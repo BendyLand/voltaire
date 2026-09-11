@@ -65,7 +65,6 @@ struct DisplayServerMacOSEmbeddedState {
 
 /// "Embedded" as in "Embedded in the Godot editor window".
 class DisplayServerMacOSEmbedded : public DisplayServerMacOSBase {
-	VLTRSOFTCLASS(DisplayServerMacOSEmbedded, DisplayServerMacOSBase)
 
 	DisplayServerMacOSEmbeddedState state;
 
@@ -140,7 +139,7 @@ public:
 	// MARK: - Mouse
 	virtual void warp_mouse(const Point2i &p_position) override;
 	virtual Point2i mouse_get_position() const override;
-	virtual BitField<MouseButtonMask> mouse_get_button_state() const override;
+	virtual uint32_t mouse_get_button_state() const override;
 
 	// MARK: - Window
 

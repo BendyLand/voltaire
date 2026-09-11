@@ -30,36 +30,10 @@
 
 #include <cfloat> // FLT_EPSILON
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "curve.h"
 
 const char* Curve::SIGNAL_RANGE_CHANGED = "range_changed";
 const char* Curve::SIGNAL_DOMAIN_CHANGED = "domain_changed";
-
-Curve::Curve() { property_helper.setup_for_instance(base_property_helper, this->obj.get()); }
-
-void Curve::set_point_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	int old_size = _points.size();
-	if (old_size == p_count) {
-		return;
-	}
-
-	if (old_size > p_count) {
-		_points.resize(p_count);
-		mark_dirty();
-	}
-	else {
-		const real_t default_offset =
-			old_size == 0 ? CLAMP((real_t)0.0, _min_domain, _max_domain) : _max_domain;
-		const real_t default_value = CLAMP((real_t)0.0, _min_value, _max_value);
-		for (int i = p_count - old_size; i > 0; i--) {
-			_add_point(Vector2(default_offset, default_value));
-		}
-	}
-	this->obj->notify_property_list_changed();
-}
 
 int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent,
 	TangentMode p_left_mode, TangentMode p_right_mode, bool p_mark_dirty)
@@ -118,15 +92,6 @@ int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_
 	if (p_mark_dirty) {
 		mark_dirty();
 	}
-
-	return ret;
-}
-
-int Curve::add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent,
-	TangentMode p_left_mode, TangentMode p_right_mode)
-{
-	int ret = _add_point(p_position, p_left_tangent, p_right_tangent, p_left_mode, p_right_mode);
-	this->obj->notify_property_list_changed();
 
 	return ret;
 }
@@ -272,23 +237,6 @@ void Curve::_set_point_position(int p_index, const Vector2& p_position)
 	set_point_offset(p_index, p_position.x);
 }
 
-void Curve::remove_point(int p_index)
-{
-	_remove_point(p_index);
-	this->obj->notify_property_list_changed();
-}
-
-void Curve::clear_points()
-{
-	if (_points.is_empty()) {
-		return;
-	}
-
-	_points.clear();
-	mark_dirty();
-	this->obj->notify_property_list_changed();
-}
-
 void Curve::set_point_value(int p_index, real_t p_position)
 {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, _points.size());
@@ -353,86 +301,6 @@ void Curve::update_auto_tangents(int p_index)
 
 #define MIN_X_RANGE 0.01
 #define MIN_Y_RANGE 0.01
-
-Array Curve::get_limits() const
-{
-	Array output;
-	output.resize(4);
-
-	output[0] = _min_value;
-	output[1] = _max_value;
-	output[2] = _min_domain;
-	output[3] = _max_domain;
-
-	return output;
-}
-
-void Curve::set_limits(const Array& p_input)
-{
-	if (p_input.size() != 4) {
-		WARN_PRINT_ED(vformat(
-			R"(Could not find Curve limit values when deserializing "%s". Resetting limits to default values.)",
-			this->get_path()));
-		_min_value = 0;
-		_max_value = 1;
-		_min_domain = 0;
-		_max_domain = 1;
-		return;
-	}
-
-	// Do not use setters because we don't want to enforce their logical constraints during
-	// deserialization.
-	_min_value = p_input[0];
-	_max_value = p_input[1];
-	_min_domain = p_input[2];
-	_max_domain = p_input[3];
-}
-
-void Curve::set_min_value(real_t p_min)
-{
-	_min_value = MIN(p_min, _max_value - MIN_Y_RANGE);
-
-	for (const Point& p : _points) {
-		_min_value = MIN(_min_value, p.position.y);
-	}
-
-	this->obj->emit_signal(SNAME(SIGNAL_RANGE_CHANGED));
-}
-
-void Curve::set_max_value(real_t p_max)
-{
-	_max_value = MAX(p_max, _min_value + MIN_Y_RANGE);
-
-	for (const Point& p : _points) {
-		_max_value = MAX(_max_value, p.position.y);
-	}
-
-	this->obj->emit_signal(SNAME(SIGNAL_RANGE_CHANGED));
-}
-
-void Curve::set_min_domain(real_t p_min)
-{
-	_min_domain = MIN(p_min, _max_domain - MIN_X_RANGE);
-
-	if (_points.size() > 0 && _min_domain > _points[0].position.x) {
-		_min_domain = _points[0].position.x;
-	}
-
-	mark_dirty();
-	this->obj->emit_signal(SNAME(SIGNAL_DOMAIN_CHANGED));
-}
-
-void Curve::set_max_domain(real_t p_max)
-{
-	_max_domain = MAX(p_max, _min_domain + MIN_X_RANGE);
-
-	if (_points.size() > 0 && _max_domain < _points[_points.size() - 1].position.x) {
-		_max_domain = _points[_points.size() - 1].position.x;
-	}
-
-	mark_dirty();
-	this->obj->emit_signal(SNAME(SIGNAL_DOMAIN_CHANGED));
-}
 
 real_t Curve::sample(real_t p_offset) const
 {
@@ -507,70 +375,6 @@ void Curve::mark_dirty()
 {
 	_baked_cache_dirty = true;
 	emit_changed();
-}
-
-Array Curve::get_data() const
-{
-	Array output;
-	const unsigned int ELEMS = 5;
-	output.resize(_points.size() * ELEMS);
-
-	for (uint32_t j = 0; j < _points.size(); ++j) {
-		const Point p = _points[j];
-		uint32_t i = j * ELEMS;
-
-		output[i] = p.position;
-		output[i + 1] = p.left_tangent;
-		output[i + 2] = p.right_tangent;
-		output[i + 3] = p.left_mode;
-		output[i + 4] = p.right_mode;
-	}
-
-	return output;
-}
-
-void Curve::set_data(const Array p_input)
-{
-	const unsigned int ELEMS = 5;
-	ERR_FAIL_COND(p_input.size() % ELEMS != 0);
-
-	// Validate input
-	for (int i = 0; i < p_input.size(); i += ELEMS) {
-		ERR_FAIL_COND(p_input[i].get_type() != Variant::VECTOR2);
-		ERR_FAIL_COND(!p_input[i + 1].is_num());
-		ERR_FAIL_COND(p_input[i + 2].get_type() != Variant::FLOAT);
-
-		ERR_FAIL_COND(p_input[i + 3].get_type() != Variant::INT);
-		int left_mode = p_input[i + 3];
-		ERR_FAIL_COND(left_mode < 0 || left_mode >= TANGENT_MODE_COUNT);
-
-		ERR_FAIL_COND(p_input[i + 4].get_type() != Variant::INT);
-		int right_mode = p_input[i + 4];
-		ERR_FAIL_COND(right_mode < 0 || right_mode >= TANGENT_MODE_COUNT);
-	}
-	int old_size = _points.size();
-	int new_size = p_input.size() / ELEMS;
-	if (old_size != new_size) {
-		_points.resize(new_size);
-	}
-
-	for (uint32_t j = 0; j < _points.size(); ++j) {
-		Point& p = _points[j];
-		int i = j * ELEMS;
-
-		p.position = p_input[i];
-		p.left_tangent = p_input[i + 1];
-		p.right_tangent = p_input[i + 2];
-		int left_mode = p_input[i + 3];
-		int right_mode = p_input[i + 4];
-		p.left_mode = (TangentMode)left_mode;
-		p.right_mode = (TangentMode)right_mode;
-	}
-
-	mark_dirty();
-	if (old_size != new_size) {
-		this->obj->notify_property_list_changed();
-	}
 }
 
 void Curve::bake() { _bake(); }
@@ -660,26 +464,6 @@ void Curve::_bind_methods() {}
 
 int Curve2D::get_point_count() const { return points.size(); }
 
-void Curve2D::set_point_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	int old_size = points.size();
-	if (old_size == p_count) {
-		return;
-	}
-
-	if (old_size > p_count) {
-		points.resize(p_count);
-		mark_dirty();
-	}
-	else {
-		for (int i = p_count - old_size; i > 0; i--) {
-			_add_point(Vector2());
-		}
-	}
-	this->obj->notify_property_list_changed();
-}
-
 void Curve2D::_add_point(
 	const Vector2& p_position, const Vector2& p_in, const Vector2& p_out, int p_atpos)
 {
@@ -695,13 +479,6 @@ void Curve2D::_add_point(
 	}
 
 	mark_dirty();
-}
-
-void Curve2D::add_point(
-	const Vector2& p_position, const Vector2& p_in, const Vector2& p_out, int p_atpos)
-{
-	_add_point(p_position, p_in, p_out, p_atpos);
-	this->obj->notify_property_list_changed();
 }
 
 void Curve2D::set_point_position(int p_index, const Vector2& p_position)
@@ -751,21 +528,6 @@ void Curve2D::_remove_point(int p_index)
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	points.remove_at(p_index);
 	mark_dirty();
-}
-
-void Curve2D::remove_point(int p_index)
-{
-	_remove_point(p_index);
-	this->obj->notify_property_list_changed();
-}
-
-void Curve2D::clear_points()
-{
-	if (!points.is_empty()) {
-		points.clear();
-		mark_dirty();
-		this->obj->notify_property_list_changed();
-	}
 }
 
 Vector2 Curve2D::sample(int p_index, const real_t p_offset) const
@@ -1121,8 +883,6 @@ void Curve2D::set_bake_interval(real_t p_tolerance)
 
 real_t Curve2D::get_bake_interval() const { return bake_interval; }
 
-PackedVector2Array Curve2D::get_points() const { return _get_data()["points"]; }
-
 Vector2 Curve2D::get_closest_point(const Vector2& p_to_point) const
 {
 	// Brute force method.
@@ -1204,51 +964,6 @@ real_t Curve2D::get_closest_offset(const Vector2& p_to_point) const
 	}
 
 	return nearest;
-}
-
-Dictionary Curve2D::_get_data() const
-{
-	Dictionary dc;
-
-	PackedVector2Array d;
-	d.resize(points.size() * 3);
-	Vector2* w = d.ptrw();
-
-	for (uint32_t i = 0; i < points.size(); i++) {
-		w[i * 3 + 0] = points[i].in;
-		w[i * 3 + 1] = points[i].out;
-		w[i * 3 + 2] = points[i].position;
-	}
-
-	dc["points"] = d;
-
-	return dc;
-}
-
-void Curve2D::_set_data(const Dictionary& p_data)
-{
-	ERR_FAIL_COND(!p_data.has("points"));
-
-	PackedVector2Array rp = p_data["points"];
-	int pc = rp.size();
-	ERR_FAIL_COND(pc % 3 != 0);
-	int old_size = points.size();
-	int new_size = pc / 3;
-	if (old_size != new_size) {
-		points.resize(new_size);
-	}
-	const Vector2* r = rp.ptr();
-
-	for (uint32_t i = 0; i < points.size(); i++) {
-		points[i].in = r[i * 3 + 0];
-		points[i].out = r[i * 3 + 1];
-		points[i].position = r[i * 3 + 2];
-	}
-
-	mark_dirty();
-	if (old_size != new_size) {
-		this->obj->notify_property_list_changed();
-	}
 }
 
 PackedVector2Array Curve2D::tessellate(int p_max_stages, real_t p_tolerance) const
@@ -1349,38 +1064,7 @@ PackedVector2Array Curve2D::tessellate_even_length(int p_max_stages, real_t p_le
 	return tess;
 }
 
-void Curve2D::_bind_methods() {}
-
-Curve2D::Curve2D() { property_helper.setup_for_instance(base_property_helper, this->obj.get()); }
-
-/***********************************************************************************/
-/***********************************************************************************/
-/***********************************************************************************/
-/***********************************************************************************/
-/***********************************************************************************/
-/***********************************************************************************/
-
 int Curve3D::get_point_count() const { return points.size(); }
-
-void Curve3D::set_point_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	int old_size = points.size();
-	if (old_size == p_count) {
-		return;
-	}
-
-	if (old_size > p_count) {
-		points.resize(p_count);
-		mark_dirty();
-	}
-	else {
-		for (int i = p_count - old_size; i > 0; i--) {
-			_add_point(Vector3());
-		}
-	}
-	this->obj->notify_property_list_changed();
-}
 
 void Curve3D::_add_point(
 	const Vector3& p_position, const Vector3& p_in, const Vector3& p_out, int p_atpos)
@@ -1397,13 +1081,6 @@ void Curve3D::_add_point(
 	}
 
 	mark_dirty();
-}
-
-void Curve3D::add_point(
-	const Vector3& p_position, const Vector3& p_in, const Vector3& p_out, int p_atpos)
-{
-	_add_point(p_position, p_in, p_out, p_atpos);
-	this->obj->notify_property_list_changed();
 }
 
 void Curve3D::set_point_position(int p_index, const Vector3& p_position)
@@ -1467,24 +1144,6 @@ void Curve3D::_remove_point(int p_index)
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	points.remove_at(p_index);
 	mark_dirty();
-}
-
-void Curve3D::remove_point(int p_index)
-{
-	_remove_point(p_index);
-	if (closed && points.size() < 2) {
-		set_closed(false);
-	}
-	this->obj->notify_property_list_changed();
-}
-
-void Curve3D::clear_points()
-{
-	if (!points.is_empty()) {
-		points.clear();
-		mark_dirty();
-		this->obj->notify_property_list_changed();
-	}
 }
 
 Vector3 Curve3D::sample(int p_index, real_t p_offset) const
@@ -2166,8 +1825,6 @@ Vector3 Curve3D::get_closest_point(const Vector3& p_to_point) const
 	return nearest;
 }
 
-PackedVector3Array Curve3D::get_points() const { return _get_data()["points"]; }
-
 real_t Curve3D::get_closest_offset(const Vector3& p_to_point) const
 {
 	// Brute force method.
@@ -2211,17 +1868,6 @@ real_t Curve3D::get_closest_offset(const Vector3& p_to_point) const
 	return nearest;
 }
 
-void Curve3D::set_closed(bool p_closed)
-{
-	if (closed == p_closed) {
-		return;
-	}
-
-	closed = p_closed;
-	mark_dirty();
-	this->obj->notify_property_list_changed();
-}
-
 bool Curve3D::is_closed() const { return closed; }
 
 void Curve3D::set_bake_interval(real_t p_tolerance)
@@ -2239,60 +1885,6 @@ void Curve3D::set_up_vector_enabled(bool p_enable)
 }
 
 bool Curve3D::is_up_vector_enabled() const { return up_vector_enabled; }
-
-Dictionary Curve3D::_get_data() const
-{
-	Dictionary dc;
-
-	PackedVector3Array d;
-	d.resize(points.size() * 3);
-	Vector3* w = d.ptrw();
-	Vector<real_t> t;
-	t.resize(points.size());
-	real_t* wt = t.ptrw();
-
-	for (uint32_t i = 0; i < points.size(); i++) {
-		w[i * 3 + 0] = points[i].in;
-		w[i * 3 + 1] = points[i].out;
-		w[i * 3 + 2] = points[i].position;
-		wt[i] = points[i].tilt;
-	}
-
-	dc["points"] = d;
-	dc["tilts"] = t;
-
-	return dc;
-}
-
-void Curve3D::_set_data(const Dictionary& p_data)
-{
-	ERR_FAIL_COND(!p_data.has("points"));
-	ERR_FAIL_COND(!p_data.has("tilts"));
-
-	PackedVector3Array rp = p_data["points"];
-	int pc = rp.size();
-	ERR_FAIL_COND(pc % 3 != 0);
-	int old_size = points.size();
-	int new_size = pc / 3;
-	if (old_size != new_size) {
-		points.resize(new_size);
-	}
-	const Vector3* r = rp.ptr();
-	Vector<real_t> rtl = p_data["tilts"];
-	const real_t* rt = rtl.ptr();
-
-	for (uint32_t i = 0; i < points.size(); i++) {
-		points[i].in = r[i * 3 + 0];
-		points[i].out = r[i * 3 + 1];
-		points[i].position = r[i * 3 + 2];
-		points[i].tilt = rt[i];
-	}
-
-	mark_dirty();
-	if (old_size != new_size) {
-		this->obj->notify_property_list_changed();
-	}
-}
 
 PackedVector3Array Curve3D::tessellate(int p_max_stages, real_t p_tolerance) const
 {
@@ -2416,9 +2008,5 @@ PackedVector3Array Curve3D::tessellate_even_length(int p_max_stages, real_t p_le
 
 	return tess;
 }
-
-void Curve3D::_bind_methods() {}
-
-Curve3D::Curve3D() { property_helper.setup_for_instance(base_property_helper, this->obj.get()); }
 
 

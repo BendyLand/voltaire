@@ -28,30 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "option_button.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
 static const int NONE_SELECTED = -1;
-
-void OptionButton::shortcut_input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	if (disable_shortcuts) {
-		return;
-	}
-
-	if (p_event->is_pressed() && !p_event->is_echo() && !is_disabled() && is_visible_in_tree() &&
-		popup->activate_item_by_event(p_event, false)) {
-		accept_event();
-		return;
-	}
-
-	Button::shortcut_input(p_event);
-}
 
 Size2 OptionButton::get_minimum_size() const
 {
@@ -80,134 +61,6 @@ Size2 OptionButton::get_minimum_size() const
 	}
 
 	return minsize;
-}
-
-void OptionButton::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
-		AccessibilityServer::get_singleton()->update_set_popup_type(
-			ae, AccessibilityServerEnums::AccessibilityPopupType::POPUP_LIST);
-	} break;
-
-	case Object::NOTIFICATION_POSTINITIALIZE: {
-		_refresh_size_cache();
-		if (has_theme_icon(SNAME("arrow"))) {
-			if (is_layout_rtl()) {
-				_set_internal_margin(SIDE_LEFT, theme_cache.arrow_icon->get_width());
-			}
-			else {
-				_set_internal_margin(SIDE_RIGHT, theme_cache.arrow_icon->get_width());
-			}
-		}
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (!has_theme_icon(SNAME("arrow"))) {
-			return;
-		}
-
-		RID ci = get_canvas_item();
-		Color clr = Color(1, 1, 1);
-		if (theme_cache.modulate_arrow) {
-			switch (get_draw_mode()) {
-			case DRAW_PRESSED:
-				clr = theme_cache.font_pressed_color;
-				break;
-			case DRAW_HOVER:
-				clr = theme_cache.font_hover_color;
-				break;
-			case DRAW_HOVER_PRESSED:
-				clr = theme_cache.font_hover_pressed_color;
-				break;
-			case DRAW_DISABLED:
-				clr = theme_cache.font_disabled_color;
-				break;
-			default:
-				if (has_focus(true)) {
-					clr = theme_cache.font_focus_color;
-				}
-				else {
-					clr = theme_cache.font_color;
-				}
-			}
-		}
-
-		Size2 size = get_size();
-
-		Point2 ofs;
-		if (is_layout_rtl()) {
-			ofs = Point2(theme_cache.arrow_margin,
-				int(Math::abs((size.height - theme_cache.arrow_icon->get_height()) / 2)));
-		}
-		else {
-			ofs =
-				Point2(size.width - theme_cache.arrow_icon->get_width() - theme_cache.arrow_margin,
-					int(Math::abs((size.height - theme_cache.arrow_icon->get_height()) / 2)));
-		}
-		theme_cache.arrow_icon->draw(ci, ofs, clr);
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-		popup->set_layout_direction((Window::LayoutDirection)get_layout_direction());
-		[[fallthrough]];
-	}
-	case NOTIFICATION_THEME_CHANGED: {
-		if (has_theme_icon(SNAME("arrow"))) {
-			if (is_layout_rtl()) {
-				_set_internal_margin(SIDE_LEFT, theme_cache.arrow_icon->get_width());
-				_set_internal_margin(SIDE_RIGHT, 0.f);
-			}
-			else {
-				_set_internal_margin(SIDE_LEFT, 0.f);
-				_set_internal_margin(SIDE_RIGHT, theme_cache.arrow_icon->get_width());
-			}
-		}
-		_refresh_size_cache();
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (!is_visible_in_tree()) {
-			popup->hide();
-		}
-	} break;
-	}
-}
-
-bool OptionButton::_set(const StringName& p_name, const Variant& p_value)
-{
-	int index;
-	const String sname = p_name;
-
-	if (property_helper.is_property_valid(sname, &index)) {
-		bool valid;
-		popup->obj->set(sname.trim_prefix("popup/"), p_value, &valid);
-
-		if (index == current) {
-			// Force refreshing currently displayed item.
-			current = NONE_SELECTED;
-			_select(index, false);
-		}
-
-		const String property = sname.get_slicec('/', 2);
-		if (property == "text" || property == "icon") {
-			_queue_update_size_cache();
-		}
-
-		return valid;
-	}
-	return false;
-}
-
-void OptionButton::_focused(int p_which)
-{
-	this->obj->emit_signal(SNAME("item_focused"), popup->get_item_index(p_which));
 }
 
 void OptionButton::_selected(int p_which) { _select(p_which, true); }
@@ -264,11 +117,6 @@ void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon)
 
 void OptionButton::set_item_id(int p_idx, int p_id) { popup->set_item_id(p_idx, p_id); }
 
-void OptionButton::set_item_metadata(int p_idx, const Variant& p_metadata)
-{
-	popup->set_item_metadata(p_idx, p_metadata);
-}
-
 void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip)
 {
 	popup->set_item_tooltip(p_idx, p_tooltip);
@@ -310,8 +158,6 @@ int OptionButton::get_item_id(int p_idx) const
 
 int OptionButton::get_item_index(int p_id) const { return popup->get_item_index(p_id); }
 
-Variant OptionButton::get_item_metadata(int p_idx) const { return popup->get_item_metadata(p_idx); }
-
 String OptionButton::get_item_tooltip(int p_idx) const { return popup->get_item_tooltip(p_idx); }
 
 Node::AutoTranslateMode OptionButton::get_item_auto_translate_mode(int p_idx) const
@@ -322,38 +168,6 @@ Node::AutoTranslateMode OptionButton::get_item_auto_translate_mode(int p_idx) co
 bool OptionButton::is_item_disabled(int p_idx) const { return popup->is_item_disabled(p_idx); }
 
 bool OptionButton::is_item_separator(int p_idx) const { return popup->is_item_separator(p_idx); }
-
-void OptionButton::set_item_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-
-	int count_old = get_item_count();
-	if (p_count == count_old) {
-		return;
-	}
-
-	if (current > p_count - 1) {
-		_select(p_count - 1, false);
-	}
-
-	popup->set_item_count(p_count);
-
-	if (p_count > count_old) {
-		for (int i = count_old; i < p_count; i++) {
-			popup->set_item_as_radio_checkable(i, true);
-		}
-	}
-
-	if (!initialized) {
-		if (queued_current != current) {
-			current = queued_current;
-		}
-		initialized = true;
-	}
-
-	_refresh_size_cache();
-	this->obj->notify_property_list_changed();
-}
 
 bool OptionButton::has_selectable_items() const
 {
@@ -450,38 +264,6 @@ void OptionButton::clear()
 	_refresh_size_cache();
 }
 
-void OptionButton::_select(int p_which, bool p_emit)
-{
-	if (p_which == current && !allow_reselect) {
-		return;
-	}
-
-	if (p_which == NONE_SELECTED) {
-		for (int i = 0; i < popup->get_item_count(); i++) {
-			popup->set_item_checked(i, false);
-		}
-
-		current = NONE_SELECTED;
-		set_text("");
-		set_button_icon(Ref<Texture2D>());
-	}
-	else {
-		ERR_FAIL_INDEX(p_which, popup->get_item_count());
-
-		for (int i = 0; i < popup->get_item_count(); i++) {
-			popup->set_item_checked(i, i == p_which);
-		}
-
-		current = p_which;
-		set_text(popup->get_item_text(current));
-		set_button_icon(popup->get_item_icon(current));
-	}
-
-	if (is_inside_tree() && p_emit) {
-		this->obj->emit_signal(SceneStringName(item_selected), current);
-	}
-}
-
 void OptionButton::_select_int(int p_which)
 {
 	if (p_which < NONE_SELECTED) {
@@ -510,50 +292,11 @@ void OptionButton::_refresh_size_cache()
 	update_minimum_size();
 }
 
-void OptionButton::_queue_update_size_cache()
-{
-	if (cache_refresh_pending) {
-		return;
-	}
-	cache_refresh_pending = true;
-
-	callable_mp(this, &OptionButton::_refresh_size_cache).call_deferred();
-}
-
-String OptionButton::_get_translated_text(const String& p_text) const
-{
-	if (0 <= current && current < popup->get_item_count()) {
-		AutoTranslateMode mode = popup->get_item_auto_translate_mode(current);
-		switch (mode) {
-		case AUTO_TRANSLATE_MODE_INHERIT: {
-			return atr(p_text);
-		} break;
-		case AUTO_TRANSLATE_MODE_ALWAYS: {
-			return this->obj->tr(p_text);
-		} break;
-		case AUTO_TRANSLATE_MODE_DISABLED: {
-			return p_text;
-		} break;
-		}
-		ERR_FAIL_V_MSG(atr(p_text), "Unexpected auto translate mode: " + itos(mode));
-	}
-	return atr(p_text);
-}
-
 void OptionButton::select(int p_idx) { _select(p_idx, false); }
 
 int OptionButton::get_selected() const { return current; }
 
 int OptionButton::get_selected_id() const { return get_item_id(current); }
-
-Variant OptionButton::get_selected_metadata() const
-{
-	int idx = get_selected();
-	if (idx < 0) {
-		return Variant();
-	}
-	return get_item_metadata(current);
-}
 
 void OptionButton::remove_item(int p_idx)
 {
@@ -608,15 +351,6 @@ void OptionButton::show_popup()
 	popup->popup(rect);
 }
 
-void OptionButton::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "text" || p_property.name == "icon") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
-void OptionButton::_bind_methods() {}
-
 void OptionButton::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
 
 #ifdef TOOLS_ENABLED
@@ -627,25 +361,6 @@ PackedStringArray OptionButton::get_configuration_warnings() const
 	return warnings;
 }
 #endif
-
-OptionButton::OptionButton(const String& p_text) : Button(p_text)
-{
-	set_toggle_mode(true);
-	set_process_shortcut_input(true);
-	set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
-	set_action_mode(ACTION_MODE_BUTTON_PRESS);
-
-	popup = memnew(PopupMenu);
-	popup->set_shrink_width(false);
-	popup->hide();
-	add_child(popup, false, INTERNAL_MODE_FRONT);
-	popup->connect("index_pressed", callable_mp(this, &OptionButton::_selected));
-	popup->connect("id_focused", callable_mp(this, &OptionButton::_focused));
-	popup->connect(
-		"popup_hide", callable_mp((BaseButton*)this, &BaseButton::set_pressed).bind(false));
-
-	property_helper.setup_for_instance(base_property_helper, this->obj.get());
-}
 
 OptionButton::~OptionButton() {}
 

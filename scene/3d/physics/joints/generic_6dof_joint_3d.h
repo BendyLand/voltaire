@@ -32,11 +32,11 @@
 
 #include "scene/3d/physics/joints/joint_3d.h"
 
-class Generic6DOFJoint3D : public Joint3D {
-	VLTRCLASS(Generic6DOFJoint3D, Joint3D);
-
+class Generic6DOFJoint3D : public Joint3D
+{
 public:
-	enum Param {
+	enum Param
+	{
 		PARAM_LINEAR_LOWER_LIMIT = PS3DE::G6DOF_JOINT_LINEAR_LOWER_LIMIT,
 		PARAM_LINEAR_UPPER_LIMIT = PS3DE::G6DOF_JOINT_LINEAR_UPPER_LIMIT,
 		PARAM_LINEAR_LIMIT_SOFTNESS = PS3DE::G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS,
@@ -58,13 +58,15 @@ public:
 		PARAM_ANGULAR_MOTOR_FORCE_LIMIT = PS3DE::G6DOF_JOINT_ANGULAR_MOTOR_FORCE_LIMIT,
 		PARAM_ANGULAR_SPRING_STIFFNESS = PS3DE::G6DOF_JOINT_ANGULAR_SPRING_STIFFNESS,
 		PARAM_ANGULAR_SPRING_DAMPING = PS3DE::G6DOF_JOINT_ANGULAR_SPRING_DAMPING,
-		PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT = PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
+		PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT =
+			PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
 		PARAM_LINEAR_DRIVE_FORCE_LIMIT = PS3DE::G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT,
 		PARAM_ANGULAR_DRIVE_TORQUE_LIMIT = PS3DE::G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT,
 		PARAM_MAX = PS3DE::G6DOF_JOINT_MAX,
 	};
 
-	enum Flag {
+	enum Flag
+	{
 		FLAG_ENABLE_LINEAR_LIMIT = PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT,
 		FLAG_ENABLE_ANGULAR_LIMIT = PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT,
 		FLAG_ENABLE_LINEAR_SPRING = PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING,
@@ -90,14 +92,15 @@ protected:
 	Quaternion angular_target_rotation;
 	bool has_angular_target_rotation = false;
 
-	virtual void _configure_joint(RID p_joint, PhysicsBody3D *body_a, PhysicsBody3D *body_b) override;
+	virtual void _configure_joint(
+		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
 	static void _bind_methods();
 
 	static void _warn_if_deprecated_param(Param p_param);
 	void _set_drive_limit_explicit(Vector3::Axis p_axis, Param p_param);
 	bool _should_replay_param(Vector3::Axis p_axis, Param p_param) const;
 
-	static bool _is_valid_angular_target_rotation(const Quaternion &p_target_rotation);
+	static bool _is_valid_angular_target_rotation(const Quaternion& p_target_rotation);
 
 public:
 	void set_param_x(Param p_param, real_t p_value);
@@ -118,7 +121,7 @@ public:
 	void set_flag_z(Flag p_flag, bool p_enabled);
 	bool get_flag_z(Flag p_flag) const;
 
-	void set_angular_target_rotation(const Quaternion &p_target_rotation);
+	void set_angular_target_rotation(const Quaternion& p_target_rotation);
 	Quaternion get_angular_target_rotation() const;
 	bool has_target_rotation() const;
 	void clear_angular_target_rotation();
@@ -126,5 +129,4 @@ public:
 	Generic6DOFJoint3D();
 };
 
-VARIANT_ENUM_CAST(Generic6DOFJoint3D::Param);
-VARIANT_ENUM_CAST(Generic6DOFJoint3D::Flag);
+

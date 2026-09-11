@@ -28,42 +28,45 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "print_string.h"
-
+#include <cstdio>
 #include "core/core_globals.h"
 #include "core/os/os.h"
+#include "print_string.h"
 
-#include <cstdio>
-
-static PrintHandlerList *print_handler_list = nullptr;
+static PrintHandlerList* print_handler_list = nullptr;
 static thread_local bool is_printing = false;
 
-static void __print_fallback(const String &p_string, bool p_err, bool p_reentrance) {
+static void __print_fallback(const String& p_string, bool p_err, bool p_reentrance)
+{
 	if (p_reentrance) {
-		fprintf(p_err ? stderr : stdout, "While attempting to print an error, another error was printed:\n");
+		fprintf(p_err ? stderr : stdout,
+			"While attempting to print an error, another error was printed:\n");
 	}
 
 	fprintf(p_err ? stderr : stdout, "%s\n", p_string.utf8().get_data());
 }
 
-void add_print_handler(PrintHandlerList *p_handler) {
+void add_print_handler(PrintHandlerList* p_handler)
+{
 	_global_lock();
 	p_handler->next = print_handler_list;
 	print_handler_list = p_handler;
 	_global_unlock();
 }
 
-void remove_print_handler(const PrintHandlerList *p_handler) {
+void remove_print_handler(const PrintHandlerList* p_handler)
+{
 	_global_lock();
 
-	PrintHandlerList *prev = nullptr;
-	PrintHandlerList *l = print_handler_list;
+	PrintHandlerList* prev = nullptr;
+	PrintHandlerList* l = print_handler_list;
 
 	while (l) {
 		if (l == p_handler) {
 			if (prev) {
 				prev->next = l->next;
-			} else {
+			}
+			else {
 				print_handler_list = l->next;
 			}
 			break;
@@ -71,13 +74,14 @@ void remove_print_handler(const PrintHandlerList *p_handler) {
 		prev = l;
 		l = l->next;
 	}
-	//OS::get_singleton()->print("print handler list is %p\n",print_handler_list);
+	// OS::get_singleton()->print("print handler list is %p\n",print_handler_list);
 
 	_global_unlock();
 	ERR_FAIL_NULL(l);
 }
 
-void __print_line(const String &p_string) {
+void __print_line(const String& p_string)
+{
 	if (!CoreGlobals::print_line_enabled) {
 		return;
 	}
@@ -97,7 +101,7 @@ void __print_line(const String &p_string) {
 	OS::get_singleton()->print("%s\n", p_string.utf8().get_data());
 
 	_global_lock();
-	PrintHandlerList *l = print_handler_list;
+	PrintHandlerList* l = print_handler_list;
 	while (l) {
 		l->printfunc(l->userdata, p_string, false, false);
 		l = l->next;
@@ -108,7 +112,8 @@ void __print_line(const String &p_string) {
 	is_printing = false;
 }
 
-void __print_line_rich(const String &p_string) {
+void __print_line_rich(const String& p_string)
+{
 	if (!CoreGlobals::print_line_enabled) {
 		return;
 	}
@@ -146,157 +151,223 @@ void __print_line_rich(const String &p_string) {
 		String tag = p_string.substr(brk_pos + 1, brk_end - brk_pos - 1);
 		if (tag == "b") {
 			output += "\u001b[1m";
-		} else if (tag == "/b") {
+		}
+		else if (tag == "/b") {
 			output += "\u001b[22m";
-		} else if (tag == "i") {
+		}
+		else if (tag == "i") {
 			output += "\u001b[3m";
-		} else if (tag == "/i") {
+		}
+		else if (tag == "/i") {
 			output += "\u001b[23m";
-		} else if (tag == "u") {
+		}
+		else if (tag == "u") {
 			output += "\u001b[4m";
-		} else if (tag == "/u") {
+		}
+		else if (tag == "/u") {
 			output += "\u001b[24m";
-		} else if (tag == "s") {
+		}
+		else if (tag == "s") {
 			output += "\u001b[9m";
-		} else if (tag == "/s") {
+		}
+		else if (tag == "/s") {
 			output += "\u001b[29m";
-		} else if (tag == "indent") {
+		}
+		else if (tag == "indent") {
 			output += "    ";
-		} else if (tag == "/indent") {
+		}
+		else if (tag == "/indent") {
 			output += "";
-		} else if (tag == "code") {
+		}
+		else if (tag == "code") {
 			output += "\u001b[2m";
-		} else if (tag == "/code") {
+		}
+		else if (tag == "/code") {
 			output += "\u001b[22m";
-		} else if (tag.begins_with("url=")) {
+		}
+		else if (tag.begins_with("url=")) {
 			// Support named URLs using OSC 8 escape codes:
 			// <https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda>
 			in_named_url = true;
 			const String url_link = tag.substr(strlen("url="));
 			output += vformat("\u001b]8;;%s\u001b\\", url_link);
-		} else if (tag == "url") {
+		}
+		else if (tag == "url") {
 			output += "";
-		} else if (tag == "/url") {
+		}
+		else if (tag == "/url") {
 			if (in_named_url) {
 				output += "\u001b]8;;\u001b\\";
 				in_named_url = false;
-			} else {
+			}
+			else {
 				// While it's legal to close an URL that was never opened using OSC 8 escape codes,
 				// it would result in the code being printed to unsupported terminal emulators
 				// when using unnamed URLs.
 				output += "";
 			}
-		} else if (tag == "center") {
+		}
+		else if (tag == "center") {
 			output += "\n\t\t\t";
-		} else if (tag == "/center") {
+		}
+		else if (tag == "/center") {
 			output += "";
-		} else if (tag == "right") {
+		}
+		else if (tag == "right") {
 			output += "\n\t\t\t\t\t\t";
-		} else if (tag == "/right") {
+		}
+		else if (tag == "/right") {
 			output += "";
-		} else if (tag.begins_with("color=")) {
+		}
+		else if (tag.begins_with("color=")) {
 			String color_name = tag.trim_prefix("color=");
 			if (color_name == "black") {
 				output += "\u001b[30m";
-			} else if (color_name == "red") {
+			}
+			else if (color_name == "red") {
 				output += "\u001b[91m";
-			} else if (color_name == "green") {
+			}
+			else if (color_name == "green") {
 				output += "\u001b[92m";
-			} else if (color_name == "lime") {
+			}
+			else if (color_name == "lime") {
 				output += "\u001b[92m";
-			} else if (color_name == "yellow") {
+			}
+			else if (color_name == "yellow") {
 				output += "\u001b[93m";
-			} else if (color_name == "blue") {
+			}
+			else if (color_name == "blue") {
 				output += "\u001b[94m";
-			} else if (color_name == "magenta") {
+			}
+			else if (color_name == "magenta") {
 				output += "\u001b[95m";
-			} else if (color_name == "pink") {
+			}
+			else if (color_name == "pink") {
 				output += "\u001b[38;5;218m";
-			} else if (color_name == "purple") {
+			}
+			else if (color_name == "purple") {
 				output += "\u001b[38;5;98m";
-			} else if (color_name == "cyan") {
+			}
+			else if (color_name == "cyan") {
 				output += "\u001b[96m";
-			} else if (color_name == "white") {
+			}
+			else if (color_name == "white") {
 				output += "\u001b[97m";
-			} else if (color_name == "orange") {
+			}
+			else if (color_name == "orange") {
 				output += "\u001b[38;5;208m";
-			} else if (color_name == "gray") {
+			}
+			else if (color_name == "gray") {
 				output += "\u001b[90m";
-			} else {
+			}
+			else {
 				Color c = Color::from_string(color_name, Color());
 				output += vformat("\u001b[38;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
 			}
-		} else if (tag == "/color") {
+		}
+		else if (tag == "/color") {
 			output += "\u001b[39m";
-		} else if (tag.begins_with("bgcolor=")) {
+		}
+		else if (tag.begins_with("bgcolor=")) {
 			String color_name = tag.trim_prefix("bgcolor=");
 			if (color_name == "black") {
 				output += "\u001b[40m";
-			} else if (color_name == "red") {
+			}
+			else if (color_name == "red") {
 				output += "\u001b[101m";
-			} else if (color_name == "green") {
+			}
+			else if (color_name == "green") {
 				output += "\u001b[102m";
-			} else if (color_name == "lime") {
+			}
+			else if (color_name == "lime") {
 				output += "\u001b[102m";
-			} else if (color_name == "yellow") {
+			}
+			else if (color_name == "yellow") {
 				output += "\u001b[103m";
-			} else if (color_name == "blue") {
+			}
+			else if (color_name == "blue") {
 				output += "\u001b[104m";
-			} else if (color_name == "magenta") {
+			}
+			else if (color_name == "magenta") {
 				output += "\u001b[105m";
-			} else if (color_name == "pink") {
+			}
+			else if (color_name == "pink") {
 				output += "\u001b[48;5;218m";
-			} else if (color_name == "purple") {
+			}
+			else if (color_name == "purple") {
 				output += "\u001b[48;5;98m";
-			} else if (color_name == "cyan") {
+			}
+			else if (color_name == "cyan") {
 				output += "\u001b[106m";
-			} else if (color_name == "white") {
+			}
+			else if (color_name == "white") {
 				output += "\u001b[107m";
-			} else if (color_name == "orange") {
+			}
+			else if (color_name == "orange") {
 				output += "\u001b[48;5;208m";
-			} else if (color_name == "gray") {
+			}
+			else if (color_name == "gray") {
 				output += "\u001b[100m";
-			} else {
+			}
+			else {
 				Color c = Color::from_string(color_name, Color());
 				output += vformat("\u001b[48;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
 			}
-		} else if (tag == "/bgcolor") {
+		}
+		else if (tag == "/bgcolor") {
 			output += "\u001b[49m";
-		} else if (tag.begins_with("fgcolor=")) {
+		}
+		else if (tag.begins_with("fgcolor=")) {
 			String color_name = tag.trim_prefix("fgcolor=");
 			if (color_name == "black") {
 				output += "\u001b[30;40m";
-			} else if (color_name == "red") {
-				output += "\u001b[91;101m";
-			} else if (color_name == "green") {
-				output += "\u001b[92;102m";
-			} else if (color_name == "lime") {
-				output += "\u001b[92;102m";
-			} else if (color_name == "yellow") {
-				output += "\u001b[93;103m";
-			} else if (color_name == "blue") {
-				output += "\u001b[94;104m";
-			} else if (color_name == "magenta") {
-				output += "\u001b[95;105m";
-			} else if (color_name == "pink") {
-				output += "\u001b[38;5;218;48;5;218m";
-			} else if (color_name == "purple") {
-				output += "\u001b[38;5;98;48;5;98m";
-			} else if (color_name == "cyan") {
-				output += "\u001b[96;106m";
-			} else if (color_name == "white") {
-				output += "\u001b[97;107m";
-			} else if (color_name == "orange") {
-				output += "\u001b[38;5;208;48;5;208m";
-			} else if (color_name == "gray") {
-				output += "\u001b[90;100m";
-			} else {
-				Color c = Color::from_string(color_name, Color());
-				output += vformat("\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255, c.r * 255, c.g * 255, c.b * 255);
 			}
-		} else if (tag == "/fgcolor") {
+			else if (color_name == "red") {
+				output += "\u001b[91;101m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[93;103m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[94;104m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[95;105m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[38;5;218;48;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[38;5;98;48;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[96;106m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[97;107m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[38;5;208;48;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[90;100m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm", c.r * 255, c.g * 255,
+					c.b * 255, c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/fgcolor") {
 			output += "\u001b[39;49m";
-		} else {
+		}
+		else {
 			output += "[";
 			pos = brk_pos + 1;
 		}
@@ -318,7 +389,7 @@ void __print_line_rich(const String &p_string) {
 	OS::get_singleton()->print_rich("%s\n", output.utf8().get_data());
 
 	_global_lock();
-	PrintHandlerList *l = print_handler_list;
+	PrintHandlerList* l = print_handler_list;
 	while (l) {
 		l->printfunc(l->userdata, p_string, false, true);
 		l = l->next;
@@ -329,7 +400,8 @@ void __print_line_rich(const String &p_string) {
 	is_printing = false;
 }
 
-void print_raw(const String &p_string) {
+void print_raw(const String& p_string)
+{
 	if (!CoreGlobals::print_ready) {
 		__print_fallback(p_string, false, false);
 		return;
@@ -347,7 +419,8 @@ void print_raw(const String &p_string) {
 	is_printing = false;
 }
 
-void print_error(const String &p_string) {
+void print_error(const String& p_string)
+{
 	if (!CoreGlobals::print_error_enabled) {
 		return;
 	}
@@ -367,7 +440,7 @@ void print_error(const String &p_string) {
 	OS::get_singleton()->printerr("%s\n", p_string.utf8().get_data());
 
 	_global_lock();
-	PrintHandlerList *l = print_handler_list;
+	PrintHandlerList* l = print_handler_list;
 	while (l) {
 		l->printfunc(l->userdata, p_string, true, false);
 		l = l->next;
@@ -378,18 +451,6 @@ void print_error(const String &p_string) {
 	is_printing = false;
 }
 
-bool is_print_verbose_enabled() {
-	return OS::get_singleton()->is_stdout_verbose();
-}
+bool is_print_verbose_enabled() { return OS::get_singleton()->is_stdout_verbose(); }
 
-String stringify_variants(const Span<Variant> &p_vars) {
-	if (p_vars.is_empty()) {
-		return String();
-	}
-	String result = String(p_vars[0]);
-	for (const Variant &v : Span(p_vars.ptr() + 1, p_vars.size() - 1)) {
-		result += ' ';
-		result += v.operator String();
-	}
-	return result;
-}
+

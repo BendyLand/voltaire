@@ -29,19 +29,12 @@
 /**************************************************************************/
 
 #include "circle_shape_2d.h"
-#include "core/object/class_db.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/rendering_server.h"
 
 bool CircleShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
 {
 	return p_point.length() < get_radius() + p_tolerance;
-}
-
-void CircleShape2D::_update_shape()
-{
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), radius);
-	emit_changed();
 }
 
 void CircleShape2D::set_radius(real_t p_radius)
@@ -55,8 +48,6 @@ void CircleShape2D::set_radius(real_t p_radius)
 }
 
 real_t CircleShape2D::get_radius() const { return radius; }
-
-void CircleShape2D::_bind_methods() {}
 
 Rect2 CircleShape2D::get_rect() const
 {

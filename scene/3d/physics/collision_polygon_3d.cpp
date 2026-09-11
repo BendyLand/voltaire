@@ -30,7 +30,6 @@
 
 #include "collision_polygon_3d.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
@@ -86,41 +85,6 @@ void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only)
 		return;
 	}
 	collision_object->shape_owner_set_disabled(owner_id, disabled);
-}
-
-void CollisionPolygon3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_PARENTED: {
-		collision_object = Object::cast_to<CollisionObject3D>(get_parent());
-		if (collision_object) {
-			owner_id = collision_object->create_shape_owner(this->obj.get());
-			_build_polygon();
-			_update_in_shape_owner();
-		}
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		if (collision_object) {
-			_update_in_shape_owner();
-		}
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		if (collision_object) {
-			_update_in_shape_owner(true);
-		}
-		update_configuration_warnings();
-	} break;
-
-	case NOTIFICATION_UNPARENTED: {
-		if (collision_object) {
-			collision_object->remove_shape_owner(owner_id);
-		}
-		owner_id = 0;
-		collision_object = nullptr;
-	} break;
-	}
 }
 
 void CollisionPolygon3D::set_polygon(const Vector<Point2>& p_polygon)
@@ -190,39 +154,6 @@ void CollisionPolygon3D::set_debug_fill_enabled(bool p_enable)
 
 bool CollisionPolygon3D::get_debug_fill_enabled() const { return debug_fill; }
 
-#ifdef DEBUG_ENABLED
-
-bool CollisionPolygon3D::_property_can_revert(const StringName& p_name) const
-{
-	if (p_name == "debug_color") {
-		return true;
-	}
-	return false;
-}
-
-bool CollisionPolygon3D::_property_get_revert(const StringName& p_name, Variant& r_property) const
-{
-	if (p_name == "debug_color") {
-		r_property = _get_default_debug_color();
-		return true;
-	}
-	return false;
-}
-
-void CollisionPolygon3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "debug_color") {
-		if (debug_color == _get_default_debug_color()) {
-			p_property.usage = PROPERTY_USAGE_DEFAULT & ~PROPERTY_USAGE_STORAGE;
-		}
-		else {
-			p_property.usage = PROPERTY_USAGE_DEFAULT;
-		}
-	}
-}
-
-#endif // DEBUG_ENABLED
-
 real_t CollisionPolygon3D::get_margin() const { return margin; }
 
 void CollisionPolygon3D::set_margin(real_t p_margin)
@@ -231,31 +162,6 @@ void CollisionPolygon3D::set_margin(real_t p_margin)
 	if (collision_object) {
 		_build_polygon();
 	}
-}
-
-PackedStringArray CollisionPolygon3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (!Object::cast_to<CollisionObject3D>(get_parent())) {
-		warnings.push_back(
-			RTR("CollisionPolygon3D only serves to provide a collision shape to a "
-				"CollisionObject3D derived node.\nPlease only use it as a child of Area3D, "
-				"StaticBody3D, RigidBody3D, CharacterBody3D, etc. to give them a shape."));
-	}
-
-	if (polygon.is_empty()) {
-		warnings.push_back(RTR("An empty CollisionPolygon3D has no effect on collision."));
-	}
-
-	Vector3 scale = get_transform().get_basis().get_scale();
-	if (!(Math::is_zero_approx(scale.x - scale.y) && Math::is_zero_approx(scale.y - scale.z))) {
-		warnings.push_back(RTR("A non-uniformly scaled CollisionPolygon3D node will probably not "
-							   "function as expected.\nPlease make its scale uniform (i.e. the "
-							   "same on all axes), and change its polygon's vertices instead."));
-	}
-
-	return warnings;
 }
 
 bool CollisionPolygon3D::_is_editable_3d_polygon() const { return true; }

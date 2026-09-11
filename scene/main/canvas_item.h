@@ -50,8 +50,6 @@ class CanvasItem : public Node
 	friend class CanvasLayer;
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::CANVAS_ITEM;
-
 	enum TextureFilter
 	{
 		TEXTURE_FILTER_PARENT_NODE,
@@ -107,7 +105,9 @@ private:
 		// an optimization for faster traversal.
 		LocalVector<CanvasItem*> canvas_item_children;
 		uint32_t index_in_parent = UINT32_MAX;
-	} data;
+	};
+
+	Data data;
 
 	int light_mask = 1;
 	uint32_t visibility_layer = 1;
@@ -152,8 +152,6 @@ private:
 	TextureRepeat texture_repeat = TEXTURE_REPEAT_PARENT_NODE;
 
 	Ref<Material> material;
-	mutable HashMap<StringName, Variant> instance_shader_parameters;
-	mutable HashMap<StringName, StringName> instance_shader_parameter_property_remap;
 
 	mutable Transform2D global_transform;
 	mutable MTFlag global_invalid;
@@ -180,8 +178,6 @@ private:
 
 	void _window_visibility_changed();
 
-	void _notify_transform(CanvasItem* p_node);
-
 	static CanvasItem* current_item_drawn;
 	friend class Viewport;
 	void _refresh_texture_repeat_cache() const;
@@ -193,26 +189,14 @@ private:
 	const StringName* _instance_shader_parameter_get_remap(const StringName& p_name) const;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 #ifdef TOOLS_ENABLED
 	bool _property_can_revert(const StringName& p_name) const;
-	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 #endif
 
 	virtual void _physics_interpolated_changed() override;
 
 	virtual void _update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat);
 	virtual void _update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter);
-
-	_FORCE_INLINE_ void _notify_transform()
-	{
-		_notify_transform(this);
-		if (is_inside_tree() && !block_transform_notify && notify_local_transform) {
-			this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-		}
-	}
 
 	void item_rect_changed(bool p_size_changed = true);
 
@@ -226,26 +210,25 @@ protected:
 		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_multiline_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::LineBreakFlag> p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_string_outline_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
 		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_multiline_string_outline_bind_compat_104872(const Ref<Font>& p_font,
@@ -253,10 +236,9 @@ protected:
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
 		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::LineBreakFlag> p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
 	void _draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -277,8 +259,6 @@ protected:
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
-	void _validate_property(PropertyInfo& p_property) const;
-
 	_FORCE_INLINE_ void set_hide_clip_children(bool p_value) { hide_clip_children = p_value; }
 
 public:
@@ -297,9 +277,6 @@ public:
 
 #ifdef TOOLS_ENABLED
 	// Save and restore a CanvasItem state
-	virtual void _edit_set_state(const Dictionary& p_state) {}
-
-	virtual Dictionary _edit_get_state() const { return Dictionary(); }
 
 	// Used to move the node
 	virtual void _edit_set_position(const Point2& p_position) = 0;
@@ -417,10 +394,10 @@ public:
 		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
 	void draw_circle(const Point2& p_pos, real_t p_radius, const Color& p_color,
 		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
-	void draw_texture(Texture2D* rp_texture, const Point2& p_pos,
-		const Color& p_modulate = Color(1, 1, 1, 1));
-	void draw_texture_rect(Texture2D* rp_texture, const Rect2& p_rect,
-		bool p_tile = false, const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false);
+	void draw_texture(
+		Texture2D* rp_texture, const Point2& p_pos, const Color& p_modulate = Color(1, 1, 1, 1));
+	void draw_texture_rect(Texture2D* rp_texture, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false);
 	void draw_texture_rect_region(Texture2D* rp_texture, const Rect2& p_rect,
 		const Rect2& p_src_rect, const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
 		bool p_clip_uv = false);
@@ -446,19 +423,18 @@ public:
 	void draw_string(Font* rp_font, const Point2& p_pos, const String& p_text,
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
 		int p_font_size = DEFAULT_FONT_SIZE, const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
-	void draw_multiline_string(Font* rp_font, const Point2& p_pos,
-		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
-		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
+	void draw_multiline_string(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::LineBreakFlag> p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
@@ -467,19 +443,18 @@ public:
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
 		int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
 		const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
-	void draw_multiline_string_outline(Font* rp_font, const Point2& p_pos,
-		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
-		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
-		int p_size = 1, const Color& p_modulate = Color(1.0, 1.0, 1.0),
-		BitField<TextServer::LineBreakFlag> p_brk_flags = TextServer::BREAK_MANDATORY |
-														  TextServer::BREAK_WORD_BOUND,
-		BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
-															  TextServer::JUSTIFICATION_WORD_BOUND,
+	void draw_multiline_string_outline(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
 		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
 		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
 		float p_oversampling = 0.0) const;
@@ -529,14 +504,10 @@ public:
 	Rect2 get_viewport_rect() const;
 	RID get_viewport_rid() const;
 	RID get_canvas() const;
-	ObjectID get_canvas_layer_instance_id() const;
 	Ref<World2D> get_world_2d() const;
 
 	virtual void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
-
-	void set_instance_shader_parameter(const StringName& p_name, const Variant& p_value);
-	Variant get_instance_shader_parameter(const StringName& p_name) const;
 
 	virtual void set_use_parent_material(bool p_use_parent_material);
 	bool get_use_parent_material() const;
@@ -579,16 +550,8 @@ public:
 	~CanvasItem();
 };
 
-VARIANT_ENUM_CAST(CanvasItem::TextureFilter)
-VARIANT_ENUM_CAST(CanvasItem::TextureRepeat)
-VARIANT_ENUM_CAST(CanvasItem::ClipChildrenMode)
-VARIANT_ENUM_CAST(CanvasItem::OversamplingWithScale)
-
 class CanvasTexture : public Texture2D
 {
-	VLTRCLASS(CanvasTexture, Texture2D);
-	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
-
 	Ref<Texture2D> diffuse_texture;
 	Ref<Texture2D> normal_texture;
 	Ref<Texture2D> specular_texture;

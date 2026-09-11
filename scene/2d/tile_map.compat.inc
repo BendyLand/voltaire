@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "tile_map.h"
 
 Rect2i TileMap::_get_used_rect_bind_compat_78328() { return get_used_rect(); }

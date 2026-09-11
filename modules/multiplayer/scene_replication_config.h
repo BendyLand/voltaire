@@ -31,14 +31,9 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/variant/typed_array.h"
 
 class SceneReplicationConfig : public Resource
 {
-	VLTRCLASS(SceneReplicationConfig, Resource);
-	OBJ_SAVE_TYPE_NO(SceneReplicationConfig);
-	RES_BASE_EXTENSION("repl");
-
 public:
 	enum ReplicationMode
 	{
@@ -69,17 +64,8 @@ private:
 
 	void _update();
 
-protected:
-	static void _bind_methods();
-
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 public:
 	virtual void reset_state() override; // Required since we use variable amount of properties.
-
-	TypedArray<NodePath> get_properties() const;
 
 	void add_property(const NodePath& p_path, int p_index = -1);
 	void remove_property(const NodePath& p_path);
@@ -104,7 +90,5 @@ public:
 
 	SceneReplicationConfig() {}
 };
-
-VARIANT_ENUM_CAST(SceneReplicationConfig::ReplicationMode);
 
 

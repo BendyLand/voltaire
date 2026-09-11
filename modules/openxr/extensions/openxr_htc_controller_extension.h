@@ -30,16 +30,13 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRHTCControllerExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRHTCControllerExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRHTCControllerExtension
+{
 public:
-	enum HTCControllers {
+	enum HTCControllers
+	{
 		// Note, HTC Vive Wand controllers are part of the core spec and not part of our extension.
 		HTC_VIVE_COSMOS,
 		HTC_VIVE_FOCUS3,
@@ -47,14 +44,14 @@ public:
 		HTC_MAX_CONTROLLERS
 	};
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	PackedStringArray get_suggested_tracker_names() override;
+	PackedStringArray get_suggested_tracker_names();
 
 	bool is_available(HTCControllers p_type);
 
-	virtual void on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) override;
-
 private:
-	bool available[HTC_MAX_CONTROLLERS] = { false, false };
+	bool available[HTC_MAX_CONTROLLERS] = {false, false};
 };
+
+

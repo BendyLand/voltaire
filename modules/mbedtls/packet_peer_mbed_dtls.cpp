@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "packet_peer_mbed_dtls.h"
 
 int PacketPeerMbedDTLS::bio_send(void* ctx, const unsigned char* buf, size_t len)
@@ -289,7 +288,7 @@ PacketPeerMbedDTLS::Status PacketPeerMbedDTLS::get_status() const { return statu
 
 PacketPeerDTLS* PacketPeerMbedDTLS::_create_func(bool p_notify_postinitialize)
 {
-	return static_cast<PacketPeerDTLS*>(memnew(PacketPeerMbedDTLS).ptr());
+	return static_cast<PacketPeerDTLS*>(memnew(PacketPeerMbedDTLS));
 }
 
 void PacketPeerMbedDTLS::initialize_dtls()

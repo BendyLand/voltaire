@@ -30,14 +30,12 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/array.h"
 
 #ifdef SOWRAP_ENABLED
 #include "speechd-so_wrap.h"
@@ -83,12 +81,10 @@ protected:
 	void _speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark);
 
 public:
-	mem_unique_ptr<Object> obj;
 	static TTS_Linux* get_singleton();
 
 	bool is_speaking() const;
 	bool is_paused() const;
-	Array get_voices() const;
 
 	void speak(const String& p_text, const String& p_voice, int p_volume = 50, float p_pitch = 1.f,
 		float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false);

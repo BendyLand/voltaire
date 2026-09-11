@@ -28,38 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "lightmap_probe_gizmo_plugin.h"
-
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/settings/editor_settings.h"
+#include "lightmap_probe_gizmo_plugin.h"
 #include "scene/3d/lightmap_probe.h"
 
-LightmapProbeGizmoPlugin::LightmapProbeGizmoPlugin() {
-	// NOTE: This gizmo only renders LightmapProbe nodes as wireframes.
-	// The solid sphere representation is handled in LightmapGIGizmoPlugin.
-	create_icon_material("lightmap_probe_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapProbe"), EditorStringName(EditorIcons)));
+String LightmapProbeGizmoPlugin::get_gizmo_name() const { return "LightmapProbe"; }
 
-	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/lightprobe_lines");
-	probe_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/lightmap_gi_probe_size");
-
-	gizmo_color.a = 0.3;
-	create_material("lightprobe_lines", gizmo_color);
-}
-
-bool LightmapProbeGizmoPlugin::has_gizmo(Node3D *p_spatial) {
-	return Object::cast_to<LightmapProbe>(p_spatial) != nullptr;
-}
-
-String LightmapProbeGizmoPlugin::get_gizmo_name() const {
-	return "LightmapProbe";
-}
-
-int LightmapProbeGizmoPlugin::get_priority() const {
-	return -1;
-}
-
-void LightmapProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
+void LightmapProbeGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
+{
 	Ref<Material> material_lines = get_material("lightprobe_lines", p_gizmo);
 
 	p_gizmo->clear();
@@ -79,8 +57,8 @@ void LightmapProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	if (!Math::is_zero_approx(radius)) {
 		for (int i = 0; i <= stack_count; ++i) {
 			float stack_angle = Math::PI / 2 - i * stack_step; // starting from pi/2 to -pi/2
-			float xy = radius * Math::cos(stack_angle); // r * cos(u)
-			float z = radius * Math::sin(stack_angle); // r * sin(u)
+			float xy = radius * Math::cos(stack_angle);		   // r * cos(u)
+			float z = radius * Math::sin(stack_angle);		   // r * sin(u)
 
 			// add (sector_count+1) vertices per stack
 			// the first and last vertices have same position and normal, but different tex coords
@@ -98,7 +76,7 @@ void LightmapProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 		for (int i = 0; i < stack_count; ++i) {
 			int k1 = i * (sector_count + 1); // beginning of current stack
-			int k2 = k1 + sector_count + 1; // beginning of next stack
+			int k2 = k1 + sector_count + 1;	 // beginning of next stack
 
 			for (int j = 0; j < sector_count; ++j, ++k1, ++k2) {
 				// 2 triangles per sector excluding first and last stacks
@@ -124,3 +102,5 @@ void LightmapProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	const Ref<Material> icon = get_material("lightmap_probe_icon", p_gizmo);
 	p_gizmo->add_unscaled_billboard(icon, 0.05);
 }
+
+

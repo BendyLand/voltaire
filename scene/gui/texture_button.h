@@ -35,8 +35,6 @@
 
 class TextureButton : public BaseButton
 {
-	VLTRCLASS(TextureButton, BaseButton);
-
 public:
 	enum StretchMode
 	{
@@ -102,7 +100,5 @@ public:
 	void set_flip_v(bool p_flip);
 	bool is_flipped_v() const;
 };
-
-VARIANT_ENUM_CAST(TextureButton::StretchMode);
 
 

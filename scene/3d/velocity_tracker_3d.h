@@ -30,12 +30,12 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 
-class VelocityTracker3D : public RefCounted {
-	VLTRSOFTCLASS(VelocityTracker3D, RefCounted);
-
-	struct PositionHistory {
+class VelocityTracker3D : public RefCounted
+{
+	struct PositionHistory
+	{
 		uint64_t frame = 0;
 		Vector3 position;
 	};
@@ -45,11 +45,13 @@ class VelocityTracker3D : public RefCounted {
 	int position_history_len = 0;
 
 public:
-	void reset(const Vector3 &p_new_pos);
+	void reset(const Vector3& p_new_pos);
 	void set_track_physics_step(bool p_track_physics_step);
 	bool is_tracking_physics_step() const;
-	void update_position(const Vector3 &p_position);
+	void update_position(const Vector3& p_position);
 	Vector3 get_tracked_linear_velocity() const;
 
 	VelocityTracker3D();
 };
+
+

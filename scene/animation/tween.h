@@ -30,8 +30,7 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 
 class Tween;
 class Node;
@@ -39,8 +38,6 @@ class SceneTree;
 
 class Tweener : public RefCounted
 {
-	ObjectID tween_id;
-
 public:
 	virtual void set_tween(const Ref<Tween>& p_tween);
 	virtual void start();
@@ -112,7 +109,6 @@ private:
 	TweenPauseMode pause_mode = TweenPauseMode::TWEEN_PAUSE_BOUND;
 	TransitionType default_transition = TransitionType::TRANS_LINEAR;
 	EaseType default_ease = EaseType::EASE_IN_OUT;
-	ObjectID bound_node;
 
 	SceneTree* parent_tree = nullptr;
 	LocalVector<List<Ref<Tweener>>> tweeners;
@@ -147,14 +143,8 @@ protected:
 	virtual String _to_string();
 
 public:
-	PropertyTweener* tween_property(
-		const Object* rp_target, const NodePath& p_property, Variant p_to, double p_duration);
 	IntervalTweener* tween_interval(double p_time);
-	CallbackTweener* tween_callback(const Callable& p_callback);
-	MethodTweener* tween_method(
-		const Callable& p_callback, const Variant p_from, Variant p_to, double p_duration);
 	SubtweenTweener* tween_subtween(Tween* rp_subtween);
-	AwaitTweener* tween_await(const Signal& p_signal);
 	void append(Ref<Tweener> p_tweener);
 
 	bool custom_step(double p_delta);
@@ -190,8 +180,6 @@ public:
 
 	static real_t run_equation(
 		TransitionType p_trans_type, EaseType p_ease_type, real_t t, real_t b, real_t c, real_t d);
-	static Variant interpolate_variant(const Variant& p_initial_val, const Variant& p_delta_val,
-		double p_time, double p_duration, Tween::TransitionType p_trans, Tween::EaseType p_ease);
 
 	bool step(double p_delta);
 	bool can_process(bool p_tree_paused) const;
@@ -202,49 +190,32 @@ public:
 	Tween(SceneTree* p_parent_tree);
 };
 
-VARIANT_ENUM_CAST(Tween::TweenPauseMode);
-VARIANT_ENUM_CAST(Tween::TweenProcessMode);
-VARIANT_ENUM_CAST(Tween::TransitionType);
-VARIANT_ENUM_CAST(Tween::EaseType);
-
 class PropertyTweener : public Tweener
 {
-	double _get_custom_interpolated_value(const Variant& p_value);
-
 public:
-	PropertyTweener* from(const Variant& p_value);
 	PropertyTweener* from_current();
 	PropertyTweener* as_relative();
 	PropertyTweener* set_trans(Tween::TransitionType p_trans);
 	PropertyTweener* set_ease(Tween::EaseType p_ease);
-	PropertyTweener* set_custom_interpolator(const Callable& p_method);
 	PropertyTweener* set_delay(double p_delay);
 
 	void set_tween(const Ref<Tween>& p_tween) override;
 	void start() override;
 	bool step(double& r_delta) override;
 
-	PropertyTweener(const Object* p_target, const Vector<StringName>& p_property,
-		const Variant& p_to, double p_duration);
 	PropertyTweener();
 
 protected:
 	static void _bind_methods();
 
 private:
-	ObjectID target;
 	Vector<StringName> property;
-	Variant initial_val;
-	Variant base_final_val;
-	Variant final_val;
-	Variant delta_val;
 
 	Ref<RefCounted> ref_copy; // Makes sure that RefCounted objects are not freed too early.
 
 	double duration = 0;
 	Tween::TransitionType trans_type = Tween::TRANS_MAX; // This is set inside set_tween();
 	Tween::EaseType ease_type = Tween::EASE_MAX;
-	Callable custom_method;
 
 	double delay = 0;
 	bool do_continue = true;
@@ -271,14 +242,12 @@ public:
 
 	bool step(double& r_delta) override;
 
-	CallbackTweener(const Callable& p_callback);
 	CallbackTweener();
 
 protected:
 	static void _bind_methods();
 
 private:
-	Callable callback;
 	double delay = 0;
 
 	Ref<RefCounted> ref_copy;
@@ -295,8 +264,6 @@ public:
 	void set_tween(const Ref<Tween>& p_tween) override;
 	bool step(double& r_delta) override;
 
-	MethodTweener(
-		const Callable& p_callback, const Variant& p_from, const Variant& p_to, double p_duration);
 	MethodTweener();
 
 protected:
@@ -307,11 +274,6 @@ private:
 	double delay = 0;
 	Tween::TransitionType trans_type = Tween::TRANS_MAX;
 	Tween::EaseType ease_type = Tween::EASE_MAX;
-
-	Variant initial_val;
-	Variant delta_val;
-	Variant final_val;
-	Callable callback;
 
 	Ref<RefCounted> ref_copy;
 };
@@ -343,20 +305,15 @@ public:
 	void start() override;
 	bool step(double& r_delta) override;
 
-	AwaitTweener(const Signal& p_signal);
 	AwaitTweener();
 
 protected:
 	static void _bind_methods();
 
 private:
-	Signal signal;
-	Callable target_callable;
 	bool received = false;
 
 	double timeout = -1;
-
-	void _signal_received(const Variant** p_args, int p_argcount, Callable::CallError& r_error);
 
 	Ref<RefCounted> ref_copy;
 };

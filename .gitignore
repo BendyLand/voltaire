@@ -399,4 +399,5 @@ $RECYCLE.BIN/
 .watcher
 .cache
 errs
-
+*summary*
+.todo.csv

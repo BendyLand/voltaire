@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/input/input.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -109,142 +107,12 @@ void GradientEdit::_show_color_picker()
 
 void GradientEdit::_color_changed(const Color& p_color) { set_color(selected_index, p_color); }
 
-void GradientEdit::set_gradient(const Ref<Gradient>& p_gradient)
-{
-	gradient = p_gradient;
-	gradient->obj->connect(
-		CoreStringName(changed), callable_mp((CanvasItem*)this, &CanvasItem::queue_redraw));
-}
-
 const Ref<Gradient>& GradientEdit::get_gradient() const { return gradient; }
-
-void GradientEdit::add_point(float p_offset, const Color& p_color)
-{
-	int new_idx = _predict_insertion_index(p_offset);
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Add Gradient Point"));
-	undo_redo->add_do_method(gradient->obj.get(), "add_point", p_offset, p_color);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(gradient->obj.get(), "remove_point", new_idx);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", -1);
-	undo_redo->commit_action();
-}
-
-void GradientEdit::remove_point(int p_index)
-{
-	ERR_FAIL_INDEX_MSG(p_index, gradient->get_point_count(), "Gradient point is out of bounds.");
-
-	if (gradient->get_point_count() <= 1) {
-		return;
-	}
-
-	// If the point is removed while it's being moved, remember its old offset.
-	float old_offset = (grabbing == GRAB_MOVE) ? pre_grab_offset : gradient->get_offset(p_index);
-	Color old_color = gradient->get_color(p_index);
-
-	int new_selected_index = selected_index;
-	// Reselect the old selected point if it's not the deleted one.
-	if (new_selected_index > p_index) {
-		new_selected_index -= 1;
-	}
-	else if (new_selected_index == p_index) {
-		new_selected_index = -1;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Remove Gradient Point"));
-	undo_redo->add_do_method(gradient->obj.get(), "remove_point", p_index);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_index);
-	undo_redo->add_undo_method(gradient->obj.get(), "add_point", old_offset, old_color);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
-	undo_redo->commit_action();
-}
-
-void GradientEdit::set_offset(int p_index, float p_offset)
-{
-	ERR_FAIL_INDEX_MSG(p_index, gradient->get_point_count(), "Gradient point is out of bounds.");
-
-	// Use pre_grab_offset to determine things for the undo/redo.
-	if (Math::is_equal_approx(pre_grab_offset, p_offset)) {
-		return;
-	}
-
-	int new_idx = _predict_insertion_index(p_offset);
-
-	gradient->set_offset(p_index, pre_grab_offset); // Pretend the point started from its old place.
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Move Gradient Point"));
-	undo_redo->add_do_method(gradient->obj.get(), "set_offset", pre_grab_index, p_offset);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(gradient->obj.get(), "set_offset", new_idx, pre_grab_offset);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", pre_grab_index);
-	undo_redo->commit_action();
-	queue_redraw();
-}
-
-void GradientEdit::set_color(int p_index, const Color& p_color)
-{
-	ERR_FAIL_INDEX_MSG(p_index, gradient->get_point_count(), "Gradient point is out of bounds.");
-
-	Color old_color = gradient->get_color(p_index);
-	if (old_color == p_color) {
-		return;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Recolor Gradient Point"), UndoRedo::MERGE_ENDS);
-	undo_redo->add_do_method(gradient->obj.get(), "set_color", p_index, p_color);
-	undo_redo->add_undo_method(gradient->obj.get(), "set_color", p_index, old_color);
-	undo_redo->commit_action();
-	queue_redraw();
-}
-
-void GradientEdit::reverse_gradient()
-{
-	int new_selected_idx =
-		(selected_index == -1) ? -1 : (gradient->get_point_count() - selected_index - 1);
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Reverse Gradient"), UndoRedo::MERGE_DISABLE, gradient->obj.get());
-	undo_redo->add_do_method(gradient->obj.get(), "reverse");
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_idx);
-	undo_redo->add_undo_method(gradient->obj.get(), "reverse");
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
-	undo_redo->commit_action();
-}
 
 void GradientEdit::set_selected_index(int p_index)
 {
 	selected_index = p_index;
 	queue_redraw();
-}
-
-void GradientEdit::set_snap_enabled(bool p_enabled)
-{
-	snap_enabled = p_enabled;
-	queue_redraw();
-	if (gradient.is_valid()) {
-		if (snap_enabled) {
-			gradient->obj->set_meta(SNAME("_snap_enabled"), true);
-		}
-		else {
-			gradient->obj->remove_meta(SNAME("_snap_enabled"));
-		}
-	}
-}
-
-void GradientEdit::set_snap_count(int p_count)
-{
-	snap_count = p_count;
-	queue_redraw();
-	if (gradient.is_valid()) {
-		if (snap_count != GradientEditor::DEFAULT_SNAP) {
-			gradient->obj->set_meta(SNAME("_snap_count"), snap_count);
-		}
-		else {
-			gradient->obj->remove_meta(SNAME("_snap_count"));
-		}
-	}
 }
 
 ColorPicker* GradientEdit::get_picker() const { return picker; }
@@ -633,29 +501,6 @@ void GradientEdit::_notification(int p_what)
 	}
 }
 
-void GradientEdit::_bind_methods() {}
-
-GradientEdit::GradientEdit()
-{
-	set_focus_mode(FOCUS_ALL);
-	set_custom_minimum_size(Size2(0, 60) * EDSCALE);
-
-	picker = memnew(ColorPicker);
-	int picker_shape = EDITOR_GET("interface/inspector/default_color_picker_shape");
-	picker->set_picker_shape((ColorPicker::PickerShapeType)picker_shape);
-	picker->connect("color_changed", callable_mp(this, &GradientEdit::_color_changed));
-
-	popup = memnew(PopupPanel);
-	popup->connect("about_to_popup",
-		callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(picker));
-
-	add_child(popup, false, INTERNAL_MODE_FRONT);
-	popup->add_child(picker);
-
-	preview_texture.instantiate();
-	preview_texture->set_width(1024);
-}
-
 ///////////////////////
 
 const int GradientEditor::DEFAULT_SNAP = 10;
@@ -674,89 +519,6 @@ void GradientEditor::_set_snap_count(int p_count)
 void GradientEditor::set_gradient(const Ref<Gradient>& p_gradient)
 {
 	gradient_editor_rect->set_gradient(p_gradient);
-}
-
-void GradientEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		reverse_button->set_button_icon(get_editor_theme_icon(SNAME("ReverseGradient")));
-		snap_button->set_button_icon(get_editor_theme_icon(SNAME("SnapGrid")));
-	} break;
-	case NOTIFICATION_READY: {
-		Ref<Gradient> gradient = gradient_editor_rect->get_gradient();
-		if (gradient.is_valid()) {
-			// Set snapping settings based on the gradient's meta.
-			snap_button->set_pressed(gradient->obj->get_meta("_snap_enabled", false));
-			snap_count_edit->set_value(gradient->obj->get_meta("_snap_count", DEFAULT_SNAP));
-		}
-	} break;
-	}
-}
-
-GradientEditor::GradientEditor()
-{
-	HFlowContainer* toolbar = memnew(HFlowContainer);
-	add_child(toolbar);
-
-	reverse_button = memnew(Button);
-	reverse_button->set_tooltip_text(TTR("Reverse/Mirror Gradient"));
-	toolbar->add_child(reverse_button);
-
-	toolbar->add_child(memnew(VSeparator));
-
-	snap_button = memnew(Button);
-	snap_button->set_tooltip_text(TTR("Toggle Grid Snap"));
-	snap_button->set_toggle_mode(true);
-	toolbar->add_child(snap_button);
-	snap_button->connect(
-		SceneStringName(toggled), callable_mp(this, &GradientEditor::_set_snap_enabled));
-
-	snap_count_edit = memnew(EditorSpinSlider);
-	snap_count_edit->set_min(2);
-	snap_count_edit->set_max(100);
-	snap_count_edit->set_accessibility_name(TTRC("Grid Step"));
-	snap_count_edit->set_value(DEFAULT_SNAP);
-	snap_count_edit->set_custom_minimum_size(Size2(65 * EDSCALE, 0));
-	toolbar->add_child(snap_count_edit);
-	snap_count_edit->connect(
-		SceneStringName(value_changed), callable_mp(this, &GradientEditor::_set_snap_count));
-
-	gradient_editor_rect = memnew(GradientEdit);
-	add_child(gradient_editor_rect);
-	reverse_button->connect(SceneStringName(pressed),
-		callable_mp(gradient_editor_rect, &GradientEdit::reverse_gradient));
-
-	set_mouse_filter(MOUSE_FILTER_STOP);
-	_set_snap_enabled(snap_button->is_pressed());
-	_set_snap_count(snap_count_edit->get_value());
-}
-
-///////////////////////
-
-bool EditorInspectorPluginGradient::can_handle(Object* p_object)
-{
-	return Object::cast_to<Gradient>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginGradient::parse_begin(Object* p_object)
-{
-	Gradient* gradient = Object::cast_to<Gradient>(p_object);
-	ERR_FAIL_NULL(gradient);
-	Ref<Gradient> g(gradient);
-
-	GradientEditor* editor = memnew(GradientEditor);
-	editor->set_gradient(g);
-	add_custom_control(editor);
-}
-
-///////////////////////
-
-GradientEditorPlugin::GradientEditorPlugin()
-{
-	Ref<EditorInspectorPluginGradient> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
 }
 
 

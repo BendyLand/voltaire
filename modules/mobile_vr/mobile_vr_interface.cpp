@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/input/input.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "mobile_vr_interface.h"
 #include "servers/display/display_server.h"
@@ -351,16 +350,6 @@ void MobileVRInterface::uninitialize()
 
 		initialized = false;
 	};
-}
-
-Dictionary MobileVRInterface::get_system_info()
-{
-	Dictionary dict;
-
-	dict[SNAME("XRRuntimeName")] = String("Godot mobile VR interface");
-	dict[SNAME("XRRuntimeVersion")] = String("");
-
-	return dict;
 }
 
 bool MobileVRInterface::supports_play_area_mode(XRInterface::PlayAreaMode p_mode)

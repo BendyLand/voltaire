@@ -36,16 +36,16 @@ class HBoxContainer;
 class MenuButton;
 class ParallaxBackground;
 
-class ParallaxBackgroundEditorPlugin : public EditorPlugin {
-	VLTRCLASS(ParallaxBackgroundEditorPlugin, EditorPlugin);
-
-	enum {
+class ParallaxBackgroundEditorPlugin : public EditorPlugin
+{
+	enum
+	{
 		MENU_CONVERT_TO_PARALLAX_2D,
 	};
 
-	ParallaxBackground *parallax_background = nullptr;
-	HBoxContainer *toolbar = nullptr;
-	MenuButton *menu = nullptr;
+	ParallaxBackground* parallax_background = nullptr;
+	HBoxContainer* toolbar = nullptr;
+	MenuButton* menu = nullptr;
 
 	void _menu_callback(int p_idx);
 	void convert_to_parallax2d();
@@ -55,9 +55,8 @@ protected:
 
 public:
 	virtual String get_plugin_name() const override { return "ParallaxBackground"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	ParallaxBackgroundEditorPlugin();
 };
+
+

@@ -43,8 +43,6 @@ class RichTextLabel;
 
 class AnimationTreeNodeEditorPlugin : public VBoxContainer
 {
-	VLTRCLASS(AnimationTreeNodeEditorPlugin, VBoxContainer);
-
 public:
 	virtual bool can_edit(const Ref<AnimationNode>& p_node) = 0;
 	virtual void edit(const Ref<AnimationNode>& p_node) = 0;
@@ -55,8 +53,6 @@ private:
 
 class AnimationTreeEditor : public EditorDock
 {
-	VLTRCLASS(AnimationTreeEditor, EditorDock);
-
 	ScrollContainer* path_edit = nullptr;
 	HBoxContainer* path_hb = nullptr;
 	RichTextLabel* current_scope_error_label = nullptr;
@@ -73,7 +69,6 @@ class AnimationTreeEditor : public EditorDock
 
 	void _update_path();
 	void _clear_editors();
-	ObjectID current_root;
 
 	void _path_button_pressed(int p_path);
 	void _animation_list_changed();
@@ -84,7 +79,6 @@ class AnimationTreeEditor : public EditorDock
 	static LocalVector<StringName> get_animation_list();
 
 protected:
-	void _meta_clicked(Variant p_meta);
 	void _notification(int p_what);
 	void _node_removed(Node* p_node);
 
@@ -113,16 +107,10 @@ public:
 
 class AnimationTreeEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(AnimationTreeEditorPlugin, EditorPlugin);
-
 	AnimationTreeEditor* anim_tree_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "AnimationTree"; }
-
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	AnimationTreeEditorPlugin();
 };

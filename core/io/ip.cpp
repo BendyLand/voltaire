@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
 #include "core/templates/hash_map.h"
-#include "core/variant/typed_array.h"
 #include "ip.h"
 
 /************* RESOLVER ******************/
@@ -131,11 +129,11 @@ struct _IP_ResolverPrivate
 
 IPAddress IP::resolve_hostname(const String& p_hostname, IP::Type p_type)
 {
-	const PackedStringArray addresses = resolve_hostname_addresses(p_hostname, p_type);
+	const Vector<String> addresses = resolve_hostname_addresses(p_hostname, p_type);
 	return addresses.size() ? (IPAddress)addresses[0] : IPAddress();
 }
 
-PackedStringArray IP::resolve_hostname_addresses(const String& p_hostname, Type p_type)
+Vector<String> IP::resolve_hostname_addresses(const String& p_hostname, Type p_type)
 {
 	List<IPAddress> res;
 	String key = _IP_ResolverPrivate::get_cache_key(p_hostname, p_type);
@@ -159,7 +157,7 @@ PackedStringArray IP::resolve_hostname_addresses(const String& p_hostname, Type 
 		}
 	}
 
-	PackedStringArray result;
+	Vector<String> result;
 	for (const IPAddress& E : res) {
 		result.push_back(String(E));
 	}
@@ -237,31 +235,6 @@ IPAddress IP::get_resolve_item_address(ResolverID p_id) const
 	return IPAddress();
 }
 
-Array IP::get_resolve_item_addresses(ResolverID p_id) const
-{
-	ERR_FAIL_INDEX_V_MSG(p_id, IP::RESOLVER_MAX_QUERIES, Array(),
-		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
-				"performing less network requests at once.",
-			p_id, IP::RESOLVER_MAX_QUERIES));
-	MutexLock lock(resolver->mutex);
-
-	if (resolver->queue[p_id].status.get() != IP::RESOLVER_STATUS_DONE) {
-		ERR_PRINT(vformat("Resolve of '%s' didn't complete yet.", resolver->queue[p_id].hostname));
-		return Array();
-	}
-
-	List<IPAddress> res(resolver->queue[p_id].response);
-
-	Array result;
-	for (const IPAddress& E : res) {
-		if (E.is_valid()) {
-
-			result.push_back(String(E));
-		}
-	}
-	return result;
-}
-
 void IP::erase_resolve_item(ResolverID p_id)
 {
 	ERR_FAIL_INDEX_MSG(p_id, IP::RESOLVER_MAX_QUERIES,
@@ -287,9 +260,9 @@ void IP::clear_cache(const String& p_hostname)
 	}
 }
 
-PackedStringArray IP::_get_local_addresses() const
+Vector<String> IP::_get_local_addresses() const
 {
-	PackedStringArray addresses;
+	Vector<String> addresses;
 	List<IPAddress> ip_addresses;
 	get_local_addresses(&ip_addresses);
 	for (const IPAddress& E : ip_addresses) {
@@ -297,30 +270,6 @@ PackedStringArray IP::_get_local_addresses() const
 	}
 
 	return addresses;
-}
-
-TypedArray<Dictionary> IP::_get_local_interfaces() const
-{
-	TypedArray<Dictionary> results;
-	HashMap<String, Interface_Info> interfaces;
-	get_local_interfaces(&interfaces);
-	for (KeyValue<String, Interface_Info>& E : interfaces) {
-		Interface_Info& c = E.value;
-		Dictionary rc;
-		rc["name"] = c.name;
-		rc["friendly"] = c.name_friendly;
-		rc["index"] = c.index;
-
-		Array ips;
-		for (const IPAddress& F : c.ip_addresses) {
-			ips.push_front(F);
-		}
-		rc["addresses"] = ips;
-
-		results.push_front(rc);
-	}
-
-	return results;
 }
 
 void IP::get_local_addresses(List<IPAddress>* r_addresses) const

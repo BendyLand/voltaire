@@ -36,9 +36,8 @@
 
 class CollisionObject2D;
 
-class ShapeCast2D : public Node2D {
-	VLTRCLASS(ShapeCast2D, Node2D);
-
+class ShapeCast2D : public Node2D
+{
 	bool enabled = true;
 
 	Ref<Shape2D> shape;
@@ -76,10 +75,10 @@ public:
 	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
-	void set_shape(const Ref<Shape2D> &p_shape);
+	void set_shape(const Ref<Shape2D>& p_shape);
 	Ref<Shape2D> get_shape() const;
 
-	void set_target_position(const Vector2 &p_point);
+	void set_target_position(const Vector2& p_point);
 	Vector2 get_target_position() const;
 
 	void set_margin(real_t p_margin);
@@ -100,9 +99,7 @@ public:
 	void force_shapecast_update();
 	bool is_colliding() const;
 
-	Array get_collision_result() const;
 	int get_collision_count() const;
-	Object *get_collider(int p_idx) const;
 	RID get_collider_rid(int p_idx) const;
 	int get_collider_shape(int p_idx) const;
 	Vector2 get_collision_point(int p_idx) const;
@@ -111,15 +108,15 @@ public:
 	real_t get_closest_collision_safe_fraction() const;
 	real_t get_closest_collision_unsafe_fraction() const;
 
-	void add_exception_rid(const RID &p_rid);
-	void add_exception(RequiredParam<const CollisionObject2D> rp_node);
+	void add_exception_rid(const RID& p_rid);
 	void add_exception(const CollisionObject2D* rp_node);
 	void remove_exception(const CollisionObject2D* rp_node);
-	void remove_exception_rid(const RID &p_rid);
-	void remove_exception(RequiredParam<const CollisionObject2D> rp_node);
+	void remove_exception_rid(const RID& p_rid);
 	void clear_exceptions();
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	ShapeCast2D();
 };
+
+

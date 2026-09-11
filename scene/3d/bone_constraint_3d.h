@@ -32,16 +32,17 @@
 
 #include "scene/3d/skeleton_modifier_3d.h"
 
-class BoneConstraint3D : public SkeletonModifier3D {
-	VLTRCLASS(BoneConstraint3D, SkeletonModifier3D);
-
+class BoneConstraint3D : public SkeletonModifier3D
+{
 public:
-	enum ReferenceType {
+	enum ReferenceType
+	{
 		REFERENCE_TYPE_BONE,
 		REFERENCE_TYPE_NODE,
 	};
 
-	struct BoneConstraint3DSetting {
+	struct BoneConstraint3DSetting
+	{
 		float amount = 1.0;
 
 		String apply_bone_name;
@@ -56,30 +57,24 @@ public:
 	};
 
 protected:
-	LocalVector<BoneConstraint3DSetting *> settings;
-
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-
-	// Define get_property_list() instead of _get_property_list()
-	// to merge child class properties into parent class array inspector.
-	void get_property_list(List<PropertyInfo> *p_list) const; // Will be called by child classes.
-	void _validate_dynamic_prop(PropertyInfo &p_property) const;
+	LocalVector<BoneConstraint3DSetting*> settings;
 
 	virtual void _validate_bone_names() override;
 	static void _bind_methods();
 
 	virtual void _process_modification(double p_delta) override;
 
-	virtual void _process_constraint_by_bone(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount);
-	virtual void _process_constraint_by_node(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const NodePath &p_reference_node, float p_amount);
+	virtual void _process_constraint_by_bone(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
+		int p_reference_bone, float p_amount);
+	virtual void _process_constraint_by_node(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
+		const NodePath& p_reference_node, float p_amount);
 	virtual void _validate_setting(int p_index);
 
 public:
 	void set_amount(int p_index, float p_amount);
 	float get_amount(int p_index) const;
 
-	void set_apply_bone_name(int p_index, const String &p_bone_name);
+	void set_apply_bone_name(int p_index, const String& p_bone_name);
 	String get_apply_bone_name(int p_index) const;
 	void set_apply_bone(int p_index, int p_bone);
 	int get_apply_bone(int p_index) const;
@@ -87,12 +82,12 @@ public:
 	void set_reference_type(int p_index, ReferenceType p_type);
 	ReferenceType get_reference_type(int p_index) const;
 
-	void set_reference_bone_name(int p_index, const String &p_bone_name);
+	void set_reference_bone_name(int p_index, const String& p_bone_name);
 	String get_reference_bone_name(int p_index) const;
 	void set_reference_bone(int p_index, int p_bone);
 	int get_reference_bone(int p_index) const;
 
-	void set_reference_node(int p_index, const NodePath &p_node);
+	void set_reference_node(int p_index, const NodePath& p_node);
 	NodePath get_reference_node(int p_index) const;
 
 	void set_setting_count(int p_count);
@@ -103,4 +98,4 @@ public:
 	~BoneConstraint3D();
 };
 
-VARIANT_ENUM_CAST(BoneConstraint3D::ReferenceType);
+

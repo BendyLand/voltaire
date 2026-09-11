@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "cone_twist_joint_3d.h"
-#include "core/object/class_db.h"
 
 void ConeTwistJoint3D::_bind_methods() {}
 

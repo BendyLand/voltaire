@@ -30,14 +30,13 @@
 
 #pragma once
 
-#include "core/object/script_language.h"
 #include "core/string/string_name.h"
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/safe_refcount.h"
 #include "core/typedefs.h"
-#include "core/variant/variant.h"
+#include "core/types.h"
 
 #ifdef DEBUG_ENABLED
 #include "servers/rendering/shader_warnings.h"
@@ -857,9 +856,6 @@ public:
 	static bool is_float_type(DataType p_type);
 	static bool is_sampler_type(DataType p_type);
 	static bool is_hint_color(ShaderNode::Uniform::Hint p_hint);
-	static Variant constant_value_to_variant(const Vector<Scalar> &p_value, DataType p_type, int p_array_size, ShaderLanguage::ShaderNode::Uniform::Hint p_hint = ShaderLanguage::ShaderNode::Uniform::HINT_NONE);
-	static Variant get_default_datatype_value(DataType p_type, int p_array_size, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
-	static PropertyInfo uniform_to_property_info(const ShaderNode::Uniform &p_uniform);
 	static uint32_t get_datatype_size(DataType p_type);
 	static uint32_t get_datatype_component_count(DataType p_type);
 
@@ -1038,16 +1034,6 @@ private:
 
 	bool check_warnings = false;
 	uint32_t warning_flags = 0;
-
-	void _add_line_warning(ShaderWarning::Code p_code, const StringName &p_subject = "", const Vector<Variant> &p_extra_args = Vector<Variant>()) {
-		warnings.push_back(ShaderWarning(p_code, tk_line, p_subject, p_extra_args));
-	}
-	void _add_global_warning(ShaderWarning::Code p_code, const StringName &p_subject = "", const Vector<Variant> &p_extra_args = Vector<Variant>()) {
-		warnings.push_back(ShaderWarning(p_code, -1, p_subject, p_extra_args));
-	}
-	void _add_warning(ShaderWarning::Code p_code, int p_line, const StringName &p_subject = "", const Vector<Variant> &p_extra_args = Vector<Variant>()) {
-		warnings.push_back(ShaderWarning(p_code, p_line, p_subject, p_extra_args));
-	}
 	void _check_warning_accums();
 #endif // DEBUG_ENABLED
 
@@ -1268,7 +1254,6 @@ public:
 	};
 
 	Error compile(const String &p_code, const ShaderCompileInfo &p_info);
-	Error complete(const String &p_code, const ShaderCompileInfo &p_info, List<ScriptLanguage::CodeCompletionOption> *r_options, String &r_call_hint);
 
 	String get_error_text();
 	Vector<FilePosition> get_include_positions();

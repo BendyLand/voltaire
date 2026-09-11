@@ -158,8 +158,6 @@ private:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	template <typename... Args> RID get_cache(RID p_shader, uint32_t p_set, Args... args)
 	{
 		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
@@ -222,9 +220,6 @@ public:
 		// Not in cache, create:
 		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, p_uniforms);
 	}
-
-	static RID get_cache_array(
-		RID p_shader, uint32_t p_set, const TypedArray<RDUniform>& p_uniforms);
 
 	static UniformSetCacheRD* get_singleton() { return singleton; }
 

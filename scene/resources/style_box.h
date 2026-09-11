@@ -31,16 +31,11 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 
 class CanvasItem;
 
 class StyleBox : public Resource
 {
-	VLTRCLASS(StyleBox, Resource);
-	RES_BASE_EXTENSION("stylebox");
-	OBJ_SAVE_TYPE_NO(StyleBox);
-
 	float content_margin[4];
 
 protected:
@@ -71,8 +66,6 @@ public:
 
 class StyleBoxEmpty : public StyleBox
 {
-	VLTRCLASS(StyleBoxEmpty, StyleBox);
-
 	virtual float get_style_margin(Side p_side) const override { return 0; }
 
 public:

@@ -31,7 +31,6 @@
 #include "image_loader_svg.h"
 
 #include "core/os/os.h"
-#include "core/variant/variant.h"
 
 #include <thorvg.h>
 
@@ -156,7 +155,7 @@ void ImageLoaderSVG::get_recognized_extensions(List<String> *p_extensions) const
 	p_extensions->push_back("svg");
 }
 
-Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) {
+Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess, uint32_t p_flags, float p_scale) {
 	const uint64_t len = p_fileaccess->get_length() - p_fileaccess->get_position();
 	Vector<uint8_t> buffer;
 	buffer.resize(len);

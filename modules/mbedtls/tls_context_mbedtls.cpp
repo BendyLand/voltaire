@@ -28,29 +28,29 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "tls_context_mbedtls.h"
-
 #include "core/config/project_settings.h"
+#include "tls_context_mbedtls.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/settings/editor_settings.h"
 #endif // TOOLS_ENABLED
 
-static void my_debug(void *ctx, int level,
-		const char *file, int line,
-		const char *str) {
+static void my_debug(void* ctx, int level, const char* file, int line, const char* str)
+{
 	printf("%s:%04d: %s", file, line, str);
 	fflush(stdout);
 }
 
-void TLSContextMbedTLS::print_mbedtls_error(int p_ret) {
+void TLSContextMbedTLS::print_mbedtls_error(int p_ret)
+{
 	printf("mbedtls error: returned -0x%x\n\n", -p_ret);
 	fflush(stdout);
 }
 
 /// CookieContextMbedTLS
 
-Error CookieContextMbedTLS::setup() {
+Error CookieContextMbedTLS::setup()
+{
 	ERR_FAIL_COND_V_MSG(inited, ERR_ALREADY_IN_USE, "This cookie context is already in use");
 
 	mbedtls_ssl_cookie_init(&cookie_ctx);
@@ -64,7 +64,8 @@ Error CookieContextMbedTLS::setup() {
 	return OK;
 }
 
-void CookieContextMbedTLS::clear() {
+void CookieContextMbedTLS::clear()
+{
 	if (!inited) {
 		return;
 	}
@@ -72,16 +73,14 @@ void CookieContextMbedTLS::clear() {
 	inited = false;
 }
 
-CookieContextMbedTLS::CookieContextMbedTLS() {
-}
+CookieContextMbedTLS::CookieContextMbedTLS() {}
 
-CookieContextMbedTLS::~CookieContextMbedTLS() {
-	clear();
-}
+CookieContextMbedTLS::~CookieContextMbedTLS() { clear(); }
 
 /// TLSContextMbedTLS
 
-Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode) {
+Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode)
+{
 	ERR_FAIL_COND_V_MSG(inited, ERR_ALREADY_IN_USE, "This SSL context is already active");
 
 	mbedtls_ssl_init(&tls);
@@ -89,7 +88,8 @@ Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode)
 	mbedtls_pk_init(&pk);
 	inited = true;
 
-	int ret = mbedtls_ssl_config_defaults(&conf, p_endpoint, p_transport, MBEDTLS_SSL_PRESET_DEFAULT);
+	int ret =
+		mbedtls_ssl_config_defaults(&conf, p_endpoint, p_transport, MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) {
 		clear();
 		ERR_FAIL_V_MSG(FAILED, "mbedtls_ssl_config_defaults returned an error" + itos(ret));
@@ -100,7 +100,9 @@ Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode)
 	return OK;
 }
 
-Error TLSContextMbedTLS::init_server(int p_transport, Ref<TLSOptions> p_options, Ref<CookieContextMbedTLS> p_cookies) {
+Error TLSContextMbedTLS::init_server(
+	int p_transport, Ref<TLSOptions> p_options, Ref<CookieContextMbedTLS> p_cookies)
+{
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
 
 	// Check key and certificate(s)
@@ -108,7 +110,8 @@ Error TLSContextMbedTLS::init_server(int p_transport, Ref<TLSOptions> p_options,
 	certs = p_options->get_own_certificate();
 	ERR_FAIL_COND_V(pkey.is_null() || certs.is_null(), ERR_INVALID_PARAMETER);
 
-	Error err = _setup(MBEDTLS_SSL_IS_SERVER, p_transport, MBEDTLS_SSL_VERIFY_NONE); // TODO client auth.
+	Error err =
+		_setup(MBEDTLS_SSL_IS_SERVER, p_transport, MBEDTLS_SSL_VERIFY_NONE); // TODO client auth.
 	ERR_FAIL_COND_V(err != OK, err);
 
 	// Locking key and certificate(s)
@@ -136,27 +139,17 @@ Error TLSContextMbedTLS::init_server(int p_transport, Ref<TLSOptions> p_options,
 			ERR_FAIL_V(ERR_BUG);
 		}
 		cookies = p_cookies;
-		mbedtls_ssl_conf_dtls_cookies(&conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, &(cookies->cookie_ctx));
-	}
-
-#ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton()) {
-		if (!EditorSettings::get_singleton()->get_setting("network/tls/enable_tls_v1.3").operator bool()) {
-			mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_2);
-		}
-	} else
-#endif
-	{
-		if (!GLOBAL_GET("network/tls/enable_tls_v1.3").operator bool()) {
-			mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_2);
-		}
+		mbedtls_ssl_conf_dtls_cookies(
+			&conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, &(cookies->cookie_ctx));
 	}
 
 	mbedtls_ssl_setup(&tls, &conf);
 	return OK;
 }
 
-Error TLSContextMbedTLS::init_client(int p_transport, const String &p_hostname, Ref<TLSOptions> p_options) {
+Error TLSContextMbedTLS::init_client(
+	int p_transport, const String& p_hostname, Ref<TLSOptions> p_options)
+{
 	ERR_FAIL_COND_V(p_options.is_null() || p_options->is_server(), ERR_INVALID_PARAMETER);
 
 	int authmode = MBEDTLS_SSL_VERIFY_REQUIRED;
@@ -171,7 +164,8 @@ Error TLSContextMbedTLS::init_client(int p_transport, const String &p_hostname, 
 	if (unsafe) {
 		// No hostname verification for unsafe clients.
 		mbedtls_ssl_set_hostname(&tls, nullptr);
-	} else {
+	}
+	else {
 		String cn = p_options->get_common_name_override();
 		if (cn.is_empty()) {
 			cn = p_hostname;
@@ -186,25 +180,13 @@ Error TLSContextMbedTLS::init_client(int p_transport, const String &p_hostname, 
 		certs = p_options->get_trusted_ca_chain();
 		certs->lock();
 		cas = certs;
-	} else {
+	}
+	else {
 		// Fall back to default certificates (no need to lock those).
 		cas = CryptoMbedTLS::get_default_certificates();
 		if (cas.is_null()) {
 			clear();
 			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "SSL module failed to initialize!");
-		}
-	}
-
-#ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton()) {
-		if (!EditorSettings::get_singleton()->get_setting("network/tls/enable_tls_v1.3").operator bool()) {
-			mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_2);
-		}
-	} else
-#endif
-	{
-		if (!GLOBAL_GET("network/tls/enable_tls_v1.3").operator bool()) {
-			mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_2);
 		}
 	}
 
@@ -214,7 +196,8 @@ Error TLSContextMbedTLS::init_client(int p_transport, const String &p_hostname, 
 	return OK;
 }
 
-void TLSContextMbedTLS::clear() {
+void TLSContextMbedTLS::clear()
+{
 	if (!inited) {
 		return;
 	}
@@ -230,14 +213,14 @@ void TLSContextMbedTLS::clear() {
 	inited = false;
 }
 
-mbedtls_ssl_context *TLSContextMbedTLS::get_context() {
+mbedtls_ssl_context* TLSContextMbedTLS::get_context()
+{
 	ERR_FAIL_COND_V(!inited, nullptr);
 	return &tls;
 }
 
-TLSContextMbedTLS::TLSContextMbedTLS() {
-}
+TLSContextMbedTLS::TLSContextMbedTLS() {}
 
-TLSContextMbedTLS::~TLSContextMbedTLS() {
-	clear();
-}
+TLSContextMbedTLS::~TLSContextMbedTLS() { clear(); }
+
+

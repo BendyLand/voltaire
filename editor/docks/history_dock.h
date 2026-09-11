@@ -37,14 +37,13 @@ class ConfigFile;
 class ItemList;
 class EditorUndoRedoManager;
 
-class HistoryDock : public EditorDock {
-	VLTRCLASS(HistoryDock, EditorDock);
+class HistoryDock : public EditorDock
+{
+	EditorUndoRedoManager* ur_manager;
+	ItemList* action_list = nullptr;
 
-	EditorUndoRedoManager *ur_manager;
-	ItemList *action_list = nullptr;
-
-	CheckBox *current_scene_checkbox = nullptr;
-	CheckBox *global_history_checkbox = nullptr;
+	CheckBox* current_scene_checkbox = nullptr;
+	CheckBox* global_history_checkbox = nullptr;
 
 	bool need_refresh = true;
 	int current_version = 0;
@@ -57,11 +56,13 @@ class HistoryDock : public EditorDock {
 protected:
 	void _notification(int p_notification);
 
-	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const;
-	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section);
+	virtual void save_layout_to_config(Ref<ConfigFile>& p_layout, const String& p_section) const;
+	virtual void load_layout_from_config(const Ref<ConfigFile>& p_layout, const String& p_section);
 
 public:
 	void seek_history(int p_index);
 
 	HistoryDock();
 };
+
+

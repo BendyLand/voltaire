@@ -30,15 +30,14 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/local_vector.h"
+#include "core/types.h"
 
-class AStarGrid2D : public RefCounted {
-	VLTRCLASS(AStarGrid2D, RefCounted);
-
+class AStarGrid2D : public RefCounted
+{
 public:
-	enum DiagonalMode {
+	enum DiagonalMode
+	{
 		DIAGONAL_MODE_ALWAYS,
 		DIAGONAL_MODE_NEVER,
 		DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE,
@@ -46,7 +45,8 @@ public:
 		DIAGONAL_MODE_MAX,
 	};
 
-	enum Heuristic {
+	enum Heuristic
+	{
 		HEURISTIC_EUCLIDEAN,
 		HEURISTIC_MANHATTAN,
 		HEURISTIC_OCTILE,
@@ -54,7 +54,8 @@ public:
 		HEURISTIC_MAX,
 	};
 
-	enum CellShape {
+	enum CellShape
+	{
 		CELL_SHAPE_SQUARE,
 		CELL_SHAPE_ISOMETRIC_RIGHT,
 		CELL_SHAPE_ISOMETRIC_DOWN,
@@ -73,14 +74,15 @@ private:
 	Heuristic default_compute_heuristic = HEURISTIC_EUCLIDEAN;
 	Heuristic default_estimate_heuristic = HEURISTIC_EUCLIDEAN;
 
-	struct Point {
+	struct Point
+	{
 		Vector2i id;
 
 		Vector2 pos;
 		real_t weight_scale = 1.0;
 
 		// Used for pathfinding.
-		Point *prev_point = nullptr;
+		Point* prev_point = nullptr;
 		real_t g_score = 0;
 		real_t f_score = 0;
 		uint64_t open_pass = 0;
@@ -92,97 +94,113 @@ private:
 
 		Point() {}
 
-		Point(const Vector2i &p_id, const Vector2 &p_pos) :
-				id(p_id), pos(p_pos) {}
+		Point(const Vector2i& p_id, const Vector2& p_pos) : id(p_id), pos(p_pos) {}
 	};
 
-	struct SortPoints {
-		_FORCE_INLINE_ bool operator()(const Point *p_left, const Point *p_right) const { // Returns true when the Point A is worse than Point B.
+	struct SortPoints
+	{
+		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
+		{ // Returns true when the Point A is worse than Point B.
 			if (p_left->f_score > p_right->f_score) {
 				return true;
-			} else if (p_left->f_score < p_right->f_score) {
+			}
+			else if (p_left->f_score < p_right->f_score) {
 				return false;
-			} else {
-				return p_left->g_score < p_right->g_score; // If the f_costs are the same then prioritize the points that are further away from the start.
+			}
+			else {
+				return p_left->g_score <
+					   p_right->g_score; // If the f_costs are the same then prioritize the points
+										 // that are further away from the start.
 			}
 		}
 	};
 
 	LocalVector<bool> solid_mask;
 	LocalVector<LocalVector<Point>> points;
-	Point *end = nullptr;
-	Point *last_closest_point = nullptr;
+	Point* end = nullptr;
+	Point* last_closest_point = nullptr;
 
 	uint64_t pass = 1;
 
 private: // Internal routines.
-	_FORCE_INLINE_ size_t _to_mask_index(int32_t p_x, int32_t p_y) const {
+	_FORCE_INLINE_ size_t _to_mask_index(int32_t p_x, int32_t p_y) const
+	{
 		return ((p_y - region.position.y + 1) * (region.size.x + 2)) + p_x - region.position.x + 1;
 	}
 
-	_FORCE_INLINE_ bool _is_walkable(int32_t p_x, int32_t p_y) const {
+	_FORCE_INLINE_ bool _is_walkable(int32_t p_x, int32_t p_y) const
+	{
 		return !solid_mask[_to_mask_index(p_x, p_y)];
 	}
 
-	_FORCE_INLINE_ Point *_get_point(int32_t p_x, int32_t p_y) {
+	_FORCE_INLINE_ Point* _get_point(int32_t p_x, int32_t p_y)
+	{
 		if (region.has_point(Vector2i(p_x, p_y))) {
 			return &points[p_y - region.position.y][p_x - region.position.x];
 		}
 		return nullptr;
 	}
 
-	_FORCE_INLINE_ void _set_solid_unchecked(int32_t p_x, int32_t p_y, bool p_solid) {
+	_FORCE_INLINE_ void _set_solid_unchecked(int32_t p_x, int32_t p_y, bool p_solid)
+	{
 		solid_mask[_to_mask_index(p_x, p_y)] = p_solid;
 	}
 
-	_FORCE_INLINE_ void _set_solid_unchecked(const Vector2i &p_id, bool p_solid) {
+	_FORCE_INLINE_ void _set_solid_unchecked(const Vector2i& p_id, bool p_solid)
+	{
 		solid_mask[_to_mask_index(p_id.x, p_id.y)] = p_solid;
 	}
 
-	_FORCE_INLINE_ bool _get_solid_unchecked(const Vector2i &p_id) const {
+	_FORCE_INLINE_ bool _get_solid_unchecked(const Vector2i& p_id) const
+	{
 		return solid_mask[_to_mask_index(p_id.x, p_id.y)];
 	}
 
-	_FORCE_INLINE_ Point *_get_point_unchecked(int32_t p_x, int32_t p_y) {
+	_FORCE_INLINE_ Point* _get_point_unchecked(int32_t p_x, int32_t p_y)
+	{
 		return &points[p_y - region.position.y][p_x - region.position.x];
 	}
 
-	_FORCE_INLINE_ Point *_get_point_unchecked(const Vector2i &p_id) {
+	_FORCE_INLINE_ Point* _get_point_unchecked(const Vector2i& p_id)
+	{
 		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
 	}
 
-	_FORCE_INLINE_ const Point *_get_point_unchecked(const Vector2i &p_id) const {
+	_FORCE_INLINE_ const Point* _get_point_unchecked(const Vector2i& p_id) const
+	{
 		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
 	}
 
-	void _get_nbors(Point *p_point, LocalVector<Point *> &r_nbors);
-	Point *_jump(Point *p_from, Point *p_to);
-	bool _solve(Point *p_begin_point, Point *p_end_point, bool p_allow_partial_path);
-	Point *_forced_successor(int32_t p_x, int32_t p_y, int32_t p_dx, int32_t p_dy, bool p_inclusive = false);
+	void _get_nbors(Point* p_point, LocalVector<Point*>& r_nbors);
+	Point* _jump(Point* p_from, Point* p_to);
+	bool _solve(Point* p_begin_point, Point* p_end_point, bool p_allow_partial_path);
+	Point* _forced_successor(
+		int32_t p_x, int32_t p_y, int32_t p_dx, int32_t p_dy, bool p_inclusive = false);
 
 protected:
 	static void _bind_methods();
 
-	virtual real_t _estimate_cost(const Vector2i &p_from_id, const Vector2i &p_end_id);
-	virtual real_t _compute_cost(const Vector2i &p_from_id, const Vector2i &p_to_id);
+	virtual real_t _estimate_cost(const Vector2i& p_from_id, const Vector2i& p_end_id);
+	virtual real_t _compute_cost(const Vector2i& p_from_id, const Vector2i& p_to_id);
 
 #ifndef DISABLE_DEPRECATED
-	TypedArray<Vector2i> _get_id_path_bind_compat_88047(const Vector2i &p_from, const Vector2i &p_to);
-	Vector<Vector2> _get_point_path_bind_compat_88047(const Vector2i &p_from, const Vector2i &p_to);
+	Vector<Vector2i> _get_id_path_bind_compat_88047(
+		const Vector2i& p_from, const Vector2i& p_to);
+	Vector<Vector2> _get_point_path_bind_compat_88047(const Vector2i& p_from, const Vector2i& p_to);
 	static void _bind_compatibility_methods();
 #endif
 
 public:
-	void set_region(const Rect2i &p_region);
+	void set_region(const Rect2i& p_region);
 	Rect2i get_region() const;
 
-	void set_size(const Size2i &p_size);
+	void set_size(const Size2i& p_size);
 	Size2i get_size() const;
 
-	void set_offset(const Vector2 &p_offset);
+	void set_offset(const Vector2& p_offset);
 	Vector2 get_offset() const;
 
-	void set_cell_size(const Size2 &p_cell_size);
+	void set_cell_size(const Size2& p_cell_size);
 	Size2 get_cell_size() const;
 
 	void set_cell_shape(CellShape p_cell_shape);
@@ -191,7 +209,7 @@ public:
 	void update();
 
 	bool is_in_bounds(int32_t p_x, int32_t p_y) const;
-	bool is_in_boundsv(const Vector2i &p_id) const;
+	bool is_in_boundsv(const Vector2i& p_id) const;
 	bool is_dirty() const;
 
 	void set_jumping_enabled(bool p_enabled);
@@ -206,23 +224,22 @@ public:
 	void set_default_estimate_heuristic(Heuristic p_heuristic);
 	Heuristic get_default_estimate_heuristic() const;
 
-	void set_point_solid(const Vector2i &p_id, bool p_solid = true);
-	bool is_point_solid(const Vector2i &p_id) const;
+	void set_point_solid(const Vector2i& p_id, bool p_solid = true);
+	bool is_point_solid(const Vector2i& p_id) const;
 
-	void set_point_weight_scale(const Vector2i &p_id, real_t p_weight_scale);
-	real_t get_point_weight_scale(const Vector2i &p_id) const;
+	void set_point_weight_scale(const Vector2i& p_id, real_t p_weight_scale);
+	real_t get_point_weight_scale(const Vector2i& p_id) const;
 
-	void fill_solid_region(const Rect2i &p_region, bool p_solid = true);
-	void fill_weight_scale_region(const Rect2i &p_region, real_t p_weight_scale);
+	void fill_solid_region(const Rect2i& p_region, bool p_solid = true);
+	void fill_weight_scale_region(const Rect2i& p_region, real_t p_weight_scale);
 
 	void clear();
 
-	Vector2 get_point_position(const Vector2i &p_id) const;
-	TypedArray<Dictionary> get_point_data_in_region(const Rect2i &p_region) const;
-	Vector<Vector2> get_point_path(const Vector2i &p_from, const Vector2i &p_to, bool p_allow_partial_path = false);
-	TypedArray<Vector2i> get_id_path(const Vector2i &p_from, const Vector2i &p_to, bool p_allow_partial_path = false);
+	Vector2 get_point_position(const Vector2i& p_id) const;
+	Vector<Vector2> get_point_path(
+		const Vector2i& p_from, const Vector2i& p_to, bool p_allow_partial_path = false);
+	Vector<Vector2i> get_id_path(
+		const Vector2i& p_from, const Vector2i& p_to, bool p_allow_partial_path = false);
 };
 
-VARIANT_ENUM_CAST(AStarGrid2D::DiagonalMode);
-VARIANT_ENUM_CAST(AStarGrid2D::Heuristic);
-VARIANT_ENUM_CAST(AStarGrid2D::CellShape)
+

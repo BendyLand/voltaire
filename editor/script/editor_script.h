@@ -30,25 +30,25 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 
 class EditorInterface;
 class EditorNode;
 class Node;
 
-class EditorScript : public RefCounted {
-	VLTRCLASS(EditorScript, RefCounted);
-
+class EditorScript : public RefCounted
+{
 protected:
 	static void _bind_methods();
 
 public:
-	void add_root_node(Node *p_node);
+	void add_root_node(Node* p_node);
 #ifndef DISABLE_DEPRECATED
-	Node *get_scene() const;
+	Node* get_scene() const;
 #endif // DISABLE_DEPRECATED
-	EditorInterface *get_editor_interface() const;
+	EditorInterface* get_editor_interface() const;
 
 	virtual void run();
 };
+
+

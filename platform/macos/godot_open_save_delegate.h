@@ -31,8 +31,6 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "core/variant/typed_array.h"
-#include "core/variant/variant.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>

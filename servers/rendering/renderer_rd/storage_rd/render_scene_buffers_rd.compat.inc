@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "render_scene_buffers_rd.h"
 
 RID RenderSceneBuffersRD::_get_color_texture_bind_compat_80214()

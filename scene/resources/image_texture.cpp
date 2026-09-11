@@ -30,31 +30,10 @@
 
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
-#include "core/object/class_db.h"
 #include "image_texture.h"
 #include "scene/resources/bit_map.h"
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
-
-void ImageTexture::reload_from_file()
-{
-	String path = ResourceLoader::path_remap(get_path());
-	if (!path.is_resource_file()) {
-		return;
-	}
-
-	Ref<Image> img;
-	img.instantiate();
-
-	if (ImageLoader::load_image(path, img) == OK) {
-		set_image(img);
-	}
-	else {
-		Resource::reload_from_file();
-		this->obj->notify_property_list_changed();
-		emit_changed();
-	}
-}
 
 Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 {
@@ -67,54 +46,7 @@ Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 	return image_texture;
 }
 
-void ImageTexture::set_image(const Ref<Image>& p_image)
-{
-	if (p_image.is_null() || p_image->is_empty()) {
-		if (image_stored) {
-			ERR_PRINT("Invalid image");
-		}
-		return;
-	}
-
-	w = p_image->get_width();
-	h = p_image->get_height();
-	format = p_image->get_format();
-	mipmaps = p_image->has_mipmaps();
-
-	if (texture.is_null()) {
-		texture = RenderingServer::get_singleton()->texture_2d_create(p_image);
-	}
-	else {
-		RID new_texture = RenderingServer::get_singleton()->texture_2d_create(p_image);
-		RenderingServer::get_singleton()->texture_replace(texture, new_texture);
-	}
-	this->obj->notify_property_list_changed();
-	emit_changed();
-
-	image_stored = true;
-}
-
 Image::Format ImageTexture::get_format() const { return format; }
-
-void ImageTexture::update(const Ref<Image>& p_image)
-{
-	ERR_FAIL_COND_MSG(p_image.is_null(), "Invalid image");
-	ERR_FAIL_COND_MSG(texture.is_null(), "Texture is not initialized.");
-	ERR_FAIL_COND_MSG(p_image->get_width() != w || p_image->get_height() != h,
-		"The new image dimensions must match the texture size.");
-	ERR_FAIL_COND_MSG(p_image->get_format() != format,
-		"The new image format must match the texture's image format.");
-	ERR_FAIL_COND_MSG(mipmaps != p_image->has_mipmaps(),
-		"The new image mipmaps configuration must match the texture's image mipmaps configuration");
-
-	RS::get_singleton()->texture_2d_update(texture, p_image);
-
-	this->obj->notify_property_list_changed();
-	emit_changed();
-
-	alpha_cache.unref();
-	image_stored = true;
-}
 
 Ref<Image> ImageTexture::get_image() const
 {
@@ -275,32 +207,6 @@ ImageTextureLayered::LayeredType ImageTextureLayered::get_layered_type() const
 	return layered_type;
 }
 
-Error ImageTextureLayered::_create_from_images(const Array& p_images)
-{
-	Vector<Ref<Image>> images;
-	for (int i = 0; i < p_images.size(); i++) {
-		Ref<Image> img = p_images[i];
-		ERR_FAIL_COND_V(img.is_null(), ERR_INVALID_PARAMETER);
-		images.push_back(img);
-	}
-
-	return create_from_images(images);
-}
-
-Array ImageTextureLayered::_get_images() const
-{
-	Array images;
-	for (int i = 0; i < layers; i++) {
-		images.push_back(get_layer_data(i));
-	}
-	return images;
-}
-
-void ImageTextureLayered::_set_images(const Array& p_images)
-{
-	ERR_FAIL_COND(_create_from_images(p_images) != OK);
-}
-
 Error ImageTextureLayered::create_from_images(Vector<Ref<Image>> p_images)
 {
 	int new_layers = p_images.size();
@@ -414,27 +320,6 @@ int ImageTexture3D::get_depth() const { return depth; }
 
 bool ImageTexture3D::has_mipmaps() const { return mipmaps; }
 
-Error ImageTexture3D::_create(Image::Format p_format, int p_width, int p_height, int p_depth,
-	bool p_mipmaps, const Array& p_data)
-{
-	Vector<Ref<Image>> images;
-	images.resize(p_data.size());
-	for (int i = 0; i < images.size(); i++) {
-		images.write[i] = p_data[i];
-	}
-	return create(p_format, p_width, p_height, p_depth, p_mipmaps, images);
-}
-
-void ImageTexture3D::_update(const Array& p_data)
-{
-	Vector<Ref<Image>> images;
-	images.resize(p_data.size());
-	for (int i = 0; i < images.size(); i++) {
-		images.write[i] = p_data[i];
-	}
-	return update(images);
-}
-
 Error ImageTexture3D::create(Image::Format p_format, int p_width, int p_height, int p_depth,
 	bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
@@ -486,64 +371,6 @@ void ImageTexture3D::set_path(const String& p_path, bool p_take_over)
 
 	Resource::set_path(p_path, p_take_over);
 }
-
-Array ImageTexture3D::_get_images() const
-{
-	Array images;
-	if (texture.is_valid()) {
-		Vector<Ref<Image>> raw_images = get_data();
-		ERR_FAIL_COND_V(raw_images.is_empty(), Array());
-
-		for (int i = 0; i < raw_images.size(); i++) {
-			images.push_back(raw_images[i]);
-		}
-	}
-	return images;
-}
-
-void ImageTexture3D::_set_images(const Array& p_images)
-{
-	if (p_images.size() == 0) {
-		if (images_stored) {
-			ERR_PRINT("Invalid images");
-		}
-		return;
-	}
-
-	Ref<Image> img_base = p_images[0];
-	ERR_FAIL_COND(img_base.is_null());
-
-	Image::Format new_format = img_base->get_format();
-	int new_width = img_base->get_width();
-	int new_height = img_base->get_height();
-	int new_depth = 0;
-	bool new_mipmaps = false;
-
-	for (int i = 1; i < p_images.size(); i++) {
-		Ref<Image> img = p_images[i];
-		ERR_FAIL_COND(img.is_null());
-		ERR_FAIL_COND_MSG(
-			img->get_format() != new_format, "All images must share the same format.");
-
-		if (img->get_width() != new_width || img->get_height() != new_height) {
-			new_mipmaps = true;
-			if (new_depth == 0) {
-				new_depth = i;
-			}
-		}
-	}
-
-	if (new_depth == 0) {
-		new_depth = p_images.size();
-	}
-
-	Error err = _create(new_format, new_width, new_height, new_depth, new_mipmaps, p_images);
-	ERR_FAIL_COND(err != OK);
-
-	images_stored = true;
-}
-
-void ImageTexture3D::_bind_methods() {}
 
 ImageTexture3D::ImageTexture3D() {}
 

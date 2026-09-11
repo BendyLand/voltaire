@@ -161,7 +161,6 @@ class EditorHelp : public VBoxContainer
 	void _add_type(
 		const String& p_type, const String& p_enum = String(), bool p_is_bitfield = false);
 	void _add_type_icon(const String& p_type, int p_size = 0, const String& p_fallback = "");
-	void _add_method(const DocData::MethodDoc& p_method, bool p_overview, bool p_override = true);
 
 	void _add_bulletpoint();
 
@@ -180,10 +179,6 @@ class EditorHelp : public VBoxContainer
 	int display_margin = 0;
 
 	Error _goto_desc(const String& p_class, bool p_can_trigger_save_history);
-	// void _update_history_buttons();
-	void _update_method_list(MethodType p_method_type, const Vector<DocData::MethodDoc>& p_methods);
-	void _update_method_descriptions(const DocData::ClassDoc& p_classdoc, MethodType p_method_type,
-		const Vector<DocData::MethodDoc>& p_methods);
 	void _update_doc();
 
 	void _request_help(const String& p_string);
@@ -198,7 +193,6 @@ class EditorHelp : public VBoxContainer
 		loader_thread; // Only load scripts here to avoid deadlocking with main thread.
 
 	inline static SafeFlag _script_docs_loaded = SafeFlag(false);
-	inline static LocalVector<DocData::ClassDoc> _docs_to_add;
 	inline static LocalVector<String> _docs_to_remove;
 	inline static LocalVector<String> _docs_to_remove_by_path;
 
@@ -213,19 +207,6 @@ class EditorHelp : public VBoxContainer
 	static void _reload_scripts_documentation(EditorFileSystemDirectory* p_dir);
 	static void _delete_script_doc_cache();
 	static void _compute_doc_version_hash();
-
-	struct PropertyCompare
-	{
-		_FORCE_INLINE_ bool operator()(
-			const DocData::PropertyDoc& p_l, const DocData::PropertyDoc& p_r) const
-		{
-			// Sort overridden properties above all else.
-			if (p_l.overridden == p_r.overridden) {
-				return p_l.name.naturalcasecmp_to(p_r.name) < 0;
-			}
-			return p_l.overridden;
-		}
-	};
 
 protected:
 	virtual void _update_theme_item_cache() override;
@@ -246,8 +227,6 @@ public:
 	// when adding script docs. Usage during startup can also cause deadlocks.
 	static DocTools* get_doc_data();
 	// Method forwarding to underlying DocTools to keep script doc cache consistent.
-	static DocData::ClassDoc* get_doc(const String& p_class_name);
-	static void add_doc(const DocData::ClassDoc& p_class_doc);
 	static void remove_doc(const String& p_class_name);
 	static void remove_script_doc_by_path(const String& p_path);
 	static bool has_doc(const String& p_class_name);
@@ -259,7 +238,6 @@ public:
 	void go_to_class(const String& p_class);
 	void update_doc();
 	void trigger_history_save_on_navigate();
-	Dictionary get_state();
 
 	Vector<Pair<String, int>> get_sections();
 	void scroll_to_section(int p_section_index);
@@ -435,7 +413,6 @@ private:
 	HashMap<String, HighlightData> highlight_data_caches[LANGUAGE_MAX];
 
 	TextEdit* text_edits[LANGUAGE_MAX];
-	Ref<Script> scripts[LANGUAGE_MAX];
 	Ref<EditorSyntaxHighlighter> highlighters[LANGUAGE_MAX];
 
 	HighlightData _get_highlight_data(

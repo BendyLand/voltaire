@@ -30,9 +30,11 @@
 
 #pragma once
 
+#include "core/types.h"
 #include "jolt_shape_3d.h"
 
-class JoltHeightMapShape3D final : public JoltShape3D {
+class JoltHeightMapShape3D final : public JoltShape3D
+{
 	AABB aabb;
 
 #ifdef REAL_T_IS_DOUBLE
@@ -52,15 +54,16 @@ class JoltHeightMapShape3D final : public JoltShape3D {
 
 public:
 	virtual ShapeType get_type() const override { return ShapeType::SHAPE_HEIGHTMAP; }
+
 	virtual bool is_convex() const override { return false; }
 
-	virtual Variant get_data() const override;
-	virtual void set_data(const Variant &p_data) override;
-
 	virtual float get_margin() const override { return 0.0f; }
+
 	virtual void set_margin(float p_margin) override {}
 
 	virtual AABB get_aabb() const override { return aabb; }
 
 	String to_string() const;
 };
+
+

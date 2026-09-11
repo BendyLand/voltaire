@@ -31,49 +31,7 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "canvas_item.h"
-#include "core/object/class_db.h"
 #include "scene/resources/font.h"
-
-void CanvasItem::_draw_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
-	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
-	const Color& p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags,
-	TextServer::Direction p_direction, TextServer::Orientation p_orientation) const
-{
-	draw_string(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_modulate, p_jst_flags,
-		p_direction, p_orientation, 0.0);
-}
-
-void CanvasItem::_draw_multiline_string_bind_compat_104872(const Ref<Font>& p_font,
-	const Point2& p_pos, const String& p_text, HorizontalAlignment p_alignment, float p_width,
-	int p_font_size, int p_max_lines, const Color& p_modulate,
-	BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
-	TextServer::Orientation p_orientation) const
-{
-	draw_multiline_string(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_max_lines,
-		p_modulate, p_brk_flags, p_jst_flags, p_direction, p_orientation, 0.0);
-}
-
-void CanvasItem::_draw_string_outline_bind_compat_104872(const Ref<Font>& p_font,
-	const Point2& p_pos, const String& p_text, HorizontalAlignment p_alignment, float p_width,
-	int p_font_size, int p_size, const Color& p_modulate,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
-	TextServer::Orientation p_orientation) const
-{
-	draw_string_outline(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size, p_size,
-		p_modulate, p_jst_flags, p_direction, p_orientation, 0.0);
-}
-
-void CanvasItem::_draw_multiline_string_outline_bind_compat_104872(const Ref<Font>& p_font,
-	const Point2& p_pos, const String& p_text, HorizontalAlignment p_alignment, float p_width,
-	int p_font_size, int p_max_lines, int p_size, const Color& p_modulate,
-	BitField<TextServer::LineBreakFlag> p_brk_flags,
-	BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction,
-	TextServer::Orientation p_orientation) const
-{
-	draw_multiline_string_outline(p_font.ptr(), p_pos, p_text, p_alignment, p_width, p_font_size,
-		p_max_lines, p_size, p_modulate, p_brk_flags, p_jst_flags, p_direction, p_orientation, 0.0);
-}
 
 void CanvasItem::_draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
 	const String& p_char, int p_font_size, const Color& p_modulate) const

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "video_stream.h"
 
 // VideoStreamPlayback starts here.
@@ -76,8 +75,6 @@ void VideoStream::set_file(const String& p_file)
 }
 
 String VideoStream::get_file() { return file; }
-
-void VideoStream::_bind_methods() {}
 
 VideoStream::VideoStream() {}
 

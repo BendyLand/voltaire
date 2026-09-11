@@ -31,41 +31,11 @@
 #include "animation_tree.compat.inc"
 #include "animation_tree.h"
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/animation/animation_blend_tree.h"
 #include "scene/animation/animation_player.h"
 
 thread_local AnimationNode::ProcessState* AnimationNode::tls_process_state = nullptr;
 thread_local AnimationNodeInstance* AnimationNode::current_instance = nullptr;
-
-void AnimationNode::get_parameter_list(LocalVector<PropertyInfo>* r_list) const
-{
-	Array parameters;
-
-	for (int i = 0; i < parameters.size(); i++) {
-		Dictionary d = parameters[i];
-		ERR_CONTINUE(d.is_empty());
-		r_list->push_back(PropertyInfo::from_dict(d));
-	}
-
-	r_list->push_back(PropertyInfo(
-		Variant::FLOAT, current_length, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY));
-	r_list->push_back(PropertyInfo(
-		Variant::FLOAT, current_position, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY));
-	r_list->push_back(PropertyInfo(
-		Variant::FLOAT, current_delta, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY));
-}
-
-Variant AnimationNode::get_parameter_default_value(const StringName& p_parameter) const
-{
-	Variant ret;
-	if (p_parameter == current_length || p_parameter == current_position ||
-		p_parameter == current_delta) {
-		return 0.0;
-	}
-	return ret;
-}
 
 bool AnimationNode::is_parameter_read_only(const StringName& p_parameter) const
 {
@@ -75,31 +45,6 @@ bool AnimationNode::is_parameter_read_only(const StringName& p_parameter) const
 	}
 
 	return false;
-}
-
-void AnimationNode::set_parameter_ex(const StringName& p_name, const Variant& p_value)
-{
-	ERR_FAIL_NULL(tls_process_state);
-	ERR_FAIL_NULL(current_instance);
-	current_instance->set_parameter(p_name, p_value, tls_process_state->is_testing);
-}
-
-Variant AnimationNode::get_parameter_ex(const StringName& p_name) const
-{
-	ERR_FAIL_NULL_V(tls_process_state, Variant());
-	ERR_FAIL_NULL_V(current_instance, Variant());
-	return current_instance->get_parameter(p_name);
-}
-
-void AnimationNode::get_child_nodes(LocalVector<ChildNode>* r_child_nodes)
-{
-	Dictionary cn;
-	for (const KeyValue<Variant, Variant>& kv : cn) {
-		ChildNode child;
-		child.name = kv.key;
-		child.node = kv.value;
-		r_child_nodes->push_back(child);
-	}
 }
 
 void AnimationNode::blend_animation(ProcessState& p_process_state,
@@ -302,18 +247,6 @@ String AnimationNode::get_caption() const
 	return ret;
 }
 
-bool AnimationNode::add_input(const String& p_name)
-{
-	// Root nodes can't add inputs.
-	ERR_FAIL_COND_V(Object::cast_to<AnimationRootNode>(this) != nullptr, false);
-	Input input;
-	ERR_FAIL_COND_V(p_name.contains_char('.') || p_name.contains_char('/'), false);
-	input.name = p_name;
-	inputs.push_back(input);
-	emit_changed();
-	return true;
-}
-
 void AnimationNode::remove_input(int p_index)
 {
 	ERR_FAIL_INDEX(p_index, (int64_t)inputs.size());
@@ -348,40 +281,6 @@ int AnimationNode::find_input(const String& p_name) const
 		}
 	}
 	return idx;
-}
-
-AnimationNode::NodeTimeInfo AnimationNode::process(ProcessState& p_process_state,
-	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
-	bool p_test_only)
-{
-	p_process_state.is_testing = p_test_only;
-
-	double& length = *VariantInternal::get_float(
-		p_instance.parameter_ptrs_by_slot[AnimationNodeInstance::SLOT_CURRENT_LENGTH]);
-	double& position = *VariantInternal::get_float(
-		p_instance.parameter_ptrs_by_slot[AnimationNodeInstance::SLOT_CURRENT_POSITION]);
-	double& delta = *VariantInternal::get_float(
-		p_instance.parameter_ptrs_by_slot[AnimationNodeInstance::SLOT_CURRENT_DELTA]);
-
-	AnimationMixer::PlaybackInfo pi = p_playback_info;
-	if (p_playback_info.seeked) {
-		if (p_playback_info.is_external_seeking) {
-			pi.delta = position - p_playback_info.time;
-		}
-	}
-	else {
-		pi.time = position + get_process_delta(p_instance, p_playback_info);
-	}
-
-	NodeTimeInfo nti = _process(p_process_state, p_instance, pi, p_test_only);
-
-	if (!p_test_only) {
-		length = nti.length;
-		position = nti.position;
-		delta = nti.delta;
-	}
-
-	return nti;
 }
 
 AnimationNode::NodeTimeInfo AnimationNode::_process(ProcessState& p_process_state,
@@ -426,12 +325,6 @@ void AnimationNode::set_deletable(bool p_closable) { closable = p_closable; }
 
 bool AnimationNode::is_deletable() const { return closable; }
 
-ObjectID AnimationNode::get_processing_animation_tree_instance_id() const
-{
-	ERR_FAIL_NULL_V(tls_process_state, ObjectID());
-	return tls_process_state->tree->obj->get_instance_id();
-}
-
 bool AnimationNode::is_process_testing() const
 {
 	ERR_FAIL_NULL_V(tls_process_state, false);
@@ -439,26 +332,6 @@ bool AnimationNode::is_process_testing() const
 }
 
 bool AnimationNode::is_path_filtered(const NodePath& p_path) const { return filter.has(p_path); }
-
-Array AnimationNode::_get_filters() const
-{
-	Array paths;
-
-	for (const NodePath& E : filter) {
-		paths.push_back(String(E)); // Use strings, so sorting is possible.
-	}
-	paths.sort(); // Done so every time the scene is saved, it does not change.
-
-	return paths;
-}
-
-void AnimationNode::_set_filters(const Array& p_filters)
-{
-	filter.clear();
-	for (int i = 0; i < p_filters.size(); i++) {
-		set_filter_path(p_filters[i], true);
-	}
-}
 
 void AnimationNode::_update_filter_cache(
 	const ProcessState& p_process_state, const AnimationNodeInstance& p_instance)
@@ -479,13 +352,6 @@ void AnimationNode::_update_filter_cache(
 		}
 	}
 	p_instance.filters_version = filters_version;
-}
-
-void AnimationNode::_validate_property(PropertyInfo& p_property) const
-{
-	if (!has_filter() && (p_property.name == "filter_enabled" || p_property.name == "filters")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
 }
 
 Ref<AnimationNode> AnimationNode::find_node_by_path(const String& p_name) const
@@ -561,119 +427,10 @@ double AnimationNode::blend_input_ex(int p_input, double p_time, bool p_seek,
 }
 
 #ifdef TOOLS_ENABLED
-void AnimationNode::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
-{
-	const String pf = p_function;
-	if (p_idx == 0) {
-		if (pf == "find_input") {
-			for (const AnimationNode::Input& E : inputs) {
-				r_options->push_back(E.name.quote());
-			}
-		}
-		else if (pf == "get_parameter" || pf == "set_parameter") {
-			bool is_setter = pf == "set_parameter";
-			LocalVector<PropertyInfo> parameters;
-			get_parameter_list(&parameters);
-			for (const PropertyInfo& E : parameters) {
-				if (is_setter && is_parameter_read_only(E.name)) {
-					continue;
-				}
-				r_options->push_back(E.name.quote());
-			}
-		}
-		else if (pf == "set_filter_path" || pf == "is_path_filtered") {
-			for (const NodePath& E : filter) {
-				r_options->push_back(String(E).quote());
-			}
-		}
-	}
-	this->obj->get_argument_options(p_function, p_idx, r_options);
-}
+
 #endif
 
-void AnimationNode::_bind_methods() {}
-
 AnimationNode::AnimationNode() {}
-
-////////////////////
-
-void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node)
-{
-	p_node->obj->connect(SNAME("tree_changed"),
-		callable_mp(this, &AnimationRootNode::_tree_changed), Object::CONNECT_REFERENCE_COUNTED);
-	p_node->obj->connect(SNAME("node_updated"),
-		callable_mp(this, &AnimationRootNode::_node_updated), Object::CONNECT_REFERENCE_COUNTED);
-	p_node->obj->connect(SNAME("animation_node_renamed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_renamed),
-		Object::CONNECT_REFERENCE_COUNTED);
-	p_node->obj->connect(SNAME("animation_node_removed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_removed),
-		Object::CONNECT_REFERENCE_COUNTED);
-}
-
-void AnimationRootNode::_remove_node(const Ref<AnimationNode>& p_node)
-{
-	p_node->obj->disconnect(
-		SNAME("tree_changed"), callable_mp(this, &AnimationRootNode::_tree_changed));
-	p_node->obj->disconnect(
-		SNAME("node_updated"), callable_mp(this, &AnimationRootNode::_node_updated));
-	p_node->obj->disconnect(SNAME("animation_node_renamed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_renamed));
-	p_node->obj->disconnect(SNAME("animation_node_removed"),
-		callable_mp(this, &AnimationRootNode::_animation_node_removed));
-}
-
-void AnimationRootNode::_tree_changed() { this->obj->emit_signal(SNAME("tree_changed")); }
-
-void AnimationRootNode::_node_updated(const ObjectID& p_oid)
-{
-	this->obj->emit_signal(SNAME("node_updated"), p_oid);
-}
-
-void AnimationRootNode::_animation_node_renamed(
-	const ObjectID& p_oid, const String& p_old_name, const String& p_new_name)
-{
-	this->obj->emit_signal(SNAME("animation_node_renamed"), p_oid, p_old_name, p_new_name);
-}
-
-void AnimationRootNode::_animation_node_removed(const ObjectID& p_oid, const StringName& p_node)
-{
-	this->obj->emit_signal(SNAME("animation_node_removed"), p_oid, p_node);
-}
-
-////////////////////
-
-void AnimationTree::set_root_animation_node(const Ref<AnimationRootNode>& p_animation_node)
-{
-	if (root_animation_node.is_valid()) {
-		root_animation_node->obj->disconnect(
-			SNAME("tree_changed"), callable_mp(this, &AnimationTree::_tree_changed));
-		root_animation_node->obj->disconnect(
-			SNAME("node_updated"), callable_mp(this, &AnimationTree::_node_updated));
-		root_animation_node->obj->disconnect(SNAME("animation_node_renamed"),
-			callable_mp(this, &AnimationTree::_animation_node_renamed));
-		root_animation_node->obj->disconnect(SNAME("animation_node_removed"),
-			callable_mp(this, &AnimationTree::_animation_node_removed));
-	}
-
-	root_animation_node = p_animation_node;
-
-	if (root_animation_node.is_valid()) {
-		root_animation_node->obj->connect(
-			SNAME("tree_changed"), callable_mp(this, &AnimationTree::_tree_changed));
-		root_animation_node->obj->connect(
-			SNAME("node_updated"), callable_mp(this, &AnimationTree::_node_updated));
-		root_animation_node->obj->connect(SNAME("animation_node_renamed"),
-			callable_mp(this, &AnimationTree::_animation_node_renamed));
-		root_animation_node->obj->connect(SNAME("animation_node_removed"),
-			callable_mp(this, &AnimationTree::_animation_node_removed));
-	}
-
-	properties_dirty = true;
-
-	update_configuration_warnings();
-}
 
 Ref<AnimationRootNode> AnimationTree::get_root_animation_node() const
 {
@@ -741,7 +498,8 @@ bool AnimationTree::_blend_pre_process(
 		}
 
 		AnimationNode::tls_process_state = &process_state;
-		root_animation_node->_pre_process(process_state, instance, pi, false);
+		root_animation_node->_pre_process(process_state, instance,
+ pi, false);
 		AnimationNode::tls_process_state = nullptr;
 	}
 
@@ -785,218 +543,6 @@ PackedStringArray AnimationTree::get_configuration_warnings() const
 	return warnings;
 }
 
-void AnimationTree::_tree_changed()
-{
-	if (properties_dirty) {
-		return;
-	}
-
-	callable_mp(this, &AnimationTree::_update_properties).call_deferred();
-	properties_dirty = true;
-}
-
-void AnimationTree::_node_updated(const ObjectID& p_oid)
-{
-	// This is for when the animation in AnimationNodeAnimation changes.
-	// or a connection in AnimationNodeBlendTree changes.
-
-	// Ideally, we would only validate relevant instances, but for now, revalidate all.
-	validation_dirty = true;
-}
-
-void AnimationTree::_animation_node_renamed(
-	const ObjectID& p_oid, const String& p_old_name, const String& p_new_name)
-{
-	// print_line("Node: " + ObjectDB::get_instance(p_oid)->get_class() + " (" + itos(p_oid) + ")
-	// renamed: " + p_old_name + " -> " + p_new_name);
-	for (const StringName& pp : instance_paths[p_oid]) {
-		String parent_path = pp;
-		String old_base = parent_path + p_old_name;
-		String new_base = parent_path + p_new_name;
-		// print_line(" - Updating " + pp + ": " + old_base + " -> " + new_base);
-		for (const PropertyInfo& E : properties) {
-			if (E.name.begins_with(old_base)) {
-				StringName old_name = E.name;
-				StringName new_name = E.name.replace_first(old_base, new_base);
-				const Pair<Variant, bool> temp_copy = property_map[old_name];
-				// print_line("   - Property: " + String(old_name) + " -> " + String(new_name));
-				property_map[new_name] = temp_copy;
-				property_map.erase(old_name);
-			}
-		}
-	}
-
-	// Update tree second.
-	properties_dirty = true;
-	_update_properties();
-}
-
-void AnimationTree::_animation_node_removed(const ObjectID& p_oid, const StringName& p_node)
-{
-	for (const StringName& parent_path : instance_paths[p_oid]) {
-		String base_path = String(parent_path) + String(p_node) + "/";
-
-		for (const PropertyInfo& E : properties) {
-			if (E.name.begins_with(base_path)) {
-				property_map.erase(E.name);
-			}
-		}
-	}
-
-	// Update tree second.
-	properties_dirty = true;
-	_update_properties();
-}
-
-void AnimationTree::_update_properties_for_node(
-	const StringName& p_base_path, const Ref<AnimationNode>& p_node) const
-{
-	ERR_FAIL_COND(p_node.is_null());
-
-	instance_paths[p_node->obj->get_instance_id()].insert(p_base_path);
-
-	const String base_path_str = p_base_path;
-
-	AnimationNodeInstance& instance = instance_map[p_base_path];
-	instance.path = p_base_path;
-	instance.resource = p_node;
-
-#ifdef ENABLE_ACTIVITY_TRACKING
-	if (p_node->get_input_count()) {
-		for (int i = 0; i < p_node->get_input_count(); i++) {
-			AnimationNodeInstance::Activity a;
-			a.activity = 0;
-			a.last_pass = 0;
-			instance.input_activity.push_back(a);
-		}
-	}
-#endif
-
-	LocalVector<PropertyInfo> plist;
-	p_node->get_parameter_list(&plist);
-	for (PropertyInfo& pinfo : plist) {
-		StringName pname = pinfo.name;
-		StringName key = base_path_str + pname;
-
-		Pair<Variant, bool>* param = property_map.getptr(key);
-		if (!param) {
-			param = &property_map.insert(key, Pair<Variant, bool>())->value;
-			param->first = p_node->get_parameter_default_value(pname);
-			param->second = p_node->is_parameter_read_only(pname);
-		}
-
-		pinfo.name = key;
-		properties.push_back(pinfo);
-	}
-
-	LocalVector<AnimationNode::ChildNode> children;
-	p_node->get_child_nodes(&children);
-
-	// These have to be done in two passes, because _update_properties_for_node invalidates the
-	// instance reference.
-	for (const AnimationNode::ChildNode& E : children) {
-		ERR_CONTINUE(E.name.is_empty());
-		instance.child_instances[E.name] = nullptr; // Will be set in _update_properties
-	}
-
-	for (const AnimationNode::ChildNode& E : children) {
-		const StringName child_path = base_path_str + E.name + "/";
-		_update_properties_for_node(child_path, E.node);
-	}
-}
-
-void AnimationTree::_update_properties() const
-{
-	if (!properties_dirty) {
-		return;
-	}
-
-	// if properties are dirty, so is the validation state.
-	validation_dirty = true;
-	properties.clear();
-	instance_map.clear();
-	instance_paths.clear();
-
-	if (root_animation_node.is_valid()) {
-		_update_properties_for_node(Animation::PARAMETERS_BASE_PATH, root_animation_node);
-
-		// Now that the properties and instances are stable, we can update them.
-		for (KeyValue<StringName, AnimationNodeInstance>& E : instance_map) {
-			const String& instance_path = E.key;
-			AnimationNodeInstance& instance = E.value;
-
-			// Update children.
-			for (KeyValue<StringName, AnimationNodeInstance*>& kv : instance.child_instances) {
-				const StringName child_path = instance_path + kv.key + "/";
-				kv.value = instance_map.getptr(child_path);
-				CRASH_COND(!kv.value); // Shouldn't ever happen.
-			}
-
-			// Now properties.
-			const Ref<AnimationNode>& node = instance.resource;
-			ERR_FAIL_COND(node.is_null());
-
-			instance.parameter_ptrs_by_slot.resize_initialized(AnimationNodeInstance::SLOT_MAX);
-			LocalVector<PropertyInfo> plist;
-			node->get_parameter_list(&plist);
-			for (const PropertyInfo& pinfo : plist) {
-				StringName pname = pinfo.name;
-
-				Pair<Variant, bool>* pair = property_map.getptr(instance_path + pname);
-				CRASH_COND(!pair); // Shouldn't ever happen.
-
-				instance.property_ptrs[pname] = &pair->first;
-
-				// Some of these get special treatment.
-				instance.maybe_bind_slot_property(pname, &pair->first);
-			}
-		}
-	}
-
-	properties_dirty = false;
-
-	const_cast<AnimationTree*>(this)->obj->notify_property_list_changed();
-}
-
-void AnimationTree::_update_connections()
-{
-	for (KeyValue<StringName, AnimationNodeInstance>& E : instance_map) {
-		AnimationNodeInstance& parent_instance = E.value;
-
-		const AnimationNodeBlendTree* blend_tree =
-			Object::cast_to<AnimationNodeBlendTree>(parent_instance.resource.ptr());
-
-		if (!blend_tree) {
-			continue;
-		}
-
-		{
-			const LocalVector<StringName>* output_connections =
-				blend_tree->get_node_connection_array(SceneStringName(output));
-			parent_instance.connection_instances.resize(1);
-			AnimationNodeInstance* connected_instance =
-				parent_instance.get_child_instance_by_path_or_null(
-					output_connections->operator[](0));
-			parent_instance.connection_instances[0] = connected_instance;
-		}
-
-		for (const KeyValue<StringName, AnimationNodeInstance*>& kv :
-			parent_instance.child_instances) {
-			AnimationNodeInstance* child_instance = kv.value;
-			const LocalVector<StringName>& child_connections =
-				*blend_tree->get_node_connection_array(kv.key);
-			child_instance->connection_instances.clear();
-			child_instance->connection_instances.resize(child_connections.size());
-			for (uint32_t input = 0; input < child_connections.size(); input++) {
-				const StringName& connected_node_name = child_connections[input];
-				AnimationNodeInstance* connected_instance =
-					parent_instance.get_child_instance_by_path_or_null(connected_node_name);
-				child_instance->connection_instances[input] = connected_instance;
-			}
-		}
-	}
-}
-
 void AnimationTree::_add_validation_error(
 	const StringName& p_path, const String& p_error, int p_input_index) const
 {
@@ -1029,155 +575,7 @@ void AnimationTree::_notification(int p_what)
 	}
 }
 
-void AnimationTree::set_animation_player(const NodePath& p_path)
-{
-	animation_player = p_path;
-	if (p_path.is_empty()) {
-		set_root_node(NodePath(".."));
-		while (animation_libraries.size()) {
-			remove_animation_library(animation_libraries[0].name);
-		}
-	}
-	this->obj->emit_signal(
-		SNAME("animation_player_changed")); // Needs to unpin AnimationPlayerEditor.
-	_setup_animation_player();
-	this->obj->notify_property_list_changed();
-}
-
 NodePath AnimationTree::get_animation_player() const { return animation_player; }
-
-void AnimationTree::_setup_animation_player()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	cache_valid = false;
-
-	if (animation_player.is_empty()) {
-		clear_caches();
-		return;
-	}
-
-	// Using AnimationPlayer here is for compatibility. Changing to AnimationMixer needs extra work
-	// like error handling.
-	AnimationPlayer* player = Object::cast_to<AnimationPlayer>(get_node_or_null(animation_player));
-	if (player) {
-		if (!player->is_connected(SNAME("caches_cleared"),
-				callable_mp(this, &AnimationTree::_setup_animation_player))) {
-			player->connect(SNAME("caches_cleared"),
-				callable_mp(this, &AnimationTree::_setup_animation_player),
-				Object::CONNECT_DEFERRED);
-		}
-		if (!player->is_connected(SNAME("animation_list_changed"),
-				callable_mp(this, &AnimationTree::_setup_animation_player))) {
-			player->connect(SNAME("animation_list_changed"),
-				callable_mp(this, &AnimationTree::_setup_animation_player),
-				Object::CONNECT_DEFERRED);
-		}
-		Node* root = player->get_node_or_null(player->get_root_node());
-		if (root) {
-			set_root_node(get_path_to(root, true));
-		}
-		while (animation_libraries.size()) {
-			remove_animation_library(animation_libraries[0].name);
-		}
-		LocalVector<StringName> list;
-		player->get_animation_library_list(&list);
-		for (const StringName& E : list) {
-			Ref<AnimationLibrary> lib = player->get_animation_library(E);
-			if (lib.is_valid()) {
-				add_animation_library(E, lib);
-			}
-		}
-	}
-
-	clear_caches();
-}
-
-// `libraries` is a dynamic property, so we can't use `_validate_property` to change it.
-uint32_t AnimationTree::_get_libraries_property_usage() const
-{
-	if (!animation_player.is_empty()) {
-		return PROPERTY_USAGE_READ_ONLY;
-	}
-	return PROPERTY_USAGE_STORAGE;
-}
-
-void AnimationTree::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	if (!animation_player.is_empty()) {
-		if (p_property.name == "root_node") {
-			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
-		}
-	}
-}
-
-bool AnimationTree::_set(const StringName& p_name, const Variant& p_value)
-{
-#ifndef DISABLE_DEPRECATED
-	String name = p_name;
-	if (name == "process_callback") {
-		set_callback_mode_process(static_cast<AnimationCallbackModeProcess>((int)p_value));
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-	_update_properties();
-
-	if (Pair<Variant, bool>* property_ptr = property_map.getptr(p_name)) {
-		Pair<Variant, bool>*& pair = property_ptr;
-		if (is_inside_tree() && pair->second) {
-			return false; // Prevent to set property by user.
-		}
-
-		Variant& prop = pair->first;
-		// Only copy variant if needed.
-		if (Animation::needs_type_cast(prop, p_value)) {
-			Variant value = p_value;
-			if (Animation::validate_type_match(prop, value)) {
-				prop = value;
-			}
-		}
-		else {
-			prop = p_value;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-bool AnimationTree::_get(const StringName& p_name, Variant& r_ret) const
-{
-#ifndef DISABLE_DEPRECATED
-	if (p_name == "process_callback") {
-		r_ret = get_callback_mode_process();
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-	_update_properties();
-
-	if (const Pair<Variant, bool>* p = property_map.getptr(p_name)) {
-		r_ret = p->first;
-		return true;
-	}
-
-	return false;
-}
-
-void AnimationTree::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	_update_properties();
-
-	for (const PropertyInfo& E : properties) {
-		p_list->push_back(E);
-	}
-}
 
 #ifdef ENABLE_ACTIVITY_TRACKING
 real_t AnimationTree::get_connection_activity(const StringName& p_path, int p_connection) const
@@ -1212,8 +610,6 @@ String AnimationTree::get_editor_error_message() const
 	return "";
 }
 #endif
-
-void AnimationTree::_bind_methods() {}
 
 AnimationTree::AnimationTree()
 {

@@ -32,9 +32,8 @@
 
 #include "scene/3d/skeleton_3d.h"
 
-class SpringBoneCollision3D : public Node3D {
-	VLTRCLASS(SpringBoneCollision3D, Node3D);
-
+class SpringBoneCollision3D : public Node3D
+{
 	String bone_name;
 	int bone = -1;
 
@@ -46,27 +45,30 @@ class SpringBoneCollision3D : public Node3D {
 protected:
 	PackedStringArray get_configuration_warnings() const override;
 
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	virtual Vector3 _collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const;
+	virtual Vector3 _collide(const Transform3D& p_center, float p_bone_radius, float p_bone_length,
+		const Vector3& p_current) const;
 
 public:
-	Skeleton3D *get_skeleton() const;
+	Skeleton3D* get_skeleton() const;
 
-	void set_bone_name(const String &p_name);
+	void set_bone_name(const String& p_name);
 	String get_bone_name() const;
 	void set_bone(int p_bone);
 	int get_bone() const;
 
-	void set_position_offset(const Vector3 &p_offset);
+	void set_position_offset(const Vector3& p_offset);
 	Vector3 get_position_offset() const;
-	void set_rotation_offset(const Quaternion &p_offset);
+	void set_rotation_offset(const Quaternion& p_offset);
 	Quaternion get_rotation_offset() const;
 
 	void sync_pose();
-	Transform3D get_transform_from_skeleton(const Transform3D &p_center) const;
+	Transform3D get_transform_from_skeleton(const Transform3D& p_center) const;
 
-	Vector3 collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const;
+	Vector3 collide(const Transform3D& p_center, float p_bone_radius, float p_bone_length,
+		const Vector3& p_current) const;
 };
+
+

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "../extensions/openxr_composition_layer_extension.h"
-#include "core/object/class_db.h"
 #include "openxr_composition_layer_cylinder.h"
 #include "scene/resources/mesh.h"
 
@@ -54,61 +53,6 @@ OpenXRCompositionLayerCylinder::OpenXRCompositionLayerCylinder()
 }
 
 OpenXRCompositionLayerCylinder::~OpenXRCompositionLayerCylinder() {}
-
-void OpenXRCompositionLayerCylinder::_bind_methods() {}
-
-Ref<Mesh> OpenXRCompositionLayerCylinder::_create_fallback_mesh()
-{
-	Ref<ArrayMesh> mesh;
-	mesh.instantiate();
-
-	float arc_length = radius * central_angle;
-	float half_height = ((1.0 / aspect_ratio) * arc_length) / 2.0;
-
-	Array arrays;
-	arrays.resize(ArrayMesh::ARRAY_MAX);
-
-	Vector<Vector3> vertices;
-	Vector<Vector3> normals;
-	Vector<Vector2> uvs;
-	Vector<int> indices;
-
-	float delta_angle = central_angle / fallback_segments;
-	float start_angle = (-Math::PI / 2.0) - (central_angle / 2.0);
-
-	for (uint32_t i = 0; i < fallback_segments + 1; i++) {
-		float current_angle = start_angle + (delta_angle * i);
-		float x = radius * Math::cos(current_angle);
-		float z = radius * Math::sin(current_angle);
-		Vector3 normal(Math::cos(current_angle), 0, Math::sin(current_angle));
-
-		vertices.push_back(Vector3(x, -half_height, z));
-		normals.push_back(normal);
-		uvs.push_back(Vector2((float)i / fallback_segments, 1));
-
-		vertices.push_back(Vector3(x, half_height, z));
-		normals.push_back(normal);
-		uvs.push_back(Vector2((float)i / fallback_segments, 0));
-	}
-
-	for (uint32_t i = 0; i < fallback_segments; i++) {
-		uint32_t index = i * 2;
-		indices.push_back(index);
-		indices.push_back(index + 1);
-		indices.push_back(index + 3);
-		indices.push_back(index);
-		indices.push_back(index + 3);
-		indices.push_back(index + 2);
-	}
-
-	arrays[ArrayMesh::ARRAY_VERTEX] = vertices;
-	arrays[ArrayMesh::ARRAY_NORMAL] = normals;
-	arrays[ArrayMesh::ARRAY_TEX_UV] = uvs;
-	arrays[ArrayMesh::ARRAY_INDEX] = indices;
-
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
-	return mesh;
-}
 
 void OpenXRCompositionLayerCylinder::set_radius(float p_radius)
 {

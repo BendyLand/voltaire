@@ -41,8 +41,6 @@ class TilesEditorUtils
 	static TilesEditorUtils* singleton;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum SourceSortOption
 	{
 		SOURCE_SORT_ID = 0,
@@ -72,7 +70,6 @@ private:
 	{
 		Ref<TileSet> tile_set;
 		Ref<TileMapPattern> pattern;
-		Callable callback;
 	};
 
 	List<QueueItem> pattern_preview_queue;
@@ -90,16 +87,10 @@ private:
 public:
 	_FORCE_INLINE_ static TilesEditorUtils* get_singleton() { return singleton; }
 
-	// Pattern preview API.
-	void queue_pattern_preview(
-		Ref<TileSet> p_tile_set, Ref<TileMapPattern> p_pattern, Callable p_callback);
-
 	// To synchronize the atlas sources lists.
 	void set_sources_lists_current(int p_current);
-	void synchronize_sources_list(Object* p_current_list, Object* p_current_sort_button);
 
 	void set_atlas_view_transform(float p_zoom, Vector2 p_scroll);
-	void synchronize_atlas_view(Object* p_current);
 
 	// Sorting.
 	void set_sorting_option(int p_option);
@@ -117,26 +108,17 @@ public:
 
 class TileSetSourceItemList : public ItemList
 {
-	VLTRCLASS(TileSetSourceItemList, ItemList);
-
 public:
 	Ref<TileSet> tile_set;
-
-	virtual String get_tooltip(const Point2& p_pos) const override;
 
 	TileSetSourceItemList();
 };
 
 class TileMapEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(TileMapEditorPlugin, EditorPlugin);
-
 	TileMapLayerEditor* editor = nullptr;
-	ObjectID tile_map_layer_id;
-	ObjectID tile_map_group_id; // Allow keeping the layer selector up to date.
 
 	bool tile_map_changed_needs_update = false;
-	ObjectID tile_set_id; // The TileSet associated with the TileMap.
 
 	void _tile_map_layer_changed();
 	void _tile_map_layer_removed();
@@ -150,10 +132,6 @@ protected:
 	void _notification(int p_notification);
 
 public:
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
@@ -165,19 +143,10 @@ public:
 
 class TileSetEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(TileSetEditorPlugin, EditorPlugin);
-
 	TileSetEditor* editor = nullptr;
 
-	ObjectID edited_tileset;
-
 public:
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 	void open_editor();
-
-	ObjectID get_edited_tileset() const;
 
 	TileSetEditorPlugin();
 	~TileSetEditorPlugin();

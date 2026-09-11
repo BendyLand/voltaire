@@ -33,8 +33,6 @@
 #include "core/io/image.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
-#include "core/variant/typed_array.h"
-#include "core/variant/variant.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
@@ -70,15 +68,8 @@ class RenderingServer
 	int mm_policy = 0;
 	bool render_loop_enabled = true;
 
-	Array _get_array_from_surface(uint64_t p_format, Vector<uint8_t> p_vertex_data,
-		Vector<uint8_t> p_attrib_data, Vector<uint8_t> p_skin_data, int p_vertex_len,
-		Vector<uint8_t> p_index_data, int p_index_len, const AABB& p_aabb,
-		const Vector4& p_uv_scale) const;
-
 	const Vector2 SMALL_VEC2 = Vector2(CMP_EPSILON, CMP_EPSILON);
 	const Vector3 SMALL_VEC3 = Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON);
-
-	virtual Array _global_shader_parameter_get_list() const;
 
 protected:
 	RID _make_test_cube();
@@ -86,12 +77,6 @@ protected:
 	RID test_texture;
 	RID white_texture;
 	RID test_material;
-
-	Error _surface_set_data(Array p_arrays, uint64_t p_format, uint32_t* p_offsets,
-		uint32_t p_vertex_stride, uint32_t p_normal_stride, uint32_t p_attrib_stride,
-		uint32_t p_skin_stride, Vector<uint8_t>& r_vertex_array, Vector<uint8_t>& r_attrib_array,
-		Vector<uint8_t>& r_skin_array, int p_vertex_array_len, Vector<uint8_t>& r_index_array,
-		int p_index_array_len, AABB& r_aabb, Vector<AABB>& r_bone_aabb, Vector4& r_uv_scale);
 
 	static RenderingServer* (*create_func)();
 	static void _bind_methods();
@@ -116,7 +101,6 @@ protected:
 #endif
 
 public:
-	mem_unique_ptr<Object> obj;
 	static RenderingServer* get_singleton();
 	static RenderingServer* create();
 
@@ -144,10 +128,6 @@ public:
 	virtual void texture_external_update(
 		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer = 0) = 0;
 	virtual void texture_proxy_update(RID p_texture, RID p_proxy_to) = 0;
-
-	virtual void texture_drawable_blit_rect(const Array& p_textures, const Rect2i& p_rect,
-		RID p_material, const Color& p_modulate, const Array& p_source_textures,
-		int p_to_mipmap = 0) = 0;
 
 	// These two APIs can be used together or in combination with the others.
 	virtual RID texture_2d_placeholder_create() = 0;
@@ -178,7 +158,6 @@ public:
 		RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata) = 0;
 
 	virtual void texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info) = 0;
-	Array _texture_debug_usage_bind();
 
 	virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) = 0;
 
@@ -196,9 +175,6 @@ public:
 	virtual void shader_set_code(RID p_shader, const String& p_code) = 0;
 	virtual void shader_set_path_hint(RID p_shader, const String& p_path) = 0;
 	virtual String shader_get_code(RID p_shader) const = 0;
-	virtual void get_shader_parameter_list(
-		RID p_shader, List<PropertyInfo>* p_param_list) const = 0;
-	virtual Variant shader_get_parameter_default(RID p_shader, const StringName& p_param) const = 0;
 
 	virtual void shader_set_default_texture_parameter(
 		RID p_shader, const StringName& p_name, RID p_texture, int p_index = 0) = 0;
@@ -216,10 +192,6 @@ public:
 
 	virtual void material_set_shader(RID p_shader_material, RID p_shader) = 0;
 
-	virtual void material_set_param(
-		RID p_material, const StringName& p_param, const Variant& p_value) = 0;
-	virtual Variant material_get_param(RID p_material, const StringName& p_param) const = 0;
-
 	virtual void material_set_render_priority(RID p_material, int priority) = 0;
 
 	virtual void material_set_next_pass(RID p_material, RID p_next_material) = 0;
@@ -236,36 +208,24 @@ public:
 	virtual void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count) = 0;
 
 	virtual uint32_t mesh_surface_get_format_offset(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len, int p_array_index) const;
+		uint32_t p_format, int p_vertex_len, int p_array_index) const;
 	virtual uint32_t mesh_surface_get_format_vertex_stride(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const;
+		uint32_t p_format, int p_vertex_len) const;
 	virtual uint32_t mesh_surface_get_format_normal_tangent_stride(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const;
+		uint32_t p_format, int p_vertex_len) const;
 	virtual uint32_t mesh_surface_get_format_attribute_stride(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const;
+		uint32_t p_format, int p_vertex_len) const;
 	virtual uint32_t mesh_surface_get_format_skin_stride(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const;
+		uint32_t p_format, int p_vertex_len) const;
 	virtual uint32_t mesh_surface_get_format_index_stride(
-		BitField<RSE::ArrayFormat> p_format, int p_vertex_len) const;
+		uint32_t p_format, int p_vertex_len) const;
 
 	/// Returns stride
 	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len,
 		int p_index_len, uint32_t* r_offsets, uint32_t& r_vertex_element_size,
 		uint32_t& r_normal_element_size, uint32_t& r_attrib_element_size,
 		uint32_t& r_skin_element_size) const;
-	virtual Error mesh_create_surface_data_from_arrays(
-		RenderingServerTypes::SurfaceData* r_surface_data, RSE::PrimitiveType p_primitive,
-		const Array& p_arrays, const Array& p_blend_shapes = Array(),
-		const Dictionary& p_lods = Dictionary(), uint64_t p_compress_format = 0);
-	Array mesh_create_arrays_from_surface_data(
-		const RenderingServerTypes::SurfaceData& p_data) const;
-	Array mesh_surface_get_arrays(RID p_mesh, int p_surface) const;
-	Array mesh_surface_get_blend_shape_arrays(RID p_mesh, int p_surface) const;
-	Dictionary mesh_surface_get_lods(RID p_mesh, int p_surface) const;
 
-	virtual void mesh_add_surface_from_arrays(RID p_mesh, RSE::PrimitiveType p_primitive,
-		const Array& p_arrays, const Array& p_blend_shapes = Array(),
-		const Dictionary& p_lods = Dictionary(), BitField<RSE::ArrayFormat> p_compress_format = 0);
 	virtual void mesh_add_surface(
 		RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface) = 0;
 
@@ -623,8 +583,6 @@ public:
 
 	virtual RID visibility_notifier_create() = 0;
 	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) = 0;
-	virtual void visibility_notifier_set_callbacks(
-		RID p_notifier, const Callable& p_enter_callbable, const Callable& p_exit_callable) = 0;
 
 	/* OCCLUDER API */
 
@@ -768,17 +726,12 @@ public:
 
 	virtual RID compositor_effect_create() = 0;
 	virtual void compositor_effect_set_enabled(RID p_effect, bool p_enabled) = 0;
-	virtual void compositor_effect_set_callback(RID p_effect,
-		RSE::CompositorEffectCallbackType p_callback_type, const Callable& p_callback) = 0;
 	virtual void compositor_effect_set_flag(
 		RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set) = 0;
 
 	/* COMPOSITOR API */
 
 	virtual RID compositor_create() = 0;
-
-	virtual void compositor_set_compositor_effects(
-		RID p_compositor, const Array& p_effects) = 0;
 
 	/* ENVIRONMENT API */
 
@@ -910,7 +863,6 @@ public:
 	virtual void instance_set_pivot_data(
 		RID p_instance, float p_sorting_offset, bool p_use_aabb_center) = 0;
 	virtual void instance_set_transform(RID p_instance, const Transform3D& p_transform) = 0;
-	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id) = 0;
 	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) = 0;
 	virtual void instance_set_surface_override_material(
 		RID p_instance, int p_surface, RID p_material) = 0;
@@ -927,19 +879,9 @@ public:
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
-	// Don't use these in a game!
-	virtual Vector<ObjectID> instances_cull_aabb(
-		const AABB& p_aabb, RID p_scenario = RID()) const = 0;
-	virtual Vector<ObjectID> instances_cull_ray(
-		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const = 0;
-	virtual Vector<ObjectID> instances_cull_convex(
-		const Vector<Plane>& p_convex, RID p_scenario = RID()) const = 0;
-
 	PackedInt64Array _instances_cull_aabb_bind(const AABB& p_aabb, RID p_scenario = RID()) const;
 	PackedInt64Array _instances_cull_ray_bind(
 		const Vector3& p_from, const Vector3& p_to, RID p_scenario = RID()) const;
-	PackedInt64Array _instances_cull_convex_bind(
-		const Array& p_convex, RID p_scenario = RID()) const;
 
 	virtual void instance_geometry_set_flag(
 		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled) = 0;
@@ -953,24 +895,6 @@ public:
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_lightmap_slice) = 0;
 	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias) = 0;
 	virtual void instance_geometry_set_transparency(RID p_instance, float p_transparency) = 0;
-
-	virtual void instance_geometry_set_shader_parameter(
-		RID p_instance, const StringName&, const Variant& p_value) = 0;
-	virtual Variant instance_geometry_get_shader_parameter(
-		RID p_instance, const StringName&) const = 0;
-	virtual Variant instance_geometry_get_shader_parameter_default_value(
-		RID p_instance, const StringName&) const = 0;
-	virtual void instance_geometry_get_shader_parameter_list(
-		RID p_instance, List<PropertyInfo>* p_parameters) const = 0;
-
-	/* BAKE API */
-
-	virtual Array bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size) = 0;
-	virtual PackedByteArray bake_render_area_light_atlas(
-		const Array& p_area_light_textures,
-		const Array& p_area_light_atlas_texture_rects, const Size2i& p_size,
-		int p_mipmaps) = 0;
 
 	/* CANVAS API (2D) */
 
@@ -1087,18 +1011,6 @@ public:
 
 	virtual void canvas_item_set_use_parent_material(RID p_item, bool p_enable) = 0;
 
-	virtual void canvas_item_set_instance_shader_parameter(
-		RID p_item, const StringName&, const Variant& p_value) = 0;
-	virtual Variant canvas_item_get_instance_shader_parameter(
-		RID p_item, const StringName&) const = 0;
-	virtual Variant canvas_item_get_instance_shader_parameter_default_value(
-		RID p_item, const StringName&) const = 0;
-	virtual void canvas_item_get_instance_shader_parameter_list(
-		RID p_item, List<PropertyInfo>* p_parameters) const = 0;
-
-	virtual void canvas_item_set_visibility_notifier(RID p_item, bool p_enable, const Rect2& p_area,
-		const Callable& p_enter_callbable, const Callable& p_exit_callable) = 0;
-
 	virtual void canvas_item_set_canvas_group_mode(RID p_item, RSE::CanvasGroupMode p_mode,
 		float p_clear_margin = 5.0, bool p_fit_empty = false, float p_fit_margin = 0.0,
 		bool p_blur_mipmaps = false) = 0;
@@ -1179,16 +1091,9 @@ public:
 
 	/* GLOBAL SHADER PARAMETERS API */
 
-	virtual void global_shader_parameter_add(const StringName& p_name,
-		RSE::GlobalShaderParameterType p_type, const Variant& p_value) = 0;
 	virtual void global_shader_parameter_remove(const StringName& p_name) = 0;
 	virtual Vector<StringName> global_shader_parameter_get_list() const = 0;
 
-	virtual void global_shader_parameter_set(const StringName& p_name, const Variant& p_value) = 0;
-	virtual void global_shader_parameter_set_override(
-		const StringName& p_name, const Variant& p_value) = 0;
-
-	virtual Variant global_shader_parameter_get(const StringName& p_name) const = 0;
 	virtual RSE::GlobalShaderParameterType global_shader_parameter_get_type(
 		const StringName& p_name) const = 0;
 
@@ -1210,8 +1115,6 @@ public:
 	virtual void set_physics_interpolation_enabled(bool p_enabled) = 0;
 
 	/* EVENT QUEUING */
-
-	virtual void request_frame_drawn_callback(const Callable& p_callable) = 0;
 
 	virtual void draw(bool p_swap_buffers = true, double frame_step = 0.0) = 0;
 	virtual void sync() = 0;
@@ -1290,7 +1193,6 @@ public:
 	void set_render_loop_enabled(bool p_enabled);
 
 	virtual bool is_on_render_thread() = 0;
-	virtual void call_on_render_thread(const Callable& p_callable) = 0;
 
 	String get_current_rendering_driver_name() const;
 	String get_current_rendering_method() const;
@@ -1314,138 +1216,7 @@ public:
 		RenderingServerTypes::SurfaceData& p_surface, const String& p_path = "");
 
 #endif
-
-private:
-	// Binder helpers
-	RID _texture_2d_layered_create(
-		const Array& p_layers, RSE::TextureLayeredType p_layered_type);
-	RID _texture_3d_create(Image::Format p_format, int p_width, int p_height, int p_depth,
-		bool p_mipmaps, const Array& p_data);
-	void _texture_3d_update(RID p_texture, const Array& p_data);
-	Array _texture_3d_get(RID p_texture) const;
-	Array _shader_get_shader_parameter_list(RID p_shader) const;
-	RID _mesh_create_from_surfaces(
-		const Array& p_surfaces, int p_blend_shape_count);
-	void _mesh_add_surface(RID p_mesh, const Dictionary& p_surface);
-	Dictionary _mesh_get_surface(RID p_mesh, int p_idx);
-	Array _instance_geometry_get_shader_parameter_list(RID p_instance) const;
-	Array _canvas_item_get_instance_shader_parameter_list(RID p_item) const;
-	Array _bake_render_uv2(
-		RID p_base, const Array& p_material_overrides, const Size2i& p_image_size);
-	void _particles_set_trail_bind_poses(
-		RID p_particles, const Array& p_bind_poses);
-#ifdef TOOLS_ENABLED
-	SurfaceUpgradeCallback surface_upgrade_callback = nullptr;
-	bool warn_on_surface_upgrade = true;
-#endif
 };
-
-// Make variant understand the enums.
-
-VARIANT_ENUM_CAST_EXT(RSE::TextureType, RenderingServer::TextureType);
-VARIANT_ENUM_CAST_EXT(RSE::TextureLayeredType, RenderingServer::TextureLayeredType);
-VARIANT_ENUM_CAST_EXT(RSE::CubeMapLayer, RenderingServer::CubeMapLayer);
-VARIANT_ENUM_CAST_EXT(RSE::TextureDrawableFormat, RenderingServer::TextureDrawableFormat);
-VARIANT_ENUM_CAST_EXT(RSE::PipelineSource, RenderingServer::PipelineSource);
-VARIANT_ENUM_CAST_EXT(RSE::ShaderMode, RenderingServer::ShaderMode);
-VARIANT_ENUM_CAST_EXT(RSE::ArrayType, RenderingServer::ArrayType);
-VARIANT_BITFIELD_CAST_EXT(RSE::ArrayFormat, RenderingServer::ArrayFormat);
-VARIANT_ENUM_CAST_EXT(RSE::ArrayCustomFormat, RenderingServer::ArrayCustomFormat);
-VARIANT_ENUM_CAST_EXT(RSE::PrimitiveType, RenderingServer::PrimitiveType);
-VARIANT_ENUM_CAST_EXT(RSE::BlendShapeMode, RenderingServer::BlendShapeMode);
-VARIANT_ENUM_CAST_EXT(RSE::MultimeshTransformFormat, RenderingServer::MultimeshTransformFormat);
-VARIANT_ENUM_CAST_EXT(RSE::MultimeshPhysicsInterpolationQuality,
-	RenderingServer::MultimeshPhysicsInterpolationQuality);
-VARIANT_ENUM_CAST_EXT(RSE::LightType, RenderingServer::LightType);
-VARIANT_ENUM_CAST_EXT(RSE::LightParam, RenderingServer::LightParam);
-VARIANT_ENUM_CAST_EXT(RSE::LightBakeMode, RenderingServer::LightBakeMode);
-VARIANT_ENUM_CAST_EXT(RSE::LightOmniShadowMode, RenderingServer::LightOmniShadowMode);
-VARIANT_ENUM_CAST_EXT(RSE::LightDirectionalShadowMode, RenderingServer::LightDirectionalShadowMode);
-VARIANT_ENUM_CAST_EXT(RSE::LightDirectionalSkyMode, RenderingServer::LightDirectionalSkyMode);
-VARIANT_ENUM_CAST_EXT(RSE::LightProjectorFilter, RenderingServer::LightProjectorFilter);
-VARIANT_ENUM_CAST_EXT(RSE::ReflectionProbeUpdateMode, RenderingServer::ReflectionProbeUpdateMode);
-VARIANT_ENUM_CAST_EXT(RSE::ReflectionProbeAmbientMode, RenderingServer::ReflectionProbeAmbientMode);
-VARIANT_ENUM_CAST_EXT(RSE::VoxelGIQuality, RenderingServer::VoxelGIQuality);
-VARIANT_ENUM_CAST_EXT(RSE::DecalTexture, RenderingServer::DecalTexture);
-VARIANT_ENUM_CAST_EXT(RSE::DecalFilter, RenderingServer::DecalFilter);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesMode, RenderingServer::ParticlesMode);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesTransformAlign, RenderingServer::ParticlesTransformAlign);
-VARIANT_ENUM_CAST_EXT(
-	RSE::ParticlesTransformAlignCustomSrc, RenderingServer::ParticlesTransformAlignCustomSrc);
-VARIANT_ENUM_CAST_EXT(
-	RSE::ParticlesTransformAlignAxis, RenderingServer::ParticlesTransformAlignAxis);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesDrawOrder, RenderingServer::ParticlesDrawOrder);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesEmitFlags, RenderingServer::ParticlesEmitFlags);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesCollisionType, RenderingServer::ParticlesCollisionType);
-VARIANT_ENUM_CAST_EXT(RSE::ParticlesCollisionHeightfieldResolution,
-	RenderingServer::ParticlesCollisionHeightfieldResolution);
-VARIANT_ENUM_CAST_EXT(RSE::FogVolumeShape, RenderingServer::FogVolumeShape);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportScaling3DMode, RenderingServer::ViewportScaling3DMode);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportUpdateMode, RenderingServer::ViewportUpdateMode);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportClearMode, RenderingServer::ViewportClearMode);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportEnvironmentMode, RenderingServer::ViewportEnvironmentMode);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportMSAA, RenderingServer::ViewportMSAA);
-VARIANT_ENUM_CAST_EXT(
-	RSE::ViewportAnisotropicFiltering, RenderingServer::ViewportAnisotropicFiltering);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportScreenSpaceAA, RenderingServer::ViewportScreenSpaceAA);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportRenderInfo, RenderingServer::ViewportRenderInfo);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportRenderInfoType, RenderingServer::ViewportRenderInfoType);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportDebugDraw, RenderingServer::ViewportDebugDraw);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportOcclusionCullingBuildQuality,
-	RenderingServer::ViewportOcclusionCullingBuildQuality);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportSDFOversize, RenderingServer::ViewportSDFOversize);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportSDFScale, RenderingServer::ViewportSDFScale);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportVRSMode, RenderingServer::ViewportVRSMode);
-VARIANT_ENUM_CAST_EXT(RSE::ViewportVRSUpdateMode, RenderingServer::ViewportVRSUpdateMode);
-VARIANT_ENUM_CAST_EXT(RSE::SkyMode, RenderingServer::SkyMode);
-VARIANT_ENUM_CAST_EXT(
-	RSE::CompositorEffectCallbackType, RenderingServer::CompositorEffectCallbackType);
-VARIANT_ENUM_CAST_EXT(RSE::CompositorEffectFlags, RenderingServer::CompositorEffectFlags);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentBG, RenderingServer::EnvironmentBG);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentAmbientSource, RenderingServer::EnvironmentAmbientSource);
-VARIANT_ENUM_CAST_EXT(
-	RSE::EnvironmentReflectionSource, RenderingServer::EnvironmentReflectionSource);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentGlowBlendMode, RenderingServer::EnvironmentGlowBlendMode);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentFogMode, RenderingServer::EnvironmentFogMode);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentToneMapper, RenderingServer::EnvironmentToneMapper);
-VARIANT_ENUM_CAST_EXT(
-	RSE::EnvironmentSSRRoughnessQuality, RenderingServer::EnvironmentSSRRoughnessQuality);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentSSAOQuality, RenderingServer::EnvironmentSSAOQuality);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentSSILQuality, RenderingServer::EnvironmentSSILQuality);
-VARIANT_ENUM_CAST_EXT(
-	RSE::EnvironmentSDFGIFramesToConverge, RenderingServer::EnvironmentSDFGIFramesToConverge);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentSDFGIRayCount, RenderingServer::EnvironmentSDFGIRayCount);
-VARIANT_ENUM_CAST_EXT(
-	RSE::EnvironmentSDFGIFramesToUpdateLight, RenderingServer::EnvironmentSDFGIFramesToUpdateLight);
-VARIANT_ENUM_CAST_EXT(RSE::EnvironmentSDFGIYScale, RenderingServer::EnvironmentSDFGIYScale);
-VARIANT_ENUM_CAST_EXT(
-	RSE::SubSurfaceScatteringQuality, RenderingServer::SubSurfaceScatteringQuality);
-VARIANT_ENUM_CAST_EXT(RSE::DOFBlurQuality, RenderingServer::DOFBlurQuality);
-VARIANT_ENUM_CAST_EXT(RSE::DOFBokehShape, RenderingServer::DOFBokehShape);
-VARIANT_ENUM_CAST_EXT(RSE::ShadowQuality, RenderingServer::ShadowQuality);
-VARIANT_ENUM_CAST_EXT(RSE::InstanceType, RenderingServer::InstanceType);
-VARIANT_ENUM_CAST_EXT(RSE::InstanceFlags, RenderingServer::InstanceFlags);
-VARIANT_ENUM_CAST_EXT(RSE::ShadowCastingSetting, RenderingServer::ShadowCastingSetting);
-VARIANT_ENUM_CAST_EXT(RSE::VisibilityRangeFadeMode, RenderingServer::VisibilityRangeFadeMode);
-VARIANT_ENUM_CAST_EXT(RSE::NinePatchAxisMode, RenderingServer::NinePatchAxisMode);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasItemTextureFilter, RenderingServer::CanvasItemTextureFilter);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasItemTextureRepeat, RenderingServer::CanvasItemTextureRepeat);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasGroupMode, RenderingServer::CanvasGroupMode);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasLightMode, RenderingServer::CanvasLig
-htMode);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasLightBlendMode, RenderingServer::CanvasLightBlendMode);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasLightShadowFilter, RenderingServer::CanvasLightShadowFilter);
-VARIANT_ENUM_CAST_EXT(
-	RSE::CanvasOccluderPolygonCullMode, RenderingServer::CanvasOccluderPolygonCullMode);
-VARIANT_ENUM_CAST_EXT(RSE::GlobalShaderParameterType, RenderingServer::GlobalShaderParameterType);
-VARIANT_ENUM_CAST_EXT(RSE::RenderingInfo, RenderingServer::RenderingInfo);
-VARIANT_ENUM_CAST_EXT(RSE::SplashStretchMode, RenderingServer::SplashStretchMode);
-VARIANT_ENUM_CAST_EXT(RSE::CanvasTextureChannel, RenderingServer::CanvasTextureChannel);
-VARIANT_ENUM_CAST_EXT(RSE::BakeChannels, RenderingServer::BakeChannels);
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST_EXT(RSE::Features, RenderingServer::Features);
-#endif
 
 // Alias to make it easier to use.
 #define RS RenderingServer

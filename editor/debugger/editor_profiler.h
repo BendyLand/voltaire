@@ -41,11 +41,11 @@
 
 class ImageTexture;
 
-class EditorProfiler : public VBoxContainer {
-	VLTRCLASS(EditorProfiler, VBoxContainer);
-
+class EditorProfiler : public VBoxContainer
+{
 public:
-	struct Metric {
+	struct Metric
+	{
 		bool valid = false;
 
 		int frame_number = 0;
@@ -54,12 +54,14 @@ public:
 		float physics_time = 0;
 		float physics_frame_time = 0;
 
-		struct Category {
+		struct Category
+		{
 			StringName signature;
 			String name;
-			float total_time = 0; //total for category
+			float total_time = 0; // total for category
 
-			struct Item {
+			struct Item
+			{
 				StringName signature;
 				String name;
 				String script;
@@ -75,31 +77,34 @@ public:
 
 		Vector<Category> categories;
 
-		HashMap<StringName, Category *> category_ptrs;
-		HashMap<StringName, Category::Item *> item_ptrs;
+		HashMap<StringName, Category*> category_ptrs;
+		HashMap<StringName, Category::Item*> item_ptrs;
 	};
 
-	enum DisplayMode {
+	enum DisplayMode
+	{
 		DISPLAY_FRAME_TIME,
 		DISPLAY_AVERAGE_TIME,
 		DISPLAY_FRAME_PERCENT,
 		DISPLAY_PHYSICS_FRAME_PERCENT,
 	};
 
-	enum DisplayTime {
+	enum DisplayTime
+	{
 		DISPLAY_TOTAL_TIME,
 		DISPLAY_SELF_TIME,
 	};
 
 private:
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Color seek_line_color;
 		Color seek_line_hover_color;
 	} theme_cache;
 
-	Button *activate = nullptr;
-	Button *clear_button = nullptr;
-	TextureRect *graph = nullptr;
+	Button* activate = nullptr;
+	Button* clear_button = nullptr;
+	TextureRect* graph = nullptr;
 	Ref<ImageTexture> graph_texture;
 	Vector<uint8_t> graph_image;
 
@@ -107,20 +112,21 @@ private:
 	float pan_accumulator = 0.0f;
 	int zoom_center = -1;
 
-	Tree *variables = nullptr;
-	HSplitContainer *h_split = nullptr;
+	Tree* variables = nullptr;
+	HSplitContainer* h_split = nullptr;
 
 	HashSet<StringName> plot_sigs;
 	HashSet<StringName> collapsed_categories;
 
-	OptionButton *display_mode = nullptr;
-	OptionButton *display_time = nullptr;
+	OptionButton* display_mode = nullptr;
+	OptionButton* display_time = nullptr;
 
-	CheckButton *display_internal_profiles = nullptr;
+	CheckButton* display_internal_profiles = nullptr;
 
-	SpinBox *cursor_metric_edit = nullptr;
+	SpinBox* cursor_metric_edit = nullptr;
 
-	Vector<Metric> frame_metrics;
+
+Vector<Metric> frame_metrics;
 	int total_metrics = 0;
 	int last_metric = -1;
 
@@ -132,8 +138,8 @@ private:
 
 	bool seeking = false;
 
-	Timer *frame_delay = nullptr;
-	Timer *plot_delay = nullptr;
+	Timer* frame_delay = nullptr;
+	Timer* plot_delay = nullptr;
 
 	void _update_button_text();
 	void _update_frame();
@@ -144,38 +150,40 @@ private:
 
 	void _internal_profiles_pressed();
 
-	String _get_time_as_text(const Metric &m, float p_time, int p_calls);
+	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
 
-	void _make_metric_ptrs(Metric &m);
+	void _make_metric_ptrs(Metric& m);
 	void _item_edited();
-	void _item_collapsed(TreeItem *p_item);
+	void _item_collapsed(TreeItem* p_item);
 
 	void _update_plot();
 
 	void _graph_tex_mouse_exit();
 
 	void _graph_tex_draw();
-	void _graph_tex_input(const Ref<InputEvent> &p_ev);
+	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
-	Color _get_color_from_signature(const StringName &p_signature) const;
+	Color _get_color_from_signature(const StringName& p_signature) const;
 	int _get_zoom_left_border() const;
 
 	void _cursor_metric_changed(double);
 
 	void _combo_changed(int);
 
-	const Metric &_get_frame_metric(int index) const;
+	const Metric& _get_frame_metric(int index) const;
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void add_frame_metric(const Metric &p_metric, bool p_final = false);
+	void add_frame_metric(const Metric& p_metric, bool p_final = false);
 	void set_enabled(bool p_enable, bool p_clear = true);
 	void set_profiling(bool p_pressed);
 	bool is_profiling();
+
 	bool is_seeking() { return seeking; }
+
 	void disable_seeking();
 
 	void clear();
@@ -184,3 +192,5 @@ public:
 
 	EditorProfiler();
 };
+
+

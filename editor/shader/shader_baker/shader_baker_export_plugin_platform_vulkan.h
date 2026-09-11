@@ -32,10 +32,13 @@
 
 #include "editor/export/shader_baker_export_plugin.h"
 
-class ShaderBakerExportPluginPlatformVulkan : public ShaderBakerExportPluginPlatform {
-	VLTRCLASS(ShaderBakerExportPluginPlatformVulkan, ShaderBakerExportPluginPlatform);
-
+class ShaderBakerExportPluginPlatformVulkan : public ShaderBakerExportPluginPlatform
+{
 public:
-	virtual RenderingShaderContainerFormat *create_shader_container_format(const Ref<EditorExportPlatform> &p_platform, const Ref<EditorExportPreset> &p_preset) override;
-	virtual bool matches_driver(const String &p_driver) override;
+	virtual RenderingShaderContainerFormat* create_shader_container_format(
+		const Ref<EditorExportPlatform>& p_platform,
+		const Ref<EditorExportPreset>& p_preset) override;
+	virtual bool matches_driver(const String& p_driver) override;
 };
+
+

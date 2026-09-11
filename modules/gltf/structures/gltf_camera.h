@@ -38,9 +38,8 @@ class GLTFObjectModelProperty;
 // Reference and test file:
 // https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_015_SimpleCameras.md
 
-class GLTFCamera : public Resource {
-	VLTRCLASS(GLTFCamera, Resource);
-
+class GLTFCamera : public Resource
+{
 private:
 	// glTF has no default camera values, they should always be specified in
 	// the glTF file. Here we default to Godot's default camera settings.
@@ -54,22 +53,30 @@ protected:
 	static void _bind_methods();
 
 public:
-	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty> &r_obj_model_prop);
+	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop);
 
 	bool get_perspective() const { return perspective; }
+
 	void set_perspective(bool p_val) { perspective = p_val; }
+
 	real_t get_fov() const { return fov; }
+
 	void set_fov(real_t p_val) { fov = p_val; }
+
 	real_t get_size_mag() const { return size_mag; }
+
 	void set_size_mag(real_t p_val) { size_mag = p_val; }
+
 	real_t get_depth_far() const { return depth_far; }
+
 	void set_depth_far(real_t p_val) { depth_far = p_val; }
+
 	real_t get_depth_near() const { return depth_near; }
+
 	void set_depth_near(real_t p_val) { depth_near = p_val; }
 
-	static Ref<GLTFCamera> from_node(const Camera3D *p_camera);
-	Camera3D *to_node() const;
-
-	static Ref<GLTFCamera> from_dictionary(const Dictionary &p_dictionary);
-	virtual Dictionary to_dictionary() const;
+	static Ref<GLTFCamera> from_node(const Camera3D* p_camera);
+	Camera3D* to_node() const;
 };
+
+

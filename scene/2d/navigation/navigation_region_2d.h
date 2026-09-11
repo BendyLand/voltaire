@@ -33,9 +33,8 @@
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/navigation_polygon.h"
 
-class NavigationRegion2D : public Node2D {
-	VLTRCLASS(NavigationRegion2D, Node2D);
-
+class NavigationRegion2D : public Node2D
+{
 	bool enabled = true;
 	bool use_edge_connections = true;
 
@@ -69,15 +68,11 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-#endif // DISABLE_DEPRECATED
-
 public:
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 #endif // DEBUG_ENABLED
 	RID get_rid() const;
 
@@ -104,7 +99,7 @@ public:
 	void set_travel_cost(real_t p_travel_cost);
 	real_t get_travel_cost() const;
 
-	void set_navigation_polygon(const Ref<NavigationPolygon> &p_navigation_polygon);
+	void set_navigation_polygon(const Ref<NavigationPolygon>& p_navigation_polygon);
 	Ref<NavigationPolygon> get_navigation_polygon() const;
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -124,3 +119,5 @@ private:
 	void _region_exit_navigation_map();
 	void _region_update_transform();
 };
+
+

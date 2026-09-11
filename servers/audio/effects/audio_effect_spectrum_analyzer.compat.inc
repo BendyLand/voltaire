@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "audio_effect_spectrum_analyzer.h"
-#include "core/object/class_db.h"
 
 void AudioEffectSpectrumAnalyzer::_set_tap_back_pos_bind_compat_114355(float p_seconds)
 {

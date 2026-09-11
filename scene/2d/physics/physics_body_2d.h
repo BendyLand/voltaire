@@ -36,7 +36,6 @@
 class PhysicsBody2D : public CollisionObject2D
 {
 protected:
-	static void _bind_methods();
 	PhysicsBody2D(PS2DE::BodyMode p_mode);
 
 	Ref<KinematicCollision2D> motion_cache;
@@ -54,7 +53,6 @@ public:
 		real_t p_margin = 0.08, bool p_recovery_as_collision = false);
 	Vector2 get_gravity() const;
 
-	Array get_collision_exceptions();
 	void add_collision_exception_with(Node* rp_node);
 	void remove_collision_exception_with(Node* rp_node);
 };

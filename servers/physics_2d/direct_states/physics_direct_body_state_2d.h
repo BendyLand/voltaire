@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/variant/type_info.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 
 class PhysicsDirectBodyState2D
@@ -39,7 +38,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual Vector2
 	get_total_gravity() const = 0; // get gravity vector working on this body space/area
 	virtual real_t get_total_linear_damp() const = 0;  // get density of this body space/area
@@ -98,8 +96,6 @@ public:
 
 	virtual RID get_contact_collider(int p_contact_idx) const = 0;
 	virtual Vector2 get_contact_collider_position(int p_contact_idx) const = 0;
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const = 0;
-	virtual Object* get_contact_collider_object(int p_contact_idx) const;
 	virtual int get_contact_collider_shape(int p_contact_idx) const = 0;
 	virtual Vector2 get_contact_collider_velocity_at_position(int p_contact_idx) const = 0;
 	virtual Vector2 get_contact_impulse(int p_contact_idx) const = 0;

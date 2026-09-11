@@ -32,16 +32,17 @@
 
 #include "core/io/packet_peer.h"
 
-class WebRTCDataChannel : public PacketPeer {
-	VLTRCLASS(WebRTCDataChannel, PacketPeer);
-
+class WebRTCDataChannel : public PacketPeer
+{
 public:
-	enum WriteMode {
+	enum WriteMode
+	{
 		WRITE_MODE_TEXT,
 		WRITE_MODE_BINARY,
 	};
 
-	enum ChannelState {
+	enum ChannelState
+	{
 		STATE_CONNECTING,
 		STATE_OPEN,
 		STATE_CLOSING,
@@ -72,9 +73,8 @@ public:
 	virtual Error poll() = 0;
 	virtual void close() = 0;
 
-	WebRTCDataChannel();
-	~WebRTCDataChannel();
+	WebRTCDataChannel() = default;
+	~WebRTCDataChannel() = default;
 };
 
-VARIANT_ENUM_CAST(WebRTCDataChannel::WriteMode);
-VARIANT_ENUM_CAST(WebRTCDataChannel::ChannelState);
+

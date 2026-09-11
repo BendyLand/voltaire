@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/physics_3d/physics_server_3d.h"
@@ -94,57 +93,11 @@ void Shape3D::set_debug_fill(bool p_fill)
 
 bool Shape3D::get_debug_fill() const { return debug_fill; }
 
-Ref<ArrayMesh> Shape3D::get_debug_mesh()
-{
-	if (debug_mesh_cache.is_valid()) {
-		return debug_mesh_cache;
-	}
-
-	Vector<Vector3> lines = get_debug_mesh_lines();
-
-	debug_mesh_cache.instantiate();
-
-	if (!lines.is_empty()) {
-		Vector<Color> colors;
-		colors.resize(lines.size());
-		colors.fill(debug_color);
-
-		Array lines_array;
-		lines_array.resize(Mesh::ARRAY_MAX);
-		lines_array[Mesh::ARRAY_VERTEX] = lines;
-		lines_array[Mesh::ARRAY_COLOR] = colors;
-
-		debug_mesh_cache->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, lines_array);
-
-		SceneTree* scene_tree = SceneTree::get_singleton();
-		if (scene_tree) {
-			debug_mesh_cache->surface_set_material(0, scene_tree->get_debug_collision_material());
-		}
-
-		if (debug_fill) {
-			Ref<ArrayMesh> array_mesh =
-				get_debug_arraymesh_faces(debug_color * Color(1.0, 1.0, 1.0, 0.0625));
-			if (array_mesh.is_valid() && array_mesh->get_surface_count() > 0) {
-				Array solid_array = array_mesh->surface_get_arrays(0);
-				debug_mesh_cache->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, solid_array);
-				if (scene_tree) {
-					debug_mesh_cache->surface_set_material(
-						1, scene_tree->get_debug_collision_material());
-				}
-			}
-		}
-	}
-
-	return debug_mesh_cache;
-}
-
 void Shape3D::_update_shape()
 {
 	emit_changed();
 	debug_mesh_cache.unref();
 }
-
-void Shape3D::_bind_methods() {}
 
 Shape3D::Shape3D() { ERR_PRINT("Default constructor must not be called!"); }
 

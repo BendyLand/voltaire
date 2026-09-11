@@ -32,11 +32,11 @@
 
 #include "scene/resources/material.h"
 
-class GLTFTextureSampler : public Resource {
-	VLTRCLASS(GLTFTextureSampler, Resource);
-
+class GLTFTextureSampler : public Resource
+{
 public:
-	enum FilterMode {
+	enum FilterMode
+	{
 		NEAREST = 9728,
 		LINEAR = 9729,
 		NEAREST_MIPMAP_NEAREST = 9984,
@@ -45,101 +45,91 @@ public:
 		LINEAR_MIPMAP_LINEAR = 9987
 	};
 
-	enum WrapMode {
+	enum WrapMode
+	{
 		CLAMP_TO_EDGE = 33071,
 		MIRRORED_REPEAT = 33648,
 		REPEAT = 10497,
 		DEFAULT = REPEAT
 	};
 
-	int get_mag_filter() const {
-		return mag_filter;
-	}
+	int get_mag_filter() const { return mag_filter; }
 
-	void set_mag_filter(const int filter_mode) {
-		mag_filter = (FilterMode)filter_mode;
-	}
+	void set_mag_filter(const int filter_mode) { mag_filter = (FilterMode)filter_mode; }
 
-	int get_min_filter() const {
-		return min_filter;
-	}
+	int get_min_filter() const { return min_filter; }
 
-	void set_min_filter(const int filter_mode) {
-		min_filter = (FilterMode)filter_mode;
-	}
+	void set_min_filter(const int filter_mode) { min_filter = (FilterMode)filter_mode; }
 
-	int get_wrap_s() const {
-		return wrap_s;
-	}
+	int get_wrap_s() const { return wrap_s; }
 
-	void set_wrap_s(const int wrap_mode) {
-		wrap_s = (WrapMode)wrap_mode;
-	}
+	void set_wrap_s(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
 
-	int get_wrap_t() const {
-		return wrap_t;
-	}
+	int get_wrap_t() const { return wrap_t; }
 
-	void set_wrap_t(const int wrap_mode) {
-		wrap_s = (WrapMode)wrap_mode;
-	}
+	void set_wrap_t(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
 
-	StandardMaterial3D::TextureFilter get_filter_mode() const {
+	StandardMaterial3D::TextureFilter get_filter_mode() const
+	{
 		using TextureFilter = StandardMaterial3D::TextureFilter;
 
 		switch (min_filter) {
-			case NEAREST:
-				return TextureFilter::TEXTURE_FILTER_NEAREST;
-			case LINEAR:
-				return TextureFilter::TEXTURE_FILTER_LINEAR;
-			case NEAREST_MIPMAP_NEAREST:
-			case NEAREST_MIPMAP_LINEAR:
-				return TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
-			case LINEAR_MIPMAP_NEAREST:
-			case LINEAR_MIPMAP_LINEAR:
-			default:
-				return TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+		case NEAREST:
+			return TextureFilter::TEXTURE_FILTER_NEAREST;
+		case LINEAR:
+			return TextureFilter::TEXTURE_FILTER_LINEAR;
+		case NEAREST_MIPMAP_NEAREST:
+		case NEAREST_MIPMAP_LINEAR:
+			return TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
+		case LINEAR_MIPMAP_NEAREST:
+		case LINEAR_MIPMAP_LINEAR:
+		default:
+			return TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
 		}
 	}
 
-	void set_filter_mode(StandardMaterial3D::TextureFilter mode) {
+	void set_filter_mode(StandardMaterial3D::TextureFilter mode)
+	{
 		using TextureFilter = StandardMaterial3D::TextureFilter;
 
 		switch (mode) {
-			case TextureFilter::TEXTURE_FILTER_NEAREST:
-				min_filter = FilterMode::NEAREST;
-				mag_filter = FilterMode::NEAREST;
-				break;
-			case TextureFilter::TEXTURE_FILTER_LINEAR:
-				min_filter = FilterMode::LINEAR;
-				mag_filter = FilterMode::LINEAR;
-				break;
-			case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
-			case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
-				min_filter = FilterMode::NEAREST_MIPMAP_LINEAR;
-				mag_filter = FilterMode::NEAREST;
-				break;
-			case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
-			case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
-			default:
-				min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
-				mag_filter = FilterMode::LINEAR;
-				break;
+		case TextureFilter::TEXTURE_FILTER_NEAREST:
+			min_filter = FilterMode::NEAREST;
+			mag_filter = FilterMode::NEAREST;
+			break;
+		case TextureFilter::TEXTURE_FILTER_LINEAR:
+			min_filter = FilterMode::LINEAR;
+			mag_filter = FilterMode::LINEAR;
+			break;
+		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
+		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
+			min_filter = FilterMode::NEAREST_MIPMAP_LINEAR;
+			mag_filter = FilterMode::NEAREST;
+			break;
+		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
+		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
+		default:
+			min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
+			mag_filter = FilterMode::LINEAR;
+			break;
 		}
 	}
 
-	bool get_wrap_mode() const {
+	bool get_wrap_mode() const
+	{
 		// BaseMaterial3D presents wrapping as a boolean property. Either the texture is repeated
 		// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
 		// when people import models having other wrapping mode combinations.
 		return (wrap_s == WrapMode::REPEAT) && (wrap_t == WrapMode::REPEAT);
 	}
 
-	void set_wrap_mode(bool mat_repeats) {
+	void set_wrap_mode(bool mat_repeats)
+	{
 		if (mat_repeats) {
 			wrap_s = WrapMode::REPEAT;
 			wrap_t = WrapMode::REPEAT;
-		} else {
+		}
+		else {
 			wrap_s = WrapMode::CLAMP_TO_EDGE;
 			wrap_t = WrapMode::CLAMP_TO_EDGE;
 		}
@@ -155,5 +145,4 @@ private:
 	WrapMode wrap_t = WrapMode::REPEAT;
 };
 
-VARIANT_ENUM_CAST(GLTFTextureSampler::FilterMode);
-VARIANT_ENUM_CAST(GLTFTextureSampler::WrapMode);
+

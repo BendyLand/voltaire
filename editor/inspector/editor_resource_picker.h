@@ -41,9 +41,8 @@ class TextureRect;
 class Tree;
 class TreeItem;
 
-class EditorResourcePicker : public HBoxContainer {
-	VLTRCLASS(EditorResourcePicker, HBoxContainer);
-
+class EditorResourcePicker : public HBoxContainer
+{
 	String base_type;
 	Ref<Resource> edited_resource;
 
@@ -55,19 +54,20 @@ class EditorResourcePicker : public HBoxContainer {
 	mutable HashSet<StringName> allowed_types_without_convert;
 	mutable HashSet<StringName> allowed_types_with_convert;
 
-	Button *assign_button = nullptr;
-	Button *make_unique_button = nullptr;
-	TextureRect *preview_rect = nullptr;
-	Button *edit_button = nullptr;
-	Button *quick_load_button = nullptr;
-	EditorFileDialog *file_dialog = nullptr;
+	Button* assign_button = nullptr;
+	Button* make_unique_button = nullptr;
+	TextureRect* preview_rect = nullptr;
+	Button* edit_button = nullptr;
+	Button* quick_load_button = nullptr;
+	EditorFileDialog* file_dialog = nullptr;
 
-	ConfirmationDialog *duplicate_resources_dialog = nullptr;
-	Tree *duplicate_resources_tree = nullptr;
+	ConfirmationDialog* duplicate_resources_dialog = nullptr;
+	Tree* duplicate_resources_tree = nullptr;
 
 	Size2i assign_button_min_size = Size2i(1, 1);
 
-	enum MenuOption {
+	enum MenuOption
+	{
 		OBJ_MENU_LOAD,
 		OBJ_MENU_QUICKLOAD,
 		OBJ_MENU_INSPECT,
@@ -85,41 +85,32 @@ class EditorResourcePicker : public HBoxContainer {
 		CONVERT_BASE_ID = 1000,
 	};
 
-	Object *resource_owner = nullptr;
 	StringName property_path;
 
-	PopupMenu *edit_menu = nullptr;
-
-	void _update_resource_preview(const String &p_path, const Ref<Texture2D> &p_preview, const Ref<Texture2D> &p_small_preview, ObjectID p_obj);
+	PopupMenu* edit_menu = nullptr;
 
 	void _resource_selected();
 	void _resource_changed();
-	void _file_selected(const String &p_path);
-
-	void _resource_saved(Object *p_resource);
+	void _file_selected(const String& p_path);
 
 	void _update_menu();
 	void _update_menu_items();
 	void _edit_menu_cbk(int p_which);
 
 	void _button_draw();
-	void _button_input(const Ref<InputEvent> &p_event);
+	void _button_input(const Ref<InputEvent>& p_event);
 	void _on_unique_button_pressed();
 
 	String _get_owner_path() const;
-	String _get_resource_type(const Ref<Resource> &p_resource) const;
+	String _get_resource_type(const Ref<Resource>& p_resource) const;
 	void _ensure_allowed_types() const;
-	bool _is_drop_valid(const Dictionary &p_drag_data) const;
-	bool _is_type_valid(const String &p_type_name, const HashSet<StringName> &p_allowed_types) const;
+	bool _is_type_valid(
+		const String& p_type_name, const HashSet<StringName>& p_allowed_types) const;
 	bool _is_custom_type_script() const;
-	Ref<Resource> _get_dropped_resource(const Variant &p_data) const;
-
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
 
 	void _ensure_resource_menu();
-	void _gather_resources_to_duplicate(const Ref<Resource> p_resource, TreeItem *p_item, const String &p_property_name = "") const;
+	void _gather_resources_to_duplicate(
+		const Ref<Resource> p_resource, TreeItem* p_item, const String& p_property_name = "") const;
 	void _duplicate_selected_resources();
 	bool _is_uniqueness_enabled(bool p_check_recursive = false);
 	Ref<Resource> _has_parent_resource();
@@ -127,21 +118,23 @@ class EditorResourcePicker : public HBoxContainer {
 protected:
 	virtual void _update_resource();
 
-	Button *get_assign_button() { return assign_button; }
+	Button* get_assign_button() { return assign_button; }
+
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	void set_assign_button_min_size(const Size2i &p_size);
+	void set_assign_button_min_size(const Size2i& p_size);
 
 public:
-	void set_base_type(const String &p_base_type);
+	void set_base_type(const String& p_base_type);
 	String get_base_type() const;
 	Vector<String> get_allowed_types() const;
 
-	bool is_resource_allowed(const Ref<Resource> &p_resource);
+	bool is_resource_allowed(const Ref<Resource>& p_resource);
 	void set_edited_resource(Ref<Resource> p_resource);
 	void set_edited_resource_no_check(Ref<Resource> p_resource);
 	Ref<Resource> get_edited_resource();
+
 	void set_force_allow_unique(bool p_force) { force_allow_unique = p_force; }
 
 	void set_toggle_mode(bool p_enable);
@@ -149,67 +142,64 @@ public:
 	void set_toggle_pressed(bool p_pressed);
 	bool is_toggle_pressed() const;
 
-	void set_resource_owner(Object *p_object);
-	void set_property_path(const StringName &p_path) { property_path = p_path; }
+	void set_property_path(const StringName& p_path) { property_path = p_path; }
 
 	void set_editable(bool p_editable);
 	bool is_editable() const;
 
-	virtual void set_create_options(Object *p_menu_node);
 	virtual bool handle_menu_selected(int p_which);
 
 	EditorResourcePicker(bool p_hide_assign_button_controls = false);
 };
 
-class EditorScriptPicker : public EditorResourcePicker {
-	VLTRCLASS(EditorScriptPicker, EditorResourcePicker);
-
-	enum ExtraMenuOption {
+class EditorScriptPicker : public EditorResourcePicker
+{
+	enum ExtraMenuOption
+	{
 		OBJ_MENU_NEW_SCRIPT = 50,
 		OBJ_MENU_EXTEND_SCRIPT = 51
 	};
 
-	Node *script_owner = nullptr;
+	Node* script_owner = nullptr;
 
 protected:
 	static void _bind_methods();
 
 public:
-	virtual void set_create_options(Object *p_menu_node) override;
 	virtual bool handle_menu_selected(int p_which) override;
 
-	void set_script_owner(Node *p_owner);
-	Node *get_script_owner() const;
+	void set_script_owner(Node* p_owner);
+	Node* get_script_owner() const;
 };
 
-class EditorShaderPicker : public EditorResourcePicker {
-	VLTRCLASS(EditorShaderPicker, EditorResourcePicker);
-
-	enum ExtraMenuOption {
+class EditorShaderPicker : public EditorResourcePicker
+{
+	enum ExtraMenuOption
+	{
 		OBJ_MENU_NEW_SHADER = 50,
 	};
 
-	ShaderMaterial *edited_material = nullptr;
+	ShaderMaterial* edited_material = nullptr;
 	int preferred_mode = -1;
 
 public:
-	virtual void set_create_options(Object *p_menu_node) override;
 	virtual bool handle_menu_selected(int p_which) override;
 
-	void set_edited_material(ShaderMaterial *p_material);
-	ShaderMaterial *get_edited_material() const;
+	void set_edited_material(ShaderMaterial* p_material);
+	ShaderMaterial* get_edited_material() const;
 	void set_preferred_mode(int p_preferred_mode);
 };
 
-class EditorAudioStreamPicker : public EditorResourcePicker {
-	VLTRCLASS(EditorAudioStreamPicker, EditorResourcePicker);
-
+class EditorAudioStreamPicker : public EditorResourcePicker
+{
 	uint64_t last_preview_version = 0;
-	Control *stream_preview_rect = nullptr;
+	Control* stream_preview_rect = nullptr;
 
-	enum {
+	enum
+	{
 		MAX_TAGGED_FRAMES = 8
 	};
+
 	float tagged_frame_offsets[MAX_TAGGED_FRAMES];
 	uint32_t tagged_frame_offset_count = 0;
 
@@ -222,3 +212,5 @@ protected:
 public:
 	EditorAudioStreamPicker();
 };
+
+

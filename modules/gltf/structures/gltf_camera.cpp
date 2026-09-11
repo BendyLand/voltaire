@@ -28,12 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "gltf_camera.h"
 #include "gltf_object_model_property.h"
 #include "scene/3d/camera_3d.h"
-
-void GLTFCamera::_bind_methods() {}
 
 void GLTFCamera::set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop)
 {
@@ -74,71 +71,12 @@ Camera3D* GLTFCamera::to_node() const
 	Camera3D* camera = memnew(Camera3D);
 	camera->set_projection(
 		perspective ? Camera3D::PROJECTION_PERSPECTIVE : Camera3D::PROJECTION_ORTHOGONAL);
-	// glTF spec (yfov) is in radians, Godot's camera (fov) is in degrees.
-	camera->set_fov(Math::rad_to_deg(fov));
 	// glTF spec (xmag and ymag) is a radius in meters, Godot's camera (size) is a diameter in
 	// meters.
 	camera->set_size(size_mag * 2.0f);
 	camera->set_near(depth_near);
 	camera->set_far(depth_far);
 	return camera;
-}
-
-Ref<GLTFCamera> GLTFCamera::from_dictionary(const Dictionary& p_dictionary)
-{
-	ERR_FAIL_COND_V_MSG(!p_dictionary.has("type"), Ref<GLTFCamera>(),
-		"Failed to parse glTF camera, missing required field 'type'.");
-	Ref<GLTFCamera> camera;
-	camera.instantiate();
-	const String& type = p_dictionary["type"];
-	if (type == "perspective") {
-		camera->set_perspective(true);
-		if (p_dictionary.has("perspective")) {
-			const Dictionary& persp = p_dictionary["perspective"];
-			camera->set_fov(persp["yfov"]);
-			if (persp.has("zfar")) {
-				camera->set_depth_far(persp["zfar"]);
-			}
-			camera->set_depth_near(persp["znear"]);
-		}
-	}
-	else if (type == "orthographic") {
-		camera->set_perspective(false);
-		if (p_dictionary.has("orthographic")) {
-			const Dictionary& ortho = p_dictionary["orthographic"];
-			camera->set_size_mag(ortho["ymag"]);
-			camera->set_depth_far(ortho["zfar"]);
-			camera->set_depth_near(ortho["znear"]);
-		}
-	}
-	else {
-		ERR_PRINT("Error parsing glTF camera: Camera type '" + type +
-				  "' is unknown, should be perspective or orthographic.");
-	}
-	return camera;
-}
-
-Dictionary GLTFCamera::to_dictionary() const
-{
-	Dictionary d;
-	if (perspective) {
-		Dictionary persp;
-		persp["yfov"] = fov;
-		persp["zfar"] = depth_far;
-		persp["znear"] = depth_near;
-		d["perspective"] = persp;
-		d["type"] = "perspective";
-	}
-	else {
-		Dictionary ortho;
-		ortho["ymag"] = size_mag;
-		ortho["xmag"] = size_mag;
-		ortho["zfar"] = depth_far;
-		ortho["znear"] = depth_near;
-		d["orthographic"] = ortho;
-		d["type"] = "orthographic";
-	}
-	return d;
 }
 
 

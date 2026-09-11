@@ -30,16 +30,15 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "editor/doc/editor_help.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 
-class EditorBuildProfile : public RefCounted {
-	VLTRCLASS(EditorBuildProfile, RefCounted);
-
+class EditorBuildProfile : public RefCounted
+{
 public:
-	enum BuildOption {
+	enum BuildOption
+	{
 		BUILD_OPTION_3D,
 		BUILD_OPTION_NAVIGATION_2D,
 		BUILD_OPTION_NAVIGATION_3D,
@@ -72,7 +71,8 @@ public:
 		BUILD_OPTION_MAX,
 	};
 
-	enum BuildOptionCategory {
+	enum BuildOptionCategory
+	{
 		BUILD_OPTION_CATEGORY_GENERAL,
 		BUILD_OPTION_CATEGORY_GRAPHICS,
 		BUILD_OPTION_CATEGORY_PHYSICS,
@@ -88,39 +88,41 @@ private:
 	String force_detect_classes;
 
 	bool build_options_disabled[BUILD_OPTION_MAX] = {};
-	static const char *build_option_identifiers[BUILD_OPTION_MAX];
+	static const char* build_option_identifiers[BUILD_OPTION_MAX];
 	static const bool build_option_disabled_by_default[BUILD_OPTION_MAX];
 	static const bool build_option_disable_values[BUILD_OPTION_MAX];
 	static const bool build_option_explicit_use[BUILD_OPTION_MAX];
 	static const BuildOptionCategory build_option_category[BUILD_OPTION_MAX];
 	static const HashMap<BuildOption, LocalVector<BuildOption>> build_option_dependencies;
-	static HashMap<BuildOption, HashMap<String, LocalVector<Variant>>> build_option_settings;
 	static const HashMap<BuildOption, LocalVector<String>> build_option_classes;
 
-	String _get_build_option_name(BuildOption p_build_option) { return get_build_option_name(p_build_option); }
+	String _get_build_option_name(BuildOption p_build_option)
+	{
+		return get_build_option_name(p_build_option);
+	}
 
 protected:
 	static void _bind_methods();
 
 public:
-	void set_disable_class(const StringName &p_class, bool p_disabled);
-	bool is_class_disabled(const StringName &p_class) const;
+	void set_disable_class(const StringName& p_class, bool p_disabled);
+	bool is_class_disabled(const StringName& p_class) const;
 
-	void set_item_collapsed(const StringName &p_class, bool p_collapsed);
-	bool is_item_collapsed(const StringName &p_class) const;
+	void set_item_collapsed(const StringName& p_class, bool p_collapsed);
+	bool is_item_collapsed(const StringName& p_class) const;
 
 	void set_disable_build_option(BuildOption p_build_option, bool p_disable);
 	bool is_build_option_disabled(BuildOption p_build_option) const;
 
 	void reset_build_options();
 
-	void set_force_detect_classes(const String &p_classes);
+	void set_force_detect_classes(const String& p_classes);
 	String get_force_detect_classes() const;
 
 	void clear_disabled_classes();
 
-	Error save_to_file(const String &p_path);
-	Error load_from_file(const String &p_path);
+	Error save_to_file(const String& p_path);
+	Error load_from_file(const String& p_path);
 
 	static String get_build_option_name(BuildOption p_build_option);
 	static String get_build_option_description(BuildOption p_build_option);
@@ -129,7 +131,6 @@ public:
 	static bool get_build_option_explicit_use(BuildOption p_build_option);
 	static BuildOptionCategory get_build_option_category(BuildOption p_build_option);
 	static LocalVector<BuildOption> get_build_option_dependencies(BuildOption p_build_option);
-	static HashMap<String, LocalVector<Variant>> get_build_option_settings(BuildOption p_build_option);
 	static LocalVector<String> get_build_option_classes(BuildOption p_build_option);
 
 	static String get_build_option_category_name(BuildOptionCategory p_build_option_category);
@@ -137,16 +138,13 @@ public:
 	EditorBuildProfile();
 };
 
-VARIANT_ENUM_CAST(EditorBuildProfile::BuildOption)
-VARIANT_ENUM_CAST(EditorBuildProfile::BuildOptionCategory)
-
 class EditorFileDialog;
 class EditorFileSystemDirectory;
 
-class EditorBuildProfileManager : public AcceptDialog {
-	VLTRCLASS(EditorBuildProfileManager, AcceptDialog);
-
-	enum Action {
+class EditorBuildProfileManager : public AcceptDialog
+{
+	enum Action
+	{
 		ACTION_NEW,
 		ACTION_RESET,
 		ACTION_LOAD,
@@ -159,53 +157,54 @@ class EditorBuildProfileManager : public AcceptDialog {
 
 	Action last_action = ACTION_NEW;
 
-	ConfirmationDialog *confirm_dialog = nullptr;
-	Button *profile_actions[ACTION_MAX];
+	ConfirmationDialog* confirm_dialog = nullptr;
+	Button* profile_actions[ACTION_MAX];
 
-	Tree *class_list = nullptr;
-	EditorHelpBit *description_bit = nullptr;
+	Tree* class_list = nullptr;
+	EditorHelpBit* description_bit = nullptr;
 
-	EditorFileDialog *import_profile = nullptr;
-	EditorFileDialog *export_profile = nullptr;
+	EditorFileDialog* import_profile = nullptr;
+	EditorFileDialog* export_profile = nullptr;
 
-	LineEdit *profile_path = nullptr;
+	LineEdit* profile_path = nullptr;
 
-	LineEdit *force_detect_classes = nullptr;
+	LineEdit* force_detect_classes = nullptr;
 
 	void _profile_action(int p_action);
 	void _action_confirm();
 	void _hide_requested();
 
 	void _update_edited_profile();
-	void _fill_classes_from(TreeItem *p_parent, const String &p_class, const String &p_selected);
+	void _fill_classes_from(TreeItem* p_parent, const String& p_class, const String& p_selected);
 
 	Ref<EditorBuildProfile> edited;
 
-	void _import_profile(const String &p_path);
-	void _export_profile(const String &p_path);
+	void _import_profile(const String& p_path);
+	void _export_profile(const String& p_path);
 
 	bool updating_build_options = false;
 
 	void _class_list_item_selected();
 	void _class_list_item_edited();
-	void _class_list_item_collapsed(Object *p_item);
 
 	bool project_scan_canceled = false;
 
 	void _detect_from_project();
 
-	void _force_detect_classes_changed(const String &p_text);
+	void _force_detect_classes_changed(const String& p_text);
 
-	struct DetectedFile {
+	struct DetectedFile
+	{
 		uint32_t timestamp = 0;
 		String md5;
 		Vector<String> classes;
 		Vector<String> build_deps;
 	};
 
-	void _find_files(EditorFileSystemDirectory *p_dir, const HashMap<String, DetectedFile> &p_cache, HashMap<String, DetectedFile> &r_detected);
+	void _find_files(EditorFileSystemDirectory* p_dir, const HashMap<String, DetectedFile>& p_cache,
+		HashMap<String, DetectedFile>& r_detected);
 
-	static EditorBuildProfileManager *singleton;
+	static EditorBuildProfileManager* singleton;
 
 protected:
 	static void _bind_methods();
@@ -214,6 +213,9 @@ protected:
 public:
 	Ref<EditorBuildProfile> get_current_profile();
 
-	static EditorBuildProfileManager *get_singleton() { return singleton; }
+	static EditorBuildProfileManager* get_singleton() { return singleton; }
+
 	EditorBuildProfileManager();
 };
+
+

@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "shader.h"
 
 void Shader::_set_default_texture_parameter_bind_compat_95126(

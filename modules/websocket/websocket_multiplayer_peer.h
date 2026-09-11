@@ -30,20 +30,19 @@
 
 #pragma once
 
-#include "websocket_peer.h"
-
 #include "core/io/tcp_server.h"
 #include "core/templates/list.h"
 #include "scene/main/multiplayer_peer.h"
+#include "websocket_peer.h"
 
-class WebSocketMultiplayerPeer : public MultiplayerPeer {
-	VLTRCLASS(WebSocketMultiplayerPeer, MultiplayerPeer);
-
+class WebSocketMultiplayerPeer : public MultiplayerPeer
+{
 private:
 	Ref<WebSocketPeer> _create_peer();
 
 protected:
-	enum {
+	enum
+	{
 		SYS_NONE = 0,
 		SYS_ADD = 1,
 		SYS_DEL = 2,
@@ -52,13 +51,15 @@ protected:
 		PROTO_SIZE = 9
 	};
 
-	struct Packet {
+	struct Packet
+	{
 		int source = 0;
-		uint8_t *data = nullptr;
+		uint8_t* data = nullptr;
 		uint32_t size = 0;
 	};
 
-	struct PendingPeer {
+	struct PendingPeer
+	{
 		uint64_t time = 0;
 		Ref<StreamPeerTCP> tcp;
 		Ref<StreamPeer> connection;
@@ -90,9 +91,13 @@ public:
 	/* MultiplayerPeer */
 	virtual void set_target_peer(int p_target_peer) override;
 	virtual int get_packet_peer() const override;
+
 	virtual int get_packet_channel() const override { return 0; }
+
 	virtual TransferMode get_packet_mode() const override { return TRANSFER_MODE_RELIABLE; }
+
 	virtual int get_unique_id() const override;
+
 	virtual bool is_server_relay_supported() const override { return true; }
 
 	virtual int get_max_packet_size() const override;
@@ -105,19 +110,19 @@ public:
 
 	/* PacketPeer */
 	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 
 	/* WebSocketPeer */
 	virtual Ref<WebSocketPeer> get_peer(int p_peer_id) const;
 
-	Error create_client(const String &p_url, const Ref<TLSOptions> &p_options);
-	Error create_server(int p_port, IPAddress p_bind_ip, const Ref<TLSOptions> &p_options);
+	Error create_client(const String& p_url, const Ref<TLSOptions>& p_options);
+	Error create_server(int p_port, IPAddress p_bind_ip, const Ref<TLSOptions>& p_options);
 
-	void set_supported_protocols(const Vector<String> &p_protocols);
+	void set_supported_protocols(const Vector<String>& p_protocols);
 	Vector<String> get_supported_protocols() const;
 
-	void set_handshake_headers(const Vector<String> &p_headers);
+	void set_handshake_headers(const Vector<String>& p_headers);
 	Vector<String> get_handshake_headers() const;
 
 	void set_outbound_buffer_size(int p_buffer_size);
@@ -138,3 +143,5 @@ public:
 	WebSocketMultiplayerPeer();
 	~WebSocketMultiplayerPeer();
 };
+
+

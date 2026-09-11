@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/object.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
@@ -60,7 +59,8 @@ class TileSetSource;
 class TileSetAtlasSource;
 class TileData;
 
-union TileMapCell {
+union TileMapCell
+{
 	struct
 	{
 		int16_t source_id;
@@ -124,20 +124,11 @@ union TileMapCell {
 
 class TileMapPattern : public Resource
 {
-	VLTRCLASS(TileMapPattern, Resource);
-
 	Size2i size;
 	HashMap<Vector2i, TileMapCell> pattern;
 
 	void _set_tile_data(const Vector<int>& p_data);
 	Vector<int> _get_tile_data() const;
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
-	static void _bind_methods();
 
 public:
 	void set_cell(const Vector2i& p_coords, int p_source_id, const Vector2i p_atlas_coords,
@@ -161,8 +152,6 @@ public:
 
 class TileSet : public Resource
 {
-	VLTRCLASS(TileSet, Resource);
-
 #ifndef DISABLE_DEPRECATED
 private:
 	struct CompatibilityShapeData
@@ -219,15 +208,9 @@ private:
 
 	HashMap<int, CompatibilityTileData*> compatibility_data;
 	HashMap<int, int> compatibility_tilemap_mapping_tile_modes;
-	HashMap<int, RBMap<Array, Array>> compatibility_tilemap_mapping;
 	HashMap<Vector2i, int> compatibility_size_count;
 
 	void _compatibility_conversion();
-
-public:
-	// Format of output array [source_id, atlas_coords, alternative]
-	Array compatibility_tilemap_map(
-		int p_tile_id, Vector2i p_coords, bool p_flip_h, bool p_flip_v, bool p_transpose);
 #endif // DISABLE_DEPRECATED
 
 public:
@@ -320,26 +303,10 @@ public:
 		void set_terrain_peering_bit(TileSet::CellNeighbor p_peering_bit, int p_terrain);
 		int get_terrain_peering_bit(TileSet::CellNeighbor p_peering_bit) const;
 
-		void from_array(Array p_terrains);
-		Array as_array() const;
-
 		TerrainsPattern(const TileSet* p_tile_set, int p_terrain_set);
 
 		TerrainsPattern() {}
 	};
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_property(PropertyInfo& p_property) const;
-
-#ifdef TOOLS_ENABLED
-	virtual uint32_t hash_edited_version_for_preview() const override
-	{
-		return 0;
-	} // Not using preview, so disable it for performance.
-#endif
 
 private:
 	// --- TileSet data ---
@@ -409,14 +376,6 @@ private:
 
 	Vector<NavigationLayer> navigation_layers;
 
-	// CustomData
-	struct CustomDataLayer
-	{
-		String name;
-		Variant::Type type = Variant::NIL;
-	};
-
-	Vector<CustomDataLayer> custom_data_layers;
 	HashMap<String, int> custom_data_layers_by_name;
 
 	// Per Atlas source data.
@@ -432,8 +391,6 @@ private:
 
 	// Tile proxies
 	RBMap<int, int> source_level_proxies;
-	RBMap<Array, Array> coords_level_proxies;
-	RBMap<Array, Array> alternative_level_proxies;
 
 	// Helpers
 	Vector<Point2> _get_square_terrain_polygon(Vector2i p_size);
@@ -561,8 +518,6 @@ public:
 	void set_custom_data_layer_name(int p_layer_id, String p_value);
 	bool has_custom_data_layer_by_name(const String& p_value) const;
 	String get_custom_data_layer_name(int p_layer_id) const;
-	void set_custom_data_layer_type(int p_layer_id, Variant::Type p_value);
-	Variant::Type get_custom_data_layer_type(int p_layer_id) const;
 
 	// Tiles proxies.
 	void set_source_level_tile_proxy(int p_source_from, int p_source_to);
@@ -572,24 +527,15 @@ public:
 
 	void set_coords_level_tile_proxy(
 		int p_source_from, Vector2i p_coords_from, int p_source_to, Vector2i p_coords_to);
-	Array get_coords_level_tile_proxy(int p_source_from, Vector2i p_coords_from);
 	bool has_coords_level_tile_proxy(int p_source_from, Vector2i p_coords_from);
 	void remove_coords_level_tile_proxy(int p_source_from, Vector2i p_coords_from);
 
 	void set_alternative_level_tile_proxy(int p_source_from, Vector2i p_coords_from,
 		int p_alternative_from, int p_source_to, Vector2i p_coords_to, int p_alternative_to);
-	Array get_alternative_level_tile_proxy(
-		int p_source_from, Vector2i p_coords_from, int p_alternative_from);
 	bool has_alternative_level_tile_proxy(
 		int p_source_from, Vector2i p_coords_from, int p_alternative_from);
 	void remove_alternative_level_tile_proxy(
 		int p_source_from, Vector2i p_coords_from, int p_alternative_from);
-
-	Array get_source_level_tile_proxies() const;
-	Array get_coords_level_tile_proxies() const;
-	Array get_alternative_level_tile_proxies() const;
-
-	Array map_tile_proxy(int p_source_from, Vector2i p_coords_from, int p_alternative_from) const;
 
 	void cleanup_invalid_tile_proxies();
 	void clear_tile_proxies();
@@ -644,8 +590,6 @@ public:
 
 class TileSetSource : public Resource
 {
-	VLTRCLASS(TileSetSource, Resource);
-
 protected:
 	const TileSet* tile_set = nullptr;
 
@@ -713,8 +657,6 @@ public:
 
 class TileSetAtlasSource : public TileSetSource
 {
-	VLTRCLASS(TileSetAtlasSource, TileSetSource);
-
 public:
 	enum TileAnimationMode
 	{
@@ -781,10 +723,6 @@ private:
 	void _try_emit_changed();
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 	void _notification(int p_notification);
 	static void _bind_methods();
 
@@ -906,8 +844,6 @@ public:
 
 class TileSetScenesCollectionSource : public TileSetSource
 {
-	VLTRCLASS(TileSetScenesCollectionSource, TileSetSource);
-
 private:
 	struct SceneData
 	{
@@ -925,10 +861,6 @@ private:
 	void _try_emit_changed();
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 	void _notification(int p_notification);
 	static void _bind_methods();
 
@@ -1031,15 +963,6 @@ private:
 	// Misc
 	double probability = 1.0;
 
-	// Custom data
-	Vector<Variant> custom_data;
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	static void _bind_methods();
-
 #ifndef DISABLE_DEPRECATED
 #ifndef NAVIGATION_2D_DISABLED
 	Ref<NavigationPolygon> _get_navigation_polygon_bind_compat_84660(int p_layer_id) const;
@@ -1050,7 +973,6 @@ protected:
 #endif
 
 public:
-	mem_unique_ptr<Object> obj;
 	// Not exposed.
 	void set_tile_set(const TileSet* p_tile_set);
 	void notify_tile_data_properties_should_change();
@@ -1161,23 +1083,11 @@ public:
 	float get_probability() const;
 
 	// Custom data.
-	void set_custom_data(String p_layer_name, Variant p_value);
-	Variant get_custom_data(String p_layer_name) const;
 	bool has_custom_data(const String& p_layer_name) const;
-	void set_custom_data_by_layer_id(int p_layer_id, Variant p_value);
-	Variant get_custom_data_by_layer_id(int p_layer_id) const;
 
 	// Polygons.
 	static PackedVector2Array get_transformed_vertices(const PackedVector2Array& p_vertices,
 		bool p_flip_h, bool p_flip_v, bool p_transpose, bool p_preserve_winding_order = false);
 };
-
-VARIANT_ENUM_CAST(TileSet::CellNeighbor);
-VARIANT_ENUM_CAST(TileSet::TerrainMode);
-VARIANT_ENUM_CAST(TileSet::TileShape);
-VARIANT_ENUM_CAST(TileSet::TileLayout);
-VARIANT_ENUM_CAST(TileSet::TileOffsetAxis);
-
-VARIANT_ENUM_CAST(TileSetAtlasSource::TileAnimationMode);
 
 

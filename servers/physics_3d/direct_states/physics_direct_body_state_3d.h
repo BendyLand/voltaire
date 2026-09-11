@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
 #include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
 
 class PhysicsDirectBodyState3D
@@ -40,7 +39,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual Vector3 get_total_gravity() const = 0;
 	virtual real_t get_total_angular_damp() const = 0;
 	virtual real_t get_total_linear_damp() const = 0;
@@ -101,8 +99,6 @@ public:
 
 	virtual RID get_contact_collider(int p_contact_idx) const = 0;
 	virtual Vector3 get_contact_collider_position(int p_contact_idx) const = 0;
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const = 0;
-	virtual Object* get_contact_collider_object(int p_contact_idx) const;
 	virtual int get_contact_collider_shape(int p_contact_idx) const = 0;
 	virtual Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const = 0;
 

@@ -40,24 +40,22 @@ class Skeleton2D;
 class SkeletonModification2D;
 class Bone2D;
 
-class SkeletonModificationStack2D : public Resource {
-	VLTRCLASS(SkeletonModificationStack2D, Resource);
+class SkeletonModificationStack2D : public Resource
+{
 	friend class Skeleton2D;
 	friend class SkeletonModification2D;
 
 protected:
 	static void _bind_methods();
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
 
 public:
-	Skeleton2D *skeleton = nullptr;
+	Skeleton2D* skeleton = nullptr;
 	bool is_setup = false;
 	bool enabled = false;
 	float strength = 1.0;
 
-	enum EXECUTION_MODE {
+	enum EXECUTION_MODE
+	{
 		execution_mode_process,
 		execution_mode_physics_process
 	};
@@ -80,8 +78,8 @@ public:
 	void set_modification_count(int p_count);
 	int get_modification_count() const;
 
-	void set_skeleton(Skeleton2D *p_skeleton);
-	Skeleton2D *get_skeleton() const;
+	void set_skeleton(Skeleton2D* p_skeleton);
+	Skeleton2D* get_skeleton() const;
 
 	bool get_is_setup() const;
 
@@ -93,3 +91,5 @@ public:
 
 	SkeletonModificationStack2D();
 };
+
+

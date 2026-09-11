@@ -70,7 +70,6 @@ protected:
 	float get_h_on_circle_edge(const Vector2& p_color_change_vector);
 
 public:
-	mem_unique_ptr<Object> obj;
 	Vector<Control*> controls;
 	bool is_initialized = false;
 	bool cursor_editing = false;

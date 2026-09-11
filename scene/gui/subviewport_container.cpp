@@ -29,28 +29,8 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "scene/main/viewport.h"
 #include "subviewport_container.h"
-
-Size2 SubViewportContainer::get_minimum_size() const
-{
-	if (stretch) {
-		return Size2();
-	}
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-		if (!c) {
-			continue;
-		}
-
-		Size2 minsize = c->get_size();
-		ms = ms.max(minsize);
-	}
-
-	return ms;
-}
 
 void SubViewportContainer::set_stretch(bool p_enable)
 {
@@ -80,23 +60,6 @@ void SubViewportContainer::set_stretch_shrink(int p_shrink)
 	queue_redraw();
 }
 
-void SubViewportContainer::recalc_force_viewport_sizes()
-{
-	if (!stretch) {
-		return;
-	}
-
-	// If stretch is enabled, make sure that all child SubViwewports have the correct size.
-	for (int i = 0; i < get_child_count(); i++) {
-		SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-		if (!c) {
-			continue;
-		}
-
-		c->set_size_force(get_size() / shrink);
-	}
-}
-
 int SubViewportContainer::get_stretch_shrink() const { return shrink; }
 
 Vector<int> SubViewportContainer::get_allowed_size_flags_horizontal() const
@@ -105,74 +68,6 @@ Vector<int> SubViewportContainer::get_allowed_size_flags_horizontal() const
 }
 
 Vector<int> SubViewportContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
-
-void SubViewportContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_RESIZED: {
-		recalc_force_viewport_sizes();
-	} break;
-
-	case NOTIFICATION_ENTER_TREE:
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		for (int i = 0; i < get_child_count(); i++) {
-			SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-			if (!c) {
-				continue;
-			}
-
-			if (is_visible_in_tree()) {
-				c->set_update_mode(SubViewport::UPDATE_ALWAYS);
-			}
-			else {
-				c->set_update_mode(SubViewport::UPDATE_DISABLED);
-			}
-
-			c->set_handle_input_locally(false); // do not handle input locally here
-		}
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		for (int i = 0; i < get_child_count(); i++) {
-			SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-			if (!c) {
-				continue;
-			}
-
-			if (stretch) {
-				draw_texture_rect(c->get_texture().ptr(), Rect2(Vector2(), get_size()));
-			}
-			else {
-				draw_texture_rect(c->get_texture().ptr(), Rect2(Vector2(), c->get_size()));
-			}
-		}
-	} break;
-
-	case NOTIFICATION_FOCUS_ENTER: {
-		// If focused, send InputEvent to the SubViewport before the Gui-Input stage.
-		set_process_input(true);
-		set_process_unhandled_input(false);
-	} break;
-
-	case NOTIFICATION_FOCUS_EXIT: {
-		// A different Control has focus and should receive Gui-Input before the InputEvent is sent
-		// to the SubViewport.
-		set_process_input(false);
-		set_process_unhandled_input(true);
-	} break;
-	}
-}
-
-void SubViewportContainer::_notify_viewports(int p_notification)
-{
-	for (int i = 0; i < get_child_count(); i++) {
-		SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-		if (!c) {
-			continue;
-		}
-		c->obj->notification(p_notification);
-	}
-}
 
 void SubViewportContainer::input(const Ref<InputEvent>& p_event)
 {
@@ -221,76 +116,9 @@ void SubViewportContainer::gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_event)
-{
-	for (int i = 0; i < get_child_count(); i++) {
-		SubViewport* c = Object::cast_to<SubViewport>(get_child(i));
-		if (!c || c->is_input_disabled()) {
-			continue;
-		}
-
-		c->push_input(p_event.ptr());
-	}
-}
-
-bool SubViewportContainer::_is_propagated_in_gui_input(const Ref<InputEvent>& p_event)
-{
-	// Propagation of events with a position property happen in gui_input
-	// Propagation of other events happen in input
-	if (Object::cast_to<InputEventMouse>(*p_event) ||
-		Object::cast_to<InputEventScreenDrag>(*p_event) ||
-		Object::cast_to<InputEventScreenTouch>(*p_event) ||
-		Object::cast_to<InputEventGesture>(*p_event)) {
-		return true;
-	}
-	return false;
-}
-
 void SubViewportContainer::set_mouse_target(bool p_enable) { mouse_target = p_enable; }
 
 bool SubViewportContainer::is_mouse_target_enabled() { return mouse_target; }
-
-void SubViewportContainer::add_child_notify(Node* p_child)
-{
-	if (Object::cast_to<SubViewport>(p_child)) {
-		queue_redraw();
-	}
-}
-
-void SubViewportContainer::remove_child_notify(Node* p_child)
-{
-	if (Object::cast_to<SubViewport>(p_child)) {
-		queue_redraw();
-	}
-}
-
-PackedStringArray SubViewportContainer::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Container::get_configuration_warnings();
-
-	bool has_viewport = false;
-	for (int i = 0; i < get_child_count(); i++) {
-		if (Object::cast_to<SubViewport>(get_child(i))) {
-			has_viewport = true;
-			break;
-		}
-	}
-	if (!has_viewport) {
-		warnings.push_back(RTR("This node doesn't have a SubViewport as child, so it can't display "
-							   "its intended content.\nConsider adding a SubViewport as a child to "
-							   "provide something displayable."));
-	}
-
-	if (get_default_cursor_shape() != Control::CURSOR_ARROW) {
-		warnings.push_back(
-			RTR("The default mouse cursor shape of SubViewportContainer has no effect.\nConsider "
-				"leaving it at its initial value `CURSOR_ARROW`."));
-	}
-
-	return warnings;
-}
-
-void SubViewportContainer::_bind_methods() {}
 
 SubViewportContainer::SubViewportContainer()
 {

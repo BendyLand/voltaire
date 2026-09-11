@@ -30,40 +30,9 @@
 
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "navigation_link_2d.h"
 #include "scene/resources/world_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-
-void NavigationLink2D::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool NavigationLink2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "start_location") {
-		set_start_position(p_value);
-		return true;
-	}
-	if (p_name == "end_location") {
-		set_end_position(p_value);
-		return true;
-	}
-	return false;
-}
-
-bool NavigationLink2D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "start_location") {
-		r_ret = get_start_position();
-		return true;
-	}
-	if (p_name == "end_location") {
-		r_ret = get_end_position();
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 void NavigationLink2D::_notification(int p_what)
 {
@@ -424,7 +393,6 @@ NavigationLink2D::NavigationLink2D()
 {
 	link = NavigationServer2D::get_singleton()->link_create();
 
-	NavigationServer2D::get_singleton()->link_set_owner_id(link, this->obj->get_instance_id());
 	NavigationServer2D::get_singleton()->link_set_enter_cost(link, enter_cost);
 	NavigationServer2D::get_singleton()->link_set_travel_cost(link, travel_cost);
 	NavigationServer2D::get_singleton()->link_set_navigation_layers(link, navigation_layers);

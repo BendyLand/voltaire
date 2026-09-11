@@ -30,9 +30,6 @@
 
 #include "audio_stream_synchronized.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
-
-AudioStreamSynchronized::AudioStreamSynchronized() {}
 
 Ref<AudioStreamPlayback> AudioStreamSynchronized::instantiate_playback()
 {
@@ -142,28 +139,9 @@ void AudioStreamSynchronized::set_stream_count(int p_count)
 	AudioServer::get_singleton()->lock();
 	stream_count = p_count;
 	AudioServer::get_singleton()->unlock();
-	this->obj->notify_property_list_changed();
 }
 
 int AudioStreamSynchronized::get_stream_count() const { return stream_count; }
-
-void AudioStreamSynchronized::_validate_property(PropertyInfo& property) const
-{
-	String prop = property.name;
-	if (prop != "stream_count" && prop.begins_with("stream_")) {
-		int stream = prop.get_slicec('/', 0).get_slicec('_', 1).to_int();
-		if (stream >= stream_count) {
-			property.usage = PROPERTY_USAGE_INTERNAL;
-		}
-	}
-}
-
-void AudioStreamSynchronized::_bind_methods() {}
-
-//////////////////////
-//////////////////////
-
-AudioStreamPlaybackSynchronized::AudioStreamPlaybackSynchronized() {}
 
 AudioStreamPlaybackSynchronized::~AudioStreamPlaybackSynchronized()
 {
@@ -301,7 +279,8 @@ double AudioStreamPlaybackSynchronized::get_playback_position() const
 
 bool AudioStreamPlaybackSynchronized::is_playing() const { return active; }
 
-void AudioStreamPlaybackSynchronized::_update_playback_instances()
+void
+AudioStreamPlaybackSynchronized::_update_playback_instances()
 {
 	stop();
 

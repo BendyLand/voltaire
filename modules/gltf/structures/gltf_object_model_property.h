@@ -30,19 +30,18 @@
 
 #pragma once
 
+#include "core/math/expression.h"
 #include "gltf_accessor.h"
 
-#include "core/math/expression.h"
-#include "core/variant/typed_array.h"
-
 // Object model: https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/ObjectModel.adoc
-// KHR_animation_pointer: https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_animation_pointer
+// KHR_animation_pointer:
+// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_animation_pointer
 
-class GLTFObjectModelProperty : public RefCounted {
-	VLTRCLASS(GLTFObjectModelProperty, RefCounted);
-
+class GLTFObjectModelProperty : public RefCounted
+{
 public:
-	enum GLTFObjectModelType {
+	enum GLTFObjectModelType
+	{
 		GLTF_OBJECT_MODEL_TYPE_UNKNOWN,
 		GLTF_OBJECT_MODEL_TYPE_BOOL,
 		GLTF_OBJECT_MODEL_TYPE_FLOAT,
@@ -59,45 +58,32 @@ public:
 private:
 	Ref<Expression> gltf_to_godot_expr;
 	Ref<Expression> godot_to_gltf_expr;
-	TypedArray<NodePath> node_paths;
 	GLTFObjectModelType object_model_type = GLTF_OBJECT_MODEL_TYPE_UNKNOWN;
 	Vector<PackedStringArray> json_pointers;
-	Variant::Type variant_type = Variant::NIL;
 
 protected:
 	static void _bind_methods();
 
 public:
-	void append_node_path(const NodePath &p_node_path);
-	void append_path_to_property(const NodePath &p_node_path, const StringName &p_prop_name);
+	void append_node_path(const NodePath& p_node_path);
+	void append_path_to_property(const NodePath& p_node_path, const StringName& p_prop_name);
 
 	GLTFAccessor::GLTFAccessorType get_accessor_type() const;
-	GLTFAccessor::GLTFComponentType get_component_type(const Vector<Variant> &p_values) const;
 
 	Ref<Expression> get_gltf_to_godot_expression() const;
-	void set_gltf_to_godot_expression(const Ref<Expression> &p_gltf_to_godot_expr);
+	void set_gltf_to_godot_expression(const Ref<Expression>& p_gltf_to_godot_expr);
 
 	Ref<Expression> get_godot_to_gltf_expression() const;
-	void set_godot_to_gltf_expression(const Ref<Expression> &p_godot_to_gltf_expr);
+	void set_godot_to_gltf_expression(const Ref<Expression>& p_godot_to_gltf_expr);
 
-	TypedArray<NodePath> get_node_paths() const;
 	bool has_node_paths() const;
-	void set_node_paths(const TypedArray<NodePath> &p_node_paths);
 
 	GLTFObjectModelType get_object_model_type() const;
 	void set_object_model_type(GLTFObjectModelType p_type);
 
 	Vector<PackedStringArray> get_json_pointers() const;
 	bool has_json_pointers() const;
-	void set_json_pointers(const Vector<PackedStringArray> &p_json_pointers);
-
-	TypedArray<PackedStringArray> get_json_pointers_bind() const;
-	void set_json_pointers_bind(const TypedArray<PackedStringArray> &p_json_pointers);
-
-	Variant::Type get_variant_type() const;
-	void set_variant_type(Variant::Type p_variant_type);
-
-	void set_types(Variant::Type p_variant_type, GLTFObjectModelType p_obj_model_type);
+	void set_json_pointers(const Vector<PackedStringArray>& p_json_pointers);
 };
 
-VARIANT_ENUM_CAST(GLTFObjectModelProperty::GLTFObjectModelType);
+

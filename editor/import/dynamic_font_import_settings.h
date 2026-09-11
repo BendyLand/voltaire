@@ -39,14 +39,12 @@
 
 class DynamicFontImportSettingsDialog;
 
-class DynamicFontImportSettingsData : public RefCounted {
-	VLTRCLASS(DynamicFontImportSettingsData, RefCounted)
+class DynamicFontImportSettingsData : public RefCounted
+{
 	friend class DynamicFontImportSettingsDialog;
 
-	HashMap<StringName, Variant> settings;
-	HashMap<StringName, Variant> defaults;
 	List<ResourceImporter::ImportOption> options;
-	DynamicFontImportSettingsDialog *owner = nullptr;
+	DynamicFontImportSettingsDialog* owner = nullptr;
 
 	HashSet<char32_t> selected_chars;
 	HashSet<int32_t> selected_glyphs;
@@ -54,10 +52,6 @@ class DynamicFontImportSettingsData : public RefCounted {
 	Ref<FontFile> fd;
 
 public:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-
 	Ref<FontFile> get_font() const;
 };
 
@@ -65,16 +59,17 @@ class EditorFileDialog;
 class EditorInspector;
 class EditorLocaleDialog;
 
-class DynamicFontImportSettingsDialog : public ConfirmationDialog {
-	VLTRCLASS(DynamicFontImportSettingsDialog, ConfirmationDialog)
+class DynamicFontImportSettingsDialog : public ConfirmationDialog
+{
 	friend class DynamicFontImportSettingsData;
 
-	enum ItemButton {
+	enum ItemButton
+	{
 		BUTTON_ADD_VAR,
 		BUTTON_REMOVE_VAR,
 	};
 
-	static DynamicFontImportSettingsDialog *singleton;
+	static DynamicFontImportSettingsDialog* singleton;
 
 	String base_path;
 
@@ -85,51 +80,50 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	bool is_pixel = false;
 
 	// Root layout
-	Label *label_warn = nullptr;
-	TabContainer *main_pages = nullptr;
+	Label* label_warn = nullptr;
+	TabContainer* main_pages = nullptr;
 
 	// Page 1 layout: Rendering Options
-	Label *page1_description = nullptr;
-	Label *font_name_label = nullptr;
-	Label *font_preview_label = nullptr;
-	EditorInspector *inspector_general = nullptr;
+	Label* page1_description = nullptr;
+	Label* font_name_label = nullptr;
+	Label* font_preview_label = nullptr;
+	EditorInspector* inspector_general = nullptr;
 
-	void _main_prop_changed(const String &p_edited_property);
+	void _main_prop_changed(const String& p_edited_property);
 
 	// Page 2 layout: Preload Configurations
-	Label *page2_description = nullptr;
-	Label *label_vars = nullptr;
-	Button *add_var = nullptr;
-	Tree *vars_list = nullptr;
-	TreeItem *vars_list_root = nullptr;
-	EditorInspector *inspector_vars = nullptr;
+	Label* page2_description = nullptr;
+	Label* label_vars = nullptr;
+	Button* add_var = nullptr;
+	Tree* vars_list = nullptr;
+	TreeItem* vars_list_root = nullptr;
+	EditorInspector* inspector_vars = nullptr;
 
 	void _variation_add();
 	void _variation_selected();
-	void _variation_remove(Object *p_item, int p_column, int p_id, MouseButton p_button);
-	void _variation_changed(const String &p_edited_property);
+	void _variation_changed(const String& p_edited_property);
 	void _variations_validate();
 
-	TabContainer *preload_pages = nullptr;
+	TabContainer* preload_pages = nullptr;
 
-	Label *label_glyphs = nullptr;
+	Label* label_glyphs = nullptr;
 	void _glyph_clear();
 	void _glyph_update_lbl();
 
 	// Page 2.0 layout: Translations
-	Label *page2_0_description = nullptr;
-	Tree *locale_tree = nullptr;
-	TreeItem *locale_root = nullptr;
-	Button *btn_fill_locales = nullptr;
+	Label* page2_0_description = nullptr;
+	Tree* locale_tree = nullptr;
+	TreeItem* locale_root = nullptr;
+	Button* btn_fill_locales = nullptr;
 
 	void _locale_edited();
 	void _process_locales();
 
 	// Page 2.1 layout: Text to select glyphs
-	Label *page2_1_description = nullptr;
-	TextEdit *text_edit = nullptr;
-	EditorInspector *inspector_text = nullptr;
-	Button *btn_fill = nullptr;
+	Label* page2_1_description = nullptr;
+	TextEdit* text_edit = nullptr;
+	EditorInspector* inspector_text = nullptr;
+	Button* btn_fill = nullptr;
 
 	List<ResourceImporter::ImportOption> options_text;
 	Ref<DynamicFontImportSettingsData> text_settings_data;
@@ -138,10 +132,10 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	void _glyph_text_selected();
 
 	// Page 2.2 layout: Character map
-	Label *page2_2_description = nullptr;
-	Tree *glyph_table = nullptr;
-	Tree *glyph_tree = nullptr;
-	TreeItem *glyph_root = nullptr;
+	Label* page2_2_description = nullptr;
+	Tree* glyph_table = nullptr;
+	Tree* glyph_tree = nullptr;
+	TreeItem* glyph_root = nullptr;
 
 	void _glyph_selected();
 	void _range_edited();
@@ -152,21 +146,23 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 
 	// Common
 
-	void _add_glyph_range_item(int32_t p_start, int32_t p_end, const String &p_name);
+	void _add_glyph_range_item(int32_t p_start, int32_t p_end, const String& p_name);
 
 	Ref<FontFile> font_preview;
 	Ref<FontFile> font_main;
 
 	void _re_import();
 
-	String _pad_zeros(const String &p_hex) const;
+	String _pad_zeros(const String& p_hex) const;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void open_settings(const String &p_path);
-	static DynamicFontImportSettingsDialog *get_singleton();
+	void open_settings(const String& p_path);
+	static DynamicFontImportSettingsDialog* get_singleton();
 
 	DynamicFontImportSettingsDialog();
 };
+
+

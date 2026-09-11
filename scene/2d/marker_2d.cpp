@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "marker_2d.h"
 
 void Marker2D::_draw_cross()

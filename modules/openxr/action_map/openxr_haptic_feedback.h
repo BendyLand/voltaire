@@ -30,24 +30,21 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
 #include "core/io/resource.h"
 
-#include <openxr/openxr.h>
-
-class OpenXRHapticBase : public Resource {
-	VLTRCLASS(OpenXRHapticBase, Resource);
-
+class OpenXRHapticBase : public Resource
+{
 private:
 protected:
 	static void _bind_methods();
 
 public:
-	virtual const XrHapticBaseHeader *get_xr_structure() = 0;
+	virtual const XrHapticBaseHeader* get_xr_structure() = 0;
 };
 
-class OpenXRHapticVibration : public OpenXRHapticBase {
-	VLTRCLASS(OpenXRHapticVibration, OpenXRHapticBase);
-
+class OpenXRHapticVibration : public OpenXRHapticBase
+{
 private:
 	XrHapticVibration haptic_vibration;
 
@@ -64,7 +61,9 @@ public:
 	void set_amplitude(float p_amplitude);
 	float get_amplitude() const;
 
-	virtual const XrHapticBaseHeader *get_xr_structure() override;
+	virtual const XrHapticBaseHeader* get_xr_structure() override;
 
 	OpenXRHapticVibration();
 };
+
+

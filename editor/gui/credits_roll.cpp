@@ -32,7 +32,6 @@
 #include "core/donors.gen.h"
 #include "core/input/input.h"
 #include "core/license.gen.h"
-#include "core/object/callable_mp.h"
 #include "core/string/string_builder.h"
 #include "credits_roll.h"
 #include "editor/editor_node.h"
@@ -108,49 +107,6 @@ void CreditsRoll::input(const Ref<InputEvent>& p_event)
 {
 	// Block inputs from going elsewhere while the credits roll.
 	get_tree()->get_root()->set_input_as_handled();
-}
-
-void CreditsRoll::_notification(int p_what)
-{
-	switch (p_what) {
-	case Object::NOTIFICATION_POSTINITIALIZE: {
-		connect("visibility_changed", callable_mp(this, &CreditsRoll::_visibility_changed));
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (project_manager) {
-			project_manager->set_text(TTR("Project Manager", "Job Title"));
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		const Vector2 pos = content->get_position();
-		if (pos.y < -content->get_size().y - 30) {
-			hide(); // No more credits left, show's over.
-			break;
-		}
-
-		if (Input::get_singleton()->is_mouse_button_pressed(MouseButton::RIGHT) ||
-			Input::get_singleton()->is_action_pressed(SNAME("ui_cancel"))) {
-			hide();
-			break;
-		}
-
-		bool lmb = Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT);
-		if (!mouse_enabled && !lmb) {
-			// Makes sure that the initial double click does not speed up text.
-			mouse_enabled = true;
-		}
-
-		if ((mouse_enabled && lmb) ||
-			Input::get_singleton()->is_action_pressed(SNAME("ui_accept"))) {
-			content->set_position(Vector2(pos.x, pos.y - 2000 * get_process_delta_time()));
-		}
-		else {
-			content->set_position(Vector2(pos.x, pos.y - 100 * get_process_delta_time()));
-		}
-	} break;
-	}
 }
 
 void CreditsRoll::roll_credits()

@@ -32,8 +32,6 @@
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/version.h"
 #include "material.h"
@@ -83,53 +81,7 @@ int Material::get_render_priority() const { return render_priority; }
 
 RID Material::get_rid() const { return material; }
 
-void Material::_validate_property(PropertyInfo& p_property) const
-{
-	if (!_can_do_next_pass() && p_property.name == "next_pass") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (!_can_use_render_priority() && p_property.name == "render_priority") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
-
 void Material::_mark_ready() { init_state = INIT_STATE_READY; }
-
-void Material::_mark_initialized(
-	const Callable& p_add_to_dirty_list, const Callable& p_update_shader)
-{
-	// If this is happening as part of resource loading, it is not safe to queue the update
-	// as an addition to the dirty list. It would be if the load is happening on the main thread,
-	// but even so we'd rather perform the update directly instead of using the dirty list.
-	if (ResourceLoader::is_within_load()) {
-		DEV_ASSERT(init_state != INIT_STATE_READY);
-		if (init_state == INIT_STATE_UNINITIALIZED) { // Prevent queueing twice.
-			if (p_update_shader.is_valid()) {
-				init_state = INIT_STATE_INITIALIZING;
-				callable_mp(this, &Material::_mark_ready).call_deferred();
-				p_update_shader.call_deferred();
-			}
-			else {
-				init_state = INIT_STATE_READY;
-			}
-		}
-	}
-	else {
-		// Straightforward conditions.
-		init_state = INIT_STATE_READY;
-		p_add_to_dirty_list.call();
-	}
-}
-
-void Material::inspect_native_shader_code()
-{
-	SceneTree* st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
-	RID shader = get_shader_rid();
-	if (st && shader.is_valid()) {
-		st->call_group_flags(SceneTree::GROUP_CALL_DEFERRED, "_native_shader_source_visualizer",
-			"_inspect_shader", shader);
-	}
-}
 
 Shader::Mode Material::get_shader_mode() const
 {
@@ -156,187 +108,6 @@ Material::~Material()
 	}
 }
 
-///////////////////////////////////
-
-bool ShaderMaterial::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (shader.is_valid()) {
-		const StringName* sn = remap_cache.getptr(p_name);
-		if (sn) {
-			set_shader_parameter(*sn, p_value);
-			return true;
-		}
-		String s = p_name;
-		if (s.begins_with("shader_parameter/")) {
-			String param = s.replace_first("shader_parameter/", "");
-			remap_cache[s] = param;
-			set_shader_parameter(param, p_value);
-			return true;
-		}
-#ifndef DISABLE_DEPRECATED
-		// Compatibility remaps are only needed here.
-		if (s.begins_with("param/")) {
-			s = s.replace_first("param/", "shader_parameter/");
-		}
-		else if (s.begins_with("shader_param/")) {
-			s = s.replace_first("shader_param/", "shader_parameter/");
-		}
-		else if (s.begins_with("shader_uniform/")) {
-			s = s.replace_first("shader_uniform/", "shader_parameter/");
-		}
-		else {
-			return false; // Not a shader parameter.
-		}
-
-		WARN_PRINT(
-			"This material (containing shader with path: '" + shader->get_path() +
-			"') uses an old deprecated parameter names. Consider re-saving this resource (or scene "
-			"which contains it) in order for it to continue working in future versions.");
-		String param = s.replace_first("shader_parameter/", "");
-		remap_cache[s] = param;
-		set_shader_parameter(param, p_value);
-		return true;
-#endif
-	}
-
-	return false;
-}
-
-bool ShaderMaterial::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (shader.is_valid()) {
-		const StringName* sn = remap_cache.getptr(p_name);
-		if (sn) {
-			// Only return a parameter if it was previously set.
-			r_ret = get_shader_parameter(*sn);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void ShaderMaterial::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	if (shader.is_valid()) {
-		List<PropertyInfo> list;
-		shader->get_shader_uniform_list(&list, true);
-
-		HashMap<String, List<PropertyInfo>> groups;
-		LocalVector<String> vgroups;
-
-		String last_group = "<None>";
-
-		bool is_none_group_undefined = true;
-		bool is_none_group = true;
-
-		for (const PropertyInfo& pi : list) {
-			if (pi.usage == PROPERTY_USAGE_GROUP) {
-				if (!pi.name.is_empty()) {
-					last_group = pi.name;
-					is_none_group = false;
-
-					if (!groups.has(last_group)) {
-						PropertyInfo info;
-						info.usage = PROPERTY_USAGE_GROUP;
-						info.name = last_group.capitalize();
-						info.hint_string = "shader_parameter/";
-
-						List<PropertyInfo> props;
-						props.push_back(info);
-
-						groups.insert(last_group, props);
-						vgroups.push_back(last_group);
-					}
-				}
-				else {
-					last_group = "<None>";
-					is_none_group = true;
-				}
-				continue; // Pass group.
-			}
-
-			if (is_none_group_undefined && is_none_group) {
-				is_none_group_undefined = false;
-
-				PropertyInfo info;
-				info.usage = PROPERTY_USAGE_GROUP;
-				info.name = "Shader Parameters";
-				info.hint_string = "shader_parameter/";
-
-				List<PropertyInfo> props;
-				props.push_back(info);
-
-				groups.insert("<None>", props);
-				vgroups.push_back("<None>");
-			}
-
-			const bool is_uniform_cached = param_cache.has(pi.name);
-			bool is_uniform_type_compatible = true;
-
-			if (is_uniform_cached) {
-				// Check if the uniform Variant type changed, for example vec3 to vec4.
-				const Variant& cached = param_cache.get(pi.name);
-
-				if (cached.is_array()) {
-					// Allow some array conversions for backwards compatibility.
-					is_uniform_type_compatible = Variant::can_convert(pi.type, cached.get_type());
-				}
-				else {
-					is_uniform_type_compatible = pi.type == cached.get_type();
-				}
-
-#ifndef DISABLE_DEPRECATED
-				// PackedFloat32Array -> PackedVector4Array conversion.
-				if (!is_uniform_type_compatible && pi.type == Variant::PACKED_VECTOR4_ARRAY &&
-					cached.get_type() == Variant::PACKED_FLOAT32_ARRAY) {
-					PackedVector4Array varray;
-					PackedFloat32Array array = (PackedFloat32Array)cached;
-
-					for (int i = 0; i + 3 < array.size(); i += 4) {
-						varray.push_back(
-							Vector4(array[i], array[i + 1], array[i + 2], array[i + 3]));
-					}
-
-					param_cache.insert(pi.name, varray);
-					is_uniform_type_compatible = true;
-				}
-#endif
-
-				if (is_uniform_type_compatible && pi.type == Variant::OBJECT &&
-					cached.get_type() == Variant::OBJECT) {
-					// Check if the Object class (hint string) changed, for example Texture2D
-					// sampler to Texture3D. Allow inheritance, Texture2D type sampler should also
-					// accept CompressedTexture2D.
-					Object* cached_obj = cached;
-					if (!cached_obj->is_class(pi.hint_string)) {
-						is_uniform_type_compatible = false;
-					}
-				}
-			}
-
-			PropertyInfo info = pi;
-			info.name = "shader_parameter/" + info.name;
-			if (!is_uniform_cached || !is_uniform_type_compatible) {
-				// Property has never been edited or its type changed, retrieve with default value.
-				Variant default_value =
-					RenderingServer::get_singleton()->shader_get_parameter_default(
-						shader->get_rid(), pi.name);
-				param_cache.insert(pi.name, default_value);
-				remap_cache.insert(info.name, pi.name);
-			}
-			groups[last_group].push_back(info);
-		}
-
-		for (const String& group : vgroups) {
-			List<PropertyInfo>& prop_infos = groups[group];
-			for (const PropertyInfo& item : prop_infos) {
-				p_list->push_back(item);
-			}
-		}
-	}
-}
-
 bool ShaderMaterial::_property_can_revert(const StringName& p_name) const
 {
 	if (shader.is_valid()) {
@@ -349,161 +120,7 @@ bool ShaderMaterial::_property_can_revert(const StringName& p_name) const
 	return false;
 }
 
-bool ShaderMaterial::_property_get_revert(const StringName& p_name, Variant& r_property) const
-{
-	if (shader.is_valid()) {
-		const StringName* pr = remap_cache.getptr(p_name);
-		if (pr) {
-			r_property = RenderingServer::get_singleton()->shader_get_parameter_default(
-				shader->get_rid(), *pr);
-			return true;
-		}
-		else if (p_name == "render_priority") {
-			r_property = 0;
-			return true;
-		}
-		else if (p_name == "next_pass") {
-			r_property = Variant();
-			return true;
-		}
-	}
-	return false;
-}
-
-void ShaderMaterial::set_shader(const Ref<Shader>& p_shader)
-{
-	// Only connect/disconnect the signal when running in the editor.
-	// This can be a slow operation, and `notify_property_list_changed()` (which is called by
-	// `_shader_changed()`) does nothing in non-editor builds anyway. See GH-34741 for details.
-	if (shader.is_valid() && Engine::get_singleton()->is_editor_hint()) {
-		shader->disconnect_changed(callable_mp(this, &ShaderMaterial::_shader_changed));
-	}
-
-	shader = p_shader;
-
-	RID rid;
-	if (shader.is_valid()) {
-		rid = shader->get_rid();
-
-		if (Engine::get_singleton()->is_editor_hint()) {
-			shader->connect_changed(callable_mp(this, &ShaderMaterial::_shader_changed));
-		}
-	}
-
-	RID material_rid = _get_material();
-	if (material_rid.is_valid()) {
-		RS::get_singleton()->material_set_shader(material_rid, rid);
-	}
-
-	this->obj->notify_property_list_changed(); // properties for shader exposed
-	emit_changed();
-}
-
 Ref<Shader> ShaderMaterial::get_shader() const { return shader; }
-
-void ShaderMaterial::set_shader_parameter(const StringName& p_param, const Variant& p_value)
-{
-	RID material_rid = _get_material();
-	if (p_value.get_type() == Variant::NIL) {
-		param_cache.erase(p_param);
-		if (material_rid.is_valid()) {
-			RS::get_singleton()->material_set_param(material_rid, p_param, Variant());
-		}
-	}
-	else {
-		Variant* v = param_cache.getptr(p_param);
-		if (!v) {
-			// Never assigned, also update the remap cache.
-			remap_cache["shader_parameter/" + p_param.string()] = p_param;
-			param_cache.insert(p_param, p_value);
-		}
-		else {
-			*v = p_value;
-		}
-
-		if (p_value.get_type() == Variant::OBJECT) {
-			RID tex_rid = p_value;
-			if (tex_rid == RID()) {
-				param_cache.erase(p_param);
-
-				if (material_rid.is_valid()) {
-					RS::get_singleton()->material_set_param(material_rid, p_param, Variant());
-				}
-			}
-			else if (material_rid.is_valid()) {
-				RS::get_singleton()->material_set_param(material_rid, p_param, tex_rid);
-			}
-		}
-		else if (material_rid.is_valid()) {
-			RS::get_singleton()->material_set_param(material_rid, p_param, p_value);
-		}
-	}
-}
-
-Variant ShaderMaterial::get_shader_parameter(const StringName& p_param) const
-{
-	if (param_cache.has(p_param)) {
-		return param_cache[p_param];
-	}
-	else {
-		return Variant();
-	}
-}
-
-void ShaderMaterial::_shader_changed()
-{
-	this->obj->notify_property_list_changed(); // update all properties
-}
-
-void ShaderMaterial::_check_material_rid() const
-{
-	MutexLock lock(material_rid_mutex);
-	if (_get_material().is_null()) {
-		RID shader_rid = shader.is_valid() ? shader->get_rid() : RID();
-		RID next_pass_rid;
-		if (get_next_pass().is_valid()) {
-			next_pass_rid = get_next_pass()->get_rid();
-		}
-
-		_set_material(RS::get_singleton()->material_create_from_shader(
-			next_pass_rid, get_render_priority(), shader_rid));
-
-		for (KeyValue<StringName, Variant> param : param_cache) {
-			if (param.value.get_type() == Variant::OBJECT) {
-				RID tex_rid = param.value;
-				if (tex_rid.is_valid()) {
-					RS::get_singleton()->material_set_param(_get_material(), param.key, tex_rid);
-				}
-				else {
-					RS::get_singleton()->material_set_param(_get_material(), param.key, Variant());
-				}
-			}
-			else {
-				RS::get_singleton()->material_set_param(_get_material(), param.key, param.value);
-			}
-		}
-	}
-}
-
-void ShaderMaterial::_bind_methods() {}
-
-#ifdef TOOLS_ENABLED
-void ShaderMaterial::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
-{
-	const String pf = p_function;
-	if (p_idx == 0 && (pf == "get_shader_parameter" || pf == "set_shader_parameter")) {
-		if (shader.is_valid()) {
-			List<PropertyInfo> pl;
-			shader->get_shader_uniform_list(&pl);
-			for (const PropertyInfo& E : pl) {
-				r_options->push_back(E.name.replace_first("shader_parameter/", "").quote());
-			}
-		}
-	}
-	this->obj->get_argument_options(p_function, p_idx, r_options);
-}
-#endif
 
 bool ShaderMaterial::_can_do_next_pass() const
 {
@@ -547,8 +164,6 @@ ShaderMaterial::ShaderMaterial()
 }
 
 ShaderMaterial::~ShaderMaterial() {}
-
-/////////////////////////////////
 
 HashMap<BaseMaterial3D::MaterialKey, BaseMaterial3D::ShaderData, BaseMaterial3D::MaterialKey>
 	BaseMaterial3D::shader_map;
@@ -2167,26 +1782,6 @@ void fragment() {)";
 	}
 }
 
-void BaseMaterial3D::_check_material_rid()
-{
-	MutexLock lock(material_rid_mutex);
-	if (_get_material().is_null()) {
-		RID next_pass_rid;
-		if (get_next_pass().is_valid()) {
-			next_pass_rid = get_next_pass()->get_rid();
-		}
-
-		_set_material(RS::get_singleton()->material_create_from_shader(
-			next_pass_rid, get_render_priority(), shader_rid));
-
-		for (KeyValue<StringName, Variant> param : pending_params) {
-			RS::get_singleton()->material_set_param(_get_material(), param.key, param.value);
-		}
-
-		pending_params.clear();
-	}
-}
-
 void BaseMaterial3D::flush_changes()
 {
 	SelfList<BaseMaterial3D>::List copy;
@@ -2217,196 +1812,48 @@ void BaseMaterial3D::_queue_shader_change()
 	}
 }
 
-void BaseMaterial3D::_material_set_param(const StringName& p_name, const Variant& p_value)
-{
-	if (_get_material().is_valid()) {
-		RS::get_singleton()->material_set_param(_get_material(), p_name, p_value);
-	}
-	else {
-		pending_params[p_name] = p_value;
-	}
-}
-
-void BaseMaterial3D::set_albedo(const Color& p_albedo)
-{
-	albedo = p_albedo;
-	_material_set_param(shader_names->albedo, p_albedo);
-}
-
 Color BaseMaterial3D::get_albedo() const { return albedo; }
-
-void BaseMaterial3D::set_specular(float p_specular)
-{
-	specular = p_specular;
-	_material_set_param(shader_names->specular, p_specular);
-}
 
 float BaseMaterial3D::get_specular() const { return specular; }
 
-void BaseMaterial3D::set_roughness(float p_roughness)
-{
-	roughness = p_roughness;
-	_material_set_param(shader_names->roughness, p_roughness);
-}
-
 float BaseMaterial3D::get_roughness() const { return roughness; }
-
-void BaseMaterial3D::set_metallic(float p_metallic)
-{
-	metallic = p_metallic;
-	_material_set_param(shader_names->metallic, p_metallic);
-}
 
 float BaseMaterial3D::get_metallic() const { return metallic; }
 
-void BaseMaterial3D::set_emission(const Color& p_emission)
-{
-	emission = p_emission;
-	_material_set_param(shader_names->emission, p_emission);
-}
-
 Color BaseMaterial3D::get_emission() const { return emission; }
-
-void BaseMaterial3D::set_emission_energy_multiplier(float p_emission_energy_multiplier)
-{
-	emission_energy_multiplier = p_emission_energy_multiplier;
-
-	if (GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		_material_set_param(
-			shader_names->emission_energy, p_emission_energy_multiplier * emission_intensity);
-	}
-	else {
-		_material_set_param(shader_names->emission_energy, p_emission_energy_multiplier);
-	}
-}
 
 float BaseMaterial3D::get_emission_energy_multiplier() const { return emission_energy_multiplier; }
 
-void BaseMaterial3D::set_emission_intensity(float p_emission_intensity)
-{
-	ERR_FAIL_COND_EDMSG(
-		!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units"),
-		"Cannot set material emission intensity when Physical Light Units disabled.");
-	emission_intensity = p_emission_intensity;
-	_material_set_param(
-		shader_names->emission_energy, emission_energy_multiplier * emission_intensity);
-}
-
 float BaseMaterial3D::get_emission_intensity() const { return emission_intensity; }
-
-void BaseMaterial3D::set_normal_scale(float p_normal_scale)
-{
-	normal_scale = p_normal_scale;
-	_material_set_param(shader_names->normal_scale, p_normal_scale);
-}
 
 float BaseMaterial3D::get_normal_scale() const { return normal_scale; }
 
-void BaseMaterial3D::set_rim(float p_rim)
-{
-	rim = p_rim;
-	_material_set_param(shader_names->rim, p_rim);
-}
-
 float BaseMaterial3D::get_rim() const { return rim; }
-
-void BaseMaterial3D::set_rim_tint(float p_rim_tint)
-{
-	rim_tint = p_rim_tint;
-	_material_set_param(shader_names->rim_tint, p_rim_tint);
-}
 
 float BaseMaterial3D::get_rim_tint() const { return rim_tint; }
 
-void BaseMaterial3D::set_ao_light_affect(float p_ao_light_affect)
-{
-	ao_light_affect = p_ao_light_affect;
-	_material_set_param(shader_names->ao_light_affect, p_ao_light_affect);
-}
-
 float BaseMaterial3D::get_ao_light_affect() const { return ao_light_affect; }
-
-void BaseMaterial3D::set_clearcoat(float p_clearcoat)
-{
-	clearcoat = p_clearcoat;
-	_material_set_param(shader_names->clearcoat, p_clearcoat);
-}
 
 float BaseMaterial3D::get_clearcoat() const { return clearcoat; }
 
-void BaseMaterial3D::set_clearcoat_roughness(float p_clearcoat_roughness)
-{
-	clearcoat_roughness = p_clearcoat_roughness;
-	_material_set_param(shader_names->clearcoat_roughness, p_clearcoat_roughness);
-}
-
 float BaseMaterial3D::get_clearcoat_roughness() const { return clearcoat_roughness; }
-
-void BaseMaterial3D::set_anisotropy(float p_anisotropy)
-{
-	anisotropy = p_anisotropy;
-	_material_set_param(shader_names->anisotropy, p_anisotropy);
-}
 
 float BaseMaterial3D::get_anisotropy() const { return anisotropy; }
 
-void BaseMaterial3D::set_heightmap_scale(float p_heightmap_scale)
-{
-	heightmap_scale = p_heightmap_scale;
-	_material_set_param(shader_names->heightmap_scale, p_heightmap_scale);
-}
-
 float BaseMaterial3D::get_heightmap_scale() const { return heightmap_scale; }
-
-void BaseMaterial3D::set_subsurface_scattering_strength(float p_subsurface_scattering_strength)
-{
-	subsurface_scattering_strength = p_subsurface_scattering_strength;
-	_material_set_param(
-		shader_names->subsurface_scattering_strength, subsurface_scattering_strength);
-}
 
 float BaseMaterial3D::get_subsurface_scattering_strength() const
 {
 	return subsurface_scattering_strength;
 }
 
-void BaseMaterial3D::set_transmittance_color(const Color& p_color)
-{
-	transmittance_color = p_color;
-	_material_set_param(shader_names->transmittance_color, p_color);
-}
-
 Color BaseMaterial3D::get_transmittance_color() const { return transmittance_color; }
-
-void BaseMaterial3D::set_transmittance_depth(float p_depth)
-{
-	transmittance_depth = p_depth;
-	_material_set_param(shader_names->transmittance_depth, p_depth);
-}
 
 float BaseMaterial3D::get_transmittance_depth() const { return transmittance_depth; }
 
-void BaseMaterial3D::set_transmittance_boost(float p_boost)
-{
-	transmittance_boost = p_boost;
-	_material_set_param(shader_names->transmittance_boost, p_boost);
-}
-
 float BaseMaterial3D::get_transmittance_boost() const { return transmittance_boost; }
 
-void BaseMaterial3D::set_backlight(const Color& p_backlight)
-{
-	backlight = p_backlight;
-	_material_set_param(shader_names->backlight, backlight);
-}
-
 Color BaseMaterial3D::get_backlight() const { return backlight; }
-
-void BaseMaterial3D::set_refraction(float p_refraction)
-{
-	refraction = p_refraction;
-	_material_set_param(shader_names->refraction, refraction);
-}
 
 float BaseMaterial3D::get_refraction() const { return refraction; }
 
@@ -2445,44 +1892,11 @@ BaseMaterial3D::BlendMode BaseMaterial3D::get_detail_blend_mode() const
 	return detail_blend_mode;
 }
 
-void BaseMaterial3D::set_transparency(Transparency p_transparency)
-{
-	if (transparency == p_transparency) {
-		return;
-	}
-
-	transparency = p_transparency;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 BaseMaterial3D::Transparency BaseMaterial3D::get_transparency() const { return transparency; }
-
-void BaseMaterial3D::set_alpha_antialiasing(AlphaAntiAliasing p_alpha_aa)
-{
-	if (alpha_antialiasing_mode == p_alpha_aa) {
-		return;
-	}
-
-	alpha_antialiasing_mode = p_alpha_aa;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
 
 BaseMaterial3D::AlphaAntiAliasing BaseMaterial3D::get_alpha_antialiasing() const
 {
 	return alpha_antialiasing_mode;
-}
-
-void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode)
-{
-	if (shading_mode == p_shading_mode) {
-		return;
-	}
-
-	shading_mode = p_shading_mode;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::ShadingMode BaseMaterial3D::get_shading_mode() const { return shading_mode; }
@@ -2550,31 +1964,6 @@ void BaseMaterial3D::set_specular_mode(SpecularMode p_mode)
 
 BaseMaterial3D::SpecularMode BaseMaterial3D::get_specular_mode() const { return specular_mode; }
 
-void BaseMaterial3D::set_flag(Flags p_flag, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_flag, FLAG_MAX);
-
-	if (flags[p_flag] == p_enabled) {
-		return;
-	}
-
-	flags[p_flag] = p_enabled;
-
-	if (p_flag == FLAG_USE_SHADOW_TO_OPACITY || p_flag == FLAG_USE_TEXTURE_REPEAT ||
-		p_flag == FLAG_SUBSURFACE_MODE_SKIN || p_flag == FLAG_USE_POINT_SIZE ||
-		p_flag == FLAG_UV1_USE_TRIPLANAR || p_flag == FLAG_UV2_USE_TRIPLANAR ||
-		p_flag == FLAG_USE_Z_CLIP_SCALE || p_flag == FLAG_USE_FOV_OVERRIDE ||
-		p_flag == FLAG_DISABLE_DEPTH_TEST) {
-		this->obj->notify_property_list_changed();
-	}
-
-	if (p_flag == FLAG_PARTICLE_TRAILS_MODE) {
-		update_configuration_warning();
-	}
-
-	_queue_shader_change();
-}
-
 bool BaseMaterial3D::get_flag(Flags p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
@@ -2596,23 +1985,6 @@ bool BaseMaterial3D::get_feature(Feature p_feature) const
 {
 	ERR_FAIL_INDEX_V(p_feature, FEATURE_MAX, false);
 	return features[p_feature];
-}
-
-void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture)
-{
-	ERR_FAIL_INDEX(p_param, TEXTURE_MAX);
-
-	textures[p_param] = p_texture;
-	Variant rid = p_texture.is_valid() ? Variant(p_texture->get_rid()) : Variant();
-	_material_set_param(shader_names->texture_names[p_param], rid);
-
-	if (p_texture.is_valid() && p_param == TEXTURE_ALBEDO) {
-		_material_set_param(shader_names->albedo_texture_size,
-			Vector2i(p_texture->get_width(), p_texture->get_height()));
-	}
-
-	this->obj->notify_property_list_changed();
-	_queue_shader_change();
 }
 
 Ref<Texture2D> BaseMaterial3D::get_texture(TextureParam p_param) const
@@ -2640,321 +2012,33 @@ void BaseMaterial3D::set_texture_filter(TextureFilter p_filter)
 
 BaseMaterial3D::TextureFilter BaseMaterial3D::get_texture_filter() const { return texture_filter; }
 
-void BaseMaterial3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "emission_intensity" &&
-		!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (p_property.name.begins_with("particles_anim_") && billboard_mode != BILLBOARD_PARTICLES) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (p_property.name == "billboard_keep_scale" && billboard_mode == BILLBOARD_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "grow_amount" && !grow_enabled) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "point_size" && !flags[FLAG_USE_POINT_SIZE]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "proximity_fade_distance" && !proximity_fade_enabled) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "msdf_pixel_range" && !flags[FLAG_ALBEDO_TEXTURE_MSDF]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "msdf_outline_size" && !flags[FLAG_ALBEDO_TEXTURE_MSDF]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if ((p_property.name == "distance_fade_max_distance" ||
-				p_property.name == "distance_fade_min_distance") &&
-			distance_fade == DISTANCE_FADE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if ((p_property.name == "uv1_triplanar_sharpness" ||
-				p_property.name == "uv1_world_triplanar") &&
-			!flags[FLAG_UV1_USE_TRIPLANAR]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if ((p_property.name == "uv2_triplanar_sharpness" ||
-				p_property.name == "uv2_world_triplanar") &&
-			!flags[FLAG_UV2_USE_TRIPLANAR]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "z_clip_scale" && !flags[FLAG_USE_Z_CLIP_SCALE]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "fov_override" && !flags[FLAG_USE_FOV_OVERRIDE]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-
-	// you can only enable anti-aliasing (in materials) on alpha scissor and alpha hash
-	const bool can_select_aa =
-		(transparency == TRANSPARENCY_ALPHA_SCISSOR || transparency == TRANSPARENCY_ALPHA_HASH);
-	// alpha anti aliasiasing is only enabled when you can select aa
-	const bool alpha_aa_enabled =
-		(alpha_antialiasing_mode != ALPHA_ANTIALIASING_OFF) && can_select_aa;
-
-	// alpha scissor slider isn't needed when alpha antialiasing is enabled
-	if (p_property.name == "alpha_scissor_threshold" &&
-		transparency != TRANSPARENCY_ALPHA_SCISSOR) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	// alpha hash scale slider is only needed if transparency is alpha hash
-	if (p_property.name == "alpha_hash_scale" && transparency != TRANSPARENCY_ALPHA_HASH) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (p_property.name == "alpha_antialiasing_mode" && !can_select_aa) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	// we can't choose an antialiasing mode if alpha isn't possible
-	if (p_property.name == "alpha_antialiasing_edge" && !alpha_aa_enabled) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (p_property.name == "blend_mode" && alpha_aa_enabled) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if ((p_property.name == "heightmap_min_layers" || p_property.name == "heightmap_max_layers") &&
-		!deep_parallax) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (p_property.name == "depth_test" && flags[FLAG_DISABLE_DEPTH_TEST]) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "stencil_reference" && stencil_mode == STENCIL_MODE_DISABLED) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if ((p_property.name == "stencil_flags" || p_property.name == "stencil_compare") &&
-			stencil_mode != STENCIL_MODE_CUSTOM) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "stencil_color" && stencil_mode != STENCIL_MODE_OUTLINE &&
-			stencil_mode != STENCIL_MODE_XRAY) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-
-		if (p_property.name == "stencil_outline_thickness" &&
-			stencil_mode != STENCIL_MODE_OUTLINE) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-
-	if (flags[FLAG_SUBSURFACE_MODE_SKIN] &&
-		(p_property.name == "subsurf_scatter_transmittance_color" ||
-			p_property.name == "subsurf_scatter_transmittance_texture")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-
-	if (orm) {
-		if (p_property.name == "shading_mode") {
-			// Vertex not supported in ORM mode, since no individual roughness.
-			p_property.hint_string = "Unshaded,Per-Pixel";
-		}
-		if (p_property.name.begins_with("roughness") || p_property.name.begins_with("metallic") ||
-			p_property.name.begins_with("ao_texture")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-	}
-	else {
-		if (p_property.name == "orm_texture") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
-	if (shading_mode != SHADING_MODE_PER_PIXEL) {
-		if (shading_mode != SHADING_MODE_PER_VERTEX) {
-			// these may still work per vertex
-			if (p_property.name.begins_with("ao")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-			if (p_property.name.begins_with("emission")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-
-			if (p_property.name.begins_with("metallic")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-			if (p_property.name.begins_with("rim")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-
-			if (p_property.name.begins_with("roughness")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-
-			if (p_property.name.begins_with("subsurf_scatter")) {
-				p_property.usage = PROPERTY_USAGE_NONE;
-			}
-		}
-
-		// these definitely only need per pixel
-		if (p_property.name.begins_with("anisotropy")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-		if (p_property.name.begins_with("clearcoat")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-		if (p_property.name.begins_with("normal")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-		if (p_property.name.begins_with("bent_normal")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-		if (p_property.name.begins_with("backlight")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-
-		if (p_property.name.begins_with("transmittance")) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
-void BaseMaterial3D::set_point_size(float p_point_size)
-{
-	point_size = p_point_size;
-	_material_set_param(shader_names->point_size, p_point_size);
-}
-
 float BaseMaterial3D::get_point_size() const { return point_size; }
-
-void BaseMaterial3D::set_uv1_scale(const Vector3& p_scale)
-{
-	uv1_scale = p_scale;
-	_material_set_param(shader_names->uv1_scale, p_scale);
-}
 
 Vector3 BaseMaterial3D::get_uv1_scale() const { return uv1_scale; }
 
-void BaseMaterial3D::set_uv1_offset(const Vector3& p_offset)
-{
-	uv1_offset = p_offset;
-	_material_set_param(shader_names->uv1_offset, p_offset);
-}
-
 Vector3 BaseMaterial3D::get_uv1_offset() const { return uv1_offset; }
-
-void BaseMaterial3D::set_uv1_triplanar_blend_sharpness(float p_sharpness)
-{
-	// Negative values or values higher than 150 can result in NaNs, leading to broken rendering.
-	uv1_triplanar_sharpness = CLAMP(p_sharpness, 0.0, 150.0);
-	_material_set_param(shader_names->uv1_blend_sharpness, uv1_triplanar_sharpness);
-}
 
 float BaseMaterial3D::get_uv1_triplanar_blend_sharpness() const { return uv1_triplanar_sharpness; }
 
-void BaseMaterial3D::set_uv2_scale(const Vector3& p_scale)
-{
-	uv2_scale = p_scale;
-	_material_set_param(shader_names->uv2_scale, p_scale);
-}
-
 Vector3 BaseMaterial3D::get_uv2_scale() const { return uv2_scale; }
-
-void BaseMaterial3D::set_uv2_offset(const Vector3& p_offset)
-{
-	uv2_offset = p_offset;
-	_material_set_param(shader_names->uv2_offset, p_offset);
-}
 
 Vector3 BaseMaterial3D::get_uv2_offset() const { return uv2_offset; }
 
-void BaseMaterial3D::set_uv2_triplanar_blend_sharpness(float p_sharpness)
-{
-	// Negative values or values higher than 150 can result in NaNs, leading to broken rendering.
-	uv2_triplanar_sharpness = CLAMP(p_sharpness, 0.0, 150.0);
-	_material_set_param(shader_names->uv2_blend_sharpness, uv2_triplanar_sharpness);
-}
-
 float BaseMaterial3D::get_uv2_triplanar_blend_sharpness() const { return uv2_triplanar_sharpness; }
-
-void BaseMaterial3D::set_billboard_mode(BillboardMode p_mode)
-{
-	billboard_mode = p_mode;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
 
 BaseMaterial3D::BillboardMode BaseMaterial3D::get_billboard_mode() const { return billboard_mode; }
 
-void BaseMaterial3D::set_particles_anim_h_frames(int p_frames)
-{
-	particles_anim_h_frames = p_frames;
-	_material_set_param(shader_names->particles_anim_h_frames, p_frames);
-}
-
 int BaseMaterial3D::get_particles_anim_h_frames() const { return particles_anim_h_frames; }
-
-void BaseMaterial3D::set_particles_anim_v_frames(int p_frames)
-{
-	particles_anim_v_frames = p_frames;
-	_material_set_param(shader_names->particles_anim_v_frames, p_frames);
-}
 
 int BaseMaterial3D::get_particles_anim_v_frames() const { return particles_anim_v_frames; }
 
-void BaseMaterial3D::set_particles_anim_loop(bool p_loop)
-{
-	particles_anim_loop = p_loop;
-	_material_set_param(shader_names->particles_anim_loop, particles_anim_loop);
-}
-
 bool BaseMaterial3D::get_particles_anim_loop() const { return particles_anim_loop; }
 
-void BaseMaterial3D::set_heightmap_deep_parallax(bool p_enable)
-{
-	deep_parallax = p_enable;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 bool BaseMaterial3D::is_heightmap_deep_parallax_enabled() const { return deep_parallax; }
-
-void BaseMaterial3D::set_heightmap_deep_parallax_min_layers(int p_layer)
-{
-	deep_parallax_min_layers = p_layer;
-	_material_set_param(shader_names->heightmap_min_layers, p_layer);
-}
 
 int BaseMaterial3D::get_heightmap_deep_parallax_min_layers() const
 {
 	return deep_parallax_min_layers;
-}
-
-void BaseMaterial3D::set_heightmap_deep_parallax_max_layers(int p_layer)
-{
-	deep_parallax_max_layers = p_layer;
-	_material_set_param(shader_names->heightmap_max_layers, p_layer);
 }
 
 int BaseMaterial3D::get_heightmap_deep_parallax_max_layers() const
@@ -2962,25 +2046,9 @@ int BaseMaterial3D::get_heightmap_deep_parallax_max_layers() const
 	return deep_parallax_max_layers;
 }
 
-void BaseMaterial3D::set_heightmap_deep_parallax_flip_tangent(bool p_flip)
-{
-	heightmap_parallax_flip_tangent = p_flip;
-	_material_set_param(
-		shader_names->heightmap_flip, Vector2(heightmap_parallax_flip_tangent ? -1 : 1,
-										  heightmap_parallax_flip_binormal ? -1 : 1));
-}
-
 bool BaseMaterial3D::get_heightmap_deep_parallax_flip_tangent() const
 {
 	return heightmap_parallax_flip_tangent;
-}
-
-void BaseMaterial3D::set_heightmap_deep_parallax_flip_binormal(bool p_flip)
-{
-	heightmap_parallax_flip_binormal = p_flip;
-	_material_set_param(
-		shader_names->heightmap_flip, Vector2(heightmap_parallax_flip_tangent ? -1 : 1,
-										  heightmap_parallax_flip_binormal ? -1 : 1));
 }
 
 bool BaseMaterial3D::get_heightmap_deep_parallax_flip_binormal() const
@@ -2988,44 +2056,13 @@ bool BaseMaterial3D::get_heightmap_deep_parallax_flip_binormal() const
 	return heightmap_parallax_flip_binormal;
 }
 
-void BaseMaterial3D::set_grow_enabled(bool p_enable)
-{
-	grow_enabled = p_enable;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 bool BaseMaterial3D::is_grow_enabled() const { return grow_enabled; }
-
-void BaseMaterial3D::set_alpha_scissor_threshold(float p_threshold)
-{
-	alpha_scissor_threshold = p_threshold;
-	_material_set_param(shader_names->alpha_scissor_threshold, p_threshold);
-}
 
 float BaseMaterial3D::get_alpha_scissor_threshold() const { return alpha_scissor_threshold; }
 
-void BaseMaterial3D::set_alpha_hash_scale(float p_scale)
-{
-	alpha_hash_scale = p_scale;
-	_material_set_param(shader_names->alpha_hash_scale, p_scale);
-}
-
 float BaseMaterial3D::get_alpha_hash_scale() const { return alpha_hash_scale; }
 
-void BaseMaterial3D::set_alpha_antialiasing_edge(float p_edge)
-{
-	alpha_antialiasing_edge = p_edge;
-	_material_set_param(shader_names->alpha_antialiasing_edge, p_edge);
-}
-
 float BaseMaterial3D::get_alpha_antialiasing_edge() const { return alpha_antialiasing_edge; }
-
-void BaseMaterial3D::set_grow(float p_grow)
-{
-	grow = p_grow;
-	_material_set_param(shader_names->grow, p_grow);
-}
 
 float BaseMaterial3D::get_grow() const { return grow; }
 
@@ -3040,13 +2077,6 @@ static Vector4 _get_texture_mask(BaseMaterial3D::TextureChannel p_channel)
 	};
 
 	return masks[p_channel];
-}
-
-void BaseMaterial3D::set_metallic_texture_channel(TextureChannel p_channel)
-{
-	ERR_FAIL_INDEX(p_channel, 5);
-	metallic_texture_channel = p_channel;
-	_material_set_param(shader_names->metallic_texture_channel, _get_texture_mask(p_channel));
 }
 
 BaseMaterial3D::TextureChannel BaseMaterial3D::get_metallic_texture_channel() const
@@ -3066,23 +2096,9 @@ BaseMaterial3D::TextureChannel BaseMaterial3D::get_roughness_texture_channel() c
 	return roughness_texture_channel;
 }
 
-void BaseMaterial3D::set_ao_texture_channel(TextureChannel p_channel)
-{
-	ERR_FAIL_INDEX(p_channel, 5);
-	ao_texture_channel = p_channel;
-	_material_set_param(shader_names->ao_texture_channel, _get_texture_mask(p_channel));
-}
-
 BaseMaterial3D::TextureChannel BaseMaterial3D::get_ao_texture_channel() const
 {
 	return ao_texture_channel;
-}
-
-void BaseMaterial3D::set_refraction_texture_channel(TextureChannel p_channel)
-{
-	ERR_FAIL_INDEX(p_channel, 5);
-	refraction_texture_channel = p_channel;
-	_material_set_param(shader_names->refraction_texture_channel, _get_texture_mask(p_channel));
 }
 
 BaseMaterial3D::TextureChannel BaseMaterial3D::get_refraction_texture_channel() const
@@ -3090,19 +2106,7 @@ BaseMaterial3D::TextureChannel BaseMaterial3D::get_refraction_texture_channel() 
 	return refraction_texture_channel;
 }
 
-void BaseMaterial3D::set_z_clip_scale(float p_z_clip_scale)
-{
-	z_clip_scale = p_z_clip_scale;
-	_material_set_param(shader_names->z_clip_scale, p_z_clip_scale);
-}
-
 float BaseMaterial3D::get_z_clip_scale() const { return z_clip_scale; }
-
-void BaseMaterial3D::set_fov_override(float p_fov_override)
-{
-	fov_override = p_fov_override;
-	_material_set_param(shader_names->fov_override, p_fov_override);
-}
 
 float BaseMaterial3D::get_fov_override() const { return fov_override; }
 
@@ -3166,61 +2170,17 @@ void BaseMaterial3D::set_on_top_of_alpha()
 	set_flag(FLAG_DISABLE_DEPTH_TEST, true);
 }
 
-void BaseMaterial3D::set_proximity_fade_enabled(bool p_enable)
-{
-	proximity_fade_enabled = p_enable;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 bool BaseMaterial3D::is_proximity_fade_enabled() const { return proximity_fade_enabled; }
-
-void BaseMaterial3D::set_proximity_fade_distance(float p_distance)
-{
-	proximity_fade_distance = MAX(p_distance, 0.01);
-	_material_set_param(shader_names->proximity_fade_distance, proximity_fade_distance);
-}
 
 float BaseMaterial3D::get_proximity_fade_distance() const { return proximity_fade_distance; }
 
-void BaseMaterial3D::set_msdf_pixel_range(float p_range)
-{
-	msdf_pixel_range = p_range;
-	_material_set_param(shader_names->msdf_pixel_range, p_range);
-}
-
 float BaseMaterial3D::get_msdf_pixel_range() const { return msdf_pixel_range; }
-
-void BaseMaterial3D::set_msdf_outline_size(float p_size)
-{
-	msdf_outline_size = p_size;
-	_material_set_param(shader_names->msdf_outline_size, p_size);
-}
 
 float BaseMaterial3D::get_msdf_outline_size() const { return msdf_outline_size; }
 
-void BaseMaterial3D::set_distance_fade(DistanceFadeMode p_mode)
-{
-	distance_fade = p_mode;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 BaseMaterial3D::DistanceFadeMode BaseMaterial3D::get_distance_fade() const { return distance_fade; }
 
-void BaseMaterial3D::set_distance_fade_max_distance(float p_distance)
-{
-	distance_fade_max_distance = p_distance;
-	_material_set_param(shader_names->distance_fade_max, distance_fade_max_distance);
-}
-
 float BaseMaterial3D::get_distance_fade_max_distance() const { return distance_fade_max_distance; }
-
-void BaseMaterial3D::set_distance_fade_min_distance(float p_distance)
-{
-	distance_fade_min_distance = p_distance;
-	_material_set_param(shader_names->distance_fade_min, distance_fade_min_distance);
-}
 
 float BaseMaterial3D::get_distance_fade_min_distance() const { return distance_fade_min_distance; }
 
@@ -3243,101 +2203,6 @@ RID BaseMaterial3D::get_rid() const
 	const_cast<BaseMaterial3D*>(this)->_update_shader();
 	const_cast<BaseMaterial3D*>(this)->_check_material_rid();
 	return _get_material();
-}
-
-void BaseMaterial3D::_prepare_stencil_effect()
-{
-	const Ref<Material> current_next_pass = get_next_pass();
-
-	if (stencil_mode == STENCIL_MODE_DISABLED || stencil_mode == STENCIL_MODE_CUSTOM) {
-		if (current_next_pass.is_valid() && current_next_pass->obj->has_meta("_stencil_owned")) {
-			set_next_pass(current_next_pass->get_next_pass());
-		}
-		return;
-	}
-
-	Ref<BaseMaterial3D> stencil_next_pass;
-
-	if (current_next_pass.is_null() || !current_next_pass->obj->has_meta("_stencil_owned")) {
-		stencil_next_pass = Ref<BaseMaterial3D>(memnew(StandardMaterial3D));
-		stencil_next_pass->obj->set_meta("_stencil_owned", true);
-		stencil_next_pass->set_next_pass(current_next_pass);
-		set_next_pass(stencil_next_pass);
-	}
-	else {
-		stencil_next_pass = current_next_pass;
-	}
-
-	switch (stencil_mode) {
-	case STENCIL_MODE_DISABLED:
-		break;
-	case STENCIL_MODE_OUTLINE:
-		set_stencil_flags(STENCIL_FLAG_WRITE);
-		set_stencil_compare(STENCIL_COMPARE_ALWAYS);
-		stencil_next_pass->set_render_priority(get_render_priority() + 1);
-		stencil_next_pass->set_shading_mode(SHADING_MODE_UNSHADED);
-		stencil_next_pass->set_transparency(TRANSPARENCY_ALPHA);
-		stencil_next_pass->set_flag(FLAG_DISABLE_DEPTH_TEST, false);
-		stencil_next_pass->set_grow_enabled(true);
-		stencil_next_pass->set_grow(stencil_effect_outline_thickness);
-		stencil_next_pass->set_albedo(stencil_effect_color);
-		stencil_next_pass->set_stencil_mode(STENCIL_MODE_CUSTOM);
-		stencil_next_pass->set_stencil_flags(STENCIL_FLAG_READ);
-		stencil_next_pass->set_stencil_compare(STENCIL_COMPARE_NOT_EQUAL);
-		stencil_next_pass->set_stencil_reference(stencil_reference);
-		break;
-	case STENCIL_MODE_XRAY:
-		set_stencil_flags(STENCIL_FLAG_WRITE);
-		set_stencil_compare(STENCIL_COMPARE_ALWAYS);
-		stencil_next_pass->set_render_priority(get_render_priority() + 1);
-		stencil_next_pass->set_shading_mode(SHADING_MODE_UNSHADED);
-		stencil_next_pass->set_transparency(TRANSPARENCY_ALPHA);
-		stencil_next_pass->set_flag(FLAG_DISABLE_DEPTH_TEST, true);
-		stencil_next_pass->set_grow_enabled(false);
-		stencil_next_pass->set_grow(0);
-		stencil_next_pass->set_albedo(stencil_effect_color);
-		stencil_next_pass->set_stencil_mode(STENCIL_MODE_CUSTOM);
-		stencil_next_pass->set_stencil_flags(STENCIL_FLAG_READ);
-		stencil_next_pass->set_stencil_compare(STENCIL_COMPARE_NOT_EQUAL);
-		stencil_next_pass->set_stencil_reference(stencil_reference);
-		break;
-	case STENCIL_MODE_CUSTOM:
-		break;
-	case STENCIL_MODE_MAX:
-		break;
-	}
-}
-
-Ref<BaseMaterial3D> BaseMaterial3D::_get_stencil_next_pass() const
-{
-	const Ref<Material> current_next_pass = get_next_pass();
-	Ref<BaseMaterial3D> stencil_next_pass;
-
-	if (current_next_pass.is_valid() && current_next_pass->obj->has_meta("_stencil_owned")) {
-		stencil_next_pass = current_next_pass;
-	}
-
-	return stencil_next_pass;
-}
-
-void BaseMaterial3D::set_stencil_mode(StencilMode p_stencil_mode)
-{
-	if (stencil_mode == p_stencil_mode) {
-		return;
-	}
-
-	if (p_stencil_mode == StencilMode::STENCIL_MODE_OUTLINE ||
-		p_stencil_mode == StencilMode::STENCIL_MODE_XRAY) {
-		ERR_FAIL_COND_EDMSG(get_render_priority() >= RENDER_PRIORITY_MAX,
-			vformat("Cannot use stencil mode Outline or Xray, when render priority is "
-					"RENDER_PRIORITY_MAX(%d).",
-				RENDER_PRIORITY_MAX));
-	}
-
-	stencil_mode = p_stencil_mode;
-	_prepare_stencil_effect();
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
 }
 
 BaseMaterial3D::StencilMode BaseMaterial3D::get_stencil_mode() const { return stencil_mode; }
@@ -3544,112 +2409,7 @@ BaseMaterial3D::~BaseMaterial3D()
 	}
 }
 
-//////////////////////
-
 #ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
-bool StandardMaterial3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "flags_transparent") {
-		bool transparent = p_value;
-		if (transparent) {
-			set_transparency(TRANSPARENCY_ALPHA);
-		}
-		return true;
-	}
-	else if (p_name == "flags_unshaded") {
-		bool unshaded = p_value;
-		if (unshaded) {
-			set_shading_mode(SHADING_MODE_UNSHADED);
-		}
-		return true;
-	}
-	else if (p_name == "flags_vertex_lighting") {
-		bool vertex_lit = p_value;
-		if (vertex_lit && get_shading_mode() != SHADING_MODE_UNSHADED) {
-			set_shading_mode(SHADING_MODE_PER_VERTEX);
-		}
-		return true;
-	}
-	else if (p_name == "params_use_alpha_scissor") {
-		bool use_scissor = p_value;
-		if (use_scissor) {
-			set_transparency(TRANSPARENCY_ALPHA_SCISSOR);
-		}
-		return true;
-	}
-	else if (p_name == "params_use_alpha_hash") {
-		bool use_hash = p_value;
-		if (use_hash) {
-			set_transparency(TRANSPARENCY_ALPHA_HASH);
-		}
-		return true;
-	}
-	else if (p_name == "params_depth_draw_mode") {
-		int mode = p_value;
-		if (mode == 3) {
-			set_transparency(TRANSPARENCY_ALPHA_DEPTH_PRE_PASS);
-		}
-		return true;
-	}
-	else if (p_name == "depth_enabled") {
-		bool enabled = p_value;
-		if (enabled) {
-			set_feature(FEATURE_HEIGHT_MAPPING, true);
-			set_flag(FLAG_INVERT_HEIGHTMAP, true);
-		}
-		return true;
-	}
-	else {
-		static const Pair<const char*, const char*> remaps[] = {
-			{"flags_use_shadow_to_opacity", "shadow_to_opacity"},
-			{"flags_use_shadow_to_opacity", "shadow_to_opacity"},
-			{"flags_no_depth_test", "no_depth_test"},
-			{"flags_use_point_size", "use_point_size"},
-			{"flags_fixed_size", "fixed_size"},
-			{"flags_albedo_tex_force_srgb", "albedo_texture_force_srgb"},
-			{"flags_do_not_receive_shadows", "disable_receive_shadows"},
-			{"flags_disable_ambient_light", "disable_ambient_light"},
-			{"params_diffuse_mode", "diffuse_mode"},
-			{"params_specular_mode", "specular_mode"},
-			{"params_blend_mode", "blend_mode"},
-			{"params_cull_mode", "cull_mode"},
-			{"params_depth_draw_mode", "params_depth_draw_mode"},
-			{"params_point_size", "point_size"},
-			{"params_billboard_mode", "billboard_mode"},
-			{"params_billboard_keep_scale", "billboard_keep_scale"},
-			{"params_grow", "grow"},
-			{"params_grow_amount", "grow_amount"},
-			{"params_alpha_scissor_threshold", "alpha_scissor_threshold"},
-			{"params_alpha_hash_scale", "alpha_hash_scale"},
-			{"params_alpha_antialiasing_edge", "alpha_antialiasing_edge"},
-
-			{"depth_scale", "heightmap_scale"},
-			{"depth_deep_parallax", "heightmap_deep_parallax"},
-			{"depth_min_layers", "heightmap_min_layers"},
-			{"depth_max_layers", "heightmap_max_layers"},
-			{"depth_flip_tangent", "heightmap_flip_tangent"},
-			{"depth_flip_binormal", "heightmap_flip_binormal"},
-			{"depth_texture", "heightmap_texture"},
-
-			{"emission_energy", "emission_energy_multiplier"},
-
-			{nullptr, nullptr},
-		};
-
-		int idx = 0;
-		while (remaps[idx].first) {
-			if (p_name == remaps[idx].first) {
-				this->obj->set(remaps[idx].second, p_value);
-				return true;
-			}
-			idx++;
-		}
-
-		WARN_PRINT("Godot 3.x SpatialMaterial remapped parameter not found: " + String(p_name));
-		return true;
-	}
-}
 
 bool Material::_can_do_next_pass() const { return false; }
 
@@ -3658,7 +2418,5 @@ bool Material::_can_use_render_priority() const { return false; }
 RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
-
-///////////////////////
 
 

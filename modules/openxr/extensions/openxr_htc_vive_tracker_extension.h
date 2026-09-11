@@ -30,24 +30,21 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRHTCViveTrackerExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRHTCViveTrackerExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRHTCViveTrackerExtension
+{
 public:
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	PackedStringArray get_suggested_tracker_names() override;
+	PackedStringArray get_suggested_tracker_names();
 
 	bool is_available();
 
-	virtual void on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) override;
-	virtual bool on_event_polled(const XrEventDataBuffer &event) override;
+	virtual bool on_event_polled(const XrEventDataBuffer& event);
 
 private:
 	bool available = false;
 };
+
+

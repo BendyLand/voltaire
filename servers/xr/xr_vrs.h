@@ -30,8 +30,8 @@
 
 #pragma once
 
+#include "core/types.h"
 #include "core/math/vector2i.h"
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
@@ -56,7 +56,6 @@ protected:
 public:
 	~XRVRS();
 
-	mem_unique_ptr<Object> obj;
 	float get_vrs_min_radius() const;
 	void set_vrs_min_radius(float p_vrs_min_radius);
 	float get_vrs_strength() const;

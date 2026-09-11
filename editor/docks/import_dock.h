@@ -42,36 +42,35 @@
 class ImportDockParameters;
 class VBoxContainer;
 
-class ImportDock : public EditorDock {
-	VLTRCLASS(ImportDock, EditorDock);
+class ImportDock : public EditorDock
+{
+	Label* imported = nullptr;
+	OptionButton* import_as = nullptr;
+	MenuButton* preset = nullptr;
+	EditorInspector* import_opts = nullptr;
 
-	Label *imported = nullptr;
-	OptionButton *import_as = nullptr;
-	MenuButton *preset = nullptr;
-	EditorInspector *import_opts = nullptr;
-
-	ConfirmationDialog *reimport_confirm = nullptr;
-	Label *cleanup_warning = nullptr;
-	Label *label_warning = nullptr;
-	Button *import = nullptr;
+	ConfirmationDialog* reimport_confirm = nullptr;
+	Label* cleanup_warning = nullptr;
+	Label* label_warning = nullptr;
+	Button* import = nullptr;
 	List<String> need_cleanup;
 
-	Control *advanced_spacer = nullptr;
-	Button *advanced = nullptr;
+	Control* advanced_spacer = nullptr;
+	Button* advanced = nullptr;
 
-	ImportDockParameters *params = nullptr;
+	ImportDockParameters* params = nullptr;
 
-	VBoxContainer *content = nullptr;
-	Label *select_a_resource = nullptr;
+	VBoxContainer* content = nullptr;
+	Label* select_a_resource = nullptr;
 
 	void _preset_selected(int p_idx);
 	void _importer_selected(int i_idx);
-	void _update_options(const String &p_path, const Ref<ConfigFile> &p_config = Ref<ConfigFile>());
+	void _update_options(const String& p_path, const Ref<ConfigFile>& p_config = Ref<ConfigFile>());
 	void _update_preset_menu();
-	void _add_keep_import_option(const String &p_importer_name);
+	void _add_keep_import_option(const String& p_importer_name);
 
-	void _property_edited(const StringName &p_prop);
-	void _property_toggled(const StringName &p_prop, bool p_checked);
+	void _property_edited(const StringName& p_prop);
+	void _property_toggled(const StringName& p_prop, bool p_checked);
 	void _set_dirty(bool p_dirty);
 	void _reimport_pressed();
 	void _reimport_attempt();
@@ -79,29 +78,33 @@ class ImportDock : public EditorDock {
 	void _reimport();
 
 	void _advanced_options();
-	enum {
+
+	enum
+	{
 		ITEM_SET_AS_DEFAULT = 100,
 		ITEM_LOAD_DEFAULT,
 		ITEM_CLEAR_DEFAULT,
 	};
 
 private:
-	static ImportDock *singleton;
+	static ImportDock* singleton;
 
 public:
-	static ImportDock *get_singleton() { return singleton; }
+	static ImportDock* get_singleton() { return singleton; }
 
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_edit_path(const String &p_path);
-	void set_edit_multiple_paths(const Vector<String> &p_paths);
-	void reimport_resources(const Vector<String> &p_paths);
+	void set_edit_path(const String& p_path);
+	void set_edit_multiple_paths(const Vector<String>& p_paths);
+	void reimport_resources(const Vector<String>& p_paths);
 	void initialize_import_options() const;
 	void clear();
 
 	ImportDock();
 	~ImportDock();
 };
+
+

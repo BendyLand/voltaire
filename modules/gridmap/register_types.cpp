@@ -37,7 +37,6 @@
 #include "editor/grid_map_editor_plugin.h"
 #endif
 
-#include "core/object/class_db.h"
 
 void initialize_gridmap_module(ModuleInitializationLevel p_level)
 {

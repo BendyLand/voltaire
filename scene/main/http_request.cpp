@@ -31,8 +31,6 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/stream_peer_gzip.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "http_request.h"
@@ -594,21 +592,6 @@ bool HTTPRequest::_update_connection()
 	ERR_FAIL_V(false);
 }
 
-void HTTPRequest::_defer_done(
-	int p_status, int p_code, const PackedStringArray& p_headers, const PackedByteArray& p_data)
-{
-	callable_mp(this, &HTTPRequest::_request_done)
-		.call_deferred(p_status, p_code, p_headers, p_data);
-}
-
-void HTTPRequest::_request_done(
-	int p_status, int p_code, const PackedStringArray& p_headers, const PackedByteArray& p_data)
-{
-	cancel_request();
-
-	this->obj->emit_signal(SNAME("request_completed"), p_status, p_code, p_headers, p_data);
-}
-
 void HTTPRequest::_notification(int p_what)
 {
 	switch (p_what) {
@@ -717,19 +700,6 @@ void HTTPRequest::set_tls_options(const Ref<TLSOptions>& p_options)
 {
 	ERR_FAIL_COND(p_options.is_null() || p_options->is_server());
 	tls_options = p_options;
-}
-
-void HTTPRequest::_bind_methods() {}
-
-HTTPRequest::HTTPRequest()
-{
-	client = Ref<HTTPClient>(HTTPClient::create());
-	tls_options = TLSOptions::client();
-	timer = memnew(Timer);
-	timer->set_one_shot(true);
-	timer->set_ignore_time_scale(true);
-	timer->connect("timeout", callable_mp(this, &HTTPRequest::_timeout));
-	add_child(timer);
 }
 
 

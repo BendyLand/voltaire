@@ -29,10 +29,7 @@
 /**************************************************************************/
 
 #include "camera_feed.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
-
-void CameraFeed::_bind_methods() {}
 
 int CameraFeed::get_id() const { return id; }
 
@@ -123,152 +120,11 @@ CameraFeed::~CameraFeed()
 	RenderingServer::get_singleton()->free_rid(texture[CameraServer::FEED_CBCR_IMAGE]);
 }
 
-void CameraFeed::set_rgb_image(const Ref<Image>& p_rgb_img)
-{
-	ERR_FAIL_COND(p_rgb_img.is_null());
-	if (active) {
-		int new_width = p_rgb_img->get_width();
-		int new_height = p_rgb_img->get_height();
-
-		if (datatype != CameraFeed::FEED_RGB || (base_width != new_width) ||
-			(base_height != new_height)) {
-			base_width = new_width;
-			base_height = new_height;
-
-			RID new_texture = RenderingServer::get_singleton()->texture_2d_create(p_rgb_img);
-			RenderingServer::get_singleton()->texture_replace(
-				texture[CameraServer::FEED_RGBA_IMAGE], new_texture);
-
-			// `format_changed` signal is deferred to ensure:
-			// - They are emitted on Godot's main thread.
-			// - Both datatype and frame size are updated before the emission.
-			this->obj->call_deferred("emit_signal", format_changed_signal_name);
-		}
-		else {
-			RenderingServer::get_singleton()->texture_2d_update(
-				texture[CameraServer::FEED_RGBA_IMAGE], p_rgb_img);
-		}
-
-		datatype = CameraFeed::FEED_RGB;
-		// Most of the time the pixel data of camera devices comes from threads outside Godot.
-		// Defer `frame_changed` signals to ensure they are emitted on Godot's main thread.
-		this->obj->call_deferred("emit_signal", frame_changed_signal_name);
-	}
-}
-
-void CameraFeed::set_ycbcr_image(const Ref<Image>& p_ycbcr_img)
-{
-	ERR_FAIL_COND(p_ycbcr_img.is_null());
-	if (active) {
-		int new_width = p_ycbcr_img->get_width();
-		int new_height = p_ycbcr_img->get_height();
-
-		if (datatype != CameraFeed::FEED_YCBCR || (base_width != new_width) ||
-			(base_height != new_height)) {
-			base_width = new_width;
-			base_height = new_height;
-
-			RID new_texture = RenderingServer::get_singleton()->texture_2d_create(p_ycbcr_img);
-			RenderingServer::get_singleton()->texture_replace(
-				texture[CameraServer::FEED_YCBCR_IMAGE], new_texture);
-
-			// `format_changed` signal is deferred to ensure:
-			// - They are emitted on Godot's main thread.
-			// - Both datatype and frame size are updated before the emission.
-			this->obj->call_deferred("emit_signal", format_changed_signal_name);
-		}
-		else {
-			RenderingServer::get_singleton()->texture_2d_update(
-				texture[CameraServer::FEED_YCBCR_IMAGE], p_ycbcr_img);
-		}
-
-		datatype = CameraFeed::FEED_YCBCR;
-		// Most of the time the pixel data of camera devices comes from threads outside Godot.
-		// Defer `frame_changed` signals to ensure they are emitted on Godot's main thread.
-		this->obj->call_deferred("emit_signal", frame_changed_signal_name);
-	}
-}
-
-void CameraFeed::set_ycbcr_images(const Ref<Image>& p_y_img, const Ref<Image>& p_cbcr_img)
-{
-	ERR_FAIL_COND(p_y_img.is_null());
-	ERR_FAIL_COND(p_cbcr_img.is_null());
-	if (active) {
-		///@TODO investigate whether we can use thirdparty/misc/yuv2rgb.h here to convert our YUV
-		///data to RGB, our shader approach is potentially faster though..
-		// Wondering about including that into multiple projects, may cause issues.
-		// That said, if we convert to RGB, we could enable using texture resources again...
-
-		int new_y_width = p_y_img->get_width();
-		int new_y_height = p_y_img->get_height();
-
-		if (datatype != CameraFeed::FEED_YCBCR_SEP || (base_width != new_y_width) ||
-			(base_height != new_y_height)) {
-			base_width = new_y_width;
-			base_height = new_y_height;
-			{
-				RID new_texture = RenderingServer::get_singleton()->texture_2d_create(p_y_img);
-				RenderingServer::get_singleton()->texture_replace(
-					texture[CameraServer::FEED_Y_IMAGE], new_texture);
-			}
-			{
-				RID new_texture = RenderingServer::get_singleton()->texture_2d_create(p_cbcr_img);
-				RenderingServer::get_singleton()->texture_replace(
-					texture[CameraServer::FEED_CBCR_IMAGE], new_texture);
-			}
-
-			// `format_changed` signal is deferred to ensure:
-			// - They are emitted on Godot's main thread.
-			// - Both datatype and frame size are updated before the emission.
-			this->obj->call_deferred("emit_signal", format_changed_signal_name);
-		}
-		else {
-			RenderingServer::get_singleton()->texture_2d_update(
-				texture[CameraServer::FEED_Y_IMAGE], p_y_img);
-			RenderingServer::get_singleton()->texture_2d_update(
-				texture[CameraServer::FEED_CBCR_IMAGE], p_cbcr_img);
-		}
-
-		datatype = CameraFeed::FEED_YCBCR_SEP;
-		// Most of the time the pixel data of camera devices comes from threads outside Godot.
-		// Defer `frame_changed` signals to ensure they are emitted on Godot's main thread.
-		this->obj->call_deferred("emit_signal", frame_changed_signal_name);
-	}
-}
-
-void CameraFeed::set_external(int p_width, int p_height)
-{
-	if (datatype != CameraFeed::FEED_EXTERNAL || (base_width != p_width) ||
-		(base_height != p_height)) {
-		base_width = p_width;
-		base_height = p_height;
-
-		RID new_texture =
-			RenderingServer::get_singleton()->texture_external_create(p_width, p_height, 0);
-		RenderingServer::get_singleton()->texture_replace(
-			texture[CameraServer::FEED_YCBCR_IMAGE], new_texture);
-
-		// `format_changed` signal is deferred to ensure:
-		// - They are emitted on Godot's main thread.
-		// - Both datatype and frame size are updated before the emission.
-		this->obj->call_deferred("emit_signal", format_changed_signal_name);
-	}
-
-	datatype = CameraFeed::FEED_EXTERNAL;
-	// Most of the time the pixel data of camera devices comes from threads outside Godot.
-	// Defer `frame_changed` signals to ensure they are emitted on Godot's main thread.
-	this->obj->call_deferred("emit_signal", frame_changed_signal_name);
-}
-
 CameraFeed::FeedFormat CameraFeed::get_format() const
 {
 	FeedFormat feed_format = {};
 	return feed_format;
 }
-
-bool CameraFeed::set_format(int p_index, const Dictionary& p_format) { return true; }
-
-Array CameraFeed::get_formats() const { return Array(); }
 
 bool CameraFeed::activate_feed() { return false; }
 

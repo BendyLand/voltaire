@@ -34,7 +34,6 @@ TEST_FORCE_LINK(test_text_server)
 
 #ifdef TOOLS_ENABLED
 
-#include "core/variant/typed_array.h"
 #include "editor/themes/builtin_fonts.gen.h"
 #include "servers/text/text_server.h"
 
@@ -519,7 +518,7 @@ TEST_SUITE("[TextServer]") {
 					struct TestCase {
 						String text;
 						PackedInt32Array breaks;
-						BitField<TextServer::LineBreakFlag> flags = TextServer::BREAK_NONE;
+						uint32_t flags = TextServer::BREAK_NONE;
 					};
 					TestCase cases[] = {
 						{ U"test \rtest", { 0, 4, 6, 10 }, TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND | TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES },

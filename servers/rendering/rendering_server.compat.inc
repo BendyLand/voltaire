@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "rendering_server.h"
 
 void RenderingServer::_multimesh_allocate_data_bind_compat_99455(RID p_multimesh, int p_instances,

@@ -67,8 +67,6 @@ typedef Vector<uint8_t> (*SaveDDSBufferFunc)(const Ref<Image>& p_img);
 
 class Image : public Resource
 {
-	VLTRCLASS(Image, Resource);
-
 public:
 	enum
 	{
@@ -293,8 +291,6 @@ public:
 	static Ref<Image> (*basis_universal_unpacker_ptr)(const uint8_t* p_data, int p_size);
 
 protected:
-	virtual Ref<Resource> _duplicate(const DuplicateParams& p_params) const override;
-
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
@@ -337,9 +333,6 @@ private:
 
 	_FORCE_INLINE_ void _repeat_pixel_over_subsequent_memory(
 		uint8_t* p_pixel, int p_pixel_size, int p_count);
-
-	void _set_data(const Dictionary& p_data);
-	Dictionary _get_data() const;
 
 	Error _load_from_buffer(const Vector<uint8_t>& p_array, ImageMemLoadFunc p_loader);
 
@@ -545,21 +538,6 @@ public:
 	void set_as_black();
 
 	void copy_internals_from(const Ref<Image>& p_image);
-
-	Dictionary compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric = true);
 };
-
-VARIANT_ENUM_CAST(Image::Format)
-VARIANT_ENUM_CAST(Image::Interpolation)
-VARIANT_ENUM_CAST(Image::CompressMode)
-VARIANT_ENUM_CAST(Image::CompressSource)
-VARIANT_ENUM_CAST(Image::UsedChannels)
-VARIANT_ENUM_CAST(Image::AlphaMode)
-VARIANT_ENUM_CAST(Image::RoughnessChannel)
-VARIANT_ENUM_CAST(Image::CompressProfile)
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST(Image::ASTCFormat)
-#endif
 
 

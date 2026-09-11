@@ -55,8 +55,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::VISUAL_INSTANCE_3D;
-
 	enum GetFacesFlags
 	{
 		FACES_SOLID = 1, // solid geometry
@@ -90,8 +88,6 @@ public:
 class GeometryInstance3D : public VisualInstance3D
 {
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::GEOMETRY_INSTANCE_3D;
-
 	enum ShadowCastingSetting
 	{
 		SHADOW_CASTING_SETTING_OFF = RSE::SHADOW_CASTING_SETTING_OFF,
@@ -138,7 +134,6 @@ private:
 
 	float lod_bias = 1.0;
 
-	mutable HashMap<StringName, Variant> instance_shader_parameters;
 	mutable HashMap<StringName, StringName> instance_shader_parameter_property_remap;
 
 	float extra_cull_margin = 0.0;
@@ -150,11 +145,6 @@ private:
 	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_property(PropertyInfo& p_property) const;
-
 	static void _bind_methods();
 
 public:
@@ -197,14 +187,6 @@ public:
 	void set_lightmap_texel_scale(float p_scale);
 	float get_lightmap_texel_scale() const;
 
-#ifndef DISABLE_DEPRECATED
-	void set_lightmap_scale(GeometryInstance3D::LightmapScale p_scale);
-	LightmapScale get_lightmap_scale() const;
-#endif // DISABLE_DEPRECATED
-
-	void set_instance_shader_parameter(const StringName& p_name, const Variant& p_value);
-	Variant get_instance_shader_parameter(const StringName& p_name) const;
-
 	void set_custom_aabb(AABB p_aabb);
 	AABB get_custom_aabb() const;
 
@@ -217,10 +199,5 @@ public:
 	GeometryInstance3D();
 	virtual ~GeometryInstance3D();
 };
-
-VARIANT_ENUM_CAST(GeometryInstance3D::ShadowCastingSetting);
-VARIANT_ENUM_CAST(GeometryInstance3D::GIMode);
-VARIANT_ENUM_CAST(GeometryInstance3D::LightmapScale);
-VARIANT_ENUM_CAST(GeometryInstance3D::VisibilityRangeFadeMode);
 
 

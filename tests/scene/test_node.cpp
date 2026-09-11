@@ -34,7 +34,6 @@ TEST_FORCE_LINK(test_node)
 
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
-#include "core/object/class_db.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
@@ -44,7 +43,6 @@ TEST_FORCE_LINK(test_node)
 namespace TestNode {
 
 class TestNode : public Node {
-	VLTRCLASS(TestNode, Node);
 
 protected:
 	void _notification(int p_what) {

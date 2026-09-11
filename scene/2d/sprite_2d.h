@@ -33,9 +33,8 @@
 #include "scene/2d/node_2d.h"
 #include "scene/resources/texture.h"
 
-class Sprite2D : public Node2D {
-	VLTRCLASS(Sprite2D, Node2D);
-
+class Sprite2D : public Node2D
+{
 	Ref<Texture2D> texture;
 
 #ifdef TOOLS_ENABLED
@@ -56,8 +55,8 @@ class Sprite2D : public Node2D {
 	int vframes = 1;
 	int hframes = 1;
 
-	void _get_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect, bool &r_filter_clip_enabled) const;
-	Point2 _get_rect_offset(const Size2i &p_size) const;
+	void _get_rects(Rect2& r_src_rect, Rect2& r_dst_rect, bool& r_filter_clip_enabled) const;
+	Point2 _get_rect_offset(const Size2i& p_size) const;
 
 	void _texture_changed();
 	void _emit_region_rect_enabled();
@@ -67,42 +66,25 @@ protected:
 
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo &p_property) const;
-
 public:
-#ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary &p_state) override;
-
-	virtual void _edit_set_pivot(const Point2 &p_pivot) override;
-	virtual Point2 _edit_get_pivot() const override;
-	virtual bool _edit_use_pivot() const override;
-
-	virtual void _edit_set_rect(const Rect2 &p_rect) override;
-#endif // TOOLS_ENABLED
-
 #ifdef DEBUG_ENABLED
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(
+		const Point2& p_point, double p_tolerance) const override;
 
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
-#ifdef TOOLS_ENABLED
-	void _editor_set_dragging_to_resize_rect(bool p_dragging_to_resize_rect);
-	bool _editor_is_dragging_to_resiz_rect() const;
-#endif
-
-	bool is_pixel_opaque(const Point2 &p_point) const;
+	bool is_pixel_opaque(const Point2& p_point) const;
 	bool is_editor_region_rect_draggable() const;
 
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_centered(bool p_center);
 	bool is_centered() const;
 
-	void set_offset(const Point2 &p_offset);
+	void set_offset(const Point2& p_offset);
 	Point2 get_offset() const;
 
 	void set_flip_h(bool p_flip);
@@ -117,13 +99,13 @@ public:
 	void set_region_filter_clip_enabled(bool p_enabled);
 	bool is_region_filter_clip_enabled() const;
 
-	void set_region_rect(const Rect2 &p_region_rect);
+	void set_region_rect(const Rect2& p_region_rect);
 	Rect2 get_region_rect() const;
 
 	void set_frame(int p_frame);
 	int get_frame() const;
 
-	void set_frame_coords(const Vector2i &p_coord);
+	void set_frame_coords(const Vector2i& p_coord);
 	Vector2i get_frame_coords() const;
 
 	void set_vframes(int p_amount);
@@ -137,3 +119,5 @@ public:
 
 	Sprite2D();
 };
+
+

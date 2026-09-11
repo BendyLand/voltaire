@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "bit_map.h"
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 
 void BitMap::create(const Size2i& p_size)
 {
@@ -155,23 +153,6 @@ bool BitMap::get_bit(int p_x, int p_y) const
 }
 
 Size2i BitMap::get_size() const { return Size2i(width, height); }
-
-void BitMap::_set_data(const Dictionary& p_d)
-{
-	ERR_FAIL_COND(!p_d.has("size"));
-	ERR_FAIL_COND(!p_d.has("data"));
-
-	create(p_d["size"]);
-	bitmask = p_d["data"];
-}
-
-Dictionary BitMap::_get_data() const
-{
-	Dictionary d;
-	d["size"] = get_size();
-	d["data"] = bitmask;
-	return d;
-}
 
 Vector<Vector<Vector2>> BitMap::_march_square(const Rect2i& p_rect, const Point2i& p_start) const
 {
@@ -635,34 +616,6 @@ void BitMap::grow_mask(int p_pixels, const Rect2i& p_rect)
 
 void BitMap::shrink_mask(int p_pixels, const Rect2i& p_rect) { grow_mask(-p_pixels, p_rect); }
 
-TypedArray<PackedVector2Array> BitMap::_opaque_to_polygons_bind(
-	const Rect2i& p_rect, float p_epsilon) const
-{
-	Vector<Vector<Vector2>> result = clip_opaque_to_polygons(p_rect, p_epsilon);
-
-	// Convert result to bindable types.
-
-	TypedArray<PackedVector2Array> result_array;
-	result_array.resize(result.size());
-	for (int i = 0; i < result.size(); i++) {
-		const Vector<Vector2>& polygon = result[i];
-
-		PackedVector2Array polygon_array;
-		polygon_array.resize(polygon.size());
-
-		{
-			Vector2* w = polygon_array.ptrw();
-			for (int j = 0; j < polygon.size(); j++) {
-				w[j] = polygon[j];
-			}
-		}
-
-		result_array[i] = polygon_array;
-	}
-
-	return result_array;
-}
-
 void BitMap::resize(const Size2i& p_new_size)
 {
 	ERR_FAIL_COND(p_new_size.width < 0 || p_new_size.height < 0);
@@ -729,7 +682,5 @@ void BitMap::blit(const Vector2i& p_pos, const Ref<BitMap>& p_bitmap)
 		}
 	}
 }
-
-void BitMap::_bind_methods() {}
 
 

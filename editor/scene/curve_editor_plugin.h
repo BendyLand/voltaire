@@ -39,9 +39,8 @@ class EditorSpinSlider;
 class MenuButton;
 class PopupMenu;
 
-class CurveEdit : public Control {
-	VLTRCLASS(CurveEdit, Control);
-
+class CurveEdit : public Control
+{
 public:
 	CurveEdit();
 
@@ -54,7 +53,8 @@ public:
 
 	Size2 get_minimum_size() const override;
 
-	enum PresetID {
+	enum PresetID
+	{
 		PRESET_CONSTANT = 0,
 		PRESET_LINEAR,
 		PRESET_EASE_IN,
@@ -63,7 +63,8 @@ public:
 		PRESET_COUNT
 	};
 
-	enum TangentIndex {
+	enum TangentIndex
+	{
 		TANGENT_NONE = -1,
 		TANGENT_LEFT = 0,
 		TANGENT_RIGHT = 1
@@ -74,17 +75,18 @@ protected:
 	static void _bind_methods();
 
 private:
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void _curve_changed();
 
-	int get_point_at(const Vector2 &p_pos) const;
-	TangentIndex get_tangent_at(const Vector2 &p_pos) const;
+	int get_point_at(const Vector2& p_pos) const;
+	TangentIndex get_tangent_at(const Vector2& p_pos) const;
 
-	float get_offset_without_collision(int p_current_index, float p_offset, bool p_prioritize_right = true);
+	float get_offset_without_collision(
+		int p_current_index, float p_offset, bool p_prioritize_right = true);
 
-	void add_point(const Vector2 &p_pos);
+	void add_point(const Vector2& p_pos);
 	void remove_point(int p_index);
-	void set_point_position(int p_index, const Vector2 &p_pos);
+	void set_point_position(int p_index, const Vector2& p_pos);
 
 	void set_point_tangents(int p_index, float p_left, float p_right);
 	void set_point_left_tangent(int p_index, float p_tangent);
@@ -93,13 +95,14 @@ private:
 
 	void update_view_transform();
 
-	void plot_curve_accurate(float p_step, const Color &p_line_color, const Color &p_edge_line_color);
+	void plot_curve_accurate(
+		float p_step, const Color& p_line_color, const Color& p_edge_line_color);
 
 	void set_selected_index(int p_index);
 
 	Vector2 get_tangent_view_pos(int p_index, TangentIndex p_tangent) const;
-	Vector2 get_view_pos(const Vector2 &p_world_pos) const;
-	Vector2 get_world_pos(const Vector2 &p_view_pos) const;
+	Vector2 get_view_pos(const Vector2& p_world_pos) const;
+	Vector2 get_world_pos(const Vector2& p_view_pos) const;
 
 	void _redraw();
 
@@ -130,11 +133,13 @@ private:
 	int tangent_hover_radius = BASE_TANGENT_HOVER_RADIUS;
 	int tangent_length = BASE_TANGENT_LENGTH;
 
-	enum GrabMode {
+	enum GrabMode
+	{
 		GRAB_NONE,
 		GRAB_ADD,
 		GRAB_MOVE
 	};
+
 	GrabMode grabbing = GRAB_NONE;
 	Vector2 initial_grab_pos;
 	int initial_grab_index = -1;
@@ -146,17 +151,16 @@ private:
 };
 
 // CurveEdit + toolbar
-class CurveEditor : public VBoxContainer {
-	VLTRCLASS(CurveEditor, VBoxContainer);
-
+class CurveEditor : public VBoxContainer
+{
 	// Make sure to use the scaled values below.
 	const int BASE_SPACING = 4;
 	int spacing = BASE_SPACING;
 
-	Button *snap_button = nullptr;
-	EditorSpinSlider *snap_count_edit = nullptr;
-	MenuButton *presets_button = nullptr;
-	CurveEdit *curve_editor_rect = nullptr;
+	Button* snap_button = nullptr;
+	EditorSpinSlider* snap_count_edit = nullptr;
+	MenuButton* presets_button = nullptr;
+	CurveEdit* curve_editor_rect = nullptr;
 
 	void _set_snap_enabled(bool p_enabled);
 	void _set_snap_count(int p_snap_count);
@@ -167,32 +171,23 @@ protected:
 
 public:
 	static const int DEFAULT_SNAP;
-	void set_curve(const Ref<Curve> &p_curve);
+	void set_curve(const Ref<Curve>& p_curve);
 
 	CurveEditor();
 };
 
-class EditorInspectorPluginCurve : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginCurve, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class CurveEditorPlugin : public EditorPlugin {
-	VLTRCLASS(CurveEditorPlugin, EditorPlugin);
-
+class CurveEditorPlugin : public EditorPlugin
+{
 public:
 	CurveEditorPlugin();
 
 	virtual String get_plugin_name() const override { return "Curve"; }
 };
 
-class CurvePreviewGenerator : public EditorResourcePreviewGenerator {
-	VLTRCLASS(CurvePreviewGenerator, EditorResourcePreviewGenerator);
-
+class CurvePreviewGenerator : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 };
+
+

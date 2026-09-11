@@ -2897,4 +2897,3 @@ bin/obj/scene/animation/animation_blend_space_2d.linuxbsd.editor.x86_64.o
 bin/obj/scene/animation/animation_blend_tree.linuxbsd.editor.x86_64.o
 bin/obj/scene/animation/animation_node_state_machine.linuxbsd.editor.x86_64.o
 bin/obj/scene/animation/animation_tree.linuxbsd.editor.x86_64.o
-bin/obj/drivers/accesskit/accessibility_server_accesskit.linuxbsd.editor.x86_64.o

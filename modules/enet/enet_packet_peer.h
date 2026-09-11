@@ -30,17 +30,15 @@
 
 #pragma once
 
+#include <enet/enet.h>
 #include "core/io/packet_peer.h"
 
-#include <enet/enet.h>
-
-class ENetPacketPeer : public PacketPeer {
-	VLTRCLASS(ENetPacketPeer, PacketPeer);
-
+class ENetPacketPeer : public PacketPeer
+{
 private:
-	ENetPeer *peer = nullptr;
-	List<ENetPacket *> packet_queue;
-	ENetPacket *last_packet = nullptr;
+	ENetPeer* peer = nullptr;
+	List<ENetPacket*> packet_queue;
+	ENetPacket* last_packet = nullptr;
 
 	static void _bind_methods();
 	Error _send(int p_channel, PackedByteArray p_packet, int p_flags);
@@ -49,22 +47,26 @@ protected:
 	friend class ENetConnection;
 	// Internally used by ENetConnection during service, destroy, etc.
 	void _on_disconnect();
-	void _queue_packet(ENetPacket *p_packet);
+	void _queue_packet(ENetPacket* p_packet);
 
 public:
-	enum {
+	enum
+	{
 		PACKET_THROTTLE_SCALE = ENET_PEER_PACKET_THROTTLE_SCALE,
 		PACKET_LOSS_SCALE = ENET_PEER_PACKET_LOSS_SCALE,
 	};
 
-	enum {
+	enum
+	{
 		FLAG_RELIABLE = ENET_PACKET_FLAG_RELIABLE,
 		FLAG_UNSEQUENCED = ENET_PACKET_FLAG_UNSEQUENCED,
 		FLAG_UNRELIABLE_FRAGMENT = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT,
-		FLAG_ALLOWED = ENET_PACKET_FLAG_RELIABLE | ENET_PACKET_FLAG_UNSEQUENCED | ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT,
+		FLAG_ALLOWED = ENET_PACKET_FLAG_RELIABLE | ENET_PACKET_FLAG_UNSEQUENCED |
+					   ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT,
 	};
 
-	enum PeerState {
+	enum PeerState
+	{
 		STATE_DISCONNECTED = ENET_PEER_STATE_DISCONNECTED,
 		STATE_CONNECTING = ENET_PEER_STATE_CONNECTING,
 		STATE_ACKNOWLEDGING_CONNECT = ENET_PEER_STATE_ACKNOWLEDGING_CONNECT,
@@ -77,7 +79,8 @@ public:
 		STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE,
 	};
 
-	enum PeerStatistic {
+	enum PeerStatistic
+	{
 		PEER_PACKET_LOSS,
 		PEER_PACKET_LOSS_VARIANCE,
 		PEER_PACKET_LOSS_EPOCH,
@@ -96,8 +99,9 @@ public:
 
 	int get_max_packet_size() const override;
 	int get_available_packet_count() const override;
-	Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 
 	void peer_disconnect(int p_data = 0);
 	void peer_disconnect_later(int p_data = 0);
@@ -106,7 +110,7 @@ public:
 	void ping();
 	void ping_interval(int p_interval);
 	void reset();
-	int send(uint8_t p_channel, ENetPacket *p_packet);
+	int send(uint8_t p_channel, ENetPacket* p_packet);
 	void throttle_configure(int interval, int acceleration, int deceleration);
 	void set_timeout(int p_timeout, int p_timeout_min, int p_timeout_max);
 	double get_statistic(PeerStatistic p_stat);
@@ -115,15 +119,13 @@ public:
 	int get_packet_flags() const;
 
 	// Extras
-	IPAddress get_remote_address() const;
 	int get_remote_port() const;
 
 	// Used by ENetMultiplayer (TODO use meta? If only they where StringNames)
 	bool is_active() const;
 
-	ENetPacketPeer(ENetPeer *p_peer);
+	ENetPacketPeer(ENetPeer* p_peer);
 	~ENetPacketPeer();
 };
 
-VARIANT_ENUM_CAST(ENetPacketPeer::PeerState);
-VARIANT_ENUM_CAST(ENetPacketPeer::PeerStatistic);
+

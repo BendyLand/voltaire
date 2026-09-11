@@ -30,13 +30,11 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
 #include "openxr_composition_layer.h"
 
-#include <openxr/openxr.h>
-
-class OpenXRCompositionLayerEquirect : public OpenXRCompositionLayer {
-	VLTRCLASS(OpenXRCompositionLayerEquirect, OpenXRCompositionLayer);
-
+class OpenXRCompositionLayerEquirect : public OpenXRCompositionLayer
+{
 	float radius = 1.0;
 	float central_horizontal_angle = Math::PI / 2.0;
 	float upper_vertical_angle = Math::PI / 4.0;
@@ -47,7 +45,9 @@ protected:
 	static void _bind_methods();
 
 	virtual Ref<Mesh> _create_fallback_mesh() override;
-	virtual XrStructureType _get_openxr_type() const override {
+
+	virtual XrStructureType _get_openxr_type() const override
+	{
 		return XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR;
 	}
 
@@ -67,8 +67,11 @@ public:
 	void set_fallback_segments(uint32_t p_fallback_segments);
 	uint32_t get_fallback_segments() const;
 
-	virtual Vector2 intersects_ray(const Vector3 &p_origin, const Vector3 &p_direction) const override;
+	virtual Vector2 intersects_ray(
+		const Vector3& p_origin, const Vector3& p_direction) const override;
 
 	OpenXRCompositionLayerEquirect();
 	~OpenXRCompositionLayerEquirect();
 };
+
+

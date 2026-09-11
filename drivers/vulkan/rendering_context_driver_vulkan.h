@@ -43,9 +43,11 @@
 
 #include <drivers/vulkan/godot_vulkan.h>
 
-class RenderingContextDriverVulkan : public RenderingContextDriver {
+class RenderingContextDriverVulkan : public RenderingContextDriver
+{
 public:
-	struct Functions {
+	struct Functions
+	{
 		// Physical device.
 		PFN_vkGetPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2 = nullptr;
 		PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2 = nullptr;
@@ -56,8 +58,10 @@ public:
 		// Surfaces.
 		PFN_vkGetPhysicalDeviceSurfaceSupportKHR GetPhysicalDeviceSurfaceSupportKHR = nullptr;
 		PFN_vkGetPhysicalDeviceSurfaceFormatsKHR GetPhysicalDeviceSurfaceFormatsKHR = nullptr;
-		PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
-		PFN_vkGetPhysicalDeviceSurfacePresentModesKHR GetPhysicalDeviceSurfacePresentModesKHR = nullptr;
+		PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR =
+			nullptr;
+		PFN_vkGetPhysicalDeviceSurfacePresentModesKHR GetPhysicalDeviceSurfacePresentModesKHR =
+			nullptr;
 
 		// Debug utils.
 		PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT = nullptr;
@@ -66,12 +70,12 @@ public:
 		PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT = nullptr;
 		PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT = nullptr;
 
-		bool debug_util_functions_available() const {
+		bool debug_util_functions_available() const
+		{
 			return CreateDebugUtilsMessengerEXT != nullptr &&
-					DestroyDebugUtilsMessengerEXT != nullptr &&
-					CmdBeginDebugUtilsLabelEXT != nullptr &&
-					CmdEndDebugUtilsLabelEXT != nullptr &&
-					SetDebugUtilsObjectNameEXT != nullptr;
+				   DestroyDebugUtilsMessengerEXT != nullptr &&
+				   CmdBeginDebugUtilsLabelEXT != nullptr && CmdEndDebugUtilsLabelEXT != nullptr &&
+				   SetDebugUtilsObjectNameEXT != nullptr;
 		}
 
 		// Debug report.
@@ -85,15 +89,16 @@ public:
 		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
 		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
 
-		bool debug_report_functions_available() const {
-			return CreateDebugReportCallbackEXT != nullptr &&
-					DebugReportMessageEXT != nullptr &&
-					DestroyDebugReportCallbackEXT != nullptr;
+		bool debug_report_functions_available() const
+		{
+			return CreateDebugReportCallbackEXT != nullptr && DebugReportMessageEXT != nullptr &&
+				   DestroyDebugReportCallbackEXT != nullptr;
 		}
 	};
 
 private:
-	struct DeviceQueueFamilies {
+	struct DeviceQueueFamilies
+	{
 		TightLocalVector<VkQueueFamilyProperties> properties;
 	};
 
@@ -109,43 +114,59 @@ private:
 	Functions functions;
 
 	Error _initialize_vulkan_version();
-	void _register_requested_instance_extension(const CharString &p_extension_name, bool p_required);
+	void _register_requested_instance_extension(
+		const CharString& p_extension_name, bool p_required);
 	Error _initialize_instance_extensions();
 	Error _initialize_instance();
 	Error _initialize_devices();
 
 	// Static callbacks.
-	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT p_message_severity, VkDebugUtilsMessageTypeFlagsEXT p_message_type, const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data);
-	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_report_callback(VkDebugReportFlagsEXT p_flags, VkDebugReportObjectTypeEXT p_object_type, uint64_t p_object, size_t p_location, int32_t p_message_code, const char *p_layer_prefix, const char *p_message, void *p_user_data);
+	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_messenger_callback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT p_message_severity,
+		VkDebugUtilsMessageTypeFlagsEXT p_message_type,
+		const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
+	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_report_callback(VkDebugReportFlagsEXT p_flags,
+		VkDebugReportObjectTypeEXT p_object_type, uint64_t p_object, size_t p_location,
+		int32_t p_message_code, const char* p_layer_prefix, const char* p_message,
+		void* p_user_data);
 	// Debug marker extensions.
 	VkDebugReportObjectTypeEXT _convert_to_debug_report_objectType(VkObjectType p_object_type);
 
 protected:
-	Error _find_validation_layers(TightLocalVector<const char *> &r_layer_names) const;
+	Error _find_validation_layers(TightLocalVector<const char*>& r_layer_names) const;
 
 	// Can be overridden by platform-specific drivers.
-	virtual const char *_get_platform_surface_extension() const { return nullptr; }
+	virtual const char* _get_platform_surface_extension() const { return nullptr; }
+
 	virtual bool _use_validation_layers() const;
-	virtual Error _create_vulkan_instance(const VkInstanceCreateInfo *p_create_info, VkInstance *r_instance);
+	virtual Error _create_vulkan_instance(
+		const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance);
 
 public:
 	virtual Error initialize() override;
-	virtual const Device &device_get(uint32_t p_device_index) const override;
+	virtual const Device& device_get(uint32_t p_device_index) const override;
 	virtual uint32_t device_get_count() const override;
-	virtual bool device_supports_present(uint32_t p_device_index, SurfaceID p_surface) const override;
-	virtual RenderingDeviceDriver *driver_create() override;
-	virtual void driver_free(RenderingDeviceDriver *p_driver) override;
-	virtual SurfaceID surface_create(const void *p_platform_data) override;
-	virtual void surface_set_size(SurfaceID p_surface, uint32_t p_width, uint32_t p_height) override;
-	virtual void surface_set_vsync_mode(SurfaceID p_surface, DisplayServerEnums::VSyncMode p_vsync_mode) override;
-	virtual DisplayServerEnums::VSyncMode surface_get_vsync_mode(SurfaceID p_surface) const override;
+	virtual bool device_supports_present(
+		uint32_t p_device_index, SurfaceID p_surface) const override;
+	virtual RenderingDeviceDriver* driver_create() override;
+	virtual void driver_free(RenderingDeviceDriver* p_driver) override;
+	virtual SurfaceID surface_create(const void* p_platform_data) override;
+	virtual void surface_set_size(
+		SurfaceID p_surface, uint32_t p_width, uint32_t p_height) override;
+	virtual void surface_set_vsync_mode(
+		SurfaceID p_surface, DisplayServerEnums::VSyncMode p_vsync_mode) override;
+	virtual DisplayServerEnums::VSyncMode surface_get_vsync_mode(
+		SurfaceID p_surface) const override;
 	virtual void surface_set_hdr_output_enabled(SurfaceID p_surface, bool p_enabled) override;
 	virtual bool surface_get_hdr_output_enabled(SurfaceID p_surface) const override;
-	virtual void surface_set_hdr_output_reference_luminance(SurfaceID p_surface, float p_reference_luminance) override;
+	virtual void surface_set_hdr_output_reference_luminance(
+		SurfaceID p_surface, float p_reference_luminance) override;
 	virtual float surface_get_hdr_output_reference_luminance(SurfaceID p_surface) const override;
-	virtual void surface_set_hdr_output_max_luminance(SurfaceID p_surface, float p_max_luminance) override;
+	virtual void surface_set_hdr_output_max_luminance(
+		SurfaceID p_surface, float p_max_luminance) override;
 	virtual float surface_get_hdr_output_max_luminance(SurfaceID p_surface) const override;
-	virtual void surface_set_hdr_output_linear_luminance_scale(SurfaceID p_surface, float p_linear_luminance_scale) override;
+	virtual void surface_set_hdr_output_linear_luminance_scale(
+		SurfaceID p_surface, float p_linear_luminance_scale) override;
 	virtual float surface_get_hdr_output_linear_luminance_scale(SurfaceID p_surface) const override;
 	virtual float surface_get_hdr_output_max_value(SurfaceID p_surface) const override;
 	virtual uint32_t surface_get_width(SurfaceID p_surface) const override;
@@ -154,11 +175,14 @@ public:
 	virtual bool surface_get_needs_resize(SurfaceID p_surface) const override;
 	virtual void surface_destroy(SurfaceID p_surface) override;
 	virtual bool is_debug_utils_enabled() const override;
+
 	virtual bool is_colorspace_externally_managed() const { return false; }
+
 	bool is_colorspace_supported() const;
 
 	// Vulkan-only methods.
-	struct Surface {
+	struct Surface
+	{
 		VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -176,14 +200,17 @@ public:
 	VkInstance instance_get() const;
 	VkPhysicalDevice physical_device_get(uint32_t p_device_index) const;
 	uint32_t queue_family_get_count(uint32_t p_device_index) const;
-	VkQueueFamilyProperties queue_family_get(uint32_t p_device_index, uint32_t p_queue_family_index) const;
-	bool queue_family_supports_present(VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const;
-	const Functions &functions_get() const;
+	VkQueueFamilyProperties queue_family_get(
+		uint32_t p_device_index, uint32_t p_queue_family_index) const;
+	bool queue_family_supports_present(VkPhysicalDevice p_physical_device,
+		uint32_t p_queue_family_index, SurfaceID p_surface) const;
+	const Functions& functions_get() const;
 
-	static VkAllocationCallbacks *get_allocation_callbacks(VkObjectType p_type);
+	static VkAllocationCallbacks* get_allocation_callbacks(VkObjectType p_type);
 
 #if defined(VK_TRACK_DRIVER_MEMORY) || defined(VK_TRACK_DEVICE_MEMORY)
-	enum VkTrackedObjectType {
+	enum VkTrackedObjectType
+	{
 		VK_TRACKED_OBJECT_DESCRIPTOR_UPDATE_TEMPLATE_KHR = VK_OBJECT_TYPE_COMMAND_POOL + 1,
 		VK_TRACKED_OBJECT_TYPE_SURFACE,
 		VK_TRACKED_OBJECT_TYPE_SWAPCHAIN,
@@ -194,12 +221,13 @@ public:
 		VK_TRACKED_OBJECT_TYPE_COUNT
 	};
 
-	enum VkTrackedSystemAllocationScope {
+	enum VkTrackedSystemAllocationScope
+	{
 		VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT = VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE + 1
 	};
 #endif
 
-	const char *get_tracked_object_name(uint32_t p_type_index) const override;
+	const char* get_tracked_object_name(uint32_t p_type_index) const override;
 #if defined(VK_TRACK_DRIVER_MEMORY) || defined(VK_TRACK_DEVICE_MEMORY)
 	uint64_t get_tracked_object_type_count() const override;
 #endif
@@ -216,7 +244,8 @@ public:
 	uint64_t get_device_allocation_count() const override;
 	uint64_t get_device_memory_by_object_type(uint32_t p_type) const override;
 	uint64_t get_device_allocs_by_object_type(uint32_t p_type) const override;
-	static VKAPI_ATTR void VKAPI_CALL memory_report_callback(const VkDeviceMemoryReportCallbackDataEXT *p_callback_data, void *p_user_data);
+	static VKAPI_ATTR void VKAPI_CALL memory_report_callback(
+		const VkDeviceMemoryReportCallbackDataEXT* p_callback_data, void* p_user_data);
 #endif
 
 	RenderingContextDriverVulkan();
@@ -224,3 +253,5 @@ public:
 };
 
 #endif // VULKAN_ENABLED
+
+

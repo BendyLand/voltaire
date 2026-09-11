@@ -33,15 +33,13 @@
 #include "core/io/resource.h"
 #include "core/templates/rid.h"
 
-class CameraAttributes : public Resource {
-	VLTRCLASS(CameraAttributes, Resource);
-
+class CameraAttributes : public Resource
+{
 private:
 	RID camera_attributes;
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 	float exposure_multiplier = 1.0;
 	float exposure_sensitivity = 100.0; // In ISO.
@@ -52,10 +50,12 @@ protected:
 	float auto_exposure_max = 64.0;
 	float auto_exposure_speed = 0.5;
 	float auto_exposure_scale = 0.4;
+
 	virtual void _update_auto_exposure() {}
 
 public:
 	virtual RID get_rid() const override;
+
 	virtual float calculate_exposure_normalization() const { return 1.0; }
 
 	void set_exposure_multiplier(float p_multiplier);
@@ -74,9 +74,8 @@ public:
 	~CameraAttributes();
 };
 
-class CameraAttributesPractical : public CameraAttributes {
-	VLTRCLASS(CameraAttributesPractical, CameraAttributes);
-
+class CameraAttributesPractical : public CameraAttributes
+{
 private:
 	// DOF blur
 	bool dof_blur_far_enabled = false;
@@ -94,7 +93,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	// DOF blur
@@ -125,16 +123,15 @@ public:
 	~CameraAttributesPractical();
 };
 
-class CameraAttributesPhysical : public CameraAttributes {
-	VLTRCLASS(CameraAttributesPhysical, CameraAttributes);
-
+class CameraAttributesPhysical : public CameraAttributes
+{
 private:
 	// Exposure
-	float exposure_aperture = 16.0; // In f-stops;
+	float exposure_aperture = 16.0;		  // In f-stops;
 	float exposure_shutter_speed = 100.0; // In 1 / seconds;
 
 	// Camera properties.
-	float frustum_focal_length = 35.0; // In millimeters.
+	float frustum_focal_length = 35.0;	 // In millimeters.
 	float frustum_focus_distance = 10.0; // In Meters.
 	real_t frustum_near = 0.05;
 	real_t frustum_far = 4000.0;
@@ -145,7 +142,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &property) const;
 
 public:
 	void set_aperture(float p_aperture);
@@ -178,3 +174,5 @@ public:
 	CameraAttributesPhysical();
 	~CameraAttributesPhysical();
 };
+
+

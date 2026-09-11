@@ -45,7 +45,6 @@ class EditorFileServer
 		HashMap<String, uint64_t>& files_to_send, HashMap<String, uint64_t>& cached_files);
 
 public:
-	mem_unique_ptr<Object> obj;
 	void poll();
 
 	void start();

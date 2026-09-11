@@ -34,21 +34,20 @@
 
 class AudioStreamPlaybackSynchronized;
 
-class AudioStreamSynchronized : public AudioStream {
-	VLTRCLASS(AudioStreamSynchronized, AudioStream)
-	OBJ_SAVE_TYPE(AudioStream)
-
+class AudioStreamSynchronized : public AudioStream
+{
 private:
 	friend class AudioStreamPlaybackSynchronized;
 
-	enum {
+	enum
+	{
 		MAX_STREAMS = 32
 	};
 
 	int stream_count = 0;
 	Ref<AudioStream> audio_streams[MAX_STREAMS];
 	float audio_stream_volume_db[MAX_STREAMS] = {};
-	HashSet<AudioStreamPlaybackSynchronized *> playbacks;
+	HashSet<AudioStreamPlaybackSynchronized*> playbacks;
 
 public:
 	virtual double get_bpm() const override;
@@ -64,25 +63,24 @@ public:
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual double get_length() const override;
+
 	virtual bool is_meta_stream() const override { return true; }
 
-	AudioStreamSynchronized();
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &property) const;
+	AudioStreamSynchronized() = default;
 };
 
 ///////////////////////////////////////
 
-class AudioStreamPlaybackSynchronized : public AudioStreamPlayback {
-	VLTRCLASS(AudioStreamPlaybackSynchronized, AudioStreamPlayback)
+class AudioStreamPlaybackSynchronized : public AudioStreamPlayback
+{
 	friend class AudioStreamSynchronized;
 
 private:
-	enum {
+	enum
+	{
 		MIX_BUFFER_SIZE = 128
 	};
+
 	AudioFrame mix_buffer[MIX_BUFFER_SIZE];
 
 	Ref<AudioStreamSynchronized> stream;
@@ -109,10 +107,12 @@ public:
 	virtual int get_loop_count() const override; // times it looped
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
-	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 
 	virtual void tag_used_streams() override;
 
-	AudioStreamPlaybackSynchronized();
+	AudioStreamPlaybackSynchronized() = default;
 	~AudioStreamPlaybackSynchronized();
 };
+
+

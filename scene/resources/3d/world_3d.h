@@ -43,9 +43,8 @@ class Compositor;
 class VisibleOnScreenNotifier3D;
 struct SpatialIndexer;
 
-class World3D : public Resource {
-	VLTRCLASS(World3D, Resource);
-
+class World3D : public Resource
+{
 private:
 	RID scenario;
 	mutable RID space;
@@ -58,15 +57,15 @@ private:
 	Ref<CameraAttributes> camera_attributes;
 	Ref<Compositor> compositor;
 
-	HashSet<Camera3D *> cameras;
+	HashSet<Camera3D*> cameras;
 
 protected:
 	static void _bind_methods();
 
 	friend class Camera3D;
 
-	void _register_camera(Camera3D *p_camera);
-	void _remove_camera(Camera3D *p_camera);
+	void _register_camera(Camera3D* p_camera);
+	void _remove_camera(Camera3D* p_camera);
 
 public:
 	RID get_space() const;
@@ -75,24 +74,26 @@ public:
 #endif // NAVIGATION_3D_DISABLED
 	RID get_scenario() const;
 
-	void set_environment(const Ref<Environment> &p_environment);
+	void set_environment(const Ref<Environment>& p_environment);
 	Ref<Environment> get_environment() const;
 
-	void set_fallback_environment(const Ref<Environment> &p_environment);
+	void set_fallback_environment(const Ref<Environment>& p_environment);
 	Ref<Environment> get_fallback_environment() const;
 
-	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
+	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
-	void set_compositor(const Ref<Compositor> &p_compositor);
+	void set_compositor(const Ref<Compositor>& p_compositor);
 	Ref<Compositor> get_compositor() const;
 
-	_FORCE_INLINE_ const HashSet<Camera3D *> &get_cameras() const { return cameras; }
+	_FORCE_INLINE_ const HashSet<Camera3D*>& get_cameras() const { return cameras; }
 
 #ifndef PHYSICS_3D_DISABLED
-	PhysicsDirectSpaceState3D *get_direct_space_state();
+	PhysicsDirectSpaceState3D* get_direct_space_state();
 #endif // PHYSICS_3D_DISABLED
 
 	World3D();
 	~World3D();
 };
+
+

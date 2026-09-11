@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/gui/progress_dialog.h"
@@ -58,69 +57,6 @@ Node* WindowWrapper::_get_wrapped_control_parent() const
 	return window;
 }
 
-void WindowWrapper::_set_window_enabled_with_rect(bool p_visible, const Rect2 p_rect)
-{
-	ERR_FAIL_NULL(wrapped_control);
-
-	if (!is_window_available()) {
-		return;
-	}
-
-	if (window->is_visible() == p_visible) {
-		if (p_visible) {
-			window->grab_focus();
-		}
-		return;
-	}
-
-	Node* parent = _get_wrapped_control_parent();
-
-	if (wrapped_control->get_parent() != parent) {
-		// Move the control to the window.
-		wrapped_control->reparent(parent, false);
-
-		_set_window_rect(p_rect);
-		wrapped_control->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-
-	}
-	else if (!p_visible) {
-		// Remove control from window.
-		wrapped_control->reparent(this, false);
-	}
-
-	window->set_visible(p_visible);
-	if (!p_visible && !override_close_request) {
-		this->obj->emit_signal("window_close_requested");
-	}
-	this->obj->emit_signal("window_visibility_changed", p_visible);
-}
-
-void WindowWrapper::_set_window_rect(const Rect2 p_rect)
-{
-	// Set the window rect even when the window is maximized to have a good default size
-	// when the user remove the maximized mode.
-	window->set_position(p_rect.position);
-	window->set_size(p_rect.size);
-
-	if (EDITOR_GET("interface/multi_window/maximize_window")) {
-		window->set_mode(Window::MODE_MAXIMIZED);
-	}
-}
-
-void WindowWrapper::_window_size_changed() { this->obj->emit_signal(SNAME("window_size_changed")); }
-
-void WindowWrapper::_window_close_request()
-{
-	if (override_close_request) {
-		this->obj->emit_signal("window_close_requested");
-	}
-	else {
-		set_window_enabled(false);
-	}
-}
-
-void WindowWrapper::_bind_methods() {}
-
 void WindowWrapper::_notification(int p_what)
 {
 	if (!is_window_available()) {
@@ -139,13 +75,6 @@ void WindowWrapper::_notification(int p_what)
 		window_background->add_theme_style_override(SceneStringName(panel),
 			get_theme_stylebox("PanelForeground", EditorStringName(EditorStyles)).ptr());
 	} break;
-	}
-}
-
-void WindowWrapper::shortcut_input(const Ref<InputEvent>& p_event)
-{
-	if (enable_shortcut.is_valid() && enable_shortcut->matches_event(p_event)) {
-		set_window_enabled(true);
 	}
 }
 
@@ -257,37 +186,6 @@ void WindowWrapper::restore_window_from_saved_position(
 	}
 }
 
-void WindowWrapper::enable_window_on_screen(int p_screen, bool p_auto_scale)
-{
-	int current_screen = Object::cast_to<Window>(get_viewport())->get_current_screen();
-	int screen = p_screen < 0 ? current_screen : p_screen;
-
-	bool auto_scale = p_auto_scale && !EDITOR_GET("interface/multi_window/maximize_window");
-
-	if (auto_scale && current_screen != screen) {
-		Rect2 control_rect = _get_default_window_rect();
-
-		Rect2i source_screen_rect =
-			DisplayServer::get_singleton()->screen_get_usable_rect(current_screen);
-		Rect2i dest_screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
-
-		// Adjust the window rect size in case the resolution changes.
-		Vector2 screen_ratio = Vector2(source_screen_rect.size) / Vector2(dest_screen_rect.size);
-
-		// The screen positioning may change, so remove the original screen position.
-		control_rect.position -= source_screen_rect.position;
-		control_rect =
-			Rect2i(control_rect.position * screen_ratio, control_rect.size * screen_ratio);
-		control_rect.position += dest_screen_rect.position;
-
-		restore_window(control_rect, p_screen);
-	}
-	else {
-		window->set_current_screen(p_screen);
-		set_window_enabled(true);
-	}
-}
-
 void WindowWrapper::set_window_title(const String& p_title)
 {
 	if (!is_window_available()) {
@@ -350,102 +248,7 @@ void WindowWrapper::set_override_close_request(bool p_enabled)
 	override_close_request = p_enabled;
 }
 
-WindowWrapper::WindowWrapper()
-{
-	if (!EditorNode::get_singleton()->is_multi_window_enabled()) {
-		return;
-	}
-
-	window = memnew(Window);
-	window_id = window->obj->get_instance_id();
-	window->set_wrap_controls(true);
-	window->set_propagate_shortcuts_to_parent(true);
-	window->hide();
-
-	window->connect("close_requested", callable_mp(this, &WindowWrapper::_window_close_request));
-	window->connect("size_changed", callable_mp(this, &WindowWrapper::_window_size_changed));
-
-	window_background = memnew(Panel);
-	window_background->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-	window->add_child(window_background);
-
-	add_child(window);
-
-	ProgressDialog::get_singleton()->add_host_window(window_id);
-}
-
-WindowWrapper::~WindowWrapper()
-{
-	if (ProgressDialog::get_singleton()) {
-		ProgressDialog::get_singleton()->remove_host_window(window_id);
-	}
-}
-
 // ScreenSelect
-
-void ScreenSelect::_build_advanced_menu()
-{
-	// Clear old screen list.
-	while (screen_list->get_child_count(false) > 0) {
-		Node* child = screen_list->get_child(0);
-		screen_list->remove_child(child);
-		child->queue_free();
-	}
-
-	// Populate screen list.
-	const real_t height = real_t(get_theme_font_size(SceneStringName(font_size))) * 1.5;
-
-	int current_screen = get_window()->get_current_screen();
-	for (int i = 0; i < DisplayServer::get_singleton()->get_screen_count(); i++) {
-		Button* button = memnew(Button);
-
-		Size2 screen_size = Size2(DisplayServer::get_singleton()->screen_get_size(i));
-		Size2 button_size = Size2(height * (screen_size.x / screen_size.y), height);
-		button->set_custom_minimum_size(button_size);
-		screen_list->add_child(button);
-
-		button->set_text(itos(i));
-		button->set_text_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-		button->set_tooltip_text(vformat(TTR("Make this panel floating in the screen %d."), i));
-
-		if (i == current_screen) {
-			Color accent_color = get_theme_color("accent_color", EditorStringName(Editor));
-			button->add_theme_color_override(SceneStringName(font_color), accent_color);
-		}
-
-		button->connect(SceneStringName(pressed),
-			callable_mp(this, &ScreenSelect::_emit_screen_signal).bind(i));
-		button->connect(SceneStringName(pressed),
-			callable_mp(static_cast<BaseButton*>(this), &ScreenSelect::set_pressed).bind(false));
-		button->connect(
-			SceneStringName(pressed), callable_mp(static_cast<Window*>(popup), &Popup::hide));
-	}
-}
-
-void ScreenSelect::_emit_screen_signal(int p_screen_idx)
-{
-	if (!is_disabled()) {
-		this->obj->emit_signal("request_open_in_screen", p_screen_idx);
-	}
-}
-
-void ScreenSelect::_bind_methods() {}
-
-void ScreenSelect::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_READY: {
-		connect(
-			SceneStringName(gui_input), callable_mp(this, &ScreenSelect::_handle_mouse_shortcut));
-	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		set_button_icon(get_editor_theme_icon("MakeFloating"));
-
-		const real_t popup_height = real_t(get_theme_font_size(SceneStringName(font_size))) * 2.0;
-		popup->set_min_size(Size2(0, popup_height * 3));
-	} break;
-	}
-}
 
 void ScreenSelect::_handle_mouse_shortcut(const Ref<InputEvent>& p_event)
 {
@@ -486,53 +289,6 @@ void ScreenSelect::pressed()
 
 	_build_advanced_menu();
 	_show_popup();
-}
-
-ScreenSelect::ScreenSelect()
-{
-	set_button_mask(MouseButtonMask::RIGHT);
-	set_theme_type_variation(SceneStringName(FlatButton));
-	set_toggle_mode(true);
-	set_focus_mode(FOCUS_NONE);
-	set_action_mode(ACTION_MODE_BUTTON_PRESS);
-
-	if (!EditorNode::get_singleton()->is_multi_window_enabled()) {
-		set_disabled(true);
-		set_tooltip_text(EditorNode::get_singleton()->get_multiwindow_support_tooltip_text());
-	}
-	else {
-		set_tooltip_text(TTR("Make this panel floating.") + "\n" +
-						 TTR("Right-click to open the screen selector."));
-	}
-
-	// Create the popup.
-	const Size2 borders = Size2(4, 4) * EDSCALE;
-
-	popup = memnew(PopupPanel);
-	popup->connect("popup_hide",
-		callable_mp(static_cast<BaseButton*>(this), &ScreenSelect::set_pressed).bind(false));
-	add_child(popup);
-
-	MarginContainer* popup_root = memnew(MarginContainer);
-	popup_root->add_theme_constant_override("margin_right", borders.width);
-	popup_root->add_theme_constant_override("margin_top", borders.height);
-	popup_root->add_theme_constant_override("margin_left", borders.width);
-	popup_root->add_theme_constant_override("margin_bottom", borders.height);
-	popup->add_child(popup_root);
-
-	VBoxContainer* vb = memnew(VBoxContainer);
-	vb->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	popup_root->add_child(vb);
-
-	Label* description = memnew(Label(TTR("Select Screen")));
-	description->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-	vb->add_child(description);
-
-	screen_list = memnew(HBoxContainer);
-	screen_list->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	vb->add_child(screen_list);
-
-	popup_root->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
 }
 
 

@@ -32,24 +32,21 @@
 
 #include "scene/resources/3d/joint_limitation_3d.h"
 
-class JointLimitationCone3D : public JointLimitation3D {
-	VLTRCLASS(JointLimitationCone3D, JointLimitation3D);
-
+class JointLimitationCone3D : public JointLimitation3D
+{
 	real_t angle = Math::TAU * 0.25;
 
 protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif // DISABLE_DEPRECATED
-	static void _bind_methods();
-
-	virtual Vector3 _solve(const Vector3 &p_direction) const override;
+	virtual Vector3 _solve(const Vector3& p_direction) const override;
 
 public:
 	void set_angle(real_t p_angle);
 	real_t get_angle() const;
 
 #ifdef TOOLS_ENABLED
-	virtual void draw_shape(Ref<SurfaceTool> &p_surface_tool, const Transform3D &p_transform, float p_bone_length, const Color &p_color) const override;
+	virtual void draw_shape(Ref<SurfaceTool>& p_surface_tool, const Transform3D& p_transform,
+		float p_bone_length, const Color& p_color) const override;
 #endif // TOOLS_ENABLED
 };
+
+

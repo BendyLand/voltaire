@@ -32,19 +32,19 @@
 
 #include "../openxr_interface.h"
 #include "../util.h"
-#include "openxr_extension_wrapper.h"
 
-class OpenXRPerformanceSettingsExtension : public OpenXRExtensionWrapper {
+class OpenXRPerformanceSettingsExtension
+{
 public:
-	static OpenXRPerformanceSettingsExtension *get_singleton();
+	static OpenXRPerformanceSettingsExtension* get_singleton();
 
 	OpenXRPerformanceSettingsExtension();
-	virtual ~OpenXRPerformanceSettingsExtension() override;
+	virtual ~OpenXRPerformanceSettingsExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual bool on_event_polled(const XrEventDataBuffer &event) override;
+	virtual void on_instance_created(const XrInstance p_instance);
+	virtual bool on_event_polled(const XrEventDataBuffer& event);
 
 	bool is_available();
 
@@ -52,13 +52,18 @@ public:
 	void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
 
 private:
-	static OpenXRPerformanceSettingsExtension *singleton;
+	static OpenXRPerformanceSettingsExtension* singleton;
 
 	bool available = false;
 
 	XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
-	OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(XrPerfSettingsSubDomainEXT p_sub_domain);
-	OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(XrPerfSettingsNotificationLevelEXT p_notification_level);
+	OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(
+		XrPerfSettingsSubDomainEXT p_sub_domain);
+	OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(
+		XrPerfSettingsNotificationLevelEXT p_notification_level);
 
-	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session, (XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
+	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
+		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
 };
+
+

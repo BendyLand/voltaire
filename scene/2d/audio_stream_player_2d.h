@@ -38,19 +38,19 @@ class AudioStream;
 class AudioStreamPlayback;
 class AudioStreamPlayerInternal;
 
-class AudioStreamPlayer2D : public Node2D {
-	VLTRCLASS(AudioStreamPlayer2D, Node2D);
-
+class AudioStreamPlayer2D : public Node2D
+{
 private:
-	enum {
+	enum
+	{
 		MAX_OUTPUTS = 8,
 		MAX_INTERSECT_AREAS = 32
 
 	};
 
-	AudioStreamPlayerInternal *internal = nullptr;
+	AudioStreamPlayerInternal* internal = nullptr;
 
-	SafeNumeric<float> setplay{ -1.0 };
+	SafeNumeric<float> setplay{-1.0};
 	Ref<AudioStreamPlayback> setplayback;
 
 	Vector<AudioFrame> volume_vector;
@@ -66,7 +66,10 @@ private:
 	StringName _get_actual_bus();
 	void _update_panning();
 
-	static void _listener_changed_cb(void *self) { reinterpret_cast<AudioStreamPlayer2D *>(self)->force_update_panning = true; }
+	static void _listener_changed_cb(void* self)
+	{
+		reinterpret_cast<AudioStreamPlayer2D*>(self)->force_update_panning = true;
+	}
 
 	uint32_t area_mask = 0;
 
@@ -77,13 +80,8 @@ private:
 	float cached_global_panning_strength = 0.5f;
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 	static void _bind_methods();
-
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 #ifndef DISABLE_DEPRECATED
 	bool _is_autoplay_enabled_bind_compat_86907();
@@ -109,7 +107,7 @@ public:
 	bool is_playing() const;
 	float get_playback_position();
 
-	void set_bus(const StringName &p_bus);
+	void set_bus(const StringName& p_bus);
 	StringName get_bus() const;
 
 	void set_autoplay(bool p_enable);
@@ -142,3 +140,5 @@ public:
 	AudioStreamPlayer2D();
 	~AudioStreamPlayer2D();
 };
+
+

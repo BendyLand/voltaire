@@ -31,9 +31,8 @@
 #pragma once
 
 #include "../util.h"
-#include "openxr_extension_wrapper.h"
-
 #include "core/templates/vector.h"
+#include "core/types.h"
 
 // The OpenXR visibility mask extension provides a mesh for each eye that
 // can be used as a mask to determine which part of our rendered result
@@ -45,33 +44,29 @@
 //
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
 
-class OpenXRVisibilityMaskExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRVisibilityMaskExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRVisibilityMaskExtension
+{
 public:
-	static OpenXRVisibilityMaskExtension *get_singleton();
+	static OpenXRVisibilityMaskExtension* get_singleton();
 
 	OpenXRVisibilityMaskExtension();
-	virtual ~OpenXRVisibilityMaskExtension() override;
+	virtual ~OpenXRVisibilityMaskExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance) override;
+	virtual void on_instance_created(const XrInstance p_instance);
 
-	virtual void on_session_created(const XrSession p_instance) override;
-	virtual void on_session_destroyed() override;
+	virtual void on_session_created(const XrSession p_instance);
+	virtual void on_session_destroyed();
 
-	virtual void on_pre_render() override;
-	virtual bool on_event_polled(const XrEventDataBuffer &event) override;
+	virtual void on_pre_render();
+	virtual bool on_event_polled(const XrEventDataBuffer& event);
 
 	bool is_available();
 	RID get_mesh();
 
 private:
-	static OpenXRVisibilityMaskExtension *singleton;
+	static OpenXRVisibilityMaskExtension* singleton;
 
 	bool available = false;
 	bool is_dirty = false;
@@ -80,7 +75,8 @@ private:
 	RID material;
 	RID mesh;
 
-	struct MeshData {
+	struct MeshData
+	{
 		Vector<XrVector2f> vertices;
 		Vector<uint32_t> indices;
 	};
@@ -92,5 +88,9 @@ private:
 	void _update_mesh();
 
 	// OpenXR API call wrappers
-	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session, (XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex, (XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR *), visibilityMask);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session,
+		(XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex,
+		(XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR*), visibilityMask);
 };
+
+

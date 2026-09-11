@@ -31,9 +31,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
-#include "core/object/message_queue.h"
 #include "scene/gui/control.h"
 #include "scene/main/node.h"
 #include "scene/main/window.h"
@@ -44,61 +41,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "servers/text/text_server.h"
 #include "theme_db.h"
-
-// Default engine theme creation and configuration.
-void ThemeDB::initialize_theme()
-{
-	// Default theme-related project settings.
-	// Allow creating the default theme at a different scale to suit higher/lower base resolutions.
-	float default_theme_scale = GLOBAL_DEF(
-		PropertyInfo(Variant::FLOAT, "gui/theme/default_theme_scale", PROPERTY_HINT_RANGE,
-			"0.5,8,0.01", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED),
-		1.0);
-	String project_theme_path = GLOBAL_DEF_RST_BASIC(
-		PropertyInfo(Variant::STRING, "gui/theme/custom", PROPERTY_HINT_FILE,
-			"*.tres,*.res,*.theme", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED),
-		"");
-	String project_font_path = GLOBAL_DEF_RST_BASIC(
-		PropertyInfo(Variant::STRING, "gui/theme/custom_font", PROPERTY_HINT_FILE,
-			"*.tres,*.res,*.otf,*.ttf,*.woff,*.woff2,*.fnt,*.font,*.pfb,*.pfm",
-			PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED),
-		"");
-	TextServer::FontAntialiasing font_antialiasing =
-		(TextServer::FontAntialiasing)(int)GLOBAL_GET("gui/theme/default_font_antialiasing");
-	TextServer::Hinting font_hinting =
-		(TextServer::Hinting)(int)GLOBAL_GET("gui/theme/default_font_hinting");
-	TextServer::SubpixelPositioning font_subpixel_positioning = (TextServer::SubpixelPositioning)(
-		int)GLOBAL_GET("gui/theme/default_font_subpixel_positioning");
-	const bool font_msdf = GLOBAL_GET("gui/theme/default_font_multichannel_signed_distance_field");
-	const bool font_generate_mipmaps = GLOBAL_GET("gui/theme/default_font_generate_mipmaps");
-	// Attempt to load custom project theme and font.
-	if (!project_theme_path.is_empty()) {
-		Ref<Theme> theme = ResourceLoader::load(project_theme_path);
-		if (theme.is_valid()) {
-			set_project_theme(theme);
-		}
-		else {
-			ERR_PRINT("Error loading custom project theme '" + project_theme_path + "'");
-		}
-	}
-	Ref<Font> project_font;
-	if (!project_font_path.is_empty()) {
-		project_font =
-			ResourceLoader::load(project_font_path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
-		if (project_font.is_valid()) {
-			set_fallback_font(project_font);
-		}
-		else {
-			ERR_PRINT("Error loading custom project font '" + project_font_path + "'");
-		}
-	}
-	// Always generate the default theme to serve as a fallback for all required theme definitions.
-	if (RenderingServer::get_singleton()) {
-		make_default_theme(default_theme_scale, project_font, font_subpixel_positioning,
-			font_hinting, font_antialiasing, font_msdf, font_generate_mipmaps);
-	}
-	_init_default_theme_context();
-}
 
 void ThemeDB::initialize_theme_noproject()
 {
@@ -134,60 +76,13 @@ void ThemeDB::set_project_theme(const Ref<Theme>& p_project_default)
 
 Ref<Theme> ThemeDB::get_project_theme() { return project_theme; }
 
-// Universal fallback values for theme item types.
-
-void ThemeDB::set_fallback_base_scale(float p_base_scale)
-{
-	if (fallback_base_scale == p_base_scale) {
-		return;
-	}
-	fallback_base_scale = p_base_scale;
-	this->obj->emit_signal(SNAME("fallback_changed"));
-}
-
 float ThemeDB::get_fallback_base_scale() { return fallback_base_scale; }
-
-void ThemeDB::set_fallback_font(const Ref<Font>& p_font)
-{
-	if (fallback_font == p_font) {
-		return;
-	}
-	fallback_font = p_font;
-	this->obj->emit_signal(SNAME("fallback_changed"));
-}
 
 Ref<Font> ThemeDB::get_fallback_font() { return fallback_font; }
 
-void ThemeDB::set_fallback_font_size(int p_font_size)
-{
-	if (fallback_font_size == p_font_size) {
-		return;
-	}
-	fallback_font_size = p_font_size;
-	this->obj->emit_signal(SNAME("fallback_changed"));
-}
-
 int ThemeDB::get_fallback_font_size() { return fallback_font_size; }
 
-void ThemeDB::set_fallback_icon(const Ref<Texture2D>& p_icon)
-{
-	if (fallback_icon == p_icon) {
-		return;
-	}
-	fallback_icon = p_icon;
-	this->obj->emit_signal(SNAME("fallback_changed"));
-}
-
 Ref<Texture2D> ThemeDB::get_fallback_icon() { return fallback_icon; }
-
-void ThemeDB::set_fallback_stylebox(const Ref<StyleBox>& p_stylebox)
-{
-	if (fallback_stylebox == p_stylebox) {
-		return;
-	}
-	fallback_stylebox = p_stylebox;
-	this->obj->emit_signal(SNAME("fallback_changed"));
-}
 
 Ref<StyleBox> ThemeDB::get_fallback_stylebox() { return fallback_stylebox; }
 
@@ -196,56 +91,6 @@ void ThemeDB::get_native_type_dependencies(
 {
 	if (p_base_type == StringName()) {
 		return;
-	}
-}
-
-// Global theme contexts.
-ThemeContext* ThemeDB::create_theme_context(Node* p_node, Vector<Ref<Theme>>& p_themes)
-{
-	ERR_FAIL_COND_V(!p_node->is_inside_tree(), nullptr);
-	ERR_FAIL_COND_V(theme_contexts.has(p_node), nullptr);
-	ERR_FAIL_COND_V(p_themes.is_empty(), nullptr);
-	ThemeContext* context = memnew(ThemeContext);
-	context->node = p_node;
-	context->parent = get_nearest_theme_context(p_node);
-	context->set_themes(p_themes);
-	theme_contexts[p_node] = context;
-	_propagate_theme_context(p_node, context);
-	p_node->connect(SceneStringName(tree_exited),
-		callable_mp(this, &ThemeDB::destroy_theme_context).bind(p_node));
-	return context;
-}
-
-void ThemeDB::destroy_theme_context(Node* p_node)
-{
-	ERR_FAIL_COND(!theme_contexts.has(p_node));
-	p_node->disconnect(
-		SceneStringName(tree_exited), callable_mp(this, &ThemeDB::destroy_theme_context));
-	ThemeContext* context = theme_contexts[p_node];
-	theme_contexts.erase(p_node);
-	_propagate_theme_context(p_node, context->parent);
-	memdelete(context);
-}
-
-void ThemeDB::_propagate_theme_context(Node* p_from_node, ThemeContext* p_context)
-{
-	Control* from_control = Object::cast_to<Control>(p_from_node);
-	Window* from_window = from_control ? nullptr : Object::cast_to<Window>(p_from_node);
-	if (from_control) {
-		from_control->set_theme_context(p_context);
-	}
-	else if (from_window) {
-		from_window->set_theme_context(p_context);
-	}
-	for (int i = 0; i < p_from_node->get_child_count(); i++) {
-		Node* child_node = p_from_node->get_child(i);
-		// If the child is the root of another global context, stop the propagation
-		// in this branch.
-		if (theme_contexts.has(child_node)) {
-			theme_contexts[child_node]->parent = p_context;
-			continue;
-		}
-		_propagate_theme_context(child_node, p_context);
 	}
 }
 
@@ -338,23 +183,6 @@ void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const String
 	theme_item_binds_list[p_class_name].push_back(bind);
 }
 
-void ThemeDB::update_class_instance_items(Node* p_instance)
-{
-	ERR_FAIL_NULL(p_instance);
-	// Use the hierarchy to initialize all inherited theme caches. Setters carry the necessary
-	// context and will set the values appropriately.
-	StringName class_name = p_instance->obj->get_class();
-	while (class_name != StringName()) {
-		HashMap<StringName, HashMap<StringName, ThemeItemBind>>::Iterator E =
-			theme_item_binds.find(class_name);
-		if (E) {
-			for (const KeyValue<StringName, ThemeItemBind>& F : E->value) {
-				F.value.setter(p_instance, F.value.item_name, F.value.type_name);
-			}
-		}
-	}
-}
-
 void ThemeDB::get_class_items(const StringName& p_class_name, List<ThemeItemBind>* r_list,
 	bool p_include_inherited, Theme::DataType p_filter_type)
 {
@@ -394,23 +222,9 @@ void ThemeDB::_sort_theme_items()
 	}
 }
 
-// Object methods.
-
-void ThemeDB::_bind_methods() {}
-
-// Memory management, reference, and initialization.
-
 ThemeDB* ThemeDB::singleton = nullptr;
 
 ThemeDB* ThemeDB::get_singleton() { return singleton; }
-
-ThemeDB::ThemeDB()
-{
-	singleton = this;
-	if (MessageQueue::get_singleton()) { // May not exist in tests etc.
-		callable_mp(this, &ThemeDB::_sort_theme_items).call_deferred();
-	}
-}
 
 ThemeDB::~ThemeDB()
 {
@@ -426,25 +240,6 @@ ThemeDB::~ThemeDB()
 	singleton = nullptr;
 }
 
-void ThemeContext::_emit_changed() { this->obj->emit_signal(CoreStringName(changed)); }
-
-void ThemeContext::set_themes(Vector<Ref<Theme>>& p_themes)
-{
-	for (const Ref<Theme>& theme : themes) {
-		theme->disconnect_changed(callable_mp(this, &ThemeContext::_emit_changed));
-	}
-	themes.clear();
-	for (const Ref<Theme>& theme : p_themes) {
-		if (theme.is_null()) {
-			continue;
-		}
-
-		themes.push_back(theme);
-		theme->connect_changed(callable_mp(this, &ThemeContext::_emit_changed));
-	}
-	_emit_changed();
-}
-
 const Vector<Ref<Theme>> ThemeContext::get_themes() const { return themes; }
 
 Ref<Theme> ThemeContext::get_fallback_theme() const
@@ -455,7 +250,5 @@ Ref<Theme> ThemeContext::get_fallback_theme() const
 	}
 	return themes[themes.size() - 1];
 }
-
-void ThemeContext::_bind_methods() {}
 
 

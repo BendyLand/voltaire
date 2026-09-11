@@ -35,15 +35,18 @@
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_server_types.h"
 
-namespace RendererSceneRenderImplementation {
+namespace RendererSceneRenderImplementation
+{
 
-class SceneShaderForwardMobile {
+class SceneShaderForwardMobile
+{
 private:
-	static SceneShaderForwardMobile *singleton;
+	static SceneShaderForwardMobile* singleton;
 	static Mutex singleton_mutex;
 
 public:
-	enum ShaderVersion {
+	enum ShaderVersion
+	{
 		SHADER_VERSION_COLOR_PASS,
 		SHADER_VERSION_LIGHTMAP_COLOR_PASS,
 		SHADER_VERSION_SHADOW_PASS,
@@ -58,34 +61,42 @@ public:
 		SHADER_VERSION_MAX
 	};
 
-	enum ShaderCount {
+	enum ShaderCount
+	{
 		SHADER_COUNT_NONE,
 		SHADER_COUNT_SINGLE,
 		SHADER_COUNT_MULTIPLE
 	};
 
-	_FORCE_INLINE_ static ShaderCount shader_count_for(uint32_t p_count) {
+	_FORCE_INLINE_ static ShaderCount shader_count_for(uint32_t p_count)
+	{
 		if (p_count == 0) {
 			return SHADER_COUNT_NONE;
-		} else if (p_count == 1) {
+		}
+		else if (p_count == 1) {
 			return SHADER_COUNT_SINGLE;
-		} else {
+		}
+		else {
 			return SHADER_COUNT_MULTIPLE;
 		}
 	}
 
-	enum ShaderGroup {
+	enum ShaderGroup
+	{
 		SHADER_GROUP_FP32,
 		SHADER_GROUP_FP32_MULTIVIEW,
 		SHADER_GROUP_FP16,
 		SHADER_GROUP_FP16_MULTIVIEW,
 	};
 
-	struct ShaderSpecialization {
-		union {
+	struct ShaderSpecialization
+	{
+		union
+		{
 			uint32_t packed_0;
 
-			struct {
+			struct
+			{
 				uint32_t use_light_projector : 1;
 				uint32_t use_light_soft_shadows : 1;
 				uint32_t use_directional_soft_shadows : 1;
@@ -116,10 +127,12 @@ public:
 			};
 		};
 
-		union {
+		union
+		{
 			uint32_t packed_1;
 
-			struct {
+			struct
+			{
 				uint32_t directional_soft_shadow_samples : 6;
 				uint32_t directional_penumbra_shadow_samples : 6;
 				uint32_t omni_lights : 2;
@@ -133,36 +146,44 @@ public:
 			};
 		};
 
-		union {
+		union
+		{
 			float packed_2;
 			float luminance_multiplier;
 		};
 	};
 
-	struct UbershaderConstants {
-		union {
+	struct UbershaderConstants
+	{
+		union
+		{
 			uint32_t packed_0;
 
-			struct {
+			struct
+			{
 				uint32_t cull_mode : 2;
 			};
 		};
 	};
 
-	struct ShaderData : public RendererRD::MaterialStorage::ShaderData {
-		enum DepthDraw {
+	struct ShaderData : public RendererRD::MaterialStorage::ShaderData
+	{
+		enum DepthDraw
+		{
 			DEPTH_DRAW_DISABLED,
 			DEPTH_DRAW_OPAQUE,
 			DEPTH_DRAW_ALWAYS
 		};
 
-		enum DepthTest {
+		enum DepthTest
+		{
 			DEPTH_TEST_DISABLED,
 			DEPTH_TEST_ENABLED,
 			DEPTH_TEST_ENABLED_INVERTED,
 		};
 
-		enum CullVariant {
+		enum CullVariant
+		{
 			CULL_VARIANT_NORMAL,
 			CULL_VARIANT_REVERSED,
 			CULL_VARIANT_DOUBLE_SIDED,
@@ -170,19 +191,22 @@ public:
 
 		};
 
-		enum AlphaAntiAliasing {
+		enum AlphaAntiAliasing
+		{
 			ALPHA_ANTIALIASING_OFF,
 			ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE,
 			ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
 		};
 
-		enum StencilFlags {
+		enum StencilFlags
+		{
 			STENCIL_FLAG_READ = 1,
 			STENCIL_FLAG_WRITE = 2,
 			STENCIL_FLAG_WRITE_DEPTH_FAIL = 4,
 		};
 
-		enum StencilCompare {
+		enum StencilCompare
+		{
 			STENCIL_COMPARE_LESS,
 			STENCIL_COMPARE_EQUAL,
 			STENCIL_COMPARE_LESS_OR_EQUAL,
@@ -193,7 +217,8 @@ public:
 			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
 		};
 
-		struct PipelineKey {
+		struct PipelineKey
+		{
 			RD::VertexFormatID vertex_format_id;
 			RD::FramebufferFormatID framebuffer_format_id;
 			RD::PolygonCullMode cull_mode = RD::POLYGON_CULL_MAX;
@@ -204,7 +229,8 @@ public:
 			uint32_t wireframe = false;
 			uint32_t ubershader = false;
 
-			uint32_t hash() const {
+			uint32_t hash() const
+			{
 				uint32_t h = hash_murmur3_one_32(vertex_format_id);
 				h = hash_murmur3_one_32(framebuffer_format_id, h);
 				h = hash_murmur3_one_32(cull_mode, h);
@@ -221,7 +247,8 @@ public:
 		};
 
 		void _create_pipeline(PipelineKey p_pipeline_key);
-		PipelineHashMapRD<PipelineKey, ShaderData, void (ShaderData::*)(PipelineKey)> pipeline_hash_map;
+		PipelineHashMapRD<PipelineKey, ShaderData, void (ShaderData::*)(PipelineKey)>
+			pipeline_hash_map;
 
 		RID version;
 
@@ -282,8 +309,10 @@ public:
 		uint64_t last_pass = 0;
 		uint32_t index = 0;
 
-		_FORCE_INLINE_ bool uses_alpha_pass() const {
-			bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
+		_FORCE_INLINE_ bool uses_alpha_pass() const
+		{
+			bool has_read_screen_alpha =
+				uses_screen_texture || uses_depth_texture || uses_normal_texture;
 			bool has_base_alpha = (uses_alpha && (!uses_alpha_clip || uses_alpha_antialiasing));
 			bool has_blend_alpha = uses_blend_alpha;
 			bool has_alpha = has_base_alpha || has_blend_alpha;
@@ -292,22 +321,28 @@ public:
 			return has_alpha || has_read_screen_alpha || no_depth_draw || no_depth_test;
 		}
 
-		_FORCE_INLINE_ bool uses_depth_in_alpha_pass() const {
+		_FORCE_INLINE_ bool uses_depth_in_alpha_pass() const
+		{
 			bool no_depth_draw = depth_draw == DEPTH_DRAW_DISABLED;
 			bool no_depth_test = depth_test != DEPTH_TEST_ENABLED;
-			return (uses_depth_prepass_alpha || uses_alpha_antialiasing) && !(no_depth_draw || no_depth_test);
+			return (uses_depth_prepass_alpha || uses_alpha_antialiasing) &&
+				   !(no_depth_draw || no_depth_test);
 		}
 
-		_FORCE_INLINE_ bool uses_shared_shadow_material() const {
+		_FORCE_INLINE_ bool uses_shared_shadow_material() const
+		{
 			bool backface_culling = cull_mode == RSE::CULL_MODE_BACK;
-			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex && !uses_discard && !uses_depth_prepass_alpha && !uses_alpha_clip && !uses_alpha_antialiasing && !uses_point_size && !uses_world_coordinates && !wireframe && !stencil_enabled && backface_culling;
+			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex &&
+				   !uses_discard && !uses_depth_prepass_alpha && !uses_alpha_clip &&
+				   !uses_alpha_antialiasing && !uses_point_size && !uses_world_coordinates &&
+				   !wireframe && !stencil_enabled && backface_culling;
 		}
 
-		virtual void set_code(const String &p_Code);
+		virtual void set_code(const String& p_Code);
 		virtual bool is_animated() const;
 		virtual bool casts_shadows() const;
 		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-		virtual Pair<ShaderRD *, RID> get_native_shader_and_version() const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
 		RD::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
 		void _clear_vertex_input_mask_cache();
 		RID get_shader_variant(ShaderVersion p_shader_version, bool p_ubershader) const;
@@ -320,13 +355,16 @@ public:
 		virtual ~ShaderData();
 	};
 
-	RendererRD::MaterialStorage::ShaderData *_create_shader_func();
-	static RendererRD::MaterialStorage::ShaderData *_create_shader_funcs() {
-		return static_cast<SceneShaderForwardMobile *>(singleton)->_create_shader_func();
+	RendererRD::MaterialStorage::ShaderData* _create_shader_func();
+
+	static RendererRD::MaterialStorage::ShaderData* _create_shader_funcs()
+	{
+		return static_cast<SceneShaderForwardMobile*>(singleton)->_create_shader_func();
 	}
 
-	struct MaterialData : public RendererRD::MaterialStorage::MaterialData {
-		ShaderData *shader_data = nullptr;
+	struct MaterialData : public RendererRD::MaterialStorage::MaterialData
+	{
+		ShaderData* shader_data = nullptr;
 		RID uniform_set;
 		uint64_t last_pass = 0;
 		uint32_t index = 0;
@@ -334,15 +372,18 @@ public:
 		uint8_t priority;
 		virtual void set_render_priority(int p_priority);
 		virtual void set_next_pass(RID p_pass);
-		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
 		virtual ~MaterialData();
 	};
 
 	SelfList<ShaderData>::List shader_list;
 
-	RendererRD::MaterialStorage::MaterialData *_create_material_func(ShaderData *p_shader);
-	static RendererRD::MaterialStorage::MaterialData *_create_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader) {
-		return static_cast<SceneShaderForwardMobile *>(singleton)->_create_material_func(static_cast<ShaderData *>(p_shader));
+	RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
+
+	static RendererRD::MaterialStorage::MaterialData* _create_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader)
+	{
+		return static_cast<SceneShaderForwardMobile*>(singleton)->_create_material_func(
+			static_cast<ShaderData*>(p_shader));
 	}
 
 	SceneForwardMobileShaderRD shader;
@@ -357,7 +398,8 @@ public:
 	RID debug_shadow_splits_material_shader;
 	RID debug_shadow_splits_material;
 	RID default_shader_rd;
-	RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd" instead.
+	RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
+									 // instead.
 
 	RID default_vec4_xform_buffer;
 	RID default_vec4_xform_uniform_set;
@@ -365,13 +407,13 @@ public:
 	RID shadow_sampler;
 
 	RID default_material_uniform_set;
-	ShaderData *default_material_shader_ptr = nullptr;
+	ShaderData* default_material_shader_ptr = nullptr;
 
 	RID overdraw_material_uniform_set;
-	ShaderData *overdraw_material_shader_ptr = nullptr;
+	ShaderData* overdraw_material_shader_ptr = nullptr;
 
 	RID debug_shadow_splits_material_uniform_set;
-	ShaderData *debug_shadow_splits_material_shader_ptr = nullptr;
+	ShaderData* debug_shadow_splits_material_shader_ptr = nullptr;
 
 	SceneShaderForwardMobile();
 	~SceneShaderForwardMobile();
@@ -381,7 +423,7 @@ public:
 	uint32_t pipeline_compilations[RSE::PIPELINE_SOURCE_MAX] = {};
 
 	void init(const String p_defines);
-	void set_default_specialization(const ShaderSpecialization &p_specialization);
+	void set_default_specialization(const ShaderSpecialization& p_specialization);
 	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 	void enable_fp32_shader_group();
 	void enable_fp16_shader_group();
@@ -391,3 +433,5 @@ public:
 };
 
 } // namespace RendererSceneRenderImplementation
+
+

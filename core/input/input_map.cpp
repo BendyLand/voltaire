@@ -30,10 +30,8 @@
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/object/class_db.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
-#include "core/variant/typed_array.h"
 #include "input_map.compat.inc"
 #include "input_map.h"
 
@@ -80,23 +78,6 @@ void InputMap::get_argument_options(
 				pf == "action_add_event" || pf == "action_get_events" ||
 				pf == "action_erase_event" || pf == "action_erase_events");
 	}
-	if (first_argument_is_action || (p_idx == 1 && pf == "event_is_action")) {
-		// Cannot rely on `get_actions()`, otherwise the actions would be in the context of the
-		// Editor (no user-defined actions).
-		List<PropertyInfo> pinfo;
-		ProjectSettings::get_singleton()->obj->get_property_list(&pinfo);
-
-		for (const PropertyInfo& pi : pinfo) {
-			if (!pi.name.begins_with("input/")) {
-				continue;
-			}
-
-			String name = pi.name.substr(pi.name.find_char('/') + 1);
-			r_options->push_back(name.quote());
-		}
-	}
-
-	this->obj->get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -116,21 +97,6 @@ void InputMap::erase_action(const StringName& p_action)
 	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
 
 	input_map.erase(p_action);
-}
-
-TypedArray<StringName> InputMap::get_actions()
-{
-	TypedArray<StringName> ret;
-
-	ret.resize(input_map.size());
-
-	uint32_t i = 0;
-	for (const KeyValue<StringName, Action>& kv : input_map) {
-		ret[i] = kv.key;
-		i++;
-	}
-
-	return ret;
 }
 
 List<Ref<InputEvent>>::Element* InputMap::_find_event(Action& p_action,
@@ -159,25 +125,7 @@ List<Ref<InputEvent>>::Element* InputMap::_find_event(Action& p_action,
 
 bool InputMap::has_action(const StringName& p_action) const { return input_map.has(p_action); }
 
-String InputMap::get_action_description(const StringName& p_action) const
-{
-	ERR_FAIL_COND_V_MSG(!input_map.has(p_action), String(), suggest_actions(p_action));
-
-	String ret;
-	const List<Ref<InputEvent>>& inputs = input_map[p_action].inputs;
-	for (Ref<InputEventKey> iek : inputs) {
-		if (iek.is_valid()) {
-			if (!ret.is_empty()) {
-				ret += RTR(" or ");
-			}
-			ret += iek->as_text();
-		}
-	}
-	if (ret.is_empty()) {
-		ret = RTR("Action has no bound inputs");
-	}
-	return ret;
-}
+String InputMap::get_action_description(const StringName& p_action) const {}
 
 float InputMap::action_get_deadzone(const StringName& p_action)
 {
@@ -250,19 +198,6 @@ void InputMap::action_erase_events(const StringName& p_action)
 	input_map[p_action].inputs.clear();
 }
 
-Array InputMap::_action_get_events(const StringName& p_action)
-{
-	Array ret;
-	const List<Ref<InputEvent>>* al = action_get_events(p_action);
-	if (al) {
-		for (const List<Ref<InputEvent>>::Element* E = al->front(); E; E = E->next()) {
-			ret.push_back(E->get());
-		}
-	}
-
-	return ret;
-}
-
 const List<Ref<InputEvent>>* InputMap::action_get_events(const StringName& p_action)
 {
 	HashMap<StringName, Action>::Iterator E = input_map.find(p_action);
@@ -295,72 +230,61 @@ bool InputMap::event_get_action_status(const Ref<InputEvent>& p_event, const Str
 	HashMap<StringName, Action>::Iterator E = input_map.find(p_action);
 	ERR_FAIL_COND_V_MSG(!E, false, suggest_actions(p_action));
 
-	Ref<InputEventAction> input_event_action = p_event;
+	Ref<InputEventAction> input_event_action = static_cast<InputEventAction*>(p_event.ptr());
 	if (input_event_action.is_valid()) {
-		const bool pressed = input_event_action->is_pressed();
-		if (r_pressed != nullptr) {
-			*r_pressed = pressed;
-		}
-		const float strength = pressed ? input_event_action->get_strength() : 0.0f;
-		if (r_strength != nullptr) {
-			*r_strength = strength;
-		}
-		if (r_raw_strength != nullptr) {
-			*r_raw_strength = strength;
-		}
-		if (r_event_index) {
-			if (input_event_action->get_event_index() >= 0) {
+		bool match = input_event_action->get_action() == p_action;
+		if (match) {
+			if (r_pressed) {
+				*r_pressed = input_event_action->is_pressed();
+			}
+			if (r_strength) {
+				*r_strength = input_event_action->get_strength();
+			}
+			if (r_raw_strength) {
+				*r_raw_strength = input_event_action->get_strength();
+			}
+			if (r_event_index) {
 				*r_event_index = input_event_action->get_event_index();
 			}
-			else {
-				*r_event_index = E->value.inputs.size();
-			}
+			return true;
 		}
-		return input_event_action->get_action() == p_action;
 	}
 
-	List<Ref<InputEvent>>::Element* event = _find_event(
-		E->value, p_event, p_exact_match, r_pressed, r_strength, r_raw_strength, r_event_index);
-	return event != nullptr;
+	const Action& action = E->value;
+	int i = 0;
+	for (const Ref<InputEvent>& e : action.inputs) {
+		if (e.is_null()) {
+			i++;
+			continue;
+		}
+
+		bool pressed = false;
+		float strength = 0.0f;
+		float raw_strength = 0.0f;
+
+		if (e->action_match(
+				p_event, p_exact_match, action.deadzone, &pressed, &strength, &raw_strength)) {
+			if (r_pressed) {
+				*r_pressed = pressed;
+			}
+			if (r_strength) {
+				*r_strength = strength;
+			}
+			if (r_raw_strength) {
+				*r_raw_strength = raw_strength;
+			}
+			if (r_event_index) {
+				*r_event_index = i;
+			}
+			return true;
+		}
+		i++;
+	}
+
+	return false;
 }
 
 const HashMap<StringName, InputMap::Action>& InputMap::get_action_map() const { return input_map; }
-
-void InputMap::load_from_project_settings()
-{
-	input_map.clear();
-
-	List<PropertyInfo> pinfo;
-	ProjectSettings::get_singleton()->obj->get_property_list(&pinfo);
-
-	for (const PropertyInfo& pi : pinfo) {
-		if (!pi.name.begins_with("input/")) {
-			continue;
-		}
-
-		String name = pi.name.substr(pi.name.find_char('/') + 1);
-
-		Dictionary action = GLOBAL_GET(pi.name);
-
-		if (!action.has("events")) {
-			continue;
-		}
-
-		float deadzone = action.has("deadzone") ? (float)action["deadzone"] : DEFAULT_DEADZONE;
-		Array events = action["events"];
-
-		add_action(name, deadzone);
-		for (int i = 0; i < events.size(); i++) {
-			Ref<InputEvent> event = events[i];
-			if (event.is_null()) {
-				continue;
-			}
-			action_add_event(name, event.ptr());
-		}
-	}
-
-	this->obj->emit_signal("project_settings_loaded");
-}
 
 struct _BuiltinActionDisplayName
 {
@@ -975,17 +899,9 @@ void InputMap::load_default()
 
 	for (const KeyValue<String, List<Ref<InputEvent>>>& E : builtins) {
 		String name = E.key;
-
 		add_action(name);
-
-		const List<Ref<InputEvent>>& inputs = E.value;
-		for (const List<Ref<InputEvent>>::Element* I = inputs.front(); I; I = I->next()) {
-			Ref<InputEventKey> iek = I->get();
-
-			// For the editor, only add keyboard actions.
-			if (iek.is_valid()) {
-				action_add_event(name, I->get().ptr());
-			}
+		for (const Ref<InputEvent>& event : E.value) {
+			action_add_event(name, event.ptr());
 		}
 	}
 }

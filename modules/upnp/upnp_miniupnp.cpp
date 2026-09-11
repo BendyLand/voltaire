@@ -33,13 +33,12 @@
 #include <cstdlib>
 #include <miniupnpc/miniwget.h>
 #include <miniupnpc/upnpcommands.h>
-#include "core/object/class_db.h"
 #include "upnp_device_miniupnp.h"
 #include "upnp_miniupnp.h"
 
 UPNP* UPNPMiniUPNP::_create(bool p_notify_postinitialize)
 {
-	return static_cast<UPNP*>(memnew(UPNPMiniUPNP).ptr());
+	return static_cast<UPNP*>(memnew(UPNPMiniUPNP));
 }
 
 void UPNPMiniUPNP::make_default() { UPNP::_create = UPNPMiniUPNP::_create; }

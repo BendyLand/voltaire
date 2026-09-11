@@ -32,12 +32,13 @@
 
 #include "servers/xr/xr_positional_tracker.h"
 
-class XRHandTracker : public XRPositionalTracker {
-	VLTRCLASS(XRHandTracker, XRPositionalTracker);
+class XRHandTracker : public XRPositionalTracker
+{
 	_THREAD_SAFE_CLASS_
 
 public:
-	enum HandTrackingSource {
+	enum HandTrackingSource
+	{
 		HAND_TRACKING_SOURCE_UNKNOWN,
 		HAND_TRACKING_SOURCE_UNOBSTRUCTED,
 		HAND_TRACKING_SOURCE_CONTROLLER,
@@ -45,7 +46,8 @@ public:
 		HAND_TRACKING_SOURCE_MAX
 	};
 
-	enum HandJoint {
+	enum HandJoint
+	{
 		HAND_JOINT_PALM,
 		HAND_JOINT_WRIST,
 		HAND_JOINT_THUMB_METACARPAL,
@@ -75,7 +77,8 @@ public:
 		HAND_JOINT_MAX,
 	};
 
-	enum HandJointFlags {
+	enum HandJointFlags
+	{
 		HAND_JOINT_FLAG_ORIENTATION_VALID = 1,
 		HAND_JOINT_FLAG_ORIENTATION_TRACKED = 2,
 		HAND_JOINT_FLAG_POSITION_VALID = 4,
@@ -93,19 +96,19 @@ public:
 	void set_hand_tracking_source(HandTrackingSource p_source);
 	HandTrackingSource get_hand_tracking_source() const;
 
-	void set_hand_joint_flags(HandJoint p_joint, BitField<HandJointFlags> p_flags);
-	BitField<HandJointFlags> get_hand_joint_flags(HandJoint p_joint) const;
+	void set_hand_joint_flags(HandJoint p_joint, uint32_t p_flags);
+	uint32_t get_hand_joint_flags(HandJoint p_joint) const;
 
-	void set_hand_joint_transform(HandJoint p_joint, const Transform3D &p_transform);
+	void set_hand_joint_transform(HandJoint p_joint, const Transform3D& p_transform);
 	Transform3D get_hand_joint_transform(HandJoint p_joint) const;
 
 	void set_hand_joint_radius(HandJoint p_joint, float p_radius);
 	float get_hand_joint_radius(HandJoint p_joint) const;
 
-	void set_hand_joint_linear_velocity(HandJoint p_joint, const Vector3 &p_velocity);
+	void set_hand_joint_linear_velocity(HandJoint p_joint, const Vector3& p_velocity);
 	Vector3 get_hand_joint_linear_velocity(HandJoint p_joint) const;
 
-	void set_hand_joint_angular_velocity(HandJoint p_joint, const Vector3 &p_velocity);
+	void set_hand_joint_angular_velocity(HandJoint p_joint, const Vector3& p_velocity);
 	Vector3 get_hand_joint_angular_velocity(HandJoint p_joint) const;
 
 	XRHandTracker();
@@ -117,13 +120,11 @@ private:
 	bool has_tracking_data = false;
 	HandTrackingSource hand_tracking_source = HAND_TRACKING_SOURCE_UNKNOWN;
 
-	BitField<HandJointFlags> hand_joint_flags[HAND_JOINT_MAX];
+	uint32_t hand_joint_flags[HAND_JOINT_MAX];
 	Transform3D hand_joint_transforms[HAND_JOINT_MAX];
 	float hand_joint_radii[HAND_JOINT_MAX] = {};
 	Vector3 hand_joint_linear_velocities[HAND_JOINT_MAX];
 	Vector3 hand_joint_angular_velocities[HAND_JOINT_MAX];
 };
 
-VARIANT_ENUM_CAST(XRHandTracker::HandTrackingSource)
-VARIANT_ENUM_CAST(XRHandTracker::HandJoint)
-VARIANT_BITFIELD_CAST(XRHandTracker::HandJointFlags)
+

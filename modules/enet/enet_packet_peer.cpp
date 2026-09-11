@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "enet_packet_peer.h"
 
 void ENetPacketPeer::peer_disconnect(int p_data)
@@ -120,18 +119,6 @@ Error ENetPacketPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
 	return send(0, packet) < 0 ? FAILED : OK;
 }
 
-IPAddress ENetPacketPeer::get_remote_address() const
-{
-	ERR_FAIL_NULL_V(peer, IPAddress());
-	IPAddress out;
-#ifdef GODOT_ENET
-	out.set_ipv6((uint8_t*)&(peer->address.host));
-#else
-	out.set_ipv4((uint8_t*)&(peer->address.host));
-#endif
-	return out;
-}
-
 int ENetPacketPeer::get_remote_port() const
 {
 	ERR_FAIL_NULL_V(peer, 0);
@@ -221,36 +208,6 @@ Error ENetPacketPeer::_send(int p_channel, PackedByteArray p_packet, int p_flags
 	ERR_FAIL_COND_V_MSG(p_flags & ~FLAG_ALLOWED, ERR_INVALID_PARAMETER, "Invalid flags");
 	ENetPacket* packet = enet_packet_create(p_packet.ptr(), p_packet.size(), p_flags);
 	return send(p_channel, packet) == 0 ? OK : FAILED;
-}
-
-void ENetPacketPeer::_bind_methods()
-{
-	BIND_ENUM_CONSTANT(STATE_DISCONNECTED);
-	BIND_ENUM_CONSTANT(STATE_CONNECTING);
-	BIND_ENUM_CONSTANT(STATE_ACKNOWLEDGING_CONNECT);
-	BIND_ENUM_CONSTANT(STATE_CONNECTION_PENDING);
-	BIND_ENUM_CONSTANT(STATE_CONNECTION_SUCCEEDED);
-	BIND_ENUM_CONSTANT(STATE_CONNECTED);
-	BIND_ENUM_CONSTANT(STATE_DISCONNECT_LATER);
-	BIND_ENUM_CONSTANT(STATE_DISCONNECTING);
-	BIND_ENUM_CONSTANT(STATE_ACKNOWLEDGING_DISCONNECT);
-	BIND_ENUM_CONSTANT(STATE_ZOMBIE);
-
-	BIND_ENUM_CONSTANT(PEER_PACKET_LOSS);
-	BIND_ENUM_CONSTANT(PEER_PACKET_LOSS_VARIANCE);
-	BIND_ENUM_CONSTANT(PEER_PA
-CKET_LOSS_EPOCH);
-	BIND_ENUM_CONSTANT(PEER_ROUND_TRIP_TIME);
-	BIND_ENUM_CONSTANT(PEER_ROUND_TRIP_TIME_VARIANCE);
-	BIND_ENUM_CONSTANT(PEER_LAST_ROUND_TRIP_TIME);
-	BIND_ENUM_CONSTANT(PEER_LAST_ROUND_TRIP_TIME_VARIANCE);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_LIMIT);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_COUNTER);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_EPOCH);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_ACCELERATION);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_DECELERATION);
-	BIND_ENUM_CONSTANT(PEER_PACKET_THROTTLE_INTERVAL);
 }
 
 ENetPacketPeer::ENetPacketPeer(ENetPeer* p_peer)

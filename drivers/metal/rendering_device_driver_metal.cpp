@@ -95,7 +95,7 @@ static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_ALWAYS, MTL::CompareFunctionAlw
 /**** BUFFERS ****/
 /*****************/
 
-RDD::BufferID RenderingDeviceDriverMetal::buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) {
+RDD::BufferID RenderingDeviceDriverMetal::buffer_create(uint64_t p_size, uint32_t p_usage, MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) {
 	const uint64_t original_size = p_size;
 	if (p_usage.has_flag(BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT)) {
 		p_size = round_up_to_alignment(p_size, 16u) * _frame_count;
@@ -611,7 +611,7 @@ Vector<uint8_t> RenderingDeviceDriverMetal::texture_get_data(TextureID p_texture
 	return image_data;
 }
 
-BitField<RDD::TextureUsageBits> RenderingDeviceDriverMetal::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
+uint32_t RenderingDeviceDriverMetal::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
 	PixelFormats &pf = *pixel_formats;
 	if (pf.getMTLPixelFormat(p_format) == MTL::PixelFormatInvalid) {
 		return 0;
@@ -620,7 +620,7 @@ BitField<RDD::TextureUsageBits> RenderingDeviceDriverMetal::texture_get_usages_s
 	MTLFmtCaps caps = pf.getCapabilities(p_format);
 
 	// Everything supported by default makes an all-or-nothing check easier for the caller.
-	BitField<RDD::TextureUsageBits> supported = INT64_MAX;
+	uint32_t supported = INT64_MAX;
 	supported.clear_flag(TEXTURE_USAGE_VRS_ATTACHMENT_BIT); // No VRS support for Metal.
 
 	if (!flags::any(caps, kMTLFmtCapsColorAtt)) {
@@ -833,8 +833,8 @@ void RenderingDeviceDriverMetal::vertex_format_free(VertexFormatID p_vertex_form
 
 void RenderingDeviceDriverMetal::command_pipeline_barrier(
 		CommandBufferID p_cmd_buffer,
-		BitField<PipelineStageBits> p_src_stages,
-		BitField<PipelineStageBits> p_dst_stages,
+		uint32_t p_src_stages,
+		uint32_t p_dst_stages,
 		VectorView<MemoryAccessBarrier> p_memory_barriers,
 		VectorView<BufferBarrier> p_buffer_barriers,
 		VectorView<TextureBarrier> p_texture_barriers,
@@ -845,7 +845,7 @@ void RenderingDeviceDriverMetal::command_pipeline_barrier(
 
 #pragma mark - Queues
 
-RDD::CommandQueueFamilyID RenderingDeviceDriverMetal::command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
+RDD::CommandQueueFamilyID RenderingDeviceDriverMetal::command_queue_family_get(uint32_t p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
 	if (p_cmd_queue_family_bits.has_flag(COMMAND_QUEUE_FAMILY_GRAPHICS_BIT) || (p_surface != 0)) {
 		return CommandQueueFamilyID(COMMAND_QUEUE_FAMILY_GRAPHICS_BIT);
 	} else if (p_cmd_queue_family_bits.has_flag(COMMAND_QUEUE_FAMILY_COMPUTE_BIT)) {
@@ -1305,7 +1305,7 @@ RDD::UniformSetID RenderingDeviceDriverMetal::uniform_set_create(VectorView<Boun
 		uint64_t *ptr = (uint64_t *)arg_buffer_data.ptrw();
 
 		HashMap<MTL::Resource *, StageResourceUsage, HashMapHasherDefault> bound_resources;
-		auto add_usage = [&bound_resources](MTL::Resource *res, BitField<RDD::ShaderStage> stage, MTL::ResourceUsage usage) {
+		auto add_usage = [&bound_resources](MTL::Resource *res, uint32_t stage, MTL::ResourceUsage usage) {
 			StageResourceUsage *sru = bound_resources.getptr(res);
 			if (sru == nullptr) {
 				sru = &bound_resources.insert(res, ResourceUnused)->value;
@@ -1897,7 +1897,7 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 		PipelineDepthStencilState p_depth_stencil_state,
 		PipelineColorBlendState p_blend_state,
 		VectorView<int32_t> p_color_attachments,
-		BitField<PipelineDynamicStateFlags> p_dynamic_state,
+		uint32_t p_dynamic_state,
 		RenderPassID p_render_pass,
 		uint32_t p_render_subpass,
 		VectorView<PipelineSpecializationConstant> p_specialization_constants) {
@@ -2288,11 +2288,11 @@ RDD::PipelineID RenderingDeviceDriverMetal::compute_pipeline_create(ShaderID p_s
 
 // ----- ACCELERATION STRUCTURE -----
 
-RDD::AccelerationStructureID RenderingDeviceDriverMetal::blas_create(VectorView<AccelerationStructureGeometry> p_geometries, BitField<AccelerationStructureFlagBits> p_flags) {
+RDD::AccelerationStructureID RenderingDeviceDriverMetal::blas_create(VectorView<AccelerationStructureGeometry> p_geometries, uint32_t p_flags) {
 	ERR_FAIL_V_MSG(AccelerationStructureID(), "Ray tracing is not currently supported by the Metal driver.");
 }
 
-RDD::AccelerationStructureID RenderingDeviceDriverMetal::tlas_create(uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags) {
+RDD::AccelerationStructureID RenderingDeviceDriverMetal::tlas_create(uint32_t p_max_instance_count, uint32_t p_flags) {
 	ERR_FAIL_V_MSG(AccelerationStructureID(), "Ray tracing is not currently supported by the Metal driver.");
 }
 

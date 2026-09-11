@@ -34,7 +34,7 @@
 
 class PackedDataContainer : public Resource
 {
-	VLTRCLASS(PackedDataContainer, Resource);
+	friend class PackedDataContainerRef;
 
 	enum : uint32_t
 	{
@@ -45,28 +45,13 @@ class PackedDataContainer : public Resource
 	struct DictKey
 	{
 		uint32_t hash;
-		Variant key;
-
 		bool operator<(const DictKey& p_key) const { return hash < p_key.hash; }
 	};
 
 	Vector<uint8_t> data;
 	int datalen = 0;
 
-	uint32_t _pack(const Variant& p_data, Vector<uint8_t>& r_tmpdata,
-		HashMap<String, uint32_t>& r_string_cache);
 
-	Variant _iter_init_ofs(const Array& p_iter, uint32_t p_offset);
-	Variant _iter_next_ofs(const Array& p_iter, uint32_t p_offset);
-	Variant _iter_get_ofs(const Variant& p_iter, uint32_t p_offset);
-
-	Variant _iter_init(const Array& p_iter);
-	Variant _iter_next(const Array& p_iter);
-	Variant _iter_get(const Variant& p_iter);
-
-	friend class PackedDataContainerRef;
-	Variant _key_at_ofs(uint32_t p_ofs, const Variant& p_key, bool& r_err) const;
-	Variant _get_at_ofs(uint32_t p_ofs, const uint8_t* p_buf, bool& r_err) const;
 	uint32_t _type_at_ofs(uint32_t p_ofs) const;
 	int _size(uint32_t p_ofs) const;
 
@@ -76,16 +61,11 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual Variant getvar(const Variant& p_key, bool* r_valid = nullptr) const;
-	Error pack(const Variant& p_data);
-
 	int size() const;
 };
 
 class PackedDataContainerRef : public RefCounted
 {
-	VLTRCLASS(PackedDataContainerRef, RefCounted);
-
 	friend class PackedDataContainer;
 	uint32_t offset = 0;
 	Ref<PackedDataContainer> from;
@@ -94,12 +74,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	Variant _iter_init(const Array& p_iter);
-	Variant _iter_next(const Array& p_iter);
-	Variant _iter_get(const Variant& p_iter);
-
 	int size() const;
-	virtual Variant getvar(const Variant& p_key, bool* r_valid = nullptr) const;
 };
 
 

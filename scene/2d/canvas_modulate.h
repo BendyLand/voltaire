@@ -32,9 +32,8 @@
 
 #include "scene/2d/node_2d.h"
 
-class CanvasModulate : public Node2D {
-	VLTRCLASS(CanvasModulate, Node2D);
-
+class CanvasModulate : public Node2D
+{
 	Color color = Color(1, 1, 1, 1);
 
 	// CanvasModulate is in canvas-specific modulate group when both in canvas and visible in tree.
@@ -47,10 +46,9 @@ class CanvasModulate : public Node2D {
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -58,3 +56,5 @@ public:
 	CanvasModulate();
 	~CanvasModulate();
 };
+
+

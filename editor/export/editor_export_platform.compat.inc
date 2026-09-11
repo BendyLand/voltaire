@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "editor_export_platform.h"
 
 Vector<String> EditorExportPlatform::_get_forced_export_files_bind_compat_71542()
@@ -40,7 +39,7 @@ Vector<String> EditorExportPlatform::_get_forced_export_files_bind_compat_71542(
 
 Error EditorExportPlatform::_export_project_bind_compat_118787(
 	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-	BitField<EditorExportPlatform::DebugFlags> p_flags)
+	uint32_t p_flags)
 {
 	return export_project(p_preset, p_debug, p_path, p_flags, true);
 }

@@ -79,18 +79,6 @@ PackedStringArray DedicatedServerExportPlugin::_get_export_features(
 	return ret;
 }
 
-uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const
-{
-	Ref<EditorExportPreset> preset = get_export_preset();
-	ERR_FAIL_COND_V(preset.is_null(), 0);
-
-	if (preset->get_export_filter() != EditorExportPreset::EXPORT_CUSTOMIZED) {
-		return 0;
-	}
-
-	return preset->get_customized_files().hash();
-}
-
 bool DedicatedServerExportPlugin::_begin_customize_scenes(
 	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
 {
@@ -119,28 +107,6 @@ Node* DedicatedServerExportPlugin::_customize_scene(Node* p_root, const String& 
 	// customization happens in _customize_resource().
 	current_export_mode = _get_export_mode_for_path(p_path);
 	return nullptr;
-}
-
-Ref<Resource> DedicatedServerExportPlugin::_customize_resource(
-	const Ref<Resource>& p_resource, const String& p_path)
-{
-	// If the resource has a path, we use that to get our export mode. But if it
-	// doesn't, we assume that this resource is embedded in the last resource with
-	// a path.
-	if (p_path != "") {
-		current_export_mode = _get_export_mode_for_path(p_path);
-	}
-
-	if (p_resource.is_valid() && current_export_mode == EditorExportPreset::MODE_FILE_STRIP &&
-		p_resource->obj->has_method("create_placeholder")) {
-		Callable::CallError err;
-		Ref<Resource> result = p_resource->obj->callp("create_placeholder", nullptr, 0, err);
-		if (err.error == Callable::CallError::CALL_OK) {
-			return result;
-		}
-	}
-
-	return Ref<Resource>();
 }
 
 void DedicatedServerExportPlugin::_end_customize_scenes()

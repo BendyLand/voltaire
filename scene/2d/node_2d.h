@@ -59,24 +59,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::NODE_2D;
-
-#ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary& p_state) override;
-
-	virtual void _edit_set_position(const Point2& p_position) override;
-	virtual Point2 _edit_get_position() const override;
-
-	virtual void _edit_set_scale(const Size2& p_scale) override;
-	virtual Size2 _edit_get_scale() const override;
-
-	virtual void _edit_set_rotation(real_t p_rotation) override;
-	virtual real_t _edit_get_rotation() const override;
-	virtual bool _edit_use_rotation() const override;
-
-	virtual void _edit_set_rect(const Rect2& p_edit_rect) override;
-#endif
 	void reparent(Node* p_parent, bool p_keep_global_transform);
 
 	void set_position(const Point2& p_pos);

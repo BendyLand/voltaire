@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "navigation_mesh_generator.h"
 #include "scene/main/node.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
@@ -60,24 +59,5 @@ void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
 		p_navigation_mesh->set_vertices(Vector<Vector3>());
 	}
 }
-
-void NavigationMeshGenerator::parse_source_geometry_data(
-	const Ref<NavigationMesh>& p_navigation_mesh,
-	Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_root_node,
-	const Callable& p_callback)
-{
-	NavigationServer3D::get_singleton()->parse_source_geometry_data(
-		p_navigation_mesh, p_source_geometry_data, p_root_node, p_callback);
-}
-
-void NavigationMeshGenerator::bake_from_source_geometry_data(Ref<NavigationMesh> p_navigation_mesh,
-	const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data,
-	const Callable& p_callback)
-{
-	NavigationServer3D::get_singleton()->bake_from_source_geometry_data(
-		p_navigation_mesh, p_source_geometry_data, p_callback);
-}
-
-void NavigationMeshGenerator::_bind_methods() {}
 
 

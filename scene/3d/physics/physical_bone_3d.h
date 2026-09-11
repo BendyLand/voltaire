@@ -35,16 +35,17 @@
 
 class PhysicalBoneSimulator3D;
 
-class PhysicalBone3D : public PhysicsBody3D {
-	VLTRCLASS(PhysicalBone3D, PhysicsBody3D);
-
+class PhysicalBone3D : public PhysicsBody3D
+{
 public:
-	enum DampMode {
+	enum DampMode
+	{
 		DAMP_MODE_COMBINE,
 		DAMP_MODE_REPLACE,
 	};
 
-	enum JointType {
+	enum JointType
+	{
 		JOINT_TYPE_NONE,
 		JOINT_TYPE_PIN,
 		JOINT_TYPE_CONE,
@@ -53,35 +54,25 @@ public:
 		JOINT_TYPE_6DOF
 	};
 
-	struct JointData {
+	struct JointData
+	{
 		virtual JointType get_joint_type() { return JOINT_TYPE_NONE; }
-
-		/// "j" is used to set the parameter inside the PhysicsServer3D
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
 
 		virtual ~JointData() {}
 	};
 
-	struct PinJointData : public JointData {
+	struct PinJointData : public JointData
+	{
 		virtual JointType get_joint_type() { return JOINT_TYPE_PIN; }
-
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
 
 		real_t bias = 0.3;
 		real_t damping = 1.0;
 		real_t impulse_clamp = 0.0;
 	};
 
-	struct ConeJointData : public JointData {
+	struct ConeJointData : public JointData
+	{
 		virtual JointType get_joint_type() { return JOINT_TYPE_CONE; }
-
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
 
 		real_t swing_span = Math::PI * 0.25;
 		real_t twist_span = Math::PI;
@@ -90,12 +81,9 @@ public:
 		real_t relaxation = 1.;
 	};
 
-	struct HingeJointData : public JointData {
+	struct HingeJointData : public JointData
+	{
 		virtual JointType get_joint_type() { return JOINT_TYPE_HINGE; }
-
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
 
 		bool angular_limit_enabled = false;
 		real_t angular_limit_upper = Math::PI * 0.5;
@@ -105,12 +93,9 @@ public:
 		real_t angular_limit_relaxation = 1.;
 	};
 
-	struct SliderJointData : public JointData {
+	struct SliderJointData : public JointData
+	{
 		virtual JointType get_joint_type() { return JOINT_TYPE_SLIDER; }
-
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
 
 		real_t linear_limit_upper = 1.0;
 		real_t linear_limit_lower = -1.0;
@@ -124,8 +109,10 @@ public:
 		real_t angular_limit_damping = 1.0;
 	};
 
-	struct SixDOFJointData : public JointData {
-		struct SixDOFAxisData {
+	struct SixDOFJointData : public JointData
+	{
+		struct SixDOFAxisData
+		{
 			bool linear_limit_enabled = true;
 			real_t linear_limit_upper = 0.0;
 			real_t linear_limit_lower = 0.0;
@@ -151,10 +138,6 @@ public:
 
 		virtual JointType get_joint_type() { return JOINT_TYPE_6DOF; }
 
-		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
-		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
-		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
-
 		SixDOFAxisData axis_data[3];
 	};
 
@@ -164,11 +147,10 @@ private:
 	bool gizmo_move_joint = false;
 #endif
 
-	JointData *joint_data = nullptr;
+	JointData* joint_data = nullptr;
 	Transform3D joint_offset;
 	RID joint;
 
-	ObjectID simulator_id;
 	Transform3D body_offset;
 	Transform3D body_offset_inverse;
 	bool simulate_physics = false;
@@ -193,17 +175,14 @@ private:
 	real_t angular_damp = 0.0;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 	void _notification(int p_what);
-	static void _body_state_changed_callback(void *p_instance, PhysicsDirectBodyState3D *p_state);
-	void _body_state_changed(PhysicsDirectBodyState3D *p_state);
+	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
+	void _body_state_changed(PhysicsDirectBodyState3D* p_state);
 
 	static void _bind_methods();
 
 private:
-	void _sync_body_state(PhysicsDirectBodyState3D *p_state);
+	void _sync_body_state(PhysicsDirectBodyState3D* p_state);
 
 	void _update_joint_offset();
 	void _fix_joint_offset();
@@ -214,13 +193,13 @@ private:
 public:
 	void _on_bone_parent_changed();
 
-	PhysicalBoneSimulator3D *get_simulator() const;
-	Skeleton3D *get_skeleton() const;
+	PhysicalBoneSimulator3D* get_simulator() const;
+	Skeleton3D* get_skeleton() const;
 
-	void set_linear_velocity(const Vector3 &p_velocity);
+	void set_linear_velocity(const Vector3& p_velocity);
 	Vector3 get_linear_velocity() const override;
 
-	void set_angular_velocity(const Vector3 &p_velocity);
+	void set_angular_velocity(const Vector3& p_velocity);
 	Vector3 get_angular_velocity() const override;
 
 	void set_use_custom_integrator(bool p_enable);
@@ -232,34 +211,30 @@ public:
 	virtual Transform3D get_local_gizmo_transform() const override;
 #endif
 
-	const JointData *get_joint_data() const;
+	const JointData* get_joint_data() const;
 
-	int get_bone_id() const {
-		return bone_id;
-	}
+	int get_bone_id() const { return bone_id; }
 
-	RID get_joint_rid() const {
-		return joint;
-	}
+	RID get_joint_rid() const { return joint; }
 
 	void set_joint_type(JointType p_joint_type);
 	JointType get_joint_type() const;
 
-	void set_joint_offset(const Transform3D &p_offset);
-	const Transform3D &get_joint_offset() const;
+	void set_joint_offset(const Transform3D& p_offset);
+	const Transform3D& get_joint_offset() const;
 
-	void set_joint_rotation(const Vector3 &p_euler_rad);
+	void set_joint_rotation(const Vector3& p_euler_rad);
 	Vector3 get_joint_rotation() const;
 
-	void set_body_offset(const Transform3D &p_offset);
-	const Transform3D &get_body_offset() const;
+	void set_body_offset(const Transform3D& p_offset);
+	const Transform3D& get_body_offset() const;
 
 	void set_simulate_physics(bool p_simulate);
 	bool get_simulate_physics();
 	bool is_simulating_physics();
 
-	void set_bone_name(const String &p_name);
-	const String &get_bone_name() const;
+	void set_bone_name(const String& p_name);
+	const String& get_bone_name() const;
 
 	void set_mass(real_t p_mass);
 	real_t get_mass() const;
@@ -288,8 +263,8 @@ public:
 	void set_can_sleep(bool p_active);
 	bool is_able_to_sleep() const;
 
-	void apply_central_impulse(const Vector3 &p_impulse);
-	void apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position = Vector3());
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_impulse(const Vector3& p_impulse, const Vector3& p_position = Vector3());
 
 	void reset_physics_simulation_state();
 	void reset_to_rest_position();
@@ -305,5 +280,4 @@ private:
 	void _stop_physics_simulation();
 };
 
-VARIANT_ENUM_CAST(PhysicalBone3D::JointType);
-VARIANT_ENUM_CAST(PhysicalBone3D::DampMode);
+

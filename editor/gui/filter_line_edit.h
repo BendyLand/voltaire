@@ -32,18 +32,19 @@
 
 #include "scene/gui/line_edit.h"
 
-class FilterLineEdit : public LineEdit {
-	VLTRCLASS(FilterLineEdit, LineEdit);
-
-	Control *forward_control = nullptr;
+class FilterLineEdit : public LineEdit
+{
+	Control* forward_control = nullptr;
 
 protected:
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual void gui_input(const Ref<InputEvent>& p_event);
 
 public:
-	void set_forward_control(Control *p_control);
+	void set_forward_control(Control* p_control);
 
 	FilterLineEdit();
 };
+
+

@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/transform_interpolator.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
@@ -111,256 +109,11 @@ void Node3D::_update_rotation_and_scale() const
 	_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
 }
 
-void Node3D::_propagate_transform_changed_deferred()
-{
-	if (is_inside_tree() && !xform_change.in_list()) {
-		get_tree()->xform_change_list.add(&xform_change);
-	}
-}
-
-void Node3D::_propagate_transform_changed(Node3D* p_origin)
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	for (uint32_t n = 0; n < data.node3d_children.size(); n++) {
-		Node3D* s = data.node3d_children[n];
-
-		// Don't propagate to a toplevel.
-		if (!s->data.top_level) {
-			s->_propagate_transform_changed(p_origin);
-		}
-	}
-
-#ifdef TOOLS_ENABLED
-	if ((!data.gizmos.is_empty() || data.notify_transform) && !data.ignore_notification &&
-		!xform_change.in_list()) {
-#else
-	if (data.notify_transform && !data.ignore_notification && !xform_change.in_list()) {
-#endif
-		// SceneTree::xform_change_list is not thread safe to modify, and is read by the main thread
-		// when processings are done.
-		if (Thread::is_main_thread()) {
-			get_tree()->xform_change_list.add(&xform_change);
-		}
-		else {
-			// For any threaded-processed node, add it to xform_change_list on the main thread in a
-			// deferred manner.
-			callable_mp(this, &Node3D::_propagate_transform_changed_deferred).call_deferred();
-		}
-	}
-	_set_dirty_bits(DIRTY_GLOBAL_TRANSFORM | DIRTY_GLOBAL_INTERPOLATED_TRANSFORM);
-}
-
-void Node3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		ERR_MAIN_THREAD_GUARD;
-		ERR_FAIL_NULL(get_tree());
-
-		Node* p = get_parent();
-		if (p) {
-			data.parent = Object::cast_to<Node3D>(p);
-		}
-
-		if (data.parent) {
-			data.index_in_parent = data.parent->data.node3d_children.size();
-			data.parent->data.node3d_children.push_back(this);
-		}
-		else if (data.index_in_parent != UINT32_MAX) {
-			data.index_in_parent = UINT32_MAX;
-			ERR_PRINT("Node3D ENTER_TREE detected without EXIT_TREE, recovering.");
-		}
-
-		if (data.top_level && !Engine::get_singleton()->is_editor_hint()) {
-			if (data.parent) {
-				if (!data.top_level) {
-					data.local_transform = data.parent->get_global_transform() * get_transform();
-				}
-				else {
-					data.local_transform = get_transform();
-				}
-				_replace_dirty_mask(
-					DIRTY_EULER_ROTATION_AND_SCALE); // As local transform was updated, rot/scale
-													 // should be dirty.
-			}
-		}
-
-		_set_dirty_bits(
-			DIRTY_GLOBAL_TRANSFORM |
-			DIRTY_GLOBAL_INTERPOLATED_TRANSFORM); // Global is always dirty upon entering a scene.
-		_notify_dirty();
-
-		this->obj->notification(NOTIFICATION_ENTER_WORLD);
-		_update_visibility_parent(true);
-
-		if (is_inside_tree() && get_tree()->is_physics_interpolation_enabled()) {
-			// Always reset FTI when entering tree and update the servers,
-			// both for interpolated and non-interpolated nodes,
-			// to ensure the server xforms are up to date.
-			fti_pump_xform();
-
-			// No need to interpolate as we are doing a reset.
-			data.global_transform_interpolated = get_global_transform();
-
-			// Make sure servers are up to date.
-			fti_update_servers_xform();
-
-			// As well as a reset based on the transform when adding, the user may change
-			// the transform during the first tick / frame, and we want to reset automatically
-			// at the end of the frame / tick (unless the user manually called
-			// `reset_physics_interpolation()`).
-			if (is_physics_interpolated()) {
-				get_tree()->get_scene_tree_fti().node_3d_request_reset(this);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		ERR_MAIN_THREAD_GUARD;
-
-		if (is_inside_tree()) {
-			get_tree()->get_scene_tree_fti().node_3d_notify_delete(this);
-		}
-
-		this->obj->notification(NOTIFICATION_EXIT_WORLD, true);
-		if (xform_change.in_list()) {
-			get_tree()->xform_change_list.remove(&xform_change);
-		}
-
-		if (data.parent) {
-			if (data.index_in_parent != UINT32_MAX) {
-				// Aliases
-				uint32_t c = data.index_in_parent;
-				LocalVector<Node3D*>& parent_children = data.parent->data.node3d_children;
-
-				parent_children.remove_at_unordered(c);
-
-				// After unordered remove, we need to inform the moved child
-				// what their new id is in the parent children list.
-				if (parent_children.size() > c) {
-					parent_children[c]->data.index_in_parent = c;
-				}
-			}
-			else {
-				ERR_PRINT("Node3D index_in_parent unset at EXIT_TREE.");
-			}
-		}
-		data.index_in_parent = UINT32_MAX;
-
-		data.parent = nullptr;
-		_update_visibility_parent(true);
-		_disable_client_physics_interpolation();
-	} break;
-
-	case NOTIFICATION_ENTER_WORLD: {
-		ERR_MAIN_THREAD_GUARD;
-
-		data.inside_world = true;
-		data.viewport = nullptr;
-		Node* parent = get_parent();
-		while (parent && !data.viewport) {
-			data.viewport = Object::cast_to<Viewport>(parent);
-			parent = parent->get_parent();
-		}
-
-		ERR_FAIL_NULL(data.viewport);
-
-#ifdef TOOLS_ENABLED
-		if (is_part_of_edited_scene() && !data.gizmos_requested) {
-			data.gizmos_requested = true;
-			get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-				SceneStringName(_spatial_editor_group), SNAME("_request_gizmo_for_id"),
-				this->obj->get_instance_id());
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_EXIT_WORLD: {
-		ERR_MAIN_THREAD_GUARD;
-
-#ifdef TOOLS_ENABLED
-		clear_gizmos();
-#endif
-
-		data.viewport = nullptr;
-		data.inside_world = false;
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		ERR_THREAD_GUARD;
-
-#ifdef TOOLS_ENABLED
-		for (int i = 0; i < data.gizmos.size(); i++) {
-			data.gizmos.write[i]->transform();
-		}
-#endif
-	} break;
-
-	case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
-		if (data.client_physics_interpolation_data) {
-			data.client_physics_interpolation_data->global_xform_prev =
-				data.client_physics_interpolation_data->global_xform_curr;
-		}
-
-		// In most cases, nodes derived from Node3D will have to already have reset code available
-		// for SceneTreeFTI, so it makes sense for them to reuse this method rather than respond
-		// individually to NOTIFICATION_RESET_PHYSICS_INTERPOLATION, unless they need to perform
-		// specific tasks (like changing process modes).
-		fti_pump_xform();
-		fti_pump_property();
-
-		// Detect whether we are using an identity transform.
-		// This is an optimization for faster tree transform concatenation.
-		data.fti_is_identity_xform = data.local_transform == Transform3D();
-	} break;
-	case NOTIFICATION_SUSPENDED:
-	case NOTIFICATION_PAUSED: {
-		if (is_physics_interpolated_and_enabled()) {
-			data.local_transform_prev = get_transform();
-		}
-	} break;
-	}
-}
-
 void Node3D::set_basis(const Basis& p_basis)
 {
 	ERR_THREAD_GUARD;
 
 	set_transform(Transform3D(p_basis, data.local_transform.origin));
-}
-
-void Node3D::set_quaternion(const Quaternion& p_quaternion)
-{
-	ERR_THREAD_GUARD;
-	if (_test_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE)) {
-		// We need the scale part, so if these are dirty, update it
-		data.scale = data.local_transform.basis.get_scale();
-		_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
-	}
-	data.local_transform.basis = Basis(p_quaternion, data.scale);
-	// Rotscale should not be marked dirty because that would cause precision loss issues with the
-	// scale. Instead reconstruct rotation now.
-	data.euler_rotation =
-		data.local_transform.basis.get_euler_normalized(data.euler_rotation_order);
-
-	_replace_dirty_mask(DIRTY_NONE);
-
-	_propagate_transform_changed(this);
-	if (data.notify_local_transform) {
-		this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-	}
-	fti_notify_node_changed();
 }
 
 Vector3 Node3D::get_global_position() const
@@ -429,19 +182,6 @@ void Node3D::fti_notify_node_changed(bool p_transform_changed)
 	if (is_inside_tree()) {
 		get_tree()->get_scene_tree_fti().node_3d_notify_changed(*this, p_transform_changed);
 	}
-}
-
-void Node3D::set_transform(const Transform3D& p_transform)
-{
-	ERR_THREAD_GUARD;
-	data.local_transform = p_transform;
-	_replace_dirty_mask(DIRTY_EULER_ROTATION_AND_SCALE); // Make rot/scale dirty.
-
-	_propagate_transform_changed(this);
-	if (data.notify_local_transform) {
-		this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-	}
-	fti_notify_node_changed();
 }
 
 Basis Node3D::get_basis() const
@@ -580,135 +320,6 @@ Transform3D Node3D::_get_global_transform_interpolated(real_t p_interpolation_fr
 	return res;
 }
 
-// Visible nodes - get_global_transform_interpolated is cheap.
-// Invisible nodes - get_global_transform_interpolated is expensive, try to avoid.
-Transform3D Node3D::get_global_transform_interpolated()
-{
-#if 1
-	// Pass through if physics interpolation is switched off.
-	// This is a convenience, as it allows you to easy turn off interpolation
-	// without changing any code.
-	if (SceneTree::is_fti_enabled() && is_inside_tree() &&
-		!Engine::get_singleton()->is_in_physics_frame()) {
-		// Note that with SceneTreeFTI, we may want to calculate interpolated transform for a node
-		// with physics interpolation set to OFF, if it has a parent that is ON.
-
-		// Cheap case.
-		// We already pre-cache the visible_in_tree for VisualInstances, but NOT for Node3Ds, so we
-		// have to deal with non-VIs the slow way.
-		if (Object::cast_to<VisualInstance3D>(this) && _is_vi_visible() &&
-			data.fti_global_xform_interp_set) {
-			return data.global_transform_interpolated;
-		}
-
-		// Find out if visible in tree.
-		// If not visible in tree, find the FIRST ancestor that is visible in tree.
-		const Node3D* visible_parent = nullptr;
-		const Node3D* s = this;
-		bool visible = true;
-		bool visible_in_tree = true;
-
-		while (s) {
-			if (!s->data.visible) {
-				visible_in_tree = false;
-				visible = false;
-			}
-			else {
-				if (!visible) {
-					visible_parent = s;
-					visible = true;
-				}
-			}
-			s = s->data.parent;
-		}
-
-		// Simplest case, we can return the interpolated xform calculated by SceneTreeFTI.
-		if (visible_in_tree) {
-			return data.fti_global_xform_interp_set ? data.global_transform_interpolated
-													: get_global_transform();
-		}
-		else if (visible_parent) {
-			// INVISIBLE case. Not visible, but there is a visible ancestor somewhere in the chain.
-			if (_get_scene_tree_depth() < 1) {
-				// This should not happen unless there a problem has been introduced in the scene
-				// tree depth code. Print a non-spammy error and return something reasonable.
-				ERR_PRINT_ONCE("depth is < 1.");
-				return get_global_transform();
-			}
-
-			// The interpolated xform is not already calculated for invisible nodes, but we can
-			// calculate this manually on demand if there is a visible parent. First create the
-			// chain (backwards), from the node up to first visible parent.
-			const Node3D** parents =
-				(const Node3D**)alloca((sizeof(const Node3D*) * _get_scene_tree_depth()));
-			int32_t num_parents = 0;
-
-			s = this;
-			while (s) {
-				if (s == visible_parent) {
-					// Finished.
-					break;
-				}
-
-				parents[num_parents++] = s;
-				s = s->data.parent;
-			}
-
-			// Now calculate the interpolated chain forwards.
-			float interpolation_fraction =
-				Engine::get_singleton()->get_physics_interpolation_fraction();
-
-			// Seed the xform with the visible parent.
-			Transform3D xform = visible_parent->data.fti_global_xform_interp_set
-									? visible_parent->data.global_transform_interpolated
-									: visible_parent->get_global_transform();
-			Transform3D local_interp;
-
-			// Backwards through the list is forwards through the chain through the tree.
-			for (int32_t n = num_parents - 1; n >= 0; n--) {
-				s = parents[n];
-
-				if (s->is_physics_interpolated()) {
-					// Make sure to call `get_transform()` rather than using local_transform
-					// directly, because local_transform may be dirty and need updating from
-					// rotation / scale.
-					TransformInterpolator::interpolate_transform_3d(s->data.local_transform_prev,
-						s->get_transform(), local_interp, interpolation_fraction);
-				}
-				else {
-					local_interp = s->get_transform();
-				}
-				xform *= local_interp;
-			}
-
-			// We could save this in case of multiple calls,
-			// but probably not necessary.
-			return xform;
-		}
-	}
-
-	return get_global_transform();
-#else
-	// OLD METHOD - deprecated since moving to SceneTreeFTI,
-	// but leaving for reference and comparison for debugging.
-
-	if (!is_physics_interpolated_and_enabled()) {
-		return get_global_transform();
-	}
-
-	// If we are in the physics frame, the interpolated global transform is meaningless.
-	// However, there is an exception, we may want to use this as a means of starting off the client
-	// interpolation pump if not already started (when _is_physics_interpolated_client_side() is
-	// false).
-	if (Engine::get_singleton()->is_in_physics_frame() && _is_physics_interpolated_client_side()) {
-		return get_global_transform();
-	}
-
-	return _get_global_transform_interpolated(
-		Engine::get_singleton()->get_physics_interpolation_fraction());
-#endif
-}
-
 Transform3D Node3D::get_global_transform() const
 {
 	ERR_FAIL_COND_V(!is_inside_tree(), Transform3D());
@@ -750,16 +361,6 @@ Transform3D Node3D::get_global_gizmo_transform() const { return get_global_trans
 Transform3D Node3D::get_local_gizmo_transform() const { return get_transform(); }
 #endif
 
-Node3D* Node3D::get_parent_node_3d() const
-{
-	ERR_READ_THREAD_GUARD_V(nullptr); // This can't be changed on threads anyway.
-	if (data.top_level) {
-		return nullptr;
-	}
-
-	return Object::cast_to<Node3D>(get_parent());
-}
-
 Transform3D Node3D::get_relative_transform(const Node* p_parent) const
 {
 	ERR_READ_THREAD_GUARD_V(Transform3D());
@@ -777,90 +378,10 @@ Transform3D Node3D::get_relative_transform(const Node* p_parent) const
 	}
 }
 
-void Node3D::set_position(const Vector3& p_position)
-{
-	ERR_THREAD_GUARD;
-	data.local_transform.origin = p_position;
-	_propagate_transform_changed(this);
-	if (data.notify_local_transform) {
-		this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-	}
-	fti_notify_node_changed();
-}
-
-void Node3D::set_rotation_edit_mode(RotationEditMode p_mode)
-{
-	ERR_THREAD_GUARD;
-	if (data.rotation_edit_mode == p_mode) {
-		return;
-	}
-
-	bool transform_changed = false;
-	if (data.rotation_edit_mode == ROTATION_EDIT_MODE_BASIS &&
-		!_test_dirty_bits(DIRTY_LOCAL_TRANSFORM)) {
-		data.local_transform.orthogonalize();
-		transform_changed = true;
-	}
-
-	data.rotation_edit_mode = p_mode;
-
-	if (p_mode == ROTATION_EDIT_MODE_EULER && _test_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE)) {
-		// If going to Euler mode, ensure that vectors are _not_ dirty, else the retrieved value may
-		// be wrong. Otherwise keep what is there, so switching back and forth between modes does
-		// not break the vectors.
-
-		_update_rotation_and_scale();
-	}
-
-	if (transform_changed) {
-		_propagate_transform_changed(this);
-		if (data.notify_local_transform) {
-			this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-		}
-	}
-
-	this->obj->notify_property_list_changed();
-}
-
 Node3D::RotationEditMode Node3D::get_rotation_edit_mode() const
 {
 	ERR_READ_THREAD_GUARD_V(ROTATION_EDIT_MODE_EULER);
 	return data.rotation_edit_mode;
-}
-
-void Node3D::set_rotation_order(EulerOrder p_order)
-{
-	ERR_THREAD_GUARD;
-	if (data.euler_rotation_order == p_order) {
-		return;
-	}
-
-	ERR_FAIL_INDEX(int32_t(p_order), 6);
-	bool transform_changed = false;
-
-	uint32_t dirty = _read_dirty_mask();
-	if ((dirty & DIRTY_EULER_ROTATION_AND_SCALE)) {
-		_update_rotation_and_scale();
-	}
-	else if ((dirty & DIRTY_LOCAL_TRANSFORM)) {
-		data.euler_rotation = Basis::from_euler(data.euler_rotation, data.euler_rotation_order)
-								  .get_euler_normalized(p_order);
-		transform_changed = true;
-	}
-	else {
-		_set_dirty_bits(DIRTY_LOCAL_TRANSFORM);
-		transform_changed = true;
-	}
-
-	data.euler_rotation_order = p_order;
-
-	if (transform_changed) {
-		_propagate_transform_changed(this);
-		if (data.notify_local_transform) {
-			this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-		}
-	}
-	this->obj->notify_property_list_changed(); // Will change the rotation property.
 }
 
 EulerOrder Node3D::get_rotation_order() const
@@ -869,49 +390,12 @@ EulerOrder Node3D::get_rotation_order() const
 	return data.euler_rotation_order;
 }
 
-void Node3D::set_rotation(const Vector3& p_euler_rad)
-{
-	ERR_THREAD_GUARD;
-	if (_test_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE)) {
-		// Update scale only if rotation and scale are dirty, as rotation will be overridden.
-		data.scale = data.local_transform.basis.get_scale();
-		_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
-	}
-
-	data.euler_rotation = p_euler_rad;
-	_replace_dirty_mask(DIRTY_LOCAL_TRANSFORM);
-	_propagate_transform_changed(this);
-	if (data.notify_local_transform) {
-		this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-	}
-	fti_notify_node_changed();
-}
-
 void Node3D::set_rotation_degrees(const Vector3& p_euler_degrees)
 {
 	ERR_THREAD_GUARD;
 	Vector3 radians(Math::deg_to_rad(p_euler_degrees.x), Math::deg_to_rad(p_euler_degrees.y),
 		Math::deg_to_rad(p_euler_degrees.z));
 	set_rotation(radians);
-}
-
-void Node3D::set_scale(const Vector3& p_scale)
-{
-	ERR_THREAD_GUARD;
-	if (_test_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE)) {
-		// Update rotation only if rotation and scale are dirty, as scale will be overridden.
-		data.euler_rotation =
-			data.local_transform.basis.get_euler_normalized(data.euler_rotation_order);
-		_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
-	}
-
-	data.scale = p_scale;
-	_replace_dirty_mask(DIRTY_LOCAL_TRANSFORM);
-	_propagate_transform_changed(this);
-	if (data.notify_local_transform) {
-		this->obj->notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
-	}
-	fti_notify_node_changed();
 }
 
 Vector3 Node3D::get_position() const
@@ -946,66 +430,6 @@ Vector3 Node3D::get_scale() const
 	}
 
 	return data.scale;
-}
-
-void Node3D::update_gizmos()
-{
-	ERR_THREAD_GUARD;
-#ifdef TOOLS_ENABLED
-	if (!is_inside_world()) {
-		return;
-	}
-
-	if (data.gizmos.is_empty()) {
-		if (!data.gizmos_requested) {
-			data.gizmos_requested = true;
-			get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-				SceneStringName(_spatial_editor_group), SNAME("_request_gizmo_for_id"),
-				this->obj->get_instance_id());
-		}
-		return;
-	}
-	if (data.gizmos_dirty) {
-		return;
-	}
-	data.gizmos_dirty = true;
-	callable_mp(this, &Node3D::_update_gizmos).call_deferred();
-#endif
-}
-
-void Node3D::set_subgizmo_selection(Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform)
-{
-	ERR_THREAD_GUARD;
-#ifdef TOOLS_ENABLED
-	if (!is_inside_world()) {
-		return;
-	}
-
-	if (is_part_of_edited_scene()) {
-		get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-			SceneStringName(_spatial_editor_group), SNAME("_set_subgizmo_selection"), this, p_gizmo,
-			p_id, p_transform);
-	}
-#endif
-}
-
-void Node3D::clear_subgizmo_selection()
-{
-	ERR_THREAD_GUARD;
-#ifdef TOOLS_ENABLED
-	if (!is_inside_world()) {
-		return;
-	}
-
-	if (data.gizmos.is_empty()) {
-		return;
-	}
-
-	if (is_part_of_edited_scene()) {
-		get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-			SceneStringName(_spatial_editor_group), SNAME("_clear_subgizmo_selection"), this);
-	}
-#endif
 }
 
 void Node3D::add_gizmo(Ref<Node3DGizmo> p_gizmo)
@@ -1049,20 +473,6 @@ void Node3D::clear_gizmos()
 	data.gizmos.clear();
 	data.gizmos_requested = false;
 #endif
-}
-
-Array Node3D::get_gizmos_bind() const
-{
-	ERR_THREAD_GUARD_V(Array());
-	Array ret;
-
-#ifdef TOOLS_ENABLED
-	for (int i = 0; i < data.gizmos.size(); i++) {
-		ret.push_back(Variant(data.gizmos[i].ptr()));
-	}
-#endif
-
-	return ret;
 }
 
 Vector<Ref<Node3DGizmo>> Node3D::get_gizmos() const
@@ -1204,27 +614,6 @@ Ref<World3D> Node3D::get_world_3d() const
 	ERR_FAIL_NULL_V(data.viewport, Ref<World3D>());
 
 	return data.viewport->find_world_3d();
-}
-
-void Node3D::_propagate_visibility_changed()
-{
-	this->obj->notification(NOTIFICATION_VISIBILITY_CHANGED);
-	this->obj->emit_signal(SceneStringName(visibility_changed));
-
-#ifdef TOOLS_ENABLED
-	if (!data.gizmos.is_empty()) {
-		data.gizmos_dirty = true;
-		_update_gizmos();
-	}
-#endif
-
-	for (uint32_t n = 0; n < data.node3d_children.size(); n++) {
-		Node3D* s = data.node3d_children[n];
-
-		if (s->data.visible) {
-			s->_propagate_visibility_changed();
-		}
-	}
 }
 
 void Node3D::show()
@@ -1448,56 +837,6 @@ bool Node3D::is_local_transform_notification_enabled() const
 	return data.notify_local_transform;
 }
 
-void Node3D::force_update_transform()
-{
-	ERR_THREAD_GUARD;
-	ERR_FAIL_COND(!is_inside_tree());
-	if (!xform_change.in_list()) {
-		return; // nothing to update
-	}
-	get_tree()->xform_change_list.remove(&xform_change);
-
-	this->obj->notification(NOTIFICATION_TRANSFORM_CHANGED);
-}
-
-void Node3D::_update_visibility_parent(bool p_update_root)
-{
-	RID new_parent;
-
-	if (!visibility_parent_path.is_empty()) {
-		if (!p_update_root) {
-			return;
-		}
-		Node* parent = get_node_or_null(visibility_parent_path);
-		ERR_FAIL_NULL_MSG(
-			parent, "Can't find visibility parent node at path: " + String(visibility_parent_path));
-		ERR_FAIL_COND_MSG(parent == this, "The visibility parent can't be the same node.");
-		GeometryInstance3D* gi = Object::cast_to<GeometryInstance3D>(parent);
-		ERR_FAIL_NULL_MSG(gi, "The visibility parent node must be a GeometryInstance3D, at path: " +
-								  String(visibility_parent_path));
-		new_parent = gi ? gi->get_instance() : RID();
-	}
-	else if (data.parent) {
-		new_parent = data.parent->data.visibility_parent;
-	}
-
-	if (new_parent == data.visibility_parent) {
-		return;
-	}
-
-	data.visibility_parent = new_parent;
-
-	VisualInstance3D* vi = Object::cast_to<VisualInstance3D>(this);
-	if (vi) {
-		RS::get_singleton()->instance_set_visibility_parent(
-			vi->get_instance(), data.visibility_parent);
-	}
-
-	for (Node3D* c : data.node3d_children) {
-		c->_update_visibility_parent(false);
-	}
-}
-
 void Node3D::set_visibility_parent(const NodePath& p_path)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1511,28 +850,6 @@ NodePath Node3D::get_visibility_parent() const
 {
 	ERR_READ_THREAD_GUARD_V(NodePath());
 	return visibility_parent_path;
-}
-
-void Node3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (data.rotation_edit_mode != ROTATION_EDIT_MODE_BASIS && p_property.name == "basis") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (data.rotation_edit_mode == ROTATION_EDIT_MODE_BASIS && p_property.name == "scale") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (data.rotation_edit_mode != ROTATION_EDIT_MODE_QUATERNION &&
-			   p_property.name == "quaternion") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (data.rotation_edit_mode != ROTATION_EDIT_MODE_EULER &&
-			   p_property.name == "rotation") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (data.rotation_edit_mode != ROTATION_EDIT_MODE_EULER &&
-			   p_property.name == "rotation_order") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
 }
 
 bool Node3D::_property_can_revert(const StringName& p_name) const
@@ -1554,100 +871,6 @@ bool Node3D::_property_can_revert(const StringName& p_name) const
 		return true;
 	}
 	return false;
-}
-
-bool Node3D::_property_get_revert(const StringName& p_name, Variant& r_property) const
-{
-	bool valid = false;
-
-	const String sname = p_name;
-	if (sname == "basis") {
-		Variant variant = PropertyUtils::get_property_default_value(this->obj.get(), "transform", &valid);
-		if (valid && variant.get_type() == Variant::Type::TRANSFORM3D) {
-			r_property = Transform3D(variant).get_basis();
-		}
-		else {
-			r_property = Basis();
-		}
-	}
-	else if (sname == "scale") {
-		Variant variant = PropertyUtils::get_property_default_value(this->obj.get(), "transform", &valid);
-		if (valid && variant.get_type() == Variant::Type::TRANSFORM3D) {
-			r_property = Transform3D(variant).get_basis().get_scale();
-		}
-		else {
-			r_property = Vector3(1.0, 1.0, 1.0);
-		}
-	}
-	else if (sname == "quaternion") {
-		Variant variant = PropertyUtils::get_property_default_value(this->obj.get(), "transform", &valid);
-		if (valid && variant.get_type() == Variant::Type::TRANSFORM3D) {
-			r_property = Quaternion(Transform3D(variant).get_basis().get_rotation_quaternion());
-		}
-		else {
-			r_property = Quaternion();
-		}
-	}
-	else if (sname == "rotation") {
-		Variant variant = PropertyUtils::get_property_default_value(this->obj.get(), "transform", &valid);
-		if (valid && variant.get_type() == Variant::Type::TRANSFORM3D) {
-			r_property =
-				Transform3D(variant).get_basis().get_euler_normalized(data.euler_rotation_order);
-		}
-		else {
-			r_property = Vector3();
-		}
-	}
-	else if (sname == "position") {
-		Variant variant = PropertyUtils::get_property_default_value(this->obj.get(), "transform", &valid);
-		if (valid) {
-			r_property = Transform3D(variant).get_origin();
-		}
-		else {
-			r_property = Vector3();
-		}
-	}
-	else {
-		return false;
-	}
-	return true;
-}
-
-void Node3D::_bind_methods() {}
-
-
-Node3D::Node3D() : xform_change(this), _client_physics_interpolation_node_3d_list(this)
-{
-	this->obj->_define_ancestry(Object::AncestralClass::NODE_3D);
-
-	// Default member initializer for bitfield is a C++20 extension, so:
-
-	data.top_level = false;
-	data.inside_world = false;
-
-	data.ignore_notification = false;
-	data.notify_local_transform = false;
-	data.notify_transform = false;
-
-	data.visible = true;
-	data.disable_scale = false;
-	data.vi_visible = true;
-
-	data.fti_on_frame_xform_list = false;
-	data.fti_on_frame_property_list = false;
-	data.fti_on_tick_xform_list = false;
-	data.fti_on_tick_property_list = false;
-	data.fti_global_xform_interp_set = false;
-	data.fti_frame_xform_force_update = false;
-	data.fti_is_identity_xform = false;
-	data.fti_processed = false;
-
-#ifdef TOOLS_ENABLED
-	data.gizmos_requested = false;
-	data.gizmos_disabled = false;
-	data.gizmos_dirty = false;
-	data.transform_gizmo_visible = true;
-#endif
 }
 
 Node3D::~Node3D()

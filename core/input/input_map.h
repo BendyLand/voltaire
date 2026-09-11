@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/input/input_event.h"
-#include "core/object/object.h"
 #include "core/templates/hash_map.h"
 
 template <typename T> class TypedArray;
@@ -39,7 +38,6 @@ template <typename T> class TypedArray;
 class InputMap
 {
 public:
-	mem_unique_ptr<Object> obj;
 	/**
 	 * A special value used to signify that a given Action can be triggered by any device
 	 */
@@ -67,7 +65,7 @@ private:
 		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
 		float* r_raw_strength = nullptr, int* r_event_index = nullptr) const;
 
-	Array _action_get_events(const StringName& p_action);
+	Vector<Ref<InputEvent>> _action_get_events(const StringName& p_action);
 
 protected:
 	static void _bind_methods();

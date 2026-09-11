@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "canvas_item_material.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/version.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -198,48 +196,13 @@ void CanvasItemMaterial::set_light_mode(LightMode p_light_mode)
 
 CanvasItemMaterial::LightMode CanvasItemMaterial::get_light_mode() const { return light_mode; }
 
-void CanvasItemMaterial::set_particles_animation(bool p_particles_anim)
-{
-	particles_animation = p_particles_anim;
-	_queue_shader_change();
-	this->obj->notify_property_list_changed();
-}
-
 bool CanvasItemMaterial::get_particles_animation() const { return particles_animation; }
-
-void CanvasItemMaterial::set_particles_anim_h_frames(int p_frames)
-{
-	particles_anim_h_frames = p_frames;
-	RS::get_singleton()->material_set_param(
-		_get_material(), shader_names->particles_anim_h_frames, p_frames);
-}
 
 int CanvasItemMaterial::get_particles_anim_h_frames() const { return particles_anim_h_frames; }
 
-void CanvasItemMaterial::set_particles_anim_v_frames(int p_frames)
-{
-	particles_anim_v_frames = p_frames;
-	RS::get_singleton()->material_set_param(
-		_get_material(), shader_names->particles_anim_v_frames, p_frames);
-}
-
 int CanvasItemMaterial::get_particles_anim_v_frames() const { return particles_anim_v_frames; }
 
-void CanvasItemMaterial::set_particles_anim_loop(bool p_loop)
-{
-	particles_anim_loop = p_loop;
-	RS::get_singleton()->material_set_param(
-		_get_material(), shader_names->particles_anim_loop, particles_anim_loop);
-}
-
 bool CanvasItemMaterial::get_particles_anim_loop() const { return particles_anim_loop; }
-
-void CanvasItemMaterial::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name.begins_with("particles_anim_") && !particles_animation) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
 
 RID CanvasItemMaterial::get_shader_rid() const
 {
@@ -248,22 +211,6 @@ RID CanvasItemMaterial::get_shader_rid() const
 }
 
 Shader::Mode CanvasItemMaterial::get_shader_mode() const { return Shader::MODE_CANVAS_ITEM; }
-
-void CanvasItemMaterial::_bind_methods() {}
-
-CanvasItemMaterial::CanvasItemMaterial() : element(this)
-{
-	_set_material(RS::get_singleton()->material_create());
-
-	set_particles_anim_h_frames(1);
-	set_particles_anim_v_frames(1);
-	set_particles_anim_loop(false);
-
-	current_key.invalid_key = 1;
-
-	_mark_initialized(callable_mp(this, &CanvasItemMaterial::_queue_shader_change),
-		callable_mp(this, &CanvasItemMaterial::_update_shader));
-}
 
 CanvasItemMaterial::~CanvasItemMaterial()
 {

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/templates/pair.h"
 #include "optimized_translation.compat.inc"
 #include "optimized_translation.h"
@@ -208,47 +207,6 @@ bool OptimizedTranslation::generate(const Ref<Translation>& p_from)
 #endif
 }
 
-bool OptimizedTranslation::_set(const StringName& p_name, const Variant& p_value)
-{
-	String prop_name = p_name.string();
-	if (prop_name == "hash_table") {
-		hash_table = p_value;
-	}
-	else if (prop_name == "bucket_table") {
-		bucket_table = p_value;
-	}
-	else if (prop_name == "strings") {
-		strings = p_value;
-	}
-	else if (prop_name == "load_from") {
-		generate(p_value);
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool OptimizedTranslation::_get(const StringName& p_name, Variant& r_ret) const
-{
-	String prop_name = p_name.string();
-	if (prop_name == "hash_table") {
-		r_ret = hash_table;
-	}
-	else if (prop_name == "bucket_table") {
-		r_ret = bucket_table;
-	}
-	else if (prop_name == "strings") {
-		r_ret = strings;
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
 StringName OptimizedTranslation::get_message(
 	const StringName& p_src_text, const StringName& p_context) const
 {
@@ -363,18 +321,6 @@ int OptimizedTranslation::get_message_count() const
 {
 	WARN_PRINT_ONCE("OptimizedTranslation does not store the message texts to be translated.");
 	return 0;
-}
-
-void OptimizedTranslation::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	p_list->push_back(PropertyInfo(Variant::PACKED_INT32_ARRAY, "hash_table", PROPERTY_HINT_NONE,
-		"", PROPERTY_USAGE_NO_EDITOR));
-	p_list->push_back(PropertyInfo(Variant::PACKED_INT32_ARRAY, "bucket_table", PROPERTY_HINT_NONE,
-		"", PROPERTY_USAGE_NO_EDITOR));
-	p_list->push_back(PropertyInfo(
-		Variant::PACKED_BYTE_ARRAY, "strings", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
-	p_list->push_back(PropertyInfo(Variant::OBJECT, "load_from", PROPERTY_HINT_RESOURCE_TYPE,
-		Translation::get_class_static(), PROPERTY_USAGE_EDITOR));
 }
 
 void OptimizedTranslation::_bind_methods() {}

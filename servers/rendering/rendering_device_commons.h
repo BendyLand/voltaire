@@ -30,8 +30,9 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/templates/mem_unique_ptr.h"
+#include "core/types.h"
+#include "core/typedefs.h"
 
 #define STEPIFY(m_number, m_alignment)                                                             \
 	((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))
@@ -77,7 +78,6 @@ class RenderingDeviceCommons
 	// with RenderingDeviceDriver.
 	////////////////////////////////////////////
 public:
-	mem_unique_ptr<Object> obj;
 	static const bool command_pool_reset_enabled = true;
 
 	/*****************/
@@ -1211,9 +1211,8 @@ public:
 		UniformType type = UniformType::UNIFORM_TYPE_MAX;
 		bool writable = false;
 		uint32_t binding = 0;
-		BitField<ShaderStage> stages = {};
-		uint32_t length =
-			0; // Size of arrays (in total elements), or ubos (in bytes * total elements).
+		uint32_t stages = 0;
+		uint32_t length = 0; // Size of arrays (in total elements), or ubos (in bytes * total elements).
 		TextureType texture_type = TEXTURE_TYPE_MAX;
 		DataFormat texture_format = DATA_FORMAT_MAX;
 
@@ -1254,7 +1253,7 @@ public:
 
 	struct ShaderSpecializationConstant : public PipelineSpecializationConstant
 	{
-		BitField<ShaderStage> stages = {};
+		uint32_t stages = 0;
 
 		bool operator<(const ShaderSpecializationConstant& p_other) const
 		{
@@ -1275,8 +1274,8 @@ public:
 		Vector<Vector<ShaderUniform>> uniform_sets;
 		Vector<ShaderSpecializationConstant> specialization_constants;
 		Vector<ShaderStage> stages_vector;
-		BitField<ShaderStage> stages_bits = {};
-		BitField<ShaderStage> push_constant_stages = {};
+		uint32_t stages_bits = 0;
+		uint32_t push_constant_stages = 0;
 	};
 };
 

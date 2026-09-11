@@ -32,8 +32,6 @@
 
 #include "core/core_globals.h"
 #include "core/io/logger.h"
-#include "core/object/object_id.h"
-#include "core/object/script_language.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 
@@ -122,13 +120,9 @@ void _err_print_error(const char *p_function, const char *p_file, int p_line, co
 
 	is_printing_error = true;
 
-	if (OS::get_singleton()) {
-		OS::get_singleton()->print_error(p_function, p_file, p_line, p_error, p_message, p_editor_notify, (Logger::ErrorType)p_type, ScriptServer::capture_script_backtraces(false));
-	} else {
-		// Fallback if errors happen before OS init or after it's destroyed.
-		const char *err_details = (p_message && *p_message) ? p_message : p_error;
-		_err_print_fallback(p_function, p_file, p_line, err_details, p_type, false);
-	}
+	// Fallback if errors happen before OS init or after it's destroyed.
+	const char *err_details = (p_message && *p_message) ? p_message : p_error;
+	_err_print_fallback(p_function, p_file, p_line, err_details, p_type, false);
 
 	_global_lock();
 
@@ -212,7 +206,7 @@ void _err_flush_stdout() {
 }
 
 // Prevent error spam by limiting the warnings to a certain frequency.
-void _physics_interpolation_warning(const char *p_function, const char *p_file, int p_line, ObjectID p_id, const char *p_warn_string) {
+void _physics_interpolation_warning(const char *p_function, const char *p_file, int p_line, const char *p_warn_string) {
 #if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
 	const uint32_t warn_max = 2048;
 	const uint32_t warn_timeout_seconds = 15;
@@ -233,25 +227,6 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	if ((warn_count == 0) && (time_now >= warn_timeout)) {
 		warn_count = warn_max;
 		warn_timeout = time_now + warn_timeout_seconds;
-
-		if (GLOBAL_GET("debug/settings/physics_interpolation/enable_warnings")) {
-			// UINT64_MAX means unused.
-			if (p_id.operator uint64_t() == UINT64_MAX) {
-				_err_print_error(p_function, p_file, p_line, "[Physics interpolation] " + String(p_warn_string) + " (possibly benign).", false, ERR_HANDLER_WARNING);
-			} else {
-				String node_name;
-				if (p_id.is_valid()) {
-					Node *node = ObjectDB::get_instance<Node>(p_id);
-					if (node && node->is_inside_tree()) {
-						node_name = "\"" + String(node->get_path()) + "\"";
-					} else {
-						node_name = "\"unknown\"";
-					}
-				}
-
-				_err_print_error(p_function, p_file, p_line, "[Physics interpolation] " + String(p_warn_string) + ": " + node_name + " (possibly benign).", false, ERR_HANDLER_WARNING);
-			}
-		}
 	}
 #endif
 }

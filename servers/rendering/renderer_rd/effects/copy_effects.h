@@ -56,7 +56,7 @@ public:
 	};
 
 private:
-	BitField<RasterEffects> raster_effects;
+	uint32_t raster_effects;
 
 	// Blur raster shader
 
@@ -360,10 +360,10 @@ private:
 public:
 	static CopyEffects *get_singleton();
 
-	CopyEffects(BitField<RasterEffects> p_raster_effects);
+	CopyEffects(uint32_t p_raster_effects);
 	~CopyEffects();
 
-	BitField<RasterEffects> get_raster_effects() { return raster_effects; }
+	uint32_t get_raster_effects() { return raster_effects; }
 
 	void copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i &p_rect, bool p_flip_y = false, bool p_force_luminance = false, bool p_all_source = false, bool p_8_bit_dst = false, bool p_alpha_to_one = false, bool p_sanitize_inf_nan = false);
 	void copy_octmap_to_panorama(RID p_source_octmap, RID p_dest_panorama, const Size2i &p_panorama_size, float p_lod, bool p_is_array, const Size2 &p_source_octmap_border_size);

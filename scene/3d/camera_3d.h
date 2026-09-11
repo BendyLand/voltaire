@@ -126,7 +126,6 @@ protected:
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 	static void _bind_methods();
 
@@ -216,9 +215,5 @@ public:
 	Camera3D();
 	~Camera3D();
 };
-
-VARIANT_ENUM_CAST(Camera3D::ProjectionType);
-VARIANT_ENUM_CAST(Camera3D::KeepAspect);
-VARIANT_ENUM_CAST(Camera3D::DopplerTracking);
 
 

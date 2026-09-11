@@ -29,130 +29,7 @@
 /**************************************************************************/
 
 #include "collision_object_2d.h"
-#include "core/object/class_db.h"
 #include "scene/resources/world_2d.h"
-
-void CollisionObject2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		Transform2D gl_transform = get_global_transform();
-
-		if (area) {
-			PhysicsServer2D::get_singleton()->area_set_transform(rid, gl_transform);
-		}
-		else {
-			PhysicsServer2D::get_singleton()->body_set_state(
-				rid, PS2DE::BODY_STATE_TRANSFORM, gl_transform);
-		}
-
-		bool disabled = !is_enabled();
-
-		if (disabled && (disable_mode != DISABLE_MODE_REMOVE)) {
-			_apply_disabled();
-		}
-
-		if (!disabled || (disable_mode != DISABLE_MODE_REMOVE)) {
-			Ref<World2D> world_ref = get_world_2d();
-			ERR_FAIL_COND(world_ref.is_null());
-			RID space = world_ref->get_space();
-			if (area) {
-				PhysicsServer2D::get_singleton()->area_set_space(rid, space);
-			}
-			else {
-				PhysicsServer2D::get_singleton()->body_set_space(rid, space);
-			}
-			_space_changed(space);
-		}
-
-		_update_pickable();
-	} break;
-
-	case NOTIFICATION_ENTER_CANVAS: {
-		if (area) {
-			PhysicsServer2D::get_singleton()->area_attach_canvas_instance_id(
-				rid, get_canvas_layer_instance_id());
-		}
-		else {
-			PhysicsServer2D::get_singleton()->body_attach_canvas_instance_id(
-				rid, get_canvas_layer_instance_id());
-		}
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		_update_pickable();
-	} break;
-
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (only_update_transform_changes) {
-			return;
-		}
-
-		Transform2D gl_transform = get_global_transform();
-
-		if (area) {
-			PhysicsServer2D::get_singleton()->area_set_transform(rid, gl_transform);
-		}
-		else {
-			PhysicsServer2D::get_singleton()->body_set_state(
-				rid, PS2DE::BODY_STATE_TRANSFORM, gl_transform);
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		bool disabled = !is_enabled();
-
-		if (!disabled || (disable_mode != DISABLE_MODE_REMOVE)) {
-			if (callback_lock > 0) {
-				ERR_PRINT(
-					"Removing a CollisionObject node during a physics callback is not allowed and "
-					"will cause undesired behavior. Remove with call_deferred() instead.");
-			}
-			else {
-				if (area) {
-					PhysicsServer2D::get_singleton()->area_set_space(rid, RID());
-				}
-				else {
-					PhysicsServer2D::get_singleton()->body_set_space(rid, RID());
-				}
-				_space_changed(RID());
-			}
-		}
-
-		if (disabled && (disable_mode != DISABLE_MODE_REMOVE)) {
-			_apply_enabled();
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_CANVAS: {
-		if (area) {
-			PhysicsServer2D::get_singleton()->area_attach_canvas_instance_id(rid, ObjectID());
-		}
-		else {
-			PhysicsServer2D::get_singleton()->body_attach_canvas_instance_id(rid, ObjectID());
-		}
-	} break;
-
-	case NOTIFICATION_WORLD_2D_CHANGED: {
-		RID space = get_world_2d()->get_space();
-		if (area) {
-			PhysicsServer2D::get_singleton()->area_set_space(rid, space);
-		}
-		else {
-			PhysicsServer2D::get_singleton()->body_set_space(rid, space);
-		}
-		_space_changed(space);
-	} break;
-
-	case NOTIFICATION_DISABLED: {
-		_apply_disabled();
-	} break;
-
-	case NOTIFICATION_ENABLED: {
-		_apply_enabled();
-	} break;
-	}
-}
 
 void CollisionObject2D::set_collision_layer(uint32_t p_layer)
 {
@@ -325,25 +202,6 @@ void CollisionObject2D::_apply_enabled()
 	}
 }
 
-uint32_t CollisionObject2D::create_shape_owner(Object* p_owner)
-{
-	ShapeData sd;
-	uint32_t id;
-
-	if (shapes.is_empty()) {
-		id = 0;
-	}
-	else {
-		id = shapes.back()->key() + 1;
-	}
-
-	sd.owner_id = p_owner ? p_owner->get_instance_id() : ObjectID();
-
-	shapes[id] = sd;
-
-	return id;
-}
-
 void CollisionObject2D::remove_shape_owner(uint32_t owner)
 {
 	ERR_FAIL_COND(!shapes.has(owner));
@@ -494,13 +352,6 @@ Transform2D CollisionObject2D::shape_owner_get_transform(uint32_t p_owner) const
 	return shapes[p_owner].xform;
 }
 
-Object* CollisionObject2D::shape_owner_get_owner(uint32_t p_owner) const
-{
-	ERR_FAIL_COND_V(!shapes.has(p_owner), nullptr);
-
-	return ObjectDB::get_instance(shapes[p_owner].owner_id);
-}
-
 void CollisionObject2D::shape_owner_add_shape(uint32_t p_owner, Shape2D* rp_shape)
 {
 	ERR_FAIL_COND(!shapes.has(p_owner));
@@ -607,26 +458,6 @@ void CollisionObject2D::set_pickable(bool p_enabled)
 
 bool CollisionObject2D::is_pickable() const { return pickable; }
 
-void CollisionObject2D::_input_event_call(
-	Viewport* p_viewport, const Ref<InputEvent>& p_input_event, int p_shape)
-{
-	this->obj->emit_signal(SceneStringName(input_event), p_viewport, p_input_event, p_shape);
-}
-
-void CollisionObject2D::_mouse_enter() { this->obj->emit_signal(SceneStringName(mouse_entered)); }
-
-void CollisionObject2D::_mouse_exit() { this->obj->emit_signal(SceneStringName(mouse_exited)); }
-
-void CollisionObject2D::_mouse_shape_enter(int p_shape)
-{
-	this->obj->emit_signal(SceneStringName(mouse_shape_entered), p_shape);
-}
-
-void CollisionObject2D::_mouse_shape_exit(int p_shape)
-{
-	this->obj->emit_signal(SceneStringName(mouse_shape_exited), p_shape);
-}
-
 void CollisionObject2D::set_only_update_transform_changes(bool p_enable)
 {
 	only_update_transform_changes = p_enable;
@@ -682,37 +513,6 @@ PackedStringArray CollisionObject2D::get_configuration_warnings() const
 	}
 
 	return warnings;
-}
-
-void CollisionObject2D::_bind_methods() {}
-
-CollisionObject2D::CollisionObject2D(RID p_rid, bool p_area)
-{
-	this->obj->_define_ancestry(Object::AncestralClass::COLLISION_OBJECT_2D);
-
-	rid = p_rid;
-	area = p_area;
-	pickable = true;
-	set_notify_transform(true);
-	set_hide_clip_children(true);
-	total_subshapes = 0;
-	only_update_transform_changes = false;
-
-	if (p_area) {
-		PhysicsServer2D::get_singleton()->area_attach_object_instance_id(rid, this->obj->get_instance_id());
-	}
-	else {
-		PhysicsServer2D::get_singleton()->body_attach_object_instance_id(rid, this->obj->get_instance_id());
-		PhysicsServer2D::get_singleton()->body_set_mode(rid, body_mode);
-	}
-}
-
-CollisionObject2D::CollisionObject2D()
-{
-	this->obj->_define_ancestry(Object::AncestralClass::COLLISION_OBJECT_2D);
-	// owner=
-
-	set_notify_transform(true);
 }
 
 CollisionObject2D::~CollisionObject2D()

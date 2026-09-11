@@ -30,30 +30,21 @@
 
 #pragma once
 
-#include "jolt_object_3d.h"
-
-#include "servers/physics_3d/physics_server_3d_enums.h"
-
 #include <Jolt/Jolt.h>
-
 #include <Jolt/Physics/SoftBody/SoftBodyCreationSettings.h>
 #include <Jolt/Physics/SoftBody/SoftBodySharedSettings.h>
+#include "jolt_object_3d.h"
+#include "servers/physics_3d/physics_server_3d_enums.h"
 
 class JoltArea3D;
 class JoltSpace3D;
 class PhysicsServer3DRenderingServerHandler;
 
-class JoltSoftBody3D final : public JoltObject3D {
-	HashSet<int> pinned_vertices;
-
-	LocalVector<int> mesh_to_physics;
-	LocalVector<JoltArea3D *> areas;
-	LocalVector<Vector3> normals;
-	LocalVector<RID> exceptions;
-
+class JoltSoftBody3D final : public JoltObject3D
+{
 	RID mesh;
 
-	JPH::SoftBodyCreationSettings *jolt_settings = new JPH::SoftBodyCreationSettings();
+	JPH::SoftBodyCreationSettings* jolt_settings = new JPH::SoftBodyCreationSettings();
 
 	float mass = 1.0f;
 	float pressure = 0.0f;
@@ -71,7 +62,7 @@ class JoltSoftBody3D final : public JoltObject3D {
 
 	virtual void _add_to_space() override;
 
-	JPH::SoftBodySharedSettings *_create_shared_settings();
+	JPH::SoftBodySharedSettings* _create_shared_settings();
 
 	void _apply_environmental_forces(float p_step);
 
@@ -99,28 +90,27 @@ public:
 	JoltSoftBody3D();
 	virtual ~JoltSoftBody3D() override;
 
-	void add_collision_exception(const RID &p_excepted_body);
-	void remove_collision_exception(const RID &p_excepted_body);
-	bool has_collision_exception(const RID &p_excepted_body) const;
+	void add_collision_exception(const RID& p_excepted_body);
+	void remove_collision_exception(const RID& p_excepted_body);
+	bool has_collision_exception(const RID& p_excepted_body) const;
 
-	const LocalVector<RID> &get_collision_exceptions() const { return exceptions; }
+	void add_area(JoltArea3D* p_area);
+	void remove_area(JoltArea3D* p_area);
 
-	void add_area(JoltArea3D *p_area);
-	void remove_area(JoltArea3D *p_area);
-
-	virtual bool can_interact_with(const JoltBody3D &p_other) const override;
-	virtual bool can_interact_with(const JoltSoftBody3D &p_other) const override;
-	virtual bool can_interact_with(const JoltArea3D &p_other) const override;
+	virtual bool can_interact_with(const JoltBody3D& p_other) const override;
+	virtual bool can_interact_with(const JoltSoftBody3D& p_other) const override;
+	virtual bool can_interact_with(const JoltArea3D& p_other) const override;
 
 	virtual bool reports_contacts() const override { return false; }
 
-	virtual Vector3 get_velocity_at_position(const Vector3 &p_position) const override;
+	virtual Vector3 get_velocity_at_position(const Vector3& p_position) const override;
 
 	virtual void pre_step(float p_step) override;
 
-	void set_mesh(const RID &p_mesh);
+	void set_mesh(const RID& p_mesh);
 
 	bool is_pickable() const { return pickable; }
+
 	void set_pickable(bool p_enabled) { pickable = p_enabled; }
 
 	bool is_sleeping() const;
@@ -130,12 +120,15 @@ public:
 	void set_is_sleep_allowed(bool p_enabled);
 
 	void put_to_sleep() { set_is_sleeping(true); }
+
 	void wake_up() { set_is_sleeping(false); }
 
 	int get_simulation_precision() const { return simulation_precision; }
+
 	void set_simulation_precision(int p_precision);
 
 	float get_mass() const { return mass; }
+
 	void set_mass(float p_mass);
 
 	float get_stiffness_coefficient() const;
@@ -145,26 +138,25 @@ public:
 	void set_shrinking_factor(float p_shrinking_factor);
 
 	float get_pressure() const { return pressure; }
+
 	void set_pressure(float p_pressure);
 
 	float get_linear_damping() const { return linear_damping; }
+
 	void set_linear_damping(float p_damping);
 
 	float get_drag() const;
 	void set_drag(float p_drag);
 
-	Variant get_state(PS3DE::BodyState p_state) const;
-	void set_state(PS3DE::BodyState p_state, const Variant &p_value);
-
 	Transform3D get_transform() const;
-	void set_transform(const Transform3D &p_transform);
+	void set_transform(const Transform3D& p_transform);
 
 	AABB get_bounds() const;
 
-	void update_rendering_server(PhysicsServer3DRenderingServerHandler *p_rendering_server_handler);
+	void update_rendering_server(PhysicsServer3DRenderingServerHandler* p_rendering_server_handler);
 
 	Vector3 get_vertex_position(int p_index);
-	void set_vertex_position(int p_index, const Vector3 &p_position);
+	void set_vertex_position(int p_index, const Vector3& p_position);
 
 	void pin_vertex(int p_index);
 	void unpin_vertex(int p_index);
@@ -173,8 +165,10 @@ public:
 
 	bool is_vertex_pinned(int p_index) const;
 
-	void apply_vertex_impulse(int p_index, const Vector3 &p_impulse);
-	void apply_vertex_force(int p_index, const Vector3 &p_force);
-	void apply_central_impulse(const Vector3 &p_impulse);
-	void apply_central_force(const Vector3 &p_force);
+	void apply_vertex_impulse(int p_index, const Vector3& p_impulse);
+	void apply_vertex_force(int p_index, const Vector3& p_force);
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_central_force(const Vector3& p_force);
 };
+
+

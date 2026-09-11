@@ -28,19 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "separation_ray_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/rendering_server.h"
-
-void SeparationRayShape2D::_update_shape()
-{
-	Dictionary d;
-	d["length"] = length;
-	d["slide_on_slope"] = slide_on_slope;
-	PhysicsServer2D::get_singleton()->shape_set_data(get_rid(), d);
-	emit_changed();
-}
 
 void SeparationRayShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
@@ -81,8 +71,6 @@ Rect2 SeparationRayShape2D::get_rect() const
 }
 
 real_t SeparationRayShape2D::get_enclosing_radius() const { return length; }
-
-void SeparationRayShape2D::_bind_methods() {}
 
 void SeparationRayShape2D::set_length(real_t p_length)
 {

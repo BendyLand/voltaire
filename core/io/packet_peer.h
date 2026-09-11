@@ -31,18 +31,13 @@
 #pragma once
 
 #include "core/io/stream_peer.h"
-#include "core/object/gdvirtual.gen.h"
 #include "core/templates/ring_buffer.h"
-#include "core/variant/native_ptr.h"
 
-class PacketPeer : public RefCounted {
-	VLTRCLASS(PacketPeer, RefCounted);
-
-	Variant _bnd_get_var(bool p_allow_objects = false);
-
+class PacketPeer : public RefCounted
+{
 	static void _bind_methods();
 
-	Error _put_packet(const Vector<uint8_t> &p_buffer);
+	Error _put_packet(const Vector<uint8_t>& p_buffer);
 	Vector<uint8_t> _get_packet();
 	Error _get_packet_error() const;
 
@@ -53,38 +48,35 @@ class PacketPeer : public RefCounted {
 
 public:
 	virtual int get_available_packet_count() const = 0;
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) = 0; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) = 0;
+	virtual Error get_packet(
+		const uint8_t** r_buffer, int& r_buffer_size) = 0; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) = 0;
 
 	virtual int get_max_packet_size() const = 0;
 
 	/* helpers / binders */
 
-	virtual Error get_packet_buffer(Vector<uint8_t> &r_buffer);
-	virtual Error put_packet_buffer(const Vector<uint8_t> &p_buffer);
-
-	virtual Error get_var(Variant &r_variant, bool p_allow_objects = false);
-	virtual Error put_var(const Variant &p_packet, bool p_full_objects = false);
+	virtual Error get_packet_buffer(Vector<uint8_t>& r_buffer);
+	virtual Error put_packet_buffer(const Vector<uint8_t>& p_buffer);
 
 	void set_encode_buffer_max_size(int p_max_size);
 	int get_encode_buffer_max_size() const;
 };
 
-class PacketPeerExtension : public PacketPeer {
-	VLTRCLASS(PacketPeerExtension, PacketPeer);
-
+class PacketPeerExtension : public PacketPeer
+{
 protected:
 	static void _bind_methods();
 
 public:
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 };
 
-class PacketPeerStream : public PacketPeer {
-	VLTRCLASS(PacketPeerStream, PacketPeer);
-
-	//the way the buffers work sucks, will change later
+class PacketPeerStream : public PacketPeer
+{
+	// the way the buffers work sucks, will change later
 
 	mutable Ref<StreamPeer> peer;
 	mutable RingBuffer<uint8_t> ring_buffer;
@@ -94,16 +86,17 @@ class PacketPeerStream : public PacketPeer {
 	Error _poll_buffer() const;
 
 protected:
-	static void _bind_methods();
+	static void
+_bind_methods();
 
 public:
 	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 
 	virtual int get_max_packet_size() const override;
 
-	void set_stream_peer(const Ref<StreamPeer> &p_peer);
+	void set_stream_peer(const Ref<StreamPeer>& p_peer);
 	Ref<StreamPeer> get_stream_peer() const;
 	void set_input_buffer_max_size(int p_max_size);
 	int get_input_buffer_max_size() const;
@@ -111,3 +104,5 @@ public:
 	int get_output_buffer_max_size() const;
 	PacketPeerStream();
 };
+
+

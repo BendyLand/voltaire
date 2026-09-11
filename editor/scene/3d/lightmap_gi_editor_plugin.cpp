@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -162,31 +160,6 @@ void LightmapGIEditorPlugin::_bake_select_file(const String& p_file)
 
 void LightmapGIEditorPlugin::_bake() { _bake_select_file(""); }
 
-void LightmapGIEditorPlugin::edit(Object* p_object)
-{
-	LightmapGI* s = Object::cast_to<LightmapGI>(p_object);
-	if (!s) {
-		return;
-	}
-
-	lightmap = s;
-}
-
-bool LightmapGIEditorPlugin::handles(Object* p_object) const
-{
-	return p_object->is_class("LightmapGI");
-}
-
-void LightmapGIEditorPlugin::make_visible(bool p_visible)
-{
-	if (p_visible) {
-		bake->show();
-	}
-	else {
-		bake->hide();
-	}
-}
-
 EditorProgress* LightmapGIEditorPlugin::tmp_progress = nullptr;
 
 bool LightmapGIEditorPlugin::bake_func_step(
@@ -205,59 +178,13 @@ void LightmapGIEditorPlugin::bake_func_end(uint64_t p_time_started)
 		memdelete(tmp_progress);
 		tmp_progress = nullptr;
 	}
-
 	const int time_taken = OS::get_singleton()->get_ticks_msec() - p_time_started;
-	print_line(vformat("Done baking lightmaps in %02d:%02d:%02d.%02d.", time_taken / 3'600'000,
+	__print_line(vformat("Done baking lightmaps in %02d:%02d:%02d.%02d.", time_taken / 3'600'000,
 		(time_taken % 3'600'000) / 60'000, (time_taken % 60'000) / 1000, (time_taken % 1000) / 10));
 	// Request attention in case the user was doing something else.
 	// Baking lightmaps is likely the editor task that can take the most time,
 	// so only request the attention for baking lightmaps.
 	DisplayServer::get_singleton()->window_request_attention();
-}
-
-void LightmapGIEditorPlugin::_bind_methods() {}
-
-LightmapGIEditorPlugin::LightmapGIEditorPlugin()
-{
-	bake = memnew(Button);
-	bake->set_theme_type_variation(SceneStringName(FlatButton));
-	// TODO: Rework this as a dedicated toolbar control so we can hook into theme changes and update
-	// it when the editor theme updates.
-	bake->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("Bake"), EditorStringName(EditorIcons)));
-	bake->set_text(TTR("Bake Lightmaps"));
-
-#ifdef MODULE_LIGHTMAPPER_RD_ENABLED
-	// Disable lightmap baking if not supported on the current GPU.
-	if (!DisplayServer::get_singleton()->can_create_rendering_device()) {
-		bake->set_disabled(true);
-		bake->set_tooltip_text(vformat(TTR("Lightmap baking is not supported on this GPU (%s)."),
-			RenderingServer::get_singleton()->get_video_adapter_name()));
-	}
-#else
-	// Disable lightmap baking if the module is disabled at compile-time.
-	bake->set_disabled(true);
-#if defined(ANDROID_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
-	bake->set_tooltip_text(
-		vformat(TTR("Lightmaps cannot be baked on %s."), OS::get_singleton()->get_name()));
-#else
-	bake->set_tooltip_text(TTR(
-		"Lightmaps cannot be baked, as the `lightmapper_rd` module was disabled at compile-time."));
-#endif
-#endif // MODULE_LIGHTMAPPER_RD_ENABLED
-
-	bake->hide();
-	bake->connect(SceneStringName(pressed), Callable(this->obj.get(), "_bake"));
-	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, bake);
-	lightmap = nullptr;
-
-	file_dialog = memnew(EditorFileDialog);
-	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
-	file_dialog->add_filter("*.lmbake", TTR("LightMap Bake"));
-	file_dialog->set_title(TTR("Select lightmap bake file:"));
-	file_dialog->connect(
-		"file_selected", callable_mp(this, &LightmapGIEditorPlugin::_bake_select_file));
-	bake->add_child(file_dialog);
 }
 
 

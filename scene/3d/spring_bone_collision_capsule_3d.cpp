@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/3d/spring_bone_collision_sphere_3d.h"
 #include "spring_bone_collision_capsule_3d.h"
 

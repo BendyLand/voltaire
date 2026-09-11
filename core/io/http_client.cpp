@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "http_client.h"
 
 const char* HTTPClient::_methods[METHOD_MAX] = {
@@ -68,35 +67,6 @@ Error HTTPClient::_request(
 		size > 0 ? (const uint8_t*)body_utf8.get_data() : nullptr, size);
 }
 
-String HTTPClient::query_string_from_dict(const Dictionary& p_dict)
-{
-	String query = "";
-	for (const KeyValue<Variant, Variant>& kv : p_dict) {
-		String encoded_key = String(kv.key).uri_encode();
-		const Variant& value = kv.value;
-		switch (value.get_type()) {
-		case Variant::ARRAY: {
-			// Repeat the key with every values
-			Array values = value;
-			for (int j = 0; j < values.size(); ++j) {
-				query += "&" + encoded_key + "=" + String(values[j]).uri_encode();
-			}
-			break;
-		}
-		case Variant::NIL: {
-			// Add the key with no value
-			query += "&" + encoded_key;
-			break;
-		}
-		default: {
-			// Add the key-value pair
-			query += "&" + encoded_key + "=" + String(value).uri_encode();
-		}
-		}
-	}
-	return query.substr(1);
-}
-
 Error HTTPClient::verify_headers(const Vector<String>& p_headers)
 {
 	for (int i = 0; i < p_headers.size(); i++) {
@@ -112,29 +82,11 @@ Error HTTPClient::verify_headers(const Vector<String>& p_headers)
 	return OK;
 }
 
-Dictionary HTTPClient::_get_response_headers_as_dictionary()
+Vector<String> HTTPClient::_get_response_headers()
 {
 	List<String> rh;
 	get_response_headers(&rh);
-	Dictionary ret;
-	for (const String& s : rh) {
-		int sp = s.find_char(':');
-		if (sp == -1) {
-			continue;
-		}
-		String key = s.substr(0, sp).strip_edges();
-		String value = s.substr(sp + 1).strip_edges();
-		ret[key] = value;
-	}
-
-	return ret;
-}
-
-PackedStringArray HTTPClient::_get_response_headers()
-{
-	List<String> rh;
-	get_response_headers(&rh);
-	PackedStringArray ret;
+	Vector<String> ret;
 	ret.resize(rh.size());
 	int idx = 0;
 	for (const String& E : rh) {

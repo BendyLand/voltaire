@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/stream_peer_tcp.h"
-#include "core/object/class_db.h"
 #include "stream_peer_mbedtls.h"
 
 int StreamPeerMbedTLS::bio_send(void* ctx, const unsigned char* buf, size_t len)

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/main/scene_tree.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/accessibility_server.h"
@@ -134,98 +132,6 @@ void VideoStreamPlayer::_mix_audio()
 	}
 }
 
-void VideoStreamPlayer::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_VIDEO);
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		AudioServer::get_singleton()->add_mix_callback(_mix_audios, this);
-
-		if (stream.is_valid() && autoplay && !Engine::get_singleton()->is_editor_hint()) {
-			play();
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		stop();
-		AudioServer::get_singleton()->remove_mix_callback(_mix_audios, this);
-	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		bus_index = AudioServer::get_singleton()->thread_find_bus_index(bus);
-
-		if (stream.is_null() || paused || playback.is_null() || !playback->is_playing()) {
-			return;
-		}
-
-		double delta = first_frame ? 0 : get_process_delta_time();
-		first_frame = false;
-
-		resampler.set_playback_speed(
-			Engine::get_singleton()->get_effective_time_scale() * speed_scale);
-
-		playback->update(
-			delta * speed_scale); // playback->is_playing() returns false in the last video frame
-
-		if (!playback->is_playing()) {
-			resampler.flush();
-			if (loop) {
-				play();
-				return;
-			}
-			this->obj->emit_signal(SceneStringName(finished));
-		}
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (texture.is_null()) {
-			return;
-		}
-		if (texture->get_width() == 0) {
-			return;
-		}
-
-		Size2 s = expand ? get_size() : texture_size;
-		draw_texture_rect(texture.ptr(), Rect2(Point2(), s), false);
-	} break;
-
-	case NOTIFICATION_SUSPENDED:
-	case NOTIFICATION_PAUSED: {
-		if (is_playing() && !is_paused()) {
-			paused_from_tree = true;
-			if (playback.is_valid()) {
-				playback->set_paused(true);
-				set_process_internal(false);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_UNSUSPENDED: {
-		if (get_tree()->is_paused()) {
-			break;
-		}
-		[[fallthrough]];
-	}
-
-	case NOTIFICATION_UNPAUSED: {
-		if (paused_from_tree) {
-			paused_from_tree = false;
-			if (playback.is_valid()) {
-				playback->set_paused(false);
-				set_process_internal(true);
-			}
-		}
-	} break;
-	}
-}
-
 void VideoStreamPlayer::texture_changed(const Ref<Texture2D>& p_texture)
 {
 	const Size2 new_texture_size = p_texture.is_valid() ? p_texture->get_size() : Size2();
@@ -269,77 +175,6 @@ bool VideoStreamPlayer::has_expand() const { return expand; }
 void VideoStreamPlayer::set_loop(bool p_loop) { loop = p_loop; }
 
 bool VideoStreamPlayer::has_loop() const { return loop; }
-
-void VideoStreamPlayer::set_stream(const Ref<VideoStream>& p_stream)
-{
-	stop();
-
-	// Make sure to handle stream changes seamlessly, e.g. when done via
-	// translation remapping.
-	if (stream.is_valid()) {
-		stream->disconnect_changed(callable_mp(this, &VideoStreamPlayer::set_stream));
-	}
-
-	AudioServer::get_singleton()->lock();
-	mix_buffer.resize(AudioServer::get_singleton()->thread_get_mix_buffer_size());
-	stream = p_stream;
-	if (stream.is_valid()) {
-		stream->set_audio_track(audio_track);
-		playback = stream->instantiate_playback();
-	}
-	else {
-		playback = Ref<VideoStreamPlayback>();
-	}
-	AudioServer::get_singleton()->unlock();
-
-	if (stream.is_valid()) {
-		stream->connect_changed(callable_mp(this, &VideoStreamPlayer::set_stream).bind(stream));
-	}
-
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &VideoStreamPlayer::texture_changed));
-	}
-
-	if (playback.is_valid()) {
-		playback->set_paused(paused);
-		texture = playback->get_texture();
-
-		if (texture.is_valid()) {
-			texture_size = texture->get_size();
-			texture->connect_changed(
-				callable_mp(this, &VideoStreamPlayer::texture_changed).bind(texture));
-		}
-
-		const int channels = playback->get_channels();
-
-		AudioServer::get_singleton()->lock();
-		if (channels > 0) {
-			resampler.setup(channels, playback->get_mix_rate(),
-				AudioServer::get_singleton()->get_mix_rate(), buffering_ms, 0);
-		}
-		else {
-			resampler.clear();
-		}
-		AudioServer::get_singleton()->unlock();
-
-		if (channels > 0) {
-			playback->set_mix_callback(_audio_mix_callback, this);
-		}
-
-	}
-	else {
-		texture.unref();
-		AudioServer::get_singleton()->lock();
-		resampler.clear();
-		AudioServer::get_singleton()->unlock();
-	}
-
-	queue_redraw();
-
-	if (!expand) {
-		update_minimum_size();
-	}
-}
 
 Ref<VideoStream> VideoStreamPlayer::get_stream() const { return stream; }
 
@@ -518,31 +353,10 @@ StringName VideoStreamPlayer::get_bus() const
 	return SceneStringName(Master);
 }
 
-void VideoStreamPlayer::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "bus") {
-		String options;
-		for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-			if (i > 0) {
-				options += ",";
-			}
-			String name = AudioServer::get_singleton()->get_bus_name(i);
-			options += name;
-		}
-
-		p_property.hint_string = options;
-	}
-}
-
-void VideoStreamPlayer::_bind_methods() {}
-
 VideoStreamPlayer::~VideoStreamPlayer()
 {
-	resampler
-		.clear(); // Not necessary here, but make in consistent with other "stream_player" classes.
+	// Not necessary here, but make in consistent with other "stream_player" classes.
+	resampler.clear();
 }
 
 

@@ -32,7 +32,6 @@
 
 TEST_FORCE_LINK(test_variant_initialization)
 
-#include "core/variant/variant_internal.h"
 
 namespace TestVariantInitialization {
 

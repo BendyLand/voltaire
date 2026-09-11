@@ -32,12 +32,9 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
-#include "core/variant/native_ptr.h"
-#include "core/variant/typed_array.h"
-#include "core/variant/variant.h"
+#include "core/types.h"
 
 template <typename T> class TypedArray;
 
@@ -50,8 +47,6 @@ struct CaretInfo;
 
 class TextServer : public RefCounted
 {
-	VLTRCLASS(TextServer, RefCounted);
-
 public:
 	enum FontAntialiasing
 	{
@@ -281,13 +276,12 @@ protected:
 		const Vector2& p_pos, double p_clip_l = -1.0, double p_clip_r = -1.0,
 		int64_t p_outline_size = 1, const Color& p_color = Color(1, 1, 1)) const;
 	PackedInt32Array _shaped_text_get_word_breaks_bind_compat_90732(const RID& p_shaped,
-		BitField<TextServer::GraphemeFlag> p_grapheme_flags = GRAPHEME_IS_SPACE |
-															  GRAPHEME_IS_PUNCTUATION) const;
+		uint32_t p_grapheme_flags = GRAPHEME_IS_SPACE | GRAPHEME_IS_PUNCTUATION) const;
 	static void _bind_compatibility_methods();
 #endif
 
 public:
-	static BitField<TextOverrunFlag> get_overrun_flags_from_behavior(OverrunBehavior p_behavior);
+	static uint32_t get_overrun_flags_from_behavior(OverrunBehavior p_behavior);
 
 	virtual bool has_feature(Feature p_feature) const { return false; }
 
@@ -337,18 +331,13 @@ public:
 
 	virtual int64_t font_get_face_count(const RID& p_font_rid) const { return 0; }
 
-	virtual void font_set_style(const RID& p_font_rid, BitField<FontStyle> p_style) {}
+	virtual void font_set_style(const RID& p_font_rid, uint32_t p_style) {}
 
-	virtual BitField<FontStyle> font_get_style(const RID& p_font_rid) const { return 0; }
+	virtual uint32_t font_get_style(const RID& p_font_rid) const { return 0; }
 
 	virtual void font_set_name(const RID& p_font_rid, const String& p_name) {}
 
 	virtual String font_get_name(const RID& p_font_rid) const { return String(); }
-
-	virtual Dictionary font_get_ot_name_strings(const RID& p_font_rid) const
-	{
-		return Dictionary();
-	}
 
 	virtual void font_set_style_name(const RID& p_font_rid, const String& p_name) {}
 
@@ -491,33 +480,18 @@ public:
 
 	virtual Transform2D font_get_transform(const RID& p_font_rid) const { return Transform2D(); }
 
-	virtual void font_set_variation_coordinates(
-		const RID& p_font_rid, const Dictionary& p_variation_coordinates)
-	{
-	}
-
-	virtual Dictionary font_get_variation_coordinates(const RID& p_font_rid) const
-	{
-		return Dictionary();
-	}
-
 	virtual void font_set_oversampling(const RID& p_font_rid, double p_oversampling) {}
 
 	virtual double font_get_oversampling(const RID& p_font_rid) const { return 0.0; }
 
-	virtual TypedArray<Vector2i> font_get_size_cache_list(const RID& p_font_rid) const
+	virtual Vector<Vector2i> font_get_size_cache_list(const RID& p_font_rid) const
 	{
-		return TypedArray<Vector2i>();
+		return Vector<Vector2i>();
 	}
 
 	virtual void font_clear_size_cache(const RID& p_font_rid) {}
 
 	virtual void font_remove_size_cache(const RID& p_font_rid, const Vector2i& p_size) {}
-
-	virtual TypedArray<Dictionary> font_get_size_cache_info(const RID& p_font_rid) const
-	{
-		return TypedArray<Dictionary>();
-	}
 
 	virtual void font_set_ascent(const RID& p_font_rid, int64_t p_size, double p_ascent) {}
 
@@ -664,17 +638,6 @@ public:
 		return Size2();
 	}
 
-	virtual Dictionary font_get_glyph_contours(
-		const RID& p_font, int64_t p_size, int64_t p_index) const
-	{
-		return Dictionary();
-	}
-
-	virtual TypedArray<Vector2i> font_get_kerning_list(const RID& p_font_rid, int64_t p_size) const
-	{
-		return TypedArray<Vector2i>();
-	}
-
 	virtual void font_clear_kerning_map(const RID& p_font_rid, int64_t p_size) {}
 
 	virtual void font_remove_kerning(
@@ -784,26 +747,6 @@ public:
 		return PackedStringArray();
 	}
 
-	virtual void font_set_opentype_feature_overrides(
-		const RID& p_font_rid, const Dictionary& p_overrides)
-	{
-	}
-
-	virtual Dictionary font_get_opentype_feature_overrides(const RID& p_font_rid) const
-	{
-		return Dictionary();
-	}
-
-	virtual Dictionary font_supported_feature_list(const RID& p_font_rid) const
-	{
-		return Dictionary();
-	}
-
-	virtual Dictionary font_supported_variation_list(const RID& p_font_rid) const
-	{
-		return Dictionary();
-	}
-
 #ifndef DISABLE_DEPRECATED
 	virtual double font_get_global_oversampling() const { return 1.0; }
 
@@ -844,8 +787,6 @@ public:
 		return DIRECTION_AUTO;
 	}
 
-	virtual void shaped_text_set_bidi_override(const RID& p_shaped, const Array& p_override) {}
-
 	virtual void shaped_text_set_custom_punctuation(const RID& p_shaped, const String& p_punct) {}
 
 	virtual String shaped_text_get_custom_punctuation(const RID& p_shaped) const
@@ -885,61 +826,13 @@ public:
 		return 0;
 	}
 
-	virtual bool shaped_text_add_string(const RID& p_shaped, const String& p_text,
-		const TypedArray<RID>& p_fonts, int64_t p_size,
-		const Dictionary& p_opentype_features = Dictionary(), const String& p_language = "",
-		const Variant& p_meta = Variant())
-	{
-		return false;
-	}
-
-	virtual bool shaped_text_add_object(const RID& p_shaped, const Variant& p_key,
-		const Size2& p_size, InlineAlignment p_inline_align = INLINE_ALIGNMENT_CENTER,
-		int64_t p_length = 1, double p_baseline = 0.0)
-	{
-		return false;
-	}
-
-	virtual bool shaped_text_resize_object(const RID& p_shaped, const Variant& p_key,
-		const Size2& p_size, InlineAlignment p_inline_align = INLINE_ALIGNMENT_CENTER,
-		double p_baseline = 0.0)
-	{
-		return false;
-	}
-
-	virtual bool shaped_text_has_object(const RID& p_shaped, const Variant& p_key) const
-	{
-		return false;
-	}
-
 	virtual String shaped_get_text(const RID& p_shaped) const { return String(); }
 
 	virtual int64_t shaped_get_span_count(const RID& p_shaped) const { return 0; }
 
-	virtual Variant shaped_get_span_meta(const RID& p_shaped, int64_t p_index) const
-	{
-		return Variant();
-	}
-
-	virtual Variant shaped_get_span_embedded_object(const RID& p_shaped, int64_t p_index) const
-	{
-		return Variant();
-	}
-
 	virtual String shaped_get_span_text(const RID& p_shaped, int64_t p_index) const
 	{
 		return String();
-	}
-
-	virtual Variant shaped_get_span_object(const RID& p_shaped, int64_t p_index) const
-	{
-		return Variant();
-	}
-
-	virtual void shaped_set_span_update_font(const RID& p_shaped, int64_t p_index,
-		const TypedArray<RID>& p_fonts, int64_t p_size,
-		const Dictionary& p_opentype_features = Dictionary())
-	{
 	}
 
 	virtual int64_t shaped_get_run_count(const RID& p_shaped) const { return 0; }
@@ -976,11 +869,6 @@ public:
 		return DIRECTION_AUTO;
 	}
 
-	virtual Variant shaped_get_run_object(const RID& p_shaped, int64_t p_index) const
-	{
-		return Variant();
-	}
-
 	virtual RID shaped_text_substr(const RID& p_shaped, int64_t p_start, int64_t p_length) const
 	{
 		return RID();
@@ -990,8 +878,7 @@ public:
 	virtual RID shaped_text_get_parent(const RID& p_shaped) const { return RID(); }
 
 	virtual double shaped_text_fit_to_width(const RID& p_shaped, double p_width,
-		BitField<TextServer::JustificationFlag> p_jst_flags = JUSTIFICATION_WORD_BOUND |
-															  JUSTIFICATION_KASHIDA)
+		uint32_t p_jst_flags = JUSTIFICATION_WORD_BOUND | JUSTIFICATION_KASHIDA)
 	{
 		return 0.0;
 	}
@@ -1013,11 +900,7 @@ public:
 
 	virtual const Glyph* shaped_text_get_glyphs(const RID& p_shaped) const { return nullptr; }
 
-	TypedArray<Dictionary> _shaped_text_get_glyphs_wrapper(const RID& p_shaped) const;
-
 	virtual const Glyph* shaped_text_sort_logical(const RID& p_shaped) { return nullptr; }
-
-	TypedArray<Dictionary> _shaped_text_sort_logical_wrapper(const RID& p_shaped);
 
 	virtual int64_t shaped_text_get_glyph_count(const RID& p_shaped) const { return 0; }
 
@@ -1025,16 +908,12 @@ public:
 
 	virtual PackedInt32Array shaped_text_get_line_breaks_adv(const RID& p_shaped,
 		const PackedFloat32Array& p_width, int64_t p_start = 0, bool p_once = true,
-		BitField<TextServer::LineBreakFlag> p_break_flags = BREAK_MANDATORY |
-															BREAK_WORD_BOUND) const;
+		uint32_t p_break_flags = BREAK_MANDATORY | BREAK_WORD_BOUND) const;
 	virtual PackedInt32Array shaped_text_get_line_breaks(const RID& p_shaped, double p_width,
-		int64_t p_start = 0,
-		BitField<TextServer::LineBreakFlag> p_break_flags = BREAK_MANDATORY |
-															BREAK_WORD_BOUND) const;
+		int64_t p_start = 0, uint32_t p_break_flags = BREAK_MANDATORY | BREAK_WORD_BOUND) const;
 	virtual PackedInt32Array shaped_text_get_word_breaks(const RID& p_shaped,
-		BitField<TextServer::GraphemeFlag> p_grapheme_flags = GRAPHEME_IS_SPACE |
-															  GRAPHEME_IS_PUNCTUATION,
-		BitField<TextServer::GraphemeFlag> p_skip_grapheme_flags = GRAPHEME_IS_VIRTUAL) const;
+		uint32_t p_grapheme_flags = GRAPHEME_IS_SPACE | GRAPHEME_IS_PUNCTUATION,
+		uint32_t p_skip_grapheme_flags = GRAPHEME_IS_VIRTUAL) const;
 
 	virtual PackedInt32Array shaped_text_get_character_breaks(const RID& p_shaped) const
 	{
@@ -1071,30 +950,11 @@ public:
 		return nullptr;
 	}
 
-	TypedArray<Dictionary> _shaped_text_get_ellipsis_glyphs_wrapper(const RID& p_shaped) const;
-
 	virtual int64_t shaped_text_get_ellipsis_glyph_count(const RID& p_shaped) const { return -1; }
 
 	virtual void shaped_text_overrun_trim_to_width(
-		const RID& p_shaped, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags)
+		const RID& p_shaped, double p_width, uint32_t p_trim_flags)
 	{
-	}
-
-	virtual Array shaped_text_get_objects(const RID& p_shaped) const { return Array(); }
-
-	virtual Rect2 shaped_text_get_object_rect(const RID& p_shaped, const Variant& p_key) const
-	{
-		return Rect2();
-	}
-
-	virtual Vector2i shaped_text_get_object_range(const RID& p_shaped, const Variant& p_key) const
-	{
-		return Vector2i();
-	}
-
-	virtual int64_t shaped_text_get_object_glyph(const RID& p_shaped, const Variant& p_key) const
-	{
-		return -1;
 	}
 
 	virtual Size2 shaped_text_get_size(const RID& p_shaped) const { return Size2(); }
@@ -1113,7 +973,6 @@ public:
 		const RID& p_shaped, int64_t p_start, int64_t p_end) const;
 
 	virtual CaretInfo shaped_text_get_carets(const RID& p_shaped, int64_t p_position) const;
-	Dictionary _shaped_text_get_carets_wrapper(const RID& p_shaped, int64_t p_position) const;
 
 	virtual Vector<Vector2> shaped_text_get_selection(
 		const RID& p_shaped, int64_t p_start, int64_t p_end) const;
@@ -1156,21 +1015,17 @@ public:
 	virtual PackedInt32Array string_get_character_breaks(
 		const String& p_string, const String& p_language = "") const;
 
+
 	virtual int64_t is_confusable(const String& p_string, const PackedStringArray& p_dict) const
 	{
 		return -1;
 	}
-
 
 	virtual bool spoof_check(const String& p_string) const { return false; }
 
 	virtual String strip_diacritics(const String& p_string) const;
 	virtual bool is_valid_identifier(const String& p_string) const;
 	virtual bool is_valid_letter(uint64_t p_unicode) const;
-
-	// Other string operations.
-	TypedArray<Vector3i> parse_structured_text(
-		StructuredTextParser p_parser_type, const Array& p_args, const String& p_text) const;
 
 	static void set_current_drawn_item_oversampling(double p_vp_oversampling)
 	{
@@ -1236,7 +1091,6 @@ private:
 	Vector<Ref<TextServer>> interfaces;
 
 public:
-	mem_unique_ptr<Object> obj;
 	_FORCE_INLINE_ static TextServerManager* get_singleton() { return singleton; }
 
 	void add_interface(const Ref<TextServer>& p_interface);
@@ -1244,7 +1098,6 @@ public:
 	int get_interface_count() const;
 	Ref<TextServer> get_interface(int p_index) const;
 	Ref<TextServer> find_interface(const String& p_name) const;
-	TypedArray<Dictionary> get_interfaces() const;
 
 	_FORCE_INLINE_ Ref<TextServer> get_primary_interface() const { return primary_interface; }
 
@@ -1257,25 +1110,5 @@ public:
 /*************************************************************************/
 
 #define TS TextServerManager::get_singleton()->get_primary_interface()
-
-VARIANT_ENUM_CAST(TextServer::VisibleCharactersBehavior);
-VARIANT_ENUM_CAST(TextServer::AutowrapMode);
-VARIANT_ENUM_CAST(TextServer::OverrunBehavior);
-VARIANT_ENUM_CAST(TextServer::Direction);
-VARIANT_ENUM_CAST(TextServer::Orientation);
-VARIANT_BITFIELD_CAST(TextServer::JustificationFlag);
-VARIANT_BITFIELD_CAST(TextServer::LineBreakFlag);
-VARIANT_BITFIELD_CAST(TextServer::TextOverrunFlag);
-VARIANT_BITFIELD_CAST(TextServer::GraphemeFlag);
-VARIANT_ENUM_CAST(TextServer::Hinting);
-VARIANT_ENUM_CAST(TextServer::SubpixelPositioning);
-VARIANT_ENUM_CAST(TextServer::Feature);
-VARIANT_ENUM_CAST(TextServer::ContourPointTag);
-VARIANT_ENUM_CAST(TextServer::SpacingType);
-VARIANT_BITFIELD_CAST(TextServer::FontStyle);
-VARIANT_ENUM_CAST(TextServer::StructuredTextParser);
-VARIANT_ENUM_CAST(TextServer::FontAntialiasing);
-VARIANT_ENUM_CAST(TextServer::FontLCDSubpixelLayout);
-VARIANT_ENUM_CAST(TextServer::FixedSizeScaleMode);
 
 

@@ -32,34 +32,29 @@
 
 #include "../action_map/openxr_binding_modifier.h"
 #include "../action_map/openxr_haptic_feedback.h"
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRValveAnalogThresholdExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRValveAnalogThresholdExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRValveAnalogThresholdExtension
+{
 public:
-	static OpenXRValveAnalogThresholdExtension *get_singleton();
+	static OpenXRValveAnalogThresholdExtension* get_singleton();
 
 	OpenXRValveAnalogThresholdExtension();
-	virtual ~OpenXRValveAnalogThresholdExtension() override;
+	virtual ~OpenXRValveAnalogThresholdExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	bool is_available();
 
 private:
-	static OpenXRValveAnalogThresholdExtension *singleton;
+	static OpenXRValveAnalogThresholdExtension* singleton;
 
 	bool binding_modifier_ext = false;
 	bool threshold_ext = false;
 };
 
-class OpenXRAnalogThresholdModifier : public OpenXRActionBindingModifier {
-	VLTRCLASS(OpenXRAnalogThresholdModifier, OpenXRActionBindingModifier);
-
+class OpenXRAnalogThresholdModifier : public OpenXRActionBindingModifier
+{
 private:
 	XrInteractionProfileAnalogThresholdVALVE analog_threshold;
 	Ref<OpenXRHapticBase> on_haptic;
@@ -77,12 +72,15 @@ public:
 	void set_off_threshold(float p_threshold);
 	float get_off_threshold() const;
 
-	void set_on_haptic(const Ref<OpenXRHapticBase> &p_haptic);
+	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
 	Ref<OpenXRHapticBase> get_on_haptic() const;
 
-	void set_off_haptic(const Ref<OpenXRHapticBase> &p_haptic);
+	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
 	Ref<OpenXRHapticBase> get_off_haptic() const;
 
 	virtual String get_description() const override { return "Analog threshold modifier"; }
+
 	virtual PackedByteArray get_ip_modification() override;
 };
+
+

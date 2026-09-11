@@ -73,7 +73,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual bool handles_file(const String& p_path) const;
 	virtual void get_supported_extensions(List<String>* r_extensions) const;
 

@@ -30,13 +30,12 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 
 class Translation;
 
 class TranslationDomain : public RefCounted
 {
-	VLTRCLASS(TranslationDomain, RefCounted);
 
 	struct PseudolocalizationConfig
 	{
@@ -77,10 +76,6 @@ public:
 	PackedStringArray get_loaded_locales() const;
 
 public:
-	// These two methods are public for easier TranslationServer bindings.
-	Array get_translations_bind() const;
-	Array find_translations_bind(const String& p_locale, bool p_exact) const;
-
 #ifndef DISABLE_DEPRECATED
 	Ref<Translation> get_translation_object(const String& p_locale) const;
 #endif

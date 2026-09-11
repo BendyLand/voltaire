@@ -30,29 +30,29 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/a_hash_map.h"
+#include "core/types.h"
 
 /**
 	A* pathfinding algorithm.
 */
 
-class AStar3D : public RefCounted {
-	VLTRCLASS(AStar3D, RefCounted);
+class AStar3D : public RefCounted
+{
 	friend class AStar2D;
 
-	struct Point {
+	struct Point
+	{
 		int64_t id = 0;
 		Vector3 pos;
 		real_t weight_scale = 0;
 		bool enabled = false;
 
-		AHashMap<int64_t, Point *> neighbors = 4u;
-		AHashMap<int64_t, Point *> unlinked_neighbours = 4u;
+		AHashMap<int64_t, Point*> neighbors = 4u;
+		AHashMap<int64_t, Point*> unlinked_neighbours = 4u;
 
 		// Used for pathfinding.
-		Point *prev_point = nullptr;
+		Point* prev_point = nullptr;
 		real_t g_score = 0;
 		real_t f_score = 0;
 		uint64_t open_pass = 0;
@@ -63,41 +63,52 @@ class AStar3D : public RefCounted {
 		real_t abs_f_score = 0;
 	};
 
-	struct SortPoints {
-		_FORCE_INLINE_ bool operator()(const Point *p_left, const Point *p_right) const { // Returns true when the Point A is worse than Point B.
+	struct SortPoints
+	{
+		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
+		{ // Returns true when the Point A is worse than Point B.
 			if (p_left->f_score > p_right->f_score) {
 				return true;
-			} else if (p_left->f_score < p_right->f_score) {
+			}
+			else if (p_left->f_score < p_right->f_score) {
 				return false;
-			} else {
-				return p_left->g_score < p_right->g_score; // If the f_costs are the same then prioritize the points that are further away from the start.
+			}
+			else {
+				return p_left->g_score <
+					   p_right->g_score; // If the f_costs are the same then prioritize the points
+										 // that are further away from the start.
 			}
 		}
 	};
 
-	struct Segment {
+	struct Segment
+	{
 		Pair<int64_t, int64_t> key;
 
-		enum {
+		enum
+		{
 			NONE = 0,
 			FORWARD = 1,
 			BACKWARD = 2,
 			BIDIRECTIONAL = FORWARD | BACKWARD
 		};
+
 		unsigned char direction = NONE;
 
-		static uint32_t hash(const Segment &p_seg) {
-			return HashMapHasherDefault::hash(p_seg.key);
-		}
-		bool operator==(const Segment &p_s) const { return key == p_s.key; }
+		static uint32_t hash(const Segment& p_seg) { return HashMapHasherDefault::hash(p_seg.key); }
+
+		bool operator==(const Segment& p_s) const { return key == p_s.key; }
 
 		Segment() {}
-		Segment(int64_t p_from, int64_t p_to) {
+
+		Segment(int64_t p_from, int64_t p_to)
+		{
 			if (p_from < p_to) {
 				key.first = p_from;
 				key.second = p_to;
 				direction = FORWARD;
-			} else {
+			}
+			else {
 				key.first = p_to;
 				key.second = p_from;
 				direction = BACKWARD;
@@ -108,12 +119,12 @@ class AStar3D : public RefCounted {
 	mutable int64_t last_free_id = 0;
 	uint64_t pass = 1;
 
-	AHashMap<int64_t, Point *> points;
+	AHashMap<int64_t, Point*> points;
 	HashSet<Segment, Segment> segments;
-	Point *last_closest_point = nullptr;
+	Point* last_closest_point = nullptr;
 	bool neighbor_filter_enabled = false;
 
-	bool _solve(Point *p_begin_point, Point *p_end_point, bool p_allow_partial_path);
+	bool _solve(Point* p_begin_point, Point* p_end_point, bool p_allow_partial_path);
 
 protected:
 	static void _bind_methods();
@@ -130,9 +141,9 @@ protected:
 public:
 	int64_t get_available_point_id() const;
 
-	void add_point(int64_t p_id, const Vector3 &p_pos, real_t p_weight_scale = 1);
+	void add_point(int64_t p_id, const Vector3& p_pos, real_t p_weight_scale = 1);
 	Vector3 get_point_position(int64_t p_id) const;
-	void set_point_position(int64_t p_id, const Vector3 &p_pos);
+	void set_point_position(int64_t p_id, const Vector3& p_pos);
 	real_t get_point_weight_scale(int64_t p_id) const;
 	void set_point_weight_scale(int64_t p_id, real_t p_weight_scale);
 	void remove_point(int64_t p_id);
@@ -155,20 +166,23 @@ public:
 	void reserve_space(int64_t p_num_nodes);
 	void clear();
 
-	int64_t get_closest_point(const Vector3 &p_point, bool p_include_disabled = false) const;
-	Vector3 get_closest_position_in_segment(const Vector3 &p_point) const;
+	int64_t get_closest_point(const Vector3& p_point, bool p_include_disabled = false) const;
+	Vector3 get_closest_position_in_segment(const Vector3& p_point) const;
 
-	Vector<Vector3> get_point_path(int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
-	Vector<int64_t> get_id_path(int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<Vector3> get_point_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<int64_t> get_id_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
 
 	~AStar3D();
 };
 
-class AStar2D : public RefCounted {
-	VLTRCLASS(AStar2D, RefCounted);
+class AStar2D : public RefCounted
+{
 	AStar3D astar;
 
-	bool _solve(AStar3D::Point *p_begin_point, AStar3D::Point *p_end_point, bool p_allow_partial_path);
+	bool _solve(
+		AStar3D::Point* p_begin_point, AStar3D::Point* p_end_point, bool p_allow_partial_path);
 
 protected:
 	static void _bind_methods();
@@ -184,9 +198,9 @@ protected:
 public:
 	int64_t get_available_point_id() const;
 
-	void add_point(int64_t p_id, const Vector2 &p_pos, real_t p_weight_scale = 1);
+	void add_point(int64_t p_id, const Vector2& p_pos, real_t p_weight_scale = 1);
 	Vector2 get_point_position(int64_t p_id) const;
-	void set_point_position(int64_t p_id, const Vector2 &p_pos);
+	void set_point_position(int64_t p_id, const Vector2& p_pos);
 	real_t get_point_weight_scale(int64_t p_id) const;
 	void set_point_weight_scale(int64_t p_id, real_t p_weight_scale);
 	void remove_point(int64_t p_id);
@@ -209,9 +223,13 @@ public:
 	void reserve_space(int64_t p_num_nodes);
 	void clear();
 
-	int64_t get_closest_point(const Vector2 &p_point, bool p_include_disabled = false) const;
-	Vector2 get_closest_position_in_segment(const Vector2 &p_point) const;
+	int64_t get_closest_point(const Vector2& p_point, bool p_include_disabled = false) const;
+	Vector2 get_closest_position_in_segment(const Vector2& p_point) const;
 
-	Vector<Vector2> get_point_path(int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
-	Vector<int64_t> get_id_path(int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<Vector2> get_point_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<int64_t> get_id_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
 };
+
+

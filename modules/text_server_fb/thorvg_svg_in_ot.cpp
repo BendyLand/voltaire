@@ -35,7 +35,6 @@
 #include "core/os/memory.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-#include "core/variant/variant.h"
 
 #include "modules/modules_enabled.gen.h" // For svg, freetype.
 

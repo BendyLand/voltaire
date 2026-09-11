@@ -30,28 +30,29 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
-#include "core/variant/type_info.h"
+#include "core/types.h"
 #include "servers/navigation_3d/navigation_constants_3d.h"
 
-class NavigationPathQueryParameters3D : public RefCounted {
-	VLTRCLASS(NavigationPathQueryParameters3D, RefCounted);
-
+class NavigationPathQueryParameters3D : public RefCounted
+{
 protected:
 	static void _bind_methods();
 
 public:
-	enum PathfindingAlgorithm {
+	enum PathfindingAlgorithm
+	{
 		PATHFINDING_ALGORITHM_ASTAR = NavigationEnums3D::PATHFINDING_ALGORITHM_ASTAR,
 	};
 
-	enum PathPostProcessing {
+	enum PathPostProcessing
+	{
 		PATH_POSTPROCESSING_CORRIDORFUNNEL = NavigationEnums3D::PATH_POSTPROCESSING_CORRIDORFUNNEL,
 		PATH_POSTPROCESSING_EDGECENTERED = NavigationEnums3D::PATH_POSTPROCESSING_EDGECENTERED,
 		PATH_POSTPROCESSING_NONE = NavigationEnums3D::PATH_POSTPROCESSING_NONE,
 	};
 
-	enum PathMetadataFlags {
+	enum PathMetadataFlags
+	{
 		PATH_METADATA_INCLUDE_NONE = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_NONE,
 		PATH_METADATA_INCLUDE_TYPES = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_TYPES,
 		PATH_METADATA_INCLUDE_RIDS = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_RIDS,
@@ -66,7 +67,7 @@ private:
 	Vector3 start_position;
 	Vector3 target_position;
 	uint32_t navigation_layers = 1;
-	BitField<PathMetadataFlags> metadata_flags = PATH_METADATA_INCLUDE_ALL;
+	uint32_t metadata_flags = PATH_METADATA_INCLUDE_ALL;
 	bool simplify_path = false;
 	real_t simplify_epsilon = 0.0;
 
@@ -97,20 +98,14 @@ public:
 	void set_navigation_layers(uint32_t p_navigation_layers);
 	uint32_t get_navigation_layers() const;
 
-	void set_metadata_flags(BitField<NavigationPathQueryParameters3D::PathMetadataFlags> p_flags);
-	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> get_metadata_flags() const;
+	void set_metadata_flags(uint32_t p_flags);
+	uint32_t get_metadata_flags() const;
 
 	void set_simplify_path(bool p_enabled);
 	bool get_simplify_path() const;
 
 	void set_simplify_epsilon(real_t p_epsilon);
 	real_t get_simplify_epsilon() const;
-
-	void set_excluded_regions(const TypedArray<RID> &p_regions);
-	TypedArray<RID> get_excluded_regions() const;
-
-	void set_included_regions(const TypedArray<RID> &p_regions);
-	TypedArray<RID> get_included_regions() const;
 
 	void set_path_return_max_length(float p_length);
 	float get_path_return_max_length() const;
@@ -125,6 +120,4 @@ public:
 	float get_path_search_max_distance() const;
 };
 
-VARIANT_ENUM_CAST(NavigationPathQueryParameters3D::PathfindingAlgorithm);
-VARIANT_ENUM_CAST(NavigationPathQueryParameters3D::PathPostProcessing);
-VARIANT_BITFIELD_CAST(NavigationPathQueryParameters3D::PathMetadataFlags);
+

@@ -42,27 +42,29 @@ class ShaderMaterial;
 class ColorChannelSelector;
 class SpinBox;
 
-class TexturePreview : public MarginContainer {
-	VLTRCLASS(TexturePreview, MarginContainer);
-
+class TexturePreview : public MarginContainer
+{
 private:
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Color outline_color;
-	} theme_cache;
+	};
 
-	TextureRect *texture_display = nullptr;
+	ThemeCache theme_cache;
 
-	MarginContainer *margin_container = nullptr;
-	Control *outline_overlay = nullptr;
-	AspectRatioContainer *centering_container = nullptr;
-	ColorRect *bg_rect = nullptr;
-	TextureRect *checkerboard = nullptr;
-	Label *metadata_label = nullptr;
+	TextureRect* texture_display = nullptr;
+
+	MarginContainer* margin_container = nullptr;
+	Control* outline_overlay = nullptr;
+	AspectRatioContainer* centering_container = nullptr;
+	ColorRect* bg_rect = nullptr;
+	TextureRect* checkerboard = nullptr;
+	Label* metadata_label = nullptr;
 
 	static inline Ref<ShaderMaterial> texture_material;
 
-	ColorChannelSelector *channel_selector = nullptr;
-	SpinBox *mipmap_spinbox = nullptr;
+	ColorChannelSelector* channel_selector = nullptr;
+	SpinBox* mipmap_spinbox = nullptr;
 
 	void _draw_outline();
 	void _update_metadata_label_text();
@@ -77,25 +79,21 @@ public:
 	static void init_shaders();
 	static void finish_shaders();
 
-	TextureRect *get_texture_display();
+	TextureRect* get_texture_display();
 	TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata);
 };
 
-class EditorInspectorPluginTexture : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginTexture, EditorInspectorPlugin);
-
+class EditorInspectorPluginTexture : public EditorInspectorPlugin
+{
 	Ref<Image> this_image;
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
 };
 
-class TextureEditorPlugin : public EditorPlugin {
-	VLTRCLASS(TextureEditorPlugin, EditorPlugin);
-
+class TextureEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "Texture2D"; }
 
 	TextureEditorPlugin();
 };
+
+

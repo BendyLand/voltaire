@@ -35,7 +35,6 @@
 class AudioEffectDelay;
 
 class AudioEffectDelayInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectDelayInstance, AudioEffectInstance);
 
 	friend class AudioEffectDelay;
 	Ref<AudioEffectDelay> base;
@@ -58,7 +57,6 @@ public:
 };
 
 class AudioEffectDelay : public AudioEffect {
-	VLTRCLASS(AudioEffectDelay, AudioEffect);
 
 	friend class AudioEffectDelayInstance;
 	enum {

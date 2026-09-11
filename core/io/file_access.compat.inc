@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "file_access.h"
 
 Ref<FileAccess> FileAccess::_open_encrypted_bind_compat_98918(
@@ -56,11 +55,6 @@ void FileAccess::store_64_bind_compat_78289(uint64_t p_dest) { store_64(p_dest);
 void FileAccess::store_buffer_bind_compat_78289(const Vector<uint8_t>& p_buffer)
 {
 	store_buffer(p_buffer);
-}
-
-void FileAccess::store_var_bind_compat_78289(const Variant& p_var, bool p_full_objects)
-{
-	store_var(p_var, p_full_objects);
 }
 
 void FileAccess::store_half_bind_compat_78289(float p_dest) { store_half(p_dest); }

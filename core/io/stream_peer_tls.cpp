@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "stream_peer_tls.h"
 
 StreamPeerTLS* (*StreamPeerTLS::_create)(bool p_notify_postinitialize) = nullptr;

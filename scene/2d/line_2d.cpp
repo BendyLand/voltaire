@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "line_2d.h"
 #include "scene/2d/line_builder.h"
 #include "servers/rendering/rendering_server.h"
@@ -102,20 +100,7 @@ void Line2D::set_width(float p_width)
 
 float Line2D::get_width() const { return _width; }
 
-void Line2D::set_curve(const Ref<Curve>& p_curve)
-{
-	if (_curve.is_valid()) {
-		_curve->disconnect_changed(callable_mp(this, &Line2D::_curve_changed));
-	}
 
-	_curve = p_curve;
-
-	if (_curve.is_valid()) {
-		_curve->connect_changed(callable_mp(this, &Line2D::_curve_changed));
-	}
-
-	queue_redraw();
-}
 
 Ref<Curve> Line2D::get_curve() const { return _curve; }
 
@@ -170,20 +155,7 @@ void Line2D::set_default_color(Color p_color)
 
 Color Line2D::get_default_color() const { return _default_color; }
 
-void Line2D::set_gradient(const Ref<Gradient>& p_gradient)
-{
-	if (_gradient.is_valid()) {
-		_gradient->disconnect_changed(callable_mp(this, &Line2D::_gradient_changed));
-	}
 
-	_gradient = p_gradient;
-
-	if (_gradient.is_valid()) {
-		_gradient->connect_changed(callable_mp(this, &Line2D::_gradient_changed));
-	}
-
-	queue_redraw();
-}
 
 Ref<Gradient> Line2D::get_gradient() const { return _gradient; }
 
@@ -263,65 +235,8 @@ void Line2D::set_antialiased(bool p_antialiased)
 
 bool Line2D::get_antialiased() const { return _antialiased; }
 
-void Line2D::_draw()
-{
-	int len = _points.size();
-	if (len <= 1 || _width == 0.f) {
-		return;
-	}
-
-	// TODO Maybe have it as member rather than copying parameters and allocating memory?
-	LineBuilder lb;
-	lb.points = _points;
-	lb.closed = _closed;
-	lb.default_color = _default_color;
-	lb.gradient = *_gradient;
-	lb.texture_mode = _texture_mode;
-	lb.joint_mode = _joint_mode;
-	lb.begin_cap_mode = _begin_cap_mode;
-	lb.end_cap_mode = _end_cap_mode;
-	lb.round_precision = _round_precision;
-	lb.sharp_limit = _sharp_limit;
-	lb.width = _width;
-	lb.curve = *_curve;
-
-	RID texture_rid;
-	if (_texture.is_valid()) {
-		texture_rid = _texture->get_scaled_rid();
-
-		lb.tile_aspect = _texture->get_size().aspect();
-	}
-
-	lb.build();
-	if (lb.indices.is_empty()) {
-		return;
-	}
-
-	RS::get_singleton()->canvas_item_add_triangle_array(get_canvas_item(), lb.indices, lb.vertices,
-		lb.colors, lb.uvs, Vector<int>(), Vector<float>(), texture_rid);
-
-	// DEBUG: Draw wireframe
-	//	if (lb.indices.size() % 3 == 0) {
-	//		Color col(0, 0, 0);
-	//		for (int i = 0; i < lb.indices.size(); i += 3) {
-	//			Vector2 a = lb.vertices[lb.indices[i]];
-	//			Vector2 b = lb.vertices[lb.indices[i+1]];
-	//			Vector2 c = lb.vertices[lb.indices[i+2]];
-	//			draw_line(a, b, col);
-	//			draw_line(b, c, col);
-	//			draw_line(c, a, col);
-	//		}
-	//		for (int i = 0; i < lb.vertices.size(); ++i) {
-	//			Vector2 p = lb.vertices[i];
-	//			draw_rect(Rect2(p.x - 1, p.y - 1, 2, 2), Color(0, 0, 0, 0.5));
-	//		}
-	//	}
-}
-
 void Line2D::_gradient_changed() { queue_redraw(); }
 
 void Line2D::_curve_changed() { queue_redraw(); }
-
-void Line2D::_bind_methods() {}
 
 

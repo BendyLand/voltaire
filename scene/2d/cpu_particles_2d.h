@@ -36,17 +36,17 @@
 
 class RandomNumberGenerator;
 
-class CPUParticles2D : public Node2D {
-private:
-	VLTRCLASS(CPUParticles2D, Node2D);
-
+class CPUParticles2D : public Node2D
+{
 public:
-	enum DrawOrder {
+	enum DrawOrder
+	{
 		DRAW_ORDER_INDEX,
 		DRAW_ORDER_LIFETIME,
 	};
 
-	enum Parameter {
+	enum Parameter
+	{
 		PARAM_INITIAL_LINEAR_VELOCITY,
 		PARAM_ANGULAR_VELOCITY,
 		PARAM_ORBIT_VELOCITY,
@@ -62,14 +62,16 @@ public:
 		PARAM_MAX
 	};
 
-	enum ParticleFlags {
+	enum ParticleFlags
+	{
 		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
-		PARTICLE_FLAG_ROTATE_Y, // Unused, but exposed for consistency with 3D.
+		PARTICLE_FLAG_ROTATE_Y,	 // Unused, but exposed for consistency with 3D.
 		PARTICLE_FLAG_DISABLE_Z, // Unused, but exposed for consistency with 3D.
 		PARTICLE_FLAG_MAX
 	};
 
-	enum EmissionShape {
+	enum EmissionShape
+	{
 		EMISSION_SHAPE_POINT,
 		EMISSION_SHAPE_SPHERE,
 		EMISSION_SHAPE_SPHERE_SURFACE,
@@ -84,7 +86,8 @@ private:
 	bool emitting = false;
 	bool active = false;
 
-	struct Particle {
+	struct Particle
+	{
 		Transform2D transform;
 		Color color;
 		real_t custom[4] = {};
@@ -115,10 +118,12 @@ private:
 	Vector<float> particle_data;
 	Vector<int> particle_order;
 
-	struct SortLifetime {
-		const Particle *particles = nullptr;
+	struct SortLifetime
+	{
+		const Particle* particles = nullptr;
 
-		bool operator()(int p_a, int p_b) const {
+		bool operator()(int p_a, int p_b) const
+		{
 			return particles[p_a].time > particles[p_b].time;
 		}
 	};
@@ -190,7 +195,8 @@ private:
 
 	Mutex update_mutex;
 
-	struct InterpolationData {
+	struct InterpolationData
+	{
 		// Whether this particle is non-interpolated, but following an interpolated parent.
 		bool interpolated_follow = false;
 
@@ -215,7 +221,6 @@ protected:
 #ifdef TOOLS_ENABLED
 	void _draw_emission_gizmo();
 #endif
-	void _validate_property(PropertyInfo &p_property) const;
 
 #ifndef DISABLE_DEPRECATED
 	void _restart_bind_compat_92089();
@@ -255,7 +260,7 @@ public:
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;
 
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed);
@@ -267,7 +272,8 @@ public:
 #endif
 	uint32_t get_seed() const;
 
-	void request_particles_process(real_t p_requested_process_time, real_t p_requested_process_time_residual = 0.);
+	void request_particles_process(
+		real_t p_requested_process_time, real_t p_requested_process_time_residual = 0.);
 
 	///////////////////
 
@@ -283,16 +289,16 @@ public:
 	void set_param_max(Parameter p_param, real_t p_value);
 	real_t get_param_max(Parameter p_param) const;
 
-	void set_param_curve(Parameter p_param, const Ref<Curve> &p_curve);
+	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
-	void set_color(const Color &p_color);
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
-	void set_color_ramp(const Ref<Gradient> &p_ramp);
+	void set_color_ramp(const Ref<Gradient>& p_ramp);
 	Ref<Gradient> get_color_ramp() const;
 
-	void set_color_initial_ramp(const Ref<Gradient> &p_ramp);
+	void set_color_initial_ramp(const Ref<Gradient>& p_ramp);
 	Ref<Gradient> get_color_initial_ramp() const;
 
 	void set_particle_flag(ParticleFlags p_particle_flag, bool p_enable);
@@ -301,9 +307,9 @@ public:
 	void set_emission_shape(EmissionShape p_shape);
 	void set_emission_sphere_radius(real_t p_radius);
 	void set_emission_rect_extents(Vector2 p_extents);
-	void set_emission_points(const Vector<Vector2> &p_points);
-	void set_emission_normals(const Vector<Vector2> &p_normals);
-	void set_emission_colors(const Vector<Color> &p_colors);
+	void set_emission_points(const Vector<Vector2>& p_points);
+	void set_emission_normals(const Vector<Vector2>& p_normals);
+	void set_emission_colors(const Vector<Color>& p_colors);
 	void set_emission_ring_inner_radius(real_t p_inner_radius);
 	void set_emission_ring_radius(real_t p_ring_radius);
 	void set_scale_curve_x(Ref<Curve> p_scale_curve);
@@ -322,20 +328,17 @@ public:
 	Ref<Curve> get_scale_curve_y() const;
 	bool get_split_scale();
 
-	void set_gravity(const Vector2 &p_gravity);
+	void set_gravity(const Vector2& p_gravity);
 	Vector2 get_gravity() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	void restart(bool p_keep_seed = false);
 
-	void convert_from_particles(Node *p_particles);
+	void convert_from_particles(Node* p_particles);
 
 	CPUParticles2D();
 	~CPUParticles2D();
 };
 
-VARIANT_ENUM_CAST(CPUParticles2D::DrawOrder)
-VARIANT_ENUM_CAST(CPUParticles2D::Parameter)
-VARIANT_ENUM_CAST(CPUParticles2D::ParticleFlags)
-VARIANT_ENUM_CAST(CPUParticles2D::EmissionShape)
+

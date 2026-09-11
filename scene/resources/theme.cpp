@@ -28,182 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/theme/theme_db.h"
 #include "theme.h"
 
-// Dynamic properties.
-bool Theme::_set(const StringName& p_name, const Variant& p_value)
-{
-	String sname = p_name;
-
-	if (sname.contains_char('/')) {
-		String type = sname.get_slicec('/', 1);
-		String theme_type = sname.get_slicec('/', 0);
-		String prop_name = sname.get_slicec('/', 2);
-
-		if (type == "icons") {
-			set_icon(prop_name, theme_type, p_value);
-		}
-		else if (type == "styles") {
-			set_stylebox(prop_name, theme_type, p_value);
-		}
-		else if (type == "fonts") {
-			set_font(prop_name, theme_type, p_value);
-		}
-		else if (type == "font_sizes") {
-			set_font_size(prop_name, theme_type, p_value);
-		}
-		else if (type == "colors") {
-			set_color(prop_name, theme_type, p_value);
-		}
-		else if (type == "constants") {
-			set_constant(prop_name, theme_type, p_value);
-		}
-		else if (type == "base_type") {
-			set_type_variation(theme_type, p_value);
-		}
-		else {
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-bool Theme::_get(const StringName& p_name, Variant& r_ret) const
-{
-	String sname = p_name;
-
-	if (sname.contains_char('/')) {
-		String type = sname.get_slicec('/', 1);
-		String theme_type = sname.get_slicec('/', 0);
-		String prop_name = sname.get_slicec('/', 2);
-
-		if (type == "icons") {
-			if (!has_icon(prop_name, theme_type)) {
-				r_ret = Ref<Texture2D>();
-			}
-			else {
-				r_ret = get_icon(prop_name, theme_type);
-			}
-		}
-		else if (type == "styles") {
-			if (!has_stylebox(prop_name, theme_type)) {
-				r_ret = Ref<StyleBox>();
-			}
-			else {
-				r_ret = get_stylebox(prop_name, theme_type);
-			}
-		}
-		else if (type == "fonts") {
-			if (!has_font(prop_name, theme_type)) {
-				r_ret = Ref<Font>();
-			}
-			else {
-				r_ret = get_font(prop_name, theme_type);
-			}
-		}
-		else if (type == "font_sizes") {
-			r_ret = get_font_size(prop_name, theme_type);
-		}
-		else if (type == "colors") {
-			r_ret = get_color(prop_name, theme_type);
-		}
-		else if (type == "constants") {
-			r_ret = get_constant(prop_name, theme_type);
-		}
-		else if (type == "base_type") {
-			r_ret = get_type_variation_base(theme_type);
-		}
-		else {
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-void Theme::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	List<PropertyInfo> list;
-
-	// Type variations.
-	for (const KeyValue<StringName, StringName>& E : variation_map) {
-		list.push_back(PropertyInfo(Variant::STRING_NAME, String() + E.key + "/base_type"));
-	}
-
-	// Icons.
-	for (const KeyValue<StringName, ThemeIconMap>& E : icon_map) {
-		for (const KeyValue<StringName, Ref<Texture2D>>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::OBJECT, String() + E.key + "/icons/" + F.key,
-				PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static(),
-				PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_STORE_IF_NULL));
-		}
-	}
-
-	// Styles.
-	for (const KeyValue<StringName, ThemeStyleMap>& E : style_map) {
-		for (const KeyValue<StringName, Ref<StyleBox>>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::OBJECT, String() + E.key + "/styles/" + F.key,
-				PROPERTY_HINT_RESOURCE_TYPE, StyleBox::get_class_static(),
-				PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_STORE_IF_NULL));
-		}
-	}
-
-	// Fonts.
-	for (const KeyValue<StringName, ThemeFontMap>& E : font_map) {
-		for (const KeyValue<StringName, Ref<Font>>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::OBJECT, String() + E.key + "/fonts/" + F.key,
-				PROPERTY_HINT_RESOURCE_TYPE, Font::get_class_static(),
-				PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_STORE_IF_NULL));
-		}
-	}
-
-	// Font sizes.
-	for (const KeyValue<StringName, ThemeFontSizeMap>& E : font_size_map) {
-		for (const KeyValue<StringName, int>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::INT, String() + E.key + "/font_sizes/" + F.key,
-				PROPERTY_HINT_RANGE, "0,256,1,or_greater,suffix:px"));
-		}
-	}
-
-	// Colors.
-	for (const KeyValue<StringName, ThemeColorMap>& E : color_map) {
-		for (const KeyValue<StringName, Color>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::COLOR, String() + E.key + "/colors/" + F.key));
-		}
-	}
-
-	// Constants.
-	for (const KeyValue<StringName, ThemeConstantMap>& E : constant_map) {
-		for (const KeyValue<StringName, int>& F : E.value) {
-			list.push_back(PropertyInfo(Variant::INT, String() + E.key + "/constants/" + F.key));
-		}
-	}
-
-	// Sort and store properties.
-	list.sort();
-	String prev_type;
-	for (const PropertyInfo& E : list) {
-		// Add groups for types so that their names are left unchanged in the inspector.
-		String current_type = E.name.get_slicec('/', 0);
-		if (prev_type != current_type) {
-			p_list->push_back(PropertyInfo(Variant::NIL, current_type, PROPERTY_HINT_NONE,
-				current_type + "/", PROPERTY_USAGE_GROUP));
-			prev_type = current_type;
-		}
-
-		p_list->push_back(E);
-	}
-}
-
-// Static helpers.
 bool Theme::is_valid_type_name(const String& p_name)
 {
 	int len = p_name.length();
@@ -260,26 +87,6 @@ float Theme::get_default_base_scale() const { return default_base_scale; }
 
 bool Theme::has_default_base_scale() const { return default_base_scale > 0.0; }
 
-void Theme::set_default_font(const Ref<Font>& p_default_font)
-{
-	if (default_font == p_default_font) {
-		return;
-	}
-
-	if (default_font.is_valid()) {
-		default_font->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	default_font = p_default_font;
-
-	if (default_font.is_valid()) {
-		default_font->connect_changed(callable_mp(this, &Theme::_emit_theme_changed).bind(false),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-
-	_emit_theme_changed();
-}
-
 Ref<Font> Theme::get_default_font() const { return default_font; }
 
 bool Theme::has_default_font() const { return default_font.is_valid(); }
@@ -298,32 +105,6 @@ void Theme::set_default_font_size(int p_font_size)
 int Theme::get_default_font_size() const { return default_font_size; }
 
 bool Theme::has_default_font_size() const { return default_font_size > 0; }
-
-// Icons.
-void Theme::set_icon(
-	const StringName& p_name, const StringName& p_theme_type, const Ref<Texture2D>& p_icon)
-{
-	ERR_FAIL_COND_MSG(!is_valid_item_name(p_name), vformat("Invalid item name: '%s'", p_name));
-	ERR_FAIL_COND_MSG(
-		!is_valid_type_name(p_theme_type), vformat("Invalid type name: '%s'", p_theme_type));
-
-	bool existing = false;
-	if (icon_map[p_theme_type].has(p_name) && icon_map[p_theme_type][p_name].is_valid()) {
-		existing = true;
-		icon_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	icon_map[p_theme_type][p_name] = p_icon;
-
-	if (p_icon.is_valid()) {
-		icon_map[p_theme_type][p_name]->connect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed).bind(false),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-
-	_emit_theme_changed(!existing);
-}
 
 Ref<Texture2D> Theme::get_icon(const StringName& p_name, const StringName& p_theme_type) const
 {
@@ -368,24 +149,6 @@ void Theme::rename_icon(
 	_emit_theme_changed(true);
 }
 
-void Theme::clear_icon(const StringName& p_name, const StringName& p_theme_type)
-{
-	ERR_FAIL_COND_MSG(!icon_map.has(p_theme_type), "Cannot clear the icon '" + String(p_name) +
-													   "' because the node type '" +
-													   String(p_theme_type) + "' does not exist.");
-	ERR_FAIL_COND_MSG(!icon_map[p_theme_type].has(p_name),
-		"Cannot clear the icon '" + String(p_name) + "' because it does not exist.");
-
-	if (icon_map[p_theme_type][p_name].is_valid()) {
-		icon_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	icon_map[p_theme_type].erase(p_name);
-
-	_emit_theme_changed(true);
-}
-
 void Theme::get_icon_list(const StringName& p_theme_type, List<StringName>* p_list) const
 {
 	ERR_FAIL_NULL(p_list);
@@ -410,26 +173,6 @@ void Theme::add_icon_type(const StringName& p_theme_type)
 	icon_map[p_theme_type] = ThemeIconMap();
 }
 
-void Theme::remove_icon_type(const StringName& p_theme_type)
-{
-	if (!icon_map.has(p_theme_type)) {
-		return;
-	}
-
-	_freeze_change_propagation();
-
-	for (const KeyValue<StringName, Ref<Texture2D>>& E : icon_map[p_theme_type]) {
-		Ref<Texture2D> icon = E.value;
-		if (icon.is_valid()) {
-			icon->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-		}
-	}
-
-	icon_map.erase(p_theme_type);
-
-	_unfreeze_and_propagate_changes();
-}
-
 void Theme::rename_icon_type(const StringName& p_old_theme_type, const StringName& p_theme_type)
 {
 	ERR_FAIL_COND_MSG(
@@ -450,32 +193,6 @@ void Theme::get_icon_type_list(List<StringName>* p_list) const
 	for (const KeyValue<StringName, ThemeIconMap>& E : icon_map) {
 		p_list->push_back(E.key);
 	}
-}
-
-// Styleboxes.
-void Theme::set_stylebox(
-	const StringName& p_name, const StringName& p_theme_type, const Ref<StyleBox>& p_style)
-{
-	ERR_FAIL_COND_MSG(!is_valid_item_name(p_name), vformat("Invalid item name: '%s'", p_name));
-	ERR_FAIL_COND_MSG(
-		!is_valid_type_name(p_theme_type), vformat("Invalid type name: '%s'", p_theme_type));
-
-	bool existing = false;
-	if (style_map[p_theme_type].has(p_name) && style_map[p_theme_type][p_name].is_valid()) {
-		existing = true;
-		style_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	style_map[p_theme_type][p_name] = p_style;
-
-	if (p_style.is_valid()) {
-		style_map[p_theme_type][p_name]->connect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed).bind(false),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-
-	_emit_theme_changed(!existing);
 }
 
 Ref<StyleBox> Theme::get_stylebox(const StringName& p_name, const StringName& p_theme_type) const
@@ -521,24 +238,6 @@ void Theme::rename_stylebox(
 	_emit_theme_changed(true);
 }
 
-void Theme::clear_stylebox(const StringName& p_name, const StringName& p_theme_type)
-{
-	ERR_FAIL_COND_MSG(!style_map.has(p_theme_type), "Cannot clear the stylebox '" + String(p_name) +
-														"' because the node type '" +
-														String(p_theme_type) + "' does not exist.");
-	ERR_FAIL_COND_MSG(!style_map[p_theme_type].has(p_name),
-		"Cannot clear the stylebox '" + String(p_name) + "' because it does not exist.");
-
-	if (style_map[p_theme_type][p_name].is_valid()) {
-		style_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	style_map[p_theme_type].erase(p_name);
-
-	_emit_theme_changed(true);
-}
-
 void Theme::get_stylebox_list(const StringName& p_theme_type, List<StringName>* p_list) const
 {
 	ERR_FAIL_NULL(p_list);
@@ -561,26 +260,6 @@ void Theme::add_stylebox_type(const StringName& p_theme_type)
 		return;
 	}
 	style_map[p_theme_type] = ThemeStyleMap();
-}
-
-void Theme::remove_stylebox_type(const StringName& p_theme_type)
-{
-	if (!style_map.has(p_theme_type)) {
-		return;
-	}
-
-	_freeze_change_propagation();
-
-	for (const KeyValue<StringName, Ref<StyleBox>>& E : style_map[p_theme_type]) {
-		Ref<StyleBox> style = E.value;
-		if (style.is_valid()) {
-			style->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-		}
-	}
-
-	style_map.erase(p_theme_type);
-
-	_unfreeze_and_propagate_changes();
 }
 
 void Theme::rename_stylebox_type(const StringName& p_old_theme_type, const StringName& p_theme_type)
@@ -606,30 +285,6 @@ void Theme::get_stylebox_type_list(List<StringName>* p_list) const
 }
 
 // Fonts.
-void Theme::set_font(
-	const StringName& p_name, const StringName& p_theme_type, const Ref<Font>& p_font)
-{
-	ERR_FAIL_COND_MSG(!is_valid_item_name(p_name), vformat("Invalid item name: '%s'", p_name));
-	ERR_FAIL_COND_MSG(
-		!is_valid_type_name(p_theme_type), vformat("Invalid type name: '%s'", p_theme_type));
-
-	bool existing = false;
-	if (font_map[p_theme_type][p_name].is_valid()) {
-		existing = true;
-		font_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	font_map[p_theme_type][p_name] = p_font;
-
-	if (p_font.is_valid()) {
-		font_map[p_theme_type][p_name]->connect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed).bind(false),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-
-	_emit_theme_changed(!existing);
-}
 
 Ref<Font> Theme::get_font(const StringName& p_name, const StringName& p_theme_type) const
 {
@@ -684,24 +339,6 @@ void Theme::rename_font(
 	_emit_theme_changed(true);
 }
 
-void Theme::clear_font(const StringName& p_name, const StringName& p_theme_type)
-{
-	ERR_FAIL_COND_MSG(!font_map.has(p_theme_type), "Cannot clear the font '" + String(p_name) +
-													   "' because the node type '" +
-													   String(p_theme_type) + "' does not exist.");
-	ERR_FAIL_COND_MSG(!font_map[p_theme_type].has(p_name),
-		"Cannot clear the font '" + String(p_name) + "' because it does not exist.");
-
-	if (font_map[p_theme_type][p_name].is_valid()) {
-		font_map[p_theme_type][p_name]->disconnect_changed(
-			callable_mp(this, &Theme::_emit_theme_changed));
-	}
-
-	font_map[p_theme_type].erase(p_name);
-
-	_emit_theme_changed(true);
-}
-
 void Theme::get_font_list(const StringName& p_theme_type, List<StringName>* p_list) const
 {
 	ERR_FAIL_NULL(p_list);
@@ -724,26 +361,6 @@ void Theme::add_font_type(const StringName& p_theme_type)
 		return;
 	}
 	font_map[p_theme_type] = ThemeFontMap();
-}
-
-void Theme::remove_font_type(const StringName& p_theme_type)
-{
-	if (!font_map.has(p_theme_type)) {
-		return;
-	}
-
-	_freeze_change_propagation();
-
-	for (const KeyValue<StringName, Ref<Font>>& E : font_map[p_theme_type]) {
-		Ref<Font> font = E.value;
-		if (font.is_valid()) {
-			font->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-		}
-	}
-
-	font_map.erase(p_theme_type);
-
-	_unfreeze_and_propagate_changes();
 }
 
 void Theme::rename_font_type(const StringName& p_old_theme_type, const StringName& p_theme_type)
@@ -1146,87 +763,6 @@ void Theme::get_constant_type_list(List<StringName>* p_list) const
 	for (const KeyValue<StringName, ThemeConstantMap>& E : constant_map) {
 		p_list->push_back(E.key);
 	}
-}
-
-// Generic methods for managing theme items.
-void Theme::set_theme_item(DataType p_data_type, const StringName& p_name,
-	const StringName& p_theme_type, const Variant& p_value)
-{
-	switch (p_data_type) {
-	case DATA_TYPE_COLOR: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::COLOR,
-			"Theme item's data type (Color) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		Color color_value = p_value;
-		set_color(p_name, p_theme_type, color_value);
-	} break;
-	case DATA_TYPE_CONSTANT: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::INT,
-			"Theme item's data type (int) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		int constant_value = p_value;
-		set_constant(p_name, p_theme_type, constant_value);
-	} break;
-	case DATA_TYPE_FONT: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::OBJECT,
-			"Theme item's data type (Object) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		Ref<Font> font_value = Object::cast_to<Font>(p_value.get_validated_object());
-		set_font(p_name, p_theme_type, font_value);
-	} break;
-	case DATA_TYPE_FONT_SIZE: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::INT,
-			"Theme item's data type (int) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		int font_size_value = p_value;
-		set_font_size(p_name, p_theme_type, font_size_value);
-	} break;
-	case DATA_TYPE_ICON: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::OBJECT,
-			"Theme item's data type (Object) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		Ref<Texture2D> icon_value = Object::cast_to<Texture2D>(p_value.get_validated_object());
-		set_icon(p_name, p_theme_type, icon_value);
-	} break;
-	case DATA_TYPE_STYLEBOX: {
-		ERR_FAIL_COND_MSG(p_value.get_type() != Variant::OBJECT,
-			"Theme item's data type (Object) does not match Variant's type (" +
-				Variant::get_type_name(p_value.get_type()) + ").");
-
-		Ref<StyleBox> stylebox_value = Object::cast_to<StyleBox>(p_value.get_validated_object());
-		set_stylebox(p_name, p_theme_type, stylebox_value);
-	} break;
-	case DATA_TYPE_MAX:
-		break; // Can't happen, but silences warning.
-	}
-}
-
-Variant Theme::get_theme_item(
-	DataType p_data_type, const StringName& p_name, const StringName& p_theme_type) const
-{
-	switch (p_data_type) {
-	case DATA_TYPE_COLOR:
-		return get_color(p_name, p_theme_type);
-	case DATA_TYPE_CONSTANT:
-		return get_constant(p_name, p_theme_type);
-	case DATA_TYPE_FONT:
-		return get_font(p_name, p_theme_type);
-	case DATA_TYPE_FONT_SIZE:
-		return get_font_size(p_name, p_theme_type);
-	case DATA_TYPE_ICON:
-		return get_icon(p_name, p_theme_type);
-	case DATA_TYPE_STYLEBOX:
-		return get_stylebox(p_name, p_theme_type);
-	case DATA_TYPE_MAX:
-		break; // Can't happen, but silences warning.
-	}
-
-	return Variant();
 }
 
 bool Theme::has_theme_item(
@@ -1950,19 +1486,6 @@ Vector<String> Theme::_get_type_list() const
 	return ilret;
 }
 
-// Theme bulk manipulations.
-void Theme::_emit_theme_changed(bool p_notify_list_changed)
-{
-	if (no_change_propagation) {
-		return;
-	}
-
-	if (p_notify_list_changed) {
-		this->obj->notify_property_list_changed();
-	}
-	emit_changed();
-}
-
 void Theme::_freeze_change_propagation() { no_change_propagation = true; }
 
 void Theme::_unfreeze_and_propagate_changes()
@@ -2054,58 +1577,7 @@ void Theme::merge_with(const Ref<Theme>& p_other)
 	_unfreeze_and_propagate_changes();
 }
 
-void Theme::clear()
-{
-	// These items need disconnecting.
-	{
-		for (const KeyValue<StringName, ThemeIconMap>& E : icon_map) {
-			for (const KeyValue<StringName, Ref<Texture2D>>& F : E.value) {
-				if (F.value.is_valid()) {
-					Ref<Texture2D> icon = F.value;
-					icon->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-				}
-			}
-		}
-	}
-
-	{
-		for (const KeyValue<StringName, ThemeStyleMap>& E : style_map) {
-			for (const KeyValue<StringName, Ref<StyleBox>>& F : E.value) {
-				if (F.value.is_valid()) {
-					Ref<StyleBox> style = F.value;
-					style->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-				}
-			}
-		}
-	}
-
-	{
-		for (const KeyValue<StringName, ThemeFontMap>& E : font_map) {
-			for (const KeyValue<StringName, Ref<Font>>& F : E.value) {
-				if (F.value.is_valid()) {
-					Ref<Font> font = F.value;
-					font->disconnect_changed(callable_mp(this, &Theme::_emit_theme_changed));
-				}
-			}
-		}
-	}
-
-	icon_map.clear();
-	style_map.clear();
-	font_map.clear();
-	font_size_map.clear();
-	color_map.clear();
-	constant_map.clear();
-
-	variation_map.clear();
-	variation_base_map.clear();
-
-	_emit_theme_changed(true);
-}
-
 void Theme::reset_state() { clear(); }
-
-void Theme::_bind_methods() {}
 
 Theme::Theme() {}
 

@@ -31,10 +31,11 @@
 #pragma once
 
 #include "scene/gui/control.h"
-class Separator : public Control {
-	VLTRCLASS(Separator, Control);
 
-	struct ThemeCache {
+class Separator : public Control
+{
+	struct ThemeCache
+	{
 		int separation = 0;
 		Ref<StyleBox> separator_style;
 	} theme_cache;
@@ -52,16 +53,16 @@ public:
 	~Separator();
 };
 
-class VSeparator : public Separator {
-	VLTRCLASS(VSeparator, Separator);
-
+class VSeparator : public Separator
+{
 public:
 	VSeparator();
 };
 
-class HSeparator : public Separator {
-	VLTRCLASS(HSeparator, Separator);
-
+class HSeparator : public Separator
+{
 public:
 	HSeparator();
 };
+
+

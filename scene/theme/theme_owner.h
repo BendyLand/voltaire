@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/resources/theme.h"
 
 class Control;
@@ -53,8 +51,6 @@ class ThemeOwner
 	Ref<Theme> _get_owner_node_theme(Node* p_owner_node) const;
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	// Theme owner node.
 	void set_owner_node(Node* p_node);
 
@@ -75,8 +71,6 @@ public:
 	void get_theme_type_dependencies(
 		const Node* p_for_node, const StringName& p_theme_type, Vector<StringName>& r_result) const;
 
-	Variant get_theme_item_in_types(Theme::DataType p_data_type, const StringName& p_name,
-		const Vector<StringName>& p_theme_types);
 	bool has_theme_item_in_types(Theme::DataType p_data_type, const StringName& p_name,
 		const Vector<StringName>& p_theme_types);
 

@@ -33,18 +33,19 @@
 #include "editor/docks/editor_dock.h"
 #include "editor/docks/groups_editor.h"
 
-class GroupsDock : public EditorDock {
-	VLTRCLASS(GroupsDock, EditorDock);
+class GroupsDock : public EditorDock
+{
+	GroupsEditor* groups = nullptr;
 
-	GroupsEditor *groups = nullptr;
-
-	static inline GroupsDock *singleton = nullptr;
+	static inline GroupsDock* singleton = nullptr;
 
 public:
-	static GroupsDock *get_singleton() { return singleton; }
+	static GroupsDock* get_singleton() { return singleton; }
 
-	void set_selection(const Vector<Node *> &p_nodes);
+	void set_selection(const Vector<Node*>& p_nodes);
 
 	GroupsDock();
 	~GroupsDock();
 };
+
+

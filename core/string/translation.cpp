@@ -28,11 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/thread.h"
 #include "core/string/plural_rules.h"
 #include "core/string/translation_server.h"
 #include "translation.h"
+#include "core/types.h"
 
 void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
 {
@@ -59,65 +59,6 @@ void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
 		WARN_PRINT(vformat("Found EOT character (0x04) within untranslated string '%s'. This may "
 						   "cause issues with the translation system and external tools.",
 			p_msgid));
-	}
-}
-
-Dictionary Translation::_get_messages() const
-{
-	Dictionary d;
-	for (const KeyValue<MessageKey, Vector<StringName>>& E : translation_map) {
-		const Array& storage_key = {E.key.msgctxt, E.key.msgid};
-
-		Array storage_value;
-		storage_value.resize(E.value.size());
-		for (int i = 0; i < E.value.size(); i++) {
-			storage_value[i] = E.value[i];
-		}
-		d[storage_key] = storage_value;
-	}
-	return d;
-}
-
-void Translation::_set_messages(const Dictionary& p_messages)
-{
-	translation_map.clear();
-
-	for (const KeyValue<Variant, Variant>& kv : p_messages) {
-		switch (kv.key.get_type()) {
-		// Old version, no context or plural support.
-		case Variant::STRING:
-		case Variant::STRING_NAME: {
-			const MessageKey msg_key = {StringName(), kv.key};
-			_check_for_incompatibility(msg_key.msgctxt, msg_key.msgid);
-			translation_map[msg_key] = {kv.value};
-		} break;
-
-		// Current version.
-		case Variant::ARRAY: {
-			const Array& storage_key = kv.key;
-			const MessageKey msg_key = {storage_key[0], storage_key[1]};
-
-			const Array& storage_value = kv.value;
-			ERR_CONTINUE_MSG(storage_value.is_empty(),
-				vformat("No translated strings for untranslated string '%s' with context '%s'.",
-					msg_key.msgid, msg_key.msgctxt));
-
-			Vector<StringName> msgstrs;
-			msgstrs.resize(storage_value.size());
-			for (int i = 0; i < storage_value.size(); i++) {
-				msgstrs.write[i] = storage_value[i];
-			}
-
-			_check_for_incompatibility(msg_key.msgctxt, msg_key.msgid);
-			translation_map[msg_key] = msgstrs;
-		} break;
-
-		default: {
-			WARN_PRINT(vformat("Invalid key type in messages dictionary: %s.",
-				Variant::get_type_name(kv.key.get_type())));
-			continue;
-		}
-		}
 	}
 }
 

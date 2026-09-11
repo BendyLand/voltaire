@@ -28,121 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "remote_transform_2d.h"
-
-void RemoteTransform2D::_update_cache()
-{
-	cache = ObjectID();
-	if (has_node(remote_node)) {
-		Node* node = get_node(remote_node);
-		if (!node || this == node || node->is_ancestor_of(this) || is_ancestor_of(node)) {
-			return;
-		}
-
-		cache = node->obj->get_instance_id();
-	}
-}
-
-void RemoteTransform2D::_update_remote()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (cache.is_null()) {
-		return;
-	}
-
-	Node2D* n = ObjectDB::get_instance<Node2D>(cache);
-	if (!n) {
-		return;
-	}
-
-	if (!n->is_inside_tree()) {
-		return;
-	}
-
-	if (!(update_remote_position || update_remote_rotation || update_remote_scale)) {
-		return; // The transform data of the RemoteTransform2D is not used at all.
-	}
-
-	// todo make faster
-	if (use_global_coordinates) {
-		if (update_remote_position && update_remote_rotation && update_remote_scale) {
-			n->set_global_transform(get_global_transform());
-			return;
-		}
-
-		Transform2D n_trans = n->get_global_transform();
-		Transform2D our_trans = get_global_transform();
-
-		// There are more steps in the operation of set_rotation, so avoid calling it.
-		Transform2D trans = update_remote_rotation ? our_trans : n_trans;
-
-		if (update_remote_rotation ^ update_remote_position) {
-			trans.set_origin(
-				update_remote_position ? our_trans.get_origin() : n_trans.get_origin());
-		}
-		if (update_remote_rotation ^ update_remote_scale) {
-			trans.set_scale(update_remote_scale ? our_trans.get_scale() : n_trans.get_scale());
-		}
-
-		n->set_global_transform(trans);
-	}
-	else {
-		if (update_remote_position && update_remote_rotation && update_remote_scale) {
-			n->set_transform(get_transform());
-			return;
-		}
-
-		Transform2D n_trans = n->get_transform();
-		Transform2D our_trans = get_transform();
-
-		// There are more steps in the operation of set_rotation, so avoid calling it.
-		Transform2D trans = update_remote_rotation ? our_trans : n_trans;
-
-		if (update_remote_rotation ^ update_remote_position) {
-			trans.set_origin(
-				update_remote_position ? our_trans.get_origin() : n_trans.get_origin());
-		}
-		if (update_remote_rotation ^ update_remote_scale) {
-			trans.set_scale(update_remote_scale ? our_trans.get_scale() : n_trans.get_scale());
-		}
-
-		n->set_transform(trans);
-	}
-}
-
-void RemoteTransform2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		_update_cache();
-	} break;
-
-	case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
-		if (cache.is_valid()) {
-			_update_remote();
-			Node2D* n = ObjectDB::get_instance<Node2D>(cache);
-			if (n) {
-				n->reset_physics_interpolation();
-			}
-		}
-	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (!is_inside_tree()) {
-			break;
-		}
-
-		if (cache.is_valid()) {
-			_update_remote();
-		}
-	} break;
-	}
-}
 
 void RemoteTransform2D::set_remote_node(const NodePath& p_remote_node)
 {
@@ -209,19 +95,6 @@ void RemoteTransform2D::set_update_scale(const bool p_update)
 bool RemoteTransform2D::get_update_scale() const { return update_remote_scale; }
 
 void RemoteTransform2D::force_update_cache() { _update_cache(); }
-
-PackedStringArray RemoteTransform2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
-
-	if (!has_node(remote_node) || !Object::cast_to<Node2D>(get_node(remote_node))) {
-		warnings.push_back(RTR("Path property must point to a valid Node2D node to work."));
-	}
-
-	return warnings;
-}
-
-void RemoteTransform2D::_bind_methods() {}
 
 RemoteTransform2D::RemoteTransform2D()
 {

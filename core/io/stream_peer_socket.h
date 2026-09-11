@@ -34,16 +34,17 @@
 #include "core/io/stream_peer.h"
 
 #ifndef DISABLE_DEPRECATED
-namespace compat::StreamPeerTCP {
+namespace compat::StreamPeerTCP
+{
 enum class Status;
-} //namespace compat::StreamPeerTCP
+} // namespace compat::StreamPeerTCP
 #endif
 
-class StreamPeerSocket : public StreamPeer {
-	VLTRCLASS(StreamPeerSocket, StreamPeer);
-
+class StreamPeerSocket : public StreamPeer
+{
 public:
-	enum Status {
+	enum Status
+	{
 		STATUS_NONE,
 		STATUS_CONNECTING,
 		STATUS_CONNECTED,
@@ -61,13 +62,13 @@ protected:
 	Status status = STATUS_NONE;
 	NetSocket::Address peer_address;
 
-	Error write(const uint8_t *p_data, int p_bytes, int &r_sent, bool p_block);
-	Error read(uint8_t *p_buffer, int p_bytes, int &r_received, bool p_block);
+	Error write(const uint8_t* p_data, int p_bytes, int& r_sent, bool p_block);
+	Error read(uint8_t* p_buffer, int p_bytes, int& r_received, bool p_block);
 
 	static void _bind_methods();
 
 public:
-	virtual void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address &p_addr) = 0;
+	virtual void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr) = 0;
 
 	void disconnect_from_host();
 
@@ -81,13 +82,13 @@ public:
 	Error wait(NetSocket::PollType p_type, int p_timeout = 0);
 
 	// Read/Write from StreamPeer
-	Error put_data(const uint8_t *p_data, int p_bytes) override;
-	Error put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) override;
-	Error get_data(uint8_t *p_buffer, int p_bytes) override;
-	Error get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) override;
+	Error put_data(const uint8_t* p_data, int p_bytes) override;
+	Error put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent) override;
+	Error get_data(uint8_t* p_buffer, int p_bytes) override;
+	Error get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received) override;
 
 	StreamPeerSocket();
 	virtual ~StreamPeerSocket();
 };
 
-VARIANT_ENUM_CAST(StreamPeerSocket::Status);
+

@@ -59,73 +59,7 @@ HashMap<String, bool *> OpenXRDebugUtilsExtension::get_requested_extensions(XrVe
 	return request_extensions;
 }
 
-void OpenXRDebugUtilsExtension::on_instance_created(const XrInstance p_instance) {
-	if (debug_utils_ext) {
-		EXT_INIT_XR_FUNC(xrCreateDebugUtilsMessengerEXT);
-		EXT_INIT_XR_FUNC(xrDestroyDebugUtilsMessengerEXT);
-		EXT_INIT_XR_FUNC(xrSetDebugUtilsObjectNameEXT);
-		EXT_INIT_XR_FUNC(xrSessionBeginDebugUtilsLabelRegionEXT);
-		EXT_INIT_XR_FUNC(xrSessionEndDebugUtilsLabelRegionEXT);
-		EXT_INIT_XR_FUNC(xrSessionInsertDebugUtilsLabelEXT);
 
-		debug_utils_ext = xrCreateDebugUtilsMessengerEXT_ptr && xrDestroyDebugUtilsMessengerEXT_ptr && xrSetDebugUtilsObjectNameEXT_ptr && xrSessionBeginDebugUtilsLabelRegionEXT_ptr && xrSessionEndDebugUtilsLabelRegionEXT_ptr && xrSessionInsertDebugUtilsLabelEXT_ptr;
-	} else {
-		WARN_PRINT("OpenXR: The debug utils extension is not available on this runtime. Debug logging is not enabled!");
-	}
-
-	// On successful init, setup our default messenger.
-	if (debug_utils_ext) {
-		int max_severity = GLOBAL_GET("xr/openxr/extensions/debug_utils");
-		int types = GLOBAL_GET("xr/openxr/extensions/debug_message_types");
-
-		XrDebugUtilsMessageSeverityFlagsEXT message_severities = 0;
-
-		if (max_severity >= 1) {
-			message_severities |= XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		}
-		if (max_severity >= 2) {
-			message_severities |= XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-		}
-		if (max_severity >= 3) {
-			message_severities |= XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-		}
-		if (max_severity >= 4) {
-			message_severities |= XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-		}
-
-		XrDebugUtilsMessageTypeFlagsEXT message_types = 0;
-
-		// These should match up but just to be safe and future proof...
-		if (types & 1) {
-			message_types |= XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-		}
-		if (types & 2) {
-			message_types |= XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-		}
-		if (types & 4) {
-			message_types |= XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		}
-		if (types & 8) {
-			message_types |= XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
-		}
-
-		XrDebugUtilsMessengerCreateInfoEXT callback_info = {
-			XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, // type
-			nullptr, // next
-			message_severities, // messageSeverities
-			message_types, // messageTypes
-			&OpenXRDebugUtilsExtension::_debug_callback, // userCallback
-			nullptr, // userData
-		};
-
-		XrResult result = xrCreateDebugUtilsMessengerEXT(p_instance, &callback_info, &default_messenger);
-		if (XR_FAILED(result)) {
-			ERR_PRINT("OpenXR: Failed to create debug callback [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
-		}
-
-		set_object_name(XR_OBJECT_TYPE_INSTANCE, uint64_t(p_instance), "Main Godot OpenXR Instance");
-	}
-}
 
 void OpenXRDebugUtilsExtension::on_instance_destroyed() {
 	if (default_messenger != XR_NULL_HANDLE) {
@@ -277,8 +211,6 @@ XrBool32 OpenXRDebugUtilsExtension::debug_callback(XrDebugUtilsMessageSeverityFl
 		ERR_PRINT("OpenXR: Severity: Error" + msg);
 	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		WARN_PRINT("OpenXR: Severity: Warning" + msg);
-	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-		print_line("OpenXR: Severity: Info" + msg);
 	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
 		// This is a bit double because we won't output this unless verbose messaging in Godot is on.
 		print_verbose("OpenXR: Severity: Verbose" + msg);

@@ -38,7 +38,6 @@
 class AudioEffectRecord;
 
 class AudioEffectRecordInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectRecordInstance, AudioEffectInstance);
 	friend class AudioEffectRecord;
 
 	bool is_recording;
@@ -66,7 +65,6 @@ public:
 };
 
 class AudioEffectRecord : public AudioEffect {
-	VLTRCLASS(AudioEffectRecord, AudioEffect);
 
 	friend class AudioEffectRecordInstance;
 

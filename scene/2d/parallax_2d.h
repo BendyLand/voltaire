@@ -32,9 +32,8 @@
 
 #include "scene/2d/node_2d.h"
 
-class Parallax2D : public Node2D {
-	VLTRCLASS(Parallax2D, Node2D);
-
+class Parallax2D : public Node2D
+{
 	static constexpr real_t DEFAULT_LIMIT = 10000000;
 
 	String group_name;
@@ -55,36 +54,36 @@ class Parallax2D : public Node2D {
 
 protected:
 #ifdef TOOLS_ENABLED
-	void _edit_set_position(const Point2 &p_position) override;
+	void _edit_set_position(const Point2& p_position) override;
 #endif // TOOLS_ENABLED
-	void _validate_property(PropertyInfo &p_property) const;
-	void _camera_moved(const Transform2D &p_transform, const Point2 &p_screen_offset, const Point2 &p_adj_screen_offset);
+	void _camera_moved(const Transform2D& p_transform, const Point2& p_screen_offset,
+		const Point2& p_adj_screen_offset);
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	void set_scroll_scale(const Size2 &p_scale);
+	void set_scroll_scale(const Size2& p_scale);
 	Size2 get_scroll_scale() const;
 
-	void set_repeat_size(const Size2 &p_repeat_size);
+	void set_repeat_size(const Size2& p_repeat_size);
 	Size2 get_repeat_size() const;
 
 	void set_repeat_times(int p_repeat_times);
 	int get_repeat_times() const;
 
-	void set_autoscroll(const Point2 &p_autoscroll);
+	void set_autoscroll(const Point2& p_autoscroll);
 	Point2 get_autoscroll() const;
 
-	void set_scroll_offset(const Point2 &p_offset);
+	void set_scroll_offset(const Point2& p_offset);
 	Point2 get_scroll_offset() const;
 
-	void set_screen_offset(const Point2 &p_offset);
+	void set_screen_offset(const Point2& p_offset);
 	Point2 get_screen_offset() const;
 
-	void set_limit_begin(const Point2 &p_offset);
+	void set_limit_begin(const Point2& p_offset);
 	Point2 get_limit_begin() const;
 
-	void set_limit_end(const Point2 &p_offset);
+	void set_limit_end(const Point2& p_offset);
 	Point2 get_limit_end() const;
 
 	void set_follow_viewport(bool p_follow);
@@ -95,3 +94,5 @@ public:
 
 	Parallax2D();
 };
+
+

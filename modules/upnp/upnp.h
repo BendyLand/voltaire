@@ -32,18 +32,14 @@
 
 #include "upnp_device.h"
 
-#include "core/object/ref_counted.h"
-
-class UPNP : public RefCounted {
-	VLTRCLASS(UPNP, RefCounted);
-
+class UPNP : public RefCounted
+{
 protected:
-	static void _bind_methods();
-
-	static UPNP *(*_create)(bool p_notify_postinitialize);
+	static UPNP* (*_create)(bool p_notify_postinitialize);
 
 public:
-	enum UPNPResult {
+	enum UPNPResult
+	{
 		UPNP_RESULT_SUCCESS,
 		UPNP_RESULT_NOT_AUTHORIZED,
 		UPNP_RESULT_PORT_MAPPING_NOT_FOUND,
@@ -75,7 +71,8 @@ public:
 		UPNP_RESULT_UNKNOWN_ERROR,
 	};
 
-	static UPNP *create(bool p_notify_postinitialize = true) {
+	static UPNP* create(bool p_notify_postinitialize = true)
+	{
 		if (!_create) {
 			return nullptr;
 		}
@@ -91,14 +88,16 @@ public:
 
 	virtual Ref<UPNPDevice> get_gateway() const = 0;
 
-	virtual int discover(int timeout = 2000, int ttl = 2, const String &device_filter = "InternetGatewayDevice") = 0;
+	virtual int discover(
+		int timeout = 2000, int ttl = 2, const String& device_filter = "InternetGatewayDevice") = 0;
 
 	virtual String query_external_address() const = 0;
 
-	virtual int add_port_mapping(int port, int port_internal = 0, String desc = "", String proto = "UDP", int duration = 0) const = 0;
+	virtual int add_port_mapping(int port, int port_internal = 0, String desc = "",
+		String proto = "UDP", int duration = 0) const = 0;
 	virtual int delete_port_mapping(int port, String proto = "UDP") const = 0;
 
-	virtual void set_discover_multicast_if(const String &m_if) = 0;
+	virtual void set_discover_multicast_if(const String& m_if) = 0;
 	virtual String get_discover_multicast_if() const = 0;
 
 	virtual void set_discover_local_port(int port) = 0;
@@ -108,7 +107,8 @@ public:
 	virtual bool is_discover_ipv6() const = 0;
 
 	UPNP() {}
+
 	virtual ~UPNP() {}
 };
 
-VARIANT_ENUM_CAST(UPNP::UPNPResult)
+

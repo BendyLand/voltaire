@@ -32,16 +32,17 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class ReflectionProbe : public VisualInstance3D {
-	VLTRCLASS(ReflectionProbe, VisualInstance3D);
-
+class ReflectionProbe : public VisualInstance3D
+{
 public:
-	enum UpdateMode {
+	enum UpdateMode
+	{
 		UPDATE_ONCE,
 		UPDATE_ALWAYS,
 	};
 
-	enum AmbientMode {
+	enum AmbientMode
+	{
 		AMBIENT_DISABLED,
 		AMBIENT_ENVIRONMENT,
 		AMBIENT_COLOR
@@ -65,14 +66,6 @@ private:
 	uint32_t cull_mask = (1 << 20) - 1;
 	uint32_t reflection_mask = (1 << 20) - 1;
 	UpdateMode update_mode = UPDATE_ONCE;
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-#endif // DISABLE_DEPRECATED
 
 public:
 	void set_intensity(float p_intensity);
@@ -99,10 +92,10 @@ public:
 	void set_mesh_lod_threshold(float p_pixels);
 	float get_mesh_lod_threshold() const;
 
-	void set_size(const Vector3 &p_size);
+	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_origin_offset(const Vector3 &p_offset);
+	void set_origin_offset(const Vector3& p_offset);
 	Vector3 get_origin_offset() const;
 
 	void set_as_interior(bool p_enable);
@@ -129,5 +122,4 @@ public:
 	~ReflectionProbe();
 };
 
-VARIANT_ENUM_CAST(ReflectionProbe::AmbientMode);
-VARIANT_ENUM_CAST(ReflectionProbe::UpdateMode);
+

@@ -35,9 +35,8 @@
 class PanelContainer;
 class Button;
 
-class ColorChannelSelector : public HBoxContainer {
-	VLTRCLASS(ColorChannelSelector, HBoxContainer);
-
+class ColorChannelSelector : public HBoxContainer
+{
 	static const unsigned int CHANNEL_COUNT = 4;
 
 public:
@@ -51,12 +50,14 @@ private:
 	void _notification(int p_what);
 
 	void on_channel_button_toggled(bool p_unused_pressed);
-	void create_button(unsigned int p_channel_index, const String &p_text, Control *p_parent);
+	void create_button(unsigned int p_channel_index, const String& p_text, Control* p_parent);
 	void on_toggled(bool p_pressed);
 
 	static void _bind_methods();
 
-	Button *channel_buttons[CHANNEL_COUNT] = {};
-	PanelContainer *panel = nullptr;
-	Button *toggle_button = nullptr;
+	Button* channel_buttons[CHANNEL_COUNT] = {};
+	PanelContainer* panel = nullptr;
+	Button* toggle_button = nullptr;
 };
+
+

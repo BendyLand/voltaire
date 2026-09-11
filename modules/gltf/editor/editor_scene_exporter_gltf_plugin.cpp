@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -47,8 +46,6 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
 	_gltf_document.instantiate();
 	// Set up the file dialog.
 	_file_dialog = memnew(EditorFileDialog);
-	_file_dialog->connect(
-		"file_selected", callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_settings_dialog));
 	_file_dialog->set_title(TTR("Export Library"));
 	_file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	_file_dialog->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
@@ -61,8 +58,6 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
 	_config_dialog = memnew(ConfirmationDialog);
 	_config_dialog->set_title(TTRC("Export Settings"));
 	EditorNode::get_singleton()->get_gui_base()->add_child(_config_dialog);
-	_config_dialog->connect(SceneStringName(confirmed),
-		callable_mp(this, &SceneExporterGLTFPlugin::_export_scene_as_gltf));
 
 	_export_settings.instantiate();
 	_export_settings->generate_property_list(_gltf_document);
@@ -73,8 +68,6 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
 	PopupMenu* menu = get_export_as_menu();
 	int idx = menu->get_item_count();
 	menu->add_item(TTRC("glTF 2.0 Scene..."));
-	menu->set_item_metadata(
-		idx, callable_mp(this, &SceneExporterGLTFPlugin::_popup_gltf_export_dialog));
 }
 
 void SceneExporterGLTFPlugin::_popup_gltf_settings_dialog(const String& p_selected_path)
@@ -85,8 +78,6 @@ void SceneExporterGLTFPlugin::_popup_gltf_settings_dialog(const String& p_select
 	ERR_FAIL_NULL(root);
 	// Generate and refresh the export settings.
 	_export_settings->generate_property_list(_gltf_document, root);
-	_settings_inspector->edit(nullptr);
-	_settings_inspector->edit(_export_settings->obj.get());
 	// Show the config dialog.
 	_config_dialog->popup_centered();
 }

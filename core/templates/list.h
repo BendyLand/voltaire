@@ -34,7 +34,6 @@
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/templates/sort_list.h"
-#include "core/variant/variant_deep_duplicate.h"
 
 /**
  * Generic Templatized Linked List Implementation.

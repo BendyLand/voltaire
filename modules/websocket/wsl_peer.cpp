@@ -33,39 +33,13 @@
 #ifndef WEB_ENABLED
 
 #include "core/io/stream_peer_tls.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 
 void WSLPeer::initialize() { WebSocketPeer::_create = WSLPeer::_create; }
 
 WebSocketPeer* WSLPeer::_create(bool p_notify_postinitialize)
 {
-	return static_cast<WebSocketPeer*>(memnew(WSLPeer).ptr());
-}
-
-///
-/// Resolver
-///
-void WSLPeer::Resolver::start(const String& p_host, int p_port)
-{
-	stop();
-
-	port = p_port;
-	if (p_host.is_valid_ip_address()) {
-		ip_candidates.push_back(IPAddress(p_host));
-	}
-	else {
-		// Queue hostname for resolution.
-		resolver_id = IP::get_singleton()->resolve_hostname_queue_item(p_host);
-		ERR_FAIL_COND(resolver_id == IP::RESOLVER_INVALID_ID);
-		// Check if it was found in cache.
-		IP::ResolverStatus ip_status = IP::get_singleton()->get_resolve_item_status(resolver_id);
-		if (ip_status == IP::RESOLVER_STATUS_DONE) {
-			ip_candidates = IP::get_singleton()->get_resolve_item_addresses(resolver_id);
-			IP::get_singleton()->erase_resolve_item(resolver_id);
-			resolver_id = IP::RESOLVER_INVALID_ID;
-		}
-	}
+	return static_cast<WebSocketPeer*>(memnew(WSLPeer));
 }
 
 void WSLPeer::Resolver::stop()
@@ -75,85 +49,6 @@ void WSLPeer::Resolver::stop()
 		resolver_id = IP::RESOLVER_INVALID_ID;
 	}
 	port = 0;
-}
-
-void WSLPeer::Resolver::try_next_candidate(const Ref<StreamPeerTCP>& p_tcp)
-{
-	// Check if we still need resolving.
-	if (resolver_id != IP::RESOLVER_INVALID_ID) {
-		IP::ResolverStatus ip_status = IP::get_singleton()->get_resolve_item_status(resolver_id);
-		if (ip_status == IP::RESOLVER_STATUS_WAITING) {
-			return;
-		}
-		if (ip_status == IP::RESOLVER_STATUS_DONE) {
-			ip_candidates = IP::get_singleton()->get_resolve_item_addresses(resolver_id);
-		}
-		IP::get_singleton()->erase_resolve_item(resolver_id);
-		resolver_id = IP::RESOLVER_INVALID_ID;
-	}
-
-	// Try the current candidate if we have one.
-	if (p_tcp->get_status() != StreamPeerTCP::STATUS_NONE) {
-		p_tcp->poll();
-		StreamPeerTCP::Status status = p_tcp->get_status();
-		if (status == StreamPeerTCP::STATUS_CONNECTED) {
-			// On Windows, setting TCP_NODELAY may fail if the socket is still connecting.
-			p_tcp->set_no_delay(true);
-			ip_candidates.clear();
-			return;
-		}
-		else if (status == StreamPeerTCP::STATUS_CONNECTING) {
-			return; // Keep connecting.
-		}
-		else {
-			p_tcp->disconnect_from_host();
-		}
-	}
-
-	// Keep trying next candidate.
-	while (ip_candidates.size()) {
-		Error err = p_tcp->connect_to_host(ip_candidates.pop_front(), port);
-		if (err == OK) {
-			return;
-		}
-		else {
-			p_tcp->disconnect_from_host();
-		}
-	}
-}
-
-///
-/// Server functions
-///
-Error WSLPeer::accept_stream(const Ref<StreamPeer>& p_stream)
-{
-	ERR_FAIL_COND_V(p_stream.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(
-		ready_state != STATE_CLOSED && ready_state != STATE_CLOSING, ERR_ALREADY_IN_USE);
-
-	_clear();
-
-	if (p_stream->is_class_ptr(StreamPeerTCP::get_class_ptr_static())) {
-		tcp = p_stream;
-		connection = p_stream;
-		use_tls = false;
-	}
-	else if (p_stream->is_class_ptr(StreamPeerTLS::get_class_ptr_static())) {
-		Ref<StreamPeer> base_stream = static_cast<Ref<StreamPeerTLS>>(p_stream)->get_stream();
-		ERR_FAIL_COND_V(base_stream.is_null() ||
-							!base_stream->is_class_ptr(StreamPeerTCP::get_class_ptr_static()),
-			ERR_INVALID_PARAMETER);
-		tcp = static_cast<Ref<StreamPeerTCP>>(base_stream);
-		connection = p_stream;
-		use_tls = true;
-	}
-	ERR_FAIL_COND_V(connection.is_null() || tcp.is_null(), ERR_INVALID_PARAMETER);
-	is_server = true;
-	tcp->set_no_delay(true);
-	ready_state = STATE_CONNECTING;
-	handshake_buffer->resize(WSL_MAX_HEADER_SIZE);
-	handshake_buffer->seek(0);
-	return OK;
 }
 
 bool WSLPeer::_parse_client_request()
@@ -328,122 +223,6 @@ Error WSLPeer::_do_server_handshake()
 	return OK;
 }
 
-///
-/// Client functions
-///
-void WSLPeer::_do_client_handshake()
-{
-	ERR_FAIL_COND(tcp.is_null());
-
-	// Try to connect to candidates.
-	if (resolver.has_more_candidates() || tcp->get_status() == StreamPeerTCP::STATUS_CONNECTING) {
-		resolver.try_next_candidate(tcp);
-		if (resolver.has_more_candidates()) {
-			return; // Still pending.
-		}
-	}
-
-	tcp->poll();
-	if (tcp->get_status() == StreamPeerTCP::STATUS_CONNECTING) {
-		return; // Keep connecting.
-	}
-	else if (tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
-		close(-1); // Failed to connect.
-		return;
-	}
-
-	if (use_tls) {
-		Ref<StreamPeerTLS> tls;
-		if (connection == tcp) {
-			// Start SSL handshake
-			tls = Ref<StreamPeerTLS>(StreamPeerTLS::create());
-			ERR_FAIL_COND(tls.is_null());
-			if (tls->connect_to_stream(tcp, requested_host, tls_options) != OK) {
-				close(-1);
-				return; // Error.
-			}
-			connection = tls;
-		}
-		else {
-			tls = static_cast<Ref<StreamPeerTLS>>(connection);
-			ERR_FAIL_COND(tls.is_null());
-			tls->poll();
-		}
-		if (tls->get_status() == StreamPeerTLS::STATUS_HANDSHAKING) {
-			return; // Need more polling.
-		}
-		else if (tls->get_status() != StreamPeerTLS::STATUS_CONNECTED) {
-			close(-1);
-			return; // Error.
-		}
-	}
-
-	// Do websocket handshake.
-	if (pending_request) {
-		int left = handshake_buffer->get_available_bytes();
-		int pos = handshake_buffer->get_position();
-		const Vector<uint8_t> data = handshake_buffer->get_data_array();
-		int sent = 0;
-		Error err = connection->put_partial_data(data.ptr() + pos, left, sent);
-		// Sending handshake failed
-		if (err != OK) {
-			close(-1);
-			return; // Error.
-		}
-		handshake_buffer->seek(pos + sent);
-		if (handshake_buffer->get_available_bytes() == 0) {
-			pending_request = false;
-			handshake_buffer->clear();
-			handshake_buffer->resize(WSL_MAX_HEADER_SIZE);
-			handshake_buffer->seek(0);
-		}
-	}
-	else {
-		int read = 0;
-		while (true) {
-			int left = handshake_buffer->get_available_bytes();
-			int pos = handshake_buffer->get_position();
-			if (left == 0) {
-				// Header is too big
-				close(-1);
-				ERR_FAIL_MSG("Response headers too big.");
-			}
-
-			uint8_t byte;
-			Error err = connection->get_partial_data(&byte, 1, read);
-			if (err != OK) {
-				// Got some error.
-				close(-1);
-				return;
-			}
-			else if (read != 1) {
-				// Busy, wait next poll.
-				break;
-			}
-			handshake_buffer->put_u8(byte);
-
-			// Check "\r\n\r\n" header terminator
-			const char* r = (const char*)handshake_buffer->get_data_array().ptr();
-			int l = pos;
-			if (l > 3 && r[l] == '\n' && r[l - 1] == '\r' && r[l - 2] == '\n' && r[l - 3] == '\r') {
-				// Response is over, verify headers and initialize wslay context/
-				if (!_verify_server_response()) {
-					close(-1);
-					ERR_FAIL_MSG("Invalid response headers.");
-				}
-				wslay_event_context_client_init(&wsl_ctx, &_wsl_callbacks, this);
-				wslay_event_config_set_no_buffering(wsl_ctx, 1);
-				wslay_event_config_set_max_recv_msg_length(wsl_ctx, inbound_buffer_size);
-				in_buffer.resize(
-					Math::nearest_shift((uint32_t)inbound_buffer_size), max_queued_packets);
-				packet_buffer.resize(inbound_buffer_size);
-				ready_state = STATE_OPEN;
-				break;
-			}
-		}
-	}
-}
-
 bool WSLPeer::_verify_server_response()
 {
 	Vector<String> psa = String::ascii(Span((const char*)handshake_buffer->get_data_array().ptr(),
@@ -566,7 +345,7 @@ Error WSLPeer::connect_to_url(const String& p_url, const Ref<TLSOptions>& p_opti
 	resolver.try_next_candidate(tcp);
 
 	if (tcp->get_status() != StreamPeerTCP::STATUS_CONNECTING &&
-		tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED && !resolver.has_more_candidates()) {
+		tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
 		_clear();
 		return FAILED;
 	}
@@ -606,9 +385,6 @@ Error WSLPeer::connect_to_url(const String& p_url, const Ref<TLSOptions>& p_opti
 	return OK;
 }
 
-///
-/// Callback functions.
-///
 ssize_t WSLPeer::_wsl_recv_callback(
 	wslay_event_context_ptr ctx, uint8_t* data, size_t len, int flags, void* user_data)
 {

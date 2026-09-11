@@ -29,10 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
-#include "gpu_particles_3d.compat.inc"
 #include "gpu_particles_3d.h"
 #include "scene/3d/cpu_particles_3d.h"
 #include "scene/resources/curve_texture.h"
@@ -111,14 +108,7 @@ void GPUParticles3D::set_one_shot(bool p_one_shot)
 	}
 }
 
-void GPUParticles3D::set_use_fixed_seed(bool p_use_fixed_seed)
-{
-	if (p_use_fixed_seed == use_fixed_seed) {
-		return;
-	}
-	use_fixed_seed = p_use_fixed_seed;
-	this->obj->notify_property_list_changed();
-}
+
 
 bool GPUParticles3D::get_use_fixed_seed() const { return use_fixed_seed; }
 
@@ -161,32 +151,7 @@ void GPUParticles3D::set_use_local_coordinates(bool p_enable)
 	RS::get_singleton()->particles_set_use_local_coordinates(particles, local_coords);
 }
 
-void GPUParticles3D::set_process_material(const Ref<Material>& p_material)
-{
-#ifdef TOOLS_ENABLED
-	if (process_material.is_valid()) {
-		if (Ref<ParticleProcessMaterial>(process_material).is_valid()) {
-			process_material->obj->disconnect("emission_shape_changed",
-				callable_mp((Node3D*)this, &GPUParticles3D::update_gizmos));
-		}
-	}
-#endif
 
-	process_material = p_material;
-	RID material_rid;
-	if (process_material.is_valid()) {
-		material_rid = process_material->get_rid();
-#ifdef TOOLS_ENABLED
-		if (Ref<ParticleProcessMaterial>(process_material).is_valid()) {
-			process_material->obj->connect("emission_shape_changed",
-				callable_mp((Node3D*)this, &GPUParticles3D::update_gizmos));
-		}
-#endif
-	}
-	RS::get_singleton()->particles_set_process_material(particles, material_rid);
-
-	update_configuration_warnings();
-}
 
 void GPUParticles3D::set_speed_scale(double p_scale)
 {
@@ -252,46 +217,11 @@ double GPUParticles3D::get_trail_lifetime() const { return trail_lifetime; }
 
 GPUParticles3D::DrawOrder GPUParticles3D::get_draw_order() const { return draw_order; }
 
-void GPUParticles3D::set_draw_passes(int p_count)
-{
-	ERR_FAIL_COND(p_count < 1);
-	for (int i = p_count; i < draw_passes.size(); i++) {
-		set_draw_pass_mesh(i, Ref<Mesh>());
-	}
-	draw_passes.resize(p_count);
-	RS::get_singleton()->particles_set_draw_passes(particles, p_count);
-	this->obj->notify_property_list_changed();
-}
+
 
 int GPUParticles3D::get_draw_passes() const { return draw_passes.size(); }
 
-void GPUParticles3D::set_draw_pass_mesh(int p_pass, const Ref<Mesh>& p_mesh)
-{
-	ERR_FAIL_INDEX(p_pass, draw_passes.size());
 
-	if (Engine::get_singleton()->is_editor_hint() && draw_passes.write[p_pass].is_valid()) {
-		draw_passes.write[p_pass]->disconnect_changed(
-			callable_mp((Node*)this, &Node::update_configuration_warnings));
-	}
-
-	draw_passes.write[p_pass] = p_mesh;
-
-	if (Engine::get_singleton()->is_editor_hint() && draw_passes.write[p_pass].is_valid()) {
-		draw_passes.write[p_pass]->connect_changed(
-			callable_mp((Node*)this, &Node::update_configuration_warnings),
-			Object::CONNECT_DEFERRED);
-	}
-
-	RID mesh_rid;
-	if (p_mesh.is_valid()) {
-		mesh_rid = p_mesh->get_rid();
-	}
-
-	RS::get_singleton()->particles_set_draw_pass_mesh(particles, p_pass, mesh_rid);
-
-	_skinning_changed();
-	update_configuration_warnings();
-}
 
 Ref<Mesh> GPUParticles3D::get_draw_pass_mesh(int p_pass) const
 {
@@ -324,134 +254,7 @@ void GPUParticles3D::set_interpolate(bool p_enable)
 
 bool GPUParticles3D::get_interpolate() const { return interpolate; }
 
-PackedStringArray GPUParticles3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = GeometryInstance3D::get_configuration_warnings();
 
-	bool meshes_found = false;
-	bool anim_material_found = false;
-
-	for (int i = 0; i < draw_passes.size(); i++) {
-		if (draw_passes[i].is_valid()) {
-			meshes_found = true;
-			for (int j = 0; j < draw_passes[i]->get_surface_count(); j++) {
-				anim_material_found = Object::cast_to<ShaderMaterial>(
-										  draw_passes[i]->surface_get_material(j).ptr()) != nullptr;
-				BaseMaterial3D* spat =
-					Object::cast_to<BaseMaterial3D>(draw_passes[i]->surface_get_material(j).ptr());
-				anim_material_found =
-					anim_material_found ||
-					(spat && spat->get_billboard_mode() == StandardMaterial3D::BILLBOARD_PARTICLES);
-			}
-			if (anim_material_found) {
-				break;
-			}
-		}
-	}
-
-	anim_material_found = anim_material_found ||
-						  Object::cast_to<ShaderMaterial>(get_material_override().ptr()) != nullptr;
-	{
-		BaseMaterial3D* spat = Object::cast_to<BaseMaterial3D>(get_material_override().ptr());
-		anim_material_found =
-			anim_material_found ||
-			(spat && spat->get_billboard_mode() == BaseMaterial3D::BILLBOARD_PARTICLES);
-	}
-
-	if (!meshes_found) {
-		warnings.push_back(
-			RTR("Nothing is visible because meshes have not been assigned to draw passes."));
-	}
-
-	if (process_material.is_null()) {
-		warnings.push_back(RTR(
-			"A material to process the particles is not assigned, so no behavior is imprinted."));
-	}
-	else {
-		const ParticleProcessMaterial* process =
-			Object::cast_to<ParticleProcessMaterial>(process_material.ptr());
-		if (!anim_material_found && process &&
-			(process->get_param_max(ParticleProcessMaterial::PARAM_ANIM_SPEED) != 0.0 ||
-				process->get_param_max(ParticleProcessMaterial::PARAM_ANIM_OFFSET) != 0.0 ||
-				process->get_param_texture(ParticleProcessMaterial::PARAM_ANIM_SPEED).is_valid() ||
-				process->get_param_texture(ParticleProcessMaterial::PARAM_ANIM_OFFSET)
-					.is_valid())) {
-			warnings.push_back(RTR("Particles animation requires the usage of a BaseMaterial3D "
-								   "whose Billboard Mode is set to \"Particle Billboard\"."));
-		}
-	}
-
-	if (trail_enabled) {
-		int dp_count = 0;
-		bool missing_trails = false;
-		bool no_materials = false;
-
-		for (int i = 0; i < draw_passes.size(); i++) {
-			Ref<Mesh> draw_pass = draw_passes[i];
-			if (draw_pass.is_valid() && draw_pass->get_builtin_bind_pose_count() > 0) {
-				dp_count++;
-			}
-
-			if (draw_pass.is_valid()) {
-				int mats_found = 0;
-				for (int j = 0; j < draw_passes[i]->get_surface_count(); j++) {
-					BaseMaterial3D* spat = Object::cast_to<BaseMaterial3D>(
-						draw_passes[i]->surface_get_material(j).ptr());
-					if (spat) {
-						mats_found++;
-					}
-					if (spat && !spat->get_flag(BaseMaterial3D::FLAG_PARTICLE_TRAILS_MODE)) {
-						missing_trails = true;
-					}
-				}
-
-				if (mats_found != draw_passes[i]->get_surface_count()) {
-					no_materials = true;
-				}
-			}
-		}
-
-		BaseMaterial3D* spat = Object::cast_to<BaseMaterial3D>(get_material_override().ptr());
-		if (spat) {
-			no_materials = false;
-		}
-		if (spat && !spat->get_flag(BaseMaterial3D::FLAG_PARTICLE_TRAILS_MODE)) {
-			missing_trails = true;
-		}
-
-		if (dp_count && skin.is_valid()) {
-			warnings.push_back(RTR("Using Trail meshes with a skin causes Skin to override Trail "
-								   "poses. Suggest removing the Skin."));
-		}
-		else if (dp_count == 0 && skin.is_null()) {
-			warnings.push_back(
-				RTR("Trails active, but neither Trail meshes or a Skin were found."));
-		}
-		else if (dp_count > 1) {
-			warnings.push_back(RTR("Only one Trail mesh is supported. If you want to use more than "
-								   "a single mesh, a Skin is needed (see documentation)."));
-		}
-
-		if ((dp_count || skin.is_valid()) && (missing_trails || no_materials)) {
-			warnings.push_back(RTR("Trails enabled, but one or more mesh materials are either "
-								   "missing or not set for trails rendering."));
-		}
-		if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" ||
-			OS::get_singleton()->get_current_rendering_method() == "dummy") {
-			warnings.push_back(RTR(
-				"Particle trails are only available when using the Forward+ or Mobile renderer."));
-		}
-	}
-
-	if (sub_emitter != NodePath() &&
-		(OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" ||
-			OS::get_singleton()->get_current_rendering_method() == "dummy")) {
-		warnings.push_back(RTR("Particle sub-emitters are only available when using the Forward+ "
-							   "or Mobile renderer."));
-	}
-
-	return warnings;
-}
 
 void GPUParticles3D::restart(bool p_keep_seed)
 {
@@ -475,35 +278,7 @@ AABB GPUParticles3D::capture_aabb() const
 	return RS::get_singleton()->particles_get_current_aabb(particles);
 }
 
-void GPUParticles3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "emitting") {
-		p_property.hint = one_shot ? PROPERTY_HINT_ONESHOT : PROPERTY_HINT_NONE;
-	}
-	else if (p_property.name.begins_with("draw_pass_")) {
-		int index = p_property.name.get_slicec('_', 2).to_int() - 1;
-		if (index >= draw_passes.size()) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-			return;
-		}
-	}
-	else if (p_property.name == "seed" && !use_fixed_seed) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	else if (p_property.name == "transform_align_axis") {
-		if (transform_align == TRANSFORM_ALIGN_DISABLED ||
-			transform_align == TRANSFORM_ALIGN_Z_BILLBOARD ||
-			transform_align == TRANSFORM_ALIGN_Y_TO_VELOCITY ||
-			transform_align == TRANSFORM_ALIGN_Z_BILLBOARD_Y_TO_VELOCITY) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-	else if (p_property.name == "transform_align_channel_filter") {
-		if (!(transform_align == TRANSFORM_ALIGN_Z_BILLBOARD)) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
+
 
 void GPUParticles3D::request_particles_process(
 	real_t p_requested_process_time, real_t p_request_process_time_residual)
@@ -531,16 +306,7 @@ void GPUParticles3D::emit_particle(const Transform3D& p_transform, const Vector3
 		particles, p_transform, p_velocity, p_color, p_custom, p_emit_flags);
 }
 
-void GPUParticles3D::_attach_sub_emitter()
-{
-	Node* n = get_node_or_null(sub_emitter);
-	if (n) {
-		GPUParticles3D* sen = Object::cast_to<GPUParticles3D>(n);
-		if (sen && sen != this) {
-			RS::get_singleton()->particles_set_subemitter(particles, sen->particles);
-		}
-	}
-}
+
 
 void GPUParticles3D::set_sub_emitter(const NodePath& p_path)
 {
@@ -557,99 +323,6 @@ void GPUParticles3D::set_sub_emitter(const NodePath& p_path)
 }
 
 NodePath GPUParticles3D::get_sub_emitter() const { return sub_emitter; }
-
-void GPUParticles3D::_notification(int p_what)
-{
-	switch (p_what) {
-	// Use internal process when emitting and one_shot is on so that when
-	// the shot ends the editor can properly update.
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		const Vector3 velocity =
-			(get_global_position() - previous_position) / get_process_delta_time();
-
-		if (velocity != previous_velocity) {
-			RS::get_singleton()->particles_set_emitter_velocity(particles, velocity);
-			previous_velocity = velocity;
-		}
-		previous_position = get_global_position();
-
-		if (one_shot) {
-			time += get_process_delta_time();
-			if (time > emission_time) {
-				emitting = false;
-				if (!active) {
-					set_process_internal(false);
-				}
-			}
-			if (time > active_time) {
-				if (active && !signal_canceled) {
-					this->obj->emit_signal(SceneStringName(finished));
-				}
-				active = false;
-				if (!emitting) {
-					set_process_internal(false);
-				}
-			}
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-		// Update velocity in physics process, so that velocity calculations remain correct
-		// if the physics tick rate is lower than the rendered framerate (especially without physics
-		// interpolation).
-		const Vector3 velocity =
-			(get_global_position() - previous_position) / get_physics_process_delta_time();
-
-		if (velocity != previous_velocity) {
-			RS::get_singleton()->particles_set_emitter_velocity(particles, velocity);
-			previous_velocity = velocity;
-		}
-		previous_position = get_global_position();
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		set_process_internal(false);
-		set_physics_process_internal(false);
-		if (sub_emitter != NodePath()) {
-			_attach_sub_emitter();
-		}
-		if (can_process()) {
-			RS::get_singleton()->particles_set_speed_scale(particles, speed_scale);
-		}
-		else {
-			RS::get_singleton()->particles_set_speed_scale(particles, 0);
-		}
-		previous_position = get_global_transform().origin;
-		set_process_internal(true);
-		set_physics_process_internal(true);
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		RS::get_singleton()->particles_set_subemitter(particles, RID());
-	} break;
-
-	case NOTIFICATION_SUSPENDED:
-	case NOTIFICATION_UNSUSPENDED:
-	case NOTIFICATION_PAUSED:
-	case NOTIFICATION_UNPAUSED: {
-		if (is_inside_tree()) {
-			if (can_process()) {
-				RS::get_singleton()->particles_set_speed_scale(particles, speed_scale);
-			}
-			else {
-				RS::get_singleton()->particles_set_speed_scale(particles, 0);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		// Make sure particles are updated before rendering occurs if they were active before.
-		if (is_visible_in_tree() && !RS::get_singleton()->particles_is_inactive(particles)) {
-			RS::get_singleton()->particles_request_process(particles);
-		}
-	} break;
-	}
-}
 
 void GPUParticles3D::_skinning_changed()
 {
@@ -685,15 +358,7 @@ void GPUParticles3D::set_skin(const Ref<Skin>& p_skin)
 
 Ref<Skin> GPUParticles3D::get_skin() const { return skin; }
 
-void GPUParticles3D::set_transform_align(TransformAlign p_align)
-{
-	if (p_align != transform_align) {
-		this->obj->notify_property_list_changed();
-	}
-	transform_align = p_align;
-	RS::get_singleton()->particles_set_transform_align(
-		particles, RSE::ParticlesTransformAlign(transform_align));
-}
+
 
 GPUParticles3D::TransformAlign GPUParticles3D::get_transform_align() const
 {
@@ -726,104 +391,7 @@ RSE::ParticlesTransformAlignAxis GPUParticles3D::get_transform_align_axis() cons
 	return transform_align_axis;
 }
 
-void GPUParticles3D::convert_from_particles(Node* p_particles)
-{
-	CPUParticles3D* cpu_particles = Object::cast_to<CPUParticles3D>(p_particles);
-	ERR_FAIL_NULL_MSG(
-		cpu_particles, "Only CPUParticles3D nodes can be converted to GPUParticles3D.");
 
-	set_emitting(cpu_particles->is_emitting());
-	set_amount(cpu_particles->get_amount());
-	set_lifetime(cpu_particles->get_lifetime());
-	set_one_shot(cpu_particles->get_one_shot());
-	set_pre_process_time(cpu_particles->get_pre_process_time());
-	set_explosiveness_ratio(cpu_particles->get_explosiveness_ratio());
-	set_randomness_ratio(cpu_particles->get_randomness_ratio());
-	set_use_local_coordinates(cpu_particles->get_use_local_coordinates());
-	set_fixed_fps(cpu_particles->get_fixed_fps());
-	set_fractional_delta(cpu_particles->get_fractional_delta());
-	set_speed_scale(cpu_particles->get_speed_scale());
-	set_draw_order(DrawOrder(cpu_particles->get_draw_order()));
-	set_draw_pass_mesh(0, cpu_particles->get_mesh());
-
-	Ref<ParticleProcessMaterial> proc_mat = memnew(ParticleProcessMaterial);
-	set_process_material(proc_mat);
-
-	proc_mat->set_direction(cpu_particles->get_direction());
-	proc_mat->set_spread(cpu_particles->get_spread());
-	proc_mat->set_flatness(cpu_particles->get_flatness());
-	proc_mat->set_color(cpu_particles->get_color());
-
-	Ref<Gradient> grad = cpu_particles->get_color_ramp();
-	if (grad.is_valid()) {
-		Ref<GradientTexture1D> tex = memnew(GradientTexture1D);
-		tex->set_gradient(grad);
-		proc_mat->set_color_ramp(tex);
-	}
-
-	Ref<Gradient> grad_init = cpu_particles->get_color_initial_ramp();
-	if (grad_init.is_valid()) {
-		Ref<GradientTexture1D> tex = memnew(GradientTexture1D);
-		tex->set_gradient(grad_init);
-		proc_mat->set_color_initial_ramp(tex);
-	}
-
-	proc_mat->set_particle_flag(ParticleProcessMaterial::PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
-		cpu_particles->get_particle_flag(CPUParticles3D::PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY));
-	proc_mat->set_particle_flag(ParticleProcessMaterial::PARTICLE_FLAG_ROTATE_Y,
-		cpu_particles->get_particle_flag(CPUParticles3D::PARTICLE_FLAG_ROTATE_Y));
-	proc_mat->set_particle_flag(ParticleProcessMaterial::PARTICLE_FLAG_DISABLE_Z,
-		cpu_particles->get_particle_flag(CPUParticles3D::PARTICLE_FLAG_DISABLE_Z));
-
-	proc_mat->set_emission_shape(
-		ParticleProcessMaterial::EmissionShape(cpu_particles->get_emission_shape()));
-	proc_mat->set_emission_sphere_radius(cpu_particles->get_emission_sphere_radius());
-	proc_mat->set_emission_box_extents(cpu_particles->get_emission_box_extents());
-	proc_mat->set_emission_ring_height(cpu_particles->get_emission_ring_height());
-	proc_mat->set_emission_ring_radius(cpu_particles->get_emission_ring_radius());
-	proc_mat->set_emission_ring_inner_radius(cpu_particles->get_emission_ring_inner_radius());
-	proc_mat->set_emission_ring_cone_angle(cpu_particles->get_emission_ring_cone_angle());
-
-	if (cpu_particles->get_split_scale()) {
-		Ref<CurveXYZTexture> scale3D = memnew(CurveXYZTexture);
-		scale3D->set_curve_x(cpu_particles->get_scale_curve_x());
-		scale3D->set_curve_y(cpu_particles->get_scale_curve_y());
-		scale3D->set_curve_z(cpu_particles->get_scale_curve_z());
-		proc_mat->set_param_texture(ParticleProcessMaterial::PARAM_SCALE, scale3D);
-	}
-
-	proc_mat->set_gravity(cpu_particles->get_gravity());
-	proc_mat->set_lifetime_randomness(cpu_particles->get_lifetime_randomness());
-
-#define CONVERT_PARAM(m_param)                                                                     \
-	proc_mat->set_param_min(                                                                       \
-		ParticleProcessMaterial::m_param, cpu_particles->get_param_min(CPUParticles3D::m_param));  \
-	{                                                                                              \
-		Ref<Curve> curve = cpu_particles->get_param_curve(CPUParticles3D::m_param);                \
-		if (curve.is_valid()) {                                                                    \
-			Ref<CurveTexture> tex = memnew(CurveTexture);                                          \
-			tex->set_curve(curve);                                                                 \
-			proc_mat->set_param_texture(ParticleProcessMaterial::m_param, tex);                    \
-		}                                                                                          \
-	}                                                                                              \
-	proc_mat->set_param_max(                                                                       \
-		ParticleProcessMaterial::m_param, cpu_particles->get_param_max(CPUParticles3D::m_param));
-
-	CONVERT_PARAM(PARAM_INITIAL_LINEAR_VELOCITY);
-	CONVERT_PARAM(PARAM_ANGULAR_VELOCITY);
-	CONVERT_PARAM(PARAM_ORBIT_VELOCITY);
-	CONVERT_PARAM(PARAM_LINEAR_ACCEL);
-	CONVERT_PARAM(PARAM_RADIAL_ACCEL);
-	CONVERT_PARAM(PARAM_TANGENTIAL_ACCEL);
-	CONVERT_PARAM(PARAM_DAMPING);
-	CONVERT_PARAM(PARAM_ANGLE);
-	CONVERT_PARAM(PARAM_SCALE);
-	CONVERT_PARAM(PARAM_HUE_VARIATION);
-	CONVERT_PARAM(PARAM_ANIM_SPEED);
-	CONVERT_PARAM(PARAM_ANIM_OFFSET);
-
-#undef CONVERT_PARAM
-}
 
 void GPUParticles3D::set_amount_ratio(float p_ratio)
 {
@@ -833,7 +401,7 @@ void GPUParticles3D::set_amount_ratio(float p_ratio)
 
 float GPUParticles3D::get_amount_ratio() const { return amount_ratio; }
 
-void GPUParticles3D::_bind_methods() {}
+
 
 GPUParticles3D::GPUParticles3D()
 {

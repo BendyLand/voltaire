@@ -30,7 +30,6 @@
 
 #include "http_client_web.h"
 
-#include "core/object/class_db.h"
 
 #ifdef DEBUG_ENABLED
 #include "core/config/engine.h"

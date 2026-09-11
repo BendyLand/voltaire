@@ -36,8 +36,6 @@ class JoltBody3D;
 
 class JoltPhysicsDirectBodyState3D final : public PhysicsDirectBodyState3D
 {
-	VLTRCLASS(JoltPhysicsDirectBodyState3D, PhysicsDirectBodyState3D)
-
 	JoltBody3D* body = nullptr;
 
 	static void _bind_methods() {}
@@ -107,8 +105,6 @@ public:
 
 	virtual RID get_contact_collider(int p_contact_idx) const override;
 	virtual Vector3 get_contact_collider_position(int p_contact_idx) const override;
-	virtual ObjectID get_contact_collider_id(int p_contact_idx) const override;
-	virtual Object* get_contact_collider_object(int p_contact_idx) const override;
 	virtual int get_contact_collider_shape(int p_contact_idx) const override;
 	virtual Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const override;
 

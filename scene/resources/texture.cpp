@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 #include "texture.h"
@@ -72,40 +71,13 @@ Ref<Resource> Texture2D::create_placeholder() const
 	return placeholder;
 }
 
-void Texture2D::_bind_methods() {}
-
 Texture2D::Texture2D() {}
-
-Array Texture3D::_get_datai() const
-{
-	Vector<Ref<Image>> data = get_data();
-
-	Array ret;
-	ret.resize(data.size());
-	for (int i = 0; i < data.size(); i++) {
-		ret[i] = data[i];
-	}
-	return ret;
-}
 
 Image::Format Texture3D::get_format() const
 {
 	Image::Format ret = Image::FORMAT_MAX;
 	return ret;
 }
-
-Vector<Ref<Image>> Texture3D::get_data() const
-{
-	Array ret;
-	Vector<Ref<Image>> data;
-	data.resize(ret.size());
-	for (int i = 0; i < data.size(); i++) {
-		data.write[i] = ret[i];
-	}
-	return data;
-}
-
-void Texture3D::_bind_methods() {}
 
 Ref<Resource> Texture3D::create_placeholder() const
 {
@@ -126,8 +98,6 @@ TextureLayered::LayeredType TextureLayered::get_layered_type() const
 	uint32_t ret = LAYERED_TYPE_2D_ARRAY;
 	return (LayeredType)ret;
 }
-
-void TextureLayered::_bind_methods() {}
 
 Image::Format Texture2D::get_format() const { return Image::FORMAT_L8; }
 

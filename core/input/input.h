@@ -31,13 +31,11 @@
 #pragma once
 
 #include "core/input/input_event.h"
-#include "core/object/object.h"
 #include "core/os/keyboard.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
-#include "core/variant/typed_array.h"
 
 class GamepadMotion;
 
@@ -93,8 +91,7 @@ public:
 	// and CursorShape in other files.
 	using MouseMode = InputClassEnums::MouseMode;
 	using CursorShape = InputClassEnums::CursorShape;
-
-	mem_unique_ptr<Object> obj;
+	Vector<uint32_t> get_joy_touchpad_fingers(int p_device, int p_touchpad) const;
 
 	class JoypadFeatures
 	{
@@ -119,7 +116,7 @@ public:
 	typedef void (*EventDispatchFunc)(const Ref<InputEvent>& p_event);
 
 private:
-	BitField<MouseButtonMask> mouse_button_mask = MouseButtonMask::NONE;
+	uint32_t mouse_button_mask = 0;
 
 	RBSet<Key> key_label_pressed;
 	RBSet<Key> physical_keys_pressed;
@@ -149,8 +146,6 @@ private:
 		uint64_t pressed_process_frame = UINT64_MAX;
 		uint64_t released_physics_frame = UINT64_MAX;
 		uint64_t released_process_frame = UINT64_MAX;
-		ObjectID pressed_event_id;
-		ObjectID released_event_id;
 		bool exact = true;
 
 		struct DeviceState
@@ -253,7 +248,6 @@ private:
 		HatMask last_hat = HatMask::CENTER;
 		int mapping = -1;
 		int hat_current = 0;
-		Dictionary info;
 		bool has_light = false;
 		bool has_vibration = false;
 		Input::JoypadFeatures* features = nullptr;
@@ -426,15 +420,12 @@ public:
 
 	float get_joy_axis(int p_device, JoyAxis p_axis) const;
 	String get_joy_name(int p_idx);
-	TypedArray<int> get_connected_joypads();
 	Vector2 get_joy_vibration_strength(int p_device);
 	float get_joy_vibration_duration(int p_device);
 	float get_joy_vibration_remaining_duration(int p_device);
 	uint64_t get_joy_vibration_timestamp(int p_device);
 	bool is_joy_vibrating(int p_device);
 	bool has_joy_vibration(int p_device) const;
-	void joy_connection_changed(int p_idx, bool p_connected, const String& p_name,
-		const String& p_guid = "", const Dictionary& p_joypad_info = Dictionary());
 
 	Vector3 get_gravity() const;
 	Vector3 get_accelerometer() const;
@@ -446,7 +437,7 @@ public:
 	Point2 get_mouse_position() const;
 	Vector2 get_last_mouse_velocity();
 	Vector2 get_last_mouse_screen_velocity();
-	BitField<MouseButtonMask> get_mouse_button_mask() const;
+	uint32_t get_mouse_button_mask() const;
 
 	void warp_mouse(const Vector2& p_position);
 	Point2 warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, const Rect2& p_rect);
@@ -478,9 +469,6 @@ public:
 	void stop_joy_motion_sensors_calibration(int p_device);
 	void clear_joy_motion_sensors_calibration(int p_device);
 
-	Dictionary get_joy_motion_sensors_calibration(int p_device) const;
-	void set_joy_motion_sensors_calibration(int p_device, const Dictionary& p_calibration_info);
-
 	bool is_joy_motion_sensors_calibrating(int p_device) const;
 	bool is_joy_motion_sensors_calibrated(int p_device) const;
 
@@ -488,7 +476,6 @@ public:
 
 	Vector2 get_joy_touchpad_finger_position(int p_device, int p_finger, int p_touchpad = 0) const;
 	float get_joy_touchpad_finger_pressure(int p_device, int p_finger, int p_touchpad = 0) const;
-	PackedInt32Array get_joy_touchpad_fingers(int p_device, int p_touchpad = 0) const;
 
 	void start_joy_vibration(
 		int p_device, float p_weak_magnitude, float p_strong_magnitude, float p_duration = 0);
@@ -520,7 +507,7 @@ public:
 	void parse_mapping(const String& p_mapping);
 	void joy_button(int p_device, JoyButton p_button, bool p_pressed);
 	void joy_axis(int p_device, JoyAxis p_axis, float p_value);
-	void joy_hat(int p_device, BitField<HatMask> p_val);
+	void joy_hat(int p_device, uint32_t p_val);
 	void joy_motion_sensors(
 		int p_device, const Vector3& p_accelerometer, const Vector3& p_gyroscope);
 	void joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vector2& p_position,
@@ -534,7 +521,6 @@ public:
 	bool is_joy_known(int p_device);
 	String get_joy_guid(int p_device) const;
 	bool should_ignore_device(int p_vendor_id, int p_product_id) const;
-	Dictionary get_joy_info(int p_device) const;
 	void set_fallback_mapping(const String& p_guid);
 
 #ifdef DEBUG_ENABLED
@@ -556,8 +542,5 @@ public:
 	Input();
 	~Input();
 };
-
-VARIANT_ENUM_CAST(Input::MouseMode);
-VARIANT_ENUM_CAST(Input::CursorShape);
 
 

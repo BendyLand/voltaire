@@ -31,7 +31,6 @@
 #include <zlib.h>
 #include "core/io/stream_peer_gzip.h"
 #include "core/io/zip_io.h"
-#include "core/object/class_db.h"
 
 void StreamPeerGZIP::_bind_methods() {}
 

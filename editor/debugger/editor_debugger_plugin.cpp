@@ -28,25 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor_debugger_plugin.h"
-
-void EditorDebuggerSession::_breaked(
-	bool p_really_did, bool p_can_debug, const String& p_message, bool p_has_stackdump)
-{
-	if (p_really_did) {
-		this->obj->emit_signal(SNAME("breaked"), p_can_debug);
-	}
-	else {
-		this->obj->emit_signal(SNAME("continued"));
-	}
-}
-
-void EditorDebuggerSession::_started() { this->obj->emit_signal(SNAME("started")); }
-
-void EditorDebuggerSession::_stopped() { this->obj->emit_signal(SNAME("stopped")); }
 
 void EditorDebuggerSession::_bind_methods() {}
 
@@ -64,19 +47,6 @@ void EditorDebuggerSession::remove_session_tab(Control* p_tab)
 	tabs.erase(p_tab);
 }
 
-void EditorDebuggerSession::send_message(const String& p_message, const Array& p_args)
-{
-	ERR_FAIL_NULL_MSG(debugger, "Plugin is not attached to debugger.");
-	debugger->send_message(p_message, p_args);
-}
-
-void EditorDebuggerSession::toggle_profiler(
-	const String& p_profiler, bool p_enable, const Array& p_data)
-{
-	ERR_FAIL_NULL_MSG(debugger, "Plugin is not attached to debugger.");
-	debugger->toggle_profiler(p_profiler, p_enable, p_data);
-}
-
 bool EditorDebuggerSession::is_breaked()
 {
 	ERR_FAIL_NULL_V_MSG(debugger, false, "Plugin is not attached to debugger.");
@@ -89,41 +59,10 @@ bool EditorDebuggerSession::is_debuggable()
 	return debugger->is_debuggable();
 }
 
-bool EditorDebuggerSession::is_active()
-{
-	ERR_FAIL_NULL_V_MSG(debugger, false, "Plugin is not attached to debugger.");
-	return debugger->is_session_active();
-}
-
 void EditorDebuggerSession::set_breakpoint(const String& p_path, int p_line, bool p_enabled)
 {
 	ERR_FAIL_NULL_MSG(debugger, "Plugin is not attached to debugger.");
 	debugger->set_breakpoint(p_path, p_line, p_enabled);
-}
-
-void EditorDebuggerSession::detach_debugger()
-{
-	if (!debugger || !ObjectDB::get_instance(debugger_id)) {
-		return;
-	}
-	debugger->disconnect("started", callable_mp(this, &EditorDebuggerSession::_started));
-	debugger->disconnect("stopped", callable_mp(this, &EditorDebuggerSession::_stopped));
-	debugger->disconnect("breaked", callable_mp(this, &EditorDebuggerSession::_breaked));
-	for (Control* tab : tabs) {
-		debugger->remove_debugger_tab(tab);
-	}
-	tabs.clear();
-	debugger = nullptr;
-}
-
-EditorDebuggerSession::EditorDebuggerSession(ScriptEditorDebugger* p_debugger)
-{
-	ERR_FAIL_NULL(p_debugger);
-	debugger = p_debugger;
-	debugger_id = p_debugger->obj->get_instance_id();
-	debugger->connect("started", callable_mp(this, &EditorDebuggerSession::_started));
-	debugger->connect("stopped", callable_mp(this, &EditorDebuggerSession::_stopped));
-	debugger->connect("breaked", callable_mp(this, &EditorDebuggerSession::_breaked));
 }
 
 EditorDebuggerSession::~EditorDebuggerSession() { detach_debugger(); }
@@ -152,42 +91,9 @@ Ref<EditorDebuggerSession> EditorDebuggerPlugin::get_session(int p_idx)
 	return sessions.get(p_idx);
 }
 
-Array EditorDebuggerPlugin::get_sessions()
-{
-	Array ret;
-	for (const Ref<EditorDebuggerSession>& session : sessions) {
-		ret.push_back(session);
-	}
-	return ret;
-}
-
-void EditorDebuggerPlugin::_bind_methods() {}
-
-EditorDebuggerPlugin::EditorDebuggerPlugin()
-{
-	EditorDebuggerNode::get_singleton()->connect(
-		"goto_script_line", callable_mp(this, &EditorDebuggerPlugin::goto_script_line));
-	EditorDebuggerNode::get_singleton()->connect("breakpoints_cleared_in_tree",
-		callable_mp(this, &EditorDebuggerPlugin::breakpoints_cleared_in_tree));
-	EditorDebuggerNode::get_singleton()->connect(
-		"breakpoint_set_in_tree", callable_mp(this, &EditorDebuggerPlugin::breakpoint_set_in_tree));
-}
-
-void EditorDebuggerPlugin::goto_script_line(const Ref<Script>& p_script, int p_line) {}
-
 void EditorDebuggerPlugin::breakpoints_cleared_in_tree() {}
 
-void EditorDebuggerPlugin::breakpoint_set_in_tree(
-	const Ref<Script>& p_script, int p_line, bool p_enabled)
-{
-}
-
 void EditorDebuggerPlugin::setup_session(int p_idx) {}
-
-bool EditorDebuggerPlugin::capture(const String& p_message, const Array& p_data, int p_session_id)
-{
-	return false;
-}
 
 bool EditorDebuggerPlugin::has_capture(const String& p_capture) const { return false; }
 

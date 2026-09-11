@@ -29,11 +29,6 @@
 /**************************************************************************/
 
 #include "bone_map_editor_plugin.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
-#include "editor/import/3d/post_import_plugin_skeleton_renamer.h"
-#include "editor/import/3d/post_import_plugin_skeleton_rest_fixer.h"
-#include "editor/import/3d/post_import_plugin_skeleton_track_organizer.h"
 #include "editor/import/3d/scene_import_settings.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
@@ -69,26 +64,6 @@ void BoneMapperButton::fetch_textures()
 
 StringName BoneMapperButton::get_profile_bone_name() const { return profile_bone_name; }
 
-void BoneMapperButton::set_state(BoneMapState p_state)
-{
-	switch (p_state) {
-	case BONE_MAP_STATE_UNSET: {
-		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/unset"));
-	} break;
-	case BONE_MAP_STATE_SET: {
-		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/set"));
-	} break;
-	case BONE_MAP_STATE_MISSING: {
-		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/missing"));
-	} break;
-	case BONE_MAP_STATE_ERROR: {
-		circle->set_modulate(EDITOR_GET("editors/bone_mapper/handle_colors/error"));
-	} break;
-	default: {
-	} break;
-	}
-}
-
 bool BoneMapperButton::is_require() const { return require; }
 
 void BoneMapperButton::_notification(int p_what)
@@ -108,136 +83,10 @@ BoneMapperButton::BoneMapperButton(
 	selected = p_selected;
 }
 
-void BoneMapperItem::create_editor()
-{
-	HBoxContainer* hbox = memnew(HBoxContainer);
-	add_child(hbox);
-
-	skeleton_bone_selector = memnew(EditorPropertyText);
-	skeleton_bone_selector->set_label(profile_bone_name);
-	skeleton_bone_selector->set_selectable(false);
-	skeleton_bone_selector->set_h_size_flags(SIZE_EXPAND_FILL);
-	skeleton_bone_selector->set_object_and_property(
-		bone_map->obj.get(), "bone_map/" + String(profile_bone_name));
-	skeleton_bone_selector->update_property();
-	skeleton_bone_selector->connect(
-		"property_changed", callable_mp(this, &BoneMapperItem::_value_changed));
-	hbox->add_child(skeleton_bone_selector);
-
-	picker_button = memnew(Button);
-	picker_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
-	picker_button->connect(
-		SceneStringName(pressed), callable_mp(this, &BoneMapperItem::_open_picker));
-	hbox->add_child(picker_button);
-
-	add_child(memnew(HSeparator));
-}
-
-void BoneMapperItem::_update_property()
-{
-	if (skeleton_bone_selector->get_edited_object() &&
-		skeleton_bone_selector->get_edited_property()) {
-		skeleton_bone_selector->update_property();
-	}
-}
-
-void BoneMapperItem::_open_picker() { this->obj->emit_signal(SNAME("pick"), profile_bone_name); }
-
-void BoneMapperItem::_value_changed(
-	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
-{
-	bone_map->obj->set(p_property, p_value);
-}
-
-void BoneMapperItem::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		create_editor();
-		bone_map->obj->connect(
-			"bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		if (bone_map.is_valid() && bone_map->obj->is_connected("bone_map_updated",
-									   callable_mp(this, &BoneMapperItem::_update_property))) {
-			bone_map->obj->disconnect(
-				"bone_map_updated", callable_mp(this, &BoneMapperItem::_update_property));
-		}
-	} break;
-	}
-}
-
-void BoneMapperItem::_bind_methods() {}
-
 BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name)
 {
 	bone_map = p_bone_map;
 	profile_bone_name = p_profile_bone_name;
-}
-
-void BonePicker::create_editors()
-{
-	set_title(TTR("Bone Picker:"));
-
-	VBoxContainer* vbox = memnew(VBoxContainer);
-	add_child(vbox);
-
-	bones = memnew(Tree);
-	bones->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	bones->set_select_mode(Tree::SELECT_SINGLE);
-	bones->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	bones->set_hide_root(true);
-	bones->connect("item_activated", callable_mp(this, &BonePicker::_confirm));
-	vbox->add_child(bones);
-
-	create_bones_tree(skeleton);
-}
-
-void BonePicker::create_bones_tree(Skeleton3D* p_skeleton)
-{
-	bones->clear();
-
-	if (!p_skeleton) {
-		return;
-	}
-
-	TreeItem* root = bones->create_item();
-
-	HashMap<int, TreeItem*> items;
-
-	items.insert(-1, root);
-
-	Ref<Texture> bone_icon = get_editor_theme_icon(SNAME("Bone"));
-
-	Vector<int> bones_to_process = p_skeleton->get_parentless_bones();
-	bool is_first = true;
-	while (bones_to_process.size() > 0) {
-		int current_bone_idx = bones_to_process[0];
-		bones_to_process.erase(current_bone_idx);
-
-		Vector<int> current_bone_child_bones = p_skeleton->get_bone_children(current_bone_idx);
-		int child_bone_size = current_bone_child_bones.size();
-		for (int i = 0; i < child_bone_size; i++) {
-			bones_to_process.push_back(current_bone_child_bones[i]);
-		}
-
-		const int parent_idx = p_skeleton->get_bone_parent(current_bone_idx);
-		TreeItem* parent_item = items.find(parent_idx)->value;
-
-		TreeItem* joint_item = bones->create_item(parent_item);
-		items.insert(current_bone_idx, joint_item);
-
-		joint_item->set_text(0, p_skeleton->get_bone_name(current_bone_idx));
-		joint_item->set_icon(0, bone_icon);
-		joint_item->set_selectable(0, true);
-		joint_item->set_metadata(0, "bones/" + itos(current_bone_idx));
-		if (is_first) {
-			is_first = false;
-		}
-		else {
-			joint_item->set_collapsed(true);
-		}
-	}
 }
 
 void BonePicker::_confirm() { _ok_pressed(); }
@@ -272,69 +121,6 @@ void BonePicker::_notification(int p_what)
 }
 
 BonePicker::BonePicker(Skeleton3D* p_skeleton) { skeleton = p_skeleton; }
-
-void BoneMapper::create_editor()
-{
-	// Create Bone picker.
-	picker = memnew(BonePicker(skeleton));
-	picker->connect(
-		SceneStringName(confirmed), callable_mp(this, &BoneMapper::_apply_picker_selection));
-	add_child(picker, false, INTERNAL_MODE_FRONT);
-
-	profile_selector = memnew(EditorPropertyResource);
-	profile_selector->setup(bone_map->obj.get(), "profile", "SkeletonProfile");
-	profile_selector->set_label("Profile");
-	profile_selector->set_selectable(false);
-	profile_selector->set_object_and_property(bone_map->obj.get(), "profile");
-	profile_selector->update_property();
-	profile_selector->connect("property_changed", callable_mp(this, &BoneMapper::_profile_changed));
-	add_child(profile_selector);
-	add_child(memnew(HSeparator));
-
-	HBoxContainer* group_hbox = memnew(HBoxContainer);
-	add_child(group_hbox);
-
-	profile_group_selector = memnew(EditorPropertyEnum);
-	profile_group_selector->set_label("Group");
-	profile_group_selector->set_selectable(false);
-	profile_group_selector->set_h_size_flags(SIZE_EXPAND_FILL);
-	profile_group_selector->set_object_and_property(this->obj.get(), "current_group_idx");
-	profile_group_selector->update_property();
-	profile_group_selector->connect(
-		"property_changed", callable_mp(this, &BoneMapper::_value_changed));
-	group_hbox->add_child(profile_group_selector);
-
-	clear_mapping_button = memnew(Button);
-	clear_mapping_button->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
-	clear_mapping_button->set_tooltip_text(TTR("Clear mappings in current group."));
-	clear_mapping_button->connect(
-		SceneStringName(pressed), callable_mp(this, &BoneMapper::_clear_mapping_current_group));
-	group_hbox->add_child(clear_mapping_button);
-
-	bone_mapper_field = memnew(AspectRatioContainer);
-	bone_mapper_field->set_stretch_mode(AspectRatioContainer::STRETCH_FIT);
-	bone_mapper_field->set_custom_minimum_size(Vector2(0, 256.0) * EDSCALE);
-	bone_mapper_field->set_h_size_flags(Control::SIZE_FILL);
-	add_child(bone_mapper_field);
-
-	profile_bg = memnew(ColorRect);
-	profile_bg->set_color(Color(0, 0, 0, 1));
-	profile_bg->set_h_size_flags(Control::SIZE_FILL);
-	profile_bg->set_v_size_flags(Control::SIZE_FILL);
-	bone_mapper_field->add_child(profile_bg);
-
-	profile_texture = memnew(TextureRect);
-	profile_texture->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
-	profile_texture->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
-	profile_texture->set_h_size_flags(Control::SIZE_FILL);
-	profile_texture->set_v_size_flags(Control::SIZE_FILL);
-	bone_mapper_field->add_child(profile_texture);
-
-	mapper_item_vbox = memnew(VBoxContainer);
-	add_child(mapper_item_vbox);
-
-	recreate_items();
-}
 
 void BoneMapper::update_group_idx()
 {
@@ -386,106 +172,6 @@ void BoneMapper::set_current_bone_idx(int p_bone_idx)
 }
 
 int BoneMapper::get_current_bone_idx() const { return current_bone_idx; }
-
-void BoneMapper::recreate_editor()
-{
-	// Clear buttons.
-	int len = bone_mapper_buttons.size();
-	for (int i = 0; i < len; i++) {
-		profile_texture->remove_child(bone_mapper_buttons[i]);
-		memdelete(bone_mapper_buttons[i]);
-	}
-	bone_mapper_buttons.clear();
-
-	// Organize mapper items.
-	len = bone_mapper_items.size();
-	for (int i = 0; i < len; i++) {
-		bone_mapper_items[i]->set_visible(current_bone_idx == i);
-	}
-
-	Ref<SkeletonProfile> profile = bone_map->get_profile();
-	if (profile.is_valid()) {
-		SkeletonProfileHumanoid* hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
-		if (hmn) {
-			StringName hmn_group_name = profile->get_group_name(current_group_idx);
-			if (hmn_group_name == "Body") {
-				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanBody")));
-			}
-			else if (hmn_group_name == "Face") {
-				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanFace")));
-			}
-			else if (hmn_group_name == "LeftHand") {
-				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanLeftHand")));
-			}
-			else if (hmn_group_name == "RightHand") {
-				profile_texture->set_texture(get_editor_theme_icon(SNAME("BoneMapHumanRightHand")));
-			}
-		}
-		else {
-			profile_texture->set_texture(profile->get_texture(current_group_idx));
-		}
-	}
-	else {
-		profile_texture->set_texture(Ref<Texture2D>());
-	}
-
-	if (profile.is_null()) {
-		return;
-	}
-
-	for (int i = 0; i < len; i++) {
-		if (profile->get_group(i) == profile->get_group_name(current_group_idx)) {
-			BoneMapperButton* mb = memnew(BoneMapperButton(
-				profile->get_bone_name(i), profile->is_required(i), current_bone_idx == i));
-			mb->connect(SceneStringName(pressed),
-				callable_mp(this, &BoneMapper::set_current_bone_idx).bind(i),
-				Object::CONNECT_DEFERRED);
-			mb->set_h_grow_direction(GROW_DIRECTION_BOTH);
-			mb->set_v_grow_direction(GROW_DIRECTION_BOTH);
-			Vector2 vc = profile->get_handle_offset(i);
-			bone_mapper_buttons.push_back(mb);
-			profile_texture->add_child(mb);
-			mb->set_anchor(SIDE_LEFT, vc.x);
-			mb->set_anchor(SIDE_RIGHT, vc.x);
-			mb->set_anchor(SIDE_TOP, vc.y);
-			mb->set_anchor(SIDE_BOTTOM, vc.y);
-		}
-	}
-
-	_update_state();
-}
-
-void BoneMapper::clear_items()
-{
-	// Clear items.
-	int len = bone_mapper_items.size();
-	for (int i = 0; i < len; i++) {
-		bone_mapper_items[i]->disconnect("pick", callable_mp(this, &BoneMapper::_pick_bone));
-		mapper_item_vbox->remove_child(bone_mapper_items[i]);
-		memdelete(bone_mapper_items[i]);
-	}
-	bone_mapper_items.clear();
-}
-
-void BoneMapper::recreate_items()
-{
-	clear_items();
-	// Create items by profile.
-	Ref<SkeletonProfile> profile = bone_map->get_profile();
-	if (profile.is_valid()) {
-		int len = profile->get_bone_size();
-		for (int i = 0; i < len; i++) {
-			StringName bn = profile->get_bone_name(i);
-			bone_mapper_items.append(memnew(BoneMapperItem(bone_map, bn)));
-			bone_mapper_items[i]->connect(
-				"pick", callable_mp(this, &BoneMapper::_pick_bone), Object::CONNECT_DEFERRED);
-			mapper_item_vbox->add_child(bone_mapper_items[i]);
-		}
-	}
-
-	update_group_idx();
-	recreate_editor();
-}
 
 void BoneMapper::_update_state()
 {
@@ -1500,56 +1186,6 @@ void BoneMapper::auto_mapping_process(Ref<BoneMap>& p_bone_map)
 	WARN_PRINT("Finish auto mapping.");
 }
 
-void BoneMapper::_value_changed(
-	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
-{
-	this->obj->set(p_property, p_value);
-	recreate_editor();
-}
-
-void BoneMapper::_profile_changed(
-	const String& p_property, const Variant& p_value, const String& p_name, bool p_changing)
-{
-	bone_map->obj->set(p_property, p_value);
-
-	// Run auto mapping when setting SkeletonProfileHumanoid by GUI Editor.
-	Ref<SkeletonProfile> profile = bone_map->get_profile();
-	if (profile.is_valid()) {
-		SkeletonProfileHumanoid* hmn = Object::cast_to<SkeletonProfileHumanoid>(profile.ptr());
-		if (hmn) {
-			_run_auto_mapping();
-		}
-	}
-}
-
-void BoneMapper::_bind_methods() {}
-
-void BoneMapper::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		create_editor();
-		bone_map->obj->connect("bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
-		bone_map->obj->connect("profile_updated", callable_mp(this, &BoneMapper::recreate_items));
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		clear_items();
-		if (bone_map.is_valid()) {
-			if (bone_map->obj->is_connected(
-					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state))) {
-				bone_map->obj->disconnect(
-					"bone_map_updated", callable_mp(this, &BoneMapper::_update_state));
-			}
-			if (bone_map->obj->is_connected(
-					"profile_updated", callable_mp(this, &BoneMapper::recreate_items))) {
-				bone_map->obj->disconnect(
-					"profile_updated", callable_mp(this, &BoneMapper::recreate_items));
-			}
-		}
-	}
-	}
-}
-
 BoneMapper::BoneMapper(Skeleton3D* p_skeleton, Ref<BoneMap>& p_bone_map)
 {
 	skeleton = p_skeleton;
@@ -1563,31 +1199,6 @@ void BoneMapEditor::create_editors()
 	}
 	bone_mapper = memnew(BoneMapper(skeleton, bone_map));
 	add_child(bone_mapper);
-}
-
-void BoneMapEditor::fetch_objects()
-{
-	skeleton = nullptr;
-	// Hackey... but it may be the easiest way to get a selected object from "ImporterScene".
-	SceneImportSettingsDialog* si = SceneImportSettingsDialog::get_singleton();
-	if (!si) {
-		return;
-	}
-	if (!si->is_visible()) {
-		return;
-	}
-	Node* selected = si->get_selected_node();
-	if (selected) {
-		Skeleton3D* sk = Object::cast_to<Skeleton3D>(selected);
-		if (!sk) {
-			return;
-		}
-		skeleton = sk;
-	}
-	else {
-		// Editor should not exist.
-		skeleton = nullptr;
-	}
 }
 
 void BoneMapEditor::_notification(int p_what)
@@ -1604,40 +1215,5 @@ void BoneMapEditor::_notification(int p_what)
 }
 
 BoneMapEditor::BoneMapEditor(Ref<BoneMap>& p_bone_map) { bone_map = p_bone_map; }
-
-bool EditorInspectorPluginBoneMap::can_handle(Object* p_object)
-{
-	return Object::cast_to<BoneMap>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginBoneMap::parse_begin(Object* p_object)
-{
-	BoneMap* bm = Object::cast_to<BoneMap>(p_object);
-	if (!bm) {
-		return;
-	}
-	Ref<BoneMap> r(bm);
-	editor = memnew(BoneMapEditor(r));
-	add_custom_control(editor);
-}
-
-BoneMapEditorPlugin::BoneMapEditorPlugin()
-{
-	Ref<EditorInspectorPluginBoneMap> inspector_plugin;
-	inspector_plugin.instantiate();
-	add_inspector_plugin(inspector_plugin);
-
-	Ref<PostImportPluginSkeletonTrackOrganizer> post_import_plugin_track_organizer;
-	post_import_plugin_track_organizer.instantiate();
-	add_scene_post_import_plugin(post_import_plugin_track_organizer);
-
-	Ref<PostImportPluginSkeletonRenamer> post_import_plugin_renamer;
-	post_import_plugin_renamer.instantiate();
-	add_scene_post_import_plugin(post_import_plugin_renamer);
-
-	Ref<PostImportPluginSkeletonRestFixer> post_import_plugin_rest_fixer;
-	post_import_plugin_rest_fixer.instantiate();
-	add_scene_post_import_plugin(post_import_plugin_rest_fixer);
-}
 
 

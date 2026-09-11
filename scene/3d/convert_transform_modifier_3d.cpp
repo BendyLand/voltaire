@@ -29,206 +29,14 @@
 /**************************************************************************/
 
 #include "convert_transform_modifier_3d.h"
-#include "core/object/class_db.h"
 
 constexpr const char* HINT_POSITION = "-10,10,0.01,or_greater,or_less,suffix:m";
 constexpr const char* HINT_ROTATION = "-180,180,0.01,radians_as_degrees";
 constexpr const char* HINT_SCALE = "0,10,0.01,or_greater";
 
-bool ConvertTransformModifier3D::_set(const StringName& p_path, const Variant& p_value)
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String where = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-		String what = path.get_slicec('/', 3);
-
-		if (where == "apply") {
-			if (what == "transform_mode") {
-				set_apply_transform_mode(which, static_cast<TransformMode>((int)p_value));
-			}
-			else if (what == "axis") {
-				set_apply_axis(which, static_cast<Vector3::Axis>((int)p_value));
-			}
-			else if (what == "range_min") {
-				set_apply_range_min(which, p_value);
-			}
-			else if (what == "range_max") {
-				set_apply_range_max(which, p_value);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (where == "reference") {
-			if (what == "transform_mode") {
-				set_reference_transform_mode(which, static_cast<TransformMode>((int)p_value));
-			}
-			else if (what == "axis") {
-				set_reference_axis(which, static_cast<Vector3::Axis>((int)p_value));
-			}
-			else if (what == "range_min") {
-				set_reference_range_min(which, p_value);
-			}
-			else if (what == "range_max") {
-				set_reference_range_max(which, p_value);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (where == "relative") {
-			set_relative(which, p_value);
-		}
-		else if (where == "additive") {
-			set_additive(which, p_value);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool ConvertTransformModifier3D::_get(const StringName& p_path, Variant& r_ret) const
-{
-	String path = p_path;
-
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String where = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
-		String what = path.get_slicec('/', 3);
-
-		if (where == "apply") {
-			if (what == "transform_mode") {
-				r_ret = (int)get_apply_transform_mode(which);
-			}
-			else if (what == "axis") {
-				r_ret = (int)get_apply_axis(which);
-			}
-			else if (what == "range_min") {
-				r_ret = get_apply_range_min(which);
-			}
-			else if (what == "range_max") {
-				r_ret = get_apply_range_max(which);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (where == "reference") {
-			if (what == "transform_mode") {
-				r_ret = (int)get_reference_transform_mode(which);
-			}
-			else if (what == "axis") {
-				r_ret = (int)get_reference_axis(which);
-			}
-			else if (what == "range_min") {
-				r_ret = get_reference_range_min(which);
-			}
-			else if (what == "range_max") {
-				r_ret = get_reference_range_max(which);
-			}
-			else {
-				return false;
-			}
-		}
-		else if (where == "relative") {
-			r_ret = is_relative(which);
-		}
-		else if (where == "additive") {
-			r_ret = is_additive(which);
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-void ConvertTransformModifier3D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	BoneConstraint3D::get_property_list(p_list);
-
-	LocalVector<PropertyInfo> props;
-
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		String path = "settings/" + itos(i) + "/";
-
-		String hint_apply_range;
-		if (get_apply_transform_mode(i) == TRANSFORM_MODE_POSITION) {
-			hint_apply_range = HINT_POSITION;
-		}
-		else if (get_apply_transform_mode(i) == TRANSFORM_MODE_ROTATION) {
-			hint_apply_range = HINT_ROTATION;
-		}
-		else {
-			hint_apply_range = HINT_SCALE;
-		}
-		props.push_back(PropertyInfo(Variant::INT, path + "apply/transform_mode",
-			PROPERTY_HINT_ENUM, "Position,Rotation,Scale"));
-		props.push_back(
-			PropertyInfo(Variant::INT, path + "apply/axis", PROPERTY_HINT_ENUM, "X,Y,Z"));
-		props.push_back(PropertyInfo(
-			Variant::FLOAT, path + "apply/range_min", PROPERTY_HINT_RANGE, hint_apply_range));
-		props.push_back(PropertyInfo(
-			Variant::FLOAT, path + "apply/range_max", PROPERTY_HINT_RANGE, hint_apply_range));
-
-		String hint_reference_range;
-		if (get_reference_transform_mode(i) == TRANSFORM_MODE_POSITION) {
-			hint_reference_range = HINT_POSITION;
-		}
-		else if (get_reference_transform_mode(i) == TRANSFORM_MODE_ROTATION) {
-			hint_reference_range = HINT_ROTATION;
-		}
-		else {
-			hint_reference_range = HINT_SCALE;
-		}
-		props.push_back(PropertyInfo(Variant::INT, path + "reference/transform_mode",
-			PROPERTY_HINT_ENUM, "Position,Rotation,Scale"));
-		props.push_back(
-			PropertyInfo(Variant::INT, path + "reference/axis", PROPERTY_HINT_ENUM, "X,Y,Z"));
-		props.push_back(PropertyInfo(Variant::FLOAT, path + "reference/range_min",
-			PROPERTY_HINT_RANGE, hint_reference_range));
-		props.push_back(PropertyInfo(Variant::FLOAT, path + "reference/range_max",
-			PROPERTY_HINT_RANGE, hint_reference_range));
-
-		props.push_back(PropertyInfo(Variant::BOOL, path + "relative"));
-		props.push_back(PropertyInfo(Variant::BOOL, path + "additive"));
-	}
-
-	for (PropertyInfo& p : props) {
-		_validate_dynamic_prop(p);
-		p_list->push_back(p);
-	}
-}
-
-void ConvertTransformModifier3D::_validate_dynamic_prop(PropertyInfo& p_property) const
-{
-	PackedStringArray split = p_property.name.split("/");
-	if (split.size() > 2 && split[0] == "settings") {
-		int which = split[1].to_int();
-		if (split[2].begins_with("relative") && get_reference_type(which) != REFERENCE_TYPE_BONE) {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-}
-
 void ConvertTransformModifier3D::_validate_setting(int p_index)
 {
 	settings[p_index] = memnew(ConvertTransform3DSetting);
-}
-
-void ConvertTransformModifier3D::set_apply_transform_mode(
-	int p_index, TransformMode p_transform_mode)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	ConvertTransform3DSetting* setting = static_cast<ConvertTransform3DSetting*>(settings[p_index]);
-	setting->apply_transform_mode = p_transform_mode;
-	this->obj->notify_property_list_changed();
 }
 
 ConvertTransformModifier3D::TransformMode ConvertTransformModifier3D::get_apply_transform_mode(
@@ -279,15 +87,6 @@ float ConvertTransformModifier3D::get_apply_range_max(int p_index) const
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
 	ConvertTransform3DSetting* setting = static_cast<ConvertTransform3DSetting*>(settings[p_index]);
 	return setting->apply_range_max;
-}
-
-void ConvertTransformModifier3D::set_reference_transform_mode(
-	int p_index, TransformMode p_transform_mode)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	ConvertTransform3DSetting* setting = static_cast<ConvertTransform3DSetting*>(settings[p_index]);
-	setting->reference_transform_mode = p_transform_mode;
-	this->obj->notify_property_list_changed();
 }
 
 ConvertTransformModifier3D::TransformMode ConvertTransformModifier3D::get_reference_transform_mode(
@@ -368,8 +167,6 @@ bool ConvertTransformModifier3D::is_additive(int p_index) const
 	return setting->additive;
 }
 
-void ConvertTransformModifier3D::_bind_methods() {}
-
 void ConvertTransformModifier3D::_process_constraint_by_bone(
 	int p_index, Skeleton3D* p_skeleton, int p_apply_bone, int p_reference_bone, float p_amount)
 {
@@ -386,23 +183,6 @@ void ConvertTransformModifier3D::_process_constraint_by_bone(
 			destination.origin - p_skeleton->get_bone_rest(p_reference_bone).origin;
 	}
 	_process_convert(p_index, p_skeleton, p_apply_bone, destination, p_amount);
-}
-
-void ConvertTransformModifier3D::_process_constraint_by_node(int p_index, Skeleton3D* p_skeleton,
-	int p_apply_bone, const NodePath& p_reference_node, float p_amount)
-{
-	Node3D* nd = Object::cast_to<Node3D>(get_node_or_null(p_reference_node));
-	if (!nd) {
-		return;
-	}
-	Transform3D skel_tr = p_skeleton->get_global_transform_interpolated();
-	int parent = p_skeleton->get_bone_parent(p_apply_bone);
-	if (parent >= 0) {
-		skel_tr = skel_tr * p_skeleton->get_bone_global_pose(parent);
-	}
-	Transform3D dest_tr = nd->get_global_transform_interpolated();
-	Transform3D reference_dest = skel_tr.affine_inverse() * dest_tr;
-	_process_convert(p_index, p_skeleton, p_apply_bone, reference_dest, p_amount);
 }
 
 void ConvertTransformModifier3D::_process_convert(int p_index, Skeleton3D* p_skeleton,

@@ -30,7 +30,6 @@
 
 #include "core/io/file_access.h"
 #include "core/io/file_access_memory.h"
-#include "core/object/class_db.h"
 #include "dds_enums.h"
 #include "scene/resources/image_texture.h"
 #include "texture_loader_dds.h"

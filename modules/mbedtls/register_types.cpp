@@ -28,26 +28,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
+#include <psa/crypto.h>
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "crypto_mbedtls.h"
 #include "dtls_server_mbedtls.h"
 #include "packet_peer_mbed_dtls.h"
+#include "register_types.h"
 #include "stream_peer_mbedtls.h"
-
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-
-#include <psa/crypto.h>
 
 static bool godot_mbedtls_initialized = false;
 
-void initialize_mbedtls_module(ModuleInitializationLevel p_level) {
+void initialize_mbedtls_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
 		return;
 	}
-
-	GLOBAL_DEF("network/tls/enable_tls_v1.3", true);
 
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->is_stdout_verbose()) {
@@ -63,7 +59,8 @@ void initialize_mbedtls_module(ModuleInitializationLevel p_level) {
 	DTLSServerMbedTLS::initialize();
 }
 
-void uninitialize_mbedtls_module(ModuleInitializationLevel p_level) {
+void uninitialize_mbedtls_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
 		return;
 	}
@@ -77,3 +74,5 @@ void uninitialize_mbedtls_module(ModuleInitializationLevel p_level) {
 	StreamPeerMbedTLS::finalize_tls();
 	CryptoMbedTLS::finalize_crypto();
 }
+
+

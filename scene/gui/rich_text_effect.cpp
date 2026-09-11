@@ -28,32 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/object/script_language.h"
 #include "rich_text_effect.h"
 
 CharFXTransform::CharFXTransform() {}
 
-CharFXTransform::~CharFXTransform() { environment.clear(); }
-
-Variant RichTextEffect::get_bbcode() const
-{
-	Variant r;
-	if (this->obj->get_script_instance()) {
-		if (!this->obj->get_script_instance()->get("bbcode", r)) {
-			String path = this->obj->get_script_instance()->get_script()->get_path();
-			r = path.get_file().get_basename();
-		}
-	}
-	return r;
-}
-
 RichTextEffect::RichTextEffect() {}
 
-void CharFXTransform::_bind_methods() {}
-
 bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return false; }
-
-void RichTextEffect::_bind_methods() {}
 
 

@@ -31,7 +31,6 @@
 #include <thirdparty/misc/yuv2rgb.h>
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
-#include "core/object/class_db.h"
 #include "scene/resources/image_texture.h"
 #include "video_stream_theora.h"
 
@@ -664,17 +663,6 @@ void VideoStreamPlaybackTheora::update(double p_delta)
 		video_ready = false;
 		current_frame_time = next_frame_time;
 	}
-}
-
-void VideoStreamPlaybackTheora::play()
-{
-	if (playing) {
-		return;
-	}
-
-	playing = true;
-	delay_compensation = GLOBAL_GET("audio/video/video_delay_compensation_ms");
-	delay_compensation /= 1000.0;
 }
 
 void VideoStreamPlaybackTheora::stop()

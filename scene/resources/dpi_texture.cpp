@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "dpi_texture.h"
 #include "modules/modules_enabled.gen.h" // For svg.
 #include "scene/resources/bit_map.h"
@@ -80,18 +79,6 @@ void DPITexture::unreference_scaling_level(double p_scale)
 			scaling_levels.erase(scale);
 		}
 	}
-}
-
-Ref<DPITexture> DPITexture::create_from_string(
-	const String& p_source, float p_scale, float p_saturation, const Dictionary& p_color_map)
-{
-	Ref<DPITexture> dpi_texture;
-	dpi_texture.instantiate();
-	dpi_texture->set_source(p_source);
-	dpi_texture->set_base_scale(p_scale);
-	dpi_texture->set_saturation(p_saturation);
-	dpi_texture->set_color_map(p_color_map);
-	return dpi_texture;
 }
 
 void DPITexture::set_source(const String& p_source)
@@ -151,21 +138,6 @@ void DPITexture::set_saturation(float p_saturation)
 }
 
 float DPITexture::get_saturation() const { return saturation; }
-
-void DPITexture::set_color_map(const Dictionary& p_color_map)
-{
-	if (color_map == p_color_map) {
-		return;
-	}
-	color_map = p_color_map;
-	cmap.clear();
-	for (const Variant* E = color_map.next(); E; E = color_map.next(E)) {
-		cmap[*E] = color_map[*E];
-	}
-	_update_texture();
-}
-
-Dictionary DPITexture::get_color_map() const { return color_map; }
 
 void DPITexture::_remove_scale(double p_scale)
 {

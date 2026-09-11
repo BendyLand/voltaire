@@ -28,14 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_translation_preview_button.h"
-
-#include "core/object/callable_mp.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_node.h"
+#include "editor_translation_preview_button.h"
 
-void EditorTranslationPreviewButton::_update() {
-	const String &locale = EditorNode::get_singleton()->get_preview_locale();
+void EditorTranslationPreviewButton::_update()
+{
+	const String& locale = EditorNode::get_singleton()->get_preview_locale();
 
 	if (locale.is_empty()) {
 		hide();
@@ -47,27 +46,26 @@ void EditorTranslationPreviewButton::_update() {
 	show();
 }
 
-void EditorTranslationPreviewButton::pressed() {
+void EditorTranslationPreviewButton::pressed()
+{
 	EditorNode::get_singleton()->set_preview_locale(String(""), true);
 }
 
-void EditorTranslationPreviewButton::_notification(int p_what) {
+void EditorTranslationPreviewButton::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_THEME_CHANGED: {
-			set_button_icon(get_editor_theme_icon(SNAME("Translation")));
-		} break;
+	case NOTIFICATION_THEME_CHANGED: {
+		set_button_icon(get_editor_theme_icon(SNAME("Translation")));
+	} break;
 
-		case NOTIFICATION_TRANSLATION_CHANGED: {
-			_update();
-		} break;
-
-		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("preview_locale_changed", callable_mp(this, &EditorTranslationPreviewButton::_update));
-		} break;
+	case NOTIFICATION_TRANSLATION_CHANGED: {
+		_update();
+	} break;
 	}
 }
 
-EditorTranslationPreviewButton::EditorTranslationPreviewButton() {
+EditorTranslationPreviewButton::EditorTranslationPreviewButton()
+{
 	set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
 	set_accessibility_name(TTRC("Disable Translation Preview"));
@@ -75,3 +73,5 @@ EditorTranslationPreviewButton::EditorTranslationPreviewButton() {
 	set_focus_mode(FOCUS_NONE);
 	set_visible(false);
 }
+
+

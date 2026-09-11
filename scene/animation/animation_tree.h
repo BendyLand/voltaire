@@ -33,10 +33,11 @@
 #include "scene/animation/animation_mixer.h"
 #include "scene/resources/animation.h"
 
-#define HUGE_LENGTH                                                                                \
-	31540000 // 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
-			 // length and Transition xfade time to prevent time inversion for
-			 // AnimationNodeStateMachine.
+	   /**
+		 * 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
+		 * length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
+		 */
+#define HUGE_LENGTH 31540000
 
 #ifdef TOOLS_ENABLED
 #define ENABLE_ACTIVITY_TRACKING
@@ -50,8 +51,6 @@ struct AnimationNodeInstance;
 
 class AnimationNode : public Resource
 {
-	VLTRCLASS(AnimationNode, Resource);
-
 public:
 	friend class AnimationTree;
 
@@ -144,9 +143,6 @@ public:
 	static thread_local AnimationNodeInstance* current_instance;
 
 public:
-	Array _get_filters() const;
-	void _set_filters(const Array& p_filters);
-
 	void _update_filter_cache(
 		const ProcessState& p_process_state, const AnimationNodeInstance& p_instance);
 
@@ -212,19 +208,12 @@ protected:
 
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo& p_property) const;
-
 private:
 	mutable uint32_t filters_version = 1;
 	void _mark_filters_dirty();
 
 public:
-	virtual void get_parameter_list(LocalVector<PropertyInfo>* r_list) const;
-	virtual Variant get_parameter_default_value(const StringName& p_parameter) const;
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const;
-
-	void set_parameter_ex(const StringName& p_name, const Variant& p_value);
-	Variant get_parameter_ex(const StringName& p_name) const;
 
 	struct ChildNode
 	{
@@ -252,8 +241,6 @@ public:
 	void set_deletable(bool p_closable);
 	bool is_deletable() const;
 
-	ObjectID get_processing_animation_tree_instance_id() const;
-
 	bool is_process_testing() const;
 
 	virtual bool has_filter() const;
@@ -269,31 +256,21 @@ public:
 	AnimationNode();
 };
 
-VARIANT_ENUM_CAST(AnimationNode::FilterAction)
-
 // Root node does not allow inputs.
 class AnimationRootNode : public AnimationNode
 {
-	VLTRCLASS(AnimationRootNode, AnimationNode);
-
 protected:
 	void _add_node(const Ref<AnimationNode>& p_node);
 	void _remove_node(const Ref<AnimationNode>& p_node);
 	virtual void _tree_changed();
-	void _node_updated(const ObjectID& p_oid);
-	virtual void _animation_node_renamed(
-		const ObjectID& p_oid, const String& p_old_name, const String& p_new_name);
-	virtual void _animation_node_removed(const ObjectID& p_oid, const StringName& p_node);
 };
 
 class AnimationNodeStartState : public AnimationRootNode
 {
-	VLTRCLASS(AnimationNodeStartState, AnimationRootNode);
 };
 
 class AnimationNodeEndState : public AnimationRootNode
 {
-	VLTRCLASS(AnimationNodeEndState, AnimationRootNode);
 };
 
 // Per instance data, for a node.
@@ -308,8 +285,6 @@ struct AnimationNodeInstance
 	// In an ideal world, get_parameter and set_parameter are removed, and everything is made
 	// strongly typed (without variant). But that is a ton of work, and this is a good enough
 	// optimization for now.
-	LocalVector<Variant*> parameter_ptrs_by_slot;
-
 	mutable LocalVector<AnimationNodeInstance*>
 		connection_instances; // AnimationNodeInstance* | nullptr
 	mutable LocalVector<real_t> track_weights;
@@ -326,8 +301,6 @@ struct AnimationNodeInstance
 	// paths. Consider moving them out of this struct.
 	// AnimationNodeInstance *parent = nullptr;
 	StringName path; // e.g. "parameters/node_name/sub_node_name/"
-
-	mutable AHashMap<StringName, Variant*> property_ptrs;
 
 #ifdef ENABLE_ACTIVITY_TRACKING
 	struct Activity
@@ -390,17 +363,6 @@ struct AnimationNodeInstance
 			SLOT_MAX = 9
 	};
 
-	void maybe_bind_slot_property(const StringName& p_name, Variant* p_property)
-	{
-#define HANDLE_MAYBE_BIND_SLOT_PARAMETER(_index, slot, name, _variant_type, _native_type)          \
-	if (p_name == SNAME(#name)) {                                                                  \
-		parameter_ptrs_by_slot[SLOT_##slot] = p_property;                                          \
-		return;                                                                                    \
-	}
-		ANIM_SLOT_LIST(HANDLE_MAYBE_BIND_SLOT_PARAMETER)
-#undef HANDLE_MAYBE_BIND_SLOT_PARAMETER
-	}
-
 #define DEFINE_SET_PARAMETER_METHOD(_index, e, member, _variant_type, native_type)                 \
 	_FORCE_INLINE_ void set_parameter_##member(const native_type p_value, bool p_test_only)        \
 	{                                                                                              \
@@ -410,7 +372,6 @@ struct AnimationNodeInstance
 		Variant& prop = *parameter_ptrs_by_slot[SLOT_##e];                                         \
 		prop = p_value;                                                                            \
 	}
-	ANIM_SLOT_LIST(DEFINE_SET_PARAMETER_METHOD)
 #undef DEFINE_SET_PARAMETER_METHOD
 
 #define DEFINE_GET_PARAMETER_METHOD(_index, e, member, _variant_type, native_type)                 \
@@ -418,58 +379,7 @@ struct AnimationNodeInstance
 	{                                                                                              \
 		return *parameter_ptrs_by_slot[SLOT_##e];                                                  \
 	}
-	ANIM_SLOT_LIST(DEFINE_GET_PARAMETER_METHOD)
 #undef DEFINE_GET_PARAMETER_METHOD
-
-	_FORCE_INLINE_ void set_parameter(
-		const StringName& p_name, const Variant& p_value, bool p_test_only)
-	{
-		if (p_test_only) {
-			return;
-		}
-
-#define HANDLE_SET_SLOT_PARAMETER(_index, slot, name, variant_type, _native_type)                  \
-	if (p_name == SNAME(#name)) {                                                                  \
-		ERR_FAIL_COND(p_value.get_type() != Variant::variant_type);                                \
-		Variant& prop = *parameter_ptrs_by_slot[SLOT_##slot];                                      \
-		prop = p_value;                                                                            \
-		return;                                                                                    \
-	}
-		ANIM_SLOT_LIST(HANDLE_SET_SLOT_PARAMETER)
-#undef HANDLE_SET_SLOT_PARAMETER
-
-		Variant** p = property_ptrs.getptr(p_name);
-		ERR_FAIL_NULL(p);
-		Variant& prop = **p;
-
-		// Only copy variant if needed.
-		if (Animation::needs_type_cast(prop, p_value)) {
-			Variant value = p_value;
-			if (Animation::validate_type_match(prop, value)) {
-				prop = value;
-			}
-		}
-		else {
-			prop = p_value;
-		}
-	}
-
-	_FORCE_INLINE_ Variant& get_parameter(const StringName& p_name)
-	{
-		static Variant dummy = Variant();
-
-#define HANDLE_GET_SLOT_PARAMETER(_index, slot, name, _variant_type, _native_type)                 \
-	if (p_name == SNAME(#name)) {                                                                  \
-		return *parameter_ptrs_by_slot[SLOT_##slot];                                               \
-	}
-		ANIM_SLOT_LIST(HANDLE_GET_SLOT_PARAMETER)
-#undef HANDLE_GET_SLOT_PARAMETER
-
-		Variant** p = property_ptrs.getptr(p_name);
-		ERR_FAIL_NULL_V(p, dummy);
-		Variant& prop = **p;
-		return prop;
-	}
 
 	_FORCE_INLINE_ AnimationNodeInstance* get_child_instance_by_path_or_null(
 		const StringName& p_path)
@@ -498,8 +408,6 @@ struct AnimationNodeInstance
 
 class AnimationTree : public AnimationMixer
 {
-	VLTRCLASS(AnimationTree, AnimationMixer);
-
 #ifndef DISABLE_DEPRECATED
 public:
 	enum AnimationProcessCallback
@@ -521,12 +429,7 @@ private:
 	bool started = true;
 
 	friend class AnimationNode;
-
-	mutable LocalVector<PropertyInfo> properties;
-	mutable AHashMap<StringName, Pair<Variant, bool>>
-		property_map; // Property value and read-only flag.
 	mutable AHashMap<StringName, AnimationNodeInstance> instance_map;
-	mutable AHashMap<ObjectID, HashSet<StringName>> instance_paths;
 
 	mutable bool properties_dirty = true;
 	mutable bool validation_dirty = true;
@@ -539,21 +442,13 @@ private:
 		const StringName& p_base_path, const Ref<AnimationNode>& p_node) const;
 
 	void _tree_changed();
-	void _node_updated(const ObjectID& p_oid);
-	void _animation_node_renamed(
-		const ObjectID& p_oid, const String& p_old_name, const String& p_new_name);
-	void _animation_node_removed(const ObjectID& p_oid, const StringName& p_node);
 
 	NodePath animation_player;
 
 	void _setup_animation_player();
 	void _animation_player_changed();
 
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
 	virtual uint32_t _get_libraries_property_usage() const override;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	virtual void _validate_property(PropertyInfo& p_property) const override;
 	void _notification(int p_what);
 
 	static void _bind_methods();
@@ -593,7 +488,6 @@ public:
 	Ref<AnimationNode> get_animation_node_by_path(const StringName& p_path) const
 	{
 		Ref<AnimationNode> current = root_animation_node;
-
 		int name_count = String(p_path).substr(0, String(p_path).length() - 1).count("/");
 		for (int i = 0; i < name_count; i++) {
 			if (current.is_null()) {
@@ -631,9 +525,5 @@ public:
 	AnimationTree();
 	~AnimationTree();
 };
-
-#ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST(AnimationTree::AnimationProcessCallback);
-#endif // DISABLE_DEPRECATED
 
 

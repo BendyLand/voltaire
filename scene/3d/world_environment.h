@@ -35,9 +35,8 @@
 #include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"
 
-class WorldEnvironment : public Node {
-	VLTRCLASS(WorldEnvironment, Node);
-
+class WorldEnvironment : public Node
+{
 	Ref<Environment> environment;
 	Ref<CameraAttributes> camera_attributes;
 	Ref<Compositor> compositor;
@@ -51,16 +50,18 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_environment(const Ref<Environment> &p_environment);
+	void set_environment(const Ref<Environment>& p_environment);
 	Ref<Environment> get_environment() const;
 
-	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
+	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
-	void set_compositor(const Ref<Compositor> &p_compositor);
+	void set_compositor(const Ref<Compositor>& p_compositor);
 	Ref<Compositor> get_compositor() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	WorldEnvironment();
 };
+
+

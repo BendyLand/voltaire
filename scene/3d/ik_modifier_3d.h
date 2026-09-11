@@ -112,7 +112,6 @@ protected:
 				settings[p_count - i] = memnew(T);
 			}
 		}
-		this->obj->notify_property_list_changed();
 	}
 
 	template <typename T> LocalVector<T*> _cast_settings() const

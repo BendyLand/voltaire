@@ -34,21 +34,22 @@
 
 class AudioEffectDistortion;
 
-class AudioEffectDistortionInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectDistortionInstance, AudioEffectInstance);
+class AudioEffectDistortionInstance : public AudioEffectInstance
+{
 	friend class AudioEffectDistortion;
 	Ref<AudioEffectDistortion> base;
 	float h[2];
 
 public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
 };
 
-class AudioEffectDistortion : public AudioEffect {
-	VLTRCLASS(AudioEffectDistortion, AudioEffect);
-
+class AudioEffectDistortion : public AudioEffect
+{
 public:
-	enum Mode {
+	enum Mode
+	{
 		MODE_CLIP,
 		MODE_ATAN,
 		MODE_LOFI,
@@ -87,4 +88,4 @@ public:
 	AudioEffectDistortion();
 };
 
-VARIANT_ENUM_CAST(AudioEffectDistortion::Mode)
+

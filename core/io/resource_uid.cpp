@@ -35,7 +35,6 @@
 #include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"
 #include "core/math/random_pcg.h"
-#include "core/object/class_db.h"
 #include "resource_uid.h"
 
 // These constants are off by 1, causing the 'z' and '9' characters never to be used.
@@ -136,14 +135,8 @@ ResourceUID::ID ResourceUID::create_id_for_path(const String& p_path)
 {
 	ID id = INVALID_ID;
 	RandomPCG rng;
-
-	const String project_name = GLOBAL_GET("application/config/name");
-	// Use lowercase file name as random seed.
-	// This ensures that case differences don't cause UIDs to shift on case-insensitive filesystems.
-	// The downside is that identical files with different case (but otherwise identical name) will
-	// run into a hash collision, but this is a very rare scenario.
 	rng.seed(
-		project_name.hash64() * p_path.to_lower().hash64() * FileAccess::get_md5(p_path).hash64());
+		p_path.hash64() * p_path.to_lower().hash64() * FileAccess::get_md5(p_path).hash64());
 
 	while (true) {
 		int64_t num1 = rng.rand();

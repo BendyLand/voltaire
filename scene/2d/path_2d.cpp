@@ -30,8 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "path_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/timer.h"
@@ -141,156 +139,7 @@ void Path2D::_debug_free()
 	}
 }
 
-void Path2D::_debug_update()
-{
-	ERR_FAIL_NULL(RS::get_singleton());
-
-	RenderingServer* rs = RS::get_singleton();
-
-	ERR_FAIL_NULL(SceneTree::get_singleton());
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-
-	const bool path_debug_enabled =
-		(Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_paths_hint());
-
-	if (!path_debug_enabled) {
-		_debug_free();
-		return;
-	}
-
-	if (debug_mesh_rid.is_null() || debug_instance.is_null()) {
-		_debug_create();
-	}
-
-	rs->mesh_clear(debug_mesh_rid);
-
-	if (curve.is_null()) {
-		return;
-	}
-	if (curve->get_point_count() < 2) {
-		return;
-	}
-
-	const real_t baked_length = curve->get_baked_length();
-
-	if (baked_length <= CMP_EPSILON) {
-		return;
-	}
-
-	const Color debug_color = get_tree()->get_debug_paths_color();
-
-	bool debug_paths_show_fish_bones = true;
-
-	real_t sample_interval = 10.0;
-
-	const int sample_count = int(baked_length / sample_interval) + 2;
-	sample_interval = baked_length / (sample_count - 1); // Recalculate real interval length.
-
-	Vector<Transform2D> samples;
-	samples.resize(sample_count);
-	Transform2D* samples_ptrw = samples.ptrw();
-
-	for (int i = 0; i < sample_count; i++) {
-		samples_ptrw[i] = curve->sample_baked_with_rotation(i * sample_interval, false);
-	}
-
-	const Transform2D* samples_ptr = samples.ptr();
-
-	// Draw curve segments
-	{
-		Vector<Vector2> ribbon;
-		ribbon.resize(sample_count);
-		Vector2* ribbon_ptrw = ribbon.ptrw();
-
-		for (int i = 0; i < sample_count; i++) {
-			ribbon_ptrw[i] = samples_ptr[i].get_origin();
-		}
-
-		Array ribbon_array;
-		ribbon_array.resize(Mesh::ARRAY_MAX);
-		ribbon_array[Mesh::ARRAY_VERTEX] = ribbon;
-		Vector<Color> ribbon_color;
-		ribbon_color.resize(ribbon.size());
-		ribbon_color.fill(debug_color);
-		ribbon_array[Mesh::ARRAY_COLOR] = ribbon_color;
-
-		rs->mesh_add_surface_from_arrays(debug_mesh_rid, RSE::PRIMITIVE_LINE_STRIP, ribbon_array,
-			Array(), Dictionary(), RSE::ARRAY_FLAG_USE_2D_VERTICES);
-	}
-
-	// Render path fish bones.
-	if (debug_paths_show_fish_bones) {
-		int fish_bones_interval = 4;
-
-		const int vertex_per_bone = 4;
-		Vector<Vector2> bones;
-		bones.resize(sample_count * vertex_per_bone);
-		Vector2* bones_ptrw = bones.ptrw();
-
-		for (int i = 0; i < sample_count; i += fish_bones_interval) {
-			const Transform2D& sample_transform = samples_ptr[i];
-
-			const Vector2 point = sample_transform.get_origin();
-			const Vector2& side = sample_transform.columns[1];
-			const Vector2& forward = sample_transform.columns[0];
-
-			const int bone_idx = i * vertex_per_bone;
-
-			bones_ptrw[bone_idx] = point;
-			bones_ptrw[bone_idx + 1] = point + (side - forward) * 5;
-			bones_ptrw[bone_idx + 2] = point;
-			bones_ptrw[bone_idx + 3] = point + (-side - forward) * 5;
-		}
-
-		Array bone_array;
-		bone_array.resize(Mesh::ARRAY_MAX);
-		bone_array[Mesh::ARRAY_VERTEX] = bones;
-		Vector<Color> bones_color;
-		bones_color.resize(bones.size());
-		bones_color.fill(debug_color);
-		bone_array[Mesh::ARRAY_COLOR] = bones_color;
-
-		rs->mesh_add_surface_from_arrays(debug_mesh_rid, RSE::PRIMITIVE_LINES, bone_array, Array(),
-			Dictionary(), RSE::ARRAY_FLAG_USE_2D_VERTICES);
-	}
-
-	rs->canvas_item_clear(get_canvas_item());
-	rs->canvas_item_add_mesh(get_canvas_item(), debug_mesh_rid, Transform2D());
-}
 #endif // DEBUG_ENABLED
-
-void Path2D::_curve_changed()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	for (int i = 0; i < get_child_count(); i++) {
-		PathFollow2D* follow = Object::cast_to<PathFollow2D>(get_child(i));
-		if (follow) {
-			follow->path_changed();
-		}
-	}
-
-	if (Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_paths_hint()) {
-		queue_redraw();
-	}
-}
-
-void Path2D::set_curve(const Ref<Curve2D>& p_curve)
-{
-	if (curve.is_valid()) {
-		curve->disconnect_changed(callable_mp(this, &Path2D::_curve_changed));
-	}
-
-	curve = p_curve;
-
-	if (curve.is_valid()) {
-		curve->connect_changed(callable_mp(this, &Path2D::_curve_changed));
-	}
-
-	_curve_changed();
-}
 
 Ref<Curve2D> Path2D::get_curve() const { return curve; }
 
@@ -338,66 +187,9 @@ void PathFollow2D::_update_transform()
 	}
 }
 
-void PathFollow2D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_READY: {
-		if (Engine::get_singleton()->is_editor_hint()) {
-			update_timer = memnew(Timer);
-			update_timer->set_wait_time(0.2);
-			update_timer->set_one_shot(true);
-			update_timer->connect("timeout", callable_mp(this, &PathFollow2D::_update_transform));
-			add_child(update_timer, false, Node::INTERNAL_MODE_BACK);
-		}
-	} break;
-
-	case NOTIFICATION_ENTER_TREE: {
-		path = Object::cast_to<Path2D>(get_parent());
-		if (path) {
-			_update_transform();
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		path = nullptr;
-	} break;
-	}
-}
-
 void PathFollow2D::set_cubic_interpolation_enabled(bool p_enabled) { cubic = p_enabled; }
 
 bool PathFollow2D::is_cubic_interpolation_enabled() const { return cubic; }
-
-void PathFollow2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "offset") {
-		real_t max = 10000.0;
-		if (path && path->get_curve().is_valid()) {
-			max = path->get_curve()->get_baked_length();
-		}
-
-		p_property.hint_string = "0," + rtos(max) + ",0.01,or_less,or_greater";
-	}
-}
-
-PackedStringArray PathFollow2D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
-
-	if (is_visible_in_tree() && is_inside_tree()) {
-		if (!Object::cast_to<Path2D>(get_parent())) {
-			warnings.push_back(
-				RTR("PathFollow2D only works when set as a child of a Path2D node."));
-		}
-	}
-
-	return warnings;
-}
-
-void PathFollow2D::_bind_methods() {}
 
 void PathFollow2D::set_progress(real_t p_progress)
 {

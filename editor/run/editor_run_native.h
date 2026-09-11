@@ -35,15 +35,14 @@
 #include "scene/gui/menu_button.h"
 #include "scene/gui/rich_text_label.h"
 
-class EditorRunNative : public HBoxContainer {
-	VLTRCLASS(EditorRunNative, HBoxContainer);
-
-	RichTextLabel *result_dialog_log = nullptr;
-	AcceptDialog *result_dialog = nullptr;
-	ConfirmationDialog *run_native_confirm = nullptr;
+class EditorRunNative : public HBoxContainer
+{
+	RichTextLabel* result_dialog_log = nullptr;
+	AcceptDialog* result_dialog = nullptr;
+	ConfirmationDialog* run_native_confirm = nullptr;
 	bool run_confirmed = false;
 
-	MenuButton *remote_debug = nullptr;
+	MenuButton* remote_debug = nullptr;
 	bool first = true;
 
 	int resume_id = -1;
@@ -62,3 +61,5 @@ public:
 
 	EditorRunNative();
 };
+
+

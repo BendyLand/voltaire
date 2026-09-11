@@ -30,34 +30,37 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 
 class InputEvent;
 class Node;
 class Shortcut;
 
-class ViewPanner : public RefCounted {
-	VLTRCLASS(ViewPanner, RefCounted);
-
+class ViewPanner : public RefCounted
+{
 public:
-	enum ControlScheme {
+	enum ControlScheme
+	{
 		SCROLL_ZOOMS,
 		SCROLL_PANS,
 	};
 
-	enum PanAxis {
+	enum PanAxis
+	{
 		PAN_AXIS_BOTH,
 		PAN_AXIS_HORIZONTAL,
 		PAN_AXIS_VERTICAL,
 	};
 
-	enum DragType {
+	enum DragType
+	{
 		DRAG_TYPE_NONE,
 		DRAG_TYPE_PAN,
 		DRAG_TYPE_ZOOM,
 	};
 
-	enum ZoomStyle {
+	enum ZoomStyle
+	{
 		ZOOM_VERTICAL,
 		ZOOM_HORIZONTAL,
 	};
@@ -82,14 +85,10 @@ private:
 
 	Ref<Shortcut> pan_view_shortcut;
 
-	Callable pan_callback;
-	Callable zoom_callback;
-
 	ControlScheme control_scheme = SCROLL_ZOOMS;
-	Node *warped_panning_owner = nullptr;
+	Node* warped_panning_owner = nullptr;
 
 public:
-	void set_callbacks(Callable p_pan_callback, Callable p_zoom_callback);
 	void set_control_scheme(ControlScheme p_scheme);
 	void set_enable_rmb(bool p_enable);
 	void set_pan_shortcut(Ref<Shortcut> p_shortcut);
@@ -100,13 +99,15 @@ public:
 	void set_zoom_style(ZoomStyle p_zoom_style);
 
 	void setup(ControlScheme p_scheme, Ref<Shortcut> p_shortcut, bool p_simple_panning);
-	void setup_warped_panning(Node *p_owner, bool p_allowed);
+	void setup_warped_panning(Node* p_owner, bool p_allowed);
 
 	bool is_panning() const;
 	void set_force_drag(bool p_force);
 
-	bool gui_input(const Ref<InputEvent> &p_ev, Rect2 p_canvas_rect = Rect2());
+	bool gui_input(const Ref<InputEvent>& p_ev, Rect2 p_canvas_rect = Rect2());
 	void release_pan_key();
 
 	ViewPanner();
 };
+
+

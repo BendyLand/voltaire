@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
 #include "navigation_path_query_parameters_3d.h"
 
 void NavigationPathQueryParameters3D::set_pathfinding_algorithm(
@@ -84,14 +82,12 @@ uint32_t NavigationPathQueryParameters3D::get_navigation_layers() const
 	return navigation_layers;
 }
 
-void NavigationPathQueryParameters3D::set_metadata_flags(
-	BitField<NavigationPathQueryParameters3D::PathMetadataFlags> p_flags)
+void NavigationPathQueryParameters3D::set_metadata_flags(uint32_t p_flags)
 {
 	metadata_flags = (int64_t)p_flags;
 }
 
-BitField<NavigationPathQueryParameters3D::PathMetadataFlags>
-NavigationPathQueryParameters3D::get_metadata_flags() const
+uint32_t NavigationPathQueryParameters3D::get_metadata_flags() const
 {
 	return (int64_t)metadata_flags;
 }
@@ -109,42 +105,6 @@ void NavigationPathQueryParameters3D::set_simplify_epsilon(real_t p_epsilon)
 }
 
 real_t NavigationPathQueryParameters3D::get_simplify_epsilon() const { return simplify_epsilon; }
-
-void NavigationPathQueryParameters3D::set_included_regions(const TypedArray<RID>& p_regions)
-{
-	_included_regions.resize(p_regions.size());
-	for (uint32_t i = 0; i < _included_regions.size(); i++) {
-		_included_regions[i] = p_regions[i];
-	}
-}
-
-TypedArray<RID> NavigationPathQueryParameters3D::get_included_regions() const
-{
-	TypedArray<RID> r_regions;
-	r_regions.resize(_included_regions.size());
-	for (uint32_t i = 0; i < _included_regions.size(); i++) {
-		r_regions[i] = _included_regions[i];
-	}
-	return r_regions;
-}
-
-void NavigationPathQueryParameters3D::set_excluded_regions(const TypedArray<RID>& p_regions)
-{
-	_excluded_regions.resize(p_regions.size());
-	for (uint32_t i = 0; i < _excluded_regions.size(); i++) {
-		_excluded_regions[i] = p_regions[i];
-	}
-}
-
-TypedArray<RID> NavigationPathQueryParameters3D::get_excluded_regions() const
-{
-	TypedArray<RID> r_regions;
-	r_regions.resize(_excluded_regions.size());
-	for (uint32_t i = 0; i < _excluded_regions.size(); i++) {
-		r_regions[i] = _excluded_regions[i];
-	}
-	return r_regions;
-}
 
 void NavigationPathQueryParameters3D::set_path_return_max_length(float p_length)
 {
@@ -185,7 +145,5 @@ float NavigationPathQueryParameters3D::get_path_search_max_distance() const
 {
 	return path_search_max_distance;
 }
-
-void NavigationPathQueryParameters3D::_bind_methods() {}
 
 

@@ -40,20 +40,18 @@ class OptionButton;
 class PanelContainer;
 class VBoxContainer;
 
-class SettingLabel : public Label {
-	VLTRCLASS(SettingLabel, Label);
-
+class SettingLabel : public Label
+{
 	String setting_name;
 
 public:
-	virtual Control *make_custom_tooltip(const String &p_text) const override;
+	virtual Control* make_custom_tooltip(const String& p_text) const override;
 
-	SettingLabel(const String &p_text, const String &p_setting);
+	SettingLabel(const String& p_text, const String& p_setting);
 };
 
-class QuickSettingsDialog : public AcceptDialog {
-	VLTRCLASS(QuickSettingsDialog, AcceptDialog);
-
+class QuickSettingsDialog : public AcceptDialog
+{
 #ifndef ANDROID_ENABLED
 	Vector<String> editor_languages;
 #endif
@@ -67,25 +65,26 @@ class QuickSettingsDialog : public AcceptDialog {
 	void _fetch_setting_values();
 	void _update_current_values();
 
-	PanelContainer *settings_list_panel = nullptr;
-	VBoxContainer *settings_list = nullptr;
+	PanelContainer* settings_list_panel = nullptr;
+	VBoxContainer* settings_list = nullptr;
 
-	void _add_setting_control(const String &p_text, const String &p_setting, Control *p_control);
+	void _add_setting_control(const String& p_text, const String& p_setting, Control* p_control);
 
 #ifndef ANDROID_ENABLED
-	// The language selection dropdown doesn't work on Android (as the setting isn't saved), see GH-60353.
-	// Also, the dropdown it spawns is very tall and can't be scrolled without a hardware mouse.
-	OptionButton *language_option_button = nullptr;
+	// The language selection dropdown doesn't work on Android (as the setting isn't saved), see
+	// GH-60353. Also, the dropdown it spawns is very tall and can't be scrolled without a hardware
+	// mouse.
+	OptionButton* language_option_button = nullptr;
 #endif
-	OptionButton *style_option_button = nullptr;
-	OptionButton *theme_option_button = nullptr;
-	OptionButton *scale_option_button = nullptr;
-	OptionButton *network_mode_option_button = nullptr;
-	OptionButton *check_for_update_button = nullptr;
-	OptionButton *directory_naming_convention_button = nullptr;
+	OptionButton* style_option_button = nullptr;
+	OptionButton* theme_option_button = nullptr;
+	OptionButton* scale_option_button = nullptr;
+	OptionButton* network_mode_option_button = nullptr;
+	OptionButton* check_for_update_button = nullptr;
+	OptionButton* directory_naming_convention_button = nullptr;
 
-	Label *custom_theme_label = nullptr;
-	EditorSettingsDialog *editor_settings_dialog = nullptr;
+	Label* custom_theme_label = nullptr;
+	EditorSettingsDialog* editor_settings_dialog = nullptr;
 
 #ifndef ANDROID_ENABLED
 	void _language_selected(int p_id);
@@ -96,11 +95,10 @@ class QuickSettingsDialog : public AcceptDialog {
 	void _network_mode_selected(int p_id);
 	void _check_for_update_selected(int p_id);
 	void _directory_naming_convention_selected(int p_id);
-	void _set_setting_value(const String &p_setting, const Variant &p_value, bool p_restart_required = false);
 	void _show_full_settings();
 
-	Label *restart_required_label = nullptr;
-	Button *restart_required_button = nullptr;
+	Label* restart_required_label = nullptr;
+	Button* restart_required_button = nullptr;
 
 	void _request_restart();
 
@@ -109,7 +107,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	void update_size_limits(const Size2 &p_max_popup_size);
+	void update_size_limits(const Size2& p_max_popup_size);
 
 	QuickSettingsDialog();
 };
+
+

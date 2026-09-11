@@ -32,19 +32,21 @@
 
 #include "core/input/input_enums.h"
 #include "core/typedefs.h"
-#include "core/variant/variant.h"
+#include "core/types.h"
 
 /**
  * Multi-Platform abstraction for accessing to MIDI.
  */
 
-class MIDIDriver {
-	static MIDIDriver *singleton;
+class MIDIDriver
+{
+	static MIDIDriver* singleton;
 	static uint8_t last_received_message;
 
 protected:
 	// Categories of message for parser logic.
-	enum class MessageCategory {
+	enum class MessageCategory
+	{
 		Data,
 		Voice,
 		SysExBegin,
@@ -57,14 +59,16 @@ protected:
 	// p_data_len is the length of the buffer passed at p_data, this must be
 	// at least equal to the data required by the passed message type, but
 	// may be larger. Only the required data will be read.
-	static void send_event(int p_device_index, uint8_t p_status,
-			const uint8_t *p_data = nullptr, size_t p_data_len = 0);
+	static void send_event(int p_device_index, uint8_t p_status, const uint8_t* p_data = nullptr,
+		size_t p_data_len = 0);
 
-	class Parser {
+	class Parser
+	{
 	public:
 		Parser() = default;
-		Parser(int p_device_index) :
-				device_index{ p_device_index } {}
+
+		Parser(int p_device_index) : device_index{p_device_index} {}
+
 		virtual ~Parser() = default;
 
 		// Push a byte of MIDI stream. Any completed messages will be
@@ -92,7 +96,7 @@ protected:
 		static constexpr size_t DATA_BUFFER_SIZE = 2;
 
 		uint8_t status_byte = 0;
-		uint8_t data_buffer[DATA_BUFFER_SIZE] = { 0 };
+		uint8_t data_buffer[DATA_BUFFER_SIZE] = {0};
 		size_t received_data_len = 0;
 		bool skipping_sys_ex = false;
 	};
@@ -100,7 +104,7 @@ protected:
 	PackedStringArray connected_input_names;
 
 public:
-	static MIDIDriver *get_singleton();
+	static MIDIDriver* get_singleton();
 
 	MIDIDriver();
 	virtual ~MIDIDriver() = default;
@@ -110,3 +114,5 @@ public:
 
 	PackedStringArray get_connected_inputs() const;
 };
+
+

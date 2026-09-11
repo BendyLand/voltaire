@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "core/doc_data.h"
 #include "core/templates/rb_set.h"
+#include "core/types.h"
 
 class XMLParser;
 
@@ -39,13 +39,11 @@ class DocTools
 {
 public:
 	String version;
-	HashMap<String, DocData::ClassDoc> class_list;
 	HashMap<String, RBSet<String, NaturalNoCaseComparator>> inheriting;
 
 	static Error erase_classes(const String& p_dir);
 
 	void merge_from(const DocTools& p_data);
-	void add_doc(const DocData::ClassDoc& p_class_doc);
 	void remove_doc(const String& p_class_name);
 	void remove_script_doc_by_path(const String& p_path);
 	bool has_doc(const String& p_class_name);
@@ -56,7 +54,7 @@ public:
 		GENERATE_FLAG_EXTENSION_CLASSES_ONLY = (1 << 1),
 	};
 
-	void generate(BitField<GenerateFlags> p_flags = {});
+	void generate(uint32_t p_flags = {});
 	Error load_classes(const String& p_dir);
 	Error save_classes(const String& p_default_path, const HashMap<String, String>& p_class_path,
 		bool p_use_relative_schema = true);

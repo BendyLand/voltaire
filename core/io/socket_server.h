@@ -33,21 +33,21 @@
 #include "core/io/net_socket.h"
 #include "core/io/stream_peer_socket.h"
 
-class SocketServer : public RefCounted {
-	VLTRCLASS(SocketServer, RefCounted);
-
+class SocketServer : public RefCounted
+{
 protected:
-	enum {
+	enum
+	{
 		MAX_PENDING_CONNECTIONS = 8,
 	};
 
 	Ref<NetSocket> _sock;
 	static void _bind_methods();
 
-	Error _listen(const NetSocket::Address &p_addr);
+	Error _listen(const NetSocket::Address& p_addr);
 
-	template <typename T>
-	Ref<T> _take_connection() {
+	template <typename T> Ref<T> _take_connection()
+	{
 		Ref<T> conn;
 		if (!is_connection_available()) {
 			return conn;
@@ -75,3 +75,5 @@ public:
 	SocketServer();
 	~SocketServer();
 };
+
+

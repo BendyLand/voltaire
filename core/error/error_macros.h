@@ -33,7 +33,6 @@
 #include "core/typedefs.h"
 
 class String;
-class ObjectID;
 
 enum ErrorHandlerType
 {
@@ -101,9 +100,6 @@ _NO_INLINE_ void _err_print_index_error(const char* p_function, const char* p_fi
 	const String& p_message, bool p_editor_notify = false, bool p_fatal = false);
 _NO_INLINE_ void _err_flush_stdout();
 
-void _physics_interpolation_warning(const char* p_function, const char* p_file, int p_line,
-	ObjectID p_id, const char* p_warn_string);
-
 #ifdef __GNUC__
 // #define FUNCTION_STR __PRETTY_FUNCTION__ - too annoying
 #define FUNCTION_STR __FUNCTION__
@@ -156,8 +152,8 @@ void _physics_interpolation_warning(const char* p_function, const char* p_file, 
 		_err_print_index_error(                                                                    \
 			FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size));       \
 		return;                                                                                    \
-	}                                                                                              \
-	else                                                                                           \
+	} \
+	else                                                                                         \
 		((void)0)
 
 /**
@@ -169,8 +165,8 @@ void _physics_interpolation_warning(const char* p_function, const char* p_file, 
 		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index),   \
 			_STR(m_size), m_msg);                                                                  \
 		return;                                                                                    \
-	}                                                                                              \
-	else                                                                                           \
+	} \
+	else                                                                                         \
 		((void)0)
 
 /**
@@ -181,8 +177,8 @@ void _physics_interpolation_warning(const char* p_function, const char* p_file, 
 		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index),   \
 			_STR(m_size), m_msg, true);                                                            \
 		return;                                                                                    \
-	}                                                                                              \
-	else                                                                                           \
+	} \
+	else                                                                                         \
 		((void)0)
 
 /**
@@ -197,8 +193,8 @@ void _physics_interpolation_warning(const char* p_function, const char* p_file, 
 		_err_print_index_error(                                                                    \
 			FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size));       \
 		return m_retval;                                                                           \
-	}                                                                                              \
-	else                                                                                           \
+	} \
+	else                                                                                         \
 		((void)0)
 
 /**
@@ -934,8 +930,7 @@ void _physics_interpolation_warning(const char* p_function, const char* p_file, 
  * 1) Bottleneck code where a check in release would be too expensive.
  * 2) Situations where the check would fail obviously and straight away during the maintenance of
  * the code (i.e. strict conditions that should be true no matter what) and that can't fail for
- * other contributors once the code is finish
-ed and merged.
+ * other contributors once the code is finish edand merged.
  */
 #ifdef DEV_ENABLED
 #define DEV_ASSERT(m_cond)                                                                         \
@@ -944,9 +939,8 @@ ed and merged.
 			"FATAL: DEV_ASSERT failed  \"" _STR(m_cond) "\" is false.");                           \
 		_err_flush_stdout();                                                                       \
 		GENERATE_TRAP();                                                                           \
-	}
-	else                                                                                         \
-		((void)0)
+	} \
+	else ((void)0)
 #else
 #define DEV_ASSERT(m_cond)
 #endif
@@ -960,9 +954,8 @@ ed and merged.
 				"DEV_CHECK_ONCE failed  \"" _STR(m_cond) "\" is false.");                          \
 			first_print = false;                                                                   \
 		}                                                                                          \
-	}
-	else                                                                                         \
-		((void)0)
+	} \
+	else((void)0)
 #else
 #define DEV_CHECK_ONCE(m_cond)
 #endif

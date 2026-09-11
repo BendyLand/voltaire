@@ -34,12 +34,11 @@
 
 class Material;
 
-class DrawableTexture2D : public Texture2D {
-	VLTRCLASS(DrawableTexture2D, Texture2D);
-	RES_BASE_EXTENSION("tex");
-
+class DrawableTexture2D : public Texture2D
+{
 public:
-	enum DrawableFormat {
+	enum DrawableFormat
+	{
 		DRAWABLE_FORMAT_RGBA8,
 		DRAWABLE_FORMAT_RGBA8_SRGB,
 		DRAWABLE_FORMAT_RGBAH,
@@ -74,14 +73,20 @@ public:
 	virtual Image::Format get_format() const override;
 	virtual RID get_rid() const override;
 
-	virtual void draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile = false, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false, bool p_clip_uv = true) const override;
+	virtual void draw(RID p_canvas_item, const Point2& p_pos,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
+		bool p_clip_uv = true) const override;
 
-	void setup(int p_width, int p_height, DrawableFormat p_format, const Color &p_modulate = Color(1, 1, 1, 1), bool p_use_mipmaps = false);
+	void setup(int p_width, int p_height, DrawableFormat p_format,
+		const Color& p_modulate = Color(1, 1, 1, 1), bool p_use_mipmaps = false);
 
-	void blit_rect(const Rect2i p_rect, const Ref<Texture2D> &p_source, const Color &p_modulate = Color(1, 1, 1, 1), int p_mipmap = 0, const Ref<Material> &p_material = Ref<Material>());
-	void blit_rect_multi(const Rect2i p_rect, const TypedArray<Texture2D> &p_sources, const TypedArray<DrawableTexture2D> &p_extra_targets, const Color &p_modulate = Color(1, 1, 1, 1), int p_mipmap = 0, const Ref<Material> &p_material = Ref<Material>());
+	void blit_rect(const Rect2i p_rect, const Ref<Texture2D>& p_source,
+		const Color& p_modulate = Color(1, 1, 1, 1), int p_mipmap = 0,
+		const Ref<Material>& p_material = Ref<Material>());
 
 	virtual Ref<Image> get_image() const override;
 
@@ -91,4 +96,4 @@ public:
 	~DrawableTexture2D();
 };
 
-VARIANT_ENUM_CAST(DrawableTexture2D::DrawableFormat)
+

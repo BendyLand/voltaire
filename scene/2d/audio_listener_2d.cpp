@@ -29,45 +29,7 @@
 /**************************************************************************/
 
 #include "audio_listener_2d.h"
-#include "core/object/class_db.h"
 #include "scene/main/viewport.h"
-
-bool AudioListener2D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "current") {
-		if (p_value.operator bool()) {
-			make_current();
-		}
-		else {
-			clear_current();
-		}
-	}
-	else {
-		return false;
-	}
-	return true;
-}
-
-bool AudioListener2D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "current") {
-		if (is_part_of_edited_scene()) {
-			r_ret = current;
-		}
-		else {
-			r_ret = is_current();
-		}
-	}
-	else {
-		return false;
-	}
-	return true;
-}
-
-void AudioListener2D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	p_list->push_back(PropertyInfo(Variant::BOOL, PNAME("current")));
-}
 
 void AudioListener2D::_notification(int p_what)
 {
@@ -119,8 +81,6 @@ bool AudioListener2D::is_current() const
 		return current;
 	}
 }
-
-void AudioListener2D::_bind_methods() {}
 
 AudioListener2D::AudioListener2D() { set_hide_clip_children(true); }
 

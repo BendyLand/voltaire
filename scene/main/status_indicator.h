@@ -35,7 +35,6 @@
 #include "servers/display/display_server_enums.h"
 
 class StatusIndicator : public Node {
-	VLTRCLASS(StatusIndicator, Node);
 
 	Ref<Texture2D> icon;
 	String tooltip;

@@ -31,13 +31,12 @@
 #ifndef WEB_ENABLED
 
 #include <miniupnpc/upnpcommands.h>
-#include "core/object/class_db.h"
 #include "upnp_device_miniupnp.h"
 #include "upnp_miniupnp.h"
 
 UPNPDevice* UPNPDeviceMiniUPNP::_create(bool p_notify_postinitialize)
 {
-	return static_cast<UPNPDevice*>(memnew(UPNPDeviceMiniUPNP).ptr());
+	return static_cast<UPNPDevice*>(memnew(UPNPDeviceMiniUPNP));
 }
 
 void UPNPDeviceMiniUPNP::make_default() { UPNPDevice::_create = UPNPDeviceMiniUPNP::_create; }

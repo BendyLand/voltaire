@@ -40,10 +40,10 @@ class MenuButton;
 class MeshInstance3D;
 class StandardMaterial3D;
 
-class Polygon3DEditor : public HBoxContainer {
-	VLTRCLASS(Polygon3DEditor, HBoxContainer);
-
-	enum Mode {
+class Polygon3DEditor : public HBoxContainer
+{
+	enum Mode
+	{
 		MODE_CREATE,
 		MODE_EDIT,
 
@@ -51,18 +51,18 @@ class Polygon3DEditor : public HBoxContainer {
 
 	Mode mode;
 
-	Button *button_create = nullptr;
-	Button *button_edit = nullptr;
+	Button* button_create = nullptr;
+	Button* button_edit = nullptr;
 
 	Ref<StandardMaterial3D> line_material;
 	Ref<StandardMaterial3D> handle_material;
 
-	Panel *panel = nullptr;
-	Node3D *node = nullptr;
+	Panel* panel = nullptr;
+	Node3D* node = nullptr;
 	Ref<Resource> node_resource;
 	Ref<ImmediateMesh> imesh;
-	MeshInstance3D *imgeom = nullptr;
-	MeshInstance3D *pointsm = nullptr;
+	MeshInstance3D* imgeom = nullptr;
+	MeshInstance3D* pointsm = nullptr;
 	Ref<ArrayMesh> m;
 
 	int edited_point = 0;
@@ -80,32 +80,36 @@ class Polygon3DEditor : public HBoxContainer {
 
 	float _get_depth();
 	PackedVector2Array _get_polygon();
-	void _set_polygon(const PackedVector2Array &p_poly);
+	void _set_polygon(const PackedVector2Array& p_poly);
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 	static void _bind_methods();
 
 public:
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event);
-	void edit(Node *p_node);
+	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event);
+	void edit(Node* p_node);
 	Polygon3DEditor();
 	~Polygon3DEditor();
 };
 
-class Polygon3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Polygon3DEditorPlugin, EditorPlugin);
+class Polygon3DEditorPlugin : public EditorPlugin
+{
 
-	Polygon3DEditor *polygon_editor = nullptr;
+	Polygon3DEditor* polygon_editor = nullptr;
 
 public:
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override { return polygon_editor->forward_3d_gui_input(p_camera, p_event); }
+	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
+		Camera3D* p_camera, const Ref<InputEvent>& p_event) override
+	{
+		return polygon_editor->forward_3d_gui_input(p_camera, p_event);
+	}
 
 	virtual String get_plugin_name() const override { return "Polygon3DEditor"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	Polygon3DEditorPlugin();
 };
+
+

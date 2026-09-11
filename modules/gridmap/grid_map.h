@@ -39,61 +39,65 @@ class NavigationMeshSourceGeometryData3D;
 class PhysicsMaterial;
 #endif // PHYSICS_3D_DISABLED
 
-class GridMap : public Node3D {
-	VLTRCLASS(GridMap, Node3D);
-
-	enum DebugVisibilityMode {
+class GridMap : public Node3D
+{
+	enum DebugVisibilityMode
+	{
 		DEBUG_VISIBILITY_MODE_DEFAULT,
 		DEBUG_VISIBILITY_MODE_FORCE_SHOW,
 		DEBUG_VISIBILITY_MODE_FORCE_HIDE,
 	};
 
-	enum {
+	enum
+	{
 		MAP_DIRTY_TRANSFORMS = 1,
 		MAP_DIRTY_INSTANCES = 2,
 	};
 
-	union IndexKey {
-		struct {
+	union IndexKey
+	{
+		struct
+		{
 			int16_t x;
 			int16_t y;
 			int16_t z;
 		};
+
 		uint64_t key = 0;
 
-		static uint32_t hash(const IndexKey &p_key) {
-			return hash_one_uint64(p_key.key);
-		}
-		_FORCE_INLINE_ bool operator<(const IndexKey &p_key) const {
-			return key < p_key.key;
-		}
-		_FORCE_INLINE_ bool operator==(const IndexKey &p_key) const {
-			return key == p_key.key;
-		}
+		static uint32_t hash(const IndexKey& p_key) { return hash_one_uint64(p_key.key); }
 
-		_FORCE_INLINE_ operator Vector3i() const {
-			return Vector3i(x, y, z);
-		}
+		_FORCE_INLINE_ bool operator<(const IndexKey& p_key) const { return key < p_key.key; }
+
+		_FORCE_INLINE_ bool operator==(const IndexKey& p_key) const { return key == p_key.key; }
+
+		_FORCE_INLINE_ operator Vector3i() const { return Vector3i(x, y, z); }
 
 		uint32_t hash() const { return operator Vector3i().hash(); }
 
-		IndexKey(Vector3i p_vector) {
+		IndexKey(Vector3i p_vector)
+		{
 			x = (int16_t)p_vector.x;
 			y = (int16_t)p_vector.y;
 			z = (int16_t)p_vector.z;
 		}
+
 		IndexKey() {}
 	};
 
 	/**
-	 * @brief A Cell is a single cell in the cube map space; it is defined by its coordinates and the populating Item, identified by int id.
+	 * @brief A Cell is a single cell in the cube map space; it is defined by its coordinates and
+	 * the populating Item, identified by int id.
 	 */
-	union Cell {
-		struct {
+	union Cell
+	{
+		struct
+		{
 			unsigned int item : 16;
 			unsigned int rot : 5;
 			unsigned int layer : 8;
 		};
+
 		uint32_t cell = 0;
 	};
 
@@ -101,24 +105,29 @@ class GridMap : public Node3D {
 	 * @brief An Octant is a prism containing Cells, and possibly belonging to an Area.
 	 * A GridMap can have multiple Octants.
 	 */
-	struct Octant {
-		struct NavigationCell {
+	struct Octant
+	{
+		struct NavigationCell
+		{
 			RID region;
 			Transform3D xform;
 			RID navigation_mesh_debug_instance;
 			uint32_t navigation_layers = 1;
 		};
 
-		struct MultimeshInstance {
+		struct MultimeshInstance
+		{
 			RID instance;
 			RID multimesh;
-			struct Item {
+
+			struct Item
+			{
 				int index = 0;
 				Transform3D transform;
 				IndexKey key;
 			};
 
-			Vector<Item> items; //tools only, for changing visibility
+			Vector<Item> items; // tools only, for changing visibility
 		};
 
 		Vector<MultimeshInstance> multimesh_instances;
@@ -135,8 +144,10 @@ class GridMap : public Node3D {
 		HashMap<IndexKey, NavigationCell> navigation_cell_ids;
 	};
 
-	union OctantKey {
-		struct {
+	union OctantKey
+	{
+		struct
+		{
 			int16_t x;
 			int16_t y;
 			int16_t z;
@@ -145,19 +156,16 @@ class GridMap : public Node3D {
 
 		uint64_t key = 0;
 
-		static uint32_t hash(const OctantKey &p_key) {
-			return hash_one_uint64(p_key.key);
-		}
-		_FORCE_INLINE_ bool operator==(const OctantKey &p_key) const {
-			return key == p_key.key;
-		}
+		static uint32_t hash(const OctantKey& p_key) { return hash_one_uint64(p_key.key); }
 
-		//OctantKey(const IndexKey& p_k, int p_item) { indexkey=p_k.key; item=p_item; }
+		_FORCE_INLINE_ bool operator==(const OctantKey& p_key) const { return key == p_key.key; }
+
+		// OctantKey(const IndexKey& p_k, int p_item) { indexkey=p_k.key; item=p_item; }
 		OctantKey() {}
 	};
 
-	OctantKey get_octant_key_from_index_key(const IndexKey &p_index_key) const;
-	OctantKey get_octant_key_from_cell_coords(const Vector3i &p_cell_coords) const;
+	OctantKey get_octant_key_from_index_key(const IndexKey& p_index_key) const;
+	OctantKey get_octant_key_from_cell_coords(const Vector3i& p_cell_coords) const;
 
 #ifndef PHYSICS_3D_DISABLED
 	uint32_t collision_layer = 1;
@@ -183,19 +191,21 @@ class GridMap : public Node3D {
 
 	Ref<MeshLibrary> mesh_library;
 
-	HashMap<OctantKey, Octant *, OctantKey> octant_map;
+	HashMap<OctantKey, Octant*, OctantKey> octant_map;
 	HashMap<IndexKey, Cell, IndexKey> cell_map;
 
 	void _recreate_octant_data();
 
-	struct BakeLight {
+	struct BakeLight
+	{
 		RSE::LightType type = RSE::LightType::LIGHT_DIRECTIONAL;
 		Vector3 pos;
 		Vector3 dir;
 		float param[RSE::LIGHT_PARAM_MAX] = {};
 	};
 
-	_FORCE_INLINE_ Vector3 _octant_get_offset(const OctantKey &p_key) const {
+	_FORCE_INLINE_ Vector3 _octant_get_offset(const OctantKey& p_key) const
+	{
 		return Vector3(p_key.x, p_key.y, p_key.z) * cell_size * octant_size;
 	}
 
@@ -203,13 +213,13 @@ class GridMap : public Node3D {
 	void _update_physics_bodies_collision_properties();
 	void _update_physics_bodies_characteristics();
 #endif // PHYSICS_3D_DISABLED
-	void _octant_enter_world(const OctantKey &p_key);
-	void _octant_exit_world(const OctantKey &p_key);
-	bool _octant_update(const OctantKey &p_key);
-	void _octant_clean_up(const OctantKey &p_key);
-	void _octant_transform(const OctantKey &p_key);
+	void _octant_enter_world(const OctantKey& p_key);
+	void _octant_exit_world(const OctantKey& p_key);
+	bool _octant_update(const OctantKey& p_key);
+	void _octant_clean_up(const OctantKey& p_key);
+	void _octant_transform(const OctantKey& p_key);
 #if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
-	void _update_octant_navigation_debug_edge_connections_mesh(const OctantKey &p_key);
+	void _update_octant_navigation_debug_edge_connections_mesh(const OctantKey& p_key);
 	void _navigation_map_changed(RID p_map);
 	void _update_navigation_debug_edge_connections();
 #endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
@@ -219,14 +229,15 @@ class GridMap : public Node3D {
 	void _update_octants_callback();
 
 #ifndef DISABLE_DEPRECATED
-	void resource_changed(const Ref<Resource> &p_res);
+	void resource_changed(const Ref<Resource>& p_res);
 #endif
 
 	void _clear_internal();
 
 	Vector3 _get_offset() const;
 
-	struct BakedMesh {
+	struct BakedMesh
+	{
 		Ref<Mesh> mesh;
 		RID instance;
 	};
@@ -245,26 +256,24 @@ class GridMap : public Node3D {
 
 	RID debug_octant_line_mesh_rid;
 
-	struct OctantDebug {
+	struct OctantDebug
+	{
 		RID debug_line_mesh_rid;
 		RID debug_line_instance_rid;
 	};
-	HashMap<OctantKey, OctantDebug *, OctantKey> debug_octant_map;
 
-	Array _build_octant_line_mesh_arrays() const;
+	HashMap<OctantKey, OctantDebug*, OctantKey> debug_octant_map;
+
 #endif // DEBUG_ENABLED
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-
 	void _notification(int p_what);
 	void _update_visibility();
 	static void _bind_methods();
 
 public:
-	enum {
+	enum
+	{
 		INVALID_CELL_ITEM = -1
 	};
 
@@ -290,7 +299,6 @@ public:
 	void set_physics_material(Ref<PhysicsMaterial> p_material);
 	Ref<PhysicsMaterial> get_physics_material() const;
 
-	Array get_collision_shapes() const;
 #endif // PHYSICS_3D_DISABLED
 
 	void set_bake_navigation(bool p_bake_navigation);
@@ -301,10 +309,10 @@ public:
 	RID get_navigation_map() const;
 #endif // NAVIGATION_3D_DISABLED
 
-	void set_mesh_library(const Ref<MeshLibrary> &p_mesh_library);
+	void set_mesh_library(const Ref<MeshLibrary>& p_mesh_library);
 	Ref<MeshLibrary> get_mesh_library() const;
 
-	void set_cell_size(const Vector3 &p_size);
+	void set_cell_size(const Vector3& p_size);
 	Vector3 get_cell_size() const;
 
 	void set_octant_size(int p_size);
@@ -317,15 +325,15 @@ public:
 	void set_center_z(bool p_enable);
 	bool get_center_z() const;
 
-	void set_cell_item(const Vector3i &p_position, int p_item, int p_rot = 0);
-	int get_cell_item(const Vector3i &p_position) const;
-	int get_cell_item_orientation(const Vector3i &p_position) const;
-	Basis get_cell_item_basis(const Vector3i &p_position) const;
+	void set_cell_item(const Vector3i& p_position, int p_item, int p_rot = 0);
+	int get_cell_item(const Vector3i& p_position) const;
+	int get_cell_item_orientation(const Vector3i& p_position) const;
+	Basis get_cell_item_basis(const Vector3i& p_position) const;
 	Basis get_basis_with_orthogonal_index(int p_index) const;
-	int get_orthogonal_index_from_basis(const Basis &p_basis) const;
+	int get_orthogonal_index_from_basis(const Basis& p_basis) const;
 
-	Vector3i local_to_map(const Vector3 &p_local_position) const;
-	Vector3 map_to_local(const Vector3i &p_map_position) const;
+	Vector3i local_to_map(const Vector3& p_local_position) const;
+	Vector3 map_to_local(const Vector3i& p_map_position) const;
 
 	void set_cell_scale(float p_scale);
 	float get_cell_scale() const;
@@ -336,52 +344,52 @@ public:
 	TypedArray<Vector3i> get_used_octants() const;
 	TypedArray<Vector3i> get_used_octants_by_item(int p_item) const;
 
-	TypedArray<Vector3i> get_used_cells_in_octant(const Vector3i &p_octant_coords) const;
-	TypedArray<Vector3i> get_used_cells_in_octant_by_item(const Vector3i &p_octant_coords, int p_item) const;
+	TypedArray<Vector3i> get_used_cells_in_octant(const Vector3i& p_octant_coords) const;
+	TypedArray<Vector3i> get_used_cells_in_octant_by_item(
+		const Vector3i& p_octant_coords, int p_item) const;
 
 	// Fastpath functions for native modules that do not use Variant/TypedArray.
-	LocalVector<IndexKey> get_index_keys_in_bounds(const AABB &p_bounds, bool p_used_only = true) const;
-	LocalVector<OctantKey> get_octant_keys_in_bounds(const AABB &p_bounds, bool p_used_only = true) const;
+	LocalVector<IndexKey> get_index_keys_in_bounds(
+		const AABB& p_bounds, bool p_used_only = true) const;
+	LocalVector<OctantKey> get_octant_keys_in_bounds(
+		const AABB& p_bounds, bool p_used_only = true) const;
 
-	TypedArray<Vector3i> get_octants_in_bounds(const AABB &p_bounds) const;
-	TypedArray<Vector3i> get_used_octants_in_bounds(const AABB &p_bounds) const;
+	TypedArray<Vector3i> get_octants_in_bounds(const AABB& p_bounds) const;
+	TypedArray<Vector3i> get_used_octants_in_bounds(const AABB& p_bounds) const;
 
-	Vector3i get_octant_coords_from_cell_coords(const Vector3i &p_cell_coords) const;
+	Vector3i get_octant_coords_from_cell_coords(const Vector3i& p_cell_coords) const;
 
 #ifndef PHYSICS_3D_DISABLED
-	RID get_physics_body_from_octant_coord(const Vector3i &p_octant_coords) const;
+	RID get_physics_body_from_octant_coord(const Vector3i& p_octant_coords) const;
 #endif
-
-	Array get_meshes() const;
 
 	void clear_baked_meshes();
 	void make_baked_meshes(bool p_gen_lightmap_uv = false, float p_lightmap_uv_texel_size = 0.1);
 
 	void clear();
 
-	Array get_bake_meshes();
 	RID get_bake_mesh_instance(int p_idx);
 
 	void set_debug_show_octants(bool p_enable);
 	bool get_debug_show_octants() const;
 
-	void set_debug_octant_color(const Color &p_color);
+	void set_debug_octant_color(const Color& p_color);
 	Color get_debug_octant_color() const;
 
 #ifndef NAVIGATION_3D_DISABLED
 private:
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 
 public:
 #ifndef NAVIGATION_3D_DISABLED
 	static void navmesh_parse_init();
-	static void navmesh_parse_source_geometry(const Ref<NavigationMesh> &p_navigation_mesh, Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node *p_node);
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 
 	GridMap();
 	~GridMap();
 };
 
-VARIANT_ENUM_CAST(GridMap::DebugVisibilityMode);
+

@@ -38,17 +38,17 @@
 	data from an XRHandTracking instance.
  */
 
-class XRHandModifier3D : public SkeletonModifier3D {
-	VLTRCLASS(XRHandModifier3D, SkeletonModifier3D);
-
+class XRHandModifier3D : public SkeletonModifier3D
+{
 public:
-	enum BoneUpdate {
+	enum BoneUpdate
+	{
 		BONE_UPDATE_FULL,
 		BONE_UPDATE_ROTATION_ONLY,
 		BONE_UPDATE_MAX
 	};
 
-	void set_hand_tracker(const StringName &p_tracker_name);
+	void set_hand_tracker(const StringName& p_tracker_name);
 	StringName get_hand_tracker() const;
 
 	void set_bone_update(BoneUpdate p_bone_update);
@@ -61,11 +61,12 @@ public:
 protected:
 	static void _bind_methods();
 
-	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	virtual void _process_modification(double p_delta) override;
 
 private:
-	struct JointData {
+	struct JointData
+	{
 		int bone = -1;
 		int parent_joint = -1;
 	};
@@ -81,4 +82,4 @@ private:
 	void _tracker_changed(StringName p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
 
-VARIANT_ENUM_CAST(XRHandModifier3D::BoneUpdate)
+

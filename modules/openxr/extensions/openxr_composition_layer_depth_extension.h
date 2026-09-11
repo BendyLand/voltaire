@@ -30,28 +30,25 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
-class OpenXRCompositionLayerDepthExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRCompositionLayerDepthExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
+class OpenXRCompositionLayerDepthExtension
+{
 
 public:
-	static OpenXRCompositionLayerDepthExtension *get_singleton();
+	static OpenXRCompositionLayerDepthExtension* get_singleton();
 
 	OpenXRCompositionLayerDepthExtension();
-	virtual ~OpenXRCompositionLayerDepthExtension() override;
+	virtual ~OpenXRCompositionLayerDepthExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
 	bool is_available();
-	virtual int get_composition_layer_count() override;
-	virtual XrCompositionLayerBaseHeader *get_composition_layer(int p_index) override;
-	virtual int get_composition_layer_order(int p_index) override;
+	virtual int get_composition_layer_count();
+	virtual int get_composition_layer_order(int p_index);
 
 private:
-	static OpenXRCompositionLayerDepthExtension *singleton;
+	static OpenXRCompositionLayerDepthExtension* singleton;
 
 	bool available = false;
 };
+
+

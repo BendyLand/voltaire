@@ -38,13 +38,11 @@
 ///////////////////////////////////////
 
 class SkeletonModification2DFABRIK : public SkeletonModification2D {
-	VLTRCLASS(SkeletonModification2DFABRIK, SkeletonModification2D);
 
 private:
 	struct FABRIK_Joint_Data2D {
 		int bone_idx = -1;
 		NodePath bone2d_node;
-		ObjectID bone2d_node_cache;
 
 		Vector2 magnet_position = Vector2(0, 0);
 		bool use_target_rotation = false;
@@ -61,7 +59,6 @@ private:
 	Vector<Transform2D> fabrik_transform_chain;
 
 	NodePath target_node;
-	ObjectID target_node_cache;
 	void update_target_cache();
 
 	float chain_tolarance = 0.01;
@@ -73,12 +70,6 @@ private:
 	void fabrik_joint_update_bone2d_cache(int p_joint_idx);
 	void chain_backwards();
 	void chain_forwards();
-
-protected:
-	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
 	void _execute(float p_delta) override;

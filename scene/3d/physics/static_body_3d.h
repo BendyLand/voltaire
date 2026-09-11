@@ -41,8 +41,6 @@ class NavigationMeshSourceGeometryData3D;
 
 class StaticBody3D : public PhysicsBody3D
 {
-	VLTRCLASS(StaticBody3D, PhysicsBody3D);
-
 private:
 	Vector3 constant_linear_velocity;
 	Vector3 constant_angular_velocity;
@@ -68,7 +66,6 @@ private:
 	void _reload_physics_characteristics();
 
 #ifndef NAVIGATION_3D_DISABLED
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 
 public:

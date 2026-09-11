@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "canvas_layer.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/world_2d.h"
@@ -47,26 +45,6 @@ void CanvasLayer::set_layer(int p_xform)
 }
 
 int CanvasLayer::get_layer() const { return layer; }
-
-void CanvasLayer::set_visible(bool p_visible)
-{
-	if (p_visible == visible) {
-		return;
-	}
-
-	visible = p_visible;
-	this->obj->emit_signal(SceneStringName(visibility_changed));
-
-	for (int i = 0; i < get_child_count(); i++) {
-		CanvasItem* c = Object::cast_to<CanvasItem>(get_child(i));
-		if (c) {
-			RenderingServer::get_singleton()->canvas_item_set_visible(
-				c->get_canvas_item(), p_visible && c->is_visible());
-
-			c->_propagate_visibility_changed(p_visible);
-		}
-	}
-}
 
 void CanvasLayer::show() { set_visible(true); }
 
@@ -174,47 +152,6 @@ Vector2 CanvasLayer::get_scale() const
 	return scale;
 }
 
-void CanvasLayer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (custom_viewport && ObjectDB::get_instance(custom_viewport_id)) {
-			vp = custom_viewport;
-		}
-		else {
-			vp = Node::get_viewport();
-		}
-		ERR_FAIL_NULL_MSG(vp, "Viewport is not initialized.");
-
-		vp->_canvas_layer_add(this);
-		viewport = vp->get_viewport_rid();
-
-		RenderingServer::get_singleton()->viewport_attach_canvas(viewport, canvas);
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(
-			viewport, canvas, transform);
-		_update_follow_viewport();
-
-		if (vp) {
-			get_parent()->connect(SNAME("child_order_changed"),
-				callable_mp(vp, &Viewport::canvas_parent_mark_dirty).bind(get_parent()),
-				Object::CONNECT_REFERENCE_COUNTED);
-			vp->canvas_parent_mark_dirty(get_parent());
-		}
-	} break;
-
-	case NOTIFICATION_EXIT_TREE: {
-		ERR_FAIL_NULL_MSG(vp, "Viewport is not initialized.");
-		get_parent()->disconnect(SNAME("child_order_changed"),
-			callable_mp(vp, &Viewport::canvas_parent_mark_dirty).bind(get_parent()));
-
-		vp->_canvas_layer_remove(this);
-		RenderingServer::get_singleton()->viewport_remove_canvas(viewport, canvas);
-		viewport = RID();
-		_update_follow_viewport(false);
-	} break;
-	}
-}
-
 void CanvasLayer::update_draw_order()
 {
 	if (is_inside_tree()) {
@@ -236,43 +173,6 @@ Size2 CanvasLayer::get_viewport_size() const
 }
 
 RID CanvasLayer::get_viewport() const { return viewport; }
-
-void CanvasLayer::set_custom_viewport(Node* p_viewport)
-{
-	ERR_FAIL_NULL_MSG(p_viewport, "Cannot set viewport to nullptr.");
-	if (is_inside_tree()) {
-		vp->_canvas_layer_remove(this);
-		RenderingServer::get_singleton()->viewport_remove_canvas(viewport, canvas);
-		viewport = RID();
-	}
-
-	custom_viewport = Object::cast_to<Viewport>(p_viewport);
-
-	if (custom_viewport) {
-		custom_viewport_id = custom_viewport->obj->get_instance_id();
-	}
-	else {
-		custom_viewport_id = ObjectID();
-	}
-
-	if (is_inside_tree()) {
-		if (custom_viewport) {
-			vp = custom_viewport;
-		}
-		else {
-			vp = Node::get_viewport();
-		}
-
-		vp->_canvas_layer_add(this);
-		viewport = vp->get_viewport_rid();
-
-		RenderingServer::get_singleton()->viewport_attach_canvas(viewport, canvas);
-		RenderingServer::get_singleton()->viewport_set_canvas_stacking(
-			viewport, canvas, layer, get_index());
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(
-			viewport, canvas, transform);
-	}
-}
 
 Node* CanvasLayer::get_custom_viewport() const { return custom_viewport; }
 

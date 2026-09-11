@@ -31,12 +31,9 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 
 class ResourceFormatSaver : public RefCounted
 {
-	VLTRCLASS(ResourceFormatSaver, RefCounted);
-
 protected:
 	static void _bind_methods();
 

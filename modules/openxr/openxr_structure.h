@@ -30,15 +30,12 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
-
 #include <openxr/openxr.h>
+#include "core/types.h"
 
 // Base class for XrStructureType based headers
-class OpenXRStructureBase : public RefCounted {
-	VLTRCLASS(OpenXRStructureBase, RefCounted);
-
+class OpenXRStructureBase : public RefCounted
+{
 public:
 	/*
 	 * get_header should return a pointer to a proper XrStructureType structure.
@@ -58,17 +55,16 @@ public:
 	 *     return &my_xr_struct;
 	 * }
 	 */
-	virtual void *get_header(void *p_next = nullptr);
+	virtual void* get_header(void* p_next = nullptr);
 	virtual XrStructureType get_structure_type();
 
 	void set_next(const Ref<OpenXRStructureBase> p_next);
 	Ref<OpenXRStructureBase> get_next() const;
-
-protected:
-	static void _bind_methods();
 
 private:
 	Ref<OpenXRStructureBase> next;
 
 	uint64_t _get_structure_type();
 };
+
+

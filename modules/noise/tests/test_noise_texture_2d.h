@@ -33,14 +33,11 @@
 #include "../fastnoise_lite.h"
 #include "../noise_texture_2d.h"
 
-#include "core/object/callable_mp.h"
-#include "core/object/message_queue.h"
 #include "tests/test_macros.h"
 
 namespace TestNoiseTexture2D {
 
 class NoiseTextureTester : public RefCounted {
-	VLTRCLASS(NoiseTextureTester, RefCounted);
 
 	const NoiseTexture2D *const texture;
 

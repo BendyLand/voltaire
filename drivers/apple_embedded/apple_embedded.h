@@ -32,7 +32,6 @@
 
 #include "core/templates/mem_unique_ptr.h"
 #import <CoreHaptics/CoreHaptics.h>
-#include "core/object/object.h"
 
 class AppleEmbedded
 {

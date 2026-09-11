@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
@@ -40,19 +38,6 @@
 #include "scene/gui/box_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/texture_rect.h"
-
-void EditorResourceTooltipPlugin::_thumbnail_ready(const String& p_path,
-	const Ref<Texture2D>& p_preview, const Ref<Texture2D>& p_small_preview, ObjectID p_trect_id)
-{
-	TextureRect* tr = ObjectDB::get_instance<TextureRect>(p_trect_id);
-	if (tr) {
-		tr->set_texture(p_preview);
-	}
-}
-
-void EditorResourceTooltipPlugin::_bind_methods()
-{
-}
 
 VBoxContainer* EditorResourceTooltipPlugin::make_default_tooltip(const String& p_resource_path)
 {
@@ -100,82 +85,14 @@ VBoxContainer* EditorResourceTooltipPlugin::make_default_tooltip(const String& p
 	return vb;
 }
 
-void EditorResourceTooltipPlugin::request_thumbnail(
-	const String& p_path, TextureRect* p_for_control) const
-{
-	ERR_FAIL_NULL(p_for_control);
-	EditorResourcePreview::get_singleton()->queue_resource_preview(
-		p_path, callable_mp(const_cast<EditorResourceTooltipPlugin*>(this),
-					&EditorResourceTooltipPlugin::_thumbnail_ready)
-					.bind(p_for_control->obj->get_instance_id()));
-}
-
 // EditorTextureTooltipPlugin
 
-bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const
-{
-	return true;
-}
-
-Control* EditorTextureTooltipPlugin::make_tooltip_for_path(
-	const String& p_resource_path, const Dictionary& p_metadata, Control* p_base) const
-{
-	HBoxContainer* hb = memnew(HBoxContainer);
-	VBoxContainer* vb = Object::cast_to<VBoxContainer>(p_base);
-	DEV_ASSERT(vb);
-	vb->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-
-	Vector2 dimensions = p_metadata.get("dimensions", Vector2());
-	Label* label = memnew(Label(vformat(TTR(U"Dimensions: %d × %d"), dimensions.x, dimensions.y)));
-	vb->add_child(label);
-
-	TextureRect* tr = memnew(TextureRect);
-	tr->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
-	hb->add_child(tr);
-	request_thumbnail(p_resource_path, tr);
-
-	hb->add_child(vb);
-	return hb;
-}
+bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const { return true; }
 
 // EditorAudioStreamTooltipPlugin
 
-bool EditorAudioStreamTooltipPlugin::handles(const String& p_resource_type) const
-{
-	return true;
-}
-
-Control* EditorAudioStreamTooltipPlugin::make_tooltip_for_path(
-	const String& p_resource_path, const Dictionary& p_metadata, Control* p_base) const
-{
-	VBoxContainer* vb = Object::cast_to<VBoxContainer>(p_base);
-	DEV_ASSERT(vb);
-
-	double length = p_metadata.get("length", 0.0);
-	if (length >= 60.0) {
-		vb->add_child(memnew(Label(
-			vformat(TTR("Length: %0dm %0ds"), int(length / 60.0), int(std::fmod(length, 60))))));
-	}
-	else if (length >= 1.0) {
-		vb->add_child(memnew(Label(vformat(TTR("Length: %0.1fs"), length))));
-	}
-	else {
-		vb->add_child(memnew(Label(vformat(TTR("Length: %0.3fs"), length))));
-	}
-
-	TextureRect* tr = memnew(TextureRect);
-	vb->add_child(tr);
-	request_thumbnail(p_resource_path, tr);
-
-	return vb;
-}
+bool EditorAudioStreamTooltipPlugin::handles(const String& p_resource_type) const { return true; }
 
 bool EditorResourceTooltipPlugin::handles(const String& p_type) const { return false; }
-
-Control* EditorResourceTooltipPlugin::make_tooltip_for_path(
-	const String& p_path, const Dictionary& p_metadata, Control* p_base) const
-{
-	return nullptr;
-}
 
 

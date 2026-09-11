@@ -30,9 +30,8 @@
 
 #pragma once
 
-#include "navigation_region_3d_gizmo_plugin.h"
-
 #include "editor/plugins/editor_plugin.h"
+#include "navigation_region_3d_gizmo_plugin.h"
 
 class AcceptDialog;
 class Button;
@@ -41,28 +40,27 @@ class HBoxContainer;
 class Label;
 class NavigationRegion3D;
 
-class NavigationRegion3DEditor : public Control {
+class NavigationRegion3DEditor : public Control
+{
 	friend class NavigationRegion3DEditorPlugin;
 
-	VLTRCLASS(NavigationRegion3DEditor, Control);
+	AcceptDialog* err_dialog = nullptr;
+	ConfirmationDialog* multibake_dialog = nullptr;
 
-	AcceptDialog *err_dialog = nullptr;
-	ConfirmationDialog *multibake_dialog = nullptr;
+	HBoxContainer* bake_hbox = nullptr;
+	Button* button_bake = nullptr;
+	Button* button_reset = nullptr;
+	Label* bake_info = nullptr;
 
-	HBoxContainer *bake_hbox = nullptr;
-	Button *button_bake = nullptr;
-	Button *button_reset = nullptr;
-	Label *bake_info = nullptr;
+	LocalVector<NavigationRegion3D*> selected_regions;
 
-	LocalVector<NavigationRegion3D *> selected_regions;
-
-	LocalVector<NavigationRegion3D *> regions_to_bake;
-	LocalVector<NavigationRegion3D *> regions_with_navmesh_to_bake;
+	LocalVector<NavigationRegion3D*> regions_to_bake;
+	LocalVector<NavigationRegion3D*> regions_with_navmesh_to_bake;
 
 	int processed_regions_to_bake_count = 0;
 	int processed_regions_to_bake_count_max = 0;
 	bool region_baking_canceled = false;
-	NavigationRegion3D *currently_baking_region = nullptr;
+	NavigationRegion3D* currently_baking_region = nullptr;
 
 	bool bake_in_process = false;
 
@@ -74,26 +72,24 @@ class NavigationRegion3DEditor : public Control {
 	void _process_regions_to_bake();
 
 protected:
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 	void _notification(int p_what);
 
 public:
-	void edit(LocalVector<NavigationRegion3D *> p_regions);
+	void edit(LocalVector<NavigationRegion3D*> p_regions);
 	NavigationRegion3DEditor();
 };
 
-class NavigationRegion3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(NavigationRegion3DEditorPlugin, EditorPlugin);
-
-	NavigationRegion3DEditor *navigation_region_editor = nullptr;
+class NavigationRegion3DEditorPlugin : public EditorPlugin
+{
+	NavigationRegion3DEditor* navigation_region_editor = nullptr;
 
 	Ref<NavigationRegion3DGizmoPlugin> gizmo_plugin;
 
 public:
 	virtual String get_plugin_name() const override { return "NavigationRegion3D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	NavigationRegion3DEditorPlugin();
 };
+
+

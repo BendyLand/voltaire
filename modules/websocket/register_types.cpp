@@ -43,9 +43,7 @@
 #include "editor/editor_debugger_server_websocket.h"
 #endif
 
-#include "core/debugger/engine_debugger.h"
 #include "core/error/error_macros.h"
-#include "core/object/class_db.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/debugger/editor_debugger_server.h"
@@ -58,25 +56,6 @@ static void _editor_init_callback()
 	EditorDebuggerServer::register_protocol_handler("ws://", EditorDebuggerServerWebSocket::create);
 }
 #endif
-
-void initialize_websocket_module(ModuleInitializationLevel p_level)
-{
-	if (p_level == MODULE_INITIALIZATION_LEVEL_CORE) {
-#ifdef WEB_ENABLED
-		EMWSPeer::initialize();
-#else
-		WSLPeer::initialize();
-#endif
-		EngineDebugger::register_uri_handler("ws://", RemoteDebuggerPeerWebSocket::create);
-		EngineDebugger::register_uri_handler("wss://", RemoteDebuggerPeerWebSocket::create);
-	}
-
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorNode::add_init_callback(&_editor_init_callback);
-	}
-#endif
-}
 
 void uninitialize_websocket_module(ModuleInitializationLevel p_level)
 {

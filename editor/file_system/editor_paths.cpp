@@ -32,7 +32,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "editor_paths.h"
 #include "main/main.h"
@@ -83,11 +82,6 @@ String EditorPaths::get_text_editor_themes_dir() const
 String EditorPaths::get_script_templates_dir() const
 {
 	return get_config_dir().path_join(script_templates_folder);
-}
-
-String EditorPaths::get_project_script_templates_dir() const
-{
-	return GLOBAL_GET("editor/script/templates_search_path");
 }
 
 String EditorPaths::get_feature_profiles_dir() const

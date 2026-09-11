@@ -32,9 +32,8 @@
 
 #include "scene/3d/skeleton_3d.h"
 
-class BoneAttachment3D : public Node3D {
-	VLTRCLASS(BoneAttachment3D, Node3D);
-
+class BoneAttachment3D : public Node3D
+{
 	bool bound = false;
 	String bone_name;
 	int bone_idx = -1;
@@ -45,7 +44,6 @@ class BoneAttachment3D : public Node3D {
 
 	bool use_external_skeleton = false;
 	NodePath external_skeleton_node;
-	ObjectID external_skeleton_node_cache;
 
 	void _check_bind();
 	void _check_unbind();
@@ -55,7 +53,6 @@ class BoneAttachment3D : public Node3D {
 	void _update_external_skeleton_cache();
 
 protected:
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 
 	static void _bind_methods();
@@ -65,18 +62,14 @@ protected:
 #endif
 
 public:
-#ifdef TOOLS_ENABLED
-	virtual void notify_skeleton_bones_renamed(Node *p_base_scene, Skeleton3D *p_skeleton, Dictionary p_rename_map);
-#endif // TOOLS_ENABLED
-
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	Skeleton3D *get_skeleton();
+	Skeleton3D* get_skeleton();
 
-	void set_bone_name(const String &p_name);
+	void set_bone_name(const String& p_name);
 	String get_bone_name() const;
 
-	void set_bone_idx(const int &p_idx);
+	void set_bone_idx(const int& p_idx);
 	int get_bone_idx() const;
 
 	void set_override_pose(bool p_override_pose);
@@ -95,3 +88,5 @@ public:
 
 	BoneAttachment3D();
 };
+
+

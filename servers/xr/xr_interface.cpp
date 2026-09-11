@@ -28,11 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/xr/xr_server.h"
 #include "xr_interface.h"
-
-void XRInterface::_bind_methods() {}
 
 bool XRInterface::is_primary()
 {
@@ -129,11 +126,6 @@ void XRInterface::trigger_haptic_pulse(const String& p_action_name,
 	const StringName& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
 	double p_delay_sec)
 {
-}
-
-Array XRInterface::get_supported_environment_blend_modes()
-{
-	return Array{XR_ENV_BLEND_MODE_OPAQUE};
 }
 
 

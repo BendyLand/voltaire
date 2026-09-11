@@ -33,24 +33,27 @@
 #include "scene/2d/physics/kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
-class CharacterBody2D : public PhysicsBody2D {
-	VLTRCLASS(CharacterBody2D, PhysicsBody2D);
-
+class CharacterBody2D : public PhysicsBody2D
+{
 public:
-	enum MotionMode {
+	enum MotionMode
+	{
 		MOTION_MODE_GROUNDED,
 		MOTION_MODE_FLOATING,
 	};
-	enum PlatformOnLeave {
+
+	enum PlatformOnLeave
+	{
 		PLATFORM_ON_LEAVE_ADD_VELOCITY,
 		PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY,
 		PLATFORM_ON_LEAVE_DO_NOTHING,
 	};
+
 	bool move_and_slide();
 	void apply_floor_snap();
 
-	const Vector2 &get_velocity() const;
-	void set_velocity(const Vector2 &p_velocity);
+	const Vector2& get_velocity() const;
+	void set_velocity(const Vector2& p_velocity);
 
 	bool is_on_floor() const;
 	bool is_on_floor_only() const;
@@ -58,14 +61,14 @@ public:
 	bool is_on_wall_only() const;
 	bool is_on_ceiling() const;
 	bool is_on_ceiling_only() const;
-	const Vector2 &get_last_motion() const;
+	const Vector2& get_last_motion() const;
 	Vector2 get_position_delta() const;
-	const Vector2 &get_floor_normal() const;
-	const Vector2 &get_wall_normal() const;
-	const Vector2 &get_real_velocity() const;
+	const Vector2& get_floor_normal() const;
+	const Vector2& get_wall_normal() const;
+	const Vector2& get_real_velocity() const;
 
-	real_t get_floor_angle(const Vector2 &p_up_direction = Vector2(0.0, -1.0)) const;
-	const Vector2 &get_platform_velocity() const;
+	real_t get_floor_angle(const Vector2& p_up_direction = Vector2(0.0, -1.0)) const;
+	const Vector2& get_platform_velocity() const;
 
 	int get_slide_collision_count() const;
 	PS2DT::MotionResult get_slide_collision(int p_bounce) const;
@@ -138,7 +141,6 @@ private:
 	Vector2 real_velocity;
 
 	RID platform_rid;
-	ObjectID platform_object_id;
 	bool on_floor = false;
 	bool on_ceiling = false;
 	bool on_wall = false;
@@ -151,19 +153,17 @@ private:
 
 	Ref<KinematicCollision2D> _get_slide_collision(int p_bounce);
 	Ref<KinematicCollision2D> _get_last_slide_collision();
-	const Vector2 &get_up_direction() const;
+	const Vector2& get_up_direction() const;
 	bool _on_floor_if_snapped(bool p_was_on_floor, bool p_vel_dir_facing_up);
-	void set_up_direction(const Vector2 &p_up_direction);
-	void _set_collision_direction(const PS2DT::MotionResult &p_result);
-	void _set_platform_data(const PS2DT::MotionResult &p_result);
+	void set_up_direction(const Vector2& p_up_direction);
+	void _set_collision_direction(const PS2DT::MotionResult& p_result);
+	void _set_platform_data(const PS2DT::MotionResult& p_result);
 	void _apply_floor_snap(bool p_wall_as_floor = false);
-	void _snap_on_floor(bool p_was_on_floor, bool p_vel_dir_facing_up, bool p_wall_as_floor = false);
+	void _snap_on_floor(
+		bool p_was_on_floor, bool p_vel_dir_facing_up, bool p_wall_as_floor = false);
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 };
 
-VARIANT_ENUM_CAST(CharacterBody2D::MotionMode);
-VARIANT_ENUM_CAST(CharacterBody2D::PlatformOnLeave);
+

@@ -31,7 +31,6 @@
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
 #include "core/io/dir_access.h"
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/version.h"
@@ -133,51 +132,6 @@ void ProjectListItemControl::_notification(int p_what)
 		queue_accessibility_update();
 	} break;
 
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_LIST_BOX_OPTION);
-		AccessibilityServer::get_singleton()->update_set_name(
-			ae, TTR("Project") + " " + project_title->get_text());
-		AccessibilityServer::get_singleton()->update_set_value(ae, project_title->get_text());
-
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_CLICK,
-			callable_mp(this, &ProjectListItemControl::_accessibility_action_open));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_SCROLL_INTO_VIEW,
-			callable_mp(this, &ProjectListItemControl::_accessibility_action_scroll_into_view));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_FOCUS,
-			callable_mp(this, &ProjectListItemControl::_accessibility_action_focus));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_BLUR,
-			callable_mp(this, &ProjectListItemControl::_accessibility_action_blur));
-
-		ProjectList* pl = get_list();
-		if (pl) {
-			AccessibilityServer::get_singleton()->update_set_list_item_index(
-				ae, pl->get_index(this));
-		}
-		AccessibilityServer::get_singleton()->update_set_list_item_level(ae, 0);
-		AccessibilityServer::get_singleton()->update_set_list_item_selected(ae, is_selected);
-	} break;
-
-	case NOTIFICATION_FOCUS_ENTER: {
-		ProjectList* pl = get_list();
-		if (pl) {
-			int idx = pl->get_index(this);
-			if (idx >= 0) {
-				// has_focus(true) is false on mouse-initiated focus, true on keyboard navigation.
-				pl->select_project(idx, !has_focus(true));
-
-				pl->obj->emit_signal(SNAME(ProjectList::SIGNAL_SELECTION_CHANGED));
-			}
-		}
-	} break;
-
 	case NOTIFICATION_DRAW: {
 		if (is_selected && is_hovering) {
 			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")).ptr(),
@@ -208,58 +162,6 @@ void ProjectListItemControl::_notification(int p_what)
 	}
 }
 
-ProjectList* ProjectListItemControl::get_list() const
-{
-	if (!is_inside_tree()) {
-		return nullptr;
-	}
-	ProjectList* pl = Object::cast_to<ProjectList>(get_parent()->get_parent());
-	return pl;
-}
-
-void ProjectListItemControl::_accessibility_action_scroll_into_view(const Variant& p_data)
-{
-	ProjectList* pl = get_list();
-	if (pl) {
-		int idx = pl->get_index(this);
-		if (idx >= 0) {
-			pl->ensure_project_visible(idx);
-		}
-	}
-}
-
-void ProjectListItemControl::_accessibility_action_open(const Variant& p_data)
-{
-	ProjectList* pl = get_list();
-	if (pl && !pl->project_opening_initiated) {
-		pl->obj->emit_signal(SNAME(ProjectList::SIGNAL_PROJECT_ASK_OPEN));
-	}
-}
-
-void ProjectListItemControl::_accessibility_action_focus(const Variant& p_data)
-{
-	ProjectList* pl = get_list();
-	if (pl) {
-		int idx = pl->get_index(this);
-		if (idx >= 0) {
-			pl->ensure_project_visible(idx);
-			pl->select_project(idx);
-		}
-	}
-}
-
-void ProjectListItemControl::_accessibility_action_blur(const Variant& p_data)
-{
-	ProjectList* pl = get_list();
-	if (pl) {
-		int idx = pl->get_index(this);
-		if (idx >= 0) {
-			pl->ensure_project_visible(idx);
-			pl->deselect_project(idx);
-		}
-	}
-}
-
 void ProjectListItemControl::_update_favorite_button_focus_color()
 {
 	if (favorite_button->has_focus()) {
@@ -268,21 +170,6 @@ void ProjectListItemControl::_update_favorite_button_focus_color()
 	else {
 		favorite_button->set_self_modulate(Color(1.0, 1.0, 1.0, 1.0));
 	}
-}
-
-void ProjectListItemControl::_favorite_button_pressed()
-{
-	this->obj->emit_signal(SNAME("favorite_pressed"));
-}
-
-void ProjectListItemControl::_explore_button_pressed()
-{
-	this->obj->emit_signal(SNAME("explore_pressed"));
-}
-
-void ProjectListItemControl::_request_menu()
-{
-	this->obj->emit_signal(SNAME("request_menu"), Vector2(touch_menu_button->get_position()));
 }
 
 void ProjectListItemControl::set_project_title(const String& p_title)
@@ -297,16 +184,6 @@ void ProjectListItemControl::set_project_path(const String& p_path)
 	project_path->set_text(p_path);
 	project_path->set_accessibility_name(TTRC("Project Path"));
 	queue_accessibility_update();
-}
-
-void ProjectListItemControl::set_tags(const PackedStringArray& p_tags, ProjectList* p_parent_list)
-{
-	for (const String& tag : p_tags) {
-		ProjectTag* tag_control = memnew(ProjectTag(tag));
-		tag_container->add_child(tag_control);
-		tag_control->connect_button_to(
-			callable_mp(p_parent_list, &ProjectList::add_search_tag).bind(tag));
-	}
 }
 
 void ProjectListItemControl::set_project_icon(const Ref<Texture2D>& p_icon)
@@ -507,34 +384,6 @@ void ProjectListItemControl::set_project_title_index(int p_title_index)
 	project_title_index = p_title_index;
 }
 
-void ProjectListItemControl::set_project_title_autowrap()
-{
-	title_fullsize_cache = project_title->get_size().x;
-	window_size_cache = get_window()->get_size().x;
-
-	int tag_size = 0;
-	int tag_maxsize = 0;
-	for (Node* child : tag_container->iterate_children()) {
-		ProjectTag* tag = Object::cast_to<ProjectTag>(child);
-		tag_size += tag->get_size().x;
-
-		if (tag_maxsize == 0) {
-			tag_maxsize = tag->get_custom_maximum_size().x;
-		}
-	}
-	tag_size_cache = MIN(tag_size, tag_maxsize);
-	int& title_size_cache = get_list()->title_size_cache[project_title_index];
-
-	int size_check = 800 * EDSCALE;
-	if (title_size_cache == 0) {
-		title_size_cache = size_check;
-	}
-
-	if (title_fullsize_cache > size_check - tag_size_cache) {
-		resize_project_title();
-	}
-}
-
 void ProjectListItemControl::resize_project_title()
 {
 	if (get_window() == nullptr) {
@@ -577,130 +426,6 @@ void ProjectListItemControl::resize_project_title()
 }
 
 void ProjectListItemControl::_bind_methods() {}
-
-ProjectListItemControl::ProjectListItemControl()
-{
-	set_focus_mode(FocusMode::FOCUS_ALL);
-	set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-
-	// Left spacer.
-	add_child(memnew(Control));
-
-	VBoxContainer* favorite_box = memnew(VBoxContainer);
-	favorite_box->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	add_child(favorite_box);
-
-	favorite_button = memnew(TextureButton);
-	favorite_button->set_name("FavoriteButton");
-	favorite_button->set_tooltip_text(TTRC("Toggle Favorite"));
-	favorite_button->set_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
-	// This makes the project's "hover" style display correctly when hovering the favorite icon.
-	favorite_button->set_mouse_filter(MOUSE_FILTER_PASS);
-	favorite_box->add_child(favorite_button);
-	favorite_button->connect(SceneStringName(pressed),
-		callable_mp(this, &ProjectListItemControl::_favorite_button_pressed));
-	favorite_button->connect(SceneStringName(focus_entered),
-		callable_mp(this, &ProjectListItemControl::_update_favorite_button_focus_color));
-	favorite_button->connect(SceneStringName(focus_exited),
-		callable_mp(this, &ProjectListItemControl::_update_favorite_button_focus_color));
-
-	project_icon = memnew(TextureRect);
-	project_icon->set_name("ProjectIcon");
-	project_icon->set_v_size_flags(SIZE_SHRINK_CENTER);
-	add_child(project_icon);
-
-	main_vbox = memnew(VBoxContainer);
-	main_vbox->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	add_child(main_vbox);
-
-	Control* ec = memnew(Control);
-	ec->set_custom_minimum_size(Size2(0, 1));
-	ec->set_mouse_filter(MOUSE_FILTER_PASS);
-	main_vbox->add_child(ec);
-
-	// Top half, title, tags and unsupported features labels.
-	{
-		HBoxContainer* title_hb = memnew(HBoxContainer);
-		main_vbox->add_child(title_hb);
-
-		project_title = memnew(Label);
-		project_title->set_focus_mode(FOCUS_ACCESSIBILITY);
-		project_title->set_name("ProjectName");
-		project_title->set_h_size_flags(Control::SIZE_FILL);
-		title_hb->add_child(project_title);
-
-		tag_container = memnew(HFlowContainer);
-		tag_container->set_alignment(FlowContainer::ALIGNMENT_END);
-		tag_container->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		title_hb->add_child(tag_container);
-	}
-
-	// Bottom half, containing the path and view folder button.
-	{
-		HBoxContainer* path_hb = memnew(HBoxContainer);
-		path_hb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		main_vbox->add_child(path_hb);
-
-		explore_button = memnew(Button);
-		explore_button->set_name("ExploreButton");
-		explore_button->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
-		explore_button->set_mouse_filter(MOUSE_FILTER_PASS);
-		explore_button->set_tooltip_text(TTRC("Open in file manager"));
-		explore_button->set_flat(true);
-		path_hb->add_child(explore_button);
-		explore_button->connect(SceneStringName(pressed),
-			callable_mp(this, &ProjectListItemControl::_explore_button_pressed));
-
-		project_path = memnew(Label);
-		project_path->set_name("ProjectPath");
-		project_path->set_focus_mode(FOCUS_ACCESSIBILITY);
-		project_path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
-		project_path->set_clip_text(true);
-		project_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		project_path->set_modulate(Color(1, 1, 1, 0.5));
-		path_hb->add_child(project_path);
-
-		project_unsupported_features = memnew(TextureRect);
-		project_unsupported_features->set_name("ProjectUnsupportedFeatures");
-		project_unsupported_features->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
-		path_hb->add_child(project_unsupported_features);
-		project_unsupported_features->hide();
-
-		project_different_version = memnew(TextureRect);
-		project_different_version->set_name("ProjectDifferentVersion");
-		project_different_version->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
-		path_hb->add_child(project_different_version);
-		project_different_version->hide();
-
-		project_version = memnew(Label);
-		project_version->set_focus_mode(FOCUS_ACCESSIBILITY);
-		project_version->set_name("ProjectVersion");
-		project_version->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-		path_hb->add_child(project_version);
-
-		last_edited_info = memnew(Label);
-		last_edited_info->set_focus_mode(FOCUS_ACCESSIBILITY);
-		last_edited_info->set_name("LastEditedInfo");
-		last_edited_info->set_mouse_filter(Control::MOUSE_FILTER_PASS);
-		last_edited_info->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_ALWAYS);
-		last_edited_info->set_tooltip_text(TTRC("Last edited timestamp"));
-		last_edited_info->set_modulate(Color(1, 1, 1, 0.5));
-		path_hb->add_child(last_edited_info);
-	}
-
-	if (DisplayServer::get_singleton()->is_touchscreen_available()) {
-		touch_menu_button = memnew(Button);
-		touch_menu_button->set_theme_type_variation(SceneStringName(FlatButton));
-		touch_menu_button->set_v_size_flags(SIZE_SHRINK_CENTER);
-		add_child(touch_menu_button);
-		touch_menu_button->set_mouse_filter(MOUSE_FILTER_PASS);
-		touch_menu_button->connect(
-			SceneStringName(pressed), callable_mp(this, &ProjectListItemControl::_request_menu));
-	}
-
-	// Right spacer.
-	add_child(memnew(Control));
-}
 
 struct ProjectListComparator
 {
@@ -848,178 +573,10 @@ void ProjectList::_scan_finished()
 
 // Initialization & loading.
 
-void ProjectList::_migrate_config()
-{
-	// Proposal #1637 moved the project list from editor settings to a separate config file
-	// If the new config file doesn't exist, populate it from EditorSettings
-	if (FileAccess::exists(_config_path)) {
-		return;
-	}
-
-	List<PropertyInfo> properties;
-	EditorSettings::get_singleton()->obj->get_property_list(&properties);
-
-	for (const PropertyInfo& E : properties) {
-		// This is actually something like "projects/C:::Documents::Godot::Projects::MyGame"
-		String property_key = E.name;
-		if (!property_key.begins_with("projects/")) {
-			continue;
-		}
-
-		String path = EDITOR_GET(property_key);
-		print_line("Migrating legacy project '" + path + "'.");
-
-		String favoriteKey = "favorite_projects/" + property_key.get_slicec('/', 1);
-		bool favorite = EditorSettings::get_singleton()->has_setting(favoriteKey);
-		add_project(path, favorite);
-		if (favorite) {
-			EditorSettings::get_singleton()->erase(favoriteKey);
-		}
-		EditorSettings::get_singleton()->erase(property_key);
-	}
-
-	save_config();
-}
-
 void ProjectList::save_config() { _config.save(_config_path); }
 
 // Load project data from p_property_key and return it in a ProjectList::Item.
 // p_favorite is passed directly into the Item.
-ProjectList::Item ProjectList::load_project_data(const String& p_path, bool p_favorite)
-{
-	String conf = p_path.path_join("project.godot");
-	bool grayed = false;
-	bool missing = false;
-	bool recovery_mode = false;
-
-	Ref<ConfigFile> cf = memnew(ConfigFile);
-	Error cf_err = cf->load(conf);
-
-	int config_version = 0;
-	String cf_project_name;
-	String project_name = TTR("Unnamed Project");
-	if (cf_err == OK) {
-		cf_project_name = cf->get_value("application", "config/name", "");
-		if (!cf_project_name.is_empty()) {
-			project_name = cf_project_name.xml_unescape();
-		}
-		config_version = (int)cf->get_value("", "config_version", 0);
-	}
-
-	if (config_version > ProjectSettings::CONFIG_VERSION) {
-		// Comes from an incompatible (more recent) Godot version, gray it out.
-		grayed = true;
-	}
-
-	const String description = cf->get_value("application", "config/description", "");
-	const PackedStringArray tags = cf->get_value("application", "config/tags", PackedStringArray());
-	const String main_scene = cf->get_value("application", "run/main_scene", "");
-
-	String icon = cf->get_value("application", "config/icon", "");
-	if (icon.begins_with("uid://")) {
-		Error err;
-		Ref<FileAccess> file =
-			FileAccess::open(p_path.path_join(".godot/uid_cache.bin"), FileAccess::READ, &err);
-		if (err == OK) {
-			icon = ResourceUID::get_path_from_cache(file, icon);
-			if (icon.is_empty()) {
-				WARN_PRINT(vformat("Could not load icon from UID for project at path \"%s\". Make "
-								   "sure UID cache exists.",
-					p_path));
-			}
-		}
-		else {
-			// Cache does not exist yet, so ignore and fallback to default icon.
-			icon = "";
-		}
-	}
-
-	PackedStringArray project_features =
-		cf->get_value("application", "config/features", PackedStringArray());
-	PackedStringArray unsupported_features =
-		ProjectSettings::get_unsupported_features(project_features);
-
-	String project_version = "?";
-	for (int i = 0; i < project_features.size(); i++) {
-		if (ProjectList::project_feature_looks_like_version(project_features[i])) {
-			project_version = project_features[i];
-			break;
-		}
-	}
-
-	if (config_version < ProjectSettings::CONFIG_VERSION) {
-		// Previous versions may not have unsupported features.
-		if (config_version == 4) {
-			unsupported_features.push_back("3.x");
-			project_version = "3.x";
-		}
-		else {
-			unsupported_features.push_back("u-ver");
-		}
-	}
-
-	uint64_t last_edited = 0;
-	if (cf_err == OK) {
-		int* cached_time = modified_time_cache.getptr(p_path);
-		if (cached_time) {
-			// Modified time may change as a result of Project Manager actions, which will affect
-			// sorting. For that reason, the time is read only once.
-			last_edited = *cached_time;
-		}
-		else {
-			// The modification date marks the date the project was last edited.
-			// This is because the `project.godot` file will always be modified
-			// when editing a project (but not when running it).
-			last_edited = FileAccess::get_modified_time(conf);
-			modified_time_cache[p_path] = last_edited;
-		}
-	}
-	else {
-		grayed = true;
-		missing = true;
-	}
-
-	for (const String& tag : tags) {
-		ProjectManager::get_singleton()->add_new_tag(tag);
-	}
-
-	// We can't use OS::get_user_dir() because it attempts to load paths from the current loaded
-	// project through ProjectSettings, while here we're parsing project files externally.
-	// Therefore, we have to replicate its behavior.
-	String user_dir;
-	if (!cf_project_name.is_empty()) {
-		String appname = OS::get_singleton()->get_safe_dir_name(cf_project_name);
-		bool use_custom_dir = cf->get_value("application", "config/use_custom_user_dir", false);
-		if (use_custom_dir) {
-			String custom_dir = OS::get_singleton()->get_safe_dir_name(
-				cf->get_value("application", "config/custom_user_dir_name", ""), true);
-			if (custom_dir.is_empty()) {
-				custom_dir = appname;
-			}
-			user_dir = custom_dir;
-		}
-		else {
-			user_dir = OS::get_singleton()
-						   ->get_godot_dir_name()
-						   .path_join("app_userdata")
-						   .path_join(appname);
-		}
-	}
-	else {
-		user_dir = OS::get_singleton()
-					   ->get_godot_dir_name()
-					   .path_join("app_userdata")
-					   .path_join("[unnamed project]");
-	}
-
-	String recovery_mode_lock_file =
-		OS::get_singleton()->get_user_data_dir(user_dir).path_join(".recovery_mode_lock");
-	recovery_mode = FileAccess::exists(recovery_mode_lock_file);
-
-	return Item(project_name, description, project_version, tags, p_path, icon, main_scene,
-		unsupported_features, last_edited, p_favorite, grayed, missing, recovery_mode,
-		config_version);
-}
 
 void ProjectList::_update_icons_async()
 {
@@ -1048,51 +605,6 @@ void ProjectList::_load_project_icon(int p_index)
 	}
 
 	item.control->set_project_icon(icon);
-}
-
-// Project list updates.
-
-void ProjectList::update_project_list()
-{
-	// This is a full, hard reload of the list. Don't call this unless really required, it's
-	// expensive. If you have 150 projects, it may read through 150 files on your disk at once +
-	// load 150 icons.
-	// FIXME: Does it really have to be a full, hard reload? Runtime updates should be made much
-	// cheaper.
-
-	int temp_title_index = -1;
-	if (ProjectManager::get_singleton()->is_initialized()) {
-		// Clear whole list
-		for (int i = 0; i < _projects.size(); ++i) {
-			Item& project = _projects.write[i];
-			CRASH_COND(project.control == nullptr);
-
-			temp_title_index = project.project_title_index;
-			memdelete(project.control); // Why not queue_free()?
-		}
-
-		_projects.clear();
-		_last_clicked = "";
-		_selected_project_paths.clear();
-
-		load_project_list();
-	}
-
-	// Create controls
-	for (int i = 0; i < _projects.size(); ++i) {
-		Item& item = _projects.write[i];
-		item.project_title_index = temp_title_index;
-
-		_create_project_item_control(i);
-	}
-
-	sort_projects();
-	_update_icons_async();
-	update_dock_menu();
-
-	set_v_scroll(0);
-	this->obj->emit_signal(SNAME(SIGNAL_LIST_CHANGED));
-	queue_accessibility_update();
 }
 
 void ProjectList::sort_projects()
@@ -1175,55 +687,6 @@ void ProjectList::find_projects(const String& p_path)
 	find_projects_multiple(paths);
 }
 
-void ProjectList::find_projects_multiple(const PackedStringArray& p_paths)
-{
-	if (!scan_progress && is_inside_tree()) {
-		scan_progress = memnew(AcceptDialog);
-		scan_progress->set_title(TTRC("Scanning"));
-		scan_progress->set_ok_button_text(TTRC("Cancel"));
-
-		VBoxContainer* vb = memnew(VBoxContainer);
-		scan_progress->add_child(vb);
-
-		Label* label = memnew(Label);
-		label->set_text(TTRC("Scanning for projects..."));
-		vb->add_child(label);
-
-		ProgressBar* progress = memnew(ProgressBar);
-		progress->set_indeterminate(true);
-		vb->add_child(progress);
-
-		add_child(scan_progress);
-		scan_progress->connect(
-			SceneStringName(confirmed), callable_mp(this, &ProjectList::_scan_finished));
-		scan_progress->connect("canceled", callable_mp(this, &ProjectList::_scan_finished));
-	}
-
-	scan_data = memnew(ScanData);
-	scan_data->paths_to_scan = p_paths;
-	scan_data->scan_in_progress.set();
-
-	scan_data->thread = memnew(Thread);
-	scan_data->thread->start(_scan_thread, scan_data);
-
-	if (scan_progress) {
-		scan_progress->reset_size();
-		scan_progress->popup_centered();
-	}
-	set_process(true);
-}
-
-void ProjectList::load_project_list()
-{
-	_config.load(_config_path);
-	Vector<String> sections = _config.get_sections();
-
-	for (const String& path : sections) {
-		bool favorite = _config.get_value(path, "favorite", false);
-		_projects.push_back(load_project_data(path, favorite));
-	}
-}
-
 void ProjectList::_scan_folder_recursive(
 	const String& p_path, List<String>* r_projects, const SafeFlag& p_scan_active)
 {
@@ -1254,16 +717,6 @@ void ProjectList::_scan_folder_recursive(
 	da->list_dir_end();
 }
 
-// Project list items.
-
-void ProjectList::add_project(const String& dir_path, bool favorite)
-{
-	if (!_config.has_section(dir_path)) {
-		_config.set_value(dir_path, "favorite", favorite);
-	}
-	queue_accessibility_update();
-}
-
 void ProjectList::set_project_version(const String& p_project_path, int p_version)
 {
 	for (ProjectList::Item& E : _projects) {
@@ -1272,59 +725,6 @@ void ProjectList::set_project_version(const String& p_project_path, int p_versio
 			break;
 		}
 	}
-}
-
-int ProjectList::refresh_project(const String& dir_path)
-{
-	// Reloads information about a specific project.
-	// If it wasn't loaded and should be in the list, it is added (i.e new project).
-	// If it isn't in the list anymore, it is removed.
-	// If it is in the list but doesn't exist anymore, it is marked as missing.
-
-	bool should_be_in_list = _config.has_section(dir_path);
-	bool is_favorite = _config.get_value(dir_path, "favorite", false);
-
-	bool was_selected = _selected_project_paths.has(dir_path);
-
-	int temp_title_index = -1;
-
-	// Remove item in any case
-	for (int i = 0; i < _projects.size(); ++i) {
-		const Item& existing_item = _projects[i];
-		if (existing_item.path == dir_path) {
-			temp_title_index = existing_item.project_title_index;
-
-			_remove_project(i, false);
-			break;
-		}
-	}
-
-	int index = -1;
-	if (should_be_in_list) {
-		// Recreate it with updated info
-
-		Item item = load_project_data(dir_path, is_favorite);
-
-		item.project_title_index = temp_title_index;
-		_projects.push_back(item);
-		_create_project_item_control(_projects.size() - 1);
-
-		sort_projects();
-
-		for (int i = 0; i < _projects.size(); ++i) {
-			if (_projects[i].path == dir_path) {
-				if (was_selected) {
-					ensure_project_visible(i);
-				}
-				_load_project_icon(i);
-
-				index = i;
-				break;
-			}
-		}
-	}
-
-	return index;
 }
 
 int ProjectList::get_index(const ProjectListItemControl* p_control) const
@@ -1342,53 +742,6 @@ void ProjectList::ensure_project_visible(int p_index)
 	const Item& item = _projects[p_index];
 	// Since follow focus is enabled.
 	item.control->grab_focus(true);
-}
-
-void ProjectList::_create_project_item_control(int p_index)
-{
-	// Will be added last in the list, so make sure indexes match
-	ERR_FAIL_COND(p_index != project_list_vbox->get_child_count());
-
-	Item& item = _projects.write[p_index];
-	ERR_FAIL_COND(item.control != nullptr); // Already created
-
-	ProjectListItemControl* hb = memnew(ProjectListItemControl);
-	item.control = hb;
-
-	hb->add_theme_constant_override("separation", 10 * EDSCALE);
-
-	_update_project_control_translatable_fields(item);
-
-	hb->set_project_path(item.path);
-	hb->set_tooltip_text(item.description);
-	hb->set_tags(item.tags, this);
-	hb->set_project_version(item.project_version);
-
-	hb->set_is_favorite(item.favorite);
-	hb->set_is_missing(item.missing);
-	hb->set_is_grayed(item.grayed);
-
-	hb->connect(
-		SceneStringName(gui_input), callable_mp(this, &ProjectList::_list_item_input).bind(hb));
-	hb->connect("favorite_pressed", callable_mp(this, &ProjectList::_on_favorite_pressed).bind(hb));
-
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-	hb->connect(
-		"explore_pressed", callable_mp(this, &ProjectList::_on_explore_pressed).bind(item.path));
-#endif
-	hb->connect("request_menu", callable_mp(this, &ProjectList::_open_menu).bind(hb));
-
-	if (item.project_title_index == -1) {
-		project_title_index_count++;
-		title_size_cache[project_title_index_count] = 0;
-		item.project_title_index = project_title_index_count;
-		hb->set_project_title_index(project_title_index_count);
-	}
-	else {
-		hb->set_project_title_index(item.project_title_index);
-	}
-
-	project_list_vbox->add_child(hb);
 }
 
 void ProjectList::_update_project_control_translatable_fields(const Item& item)
@@ -1436,158 +789,9 @@ void ProjectList::_remove_project(int p_index, bool p_update_config)
 	update_dock_menu();
 }
 
-void ProjectList::_list_item_input(const Ref<InputEvent>& p_ev, Control* p_hb)
-{
-	Ref<InputEventMouseButton> mb = p_ev;
-	int clicked_index = p_hb->get_index();
-	const Item& clicked_project = _projects[clicked_index];
-
-	if (mb.is_valid() && mb->is_pressed()) {
-		if (mb->get_button_index() == MouseButton::LEFT) {
-			if (mb->is_shift_pressed() && _selected_project_paths.size() > 0 &&
-				!_last_clicked.is_empty() && clicked_project.path != _last_clicked) {
-				int anchor_index = -1;
-				for (int i = 0; i < _projects.size(); ++i) {
-					const Item& p = _projects[i];
-					if (p.path == _last_clicked) {
-						anchor_index = p.control->get_index();
-						break;
-					}
-				}
-				CRASH_COND(anchor_index == -1);
-				_select_project_range(anchor_index, clicked_index);
-
-			}
-			else if (mb->is_command_or_control_pressed()) {
-				_toggle_project(clicked_index);
-
-			}
-			else {
-				_last_clicked = clicked_project.path;
-				select_project(clicked_index, true);
-			}
-
-			this->obj->emit_signal(SNAME(SIGNAL_SELECTION_CHANGED));
-
-			// Do not allow opening a project more than once using a single project manager
-			// instance. Opening the same project in several editor instances at once can lead to
-			// various issues.
-			if (!mb->is_command_or_control_pressed() && mb->is_double_click() &&
-				!project_opening_initiated) {
-				this->obj->emit_signal(SNAME(SIGNAL_PROJECT_ASK_OPEN));
-			}
-		}
-		else if (mb->get_button_index() == MouseButton::RIGHT) {
-			_open_menu(mb->get_position(), p_hb);
-		}
-	}
-
-	Ref<InputEventKey> kev = p_ev;
-
-	if (kev.is_valid() && kev->is_pressed()) {
-		switch (kev->get_keycode()) {
-		case Key::E: {
-			_on_explore_pressed(clicked_project.path);
-			accept_event();
-		} break;
-		case Key::F: {
-			if (kev->is_command_or_control_pressed()) {
-				return; // Focus the search box by the ProjectManager.
-			}
-			_on_favorite_pressed(p_hb);
-			accept_event();
-		} break;
-		default: {
-		} break;
-		}
-	}
-}
-
-void ProjectList::_on_favorite_pressed(Node* p_hb)
-{
-	ProjectListItemControl* control = Object::cast_to<ProjectListItemControl>(p_hb);
-
-	int index = control->get_index();
-	Item item = _projects.write[index]; // Take copy
-
-	item.favorite = !item.favorite;
-
-	_config.set_value(item.path, "favorite", item.favorite);
-	save_config();
-
-	_projects.write[index] = item;
-
-	control->set_is_favorite(item.favorite);
-
-	sort_projects();
-
-	// As controls are sorted, the calls are delayed in case follow focus does not take effect.
-	if (Input::get_singleton()->is_key_pressed(Key::ALT)) {
-		callable_mp((ScrollContainer*)this, &ScrollContainer::ensure_control_visible)
-			.call_deferred(control);
-	}
-	else {
-		// Do not follow the control when toggling.
-		callable_mp(this, &ProjectList::ensure_project_visible).call_deferred(index);
-	}
-
-	update_dock_menu();
-}
-
 void ProjectList::_on_explore_pressed(const String& p_path)
 {
 	OS::get_singleton()->shell_show_in_file_manager(p_path, true);
-}
-
-void ProjectList::_open_menu(const Vector2& p_at, Control* p_hb)
-{
-	int clicked_index = p_hb->get_index();
-	const Item& clicked_project = _projects[clicked_index];
-
-	if (!project_context_menu) {
-		project_context_menu = memnew(PopupMenu);
-		project_context_menu->add_item(TTRC("Open in Editor"), MENU_EDIT);
-		project_context_menu->add_item(TTRC("Open in Editor (Verbose Mode)"), MENU_EDIT_VERBOSE);
-		project_context_menu->add_item(TTRC("Open in Editor (Recovery Mode)"), MENU_EDIT_RECOVERY);
-		project_context_menu->add_item(TTRC("Run Project"), MENU_RUN);
-		project_context_menu->add_separator();
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-		project_context_menu->add_item(
-			OS::get_singleton()->get_platform_string(OS::PLATFORM_STRING_FILE_MANAGER_OPEN),
-			MENU_SHOW_IN_FILE_MANAGER);
-#endif // !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-		project_context_menu->add_item(TTRC("Copy Path"), MENU_COPY_PATH);
-		project_context_menu->add_separator();
-		project_context_menu->add_item(TTRC("Rename"), MENU_RENAME);
-		project_context_menu->add_item(TTRC("Manage Tags"), MENU_MANAGE_TAGS);
-		project_context_menu->add_item(TTRC("Duplicate"), MENU_DUPLICATE);
-		project_context_menu->add_item(TTRC("Remove from Project List"), MENU_REMOVE);
-		add_child(project_context_menu);
-		project_context_menu->connect(
-			SceneStringName(id_pressed), callable_mp(this, &ProjectList::_menu_option));
-		_update_menu_icons();
-	}
-	clicked_project.control->grab_focus(true);
-
-	for (int id : Vector<int> {
-			 MENU_EDIT, MENU_EDIT_VERBOSE, MENU_EDIT_RECOVERY, MENU_RUN,
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-				 MENU_SHOW_IN_FILE_MANAGER,
-#endif
-				 MENU_RENAME, MENU_MANAGE_TAGS, MENU_DUPLICATE
-		 }) {
-		project_context_menu->set_item_disabled(
-			project_context_menu->get_item_index(id), clicked_project.missing);
-	}
-
-	project_context_menu->set_position(p_hb->get_screen_position() + p_at);
-	project_context_menu->reset_size();
-	project_context_menu->popup();
-}
-
-void ProjectList::_menu_option(int p_option)
-{
-	this->obj->emit_signal(SIGNAL_MENU_OPTION_SELECTED, p_option);
 }
 
 void ProjectList::_update_menu_icons()
@@ -1825,8 +1029,8 @@ void ProjectList::erase_missing_projects()
 		}
 	}
 
-	print_line("Removed " + itos(deleted_count) + " projects from the list, remaining " +
-			   itos(remaining_count) + " projects");
+	__print_line("Removed " + itos(deleted_count) + " projects from the list, remaining " +
+				 itos(remaining_count) + " projects");
 	save_config();
 }
 
@@ -1851,73 +1055,6 @@ void ProjectList::add_search_tag(const String& p_tag)
 	ProjectManager::get_singleton()->get_search_box()->set_text(_search_term);
 
 	sort_projects();
-}
-
-void ProjectList::set_order_option(int p_option, bool p_save)
-{
-	FilterOption selected = (FilterOption)p_option;
-	if (p_save) {
-		EditorSettings::get_singleton()->obj->set("project_manager/sorting_order", p_option);
-		EditorSettings::get_singleton()->save();
-	}
-	_order_option = selected;
-
-	sort_projects();
-}
-
-// Global menu integration.
-
-void ProjectList::update_dock_menu()
-{
-	if (!NativeMenu::get_singleton()->has_feature(NativeMenu::FEATURE_GLOBAL_MENU)) {
-		return;
-	}
-	RID dock_rid = NativeMenu::get_singleton()->get_system_menu(NativeMenu::DOCK_MENU_ID);
-	NativeMenu::get_singleton()->clear(dock_rid);
-
-	int favs_added = 0;
-	int total_added = 0;
-	for (int i = 0; i < _projects.size(); ++i) {
-		if (!_projects[i].grayed && !_projects[i].missing) {
-			if (_projects[i].favorite) {
-				favs_added++;
-			}
-			else {
-				if (favs_added != 0) {
-					NativeMenu::get_singleton()->add_separator(dock_rid);
-				}
-				favs_added = 0;
-			}
-			NativeMenu::get_singleton()->add_item(dock_rid,
-				_projects[i].project_name + " ( " + _projects[i].path + " )",
-				callable_mp(this, &ProjectList::_global_menu_open_project), Callable(), i);
-			total_added++;
-		}
-	}
-	if (total_added != 0) {
-		NativeMenu::get_singleton()->add_separator(dock_rid);
-	}
-	NativeMenu::get_singleton()->add_item(
-		dock_rid, TTR("New Window"), callable_mp(this, &ProjectList::_global_menu_new_window));
-}
-
-void ProjectList::_global_menu_new_window(const Variant& p_tag)
-{
-	List<String> args;
-	args.push_back("-p");
-	OS::get_singleton()->create_instance(args);
-}
-
-void ProjectList::_global_menu_open_project(const Variant& p_tag)
-{
-	int idx = (int)p_tag;
-
-	if (idx >= 0 && idx < _projects.size()) {
-		String conf = _projects[idx].path.path_join("project.godot");
-		List<String> args;
-		args.push_back(conf);
-		OS::get_singleton()->create_instance(args);
-	}
 }
 
 // Object methods.

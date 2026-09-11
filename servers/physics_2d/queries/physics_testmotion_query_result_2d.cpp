@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_testmotion_query_result_2d.h"
 
 Vector2 PhysicsTestMotionResult2D::get_travel() const { return result.travel; }
@@ -44,14 +43,7 @@ Vector2 PhysicsTestMotionResult2D::get_collider_velocity() const
 	return result.collider_velocity;
 }
 
-ObjectID PhysicsTestMotionResult2D::get_collider_id() const { return result.collider_id; }
-
 RID PhysicsTestMotionResult2D::get_collider_rid() const { return result.collider; }
-
-Object* PhysicsTestMotionResult2D::get_collider() const
-{
-	return ObjectDB::get_instance(result.collider_id);
-}
 
 int PhysicsTestMotionResult2D::get_collider_shape() const { return result.collider_shape; }
 
@@ -71,7 +63,5 @@ real_t PhysicsTestMotionResult2D::get_collision_unsafe_fraction() const
 {
 	return result.collision_unsafe_fraction;
 }
-
-void PhysicsTestMotionResult2D::_bind_methods() {}
 
 

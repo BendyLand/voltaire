@@ -29,15 +29,8 @@
 /**************************************************************************/
 
 #include "core/io/image.h"
-#include "core/variant/typed_array.h"
 #include "rasterizer_scene_dummy.h"
 #include "servers/rendering/rendering_server_globals.h"
-
-Array RasterizerSceneDummy::bake_render_uv2(
-	RID p_base, const Array& p_material_overrides, const Size2i& p_image_size)
-{
-	return Array();
-}
 
 bool RasterizerSceneDummy::free(RID p_rid)
 {

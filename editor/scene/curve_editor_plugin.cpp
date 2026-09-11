@@ -30,8 +30,6 @@
 
 #include "core/input/input.h"
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/keyboard.h"
 #include "curve_editor_plugin.h"
 #include "editor/editor_interface.h"
@@ -54,102 +52,11 @@ CurveEdit::CurveEdit()
 	set_clip_contents(true);
 }
 
-void CurveEdit::_bind_methods() {}
-
-void CurveEdit::set_curve(Ref<Curve> p_curve)
-{
-	if (p_curve == curve) {
-		return;
-	}
-
-	if (curve.is_valid()) {
-		curve->disconnect_changed(callable_mp(this, &CurveEdit::_curve_changed));
-		curve->obj->disconnect(
-			Curve::SIGNAL_RANGE_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-		curve->obj->disconnect(
-			Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-	}
-
-	curve = p_curve;
-
-	if (curve.is_valid()) {
-		curve->connect_changed(callable_mp(this, &CurveEdit::_curve_changed));
-		curve->obj->connect(
-			Curve::SIGNAL_RANGE_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-		curve->obj->connect(
-			Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
-	}
-
-	// Note: if you edit a curve, then set another, and try to undo,
-	// it will normally apply on the previous curve, but you won't see it.
-}
-
 Ref<Curve> CurveEdit::get_curve() { return curve; }
-
-void CurveEdit::set_snap_enabled(bool p_enabled)
-{
-	snap_enabled = p_enabled;
-	queue_redraw();
-	if (curve.is_valid()) {
-		if (snap_enabled) {
-			curve->obj->set_meta(SNAME("_snap_enabled"), true);
-		}
-		else {
-			curve->obj->remove_meta(SNAME("_snap_enabled"));
-		}
-	}
-}
-
-void CurveEdit::set_snap_count(int p_snap_count)
-{
-	snap_count = p_snap_count;
-	queue_redraw();
-	if (curve.is_valid()) {
-		if (snap_count != CurveEditor::DEFAULT_SNAP) {
-			curve->obj->set_meta(SNAME("_snap_count"), snap_count);
-		}
-		else {
-			curve->obj->remove_meta(SNAME("_snap_count"));
-		}
-	}
-}
 
 Size2 CurveEdit::get_minimum_size() const
 {
 	return Vector2(64, MAX(135, get_size().x * ASPECT_RATIO)) * EDSCALE;
-}
-
-void CurveEdit::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (hovered_index != -1 || hovered_tangent_index != TANGENT_NONE) {
-			hovered_index = -1;
-			hovered_tangent_index = TANGENT_NONE;
-			queue_redraw();
-		}
-	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		float gizmo_scale = EDITOR_GET("interface/touchscreen/scale_gizmo_handles");
-		point_radius =
-			Math::round(BASE_POINT_RADIUS * get_theme_default_base_scale() * gizmo_scale);
-		hover_radius =
-			Math::round(BASE_HOVER_RADIUS * get_theme_default_base_scale() * gizmo_scale);
-		tangent_radius =
-			Math::round(BASE_TANGENT_RADIUS * get_theme_default_base_scale() * gizmo_scale);
-		tangent_hover_radius =
-			Math::round(BASE_TANGENT_HOVER_RADIUS * get_theme_default_base_scale() * gizmo_scale);
-		tangent_length = Math::round(BASE_TANGENT_LENGTH * get_theme_default_base_scale());
-	} break;
-	case NOTIFICATION_DRAW: {
-		_redraw();
-	} break;
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (!is_visible()) {
-			grabbing = GRAB_NONE;
-		}
-	} break;
-	}
 }
 
 void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
@@ -418,64 +325,6 @@ void CurveEdit::gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void CurveEdit::use_preset(int p_preset_id)
-{
-	ERR_FAIL_COND(p_preset_id < 0 || p_preset_id >= PRESET_COUNT);
-	ERR_FAIL_COND(curve.is_null());
-
-	Array previous_data = curve->get_data();
-	curve->clear_points();
-
-	const float min_y = curve->get_min_value();
-	const float max_y = curve->get_max_value();
-	const float min_x = curve->get_min_domain();
-	const float max_x = curve->get_max_domain();
-
-	switch (p_preset_id) {
-	case PRESET_CONSTANT:
-		curve->add_point(Vector2(min_x, (min_y + max_y) / 2.0));
-		curve->add_point(Vector2(max_x, (min_y + max_y) / 2.0));
-		curve->set_point_right_mode(0, Curve::TANGENT_LINEAR);
-		curve->set_point_left_mode(1, Curve::TANGENT_LINEAR);
-		break;
-
-	case PRESET_LINEAR:
-		curve->add_point(Vector2(min_x, min_y));
-		curve->add_point(Vector2(max_x, max_y));
-		curve->set_point_right_mode(0, Curve::TANGENT_LINEAR);
-		curve->set_point_left_mode(1, Curve::TANGENT_LINEAR);
-		break;
-
-	case PRESET_EASE_IN:
-		curve->add_point(Vector2(min_x, min_y));
-		curve->add_point(
-			Vector2(max_x, max_y), curve->get_value_range() / curve->get_domain_range() * 1.4, 0);
-		break;
-
-	case PRESET_EASE_OUT:
-		curve->add_point(
-			Vector2(min_x, min_y), 0, curve->get_value_range() / curve->get_domain_range() * 1.4);
-		curve->add_point(Vector2(max_x, max_y));
-		break;
-
-	case PRESET_SMOOTHSTEP:
-		curve->add_point(Vector2(min_x, min_y));
-		curve->add_point(Vector2(max_x, max_y));
-		break;
-
-	default:
-		break;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Load Curve Preset"));
-	undo_redo->add_do_method(curve->obj.get(), "_set_data", curve->get_data());
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", -1);
-	undo_redo->add_undo_method(curve->obj.get(), "_set_data", previous_data);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
-	undo_redo->commit_action();
-}
-
 void CurveEdit::_curve_changed()
 {
 	queue_redraw();
@@ -568,179 +417,6 @@ float CurveEdit::get_offset_without_collision(
 	}
 
 	return safe_offset;
-}
-
-void CurveEdit::add_point(const Vector2& p_pos)
-{
-	ERR_FAIL_COND(curve.is_null());
-
-	// Add a point to get its index, then remove it immediately. Trick to feed the UndoRedo.
-	int new_idx = curve->add_point(p_pos);
-	curve->remove_point(new_idx);
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Add Curve Point"));
-	undo_redo->add_do_method(curve->obj.get(), "add_point", p_pos);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_idx);
-	undo_redo->add_undo_method(curve->obj.get(), "remove_point", new_idx);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", -1);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::remove_point(int p_index)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	Curve::Point p = curve->get_point(p_index);
-	Vector2 old_pos = (grabbing == GRAB_MOVE) ? initial_grab_pos : p.position;
-
-	int new_selected_index = selected_index;
-	// Reselect the old selected point if it's not the deleted one.
-	if (new_selected_index > p_index) {
-		new_selected_index -= 1;
-	}
-	else if (new_selected_index == p_index) {
-		new_selected_index = -1;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Remove Curve Point"));
-	undo_redo->add_do_method(curve->obj.get(), "remove_point", p_index);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", new_selected_index);
-	undo_redo->add_undo_method(curve->obj.get(), "add_point", old_pos, p.left_tangent,
-		p.right_tangent, p.left_mode, p.right_mode);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", selected_index);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::set_point_position(int p_index, const Vector2& p_pos)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	if (initial_grab_pos == p_pos) {
-		return;
-	}
-
-	// Pretend the point started from its old place.
-	curve->set_point_value(p_index, initial_grab_pos.y);
-	curve->set_point_offset(p_index, initial_grab_pos.x);
-	// Note: Changing the offset may modify the order.
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Modify Curve Point"));
-	undo_redo->add_do_method(curve->obj.get(), "set_point_value", initial_grab_index, p_pos.y);
-	undo_redo->add_do_method(curve->obj.get(), "set_point_offset", initial_grab_index, p_pos.x);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->add_undo_method(curve->obj.get(), "set_point_value", p_index, initial_grab_pos.y);
-	undo_redo->add_undo_method(curve->obj.get(), "set_point_offset", p_index, initial_grab_pos.x);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", initial_grab_index);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::set_point_tangents(int p_index, float p_left, float p_right)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	if (initial_grab_left_tangent == p_left) {
-		set_point_right_tangent(p_index, p_right);
-		return;
-	}
-	else if (initial_grab_right_tangent == p_right) {
-		set_point_left_tangent(p_index, p_left);
-		return;
-	}
-
-	curve->set_point_left_tangent(p_index, initial_grab_left_tangent);
-	curve->set_point_right_tangent(p_index, initial_grab_right_tangent);
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Modify Curve Point's Tangents"));
-	undo_redo->add_do_method(curve->obj.get(), "set_point_left_tangent", p_index, p_left);
-	undo_redo->add_do_method(curve->obj.get(), "set_point_right_tangent", p_index, p_right);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->add_undo_method(
-		curve->obj.get(), "set_point_left_tangent", p_index, initial_grab_left_tangent);
-	undo_redo->add_undo_method(
-		curve->obj.get(), "set_point_right_tangent", p_index, initial_grab_right_tangent);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::set_point_left_tangent(int p_index, float p_tangent)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	if (initial_grab_left_tangent == p_tangent) {
-		return;
-	}
-
-	curve->set_point_left_tangent(p_index, initial_grab_left_tangent);
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Modify Curve Point's Left Tangent"));
-	undo_redo->add_do_method(curve->obj.get(), "set_point_left_tangent", p_index, p_tangent);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->add_undo_method(
-		curve->obj.get(), "set_point_left_tangent", p_index, initial_grab_left_tangent);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::set_point_right_tangent(int p_index, float p_tangent)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	if (initial_grab_right_tangent == p_tangent) {
-		return;
-	}
-
-	curve->set_point_right_tangent(p_index, initial_grab_right_tangent);
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Modify Curve Point's Right Tangent"));
-	undo_redo->add_do_method(curve->obj.get(), "set_point_right_tangent", p_index, p_tangent);
-	undo_redo->add_do_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->add_undo_method(
-		curve->obj.get(), "set_point_right_tangent", p_index, initial_grab_right_tangent);
-	undo_redo->add_undo_method(this->obj.get(), "set_selected_index", p_index);
-	undo_redo->commit_action();
-}
-
-void CurveEdit::toggle_linear(int p_index, TangentIndex p_tangent)
-{
-	ERR_FAIL_COND(curve.is_null());
-	ERR_FAIL_INDEX_MSG(p_index, curve->get_point_count(), "Curve point is out of bounds.");
-
-	if (p_tangent == TANGENT_NONE) {
-		return;
-	}
-
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Toggle Linear Curve Point's Tangent"));
-
-	Curve::TangentMode prev_mode = (p_tangent == TANGENT_LEFT)
-									   ? curve->get_point_left_mode(p_index)
-									   : curve->get_point_right_mode(p_index);
-	Curve::TangentMode mode =
-		(prev_mode == Curve::TANGENT_LINEAR) ? Curve::TANGENT_FREE : Curve::TANGENT_LINEAR;
-	float prev_angle = (p_tangent == TANGENT_LEFT) ? curve->get_point_left_tangent(p_index)
-												   : curve->get_point_right_tangent(p_index);
-
-	// Add different methods in the UndoRedo based on the tangent passed.
-	if (p_tangent == TANGENT_LEFT) {
-		undo_redo->add_do_method(curve->obj.get(), "set_point_left_mode", p_index, mode);
-		undo_redo->add_undo_method(curve->obj.get(), "set_point_left_mode", p_index, prev_mode);
-		undo_redo->add_undo_method(curve->obj.get(), "set_point_left_tangent", p_index, prev_angle);
-	}
-	else {
-		undo_redo->add_do_method(curve->obj.get(), "set_point_right_mode", p_index, mode);
-		undo_redo->add_undo_method(curve->obj.get(), "set_point_right_mode", p_index, prev_mode);
-		undo_redo->add_undo_method(
-			curve->obj.get(), "set_point_right_tangent", p_index, prev_angle);
-	}
-
-	undo_redo->commit_action();
 }
 
 void CurveEdit::set_selected_index(int p_index)
@@ -1110,7 +786,8 @@ void CurveEdit::_redraw()
 			get_theme_color(SNAME("axis_x_color"), EditorStringName(Editor)).darkened(0.4));
 		draw_line(Vector2(curve->get_min_domain(), initial_grab_pos.y),
 			Vector2(curve->get_max_domain(), initial_grab_pos.y),
-			get_theme_color(SNAME("axis_y_color"), EditorStringName(Editor)).darkened(0.4));
+			get_theme_color(SNAME("axis_y_color"), EditorStringName
+(Editor)).darkened(0.4));
 	}
 }
 
@@ -1136,153 +813,10 @@ void CurveEditor::_on_preset_item_selected(int p_preset_id)
 
 void CurveEditor::set_curve(const Ref<Curve>& p_curve) { curve_editor_rect->set_curve(p_curve); }
 
-void CurveEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		spacing = Math::round(BASE_SPACING * get_theme_default_base_scale());
-		snap_button->set_button_icon(get_editor_theme_icon(SNAME("SnapGrid")));
-		PopupMenu* p = presets_button->get_popup();
-		p->clear();
-		p->add_icon_item(get_editor_theme_icon(SNAME("CurveConstant")), TTR("Constant"),
-			CurveEdit::PRESET_CONSTANT);
-		p->add_icon_item(
-			get_editor_theme_icon(SNAME("CurveLinear")), TTR("Linear"), CurveEdit::PRESET_LINEAR);
-		p->add_icon_item(
-			get_editor_theme_icon(SNAME("CurveIn")), TTR("Ease In"), CurveEdit::PRESET_EASE_IN);
-		p->add_icon_item(
-			get_editor_theme_icon(SNAME("CurveOut")), TTR("Ease Out"), CurveEdit::PRESET_EASE_OUT);
-		p->add_icon_item(get_editor_theme_icon(SNAME("CurveInOut")), TTR("Smoothstep"),
-			CurveEdit::PRESET_SMOOTHSTEP);
-	} break;
-	case NOTIFICATION_READY: {
-		Ref<Curve> curve = curve_editor_rect->get_curve();
-		if (curve.is_valid()) {
-			// Set snapping settings based on the curve's meta.
-			snap_button->set_pressed(curve->obj->get_meta("_snap_enabled", false));
-			snap_count_edit->set_value(curve->obj->get_meta("_snap_count", DEFAULT_SNAP));
-		}
-	} break;
-	case NOTIFICATION_RESIZED:
-		curve_editor_rect->update_minimum_size();
-		break;
-	}
-}
-
-CurveEditor::CurveEditor()
-{
-	HFlowContainer* toolbar = memnew(HFlowContainer);
-	add_child(toolbar);
-
-	snap_button = memnew(Button);
-	snap_button->set_tooltip_text(TTR("Toggle Grid Snap"));
-	snap_button->set_toggle_mode(true);
-	toolbar->add_child(snap_button);
-	snap_button->connect(
-		SceneStringName(toggled), callable_mp(this, &CurveEditor::_set_snap_enabled));
-
-	toolbar->add_child(memnew(VSeparator));
-
-	snap_count_edit = memnew(EditorSpinSlider);
-	snap_count_edit->set_min(2);
-	snap_count_edit->set_max(100);
-	snap_count_edit->set_accessibility_name(TTRC("Snap Step"));
-	snap_count_edit->set_value(DEFAULT_SNAP);
-	snap_count_edit->set_custom_minimum_size(Size2(65 * EDSCALE, 0));
-	toolbar->add_child(snap_count_edit);
-	snap_count_edit->connect(
-		SceneStringName(value_changed), callable_mp(this, &CurveEditor::_set_snap_count));
-
-	presets_button = memnew(MenuButton);
-	presets_button->set_text(TTR("Presets"));
-	presets_button->set_switch_on_hover(true);
-	presets_button->set_h_size_flags(SIZE_EXPAND | SIZE_SHRINK_END);
-	toolbar->add_child(presets_button);
-	presets_button->get_popup()->connect(
-		SceneStringName(id_pressed), callable_mp(this, &CurveEditor::_on_preset_item_selected));
-
-	curve_editor_rect = memnew(CurveEdit);
-	add_child(curve_editor_rect);
-
-	// Some empty space below. Not a part of the curve editor so it can't draw in it.
-	Control* empty_space = memnew(Control);
-	empty_space->set_custom_minimum_size(Vector2(0, spacing));
-	add_child(empty_space);
-
-	set_mouse_filter(MOUSE_FILTER_STOP);
-	_set_snap_enabled(snap_button->is_pressed());
-	_set_snap_count(snap_count_edit->get_value());
-}
-
 ///////////////////////
-
-bool EditorInspectorPluginCurve::can_handle(Object* p_object)
-{
-	return Object::cast_to<Curve>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginCurve::parse_begin(Object* p_object)
-{
-	Curve* curve = Object::cast_to<Curve>(p_object);
-	ERR_FAIL_NULL(curve);
-	Ref<Curve> c(curve);
-
-	CurveEditor* editor = memnew(CurveEditor);
-	editor->set_curve(c);
-	add_custom_control(editor);
-}
-
-CurveEditorPlugin::CurveEditorPlugin()
-{
-	Ref<EditorInspectorPluginCurve> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
-
-	EditorInterface::get_singleton()->get_resource_previewer()->add_preview_generator(
-		memnew(CurvePreviewGenerator));
-}
 
 ///////////////////////
 
 bool CurvePreviewGenerator::handles(const String& p_type) const { return p_type == "Curve"; }
-
-Ref<Texture2D> CurvePreviewGenerator::generate(
-	const Ref<Resource>& p_from, const Size2& p_size, Dictionary& p_metadata) const
-{
-	Ref<Curve> curve = p_from;
-	if (curve.is_null()) {
-		return Ref<Texture2D>();
-	}
-	Ref<Image> img_ref;
-	img_ref.instantiate();
-	Image& im = **img_ref;
-	im.initialize_data(p_size.x, p_size.y, false, Image::FORMAT_RGBA8);
-
-	Color line_color = EditorInterface::get_singleton()->get_editor_theme()->get_color(
-		SceneStringName(font_color), EditorStringName(Editor));
-
-	// Set the first pixel of the thumbnail.
-	float v = (curve->sample_baked(curve->get_min_domain()) - curve->get_min_value()) /
-			  curve->get_value_range();
-	int y = CLAMP(im.get_height() - v * im.get_height(), 0, im.get_height() - 1);
-	im.set_pixel(0, y, line_color);
-
-	// Plot a line towards the next point.
-	int prev_y = y;
-	for (int x = 1; x < im.get_width(); ++x) {
-		float t = static_cast<float>(x) / im.get_width() * curve->get_domain_range() +
-				  curve->get_min_domain();
-		v = (curve->sample_baked(t) - curve->get_min_value()) / curve->get_value_range();
-		y = CLAMP(im.get_height() - v * im.get_height(), 0, im.get_height() - 1);
-
-		Vector<Point2i> points = Geometry2D::bresenham_line(Point2i(x - 1, prev_y), Point2i(x, y));
-		for (Point2i point : points) {
-			im.set_pixelv(point, line_color);
-		}
-		prev_y = y;
-	}
-
-	return ImageTexture::create_from_image(img_ref);
-}
 
 

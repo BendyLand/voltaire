@@ -30,7 +30,6 @@
 
 #include "core/config/engine.h"
 #include "core/input/input.h"
-#include "core/object/class_db.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 #include "slider.h"
@@ -45,179 +44,6 @@ Size2 Slider::get_minimum_size() const
 	}
 	else {
 		return Size2i(MAX(ss.width, rs.width), ss.height);
-	}
-}
-
-void Slider::gui_input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	if (!editable) {
-		return;
-	}
-
-	Ref<InputEventMouseButton> mb = p_event;
-
-	if (mb.is_valid()) {
-		if (mb->get_button_index() == MouseButton::LEFT) {
-			if (mb->is_pressed()) {
-				Ref<Texture2D> grabber;
-				if (mouse_inside || has_focus(true)) {
-					grabber = theme_cache.grabber_hl_icon;
-				}
-				else {
-					grabber = theme_cache.grabber_icon;
-				}
-
-				grab.pos = orientation == VERTICAL ? mb->get_position().y : mb->get_position().x;
-				grab.value_before_dragging = get_as_ratio();
-				this->obj->emit_signal(SNAME("drag_started"));
-
-				double grab_width = theme_cache.center_grabber ? 0.0 : (double)grabber->get_width();
-				double grab_height =
-					theme_cache.center_grabber ? 0.0 : (double)grabber->get_height();
-				double max = orientation == VERTICAL ? get_size().height - grab_height
-													 : get_size().width - grab_width;
-				this->obj->set_block_signals(true);
-				if (orientation == VERTICAL) {
-					set_as_ratio(1 - (((double)grab.pos - (grab_height / 2.0)) / max));
-				}
-				else {
-					double v = ((double)grab.pos - (grab_width / 2.0)) / max;
-					set_as_ratio(is_layout_rtl() ? 1 - v : v);
-				}
-				this->obj->set_block_signals(false);
-				grab.active = true;
-				grab.uvalue = get_as_ratio();
-
-				_notify_shared_value_changed();
-			}
-			else {
-				grab.active = false;
-
-				const bool value_changed =
-					!Math::is_equal_approx((double)grab.value_before_dragging, get_as_ratio());
-				this->obj->emit_signal(SNAME("drag_ended"), value_changed);
-			}
-		}
-		else if (scrollable) {
-			if (mb->is_pressed() && mb->get_button_index() == MouseButton::WHEEL_UP) {
-				if (_is_focusable()) {
-					grab_focus();
-				}
-				set_value(get_value() + get_step());
-			}
-			else if (mb->is_pressed() && mb->get_button_index() == MouseButton::WHEEL_DOWN) {
-				if (_is_focusable()) {
-					grab_focus();
-				}
-				set_value(get_value() - get_step());
-			}
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_event;
-
-	if (mm.is_valid()) {
-		if (grab.active) {
-			Size2i size = get_size();
-			Ref<Texture2D> grabber = theme_cache.grabber_hl_icon;
-			double grab_width = theme_cache.center_grabber ? 0.0 : (double)grabber->get_width();
-			double grab_height = theme_cache.center_grabber ? 0.0 : (double)grabber->get_height();
-			double motion =
-				(orientation == VERTICAL ? mm->get_position().y : mm->get_position().x) - grab.pos;
-			if (orientation == VERTICAL) {
-				motion = -motion;
-			}
-			else if (is_layout_rtl()) {
-				motion = -motion;
-			}
-			double areasize =
-				orientation == VERTICAL ? size.height - grab_height : size.width - grab_width;
-			if (areasize <= 0) {
-				return;
-			}
-			double umotion = motion / double(areasize);
-			set_as_ratio(grab.uvalue + umotion);
-		}
-	}
-
-	Input* input = Input::get_singleton();
-	Ref<InputEventJoypadMotion> joypadmotion_event = p_event;
-	Ref<InputEventJoypadButton> joypadbutton_event = p_event;
-	bool is_joypad_event = (joypadmotion_event.is_valid() || joypadbutton_event.is_valid());
-
-	if (mm.is_null() && mb.is_null()) {
-		if (p_event->is_action_pressed("ui_left", true)) {
-			if (orientation != HORIZONTAL) {
-				return;
-			}
-			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_left", p_event.ptr(), true)) {
-					return;
-				}
-				set_process_internal(true);
-			}
-			if (is_layout_rtl()) {
-				set_value(get_value() + (custom_step >= 0 ? custom_step : get_step()));
-			}
-			else {
-				set_value(get_value() - (custom_step >= 0 ? custom_step : get_step()));
-			}
-			accept_event();
-		}
-		else if (p_event->is_action_pressed("ui_right", true)) {
-			if (orientation != HORIZONTAL) {
-				return;
-			}
-			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_right", p_event.ptr(), true)) {
-					return;
-				}
-				set_process_internal(true);
-			}
-			if (is_layout_rtl()) {
-				set_value(get_value() - (custom_step >= 0 ? custom_step : get_step()));
-			}
-			else {
-				set_value(get_value() + (custom_step >= 0 ? custom_step : get_step()));
-			}
-			accept_event();
-		}
-		else if (p_event->is_action_pressed("ui_up", true)) {
-			if (orientation != VERTICAL) {
-				return;
-			}
-			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_up", p_event.ptr(), true)) {
-					return;
-				}
-				set_process_internal(true);
-			}
-			set_value(get_value() + (custom_step >= 0 ? custom_step : get_step()));
-			accept_event();
-		}
-		else if (p_event->is_action_pressed("ui_down", true)) {
-			if (orientation != VERTICAL) {
-				return;
-			}
-			if (is_joypad_event) {
-				if (!input->is_action_just_pressed_by_event("ui_down", p_event.ptr(), true)) {
-					return;
-				}
-				set_process_internal(true);
-			}
-			set_value(get_value() - (custom_step >= 0 ? custom_step : get_step()));
-			accept_event();
-		}
-		else if (p_event->is_action("ui_home", true) && p_event->is_pressed()) {
-			set_value(get_min());
-			accept_event();
-		}
-		else if (p_event->is_action("ui_end", true) && p_event->is_pressed()) {
-			set_value(get_max());
-			accept_event();
-		}
 	}
 }
 
@@ -434,17 +260,6 @@ void Slider::_notification(int p_what)
 	}
 }
 
-void Slider::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "ticks_position") {
-		p_property.hint_string =
-			orientation == VERTICAL ? "Right,Left,Both,Center" : "Bottom,Top,Both,Center";
-	}
-}
-
 void Slider::set_custom_step(double p_custom_step) { custom_step = p_custom_step; }
 
 double Slider::get_custom_step() const { return custom_step; }
@@ -502,11 +317,10 @@ void Slider::set_scrollable(bool p_scrollable) { scrollable = p_scrollable; }
 
 bool Slider::is_scrollable() const { return scrollable; }
 
-void Slider::_bind_methods() {}
-
 Slider::Slider(Orientation p_orientation)
 {
 	orientation = p_orientation;
 	set_focus_mode(FOCUS_ALL);
 }
+
 

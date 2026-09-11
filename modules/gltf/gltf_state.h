@@ -47,7 +47,6 @@
 
 class GLTFState : public Resource
 {
-	VLTRCLASS(GLTFState, Resource);
 	friend class GLTFDocument;
 	friend class GLTFNode;
 
@@ -67,7 +66,6 @@ protected:
 	String extract_path;
 	String extract_prefix;
 	String filename;
-	Dictionary json;
 	int major_version = 0;
 	int minor_version = 0;
 	String copyright;
@@ -117,50 +115,28 @@ protected:
 	HashMap<GLTFNodeIndex, ImporterMeshInstance3D*> scene_mesh_instances;
 	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
 
-	HashMap<ObjectID, GLTFSkeletonIndex> skeleton3d_to_gltf_skeleton;
-	HashMap<ObjectID, HashMap<ObjectID, GLTFSkinIndex>> skin_and_skeleton3d_to_gltf_skin;
-	Dictionary additional_data;
-
 protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	// Non-const getters for compatibility.
 	int32_t _get_handle_binary_image_bind_compat_113172();
-	Dictionary _get_json_bind_compat_113172();
 	int _get_major_version_bind_compat_113172();
 	int _get_minor_version_bind_compat_113172();
 	Vector<uint8_t> _get_glb_data_bind_compat_113172();
 	bool _get_use_named_skin_binds_bind_compat_113172();
 	bool _get_discard_meshes_and_materials_bind_compat_113172();
-	Array _get_nodes_bind_compat_113172();
-	Array _get_buffers_bind_compat_113172();
-	Array _get_buffer_views_bind_compat_113172();
-	Array _get_accessors_bind_compat_113172();
-	Array _get_meshes_bind_compat_113172();
-	Array _get_materials_bind_compat_113172();
 	String _get_scene_name_bind_compat_113172();
 	String _get_base_path_bind_compat_113172();
 	String _get_extract_path_bind_compat_113172();
 	String _get_extract_prefix_bind_compat_113172();
 	PackedInt32Array _get_root_nodes_bind_compat_113172();
-	Array _get_textures_bind_compat_113172();
-	Array _get_texture_samplers_bind_compat_113172();
-	Array _get_images_bind_compat_113172();
-	Array _get_skins_bind_compat_113172();
-	Array _get_cameras_bind_compat_113172();
-	Array _get_lights_bind_compat_113172();
-	Array _get_unique_names_bind_compat_113172();
-	Array _get_unique_animation_names_bind_compat_113172();
-	Array _get_skeletons_bind_compat_113172();
 	bool _get_create_animations_bind_compat_113172();
 	bool _get_import_as_skeleton_bones_bind_compat_113172();
-	Array _get_animations_bind_compat_113172();
 	Node* _get_scene_node_bind_compat_113172(GLTFNodeIndex p_gltf_node_index);
 	GLTFNodeIndex _get_node_index_bind_compat_113172(Node* p_node);
 	int _get_animation_players_count_bind_compat_113172(int p_anim_player_index);
 	AnimationPlayer* _get_animation_player_bind_compat_113172(int p_anim_player_index);
-	Variant _get_additional_data_bind_compat_113172(const StringName& p_extension_name);
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
@@ -200,9 +176,6 @@ public:
 		handle_binary_image_mode = p_handle_binary_image;
 	}
 
-	Dictionary get_json() const;
-	void set_json(const Dictionary& p_json);
-
 	int get_major_version() const;
 	void set_major_version(int p_major_version);
 
@@ -225,15 +198,9 @@ public:
 
 	void set_nodes(const Vector<Ref<GLTFNode>>& p_nodes) { nodes = p_nodes; }
 
-	Array get_nodes_bind() const;
-	void set_nodes_bind(const Array& p_nodes);
-
 	const Vector<PackedByteArray>& get_buffers() const { return buffers; }
 
 	void set_buffers(const Vector<PackedByteArray>& p_buffers) { buffers = p_buffers; }
-
-	Array get_buffers_bind() const;
-	void set_buffers_bind(const Array& p_buffers);
 
 	const Vector<Ref<GLTFBufferView>>& get_buffer_views() const { return buffer_views; }
 
@@ -242,29 +209,17 @@ public:
 		buffer_views = p_buffer_views;
 	}
 
-	Array get_buffer_views_bind() const;
-	void set_buffer_views_bind(const Array& p_buffer_views);
-
 	const Vector<Ref<GLTFAccessor>>& get_accessors() const { return accessors; }
 
 	void set_accessors(const Vector<Ref<GLTFAccessor>>& p_accessors) { accessors = p_accessors; }
-
-	Array get_accessors_bind() const;
-	void set_accessors_bind(const Array& p_accessors);
 
 	const Vector<Ref<GLTFMesh>>& get_meshes() const { return meshes; }
 
 	void set_meshes(const Vector<Ref<GLTFMesh>>& p_meshes) { meshes = p_meshes; }
 
-	Array get_meshes_bind() const;
-	void set_meshes_bind(const Array& p_meshes);
-
 	const Vector<Ref<Material>>& get_materials() const { return materials; }
 
 	void set_materials(const Vector<Ref<Material>>& p_materials) { materials = p_materials; }
-
-	Array get_materials_bind() const;
-	void set_materials_bind(const Array& p_materials);
 
 	String get_scene_name() const;
 	void set_scene_name(const String& p_scene_name);
@@ -288,9 +243,6 @@ public:
 
 	void set_textures(const Vector<Ref<GLTFTexture>>& p_textures) { textures = p_textures; }
 
-	Array get_textures_bind() const;
-	void set_textures_bind(const Array& p_textures);
-
 	const Vector<Ref<GLTFTextureSampler>>& get_texture_samplers() const { return texture_samplers; }
 
 	void set_texture_samplers(const Vector<Ref<GLTFTextureSampler>>& p_texture_samplers)
@@ -298,43 +250,25 @@ public:
 		texture_samplers = p_texture_samplers;
 	}
 
-	Array get_texture_samplers_bind() const;
-	void set_texture_samplers_bind(const Array& p_texture_samplers);
-
 	const Vector<Ref<Texture2D>>& get_images() const { return images; }
 
 	void set_images(const Vector<Ref<Texture2D>>& p_images) { images = p_images; }
-
-	Array get_images_bind() const;
-	void set_images_bind(const Array& p_images);
 
 	const Vector<Ref<GLTFSkin>>& get_skins() const { return skins; }
 
 	void set_skins(const Vector<Ref<GLTFSkin>>& p_skins) { skins = p_skins; }
 
-	Array get_skins_bind() const;
-	void set_skins_bind(const Array& p_skins);
-
 	const Vector<Ref<GLTFCamera>>& get_cameras() const { return cameras; }
 
 	void set_cameras(const Vector<Ref<GLTFCamera>>& p_cameras) { cameras = p_cameras; }
-
-	Array get_cameras_bind() const;
-	void set_cameras_bind(const Array& p_cameras);
 
 	const Vector<Ref<GLTFLight>>& get_lights() const { return lights; }
 
 	void set_lights(const Vector<Ref<GLTFLight>>& p_lights) { lights = p_lights; }
 
-	Array get_lights_bind() const;
-	void set_lights_bind(const Array& p_lights);
-
 	const HashSet<String>& get_unique_names() const { return unique_names; }
 
 	void set_unique_names(const HashSet<String>& p_unique_names) { unique_names = p_unique_names; }
-
-	Array get_unique_names_bind() const;
-	void set_unique_names_bind(const Array& p_unique_names);
 
 	const HashSet<String>& get_unique_animation_names() const { return unique_animation_names; }
 
@@ -343,15 +277,9 @@ public:
 		unique_animation_names = p_unique_animation_names;
 	}
 
-	Array get_unique_animation_names_bind() const;
-	void set_unique_animation_names_bind(const Array& p_unique_names);
-
 	const Vector<Ref<GLTFSkeleton>>& get_skeletons() const { return skeletons; }
 
 	void set_skeletons(const Vector<Ref<GLTFSkeleton>>& p_skeletons) { skeletons = p_skeletons; }
-
-	Array get_skeletons_bind() const;
-	void set_skeletons_bind(const Array& p_skeletons);
 
 	bool get_create_animations() const;
 	void set_create_animations(bool p_create_animations);
@@ -366,20 +294,12 @@ public:
 		animations = p_animations;
 	}
 
-	Array get_animations_bind() const;
-	void set_animations_bind(const Array& p_animations);
-
 	Node* get_scene_node(GLTFNodeIndex p_gltf_node_index) const;
 	GLTFNodeIndex get_node_index(Node* p_node) const;
 
 	int get_animation_players_count(int p_anim_player_index) const;
 
 	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
-
-	Variant get_additional_data(const StringName& p_extension_name) const;
-	void set_additional_data(const StringName& p_extension_name, Variant p_additional_data);
 };
-
-VARIANT_ENUM_CAST(GLTFState::HandleBinaryImageMode);
 
 

@@ -30,19 +30,18 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
+#include "core/types.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
 
-class PhysicsTestMotionResult3D : public RefCounted {
-	VLTRCLASS(PhysicsTestMotionResult3D, RefCounted);
-
+class PhysicsTestMotionResult3D : public RefCounted
+{
 	PS3DT::MotionResult result;
 
 protected:
 	static void _bind_methods();
 
 public:
-	PS3DT::MotionResult *get_result_ptr() { return &result; }
+	PS3DT::MotionResult* get_result_ptr() { return &result; }
 
 	Vector3 get_travel() const;
 	Vector3 get_remainder() const;
@@ -54,10 +53,10 @@ public:
 	Vector3 get_collision_point(int p_collision_index = 0) const;
 	Vector3 get_collision_normal(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
-	ObjectID get_collider_id(int p_collision_index = 0) const;
 	RID get_collider_rid(int p_collision_index = 0) const;
-	Object *get_collider(int p_collision_index = 0) const;
 	int get_collider_shape(int p_collision_index = 0) const;
 	int get_collision_local_shape(int p_collision_index = 0) const;
 	real_t get_collision_depth(int p_collision_index = 0) const;
 };
+
+

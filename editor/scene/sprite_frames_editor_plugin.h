@@ -47,7 +47,6 @@ class OptionButton;
 class EditorFileDialog;
 
 class ClipboardSpriteFrames : public Resource {
-	VLTRCLASS(ClipboardSpriteFrames, Resource);
 
 public:
 	struct Frame {
@@ -58,7 +57,6 @@ public:
 };
 
 class ClipboardAnimation : public Resource {
-	VLTRCLASS(ClipboardAnimation, Resource);
 
 public:
 	String name;
@@ -70,7 +68,6 @@ public:
 };
 
 class SpriteFramesEditor : public EditorDock {
-	VLTRCLASS(SpriteFramesEditor, EditorDock);
 
 	Ref<SpriteFrames> frames;
 	Node *animated_sprite = nullptr;
@@ -264,10 +261,6 @@ class SpriteFramesEditor : public EditorDock {
 	bool updating;
 	bool updating_split_settings = false; // Skip SpinBox/Range callback when setting value by code.
 
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
-
 	void _open_sprite_sheet();
 	void _auto_slice_sprite_sheet();
 	bool _matches_background_color(const Color &p_background_color, const Color &p_pixel_color);
@@ -315,15 +308,11 @@ public:
 };
 
 class SpriteFramesEditorPlugin : public EditorPlugin {
-	VLTRCLASS(SpriteFramesEditorPlugin, EditorPlugin);
 
 	SpriteFramesEditor *frames_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "SpriteFrames"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	SpriteFramesEditorPlugin();
 };

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
@@ -48,42 +47,7 @@ real_t KinematicCollision2D::get_angle(const Vector2& p_up_direction) const
 
 real_t KinematicCollision2D::get_depth() const { return result.collision_depth; }
 
-Object* KinematicCollision2D::get_local_shape() const
-{
-	PhysicsBody2D* owner = ObjectDB::get_instance<PhysicsBody2D>(owner_id);
-	if (!owner) {
-		return nullptr;
-	}
-	uint32_t ownerid = owner->shape_find_owner(result.collision_local_shape);
-	return owner->shape_owner_get_owner(ownerid);
-}
-
-Object* KinematicCollision2D::get_collider() const
-{
-	if (result.collider_id.is_valid()) {
-		return ObjectDB::get_instance(result.collider_id);
-	}
-
-	return nullptr;
-}
-
-ObjectID KinematicCollision2D::get_collider_id() const { return result.collider_id; }
-
 RID KinematicCollision2D::get_collider_rid() const { return result.collider; }
-
-Object* KinematicCollision2D::get_collider_shape() const
-{
-	Object* collider = get_collider();
-	if (collider) {
-		CollisionObject2D* obj2d = Object::cast_to<CollisionObject2D>(collider);
-		if (obj2d) {
-			uint32_t ownerid = obj2d->shape_find_owner(result.collider_shape);
-			return obj2d->shape_owner_get_owner(ownerid);
-		}
-	}
-
-	return nullptr;
-}
 
 int KinematicCollision2D::get_collider_shape_index() const { return result.collider_shape; }
 

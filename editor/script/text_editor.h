@@ -32,12 +32,11 @@
 
 #include "editor/script/script_editor_base.h"
 
-class TextEditor : public TextEditorBase {
-	VLTRCLASS(TextEditor, TextEditorBase);
+class TextEditor : public TextEditorBase
+{
+	static ScriptEditorBase* create_editor(const Ref<Resource>& p_resource);
 
-	static ScriptEditorBase *create_editor(const Ref<Resource> &p_resource);
-
-	static inline EditMenus *edit_menus = nullptr;
+	static inline EditMenus* edit_menus = nullptr;
 
 protected:
 	virtual void _validate_script() override;
@@ -45,9 +44,11 @@ protected:
 public:
 	virtual void apply_code() override;
 
-	virtual Control *get_edit_menu() override;
+	virtual Control* get_edit_menu() override;
 
 	static void register_editor();
 
 	TextEditor();
 };
+
+

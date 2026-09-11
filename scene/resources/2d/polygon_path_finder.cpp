@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_2d.h"
-#include "core/object/class_db.h"
 #include "polygon_path_finder.h"
 
 bool PolygonPathFinder::_is_point_inside(const Vector2& p_point) const
@@ -391,104 +390,6 @@ Vector<Vector2> PolygonPathFinder::find_path(const Vector2& p_from, const Vector
 	return path;
 }
 
-void PolygonPathFinder::_set_data(const Dictionary& p_data)
-{
-	ERR_FAIL_COND(!p_data.has("points"));
-	ERR_FAIL_COND(!p_data.has("connections"));
-	ERR_FAIL_COND(!p_data.has("segments"));
-	ERR_FAIL_COND(!p_data.has("bounds"));
-
-	Vector<Vector2> p = p_data["points"];
-	Array c = p_data["connections"];
-
-	ERR_FAIL_COND(c.size() != p.size());
-	if (c.size()) {
-		return;
-	}
-
-	int pc = p.size();
-	points.resize(pc + 2);
-
-	const Vector2* pr = p.ptr();
-	for (int i = 0; i < pc; i++) {
-		points.write[i].pos = pr[i];
-		Vector<int> con = c[i];
-		const int* cr = con.ptr();
-		int cc = con.size();
-		for (int j = 0; j < cc; j++) {
-			points.write[i].connections.insert(cr[j]);
-		}
-	}
-
-	if (p_data.has("penalties")) {
-		Vector<real_t> penalties = p_data["penalties"];
-		if (penalties.size() == pc) {
-			const real_t* pr2 = penalties.ptr();
-			for (int i = 0; i < pc; i++) {
-				points.write[i].penalty = pr2[i];
-			}
-		}
-	}
-
-	Vector<int> segs = p_data["segments"];
-	int sc = segs.size();
-	ERR_FAIL_COND(sc & 1);
-	const int* sr = segs.ptr();
-	for (int i = 0; i < sc; i += 2) {
-		Edge e(sr[i], sr[i + 1]);
-		edges.insert(e);
-	}
-	bounds = p_data["bounds"];
-}
-
-Dictionary PolygonPathFinder::_get_data() const
-{
-	Dictionary d;
-	Vector<Vector2> p;
-	Vector<int> ind;
-	Array path_connections;
-	p.resize(MAX(0, points.size() - 2));
-	path_connections.resize(MAX(0, points.size() - 2));
-	ind.resize(edges.size() * 2);
-	Vector<real_t> penalties;
-	penalties.resize(MAX(0, points.size() - 2));
-	{
-		Vector2* wp = p.ptrw();
-		real_t* pw = penalties.ptrw();
-
-		for (int i = 0; i < points.size() - 2; i++) {
-			wp[i] = points[i].pos;
-			pw[i] = points[i].penalty;
-			Vector<int> c;
-			c.resize(points[i].connections.size());
-			{
-				int* cw = c.ptrw();
-				int idx = 0;
-				for (const int& E : points[i].connections) {
-					cw[idx++] = E;
-				}
-			}
-			path_connections[i] = c;
-		}
-	}
-	{
-		int* iw = ind.ptrw();
-		int idx = 0;
-		for (const Edge& E : edges) {
-			iw[idx++] = E.points[0];
-			iw[idx++] = E.points[1];
-		}
-	}
-
-	d["bounds"] = bounds;
-	d["points"] = p;
-	d["penalties"] = penalties;
-	d["connections"] = path_connections;
-	d["segments"] = ind;
-
-	return d;
-}
-
 bool PolygonPathFinder::is_point_inside(const Vector2& p_point) const
 {
 	return _is_point_inside(p_point);
@@ -548,8 +449,6 @@ float PolygonPathFinder::get_point_penalty(int p_point) const
 	ERR_FAIL_INDEX_V(p_point, points.size() - 2, 0);
 	return points[p_point].penalty;
 }
-
-void PolygonPathFinder::_bind_methods() {}
 
 PolygonPathFinder::PolygonPathFinder() {}
 

@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/condition_variable.h"
 #include "core/templates/rb_set.h"
 #include "editor/export/editor_export_plugin.h"
@@ -41,8 +39,6 @@ class RenderingShaderContainerFormat;
 
 class ShaderBakerExportPluginPlatform : public RefCounted
 {
-	VLTRCLASS(ShaderBakerExportPluginPlatform, RefCounted);
-
 public:
 	virtual RenderingShaderContainerFormat* create_shader_container_format(
 		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset) = 0;
@@ -53,8 +49,6 @@ public:
 
 class ShaderBakerExportPlugin : public EditorExportPlugin
 {
-	VLTRSOFTCLASS(ShaderBakerExportPlugin, EditorExportPlugin);
-
 protected:
 	struct WorkItem
 	{
@@ -76,7 +70,6 @@ protected:
 	{
 		String cache_path;
 		LocalVector<int> variants;
-		LocalVector<WorkerThreadPool::TaskID> variant_tasks;
 	};
 
 	String shader_cache_platform_name;

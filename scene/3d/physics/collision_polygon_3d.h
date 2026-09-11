@@ -33,8 +33,9 @@
 #include "scene/3d/node_3d.h"
 
 class CollisionObject3D;
-class CollisionPolygon3D : public Node3D {
-	VLTRCLASS(CollisionPolygon3D, Node3D);
+
+class CollisionPolygon3D : public Node3D
+{
 	real_t margin = 0.04;
 
 protected:
@@ -43,7 +44,7 @@ protected:
 	Vector<Point2> polygon;
 
 	uint32_t owner_id = 0;
-	CollisionObject3D *collision_object = nullptr;
+	CollisionObject3D* collision_object = nullptr;
 
 	Color debug_color;
 	bool debug_fill = true;
@@ -62,23 +63,17 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-#ifdef DEBUG_ENABLED
-	bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
-	void _validate_property(PropertyInfo &p_property) const;
-#endif // DEBUG_ENABLED
-
 public:
 	void set_depth(real_t p_depth);
 	real_t get_depth() const;
 
-	void set_polygon(const Vector<Point2> &p_polygon);
+	void set_polygon(const Vector<Point2>& p_polygon);
 	Vector<Point2> get_polygon() const;
 
 	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
-	void set_debug_color(const Color &p_color);
+	void set_debug_color(const Color& p_color);
 	Color get_debug_color() const;
 
 	void set_debug_fill_enabled(bool p_enable);
@@ -93,3 +88,5 @@ public:
 
 	CollisionPolygon3D();
 };
+
+

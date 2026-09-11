@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "openxr_spatial_anchor.h"
 
 void OpenXRSpatialAnchorCapability::_bind_compatibility_methods() {}

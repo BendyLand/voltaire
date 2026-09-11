@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation_tree.h"
-#include "core/object/class_db.h"
 
 void AnimationTree::_set_process_callback_bind_compat_80813(
 	AnimationTree::AnimationProcessCallback p_mode)
@@ -44,15 +43,6 @@ AnimationTree::AnimationProcessCallback
 AnimationTree::_get_process_callback_bind_compat_80813() const
 {
 	return static_cast<AnimationProcessCallback>(static_cast<int>(get_callback_mode_process()));
-}
-
-void AnimationTree::_set_tree_root_bind_compat_80813(const Ref<AnimationNode>& p_root)
-{
-	const Ref<AnimationRootNode> rn = Ref<AnimationRootNode>(p_root.ptr());
-	if (rn.is_null()) {
-		return;
-	}
-	return (set_root_animation_node(rn));
 }
 
 Ref<AnimationNode> AnimationTree::_get_tree_root_bind_compat_80813() const

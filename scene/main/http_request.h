@@ -31,6 +31,7 @@
 #pragma once
 
 #include "core/io/http_client.h"
+#include "core/io/stream_peer_gzip.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 
@@ -38,11 +39,11 @@ class Thread;
 class Timer;
 class StreamPeerGZIP;
 
-class HTTPRequest : public Node {
-	VLTRCLASS(HTTPRequest, Node);
-
+class HTTPRequest : public Node
+{
 public:
-	enum Result {
+	enum Result
+	{
 		RESULT_SUCCESS,
 		RESULT_CHUNKED_BODY_SIZE_MISMATCH,
 		RESULT_CANT_CONNECT,
@@ -103,37 +104,45 @@ private:
 
 	double timeout = 0;
 
-	void _redirect_request(const String &p_new_url);
+	void _redirect_request(const String& p_new_url);
 
-	bool _is_content_header(const String &p_header) const;
+	bool _is_content_header(const String& p_header) const;
 	bool _is_method_safe() const;
-	Error _get_redirect_headers(Vector<String> *r_headers);
+	Error _get_redirect_headers(Vector<String>* r_headers);
 	bool _is_automatic_redirect() const;
 
-	bool _handle_response(bool *ret_value);
+	bool _handle_response(bool* ret_value);
 
-	Error _parse_url(const String &p_url);
+	Error _parse_url(const String& p_url);
 	Error _request();
 
-	bool has_header(const PackedStringArray &p_headers, const String &p_header_name);
-	String get_header_value(const PackedStringArray &p_headers, const String &header_name);
+	bool has_header(const PackedStringArray& p_headers, const String& p_header_name);
+	String get_header_value(const PackedStringArray& p_headers, const String& header_name);
 
 	SafeFlag thread_done;
 	SafeFlag thread_request_quit;
 
 	Thread thread;
 
-	void _defer_done(int p_status, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_data);
-	void _request_done(int p_status, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_data);
-	static void _thread_func(void *p_userdata);
+	void _defer_done(int p_status, int p_code, const PackedStringArray& p_headers,
+		const PackedByteArray& p_data);
+	void _request_done(int p_status, int p_code, const PackedStringArray& p_headers,
+		const PackedByteArray& p_data);
+	static void _thread_func(void* p_userdata);
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
-	Error request(const String &p_url, const Vector<String> &p_custom_headers = Vector<String>(), HTTPClient::Method p_method = HTTPClient::METHOD_GET, const String &p_request_data = ""); //connects to a full url and perform request
-	Error request_raw(const String &p_url, const Vector<String> &p_custom_headers = Vector<String>(), HTTPClient::Method p_method = HTTPClient::METHOD_GET, const Vector<uint8_t> &p_request_data_raw = Vector<uint8_t>()); //connects to a full url and perform request
+	Error request(const String& p_url, const Vector<String>& p_custom_headers = Vector<String>(),
+		HTTPClient::Method p_method = HTTPClient::METHOD_GET,
+		const String& p_request_data = ""); // connects to a full url and perform request
+	Error request_raw(const String& p_url,
+		const Vector<String>& p_custom_headers = Vector<String>(),
+		HTTPClient::Method p_method = HTTPClient::METHOD_GET,
+		const Vector<uint8_t>& p_request_data_raw =
+			Vector<uint8_t>()); // connects to a full url and perform request
 	void cancel_request();
 	HTTPClient::Status get_http_client_status() const;
 
@@ -143,7 +152,7 @@ public:
 	void set_accept_gzip(bool p_gzip);
 	bool is_accepting_gzip() const;
 
-	void set_download_file(const String &p_file);
+	void set_download_file(const String& p_file);
 	String get_download_file() const;
 
 	void set_keep_partial_download(bool p_keep);
@@ -161,7 +170,7 @@ public:
 	void set_max_redirects(int p_max);
 	int get_max_redirects() const;
 
-	Timer *timer = nullptr;
+	Timer* timer = nullptr;
 
 	void set_timeout(double p_timeout);
 	double get_timeout();
@@ -171,12 +180,12 @@ public:
 	int get_downloaded_bytes() const;
 	int get_body_size() const;
 
-	void set_http_proxy(const String &p_host, int p_port);
-	void set_https_proxy(const String &p_host, int p_port);
+	void set_http_proxy(const String& p_host, int p_port);
+	void set_https_proxy(const String& p_host, int p_port);
 
-	void set_tls_options(const Ref<TLSOptions> &p_options);
+	void set_tls_options(const Ref<TLSOptions>& p_options);
 
 	HTTPRequest();
 };
 
-VARIANT_ENUM_CAST(HTTPRequest::Result);
+

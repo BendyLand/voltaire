@@ -32,8 +32,10 @@
 
 #include "scene/3d/node_3d.h"
 
-class LightmapProbe : public Node3D {
-	VLTRCLASS(LightmapProbe, Node3D)
+class LightmapProbe : public Node3D
+{
 public:
 	LightmapProbe();
 };
+
+

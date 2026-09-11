@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "gltf_animation.h"
 
 void GLTFAnimation::_bind_methods() {}
@@ -76,27 +75,6 @@ void GLTFAnimation::set_loop(bool p_val) { loop = p_val; }
 
 HashMap<int, GLTFAnimation::NodeTrack>& GLTFAnimation::get_node_tracks() { return node_tracks; }
 
-HashMap<String, GLTFAnimation::Channel<Variant>>& GLTFAnimation::get_pointer_tracks()
-{
-	return pointer_tracks;
-}
-
-bool GLTFAnimation::is_empty_of_tracks() const
-{
-	return node_tracks.is_empty() && pointer_tracks.is_empty();
-}
-
 GLTFAnimation::GLTFAnimation() {}
-
-Variant GLTFAnimation::get_additional_data(const StringName& p_extension_name)
-{
-	return additional_data.get(p_extension_name, Variant());
-}
-
-void GLTFAnimation::set_additional_data(
-	const StringName& p_extension_name, Variant p_additional_data)
-{
-	additional_data[p_extension_name] = p_additional_data;
-}
 
 

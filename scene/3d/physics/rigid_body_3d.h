@@ -35,21 +35,23 @@
 
 class PhysicsMaterial;
 
-class RigidBody3D : public PhysicsBody3D {
-	VLTRCLASS(RigidBody3D, PhysicsBody3D);
-
+class RigidBody3D : public PhysicsBody3D
+{
 public:
-	enum FreezeMode {
+	enum FreezeMode
+	{
 		FREEZE_MODE_STATIC,
 		FREEZE_MODE_KINEMATIC,
 	};
 
-	enum CenterOfMassMode {
+	enum CenterOfMassMode
+	{
 		CENTER_OF_MASS_MODE_AUTO,
 		CENTER_OF_MASS_MODE_CUSTOM,
 	};
 
-	enum DampMode {
+	enum DampMode
+	{
 		DAMP_MODE_COMBINE,
 		DAMP_MODE_REPLACE,
 	};
@@ -86,58 +88,62 @@ private:
 
 	bool custom_integrator = false;
 
-	struct ShapePair {
+	struct ShapePair
+	{
 		int body_shape = 0;
 		int local_shape = 0;
 		bool tagged = false;
-		bool operator<(const ShapePair &p_sp) const {
+
+		bool operator<(const ShapePair& p_sp) const
+		{
 			if (body_shape == p_sp.body_shape) {
 				return local_shape < p_sp.local_shape;
-			} else {
+			}
+			else {
 				return body_shape < p_sp.body_shape;
 			}
 		}
 
 		ShapePair() {}
-		ShapePair(int p_bs, int p_ls) {
+
+		ShapePair(int p_bs, int p_ls)
+		{
 			body_shape = p_bs;
 			local_shape = p_ls;
 			tagged = false;
 		}
 	};
-	struct RigidBody3D_RemoveAction {
+
+	struct RigidBody3D_RemoveAction
+	{
 		RID rid;
-		ObjectID body_id;
 		ShapePair pair;
 	};
-	struct BodyState {
+
+	struct BodyState
+	{
 		RID rid;
-		//int rc;
+		// int rc;
 		bool in_tree = false;
 		VSet<ShapePair> shapes;
 	};
 
-	struct ContactMonitor {
+	struct ContactMonitor
+	{
 		bool locked = false;
-		HashMap<ObjectID, BodyState> body_map;
 	};
 
-	ContactMonitor *contact_monitor = nullptr;
-	void _body_enter_tree(ObjectID p_id);
-	void _body_exit_tree(ObjectID p_id);
+	ContactMonitor* contact_monitor = nullptr;
 
-	void _body_inout(int p_status, const RID &p_body, ObjectID p_instance, int p_body_shape, int p_local_shape);
-	static void _body_state_changed_callback(void *p_instance, PhysicsDirectBodyState3D *p_state);
+	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
 
-	void _sync_body_state(PhysicsDirectBodyState3D *p_state);
+	void _sync_body_state(PhysicsDirectBodyState3D* p_state);
 
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	void _validate_property(PropertyInfo &p_property) const;
-
-	virtual void _body_state_changed(PhysicsDirectBodyState3D *p_state);
+	virtual void _body_state_changed(PhysicsDirectBodyState3D* p_state);
 
 	void _apply_body_mode();
 
@@ -156,24 +162,24 @@ public:
 
 	virtual real_t get_inverse_mass() const override { return 1.0 / mass; }
 
-	void set_inertia(const Vector3 &p_inertia);
-	const Vector3 &get_inertia() const;
+	void set_inertia(const Vector3& p_inertia);
+	const Vector3& get_inertia() const;
 
 	void set_center_of_mass_mode(CenterOfMassMode p_mode);
 	CenterOfMassMode get_center_of_mass_mode() const;
 
-	void set_center_of_mass(const Vector3 &p_center_of_mass);
-	const Vector3 &get_center_of_mass() const;
+	void set_center_of_mass(const Vector3& p_center_of_mass);
+	const Vector3& get_center_of_mass() const;
 
-	void set_physics_material_override(const Ref<PhysicsMaterial> &p_physics_material_override);
+	void set_physics_material_override(const Ref<PhysicsMaterial>& p_physics_material_override);
 	Ref<PhysicsMaterial> get_physics_material_override() const;
 
-	void set_linear_velocity(const Vector3 &p_velocity);
+	void set_linear_velocity(const Vector3& p_velocity);
 	Vector3 get_linear_velocity() const override;
 
-	void set_axis_velocity(const Vector3 &p_axis);
+	void set_axis_velocity(const Vector3& p_axis);
 
-	void set_angular_velocity(const Vector3 &p_velocity);
+	void set_angular_velocity(const Vector3& p_velocity);
 	Vector3 get_angular_velocity() const override;
 
 	Basis get_inverse_inertia_tensor() const;
@@ -212,24 +218,22 @@ public:
 	void set_use_continuous_collision_detection(bool p_enable);
 	bool is_using_continuous_collision_detection() const;
 
-	Array get_colliding_bodies() const;
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_impulse(const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	void apply_torque_impulse(const Vector3& p_impulse);
 
-	void apply_central_impulse(const Vector3 &p_impulse);
-	void apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position = Vector3());
-	void apply_torque_impulse(const Vector3 &p_impulse);
+	void apply_central_force(const Vector3& p_force);
+	void apply_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void apply_torque(const Vector3& p_torque);
 
-	void apply_central_force(const Vector3 &p_force);
-	void apply_force(const Vector3 &p_force, const Vector3 &p_position = Vector3());
-	void apply_torque(const Vector3 &p_torque);
+	void add_constant_central_force(const Vector3& p_force);
+	void add_constant_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void add_constant_torque(const Vector3& p_torque);
 
-	void add_constant_central_force(const Vector3 &p_force);
-	void add_constant_force(const Vector3 &p_force, const Vector3 &p_position = Vector3());
-	void add_constant_torque(const Vector3 &p_torque);
-
-	void set_constant_force(const Vector3 &p_force);
+	void set_constant_force(const Vector3& p_force);
 	Vector3 get_constant_force() const;
 
-	void set_constant_torque(const Vector3 &p_torque);
+	void set_constant_torque(const Vector3& p_torque);
 	Vector3 get_constant_torque() const;
 
 	virtual PackedStringArray get_configuration_warnings() const override;
@@ -241,6 +245,4 @@ private:
 	void _reload_physics_characteristics();
 };
 
-VARIANT_ENUM_CAST(RigidBody3D::FreezeMode);
-VARIANT_ENUM_CAST(RigidBody3D::CenterOfMassMode);
-VARIANT_ENUM_CAST(RigidBody3D::DampMode);
+

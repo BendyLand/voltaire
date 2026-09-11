@@ -32,11 +32,12 @@
 
 #include "editor/plugins/editor_plugin.h"
 
-class NoiseEditorPlugin : public EditorPlugin {
-	VLTRCLASS(NoiseEditorPlugin, EditorPlugin)
-
+class NoiseEditorPlugin : public EditorPlugin
+{
 public:
 	String get_plugin_name() const override;
 
 	NoiseEditorPlugin();
 };
+
+

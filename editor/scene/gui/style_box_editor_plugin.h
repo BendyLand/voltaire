@@ -37,10 +37,9 @@
 class Button;
 class StyleBox;
 
-class StyleBoxPreview : public TextureRect {
-	VLTRCLASS(StyleBoxPreview, TextureRect);
-
-	Button *grid_preview = nullptr;
+class StyleBoxPreview : public TextureRect
+{
+	Button* grid_preview = nullptr;
 	Ref<StyleBox> stylebox;
 
 	void _sb_changed();
@@ -52,24 +51,17 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void edit(const Ref<StyleBox> &p_stylebox);
+	void edit(const Ref<StyleBox>& p_stylebox);
 
 	StyleBoxPreview();
 };
 
-class EditorInspectorPluginStyleBox : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginStyleBox, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class StyleBoxEditorPlugin : public EditorPlugin {
-	VLTRCLASS(StyleBoxEditorPlugin, EditorPlugin);
-
+class StyleBoxEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "StyleBox"; }
 
 	StyleBoxEditorPlugin();
 };
+
+

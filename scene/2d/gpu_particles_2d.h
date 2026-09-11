@@ -32,12 +32,11 @@
 
 #include "scene/2d/node_2d.h"
 
-class GPUParticles2D : public Node2D {
-private:
-	VLTRCLASS(GPUParticles2D, Node2D);
-
+class GPUParticles2D : public Node2D
+{
 public:
-	enum DrawOrder {
+	enum DrawOrder
+	{
 		DRAW_ORDER_INDEX,
 		DRAW_ORDER_LIFETIME,
 		DRAW_ORDER_REVERSE_LIFETIME,
@@ -98,7 +97,6 @@ private:
 
 protected:
 	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 	void _notification(int p_what);
 #ifdef TOOLS_ENABLED
 	void _draw_emission_gizmo();
@@ -119,9 +117,9 @@ public:
 	void set_pre_process_time(double p_time);
 	void set_explosiveness_ratio(real_t p_ratio);
 	void set_randomness_ratio(real_t p_ratio);
-	void set_visibility_rect(const Rect2 &p_visibility_rect);
+	void set_visibility_rect(const Rect2& p_visibility_rect);
 	void set_use_local_coordinates(bool p_enable);
-	void set_process_material(const Ref<Material> &p_material);
+	void set_process_material(const Ref<Material>& p_material);
 	void set_speed_scale(double p_scale);
 	void set_collision_base_size(real_t p_ratio);
 	void set_trail_enabled(bool p_enabled);
@@ -129,7 +127,8 @@ public:
 	void set_trail_sections(int p_sections);
 	void set_trail_section_subdivisions(int p_subdivisions);
 	void set_interp_to_end(float p_interp);
-	void request_particles_process(real_t p_requested_process_time, real_t p_requested_process_time_residual);
+	void request_particles_process(
+		real_t p_requested_process_time, real_t p_requested_process_time_residual);
 
 #ifdef TOOLS_ENABLED
 	void set_show_gizmos(bool p_show_gizmos);
@@ -166,7 +165,7 @@ public:
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;
 
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_amount_ratio(float p_ratio);
@@ -174,7 +173,7 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	void set_sub_emitter(const NodePath &p_path);
+	void set_sub_emitter(const NodePath& p_path);
 	NodePath get_sub_emitter() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed);
@@ -183,7 +182,8 @@ public:
 	void set_seed(uint32_t p_seed);
 	uint32_t get_seed() const;
 
-	enum EmitFlags {
+	enum EmitFlags
+	{
 		EMIT_FLAG_POSITION = RSE::PARTICLES_EMIT_FLAG_POSITION,
 		EMIT_FLAG_ROTATION_SCALE = RSE::PARTICLES_EMIT_FLAG_ROTATION_SCALE,
 		EMIT_FLAG_VELOCITY = RSE::PARTICLES_EMIT_FLAG_VELOCITY,
@@ -191,15 +191,15 @@ public:
 		EMIT_FLAG_CUSTOM = RSE::PARTICLES_EMIT_FLAG_CUSTOM
 	};
 
-	void emit_particle(const Transform2D &p_transform, const Vector2 &p_velocity, const Color &p_color, const Color &p_custom, uint32_t p_emit_flags);
+	void emit_particle(const Transform2D& p_transform, const Vector2& p_velocity,
+		const Color& p_color, const Color& p_custom, uint32_t p_emit_flags);
 
 	void restart(bool p_keep_seed = false);
 	Rect2 capture_rect() const;
-	void convert_from_particles(Node *p_particles);
+	void convert_from_particles(Node* p_particles);
 
 	GPUParticles2D();
 	~GPUParticles2D();
 };
 
-VARIANT_ENUM_CAST(GPUParticles2D::DrawOrder)
-VARIANT_ENUM_CAST(GPUParticles2D::EmitFlags)
+

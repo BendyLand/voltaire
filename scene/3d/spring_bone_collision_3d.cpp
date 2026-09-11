@@ -29,40 +29,8 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "scene/3d/spring_bone_simulator_3d.h"
 #include "spring_bone_collision_3d.h"
-
-PackedStringArray SpringBoneCollision3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	SpringBoneSimulator3D* parent = Object::cast_to<SpringBoneSimulator3D>(get_parent());
-	if (!parent) {
-		warnings.push_back(RTR("Parent node should be a SpringBoneSimulator3D node."));
-	}
-
-	return warnings;
-}
-
-void SpringBoneCollision3D::_validate_property(PropertyInfo& p_property) const
-{
-	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "bone_name") {
-		Skeleton3D* sk = get_skeleton();
-		if (sk) {
-			p_property.hint = PROPERTY_HINT_ENUM_SUGGESTION;
-			p_property.hint_string = sk->get_concatenated_bone_names();
-		}
-		else {
-			p_property.hint = PROPERTY_HINT_NONE;
-			p_property.hint_string = "";
-		}
-	}
-	else if (bone < 0 &&
-			   (p_property.name == "position_offset" || p_property.name == "rotation_offset")) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
 
 void SpringBoneCollision3D::_validate_bone_name()
 {
@@ -75,15 +43,6 @@ void SpringBoneCollision3D::_validate_bone_name()
 	}
 }
 
-Skeleton3D* SpringBoneCollision3D::get_skeleton() const
-{
-	SpringBoneSimulator3D* parent = Object::cast_to<SpringBoneSimulator3D>(get_parent());
-	if (!parent) {
-		return nullptr;
-	}
-	return parent->get_skeleton();
-}
-
 void SpringBoneCollision3D::set_bone_name(const String& p_name)
 {
 	bone_name = p_name;
@@ -94,25 +53,6 @@ void SpringBoneCollision3D::set_bone_name(const String& p_name)
 }
 
 String SpringBoneCollision3D::get_bone_name() const { return bone_name; }
-
-void SpringBoneCollision3D::set_bone(int p_bone)
-{
-	bone = p_bone;
-
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (bone <= -1 || bone >= sk->get_bone_count()) {
-			WARN_PRINT("Bone index '" + itos(p_bone) +
-					   "' is out of range! Cannot connect BoneAttachment to node!");
-			bone = -1;
-		}
-		else {
-			bone_name = sk->get_bone_name(bone);
-		}
-	}
-
-	this->obj->notify_property_list_changed();
-}
 
 int SpringBoneCollision3D::get_bone() const { return bone; }
 

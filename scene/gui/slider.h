@@ -32,11 +32,11 @@
 
 #include "scene/gui/range.h"
 
-class Slider : public Range {
-	VLTRCLASS(Slider, Range);
-
+class Slider : public Range
+{
 public:
-	enum TickPosition {
+	enum TickPosition
+	{
 		TICK_POSITION_BOTTOM_RIGHT,
 		TICK_POSITION_TOP_LEFT,
 		TICK_POSITION_BOTH,
@@ -44,7 +44,8 @@ public:
 	};
 
 private:
-	struct Grab {
+	struct Grab
+	{
 		int pos = 0;
 		double uvalue = 0.0; // Value at `pos`.
 		double value_before_dragging = 0.0;
@@ -64,7 +65,8 @@ private:
 	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
 	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> slider_style;
 		Ref<StyleBox> grabber_area_style;
 		Ref<StyleBox> grabber_area_hl_style;
@@ -82,9 +84,7 @@ private:
 protected:
 	bool ticks_on_borders = false;
 
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 	static void _bind_methods();
 
 public:
@@ -111,20 +111,16 @@ public:
 	Slider(Orientation p_orientation = VERTICAL);
 };
 
-VARIANT_ENUM_CAST(Slider::TickPosition);
-
-class HSlider : public Slider {
-	VLTRCLASS(HSlider, Slider);
-
+class HSlider : public Slider
+{
 public:
-	HSlider() :
-			Slider(HORIZONTAL) { set_v_size_flags(0); }
+	HSlider() : Slider(HORIZONTAL) { set_v_size_flags(0); }
 };
 
-class VSlider : public Slider {
-	VLTRCLASS(VSlider, Slider);
-
+class VSlider : public Slider
+{
 public:
-	VSlider() :
-			Slider(VERTICAL) { set_h_size_flags(0); }
+	VSlider() : Slider(VERTICAL) { set_h_size_flags(0); }
 };
+
+

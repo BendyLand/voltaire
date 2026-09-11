@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation_blend_space_1d.h"
-#include "core/object/class_db.h"
 
 void AnimationNodeBlendSpace1D::_add_blend_point_bind_compat_110369(
 	const Ref<AnimationRootNode>& p_node, float p_position, int p_at_index)

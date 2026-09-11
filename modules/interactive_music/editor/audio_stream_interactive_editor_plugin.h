@@ -41,23 +41,22 @@ class Tree;
 class TreeItem;
 class AudioStreamInteractive;
 
-class AudioStreamInteractiveTransitionEditor : public AcceptDialog {
-	VLTRCLASS(AudioStreamInteractiveTransitionEditor, AcceptDialog);
+class AudioStreamInteractiveTransitionEditor : public AcceptDialog
+{
+	AudioStreamInteractive* audio_stream_interactive = nullptr;
 
-	AudioStreamInteractive *audio_stream_interactive = nullptr;
+	HSplitContainer* split = nullptr;
+	Tree* tree = nullptr;
 
-	HSplitContainer *split = nullptr;
-	Tree *tree = nullptr;
+	Vector<TreeItem*> rows;
 
-	Vector<TreeItem *> rows;
-
-	CheckBox *transition_enabled = nullptr;
-	OptionButton *transition_from = nullptr;
-	OptionButton *transition_to = nullptr;
-	OptionButton *fade_mode = nullptr;
-	SpinBox *fade_beats = nullptr;
-	OptionButton *filler_clip = nullptr;
-	CheckBox *hold_previous = nullptr;
+	CheckBox* transition_enabled = nullptr;
+	OptionButton* transition_from = nullptr;
+	OptionButton* transition_to = nullptr;
+	OptionButton* fade_mode = nullptr;
+	SpinBox* fade_beats = nullptr;
+	OptionButton* filler_clip = nullptr;
+	CheckBox* hold_previous = nullptr;
 
 	bool updating_selection = false;
 	int order_counter = 0;
@@ -65,7 +64,7 @@ class AudioStreamInteractiveTransitionEditor : public AcceptDialog {
 
 	Vector<Vector2i> selected;
 	bool updating = false;
-	void _cell_selected(TreeItem *p_item, int p_column, bool p_selected);
+	void _cell_selected(TreeItem* p_item, int p_column, bool p_selected);
 	void _update_transitions();
 
 	void _update_selection();
@@ -76,32 +75,25 @@ protected:
 	static void _bind_methods();
 
 public:
-	void edit(Object *p_obj);
-
 	AudioStreamInteractiveTransitionEditor();
 };
 
 //
 
-class EditorInspectorPluginAudioStreamInteractive : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginAudioStreamInteractive, EditorInspectorPlugin);
-
-	AudioStreamInteractiveTransitionEditor *audio_stream_interactive_transition_editor = nullptr;
-
-	void _edit(Object *p_object);
+class EditorInspectorPluginAudioStreamInteractive : public EditorInspectorPlugin
+{
+	AudioStreamInteractiveTransitionEditor* audio_stream_interactive_transition_editor = nullptr;
 
 public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_end(Object *p_object) override;
-
 	EditorInspectorPluginAudioStreamInteractive();
 };
 
-class AudioStreamInteractiveEditorPlugin : public EditorPlugin {
-	VLTRCLASS(AudioStreamInteractiveEditorPlugin, EditorPlugin);
-
+class AudioStreamInteractiveEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "AudioStreamInteractive"; }
 
 	AudioStreamInteractiveEditorPlugin();
 };
+
+

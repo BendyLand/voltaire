@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_testmotion_query_result_3d.h"
 
 Vector3 PhysicsTestMotionResult3D::get_travel() const { return result.travel; }
@@ -65,22 +64,10 @@ Vector3 PhysicsTestMotionResult3D::get_collider_velocity(int p_collision_index) 
 	return result.collisions[p_collision_index].collider_velocity;
 }
 
-ObjectID PhysicsTestMotionResult3D::get_collider_id(int p_collision_index) const
-{
-	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, ObjectID());
-	return result.collisions[p_collision_index].collider_id;
-}
-
 RID PhysicsTestMotionResult3D::get_collider_rid(int p_collision_index) const
 {
 	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, RID());
 	return result.collisions[p_collision_index].collider;
-}
-
-Object* PhysicsTestMotionResult3D::get_collider(int p_collision_index) const
-{
-	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, nullptr);
-	return ObjectDB::get_instance(result.collisions[p_collision_index].collider_id);
 }
 
 int PhysicsTestMotionResult3D::get_collider_shape(int p_collision_index) const
@@ -100,7 +87,5 @@ real_t PhysicsTestMotionResult3D::get_collision_depth(int p_collision_index) con
 	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0.0);
 	return result.collisions[p_collision_index].depth;
 }
-
-void PhysicsTestMotionResult3D::_bind_methods() {}
 
 

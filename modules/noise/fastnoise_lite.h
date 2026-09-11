@@ -30,18 +30,16 @@
 
 #pragma once
 
-#include "noise.h"
-
 #include <thirdparty/misc/FastNoiseLite.h>
+#include "noise.h"
 
 typedef fastnoiselite::FastNoiseLite _FastNoiseLite;
 
-class FastNoiseLite : public Noise {
-	VLTRCLASS(FastNoiseLite, Noise);
-	OBJ_SAVE_TYPE_NO(FastNoiseLite);
-
+class FastNoiseLite : public Noise
+{
 public:
-	enum NoiseType {
+	enum NoiseType
+	{
 		TYPE_SIMPLEX = _FastNoiseLite::NoiseType_OpenSimplex2,
 		TYPE_SIMPLEX_SMOOTH = _FastNoiseLite::NoiseType_OpenSimplex2S,
 		TYPE_CELLULAR = _FastNoiseLite::NoiseType_Cellular,
@@ -50,21 +48,24 @@ public:
 		TYPE_VALUE = _FastNoiseLite::NoiseType_Value,
 	};
 
-	enum FractalType {
+	enum FractalType
+	{
 		FRACTAL_NONE = _FastNoiseLite::FractalType_None,
 		FRACTAL_FBM = _FastNoiseLite::FractalType_FBm,
 		FRACTAL_RIDGED = _FastNoiseLite::FractalType_Ridged,
 		FRACTAL_PING_PONG = _FastNoiseLite::FractalType_PingPong,
 	};
 
-	enum CellularDistanceFunction {
+	enum CellularDistanceFunction
+	{
 		DISTANCE_EUCLIDEAN = _FastNoiseLite::CellularDistanceFunction_Euclidean,
 		DISTANCE_EUCLIDEAN_SQUARED = _FastNoiseLite::CellularDistanceFunction_EuclideanSq,
 		DISTANCE_MANHATTAN = _FastNoiseLite::CellularDistanceFunction_Manhattan,
 		DISTANCE_HYBRID = _FastNoiseLite::CellularDistanceFunction_Hybrid
 	};
 
-	enum CellularReturnType {
+	enum CellularReturnType
+	{
 		RETURN_CELL_VALUE = _FastNoiseLite::CellularReturnType_CellValue,
 		RETURN_DISTANCE = _FastNoiseLite::CellularReturnType_Distance,
 		RETURN_DISTANCE2 = _FastNoiseLite::CellularReturnType_Distance2,
@@ -74,21 +75,19 @@ public:
 		RETURN_DISTANCE2_DIV = _FastNoiseLite::CellularReturnType_Distance2Div
 	};
 
-	enum DomainWarpType {
+	enum DomainWarpType
+	{
 		DOMAIN_WARP_SIMPLEX = _FastNoiseLite::DomainWarpType_OpenSimplex2,
 		DOMAIN_WARP_SIMPLEX_REDUCED = _FastNoiseLite::DomainWarpType_OpenSimplex2Reduced,
 		DOMAIN_WARP_BASIC_GRID = _FastNoiseLite::DomainWarpType_BasicGrid
 	};
 
-	enum DomainWarpFractalType {
+	enum DomainWarpFractalType
+	{
 		DOMAIN_WARP_FRACTAL_NONE,
 		DOMAIN_WARP_FRACTAL_PROGRESSIVE,
 		DOMAIN_WARP_FRACTAL_INDEPENDENT
 	};
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 private:
 	_FastNoiseLite _noise;
@@ -123,8 +122,10 @@ private:
 	real_t domain_warp_fractal_lacunarity = 6;
 	real_t domain_warp_fractal_gain = 0.5;
 
-	// This needs manual conversion because Godots Inspector property API does not support discontiguous enum indices.
-	_FastNoiseLite::FractalType _convert_domain_warp_fractal_type_enum(DomainWarpFractalType p_domain_warp_fractal_type);
+	// This needs manual conversion because Godots Inspector property API does not support
+	// discontiguous enum indices.
+	_FastNoiseLite::FractalType _convert_domain_warp_fractal_type_enum(
+		DomainWarpFractalType p_domain_warp_fractal_type);
 
 public:
 	FastNoiseLite();
@@ -213,9 +214,4 @@ public:
 	void _changed();
 };
 
-VARIANT_ENUM_CAST(FastNoiseLite::NoiseType);
-VARIANT_ENUM_CAST(FastNoiseLite::FractalType);
-VARIANT_ENUM_CAST(FastNoiseLite::CellularDistanceFunction);
-VARIANT_ENUM_CAST(FastNoiseLite::CellularReturnType);
-VARIANT_ENUM_CAST(FastNoiseLite::DomainWarpType);
-VARIANT_ENUM_CAST(FastNoiseLite::DomainWarpFractalType);
+

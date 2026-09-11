@@ -32,7 +32,6 @@
 
 TEST_FORCE_LINK(test_variant_utility)
 
-#include "core/variant/variant_utility.h"
 
 namespace TestVariantUtility {
 

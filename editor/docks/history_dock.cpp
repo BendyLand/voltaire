@@ -28,32 +28,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "history_dock.h"
-
 #include "core/io/config_file.h"
-#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/settings/editor_command_palette.h"
+#include "history_dock.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/item_list.h"
 
-struct SortActionsByTimestamp {
-	bool operator()(const EditorUndoRedoManager::Action &l, const EditorUndoRedoManager::Action &r) const {
+struct SortActionsByTimestamp
+{
+	bool operator()(
+		const EditorUndoRedoManager::Action& l, const EditorUndoRedoManager::Action& r) const
+	{
 		return l.timestamp > r.timestamp;
 	}
 };
 
-void HistoryDock::on_history_changed() {
+void HistoryDock::on_history_changed()
+{
 	if (is_visible_in_tree()) {
 		refresh_history();
-	} else {
+	}
+	else {
 		need_refresh = true;
 	}
 }
 
-void HistoryDock::refresh_history() {
+void HistoryDock::refresh_history()
+{
 	action_list->clear();
 	bool include_scene = current_scene_checkbox->is_pressed();
 	bool include_global = global_history_checkbox->is_pressed();
@@ -64,14 +68,17 @@ void HistoryDock::refresh_history() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
+	const EditorUndoRedoManager::History& current_scene_history = ur_manager->get_or_create_history(
+		EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History& global_history =
+		ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 
 	Vector<EditorUndoRedoManager::Action> full_history;
 	{
 		int full_size = 0;
 		if (include_scene) {
-			full_size += current_scene_history.redo_stack.size() + current_scene_history.undo_stack.size();
+			full_size +=
+				current_scene_history.redo_stack.size() + current_scene_history.undo_stack.size();
 		}
 		if (include_global) {
 			full_size += global_history.redo_stack.size() + global_history.undo_stack.size();
@@ -81,31 +88,32 @@ void HistoryDock::refresh_history() {
 
 	int i = 0;
 	if (include_scene) {
-		for (const EditorUndoRedoManager::Action &E : current_scene_history.redo_stack) {
+		for (const EditorUndoRedoManager::Action& E : current_scene_history.redo_stack) {
 			full_history.write[i] = E;
 			i++;
 		}
-		for (const EditorUndoRedoManager::Action &E : current_scene_history.undo_stack) {
+		for (const EditorUndoRedoManager::Action& E : current_scene_history.undo_stack) {
 			full_history.write[i] = E;
 			i++;
 		}
 	}
 	if (include_global) {
-		for (const EditorUndoRedoManager::Action &E : global_history.redo_stack) {
+		for (const EditorUndoRedoManager::Action& E : global_history.redo_stack) {
 			full_history.write[i] = E;
 			i++;
 		}
-		for (const EditorUndoRedoManager::Action &E : global_history.undo_stack) {
+		for (const EditorUndoRedoManager::Action& E : global_history.undo_stack) {
 			full_history.write[i] = E;
 			i++;
 		}
 	}
 
 	full_history.sort_custom<SortActionsByTimestamp>();
-	for (const EditorUndoRedoManager::Action &E : full_history) {
+	for (const EditorUndoRedoManager::Action& E : full_history) {
 		action_list->add_item(E.action_name);
 		if (E.history_id == EditorUndoRedoManager::GLOBAL_HISTORY) {
-			action_list->set_item_custom_fg_color(-1, get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
+			action_list->set_item_custom_fg_color(
+				-1, get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
 		}
 	}
 
@@ -114,15 +122,18 @@ void HistoryDock::refresh_history() {
 	refresh_version();
 }
 
-void HistoryDock::on_version_changed() {
+void HistoryDock::on_version_changed()
+{
 	if (is_visible_in_tree()) {
 		refresh_version();
-	} else {
+	}
+	else {
 		need_refresh = true;
 	}
 }
 
-void HistoryDock::refresh_version() {
+void HistoryDock::refresh_version()
+{
 	int idx = 0;
 	bool include_scene = current_scene_checkbox->is_pressed();
 	bool include_global = global_history_checkbox->is_pressed();
@@ -133,8 +144,10 @@ void HistoryDock::refresh_version() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
+	const EditorUndoRedoManager::History& current_scene_history = ur_manager->get_or_create_history(
+		EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History& global_history =
+		ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 	double newest_undo_timestamp = 0;
 
 	if (include_scene && !current_scene_history.undo_stack.is_empty()) {
@@ -150,10 +163,11 @@ void HistoryDock::refresh_version() {
 
 	if (include_scene) {
 		int skip = 0;
-		for (const EditorUndoRedoManager::Action &E : current_scene_history.redo_stack) {
+		for (const EditorUndoRedoManager::Action& E : current_scene_history.redo_stack) {
 			if (E.timestamp < newest_undo_timestamp) {
 				skip++;
-			} else {
+			}
+			else {
 				break;
 			}
 		}
@@ -162,10 +176,11 @@ void HistoryDock::refresh_version() {
 
 	if (include_global) {
 		int skip = 0;
-		for (const EditorUndoRedoManager::Action &E : global_history.redo_stack) {
+		for (const EditorUndoRedoManager::Action& E : global_history.redo_stack) {
 			if (E.timestamp < newest_undo_timestamp) {
 				skip++;
-			} else {
+			}
+			else {
 				break;
 			}
 		}
@@ -176,18 +191,8 @@ void HistoryDock::refresh_version() {
 	action_list->set_current(idx);
 }
 
-void HistoryDock::save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const {
-	p_layout->set_value(p_section, "include_scene", current_scene_checkbox->is_pressed());
-	p_layout->set_value(p_section, "include_global", global_history_checkbox->is_pressed());
-}
-
-void HistoryDock::load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) {
-	current_scene_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "include_scene", true));
-	global_history_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "include_global", true));
-	refresh_history();
-}
-
-void HistoryDock::seek_history(int p_index) {
+void HistoryDock::seek_history(int p_index)
+{
 	bool include_scene = current_scene_checkbox->is_pressed();
 	bool include_global = global_history_checkbox->is_pressed();
 
@@ -200,10 +205,12 @@ void HistoryDock::seek_history(int p_index) {
 		if (include_scene) {
 			if (include_global) {
 				ur_manager->undo();
-			} else {
+			}
+			else {
 				ur_manager->undo_history(current_scene_id);
 			}
-		} else {
+		}
+		else {
 			ur_manager->undo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 		}
 	}
@@ -212,72 +219,15 @@ void HistoryDock::seek_history(int p_index) {
 		if (include_scene) {
 			if (include_global) {
 				ur_manager->redo();
-			} else {
+			}
+			else {
 				ur_manager->redo_history(current_scene_id);
 			}
-		} else {
+		}
+		else {
 			ur_manager->redo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 		}
 	}
 }
 
-void HistoryDock::_notification(int p_notification) {
-	switch (p_notification) {
-		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("scene_changed", callable_mp(this, &HistoryDock::on_history_changed));
-		} break;
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (is_visible_in_tree() && need_refresh) {
-				refresh_history();
-			}
-		} break;
-	}
-}
-
-HistoryDock::HistoryDock() {
-	set_name(TTRC("History"));
-	set_icon_name("History");
-	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_history", TTRC("Open History Dock")));
-	set_default_slot(EditorDock::DOCK_SLOT_LEFT_BR);
-
-	ur_manager = EditorUndoRedoManager::get_singleton();
-	ur_manager->obj->connect("history_changed", callable_mp(this, &HistoryDock::on_history_changed));
-	ur_manager->obj->connect("version_changed", callable_mp(this, &HistoryDock::on_version_changed));
-
-	VBoxContainer *main_vb = memnew(VBoxContainer);
-	add_child(main_vb);
-
-	HBoxContainer *mode_hb = memnew(HBoxContainer);
-	main_vb->add_child(mode_hb);
-
-	current_scene_checkbox = memnew(CheckBox);
-	mode_hb->add_child(current_scene_checkbox);
-	current_scene_checkbox->set_flat(true);
-	current_scene_checkbox->set_text(TTRC("Scene"));
-	current_scene_checkbox->set_h_size_flags(SIZE_EXPAND_FILL);
-	current_scene_checkbox->set_clip_text(true);
-	current_scene_checkbox->set_pressed(true);
-	current_scene_checkbox->connect(SceneStringName(toggled), callable_mp(this, &HistoryDock::refresh_history).unbind(1));
-
-	global_history_checkbox = memnew(CheckBox);
-	mode_hb->add_child(global_history_checkbox);
-	global_history_checkbox->set_flat(true);
-	global_history_checkbox->set_text(TTRC("Global"));
-	global_history_checkbox->set_h_size_flags(SIZE_EXPAND_FILL);
-	global_history_checkbox->set_clip_text(true);
-	global_history_checkbox->set_pressed(true);
-	global_history_checkbox->connect(SceneStringName(toggled), callable_mp(this, &HistoryDock::refresh_history).unbind(1));
-
-	MarginContainer *mc = memnew(MarginContainer);
-	mc->set_theme_type_variation("NoBorderBottomPanel");
-	mc->set_v_size_flags(SIZE_EXPAND_FILL);
-	main_vb->add_child(mc);
-
-	action_list = memnew(ItemList);
-	action_list->set_scroll_hint_mode(ItemList::SCROLL_HINT_MODE_TOP);
-	action_list->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	mc->add_child(action_list);
-	action_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	action_list->connect(SceneStringName(item_selected), callable_mp(this, &HistoryDock::seek_history));
-}

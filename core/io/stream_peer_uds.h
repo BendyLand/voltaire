@@ -32,17 +32,18 @@
 
 #include "core/io/stream_peer_socket.h"
 
-class StreamPeerUDS : public StreamPeerSocket {
-	VLTRCLASS(StreamPeerUDS, StreamPeerSocket);
-
+class StreamPeerUDS : public StreamPeerSocket
+{
 protected:
 	String peer_path;
 	static void _bind_methods();
 
 public:
-	void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address &p_addr) override;
+	void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr) override;
 
-	Error bind(const String &p_path);
-	Error connect_to_host(const String &p_path);
+	Error bind(const String& p_path);
+	Error connect_to_host(const String& p_path);
 	const String get_connected_path() const;
 };
+
+

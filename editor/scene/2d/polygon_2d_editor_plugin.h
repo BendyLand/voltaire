@@ -48,17 +48,18 @@ class TextureRect;
 class ViewPanner;
 class VScrollBar;
 
-class Polygon2DEditor : public AbstractPolygon2DEditor {
-	VLTRCLASS(Polygon2DEditor, AbstractPolygon2DEditor);
-
-	enum {
+class Polygon2DEditor : public AbstractPolygon2DEditor
+{
+	enum
+	{
 		MENU_POLYGON_TO_UV,
 		MENU_UV_TO_POLYGON,
 		MENU_UV_CLEAR,
 		MENU_GRID_SETTINGS,
 	};
 
-	enum Mode {
+	enum Mode
+	{
 		MODE_POINTS,
 		MODE_POLYGONS,
 		MODE_UV,
@@ -66,7 +67,8 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 		MODE_MAX
 	};
 
-	enum Action {
+	enum Action
+	{
 		ACTION_CREATE,
 		ACTION_CREATE_INTERNAL,
 		ACTION_REMOVE_INTERNAL,
@@ -81,24 +83,24 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 		ACTION_MAX
 	};
 
-	Polygon2D *node = nullptr;
-	Polygon2D *previous_node = nullptr;
+	Polygon2D* node = nullptr;
+	Polygon2D* previous_node = nullptr;
 
-	EditorDock *polygon_edit = nullptr;
+	EditorDock* polygon_edit = nullptr;
 	Mode current_mode = MODE_MAX; // Uninitialized.
-	Button *mode_buttons[MODE_MAX];
+	Button* mode_buttons[MODE_MAX];
 	Action selected_action = ACTION_CREATE;
-	Button *action_buttons[ACTION_MAX];
-	Button *b_snap_enable = nullptr;
-	Button *b_snap_grid = nullptr;
-	MenuButton *edit_menu = nullptr;
+	Button* action_buttons[ACTION_MAX];
+	Button* b_snap_enable = nullptr;
+	Button* b_snap_grid = nullptr;
+	MenuButton* edit_menu = nullptr;
 
-	Control *canvas = nullptr;
-	Panel *canvas_background = nullptr;
-	Polygon2D *preview_polygon = nullptr;
-	EditorZoomWidget *zoom_widget = nullptr;
-	HScrollBar *hscroll = nullptr;
-	VScrollBar *vscroll = nullptr;
+	Control* canvas = nullptr;
+	Panel* canvas_background = nullptr;
+	Polygon2D* preview_polygon = nullptr;
+	EditorZoomWidget* zoom_widget = nullptr;
+	HScrollBar* hscroll = nullptr;
+	VScrollBar* vscroll = nullptr;
 	bool center_view_on_draw = false;
 
 	Ref<ViewPanner> panner;
@@ -107,29 +109,27 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 	Vector2 draw_offset;
 	real_t draw_zoom = 1.0;
 
-	VBoxContainer *bone_scroll_main_vb = nullptr;
-	ScrollContainer *bone_scroll = nullptr;
-	VBoxContainer *bone_scroll_vb = nullptr;
-	Button *sync_bones = nullptr;
-	HSlider *bone_paint_strength = nullptr;
-	SpinBox *bone_paint_radius = nullptr;
-	Label *bone_paint_radius_label = nullptr;
+	VBoxContainer* bone_scroll_main_vb = nullptr;
+	ScrollContainer* bone_scroll = nullptr;
+	VBoxContainer* bone_scroll_vb = nullptr;
+	Button* sync_bones = nullptr;
+	HSlider* bone_paint_strength = nullptr;
+	SpinBox* bone_paint_radius = nullptr;
+	Label* bone_paint_radius_label = nullptr;
 	bool bone_painting = false;
 	int bone_painting_bone = 0;
 	Vector<float> prev_weights;
 	Vector2 bone_paint_pos;
-	AcceptDialog *grid_settings = nullptr;
+	AcceptDialog* grid_settings = nullptr;
 
 	void _sync_bones();
-	void _update_bone_list(const Polygon2D *p_for_node);
+	void _update_bone_list(const Polygon2D* p_for_node);
 
 	Vector<Vector2> editing_points;
 	Vector<Vector2> previous_uv;
 	Vector<Vector2> previous_polygon;
 	Vector<Color> previous_colors;
 	int previous_internal_vertices = 0;
-	Array previous_bones;
-	Array previous_polygons;
 
 	Vector2 create_to;
 	int point_drag_index = -1;
@@ -140,7 +140,7 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 	Action current_action = ACTION_CREATE;
 	Vector2 drag_from;
 
-	AcceptDialog *error = nullptr;
+	AcceptDialog* error = nullptr;
 
 	bool use_snap = false;
 	bool snap_show_grid = false;
@@ -155,7 +155,7 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 
 	void _center_view();
 	void _update_zoom_and_pan(bool p_zoom_at_center);
-	void _canvas_input(const Ref<InputEvent> &p_input);
+	void _canvas_input(const Ref<InputEvent>& p_input);
 	void _center_view_on_draw(bool p_enabled = true);
 	void _canvas_draw();
 	void _set_action(int p_mode);
@@ -173,12 +173,13 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 	int _get_polygon_count() const override;
 
 protected:
-	virtual Node2D *_get_node() const override;
-	virtual void _set_node(Node *p_polygon) override;
+	virtual Node2D* _get_node() const override;
+	virtual void _set_node(Node* p_polygon) override;
 
 	virtual Vector2 _get_offset(int p_idx) const override;
 
 	virtual bool _has_uv() const override { return true; }
+
 	virtual void _commit_action() override;
 
 	void _notification(int p_what);
@@ -190,9 +191,10 @@ public:
 	Polygon2DEditor();
 };
 
-class Polygon2DEditorPlugin : public AbstractPolygon2DEditorPlugin {
-	VLTRCLASS(Polygon2DEditorPlugin, AbstractPolygon2DEditorPlugin);
-
+class Polygon2DEditorPlugin : public AbstractPolygon2DEditorPlugin
+{
 public:
 	Polygon2DEditorPlugin();
 };
+
+

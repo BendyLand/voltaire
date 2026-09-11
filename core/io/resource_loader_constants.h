@@ -30,11 +30,11 @@
 
 #pragma once
 
-#include "core/variant/type_info.h"
+namespace ResourceLoaderConstants
+{
 
-namespace ResourceLoaderConstants {
-
-enum CacheMode {
+enum CacheMode
+{
 	CACHE_MODE_IGNORE,
 	CACHE_MODE_REUSE,
 	CACHE_MODE_REPLACE,
@@ -44,4 +44,4 @@ enum CacheMode {
 
 } // namespace ResourceLoaderConstants
 
-VARIANT_ENUM_CAST(ResourceLoaderConstants::CacheMode)
+

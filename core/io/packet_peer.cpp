@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/marshalls.h"
-#include "core/object/class_db.h"
 #include "packet_peer.h"
 
 /* helpers / binders */
@@ -76,55 +75,6 @@ Error PacketPeer::put_packet_buffer(const Vector<uint8_t>& p_buffer)
 
 	const uint8_t* r = p_buffer.ptr();
 	return put_packet(&r[0], len);
-}
-
-Error PacketPeer::get_var(Variant& r_variant, bool p_allow_objects)
-{
-	const uint8_t* buffer;
-	int buffer_size;
-	Error err = get_packet(&buffer, buffer_size);
-	if (err) {
-		return err;
-	}
-
-	return decode_variant(r_variant, buffer, buffer_size, nullptr, p_allow_objects);
-}
-
-Error PacketPeer::put_var(const Variant& p_packet, bool p_full_objects)
-{
-	int len;
-	Error err = encode_variant(p_packet, nullptr, len, p_full_objects); // compute len first
-	if (err) {
-		return err;
-	}
-
-	if (len == 0) {
-		return OK;
-	}
-
-	ERR_FAIL_COND_V_MSG(len > encode_buffer_max_size, ERR_OUT_OF_MEMORY,
-		"Failed to encode variant, encode size is bigger then encode_buffer_max_size. Consider "
-		"raising it via 'set_encode_buffer_max_size'.");
-
-	if (unlikely(encode_buffer.size() < len)) {
-		encode_buffer.resize(0); // Avoid realloc
-		encode_buffer.resize(Math::next_power_of_2((uint32_t)len));
-	}
-
-	uint8_t* w = encode_buffer.ptrw();
-	err = encode_variant(p_packet, w, len, p_full_objects);
-	ERR_FAIL_COND_V_MSG(err != OK, err, "Error when trying to encode Variant.");
-
-	return put_packet(w, len);
-}
-
-Variant PacketPeer::_bnd_get_var(bool p_allow_objects)
-{
-	Variant var;
-	Error err = get_var(var, p_allow_objects);
-
-	ERR_FAIL_COND_V(err != OK, Variant());
-	return var;
 }
 
 Error PacketPeer::_put_packet(const Vector<uint8_t>& p_buffer)
@@ -288,7 +238,8 @@ int PacketPeerStream::get_output_buffer_max_size() const { return output_buffer.
 
 PacketPeerStream::PacketPeerStream()
 {
-	int64_t rbsize = GLOBAL_GET("network/limits/packet_peer_stream/max_buffer_po2");
+	// TODO: make a way to select dynamically based on available hardware
+	int64_t rbsize = 16;
 
 	ring_buffer.resize(rbsize);
 	input_buffer.resize(int64_t(1) << rbsize);
