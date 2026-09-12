@@ -85,7 +85,6 @@ class EditorFileSystemDirectory
 
 	Vector<FileInfo*> files;
 
-	static void _bind_methods();
 
 	friend class EditorFileSystem;
 
@@ -124,7 +123,6 @@ public:
 class EditorFileSystemImportFormatSupportQuery : public RefCounted
 {
 protected:
-	static void _bind_methods();
 };
 
 class EditorFileSystem : public Node
@@ -389,7 +387,6 @@ class EditorFileSystem : public Node
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static EditorFileSystem* get_singleton() { return singleton; }

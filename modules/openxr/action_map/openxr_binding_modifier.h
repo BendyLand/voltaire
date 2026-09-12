@@ -41,7 +41,6 @@ class OpenXRIPBinding;
 class OpenXRBindingModifier : public Resource
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String get_description() const; // Returns the description shown in the editor

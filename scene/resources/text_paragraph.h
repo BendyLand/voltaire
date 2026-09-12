@@ -84,7 +84,6 @@ protected:
 
 	static void _bind_compatibility_methods();
 #endif
-	static void _bind_methods();
 
 	void _shape_lines() const;
 

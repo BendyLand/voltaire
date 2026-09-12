@@ -165,30 +165,6 @@ void FileDialog::_dir_submitted(String p_dir)
 	_push_history();
 }
 
-void FileDialog::_post_popup()
-{
-	ConfirmationDialog::_post_popup();
-	if (mode == FILE_MODE_SAVE_FILE) {
-		filename_edit->grab_focus(true);
-	}
-	else {
-		file_list->grab_focus(true);
-	}
-
-	// For open dir mode, deselect all items on file dialog open.
-	if (mode == FILE_MODE_OPEN_DIR) {
-		deselect_all();
-		file_box->set_visible(false);
-	}
-	else {
-		file_box->set_visible(true);
-	}
-
-	local_history.clear();
-	local_history_pos = -1;
-	_push_history();
-}
-
 void FileDialog::_cancel_pressed()
 {
 	filename_edit->set_text("");
@@ -267,43 +243,6 @@ void FileDialog::_delete_confirm()
 		invalidate();
 		_dir_contents_changed();
 	}
-}
-
-void FileDialog::update_customization()
-{
-	_update_make_dir_visible();
-	show_hidden->set_visible(customization_flags[CUSTOMIZATION_HIDDEN_FILES]);
-	layout_container->set_visible(customization_flags[CUSTOMIZATION_LAYOUT]);
-	layout_separator->set_visible(customization_flags[CUSTOMIZATION_FILE_FILTER] ||
-								  customization_flags[CUSTOMIZATION_FILE_SORT]);
-	show_filename_filter_button->set_visible(customization_flags[CUSTOMIZATION_FILE_FILTER]);
-	file_sort_button->set_visible(customization_flags[CUSTOMIZATION_FILE_SORT]);
-	show_hidden_separator->set_visible(customization_flags[CUSTOMIZATION_HIDDEN_FILES] &&
-									   (customization_flags[CUSTOMIZATION_LAYOUT] ||
-										   customization_flags[CUSTOMIZATION_FILE_FILTER] ||
-										   customization_flags[CUSTOMIZATION_FILE_SORT]));
-	favorite_button->set_visible(customization_flags[CUSTOMIZATION_FAVORITES]);
-	favorite_vbox->set_visible(customization_flags[CUSTOMIZATION_FAVORITES]);
-	recent_vbox->set_visible(customization_flags[CUSTOMIZATION_RECENT]);
-}
-
-void FileDialog::clear_filename_filter()
-{
-	set_filename_filter("");
-	update_filename_filter_gui();
-	invalidate();
-}
-
-void FileDialog::update_filename_filter_gui()
-{
-	filename_filter_box->set_visible(show_filename_filter);
-	if (!show_filename_filter) {
-		file_name_filter.clear();
-	}
-	if (filename_filter->get_text() == file_name_filter) {
-		return;
-	}
-	filename_filter->set_text(file_name_filter);
 }
 
 void FileDialog::update_filename_filter()
@@ -521,16 +460,6 @@ PackedStringArray FileDialog::get_recent_list()
 	return ret;
 }
 
-void FileDialog::set_customization_flag_enabled(Customization p_flag, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_flag, CUSTOMIZATION_MAX);
-	if (customization_flags[p_flag] == p_enabled) {
-		return;
-	}
-	customization_flags[p_flag] = p_enabled;
-	update_customization();
-}
-
 bool FileDialog::is_customization_flag_enabled(Customization p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, CUSTOMIZATION_MAX, false);
@@ -582,13 +511,6 @@ void FileDialog::_invalidate()
 		ensure_visible_after_invalidating = false;
 	}
 	is_invalidating = false;
-}
-
-void FileDialog::_update_make_dir_visible()
-{
-	can_create_folders = customization_flags[CUSTOMIZATION_CREATE_FOLDER] &&
-						 mode != FILE_MODE_OPEN_FILE && mode != FILE_MODE_OPEN_FILES;
-	make_dir_container->set_visible(can_create_folders);
 }
 
 FileDialog::Access FileDialog::get_access() const { return access; }

@@ -57,7 +57,6 @@ private:
 	void _on_focus_exit();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	// used for undo/redo

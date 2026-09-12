@@ -66,7 +66,6 @@ private:
 	static StringName default_extension;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static void set_default_extension(const StringName& p_name);

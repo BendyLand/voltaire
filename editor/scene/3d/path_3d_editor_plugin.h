@@ -146,7 +146,6 @@ class Path3DEditorPlugin : public EditorPlugin
 	Path3D* path = nullptr;
 
 	void _update_theme();
-	void _update_toolbar();
 
 	void _mode_changed(int p_mode);
 	void _toggle_closed_curve();
@@ -171,7 +170,6 @@ class Path3DEditorPlugin : public EditorPlugin
 
 protected:
 	virtual void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	Path3D* get_edited_path() { return path; }

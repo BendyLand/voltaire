@@ -42,7 +42,6 @@ class PhysicsShapeQueryParameters3D : public RefCounted
 	Ref<Resource> shape_ref;
 
 protected:
-	static void _bind_methods();
 
 public:
 	const PS3DT::ShapeParameters& get_parameters() const { return parameters; }

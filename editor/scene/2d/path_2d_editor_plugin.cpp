@@ -57,16 +57,6 @@ void Path2DEditor::_node_visibility_changed()
 	_update_toolbar();
 }
 
-void Path2DEditor::_update_toolbar()
-{
-	if (!node) {
-		return;
-	}
-	bool has_curve = node->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
-}
-
 void Path2DEditor::_handle_option_pressed(int p_option)
 {
 	PopupMenu* pm;

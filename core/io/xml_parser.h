@@ -99,7 +99,6 @@ private:
 		P++;
 	}
 
-	static void _bind_methods();
 
 public:
 	Error read();

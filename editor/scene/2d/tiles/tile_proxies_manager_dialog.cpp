@@ -87,7 +87,6 @@ void TileProxiesManagerDialog::cancel_pressed()
 	committed_actions_count = 0;
 }
 
-void TileProxiesManagerDialog::_bind_methods() {}
 
 void TileProxiesManagerDialog::update_tile_set(Ref<TileSet> p_tile_set)
 {

@@ -190,7 +190,6 @@ class SceneTreeEditor : public Control
 	bool visibility_drag_value = false;
 	Vector2 visibility_drag_start_pos;
 
-	static void _bind_methods();
 
 	void _gui_input(const Ref<InputEvent>& p_event);
 	void _toggle_visible(Node* p_node);
@@ -289,7 +288,6 @@ class SceneTreeDialog : public ConfirmationDialog
 protected:
 	void _update_valid_type_icons();
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void popup_scenetree_dialog(Node* p_selected_node = nullptr, Node* p_marked_node = nullptr,

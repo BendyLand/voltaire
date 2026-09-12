@@ -108,7 +108,6 @@ Transform3D SpringBoneCollision3D::get_transform_from_skeleton(const Transform3D
 	return gtr;
 }
 
-void SpringBoneCollision3D::_bind_methods() {}
 
 void SpringBoneCollision3D::_notification(int p_what)
 {

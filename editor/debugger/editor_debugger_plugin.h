@@ -47,7 +47,6 @@ private:
 	void _stopped();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void detach_debugger();
@@ -70,7 +69,6 @@ private:
 	List<Ref<EditorDebuggerSession>> sessions;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void create_session(ScriptEditorDebugger* p_debugger);

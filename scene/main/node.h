@@ -417,7 +417,6 @@ protected:
 
 	void _propagate_replace_owner(Node* p_owner, Node* p_by_owner);
 
-	static void _bind_methods();
 	static String _get_name_num_separator();
 
 	friend class SceneState;

@@ -222,7 +222,6 @@ class JavaObject : public RefCounted
 #endif
 
 protected:
-	static void _bind_methods();
 
 public:
 
@@ -290,7 +289,6 @@ class JavaClassWrapper
 	static JavaClassWrapper* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static JavaClassWrapper* get_singleton() { return singleton; }

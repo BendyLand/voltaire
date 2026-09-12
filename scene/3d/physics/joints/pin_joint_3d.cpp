@@ -30,7 +30,6 @@
 
 #include "pin_joint_3d.h"
 
-void PinJoint3D::_bind_methods() {}
 
 void PinJoint3D::set_param(Param p_param, real_t p_value)
 {

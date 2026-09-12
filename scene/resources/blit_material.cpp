@@ -120,7 +120,6 @@ void BlitMaterial::cleanup_shader()
 	}
 }
 
-void BlitMaterial::_bind_methods() {}
 
 BlitMaterial::BlitMaterial()
 {

@@ -405,7 +405,6 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 	return Ref<Image>();
 }
 
-void CompressedTexture2D::_bind_methods() {}
 
 CompressedTexture2D::~CompressedTexture2D()
 {
@@ -515,7 +514,6 @@ void CompressedTexture3D::reload_from_file()
 	load(path);
 }
 
-void CompressedTexture3D::_bind_methods() {}
 
 CompressedTexture3D::~CompressedTexture3D()
 {
@@ -632,7 +630,6 @@ void CompressedTextureLayered::reload_from_file()
 	load(path);
 }
 
-void CompressedTextureLayered::_bind_methods() {}
 
 CompressedTextureLayered::CompressedTextureLayered(LayeredType p_type) { layered_type = p_type; }
 

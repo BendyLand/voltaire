@@ -244,7 +244,6 @@ void Parallax2D::set_ignore_camera_scroll(bool p_ignore) { ignore_camera_scroll 
 
 bool Parallax2D::is_ignore_camera_scroll() { return ignore_camera_scroll; }
 
-void Parallax2D::_bind_methods() {}
 
 Parallax2D::Parallax2D()
 {

@@ -312,13 +312,6 @@ void SpriteFramesEditor::_sheet_spin_changed(double p_value, int p_dominant_para
 	last_frame_selected = -1;
 }
 
-void SpriteFramesEditor::_toggle_show_settings()
-{
-	split_sheet_settings_vb->set_visible(!split_sheet_settings_vb->is_visible());
-
-	_update_show_settings();
-}
-
 void SpriteFramesEditor::_auto_slice_sprite_sheet()
 {
 	if (updating_split_settings) {

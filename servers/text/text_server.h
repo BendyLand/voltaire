@@ -261,7 +261,6 @@ protected:
 	void _diacritics_map_add(const String& p_from, char32_t p_to);
 	void _init_diacritics_map();
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _font_draw_glyph_bind_compat_104872(const RID& p_font, const RID& p_canvas, int64_t p_size,
@@ -1082,7 +1081,6 @@ struct CaretInfo
 class TextServerManager
 {
 protected:
-	static void _bind_methods();
 
 private:
 	static TextServerManager* singleton;

@@ -73,7 +73,6 @@ public:
 class AudioStreamPlayback : public RefCounted
 {
 protected:
-	static void _bind_methods();
 	PackedVector2Array _mix_audio_bind(float p_rate_scale, int p_frames);
 
 public:
@@ -128,7 +127,6 @@ protected:
 	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames);
 	virtual float get_stream_sampling_rate();
 
-	static void _bind_methods();
 
 public:
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
@@ -149,7 +147,6 @@ class AudioStream : public Resource
 	float tagged_offsets[MAX_TAGGED_OFFSETS];
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback();
@@ -263,7 +260,6 @@ private:
 	PlaybackMode playback_mode = PLAYBACK_RANDOM_NO_REPEATS;
 
 protected:
-	static void _bind_methods();
 
 	bool _property_can_revert(const StringName& p_name) const
 	{

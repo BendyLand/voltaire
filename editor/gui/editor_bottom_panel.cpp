@@ -75,37 +75,6 @@ void EditorBottomPanel::_theme_changed()
 	}
 }
 
-void EditorBottomPanel::_repaint()
-{
-	bool panel_collapsed = get_current_tab() == -1;
-
-	if (panel_collapsed && get_popup()) {
-		set_popup(nullptr);
-	}
-	else if (!panel_collapsed && !get_popup()) {
-		set_popup(dock_context_popup);
-	}
-	if (!panel_collapsed && (previous_tab != -1)) {
-		return;
-	}
-	previous_tab = get_current_tab();
-
-	DockSplitContainer* center_split = EditorNode::get_center_split();
-	ERR_FAIL_NULL(center_split);
-
-	center_split->set_dragger_visibility(
-		panel_collapsed ? SplitContainer::DRAGGER_HIDDEN : SplitContainer::DRAGGER_VISIBLE);
-	center_split->set_collapsed(panel_collapsed);
-
-	expand_button->set_visible(!panel_collapsed);
-	if (expand_button->is_pressed()) {
-		_expand_button_toggled(!panel_collapsed);
-	}
-	else {
-		_theme_changed();
-	}
-}
-
 void EditorBottomPanel::dock_closed(EditorDock* p_dock)
 {
 	if (p_dock == get_current_tab_control()) {
@@ -138,18 +107,6 @@ Rect2 EditorBottomPanel::get_floating_dock_rect(EditorDock* p_dock)
 	ret.size.y -= get_tab_bar()->get_size().y;
 	ret.position = get_tab_bar()->get_screen_position() - Vector2(0, ret.size.y);
 	return ret;
-}
-
-void EditorBottomPanel::make_item_visible(Control* p_item, bool p_visible, bool p_ignore_lock)
-{
-	// Don't allow changing tabs involuntarily when tabs are locked.
-	if (!p_ignore_lock && lock_panel_switching) {
-		return;
-	}
-
-	EditorDock* dock = _get_dock_from_control(p_item);
-	ERR_FAIL_NULL(dock);
-	dock->set_visible(p_visible);
 }
 
 void EditorBottomPanel::hide_bottom_panel() { set_current_tab(-1); }

@@ -984,28 +984,6 @@ void CodeTextEditor::_error_pressed(const Ref<InputEvent>& p_event)
 	}
 }
 
-void CodeTextEditor::set_error_count(int p_error_count)
-{
-	error_button->set_text(itos(p_error_count));
-	error_button->set_visible(p_error_count > 0);
-	if (p_error_count > 0) {
-		idle->set_wait_time(idle_time_with_errors); // Parsing should happen sooner.
-	}
-	else {
-		_set_show_errors_panel(false);
-		idle->set_wait_time(idle_time);
-	}
-}
-
-void CodeTextEditor::set_warning_count(int p_warning_count)
-{
-	warning_button->set_text(itos(p_warning_count));
-	warning_button->set_visible(p_warning_count > 0);
-	if (!p_warning_count) {
-		_set_show_warnings_panel(false);
-	}
-}
-
 void CodeTextEditor::toggle_bookmark()
 {
 	Vector<int> sorted_carets = text_editor->get_sorted_carets();

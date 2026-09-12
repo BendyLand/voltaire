@@ -32,8 +32,6 @@
 #include "core/io/marshalls.h"
 #include "packet_peer.h"
 
-/* helpers / binders */
-
 void PacketPeer::set_encode_buffer_max_size(int p_max_size)
 {
 	ERR_FAIL_COND_MSG(p_max_size < 1024, "Max encode buffer must be at least 1024 bytes");
@@ -91,10 +89,6 @@ Vector<uint8_t> PacketPeer::_get_packet()
 
 Error PacketPeer::_get_packet_error() const { return last_get_error; }
 
-void PacketPeer::_bind_methods() {}
-
-/***************/
-
 Error PacketPeerExtension::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
 {
 	WARN_PRINT_ONCE("PacketPeerExtension::_get_packet_native is unimplemented!");
@@ -106,10 +100,6 @@ Error PacketPeerExtension::put_packet(const uint8_t* p_buffer, int p_buffer_size
 	WARN_PRINT_ONCE("PacketPeerExtension::_put_packet_native is unimplemented!");
 	return FAILED;
 }
-
-/***************/
-
-void PacketPeerStream::_bind_methods() {}
 
 Error PacketPeerStream::_poll_buffer() const
 {
@@ -246,6 +236,5 @@ PacketPeerStream::PacketPeerStream()
 	output_buffer.resize(int64_t(1) << rbsize);
 }
 
-void PacketPeerExtension::_bind_methods() {}
 
 

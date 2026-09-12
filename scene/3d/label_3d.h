@@ -164,7 +164,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	void _im_update();
 	void _font_changed();

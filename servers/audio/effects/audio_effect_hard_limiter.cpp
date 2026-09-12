@@ -135,6 +135,5 @@ float AudioEffectHardLimiter::get_release() const { return release; }
 
 void AudioEffectHardLimiter::set_release(const float p_release) { release = p_release; }
 
-void AudioEffectHardLimiter::_bind_methods() {}
 
 

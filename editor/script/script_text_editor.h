@@ -156,8 +156,6 @@ protected:
 	void _update_errors();
 
 	void _set_theme_for_script();
-	void _show_errors_panel(bool p_show);
-	void _show_warnings_panel(bool p_show);
 	void _on_mouse_exited();
 
 	String _picker_color_stringify(const Color& p_color, COLOR_MODE p_mode);

@@ -35,7 +35,6 @@
 class EditorTranslationParserPlugin : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Error parse_file(const String& p_path, Vector<Vector<String>>* r_translations);

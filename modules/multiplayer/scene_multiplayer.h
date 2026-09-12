@@ -154,7 +154,6 @@ private:
 #endif
 
 protected:
-	static void _bind_methods();
 
 	void _process_packet(int p_from, const uint8_t* p_packet, int p_packet_len);
 	void _process_raw(int p_from, const uint8_t* p_packet, int p_packet_len);

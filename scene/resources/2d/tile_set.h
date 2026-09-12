@@ -419,7 +419,6 @@ private:
 		float p_overlap, TileSet::TileOffsetAxis p_offset_axis, TileSet::CellNeighbor p_bit);
 
 protected:
-	static void _bind_methods();
 
 public:
 	// --- Accessors for TileSet data ---
@@ -593,7 +592,6 @@ class TileSetSource : public Resource
 protected:
 	const TileSet* tile_set = nullptr;
 
-	static void _bind_methods();
 
 public:
 	static const Vector2i INVALID_ATLAS_COORDS; // Vector2i(-1, -1);
@@ -724,7 +722,6 @@ private:
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	// Not exposed.
@@ -862,7 +859,6 @@ private:
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	// Tiles.

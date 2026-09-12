@@ -32,8 +32,6 @@
 #include "core/os/os.h"
 #include "stream_peer_uds.h"
 
-void StreamPeerUDS::_bind_methods() {}
-
 void StreamPeerUDS::accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr)
 {
 	_sock = p_sock;

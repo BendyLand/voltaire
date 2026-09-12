@@ -48,7 +48,6 @@ class AudioEffectPanner : public AudioEffect {
 	float pan;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

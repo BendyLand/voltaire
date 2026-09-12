@@ -70,7 +70,6 @@ public:
 	void skip_next_frame();
 
 protected:
-	static void _bind_methods();
 
 	void _set_render_state_enabled_rt(bool p_enabled);
 	void _set_relax_frame_interval_rt(bool p_relax_frame_interval);

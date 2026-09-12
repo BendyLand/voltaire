@@ -122,7 +122,6 @@ Rect2i Popup::_popup_adjust_rect() const
 	return current;
 }
 
-void Popup::_bind_methods() {}
 
 Popup::Popup()
 {

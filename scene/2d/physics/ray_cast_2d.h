@@ -58,7 +58,6 @@ class RayCast2D : public Node2D
 protected:
 	void _notification(int p_what);
 	void _update_raycast_state();
-	static void _bind_methods();
 
 public:
 	void set_collide_with_areas(bool p_clip);

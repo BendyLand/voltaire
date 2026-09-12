@@ -498,8 +498,6 @@ String ResourceFormatImporter::get_import_settings_hash() const
 
 ResourceFormatImporter::ResourceFormatImporter() { singleton = this; }
 
-//////////////
-
 void ResourceImporter::get_build_dependencies(const String& p_path, HashSet<String>* r_dependencies)
 {
 	Vector<String> ret;
@@ -507,10 +505,6 @@ void ResourceImporter::get_build_dependencies(const String& p_path, HashSet<Stri
 		r_dependencies->insert(ret[i]);
 	}
 }
-
-void ResourceImporter::_bind_methods() {}
-
-/////
 
 Error ResourceFormatImporterSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
 {

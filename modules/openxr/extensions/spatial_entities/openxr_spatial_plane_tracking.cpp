@@ -43,7 +43,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationPlaneTracking
 
-void OpenXRSpatialCapabilityConfigurationPlaneTracking::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationPlaneTracking::has_valid_configuration() const
 {
@@ -155,7 +154,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationPlaneTracking::_get_enabled
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialComponentPlaneAlignmentList
 
-void OpenXRSpatialComponentPlaneAlignmentList::_bind_methods() {}
 
 void OpenXRSpatialComponentPlaneAlignmentList::set_capacity(uint32_t p_capacity)
 {
@@ -193,7 +191,6 @@ OpenXRSpatialComponentPlaneAlignmentList::_get_plane_alignment(int64_t p_index) 
 ////////////////////////////////////////////////////////////////////////////
 // Spatial component polygon2d list
 
-void OpenXRSpatialComponentPolygon2DList::_bind_methods() {}
 
 void OpenXRSpatialComponentPolygon2DList::set_capacity(uint32_t p_capacity)
 {
@@ -246,7 +243,6 @@ PackedVector2Array OpenXRSpatialComponentPolygon2DList::get_vertices(
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialComponentPlaneSemanticLabelList
 
-void OpenXRSpatialComponentPlaneSemanticLabelList::_bind_methods() {}
 
 void OpenXRSpatialComponentPlaneSemanticLabelList::set_capacity(uint32_t p_capacity)
 {
@@ -285,7 +281,6 @@ OpenXRSpatialComponentPlaneSemanticLabelList::_get_plane_semantic_label(int64_t 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRPlaneTracker
 
-void OpenXRPlaneTracker::_bind_methods() {}
 
 void OpenXRPlaneTracker::set_bounds_size(const Vector2& p_bounds_size)
 {

@@ -42,7 +42,6 @@ class ScriptEditorBase : public VBoxContainer
 protected:
 	Ref<Resource> edited_res;
 
-	static void _bind_methods();
 
 public:
 	struct EditedFileData

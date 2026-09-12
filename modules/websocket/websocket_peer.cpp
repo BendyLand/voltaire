@@ -36,7 +36,6 @@ WebSocketPeer::WebSocketPeer() {}
 
 WebSocketPeer::~WebSocketPeer() {}
 
-void WebSocketPeer::_bind_methods() {}
 
 Error WebSocketPeer::_send_bind(const PackedByteArray& p_message, WriteMode p_mode)
 {

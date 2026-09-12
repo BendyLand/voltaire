@@ -57,17 +57,6 @@ void DockSplitContainer::_notification(int p_what)
 	}
 }
 
-void DockSplitContainer::_update_visibility()
-{
-	if (is_updating) {
-		return;
-	}
-	is_updating = true;
-	bool any_visible = false;
-	set_visible(any_visible);
-	is_updating = false;
-}
-
 void EditorDockManager::_dock_drag_stopped() { dock_tab_dragged = nullptr; }
 
 void EditorDockManager::_dock_split_dragged(int p_offset)
@@ -106,49 +95,6 @@ void EditorDockManager::_window_close_request(WindowWrapper* p_wrapper)
 	}
 }
 
-void EditorDockManager::_open_dock_in_window(
-	EditorDock* p_dock, bool p_show_window, bool p_reset_size)
-{
-	ERR_FAIL_NULL(p_dock);
-
-	DockTabContainer* parent_container = p_dock->get_parent_container();
-	const Rect2 floating_rect = parent_container
-									? parent_container->get_floating_dock_rect(p_dock)
-									: DockTabContainer::get_default_floating_dock_rect(p_dock);
-	Size2 dock_size = floating_rect.size;
-	Point2 dock_screen_pos = floating_rect.position;
-
-	WindowWrapper* wrapper = memnew(WindowWrapper);
-	wrapper->set_window_title(vformat(TTR("%s - Godot Engine"), TTR(p_dock->get_display_title())));
-	wrapper->set_margins_enabled(true);
-
-	EditorNode::get_singleton()->get_gui_base()->add_child(wrapper);
-
-	_move_dock(p_dock, nullptr);
-	p_dock->update_layout(EditorDock::DOCK_LAYOUT_FLOATING, EditorDock::DOCK_SLOT_NONE);
-	p_dock->current_layout = EditorDock::DOCK_LAYOUT_FLOATING;
-	wrapper->set_wrapped_control(p_dock);
-
-	p_dock->dock_window = wrapper;
-	p_dock->is_open = true;
-	p_dock->show();
-
-	dock_windows.push_back(wrapper);
-
-	if (p_show_window) {
-		wrapper->restore_window(Rect2i(dock_screen_pos, dock_size),
-			EditorNode::get_singleton()->get_gui_base()->get_window()->get_current_screen());
-		_update_layout();
-		if (p_reset_size) {
-			// Use a default size of one third the current window size.
-			Size2i popup_size = EditorNode::get_singleton()->get_window()->get_size() / 3.0;
-			p_dock->get_window()->set_size(popup_size);
-			p_dock->get_window()->move_to_center();
-		}
-		p_dock->get_window()->grab_focus();
-	}
-}
-
 void EditorDockManager::_update_dirty_dock_tabs()
 {
 	bool update_menu = false;
@@ -160,37 +106,6 @@ void EditorDockManager::_update_dirty_dock_tabs()
 
 	if (update_menu) {
 		update_docks_menu();
-	}
-}
-
-void EditorDockManager::set_dock_slot_highlighted(int p_slot, bool p_highlighted)
-{
-	ERR_FAIL_INDEX(p_slot, EditorDock::DOCK_SLOT_MAX);
-	if (p_highlighted) {
-		dock_slots[p_slot]->show_drag_hint();
-	}
-	else {
-		dock_slots[p_slot]->get_drag_hint()->hide();
-	}
-	dock_slots[p_slot]->get_drag_hint()->set_highlighted(p_highlighted);
-}
-
-void EditorDockManager::set_dock_enabled(EditorDock* p_dock, bool p_enabled)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot set enabled unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (p_dock->enabled == p_enabled) {
-		return;
-	}
-
-	p_dock->enabled = p_enabled;
-	if (p_enabled) {
-		open_dock(p_dock, false);
-	}
-	else {
-		close_dock(p_dock);
 	}
 }
 
@@ -213,51 +128,6 @@ void EditorDockManager::close_dock(EditorDock* p_dock)
 	_move_dock(p_dock, closed_dock_parent);
 
 	_update_layout();
-}
-
-void EditorDockManager::open_dock(EditorDock* p_dock, bool p_set_current)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot open unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (p_dock->is_open) {
-		// Show the dock if it is already open.
-		if (p_set_current) {
-			_make_dock_visible(p_dock, false);
-		}
-		return;
-	}
-
-	p_dock->is_open = true;
-
-	// Open dock to its previous location.
-	if (p_dock->dock_slot_index != EditorDock::DOCK_SLOT_NONE) {
-		DockTabContainer* slot = dock_slots[p_dock->dock_slot_index];
-		int tab_index = p_dock->previous_tab_index;
-		if (tab_index < 0) {
-			tab_index = slot->get_tab_count();
-		}
-
-		_move_dock(p_dock, slot, tab_index, p_set_current && slot->can_switch_dock());
-	}
-	else {
-		_open_dock_in_window(p_dock, true, true);
-		return;
-	}
-
-	_update_layout();
-}
-
-void EditorDockManager::make_dock_floating(EditorDock* p_dock)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot make unknown dock '%s' floating.", p_dock->get_display_title()));
-
-	if (!p_dock->dock_window) {
-		_open_dock_in_window(p_dock);
-	}
 }
 
 void EditorDockManager::_make_dock_visible(EditorDock* p_dock, bool p_grab_focus)
@@ -333,12 +203,6 @@ void DockContextPopup::_close_dock()
 {
 	hide();
 	dock_manager->close_dock(context_dock);
-}
-
-void DockContextPopup::_float_dock()
-{
-	hide();
-	dock_manager->_open_dock_in_window(context_dock);
 }
 
 void DockContextPopup::set_dock(EditorDock* p_dock)

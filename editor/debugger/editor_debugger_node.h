@@ -149,7 +149,6 @@ protected:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
@@ -167,8 +166,6 @@ public:
 	void debug_step();
 	void debug_break();
 	void debug_continue();
-
-	void set_script_debug_button(MenuButton* p_button);
 
 	String get_var_value(const String& p_var) const;
 

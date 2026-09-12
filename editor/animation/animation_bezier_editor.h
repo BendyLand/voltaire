@@ -204,7 +204,6 @@ class AnimationBezierTrackEdit : public Control
 	void _zoom_vertically(real_t p_minimum_value, real_t p_maximum_value);
 
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<Animation> get_animation() const;

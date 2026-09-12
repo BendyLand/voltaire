@@ -71,7 +71,6 @@ class ArrayOccluder3D : public Occluder3D
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	void set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices);
@@ -90,7 +89,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	Size2 get_size() const;
@@ -108,7 +106,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	Vector3 get_size() const;
@@ -128,7 +125,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	float get_radius() const;
@@ -148,7 +144,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	void set_polygon(const Vector<Vector2>& p_polygon);
@@ -173,7 +168,6 @@ private:
 	Ref<Resource> _get_editable_3d_polygon_resource() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;

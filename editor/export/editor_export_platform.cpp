@@ -1420,7 +1420,6 @@ String EditorExportPlatform::simplify_path(const String& p_path)
 
 
 
-void EditorExportPlatform::_bind_methods() {}
 
 void EditorExportPlatform::get_preset_features(
 	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const

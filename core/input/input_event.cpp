@@ -122,11 +122,6 @@ bool InputEvent::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) co
 
 bool InputEvent::is_action_type() const { return false; }
 
-void InputEvent::_bind_methods() {}
-
-///////////////////////////////////
-
-void InputEventFromWindow::_bind_methods() {}
 
 void InputEventFromWindow::set_window_id(int64_t p_id)
 {
@@ -247,7 +242,6 @@ String InputEventWithModifiers::as_text() const
 
 String InputEventWithModifiers::_to_string() { return as_text(); }
 
-void InputEventWithModifiers::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -568,7 +562,6 @@ bool InputEventKey::is_match(const Ref<InputEvent>& p_event, bool p_exact_match)
 	}
 }
 
-void InputEventKey::_bind_methods() {}
 
 InputEventKey::InputEventKey() { set_device(DEVICE_ID_KEYBOARD); }
 
@@ -585,7 +578,6 @@ void InputEventMouse::set_global_position(const Vector2& p_global_pos)
 
 Vector2 InputEventMouse::get_global_position() const { return global_pos; }
 
-void InputEventMouse::_bind_methods() {}
 
 InputEventMouse::InputEventMouse() { set_device(DEVICE_ID_MOUSE); }
 
@@ -761,7 +753,6 @@ String InputEventMouseButton::_to_string()
 		index_and_mods, p, canceled_state, String(get_position()), get_button_mask(), d);
 }
 
-void InputEventMouseButton::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -895,7 +886,6 @@ bool InputEventMouseMotion::accumulate(const Ref<InputEvent>& p_event)
 	return true;
 }
 
-void InputEventMouseMotion::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1012,7 +1002,6 @@ Ref<InputEventJoypadMotion> InputEventJoypadMotion::create_reference(
 	return ie;
 }
 
-void InputEventJoypadMotion::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1123,7 +1112,6 @@ Ref<InputEventJoypadButton> InputEventJoypadButton::create_reference(
 	return ie;
 }
 
-void InputEventJoypadButton::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1177,7 +1165,6 @@ String InputEventScreenTouch::_to_string()
 		index, p, canceled_state, String(get_position()), double_tap_string);
 }
 
-void InputEventScreenTouch::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1281,7 +1268,6 @@ bool InputEventScreenDrag::accumulate(const Ref<InputEvent>& p_event)
 	return true;
 }
 
-void InputEventScreenDrag::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1357,13 +1343,11 @@ String InputEventAction::_to_string()
 	return vformat("InputEventAction: action=\"%s\", pressed=%s", action, p);
 }
 
-void InputEventAction::_bind_methods() {}
 
 ///////////////////////////////////
 
 void InputEventGesture::set_position(const Vector2& p_pos) { pos = p_pos; }
 
-void InputEventGesture::_bind_methods() {}
 
 Vector2 InputEventGesture::get_position() const { return pos; }
 
@@ -1402,7 +1386,6 @@ String InputEventMagnifyGesture::_to_string()
 		"InputEventMagnifyGesture: factor=%.2f, position=(%s)", factor, String(get_position()));
 }
 
-void InputEventMagnifyGesture::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1439,7 +1422,6 @@ String InputEventPanGesture::_to_string()
 		String(get_position()));
 }
 
-void InputEventPanGesture::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1516,7 +1498,6 @@ String InputEventMIDI::_to_string()
 	return "InputEventMIDI: " + ret;
 }
 
-void InputEventMIDI::_bind_methods() {}
 
 ///////////////////////////////////
 
@@ -1528,7 +1509,6 @@ void InputEventShortcut::set_shortcut(Ref<Shortcut> p_shortcut)
 
 Ref<Shortcut> InputEventShortcut::get_shortcut() { return shortcut; }
 
-void InputEventShortcut::_bind_methods() {}
 
 String InputEventShortcut::as_text() const
 {

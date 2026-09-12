@@ -32,7 +32,6 @@
 #include "servers/xr/xr_server.h"
 #include "xr_hand_modifier_3d.h"
 
-void XRHandModifier3D::_bind_methods() {}
 
 void XRHandModifier3D::set_hand_tracker(const StringName& p_tracker_name)
 {

@@ -122,7 +122,6 @@ class GroupsEditor : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	enum ModifyButton
@@ -132,8 +131,6 @@ public:
 		RENAME_GROUP,
 		CONVERT_GROUP,
 	};
-
-	void set_selection(const Vector<Node*>& p_nodes);
 
 	GroupsEditor();
 };

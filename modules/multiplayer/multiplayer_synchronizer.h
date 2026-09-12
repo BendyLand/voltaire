@@ -70,7 +70,6 @@ private:
 	Error _watch_changes(uint64_t p_usec);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

@@ -102,7 +102,6 @@ class RenameDialog : public ConfirmationDialog
 	bool has_errors = false;
 
 protected:
-	static void _bind_methods();
 	virtual void _post_popup() override;
 
 public:

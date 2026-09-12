@@ -48,7 +48,6 @@ class MultiNodeEdit : public RefCounted
 	void _notify_property_list_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	bool _hide_script_from_inspector() { return true; }

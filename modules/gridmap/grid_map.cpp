@@ -702,7 +702,6 @@ void GridMap::_update_octants_callback()
 #endif
 }
 
-void GridMap::_bind_methods() {}
 
 void GridMap::set_cell_scale(float p_scale)
 {

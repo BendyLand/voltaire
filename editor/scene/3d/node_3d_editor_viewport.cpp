@@ -1113,15 +1113,6 @@ void Node3DEditorViewport::_selection_menu_hide()
 	selection_menu->reset_size();
 }
 
-void Node3DEditorViewport::set_can_preview(Camera3D* p_preview)
-{
-	preview = p_preview;
-
-	if (!preview_camera->is_pressed() && !previewing_cinema) {
-		preview_camera->set_visible(p_preview);
-	}
-}
-
 void Node3DEditorViewport::update_transform_gizmo_highlight()
 {
 	if (!is_visible_in_tree() ||
@@ -1341,21 +1332,6 @@ void Node3DEditorViewportContainer::set_view(View p_view)
 				is_vertical ? horizontal_offset
 							: vertical_offset); // Store the other offset here for later.
 		}
-	} break;
-	case VIEW_USE_3_VIEWPORTS:
-	case VIEW_USE_3_VIEWPORTS_ALT: {
-		// Default mode has two on bottom (second_split). Alt mode has two on the left
-		// (first_split).
-		const bool main_vertical = view == VIEW_USE_3_VIEWPORTS;
-		viewports[1]->set_visible(!main_vertical);
-		viewports[2]->show();
-		viewports[3]->set_visible(main_vertical);
-		second_split->show();
-		main_split->set_vertical(main_vertical);
-		main_split->set_split_offset(main_vertical ? vertical_offset : horizontal_offset);
-		first_split->set_vertical(!main_vertical);
-		first_split->set_split_offset(main_vertical ? horizontal_offset : vertical_offset);
-		second_split->set_split_offset(main_vertical ? horizontal_offset : vertical_offset);
 	} break;
 	case VIEW_USE_4_VIEWPORTS: {
 		for (int i = 1; i < 4; i++) {

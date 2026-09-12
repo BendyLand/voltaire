@@ -118,7 +118,6 @@ protected:
 	void _make_dirty(bool p_parent_removing = false);
 	PackedStringArray get_configuration_warnings() const override;
 
-	static void _bind_methods();
 
 	friend class CSGCombiner3D;
 	CSGBrush* _get_brush();
@@ -208,7 +207,6 @@ protected:
 	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
 		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
 		const Vector<Ref<Material>>& p_materials);
-	static void _bind_methods();
 
 public:
 	void set_flip_faces(bool p_invert);
@@ -227,7 +225,6 @@ class CSGMesh3D : public CSGPrimitive3D
 	void _mesh_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_mesh(const Ref<Mesh>& p_mesh);
@@ -248,7 +245,6 @@ class CSGSphere3D : public CSGPrimitive3D
 	int rings;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_radius(const float p_radius);
@@ -277,7 +273,6 @@ class CSGBox3D : public CSGPrimitive3D
 	Vector3 size = Vector3(1, 1, 1);
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_size(const Vector3& p_size);
@@ -301,7 +296,6 @@ class CSGCylinder3D : public CSGPrimitive3D
 	bool smooth_faces;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_radius(const float p_radius);
@@ -337,7 +331,6 @@ class CSGTorus3D : public CSGPrimitive3D
 	bool smooth_faces;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_inner_radius(const float p_inner_radius);
@@ -419,7 +412,6 @@ private:
 	void _path_exited();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

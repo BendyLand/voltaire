@@ -101,7 +101,6 @@ private:
 	Ref<ShaderMaterial> _get_source_material() const;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -169,7 +168,6 @@ class ShaderTextEditor : public CodeTextEditor
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _load_theme_settings() override;
 
 public:
@@ -274,7 +272,6 @@ class TextShaderEditor : public ShaderEditor
 	void _reload_shader_from_disk();
 	void _reload_shader_include_from_disk();
 	void _reload();
-	void _show_warnings_panel(bool p_show);
 	void _update_warnings(bool p_validate);
 	void _focus_preview_line(int p_line);
 
@@ -290,7 +287,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	void _make_context_menu(bool p_selection, Vector2 p_position);
 	void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	void _on_shader_preview_toggled(int p_line);

@@ -77,7 +77,6 @@ class ImmediateMesh : public Mesh
 	const Vector3 SMALL_VEC3 = Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON);
 
 protected:
-	static void _bind_methods();
 
 public:
 	void surface_begin(

@@ -54,7 +54,6 @@ class ShaderGlobalsEditor : public VBoxContainer
 	void _changed();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

@@ -124,7 +124,6 @@ private:
 	TightLocalVector<uint8_t, uint64_t> data;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_format(Format p_format);

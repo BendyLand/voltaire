@@ -1852,18 +1852,6 @@ void EditorNode::_update_layouts_menu()
 void EditorNode::_layout_menu_option(int p_id)
 {
 	switch (p_id) {
-	case LAYOUT_SAVE: {
-		current_menu_option = p_id;
-		layout_dialog->set_save_mode_enabled(true);
-		layout_dialog->popup_centered();
-	} break;
-
-	case LAYOUT_DELETE: {
-		current_menu_option = p_id;
-		layout_dialog->set_save_mode_enabled(false);
-		layout_dialog->popup_centered();
-	} break;
-
 	case LAYOUT_DEFAULT: {
 		// Check if the default layout was overridden, and if so, select that instead.
 		Ref<ConfigFile> config;
@@ -2509,8 +2497,6 @@ void EditorNode::_feature_profile_changed()
 
 	editor_dock_manager->update_docks_menu();
 }
-
-void EditorNode::_bind_methods() {}
 
 static Node* _resource_get_edited_scene()
 {

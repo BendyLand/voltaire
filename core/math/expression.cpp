@@ -588,8 +588,6 @@ bool Expression::has_execute_failed() const { return execution_error; }
 
 String Expression::get_error_text() const { return error_str; }
 
-void Expression::_bind_methods() {}
-
 Expression::~Expression() { memdelete(nodes); }
 
 

@@ -422,23 +422,7 @@ String FindInFilesDialog::_validate_filter_wildcard(const String& p_expression) 
 	return ret;
 }
 
-void FindInFilesPanel::set_with_replace(bool p_with_replace)
-{
-	with_replace = p_with_replace;
-	replace_container->set_visible(p_with_replace);
 
-	if (with_replace) {
-		// Results show checkboxes on their left so they can be opted out.
-		results_display->set_columns(2);
-		results_display->set_column_expand(0, false);
-		results_display->set_column_custom_minimum_width(0, 48 * EDSCALE);
-	}
-	else {
-		// Results are single-cell items.
-		results_display->set_column_expand(0, true);
-		results_display->set_columns(1);
-	}
-}
 
 void FindInFilesPanel::set_replace_text(const String& p_text)
 {
@@ -447,12 +431,7 @@ void FindInFilesPanel::set_replace_text(const String& p_text)
 
 bool FindInFilesPanel::is_keep_results() const { return keep_results_button->is_pressed(); }
 
-void FindInFilesPanel::set_search_labels_visibility(bool p_visible)
-{
-	find_label->set_visible(p_visible);
-	search_text_label->set_visible(p_visible);
-	close_button->set_visible(p_visible);
-}
+
 
 void FindInFilesPanel::_clear()
 {
@@ -461,39 +440,6 @@ void FindInFilesPanel::_clear()
 	result_items.clear();
 	results_display->clear();
 	results_display->create_item(); // Root
-}
-
-void FindInFilesPanel::start_search()
-{
-	_clear();
-
-	status_label->set_text(TTRC("Searching..."));
-	search_text_label->set_text(finder->get_search_text());
-	search_text_label->set_tooltip_text(finder->get_search_text());
-
-	int label_min_width =
-		search_text_label->get_minimum_size().x + search_text_label->get_character_bounds(0).size.x;
-	search_text_label->set_custom_minimum_size(Size2(label_min_width, 0));
-
-	set_process(true);
-	progress_bar->set_visible(true);
-
-	finder->start();
-
-	_update_replace_buttons();
-	refresh_button->hide();
-	cancel_button->show();
-}
-
-void FindInFilesPanel::stop_search()
-{
-	finder->stop();
-
-	status_label->set_text("");
-	_update_replace_buttons();
-	progress_bar->set_visible(false);
-	refresh_button->show();
-	cancel_button->hide();
 }
 
 void FindInFilesPanel::update_layout(EditorDock::DockLayout p_layout, int p_slot)
@@ -605,18 +551,9 @@ void FindInFilesPanel::_on_item_edited()
 	item->set_custom_color(1, use_color);
 }
 
-void FindInFilesPanel::_on_finished()
-{
-	_update_matches_text();
-	_update_replace_buttons();
-	progress_bar->set_visible(false);
-	refresh_button->show();
-	cancel_button->hide();
-}
 
-void FindInFilesPanel::_on_refresh_button_clicked() { start_search(); }
 
-void FindInFilesPanel::_on_cancel_button_clicked() { stop_search(); }
+
 
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
 
@@ -672,27 +609,6 @@ void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
 		tabs_context_menu->reset_size();
 		tabs_context_menu->popup();
 	}
-}
-
-void FindInFiles::_start_search(bool p_with_replace)
-{
-	FindInFilesPanel* panel = container->get_panel_for_results(
-		(p_with_replace ? TTR("Replace:") : TTR("Find:")) + " " + dialog->get_search_text());
-	FindInFilesSearch* search = panel->get_finder();
-
-	search->set_search_text(dialog->get_search_text());
-	search->set_match_case(dialog->is_match_case());
-	search->set_whole_words(dialog->is_whole_words());
-	search->set_folder(dialog->get_folder());
-	search->set_filter(dialog->get_filter());
-	search->set_includes(dialog->get_includes());
-	search->set_excludes(dialog->get_excludes());
-
-	panel->set_with_replace(p_with_replace);
-	panel->set_replace_text(dialog->get_replace_text());
-	panel->start_search();
-
-	container->make_visible();
 }
 
 void FindInFiles::open_dialog(const String& p_initial_text, bool p_replace)

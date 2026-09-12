@@ -99,6 +99,4 @@ bool Shortcut::has_valid_event() const
 	return false;
 }
 
-void Shortcut::_bind_methods() {}
-
 

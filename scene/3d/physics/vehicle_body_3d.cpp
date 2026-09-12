@@ -195,7 +195,6 @@ Vector3 VehicleWheel3D::get_contact_normal() const { return m_raycastInfo.m_cont
 
 Node3D* VehicleWheel3D::get_contact_body() const { return m_raycastInfo.m_groundObject; }
 
-void VehicleWheel3D::_bind_methods() {}
 
 void VehicleWheel3D::set_engine_force(real_t p_engine_force) { m_engineForce = p_engine_force; }
 
@@ -810,7 +809,6 @@ void VehicleBody3D::set_steering(real_t p_steering)
 
 real_t VehicleBody3D::get_steering() const { return m_steeringValue; }
 
-void VehicleBody3D::_bind_methods() {}
 
 VehicleBody3D::VehicleBody3D()
 {

@@ -73,40 +73,6 @@ void ImportDock::reimport_resources(const Vector<String>& p_paths)
 	_reimport_attempt();
 }
 
-void ImportDock::_update_preset_menu()
-{
-	preset->get_popup()->clear();
-
-	if (params->importer.is_null()) {
-		preset->get_popup()->add_item(TTRC("Default"));
-		preset->hide();
-		return;
-	}
-	preset->show();
-
-	if (params->importer->get_preset_count() <= 0) {
-		preset->get_popup()->add_item(TTRC("Default"));
-	}
-	else {
-		for (int i = 0; i < params->importer->get_preset_count(); i++) {
-			preset->get_popup()->add_item(params->importer->get_preset_name(i));
-		}
-	}
-
-	preset->get_popup()->add_separator();
-	preset->get_popup()->add_item(
-		vformat(TTR("Set as Default for '%s'"), params->importer->get_visible_name()),
-		ITEM_SET_AS_DEFAULT);
-	if (ProjectSettings::get_singleton()->has_setting(
-			"importer_defaults/" + params->importer->get_importer_name())) {
-		preset->get_popup()->add_item(TTRC("Load Default"), ITEM_LOAD_DEFAULT);
-		preset->get_popup()->add_separator();
-		preset->get_popup()->add_item(
-			vformat(TTR("Clear Default for '%s'"), params->importer->get_visible_name()),
-			ITEM_CLEAR_DEFAULT);
-	}
-}
-
 static bool _find_owners(EditorFileSystemDirectory* efsd, const String& p_path)
 {
 	if (!efsd) {
@@ -127,21 +93,6 @@ static bool _find_owners(EditorFileSystemDirectory* efsd, const String& p_path)
 	}
 
 	return false;
-}
-
-void ImportDock::_reimport_pressed()
-{
-	_reimport_attempt();
-
-	if (params->importer.is_valid() && params->paths.size() == 1 &&
-		params->importer->has_advanced_options()) {
-		advanced->show();
-		advanced_spacer->show();
-	}
-	else {
-		advanced->hide();
-		advanced_spacer->hide();
-	}
 }
 
 void ImportDock::_advanced_options()

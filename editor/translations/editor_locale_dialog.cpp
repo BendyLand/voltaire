@@ -51,7 +51,6 @@ void EditorLocaleDialog::_notification(int p_what)
 	}
 }
 
-void EditorLocaleDialog::_bind_methods() {}
 
 void EditorLocaleDialog::ok_pressed()
 {

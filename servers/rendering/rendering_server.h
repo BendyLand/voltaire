@@ -79,7 +79,6 @@ protected:
 	RID test_material;
 
 	static RenderingServer* (*create_func)();
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _environment_set_fog_bind_compat_84792(RID p_env, bool p_enable,

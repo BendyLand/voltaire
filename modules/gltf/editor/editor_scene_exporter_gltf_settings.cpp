@@ -37,7 +37,6 @@ void EditorSceneExporterGLTFSettings::set_copyright(const String& p_copyright)
 	_copyright = p_copyright;
 }
 
-void EditorSceneExporterGLTFSettings::_bind_methods() {}
 
 double EditorSceneExporterGLTFSettings::get_bake_fps() const { return _bake_fps; }
 

@@ -100,15 +100,6 @@ void TileSetAtlasSourceEditor::_update_fix_selected_and_hovered_tiles()
 	}
 }
 
-void TileSetAtlasSourceEditor::_update_atlas_source_inspector()
-{
-	// Update visibility.
-	bool inspector_visible =
-		tools_button_group->get_pressed_button() == tool_setup_atlas_source_button;
-	atlas_source_inspector->set_visible(inspector_visible);
-	atlas_source_inspector->set_read_only(read_only);
-}
-
 void TileSetAtlasSourceEditor::_tile_data_editor_dropdown_button_draw()
 {
 	if (!has_theme_icon(SNAME("arrow"), SNAME("OptionButton"))) {
@@ -559,16 +550,6 @@ void TileSetAtlasSourceEditor::init_new_atlases(const Vector<Ref<TileSetAtlasSou
 	confirm_auto_create_tiles->popup_centered();
 }
 
-void TileSetAtlasSourceEditor::_check_outside_tiles()
-{
-	ERR_FAIL_NULL(tile_set_atlas_source);
-	bool has_tiles_outside = tile_set_atlas_source->has_tiles_outside_texture();
-	outside_tiles_warning->set_visible(!read_only && has_tiles_outside);
-	tool_advanced_menu_button->get_popup()->set_item_disabled(
-		tool_advanced_menu_button->get_popup()->get_item_index(ADVANCED_CLEANUP_TILES),
-		!has_tiles_outside);
-}
-
 void TileSetAtlasSourceEditor::_cancel_auto_create_tiles() { atlases_to_auto_create_tiles.clear(); }
 
 void TileSetAtlasSourceEditor::_notification(int p_what)
@@ -673,33 +654,6 @@ void TileSetAtlasSourceEditor::_notification(int p_what)
 		if (tile_set.is_valid()) {
 			_update_tile_data_editors();
 			_update_atlas_view();
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		if (tile_set_changed_needs_update) {
-			// Read-only is off by default
-			read_only = false;
-			// Add the listener again and check for read-only status.
-			if (tile_set.is_valid()) {
-				read_only = EditorNode::get_singleton()->is_resource_read_only(tile_set);
-			}
-
-			_update_buttons();
-
-			// Update everything.
-			_update_source_inspector();
-
-			// Update the selected tile.
-			_update_fix_selected_and_hovered_tiles();
-			_update_tile_id_label();
-			_update_atlas_view();
-			_update_atlas_source_inspector();
-			_update_tile_inspector();
-			_update_tile_data_editors();
-			_update_current_tile_data_editor();
-
-			tile_set_changed_needs_update = false;
 		}
 	} break;
 

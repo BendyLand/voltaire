@@ -65,7 +65,6 @@ class PhysicalBoneSimulator3D : public SkeletonModifier3D
 	void _reset_physical_bones_state();
 
 protected:
-	static void _bind_methods();
 
 	virtual void _set_active(bool p_active) override;
 

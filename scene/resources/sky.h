@@ -63,7 +63,6 @@ private:
 	Ref<Material> sky_material;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_radiance_size(RadianceSize p_size);

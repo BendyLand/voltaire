@@ -77,7 +77,6 @@ class Polygon2D : public Node2D
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 #ifdef TOOLS_ENABLED

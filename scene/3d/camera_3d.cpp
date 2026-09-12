@@ -493,7 +493,6 @@ void Camera3D::set_doppler_tracking(DopplerTracking p_tracking)
 
 Camera3D::DopplerTracking Camera3D::get_doppler_tracking() const { return doppler_tracking; }
 
-void Camera3D::_bind_methods() {}
 
 real_t Camera3D::get_fov() const { return fov; }
 

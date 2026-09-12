@@ -297,7 +297,6 @@ float BoneTwistDisperser3D::get_joint_twist_amount(int p_index, int p_joint) con
 	return joints[p_joint].custom_amount;
 }
 
-void BoneTwistDisperser3D::_bind_methods() {}
 
 void BoneTwistDisperser3D::_validate_bone_names()
 {

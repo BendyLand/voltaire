@@ -39,7 +39,6 @@
 
 RID NavigationObstacle3D::_navmesh_source_geometry_parser;
 
-void NavigationObstacle3D::_bind_methods() {}
 
 void NavigationObstacle3D::_notification(int p_what)
 {

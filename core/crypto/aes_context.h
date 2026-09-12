@@ -50,7 +50,6 @@ private:
 	CryptoCore::AESContext ctx;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Error start(

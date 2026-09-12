@@ -42,7 +42,6 @@ class SpringBoneCollisionSphere3D : public SpringBoneCollision3D
 	bool inside = false;
 
 protected:
-	static void _bind_methods();
 
 	static Vector3 _collide_sphere(const Vector3& p_origin, float p_radius, bool p_inside,
 		float p_bone_radius, float p_bone_length, const Vector3& p_current);

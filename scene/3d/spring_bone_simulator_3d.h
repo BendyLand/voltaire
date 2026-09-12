@@ -168,7 +168,6 @@ protected:
 	virtual void _validate_bone_names() override;
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 
-	static void _bind_methods();
 
 	virtual void _set_active(bool p_active) override;
 	virtual void _process_modification(double p_delta) override;

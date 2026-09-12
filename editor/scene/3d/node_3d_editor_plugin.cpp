@@ -221,15 +221,6 @@ void Node3DEditor::_sun_environ_settings_pressed()
 	sun_environ_popup->grab_focus();
 }
 
-void Node3DEditor::set_can_preview(Camera3D* p_preview)
-{
-	for (int i = 0; i < 4; i++) {
-		viewports[i]->set_can_preview(p_preview);
-	}
-
-	viewports[last_used_viewport]->switch_preview_camera(p_preview);
-}
-
 VSplitContainer* Node3DEditor::get_shader_split() { return shader_split; }
 
 Node3DEditorViewport* Node3DEditor::get_last_used_viewport()

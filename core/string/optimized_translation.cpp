@@ -323,6 +323,4 @@ int OptimizedTranslation::get_message_count() const
 	return 0;
 }
 
-void OptimizedTranslation::_bind_methods() {}
-
 

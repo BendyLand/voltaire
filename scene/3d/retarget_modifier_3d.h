@@ -88,7 +88,6 @@ protected:
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
 
-	static void _bind_methods();
 	virtual void _notification(int p_what);
 
 	virtual void add_child_notify(Node* p_child) override;

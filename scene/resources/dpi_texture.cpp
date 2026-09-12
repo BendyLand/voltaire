@@ -373,7 +373,6 @@ void DPITexture::set_size_override(const Size2i& p_size)
 	emit_changed();
 }
 
-void DPITexture::_bind_methods() {}
 
 DPITexture::~DPITexture()
 {

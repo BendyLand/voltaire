@@ -44,7 +44,6 @@ private:
 	void _profiler_activate(bool p_enable, int p_session_id);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool has_capture(const String& p_capture) const override;

@@ -48,7 +48,6 @@ protected:
 
 	OpenXRActionMap* action_map = nullptr;
 
-	static void _bind_methods();
 
 public:
 	static Ref<OpenXRIPBinding> new_binding(const Ref<OpenXRAction>& p_action,
@@ -104,7 +103,6 @@ protected:
 
 	OpenXRActionMap* action_map = nullptr;
 
-	static void _bind_methods();
 
 public:
 	static Ref<OpenXRInteractionProfile> new_profile(

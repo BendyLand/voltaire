@@ -60,7 +60,6 @@ private:
 	HashSet<Camera3D*> cameras;
 
 protected:
-	static void _bind_methods();
 
 	friend class Camera3D;
 

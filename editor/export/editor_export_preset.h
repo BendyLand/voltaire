@@ -102,7 +102,6 @@ private:
 protected:
 	String _get_property_warning(const StringName& p_name) const;
 
-	static void _bind_methods();
 
 
 #ifndef DISABLE_DEPRECATED

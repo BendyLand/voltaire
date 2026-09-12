@@ -1,4 +1,3 @@
-    211 Resource::Resource()
     174 CanvasItem::set_visible(bool)
     166 EditorUndoRedoManager::add_do_methodp(Object*, StringName const&, Variant const**, int)
     160 EditorUndoRedoManager::add_undo_methodp(Object*, StringName const&, Variant const**, int)
@@ -61,8 +60,8 @@
      30 Node::set_name(StringName const&)
      30 Control::get_theme_icon(StringName const&, StringName const&) const
      29 TextServerAdvanced::_ensure_cache_for_size(TextServerAdvanced::FontAdvanced*, Vector2i const&, TextServerAdvanced::FontForSizeAdvanced*&, bool, unsigned int) const
-     29 OpenXRAPI::get_error_string(XrResult) const
      29 Node3D::set_transform(Transform3D const&)
+     28 OpenXRAPI::get_error_string(XrResult) const
      28 Node2D::Node2D()
      27 Tree::clear()
      27 Shader::set_code(String const&)
@@ -134,6 +133,7 @@
      11 Tree::set_column_titles_visible(bool)
      11 ScrollContainer::ScrollContainer()
      11 RichTextLabel::_validate_line_caches()
+     11 Resource::Resource()
      11 Resource::connect_changed(Callable const&, unsigned int)
      11 RenderingDevice::vertex_buffer_create(unsigned int, Span<unsigned char>, unsigned int)
      11 PopupMenu::add_check_shortcut(Ref<Shortcut> const&, int, bool)

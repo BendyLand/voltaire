@@ -256,7 +256,6 @@ protected:
 	virtual void fti_pump_property() {}
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	bool _property_can_revert(const StringName& p_name) const;
 

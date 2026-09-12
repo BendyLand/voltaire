@@ -47,7 +47,6 @@ private:
 	HashType type = HASH_MD5;
 
 protected:
-	static void _bind_methods();
 	void _create_ctx(HashType p_type);
 	void _delete_ctx();
 

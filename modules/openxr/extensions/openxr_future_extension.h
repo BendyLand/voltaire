@@ -54,7 +54,6 @@ class OpenXRFutureResult : public RefCounted
 	friend class OpenXRFutureExtension;
 
 protected:
-	static void _bind_methods();
 
 	void _mark_as_finished();
 	void _mark_as_cancelled();
@@ -82,7 +81,6 @@ private:
 class OpenXRFutureExtension
 {
 protected:
-	static void _bind_methods();
 
 public:
 	static OpenXRFutureExtension* get_singleton();

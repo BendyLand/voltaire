@@ -35,7 +35,6 @@
 class EditorResourceConversionPlugin : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String converts_to() const;

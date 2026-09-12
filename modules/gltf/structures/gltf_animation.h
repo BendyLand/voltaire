@@ -35,7 +35,6 @@
 class GLTFAnimation : public Resource
 {
 protected:
-	static void _bind_methods();
 
 public:
 	enum Interpolation

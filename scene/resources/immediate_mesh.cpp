@@ -423,7 +423,6 @@ AABB ImmediateMesh::get_aabb() const
 	return aabb;
 }
 
-void ImmediateMesh::_bind_methods() {}
 
 RID ImmediateMesh::get_rid() const { return mesh; }
 

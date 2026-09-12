@@ -69,7 +69,6 @@ class ThemeEditorPreview : public VBoxContainer
 		int font_size = 16;
 	} theme_cache;
 
-	void _picker_button_cbk();
 	Control* _find_hovered_control(Control* p_parent, Vector2 p_mouse_position);
 
 	void _draw_picker_overlay();
@@ -86,7 +85,6 @@ protected:
 	void add_preview_overlay(Control* p_overlay);
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_preview_theme(const Ref<Theme>& p_theme);
@@ -115,7 +113,6 @@ class SceneThemeEditorPreview : public ThemeEditorPreview
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	bool set_preview_scene(const String& p_path);

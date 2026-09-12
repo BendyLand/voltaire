@@ -48,7 +48,6 @@ class Skin : public Resource
 
 protected:
 	virtual void reset_state() override;
-	static void _bind_methods();
 
 public:
 	void set_bind_count(int p_size);

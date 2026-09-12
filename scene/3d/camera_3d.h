@@ -127,7 +127,6 @@ protected:
 
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	Projection _get_camera_projection(real_t p_near) const;
 

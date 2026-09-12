@@ -649,8 +649,6 @@ void TextShaderEditor::_notification(int p_what)
 	}
 }
 
-void TextShaderEditor::_show_warnings_panel(bool p_show) { warnings_panel->set_visible(p_show); }
-
 void TextShaderEditor::goto_line_selection(int p_line, int p_begin, int p_end)
 {
 	code_editor->goto_line_selection(p_line, p_begin, p_end);

@@ -52,7 +52,6 @@ class TranslationServer
 
 	static inline TranslationServer* singleton = nullptr;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	String _standardize_locale_bind_compat_98972(const String& p_locale) const;

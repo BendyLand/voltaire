@@ -87,7 +87,6 @@ private:
 protected:
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	Vector2 get_joystick_position() const;

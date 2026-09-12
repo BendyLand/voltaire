@@ -51,7 +51,6 @@ class Shape3D : public Resource
 #endif // DEBUG_ENABLED
 
 protected:
-	static void _bind_methods();
 
 	_FORCE_INLINE_ RID get_shape() const { return shape; }
 

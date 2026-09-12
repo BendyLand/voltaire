@@ -40,7 +40,6 @@ class Texture : public Resource
 class Texture2D : public Texture
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const;
@@ -76,7 +75,6 @@ public:
 class TextureLayered : public Texture
 {
 protected:
-	static void _bind_methods();
 
 public:
 	enum LayeredType
@@ -98,7 +96,6 @@ public:
 class Texture3D : public Texture
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const;

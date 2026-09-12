@@ -35,7 +35,6 @@
 class PhysicsDirectBodyState2D
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Vector2

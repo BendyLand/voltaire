@@ -45,7 +45,6 @@ class RemoteTransform3D : public Node3D
 	void _update_cache();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

@@ -39,7 +39,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationAnchor
 
-void OpenXRSpatialCapabilityConfigurationAnchor::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationAnchor::has_valid_configuration() const
 {
@@ -93,7 +92,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationAnchor::_get_enabled_compon
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialComponentAnchorList
 
-void OpenXRSpatialComponentAnchorList::_bind_methods() {}
 
 void OpenXRSpatialComponentAnchorList::set_capacity(uint32_t p_capacity)
 {
@@ -127,7 +125,6 @@ Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) c
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialContextPersistenceConfig
 
-void OpenXRSpatialContextPersistenceConfig::_bind_methods() {}
 
 bool OpenXRSpatialContextPersistenceConfig::has_valid_configuration() const
 {
@@ -254,7 +251,6 @@ String OpenXRSpatialComponentPersistenceList::get_persistence_state_name(
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRAnchorTracker
 
-void OpenXRAnchorTracker::_bind_methods() {}
 
 bool OpenXRAnchorTracker::has_uuid() const
 {
@@ -307,7 +303,6 @@ OpenXRSpatialAnchorCapability::OpenXRSpatialAnchorCapability() { singleton = thi
 
 OpenXRSpatialAnchorCapability::~OpenXRSpatialAnchorCapability() { singleton = nullptr; }
 
-void OpenXRSpatialAnchorCapability::_bind_methods() {}
 
 HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(XrVersion p_version)
 {

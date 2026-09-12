@@ -128,7 +128,6 @@ CompositorEffect::~CompositorEffect()
 
 /* Compositor */
 
-void Compositor::_bind_methods() {}
 
 Compositor::Compositor()
 {

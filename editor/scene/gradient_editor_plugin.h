@@ -82,7 +82,6 @@ class GradientEdit : public Control
 protected:
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_gradient(const Ref<Gradient>& p_gradient);

@@ -147,7 +147,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 private:
 	bool _filter_property(const String& p_name, int p_index) const;
@@ -234,7 +233,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 public:
 	int get_point_count() const;
@@ -343,7 +341,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 public:
 #ifdef TOOLS_ENABLED

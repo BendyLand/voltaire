@@ -195,24 +195,6 @@ void EditorDebuggerNode::_update_margins()
 	add_theme_constant_override("margin_bottom", -bottom_panel_margins->get_margin(SIDE_BOTTOM));
 }
 
-void EditorDebuggerNode::set_script_debug_button(MenuButton* p_button)
-{
-	script_menu = p_button;
-	script_menu->set_text(TTRC("Debug"));
-	script_menu->set_switch_on_hover(true);
-	PopupMenu* p = script_menu->get_popup();
-	p->add_shortcut(ED_GET_SHORTCUT("debugger/step_into"), DEBUG_STEP);
-	p->add_shortcut(ED_GET_SHORTCUT("debugger/step_over"), DEBUG_NEXT);
-	p->add_separator();
-	p->add_shortcut(ED_GET_SHORTCUT("debugger/break"), DEBUG_BREAK);
-	p->add_shortcut(ED_GET_SHORTCUT("debugger/continue"), DEBUG_CONTINUE);
-	p->add_separator();
-	p->add_check_shortcut(
-		ED_GET_SHORTCUT("debugger/debug_with_external_editor"), DEBUG_WITH_EXTERNAL_EDITOR);
-	_break_state_changed();
-	script_menu->show();
-}
-
 void EditorDebuggerNode::_break_state_changed()
 {
 	const bool breaked = get_current_debugger()->is_breaked();

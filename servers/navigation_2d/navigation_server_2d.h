@@ -420,7 +420,6 @@ class NavigationServer2DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

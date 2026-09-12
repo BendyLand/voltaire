@@ -44,7 +44,6 @@ class SkeletonModification2D : public Resource
 	friend class Bone2D;
 
 protected:
-	static void _bind_methods();
 
 	SkeletonModificationStack2D* stack = nullptr;
 	int execution_mode = 0; // 0 = process

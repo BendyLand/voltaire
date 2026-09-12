@@ -42,7 +42,6 @@ class StyleBoxLine : public StyleBox
 
 protected:
 	virtual float get_style_margin(Side p_side) const override;
-	static void _bind_methods();
 
 public:
 	void set_color(const Color& p_color);

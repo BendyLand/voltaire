@@ -37,7 +37,6 @@
 class AudioEffectInstance : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void process(
@@ -48,7 +47,6 @@ public:
 class AudioEffect : public Resource
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Ref<AudioEffectInstance> instantiate();

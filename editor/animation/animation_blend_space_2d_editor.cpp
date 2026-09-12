@@ -109,16 +109,6 @@ void AnimationNodeBlendSpace2DEditor::_update_edited_point_name()
 	}
 }
 
-void AnimationNodeBlendSpace2DEditor::_open_editor()
-{
-	if (selected_point >= 0 && selected_point < blend_space->get_blend_point_count()) {
-		Ref<AnimationNode> an = blend_space->get_blend_point_node(selected_point);
-		ERR_FAIL_COND(an.is_null());
-		AnimationTreeEditor::get_singleton()->enter_editor(
-			blend_space->get_blend_point_name(selected_point));
-	}
-}
-
 void AnimationNodeBlendSpace2DEditor::_index_edit_focus_exited()
 {
 	index_edit_has_focus = false;

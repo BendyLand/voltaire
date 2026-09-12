@@ -60,7 +60,6 @@ protected:
 	LocalVector<BoneConstraint3DSetting*> settings;
 
 	virtual void _validate_bone_names() override;
-	static void _bind_methods();
 
 	virtual void _process_modification(double p_delta) override;
 

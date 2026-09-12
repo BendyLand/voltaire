@@ -179,7 +179,6 @@ void VisualInstance3D::set_sorting_use_aabb_center(bool p_enabled)
 
 bool VisualInstance3D::is_sorting_use_aabb_center() const { return sorting_use_aabb_center; }
 
-void VisualInstance3D::_bind_methods() {}
 
 void VisualInstance3D::set_base(const RID& p_base)
 {

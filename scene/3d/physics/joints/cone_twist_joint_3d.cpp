@@ -30,7 +30,6 @@
 
 #include "cone_twist_joint_3d.h"
 
-void ConeTwistJoint3D::_bind_methods() {}
 
 void ConeTwistJoint3D::set_param(Param p_param, real_t p_value)
 {

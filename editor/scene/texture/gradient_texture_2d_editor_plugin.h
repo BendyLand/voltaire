@@ -89,7 +89,6 @@ class GradientTexture2DEditor : public VBoxContainer
 	GradientTexture2DEdit* texture_editor_rect = nullptr;
 
 	void _reverse_button_pressed();
-	void _set_snap_enabled(bool p_enabled);
 	void _set_snap_count(int p_snap_count);
 
 protected:

@@ -478,6 +478,5 @@ void AnimationNodeBlendSpace2D::validate_node(
 	}
 }
 
-void AnimationNodeBlendSpace2D::_bind_methods() {}
 
 

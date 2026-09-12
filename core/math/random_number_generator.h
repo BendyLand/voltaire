@@ -38,7 +38,6 @@ class RandomNumberGenerator : public RefCounted
 protected:
 	RandomPCG randbase;
 
-	static void _bind_methods();
 
 public:
 	_FORCE_INLINE_ void set_seed(uint64_t p_seed) { randbase.seed(p_seed); }

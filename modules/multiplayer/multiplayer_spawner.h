@@ -70,7 +70,6 @@ private:
 	void _set_spawnable_scenes(const Vector<String>& p_scenes);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

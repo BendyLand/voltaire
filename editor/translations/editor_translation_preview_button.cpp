@@ -67,7 +67,6 @@ EditorTranslationPreviewButton::EditorTranslationPreviewButton()
 	set_accessibility_name(TTRC("Disable Translation Preview"));
 	set_tooltip_text(TTRC("Previewing translation. Click to disable."));
 	set_focus_mode(FOCUS_NONE);
-	set_visible(false);
 }
 
 

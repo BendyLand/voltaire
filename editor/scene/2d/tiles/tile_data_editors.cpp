@@ -114,16 +114,6 @@ void GenericTilePolygonEditor::_snap_point(Point2& r_point)
 	}
 }
 
-void GenericTilePolygonEditor::_toggle_expand(bool p_expand)
-{
-	if (p_expand) {
-		TileSetEditor::get_singleton()->add_expanded_editor(this);
-	}
-	else {
-		TileSetEditor::get_singleton()->remove_expanded_editor();
-	}
-}
-
 void GenericTilePolygonEditor::set_use_undo_redo(bool p_use_undo_redo)
 {
 	use_undo_redo = p_use_undo_redo;

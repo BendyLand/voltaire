@@ -30,7 +30,6 @@
 
 #include "slider_joint_3d.h"
 
-void SliderJoint3D::_bind_methods() {}
 
 void SliderJoint3D::set_param(Param p_param, real_t p_value)
 {

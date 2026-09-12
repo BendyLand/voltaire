@@ -374,7 +374,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 public:
 	static Node3DEditor* get_singleton() { return singleton; }
@@ -469,8 +468,6 @@ public:
 		r_secondary = current_hover_gizmo_handle_secondary;
 		return current_hover_gizmo_handle;
 	}
-
-	void set_can_preview(Camera3D* p_preview);
 
 	void set_preview_material(Ref<Material> p_material) { preview_material = p_material; }
 

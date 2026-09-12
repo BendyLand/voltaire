@@ -83,7 +83,6 @@ private:
 protected:
 	Ref<XRPositionalTracker> tracker;
 
-	static void _bind_methods();
 
 	virtual void _bind_tracker();
 	virtual void _unbind_tracker();
@@ -158,7 +157,6 @@ private:
 	Vector3 size;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Vector3 get_size() const;
@@ -187,7 +185,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _physics_interpolated_changed() override;
 
 public:

@@ -55,7 +55,6 @@ void SpringArm3D::_notification(int p_what)
 	}
 }
 
-void SpringArm3D::_bind_methods() {}
 
 real_t SpringArm3D::get_length() const { return spring_length; }
 

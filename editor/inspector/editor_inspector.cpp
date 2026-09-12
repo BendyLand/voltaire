@@ -397,11 +397,6 @@ void EditorInspectorArray::_rmb_popup_id_pressed(int p_id)
 	}
 }
 
-void EditorInspectorArray::_vbox_visibility_changed()
-{
-	control_dropping->set_visible(vbox->is_visible_in_tree());
-}
-
 void EditorInspectorArray::_panel_draw(int p_index)
 {
 	ERR_FAIL_INDEX(p_index, (int)array_elements.size());

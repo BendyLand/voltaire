@@ -231,7 +231,6 @@ private:
 	bool _is_any_collapsed(bool p_only_visible);
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _select_bind_compat_119367(int p_column);
@@ -827,7 +826,6 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	PackedStringArray get_accessibility_configuration_warnings() const;

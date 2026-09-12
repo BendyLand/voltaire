@@ -116,7 +116,6 @@ private:
 protected:
 	virtual void _post_popup() override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	ConnectionData get_source_connection_data() const;
@@ -223,7 +222,6 @@ class ConnectionsDock : public VBoxContainer
 protected:
 	void _connect_pressed();
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void update_tree();

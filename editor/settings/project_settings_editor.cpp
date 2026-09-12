@@ -103,11 +103,6 @@ void ProjectSettingsEditor::_setting_edited(const String& p_name)
 	queue_save();
 }
 
-void ProjectSettingsEditor::_update_advanced(bool p_is_advanced)
-{
-	custom_properties->set_visible(p_is_advanced);
-}
-
 void ProjectSettingsEditor::_on_category_changed(const String& p_new_category)
 {
 	general_settings_inspector->get_inspector()->set_use_deletable_properties(

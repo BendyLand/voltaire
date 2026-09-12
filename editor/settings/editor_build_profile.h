@@ -102,7 +102,6 @@ private:
 	}
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_disable_class(const StringName& p_class, bool p_disabled);
@@ -207,7 +206,6 @@ class EditorBuildProfileManager : public AcceptDialog
 	static EditorBuildProfileManager* singleton;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

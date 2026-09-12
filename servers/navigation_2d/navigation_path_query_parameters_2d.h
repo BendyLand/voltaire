@@ -36,7 +36,6 @@
 class NavigationPathQueryParameters2D : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	enum PathfindingAlgorithm

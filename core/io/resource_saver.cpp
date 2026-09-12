@@ -236,5 +236,4 @@ void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPa
 	save_get_id_for_path = p_callback;
 }
 
-void ResourceFormatSaver::_bind_methods() {}
 

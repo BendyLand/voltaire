@@ -39,19 +39,6 @@ void EditorDock::_set_default_slot_bind(DockSlot p_slot)
 	default_slot = p_slot;
 }
 
-void EditorDock::_bind_methods() {}
-
-void EditorDock::open()
-{
-	if (!is_open) {
-		EditorDockManager::get_singleton()->open_dock(this, false);
-	}
-}
-
-void EditorDock::make_visible() { EditorDockManager::get_singleton()->open_dock(this, true); }
-
-void EditorDock::make_floating() { EditorDockManager::get_singleton()->make_dock_floating(this); }
-
 void EditorDock::close()
 {
 	if (is_open) {
@@ -82,8 +69,7 @@ void EditorDock::set_global(bool p_global)
 
 void EditorDock::set_icon_name(const StringName& p_name)
 {
-
-if (icon_name == p_name) {
+	if (icon_name == p_name) {
 		return;
 	}
 	icon_name = p_name;

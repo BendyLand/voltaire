@@ -143,7 +143,6 @@ void Path2D::_debug_free()
 
 Ref<Curve2D> Path2D::get_curve() const { return curve; }
 
-void Path2D::_bind_methods() {}
 
 /////////////////////////////////////////////////////////////////////////////////
 

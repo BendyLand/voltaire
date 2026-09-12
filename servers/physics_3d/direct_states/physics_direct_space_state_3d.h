@@ -42,7 +42,6 @@ private:
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool intersect_ray(

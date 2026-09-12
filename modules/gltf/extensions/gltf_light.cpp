@@ -33,7 +33,6 @@
 #include "gltf_light.h"
 #include "scene/3d/light_3d.h"
 
-void GLTFLight::_bind_methods() {}
 
 void GLTFLight::set_cone_inner_attenuation_conversion_expressions(
 	Ref<GLTFObjectModelProperty>& r_obj_model_prop)

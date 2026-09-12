@@ -99,66 +99,6 @@ void ColorPicker::_update_theme_item_cache()
 
 void ColorPicker::set_focus_on_picker_shape() { shapes[get_current_shape_index()]->grab_focus(); }
 
-void ColorPicker::_update_controls()
-{
-	int mode_sliders_count = modes[current_mode]->get_slider_count();
-
-	for (int i = current_slider_count; i < mode_sliders_count; i++) {
-		sliders[i]->show();
-		labels[i]->show();
-		values[i]->show();
-	}
-	for (int i = mode_sliders_count; i < current_slider_count; i++) {
-		sliders[i]->hide();
-		labels[i]->hide();
-		values[i]->hide();
-	}
-	current_slider_count = mode_sliders_count;
-
-	for (int i = 0; i < current_slider_count; i++) {
-		labels[i]->set_text(modes[current_mode]->get_slider_label(i));
-		sliders[i]->set_accessibility_name(modes[current_mode]->get_slider_label(i));
-		values[i]->set_accessibility_name(modes[current_mode]->get_slider_label(i));
-	}
-	alpha_label->set_text("A");
-	alpha_slider->set_accessibility_name(ETR("Alpha"));
-	alpha_value->set_accessibility_name(ETR("Alpha"));
-
-	intensity_label->set_text("I");
-	intensity_slider->set_accessibility_name(ETR("Intensity"));
-	intensity_value->set_accessibility_name(ETR("Intensity"));
-
-	alpha_value->set_visible(edit_alpha);
-	alpha_slider->set_visible(edit_alpha);
-	alpha_label->set_visible(edit_alpha);
-
-	intensity_value->set_visible(edit_intensity);
-	intensity_slider->set_visible(edit_intensity);
-	intensity_label->set_visible(edit_intensity);
-
-	int i = 0;
-	for (ColorPickerShape* shape : shapes) {
-		bool is_active = get_current_shape_index() == i;
-		i++;
-
-		if (!shape->is_initialized) {
-			if (is_active) {
-				// Controls are initialized on demand, because ColorPicker does not need them all at
-				// once.
-				shape->initialize_controls();
-			}
-			else {
-				continue;
-			}
-		}
-
-		for (Control* control : shape->controls) {
-			control->set_visible(is_active);
-		}
-	}
-	btn_shape->set_visible(current_shape != SHAPE_NONE);
-}
-
 void ColorPicker::_set_pick_color(
 	const Color& p_color, bool p_update_sliders, bool p_calc_intensity)
 {
@@ -690,62 +630,13 @@ void ColorPicker::_html_focus_exit()
 
 bool ColorPicker::are_swatches_enabled() const { return can_add_swatches; }
 
-void ColorPicker::set_presets_visible(bool p_visible)
-{
-	if (presets_visible == p_visible) {
-		return;
-	}
-	presets_visible = p_visible;
-	swatches_vbc->set_visible(p_visible);
-}
-
 bool ColorPicker::are_presets_visible() const { return presets_visible; }
-
-void ColorPicker::set_modes_visible(bool p_visible)
-{
-	if (color_modes_visible == p_visible) {
-		return;
-	}
-	color_modes_visible = p_visible;
-	mode_hbc->set_visible(p_visible);
-}
 
 bool ColorPicker::are_modes_visible() const { return color_modes_visible; }
 
-void ColorPicker::set_sampler_visible(bool p_visible)
-{
-	if (sampler_visible == p_visible) {
-		return;
-	}
-	sampler_visible = p_visible;
-	sample_hbc->set_visible(p_visible);
-#ifdef MACOS_ENABLED
-	perm_hb->set_visible(p_visible && !OS::get_singleton()->get_granted_permissions().has(
-										  "macos.permission.RECORD_SCREEN"));
-#endif
-}
-
 bool ColorPicker::is_sampler_visible() const { return sampler_visible; }
 
-void ColorPicker::set_sliders_visible(bool p_visible)
-{
-	if (sliders_visible == p_visible) {
-		return;
-	}
-	sliders_visible = p_visible;
-	slider_gc->set_visible(p_visible);
-}
-
 bool ColorPicker::are_sliders_visible() const { return sliders_visible; }
-
-void ColorPicker::set_hex_visible(bool p_visible)
-{
-	if (hex_visible == p_visible) {
-		return;
-	}
-	hex_visible = p_visible;
-	hex_hbc->set_visible(p_visible);
-}
 
 bool ColorPicker::is_hex_visible() const { return hex_visible; }
 
@@ -766,8 +657,6 @@ ColorPicker::~ColorPicker()
 	}
 }
 
-/////////////////
-
 void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
 {
 	if (p_event->is_action_pressed(SNAME("ui_accept"), false, true)) {
@@ -775,8 +664,6 @@ void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
 	}
 	PopupPanel::_input_from_window(p_event);
 }
-
-/////////////////
 
 void ColorPickerButton::_about_to_popup()
 {
@@ -875,8 +762,6 @@ ColorPickerButton::ColorPickerButton(const String& p_text) : Button(p_text)
 {
 	set_toggle_mode(true);
 }
-
-/////////////////
 
 void ColorPresetButton::_notification(int p_what)
 {

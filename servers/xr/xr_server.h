@@ -118,7 +118,6 @@ private:
 protected:
 	static XRServer* singleton;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();

@@ -110,7 +110,6 @@ Vector<int> BoxContainer::get_allowed_size_flags_vertical() const
 
 BoxContainer::BoxContainer(bool p_vertical) { vertical = p_vertical; }
 
-void BoxContainer::_bind_methods() {}
 
 MarginContainer* VBoxContainer::add_margin_child(
 	const String& p_label, Control* p_control, bool p_expand)

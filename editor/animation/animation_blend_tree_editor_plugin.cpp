@@ -129,13 +129,6 @@ void AnimationNodeBlendTreeEditor::_popup_hide()
 	to_slot = -1;
 }
 
-void AnimationNodeBlendTreeEditor::_open_in_editor(const String& p_which)
-{
-	Ref<AnimationNode> an = blend_tree->get_node(p_which);
-	ERR_FAIL_COND(an.is_null());
-	AnimationTreeEditor::get_singleton()->enter_editor(p_which);
-}
-
 void AnimationNodeBlendTreeEditor::_scroll_changed(const Vector2& p_scroll)
 {
 	if (read_only) {
@@ -155,7 +148,6 @@ void AnimationNodeBlendTreeEditor::_scroll_changed(const Vector2& p_scroll)
 	updating = false;
 }
 
-void AnimationNodeBlendTreeEditor::_bind_methods() {}
 
 AnimationNodeBlendTreeEditor* AnimationNodeBlendTreeEditor::singleton = nullptr;
 

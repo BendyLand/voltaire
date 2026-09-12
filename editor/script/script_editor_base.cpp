@@ -40,7 +40,6 @@
 #include "script_editor_base.h"
 #include "servers/display/display_server.h"
 
-void ScriptEditorBase::_bind_methods() {}
 
 String ScriptEditorBase::get_name()
 {

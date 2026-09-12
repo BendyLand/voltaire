@@ -106,7 +106,6 @@ private:
 		const PackedInt64Array& p_sparse_indices, const bool p_deduplicate = true);
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	// 32-bit and non-const versions for compatibility.

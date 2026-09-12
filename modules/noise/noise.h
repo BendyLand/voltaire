@@ -286,7 +286,6 @@ class Noise : public Resource
 	}
 
 protected:
-	static void _bind_methods();
 
 public:
 	// Virtual destructor so we can delete any Noise derived object when referenced as a Noise*.

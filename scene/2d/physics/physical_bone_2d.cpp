@@ -164,7 +164,6 @@ void PhysicalBone2D::set_follow_bone_when_simulating(bool p_follow_bone)
 
 bool PhysicalBone2D::get_follow_bone_when_simulating() const { return follow_bone_when_simulating; }
 
-void PhysicalBone2D::_bind_methods() {}
 
 PhysicalBone2D::PhysicalBone2D()
 {

@@ -42,7 +42,6 @@ class Texture2D;
 class EditorResourcePreviewGenerator : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 	class DrawRequester
 	{
@@ -110,7 +109,6 @@ class EditorResourcePreview : public Node
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static EditorResourcePreview* get_singleton();

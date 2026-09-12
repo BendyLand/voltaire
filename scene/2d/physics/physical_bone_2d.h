@@ -39,7 +39,6 @@ class PhysicalBone2D : public RigidBody2D
 {
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 private:
 	Skeleton2D* parent_skeleton = nullptr;

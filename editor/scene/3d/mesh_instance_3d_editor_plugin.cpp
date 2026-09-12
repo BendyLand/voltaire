@@ -284,14 +284,6 @@ Vector<Ref<Shape3D>> MeshInstance3DEditor::create_shape_from_mesh(
 	return shapes;
 }
 
-void MeshInstance3DEditor::_shape_type_selected(int p_option)
-{
-	bool shape_axis_visible =
-		(ShapeType)p_option == SHAPE_TYPE_CAPSULE || (ShapeType)p_option == SHAPE_TYPE_CYLINDER;
-	shape_axis->set_visible(shape_axis_visible);
-	shape_axis_label->set_visible(shape_axis_visible);
-}
-
 struct MeshInstance3DEditorEdgeSort
 {
 	Vector2 a;

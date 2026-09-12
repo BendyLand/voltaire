@@ -59,7 +59,6 @@ class WindowWrapper : public MarginContainer
 	void _window_close_request();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -106,7 +105,6 @@ class ScreenSelect : public Button
 
 protected:
 	virtual void pressed() override;
-	static void _bind_methods();
 
 	void _notification(int p_what);
 

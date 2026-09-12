@@ -1886,7 +1886,6 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-void Node::_bind_methods() {}
 
 Node::~Node()
 {

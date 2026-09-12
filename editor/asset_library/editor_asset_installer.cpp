@@ -140,61 +140,6 @@ void EditorAssetInstaller::_update_file_mappings()
 	}
 }
 
-void EditorAssetInstaller::_rebuild_source_tree()
-{
-	updating_source = true;
-	source_tree->clear();
-
-	TreeItem* root = source_tree->create_item();
-	root->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-	root->set_checked(0, true);
-	root->set_icon(0, get_theme_icon(SNAME("folder"), SNAME("FileDialog")));
-	root->set_text(0, "/");
-	root->set_editable(0, true);
-
-	file_item_map.clear();
-	HashMap<String, TreeItem*> directory_item_map;
-	int num_file_conflicts = 0;
-	first_file_conflict = nullptr;
-
-	for (const String& E : asset_files) {
-		String path = E; // We're going to mutate it.
-
-		bool is_directory = false;
-		if (path.ends_with("/")) {
-			path = path.trim_suffix("/");
-			is_directory = true;
-		}
-
-		TreeItem* parent_item;
-
-		int separator = path.rfind_char('/');
-		if (separator == -1) {
-			parent_item = root;
-		}
-		else {
-			String parent_path = path.substr(0, separator);
-			HashMap<String, TreeItem*>::Iterator I = directory_item_map.find(parent_path);
-			ERR_CONTINUE(!I);
-			parent_item = I->value;
-		}
-
-		TreeItem* ti;
-		if (is_directory) {
-			ti = _create_dir_item(source_tree, parent_item, path, directory_item_map);
-		}
-		else {
-			ti = _create_file_item(source_tree, parent_item, path, &num_file_conflicts);
-		}
-		file_item_map[E] = ti;
-	}
-
-	_update_conflict_status(num_file_conflicts);
-	_update_confirm_button();
-
-	updating_source = false;
-}
-
 bool EditorAssetInstaller::_update_source_item_status(TreeItem* p_item, const String& p_path)
 {
 	ERR_FAIL_COND_V(!mapped_files.has(p_path), false);
@@ -313,22 +258,6 @@ TreeItem* EditorAssetInstaller::_create_file_item(
 	ti->set_text(0, file);
 
 	return ti;
-}
-
-void EditorAssetInstaller::_update_conflict_status(int p_conflicts)
-{
-	if (p_conflicts >= 1) {
-		asset_conflicts_link->set_text(
-			vformat(TTRN("%d file conflicts with your project and won't be installed",
-						"%d files conflict with your project and won't be installed", p_conflicts),
-				p_conflicts));
-		asset_conflicts_link->show();
-		asset_conflicts_label->hide();
-	}
-	else {
-		asset_conflicts_link->hide();
-		asset_conflicts_label->show();
-	}
 }
 
 void EditorAssetInstaller::_set_skip_toplevel(bool p_checked)
@@ -536,7 +465,6 @@ EditorAssetInstaller::EditorAssetInstaller()
 	asset_conflicts_link->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
 	asset_conflicts_link->set_tooltip_text(
 		TTRC("Show contents of the asset and conflicting files."));
-	asset_conflicts_link->set_visible(false);
 	remapping_tools->add_child(asset_conflicts_link);
 
 	// File hierarchy trees.
@@ -547,7 +475,6 @@ EditorAssetInstaller::EditorAssetInstaller()
 
 	source_tree_vb = memnew(VBoxContainer);
 	source_tree_vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	source_tree_vb->set_visible(show_source_files_button->is_pressed());
 	tree_split->add_child(source_tree_vb);
 
 	Label* source_tree_label = memnew(Label);

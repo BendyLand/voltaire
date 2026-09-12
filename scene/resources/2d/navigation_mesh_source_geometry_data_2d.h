@@ -52,7 +52,6 @@ private:
 	Vector<ProjectedObstruction> _projected_obstructions;
 
 protected:
-	static void _bind_methods();
 
 public:
 	struct ProjectedObstruction

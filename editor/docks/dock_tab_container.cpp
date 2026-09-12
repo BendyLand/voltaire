@@ -76,14 +76,6 @@ void EditorDockDragHint::_notification(int p_what)
 		can_drop_dock = dragged_dock->get_available_layouts() & dock_container->layout;
 
 	} break;
-	case NOTIFICATION_DRAG_END: {
-		EditorDockManager::get_singleton()->_dock_drag_stopped();
-		can_drop_dock = false;
-		mouse_inside = false;
-		highlighted = false;
-		mouse_margin_index = -1;
-		hide();
-	} break;
 
 	case NOTIFICATION_DRAW: {
 		if (!highlighted && (!can_drop_dock || !mouse_inside)) {
@@ -120,15 +112,6 @@ void EditorDockDragHint::_notification(int p_what)
 	}
 }
 
-EditorDockDragHint::EditorDockDragHint()
-{
-	set_as_top_level(true);
-	hide();
-
-	dock_drop_highlight.instantiate();
-	dock_drop_highlight->set_border_width_all(Math::round(2 * EDSCALE));
-}
-
 void DockTabContainer::_pre_popup(const Size2i& p_size)
 {
 	dock_context_popup->set_dock(get_dock(get_current_tab()));
@@ -146,12 +129,6 @@ void DockTabContainer::_tab_rmb_clicked(int p_tab_idx)
 	dock_context_popup->set_position(
 		get_tab_bar()->get_screen_position() + get_tab_bar()->get_local_mouse_position());
 	dock_context_popup->popup();
-}
-
-void DockTabContainer::update_visibility()
-{
-	// Hide the dock container if there are no tabs.
-	set_visible(EditorDockManager::get_singleton()->are_docks_visible() && get_tab_count() > 0);
 }
 
 bool DockTabContainer::can_switch_dock() const
@@ -225,15 +202,6 @@ void DockTabContainer::move_dock_index(EditorDock* p_dock, int p_to_index, bool 
 	}
 }
 
-void DockTabContainer::show_drag_hint()
-{
-	if (!is_visible_in_tree()) {
-		return;
-	}
-	drag_hint->set_rect(get_global_rect());
-	drag_hint->show();
-}
-
 Rect2 DockTabContainer::get_default_floating_dock_rect(EditorDock* p_dock)
 {
 	Size2 borders = Size2(4, 4) * EDSCALE;
@@ -241,23 +209,6 @@ Rect2 DockTabContainer::get_default_floating_dock_rect(EditorDock* p_dock)
 	ret.position = p_dock->get_screen_position();
 	ret.size = p_dock->get_size() + borders * 2;
 	return ret;
-}
-
-DockTabContainer::DockTabContainer(int p_slot)
-{
-	ERR_FAIL_INDEX(p_slot, EditorDock::DOCK_SLOT_MAX);
-	dock_slot = p_slot;
-
-	set_drag_to_rearrange_enabled(true);
-	set_tabs_rearrange_group(1);
-	hide();
-
-	drag_hint = memnew(EditorDockDragHint);
-	drag_hint->set_slot(this);
-	drag_hint->hide();
-	EditorNode::get_singleton()->get_gui_base()->add_child(drag_hint);
-
-	get_tab_bar()->set_switch_on_release(true);
 }
 
 Rect2 SideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
@@ -270,15 +221,6 @@ Rect2 SideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 		get_size() - Vector2(0, tab_bar_height));
 }
 
-SideDockTabContainer::SideDockTabContainer(int p_slot, const Rect2i& p_slot_rect)
-	: DockTabContainer(p_slot)
-{
-	grid_rect = p_slot_rect;
-	set_custom_minimum_size(Size2(170 * EDSCALE, 0));
-	set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	set_use_hidden_tabs_for_min_size(true);
-}
-
 Rect2 BottomSideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 {
 	if (p_dock->is_visible_in_tree()) {
@@ -287,17 +229,6 @@ Rect2 BottomSideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 	const float tab_bar_height = get_tab_bar()->get_size().y;
 	return Rect2(get_screen_position() + Vector2(0, tab_bar_height),
 		get_size() - Vector2(0, tab_bar_height));
-}
-
-BottomSideDockTabContainer::BottomSideDockTabContainer(int p_slot, const Rect2i& p_slot_rect)
-	: DockTabContainer(p_slot)
-{
-	grid_rect = p_slot_rect;
-	layout = EditorDock::DOCK_LAYOUT_HORIZONTAL;
-
-	set_custom_minimum_size(Size2(0, 170 * EDSCALE));
-	set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	set_use_hidden_tabs_for_min_size(true);
 }
 
 

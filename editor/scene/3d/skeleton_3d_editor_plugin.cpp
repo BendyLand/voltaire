@@ -97,7 +97,6 @@ void Skeleton3DEditor::set_bone_options_enabled(const bool p_bone_options_enable
 		SKELETON_OPTION_SELECTED_POSES_TO_RESTS, !p_bone_options_enabled);
 }
 
-void Skeleton3DEditor::_bind_methods() {}
 
 void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 {
@@ -293,25 +292,6 @@ void Skeleton3DEditor::_scl_toggled(bool p_toggled_on)
 		return;
 	}
 	editor_plugin->scl_pressed = p_toggled_on;
-}
-
-void Skeleton3DEditor::_node_removed(Node* p_node)
-{
-	if (!skeleton || p_node != skeleton) {
-		return;
-	}
-
-	_disconnect_from_tree();
-	_disconnect_from_skeleton();
-	if (pose_editor) {
-		pose_editor->set_skeleton(nullptr);
-		pose_editor->set_visible(false);
-	}
-	edit_mode = false;
-	skeleton = nullptr;
-	skeleton_options->hide();
-
-	_update_properties();
 }
 
 void Skeleton3DEditor::edit_mode_toggled(const bool pressed)

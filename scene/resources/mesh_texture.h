@@ -41,7 +41,6 @@ class MeshTexture : public Texture2D
 	Size2i size;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual int get_width() const override;

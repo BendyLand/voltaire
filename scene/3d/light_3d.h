@@ -94,7 +94,6 @@ private:
 protected:
 	RID light;
 
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	Light3D(RSE::LightType p_type);
@@ -178,7 +177,6 @@ private:
 	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_shadow_mode(ShadowMode p_mode);
@@ -208,7 +206,6 @@ private:
 	ShadowMode shadow_mode;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_shadow_mode(ShadowMode p_mode);
@@ -222,7 +219,6 @@ public:
 class SpotLight3D : public Light3D
 {
 protected:
-	static void _bind_methods();
 
 public:
 	PackedStringArray get_configuration_warnings() const override;
@@ -238,7 +234,6 @@ private:
 	bool area_normalize_energy = true;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_area_size(const Vector2& p_size);

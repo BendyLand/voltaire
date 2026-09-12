@@ -50,7 +50,6 @@ void SpringBoneCollisionSphere3D::set_inside(bool p_enabled)
 
 bool SpringBoneCollisionSphere3D::is_inside() const { return inside; }
 
-void SpringBoneCollisionSphere3D::_bind_methods() {}
 
 Vector3 SpringBoneCollisionSphere3D::_collide_sphere(const Vector3& p_origin, float p_radius,
 	bool p_inside, float p_bone_radius, float p_bone_length, const Vector3& p_current)

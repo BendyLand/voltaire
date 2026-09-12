@@ -42,7 +42,6 @@ class GLTFLight : public Resource
 	friend class GLTFDocument;
 
 protected:
-	static void _bind_methods();
 
 private:
 	Color color = Color(1.0f, 1.0f, 1.0f);

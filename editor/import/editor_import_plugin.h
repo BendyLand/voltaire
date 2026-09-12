@@ -35,7 +35,6 @@
 class EditorImportPlugin : public ResourceImporter
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String get_importer_name() const override;

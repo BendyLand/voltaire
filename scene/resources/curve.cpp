@@ -460,7 +460,6 @@ void Curve::ensure_default_setup(real_t p_min, real_t p_max)
 	}
 }
 
-void Curve::_bind_methods() {}
 
 int Curve2D::get_point_count() const { return points.size(); }
 

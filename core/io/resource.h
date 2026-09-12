@@ -87,7 +87,7 @@ private:
 	friend class SceneState;
 	Node* local_scene = nullptr;
 
-	SelfList<Resource> remapped_list;
+	SelfList<Resource> remapped_list = { this };
 
 	using DuplicateRemapCacheT = HashMap<Ref<Resource>, Ref<Resource>>;
 	static thread_local inline DuplicateRemapCacheT* thread_duplicate_remap_cache = nullptr;
@@ -95,7 +95,6 @@ private:
 
 protected:
 	virtual void _resource_path_changed();
-	static void _bind_methods();
 
 	void _block_emit_changed();
 	void _unblock_emit_changed();
@@ -166,7 +165,7 @@ public:
 
 	String get_id_for_path(const String& p_referrer_path) const;
 
-	Resource();
+	Resource() = default;
 	~Resource();
 };
 

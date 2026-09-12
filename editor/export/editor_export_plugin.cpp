@@ -194,7 +194,6 @@ void EditorExportPlugin::end_generate_apple_embedded_project(
 
 void EditorExportPlugin::skip() { skipped = true; }
 
-void EditorExportPlugin::_bind_methods() {}
 
 bool EditorExportPlugin::_begin_customize_resources(
 	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_targets)

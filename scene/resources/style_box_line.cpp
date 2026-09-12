@@ -106,6 +106,5 @@ void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 	vs->canvas_item_add_rect(p_canvas_item, r, color);
 }
 
-void StyleBoxLine::_bind_methods() {}
 
 

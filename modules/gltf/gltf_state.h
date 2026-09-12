@@ -116,7 +116,6 @@ protected:
 	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	// Non-const getters for compatibility.

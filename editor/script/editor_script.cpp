@@ -64,6 +64,5 @@ EditorInterface* EditorScript::get_editor_interface() const
 
 void EditorScript::run() {}
 
-void EditorScript::_bind_methods() {}
 
 

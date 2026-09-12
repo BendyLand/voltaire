@@ -77,7 +77,6 @@ public:
 	HashMap<String, ContextMenuItem> context_menu_items;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void get_options(const Vector<String>& p_paths);

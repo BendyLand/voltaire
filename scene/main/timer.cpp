@@ -160,6 +160,5 @@ PackedStringArray Timer::get_configuration_warnings() const
 	return warnings;
 }
 
-void Timer::_bind_methods() {}
 
 

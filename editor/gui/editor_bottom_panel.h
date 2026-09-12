@@ -43,7 +43,6 @@ class ProgressIndicator : public TextureProgressBar
 {
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	ProgressIndicator();
@@ -78,8 +77,6 @@ protected:
 public:
 	virtual void dock_closed(EditorDock* p_dock) override;
 	virtual void dock_focused(EditorDock* p_dock, bool p_was_visible) override;
-
-	virtual void update_visibility() override { show(); } // Never hide bottom panel.
 
 	virtual TabStyle get_tab_style() const override;
 	virtual bool can_switch_dock() const override;

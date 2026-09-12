@@ -252,6 +252,5 @@ void GradientTexture2D::update_now() const
 	}
 }
 
-void GradientTexture2D::_bind_methods() {}
 
 

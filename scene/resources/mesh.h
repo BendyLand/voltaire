@@ -67,7 +67,6 @@ public:
 	};
 
 protected:
-	static void _bind_methods();
 
 public:
 	enum
@@ -244,7 +243,6 @@ private:
 	bool project_hull_vertices = true;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_max_concavity(real_t p_max_concavity);
@@ -325,7 +323,6 @@ protected:
 
 	virtual void reset_state() override;
 
-	static void _bind_methods();
 
 public:
 	void add_surface(uint32_t p_format, PrimitiveType p_primitive,
@@ -401,7 +398,6 @@ class PlaceholderMesh : public Mesh
 	AABB aabb;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual int get_surface_count() const override { return 0; }

@@ -407,40 +407,6 @@ void QuickOpenResultContainer::_score_and_sort_candidates()
 	}
 }
 
-void QuickOpenResultContainer::_update_result_items(
-	int p_new_visible_results_count, int p_new_selection_index)
-{
-	// Only need to update items that were not hidden in previous update.
-	int num_items_needing_updates = MAX(num_visible_results, p_new_visible_results_count);
-	num_visible_results = p_new_visible_results_count;
-
-	for (int i = 0; i < num_items_needing_updates; i++) {
-		QuickOpenResultItem* item = result_items[i];
-
-		if (i < num_visible_results) {
-			item->set_content(candidates[i]);
-		}
-		else {
-			item->reset();
-		}
-	};
-
-	const bool any_results = num_visible_results > 0;
-	_select_item(any_results ? p_new_selection_index : -1);
-
-	scroll_container->set_visible(any_results);
-	no_results_container->set_visible(!any_results);
-
-	if (!any_results) {
-		if (uids.is_empty()) {
-			no_results_label->set_text(TTR("No files found for this type"));
-		}
-		else {
-			no_results_label->set_text(TTR("No results found"));
-		}
-	}
-}
-
 void QuickOpenResultContainer::_move_selection_index(Key p_key)
 {
 	// Don't move selection if there are no results.
@@ -578,11 +544,6 @@ bool QuickOpenResultContainer::is_instant_preview_enabled() const
 		   instant_preview_toggle->is_pressed();
 }
 
-void QuickOpenResultContainer::set_instant_preview_toggle_visible(bool p_visible)
-{
-	instant_preview_toggle->set_visible(p_visible);
-}
-
 void QuickOpenResultContainer::cleanup()
 {
 	num_visible_results = 0;
@@ -616,13 +577,6 @@ void QuickOpenResultItem::reset()
 	is_selected = false;
 	list_item->reset();
 	grid_item->reset();
-}
-
-void QuickOpenResultItem::_set_enabled(bool p_enabled)
-{
-	set_visible(p_enabled);
-	set_process(p_enabled);
-	set_process_input(p_enabled);
 }
 
 void QuickOpenResultItem::_notification(int p_what)

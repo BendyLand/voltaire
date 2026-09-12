@@ -124,7 +124,6 @@ PackedStringArray Joint3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void Joint3D::_bind_methods() {}
 
 Joint3D::Joint3D()
 {

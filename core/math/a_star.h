@@ -127,7 +127,6 @@ class AStar3D : public RefCounted
 	bool _solve(Point* p_begin_point, Point* p_end_point, bool p_allow_partial_path);
 
 protected:
-	static void _bind_methods();
 
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
@@ -185,7 +184,6 @@ class AStar2D : public RefCounted
 		AStar3D::Point* p_begin_point, AStar3D::Point* p_end_point, bool p_allow_partial_path);
 
 protected:
-	static void _bind_methods();
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
 

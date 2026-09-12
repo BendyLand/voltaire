@@ -44,7 +44,6 @@ void SkinReference::_skin_changed()
 	skeleton_version = 0;
 }
 
-void SkinReference::_bind_methods() {}
 
 RID SkinReference::get_skeleton() const { return skeleton; }
 

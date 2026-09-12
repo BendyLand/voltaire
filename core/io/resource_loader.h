@@ -56,7 +56,6 @@ public:
 		ResourceLoaderConstants::CACHE_MODE_REPLACE_DEEP;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",

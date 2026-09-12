@@ -136,7 +136,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods();
 
 private:
 	FilterMode mag_filter = FilterMode::LINEAR;

@@ -41,7 +41,6 @@ class AnimationLibrary : public Resource
 	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static bool is_valid_animation_name(const String& p_name);

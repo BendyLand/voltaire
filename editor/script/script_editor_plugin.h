@@ -68,7 +68,6 @@ class ScriptEditorQuickOpen : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void popup_dialog(const Vector<String>& p_functions, bool p_dontclear = false);
@@ -393,15 +392,12 @@ class ScriptEditor : public PanelContainer
 	void _set_script_zoom_factor(float p_zoom_factor);
 	void _update_code_editor_zoom_factor(CodeTextEditor* p_code_text_editor);
 
-	void _window_changed(bool p_visible);
-
 	void _close_builtin_scripts_from_scene(const String& p_scene);
 
 	static ScriptEditor* script_editor;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static ScriptEditor* get_singleton() { return script_editor; }

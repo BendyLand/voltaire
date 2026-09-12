@@ -112,8 +112,6 @@ private:
 
 	void _window_close_request(WindowWrapper* p_wrapper);
 	EditorDock* _close_window(WindowWrapper* p_wrapper);
-	void _open_dock_in_window(
-		EditorDock* p_dock, bool p_show_window = true, bool p_reset_size = false);
 
 	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
 	void _move_dock(
@@ -152,13 +150,8 @@ public:
 	void load_docks_from_config(
 		Ref<ConfigFile> p_layout, const String& p_section, bool p_first_load = false);
 
-	void set_dock_slot_highlighted(int p_slot, bool p_highlighted);
-
-	void set_dock_enabled(EditorDock* p_dock, bool p_enabled);
 	void close_dock(EditorDock* p_dock);
-	void open_dock(EditorDock* p_dock, bool p_set_current = true);
 	void focus_dock(EditorDock* p_dock);
-	void make_dock_floating(EditorDock* p_dock);
 
 	void set_docks_visible(bool p_show);
 	bool are_docks_visible() const;
@@ -186,7 +179,6 @@ class DockSlotGrid : public Control
 	void _update_rect_cache();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	virtual Size2 get_minimum_size() const override;
@@ -215,7 +207,6 @@ private:
 	void _tab_move_left();
 	void _tab_move_right();
 	void _close_dock();
-	void _float_dock();
 
 	void _update_buttons();
 

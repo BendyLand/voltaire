@@ -216,7 +216,6 @@ protected:
 	bool can_override = false;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _set_read_only(bool p_read_only);
 
 	const Color* _get_property_colors();
@@ -335,7 +334,6 @@ public:
 	List<AddedEditor> added_editors;
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _add_property_editor_bind_compat_92322(
@@ -401,7 +399,6 @@ class EditorInspectorCategory : public Control
 	void _theme_changed();
 
 protected:
-	static void _bind_methods();
 
 	void _notification(int p_what);
 
@@ -512,7 +509,6 @@ protected:
 	VBoxContainer* vbox = nullptr;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -658,7 +654,6 @@ class EditorInspectorArray : public EditorInspectorSection
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	VBoxContainer* get_vbox(int p_index);
@@ -687,7 +682,6 @@ class EditorPaginator : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void update(int p_page, int p_max_page);
@@ -845,7 +839,6 @@ private:
 	static EditorInspector* _get_control_parent_inspector(Control* p_control);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

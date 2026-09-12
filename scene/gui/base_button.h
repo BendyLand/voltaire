@@ -87,7 +87,6 @@ private:
 protected:
 	virtual void pressed();
 	virtual void toggled(bool p_pressed);
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	bool _was_pressed_by_mouse() const;
@@ -155,7 +154,6 @@ class ButtonGroup : public Resource
 	bool allow_unpress = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	BaseButton* get_pressed_button();

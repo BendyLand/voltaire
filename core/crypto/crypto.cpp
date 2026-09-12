@@ -30,8 +30,6 @@
 
 #include "crypto.h"
 
-/// Resources
-
 CryptoKey* (*CryptoKey::_create)(bool p_notify_postinitialize) = nullptr;
 
 CryptoKey* CryptoKey::create(bool p_notify_postinitialize)
@@ -42,8 +40,6 @@ CryptoKey* CryptoKey::create(bool p_notify_postinitialize)
 	return nullptr;
 }
 
-void CryptoKey::_bind_methods() {}
-
 X509Certificate* (*X509Certificate::_create)(bool p_notify_postinitialize) = nullptr;
 
 X509Certificate* X509Certificate::create(bool p_notify_postinitialize)
@@ -53,10 +49,6 @@ X509Certificate* X509Certificate::create(bool p_notify_postinitialize)
 	}
 	return nullptr;
 }
-
-void X509Certificate::_bind_methods() {}
-
-/// TLSOptions
 
 Ref<TLSOptions> TLSOptions::client(
 	Ref<X509Certificate> p_trusted_chain, const String& p_common_name_override)
@@ -88,12 +80,6 @@ Ref<TLSOptions> TLSOptions::server(Ref<CryptoKey> p_own_key, Ref<X509Certificate
 	return opts;
 }
 
-void TLSOptions::_bind_methods() {}
-
-/// HMACContext
-
-void HMACContext::_bind_methods() {}
-
 HMACContext* (*HMACContext::_create)(bool p_notify_postinitialize) = nullptr;
 
 HMACContext* HMACContext::create(bool p_notify_postinitialize)
@@ -103,8 +89,6 @@ HMACContext* HMACContext::create(bool p_notify_postinitialize)
 	}
 	ERR_FAIL_V_MSG(nullptr, "HMACContext is not available when the mbedtls module is disabled.");
 }
-
-/// Crypto
 
 void (*Crypto::_load_default_certificates)(const String& p_path) = nullptr;
 Crypto* (*Crypto::_create)(bool p_notify_postinitialize) = nullptr;
@@ -159,7 +143,5 @@ bool Crypto::constant_time_compare(
 	}
 	return v == 0;
 }
-
-void Crypto::_bind_methods() {}
 
 

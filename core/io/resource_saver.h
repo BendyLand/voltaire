@@ -35,7 +35,6 @@
 class ResourceFormatSaver : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0);

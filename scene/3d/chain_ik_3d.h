@@ -202,7 +202,6 @@ protected:
 
 	LocalVector<ChainIK3DSetting *> chain_settings; // For caching.
 
-	static void _bind_methods();
 
 	virtual void _validate_bone_names() override;
 	void _validate_axes(Skeleton3D *p_skeleton) const;

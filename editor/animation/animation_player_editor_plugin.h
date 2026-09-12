@@ -189,7 +189,6 @@ class AnimationPlayerEditor : public EditorDock
 	void _play_bw_pressed();
 	void _play_bw_from_pressed();
 	void _animation_new();
-	void _animation_rename();
 
 	void _animation_remove();
 	void _animation_duplicate();
@@ -234,7 +233,6 @@ class AnimationPlayerEditor : public EditorDock
 	~AnimationPlayerEditor();
 
 protected:
-	static void _bind_methods();
 
 public:
 	AnimationMixer* get_editing_node() const;

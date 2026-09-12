@@ -77,7 +77,6 @@ private:
 	Ref<Skin> godot_skin;
 
 protected:
-	static void _bind_methods();
 
 public:
 	GLTFNodeIndex get_skin_root();

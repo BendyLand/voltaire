@@ -66,7 +66,6 @@ bool MultiplayerPeer::is_refusing_new_connections() const { return refuse_connec
 
 bool MultiplayerPeer::is_server_relay_supported() const { return false; }
 
-void MultiplayerPeer::_bind_methods() {}
 
 /*************/
 
@@ -108,5 +107,4 @@ bool MultiplayerPeerExtension::is_server_relay_supported() const
 	return MultiplayerPeer::is_server_relay_supported();
 }
 
-void MultiplayerPeerExtension::_bind_methods() {}
 

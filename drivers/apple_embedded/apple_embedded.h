@@ -35,7 +35,6 @@
 
 class AppleEmbedded
 {
-	static void _bind_methods();
 
 private:
 	CHHapticEngine* haptic_engine API_AVAILABLE(ios(13)) = nullptr;

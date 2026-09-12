@@ -53,7 +53,6 @@ private:
 	void _update();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_width(int p_width);
@@ -89,7 +88,6 @@ private:
 	void _update();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_width(int p_width);

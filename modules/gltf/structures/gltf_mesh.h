@@ -41,7 +41,6 @@ private:
 	Vector<float> blend_weights;
 
 protected:
-	static void _bind_methods();
 
 public:
 	String get_original_name();

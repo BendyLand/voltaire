@@ -120,7 +120,6 @@ protected:
 
 	Button* get_assign_button() { return assign_button; }
 
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	void set_assign_button_min_size(const Size2i& p_size);
@@ -163,7 +162,6 @@ class EditorScriptPicker : public EditorResourcePicker
 	Node* script_owner = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool handle_menu_selected(int p_which) override;

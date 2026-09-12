@@ -323,7 +323,6 @@ Plane XRAnchor3D::get_plane() const
 
 Vector<XROrigin3D*> XROrigin3D::origin_nodes;
 
-void XROrigin3D::_bind_methods() {}
 
 real_t XROrigin3D::get_world_scale() const
 {

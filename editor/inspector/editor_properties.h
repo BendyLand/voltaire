@@ -332,7 +332,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	uint32_t value = 0;
@@ -752,7 +751,6 @@ class EditorPropertyResource : public EditorProperty
 protected:
 	virtual void _set_read_only(bool p_read_only) override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual void update_property() override;

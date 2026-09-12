@@ -42,7 +42,6 @@ private:
 	void clear_actions();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static Ref<OpenXRActionSet> new_action_set(const char* p_name, const char* p_localized_name,

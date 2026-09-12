@@ -131,6 +131,5 @@ ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 	return visibility_range_fade_mode;
 }
 
-void ImporterMeshInstance3D::_bind_methods() {}
 
 

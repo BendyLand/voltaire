@@ -43,7 +43,6 @@ OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::singleton = nullpt
 
 OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::get_singleton() { return singleton; }
 
-void OpenXRFrameSynthesisExtension::_bind_methods() {}
 
 OpenXRFrameSynthesisExtension::OpenXRFrameSynthesisExtension() { singleton = this; }
 

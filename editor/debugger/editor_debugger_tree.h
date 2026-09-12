@@ -81,7 +81,6 @@ private:
 	void _file_selected(const String& p_file);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

@@ -94,7 +94,6 @@ protected:
 
 	virtual void _configure_joint(
 		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
-	static void _bind_methods();
 
 	static void _warn_if_deprecated_param(Param p_param);
 	void _set_drive_limit_explicit(Vector3::Axis p_axis, Param p_param);

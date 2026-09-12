@@ -51,7 +51,6 @@ OpenXRAndroidThreadSettingsExtension::~OpenXRAndroidThreadSettingsExtension()
 	singleton = nullptr;
 }
 
-void OpenXRAndroidThreadSettingsExtension::_bind_methods() {}
 
 HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(
 	XrVersion p_version)

@@ -200,7 +200,6 @@ class FramebufferCacheRD
 	}
 
 private:
-	static void _bind_methods();
 
 public:
 	template <typename... Args> RID get_cache(Args... args)

@@ -45,7 +45,6 @@
 
 class Time
 {
-	static void _bind_methods();
 	static Time* singleton;
 
 public:

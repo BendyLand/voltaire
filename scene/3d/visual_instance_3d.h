@@ -52,7 +52,6 @@ protected:
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	enum GetFacesFlags
@@ -145,7 +144,6 @@ private:
 	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting);

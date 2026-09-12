@@ -106,7 +106,6 @@ public:
 	~DisplayServer();
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();

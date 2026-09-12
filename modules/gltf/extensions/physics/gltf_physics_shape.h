@@ -42,7 +42,6 @@ class ImporterMesh;
 class GLTFPhysicsShape : public Resource
 {
 protected:
-	static void _bind_methods();
 
 private:
 	String shape_type;

@@ -107,7 +107,6 @@ protected:
 	virtual String get_tooltip(const Point2& p_pos) const;
 	virtual bool has_point(const Point2& p_point) const override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void fold();
@@ -167,7 +166,6 @@ class FoldableGroup : public Resource
 	bool updating_group = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	FoldableContainer* get_expanded_container() const;

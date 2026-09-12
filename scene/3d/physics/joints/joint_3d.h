@@ -56,7 +56,6 @@ protected:
 
 	virtual void _configure_joint(RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) = 0;
 
-	static void _bind_methods();
 
 	_FORCE_INLINE_ bool is_configured() const { return configured; }
 

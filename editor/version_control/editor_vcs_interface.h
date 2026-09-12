@@ -97,7 +97,6 @@ public:
 protected:
 	static EditorVCSInterface* singleton;
 
-	static void _bind_methods();
 
 public:
 	static EditorVCSInterface* get_singleton();

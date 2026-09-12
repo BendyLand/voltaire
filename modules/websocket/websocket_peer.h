@@ -62,7 +62,6 @@ private:
 protected:
 	static WebSocketPeer* (*_create)(bool p_notify_postinitialize);
 
-	static void _bind_methods();
 
 	Vector<String> supported_protocols;
 	Vector<String> handshake_headers;

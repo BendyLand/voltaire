@@ -143,7 +143,6 @@ void EditorResourcePreview::remove_preview_generator(
 
 EditorResourcePreview* EditorResourcePreview::get_singleton() { return singleton; }
 
-void EditorResourcePreview::_bind_methods() {}
 
 void EditorResourcePreview::_notification(int p_what)
 {

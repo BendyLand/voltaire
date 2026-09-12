@@ -52,7 +52,6 @@ class VoxelGIData : public Resource
 	bool use_two_bounces = true;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,

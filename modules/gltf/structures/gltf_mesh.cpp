@@ -31,7 +31,6 @@
 #include "gltf_mesh.h"
 #include "scene/resources/3d/importer_mesh.h"
 
-void GLTFMesh::_bind_methods() {}
 
 String GLTFMesh::get_original_name() { return original_name; }
 

@@ -724,12 +724,6 @@ void CurveEdit::_redraw()
 
 const int CurveEditor::DEFAULT_SNAP = 10;
 
-void CurveEditor::_set_snap_enabled(bool p_enabled)
-{
-	curve_editor_rect->set_snap_enabled(p_enabled);
-	snap_count_edit->set_visible(p_enabled);
-}
-
 void CurveEditor::_set_snap_count(int p_snap_count)
 {
 	curve_editor_rect->set_snap_count(CLAMP(p_snap_count, 2, 100));

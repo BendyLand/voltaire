@@ -63,7 +63,6 @@ protected:
 
 	HashMap<StringName, Ref<XRPose>> poses;
 
-	static void _bind_methods();
 
 public:
 	void set_tracker_profile(const String& p_profile);

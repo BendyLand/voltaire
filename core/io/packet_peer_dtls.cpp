@@ -40,6 +40,4 @@ PacketPeerDTLS* PacketPeerDTLS::create(bool p_notify_postinitialize)
 
 bool PacketPeerDTLS::is_available() { return available; }
 
-void PacketPeerDTLS::_bind_methods() {}
-
 

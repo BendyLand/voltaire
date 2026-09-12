@@ -34,6 +34,5 @@ void ColorPalette::set_colors(const PackedColorArray& p_colors) { colors = p_col
 
 PackedColorArray ColorPalette::get_colors() const { return colors; }
 
-void ColorPalette::_bind_methods() {}
 
 

@@ -88,7 +88,6 @@ class BoneMapperItem : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void create_editor();
 
 public:
@@ -173,7 +172,6 @@ class BoneMapper : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_current_group_idx(int p_group_idx);

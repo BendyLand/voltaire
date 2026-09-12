@@ -37,7 +37,6 @@ OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::singleton = nullptr;
 
 OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::get_singleton() { return singleton; }
 
-void OpenXRSpatialEntityExtension::_bind_methods() {}
 
 OpenXRSpatialEntityExtension::OpenXRSpatialEntityExtension() { singleton = this; }
 

@@ -53,7 +53,6 @@ public:
 	const StringName UPGRADE_FINISHED = "upgrade_finished";
 
 protected:
-	static void _bind_methods();
 
 public:
 	ProjectUpgradeTool();

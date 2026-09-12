@@ -169,7 +169,6 @@ bool MeshConvexDecompositionSettings::get_project_hull_vertices() const
 	return project_hull_vertices;
 }
 
-void MeshConvexDecompositionSettings::_bind_methods() {}
 
 #ifndef PHYSICS_3D_DISABLED
 Mesh::ConvexDecompositionFunc Mesh::convex_decomposition_function = nullptr;
@@ -284,7 +283,6 @@ Ref<Resource> Mesh::create_placeholder() const
 	return placeholder;
 }
 
-void Mesh::_bind_methods() {}
 
 void Mesh::clear_cache() const
 {

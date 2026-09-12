@@ -74,7 +74,6 @@ class EditorInterface
 	AABB _calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb);
 
 protected:
-	static void _bind_methods();
 
 public:
 	static EditorInterface* get_singleton() { return singleton; }

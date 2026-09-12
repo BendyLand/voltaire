@@ -111,25 +111,6 @@ void ShaderCreateDialog::_built_in_toggled(bool p_enabled)
 	validation_panel->update();
 }
 
-void ShaderCreateDialog::_browse_path()
-{
-	file_browse->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
-	file_browse->set_title(TTR("Open Shader / Choose Location"));
-	file_browse->set_ok_button_text(TTR("Open"));
-
-	file_browse->set_customization_flag_enabled(FileDialog::CUSTOMIZATION_OVERWRITE_WARNING, false);
-	file_browse->clear_filters();
-
-	List<String> extensions(type_data.get(type_menu->get_selected()).extensions);
-
-	for (const String& E : extensions) {
-		file_browse->add_filter("*." + E);
-	}
-
-	file_browse->set_current_path(file_path->get_text());
-	file_browse->popup_file_dialog();
-}
-
 void ShaderCreateDialog::_file_selected(const String& p_file)
 {
 	String p = ProjectSettings::get_singleton()->localize_path(p_file);

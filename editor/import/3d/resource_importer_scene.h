@@ -50,7 +50,6 @@ class EditorSceneFormatImporter : public RefCounted
 	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	enum ImportFlags
@@ -74,7 +73,6 @@ class EditorScenePostImport : public RefCounted
 	String source_file;
 
 protected:
-	static void _bind_methods();
 
 public:
 	String get_source_file() const;
@@ -101,7 +99,6 @@ private:
 	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void get_internal_import_options(

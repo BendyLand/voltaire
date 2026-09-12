@@ -268,8 +268,6 @@ String Resource::get_id_for_path(const String& p_referrer_path) const
 	return "";
 }
 
-void Resource::_bind_methods() {}
-
 Resource::~Resource()
 {
 	if (unlikely(path_cache.is_empty())) {

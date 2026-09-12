@@ -104,7 +104,6 @@ protected:
 	virtual void _validate_bone_names();
 
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _set_active(bool p_active);
 	virtual void _process_modification(double p_delta);
 	bool should_check_node_path();

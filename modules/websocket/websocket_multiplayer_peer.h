@@ -81,7 +81,6 @@ protected:
 	int target_peer = 0;
 	int unique_id = 0;
 
-	static void _bind_methods();
 
 	void _poll_client();
 	void _poll_server();

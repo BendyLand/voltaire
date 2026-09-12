@@ -62,7 +62,6 @@ public:
 	bool set_application_thread_type(ThreadType p_thread_type, uint32_t p_thread_id = 0);
 
 protected:
-	static void _bind_methods();
 
 private:
 	static OpenXRAndroidThreadSettingsExtension* singleton;

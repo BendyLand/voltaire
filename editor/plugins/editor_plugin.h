@@ -117,7 +117,6 @@ public:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 	EditorUndoRedoManager* get_undo_redo();
 
 	void remove_custom_type(const String& p_type);

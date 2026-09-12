@@ -52,7 +52,6 @@ const String ENV_SCRIPT_ENCRYPTION_KEY = "GODOT_SCRIPT_ENCRYPTION_KEY";
 class EditorExportPlatform : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 

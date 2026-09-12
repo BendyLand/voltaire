@@ -62,7 +62,6 @@ private:
 	Vector<PackedStringArray> json_pointers;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void append_node_path(const NodePath& p_node_path);

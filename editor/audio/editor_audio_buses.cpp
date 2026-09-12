@@ -53,44 +53,9 @@
 #include "scene/resources/style_box_flat.h"
 #include "servers/audio/audio_server.h"
 
-void EditorAudioBus::_update_visible_channels()
-{
-	int i = 0;
-	for (; i < cc; i++) {
-		if (!channel[i].vu_l->is_visible()) {
-			channel[i].vu_l->show();
-		}
-		if (!channel[i].vu_r->is_visible()) {
-			channel[i].vu_r->show();
-		}
-		if (!channel[i].peak_indicator_l->is_visible()) {
-			channel[i].peak_indicator_l->show();
-		}
-		if (!channel[i].peak_indicator_r->is_visible()) {
-			channel[i].peak_indicator_r->show();
-		}
-	}
-
-	for (; i < CHANNELS_MAX; i++) {
-		if (channel[i].vu_l->is_visible()) {
-			channel[i].vu_l->hide();
-		}
-		if (channel[i].vu_r->is_visible()) {
-			channel[i].vu_r->hide();
-		}
-		if (channel[i].peak_indicator_l->is_visible()) {
-			channel[i].peak_indicator_l->hide();
-		}
-		if (channel[i].peak_indicator_r->is_visible()) {
-			channel[i].peak_indicator_r->hide();
-		}
-	}
-}
-
 void EditorAudioBus::_notification(int p_what)
 {
 	switch (p_what) {
-
 	case NOTIFICATION_READY: {
 		update_bus();
 		set_process(true);
@@ -114,141 +79,6 @@ void EditorAudioBus::_notification(int p_what)
 			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 			accent.a *= 0.7;
 			draw_rect(Rect2(Point2(), get_size()), accent, false);
-		}
-	} break;
-
-	case NOTIFICATION_PROCESS: {
-		if (cc != AudioServer::get_singleton()->get_bus_channels(get_index())) {
-			cc = AudioServer::get_singleton()->get_bus_channels(get_index());
-			_update_visible_channels();
-		}
-
-		for (int i = 0; i < cc; i++) {
-			float real_peak[2] = {-100, -100};
-			bool activity_found = false;
-
-			if (AudioServer::get_singleton()->is_bus_channel_active(get_index(), i)) {
-				activity_found = true;
-				real_peak[0] = MAX(real_peak[0],
-					AudioServer::get_singleton()->get_bus_peak_volume_left_db(get_index(), i));
-				real_peak[1] = MAX(real_peak[1],
-					AudioServer::get_singleton()->get_bus_peak_volume_right_db(get_index(), i));
-			}
-
-			// Checking if equal too to avoid jitters.
-			if (real_peak[0] >= channel[i].peak_l) {
-				channel[i].peak_l = real_peak[0];
-			}
-			else {
-				channel[i].peak_l -= get_process_delta_time() * 60.0;
-			}
-
-			if (real_peak[1] >= channel[i].peak_r) {
-				channel[i].peak_r = real_peak[1];
-			}
-			else {
-				channel[i].peak_r -= get_process_delta_time() * 60.0;
-			}
-
-			channel[i].vu_l->set_value(_scaled_db_to_normalized_volume(channel[i].peak_l));
-			channel[i].vu_r->set_value(_scaled_db_to_normalized_volume(channel[i].peak_r));
-
-			if (!channel[i].indicator_fall_l) {
-				channel[i].peak_indicator_l->set_position(
-					Point2(0.0, MIN(channel[i].peak_indicator_l->get_position().height,
-									peak_indicator_range -
-										channel[i].vu_l->get_value() * peak_indicator_range)));
-			}
-			else {
-				channel[i].peak_indicator_l->set_position(Point2(0.0,
-					MIN(peak_indicator_range, channel[i].peak_indicator_l->get_position().height +
-												  get_process_delta_time() * 60.0)));
-			}
-			if (!channel[i].indicator_fall_r) {
-				channel[i].peak_indicator_r->set_position(
-					Point2(0.0, MIN(channel[i].peak_indicator_r->get_position().height,
-									peak_indicator_range -
-										channel[i].vu_r->get_value() * peak_indicator_range)));
-			}
-			else {
-				channel[i].peak_indicator_r->set_position(Point2(0.0,
-					MIN(peak_indicator_range, channel[i].peak_indicator_r->get_position().height +
-												  get_process_delta_time() * 60.0)));
-			}
-
-			double normalized_peak_indicator =
-				(channel[i].peak_indicator_l->get_position().height - peak_indicator_range) /
-				-peak_indicator_range;
-
-			if (channel[i].vu_l->get_value() > normalized_peak_indicator ||
-				Math::is_equal_approx(
-					channel[i].vu_l->get_value(), normalized_peak_indicator, 0.01)) {
-				if (!channel[i].peak_timer_l->is_paused() || channel[i].indicator_fall_l) {
-					channel[i].peak_timer_l->set_paused(true);
-					channel[i].indicator_fall_l = false;
-				}
-			}
-			else if (channel[i].peak_timer_l->is_paused()) {
-				channel[i].peak_timer_l->set_paused(false);
-				channel[i].peak_timer_l->start();
-			}
-
-			peak_indicator_stylebox_l->set_bg_color(
-				active_gradient->get_color_at_offset(normalized_peak_indicator));
-
-			normalized_peak_indicator =
-				(channel[i].peak_indicator_r->get_position().height - peak_indicator_range) /
-				-peak_indicator_range;
-
-			if (channel[i].vu_r->get_value() > normalized_peak_indicator ||
-				Math::is_equal_approx(
-					channel[i].vu_r->get_value(), normalized_peak_indicator, 0.01)) {
-				if (!channel[i].peak_timer_r->is_paused() || channel[i].indicator_fall_r) {
-					channel[i].peak_timer_r->set_paused(true);
-					channel[i].indicator_fall_r = false;
-				}
-			}
-			else if (channel[i].peak_timer_r->is_paused()) {
-				channel[i].peak_timer_r->set_paused(false);
-				channel[i].peak_timer_r->start();
-			}
-
-			peak_indicator_stylebox_r->set_bg_color(
-				active_gradient->get_color_at_offset(normalized_peak_indicator));
-
-			if (activity_found != channel[i].prev_active) {
-				if (activity_found) {
-					channel[i].vu_l->set_over_texture(Ref<Texture2D>());
-					channel[i].vu_r->set_over_texture(Ref<Texture2D>());
-				}
-				else {
-					channel[i].vu_l->set_over_texture(inactive_bus_texture);
-					channel[i].vu_r->set_over_texture(inactive_bus_texture);
-				}
-
-				channel[i].prev_active = activity_found;
-			}
-
-			if (!activity_found) {
-				if (channel[i].peak_indicator_l->get_position().height >
-						(peak_indicator_range - 2.0) &&
-					channel[i].peak_indicator_l->is_visible()) {
-					channel[i].peak_indicator_l->hide();
-				}
-				if (channel[i].peak_indicator_r->get_position().height >
-						(peak_indicator_range - 2.0) &&
-					channel[i].peak_indicator_r->is_visible()) {
-					channel[i].peak_indicator_r->hide();
-				}
-			}
-			else {
-				if (!channel[i].peak_indicator_l->is_visible()) {
-					channel[i].peak_indicator_l->show();
-				}
-				if (!channel[i].peak_indicator_r->is_visible()) {
-					channel[i].peak_indicator_r->show();
-				}
-			}
 		}
 	} break;
 
@@ -365,49 +195,6 @@ float EditorAudioBus::_scaled_db_to_normalized_volume(float db)
 	}
 }
 
-void EditorAudioBus::_show_value(float slider_value)
-{
-	float db;
-	if (Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL)) {
-		// Display the correct (snapped) value when holding Ctrl
-		db = Math::round(_normalized_volume_to_scaled_db(slider_value));
-	}
-	else {
-		db = _normalized_volume_to_scaled_db(slider_value);
-	}
-
-	String text;
-	if (Math::is_zero_approx(Math::snapped(db, 0.1))) {
-		// Prevent displaying `-0.0 dB` and show ` 0.0 dB` instead.
-		// The leading space makes the text visually line up with its positive/negative
-		// counterparts.
-		text = " 0.0 dB";
-	}
-	else {
-		// Show an explicit `+` sign if positive.
-		text = vformat("%+.1f dB", db);
-	}
-
-	// Also set the preview text as a standard Control tooltip.
-	// This way, it can be seen when the slider is merely hovered (instead of dragged).
-	slider->set_tooltip_text(text);
-	audio_value_preview_label->set_text(text);
-	const Vector2 slider_size = slider->get_size();
-	const Vector2 slider_position = slider->get_global_position();
-	const float vert_padding = 10.0f;
-	const Size2 box_size = audio_value_preview_label->get_size();
-	const Vector2 box_position = Vector2(
-		-box_size.x, (slider_size.y - vert_padding) * (1.0f - slider->get_value()) - vert_padding);
-	audio_value_preview_box->set_position(slider_position + box_position);
-	audio_value_preview_box->set_size(box_size);
-	if (slider->has_focus() && !audio_value_preview_box->is_visible()) {
-		audio_value_preview_box->show();
-	}
-	preview_timer->start();
-}
-
-void EditorAudioBus::_hide_value_preview() { audio_value_preview_box->hide(); }
-
 void EditorAudioBus::_enable_indicator_fall()
 {
 	for (int i = 0; i < cc; i++) {
@@ -512,7 +299,6 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 	slider->add_child(audio_value_preview_box);
 	audio_value_preview_box->set_as_top_level(true);
 	audio_value_preview_box->set_mouse_filter(MOUSE_FILTER_PASS);
-	audio_value_preview_box->hide();
 
 	HBoxContainer* audioprev_hbc = memnew(HBoxContainer);
 	audioprev_hbc->set_v_size_flags(SIZE_EXPAND_FILL);
@@ -793,38 +579,6 @@ void EditorAudioBuses::_load_layout()
 	new_layout = false;
 }
 
-void EditorAudioBuses::_file_dialog_callback(const String& p_string)
-{
-	if (file_dialog->get_file_mode() == EditorFileDialog::FILE_MODE_SAVE_FILE) {
-		if (new_layout) {
-			Ref<AudioBusLayout> empty_state;
-			empty_state.instantiate();
-			AudioServer::get_singleton()->set_bus_layout(empty_state);
-		}
-
-		Error err = ResourceSaver::save(
-			AudioServer::get_singleton()->generate_bus_layout().ptr(), p_string);
-		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(
-				vformat(TTR("Error saving file: %s"), p_string));
-			return;
-		}
-	}
-	open_layout(ResourceUID::path_to_uid(p_string));
-}
-
-void EditorAudioBuses::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	if (p_slot != EditorDock::DOCK_SLOT_BOTTOM) {
-		bus_mc->set_theme_type_variation("NoBorderBottomPanel");
-		bus_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_TOP_AND_LEFT);
-	}
-	else {
-		bus_mc->set_theme_type_variation("NoBorderPanel");
-		bus_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
-	}
-}
-
 EditorAudioBuses::EditorAudioBuses()
 {
 	set_name(TTRC("Audio"));
@@ -864,7 +618,6 @@ EditorAudioBuses::EditorAudioBuses()
 	main_vb->add_child(bus_mc);
 
 	bus_scroll = memnew(ScrollContainer);
-	bus_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
 	bus_scroll->set_custom_minimum_size(Size2(0, 40 * EDSCALE));
 	bus_mc->add_child(bus_scroll);
 
@@ -902,33 +655,6 @@ EditorAudioBuses::EditorAudioBuses()
 	}
 	add_child(file_dialog);
 	set_process(true);
-}
-
-void EditorAudioBuses::open_layout(const String& p_path)
-{
-	make_visible();
-
-	const String path = ResourceUID::ensure_path(p_path);
-	if (!ResourceLoader::exists(path)) {
-		EditorNode::get_singleton()->show_warning(
-			vformat(TTR(R"(Can't open audio bus layout: "%s" doesn't exist.)"), path));
-		return;
-	}
-
-	Ref<AudioBusLayout> state =
-		ResourceLoader::load(p_path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
-	if (state.is_null()) {
-		EditorNode::get_singleton()->show_warning(vformat(
-			TTR(R"(Can't open audio bus layout: "%s" is not a valid audio bus layout.)"), path));
-		return;
-	}
-
-	edited_path = ResourceUID::path_to_uid(p_path);
-	_update_file_label();
-
-	AudioServer::get_singleton()->set_bus_layout(state);
-	_rebuild_buses();
-	EditorUndoRedoManager::get_singleton()->clear_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 }
 
 AudioBusesEditorPlugin::AudioBusesEditorPlugin(EditorAudioBuses* p_node)

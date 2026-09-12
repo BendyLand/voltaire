@@ -65,7 +65,6 @@ class TranslationDomain : public RefCounted
 	bool _is_placeholder(const String& p_message, int p_index) const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	// Methods in this section are not intended for scripting.

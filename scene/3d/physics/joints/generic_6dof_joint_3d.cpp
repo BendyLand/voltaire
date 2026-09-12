@@ -31,7 +31,6 @@
 #include <cfloat> // FLT_MAX
 #include "generic_6dof_joint_3d.h"
 
-void Generic6DOFJoint3D::_bind_methods() {}
 
 void Generic6DOFJoint3D::set_param_x(Param p_param, real_t p_value)
 {

@@ -266,12 +266,6 @@ void GradientEdit::_notification(int p_what)
 
 const int GradientEditor::DEFAULT_SNAP = 10;
 
-void GradientEditor::_set_snap_enabled(bool p_enabled)
-{
-	gradient_editor_rect->set_snap_enabled(p_enabled);
-	snap_count_edit->set_visible(p_enabled);
-}
-
 void GradientEditor::_set_snap_count(int p_count)
 {
 	gradient_editor_rect->set_snap_count(CLAMP(p_count, 2, 100));

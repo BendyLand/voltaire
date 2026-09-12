@@ -151,7 +151,6 @@ protected:
 	void _value_changed(double p_value) override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	LineEdit* get_line_edit();

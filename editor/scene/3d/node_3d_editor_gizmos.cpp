@@ -581,7 +581,6 @@ void EditorNode3DGizmo::set_hidden(bool p_hidden)
 
 void EditorNode3DGizmo::set_plugin(EditorNode3DGizmoPlugin* p_plugin) { gizmo_plugin = p_plugin; }
 
-void EditorNode3DGizmo::_bind_methods() {}
 
 EditorNode3DGizmo::EditorNode3DGizmo()
 {

@@ -79,14 +79,6 @@ void ThemeEditorPreview::add_preview_overlay(Control* p_overlay)
 	p_overlay->hide();
 }
 
-void ThemeEditorPreview::_picker_button_cbk()
-{
-	picker_overlay->set_visible(picker_button->is_pressed());
-	if (picker_button->is_pressed()) {
-		_reset_picker_overlay();
-	}
-}
-
 void ThemeEditorPreview::_notification(int p_what)
 {
 	switch (p_what) {

@@ -428,8 +428,6 @@ void ResourceUID::clear()
 	changed = false;
 }
 
-void ResourceUID::_bind_methods() {}
-
 ResourceUID* ResourceUID::singleton = nullptr;
 
 ResourceUID::ResourceUID()

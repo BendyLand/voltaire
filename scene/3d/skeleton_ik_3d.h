@@ -144,7 +144,6 @@ class SkeletonIK3D : public SkeletonModifier3D
 #endif // DISABLE_DEPRECATED
 
 protected:
-	static void _bind_methods();
 	virtual void _notification(int p_what);
 
 	virtual void _process_modification(double p_delta) override;

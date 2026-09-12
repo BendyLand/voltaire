@@ -155,7 +155,6 @@ class UniformSetCacheRD
 	}
 
 private:
-	static void _bind_methods();
 
 public:
 	template <typename... Args> RID get_cache(RID p_shader, uint32_t p_set, Args... args)

@@ -38,7 +38,6 @@ private:
 	Ref<RefCounted> edited_resource;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String _get_name() const;

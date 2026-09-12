@@ -291,7 +291,6 @@ public:
 	static Ref<Image> (*basis_universal_unpacker_ptr)(const uint8_t* p_data, int p_size);
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	Error _compress_bind_compat_115003(

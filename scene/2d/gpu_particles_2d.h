@@ -96,7 +96,6 @@ private:
 	void _texture_changed();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 #ifdef TOOLS_ENABLED
 	void _draw_emission_gizmo();

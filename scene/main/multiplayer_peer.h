@@ -43,7 +43,6 @@ public:
 	};
 
 protected:
-	static void _bind_methods();
 
 private:
 	int transfer_channel = 0;
@@ -95,7 +94,6 @@ public:
 class MultiplayerPeerExtension : public MultiplayerPeer
 {
 protected:
-	static void _bind_methods();
 
 	PackedByteArray script_buffer;
 

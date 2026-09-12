@@ -69,7 +69,6 @@ private:
 	void _finish_non_thread_safe_setup();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_frames(int p_frames);

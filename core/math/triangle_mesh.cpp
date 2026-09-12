@@ -577,8 +577,6 @@ Vector<Vector3> TriangleMesh::get_faces_scriptwrap() const
 	return faces;
 }
 
-void TriangleMesh::_bind_methods() {}
-
 TriangleMesh::TriangleMesh()
 {
 	valid = false;

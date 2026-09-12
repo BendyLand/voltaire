@@ -363,11 +363,6 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& 
 	}
 }
 
-void AnimationNodeStateMachineEditor::_open_editor(const String& p_name)
-{
-	AnimationTreeEditor::get_singleton()->enter_editor(p_name);
-}
-
 AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;
 
 void EditorAnimationMultiTransitionEdit::add_transition(const StringName& p_from,

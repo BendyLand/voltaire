@@ -128,46 +128,6 @@ void ProjectExportDialog::_add_preset(int p_platform)
 
 void ProjectExportDialog::_update_current_preset() { _edit_preset(presets->get_current()); }
 
-void ProjectExportDialog::_update_presets()
-{
-	updating = true;
-
-	Ref<EditorExportPreset> current;
-	if (presets->get_current() >= 0 && presets->get_current() < presets->get_item_count()) {
-		current = get_current_preset();
-	}
-
-	int current_idx = -1;
-	int preset_count = EditorExport::get_singleton()->get_export_preset_count();
-	presets->clear();
-	for (int i = 0; i < preset_count; i++) {
-		Ref<EditorExportPreset> preset = EditorExport::get_singleton()->get_export_preset(i);
-		if (preset == current) {
-			current_idx = i;
-		}
-		else if (current.is_null()) {
-			current_idx = i;
-			_edit_preset(i);
-		}
-
-		String preset_name = preset->get_name();
-		if (preset->is_runnable()) {
-			preset_name += " (" + TTR("Runnable") + ")";
-		}
-		preset->update_files();
-		presets->add_item(preset_name, preset->get_platform()->get_logo());
-	}
-
-	settings_vb->set_visible(current_idx != -1);
-	empty_label->set_visible(current_idx == -1);
-
-	if (current_idx != -1) {
-		presets->select(current_idx);
-	}
-
-	updating = false;
-}
-
 void ProjectExportDialog::_update_feature_list()
 {
 	Ref<EditorExportPreset> current = get_current_preset();
@@ -414,34 +374,6 @@ void ProjectExportDialog::_delete_preset()
 
 	delete_confirm->set_text(vformat(TTR("Delete preset '%s'?"), current->get_name()));
 	delete_confirm->popup_centered();
-}
-
-void ProjectExportDialog::_export_type_changed(int p_which)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	if (current.is_null()) {
-		return;
-	}
-
-	EditorExportPreset::ExportFilter filter_type = (EditorExportPreset::ExportFilter)p_which;
-	current->set_export_filter(filter_type);
-	current->set_dedicated_server(filter_type == EditorExportPreset::EXPORT_CUSTOMIZED);
-	server_strip_message->set_visible(filter_type == EditorExportPreset::EXPORT_CUSTOMIZED);
-
-	// Default to stripping everything when first switching to server build.
-	if (filter_type == EditorExportPreset::EXPORT_CUSTOMIZED &&
-		current->get_customized_files_count() == 0) {
-		current->set_file_export_mode("res://", EditorExportPreset::MODE_FILE_STRIP);
-	}
-	include_label->set_text(_get_resource_export_header(current->get_export_filter()));
-
-	updating = true;
-	_fill_resource_tree();
-	updating = false;
 }
 
 String ProjectExportDialog::_get_resource_export_header(

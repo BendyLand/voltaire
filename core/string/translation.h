@@ -66,7 +66,6 @@ private:
 	virtual Vector<String> _get_message_list() const;
 
 protected:
-	static void _bind_methods();
 
 	PluralRules* _get_plural_rules() const;
 

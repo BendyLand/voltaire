@@ -128,7 +128,6 @@ bool MeshTexture::get_rect_region(
 
 bool MeshTexture::is_pixel_opaque(int p_x, int p_y) const { return true; }
 
-void MeshTexture::_bind_methods() {}
 
 MeshTexture::MeshTexture() {}
 

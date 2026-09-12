@@ -77,7 +77,6 @@ double AudioStreamGenerator::get_length() const { return 0; }
 
 bool AudioStreamGenerator::is_monophonic() const { return true; }
 
-void AudioStreamGenerator::_bind_methods() {}
 
 ////////////////
 
@@ -193,7 +192,6 @@ void AudioStreamGeneratorPlayback::seek(double p_time)
 
 void AudioStreamGeneratorPlayback::tag_used_streams() { generator->tag_used(0); }
 
-void AudioStreamGeneratorPlayback::_bind_methods() {}
 
 AudioStreamGeneratorPlayback::AudioStreamGeneratorPlayback()
 {

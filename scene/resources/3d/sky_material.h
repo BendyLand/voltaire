@@ -61,7 +61,6 @@ private:
 	RID get_shader_cache() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_sky_top_color(const Color& p_sky_top);
@@ -133,7 +132,6 @@ private:
 	bool filter = true;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_panorama(const Ref<Texture2D>& p_panorama);

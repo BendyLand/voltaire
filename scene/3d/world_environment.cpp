@@ -197,7 +197,6 @@ PackedStringArray WorldEnvironment::get_configuration_warnings() const
 	return warnings;
 }
 
-void WorldEnvironment::_bind_methods() {}
 
 WorldEnvironment::WorldEnvironment() {}
 

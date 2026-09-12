@@ -89,7 +89,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 public:
 	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
@@ -116,10 +115,8 @@ public:
 	String get_item_tooltip(int p_idx) const;
 	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
 
-	void set_search_bar_enabled(bool p_enabled);
 	bool is_search_bar_enabled() const;
 
-	void set_search_bar_min_item_count(int p_count);
 	int get_search_bar_min_item_count() const;
 
 	void set_search_bar_fuzzy_search_enabled(bool p_enabled);

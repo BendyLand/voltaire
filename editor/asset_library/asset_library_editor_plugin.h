@@ -89,7 +89,6 @@ class EditorAssetLibraryItem : public MarginContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void configure(const String& p_title, const String& p_asset_id, const String& p_author,
@@ -182,7 +181,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void configure(const String& p_title, const String& p_asset_id, const String& p_author,
@@ -231,23 +229,16 @@ class EditorAssetLibraryItemDownload : public MarginContainer
 	EditorAssetInstaller* asset_installer = nullptr;
 
 	void _close();
-	void _make_request();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_external_install(bool p_enable) { external_install = p_enable; }
 
 	String get_asset_id() { return asset_id; }
 
-	void configure(const String& p_title, const String& p_asset_id, const String& p_version,
-		const Ref<Texture2D>& p_preview, const String& p_download_url, const String& p_sha256);
-
 	bool can_install() const;
-
-	EditorAssetLibraryItemDownload();
 };
 
 class EditorAssetLibrary : public PanelContainer
@@ -266,8 +257,6 @@ class EditorAssetLibrary : public PanelContainer
 	VBoxContainer* library_message_box = nullptr;
 	Label* library_message = nullptr;
 	Button* library_message_button = nullptr;
-
-	void _set_library_message(const String& p_message);
 
 	LineEdit* filter = nullptr;
 	Timer* filter_debounce_timer = nullptr;
@@ -297,7 +286,6 @@ class EditorAssetLibrary : public PanelContainer
 	bool licenses_all_toggled = true;
 
 	void _licenses_id_pressed(int p_id);
-	void _licenses_popup_hide();
 
 	enum SortOrder
 	{
@@ -371,16 +359,9 @@ class EditorAssetLibrary : public PanelContainer
 
 	EditorAssetLibraryItemDescription* description = nullptr;
 
-	void _tag_clicked(const String& p_tag);
-
 	void _select_author(const String& p_author);
-	void _select_asset(const String& p_id);
-
 	void _manage_plugins();
 
-	void _search(int p_page = 1);
-	void _api_request(
-		const String& p_request, RequestType p_request_type, bool p_is_parallel = false);
 	void _request_current_config();
 	EditorAssetLibraryItemDownload* _get_asset_in_progress(const String& p_asset_id) const;
 
@@ -393,7 +374,6 @@ class EditorAssetLibrary : public PanelContainer
 	friend class EditorAssetLibraryItem;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -412,8 +392,6 @@ public:
 	virtual const Ref<Texture2D> get_plugin_icon() const override;
 
 	bool has_main_screen() const override { return true; }
-
-	AssetLibraryEditorPlugin();
 };
 
 

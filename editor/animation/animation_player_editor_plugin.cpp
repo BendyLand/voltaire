@@ -105,29 +105,6 @@ void AnimationPlayerEditor::_animation_new()
 	name->grab_focus();
 }
 
-void AnimationPlayerEditor::_animation_rename()
-{
-	if (!animation->has_selectable_items()) {
-		return;
-	}
-	int selected = animation->get_selected();
-	String selected_name = animation->get_item_text(selected);
-
-	// Remove library prefix if present.
-	if (selected_name.contains_char('/')) {
-		selected_name = selected_name.get_slicec('/', 1);
-	}
-
-	name_dialog->set_title(TTR("Rename Animation"));
-	name_title->set_text(TTR("Change Animation Name:"));
-	name->set_text(selected_name);
-	name_dialog_op = TOOL_RENAME_ANIM;
-	name_dialog->popup_centered(Size2(300, 90));
-	name->select_all();
-	name->grab_focus();
-	library->hide();
-}
-
 void AnimationPlayerEditor::_animation_remove()
 {
 	if (!animation->has_selectable_items()) {
@@ -629,7 +606,6 @@ bool AnimationPlayerEditor::_validate_tracks(const Ref<Animation> p_anim)
 	return is_valid;
 }
 
-void AnimationPlayerEditor::_bind_methods() {}
 
 AnimationPlayerEditor* AnimationPlayerEditor::singleton = nullptr;
 

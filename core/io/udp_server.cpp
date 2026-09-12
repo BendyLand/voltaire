@@ -30,8 +30,6 @@
 
 #include "udp_server.h"
 
-void UDPServer::_bind_methods() {}
-
 Error UDPServer::poll()
 {
 	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);

@@ -54,7 +54,6 @@ class NavigationLink3D : public Node3D
 #endif // DEBUG_ENABLED
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

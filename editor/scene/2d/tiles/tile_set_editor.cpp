@@ -76,12 +76,6 @@ void TileSetEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
 
 void TileSetEditor::_tile_set_changed() { tile_set_changed_needs_update = true; }
 
-void TileSetEditor::_tab_changed(int p_tab_changed)
-{
-	split_container->set_visible(p_tab_changed == 0);
-	patterns_mc->set_visible(p_tab_changed == 1);
-}
-
 void TileSetEditor::register_split(SplitContainer* p_split)
 {
 	disable_on_expand.push_back(p_split);

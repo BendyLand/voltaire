@@ -53,7 +53,6 @@ protected:
 
 	virtual void _tile_set_changed() {}
 
-	static void _bind_methods();
 
 public:
 	void set_tile_set(Ref<TileSet> p_tile_set);
@@ -177,7 +176,6 @@ private:
 	void _base_control_gui_input(Ref<InputEvent> p_event);
 	void _set_snap_option(int p_index);
 	void _store_snap_options();
-	void _toggle_expand(bool p_expand);
 
 	void _snap_to_tile_shape(Point2& r_point, float& r_current_snapped_dist, float p_snap_dist);
 	void _snap_point(Point2& r_point);
@@ -188,7 +186,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_use_undo_redo(bool p_use_undo_redo);

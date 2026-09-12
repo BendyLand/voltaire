@@ -113,7 +113,6 @@ class MeshLibraryEditor : public EditorDock
 
 private:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void edit(const Ref<MeshLibrary>& p_mesh_library);

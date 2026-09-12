@@ -52,7 +52,6 @@ private:
 	TrackingConfidence tracking_confidence = XR_TRACKING_CONFIDENCE_NONE;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_has_tracking_data(const bool p_has_tracking_data);

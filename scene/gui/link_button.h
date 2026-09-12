@@ -82,7 +82,6 @@ protected:
 	virtual Size2 get_minimum_size() const override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual String _get_accessibility_name() const override;
 

@@ -87,7 +87,6 @@ Pair<Vector3, Vector3> SpringBoneCollisionCapsule3D::get_head_and_tail(
 		tr.origin + tr.basis.xform(Vector3::DOWN * (height * 0.5 - radius)));
 }
 
-void SpringBoneCollisionCapsule3D::_bind_methods() {}
 
 Vector3 SpringBoneCollisionCapsule3D::_collide(const Transform3D& p_center, float p_bone_radius,
 	float p_bone_length, const Vector3& p_current) const

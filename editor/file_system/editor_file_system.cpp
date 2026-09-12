@@ -219,7 +219,6 @@ String EditorFileSystemDirectory::get_name() { return name; }
 
 EditorFileSystemDirectory* EditorFileSystemDirectory::get_parent() { return parent; }
 
-void EditorFileSystemDirectory::_bind_methods() {}
 
 EditorFileSystemDirectory::EditorFileSystemDirectory()
 {
@@ -1518,7 +1517,6 @@ EditorFileSystem::~EditorFileSystem()
 	ResourceSaver::set_get_resource_id_for_path(nullptr);
 }
 
-void EditorFileSystemImportFormatSupportQuery::_bind_methods() {}
 
 bool EditorFileSystem::_scan_extensions() { return true; }
 

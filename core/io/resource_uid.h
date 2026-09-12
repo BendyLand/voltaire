@@ -66,7 +66,6 @@ private:
 	bool cache_initialized = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	inline static ResourceUIDScanForUIDOnStartup scan_for_uid_on_startup = nullptr;

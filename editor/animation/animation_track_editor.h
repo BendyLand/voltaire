@@ -86,7 +86,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-	static void _bind_methods();
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -120,7 +119,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-	static void _bind_methods();
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -147,7 +145,6 @@ public:
 	float get_time() const;
 
 protected:
-	static void _bind_methods();
 	void _set_marker_name(const StringName& p_name);
 };
 
@@ -170,7 +167,6 @@ public:
 	bool _is_read_only() { return animation_read_only; }
 
 protected:
-	static void _bind_methods();
 };
 
 class AnimationTimelineEdit : public Range
@@ -239,7 +235,6 @@ class AnimationTimelineEdit : public Range
 	void _scroll_to_start();
 
 protected:
-	static void _bind_methods();
 
 public:
 	int get_name_limit() const;
@@ -625,8 +620,6 @@ class AnimationTrackEditor : public VBoxContainer
 	void _track_grab_focus(int p_track);
 
 	void _update_scroll(double);
-	void _update_nearest_fps_label();
-	void _update_fps_compat_mode(bool p_enabled);
 
 	void _add_track(int p_type);
 	void _store_snap_states();
@@ -727,9 +720,6 @@ class AnimationTrackEditor : public VBoxContainer
 
 	Vector<Ref<AnimationTrackEditPlugin>> track_edit_plugins;
 
-	void _toggle_bezier_edit();
-	void _cancel_bezier_edit();
-	void _bezier_edit(int p_for_track);
 	void _bezier_track_set_key_handle_mode(Animation* p_anim, int p_track, int p_index,
 		Animation::HandleMode p_mode,
 		Animation::HandleSetMode p_set_mode = Animation::HANDLE_SET_MODE_NONE);
@@ -834,7 +824,6 @@ class AnimationTrackEditor : public VBoxContainer
 	double snap_unit = 0;
 	bool fps_compatible = true;
 	int nearest_fps = 0;
-	void _update_snap_unit();
 
 public:
 	// Public for use as signal callback.

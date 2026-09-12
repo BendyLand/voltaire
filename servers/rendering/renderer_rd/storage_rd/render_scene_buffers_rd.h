@@ -193,7 +193,6 @@ private:
 	void update_samplers();
 
 protected:
-	static void _bind_methods();
 
 public:
 	RenderSceneBuffersRD();

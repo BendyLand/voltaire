@@ -80,7 +80,6 @@ protected:
 	_FORCE_INLINE_ RID _get_light() const { return canvas_light; }
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_enabled(bool p_enabled);
@@ -175,7 +174,6 @@ class DirectionalLight2D : public Light2D
 	real_t max_distance = 10000.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_max_distance(real_t p_distance);

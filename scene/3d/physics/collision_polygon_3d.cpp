@@ -166,7 +166,6 @@ void CollisionPolygon3D::set_margin(real_t p_margin)
 
 bool CollisionPolygon3D::_is_editable_3d_polygon() const { return true; }
 
-void CollisionPolygon3D::_bind_methods() {}
 
 CollisionPolygon3D::CollisionPolygon3D()
 {

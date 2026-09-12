@@ -54,7 +54,6 @@ WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
 #endif
 }
 
-void WebRTCPeerConnection::_bind_methods() {}
 
 WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const
 {

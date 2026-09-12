@@ -145,7 +145,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void _space_changed(const RID& p_new_space) override;
 

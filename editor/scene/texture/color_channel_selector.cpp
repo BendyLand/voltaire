@@ -64,15 +64,6 @@ ColorChannelSelector::ColorChannelSelector()
 	add_child(panel);
 }
 
-void ColorChannelSelector::set_available_channels_mask(uint32_t p_mask)
-{
-	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
-		const bool available = (p_mask & (1u << i)) != 0;
-		Button* button = channel_buttons[i];
-		button->set_visible(available);
-	}
-}
-
 uint32_t ColorChannelSelector::get_selected_channels_mask() const
 {
 	uint32_t mask = 0;
@@ -117,9 +108,5 @@ void ColorChannelSelector::create_button(
 	p_parent->add_child(button);
 	channel_buttons[p_channel_index] = button;
 }
-
-void ColorChannelSelector::on_toggled(bool p_pressed) { panel->set_visible(p_pressed); }
-
-void ColorChannelSelector::_bind_methods() {}
 
 

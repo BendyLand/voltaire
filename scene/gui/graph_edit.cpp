@@ -611,58 +611,15 @@ float GraphEdit::get_minimap_opacity() const
 
 bool GraphEdit::is_minimap_enabled() const { return minimap_button->is_pressed(); }
 
-void GraphEdit::set_show_menu(bool p_hidden)
-{
-	show_menu = p_hidden;
-	menu_panel->set_visible(show_menu);
-}
-
 bool GraphEdit::is_showing_menu() const { return show_menu; }
-
-void GraphEdit::set_show_zoom_label(bool p_hidden)
-{
-	show_zoom_label = p_hidden;
-	zoom_label->set_visible(show_zoom_label);
-}
 
 bool GraphEdit::is_showing_zoom_label() const { return show_zoom_label; }
 
-void GraphEdit::set_show_zoom_buttons(bool p_hidden)
-{
-	show_zoom_buttons = p_hidden;
-
-	zoom_minus_button->set_visible(show_zoom_buttons);
-	zoom_reset_button->set_visible(show_zoom_buttons);
-	zoom_plus_button->set_visible(show_zoom_buttons);
-}
-
 bool GraphEdit::is_showing_zoom_buttons() const { return show_zoom_buttons; }
-
-void GraphEdit::set_show_grid_buttons(bool p_hidden)
-{
-	show_grid_buttons = p_hidden;
-
-	toggle_grid_button->set_visible(show_grid_buttons);
-	toggle_snapping_button->set_visible(show_grid_buttons);
-	snapping_distance_spinbox
-->set_visible(show_grid_buttons);
-}
 
 bool GraphEdit::is_showing_grid_buttons() const { return show_grid_buttons; }
 
-void GraphEdit::set_show_minimap_button(bool p_hidden)
-{
-	show_minimap_button = p_hidden;
-	minimap_button->set_visible(show_minimap_button);
-}
-
 bool GraphEdit::is_showing_minimap_button() const { return show_minimap_button; }
-
-void GraphEdit::set_show_arrange_button(bool p_hidden)
-{
-	show_arrange_button = p_hidden;
-	arrange_button->set_visible(show_arrange_button);
-}
 
 bool GraphEdit::is_showing_arrange_button() const { return show_arrange_button; }
 

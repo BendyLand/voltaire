@@ -239,7 +239,6 @@ void Light2D::set_shadow_smooth(real_t p_amount)
 
 real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
-void Light2D::_bind_methods() {}
 
 Light2D::Light2D()
 {
@@ -348,7 +347,6 @@ void DirectionalLight2D::set_max_distance(real_t p_distance)
 
 real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
 
-void DirectionalLight2D::_bind_methods() {}
 
 DirectionalLight2D::DirectionalLight2D()
 {

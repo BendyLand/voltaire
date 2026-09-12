@@ -84,7 +84,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDTextureView : public RefCounted
@@ -101,7 +100,6 @@ public:
 	RD_SETGET(RD::TextureSwizzle, swizzle_b)
 	RD_SETGET(RD::TextureSwizzle, swizzle_a)
 protected:
-	static void _bind_methods() {}
 };
 
 class RDAttachmentFormat : public RefCounted
@@ -115,7 +113,6 @@ public:
 	RD_SETGET(RD::TextureSamples, samples)
 	RD_SETGET(uint32_t, usage_flags)
 protected:
-	static void _bind_methods() {}
 };
 
 class RDFramebufferPass : public RefCounted
@@ -137,7 +134,6 @@ protected:
 		ATTACHMENT_UNUSED = -1
 	};
 
-	static void _bind_methods() {}
 };
 
 class RDSamplerState : public RefCounted
@@ -164,7 +160,6 @@ public:
 	RD_SETGET(bool, unnormalized_uvw)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDVertexAttribute : public RefCounted
@@ -181,7 +176,6 @@ public:
 	RD_SETGET(RD::VertexFrequency, frequency)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDShaderSource : public RefCounted
@@ -207,7 +201,6 @@ public:
 	RD::ShaderLanguage get_language() const { return language; }
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDShaderSPIRV : public Resource
@@ -255,7 +248,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDShaderFile : public Resource
@@ -380,7 +372,6 @@ public:
 	RD_SETGET(bool, enable_alpha_to_one)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineDepthStencilState : public RefCounted
@@ -415,7 +406,6 @@ public:
 	RD_SETGET_SUB(uint32_t, back_op, reference)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineColorBlendStateAttachment : public RefCounted
@@ -447,7 +437,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineColorBlendState : public RefCounted
@@ -461,7 +450,6 @@ public:
 	RD_SETGET(Color, blend_constant)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDAccelerationStructureGeometry : public RefCounted
@@ -481,7 +469,6 @@ public:
 	RD_SETGET(uint32_t, index_count)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDAccelerationStructureInstance : public RefCounted
@@ -498,7 +485,6 @@ public:
 	RD_SETGET(RID, blas)
 
 protected:
-	static void _bind_methods() {}
 };
 
 class RDPipelineShader : public RefCounted

@@ -63,7 +63,6 @@ bool OpenXRDPadBindingExtension::is_available() { return binding_modifier_ext &&
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRDpadBindingModifier
 
-void OpenXRDpadBindingModifier::_bind_methods() {}
 
 OpenXRDpadBindingModifier::OpenXRDpadBindingModifier()
 {

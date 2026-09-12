@@ -45,7 +45,6 @@ XRServer* XRServer::singleton = nullptr;
 
 XRServer* XRServer::get_singleton() { return singleton; }
 
-void XRServer::_bind_methods() {}
 
 double XRServer::get_world_scale() const
 {

@@ -62,7 +62,6 @@ void AnimationNodeBlendSpace1D::validate_node(
 	}
 }
 
-void AnimationNodeBlendSpace1D::_bind_methods() {}
 
 void AnimationNodeBlendSpace1D::get_child_nodes(LocalVector<ChildNode>* r_child_nodes)
 {

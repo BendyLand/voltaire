@@ -51,7 +51,6 @@ Color EditorFileDialog::_get_folder_color(const String& p_path) const
 
 Vector2i EditorFileDialog::_get_list_mode_icon_size() const { return Vector2i(); }
 
-void EditorFileDialog::_bind_methods() {}
 
 void EditorFileDialog::_dir_contents_changed()
 {

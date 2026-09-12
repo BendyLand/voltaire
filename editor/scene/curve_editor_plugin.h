@@ -72,7 +72,6 @@ public:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 private:
 	virtual void gui_input(const Ref<InputEvent>& p_event);

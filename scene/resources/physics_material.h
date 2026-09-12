@@ -41,7 +41,6 @@ class PhysicsMaterial : public Resource
 	bool absorbent = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_friction(real_t p_val);

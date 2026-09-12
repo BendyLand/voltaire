@@ -42,7 +42,6 @@ class OpenXRAPIExtension : public RefCounted
 protected:
 	_THREAD_SAFE_CLASS_
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();

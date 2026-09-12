@@ -35,7 +35,6 @@
 class StreamPeer : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 	// bind helpers
 	Error _put_data(const Vector<uint8_t>& p_data);
@@ -91,7 +90,6 @@ public:
 class StreamPeerExtension : public StreamPeer
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Error put_data(const uint8_t* p_data, int p_bytes) override;
@@ -106,7 +104,6 @@ class StreamPeerBuffer : public StreamPeer
 	int pointer = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Error put_data(const uint8_t* p_data, int p_bytes) override;

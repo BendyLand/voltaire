@@ -63,7 +63,6 @@ class ControlPositioningWarning : public MarginContainer
 
 	void _update_warning();
 	void _update_toggler();
-	virtual void gui_input(const Ref<InputEvent>& p_event);
 
 protected:
 	void _notification(int p_notification);
@@ -110,7 +109,6 @@ class EditorPropertySizeFlags : public EditorProperty
 
 	bool keep_selected_preset = false;
 
-	void _preset_selected(int p_which);
 	void _expand_toggled();
 	void _flag_toggled();
 
@@ -169,7 +167,6 @@ class AnchorPresetPicker : public ControlEditorPresetPicker
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	void set_selected_preset(int p_preset);
@@ -188,7 +185,6 @@ class SizeFlagPresetPicker : public ControlEditorPresetPicker
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	void set_allowed_flags(Vector<SizeFlags>& p_flags);

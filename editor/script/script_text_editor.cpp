@@ -91,8 +91,6 @@ ConnectionInfoDialog::ConnectionInfoDialog()
 	tree->set_allow_rmb_select(true);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
 {
 	breakpoints_menu->clear();
@@ -137,12 +135,6 @@ void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
 		breakpoints_menu->add_item(String::num_int64(breakpoint_list[i] + 1) + " - `" + line + "`");
 	}
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ScriptTextEditor::_show_errors_panel(bool p_show) { errors_panel->set_visible(p_show); }
-
-void ScriptTextEditor::_show_warnings_panel(bool p_show) { warnings_panel->set_visible(p_show); }
 
 void ScriptTextEditor::_on_mouse_exited() { drag_info_label->hide(); }
 

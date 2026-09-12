@@ -58,7 +58,6 @@ class PropertySelector : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void select_method_from_base_type(

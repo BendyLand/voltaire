@@ -310,7 +310,6 @@ public:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	String get_filter();

@@ -176,10 +176,6 @@ void Texture3DEditor::_update_gui()
 		// Only one channel available, no point in showing a channel selector.
 		channel_selector->hide();
 	}
-	else {
-		channel_selector->show();
-		channel_selector->set_available_channels_mask(components_mask);
-	}
 }
 
 void Texture3DEditor::on_selected_channels_changed() { _update_material(false); }

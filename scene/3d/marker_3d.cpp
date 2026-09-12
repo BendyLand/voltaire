@@ -41,7 +41,6 @@ void Marker3D::set_gizmo_extents(real_t p_extents)
 
 real_t Marker3D::get_gizmo_extents() const { return gizmo_extents; }
 
-void Marker3D::_bind_methods() {}
 
 Marker3D::Marker3D() {}
 

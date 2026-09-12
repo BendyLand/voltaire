@@ -111,6 +111,4 @@ void AESContext::finish()
 	mode = MODE_MAX;
 }
 
-void AESContext::_bind_methods() {}
-
 

@@ -123,7 +123,6 @@ MultiplayerSynchronizer::get_visibility_update_mode() const
 	return visibility_update_mode;
 }
 
-void MultiplayerSynchronizer::_bind_methods() {}
 
 void MultiplayerSynchronizer::_notification(int p_what)
 {

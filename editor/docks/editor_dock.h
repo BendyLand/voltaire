@@ -101,12 +101,8 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void open();
-	void make_visible();
-	void make_floating();
 	void close();
 
 	void set_title(const String& p_title);

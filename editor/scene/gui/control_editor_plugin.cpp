@@ -69,20 +69,6 @@ void ControlPositioningWarning::set_control(Control* p_node)
 	_update_warning();
 }
 
-void ControlPositioningWarning::gui_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-		bool state = !hint_label->is_visible();
-
-		hint_filler_left->set_visible(state);
-		hint_label->set_visible(state);
-		hint_filler_right->set_visible(state);
-
-		_update_toggler();
-	}
-}
-
 void ControlPositioningWarning::_notification(int p_notification)
 {
 	switch (p_notification) {
@@ -137,37 +123,6 @@ ControlPositioningWarning::ControlPositioningWarning()
 	hint_filler_right = memnew(Control);
 	hint_filler_right->hide();
 	grid->add_child(hint_filler_right);
-}
-
-void EditorPropertySizeFlags::_preset_selected(int p_which)
-{
-	int preset = flag_presets->get_item_id(p_which);
-	if (preset == SIZE_FLAGS_PRESET_CUSTOM) {
-		flag_options->set_visible(true);
-		return;
-	}
-	flag_options->set_visible(false);
-
-	uint32_t value = 0;
-	switch (preset) {
-	case SIZE_FLAGS_PRESET_FILL:
-		value = Control::SIZE_FILL;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_BEGIN:
-		value = Control::SIZE_SHRINK_BEGIN;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_CENTER:
-		value = Control::SIZE_SHRINK_CENTER;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_END:
-		value = Control::SIZE_SHRINK_END;
-		break;
-	}
-
-	bool is_expand = flag_expand->is_visible() && flag_expand->is_pressed();
-	if (is_expand) {
-		value |= Control::SIZE_EXPAND;
-	}
 }
 
 Size2 ControlEditorPopupButton::get_minimum_size() const
@@ -273,7 +228,6 @@ void AnchorPresetPicker::set_selected_preset(int p_preset)
 	_update_preset_button_state(p_preset);
 }
 
-void AnchorPresetPicker::_bind_methods() {}
 
 AnchorPresetPicker::AnchorPresetPicker()
 {

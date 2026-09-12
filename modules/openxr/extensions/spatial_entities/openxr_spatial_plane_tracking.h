@@ -55,7 +55,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods();
 
 private:
 	int supports_mesh_2d = -1;
@@ -89,7 +88,6 @@ public:
 	XrSpatialPlaneAlignmentEXT get_plane_alignment(int64_t p_index) const;
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialPlaneAlignmentEXT> plane_alignment_data;
@@ -103,7 +101,6 @@ private:
 class OpenXRSpatialComponentPolygon2DList : public OpenXRSpatialComponentData
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
@@ -140,7 +137,6 @@ public:
 	XrSpatialPlaneSemanticLabelEXT get_plane_semantic_label(int64_t p_index) const;
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialPlaneSemanticLabelEXT> plane_semantic_label_data;
@@ -176,7 +172,6 @@ public:
 #endif
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector2 bounds_size;

@@ -770,7 +770,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _set_selection_mode_bind_compat_86978(

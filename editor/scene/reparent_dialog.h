@@ -45,7 +45,6 @@ class ReparentDialog : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_current(const HashSet<Node*>& p_selection);

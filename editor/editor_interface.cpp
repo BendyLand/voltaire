@@ -540,7 +540,6 @@ void EditorInterface::get_argument_options(
 
 // Base.
 
-void EditorInterface::_bind_methods() {}
 
 void EditorInterface::create() { memnew(EditorInterface); }
 

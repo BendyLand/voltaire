@@ -30,7 +30,6 @@
 
 #include "xr_hand_tracker.h"
 
-void XRHandTracker::_bind_methods() {}
 
 void XRHandTracker::set_tracker_type(XRServer::TrackerType p_type)
 {

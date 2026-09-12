@@ -78,7 +78,6 @@ protected:
 	Vector<uint8_t> _get_data() const;
 	void _set_data(const Vector<uint8_t>& p_data);
 
-	static void _bind_methods();
 
 public:
 	CompressionMode get_compression_mode() const;

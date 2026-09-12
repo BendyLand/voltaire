@@ -43,7 +43,6 @@ private:
 protected:
 	TextEdit* text_edit = nullptr;
 
-	static void _bind_methods();
 
 public:
 	void clear_highlighting_cache();
@@ -85,7 +84,6 @@ private:
 	bool uint_suffix_enabled = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void _clear_highlighting_cache() override;

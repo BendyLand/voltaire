@@ -554,15 +554,7 @@ void ScriptEditor::_update_code_editor_zoom_factor(CodeTextEditor* p_code_text_e
 	}
 }
 
-void ScriptEditor::_window_changed(bool p_visible)
-{
-	make_floating->set_visible(!p_visible);
-	is_floating = p_visible;
-}
-
 void ScriptEditor::_filter_scripts_text_changed(const String& p_newtext) { _update_script_names(); }
-
-void ScriptEditor::_bind_methods() {}
 
 ScriptEditor::~ScriptEditor()
 {

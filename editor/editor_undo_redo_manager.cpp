@@ -200,7 +200,6 @@ static bool _bind_is_committing_action()
 	return false;
 }
 
-void EditorUndoRedoManager::_bind_methods() {}
 
 EditorUndoRedoManager* EditorUndoRedoManager::get_singleton() { return singleton; }
 

@@ -164,7 +164,6 @@ class DependencyRemoveDialog : public ConfirmationDialog
 
 	void ok_pressed() override;
 
-	static void _bind_methods();
 
 public:
 	void show(const Vector<String>& p_folders, const Vector<String>& p_files);

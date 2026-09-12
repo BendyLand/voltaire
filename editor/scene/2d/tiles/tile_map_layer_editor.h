@@ -59,8 +59,6 @@ class SwitchSeparator : public MarginContainer
 	VSeparator* v_separator = nullptr;
 
 public:
-	void set_vertical(bool p_vertical);
-
 	SwitchSeparator();
 };
 
@@ -137,10 +135,8 @@ private:
 	float scattering = 0.0;
 	Label* scatter_label = nullptr;
 	SpinBox* scatter_spinbox = nullptr;
-	void _on_random_tile_checkbox_toggled(bool p_pressed);
 	void _on_scattering_spinbox_changed(double p_value);
 
-	void _update_toolbar();
 	void _update_transform_buttons();
 	void _set_transform_buttons_state(const Vector<Button*>& p_enabled_buttons,
 		const Vector<Button*>& p_disabled_buttons, const String& p_why_disabled);
@@ -267,14 +263,10 @@ private:
 	// Update callback
 	virtual void tile_set_changed() override;
 
-protected:
-	static void _bind_methods();
-
 public:
 	virtual Vector<TabData> get_tabs() const override;
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 	TileMapLayerEditorTilesPlugin();
 };
@@ -299,7 +291,6 @@ private:
 	Button* erase_button = nullptr;
 
 	CheckBox* bucket_contiguous_checkbox = nullptr;
-	void _update_toolbar();
 
 	// Main vbox.
 	BoxContainer* main_box_container = nullptr;
@@ -374,7 +365,6 @@ public:
 	virtual Vector<TabData> get_tabs() const override;
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 	TileMapLayerEditorTerrainsPlugin();
 };
@@ -443,7 +433,6 @@ private:
 	PanelContainer* tabs_panel = nullptr;
 	LocalVector<TileMapLayerSubEditorPlugin::TabData> tabs_data;
 	LocalVector<TileMapLayerSubEditorPlugin*> tabs_plugins;
-	void _update_bottom_panel();
 
 	// TileMap.
 	Ref<Texture2D> missing_tile_texture;
@@ -460,7 +449,6 @@ protected:
 	void _notification(int p_what);
 	void _draw_shape(Control* p_control, Rect2 p_region, TileSet::TileShape p_shape,
 		TileSet::TileOffsetAxis p_offset_axis, Color p_color);
-	virtual void update_layout(DockLayout p_layout, int p_slot) override;
 
 public:
 	bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);

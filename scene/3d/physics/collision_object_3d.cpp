@@ -301,7 +301,6 @@ void CollisionObject3D::set_ray_pickable(bool p_ray_pickable)
 
 bool CollisionObject3D::is_ray_pickable() const { return ray_pickable; }
 
-void CollisionObject3D::_bind_methods() {}
 
 void CollisionObject3D::remove_shape_owner(uint32_t owner)
 {

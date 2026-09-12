@@ -45,7 +45,6 @@ protected:
 	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
 		AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO;
 
-	static void _bind_methods();
 
 	enum
 	{

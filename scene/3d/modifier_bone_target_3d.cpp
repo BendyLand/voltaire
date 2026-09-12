@@ -70,7 +70,6 @@ void ModifierBoneTarget3D::set_bone(int p_bone)
 
 int ModifierBoneTarget3D::get_bone() const { return bone; }
 
-void ModifierBoneTarget3D::_bind_methods() {}
 
 void ModifierBoneTarget3D::_process_modification(double p_delta)
 {

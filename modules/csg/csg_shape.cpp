@@ -748,7 +748,6 @@ Ref<TriangleMesh> CSGShape3D::generate_triangle_mesh() const
 	return Ref<TriangleMesh>();
 }
 
-void CSGShape3D::_bind_methods() {}
 
 CSGShape3D::CSGShape3D() { set_notify_local_transform(true); }
 
@@ -787,7 +786,6 @@ CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_ver
 	return new_brush;
 }
 
-void CSGPrimitive3D::_bind_methods() {}
 
 void CSGPrimitive3D::set_flip_faces(bool p_invert)
 {
@@ -949,7 +947,6 @@ CSGBrush* CSGSphere3D::_build_brush()
 	return new_brush;
 }
 
-void CSGSphere3D::_bind_methods() {}
 
 void CSGSphere3D::set_radius(const float p_radius)
 {
@@ -1106,7 +1103,6 @@ CSGBrush* CSGBox3D::_build_brush()
 	return new_brush;
 }
 
-void CSGBox3D::_bind_methods() {}
 
 void CSGBox3D::set_size(const Vector3& p_size)
 {
@@ -1266,7 +1262,6 @@ CSGBrush* CSGCylinder3D::_build_brush()
 	return new_brush;
 }
 
-void CSGCylinder3D::_bind_methods() {}
 
 void CSGCylinder3D::set_radius(const float p_radius)
 {
@@ -1460,7 +1455,6 @@ CSGBrush* CSGTorus3D::_build_brush()
 	return new_brush;
 }
 
-void CSGTorus3D::_bind_methods() {}
 
 void CSGTorus3D::set_inner_radius(const float p_inner_radius)
 {
@@ -1534,7 +1528,6 @@ void CSGPolygon3D::_path_changed()
 
 void CSGPolygon3D::_path_exited() { path = nullptr; }
 
-void CSGPolygon3D::_bind_methods() {}
 
 void CSGPolygon3D::set_polygon(const Vector<Vector2>& p_polygon)
 {

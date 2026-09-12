@@ -68,7 +68,6 @@ private:
 	HashMap<uint64_t, ScreenshotCB> screenshot_callbacks;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool has_capture(const String& p_capture) const override;

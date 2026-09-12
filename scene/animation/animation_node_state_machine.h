@@ -67,7 +67,6 @@ private:
 	Ref<Expression> expression;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_switch_mode(SwitchMode p_mode);
@@ -338,7 +337,6 @@ class AnimationNodeStateMachinePlayback : public Resource
 	Ref<AnimationNodeStateMachineTransition> _get_group_end_transition() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void travel(const StringName& p_state, bool p_reset_on_teleport = true);

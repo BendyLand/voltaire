@@ -132,7 +132,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	Error request(const String& p_url, const Vector<String>& p_custom_headers = Vector<String>(),

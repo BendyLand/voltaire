@@ -42,7 +42,6 @@ protected:
 	};
 
 	Ref<NetSocket> _sock;
-	static void _bind_methods();
 
 	Error _listen(const NetSocket::Address& p_addr);
 

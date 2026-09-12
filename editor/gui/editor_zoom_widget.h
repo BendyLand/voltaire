@@ -49,7 +49,6 @@ class EditorZoomWidget : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	EditorZoomWidget();

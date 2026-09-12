@@ -108,7 +108,6 @@ class ScriptCreateDialog : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void config(const String& p_base_name, const String& p_base_path,

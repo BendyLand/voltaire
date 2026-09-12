@@ -102,7 +102,6 @@ PackedVector2Array Shape2D::collide_and_get_contacts(const Transform2D& p_local_
 	return results;
 }
 
-void Shape2D::_bind_methods() {}
 
 bool Shape2D::is_collision_outline_enabled()
 {

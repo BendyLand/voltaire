@@ -30,7 +30,6 @@
 
 #include "gltf_texture.h"
 
-void GLTFTexture::_bind_methods() {}
 
 GLTFImageIndex GLTFTexture::get_src_image() const { return src_image; }
 

@@ -74,7 +74,6 @@ public:
 	};
 
 protected:
-	static void _bind_methods();
 
 private:
 	ENetHost* host = nullptr;

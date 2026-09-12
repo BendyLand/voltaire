@@ -728,8 +728,6 @@ private:
 protected:
 	friend class FileSystemDock;
 
-	static void _bind_methods();
-
 public:
 	void init_plugins();
 

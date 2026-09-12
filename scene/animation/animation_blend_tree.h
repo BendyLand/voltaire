@@ -102,7 +102,6 @@ public:
 	AnimationNodeAnimation();
 
 protected:
-	static void _bind_methods();
 
 private:
 	PlayMode play_mode = PLAY_MODE_FORWARD;
@@ -115,7 +114,6 @@ class AnimationNodeSync : public AnimationNode
 protected:
 	bool sync = false;
 
-	static void _bind_methods();
 
 public:
 	void set_use_sync(bool p_sync);
@@ -162,7 +160,6 @@ private:
 	StringName time_to_restart = "time_to_restart";
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
@@ -291,7 +288,6 @@ class AnimationNodeTimeSeek : public AnimationNode
 	bool explicit_elapse = true;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String get_caption() const override;
@@ -329,7 +325,6 @@ class AnimationNodeTransition : public AnimationNodeSync
 	bool pending_update = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
@@ -395,7 +390,6 @@ class AnimationNodeBlendTree : public AnimationRootNode
 	void _initialize_node_tree();
 
 protected:
-	static void _bind_methods();
 
 	virtual void _tree_changed() override;
 

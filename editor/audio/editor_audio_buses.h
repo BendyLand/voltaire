@@ -121,19 +121,15 @@ class EditorAudioBus : public PanelContainer
 
 	float _normalized_volume_to_scaled_db(float normalized);
 	float _scaled_db_to_normalized_volume(float db);
-	void _show_value(float slider_value);
-	void _hide_value_preview();
 	void _enable_indicator_fall();
 	void _effect_selected();
 	void _effect_rmb(const Vector2& p_pos, MouseButton p_button);
-	void _update_visible_channels();
 
 	friend class EditorAudioBuses;
 
 	EditorAudioBuses* buses = nullptr;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -148,7 +144,6 @@ class EditorAudioBusDrop : public Control
 	mutable bool hovering_drop = false;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 };
 
@@ -200,17 +195,10 @@ class EditorAudioBuses : public EditorDock
 	EditorFileDialog* file_dialog = nullptr;
 	bool new_layout = false;
 
-	void _file_dialog_callback(const String& p_string);
-
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-
 public:
-	void open_layout(const String& p_path);
-
 	static EditorAudioBuses* register_editor();
 
 	EditorAudioBuses();
@@ -269,7 +257,6 @@ public:
 private:
 	virtual void _update_theme_item_cache() override;
 
-	static void _bind_methods();
 	void _notification(int p_what);
 	void _draw_audio_notches();
 };

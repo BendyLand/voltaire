@@ -266,7 +266,6 @@ class EditorSelection
 	void _emit_change();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void add_node(Node* p_node);

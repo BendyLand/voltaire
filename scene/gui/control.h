@@ -434,7 +434,6 @@ protected:
 	// Base object overrides.
 
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	bool _has_focus_bind_compat_110250() const;

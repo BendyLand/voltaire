@@ -70,7 +70,6 @@ void EditorDebuggerTree::_notification(int p_what)
 	}
 }
 
-void EditorDebuggerTree::_bind_methods() {}
 
 void EditorDebuggerTree::_scene_tree_selected()
 {

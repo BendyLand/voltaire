@@ -445,7 +445,6 @@ void SceneTreeEditor::set_update_when_invisible(bool p_enable)
 	_update_tree();
 }
 
-void SceneTreeEditor::_bind_methods() {}
 
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
 
@@ -462,7 +461,6 @@ void SceneTreeDialog::_cancel() { hide(); }
 
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
 
-void SceneTreeDialog::_bind_methods() {}
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
 

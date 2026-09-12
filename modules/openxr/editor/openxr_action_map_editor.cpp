@@ -42,18 +42,6 @@
 HashMap<String, String> OpenXRActionMapEditor::interaction_profile_editors;
 HashMap<String, String> OpenXRActionMapEditor::binding_modifier_editors;
 
-void OpenXRActionMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	if (p_slot != EditorDock::DOCK_SLOT_BOTTOM) {
-		actionsets_mc->set_theme_type_variation("NoBorderBottomWideWindow");
-		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_TOP_AND_LEFT);
-	}
-	else {
-		actionsets_mc->set_theme_type_variation("NoBorderOpenXR");
-		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
-	}
-}
-
 OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_profile_editor(
 	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
 {

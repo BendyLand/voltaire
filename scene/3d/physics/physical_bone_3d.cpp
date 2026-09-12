@@ -162,7 +162,6 @@ void PhysicalBone3D::_body_state_changed(PhysicsDirectBodyState3D* p_state)
 	}
 }
 
-void PhysicalBone3D::_bind_methods() {}
 
 void PhysicalBone3D::_update_joint_offset()
 {

@@ -206,17 +206,7 @@ void OptionButton::set_allow_reselect(bool p_allow) { allow_reselect = p_allow; 
 
 bool OptionButton::get_allow_reselect() const { return allow_reselect; }
 
-void OptionButton::set_search_bar_enabled(bool p_enabled)
-{
-	popup->set_search_bar_enabled(p_enabled);
-}
-
 bool OptionButton::is_search_bar_enabled() const { return popup->is_search_bar_enabled(); }
-
-void OptionButton::set_search_bar_min_item_count(int p_count)
-{
-	popup->set_search_bar_min_item_count(p_count);
-}
 
 int OptionButton::get_search_bar_min_item_count() const
 {

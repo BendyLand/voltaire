@@ -75,7 +75,6 @@ class Camera2DEditor : public Control
 	void _update_hover(const Vector2& p_mouse_pos);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

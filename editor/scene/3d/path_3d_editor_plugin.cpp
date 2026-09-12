@@ -285,16 +285,6 @@ void Path3DEditorPlugin::_restore_curve_points(const PackedVector3Array& p_point
 	}
 }
 
-void Path3DEditorPlugin::_update_toolbar()
-{
-	if (!path) {
-		return;
-	}
-	bool has_curve = path->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
-}
-
 String Path3DGizmoPlugin::get_gizmo_name() const { return "Path3D"; }
 
 

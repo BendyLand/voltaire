@@ -30,7 +30,6 @@
 
 #include "hinge_joint_3d.h"
 
-void HingeJoint3D::_bind_methods() {}
 
 void HingeJoint3D::set_param(Param p_param, real_t p_value)
 {

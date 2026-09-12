@@ -43,7 +43,6 @@ class GPUParticlesCollision3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-	static void _bind_methods();
 
 	GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type);
 
@@ -59,7 +58,6 @@ class GPUParticlesCollisionSphere3D : public GPUParticlesCollision3D
 	real_t radius = 1.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_radius(real_t p_radius);
@@ -76,7 +74,6 @@ class GPUParticlesCollisionBox3D : public GPUParticlesCollision3D
 	Vector3 size = Vector3(2, 2, 2);
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_size(const Vector3& p_size);
@@ -227,7 +224,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_size(const Vector3& p_size);
@@ -265,7 +261,6 @@ class GPUParticlesAttractor3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-	static void _bind_methods();
 
 	GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type);
 
@@ -290,7 +285,6 @@ class GPUParticlesAttractorSphere3D : public GPUParticlesAttractor3D
 	real_t radius = 1.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_radius(real_t p_radius);
@@ -307,7 +301,6 @@ class GPUParticlesAttractorBox3D : public GPUParticlesAttractor3D
 	Vector3 size = Vector3(2, 2, 2);
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_size(const Vector3& p_size);
@@ -325,7 +318,6 @@ class GPUParticlesAttractorVectorField3D : public GPUParticlesAttractor3D
 	Ref<Texture3D> texture;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_size(const Vector3& p_size);

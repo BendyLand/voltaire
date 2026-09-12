@@ -228,7 +228,6 @@ void MobileVRInterface::set_position_from_sensors()
 	last_ticks = ticks;
 }
 
-void MobileVRInterface::_bind_methods() {}
 
 void MobileVRInterface::set_eye_height(const double p_eye_height) { eye_height = p_eye_height; }
 

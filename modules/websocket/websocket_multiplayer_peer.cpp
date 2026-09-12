@@ -71,7 +71,6 @@ void WebSocketMultiplayerPeer::_clear()
 	incoming_packets.clear();
 }
 
-void WebSocketMultiplayerPeer::_bind_methods() {}
 
 //
 // PacketPeer

@@ -36,7 +36,6 @@ struct Vector3;
 class PhysicsServer3DRenderingServerHandler
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void set_vertex(int p_vertex_id, const Vector3& p_vertex);

@@ -67,7 +67,6 @@ class ColorPresetButton : public BaseButton
 
 protected:
 	void _notification(int);
-	static void _bind_methods();
 
 public:
 	void set_preset_color(const Color& p_color);
@@ -356,7 +355,6 @@ private:
 	void _slider_drag_started();
 	void _slider_value_changed();
 	void _slider_drag_ended();
-	void _update_controls();
 	void _update_color(bool p_update_sliders = true);
 	void _update_text_value();
 #ifdef TOOLS_ENABLED
@@ -409,7 +407,6 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int);
-	static void _bind_methods();
 
 public:
 	GridContainer* get_slider_container();
@@ -463,19 +460,14 @@ public:
 	void set_can_add_swatches(bool p_enabled);
 	bool are_swatches_enabled() const;
 
-	void set_presets_visible(bool p_visible);
 	bool are_presets_visible() const;
 
-	void set_modes_visible(bool p_visible);
 	bool are_modes_visible() const;
 
-	void set_sampler_visible(bool p_visible);
 	bool is_sampler_visible() const;
 
-	void set_sliders_visible(bool p_visible);
 	bool are_sliders_visible() const;
 
-	void set_hex_visible(bool p_visible);
 	bool is_hex_visible() const;
 
 	void set_focus_on_line_edit();
@@ -521,7 +513,6 @@ class ColorPickerButton : public Button
 
 protected:
 	void _notification(int);
-	static void _bind_methods();
 
 public:
 	void set_pick_color(const Color& p_color);

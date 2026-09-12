@@ -105,7 +105,6 @@ public:
 
 class Skeleton3DEditor : public VBoxContainer
 {
-	static void _bind_methods();
 
 	friend class Skeleton3DEditorPlugin;
 
@@ -220,10 +219,6 @@ class Skeleton3DEditor : public VBoxContainer
 	void _disconnect_from_tree();
 
 	int selected_bone = -1;
-
-protected:
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
 
 public:
 	static Skeleton3DEditor* get_singleton() { return singleton; }

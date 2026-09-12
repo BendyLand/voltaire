@@ -149,7 +149,6 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 	preview->generating.clear();
 }
 
-void AudioStreamPreviewGenerator::_bind_methods() {}
 
 AudioStreamPreviewGenerator* AudioStreamPreviewGenerator::singleton = nullptr;
 

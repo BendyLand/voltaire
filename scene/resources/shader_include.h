@@ -42,7 +42,6 @@ private:
 	void _dependency_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_code(const String& p_text);

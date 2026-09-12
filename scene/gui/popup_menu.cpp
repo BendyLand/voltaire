@@ -649,26 +649,6 @@ void PopupMenu::_draw_items()
 	}
 }
 
-void PopupMenu::_update_search_bar_visibility()
-{
-	if (search_bar) {
-		if (search_bar_enabled) {
-			int item_count = 0;
-			for (const Item& item : items) {
-				if (!item.separator) {
-					item_count++;
-				}
-			}
-			search_bar->set_visible(item_count >= search_bar_min_item_count);
-		}
-		else {
-			search_bar->hide();
-		}
-	}
-}
-
-
-
 void PopupMenu::_filter_items(const String& p_query)
 {
 	for (PopupMenu::Item& item : items) {
@@ -1205,20 +1185,7 @@ void PopupMenu::set_allow_search(bool p_allow) { allow_search = p_allow; }
 
 bool PopupMenu::get_allow_search() const { return allow_search; }
 
-void PopupMenu::set_search_bar_enabled(bool p_enabled)
-{
-	search_bar_enabled = p_enabled;
-	_update_search_bar_visibility();
-}
-
 bool PopupMenu::is_search_bar_enabled() const { return search_bar_enabled; }
-
-void PopupMenu::set_search_bar_min_item_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	search_bar_min_item_count = p_count;
-	_update_search_bar_visibility();
-}
 
 int PopupMenu::get_search_bar_min_item_count() const { return search_bar_min_item_count; }
 

@@ -408,7 +408,6 @@ void PortableCompressedTexture2D::set_basisu_compressor_params(
 	basisu_params.rdo_quality_loss = p_rdo_quality_loss;
 }
 
-void PortableCompressedTexture2D::_bind_methods() {}
 
 PortableCompressedTexture2D::~PortableCompressedTexture2D()
 {

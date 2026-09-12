@@ -57,31 +57,20 @@ private:
 	bool tile_set_changed_needs_update = false;
 	HSplitContainer* split_container = nullptr;
 
-	// TabBar.
 	HBoxContainer* tile_set_toolbar = nullptr;
 	TabBar* tabs_bar = nullptr;
 
-	// Tiles.
 	Label* no_source_selected_label = nullptr;
 	TileSetAtlasSourceEditor* tile_set_atlas_source_editor = nullptr;
 	TileSetScenesCollectionSourceEditor* tile_set_scenes_collection_source_editor = nullptr;
 
-	void _load_texture_files(const Vector<String>& p_paths);
-
-	void _update_sources_list(int force_selected_id = -1);
-
-	// Sources management.
 	Button* sources_delete_button = nullptr;
 	MenuButton* sources_add_button = nullptr;
 	MenuButton* source_sort_button = nullptr;
 	MenuButton* sources_advanced_menu_button = nullptr;
 	TileSetSourceItemList* sources_list = nullptr;
 	Ref<Texture2D> missing_texture_texture;
-	void _source_selected(int p_source_index);
-	void _source_delete_pressed();
-	void _source_add_id_pressed(int p_id_pressed);
 	void _sources_advanced_menu_id_pressed(int p_id_pressed);
-	void _set_source_sort(int p_sort);
 
 	EditorFileDialog* texture_file_dialog = nullptr;
 	AtlasMergingDialog* atlas_merging_dialog = nullptr;
@@ -89,37 +78,23 @@ private:
 
 	bool first_edit = true;
 
-	// Patterns.
 	MarginContainer* patterns_mc = nullptr;
 	ItemList* patterns_item_list = nullptr;
 	Label* patterns_help_label = nullptr;
-	void _patterns_item_list_gui_input(const Ref<InputEvent>& p_event);
-	void _pattern_preview_done(Ref<TileMapPattern> p_pattern, Ref<Texture2D> p_texture);
-	void _update_patterns_list();
 
-	// Expanded editor.
 	PanelContainer* expanded_area = nullptr;
 	Control* expanded_editor = nullptr;
 	LocalVector<SplitContainer*> disable_on_expand;
 
 	void _tile_set_changed();
-	void _tab_changed(int p_tab_changed);
 
 protected:
-	void _notification(int p_what);
-
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 public:
-	_FORCE_INLINE_ static TileSetEditor* get_singleton() { return singleton; }
-
-	void edit(Ref<TileSet> p_tile_set);
-
-	void add_expanded_editor(Control* p_editor);
-	void remove_expanded_editor();
 	void register_split(SplitContainer* p_split);
 
-	TileSetEditor();
+	TileSetEditor() = default;
 };
 
 class TileSourceInspectorPlugin : public EditorInspectorPlugin
@@ -127,8 +102,6 @@ class TileSourceInspectorPlugin : public EditorInspectorPlugin
 	AcceptDialog* id_edit_dialog = nullptr;
 	Label* id_label = nullptr;
 	SpinBox* id_input = nullptr;
-
-	void _confirm_change_id();
 };
 
 

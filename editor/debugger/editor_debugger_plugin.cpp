@@ -31,7 +31,6 @@
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor_debugger_plugin.h"
 
-void EditorDebuggerSession::_bind_methods() {}
 
 void EditorDebuggerSession::add_session_tab(Control* p_tab)
 {

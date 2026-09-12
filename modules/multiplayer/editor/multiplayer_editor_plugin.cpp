@@ -37,7 +37,6 @@
 #include "replication_editor.h"
 #include "scene/main/scene_tree.h"
 
-void MultiplayerEditorDebugger::_bind_methods() {}
 
 bool MultiplayerEditorDebugger::has_capture(const String& p_capture) const
 {

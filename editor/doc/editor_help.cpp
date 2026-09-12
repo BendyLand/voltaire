@@ -224,8 +224,6 @@ static String _contextualize_class_specifier(
 	return p_class_specifier.substr(p_edited_class.length() + 1);
 }
 
-/// EditorHelp ///
-
 void EditorHelp::_update_theme_item_cache()
 {
 	VBoxContainer::_update_theme_item_cache();
@@ -292,8 +290,6 @@ void EditorHelp::_search(bool p_search_previous)
 		find_bar->search_next();
 	}
 }
-
-void EditorHelp::_class_list_select(const String& p_select) { _goto_desc(p_select, true); }
 
 void EditorHelp::_class_desc_select(const String& p_select)
 {
@@ -515,7 +511,6 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 }
 
 // Macros for assigning the deprecated/experimental marks to class members in overview.
-
 #define DEPRECATED_DOC_TAG                                                                         \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
 	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));       \
@@ -535,7 +530,6 @@ void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& 
 	class_desc->pop();
 
 // Macros for displaying the deprecated/experimental info in class member descriptions.
-
 #define DEPRECATED_DOC_MSG(m_message, m_default_message)                                           \
 	Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));                       \
 	class_desc->add_image(error_icon, error_icon->get_width(), error_icon->get_height());          \
@@ -612,142 +606,6 @@ void EditorHelp::_pop_code_font()
 {
 	class_desc->pop(); // font_size
 	class_desc->pop(); // font
-}
-
-Error EditorHelp::_goto_desc(const String& p_class, bool p_can_trigger_save_history)
-{
-	select_locked = true;
-
-	class_desc->show();
-
-	description_line = 0;
-
-	if (p_class == edited_class) {
-		if (p_can_trigger_save_history) {
-			trigger_history_save_on_navigate();
-		}
-		return OK; // Already there.
-	}
-
-	edited_class = p_class;
-	_update_doc();
-	if (p_can_trigger_save_history) {
-		trigger_history_save_on_navigate();
-	}
-	return OK;
-}
-
-void EditorHelp::_request_help(const String& p_string)
-{
-	Error err = _goto_desc(p_string, false);
-	if (err == OK) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(
-			EditorMainScreen::EDITOR_SCRIPT);
-	}
-}
-
-void EditorHelp::_help_callback(const String& p_topic)
-{
-	Vector<String> parts;
-	{
-		int from = 0;
-		int buffer_start = 0;
-		while (true) {
-			const int pos = p_topic.find_char(':', from);
-			if (pos < 0) {
-				parts.push_back(p_topic.substr(buffer_start));
-				break;
-			}
-
-			if (pos + 1 < p_topic.length() && p_topic[pos + 1] == ':') {
-				// `::` used in built-in scripts.
-				from = pos + 2;
-			}
-			else {
-				parts.push_back(p_topic.substr(buffer_start, pos - buffer_start));
-				from = pos + 1;
-				buffer_start = from;
-			}
-		}
-	}
-
-	const String what = parts[0]; // `parts` is always non-empty.
-	const String clss = (parts.size() > 1) ? parts[1] : String();
-	const String name = (parts.size() > 2) ? parts[2] : String();
-
-	_request_help(clss); // First go to class.
-
-	int line = 0;
-
-	if (what == "class_desc") {
-		line = description_line;
-	}
-	else if (what == "class_signal") {
-		if (signal_line.has(name)) {
-			line = signal_line[name];
-		}
-	}
-	else if (what == "class_method" || what == "class_method_desc") {
-		if (method_line.has(name)) {
-			line = method_line[name];
-		}
-	}
-	else if (what == "class_property") {
-		if (property_line.has(name)) {
-			line = property_line[name];
-		}
-	}
-	else if (what == "class_enum") {
-		if (enum_line.has(name)) {
-			line = enum_line[name];
-		}
-	}
-	else if (what == "class_theme_item") {
-		if (theme_property_line.has(name)) {
-			line = theme_property_line[name];
-		}
-	}
-	else if (what == "class_constant") {
-		if (constant_line.has(name)) {
-			line = constant_line[name];
-		}
-	}
-	else if (what == "class_annotation") {
-		if (annotation_line.has(name)) {
-			line = annotation_line[name];
-		}
-	}
-	else if (what == "class_global") { // Deprecated.
-		if (constant_line.has(name)) {
-			line = constant_line[name];
-		}
-		else if (method_line.has(name)) {
-			line = method_line[name];
-		}
-		else {
-			HashMap<String, HashMap<String, int>>::Iterator iter = enum_values_line.begin();
-			while (true) {
-				if (iter->value.has(name)) {
-					line = iter->value[name];
-					break;
-				}
-				else if (iter == enum_values_line.last()) {
-					break;
-				}
-				else {
-					++iter;
-				}
-			}
-		}
-	}
-
-	if (class_desc->is_finished()) {
-		_class_desc_scroll_to_paragraph(line, _need_save_new_history());
-	}
-	else {
-		scroll_to = line;
-		need_save_new_history = _need_save_new_history();
-	}
 }
 
 bool EditorHelp::_need_save_new_history() const
@@ -1551,18 +1409,6 @@ void EditorHelp::_notification(int p_what)
 	}
 }
 
-void EditorHelp::go_to_help(const String& p_help)
-{
-	_wait_for_thread();
-	_help_callback(p_help);
-}
-
-void EditorHelp::go_to_class(const String& p_class)
-{
-	_wait_for_thread();
-	_goto_desc(p_class, true);
-}
-
 void EditorHelp::cleanup_doc()
 {
 	_wait_for_thread();
@@ -1596,12 +1442,6 @@ void EditorHelp::scroll_to_section(int p_section_index)
 	ScriptEditorNavigationMarker::get_singleton()->locate_end();
 }
 
-void EditorHelp::popup_search()
-{
-	_wait_for_thread();
-	find_bar->popup_search();
-}
-
 String EditorHelp::get_class() { return edited_class; }
 
 void EditorHelp::search_again(bool p_search_previous) { _search(p_search_previous); }
@@ -1610,318 +1450,10 @@ int EditorHelp::get_scroll() const { return class_desc->get_v_scroll_bar()->get_
 
 void EditorHelp::set_scroll(int p_scroll) { class_desc->get_v_scroll_bar()->set_value(p_scroll); }
 
-void EditorHelp::_bind_methods() {}
-
-EditorHelp::EditorHelp()
-{
-	set_custom_minimum_size(Size2(150 * EDSCALE, 0));
-
-	class_desc = memnew(RichTextLabel);
-	class_desc->set_tab_size(8);
-	class_desc->set_autowrap_trim_flags(TextServer::BREAK_TRIM_END_EDGE_SPACES);
-	add_child(class_desc);
-
-	class_desc->set_threaded(true);
-	class_desc->set_v_size_flags(SIZE_EXPAND_FILL);
-
-	// Added second so it opens at the bottom so it won't offset the entire widget.
-	find_bar = memnew(FindBar);
-	add_child(find_bar);
-	find_bar->hide();
-	find_bar->set_rich_text_label(class_desc);
-
-	status_bar = memnew(HBoxContainer);
-	add_child(status_bar);
-	status_bar->set_h_size_flags(SIZE_EXPAND_FILL);
-	status_bar->set_custom_minimum_size(Size2(0, 24 * EDSCALE));
-
-	toggle_files_button = memnew(Button);
-	toggle_files_button->set_theme_type_variation(SceneStringName(FlatButton));
-	toggle_files_button->set_accessibility_name(TTRC("Scripts"));
-	toggle_files_button->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	status_bar->add_child(toggle_files_button);
-
-	class_desc->set_selection_enabled(true);
-	class_desc->set_context_menu_enabled(true);
-
-	class_desc->hide();
-}
-
-/// EditorHelpBit ///
-
 void EditorHelpBit::_add_type_to_title(const DocType& p_doc_type)
 {
 	_add_type_to_rt(p_doc_type.type, p_doc_type.enumeration, p_doc_type.is_bitfield, title, this,
 		symbol_class_name);
-}
-
-void EditorHelpBit::_update_labels()
-{
-	const Ref<Font> doc_bold_font =
-		get_theme_font(SNAME("doc_bold"), EditorStringName(EditorFonts));
-
-	if (!symbol_type.is_empty() || !symbol_name.is_empty()) {
-		title->clear();
-
-		title->push_font(doc_bold_font);
-
-		if (!symbol_type.is_empty()) {
-			title->push_color(get_theme_color(SNAME("title_color"), SNAME("EditorHelp")));
-			title->add_text(symbol_type);
-			title->pop(); // color
-		}
-
-		if (!symbol_type.is_empty() && !symbol_name.is_empty()) {
-			title->add_text(" ");
-		}
-
-		if (!symbol_name.is_empty()) {
-			if (use_class_prefix && !symbol_class_name.is_empty() &&
-				symbol_hint != SYMBOL_HINT_INHERITANCE) {
-				title->add_text(symbol_class_name + ".");
-			}
-			title->add_text(symbol_name);
-			if (!symbol_doc_link.is_empty()) {
-				title->pop(); // meta
-			}
-		}
-
-		title->pop(); // font
-
-		const Color text_color = get_theme_color(SNAME("text_color"), SNAME("EditorHelp"));
-		const Color symbol_color = get_theme_color(SNAME("symbol_color"), SNAME("EditorHelp"));
-		const Color value_color = get_theme_color(SNAME("value_color"), SNAME("EditorHelp"));
-		const Color qualifier_color =
-			get_theme_color(SNAME("qualifier_color"), SNAME("EditorHelp"));
-		const Ref<Font> doc_source =
-			get_theme_font(SNAME("doc_source"), EditorStringName(EditorFonts));
-		const int doc_source_size =
-			get_theme_font_size(SNAME("doc_source_size"), EditorStringName(EditorFonts));
-
-		switch (symbol_hint) {
-		case SYMBOL_HINT_NONE: {
-			// Nothing to do.
-		} break;
-		case SYMBOL_HINT_INHERITANCE: {
-			String inherits = String();
-			if (!inherits.is_empty()) {
-				title->push_font(doc_source);
-				title->push_font_size(doc_source_size * 0.9);
-
-				while (!inherits.is_empty()) {
-					title->push_color(symbol_color);
-					title->add_text(" <" + nbsp);
-					title->pop(); // color
-
-					_add_type_to_title({inherits, String(), false});
-				}
-
-				title->pop(); // font_size
-				title->pop(); // font
-			}
-		} break;
-		case SYMBOL_HINT_ASSIGNABLE: {
-			const bool has_type = !help_data.doc_type.type.is_empty();
-			const bool has_value = !help_data.value.is_empty();
-
-			if (has_type || has_value) {
-				title->push_font(doc_source);
-				title->push_font_size(doc_source_size * 0.9);
-
-				if (has_type) {
-					title->push_color(symbol_color);
-					title->add_text(colon_nbsp);
-					title->pop(); // color
-
-					_add_type_to_title(help_data.doc_type);
-				}
-
-				if (has_value) {
-					title->push_color(symbol_color);
-					title->add_text(nbsp_equal_nbsp);
-					title->pop(); // color
-
-					title->push_color(value_color);
-					title->add_text(_fix_constant(help_data.value));
-					title->pop(); // color
-				}
-
-				title->pop(); // font_size
-				title->pop(); // font
-			}
-		} break;
-		case SYMBOL_HINT_SIGNATURE: {
-			title->push_font(doc_source);
-			title->push_font_size(doc_source_size * 0.9);
-
-			title->push_color(symbol_color);
-			title->add_text("(");
-			title->pop(); // color
-
-			for (int i = 0; i < help_data.arguments.size(); i++) {
-				const ArgumentData& argument = help_data.arguments[i];
-
-				if (i > 0) {
-					title->push_color(symbol_color);
-					title->add_text(", ");
-					title->pop(); // color
-				}
-
-				title->push_color(text_color);
-				title->add_text(argument.name);
-				title->pop(); // color
-
-				title->push_color(symbol_color);
-				title->add_text(colon_nbsp);
-				title->pop(); // color
-
-				_add_type_to_title(argument.doc_type);
-
-				if (!argument.default_value.is_empty()) {
-					title->push_color(symbol_color);
-					title->add_text(nbsp_equal_nbsp);
-					title->pop(); // color
-
-					title->push_color(value_color);
-					title->add_text(_fix_constant(argument.default_value));
-					title->pop(); // color
-				}
-			}
-
-			if (help_data.qualifiers.contains("vararg")) {
-				if (!help_data.arguments.is_empty()) {
-					title->push_color(symbol_color);
-					title->add_text(", ");
-					title->pop(); // color
-				}
-
-				title->push_color(symbol_color);
-				title->add_text("...");
-				title->pop(); // color
-
-				const ArgumentData& rest_argument = help_data.rest_argument;
-
-				title->push_color(text_color);
-				title->add_text(rest_argument.name.is_empty() ? "args" : rest_argument.name);
-				title->pop(); // color
-
-				title->push_color(symbol_color);
-				title->add_text(colon_nbsp);
-				title->pop(); // color
-
-				if (rest_argument.doc_type.type.is_empty()) {
-					_add_type_to_title({"Array", "", false});
-				}
-				else {
-					_add_type_to_title(rest_argument.doc_type);
-				}
-			}
-
-			title->push_color(symbol_color);
-			title->add_text(")");
-			title->pop(); // color
-
-			if (!help_data.doc_type.type.is_empty()) {
-				title->push_color(symbol_color);
-				title->add_text(" ->" + nbsp);
-				title->pop(); // color
-
-				_add_type_to_title(help_data.doc_type);
-			}
-
-			if (!help_data.qualifiers.is_empty()) {
-				title->push_color(qualifier_color);
-				_add_qualifiers_to_rt(help_data.qualifiers, title);
-				title->pop(); // color
-			}
-
-			title->pop(); // font_size
-			title->pop(); // font
-		} break;
-		}
-
-		title->show();
-	}
-	else {
-		title->hide();
-	}
-
-	content->clear();
-
-	bool has_prev_text = false;
-
-	if (!help_data.deprecated_message.is_empty()) {
-		has_prev_text = true;
-
-		Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));
-		content->add_text(nbsp);
-		content->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		content->push_font(doc_bold_font);
-		content->add_text(TTR("Deprecated:"));
-		content->pop(); // font
-		content->pop(); // color
-		content->add_text(" ");
-		_add_text_to_rt(help_data.deprecated_message, content, this, symbol_class_name);
-	}
-
-	if (!help_data.experimental_message.is_empty()) {
-		if (has_prev_text) {
-			content->add_newline();
-		}
-		has_prev_text = true;
-
-		Ref<Texture2D> warning_icon = get_editor_theme_icon(SNAME("NodeWarning"));
-		content->add_text(nbsp);
-		content->push_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		content->push_font(doc_bold_font);
-		content->add_text(TTR("Experimental:"));
-		content->pop(); // font
-		content->pop(); // color
-		content->add_text(" ");
-		_add_text_to_rt(help_data.experimental_message, content, this, symbol_class_name);
-	}
-
-	if (!help_data.description.is_empty()) {
-		if (has_prev_text) {
-			content->add_newline();
-		}
-		has_prev_text = true;
-
-		const Color comment_color = get_theme_color(SNAME("comment_color"), SNAME("EditorHelp"));
-		_add_text_to_rt(
-			help_data.description.replace("<EditorHelpBitCommentColor>", comment_color.to_html()),
-			content, this, symbol_class_name);
-	}
-
-	if (!help_data.resource_path.is_empty()) {
-		if (has_prev_text) {
-			content->add_newline();
-		}
-		has_prev_text = true;
-
-		const String ext = help_data.resource_path.get_extension();
-		const bool is_dir = ext.is_empty();
-		const bool is_valid =
-			is_dir || EditorFileSystem::get_singleton()->get_valid_extensions().has(ext);
-		if (!is_dir && is_valid) {
-			content->add_text(nbsp + TTR("Open"));
-			content->pop(); // meta
-			content->add_newline();
-		}
-
-		if (is_valid) {
-			content->add_text(nbsp + TTR("Show in FileSystem"));
-			content->pop(); // meta
-		}
-		else {
-			content->add_text(nbsp + TTR("Open in File Manager"));
-			content->pop(); // meta
-		}
-	}
-
-	if (is_inside_tree()) {
-		update_content_height();
-	}
 }
 
 void EditorHelpBit::_go_to_url(const String& p_what)
@@ -2103,34 +1635,6 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 		DisplayServer::get_singleton()->clipboard_set(p_select.substr(1));
 		EditorToaster::get_singleton()->popup_str(
 			TTR("Code snippet copied to clipboard."), EditorToaster::SEVERITY_INFO);
-	}
-}
-
-void EditorHelpBit::_bind_methods() {}
-
-void EditorHelpBit::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED:
-		content->begin_bulk_theme_override();
-
-		// content->add_theme_constant_override(SceneStringName(line_separation),
-		// get_theme_constant(SceneStringName(line_separation), SNAME("EditorHelp")));
-		content->add_theme_constant_override(SceneStringName(paragraph_separation),
-			get_theme_constant(SceneStringName(paragraph_separation), SNAME("EditorHelp")));
-		content->add_theme_constant_override("table_h_separation",
-			get_theme_constant(SNAME("table_h_separation"), SNAME("EditorHelp")));
-		content->add_theme_constant_override("table_v_separation",
-			get_theme_constant(SNAME("table_v_separation"), SNAME("EditorHelp")));
-		content->add_theme_constant_override("text_highlight_h_padding",
-			get_theme_constant(SNAME("text_highlight_h_padding"), SNAME("EditorHelp")));
-		content->add_theme_constant_override("text_highlight_v_padding",
-			get_theme_constant(SNAME("text_highlight_v_padding"), SNAME("EditorHelp")));
-
-		content->end_bulk_theme_override();
-
-		_update_labels();
-		break;
 	}
 }
 
@@ -2358,197 +1862,6 @@ String EditorHelpBit::get_as_plain_text(const String& p_symbol, const String& p_
 	return output.as_string();
 }
 
-void EditorHelpBit::parse_symbol(const String& p_symbol, const String& p_prologue)
-{
-	const PackedStringArray slices = p_symbol.split("|", true, 3);
-	ERR_FAIL_COND_MSG(slices.size() < 3,
-		R"(Invalid doc id: The expected format is "item_type|class_name|item_name[|item_data]".)");
-
-	const String& item_type = slices[0];
-	const String& class_name = slices[1];
-	const String& item_name = slices[2];
-
-	symbol_doc_link = String();
-	symbol_class_name = class_name;
-	symbol_type = String();
-	symbol_name = item_name;
-	symbol_hint = SYMBOL_HINT_NONE;
-	help_data = HelpData();
-
-	if (item_type == "class") {
-		symbol_doc_link = vformat("#%s", class_name);
-		symbol_type = TTR("Class");
-		symbol_name = class_name;
-		symbol_hint = SYMBOL_HINT_INHERITANCE;
-		help_data = _get_class_help_data(class_name);
-	}
-	else if (item_type == "enum") {
-		symbol_doc_link = vformat("$%s.%s", class_name, item_name);
-		symbol_type = TTR("Enumeration");
-		help_data = _get_enum_help_data(class_name, item_name);
-	}
-	else if (item_type == "constant") {
-		symbol_doc_link = vformat("@constant %s.%s", class_name, item_name);
-		symbol_type = TTR("Constant");
-		symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-		help_data = _get_constant_help_data(class_name, item_name);
-	}
-	else if (item_type == "property") {
-		if (item_name.begins_with("metadata/")) {
-			symbol_type = TTR("Metadata");
-			symbol_name = item_name.trim_prefix("metadata/");
-		}
-		else if (class_name == "ProjectSettings" || class_name == "EditorSettings") {
-			symbol_doc_link = vformat("@member %s.%s", class_name, item_name);
-			symbol_type = TTR("Setting");
-			symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-		}
-		else {
-			symbol_doc_link = vformat("@member %s.%s", class_name, item_name);
-			symbol_type = TTR("Property");
-			symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-		}
-		help_data = _get_property_help_data(class_name, item_name);
-
-		// Add copy note to built-in properties returning `Packed*Array`.
-		if (packed_array_types.has(help_data.doc_type.type)) {
-			if (!help_data.description.is_empty()) {
-				help_data.description += "\n";
-			}
-			// See also `EditorHelp::_update_doc()` and `doc/tools/make_rst.py`.
-			help_data.description += vformat(
-				TTR("[b]Note:[/b] The returned array is [i]copied[/i] and any changes to it will "
-					"not update the original property value. See [%s] for more details."),
-				help_data.doc_type.type);
-		}
-	}
-	else if (item_type == "internal_property") {
-		symbol_type = TTR("Internal Property");
-		help_data.description = "[color=<EditorHelpBitCommentColor>][i]" +
-								TTR("This property can only be set in the Inspector.") +
-								"[/i][/color]";
-	}
-	else if (item_type == "theme_item") {
-		symbol_doc_link = vformat("@theme_item %s.%s", class_name, item_name);
-		symbol_type = TTR("Theme Property");
-		symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-		help_data = _get_theme_item_help_data(class_name, item_name);
-	}
-	else if (item_type == "method") {
-		symbol_doc_link = vformat("@method %s.%s", class_name, item_name);
-		symbol_type = TTR("Method");
-		symbol_hint = SYMBOL_HINT_SIGNATURE;
-		help_data = _get_method_help_data(class_name, item_name);
-	}
-	else if (item_type == "signal") {
-		symbol_doc_link = vformat("@signal %s.%s", class_name, item_name);
-		symbol_type = TTR("Signal");
-		symbol_hint = SYMBOL_HINT_SIGNATURE;
-		help_data = _get_signal_help_data(class_name, item_name);
-	}
-	else if (item_type == "annotation") {
-		symbol_doc_link = vformat("@annotation %s.%s", class_name, item_name);
-		symbol_type = TTR("Annotation");
-		symbol_hint = SYMBOL_HINT_SIGNATURE;
-		help_data = _get_annotation_help_data(class_name, item_name);
-	}
-	else if (item_type == "local_constant" || item_type == "local_variable") {
-		symbol_type =
-			(item_type == "local_constant") ? TTR("Local Constant") : TTR("Local Variable");
-		symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-	}
-	else if (item_type == "resource") {
-		String path = item_name.simplify_path();
-		const bool is_uid = path.begins_with("uid://");
-		if (is_uid) {
-			if (ResourceUID::get_singleton()->has_id(
-					ResourceUID::get_singleton()->text_to_id(path))) {
-				path = ResourceUID::uid_to_path(path);
-			}
-			else {
-				path = "";
-			}
-		}
-		help_data.resource_path = path;
-
-		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		if (da->file_exists(path)) {
-			help_data.doc_type.type = ResourceLoader::get_resource_type(path);
-			symbol_type = TTR("Resource");
-			symbol_hint = SYMBOL_HINT_ASSIGNABLE;
-			if (is_uid) {
-				help_data.description =
-					vformat("%s: [color=<EditorHelpBitCommentColor>]%s[/color]", TTR("Path"), path);
-			}
-			symbol_name = path.get_file();
-		}
-		else if (!is_uid && da->dir_exists(path)) {
-			symbol_type = TTR("Directory");
-			symbol_name = path;
-		}
-		else {
-			help_data.resource_path = "";
-			symbol_name = "";
-			if (is_uid) {
-				symbol_type = TTR("Invalid UID");
-				help_data.description = "[color=<EditorHelpBitCommentColor>][i]" +
-										TTR("This UID does not point to any valid Resource.") +
-										"[/i][/color]";
-			}
-			else {
-				symbol_type = TTR("Invalid path");
-				help_data.description = "[color=<EditorHelpBitCommentColor>][i]" +
-										TTR("This path does not exist.") + "[/i][/color]";
-			}
-		}
-	}
-	else {
-		ERR_FAIL_MSG("Invalid doc id: Unknown item type " + item_type.quote() + ".");
-	}
-
-	// Do not add links for custom or undocumented symbols.
-	if (symbol_class_name.is_empty() ||
-		(help_data.description.is_empty() && help_data.deprecated_message.is_empty() &&
-			help_data.experimental_message.is_empty())) {
-		symbol_doc_link = String();
-	}
-
-	if (!p_prologue.is_empty()) {
-		if (help_data.description.is_empty()) {
-			help_data.description = p_prologue;
-		}
-		else {
-			help_data.description = p_prologue + "\n" + help_data.description;
-		}
-	}
-
-	if (help_data.description.is_empty() && item_type != "resource") {
-		help_data.description = "[color=<EditorHelpBitCommentColor>][i]" +
-								TTR("No description available.") + "[/i][/color]";
-	}
-
-	if (is_inside_tree()) {
-		_update_labels();
-	}
-}
-
-void EditorHelpBit::set_custom_text(
-	const String& p_type, const String& p_name, const String& p_description)
-{
-	symbol_doc_link = String();
-	symbol_class_name = String();
-	symbol_type = p_type;
-	symbol_name = p_name;
-	symbol_hint = SYMBOL_HINT_NONE;
-
-	help_data = HelpData();
-	help_data.description = p_description;
-
-	if (is_inside_tree()) {
-		_update_labels();
-	}
-}
-
 void EditorHelpBit::set_content_height_limits(float p_min, float p_max)
 {
 	ERR_FAIL_COND(p_min > p_max);
@@ -2567,55 +1880,7 @@ void EditorHelpBit::update_content_height()
 		CLAMP(content_height, content_min_height, content_max_height)));
 }
 
-EditorHelpBit::EditorHelpBit(const String& p_symbol, const String& p_prologue,
-	bool p_use_class_prefix, bool p_allow_selection, bool p_in_tooltip)
-{
-	add_theme_constant_override("separation", 0);
-
-	title = memnew(RichTextLabel);
-	title->set_theme_type_variation(
-		p_in_tooltip ? "EditorHelpBitTooltipTitle" : "EditorHelpBitTitle");
-	title->set_custom_minimum_size(
-		Size2(640 * EDSCALE, 0)); // GH-93031. Set the minimum width even if `fit_content` is true.
-	title->set_fit_content(true);
-	title->set_selection_enabled(p_allow_selection);
-	title->set_context_menu_enabled(p_allow_selection);
-	title->hide();
-	add_child(title);
-
-	content_min_height = 48 * EDSCALE;
-	content_max_height = 360 * EDSCALE;
-
-	content = memnew(RichTextLabel);
-	content->set_theme_type_variation(
-		p_in_tooltip ? "EditorHelpBitTooltipContent" : "EditorHelpBitContent");
-	content->set_autowrap_trim_flags(TextServer::BREAK_TRIM_END_EDGE_SPACES);
-	content->set_custom_minimum_size(Size2(640 * EDSCALE, content_min_height));
-	content->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	content->set_selection_enabled(p_allow_selection);
-	content->set_context_menu_enabled(p_allow_selection);
-	add_child(content);
-
-	use_class_prefix = p_use_class_prefix;
-
-	if (!p_symbol.is_empty()) {
-		parse_symbol(p_symbol, p_prologue);
-	}
-	else if (!p_prologue.is_empty()) {
-		set_custom_text(String(), String(), p_prologue);
-	}
-}
-
-/// EditorHelpBitTooltip ///
-
 bool EditorHelpBitTooltip::_is_tooltip_visible = false;
-
-Control* EditorHelpBitTooltip::_make_invisible_control()
-{
-	Control* control = memnew(Control);
-	control->set_visible(false);
-	return control;
-}
 
 void EditorHelpBitTooltip::_start_timer()
 {
@@ -2688,38 +1953,6 @@ void EditorHelpBitTooltip::_notification(int p_what)
 	} break;
 	}
 }
-
-Control* EditorHelpBitTooltip::make_tooltip(Control* p_target, const String& p_symbol,
-	const String& p_prologue, bool p_use_class_prefix, bool p_shortcut)
-{
-	ERR_FAIL_NULL_V(p_target, _make_invisible_control());
-
-	// Show the custom tooltip only if it is not already visible.
-	// The viewport will retrigger `make_custom_tooltip()` every few seconds
-	// because the return control is not visible even if the custom tooltip is displayed.
-	if (_is_tooltip_visible || (!p_shortcut && Input::get_singleton()->is_anything_pressed())) {
-		return _make_invisible_control();
-	}
-
-	EditorHelpBit* help_bit =
-		memnew(EditorHelpBit(p_symbol, p_prologue, p_use_class_prefix, false, true));
-
-	EditorHelpBitTooltip* tooltip = memnew(EditorHelpBitTooltip(p_target, p_shortcut));
-	tooltip->add_child(help_bit);
-	p_target->add_child(tooltip);
-
-	help_bit->update_content_height();
-	if (tooltip->is_shortcut_pressed()) {
-		tooltip->_shortcut_pressed(p_target);
-	}
-	else {
-		tooltip->popup_under_position(tooltip->get_mouse_position());
-	}
-
-	return _make_invisible_control();
-}
-
-/// EditorHelpHighlighter ///
 
 EditorHelpHighlighter* EditorHelpHighlighter::singleton = nullptr;
 
@@ -2823,11 +2056,13 @@ void EditorHelpHighlighter::reset_cache()
 
 EditorHelpHighlighter::EditorHelpHighlighter()
 {
-#ifdef MODULE_MONO_ENABLED
+#ifdef MODULE_MONO_E
+	NABLED
 	TextEdit* csharp_text_edit = memnew(TextEdit);
 	csharp_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
 
-	// See GH-89610.
+	// See G
+H-89610.
 	// Ref<CSharpScript> csharp;
 	// csharp.instantiate();
 
@@ -2852,28 +2087,6 @@ EditorHelpHighlighter::~EditorHelpHighlighter()
 #ifdef MODULE_MONO_ENABLED
 	memdelete(text_edits[LANGUAGE_CSHARP]);
 #endif
-}
-
-/// FindBar ///
-
-void FindBar::popup_search()
-{
-	show();
-	bool grabbed_focus = false;
-	if (!search_text->has_focus()) {
-		search_text->grab_focus();
-		grabbed_focus = true;
-	}
-
-	if (!search_text->get_text().is_empty()) {
-		search_text->select_all();
-		search_text->set_caret_column(search_text->get_text().length());
-		if (grabbed_focus) {
-			rich_text_label->deselect();
-			results_count_to_current = 0;
-			_search();
-		}
-	}
 }
 
 void FindBar::_notification(int p_what)
@@ -2951,31 +2164,6 @@ void FindBar::_update_results_count(bool p_search_previous)
 	}
 	else if (results_count_to_current <= 0) {
 		results_count_to_current = results_count;
-	}
-}
-
-void FindBar::_hide_bar()
-{
-	if (search_text->has_focus()) {
-		rich_text_label->grab_focus();
-	}
-
-	hide();
-}
-
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
-void FindBar::input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_action_pressed(SNAME("ui_cancel"), false, true)) {
-		Control* focus_owner = get_viewport()->gui_get_focus_owner();
-
-		if (rich_text_label->has_focus() || (focus_owner && is_ancestor_of(focus_owner))) {
-			_hide_bar();
-			accept_event();
-		}
 	}
 }
 

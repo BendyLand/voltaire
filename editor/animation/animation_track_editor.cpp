@@ -771,21 +771,6 @@ float AnimationTrackEditor::get_marker_moving_selection_offset() const
 	return marker_edit->get_moving_selection_offset();
 }
 
-void AnimationTrackEditor::show_select_node_warning(bool p_show)
-{
-	info_message_vbox->set_visible(p_show);
-}
-
-void AnimationTrackEditor::show_dummy_player_warning(bool p_show)
-{
-	dummy_player_warning->set_visible(p_show);
-}
-
-void AnimationTrackEditor::show_inactive_player_warning(bool p_show)
-{
-	inactive_player_warning->set_visible(p_show);
-}
-
 bool AnimationTrackEditor::is_key_selected(int p_track, int p_key) const
 {
 	SelectedKey sk;
@@ -822,20 +807,6 @@ void AnimationTrackEditor::resolve_insertion_offset(float& r_offset) const
 }
 
 bool AnimationTrackEditor::is_bezier_editor_active() const { return bezier_mc->is_visible(); }
-
-void AnimationTrackEditor::_update_fps_compat_mode(bool p_enabled) { _update_snap_unit(); }
-
-void AnimationTrackEditor::_update_nearest_fps_label()
-{
-	bool is_fps_invalid = nearest_fps == 0;
-	if (is_fps_invalid) {
-		nearest_fps_label->hide();
-	}
-	else {
-		nearest_fps_label->show();
-		nearest_fps_label->set_text(vformat(TTR("Nearest FPS: %d"), nearest_fps));
-	}
-}
 
 MenuButton* AnimationTrackEditor::get_edit_menu() { return edit; }
 
@@ -957,22 +928,6 @@ void AnimationTrackEditor::_box_selection_draw()
 		Math::round(EDSCALE));
 }
 
-void AnimationTrackEditor::_toggle_bezier_edit()
-{
-	if (bezier_mc->is_visible()) {
-		_cancel_bezier_edit();
-	}
-	else {
-		int track_count = animation->get_track_count();
-		for (int i = 0; i < track_count; ++i) {
-			if (animation->track_get_type(i) == Animation::TrackType::TYPE_BEZIER) {
-				_bezier_edit(i);
-				return;
-			}
-		}
-	}
-}
-
 void AnimationTrackEditor::_scroll_changed(const Vector2& p_val)
 {
 	if (box_selecting) {
@@ -1015,27 +970,6 @@ void AnimationTrackEditor::_zoom_callback(
 	timeline->_zoom_callback(p_zoom_factor, p_origin, p_event);
 }
 
-void AnimationTrackEditor::_cancel_bezier_edit()
-{
-	bezier_mc->hide();
-	box_selection_container->show();
-	bezier_edit_icon->set_pressed(false);
-	auto_fit->show();
-	auto_fit_bezier->hide();
-}
-
-void AnimationTrackEditor::_bezier_edit(int p_for_track)
-{
-	_clear_selection(); // Bezier probably wants to use a separate selection mode.
-	bezier_edit->set_root(root);
-	bezier_edit->set_animation_and_track(animation, p_for_track, read_only);
-	box_selection_container->hide();
-	bezier_mc->show();
-	auto_fit->hide();
-	auto_fit_bezier->show();
-	// Search everything within the track and curve - edit it.
-}
-
 void AnimationTrackEditor::_bezier_track_set_key_handle_mode(Animation* p_anim, int p_track,
 	int p_index, Animation::HandleMode p_mode, Animation::HandleSetMode p_set_mode)
 {
@@ -1071,35 +1005,6 @@ bool AnimationTrackEditor::is_function_name_pressed()
 }
 
 void AnimationTrackEditor::_auto_fit() { timeline->auto_fit(); }
-
-void AnimationTrackEditor::_update_snap_unit()
-{
-	nearest_fps = 0;
-
-	if (step->get_value() <= 0) {
-		snap_unit = 0;
-		_update_nearest_fps_label();
-		return; // Avoid zero div.
-	}
-
-	if (timeline->is_using_fps()) {
-		snap_unit = 1.0 / step->get_value();
-	}
-	else {
-		if (fps_compat->is_pressed()) {
-			snap_unit = CLAMP(step->get_value(), 0.0, 1.0);
-			if (!Math::is_zero_approx(snap_unit)) {
-				real_t fps = Math::round(1.0 / snap_unit);
-				nearest_fps = int(fps);
-				snap_unit = 1.0 / fps;
-			}
-		}
-		else {
-			snap_unit = step->get_value();
-		}
-	}
-	_update_nearest_fps_label();
-}
 
 float AnimationTrackEditor::snap_time(float p_value, bool p_relative)
 {

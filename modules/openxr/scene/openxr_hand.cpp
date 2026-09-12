@@ -34,7 +34,6 @@
 #include "scene/3d/skeleton_3d.h"
 #include "servers/xr/xr_server.h"
 
-void OpenXRHand::_bind_methods() {}
 
 OpenXRHand::OpenXRHand()
 {

@@ -102,7 +102,6 @@ private:
 	void _register_core_metadata();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static OpenXRInteractionProfileMetadata* get_singleton() { return singleton; }

@@ -289,7 +289,6 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	return sample;
 }
 
-void AudioEffectRecord::_bind_methods() {}
 
 AudioEffectRecord::AudioEffectRecord() { format = AudioStreamWAV::FORMAT_16_BITS; }
 

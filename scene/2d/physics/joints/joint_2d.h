@@ -55,7 +55,6 @@ protected:
 	void _notification(int p_what);
 	virtual void _configure_joint(RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b) = 0;
 
-	static void _bind_methods();
 
 	_FORCE_INLINE_ bool is_configured() const { return configured; }
 

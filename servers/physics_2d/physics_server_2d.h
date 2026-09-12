@@ -47,7 +47,6 @@ class PhysicsServer2D
 		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _body_set_shape_as_one_way_collision_bind_compat_104736(
@@ -292,7 +291,6 @@ class PhysicsServer2DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

@@ -73,7 +73,6 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	int get_line_count() const;

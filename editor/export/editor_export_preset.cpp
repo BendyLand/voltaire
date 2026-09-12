@@ -36,7 +36,6 @@
 #include "editor_export_preset.compat.inc"
 #include "editor_export_preset.h"
 
-void EditorExportPreset::_bind_methods() {}
 
 Ref<EditorExportPlatform> EditorExportPreset::get_platform() const { return platform; }
 

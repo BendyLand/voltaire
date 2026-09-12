@@ -71,7 +71,6 @@ bool OpenXRValveAnalogThresholdExtension::is_available()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRAnalogThresholdModifier
 
-void OpenXRAnalogThresholdModifier::_bind_methods() {}
 
 OpenXRAnalogThresholdModifier::OpenXRAnalogThresholdModifier()
 {

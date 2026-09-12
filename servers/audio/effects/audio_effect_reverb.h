@@ -65,7 +65,6 @@ class AudioEffectReverb : public AudioEffect {
 	float wet;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_predelay_msec(float p_msec);

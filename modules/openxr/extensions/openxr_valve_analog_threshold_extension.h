@@ -61,7 +61,6 @@ private:
 	Ref<OpenXRHapticBase> off_haptic;
 
 protected:
-	static void _bind_methods();
 
 public:
 	OpenXRAnalogThresholdModifier();

@@ -65,7 +65,6 @@ private:
 	void _theme_changed();
 	OpenXRActionEditor* _add_action_editor(const Ref<OpenXRAction>& p_action);
 
-	void _on_toggle_expand();
 	void _on_action_set_name_changed(const String& p_new_text);
 	void _on_action_set_localized_name_changed(const String& p_new_text);
 	void _on_action_set_priority_changed(const double p_new_value);
@@ -73,7 +72,6 @@ private:
 	void _on_remove_action_set();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	// used for undo/redo

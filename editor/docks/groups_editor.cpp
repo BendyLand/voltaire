@@ -288,28 +288,6 @@ void GroupsEditor::_update_groups_and_tree()
 	_update_tree();
 }
 
-void GroupsEditor::set_selection(const Vector<Node*>& p_nodes)
-{
-	if (p_nodes.is_empty()) {
-		holder->hide();
-		select_a_node->show();
-		selection.clear();
-		return;
-	}
-
-	selection = p_nodes;
-
-	holder->show();
-	select_a_node->hide();
-
-	if (scene_tree->get_edited_scene_root() != scene_root_node) {
-		scene_root_node = scene_tree->get_edited_scene_root();
-		_update_groups();
-	}
-
-	_update_tree();
-}
-
 void GroupsEditor::_check_add()
 {
 	String group_name = add_group_name->get_text().strip_edges();

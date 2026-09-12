@@ -41,7 +41,6 @@ template <typename T> class TypedArray;
 class Performance
 {
 	static Performance* singleton;
-	static void _bind_methods();
 
 	int _get_node_count() const;
 	int _get_orphan_node_count() const;

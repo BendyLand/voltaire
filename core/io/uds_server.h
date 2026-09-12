@@ -36,7 +36,6 @@
 class UDSServer : public SocketServer
 {
 protected:
-	static void _bind_methods();
 
 public:
 	Error listen(const String& p_path);

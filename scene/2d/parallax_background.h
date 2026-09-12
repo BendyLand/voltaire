@@ -52,7 +52,6 @@ protected:
 		const Point2& p_adj_screen_offset);
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_scroll_offset(const Point2& p_ofs);

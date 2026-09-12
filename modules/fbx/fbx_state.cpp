@@ -30,7 +30,6 @@
 
 #include "fbx_state.h"
 
-void FBXState::_bind_methods() {}
 
 bool FBXState::get_allow_geometry_helper_nodes() { return allow_geometry_helper_nodes; }
 

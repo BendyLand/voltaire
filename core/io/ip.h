@@ -69,7 +69,6 @@ private:
 
 protected:
 	static inline IP* singleton = nullptr;
-	static void _bind_methods();
 
 	Vector<String> _get_local_addresses() const;
 

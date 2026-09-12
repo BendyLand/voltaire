@@ -39,7 +39,6 @@ class Node;
 class EditorScript : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	void add_root_node(Node* p_node);

@@ -48,12 +48,6 @@
 #include "scene/main/scene_tree.h"
 #include "tile_map_layer_editor.h"
 
-void SwitchSeparator::set_vertical(bool p_vertical)
-{
-	h_separator->set_visible(p_vertical);
-	v_separator->set_visible(!p_vertical);
-}
-
 SwitchSeparator::SwitchSeparator()
 {
 	h_separator = memnew(HSeparator);
@@ -106,31 +100,9 @@ void TileMapLayerEditorTilesPlugin::tile_set_changed()
 	_update_patterns_list();
 }
 
-void TileMapLayerEditorTilesPlugin::_on_random_tile_checkbox_toggled(bool p_pressed)
-{
-	scatter_controls_container->set_visible(p_pressed);
-}
-
 void TileMapLayerEditorTilesPlugin::_on_scattering_spinbox_changed(double p_value)
 {
 	scattering = p_value;
-}
-
-void TileMapLayerEditorTilesPlugin::_update_toolbar()
-{
-	// Stop dragging if needed.
-	_stop_dragging();
-
-	// Show only the correct settings.
-	const BaseButton* pressed_tool = tool_buttons_group->get_pressed_button();
-	bool using_select = (pressed_tool == select_tool_button);
-	tools_settings_vsep->set_visible(!using_select);
-	picker_button->set_visible(!using_select);
-	erase_button->set_visible(!using_select);
-	random_tile_toggle->set_visible(!using_select);
-	bucket_contiguous_checkbox->set_visible(!using_select && pressed_tool == bucket_tool_button);
-	scatter_controls_container->set_visible(!using_select && random_tile_toggle->is_pressed());
-	CanvasItemEditor::get_singleton()->set_current_tool(CanvasItemEditor::TOOL_SELECT);
 }
 
 void TileMapLayerEditorTilesPlugin::_update_transform_buttons()
@@ -328,47 +300,11 @@ void TileMapLayerEditorTilesPlugin::patterns_item_list_empty_clicked(
 	}
 }
 
-void TileMapLayerEditorTilesPlugin::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DOCK_LAYOUT_VERTICAL);
-	atlas_sources_split_container->set_vertical(is_vertical);
-	atlas_sources_split_container->move_child(split_container_left_side, is_vertical ? -1 : 0);
-	split_container_left_side->set_vertical(!is_vertical);
-
-	tilemap_tiles_tools_buttons->set_vertical(is_vertical);
-	transform_toolbar->set_vertical(is_vertical);
-	tools_settings->set_vertical(is_vertical);
-	tools_settings_vsep->set_vertical(is_vertical);
-	transform_separator->set_vertical(is_vertical);
-
-	wide_toolbar->set_visible(is_vertical);
-	bucket_contiguous_checkbox->reparent(is_vertical ? wide_toolbar : tools_settings);
-	scatter_controls_container->reparent(is_vertical ? wide_toolbar : tools_settings);
-
-	if (p_layout == EditorDock::DOCK_LAYOUT_FLOATING ||
-		(!is_vertical && p_slot != EditorDock::DOCK_SLOT_BOTTOM)) {
-		patterns_mc->set_theme_type_variation("NoBorderHorizontalBottom");
-		patterns_item_list->set_scroll_hint_mode(ItemList::SCROLL_HINT_MODE_TOP);
-	}
-	else {
-		patterns_mc->set_theme_type_variation(is_vertical ? "" : "NoBorderHorizontal");
-		patterns_item_list->set_scroll_hint_mode(
-			is_vertical ? ItemList::SCROLL_HINT_MODE_DISABLED : ItemList::SCROLL_HINT_MODE_BOTH);
-	}
-	patterns_item_list->set_theme_type_variation(is_vertical ? "ItemListSecondary" : "");
-}
-
 void TileMapLayerEditorTerrainsPlugin::tile_set_changed()
 {
 	_update_terrains_cache();
 	_update_terrains_tree();
 	_update_tiles_list();
-}
-
-void TileMapLayerEditorTerrainsPlugin::_update_toolbar()
-{
-	bucket_contiguous_checkbox->set_visible(
-		tool_buttons_group->get_pressed_button() == bucket_tool_button);
 }
 
 Vector<TileMapLayerSubEditorPlugin::TabData> TileMapLayerEditorTerrainsPlugin::get_tabs() const
@@ -648,23 +584,6 @@ void TileMapLayerEditorTerrainsPlugin::_update_terrains_cache()
 
 void TileMapLayerEditorTerrainsPlugin::_update_translation() { _update_terrains_tree(); }
 
-void TileMapLayerEditorTerrainsPlugin::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DockLayout::DOCK_LAYOUT_VERTICAL);
-	// Main Panel.
-	main_box_container->set_vertical(is_vertical);
-	tilemap_tab_terrains->move_child(terrains_tree, is_vertical ? 1 : 0);
-	tilemap_tab_terrains->set_vertical(is_vertical);
-
-	// Toolbar.
-	tilemap_tiles_tools_buttons->set_vertical(is_vertical);
-	tools_settings->set_vertical(is_vertical);
-	tools_settings_vsep->set_vertical(is_vertical);
-
-	wide_toolbar->set_visible(is_vertical);
-	bucket_contiguous_checkbox->reparent(is_vertical ? wide_toolbar : tools_settings);
-}
-
 void TileMapLayerEditor::_update_tile_map_layers_in_scene_list_cache()
 {
 	if (!layers_in_scene_list_cache_needs_update) {
@@ -688,49 +607,6 @@ void TileMapLayerEditor::_select_previous_layer_pressed()
 }
 
 void TileMapLayerEditor::_select_next_layer_pressed() { _layers_select_next_or_previous(true); }
-
-void TileMapLayerEditor::_update_bottom_panel()
-{
-	const TileMapLayer* edited_layer = _get_edited_layer();
-	Ref<TileSet> tile_set;
-	if (edited_layer) {
-		tile_set = edited_layer->get_tile_set();
-	}
-
-	// Update state labels.
-	if (is_multi_node_edit) {
-		cant_edit_label->set_text(TTRC("Can't edit multiple layers at once."));
-		cant_edit_label->show();
-	}
-	else if (!edited_layer) {
-		cant_edit_label->set_text(TTRC("The selected TileMap has no layer to edit."));
-		cant_edit_label->show();
-	}
-	else if (!edited_layer->is_enabled() || !edited_layer->is_visible_in_tree()) {
-		cant_edit_label->set_text(TTRC("The edited layer is disabled or invisible"));
-		cant_edit_label->show();
-	}
-	else if (tile_set.is_null()) {
-		cant_edit_label->set_text(
-			TTRC("The edited TileMap or TileMapLayer node has no TileSet resource.\nCreate or load "
-				 "a TileSet resource in the Tile Set property in the inspector."));
-		cant_edit_label->show();
-	}
-	else {
-		cant_edit_label->hide();
-	}
-
-	// Update tabs visibility.
-	for (int i = 0; i < int(tabs_data.size()); i++) {
-		TileMapLayerSubEditorPlugin::TabData& tab_data = tabs_data[i];
-		if (i == tabs_bar->get_current_tab()) {
-			tab_data.panel->set_visible(!cant_edit_label->is_visible());
-		}
-		else {
-			tab_data.panel->hide();
-		}
-	}
-}
 
 Vector<Vector2i> TileMapLayerEditor::get_line(
 	const TileMapLayer* p_tile_map_layer, Vector2i p_from_cell, Vector2i p_to_cell)
@@ -834,7 +710,8 @@ void TileMapLayerEditor::_tile_map_layer_changed() { tile_map_layer_changed_need
 
 bool TileMapLayerEditor::forward_canvas_gui_input(const Ref<InputEvent>& p_event)
 {
-	if (ED_IS_SHORTCUT("tiles_editor/select_next_layer", p_event) && p_event->is_pressed()) {
+	if (ED_IS_SHORTCUT("tiles_editor/select_next_layer", p_event) && p_event->
+is_pressed()) {
 		_layers_select_next_or_previous(true);
 		return true;
 	}
@@ -864,39 +741,6 @@ void TileMapLayerEditor::_update_layer_selector_layout(bool p_is_vertical)
 		layer_selection_hbox->reparent(tile_map_toolbar);
 		tile_map_toolbar->move_child(layer_selection_hbox, -5);
 		layer_selection_hbox->set_vertical(p_is_vertical);
-	}
-}
-
-void TileMapLayerEditor::update_layout(DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DockLayout::DOCK_LAYOUT_VERTICAL);
-	tile_map_toolbar->set_vertical(is_vertical);
-	layer_selector_separator->set_vertical(is_vertical);
-	tile_map_toolbar->set_h_size_flags(is_vertical ? SIZE_SHRINK_BEGIN : SIZE_EXPAND_FILL);
-	tile_map_toolbar->set_v_size_flags(is_vertical ? SIZE_EXPAND_FILL : SIZE_SHRINK_BEGIN);
-
-	main_box_container->move_child(padding_control, is_vertical ? 0 : 2);
-	if (is_vertical) {
-		main_box_container->remove_theme_constant_override(SNAME("h_separation"));
-	}
-	else {
-		main_box_container->add_theme_constant_override(SNAME("h_separation"), 0);
-	}
-
-	if (is_vertical) {
-		tabs_panel->reparent(tile_map_wide_toolbar);
-		tile_map_wide_toolbar->move_child(tabs_panel, 0);
-	}
-	else {
-		tabs_panel->reparent(tile_map_toolbar);
-		tile_map_toolbar->move_child(tabs_panel, 0);
-	}
-
-	_update_layer_selector_layout(is_vertical);
-
-	// Propagate layout change to sub plugins
-	for (TileMapLayerSubEditorPlugin* tab_plugin : tabs_plugins) {
-		tab_plugin->update_layout(p_layout, p_slot);
 	}
 }
 

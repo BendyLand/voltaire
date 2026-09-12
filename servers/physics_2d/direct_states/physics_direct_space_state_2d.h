@@ -40,7 +40,6 @@ class PhysicsDirectSpaceState2D
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters2D* rp_shape_query);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool intersect_ray(

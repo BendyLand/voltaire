@@ -99,7 +99,6 @@ PackedStringArray Joint2D::get_configuration_warnings() const
 	return warnings;
 }
 
-void Joint2D::_bind_methods() {}
 
 Joint2D::Joint2D()
 {

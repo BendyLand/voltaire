@@ -90,14 +90,6 @@ void AbstractPolygon2DEditor::_wip_cancel()
 	canvas_item_editor->update_viewport();
 }
 
-void AbstractPolygon2DEditor::set_edit_origin_and_center(bool p_enabled)
-{
-	edit_origin_and_center = p_enabled;
-	if (button_center) {
-		button_center->set_visible(edit_origin_and_center);
-	}
-}
-
 AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() const
 {
 	return hover_point.valid() ? hover_point : selected_point;

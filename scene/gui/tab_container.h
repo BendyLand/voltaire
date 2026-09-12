@@ -162,7 +162,6 @@ protected:
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-	static void _bind_methods();
 
 public:
 	virtual bool accessibility_override_tree_hierarchy() const override { return true; }

@@ -257,7 +257,6 @@ private:
 	void _update_tile_id_label();
 	void _update_source_inspector();
 	void _update_fix_selected_and_hovered_tiles();
-	void _update_atlas_source_inspector();
 	void _update_tile_inspector();
 	void _update_tile_data_editors();
 	void _update_current_tile_data_editor();
@@ -276,7 +275,6 @@ private:
 
 	void _update_source_texture();
 	void _check_outside_tiles();
-	void _cleanup_outside_tiles();
 
 	void _tile_set_changed();
 	void _tile_proxy_object_changed(const String& p_what);
@@ -285,7 +283,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 
 public:

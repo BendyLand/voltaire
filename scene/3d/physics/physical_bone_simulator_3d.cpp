@@ -229,7 +229,6 @@ void PhysicalBoneSimulator3D::_process_modification(double p_delta)
 	}
 }
 
-void PhysicalBoneSimulator3D::_bind_methods() {}
 
 PhysicalBoneSimulator3D::PhysicalBoneSimulator3D() {}
 

@@ -44,7 +44,6 @@ class NavigationServer3D
 	static NavigationServer3D* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static NavigationServer3D* get_singleton();
@@ -503,7 +502,6 @@ class NavigationServer3DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

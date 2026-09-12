@@ -102,7 +102,6 @@ class AudioStreamMP3 : public AudioStream
 	int bar_beats = 4;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static Ref<AudioStreamMP3> load_from_buffer(const Vector<uint8_t>& p_stream_data);

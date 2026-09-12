@@ -554,7 +554,6 @@ public:
 	void update_transform_gizmo_view();
 	void update_transform_gizmo_highlight();
 
-	void set_can_preview(Camera3D* p_preview);
 	void switch_preview_camera(Camera3D* p_new_camera);
 	void reset();
 

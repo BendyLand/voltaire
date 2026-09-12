@@ -251,7 +251,6 @@ class PopupMenu : public Popup
 	} theme_cache;
 
 	void _draw_items();
-	void _update_search_bar_visibility();
 	void _items_focus_entered();
 	void _search_bar_text_changed(const String& p_new_text);
 	void _search_bar_focus_entered();
@@ -412,10 +411,8 @@ public:
 	void set_prefer_native_menu(bool p_enabled);
 	bool is_prefer_native_menu() const;
 
-	void set_search_bar_enabled(bool p_enabled);
 	bool is_search_bar_enabled() const;
 
-	void set_search_bar_min_item_count(int p_count);
 	int get_search_bar_min_item_count() const;
 
 	void set_search_bar_fuzzy_search_enabled(bool p_enabled);

@@ -73,7 +73,6 @@ private:
 	String _format_label(float p_value, Performance::MonitorType p_type) const;
 	void _update_monitor_value(Monitor* p_monitor, float p_value);
 	void _monitor_select();
-	void _monitor_draw();
 	void _build_monitor_tree();
 	TreeItem* _get_monitor_base(const StringName& p_base_name);
 	TreeItem* _create_monitor_item(const StringName& p_monitor_name, TreeItem* p_base);

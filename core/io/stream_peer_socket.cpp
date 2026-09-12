@@ -230,8 +230,6 @@ int StreamPeerSocket::get_available_bytes() const
 	return _sock->get_available_bytes();
 }
 
-void StreamPeerSocket::_bind_methods() {}
-
 StreamPeerSocket::StreamPeerSocket() : _sock(NetSocket::create()) {}
 
 StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }

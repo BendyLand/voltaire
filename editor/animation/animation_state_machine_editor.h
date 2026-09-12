@@ -240,7 +240,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	HoveredNodeArea hovered_node_area = HOVER_NODE_NONE;
 
 	String prev_name;
-	void _open_editor(const String& p_name);
 	void _scroll_changed(double);
 
 	String _get_root_playback_path(String& r_node_directory);
@@ -288,7 +287,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	Ref<StyleBox> _adjust_stylebox_opacity(Ref<StyleBox> p_style, float p_opacity);
 
 protected:
-	static void _bind_methods();
 
 public:
 	static AnimationNodeStateMachineEditor* get_singleton() { return singleton; }

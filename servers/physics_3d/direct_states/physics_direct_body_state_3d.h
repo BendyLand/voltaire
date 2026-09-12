@@ -36,7 +36,6 @@
 class PhysicsDirectBodyState3D
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Vector3 get_total_gravity() const = 0;

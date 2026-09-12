@@ -75,7 +75,6 @@ class EditorAssetInstaller : public ConfirmationDialog
 	void _target_dir_selected(const String& p_target_path);
 
 	void _update_file_mappings();
-	void _rebuild_source_tree();
 	void _update_source_tree();
 	bool _update_source_item_status(TreeItem* p_item, const String& p_path);
 	void _rebuild_destination_tree();
@@ -84,7 +83,6 @@ class EditorAssetInstaller : public ConfirmationDialog
 	TreeItem* _create_file_item(
 		Tree* p_tree, TreeItem* p_parent, const String& p_path, int* r_conflicts);
 
-	void _update_conflict_status(int p_conflicts);
 	void _update_confirm_button();
 	void _toggle_source_tree(bool p_visible, bool p_scroll_to_error = false);
 

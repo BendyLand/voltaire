@@ -104,7 +104,6 @@ void AudioEffectPhaser::set_depth(float p_depth) { depth = p_depth; }
 
 float AudioEffectPhaser::get_depth() const { return depth; }
 
-void AudioEffectPhaser::_bind_methods() {}
 
 AudioEffectPhaser::AudioEffectPhaser()
 {

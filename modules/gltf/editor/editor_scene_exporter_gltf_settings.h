@@ -41,7 +41,6 @@ class EditorSceneExporterGLTFSettings : public RefCounted
 	double _bake_fps = 30.0;
 
 protected:
-	static void _bind_methods();
 	void _on_extension_property_list_changed();
 
 public:

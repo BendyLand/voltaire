@@ -406,7 +406,6 @@ void GPUParticles2D::_draw_emission_gizmo()
 }
 #endif
 
-void GPUParticles2D::_bind_methods() {}
 
 GPUParticles2D::GPUParticles2D()
 {

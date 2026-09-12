@@ -203,7 +203,6 @@ protected:
 	void set_canvas_item_use_identity_transform(bool p_enable);
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _draw_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -325,13 +324,8 @@ public:
 
 	void update_draw_order();
 
-	/* VISIBILITY */
-
-	void set_visible(bool p_visible);
 	bool is_visible() const;
 	bool is_visible_in_tree() const;
-	void show();
-	void hide();
 
 	void move_to_front();
 
@@ -563,7 +557,6 @@ class CanvasTexture : public Texture2D
 	CanvasItem::TextureRepeat texture_repeat = CanvasItem::TEXTURE_REPEAT_PARENT_NODE;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_diffuse_texture(const Ref<Texture2D>& p_diffuse);

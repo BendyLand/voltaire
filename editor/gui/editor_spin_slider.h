@@ -103,7 +103,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	void _grabber_mouse_entered();
 	void _grabber_mouse_exited();
 	void _focus_entered(bool p_hide_focus = false);

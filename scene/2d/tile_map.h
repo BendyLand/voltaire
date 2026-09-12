@@ -101,7 +101,6 @@ protected:
 	}
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	Rect2i _get_used_rect_bind_compat_78328();

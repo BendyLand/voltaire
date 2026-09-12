@@ -68,41 +68,33 @@ class AnimationTreeEditor : public EditorDock
 	Vector<AnimationTreeNodeEditorPlugin*> editors;
 
 	void _update_path();
-	void _clear_editors();
 
 	void _path_button_pressed(int p_path);
 	void _animation_list_changed();
 
 	void _toggle_error_panel();
-	void _update_error_message();
 
 	static LocalVector<StringName> get_animation_list();
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node* p_node);
 
 	static AnimationTreeEditor* singleton;
 
 public:
 	AnimationTree* get_animation_tree() { return tree; }
 
-	void add_plugin(AnimationTreeNodeEditorPlugin* p_editor);
 	void remove_plugin(AnimationTreeNodeEditorPlugin* p_editor);
 
 	String get_base_path();
 
 	bool can_edit(const Ref<AnimationNode>& p_node) const;
 
-	void edit_path(const Vector<String>& p_path);
 	Vector<String> get_edited_path() const;
-
-	void enter_editor(const String& p_path = "");
 
 	static AnimationTreeEditor* get_singleton() { return singleton; }
 
 	void edit(AnimationTree* p_tree);
-	AnimationTreeEditor();
 };
 
 class AnimationTreeEditorPlugin : public EditorPlugin

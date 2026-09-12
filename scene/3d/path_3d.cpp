@@ -153,7 +153,6 @@ Transform3D PathFollow3D::correct_posture(
 	return t;
 }
 
-void PathFollow3D::_bind_methods() {}
 
 void PathFollow3D::set_progress(real_t p_progress)
 {

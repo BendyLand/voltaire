@@ -70,7 +70,6 @@ protected:
 
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	bool _rounded_values = false;
 

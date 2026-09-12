@@ -83,8 +83,6 @@ private:
 	ScrollMode horizontal_scroll_mode = SCROLL_MODE_AUTO;
 	ScrollMode vertical_scroll_mode = SCROLL_MODE_AUTO;
 
-	void _update_scroll_hints();
-
 	int deadzone = 0;
 	bool follow_focus = false;
 	int scroll_border = 20;
@@ -136,7 +134,6 @@ protected:
 	void _reposition_children();
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	bool _updating_scrollbars = false;
 	void _update_scrollbar_position();
@@ -167,7 +164,6 @@ public:
 	void set_deadzone(int p_deadzone);
 	int get_deadzone() const;
 
-	void set_scroll_hint_mode(ScrollHintMode p_mode);
 	ScrollHintMode get_scroll_hint_mode() const;
 
 	void set_tile_scroll_hint(bool p_enable);

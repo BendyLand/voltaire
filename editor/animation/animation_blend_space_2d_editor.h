@@ -125,7 +125,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 	void _start_inline_edit(int p_point);
 	void _cancel_inline_edit();
 	void _inline_editor_text_changed(const String& p_text);
-	void _open_editor();
 	void _index_edit_focus_entered();
 	void _index_edit_focus_exited();
 	void _index_focus_cooldown_timeout();
@@ -149,7 +148,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static AnimationNodeBlendSpace2DEditor* get_singleton() { return singleton; }

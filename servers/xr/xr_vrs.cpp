@@ -33,7 +33,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "xr_vrs.h"
 
-void XRVRS::_bind_methods() {}
 
 XRVRS::~XRVRS()
 {

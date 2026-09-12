@@ -58,7 +58,6 @@ protected:
 
 	OpenXRActionSet* action_set = nullptr; // action belongs to this action set.
 
-	static void _bind_methods();
 
 public:
 	static Ref<OpenXRAction> new_action(const char* p_name, const char* p_localized_name,

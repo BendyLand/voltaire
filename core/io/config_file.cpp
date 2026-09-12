@@ -130,5 +130,4 @@ Error ConfigFile::load_encrypted_pass(const String& p_path, const String& p_pass
 	return _internal_load(p_path, fae);
 }
 
-void ConfigFile::_bind_methods() {}
 

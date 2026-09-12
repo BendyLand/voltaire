@@ -43,7 +43,6 @@ void EditorExport::save_presets()
 	save_timer->start();
 }
 
-void EditorExport::_bind_methods() {}
 
 void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {

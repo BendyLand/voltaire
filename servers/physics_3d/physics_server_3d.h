@@ -55,7 +55,6 @@ class PhysicsServer3D
 		const Ref<PhysicsTestMotionResult3D>& p_result = Ref<PhysicsTestMotionResult3D>());
 
 protected:
-	static void _bind_methods();
 
 public:
 	static PhysicsServer3D* get_singleton();
@@ -421,7 +420,6 @@ class PhysicsServer3DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

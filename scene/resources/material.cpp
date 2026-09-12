@@ -96,7 +96,6 @@ Ref<Resource> Material::create_placeholder() const
 	return placeholder;
 }
 
-void Material::_bind_methods() {}
 
 Material::Material() { render_priority = 0; }
 
@@ -2312,7 +2311,6 @@ RID BaseMaterial3D::get_shader_rid() const
 
 Shader::Mode BaseMaterial3D::get_shader_mode() const { return Shader::MODE_SPATIAL; }
 
-void BaseMaterial3D::_bind_methods() {}
 
 BaseMaterial3D::BaseMaterial3D(bool p_orm) : element(this)
 {

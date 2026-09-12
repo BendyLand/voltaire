@@ -115,7 +115,6 @@ private:
 #endif
 
 protected:
-	static void _bind_methods();
 
 public:
 	enum
@@ -252,7 +251,6 @@ protected:
 		return false;
 	} // this is handled by editor better
 
-	static void _bind_methods();
 	virtual void reset_state() override;
 
 public:

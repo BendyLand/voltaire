@@ -4208,8 +4208,6 @@ void Image::optimize_channels()
 	}
 }
 
-void Image::_bind_methods() {}
-
 void Image::normal_map_to_xy()
 {
 	convert(Image::FORMAT_RGBA8);

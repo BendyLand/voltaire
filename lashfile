@@ -14,6 +14,10 @@ todo:
 	todo -li
 
 summary:
+	if [[ ! -f errs ]]; then
+		echo "Missing first error file. Try linking first."
+		exit
+	fi
 	if [[ -f errs2 ]]; then
 		awk -F "undefined reference to \`" 'NF>1 {print $2}' errs2 | sed "s/'$//" | sort | uniq -c | sort -nr > errs3
 	else

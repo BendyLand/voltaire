@@ -137,7 +137,6 @@ void ArrayOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32
 	r_indices = indices;
 }
 
-void ArrayOccluder3D::_bind_methods() {}
 
 ArrayOccluder3D::ArrayOccluder3D() {}
 
@@ -171,7 +170,6 @@ void QuadOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32A
 	r_indices = {0, 1, 2, 0, 2, 3};
 }
 
-void QuadOccluder3D::_bind_methods() {}
 
 QuadOccluder3D::QuadOccluder3D() {}
 
@@ -222,7 +220,6 @@ void BoxOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Ar
 		3, 2, 6, 6, 7, 3};
 }
 
-void BoxOccluder3D::_bind_methods() {}
 
 BoxOccluder3D::BoxOccluder3D() {}
 
@@ -284,7 +281,6 @@ void SphereOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt3
 	}
 }
 
-void SphereOccluder3D::_bind_methods() {}
 
 SphereOccluder3D::SphereOccluder3D() {}
 
@@ -335,7 +331,6 @@ void PolygonOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt
 
 bool PolygonOccluder3D::_has_editable_3d_polygon_no_depth() const { return false; }
 
-void PolygonOccluder3D::_bind_methods() {}
 
 PolygonOccluder3D::PolygonOccluder3D() {}
 
@@ -503,7 +498,6 @@ bool OccluderInstance3D::_is_editable_3d_polygon() const
 
 Ref<Resource> OccluderInstance3D::_get_editable_3d_polygon_resource() const { return occluder; }
 
-void OccluderInstance3D::_bind_methods() {}
 
 OccluderInstance3D::OccluderInstance3D() {}
 

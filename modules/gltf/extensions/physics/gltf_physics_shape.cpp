@@ -39,7 +39,6 @@
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/sphere_shape_3d.h"
 
-void GLTFPhysicsShape::_bind_methods() {}
 
 String GLTFPhysicsShape::get_shape_type() const { return shape_type; }
 

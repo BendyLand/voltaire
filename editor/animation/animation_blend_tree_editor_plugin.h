@@ -101,7 +101,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	bool updating = false;
 
 	void _scroll_changed(const Vector2& p_scroll);
-	void _open_in_editor(const String& p_which);
 
 	void _filter_fill_selection_recursive(
 		EditorUndoRedoManager* p_undo_redo, TreeItem* p_item, bool p_parent_filtered);
@@ -133,7 +132,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	Ref<Tween> pan_to_tween;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static AnimationNodeBlendTreeEditor* get_singleton() { return singleton; }
