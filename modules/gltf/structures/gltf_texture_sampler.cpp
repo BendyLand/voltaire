@@ -31,4 +31,3 @@
 #include "gltf_texture_sampler.h"
 
 
-void GLTFTextureSampler::_bind_methods() {}

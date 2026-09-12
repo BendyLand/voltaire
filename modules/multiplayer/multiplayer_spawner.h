@@ -70,7 +70,6 @@ private:
 	void _set_spawnable_scenes(const Vector<String>& p_scenes);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -82,7 +81,6 @@ public:
 	void clear_spawnable_scenes();
 
 	NodePath get_spawn_path() const;
-	void set_spawn_path(const NodePath& p_path);
 
 	uint32_t get_spawn_limit() const { return spawn_limit; }
 

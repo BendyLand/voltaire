@@ -53,34 +53,6 @@ bool EditorSelectionHistory::is_at_end() const
 	return ((current_elem_idx + 1) >= history.size());
 }
 
-bool EditorSelectionHistory::next()
-{
-	cleanup_history();
-
-	if ((current_elem_idx + 1) < history.size()) {
-		current_elem_idx++;
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool EditorSelectionHistory::previous()
-{
-	cleanup_history();
-
-	if (current_elem_idx > 0) {
-		current_elem_idx--;
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
 bool EditorSelectionHistory::is_current_inspector_only() const
 {
 	if (current_elem_idx < 0 || current_elem_idx >= history.size()) {
@@ -118,8 +90,6 @@ void EditorSelectionHistory::clear()
 
 EditorSelectionHistory::EditorSelectionHistory() { current_elem_idx = -1; }
 
-////////////////////////////////////////////////////////////
-
 EditorPlugin* EditorData::get_editor_by_name(const String& p_name)
 {
 	for (int i = editor_plugins.size() - 1; i > -1; i--) {
@@ -135,28 +105,6 @@ void EditorData::get_editor_breakpoints(List<String>* p_breakpoints)
 {
 	for (int i = 0; i < editor_plugins.size(); i++) {
 		editor_plugins[i]->get_breakpoints(p_breakpoints);
-	}
-}
-
-void EditorData::notify_edited_scene_changed()
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->edited_scene_changed();
-		editor_plugins[i]->notify_scene_changed(get_edited_scene_root());
-	}
-}
-
-void EditorData::notify_resource_saved(const Ref<Resource>& p_resource)
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->notify_resource_saved(p_resource);
-	}
-}
-
-void EditorData::notify_scene_saved(const String& p_path)
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->notify_scene_saved(p_path);
 	}
 }
 
@@ -355,68 +303,6 @@ bool EditorData::_find_updated_instances(Node* p_root, Node* p_node, HashSet<Str
 	}
 
 	return false;
-}
-
-bool EditorData::check_and_update_scene(int p_idx)
-{
-	ERR_FAIL_INDEX_V(p_idx, edited_scene.size(), false);
-	if (!edited_scene[p_idx].root) {
-		return false;
-	}
-
-	HashSet<String> checked_scenes;
-
-	bool must_reload =
-		_find_updated_instances(edited_scene[p_idx].root, edited_scene[p_idx].root, checked_scenes);
-
-	if (must_reload) {
-		reload_scene_from_memory(p_idx, false);
-
-		return true;
-	}
-
-	return false;
-}
-
-bool EditorData::reload_scene_from_memory(int p_idx, bool p_mark_unsaved)
-{
-	ERR_FAIL_INDEX_V(p_idx, edited_scene.size(), false);
-	if (!edited_scene[p_idx].root) {
-		return false;
-	}
-
-	Ref<PackedScene> pscene;
-	pscene.instantiate();
-
-	EditorProgress ep("update_scene", TTR("Updating Scene"), 2);
-	ep.step(TTR("Storing local changes..."), 0);
-	// Pack first, so it stores diffs to previous version of saved scene.
-	Error err = pscene->pack(edited_scene[p_idx].root);
-	ERR_FAIL_COND_V(err != OK, false);
-	ep.step(TTR("Updating scene..."), 1);
-	Node* new_scene = pscene->instantiate(PackedScene::GEN_EDIT_STATE_MAIN);
-	ERR_FAIL_NULL_V(new_scene, false);
-
-	// Transfer selection.
-	List<Node*> new_selection;
-	for (const Node* E : edited_scene.write[p_idx].selection) {
-		NodePath p = edited_scene[p_idx].root->get_path_to(E);
-		Node* new_node = new_scene->get_node(p);
-		if (new_node) {
-			new_selection.push_back(new_node);
-		}
-	}
-
-	new_scene->set_scene_file_path(edited_scene[p_idx].root->get_scene_file_path());
-	Node* old_root = edited_scene[p_idx].root;
-	EditorNode::get_singleton()->set_edited_scene(new_scene);
-	memdelete(old_root);
-	edited_scene.write[p_idx].selection = new_selection;
-
-	if (p_mark_unsaved) {
-		EditorUndoRedoManager::get_singleton()->clear_history(get_scene_history_id(p_idx));
-	}
-	return true;
 }
 
 void EditorData::move_scene_to_index(int p_idx, int p_to_idx)
@@ -639,21 +525,12 @@ Ref<Texture2D> EditorData::_load_script_icon(const String& p_path) const
 
 void EditorData::clear_script_icon_cache() { _script_icon_cache.clear(); }
 
-EditorData::EditorData()
-{
-	undo_redo_manager = memnew(EditorUndoRedoManager);
-	script_class_load_icon_paths();
-}
 
 EditorData::~EditorData() { memdelete(undo_redo_manager); }
-
-///////////////////////////////////////////////////////////////////////////////
 
 Ref<Texture2D> EditorData::extension_class_get_icon(const String& p_class) const
 {
 	return Ref<Texture2D>();
 }
-
-EditorSelection::~EditorSelection() { clear(); }
 
 

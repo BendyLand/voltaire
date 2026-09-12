@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "core/types.h"
 
 class InputEvent;
@@ -77,7 +76,6 @@ public:
 	HashMap<String, ContextMenuItem> context_menu_items;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void get_options(const Vector<String>& p_paths);
@@ -103,8 +101,6 @@ public:
 	void remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
 
 	bool has_plugins_for_slot(ContextMenuSlot p_slot);
-	void add_options_from_plugins(PopupMenu* p_popup, ContextMenuSlot p_slot,
-		const Vector<String>& p_paths, int p_id_offset = 0);
 
 	static void create();
 	static void cleanup();

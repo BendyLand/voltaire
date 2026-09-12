@@ -44,7 +44,6 @@ public:
 	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialComponentTypeEXT> anchor_enabled_components;
@@ -59,7 +58,6 @@ private:
 class OpenXRSpatialComponentAnchorList : public OpenXRSpatialComponentData
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
@@ -87,7 +85,6 @@ public:
 	void remove_persistence_context(RID p_persistence_context);
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<RID> persistence_contexts;
@@ -101,7 +98,6 @@ private:
 class OpenXRSpatialComponentPersistenceList : public OpenXRSpatialComponentData
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void set_capacity(uint32_t p_capacity) override;
@@ -127,7 +123,6 @@ private:
 class OpenXRAnchorTracker : public OpenXRSpatialEntityTracker
 {
 protected:
-	static void _bind_methods();
 
 public:
 	bool has_uuid() const;
@@ -186,7 +181,6 @@ public:
 		XrSpatialPersistenceContextResultEXT p_result);
 
 protected:
-	static void _bind_methods();
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 	Ref<OpenXRAnchorTracker> _create_new_anchor_bind_compat_118128(

@@ -133,35 +133,6 @@ bool EmbeddedProcess::is_process_focused() const
 
 int EmbeddedProcess::get_embedded_pid() const { return current_process_id; }
 
-void EmbeddedProcess::embed_process(ProcessID p_pid)
-{
-	if (!window) {
-		return;
-	}
-
-	ERR_FAIL_COND_MSG(
-		!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_WINDOW_EMBEDDING),
-		"Embedded process not supported by this display server.");
-
-	if (current_process_id != 0) {
-		// Stop embedding the last process.
-		OS::get_singleton()->kill(current_process_id);
-	}
-
-	reset();
-
-	current_process_id = p_pid;
-	start_embedding_time = OS::get_singleton()->get_ticks_msec();
-	embedding_grab_focus = has_focus();
-	timer_update_embedded_process->start();
-	set_process(true);
-	set_notify_transform(true);
-
-	// Attempt to embed the process, but if it has just started and the window is not ready yet,
-	// we will retry in this case.
-	_try_embed_process();
-}
-
 void EmbeddedProcess::reset_timers()
 {
 	timer_embedding->stop();

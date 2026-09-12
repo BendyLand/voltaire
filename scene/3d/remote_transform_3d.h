@@ -45,11 +45,9 @@ class RemoteTransform3D : public Node3D
 	void _update_cache();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_remote_node(const NodePath& p_remote_node);
 	NodePath get_remote_node() const;
 
 	void set_use_global_coordinates(const bool p_enable);

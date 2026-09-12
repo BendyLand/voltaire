@@ -46,8 +46,6 @@ static int _get_pad(int p_alignment, int p_n)
 	return pad;
 }
 
-void PCKPacker::_bind_methods() {}
-
 Error PCKPacker::pck_start(
 	const String& p_pck_path, int p_alignment, const String& p_key, bool p_encrypt_directory)
 {

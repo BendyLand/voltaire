@@ -36,7 +36,6 @@
 class CryptoKey : public Resource
 {
 protected:
-	static void _bind_methods();
 	static CryptoKey* (*_create)(bool p_notify_postinitialize);
 
 public:
@@ -51,7 +50,6 @@ public:
 class X509Certificate : public Resource
 {
 protected:
-	static void _bind_methods();
 	static X509Certificate* (*_create)(bool p_notify_postinitialize);
 
 public:
@@ -80,7 +78,6 @@ private:
 	Ref<CryptoKey> private_key;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static Ref<TLSOptions> client(Ref<X509Certificate> p_trusted_chain = Ref<X509Certificate>(),
@@ -104,7 +101,6 @@ public:
 class HMACContext : public RefCounted
 {
 protected:
-	static void _bind_methods();
 	static HMACContext* (*_create)(bool p_notify_postinitialize);
 
 public:
@@ -120,7 +116,6 @@ public:
 class Crypto : public RefCounted
 {
 protected:
-	static void _bind_methods();
 	static Crypto* (*_create)(bool p_notify_postinitialize);
 	static void (*_load_default_certificates)(const String& p_path);
 

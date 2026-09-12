@@ -212,7 +212,6 @@ private:
 	/// Message handler function for _parse_message.
 	static void _init_parse_message_handlers();
 
-	void _set_reason_text(const String& p_reason, MessageType p_type);
 	void _update_reason_content_height();
 	void _update_buttons_state();
 
@@ -234,7 +233,6 @@ private:
 	void _expand_errors_list();
 	void _collapse_errors_list();
 
-	void _vmem_item_activated();
 	void _vmem_tree_rmb_selected(const Vector2& p_pos, MouseButton p_button);
 	void _vmem_item_menu_id_pressed(int p_option);
 
@@ -243,15 +241,12 @@ private:
 
 	void _clear_errors_list();
 
-	void _breakpoints_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
-	void _error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
 	void _item_menu_id_pressed(int p_option);
 	void _tab_changed(int p_tab);
 
 	void _export_csv();
 
 	void _clear_execution();
-	void _stop_and_notify();
 
 	void _set_breakpoint(const String& p_path, const int& p_line, const bool& p_enabled);
 	void _clear_breakpoints();
@@ -263,7 +258,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	enum EmbedShortcutAction
@@ -284,8 +278,6 @@ public:
 	const SceneDebuggerTree* get_remote_tree();
 
 	void request_remote_evaluate(const String& p_expression, int p_stack_frame);
-
-	void stop();
 
 	void debug_skip_breakpoints();
 	void debug_ignore_error_breaks();
@@ -339,8 +331,6 @@ public:
 
 	EditorDebuggerNode::CameraOverride get_camera_override() const;
 	void set_camera_override(EditorDebuggerNode::CameraOverride p_override);
-
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
 
 	void update_live_edit_root();
 

@@ -32,7 +32,6 @@
 
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 
@@ -42,7 +41,6 @@ class Texture2D;
 class EditorResourcePreviewGenerator : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 	class DrawRequester
 	{
@@ -69,8 +67,7 @@ public:
 
 class EditorResourcePreview : public Node
 {
-	static constexpr int CURRENT_METADATA_VERSION =
-		1; // Increment this number to invalidate all previews.
+	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
 	inline static EditorResourcePreview* singleton = nullptr;
 
 	struct QueueItem
@@ -106,11 +103,8 @@ class EditorResourcePreview : public Node
 
 	Vector<Ref<EditorResourcePreviewGenerator>> preview_generators;
 
-	void _update_thumbnail_sizes();
-
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static EditorResourcePreview* get_singleton();

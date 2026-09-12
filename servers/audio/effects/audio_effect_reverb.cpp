@@ -126,7 +126,6 @@ float AudioEffectReverb::get_wet() const { return wet; }
 
 float AudioEffectReverb::get_hpf() const { return hpf; }
 
-void AudioEffectReverb::_bind_methods() {}
 
 AudioEffectReverb::AudioEffectReverb()
 {

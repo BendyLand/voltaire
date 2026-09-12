@@ -35,26 +35,6 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-void BaseButton::_unpress_group()
-{
-	if (button_group.is_null()) {
-		return;
-	}
-
-	if (toggle_mode && !button_group->is_allow_unpress()) {
-		status.pressed = true;
-		queue_accessibility_update();
-	}
-
-	for (BaseButton* E : button_group->buttons) {
-		if (E == this) {
-			continue;
-		}
-
-		E->set_pressed(false);
-	}
-}
-
 bool BaseButton::is_disabled() const { return status.disabled; }
 
 bool BaseButton::is_pressing() const { return status.press_attempt; }
@@ -107,18 +87,6 @@ bool BaseButton::has_point(const Point2& p_point) const
 	ERR_READ_THREAD_GUARD_V(false);
 	Rect2 rect = Rect2(Point2(), get_size()).grow(theme_cache.click_margin);
 	return rect.has_area() && rect.has_point(p_point);
-}
-
-void BaseButton::set_toggle_mode(bool p_on)
-{
-	// Make sure to set 'pressed' to false if we are not in toggle mode
-	if (!p_on) {
-		set_pressed(false);
-	}
-	queue_accessibility_update();
-
-	toggle_mode = p_on;
-	update_configuration_warnings();
 }
 
 bool BaseButton::is_toggle_mode() const { return toggle_mode; }

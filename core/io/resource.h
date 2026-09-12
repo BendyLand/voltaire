@@ -87,7 +87,7 @@ private:
 	friend class SceneState;
 	Node* local_scene = nullptr;
 
-	SelfList<Resource> remapped_list;
+	SelfList<Resource> remapped_list = { this };
 
 	using DuplicateRemapCacheT = HashMap<Ref<Resource>, Ref<Resource>>;
 	static thread_local inline DuplicateRemapCacheT* thread_duplicate_remap_cache = nullptr;
@@ -95,7 +95,6 @@ private:
 
 protected:
 	virtual void _resource_path_changed();
-	static void _bind_methods();
 
 	void _block_emit_changed();
 	void _unblock_emit_changed();
@@ -140,7 +139,6 @@ public:
 	void set_scene_unique_id(const String& p_id);
 	String get_scene_unique_id() const;
 
-	Ref<Resource> duplicate(bool p_deep = false) const;
 	void configure_for_local_scene(
 		Node* p_for_scene, HashMap<Ref<Resource>, Ref<Resource>>& p_remap_cache);
 
@@ -166,7 +164,7 @@ public:
 
 	String get_id_for_path(const String& p_referrer_path) const;
 
-	Resource();
+	Resource() = default;
 	~Resource();
 };
 

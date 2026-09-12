@@ -43,7 +43,6 @@ class KinematicCollision2D : public RefCounted
 	PS2DT::MotionResult result;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Vector2 get_position() const;

@@ -78,7 +78,6 @@ public:
 	void set_accept_button(Button* p_button);
 
 	void update();
-	void set_message(int p_id, const String& p_text, MessageType p_type, bool p_auto_prefix = true);
 	bool is_valid() const;
 
 	EditorValidationPanel();

@@ -63,18 +63,23 @@ class ColorPresetButton : public BaseButton
 
 		Ref<Texture2D> background_icon;
 		Ref<Texture2D> overbright_indicator;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 protected:
 	void _notification(int);
-	static void _bind_methods();
 
 public:
 	void set_preset_color(const Color& p_color);
 	Color get_preset_color() const;
 
-	ColorPresetButton(Color p_color, int p_size, bool p_recent);
-	~ColorPresetButton();
+	ColorPresetButton(Color p_color, int p_size, bool p_recent)
+		: preset_color(p_color), recent(p_recent)
+	{
+	}
+
+	~ColorPresetButton() = default;
 };
 
 class ColorPicker : public VBoxContainer
@@ -341,7 +346,9 @@ private:
 		Ref<StyleBox> mode_button_pressed;
 		Ref<StyleBox> mode_button_hover;
 		Ref<StyleBox> mode_button_hover_pressed;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _copy_normalized_to_hsv_okhsl();
 	void _copy_hsv_okhsl_to_normalized();
@@ -350,66 +357,23 @@ private:
 	void _normalized_apply_intensity_to_color();
 	void _copy_color_to_normalized_and_intensity();
 
-	void create_slider(GridContainer* gc, int idx);
 	void _reset_sliders_theme();
-	void _html_submitted(const String& p_html);
 	void _slider_drag_started();
-	void _slider_value_changed();
-	void _slider_drag_ended();
-	void _update_controls();
-	void _update_color(bool p_update_sliders = true);
-	void _update_text_value();
-#ifdef TOOLS_ENABLED
-	void _text_type_toggled();
-#endif // TOOLS_ENABLED
 	void _text_copy_pressed();
-	void _sample_input(const Ref<InputEvent>& p_event);
 	void _sample_draw();
 	void _slider_draw(int p_which);
 	void _alpha_slider_draw();
 
-	void _slider_or_spin_input(const Ref<InputEvent>& p_event);
 	void _line_edit_input(const Ref<InputEvent>& p_event);
-	void _preset_input(const Ref<InputEvent>& p_event, const Color& p_color);
-	void _recent_preset_pressed(const bool pressed, ColorPresetButton* p_preset);
 	void _text_changed(const String& p_new_text);
-	void _add_preset_pressed();
-	void _html_focus_exit();
-	void _pick_button_pressed();
-	void _target_gui_input(const Ref<InputEvent>& p_event);
-	void _pick_finished();
-	void _update_menu_items();
-	void _options_menu_cbk(int p_which);
 	void _block_input_on_popup_show();
 	void _enable_input_on_popup_hide();
 
-	// Native color picking.
-	void _pick_button_pressed_native();
-	void _native_cb(bool p_status, const Color& p_color);
-
-	// Legacy color picking.
-	void _pick_button_pressed_legacy();
-	void _picker_texture_input(const Ref<InputEvent>& p_event);
-
 	inline int _get_preset_size();
-	void _add_preset_button(int p_size, const Color& p_color);
-	void _add_recent_preset_button(int p_size, const Color& p_color);
-	void _save_palette(bool p_is_save_as);
 	void _load_palette();
-
-	void _show_hide_preset(
-		const bool& p_is_btn_pressed, Button* p_btn_preset, Container* p_preset_container);
-	void _update_drop_down_arrow(const bool& p_is_btn_pressed, Button* p_btn_preset);
-
-	void _set_mode_popup_value(ColorModeType p_mode);
-
-	void _ensure_file_dialog();
 
 protected:
 	virtual void _update_theme_item_cache() override;
-
-	void _notification(int);
-	static void _bind_methods();
 
 public:
 	GridContainer* get_slider_container();
@@ -419,39 +383,23 @@ public:
 	void add_mode(ColorMode* p_mode);
 	void add_shape(ColorPickerShape* p_shape);
 
-	void set_edit_alpha(bool p_show);
 	bool is_editing_alpha() const;
 
-	void set_edit_intensity(bool p_show);
 	bool is_editing_intensity() const;
 
-	void _set_pick_color(const Color& p_color, bool p_update_sliders, bool p_calc_intensity);
-	void set_pick_color(const Color& p_color);
 	Color get_pick_color() const;
 	void set_old_color(const Color& p_color);
-	Color get_old_color() const;
 
-	void _palette_file_selected(const String& p_path);
+	Color get_old_color() const;
 
 	void set_display_old_color(bool p_enabled);
 	bool is_displaying_old_color() const;
 
-	void set_picker_shape(PickerShapeType p_shape);
 	PickerShapeType get_picker_shape() const;
 
-	void add_preset(const Color& p_color);
-	void add_recent_preset(const Color& p_color);
-	void erase_preset(const Color& p_color);
-	void erase_recent_preset(const Color& p_color);
 	PackedColorArray get_presets() const;
 	PackedColorArray get_recent_presets() const;
-	void _update_presets();
-	void _update_recent_presets();
 
-	void _select_from_preset_container(const Color& p_color);
-	bool _select_from_recent_preset_hbc(const Color& p_color);
-
-	void set_color_mode(ColorModeType p_mode);
 	ColorModeType get_color_mode() const;
 
 	void set_colorize_sliders(bool p_colorize_sliders);
@@ -460,28 +408,21 @@ public:
 	void set_deferred_mode(bool p_enabled);
 	bool is_deferred_mode() const;
 
-	void set_can_add_swatches(bool p_enabled);
 	bool are_swatches_enabled() const;
 
-	void set_presets_visible(bool p_visible);
 	bool are_presets_visible() const;
 
-	void set_modes_visible(bool p_visible);
 	bool are_modes_visible() const;
 
-	void set_sampler_visible(bool p_visible);
 	bool is_sampler_visible() const;
 
-	void set_sliders_visible(bool p_visible);
 	bool are_sliders_visible() const;
 
-	void set_hex_visible(bool p_visible);
 	bool is_hex_visible() const;
 
-	void set_focus_on_line_edit();
 	void set_focus_on_picker_shape();
 
-	ColorPicker();
+	ColorPicker() = default;
 	~ColorPicker();
 };
 
@@ -509,34 +450,21 @@ class ColorPickerButton : public Button
 		Ref<Texture2D> background_icon;
 
 		Ref<Texture2D> overbright_indicator;
-	} theme_cache;
+	};
 
-	void _about_to_popup();
-	void _color_changed(const Color& p_color);
-	void _modal_closed();
-
-	virtual void pressed() override;
-
-	void _update_picker();
+	ThemeCache theme_cache;
 
 protected:
 	void _notification(int);
-	static void _bind_methods();
 
 public:
-	void set_pick_color(const Color& p_color);
 	Color get_pick_color() const;
 
-	void set_edit_alpha(bool p_show);
 	bool is_editing_alpha() const;
 
-	void set_edit_intensity(bool p_show);
 	bool is_editing_intensity() const;
 
-	ColorPicker* get_picker();
-	PopupPanel* get_popup();
-
-	ColorPickerButton(const String& p_text = String());
+	ColorPickerButton(const String& p_text = String()) : Button(p_text) {}
 };
 
 

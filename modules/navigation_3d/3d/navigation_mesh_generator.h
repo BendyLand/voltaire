@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/resources/navigation_mesh.h"
 
 class NavigationMeshSourceGeometryData3D;
@@ -40,7 +39,6 @@ class NavigationMeshGenerator
 	static NavigationMeshGenerator* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static NavigationMeshGenerator* get_singleton();

@@ -417,16 +417,6 @@ void SceneTreeEditor::_empty_clicked(const Vector2& p_pos, MouseButton p_button)
 	_rmb_select(p_pos);
 }
 
-void SceneTreeEditor::update_warning() { _warning_changed(nullptr); }
-
-void SceneTreeEditor::_warning_changed(Node* p_for_node)
-{
-	node_cache.mark_dirty(p_for_node);
-
-	// Should use a timer.
-	update_timer->start();
-}
-
 void SceneTreeEditor::set_connect_to_script_mode(bool p_enable)
 {
 	connect_to_script_mode = p_enable;
@@ -445,7 +435,6 @@ void SceneTreeEditor::set_update_when_invisible(bool p_enable)
 	_update_tree();
 }
 
-void SceneTreeEditor::_bind_methods() {}
 
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
 
@@ -462,7 +451,6 @@ void SceneTreeDialog::_cancel() { hide(); }
 
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
 
-void SceneTreeDialog::_bind_methods() {}
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
 

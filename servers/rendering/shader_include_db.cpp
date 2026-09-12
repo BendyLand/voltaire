@@ -32,7 +32,6 @@
 
 HashMap<String, String> ShaderIncludeDB::built_in_includes;
 
-void ShaderIncludeDB::_bind_methods() {}
 
 void ShaderIncludeDB::register_built_in_include_file(
 	const String& p_filename, const String& p_shader_code)

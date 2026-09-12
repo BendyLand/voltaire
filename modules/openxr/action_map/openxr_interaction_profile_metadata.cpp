@@ -42,7 +42,6 @@ OpenXRInteractionProfileMetadata::OpenXRInteractionProfileMetadata()
 
 OpenXRInteractionProfileMetadata::~OpenXRInteractionProfileMetadata() { singleton = nullptr; }
 
-void OpenXRInteractionProfileMetadata::_bind_methods() {}
 
 void OpenXRInteractionProfileMetadata::register_profile_rename(
 	const String& p_old_name, const String& p_new_name)

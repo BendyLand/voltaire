@@ -31,7 +31,6 @@
 #include "curve_texture.h"
 #include "servers/rendering/rendering_server.h"
 
-void CurveTexture::_bind_methods() {}
 
 void CurveTexture::set_width(int p_width)
 {
@@ -92,7 +91,6 @@ CurveTexture::~CurveTexture()
 
 //////////////////
 
-void CurveXYZTexture::_bind_methods() {}
 
 void CurveXYZTexture::set_width(int p_width)
 {

@@ -82,17 +82,14 @@ private:
 	bool global = true;
 	bool transient = false;
 	bool closable = false;
-
 	DockLayout current_layout;
 	uint32_t available_layouts = DOCK_LAYOUT_VERTICAL | DOCK_LAYOUT_FLOATING;
-
 	bool is_open = false;
 	bool enabled = true;
 	int previous_tab_index = -1;
 	WindowWrapper* dock_window = nullptr;
 	DockTabContainer* parent_dock_container = nullptr;
 	int dock_slot_index = DOCK_SLOT_NONE;
-
 	void _set_default_slot_bind(DockSlot p_slot);
 
 	DockSlot _get_default_slot_bind() const { return default_slot; }
@@ -101,16 +98,8 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void open();
-	void make_visible();
-	void make_floating();
-	void close();
-
-	void set_title(const String& p_title);
-
 	String get_title() const { return title; }
 
 	void set_layout_key(const String& p_key) { layout_key = p_key; }
@@ -145,24 +134,13 @@ public:
 
 	Color get_title_color() const { return title_color; }
 
-	void set_dock_shortcut(const Ref<Shortcut>& p_shortcut);
-	Ref<Shortcut> get_dock_shortcut() const;
-
-	void set_default_slot(DockSlot p_slot);
-
 	DockSlot get_default_slot() const { return default_slot; }
 
 	void set_available_layouts(uint32_t p_layouts) { available_layouts = p_layouts; }
 
 	uint32_t get_available_layouts() const { return available_layouts; }
 
-	String get_display_title() const;
-	String get_effective_layout_key() const;
-
 	DockTabContainer* get_parent_container() const { return parent_dock_container; }
-
-	void set_tab_index(int p_index, bool p_set_current);
-	void update_tab_style();
 
 	DockLayout get_current_layout() const { return current_layout; }
 
@@ -171,6 +149,15 @@ public:
 	virtual void update_layout(DockLayout p_layout, int p_slot)
 	{ /* stub */
 	}
+
+	void set_dock_shortcut(const Ref<Shortcut>& p_shortcut);
+	Ref<Shortcut> get_dock_shortcut() const;
+	void set_default_slot(DockSlot p_slot);
+
+	String get_display_title() const;
+	String get_effective_layout_key() const;
+	void set_tab_index(int p_index, bool p_set_current);
+	void update_tab_style();
 
 	EditorDock();
 };

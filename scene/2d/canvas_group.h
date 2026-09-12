@@ -39,7 +39,6 @@ class CanvasGroup : public Node2D
 	bool use_mipmaps = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_fit_margin(real_t p_fit_margin);

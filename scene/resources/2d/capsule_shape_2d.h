@@ -41,7 +41,6 @@ class CapsuleShape2D : public Shape2D
 	Vector<Vector2> _get_points() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool _edit_is_selected_on_click(

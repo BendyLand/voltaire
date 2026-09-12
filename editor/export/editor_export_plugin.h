@@ -125,7 +125,6 @@ protected:
 	virtual void _end_generate_apple_embedded_project(
 		const String& p_path, bool p_will_build_archive);
 
-	static void _bind_methods();
 
 	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform>& p_platform,
 		const Vector<String>&

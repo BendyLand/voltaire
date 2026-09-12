@@ -32,7 +32,6 @@
 
 #include "core/io/tcp_server.h"
 #include "core/os/thread.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/file_system/editor_file_system.h"
 
 class EditorFileServer
@@ -45,8 +44,6 @@ class EditorFileServer
 		HashMap<String, uint64_t>& files_to_send, HashMap<String, uint64_t>& cached_files);
 
 public:
-	void poll();
-
 	void start();
 	void stop();
 

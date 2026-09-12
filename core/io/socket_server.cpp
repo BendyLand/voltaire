@@ -30,8 +30,6 @@
 
 #include "socket_server.h"
 
-void SocketServer::_bind_methods() {}
-
 Error SocketServer::_listen(const NetSocket::Address& p_addr)
 {
 	DEV_ASSERT(_sock.is_valid());

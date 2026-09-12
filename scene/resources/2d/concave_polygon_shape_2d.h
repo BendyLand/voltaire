@@ -35,7 +35,6 @@
 class ConcavePolygonShape2D : public Shape2D
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool _edit_is_selected_on_click(

@@ -96,7 +96,6 @@ private:
 	void _texture_changed();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 #ifdef TOOLS_ENABLED
 	void _draw_emission_gizmo();
@@ -173,7 +172,6 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	void set_sub_emitter(const NodePath& p_path);
 	NodePath get_sub_emitter() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed);

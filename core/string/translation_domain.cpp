@@ -536,5 +536,4 @@ StringName TranslationDomain::pseudolocalize(const StringName& p_message) const
 	return _add_padding(message, length);
 }
 
-void TranslationDomain::_bind_methods() {}
 

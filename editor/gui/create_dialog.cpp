@@ -46,67 +46,12 @@
 
 void CreateDialog::for_inherit() { allow_abstract_scripts = true; }
 
-bool CreateDialog::_is_type_preferred(const String& p_type) const
-{
-	return EditorNode::get_editor_data().script_class_is_parent(
-		p_type, preferred_search_result_type);
-}
-
 bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName& p_class) const
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
 
 	return profile.is_valid() && profile->is_class_disabled(p_class);
-}
-
-
-
-float CreateDialog::_score_type(const String& p_type, const String& p_search) const
-{
-	if (p_search.is_empty()) {
-		return 0.0f;
-	}
-
-	// Determine the best match for a non-empty search.
-	if (!p_search.is_subsequence_ofn(p_type)) {
-		return -1.0f;
-	}
-
-	if (p_type == p_search) {
-		// Always favor an exact match (case-sensitive), since clicking a favorite will set the
-		// search text to the type.
-		return 1.0f;
-	}
-
-	float inverse_length = 1.f / float(p_type.length());
-
-	// Favor types where search term is a substring close to the start of the type.
-	float w = 0.5f;
-	int pos = p_type.findn(p_search);
-	float score = (pos > -1) ? 1.0f - w * MIN(1, 3 * pos * inverse_length) : MAX(0.f, .9f - w);
-
-	// Favor shorter items: they resemble the search term more.
-	w = 0.9f;
-	score *= (1 - w) + w * MIN(1.0f, p_search.length() * inverse_length);
-
-	score *= _is_type_preferred(p_type) ? 1.0f : 0.9f;
-
-	// Add score for being a favorite type.
-	score *= favorite_list.has(p_type) ? 1.0f : 0.8f;
-
-	// Look through at most 5 recent items
-	bool in_recent = false;
-	constexpr int RECENT_COMPLETION_SIZE = 5;
-	for (int i = 0; i < MIN(RECENT_COMPLETION_SIZE - 1, recent->get_item_count()); i++) {
-		if (recent->get_item_text(i) == p_type) {
-			in_recent = true;
-			break;
-		}
-	}
-	score *= in_recent ? 1.0f : 0.9f;
-
-	return score;
 }
 
 void CreateDialog::_cleanup()
@@ -117,21 +62,6 @@ void CreateDialog::_cleanup()
 	recent->clear();
 	custom_type_parents.clear();
 	custom_type_indices.clear();
-}
-
-void CreateDialog::_reset_filters()
-{
-	if (!types_enabled[TYPE_BUILT_IN]) {
-		_type_filter_toggled(TYPE_BUILT_IN, false);
-	}
-	if (!types_enabled[TYPE_CUSTOM]) {
-		_type_filter_toggled(TYPE_CUSTOM, false);
-	}
-	if (types_enabled[TYPE_EDITOR]) {
-		_type_filter_toggled(TYPE_EDITOR, false);
-	}
-	reset_filters_button->hide();
-	_update_search();
 }
 
 void CreateDialog::_text_changed(const String& p_newtext)
@@ -181,27 +111,6 @@ void CreateDialog::_hide_requested()
 
 void CreateDialog::cancel_pressed() { _cleanup(); }
 
-void CreateDialog::_favorite_toggled()
-{
-	TreeItem* item = search_options->get_selected();
-	if (!item) {
-		return;
-	}
-
-	String name = get_selected_type_name();
-
-	if (favorite_list.has(name)) {
-		favorite_list.erase(name);
-		favorite->set_pressed(false);
-	}
-	else {
-		favorite_list.push_back(name);
-		favorite->set_pressed(true);
-	}
-
-	_save_and_update_favorite_list();
-}
-
 void CreateDialog::_history_selected(int p_idx)
 {
 	search_box->set_text(recent->get_item_text(p_idx));
@@ -231,34 +140,6 @@ void CreateDialog::_favorite_activated()
 {
 	_favorite_selected();
 	_confirmed();
-}
-
-void CreateDialog::_load_favorites_and_history()
-{
-	String dir = EditorPaths::get_singleton()->get_project_settings_dir();
-	Ref<FileAccess> f =
-		FileAccess::open(dir.path_join("create_recent." + base_type), FileAccess::READ);
-	if (f.is_valid()) {
-		while (!f->eof_reached()) {
-			String name = f->get_line().strip_edges();
-
-			if (EditorNode::get_editor_data().is_type_recognized(name) &&
-				!_is_class_disabled_by_feature_profile(name)) {
-				recent->add_item(name, EditorNode::get_singleton()->get_class_icon(name));
-			}
-		}
-	}
-
-	f = FileAccess::open(dir.path_join("favorites." + base_type), FileAccess::READ);
-	if (f.is_valid()) {
-		while (!f->eof_reached()) {
-			String name = f->get_line().strip_edges();
-
-			if (!name.is_empty()) {
-				favorite_list.push_back(name);
-			}
-		}
-	}
 }
 
 

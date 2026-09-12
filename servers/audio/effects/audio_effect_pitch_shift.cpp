@@ -350,6 +350,5 @@ void AudioEffectPitchShift::set_fft_size(FFTSize p_fft_size)
 
 AudioEffectPitchShift::FFTSize AudioEffectPitchShift::get_fft_size() const { return fft_size; }
 
-void AudioEffectPitchShift::_bind_methods() {}
 
 

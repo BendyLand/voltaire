@@ -546,11 +546,6 @@ void EditorBuildProfileManager::_profile_action(int p_action)
 	last_action = Action(p_action);
 
 	switch (p_action) {
-	case ACTION_RESET: {
-		confirm_dialog->set_text(TTRC("Reset the edited profile?"));
-		confirm_dialog->popup_centered();
-	} break;
-
 	case ACTION_LOAD: {
 		import_profile->popup_file_dialog();
 	} break;
@@ -570,108 +565,8 @@ void EditorBuildProfileManager::_profile_action(int p_action)
 		export_profile->set_current_file(profile_path->get_text());
 	} break;
 
-	case ACTION_NEW: {
-		confirm_dialog->set_text(TTRC("Create a new profile?"));
-		confirm_dialog->popup_centered();
-	} break;
-
-	case ACTION_DETECT: {
-		String text =
-			TTR("This will scan all files in the current project to detect used classes.\nNote "
-				"that the first scan may take a while, specially in larger projects.");
-#ifdef MODULE_MONO_ENABLED
-		text += "\n\n" + TTR("Warning: Class detection for C# scripts is not currently available, "
-							 "and such files will be ignored.");
-#endif // MODULE_MONO_ENABLED
-		confirm_dialog->set_text(text);
-		confirm_dialog->popup_centered();
-	} break;
-
-	case ACTION_CLEAR_CACHE: {
-		confirm_dialog->set_text(TTRC(
-			"Clear cache of used classes per file? This will make it so that those files will need "
-			"to be re-scanned, but it can also help fix problems related to outdated caching."));
-		confirm_dialog->popup_centered();
-	} break;
-
 	case ACTION_MAX: {
 	} break;
-	}
-}
-
-void EditorBuildProfileManager::_find_files(EditorFileSystemDirectory* p_dir,
-	const HashMap<String, DetectedFile>& p_cache, HashMap<String, DetectedFile>& r_detected)
-{
-	if (p_dir == nullptr || p_dir->get_path().get_file().begins_with(".")) {
-		return;
-	}
-
-	for (int i = 0; i < p_dir->get_file_count(); i++) {
-		String p = p_dir->get_file_path(i);
-
-		if (EditorNode::get_singleton()->progress_task_step("detect_classes_from_project", p, 1)) {
-			project_scan_canceled = true;
-			return;
-		}
-
-		String p_check = p;
-		// Make so that the import file is the one checked if available,
-		// so the cache can be updated when it changes.
-		if (ResourceFormatImporter::get_singleton()->exists(p_check)) {
-			p_check += ".import";
-		}
-
-		uint64_t timestamp = 0;
-		String md5;
-
-		if (p_cache.has(p)) {
-			const DetectedFile& cache = p_cache[p];
-			// Check if timestamp and MD5 match.
-			timestamp = FileAccess::get_modified_time(p_check);
-			bool cache_valid = true;
-			if (cache.timestamp != timestamp) {
-				md5 = FileAccess::get_md5(p_check);
-				if (md5 != cache.md5) {
-					cache_valid = false;
-				}
-			}
-
-			if (cache_valid) {
-				r_detected.insert(p, cache);
-				continue;
-			}
-		}
-
-		// Not cached, or cache invalid.
-
-		DetectedFile cache;
-
-		HashSet<StringName> classes;
-		ResourceLoader::get_classes_used(p, &classes);
-		for (const StringName& E : classes) {
-			cache.classes.push_back(E);
-		}
-
-		HashSet<String> build_deps;
-		ResourceFormatImporter::get_singleton()->get_build_dependencies(p, &build_deps);
-		for (const String& E : build_deps) {
-			cache.build_deps.push_back(E);
-		}
-
-		if (md5.is_empty()) {
-			cache.timestamp = FileAccess::get_modified_time(p_check);
-			cache.md5 = FileAccess::get_md5(p_check);
-		}
-		else {
-			cache.timestamp = timestamp;
-			cache.md5 = md5;
-		}
-
-		r_detected.insert(p, cache);
-	}
-
-	for (int i = 0; i < p_dir->get_subdir_count(); i++) {
-		_find_files(p_dir->get_subdir(i), p_cache, r_detected);
 	}
 }
 

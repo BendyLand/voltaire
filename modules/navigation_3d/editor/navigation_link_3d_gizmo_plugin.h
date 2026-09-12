@@ -45,7 +45,7 @@ public:
 	void set_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
 		Camera3D* p_camera, const Point2& p_point) override;
 
-	NavigationLink3DGizmoPlugin();
+	NavigationLink3DGizmoPlugin() = default;
 };
 
 

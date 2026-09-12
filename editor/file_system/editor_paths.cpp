@@ -98,7 +98,6 @@ void EditorPaths::free()
 	singleton = nullptr;
 }
 
-void EditorPaths::_bind_methods() {}
 
 EditorPaths::EditorPaths()
 {

@@ -304,8 +304,7 @@ String StreamPeer::get_string(int p_bytes)
 	Error err = buf.resize(p_bytes + 1);
 	ERR_FAIL_COND_V(err != OK, String());
 	err = get_data((uint8_t*)&buf[0], p_bytes);
-	ERR_FAIL_COND_V(err !=
- OK, String());
+	ERR_FAIL_COND_V(err != OK, String());
 	buf.write[p_bytes] = 0;
 	return buf.ptr();
 }
@@ -325,10 +324,6 @@ String StreamPeer::get_utf8_string(int p_bytes)
 
 	return String::utf8((const char*)buf.ptr(), buf.size());
 }
-
-void StreamPeer::_bind_methods() {}
-
-////////////////////////////////
 
 Error StreamPeerExtension::get_data(uint8_t* r_buffer, int p_bytes)
 {
@@ -353,10 +348,6 @@ Error StreamPeerExtension::put_partial_data(const uint8_t* p_data, int p_bytes, 
 	WARN_PRINT_ONCE("StreamPeerExtension::_put_partial_data is unimplemented!");
 	return FAILED;
 }
-
-////////////////////////////////
-
-void StreamPeerBuffer::_bind_methods() {}
 
 Error StreamPeerBuffer::put_data(const uint8_t* p_data, int p_bytes)
 {
@@ -455,7 +446,5 @@ Ref<StreamPeerBuffer> StreamPeerBuffer::duplicate() const
 	spb->data = data;
 	return spb;
 }
-
-void StreamPeerExtension::_bind_methods() {}
 
 

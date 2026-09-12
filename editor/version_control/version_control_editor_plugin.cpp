@@ -78,8 +78,6 @@ VersionControlEditorPlugin* VersionControlEditorPlugin::get_singleton()
 	return singleton ? singleton : memnew(VersionControlEditorPlugin);
 }
 
-void VersionControlEditorPlugin::popup_vcs_metadata_dialog() { metadata_dialog->popup_centered(); }
-
 void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_base)
 {
 	fetch_available_vcs_plugin_names();
@@ -101,26 +99,6 @@ void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_ba
 	}
 }
 
-void VersionControlEditorPlugin::_update_set_up_warning(const String& p_new_text)
-{
-	bool empty_settings = set_up_username->get_text().strip_edges().is_empty() &&
-						  set_up_password->get_text().is_empty() &&
-						  set_up_ssh_public_key_path->get_text().strip_edges().is_empty() &&
-						  set_up_ssh_private_key_path->get_text().strip_edges().is_empty() &&
-						  set_up_ssh_passphrase->get_text().is_empty();
-
-	if (empty_settings) {
-		set_up_warning_text->add_theme_color_override(
-			SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(
-											 SNAME("warning_color"), EditorStringName(Editor)));
-		set_up_warning_text->set_text(
-			TTR("Remote settings are empty. VCS features that use the network may not work."));
-	}
-	else {
-		set_up_warning_text->set_text("");
-	}
-}
-
 String VersionControlEditorPlugin::_get_date_string_from(
 	int64_t p_unix_timestamp, int64_t p_offset_minutes) const
 {
@@ -131,32 +109,6 @@ String VersionControlEditorPlugin::_get_date_string_from(
 }
 
 void VersionControlEditorPlugin::_set_commit_list_size(int p_index) { _refresh_commit_list(); }
-
-void VersionControlEditorPlugin::_commit()
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	String msg = commit_message->get_text().strip_edges();
-
-	ERR_FAIL_COND_MSG(msg.is_empty(), "No commit message was provided.");
-
-	EditorVCSInterface::get_singleton()->commit(msg, toggle_amend_commit->is_pressed());
-
-	if (version_control_dock->get_current_layout() == EditorDock::DOCK_LAYOUT_HORIZONTAL) {
-		version_control_dock->hide();
-	}
-
-	commit_message->release_focus();
-	commit_button->release_focus();
-	toggle_amend_commit->set_pressed_no_signal(false);
-	commit_message->set_text("");
-	previous_commit_message = "";
-
-	_refresh_stage_area();
-	_refresh_commit_list();
-	_refresh_branch_list();
-	_clear_diff();
-}
 
 void VersionControlEditorPlugin::_toggle_amend_commit(bool p_toggled)
 {
@@ -169,24 +121,6 @@ void VersionControlEditorPlugin::_toggle_amend_commit(bool p_toggled)
 		previous_commit_message = "";
 	}
 	_update_commit_button();
-}
-
-void VersionControlEditorPlugin::_branch_item_selected(int p_index)
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	String branch_name = branch_select->get_item_text(p_index);
-	EditorVCSInterface::get_singleton()->checkout_branch(branch_name);
-
-	EditorFileSystem::get_singleton()->scan_changes();
-	ScriptEditor::get_singleton()->reload_scripts();
-
-	_refresh_branch_list();
-	_refresh_commit_list();
-	_refresh_stage_area();
-	_clear_diff();
-
-	_update_opened_tabs();
 }
 
 void VersionControlEditorPlugin::_remote_selected(int p_index) { _refresh_remote_list(); }
@@ -236,231 +170,11 @@ int VersionControlEditorPlugin::_get_item_count(Tree* p_tree)
 	return p_tree->get_root()->get_children().size();
 }
 
-void VersionControlEditorPlugin::_discard_file(
-	const String& p_file_path, EditorVCSInterface::ChangeType p_change)
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	if (p_change == EditorVCSInterface::CHANGE_TYPE_NEW) {
-		Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		dir->remove(p_file_path);
-	}
-	else {
-		CHECK_PLUGIN_INITIALIZED();
-		EditorVCSInterface::get_singleton()->discard_file(p_file_path);
-	}
-	// FIXIT: The project.godot file shows weird behavior
-	EditorFileSystem::get_singleton()->update_file(p_file_path);
-}
-
-void VersionControlEditorPlugin::_update_opened_tabs()
-{
-	Vector<EditorData::EditedScene> open_scenes = EditorNode::get_editor_data().get_edited_scenes();
-	for (int i = 0; i < open_scenes.size(); i++) {
-		if (open_scenes[i].root == nullptr) {
-			continue;
-		}
-		EditorNode::get_singleton()->reload_scene(open_scenes[i].path);
-	}
-}
-
 void VersionControlEditorPlugin::_clear_diff()
 {
 	diff->clear();
 	diff_content.clear();
 	diff_title->set_text("");
-}
-
-void VersionControlEditorPlugin::_display_diff_split_view(
-	List<EditorVCSInterface::DiffLine>& p_diff_content)
-{
-	LocalVector<EditorVCSInterface::DiffLine> parsed_diff;
-
-	for (EditorVCSInterface::DiffLine diff_line : p_diff_content) {
-		String line = diff_line.content.strip_edges(false, true);
-
-		if (diff_line.new_line_no >= 0 && diff_line.old_line_no >= 0) {
-			diff_line.new_text = line;
-			diff_line.old_text = line;
-			parsed_diff.push_back(diff_line);
-		}
-		else if (diff_line.new_line_no == -1) {
-			diff_line.new_text = "";
-			diff_line.old_text = line;
-			parsed_diff.push_back(diff_line);
-		}
-		else if (diff_line.old_line_no == -1) {
-			int32_t j = parsed_diff.size() - 1;
-			while (j >= 0 && parsed_diff[j].new_line_no == -1) {
-				j--;
-			}
-
-			if (j == (int32_t)parsed_diff.size() - 1) {
-				// no lines are modified
-				diff_line.new_text = line;
-				diff_line.old_text = "";
-				parsed_diff.push_back(diff_line);
-			}
-			else {
-				// lines are modified
-				EditorVCSInterface::DiffLine modified_line = parsed_diff[j + 1];
-				modified_line.new_text = line;
-				modified_line.new_line_no = diff_line.new_line_no;
-				parsed_diff[j + 1] = modified_line;
-			}
-		}
-	}
-
-	diff->push_table(6);
-	/*
-		[cell]Old Line No[/cell]
-		[cell]prefix[/cell]
-		[cell]Old Code[/cell]
-
-		[cell]New Line No[/cell]
-		[cell]prefix[/cell]
-		[cell]New Line[/cell]
-	*/
-
-	diff->set_table_column_expand(2, true);
-	diff->set_table_column_expand(5, true);
-
-	for (uint32_t i = 0; i < parsed_diff.size(); i++) {
-		EditorVCSInterface::DiffLine diff_line = parsed_diff[i];
-
-		bool has_change = diff_line.status != " ";
-		static const Color red = EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("error_color"), EditorStringName(Editor));
-		static const Color green = EditorNode::get_singleton()->get_editor_theme()->get_color(
-			SNAME("success_color"), EditorStringName(Editor));
-		static const Color white = EditorNode::get_singleton()->get_editor_theme()->get_color(
-									   SceneStringName(font_color), SNAME("Label")) *
-								   Color(1, 1, 1, 0.6);
-
-		if (diff_line.old_line_no >= 0) {
-			diff->push_cell();
-			diff->push_color(has_change ? red : white);
-			diff->add_text(String::num_int64(diff_line.old_line_no));
-			diff->pop();
-			diff->pop();
-
-			diff->push_cell();
-			diff->push_color(has_change ? red : white);
-			diff->add_text(has_change ? "-|" : " |");
-			diff->pop();
-			diff->pop();
-
-			diff->push_cell();
-			diff->push_color(has_change ? red : white);
-			diff->add_text(diff_line.old_text);
-			diff->pop();
-			diff->pop();
-
-		}
-		else {
-			diff->push_cell();
-			diff->pop();
-
-			diff->push_cell();
-			diff->pop();
-
-			diff->push_cell();
-			diff->pop();
-		}
-
-		if (diff_line.new_line_no >= 0) {
-			diff->push_cell();
-			diff->push_color(has_change ? green : white);
-			diff->add_text(String::num_int64(diff_line.new_line_no));
-			diff->pop();
-			diff->pop();
-
-			diff->push_cell();
-			diff->push_color(has_change ? green : white);
-			diff->add_text(has_change ? "+|" : " |");
-			diff->pop();
-			diff->pop();
-
-			diff->push_cell();
-			diff->push_color(has_change ? green : white);
-			diff->add_text(diff_line.new_text);
-			diff->pop();
-			diff->pop();
-		}
-		else {
-			diff->push_cell();
-			diff->pop();
-
-			diff->push_cell();
-			diff->pop();
-
-			diff->push_cell();
-			diff->pop();
-		}
-	}
-	diff->pop();
-}
-
-void VersionControlEditorPlugin::_display_diff_unified_view(
-	List<EditorVCSInterface::DiffLine>& p_diff_content)
-{
-	diff->push_table(4);
-	diff->set_table_column_expand(3, true);
-
-	/*
-		[cell]Old Line No[/cell]
-		[cell]New Line No[/cell]
-		[cell]status[/cell]
-		[cell]code[/cell]
-	*/
-	for (const EditorVCSInterface::DiffLine& diff_line : p_diff_content) {
-		String line = diff_line.content.strip_edges(false, true);
-
-		Color color;
-		if (diff_line.status == "+") {
-			color = EditorNode::get_singleton()->get_editor_theme()->get_color(
-				SNAME("success_color"), EditorStringName(Editor));
-		}
-		else if (diff_line.status == "-") {
-			color = EditorNode::get_singleton()->get_editor_theme()->get_color(
-				SNAME("error_color"), EditorStringName(Editor));
-		}
-		else {
-			color = EditorNode::get_singleton()->get_editor_theme()->get_color(
-				SceneStringName(font_color), SNAME("Label"));
-			color *= Color(1, 1, 1, 0.6);
-		}
-
-		diff->push_cell();
-		diff->push_color(color);
-		diff->push_indent(1);
-		diff->add_text(diff_line.old_line_no >= 0 ? String::num_int64(diff_line.old_line_no) : "");
-		diff->pop();
-		diff->pop();
-		diff->pop();
-
-		diff->push_cell();
-		diff->push_color(color);
-		diff->push_indent(1);
-		diff->add_text(diff_line.new_line_no >= 0 ? String::num_int64(diff_line.new_line_no) : "");
-		diff->pop();
-		diff->pop();
-		diff->pop();
-
-		diff->push_cell();
-		diff->push_color(color);
-		diff->add_text(diff_line.status != "" ? diff_line.status + "|" : " |");
-		diff->pop();
-		diff->pop();
-
-		diff->push_cell();
-		diff->push_color(color);
-		diff->add_text(line);
-		diff->pop();
-		diff->pop();
-	}
-
-	diff->pop();
 }
 
 void VersionControlEditorPlugin::_remove_branch()
@@ -491,52 +205,7 @@ void VersionControlEditorPlugin::_extra_option_selected(int p_index)
 	case EXTRA_OPTION_FORCE_PUSH:
 		_force_push();
 		break;
-	case EXTRA_OPTION_CREATE_BRANCH:
-		branch_create_confirm->popup_centered();
-		break;
-	case EXTRA_OPTION_CREATE_REMOTE:
-		remote_create_confirm->popup_centered();
-		break;
 	}
-}
-
-void VersionControlEditorPlugin::_popup_branch_remove_confirm(int p_index)
-{
-	branch_to_remove = extra_options_remove_branch_list->get_item_text(p_index);
-
-	branch_remove_confirm->set_text(
-		vformat(TTR("Do you want to remove the %s branch?"), branch_to_remove));
-	branch_remove_confirm->popup_centered();
-}
-
-void VersionControlEditorPlugin::_popup_remote_remove_confirm(int p_index)
-{
-	remote_to_remove = extra_options_remove_remote_list->get_item_text(p_index);
-
-	remote_remove_confirm->set_text(
-		vformat(TTR("Do you want to remove the %s remote?"), branch_to_remove));
-	remote_remove_confirm->popup_centered();
-}
-
-void VersionControlEditorPlugin::_update_extra_options()
-{
-	extra_options_remove_branch_list->clear();
-	for (int i = 0; i < branch_select->get_item_count(); i++) {
-		extra_options_remove_branch_list->add_icon_item(
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(
-				SNAME("VcsBranches"), EditorStringName(EditorIcons)),
-			branch_select->get_item_text(branch_select->get_item_id(i)));
-	}
-	extra_options_remove_branch_list->update_canvas_items();
-
-	extra_options_remove_remote_list->clear();
-	for (int i = 0; i < remote_select->get_item_count(); i++) {
-		extra_options_remove_remote_list->add_icon_item(
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(
-				SNAME("ArrowUp"), EditorStringName(EditorIcons)),
-			remote_select->get_item_text(remote_select->get_item_id(i)));
-	}
-	extra_options_remove_remote_list->update_canvas_items();
 }
 
 bool VersionControlEditorPlugin::_is_staging_area_empty()

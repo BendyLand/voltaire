@@ -312,13 +312,6 @@ void SpriteFramesEditor::_sheet_spin_changed(double p_value, int p_dominant_para
 	last_frame_selected = -1;
 }
 
-void SpriteFramesEditor::_toggle_show_settings()
-{
-	split_sheet_settings_vb->set_visible(!split_sheet_settings_vb->is_visible());
-
-	_update_show_settings();
-}
-
 void SpriteFramesEditor::_auto_slice_sprite_sheet()
 {
 	if (updating_split_settings) {
@@ -362,10 +355,6 @@ bool SpriteFramesEditor::_matches_background_color(
 Size2i SpriteFramesEditor::_estimate_sprite_sheet_size(const Ref<Texture2D> p_texture)
 {
 	Ref<Image> image = p_texture->get_image();
-	if (image->is_compressed()) {
-		image = image->duplicate();
-		ERR_FAIL_COND_V(image->decompress() != OK, p_texture->get_size());
-	}
 	Size2i size = image->get_size();
 
 	Color assumed_background_color = image->get_pixel(0, 0);
@@ -513,20 +502,6 @@ void SpriteFramesEditor::_animation_copy()
 	EditorSettings::get_singleton()->set_resource_clipboard(clipboard_anim);
 }
 
-void SpriteFramesEditor::_animation_remove()
-{
-	if (updating) {
-		return;
-	}
-
-	if (!frames->has_animation(edited_anim)) {
-		return;
-	}
-
-	delete_dialog->set_text(TTRC("Delete Animation?"));
-	delete_dialog->popup_centered();
-}
-
 void SpriteFramesEditor::_animation_remove_confirmed()
 {
 	_animation_remove_undo_redo(TTR("Remove Animation"), nullptr);
@@ -578,24 +553,6 @@ String SpriteFramesEditor::_generate_unique_animation_name(const String& p_base_
 		break;
 	}
 	return new_name;
-}
-
-void SpriteFramesEditor::_menu_selected(int p_id)
-{
-	switch (p_id) {
-	case MENU_SHOW_IN_FILESYSTEM: {
-		Ref<Texture2D> frame_texture = frames->get_frame_texture(edited_anim, right_clicked_frame);
-		ERR_FAIL_COND(frame_texture.is_null());
-		String path = frame_texture->get_path();
-		// Check if the file is an atlas resource, if it is find the source texture.
-		Ref<AtlasTexture> at = frame_texture;
-		while (at.is_valid() && at->get_atlas().is_valid()) {
-			path = at->get_atlas()->get_path();
-			at = at->get_atlas();
-		}
-		FileSystemDock::get_singleton()->navigate_to_path(path);
-	} break;
-	}
 }
 
 void SpriteFramesEditor::_frame_list_item_selected(int p_index, bool p_selected)
@@ -659,14 +616,6 @@ void SpriteFramesEditor::_node_removed(Node* p_node)
 		}
 		_remove_sprite_node();
 	}
-}
-
-SpriteFramesEditorPlugin::SpriteFramesEditorPlugin()
-{
-	frames_editor = memnew(SpriteFramesEditor);
-	frames_editor->set_custom_minimum_size(Size2(0, 300) * EDSCALE);
-	EditorDockManager::get_singleton()->add_dock(frames_editor);
-	frames_editor->close();
 }
 
 Ref<ClipboardAnimation> ClipboardAnimation::from_sprite_frames(

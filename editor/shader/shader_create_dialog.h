@@ -89,7 +89,6 @@ class ShaderCreateDialog : public ConfirmationDialog
 	void _built_in_toggled(bool p_enabled);
 	void _template_changed(int p_template = 0);
 	void _mode_changed(int p_mode = 0);
-	void _browse_path();
 	void _file_selected(const String& p_file);
 	void _refresh_type_icons();
 	String _validate_path(const String& p_path);
@@ -100,7 +99,6 @@ class ShaderCreateDialog : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void config(const String& p_base_path, bool p_built_in_enabled = true,

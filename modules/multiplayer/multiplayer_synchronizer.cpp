@@ -123,7 +123,6 @@ MultiplayerSynchronizer::get_visibility_update_mode() const
 	return visibility_update_mode;
 }
 
-void MultiplayerSynchronizer::_bind_methods() {}
 
 void MultiplayerSynchronizer::_notification(int p_what)
 {
@@ -184,17 +183,6 @@ void MultiplayerSynchronizer::set_replication_config(Ref<SceneReplicationConfig>
 Ref<SceneReplicationConfig> MultiplayerSynchronizer::get_replication_config()
 {
 	return replication_config;
-}
-
-void MultiplayerSynchronizer::set_root_path(const NodePath& p_path)
-{
-	if (p_path == root_path) {
-		return;
-	}
-	_stop();
-	root_path = p_path;
-	_start();
-	update_configuration_warnings();
 }
 
 NodePath MultiplayerSynchronizer::get_root_path() const { return root_path; }

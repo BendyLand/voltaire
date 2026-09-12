@@ -106,7 +106,6 @@ class MeshInstance3DEditor : public Control
 	void _shape_dialog_about_to_popup();
 	void _shape_type_selected(int p_option);
 	void _create_collision_shape();
-	Vector<Ref<Shape3D>> create_shape_from_mesh(Ref<Mesh> p_mesh, int p_option, bool p_verbose);
 	void _menu_option(int p_option);
 	void _create_outline_mesh();
 	void _create_navigation_mesh();
@@ -114,11 +113,7 @@ class MeshInstance3DEditor : public Control
 	void _create_uv_lines(int p_layer);
 	friend class MeshInstance3DEditorPlugin;
 
-	void _debug_uv_draw();
-
 protected:
-	void _node_removed(Node* p_node);
-
 	void _notification(int p_what);
 
 public:
@@ -133,7 +128,7 @@ class MeshInstance3DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "MeshInstance3D"; }
 
-	MeshInstance3DEditorPlugin();
+	MeshInstance3DEditorPlugin() = default;
 };
 
 

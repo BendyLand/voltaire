@@ -41,10 +41,6 @@ class HBoxContainer;
 
 class ProgressIndicator : public TextureProgressBar
 {
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
 public:
 	ProgressIndicator();
 };
@@ -63,10 +59,8 @@ class EditorBottomPanel : public DockTabContainer
 	HashMap<String, int> dock_offsets;
 
 	LocalVector<Button*> legacy_buttons;
-	void _on_button_visibility_changed(Button* p_button, EditorDock* p_dock);
 
 	void _repaint();
-	void _on_tab_changed(int p_idx);
 	void _pin_button_toggled(bool p_pressed);
 	void _expand_button_toggled(bool p_pressed);
 	void _update_center_split_offset();
@@ -78,8 +72,6 @@ protected:
 public:
 	virtual void dock_closed(EditorDock* p_dock) override;
 	virtual void dock_focused(EditorDock* p_dock, bool p_was_visible) override;
-
-	virtual void update_visibility() override { show(); } // Never hide bottom panel.
 
 	virtual TabStyle get_tab_style() const override;
 	virtual bool can_switch_dock() const override;
@@ -95,7 +87,6 @@ public:
 	void make_item_visible(Control* p_item, bool p_visible = true, bool p_ignore_lock = false);
 	void hide_bottom_panel();
 	void toggle_last_opened_bottom_panel();
-	void set_expanded(bool p_expanded);
 	void _theme_changed();
 
 	bool is_locked() const { return lock_panel_switching; }

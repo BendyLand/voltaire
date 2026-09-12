@@ -31,8 +31,6 @@
 #include "render_scene_buffers.h"
 #include "servers/rendering/rendering_server.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
-void RenderSceneBuffersConfiguration::_bind_methods() {}
 
-void RenderSceneBuffers::_bind_methods() {}
 
 

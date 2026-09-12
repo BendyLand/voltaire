@@ -30,6 +30,5 @@
 
 #include "render_scene_data.h"
 
-void RenderSceneData::_bind_methods() {}
 
 

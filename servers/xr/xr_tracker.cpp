@@ -30,7 +30,6 @@
 
 #include "xr_tracker.h"
 
-void XRTracker::_bind_methods() {}
 
 void XRTracker::set_tracker_type(XRServer::TrackerType p_type) { type = p_type; }
 

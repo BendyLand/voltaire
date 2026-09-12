@@ -276,6 +276,5 @@ Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String& p_path)
 	return load_from_buffer(stream_data);
 }
 
-void AudioStreamMP3::_bind_methods() {}
 
 

@@ -78,7 +78,6 @@ protected:
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
-	static void _bind_methods();
 
 public:
 	// void set_mode(Mode p_mode);

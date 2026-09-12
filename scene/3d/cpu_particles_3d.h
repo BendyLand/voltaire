@@ -229,7 +229,6 @@ public:
 	void set_pre_process_time(double p_time);
 	void set_explosiveness_ratio(real_t p_ratio);
 	void set_randomness_ratio(real_t p_ratio);
-	void set_visibility_aabb(const AABB& p_aabb);
 	void set_lifetime_randomness(double p_random);
 	void set_use_local_coordinates(bool p_enable);
 	void set_speed_scale(double p_scale);
@@ -255,7 +254,6 @@ public:
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;
 
-	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed = false);
@@ -278,13 +276,10 @@ public:
 	void set_flatness(real_t p_flatness);
 	real_t get_flatness() const;
 
-	void set_param_min(Parameter p_param, real_t p_value);
 	real_t get_param_min(Parameter p_param) const;
 
-	void set_param_max(Parameter p_param, real_t p_value);
 	real_t get_param_max(Parameter p_param) const;
 
-	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
 	void set_color(const Color& p_color);
@@ -299,17 +294,9 @@ public:
 	void set_particle_flag(ParticleFlags p_particle_flag, bool p_enable);
 	bool get_particle_flag(ParticleFlags p_particle_flag) const;
 
-	void set_emission_shape(EmissionShape p_shape);
-	void set_emission_sphere_radius(real_t p_radius);
-	void set_emission_box_extents(Vector3 p_extents);
 	void set_emission_points(const Vector<Vector3>& p_points);
 	void set_emission_normals(const Vector<Vector3>& p_normals);
 	void set_emission_colors(const Vector<Color>& p_colors);
-	void set_emission_ring_axis(Vector3 p_axis);
-	void set_emission_ring_height(real_t p_height);
-	void set_emission_ring_radius(real_t p_radius);
-	void set_emission_ring_inner_radius(real_t p_radius);
-	void set_emission_ring_cone_angle(real_t p_angle);
 	void set_scale_curve_x(Ref<Curve> p_scale_curve);
 	void set_scale_curve_y(Ref<Curve> p_scale_curve);
 	void set_scale_curve_z(Ref<Curve> p_scale_curve);
@@ -342,7 +329,7 @@ public:
 
 	AABB capture_aabb() const;
 
-	CPUParticles3D();
+	CPUParticles3D() = default;
 	~CPUParticles3D();
 };
 

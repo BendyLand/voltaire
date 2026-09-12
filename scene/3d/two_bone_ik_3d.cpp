@@ -50,61 +50,16 @@ PackedStringArray TwoBoneIK3D::get_configuration_warnings() const
 	return warnings;
 }
 
-// Setting.
-
-void TwoBoneIK3D::set_root_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	tb_settings[p_index]->root_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_root_bone(p_index, sk->find_bone(tb_settings[p_index]->root_bone.name));
-	}
-}
-
 String TwoBoneIK3D::get_root_bone_name(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
 	return tb_settings[p_index]->root_bone.name;
 }
 
-void TwoBoneIK3D::set_root_bone(int p_index, int p_bone)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	bool changed = tb_settings[p_index]->root_bone.bone != p_bone;
-	tb_settings[p_index]->root_bone.bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (tb_settings[p_index]->root_bone.bone <= -1 ||
-			tb_settings[p_index]->root_bone.bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Setting: " + itos(p_index) + ": Root bone index '" + itos(p_bone) +
-						  "' is out of range!");
-			tb_settings[p_index]->root_bone.bone = -1;
-		}
-		else {
-			tb_settings[p_index]->root_bone.name =
-				sk->get_bone_name(tb_settings[p_index]->root_bone.bone);
-		}
-	}
-	if (changed) {
-		_update_joints(p_index);
-	}
-}
-
 int TwoBoneIK3D::get_root_bone(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
 	return tb_settings[p_index]->root_bone.bone;
-}
-
-void TwoBoneIK3D::set_middle_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	tb_settings[p_index]->middle_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_middle_bone(p_index, sk->find_bone(tb_settings[p_index]->middle_bone.name));
-	}
 }
 
 String TwoBoneIK3D::get_middle_bone_name(int p_index) const
@@ -117,16 +72,6 @@ int TwoBoneIK3D::get_middle_bone(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
 	return tb_settings[p_index]->middle_bone.bone;
-}
-
-void TwoBoneIK3D::set_end_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	tb_settings[p_index]->end_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_end_bone(p_index, sk->find_bone(tb_settings[p_index]->end_bone.name));
-	}
 }
 
 String TwoBoneIK3D::get_end_bone_name(int p_index) const
@@ -151,23 +96,6 @@ bool TwoBoneIK3D::is_end_bone_extended(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
 	return tb_settings[p_index]->extend_end_bone;
-}
-
-void TwoBoneIK3D::set_end_bone_direction(int p_index, BoneDirection p_bone_direction)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	tb_settings[p_index]->end_bone_direction = p_bone_direction;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		_validate_pole_direction(sk, p_index);
-	}
-#ifdef TOOLS_ENABLED
-	_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
-	if (mutable_bone_axes) {
-		return; // Chain dir will be recaluclated in _update_bone_axis().
-	}
-	tb_settings[p_index]->simulation_dirty = true;
 }
 
 SkeletonModifier3D::BoneDirection TwoBoneIK3D::get_end_bone_direction(int p_index) const
@@ -214,23 +142,6 @@ SkeletonModifier3D::SecondaryDirection TwoBoneIK3D::get_pole_direction(int p_ind
 	return tb_settings[p_index]->pole_direction;
 }
 
-void TwoBoneIK3D::set_pole_direction_vector(int p_index, const Vector3& p_vector)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	if (tb_settings[p_index]->pole_direction != SECONDARY_DIRECTION_CUSTOM) {
-		return;
-	}
-	tb_settings[p_index]->pole_direction_vector = p_vector;
-	tb_settings[p_index]->simulation_dirty = true;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		_validate_pole_direction(sk, p_index);
-	}
-#ifdef TOOLS_ENABLED
-	_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
-}
-
 Vector3 TwoBoneIK3D::get_pole_direction_vector(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
@@ -242,33 +153,6 @@ bool TwoBoneIK3D::is_valid(int p_index) const
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
 	return tb_settings[p_index]->root_bone.bone != -1 &&
 		   tb_settings[p_index]->middle_bone.bone != -1 && tb_settings[p_index]->is_end_valid();
-}
-
-void TwoBoneIK3D::_validate_bone_names()
-{
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		// Prior bone name.
-		if (!tb_settings[i]->root_bone.name.is_empty()) {
-			set_root_bone_name(i, tb_settings[i]->root_bone.name);
-		}
-		else if (tb_settings[i]->root_bone.bone != -1) {
-			set_root_bone(i, tb_settings[i]->root_bone.bone);
-		}
-		// Prior bone name.
-		if (!tb_settings[i]->middle_bone.name.is_empty()) {
-			set_middle_bone_name(i, tb_settings[i]->middle_bone.name);
-		}
-		else if (tb_settings[i]->middle_bone.bone != -1) {
-			set_middle_bone(i, tb_settings[i]->middle_bone.bone);
-		}
-		// Prior bone name.
-		if (!tb_settings[i]->end_bone.name.is_empty()) {
-			set_end_bone_name(i, tb_settings[i]->end_bone.name);
-		}
-		else if (tb_settings[i]->end_bone.bone != -1) {
-			set_end_bone(i, tb_settings[i]->end_bone.bone);
-		}
-	}
 }
 
 void TwoBoneIK3D::_validate_pole_directions(Skeleton3D* p_skeleton) const
@@ -457,62 +341,6 @@ void TwoBoneIK3D::_update_bone_axis(Skeleton3D* p_skeleton, int p_index)
 #endif // TOOLS_ENABLED
 }
 
-void TwoBoneIK3D::_update_joints(int p_index)
-{
-	tb_settings[p_index]->simulation_dirty = true;
-
-#ifdef TOOLS_ENABLED
-	_make_gizmo_dirty(); // To clear invalid setting.
-#endif					 // TOOLS_ENABLED
-
-	Skeleton3D* sk = get_skeleton();
-	if (!sk || tb_settings[p_index]->root_bone.bone == -1 ||
-		tb_settings[p_index]->middle_bone.bone == -1 || !tb_settings[p_index]->is_end_valid()) {
-		return;
-	}
-
-	// Validation for middle bone.
-	int parent_bone = tb_settings[p_index]->root_bone.bone;
-	int current_bone = tb_settings[p_index]->middle_bone.bone;
-	bool valid = false;
-	while (current_bone >= 0) {
-		if (current_bone == parent_bone) {
-			valid = true;
-			break;
-		}
-		current_bone = sk->get_bone_parent(current_bone);
-	}
-	ERR_FAIL_COND_EDMSG(!valid, "The middle bone must be a child of the root bone.");
-
-	// Validation for end bone.
-	if (!tb_settings[p_index]->use_virtual_end) {
-		parent_bone = tb_settings[p_index]->middle_bone.bone;
-		current_bone = tb_settings[p_index]->end_bone.bone;
-		valid = false;
-		while (current_bone >= 0) {
-			if (current_bone == parent_bone) {
-				valid = true;
-				break;
-			}
-			current_bone = sk->get_bone_parent(current_bone);
-		}
-		ERR_FAIL_COND_EDMSG(!valid, "The end bone must be a child of the middle bone.");
-	}
-
-	if (sk) {
-		_validate_pole_directions(sk);
-	}
-
-	if (mutable_bone_axes) {
-		_update_bone_axis(sk, p_index);
-#ifdef TOOLS_ENABLED
-	}
-	else {
-		_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
-	}
-}
-
 Transform3D TwoBoneIK3D::_get_bone_global_rest(Skeleton3D* p_skeleton, int p_bone, int p_root) const
 {
 	if (!mutable_bone_axes) {
@@ -621,62 +449,6 @@ void TwoBoneIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 		get_local_pose_rotation(p_skeleton, p_setting->middle_bone.bone,
 			p_setting->mid_joint_solver_info->current_gpose));
 }
-
-#ifdef TOOLS_ENABLED
-Vector3 TwoBoneIK3D::get_root_bone_vector(int p_index) const
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return Vector3();
-	}
-	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
-	TwoBoneIK3DSetting* setting = tb_settings[p_index];
-	if (!setting) {
-		return Vector3();
-	}
-	if (!setting->root_joint_solver_info) {
-		return _get_bone_global_rest(skeleton, setting->middle_bone.bone, setting->root_bone.bone)
-				   .origin -
-			   _get_bone_global_rest(skeleton, setting->root_bone.bone, setting->root_bone.bone)
-				   .origin;
-	}
-	return setting->root_joint_solver_info->forward_vector *
-		   setting->root_joint_solver_info->length;
-}
-
-Vector3 TwoBoneIK3D::get_middle_bone_vector(int p_index) const
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return Vector3();
-	}
-	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
-	TwoBoneIK3DSetting* setting = tb_settings[p_index];
-	if (!setting) {
-		return Vector3();
-	}
-	if (!setting->mid_joint_solver_info) {
-		int valid_end_bone = setting->get_end_bone();
-		Vector3 axis = IKModifier3D::get_bone_axis(
-			skeleton, valid_end_bone, setting->end_bone_direction, mutable_bone_axes);
-		Vector3 global_rest_origin;
-		if (setting->extend_end_bone && setting->end_bone_length > 0 && !axis.is_zero_approx()) {
-			global_rest_origin =
-				_get_bone_global_rest(skeleton, valid_end_bone, setting->root_bone.bone)
-					.xform(axis * setting->end_bone_length);
-		}
-		else {
-			// Shouldn't be using virtual end.
-			global_rest_origin =
-				_get_bone_global_rest(skeleton, valid_end_bone, setting->root_bone.bone).origin;
-		}
-		return global_rest_origin -
-			   _get_bone_global_rest(skeleton, setting->middle_bone.bone, setting->root_bone.bone)
-				   .origin;
-	}
-	return setting->mid_joint_solver_info->forward_vector * setting->mid_joint_solver_info->length;
-}
-#endif // TOOLS_ENABLED
 
 TwoBoneIK3D::~TwoBoneIK3D() { clear_settings(); }
 

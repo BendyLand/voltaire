@@ -43,6 +43,7 @@
 #include "scene/gui/slider.h"
 #include "scene/gui/texture_progress_bar.h"
 #include "scene/gui/tree.h"
+#include "scene/resources/gradient_texture.h"
 
 class EditorAudioBuses;
 class EditorFileDialog;
@@ -121,35 +122,29 @@ class EditorAudioBus : public PanelContainer
 
 	float _normalized_volume_to_scaled_db(float normalized);
 	float _scaled_db_to_normalized_volume(float db);
-	void _show_value(float slider_value);
-	void _hide_value_preview();
 	void _enable_indicator_fall();
 	void _effect_selected();
 	void _effect_rmb(const Vector2& p_pos, MouseButton p_button);
-	void _update_visible_channels();
 
 	friend class EditorAudioBuses;
 
 	EditorAudioBuses* buses = nullptr;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void update_bus();
 	void update_send();
 
-	EditorAudioBus(EditorAudioBuses* p_buses = nullptr, bool p_is_master = false);
+	EditorAudioBus(EditorAudioBuses* p_buses = nullptr, bool p_is_master = false)
+		: buses(p_buses), is_master(p_is_master)
+	{
+	}
 };
 
 class EditorAudioBusDrop : public Control
 {
 	mutable bool hovering_drop = false;
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
 };
 
 class EditorAudioBuses : public EditorDock
@@ -178,7 +173,6 @@ class EditorAudioBuses : public EditorDock
 	Timer* save_timer = nullptr;
 	String edited_path;
 
-	void _update_file_label();
 	void _update_file_label_size();
 
 	void _rebuild_buses();
@@ -190,7 +184,6 @@ class EditorAudioBuses : public EditorDock
 	void _server_save();
 	void _file_moved(const String& p_old_path, const String& p_new_path);
 
-	void _select_layout();
 	void _load_layout();
 	void _save_as_layout();
 	void _load_default_layout();
@@ -200,20 +193,13 @@ class EditorAudioBuses : public EditorDock
 	EditorFileDialog* file_dialog = nullptr;
 	bool new_layout = false;
 
-	void _file_dialog_callback(const String& p_string);
-
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-
 public:
-	void open_layout(const String& p_path);
-
 	static EditorAudioBuses* register_editor();
 
-	EditorAudioBuses();
+	EditorAudioBuses() = default;
 };
 
 class EditorAudioMeterNotches : public Control
@@ -267,9 +253,6 @@ public:
 	Size2 get_minimum_size() const override;
 
 private:
-	virtual void _update_theme_item_cache() override;
-
-	static void _bind_methods();
 	void _notification(int p_what);
 	void _draw_audio_notches();
 };

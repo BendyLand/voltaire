@@ -63,8 +63,6 @@ void EditorSettingsDialog::ok_pressed()
 	_settings_save();
 }
 
-void EditorSettingsDialog::_settings_changed() { timer->start(); }
-
 void EditorSettingsDialog::_settings_save()
 {
 	if (!timer->is_stopped()) {
@@ -81,21 +79,6 @@ void EditorSettingsDialog::cancel_pressed()
 	}
 
 	EditorSettings::get_singleton()->notify_changes();
-}
-
-void EditorSettingsDialog::set_advanced_mode_enabled(bool p_enabled)
-{
-	advanced_switch->set_pressed(p_enabled);
-}
-
-void EditorSettingsDialog::set_current_section(const String& p_section)
-{
-	inspector->set_current_section(p_section);
-}
-
-void EditorSettingsDialog::_undo_redo_callback(void* p_self, const String& p_name)
-{
-	EditorNode::get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
 }
 
 bool EditorSettingsDialog::_is_in_project_manager() const
@@ -129,40 +112,7 @@ void EditorSettingsDialog::_focus_current_search_box()
 	}
 }
 
-void EditorSettingsDialog::_editor_restart_request() { restart_container->show(); }
-
-void EditorSettingsDialog::_editor_restart_close() { restart_container->hide(); }
-
 EditorSettingsDialog::~EditorSettingsDialog() { singleton = nullptr; }
-
-void EditorSettingsPropertyWrapper::_update_override()
-{
-	// Don't allow overriding theme properties, because it causes problems. Overriding Project
-	// Manager settings makes no sense.
-	// TODO: Find a better way to define exception prefixes (if the list happens to grow).
-	if (property.begins_with("interface/theme") || property.begins_with("project_manager") ||
-		Engine::get_singleton()->is_project_manager_hint()) {
-		can_override = false;
-		return;
-	}
-
-	const bool has_override =
-		ProjectSettings::get_singleton()->is_project_loaded() &&
-		ProjectSettings::get_singleton()->has_editor_setting_override(property);
-	if (has_override) {
-		if (!override_container) {
-			_setup_override_info();
-		}
-		override_editor_property->update_property();
-		set_bottom_editor(override_container);
-		override_container->show();
-	}
-	else if (override_container) {
-		override_container->hide();
-		set_bottom_editor(nullptr);
-	}
-	can_override = !has_override;
-}
 
 void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }
 

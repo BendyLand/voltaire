@@ -56,14 +56,12 @@ protected:
 	HashMap<StringName, int> blend_shape_properties;
 	Vector<Ref<Material>> surface_override_materials;
 
-	void _mesh_changed();
 	void _resolve_skeleton_path();
 
 protected:
 	bool surface_index_0 = false;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	bool _property_can_revert(const StringName& p_name) const;
 

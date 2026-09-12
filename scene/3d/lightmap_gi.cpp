@@ -605,27 +605,6 @@ void LightmapGI::_notification(int p_what)
 	}
 }
 
-void LightmapGI::set_light_data(const Ref<LightmapGIData>& p_data)
-{
-	if (light_data.is_valid()) {
-		if (is_inside_tree()) {
-			_clear_lightmaps();
-		}
-		set_base(RID());
-	}
-	light_data = p_data;
-
-	if (light_data.is_valid()) {
-		set_base(light_data->get_rid());
-		if (is_inside_tree()) {
-			_assign_lightmaps();
-		}
-		light_data->update_shadowmask_mode(shadowmask_mode);
-	}
-
-	update_gizmos();
-}
-
 Ref<LightmapGIData> LightmapGI::get_light_data() const { return light_data; }
 
 void LightmapGI::set_bake_quality(BakeQuality p_quality) { bake_quality = p_quality; }
@@ -650,16 +629,6 @@ int LightmapGI::get_denoiser_range() const { return denoiser_range; }
 void LightmapGI::set_directional(bool p_enable) { directional = p_enable; }
 
 bool LightmapGI::is_directional() const { return directional; }
-
-void LightmapGI::set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode)
-{
-	shadowmask_mode = p_mode;
-	if (light_data.is_valid()) {
-		light_data->update_shadowmask_mode(p_mode);
-	}
-
-	update_configuration_warnings();
-}
 
 LightmapGIData::ShadowmaskMode LightmapGI::get_shadowmask_mode() const { return shadowmask_mode; }
 

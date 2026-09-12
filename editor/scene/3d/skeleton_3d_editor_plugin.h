@@ -77,7 +77,6 @@ class BonePropertiesEditor : public VBoxContainer
 
 	void create_editors();
 
-
 	void _property_keyed(const String& p_path, bool p_advance);
 
 	void _meta_deleted(const String& p_property);
@@ -85,9 +84,6 @@ class BonePropertiesEditor : public VBoxContainer
 	void _add_meta_confirm();
 
 	HashMap<StringName, EditorProperty*> meta_editors;
-
-protected:
-	void _notification(int p_what);
 
 public:
 	BonePropertiesEditor(Skeleton3D* p_skeleton);
@@ -105,8 +101,6 @@ public:
 
 class Skeleton3DEditor : public VBoxContainer
 {
-	static void _bind_methods();
-
 	friend class Skeleton3DEditorPlugin;
 
 	enum SkeletonOption
@@ -174,7 +168,6 @@ class Skeleton3DEditor : public VBoxContainer
 	EditorFileDialog* file_export_lib = nullptr;
 
 	void update_joint_tree();
-	void update_all();
 
 	void create_editors();
 
@@ -185,13 +178,8 @@ class Skeleton3DEditor : public VBoxContainer
 	void insert_keys(const bool p_all_bones, const bool p_enable_modifier);
 
 	void create_physical_skeleton();
-	PhysicalBone3D* create_physical_bone(
-		int bone_id, int bone_child_id, const Vector<BoneInfo>& bones_infos);
 
 	void export_skeleton_profile();
-
-	void set_keyable(const bool p_keyable);
-	void set_bone_options_enabled(const bool p_bone_options_enabled);
 
 	// Handle.
 	MeshInstance3D* handles_mesh_instance = nullptr;
@@ -213,7 +201,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 	void _joint_tree_selection_changed();
 	void _joint_tree_rmb_select(const Vector2& p_pos, MouseButton p_button);
-	void _update_properties();
 
 	void _subgizmo_selection_change();
 	void _disconnect_from_skeleton();
@@ -221,14 +208,8 @@ class Skeleton3DEditor : public VBoxContainer
 
 	int selected_bone = -1;
 
-protected:
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
-
 public:
 	static Skeleton3DEditor* get_singleton() { return singleton; }
-
-	void select_bone(int p_idx);
 
 	int get_selected_bone() const;
 
@@ -247,8 +228,12 @@ public:
 
 	Vector3 get_bone_original_scale() const { return bone_original_scale; }
 
-	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton);
-	~Skeleton3DEditor();
+	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton)
+		: editor_plugin(e_plugin), skeleton(skeleton)
+	{
+	}
+
+	~Skeleton3DEditor() = default;
 };
 
 class EditorInspectorPluginSkeleton : public EditorInspectorPlugin
@@ -273,10 +258,11 @@ public:
 
 	virtual String get_plugin_name() const override { return "Skeleton3D"; }
 
-	Skeleton3DEditorPlugin();
+	Skeleton3DEditorPlugin() = default;
 };
 
-class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin
+class Skeleton3DGizmoPlugin
+ : public EditorNode3DGizmoPlugin
 {
 	struct SelectionMaterials
 	{
@@ -303,7 +289,7 @@ public:
 	virtual void set_subgizmo_transform(
 		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
 	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
-		const Vector<Transform3D>& p_restore, bool p_cancel) override;
+		const Vector<Transform3D>& p_restore, bool p_cancel);
 
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 

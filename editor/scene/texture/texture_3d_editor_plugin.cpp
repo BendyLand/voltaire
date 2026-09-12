@@ -87,16 +87,6 @@ void Texture3DEditor::_notification(int p_what)
 		draw_texture_rect(checkerboard.ptr(), texture_rect->get_rect(), true);
 		_draw_outline();
 	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (info) {
-			Ref<Font> metadata_label_font =
-				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-			info->add_theme_font_override(SceneStringName(font), metadata_label_font.ptr());
-		}
-		theme_cache.outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-	} break;
 	}
 }
 
@@ -132,54 +122,6 @@ void Texture3DEditor::_texture_rect_update_area()
 
 	texture_rect->set_position(Vector2(ofs_x, ofs_y - Math::round(EDSCALE)));
 	texture_rect->set_size(Vector2(tex_width, tex_height));
-}
-
-void Texture3DEditor::_update_gui()
-{
-	if (texture.is_null()) {
-		return;
-	}
-
-	_texture_rect_update_area();
-
-	layer->set_max(texture->get_depth() - 1);
-
-	const Image::Format format = texture->get_format();
-	const String format_name = Image::get_format_name(format);
-
-	if (texture->has_mipmaps()) {
-		const int mip_count =
-			Image::get_image_required_mipmaps(texture->get_width(), texture->get_height(), format);
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, true) *
-			texture->get_depth();
-
-		info->set_text(
-			vformat(String::utf8("%d×%d×%d %s\n") + TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"),
-				texture->get_width(), texture->get_height(), texture->get_depth(), format_name,
-				mip_count, String::humanize_size(memory)));
-
-	}
-	else {
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, false) *
-			texture->get_depth();
-
-		info->set_text(
-			vformat(String::utf8("%d×%d×%d %s\n") + TTR("No Mipmaps") + "\n" + TTR("Memory: %s"),
-				texture->get_width(), texture->get_height(), texture->get_depth(), format_name,
-				String::humanize_size(memory)));
-	}
-
-	const uint32_t components_mask = Image::get_format_component_mask(format);
-	if (Math::is_power_of_2(components_mask)) {
-		// Only one channel available, no point in showing a channel selector.
-		channel_selector->hide();
-	}
-	else {
-		channel_selector->show();
-		channel_selector->set_available_channels_mask(components_mask);
-	}
 }
 
 void Texture3DEditor::on_selected_channels_changed() { _update_material(false); }

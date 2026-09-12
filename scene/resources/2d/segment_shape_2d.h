@@ -40,7 +40,6 @@ class SegmentShape2D : public Shape2D
 	void _update_shape();
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool _edit_is_selected_on_click(

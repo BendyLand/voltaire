@@ -178,7 +178,6 @@ private: // Internal routines.
 		int32_t p_x, int32_t p_y, int32_t p_dx, int32_t p_dy, bool p_inclusive = false);
 
 protected:
-	static void _bind_methods();
 
 	virtual real_t _estimate_cost(const Vector2i& p_from_id, const Vector2i& p_end_id);
 	virtual real_t _compute_cost(const Vector2i& p_from_id, const Vector2i& p_to_id);

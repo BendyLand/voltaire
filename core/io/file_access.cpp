@@ -727,8 +727,7 @@ uint32_t FileAccess::get_unix_permissions(const String& p_file)
 	return fa->_get_unix_permissions(p_file);
 }
 
-Error FileAccess::set_unix_permissions(
-	const String& p_file, uint32_t p_permissions)
+Error FileAccess::set_unix_permissions(const String& p_file, uint32_t p_permissions)
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||
@@ -905,8 +904,8 @@ Vector<String> FileAccess::get_extended_attributes_list(const String& p_file)
 	}
 
 	Ref<FileAccess> fa = create_for_path(p_file);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), Vector<String>(),
-		vformat("Cannot create FileAccess for path '%s'.", p_file));
+	ERR_FAIL_COND_V_MSG(
+		fa.is_null(), Vector<String>(), vformat("Cannot create FileAccess for path '%s'.", p_file));
 
 	return fa->_get_extended_attributes_list(p_file);
 }
@@ -1106,7 +1105,6 @@ String FileAccess::get_sha256(const String& p_file)
 	return String::hex_encode_buffer(hash, 32);
 }
 
-void FileAccess::_bind_methods() {}
-
 FileAccess::~FileAccess() { _delete_temp(); }
+
 

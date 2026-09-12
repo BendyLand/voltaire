@@ -59,14 +59,8 @@ class ProjectExportTextureFormatError : public HBoxContainer
 	Label* texture_format_error_label = nullptr;
 	LinkButton* fix_texture_format_button = nullptr;
 	String setting_identifier;
-	void _on_fix_texture_format_pressed();
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
 
 public:
-	void show_for_texture_format(const String& p_friendly_name, const String& p_setting_identifier);
 	ProjectExportTextureFormatError(ProjectExportDialog* p_export_dialog);
 };
 
@@ -142,14 +136,9 @@ class ProjectExportDialog : public ConfirmationDialog
 
 	void _advanced_options_pressed();
 	void _options_filter_changed(const String& p_filter);
-	void _runnable_pressed();
 	void _update_parameters(const String& p_edited_property);
-	void _name_changed(const String& p_string);
-	void _name_editing_finished();
-	void _add_preset(int p_platform);
 	void _edit_preset(int p_index);
 	void _duplicate_preset();
-	void _delete_preset();
 	void _delete_preset_confirm();
 	void _update_export_all();
 
@@ -158,9 +147,7 @@ class ProjectExportDialog : public ConfirmationDialog
 	void _update_presets();
 
 	void _export_type_changed(int p_which);
-	void _filter_changed(const String& p_filter);
 	String _get_resource_export_header(EditorExportPreset::ExportFilter p_filter) const;
-	void _fill_resource_tree();
 	void _setup_item_for_file_mode(TreeItem* p_item, EditorExportPreset::FileExportMode p_mode);
 	bool _fill_tree(EditorFileSystemDirectory* p_dir, TreeItem* p_item,
 		Ref<EditorExportPreset>& current, EditorExportPreset::ExportFilter p_export_filter);
@@ -171,14 +158,7 @@ class ProjectExportDialog : public ConfirmationDialog
 	void _set_file_export_mode(int p_id);
 
 	bool updating_patch_delta_filters = false;
-	void _patch_delta_encoding_changed(bool p_pressed);
-	void _patch_delta_include_filter_changed(const String& p_filter);
-	void _patch_delta_exclude_filter_changed(const String& p_filter);
-	void _patch_delta_zstd_level_changed(double p_value);
 	void _patch_delta_min_reduction_changed(double p_value);
-	void _patch_tree_item_edited();
-	void _patch_file_selected(const String& p_path);
-	void _patch_delete_confirmed();
 	void _patch_add_pack_pressed();
 
 	EditorFileDialog* export_pck_zip = nullptr;
@@ -192,32 +172,20 @@ class ProjectExportDialog : public ConfirmationDialog
 
 	OptionButton* script_mode = nullptr;
 
-	void _open_export_template_manager();
-
 	void _export_pck_zip();
 	void _export_pck_zip_selected(const String& p_path);
 
 	void _export_project();
 	void _export_project_to_path(const String& p_path);
-	void _export_all_dialog();
-	void _export_all_dialog_action(const String& p_str);
-	void _export_all(bool p_debug);
 
 	void _update_feature_list();
-	void _custom_features_changed(const String& p_text);
 
 	bool updating_script_key = false;
 	bool updating_enc_filters = false;
 	bool updating_seed = false;
 	void _enc_pck_changed(bool p_pressed);
-	void _enc_directory_changed(bool p_pressed);
-	void _enc_filters_changed(const String& p_text);
-	void _seed_input_changed(const String& p_text);
-	void _script_encryption_key_changed(const String& p_key);
 	void _script_encryption_key_visibility_changed(bool p_visible);
 	bool _validate_script_encryption_key(const String& p_key);
-
-	void _script_export_mode_changed(EditorExportPreset::ScriptExportMode p_mode);
 
 	void _open_key_help_link();
 
@@ -225,12 +193,10 @@ class ProjectExportDialog : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void popup_export();
 
-	void set_export_path(const String& p_value);
 	String get_export_path();
 
 	Ref<EditorExportPreset> get_current_preset() const;

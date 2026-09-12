@@ -32,7 +32,6 @@
 #include "servers/xr/xr_server.h"
 #include "xr_body_modifier_3d.h"
 
-void XRBodyModifier3D::_bind_methods() {}
 
 void XRBodyModifier3D::set_body_tracker(const StringName& p_tracker_name)
 {

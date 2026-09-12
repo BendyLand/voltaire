@@ -70,7 +70,6 @@ private:
 	Error _watch_changes(uint64_t p_usec);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -94,7 +93,6 @@ public:
 	void set_replication_config(Ref<SceneReplicationConfig> p_config);
 	Ref<SceneReplicationConfig> get_replication_config();
 
-	void set_root_path(const NodePath& p_path);
 	NodePath get_root_path() const;
 	virtual void set_multiplayer_authority(int p_peer_id, bool p_recursive = true) override;
 

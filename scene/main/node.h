@@ -33,8 +33,9 @@
 #include "core/input/input_event.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/iterable.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
+#include "scene/resources/packed_scene.h"
+#include "scene/resources/material.h"
 
 class MultiplayerAPI;
 class NodePath;
@@ -348,7 +349,6 @@ private:
 	void _propagate_ready();
 	void _propagate_exit_tree();
 	void _propagate_after_exit_tree();
-	void _propagate_physics_interpolated(bool p_interpolated);
 	void _propagate_physics_interpolation_reset_requested(bool p_requested);
 	void _propagate_process_owner(
 		Node* p_owner, int p_pause_notification, int p_enabled_notification);
@@ -417,7 +417,6 @@ protected:
 
 	void _propagate_replace_owner(Node* p_owner, Node* p_by_owner);
 
-	static void _bind_methods();
 	static String _get_name_num_separator();
 
 	friend class SceneState;
@@ -621,7 +620,6 @@ public:
 	Node* get_owner() const;
 	void get_owned_by(Node* p_by, List<Node*>* p_owned);
 
-	void set_unique_name_in_owner(bool p_enabled);
 	bool is_unique_name_in_owner() const;
 
 	_FORCE_INLINE_ int get_index(bool p_include_internal = true) const
@@ -798,8 +796,6 @@ public:
 	bool can_process() const;
 	bool can_process_notification(int p_what) const;
 
-	void set_physics_interpolation_mode(PhysicsInterpolationMode p_mode);
-
 	PhysicsInterpolationMode get_physics_interpolation_mode() const
 	{
 		return data.physics_interpolation_mode;
@@ -840,8 +836,6 @@ public:
 	_FORCE_INLINE_ Viewport* get_viewport() const { return data.viewport; }
 
 	virtual Vector<String> get_configuration_warnings() const;
-
-	void update_configuration_warnings();
 
 	void set_display_folded(bool p_folded);
 	bool is_displayed_folded() const;
@@ -891,7 +885,7 @@ public:
 
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
-	Node();
+	Node() = default;
 	~Node();
 };
 

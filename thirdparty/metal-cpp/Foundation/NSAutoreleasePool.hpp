@@ -26,7 +26,6 @@
 #include "NSObject.hpp"
 #include "NSPrivate.hpp"
 #include "NSTypes.hpp"
-#include "core/templates/mem_unique_ptr.h"
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 

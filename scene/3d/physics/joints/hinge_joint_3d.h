@@ -58,15 +58,10 @@ public:
 protected:
 	real_t params[PARAM_MAX];
 	bool flags[FLAG_MAX];
-	virtual void _configure_joint(
-		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
-	static void _bind_methods();
 
 public:
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
-	void set_flag(Flag p_flag, bool p_value);
 	bool get_flag(Flag p_flag) const;
 
 	HingeJoint3D();

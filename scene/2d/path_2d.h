@@ -52,7 +52,6 @@ class Path2D : public Node2D
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 #ifdef DEBUG_ENABLED
@@ -82,11 +81,8 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void path_changed();
-
 	void set_progress(real_t p_progress);
 	real_t get_progress() const;
 

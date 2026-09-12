@@ -131,7 +131,6 @@ void AnimationNodeStateMachineTransition::set_priority(int p_priority)
 
 int AnimationNodeStateMachineTransition::get_priority() const { return priority; }
 
-void AnimationNodeStateMachineTransition::_bind_methods() {}
 
 AnimationNodeStateMachineTransition::AnimationNodeStateMachineTransition() {}
 
@@ -870,7 +869,6 @@ AnimationNodeStateMachinePlayback::_get_group_end_transition() const
 	return group_end_transition;
 }
 
-void AnimationNodeStateMachinePlayback::_bind_methods() {}
 
 AnimationNodeStateMachinePlayback::AnimationNodeStateMachinePlayback()
 {

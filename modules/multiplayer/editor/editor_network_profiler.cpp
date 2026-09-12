@@ -58,31 +58,6 @@ void EditorNetworkProfiler::_notification(int p_what)
 	}
 }
 
-void EditorNetworkProfiler::_update_theme_item_cache()
-{
-	VBoxContainer::_update_theme_item_cache();
-
-	theme_cache.node_icon = get_theme_icon(SNAME("Node"), EditorStringName(EditorIcons));
-	theme_cache.stop_icon = get_theme_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-	theme_cache.play_icon = get_theme_icon(SNAME("Play"), EditorStringName(EditorIcons));
-	theme_cache.clear_icon = get_theme_icon(SNAME("Clear"), EditorStringName(EditorIcons));
-
-	theme_cache.multiplayer_synchronizer_icon =
-		get_theme_icon("MultiplayerSynchronizer", EditorStringName(EditorIcons));
-	theme_cache.instance_options_icon =
-		get_theme_icon(SNAME("InstanceOptions"), EditorStringName(EditorIcons));
-
-	theme_cache.incoming_bandwidth_icon =
-		get_theme_icon(SNAME("ArrowDown"), EditorStringName(EditorIcons));
-	theme_cache.outgoing_bandwidth_icon =
-		get_theme_icon(SNAME("ArrowUp"), EditorStringName(EditorIcons));
-
-	theme_cache.incoming_bandwidth_color =
-		get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	theme_cache.outgoing_bandwidth_color =
-		get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-}
-
 void EditorNetworkProfiler::_refresh()
 {
 	if (!dirty) {
@@ -91,18 +66,6 @@ void EditorNetworkProfiler::_refresh()
 	dirty = false;
 	refresh_rpc_data();
 	refresh_replication_data();
-}
-
-void EditorNetworkProfiler::_activate_pressed()
-{
-	_update_button_text();
-
-	if (activate->is_pressed()) {
-		refresh_timer->start();
-	}
-	else {
-		refresh_timer->stop();
-	}
 }
 
 void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)

@@ -61,7 +61,6 @@ protected:
 	bool _property_can_revert(const StringName& p_name) const;
 #endif // DEBUG_ENABLED
 
-	static void _bind_methods();
 
 public:
 #ifdef DEBUG_ENABLED

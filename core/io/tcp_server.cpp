@@ -30,8 +30,6 @@
 
 #include "tcp_server.h"
 
-void TCPServer::_bind_methods() {}
-
 Error TCPServer::listen(uint16_t p_port, const IPAddress& p_bind_address)
 {
 	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);

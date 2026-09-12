@@ -72,12 +72,8 @@ class MultiMeshEditor : public Control
 	};
 
 	void _browsed(const NodePath& p_path);
-	void _menu_option(int);
 	void _populate();
 	void _browse(bool p_source);
-
-protected:
-	void _node_removed(Node* p_node);
 
 public:
 	void edit(MultiMeshInstance3D* p_multimesh);
@@ -91,7 +87,7 @@ class MultiMeshEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "MultiMesh"; }
 
-	MultiMeshEditorPlugin();
+	MultiMeshEditorPlugin() = default;
 };
 
 

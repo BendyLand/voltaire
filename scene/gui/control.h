@@ -294,7 +294,6 @@ private:
 		NodePath focus_next;
 		NodePath focus_prev;
 
-
 		// Accessibility.
 
 		String accessibility_name;
@@ -341,8 +340,9 @@ private:
 		String tooltip;
 		StringName translation_context;
 		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+	};
 
-	} data;
+	Data data;
 
 	// Dynamic properties.
 
@@ -381,10 +381,9 @@ private:
 	void _grow_to_desired_size();
 	void _size_changed();
 
-	void _top_level_changed() override {
-	} // Controls don't need to do anything, only other CanvasItems.
+	void _top_level_changed() {} // Controls don't need to do anything, only other CanvasItems.
 
-	void _top_level_changed_on_parent() override;
+	void _top_level_changed_on_parent();
 
 	void _clear_size_warning();
 
@@ -434,7 +433,6 @@ protected:
 	// Base object overrides.
 
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	bool _has_focus_bind_compat_110250() const;
@@ -501,7 +499,7 @@ public:
 	static void set_root_layout_direction(int p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
-	PackedStringArray get_accessibility_configuration_warnings() const ;
+	PackedStringArray get_accessibility_configuration_warnings() const;
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
 		const StringName& p_function, int p_idx, List<String>* r_options) const;
@@ -593,7 +591,6 @@ public:
 	virtual Size2 get_combined_maximum_size() const;
 	virtual Size2 get_inner_combined_maximum_size() const;
 
-	void set_custom_maximum_size(const Size2& p_custom);
 	Size2 get_custom_maximum_size() const;
 
 	void set_parent_maximum_size_cache(const Size2& p_size);
@@ -700,7 +697,6 @@ public:
 
 	virtual String get_accessibility_container_name(const Node* p_node) const;
 
-	void set_accessibility_name(const String& p_name);
 	String get_accessibility_name() const;
 
 	virtual String _get_accessibility_name() const;
@@ -776,8 +772,6 @@ public:
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_font_size(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
-	Color get_theme_color(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_constant(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 #ifdef TOOLS_ENABLED
@@ -829,15 +823,14 @@ public:
 	// Extra properties.
 
 	String get_tooltip_text() const;
-	void set_tooltip_text(const String& text);
 	StringName get_translation_context() const;
 	void set_translation_context(const StringName& p_context);
 	virtual Control* make_custom_tooltip(const String& p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;
 
-	Control();
-	~Control();
+	Control() = default;
+	~Control() = default;
 };
 
 // G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore

@@ -49,7 +49,6 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 
 	// Create an editable reference and a copy of full event.
 	Ref<InputEvent> received_event = p_event;
-	Ref<InputEvent> received_original_event = received_event->duplicate();
 
 	// Check what the type is and if it is allowed.
 	Ref<InputEventKey> k = received_event;
@@ -106,8 +105,6 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 
 	// Maintain device selection.
 	received_event->set_device(_get_current_device());
-
-	_set_event(received_event, received_original_event);
 }
 
 void InputEventConfigurationDialog::_search_term_updated(const String&) { _update_input_list(); }
@@ -139,24 +136,6 @@ void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index)
 	}
 
 	_set_event(ie, original_event);
-}
-
-void InputEventConfigurationDialog::_autoremap_command_or_control_toggled(bool p_checked)
-{
-	Ref<InputEventWithModifiers> ie = event;
-	if (ie.is_valid()) {
-		ie->set_command_or_control_autoremap(p_checked);
-		_set_event(ie, original_event);
-	}
-
-	if (p_checked) {
-		mod_checkboxes[MOD_META]->hide();
-		mod_checkboxes[MOD_CTRL]->hide();
-	}
-	else {
-		mod_checkboxes[MOD_META]->show();
-		mod_checkboxes[MOD_CTRL]->show();
-	}
 }
 
 void InputEventConfigurationDialog::_key_mode_selected(int p_mode)

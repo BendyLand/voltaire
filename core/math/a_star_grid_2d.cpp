@@ -685,5 +685,4 @@ Vector<Vector2> AStarGrid2D::get_point_path(
 	return path;
 }
 
-void AStarGrid2D::_bind_methods() {}
 

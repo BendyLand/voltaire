@@ -82,47 +82,6 @@ void TabContainer::_drag_move_tab(int p_from_index, int p_to_index)
 	move_child(get_tab_control(p_from_index), get_tab_control(p_to_index)->get_index(false));
 }
 
-void TabContainer::_on_tab_visibility_changed(Control* p_child)
-{
-	if (updating_visibility) {
-		return;
-	}
-	int tab_index = get_tab_idx_from_control(p_child);
-	if (tab_index == -1) {
-		return;
-	}
-	// Only allow one tab to be visible.
-	bool made_visible = p_child->is_visible();
-	updating_visibility = true;
-
-	if (!made_visible && get_current_tab() == tab_index) {
-		if (get_deselect_enabled() || get_tab_count() == 0) {
-			// Deselect.
-			set_current_tab(-1);
-		}
-		else if (get_tab_count() == 1) {
-			// Only tab, cannot deselect.
-			p_child->show();
-		}
-		else {
-			// Set a different tab to be the current tab.
-			bool selected = select_next_available();
-			if (!selected) {
-				selected = select_previous_available();
-			}
-			if (!selected) {
-				// No available tabs, deselect.
-				set_current_tab(-1);
-			}
-		}
-	}
-	else if (made_visible && get_current_tab() != tab_index) {
-		set_current_tab(tab_index);
-	}
-
-	updating_visibility = false;
-}
-
 TabBar* TabContainer::get_tab_bar() const { return tab_bar; }
 
 int TabContainer::get_tab_count() const { return tab_bar->get_tab_count(); }
@@ -348,36 +307,6 @@ Size2 TabContainer::get_inner_combined_maximum_size() const
 	}
 
 	return ms;
-}
-
-void TabContainer::_maximum_size_changed()
-{
-	if (!tab_bar) {
-		return;
-	}
-
-	Size2 ms = get_combined_maximum_size();
-	if (theme_cache.tabbar_style.is_valid()) {
-		if (ms.width >= 0) {
-			ms.width -= theme_cache.tabbar_style->get_margin(SIDE_LEFT) +
-						theme_cache.tabbar_style->get_margin(SIDE_RIGHT);
-			if (get_popup() && popup_button) {
-				ms.width -= popup_button->get_minimum_size().x;
-			}
-			if (theme_cache.side_margin > 0 && get_tab_alignment() != TabBar::ALIGNMENT_CENTER &&
-				(get_tab_alignment() != TabBar::ALIGNMENT_RIGHT || !get_popup())) {
-				ms.width -= theme_cache.side_margin;
-			}
-			ms.width = MAX(ms.width, 0);
-		}
-		if (ms.height >= 0) {
-			ms.height -= theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-						 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
-			ms.height = MAX(ms.height, 0);
-		}
-	}
-	internal_container->set_parent_maximum_size_cache(Size2(-1, -1));
-	tab_bar->set_custom_maximum_size(ms);
 }
 
 void TabContainer::set_switch_on_drag_hover(bool p_enabled)

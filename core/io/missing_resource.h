@@ -41,7 +41,6 @@ class MissingResource : public Resource
 	bool recording_properties = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_original_class(const String& p_class);

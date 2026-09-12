@@ -60,58 +60,11 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
-void ExportTemplateManager::_request_mirrors()
-{
-	mirrors_list->clear();
-	mirrors_empty = true;
-	_update_install_button();
-
-	// Downloadable export templates are only available for stable and official alpha/beta/RC builds
-	// (which always have a number following their status, e.g. "alpha1").
-	// Therefore, don't display download-related features when using a development version
-	// (whose builds aren't numbered).
-	if (!strcmp(VLTR_VERSION_STATUS, "dev") || !strcmp(VLTR_VERSION_STATUS, "beta") ||
-		!strcmp(VLTR_VERSION_STATUS, "rc")) {
-		_set_empty_mirror_list();
-		mirrors_list->set_tooltip_text(
-			TTRC("Official export templates aren't available for development builds."));
-#ifdef REAL_T_IS_DOUBLE
-	}
-	else if (true) {
-		_set_empty_mirror_list();
-		mirrors_list->set_tooltip_text(
-			TTRC("Official export templates aren't available for double-precision builds."));
-#endif
-	}
-	else if (!_is_online()) {
-		mirrors_list->set_tooltip_text(TTRC("Template downloading is disabled in offline mode."));
-	}
-	else {
-		mirrors_list->set_tooltip_text(String());
-	}
-
-	if (mirrors_list->get_tooltip_text().is_empty()) {
-		const String mirrors_metadata_url =
-			vformat("https://godotengine.org/mirrorlist/%s.json", VLTR_VERSION_FULL_CONFIG);
-		mirrors_requester->request(mirrors_metadata_url);
-	}
-}
-
 bool ExportTemplateManager::_is_online() const { return !offline_container->is_visible(); }
 
 void ExportTemplateManager::_open_mirror()
 {
 	OS::get_singleton()->shell_open(_get_current_mirror_url());
-}
-
-void ExportTemplateManager::_delete_all()
-{
-	item_to_delete = installed_templates_tree->get_root();
-	confirm_delete->set_text(
-		TTRC("Remove all installed template files? (Cannot be undone.)\nDepending on your "
-			 "filesystem configuration, the files will either be moved to the system trash or "
-			 "deleted permanently."));
-	confirm_delete->popup_centered();
 }
 
 void ExportTemplateManager::_delete_confirmed()
@@ -408,43 +361,6 @@ void ExportTemplateManager::_tree_button_clicked(
 	TreeItem* p_item, int p_column, int p_id, MouseButton p_button)
 {
 	switch ((ButtonID)p_id) {
-	case ButtonID::DOWNLOAD: {
-		_install_templates(p_item);
-	} break;
-
-	case ButtonID::REPAIR: {
-		p_item->set_collapsed(false);
-		_install_templates(p_item);
-	} break;
-
-	case ButtonID::REMOVE: {
-		item_to_delete = p_item;
-		confirm_delete->set_text(
-			TTRC("Remove the selected template files? (Cannot be undone.)\nDepending on your "
-				 "filesystem configuration, the files will either be moved to the system trash or "
-				 "deleted permanently."));
-		confirm_delete->popup_centered();
-	} break;
-
-	case ButtonID::CANCEL: {
-		if (_item_is_file(p_item)) {
-			_cancel_item_download(p_item);
-			if (_is_template_download_finished(p_item->get_parent())) {
-				queued_templates.erase(p_item->get_parent()->get_text(0));
-			}
-		}
-		else {
-			queued_templates.erase(p_item->get_text(0));
-			for (TreeItem* child = p_item->get_first_child(); child; child = child->get_next()) {
-				if (_get_file_metadata(child)->download_status != DownloadStatus::NONE) {
-					_cancel_item_download(child);
-				}
-			}
-		}
-		_process_download_queue();
-		_update_template_tree();
-	} break;
-
 	case ButtonID::FAIL: {
 		FileMetadata* meta = _get_file_metadata(p_item);
 		EditorNode::get_singleton()->show_warning(meta->fail_reason + ".", TTR("Download Failed"));
@@ -462,27 +378,6 @@ void ExportTemplateManager::_tree_item_edited()
 
 	edited->propagate_check(0, false);
 	_update_install_button();
-}
-
-void ExportTemplateManager::_install_templates(TreeItem* p_files)
-{
-	_queue_download_tree_item(p_files ? p_files : available_templates_tree->get_root());
-	download_count = queued_files.size();
-
-	file_metadata.clear();
-	_update_template_tree();
-	_process_download_queue();
-	_update_install_button();
-
-	// Don't allow changing selected version while downloading.
-	for (int i = 0; i < version_list->get_item_count(); i++) {
-		version_list->set_item_disabled(i, true);
-	}
-
-	ProgressIndicator* indicator = EditorNode::get_bottom_panel()->get_progress_indicator();
-	indicator->set_tooltip_text(TTRC("Downloading export templates..."));
-	indicator->set_value(0);
-	indicator->show();
 }
 
 void ExportTemplateManager::_open_template_directory()
@@ -516,54 +411,6 @@ void ExportTemplateManager::_queue_download_tree_item(TreeItem* p_item)
 		for (TreeItem* child = p_item->get_first_child(); child; child = child->get_next()) {
 			_queue_download_tree_item(child);
 		}
-	}
-}
-
-void ExportTemplateManager::_process_download_queue()
-{
-	queue_update_pending = false;
-
-	int downloader_index = 0;
-	bool is_finished = true;
-	for (TreeItem* item : downloading_items) {
-		FileMetadata* meta = _get_file_metadata(item);
-
-		is_finished = is_finished && _status_is_finished(meta->download_status);
-		if (meta->download_status != DownloadStatus::PENDING) {
-			continue;
-		}
-
-		TemplateDownloader* downloader = _get_available_downloader(&downloader_index);
-		if (!downloader) {
-			break;
-		}
-		downloader_index++;
-
-		Error err = downloader->download_template(item->get_text(0), _get_current_mirror_url());
-		if (err == OK) {
-			meta->download_status = DownloadStatus::IN_PROGRESS;
-			meta->downloader = downloader;
-		}
-		else {
-			_item_download_failed(
-				item, vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		}
-	}
-
-	if (is_finished) {
-		// Exit "downloading mode".
-		queued_templates.clear();
-		downloading_items.clear();
-		set_process_internal(false);
-		_update_install_button();
-		EditorNode::get_bottom_panel()->get_progress_indicator()->hide();
-
-		for (int i = 0; i < version_list->get_item_count(); i++) {
-			version_list->set_item_disabled(i, false);
-		}
-	}
-	else {
-		set_process_internal(true);
 	}
 }
 
@@ -617,40 +464,6 @@ void ExportTemplateManager::_download_request_completed(const String& p_filename
 	}
 }
 
-void ExportTemplateManager::_download_request_failed(
-	const String& p_filename, const String& p_reason)
-{
-	bool found = false;
-	bool template_finished = false;
-
-	queued_files.erase(p_filename);
-	for (TreeItem* item : downloading_items) {
-		if (item->get_text(0) != p_filename) {
-			continue;
-		}
-
-		FileMetadata* meta = _get_file_metadata(p_filename);
-		meta->downloader = nullptr;
-
-		_item_download_failed(item, p_reason);
-
-		found = true;
-		template_finished = _is_template_download_finished(item->get_parent());
-		if (template_finished) {
-			queued_templates.erase(item->get_parent()->get_text(0));
-		}
-		break;
-	}
-	if (!found) {
-		ERR_FAIL_COND(!found);
-	}
-	_queue_process_download_queue();
-
-	if (template_finished) {
-		_update_template_tree();
-	}
-}
-
 bool ExportTemplateManager::_is_template_download_finished(TreeItem* p_template)
 {
 	for (TreeItem* child = p_template->get_first_child(); child; child = child->get_next()) {
@@ -681,37 +494,6 @@ void ExportTemplateManager::_apply_item_folding(TreeItem* p_item, bool p_default
 			p_item->set_collapsed(true);
 		}
 	}
-}
-
-void ExportTemplateManager::_cancel_item_download(TreeItem* p_item)
-{
-	_item_download_failed(p_item, TTR("Canceled by the user"));
-	queued_files.erase(p_item->get_text(0));
-
-	FileMetadata* meta = _get_file_metadata(p_item);
-	if (meta->downloader) {
-		meta->downloader->cancel_download();
-		meta->downloader = nullptr;
-	}
-}
-
-void ExportTemplateManager::_item_download_failed(TreeItem* p_item, const String& p_reason)
-{
-	FileMetadata* meta = _get_file_metadata(p_item);
-	meta->fail_reason = p_reason;
-	meta->download_status = DownloadStatus::FAILED;
-
-	p_item->clear_buttons();
-	_add_fail_reason_button(p_item);
-}
-
-void ExportTemplateManager::_add_fail_reason_button(TreeItem* p_item, const String& p_filename)
-{
-	FileMetadata* meta =
-		_get_file_metadata(p_filename.is_empty() ? p_item->get_text(0) : p_filename);
-	p_item->add_button(0, theme_cache.failure_icon, (int)ButtonID::FAIL);
-	p_item->set_button_tooltip_text(
-		0, -1, vformat(TTR("Download failed.\nReason: %s."), meta->fail_reason));
 }
 
 ExportTemplateManager::FileMetadata* ExportTemplateManager::_get_file_metadata(
@@ -832,144 +614,7 @@ bool ExportTemplateManager::can_install_android_template(const Ref<EditorExportP
 	return FileAccess::exists(get_android_source_zip(p_preset));
 }
 
-Error ExportTemplateManager::install_android_template(const Ref<EditorExportPreset>& p_preset)
-{
-	const String source_zip = get_android_source_zip(p_preset);
-	ERR_FAIL_COND_V(!FileAccess::exists(source_zip), ERR_CANT_OPEN);
-	return install_android_template_from_file(source_zip, p_preset);
-}
-
-Error ExportTemplateManager::install_android_template_from_file(
-	const String& p_file, const Ref<EditorExportPreset>& p_preset)
-{
-	// To support custom Android builds, we install the Java source code and buildsystem
-	// from android_source.zip to the project's res://android folder.
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	ERR_FAIL_COND_V(da.is_null(), ERR_CANT_CREATE);
-
-	String build_dir = get_android_build_directory(p_preset);
-	String parent_dir = build_dir.get_base_dir();
-
-	// Make parent of the build dir (if it does not exist).
-	da->make_dir_recursive(parent_dir);
-	{
-		// Add identifier, to ensure building won't work if the current template doesn't match.
-		Ref<FileAccess> f =
-			FileAccess::open(parent_dir.path_join(".build_version"), FileAccess::WRITE);
-		ERR_FAIL_COND_V(f.is_null(), ERR_CANT_CREATE);
-		f->store_line(get_android_template_identifier(p_preset));
-	}
-
-	// Create the android build directory.
-	Error err = da->make_dir_recursive(build_dir);
-	ERR_FAIL_COND_V(err != OK, err);
-	{
-		// Add an empty .gdignore file to avoid scan.
-		Ref<FileAccess> f = FileAccess::open(build_dir.path_join(".gdignore"), FileAccess::WRITE);
-		ERR_FAIL_COND_V(f.is_null(), ERR_CANT_CREATE);
-		f->store_line("");
-	}
-
-	// Uncompress source template.
-
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-
-	unzFile pkg = unzOpen2(p_file.utf8().get_data(), &io);
-	ERR_FAIL_NULL_V_MSG(pkg, ERR_CANT_OPEN, "Android sources not in ZIP format.");
-
-	int ret = unzGoToFirstFile(pkg);
-	int total_files = 0;
-	// Count files to unzip.
-	while (ret == UNZ_OK) {
-		total_files++;
-		ret = unzGoToNextFile(pkg);
-	}
-	ret = unzGoToFirstFile(pkg);
-
-	ProgressDialog::get_singleton()->add_task(
-		"uncompress_src", TTR("Uncompressing Android Build Sources"), total_files);
-
-	HashSet<String> dirs_tested;
-	int idx = 0;
-	while (ret == UNZ_OK) {
-		// Get file path.
-		unz_file_info info;
-		char fpath[16384];
-		ret = unzGetCurrentFileInfo(pkg, &info, fpath, 16384, nullptr, 0, nullptr, 0);
-		if (ret != UNZ_OK) {
-			break;
-		}
-
-		String path = String::utf8(fpath);
-		String base_dir = path.get_base_dir();
-
-		if (!path.ends_with("/")) {
-			Vector<uint8_t> uncomp_data;
-			uncomp_data.resize(info.uncompressed_size);
-
-			// Read.
-			unzOpenCurrentFile(pkg);
-			unzReadCurrentFile(pkg, uncomp_data.ptrw(), uncomp_data.size());
-			unzCloseCurrentFile(pkg);
-
-			if (!dirs_tested.has(base_dir)) {
-				da->make_dir_recursive(build_dir.path_join(base_dir));
-				dirs_tested.insert(base_dir);
-			}
-
-			String to_write = build_dir.path_join(path);
-			Ref<FileAccess> f = FileAccess::open(to_write, FileAccess::WRITE);
-			if (f.is_valid()) {
-				f->store_buffer(uncomp_data.ptr(), uncomp_data.size());
-				f.unref(); // close file.
-#ifndef WINDOWS_ENABLED
-				FileAccess::set_unix_permissions(to_write, (info.external_fa >> 16) & 0x01FF);
-#endif
-			}
-			else {
-				ERR_PRINT("Can't uncompress file: " + to_write);
-			}
-		}
-
-		ProgressDialog::get_singleton()->task_step("uncompress_src", path, idx);
-
-		idx++;
-		ret = unzGoToNextFile(pkg);
-	}
-
-	ProgressDialog::get_singleton()->end_task("uncompress_src");
-	unzClose(pkg);
-	EditorFileSystem::get_singleton()->scan_changes();
-	return OK;
-}
-
-void ExportTemplateManager::popup_manager()
-{
-	if (template_data.is_empty()) {
-		_initialize_template_data();
-	}
-	_update_online_mode();
-
-	if (!is_downloading()) {
-		_update_template_tree();
-		_request_mirrors();
-	}
-	popup_centered_clamped(Vector2i(640, 700) * EDSCALE);
-}
-
 bool ExportTemplateManager::is_downloading() const { return !queued_files.is_empty(); }
-
-void ExportTemplateManager::stop_download()
-{
-	for (TreeItem* item : downloading_items) {
-		FileMetadata* meta = _get_file_metadata(item);
-		if (meta && !_status_is_finished(meta->download_status)) {
-			_cancel_item_download(item);
-		}
-	}
-}
 
 int TemplateDownloader::_find_sequence_backwards(
 	const PackedByteArray& p_source, const PackedByteArray& p_target) const
@@ -1034,135 +679,6 @@ void TemplateDownloader::_request_completed(int p_result, int p_response_code,
 			String()); // Not really possible to happen, so just fail with empty message.
 		ERR_FAIL_MSG("Request completed on wrong step.");
 	} break;
-
-	case Step::QUERYING: {
-		if (p_result != HTTPRequest::RESULT_SUCCESS || p_response_code != HTTPClient::RESPONSE_OK) {
-			_download_failed(_get_download_error(p_result, p_response_code));
-			return;
-		}
-		for (const String& header : p_headers) {
-			if (header.to_lower().begins_with("content-length:")) {
-				file_size = header.split(":")[1].to_int();
-			}
-		}
-
-		current_step = Step::SCANNING;
-		// Request the last 64 KB of the file to read the Central Directory.
-		const String tail_range =
-			vformat("Range: bytes=%d-%d", MAX(0, file_size - 0x10000), file_size - 1);
-
-		Error err = request(url, PackedStringArray{tail_range}, HTTPClient::METHOD_GET);
-		if (err != OK) {
-			_download_failed(vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		}
-	} break;
-
-	case Step::SCANNING: {
-		if (p_result != HTTPRequest::RESULT_SUCCESS ||
-			p_response_code != HTTPClient::RESPONSE_PARTIAL_CONTENT) {
-			_download_failed(_get_download_error(p_result, p_response_code));
-			return;
-		}
-		PackedByteArray eocd_sig = {0x50, 0x4b, 0x05, 0x06};
-		int eocd_pos = _find_sequence_backwards(p_body, eocd_sig);
-		if (eocd_pos == -1) {
-			_download_failed(TTR("Invalid template archive header."));
-			return;
-		}
-		const uint8_t* tail_data = p_body.ptr();
-
-		int total_entries = decode_uint16(tail_data + eocd_pos + 10);
-		int cd_start_offset = decode_uint32(tail_data + eocd_pos + 16);
-		int buffer_start_abs = file_size - p_body.size();
-		int current_pos = cd_start_offset - buffer_start_abs;
-		const String target_path = "templates/" + filename;
-
-		for (int i = 0; i < total_entries; i++) {
-			if (decode_uint32(tail_data + current_pos) != 0x02014b50) {
-				break;
-			}
-
-			int comp_method =
-				decode_uint16(tail_data + current_pos + 10); // 0 = Stored, 8 = Deflated
-			int comp_size = decode_uint32(tail_data + current_pos + 20);
-			int uncomp_size = decode_uint32(tail_data + current_pos + 24);
-			int name_len = decode_uint16(tail_data + current_pos + 28);
-			int extra_len = decode_uint16(tail_data + current_pos + 30);
-			int comm_len = decode_uint16(tail_data + current_pos + 32);
-			int local_offset = decode_uint32(tail_data + current_pos + 42);
-
-			int full_record_len = 46 + name_len + extra_len + comm_len;
-			const PackedByteArray raw_record =
-				p_body.slice(current_pos, current_pos + full_record_len);
-			const String file_name = String::utf8(
-				(const char*)p_body.slice(current_pos + 46, current_pos + 46 + name_len).ptr(),
-				name_len);
-
-			if (file_name == target_path) {
-				file_info.offset = local_offset;
-				file_info.compressed_size = comp_size;
-				file_info.uncompressed_size = uncomp_size;
-				file_info.raw_record = raw_record;
-				file_info.method = comp_method;
-				file_info.name = file_name;
-				break;
-			}
-			current_pos += full_record_len;
-		}
-
-		if (file_info.name.is_empty()) {
-			_download_failed(TTR("Requested template not found in the archive."));
-			return;
-		}
-
-		fragment_start_byte = file_info.offset;
-		fragment_end_byte =
-			file_info.offset + file_info.compressed_size + file_info.raw_record.size();
-		request_start_partial_size = 0;
-		retry_count = 0;
-		range_restart_attempted = false;
-		_clear_partial_download();
-		current_step = Step::DOWNLOADING;
-
-		Error err = _request_file_fragment();
-		if (err != OK) {
-			_download_failed(vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		}
-	} break;
-
-	case Step::DOWNLOADING: {
-		if (p_result != HTTPRequest::RESULT_SUCCESS ||
-			p_response_code != HTTPClient::RESPONSE_PARTIAL_CONTENT) {
-			if (p_result == HTTPRequest::RESULT_SUCCESS &&
-				p_response_code == HTTPClient::RESPONSE_REQUESTED_RANGE_NOT_SATISFIABLE &&
-				!range_restart_attempted) {
-				range_restart_attempted = true;
-				retry_count = 0;
-				request_start_partial_size = 0;
-				_clear_partial_download();
-
-				Error err = _request_file_fragment();
-				if (err != OK) {
-					_download_failed(
-						vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-				}
-				return;
-			}
-
-			if (_is_retryable_result(p_result, p_response_code)) {
-				if (p_result == HTTPRequest::RESULT_SUCCESS) {
-					request_start_partial_size = 0;
-					_clear_partial_download();
-				}
-				_retry_file_fragment(_get_download_error(p_result, p_response_code));
-				return;
-			}
-
-			_download_failed(_get_download_error(p_result, p_response_code));
-			return;
-		}
-		_download_completed();
-	} break;
 	}
 }
 
@@ -1213,64 +729,6 @@ void TemplateDownloader::_clear_partial_download()
 	if (!partial_download_path.is_empty() && FileAccess::exists(partial_download_path)) {
 		DirAccess::remove_absolute(partial_download_path);
 	}
-}
-
-Error TemplateDownloader::_request_file_fragment()
-{
-	const int64_t fragment_size = _get_fragment_download_size();
-	if (fragment_size <= 0) {
-		return ERR_INVALID_DATA;
-	}
-
-	int64_t partial_size = _get_partial_download_size();
-	if (partial_size >= fragment_size) {
-		_download_completed();
-		return OK;
-	}
-
-	request_start_partial_size = partial_size;
-	const int64_t request_start_byte = fragment_start_byte + partial_size;
-	const String data_range = vformat("Range: bytes=%d-%d", request_start_byte, fragment_end_byte);
-
-	set_download_file(partial_download_path);
-	set_keep_partial_download(true);
-	set_append_to_download_file(partial_size > 0);
-	return request(url, PackedStringArray{data_range}, HTTPClient::METHOD_GET);
-}
-
-bool TemplateDownloader::_retry_file_fragment(const String& p_reason)
-{
-	if (retry_count >= MAX_DOWNLOAD_RETRIES) {
-		_download_failed(
-			vformat(TTR("%s. Download failed after %d retries."), p_reason, MAX_DOWNLOAD_RETRIES));
-		return false;
-	}
-
-	retry_count++;
-	Error err = _request_file_fragment();
-	if (err != OK) {
-		_download_failed(vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		return false;
-	}
-	return true;
-}
-
-Error TemplateDownloader::download_template(const String& p_file_name, const String& p_source)
-{
-	url = p_source;
-	filename = p_file_name;
-	partial_download_path = EditorPaths::get_singleton()->get_temp_dir().path_join(
-		(filename + "-" + url).md5_text() + "-" + filename.validate_filename() + ".part");
-	_clear_partial_download();
-
-	set_download_file(String());
-	set_keep_partial_download(false);
-	set_append_to_download_file(false);
-	request_start_partial_size = 0;
-	retry_count = 0;
-	range_restart_attempted = false;
-	current_step = Step::QUERYING;
-	return request(p_source, PackedStringArray(), HTTPClient::METHOD_HEAD);
 }
 
 void TemplateDownloader::cancel_download()

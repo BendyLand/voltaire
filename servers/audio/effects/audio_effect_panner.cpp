@@ -54,7 +54,6 @@ void AudioEffectPanner::set_pan(float p_cpanume) { pan = p_cpanume; }
 
 float AudioEffectPanner::get_pan() const { return pan; }
 
-void AudioEffectPanner::_bind_methods() {}
 
 AudioEffectPanner::AudioEffectPanner() { pan = 0; }
 

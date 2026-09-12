@@ -97,16 +97,12 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_project_title(const String& p_title);
-	void set_project_path(const String& p_path);
 	void set_tags(const PackedStringArray& p_tags, ProjectList* p_parent_list);
 	void set_project_icon(const Ref<Texture2D>& p_icon);
 	void set_last_edited_info(const String& p_info);
 	void set_project_version(const String& p_version);
-	void set_unsupported_features(PackedStringArray p_features);
 
 	bool should_load_project_icon() const;
 
@@ -118,13 +114,10 @@ public:
 
 	void set_selected(bool p_selected, bool p_hide_focus = false);
 
-	void set_is_favorite(bool p_favorite);
 	void set_is_missing(bool p_missing);
 	void set_is_grayed(bool p_grayed);
 	void set_project_title_index(int p_title_index);
 	void set_project_title_autowrap();
-
-	void resize_project_title();
 
 	ProjectListItemControl();
 };
@@ -267,7 +260,6 @@ private:
 	// Project list items.
 
 	void _create_project_item_control(int p_index);
-	void _update_project_control_translatable_fields(const Item& item);
 	void _toggle_project(int p_index);
 	void _remove_project(int p_index, bool p_update_settings);
 
@@ -288,7 +280,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static inline const char* SIGNAL_LIST_CHANGED = "list_changed";
@@ -331,10 +322,6 @@ public:
 	const HashSet<String>& get_selected_project_keys() const;
 	int get_single_selected_index() const;
 	void erase_selected_projects(bool p_delete_project_contents);
-
-	// Resize project titles.
-
-	void resize_project_titles();
 
 	// Missing projects.
 

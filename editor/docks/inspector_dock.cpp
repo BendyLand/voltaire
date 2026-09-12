@@ -46,47 +46,9 @@
 #include "inspector_dock.h"
 #include "scene/gui/box_container.h"
 
-void InspectorDock::_prepare_menu()
-{
-	PopupMenu* menu = object_menu->get_popup();
-	for (int i = EditorPropertyNameProcessor::STYLE_RAW;
-		 i <= EditorPropertyNameProcessor::STYLE_LOCALIZED; i++) {
-		menu->set_item_checked(
-			menu->get_item_index(PROPERTY_NAME_STYLE_RAW + i), i == property_name_style);
-	}
-}
-
-void InspectorDock::_menu_option(int p_option) { _menu_option_confirm(p_option, false); }
-
-void InspectorDock::_menu_confirm_current() { _menu_option_confirm(current_option, true); }
+void InspectorDock::_prepare_menu() {}
 
 void InspectorDock::_new_resource() { new_resource_dialog->popup_create(true); }
-
-void InspectorDock::_unref_resource()
-{
-	Ref<Resource> current_res = _get_current_resource();
-	ERR_FAIL_COND(current_res.is_null());
-	current_res->set_path("");
-	EditorNode::get_singleton()->edit_current();
-}
-
-void InspectorDock::_copy_resource()
-{
-	Ref<Resource> current_res = _get_current_resource();
-	ERR_FAIL_COND(current_res.is_null());
-	EditorSettings::get_singleton()->set_resource_clipboard(current_res);
-}
-
-void InspectorDock::_prepare_resource_extra_popup()
-{
-	Ref<Resource> r = EditorSettings::get_singleton()->get_resource_clipboard();
-	PopupMenu* popup = resource_extra_button->get_popup();
-	popup->set_item_disabled(popup->get_item_index(RESOURCE_EDIT_CLIPBOARD), r.is_null());
-
-	Ref<Resource> current_res = _get_current_resource();
-	popup->set_item_disabled(popup->get_item_index(RESOURCE_SHOW_IN_FILESYSTEM),
-		current_res.is_null() || current_res->is_built_in());
-}
 
 void InspectorDock::_menu_collapseall() { inspector->collapse_all_folding(); }
 
@@ -94,20 +56,9 @@ void InspectorDock::_menu_expandall() { inspector->expand_all_folding(); }
 
 void InspectorDock::_menu_expand_revertable() { inspector->expand_revertable(); }
 
-void InspectorDock::_info_pressed() { info_dialog->popup_centered(); }
-
 Container* InspectorDock::get_addon_area() { return this; }
 
-void InspectorDock::edit_resource(const Ref<Resource>& p_resource)
-{
-	_resource_selected(p_resource, "");
-}
-
-void InspectorDock::open_resource(const String& p_type) { _load_resource(p_type); }
-
 void InspectorDock::clear() {}
-
-void InspectorDock::go_back() { _edit_back(); }
 
 EditorPropertyNameProcessor::Style InspectorDock::get_property_name_style() const
 {

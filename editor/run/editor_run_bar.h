@@ -98,7 +98,6 @@ class EditorRunBar : public MarginContainer
 	void _reset_play_buttons();
 	void _update_play_buttons();
 
-	void _movie_maker_item_pressed(int p_id);
 	void _write_movie_toggled(bool p_enabled);
 	void _quick_run_selected(
 		const String& p_file_path, int p_menu_item = RunXRModeMenuItem::INVALID);
@@ -117,18 +116,12 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static EditorRunBar* get_singleton() { return singleton; }
 
-	void recovery_mode_show_dialog();
-	void recovery_mode_reload_project();
-
 	void play_main_scene(
 		bool p_from_native = false, const Vector<String>& p_play_args = Vector<String>());
-	void play_current_scene(
-		bool p_reload = false, const Vector<String>& p_play_args = Vector<String>());
 	void play_custom_scene(
 		const String& p_custom, const Vector<String>& p_play_args = Vector<String>());
 

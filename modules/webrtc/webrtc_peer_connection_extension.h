@@ -37,7 +37,6 @@
 class WebRTCPeerConnectionExtension : public WebRTCPeerConnection {
 
 protected:
-	static void _bind_methods();
 
 public:
 	WebRTCPeerConnectionExtension() {}

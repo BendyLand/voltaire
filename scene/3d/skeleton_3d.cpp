@@ -44,7 +44,6 @@ void SkinReference::_skin_changed()
 	skeleton_version = 0;
 }
 
-void SkinReference::_bind_methods() {}
 
 RID SkinReference::get_skeleton() const { return skeleton; }
 
@@ -78,22 +77,6 @@ StringName Skeleton3D::get_concatenated_bone_names() const
 	}
 	return concatenated_bone_names;
 }
-
-#if !defined(DISABLE_DEPRECATED) && !defined(PHYSICS_3D_DISABLED)
-void Skeleton3D::setup_simulator()
-{
-	if (simulator && simulator->get_parent() == this) {
-		remove_child(simulator);
-		simulator->queue_free();
-	}
-	PhysicalBoneSimulator3D* sim = memnew(PhysicalBoneSimulator3D);
-	simulator = sim;
-	sim->is_compat = true;
-	sim->set_active(false); // Don't run unneeded process.
-	add_child(simulator, false, INTERNAL_MODE_BACK);
-	set_animate_physical_bones(animate_physical_bones);
-}
-#endif // _DISABLE_DEPRECATED && PHYSICS_3D_DISABLED
 
 void Skeleton3D::set_modifier_callback_mode_process(Skeleton3D::ModifierCallbackModeProcess p_mode)
 {

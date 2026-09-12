@@ -84,7 +84,6 @@ protected:
 	}
 
 	virtual void reset_state() override;
-	static void _bind_methods();
 
 public:
 	void create_item(int p_item);

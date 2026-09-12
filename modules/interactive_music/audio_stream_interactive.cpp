@@ -756,6 +756,5 @@ double AudioStreamPlaybackInteractive::get_playback_position() const { return 0.
 
 bool AudioStreamPlaybackInteractive::is_playing() const { return active; }
 
-void AudioStreamPlaybackInteractive::_bind_methods() {}
 
 

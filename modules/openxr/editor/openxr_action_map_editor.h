@@ -94,10 +94,7 @@ private:
 	void _on_tab_button_pressed(int p_tab);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
-
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 	void _clear_action_map();
 
@@ -115,8 +112,6 @@ public:
 	static void register_binding_modifier_editor(
 		const String& p_binding_modifier_class, const String& p_editor_class);
 	static String get_binding_modifier_editor_class(const String& p_binding_modifier_class);
-
-	void open_action_map(const String& p_path);
 
 	OpenXRActionMapEditor();
 };

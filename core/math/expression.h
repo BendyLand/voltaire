@@ -238,7 +238,6 @@ protected:
 	bool execution_error = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Error parse(const String& p_expression, const Vector<String>& p_input_names = Vector<String>());

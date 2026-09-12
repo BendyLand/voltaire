@@ -31,7 +31,6 @@
 #include "gltf_skin.h"
 #include "scene/resources/3d/skin.h"
 
-void GLTFSkin::_bind_methods() {}
 
 GLTFNodeIndex GLTFSkin::get_skin_root() { return skin_root; }
 

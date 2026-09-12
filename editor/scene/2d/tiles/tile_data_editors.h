@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/inspector/editor_properties.h"
 #include "editor/scene/2d/tiles/tile_atlas_view.h"
 #include "scene/gui/box_container.h"
@@ -53,7 +52,6 @@ protected:
 
 	virtual void _tile_set_changed() {}
 
-	static void _bind_methods();
 
 public:
 	void set_tile_set(Ref<TileSet> p_tile_set);
@@ -177,7 +175,6 @@ private:
 	void _base_control_gui_input(Ref<InputEvent> p_event);
 	void _set_snap_option(int p_index);
 	void _store_snap_options();
-	void _toggle_expand(bool p_expand);
 
 	void _snap_to_tile_shape(Point2& r_point, float& r_current_snapped_dist, float p_snap_dist);
 	void _snap_point(Point2& r_point);
@@ -188,7 +185,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_use_undo_redo(bool p_use_undo_redo);
@@ -262,7 +258,7 @@ public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
 
-	TileDataDefaultEditor();
+	TileDataDefaultEditor() = default;
 	~TileDataDefaultEditor();
 };
 

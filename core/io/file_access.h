@@ -125,7 +125,6 @@ public:
 	}
 
 protected:
-	static void _bind_methods();
 
 	friend class Main;
 	AccessType get_access_type() const;

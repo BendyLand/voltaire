@@ -57,7 +57,7 @@ public:
 	int get_priority() const override;
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 
-	NavigationRegion3DGizmoPlugin();
+	NavigationRegion3DGizmoPlugin() = default;
 };
 
 

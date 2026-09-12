@@ -40,7 +40,7 @@ class NavigationLink3DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "NavigationLink3D"; }
 
-	NavigationLink3DEditorPlugin();
+	NavigationLink3DEditorPlugin() = default;
 };
 
 

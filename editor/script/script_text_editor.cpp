@@ -91,8 +91,6 @@ ConnectionInfoDialog::ConnectionInfoDialog()
 	tree->set_allow_rmb_select(true);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
 {
 	breakpoints_menu->clear();
@@ -138,14 +136,6 @@ void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-void ScriptTextEditor::_show_errors_panel(bool p_show) { errors_panel->set_visible(p_show); }
-
-void ScriptTextEditor::_show_warnings_panel(bool p_show) { warnings_panel->set_visible(p_show); }
-
-void ScriptTextEditor::_on_mouse_exited() { drag_info_label->hide(); }
-
 String ScriptTextEditor::_picker_color_stringify(const Color& p_color, COLOR_MODE p_mode)
 {
 	String result;
@@ -185,12 +175,6 @@ String ScriptTextEditor::_picker_color_stringify(const Color& p_color, COLOR_MOD
 	return result;
 }
 
-void ScriptTextEditor::_picker_color_changed(const Color& p_color)
-{
-	_update_color_constructor_options();
-	_update_color_text();
-}
-
 void ScriptTextEditor::_update_color_constructor_options()
 {
 	int item_count = inline_color_options->get_item_count();
@@ -205,20 +189,6 @@ void ScriptTextEditor::_update_color_constructor_options()
 			inline_color_options->set_item_text(i, option_text);
 		}
 	}
-}
-
-void ScriptTextEditor::_update_color_text()
-{
-	if (inline_color_line < 0) {
-		return;
-	}
-	String result = inline_color_options->get_item_text(inline_color_options->get_selected_id());
-	code_editor->get_text_editor()->begin_complex_operation();
-	code_editor->get_text_editor()->remove_text(
-		inline_color_line, inline_color_start, inline_color_line, inline_color_end + 1);
-	inline_color_end = inline_color_start + result.size() - 2;
-	code_editor->get_text_editor()->insert_text(result, inline_color_line, inline_color_start);
-	code_editor->get_text_editor()->end_complex_operation();
 }
 
 void ScriptTextEditor::store_previous_state() { return code_editor->store_previous_state(); }
@@ -279,9 +249,6 @@ void ScriptTextEditor::_notification(int p_what)
 		inline_color_options->add_theme_font_override("font", code_font.ptr());
 		inline_color_options->get_popup()->add_theme_font_override("font", code_font);
 	} break;
-	case NOTIFICATION_DRAG_END: {
-		drag_info_label->hide();
-	} break;
 	}
 }
 
@@ -306,70 +273,6 @@ void ScriptTextEditor::set_breakpoint(int p_line, bool p_enabled)
 void ScriptTextEditor::clear_breakpoints()
 {
 	code_editor->get_text_editor()->clear_breakpointed_lines();
-}
-
-void ScriptTextEditor::_color_changed(const Color& p_color)
-{
-	String new_args;
-	const int decimals = 3;
-	if (p_color.a == 1.0f) {
-		new_args = String("(" + String::num(p_color.r, decimals) + ", " +
-						  String::num(p_color.g, decimals) + ", " +
-						  String::num(p_color.b, decimals) + ")");
-	}
-	else {
-		new_args =
-			String("(" + String::num(p_color.r, decimals) + ", " +
-				   String::num(p_color.g, decimals) + ", " + String::num(p_color.b, decimals) +
-				   ", " + String::num(p_color.a, decimals) + ")");
-	}
-
-	String line = code_editor->get_text_editor()->get_line(color_position.x);
-	String line_with_replaced_args =
-		line.substr(0, color_position.y) +
-		line.substr(color_position.y, color_position.z - color_position.y)
-			.replace(color_args, new_args) +
-		line.substr(color_position.z);
-
-	color_args = new_args;
-	code_editor->get_text_editor()->begin_complex_operation();
-	code_editor->get_text_editor()->set_line(color_position.x, line_with_replaced_args);
-	code_editor->get_text_editor()->end_complex_operation();
-}
-
-void ScriptTextEditor::_make_context_menu(bool p_selection, bool p_color, bool p_foldable,
-	bool p_open_docs, bool p_goto_definition, const Vector2& p_position)
-{
-	TextEditorBase::_make_context_menu(p_selection, p_foldable, p_position, false);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
-	_popup_move_item(EDIT_UNINDENT, context_menu);
-
-	if (p_selection) {
-		context_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_text_editor/evaluate_selection"), EDIT_EVALUATE);
-		_popup_move_item(EDIT_TO_LOWERCASE, context_menu);
-		context_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_text_editor/create_code_region"), EDIT_CREATE_CODE_REGION);
-		_popup_move_item(EDIT_EVALUATE, context_menu);
-	}
-
-	if (p_color || p_open_docs || p_goto_definition) {
-		context_menu->add_separator();
-		if (p_open_docs) {
-			context_menu->add_shortcut(
-				ED_GET_SHORTCUT("script_text_editor/goto_symbol"), LOOKUP_SYMBOL);
-		}
-		if (p_color) {
-			context_menu->add_item(TTRC("Pick Color"), EDIT_PICK_COLOR);
-		}
-	}
-
-	const PackedStringArray paths = {String(code_editor->get_text_editor()->get_path())};
-	EditorContextMenuPluginManager::get_singleton()->add_options_from_plugins(
-		context_menu, EditorContextMenuPlugin::CONTEXT_SLOT_SCRIPT_EDITOR_CODE, paths);
-
-	_show_context_menu(p_position);
 }
 
 void ScriptTextEditor::register_editor()

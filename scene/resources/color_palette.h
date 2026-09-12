@@ -38,7 +38,6 @@ private:
 	PackedColorArray colors;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_colors(const PackedColorArray& p_colors);

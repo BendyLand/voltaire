@@ -110,24 +110,4 @@ Vector<int> BoxContainer::get_allowed_size_flags_vertical() const
 
 BoxContainer::BoxContainer(bool p_vertical) { vertical = p_vertical; }
 
-void BoxContainer::_bind_methods() {}
-
-MarginContainer* VBoxContainer::add_margin_child(
-	const String& p_label, Control* p_control, bool p_expand)
-{
-	Label* l = memnew(Label);
-	l->set_theme_type_variation("HeaderSmall");
-	l->set_text(p_label);
-	add_child(l);
-	MarginContainer* mc = memnew(MarginContainer);
-	mc->add_child(p_control, true);
-	add_child(mc);
-	if (p_expand) {
-		mc->set_v_size_flags(SIZE_EXPAND_FILL);
-	}
-	p_control->set_accessibility_name(p_label);
-
-	return mc;
-}
-
 

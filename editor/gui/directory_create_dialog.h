@@ -55,7 +55,6 @@ private:
 
 	String _sanitize_input(const String& p_input) const;
 	String _validate_path(const String& p_path) const;
-	void _on_dir_path_changed();
 
 protected:
 	virtual void ok_pressed() override;

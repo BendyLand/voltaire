@@ -233,19 +233,6 @@ void EditorFeatureProfileManager::_profile_action(int p_action)
 		export_profile->popup_file_dialog();
 		export_profile->set_current_file(_get_selected_profile() + ".profile");
 	} break;
-	case PROFILE_NEW: {
-		new_profile_dialog->popup_centered(Size2(240, 60) * EDSCALE);
-		new_profile_name->clear();
-		new_profile_name->grab_focus();
-	} break;
-	case PROFILE_ERASE: {
-		String selected = _get_selected_profile();
-		ERR_FAIL_COND(selected.is_empty());
-
-		erase_profile_dialog->set_text(
-			vformat(TTR("Remove currently selected profile, '%s'? Cannot be undone."), selected));
-		erase_profile_dialog->popup_centered(Size2(240, 60) * EDSCALE);
-	} break;
 	}
 }
 
@@ -352,20 +339,6 @@ void EditorFeatureProfileManager::_export_profile(const String& p_path)
 	if (err != OK) {
 		EditorNode::get_singleton()->show_warning(
 			vformat(TTR("Error saving profile to path: '%s'."), p_path));
-	}
-}
-
-void EditorFeatureProfileManager::_save_and_update()
-{
-	String edited_path = _get_selected_profile();
-	ERR_FAIL_COND(edited_path.is_empty());
-	ERR_FAIL_COND(edited.is_null());
-
-	edited->save_to_file(EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(
-		edited_path + ".profile"));
-
-	if (edited == current) {
-		update_timer->start();
 	}
 }
 

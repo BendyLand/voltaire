@@ -32,7 +32,6 @@
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/scene/editor_scene_tabs.h"

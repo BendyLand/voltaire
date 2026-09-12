@@ -31,30 +31,6 @@
 #include "core/config/engine.h"
 #include "timer.h"
 
-void Timer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_READY: {
-		if (autostart) {
-#ifdef TOOLS_ENABLED
-			if (is_part_of_edited_scene()) {
-				break;
-			}
-#endif
-			start();
-			autostart = false;
-		}
-	} break;
-	}
-}
-
-void Timer::set_wait_time(double p_time)
-{
-	ERR_FAIL_COND_MSG(p_time <= 0, "Time should be greater than zero.");
-	wait_time = p_time;
-	update_configuration_warnings();
-}
-
 double Timer::get_wait_time() const { return wait_time; }
 
 void Timer::set_one_shot(bool p_one_shot) { one_shot = p_one_shot; }
@@ -64,18 +40,6 @@ bool Timer::is_one_shot() const { return one_shot; }
 void Timer::set_autostart(bool p_start) { autostart = p_start; }
 
 bool Timer::has_autostart() const { return autostart; }
-
-void Timer::start(double p_time)
-{
-	ERR_FAIL_COND_MSG(!is_inside_tree(), "Unable to start the timer because it's not inside the "
-										 "scene tree. Either add it or set autostart to true.");
-
-	if (p_time > 0) {
-		set_wait_time(p_time);
-	}
-	time_left = wait_time;
-	_set_process(true);
-}
 
 void Timer::stop()
 {
@@ -159,7 +123,5 @@ PackedStringArray Timer::get_configuration_warnings() const
 
 	return warnings;
 }
-
-void Timer::_bind_methods() {}
 
 

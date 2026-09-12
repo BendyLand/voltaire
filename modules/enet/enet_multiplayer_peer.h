@@ -89,7 +89,6 @@ private:
 	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void set_target_peer(int p_peer) override;

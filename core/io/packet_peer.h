@@ -35,8 +35,6 @@
 
 class PacketPeer : public RefCounted
 {
-	static void _bind_methods();
-
 	Error _put_packet(const Vector<uint8_t>& p_buffer);
 	Vector<uint8_t> _get_packet();
 	Error _get_packet_error() const;
@@ -84,10 +82,6 @@ class PacketPeerStream : public PacketPeer
 	mutable Vector<uint8_t> output_buffer;
 
 	Error _poll_buffer() const;
-
-protected:
-	static void
-_bind_methods();
 
 public:
 	virtual int get_available_packet_count() const override;

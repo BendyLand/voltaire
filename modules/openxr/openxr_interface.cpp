@@ -41,7 +41,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
-void OpenXRInterface::_bind_methods() {}
 
 StringName OpenXRInterface::get_name() const { return StringName("OpenXR"); }
 

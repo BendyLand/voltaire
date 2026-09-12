@@ -31,7 +31,6 @@
 #include "../gltf_state.h"
 #include "gltf_node.h"
 
-void GLTFNode::_bind_methods() {}
 
 String GLTFNode::get_original_name() { return original_name; }
 

@@ -47,7 +47,6 @@ class MultiMeshInstance2D : public Node2D
 protected:
 	virtual void _physics_interpolated_changed() override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 #ifdef DEBUG_ENABLED

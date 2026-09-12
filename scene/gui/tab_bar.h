@@ -210,7 +210,6 @@ protected:
 
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	void _move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
 

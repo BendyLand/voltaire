@@ -38,7 +38,6 @@ class OpenXRCompositionLayerQuad : public OpenXRCompositionLayer
 	Size2 quad_size = Size2(1.0, 1.0);
 
 protected:
-	static void _bind_methods();
 
 	virtual Ref<Mesh> _create_fallback_mesh() override;
 

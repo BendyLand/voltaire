@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/list.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/main/node.h"
 #include "scene/resources/texture.h"
 
@@ -73,8 +72,6 @@ class EditorSelectionHistory
 	int current_elem_idx; // The current history element being edited.
 
 public:
-	void cleanup_history();
-
 	bool is_at_beginning() const;
 	bool is_at_end() const;
 
@@ -85,8 +82,6 @@ public:
 	int get_history_len();
 	int get_history_pos();
 
-	bool next();
-	bool previous();
 	bool is_current_inspector_only() const;
 
 	// Gets the size of the path of the current history item.
@@ -154,7 +149,6 @@ public:
 	EditorPlugin* get_editor_by_name(const String& p_name);
 
 	void get_editor_breakpoints(List<String>* p_breakpoints);
-	void clear_editor_states();
 	void save_editor_external_data();
 	void apply_changes_in_editors();
 
@@ -169,18 +163,13 @@ public:
 	bool has_extension_editor_plugin(const StringName& p_class_name);
 	EditorPlugin* get_extension_editor_plugin(const StringName& p_class_name);
 
-	void remove_move_array_element_function(const StringName& p_class);
-
 	void remove_custom_type(const String& p_type);
 
 	const HashMap<String, Vector<CustomType>>& get_custom_types() const { return custom_types; }
 
 	const CustomType* get_custom_type_by_name(const String& p_name) const;
-	const CustomType* get_custom_type_by_path(const String& p_path) const;
-	bool is_type_recognized(const String& p_type) const;
 
 	int add_edited_scene(int p_at_pos);
-	void remove_scene(int p_idx);
 	void set_scene_root(int p_idx, Node* p_root);
 	void set_edited_scene(int p_idx);
 	void set_edited_scene_root(Node* p_root);
@@ -192,7 +181,6 @@ public:
 
 	String get_scene_title(int p_idx, bool p_always_strip_extension = false) const;
 	String get_scene_path(int p_idx) const;
-	String get_scene_type(int p_idx) const;
 	void set_scene_path(int p_idx, const String& p_path);
 	uint64_t get_scene_time_opened(int p_idx) const;
 	void set_scene_modified_time(int p_idx, uint64_t p_time);
@@ -200,15 +188,12 @@ public:
 	void clear_edited_scenes();
 	void set_edited_scene_live_edit_root(const NodePath& p_root);
 	NodePath get_edited_scene_live_edit_root();
-	bool check_and_update_scene(int p_idx);
-	bool reload_scene_from_memory(int p_idx, bool p_mark_unsaved);
 	void move_scene_to_index(int p_idx, int p_to_idx);
 	void move_edited_scene_to_index(int p_idx);
 
 	bool call_build();
 
 	void set_scene_as_saved(int p_idx);
-	bool is_scene_changed(int p_idx);
 
 	int get_scene_history_id_from_path(const String& p_path) const;
 	int get_current_edited_scene_history_id() const;
@@ -216,13 +201,6 @@ public:
 
 	void set_plugin_window_layout(Ref<ConfigFile> p_layout);
 	void get_plugin_window_layout(Ref<ConfigFile> p_layout);
-
-	void notify_edited_scene_changed();
-	void notify_resource_saved(const Ref<Resource>& p_resource);
-	void notify_scene_saved(const String& p_path);
-	void load_editor_plugin_states_from_config(const Ref<ConfigFile>& p_config_file, int p_idx);
-
-	bool script_class_is_parent(const String& p_class, const String& p_inherits);
 
 	StringName script_class_get_name(const String& p_path) const;
 	void script_class_set_name(const String& p_path, const StringName& p_class);
@@ -232,15 +210,11 @@ public:
 
 	void script_class_clear_icon_paths() { _script_class_icon_paths.clear(); }
 
-	void script_class_save_global_classes();
-	void script_class_load_icon_paths();
-
 	Ref<Texture2D> extension_class_get_icon(const String& p_class) const;
 
-	Ref<Texture2D> get_script_icon(const String& p_script_path);
 	void clear_script_icon_cache();
 
-	EditorData();
+	EditorData() = default;
 	~EditorData();
 };
 
@@ -260,30 +234,8 @@ class EditorSelection
 	bool changed = false;
 	bool node_list_changed = false;
 
-	void _node_removed(Node* p_node);
-
-	void _update_node_list();
-	void _emit_change();
-
-protected:
-	static void _bind_methods();
-
 public:
-	void add_node(Node* p_node);
-	void remove_node(Node* p_node);
-	bool is_selected(Node* p_node) const;
-
-	void update(bool p_deferred = true);
-	void clear();
-
-	// Returns only the top level selected nodes.
-	// That is, if the selection includes some node and a child of that node, only the parent is
-	// returned.
-	List<Node*> get_top_selected_node_list();
-	// Returns all the selected nodes (list version of "get_selected_nodes").
-	List<Node*> get_full_selected_node_list();
-
-	~EditorSelection();
+	~EditorSelection() = default;
 };
 
 

@@ -31,6 +31,7 @@
 #pragma once
 
 #include "editor/debugger/editor_debugger_server.h"
+#include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/docks/editor_dock.h"
 
 class Button;
@@ -124,32 +125,27 @@ private:
 	HashSet<Ref<EditorDebuggerPlugin>> debugger_plugins;
 
 	ScriptEditorDebugger* _add_debugger();
-	void _update_errors();
-	void _update_margins();
 
 	friend class DebuggerEditorPlugin;
 	friend class DebugAdapterParser;
 	static EditorDebuggerNode* singleton;
-	EditorDebuggerNode();
+	EditorDebuggerNode() = default;
 
 protected:
 	void _debugger_stopped(int p_id);
 	void _debugger_wants_stop(int p_id);
 	void _remote_tree_select_requested(const TypedArray<int64_t>& p_ids, int p_debugger);
 	void _remote_tree_clear_selection_requested(int p_debugger);
-	void _remote_tree_updated(int p_debugger);
 	void _remote_objects_updated(EditorDebuggerRemoteObjects* p_objs, int p_debugger);
 	void _remote_objects_requested(const TypedArray<uint64_t>& p_ids, int p_debugger);
 	void _remote_selection_cleared(int p_debugger);
 
 	void _paused();
-	void _break_state_changed();
 	void _menu_option(int p_id);
 	void _update_debug_options();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
@@ -167,8 +163,6 @@ public:
 	void debug_step();
 	void debug_break();
 	void debug_continue();
-
-	void set_script_debug_button(MenuButton* p_button);
 
 	String get_var_value(const String& p_var) const;
 
@@ -207,8 +201,6 @@ public:
 	String get_server_uri() const;
 
 	void set_keep_open(bool p_keep_open);
-	Error start(const String& p_uri = "tcp://");
-	void stop(bool p_force = false);
 
 	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
 	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);

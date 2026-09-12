@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/local_vector.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
 
@@ -155,7 +154,6 @@ class UniformSetCacheRD
 	}
 
 private:
-	static void _bind_methods();
 
 public:
 	template <typename... Args> RID get_cache(RID p_shader, uint32_t p_set, Args... args)

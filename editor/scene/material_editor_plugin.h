@@ -111,11 +111,8 @@ protected:
 	void gui_input(const Ref<InputEvent>& p_event);
 
 public:
-	void set_autohide_buttons(bool p_autohide);
-
 	static Ref<ShaderMaterial> make_shader_material(
 		const Ref<Material>& p_from, bool p_copy_params = true);
-	void edit(Ref<Material> p_material, const Ref<Environment>& p_env);
 	MaterialEditor();
 };
 

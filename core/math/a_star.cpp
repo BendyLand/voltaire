@@ -575,11 +575,7 @@ bool AStar3D::is_point_disabled(int64_t p_id) const
 	return !p->enabled;
 }
 
-void AStar3D::_bind_methods() {}
-
 AStar3D::~AStar3D() { clear(); }
-
-/////////////////////////////////////////////////////////////
 
 int64_t AStar2D::get_available_point_id() const { return astar.get_available_point_id(); }
 
@@ -888,7 +884,5 @@ bool AStar2D::_solve(
 
 	return found_route;
 }
-
-void AStar2D::_bind_methods() {}
 
 

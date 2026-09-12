@@ -40,5 +40,4 @@ bool MissingResource::is_recording_properties() const { return recording_propert
 
 String MissingResource::get_save_class() const { return original_class; }
 
-void MissingResource::_bind_methods() {}
 

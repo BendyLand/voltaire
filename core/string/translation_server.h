@@ -32,7 +32,6 @@
 
 #include "core/string/translation.h"
 #include "core/string/translation_domain.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class TranslationServer
 {
@@ -52,7 +51,6 @@ class TranslationServer
 
 	static inline TranslationServer* singleton = nullptr;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	String _standardize_locale_bind_compat_98972(const String& p_locale) const;

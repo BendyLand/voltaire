@@ -160,24 +160,6 @@ void Range::set_value_no_signal(double p_val)
 	}
 }
 
-void Range::set_min(double p_min)
-{
-	if (shared->min == p_min) {
-		return;
-	}
-
-	shared->min = p_min;
-	shared->max = MAX(shared->max, shared->min);
-	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
-	set_value(shared->val);
-
-	shared->emit_changed();
-
-	update_configuration_warnings();
-
-	queue_accessibility_update();
-}
-
 void Range::set_max(double p_max)
 {
 	double max_validated = MAX(p_max, shared->min);
@@ -325,17 +307,6 @@ void Range::_unref_shared()
 void Range::set_use_rounded_values(bool p_enable) { _rounded_values = p_enable; }
 
 bool Range::is_using_rounded_values() const { return _rounded_values; }
-
-void Range::set_exp_ratio(bool p_enable)
-{
-	if (shared->exp_ratio == p_enable) {
-		return;
-	}
-
-	shared->exp_ratio = p_enable;
-
-	update_configuration_warnings();
-}
 
 bool Range::is_ratio_exp() const { return shared->exp_ratio; }
 

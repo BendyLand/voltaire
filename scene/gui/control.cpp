@@ -1068,31 +1068,6 @@ void Control::set_block_maximum_size_adjust(bool p_block)
 	data.block_maximum_size_adjust = p_block;
 }
 
-void Control::set_custom_maximum_size(const Size2& p_custom)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (p_custom == data.custom_maximum_size) {
-		return;
-	}
-
-	if (!p_custom.is_finite()) {
-		// Prevent infinite loop.
-		return;
-	}
-
-	Size2 normalized = p_custom;
-	if (normalized.x < 0) {
-		normalized.x = -1;
-	}
-	if (normalized.y < 0) {
-		normalized.y = -1;
-	}
-
-	data.custom_maximum_size = normalized;
-	update_maximum_size();
-	update_configuration_warnings();
-}
-
 Size2 Control::get_custom_maximum_size() const
 {
 	ERR_READ_THREAD_GUARD_V(Size2());
@@ -1538,16 +1513,6 @@ String Control::get_accessibility_container_name(const Node* p_node) const
 		ret = data.parent_control->get_accessibility_container_name(this);
 	}
 	return ret;
-}
-
-void Control::set_accessibility_name(const String& p_name)
-{
-	ERR_THREAD_GUARD
-	if (data.accessibility_name != p_name) {
-		data.accessibility_name = p_name;
-		queue_accessibility_update();
-		update_configuration_warnings();
-	}
 }
 
 void Control::set_accessibility_description(const String& p_description)
@@ -2052,13 +2017,6 @@ Node::AutoTranslateMode Control::get_tooltip_auto_translate_mode_at(const Vector
 {
 	ERR_READ_THREAD_GUARD_V(AUTO_TRANSLATE_MODE_INHERIT);
 	return get_tooltip_auto_translate_mode();
-}
-
-void Control::set_tooltip_text(const String& p_hint)
-{
-	ERR_MAIN_THREAD_GUARD;
-	data.tooltip = p_hint;
-	update_configuration_warnings();
 }
 
 String Control::get_tooltip_text() const

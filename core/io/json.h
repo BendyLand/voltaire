@@ -73,7 +73,6 @@ class JSON : public Resource
 		int& r_line, String& r_err_str);
 
 protected:
-	static void _bind_methods();
 
 public:
 	Error parse(const String& p_json_string, bool p_keep_text = false);

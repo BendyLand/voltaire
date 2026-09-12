@@ -69,42 +69,6 @@ bool ScriptCreateDialog::_can_be_built_in() { return (supports_built_in && built
 
 void ScriptCreateDialog::set_inheritance_base_type(const String& p_base) { base_type = p_base; }
 
-bool ScriptCreateDialog::_validate_parent(const String& p_string)
-{
-	if (p_string.length() == 0) {
-		return false;
-	}
-
-	if (can_inherit_from_file && p_string.is_quoted()) {
-		String p = p_string.substr(1, p_string.length() - 2);
-		if (_validate_path(p, true).is_empty()) {
-			return true;
-		}
-	}
-
-	return EditorNode::get_editor_data().is_type_recognized(p_string);
-}
-
-void ScriptCreateDialog::_parent_name_changed(const String&
- p_parent)
-{
-	is_parent_name_valid = _validate_parent(parent_name->get_text());
-	validation_panel->update();
-}
-
-void ScriptCreateDialog::_load_exist()
-{
-	String path = file_path->get_text();
-	Ref<Resource> p_script = ResourceLoader::load(path, "Script");
-	if (p_script.is_null()) {
-		alert->set_text(vformat(TTR("Error loading script from %s"), path));
-		alert->popup_centered();
-		return;
-	}
-
-	hide();
-}
-
 void ScriptCreateDialog::_built_in_pressed()
 {
 	if (built_in->is_pressed()) {
@@ -116,31 +80,6 @@ void ScriptCreateDialog::_built_in_pressed()
 		_path_changed(file_path->get_text());
 	}
 	validation_panel->update();
-}
-
-void ScriptCreateDialog::_file_selected(const String& p_file)
-{
-	String path = ProjectSettings::get_singleton()->localize_path(p_file);
-	if (is_browsing_parent) {
-		parent_name->set_text("\"" + path + "\"");
-		_parent_name_changed(parent_name->get_text());
-	}
-	else {
-		file_path->set_text(path);
-		_path_changed(path);
-
-		String filename = path.get_file().get_basename();
-		int select_start = path.rfind(filename);
-		file_path->select(select_start, select_start + filename.length());
-		file_path->set_caret_column(select_start + filename.length());
-		file_path->grab_focus();
-	}
-}
-
-void ScriptCreateDialog::_create()
-{
-	parent_name->set_text(select_class->get_selected_type_name());
-	_parent_name_changed(parent_name->get_text());
 }
 
 void ScriptCreateDialog::_browse_class_in_tree()

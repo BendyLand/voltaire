@@ -30,7 +30,6 @@
 
 #include "core/io/resource.h"
 #include "core/os/os.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/debugger/editor_debugger_inspector.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/editor_log.h"
@@ -200,7 +199,6 @@ static bool _bind_is_committing_action()
 	return false;
 }
 
-void EditorUndoRedoManager::_bind_methods() {}
 
 EditorUndoRedoManager* EditorUndoRedoManager::get_singleton() { return singleton; }
 

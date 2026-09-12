@@ -192,6 +192,5 @@ void StyleBoxTexture::draw(RID p_canvas_item, const Rect2& p_rect) const
 		RSE::NinePatchAxisMode(axis_v), draw_center, modulate);
 }
 
-void StyleBoxTexture::_bind_methods() {}
 
 

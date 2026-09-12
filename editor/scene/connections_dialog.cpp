@@ -31,7 +31,6 @@
 #include "connections_dialog.h"
 #include "core/config/project_settings.h"
 #include "core/templates/hash_set.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/doc/editor_help.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/docks/signals_dock.h"
@@ -57,20 +56,11 @@
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 
-
 void ConnectDialog::_cancel_pressed() { hide(); }
 
 void ConnectDialog::_item_activated()
 {
 	_ok_pressed(); // From AcceptDialog.
-}
-
-
-void ConnectDialog::_open_method_popup()
-{
-	method_popup->popup_centered();
-	method_search->clear();
-	method_search->grab_focus();
 }
 
 ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
@@ -113,58 +103,9 @@ bool ConnectDialog::get_append_source() const
  */
 bool ConnectDialog::is_editing() const { return edit_mode; }
 
-/*
- * Initialize ConnectDialog and populate fields with expected data.
- * If creating a connection from scratch, sensible defaults are used.
- * If editing an existing connection, previous data is retained.
- */
-
 ConnectDialog::~ConnectDialog() {}
 
-//////////////////////////////////////////
-
-Control* ConnectionsDockTree::make_custom_tooltip(const String& p_text) const
-{
-	// If it's not a doc tooltip, fallback to the default one.
-	if (p_text.is_empty() || p_text.contains(" :: ")) {
-		return nullptr;
-	}
-
-	return EditorHelpBitTooltip::make_tooltip(const_cast<ConnectionsDockTree*>(this), p_text);
-}
-
 void ConnectionsDock::_filter_changed(const String& p_text) { update_tree(); }
-
-void ConnectionsDock::_tree_item_activated()
-{ // "Activation" on double-click.
-	TreeItem* item = tree->get_selected();
-	if (!item) {
-		return;
-	}
-
-	if (_get_item_type(*item) == TREE_ITEM_TYPE_SIGNAL) {
-		_open_connection_dialog(*item);
-	}
-	else if (_get_item_type(*item) == TREE_ITEM_TYPE_CONNECTION) {
-		_go_to_method(*item);
-	}
-}
-
-ConnectionsDock::TreeItemType ConnectionsDock::_get_item_type(const TreeItem& p_item) const
-{
-	if (&p_item == tree->get_root()) {
-		return TREE_ITEM_TYPE_ROOT;
-	}
-	else if (p_item.get_parent() == tree->get_root()) {
-		return TREE_ITEM_TYPE_CLASS;
-	}
-	else if (p_item.get_parent()->get_parent() == tree->get_root()) {
-		return TREE_ITEM_TYPE_SIGNAL;
-	}
-	else {
-		return TREE_ITEM_TYPE_CONNECTION;
-	}
-}
 
 void ConnectionsDock::_handle_class_menu_option(int p_option)
 {
@@ -177,45 +118,9 @@ void ConnectionsDock::_handle_class_menu_option(int p_option)
 	}
 }
 
-void ConnectionsDock::_class_menu_about_to_popup()
-{
-	class_menu->set_item_disabled(
-		class_menu->get_item_index(CLASS_MENU_OPEN_DOCS), class_menu_doc_class_name.is_empty());
-}
-
-void ConnectionsDock::_close() { hide(); }
-
 void ConnectionsDock::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-
-		class_menu->set_item_icon(
-			class_menu->get_item_index(CLASS_MENU_OPEN_DOCS), get_editor_theme_icon(SNAME("Help")));
-
-		signal_menu->set_item_icon(signal_menu->get_item_index(SIGNAL_MENU_CONNECT),
-			get_editor_theme_icon(SNAME("Instance")));
-		signal_menu->set_item_icon(signal_menu->get_item_index(SIGNAL_MENU_DISCONNECT_ALL),
-			get_editor_theme_icon(SNAME("Unlinked")));
-		signal_menu->set_item_icon(signal_menu->get_item_index(SIGNAL_MENU_COPY_NAME),
-			get_editor_theme_icon(SNAME("ActionCopy")));
-		signal_menu->set_item_icon(signal_menu->get_item_index(SIGNAL_MENU_OPEN_DOCS),
-			get_editor_theme_icon(SNAME("Help")));
-
-		slot_menu->set_item_icon(
-			slot_menu->get_item_index(SLOT_MENU_EDIT), get_editor_theme_icon(SNAME("Edit")));
-		slot_menu->set_item_icon(slot_menu->get_item_index(SLOT_MENU_GO_TO_METHOD),
-			get_editor_theme_icon(SNAME("ArrowRight")));
-		slot_menu->set_item_icon(slot_menu->get_item_index(SLOT_MENU_DISCONNECT),
-			get_editor_theme_icon(SNAME("Unlinked")));
-
-		tree->add_theme_constant_override("icon_max_width",
-			get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor)));
-
-		update_tree();
-	} break;
-
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		if (EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editors")) {
 			update_tree();

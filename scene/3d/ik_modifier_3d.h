@@ -71,14 +71,11 @@ protected:
 	LocalVector<IKModifier3DSetting*> settings;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
-	virtual void _set_active(bool p_active) override;
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 
 	virtual void _validate_bone_names() override;
 
-	void _rest_updated();
 	virtual void _make_all_joints_dirty();
 	virtual void _init_joints(Skeleton3D* p_skeleton, int p_index);
 	virtual void _update_joints(int p_index);
@@ -89,10 +86,8 @@ protected:
 	bool gizmo_dirty = false;
 	void _make_gizmo_dirty();
 	virtual void _update_mutable_info();
-	void _redraw_gizmo();
 #endif // TOOLS_ENABLED
 
-	virtual void _process_modification(double p_delta) override;
 	virtual void _process_ik(Skeleton3D* p_skeleton, double p_delta);
 
 	template <typename T> void _set_setting_count(int p_count)
@@ -141,9 +136,6 @@ public:
 		Skeleton3D* p_skeleton, int p_bone, const Quaternion& p_global_pose_rotation);
 	static Vector3 get_bone_axis(Skeleton3D* p_skeleton, int p_end_bone, BoneDirection p_direction,
 		bool p_mutable_bone_axes);
-
-	// To process manually.
-	void reset();
 
 	~IKModifier3D();
 };

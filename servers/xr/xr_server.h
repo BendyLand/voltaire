@@ -32,7 +32,6 @@
 
 #include "core/os/thread_safe.h"
 #include "core/types.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class XRInterface;
 class XRTracker;
@@ -118,7 +117,6 @@ private:
 protected:
 	static XRServer* singleton;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();

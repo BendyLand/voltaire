@@ -30,8 +30,6 @@
 
 #include "image_loader.h"
 
-void ImageFormatLoader::_bind_methods() {}
-
 bool ImageFormatLoader::recognize(const String& p_extension) const
 {
 	List<String> extensions;
@@ -58,8 +56,6 @@ void ImageFormatLoaderExtension::remove_format_loader()
 {
 	ImageLoader::remove_image_format_loader(this);
 }
-
-void ImageFormatLoaderExtension::_bind_methods() {}
 
 Error ImageLoader::load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom,
 	uint32_t p_flags, float p_scale)

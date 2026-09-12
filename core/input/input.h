@@ -33,7 +33,6 @@
 #include "core/input/input_event.h"
 #include "core/os/keyboard.h"
 #include "core/os/thread_safe.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 
@@ -379,7 +378,6 @@ private:
 #endif // DISABLE_DEPRECATED
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_mouse_mode(MouseMode p_mode);

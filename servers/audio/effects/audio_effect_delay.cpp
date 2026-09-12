@@ -202,6 +202,5 @@ void AudioEffectDelay::set_feedback_lowpass(float p_lowpass)
 
 float AudioEffectDelay::get_feedback_lowpass() const { return feedback_lowpass; }
 
-void AudioEffectDelay::_bind_methods() {}
 
 

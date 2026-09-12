@@ -43,7 +43,6 @@ class GPUParticlesCollision3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-	static void _bind_methods();
 
 	GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type);
 
@@ -58,11 +57,7 @@ class GPUParticlesCollisionSphere3D : public GPUParticlesCollision3D
 {
 	real_t radius = 1.0;
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
 	virtual AABB get_aabb() const override;
@@ -75,11 +70,7 @@ class GPUParticlesCollisionBox3D : public GPUParticlesCollision3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -168,16 +159,12 @@ public:
 	void set_thickness(float p_thickness);
 	float get_thickness() const;
 
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_resolution(Resolution p_resolution);
 	Resolution get_resolution() const;
 
-	void set_bake_mask(uint32_t p_mask);
 	uint32_t get_bake_mask() const;
 
-	void set_bake_mask_value(int p_layer_number, bool p_enable);
 	bool get_bake_mask_value(int p_layer_number) const;
 
 	void set_texture(const Ref<Texture3D>& p_texture);
@@ -227,13 +214,10 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_resolution(Resolution p_resolution);
 	Resolution get_resolution() const;
 
 	void set_update_mode(UpdateMode p_update_mode);
@@ -265,7 +249,6 @@ class GPUParticlesAttractor3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-	static void _bind_methods();
 
 	GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type);
 
@@ -279,7 +262,6 @@ public:
 	void set_attenuation(real_t p_attenuation);
 	real_t get_attenuation() const;
 
-	void set_directionality(real_t p_directionality);
 	real_t get_directionality() const;
 
 	~GPUParticlesAttractor3D();
@@ -289,11 +271,7 @@ class GPUParticlesAttractorSphere3D : public GPUParticlesAttractor3D
 {
 	real_t radius = 1.0;
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
 	virtual AABB get_aabb() const override;
@@ -306,11 +284,7 @@ class GPUParticlesAttractorBox3D : public GPUParticlesAttractor3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -324,11 +298,7 @@ class GPUParticlesAttractorVectorField3D : public GPUParticlesAttractor3D
 	Vector3 size = Vector3(2, 2, 2);
 	Ref<Texture3D> texture;
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	void set_texture(const Ref<Texture3D>& p_texture);

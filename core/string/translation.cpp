@@ -31,8 +31,8 @@
 #include "core/os/thread.h"
 #include "core/string/plural_rules.h"
 #include "core/string/translation_server.h"
-#include "translation.h"
 #include "core/types.h"
+#include "translation.h"
 
 void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
 {
@@ -209,8 +209,6 @@ void Translation::set_plural_rules_override(const String& p_rules)
 String Translation::get_plural_rules_override() const { return plural_rules_override; }
 
 int Translation::get_nplurals() const { return _get_plural_rules()->get_nplurals(); }
-
-void Translation::_bind_methods() {}
 
 Translation::~Translation()
 {

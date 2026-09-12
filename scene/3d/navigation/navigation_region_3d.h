@@ -64,12 +64,10 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	RID get_rid() const;
 
-	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
 	void set_navigation_map(RID p_navigation_map);

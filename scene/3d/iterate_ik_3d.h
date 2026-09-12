@@ -301,7 +301,6 @@ protected:
 
 	virtual void _set_joint_count(int p_index, int p_count) override;
 
-	void _update_joint_limitation(int p_index, int p_joint);
 	void _bind_joint_limitation(int p_index, int p_joint);
 	void _unbind_joint_limitation(int p_index, int p_joint);
 	void _bind_joint_limitations(int p_index);
@@ -342,24 +341,16 @@ public:
 	// Individual joints.
 	void set_joint_rotation_axis(int p_index, int p_joint, RotationAxis p_axis);
 	RotationAxis get_joint_rotation_axis(int p_index, int p_joint) const;
-	void set_joint_rotation_axis_vector(int p_index, int p_joint, const Vector3& p_vector);
 	Vector3 get_joint_rotation_axis_vector(int p_index, int p_joint) const;
 	void set_joint_limitation(int p_index, int p_joint, const Ref<JointLimitation3D>& p_limitation);
 	Ref<JointLimitation3D> get_joint_limitation(int p_index, int p_joint) const;
 	void set_joint_limitation_right_axis(int p_index, int p_joint, SecondaryDirection p_direction);
 	SecondaryDirection get_joint_limitation_right_axis(int p_index, int p_joint) const;
-	void set_joint_limitation_right_axis_vector(int p_index, int p_joint, const Vector3& p_vector);
 	Vector3 get_joint_limitation_right_axis_vector(int p_index, int p_joint) const;
-	void set_joint_limitation_rotation_offset(int p_index, int p_joint, const Quaternion& p_offset);
 	Quaternion get_joint_limitation_rotation_offset(int p_index, int p_joint) const;
 
 	// Helper.
 	Quaternion get_joint_limitation_space(int p_index, int p_joint, const Vector3& p_forward) const;
-
-#ifdef TOOLS_ENABLED
-	virtual Vector3 get_bone_vector(int p_index, int p_joint) const override;
-#endif // TOOLS_ENABLED
-
 	~IterateIK3D();
 };
 

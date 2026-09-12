@@ -97,161 +97,7 @@ class SnapDialog : public ConfirmationDialog
 	SpinBox* scale_step;
 
 public:
-	SnapDialog()
-	{
-		const int SPIN_BOX_GRID_RANGE = 16384;
-		const int SPIN_BOX_ROTATION_RANGE = 360;
-		const real_t SPIN_BOX_SCALE_MIN = 0.01;
-		const real_t SPIN_BOX_SCALE_MAX = 100;
-
-		Label* label;
-		VBoxContainer* container;
-		GridContainer* child_container;
-
-		set_title(TTRC("Configure Snap"));
-
-		container = memnew(VBoxContainer);
-		add_child(container);
-
-		child_container = memnew(GridContainer);
-		child_container->set_columns(3);
-		container->add_child(child_container);
-
-		label = memnew(Label);
-		label->set_text(TTRC("Grid Offset:"));
-		child_container->add_child(label);
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-		grid_offset_x = memnew(SpinBox);
-		grid_offset_x->set_min(-SPIN_BOX_GRID_RANGE);
-		grid_offset_x->set_max(SPIN_BOX_GRID_RANGE);
-		grid_offset_x->set_allow_lesser(true);
-		grid_offset_x->set_allow_greater(true);
-		grid_offset_x->set_suffix("px");
-		grid_offset_x->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		grid_offset_x->set_select_all_on_focus(true);
-		grid_offset_x->set_accessibility_name(TTRC("X Offset"));
-		child_container->add_child(grid_offset_x);
-
-		grid_offset_y = memnew(SpinBox);
-		grid_offset_y->set_min(-SPIN_BOX_GRID_RANGE);
-		grid_offset_y->set_max(SPIN_BOX_GRID_RANGE);
-		grid_offset_y->set_allow_lesser(true);
-		grid_offset_y->set_allow_greater(true);
-		grid_offset_y->set_suffix("px");
-		grid_offset_y->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		grid_offset_y->set_select_all_on_focus(true);
-		grid_offset_y->set_accessibility_name(TTRC("Y Offset"));
-		child_container->add_child(grid_offset_y);
-
-		label = memnew(Label);
-		label->set_text(TTRC("Grid Step:"));
-		child_container->add_child(label);
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-		grid_step_x = memnew(SpinBox);
-		grid_step_x->set_min(1);
-		grid_step_x->set_max(SPIN_BOX_GRID_RANGE);
-		grid_step_x->set_allow_greater(true);
-		grid_step_x->set_suffix("px");
-		grid_step_x->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		grid_step_x->set_select_all_on_focus(true);
-		grid_step_x->set_accessibility_name(TTRC("X Step"));
-		child_container->add_child(grid_step_x);
-
-		grid_step_y = memnew(SpinBox);
-		grid_step_y->set_min(1);
-		grid_step_y->set_max(SPIN_BOX_GRID_RANGE);
-		grid_step_y->set_allow_greater(true);
-		grid_step_y->set_suffix("px");
-		grid_step_y->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		grid_step_y->set_select_all_on_focus(true);
-		grid_step_y->set_accessibility_name(TTRC("X Step"));
-		child_container->add_child(grid_step_y);
-
-		label = memnew(Label);
-		label->set_text(TTRC("Primary Line Every:"));
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		child_container->add_child(label);
-
-		primary_grid_step_x = memnew(SpinBox);
-		primary_grid_step_x->set_min(1);
-		primary_grid_step_x->set_step(1);
-		primary_grid_step_x->set_max(SPIN_BOX_GRID_RANGE);
-		primary_grid_step_x->set_allow_greater(true);
-		primary_grid_step_x->set_suffix("steps");
-		primary_grid_step_x->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		primary_grid_step_x->set_select_all_on_focus(true);
-		primary_grid_step_x->set_accessibility_name(TTRC("X Primary Step"));
-		child_container->add_child(primary_grid_step_x);
-
-		primary_grid_step_y = memnew(SpinBox);
-		primary_grid_step_y->set_min(1);
-		primary_grid_step_y->set_step(1);
-		primary_grid_step_y->set_max(SPIN_BOX_GRID_RANGE);
-		primary_grid_step_y->set_allow_greater(true);
-		primary_grid_step_y->set_suffix(TTRC("steps")); // TODO: Add suffix auto-translation.
-		primary_grid_step_y->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		primary_grid_step_y->set_select_all_on_focus(true);
-		primary_grid_step_y->set_accessibility_name(TTRC("Y Primary Step"));
-		child_container->add_child(primary_grid_step_y);
-
-		container->add_child(memnew(HSeparator));
-
-		// We need to create another GridContainer with the same column count,
-		// so we can put an HSeparator above
-		child_container = memnew(GridContainer);
-		child_container->set_columns(2);
-		container->add_child(child_container);
-
-		label = memnew(Label);
-		label->set_text(TTRC("Rotation Offset:"));
-		child_container->add_child(label);
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-		rotation_offset = memnew(SpinBox);
-		rotation_offset->set_min(-SPIN_BOX_ROTATION_RANGE);
-		rotation_offset->set_max(SPIN_BOX_ROTATION_RANGE);
-		rotation_offset->set_suffix(U"°");
-		rotation_offset->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		rotation_offset->set_select_all_on_focus(true);
-		rotation_offset->set_accessibility_name(TTRC("Rotation Offset:"));
-		child_container->add_child(rotation_offset);
-
-		label = memnew(Label);
-		label->set_text(TTRC("Rotation Step:"));
-		child_container->add_child(label);
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-		rotation_step = memnew(SpinBox);
-		rotation_step->set_min(-SPIN_BOX_ROTATION_RANGE);
-		rotation_step->set_max(SPIN_BOX_ROTATION_RANGE);
-		rotation_step->set_suffix(U"°");
-		rotation_step->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		rotation_step->set_select_all_on_focus(true);
-		rotation_step->set_accessibility_name(TTRC("Rotation Step:"));
-		child_container->add_child(rotation_step);
-
-		container->add_child(memnew(HSeparator));
-
-		child_container = memnew(GridContainer);
-		child_container->set_columns(2);
-		container->add_child(child_container);
-		label = memnew(Label);
-		label->set_text(TTRC("Scale Step:"));
-		child_container->add_child(label);
-		label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-		scale_step = memnew(SpinBox);
-		scale_step->set_min(SPIN_BOX_SCALE_MIN);
-		scale_step->set_max(SPIN_BOX_SCALE_MAX);
-		scale_step->set_allow_greater(true);
-		scale_step->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		scale_step->set_step(0.01f);
-		scale_step->set_select_all_on_focus(true);
-		scale_step->set_accessibility_name(TTRC("Scale Step:"));
-		child_container->add_child(scale_step);
-	}
+	SnapDialog() = default;
 
 	void set_fields(const Point2 p_grid_offset, const Point2 p_grid_step,
 		const Vector2i p_primary_grid_step, const real_t p_rotation_offset,
@@ -329,17 +175,6 @@ real_t CanvasItemEditor::snap_angle(real_t p_target, real_t p_start) const
 	}
 	else {
 		return p_target;
-	}
-}
-
-void CanvasItemEditor::_keying_changed()
-{
-	AnimationTrackEditor* te = AnimationPlayerEditor::get_singleton()->get_track_editor();
-	if (te && te->is_visible_in_tree() && te->get_current_animation().is_valid()) {
-		animation_hb->show();
-	}
-	else {
-		animation_hb->hide();
 	}
 }
 
@@ -463,83 +298,11 @@ void CanvasItemEditor::_prepare_grid_menu()
 	}
 }
 
-bool CanvasItemEditor::_gui_input_zoom_or_pan(
-	const Ref<InputEvent>& p_event, bool p_already_accepted)
-{
-	panner->set_force_drag(tool == TOOL_PAN);
-	bool panner_active = panner->gui_input(p_event, viewport->get_global_rect());
-	if (panner->is_panning() != pan_pressed) {
-		pan_pressed = panner->is_panning();
-		_update_cursor();
-	}
-
-	if (panner_active) {
-		return true;
-	}
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid()) {
-		if (k->is_pressed()) {
-			if (ED_IS_SHORTCUT("canvas_item_editor/zoom_3.125_percent", p_event)) {
-				_shortcut_zoom_set(1.0 / 32.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_6.25_percent", p_event)) {
-				_shortcut_zoom_set(1.0 / 16.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_12.5_percent", p_event)) {
-				_shortcut_zoom_set(1.0 / 8.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_25_percent", p_event)) {
-				_shortcut_zoom_set(1.0 / 4.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_50_percent", p_event)) {
-				_shortcut_zoom_set(1.0 / 2.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_100_percent", p_event)) {
-				_shortcut_zoom_set(1.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_200_percent", p_event)) {
-				_shortcut_zoom_set(2.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_400_percent", p_event)) {
-				_shortcut_zoom_set(4.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_800_percent", p_event)) {
-				_shortcut_zoom_set(8.0);
-			}
-			else if (ED_IS_SHORTCUT("canvas_item_editor/zoom_1600_percent", p_event)) {
-				_shortcut_zoom_set(16.0);
-			}
-		}
-	}
-
-	return false;
-}
-
 void CanvasItemEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
 {
 	view_offset.x -= p_scroll_vec.x / zoom;
 	view_offset.y -= p_scroll_vec.y / zoom;
 	update_viewport();
-}
-
-bool CanvasItemEditor::_gui_input_open_scene_on_double_click(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> b = p_event;
-
-	// Open a sub-scene on double-click
-	if (b.is_valid() && b->get_button_index() == MouseButton::LEFT && b->is_pressed() &&
-		b->is_double_click() && tool == TOOL_SELECT) {
-		List<CanvasItem*> selection = _get_edited_canvas_items();
-		if (selection.size() == 1) {
-			CanvasItem* ci = selection.front()->get();
-			if (ci->is_instance() && ci != EditorNode::get_singleton()->get_edited_scene()) {
-				EditorNode::get_singleton()->open_scene(ci->get_scene_file_path());
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 void CanvasItemEditor::_update_cursor()
@@ -657,32 +420,6 @@ Control::CursorShape CanvasItemEditor::get_cursor_shape(const Point2& p_pos) con
 		c = CURSOR_DRAG;
 	}
 	return c;
-}
-
-void CanvasItemEditor::_draw_text_at_position(
-	Point2 p_position, const String& p_string, Side p_side)
-{
-	Color color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	color.a = 0.8;
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-	Size2 text_size = font->get_string_size(p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-	switch (p_side) {
-	case SIDE_LEFT:
-		p_position += Vector2(-text_size.x - 5, text_size.y / 2);
-		break;
-	case SIDE_TOP:
-		p_position += Vector2(-text_size.x / 2, -5);
-		break;
-	case SIDE_RIGHT:
-		p_position += Vector2(5, text_size.y / 2);
-		break;
-	case SIDE_BOTTOM:
-		p_position += Vector2(-text_size.x / 2, text_size.y + 5);
-		break;
-	}
-	viewport->draw_string(
-		font.ptr(), p_position, p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
 }
 
 void CanvasItemEditor::_draw_focus()
@@ -818,75 +555,10 @@ void CanvasItemEditor::_draw_viewport()
 
 void CanvasItemEditor::set_current_tool(Tool p_tool) { _button_tool_select(p_tool); }
 
-void CanvasItemEditor::edit(CanvasItem* p_canvas_item)
-{
-	if (!p_canvas_item) {
-		return;
-	}
-
-	List<Node*> selection = editor_selection->get_full_selected_node_list();
-	if (selection.size() != 1) {
-		_reset_drag();
-	}
-}
-
-void CanvasItemEditor::_zoom_on_position(real_t p_zoom, Point2 p_position)
-{
-	p_zoom = CLAMP(p_zoom, zoom_widget->get_min_zoom(), zoom_widget->get_max_zoom());
-
-	if (p_zoom == zoom) {
-		return;
-	}
-
-	real_t prev_zoom = zoom;
-	zoom = p_zoom;
-
-	view_offset += p_position / prev_zoom - p_position / zoom;
-
-	// We want to align in-scene pixels to screen pixels, this prevents blurry rendering
-	// of small details (texts, lines).
-	// This correction adds a jitter movement when zooming, so we correct only when the
-	// zoom factor is an integer. (in the other cases, all pixels won't be aligned anyway)
-	const real_t closest_zoom_factor = Math::round(zoom);
-	if (Math::is_zero_approx(zoom - closest_zoom_factor)) {
-		// Make sure scene pixel at view_offset is aligned on a screen pixel.
-		Vector2 view_offset_int = view_offset.floor();
-		Vector2 view_offset_frac = view_offset - view_offset_int;
-		view_offset = view_offset_int +
-					  (view_offset_frac * closest_zoom_factor).round() / closest_zoom_factor;
-	}
-
-	zoom_widget->set_zoom(zoom);
-	update_viewport();
-	if (auto_resampling_enabled) {
-		resample_timer->start();
-	}
-}
-
-void CanvasItemEditor::_update_zoom(real_t p_zoom)
-{
-	_zoom_on_position(p_zoom, viewport_scrollable->get_size() / 2.0);
-}
-
 void CanvasItemEditor::_update_oversampling()
 {
 	EditorNode::get_singleton()->get_scene_root()->set_oversampling_override(
 		auto_resampling_enabled ? zoom : 0.0);
-}
-
-void CanvasItemEditor::_shortcut_zoom_set(real_t p_zoom)
-{
-	_zoom_on_position(p_zoom * MAX(1, EDSCALE), viewport->get_local_mouse_position());
-}
-
-void CanvasItemEditor::_prepare_view_menu()
-{
-	PopupMenu* popup = view_menu->get_popup();
-
-	Node* root = EditorNode::get_singleton()->get_edited_scene();
-	bool has_guides = root && (root->has_meta("_edit_horizontal_guides_") ||
-								  root->has_meta("_edit_vertical_guides_"));
-	popup->set_item_disabled(popup->get_item_index(CLEAR_GUIDES), !has_guides);
 }
 
 void CanvasItemEditor::_set_owner_for_node_and_children(Node* p_node, Node* p_owner)
@@ -941,42 +613,6 @@ void CanvasItemEditor::center_at(const Point2& p_pos)
 
 CanvasItemEditor* CanvasItemEditor::singleton = nullptr;
 
-CanvasItemEditorPlugin::CanvasItemEditorPlugin()
-{
-	canvas_item_editor = memnew(CanvasItemEditor);
-	canvas_item_editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(
-		canvas_item_editor);
-	canvas_item_editor->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	canvas_item_editor->hide();
-}
-
-void CanvasItemEditorViewport::_on_mouse_exit()
-{
-	if (!texture_node_type_selector->is_visible() && preview_node->get_parent()) {
-		_remove_preview();
-	}
-}
-
-void CanvasItemEditorViewport::_on_change_type_closed() { _remove_preview(); }
-
-void CanvasItemEditorViewport::_remove_preview()
-{
-	if (!canvas_item_editor->message.is_empty()) {
-		canvas_item_editor->message = "";
-		canvas_item_editor->update_viewport();
-	}
-	tooltip_panel->hide();
-	if (preview_node->get_parent()) {
-		for (int i = preview_node->get_child_count() - 1; i >= 0; i--) {
-			Node* node = preview_node->get_child(i);
-			node->queue_free();
-			preview_node->remove_child(node);
-		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
-	}
-}
-
 bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 	const String& p_target_scene_path, Node* p_desired_node) const
 {
@@ -993,21 +629,6 @@ bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 		}
 	}
 	return false;
-}
-
-void CanvasItemEditorViewport::set_hint_label(
-	const String& p_title, const String& p_description) const
-{
-	if (p_title.is_empty() && p_description.is_empty()) {
-		tooltip_panel->hide();
-		return;
-	}
-
-	tooltip_panel->set_text(vformat("[font_size=%s][b][color=%s]%s[/color][/b][/font_size]\n%s",
-		get_theme_default_font_size() + 2,
-		get_theme_color(SNAME("accent_color"), EditorStringName(Editor)).to_html(false), p_title,
-		p_description));
-	tooltip_panel->show();
 }
 
 CanvasItemEditorViewport::~CanvasItemEditorViewport() { memdelete(preview_node); }

@@ -39,44 +39,10 @@ void LimitAngularVelocityModifier3D::_notification(int p_what)
 	}
 }
 
-// Setting.
-
-void LimitAngularVelocityModifier3D::set_root_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)chains.size());
-	chains[p_index].root_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_root_bone(p_index, sk->find_bone(chains[p_index].root_bone.name));
-	}
-}
-
 String LimitAngularVelocityModifier3D::get_root_bone_name(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)chains.size(), String());
 	return chains[p_index].root_bone.name;
-}
-
-void LimitAngularVelocityModifier3D::set_root_bone(int p_index, int p_bone)
-{
-	ERR_FAIL_INDEX(p_index, (int)chains.size());
-	bool changed = chains[p_index].root_bone.bone != p_bone;
-	chains[p_index].root_bone.bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (chains[p_index].root_bone.bone <= -1 ||
-			chains[p_index].root_bone.bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Setting: " + itos(p_index) + ": Root bone index '" + itos(p_bone) +
-						  "' is out of range!");
-			chains[p_index].root_bone.bone = -1;
-		}
-		else {
-			chains[p_index].root_bone.name = sk->get_bone_name(chains[p_index].root_bone.bone);
-		}
-	}
-	if (changed) {
-		_make_joints_dirty();
-	}
 }
 
 int LimitAngularVelocityModifier3D::get_root_bone(int p_index) const
@@ -85,42 +51,10 @@ int LimitAngularVelocityModifier3D::get_root_bone(int p_index) const
 	return chains[p_index].root_bone.bone;
 }
 
-void LimitAngularVelocityModifier3D::set_end_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)chains.size());
-	chains[p_index].end_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_end_bone(p_index, sk->find_bone(chains[p_index].end_bone.name));
-	}
-}
-
 String LimitAngularVelocityModifier3D::get_end_bone_name(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)chains.size(), String());
 	return chains[p_index].end_bone.name;
-}
-
-void LimitAngularVelocityModifier3D::set_end_bone(int p_index, int p_bone)
-{
-	ERR_FAIL_INDEX(p_index, (int)chains.size());
-	bool changed = chains[p_index].end_bone.bone != p_bone;
-	chains[p_index].end_bone.bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (chains[p_index].end_bone.bone <= -1 ||
-			chains[p_index].end_bone.bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Setting: " + itos(p_index) + ": End bone index '" + itos(p_bone) +
-						  "' is out of range!");
-			chains[p_index].end_bone.bone = -1;
-		}
-		else {
-			chains[p_index].end_bone.name = sk->get_bone_name(chains[p_index].end_bone.bone);
-		}
-	}
-	if (changed) {
-		_make_joints_dirty();
-	}
 }
 
 int LimitAngularVelocityModifier3D::get_end_bone(int p_index) const
@@ -180,26 +114,6 @@ void LimitAngularVelocityModifier3D::_skeleton_changed(Skeleton3D* p_old, Skelet
 	_make_joints_dirty();
 }
 
-void LimitAngularVelocityModifier3D::_validate_bone_names()
-{
-	for (uint32_t i = 0; i < chains.size(); i++) {
-		// Prior bone name.
-		if (!chains[i].root_bone.name.is_empty()) {
-			set_root_bone_name(i, chains[i].root_bone.name);
-		}
-		else if (chains[i].root_bone.bone != -1) {
-			set_root_bone(i, chains[i].root_bone.bone);
-		}
-		// Prior bone name.
-		if (!chains[i].end_bone.name.is_empty()) {
-			set_end_bone_name(i, chains[i].end_bone.name);
-		}
-		else if (chains[i].end_bone.bone != -1) {
-			set_end_bone(i, chains[i].end_bone.bone);
-		}
-	}
-}
-
 bool LimitAngularVelocityModifier3D::_is_joint_contained(int p_bone)
 {
 	bool ret = false;
@@ -210,37 +124,6 @@ bool LimitAngularVelocityModifier3D::_is_joint_contained(int p_bone)
 		}
 	}
 	return ret;
-}
-
-void LimitAngularVelocityModifier3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	if (init_needed) {
-		// Note:
-		// The pose retrieval within `_update_joints()` is done outside the skeleton's update
-		// process, so it ignores the pose resulting from the previous modifier's modification. This
-		// causes unintended initialization when `active` is set to true, so it must be initialized
-		// here.
-		for (uint32_t i = 0; i < bones.size(); i++) {
-			bones[i].second = skeleton->get_bone_pose_rotation(bones[i].first);
-		}
-		init_needed = false;
-	}
-
-	double limit_in_frame = max_angular_velocity * p_delta;
-	for (uint32_t i = 0; i < bones.size(); i++) {
-		int bn = bones[i].first;
-		Quaternion dest = skeleton->get_bone_pose_rotation(bn);
-		double diff = bones[i].second.angle_to(dest);
-		if (!Math::is_zero_approx(diff)) {
-			bones[i].second = bones[i].second.slerp(dest, MIN(1.0, limit_in_frame / diff));
-		}
-		skeleton->set_bone_pose_rotation(bn, bones[i].second);
-	}
 }
 
 void LimitAngularVelocityModifier3D::reset() { init_needed = true; }

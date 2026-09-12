@@ -107,7 +107,6 @@ protected:
 	void _draw_indicator();
 	void _on_input_indicator(Ref<InputEvent> p_event);
 	void _seek_to(real_t p_x);
-	void _set_beat_len_to(real_t p_x);
 	void _on_indicator_mouse_exited();
 	int _get_beat_at_pos(real_t p_x);
 

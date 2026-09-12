@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid_owner.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
@@ -44,7 +43,6 @@ class NavigationServer3D
 	static NavigationServer3D* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static NavigationServer3D* get_singleton();
@@ -503,7 +501,6 @@ class NavigationServer3DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

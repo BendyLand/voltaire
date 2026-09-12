@@ -41,7 +41,6 @@ public:
 	static double get_remaining_time(const PackedFloat32Array &p_node_info, bool p_break_loop = false);
 
 protected:
-	static void _bind_methods();
 
 private:
 	static AnimationNode::NodeTimeInfo _array_to_node_time_info(const PackedFloat32Array &p_array);

@@ -174,7 +174,6 @@ public:
 	XRBodyTracker();
 
 protected:
-	static void _bind_methods();
 
 private:
 	bool has_tracking_data = false;

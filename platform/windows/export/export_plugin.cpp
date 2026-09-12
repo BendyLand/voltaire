@@ -96,16 +96,6 @@ void EditorExportPlatformWindows::get_platform_features(List<String>* r_features
 
 Ref<Texture2D> EditorExportPlatformWindows::get_run_icon() const { return run_icon; }
 
-Ref<Texture2D> EditorExportPlatformWindows::get_option_icon(int p_index) const
-{
-	if (p_index == 1) {
-		return stop_icon;
-	}
-	else {
-		return EditorExportPlatform::get_option_icon(p_index);
-	}
-}
-
 int EditorExportPlatformWindows::get_options_count() const { return menu_options; }
 
 String EditorExportPlatformWindows::get_option_label(int p_index) const
@@ -140,29 +130,6 @@ void EditorExportPlatformWindows::cleanup()
 	}
 	ssh_pid = 0;
 	cleanup_commands.clear();
-}
-
-void EditorExportPlatformWindows::initialize()
-{
-	if (EditorNode::get_singleton()) {
-		Ref<Image> img = memnew(Image);
-		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
-
-		ImageLoaderSVG::create_image_from_string(img, _windows_logo_svg, EDSCALE, upsample, false);
-		set_logo(ImageTexture::create_from_image(img));
-
-		ImageLoaderSVG::create_image_from_string(
-			img, _windows_run_icon_svg, EDSCALE, upsample, false);
-		run_icon = ImageTexture::create_from_image(img);
-
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		if (theme.is_valid()) {
-			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-		}
-		else {
-			stop_icon.instantiate();
-		}
-	}
 }
 
 

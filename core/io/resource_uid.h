@@ -33,7 +33,6 @@
 #include "core/types.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class FileAccess;
 
@@ -66,7 +65,6 @@ private:
 	bool cache_initialized = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	inline static ResourceUIDScanForUIDOnStartup scan_for_uid_on_startup = nullptr;

@@ -39,46 +39,12 @@
 #include "scene/main/viewport.h"
 #include "servers/rendering/rendering_server.h"
 
-void Camera3DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		Node3DEditor::get_singleton()->set_custom_camera(nullptr);
-		hide();
-	}
-}
-
-void Camera3DEditor::_pressed()
-{
-	Node* sn = (node && preview->is_pressed()) ? node : nullptr;
-	Node3DEditor::get_singleton()->set_custom_camera(sn);
-}
-
-void Camera3DEditor::edit(Node* p_camera)
-{
-	node = p_camera;
-
-	if (!node) {
-		preview->set_pressed(false);
-		Node3DEditor::get_singleton()->set_custom_camera(nullptr);
-	}
-	else {
-		if (preview->is_pressed()) {
-			Node3DEditor::get_singleton()->set_custom_camera(p_camera);
-		}
-		else {
-			Node3DEditor::get_singleton()->set_custom_camera(nullptr);
-		}
-	}
-}
-
 Camera3DEditor::Camera3DEditor()
 {
 	preview = memnew(Button);
 	add_child(preview);
 
 	preview->set_text(TTR("Preview"));
-	preview->set_toggle_mode(true);
 	preview->set_anchor(SIDE_LEFT, Control::ANCHOR_END);
 	preview->set_anchor(SIDE_RIGHT, Control::ANCHOR_END);
 	preview->set_offset(SIDE_LEFT, -60);
@@ -89,19 +55,6 @@ Camera3DEditor::Camera3DEditor()
 
 bool Camera3DPreview::camera_preview_folded = false;
 
-void Camera3DPreview::_update_sub_viewport_size()
-{
-	const Size2i camera_size = Node3DEditor::get_camera_viewport_size(camera);
-	centering_container->set_ratio(camera_size.aspect());
-}
-
 void Camera3DPreview::_toggle_folding(bool p_folded) { camera_preview_folded = p_folded; }
-
-void Camera3DPreview::_project_settings_changed()
-{
-	if (ProjectSettings::get_singleton()->check_changed_settings_in_group("display/window/size")) {
-		_update_sub_viewport_size();
-	}
-}
 
 

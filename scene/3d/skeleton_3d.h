@@ -51,7 +51,6 @@ class SkinReference : public RefCounted
 	uint32_t* skin_bone_indices_ptrs = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	// Public for use as signal callback.
@@ -71,7 +70,6 @@ class Skeleton3D : public Node3D
 #if !defined(DISABLE_DEPRECATED) && !defined(PHYSICS_3D_DISABLED)
 	bool animate_physical_bones = true;
 	Node* simulator = nullptr;
-	void setup_simulator();
 #endif // _DISABLE_DEPRECATED && PHYSICS_3D_DISABLED
 
 public:
@@ -222,7 +220,6 @@ private:
 protected:
 	void _notification(int p_what);
 	TypedArray<StringName> _get_bone_meta_list_bind(int p_bone) const;
-	static void _bind_methods();
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;

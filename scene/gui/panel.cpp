@@ -50,7 +50,6 @@ void Panel::_notification(int p_what)
 	}
 }
 
-void Panel::_bind_methods() {}
 
 Panel::Panel()
 {

@@ -248,38 +248,6 @@ Size2 ScriptEditorDebugger::get_minimum_size() const
 	return ms;
 }
 
-void ScriptEditorDebugger::_set_reason_text(const String& p_reason, MessageType p_type)
-{
-	switch (p_type) {
-	case MESSAGE_ERROR:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		break;
-	case MESSAGE_WARNING:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		break;
-	default:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		break;
-	}
-
-	reason->set_text(p_reason);
-
-	_update_reason_content_height();
-
-	const PackedInt32Array boundaries = TS->string_get_word_breaks(p_reason, "", 80);
-	PackedStringArray lines;
-	for (int i = 0; i < boundaries.size(); i += 2) {
-		const int start = boundaries[i];
-		const int end = boundaries[i + 1];
-		lines.append(p_reason.substr(start, end - start));
-	}
-
-	reason->set_tooltip_text(String("\n").join(lines));
-}
-
 void ScriptEditorDebugger::_update_reason_content_height()
 {
 	float margin_height = 0;
@@ -294,37 +262,6 @@ void ScriptEditorDebugger::_update_reason_content_height()
 	}
 
 	reason->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
-}
-
-void ScriptEditorDebugger::_stop_and_notify()
-{
-	stop();
-	_set_reason_text(TTRC("Debug session closed."), MESSAGE_WARNING);
-}
-
-void ScriptEditorDebugger::stop()
-{
-	set_process(false);
-	threads_debugged.clear();
-	debugging_thread_id = Thread::UNASSIGNED_ID;
-	remote_pid = 0;
-	_clear_execution();
-
-	inspector->clear_cache();
-
-	node_path_cache.clear();
-	res_path_cache.clear();
-	profiler_signature.clear();
-
-	profiler->set_enabled(false, false);
-	profiler->set_profiling(false);
-
-	visual_profiler->set_enabled(false);
-	visual_profiler->set_profiling(false);
-
-	audio_muted_on_break = false;
-
-	_update_buttons_state();
 }
 
 void ScriptEditorDebugger::_profiler_seeked()
@@ -446,40 +383,6 @@ void ScriptEditorDebugger::_mute_audio_on_break(bool p_mute)
 
 CameraOverride ScriptEditorDebugger::get_camera_override() const { return camera_override; }
 
-void ScriptEditorDebugger::set_breakpoint(const String& p_path, int p_line, bool p_enabled)
-{
-	TreeItem* path_item = breakpoints_tree->search_item_text(p_path);
-	if (path_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		path_item = breakpoints_tree->create_item();
-		path_item->set_text(0, p_path);
-	}
-
-	int idx = 0;
-	TreeItem* breakpoint_item;
-	for (breakpoint_item = path_item->get_first_child(); breakpoint_item;
-		 breakpoint_item = breakpoint_item->get_next()) {
-	}
-
-	if (breakpoint_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		breakpoint_item = breakpoints_tree->create_item(path_item, idx);
-		breakpoint_item->set_text(0, vformat(TTR("Line %d"), p_line));
-		return;
-	}
-
-	if (!p_enabled) {
-		path_item->remove_child(breakpoint_item);
-		if (path_item->get_first_child() == nullptr) {
-			breakpoints_tree->get_root()->remove_child(path_item);
-		}
-	}
-}
-
 bool ScriptEditorDebugger::is_skip_breakpoints() const { return skip_breakpoints_value; }
 
 bool ScriptEditorDebugger::is_ignore_error_breaks() const { return ignore_error_breaks_value; }
@@ -526,19 +429,6 @@ void ScriptEditorDebugger::_collapse_errors_list()
 	}
 }
 
-void ScriptEditorDebugger::_vmem_item_activated()
-{
-	TreeItem* selected = vmem_tree->get_selected();
-	if (!selected) {
-		return;
-	}
-	const String path = selected->get_text(0);
-	if (path.is_empty() || !FileAccess::exists(path)) {
-		return;
-	}
-	FileSystemDock::get_singleton()->navigate_to_path(path);
-}
-
 void ScriptEditorDebugger::_vmem_tree_rmb_selected(const Vector2& p_pos, MouseButton p_button)
 {
 	if (p_button != MouseButton::RIGHT) {
@@ -568,54 +458,10 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 
 	String path = item->get_text(0);
 	switch (p_option) {
-	case VMEM_MENU_SHOW_IN_FILESYSTEM: {
-		FileSystemDock::get_singleton()->navigate_to_path(path);
-	} break;
 	case VMEM_MENU_SHOW_IN_EXPLORER: {
 		OS::get_singleton()->shell_show_in_file_manager(
 			ProjectSettings::get_singleton()->globalize_path(path), true);
 	} break;
-	case VMEM_MENU_OWNERS: {
-		FileSystemDock::get_owners_dialog()->show(path);
-	} break;
-	}
-}
-
-void ScriptEditorDebugger::_breakpoints_item_rmb_selected(
-	const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	breakpoints_menu->clear();
-	breakpoints_menu->set_size(Size2(1, 1));
-
-	const TreeItem* selected = breakpoints_tree->get_selected();
-	String file = selected->get_text(0);
-	file = selected->get_parent()->get_text(0);
-}
-
-// Right click on specific file(s) or folder(s).
-void ScriptEditorDebugger::_error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	item_menu->clear();
-	item_menu->reset_size();
-
-	if (error_tree->is_anything_selected()) {
-		item_menu->add_icon_item(
-			get_editor_theme_icon(SNAME("ActionCopy")), TTRC("Copy Error"), ACTION_COPY_ERROR);
-		item_menu->add_icon_item(get_editor_theme_icon(SNAME("ExternalLink")),
-			TTRC("Open C++ Source on GitHub"), ACTION_OPEN_SOURCE);
-	}
-
-	if (item_menu->get_item_count() > 0) {
-		item_menu->set_position(error_tree->get_screen_position() + p_pos);
-		item_menu->popup();
 	}
 }
 

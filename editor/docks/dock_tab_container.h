@@ -64,8 +64,6 @@ protected:
 public:
 	void set_slot(DockTabContainer* p_slot);
 	void set_highlighted(bool p_highlighted);
-
-	EditorDockDragHint();
 };
 
 class DockTabContainer : public TabContainer
@@ -121,29 +119,22 @@ public:
 
 	void set_dock_context_popup(DockContextPopup* p_popup);
 	EditorDock* get_dock(int p_idx) const;
-	void show_drag_hint();
 
 	EditorDockDragHint* get_drag_hint() const { return drag_hint; }
 
 	static Rect2 get_default_floating_dock_rect(EditorDock* p_dock);
-
-	DockTabContainer(int p_slot);
 };
 
 class SideDockTabContainer : public DockTabContainer
 {
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock) override;
-
-	SideDockTabContainer(int p_slot, const Rect2i& p_slot_rect);
 };
 
 class BottomSideDockTabContainer : public DockTabContainer
 {
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock) override;
-
-	BottomSideDockTabContainer(int p_slot, const Rect2i& p_slot_rect);
 };
 
 

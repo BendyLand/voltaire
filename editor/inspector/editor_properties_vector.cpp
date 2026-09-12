@@ -62,29 +62,6 @@ void EditorPropertyVectorN::_update_ratio()
 	}
 }
 
-void EditorPropertyVectorN::setup(
-	const EditorPropertyRangeHint& p_range_hint, bool p_link, bool p_is_int)
-{
-	radians_as_degrees = p_range_hint.radians_as_degrees;
-
-	for (EditorSpinSlider* spin : spin_sliders) {
-		spin->set_min(p_range_hint.min);
-		spin->set_max(p_range_hint.max);
-		spin->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin->set_allow_greater(true);
-		spin->set_allow_lesser(true);
-		spin->set_suffix(p_range_hint.suffix);
-		spin->set_editing_integer(p_is_int);
-	}
-
-	if (!p_link) {
-		linked->hide();
-	}
-}
-
 void EditorPropertyVectorN::set_deferred_drag_mode_enabled(bool p_enabled)
 {
 	EditorProperty::set_deferred_drag_mode_enabled(p_enabled);

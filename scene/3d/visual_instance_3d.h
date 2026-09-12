@@ -52,7 +52,6 @@ protected:
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	enum GetFacesFlags
@@ -81,7 +80,7 @@ public:
 	void set_sorting_use_aabb_center(bool p_enabled);
 	bool is_sorting_use_aabb_center() const;
 
-	VisualInstance3D();
+	VisualInstance3D() = default;
 	~VisualInstance3D();
 };
 
@@ -145,28 +144,21 @@ private:
 	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting);
 	ShadowCastingSetting get_cast_shadows_setting() const;
 
-	void set_transparency(float p_transparency);
 	float get_transparency() const;
 
-	void set_visibility_range_begin(float p_dist);
 	float get_visibility_range_begin() const;
 
-	void set_visibility_range_end(float p_dist);
 	float get_visibility_range_end() const;
 
-	void set_visibility_range_begin_margin(float p_dist);
 	float get_visibility_range_begin_margin() const;
 
-	void set_visibility_range_end_margin(float p_dist);
 	float get_visibility_range_end_margin() const;
 
-	void set_visibility_range_fade_mode(VisibilityRangeFadeMode p_mode);
 	VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 
 	void set_material_override(const Ref<Material>& p_material);
@@ -187,7 +179,6 @@ public:
 	void set_lightmap_texel_scale(float p_scale);
 	float get_lightmap_texel_scale() const;
 
-	void set_custom_aabb(AABB p_aabb);
 	AABB get_custom_aabb() const;
 
 	void set_ignore_occlusion_culling(bool p_enabled);
@@ -196,7 +187,7 @@ public:
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const;
 
 	PackedStringArray get_configuration_warnings() const override;
-	GeometryInstance3D();
+	GeometryInstance3D() = default;
 	virtual ~GeometryInstance3D();
 };
 

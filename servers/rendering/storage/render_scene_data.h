@@ -35,7 +35,6 @@
 class RenderSceneData
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Transform3D get_cam_transform() const = 0;

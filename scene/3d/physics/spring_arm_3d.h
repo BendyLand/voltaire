@@ -44,10 +44,8 @@ class SpringArm3D : public Node3D
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_length(real_t p_length);
 	real_t get_length() const;
 	void set_shape(Ref<Shape3D> p_shape);
 	Ref<Shape3D> get_shape() const;

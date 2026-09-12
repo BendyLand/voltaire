@@ -135,5 +135,4 @@ Error StreamPeerTCP::_connect(const String& p_address, int p_port)
 	return connect_to_host(ip, p_port);
 }
 
-void StreamPeerTCP::_bind_methods() {}
 

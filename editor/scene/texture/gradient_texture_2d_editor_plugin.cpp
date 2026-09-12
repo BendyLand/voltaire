@@ -143,15 +143,7 @@ GradientTexture2DEdit::GradientTexture2DEdit()
 	set_custom_minimum_size(Size2(0, 250 * EDSCALE));
 }
 
-///////////////////////
-
 const int GradientTexture2DEditor::DEFAULT_SNAP = 10;
-
-void GradientTexture2DEditor::_set_snap_enabled(bool p_enabled)
-{
-	texture_editor_rect->set_snap_enabled(p_enabled);
-	snap_count_edit->set_visible(p_enabled);
-}
 
 void GradientTexture2DEditor::_set_snap_count(int p_snap_count)
 {

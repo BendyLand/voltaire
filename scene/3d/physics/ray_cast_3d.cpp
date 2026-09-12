@@ -35,21 +35,6 @@
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-void RayCast3D::set_target_position(const Vector3& p_point)
-{
-	target_position = p_point;
-	update_gizmos();
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (is_inside_tree()) {
-			_update_debug_shape_vertices();
-		}
-	}
-	else if (debug_instance.is_valid()) {
-		_update_debug_shape();
-	}
-}
-
 Vector3 RayCast3D::get_target_position() const { return target_position; }
 
 void RayCast3D::set_collision_mask(uint32_t p_mask) { collision_mask = p_mask; }
@@ -92,28 +77,6 @@ Vector3 RayCast3D::get_collision_point() const { return collision_point; }
 Vector3 RayCast3D::get_collision_normal() const { return collision_normal; }
 
 int RayCast3D::get_collision_face_index() const { return collision_face_index; }
-
-void RayCast3D::set_enabled(bool p_enabled)
-{
-	enabled = p_enabled;
-	update_gizmos();
-
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
-		set_physics_process_internal(p_enabled);
-	}
-	if (!p_enabled) {
-		collided = false;
-	}
-
-	if (is_inside_tree() && get_tree()->is_debugging_collisions_hint()) {
-		if (p_enabled) {
-			_update_debug_shape();
-		}
-		else {
-			_clear_debug_shape();
-		}
-	}
-}
 
 bool RayCast3D::is_enabled() const { return enabled; }
 
@@ -182,21 +145,6 @@ void RayCast3D::_update_debug_shape_vertices()
 	}
 }
 
-void RayCast3D::set_debug_shape_thickness(const int p_debug_shape_thickness)
-{
-	debug_shape_thickness = p_debug_shape_thickness;
-	update_gizmos();
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (is_inside_tree()) {
-			_update_debug_shape_vertices();
-		}
-	}
-	else if (debug_instance.is_valid()) {
-		_update_debug_shape();
-	}
-}
-
 const Vector<Vector3>& RayCast3D::get_debug_shape_vertices() const { return debug_shape_vertices; }
 
 const Vector<Vector3>& RayCast3D::get_debug_line_vertices() const { return debug_line_vertices; }
@@ -237,7 +185,6 @@ void RayCast3D::_update_debug_shape_material(bool p_check_collision)
 		debug_material = material;
 
 		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 		// Use double-sided rendering so that the RayCast can be seen if the camera is inside.
 		material->set_cull_mode(BaseMaterial3D::CULL_DISABLED);
 		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
@@ -262,7 +209,6 @@ void RayCast3D::_update_debug_shape_material(bool p_check_collision)
 	}
 
 	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
-	material->set_albedo(color);
 }
 
 void RayCast3D::_clear_debug_shape()

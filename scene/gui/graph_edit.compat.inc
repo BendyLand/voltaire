@@ -37,11 +37,6 @@ bool GraphEdit::_is_arrange_nodes_button_hidden_bind_compat_81582() const
 	return !is_showing_arrange_button();
 }
 
-void GraphEdit::_set_arrange_nodes_button_hidden_bind_compat_81582(bool p_enable)
-{
-	set_show_arrange_button(!p_enable);
-}
-
 PackedVector2Array GraphEdit::_get_connection_line_bind_compat_86158(
 	const Vector2& p_from, const Vector2& p_to)
 {

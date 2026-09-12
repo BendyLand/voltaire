@@ -66,7 +66,6 @@ void AudioEffectAmplify::set_volume_linear(float p_volume)
 
 float AudioEffectAmplify::get_volume_linear() const { return Math::db_to_linear(get_volume_db()); }
 
-void AudioEffectAmplify::_bind_methods() {}
 
 AudioEffectAmplify::AudioEffectAmplify() { volume_db = 0; }
 

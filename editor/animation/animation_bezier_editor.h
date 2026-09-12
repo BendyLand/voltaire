@@ -93,18 +93,10 @@ class AnimationBezierTrackEdit : public Control
 
 	PopupMenu* menu = nullptr;
 
-	void _zoom_changed();
-
 	void _update_locked_tracks_after(int p_track);
 	void _update_hidden_tracks_after(int p_track);
-	bool _lock_track(int p_track);
 	bool _unlock_track(int p_track);
-	bool _hide_track(int p_track);
 	bool _show_track(int p_track);
-
-	void _play_position_draw();
-	bool _is_track_displayed(int p_track_index);
-	bool _is_track_curves_displayed(int p_track_index);
 
 	typedef Pair<int, int> IntPair;
 
@@ -193,8 +185,6 @@ class AnimationBezierTrackEdit : public Control
 	SelectionSet selection;
 
 	Ref<ViewPanner> panner;
-	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
-	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
 
 	void _draw_line_clipped(const Vector2& p_from, const Vector2& p_to, const Color& p_color,
 		int p_clip_left, int p_clip_right);
@@ -203,30 +193,20 @@ class AnimationBezierTrackEdit : public Control
 	float _bezier_h_to_pixel(float p_h);
 	void _zoom_vertically(real_t p_minimum_value, real_t p_maximum_value);
 
-protected:
-	static void _bind_methods();
-
 public:
 	Ref<Animation> get_animation() const;
 
-	void set_animation_and_track(const Ref<Animation>& p_animation, int p_track, bool p_read_only);
 	virtual Size2 get_minimum_size() const override;
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
-	void set_timeline(AnimationTimelineEdit* p_timeline);
-	void set_editor(AnimationTrackEditor* p_editor);
 	void set_root(Node* p_root);
-	void set_filtered(bool p_filtered);
-
-	void set_play_position(real_t p_pos);
-	void update_play_position();
 
 	void _bezier_track_insert_key_at_anim(const Ref<Animation>& p_anim, int p_track, double p_time,
 		real_t p_value, const Vector2& p_in_handle, const Vector2& p_out_handle,
 		const Animation::HandleMode p_handle_mode,
 		Animation::HandleSetMode p_handle_set_mode = Animation::HANDLE_SET_MODE_NONE);
 
-	AnimationBezierTrackEdit();
+	AnimationBezierTrackEdit() = default;
 };
 
 

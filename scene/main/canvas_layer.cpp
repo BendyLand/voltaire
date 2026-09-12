@@ -216,7 +216,6 @@ void CanvasLayer::_update_follow_viewport(bool p_force_exit)
 	}
 }
 
-void CanvasLayer::_bind_methods() {}
 
 CanvasLayer::CanvasLayer() { canvas = RS::get_singleton()->canvas_create(); }
 

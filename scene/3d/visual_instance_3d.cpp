@@ -179,7 +179,6 @@ void VisualInstance3D::set_sorting_use_aabb_center(bool p_enabled)
 
 bool VisualInstance3D::is_sorting_use_aabb_center() const { return sorting_use_aabb_center; }
 
-void VisualInstance3D::_bind_methods() {}
 
 void VisualInstance3D::set_base(const RID& p_base)
 {
@@ -206,72 +205,20 @@ void GeometryInstance3D::set_material_overlay(const Ref<Material>& p_material)
 
 Ref<Material> GeometryInstance3D::get_material_overlay() const { return material_overlay; }
 
-void GeometryInstance3D::set_transparency(float p_transparency)
-{
-	transparency = CLAMP(p_transparency, 0.0f, 1.0f);
-	RS::get_singleton()->instance_geometry_set_transparency(get_instance(), transparency);
-	update_configuration_warnings();
-}
-
 float GeometryInstance3D::get_transparency() const { return transparency; }
-
-void GeometryInstance3D::set_visibility_range_begin(float p_dist)
-{
-	visibility_range_begin = p_dist;
-	RS::get_singleton()->instance_geometry_set_visibility_range(get_instance(),
-		visibility_range_begin, visibility_range_end, visibility_range_begin_margin,
-		visibility_range_end_margin, (RSE::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	update_configuration_warnings();
-}
 
 float GeometryInstance3D::get_visibility_range_begin() const { return visibility_range_begin; }
 
-void GeometryInstance3D::set_visibility_range_end(float p_dist)
-{
-	visibility_range_end = p_dist;
-	RS::get_singleton()->instance_geometry_set_visibility_range(get_instance(),
-		visibility_range_begin, visibility_range_end, visibility_range_begin_margin,
-		visibility_range_end_margin, (RSE::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	update_configuration_warnings();
-}
-
 float GeometryInstance3D::get_visibility_range_end() const { return visibility_range_end; }
-
-void GeometryInstance3D::set_visibility_range_begin_margin(float p_dist)
-{
-	visibility_range_begin_margin = p_dist;
-	RS::get_singleton()->instance_geometry_set_visibility_range(get_instance(),
-		visibility_range_begin, visibility_range_end, visibility_range_begin_margin,
-		visibility_range_end_margin, (RSE::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	update_configuration_warnings();
-}
 
 float GeometryInstance3D::get_visibility_range_begin_margin() const
 {
 	return visibility_range_begin_margin;
 }
 
-void GeometryInstance3D::set_visibility_range_end_margin(float p_dist)
-{
-	visibility_range_end_margin = p_dist;
-	RS::get_singleton()->instance_geometry_set_visibility_range(get_instance(),
-		visibility_range_begin, visibility_range_end, visibility_range_begin_margin,
-		visibility_range_end_margin, (RSE::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	update_configuration_warnings();
-}
-
 float GeometryInstance3D::get_visibility_range_end_margin() const
 {
 	return visibility_range_end_margin;
-}
-
-void GeometryInstance3D::set_visibility_range_fade_mode(VisibilityRangeFadeMode p_mode)
-{
-	visibility_range_fade_mode = p_mode;
-	RS::get_singleton()->instance_geometry_set_visibility_range(get_instance(),
-		visibility_range_begin, visibility_range_end, visibility_range_begin_margin,
-		visibility_range_end_margin, (RSE::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	update_configuration_warnings();
 }
 
 GeometryInstance3D::VisibilityRangeFadeMode
@@ -332,16 +279,6 @@ void GeometryInstance3D::set_lod_bias(float p_bias)
 }
 
 float GeometryInstance3D::get_lod_bias() const { return lod_bias; }
-
-void GeometryInstance3D::set_custom_aabb(AABB p_aabb)
-{
-	if (p_aabb == custom_aabb) {
-		return;
-	}
-	custom_aabb = p_aabb;
-	RS::get_singleton()->instance_set_custom_aabb(get_instance(), custom_aabb);
-	update_gizmos();
-}
 
 AABB GeometryInstance3D::get_custom_aabb() const { return custom_aabb; }
 

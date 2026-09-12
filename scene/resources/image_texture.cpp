@@ -129,19 +129,6 @@ void ImageTexture::draw_lcd_rect_region(
 
 bool ImageTexture::is_pixel_opaque(int p_x, int p_y) const
 {
-	if (alpha_cache.is_null()) {
-		Ref<Image> img = get_image();
-		if (img.is_valid()) {
-			if (img->is_compressed()) { // must decompress, if compressed
-				Ref<Image> decom = img->duplicate();
-				decom->decompress();
-				img = decom;
-			}
-			alpha_cache.instantiate();
-			alpha_cache->create_from_image_alpha(img);
-		}
-	}
-
 	if (alpha_cache.is_valid()) {
 		int aw = int(alpha_cache->get_size().width);
 		int ah = int(alpha_cache->get_size().height);
@@ -182,7 +169,6 @@ void ImageTexture::set_path(const String& p_path, bool p_take_over)
 	Resource::set_path(p_path, p_take_over);
 }
 
-void ImageTexture::_bind_methods() {}
 
 ImageTexture::~ImageTexture()
 {
@@ -295,7 +281,6 @@ void ImageTextureLayered::set_path(const String& p_path, bool p_take_over)
 	Resource::set_path(p_path, p_take_over);
 }
 
-void ImageTextureLayered::_bind_methods() {}
 
 ImageTextureLayered::ImageTextureLayered(LayeredType p_layered_type)
 {
@@ -382,7 +367,6 @@ ImageTexture3D::~ImageTexture3D()
 	}
 }
 
-void Texture2DArray::_bind_methods() {}
 
 Ref<Resource> Texture2DArray::create_placeholder() const
 {
@@ -393,7 +377,6 @@ Ref<Resource> Texture2DArray::create_placeholder() const
 	return placeholder;
 }
 
-void Cubemap::_bind_methods() {}
 
 Ref<Resource> Cubemap::create_placeholder() const
 {
@@ -404,7 +387,6 @@ Ref<Resource> Cubemap::create_placeholder() const
 	return placeholder;
 }
 
-void CubemapArray::_bind_methods() {}
 
 Ref<Resource> CubemapArray::create_placeholder() const
 {

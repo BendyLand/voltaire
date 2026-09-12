@@ -57,24 +57,6 @@
 
 EditorRunBar* EditorRunBar::singleton = nullptr;
 
-void EditorRunBar::_movie_maker_item_pressed(int p_id)
-{
-	switch (p_id) {
-	case MOVIE_MAKER_TOGGLE: {
-		bool new_enabled = !is_movie_maker_enabled();
-		set_movie_maker_enabled(new_enabled);
-		write_movie_button->get_popup()->set_item_checked(0, new_enabled);
-		write_movie_button->set_pressed(new_enabled);
-		_write_movie_toggled(new_enabled);
-		break;
-	}
-	case MOVIE_MAKER_OPEN_SETTINGS:
-		ProjectSettingsEditor::get_singleton()->popup_project_settings(true);
-		ProjectSettingsEditor::get_singleton()->set_general_page("editor/movie_writer");
-		break;
-	}
-}
-
 void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
@@ -115,14 +97,6 @@ void EditorRunBar::_quick_run_selected(const String& p_file_path, int p_menu_ite
 		p_file_path, _get_xr_mode_play_args(static_cast<RunXRModeMenuItem>(p_menu_item)));
 }
 
-void EditorRunBar::recovery_mode_show_dialog() { recovery_mode_popup->popup_centered(); }
-
-void EditorRunBar::recovery_mode_reload_project()
-{
-	EditorNode::get_singleton()->trigger_menu_option(
-		EditorNode::PROJECT_RELOAD_CURRENT_PROJECT, false);
-}
-
 void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_play_args)
 {
 	if (Engine::get_singleton()->is_recovery_mode_hint()) {
@@ -139,30 +113,6 @@ void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_p
 		stop_playing();
 
 		current_mode = RunMode::RUN_MAIN;
-		_run_scene("", p_play_args);
-	}
-}
-
-void EditorRunBar::play_current_scene(bool p_reload, const Vector<String>& p_play_args)
-{
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		EditorToaster::get_singleton()->popup_str(
-			TTR("Recovery Mode is enabled. Disable it to run the project."),
-			EditorToaster::SEVERITY_WARNING);
-		return;
-	}
-
-	String last_current_scene =
-		run_current_filename; // This is necessary to have a copy of the string.
-
-	EditorNode::get_singleton()->save_default_environment();
-	stop_playing();
-
-	current_mode = RunMode::RUN_CURRENT;
-	if (p_reload) {
-		_run_scene(last_current_scene, p_play_args);
-	}
-	else {
 		_run_scene("", p_play_args);
 	}
 }
@@ -215,7 +165,6 @@ ProcessID EditorRunBar::get_current_process() const { return editor_run.get_curr
 void EditorRunBar::set_movie_maker_enabled(bool p_enabled)
 {
 	movie_maker_enabled = p_enabled;
-	write_movie_button->get_popup()->set_item_checked(0, p_enabled);
 }
 
 bool EditorRunBar::is_movie_maker_enabled() const { return movie_maker_enabled; }

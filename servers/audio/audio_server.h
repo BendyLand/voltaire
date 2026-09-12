@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include <atomic>
 #include "core/math/audio_frame.h"
 #include "core/templates/safe_list.h"
@@ -419,7 +418,6 @@ private:
 	LocalVector<Ref<AudioSamplePlayback>> sample_playback_list;
 
 protected:
-	static void _bind_methods();
 
 public:
 	_FORCE_INLINE_ int get_channel_count() const

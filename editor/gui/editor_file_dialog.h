@@ -44,10 +44,8 @@ protected:
 
 	virtual bool _should_use_native_popup() const override;
 	virtual bool _should_hide_file(const String& p_file) const override;
-	virtual Color _get_folder_color(const String& p_path) const override;
 	virtual Vector2i _get_list_mode_icon_size() const override;
 
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -56,11 +54,6 @@ public:
 	{
 		ERR_FAIL_MSG("add_side_menu() is kept for compatibility and does nothing. For similar "
 					 "functionality, you can show another dialog after file dialog.");
-	}
-
-	void set_disable_overwrite_warning(bool p_disable)
-	{
-		set_customization_flag_enabled(CUSTOMIZATION_OVERWRITE_WARNING, !p_disable);
 	}
 
 	bool is_overwrite_warning_disabled() const

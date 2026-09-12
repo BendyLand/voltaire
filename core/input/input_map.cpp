@@ -35,8 +35,6 @@
 #include "input_map.compat.inc"
 #include "input_map.h"
 
-void InputMap::_bind_methods() {}
-
 /**
  * Returns an nonexistent action error message with a suggestion of the closest
  * matching action name (if possible).

@@ -47,7 +47,7 @@ public:
 	bool is_handle_highlighted(
 		const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary) const override;
 
-	SoftBody3DGizmoPlugin();
+	SoftBody3DGizmoPlugin() = default;
 };
 
 

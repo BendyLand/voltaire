@@ -157,7 +157,6 @@ public:
 class VideoStreamTheora : public VideoStream
 {
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<VideoStreamPlayback> instantiate_playback() override

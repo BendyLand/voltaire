@@ -42,6 +42,4 @@ StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize)
 
 bool StreamPeerTLS::is_available() { return _create != nullptr; }
 
-void StreamPeerTLS::_bind_methods() {}
-
 

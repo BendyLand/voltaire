@@ -280,46 +280,6 @@ void AnimationBezierTrackEdit::_draw_line_clipped(const Vector2& p_from, const V
 	draw_line(from, to, p_color, Math::round(EDSCALE), true);
 }
 
-// Check if a track is displayed in the bezier editor (track type = bezier and track not filtered).
-bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index)
-{
-	if (animation->track_get_type(p_track_index) != Animation::TrackType::TYPE_BEZIER) {
-		return false;
-	}
-
-	if (is_filtered) {
-		String path = String(animation->track_get_path(p_track_index));
-		if (root && root->has_node(path)) {
-			Node* node = root->get_node(path);
-			if (!node) {
-				return false; // No node, no filter.
-			}
-			if (!EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
-				return false; // Skip track due to not selected.
-			}
-		}
-	}
-
-	return true;
-}
-
-// Check if the curves for a track are displayed in the editor (not hidden). Includes the check on
-// the track visibility.
-bool AnimationBezierTrackEdit::_is_track_curves_displayed(int p_track_index)
-{
-	// Is the track is visible in the editor?
-	if (!_is_track_displayed(p_track_index)) {
-		return false;
-	}
-
-	// And curves visible?
-	if (hidden_tracks.has(p_track_index)) {
-		return false;
-	}
-
-	return true;
-}
-
 Ref<Animation> AnimationBezierTrackEdit::get_animation() const { return animation; }
 
 Size2 AnimationBezierTrackEdit::get_minimum_size() const { return Vector2(1, 1); }
@@ -377,25 +337,6 @@ Control::CursorShape AnimationBezierTrackEdit::get_cursor_shape(const Point2& p_
 	return get_default_cursor_shape();
 }
 
-void AnimationBezierTrackEdit::_play_position_draw()
-{
-	if (animation.is_null() || play_position_pos < 0) {
-		return;
-	}
-
-	float scale = timeline->get_zoom_scale();
-	int h = get_size().height;
-
-	int limit = timeline->get_name_limit();
-
-	int px = (-timeline->get_value() + play_position_pos) * scale + limit;
-
-	if (px >= limit && px < (get_size().width)) {
-		const Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		play_position->draw_line(Point2(px, 0), Point2(px, h), color, Math::round(2 * EDSCALE));
-	}
-}
-
 void AnimationBezierTrackEdit::set_root(Node* p_root) { root = p_root; }
 
 void AnimationBezierTrackEdit::_zoom_vertically(real_t p_minimum_value, real_t p_maximum_value)
@@ -448,39 +389,7 @@ void AnimationBezierTrackEdit::_update_hidden_tracks_after(int p_track)
 	}
 }
 
-bool AnimationBezierTrackEdit::_lock_track(int p_track)
-{
-	locked_tracks.insert(p_track);
-	if (selected_track == p_track) {
-		for (int i = 0; i < animation->get_track_count(); ++i) {
-			if (!locked_tracks.has(i) &&
-				animation->track_get_type(i) == Animation::TrackType::TYPE_BEZIER) {
-				set_animation_and_track(animation, i, read_only);
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 bool AnimationBezierTrackEdit::_unlock_track(int p_track) { return locked_tracks.erase(p_track); }
-
-bool AnimationBezierTrackEdit::_hide_track(int p_track)
-{
-	hidden_tracks.insert(p_track);
-	if (selected_track == p_track) {
-		for (int i = 0; i < animation->get_track_count(); ++i) {
-			if (!hidden_tracks.has(i) &&
-				animation->track_get_type(i) == Animation::TrackType::TYPE_BEZIER) {
-				set_animation_and_track(animation, i, read_only);
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
 
 bool AnimationBezierTrackEdit::_show_track(int p_track) { return hidden_tracks.erase(p_track); }
 

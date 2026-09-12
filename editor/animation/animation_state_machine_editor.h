@@ -240,7 +240,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	HoveredNodeArea hovered_node_area = HOVER_NODE_NONE;
 
 	String prev_name;
-	void _open_editor(const String& p_name);
 	void _scroll_changed(double);
 
 	String _get_root_playback_path(String& r_node_directory);
@@ -249,9 +248,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	void _clip_dst_line_to_rect(const Vector2& p_from, Vector2& r_to, const Rect2& p_rect);
 
 	void _update_mode();
-	void _open_menu(const Vector2& p_position);
-	bool _create_submenu(PopupMenu* p_menu, Ref<AnimationNodeStateMachine> p_nodesm,
-		const StringName& p_name, const StringName& p_path);
 	void _stop_connecting();
 
 	bool last_active = false;
@@ -288,7 +284,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	Ref<StyleBox> _adjust_stylebox_opacity(Ref<StyleBox> p_style, float p_opacity);
 
 protected:
-	static void _bind_methods();
 
 public:
 	static AnimationNodeStateMachineEditor* get_singleton() { return singleton; }

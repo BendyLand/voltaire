@@ -30,21 +30,6 @@
 
 #include "remote_transform_2d.h"
 
-void RemoteTransform2D::set_remote_node(const NodePath& p_remote_node)
-{
-	if (remote_node == p_remote_node) {
-		return;
-	}
-
-	remote_node = p_remote_node;
-	if (is_inside_tree()) {
-		_update_cache();
-		_update_remote();
-	}
-
-	update_configuration_warnings();
-}
-
 NodePath RemoteTransform2D::get_remote_node() const { return remote_node; }
 
 void RemoteTransform2D::set_use_global_coordinates(const bool p_enable)

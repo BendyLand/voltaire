@@ -33,7 +33,6 @@
 #include "gltf_accessor.compat.inc"
 #include "gltf_accessor.h"
 
-void GLTFAccessor::_bind_methods() {}
 
 // Property getters and setters.
 

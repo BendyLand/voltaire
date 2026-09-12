@@ -43,7 +43,6 @@ protected:
 	Rect2 margin;
 	bool filter_clip = false;
 
-	static void _bind_methods();
 
 public:
 	virtual int get_width() const override;

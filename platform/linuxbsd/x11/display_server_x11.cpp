@@ -3191,11 +3191,6 @@ void DisplayServerX11::window_set_icon(
 	wd.icon_set = true;
 
 	Ref<Image> img;
-	if (p_icon.is_valid()) {
-		ERR_FAIL_COND(p_icon->get_width() <= 0 || p_icon->get_height() <= 0);
-		img = p_icon->duplicate();
-		img->convert(Image::FORMAT_RGBA8);
-	}
 	wd.icon = img;
 	_update_window_icon(wd);
 }
@@ -4808,7 +4803,6 @@ void DisplayServerX11::set_icon(const Ref<Image>& p_icon)
 {
 	ERR_FAIL_COND(p_icon.is_null());
 
-	icon = p_icon->duplicate();
 	icon->convert(Image::FORMAT_RGBA8);
 
 	for (KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {

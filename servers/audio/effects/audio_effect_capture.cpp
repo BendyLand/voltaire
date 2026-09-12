@@ -63,7 +63,6 @@ void AudioEffectCapture::clear_buffer()
 	buffer.advance_read(data_left);
 }
 
-void AudioEffectCapture::_bind_methods() {}
 
 Ref<AudioEffectInstance> AudioEffectCapture::instantiate()
 {

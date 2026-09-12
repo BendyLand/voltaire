@@ -198,10 +198,6 @@ public:
 	// Helper.
 	double get_bezier_arc_length();
 
-#ifdef TOOLS_ENABLED
-	virtual Vector3 get_bone_vector(int p_index, int p_joint) const override;
-#endif // TOOLS_ENABLED
-
 	~SplineIK3D();
 };
 

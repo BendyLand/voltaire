@@ -70,7 +70,6 @@ void EditorDebuggerTree::_notification(int p_what)
 	}
 }
 
-void EditorDebuggerTree::_bind_methods() {}
 
 void EditorDebuggerTree::_scene_tree_selected()
 {
@@ -82,84 +81,6 @@ void EditorDebuggerTree::_scene_tree_selected()
 	if (!notify_selection_queued) {
 		notify_selection_queued = true;
 	}
-}
-
-void EditorDebuggerTree::_scene_tree_rmb_selected(const Vector2& p_position, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	TreeItem* item = get_item_at_position(p_position);
-	if (!item) {
-		return;
-	}
-
-	item->select(0);
-
-	item_menu->clear();
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("CreateNewSceneFrom")),
-		TTR("Save Branch as Scene..."), ITEM_MENU_SAVE_REMOTE_NODE);
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("CopyNodePath")), TTR("Copy Node Path"),
-		ITEM_MENU_COPY_NODE_PATH);
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("Collapse")),
-		TTR("Expand/Collapse Branch"), ITEM_MENU_EXPAND_COLLAPSE);
-	item_menu->set_position(get_screen_position() + get_local_mouse_position());
-	item_menu->reset_size();
-	item_menu->popup();
-}
-
-/// Populates inspect_scene_tree given data in nodes as a flat list, encoded depth first.
-///
-/// Given a nodes array like [R,A,B,C,D,E] the following Tree will be generated, assuming
-/// filter is an empty String, R and A child count are 2, B is 1 and C, D and E are 0.
-///
-/// R
-/// |-A
-/// | |-B
-/// | | |-C
-/// | |
-/// | |-D
-/// |
-/// |-E
-///
-void EditorDebuggerTree::update_scene_tree(const SceneDebuggerTree* p_tree, int p_debugger)
-{
-	set_hide_root(false);
-
-	updating_scene_tree = true;
-	const String last_path = get_selected_path();
-	const String filter = SceneTreeDock::get_singleton()->get_filter();
-	LocalVector<TreeItem*> select_items;
-
-	bool should_scroll = scrolling_to_item || filter != last_filter;
-	scrolling_to_item = false;
-	TreeItem* scroll_item = nullptr;
-
-	// Nodes are in a flatten list, depth first. Use a stack of parents, avoid recursion.
-	List<ParentItem> parents;
-
-	debugger_id =
-		p_debugger; // Needed by hook, could be avoided if every debugger had its own tree.
-
-	for (TreeItem* item : select_items) {
-		item->select(0);
-	}
-	if (scroll_item) {
-		scroll_to_item(scroll_item, false);
-	}
-
-	if (new_session) {
-		// Some nodes may stay selected between sessions.
-		// Make sure the inspector shows them properly.
-		if (!notify_selection_queued) {
-			notify_selection_queued = true;
-		}
-		new_session = false;
-	}
-
-	last_filter = filter;
-	updating_scene_tree = false;
 }
 
 void EditorDebuggerTree::clear_selection()

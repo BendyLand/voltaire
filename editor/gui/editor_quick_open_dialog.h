@@ -159,8 +159,6 @@ private:
 
 	void _ensure_result_vector_capacity();
 	void _sort_uids(int p_max_results);
-	void _create_initial_results();
-	void _find_uids_in_folder(EditorFileSystemDirectory* p_directory, bool p_include_addons);
 
 	Vector<ResourceUID::ID>* _get_history();
 	void _add_candidate(QuickOpenResultCandidate& p_candidate);
@@ -181,11 +179,9 @@ private:
 	void _toggle_instant_preview(bool p_pressed);
 	void _toggle_include_addons(bool p_pressed);
 	void _toggle_fuzzy_search(bool p_pressed);
-	void _menu_option(int p_option);
 
 	String _get_cache_file_path() const;
 
-	static void _bind_methods();
 };
 
 class QuickOpenResultGridItem : public MarginContainer
@@ -194,7 +190,6 @@ public:
 	QuickOpenResultGridItem();
 
 	void reset();
-	void set_content(const QuickOpenResultCandidate& p_candidate, bool p_highlight);
 	void highlight_item(const Color& p_color);
 	void remove_highlight();
 
@@ -214,9 +209,6 @@ public:
 	void highlight_item(const Color& p_color);
 	void remove_highlight();
 
-protected:
-	void _notification(int p_what);
-
 private:
 	HBoxContainer* hbc = nullptr;
 	VBoxContainer* text_container = nullptr;
@@ -229,7 +221,7 @@ private:
 class QuickOpenResultItem : public HBoxContainer
 {
 public:
-	QuickOpenResultItem();
+	QuickOpenResultItem() = default;
 
 	bool enable_highlights = true;
 

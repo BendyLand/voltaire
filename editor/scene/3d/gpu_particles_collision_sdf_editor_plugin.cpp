@@ -67,12 +67,6 @@ void GPUParticlesCollisionSDF3DEditorPlugin::bake_func_begin(int p_steps)
 	tmp_progress = memnew(EditorProgress("bake_sdf", TTR("Bake SDF"), p_steps));
 }
 
-void GPUParticlesCollisionSDF3DEditorPlugin::bake_func_step(int p_step, const String& p_description)
-{
-	ERR_FAIL_NULL(tmp_progress);
-	tmp_progress->step(p_description, p_step, false);
-}
-
 void GPUParticlesCollisionSDF3DEditorPlugin::bake_func_end()
 {
 	ERR_FAIL_NULL(tmp_progress);

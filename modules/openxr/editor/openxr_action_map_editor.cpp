@@ -42,18 +42,6 @@
 HashMap<String, String> OpenXRActionMapEditor::interaction_profile_editors;
 HashMap<String, String> OpenXRActionMapEditor::binding_modifier_editors;
 
-void OpenXRActionMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	if (p_slot != EditorDock::DOCK_SLOT_BOTTOM) {
-		actionsets_mc->set_theme_type_variation("NoBorderBottomWideWindow");
-		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_TOP_AND_LEFT);
-	}
-	else {
-		actionsets_mc->set_theme_type_variation("NoBorderOpenXR");
-		actionsets_scroll->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
-	}
-}
-
 OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_profile_editor(
 	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
 {
@@ -222,20 +210,6 @@ void OpenXRActionMapEditor::_do_remove_interaction_profile_editor(
 
 	tabs->remove_child(p_interaction_profile_editor);
 	action_map->remove_interaction_profile(interaction_profile);
-}
-
-void OpenXRActionMapEditor::open_action_map(const String& p_path)
-{
-	make_visible();
-
-	// out with the old...
-	_clear_action_map();
-
-	// now load in our new action map
-	_load_action_map(p_path);
-
-	_create_action_sets();
-	_create_interaction_profiles();
 }
 
 void OpenXRActionMapEditor::register_interaction_profile_editor(

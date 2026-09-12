@@ -55,7 +55,6 @@ private:
 
 		Monitor(const String& p_name, const String& p_base, int p_frame_index,
 			Performance::MonitorType p_type, TreeItem* p_item);
-		void reset();
 	};
 
 	HashMap<StringName, Monitor> monitors;
@@ -71,12 +70,7 @@ private:
 	const int MARKER_MARGIN = 2;
 
 	String _format_label(float p_value, Performance::MonitorType p_type) const;
-	void _update_monitor_value(Monitor* p_monitor, float p_value);
 	void _monitor_select();
-	void _monitor_draw();
-	void _build_monitor_tree();
-	TreeItem* _get_monitor_base(const StringName& p_base_name);
-	TreeItem* _create_monitor_item(const StringName& p_monitor_name, TreeItem* p_base);
 	void _marker_input(const Ref<InputEvent>& p_event);
 
 protected:
@@ -84,10 +78,9 @@ protected:
 
 public:
 	void reset();
-	void update_monitors(const Vector<StringName>& p_names, const PackedInt32Array& p_types);
 	void add_profile_frame(const Vector<float>& p_values);
 	List<float>* get_monitor_data(const StringName& p_name);
-	EditorPerformanceProfiler();
+	EditorPerformanceProfiler() = default;
 };
 
 

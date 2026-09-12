@@ -332,6 +332,5 @@ RegEx::~RegEx()
 	pcre2_general_context_free_32((pcre2_general_context_32*)general_ctx);
 }
 
-void RegEx::_bind_methods() {}
 
 

@@ -30,7 +30,6 @@
 
 #include "xr_body_tracker.h"
 
-void XRBodyTracker::_bind_methods() {}
 
 void XRBodyTracker::set_tracker_type(XRServer::TrackerType p_type)
 {

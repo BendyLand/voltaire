@@ -71,7 +71,6 @@ class ArrayOccluder3D : public Occluder3D
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	void set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices);
@@ -90,7 +89,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	Size2 get_size() const;
@@ -108,7 +106,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	Vector3 get_size() const;
@@ -128,7 +125,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	float get_radius() const;
@@ -148,7 +144,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-	static void _bind_methods();
 
 public:
 	void set_polygon(const Vector<Vector2>& p_polygon);
@@ -165,15 +160,12 @@ private:
 	uint32_t bake_mask = 0xFFFFFFFF;
 	float bake_simplification_dist = 0.1f;
 
-	void _occluder_changed();
-
 	void _bake_node(Node* p_node, PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
 
 	bool _is_editable_3d_polygon() const;
 	Ref<Resource> _get_editable_3d_polygon_resource() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
@@ -191,13 +183,11 @@ public:
 
 	virtual AABB get_aabb() const override;
 
-	void set_bake_mask(uint32_t p_mask);
 	uint32_t get_bake_mask() const;
 
 	void set_bake_simplification_distance(float p_dist);
 	float get_bake_simplification_distance() const;
 
-	void set_bake_mask_value(int p_layer_number, bool p_enable);
 	bool get_bake_mask_value(int p_layer_number) const;
 
 	BakeError bake_scene(Node* p_from_node, String p_occluder_path = "");

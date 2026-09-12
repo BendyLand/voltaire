@@ -108,8 +108,6 @@ void GPUParticles3D::set_one_shot(bool p_one_shot)
 	}
 }
 
-
-
 bool GPUParticles3D::get_use_fixed_seed() const { return use_fixed_seed; }
 
 void GPUParticles3D::set_seed(uint32_t p_seed)
@@ -138,20 +136,11 @@ void GPUParticles3D::set_randomness_ratio(real_t p_ratio)
 	RS::get_singleton()->particles_set_randomness_ratio(particles, randomness_ratio);
 }
 
-void GPUParticles3D::set_visibility_aabb(const AABB& p_aabb)
-{
-	visibility_aabb = p_aabb;
-	RS::get_singleton()->particles_set_custom_aabb(particles, visibility_aabb);
-	update_gizmos();
-}
-
 void GPUParticles3D::set_use_local_coordinates(bool p_enable)
 {
 	local_coords = p_enable;
 	RS::get_singleton()->particles_set_use_local_coordinates(particles, local_coords);
 }
-
-
 
 void GPUParticles3D::set_speed_scale(double p_scale)
 {
@@ -197,13 +186,6 @@ void GPUParticles3D::set_draw_order(DrawOrder p_order)
 	RS::get_singleton()->particles_set_draw_order(particles, RSE::ParticlesDrawOrder(p_order));
 }
 
-void GPUParticles3D::set_trail_enabled(bool p_enabled)
-{
-	trail_enabled = p_enabled;
-	RS::get_singleton()->particles_set_trails(particles, trail_enabled, trail_lifetime);
-	update_configuration_warnings();
-}
-
 void GPUParticles3D::set_trail_lifetime(double p_seconds)
 {
 	ERR_FAIL_COND(p_seconds < 0.01 - CMP_EPSILON);
@@ -217,11 +199,7 @@ double GPUParticles3D::get_trail_lifetime() const { return trail_lifetime; }
 
 GPUParticles3D::DrawOrder GPUParticles3D::get_draw_order() const { return draw_order; }
 
-
-
 int GPUParticles3D::get_draw_passes() const { return draw_passes.size(); }
-
-
 
 Ref<Mesh> GPUParticles3D::get_draw_pass_mesh(int p_pass) const
 {
@@ -254,8 +232,6 @@ void GPUParticles3D::set_interpolate(bool p_enable)
 
 bool GPUParticles3D::get_interpolate() const { return interpolate; }
 
-
-
 void GPUParticles3D::restart(bool p_keep_seed)
 {
 	if (!p_keep_seed && !use_fixed_seed) {
@@ -277,8 +253,6 @@ AABB GPUParticles3D::capture_aabb() const
 {
 	return RS::get_singleton()->particles_get_current_aabb(particles);
 }
-
-
 
 void GPUParticles3D::request_particles_process(
 	real_t p_requested_process_time, real_t p_request_process_time_residual)
@@ -306,59 +280,9 @@ void GPUParticles3D::emit_particle(const Transform3D& p_transform, const Vector3
 		particles, p_transform, p_velocity, p_color, p_custom, p_emit_flags);
 }
 
-
-
-void GPUParticles3D::set_sub_emitter(const NodePath& p_path)
-{
-	if (is_inside_tree()) {
-		RS::get_singleton()->particles_set_subemitter(particles, RID());
-	}
-
-	sub_emitter = p_path;
-
-	if (is_inside_tree() && sub_emitter != NodePath()) {
-		_attach_sub_emitter();
-	}
-	update_configuration_warnings();
-}
-
 NodePath GPUParticles3D::get_sub_emitter() const { return sub_emitter; }
 
-void GPUParticles3D::_skinning_changed()
-{
-	Vector<Transform3D> xforms;
-	if (skin.is_valid()) {
-		xforms.resize(skin->get_bind_count());
-		for (int i = 0; i < skin->get_bind_count(); i++) {
-			xforms.write[i] = skin->get_bind_pose(i);
-		}
-	}
-	else {
-		for (int i = 0; i < draw_passes.size(); i++) {
-			Ref<Mesh> draw_pass = draw_passes[i];
-			if (draw_pass.is_valid() && draw_pass->get_builtin_bind_pose_count() > 0) {
-				xforms.resize(draw_pass->get_builtin_bind_pose_count());
-				for (int j = 0; j < draw_pass->get_builtin_bind_pose_count(); j++) {
-					xforms.write[j] = draw_pass->get_builtin_bind_pose(j);
-				}
-				break;
-			}
-		}
-	}
-
-	RS::get_singleton()->particles_set_trail_bind_poses(particles, xforms);
-	update_configuration_warnings();
-}
-
-void GPUParticles3D::set_skin(const Ref<Skin>& p_skin)
-{
-	skin = p_skin;
-	_skinning_changed();
-}
-
 Ref<Skin> GPUParticles3D::get_skin() const { return skin; }
-
-
 
 GPUParticles3D::TransformAlign GPUParticles3D::get_transform_align() const
 {
@@ -391,8 +315,6 @@ RSE::ParticlesTransformAlignAxis GPUParticles3D::get_transform_align_axis() cons
 	return transform_align_axis;
 }
 
-
-
 void GPUParticles3D::set_amount_ratio(float p_ratio)
 {
 	amount_ratio = p_ratio;
@@ -400,8 +322,6 @@ void GPUParticles3D::set_amount_ratio(float p_ratio)
 }
 
 float GPUParticles3D::get_amount_ratio() const { return amount_ratio; }
-
-
 
 GPUParticles3D::GPUParticles3D()
 {
@@ -422,7 +342,6 @@ GPUParticles3D::GPUParticles3D()
 	set_explosiveness_ratio(0);
 	set_randomness_ratio(0);
 	set_trail_lifetime(0.3);
-	set_visibility_aabb(AABB(Vector3(-4, -4, -4), Vector3(8, 8, 8)));
 	set_use_local_coordinates(false);
 	set_draw_passes(1);
 	set_draw_order(DRAW_ORDER_INDEX);

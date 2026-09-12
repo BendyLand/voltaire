@@ -233,7 +233,6 @@ class SpriteFramesEditor : public EditorDock {
 	void _animation_cut();
 	void _animation_copy();
 	void _animation_paste();
-	void _animation_remove();
 	void _animation_remove_confirmed();
 	void _animation_search_text_changed(const String &p_text);
 	void _animation_loop_pressed();
@@ -248,8 +247,6 @@ class SpriteFramesEditor : public EditorDock {
 
 	void _frame_list_gui_input(const Ref<InputEvent> &p_event);
 	void _frame_list_item_selected(int p_index, bool p_selected);
-
-	void _menu_selected(int p_id);
 
 	void _zoom_in();
 	void _zoom_out();
@@ -298,7 +295,6 @@ class SpriteFramesEditor : public EditorDock {
 protected:
 	void _notification(int p_what);
 	void _node_removed(Node *p_node);
-	static void _bind_methods();
 
 public:
 	void edit(Ref<SpriteFrames> p_frames);
@@ -314,5 +310,5 @@ class SpriteFramesEditorPlugin : public EditorPlugin {
 public:
 	virtual String get_plugin_name() const override { return "SpriteFrames"; }
 
-	SpriteFramesEditorPlugin();
+	SpriteFramesEditorPlugin() = default;
 };

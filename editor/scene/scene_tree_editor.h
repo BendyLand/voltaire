@@ -190,7 +190,6 @@ class SceneTreeEditor : public Control
 	bool visibility_drag_value = false;
 	Vector2 visibility_drag_start_pos;
 
-	static void _bind_methods();
 
 	void _gui_input(const Ref<InputEvent>& p_event);
 	void _toggle_visible(Node* p_node);
@@ -210,7 +209,6 @@ class SceneTreeEditor : public Control
 	void _empty_clicked(const Vector2& p_pos, MouseButton p_button);
 	void _rmb_select(const Vector2& p_pos, MouseButton p_button = MouseButton::RIGHT);
 
-	void _warning_changed(Node* p_for_node);
 	void _update_marking_list(const HashSet<Node*>& p_marked);
 
 	Timer* update_timer = nullptr;
@@ -264,8 +262,6 @@ public:
 
 	Tree* get_scene_tree() { return tree; }
 
-	void update_warning();
-
 	SceneTreeEditor(
 		bool p_label = true, bool p_can_rename = false, bool p_can_open_instance = false);
 	~SceneTreeEditor();
@@ -289,7 +285,6 @@ class SceneTreeDialog : public ConfirmationDialog
 protected:
 	void _update_valid_type_icons();
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void popup_scenetree_dialog(Node* p_selected_node = nullptr, Node* p_marked_node = nullptr,

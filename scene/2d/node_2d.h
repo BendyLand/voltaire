@@ -56,7 +56,6 @@ class Node2D : public CanvasItem
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	void reparent(Node* p_parent, bool p_keep_global_transform);
@@ -104,7 +103,7 @@ public:
 
 	Transform2D get_transform() const override;
 
-	Node2D();
+	Node2D() = default;
 };
 
 

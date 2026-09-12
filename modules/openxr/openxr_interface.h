@@ -136,7 +136,6 @@ private:
 		const String& p_path, OpenXRHandTrackingExtension::HandTrackedHands p_hand);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual StringName get_name() const override;

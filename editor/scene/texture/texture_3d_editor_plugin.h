@@ -74,8 +74,6 @@ class Texture3DEditor : public Control
 	void _texture_rect_draw();
 
 	void _update_material(bool p_texture_changed);
-	void _update_gui();
-
 	void on_selected_channels_changed();
 
 protected:

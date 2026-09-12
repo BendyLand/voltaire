@@ -50,7 +50,6 @@ class AudioEffectAmplify : public AudioEffect {
 	float volume_db;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

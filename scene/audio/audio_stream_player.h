@@ -60,7 +60,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_stream(Ref<AudioStream> p_stream);

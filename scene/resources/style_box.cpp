@@ -98,7 +98,6 @@ CanvasItem* StyleBox::get_current_item_drawn() const
 	return CanvasItem::get_current_item_drawn();
 }
 
-void StyleBox::_bind_methods() {}
 
 StyleBox::StyleBox()
 {

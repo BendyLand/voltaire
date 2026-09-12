@@ -66,7 +66,6 @@ class DPITexture : public Texture2D
 	void _clear();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_source(const String& p_source);

@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/keyboard.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class Texture2D;
 
@@ -40,7 +39,6 @@ class NativeMenu
 	static NativeMenu* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
 	_FORCE_INLINE_ static NativeMenu* get_singleton() { return singleton; }

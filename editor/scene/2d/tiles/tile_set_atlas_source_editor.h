@@ -133,7 +133,6 @@ private:
 	Button* tile_data_editor_dropdown_button = nullptr;
 	Popup* tile_data_editors_popup = nullptr;
 	Tree* tile_data_editors_tree = nullptr;
-	void _tile_data_editor_dropdown_button_draw();
 	void _tile_data_editor_dropdown_button_pressed();
 
 	// -- Tile data editors --
@@ -234,7 +233,6 @@ private:
 	Ref<Texture2D> resize_handle_disabled;
 	Control* tile_atlas_control = nullptr;
 	Control* tile_atlas_control_unscaled = nullptr;
-	void _tile_atlas_control_draw();
 	void _tile_atlas_control_unscaled_draw();
 	void _tile_atlas_control_mouse_exited();
 	void _tile_atlas_control_gui_input(const Ref<InputEvent>& p_event);
@@ -248,22 +246,18 @@ private:
 	Control* alternative_tiles_control = nullptr;
 	Control* alternative_tiles_control_unscaled = nullptr;
 	void _tile_alternatives_create_button_pressed(const Vector2i& p_atlas_coords);
-	void _tile_alternatives_control_draw();
 	void _tile_alternatives_control_unscaled_draw();
 	void _tile_alternatives_control_mouse_exited();
 	void _tile_alternatives_control_gui_input(const Ref<InputEvent>& p_event);
 
 	// -- Update functions --
-	void _update_tile_id_label();
 	void _update_source_inspector();
 	void _update_fix_selected_and_hovered_tiles();
-	void _update_atlas_source_inspector();
 	void _update_tile_inspector();
 	void _update_tile_data_editors();
 	void _update_current_tile_data_editor();
 	void _update_manage_tile_properties_button();
 	void _update_atlas_view();
-	void _update_toolbar();
 	void _update_buttons();
 
 	// -- Misc --
@@ -276,7 +270,6 @@ private:
 
 	void _update_source_texture();
 	void _check_outside_tiles();
-	void _cleanup_outside_tiles();
 
 	void _tile_set_changed();
 	void _tile_proxy_object_changed(const String& p_what);
@@ -285,12 +278,10 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 
 public:
 	void edit(Ref<TileSet> p_tile_set, TileSetAtlasSource* p_tile_set_source, int p_source_id);
-	void init_new_atlases(const Vector<Ref<TileSetAtlasSource>>& p_atlases);
 
 	TileSetAtlasSourceEditor();
 	~TileSetAtlasSourceEditor();

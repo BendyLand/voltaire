@@ -73,16 +73,13 @@ class GradientEdit : public Control
 	int _get_gradient_rect_width() const;
 
 	void _color_changed(const Color& p_color);
-	void _redraw();
 
 	int _get_point_at(int p_xpos) const;
 	int _predict_insertion_index(float p_offset);
-	void _show_color_picker();
 
 protected:
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_gradient(const Ref<Gradient>& p_gradient);

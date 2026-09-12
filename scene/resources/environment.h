@@ -231,7 +231,6 @@ private:
 	void _update_adjustment();
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual RID get_rid() const override;

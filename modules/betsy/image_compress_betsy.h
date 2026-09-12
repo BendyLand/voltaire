@@ -32,7 +32,6 @@
 
 #include "core/io/image.h"
 #include "core/templates/command_queue_mt.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class RDShaderFile;
 class RenderingDevice;

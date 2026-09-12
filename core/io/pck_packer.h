@@ -46,7 +46,6 @@ class PCKPacker : public RefCounted
 	uint64_t file_base_ofs = 0;
 	uint64_t dir_base_ofs = 0;
 
-	static void _bind_methods();
 
 	struct File
 	{

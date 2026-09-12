@@ -31,7 +31,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_importer.h"
 #include "core/io/resource_saver.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
@@ -78,54 +77,7 @@ void SceneImportSettingsDialog::_update_scene()
 	_fill_scene(scene, nullptr);
 }
 
-void SceneImportSettingsDialog::_update_camera()
-{
-	AABB camera_aabb;
-
-	float rot_x = cam_rot_x;
-	float rot_y = cam_rot_y;
-	float zoom = cam_zoom;
-
-	if (selected_type == "Node" || selected_type == "Animation" || selected_type.is_empty()) {
-		camera_aabb = contents_aabb;
-	}
-	else {
-		if (mesh_preview->get_mesh().is_valid()) {
-			camera_aabb = mesh_preview->get_transform().xform(mesh_preview->get_mesh()->get_aabb());
-		}
-		else {
-			camera_aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
-		}
-		if (selected_type == "Mesh" && mesh_map.has(selected_id)) {
-			const MeshData& md = mesh_map[selected_id];
-			rot_x = md.cam_rot_x;
-			rot_y = md.cam_rot_y;
-			zoom = md.cam_zoom;
-		}
-		else if (selected_type == "Material" && material_map.has(selected_id)) {
-			const MaterialData& md = material_map[selected_id];
-			rot_x = md.cam_rot_x;
-			rot_y = md.cam_rot_y;
-			zoom = md.cam_zoom;
-		}
-	}
-
-	Vector3 center = camera_aabb.get_center();
-	float camera_size = camera_aabb.get_longest_axis_size();
-
-	camera->set_orthogonal(camera_size * zoom, 0.0001, camera_size * 2);
-
-	Transform3D xf;
-	xf.basis = Basis(Vector3(0, 1, 0), rot_y) * Basis(Vector3(1, 0, 0), rot_x);
-	xf.origin = center;
-	xf.translate_local(0, 0, camera_size);
-
-	camera->set_transform(xf);
-}
-
 void SceneImportSettingsDialog::request_generate_collider() { generate_collider = true; }
-
-void SceneImportSettingsDialog::update_view() { update_view_timer->start(); }
 
 SceneImportSettingsDialog* SceneImportSettingsDialog::singleton = nullptr;
 
@@ -209,23 +161,6 @@ void SceneImportSettingsDialog::_menu_callback(int p_id)
 	save_path->set_current_dir(base_path.get_base_dir());
 	current_action = p_id;
 	save_path->popup_centered_ratio();
-}
-
-void SceneImportSettingsDialog::_save_path_changed(const String& p_path)
-{
-	save_path_item->set_text(1, p_path);
-
-	if (FileAccess::exists(p_path)) {
-		save_path_item->set_text(2, TTR("Warning: File exists"));
-		save_path_item->set_tooltip_text(
-			2, TTR("Existing file with the same name will be replaced."));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusWarning")));
-
-	}
-	else {
-		save_path_item->set_text(2, TTR("Will create new file"));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusSuccess")));
-	}
 }
 
 SceneImportSettingsDialog::~SceneImportSettingsDialog() { memdelete(scene_import_settings_data); }

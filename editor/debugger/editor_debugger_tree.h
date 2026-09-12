@@ -76,12 +76,10 @@ private:
 	void _scene_tree_selection_changed(TreeItem* p_item, int p_column, bool p_selected);
 	void _scene_tree_nothing_selected();
 	void _notify_selection_changed();
-	void _scene_tree_rmb_selected(const Vector2& p_position, MouseButton p_button);
 	void _item_menu_id_pressed(int p_option);
 	void _file_selected(const String& p_file);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -96,7 +94,6 @@ public:
 	String get_selected_path();
 	int get_current_debugger(); // Would love to have one tree for every debugger.
 
-	void update_scene_tree(const SceneDebuggerTree* p_tree, int p_debugger);
 	void select_nodes(const TypedArray<int64_t>& p_ids);
 	void clear_selection();
 

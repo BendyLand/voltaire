@@ -39,14 +39,6 @@
 #include "scene/gui/menu_button.h"
 #include "scene/gui/option_button.h"
 
-void MultiMeshEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		hide();
-	}
-}
-
 void MultiMeshEditor::_browsed(const NodePath& p_path)
 {
 	NodePath path = node->get_path_to(get_node(p_path));
@@ -56,28 +48,6 @@ void MultiMeshEditor::_browsed(const NodePath& p_path)
 	}
 	else {
 		surface_source->set_text(String(path));
-	}
-}
-
-void MultiMeshEditor::_menu_option(int p_option)
-{
-	switch (p_option) {
-	case MENU_OPTION_POPULATE: {
-		if (_last_pp_node != node) {
-			surface_source->set_text("..");
-			mesh_source->set_text("..");
-			populate_axis->select(1);
-			populate_rotate_random->set_value(0);
-			populate_tilt_random->set_value(0);
-			populate_scale_random->set_value(0);
-			populate_scale->set_value(1);
-			populate_amount->set_value(128);
-
-			_last_pp_node = node;
-		}
-		populate_dialog->popup_centered(Size2(250, 380));
-
-	} break;
 	}
 }
 
@@ -96,14 +66,6 @@ void MultiMeshEditor::_browse(bool p_source)
 		std->set_title(TTR("Select a Target Surface:"));
 	}
 	std->popup_scenetree_dialog(browsed_node);
-}
-
-MultiMeshEditorPlugin::MultiMeshEditorPlugin()
-{
-	multimesh_editor = memnew(MultiMeshEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(multimesh_editor);
-
-	multimesh_editor->options->hide();
 }
 
 

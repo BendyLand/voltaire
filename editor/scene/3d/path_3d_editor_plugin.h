@@ -68,8 +68,6 @@ class Path3DGizmo : public EditorNode3DGizmo
 	// Cache information of secondary handles.
 	Vector<HandleInfo> _secondary_handles_info;
 
-	void _update_transform_gizmo();
-
 public:
 	virtual String get_handle_name(int p_id, bool p_secondary) const override;
 	virtual void set_handle(
@@ -99,13 +97,13 @@ public:
 	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
 		const Vector2& p_point) const override;
 	virtual Vector<int> subgizmos_intersect_frustum(const EditorNode3DGizmo* p_gizmo,
-		const Camera3D* p_camera, const Vector<Plane>& p_frustum) const override;
+		const Camera3D* p_camera, const Vector<Plane>& p_frustum) const;
 	virtual Transform3D get_subgizmo_transform(
 		const EditorNode3DGizmo* p_gizmo, int p_id) const override;
 	virtual void set_subgizmo_transform(
 		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
 	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
-		const Vector<Transform3D>& p_restore, bool p_cancel = false) override;
+		const Vector<Transform3D>& p_restore, bool p_cancel = false);
 
 	int get_priority() const override;
 	Path3DGizmoPlugin();
@@ -146,7 +144,6 @@ class Path3DEditorPlugin : public EditorPlugin
 	Path3D* path = nullptr;
 
 	void _update_theme();
-	void _update_toolbar();
 
 	void _mode_changed(int p_mode);
 	void _toggle_closed_curve();
@@ -157,7 +154,6 @@ class Path3DEditorPlugin : public EditorPlugin
 	bool snap_to_collider = true;
 
 	void _create_curve();
-	void _confirm_clear_points();
 	void _clear_points();
 	void _clear_curve_points();
 	void _restore_curve_points(const PackedVector3Array& p_points);
@@ -171,7 +167,6 @@ class Path3DEditorPlugin : public EditorPlugin
 
 protected:
 	virtual void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	Path3D* get_edited_path() { return path; }

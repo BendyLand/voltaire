@@ -318,7 +318,6 @@ protected:
 		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
-	static void _bind_methods();
 	void _node_removed(Node* p_node);
 
 	// Helper for extended class.

@@ -39,14 +39,6 @@
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-void Path2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		hide();
-	}
-}
-
 void Path2DEditor::_node_visibility_changed()
 {
 	if (!node) {
@@ -57,28 +49,12 @@ void Path2DEditor::_node_visibility_changed()
 	_update_toolbar();
 }
 
-void Path2DEditor::_update_toolbar()
-{
-	if (!node) {
-		return;
-	}
-	bool has_curve = node->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
-}
-
 void Path2DEditor::_handle_option_pressed(int p_option)
 {
 	PopupMenu* pm;
 	pm = handle_menu->get_popup();
 
 	switch (p_option) {
-	case HANDLE_OPTION_ANGLE: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_ANGLE);
-		mirror_handle_angle = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
-		pm->set_item_disabled(HANDLE_OPTION_LENGTH, !mirror_handle_angle);
-	} break;
 	case HANDLE_OPTION_LENGTH: {
 		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
 		mirror_handle_length = !is_checked;
@@ -124,18 +100,6 @@ void Path2DEditor::_cancel_current_action()
 
 	canvas_item_editor->update_viewport();
 	action = ACTION_NONE;
-}
-
-void Path2DEditor::_confirm_clear_points()
-{
-	if (!node || node->get_curve().is_null()) {
-		return;
-	}
-	if (node->get_curve()->get_point_count() == 0) {
-		return;
-	}
-	clear_points_dialog->reset_size();
-	clear_points_dialog->popup_centered();
 }
 
 void Path2DEditor::_clear_curve_points(Path2D* p_path2d)
@@ -185,13 +149,6 @@ Path2DEditor::~Path2DEditor()
 	RS::get_singleton()->free_rid(debug_handle_sharp_multimesh_rid);
 	RS::get_singleton()->free_rid(debug_handle_smooth_multimesh_rid);
 	RS::get_singleton()->free_rid(debug_handle_mesh_rid);
-}
-
-Path2DEditorPlugin::Path2DEditorPlugin()
-{
-	path2d_editor = memnew(Path2DEditor);
-	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(path2d_editor);
-	path2d_editor->hide();
 }
 
 

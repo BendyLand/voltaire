@@ -105,13 +105,6 @@ void CPUParticles3D::set_explosiveness_ratio(real_t p_ratio) { explosiveness_rat
 
 void CPUParticles3D::set_randomness_ratio(real_t p_ratio) { randomness_ratio = p_ratio; }
 
-void CPUParticles3D::set_visibility_aabb(const AABB& p_aabb)
-{
-	RS::get_singleton()->multimesh_set_custom_aabb(multimesh, p_aabb);
-	visibility_aabb = p_aabb;
-	update_gizmos();
-}
-
 void CPUParticles3D::set_lifetime_randomness(double p_random) { lifetime_randomness = p_random; }
 
 void CPUParticles3D::set_use_local_coordinates(bool p_enable) { local_coords = p_enable; }
@@ -147,19 +140,6 @@ void CPUParticles3D::set_draw_order(DrawOrder p_order)
 }
 
 CPUParticles3D::DrawOrder CPUParticles3D::get_draw_order() const { return draw_order; }
-
-void CPUParticles3D::set_mesh(const Ref<Mesh>& p_mesh)
-{
-	mesh = p_mesh;
-	if (mesh.is_valid()) {
-		RS::get_singleton()->multimesh_set_mesh(multimesh, mesh->get_rid());
-	}
-	else {
-		RS::get_singleton()->multimesh_set_mesh(multimesh, RID());
-	}
-
-	update_configuration_warnings();
-}
 
 Ref<Mesh> CPUParticles3D::get_mesh() const { return mesh; }
 
@@ -206,35 +186,11 @@ void CPUParticles3D::set_flatness(real_t p_flatness) { flatness = p_flatness; }
 
 real_t CPUParticles3D::get_flatness() const { return flatness; }
 
-void CPUParticles3D::set_param_min(Parameter p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	parameters_min[p_param] = p_value;
-	if (parameters_min[p_param] > parameters_max[p_param]) {
-		set_param_max(p_param, p_value);
-	}
-
-	update_configuration_warnings();
-}
-
 real_t CPUParticles3D::get_param_min(Parameter p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
 
 	return parameters_min[p_param];
-}
-
-void CPUParticles3D::set_param_max(Parameter p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	parameters_max[p_param] = p_value;
-	if (parameters_min[p_param] > parameters_max[p_param]) {
-		set_param_min(p_param, p_value);
-	}
-
-	update_configuration_warnings();
 }
 
 real_t CPUParticles3D::get_param_max(Parameter p_param) const
@@ -252,54 +208,6 @@ static void _adjust_curve_range(const Ref<Curve>& p_curve, real_t p_min, real_t 
 	}
 
 	curve->ensure_default_setup(p_min, p_max);
-}
-
-void CPUParticles3D::set_param_curve(Parameter p_param, const Ref<Curve>& p_curve)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	curve_parameters[p_param] = p_curve;
-
-	switch (p_param) {
-	case PARAM_INITIAL_LINEAR_VELOCITY: {
-		// do none for this one
-	} break;
-	case PARAM_ANGULAR_VELOCITY: {
-		_adjust_curve_range(p_curve, -360, 360);
-	} break;
-	case PARAM_ORBIT_VELOCITY: {
-		_adjust_curve_range(p_curve, -500, 500);
-	} break;
-	case PARAM_LINEAR_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_RADIAL_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_TANGENTIAL_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_DAMPING: {
-		_adjust_curve_range(p_curve, 0, 100);
-	} break;
-	case PARAM_ANGLE: {
-		_adjust_curve_range(p_curve, -360, 360);
-	} break;
-	case PARAM_SCALE: {
-	} break;
-	case PARAM_HUE_VARIATION: {
-		_adjust_curve_range(p_curve, -1, 1);
-	} break;
-	case PARAM_ANIM_SPEED: {
-		_adjust_curve_range(p_curve, 0, 200);
-	} break;
-	case PARAM_ANIM_OFFSET: {
-	} break;
-	default: {
-	}
-	}
-
-	update_configuration_warnings();
 }
 
 Ref<Curve> CPUParticles3D::get_param_curve(Parameter p_param) const
@@ -330,25 +238,6 @@ bool CPUParticles3D::get_particle_flag(ParticleFlags p_particle_flag) const
 	return particle_flags[p_particle_flag];
 }
 
-void CPUParticles3D::set_emission_shape(EmissionShape p_shape)
-{
-	ERR_FAIL_INDEX(p_shape, EMISSION_SHAPE_MAX);
-	emission_shape = p_shape;
-	update_gizmos();
-}
-
-void CPUParticles3D::set_emission_sphere_radius(real_t p_radius)
-{
-	emission_sphere_radius = p_radius;
-	update_gizmos();
-}
-
-void CPUParticles3D::set_emission_box_extents(Vector3 p_extents)
-{
-	emission_box_extents = p_extents;
-	update_gizmos();
-}
-
 void CPUParticles3D::set_emission_points(const Vector<Vector3>& p_points)
 {
 	emission_points = p_points;
@@ -364,35 +253,9 @@ void CPUParticles3D::set_emission_colors(const Vector<Color>& p_colors)
 	emission_colors = p_colors;
 }
 
-void CPUParticles3D::set_emission_ring_axis(Vector3 p_axis)
-{
-	emission_ring_axis = p_axis;
-	update_gizmos();
-}
 
-void CPUParticles3D::set_emission_ring_height(real_t p_height)
-{
-	emission_ring_height = p_height;
-	update_gizmos();
-}
 
-void CPUParticles3D::set_emission_ring_radius(real_t p_radius)
-{
-	emission_ring_radius = p_radius;
-	update_gizmos();
-}
 
-void CPUParticles3D::set_emission_ring_inner_radius(real_t p_radius)
-{
-	emission_ring_inner_radius = p_radius;
-	update_gizmos();
-}
-
-void CPUParticles3D::set_emission_ring_cone_angle(real_t p_angle)
-{
-	emission_ring_cone_angle = p_angle;
-	update_gizmos();
-}
 
 void CPUParticles3D::set_scale_curve_x(Ref<Curve> p_scale_curve) { scale_curve_x = p_scale_curve; }
 
@@ -759,62 +622,6 @@ void CPUParticles3D::_notification(int p_what)
 		}
 	} break;
 	}
-}
-
-CPUParticles3D::CPUParticles3D()
-{
-	set_notify_transform(true);
-
-	multimesh = RenderingServer::get_singleton()->multimesh_create();
-	RenderingServer::get_singleton()->multimesh_set_visible_instances(multimesh, 0);
-	set_base(multimesh);
-
-	set_emitting(true);
-	set_amount(8);
-	set_seed(Math::rand());
-
-	rng.instantiate();
-
-	set_param_min(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_min(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_min(PARAM_ORBIT_VELOCITY, 0);
-	set_param_min(PARAM_LINEAR_ACCEL, 0);
-	set_param_min(PARAM_RADIAL_ACCEL, 0);
-	set_param_min(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_min(PARAM_DAMPING, 0);
-	set_param_min(PARAM_ANGLE, 0);
-	set_param_min(PARAM_SCALE, 1);
-	set_param_min(PARAM_HUE_VARIATION, 0);
-	set_param_min(PARAM_ANIM_SPEED, 0);
-	set_param_min(PARAM_ANIM_OFFSET, 0);
-	set_param_max(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_max(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_max(PARAM_ORBIT_VELOCITY, 0);
-	set_param_max(PARAM_LINEAR_ACCEL, 0);
-	set_param_max(PARAM_RADIAL_ACCEL, 0);
-	set_param_max(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_max(PARAM_DAMPING, 0);
-	set_param_max(PARAM_ANGLE, 0);
-	set_param_max(PARAM_SCALE, 1);
-	set_param_max(PARAM_HUE_VARIATION, 0);
-	set_param_max(PARAM_ANIM_SPEED, 0);
-	set_param_max(PARAM_ANIM_OFFSET, 0);
-	set_emission_shape(EMISSION_SHAPE_POINT);
-	set_emission_sphere_radius(1);
-	set_emission_box_extents(Vector3(1, 1, 1));
-	set_emission_ring_axis(Vector3(0, 0, 1.0));
-	set_emission_ring_height(1);
-	set_emission_ring_radius(1);
-	set_emission_ring_inner_radius(0);
-	set_emission_ring_cone_angle(90);
-
-	set_gravity(Vector3(0, -9.8, 0));
-
-	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
-		particle_flags[i] = false;
-	}
-
-	set_color(Color(1, 1, 1, 1));
 }
 
 CPUParticles3D::~CPUParticles3D()

@@ -102,7 +102,6 @@ real_t ConcavePolygonShape2D::get_enclosing_radius() const
 	return Math::sqrt(r);
 }
 
-void ConcavePolygonShape2D::_bind_methods() {}
 
 ConcavePolygonShape2D::ConcavePolygonShape2D()
 	: Shape2D(PhysicsServer2D::get_singleton()->concave_polygon_shape_create())

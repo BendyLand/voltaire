@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
 #include "servers/physics_3d/queries/physics_point_query_parameters_3d.h"
 #include "servers/physics_3d/queries/physics_ray_query_parameters_3d.h"
@@ -42,7 +41,6 @@ private:
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual bool intersect_ray(

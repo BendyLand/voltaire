@@ -524,7 +524,6 @@ void AnimationMixer::get_argument_options(
 }
 #endif
 
-void AnimationMixer::_bind_methods() {}
 
 AnimationMixer::AnimationMixer() { root_node = NodePath(".."); }
 

@@ -105,20 +105,6 @@ List<int> TilesEditorUtils::get_sorted_sources(const Ref<TileSet> p_tile_set) co
 
 Ref<TileSet> TilesEditorUtils::SourceNameComparator::tile_set;
 
-void TilesEditorUtils::draw_selection_rect(
-	CanvasItem* p_ci, const Rect2& p_rect, const Color& p_color)
-{
-	Ref<Texture2D> selection_texture = EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("TileSelection"), EditorStringName(EditorIcons));
-
-	real_t scale = p_ci->get_global_transform().get_scale().x * 0.5;
-	p_ci->draw_set_transform(p_rect.position, 0, Vector2(1, 1) / scale);
-	RS::get_singleton()->canvas_item_add_nine_patch(p_ci->get_canvas_item(),
-		Rect2(Vector2(), p_rect.size * scale), Rect2(), selection_texture->get_rid(), Vector2(2, 2),
-		Vector2(2, 2), RSE::NINE_PATCH_STRETCH, RSE::NINE_PATCH_STRETCH, false, p_color);
-	p_ci->draw_set_transform_matrix(Transform2D());
-}
-
 TilesEditorUtils::TilesEditorUtils()
 {
 	singleton = this;
@@ -166,43 +152,7 @@ void TileMapEditorPlugin::forward_canvas_draw_over_viewport(Control* p_overlay)
 
 bool TileMapEditorPlugin::is_editor_visible() const { return editor->is_visible_in_tree(); }
 
-TileMapEditorPlugin::TileMapEditorPlugin()
-{
-	if (!TilesEditorUtils::get_singleton()) {
-		memnew(TilesEditorUtils);
-	}
-	tile_map_plugin_singleton = this;
-
-	editor = memnew(TileMapLayerEditor);
-	editor->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
-	editor->hide();
-
-	EditorDockManager::get_singleton()->add_dock(editor);
-	editor->close();
-}
-
 TileMapEditorPlugin::~TileMapEditorPlugin() { tile_map_plugin_singleton = nullptr; }
-
-void TileSetEditorPlugin::open_editor() { editor->open(); }
-
-TileSetEditorPlugin::TileSetEditorPlugin()
-{
-	if (!TilesEditorUtils::get_singleton()) {
-		memnew(TilesEditorUtils);
-	}
-	tile_set_plugin_singleton = this;
-
-	editor = memnew(TileSetEditor);
-	editor->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
-	editor->hide();
-
-	EditorDockManager::get_singleton()->add_dock(editor);
-	editor->close();
-}
 
 TileSetEditorPlugin::~TileSetEditorPlugin() { tile_set_plugin_singleton = nullptr; }
 

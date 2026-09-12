@@ -89,7 +89,6 @@ class ProgressDialog : public CenterContainer
 	void _cancel_pressed();
 
 	void _update_ui();
-	void _reparent_and_show();
 	bool canceled = false;
 
 protected:

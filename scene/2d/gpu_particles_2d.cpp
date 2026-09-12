@@ -301,20 +301,6 @@ void GPUParticles2D::emit_particle(const Transform2D& p_transform2d, const Vecto
 		particles, emit_transform, velocity, p_color, p_custom, p_emit_flags);
 }
 
-void GPUParticles2D::set_sub_emitter(const NodePath& p_path)
-{
-	if (is_inside_tree()) {
-		RS::get_singleton()->particles_set_subemitter(particles, RID());
-	}
-
-	sub_emitter = p_path;
-
-	if (is_inside_tree() && sub_emitter != NodePath()) {
-		_attach_sub_emitter();
-	}
-	update_configuration_warnings();
-}
-
 NodePath GPUParticles2D::get_sub_emitter() const { return sub_emitter; }
 
 void GPUParticles2D::set_amount_ratio(float p_ratio)
@@ -406,7 +392,6 @@ void GPUParticles2D::_draw_emission_gizmo()
 }
 #endif
 
-void GPUParticles2D::_bind_methods() {}
 
 GPUParticles2D::GPUParticles2D()
 {

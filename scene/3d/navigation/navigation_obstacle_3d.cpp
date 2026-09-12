@@ -39,7 +39,6 @@
 
 RID NavigationObstacle3D::_navmesh_source_geometry_parser;
 
-void NavigationObstacle3D::_bind_methods() {}
 
 void NavigationObstacle3D::_notification(int p_what)
 {
@@ -64,12 +63,6 @@ void NavigationObstacle3D::_notification(int p_what)
 		_update_debug();
 #endif // DEBUG_ENABLED
 	} break;
-
-#ifdef TOOLS_ENABLED
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		update_gizmos();
-	} break;
-#endif // TOOLS_ENABLED
 
 	case NOTIFICATION_EXIT_TREE: {
 		set_physics_process_internal(false);
@@ -194,10 +187,6 @@ void NavigationObstacle3D::set_vertices(const Vector<Vector3>& p_vertices)
 		Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), rotation_y), Vector3());
 	NavigationServer3D::get_singleton()->obstacle_set_vertices(
 		obstacle, safe_transform.xform(vertices));
-#ifdef DEBUG_ENABLED
-	_update_static_obstacle_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_navigation_map(RID p_navigation_map)
@@ -234,11 +223,6 @@ void NavigationObstacle3D::set_radius(real_t p_radius)
 		(is_inside_tree() ? get_global_basis() : get_basis()).get_scale().abs().maxf(0.001);
 	NavigationServer3D::get_singleton()->obstacle_set_radius(
 		obstacle, safe_scale[safe_scale.max_axis_index()] * radius);
-
-#ifdef DEBUG_ENABLED
-	_update_fake_agent_radius_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_height(real_t p_height)
@@ -252,11 +236,6 @@ void NavigationObstacle3D::set_height(real_t p_height)
 	const float scale_factor =
 		MAX(Math::abs((is_inside_tree() ? get_global_basis() : get_basis()).get_scale().y), 0.001);
 	NavigationServer3D::get_singleton()->obstacle_set_height(obstacle, scale_factor * height);
-
-#ifdef DEBUG_ENABLED
-	_update_static_obstacle_debug();
-	update_gizmos();
-#endif // DEBUG_ENABLED
 }
 
 void NavigationObstacle3D::set_avoidance_layers(uint32_t p_layers)

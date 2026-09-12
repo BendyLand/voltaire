@@ -92,7 +92,6 @@ class CreateDialog : public ConfirmationDialog
 	HashSet<StringName> custom_type_blocklist;
 	HashSet<StringName> selectable_types;
 
-	void _reset_filters();
 	void _update_filter_button_state();
 	void _update_search();
 	bool _should_hide_type(const StringName& p_type) const;
@@ -100,8 +99,6 @@ class CreateDialog : public ConfirmationDialog
 		const StringName& p_type, TypeCategory p_type_category, const String& p_match_keyword);
 	void _configure_search_option_item(TreeItem* r_item, const StringName& p_type,
 		TypeCategory p_type_category, const String& p_match_keyword);
-	float _score_type(const String& p_type, const String& p_search) const;
-	bool _is_type_preferred(const String& p_type) const;
 	void _script_button_clicked(
 		TreeItem* p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index);
 
@@ -118,7 +115,6 @@ class CreateDialog : public ConfirmationDialog
 	virtual void cancel_pressed() override;
 
 	void _type_filter_toggled(int p_type, bool p_search);
-	void _favorite_toggled();
 
 	void _history_selected(int p_idx);
 	void _favorite_selected();
@@ -127,11 +123,9 @@ class CreateDialog : public ConfirmationDialog
 	void _favorite_activated();
 
 	bool _is_class_disabled_by_feature_profile(const StringName& p_class) const;
-	void _load_favorites_and_history();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	void _save_and_update_favorite_list();
 

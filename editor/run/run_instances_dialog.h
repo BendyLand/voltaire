@@ -82,9 +82,6 @@ class RunInstancesDialog : public AcceptDialog
 	PopupMenu* popup_menu = nullptr;
 
 	void _fetch_main_args();
-	// These 2 methods are necessary due to callable_mp() not supporting default arguments.
-	void _start_main_timer();
-	void _start_instance_timer();
 
 	void _refresh_argument_count();
 	void _save_main_args();

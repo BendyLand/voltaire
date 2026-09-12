@@ -431,25 +431,6 @@ String EditorExportPlatformAppleEmbedded::get_options_tooltip() const
 	return TTR("Select device from the list");
 }
 
-Ref<Texture2D> EditorExportPlatformAppleEmbedded::get_option_icon(int p_index) const
-{
-	MutexLock lock(device_lock);
-
-	Ref<Texture2D> icon;
-	if (p_index >= 0 || p_index < devices.size()) {
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		if (theme.is_valid()) {
-			if (devices[p_index].wifi) {
-				icon = theme->get_icon("IOSDeviceWireless", EditorStringName(EditorIcons));
-			}
-			else {
-				icon = theme->get_icon("IOSDeviceWired", EditorStringName(EditorIcons));
-			}
-		}
-	}
-	return icon;
-}
-
 String EditorExportPlatformAppleEmbedded::get_option_label(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, devices.size(), "");

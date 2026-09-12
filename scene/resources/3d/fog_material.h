@@ -52,7 +52,6 @@ private:
 	mutable bool shader_set = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_density(float p_density);

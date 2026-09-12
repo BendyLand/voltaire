@@ -44,7 +44,6 @@ public:
 	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialComponentTypeEXT> enabled_components;
@@ -66,7 +65,6 @@ public:
 	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialComponentTypeEXT> enabled_components;
@@ -114,7 +112,6 @@ public:
 	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialComponentTypeEXT> enabled_components;
@@ -154,7 +151,6 @@ public:
 	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialComponentTypeEXT> enabled_components;
@@ -191,7 +187,6 @@ public:
 	uint32_t get_marker_id(int64_t p_index) const;
 
 protected:
-	static void _bind_methods();
 
 private:
 	Vector<XrSpatialMarkerDataEXT> marker_data;

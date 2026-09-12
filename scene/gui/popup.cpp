@@ -122,7 +122,6 @@ Rect2i Popup::_popup_adjust_rect() const
 	return current;
 }
 
-void Popup::_bind_methods() {}
 
 Popup::Popup()
 {
@@ -261,10 +260,6 @@ void PopupPanel::_notification(int p_what)
 		}
 
 		_update_child_rects();
-
-#ifdef TOOLS_ENABLED
-		update_configuration_warnings();
-#endif
 	} break;
 
 	case Control::NOTIFICATION_TRANSLATION_CHANGED:

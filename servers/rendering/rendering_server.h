@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_device_enums.h"
@@ -79,7 +78,6 @@ protected:
 	RID test_material;
 
 	static RenderingServer* (*create_func)();
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _environment_set_fog_bind_compat_84792(RID p_env, bool p_enable,

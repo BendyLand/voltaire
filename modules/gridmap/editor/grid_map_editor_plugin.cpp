@@ -60,39 +60,6 @@
 #include "scene/main/window.h"
 #include "servers/rendering/rendering_server.h"
 
-void GridMapEditor::_update_cursor_transform()
-{
-	cursor_transform = Transform3D();
-	cursor_transform.origin = cursor_origin;
-	cursor_transform.basis *= node->get_cell_scale();
-	cursor_transform = node->get_global_transform() * cursor_transform;
-
-	if (mode_buttons_group->get_pressed_button() == paint_mode_button) {
-		// Auto-deselect the selection when painting.
-		if (selection.active) {
-			_set_selection(false);
-		}
-		// Rotation is only applied in paint mode, we don't want the cursor box to rotate otherwise.
-		cursor_transform.basis *= node->get_basis_with_orthogonal_index(cursor_rot);
-		if (selected_palette >= 0 && node && node->get_mesh_library().is_valid()) {
-			cursor_transform *= node->get_mesh_library()->get_item_mesh_transform(selected_palette);
-		}
-	}
-	else {
-		Transform3D xf;
-		xf.scale(node->get_cell_size());
-		xf.origin.x = node->get_center_x() ? -node->get_cell_size().x / 2 : 0;
-		xf.origin.y = node->get_center_y() ? -node->get_cell_size().y / 2 : 0;
-		xf.origin.z = node->get_center_z() ? -node->get_cell_size().z / 2 : 0;
-		cursor_transform *= xf;
-	}
-
-	if (cursor_instance.is_valid()) {
-		RenderingServer::get_singleton()->instance_set_transform(cursor_instance, cursor_transform);
-		RenderingServer::get_singleton()->instance_set_visible(cursor_instance, cursor_visible);
-	}
-}
-
 void GridMapEditor::_update_selection_transform()
 {
 	Transform3D xf_zero;
@@ -191,13 +158,6 @@ Vector3::Axis GridMapEditor::_get_facing_axis(
 		return Vector3::AXIS_Y;
 	}
 	return Vector3::AXIS_X;
-}
-
-void GridMapEditor::_view_state_changed(Node3DEditorViewport* p_viewport)
-{
-	if (node && last_viewport == p_viewport->get_viewport_node()) {
-		_update_edit_axis();
-	}
 }
 
 String GridMapEditor::_get_cursor_coordinates() const
@@ -369,34 +329,6 @@ struct _CGMEItemSort
 	_FORCE_INLINE_ bool operator<(const _CGMEItemSort& r_it) const { return name < r_it.name; }
 };
 
-void GridMapEditor::_set_display_mode(int p_mode)
-{
-	if (display_mode == p_mode) {
-		return;
-	}
-
-	if (p_mode == DISPLAY_LIST) {
-		mode_list->set_pressed(true);
-		mode_thumbnail->set_pressed(false);
-	}
-	else { // DISPLAY_THUMBNAIL
-		mode_list->set_pressed(false);
-		mode_thumbnail->set_pressed(true);
-	}
-
-	display_mode = p_mode;
-
-	update_palette();
-}
-
-void GridMapEditor::_text_changed(const String& p_text) { update_palette(); }
-
-void GridMapEditor::_icon_size_changed(float p_value)
-{
-	mesh_library_palette->set_icon_scale(p_value);
-	update_palette();
-}
-
 void GridMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
 {
 	if (categories->is_visible()) {
@@ -448,13 +380,6 @@ void GridMapEditor::update_grid()
 	updating = true;
 	floor->set_value(edit_floor[edit_axis]);
 	updating = false;
-}
-
-void GridMapEditor::_on_tool_mode_changed()
-{
-	_show_viewports_transform_gizmo(
-		mode_buttons_group->get_pressed_button() == transform_mode_button);
-	_update_cursor_instance();
 }
 
 void GridMapEditor::_floor_mouse_exited() { floor->get_line_edit()->release_focus(); }
@@ -520,18 +445,6 @@ GridMap* GridMapEditorPlugin::get_current_grid_map() const
 	return grid_map_editor->node;
 }
 
-void GridMapEditorPlugin::set_selection(const Vector3i& p_begin, const Vector3i& p_end)
-{
-	ERR_FAIL_NULL(grid_map_editor);
-	grid_map_editor->_set_selection(true, p_begin, p_end);
-}
-
-void GridMapEditorPlugin::clear_selection()
-{
-	ERR_FAIL_NULL(grid_map_editor);
-	grid_map_editor->_set_selection(false);
-}
-
 AABB GridMapEditorPlugin::get_selection() const
 {
 	ERR_FAIL_NULL_V(grid_map_editor, AABB());
@@ -542,24 +455,6 @@ bool GridMapEditorPlugin::has_selection() const
 {
 	ERR_FAIL_NULL_V(grid_map_editor, false);
 	return grid_map_editor->_has_selection();
-}
-
-void GridMapEditorPlugin::set_selected_palette_item(int p_item) const
-{
-	ERR_FAIL_NULL(grid_map_editor);
-	if (grid_map_editor->node && grid_map_editor->node->get_mesh_library().is_valid()) {
-		if (p_item < -1) {
-			p_item = -1;
-		}
-		else if (p_item >= grid_map_editor->node->get_mesh_library()->get_item_list().size()) {
-			p_item = grid_map_editor->node->get_mesh_library()->get_item_list().size() - 1;
-		}
-		if (p_item != grid_map_editor->selected_palette) {
-			grid_map_editor->selected_palette = p_item;
-			grid_map_editor->_update_cursor_instance();
-			grid_map_editor->update_palette();
-		}
-	}
 }
 
 int GridMapEditorPlugin::get_selected_palette_item() const

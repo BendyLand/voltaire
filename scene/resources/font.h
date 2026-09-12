@@ -102,7 +102,6 @@ protected:
 	// Fallbacks.
 	static constexpr int MAX_FALLBACK_DEPTH = 64;
 
-	static void _bind_methods();
 
 	virtual void _update_rids_fb(const Font* p_f, int p_depth) const;
 	virtual void _update_rids() const;
@@ -306,7 +305,6 @@ class FontFile : public Font
 	void _convert_mono_4bit(Ref<Image>& p_source, int p_page, int p_ch, int p_sz, int p_ol);
 
 protected:
-	static void _bind_methods();
 
 	virtual void reset_state() override;
 
@@ -513,7 +511,6 @@ class FontVariation : public Font
 	Vector<Color> custom_colors;
 
 protected:
-	static void _bind_methods();
 
 	virtual void _update_rids() const override;
 
@@ -586,7 +583,6 @@ class SystemFont : public Font
 	int msdf_size = 48;
 
 protected:
-	static void _bind_methods();
 
 	virtual void _update_base_font();
 	virtual void _update_rids() const override;

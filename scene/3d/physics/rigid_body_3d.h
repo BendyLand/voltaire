@@ -141,7 +141,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void _body_state_changed(PhysicsDirectBodyState3D* p_state);
 

@@ -32,7 +32,6 @@
 #include "gltf_buffer_view.compat.inc"
 #include "gltf_buffer_view.h"
 
-void GLTFBufferView::_bind_methods() {}
 
 GLTFBufferIndex GLTFBufferView::get_buffer() const { return buffer; }
 

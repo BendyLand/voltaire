@@ -81,7 +81,6 @@ private:
 	static void _requested_normal(void* p_ud);
 
 protected:
-	static void _bind_methods();
 
 public:
 	static Ref<Image> load_image_from_file(Ref<FileAccess> p_file, int p_size_limit);
@@ -113,7 +112,6 @@ public:
 		bool p_clip_uv = true) const override;
 
 	virtual bool has_alpha() const override;
-	bool is_pixel_opaque(int p_x, int p_y) const override;
 
 	virtual Ref<Image> get_image() const override;
 
@@ -157,7 +155,6 @@ private:
 	virtual void reload_from_file() override;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Image::Format get_format() const override;
@@ -233,7 +230,6 @@ private:
 	virtual void reload_from_file() override;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Image::Format get_format() const override;

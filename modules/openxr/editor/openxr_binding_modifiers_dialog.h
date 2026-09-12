@@ -63,7 +63,6 @@ protected:
 	Ref<OpenXRInteractionProfile> interaction_profile;
 	Ref<OpenXRIPBinding> ip_binding;
 
-	static void _bind_methods();
 	void _notification(int p_what);
 
 	// used for undo/redo

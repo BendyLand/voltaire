@@ -705,11 +705,6 @@ void EditorExportPlatformAndroid::_process_launcher_icons(const String& p_file_n
 {
 	Ref<Image> working_image = p_source_image;
 
-	if (p_source_image->get_width() != dimension || p_source_image->get_height() != dimension) {
-		working_image = p_source_image->duplicate();
-		working_image->resize(dimension, dimension, Image::Interpolation::INTERPOLATE_LANCZOS);
-	}
-
 	Vector<uint8_t> buffer = working_image->save_webp_to_buffer();
 	p_data.resize(buffer.size());
 	memcpy(p_data.ptrw(), buffer.ptr(), p_data.size());
@@ -829,17 +824,6 @@ int EditorExportPlatformAndroid::get_options_count() const
 {
 	MutexLock lock(device_lock);
 	return devices.size() + 1;
-}
-
-Ref<Texture2D> EditorExportPlatformAndroid::get_option_icon(int p_index) const
-{
-	if (p_index == 0) {
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		ERR_FAIL_COND_V(theme.is_null(), Ref<ImageTexture>());
-		return theme->get_icon(use_scrcpy ? SNAME("GuiChecked") : SNAME("GuiUnchecked"),
-			EditorStringName(EditorIcons));
-	}
-	return EditorExportPlatform::get_option_icon(p_index - 1);
 }
 
 String EditorExportPlatformAndroid::get_options_tooltip() const

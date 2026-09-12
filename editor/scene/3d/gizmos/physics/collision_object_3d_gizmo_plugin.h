@@ -40,7 +40,7 @@ public:
 	int get_priority() const override;
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 
-	CollisionObject3DGizmoPlugin();
+	CollisionObject3DGizmoPlugin() = default;
 };
 
 

@@ -32,8 +32,6 @@
 #include "core/io/stream_peer_gzip.h"
 #include "core/io/zip_io.h"
 
-void StreamPeerGZIP::_bind_methods() {}
-
 StreamPeerGZIP::~StreamPeerGZIP() { _close(); }
 
 void StreamPeerGZIP::_close()

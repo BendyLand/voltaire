@@ -32,7 +32,6 @@
 
 // VideoStreamPlayback starts here.
 
-void VideoStreamPlayback::_bind_methods() {}
 
 VideoStreamPlayback::VideoStreamPlayback() {}
 

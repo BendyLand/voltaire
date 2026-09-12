@@ -51,14 +51,6 @@ void AimModifier3D::_validate_setting(int p_index)
 	settings[p_index] = memnew(AimModifier3DSetting);
 }
 
-void AimModifier3D::set_forward_axis(int p_index, BoneAxis p_axis)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	AimModifier3DSetting* setting = static_cast<AimModifier3DSetting*>(settings[p_index]);
-	setting->forward_axis = p_axis;
-	update_configuration_warnings();
-}
-
 SkeletonModifier3D::BoneAxis AimModifier3D::get_forward_axis(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_AXIS_PLUS_Y);
@@ -71,14 +63,6 @@ bool AimModifier3D::is_using_euler(int p_index) const
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
 	AimModifier3DSetting* setting = static_cast<AimModifier3DSetting*>(settings[p_index]);
 	return setting->use_euler;
-}
-
-void AimModifier3D::set_primary_rotation_axis(int p_index, Vector3::Axis p_axis)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	AimModifier3DSetting* setting = static_cast<AimModifier3DSetting*>(settings[p_index]);
-	setting->primary_rotation_axis = p_axis;
-	update_configuration_warnings();
 }
 
 Vector3::Axis AimModifier3D::get_primary_rotation_axis(int p_index) const

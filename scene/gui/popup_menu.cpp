@@ -70,19 +70,7 @@ bool PopupMenu::_set_item_accelerator(int p_index, const Ref<InputEventKey>& p_i
 }
 
 void PopupMenu::_set_item_checkable_type(int p_index, int p_checkable_type)
-{
-	switch (p_checkable_type) {
-	case Item::CHECKABLE_TYPE_NONE: {
-		set_item_as_checkable(p_index, false);
-	} break;
-	case Item::CHECKABLE_TYPE_CHECK_BOX: {
-		set_item_as_checkable(p_index, true);
-	} break;
-	case Item::CHECKABLE_TYPE_RADIO_BUTTON: {
-		set_item_as_radio_checkable(p_index, true);
-	} break;
-	}
-}
+{}
 
 int PopupMenu::_get_item_checkable_type(int p_index) const
 {
@@ -129,9 +117,6 @@ void PopupMenu::set_system_menu(NativeMenu::SystemMenus p_system_menu_id)
 		unbind_global_menu();
 	}
 	system_menu_id = p_system_menu_id;
-	if (is_inside_tree() && system_menu_id != NativeMenu::INVALID_MENU_ID) {
-		bind_global_menu();
-	}
 }
 
 NativeMenu::SystemMenus PopupMenu::get_system_menu() const { return system_menu_id; }
@@ -318,8 +303,6 @@ int PopupMenu::_get_mouse_over(const Point2& p_over) const
 
 	return -1;
 }
-
-
 
 void PopupMenu::_submenu_timeout()
 {
@@ -649,26 +632,6 @@ void PopupMenu::_draw_items()
 	}
 }
 
-void PopupMenu::_update_search_bar_visibility()
-{
-	if (search_bar) {
-		if (search_bar_enabled) {
-			int item_count = 0;
-			for (const Item& item : items) {
-				if (!item.separator) {
-					item_count++;
-				}
-			}
-			search_bar->set_visible(item_count >= search_bar_min_item_count);
-		}
-		else {
-			search_bar->hide();
-		}
-	}
-}
-
-
-
 void PopupMenu::_filter_items(const String& p_query)
 {
 	for (PopupMenu::Item& item : items) {
@@ -831,31 +794,6 @@ RID PopupMenu::get_focused_accessibility_element() const
 #undef ITEM_SETUP_WITH_ACCEL
 #undef ITEM_SETUP_WITH_SHORTCUT
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void PopupMenu::_close_suspended_timeout()
 {
 	if (submenu_over != -1 && is_embedded()) {
@@ -871,10 +809,6 @@ void PopupMenu::_close_suspended_timeout()
 		items[active_submenu_index].submenu->_close_pressed();
 	}
 }
-
-
-
-
 
 String PopupMenu::get_item_text(int p_idx) const
 {
@@ -1018,27 +952,11 @@ int PopupMenu::get_item_state(int p_idx) const
 	return items[p_idx].state;
 }
 
-
-
 bool PopupMenu::is_item_separator(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
 	return items[p_idx].separator;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bool PopupMenu::is_item_checkable(int p_idx) const
 {
@@ -1063,8 +981,6 @@ bool PopupMenu::is_item_shortcut_disabled(int p_idx) const
 	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
 	return items[p_idx].shortcut_is_disabled;
 }
-
-
 
 int PopupMenu::get_focused_item() const { return mouse_over; }
 
@@ -1092,12 +1008,7 @@ void PopupMenu::set_prefer_native_menu(bool p_enabled)
 {
 	if (prefer_native != p_enabled) {
 		prefer_native = p_enabled;
-		if (prefer_native) {
-			bind_global_menu();
-		}
-		else {
-			unbind_global_menu();
-		}
+		unbind_global_menu();
 	}
 }
 
@@ -1147,12 +1058,10 @@ bool PopupMenu::activate_item_by_event(const Ref<InputEvent>& p_event, bool p_fo
 
 		if (items[i].shortcut.is_valid() && items[i].shortcut->matches_event(p_event) &&
 			(items[i].shortcut_is_global || !p_for_global_only)) {
-			activate_item(i);
 			return true;
 		}
 
 		if (code != Key::NONE && items[i].accel == code) {
-			activate_item(i);
 			return true;
 		}
 
@@ -1190,35 +1099,13 @@ bool PopupMenu::is_hide_on_multistate_item_selection() const
 	return hide_on_multistate_item_selection;
 }
 
-void PopupMenu::set_submenu_popup_delay(float p_time)
-{
-	if (p_time <= 0) {
-		p_time = 0.01;
-	}
-	submenu_timer_popup_delay = p_time;
-	submenu_timer->set_wait_time(p_time);
-}
-
 float PopupMenu::get_submenu_popup_delay() const { return submenu_timer->get_wait_time(); }
 
 void PopupMenu::set_allow_search(bool p_allow) { allow_search = p_allow; }
 
 bool PopupMenu::get_allow_search() const { return allow_search; }
 
-void PopupMenu::set_search_bar_enabled(bool p_enabled)
-{
-	search_bar_enabled = p_enabled;
-	_update_search_bar_visibility();
-}
-
 bool PopupMenu::is_search_bar_enabled() const { return search_bar_enabled; }
-
-void PopupMenu::set_search_bar_min_item_count(int p_count)
-{
-	ERR_FAIL_COND(p_count < 0);
-	search_bar_min_item_count = p_count;
-	_update_search_bar_visibility();
-}
 
 int PopupMenu::get_search_bar_min_item_count() const { return search_bar_min_item_count; }
 

@@ -96,7 +96,6 @@ class GraphEditMinimap : public Control
 	void _adjust_graph_scroll(const Vector2& p_offset);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
@@ -373,7 +372,6 @@ private:
 
 #ifndef DISABLE_DEPRECATED
 	bool _is_arrange_nodes_button_hidden_bind_compat_81582() const;
-	void _set_arrange_nodes_button_hidden_bind_compat_81582(bool p_enable);
 	PackedVector2Array _get_connection_line_bind_compat_86158(
 		const Vector2& p_from, const Vector2& p_to);
 	Error _connect_node_bind_compat_97449(
@@ -387,7 +385,6 @@ protected:
 	virtual void remove_child_notify(Node* p_child) override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 #endif
@@ -477,17 +474,11 @@ public:
 	void set_minimap_enabled(bool p_enable);
 	bool is_minimap_enabled() const;
 
-	void set_show_menu(bool p_hidden);
 	bool is_showing_menu() const;
-	void set_show_zoom_label(bool p_hidden);
 	bool is_showing_zoom_label() const;
-	void set_show_grid_buttons(bool p_hidden);
 	bool is_showing_grid_buttons() const;
-	void set_show_zoom_buttons(bool p_hidden);
 	bool is_showing_zoom_buttons() const;
-	void set_show_minimap_button(bool p_hidden);
 	bool is_showing_minimap_button() const;
-	void set_show_arrange_button(bool p_hidden);
 	bool is_showing_arrange_button() const;
 
 	Control* get_top_layer() const { return top_layer; }

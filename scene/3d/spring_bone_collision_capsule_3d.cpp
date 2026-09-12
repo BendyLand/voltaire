@@ -37,9 +37,6 @@ void SpringBoneCollisionCapsule3D::set_radius(float p_radius)
 	if (radius > height * 0.5) {
 		height = radius * 2.0;
 	}
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 float SpringBoneCollisionCapsule3D::get_radius() const { return radius; }
@@ -50,9 +47,6 @@ void SpringBoneCollisionCapsule3D::set_height(float p_height)
 	if (radius > height * 0.5) {
 		radius = height * 0.5;
 	}
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 float SpringBoneCollisionCapsule3D::get_height() const { return height; }
@@ -62,9 +56,6 @@ void SpringBoneCollisionCapsule3D::set_mid_height(real_t p_mid_height)
 	ERR_FAIL_COND_MSG(
 		p_mid_height < 0.0f, "SpringBoneCollisionCapsule3D mid-height cannot be negative.");
 	height = p_mid_height + radius * 2.0f;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 real_t SpringBoneCollisionCapsule3D::get_mid_height() const { return height - radius * 2.0f; }
@@ -72,9 +63,6 @@ real_t SpringBoneCollisionCapsule3D::get_mid_height() const { return height - ra
 void SpringBoneCollisionCapsule3D::set_inside(bool p_enabled)
 {
 	inside = p_enabled;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 bool SpringBoneCollisionCapsule3D::is_inside() const { return inside; }
@@ -87,7 +75,6 @@ Pair<Vector3, Vector3> SpringBoneCollisionCapsule3D::get_head_and_tail(
 		tr.origin + tr.basis.xform(Vector3::DOWN * (height * 0.5 - radius)));
 }
 
-void SpringBoneCollisionCapsule3D::_bind_methods() {}
 
 Vector3 SpringBoneCollisionCapsule3D::_collide(const Transform3D& p_center, float p_bone_radius,
 	float p_bone_length, const Vector3& p_current) const

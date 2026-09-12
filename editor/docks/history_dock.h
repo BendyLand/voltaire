@@ -48,8 +48,6 @@ class HistoryDock : public EditorDock
 	bool need_refresh = true;
 	int current_version = 0;
 
-	void on_history_changed();
-	void refresh_history();
 	void on_version_changed();
 	void refresh_version();
 

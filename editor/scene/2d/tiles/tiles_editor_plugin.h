@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/semaphore.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/2d/tiles/tile_map_layer_editor.h"
 #include "editor/scene/2d/tiles/tile_set_editor.h"
@@ -99,9 +98,6 @@ public:
 	// Misc.
 	void display_tile_set_editor_panel();
 
-	static void draw_selection_rect(
-		CanvasItem* p_ci, const Rect2& p_rect, const Color& p_color = Color(1.0, 1.0, 1.0));
-
 	TilesEditorUtils();
 	~TilesEditorUtils();
 };
@@ -137,7 +133,7 @@ public:
 
 	bool is_editor_visible() const;
 
-	TileMapEditorPlugin();
+	TileMapEditorPlugin() = default;
 	~TileMapEditorPlugin();
 };
 
@@ -146,9 +142,7 @@ class TileSetEditorPlugin : public EditorPlugin
 	TileSetEditor* editor = nullptr;
 
 public:
-	void open_editor();
-
-	TileSetEditorPlugin();
+	TileSetEditorPlugin() = default;
 	~TileSetEditorPlugin();
 };
 

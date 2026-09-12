@@ -41,8 +41,6 @@
 #include "servers/display/display_server.h"
 #include "window_wrapper.h"
 
-// WindowWrapper
-
 Rect2 WindowWrapper::_get_default_window_rect() const
 {
 	// Assume that the control rect is the desired one for the window.
@@ -90,29 +88,11 @@ void WindowWrapper::set_wrapped_control(Control* p_control, const Ref<Shortcut>&
 
 Control* WindowWrapper::get_wrapped_control() const { return wrapped_control; }
 
-Control* WindowWrapper::release_wrapped_control()
-{
-	set_window_enabled(false);
-	if (wrapped_control) {
-		Control* old_wrapped = wrapped_control;
-		wrapped_control->get_parent()->remove_child(wrapped_control);
-		wrapped_control = nullptr;
-
-		return old_wrapped;
-	}
-	return nullptr;
-}
-
 bool WindowWrapper::is_window_available() const { return window != nullptr; }
 
 bool WindowWrapper::get_window_enabled() const
 {
 	return is_window_available() ? window->is_visible() : false;
-}
-
-void WindowWrapper::set_window_enabled(bool p_enabled)
-{
-	_set_window_enabled_with_rect(p_enabled, _get_default_window_rect());
 }
 
 Rect2i WindowWrapper::get_window_rect() const
@@ -125,65 +105,6 @@ int WindowWrapper::get_window_screen() const
 {
 	ERR_FAIL_COND_V(!get_window_enabled(), -1);
 	return window->get_current_screen();
-}
-
-void WindowWrapper::restore_window(const Rect2i& p_rect, int p_screen)
-{
-	ERR_FAIL_COND(!is_window_available());
-	ERR_FAIL_INDEX(p_screen, DisplayServer::get_singleton()->get_screen_count());
-
-	_set_window_enabled_with_rect(true, p_rect);
-	window->set_current_screen(p_screen);
-}
-
-void WindowWrapper::restore_window_from_saved_position(
-	const Rect2 p_window_rect, int p_screen, const Rect2 p_screen_rect)
-{
-	ERR_FAIL_COND(!is_window_available());
-
-	Rect2 window_rect = p_window_rect;
-	int screen = p_screen;
-	Rect2 restored_screen_rect = p_screen_rect;
-
-	if (screen < 0 || screen >= DisplayServer::get_singleton()->get_screen_count()) {
-		// Fallback to the main window screen if the saved screen is not available.
-		screen = get_window()->get_window_id();
-	}
-
-	Rect2i real_screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
-
-	if (restored_screen_rect == Rect2i()) {
-		// Fallback to the target screen rect.
-		restored_screen_rect = real_screen_rect;
-	}
-
-	if (window_rect == Rect2i()) {
-		// Fallback to a standard rect.
-		window_rect = Rect2i(restored_screen_rect.position + restored_screen_rect.size / 4,
-			restored_screen_rect.size / 2);
-	}
-
-	// Adjust the window rect size in case the resolution changes.
-	Vector2 screen_ratio = Vector2(real_screen_rect.size) / Vector2(restored_screen_rect.size);
-
-	// The screen positioning may change, so remove the original screen position.
-	window_rect.position -= restored_screen_rect.position;
-	window_rect = Rect2i(window_rect.position * screen_ratio, window_rect.size * screen_ratio);
-	window_rect.position += real_screen_rect.position;
-
-	// Make sure to restore the window if the user minimized it the last time it was displayed.
-	if (window->get_mode() == Window::MODE_MINIMIZED) {
-		window->set_mode(Window::MODE_WINDOWED);
-	}
-
-	// All good, restore the window.
-	window->set_current_screen(p_screen);
-	if (window->is_visible()) {
-		_set_window_rect(window_rect);
-	}
-	else {
-		_set_window_enabled_with_rect(true, window_rect);
-	}
 }
 
 void WindowWrapper::set_window_title(const String& p_title)
@@ -248,19 +169,6 @@ void WindowWrapper::set_override_close_request(bool p_enabled)
 	override_close_request = p_enabled;
 }
 
-// ScreenSelect
-
-void ScreenSelect::_handle_mouse_shortcut(const Ref<InputEvent>& p_event)
-{
-	const Ref<InputEventMouseButton> mouse_button = p_event;
-	if (mouse_button.is_valid()) {
-		if (mouse_button->is_pressed() && mouse_button->get_button_index() == MouseButton::LEFT) {
-			_emit_screen_signal(get_window()->get_current_screen());
-			accept_event();
-		}
-	}
-}
-
 void ScreenSelect::_show_popup()
 {
 	// Adapted from /scene/gui/menu_button.cpp::show_popup
@@ -278,17 +186,6 @@ void ScreenSelect::_show_popup()
 	}
 	popup->set_position(gp);
 	popup->popup();
-}
-
-void ScreenSelect::pressed()
-{
-	if (popup->is_visible()) {
-		popup->hide();
-		return;
-	}
-
-	_build_advanced_menu();
-	_show_popup();
 }
 
 

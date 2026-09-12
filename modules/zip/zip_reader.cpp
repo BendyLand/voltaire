@@ -180,6 +180,5 @@ ZIPReader::~ZIPReader()
 	}
 }
 
-void ZIPReader::_bind_methods() {}
 
 
