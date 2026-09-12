@@ -58,11 +58,7 @@ void Particles3DEditorPlugin::_menu_callback(int p_idx)
 }
 
 void Particles3DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
-{
-	p_menu->add_item(TTR("Generate AABB"), MENU_OPTION_GENERATE_AABB);
-	p_menu->add_item(
-		TTR("Create Emission Points From Node"), MENU_OPTION_CREATE_EMISSION_VOLUME_FROM_NODE);
-}
+{}
 
 GPUParticles3DEditorPlugin::GPUParticles3DEditorPlugin()
 {

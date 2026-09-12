@@ -39,7 +39,6 @@ class VBoxContainer;
 class EditorResourceTooltipPlugin : public RefCounted
 {
 public:
-	static VBoxContainer* make_default_tooltip(const String& p_resource_path);
 	void request_thumbnail(const String& p_path, TextureRect* p_for_control) const;
 
 	virtual bool handles(const String& p_resource_type) const;

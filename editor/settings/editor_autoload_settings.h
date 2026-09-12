@@ -85,27 +85,20 @@ class EditorAutoloadSettings : public VBoxContainer
 	EditorValidationPanel* name_validator = nullptr;
 
 	bool _autoload_name_is_valid(const String& p_name, String* r_error = nullptr);
-	void _validate_autoload_name();
 
 	void _autoload_selected();
 	void _autoload_edited();
-	void _autoload_activated();
-	void _autoload_open(const String& fpath);
 	Node* _create_autoload(const String& p_path);
 
 	void _create_script_autoload();
 	void _create_scene_autoload();
-	void _autoload_file_selected(const String& p_path);
 	void _scene_file_selected(const String& p_path);
 
-	void _scene_created();
 	void _add_autoload(const String& p_name, const String& p_path);
-	void _try_add_autoload(const String& p_name, const String& p_path);
 	void _confirm_autoload_name();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void init_autoloads();

@@ -1094,14 +1094,6 @@ Ref<Image> DisplayServer::_get_cursor_image_from_resource(
 		"Hotspot outside cursor image.");
 	ERR_FAIL_COND_V_MSG(image_size.width > 256 || image_size.height > 256, image,
 		"Cursor image too big. Max supported size is 256x256.");
-
-	if (image->is_compressed()) {
-		image = image->duplicate(true);
-		Error err = image->decompress();
-		ERR_FAIL_COND_V_MSG(err != OK, Ref<Image>(),
-			"Couldn't decompress VRAM-compressed custom mouse cursor image. Switch to a lossless "
-			"compression mode in the Import dock.");
-	}
 	return image;
 }
 

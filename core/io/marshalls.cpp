@@ -34,8 +34,6 @@
 #include "marshalls.h"
 #include "core/types.h"
 
-void EncodedObjectAsID::_bind_methods() {}
-
 #define ERR_FAIL_ADD_OF(a, b, err)                                                                 \
 	ERR_FAIL_COND_V(                                                                               \
 		((int32_t)(b)) < 0 || ((int32_t)(a)) < 0 || ((int32_t)(a)) > INT_MAX - ((int32_t)(b)),     \

@@ -42,7 +42,6 @@ protected:
 	void* mix_udata = nullptr;
 	mutable int _channel_count = 0; // Used only to assist with bounds checking in mix_audio.
 
-	static void _bind_methods();
 	int mix_audio(int num_frames, PackedFloat32Array buffer = {}, int offset = 0);
 
 public:

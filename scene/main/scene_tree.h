@@ -60,7 +60,6 @@ class SceneTreeTimer : public RefCounted
 	bool ignore_time_scale = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_time_left(double p_time);
@@ -284,7 +283,6 @@ private:
 
 protected:
 	void _notification(int p_notification);
-	static void _bind_methods();
 
 public:
 	enum

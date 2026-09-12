@@ -63,7 +63,6 @@ protected:
 	int max_pending_connections = 16;
 
 	Ref<NetSocket> _sock;
-	static void _bind_methods();
 
 public:
 	void remove_peer(IPAddress p_ip, int p_port);

@@ -50,7 +50,6 @@ public:
 
 private:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_animation_mixer(const NodePath &p_path);

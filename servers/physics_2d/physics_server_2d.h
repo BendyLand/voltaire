@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 #include "servers/physics_2d/physics_server_2d_enums.h"
@@ -47,7 +46,6 @@ class PhysicsServer2D
 		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _body_set_shape_as_one_way_collision_bind_compat_104736(
@@ -292,7 +290,6 @@ class PhysicsServer2DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

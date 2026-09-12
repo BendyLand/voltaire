@@ -78,8 +78,6 @@ class ShapeCast3D : public Node3D
 protected:
 	void _notification(int p_what);
 	void _update_shapecast_state();
-	void _shape_changed();
-	static void _bind_methods();
 
 public:
 	void set_collide_with_areas(bool p_clip);
@@ -88,13 +86,11 @@ public:
 	void set_collide_with_bodies(bool p_clip);
 	bool is_collide_with_bodies_enabled() const;
 
-	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
 	void set_shape(const Ref<Shape3D>& p_shape);
 	Ref<Shape3D> get_shape() const;
 
-	void set_target_position(const Vector3& p_point);
 	Vector3 get_target_position() const;
 
 	void set_margin(real_t p_margin);

@@ -60,7 +60,6 @@ private:
 	bool needs_separate_specular = false;
 
 protected:
-	static void _bind_methods();
 
 	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
 
@@ -104,7 +103,6 @@ private:
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual RID get_rid() const override { return compositor; }

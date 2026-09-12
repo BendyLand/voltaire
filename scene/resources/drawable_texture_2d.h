@@ -59,7 +59,6 @@ private:
 	void _initialize();
 
 protected:
-	static void _bind_methods();
 
 public:
 	int get_width() const override;

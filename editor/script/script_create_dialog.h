@@ -90,25 +90,19 @@ class ScriptCreateDialog : public ConfirmationDialog
 	void _language_changed(int l = 0);
 	void _built_in_pressed();
 	void _use_template_pressed();
-	bool _validate_parent(const String& p_string);
 	String _validate_path(
 		const String& p_path, bool p_file_must_exist, bool* r_path_valid = nullptr);
-	void _parent_name_changed(const String& p_parent);
 	void _template_changed(int p_template = 0);
 	void _browse_path(bool browse_parent, bool p_save);
-	void _file_selected(const String& p_file);
-	void _create();
 	void _browse_class_in_tree();
 	virtual void ok_pressed() override;
 	void _create_new();
-	void _load_exist();
 	void _update_template_menu();
 	void _update_dialog();
 	String _adjust_file_path(const String& p_base_path) const;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void config(const String& p_base_name, const String& p_base_path,

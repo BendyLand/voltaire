@@ -28,15 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "editor/settings/editor_command_palette.h"
 #include "groups_dock.h"
 
-#include "editor/settings/editor_command_palette.h"
-
-void GroupsDock::set_selection(const Vector<Node *> &p_nodes) {
-	groups->set_selection(p_nodes);
-}
-
-GroupsDock::GroupsDock() {
+GroupsDock::GroupsDock()
+{
 	singleton = this;
 	set_name(TTRC("Groups"));
 	set_icon_name("Groups");
@@ -48,6 +44,6 @@ GroupsDock::GroupsDock() {
 	add_child(groups);
 }
 
-GroupsDock::~GroupsDock() {
-	singleton = nullptr;
-}
+GroupsDock::~GroupsDock() { singleton = nullptr; }
+
+

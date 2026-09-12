@@ -38,7 +38,6 @@
 class OpenXRDPadBindingExtension
 {
 protected:
-	static void _bind_methods() {}
 
 public:
 	static OpenXRDPadBindingExtension* get_singleton();
@@ -68,7 +67,6 @@ private:
 	Ref<OpenXRHapticBase> off_haptic;
 
 protected:
-	static void _bind_methods();
 
 public:
 	OpenXRDpadBindingModifier();

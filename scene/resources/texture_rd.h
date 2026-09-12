@@ -45,7 +45,6 @@ class Texture2DRD : public Texture2D
 	Size2i size;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual int get_width() const override;
@@ -78,7 +77,6 @@ class TextureLayeredRD : public TextureLayered
 	uint32_t mipmaps = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const override;
@@ -129,7 +127,6 @@ class Texture3DRD : public Texture3D
 	uint32_t mipmaps = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const override;

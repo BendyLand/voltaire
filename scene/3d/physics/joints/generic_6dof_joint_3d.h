@@ -94,7 +94,6 @@ protected:
 
 	virtual void _configure_joint(
 		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
-	static void _bind_methods();
 
 	static void _warn_if_deprecated_param(Param p_param);
 	void _set_drive_limit_explicit(Vector3::Axis p_axis, Param p_param);
@@ -103,22 +102,16 @@ protected:
 	static bool _is_valid_angular_target_rotation(const Quaternion& p_target_rotation);
 
 public:
-	void set_param_x(Param p_param, real_t p_value);
 	real_t get_param_x(Param p_param) const;
 
-	void set_param_y(Param p_param, real_t p_value);
 	real_t get_param_y(Param p_param) const;
 
-	void set_param_z(Param p_param, real_t p_value);
 	real_t get_param_z(Param p_param) const;
 
-	void set_flag_x(Flag p_flag, bool p_enabled);
 	bool get_flag_x(Flag p_flag) const;
 
-	void set_flag_y(Flag p_flag, bool p_enabled);
 	bool get_flag_y(Flag p_flag) const;
 
-	void set_flag_z(Flag p_flag, bool p_enabled);
 	bool get_flag_z(Flag p_flag) const;
 
 	void set_angular_target_rotation(const Quaternion& p_target_rotation);
@@ -126,7 +119,7 @@ public:
 	bool has_target_rotation() const;
 	void clear_angular_target_rotation();
 
-	Generic6DOFJoint3D();
+	Generic6DOFJoint3D() = default;
 };
 
 

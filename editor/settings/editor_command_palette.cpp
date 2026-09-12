@@ -90,22 +90,6 @@ void EditorCommandPalette::_notification(int p_what)
 	}
 }
 
-void EditorCommandPalette::open_popup()
-{
-	if (was_showed) {
-		popup(prev_rect);
-	}
-	else {
-		_update_command_search(String());
-		popup_centered_clamped(Size2(600, 440) * EDSCALE, 0.8f);
-	}
-
-	command_search_box->clear();
-	command_search_box->grab_focus();
-
-	search_options->scroll_to_item(search_options->get_root());
-}
-
 void EditorCommandPalette::get_actions_list(List<String>* p_list) const
 {
 	for (const KeyValue<String, Command>& E : commands) {

@@ -64,20 +64,6 @@ void ProjectListItemControl::_update_favorite_button_focus_color()
 	}
 }
 
-void ProjectListItemControl::set_project_title(const String& p_title)
-{
-	project_title->set_text(p_title);
-	project_title->set_accessibility_name(TTRC("Project Name"));
-	queue_accessibility_update();
-}
-
-void ProjectListItemControl::set_project_path(const String& p_path)
-{
-	project_path->set_text(p_path);
-	project_path->set_accessibility_name(TTRC("Project Path"));
-	queue_accessibility_update();
-}
-
 void ProjectListItemControl::set_project_icon(const Ref<Texture2D>& p_icon)
 {
 	icon_needs_reload = false;
@@ -101,132 +87,7 @@ void ProjectListItemControl::set_project_version(const String& p_info)
 	project_version->set_text(p_info);
 }
 
-void ProjectListItemControl::set_unsupported_features(PackedStringArray p_features)
-{
-	if (p_features.size() > 0) {
-		String tooltip_text = "";
-		bool unknown_version = false;
-		for (int i = 0; i < p_features.size(); i++) {
-			if (ProjectList::project_feature_looks_like_version(p_features[i])) {
-				PackedStringArray project_version_split = p_features[i].split(".");
-				int project_version_major = 0, project_version_minor = 0;
-				if (project_version_split.size() >= 2) {
-					project_version_major = project_version_split[0].to_int();
-					project_version_minor = project_version_split[1].to_int();
-				}
-
-				version_match_type = VersionMatchType::PROJECT_USES_SAME;
-				if (project_version_major > VLTR_VERSION_MAJOR) {
-					version_match_type = VersionMatchType::PROJECT_USES_NEWER_MAJOR;
-				}
-				else if (project_version_major < VLTR_VERSION_MAJOR) {
-					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
-				}
-				else {
-					// Project is same major version.
-					// Is it the same minor version, or an upgrade or downgrade?
-					if (project_version_minor > VLTR_VERSION_MINOR) {
-						version_match_type = VersionMatchType::PROJECT_USES_NEWER_MINOR;
-					}
-					else if (project_version_minor < VLTR_VERSION_MINOR) {
-						version_match_type = VersionMatchType::PROJECT_USES_OLDER_MINOR;
-					}
-				}
-
-				if (version_match_type != VersionMatchType::PROJECT_USES_SAME) {
-					String project_version_tooltip_text =
-						TTR("This project was last edited in a different Godot version: ") +
-						p_features[i] + "\n";
-					if (version_match_type == VersionMatchType::PROJECT_USES_OLDER_MAJOR ||
-						version_match_type == VersionMatchType::PROJECT_USES_OLDER_MINOR) {
-						project_version_tooltip_text +=
-							vformat(TTR("Opening it will upgrade it to Godot %s.%s."),
-								VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-							"\n";
-					}
-					else if (version_match_type == VersionMatchType::PROJECT_USES_NEWER_MAJOR ||
-							   version_match_type == VersionMatchType::PROJECT_USES_NEWER_MINOR) {
-						project_version_tooltip_text +=
-							vformat(TTR("Opening it will downgrade it to Godot %s.%s."),
-								VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-							"\n";
-						project_version_tooltip_text +=
-							TTR("Downgrading projects is not recommended.") + "\n";
-					}
-					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
-					project_different_version->set_tooltip_text(project_version_tooltip_text);
-					project_different_version->show();
-				}
-				else {
-					project_different_version->hide();
-				}
-			}
-			else {
-				if (p_features[i] == "3.x") {
-					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
-					String project_version_tooltip_text =
-						TTR("This project was last edited in a different Godot version: ") +
-						p_features[i] + "\n";
-					project_version_tooltip_text +=
-						vformat(TTR("Opening it will upgrade it to Godot %s.%s."),
-							VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-						"\n";
-					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
-					project_different_version->set_tooltip_text(project_version_tooltip_text);
-					project_different_version->show();
-				}
-				else if (p_features[i] == "u-ver") {
-					unknown_version = true;
-					project_different_version->hide();
-				}
-			}
-
-			p_features.remove_at(i);
-			i--;
-		}
-
-		// This is actually triggered when the project.godot file's config_version
-		// is less than 4, so perhaps it'd be more accurate to say the engine configuration
-		// file's version is not supported...? If the config/features array includes
-		// a proper version number, it will be displayed alongside the "unknown version"
-		// warning otherwise.
-		if (unknown_version) {
-			tooltip_text += TTR("This project uses an unknown version of Godot.") + "\n";
-		}
-		if (p_features.size() > 0) {
-			String unsupported_features_str = String(", ").join(p_features);
-			tooltip_text += TTR("This project uses features unsupported by the current build:") +
-							"\n" + unsupported_features_str;
-		}
-
-		if (tooltip_text.is_empty()) {
-			return;
-		}
-		project_version->set_tooltip_text(tooltip_text);
-		project_unsupported_features->set_focus_mode(FOCUS_ACCESSIBILITY);
-		project_unsupported_features->set_tooltip_text(tooltip_text);
-		project_unsupported_features->show();
-	}
-	else {
-		project_different_version->hide();
-		project_unsupported_features->hide();
-	}
-}
-
 bool ProjectListItemControl::should_load_project_icon() const { return icon_needs_reload; }
-
-void ProjectListItemControl::set_is_favorite(bool p_favorite)
-{
-	is_favorite = p_favorite;
-	if (p_favorite) {
-		favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Favorites")));
-		favorite_button->set_accessibility_name(TTRC("Remove from Favorites"));
-	}
-	else {
-		favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Unfavorite")));
-		favorite_button->set_accessibility_name(TTRC("Add to Favorites"));
-	}
-}
 
 void ProjectListItemControl::set_is_grayed(bool p_grayed)
 {
@@ -244,47 +105,6 @@ void ProjectListItemControl::set_is_grayed(bool p_grayed)
 void ProjectListItemControl::set_project_title_index(int p_title_index)
 {
 	project_title_index = p_title_index;
-}
-
-void ProjectListItemControl::resize_project_title()
-{
-	if (get_window() == nullptr) {
-		return;
-	}
-
-	int window_size = get_window()->get_size().x;
-	int difference = window_size - window_size_cache;
-	window_size_cache = window_size;
-
-	int& title_size_cache = get_list()->title_size_cache[project_title_index];
-	title_size_cache += difference;
-
-	if (title_size_cache > title_fullsize_cache + tag_size_cache) {
-		project_title->set_custom_maximum_size(Vector2(-1, -1));
-		project_title->set_custom_minimum_size(Vector2(0, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_OFF);
-
-		return;
-	}
-	ProjectTag tag = ProjectTag("dummy");
-	int tag_maxsize = tag.get_custom_maximum_size().x;
-	int title_maxsize = title_size_cache - tag_size_cache;
-	int title_minsize = title_size_cache - tag_maxsize;
-
-	int abs_minsize = (200 * EDSCALE);
-	if (title_fullsize_cache > abs_minsize) {
-		if (title_minsize < abs_minsize) {
-			title_minsize = abs_minsize + tag_maxsize - tag_size_cache;
-		}
-		if (title_maxsize < title_minsize) {
-			project_title->set_custom_maximum_size(Vector2(title_minsize, -1));
-		}
-		else {
-			project_title->set_custom_maximum_size(Vector2(title_maxsize, -1));
-		}
-		project_title->set_custom_minimum_size(Vector2(title_minsize, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	}
 }
 
 struct ProjectListComparator
@@ -332,15 +152,6 @@ bool ProjectList::project_feature_looks_like_version(const String& p_feature)
 void ProjectList::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			for (const Item& item : _projects) {
-				_update_project_control_translatable_fields(item);
-			}
-			update_dock_menu();
-		}
-	} break;
-
 	case NOTIFICATION_THEME_CHANGED: {
 		if (project_context_menu) {
 			_update_menu_icons();
@@ -456,78 +267,6 @@ void ProjectList::_load_project_icon(int p_index)
 	item.control->set_project_icon(icon);
 }
 
-void ProjectList::sort_projects()
-{
-	SortArray<Item, ProjectListComparator> sorter;
-	sorter.compare.order_option = _order_option;
-	sorter.sort(_projects.ptrw(), _projects.size());
-
-	String search_term;
-	PackedStringArray tags;
-
-	if (!_search_term.is_empty()) {
-		PackedStringArray search_parts = _search_term.split(" ");
-		if (search_parts.size() > 1 || search_parts[0].begins_with("tag:")) {
-			PackedStringArray remaining;
-			for (const String& part : search_parts) {
-				if (part.begins_with("tag:")) {
-					tags.push_back(part.get_slicec(':', 1));
-				}
-				else {
-					remaining.append(part);
-				}
-			}
-			search_term = String(" ").join(remaining); // Search term without tags.
-		}
-		else {
-			search_term = _search_term;
-		}
-	}
-
-	for (int i = 0; i < _projects.size(); ++i) {
-		Item& item = _projects.write[i];
-
-		bool item_visible = true;
-		if (!_search_term.is_empty()) {
-			String search_path;
-			if (search_term.contains_char('/')) {
-				// Search path will match the whole path
-				search_path = item.path;
-			}
-			else {
-				// Search path will only match the last path component to make searching more strict
-				search_path = item.path.get_file();
-			}
-
-			bool missing_tags = false;
-			for (const String& tag : tags) {
-				if (!item.tags.has(tag)) {
-					missing_tags = true;
-					break;
-				}
-			}
-
-			// When searching, display projects whose name or path contain the search term and whose
-			// tags match the searched tags.
-			item_visible = !missing_tags &&
-						   (search_term.is_empty() || item.project_name.containsn(search_term) ||
-							   search_path.containsn(search_term));
-		}
-
-		item.control->set_visible(item_visible);
-	}
-
-	for (int i = 0; i < _projects.size(); ++i) {
-		Item& item = _projects.write[i];
-		item.control->get_parent()->move_child(item.control, i);
-	}
-
-	// Rewind the coroutine because order of projects changed
-	_update_icons_async();
-	update_dock_menu();
-	queue_accessibility_update();
-}
-
 int ProjectList::get_project_count() const { return _projects.size(); }
 
 void ProjectList::find_projects(const String& p_path)
@@ -593,15 +332,6 @@ void ProjectList::ensure_project_visible(int p_index)
 	item.control->grab_focus(true);
 }
 
-void ProjectList::_update_project_control_translatable_fields(const Item& item)
-{
-	ProjectListItemControl* control = item.control;
-
-	control->set_project_title(!item.missing ? item.project_name : TTR("Missing Project"));
-	control->set_last_edited_info(item.get_last_edited_string());
-	control->set_unsupported_features(item.unsupported_features.duplicate());
-}
-
 void ProjectList::_toggle_project(int p_index)
 {
 	// This methods adds to the selection or removes from the
@@ -643,32 +373,7 @@ void ProjectList::_on_explore_pressed(const String& p_path)
 	OS::get_singleton()->shell_show_in_file_manager(p_path, true);
 }
 
-void ProjectList::_update_menu_icons()
-{
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_EDIT), get_editor_theme_icon("Edit"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_VERBOSE),
-		get_editor_theme_icon("Notification"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_RECOVERY),
-		get_editor_theme_icon("NodeWarning"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RUN), get_editor_theme_icon("Play"));
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_SHOW_IN_FILE_MANAGER),
-		get_editor_theme_icon("Load"));
-#endif
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_COPY_PATH), get_editor_theme_icon("ActionCopy"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RENAME), get_editor_theme_icon("Rename"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_MANAGE_TAGS), get_editor_theme_icon("Script"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_DUPLICATE), get_editor_theme_icon("Duplicate"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_REMOVE), get_editor_theme_icon("Remove"));
-}
+void ProjectList::_update_menu_icons() {}
 
 void ProjectList::_clear_project_selection()
 {
@@ -830,13 +535,6 @@ void ProjectList::erase_selected_projects(bool p_delete_project_contents)
 	_last_clicked = "";
 
 	update_dock_menu();
-}
-
-void ProjectList::resize_project_titles()
-{
-	for (Item& item : _projects) {
-		item.control->resize_project_title();
-	}
 }
 
 bool ProjectList::is_any_project_missing() const

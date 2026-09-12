@@ -243,16 +243,12 @@ Error ColladaImport::_create_material(const String& p_target)
 			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
 			if (texture.is_valid()) {
 				material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, texture);
-				material->set_albedo(Color(1, 1, 1, 1));
 				// material->set_parameter(StandardMaterial3D::PARAM_DIFFUSE,Color(1,1,1,1));
 			}
 			else {
 				missing_textures.push_back(texfile.get_file());
 			}
 		}
-	}
-	else {
-		material->set_albedo(effect.diffuse.color);
 	}
 
 	// SPECULAR

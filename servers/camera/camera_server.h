@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/thread_safe.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "core/types.h"
 
@@ -70,7 +69,6 @@ protected:
 
 	static CameraServer* singleton;
 
-	static void _bind_methods();
 
 	template <typename T> static CameraServer* _create_builtin() { return memnew(T); }
 

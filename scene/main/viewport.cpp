@@ -2286,8 +2286,6 @@ void Viewport::_own_world_3d_changed()
 		_propagate_exit_world_3d(this);
 	}
 
-	own_world_3d = world_3d->duplicate();
-
 	if (is_inside_tree()) {
 		_propagate_enter_world_3d(this);
 	}

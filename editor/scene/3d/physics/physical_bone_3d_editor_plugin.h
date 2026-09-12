@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -44,17 +43,8 @@ class PhysicalBone3DEditor
 
 	PhysicalBone3D* selected = nullptr;
 
-private:
-	void _on_toggle_button_transform_joint(bool p_is_pressed);
-	void _set_move_joint();
-
 public:
-	PhysicalBone3DEditor();
-
-	void set_selected(PhysicalBone3D* p_pb);
-
-	void hide();
-	void show();
+	PhysicalBone3DEditor() = default;
 };
 
 class PhysicalBone3DEditorPlugin : public EditorPlugin

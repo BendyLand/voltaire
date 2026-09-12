@@ -78,13 +78,6 @@ void EditorSpinSlider::_value_input_gui_input(const Ref<InputEvent>& p_event)
 			value_input_dirty = true;
 			set_process_internal(true);
 		} break;
-		case Key::ESCAPE: {
-			value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
-			if (value_input) {
-				value_input_focus_visible = value_input->has_focus(true);
-				value_input->hide();
-			}
-		} break;
 		default:
 			break;
 		}
@@ -113,15 +106,6 @@ bool EditorSpinSlider::is_editing_integer() const { return editing_integer; }
 String EditorSpinSlider::get_label() const { return label; }
 
 String EditorSpinSlider::get_suffix() const { return suffix; }
-
-void EditorSpinSlider::_value_input_submitted(const String& p_text)
-{
-	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
-	if (value_input) {
-		value_input_focus_visible = value_input->has_focus(true);
-		value_input->hide();
-	}
-}
 
 void EditorSpinSlider::_value_input_hidden()
 {

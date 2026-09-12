@@ -91,22 +91,15 @@ protected:
 	LocalVector<BoneTwistDisperser3DSetting*> settings;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void _set_active(bool p_active) override;
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-	virtual void _validate_bone_names() override;
 
 	void _make_all_joints_dirty();
 
 	void _make_joints_dirty(int p_index);
-	void _update_joints(int p_index);
-	void _set_joint_bone(int p_index, int p_joint, int p_bone);
 
-	void _update_reference_bone(int p_index);
 	void _update_curve(int p_index);
-
-	virtual void _process_modification(double p_delta) override;
 
 public:
 	void set_mutable_bone_axes(bool p_enabled);
@@ -117,12 +110,9 @@ public:
 	void clear_settings();
 
 	// Setting.
-	void set_root_bone_name(int p_index, const String& p_bone_name);
 	String get_root_bone_name(int p_index) const;
-	void set_root_bone(int p_index, int p_bone);
 	int get_root_bone(int p_index) const;
 
-	void set_end_bone_name(int p_index, const String& p_bone_name);
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;

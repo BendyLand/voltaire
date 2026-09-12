@@ -49,10 +49,6 @@ class EditorRunNative : public HBoxContainer
 
 	void _confirm_run_native();
 
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
 public:
 	Error start_run_native(int p_id);
 	void resume_run_native();

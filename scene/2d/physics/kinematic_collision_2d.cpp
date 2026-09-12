@@ -53,6 +53,5 @@ int KinematicCollision2D::get_collider_shape_index() const { return result.colli
 
 Vector2 KinematicCollision2D::get_collider_velocity() const { return result.collider_velocity; }
 
-void KinematicCollision2D::_bind_methods() {}
 
 

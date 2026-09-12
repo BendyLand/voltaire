@@ -42,8 +42,6 @@ class ScriptEditorBase : public VBoxContainer
 protected:
 	Ref<Resource> edited_res;
 
-	static void _bind_methods();
-
 public:
 	struct EditedFileData
 	{
@@ -143,7 +141,6 @@ protected:
 
 		TextEditorBase* _get_active_editor();
 		void _edit_option(int p_op);
-		void _prepare_edit_menu();
 		void _update_highlighter_menu();
 		void _change_syntax_highlighter(int p_idx);
 		void _update_bookmark_list();
@@ -156,10 +153,6 @@ protected:
 	static void _popup_move_item(
 		int p_target_id, PopupMenu* r_popup, bool p_move_after = true, int p_idx = -1)
 	{
-		int target_idx = r_popup->get_item_index(p_target_id) + p_move_after;
-		if (target_idx >= 0 && target_idx < r_popup->get_item_count()) {
-			r_popup->set_item_index(p_idx, target_idx);
-		}
 	}
 
 	static inline EditMenus* edit_menus = nullptr;
@@ -174,17 +167,11 @@ protected:
 	PopupMenu* context_menu = nullptr;
 	MenuButton* search_menu = nullptr;
 
-	void _make_context_menu(bool p_selection, bool p_foldable,
-		const Vector2& p_position = Vector2(0, 0), bool p_show = true);
-	void _show_context_menu(const Vector2& p_position);
-
 	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	virtual bool _edit_option(int p_op);
 
 	virtual void _load_theme_settings();
 	virtual void _validate_script();
-
-	void _convert_case(CodeTextEditor::CaseStyle p_case) { code_editor->convert_case(p_case); }
 
 	int previous_history_line = -1;
 	void _emit_request_save_new_history();
@@ -210,13 +197,7 @@ public:
 
 	virtual void ensure_focus() { code_editor->get_text_editor()->grab_focus(); }
 
-	virtual void convert_indent() { code_editor->get_text_editor()->convert_indent(); }
-
-	virtual void trim_trailing_whitespace() { code_editor->trim_trailing_whitespace(); }
-
 	virtual void trim_final_newlines() { code_editor->trim_final_newlines(); }
-
-	virtual void insert_final_newline() { code_editor->insert_final_newline(); }
 
 	virtual void goto_line_without_history(int p_line, int p_column = 0)
 	{
@@ -258,8 +239,6 @@ public:
 	{
 		code_editor->set_find_replace_bar(p_bar);
 	}
-
-	virtual void validate_script() override { code_editor->validate_script(); }
 
 	virtual void set_toggle_list_control(Control* p_toggle_list_control) override
 	{

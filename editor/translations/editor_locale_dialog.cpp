@@ -38,21 +38,6 @@
 #include "scene/gui/option_button.h"
 #include "scene/gui/tree.h"
 
-void EditorLocaleDialog::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_TRANSLATION_CHANGED) {
-		// TRANSLATORS: This is the label for a list of writing systems.
-		script_label1->set_text(TTR("Script:", "Locale"));
-		// TRANSLATORS: This refers to a writing system.
-		script_label2->set_text(TTR("Script", "Locale"));
-
-		script_list->set_accessibility_name(TTR("Script", "Locale"));
-		script_code->set_accessibility_name(TTR("Script", "Locale"));
-	}
-}
-
-void EditorLocaleDialog::_bind_methods() {}
-
 void EditorLocaleDialog::ok_pressed()
 {
 	if (edit_filters->is_pressed()) {
@@ -77,31 +62,6 @@ void EditorLocaleDialog::ok_pressed()
 	hide();
 }
 
-void EditorLocaleDialog::_toggle_advanced(bool p_checked)
-{
-	if (!p_checked) {
-		script_code->set_text("");
-		variant_code->set_text("");
-	}
-	_update_tree();
-}
-
-void EditorLocaleDialog::_post_popup()
-{
-	ConfirmationDialog::_post_popup();
-
-	if (!locale_set) {
-		lang_code->set_text("");
-		script_code->set_text("");
-		country_code->set_text("");
-		variant_code->set_text("");
-	}
-	edit_filters->set_pressed(false);
-	_update_tree();
-}
-
-void EditorLocaleDialog::_edit_filters(bool p_checked) { _update_tree(); }
-
 void EditorLocaleDialog::set_locale(const String& p_locale)
 {
 	const String& locale = TranslationServer::get_singleton()->standardize_locale(p_locale);
@@ -119,13 +79,6 @@ void EditorLocaleDialog::set_locale(const String& p_locale)
 		Vector<String> locale_elements = p_locale.split("_");
 		lang_code->set_text(locale_elements[0]);
 		if (locale_elements.size() >= 2) {
-			if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) &&
-				is_ascii_lower_case(locale_elements[1][1]) &&
-				is_ascii_lower_case(locale_elements[1][2]) &&
-				is_ascii_lower_case(locale_elements[1][3])) {
-				script_code->set_text(locale_elements[1]);
-				advanced->set_pressed(true);
-			}
 			if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) &&
 				is_ascii_upper_case(locale_elements[1][1])) {
 				country_code->set_text(locale_elements[1]);
@@ -136,14 +89,6 @@ void EditorLocaleDialog::set_locale(const String& p_locale)
 				is_ascii_upper_case(locale_elements[2][1])) {
 				country_code->set_text(locale_elements[2]);
 			}
-			else {
-				variant_code->set_text(locale_elements[2].to_lower());
-				advanced->set_pressed(true);
-			}
-		}
-		if (locale_elements.size() >= 4) {
-			variant_code->set_text(locale_elements[3].to_lower());
-			advanced->set_pressed(true);
 		}
 	}
 }

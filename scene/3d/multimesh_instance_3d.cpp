@@ -52,7 +52,6 @@ void MultiMeshInstance3D::_physics_interpolated_changed()
 	_refresh_interpolated();
 }
 
-void MultiMeshInstance3D::_bind_methods() {}
 
 void MultiMeshInstance3D::_notification(int p_what)
 {

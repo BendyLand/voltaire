@@ -99,7 +99,9 @@ private:
 		Color font_outline_color;
 		int font_outline_size;
 		int font_shadow_outline_size;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	Rect2 _get_line_rect(int p_para, int p_line) const;
 	void _ensure_shaped() const;
@@ -114,7 +116,6 @@ protected:
 	int get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spacing) const;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -191,7 +192,8 @@ public:
 
 	Rect2 get_character_bounds(int p_pos) const;
 
-	Label(const String& p_text = String());
+	Label() = default;
+	Label(const String& p_text) : text(p_text) {}
 	~Label();
 
 	template <typename... VarArgsFunc, typename... VarArgs>

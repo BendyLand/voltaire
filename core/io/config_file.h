@@ -41,7 +41,6 @@ class ConfigFile : public RefCounted
 	Error _parse(const String& p_path);
 
 protected:
-	static void _bind_methods();
 
 public:
 	bool has_section(const String& p_section) const;

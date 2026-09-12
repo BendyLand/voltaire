@@ -45,16 +45,4 @@ void EditorLayoutsDialog::_deselect_layout_names()
 	validation->update();
 }
 
-void EditorLayoutsDialog::set_save_mode_enabled(bool p_enabled)
-{
-	save_mode = p_enabled;
-
-	set_title(p_enabled ? TTRC("Save Layout") : TTRC("Delete Layout"));
-	set_ok_button_text(p_enabled ? TTRC("Save") : TTRC("Delete"));
-
-	layout_names->set_select_mode(p_enabled ? ItemList::SELECT_SINGLE : ItemList::SELECT_MULTI);
-	name->set_visible(p_enabled);
-	validation->set_visible(p_enabled);
-}
-
 

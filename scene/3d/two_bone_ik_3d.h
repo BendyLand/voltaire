@@ -292,14 +292,12 @@ public:
 protected:
 	LocalVector<TwoBoneIK3DSetting*> tb_settings;
 
-	virtual void _validate_bone_names() override;
 	void _validate_pole_directions(Skeleton3D* p_skeleton) const;
 	void _validate_pole_direction(Skeleton3D* p_skeleton, int p_index) const;
 
 	virtual void _make_all_joints_dirty() override;
 	virtual void _init_joints(Skeleton3D* p_skeleton, int p_index) override;
 	void _clear_joints(int p_index);
-	virtual void _update_joints(int p_index) override;
 	virtual void _make_simulation_dirty(int p_index) override;
 	virtual void _update_bone_axis(Skeleton3D* p_skeleton, int p_index) override;
 
@@ -325,17 +323,13 @@ public:
 	}
 
 	// Setting.
-	void set_root_bone_name(int p_index, const String& p_bone_name);
 	String get_root_bone_name(int p_index) const;
-	void set_root_bone(int p_index, int p_bone);
 	int get_root_bone(int p_index) const;
 
-	void set_middle_bone_name(int p_index, const String& p_bone_name);
 	String get_middle_bone_name(int p_index) const;
 	void set_middle_bone(int p_index, int p_bone);
 	int get_middle_bone(int p_index) const;
 
-	void set_end_bone_name(int p_index, const String& p_bone_name);
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
@@ -344,7 +338,6 @@ public:
 	bool is_using_virtual_end(int p_index) const;
 	void set_extend_end_bone(int p_index, bool p_enabled);
 	bool is_end_bone_extended(int p_index) const;
-	void set_end_bone_direction(int p_index, BoneDirection p_bone_direction);
 	BoneDirection get_end_bone_direction(int p_index) const;
 	void set_end_bone_length(int p_index, float p_length);
 	float get_end_bone_length(int p_index) const;
@@ -357,15 +350,8 @@ public:
 
 	void set_pole_direction(int p_index, SecondaryDirection p_axis);
 	SecondaryDirection get_pole_direction(int p_index) const;
-	void set_pole_direction_vector(int p_index, const Vector3& p_vector);
 	Vector3 get_pole_direction_vector(int p_index) const;
-
 	bool is_valid(int p_index) const; // Helper for editor and validation.
-
-#ifdef TOOLS_ENABLED
-	Vector3 get_root_bone_vector(int p_index) const;
-	Vector3 get_middle_bone_vector(int p_index) const;
-#endif // TOOLS_ENABLED
 
 	~TwoBoneIK3D();
 };

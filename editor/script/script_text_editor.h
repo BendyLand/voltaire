@@ -156,20 +156,14 @@ protected:
 	void _update_errors();
 
 	void _set_theme_for_script();
-	void _show_errors_panel(bool p_show);
-	void _show_warnings_panel(bool p_show);
-	void _on_mouse_exited();
 
 	String _picker_color_stringify(const Color& p_color, COLOR_MODE p_mode);
-	void _picker_color_changed(const Color& p_color);
 	void _update_color_constructor_options();
 	void _update_background_color();
-	void _update_color_text();
 
 	void _notification(int p_what);
 
 	void _edit_option_toggle_inline_comment();
-	void _color_changed(const Color& p_color);
 
 	void _lookup_symbol(const String& p_symbol, int p_row, int p_column);
 	void _validate_symbol(const String& p_symbol);
@@ -180,9 +174,6 @@ protected:
 	String _get_absolute_path(const String& rel_path);
 
 	void _goto_line(int p_line);
-
-	void _make_context_menu(bool p_selection, bool p_color, bool p_foldable, bool p_open_docs,
-		bool p_goto_definition, const Vector2& p_pos);
 
 	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev) override;
 	virtual bool _edit_option(int p_op) override;

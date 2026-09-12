@@ -473,15 +473,6 @@ void GLTFDocument::set_fallback_image_quality(float p_fallback_image_quality)
 
 float GLTFDocument::get_fallback_image_quality() const { return _fallback_image_quality; }
 
-static inline Ref<Image> _duplicate_and_decompress_image(const Ref<Image>& p_image)
-{
-	Ref<Image> img = p_image->duplicate();
-	if (img->is_compressed()) {
-		img->decompress();
-	}
-	return img;
-}
-
 Ref<Image> GLTFDocument::_parse_image_bytes_into_image(Ref<GLTFState> p_state,
 	const Vector<uint8_t>& p_bytes, const String& p_mime_type, int p_index,
 	String& r_file_extension)
@@ -548,38 +539,6 @@ GLTFTextureIndex GLTFDocument::_set_texture(Ref<GLTFState> p_state, Ref<Texture2
 	GLTFTextureIndex gltf_texture_i = p_state->textures.size();
 	p_state->textures.push_back(gltf_texture);
 	return gltf_texture_i;
-}
-
-Ref<Texture2D> GLTFDocument::_get_texture(
-	Ref<GLTFState> p_state, const GLTFTextureIndex p_texture, int p_texture_types)
-{
-	ERR_FAIL_COND_V_MSG(p_state->textures.is_empty(), Ref<Texture2D>(),
-		"glTF import: Tried to read texture at index " + itos(p_texture) +
-			", but this glTF file does not contain any textures.");
-	ERR_FAIL_INDEX_V(p_texture, p_state->textures.size(), Ref<Texture2D>());
-	const GLTFImageIndex image = p_state->textures[p_texture]->get_src_image();
-	ERR_FAIL_INDEX_V(image, p_state->images.size(), Ref<Texture2D>());
-	if (GLTFState::HandleBinaryImageMode(p_state->handle_binary_image_mode) ==
-		GLTFState::HandleBinaryImageMode::HANDLE_BINARY_IMAGE_MODE_EMBED_AS_BASISU) {
-		ERR_FAIL_INDEX_V(image, p_state->source_images.size(), Ref<Texture2D>());
-		Ref<PortableCompressedTexture2D> portable_texture;
-		portable_texture.instantiate();
-		portable_texture->set_keep_compressed_buffer(true);
-		Ref<Image> new_img = p_state->source_images[image]->duplicate();
-		ERR_FAIL_COND_V(new_img.is_null(), Ref<Texture2D>());
-		new_img->generate_mipmaps();
-		if (p_texture_types) {
-			portable_texture->create_from_image(
-				new_img, PortableCompressedTexture2D::COMPRESSION_MODE_BASIS_UNIVERSAL, true);
-		}
-		else {
-			portable_texture->create_from_image(
-				new_img, PortableCompressedTexture2D::COMPRESSION_MODE_BASIS_UNIVERSAL, false);
-		}
-		p_state->images.write[image] = portable_texture;
-		p_state->source_images.write[image] = new_img;
-	}
-	return p_state->images[image];
 }
 
 GLTFTextureSamplerIndex GLTFDocument::_set_sampler_for_mode(
@@ -876,30 +835,6 @@ ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
 	}
 	mi->set_mesh(import_mesh);
 	return mi;
-}
-
-Light3D* GLTFDocument::_generate_light(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(gltf_node->light, p_state->lights.size(), nullptr);
-
-	print_verbose("glTF: Creating light for: " + gltf_node->get_name());
-
-	Ref<GLTFLight> l = p_state->lights[gltf_node->light];
-	return l->to_node();
-}
-
-Camera3D* GLTFDocument::_generate_camera(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(gltf_node->camera, p_state->cameras.size(), nullptr);
-
-	print_verbose("glTF: Creating camera for: " + gltf_node->get_name());
-
-	Ref<GLTFCamera> c = p_state->cameras[gltf_node->camera];
-	return c->to_node();
 }
 
 GLTFCameraIndex GLTFDocument::_convert_camera(Ref<GLTFState> p_state, Camera3D* p_camera)

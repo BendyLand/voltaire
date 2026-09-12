@@ -104,7 +104,6 @@ private:
 	void _method_selected();
 	void _update_method_tree();
 	void _method_check_button_pressed(const CheckButton* p_button);
-	void _open_method_popup();
 
 	void _unbind_count_changed(double p_count);
 	void _add_bind();
@@ -116,7 +115,6 @@ private:
 protected:
 	virtual void _post_popup() override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	ConnectionData get_source_connection_data() const;
@@ -139,14 +137,6 @@ public:
 	void popup_dialog(const String& p_for_signal);
 	ConnectDialog();
 	~ConnectDialog();
-};
-
-//////////////////////////////////////////
-
-// Custom `Tree` needed to use `EditorHelpBit` to display signal documentation.
-class ConnectionsDockTree : public Tree
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
 };
 
 class ConnectionsDock : public VBoxContainer
@@ -183,8 +173,6 @@ class ConnectionsDock : public VBoxContainer
 	VBoxContainer* holder = nullptr;
 	Label* select_an_object = nullptr;
 
-	ConnectionsDockTree* tree = nullptr;
-
 	ConfirmationDialog* disconnect_all_dialog = nullptr;
 	ConnectDialog* connect_dialog = nullptr;
 	Button* connect_button = nullptr;
@@ -204,26 +192,21 @@ class ConnectionsDock : public VBoxContainer
 	void _disconnect_all();
 
 	void _tree_item_selected();
-	void _tree_item_activated();
-	TreeItemType _get_item_type(const TreeItem& p_item) const;
 
 	void _open_connection_dialog(TreeItem& p_item);
 	void _open_edit_connection_dialog(TreeItem& p_item);
 	void _go_to_method(TreeItem& p_item);
 
 	void _handle_class_menu_option(int p_option);
-	void _class_menu_about_to_popup();
 	void _handle_signal_menu_option(int p_option);
 	void _signal_menu_about_to_popup();
 	void _handle_slot_menu_option(int p_option);
 	void _slot_menu_about_to_popup();
 	void _tree_gui_input(const Ref<InputEvent>& p_event);
-	void _close();
 
 protected:
 	void _connect_pressed();
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void update_tree();

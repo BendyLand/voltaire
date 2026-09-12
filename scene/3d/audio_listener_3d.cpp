@@ -135,7 +135,6 @@ AudioListener3D::DopplerTracking AudioListener3D::get_doppler_tracking() const
 	return doppler_tracking;
 }
 
-void AudioListener3D::_bind_methods() {}
 
 Vector3 AudioListener3D::get_doppler_tracked_velocity() const
 {

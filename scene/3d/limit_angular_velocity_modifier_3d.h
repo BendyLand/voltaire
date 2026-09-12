@@ -59,13 +59,10 @@ private:
 	bool init_needed = true;
 
 protected:
-	void _notification(int p_what);
-
 	virtual void _set_active(bool p_active) override;
 	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
 
-	virtual void _validate_bone_names() override;
-
+	void _notification(int p_what);
 	void _make_joints_dirty();
 	void _update_joints();
 	bool _is_joint_contained(int p_bone);
@@ -73,17 +70,11 @@ protected:
 	// For editor.
 	int _get_joint_count() const;
 
-	virtual void _process_modification(double p_delta) override;
-
 public:
-	void set_root_bone_name(int p_index, const String &p_bone_name);
 	String get_root_bone_name(int p_index) const;
-	void set_root_bone(int p_index, int p_bone);
 	int get_root_bone(int p_index) const;
 
-	void set_end_bone_name(int p_index, const String &p_bone_name);
 	String get_end_bone_name(int p_index) const;
-	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
 
 	String get_joint_bone_name(int p_index) const;

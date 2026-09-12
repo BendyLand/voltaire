@@ -68,7 +68,6 @@ class ScriptEditorQuickOpen : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void popup_dialog(const Vector<String>& p_functions, bool p_dontclear = false);
@@ -251,8 +250,6 @@ class ScriptEditor : public PanelContainer
 	void _show_save_theme_as_dialog();
 	bool _has_docs_tab() const;
 	bool _has_script_tab() const;
-	void _prepare_file_menu();
-	void _file_menu_closed();
 
 	Tree* disk_changed_list = nullptr;
 	ConfirmationDialog* disk_changed = nullptr;
@@ -268,8 +265,6 @@ class ScriptEditor : public PanelContainer
 	void _update_recent_scripts();
 	void _open_recent_script(int p_idx);
 
-	void _show_error_dialog(const String& p_path);
-
 	void _close_tab(int p_idx, bool p_save = true);
 	void _update_find_replace_bar();
 
@@ -283,8 +278,6 @@ class ScriptEditor : public PanelContainer
 
 	void _copy_script_path();
 	void _copy_script_uid();
-
-	void _ask_close_current_unsaved_tab(ScriptEditorBase* current);
 
 	bool grab_focus_block;
 
@@ -327,7 +320,6 @@ class ScriptEditor : public PanelContainer
 
 	Ref<ConfigFile> script_editor_cache;
 	void _save_editor_state(ScriptEditorBase* p_editor);
-	void _save_layout();
 	void _apply_editor_settings();
 	void _filesystem_changed();
 	void _files_moved(const String& p_old_file, const String& p_new_file);
@@ -348,8 +340,6 @@ class ScriptEditor : public PanelContainer
 	void _script_selected(int p_idx);
 
 	void _update_online_doc();
-
-	void _split_dragged(float);
 
 	virtual void input(const Ref<InputEvent>& p_event) override;
 
@@ -393,15 +383,12 @@ class ScriptEditor : public PanelContainer
 	void _set_script_zoom_factor(float p_zoom_factor);
 	void _update_code_editor_zoom_factor(CodeTextEditor* p_code_text_editor);
 
-	void _window_changed(bool p_visible);
-
 	void _close_builtin_scripts_from_scene(const String& p_scene);
 
 	static ScriptEditor* script_editor;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static ScriptEditor* get_singleton() { return script_editor; }

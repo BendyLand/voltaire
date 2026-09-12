@@ -670,8 +670,6 @@ bool DirAccess::is_equivalent(const String& p_path_a, const String& p_path_b) co
 	return p_path_a == p_path_b;
 }
 
-void DirAccess::_bind_methods() {}
-
 DirAccess::~DirAccess() { _delete_temp(); }
 
 

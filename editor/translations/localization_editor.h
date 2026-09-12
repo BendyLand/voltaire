@@ -73,7 +73,6 @@ class LocalizationEditor : public VBoxContainer
 	void _translation_res_option_add(const PackedStringArray& p_paths);
 	void _translation_res_option_changed();
 	void _translation_res_option_popup(bool p_arrow_clicked);
-	void _translation_res_option_selected(const String& p_locale);
 
 	void _template_source_add(const PackedStringArray& p_paths);
 	void _template_source_file_open();
@@ -88,7 +87,6 @@ class LocalizationEditor : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void add_translation(const String& p_translation);

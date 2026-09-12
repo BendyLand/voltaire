@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/split_container.h"
 
 class CheckButton;
@@ -52,7 +51,6 @@ class SectionedInspector : public HSplitContainer
 
 	bool restrict_to_basic = false;
 
-	static void _bind_methods();
 	void _section_selected();
 
 	void _search_changed(const String& p_what);
@@ -68,7 +66,6 @@ public:
 	EditorInspector* get_inspector();
 	String get_full_item_path(const String& p_item);
 
-	void set_current_section(const String& p_section);
 	String get_current_section() const;
 
 	void update_category_list();

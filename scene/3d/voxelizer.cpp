@@ -320,8 +320,6 @@ Vector<Color> Voxelizer::_get_bake_texture(
 
 		return ret;
 	}
-	p_image = p_image->duplicate();
-
 	if (p_image->is_compressed()) {
 		p_image->decompress();
 	}

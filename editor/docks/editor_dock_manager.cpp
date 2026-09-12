@@ -57,96 +57,12 @@ void DockSplitContainer::_notification(int p_what)
 	}
 }
 
-void DockSplitContainer::_update_visibility()
-{
-	if (is_updating) {
-		return;
-	}
-	is_updating = true;
-	bool any_visible = false;
-	set_visible(any_visible);
-	is_updating = false;
-}
-
 void EditorDockManager::_dock_drag_stopped() { dock_tab_dragged = nullptr; }
-
-void EditorDockManager::_dock_split_dragged(int p_offset)
-{
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
-
-void EditorDockManager::_update_layout()
-{
-	if (!dock_context_popup->is_inside_tree() || EditorNode::get_singleton()->is_exiting()) {
-		return;
-	}
-	dock_context_popup->docks_updated();
-	update_docks_menu();
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
 
 DockTabContainer* EditorDockManager::get_dock_container(int p_slot) const
 {
 	ERR_FAIL_INDEX_V(p_slot, EditorDock::DOCK_SLOT_MAX, nullptr);
 	return dock_slots[p_slot];
-}
-
-void EditorDockManager::_window_close_request(WindowWrapper* p_wrapper)
-{
-	// Give the dock back to the original owner.
-	EditorDock* dock = _close_window(p_wrapper);
-	ERR_FAIL_COND(!all_docks.has(dock));
-
-	if (dock->dock_slot_index != EditorDock::DOCK_SLOT_NONE) {
-		dock->is_open = false;
-		focus_dock(dock);
-	}
-	else {
-		close_dock(dock);
-	}
-}
-
-void EditorDockManager::_open_dock_in_window(
-	EditorDock* p_dock, bool p_show_window, bool p_reset_size)
-{
-	ERR_FAIL_NULL(p_dock);
-
-	DockTabContainer* parent_container = p_dock->get_parent_container();
-	const Rect2 floating_rect = parent_container
-									? parent_container->get_floating_dock_rect(p_dock)
-									: DockTabContainer::get_default_floating_dock_rect(p_dock);
-	Size2 dock_size = floating_rect.size;
-	Point2 dock_screen_pos = floating_rect.position;
-
-	WindowWrapper* wrapper = memnew(WindowWrapper);
-	wrapper->set_window_title(vformat(TTR("%s - Godot Engine"), TTR(p_dock->get_display_title())));
-	wrapper->set_margins_enabled(true);
-
-	EditorNode::get_singleton()->get_gui_base()->add_child(wrapper);
-
-	_move_dock(p_dock, nullptr);
-	p_dock->update_layout(EditorDock::DOCK_LAYOUT_FLOATING, EditorDock::DOCK_SLOT_NONE);
-	p_dock->current_layout = EditorDock::DOCK_LAYOUT_FLOATING;
-	wrapper->set_wrapped_control(p_dock);
-
-	p_dock->dock_window = wrapper;
-	p_dock->is_open = true;
-	p_dock->show();
-
-	dock_windows.push_back(wrapper);
-
-	if (p_show_window) {
-		wrapper->restore_window(Rect2i(dock_screen_pos, dock_size),
-			EditorNode::get_singleton()->get_gui_base()->get_window()->get_current_screen());
-		_update_layout();
-		if (p_reset_size) {
-			// Use a default size of one third the current window size.
-			Size2i popup_size = EditorNode::get_singleton()->get_window()->get_size() / 3.0;
-			p_dock->get_window()->set_size(popup_size);
-			p_dock->get_window()->move_to_center();
-		}
-		p_dock->get_window()->grab_focus();
-	}
 }
 
 void EditorDockManager::_update_dirty_dock_tabs()
@@ -160,103 +76,6 @@ void EditorDockManager::_update_dirty_dock_tabs()
 
 	if (update_menu) {
 		update_docks_menu();
-	}
-}
-
-void EditorDockManager::set_dock_slot_highlighted(int p_slot, bool p_highlighted)
-{
-	ERR_FAIL_INDEX(p_slot, EditorDock::DOCK_SLOT_MAX);
-	if (p_highlighted) {
-		dock_slots[p_slot]->show_drag_hint();
-	}
-	else {
-		dock_slots[p_slot]->get_drag_hint()->hide();
-	}
-	dock_slots[p_slot]->get_drag_hint()->set_highlighted(p_highlighted);
-}
-
-void EditorDockManager::set_dock_enabled(EditorDock* p_dock, bool p_enabled)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot set enabled unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (p_dock->enabled == p_enabled) {
-		return;
-	}
-
-	p_dock->enabled = p_enabled;
-	if (p_enabled) {
-		open_dock(p_dock, false);
-	}
-	else {
-		close_dock(p_dock);
-	}
-}
-
-void EditorDockManager::close_dock(EditorDock* p_dock)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot close unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (!p_dock->is_open) {
-		return;
-	}
-
-	p_dock->is_open = false;
-	DockTabContainer* parent_container = p_dock->get_parent_container();
-	if (parent_container) {
-		parent_container->dock_closed(p_dock);
-	}
-
-	_move_dock(p_dock, closed_dock_parent);
-
-	_update_layout();
-}
-
-void EditorDockManager::open_dock(EditorDock* p_dock, bool p_set_current)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot open unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (p_dock->is_open) {
-		// Show the dock if it is already open.
-		if (p_set_current) {
-			_make_dock_visible(p_dock, false);
-		}
-		return;
-	}
-
-	p_dock->is_open = true;
-
-	// Open dock to its previous location.
-	if (p_dock->dock_slot_index != EditorDock::DOCK_SLOT_NONE) {
-		DockTabContainer* slot = dock_slots[p_dock->dock_slot_index];
-		int tab_index = p_dock->previous_tab_index;
-		if (tab_index < 0) {
-			tab_index = slot->get_tab_count();
-		}
-
-		_move_dock(p_dock, slot, tab_index, p_set_current && slot->can_switch_dock());
-	}
-	else {
-		_open_dock_in_window(p_dock, true, true);
-		return;
-	}
-
-	_update_layout();
-}
-
-void EditorDockManager::make_dock_floating(EditorDock* p_dock)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot make unknown dock '%s' floating.", p_dock->get_display_title()));
-
-	if (!p_dock->dock_window) {
-		_open_dock_in_window(p_dock);
 	}
 }
 
@@ -284,20 +103,6 @@ void EditorDockManager::_make_dock_visible(EditorDock* p_dock, bool p_grab_focus
 	}
 }
 
-void EditorDockManager::set_docks_visible(bool p_show)
-{
-	if (docks_visible == p_show) {
-		return;
-	}
-	docks_visible = p_show;
-	for (int i = 0; i < EditorDock::DOCK_SLOT_MAX; i++) {
-		// Show and hide in reverse order due to the SplitContainer prioritizing the last split
-		// offset.
-		dock_slots[docks_visible ? i : EditorDock::DOCK_SLOT_MAX - i - 1]->update_visibility();
-	}
-	_update_layout();
-}
-
 bool EditorDockManager::are_docks_visible() const { return docks_visible; }
 
 void EditorDockManager::update_tab_styles()
@@ -317,29 +122,6 @@ void EditorDockManager::set_tab_icon_max_width(int p_max_width)
 int EditorDockManager::get_vsplit_count() const { return vsplits.size(); }
 
 PopupMenu* EditorDockManager::get_docks_menu() { return docks_menu; }
-
-void DockContextPopup::_slot_clicked(int p_slot)
-{
-	DockTabContainer* target_tab_container = dock_manager->dock_slots[p_slot];
-	if (context_dock->get_parent_container() != target_tab_container) {
-		dock_manager->_move_dock(
-			context_dock, target_tab_container, target_tab_container->get_tab_count());
-		dock_manager->_update_layout();
-		hide();
-	}
-}
-
-void DockContextPopup::_close_dock()
-{
-	hide();
-	dock_manager->close_dock(context_dock);
-}
-
-void DockContextPopup::_float_dock()
-{
-	hide();
-	dock_manager->_open_dock_in_window(context_dock);
-}
 
 void DockContextPopup::set_dock(EditorDock* p_dock)
 {
@@ -390,83 +172,6 @@ void DockSlotGrid::_notification(int p_what)
 	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 	case NOTIFICATION_TRANSLATION_CHANGED: {
 		rect_cache_dirty = true;
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (rect_cache_dirty) {
-			_update_rect_cache();
-			rect_cache_dirty = false;
-		}
-		Color used_dock_color = Color(0.6, 0.6, 0.6, 0.8);
-		Color hovered_dock_color = Color(0.8, 0.8, 0.8, 0.8);
-		Color tab_selected_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor));
-		Color tab_unselected_color = used_dock_color;
-		Color unused_dock_color = used_dock_color;
-		unused_dock_color.a = 0.4;
-		Color unusable_dock_color = unused_dock_color;
-		unusable_dock_color.a = 0.1;
-		Color tab_unusable_color = unusable_dock_color;
-
-		TabContainer* context_tab_container = context_dock->get_parent_container();
-		int context_tab_index = -1;
-		if (context_tab_container && context_tab_container->get_tab_count() > 0) {
-			context_tab_index = context_tab_container->get_tab_idx_from_control(context_dock);
-		}
-
-		for (int i = 0; i < EditorDock::DOCK_SLOT_MAX; i++) {
-			const Rect2i slot_rect = rect_cache[i];
-			int max_tabs =
-				EditorDockManager::get_singleton()->dock_slots[i]->grid_rect.size.x * TABS_PER_CELL;
-
-			DockTabContainer* dock_slot = EditorDockManager::get_singleton()->dock_slots[i];
-			bool is_context_slot = context_tab_container == dock_slot;
-			bool is_slot_available = context_dock->available_layouts & dock_slot->layout;
-			int tabs_to_draw = MIN(max_tabs, dock_slot->get_tab_count());
-
-			if (i == context_dock->dock_slot_index) {
-				draw_rect(slot_rect, tab_selected_color);
-			}
-			else if (!is_slot_available) {
-				draw_rect(slot_rect, unusable_dock_color);
-			}
-			else if (i == hovered_slot) {
-				draw_rect(slot_rect, hovered_dock_color);
-			}
-			else if (tabs_to_draw == 0) {
-				draw_rect(slot_rect, unused_dock_color);
-			}
-			else {
-				draw_rect(slot_rect, used_dock_color);
-			}
-
-			real_t tab_width =
-				((slot_rect.size.x - (max_tabs - 1) * TAB_MARGIN * EDSCALE) / max_tabs);
-			real_t initial_offset =
-				(slot_rect.size.x -
-					(max_tabs * tab_width + (max_tabs - 1) * TAB_MARGIN * EDSCALE)) *
-				0.5;
-
-			for (int j = 0; j < tabs_to_draw; j++) {
-				real_t pos_x = is_layout_rtl()
-								   ? slot_rect.size.x - (initial_offset + (j + 1) * tab_width +
-															j * TAB_MARGIN * EDSCALE)
-								   : initial_offset + j * (tab_width + TAB_MARGIN * EDSCALE);
-				const Rect2 tab_rect =
-					Rect2(slot_rect.position +
-							  Vector2(pos_x, -MARGINS.y * EDSCALE + MARGINS.y * EDSCALE / 4),
-						Vector2(tab_width, MARGINS.y * EDSCALE / 2));
-				if (is_context_slot && context_tab_index == j) {
-					draw_rect(tab_rect, tab_selected_color);
-				}
-				else if (is_slot_available) {
-					draw_rect(tab_rect, tab_unselected_color);
-				}
-				else {
-					draw_rect(tab_rect, tab_unusable_color);
-				}
-			}
-		}
-		draw_rect(main_screen_rect, unusable_dock_color);
 	} break;
 	}
 }

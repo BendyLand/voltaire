@@ -49,14 +49,12 @@ class Joint3D : public Node3D
 
 protected:
 	void _disconnect_signals();
-	void _body_exit_tree();
 	void _update_joint(bool p_only_free = false);
 
 	void _notification(int p_what);
 
 	virtual void _configure_joint(RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) = 0;
 
-	static void _bind_methods();
 
 	_FORCE_INLINE_ bool is_configured() const { return configured; }
 

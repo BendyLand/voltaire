@@ -248,16 +248,6 @@ void EditorInspectorPlugin::add_property_editor_for_multiple_properties(
 	added_editors.push_back(ae);
 }
 
-Control* EditorInspectorCategory::make_custom_tooltip(const String& p_text) const
-{
-	// If it's not a doc tooltip, fallback to the default one.
-	if (doc_class_name.is_empty()) {
-		return nullptr;
-	}
-
-	return EditorHelpBitTooltip::make_tooltip(const_cast<EditorInspectorCategory*>(this), p_text);
-}
-
 void EditorInspectorCategory::set_as_favorite()
 {
 	is_favorite = true;
@@ -293,14 +283,6 @@ Size2 EditorInspectorCategory::get_minimum_size() const
 	}
 
 	return ms;
-}
-
-void EditorInspectorCategory::_theme_changed()
-{
-	// This needs to be done via the signal, as it's fired before the minimum since is updated.
-	EditorInspector::initialize_category_theme(theme_cache, this);
-	menu_icon_dirty = true;
-	_update_icon();
 }
 
 EditorInspectorCategory::EditorInspectorCategory() { set_focus_mode(FOCUS_ACCESSIBILITY); }
@@ -346,13 +328,6 @@ String EditorInspectorSection::get_section() const { return section; }
 
 VBoxContainer* EditorInspectorSection::get_vbox() { return vbox; }
 
-void EditorInspectorSection::reset_timer()
-{
-	if (dropping_for_unfold && !dropping_unfold_timer->is_stopped()) {
-		dropping_unfold_timer->start();
-	}
-}
-
 bool EditorInspectorSection::has_revertable_properties() const
 {
 	return !revertable_properties.is_empty();
@@ -397,11 +372,6 @@ void EditorInspectorArray::_rmb_popup_id_pressed(int p_id)
 	}
 }
 
-void EditorInspectorArray::_vbox_visibility_changed()
-{
-	control_dropping->set_visible(vbox->is_visible_in_tree());
-}
-
 void EditorInspectorArray::_panel_draw(int p_index)
 {
 	ERR_FAIL_INDEX(p_index, (int)array_elements.size());
@@ -414,16 +384,6 @@ void EditorInspectorArray::_panel_draw(int p_index)
 		array_elements[p_index].panel->draw_style_box(
 			style.ptr(), Rect2(Vector2(), array_elements[p_index].panel->get_size()));
 	}
-}
-
-void EditorInspectorArray::show_menu(int p_index, const Vector2& p_offset)
-{
-	popup_array_index_pressed = begin_array_index + p_index;
-	rmb_popup->set_item_disabled(OPTION_MOVE_UP, popup_array_index_pressed == 0);
-	rmb_popup->set_item_disabled(OPTION_MOVE_DOWN, popup_array_index_pressed == count - 1);
-	rmb_popup->set_position(get_screen_position() + p_offset);
-	rmb_popup->reset_size();
-	rmb_popup->popup();
 }
 
 int EditorInspectorArray::_drop_position() const
@@ -480,49 +440,6 @@ VBoxContainer* EditorInspectorArray::get_vbox(int p_index)
 
 Ref<EditorInspectorPlugin> EditorInspector::inspector_plugins[MAX_PLUGINS];
 int EditorInspector::inspector_plugin_count = 0;
-
-void EditorInspector::initialize_category_theme(
-	EditorInspectorCategory::ThemeCache& p_cache, Control* p_control)
-{
-	EditorInspector* parent_inspector = _get_control_parent_inspector(p_control);
-	if (parent_inspector && parent_inspector != p_control) {
-		p_cache = parent_inspector->category_theme_cache;
-		return;
-	}
-
-	p_cache.horizontal_separation =
-		p_control->get_theme_constant(SNAME("h_separation"), SNAME("Tree"));
-	p_cache.vertical_separation =
-		p_control->get_theme_constant(SNAME("separation"), SNAME("EditorPropertyContainer"));
-	p_cache.class_icon_size =
-		p_control->get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-
-	p_cache.font_color = p_control->get_theme_color(SceneStringName(font_color), SNAME("Tree"));
-
-	p_cache.bold_font = p_control->get_theme_font(SNAME("bold"), EditorStringName(EditorFonts));
-	p_cache.bold_font_size =
-		p_control->get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
-
-	p_cache.icon_copy = p_control->get_editor_theme_icon(SNAME("ActionCopy"));
-	p_cache.icon_paste = p_control->get_editor_theme_icon(SNAME("ActionPaste"));
-
-	p_cache.icon_favorites = p_control->get_editor_theme_icon(SNAME("Favorites"));
-	p_cache.icon_unfavorite = p_control->get_editor_theme_icon(SNAME("Unfavorite"));
-	p_cache.icon_help = p_control->get_editor_theme_icon(SNAME("Help"));
-
-	p_cache.background =
-		p_control->get_theme_stylebox(SNAME("bg"), SNAME("EditorInspectorCategory"));
-
-	if (p_control == parent_inspector) {
-		// Only initialize for the inspector, as stand-alone categories won't need it.
-		p_cache.sub_inspector_background = p_control->get_theme_stylebox(
-			"sub_inspector_category_bg", EditorStringName(EditorStyles));
-		for (int i = 0; i <= 16; i++) {
-			p_cache.sub_inspector_color_background[i] = p_control->get_theme_stylebox(
-				"sub_inspector_color_category_bg" + itos(i), EditorStringName(EditorStyles));
-		}
-	}
-}
 
 void EditorInspector::add_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin)
 {

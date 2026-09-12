@@ -53,10 +53,6 @@ class FindBar : public HBoxContainer
 	int results_count = 0;
 	int results_count_to_current = 0;
 
-	virtual void input(const Ref<InputEvent>& p_event) override;
-
-	void _hide_bar();
-
 	void _search_text_changed(const String& p_text);
 	void _search_text_submitted(const String& p_text);
 
@@ -70,8 +66,6 @@ protected:
 
 public:
 	void set_rich_text_label(RichTextLabel* p_rich_text_label);
-
-	void popup_search();
 
 	bool search_prev();
 	bool search_next();
@@ -150,38 +144,20 @@ class EditorHelp : public VBoxContainer
 	int scroll_to = -1;
 	bool need_save_new_history = false;
 
-	void _help_callback(const String& p_topic);
 	void _class_desc_scroll_to_paragraph(int p_line, bool p_save_history);
 	bool _need_save_new_history() const;
 
-	void _add_text(const String& p_bbcode);
 	bool scroll_locked = false;
-
-	// void _button_pressed(int p_idx);
-	void _add_type(
-		const String& p_type, const String& p_enum = String(), bool p_is_bitfield = false);
-	void _add_type_icon(const String& p_type, int p_size = 0, const String& p_fallback = "");
 
 	void _add_bulletpoint();
 
-	void _push_normal_font();
-	void _pop_normal_font();
-	void _push_title_font();
-	void _pop_title_font();
-	void _push_code_font();
-	void _pop_code_font();
-
 	void _class_desc_finished();
-	void _class_list_select(const String& p_select);
 	void _class_desc_select(const String& p_select);
 	void _class_desc_input(const Ref<InputEvent>& p_input);
-	void _class_desc_resized(bool p_force_update_theme);
 	int display_margin = 0;
 
-	Error _goto_desc(const String& p_class, bool p_can_trigger_save_history);
 	void _update_doc();
 
-	void _request_help(const String& p_string);
 	void _search(bool p_search_previous = false);
 
 	void _toggle_files_pressed();
@@ -209,10 +185,7 @@ class EditorHelp : public VBoxContainer
 	static void _compute_doc_version_hash();
 
 protected:
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static void generate_doc(bool p_use_cache = true, bool p_use_script_cache = true);
@@ -234,15 +207,12 @@ public:
 	static void load_xml_buffer(const uint8_t* p_buffer, int p_size);
 	static void remove_class(const String& p_class);
 
-	void go_to_help(const String& p_help);
-	void go_to_class(const String& p_class);
 	void update_doc();
 	void trigger_history_save_on_navigate();
 
 	Vector<Pair<String, int>> get_sections();
 	void scroll_to_section(int p_section_index);
 
-	void popup_search();
 	void search_again(bool p_search_previous = false);
 
 	String get_class();
@@ -255,8 +225,6 @@ public:
 	void update_toggle_files_button();
 
 	static void init_gdext_pointers();
-
-	EditorHelp();
 };
 
 class EditorHelpBit : public VBoxContainer
@@ -337,27 +305,15 @@ class EditorHelpBit : public VBoxContainer
 	static HelpData _get_annotation_help_data(
 		const StringName& p_class_name, const StringName& p_annotation_name);
 
-	void _add_type_to_title(const DocType& p_doc_type);
-	void _update_labels();
 	void _go_to_help(const String& p_what);
 	void _go_to_url(const String& p_what);
 	void _meta_clicked(const String& p_select);
 
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
 public:
 	static String get_as_plain_text(const String& p_symbol, const String& p_prologue = String());
 
-	void parse_symbol(const String& p_symbol, const String& p_prologue = String());
-	void set_custom_text(const String& p_type, const String& p_name, const String& p_description);
-
 	void set_content_height_limits(float p_min, float p_max);
 	void update_content_height();
-
-	EditorHelpBit(const String& p_symbol = String(), const String& p_prologue = String(),
-		bool p_use_class_prefix = false, bool p_allow_selection = true, bool p_in_tooltip = false);
 };
 
 // Standard tooltips do not allow you to hover over them.
@@ -373,7 +329,6 @@ class EditorHelpBitTooltip : public PopupPanel
 
 	static Control* _make_invisible_control();
 
-	void _start_timer();
 	void _target_gui_input(const Ref<InputEvent>& p_event);
 	void _shortcut_pressed(Control* p_target);
 
@@ -381,11 +336,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	// The returned control is an orphan node, which is to make the standard tooltip invisible.
-	[[nodiscard]] static Control* make_tooltip(Control* p_target, const String& p_symbol,
-		const String& p_prologue = String(), bool p_use_class_prefix = false,
-		bool p_shortcut = false);
-
 	void popup_under_position(const Point2& p_point);
 
 	bool is_shortcut_pressed() const { return _is_shortcut_pressed; }
@@ -423,8 +373,6 @@ public:
 	static void free_singleton();
 	static EditorHelpHighlighter* get_singleton();
 
-	void highlight(RichTextLabel* p_rich_text_label, Language p_language, const String& p_source,
-		bool p_use_cache);
 	void reset_cache();
 
 	EditorHelpHighlighter();

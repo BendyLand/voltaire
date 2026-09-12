@@ -43,7 +43,6 @@ class ParallaxLayer : public Node2D
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_motion_offset(const Size2& p_offset);
@@ -58,7 +57,7 @@ public:
 	void set_base_offset_and_scale(const Point2& p_offset, real_t p_scale);
 
 	PackedStringArray get_configuration_warnings() const override;
-	ParallaxLayer();
+	ParallaxLayer() = default;
 };
 
 

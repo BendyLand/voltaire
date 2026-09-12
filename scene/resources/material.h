@@ -55,7 +55,6 @@ protected:
 
 	_FORCE_INLINE_ RID _get_material() const { return material; }
 
-	static void _bind_methods();
 	virtual bool _can_do_next_pass() const;
 	virtual bool _can_use_render_priority() const;
 
@@ -96,7 +95,6 @@ class ShaderMaterial : public Material
 protected:
 	bool _property_can_revert(const StringName& p_name) const;
 
-	static void _bind_methods();
 
 #ifdef TOOLS_ENABLED
 	void get_argument_options(
@@ -648,14 +646,12 @@ private:
 		materials_for_2d; // used by Sprite3D, Label3D and other stuff
 
 protected:
-	static void _bind_methods();
 
 	virtual bool _can_do_next_pass() const override { return true; }
 
 	virtual bool _can_use_render_priority() const override { return true; }
 
 public:
-	void set_albedo(const Color& p_albedo);
 	Color get_albedo() const;
 
 	void set_specular(float p_specular);
@@ -772,7 +768,6 @@ public:
 	void set_specular_mode(SpecularMode p_mode);
 	SpecularMode get_specular_mode() const;
 
-	void set_flag(Flags p_flag, bool p_enabled);
 	bool get_flag(Flags p_flag) const;
 
 	void set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture);

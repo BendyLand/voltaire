@@ -68,7 +68,6 @@ class AudioEffectHardLimiter : public AudioEffect {
 	const float attack = 0.002;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_ceiling_db(float p_ceiling);

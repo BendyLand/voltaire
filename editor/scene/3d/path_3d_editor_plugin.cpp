@@ -220,23 +220,12 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D* p_camera, con
 	}
 }
 
-void Path3DGizmo::_update_transform_gizmo()
-{
-	Node3DEditor::get_singleton()->update_transform_gizmo();
-}
-
 void Path3DEditorPlugin::_handle_option_pressed(int p_option)
 {
 	PopupMenu* pm;
 	pm = handle_menu->get_popup();
 
 	switch (p_option) {
-	case HANDLE_OPTION_ANGLE: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_ANGLE);
-		mirror_handle_angle = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
-		pm->set_item_disabled(HANDLE_OPTION_LENGTH, !mirror_handle_angle);
-	} break;
 	case HANDLE_OPTION_LENGTH: {
 		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
 		mirror_handle_length = !is_checked;
@@ -248,15 +237,6 @@ void Path3DEditorPlugin::_handle_option_pressed(int p_option)
 		pm->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
 	} break;
 	}
-}
-
-void Path3DEditorPlugin::_confirm_clear_points()
-{
-	if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {
-		return;
-	}
-	clear_points_dialog->reset_size();
-	clear_points_dialog->popup_centered();
 }
 
 void Path3DEditorPlugin::_clear_curve_points()
@@ -283,16 +263,6 @@ void Path3DEditorPlugin::_restore_curve_points(const PackedVector3Array& p_point
 	for (int i = 0; i < p_points.size(); i += 3) {
 		curve->add_point(p_points[i + 2], p_points[i], p_points[i + 1]);
 	}
-}
-
-void Path3DEditorPlugin::_update_toolbar()
-{
-	if (!path) {
-		return;
-	}
-	bool has_curve = path->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
 }
 
 String Path3DGizmoPlugin::get_gizmo_name() const { return "Path3D"; }

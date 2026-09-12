@@ -40,13 +40,6 @@ void ReflectionProbe::set_intensity(float p_intensity)
 
 float ReflectionProbe::get_intensity() const { return intensity; }
 
-void ReflectionProbe::set_blend_distance(float p_blend_distance)
-{
-	blend_distance = p_blend_distance;
-	RS::get_singleton()->reflection_probe_set_blend_distance(probe, p_blend_distance);
-	update_gizmos();
-}
-
 float ReflectionProbe::get_blend_distance() const { return blend_distance; }
 
 ReflectionProbe::AmbientMode ReflectionProbe::get_ambient_mode() const { return ambient_mode; }
@@ -85,44 +78,7 @@ void ReflectionProbe::set_mesh_lod_threshold(float p_pixels)
 
 float ReflectionProbe::get_mesh_lod_threshold() const { return mesh_lod_threshold; }
 
-void ReflectionProbe::set_size(const Vector3& p_size)
-{
-	size = p_size;
-
-	for (int i = 0; i < 3; i++) {
-		float half_size = size[i] / 2;
-		if (half_size < 0.01) {
-			half_size = 0.01;
-		}
-
-		if (half_size - 0.01 < Math::abs(origin_offset[i])) {
-			origin_offset[i] = SIGN(origin_offset[i]) * (half_size - 0.01);
-		}
-	}
-
-	RS::get_singleton()->reflection_probe_set_size(probe, size);
-	RS::get_singleton()->reflection_probe_set_origin_offset(probe, origin_offset);
-
-	update_gizmos();
-}
-
 Vector3 ReflectionProbe::get_size() const { return size; }
-
-void ReflectionProbe::set_origin_offset(const Vector3& p_offset)
-{
-	origin_offset = p_offset;
-
-	for (int i = 0; i < 3; i++) {
-		float half_size = size[i] / 2;
-		if (half_size - 0.01 < Math::abs(origin_offset[i])) {
-			origin_offset[i] = SIGN(origin_offset[i]) * (half_size - 0.01);
-		}
-	}
-	RS::get_singleton()->reflection_probe_set_size(probe, size);
-	RS::get_singleton()->reflection_probe_set_origin_offset(probe, origin_offset);
-
-	update_gizmos();
-}
 
 Vector3 ReflectionProbe::get_origin_offset() const { return origin_offset; }
 

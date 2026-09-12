@@ -57,9 +57,8 @@ protected:
 	bool canceled = false;
 	bool pressed = false;
 
-	static void _bind_methods();
-
 public:
+	InputEvent() = default;
 	static constexpr int DEVICE_ID_EMULATION = -1;
 	static constexpr int DEVICE_ID_INTERNAL = -2;
 	static constexpr int DEVICE_ID_KEYBOARD = 16; // IDs 0-15 are reserved for joypads.
@@ -104,7 +103,6 @@ class InputEventFromWindow : public InputEvent
 	int64_t window_id = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_window_id(int64_t p_id);
@@ -121,7 +119,6 @@ class InputEventWithModifiers : public InputEventFromWindow
 	bool ctrl_pressed = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	uint32_t get_modifiers_mask() const
@@ -179,7 +176,6 @@ class InputEventKey : public InputEventWithModifiers
 	bool echo = false; /// true if this is an echo key
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_pressed(bool p_pressed);
@@ -233,7 +229,6 @@ class InputEventMouse : public InputEventWithModifiers
 	Vector2 global_pos;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_button_mask(uint32_t p_mask);
@@ -255,7 +250,6 @@ class InputEventMouseButton : public InputEventMouse
 	bool double_click = false; // last even less than double click time
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_factor(float p_factor);
@@ -296,7 +290,6 @@ class InputEventMouseMotion : public InputEventMouse
 	bool pen_inverted = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_tilt(const Vector2& p_tilt);
@@ -336,7 +329,6 @@ class InputEventJoypadMotion : public InputEvent
 	float axis_value = 0;	   ///< -1 to 1
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_axis(JoyAxis p_axis);
@@ -366,7 +358,6 @@ class InputEventJoypadButton : public InputEvent
 	JoyButton button_index = (JoyButton)0;
 	float pressure = 0; // 0 to 1
 protected:
-	static void _bind_methods();
 
 public:
 	void set_button_index(JoyButton p_index);
@@ -399,7 +390,6 @@ class InputEventScreenTouch : public InputEventFromWindow
 	bool double_tap = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_index(int p_index);
@@ -435,7 +425,6 @@ class InputEventScreenDrag : public InputEventFromWindow
 	bool pen_inverted = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_index(int p_index);
@@ -482,7 +471,6 @@ class InputEventAction : public InputEvent
 	int event_index = -1;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_action(const StringName& p_action);
@@ -515,7 +503,6 @@ class InputEventGesture : public InputEventWithModifiers
 	Vector2 pos;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_position(const Vector2& p_pos);
@@ -527,7 +514,6 @@ class InputEventMagnifyGesture : public InputEventGesture
 	real_t factor = 1.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_factor(real_t p_factor);
@@ -546,7 +532,6 @@ class InputEventPanGesture : public InputEventGesture
 	Vector2 delta;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_delta(const Vector2& p_delta);
@@ -572,7 +557,6 @@ class InputEventMIDI : public InputEvent
 	int controller_value = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_channel(const int p_channel);
@@ -610,7 +594,6 @@ class InputEventShortcut : public InputEvent
 	Ref<Shortcut> shortcut;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_shortcut(Ref<Shortcut> p_shortcut);

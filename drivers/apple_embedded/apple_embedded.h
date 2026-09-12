@@ -30,12 +30,10 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #import <CoreHaptics/CoreHaptics.h>
 
 class AppleEmbedded
 {
-	static void _bind_methods();
 
 private:
 	CHHapticEngine* haptic_engine API_AVAILABLE(ios(13)) = nullptr;

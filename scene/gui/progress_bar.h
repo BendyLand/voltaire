@@ -53,7 +53,6 @@ class ProgressBar : public Range
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	double indeterminate_min_speed = 200.0;
 

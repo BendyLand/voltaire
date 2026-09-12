@@ -44,15 +44,7 @@ class LightmapGIEditorPlugin : public EditorPlugin
 
 	EditorFileDialog* file_dialog = nullptr;
 	static EditorProgress* tmp_progress;
-	static bool bake_func_step(
-		float p_progress, const String& p_description, void*, bool p_refresh);
 	static void bake_func_end(uint64_t p_time_started);
-
-	void _bake_select_file(const String& p_file);
-	void _bake();
-
-protected:
-	static void _bind_methods();
 
 public:
 	virtual String get_plugin_name() const override { return "LightmapGI"; }

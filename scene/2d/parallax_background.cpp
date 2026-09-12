@@ -105,7 +105,6 @@ bool ParallaxBackground::is_ignore_camera_zoom() { return ignore_camera_zoom; }
 
 Vector2 ParallaxBackground::get_final_offset() const { return final_offset; }
 
-void ParallaxBackground::_bind_methods() {}
 
 ParallaxBackground::ParallaxBackground()
 {

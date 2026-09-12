@@ -45,8 +45,6 @@ class SettingLabel : public Label
 	String setting_name;
 
 public:
-	virtual Control* make_custom_tooltip(const String& p_text) const override;
-
 	SettingLabel(const String& p_text, const String& p_setting);
 };
 
@@ -104,7 +102,6 @@ class QuickSettingsDialog : public AcceptDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void update_size_limits(const Size2& p_max_popup_size);

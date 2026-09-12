@@ -290,8 +290,6 @@ uint64_t Time::get_ticks_msec() const { return OS::get_singleton()->get_ticks_ms
 
 uint64_t Time::get_ticks_usec() const { return OS::get_singleton()->get_ticks_usec(); }
 
-void Time::_bind_methods() {}
-
 Time::Time()
 {
 	ERR_FAIL_COND_MSG(singleton, "Singleton for Time already exists.");

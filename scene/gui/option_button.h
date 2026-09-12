@@ -62,7 +62,9 @@ class OptionButton : public Button
 		Ref<Texture2D> arrow_icon;
 		int arrow_margin = 0;
 		int modulate_arrow = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
@@ -75,7 +77,7 @@ class OptionButton : public Button
 
 	void _dummy_setter() {} // Stub for PropertyListHelper (_set() doesn't use it).
 
-	virtual void pressed() override;
+	virtual void pressed();
 
 protected:
 	Size2 get_minimum_size() const override;
@@ -89,7 +91,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 public:
 	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
@@ -103,7 +104,6 @@ public:
 	void set_item_text(int p_idx, const String& p_text);
 	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
 	void set_item_id(int p_idx, int p_id);
-	void set_item_disabled(int p_idx, bool p_disabled);
 	void set_item_tooltip(int p_idx, const String& p_tooltip);
 	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
 
@@ -116,10 +116,8 @@ public:
 	String get_item_tooltip(int p_idx) const;
 	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
 
-	void set_search_bar_enabled(bool p_enabled);
 	bool is_search_bar_enabled() const;
 
-	void set_search_bar_min_item_count(int p_count);
 	int get_search_bar_min_item_count() const;
 
 	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
@@ -158,7 +156,7 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 #endif
 
-	OptionButton(const String& p_text = String());
+	OptionButton(const String& p_text = String()) : Button(p_text) {}
 	~OptionButton();
 };
 

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/vector.h"
 #include "node.h"
 #include "scene/resources/environment.h"
@@ -36,7 +35,6 @@
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Mesh);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, DisplayServer);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, Shader);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, OS);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Engine);
 
@@ -62,39 +60,6 @@ SafeNumeric<uint64_t> Node::total_node_count{0};
 #endif
 
 thread_local Node* Node::current_process_thread_group = nullptr;
-
-void Node::_propagate_physics_interpolated(bool p_interpolated)
-{
-	switch (data.physics_interpolation_mode) {
-	case PHYSICS_INTERPOLATION_MODE_INHERIT:
-		// Keep the parent p_interpolated.
-		break;
-	case PHYSICS_INTERPOLATION_MODE_OFF: {
-		p_interpolated = false;
-	} break;
-	case PHYSICS_INTERPOLATION_MODE_ON: {
-		p_interpolated = true;
-	} break;
-	}
-
-	// No change? No need to propagate further.
-	if (data.physics_interpolated == p_interpolated) {
-		return;
-	}
-
-	data.physics_interpolated = p_interpolated;
-
-	// Allow a call to the RenderingServer etc. in derived classes.
-	_physics_interpolated_changed();
-
-	update_configuration_warnings();
-
-	data.blocked++;
-	for (KeyValue<StringName, Node*>& K : data.children) {
-		K.value->_propagate_physics_interpolated(p_interpolated);
-	}
-	data.blocked--;
-}
 
 void Node::_propagate_physics_interpolation_reset_requested(bool p_requested)
 {
@@ -312,39 +277,6 @@ bool Node::_can_process(bool p_paused) const
 	}
 	else {
 		return process_mode == PROCESS_MODE_PAUSABLE;
-	}
-}
-
-void Node::set_physics_interpolation_mode(PhysicsInterpolationMode p_mode)
-{
-	ERR_THREAD_GUARD
-	if (data.physics_interpolation_mode == p_mode) {
-		return;
-	}
-
-	data.physics_interpolation_mode = p_mode;
-
-	bool interpolate = true; // Default for root node.
-
-	switch (p_mode) {
-	case PHYSICS_INTERPOLATION_MODE_INHERIT: {
-		if (is_inside_tree() && data.parent) {
-			interpolate = data.parent->is_physics_interpolated();
-		}
-	} break;
-	case PHYSICS_INTERPOLATION_MODE_OFF: {
-		interpolate = false;
-	} break;
-	case PHYSICS_INTERPOLATION_MODE_ON: {
-		interpolate = true;
-	} break;
-	}
-
-	_propagate_physics_interpolated(interpolate);
-
-	// Auto-reset on changing interpolation mode.
-	if (is_physics_interpolated() && is_inside_tree()) {
-		propagate_notification(NOTIFICATION_RESET_PHYSICS_INTERPOLATION);
 	}
 }
 
@@ -1225,26 +1157,6 @@ void Node::_acquire_unique_name_in_owner()
 	data.owner->data.owned_unique_nodes[key] = this;
 }
 
-void Node::set_unique_name_in_owner(bool p_enabled)
-{
-	ERR_MAIN_THREAD_GUARD
-	if (data.unique_name_in_owner == p_enabled) {
-		return;
-	}
-
-	if (data.unique_name_in_owner && data.owner != nullptr) {
-		_release_unique_name_in_owner();
-	}
-	data.unique_name_in_owner = p_enabled;
-
-	if (data.unique_name_in_owner && data.owner != nullptr) {
-		_acquire_unique_name_in_owner();
-	}
-
-	update_configuration_warnings();
-	_emit_editor_state_changed();
-}
-
 bool Node::is_unique_name_in_owner() const { return data.unique_name_in_owner; }
 
 void Node::set_owner(Node* p_owner)
@@ -1885,8 +1797,6 @@ RID Node::get_accessibility_element() const
 	}
 	return data.accessibility_element;
 }
-
-void Node::_bind_methods() {}
 
 Node::~Node()
 {

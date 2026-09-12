@@ -374,9 +374,8 @@ void PacketPeerUDP::set_dest_address(const IPAddress& p_address, int p_port)
 	peer_port = p_port;
 }
 
-void PacketPeerUDP::_bind_methods() {}
-
 PacketPeerUDP::PacketPeerUDP() : _sock(Ref<NetSocket>(NetSocket::create())) { rb.resize(16); }
 
 PacketPeerUDP::~PacketPeerUDP() { close(); }
+
 

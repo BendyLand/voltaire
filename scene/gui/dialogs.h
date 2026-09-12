@@ -78,7 +78,6 @@ protected:
 	virtual void _post_popup() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual void ok_pressed() {}
 
@@ -122,8 +121,8 @@ public:
 	void set_ok_button_text(String p_ok_button_text);
 	String get_ok_button_text() const;
 
-	AcceptDialog();
-	~AcceptDialog();
+	AcceptDialog() = default;
+	~AcceptDialog() = default;
 };
 
 class ConfirmationDialog : public AcceptDialog
@@ -136,7 +135,7 @@ public:
 	void set_cancel_button_text(String p_cancel_button_text);
 	String get_cancel_button_text() const;
 
-	ConfirmationDialog();
+	ConfirmationDialog() = default;
 };
 
 

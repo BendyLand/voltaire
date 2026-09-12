@@ -65,7 +65,6 @@ protected:
 	Error write(const uint8_t* p_data, int p_bytes, int& r_sent, bool p_block);
 	Error read(uint8_t* p_buffer, int p_bytes, int& r_received, bool p_block);
 
-	static void _bind_methods();
 
 public:
 	virtual void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr) = 0;

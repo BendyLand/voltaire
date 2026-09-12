@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "editor/themes/editor_scale.h"
@@ -355,8 +354,6 @@ private:
 	float get_zfar() const;
 	float get_fov() const;
 
-	void _show_tooltip(const String& p_title, const String& p_description) const;
-
 	Vector<Node3D*> selection_results;
 	Vector<Node3D*> selection_results_menu;
 	bool clicked_wants_append = false;
@@ -460,7 +457,6 @@ private:
 	void _apply_camera_transform_to_cursor();
 
 	void _surface_mouse_enter();
-	void _surface_mouse_exit();
 	void _surface_focus_enter();
 	void _surface_focus_exit();
 
@@ -506,7 +502,6 @@ private:
 	Node* _sanitize_preview_node(Node* p_node) const;
 
 	void _create_preview_node(const Vector<String>& files) const;
-	void _remove_preview_node();
 	void _reset_preview_material() const;
 	void _remove_preview_material();
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
@@ -554,7 +549,6 @@ public:
 	void update_transform_gizmo_view();
 	void update_transform_gizmo_highlight();
 
-	void set_can_preview(Camera3D* p_preview);
 	void switch_preview_camera(Camera3D* p_new_camera);
 	void reset();
 
@@ -602,7 +596,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_view(View p_view);
 	View get_view();
 
 	void add_viewport(Node3DEditorViewport* p_viewport, int p_index);

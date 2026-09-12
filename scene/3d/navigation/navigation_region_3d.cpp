@@ -37,52 +37,6 @@
 
 RID NavigationRegion3D::get_rid() const { return region; }
 
-void NavigationRegion3D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-
-	enabled = p_enabled;
-
-	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
-
-#ifdef DEBUG_ENABLED
-	if (debug_instance.is_valid()) {
-		if (!is_enabled()) {
-			if (debug_mesh.is_valid()) {
-				if (debug_mesh->get_surface_count() > 0) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 0,
-						NavigationServer3D::get_singleton()
-							->get_debug_navigation_geometry_face_disabled_material()
-							->get_rid());
-				}
-				if (debug_mesh->get_surface_count() > 1) {
-					RS::get_singleton()->instance_set_surface_override_material(debug_instance, 1,
-						NavigationServer3D::get_singleton()
-							->get_debug_navigation_geometry_edge_disabled_material()
-							->get_rid());
-				}
-			}
-		}
-		else {
-			if (debug_mesh.is_valid()) {
-				if (debug_mesh->get_surface_count() > 0) {
-					RS::get_singleton()->instance_set_surface_override_material(
-						debug_instance, 0, RID());
-				}
-				if (debug_mesh->get_surface_count() > 1) {
-					RS::get_singleton()->instance_set_surface_override_material(
-						debug_instance, 1, RID());
-				}
-			}
-		}
-	}
-#endif // DEBUG_ENABLED
-
-	update_gizmos();
-}
-
 bool NavigationRegion3D::is_enabled() const { return enabled; }
 
 void NavigationRegion3D::set_use_edge_connections(bool p_enabled)

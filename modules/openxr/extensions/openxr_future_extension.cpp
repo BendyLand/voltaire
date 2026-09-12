@@ -61,7 +61,6 @@ OpenXRFutureExtension::OpenXRFutureExtension() { singleton = this; }
 
 OpenXRFutureExtension::~OpenXRFutureExtension() { singleton = nullptr; }
 
-void OpenXRFutureExtension::_bind_methods() {}
 
 HashMap<String, bool*> OpenXRFutureExtension::get_requested_extensions(XrVersion p_version)
 {

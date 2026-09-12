@@ -86,27 +86,6 @@ Size2i TileAtlasView::_compute_alternative_tiles_control_size()
 	return size;
 }
 
-void TileAtlasView::_base_tiles_root_control_gui_input(const Ref<InputEvent>& p_event)
-{
-	if (tile_set_atlas_source.is_null()) {
-		return;
-	}
-	base_tiles_root_control->set_tooltip_text("");
-
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		Transform2D xform = base_tiles_drawing_root->get_transform().affine_inverse();
-		Vector2i coords = get_atlas_tile_coords_at_pos(xform.xform(mm->get_position()));
-		if (coords != TileSetSource::INVALID_ATLAS_COORDS) {
-			coords = tile_set_atlas_source->get_tile_at_coords(coords);
-			if (coords != TileSetSource::INVALID_ATLAS_COORDS) {
-				base_tiles_root_control->set_tooltip_text(vformat(
-					TTR("Source: %d\nAtlas coordinates: %s\nAlternative: 0"), source_id, coords));
-			}
-		}
-	}
-}
-
 void TileAtlasView::_draw_base_tiles()
 {
 	if (tile_set.is_null() || tile_set_atlas_source.is_null()) {
@@ -324,25 +303,6 @@ void TileAtlasView::_draw_base_tiles_texture_grid()
 						Rect2i(origin, texture_region_size), Color(0.7, 0.7, 0.7, 0.1), false);
 				}
 			}
-		}
-	}
-}
-
-void TileAtlasView::_alternative_tiles_root_control_gui_input(const Ref<InputEvent>& p_event)
-{
-	alternative_tiles_root_control->set_tooltip_text("");
-
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		Transform2D xform = alternative_tiles_drawing_root->get_transform().affine_inverse();
-		Vector3i coords3 = get_alternative_tile_at_pos(xform.xform(mm->get_position()));
-		Vector2i coords = Vector2i(coords3.x, coords3.y);
-		int alternative_id = coords3.z;
-		if (coords != TileSetSource::INVALID_ATLAS_COORDS &&
-			alternative_id != TileSetSource::INVALID_TILE_ALTERNATIVE) {
-			alternative_tiles_root_control->set_tooltip_text(
-				vformat(TTR("Source: %d\nAtlas coordinates: %s\nAlternative: %d"), source_id,
-					coords, alternative_id));
 		}
 	}
 }

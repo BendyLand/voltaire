@@ -158,7 +158,6 @@ class Polygon2DEditor : public AbstractPolygon2DEditor
 	void _canvas_input(const Ref<InputEvent>& p_input);
 	void _center_view_on_draw(bool p_enabled = true);
 	void _canvas_draw();
-	void _set_action(int p_mode);
 
 	void _set_use_snap(bool p_use);
 	void _set_show_grid(bool p_show);
@@ -167,7 +166,6 @@ class Polygon2DEditor : public AbstractPolygon2DEditor
 	void _set_snap_step_x(real_t p_val);
 	void _set_snap_step_y(real_t p_val);
 
-	void _select_mode(int p_mode);
 	void _bone_paint_selected(int p_index);
 
 	int _get_polygon_count() const override;
@@ -183,7 +181,6 @@ protected:
 	virtual void _commit_action() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	Vector2 snap_point(Vector2 p_target) const;
 

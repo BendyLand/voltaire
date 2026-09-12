@@ -44,7 +44,6 @@ protected:
 
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 
-	static void _bind_methods() {}
 
 public:
 	void set_center_control(Control* p_center_control);

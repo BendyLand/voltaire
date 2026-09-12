@@ -30,7 +30,6 @@
 
 #include "gltf_animation.h"
 
-void GLTFAnimation::_bind_methods() {}
 
 GLTFAnimation::Interpolation GLTFAnimation::godot_to_gltf_interpolation(
 	const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index)

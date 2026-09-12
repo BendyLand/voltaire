@@ -95,7 +95,6 @@ Ref<OggPacketSequencePlayback> OggPacketSequence::instantiate_playback()
 	return playback;
 }
 
-void OggPacketSequence::_bind_methods() {}
 
 bool OggPacketSequencePlayback::next_ogg_packet(ogg_packet** p_packet) const
 {

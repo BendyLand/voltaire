@@ -49,8 +49,6 @@ void EditorObjectSelector::_show_popup()
 		return;
 	}
 
-	sub_objects_menu->clear();
-
 	Rect2 rect = get_screen_rect();
 	rect.position.y += rect.size.height;
 	rect.size.height = 0;

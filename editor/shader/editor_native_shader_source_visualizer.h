@@ -44,7 +44,6 @@ class EditorNativeShaderSourceVisualizer : public AcceptDialog
 	void _inspect_shader(RID p_shader);
 
 protected:
-	static void _bind_methods();
 
 public:
 	EditorNativeShaderSourceVisualizer();

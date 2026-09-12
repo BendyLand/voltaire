@@ -32,7 +32,6 @@
 
 #include "core/types.h"
 #include "core/math/vector2i.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
 
@@ -51,7 +50,6 @@ private:
 	Vector<Vector2> eye_foci;
 
 protected:
-	static void _bind_methods();
 
 public:
 	~XRVRS();

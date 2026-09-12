@@ -143,20 +143,6 @@ void Path2D::_debug_free()
 
 Ref<Curve2D> Path2D::get_curve() const { return curve; }
 
-void Path2D::_bind_methods() {}
-
-/////////////////////////////////////////////////////////////////////////////////
-
-void PathFollow2D::path_changed()
-{
-	if (update_timer && !update_timer->is_stopped()) {
-		update_timer->start();
-	}
-	else {
-		_update_transform();
-	}
-}
-
 void PathFollow2D::_update_transform()
 {
 	if (!path) {

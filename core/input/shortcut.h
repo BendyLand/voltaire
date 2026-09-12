@@ -38,7 +38,6 @@ class Shortcut : public Resource
 	Vector<Ref<InputEvent>> events;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_events(const Vector<Ref<InputEvent>>& p_events);

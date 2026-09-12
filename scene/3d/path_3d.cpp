@@ -153,7 +153,6 @@ Transform3D PathFollow3D::correct_posture(
 	return t;
 }
 
-void PathFollow3D::_bind_methods() {}
 
 void PathFollow3D::set_progress(real_t p_progress)
 {
@@ -225,17 +224,6 @@ real_t PathFollow3D::get_progress_ratio() const
 	else {
 		return 0;
 	}
-}
-
-void PathFollow3D::set_rotation_mode(RotationMode p_rotation_mode)
-{
-	if (rotation_mode == p_rotation_mode) {
-		return;
-	}
-	rotation_mode = p_rotation_mode;
-
-	update_configuration_warnings();
-	update_transform();
 }
 
 PathFollow3D::RotationMode PathFollow3D::get_rotation_mode() const { return rotation_mode; }

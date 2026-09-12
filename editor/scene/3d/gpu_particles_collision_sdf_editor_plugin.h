@@ -48,7 +48,6 @@ class GPUParticlesCollisionSDF3DEditorPlugin : public EditorPlugin
 
 	static EditorProgress* tmp_progress;
 	static void bake_func_begin(int p_steps);
-	static void bake_func_step(int p_step, const String& p_description);
 	static void bake_func_end();
 
 	void _bake();

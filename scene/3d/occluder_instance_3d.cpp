@@ -137,7 +137,6 @@ void ArrayOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32
 	r_indices = indices;
 }
 
-void ArrayOccluder3D::_bind_methods() {}
 
 ArrayOccluder3D::ArrayOccluder3D() {}
 
@@ -171,7 +170,6 @@ void QuadOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32A
 	r_indices = {0, 1, 2, 0, 2, 3};
 }
 
-void QuadOccluder3D::_bind_methods() {}
 
 QuadOccluder3D::QuadOccluder3D() {}
 
@@ -222,7 +220,6 @@ void BoxOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Ar
 		3, 2, 6, 6, 7, 3};
 }
 
-void BoxOccluder3D::_bind_methods() {}
 
 BoxOccluder3D::BoxOccluder3D() {}
 
@@ -284,7 +281,6 @@ void SphereOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt3
 	}
 }
 
-void SphereOccluder3D::_bind_methods() {}
 
 SphereOccluder3D::SphereOccluder3D() {}
 
@@ -335,7 +331,6 @@ void PolygonOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt
 
 bool PolygonOccluder3D::_has_editable_3d_polygon_no_depth() const { return false; }
 
-void PolygonOccluder3D::_bind_methods() {}
 
 PolygonOccluder3D::PolygonOccluder3D() {}
 
@@ -351,19 +346,7 @@ AABB OccluderInstance3D::get_aabb() const
 	return AABB();
 }
 
-void OccluderInstance3D::_occluder_changed()
-{
-	update_gizmos();
-	update_configuration_warnings();
-}
-
 Ref<Occluder3D> OccluderInstance3D::get_occluder() const { return occluder; }
-
-void OccluderInstance3D::set_bake_mask(uint32_t p_mask)
-{
-	bake_mask = p_mask;
-	update_configuration_warnings();
-}
 
 uint32_t OccluderInstance3D::get_bake_mask() const { return bake_mask; }
 
@@ -375,22 +358,6 @@ void OccluderInstance3D::set_bake_simplification_distance(float p_dist)
 float OccluderInstance3D::get_bake_simplification_distance() const
 {
 	return bake_simplification_dist;
-}
-
-void OccluderInstance3D::set_bake_mask_value(int p_layer_number, bool p_value)
-{
-	ERR_FAIL_COND_MSG(
-		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
-	uint32_t mask = get_bake_mask();
-	if (p_value) {
-		mask |= 1 << (p_layer_number - 1);
-	}
-	else {
-		mask &= ~(1 << (p_layer_number - 1));
-	}
-	set_bake_mask(mask);
 }
 
 bool OccluderInstance3D::get_bake_mask_value(int p_layer_number) const
@@ -503,7 +470,6 @@ bool OccluderInstance3D::_is_editable_3d_polygon() const
 
 Ref<Resource> OccluderInstance3D::_get_editable_3d_polygon_resource() const { return occluder; }
 
-void OccluderInstance3D::_bind_methods() {}
 
 OccluderInstance3D::OccluderInstance3D() {}
 

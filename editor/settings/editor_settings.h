@@ -111,7 +111,6 @@ private:
 	Vector<String> _get_shortcut_list();
 
 protected:
-	static void _bind_methods();
 
 public:
 	enum

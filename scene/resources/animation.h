@@ -451,7 +451,6 @@ private:
 protected:
 	virtual void reset_state() override;
 
-	static void _bind_methods();
 
 	static bool inform_variant_array(
 		int& r_min, int& r_max); // Returns true if max and min are swapped.

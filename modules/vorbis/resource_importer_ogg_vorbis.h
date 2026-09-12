@@ -36,7 +36,6 @@
 class ResourceImporterOggVorbis : public ResourceImporter
 {
 protected:
-	static void _bind_methods();
 
 public:
 #ifdef TOOLS_ENABLED

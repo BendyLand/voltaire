@@ -93,33 +93,6 @@ void TexturePreview::finish_shaders() { texture_material.unref(); }
 
 TextureRect* TexturePreview::get_texture_display() { return texture_display; }
 
-void TexturePreview::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		if (!is_inside_tree()) {
-			// TODO: This is a workaround because `NOTIFICATION_THEME_CHANGED`
-			// is getting called for some reason when the `TexturePreview` is
-			// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
-			// See https://github.com/godotengine/godot/issues/50743.
-			break;
-		}
-
-		if (metadata_label) {
-			Ref<Font> metadata_label_font =
-				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-			metadata_label->add_theme_font_override(
-				SceneStringName(font), metadata_label_font.ptr());
-		}
-
-		bg_rect->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
-		checkerboard->set_texture(get_editor_theme_icon(SNAME("Checkerboard")));
-		theme_cache.outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-	} break;
-	}
-}
-
 void TexturePreview::_draw_outline()
 {
 	const float outline_width = Math::round(EDSCALE);

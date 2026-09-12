@@ -51,7 +51,6 @@ public:
 	};
 
 protected:
-	static void _bind_methods();
 
 	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
 		uint32_t p_flags = FLAG_NONE, float p_scale = 1.0) = 0;
@@ -65,7 +64,6 @@ public:
 class ImageFormatLoaderExtension : public ImageFormatLoader
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,

@@ -91,7 +91,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 public:
 	void set_progress(real_t p_progress);
@@ -112,7 +111,6 @@ public:
 	void set_tilt_enabled(bool p_enabled);
 	bool is_tilt_enabled() const;
 
-	void set_rotation_mode(RotationMode p_rotation_mode);
 	RotationMode get_rotation_mode() const;
 
 	void set_use_model_front(bool p_use_model_front);

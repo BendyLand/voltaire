@@ -104,7 +104,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _feature_selected(int p_index);
 
 	String _get_setting_name() const;
-	void _setting_edited(const String& p_name);
 	void _setting_selected(const String& p_path);
 	void _add_setting();
 	void _delete_setting();
@@ -112,10 +111,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _tabs_tab_changed(int p_tab);
 	void _focus_current_search_box();
 	void _focus_current_path_box();
-
-	void _editor_restart_request();
-	void _editor_restart();
-	void _editor_restart_close();
 
 	void _add_feature_overrides();
 
@@ -129,16 +124,13 @@ class ProjectSettingsEditor : public AcceptDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static ProjectSettingsEditor* get_singleton() { return singleton; }
 
 	void popup_project_settings(bool p_clear_filter = false);
-	void popup_for_override(const String& p_override);
 
 	void set_plugins_page();
-	void set_general_page(const String& p_category);
 	void update_plugins();
 	void init_autoloads();
 
@@ -152,7 +144,6 @@ public:
 
 	SectionedInspector* get_inspector() { return general_settings_inspector; }
 
-	void queue_save();
 	void connect_filesystem_dock_signals(FileSystemDock* p_fs_dock);
 
 	ProjectSettingsEditor(EditorData* p_data);

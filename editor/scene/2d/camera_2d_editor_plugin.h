@@ -71,11 +71,9 @@ class Camera2DEditor : public Control
 
 	void _menu_option(int p_option);
 	void _snap_limits_to_viewport(Camera2D* p_camera);
-	void _update_overlays_if_needed(Camera2D* p_camera);
 	void _update_hover(const Vector2& p_mouse_pos);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

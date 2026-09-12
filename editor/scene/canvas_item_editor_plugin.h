@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 
@@ -435,7 +434,6 @@ private:
 	Vector2 _anchor_to_position(const Control* p_control, Vector2 anchor);
 	Vector2 _position_to_anchor(const Control* p_control, Vector2 position);
 
-	void _prepare_view_menu();
 	void _popup_callback(int p_op);
 	bool updating_scroll = false;
 	void _update_scroll(real_t);
@@ -477,9 +475,6 @@ private:
 
 	void _insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing);
 
-	void _keying_changed();
-
-	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);
 	void _draw_percentage_at_position(real_t p_value, Point2 p_position, Side p_side);
 	void _draw_straight_line(Point2 p_from, Point2 p_to, Color p_color);
@@ -506,14 +501,12 @@ private:
 
 	bool _gui_input_anchors(const Ref<InputEvent>& p_event);
 	bool _gui_input_move(const Ref<InputEvent>& p_event);
-	bool _gui_input_open_scene_on_double_click(const Ref<InputEvent>& p_event);
 	bool _gui_input_scale(const Ref<InputEvent>& p_event);
 	bool _gui_input_pivot(const Ref<InputEvent>& p_event);
 	bool _gui_input_resize(const Ref<InputEvent>& p_event);
 	bool _gui_input_rotate(const Ref<InputEvent>& p_event);
 	bool _gui_input_select(const Ref<InputEvent>& p_event);
 	bool _gui_input_ruler_tool(const Ref<InputEvent>& p_event);
-	bool _gui_input_zoom_or_pan(const Ref<InputEvent>& p_event, bool p_already_accepted);
 	bool _gui_input_rulers_and_guides(const Ref<InputEvent>& p_event);
 	bool _gui_input_hover(const Ref<InputEvent>& p_event);
 
@@ -545,9 +538,6 @@ private:
 	VBoxContainer* controls_vb = nullptr;
 	Button* button_center_view = nullptr;
 	EditorZoomWidget* zoom_widget = nullptr;
-	void _update_zoom(real_t p_zoom);
-	void _shortcut_zoom_set(real_t p_zoom);
-	void _zoom_on_position(real_t p_zoom, Point2 p_position = Point2());
 	void _button_toggle_local_space(bool p_status);
 	void _button_toggle_smart_snap(bool p_status);
 	void _button_toggle_grid_snap(bool p_status);
@@ -564,7 +554,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	static CanvasItemEditor* singleton;
 
@@ -627,8 +616,6 @@ public:
 
 	Vector2 get_grid_offset() const { return grid_offset; }
 
-	void edit(CanvasItem* p_canvas_item);
-
 	void focus_selection();
 	void center_at(const Point2& p_pos);
 
@@ -656,7 +643,7 @@ public:
 
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }
 
-	CanvasItemEditorPlugin();
+	CanvasItemEditorPlugin() = default;
 };
 
 class CanvasItemEditorViewport : public Control
@@ -677,12 +664,9 @@ class CanvasItemEditorViewport : public Control
 	RichTextLabel* tooltip_panel = nullptr;
 	Ref<ButtonGroup> button_group;
 
-	void _on_mouse_exit();
 	void _on_change_type_confirmed();
-	void _on_change_type_closed();
 
 	void _create_preview(const Vector<String>& files) const;
-	void _remove_preview();
 
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
 	bool _is_any_texture_selected() const;
@@ -700,8 +684,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_hint_label(const String& p_title, const String& p_description) const;
-
 	CanvasItemEditorViewport(CanvasItemEditor* p_canvas_item_editor);
 	~CanvasItemEditorViewport();
 };

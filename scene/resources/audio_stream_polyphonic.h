@@ -41,7 +41,6 @@ class AudioStreamPolyphonic : public AudioStream
 
 	AudioServer::PlaybackType playback_type;
 
-	static void _bind_methods();
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
@@ -90,7 +89,6 @@ class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback
 	friend class AudioStreamPolyphonic;
 
 protected:
-	static void _bind_methods();
 
 public:
 	typedef int64_t ID;

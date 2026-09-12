@@ -58,7 +58,6 @@ class PackedDataContainer : public Resource
 protected:
 	void _set_data(const Vector<uint8_t>& p_data);
 	Vector<uint8_t> _get_data() const;
-	static void _bind_methods();
 
 public:
 	int size() const;
@@ -71,7 +70,6 @@ class PackedDataContainerRef : public RefCounted
 	Ref<PackedDataContainer> from;
 
 protected:
-	static void _bind_methods();
 
 public:
 	int size() const;

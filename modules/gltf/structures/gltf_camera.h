@@ -50,7 +50,6 @@ private:
 	real_t depth_near = 0.05;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop);
@@ -76,7 +75,6 @@ public:
 	void set_depth_near(real_t p_val) { depth_near = p_val; }
 
 	static Ref<GLTFCamera> from_node(const Camera3D* p_camera);
-	Camera3D* to_node() const;
 };
 
 

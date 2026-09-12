@@ -72,7 +72,6 @@ void ResourcePreloader::get_resource_list(List<StringName>* p_list)
 	}
 }
 
-void ResourcePreloader::_bind_methods() {}
 
 ResourcePreloader::ResourcePreloader() {}
 

@@ -48,7 +48,6 @@ class VoxelGIEditorPlugin : public EditorPlugin
 
 	static EditorProgress* tmp_progress;
 	static void bake_func_begin();
-	static bool bake_func_step(int p_progress, const String& p_description);
 	static void bake_func_end();
 
 	void _bake();

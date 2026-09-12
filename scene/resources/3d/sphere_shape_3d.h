@@ -39,7 +39,6 @@ class SphereShape3D : public Shape3D
 	float radius = 0.5f;
 
 protected:
-	static void _bind_methods();
 
 	virtual void _update_shape() override;
 

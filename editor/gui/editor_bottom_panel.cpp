@@ -54,15 +54,6 @@ void EditorBottomPanel::_notification(int p_what)
 	}
 }
 
-void EditorBottomPanel::_on_tab_changed(int p_idx)
-{
-	_update_center_split_offset();
-	_repaint();
-	if (p_idx >= 0 && p_idx < get_tab_count()) {
-		set_accessibility_name(get_tab_title(p_idx));
-	}
-}
-
 void EditorBottomPanel::_theme_changed()
 {
 	if (get_current_tab() == -1) {
@@ -72,37 +63,6 @@ void EditorBottomPanel::_theme_changed()
 	else {
 		add_theme_style_override(SceneStringName(panel),
 			get_theme_stylebox(SNAME("BottomPanel"), EditorStringName(EditorStyles)).ptr());
-	}
-}
-
-void EditorBottomPanel::_repaint()
-{
-	bool panel_collapsed = get_current_tab() == -1;
-
-	if (panel_collapsed && get_popup()) {
-		set_popup(nullptr);
-	}
-	else if (!panel_collapsed && !get_popup()) {
-		set_popup(dock_context_popup);
-	}
-	if (!panel_collapsed && (previous_tab != -1)) {
-		return;
-	}
-	previous_tab = get_current_tab();
-
-	DockSplitContainer* center_split = EditorNode::get_center_split();
-	ERR_FAIL_NULL(center_split);
-
-	center_split->set_dragger_visibility(
-		panel_collapsed ? SplitContainer::DRAGGER_HIDDEN : SplitContainer::DRAGGER_VISIBLE);
-	center_split->set_collapsed(panel_collapsed);
-
-	expand_button->set_visible(!panel_collapsed);
-	if (expand_button->is_pressed()) {
-		_expand_button_toggled(!panel_collapsed);
-	}
-	else {
-		_theme_changed();
 	}
 }
 
@@ -140,18 +100,6 @@ Rect2 EditorBottomPanel::get_floating_dock_rect(EditorDock* p_dock)
 	return ret;
 }
 
-void EditorBottomPanel::make_item_visible(Control* p_item, bool p_visible, bool p_ignore_lock)
-{
-	// Don't allow changing tabs involuntarily when tabs are locked.
-	if (!p_ignore_lock && lock_panel_switching) {
-		return;
-	}
-
-	EditorDock* dock = _get_dock_from_control(p_item);
-	ERR_FAIL_NULL(dock);
-	dock->set_visible(p_visible);
-}
-
 void EditorBottomPanel::hide_bottom_panel() { set_current_tab(-1); }
 
 void EditorBottomPanel::toggle_last_opened_bottom_panel()
@@ -160,8 +108,6 @@ void EditorBottomPanel::toggle_last_opened_bottom_panel()
 }
 
 void EditorBottomPanel::_pin_button_toggled(bool p_pressed) { lock_panel_switching = p_pressed; }
-
-void EditorBottomPanel::set_expanded(bool p_expanded) { expand_button->set_pressed(p_expanded); }
 
 void EditorBottomPanel::_update_center_split_offset()
 {
@@ -190,30 +136,10 @@ void EditorBottomPanel::remove_item(Control* p_item)
 	dock->queue_free();
 }
 
-void EditorBottomPanel::_on_button_visibility_changed(Button* p_button, EditorDock* p_dock)
-{
-	if (p_button->is_visible()) {
-		p_dock->open();
-	}
-	else {
-		p_dock->close();
-	}
-}
-
 EditorBottomPanel::~EditorBottomPanel()
 {
 	for (Button* b : legacy_buttons) {
 		memdelete(b);
-	}
-}
-
-void ProgressIndicator::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		const Ref<Texture2D> ring_texture = get_editor_theme_icon(SNAME("ProgressRing"));
-		set_progress_texture(ring_texture);
-		set_tint_progress(get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
-		set_under_texture(ring_texture);
 	}
 }
 

@@ -43,7 +43,6 @@ class PhysicsShapeQueryParameters2D : public RefCounted
 	Ref<Resource> shape_ref;
 
 protected:
-	static void _bind_methods();
 
 public:
 	const PS2DT::ShapeParameters& get_parameters() const { return parameters; }

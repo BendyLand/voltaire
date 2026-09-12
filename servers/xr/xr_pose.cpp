@@ -31,7 +31,6 @@
 #include "servers/xr/xr_server.h"
 #include "xr_pose.h"
 
-void XRPose::_bind_methods() {}
 
 void XRPose::set_has_tracking_data(const bool p_has_tracking_data)
 {

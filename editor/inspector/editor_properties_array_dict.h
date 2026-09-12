@@ -128,9 +128,6 @@ protected:
 
 	virtual void _remove_pressed(int p_index);
 
-	virtual void _button_draw();
-	virtual void _button_add_item_draw();
-
 public:
 	void set_preview_value(bool p_preview_value);
 	virtual void update_property() override;

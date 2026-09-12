@@ -55,7 +55,6 @@ class NavigationPolygon : public Resource
 	Vector2 baking_rect_offset;
 
 protected:
-	static void _bind_methods();
 
 public:
 #ifdef DEBUG_ENABLED

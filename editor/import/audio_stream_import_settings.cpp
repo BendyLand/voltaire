@@ -210,17 +210,4 @@ int AudioStreamImportSettingsDialog::_get_beat_at_pos(real_t p_x)
 	return beat;
 }
 
-void AudioStreamImportSettingsDialog::_set_beat_len_to(real_t p_x)
-{
-	int beat = _get_beat_at_pos(p_x);
-	if (beat < 1) {
-		beat = 1; // Because 0 is disable.
-	}
-	updating_settings = true;
-	beats_enabled->set_pressed(true);
-	beats_edit->set_value(beat);
-	updating_settings = false;
-	_settings_changed();
-}
-
 

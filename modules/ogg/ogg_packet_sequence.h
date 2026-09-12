@@ -55,7 +55,6 @@ class OggPacketSequence : public Resource
 	float length = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	// Pushes information about all the pages that ended on this page.

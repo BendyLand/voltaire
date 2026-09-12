@@ -33,13 +33,6 @@
 #include "scene/2d/physics/physics_body_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-void Joint2D::_body_exit_tree()
-{
-	_disconnect_signals();
-	_update_joint(true);
-	update_configuration_warnings();
-}
-
 NodePath Joint2D::get_node_a() const { return a; }
 
 NodePath Joint2D::get_node_b() const { return b; }
@@ -99,7 +92,6 @@ PackedStringArray Joint2D::get_configuration_warnings() const
 	return warnings;
 }
 
-void Joint2D::_bind_methods() {}
 
 Joint2D::Joint2D()
 {

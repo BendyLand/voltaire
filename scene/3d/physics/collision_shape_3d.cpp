@@ -52,15 +52,6 @@ void CollisionShape3D::resource_changed(Ref<Resource> res) {}
 
 Ref<Shape3D> CollisionShape3D::get_shape() const { return shape; }
 
-void CollisionShape3D::set_disabled(bool p_disabled)
-{
-	disabled = p_disabled;
-	update_gizmos();
-	if (collision_object) {
-		collision_object->shape_owner_set_disabled(owner_id, p_disabled);
-	}
-}
-
 bool CollisionShape3D::is_disabled() const { return disabled; }
 
 Color CollisionShape3D::_get_default_debug_color() const

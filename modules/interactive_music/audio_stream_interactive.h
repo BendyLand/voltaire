@@ -250,7 +250,6 @@ private:
 	int switch_request = -1;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual void start(double p_from_pos = 0.0) override;

@@ -173,7 +173,6 @@ protected:
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _clamp_split_offset_bind_compat_90411();

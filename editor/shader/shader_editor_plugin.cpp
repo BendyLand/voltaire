@@ -122,16 +122,6 @@ String ShaderEditorPlugin::get_unsaved_status(const String& p_for_scene) const
 	return String("\n").join(unsaved_shaders);
 }
 
-void ShaderEditorPlugin::save_external_data()
-{
-	for (EditedShader& edited_shader : edited_shaders) {
-		if (edited_shader.shader_editor && edited_shader.shader_editor->is_unsaved()) {
-			edited_shader.shader_editor->save_external_data();
-		}
-	}
-	_update_shader_list();
-}
-
 void ShaderEditorPlugin::apply_changes()
 {
 	for (EditedShader& edited_shader : edited_shaders) {
@@ -230,18 +220,6 @@ void ShaderEditorPlugin::_update_shader_editor_zoom_factor(CodeTextEditor* p_sha
 	}
 }
 
-void ShaderEditorPlugin::_switch_to_editor(ShaderEditor* p_editor)
-{
-	ERR_FAIL_NULL(p_editor);
-	if (file_menu->get_parent() != nullptr) {
-		file_menu->get_parent()->remove_child(file_menu);
-	}
-
-	shader_tabs->show();
-	p_editor->use_menu_bar(file_menu);
-	file_menu->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-}
-
 void ShaderEditorPlugin::_file_removed(const String& p_removed_file)
 {
 	for (uint32_t i = 0; i < edited_shaders.size(); i++) {
@@ -250,20 +228,6 @@ void ShaderEditorPlugin::_file_removed(const String& p_removed_file)
 			break;
 		}
 	}
-}
-
-void ShaderEditorPlugin::_set_file_specific_items_disabled(bool p_disabled)
-{
-	PopupMenu* file_popup_menu = file_menu->get_popup();
-	file_popup_menu->set_item_disabled(file_popup_menu->get_item_index(FILE_MENU_SAVE), p_disabled);
-	file_popup_menu->set_item_disabled(
-		file_popup_menu->get_item_index(FILE_MENU_SAVE_AS), p_disabled);
-	file_popup_menu->set_item_disabled(
-		file_popup_menu->get_item_index(FILE_MENU_INSPECT), p_disabled);
-	file_popup_menu->set_item_disabled(
-		file_popup_menu->get_item_index(FILE_MENU_INSPECT_NATIVE_SHADER_CODE), p_disabled);
-	file_popup_menu->set_item_disabled(
-		file_popup_menu->get_item_index(FILE_MENU_CLOSE), p_disabled);
 }
 
 ShaderEditorPlugin::~ShaderEditorPlugin()

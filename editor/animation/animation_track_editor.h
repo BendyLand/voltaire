@@ -31,7 +31,6 @@
 #pragma once
 
 #include <cfloat> // FLT_MAX
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "editor/editor_data.h"
 #include "editor/inspector/editor_properties.h"
@@ -86,7 +85,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-	static void _bind_methods();
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -120,7 +118,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-	static void _bind_methods();
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -147,7 +144,6 @@ public:
 	float get_time() const;
 
 protected:
-	static void _bind_methods();
 	void _set_marker_name(const StringName& p_name);
 };
 
@@ -170,7 +166,6 @@ public:
 	bool _is_read_only() { return animation_read_only; }
 
 protected:
-	static void _bind_methods();
 };
 
 class AnimationTimelineEdit : public Range
@@ -207,7 +202,6 @@ class AnimationTimelineEdit : public Range
 									  // changed are much faster
 	HScrollBar* hscroll = nullptr;
 
-	void _play_position_draw();
 	Rect2 hsize_rect;
 
 	bool editing = false;
@@ -239,7 +233,6 @@ class AnimationTimelineEdit : public Range
 	void _scroll_to_start();
 
 protected:
-	static void _bind_methods();
 
 public:
 	int get_name_limit() const;
@@ -305,7 +298,6 @@ class AnimationMarkerEdit : public Control
 
 	Ref<Texture2D> icon_cache;
 
-	void _play_position_draw();
 	bool _is_ui_pos_in_current_section(const Point2& p_pos);
 
 	float insert_at_pos = 0.0f;
@@ -326,7 +318,6 @@ class AnimationMarkerEdit : public Control
 	void _deselect_key(const StringName& p_name);
 
 	void _insert_marker(float p_ofs);
-	void _rename_marker(const StringName& p_name);
 
 	ConfirmationDialog* marker_insert_confirm = nullptr;
 	LineEdit* marker_insert_new_name = nullptr;
@@ -454,7 +445,6 @@ class AnimationTrackEdit : public Control
 	String path_cache;
 
 	void _path_submitted(const String& p_text);
-	void _play_position_draw();
 
 	int lookup_key_idx = -1;
 	bool _lookup_key(int p_key_idx) const;
@@ -625,8 +615,6 @@ class AnimationTrackEditor : public VBoxContainer
 	void _track_grab_focus(int p_track);
 
 	void _update_scroll(double);
-	void _update_nearest_fps_label();
-	void _update_fps_compat_mode(bool p_enabled);
 
 	void _add_track(int p_type);
 	void _store_snap_states();
@@ -718,7 +706,6 @@ class AnimationTrackEditor : public VBoxContainer
 	Control* box_selection_container = nullptr;
 
 	Control* box_selection = nullptr;
-	void _box_selection_draw();
 	bool box_selecting = false;
 	Vector2 box_selecting_from;
 	Vector2 box_selecting_to;
@@ -727,9 +714,6 @@ class AnimationTrackEditor : public VBoxContainer
 
 	Vector<Ref<AnimationTrackEditPlugin>> track_edit_plugins;
 
-	void _toggle_bezier_edit();
-	void _cancel_bezier_edit();
-	void _bezier_edit(int p_for_track);
 	void _bezier_track_set_key_handle_mode(Animation* p_anim, int p_track, int p_index,
 		Animation::HandleMode p_mode,
 		Animation::HandleSetMode p_set_mode = Animation::HANDLE_SET_MODE_NONE);
@@ -834,7 +818,6 @@ class AnimationTrackEditor : public VBoxContainer
 	double snap_unit = 0;
 	bool fps_compatible = true;
 	int nearest_fps = 0;
-	void _update_snap_unit();
 
 public:
 	// Public for use as signal callback.
@@ -912,7 +895,6 @@ public:
 	bool is_function_name_pressed();
 
 	bool is_read_only() const;
-	void popup_read_only_dialog();
 
 	MenuButton* get_edit_menu();
 	AnimationTrackEditor();

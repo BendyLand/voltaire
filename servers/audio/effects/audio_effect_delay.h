@@ -82,7 +82,6 @@ class AudioEffectDelay : public AudioEffect {
 	float feedback_lowpass = 16000.0f;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_dry(float p_dry);

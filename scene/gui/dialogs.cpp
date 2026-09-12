@@ -128,8 +128,6 @@ void AcceptDialog::_update_ok_text()
 
 void AcceptDialog::set_swap_cancel_ok(bool p_swap) { swap_cancel_ok = p_swap; }
 
-AcceptDialog::~AcceptDialog() {}
-
 void ConfirmationDialog::set_cancel_button_text(String p_cancel_button_text)
 {
 	cancel->set_text(p_cancel_button_text);

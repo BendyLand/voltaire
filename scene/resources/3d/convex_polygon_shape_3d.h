@@ -39,7 +39,6 @@ class ConvexPolygonShape3D : public Shape3D
 	Vector<Vector3> points;
 
 protected:
-	static void _bind_methods();
 
 	virtual void _update_shape() override;
 

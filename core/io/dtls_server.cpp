@@ -40,6 +40,4 @@ DTLSServer* DTLSServer::create(bool p_notify_postinitialize)
 
 bool DTLSServer::is_available() { return available; }
 
-void DTLSServer::_bind_methods() {}
-
 

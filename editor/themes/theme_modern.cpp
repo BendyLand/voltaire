@@ -335,7 +335,6 @@ void ThemeModern::populate_shared_styles(
 			p_config.increased_margin * 1.5, p_config.increased_margin * 1.5,
 			p_config.corner_radius);
 
-		p_config.focus_style = p_config.base_style->duplicate();
 		p_config.focus_style->set_draw_center(false);
 		p_config.focus_style->set_border_color(p_config.accent_color * Color(1, 1, 1, 0.8));
 		p_config.focus_style->set_border_width_all(2);
@@ -354,7 +353,6 @@ void ThemeModern::populate_shared_styles(
 			p_config.widget_margin =
 				Vector2(p_config.increased_margin + 2, p_config.increased_margin + 1) * EDSCALE;
 
-			p_config.button_style = p_config.base_style->duplicate();
 			p_config.button_style->set_content_margin_individual(p_config.base_margin * 2 * EDSCALE,
 				p_config.base_margin * 1.5 * EDSCALE, p_config.base_margin * 2 * EDSCALE,
 				p_config.base_margin * 1.5 * EDSCALE);
@@ -371,7 +369,6 @@ void ThemeModern::populate_shared_styles(
 				p_config.button_style->set_border_color(p_config.button_border_normal_color);
 			}
 
-			p_config.button_style_disabled = p_config.button_style->duplicate();
 			p_config.button_style_disabled->set_bg_color(p_config.button_disabled_color);
 			if (p_config.draw_extra_borders) {
 				p_config.button_style_disabled->set_border_color(
@@ -381,7 +378,6 @@ void ThemeModern::populate_shared_styles(
 				p_config.button_style_disabled->set_border_width_all(0);
 			}
 
-			p_config.button_style_pressed = p_config.button_style->duplicate();
 			p_config.button_style_pressed->set_bg_color(p_config.button_pressed_color);
 			if (p_config.draw_extra_borders) {
 				p_config.button_style_pressed->set_border_color(p_config.extra_border_color_1);
@@ -391,7 +387,6 @@ void ThemeModern::populate_shared_styles(
 					p_config.button_border_pressed_color);
 			}
 
-			p_config.button_style_hover = p_config.button_style->duplicate();
 			p_config.button_style_hover->set_bg_color(p_config.button_hover_color);
 			if (p_config.draw_extra_borders) {
 				p_config.button_style_pressed->set_border_color(p_config.extra_border_color_1);
@@ -400,7 +395,6 @@ void ThemeModern::populate_shared_styles(
 				p_config.button_style_hover->set_border_color(p_config.button_border_hover_color);
 			}
 
-			p_config.flat_button_hover = p_config.base_style->duplicate();
 			p_config.flat_button_hover->set_bg_color(p_config.flat_button_hover_color);
 			// This affects buttons in Tree so top and bottom margins should be kept low.
 			p_config.flat_button_hover->set_content_margin_individual(
@@ -410,26 +404,22 @@ void ThemeModern::populate_shared_styles(
 				p_config.button_style_hover->set_border_color(p_config.extra_border_color_1);
 			}
 
-			p_config.flat_button_pressed = p_config.flat_button_hover->duplicate();
 			p_config.flat_button_pressed->set_bg_color(p_config.flat_button_pressed_color);
 			if (p_config.draw_extra_borders) {
 				p_config.flat_button_pressed->set_border_color(p_config.extra_border_color_1);
 			}
 
-			p_config.flat_button_hover_pressed = p_config.flat_button_hover->duplicate();
 			p_config.flat_button_hover_pressed->set_bg_color(
 				p_config.flat_button_hover_pressed_color);
 			if (p_config.draw_extra_borders) {
 				p_config.flat_button_hover_pressed->set_border_color(p_config.extra_border_color_1);
 			}
 
-			p_config.flat_button = p_config.flat_button_hover->duplicate();
 			p_config.flat_button->set_draw_center(false);
 		}
 
 		// Windows and popups.
 		{
-			p_config.popup_panel_style = p_config.base_style->duplicate();
 			p_config.popup_panel_style->set_bg_color(p_config.surface_popup_color);
 			p_config.popup_panel_style->set_shadow_color(Color(0, 0, 0, 0.3));
 			p_config.popup_panel_style->set_shadow_size(p_config.base_margin * 0.75 * EDSCALE);
@@ -440,7 +430,6 @@ void ThemeModern::populate_shared_styles(
 				p_config.popup_panel_style->set_border_color(p_config.extra_border_color_2);
 			}
 
-			p_config.window_style = p_config.base_style->duplicate();
 			p_config.window_style->set_content_margin_all(p_config.popup_margin);
 			p_config.window_style->set_shadow_color(p_config.shadow_color);
 			p_config.window_style->set_shadow_size(4 * EDSCALE);
@@ -449,17 +438,14 @@ void ThemeModern::populate_shared_styles(
 			p_config.window_style->set_expand_margin(SIDE_TOP, 24 * EDSCALE);
 			p_config.window_style->set_corner_radius_all(0);
 
-			p_config.window_complex_style = p_config.window_style->duplicate();
 			p_config.window_complex_style->set_bg_color(p_config.surface_lowest_color);
 
-			p_config.dialog_style = p_config.base_style->duplicate();
 			p_config.dialog_style->set_content_margin_all(p_config.popup_margin);
 			p_config.dialog_style->set_corner_radius_all(0);
 		}
 
 		// Panels.
 		{
-			p_config.panel_container_style = p_config.button_style->duplicate();
 			p_config.panel_container_style->set_draw_center(false);
 			p_config.panel_container_style->set_border_width_all(0);
 
@@ -468,7 +454,6 @@ void ThemeModern::populate_shared_styles(
 			// Compensate for the border.
 			const int content_panel_margin = p_config.base_margin * EDSCALE + p_config.border_width;
 
-			p_config.content_panel_style = p_config.base_style->duplicate();
 			p_config.content_panel_style->set_border_color(p_config.dark_color_3);
 			p_config.content_panel_style->set_border_width_all(p_config.border_width);
 			p_config.content_panel_style->set_border_width(Side::SIDE_TOP, 0);
@@ -477,21 +462,16 @@ void ThemeModern::populate_shared_styles(
 			p_config.content_panel_style->set_content_margin_individual(content_panel_margin,
 				2 * EDSCALE + content_panel_margin, content_panel_margin, content_panel_margin);
 
-			p_config.tab_container_style = p_config.base_style->duplicate();
 			p_config.tab_container_style->set_content_margin_all(
 				p_config.increased_margin * 1.5 * EDSCALE);
 			p_config.tab_container_style->set_corner_radius_individual(
 				0, 0, p_config.corner_radius * EDSCALE, p_config.corner_radius * EDSCALE);
 
-			p_config.foreground_panel = p_config.tab_container_style->duplicate();
 			p_config.foreground_panel->set_corner_radius(CORNER_TOP_LEFT,
 				p_config.tab_container_style->get_corner_radius(CORNER_BOTTOM_LEFT));
 			p_config.foreground_panel->set_corner_radius(CORNER_TOP_RIGHT,
 				p_config.tab_container_style->get_corner_radius(CORNER_BOTTOM_RIGHT));
 
-			// Trees and similarly inset panels.
-
-			p_config.tree_panel_style = p_config.base_style->duplicate();
 			// Make Trees easier to distinguish from other controls by using a darker background
 			// color.
 			p_config.tree_panel_style->set_bg_color(

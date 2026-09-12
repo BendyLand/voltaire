@@ -463,10 +463,6 @@ Ref<Material> SceneTree::get_debug_paths_material()
 	Ref<StandardMaterial3D> _debug_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	_debug_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	_debug_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	_debug_material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	_debug_material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	_debug_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	_debug_material->set_albedo(get_debug_paths_color());
 
 	debug_paths_material = _debug_material;
 
@@ -486,10 +482,6 @@ Ref<Material> SceneTree::get_debug_collision_material()
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 1);
 	material->set_cull_mode(StandardMaterial3D::CULL_BACK);
-	material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
 	collision_material = material;
 
 	return collision_material;

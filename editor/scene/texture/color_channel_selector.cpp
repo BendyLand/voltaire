@@ -35,44 +35,6 @@
 #include "scene/gui/panel_container.h"
 #include "scene/resources/style_box.h"
 
-ColorChannelSelector::ColorChannelSelector()
-{
-	toggle_button = memnew(Button);
-	toggle_button->set_flat(true);
-	toggle_button->set_toggle_mode(true);
-	toggle_button->set_tooltip_text(TTRC("Toggle color channel preview selection."));
-	toggle_button->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
-	toggle_button->set_theme_type_variation("PreviewLightButton");
-	add_child(toggle_button);
-
-	panel = memnew(PanelContainer);
-	panel->hide();
-
-	HBoxContainer* container = memnew(HBoxContainer);
-	container->add_theme_constant_override("separation", 0);
-
-	create_button(0, "R", container);
-	create_button(1, "G", container);
-	create_button(2, "B", container);
-	create_button(3, "A", container);
-
-	// Use a bit of transparency to be less distracting.
-	set_modulate(Color(1, 1, 1, 0.7));
-
-	panel->add_child(container);
-
-	add_child(panel);
-}
-
-void ColorChannelSelector::set_available_channels_mask(uint32_t p_mask)
-{
-	for (unsigned int i = 0; i < CHANNEL_COUNT; ++i) {
-		const bool available = (p_mask & (1u << i)) != 0;
-		Button* button = channel_buttons[i];
-		button->set_visible(available);
-	}
-}
-
 uint32_t ColorChannelSelector::get_selected_channels_mask() const
 {
 	uint32_t mask = 0;
@@ -96,30 +58,5 @@ Vector4 ColorChannelSelector::get_selected_channel_factors() const
 	}
 	return channel_factors;
 }
-
-void ColorChannelSelector::create_button(
-	unsigned int p_channel_index, const String& p_text, Control* p_parent)
-{
-	ERR_FAIL_COND(p_channel_index >= CHANNEL_COUNT);
-	ERR_FAIL_COND(channel_buttons[p_channel_index] != nullptr);
-	Button* button = memnew(Button);
-	button->set_text(p_text);
-	button->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	button->set_toggle_mode(true);
-	button->set_pressed(true);
-
-	// Don't show focus, it stands out too much and remains visible which can be confusing.
-	button->add_theme_style_override("focus", memnew(StyleBoxEmpty));
-
-	// Make it look similar to toolbar buttons.
-	button->set_theme_type_variation(SceneStringName(FlatButton));
-
-	p_parent->add_child(button);
-	channel_buttons[p_channel_index] = button;
-}
-
-void ColorChannelSelector::on_toggled(bool p_pressed) { panel->set_visible(p_pressed); }
-
-void ColorChannelSelector::_bind_methods() {}
 
 

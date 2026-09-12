@@ -130,7 +130,7 @@ public:
 		Ref<FileAccess> p_f, const String& p_path, const HashMap<String, String>& p_map);
 	Error get_classes_used(HashSet<StringName>* r_classes);
 
-	ResourceLoaderText();
+	ResourceLoaderText() = default;
 };
 
 class ResourceFormatLoaderText : public ResourceFormatLoader

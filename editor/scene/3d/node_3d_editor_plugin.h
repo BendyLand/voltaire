@@ -106,8 +106,6 @@ private:
 	HSplitContainer* left_panel_split = nullptr;
 	HSplitContainer* right_panel_split = nullptr;
 
-	/////
-
 	ToolMode tool_mode = TOOL_MODE_TRANSFORM;
 
 	RID origin_mesh;
@@ -247,27 +245,14 @@ private:
 	SpinBox* settings_znear = nullptr;
 	SpinBox* settings_zfar = nullptr;
 
-	void _snap_changed();
 	void _snap_update();
 	void _update_vertex_snap_tooltips();
-	void _xform_dialog_action();
-	void _menu_item_pressed(int p_option);
-	void _menu_item_toggled(bool pressed, int p_option);
-	void _menu_gizmo_toggled(int p_option);
 	// Used for secondary menu items which are displayed depending on the currently selected node
 	// (such as MeshInstance's "Mesh" menu).
 	PanelContainer* context_toolbar_panel = nullptr;
 	HBoxContainer* context_toolbar_hbox = nullptr;
 	HashMap<Control*, VSeparator*> context_toolbar_separators;
 
-	void _update_context_toolbar();
-
-	void _generate_selection_boxes();
-
-	void _init_indicators();
-	void _update_gizmos_menu();
-	void _update_gizmos_menu_theme();
-	void _init_grid();
 	void _finish_indicators();
 	void _finish_grid();
 
@@ -285,18 +270,10 @@ private:
 
 	static Node3DEditor* singleton;
 
-	void _node_added(Node* p_node);
-	void _node_removed(Node* p_node);
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_priority;
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_name;
 
-	void _register_all_gizmos();
-
-	void _selection_changed();
-	void _refresh_menu_icons();
-
 	bool do_snap_selected_nodes_to_floor = false;
-	void _snap_selected_nodes_to_floor();
 
 	uint32_t world_env_count = 0;
 	uint32_t directional_light_count = 0;
@@ -344,42 +321,11 @@ private:
 
 	bool sun_environ_updating = false;
 
-	void _sun_direction_draw();
-	void _sun_direction_input(const Ref<InputEvent>& p_event);
-	void _sun_direction_set_altitude(float p_altitude);
-	void _sun_direction_set_azimuth(float p_azimuth);
-	void _sun_set_color(const Color& p_color);
-	void _sun_set_energy(float p_energy);
-	void _sun_set_shadow_max_distance(float p_shadow_max_distance);
-
-	void _environ_set_sky_color(const Color& p_color);
-	void _environ_set_ground_color(const Color& p_color);
-	void _environ_set_sky_energy(float p_energy);
-	void _environ_set_ao();
-	void _environ_set_glow();
-	void _environ_set_tonemap();
-	void _environ_set_gi();
-
-	void _load_default_preview_settings();
-	void _update_preview_environment();
-
 	void _preview_settings_changed();
 	void _sun_environ_settings_pressed();
 
-	void _add_sun_to_scene(bool p_already_added_environment = false);
-	void _add_environment_to_scene(bool p_already_added_sun = false);
-
-	void _update_theme();
-
-protected:
-	void _notification(int p_what);
-
-	static void _bind_methods();
-
 public:
 	static Node3DEditor* get_singleton() { return singleton; }
-
-	static Size2i get_camera_viewport_size(Camera3D* p_camera);
 
 	Vector3 snap_point(Vector3 p_target, Vector3 p_start = Vector3(0, 0, 0)) const;
 
@@ -394,7 +340,6 @@ public:
 	ToolMode get_tool_mode() const { return tool_mode; }
 
 	bool are_local_coords_enabled() const;
-	void set_local_coords_enabled(bool on) const;
 	bool is_preserve_children_transform_enabled() const;
 
 	bool is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
@@ -422,37 +367,12 @@ public:
 
 	Ref<ArrayMesh> get_trackball_sphere_gizmo() const { return trackball_sphere_gizmo; }
 
-	void update_grid();
-	void update_transform_gizmo();
-	void update_all_gizmos(Node* p_node = nullptr);
-	void update_gizmo_opacity();
 	void snap_selected_nodes_to_floor();
 	void select_gizmo_highlight_axis(int p_axis);
-
-	void set_custom_camera(Node* p_camera) { custom_camera = p_camera; }
-
-	Ref<Environment> get_viewport_environment() { return viewport_environment; }
-
-	void add_control_to_menu_panel(Control* p_control);
-	void remove_control_from_menu_panel(Control* p_control);
-
-	void add_control_to_left_panel(Control* p_control);
-	void remove_control_from_left_panel(Control* p_control);
-
-	void add_control_to_right_panel(Control* p_control);
-	void remove_control_from_right_panel(Control* p_control);
-
-	void move_control_to_left_panel(Control* p_control);
-	void move_control_to_right_panel(Control* p_control);
 
 	VSplitContainer* get_shader_split();
 
 	Node3D* get_single_selected_node() { return selected; }
-
-	bool is_current_selected_gizmo(const EditorNode3DGizmo* p_gizmo);
-	bool is_subgizmo_selected(int p_id);
-	Vector<int> get_subgizmo_selection();
-	void refresh_dirty_gizmos();
 
 	Ref<EditorNode3DGizmo> get_current_hover_gizmo() const { return current_hover_gizmo; }
 
@@ -469,8 +389,6 @@ public:
 		r_secondary = current_hover_gizmo_handle_secondary;
 		return current_hover_gizmo_handle;
 	}
-
-	void set_can_preview(Camera3D* p_preview);
 
 	void set_preview_material(Ref<Material> p_material) { preview_material = p_material; }
 
@@ -498,19 +416,13 @@ public:
 	void set_freelook_viewport(Node3DEditorViewport* p_viewport);
 	Node3DEditorViewport* get_freelook_viewport() const;
 
-	void add_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin);
-	void remove_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin);
-
 	DynamicBVH::ID insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb);
 	void update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb);
 	void remove_gizmo_bvh_node(DynamicBVH::ID p_id);
 	Vector<Node3D*> gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
 	Vector<Node3D*> gizmo_bvh_frustum_query(const Vector<Plane>& p_frustum);
 
-	void edit(Node3D* p_spatial);
-	void clear();
-
-	Node3DEditor();
+	Node3DEditor() = default;
 	~Node3DEditor();
 };
 
@@ -525,9 +437,7 @@ public:
 
 	bool has_main_screen() const override { return true; }
 
-	virtual void edited_scene_changed() override;
-
-	Node3DEditorPlugin();
+	Node3DEditorPlugin() = default;
 };
 
 

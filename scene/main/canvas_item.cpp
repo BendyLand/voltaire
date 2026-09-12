@@ -88,18 +88,6 @@ void CanvasItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
 	_handle_visibility_change(p_parent_visible_in_tree);
 }
 
-void CanvasItem::show()
-{
-	ERR_MAIN_THREAD_GUARD;
-	set_visible(true);
-}
-
-void CanvasItem::hide()
-{
-	ERR_MAIN_THREAD_GUARD;
-	set_visible(false);
-}
-
 bool CanvasItem::is_visible() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
@@ -268,12 +256,6 @@ Color CanvasItem::get_modulate_in_tree() const
 	return final_modulate;
 }
 
-void CanvasItem::_top_level_changed_on_parent()
-{
-	// Inform children that top_level status has changed on a parent.
-	_top_level_changed();
-}
-
 bool CanvasItem::is_set_as_top_level() const { return top_level; }
 
 void CanvasItem::set_self_modulate(const Color& p_self_modulate)
@@ -308,17 +290,6 @@ int CanvasItem::get_light_mask() const
 {
 	ERR_READ_THREAD_GUARD_V(0);
 	return light_mask;
-}
-
-void CanvasItem::set_z_index(int p_z)
-{
-	ERR_THREAD_GUARD;
-	ERR_FAIL_COND_MSG(p_z < RSE::CANVAS_ITEM_Z_MIN || p_z > RSE::CANVAS_ITEM_Z_MAX,
-		vformat("Tried to set Z index to an invalid value: %d. Z index must be between %d and %d.",
-			p_z, RSE::CANVAS_ITEM_Z_MIN, RSE::CANVAS_ITEM_Z_MAX));
-	z_index = p_z;
-	RS::get_singleton()->canvas_item_set_z_index(canvas_item, z_index);
-	update_configuration_warnings();
 }
 
 void CanvasItem::set_z_as_relative(bool p_enabled)

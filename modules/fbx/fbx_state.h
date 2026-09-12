@@ -54,7 +54,6 @@ class FBXState : public GLTFState
 									   // with the scene name (or _)
 
 protected:
-	static void _bind_methods();
 
 public:
 	bool get_allow_geometry_helper_nodes();

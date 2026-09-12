@@ -40,7 +40,6 @@ class PhysicsRayQueryParameters2D : public RefCounted
 	PS2DT::RayParameters parameters;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static Ref<PhysicsRayQueryParameters2D> create(

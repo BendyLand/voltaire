@@ -48,7 +48,6 @@ EditorDebuggerInspector::~EditorDebuggerInspector()
 	memdelete(variables);
 }
 
-void EditorDebuggerInspector::_bind_methods() {}
 
 void EditorDebuggerInspector::clear_cache()
 {

@@ -76,7 +76,6 @@ Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_file(const String
 }
 #endif
 
-void ResourceImporterOggVorbis::_bind_methods() {}
 
 ResourceImporterOggVorbis::ResourceImporterOggVorbis() {}
 

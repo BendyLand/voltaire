@@ -37,7 +37,6 @@ AccessibilityServer::AccessibilityServerCreate
 
 int AccessibilityServer::server_create_count = 1;
 
-void AccessibilityServer::_bind_methods() {}
 
 AccessibilityServer* AccessibilityServer::create(int p_index, Error& r_error)
 {

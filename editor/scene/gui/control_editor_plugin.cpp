@@ -43,133 +43,6 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 
-void ControlPositioningWarning::_update_toggler()
-{
-	Ref<Texture2D> arrow;
-	if (hint_label->is_visible()) {
-		arrow = get_theme_icon(SNAME("arrow"), SNAME("Tree"));
-		set_tooltip_text(TTR("Collapse positioning hint."));
-	}
-	else {
-		if (is_layout_rtl()) {
-			arrow = get_theme_icon(SNAME("arrow_collapsed"), SNAME("Tree"));
-		}
-		else {
-			arrow = get_theme_icon(SNAME("arrow_collapsed_mirrored"), SNAME("Tree"));
-		}
-		set_tooltip_text(TTR("Expand positioning hint."));
-	}
-
-	hint_icon->set_texture(arrow);
-}
-
-void ControlPositioningWarning::set_control(Control* p_node)
-{
-	control_node = p_node;
-	_update_warning();
-}
-
-void ControlPositioningWarning::gui_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-		bool state = !hint_label->is_visible();
-
-		hint_filler_left->set_visible(state);
-		hint_label->set_visible(state);
-		hint_filler_right->set_visible(state);
-
-		_update_toggler();
-	}
-}
-
-void ControlPositioningWarning::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED:
-		_update_warning();
-		_update_toggler();
-		break;
-	}
-}
-
-ControlPositioningWarning::ControlPositioningWarning()
-{
-	set_mouse_filter(MOUSE_FILTER_STOP);
-
-	bg_panel = memnew(PanelContainer);
-	bg_panel->set_mouse_filter(MOUSE_FILTER_IGNORE);
-	add_child(bg_panel);
-
-	grid = memnew(GridContainer);
-	grid->set_columns(3);
-	bg_panel->add_child(grid);
-
-	title_icon = memnew(TextureRect);
-	title_icon->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	grid->add_child(title_icon);
-
-	title_label = memnew(Label);
-	title_label->set_autowrap_mode(TextServer::AutowrapMode::AUTOWRAP_WORD);
-	title_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	title_label->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
-	grid->add_child(title_label);
-
-	hint_icon = memnew(TextureRect);
-	hint_icon->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	grid->add_child(hint_icon);
-
-	// Filler.
-	hint_filler_left = memnew(Control);
-	hint_filler_left->hide();
-	grid->add_child(hint_filler_left);
-
-	hint_label = memnew(Label);
-	hint_label->set_autowrap_mode(TextServer::AutowrapMode::AUTOWRAP_WORD);
-	hint_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	hint_label->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
-	hint_label->hide();
-	grid->add_child(hint_label);
-
-	// Filler.
-	hint_filler_right = memnew(Control);
-	hint_filler_right->hide();
-	grid->add_child(hint_filler_right);
-}
-
-void EditorPropertySizeFlags::_preset_selected(int p_which)
-{
-	int preset = flag_presets->get_item_id(p_which);
-	if (preset == SIZE_FLAGS_PRESET_CUSTOM) {
-		flag_options->set_visible(true);
-		return;
-	}
-	flag_options->set_visible(false);
-
-	uint32_t value = 0;
-	switch (preset) {
-	case SIZE_FLAGS_PRESET_FILL:
-		value = Control::SIZE_FILL;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_BEGIN:
-		value = Control::SIZE_SHRINK_BEGIN;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_CENTER:
-		value = Control::SIZE_SHRINK_CENTER;
-		break;
-	case SIZE_FLAGS_PRESET_SHRINK_END:
-		value = Control::SIZE_SHRINK_END;
-		break;
-	}
-
-	bool is_expand = flag_expand->is_visible() && flag_expand->is_pressed();
-	if (is_expand) {
-		value |= Control::SIZE_EXPAND;
-	}
-}
-
 Size2 ControlEditorPopupButton::get_minimum_size() const
 {
 	Vector2 base_size = Vector2(26, 26) * EDSCALE;
@@ -203,8 +76,6 @@ void ControlEditorPopupButton::toggled(bool p_pressed)
 
 	popup_panel->popup();
 }
-
-void ControlEditorPopupButton::_popup_visibility_changed(bool p_visible) { set_pressed(p_visible); }
 
 void ControlEditorPopupButton::_notification(int p_what)
 {
@@ -242,98 +113,6 @@ void ControlEditorPresetPicker::_add_separator(BoxContainer* p_box, Separator* p
 	p_separator->set_custom_minimum_size(Size2i(1, 1));
 	p_box->add_child(p_separator);
 }
-
-void ControlEditorPresetPicker::_update_preset_button_state(int p_preset)
-{
-	for (KeyValue<int, Button*>& E : preset_buttons) {
-		Button* button = E.value;
-
-		if (!button) {
-			continue;
-		}
-
-		button->begin_bulk_theme_override();
-
-		if (E.key == p_preset) {
-			const Color pressed_color = get_theme_color(SNAME("icon_pressed_color"), "Button");
-			button->add_theme_color_override(SNAME("icon_normal_color"), pressed_color);
-			button->add_theme_color_override(SNAME("icon_hover_color"), pressed_color);
-		}
-		else {
-			button->remove_theme_color_override(SNAME("icon_normal_color"));
-			button->remove_theme_color_override(SNAME("icon_hover_color"));
-		}
-
-		button->end_bulk_theme_override();
-	}
-}
-
-void AnchorPresetPicker::set_selected_preset(int p_preset)
-{
-	_update_preset_button_state(p_preset);
-}
-
-void AnchorPresetPicker::_bind_methods() {}
-
-AnchorPresetPicker::AnchorPresetPicker()
-{
-	VBoxContainer* main_vb = memnew(VBoxContainer);
-	main_vb->add_theme_constant_override("separation", grid_separation);
-	add_child(main_vb);
-
-	HBoxContainer* top_row = memnew(HBoxContainer);
-	top_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	top_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(top_row);
-
-	_add_row_button(top_row, PRESET_TOP_LEFT, TTRC("Top Left"));
-	_add_row_button(top_row, PRESET_CENTER_TOP, TTRC("Center Top"));
-	_add_row_button(top_row, PRESET_TOP_RIGHT, TTRC("Top Right"));
-	_add_separator(top_row, memnew(VSeparator));
-	_add_row_button(top_row, PRESET_TOP_WIDE, TTRC("Top Wide"));
-
-	HBoxContainer* mid_row = memnew(HBoxContainer);
-	mid_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	mid_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(mid_row);
-
-	_add_row_button(mid_row, PRESET_CENTER_LEFT, TTRC("Center Left"));
-	_add_row_button(mid_row, PRESET_CENTER, TTRC("Center"));
-	_add_row_button(mid_row, PRESET_CENTER_RIGHT, TTRC("Center Right"));
-	_add_separator(mid_row, memnew(VSeparator));
-	_add_row_button(mid_row, PRESET_HCENTER_WIDE, TTRC("HCenter Wide"));
-
-	HBoxContainer* bot_row = memnew(HBoxContainer);
-	bot_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	bot_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(bot_row);
-
-	_add_row_button(bot_row, PRESET_BOTTOM_LEFT, TTRC("Bottom Left"));
-	_add_row_button(bot_row, PRESET_CENTER_BOTTOM, TTRC("Center Bottom"));
-	_add_row_button(bot_row, PRESET_BOTTOM_RIGHT, TTRC("Bottom Right"));
-	_add_separator(bot_row, memnew(VSeparator));
-	_add_row_button(bot_row, PRESET_BOTTOM_WIDE, TTRC("Bottom Wide"));
-
-	_add_separator(main_vb, memnew(HSeparator));
-
-	HBoxContainer* extra_row = memnew(HBoxContainer);
-	extra_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	extra_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(extra_row);
-
-	_add_row_button(extra_row, PRESET_LEFT_WIDE, TTRC("Left Wide"));
-	_add_row_button(extra_row, PRESET_VCENTER_WIDE, TTRC("VCenter Wide"));
-	_add_row_button(extra_row, PRESET_RIGHT_WIDE, TTRC("Right Wide"));
-	_add_separator(extra_row, memnew(VSeparator));
-	_add_row_button(extra_row, PRESET_FULL_RECT, TTRC("Full Rect"));
-}
-
-void SizeFlagPresetPicker::set_selected_preset(int p_preset)
-{
-	_update_preset_button_state(p_preset);
-}
-
-void SizeFlagPresetPicker::set_expand_flag(bool p_expand) { expand_button->set_pressed(p_expand); }
 
 Vector2 ControlEditorToolbar::_position_to_anchor(const Control* p_control, Vector2 position)
 {
@@ -405,20 +184,6 @@ ControlOffsetTransformPreview::ControlOffsetTransformPreview(EditorPlugin* p_plu
 void ControlEditorPlugin::forward_canvas_draw_over_viewport(Control* p_overlay)
 {
 	offset_transform_preview->forward_canvas_draw_over_viewport(p_overlay);
-}
-
-ControlEditorPlugin::ControlEditorPlugin()
-{
-	toolbar = memnew(ControlEditorToolbar);
-	toolbar->hide();
-	add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
-
-	offset_transform_preview = memnew(ControlOffsetTransformPreview(this));
-	EditorNode::get_singleton()->get_gui_base()->add_child(offset_transform_preview);
-
-	Ref<EditorInspectorPluginControl> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
 }
 
 

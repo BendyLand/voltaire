@@ -180,78 +180,6 @@ void TextureLayeredEditor::_texture_rect_draw()
 	texture_rect->draw_rect(Rect2(Point2(), texture_rect->get_size()), Color(1, 1, 1, 1));
 }
 
-void TextureLayeredEditor::_update_gui()
-{
-	if (texture.is_null()) {
-		return;
-	}
-
-	_texture_rect_update_area();
-
-	const Image::Format format = texture->get_format();
-	const String format_name = Image::get_format_name(format);
-	String texture_info;
-
-	switch (texture->get_layered_type()) {
-	case TextureLayered::LAYERED_TYPE_2D_ARRAY: {
-		layer->set_max(texture->get_layers() - 1);
-
-		texture_info = vformat(String::utf8("%d×%d (×%d) %s\n"), texture->get_width(),
-			texture->get_height(), texture->get_layers(), format_name);
-
-	} break;
-	case TextureLayered::LAYERED_TYPE_CUBEMAP: {
-		layer->hide();
-
-		texture_info = vformat(
-			String::utf8("%d×%d %s\n"), texture->get_width(), texture->get_height(), format_name);
-
-	} break;
-	case TextureLayered::LAYERED_TYPE_CUBEMAP_ARRAY: {
-		layer->set_max(texture->get_layers() / 6 - 1);
-
-		texture_info = vformat(String::utf8("%d×%d (×%d) %s\n"), texture->get_width(),
-			texture->get_height(), texture->get_layers() / 6, format_name);
-
-	} break;
-
-	default: {
-	}
-	}
-
-	if (texture->has_mipmaps()) {
-		const int mip_count =
-			Image::get_image_required_mipmaps(texture->get_width(), texture->get_height(), format);
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, true) *
-			texture->get_layers();
-
-		texture_info += vformat(
-			TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"), mip_count, String::humanize_size(memory));
-
-	}
-	else {
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, false) *
-			texture->get_layers();
-
-		texture_info +=
-			vformat(TTR("No Mipmaps") + "\n" + TTR("Memory: %s"), String::humanize_size(memory));
-	}
-
-	info->set_text(texture_info);
-
-	const uint32_t components_mask = Image::get_format_component_mask(format);
-	if (Math::is_power_of_2(components_mask)) {
-		// Only one channel available, no point in showing a channel selector.
-		channel_selector->hide();
-	}
-	else {
-		channel_selector->show();
-		channel_selector->set_available_channels_mask(components_mask);
-	}
-}
-
 void TextureLayeredEditor::_notification(int p_what)
 {
 	switch (p_what) {
@@ -263,16 +191,6 @@ void TextureLayeredEditor::_notification(int p_what)
 		Ref<Texture2D> checkerboard = get_editor_theme_icon(SNAME("Checkerboard"));
 		draw_texture_rect(checkerboard.ptr(), texture_rect->get_rect(), true);
 		_draw_outline();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (info) {
-			Ref<Font> metadata_label_font =
-				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-			info->add_theme_font_override(SceneStringName(font), metadata_label_font.ptr());
-		}
-		theme_cache.outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
 	} break;
 	}
 }

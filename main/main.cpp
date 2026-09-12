@@ -4181,12 +4181,6 @@ bool Main::iteration()
 	}
 #endif
 
-#ifdef TOOLS_ENABLED
-	if (exit && quit_after_timeout && EditorNode::get_singleton()) {
-		EditorNode::get_singleton()->unload_editor_addons();
-	}
-#endif
-
 	return exit;
 }
 

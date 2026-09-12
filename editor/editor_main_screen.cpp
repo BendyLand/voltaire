@@ -65,15 +65,6 @@ void EditorMainScreen::_notification(int p_what)
 
 void EditorMainScreen::set_button_container(HBoxContainer* p_button_hb) { button_hb = p_button_hb; }
 
-void EditorMainScreen::set_button_enabled(int p_index, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_index, buttons.size());
-	buttons[p_index]->set_visible(p_enabled);
-	if (!p_enabled && buttons[p_index]->is_pressed()) {
-		select(EDITOR_2D);
-	}
-}
-
 bool EditorMainScreen::is_button_enabled(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, buttons.size(), false);

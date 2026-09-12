@@ -38,7 +38,6 @@ private:
 	static HashMap<String, String> built_in_includes;
 
 protected:
-	static void _bind_methods();
 
 public:
 	static void register_built_in_include_file(

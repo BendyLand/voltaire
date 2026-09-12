@@ -121,13 +121,10 @@ class ScenePaint2DEditor : public Control
 	bool _is_node_valid();
 
 	void _add_instance(bool p_show = false);
-	void _clear_instance(bool p_hide = false);
-	void _update_instance();
 	bool _is_instance_valid();
 
 	void _draw_overlay();
 	void _update_draw_overlay();
-	void _update_hint_label();
 
 	void _gui_input_viewport(const Ref<InputEvent>& p_event);
 	void _add_node_at_pos();
@@ -135,7 +132,6 @@ class ScenePaint2DEditor : public Control
 
 	Vector2 _get_mouse_grid_cell();
 
-	void _set_pinned(bool p_pinned, Node* p_pinned_node = nullptr);
 	void _pinned_toggled(bool p_pressed);
 	void _scene_changed();
 
@@ -167,7 +163,6 @@ class ScenePaint2DEditor : public Control
 	void _grid_step_changed();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

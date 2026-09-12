@@ -111,24 +111,6 @@ void Camera3D::fti_update_servers_xform()
 	Node3D::fti_update_servers_xform();
 }
 
-void Camera3D::_update_camera_mode()
-{
-	force_change = true;
-	switch (mode) {
-	case PROJECTION_PERSPECTIVE: {
-		set_perspective(fov, _near, _far);
-
-	} break;
-	case PROJECTION_ORTHOGONAL: {
-		set_orthogonal(size, _near, _far);
-	} break;
-	case PROJECTION_FRUSTUM: {
-		set_frustum(size, frustum_offset, _near, _far);
-	} break;
-	}
-	fti_notify_node_changed(false);
-}
-
 void Camera3D::_update_camera()
 {
 	if (!is_inside_tree()) {
@@ -206,60 +188,6 @@ Projection Camera3D::get_camera_projection() const
 {
 	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Projection(), "Camera is not inside the scene tree.");
 	return _get_camera_projection(_near);
-}
-
-void Camera3D::set_perspective(real_t p_fovy_degrees, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && fov == p_fovy_degrees && p_z_near == _near && p_z_far == _far &&
-		mode == PROJECTION_PERSPECTIVE) {
-		return;
-	}
-
-	fov = p_fovy_degrees;
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_PERSPECTIVE;
-
-	RenderingServer::get_singleton()->camera_set_perspective(camera, fov, _near, _far);
-	update_gizmos();
-	force_change = false;
-}
-
-void Camera3D::set_orthogonal(real_t p_size, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && size == p_size && p_z_near == _near && p_z_far == _far &&
-		mode == PROJECTION_ORTHOGONAL) {
-		return;
-	}
-
-	size = p_size;
-
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_ORTHOGONAL;
-	force_change = false;
-
-	RenderingServer::get_singleton()->camera_set_orthogonal(camera, size, _near, _far);
-	update_gizmos();
-}
-
-void Camera3D::set_frustum(real_t p_size, Vector2 p_offset, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && size == p_size && frustum_offset == p_offset && p_z_near == _near &&
-		p_z_far == _far && mode == PROJECTION_FRUSTUM) {
-		return;
-	}
-
-	size = p_size;
-	frustum_offset = p_offset;
-
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_FRUSTUM;
-	force_change = false;
-
-	RenderingServer::get_singleton()->camera_set_frustum(camera, size, frustum_offset, _near, _far);
-	update_gizmos();
 }
 
 RID Camera3D::get_camera() const { return camera; }
@@ -443,57 +371,15 @@ Vector3 Camera3D::project_position(const Point2& p_point, real_t p_z_depth) cons
 	return get_camera_transform().xform(p);
 }
 
-void Camera3D::set_environment(const Ref<Environment>& p_environment)
-{
-	environment = p_environment;
-	if (environment.is_valid()) {
-		RS::get_singleton()->camera_set_environment(camera, environment->get_rid());
-	}
-	else {
-		RS::get_singleton()->camera_set_environment(camera, RID());
-	}
-	_update_camera_mode();
-}
-
 Ref<Environment> Camera3D::get_environment() const { return environment; }
 
 Ref<CameraAttributes> Camera3D::get_attributes() const { return attributes; }
-
-void Camera3D::set_compositor(const Ref<Compositor>& p_compositor)
-{
-	compositor = p_compositor;
-	if (compositor.is_valid()) {
-		RS::get_singleton()->camera_set_compositor(camera, compositor->get_rid());
-	}
-	else {
-		RS::get_singleton()->camera_set_compositor(camera, RID());
-	}
-	_update_camera_mode();
-}
 
 Ref<Compositor> Camera3D::get_compositor() const { return compositor; }
 
 Camera3D::KeepAspect Camera3D::get_keep_aspect_mode() const { return keep_aspect; }
 
-void Camera3D::set_doppler_tracking(DopplerTracking p_tracking)
-{
-	if (doppler_tracking == p_tracking) {
-		return;
-	}
-
-	doppler_tracking = p_tracking;
-	if (p_tracking != DOPPLER_TRACKING_DISABLED) {
-		velocity_tracker->set_track_physics_step(doppler_tracking == DOPPLER_TRACKING_PHYSICS_STEP);
-		if (is_inside_tree()) {
-			velocity_tracker->reset(get_global_transform().origin);
-		}
-	}
-	_update_camera_mode();
-}
-
 Camera3D::DopplerTracking Camera3D::get_doppler_tracking() const { return doppler_tracking; }
-
-void Camera3D::_bind_methods() {}
 
 real_t Camera3D::get_fov() const { return fov; }
 
@@ -507,62 +393,7 @@ real_t Camera3D::get_far() const { return _far; }
 
 Camera3D::ProjectionType Camera3D::get_projection() const { return mode; }
 
-void Camera3D::set_fov(real_t p_fov)
-{
-	ERR_FAIL_COND(p_fov <= CMP_EPSILON || p_fov >= 180.0 - CMP_EPSILON);
-	fov = p_fov;
-	_update_camera_mode();
-}
-
-void Camera3D::set_size(real_t p_size)
-{
-	ERR_FAIL_COND(p_size <= CMP_EPSILON);
-	size = p_size;
-	_update_camera_mode();
-}
-
-void Camera3D::set_near(real_t p_near)
-{
-	_near = p_near;
-	_update_camera_mode();
-}
-
-void Camera3D::set_frustum_offset(Vector2 p_offset)
-{
-	frustum_offset = p_offset;
-	_update_camera_mode();
-}
-
-void Camera3D::set_far(real_t p_far)
-{
-	_far = p_far;
-	_update_camera_mode();
-}
-
-void Camera3D::set_cull_mask(uint32_t p_layers)
-{
-	layers = p_layers;
-	RenderingServer::get_singleton()->camera_set_cull_mask(camera, layers);
-	_update_camera_mode();
-}
-
 uint32_t Camera3D::get_cull_mask() const { return layers; }
-
-void Camera3D::set_cull_mask_value(int p_layer_number, bool p_value)
-{
-	ERR_FAIL_COND_MSG(
-		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
-	uint32_t mask = get_cull_mask();
-	if (p_value) {
-		mask |= 1 << (p_layer_number - 1);
-	}
-	else {
-		mask &= ~(1 << (p_layer_number - 1));
-	}
-	set_cull_mask(mask);
-}
 
 bool Camera3D::get_cull_mask_value(int p_layer_number) const
 {
@@ -618,17 +449,6 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 	else {
 		return Vector3();
 	}
-}
-
-Camera3D::Camera3D()
-{
-	camera = RenderingServer::get_singleton()->camera_create();
-	set_perspective(75.0, 0.05, 4000.0);
-	RenderingServer::get_singleton()->camera_set_cull_mask(camera, layers);
-	// active=false;
-	velocity_tracker.instantiate();
-	set_notify_transform(true);
-	set_disable_scale(true);
 }
 
 Camera3D::~Camera3D()

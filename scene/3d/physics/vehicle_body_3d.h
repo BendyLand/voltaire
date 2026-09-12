@@ -138,13 +138,10 @@ class VehicleWheel3D : public Node3D
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
-	void set_suspension_rest_length(real_t p_length);
 	real_t get_suspension_rest_length() const;
 
 	void set_suspension_travel(real_t p_length);
@@ -197,7 +194,7 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	VehicleWheel3D();
+	VehicleWheel3D() = default;
 };
 
 class VehicleBody3D : public RigidBody3D
@@ -246,7 +243,6 @@ class VehicleBody3D : public RigidBody3D
 	friend class VehicleWheel3D;
 	Vector<VehicleWheel3D*> wheels;
 
-	static void _bind_methods();
 
 	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
 	virtual void _body_state_changed(PhysicsDirectBodyState3D* p_state) override;

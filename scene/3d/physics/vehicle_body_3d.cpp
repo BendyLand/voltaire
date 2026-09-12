@@ -140,19 +140,7 @@ void VehicleWheel3D::_update(PhysicsDirectBodyState3D* s)
 	}
 }
 
-void VehicleWheel3D::set_radius(real_t p_radius)
-{
-	m_wheelRadius = p_radius;
-	update_gizmos();
-}
-
 real_t VehicleWheel3D::get_radius() const { return m_wheelRadius; }
-
-void VehicleWheel3D::set_suspension_rest_length(real_t p_length)
-{
-	m_suspensionRestLength = p_length;
-	update_gizmos();
-}
 
 real_t VehicleWheel3D::get_suspension_rest_length() const { return m_suspensionRestLength; }
 
@@ -195,7 +183,6 @@ Vector3 VehicleWheel3D::get_contact_normal() const { return m_raycastInfo.m_cont
 
 Node3D* VehicleWheel3D::get_contact_body() const { return m_raycastInfo.m_groundObject; }
 
-void VehicleWheel3D::_bind_methods() {}
 
 void VehicleWheel3D::set_engine_force(real_t p_engine_force) { m_engineForce = p_engine_force; }
 
@@ -220,8 +207,6 @@ bool VehicleWheel3D::is_used_as_steering() const { return steers; }
 real_t VehicleWheel3D::get_skidinfo() const { return m_skidInfo; }
 
 real_t VehicleWheel3D::get_rpm() const { return m_rpm; }
-
-VehicleWheel3D::VehicleWheel3D() { set_physics_interpolation_mode(PHYSICS_INTERPOLATION_MODE_OFF); }
 
 void VehicleBody3D::_update_wheel_transform(VehicleWheel3D& wheel, PhysicsDirectBodyState3D* s)
 {
@@ -810,7 +795,6 @@ void VehicleBody3D::set_steering(real_t p_steering)
 
 real_t VehicleBody3D::get_steering() const { return m_steeringValue; }
 
-void VehicleBody3D::_bind_methods() {}
 
 VehicleBody3D::VehicleBody3D()
 {

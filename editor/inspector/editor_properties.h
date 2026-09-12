@@ -105,7 +105,6 @@ protected:
 	virtual void _set_read_only(bool p_read_only) override;
 
 public:
-	void set_string_name(bool p_enabled);
 	virtual void update_property() override;
 	void set_placeholder(const String& p_string);
 	void set_secret(bool p_enabled);
@@ -166,9 +165,6 @@ class EditorPropertyTextEnum : public EditorProperty
 	void _emit_changed_value(const String& p_string);
 	void _option_selected(int p_which);
 
-	void _edit_custom_value();
-	void _custom_value_submitted(const String& p_value);
-	void _custom_value_accepted();
 	void _custom_value_canceled();
 
 protected:
@@ -323,16 +319,11 @@ private:
 	ConfirmationDialog* rename_dialog = nullptr;
 	LineEdit* rename_dialog_text = nullptr;
 
-	void _rename_pressed(int p_menu);
 	void _rename_operation_confirm();
 	void _update_hovered(const Vector2& p_position);
 	void _on_hover_exit();
 	void _update_flag(bool p_replace);
 	Size2 get_grid_size() const;
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	uint32_t value = 0;
@@ -369,7 +360,6 @@ private:
 	PopupMenu* layers = nullptr;
 	TextureButton* button = nullptr;
 
-	void _button_pressed();
 	void _menu_pressed(int p_menu);
 	void _refresh_names();
 
@@ -396,7 +386,6 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyInteger();
 };
 
@@ -435,7 +424,7 @@ class EditorPropertyCallable : public EditorProperty
 
 public:
 	virtual void update_property() override;
-	EditorPropertyCallable();
+	EditorPropertyCallable() = default;
 };
 
 class EditorPropertyFloat : public EditorProperty
@@ -450,7 +439,6 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyFloat();
 };
 
@@ -485,8 +473,6 @@ class EditorPropertyEasing : public EditorProperty
 	void _spin_value_changed(double p_value);
 	void _spin_focus_exited();
 
-	void _notification(int p_what);
-
 protected:
 	virtual void _set_read_only(bool p_read_only) override;
 
@@ -507,7 +493,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyRect2(bool p_force_wide = false);
 };
 
@@ -522,7 +507,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyRect2i(bool p_force_wide = false);
 };
 
@@ -537,7 +521,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyPlane(bool p_force_wide = false);
 };
 
@@ -557,9 +540,7 @@ class EditorPropertyQuaternion : public EditorProperty
 	Vector3 edit_euler;
 
 	void _value_changed(double p_val, const String& p_name);
-	void _edit_custom_value();
 	void _custom_value_changed(double p_val);
-	void _warning_pressed();
 
 	bool is_grabbing_euler();
 
@@ -569,7 +550,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint, bool p_hide_editor = false);
 	EditorPropertyQuaternion();
 };
 
@@ -584,7 +564,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyAABB();
 };
 
@@ -599,7 +578,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyTransform2D(bool p_include_origin = true);
 };
 
@@ -614,7 +592,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyBasis();
 };
 
@@ -630,7 +607,6 @@ protected:
 public:
 	virtual void update_property() override;
 	virtual void update_using_transform(Transform3D p_transform);
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyTransform3D();
 };
 
@@ -646,7 +622,6 @@ protected:
 public:
 	virtual void update_property() override;
 	virtual void update_using_transform(Projection p_transform);
-	void setup(const EditorPropertyRangeHint& p_range_hint);
 	EditorPropertyProjection();
 };
 
@@ -655,7 +630,6 @@ class EditorPropertyColor : public EditorProperty
 	ColorPickerButton* picker = nullptr;
 	void _color_changed(const Color& p_color);
 	void _picker_created();
-	void _popup_opening();
 	void _popup_closed();
 
 	Color last_color;
@@ -667,7 +641,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(bool p_show_alpha);
 	void set_live_changes_enabled(bool p_enabled);
 	EditorPropertyColor();
 };
@@ -694,12 +667,9 @@ class EditorPropertyNodePath : public EditorProperty
 	Vector<StringName> valid_types;
 	void _node_selected(const NodePath& p_path, bool p_absolute = true);
 	void _node_assign();
-	void _assign_draw();
 	Node* get_base_node();
 	void _update_menu();
 	void _menu_option(int p_idx);
-	void _accept_text();
-	void _text_submitted(const String& p_text);
 	const NodePath _get_node_path() const;
 
 protected:
@@ -752,7 +722,6 @@ class EditorPropertyResource : public EditorProperty
 protected:
 	virtual void _set_read_only(bool p_read_only) override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual void update_property() override;

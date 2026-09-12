@@ -124,7 +124,6 @@ public:
 	};
 
 private:
-	static void _bind_methods() {}
 
 public:
 	explicit JoltPhysicsServer3D(bool p_on_separate_thread);

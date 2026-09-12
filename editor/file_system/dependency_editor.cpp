@@ -98,17 +98,6 @@ struct DependencyEditorSortByFile
 	}
 };
 
-void DependencyEditor::_searched(const String& p_path)
-{
-	HashMap<String, String> dep_rename;
-	dep_rename[replacing] = p_path;
-
-	ResourceLoader::rename_dependencies(editing, dep_rename);
-
-	_update_list();
-	_update_file();
-}
-
 void DependencyEditor::_fix_and_find(
 	EditorFileSystemDirectory* efsd, HashMap<String, HashMap<String, String>>& candidates)
 {
@@ -163,45 +152,6 @@ void DependencyEditor::_fix_and_find(
 	}
 }
 
-void DependencyEditor::_fix_all()
-{
-	if (!EditorFileSystem::get_singleton()->get_filesystem()) {
-		return;
-	}
-
-	HashMap<String, HashMap<String, String>> candidates;
-
-	for (const String& E : missing) {
-		String base = E.get_file();
-		if (!candidates.has(base)) {
-			candidates[base] = HashMap<String, String>();
-		}
-
-		candidates[base][E] = "";
-	}
-
-	_fix_and_find(EditorFileSystem::get_singleton()->get_filesystem(), candidates);
-
-	HashMap<String, String> remaps;
-
-	for (KeyValue<String, HashMap<String, String>>& E : candidates) {
-		for (const KeyValue<String, String>& F : E.value) {
-			if (!F.value.is_empty()) {
-				remaps[F.key] = F.value;
-			}
-		}
-	}
-
-	if (remaps.size()) {
-		ResourceLoader::rename_dependencies(editing, remaps);
-
-		_update_list();
-		_update_file();
-	}
-}
-
-void DependencyEditor::_update_file() { EditorFileSystem::get_singleton()->update_file(editing); }
-
 static String _get_resolved_dep_path(const String& p_dep)
 {
 	if (p_dep.get_slice_count("::") < 3) {
@@ -249,34 +199,6 @@ List<String> DependencyEditor::_filter_deps(const List<String>& p_deps)
 	return filtered;
 }
 
-void DependencyEditor::edit(const String& p_path)
-{
-	editing = p_path;
-	set_title(TTR("Dependencies For:") + " " + p_path.get_file());
-
-	filter->set_text("");
-
-	_update_menu_sort();
-	_update_list();
-
-	if (EditorNode::get_singleton()->is_scene_open(p_path)) {
-		warning_label->show();
-		warning_label->set_text(vformat(TTR("Scene \"%s\" is currently being edited. Changes will "
-											"only take effect when reloaded."),
-			p_path.get_file()));
-	}
-	else if (ResourceCache::has(p_path)) {
-		warning_label->show();
-		warning_label->set_text(
-			vformat(TTR("Resource \"%s\" is in use. Changes will only take effect when reloaded."),
-				p_path.get_file()));
-	}
-	else {
-		warning_label->hide();
-	}
-	popup_centered_ratio(0.4);
-}
-
 void DependencyEditor::_sort_option_selected(int p_id)
 {
 	sort_by = (DependencyEditorSortBy)p_id;
@@ -284,52 +206,7 @@ void DependencyEditor::_sort_option_selected(int p_id)
 	_update_list();
 }
 
-void DependencyEditor::_update_menu_sort()
-{
-	for (int i = 0; i != (int)DependencyEditorSortBy::MAX; i++) {
-		menu_sort->get_popup()->set_item_checked(i, (i == (int)sort_by));
-	}
-}
-
-void DependencyEditorOwners::_list_rmb_clicked(
-	int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index)
-{
-	if (p_mouse_button_index != MouseButton::RIGHT) {
-		return;
-	}
-
-	file_options->clear();
-	file_options->reset_size();
-	if (p_item >= 0) {
-		PackedInt32Array selected_items = owners->get_selected_items();
-		bool only_scenes_selected = true;
-
-		for (int i = 0; i < selected_items.size(); i++) {
-			int item_idx = selected_items[i];
-			if (ResourceLoader::get_resource_type(owners->get_item_text(item_idx)) !=
-				"PackedScene") {
-				only_scenes_selected = false;
-				break;
-			}
-		}
-
-		if (only_scenes_selected) {
-			file_options->add_icon_item(get_editor_theme_icon(SNAME("Load")),
-				TTRN("Open Scene", "Open Scenes", selected_items.size()), FILE_MENU_OPEN);
-		}
-		else if (selected_items.size() == 1) {
-			file_options->add_icon_item(
-				get_editor_theme_icon(SNAME("Load")), TTR("Open"), FILE_MENU_OPEN);
-		}
-		else {
-			return;
-		}
-	}
-
-	file_options->set_position(owners->get_screen_position() + p_pos);
-	file_options->reset_size();
-	file_options->popup();
-}
+void DependencyEditor::_update_menu_sort() {}
 
 void DependencyEditorOwners::_empty_clicked(const Vector2& p_pos, MouseButton p_mouse_button_index)
 {
@@ -354,58 +231,6 @@ void DependencyEditorOwners::_file_option(int p_option)
 		}
 	} break;
 	}
-}
-
-void DependencyEditorOwners::_fill_owners(EditorFileSystemDirectory* efsd)
-{
-	if (!efsd) {
-		return;
-	}
-
-	for (int i = 0; i < efsd->get_subdir_count(); i++) {
-		_fill_owners(efsd->get_subdir(i));
-	}
-
-	for (int i = 0; i < efsd->get_file_count(); i++) {
-		Vector<String> deps = efsd->get_file_deps(i);
-		bool found = false;
-		for (int j = 0; j < deps.size(); j++) {
-			if (deps[j] == editing) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			continue;
-		}
-
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(efsd->get_file_type(i));
-
-		owners->add_item(efsd->get_file_path(i), icon);
-	}
-}
-
-void DependencyEditorOwners::show(const String& p_path)
-{
-	editing = p_path;
-	owners->clear();
-	_fill_owners(EditorFileSystem::get_singleton()->get_filesystem());
-
-	int count = owners->get_item_count();
-	if (count > 0) {
-		empty->hide();
-		owners_count->set_text(vformat(TTR("Owners of: %s (Total: %d)"), p_path.get_file(), count));
-		owners_count->show();
-		owners_mc->show();
-	}
-	else {
-		owners_count->hide();
-		owners_mc->hide();
-		empty->set_text(vformat(TTR("No owners found for: %s"), p_path.get_file()));
-		empty->show();
-	}
-
-	popup_centered_ratio(0.3);
 }
 
 void DependencyRemoveDialog::_find_files_in_removed_folder(
@@ -462,47 +287,6 @@ void DependencyRemoveDialog::_find_all_removed_dependencies(
 	}
 }
 
-void DependencyRemoveDialog::_build_removed_dependency_tree(
-	const Vector<RemovedDependency>& p_removed)
-{
-	owners->clear();
-	owners->create_item(); // root
-
-	HashMap<String, TreeItem*> tree_items;
-	for (int i = 0; i < p_removed.size(); i++) {
-		RemovedDependency rd = p_removed[i];
-
-		// Ensure that the dependency is already in the tree
-		if (!tree_items.has(rd.dependency)) {
-			if (rd.dependency_folder.length() > 0) {
-				// Ensure the ancestor folder is already in the tree
-				if (!tree_items.has(rd.dependency_folder)) {
-					TreeItem* folder_item = owners->create_item(owners->get_root());
-					folder_item->set_text(0, rd.dependency_folder);
-					folder_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Folder")));
-					tree_items[rd.dependency_folder] = folder_item;
-				}
-				TreeItem* dependency_item = owners->create_item(tree_items[rd.dependency_folder]);
-				dependency_item->set_text(0, rd.dependency);
-				dependency_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Warning")));
-				tree_items[rd.dependency] = dependency_item;
-			}
-			else {
-				TreeItem* dependency_item = owners->create_item(owners->get_root());
-				dependency_item->set_text(0, rd.dependency);
-				dependency_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Warning")));
-				tree_items[rd.dependency] = dependency_item;
-			}
-		}
-
-		// List this file under this dependency
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(rd.file_type);
-		TreeItem* file_item = owners->create_item(tree_items[rd.dependency]);
-		file_item->set_text(0, rd.file);
-		file_item->set_icon(0, icon);
-	}
-}
-
 void DependencyRemoveDialog::_show_files_to_delete_list()
 {
 	files_to_delete_list->clear();
@@ -518,76 +302,11 @@ void DependencyRemoveDialog::_show_files_to_delete_list()
 	}
 }
 
-void DependencyRemoveDialog::show(const Vector<String>& p_folders, const Vector<String>& p_files)
-{
-	all_remove_files.clear();
-	dirs_to_delete.clear();
-	files_to_delete.clear();
-	owners->clear();
-
-	for (int i = 0; i < p_folders.size(); ++i) {
-		String folder = p_folders[i].ends_with("/") ? p_folders[i] : (p_folders[i] + "/");
-		_find_files_in_removed_folder(
-			EditorFileSystem::get_singleton()->get_filesystem_path(folder), folder);
-		dirs_to_delete.push_back(folder);
-	}
-	for (int i = 0; i < p_files.size(); ++i) {
-		all_remove_files[p_files[i]] = String();
-		files_to_delete.push_back(p_files[i]);
-	}
-
-	_show_files_to_delete_list();
-
-	Vector<RemovedDependency> removed_deps;
-	_find_all_removed_dependencies(
-		EditorFileSystem::get_singleton()->get_filesystem(), removed_deps);
-	_find_localization_remaps_of_removed_files(removed_deps);
-	removed_deps.sort();
-	if (removed_deps.is_empty()) {
-		vb_owners->hide();
-		text->set_text(TTR("Remove the selected files from the project? (Cannot be "
-						   "undone.)\nDepending on your filesystem configuration, the files will "
-						   "either be moved to the system trash or deleted permanently."));
-		reset_size();
-		popup_centered();
-	}
-	else {
-		_build_removed_dependency_tree(removed_deps);
-		vb_owners->show();
-		text->set_text(TTR("The files being removed are required by other resources in order for "
-						   "them to work.\nRemove them anyway? (Cannot be undone.)\nDepending on "
-						   "your filesystem configuration, the files will either be moved to the "
-						   "system trash or deleted permanently."));
-		popup_centered(Size2(500, 350));
-	}
-
-	EditorFileSystem::get_singleton()->scan_changes();
-}
-
 enum
 {
 	BUTTON_ID_SEARCH,
 	BUTTON_ID_OPEN_DEPS_EDITOR,
 };
-
-void DependencyErrorDialog::ok_pressed()
-{
-	EditorNode::get_singleton()->load_scene_or_resource(for_file, !errors_fixed);
-}
-
-void OrphanResourcesDialog::ok_pressed()
-{
-	paths.clear();
-
-	_find_to_delete(files->get_root(), paths);
-	if (paths.is_empty()) {
-		return;
-	}
-
-	delete_confirm->set_text(
-		vformat(TTR("Permanently delete %d item(s)? (No undo!)"), paths.size()));
-	delete_confirm->popup_centered();
-}
 
 void OrphanResourcesDialog::refresh()
 {
@@ -602,16 +321,6 @@ void OrphanResourcesDialog::show()
 {
 	refresh();
 	popup_centered_ratio(0.4);
-}
-
-void OrphanResourcesDialog::_delete_confirm()
-{
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	for (const String& E : paths) {
-		da->remove(E);
-		EditorFileSystem::get_singleton()->update_file(E);
-	}
-	refresh();
 }
 
 

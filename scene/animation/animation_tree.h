@@ -203,7 +203,6 @@ protected:
 	void make_invalid(
 		ProcessState& p_process_state, AnimationNodeInstance& p_instance, const String& p_reason);
 
-	static void _bind_methods();
 
 private:
 	mutable uint32_t filters_version = 1;
@@ -448,7 +447,6 @@ private:
 	virtual uint32_t _get_libraries_property_usage() const override;
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	virtual void _set_active(bool p_active) override;
 

@@ -373,7 +373,6 @@ void ENetConnection::socket_send(
 	enet_socket_send(host->socket, &address, enet_buffers, 1);
 }
 
-void ENetConnection::_bind_methods() {}
 
 ENetConnection::~ENetConnection()
 {

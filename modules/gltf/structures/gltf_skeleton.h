@@ -60,7 +60,6 @@ private:
 	Vector<BoneAttachment3D*> bone_attachments;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Vector<GLTFNodeIndex> get_joints();

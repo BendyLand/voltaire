@@ -269,7 +269,6 @@ class GridMap : public Node3D
 protected:
 	void _notification(int p_what);
 	void _update_visibility();
-	static void _bind_methods();
 
 public:
 	enum

@@ -80,14 +80,6 @@ void EditorNode3DGizmo::clear()
 	secondary_handle_ids.clear();
 }
 
-void EditorNode3DGizmo::redraw()
-{
-	_update_bvh();
-	if (Node3DEditor::get_singleton()->is_current_selected_gizmo(this)) {
-		Node3DEditor::get_singleton()->update_transform_gizmo();
-	}
-}
-
 String EditorNode3DGizmo::get_handle_name(int p_id, bool p_secondary) const
 {
 	ERR_FAIL_NULL_V(gizmo_plugin, "");
@@ -191,12 +183,6 @@ void EditorNode3DGizmo::_update_bvh()
 	}
 
 	Node3DEditor::get_singleton()->update_gizmo_bvh_node(bvh_node_id, aabb);
-}
-
-void EditorNode3DGizmo::add_lines(const Vector<Vector3>& p_lines, const Ref<Material>& p_material,
-	bool p_billboard, const Color& p_modulate)
-{
-	add_vertices(p_lines, p_material, Mesh::PRIMITIVE_LINES, p_billboard, p_modulate);
 }
 
 void EditorNode3DGizmo::add_collision_triangles(const Ref<TriangleMesh>& p_tmesh)
@@ -500,27 +486,6 @@ bool EditorNode3DGizmo::intersect_ray(
 	return false;
 }
 
-bool EditorNode3DGizmo::is_subgizmo_selected(int p_id) const
-{
-	Node3DEditor* ed = Node3DEditor::get_singleton();
-	ERR_FAIL_NULL_V(ed, false);
-	return ed->is_current_selected_gizmo(this) && ed->is_subgizmo_selected(p_id);
-}
-
-Vector<int> EditorNode3DGizmo::get_subgizmo_selection() const
-{
-	Vector<int> ret;
-
-	Node3DEditor* ed = Node3DEditor::get_singleton();
-	ERR_FAIL_NULL_V(ed, ret);
-
-	if (ed->is_current_selected_gizmo(this)) {
-		ret = ed->get_subgizmo_selection();
-	}
-
-	return ret;
-}
-
 void EditorNode3DGizmo::create()
 {
 	ERR_FAIL_NULL(spatial_node);
@@ -581,8 +546,6 @@ void EditorNode3DGizmo::set_hidden(bool p_hidden)
 
 void EditorNode3DGizmo::set_plugin(EditorNode3DGizmoPlugin* p_plugin) { gizmo_plugin = p_plugin; }
 
-void EditorNode3DGizmo::_bind_methods() {}
-
 EditorNode3DGizmo::EditorNode3DGizmo()
 {
 	valid = false;
@@ -602,64 +565,10 @@ EditorNode3DGizmo::~EditorNode3DGizmo()
 	clear();
 }
 
-/////
-
-void EditorNode3DGizmoPlugin::create_handle_material(
-	const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon)
-{
-	Ref<StandardMaterial3D> handle_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
-
-	handle_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	handle_material->set_flag(StandardMaterial3D::FLAG_USE_POINT_SIZE, true);
-	Ref<Texture2D> handle_t = p_icon.is_valid()
-								  ? p_icon
-								  : EditorNode::get_singleton()->get_editor_theme()->get_icon(
-										SNAME("Editor3DHandle"), EditorStringName(EditorIcons));
-	handle_material->set_point_size(handle_t->get_width());
-	handle_material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, handle_t);
-	handle_material->set_albedo(Color(1, 1, 1));
-	handle_material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	handle_material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	handle_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	handle_material->set_on_top_of_alpha();
-	if (p_billboard) {
-		handle_material->set_billboard_mode(StandardMaterial3D::BILLBOARD_ENABLED);
-		handle_material->set_on_top_of_alpha();
-	}
-	handle_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-
-	materials[p_name] = Vector<Ref<StandardMaterial3D>>();
-	materials[p_name].push_back(handle_material);
-}
-
 void EditorNode3DGizmoPlugin::add_material(const String& p_name, Ref<StandardMaterial3D> p_material)
 {
 	materials[p_name] = Vector<Ref<StandardMaterial3D>>();
 	materials[p_name].push_back(p_material);
-}
-
-Ref<StandardMaterial3D> EditorNode3DGizmoPlugin::get_material(
-	const String& p_name, const Ref<EditorNode3DGizmo>& p_gizmo)
-{
-	ERR_FAIL_COND_V(!materials.has(p_name), Ref<StandardMaterial3D>());
-	ERR_FAIL_COND_V(materials[p_name].is_empty(), Ref<StandardMaterial3D>());
-
-	if (p_gizmo.is_null() || materials[p_name].size() == 1) {
-		return materials[p_name][0];
-	}
-
-	int index = (p_gizmo->is_selected() ? 1 : 0) + (p_gizmo->is_editable() ? 2 : 0);
-
-	Ref<StandardMaterial3D> mat = materials[p_name][index];
-
-	bool on_top_mat = mat->get_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST);
-
-	if (!on_top_mat && current_state == ON_TOP && p_gizmo->is_selected()) {
-		mat = mat->duplicate();
-		mat->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
-
-	return mat;
 }
 
 String EditorNode3DGizmoPlugin::get_gizmo_name() const
@@ -697,17 +606,6 @@ void EditorNode3DGizmoPlugin::unregister_gizmo(EditorNode3DGizmo* p_gizmo)
 }
 
 EditorNode3DGizmoPlugin::EditorNode3DGizmoPlugin() { current_state = VISIBLE; }
-
-EditorNode3DGizmoPlugin::~EditorNode3DGizmoPlugin()
-{
-	for (EditorNode3DGizmo* current : current_gizmos) {
-		current->set_plugin(nullptr);
-		current->get_node_3d()->remove_gizmo(current);
-	}
-	if (Node3DEditor::get_singleton()) {
-		Node3DEditor::get_singleton()->update_all_gizmos();
-	}
-}
 
 bool EditorNode3DGizmoPlugin::can_be_hidden() const { return true; }
 
@@ -763,8 +661,8 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial) 
 
 int EditorNode3DGizmoPlugin::get_priority() const { return 0; }
 
-void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+void EditorNode3DGizmo::redraw() {}
 
-//////
+void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
 
 

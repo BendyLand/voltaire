@@ -98,17 +98,6 @@ void EditorResourcePreview::_idle_callback()
 	}
 }
 
-void EditorResourcePreview::_update_thumbnail_sizes()
-{
-	if (small_thumbnail_size == -1) {
-		// Kind of a workaround to retrieve the default icon size.
-		small_thumbnail_size = EditorNode::get_singleton()
-								   ->get_editor_theme()
-								   ->get_icon(SNAME("Object"), EditorStringName(EditorIcons))
-								   ->get_width();
-	}
-}
-
 EditorResourcePreview::PreviewItem EditorResourcePreview::get_resource_preview_if_available(
 	const String& p_path)
 {
@@ -143,7 +132,6 @@ void EditorResourcePreview::remove_preview_generator(
 
 EditorResourcePreview* EditorResourcePreview::get_singleton() { return singleton; }
 
-void EditorResourcePreview::_bind_methods() {}
 
 void EditorResourcePreview::_notification(int p_what)
 {

@@ -76,7 +76,6 @@ private:
 	void _update_models();
 
 protected:
-	static void _bind_methods();
 
 	void _notification(int p_what);
 };

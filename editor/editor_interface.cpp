@@ -70,16 +70,6 @@ EditorInterface* EditorInterface::singleton = nullptr;
 
 bool EditorInterface::is_exiting() const { return EditorNode::get_singleton()->is_exiting(); }
 
-void EditorInterface::restart_editor(bool p_save)
-{
-	if (p_save) {
-		EditorNode::get_singleton()->save_all_scenes();
-	}
-	EditorNode::get_singleton()->restart_editor();
-}
-
-// Editor tools.
-
 EditorCommandPalette* EditorInterface::get_command_palette() const
 {
 	return EditorCommandPalette::get_singleton();
@@ -122,139 +112,9 @@ ScenePaint2DEditor* EditorInterface::get_scene_paint_2d() const
 	return ScenePaint2DEditor::get_singleton();
 }
 
-Vector<Ref<Texture2D>> EditorInterface::make_mesh_previews(
-	const Vector<Ref<Mesh>>& p_meshes, Vector<Transform3D>* p_transforms, int p_preview_size)
-{
-	int size = p_preview_size;
-
-	RID scenario = RS::get_singleton()->scenario_create();
-
-	RID viewport = RS::get_singleton()->viewport_create();
-	RS::get_singleton()->viewport_set_update_mode(viewport, RSE::VIEWPORT_UPDATE_ALWAYS);
-	RS::get_singleton()->viewport_set_scenario(viewport, scenario);
-	RS::get_singleton()->viewport_set_size(viewport, size, size);
-	RS::get_singleton()->viewport_set_transparent_background(viewport, true);
-	RS::get_singleton()->viewport_set_active(viewport, true);
-	RID viewport_texture = RS::get_singleton()->viewport_get_texture(viewport);
-
-	RID camera = RS::get_singleton()->camera_create();
-	RS::get_singleton()->viewport_attach_camera(viewport, camera);
-
-	RID light = RS::get_singleton()->directional_light_create();
-	RID light_instance = RS::get_singleton()->instance_create2(light, scenario);
-
-	RID light2 = RS::get_singleton()->directional_light_create();
-	RS::get_singleton()->light_set_color(light2, Color(0.7, 0.7, 0.7));
-	RID light_instance2 = RS::get_singleton()->instance_create2(light2, scenario);
-
-	EditorProgress ep("mlib", TTR("Creating Mesh Previews"), p_meshes.size());
-
-	Vector<Ref<Texture2D>> textures;
-
-	for (int i = 0; i < p_meshes.size(); i++) {
-		const Ref<Mesh>& mesh = p_meshes[i];
-		if (mesh.is_null()) {
-			textures.push_back(Ref<Texture2D>());
-			continue;
-		}
-
-		Transform3D mesh_xform;
-		if (p_transforms != nullptr) {
-			mesh_xform = (*p_transforms)[i];
-		}
-
-		RID inst = RS::get_singleton()->instance_create2(mesh->get_rid(), scenario);
-		RS::get_singleton()->instance_set_transform(inst, mesh_xform);
-
-		AABB aabb = mesh->get_aabb();
-		Vector3 ofs = aabb.get_center();
-		aabb.position -= ofs;
-		Transform3D xform;
-		xform.basis = Basis().rotated(Vector3(0, 1, 0), -Math::PI / 6);
-		xform.basis = Basis().rotated(Vector3(1, 0, 0), Math::PI / 6) * xform.basis;
-		AABB rot_aabb = xform.xform(aabb);
-		float m = MAX(rot_aabb.size.x, rot_aabb.size.y) * 0.5;
-		if (m == 0) {
-			textures.push_back(Ref<Texture2D>());
-			continue;
-		}
-		xform.origin = -xform.basis.xform(ofs); //-ofs*m;
-		xform.origin.z -= rot_aabb.size.z * 2;
-		xform.invert();
-		xform = mesh_xform * xform;
-
-		RS::get_singleton()->camera_set_transform(
-			camera, xform * Transform3D(Basis(), Vector3(0, 0, 3)));
-		RS::get_singleton()->camera_set_orthogonal(camera, m * 2, 0.01, 1000.0);
-
-		RS::get_singleton()->instance_set_transform(light_instance,
-			xform * Transform3D().looking_at(Vector3(-2, -1, -1), Vector3(0, 1, 0)));
-		RS::get_singleton()->instance_set_transform(light_instance2,
-			xform * Transform3D().looking_at(Vector3(+1, -1, -2), Vector3(0, 1, 0)));
-
-		ep.step(TTR("Thumbnail..."), i);
-		DisplayServer::get_singleton()->process_events();
-		Main::iteration();
-		Main::iteration();
-		Ref<Image> img = RS::get_singleton()->texture_2d_get(viewport_texture);
-		ERR_CONTINUE(img.is_null() || img->is_empty());
-		Ref<ImageTexture> it = ImageTexture::create_from_image(img);
-
-		RS::get_singleton()->free_rid(inst);
-
-		textures.push_back(it);
-	}
-
-	RS::get_singleton()->free_rid(viewport);
-	RS::get_singleton()->free_rid(light);
-	RS::get_singleton()->free_rid(light_instance);
-	RS::get_singleton()->free_rid(light2);
-	RS::get_singleton()->free_rid(light_instance2);
-	RS::get_singleton()->free_rid(camera);
-	RS::get_singleton()->free_rid(scenario);
-
-	return textures;
-}
-
-void EditorInterface::add_root_node(Node* p_node)
-{
-	if (EditorNode::get_singleton()->get_edited_scene()) {
-		ERR_PRINT("EditorInterface::add_root_node: The current scene already has a root node.");
-		return;
-	}
-
-	const String& scene_path = p_node->get_scene_file_path();
-	if (!scene_path.is_empty()) {
-		Ref<PackedScene> scene = ResourceLoader::load(scene_path);
-		if (scene.is_valid()) {
-			memfree(scene->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE)); // Ensure node cache.
-
-			p_node->set_scene_inherited_state(scene->get_state());
-			p_node->set_scene_file_path(String());
-		}
-	}
-
-	EditorNode::get_singleton()->set_edited_scene(p_node);
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(
-		EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	EditorSceneTabs::get_singleton()->update_scene_tabs();
-}
-
-void EditorInterface::set_plugin_enabled(const String& p_plugin, bool p_enabled)
-{
-	EditorNode::get_singleton()->set_addon_plugin_enabled(p_plugin, p_enabled, true);
-}
-
 bool EditorInterface::is_plugin_enabled(const String& p_plugin) const
 {
 	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
-}
-
-// Editor GUI.
-
-Ref<Theme> EditorInterface::get_editor_theme() const
-{
-	return EditorNode::get_singleton()->get_editor_theme();
 }
 
 Control* EditorInterface::get_base_control() const
@@ -285,19 +145,9 @@ void EditorInterface::set_main_screen_editor(const String& p_name)
 	EditorNode::get_singleton()->get_editor_main_screen()->select_by_name(p_name);
 }
 
-void EditorInterface::set_distraction_free_mode(bool p_enter)
-{
-	EditorNode::get_singleton()->set_distraction_free_mode(p_enter);
-}
-
 bool EditorInterface::is_distraction_free_mode_enabled() const
 {
 	return EditorNode::get_singleton()->is_distraction_free_mode_enabled();
-}
-
-bool EditorInterface::is_multi_window_enabled() const
-{
-	return EditorNode::get_singleton()->is_multi_window_enabled();
 }
 
 float EditorInterface::get_editor_scale() const { return EDSCALE; }
@@ -332,11 +182,6 @@ void EditorInterface::popup_dialog(Window* p_dialog, const Rect2i& p_screen_rect
 	p_dialog->popup_exclusive(EditorNode::get_singleton(), p_screen_rect);
 }
 
-void EditorInterface::popup_dialog_centered(Window* p_dialog, const Size2i& p_minsize)
-{
-	p_dialog->popup_exclusive_centered(EditorNode::get_singleton(), p_minsize);
-}
-
 void EditorInterface::popup_dialog_centered_ratio(Window* p_dialog, float p_ratio)
 {
 	p_dialog->popup_exclusive_centered_ratio(EditorNode::get_singleton(), p_ratio);
@@ -359,23 +204,9 @@ void EditorInterface::set_current_feature_profile(const String& p_profile_name)
 	EditorFeatureProfileManager::get_singleton()->set_current_profile(p_profile_name, true);
 }
 
-// Editor dialogs.
-
-// Editor docks.
-
 FileSystemDock* EditorInterface::get_file_system_dock() const
 {
 	return FileSystemDock::get_singleton();
-}
-
-void EditorInterface::select_file(const String& p_file)
-{
-	FileSystemDock::get_singleton()->select_file(p_file);
-}
-
-Vector<String> EditorInterface::get_selected_paths() const
-{
-	return FileSystemDock::get_singleton()->get_selected_paths();
 }
 
 String EditorInterface::get_current_path() const
@@ -391,30 +222,6 @@ String EditorInterface::get_current_directory() const
 EditorInspector* EditorInterface::get_inspector() const
 {
 	return InspectorDock::get_inspector_singleton();
-}
-
-// Object/Resource/Node editing.
-
-void EditorInterface::edit_resource(const Ref<Resource>& p_resource)
-{
-	EditorNode::get_singleton()->edit_resource(p_resource);
-}
-
-void EditorInterface::open_scene_from_path(const String& scene_path, bool p_set_inherited)
-{
-	if (EditorNode::get_singleton()->is_changing_scene()) {
-		return;
-	}
-	EditorNode::get_singleton()->open_scene(scene_path, false, p_set_inherited);
-}
-
-void EditorInterface::reload_scene_from_path(const String& scene_path)
-{
-	if (EditorNode::get_singleton()->is_changing_scene()) {
-		return;
-	}
-
-	EditorNode::get_singleton()->reload_scene(scene_path);
 }
 
 Node* EditorInterface::get_edited_scene_root() const
@@ -460,19 +267,6 @@ Vector<Node*> EditorInterface::get_open_scene_roots() const
 	return ret;
 }
 
-Error EditorInterface::save_scene()
-{
-	if (!get_edited_scene_root()) {
-		return ERR_CANT_CREATE;
-	}
-	if (get_edited_scene_root()->get_scene_file_path().is_empty()) {
-		return ERR_CANT_CREATE;
-	}
-
-	save_scene_as(get_edited_scene_root()->get_scene_file_path());
-	return OK;
-}
-
 void EditorInterface::mark_scene_as_unsaved()
 {
 	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(
@@ -480,18 +274,7 @@ void EditorInterface::mark_scene_as_unsaved()
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
-void EditorInterface::save_all_scenes() { EditorNode::get_singleton()->save_all_scenes(); }
-
-Error EditorInterface::close_scene()
-{
-	return EditorNode::get_singleton()->close_scene() ? OK : ERR_DOES_NOT_EXIST;
-}
-
-// Scene playback.
-
 void EditorInterface::play_main_scene() { EditorRunBar::get_singleton()->play_main_scene(); }
-
-void EditorInterface::play_current_scene() { EditorRunBar::get_singleton()->play_current_scene(); }
 
 void EditorInterface::play_custom_scene(const String& scene_path)
 {
@@ -537,10 +320,6 @@ void EditorInterface::get_argument_options(
 		}
 	}
 }
-
-// Base.
-
-void EditorInterface::_bind_methods() {}
 
 void EditorInterface::create() { memnew(EditorInterface); }
 

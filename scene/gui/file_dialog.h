@@ -32,6 +32,7 @@
 
 #include "scene/gui/dialogs.h"
 #include "scene/property_list_helper.h"
+#include "core/io/dir_access.h"
 
 class DirAccess;
 class FlowContainer;
@@ -312,15 +313,15 @@ private:
 		Color icon_hover_color;
 		Color icon_focus_color;
 		Color icon_pressed_color;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void update_dir();
 	void update_file_name();
 	void update_file_list();
 	void update_filename_filter();
-	void update_filename_filter_gui();
 	void update_filters();
-	void update_customization();
 
 	void _empty_clicked(const Vector2& p_pos, MouseButton p_button);
 	void _item_clicked(int p_item, const Vector2& p_pos, MouseButton p_button);
@@ -344,7 +345,6 @@ private:
 	void _filename_filter_selected();
 	void _file_list_select_first();
 	void _delete_confirm();
-	void _make_dir();
 	void _make_dir_confirm();
 	void _go_up();
 	void _go_back();
@@ -369,7 +369,6 @@ private:
 
 	void _invalidate();
 	void _setup_button(Button* p_button, const Ref<Texture2D>& p_icon);
-	void _update_make_dir_visible();
 
 	void _native_popup();
 	void _native_dialog_cb(bool p_ok, const Vector<String>& p_files, int p_filter);
@@ -380,8 +379,6 @@ private:
 	void _update_option_controls();
 	void _option_changed_checkbox_toggled(bool p_pressed, const String& p_name);
 	void _option_changed_item_selected(int p_idx, const String& p_name);
-
-	virtual void _post_popup() override;
 
 protected:
 	Ref<DirAccess> dir_access;
@@ -415,7 +412,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _add_filter_bind_compat_111439(const String& p_filter, const String& p_description = "");
@@ -432,7 +428,6 @@ public:
 		const String& p_filter, const String& p_description = "", const String& p_mime = "");
 	void set_filters(const Vector<String>& p_filters);
 	Vector<String> get_filters() const;
-	void clear_filename_filter();
 	void set_filename_filter(const String& p_filename_filter);
 	String get_filename_filter() const;
 
@@ -469,7 +464,6 @@ public:
 	void set_file_mode(FileMode p_mode);
 	FileMode get_file_mode() const;
 
-	void set_display_mode(DisplayMode p_mode);
 	DisplayMode get_display_mode() const;
 
 	static void set_favorite_list(const PackedStringArray& p_favorites);
@@ -478,7 +472,6 @@ public:
 	static void set_recent_list(const PackedStringArray& p_recents);
 	static PackedStringArray get_recent_list();
 
-	void set_customization_flag_enabled(Customization p_flag, bool p_enabled);
 	bool is_customization_flag_enabled(Customization p_flag) const;
 
 	VBoxContainer* get_vbox() { return main_vbox; }
@@ -490,7 +483,6 @@ public:
 	void set_access(Access p_access);
 	Access get_access() const;
 
-	void set_show_hidden_files(bool p_show);
 	bool is_showing_hidden_files() const;
 	void set_show_filename_filter(bool p_show);
 	bool get_show_filename_filter() const;
@@ -502,7 +494,7 @@ public:
 
 	void deselect_all();
 
-	FileDialog();
+	FileDialog() = default;
 	~FileDialog();
 };
 

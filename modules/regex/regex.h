@@ -50,7 +50,6 @@ class RegExMatch : public RefCounted
 	friend class RegEx;
 
 protected:
-	static void _bind_methods();
 
 public:
 	String get_subject() const;
@@ -71,7 +70,6 @@ class RegEx : public RefCounted
 		uint32_t p_flags, String& r_output) const;
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static Ref<RegEx> _create_from_string_bind_compat_95212(const String& p_pattern);

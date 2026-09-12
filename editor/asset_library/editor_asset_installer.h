@@ -69,31 +69,18 @@ class EditorAssetInstaller : public ConfirmationDialog
 	String target_dir_path = "res://";
 
 	void _check_has_toplevel();
-	void _set_skip_toplevel(bool p_checked);
 
 	void _open_target_dir_dialog();
-	void _target_dir_selected(const String& p_target_path);
 
 	void _update_file_mappings();
-	void _rebuild_source_tree();
 	void _update_source_tree();
 	bool _update_source_item_status(TreeItem* p_item, const String& p_path);
-	void _rebuild_destination_tree();
-	TreeItem* _create_dir_item(Tree* p_tree, TreeItem* p_parent, const String& p_path,
-		HashMap<String, TreeItem*>& p_item_map);
-	TreeItem* _create_file_item(
-		Tree* p_tree, TreeItem* p_parent, const String& p_path, int* r_conflicts);
 
-	void _update_conflict_status(int p_conflicts);
 	void _update_confirm_button();
 	void _toggle_source_tree(bool p_visible, bool p_scroll_to_error = false);
 
-	void _item_checked_cbk();
 	bool _fix_conflicted_indeterminate_state(TreeItem* p_item, int p_column);
 	bool _is_item_checked(const String& p_source_path) const;
-
-	void _install_asset();
-	virtual void ok_pressed() override;
 
 protected:
 	void _notification(int p_what);
@@ -102,7 +89,7 @@ public:
 	void set_asset_name(const String& p_asset_name);
 	String get_asset_name() const;
 
-	EditorAssetInstaller();
+	EditorAssetInstaller() = default;
 };
 
 

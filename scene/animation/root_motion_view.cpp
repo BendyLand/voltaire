@@ -76,7 +76,6 @@ AABB RootMotionView::get_aabb() const
 	return AABB(Vector3(-radius, 0, -radius), Vector3(radius * 2, 0.001, radius * 2));
 }
 
-void RootMotionView::_bind_methods() {}
 
 RootMotionView::RootMotionView()
 {

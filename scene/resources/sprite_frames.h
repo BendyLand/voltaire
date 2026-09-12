@@ -61,7 +61,6 @@ private:
 	HashMap<StringName, Anim> animations;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void add_animation(const StringName& p_anim);

@@ -39,7 +39,6 @@ class ZIPReader : public RefCounted
 	unzFile uzf = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Error open(const String& p_path);

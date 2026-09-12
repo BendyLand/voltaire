@@ -101,11 +101,4 @@ void ResourcePreloaderEditor::update_layout(EditorDock::DockLayout p_layout, int
 	}
 }
 
-ResourcePreloaderEditorPlugin::ResourcePreloaderEditorPlugin()
-{
-	preloader_editor = memnew(ResourcePreloaderEditor);
-	EditorDockManager::get_singleton()->add_dock(preloader_editor);
-	preloader_editor->close();
-}
-
 

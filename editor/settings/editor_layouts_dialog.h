@@ -51,14 +51,11 @@ class EditorLayoutsDialog : public ConfirmationDialog
 	void _item_activated();
 
 protected:
-	static void _bind_methods();
 	virtual void ok_pressed() override;
 	virtual void _post_popup() override;
 
 public:
 	EditorLayoutsDialog();
-
-	void set_save_mode_enabled(bool p_enabled);
 };
 
 

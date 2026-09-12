@@ -186,42 +186,6 @@ bool EditorExportPlatformWeb::poll_export()
 	return remote_debug_state != prev_remote_debug_state;
 }
 
-Ref<Texture2D> EditorExportPlatformWeb::get_option_icon(int p_index) const
-{
-	Ref<Texture2D> play_icon = EditorExportPlatform::get_option_icon(p_index);
-
-	switch (remote_debug_state) {
-	case REMOTE_DEBUG_STATE_UNAVAILABLE: {
-		return nullptr;
-	} break;
-
-	case REMOTE_DEBUG_STATE_AVAILABLE: {
-		switch (p_index) {
-		case 0:
-		case 1:
-			return play_icon;
-		default:
-			ERR_FAIL_V(nullptr);
-		}
-	} break;
-
-	case REMOTE_DEBUG_STATE_SERVING: {
-		switch (p_index) {
-		case 0:
-			return play_icon;
-		case 1:
-			return restart_icon;
-		case 2:
-			return stop_icon;
-		default:
-			ERR_FAIL_V(nullptr);
-		}
-	} break;
-	}
-
-	return nullptr;
-}
-
 int EditorExportPlatformWeb::get_options_count() const
 {
 	switch (remote_debug_state) {
@@ -370,33 +334,5 @@ Error EditorExportPlatformWeb::_stop_server()
 }
 
 Ref<Texture2D> EditorExportPlatformWeb::get_run_icon() const { return run_icon; }
-
-void EditorExportPlatformWeb::initialize()
-{
-	if (EditorNode::get_singleton()) {
-		server.instantiate();
-
-		Ref<Image> img = memnew(Image);
-		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
-
-		ImageLoaderSVG::create_image_from_string(img, _web_logo_svg, EDSCALE, upsample, false);
-		logo = ImageTexture::create_from_image(img);
-
-		ImageLoaderSVG::create_image_from_string(img, _web_run_icon_svg, EDSCALE, upsample, false);
-		run_icon = ImageTexture::create_from_image(img);
-
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		if (theme.is_valid()) {
-			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-			restart_icon = theme->get_icon(SNAME("Reload"), EditorStringName(EditorIcons));
-		}
-		else {
-			stop_icon.instantiate();
-			restart_icon.instantiate();
-		}
-	}
-}
-
-EditorExportPlatformWeb::~EditorExportPlatformWeb() {}
 
 

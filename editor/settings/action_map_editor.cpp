@@ -88,10 +88,4 @@ InputEventConfigurationDialog* ActionMapEditor::get_configuration_dialog()
 	return event_config_dialog;
 }
 
-void ActionMapEditor::show_message(const String& p_message)
-{
-	message->set_text(p_message);
-	message->popup_centered();
-}
-
 

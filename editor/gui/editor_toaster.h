@@ -99,19 +99,15 @@ private:
 	static void _error_handler_impl(const String& p_file, int p_line, const String& p_error,
 		const String& p_errorexp, bool p_editor_notify, int p_type);
 	void _update_vbox_position();
-	void _update_disable_notifications_button();
 	void _auto_hide_or_free_toasts();
 
-	void _draw_button();
 	void _draw_progress(Control* panel);
 
 	void _set_notifications_enabled(bool p_enabled);
 	void _repop_old();
-	void _popup_str(const String& p_message, Severity p_severity, const String& p_tooltip);
 	void _toast_theme_changed(Control* p_control);
 
 protected:
-	static void _bind_methods();
 	static EditorToaster* singleton;
 
 	void _notification(int p_what);

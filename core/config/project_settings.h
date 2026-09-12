@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/thread_safe.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/types.h"
 
@@ -133,7 +132,6 @@ protected:
 	void _add_builtin_input_map();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const int CONFIG_VERSION = 5;

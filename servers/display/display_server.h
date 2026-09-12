@@ -35,7 +35,6 @@
 #include "core/io/resource.h"
 #include "core/os/keyboard.h"
 #include "core/os/process_id.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/types.h"
 #include "servers/display/display_server_enums.h"
 
@@ -106,7 +105,6 @@ public:
 	~DisplayServer();
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();

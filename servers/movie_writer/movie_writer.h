@@ -32,7 +32,6 @@
 
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/audio/audio_server.h"
 
 class MovieWriter
@@ -70,7 +69,6 @@ protected:
 	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data);
 	virtual void write_end();
 
-	static void _bind_methods();
 
 public:
 	virtual bool handles_file(const String& p_path) const;

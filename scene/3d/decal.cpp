@@ -32,13 +32,6 @@
 #include "decal.h"
 #include "servers/rendering/rendering_server.h"
 
-void Decal::set_size(const Vector3& p_size)
-{
-	size = p_size.maxf(0.001);
-	RS::get_singleton()->decal_set_size(decal, size);
-	update_gizmos();
-}
-
 Vector3 Decal::get_size() const { return size; }
 
 Ref<Texture2D> Decal::get_texture(DecalTexture p_type) const
@@ -114,13 +107,6 @@ void Decal::set_distance_fade_length(real_t p_length)
 }
 
 real_t Decal::get_distance_fade_length() const { return distance_fade_length; }
-
-void Decal::set_cull_mask(uint32_t p_layers)
-{
-	cull_mask = p_layers;
-	RS::get_singleton()->decal_set_cull_mask(decal, cull_mask);
-	update_configuration_warnings();
-}
 
 uint32_t Decal::get_cull_mask() const { return cull_mask; }
 

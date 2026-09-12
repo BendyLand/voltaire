@@ -301,17 +301,6 @@ void CollisionObject3D::set_ray_pickable(bool p_ray_pickable)
 
 bool CollisionObject3D::is_ray_pickable() const { return ray_pickable; }
 
-void CollisionObject3D::_bind_methods() {}
-
-void CollisionObject3D::remove_shape_owner(uint32_t owner)
-{
-	ERR_FAIL_COND(!shapes.has(owner));
-
-	shape_owner_clear_shapes(owner);
-
-	shapes.erase(owner);
-}
-
 void CollisionObject3D::shape_owner_set_disabled(uint32_t p_owner, bool p_disabled)
 {
 	ERR_FAIL_COND(!shapes.has(p_owner));
@@ -386,31 +375,6 @@ Transform3D CollisionObject3D::shape_owner_get_transform(uint32_t p_owner) const
 	return shapes[p_owner].xform;
 }
 
-void CollisionObject3D::shape_owner_add_shape(uint32_t p_owner, Shape3D* rp_shape)
-{
-	ERR_FAIL_COND(!shapes.has(p_owner));
-
-	ShapeData& sd = shapes[p_owner];
-	ShapeData::ShapeBase s;
-	s.index = total_subshapes;
-	s.shape = rp_shape;
-
-	if (area) {
-		PhysicsServer3D::get_singleton()->area_add_shape(
-			rid, rp_shape->get_rid(), sd.xform, sd.disabled);
-	}
-	else {
-		PhysicsServer3D::get_singleton()->body_add_shape(
-			rid, rp_shape->get_rid(), sd.xform, sd.disabled);
-	}
-	sd.shapes.push_back(s);
-
-	total_subshapes++;
-
-	_update_shape_data(p_owner);
-	update_gizmos();
-}
-
 int CollisionObject3D::shape_owner_get_shape_count(uint32_t p_owner) const
 {
 	ERR_FAIL_COND_V(!shapes.has(p_owner), 0);
@@ -432,17 +396,6 @@ int CollisionObject3D::shape_owner_get_shape_index(uint32_t p_owner, int p_shape
 	ERR_FAIL_INDEX_V(p_shape, shapes[p_owner].shapes.size(), -1);
 
 	return shapes[p_owner].shapes[p_shape].index;
-}
-
-void CollisionObject3D::shape_owner_clear_shapes(uint32_t p_owner)
-{
-	ERR_FAIL_COND(!shapes.has(p_owner));
-
-	while (shape_owner_get_shape_count(p_owner) > 0) {
-		shape_owner_remove_shape(p_owner, 0);
-	}
-
-	update_gizmos();
 }
 
 uint32_t CollisionObject3D::shape_find_owner(int p_shape_index) const

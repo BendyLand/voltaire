@@ -31,8 +31,6 @@
 #include "core/io/file_access.h"
 #include "xml_parser.h"
 
-// #define DEBUG_XML
-
 static inline bool _is_white_space(char p_char)
 {
 	return (p_char == ' ' || p_char == '\t' || p_char == '\n' || p_char == '\r');
@@ -354,8 +352,6 @@ Error XMLParser::seek(uint64_t p_pos)
 
 	return read();
 }
-
-void XMLParser::_bind_methods() {}
 
 Error XMLParser::read()
 {

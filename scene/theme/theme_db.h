@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include <functional>
 #include "scene/resources/theme.h"
 

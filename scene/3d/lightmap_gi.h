@@ -80,7 +80,6 @@ private:
 	void _reset_shadowmask_textures();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void add_user(const NodePath& p_path, const Rect2& p_uv_scale, int p_slice_index,
@@ -286,11 +285,9 @@ private:
 		int& r_mipmaps) const;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_light_data(const Ref<LightmapGIData>& p_data);
 	Ref<LightmapGIData> get_light_data() const;
 
 	void set_bake_quality(BakeQuality p_quality);
@@ -308,7 +305,6 @@ public:
 	void set_directional(bool p_enable);
 	bool is_directional() const;
 
-	void set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode);
 	LightmapGIData::ShadowmaskMode get_shadowmask_mode() const;
 
 	void set_use_texture_for_bounces(bool p_enable);

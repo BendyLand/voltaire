@@ -291,7 +291,6 @@ public:
 	static Ref<Image> (*basis_universal_unpacker_ptr)(const uint8_t* p_data, int p_size);
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	Error _compress_bind_compat_115003(
@@ -399,9 +398,6 @@ public:
 
 	// Generate a mipmap chain of an image (creates an image 1/4 the size, with averaging of 4->1).
 	Error generate_mipmaps(bool p_renormalize = false);
-
-	Error generate_mipmap_roughness(
-		RoughnessChannel p_roughness_channel, const Ref<Image>& p_normal_map);
 
 	void clear_mipmaps();
 	void normalize();

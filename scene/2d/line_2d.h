@@ -123,7 +123,6 @@ protected:
 	void _notification(int p_what);
 	void _draw();
 
-	static void _bind_methods();
 
 private:
 	void _gradient_changed();

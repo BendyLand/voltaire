@@ -31,6 +31,5 @@
 #include "webxr_interface.compat.inc"
 #include "webxr_interface.h"
 
-void WebXRInterface::_bind_methods() {}
 
 

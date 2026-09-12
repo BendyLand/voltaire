@@ -62,7 +62,6 @@ class SpinBox : public Range
 	} sizing_cache;
 
 	Timer* range_click_timer = nullptr;
-	void _range_click_timeout();
 	void _release_mouse_from_drag_mode();
 	void _arrow_clicked(bool p_up);
 
@@ -151,7 +150,6 @@ protected:
 	void _value_changed(double p_value) override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	LineEdit* get_line_edit();

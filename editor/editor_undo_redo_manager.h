@@ -72,7 +72,6 @@ private:
 	History* _get_newest_undo();
 
 protected:
-	static void _bind_methods();
 
 public:
 	History& get_or_create_history(int p_idx);

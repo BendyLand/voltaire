@@ -64,7 +64,6 @@ Ref<Material> Sky::get_material() const { return sky_material; }
 
 RID Sky::get_rid() const { return sky; }
 
-void Sky::_bind_methods() {}
 
 Sky::Sky() { sky = RS::get_singleton()->sky_create(); }
 

@@ -371,7 +371,6 @@ static void remove_driven_unified_blend_shapes(RBMap<int, int>& p_blend_mapping)
 	}
 }
 
-void XRFaceModifier3D::_bind_methods() {}
 
 void XRFaceModifier3D::set_face_tracker(const StringName& p_tracker_name)
 {

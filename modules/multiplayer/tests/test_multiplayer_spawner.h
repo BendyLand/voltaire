@@ -58,7 +58,6 @@ public:
 class SpawnWasps
 {
 protected:
-	static void _bind_methods()
 	{
 	}
 

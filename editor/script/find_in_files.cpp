@@ -285,29 +285,6 @@ void FindInFilesDialog::set_replace_text(const String& p_text)
 	replace_text_line_edit->set_text(p_text);
 }
 
-void FindInFilesDialog::set_replace_mode(bool p_replace)
-{
-	if (replace_mode == p_replace) {
-		return;
-	}
-
-	replace_mode = p_replace;
-
-	if (replace_mode) {
-		set_title(TTRC("Replace in Files"));
-		replace_label->show();
-		replace_text_line_edit->show();
-	}
-	else {
-		set_title(TTRC("Find in Files"));
-		replace_label->hide();
-		replace_text_line_edit->hide();
-	}
-
-	// Recalculate the dialog size after hiding child controls.
-	set_size(Size2(get_size().x, 0));
-}
-
 String FindInFilesDialog::get_search_text() const { return search_text_line_edit->get_text(); }
 
 String FindInFilesDialog::get_replace_text() const { return replace_text_line_edit->get_text(); }
@@ -422,23 +399,7 @@ String FindInFilesDialog::_validate_filter_wildcard(const String& p_expression) 
 	return ret;
 }
 
-void FindInFilesPanel::set_with_replace(bool p_with_replace)
-{
-	with_replace = p_with_replace;
-	replace_container->set_visible(p_with_replace);
 
-	if (with_replace) {
-		// Results show checkboxes on their left so they can be opted out.
-		results_display->set_columns(2);
-		results_display->set_column_expand(0, false);
-		results_display->set_column_custom_minimum_width(0, 48 * EDSCALE);
-	}
-	else {
-		// Results are single-cell items.
-		results_display->set_column_expand(0, true);
-		results_display->set_columns(1);
-	}
-}
 
 void FindInFilesPanel::set_replace_text(const String& p_text)
 {
@@ -447,12 +408,7 @@ void FindInFilesPanel::set_replace_text(const String& p_text)
 
 bool FindInFilesPanel::is_keep_results() const { return keep_results_button->is_pressed(); }
 
-void FindInFilesPanel::set_search_labels_visibility(bool p_visible)
-{
-	find_label->set_visible(p_visible);
-	search_text_label->set_visible(p_visible);
-	close_button->set_visible(p_visible);
-}
+
 
 void FindInFilesPanel::_clear()
 {
@@ -461,39 +417,6 @@ void FindInFilesPanel::_clear()
 	result_items.clear();
 	results_display->clear();
 	results_display->create_item(); // Root
-}
-
-void FindInFilesPanel::start_search()
-{
-	_clear();
-
-	status_label->set_text(TTRC("Searching..."));
-	search_text_label->set_text(finder->get_search_text());
-	search_text_label->set_tooltip_text(finder->get_search_text());
-
-	int label_min_width =
-		search_text_label->get_minimum_size().x + search_text_label->get_character_bounds(0).size.x;
-	search_text_label->set_custom_minimum_size(Size2(label_min_width, 0));
-
-	set_process(true);
-	progress_bar->set_visible(true);
-
-	finder->start();
-
-	_update_replace_buttons();
-	refresh_button->hide();
-	cancel_button->show();
-}
-
-void FindInFilesPanel::stop_search()
-{
-	finder->stop();
-
-	status_label->set_text("");
-	_update_replace_buttons();
-	progress_bar->set_visible(false);
-	refresh_button->show();
-	cancel_button->hide();
 }
 
 void FindInFilesPanel::update_layout(EditorDock::DockLayout p_layout, int p_slot)
@@ -511,12 +434,8 @@ void FindInFilesPanel::update_layout(EditorDock::DockLayout p_layout, int p_slot
 void FindInFilesPanel::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		_on_theme_changed();
-	} break;
 	case NOTIFICATION_TRANSLATION_CHANGED: {
 		_update_matches_text();
-
 		TreeItem* file_item = results_display->get_root()->get_first_child();
 		while (file_item) {
 			if (with_replace) {
@@ -551,102 +470,9 @@ void FindInFilesPanel::_notification(int p_what)
 	}
 }
 
-void FindInFilesPanel::_on_theme_changed()
-{
-	results_display->add_theme_font_override(SceneStringName(font),
-		get_theme_font(SNAME("source"), EditorStringName(EditorFonts)).ptr());
-	results_display->add_theme_font_size_override(SceneStringName(font_size),
-		get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts)));
-
-	Color file_item_color =
-		results_display->get_theme_color(SceneStringName(font_color)) * Color(1, 1, 1, 0.67);
-	Ref<Texture2D> remove_texture = get_editor_theme_icon(SNAME("Close"));
-	Ref<Texture2D> replace_texture = get_editor_theme_icon(SNAME("ReplaceText"));
-
-	TreeItem* file_item = results_display->get_root()->get_first_child();
-	while (file_item) {
-		file_item->set_custom_color(0, file_item_color);
-		if (with_replace) {
-			file_item->set_button(
-				0, file_item->get_button_by_id(0, FIND_BUTTON_REPLACE), replace_texture);
-		}
-		file_item->set_button(
-			0, file_item->get_button_by_id(0, FIND_BUTTON_REMOVE), remove_texture);
-
-		TreeItem* result_item = file_item->get_first_child();
-		while (result_item) {
-			if (with_replace) {
-				result_item->set_button(
-					1, result_item->get_button_by_id(1, FIND_BUTTON_REPLACE), replace_texture);
-				result_item->set_button(
-					1, result_item->get_button_by_id(1, FIND_BUTTON_REMOVE), remove_texture);
-			}
-			else {
-				result_item->set_button(
-					0, result_item->get_button_by_id(0, FIND_BUTTON_REMOVE), remove_texture);
-			}
-
-			result_item = result_item->get_next();
-		}
-
-		file_item = file_item->get_next();
-	}
-}
-
-void FindInFilesPanel::_on_item_edited()
-{
-	TreeItem* item = results_display->get_selected();
-
-	// Change opacity to half if checkbox is checked, otherwise full.
-	Color use_color = results_display->get_theme_color(SceneStringName(font_color));
-	if (!item->is_checked(0)) {
-		use_color.a *= 0.5;
-	}
-	item->set_custom_color(1, use_color);
-}
-
-void FindInFilesPanel::_on_finished()
-{
-	_update_matches_text();
-	_update_replace_buttons();
-	progress_bar->set_visible(false);
-	refresh_button->show();
-	cancel_button->hide();
-}
-
-void FindInFilesPanel::_on_refresh_button_clicked() { start_search(); }
-
-void FindInFilesPanel::_on_cancel_button_clicked() { stop_search(); }
-
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
 
 String FindInFilesPanel::_get_replace_text() { return replace_line_edit->get_text(); }
-
-void FindInFilesContainer::_on_theme_changed()
-{
-	const Ref<StyleBox> bottom_panel_style =
-		EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-			SNAME("BottomPanel"), EditorStringName(EditorStyles));
-	if (bottom_panel_style.is_valid()) {
-		begin_bulk_theme_override();
-		add_theme_constant_override("margin_top", -bottom_panel_style->get_margin(SIDE_TOP));
-		add_theme_constant_override("margin_left", -bottom_panel_style->get_margin(SIDE_LEFT));
-		add_theme_constant_override("margin_right", -bottom_panel_style->get_margin(SIDE_RIGHT));
-		add_theme_constant_override("margin_bottom", -bottom_panel_style->get_margin(SIDE_BOTTOM));
-		end_bulk_theme_override();
-	}
-}
-
-void FindInFilesContainer::_close_panel(FindInFilesPanel* p_panel)
-{
-	ERR_FAIL_COND_MSG(p_panel->get_parent() != tabs, "This panel is not a child!");
-	tabs->remove_child(p_panel);
-	p_panel->queue_free();
-	_update_bar_visibility();
-	if (tabs->get_tab_count() == 0) {
-		close();
-	}
-}
 
 void FindInFilesContainer::_on_dock_closed()
 {
@@ -656,53 +482,6 @@ void FindInFilesContainer::_on_dock_closed()
 		tab->queue_free();
 	}
 	_update_bar_visibility();
-}
-
-void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
-{
-	int tab_id = tabs->get_tab_bar()->get_hovered_tab();
-	Ref<InputEventMouseButton> mb = p_input;
-
-	if (tab_id >= 0 && mb.is_valid() && mb->is_pressed() &&
-		mb->get_button_index() == MouseButton::RIGHT) {
-		tabs_context_menu->set_item_disabled(tabs_context_menu->get_item_index(PANEL_CLOSE_RIGHT),
-			tab_id == tabs->get_tab_count() - 1);
-		tabs_context_menu->set_position(
-			tabs->get_tab_bar()->get_screen_position() + mb->get_position());
-		tabs_context_menu->reset_size();
-		tabs_context_menu->popup();
-	}
-}
-
-void FindInFiles::_start_search(bool p_with_replace)
-{
-	FindInFilesPanel* panel = container->get_panel_for_results(
-		(p_with_replace ? TTR("Replace:") : TTR("Find:")) + " " + dialog->get_search_text());
-	FindInFilesSearch* search = panel->get_finder();
-
-	search->set_search_text(dialog->get_search_text());
-	search->set_match_case(dialog->is_match_case());
-	search->set_whole_words(dialog->is_whole_words());
-	search->set_folder(dialog->get_folder());
-	search->set_filter(dialog->get_filter());
-	search->set_includes(dialog->get_includes());
-	search->set_excludes(dialog->get_excludes());
-
-	panel->set_with_replace(p_with_replace);
-	panel->set_replace_text(dialog->get_replace_text());
-	panel->start_search();
-
-	container->make_visible();
-}
-
-void FindInFiles::open_dialog(const String& p_initial_text, bool p_replace)
-{
-	dialog->set_replace_mode(p_replace);
-	dialog->set_search_text(p_initial_text);
-	if (p_replace) {
-		dialog->set_replace_text(String());
-	}
-	dialog->popup_centered();
 }
 
 

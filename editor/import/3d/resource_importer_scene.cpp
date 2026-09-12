@@ -66,7 +66,6 @@ void EditorSceneFormatImporter::get_import_options(
 }
 
 /////////////////////////////////
-void EditorScenePostImport::_bind_methods() {}
 
 String EditorScenePostImport::get_source_file() const { return source_file; }
 

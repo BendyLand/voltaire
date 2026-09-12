@@ -150,7 +150,7 @@ protected:
 	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
 	bool is_viewport_in_use(SubViewport* p_viewport);
 
-	OpenXRCompositionLayer();
+	OpenXRCompositionLayer() = default;
 
 public:
 	void set_layer_viewport(SubViewport* p_viewport);
@@ -162,10 +162,8 @@ public:
 	void set_android_surface_size(Size2i p_size);
 	Size2i get_android_surface_size() const;
 
-	void set_enable_hole_punch(bool p_enable);
 	bool get_enable_hole_punch() const;
 
-	void set_sort_order(int p_order);
 	int get_sort_order() const;
 
 	void set_alpha_blend(bool p_alpha_blend);

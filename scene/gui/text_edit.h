@@ -392,7 +392,6 @@ private:
 
 	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
-	void _update_context_menu();
 
 	/* Versioning */
 	struct Caret;
@@ -582,10 +581,6 @@ private:
 	void _selection_changed(int p_caret = -1);
 	void _click_selection_held();
 
-	void _update_selection_mode_pointer(bool p_initial = false);
-	void _update_selection_mode_word(bool p_initial = false);
-	void _update_selection_mode_line(bool p_initial = false);
-
 	void _pre_shift_selection(int p_caret);
 
 	bool _selection_contains(int p_caret, int p_line, int p_column, bool p_include_edges = true,
@@ -742,10 +737,6 @@ private:
 	void _text_changed();
 	void _emit_text_changed();
 
-	void _insert_text(int p_line, int p_char, const String& p_text, int* r_end_line = nullptr,
-		int* r_end_char = nullptr);
-	void _remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
-
 	void _base_insert_text(
 		int p_line, int p_char, const String& p_text, int& r_end_line, int& r_end_column);
 	String _base_get_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column) const;
@@ -753,7 +744,6 @@ private:
 
 	/* Input actions. */
 	void _swap_current_input_direction();
-	void _new_line(bool p_split_current = true, bool p_above = false);
 	void _move_caret_left(bool p_select, bool p_move_by_word = false);
 	void _move_caret_right(bool p_select, bool p_move_by_word = false);
 	void _move_caret_up(bool p_select);
@@ -762,15 +752,12 @@ private:
 	void _move_caret_to_line_end(bool p_select);
 	void _move_caret_page_up(bool p_select);
 	void _move_caret_page_down(bool p_select);
-	void _do_backspace(bool p_word = false, bool p_all_to_left = false);
-	void _delete(bool p_word = false, bool p_all_to_right = false);
 	void _move_caret_document_start(bool p_select);
 	void _move_caret_document_end(bool p_select);
 	bool _clear_carets_and_selection();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _set_selection_mode_bind_compat_86978(
@@ -829,20 +816,10 @@ protected:
 	virtual Ref<Texture2D> _get_folded_eol_icon() const { return Ref<Texture2D>(); }
 
 	/* Text manipulation */
-
-	// Overridable actions
-	virtual void _handle_unicode_input_internal(const uint32_t p_unicode, int p_caret);
-	virtual void _backspace_internal(int p_caret);
-
-	virtual void _cut_internal(int p_caret);
 	virtual void _copy_internal(int p_caret);
-	virtual void _paste_internal(int p_caret);
-	virtual void _paste_primary_clipboard_internal(int p_caret);
 
 public:
 	/* General overrides. */
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
-	bool alt_input(const Ref<InputEvent>& p_gui_input);
 	virtual Size2 get_minimum_size() const override;
 	virtual bool is_text_field() const override;
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
@@ -853,7 +830,6 @@ public:
 
 	bool has_ime_text() const;
 	void cancel_ime();
-	void apply_ime();
 
 	void set_editable(bool p_editable);
 	bool is_editable() const;
@@ -918,7 +894,6 @@ public:
 	void set_placeholder(const String& p_text);
 	String get_placeholder() const;
 
-	void set_line(int p_line, const String& p_new_text);
 	String get_line(int p_line) const;
 	String get_line_with_ime(int p_line) const;
 
@@ -928,15 +903,7 @@ public:
 	int get_indent_level(int p_line) const;
 	int get_first_non_whitespace_column(int p_line) const;
 
-	void swap_lines(int p_from_line, int p_to_line);
-
-	void insert_line_at(int p_line, const String& p_text);
 	void remove_line_at(int p_line, bool p_move_carets_down = true);
-
-	void insert_text_at_caret(const String& p_text, int p_caret = -1);
-	void insert_text(const String& p_text, int p_line, int p_column,
-		bool p_before_selection_begin = true, bool p_before_selection_end = false);
-	void remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
 
 	int get_last_unhidden_line() const;
 	int get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const;
@@ -944,13 +911,7 @@ public:
 		int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
 
 	// Overridable actions
-	void handle_unicode_input(const uint32_t p_unicode, int p_caret = -1);
-	void backspace(int p_caret = -1);
-
-	void cut(int p_caret = -1);
 	void copy(int p_caret = -1);
-	void paste(int p_caret = -1);
-	void paste_primary_clipboard(int p_caret = -1);
 
 	// Context menu.
 	PopupMenu* get_menu() const;
@@ -1006,10 +967,8 @@ public:
 	void set_caret_type(CaretType p_type);
 	CaretType get_caret_type() const;
 
-	void set_caret_blink_enabled(bool p_enabled);
 	bool is_caret_blink_enabled() const;
 
-	void set_caret_blink_interval(const float p_interval);
 	float get_caret_blink_interval() const;
 
 	void set_draw_caret_when_editable_disabled(bool p_enable);
@@ -1101,7 +1060,6 @@ public:
 	bool is_caret_after_selection_origin(int p_caret = 0) const;
 
 	void deselect(int p_caret = -1);
-	void delete_selection(int p_caret = -1);
 
 	void set_selection_handle_enabled(bool p_enabled);
 	bool is_selection_handle_enabled() const;

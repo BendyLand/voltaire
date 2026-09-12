@@ -47,27 +47,6 @@ void BitMap::create(const Size2i& p_size)
 	memset(bitmask.ptrw(), 0, bitmask.size());
 }
 
-void BitMap::create_from_image_alpha(const Ref<Image>& p_image, float p_threshold)
-{
-	ERR_FAIL_COND(p_image.is_null() || p_image->is_empty());
-	Ref<Image> img = p_image->duplicate();
-	img->convert(Image::FORMAT_LA8);
-	ERR_FAIL_COND(img->get_format() != Image::FORMAT_LA8);
-
-	create(Size2i(img->get_width(), img->get_height()));
-
-	const uint8_t* r = img->get_data().ptr();
-	uint8_t* w = bitmask.ptrw();
-
-	for (int i = 0; i < width * height; i++) {
-		int bbyte = i / 8;
-		int bbit = i % 8;
-		if (r[i * 2 + 1] / 255.0 > p_threshold) {
-			w[bbyte] |= (1 << bbit);
-		}
-	}
-}
-
 void BitMap::set_bit_rect(const Rect2i& p_rect, bool p_value)
 {
 	Rect2i current = Rect2i(0, 0, width, height).intersection(p_rect);

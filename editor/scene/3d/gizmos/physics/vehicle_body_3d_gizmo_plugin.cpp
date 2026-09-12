@@ -32,12 +32,6 @@
 #include "scene/main/scene_tree.h"
 #include "vehicle_body_3d_gizmo_plugin.h"
 
-VehicleWheel3DGizmoPlugin::VehicleWheel3DGizmoPlugin()
-{
-	Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
-	create_material("shape_material", gizmo_color);
-}
-
 String VehicleWheel3DGizmoPlugin::get_gizmo_name() const { return "VehicleWheel3D"; }
 
 

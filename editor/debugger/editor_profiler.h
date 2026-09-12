@@ -142,18 +142,14 @@ Vector<Metric> frame_metrics;
 	Timer* plot_delay = nullptr;
 
 	void _update_button_text();
-	void _update_frame();
 
 	void _activate_pressed();
 	void _clear_pressed();
 	void _autostart_toggled(bool p_toggled_on);
 
-	void _internal_profiles_pressed();
-
 	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
 
 	void _make_metric_ptrs(Metric& m);
-	void _item_edited();
 	void _item_collapsed(TreeItem* p_item);
 
 	void _update_plot();
@@ -163,30 +159,23 @@ Vector<Metric> frame_metrics;
 	void _graph_tex_draw();
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
-	Color _get_color_from_signature(const StringName& p_signature) const;
 	int _get_zoom_left_border() const;
 
 	void _cursor_metric_changed(double);
-
-	void _combo_changed(int);
 
 	const Metric& _get_frame_metric(int index) const;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void add_frame_metric(const Metric& p_metric, bool p_final = false);
 	void set_enabled(bool p_enable, bool p_clear = true);
-	void set_profiling(bool p_pressed);
 	bool is_profiling();
 
 	bool is_seeking() { return seeking; }
 
 	void disable_seeking();
-
-	void clear();
 
 	Vector<Vector<String>> get_data_as_csv() const;
 

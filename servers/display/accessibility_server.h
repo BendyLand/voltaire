@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "core/types.h"
 #include "servers/display/accessibility_server_enums.h"
 #include "servers/display/display_server_enums.h"
@@ -45,7 +44,6 @@ protected:
 	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
 		AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO;
 
-	static void _bind_methods();
 
 	enum
 	{

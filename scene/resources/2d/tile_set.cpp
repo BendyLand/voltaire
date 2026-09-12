@@ -2839,7 +2839,6 @@ TileSet* TileSetSource::get_tile_set() const { return (TileSet*)tile_set; }
 
 void TileSetSource::reset_state() { tile_set = nullptr; }
 
-void TileSetSource::_bind_methods() {}
 
 /////////////////////////////// TileSetAtlasSource //////////////////////////////////////
 

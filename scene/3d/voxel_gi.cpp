@@ -38,10 +38,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "voxel_gi.h"
 
-
-
-
-
 void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,
 	const Vector3& p_octree_size, const Vector<uint8_t>& p_octree_cells,
 	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
@@ -146,42 +142,9 @@ VoxelGIData::~VoxelGIData()
 	RS::get_singleton()->free_rid(probe);
 }
 
-//////////////////////
-//////////////////////
-
-void VoxelGI::set_probe_data(const Ref<VoxelGIData>& p_data)
-{
-	if (p_data.is_valid()) {
-		RS::get_singleton()->instance_set_base(get_instance(), p_data->get_rid());
-		RS::get_singleton()->voxel_gi_set_baked_exposure_normalization(
-			p_data->get_rid(), _get_camera_exposure_normalization());
-	}
-	else {
-		RS::get_singleton()->instance_set_base(get_instance(), RID());
-	}
-
-	probe_data = p_data;
-	update_configuration_warnings();
-}
-
 Ref<VoxelGIData> VoxelGI::get_probe_data() const { return probe_data; }
 
-void VoxelGI::set_subdiv(Subdiv p_subdiv)
-{
-	ERR_FAIL_INDEX(p_subdiv, SUBDIV_MAX);
-	subdiv = p_subdiv;
-	update_gizmos();
-}
-
 VoxelGI::Subdiv VoxelGI::get_subdiv() const { return subdiv; }
-
-void VoxelGI::set_size(const Vector3& p_size)
-{
-	// Prevent very small size dimensions as these breaks baking if other size dimensions are set
-	// very high.
-	size = p_size.maxf(1.0);
-	update_gizmos();
-}
 
 Vector3 VoxelGI::get_size() const { return size; }
 
@@ -196,10 +159,6 @@ void VoxelGI::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 }
 
 Ref<CameraAttributes> VoxelGI::get_camera_attributes() const { return camera_attributes; }
-
-
-
-
 
 VoxelGI::BakeBeginFunc VoxelGI::bake_begin_function = nullptr;
 VoxelGI::BakeStepFunc VoxelGI::bake_step_function = nullptr;

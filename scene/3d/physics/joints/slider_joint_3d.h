@@ -68,10 +68,8 @@ protected:
 	real_t params[PARAM_MAX];
 	virtual void _configure_joint(
 		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
-	static void _bind_methods();
 
 public:
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
 	SliderJoint3D();

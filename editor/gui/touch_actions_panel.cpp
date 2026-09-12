@@ -38,11 +38,6 @@
 #include "servers/display/display_server.h"
 #include "touch_actions_panel.h"
 
-void TouchActionsPanel::_hardware_keyboard_connected(bool p_connected)
-{
-	set_visible(!p_connected);
-}
-
 void TouchActionsPanel::_simulate_editor_shortcut(const String& p_shortcut_name)
 {
 	Ref<Shortcut> shortcut = ED_GET_SHORTCUT(p_shortcut_name);

@@ -49,7 +49,6 @@ double AnimationNodeExtension::get_remaining_time(
 	return _array_to_node_time_info(p_node_info).get_remain(p_break_loop);
 }
 
-void AnimationNodeExtension::_bind_methods() {}
 
 AnimationNode::NodeTimeInfo AnimationNodeExtension::_array_to_node_time_info(
 	const PackedFloat32Array& p_node_info)

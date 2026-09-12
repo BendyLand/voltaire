@@ -88,7 +88,6 @@ class BoneMapperItem : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void create_editor();
 
 public:
@@ -103,7 +102,6 @@ class BonePicker : public AcceptDialog
 	Tree* bones = nullptr;
 
 public:
-	void popup_bones_tree(const Size2i& p_minsize = Size2i());
 	bool has_selected_bone();
 	StringName get_selected_bone();
 
@@ -151,7 +149,6 @@ class BoneMapper : public VBoxContainer
 	/* Bone picker */
 	BonePicker* picker = nullptr;
 	StringName picker_key_name;
-	void _pick_bone(const StringName& p_bone_name);
 	void _apply_picker_selection();
 	void _clear_mapping_current_group();
 
@@ -173,7 +170,6 @@ class BoneMapper : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_current_group_idx(int p_group_idx);

@@ -86,7 +86,7 @@ class ResourcePreloaderEditorPlugin : public EditorPlugin
 	ResourcePreloaderEditor* preloader_editor = nullptr;
 
 public:
-	ResourcePreloaderEditorPlugin();
+	ResourcePreloaderEditorPlugin() = default;
 };
 
 

@@ -33,24 +33,6 @@
 #include "scene/3d/navigation/navigation_region_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
-NavigationRegion3DGizmoPlugin::NavigationRegion3DGizmoPlugin()
-{
-	create_material("face_material",
-		NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_color(), false,
-		false, true);
-	create_material("face_material_disabled",
-		NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_disabled_color(),
-		false, false, true);
-	create_material("edge_material",
-		NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_color());
-	create_material("edge_material_disabled",
-		NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_disabled_color());
-
-	Color baking_aabb_material_color = Color(0.8, 0.5, 0.7);
-	baking_aabb_material_color.a = 0.1;
-	create_material("baking_aabb_material", baking_aabb_material_color);
-}
-
 String NavigationRegion3DGizmoPlugin::get_gizmo_name() const { return "NavigationRegion3D"; }
 
 

@@ -37,7 +37,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationQrCode
 
-void OpenXRSpatialCapabilityConfigurationQrCode::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationQrCode::has_valid_configuration() const
 {
@@ -88,7 +87,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationQrCode::_get_enabled_compon
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationMicroQrCode
 
-void OpenXRSpatialCapabilityConfigurationMicroQrCode::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationMicroQrCode::has_valid_configuration() const
 {
@@ -148,7 +146,6 @@ OpenXRSpatialCapabilityConfigurationAruco::OpenXRSpatialCapabilityConfigurationA
 
 OpenXRSpatialCapabilityConfigurationAruco::~OpenXRSpatialCapabilityConfigurationAruco() {}
 
-void OpenXRSpatialCapabilityConfigurationAruco::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationAruco::has_valid_configuration() const
 {
@@ -230,7 +227,6 @@ OpenXRSpatialCapabilityConfigurationAprilTag::OpenXRSpatialCapabilityConfigurati
 
 OpenXRSpatialCapabilityConfigurationAprilTag::~OpenXRSpatialCapabilityConfigurationAprilTag() {}
 
-void OpenXRSpatialCapabilityConfigurationAprilTag::_bind_methods() {}
 
 bool OpenXRSpatialCapabilityConfigurationAprilTag::has_valid_configuration() const
 {
@@ -303,7 +299,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationAprilTag::_get_enabled_comp
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialComponentMarkerList
 
-void OpenXRSpatialComponentMarkerList::_bind_methods() {}
 
 void OpenXRSpatialComponentMarkerList::set_capacity(uint32_t p_capacity)
 {

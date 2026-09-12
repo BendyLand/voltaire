@@ -319,7 +319,6 @@ int SceneMultiplayer::get_max_delta_packet_size() const
 	return replicator->get_max_delta_packet_size();
 }
 
-void SceneMultiplayer::_bind_methods() {}
 
 SceneMultiplayer::SceneMultiplayer()
 {

@@ -37,7 +37,6 @@
 class TCPServer : public SocketServer
 {
 protected:
-	static void _bind_methods();
 
 public:
 	Error listen(uint16_t p_port, const IPAddress& p_bind_address = IPAddress("*"));

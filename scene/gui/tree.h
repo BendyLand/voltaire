@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/control.h"
 #include "scene/resources/text_paragraph.h"
 #include "servers/display/accessibility_server.h"
@@ -231,12 +230,9 @@ private:
 	bool _is_any_collapsed(bool p_only_visible);
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _select_bind_compat_119367(int p_column);
-	void _add_button_bind_compat_76829(int p_column, const Ref<Texture2D>& p_button, int p_id,
-		bool p_disabled, const String& p_tooltip);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -272,10 +268,8 @@ private:
 	TreeItem* _get_next_in_tree(bool p_wrap = false, bool p_include_invisible = false);
 
 public:
-	void set_text(int p_column, String p_text);
 	String get_text(int p_column) const;
 
-	void set_description(int p_column, String p_text);
 	String get_description(int p_column) const;
 
 	void set_text_direction(int p_column, Control::TextDirection p_text_direction);
@@ -315,18 +309,14 @@ public:
 	int get_icon_max_width(int p_column) const;
 
 	void clear_buttons();
-	void add_button(int p_column, const Ref<Texture2D>& p_button, int p_id = -1,
-		bool p_disabled = false, const String& p_tooltip = "", const String& p_description = "");
 	int get_button_count(int p_column) const;
 	String get_button_tooltip_text(int p_column, int p_index) const;
 	Ref<Texture2D> get_button(int p_column, int p_index) const;
 	int get_button_id(int p_column, int p_index) const;
-	void erase_button(int p_column, int p_index);
 	int get_button_by_id(int p_column, int p_id) const;
 	Color get_button_color(int p_column, int p_index) const;
 	void set_button_tooltip_text(int p_column, int p_index, const String& p_tooltip);
 	void set_button(int p_column, int p_index, const Ref<Texture2D>& p_button);
-	void set_button_description(int p_column, int p_index, const String& p_description);
 	void set_button_color(int p_column, int p_index, const Color& p_color);
 	void set_button_disabled(int p_column, int p_index, bool p_disabled);
 	bool is_button_disabled(int p_column, int p_index) const;
@@ -594,7 +584,6 @@ private:
 	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
 	void value_editor_changed(double p_value);
 	void _update_popup_menu(const TreeItem::Cell& p_cell);
-	void _update_value_editor(const TreeItem::Cell& p_cell);
 
 	void popup_select(int p_option);
 
@@ -739,7 +728,6 @@ private:
 	bool v_scroll_enabled = true;
 
 	Size2 get_internal_min_size() const;
-	void update_scrollbars();
 
 	Rect2 search_item_rect(TreeItem* p_from, TreeItem* p_item);
 	uint64_t last_keypress = 0;
@@ -827,7 +815,6 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	PackedStringArray get_accessibility_configuration_warnings() const;
@@ -915,7 +902,6 @@ public:
 	TreeItem* get_item_with_text(const String& p_find) const;
 
 	Point2 get_scroll() const;
-	void scroll_to_item(TreeItem* p_item, bool p_center_on_item = false);
 	void set_h_scroll_enabled(bool p_enable);
 	bool is_h_scroll_enabled() const;
 	void set_v_scroll_enabled(bool p_enable);
@@ -960,7 +946,7 @@ public:
 
 	Size2 get_minimum_size() const override;
 
-	Tree();
+	Tree() = default;
 	~Tree();
 };
 

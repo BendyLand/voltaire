@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/color_picker.h"
 
 class ColorPickerShape
@@ -52,7 +51,6 @@ protected:
 
 	bool can_handle(
 		const Ref<InputEvent>& p_event, Vector2& r_position, bool* r_is_click = nullptr);
-	void apply_color();
 	void cancel_event();
 
 	void draw_focus_rect(Control* p_control, const Rect2& p_rect = Rect2());
@@ -85,7 +83,6 @@ public:
 
 	void initialize_controls();
 	virtual void update_theme() = 0;
-	void update_cursor(const Vector2& p_color_change_vector, bool p_is_echo);
 	virtual void grab_focus() = 0;
 
 	ColorPickerShape(ColorPicker* p_color_picker);
@@ -95,9 +92,6 @@ class ColorPickerShapeRectangle : public ColorPickerShape
 {
 	Control* sv_square = nullptr;
 	Control* hue_slider = nullptr;
-
-	void _sv_square_input(const Ref<InputEvent>& p_event);
-	void _hue_slider_input(const Ref<InputEvent>& p_event);
 
 	void _sv_square_draw();
 	void _hue_slider_draw();
@@ -138,10 +132,8 @@ protected:
 	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
 
 	virtual void _square_draw();
-	virtual void _square_overlay_input(const Ref<InputEvent>& p_event);
 	virtual void _square_overlay_draw();
 
-	virtual void _value_slider_input(const Ref<InputEvent>& p_event);
 	virtual void _value_slider_draw();
 
 public:
@@ -171,10 +163,8 @@ protected:
 	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
 
 	virtual void _square_draw() override;
-	virtual void _square_overlay_input(const Ref<InputEvent>& p_event) override;
 	virtual void _square_overlay_draw() override;
 
-	virtual void _value_slider_input(const Ref<InputEvent>& p_event) override;
 	virtual void _value_slider_draw() override;
 
 public:
@@ -271,9 +261,6 @@ protected:
 
 	virtual Ref<Shader> _get_shader() const override { return ColorPickerShape::circle_shader; }
 
-	virtual void _circle_input(const Ref<InputEvent>& p_event) override;
-	virtual void _value_slider_input(const Ref<InputEvent>& p_event) override;
-
 	virtual void _circle_draw() override;
 	virtual void _circle_overlay_draw() override;
 	virtual void _value_slider_draw() override;
@@ -295,9 +282,6 @@ protected:
 	{
 		return ColorPickerShape::circle_ok_color_shader;
 	}
-
-	virtual void _circle_input(const Ref<InputEvent>& p_event) override;
-	virtual void _value_slider_input(const Ref<InputEvent>& p_event) override;
 
 	virtual void _circle_draw() override;
 	virtual void _circle_overlay_draw() override;

@@ -96,5 +96,4 @@ Vector<String> HTTPClient::_get_response_headers()
 	return ret;
 }
 
-void HTTPClient::_bind_methods() {}
 

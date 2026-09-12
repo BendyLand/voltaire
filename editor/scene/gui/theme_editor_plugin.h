@@ -179,12 +179,10 @@ class ThemeItemImportTree : public VBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
 	void set_base_theme(const Ref<Theme>& p_theme);
-	void reset_item_tree();
 
 	bool has_selected_items() const;
 
@@ -256,10 +254,8 @@ class ThemeItemEditorDialog : public AcceptDialog
 
 	ConfirmationDialog* confirm_closing_dialog = nullptr;
 
-	void ok_pressed() override;
 	void _close_dialog();
 
-	void _dialog_about_to_show();
 	void _update_edit_types();
 	void _edited_type_selected();
 	void _edited_type_edited();
@@ -275,17 +271,13 @@ class ThemeItemEditorDialog : public AcceptDialog
 	void _remove_custom_items();
 	void _remove_all_items();
 
-	void _open_add_theme_item_dialog(int p_data_type);
-	void _open_rename_theme_item_dialog(Theme::DataType p_data_type, String p_item_name);
 	void _confirm_edit_theme_item();
 	void _edit_theme_item_gui_input(const Ref<InputEvent>& p_event);
 
 	void _open_select_another_theme();
-	void _select_another_theme_cbk(const String& p_path);
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
@@ -304,34 +296,18 @@ class ThemeTypeDialog : public ConfirmationDialog
 	ItemList* add_type_options = nullptr;
 	ConfirmationDialog* add_type_confirmation = nullptr;
 
-	void _dialog_about_to_show();
-	void ok_pressed() override;
-
-	void _update_add_type_options(const String& p_filter = "");
-
-	void _add_type_filter_cbk(const String& p_value);
 	void _add_type_options_cbk(int p_index);
-	void _add_type_dialog_entered(const String& p_value);
-	void _add_type_dialog_activated(int p_index);
 
-	void _add_type_selected(const String& p_type_name);
 	void _add_type_confirmed();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
 	void set_include_own_types(bool p_enable);
 
 	ThemeTypeDialog();
-};
-
-// Custom `Label` needed to use `EditorHelpBit` to display theme item documentation.
-class ThemeItemLabel : public Label
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
 };
 
 class ThemeTypeEditor : public MarginContainer
@@ -385,7 +361,6 @@ class ThemeTypeEditor : public MarginContainer
 
 	VBoxContainer* _create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
-	void _update_type_list_debounced();
 	HashMap<StringName, bool> _get_type_items(
 		String p_type_name, Theme::DataType p_type, bool p_include_default);
 	HBoxContainer* _create_property_control(
@@ -394,8 +369,6 @@ class ThemeTypeEditor : public MarginContainer
 	void _update_type_items();
 
 	void _list_type_selected(int p_index);
-	void _add_type_button_cbk();
-	void _rename_type_button_cbk();
 	void _theme_type_rename_dialog_confirmed();
 	void _remove_type_button_cbk();
 	void _add_default_type_items();
@@ -414,7 +387,6 @@ class ThemeTypeEditor : public MarginContainer
 	void _color_item_changed(Color p_value, String p_item_name);
 	void _constant_item_changed(float p_value, String p_item_name);
 	void _font_size_item_changed(float p_value, String p_item_name);
-	void _edit_resource_item(Ref<Resource> p_resource, bool p_edit);
 	void _font_item_changed(Ref<Font> p_value, String p_item_name);
 	void _icon_item_changed(Ref<Texture2D> p_value, String p_item_name);
 	void _stylebox_item_changed(Ref<StyleBox> p_value, String p_item_name);
@@ -426,13 +398,11 @@ class ThemeTypeEditor : public MarginContainer
 	void _update_stylebox_from_leading();
 
 	void _type_variation_changed(const String p_value);
-	void _add_type_variation_cbk();
 
 	void _add_type_dialog_selected(const String p_type_name);
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
@@ -466,12 +436,8 @@ class ThemeEditor : public EditorDock
 
 	void _theme_save_button_cbk(bool p_save_as);
 	void _theme_edit_button_cbk();
-	void _theme_close_button_cbk();
 	void _dock_closed_cbk();
 	void _scene_closed(const String& p_path);
-	void _resource_saved(const Ref<Resource>& p_resource);
-	void _files_moved(const String& p_old_path, const String& p_new_path);
-	void _update_theme_name(const String& p_name);
 
 	void _add_preview_button_cbk();
 	void _preview_scene_dialog_cbk(const String& p_path);
@@ -506,7 +472,7 @@ public:
 
 	virtual bool can_auto_hide() const override;
 
-	ThemeEditorPlugin();
+	ThemeEditorPlugin() = default;
 };
 
 

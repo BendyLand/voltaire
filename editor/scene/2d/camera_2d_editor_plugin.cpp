@@ -46,13 +46,6 @@ void Camera2DEditor::forward_canvas_draw_over_viewport(Control* p_overlay)
 	p_overlay->draw_rect(limit_rect, Color(1, 1, 0.25, 0.63), false, 3);
 }
 
-void Camera2DEditor::_update_overlays_if_needed(Camera2D* p_camera)
-{
-	if (p_camera == selected_camera) {
-		plugin->update_overlays();
-	}
-}
-
 void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 {
 	if (CanvasItemEditor::get_singleton()->get_current_tool() != CanvasItemEditor::TOOL_SELECT) {

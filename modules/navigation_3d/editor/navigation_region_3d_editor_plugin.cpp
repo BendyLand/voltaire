@@ -59,21 +59,6 @@ void NavigationRegion3DEditor::_on_navmesh_multibake_canceled()
 	bake_in_process = false;
 }
 
-void NavigationRegion3DEditor::_clear_pressed()
-{
-	button_bake->set_pressed(false);
-	bake_info->set_text("");
-
-	if (!selected_regions.is_empty()) {
-		for (NavigationRegion3D* region : selected_regions) {
-			if (region->get_navigation_mesh().is_valid()) {
-				region->get_navigation_mesh()->clear();
-				region->update_gizmos();
-			}
-		}
-	}
-}
-
 void NavigationRegion3DEditor::edit(LocalVector<NavigationRegion3D*> p_regions)
 {
 	if (p_regions.is_empty()) {
@@ -81,18 +66,6 @@ void NavigationRegion3DEditor::edit(LocalVector<NavigationRegion3D*> p_regions)
 	}
 
 	selected_regions = p_regions;
-}
-
-NavigationRegion3DEditorPlugin::NavigationRegion3DEditorPlugin()
-{
-	navigation_region_editor = memnew(NavigationRegion3DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(navigation_region_editor);
-	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, navigation_region_editor->bake_hbox);
-	navigation_region_editor->hide();
-	navigation_region_editor->bake_hbox->hide();
-
-	gizmo_plugin.instantiate();
-	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
 }
 
 

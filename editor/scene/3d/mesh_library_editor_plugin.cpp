@@ -76,17 +76,4 @@ void MeshLibraryEditor::_icon_size_changed(float p_value)
 	_update_mesh_items();
 }
 
-////////////////
-
-void MeshLibraryEditorPlugin::open_editor() { mesh_library_editor->open(); }
-
-MeshLibraryEditorPlugin::MeshLibraryEditorPlugin()
-{
-	singleton = this;
-
-	mesh_library_editor = memnew(MeshLibraryEditor);
-	EditorDockManager::get_singleton()->add_dock(mesh_library_editor);
-	mesh_library_editor->close();
-}
-
 

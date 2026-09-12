@@ -53,7 +53,6 @@ private:
 	bool use_debanding = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	RID get_render_target() const { return render_target; }
@@ -128,7 +127,6 @@ public:
 class RenderSceneBuffers : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	RenderSceneBuffers() {}

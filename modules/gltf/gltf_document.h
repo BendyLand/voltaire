@@ -91,7 +91,6 @@ private:
 	VisibilityMode _visibility_mode = VisibilityMode::VISIBILITY_MODE_INCLUDE_REQUIRED;
 
 protected:
-	static void _bind_methods();
 	String _gen_unique_name(Ref<GLTFState> p_state, const String& p_name);
 	static Vector<Ref<GLTFDocumentExtension>> all_document_extensions;
 	static Mutex all_document_extensions_mutex;
@@ -147,8 +146,6 @@ private:
 		Ref<GLTFState> p_state, const GLTFSkeletonIndex p_skel_i, const String& p_name);
 	GLTFTextureIndex _set_texture(Ref<GLTFState> p_state, Ref<Texture2D> p_texture,
 		StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
-	Ref<Texture2D> _get_texture(
-		Ref<GLTFState> p_state, const GLTFTextureIndex p_texture, int p_texture_type);
 	GLTFTextureSamplerIndex _set_sampler_for_mode(
 		Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
 	Ref<GLTFTextureSampler> _get_sampler_for_texture(
@@ -222,8 +219,6 @@ private:
 		Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index);
 	ImporterMeshInstance3D* _generate_mesh_instance(
 		Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	Camera3D* _generate_camera(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	Light3D* _generate_light(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	Node3D* _generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	void _assign_node_names(Ref<GLTFState> p_state);
 	template <typename T>

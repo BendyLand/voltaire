@@ -128,7 +128,6 @@ public:
 	static String get_spatial_feature_name(XrSpatialCapabilityFeatureEXT p_feature);
 
 protected:
-	static void _bind_methods();
 
 private:
 	static OpenXRSpatialEntityExtension* singleton;

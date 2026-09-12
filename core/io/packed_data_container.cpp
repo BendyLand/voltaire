@@ -73,12 +73,6 @@ void PackedDataContainer::_set_data(const Vector<uint8_t>& p_data)
 
 Vector<uint8_t> PackedDataContainer::_get_data() const { return data; }
 
-void PackedDataContainer::_bind_methods() {}
-
-//////////////////
-
-void PackedDataContainerRef::_bind_methods() {}
-
 int PackedDataContainerRef::size() const { return from->_size(offset); }
 
 

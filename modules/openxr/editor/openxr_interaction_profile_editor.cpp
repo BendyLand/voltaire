@@ -70,11 +70,6 @@ void OpenXRInteractionProfileEditorBase::remove_all_for_action_set(
 	// TODO update binding modifiers
 }
 
-void OpenXRInteractionProfileEditorBase::_on_open_binding_modifiers()
-{
-	binding_modifiers_dialog->popup_centered(Size2i(500, 400));
-}
-
 void OpenXRInteractionProfileEditorBase::setup(const Ref<OpenXRActionMap>& p_action_map,
 	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
 {

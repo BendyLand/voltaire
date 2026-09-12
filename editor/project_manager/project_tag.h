@@ -47,7 +47,10 @@ protected:
 public:
 	const String get_tag() const;
 
-	ProjectTag(const String& p_text, bool p_display_close = false);
+	ProjectTag(const String& p_text, bool p_display_close = false)
+		: tag_string(p_text), display_close(p_display_close)
+	{
+	}
 };
 
 

@@ -339,9 +339,6 @@ void FabrikInverseKinematic::_update_chain(const Skeleton3D* p_sk, ChainItem* p_
 void SkeletonIK3D::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		reload_chain();
-	} break;
 	case NOTIFICATION_EXIT_TREE: {
 		stop();
 	} break;
@@ -356,19 +353,7 @@ SkeletonIK3D::~SkeletonIK3D()
 	task = nullptr;
 }
 
-void SkeletonIK3D::set_root_bone(const StringName& p_root_bone)
-{
-	root_bone = p_root_bone;
-	reload_chain();
-}
-
 StringName SkeletonIK3D::get_root_bone() const { return root_bone; }
-
-void SkeletonIK3D::set_tip_bone(const StringName& p_tip_bone)
-{
-	tip_bone = p_tip_bone;
-	reload_chain();
-}
 
 StringName SkeletonIK3D::get_tip_bone() const { return tip_bone; }
 
@@ -407,8 +392,6 @@ void SkeletonIK3D::set_min_distance(real_t p_min_distance) { min_distance = p_mi
 
 void SkeletonIK3D::set_max_iterations(int p_iterations) { max_iterations = p_iterations; }
 
-Skeleton3D* SkeletonIK3D::get_parent_skeleton() const { return get_skeleton(); }
-
 bool SkeletonIK3D::is_running() { return internal_active; }
 
 void SkeletonIK3D::start(bool p_one_time)
@@ -424,24 +407,6 @@ void SkeletonIK3D::start(bool p_one_time)
 }
 
 void SkeletonIK3D::stop() { internal_active = false; }
-
-void SkeletonIK3D::reload_chain()
-{
-	FabrikInverseKinematic::free_task(task);
-	task = nullptr;
-
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	task = FabrikInverseKinematic::create_simple_task(skeleton, skeleton->find_bone(root_bone),
-		skeleton->find_bone(tip_bone), _get_target_transform());
-	if (task) {
-		task->max_iterations = max_iterations;
-		task->min_distance = min_distance;
-	}
-}
 
 void SkeletonIK3D::reload_goal()
 {

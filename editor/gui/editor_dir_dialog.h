@@ -52,7 +52,6 @@ class EditorDirDialog : public ConfirmationDialog
 
 	void _item_activated();
 	void _make_dir();
-	void _make_dir_confirm(const String& p_path, const String& p_base_dir);
 
 	void _copy_pressed();
 	void ok_pressed() override;
@@ -61,7 +60,6 @@ class EditorDirDialog : public ConfirmationDialog
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void config(const Vector<String>& p_paths);

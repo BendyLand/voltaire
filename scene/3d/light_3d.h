@@ -94,10 +94,9 @@ private:
 protected:
 	RID light;
 
-	static void _bind_methods();
 	void _notification(int p_what);
 
-	Light3D(RSE::LightType p_type);
+	Light3D(RSE::LightType p_type) : type(p_type) {}
 
 public:
 	RSE::LightType get_light_type() const { return type; }
@@ -105,10 +104,8 @@ public:
 	void set_editor_only(bool p_editor_only);
 	bool is_editor_only() const;
 
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
-	void set_shadow(bool p_enable);
 	bool has_shadow() const;
 
 	void set_negative(bool p_enable);
@@ -129,7 +126,6 @@ public:
 	void set_cull_mask(uint32_t p_cull_mask);
 	uint32_t get_cull_mask() const;
 
-	void set_color(const Color& p_color);
 	Color get_color() const;
 
 	void set_shadow_reverse_cull_face(bool p_enable);
@@ -144,7 +140,6 @@ public:
 	void set_projector(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_projector() const;
 
-	void set_temperature(const float p_temperature);
 	float get_temperature() const;
 	Color get_correlated_color() const;
 
@@ -177,9 +172,6 @@ private:
 	ShadowMode shadow_mode;
 	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
 
-protected:
-	static void _bind_methods();
-
 public:
 	void set_shadow_mode(ShadowMode p_mode);
 	ShadowMode get_shadow_mode() const;
@@ -190,7 +182,7 @@ public:
 	void set_sky_mode(SkyMode p_mode);
 	SkyMode get_sky_mode() const;
 
-	DirectionalLight3D();
+	DirectionalLight3D() = default;
 };
 
 
@@ -207,9 +199,6 @@ public:
 private:
 	ShadowMode shadow_mode;
 
-protected:
-	static void _bind_methods();
-
 public:
 	void set_shadow_mode(ShadowMode p_mode);
 	ShadowMode get_shadow_mode() const;
@@ -221,13 +210,10 @@ public:
 
 class SpotLight3D : public Light3D
 {
-protected:
-	static void _bind_methods();
-
 public:
 	PackedStringArray get_configuration_warnings() const override;
 
-	SpotLight3D();
+	SpotLight3D() : Light3D(RSE::LIGHT_SPOT) {}
 };
 
 class AreaLight3D : public Light3D
@@ -237,11 +223,7 @@ private:
 	Ref<Texture2D> area_texture;
 	bool area_normalize_energy = true;
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_area_size(const Vector2& p_size);
 	Vector2 get_area_size() const;
 
 	void set_area_texture(const Ref<Texture2D>& p_texture);
@@ -252,7 +234,7 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	AreaLight3D();
+	AreaLight3D() : Light3D(RSE::LIGHT_AREA) {}
 	~AreaLight3D();
 };
 

@@ -52,7 +52,6 @@ OpenXRCompositionLayerQuad::OpenXRCompositionLayerQuad()
 
 OpenXRCompositionLayerQuad::~OpenXRCompositionLayerQuad() {}
 
-void OpenXRCompositionLayerQuad::_bind_methods() {}
 
 Ref<Mesh> OpenXRCompositionLayerQuad::_create_fallback_mesh()
 {

@@ -76,7 +76,6 @@ class RayCast3D : public Node3D
 protected:
 	void _notification(int p_what);
 	void _update_raycast_state();
-	static void _bind_methods();
 
 public:
 	void set_collide_with_areas(bool p_enabled);
@@ -91,10 +90,8 @@ public:
 	void set_hit_back_faces(bool p_enabled);
 	bool is_hit_back_faces_enabled() const;
 
-	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
-	void set_target_position(const Vector3& p_point);
 	Vector3 get_target_position() const;
 
 	void set_collision_mask(uint32_t p_mask);
@@ -115,7 +112,6 @@ public:
 	Ref<StandardMaterial3D> get_debug_material();
 
 	int get_debug_shape_thickness() const;
-	void set_debug_shape_thickness(const int p_debug_thickness);
 
 	void force_raycast_update();
 	bool is_colliding() const;

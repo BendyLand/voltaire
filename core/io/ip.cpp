@@ -283,8 +283,6 @@ void IP::get_local_addresses(List<IPAddress>* r_addresses) const
 	}
 }
 
-void IP::_bind_methods() {}
-
 IP* IP::get_singleton() { return singleton; }
 
 IP* (*IP::_create)() = nullptr;

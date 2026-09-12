@@ -36,7 +36,6 @@
 class RenderData
 {
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const = 0;

@@ -48,7 +48,6 @@ class ImageTexture : public Texture2D
 
 protected:
 	virtual void reload_from_file() override;
-	static void _bind_methods();
 
 public:
 	void set_image(const Ref<Image>& p_image);
@@ -101,7 +100,6 @@ class ImageTextureLayered : public TextureLayered
 	bool mipmaps = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const override;
@@ -134,7 +132,6 @@ class ImageTexture3D : public Texture3D
 	bool images_stored = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const override;
@@ -158,7 +155,6 @@ public:
 class Texture2DArray : public ImageTextureLayered
 {
 protected:
-	static void _bind_methods();
 
 public:
 	Texture2DArray() : ImageTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
@@ -169,7 +165,6 @@ public:
 class Cubemap : public ImageTextureLayered
 {
 protected:
-	static void _bind_methods();
 
 public:
 	Cubemap() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP) {}
@@ -180,7 +175,6 @@ public:
 class CubemapArray : public ImageTextureLayered
 {
 protected:
-	static void _bind_methods();
 
 public:
 	CubemapArray() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}

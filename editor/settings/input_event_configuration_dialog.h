@@ -131,7 +131,6 @@ private:
 	void _input_list_item_selected();
 
 	void _mod_toggled(bool p_checked, int p_index);
-	void _autoremap_command_or_control_toggled(bool p_checked);
 	void _key_mode_selected(int p_mode);
 	void _key_location_selected(int p_location);
 

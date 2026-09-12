@@ -216,7 +216,6 @@ protected:
 	bool can_override = false;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _set_read_only(bool p_read_only);
 
 	const Color* _get_property_colors();
@@ -316,7 +315,7 @@ public:
 
 	void menu_option(int p_option);
 
-	EditorProperty();
+	EditorProperty() = default;
 };
 
 class EditorInspectorPlugin : public RefCounted
@@ -335,7 +334,6 @@ public:
 	List<AddedEditor> added_editors;
 
 protected:
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _add_property_editor_bind_compat_92322(
@@ -398,10 +396,8 @@ class EditorInspectorCategory : public Control
 	void _handle_menu_option(int p_option);
 	void _popup_context_menu(const Point2i& p_position);
 	void _update_icon();
-	void _theme_changed();
 
 protected:
-	static void _bind_methods();
 
 	void _notification(int p_what);
 
@@ -416,7 +412,6 @@ public:
 	}
 
 	virtual Size2 get_minimum_size() const override;
-	virtual Control* make_custom_tooltip(const String& p_text) const override;
 
 	EditorInspectorCategory();
 };
@@ -512,7 +507,6 @@ protected:
 	VBoxContainer* vbox = nullptr;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -526,7 +520,6 @@ public:
 	void unfold();
 	void fold();
 	void set_bg_color(const Color& p_bg_color);
-	void reset_timer();
 	void set_checkable(
 		const String& p_related_check_property, bool p_checkbox_only, bool p_checked);
 
@@ -658,12 +651,9 @@ class EditorInspectorArray : public EditorInspectorSection
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	VBoxContainer* get_vbox(int p_index);
-
-	void show_menu(int p_index, const Vector2& p_offset);
 
 	EditorInspectorArray(bool p_read_only);
 };
@@ -687,7 +677,6 @@ class EditorPaginator : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void update(int p_page, int p_max_page);
@@ -845,7 +834,6 @@ private:
 	static EditorInspector* _get_control_parent_inspector(Control* p_control);
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
@@ -855,8 +843,6 @@ public:
 
 	static void initialize_section_theme(
 		EditorInspectorSection::ThemeCache& p_cache, Control* p_control);
-	static void initialize_category_theme(
-		EditorInspectorCategory::ThemeCache& p_cache, Control* p_control);
 	static void initialize_property_theme(EditorProperty::ThemeCache& p_cache, Control* p_control);
 
 	static PropertyClipboard::Type get_property_clipboard_type() { return property_clipboard.type; }

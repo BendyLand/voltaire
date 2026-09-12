@@ -33,13 +33,6 @@
 #include "scene/main/scene_tree.h"
 #include "soft_body_3d_gizmo_plugin.h"
 
-SoftBody3DGizmoPlugin::SoftBody3DGizmoPlugin()
-{
-	Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
-	create_material("shape_material", gizmo_color);
-	create_handle_material("handles");
-}
-
 String SoftBody3DGizmoPlugin::get_gizmo_name() const { return "SoftBody3D"; }
 
 int SoftBody3DGizmoPlugin::get_priority() const { return -1; }

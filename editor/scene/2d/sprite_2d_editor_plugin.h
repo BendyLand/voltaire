@@ -113,9 +113,7 @@ class Sprite2DEditor : public Control
 	void _update_sprite_resize_mode_button();
 
 protected:
-	void _node_removed(Node* p_node);
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void edit(Sprite2D* p_sprite);

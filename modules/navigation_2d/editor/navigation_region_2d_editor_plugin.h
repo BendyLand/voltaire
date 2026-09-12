@@ -61,8 +61,6 @@ class NavigationRegion2DEditor : public AbstractPolygon2DEditor
 	void _bake_pressed();
 	void _clear_pressed();
 
-	void _update_polygon_editing_state();
-
 protected:
 	void _notification(int p_what);
 

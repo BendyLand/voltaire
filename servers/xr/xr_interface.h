@@ -107,7 +107,6 @@ public:
 protected:
 	_THREAD_SAFE_CLASS_
 
-	static void _bind_methods();
 
 public:
 	/** general interface information **/

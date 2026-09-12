@@ -150,21 +150,9 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size);
-	void _set_table_column_expand_bind_compat_79053(int p_column, bool p_expand, int p_ratio);
-	void _add_image_bind_compat_80410(const Ref<Texture2D>& p_image, const int p_width,
-		const int p_height, const Color& p_color, InlineAlignment p_alignment,
-		const Rect2& p_region);
-	void _push_table_bind_compat_76829(
-		int p_columns, InlineAlignment p_alignment, int p_align_to_row);
-	bool _remove_paragraph_bind_compat_91098(int p_paragraph);
-	void _set_table_column_expand_bind_compat_101482(int p_column, bool p_expand, int p_ratio);
-	void _push_underline_bind_compat_106300();
-	void _push_strikethrough_bind_compat_106300();
-	static void _bind_compatibility_methods();
 #endif
 
 private:
@@ -619,11 +607,8 @@ private:
 
 	void _thread_function(void* p_userdata);
 	void _thread_end();
-	void _stop_thread();
 	bool _validate_line_caches();
 	void _process_line_caches();
-	_FORCE_INLINE_ float _update_scroll_exceeds(float p_total_height, float p_ctrl_height,
-		float p_width, int p_idx, float p_old_scroll, float p_text_rect_height);
 
 	void _add_item(Item* p_item, bool p_enter = false, bool p_ensure_newline = false);
 	void _remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line, bool p_erase,
@@ -687,7 +672,6 @@ private:
 	// Context menu.
 	PopupMenu* menu = nullptr;
 	void _generate_context_menu();
-	void _update_context_menu();
 	Key _get_menu_action_accelerator(const String& p_action);
 
 	int visible_characters = -1;
@@ -882,54 +866,12 @@ public:
 	void _push_def_font(DefaultFont p_def_font);
 	void _push_def_font_var(DefaultFont p_def_font, const Ref<Font>& p_font, int p_size = -1);
 	void push_font(const Ref<Font>& p_font, int p_size = 0);
-	void push_font_size(int p_font_size);
-	void push_outline_size(int p_font_size);
 	void push_normal();
 	void push_bold();
 	void push_bold_italics();
 	void push_italics();
 	void push_mono();
-	void push_color(const Color& p_color);
-	void push_outline_color(const Color& p_color);
-	void push_underline(const Color& p_color = Color(0, 0, 0, 0));
-	void push_strikethrough(const Color& p_color = Color(0, 0, 0, 0));
-	void push_language(const String& p_language);
-	void push_paragraph(HorizontalAlignment p_alignment,
-		Control::TextDirection p_direction = Control::TEXT_DIRECTION_INHERITED,
-		const String& p_language = "",
-		TextServer::StructuredTextParser p_st_parser = TextServer::STRUCTURED_TEXT_DEFAULT,
-		uint32_t p_jst_flags =
-			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
-			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
-			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE,
-		const PackedFloat32Array& p_tab_stops = PackedFloat32Array());
-	void push_indent(int p_level);
-	void push_list(int p_level, ListType p_list, bool p_capitalize,
-		const String& p_bullet = String::utf8("•"));
-	void push_hint(const String& p_string);
-	void push_table(int p_columns, InlineAlignment p_alignment = INLINE_ALIGNMENT_TOP,
-		int p_align_to_row = -1, const String& p_name = String());
-	void push_fade(int p_start_index, int p_length);
-	void push_shake(int p_strength, float p_rate, bool p_connected);
-	void push_wave(float p_frequency, float p_amplitude, bool p_connected);
-	void push_tornado(float p_frequency, float p_radius, bool p_connected);
-	void push_rainbow(float p_saturation, float p_value, float p_frequency, float p_speed);
-	void push_pulse(const Color& p_color, float p_frequency, float p_ease);
-	void push_bgcolor(const Color& p_color);
-	void push_fgcolor(const Color& p_color);
-	void push_context();
-	void set_table_column_expand(
-		int p_column, bool p_expand, int p_ratio = 1, bool p_shrink = true);
-	void set_table_column_name(int p_column, const String& p_name);
-	void set_cell_row_background_color(const Color& p_odd_row_bg, const Color& p_even_row_bg);
-	void set_cell_border_color(const Color& p_color);
-	void set_cell_size_override(const Size2& p_min_size, const Size2& p_max_size);
-	void set_cell_padding(const Rect2& p_padding);
 	int get_current_table_column() const;
-	void push_cell();
-	void pop();
-	void pop_context();
-	void pop_all();
 
 	void clear();
 
@@ -1010,7 +952,6 @@ public:
 	int get_pending_paragraphs() const;
 	bool is_finished() const;
 	bool is_updating() const;
-	void wait_until_finished();
 
 	void set_threaded(bool p_threaded);
 	bool is_threaded() const;
@@ -1077,7 +1018,7 @@ public:
 	virtual Size2 get_minimum_size() const override;
 
 	RichTextLabel(const String& p_text = String());
-	~RichTextLabel();
+	~RichTextLabel() = default;
 };
 
 

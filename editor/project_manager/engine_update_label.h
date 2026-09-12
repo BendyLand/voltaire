@@ -87,7 +87,6 @@ private:
 	String current_message;
 
 	bool _can_check_updates() const;
-	void _check_update();
 	void _http_request_completed(int p_result, int p_response_code,
 		const PackedStringArray& p_headers, const PackedByteArray& p_body);
 
@@ -98,9 +97,6 @@ private:
 	String _extract_sub_string(const String& p_line) const;
 
 protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
 	virtual void pressed() override;
 
 public:

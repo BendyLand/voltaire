@@ -109,8 +109,6 @@ private:
 
 	void _update_button_text();
 
-	void _update_frame(bool p_focus_selected = false);
-
 	void _activate_pressed();
 	void _clear_pressed();
 	void _autostart_toggled(bool p_toggled_on);
@@ -125,33 +123,24 @@ private:
 
 	void _graph_tex_mouse_exit();
 
-	void _graph_tex_draw();
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
 	int _get_cursor_index() const;
 
-	Color _get_color_from_signature(const StringName& p_signature) const;
-
 	void _cursor_metric_changed(double);
-
-	void _combo_changed(int);
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_hardware_info(const String& p_cpu_name, const String& p_gpu_name);
 	void add_frame_metric(const Metric& p_metric);
 	void set_enabled(bool p_enable);
-	void set_profiling(bool p_profiling);
 	bool is_profiling();
 
 	bool is_seeking() { return seeking; }
 
 	void disable_seeking();
-
-	void clear();
 
 	Vector<Vector<String>> get_data_as_csv() const;
 

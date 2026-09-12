@@ -69,7 +69,6 @@ class ViewportTexture : public Texture2D
 	mutable RID proxy;
 
 protected:
-	static void _bind_methods();
 
 	virtual void reset_local_to_scene() override;
 
@@ -552,7 +551,6 @@ protected:
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 	void _process_picking();
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-	static void _bind_methods();
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 #endif
@@ -953,7 +951,6 @@ private:
 	void _internal_set_size(const Size2i& p_size, const int p_view_count = 1, bool p_force = false);
 
 protected:
-	static void _bind_methods();
 	virtual DisplayServerEnums::WindowID get_window_id() const override;
 	void _notification(int p_what);
 

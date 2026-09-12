@@ -30,12 +30,10 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 
 class MainLoop
 {
 protected:
-	static void _bind_methods();
 
 public:
 	enum

@@ -74,7 +74,6 @@ private:
 	String _get_feature_name(Feature p_feature) { return get_feature_name(p_feature); }
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_disable_class(const StringName& p_class, bool p_disabled);
@@ -168,7 +167,6 @@ class EditorFeatureProfileManager : public AcceptDialog
 	void _class_list_item_selected();
 	void _class_list_item_edited();
 	void _property_item_edited();
-	void _save_and_update();
 
 	Timer* update_timer = nullptr;
 	void _emit_current_profile_changed();
@@ -176,7 +174,6 @@ class EditorFeatureProfileManager : public AcceptDialog
 	static EditorFeatureProfileManager* singleton;
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:

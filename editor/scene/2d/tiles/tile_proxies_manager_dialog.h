@@ -63,7 +63,6 @@ private:
 	void _menu_id_pressed(int p_id);
 	void _delete_selected_bindings();
 	void _update_lists();
-	void _update_enabled_property_editors();
 	void _add_button_pressed();
 
 	void _clear_invalid_button_pressed();
@@ -72,7 +71,6 @@ private:
 protected:
 	void _unhandled_key_input(Ref<InputEvent> p_event);
 	virtual void cancel_pressed() override;
-	static void _bind_methods();
 
 public:
 	void update_tile_set(Ref<TileSet> p_tile_set);

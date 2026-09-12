@@ -121,7 +121,6 @@ void AudioEffectStereoEnhance::set_surround(float p_amount) { surround = p_amoun
 
 float AudioEffectStereoEnhance::get_surround() const { return surround; }
 
-void AudioEffectStereoEnhance::_bind_methods() {}
 
 AudioEffectStereoEnhance::AudioEffectStereoEnhance() {}
 

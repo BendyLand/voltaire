@@ -121,7 +121,6 @@ Rect2 AtlasTexture::_get_region_rect() const
 	return rc;
 }
 
-void AtlasTexture::_bind_methods() {}
 
 void AtlasTexture::draw(
 	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const

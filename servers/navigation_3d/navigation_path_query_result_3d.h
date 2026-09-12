@@ -41,7 +41,6 @@ class NavigationPathQueryResult3D : public RefCounted
 	float path_length = 0.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	enum PathSegmentType

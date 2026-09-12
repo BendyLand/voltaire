@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
 #include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
@@ -55,7 +54,6 @@ class PhysicsServer3D
 		const Ref<PhysicsTestMotionResult3D>& p_result = Ref<PhysicsTestMotionResult3D>());
 
 protected:
-	static void _bind_methods();
 
 public:
 	static PhysicsServer3D* get_singleton();
@@ -394,7 +392,7 @@ public:
 
 	virtual int get_process_info(PS3DE::ProcessInfo p_info) = 0;
 
-	PhysicsServer3D();
+	PhysicsServer3D() = default;
 	~PhysicsServer3D();
 };
 
@@ -421,7 +419,6 @@ class PhysicsServer3DManager
 	void on_servers_changed();
 
 protected:
-	static void _bind_methods();
 
 public:
 	static const String setting_property_name;

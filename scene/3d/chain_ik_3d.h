@@ -196,24 +196,11 @@ public:
 	};
 
 protected:
-#ifdef TOOLS_ENABLED
-	virtual void _update_mutable_info() override;
-#endif // TOOLS_ENABLED
-
 	LocalVector<ChainIK3DSetting *> chain_settings; // For caching.
-
-	static void _bind_methods();
-
-	virtual void _validate_bone_names() override;
 	void _validate_axes(Skeleton3D *p_skeleton) const;
 	virtual void _validate_axis(Skeleton3D *p_skeleton, int p_index, int p_joint) const;
-
 	virtual void _make_all_joints_dirty() override;
-	virtual void _update_joints(int p_index) override;
-	void _set_joint_bone(int p_index, int p_joint, int p_bone);
-
 	virtual void _process_ik(Skeleton3D *p_skeleton, double p_delta) override;
-
 	virtual void _set_joint_count(int p_index, int p_count);
 
 public:
@@ -229,17 +216,14 @@ public:
 	// Setting.
 	void set_root_bone_name(int p_index, const String &p_bone_name);
 	String get_root_bone_name(int p_index) const;
-	void set_root_bone(int p_index, int p_bone);
 	int get_root_bone(int p_index) const;
 
-	void set_end_bone_name(int p_index, const String &p_bone_name);
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
 
 	void set_extend_end_bone(int p_index, bool p_enabled);
 	bool is_end_bone_extended(int p_index) const;
-	void set_end_bone_direction(int p_index, BoneDirection p_bone_direction);
 	BoneDirection get_end_bone_direction(int p_index) const;
 	void set_end_bone_length(int p_index, float p_length);
 	float get_end_bone_length(int p_index) const;

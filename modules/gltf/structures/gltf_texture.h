@@ -40,7 +40,6 @@ private:
 	GLTFTextureSamplerIndex sampler = -1;
 
 protected:
-	static void _bind_methods();
 
 public:
 	GLTFImageIndex get_src_image() const;

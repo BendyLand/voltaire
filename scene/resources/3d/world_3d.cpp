@@ -116,7 +116,6 @@ PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
 }
 #endif // PHYSICS_3D_DISABLED
 
-void World3D::_bind_methods() {}
 
 World3D::World3D() { scenario = RenderingServer::get_singleton()->scenario_create(); }
 

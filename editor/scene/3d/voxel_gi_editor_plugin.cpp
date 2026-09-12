@@ -46,12 +46,6 @@ void VoxelGIEditorPlugin::bake_func_begin()
 	tmp_progress = memnew(EditorProgress("bake_gi", TTR("Bake VoxelGI"), 1000, true));
 }
 
-bool VoxelGIEditorPlugin::bake_func_step(int p_progress, const String& p_description)
-{
-	ERR_FAIL_NULL_V(tmp_progress, false);
-	return tmp_progress->step(p_description, p_progress, false);
-}
-
 void VoxelGIEditorPlugin::bake_func_end()
 {
 	ERR_FAIL_NULL(tmp_progress);

@@ -124,7 +124,6 @@ public:
 class ResourceImporter : public RefCounted
 {
 protected:
-	static void _bind_methods();
 
 public:
 	static inline ResourceFormatImporterLoadOnStartup load_on_startup = nullptr;
