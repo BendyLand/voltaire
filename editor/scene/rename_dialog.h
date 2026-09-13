@@ -48,7 +48,6 @@ class RenameDialog : public ConfirmationDialog
 
 	void _cancel_pressed() {}
 
-	void _features_toggled(bool pressed);
 	void _insert_text(const String& text);
 	void _update_substitute();
 	bool _is_main_field(LineEdit* line_edit);

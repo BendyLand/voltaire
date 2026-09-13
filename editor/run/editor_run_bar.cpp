@@ -68,10 +68,6 @@ void EditorRunBar::_movie_maker_item_pressed(int p_id)
 		_write_movie_toggled(new_enabled);
 		break;
 	}
-	case MOVIE_MAKER_OPEN_SETTINGS:
-		ProjectSettingsEditor::get_singleton()->popup_project_settings(true);
-		ProjectSettingsEditor::get_singleton()->set_general_page("editor/movie_writer");
-		break;
 	}
 }
 

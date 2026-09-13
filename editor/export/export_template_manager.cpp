@@ -408,15 +408,6 @@ void ExportTemplateManager::_tree_button_clicked(
 	TreeItem* p_item, int p_column, int p_id, MouseButton p_button)
 {
 	switch ((ButtonID)p_id) {
-	case ButtonID::DOWNLOAD: {
-		_install_templates(p_item);
-	} break;
-
-	case ButtonID::REPAIR: {
-		p_item->set_collapsed(false);
-		_install_templates(p_item);
-	} break;
-
 	case ButtonID::REMOVE: {
 		item_to_delete = p_item;
 		confirm_delete->set_text(
@@ -424,25 +415,6 @@ void ExportTemplateManager::_tree_button_clicked(
 				 "filesystem configuration, the files will either be moved to the system trash or "
 				 "deleted permanently."));
 		confirm_delete->popup_centered();
-	} break;
-
-	case ButtonID::CANCEL: {
-		if (_item_is_file(p_item)) {
-			_cancel_item_download(p_item);
-			if (_is_template_download_finished(p_item->get_parent())) {
-				queued_templates.erase(p_item->get_parent()->get_text(0));
-			}
-		}
-		else {
-			queued_templates.erase(p_item->get_text(0));
-			for (TreeItem* child = p_item->get_first_child(); child; child = child->get_next()) {
-				if (_get_file_metadata(child)->download_status != DownloadStatus::NONE) {
-					_cancel_item_download(child);
-				}
-			}
-		}
-		_process_download_queue();
-		_update_template_tree();
 	} break;
 
 	case ButtonID::FAIL: {
@@ -462,27 +434,6 @@ void ExportTemplateManager::_tree_item_edited()
 
 	edited->propagate_check(0, false);
 	_update_install_button();
-}
-
-void ExportTemplateManager::_install_templates(TreeItem* p_files)
-{
-	_queue_download_tree_item(p_files ? p_files : available_templates_tree->get_root());
-	download_count = queued_files.size();
-
-	file_metadata.clear();
-	_update_template_tree();
-	_process_download_queue();
-	_update_install_button();
-
-	// Don't allow changing selected version while downloading.
-	for (int i = 0; i < version_list->get_item_count(); i++) {
-		version_list->set_item_disabled(i, true);
-	}
-
-	ProgressIndicator* indicator = EditorNode::get_bottom_panel()->get_progress_indicator();
-	indicator->set_tooltip_text(TTRC("Downloading export templates..."));
-	indicator->set_value(0);
-	indicator->show();
 }
 
 void ExportTemplateManager::_open_template_directory()
@@ -516,54 +467,6 @@ void ExportTemplateManager::_queue_download_tree_item(TreeItem* p_item)
 		for (TreeItem* child = p_item->get_first_child(); child; child = child->get_next()) {
 			_queue_download_tree_item(child);
 		}
-	}
-}
-
-void ExportTemplateManager::_process_download_queue()
-{
-	queue_update_pending = false;
-
-	int downloader_index = 0;
-	bool is_finished = true;
-	for (TreeItem* item : downloading_items) {
-		FileMetadata* meta = _get_file_metadata(item);
-
-		is_finished = is_finished && _status_is_finished(meta->download_status);
-		if (meta->download_status != DownloadStatus::PENDING) {
-			continue;
-		}
-
-		TemplateDownloader* downloader = _get_available_downloader(&downloader_index);
-		if (!downloader) {
-			break;
-		}
-		downloader_index++;
-
-		Error err = downloader->download_template(item->get_text(0), _get_current_mirror_url());
-		if (err == OK) {
-			meta->download_status = DownloadStatus::IN_PROGRESS;
-			meta->downloader = downloader;
-		}
-		else {
-			_item_download_failed(
-				item, vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		}
-	}
-
-	if (is_finished) {
-		// Exit "downloading mode".
-		queued_templates.clear();
-		downloading_items.clear();
-		set_process_internal(false);
-		_update_install_button();
-		EditorNode::get_bottom_panel()->get_progress_indicator()->hide();
-
-		for (int i = 0; i < version_list->get_item_count(); i++) {
-			version_list->set_item_disabled(i, false);
-		}
-	}
-	else {
-		set_process_internal(true);
 	}
 }
 

@@ -70,7 +70,7 @@ protected:
 public:
 	void set_control(Control* p_node);
 
-	ControlPositioningWarning();
+	ControlPositioningWarning() = default;
 };
 
 class EditorPropertyAnchorsPreset : public EditorProperty
@@ -262,7 +262,7 @@ public:
 
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
-	ControlEditorPlugin();
+	ControlEditorPlugin() = default;
 };
 
 

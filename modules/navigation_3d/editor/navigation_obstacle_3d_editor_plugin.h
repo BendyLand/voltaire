@@ -111,7 +111,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node* p_node);
 
 public:
 	HBoxContainer* obstacle_editor = nullptr;

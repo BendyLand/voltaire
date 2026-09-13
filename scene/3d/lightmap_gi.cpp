@@ -605,27 +605,6 @@ void LightmapGI::_notification(int p_what)
 	}
 }
 
-void LightmapGI::set_light_data(const Ref<LightmapGIData>& p_data)
-{
-	if (light_data.is_valid()) {
-		if (is_inside_tree()) {
-			_clear_lightmaps();
-		}
-		set_base(RID());
-	}
-	light_data = p_data;
-
-	if (light_data.is_valid()) {
-		set_base(light_data->get_rid());
-		if (is_inside_tree()) {
-			_assign_lightmaps();
-		}
-		light_data->update_shadowmask_mode(shadowmask_mode);
-	}
-
-	update_gizmos();
-}
-
 Ref<LightmapGIData> LightmapGI::get_light_data() const { return light_data; }
 
 void LightmapGI::set_bake_quality(BakeQuality p_quality) { bake_quality = p_quality; }

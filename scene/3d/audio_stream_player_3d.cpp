@@ -624,12 +624,6 @@ void AudioStreamPlayer3D::set_volume_linear(float p_volume)
 
 float AudioStreamPlayer3D::get_volume_linear() const { return Math::db_to_linear(get_volume_db()); }
 
-void AudioStreamPlayer3D::set_unit_size(float p_volume)
-{
-	unit_size = p_volume;
-	update_gizmos();
-}
-
 float AudioStreamPlayer3D::get_unit_size() const { return unit_size; }
 
 void AudioStreamPlayer3D::set_max_db(float p_boost) { max_db = p_boost; }
@@ -700,33 +694,13 @@ bool AudioStreamPlayer3D::is_autoplay_enabled() const { return internal->autopla
 
 void AudioStreamPlayer3D::_set_playing(bool p_enable) { internal->set_playing(p_enable); }
 
-void AudioStreamPlayer3D::set_max_distance(float p_metres)
-{
-	ERR_FAIL_COND(p_metres < 0.0);
-	max_distance = p_metres;
-	update_gizmos();
-}
-
 float AudioStreamPlayer3D::get_max_distance() const { return max_distance; }
 
 void AudioStreamPlayer3D::set_area_mask(uint32_t p_mask) { area_mask = p_mask; }
 
 uint32_t AudioStreamPlayer3D::get_area_mask() const { return area_mask; }
 
-void AudioStreamPlayer3D::set_emission_angle_enabled(bool p_enable)
-{
-	emission_angle_enabled = p_enable;
-	update_gizmos();
-}
-
 bool AudioStreamPlayer3D::is_emission_angle_enabled() const { return emission_angle_enabled; }
-
-void AudioStreamPlayer3D::set_emission_angle(float p_angle)
-{
-	ERR_FAIL_COND(p_angle < 0 || p_angle > 90);
-	emission_angle = p_angle;
-	update_gizmos();
-}
 
 float AudioStreamPlayer3D::get_emission_angle() const { return emission_angle; }
 
@@ -753,13 +727,6 @@ float AudioStreamPlayer3D::get_attenuation_filter_cutoff_hz() const
 void AudioStreamPlayer3D::set_attenuation_filter_db(float p_db) { attenuation_filter_db = p_db; }
 
 float AudioStreamPlayer3D::get_attenuation_filter_db() const { return attenuation_filter_db; }
-
-void AudioStreamPlayer3D::set_attenuation_model(AttenuationModel p_model)
-{
-	ERR_FAIL_INDEX((int)p_model, 4);
-	attenuation_model = p_model;
-	update_gizmos();
-}
 
 AudioStreamPlayer3D::AttenuationModel AudioStreamPlayer3D::get_attenuation_model() const
 {

@@ -118,14 +118,12 @@ protected:
 	void _make_dirty(bool p_parent_removing = false);
 	PackedStringArray get_configuration_warnings() const override;
 
-
 	friend class CSGCombiner3D;
 	CSGBrush* _get_brush();
 
 public:
 	void update_shape();
 
-	void set_operation(Operation p_operation);
 	Operation get_operation() const;
 
 	virtual Vector<Vector3> get_brush_faces();
@@ -225,7 +223,6 @@ class CSGMesh3D : public CSGPrimitive3D
 	void _mesh_changed();
 
 protected:
-
 public:
 	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh();
@@ -245,15 +242,11 @@ class CSGSphere3D : public CSGPrimitive3D
 	int rings;
 
 protected:
-
 public:
-	void set_radius(const float p_radius);
 	float get_radius() const;
 
-	void set_radial_segments(const int p_radial_segments);
 	int get_radial_segments() const;
 
-	void set_rings(const int p_rings);
 	int get_rings() const;
 
 	void set_material(const Ref<Material>& p_material);
@@ -272,13 +265,8 @@ class CSGBox3D : public CSGPrimitive3D
 	Ref<Material> material;
 	Vector3 size = Vector3(1, 1, 1);
 
-protected:
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
-
-	void set_material(const Ref<Material>& p_material);
 	Ref<Material> get_material() const;
 
 	CSGBox3D() {}
@@ -295,19 +283,12 @@ class CSGCylinder3D : public CSGPrimitive3D
 	bool cone;
 	bool smooth_faces;
 
-protected:
-
 public:
-	void set_radius(const float p_radius);
 	float get_radius() const;
-
-	void set_height(const float p_height);
 	float get_height() const;
 
-	void set_sides(const int p_sides);
 	int get_sides() const;
 
-	void set_cone(const bool p_cone);
 	bool is_cone() const;
 
 	void set_smooth_faces(bool p_smooth_faces);
@@ -330,19 +311,13 @@ class CSGTorus3D : public CSGPrimitive3D
 	int ring_sides;
 	bool smooth_faces;
 
-protected:
-
 public:
-	void set_inner_radius(const float p_inner_radius);
 	float get_inner_radius() const;
 
-	void set_outer_radius(const float p_outer_radius);
 	float get_outer_radius() const;
 
-	void set_sides(const int p_sides);
 	int get_sides() const;
 
-	void set_ring_sides(const int p_ring_sides);
 	int get_ring_sides() const;
 
 	void set_smooth_faces(bool p_smooth_faces);
@@ -408,56 +383,41 @@ private:
 	bool _is_editable_3d_polygon() const;
 	bool _has_editable_3d_polygon_no_depth() const;
 
-	void _path_changed();
 	void _path_exited();
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void set_polygon(const Vector<Vector2>& p_polygon);
 	Vector<Vector2> get_polygon() const;
 
-	void set_mode(Mode p_mode);
 	Mode get_mode() const;
 
-	void set_depth(float p_depth);
 	float get_depth() const;
 
-	void set_spin_degrees(float p_spin_degrees);
 	float get_spin_degrees() const;
 
-	void set_spin_sides(int p_spin_sides);
 	int get_spin_sides() const;
 
-	void set_path_node(const NodePath& p_path);
 	NodePath get_path_node() const;
 
-	void set_path_interval_type(PathIntervalType p_interval_type);
 	PathIntervalType get_path_interval_type() const;
 
-	void set_path_interval(float p_interval);
 	float get_path_interval() const;
 
-	void set_path_simplify_angle(float p_angle);
 	float get_path_simplify_angle() const;
 
-	void set_path_rotation(PathRotation p_rotation);
 	PathRotation get_path_rotation() const;
 
-	void set_path_rotation_accurate(bool p_enable);
 	bool get_path_rotation_accurate() const;
 
-	void set_path_local(bool p_enable);
 	bool is_path_local() const;
 
 	void set_path_continuous_u(bool p_enable);
 	bool is_path_continuous_u() const;
 
-	void set_path_u_distance(real_t p_path_u_distance);
 	real_t get_path_u_distance() const;
 
-	void set_path_joined(bool p_enable);
 	bool is_path_joined() const;
 
 	void set_smooth_faces(bool p_smooth_faces);

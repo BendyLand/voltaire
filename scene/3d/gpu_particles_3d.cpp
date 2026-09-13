@@ -138,20 +138,11 @@ void GPUParticles3D::set_randomness_ratio(real_t p_ratio)
 	RS::get_singleton()->particles_set_randomness_ratio(particles, randomness_ratio);
 }
 
-void GPUParticles3D::set_visibility_aabb(const AABB& p_aabb)
-{
-	visibility_aabb = p_aabb;
-	RS::get_singleton()->particles_set_custom_aabb(particles, visibility_aabb);
-	update_gizmos();
-}
-
 void GPUParticles3D::set_use_local_coordinates(bool p_enable)
 {
 	local_coords = p_enable;
 	RS::get_singleton()->particles_set_use_local_coordinates(particles, local_coords);
 }
-
-
 
 void GPUParticles3D::set_speed_scale(double p_scale)
 {
@@ -401,8 +392,6 @@ void GPUParticles3D::set_amount_ratio(float p_ratio)
 
 float GPUParticles3D::get_amount_ratio() const { return amount_ratio; }
 
-
-
 GPUParticles3D::GPUParticles3D()
 {
 	particles = RS::get_singleton()->particles_create();
@@ -422,7 +411,6 @@ GPUParticles3D::GPUParticles3D()
 	set_explosiveness_ratio(0);
 	set_randomness_ratio(0);
 	set_trail_lifetime(0.3);
-	set_visibility_aabb(AABB(Vector3(-4, -4, -4), Vector3(8, 8, 8)));
 	set_use_local_coordinates(false);
 	set_draw_passes(1);
 	set_draw_order(DRAW_ORDER_INDEX);

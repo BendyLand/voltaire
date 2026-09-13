@@ -285,29 +285,6 @@ void FindInFilesDialog::set_replace_text(const String& p_text)
 	replace_text_line_edit->set_text(p_text);
 }
 
-void FindInFilesDialog::set_replace_mode(bool p_replace)
-{
-	if (replace_mode == p_replace) {
-		return;
-	}
-
-	replace_mode = p_replace;
-
-	if (replace_mode) {
-		set_title(TTRC("Replace in Files"));
-		replace_label->show();
-		replace_text_line_edit->show();
-	}
-	else {
-		set_title(TTRC("Find in Files"));
-		replace_label->hide();
-		replace_text_line_edit->hide();
-	}
-
-	// Recalculate the dialog size after hiding child controls.
-	set_size(Size2(get_size().x, 0));
-}
-
 String FindInFilesDialog::get_search_text() const { return search_text_line_edit->get_text(); }
 
 String FindInFilesDialog::get_replace_text() const { return replace_text_line_edit->get_text(); }
@@ -609,16 +586,6 @@ void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
 		tabs_context_menu->reset_size();
 		tabs_context_menu->popup();
 	}
-}
-
-void FindInFiles::open_dialog(const String& p_initial_text, bool p_replace)
-{
-	dialog->set_replace_mode(p_replace);
-	dialog->set_search_text(p_initial_text);
-	if (p_replace) {
-		dialog->set_replace_text(String());
-	}
-	dialog->popup_centered();
 }
 
 

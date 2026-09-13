@@ -59,7 +59,7 @@ class SwitchSeparator : public MarginContainer
 	VSeparator* v_separator = nullptr;
 
 public:
-	SwitchSeparator();
+	SwitchSeparator() = default;
 };
 
 class TileMapLayerSubEditorPlugin

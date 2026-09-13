@@ -230,18 +230,6 @@ void ShaderEditorPlugin::_update_shader_editor_zoom_factor(CodeTextEditor* p_sha
 	}
 }
 
-void ShaderEditorPlugin::_switch_to_editor(ShaderEditor* p_editor)
-{
-	ERR_FAIL_NULL(p_editor);
-	if (file_menu->get_parent() != nullptr) {
-		file_menu->get_parent()->remove_child(file_menu);
-	}
-
-	shader_tabs->show();
-	p_editor->use_menu_bar(file_menu);
-	file_menu->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-}
-
 void ShaderEditorPlugin::_file_removed(const String& p_removed_file)
 {
 	for (uint32_t i = 0; i < edited_shaders.size(); i++) {

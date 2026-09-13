@@ -235,10 +235,6 @@ void ChainIK3D::_update_joints(int p_index)
 {
 	_make_simulation_dirty(p_index);
 
-#ifdef TOOLS_ENABLED
-	update_gizmos(); // To clear invalid setting.
-#endif				 // TOOLS_ENABLED
-
 	Skeleton3D* sk = get_skeleton();
 	int current_bone = chain_settings[p_index]->end_bone.bone;
 	int root_bone = chain_settings[p_index]->root_bone.bone;

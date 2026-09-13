@@ -56,8 +56,4 @@ void PhysicalBone3DEditor::set_selected(PhysicalBone3D* p_pb)
 	_set_move_joint();
 }
 
-void PhysicalBone3DEditor::hide() { spatial_editor_hb->hide(); }
-
-void PhysicalBone3DEditor::show() { spatial_editor_hb->show(); }
-
 

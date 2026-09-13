@@ -55,15 +55,6 @@ static bool _property_path_matches(const String& p_property_path, const String& 
 	return false;
 }
 
-void SectionedInspector::set_current_section(const String& p_section)
-{
-	if (section_map.has(p_section)) {
-		TreeItem* item = section_map[p_section];
-		item->select(0);
-		sections->scroll_to_item(item);
-	}
-}
-
 String SectionedInspector::get_full_item_path(const String& p_item)
 {
 	String base = get_current_section();

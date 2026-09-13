@@ -288,24 +288,6 @@ void GroupsEditor::_update_groups_and_tree()
 	_update_tree();
 }
 
-void GroupsEditor::_check_add()
-{
-	String group_name = add_group_name->get_text().strip_edges();
-	_validate_name(group_name, add_validation_panel);
-}
-
-void GroupsEditor::_validate_name(const String& p_name, EditorValidationPanel* p_validation_panel)
-{
-	if (p_name.is_empty()) {
-		p_validation_panel->set_message(EditorValidationPanel::MSG_ID_DEFAULT,
-			TTRC("Group can't be empty."), EditorValidationPanel::MSG_ERROR);
-	}
-	else if (_has_group(p_name)) {
-		p_validation_panel->set_message(EditorValidationPanel::MSG_ID_DEFAULT,
-			TTRC("Group already exists."), EditorValidationPanel::MSG_ERROR);
-	}
-}
-
 void GroupsEditor::_groups_gui_input(Ref<InputEvent> p_event)
 {
 	Ref<InputEventKey> key = p_event;

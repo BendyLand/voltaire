@@ -110,11 +110,7 @@ class EditorSettingsDialog : public AcceptDialog
 	PanelContainer* restart_container = nullptr;
 	Button* restart_close_button = nullptr;
 
-	void _editor_restart_request();
 	void _editor_restart();
-	void _editor_restart_close();
-
-protected:
 
 public:
 	void popup_edit_settings();
@@ -143,7 +139,6 @@ class EditorSettingsPropertyWrapper : public EditorProperty
 	Button* remove_button = nullptr;
 
 	void _setup_override_info();
-	void _update_override();
 	void _create_override();
 	void _remove_override();
 

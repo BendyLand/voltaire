@@ -556,20 +556,6 @@ void QuickOpenResultContainer::cleanup()
 	}
 }
 
-QuickOpenResultItem::QuickOpenResultItem()
-{
-	set_focus_mode(FocusMode::FOCUS_NONE);
-	_set_enabled(false);
-
-	list_item = memnew(QuickOpenResultListItem);
-	list_item->hide();
-	add_child(list_item);
-
-	grid_item = memnew(QuickOpenResultGridItem);
-	grid_item->hide();
-	add_child(grid_item);
-}
-
 void QuickOpenResultItem::reset()
 {
 	_set_enabled(false);

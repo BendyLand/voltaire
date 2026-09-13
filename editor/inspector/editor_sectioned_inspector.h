@@ -67,7 +67,6 @@ public:
 	EditorInspector* get_inspector();
 	String get_full_item_path(const String& p_item);
 
-	void set_current_section(const String& p_section);
 	String get_current_section() const;
 
 	void update_category_list();

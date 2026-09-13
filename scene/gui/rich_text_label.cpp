@@ -1373,48 +1373,6 @@ void RichTextLabel::set_progress_bar_delay(int p_delay_ms) { progress_delay = p_
 
 int RichTextLabel::get_progress_bar_delay() const { return progress_delay; }
 
-_FORCE_INLINE_ float RichTextLabel::_update_scroll_exceeds(float p_total_height,
-	float p_ctrl_height, float p_width, int p_idx, float p_old_scroll, float p_text_rect_height)
-{
-	updating_scroll = true;
-
-	float total_height = p_total_height;
-	bool exceeds = scroll_active && p_total_height > p_ctrl_height &&
-				   p_width > vscroll->get_bound_minimum_size().width;
-	if (exceeds != scroll_visible) {
-		if (exceeds) {
-			scroll_visible = true;
-			_prepare_scroll_anchor();
-			vscroll->show();
-		}
-		else {
-			scroll_visible = false;
-			scroll_w = 0;
-		}
-
-		main->first_resized_line.store(0);
-
-		total_height = 0;
-		for (int j = 0; j <= p_idx; j++) {
-			total_height = _resize_line(main, j, theme_cache.normal_font,
-				theme_cache.normal_font_size, p_width - scroll_w, total_height);
-
-			main->first_resized_line.store(j);
-		}
-	}
-	vscroll->set_max(total_height);
-	vscroll->set_page(p_text_rect_height);
-	if (scroll_follow && scroll_following) {
-		vscroll->set_value(total_height);
-	}
-	else {
-		vscroll->set_value(p_old_scroll);
-	}
-	updating_scroll = false;
-
-	return total_height;
-}
-
 void RichTextLabel::_invalidate_current_line(ItemFrame* p_frame)
 {
 	if ((int)p_frame->lines.size() - 1 <= p_frame->first_invalid_line) {

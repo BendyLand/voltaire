@@ -82,8 +82,6 @@ protected:
 	ScalableContainer* preview_content = nullptr;
 	Button* picker_button = nullptr;
 
-	void add_preview_overlay(Control* p_overlay);
-
 	void _notification(int p_what);
 
 public:

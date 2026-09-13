@@ -189,7 +189,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 	void export_skeleton_profile();
 
-	void set_keyable(const bool p_keyable);
 	void set_bone_options_enabled(const bool p_bone_options_enabled);
 
 	// Handle.
@@ -222,8 +221,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 public:
 	static Skeleton3DEditor* get_singleton() { return singleton; }
-
-	void select_bone(int p_idx);
 
 	int get_selected_bone() const;
 

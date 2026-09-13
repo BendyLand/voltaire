@@ -53,14 +53,6 @@
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/3d/sphere_shape_3d.h"
 
-void MeshInstance3DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
 void MeshInstance3DEditor::edit(MeshInstance3D* p_mesh) { node = p_mesh; }
 
 Vector<Ref<Shape3D>> MeshInstance3DEditor::create_shape_from_mesh(
@@ -355,14 +347,6 @@ void MeshInstance3DEditor::_debug_uv_draw()
 	debug_uv->draw_multiline(uv_lines,
 		get_theme_color(SNAME("mono_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.5),
 		Math::round(EDSCALE) / debug_uv->get_size().x);
-}
-
-MeshInstance3DEditorPlugin::MeshInstance3DEditorPlugin()
-{
-	mesh_editor = memnew(MeshInstance3DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(mesh_editor);
-
-	mesh_editor->options->hide();
 }
 
 

@@ -111,8 +111,8 @@ public:
 
 	void request_update();
 
-	PrimitiveMesh();
-	~PrimitiveMesh();
+	PrimitiveMesh() = default;
+	~PrimitiveMesh() = default;
 };
 
 /**

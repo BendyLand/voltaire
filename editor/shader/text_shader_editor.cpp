@@ -54,8 +54,6 @@
 #include "servers/rendering/shader_types.h"
 #include "text_shader_editor.h"
 
-/*** SHADER SYNTAX HIGHLIGHTER ****/
-
 void GDShaderSyntaxHighlighter::add_disabled_branch_region(const Point2i& p_region)
 {
 	ERR_FAIL_COND(p_region.x < 0);
@@ -85,8 +83,6 @@ void GDShaderSyntaxHighlighter::set_disabled_branch_color(const Color& p_color)
 	disabled_branch_color = p_color;
 	clear_highlighting_cache();
 }
-
-/*** SHADER PREVIEW LINE LAYER ****/
 
 void TextShaderPreviewLineLayer::_notification(int p_what)
 {
@@ -155,8 +151,6 @@ void TextShaderPreviewLineLayer::set_scroll_container(ScrollContainer* p_scroll_
 }
 
 TextShaderPreviewLineLayer::TextShaderPreviewLineLayer() { set_as_top_level(true); }
-
-/***  SHADER PREVIEW ****/
 
 class SquareMarginContainer : public MarginContainer
 {
@@ -241,23 +235,6 @@ HashMap<String, String> TextShaderPreview::builtin_canvas_types = {
 	{"COLOR", "vec4"},
 };
 
-void TextShaderPreview::_on_hover_enter()
-{
-	hovered = true;
-	delete_button->show();
-	goto_button->show();
-
-	DisplayServer::get_singleton()->cursor_set_shape(
-		DisplayServerEnums::CURSOR_ARROW); // Since MaterialEditor doesn't set cursor.
-}
-
-void TextShaderPreview::_on_hover_exit()
-{
-	hovered = false;
-	delete_button->hide();
-	goto_button->hide();
-}
-
 String TextShaderPreview::_get_enclosing_function(
 	const PackedStringArray& p_lines, int p_line) const
 {
@@ -317,24 +294,6 @@ bool TextShaderPreview::_is_inside_loop(const PackedStringArray& p_lines, int p_
 	return false;
 }
 
-void TextShaderPreview::_show_error(const String& p_error)
-{
-	surface->edit(Ref<Material>(), env);
-	error_label->set_text(p_error);
-	surface_container->hide();
-	error_container->show();
-}
-
-void TextShaderPreview::show_shader_compile_error()
-{
-	_show_error(TTRC("Shader must be compiled correctly."));
-}
-
-void TextShaderPreview::recompile(const String& p_code)
-{
-	set_shader_code(p_code, line, in_comment);
-}
-
 void TextShaderPreview::sync_shader_parameters()
 {
 	if (shader_material->get_shader().is_null()) {
@@ -357,88 +316,6 @@ void TextShaderPreview::update_panel_color(const Color& p_color)
 PanelContainer* TextShaderPreview::get_panel_container() const { return panel; }
 
 Control* TextShaderPreview::get_hover_control() const { return surface_hover; }
-
-void TextShaderPreview::set_shader_code(const String& p_code, int p_line, bool p_in_comment)
-{
-	line = p_line;
-	in_comment = p_in_comment;
-	goto_button->set_text(itos(line + 1));
-
-	String shader_type = ShaderLanguage::get_shader_type(p_code);
-	bool mode_3d = shader_type == "spatial";
-
-	if (shader_type != "canvas_item" && !mode_3d) {
-		_show_error(TTRC("For previews, shader type must be CanvasItem or Spatial."));
-		return;
-	}
-
-	const PackedStringArray lines = p_code.split("\n");
-	String enclosing_function = _get_enclosing_function(lines, p_line);
-
-	if (enclosing_function != "fragment") {
-		_show_error(TTRC("Previewed line must be inside fragment() function."));
-		return;
-	}
-
-	if (_is_inside_loop(lines, p_line)) {
-		_show_error(TTRC("Preview not supported inside loops."));
-		return;
-	}
-
-	String var_name;
-	int start;
-	int end;
-
-	if (in_comment || !_find_statement(lines, p_line, var_name, start, end)) {
-		_show_error(TTRC("Previewed line must contain an assignment."));
-		return;
-	}
-
-	String type = _find_var_type(lines, var_name, end, mode_3d);
-
-	// All code before assignment stays as it was.
-	PackedStringArray truncated_lines = lines.slice(0, end + 1);
-
-	String injection;
-	HashMap<String, String>& assignments = mode_3d ? spatial_assignments : canvas_assignments;
-	if (!assignments.has(type)) {
-		_show_error(TTRC("Preview only available for bool, int, float, vec2, vec3, vec4."));
-		return;
-	}
-	injection = assignments[type].replace("%s", var_name);
-	truncated_lines.append(injection);
-
-	String full_truncated_text = "\n";
-	full_truncated_text = full_truncated_text.join(truncated_lines);
-
-	int open_braces = full_truncated_text.count("{");
-	int closed_braces = full_truncated_text.count("}");
-	int needed_closures = open_braces - closed_braces;
-
-	for (int i = 0; i < needed_closures; i++) {
-		full_truncated_text += "\n}";
-	}
-
-	Ref<Shader> shader;
-	shader.instantiate();
-	shader->set_code(full_truncated_text);
-	shader_material->set_shader(shader);
-
-	const Ref<ShaderMaterial> src_mat = _get_source_material();
-	if (src_mat.is_valid()) {
-		_sync_shader_parameters(src_mat, shader_material);
-	}
-	else {
-		_reset_shader_parameters(shader_material);
-	}
-
-	error_container->hide();
-	surface_container->show();
-	surface->edit(shader_material.ptr(), env);
-	surface->show(); // Edit may have called hide() earlier on failed compilation.
-}
-
-/*** SHADER SCRIPT EDITOR ****/
 
 static bool saved_warnings_enabled = false;
 static bool saved_treat_warning_as_errors = false;
@@ -499,13 +376,6 @@ void ShaderTextEditor::clear_previews()
 		pair.value->queue_free();
 	}
 	previews.clear();
-}
-
-void ShaderTextEditor::recompile_previews()
-{
-	for (KeyValue<int, TextShaderPreview*>& E : previews) {
-		E.value->recompile(get_text_editor()->get_text());
-	}
 }
 
 void ShaderTextEditor::update_parameters()
@@ -610,8 +480,6 @@ static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName
 }
 
 static String complete_from_path;
-
-/*** SCRIPT EDITOR ******/
 
 void TextShaderEditor::_prepare_edit_menu()
 {
@@ -773,30 +641,6 @@ bool TextShaderEditor::is_unsaved() const
 }
 
 void TextShaderEditor::tag_saved_version() { code_editor->get_text_editor()->tag_saved_version(); }
-
-void TextShaderEditor::_update_shader_previews()
-{
-	pending_update_shader_previews = false;
-
-	const CodeEdit* ce = code_editor->get_text_editor();
-	code_editor->clear_previews();
-	bool found = false;
-
-	for (int i = 0; i < ce->get_line_count(); i++) {
-		if (ce->is_line_breakpointed(i)) {
-			found = true;
-			code_editor->toggle_shader_preview(i);
-		}
-	}
-
-	if (!found) {
-		preview_box->hide();
-		return;
-	}
-	preview_box->show();
-
-	preview_timer->start();
-}
 
 void TextShaderEditor::_make_context_menu(bool p_selection, Vector2 p_position)
 {

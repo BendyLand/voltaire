@@ -73,17 +73,6 @@ void MaterialEditor::gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void MaterialEditor::set_autohide_buttons(bool p_autohide)
-{
-	autohide_buttons = p_autohide;
-	if (autohide_buttons) {
-		layout_3d->hide();
-	}
-	else {
-		layout_3d->show();
-	}
-}
-
 void MaterialEditor::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
@@ -110,22 +99,6 @@ void MaterialEditor::_notification(int p_what)
 			draw_texture_rect(theme_cache.checkerboard.ptr(), Rect2(Point2(), size), true);
 		}
 	} break;
-
-	case NOTIFICATION_MOUSE_ENTER: {
-		if (autohide_buttons) {
-			Shader::Mode mode =
-				material.is_valid() ? material->get_shader_mode() : Shader::MODE_MAX;
-			if (mode == Shader::MODE_SPATIAL) {
-				layout_3d->show();
-			}
-		}
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (autohide_buttons) {
-			layout_3d->hide();
-		}
-	} break;
 	}
 }
 
@@ -144,47 +117,6 @@ void MaterialEditor::_update_rotation()
 	rotation->set_transform(t);
 }
 
-void MaterialEditor::edit(Ref<Material> p_material, const Ref<Environment>& p_env)
-{
-	material = p_material;
-	camera->set_environment(p_env);
-
-	is_unsupported_shader_mode = false;
-	if (material.is_valid()) {
-		Shader::Mode mode = p_material->get_shader_mode();
-		switch (mode) {
-		case Shader::MODE_CANVAS_ITEM:
-			layout_error->hide();
-			layout_3d->hide();
-			layout_2d->show();
-			rect_instance->set_material(material);
-			vc->hide();
-			break;
-		case Shader::MODE_SPATIAL:
-			layout_error->hide();
-			layout_2d->hide();
-			if (!autohide_buttons) {
-				layout_3d->show();
-			}
-			sphere_instance->set_material_override(material);
-			box_instance->set_material_override(material);
-			quad_instance->set_material_override(material);
-			vc->show();
-			break;
-		default:
-			layout_error->show();
-			layout_2d->hide();
-			layout_3d->hide();
-			is_unsupported_shader_mode = true;
-			vc->hide();
-			break;
-		}
-	}
-	else {
-		hide();
-	}
-}
-
 void MaterialEditor::_on_light_1_switch_pressed()
 {
 	light1->set_visible(light_1_switch->is_pressed());
@@ -194,8 +126,6 @@ void MaterialEditor::_on_light_2_switch_pressed()
 {
 	light2->set_visible(light_2_switch->is_pressed());
 }
-
-///////////////////////
 
 MaterialEditorPlugin::MaterialEditorPlugin()
 {

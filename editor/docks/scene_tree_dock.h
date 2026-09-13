@@ -203,7 +203,6 @@ class SceneTreeDock : public EditorDock
 	void _node_replace_owner(
 		Node* p_base, Node* p_node, Node* p_root, ReplaceOwnerMode p_mode = MODE_BIDI);
 	void _node_strip_signal_inheritance(Node* p_node);
-	void _load_request(const String& p_path);
 	void _handle_select(Node* p_node);
 
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node);
@@ -275,10 +274,8 @@ class SceneTreeDock : public EditorDock
 	void _replace_with_branch_scene(const String& p_file, Node* p_base);
 
 	void _remote_tree_selected();
-	void _local_tree_selected();
 
 	void _update_create_root_dialog(bool p_initializing = false);
-	void _update_create_root_dialog_visibility();
 	void _favorite_root_selected(const String& p_class);
 
 	void _feature_profile_changed();
@@ -319,7 +316,6 @@ public:
 	void _focus_node();
 
 	void add_root_node(Node* p_node);
-	void set_edited_scene(Node* p_scene);
 	void instantiate(const String& p_file);
 	void instantiate_scenes(const Vector<String>& p_files, Node* p_parent = nullptr);
 	void clear_previous_node_selection();
@@ -337,9 +333,6 @@ public:
 
 	void add_remote_tree_editor(Tree* p_remote);
 	void show_remote_tree();
-	void hide_remote_tree();
-	void show_tab_buttons();
-	void hide_tab_buttons();
 
 	void replace_node(Node* p_node, Node* p_by_node);
 

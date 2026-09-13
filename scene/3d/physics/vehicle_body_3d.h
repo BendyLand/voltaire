@@ -140,10 +140,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
-	void set_suspension_rest_length(real_t p_length);
 	real_t get_suspension_rest_length() const;
 
 	void set_suspension_travel(real_t p_length);

@@ -99,7 +99,9 @@ private:
 		Color font_outline_color;
 		int font_outline_size;
 		int font_shadow_outline_size;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	Rect2 _get_line_rect(int p_para, int p_line) const;
 	void _ensure_shaped() const;
@@ -190,7 +192,8 @@ public:
 
 	Rect2 get_character_bounds(int p_pos) const;
 
-	Label(const String& p_text = String());
+	Label() = default;
+	Label(const String& p_text) : text(p_text) {}
 	~Label();
 
 	template <typename... VarArgsFunc, typename... VarArgs>

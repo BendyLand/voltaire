@@ -117,7 +117,6 @@ private:
 
 	void _set_message(const String& p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
 	void _update_ok_button();
-	void _validate_path();
 
 	// Project path for MODE_NEW and MODE_INSTALL. Install path for MODE_IMPORT.
 	// Install path is only visible when importing a ZIP.
@@ -134,17 +133,9 @@ private:
 	// While `create_dir` is disabled, stores the last target path dir name, or an empty string if
 	// equal to `auto_dir`.
 	String last_custom_target_dir;
-	void _create_dir_toggled(bool p_pressed);
-
-	void _project_name_changed();
-	void _project_path_changed();
-	void _install_path_changed();
 
 	void _browse_project_path();
 	void _browse_install_path();
-
-	void _project_path_selected(const String& p_path);
-	void _install_path_selected(const String& p_path);
 
 	void _reset_name();
 	void _renderer_selected();

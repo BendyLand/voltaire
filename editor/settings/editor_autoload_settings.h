@@ -85,7 +85,6 @@ class EditorAutoloadSettings : public VBoxContainer
 	EditorValidationPanel* name_validator = nullptr;
 
 	bool _autoload_name_is_valid(const String& p_name, String* r_error = nullptr);
-	void _validate_autoload_name();
 
 	void _autoload_selected();
 	void _autoload_edited();

@@ -184,27 +184,6 @@ bool EditorPropertyMultilineText::EditorPropertyMultilineText::get_wrap_lines()
 	return wrap_lines;
 }
 
-void EditorPropertyTextEnum::_edit_custom_value()
-{
-	default_layout->hide();
-	edit_custom_layout->show();
-	custom_value_edit->grab_focus(true);
-}
-
-void EditorPropertyTextEnum::_custom_value_submitted(const String& p_value)
-{
-	edit_custom_layout->hide();
-	default_layout->show();
-
-	_emit_changed_value(p_value.strip_edges());
-}
-
-void EditorPropertyTextEnum::_custom_value_accepted()
-{
-	String new_value = custom_value_edit->get_text().strip_edges();
-	_custom_value_submitted(new_value);
-}
-
 void EditorPropertyLocale::setup(const String& p_hint_text) {}
 
 void EditorPropertyLocale::_locale_focus_exited() { _locale_selected(locale->get_text()); }
@@ -701,23 +680,6 @@ void EditorPropertyQuaternion::_set_read_only(bool p_read_only)
 	}
 }
 
-void EditorPropertyQuaternion::_edit_custom_value()
-{
-	if (edit_button->is_pressed()) {
-		edit_custom_bc->show();
-		for (int i = 0; i < 3; i++) {
-			euler[i]->grab_focus();
-		}
-	}
-	else {
-		edit_custom_bc->hide();
-		for (int i = 0; i < 4; i++) {
-			spin[i]->grab_focus();
-		}
-	}
-	update_property();
-}
-
 void EditorPropertyQuaternion::_custom_value_changed(double val)
 {
 	edit_euler.x = euler[0]->get_value();
@@ -747,37 +709,6 @@ bool EditorPropertyQuaternion::is_grabbing_euler()
 }
 
 void EditorPropertyQuaternion::_warning_pressed() { warning_dialog->popup_centered(); }
-
-void EditorPropertyQuaternion::setup(
-	const EditorPropertyRangeHint& p_range_hint, bool p_hide_editor)
-{
-	for (int i = 0; i < 4; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		// Quaternion is inherently unitless, however someone may want to use it as
-		// a generic way to store 4 values, so we'll still respect the suffix.
-		spin[i]->set_suffix(p_range_hint.suffix);
-	}
-
-	for (int i = 0; i < 3; i++) {
-		euler[i]->set_min(-360);
-		euler[i]->set_max(360);
-		euler[i]->set_step(0.1);
-		euler[i]->set_allow_greater(true);
-		euler[i]->set_allow_lesser(true);
-		euler[i]->set_suffix(U"\u00B0");
-	}
-
-	if (p_hide_editor) {
-		edit_button->hide();
-	}
-}
 
 void EditorPropertyAABB::_set_read_only(bool p_read_only)
 {
@@ -1021,17 +952,6 @@ void EditorPropertyNodePath::_assign_draw()
 		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 		assign->draw_rect(Rect2(Point2(), assign->get_size()), color, false);
 	}
-}
-
-void EditorPropertyNodePath::_accept_text() { _text_submitted(edit->get_text()); }
-
-void EditorPropertyNodePath::_text_submitted(const String& p_text)
-{
-	NodePath np = p_text;
-	_node_selected(np, false);
-	edit->hide();
-	assign->show();
-	menu->show();
 }
 
 void EditorPropertyNodePath::setup(

@@ -48,16 +48,6 @@
 #include "scene/main/scene_tree.h"
 #include "tile_map_layer_editor.h"
 
-SwitchSeparator::SwitchSeparator()
-{
-	h_separator = memnew(HSeparator);
-	h_separator->hide();
-	add_child(h_separator);
-
-	v_separator = memnew(VSeparator);
-	add_child(v_separator);
-}
-
 void TileMapLayerSubEditorPlugin::_add_to_output_if_tile_changed(
 	HashMap<Vector2i, TileMapCell>& p_output, const TileMapLayer* p_layer, Vector2i p_coords,
 	const TileMapCell& p_cell)

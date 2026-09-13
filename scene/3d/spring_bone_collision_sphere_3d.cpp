@@ -33,9 +33,6 @@
 void SpringBoneCollisionSphere3D::set_radius(float p_radius)
 {
 	radius = p_radius;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 float SpringBoneCollisionSphere3D::get_radius() const { return radius; }
@@ -43,9 +40,6 @@ float SpringBoneCollisionSphere3D::get_radius() const { return radius; }
 void SpringBoneCollisionSphere3D::set_inside(bool p_enabled)
 {
 	inside = p_enabled;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 bool SpringBoneCollisionSphere3D::is_inside() const { return inside; }

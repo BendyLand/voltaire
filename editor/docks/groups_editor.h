@@ -87,9 +87,7 @@ class GroupsEditor : public VBoxContainer
 	void _show_rename_group_dialog();
 	void _show_remove_group_dialog();
 
-	void _check_add();
 	void _check_rename();
-	void _validate_name(const String& p_name, EditorValidationPanel* p_validation_panel);
 
 	void _update_tree();
 

@@ -34,50 +34,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
 
-void CollisionPolygon3D::_build_polygon()
-{
-	if (!collision_object) {
-		return;
-	}
-
-	collision_object->shape_owner_clear_shapes(owner_id);
-
-	if (polygon.is_empty()) {
-		return;
-	}
-
-	Vector<Vector<Vector2>> decomp = Geometry2D::decompose_polygon_in_convex(polygon);
-	if (decomp.is_empty()) {
-		return;
-	}
-
-	// here comes the sun, lalalala
-	// decompose concave into multiple convex polygons and add them
-
-	for (int i = 0; i < decomp.size(); i++) {
-		Ref<ConvexPolygonShape3D> convex = memnew(ConvexPolygonShape3D);
-		Vector<Vector3> cp;
-		int cs = decomp[i].size();
-		cp.resize(cs * 2);
-		{
-			Vector3* w = cp.ptrw();
-			int idx = 0;
-			for (int j = 0; j < cs; j++) {
-				Vector2 d = decomp[i][j];
-				w[idx++] = Vector3(d.x, d.y, depth * 0.5);
-				w[idx++] = Vector3(d.x, d.y, -depth * 0.5);
-			}
-		}
-
-		convex->set_points(cp);
-		convex->set_margin(margin);
-		convex->set_debug_color(debug_color);
-		convex->set_debug_fill(debug_fill);
-		collision_object->shape_owner_add_shape(owner_id, convex.ptr());
-		collision_object->shape_owner_set_disabled(owner_id, disabled);
-	}
-}
-
 void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only)
 {
 	collision_object->shape_owner_set_transform(owner_id, get_transform());
@@ -87,38 +43,11 @@ void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only)
 	collision_object->shape_owner_set_disabled(owner_id, disabled);
 }
 
-void CollisionPolygon3D::set_polygon(const Vector<Point2>& p_polygon)
-{
-	polygon = p_polygon;
-	if (collision_object) {
-		_build_polygon();
-	}
-	update_configuration_warnings();
-	update_gizmos();
-}
-
 Vector<Point2> CollisionPolygon3D::get_polygon() const { return polygon; }
 
 AABB CollisionPolygon3D::get_item_rect() const { return aabb; }
 
-void CollisionPolygon3D::set_depth(real_t p_depth)
-{
-	depth = p_depth;
-	_build_polygon();
-	update_gizmos();
-}
-
 real_t CollisionPolygon3D::get_depth() const { return depth; }
-
-void CollisionPolygon3D::set_disabled(bool p_disabled)
-{
-	disabled = p_disabled;
-	update_gizmos();
-
-	if (collision_object) {
-		collision_object->shape_owner_set_disabled(owner_id, p_disabled);
-	}
-}
 
 bool CollisionPolygon3D::is_disabled() const { return disabled; }
 
@@ -128,44 +57,13 @@ Color CollisionPolygon3D::_get_default_debug_color() const
 	return st ? st->get_debug_collisions_color() : Color(0.0, 0.0, 0.0, 0.0);
 }
 
-void CollisionPolygon3D::set_debug_color(const Color& p_color)
-{
-	if (debug_color == p_color) {
-		return;
-	}
-
-	debug_color = p_color;
-
-	update_gizmos();
-}
-
 Color CollisionPolygon3D::get_debug_color() const { return debug_color; }
-
-void CollisionPolygon3D::set_debug_fill_enabled(bool p_enable)
-{
-	if (debug_fill == p_enable) {
-		return;
-	}
-
-	debug_fill = p_enable;
-
-	update_gizmos();
-}
 
 bool CollisionPolygon3D::get_debug_fill_enabled() const { return debug_fill; }
 
 real_t CollisionPolygon3D::get_margin() const { return margin; }
 
-void CollisionPolygon3D::set_margin(real_t p_margin)
-{
-	margin = p_margin;
-	if (collision_object) {
-		_build_polygon();
-	}
-}
-
 bool CollisionPolygon3D::_is_editable_3d_polygon() const { return true; }
-
 
 CollisionPolygon3D::CollisionPolygon3D()
 {

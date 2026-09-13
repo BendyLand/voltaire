@@ -75,7 +75,6 @@ public:
 	void set_depth_near(real_t p_val) { depth_near = p_val; }
 
 	static Ref<GLTFCamera> from_node(const Camera3D* p_camera);
-	Camera3D* to_node() const;
 };
 
 

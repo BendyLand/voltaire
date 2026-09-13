@@ -34,12 +34,8 @@
 
 class EditorTranslationPreviewButton : public Button
 {
-	void _update();
-
 protected:
 	virtual void pressed() override;
-
-	void _notification(int p_what);
 
 public:
 	EditorTranslationPreviewButton();

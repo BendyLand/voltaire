@@ -185,7 +185,6 @@ protected:
 #ifdef TOOLS_ENABLED
 	bool gizmo_dirty = false;
 	void _make_gizmo_dirty();
-	void _redraw_gizmo();
 #endif // TOOLS_ENABLED
 
 	virtual void add_child_notify(Node* p_child) override;

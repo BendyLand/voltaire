@@ -72,7 +72,7 @@ public:
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
 
-	Curve();
+	Curve() = default;
 
 	int get_point_count() const { return _points.size(); }
 

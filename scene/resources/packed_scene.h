@@ -237,7 +237,7 @@ public:
 	}
 #endif
 
-	SceneState();
+	SceneState() = default;
 };
 
 

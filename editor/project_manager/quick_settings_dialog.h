@@ -45,8 +45,6 @@ class SettingLabel : public Label
 	String setting_name;
 
 public:
-	virtual Control* make_custom_tooltip(const String& p_text) const override;
-
 	SettingLabel(const String& p_text, const String& p_setting);
 };
 

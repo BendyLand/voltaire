@@ -63,9 +63,6 @@ void SpringBoneCollision3D::set_position_offset(const Vector3& p_offset)
 	}
 	position_offset = p_offset;
 	sync_pose();
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 Vector3 SpringBoneCollision3D::get_position_offset() const { return position_offset; }
@@ -77,9 +74,6 @@ void SpringBoneCollision3D::set_rotation_offset(const Quaternion& p_offset)
 	}
 	rotation_offset = p_offset;
 	sync_pose();
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 Quaternion SpringBoneCollision3D::get_rotation_offset() const { return rotation_offset; }

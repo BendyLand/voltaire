@@ -57,10 +57,7 @@ class GPUParticlesCollisionSphere3D : public GPUParticlesCollision3D
 {
 	real_t radius = 1.0;
 
-protected:
-
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
 	virtual AABB get_aabb() const override;
@@ -73,10 +70,7 @@ class GPUParticlesCollisionBox3D : public GPUParticlesCollision3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-protected:
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -165,10 +159,8 @@ public:
 	void set_thickness(float p_thickness);
 	float get_thickness() const;
 
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_resolution(Resolution p_resolution);
 	Resolution get_resolution() const;
 
 	void set_bake_mask(uint32_t p_mask);
@@ -226,10 +218,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_resolution(Resolution p_resolution);
 	Resolution get_resolution() const;
 
 	void set_update_mode(UpdateMode p_update_mode);
@@ -274,7 +264,6 @@ public:
 	void set_attenuation(real_t p_attenuation);
 	real_t get_attenuation() const;
 
-	void set_directionality(real_t p_directionality);
 	real_t get_directionality() const;
 
 	~GPUParticlesAttractor3D();
@@ -284,10 +273,7 @@ class GPUParticlesAttractorSphere3D : public GPUParticlesAttractor3D
 {
 	real_t radius = 1.0;
 
-protected:
-
 public:
-	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
 	virtual AABB get_aabb() const override;
@@ -300,10 +286,7 @@ class GPUParticlesAttractorBox3D : public GPUParticlesAttractor3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-protected:
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -317,10 +300,7 @@ class GPUParticlesAttractorVectorField3D : public GPUParticlesAttractor3D
 	Vector3 size = Vector3(2, 2, 2);
 	Ref<Texture3D> texture;
 
-protected:
-
 public:
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	void set_texture(const Ref<Texture3D>& p_texture);

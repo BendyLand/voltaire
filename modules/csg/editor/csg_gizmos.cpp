@@ -42,25 +42,6 @@
 #include "scene/gui/menu_button.h"
 #include "scene/main/scene_tree.h"
 
-void CSGShapeEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
-void CSGShapeEditor::edit(CSGShape3D* p_csg_shape)
-{
-	node = p_csg_shape;
-	if (node) {
-		options->show();
-	}
-	else {
-		options->hide();
-	}
-}
-
 String CSGShape3DGizmoPlugin::get_gizmo_name() const { return "CSGShape3D"; }
 
 EditorPluginCSG::EditorPluginCSG()

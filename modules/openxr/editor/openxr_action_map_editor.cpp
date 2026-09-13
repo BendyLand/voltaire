@@ -212,20 +212,6 @@ void OpenXRActionMapEditor::_do_remove_interaction_profile_editor(
 	action_map->remove_interaction_profile(interaction_profile);
 }
 
-void OpenXRActionMapEditor::open_action_map(const String& p_path)
-{
-	make_visible();
-
-	// out with the old...
-	_clear_action_map();
-
-	// now load in our new action map
-	_load_action_map(p_path);
-
-	_create_action_sets();
-	_create_interaction_profiles();
-}
-
 void OpenXRActionMapEditor::register_interaction_profile_editor(
 	const String& p_for_path, const String& p_editor_class)
 {

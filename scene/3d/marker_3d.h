@@ -39,7 +39,6 @@ class Marker3D : public Node3D
 protected:
 
 public:
-	void set_gizmo_extents(real_t p_extents);
 	real_t get_gizmo_extents() const;
 
 	Marker3D();

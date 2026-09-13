@@ -849,8 +849,6 @@ void EditorNode::_node_renamed()
 	}
 }
 
-void EditorNode::_open_command_palette() { command_palette->open_popup(); }
-
 Error EditorNode::load_scene_or_resource(
 	const String& p_path, bool p_ignore_broken_deps, bool p_change_scene_tab_if_already_open)
 {
@@ -2447,57 +2445,6 @@ void EditorNode::_resource_loaded(Ref<Resource> p_resource, const String& p_path
 	singleton->editor_folding.load_resource_folding(p_resource, p_path);
 }
 
-void EditorNode::_feature_profile_changed()
-{
-	Ref<EditorFeatureProfile> profile = feature_profile_manager->get_current_profile();
-	if (profile.is_valid()) {
-		editor_dock_manager->set_dock_enabled(SignalsDock::get_singleton(),
-			!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_SIGNALS_DOCK));
-		editor_dock_manager->set_dock_enabled(GroupsDock::get_singleton(),
-			!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_GROUPS_DOCK));
-		// The Import dock is useless without the FileSystem dock. Ensure the configuration is
-		// valid.
-		bool fs_dock_disabled =
-			profile->is_feature_disabled(EditorFeatureProfile::FEATURE_FILESYSTEM_DOCK);
-		editor_dock_manager->set_dock_enabled(FileSystemDock::get_singleton(), !fs_dock_disabled);
-		editor_dock_manager->set_dock_enabled(ImportDock::get_singleton(),
-			!fs_dock_disabled &&
-				!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_IMPORT_DOCK));
-		editor_dock_manager->set_dock_enabled(history_dock,
-			!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_HISTORY_DOCK));
-
-		editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_3D,
-			!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_3D));
-		editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_SCRIPT,
-			!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_SCRIPT));
-		if (!Engine::get_singleton()->is_recovery_mode_hint()) {
-			editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_GAME,
-				!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_GAME));
-		}
-		if (AssetLibraryEditorPlugin::is_available()) {
-			editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_ASSETLIB,
-				!profile->is_feature_disabled(EditorFeatureProfile::FEATURE_ASSET_LIB));
-		}
-	}
-	else {
-		editor_dock_manager->set_dock_enabled(ImportDock::get_singleton(), true);
-		editor_dock_manager->set_dock_enabled(SignalsDock::get_singleton(), true);
-		editor_dock_manager->set_dock_enabled(GroupsDock::get_singleton(), true);
-		editor_dock_manager->set_dock_enabled(FileSystemDock::get_singleton(), true);
-		editor_dock_manager->set_dock_enabled(history_dock, true);
-		editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_3D, true);
-		editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_SCRIPT, true);
-		if (!Engine::get_singleton()->is_recovery_mode_hint()) {
-			editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_GAME, true);
-		}
-		if (AssetLibraryEditorPlugin::is_available()) {
-			editor_main_screen->set_button_enabled(EditorMainScreen::EDITOR_ASSETLIB, true);
-		}
-	}
-
-	editor_dock_manager->update_docks_menu();
-}
-
 static Node* _resource_get_edited_scene()
 {
 	return EditorNode::get_singleton()->get_edited_scene();
@@ -2631,12 +2578,6 @@ extern "C" GameViewPluginBase* get_game_view_plugin();
 #else
 GameViewPluginBase* get_game_view_plugin() { return memnew(GameViewPlugin); }
 #endif
-
-void EditorNode::open_setting_override(const String& p_property)
-{
-	editor_settings_dialog->hide();
-	project_settings_editor->popup_for_override(p_property);
-}
 
 void EditorNode::notify_settings_overrides_changed() { settings_overrides_changed = true; }
 

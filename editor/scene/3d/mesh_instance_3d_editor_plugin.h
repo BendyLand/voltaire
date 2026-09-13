@@ -117,8 +117,6 @@ class MeshInstance3DEditor : public Control
 	void _debug_uv_draw();
 
 protected:
-	void _node_removed(Node* p_node);
-
 	void _notification(int p_what);
 
 public:
@@ -133,7 +131,7 @@ class MeshInstance3DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "MeshInstance3D"; }
 
-	MeshInstance3DEditorPlugin();
+	MeshInstance3DEditorPlugin() = default;
 };
 
 

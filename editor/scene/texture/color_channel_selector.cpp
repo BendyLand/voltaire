@@ -35,35 +35,6 @@
 #include "scene/gui/panel_container.h"
 #include "scene/resources/style_box.h"
 
-ColorChannelSelector::ColorChannelSelector()
-{
-	toggle_button = memnew(Button);
-	toggle_button->set_flat(true);
-	toggle_button->set_toggle_mode(true);
-	toggle_button->set_tooltip_text(TTRC("Toggle color channel preview selection."));
-	toggle_button->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
-	toggle_button->set_theme_type_variation("PreviewLightButton");
-	add_child(toggle_button);
-
-	panel = memnew(PanelContainer);
-	panel->hide();
-
-	HBoxContainer* container = memnew(HBoxContainer);
-	container->add_theme_constant_override("separation", 0);
-
-	create_button(0, "R", container);
-	create_button(1, "G", container);
-	create_button(2, "B", container);
-	create_button(3, "A", container);
-
-	// Use a bit of transparency to be less distracting.
-	set_modulate(Color(1, 1, 1, 0.7));
-
-	panel->add_child(container);
-
-	add_child(panel);
-}
-
 uint32_t ColorChannelSelector::get_selected_channels_mask() const
 {
 	uint32_t mask = 0;

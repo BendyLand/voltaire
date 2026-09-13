@@ -467,7 +467,7 @@ public:
 
 	virtual void set_visible(bool p_visible) override;
 
-	PopupMenu();
+	PopupMenu() = default;
 	~PopupMenu();
 };
 

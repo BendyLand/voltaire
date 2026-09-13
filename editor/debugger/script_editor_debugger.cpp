@@ -575,9 +575,6 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 		OS::get_singleton()->shell_show_in_file_manager(
 			ProjectSettings::get_singleton()->globalize_path(path), true);
 	} break;
-	case VMEM_MENU_OWNERS: {
-		FileSystemDock::get_owners_dialog()->show(path);
-	} break;
 	}
 }
 

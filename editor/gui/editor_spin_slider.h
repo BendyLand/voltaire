@@ -85,7 +85,6 @@ private:
 
 	void _grabber_gui_input(const Ref<InputEvent>& p_event);
 	void _value_input_hidden();
-	void _value_input_submitted(const String&);
 	void _value_focus_exited();
 	void _value_input_gui_input(const Ref<InputEvent>& p_event);
 

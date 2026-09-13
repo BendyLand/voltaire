@@ -92,7 +92,6 @@ class CreateDialog : public ConfirmationDialog
 	HashSet<StringName> custom_type_blocklist;
 	HashSet<StringName> selectable_types;
 
-	void _reset_filters();
 	void _update_filter_button_state();
 	void _update_search();
 	bool _should_hide_type(const StringName& p_type) const;

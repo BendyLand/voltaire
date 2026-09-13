@@ -208,19 +208,4 @@ bool RenameDialog::_is_main_field(LineEdit* line_edit)
 							line_edit == lne_prefix || line_edit == lne_suffix);
 }
 
-void RenameDialog::_features_toggled(bool pressed)
-{
-	if (pressed) {
-		tabc_features->show();
-	}
-	else {
-		tabc_features->hide();
-	}
-
-	// Adjust to minimum size in y
-	Size2i new_size = get_size();
-	new_size.y = 0;
-	set_size(new_size);
-}
-
 

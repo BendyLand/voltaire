@@ -355,8 +355,6 @@ private:
 	float get_zfar() const;
 	float get_fov() const;
 
-	void _show_tooltip(const String& p_title, const String& p_description) const;
-
 	Vector<Node3D*> selection_results;
 	Vector<Node3D*> selection_results_menu;
 	bool clicked_wants_append = false;
@@ -460,7 +458,6 @@ private:
 	void _apply_camera_transform_to_cursor();
 
 	void _surface_mouse_enter();
-	void _surface_mouse_exit();
 	void _surface_focus_enter();
 	void _surface_focus_exit();
 
@@ -506,7 +503,6 @@ private:
 	Node* _sanitize_preview_node(Node* p_node) const;
 
 	void _create_preview_node(const Vector<String>& files) const;
-	void _remove_preview_node();
 	void _reset_preview_material() const;
 	void _remove_preview_material();
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
@@ -601,7 +597,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_view(View p_view);
 	View get_view();
 
 	void add_viewport(Node3DEditorViewport* p_viewport, int p_index);

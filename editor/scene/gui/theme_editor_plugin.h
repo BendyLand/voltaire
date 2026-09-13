@@ -183,7 +183,6 @@ protected:
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
 	void set_base_theme(const Ref<Theme>& p_theme);
-	void reset_item_tree();
 
 	bool has_selected_items() const;
 
@@ -258,7 +257,6 @@ class ThemeItemEditorDialog : public AcceptDialog
 	void ok_pressed() override;
 	void _close_dialog();
 
-	void _dialog_about_to_show();
 	void _update_edit_types();
 	void _edited_type_selected();
 	void _edited_type_edited();
@@ -274,13 +272,10 @@ class ThemeItemEditorDialog : public AcceptDialog
 	void _remove_custom_items();
 	void _remove_all_items();
 
-	void _open_add_theme_item_dialog(int p_data_type);
-	void _open_rename_theme_item_dialog(Theme::DataType p_data_type, String p_item_name);
 	void _confirm_edit_theme_item();
 	void _edit_theme_item_gui_input(const Ref<InputEvent>& p_event);
 
 	void _open_select_another_theme();
-	void _select_another_theme_cbk(const String& p_path);
 
 protected:
 	void _notification(int p_what);
@@ -323,12 +318,6 @@ public:
 	void set_include_own_types(bool p_enable);
 
 	ThemeTypeDialog();
-};
-
-// Custom `Label` needed to use `EditorHelpBit` to display theme item documentation.
-class ThemeItemLabel : public Label
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
 };
 
 class ThemeTypeEditor : public MarginContainer

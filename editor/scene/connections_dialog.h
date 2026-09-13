@@ -140,14 +140,6 @@ public:
 	~ConnectDialog();
 };
 
-//////////////////////////////////////////
-
-// Custom `Tree` needed to use `EditorHelpBit` to display signal documentation.
-class ConnectionsDockTree : public Tree
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
-};
-
 class ConnectionsDock : public VBoxContainer
 {
 	enum TreeItemType
@@ -182,8 +174,6 @@ class ConnectionsDock : public VBoxContainer
 	VBoxContainer* holder = nullptr;
 	Label* select_an_object = nullptr;
 
-	ConnectionsDockTree* tree = nullptr;
-
 	ConfirmationDialog* disconnect_all_dialog = nullptr;
 	ConnectDialog* connect_dialog = nullptr;
 	Button* connect_button = nullptr;
@@ -203,8 +193,6 @@ class ConnectionsDock : public VBoxContainer
 	void _disconnect_all();
 
 	void _tree_item_selected();
-	void _tree_item_activated();
-	TreeItemType _get_item_type(const TreeItem& p_item) const;
 
 	void _open_connection_dialog(TreeItem& p_item);
 	void _open_edit_connection_dialog(TreeItem& p_item);
@@ -217,7 +205,6 @@ class ConnectionsDock : public VBoxContainer
 	void _handle_slot_menu_option(int p_option);
 	void _slot_menu_about_to_popup();
 	void _tree_gui_input(const Ref<InputEvent>& p_event);
-	void _close();
 
 protected:
 	void _connect_pressed();

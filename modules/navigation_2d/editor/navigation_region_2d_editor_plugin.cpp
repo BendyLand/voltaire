@@ -64,20 +64,6 @@ bool NavigationRegion2DEditor::_has_resource() const
 	return node && node->get_navigation_polygon().is_valid();
 }
 
-void NavigationRegion2DEditor::_update_polygon_editing_state()
-{
-	if (!_get_node()) {
-		return;
-	}
-
-	if (node != nullptr && node->get_navigation_polygon().is_valid()) {
-		bake_hbox->show();
-	}
-	else {
-		bake_hbox->hide();
-	}
-}
-
 NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin()
 	: AbstractPolygon2DEditorPlugin(memnew(NavigationRegion2DEditor), "NavigationRegion2D")
 {

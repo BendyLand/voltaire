@@ -56,7 +56,7 @@ protected:
 public:
 	virtual String get_plugin_name() const override { return "ParallaxBackground"; }
 
-	ParallaxBackgroundEditorPlugin();
+	ParallaxBackgroundEditorPlugin() = default;
 };
 
 

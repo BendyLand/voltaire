@@ -248,16 +248,6 @@ void EditorInspectorPlugin::add_property_editor_for_multiple_properties(
 	added_editors.push_back(ae);
 }
 
-Control* EditorInspectorCategory::make_custom_tooltip(const String& p_text) const
-{
-	// If it's not a doc tooltip, fallback to the default one.
-	if (doc_class_name.is_empty()) {
-		return nullptr;
-	}
-
-	return EditorHelpBitTooltip::make_tooltip(const_cast<EditorInspectorCategory*>(this), p_text);
-}
-
 void EditorInspectorCategory::set_as_favorite()
 {
 	is_favorite = true;

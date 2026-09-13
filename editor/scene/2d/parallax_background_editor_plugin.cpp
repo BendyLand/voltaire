@@ -46,19 +46,4 @@ void ParallaxBackgroundEditorPlugin::_menu_callback(int p_idx)
 	}
 }
 
-ParallaxBackgroundEditorPlugin::ParallaxBackgroundEditorPlugin()
-{
-	toolbar = memnew(HBoxContainer);
-	toolbar->hide();
-	add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
-
-	menu = memnew(MenuButton);
-	menu->get_popup()->add_item(TTR("Convert to Parallax2D"), MENU_CONVERT_TO_PARALLAX_2D);
-	menu->set_text(TTR("ParallaxBackground"));
-	menu->set_switch_on_hover(true);
-	menu->set_flat(false);
-	menu->set_theme_type_variation("FlatMenuButton");
-	toolbar->add_child(menu);
-}
-
 

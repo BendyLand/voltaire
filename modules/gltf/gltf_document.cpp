@@ -878,30 +878,6 @@ ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
 	return mi;
 }
 
-Light3D* GLTFDocument::_generate_light(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(gltf_node->light, p_state->lights.size(), nullptr);
-
-	print_verbose("glTF: Creating light for: " + gltf_node->get_name());
-
-	Ref<GLTFLight> l = p_state->lights[gltf_node->light];
-	return l->to_node();
-}
-
-Camera3D* GLTFDocument::_generate_camera(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(gltf_node->camera, p_state->cameras.size(), nullptr);
-
-	print_verbose("glTF: Creating camera for: " + gltf_node->get_name());
-
-	Ref<GLTFCamera> c = p_state->cameras[gltf_node->camera];
-	return c->to_node();
-}
-
 GLTFCameraIndex GLTFDocument::_convert_camera(Ref<GLTFState> p_state, Camera3D* p_camera)
 {
 	print_verbose("glTF: Converting camera: " + p_camera->get_name());

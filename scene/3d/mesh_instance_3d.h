@@ -56,7 +56,6 @@ protected:
 	HashMap<StringName, int> blend_shape_properties;
 	Vector<Ref<Material>> surface_override_materials;
 
-	void _mesh_changed();
 	void _resolve_skeleton_path();
 
 protected:

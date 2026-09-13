@@ -290,15 +290,6 @@ void EditorDebuggerNode::_remote_tree_clear_selection_requested(int p_debugger)
 	remote_scene_tree_clear_msg = true;
 }
 
-void EditorDebuggerNode::_remote_tree_updated(int p_debugger)
-{
-	if (p_debugger != tabs->get_current_tab()) {
-		return;
-	}
-	remote_scene_tree->clear();
-	remote_scene_tree->update_scene_tree(get_current_debugger()->get_remote_tree(), p_debugger);
-}
-
 void EditorDebuggerNode::_remote_objects_requested(
 	const TypedArray<uint64_t>& p_ids, int p_debugger)
 {

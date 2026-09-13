@@ -39,14 +39,6 @@
 #include "scene/gui/menu_button.h"
 #include "scene/gui/option_button.h"
 
-void MultiMeshEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		hide();
-	}
-}
-
 void MultiMeshEditor::_browsed(const NodePath& p_path)
 {
 	NodePath path = node->get_path_to(get_node(p_path));
@@ -96,14 +88,6 @@ void MultiMeshEditor::_browse(bool p_source)
 		std->set_title(TTR("Select a Target Surface:"));
 	}
 	std->popup_scenetree_dialog(browsed_node);
-}
-
-MultiMeshEditorPlugin::MultiMeshEditorPlugin()
-{
-	multimesh_editor = memnew(MultiMeshEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(multimesh_editor);
-
-	multimesh_editor->options->hide();
 }
 
 

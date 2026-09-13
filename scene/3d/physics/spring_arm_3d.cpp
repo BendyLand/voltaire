@@ -58,16 +58,6 @@ void SpringArm3D::_notification(int p_what)
 
 real_t SpringArm3D::get_length() const { return spring_length; }
 
-void SpringArm3D::set_length(real_t p_length)
-{
-	if (is_inside_tree() &&
-		(Engine::get_singleton()->is_editor_hint() || get_tree()->is_debugging_collisions_hint())) {
-		update_gizmos();
-	}
-
-	spring_length = p_length;
-}
-
 void SpringArm3D::set_shape(Ref<Shape3D> p_shape) { shape = p_shape; }
 
 Ref<Shape3D> SpringArm3D::get_shape() const { return shape; }

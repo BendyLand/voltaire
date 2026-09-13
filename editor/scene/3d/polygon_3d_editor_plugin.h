@@ -84,7 +84,6 @@ class Polygon3DEditor : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node* p_node);
 
 public:
 	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
@@ -108,7 +107,7 @@ public:
 
 	virtual String get_plugin_name() const override { return "Polygon3DEditor"; }
 
-	Polygon3DEditorPlugin();
+	Polygon3DEditorPlugin() = default;
 };
 
 

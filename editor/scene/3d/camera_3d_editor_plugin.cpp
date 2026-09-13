@@ -39,15 +39,6 @@
 #include "scene/main/viewport.h"
 #include "servers/rendering/rendering_server.h"
 
-void Camera3DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		Node3DEditor::get_singleton()->set_custom_camera(nullptr);
-		hide();
-	}
-}
-
 void Camera3DEditor::_pressed()
 {
 	Node* sn = (node && preview->is_pressed()) ? node : nullptr;

@@ -103,7 +103,7 @@ public:
 
 	Transform2D get_transform() const override;
 
-	Node2D();
+	Node2D() = default;
 };
 
 

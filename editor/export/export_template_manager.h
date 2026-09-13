@@ -263,11 +263,9 @@ class ExportTemplateManager : public AcceptDialog
 	void _version_selected();
 	void _tree_button_clicked(TreeItem* p_item, int p_column, int p_id, MouseButton p_button);
 	void _tree_item_edited();
-	void _install_templates(TreeItem* p_files = nullptr);
 	void _open_template_directory();
 
 	void _queue_download_tree_item(TreeItem* p_item);
-	void _process_download_queue();
 	void _queue_process_download_queue();
 	TemplateDownloader* _get_available_downloader(int* r_from_index);
 	void _download_request_completed(const String& p_filename);

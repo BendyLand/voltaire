@@ -81,50 +81,6 @@ void ControlPositioningWarning::_notification(int p_notification)
 	}
 }
 
-ControlPositioningWarning::ControlPositioningWarning()
-{
-	set_mouse_filter(MOUSE_FILTER_STOP);
-
-	bg_panel = memnew(PanelContainer);
-	bg_panel->set_mouse_filter(MOUSE_FILTER_IGNORE);
-	add_child(bg_panel);
-
-	grid = memnew(GridContainer);
-	grid->set_columns(3);
-	bg_panel->add_child(grid);
-
-	title_icon = memnew(TextureRect);
-	title_icon->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	grid->add_child(title_icon);
-
-	title_label = memnew(Label);
-	title_label->set_autowrap_mode(TextServer::AutowrapMode::AUTOWRAP_WORD);
-	title_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	title_label->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
-	grid->add_child(title_label);
-
-	hint_icon = memnew(TextureRect);
-	hint_icon->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	grid->add_child(hint_icon);
-
-	// Filler.
-	hint_filler_left = memnew(Control);
-	hint_filler_left->hide();
-	grid->add_child(hint_filler_left);
-
-	hint_label = memnew(Label);
-	hint_label->set_autowrap_mode(TextServer::AutowrapMode::AUTOWRAP_WORD);
-	hint_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	hint_label->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
-	hint_label->hide();
-	grid->add_child(hint_label);
-
-	// Filler.
-	hint_filler_right = memnew(Control);
-	hint_filler_right->hide();
-	grid->add_child(hint_filler_right);
-}
-
 Size2 ControlEditorPopupButton::get_minimum_size() const
 {
 	Vector2 base_size = Vector2(26, 26) * EDSCALE;
@@ -227,7 +183,6 @@ void AnchorPresetPicker::set_selected_preset(int p_preset)
 {
 	_update_preset_button_state(p_preset);
 }
-
 
 AnchorPresetPicker::AnchorPresetPicker()
 {
@@ -359,20 +314,6 @@ ControlOffsetTransformPreview::ControlOffsetTransformPreview(EditorPlugin* p_plu
 void ControlEditorPlugin::forward_canvas_draw_over_viewport(Control* p_overlay)
 {
 	offset_transform_preview->forward_canvas_draw_over_viewport(p_overlay);
-}
-
-ControlEditorPlugin::ControlEditorPlugin()
-{
-	toolbar = memnew(ControlEditorToolbar);
-	toolbar->hide();
-	add_control_to_container(CONTAINER_CANVAS_EDITOR_MENU, toolbar);
-
-	offset_transform_preview = memnew(ControlOffsetTransformPreview(this));
-	EditorNode::get_singleton()->get_gui_base()->add_child(offset_transform_preview);
-
-	Ref<EditorInspectorPluginControl> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
 }
 
 

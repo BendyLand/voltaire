@@ -221,8 +221,6 @@ private:
 		Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index);
 	ImporterMeshInstance3D* _generate_mesh_instance(
 		Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	Camera3D* _generate_camera(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	Light3D* _generate_light(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	Node3D* _generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	void _assign_node_names(Ref<GLTFState> p_state);
 	template <typename T>

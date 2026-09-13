@@ -193,12 +193,6 @@ bool SceneTreeDock::_track_inherit(const String& p_target_scene_path, Node* p_de
 	return result;
 }
 
-void SceneTreeDock::_load_request(const String& p_path)
-{
-	EditorNode::get_singleton()->open_scene(p_path);
-	_local_tree_selected();
-}
-
 void SceneTreeDock::_node_selected()
 {
 	Node* node = scene_tree->get_selected();
@@ -428,12 +422,6 @@ void SceneTreeDock::_toggle_placeholder_from_selection()
 	}
 }
 
-void SceneTreeDock::set_edited_scene(Node* p_scene)
-{
-	edited_scene = p_scene;
-	_update_create_root_dialog_visibility();
-}
-
 void SceneTreeDock::set_selected(Node* p_node, bool p_emit_selected)
 {
 	scene_tree->set_selected(p_node, p_emit_selected);
@@ -617,39 +605,6 @@ void SceneTreeDock::open_instance_child_dialog() { _tool_selected(TOOL_INSTANTIA
 List<Node*> SceneTreeDock::get_node_clipboard() const { return List<Node*>(node_clipboard); }
 
 void SceneTreeDock::show_remote_tree() { _remote_tree_selected(); }
-
-void SceneTreeDock::hide_remote_tree() { _local_tree_selected(); }
-
-void SceneTreeDock::show_tab_buttons() { button_panel->show(); }
-
-void SceneTreeDock::hide_tab_buttons() { button_panel->hide(); }
-
-void SceneTreeDock::_local_tree_selected()
-{
-	if (remote_tree) {
-		remote_tree->hide();
-	}
-	_update_create_root_dialog_visibility();
-	edit_remote->set_pressed(false);
-	edit_local->set_pressed(true);
-}
-
-void SceneTreeDock::_update_create_root_dialog_visibility()
-{
-	if (remote_tree && remote_tree->is_visible()) {
-		return;
-	}
-	if (edited_scene == nullptr) {
-		main_mc->set_theme_type_variation("");
-		create_root_dialog->show();
-		scene_tree->hide();
-	}
-	else {
-		main_mc->set_theme_type_variation("NoBorderBottomPanel");
-		create_root_dialog->hide();
-		scene_tree->show();
-	}
-}
 
 void SceneTreeDock::_favorite_root_selected(const String& p_class)
 {

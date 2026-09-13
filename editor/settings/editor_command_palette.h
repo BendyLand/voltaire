@@ -89,13 +89,12 @@ class EditorCommandPalette : public ConfirmationDialog
 	void _confirmed();
 	void _save_history() const;
 
-	EditorCommandPalette();
+	EditorCommandPalette() = default;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void open_popup();
 	void get_actions_list(List<String>* p_list) const;
 	void execute_command(const String& p_command_name);
 	void register_shortcuts_as_command();

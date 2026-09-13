@@ -67,16 +67,6 @@ bool AbstractPolygon2DEditor::_has_resource() const { return true; }
 
 void AbstractPolygon2DEditor::_create_resource() {}
 
-void AbstractPolygon2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == _get_node()) {
-		edit(nullptr);
-		hide();
-
-		canvas_item_editor->update_viewport();
-	}
-}
-
 void AbstractPolygon2DEditor::_wip_cancel()
 {
 	wip.clear();
@@ -93,14 +83,6 @@ void AbstractPolygon2DEditor::_wip_cancel()
 AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() const
 {
 	return hover_point.valid() ? hover_point : selected_point;
-}
-
-AbstractPolygon2DEditorPlugin::AbstractPolygon2DEditorPlugin(
-	AbstractPolygon2DEditor* p_polygon_editor, const String& p_class)
-	: polygon_editor(p_polygon_editor), klass(p_class)
-{
-	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(polygon_editor);
-	polygon_editor->hide();
 }
 
 

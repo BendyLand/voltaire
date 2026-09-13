@@ -52,9 +52,6 @@ public:
 	PhysicalBone3DEditor();
 
 	void set_selected(PhysicalBone3D* p_pb);
-
-	void hide();
-	void show();
 };
 
 class PhysicalBone3DEditorPlugin : public EditorPlugin

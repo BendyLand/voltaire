@@ -249,34 +249,6 @@ List<String> DependencyEditor::_filter_deps(const List<String>& p_deps)
 	return filtered;
 }
 
-void DependencyEditor::edit(const String& p_path)
-{
-	editing = p_path;
-	set_title(TTR("Dependencies For:") + " " + p_path.get_file());
-
-	filter->set_text("");
-
-	_update_menu_sort();
-	_update_list();
-
-	if (EditorNode::get_singleton()->is_scene_open(p_path)) {
-		warning_label->show();
-		warning_label->set_text(vformat(TTR("Scene \"%s\" is currently being edited. Changes will "
-											"only take effect when reloaded."),
-			p_path.get_file()));
-	}
-	else if (ResourceCache::has(p_path)) {
-		warning_label->show();
-		warning_label->set_text(
-			vformat(TTR("Resource \"%s\" is in use. Changes will only take effect when reloaded."),
-				p_path.get_file()));
-	}
-	else {
-		warning_label->hide();
-	}
-	popup_centered_ratio(0.4);
-}
-
 void DependencyEditor::_sort_option_selected(int p_id)
 {
 	sort_by = (DependencyEditorSortBy)p_id;
@@ -383,29 +355,6 @@ void DependencyEditorOwners::_fill_owners(EditorFileSystemDirectory* efsd)
 
 		owners->add_item(efsd->get_file_path(i), icon);
 	}
-}
-
-void DependencyEditorOwners::show(const String& p_path)
-{
-	editing = p_path;
-	owners->clear();
-	_fill_owners(EditorFileSystem::get_singleton()->get_filesystem());
-
-	int count = owners->get_item_count();
-	if (count > 0) {
-		empty->hide();
-		owners_count->set_text(vformat(TTR("Owners of: %s (Total: %d)"), p_path.get_file(), count));
-		owners_count->show();
-		owners_mc->show();
-	}
-	else {
-		owners_count->hide();
-		owners_mc->hide();
-		empty->set_text(vformat(TTR("No owners found for: %s"), p_path.get_file()));
-		empty->show();
-	}
-
-	popup_centered_ratio(0.3);
 }
 
 void DependencyRemoveDialog::_find_files_in_removed_folder(
@@ -516,52 +465,6 @@ void DependencyRemoveDialog::_show_files_to_delete_list()
 		String t = s.trim_prefix("res://");
 		files_to_delete_list->add_item(t, Ref<Texture2D>(), false);
 	}
-}
-
-void DependencyRemoveDialog::show(const Vector<String>& p_folders, const Vector<String>& p_files)
-{
-	all_remove_files.clear();
-	dirs_to_delete.clear();
-	files_to_delete.clear();
-	owners->clear();
-
-	for (int i = 0; i < p_folders.size(); ++i) {
-		String folder = p_folders[i].ends_with("/") ? p_folders[i] : (p_folders[i] + "/");
-		_find_files_in_removed_folder(
-			EditorFileSystem::get_singleton()->get_filesystem_path(folder), folder);
-		dirs_to_delete.push_back(folder);
-	}
-	for (int i = 0; i < p_files.size(); ++i) {
-		all_remove_files[p_files[i]] = String();
-		files_to_delete.push_back(p_files[i]);
-	}
-
-	_show_files_to_delete_list();
-
-	Vector<RemovedDependency> removed_deps;
-	_find_all_removed_dependencies(
-		EditorFileSystem::get_singleton()->get_filesystem(), removed_deps);
-	_find_localization_remaps_of_removed_files(removed_deps);
-	removed_deps.sort();
-	if (removed_deps.is_empty()) {
-		vb_owners->hide();
-		text->set_text(TTR("Remove the selected files from the project? (Cannot be "
-						   "undone.)\nDepending on your filesystem configuration, the files will "
-						   "either be moved to the system trash or deleted permanently."));
-		reset_size();
-		popup_centered();
-	}
-	else {
-		_build_removed_dependency_tree(removed_deps);
-		vb_owners->show();
-		text->set_text(TTR("The files being removed are required by other resources in order for "
-						   "them to work.\nRemove them anyway? (Cannot be undone.)\nDepending on "
-						   "your filesystem configuration, the files will either be moved to the "
-						   "system trash or deleted permanently."));
-		popup_centered(Size2(500, 350));
-	}
-
-	EditorFileSystem::get_singleton()->scan_changes();
 }
 
 enum

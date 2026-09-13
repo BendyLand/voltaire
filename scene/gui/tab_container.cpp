@@ -82,47 +82,6 @@ void TabContainer::_drag_move_tab(int p_from_index, int p_to_index)
 	move_child(get_tab_control(p_from_index), get_tab_control(p_to_index)->get_index(false));
 }
 
-void TabContainer::_on_tab_visibility_changed(Control* p_child)
-{
-	if (updating_visibility) {
-		return;
-	}
-	int tab_index = get_tab_idx_from_control(p_child);
-	if (tab_index == -1) {
-		return;
-	}
-	// Only allow one tab to be visible.
-	bool made_visible = p_child->is_visible();
-	updating_visibility = true;
-
-	if (!made_visible && get_current_tab() == tab_index) {
-		if (get_deselect_enabled() || get_tab_count() == 0) {
-			// Deselect.
-			set_current_tab(-1);
-		}
-		else if (get_tab_count() == 1) {
-			// Only tab, cannot deselect.
-			p_child->show();
-		}
-		else {
-			// Set a different tab to be the current tab.
-			bool selected = select_next_available();
-			if (!selected) {
-				selected = select_previous_available();
-			}
-			if (!selected) {
-				// No available tabs, deselect.
-				set_current_tab(-1);
-			}
-		}
-	}
-	else if (made_visible && get_current_tab() != tab_index) {
-		set_current_tab(tab_index);
-	}
-
-	updating_visibility = false;
-}
-
 TabBar* TabContainer::get_tab_bar() const { return tab_bar; }
 
 int TabContainer::get_tab_count() const { return tab_bar->get_tab_count(); }

@@ -254,7 +254,6 @@ private:
 	void _tile_alternatives_control_gui_input(const Ref<InputEvent>& p_event);
 
 	// -- Update functions --
-	void _update_tile_id_label();
 	void _update_source_inspector();
 	void _update_fix_selected_and_hovered_tiles();
 	void _update_tile_inspector();
@@ -262,7 +261,6 @@ private:
 	void _update_current_tile_data_editor();
 	void _update_manage_tile_properties_button();
 	void _update_atlas_view();
-	void _update_toolbar();
 	void _update_buttons();
 
 	// -- Misc --

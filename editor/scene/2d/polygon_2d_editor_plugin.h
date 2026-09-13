@@ -167,7 +167,6 @@ class Polygon2DEditor : public AbstractPolygon2DEditor
 	void _set_snap_step_x(real_t p_val);
 	void _set_snap_step_y(real_t p_val);
 
-	void _select_mode(int p_mode);
 	void _bone_paint_selected(int p_index);
 
 	int _get_polygon_count() const override;

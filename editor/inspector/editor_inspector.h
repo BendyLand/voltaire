@@ -315,7 +315,7 @@ public:
 
 	void menu_option(int p_option);
 
-	EditorProperty();
+	EditorProperty() = default;
 };
 
 class EditorInspectorPlugin : public RefCounted
@@ -413,7 +413,6 @@ public:
 	}
 
 	virtual Size2 get_minimum_size() const override;
-	virtual Control* make_custom_tooltip(const String& p_text) const override;
 
 	EditorInspectorCategory();
 };

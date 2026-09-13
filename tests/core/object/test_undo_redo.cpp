@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/templates/mem_unique_ptr.h"
 #include "tests/test_macros.h"
 
 TEST_FORCE_LINK(test_undo_redo)
-
 
 namespace TestUndoRedo
 {
@@ -41,12 +39,7 @@ class _TestUndoRedoObject
 {
 	int property_value = 0;
 
-protected:
-	static void _bind_methods() {}
-
 public:
-	mem_unique_ptr<Object> obj;
-
 	void set_property(int value) { property_value = value; }
 
 	int get_property() const { return property_value; }
@@ -55,27 +48,6 @@ public:
 
 	void subtract_from_property(int value) { property_value -= value; }
 };
-
-void set_property_action(UndoRedo* undo_redo, const String& name, _TestUndoRedoObject* test_object,
-	int value, UndoRedo::MergeMode merge_mode = UndoRedo::MERGE_DISABLE)
-{
-	undo_redo->create_action(name, merge_mode);
-	undo_redo->add_do_property(test_object->obj.get(), "property", value);
-	undo_redo->add_undo_property(test_object->obj.get(), "property", test_object->get_property());
-	undo_redo->commit_action();
-}
-
-void increment_property_action(UndoRedo* undo_redo, const String& name,
-	_TestUndoRedoObject* test_object, int value,
-	UndoRedo::MergeMode merge_mode = UndoRedo::MERGE_DISABLE)
-{
-	undo_redo->create_action(name, merge_mode);
-	undo_redo->add_do_method(
-		callable_mp(test_object, &_TestUndoRedoObject::add_to_property).bind(value));
-	undo_redo->add_undo_method(
-		callable_mp(test_object, &_TestUndoRedoObject::subtract_from_property).bind(value));
-	undo_redo->commit_action();
-}
 
 } // namespace TestUndoRedo
 

@@ -137,7 +137,7 @@ public:
 
 	bool is_editor_visible() const;
 
-	TileMapEditorPlugin();
+	TileMapEditorPlugin() = default;
 	~TileMapEditorPlugin();
 };
 
@@ -146,9 +146,7 @@ class TileSetEditorPlugin : public EditorPlugin
 	TileSetEditor* editor = nullptr;
 
 public:
-	void open_editor();
-
-	TileSetEditorPlugin();
+	TileSetEditorPlugin() = default;
 	~TileSetEditorPlugin();
 };
 

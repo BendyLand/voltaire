@@ -62,7 +62,9 @@ class OptionButton : public Button
 		Ref<Texture2D> arrow_icon;
 		int arrow_margin = 0;
 		int modulate_arrow = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
@@ -155,7 +157,7 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 #endif
 
-	OptionButton(const String& p_text = String());
+	OptionButton(const String& p_text = String()) : Button(p_text) {}
 	~OptionButton();
 };
 

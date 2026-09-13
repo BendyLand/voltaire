@@ -88,7 +88,6 @@ protected:
 	bool gizmo_dirty = false;
 	void _make_gizmo_dirty();
 	virtual void _update_mutable_info();
-	void _redraw_gizmo();
 #endif // TOOLS_ENABLED
 
 	virtual void _process_modification(double p_delta) override;

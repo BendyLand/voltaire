@@ -70,7 +70,6 @@ protected:
 		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
 
 public:
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
 	SliderJoint3D();

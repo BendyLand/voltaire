@@ -121,13 +121,10 @@ class ScenePaint2DEditor : public Control
 	bool _is_node_valid();
 
 	void _add_instance(bool p_show = false);
-	void _clear_instance(bool p_hide = false);
-	void _update_instance();
 	bool _is_instance_valid();
 
 	void _draw_overlay();
 	void _update_draw_overlay();
-	void _update_hint_label();
 
 	void _gui_input_viewport(const Ref<InputEvent>& p_event);
 	void _add_node_at_pos();

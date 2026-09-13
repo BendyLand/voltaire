@@ -58,15 +58,6 @@
 #include "scene/gui/tree.h"
 #include "servers/display/display_server.h"
 
-void ProjectExportTextureFormatError::_on_fix_texture_format_pressed()
-{
-	export_dialog->hide();
-	ProjectSettingsEditor* project_settings = EditorNode::get_singleton()->get_project_settings();
-	project_settings->set_general_page("rendering/textures");
-	project_settings->set_filter(setting_identifier);
-	project_settings->popup_project_settings(false);
-}
-
 void ProjectExportTextureFormatError::_notification(int p_what)
 {
 	switch (p_what) {
@@ -75,16 +66,6 @@ void ProjectExportTextureFormatError::_notification(int p_what)
 			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 	} break;
 	}
-}
-
-void ProjectExportTextureFormatError::show_for_texture_format(
-	const String& p_friendly_name, const String& p_setting_identifier)
-{
-	texture_format_error_label->set_text(vformat(
-		TTR("Target platform requires '%s' texture compression. Enable 'Import %s' to fix."),
-		p_friendly_name, p_friendly_name.replace_char('/', ' ')));
-	setting_identifier = p_setting_identifier;
-	show();
 }
 
 void ProjectExportDialog::_add_preset(int p_platform)
@@ -402,45 +383,6 @@ void ProjectExportDialog::_filter_changed(const String& p_filter)
 
 	current->set_include_filter(include_filters->get_text());
 	current->set_exclude_filter(exclude_filters->get_text());
-}
-
-void ProjectExportDialog::_fill_resource_tree()
-{
-	include_files->clear();
-	include_label->hide();
-	include_margin->hide();
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	if (current.is_null()) {
-		return;
-	}
-
-	EditorExportPreset::ExportFilter f = current->get_export_filter();
-
-	if (f == EditorExportPreset::EXPORT_ALL_RESOURCES) {
-		return;
-	}
-
-	TreeItem* root = include_files->create_item();
-
-	if (f == EditorExportPreset::EXPORT_CUSTOMIZED) {
-		include_files->set_columns(2);
-		include_files->set_column_expand(1, false);
-		include_files->set_column_custom_minimum_width(1, 250 * EDSCALE);
-	}
-	else {
-		include_files->set_columns(1);
-	}
-
-	include_label->show();
-	include_margin->show();
-
-	_fill_tree(EditorFileSystem::get_singleton()->get_filesystem(), root, current, f);
-
-	if (f == EditorExportPreset::EXPORT_CUSTOMIZED) {
-		_propagate_file_export_mode(
-			include_files->get_root(), EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED);
-	}
 }
 
 void ProjectExportDialog::_tree_popup_edited(bool p_arrow_clicked)

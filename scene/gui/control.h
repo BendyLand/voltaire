@@ -294,7 +294,6 @@ private:
 		NodePath focus_next;
 		NodePath focus_prev;
 
-
 		// Accessibility.
 
 		String accessibility_name;
@@ -342,7 +341,9 @@ private:
 		StringName translation_context;
 		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
 
-	} data;
+	};
+
+	Data data;
 
 	// Dynamic properties.
 
@@ -500,7 +501,7 @@ public:
 	static void set_root_layout_direction(int p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
-	PackedStringArray get_accessibility_configuration_warnings() const ;
+	PackedStringArray get_accessibility_configuration_warnings() const;
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
 		const StringName& p_function, int p_idx, List<String>* r_options) const;
@@ -835,8 +836,8 @@ public:
 
 	virtual String accessibility_get_contextual_info() const;
 
-	Control();
-	~Control();
+	Control() = default;
+	~Control() = default;
 };
 
 // G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore

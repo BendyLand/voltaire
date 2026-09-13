@@ -80,8 +80,6 @@ class TextureLayeredEditor : public Control
 	void _texture_rect_update_area();
 	void _texture_rect_draw();
 
-	void _update_gui();
-
 	void on_selected_channels_changed();
 
 protected:

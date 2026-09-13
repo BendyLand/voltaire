@@ -140,7 +140,6 @@ private:
 	void _on_tab_selected(int p_tab);
 	void _on_tab_button_pressed(int p_tab);
 	void _on_active_tab_rearranged(int p_tab);
-	void _on_tab_visibility_changed(Control* p_child);
 
 	void _drag_move_tab(int p_from_index, int p_to_index);
 	void _drag_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);

@@ -119,21 +119,6 @@ void CreateDialog::_cleanup()
 	custom_type_indices.clear();
 }
 
-void CreateDialog::_reset_filters()
-{
-	if (!types_enabled[TYPE_BUILT_IN]) {
-		_type_filter_toggled(TYPE_BUILT_IN, false);
-	}
-	if (!types_enabled[TYPE_CUSTOM]) {
-		_type_filter_toggled(TYPE_CUSTOM, false);
-	}
-	if (types_enabled[TYPE_EDITOR]) {
-		_type_filter_toggled(TYPE_EDITOR, false);
-	}
-	reset_filters_button->hide();
-	_update_search();
-}
-
 void CreateDialog::_text_changed(const String& p_newtext)
 {
 	_update_filter_button_state();

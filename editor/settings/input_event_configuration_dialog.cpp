@@ -141,24 +141,6 @@ void InputEventConfigurationDialog::_mod_toggled(bool p_checked, int p_index)
 	_set_event(ie, original_event);
 }
 
-void InputEventConfigurationDialog::_autoremap_command_or_control_toggled(bool p_checked)
-{
-	Ref<InputEventWithModifiers> ie = event;
-	if (ie.is_valid()) {
-		ie->set_command_or_control_autoremap(p_checked);
-		_set_event(ie, original_event);
-	}
-
-	if (p_checked) {
-		mod_checkboxes[MOD_META]->hide();
-		mod_checkboxes[MOD_CTRL]->hide();
-	}
-	else {
-		mod_checkboxes[MOD_META]->show();
-		mod_checkboxes[MOD_CTRL]->show();
-	}
-}
-
 void InputEventConfigurationDialog::_key_mode_selected(int p_mode)
 {
 	Ref<InputEventKey> k = event;

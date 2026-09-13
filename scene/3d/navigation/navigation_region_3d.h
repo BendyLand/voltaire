@@ -68,7 +68,6 @@ protected:
 public:
 	RID get_rid() const;
 
-	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
 	void set_navigation_map(RID p_navigation_map);

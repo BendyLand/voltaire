@@ -35,22 +35,6 @@
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/rendering_server.h"
 
-void Light3D::set_param(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	param[p_param] = p_value;
-
-	RS::get_singleton()->light_set_param(light, RSE::LightParam(p_param), p_value);
-
-	if (p_param == PARAM_SPOT_ANGLE || p_param == PARAM_RANGE) {
-		update_gizmos();
-
-		if (p_param == PARAM_SPOT_ANGLE) {
-			update_configuration_warnings();
-		}
-	}
-}
-
 real_t Light3D::get_param(Param p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
@@ -111,22 +95,6 @@ void Light3D::set_cull_mask(uint32_t p_cull_mask)
 }
 
 uint32_t Light3D::get_cull_mask() const { return cull_mask; }
-
-void Light3D::set_color(const Color& p_color)
-{
-	color = p_color;
-
-	if (GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		Color combined = color.srgb_to_linear();
-		combined *= correlated_color.srgb_to_linear();
-		RS::get_singleton()->light_set_color(light, combined.linear_to_srgb());
-	}
-	else {
-		RS::get_singleton()->light_set_color(light, color);
-	}
-	// The gizmo color depends on the light color, so update it.
-	update_gizmos();
-}
 
 Color Light3D::get_color() const { return color; }
 
@@ -203,21 +171,6 @@ Color _color_from_temperature(float p_temperature)
 	return Color(linear.x, linear.y, linear.z).clamp().linear_to_srgb();
 }
 
-void Light3D::set_temperature(const float p_temperature)
-{
-	temperature = p_temperature;
-	if (!GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		return;
-	}
-	correlated_color = _color_from_temperature(temperature);
-
-	Color combined = color.srgb_to_linear() * correlated_color.srgb_to_linear();
-
-	RS::get_singleton()->light_set_color(light, combined.linear_to_srgb());
-	// The gizmo color depends on the light color, so update it.
-	update_gizmos();
-}
-
 Color Light3D::get_correlated_color() const { return correlated_color; }
 
 float Light3D::get_temperature() const { return temperature; }
@@ -271,61 +224,6 @@ void Light3D::set_editor_only(bool p_editor_only)
 
 bool Light3D::is_editor_only() const { return editor_only; }
 
-
-Light3D::Light3D(RSE::LightType p_type)
-{
-	type = p_type;
-	switch (p_type) {
-	case RSE::LIGHT_DIRECTIONAL:
-		light = RenderingServer::get_singleton()->directional_light_create();
-		break;
-	case RSE::LIGHT_OMNI:
-		light = RenderingServer::get_singleton()->omni_light_create();
-		break;
-	case RSE::LIGHT_SPOT:
-		light = RenderingServer::get_singleton()->spot_light_create();
-		break;
-	case RSE::LIGHT_AREA:
-		light = RenderingServer::get_singleton()->area_light_create();
-		break;
-	default: {
-	};
-	}
-
-	RS::get_singleton()->instance_set_base(get_instance(), light);
-
-	set_color(Color(1, 1, 1, 1));
-	set_shadow(false);
-	set_negative(false);
-	set_cull_mask(0xFFFFFFFF);
-
-	set_param(PARAM_ENERGY, 1);
-	set_param(PARAM_INDIRECT_ENERGY, 1);
-	set_param(PARAM_VOLUMETRIC_FOG_ENERGY, 1);
-	set_param(PARAM_SPECULAR, 0.5);
-	set_param(PARAM_RANGE, 5);
-	set_param(PARAM_SIZE, 0);
-	set_param(PARAM_ATTENUATION, 1);
-	set_param(PARAM_SPOT_ANGLE, 45);
-	set_param(PARAM_SPOT_ATTENUATION, 1);
-	set_param(PARAM_SHADOW_MAX_DISTANCE, 0);
-	set_param(PARAM_SHADOW_SPLIT_1_OFFSET, 0.1);
-	set_param(PARAM_SHADOW_SPLIT_2_OFFSET, 0.2);
-	set_param(PARAM_SHADOW_SPLIT_3_OFFSET, 0.5);
-	set_param(PARAM_SHADOW_FADE_START, 0.8);
-	set_param(PARAM_SHADOW_PANCAKE_SIZE, 20.0);
-	set_param(PARAM_SHADOW_OPACITY, 1.0);
-	set_param(PARAM_SHADOW_BLUR, 1.0);
-	set_param(PARAM_SHADOW_BIAS, 0.1);
-	set_param(PARAM_SHADOW_NORMAL_BIAS, 1.0);
-	set_param(PARAM_TRANSMITTANCE_BIAS, 0.05);
-	set_param(PARAM_SHADOW_FADE_START, 1);
-	// For OmniLight3D and SpotLight3D, specified in Lumens.
-	set_param(PARAM_INTENSITY, 1000.0);
-	set_temperature(6500.0); // Nearly white.
-	set_disable_scale(true);
-}
-
 Light3D::Light3D()
 {
 	ERR_PRINT("Light3D should not be instantiated directly; use the DirectionalLight3D, "
@@ -360,21 +258,6 @@ void DirectionalLight3D::set_sky_mode(SkyMode p_mode)
 }
 
 DirectionalLight3D::SkyMode DirectionalLight3D::get_sky_mode() const { return sky_mode; }
-
-
-
-DirectionalLight3D::DirectionalLight3D() : Light3D(RSE::LIGHT_DIRECTIONAL)
-{
-	set_param(PARAM_SHADOW_MAX_DISTANCE, 100);
-	set_param(PARAM_SHADOW_FADE_START, 0.8);
-	// Increase the default shadow normal bias to better suit most scenes.
-	set_param(PARAM_SHADOW_NORMAL_BIAS, 2.0);
-	set_param(PARAM_INTENSITY, 100000.0); // Specified in Lux, approximate mid-day sun.
-	set_param(PARAM_SPECULAR, 1.0);
-	set_shadow_mode(SHADOW_PARALLEL_4_SPLITS);
-	blend_splits = false;
-	set_sky_mode(SKY_MODE_LIGHT_AND_SKY);
-}
 
 void OmniLight3D::set_shadow_mode(ShadowMode p_mode)
 {
@@ -429,21 +312,7 @@ PackedStringArray SpotLight3D::get_configuration_warnings() const
 	return warnings;
 }
 
-SpotLight3D::SpotLight3D() : Light3D(RSE::LIGHT_SPOT)
-{
-	// Decrease the default shadow bias to better suit most scenes.
-	set_param(PARAM_SHADOW_BIAS, 0.03);
-}
-
 Ref<Texture2D> AreaLight3D::get_area_texture() const { return area_texture; }
-
-void AreaLight3D::set_area_size(const Vector2& p_size)
-{
-	area_size = p_size.maxf(0.0f);
-	RS::get_singleton()->light_area_set_size(light, area_size);
-
-	update_gizmos();
-}
 
 Vector2 AreaLight3D::get_area_size() const { return area_size; }
 
@@ -454,18 +323,6 @@ void AreaLight3D::set_area_normalize_energy(bool p_enabled)
 }
 
 bool AreaLight3D::is_area_normalizing_energy() const { return area_normalize_energy; }
-
-AreaLight3D::AreaLight3D() : Light3D(RSE::LIGHT_AREA)
-{
-	// Decrease the default shadow bias to better suit most scenes.
-	set_param(PARAM_SHADOW_BIAS, 0.1);
-	set_param(PARAM_SIZE, 0.5);
-	set_param(PARAM_SPECULAR, 1.0);
-	set_area_size(Vector2(1, 1));
-	set_area_normalize_energy(true);
-}
-
-
 
 PackedStringArray AreaLight3D::get_configuration_warnings() const
 {

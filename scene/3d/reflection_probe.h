@@ -71,7 +71,6 @@ public:
 	void set_intensity(float p_intensity);
 	float get_intensity() const;
 
-	void set_blend_distance(float p_blend_distance);
 	float get_blend_distance() const;
 
 	void set_ambient_mode(AmbientMode p_mode);
@@ -92,10 +91,8 @@ public:
 	void set_mesh_lod_threshold(float p_pixels);
 	float get_mesh_lod_threshold() const;
 
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_origin_offset(const Vector3& p_offset);
 	Vector3 get_origin_offset() const;
 
 	void set_as_interior(bool p_enable);

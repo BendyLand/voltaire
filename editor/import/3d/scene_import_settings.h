@@ -183,7 +183,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	bool selecting = false;
 
 	void _update_view_gizmos();
-	void _update_camera();
 	void _select(Tree* p_from, const String& p_type, const String& p_id);
 	void _inspector_property_edited(const String& p_name);
 	void _reset_bone_transforms();

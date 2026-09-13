@@ -706,13 +706,6 @@ Vector<Vector3> CSGShape3D::get_brush_faces()
 	return faces;
 }
 
-void CSGShape3D::set_operation(Operation p_operation)
-{
-	operation = p_operation;
-	_make_dirty();
-	update_gizmos();
-}
-
 CSGShape3D::Operation CSGShape3D::get_operation() const { return operation; }
 
 void CSGShape3D::set_calculate_tangents(bool p_calculate_tangents)
@@ -747,7 +740,6 @@ Ref<TriangleMesh> CSGShape3D::generate_triangle_mesh() const
 	}
 	return Ref<TriangleMesh>();
 }
-
 
 CSGShape3D::CSGShape3D() { set_notify_local_transform(true); }
 
@@ -785,7 +777,6 @@ CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_ver
 
 	return new_brush;
 }
-
 
 void CSGPrimitive3D::set_flip_faces(bool p_invert)
 {
@@ -947,32 +938,9 @@ CSGBrush* CSGSphere3D::_build_brush()
 	return new_brush;
 }
 
-
-void CSGSphere3D::set_radius(const float p_radius)
-{
-	ERR_FAIL_COND(p_radius <= 0);
-	radius = p_radius;
-	_make_dirty();
-	update_gizmos();
-}
-
 float CSGSphere3D::get_radius() const { return radius; }
 
-void CSGSphere3D::set_radial_segments(const int p_radial_segments)
-{
-	radial_segments = p_radial_segments > 4 ? p_radial_segments : 4;
-	_make_dirty();
-	update_gizmos();
-}
-
 int CSGSphere3D::get_radial_segments() const { return radial_segments; }
-
-void CSGSphere3D::set_rings(const int p_rings)
-{
-	rings = p_rings > 1 ? p_rings : 1;
-	_make_dirty();
-	update_gizmos();
-}
 
 int CSGSphere3D::get_rings() const { return rings; }
 
@@ -1103,22 +1071,7 @@ CSGBrush* CSGBox3D::_build_brush()
 	return new_brush;
 }
 
-
-void CSGBox3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	_make_dirty();
-	update_gizmos();
-}
-
 Vector3 CSGBox3D::get_size() const { return size; }
-
-void CSGBox3D::set_material(const Ref<Material>& p_material)
-{
-	material = p_material;
-	_make_dirty();
-	update_gizmos();
-}
 
 Ref<Material> CSGBox3D::get_material() const { return material; }
 
@@ -1262,41 +1215,11 @@ CSGBrush* CSGCylinder3D::_build_brush()
 	return new_brush;
 }
 
-
-void CSGCylinder3D::set_radius(const float p_radius)
-{
-	radius = p_radius;
-	_make_dirty();
-	update_gizmos();
-}
-
 float CSGCylinder3D::get_radius() const { return radius; }
-
-void CSGCylinder3D::set_height(const float p_height)
-{
-	height = p_height;
-	_make_dirty();
-	update_gizmos();
-}
 
 float CSGCylinder3D::get_height() const { return height; }
 
-void CSGCylinder3D::set_sides(const int p_sides)
-{
-	ERR_FAIL_COND(p_sides < 3);
-	sides = p_sides;
-	_make_dirty();
-	update_gizmos();
-}
-
 int CSGCylinder3D::get_sides() const { return sides; }
-
-void CSGCylinder3D::set_cone(const bool p_cone)
-{
-	cone = p_cone;
-	_make_dirty();
-	update_gizmos();
-}
 
 bool CSGCylinder3D::is_cone() const { return cone; }
 
@@ -1455,42 +1378,11 @@ CSGBrush* CSGTorus3D::_build_brush()
 	return new_brush;
 }
 
-
-void CSGTorus3D::set_inner_radius(const float p_inner_radius)
-{
-	inner_radius = p_inner_radius;
-	_make_dirty();
-	update_gizmos();
-}
-
 float CSGTorus3D::get_inner_radius() const { return inner_radius; }
-
-void CSGTorus3D::set_outer_radius(const float p_outer_radius)
-{
-	outer_radius = p_outer_radius;
-	_make_dirty();
-	update_gizmos();
-}
 
 float CSGTorus3D::get_outer_radius() const { return outer_radius; }
 
-void CSGTorus3D::set_sides(const int p_sides)
-{
-	ERR_FAIL_COND(p_sides < 3);
-	sides = p_sides;
-	_make_dirty();
-	update_gizmos();
-}
-
 int CSGTorus3D::get_sides() const { return sides; }
-
-void CSGTorus3D::set_ring_sides(const int p_ring_sides)
-{
-	ERR_FAIL_COND(p_ring_sides < 3);
-	ring_sides = p_ring_sides;
-	_make_dirty();
-	update_gizmos();
-}
 
 int CSGTorus3D::get_ring_sides() const { return ring_sides; }
 
@@ -1520,40 +1412,11 @@ CSGTorus3D::CSGTorus3D()
 	smooth_faces = true;
 }
 
-void CSGPolygon3D::_path_changed()
-{
-	_make_dirty();
-	update_gizmos();
-}
-
 void CSGPolygon3D::_path_exited() { path = nullptr; }
-
-
-void CSGPolygon3D::set_polygon(const Vector<Vector2>& p_polygon)
-{
-	polygon = p_polygon;
-	_make_dirty();
-	update_gizmos();
-}
 
 Vector<Vector2> CSGPolygon3D::get_polygon() const { return polygon; }
 
-void CSGPolygon3D::set_mode(Mode p_mode)
-{
-	mode = p_mode;
-	_make_dirty();
-	update_gizmos();
-}
-
 CSGPolygon3D::Mode CSGPolygon3D::get_mode() const { return mode; }
-
-void CSGPolygon3D::set_depth(const float p_depth)
-{
-	ERR_FAIL_COND(p_depth < 0.001);
-	depth = p_depth;
-	_make_dirty();
-	update_gizmos();
-}
 
 float CSGPolygon3D::get_depth() const { return depth; }
 
@@ -1565,107 +1428,28 @@ void CSGPolygon3D::set_path_continuous_u(bool p_enable)
 
 bool CSGPolygon3D::is_path_continuous_u() const { return path_continuous_u; }
 
-void CSGPolygon3D::set_path_u_distance(real_t p_path_u_distance)
-{
-	path_u_distance = p_path_u_distance;
-	_make_dirty();
-	update_gizmos();
-}
-
 real_t CSGPolygon3D::get_path_u_distance() const { return path_u_distance; }
-
-void CSGPolygon3D::set_spin_degrees(const float p_spin_degrees)
-{
-	ERR_FAIL_COND(p_spin_degrees < 0.01 || p_spin_degrees > 360);
-	spin_degrees = p_spin_degrees;
-	_make_dirty();
-	update_gizmos();
-}
 
 float CSGPolygon3D::get_spin_degrees() const { return spin_degrees; }
 
-void CSGPolygon3D::set_spin_sides(int p_spin_sides)
-{
-	ERR_FAIL_COND(p_spin_sides < 3);
-	spin_sides = p_spin_sides;
-	_make_dirty();
-	update_gizmos();
-}
-
 int CSGPolygon3D::get_spin_sides() const { return spin_sides; }
 
-void CSGPolygon3D::set_path_node(const NodePath& p_path)
-{
-	path_node = p_path;
-	_make_dirty();
-	update_gizmos();
-}
-
 NodePath CSGPolygon3D::get_path_node() const { return path_node; }
-
-void CSGPolygon3D::set_path_interval_type(PathIntervalType p_interval_type)
-{
-	path_interval_type = p_interval_type;
-	_make_dirty();
-	update_gizmos();
-}
 
 CSGPolygon3D::PathIntervalType CSGPolygon3D::get_path_interval_type() const
 {
 	return path_interval_type;
 }
 
-void CSGPolygon3D::set_path_interval(float p_interval)
-{
-	path_interval = p_interval;
-	_make_dirty();
-	update_gizmos();
-}
-
 float CSGPolygon3D::get_path_interval() const { return path_interval; }
-
-void CSGPolygon3D::set_path_simplify_angle(float p_angle)
-{
-	path_simplify_angle = p_angle;
-	_make_dirty();
-	update_gizmos();
-}
 
 float CSGPolygon3D::get_path_simplify_angle() const { return path_simplify_angle; }
 
-void CSGPolygon3D::set_path_rotation(PathRotation p_rotation)
-{
-	path_rotation = p_rotation;
-	_make_dirty();
-	update_gizmos();
-}
-
 CSGPolygon3D::PathRotation CSGPolygon3D::get_path_rotation() const { return path_rotation; }
-
-void CSGPolygon3D::set_path_rotation_accurate(bool p_enabled)
-{
-	path_rotation_accurate = p_enabled;
-	_make_dirty();
-	update_gizmos();
-}
 
 bool CSGPolygon3D::get_path_rotation_accurate() const { return path_rotation_accurate; }
 
-void CSGPolygon3D::set_path_local(bool p_enable)
-{
-	path_local = p_enable;
-	_make_dirty();
-	update_gizmos();
-}
-
 bool CSGPolygon3D::is_path_local() const { return path_local; }
-
-void CSGPolygon3D::set_path_joined(bool p_enable)
-{
-	path_joined = p_enable;
-	_make_dirty();
-	update_gizmos();
-}
 
 bool CSGPolygon3D::is_path_joined() const { return path_joined; }
 

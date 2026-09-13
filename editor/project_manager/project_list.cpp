@@ -101,118 +101,6 @@ void ProjectListItemControl::set_project_version(const String& p_info)
 	project_version->set_text(p_info);
 }
 
-void ProjectListItemControl::set_unsupported_features(PackedStringArray p_features)
-{
-	if (p_features.size() > 0) {
-		String tooltip_text = "";
-		bool unknown_version = false;
-		for (int i = 0; i < p_features.size(); i++) {
-			if (ProjectList::project_feature_looks_like_version(p_features[i])) {
-				PackedStringArray project_version_split = p_features[i].split(".");
-				int project_version_major = 0, project_version_minor = 0;
-				if (project_version_split.size() >= 2) {
-					project_version_major = project_version_split[0].to_int();
-					project_version_minor = project_version_split[1].to_int();
-				}
-
-				version_match_type = VersionMatchType::PROJECT_USES_SAME;
-				if (project_version_major > VLTR_VERSION_MAJOR) {
-					version_match_type = VersionMatchType::PROJECT_USES_NEWER_MAJOR;
-				}
-				else if (project_version_major < VLTR_VERSION_MAJOR) {
-					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
-				}
-				else {
-					// Project is same major version.
-					// Is it the same minor version, or an upgrade or downgrade?
-					if (project_version_minor > VLTR_VERSION_MINOR) {
-						version_match_type = VersionMatchType::PROJECT_USES_NEWER_MINOR;
-					}
-					else if (project_version_minor < VLTR_VERSION_MINOR) {
-						version_match_type = VersionMatchType::PROJECT_USES_OLDER_MINOR;
-					}
-				}
-
-				if (version_match_type != VersionMatchType::PROJECT_USES_SAME) {
-					String project_version_tooltip_text =
-						TTR("This project was last edited in a different Godot version: ") +
-						p_features[i] + "\n";
-					if (version_match_type == VersionMatchType::PROJECT_USES_OLDER_MAJOR ||
-						version_match_type == VersionMatchType::PROJECT_USES_OLDER_MINOR) {
-						project_version_tooltip_text +=
-							vformat(TTR("Opening it will upgrade it to Godot %s.%s."),
-								VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-							"\n";
-					}
-					else if (version_match_type == VersionMatchType::PROJECT_USES_NEWER_MAJOR ||
-							   version_match_type == VersionMatchType::PROJECT_USES_NEWER_MINOR) {
-						project_version_tooltip_text +=
-							vformat(TTR("Opening it will downgrade it to Godot %s.%s."),
-								VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-							"\n";
-						project_version_tooltip_text +=
-							TTR("Downgrading projects is not recommended.") + "\n";
-					}
-					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
-					project_different_version->set_tooltip_text(project_version_tooltip_text);
-					project_different_version->show();
-				}
-				else {
-					project_different_version->hide();
-				}
-			}
-			else {
-				if (p_features[i] == "3.x") {
-					version_match_type = VersionMatchType::PROJECT_USES_OLDER_MAJOR;
-					String project_version_tooltip_text =
-						TTR("This project was last edited in a different Godot version: ") +
-						p_features[i] + "\n";
-					project_version_tooltip_text +=
-						vformat(TTR("Opening it will upgrade it to Godot %s.%s."),
-							VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR) +
-						"\n";
-					project_different_version->set_focus_mode(FOCUS_ACCESSIBILITY);
-					project_different_version->set_tooltip_text(project_version_tooltip_text);
-					project_different_version->show();
-				}
-				else if (p_features[i] == "u-ver") {
-					unknown_version = true;
-					project_different_version->hide();
-				}
-			}
-
-			p_features.remove_at(i);
-			i--;
-		}
-
-		// This is actually triggered when the project.godot file's config_version
-		// is less than 4, so perhaps it'd be more accurate to say the engine configuration
-		// file's version is not supported...? If the config/features array includes
-		// a proper version number, it will be displayed alongside the "unknown version"
-		// warning otherwise.
-		if (unknown_version) {
-			tooltip_text += TTR("This project uses an unknown version of Godot.") + "\n";
-		}
-		if (p_features.size() > 0) {
-			String unsupported_features_str = String(", ").join(p_features);
-			tooltip_text += TTR("This project uses features unsupported by the current build:") +
-							"\n" + unsupported_features_str;
-		}
-
-		if (tooltip_text.is_empty()) {
-			return;
-		}
-		project_version->set_tooltip_text(tooltip_text);
-		project_unsupported_features->set_focus_mode(FOCUS_ACCESSIBILITY);
-		project_unsupported_features->set_tooltip_text(tooltip_text);
-		project_unsupported_features->show();
-	}
-	else {
-		project_different_version->hide();
-		project_unsupported_features->hide();
-	}
-}
-
 bool ProjectListItemControl::should_load_project_icon() const { return icon_needs_reload; }
 
 void ProjectListItemControl::set_is_favorite(bool p_favorite)
@@ -332,15 +220,6 @@ bool ProjectList::project_feature_looks_like_version(const String& p_feature)
 void ProjectList::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			for (const Item& item : _projects) {
-				_update_project_control_translatable_fields(item);
-			}
-			update_dock_menu();
-		}
-	} break;
-
 	case NOTIFICATION_THEME_CHANGED: {
 		if (project_context_menu) {
 			_update_menu_icons();
@@ -519,15 +398,6 @@ void ProjectList::ensure_project_visible(int p_index)
 	const Item& item = _projects[p_index];
 	// Since follow focus is enabled.
 	item.control->grab_focus(true);
-}
-
-void ProjectList::_update_project_control_translatable_fields(const Item& item)
-{
-	ProjectListItemControl* control = item.control;
-
-	control->set_project_title(!item.missing ? item.project_name : TTR("Missing Project"));
-	control->set_last_edited_info(item.get_last_edited_string());
-	control->set_unsupported_features(item.unsupported_features.duplicate());
 }
 
 void ProjectList::_toggle_project(int p_index)

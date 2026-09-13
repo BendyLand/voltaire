@@ -307,23 +307,6 @@ GridContainer* ColorPicker::get_slider_container() { return slider_gc; }
 
 #endif // ifdef TOOLS_ENABLED
 
-void ColorPicker::_show_hide_preset(
-	const bool& p_is_btn_pressed, Button* p_btn_preset, Container* p_preset_container)
-{
-	if (p_is_btn_pressed) {
-		p_preset_container->show();
-	}
-	else {
-		p_preset_container->hide();
-	}
-	_update_drop_down_arrow(p_is_btn_pressed, p_btn_preset);
-
-	palette_name->hide();
-	if (btn_preset->is_pressed() && !palette_name->get_text().is_empty()) {
-		palette_name->show();
-	}
-}
-
 void ColorPicker::_set_mode_popup_value(ColorModeType p_mode)
 {
 	ERR_FAIL_INDEX(p_mode, MODE_MAX + 1);

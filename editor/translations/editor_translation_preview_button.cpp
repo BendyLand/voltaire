@@ -32,32 +32,9 @@
 #include "editor/editor_node.h"
 #include "editor_translation_preview_button.h"
 
-void EditorTranslationPreviewButton::_update()
-{
-	const String& locale = EditorNode::get_singleton()->get_preview_locale();
-
-	if (locale.is_empty()) {
-		hide();
-		return;
-	}
-
-	const String name = TranslationServer::get_singleton()->get_locale_name(locale);
-	set_text(vformat(TTR("Previewing: %s"), name == locale ? locale : name + " [" + locale + "]"));
-	show();
-}
-
 void EditorTranslationPreviewButton::pressed()
 {
 	EditorNode::get_singleton()->set_preview_locale(String(""), true);
-}
-
-void EditorTranslationPreviewButton::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		_update();
-	} break;
-	}
 }
 
 EditorTranslationPreviewButton::EditorTranslationPreviewButton()

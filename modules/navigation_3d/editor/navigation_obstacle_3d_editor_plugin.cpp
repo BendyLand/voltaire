@@ -51,19 +51,6 @@ int NavigationObstacle3DGizmoPlugin::get_priority() const { return -1; }
 
 NavigationObstacle3DGizmoPlugin::NavigationObstacle3DGizmoPlugin() { current_state = VISIBLE; }
 
-void NavigationObstacle3DEditorPlugin::_node_removed(Node* p_node)
-{
-	if (obstacle_node == p_node) {
-		obstacle_node = nullptr;
-
-		RenderingServer* rs = RenderingServer::get_singleton();
-		rs->mesh_clear(point_lines_mesh_rid);
-		rs->mesh_clear(point_handle_mesh_rid);
-
-		obstacle_editor->hide();
-	}
-}
-
 void NavigationObstacle3DEditorPlugin::set_mode(int p_option)
 {
 	if (p_option == NavigationObstacle3DEditorPlugin::ACTION_FLIP) {

@@ -62,14 +62,10 @@ public:
 
 	RID get_rid() const;
 
-	void set_enabled(bool p_enabled);
-
 	bool is_enabled() const { return enabled; }
 
 	void set_navigation_map(RID p_navigation_map);
 	RID get_navigation_map() const;
-
-	void set_bidirectional(bool p_bidirectional);
 
 	bool is_bidirectional() const { return bidirectional; }
 
@@ -80,18 +76,12 @@ public:
 	void set_navigation_layer_value(int p_layer_number, bool p_value);
 	bool get_navigation_layer_value(int p_layer_number) const;
 
-	void set_start_position(Vector3 p_position);
-
 	Vector3 get_start_position() const { return start_position; }
-
-	void set_end_position(Vector3 p_position);
 
 	Vector3 get_end_position() const { return end_position; }
 
-	void set_global_start_position(Vector3 p_position);
 	Vector3 get_global_start_position() const;
 
-	void set_global_end_position(Vector3 p_position);
 	Vector3 get_global_end_position() const;
 
 	void set_enter_cost(real_t p_enter_cost);

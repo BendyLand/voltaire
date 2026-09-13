@@ -810,13 +810,6 @@ void Node3DEditorViewport::_surface_mouse_enter()
 	}
 }
 
-void Node3DEditorViewport::_surface_mouse_exit()
-{
-	_remove_preview_node();
-	_reset_preview_material();
-	_remove_preview_material();
-}
-
 void Node3DEditorViewport::_surface_focus_enter()
 {
 	view_display_menu->set_disable_shortcuts(false);
@@ -1130,21 +1123,6 @@ void Node3DEditorViewport::assign_pending_data_pointers(
 	accept = p_accept;
 }
 
-void Node3DEditorViewport::_remove_preview_node()
-{
-	tooltip_panel->hide();
-
-	set_message("");
-	if (preview_node->get_parent()) {
-		for (int i = preview_node->get_child_count() - 1; i >= 0; i--) {
-			Node* node = preview_node->get_child(i);
-			node->queue_free();
-			preview_node->remove_child(node);
-		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
-	}
-}
-
 bool Node3DEditorViewport::_cyclical_dependency_exists(
 	const String& p_target_scene_path, Node* p_desired_node) const
 {
@@ -1161,17 +1139,6 @@ bool Node3DEditorViewport::_cyclical_dependency_exists(
 	}
 	return false;
 }
-
-void Node3DEditorViewport::_show_tooltip(const String& p_title, const String& p_description) const
-{
-	tooltip_panel->set_text(vformat("[font_size=%s][b][color=%s]%s[/color][/b][/font_size]\n%s",
-		get_theme_default_font_size() + 2,
-		get_theme_color(SNAME("accent_color"), EditorStringName(Editor)).to_html(false), p_title,
-		p_description));
-	tooltip_panel->show();
-}
-
-
 
 void Node3DEditorViewport::update_transform_numeric()
 {
@@ -1288,65 +1255,6 @@ void Node3DEditorViewportContainer::_update_split_drag_margin()
 	if (view == VIEW_USE_4_VIEWPORTS) {
 		// Extend to cover the first split on top.
 		second_split->set_drag_area_margin_begin(second_split->get_size().y - get_size().y);
-	}
-}
-
-void Node3DEditorViewportContainer::set_view(View p_view)
-{
-	view = p_view;
-
-	Node3DEditorViewport* viewports[4];
-	for (uint32_t i = 0; i < 4; i++) {
-		viewports[i] = Node3DEditor::get_singleton()->get_editor_viewport(i);
-		ERR_FAIL_NULL(viewports[i]);
-	}
-
-	const bool previous_main_vertical = !first_split->is_vertical();
-	const float horizontal_offset =
-		previous_main_vertical ? first_split->get_split_offset() : main_split->get_split_offset();
-	const float vertical_offset =
-		previous_main_vertical ? main_split->get_split_offset() : first_split->get_split_offset();
-
-	first_split->set_dragging_enabled(true);
-	second_split->set_drag_area_margin_begin(0);
-	viewports[0]->show();
-
-	switch (view) {
-	case VIEW_USE_1_VIEWPORT: {
-		for (int i = 1; i < 4; i++) {
-			viewports[i]->hide();
-		}
-		second_split->hide();
-	} break;
-	case VIEW_USE_2_VIEWPORTS:
-	case VIEW_USE_2_VIEWPORTS_ALT: {
-		viewports[1]->show();
-		viewports[2]->hide();
-		viewports[3]->hide();
-		second_split->hide();
-		const bool is_vertical = view == VIEW_USE_2_VIEWPORTS;
-		if (first_split->is_vertical() != is_vertical) {
-			first_split->set_vertical(is_vertical);
-			first_split->set_split_offset(is_vertical ? vertical_offset : horizontal_offset);
-			main_split->set_split_offset(
-				is_vertical ? horizontal_offset
-							: vertical_offset); // Store the other offset here for later.
-		}
-	} break;
-	case VIEW_USE_4_VIEWPORTS: {
-		for (int i = 1; i < 4; i++) {
-			viewports[i]->show();
-		}
-		second_split->show();
-		main_split->set_vertical(true);
-		main_split->set_split_offset(vertical_offset);
-		first_split->set_vertical(false);
-		first_split->set_split_offset(horizontal_offset);
-		second_split->set_split_offset(horizontal_offset);
-
-		first_split->set_dragging_enabled(false);
-		_update_split_drag_margin();
-	} break;
 	}
 }
 

@@ -183,7 +183,7 @@ public:
 	void set_draw_focus_border(bool p_draw);
 	bool get_draw_focus_border();
 
-	ScrollContainer();
+	ScrollContainer() = default;
 };
 
 

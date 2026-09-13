@@ -160,8 +160,6 @@ private:
 	uint32_t bake_mask = 0xFFFFFFFF;
 	float bake_simplification_dist = 0.1f;
 
-	void _occluder_changed();
-
 	void _bake_node(Node* p_node, PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
 
 	bool _is_editable_3d_polygon() const;

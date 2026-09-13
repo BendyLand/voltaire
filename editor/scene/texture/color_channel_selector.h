@@ -40,7 +40,7 @@ class ColorChannelSelector : public HBoxContainer
 	static const unsigned int CHANNEL_COUNT = 4;
 
 public:
-	ColorChannelSelector();
+	ColorChannelSelector() = default;
 
 	uint32_t get_selected_channels_mask() const;
 	Vector4 get_selected_channel_factors() const;

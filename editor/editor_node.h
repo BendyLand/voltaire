@@ -609,7 +609,6 @@ private:
 	void _instantiate_request(const Vector<String>& p_files);
 
 	void _quick_opened(const String& p_file_path);
-	void _open_command_palette();
 
 	void _project_run_started();
 	void _project_run_stopped();
@@ -682,7 +681,6 @@ private:
 	void _reload_modified_scenes();
 	void _reload_project_settings();
 
-	void _feature_profile_changed();
 	bool _is_class_editor_disabled_by_feature_profile(const StringName& p_class);
 
 	Ref<Texture2D> _get_class_or_script_icon(const String& p_class, const String& p_script_path,
@@ -1006,14 +1004,12 @@ public:
 
 	void save_all_scenes();
 	void save_scene_if_open(const String& p_scene_path);
-	void save_scene_list(const HashSet
-<String>& p_scene_paths);
+	void save_scene_list(const HashSet<String>& p_scene_paths);
 	void save_before_run();
 	void try_autosave();
 	void restart_editor(bool p_goto_project_manager = false);
 	void unload_editor_addons();
 
-	void open_setting_override(const String& p_property);
 	void notify_settings_overrides_changed();
 
 	void dim_editor(bool p_dimming);

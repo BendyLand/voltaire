@@ -120,8 +120,6 @@ class ShaderEditorPlugin : public EditorPlugin
 	void _set_text_shader_zoom_factor(float p_zoom_factor);
 	void _update_shader_editor_zoom_factor(CodeTextEditor* p_shader_editor) const;
 
-	void _switch_to_editor(ShaderEditor* p_editor);
-
 	static inline ShaderEditorPlugin* shader_editor_plugin = nullptr;
 
 protected:

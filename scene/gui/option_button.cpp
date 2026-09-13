@@ -319,6 +319,4 @@ PackedStringArray OptionButton::get_configuration_warnings() const
 }
 #endif
 
-OptionButton::~OptionButton() {}
-
 

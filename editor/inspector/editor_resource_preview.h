@@ -68,8 +68,7 @@ public:
 
 class EditorResourcePreview : public Node
 {
-	static constexpr int CURRENT_METADATA_VERSION =
-		1; // Increment this number to invalidate all previews.
+	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
 	inline static EditorResourcePreview* singleton = nullptr;
 
 	struct QueueItem

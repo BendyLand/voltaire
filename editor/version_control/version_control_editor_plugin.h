@@ -163,7 +163,6 @@ private:
 	void _push();
 	void _force_push();
 	void _fetch();
-	void _commit();
 	void _toggle_amend_commit(bool p_toggled);
 	void _confirm_discard_all();
 	void _discard_all();

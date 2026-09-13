@@ -113,8 +113,6 @@ public:
 		const String& p_binding_modifier_class, const String& p_editor_class);
 	static String get_binding_modifier_editor_class(const String& p_binding_modifier_class);
 
-	void open_action_map(const String& p_path);
-
 	OpenXRActionMapEditor();
 };
 

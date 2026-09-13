@@ -52,14 +52,6 @@
 
 #define PRECISION 1
 
-void Sprite2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
 Vector<Vector2> expand(const Vector<Vector2>& points, const Rect2i& rect, float epsilon = 2.0)
 {
 	int size = points.size();

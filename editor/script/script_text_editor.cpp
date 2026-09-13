@@ -136,8 +136,6 @@ void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
 	}
 }
 
-void ScriptTextEditor::_on_mouse_exited() { drag_info_label->hide(); }
-
 String ScriptTextEditor::_picker_color_stringify(const Color& p_color, COLOR_MODE p_mode)
 {
 	String result;
@@ -270,9 +268,6 @@ void ScriptTextEditor::_notification(int p_what)
 		Ref<Font> code_font = get_theme_font("font", "CodeEdit");
 		inline_color_options->add_theme_font_override("font", code_font.ptr());
 		inline_color_options->get_popup()->add_theme_font_override("font", code_font);
-	} break;
-	case NOTIFICATION_DRAG_END: {
-		drag_info_label->hide();
 	} break;
 	}
 }

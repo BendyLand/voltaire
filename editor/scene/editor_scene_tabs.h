@@ -77,7 +77,6 @@ private:
 	void _scene_tab_script_edited(int p_tab);
 	void _scene_tab_closed(int p_tab);
 	void _scene_tab_hovered(int p_tab);
-	void _scene_tab_exit();
 	void _scene_tab_input(const Ref<InputEvent>& p_input);
 	void _scene_tabs_resized();
 
@@ -87,14 +86,10 @@ private:
 	void _custom_menu_option(int p_option);
 	void _update_scene_list();
 
-	void _tab_preview_done(const String& p_path, const Ref<Texture2D>& p_preview,
-		const Ref<Texture2D>& p_small_preview, int p_tab);
-
 	void _project_settings_changed();
 
 protected:
 	void _notification(int p_what);
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
 
 public:
 	static EditorSceneTabs* get_singleton() { return singleton; }

@@ -147,16 +147,6 @@ void EditorBottomPanel::remove_item(Control* p_item)
 	dock->queue_free();
 }
 
-void EditorBottomPanel::_on_button_visibility_changed(Button* p_button, EditorDock* p_dock)
-{
-	if (p_button->is_visible()) {
-		p_dock->open();
-	}
-	else {
-		p_dock->close();
-	}
-}
-
 EditorBottomPanel::~EditorBottomPanel()
 {
 	for (Button* b : legacy_buttons) {

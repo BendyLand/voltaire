@@ -115,8 +115,6 @@ protected:
 
 	void _wip_cancel();
 
-	void _node_removed(Node* p_node);
-
 	Vertex get_active_point() const;
 
 	virtual Node2D* _get_node() const = 0;
@@ -139,7 +137,8 @@ public:
 	void set_edit_origin_and_center(bool p_enabled);
 
 	void edit(Node* p_polygon);
-	AbstractPolygon2DEditor(bool p_wip_destructive = true);
+
+	AbstractPolygon2DEditor(bool p_wip_destructive = true) : wip_destructive(p_wip_destructive) {}
 };
 
 class AbstractPolygon2DEditorPlugin : public EditorPlugin
@@ -150,7 +149,10 @@ class AbstractPolygon2DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return klass; }
 
-	AbstractPolygon2DEditorPlugin(AbstractPolygon2DEditor* p_polygon_editor, const String& p_class);
+	AbstractPolygon2DEditorPlugin(AbstractPolygon2DEditor* p_polygon_editor, const String& p_class)
+		: polygon_editor(p_polygon_editor), klass(p_class)
+	{
+	}
 };
 
 

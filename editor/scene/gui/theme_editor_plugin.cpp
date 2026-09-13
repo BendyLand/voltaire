@@ -355,21 +355,6 @@ void ThemeItemImportTree::set_edited_theme(const Ref<Theme>& p_theme) { edited_t
 
 void ThemeItemImportTree::set_base_theme(const Ref<Theme>& p_theme) { base_theme = p_theme; }
 
-void ThemeItemImportTree::reset_item_tree()
-{
-	import_items_filter->clear();
-	selected_items.clear();
-
-	total_selected_colors_label->hide();
-	total_selected_constants_label->hide();
-	total_selected_fonts_label->hide();
-	total_selected_font_sizes_label->hide();
-	total_selected_icons_label->hide();
-	total_selected_styleboxes_label->hide();
-
-	_update_items_tree();
-}
-
 bool ThemeItemImportTree::has_selected_items() const { return (selected_items.size() > 0); }
 
 void ThemeItemEditorDialog::ok_pressed()
@@ -389,105 +374,11 @@ void ThemeItemEditorDialog::ok_pressed()
 
 void ThemeItemEditorDialog::_close_dialog() { hide(); }
 
-void ThemeItemEditorDialog::_dialog_about_to_show()
-{
-	ERR_FAIL_COND_MSG(edited_theme.is_null(),
-		"Invalid state of the Theme Editor; the Theme resource is missing.");
-
-	_update_edit_types();
-
-	import_default_theme_items->set_edited_theme(edited_theme);
-	import_default_theme_items->set_base_theme(ThemeDB::get_singleton()->get_default_theme());
-	import_default_theme_items->reset_item_tree();
-
-	import_editor_theme_items->set_edited_theme(edited_theme);
-	import_editor_theme_items->set_base_theme(EditorNode::get_singleton()->get_editor_theme());
-	import_editor_theme_items->reset_item_tree();
-
-	import_other_theme_items->set_edited_theme(edited_theme);
-	import_other_theme_items->reset_item_tree();
-}
-
 void ThemeItemEditorDialog::_edited_type_selected()
 {
 	TreeItem* selected_item = edit_type_list->get_selected();
 	String selected_type = selected_item->get_text(0);
 	_update_edit_item_tree(selected_type);
-}
-
-void ThemeItemEditorDialog::_open_add_theme_item_dialog(int p_data_type)
-{
-	ERR_FAIL_INDEX_MSG(p_data_type, Theme::DATA_TYPE_MAX, "Theme item data type is out of bounds.");
-
-	item_popup_mode = CREATE_THEME_ITEM;
-	edit_item_data_type = (Theme::DataType)p_data_type;
-
-	switch (edit_item_data_type) {
-	case Theme::DATA_TYPE_COLOR:
-		edit_theme_item_dialog->set_title(TTR("Add Color Item"));
-		break;
-	case Theme::DATA_TYPE_CONSTANT:
-		edit_theme_item_dialog->set_title(TTR("Add Constant Item"));
-		break;
-	case Theme::DATA_TYPE_FONT:
-		edit_theme_item_dialog->set_title(TTR("Add Font Item"));
-		break;
-	case Theme::DATA_TYPE_FONT_SIZE:
-		edit_theme_item_dialog->set_title(TTR("Add Font Size Item"));
-		break;
-	case Theme::DATA_TYPE_ICON:
-		edit_theme_item_dialog->set_title(TTR("Add Icon Item"));
-		break;
-	case Theme::DATA_TYPE_STYLEBOX:
-		edit_theme_item_dialog->set_title(TTR("Add Stylebox Item"));
-		break;
-	case Theme::DATA_TYPE_MAX:
-		break; // Can't happen, but silences warning.
-	}
-
-	edit_theme_item_old_vb->hide();
-	theme_item_name->clear();
-	edit_theme_item_dialog->popup_centered(Size2(380, 110) * EDSCALE);
-	theme_item_name->grab_focus();
-}
-
-void ThemeItemEditorDialog::_open_rename_theme_item_dialog(
-	Theme::DataType p_data_type, String p_item_name)
-{
-	ERR_FAIL_INDEX_MSG(p_data_type, Theme::DATA_TYPE_MAX, "Theme item data type is out of bounds.");
-
-	item_popup_mode = RENAME_THEME_ITEM;
-	edit_item_data_type = p_data_type;
-	edit_item_old_name = p_item_name;
-
-	switch (edit_item_data_type) {
-	case Theme::DATA_TYPE_COLOR:
-		edit_theme_item_dialog->set_title(TTR("Rename Color Item"));
-		break;
-	case Theme::DATA_TYPE_CONSTANT:
-		edit_theme_item_dialog->set_title(TTR("Rename Constant Item"));
-		break;
-	case Theme::DATA_TYPE_FONT:
-		edit_theme_item_dialog->set_title(TTR("Rename Font Item"));
-		break;
-	case Theme::DATA_TYPE_FONT_SIZE:
-		edit_theme_item_dialog->set_title(TTR("Rename Font Size Item"));
-		break;
-	case Theme::DATA_TYPE_ICON:
-		edit_theme_item_dialog->set_title(TTR("Rename Icon Item"));
-		break;
-	case Theme::DATA_TYPE_STYLEBOX:
-		edit_theme_item_dialog->set_title(TTR("Rename Stylebox Item"));
-		break;
-	case Theme::DATA_TYPE_MAX:
-		break; // Can't happen, but silences warning.
-	}
-
-	edit_theme_item_old_vb->show();
-	theme_item_old_name->set_text(p_item_name);
-	theme_item_name->set_text(p_item_name);
-	edit_theme_item_dialog->popup_centered(Size2(380, 140) * EDSCALE);
-	theme_item_name->grab_focus();
 }
 
 void ThemeItemEditorDialog::_edit_theme_item_gui_input(const Ref<InputEvent>& p_event)
@@ -514,24 +405,6 @@ void ThemeItemEditorDialog::_edit_theme_item_gui_input(const Ref<InputEvent>& p_
 void ThemeItemEditorDialog::_open_select_another_theme()
 {
 	import_another_theme_dialog->popup_file_dialog();
-}
-
-void ThemeItemEditorDialog::_select_another_theme_cbk(const String& p_path)
-{
-	Ref<Theme> loaded_theme = ResourceLoader::load(p_path);
-	if (loaded_theme.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid file, not a Theme resource."));
-		return;
-	}
-	if (loaded_theme == edited_theme) {
-		EditorNode::get_singleton()->show_warning(
-			TTR("Invalid file, same as the edited Theme resource."));
-		return;
-	}
-
-	import_another_theme_value->set_text(p_path);
-	import_other_theme_items->set_base_theme(loaded_theme);
-	import_other_theme_items->reset_item_tree();
 }
 
 void ThemeItemEditorDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
@@ -620,11 +493,6 @@ void ThemeTypeDialog::_add_type_selected(const String& p_type_name)
 void ThemeTypeDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
 
 void ThemeTypeDialog::set_include_own_types(bool p_enable) { include_own_types = p_enable; }
-
-Control* ThemeItemLabel::make_custom_tooltip(const String& p_text) const
-{
-	return EditorHelpBitTooltip::make_tooltip(const_cast<ThemeItemLabel*>(this), p_text);
-}
 
 void ThemeTypeEditor::_update_type_list_debounced() { update_debounce_timer->start(); }
 

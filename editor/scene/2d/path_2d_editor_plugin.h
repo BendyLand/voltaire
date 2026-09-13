@@ -129,7 +129,6 @@ class Path2DEditor : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node* p_node);
 
 public:
 	bool forward_gui_input(const Ref<InputEvent>& p_event);
@@ -156,7 +155,7 @@ public:
 
 	virtual String get_plugin_name() const override { return "Path2D"; }
 
-	Path2DEditorPlugin();
+	Path2DEditorPlugin() = default;
 };
 
 

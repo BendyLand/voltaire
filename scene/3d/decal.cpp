@@ -32,13 +32,6 @@
 #include "decal.h"
 #include "servers/rendering/rendering_server.h"
 
-void Decal::set_size(const Vector3& p_size)
-{
-	size = p_size.maxf(0.001);
-	RS::get_singleton()->decal_set_size(decal, size);
-	update_gizmos();
-}
-
 Vector3 Decal::get_size() const { return size; }
 
 Ref<Texture2D> Decal::get_texture(DecalTexture p_type) const

@@ -477,8 +477,6 @@ private:
 
 	void _insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing);
 
-	void _keying_changed();
-
 	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);
 	void _draw_percentage_at_position(real_t p_value, Point2 p_position, Side p_side);
@@ -655,7 +653,7 @@ public:
 
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }
 
-	CanvasItemEditorPlugin();
+	CanvasItemEditorPlugin() = default;
 };
 
 class CanvasItemEditorViewport : public Control
@@ -676,12 +674,9 @@ class CanvasItemEditorViewport : public Control
 	RichTextLabel* tooltip_panel = nullptr;
 	Ref<ButtonGroup> button_group;
 
-	void _on_mouse_exit();
 	void _on_change_type_confirmed();
-	void _on_change_type_closed();
 
 	void _create_preview(const Vector<String>& files) const;
-	void _remove_preview();
 
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
 	bool _is_any_texture_selected() const;
@@ -699,8 +694,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_hint_label(const String& p_title, const String& p_description) const;
-
 	CanvasItemEditorViewport(CanvasItemEditor* p_canvas_item_editor);
 	~CanvasItemEditorViewport();
 };

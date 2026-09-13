@@ -46,18 +46,6 @@
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 
-void Polygon3DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		if (imgeom->get_parent() == p_node) {
-			p_node->remove_child(imgeom);
-		}
-		hide();
-		set_process(false);
-	}
-}
-
 void Polygon3DEditor::_menu_option(int p_option)
 {
 	switch (p_option) {
@@ -75,13 +63,5 @@ void Polygon3DEditor::_menu_option(int p_option)
 }
 
 Polygon3DEditor::~Polygon3DEditor() { memdelete(imgeom); }
-
-Polygon3DEditorPlugin::Polygon3DEditorPlugin()
-{
-	polygon_editor = memnew(Polygon3DEditor);
-	Node3DEditor::get_singleton()->add_control_to_menu_panel(polygon_editor);
-
-	polygon_editor->hide();
-}
 
 

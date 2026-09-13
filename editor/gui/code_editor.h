@@ -100,23 +100,16 @@ class FindReplaceBar : public HBoxContainer
 	bool replace_all_mode = false;
 	bool preserve_cursor = false;
 
-	virtual void input(const Ref<InputEvent>& p_event) override;
-
 	void _get_search_from(int& r_line, int& r_col, SearchMode p_search_mode);
 	void _update_results_count();
 	void _update_matches_display();
 
 	void _show_search(bool p_with_replace, bool p_show_only);
-	void _hide_bar();
 	void _update_toggle_replace_button(bool p_replace_visible);
 
 	void _editor_text_changed();
 	void _search_options_changed(bool p_pressed);
 	void _search_text_changed(const String& p_text);
-	void _search_text_submitted(const String& p_text);
-	void _replace_text_submitted(const String& p_text);
-	void _replace_button_pressed();
-	void _toggle_replace_pressed();
 
 protected:
 	void _notification(int p_what);
@@ -139,12 +132,7 @@ public:
 
 	void set_text_edit(CodeTextEditor* p_text_editor);
 
-	void popup_search(bool p_show_only = false);
-	void popup_replace();
-
 	bool search_current();
-	bool search_prev();
-	bool search_next();
 
 	bool needs_to_count_results = true;
 	bool line_col_changed_for_result = false;
@@ -186,7 +174,6 @@ class CodeTextEditor : public VBoxContainer
 	void _update_font_ligatures();
 	void _complete_request();
 
-	virtual void input(const Ref<InputEvent>& event) override;
 	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
 
 	Color completion_font_color;
@@ -303,7 +290,6 @@ public:
 	void validate_script();
 
 	void set_toggle_list_control(Control* p_toggle_list_control);
-	void show_toggle_files_button();
 	void update_toggle_files_button();
 
 	CodeTextEditor();

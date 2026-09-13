@@ -59,13 +59,11 @@ class ProjectExportTextureFormatError : public HBoxContainer
 	Label* texture_format_error_label = nullptr;
 	LinkButton* fix_texture_format_button = nullptr;
 	String setting_identifier;
-	void _on_fix_texture_format_pressed();
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void show_for_texture_format(const String& p_friendly_name, const String& p_setting_identifier);
 	ProjectExportTextureFormatError(ProjectExportDialog* p_export_dialog);
 };
 
@@ -159,7 +157,6 @@ class ProjectExportDialog : public ConfirmationDialog
 	void _export_type_changed(int p_which);
 	void _filter_changed(const String& p_filter);
 	String _get_resource_export_header(EditorExportPreset::ExportFilter p_filter) const;
-	void _fill_resource_tree();
 	void _setup_item_for_file_mode(TreeItem* p_item, EditorExportPreset::FileExportMode p_mode);
 	bool _fill_tree(EditorFileSystemDirectory* p_dir, TreeItem* p_item,
 		Ref<EditorExportPreset>& current, EditorExportPreset::ExportFilter p_export_filter);

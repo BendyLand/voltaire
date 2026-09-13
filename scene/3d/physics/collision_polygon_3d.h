@@ -53,8 +53,6 @@ protected:
 
 	bool disabled = false;
 
-	void _build_polygon();
-
 	void _update_in_shape_owner(bool p_xform_only = false);
 
 	bool _is_editable_3d_polygon() const;
@@ -63,25 +61,19 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_depth(real_t p_depth);
 	real_t get_depth() const;
 
-	void set_polygon(const Vector<Point2>& p_polygon);
 	Vector<Point2> get_polygon() const;
 
-	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
-	void set_debug_color(const Color& p_color);
 	Color get_debug_color() const;
 
-	void set_debug_fill_enabled(bool p_enable);
 	bool get_debug_fill_enabled() const;
 
 	virtual AABB get_item_rect() const;
 
 	real_t get_margin() const;
-	void set_margin(real_t p_margin);
 
 	PackedStringArray get_configuration_warnings() const override;
 

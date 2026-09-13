@@ -78,17 +78,6 @@ void BonePropertiesEditor::set_keyable(const bool p_keyable)
 
 Skeleton3DEditor* Skeleton3DEditor::singleton = nullptr;
 
-void Skeleton3DEditor::set_keyable(const bool p_keyable)
-{
-	keyable = p_keyable;
-	if (p_keyable) {
-		animation_hb->show();
-	}
-	else {
-		animation_hb->hide();
-	}
-}
-
 void Skeleton3DEditor::set_bone_options_enabled(const bool p_bone_options_enabled)
 {
 	skeleton_options->get_popup()->set_item_disabled(
@@ -402,28 +391,6 @@ void Skeleton3DEditor::_subgizmo_selection_change()
 	}
 	else {
 		skeleton->clear_subgizmo_selection();
-	}
-}
-
-void Skeleton3DEditor::select_bone(int p_idx)
-{
-	if (p_idx >= 0) {
-		TreeItem* ti = _find(joint_tree->get_root(), "bones/" + itos(p_idx));
-		if (ti) {
-			// Make visible when it's collapsed.
-			TreeItem* node = ti->get_parent();
-			while (node && node != joint_tree->get_root()) {
-				node->set_collapsed(false);
-				node = node->get_parent();
-			}
-			ti->select(0);
-			joint_tree->scroll_to_item(ti);
-		}
-	}
-	else {
-		selected_bone = -1;
-		joint_tree->deselect_all();
-		_joint_tree_selection_changed();
 	}
 }
 

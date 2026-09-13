@@ -34,28 +34,9 @@
 #include "scene/resources/environment.h"
 #include "servers/rendering/rendering_server.h"
 
-void FogVolume::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	size = size.maxf(0);
-	RS::get_singleton()->fog_volume_set_size(_get_volume(), size);
-	update_gizmos();
-}
-
 Vector3 FogVolume::get_size() const { return size; }
 
 RSE::FogVolumeShape FogVolume::get_shape() const { return shape; }
-
-void FogVolume::set_material(const Ref<Material>& p_material)
-{
-	material = p_material;
-	RID material_rid;
-	if (material.is_valid()) {
-		material_rid = material->get_rid();
-	}
-	RS::get_singleton()->fog_volume_set_material(_get_volume(), material_rid);
-	update_gizmos();
-}
 
 Ref<Material> FogVolume::get_material() const { return material; }
 

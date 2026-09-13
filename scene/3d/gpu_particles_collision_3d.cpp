@@ -57,13 +57,6 @@ GPUParticlesCollision3D::~GPUParticlesCollision3D()
 	RS::get_singleton()->free_rid(collision);
 }
 
-void GPUParticlesCollisionSphere3D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	RS::get_singleton()->particles_collision_set_sphere_radius(_get_collision(), radius);
-	update_gizmos();
-}
-
 real_t GPUParticlesCollisionSphere3D::get_radius() const { return radius; }
 
 AABB GPUParticlesCollisionSphere3D::get_aabb() const
@@ -77,13 +70,6 @@ GPUParticlesCollisionSphere3D::GPUParticlesCollisionSphere3D()
 }
 
 GPUParticlesCollisionSphere3D::~GPUParticlesCollisionSphere3D() {}
-
-void GPUParticlesCollisionBox3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
 
 Vector3 GPUParticlesCollisionBox3D::get_size() const { return size; }
 
@@ -129,20 +115,7 @@ void GPUParticlesCollisionSDF3D::set_thickness(float p_thickness) { thickness = 
 
 float GPUParticlesCollisionSDF3D::get_thickness() const { return thickness; }
 
-void GPUParticlesCollisionSDF3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
-
 Vector3 GPUParticlesCollisionSDF3D::get_size() const { return size; }
-
-void GPUParticlesCollisionSDF3D::set_resolution(Resolution p_resolution)
-{
-	resolution = p_resolution;
-	update_gizmos();
-}
 
 GPUParticlesCollisionSDF3D::Resolution GPUParticlesCollisionSDF3D::get_resolution() const
 {
@@ -250,24 +223,7 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 	}
 }
 
-void GPUParticlesCollisionHeightField3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-	RS::get_singleton()->particles_collision_height_field_update(_get_collision());
-}
-
 Vector3 GPUParticlesCollisionHeightField3D::get_size() const { return size; }
-
-void GPUParticlesCollisionHeightField3D::set_resolution(Resolution p_resolution)
-{
-	resolution = p_resolution;
-	RS::get_singleton()->particles_collision_set_height_field_resolution(
-		_get_collision(), RSE::ParticlesCollisionHeightfieldResolution(resolution));
-	update_gizmos();
-	RS::get_singleton()->particles_collision_height_field_update(_get_collision());
-}
 
 GPUParticlesCollisionHeightField3D::Resolution
 GPUParticlesCollisionHeightField3D::get_resolution() const
@@ -369,14 +325,6 @@ void GPUParticlesAttractor3D::set_attenuation(real_t p_attenuation)
 
 real_t GPUParticlesAttractor3D::get_attenuation() const { return attenuation; }
 
-void GPUParticlesAttractor3D::set_directionality(real_t p_directionality)
-{
-	directionality = p_directionality;
-	RS::get_singleton()->particles_collision_set_attractor_directionality(
-		collision, p_directionality);
-	update_gizmos();
-}
-
 real_t GPUParticlesAttractor3D::get_directionality() const { return directionality; }
 
 GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type)
@@ -390,13 +338,6 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(collision);
-}
-
-void GPUParticlesAttractorSphere3D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	RS::get_singleton()->particles_collision_set_sphere_radius(_get_collision(), radius);
-	update_gizmos();
 }
 
 real_t GPUParticlesAttractorSphere3D::get_radius() const { return radius; }
@@ -413,13 +354,6 @@ GPUParticlesAttractorSphere3D::GPUParticlesAttractorSphere3D()
 
 GPUParticlesAttractorSphere3D::~GPUParticlesAttractorSphere3D() {}
 
-void GPUParticlesAttractorBox3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
-
 Vector3 GPUParticlesAttractorBox3D::get_size() const { return size; }
 
 AABB GPUParticlesAttractorBox3D::get_aabb() const { return AABB(-size / 2, size); }
@@ -430,13 +364,6 @@ GPUParticlesAttractorBox3D::GPUParticlesAttractorBox3D()
 }
 
 GPUParticlesAttractorBox3D::~GPUParticlesAttractorBox3D() {}
-
-void GPUParticlesAttractorVectorField3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
 
 Vector3 GPUParticlesAttractorVectorField3D::get_size() const { return size; }
 

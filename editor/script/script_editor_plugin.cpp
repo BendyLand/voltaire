@@ -363,11 +363,6 @@ Control* ScriptEditor::get_active_editor() const
 	return tab_container->get_current_tab_control();
 }
 
-void ScriptEditor::open_find_in_files_dialog(const String& p_initial_text, bool p_replace)
-{
-	find_in_files->open_dialog(p_initial_text, p_replace);
-}
-
 void ScriptEditor::open_script_create_dialog(const String& p_base_name, const String& p_base_path)
 {
 	_menu_option(FILE_MENU_NEW_SCRIPT);

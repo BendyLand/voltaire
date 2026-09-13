@@ -62,7 +62,6 @@ class EditorBottomPanel : public DockTabContainer
 	HashMap<String, int> dock_offsets;
 
 	LocalVector<Button*> legacy_buttons;
-	void _on_button_visibility_changed(Button* p_button, EditorDock* p_dock);
 
 	void _repaint();
 	void _on_tab_changed(int p_idx);

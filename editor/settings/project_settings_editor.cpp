@@ -49,14 +49,6 @@ void ProjectSettingsEditor::connect_filesystem_dock_signals(FileSystemDock* p_fs
 	group_settings->connect_filesystem_dock_signals(p_fs_dock);
 }
 
-void ProjectSettingsEditor::popup_for_override(const String& p_override)
-{
-	popup_project_settings();
-	tab_container->set_current_tab(0);
-	general_settings_inspector->set_current_section(
-		ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX + p_override.get_slicec('/', 0));
-}
-
 void ProjectSettingsEditor::set_filter(const String& p_filter) { search_box->set_text(p_filter); }
 
 void ProjectSettingsEditor::queue_save()
@@ -80,12 +72,6 @@ void ProjectSettingsEditor::_save()
 void ProjectSettingsEditor::set_plugins_page()
 {
 	tab_container->set_current_tab(tab_container->get_tab_idx_from_control(plugin_settings));
-}
-
-void ProjectSettingsEditor::set_general_page(const String& p_category)
-{
-	tab_container->set_current_tab(tab_container->get_tab_idx_from_control(general_editor));
-	general_settings_inspector->set_current_section(p_category);
 }
 
 void ProjectSettingsEditor::update_plugins() { plugin_settings->update_plugins(); }
@@ -259,9 +245,5 @@ void ProjectSettingsEditor::_editor_restart()
 	EditorNode::get_singleton()->save_all_scenes();
 	EditorNode::get_singleton()->restart_editor();
 }
-
-void ProjectSettingsEditor::_editor_restart_request() { restart_container->show(); }
-
-void ProjectSettingsEditor::_editor_restart_close() { restart_container->hide(); }
 
 

@@ -92,7 +92,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void edit(const String& p_path);
 	DependencyEditor();
 };
 
@@ -120,7 +119,6 @@ private:
 	};
 
 public:
-	void show(const String& p_path);
 	DependencyEditorOwners();
 };
 
@@ -166,7 +164,6 @@ class DependencyRemoveDialog : public ConfirmationDialog
 
 
 public:
-	void show(const Vector<String>& p_folders, const Vector<String>& p_files);
 	DependencyRemoveDialog();
 };
 

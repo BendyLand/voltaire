@@ -42,9 +42,6 @@ class Camera3DEditor : public Control
 
 	void _pressed();
 
-protected:
-	void _node_removed(Node* p_node);
-
 public:
 	void edit(Node* p_camera);
 	Camera3DEditor();

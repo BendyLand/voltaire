@@ -47,8 +47,6 @@ public:
 private:
 	List<StringName> _existing_metas;
 
-	void _check_meta_name();
-
 	LineEdit* add_meta_name = nullptr;
 	EditorVariantTypeOptionButton* add_meta_type = nullptr;
 	EditorValidationPanel* validation_panel = nullptr;

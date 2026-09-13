@@ -33,8 +33,9 @@
 #include "core/input/input_event.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/iterable.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
+#include "scene/resources/packed_scene.h"
+#include "scene/resources/material.h"
 
 class MultiplayerAPI;
 class NodePath;
@@ -890,7 +891,7 @@ public:
 
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
-	Node();
+	Node() = default;
 	~Node();
 };
 

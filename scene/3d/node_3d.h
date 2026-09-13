@@ -108,8 +108,8 @@ private:
 		uint64_t timeout_physics_tick = 0;
 	};
 
-	mutable SelfList<Node> xform_change;
-	SelfList<Node3D> _client_physics_interpolation_node_3d_list;
+	mutable SelfList<Node> xform_change = { this };
+	SelfList<Node3D> _client_physics_interpolation_node_3d_list = { this };
 
 	// This Data struct is to avoid namespace pollution in derived classes.
 
@@ -326,7 +326,6 @@ public:
 #endif
 	void reparent(Node* p_parent, bool p_keep_global_transform);
 	void set_disable_gizmos(bool p_enabled);
-	void update_gizmos();
 	void set_subgizmo_selection(
 		Ref<Node3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
 	void clear_subgizmo_selection();
@@ -389,7 +388,7 @@ public:
 	void set_visibility_parent(const NodePath& p_path);
 	NodePath get_visibility_parent() const;
 
-	Node3D();
+	Node3D() = default;
 	~Node3D();
 };
 

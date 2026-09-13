@@ -49,7 +49,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_aabb(const AABB& p_aabb);
 	virtual AABB get_aabb() const override;
 	bool is_on_screen() const;
 

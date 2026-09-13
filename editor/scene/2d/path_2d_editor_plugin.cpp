@@ -39,14 +39,6 @@
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-void Path2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		hide();
-	}
-}
-
 void Path2DEditor::_node_visibility_changed()
 {
 	if (!node) {
@@ -175,13 +167,6 @@ Path2DEditor::~Path2DEditor()
 	RS::get_singleton()->free_rid(debug_handle_sharp_multimesh_rid);
 	RS::get_singleton()->free_rid(debug_handle_smooth_multimesh_rid);
 	RS::get_singleton()->free_rid(debug_handle_mesh_rid);
-}
-
-Path2DEditorPlugin::Path2DEditorPlugin()
-{
-	path2d_editor = memnew(Path2DEditor);
-	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(path2d_editor);
-	path2d_editor->hide();
 }
 
 

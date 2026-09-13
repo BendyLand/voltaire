@@ -86,15 +86,6 @@ void IKModifier3D::_process_modification(double p_delta)
 	_process_ik(skeleton, p_delta);
 }
 
-#ifdef TOOLS_ENABLED
-
-void IKModifier3D::_redraw_gizmo()
-{
-	update_gizmos();
-	gizmo_dirty = false;
-}
-#endif // TOOLS_ENABLED
-
 void IKModifier3D::set_mutable_bone_axes(bool p_enabled)
 {
 	mutable_bone_axes = p_enabled;

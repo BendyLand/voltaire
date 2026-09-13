@@ -36,14 +36,6 @@
 #include "scene/gui/menu_button.h"
 #include "skeleton_2d_editor_plugin.h"
 
-void Skeleton2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
 void Skeleton2DEditor::edit(Skeleton2D* p_sprite) { node = p_sprite; }
 
 

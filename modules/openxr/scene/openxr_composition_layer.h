@@ -150,7 +150,7 @@ protected:
 	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
 	bool is_viewport_in_use(SubViewport* p_viewport);
 
-	OpenXRCompositionLayer();
+	OpenXRCompositionLayer() = default;
 
 public:
 	void set_layer_viewport(SubViewport* p_viewport);

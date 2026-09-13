@@ -86,12 +86,6 @@ void QuickSettingsDialog::_notification(int p_what)
 	}
 }
 
-Control* SettingLabel::make_custom_tooltip(const String& p_text) const
-{
-	return EditorHelpBitTooltip::make_tooltip(const_cast<SettingLabel*>(this),
-		vformat("property|EditorSettings|%s", setting_name), String());
-}
-
 SettingLabel::SettingLabel(const String& p_text, const String& p_setting) : Label(p_text)
 {
 	setting_name = p_setting;

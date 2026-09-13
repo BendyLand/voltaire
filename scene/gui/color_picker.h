@@ -395,8 +395,6 @@ private:
 	void _save_palette(bool p_is_save_as);
 	void _load_palette();
 
-	void _show_hide_preset(
-		const bool& p_is_btn_pressed, Button* p_btn_preset, Container* p_preset_container);
 	void _update_drop_down_arrow(const bool& p_is_btn_pressed, Button* p_btn_preset);
 
 	void _set_mode_popup_value(ColorModeType p_mode);

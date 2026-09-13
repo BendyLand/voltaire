@@ -132,32 +132,6 @@ String VersionControlEditorPlugin::_get_date_string_from(
 
 void VersionControlEditorPlugin::_set_commit_list_size(int p_index) { _refresh_commit_list(); }
 
-void VersionControlEditorPlugin::_commit()
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	String msg = commit_message->get_text().strip_edges();
-
-	ERR_FAIL_COND_MSG(msg.is_empty(), "No commit message was provided.");
-
-	EditorVCSInterface::get_singleton()->commit(msg, toggle_amend_commit->is_pressed());
-
-	if (version_control_dock->get_current_layout() == EditorDock::DOCK_LAYOUT_HORIZONTAL) {
-		version_control_dock->hide();
-	}
-
-	commit_message->release_focus();
-	commit_button->release_focus();
-	toggle_amend_commit->set_pressed_no_signal(false);
-	commit_message->set_text("");
-	previous_commit_message = "";
-
-	_refresh_stage_area();
-	_refresh_commit_list();
-	_refresh_branch_list();
-	_clear_diff();
-}
-
 void VersionControlEditorPlugin::_toggle_amend_commit(bool p_toggled)
 {
 	if (p_toggled) {

@@ -68,7 +68,6 @@ public:
 	void set_shape(const Ref<Shape3D>& p_shape);
 	Ref<Shape3D> get_shape() const;
 
-	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
 	void set_debug_color(const Color& p_color);

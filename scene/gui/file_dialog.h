@@ -32,6 +32,7 @@
 
 #include "scene/gui/dialogs.h"
 #include "scene/property_list_helper.h"
+#include "core/io/dir_access.h"
 
 class DirAccess;
 class FlowContainer;
@@ -496,7 +497,7 @@ public:
 
 	void deselect_all();
 
-	FileDialog();
+	FileDialog() = default;
 	~FileDialog();
 };
 

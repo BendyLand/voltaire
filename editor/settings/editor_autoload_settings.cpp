@@ -70,15 +70,6 @@ void EditorAutoloadSettings::_notification(int p_what)
 	}
 }
 
-void EditorAutoloadSettings::_validate_autoload_name()
-{
-	String error;
-	bool is_valid = _autoload_name_is_valid(name_edit->get_text(), &error);
-	if (!is_valid) {
-		name_validator->set_message(0, error, EditorValidationPanel::MSG_ERROR);
-	}
-}
-
 void EditorAutoloadSettings::_autoload_selected()
 {
 	TreeItem* ti = tree->get_selected();

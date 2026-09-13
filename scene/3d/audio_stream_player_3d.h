@@ -154,7 +154,6 @@ public:
 	void set_volume_linear(float p_volume);
 	float get_volume_linear() const;
 
-	void set_unit_size(float p_volume);
 	float get_unit_size() const;
 
 	void set_max_db(float p_boost);
@@ -178,16 +177,13 @@ public:
 	void set_autoplay(bool p_enable);
 	bool is_autoplay_enabled() const;
 
-	void set_max_distance(float p_metres);
 	float get_max_distance() const;
 
 	void set_area_mask(uint32_t p_mask);
 	uint32_t get_area_mask() const;
 
-	void set_emission_angle_enabled(bool p_enable);
 	bool is_emission_angle_enabled() const;
 
-	void set_emission_angle(float p_angle);
 	float get_emission_angle() const;
 
 	void set_emission_angle_filter_attenuation_db(float p_angle_attenuation_db);
@@ -199,7 +195,6 @@ public:
 	void set_attenuation_filter_db(float p_db);
 	float get_attenuation_filter_db() const;
 
-	void set_attenuation_model(AttenuationModel p_model);
 	AttenuationModel get_attenuation_model() const;
 
 	void set_doppler_tracking(DopplerTracking p_tracking);

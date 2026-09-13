@@ -93,20 +93,14 @@ private:
 	void _sync_shader_parameters(
 		const Ref<ShaderMaterial>& p_source, Ref<ShaderMaterial>& p_target);
 	void _reset_shader_parameters(Ref<ShaderMaterial>& p_target);
-	void _show_error(const String& p_error);
 	void _goto_pressed();
 	void _delete_pressed();
-	void _on_hover_enter();
-	void _on_hover_exit();
 	Ref<ShaderMaterial> _get_source_material() const;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void set_shader_code(const String& p_code, int p_line, bool p_in_comment);
-	void show_shader_compile_error();
-	void recompile(const String& p_code);
 	void sync_shader_parameters();
 	void update_panel_color(const Color& p_color);
 	PanelContainer* get_panel_container() const;
@@ -197,7 +191,6 @@ public:
 	void set_preview_box(Control* p_box);
 	void clear_previews();
 	void redraw_preview_lines();
-	void recompile_previews();
 	void update_parameters();
 
 	ShaderTextEditor();
@@ -290,7 +283,6 @@ protected:
 	void _make_context_menu(bool p_selection, Vector2 p_position);
 	void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	void _on_shader_preview_toggled(int p_line);
-	void _update_shader_previews();
 
 	void _update_bookmark_list();
 	void _bookmark_item_pressed(int p_idx);

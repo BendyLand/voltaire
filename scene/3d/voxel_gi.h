@@ -140,10 +140,8 @@ public:
 	void set_probe_data(const Ref<VoxelGIData>& p_data);
 	Ref<VoxelGIData> get_probe_data() const;
 
-	void set_subdiv(Subdiv p_subdiv);
 	Subdiv get_subdiv() const;
 
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
 	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);

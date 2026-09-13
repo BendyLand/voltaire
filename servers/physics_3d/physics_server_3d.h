@@ -393,7 +393,7 @@ public:
 
 	virtual int get_process_info(PS3DE::ProcessInfo p_info) = 0;
 
-	PhysicsServer3D();
+	PhysicsServer3D() = default;
 	~PhysicsServer3D();
 };
 

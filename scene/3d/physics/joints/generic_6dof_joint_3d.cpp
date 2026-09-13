@@ -31,72 +31,16 @@
 #include <cfloat> // FLT_MAX
 #include "generic_6dof_joint_3d.h"
 
-
-void Generic6DOFJoint3D::set_param_x(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	params_x[p_param] = p_value;
-	if (p_param == PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT) {
-		has_angular_target_rotation = false;
-	}
-	if (!setting_default_params) {
-		_set_drive_limit_explicit(Vector3::AXIS_X, p_param);
-		_warn_if_deprecated_param(p_param);
-	}
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
-			get_rid(), Vector3::AXIS_X, PS3DE::G6DOFJointAxisParam(p_param), p_value);
-	}
-
-	update_gizmos();
-}
-
 real_t Generic6DOFJoint3D::get_param_x(Param p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
 	return params_x[p_param];
 }
 
-void Generic6DOFJoint3D::set_param_y(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	params_y[p_param] = p_value;
-	if (p_param == PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT) {
-		has_angular_target_rotation = false;
-	}
-	if (!setting_default_params) {
-		_set_drive_limit_explicit(Vector3::AXIS_Y, p_param);
-		_warn_if_deprecated_param(p_param);
-	}
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
-			get_rid(), Vector3::AXIS_Y, PS3DE::G6DOFJointAxisParam(p_param), p_value);
-	}
-	update_gizmos();
-}
-
 real_t Generic6DOFJoint3D::get_param_y(Param p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
 	return params_y[p_param];
-}
-
-void Generic6DOFJoint3D::set_param_z(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	params_z[p_param] = p_value;
-	if (p_param == PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT) {
-		has_angular_target_rotation = false;
-	}
-	if (!setting_default_params) {
-		_set_drive_limit_explicit(Vector3::AXIS_Z, p_param);
-		_warn_if_deprecated_param(p_param);
-	}
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
-			get_rid(), Vector3::AXIS_Z, PS3DE::G6DOFJointAxisParam(p_param), p_value);
-	}
-	update_gizmos();
 }
 
 void Generic6DOFJoint3D::_warn_if_deprecated_param(Param p_param)
@@ -140,49 +84,16 @@ real_t Generic6DOFJoint3D::get_param_z(Param p_param) const
 	return params_z[p_param];
 }
 
-void Generic6DOFJoint3D::set_flag_x(Flag p_flag, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_flag, FLAG_MAX);
-	flags_x[p_flag] = p_enabled;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
-			get_rid(), Vector3::AXIS_X, PS3DE::G6DOFJointAxisFlag(p_flag), p_enabled);
-	}
-	update_gizmos();
-}
-
 bool Generic6DOFJoint3D::get_flag_x(Flag p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
 	return flags_x[p_flag];
 }
 
-void Generic6DOFJoint3D::set_flag_y(Flag p_flag, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_flag, FLAG_MAX);
-	flags_y[p_flag] = p_enabled;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
-			get_rid(), Vector3::AXIS_Y, PS3DE::G6DOFJointAxisFlag(p_flag), p_enabled);
-	}
-	update_gizmos();
-}
-
 bool Generic6DOFJoint3D::get_flag_y(Flag p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
 	return flags_y[p_flag];
-}
-
-void Generic6DOFJoint3D::set_flag_z(Flag p_flag, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_flag, FLAG_MAX);
-	flags_z[p_flag] = p_enabled;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
-			get_rid(), Vector3::AXIS_Z, PS3DE::G6DOFJointAxisFlag(p_flag), p_enabled);
-	}
-	update_gizmos();
 }
 
 bool Generic6DOFJoint3D::get_flag_z(Flag p_flag) const
@@ -306,107 +217,6 @@ void Generic6DOFJoint3D::_configure_joint(RID p_joint, PhysicsBody3D* body_a, Ph
 		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_angular_target_rotation(
 			p_joint, angular_target_rotation);
 	}
-}
-
-Generic6DOFJoint3D::Generic6DOFJoint3D()
-{
-	set_param_x(PARAM_LINEAR_LOWER_LIMIT, 0);
-	set_param_x(PARAM_LINEAR_UPPER_LIMIT, 0);
-	set_param_x(PARAM_LINEAR_LIMIT_SOFTNESS, 0.7);
-	set_param_x(PARAM_LINEAR_RESTITUTION, 0.5);
-	set_param_x(PARAM_LINEAR_DAMPING, 1.0);
-	set_param_x(PARAM_LINEAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_x(PARAM_LINEAR_MOTOR_FORCE_LIMIT, 0);
-	set_param_x(PARAM_LINEAR_SPRING_STIFFNESS, 0.01);
-	set_param_x(PARAM_LINEAR_SPRING_DAMPING, 0.01);
-	set_param_x(PARAM_LINEAR_SPRING_EQUILIBRIUM_POINT, 0.0);
-	set_param_x(PARAM_LINEAR_DRIVE_FORCE_LIMIT, FLT_MAX);
-	set_param_x(PARAM_ANGULAR_LOWER_LIMIT, 0);
-	set_param_x(PARAM_ANGULAR_UPPER_LIMIT, 0);
-	set_param_x(PARAM_ANGULAR_LIMIT_SOFTNESS, 0.5f);
-	set_param_x(PARAM_ANGULAR_DAMPING, 1.0f);
-	set_param_x(PARAM_ANGULAR_RESTITUTION, 0);
-	set_param_x(PARAM_ANGULAR_FORCE_LIMIT, 0);
-	set_param_x(PARAM_ANGULAR_ERP, 0.5);
-	set_param_x(PARAM_ANGULAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_x(PARAM_ANGULAR_MOTOR_FORCE_LIMIT, 300);
-	set_param_x(PARAM_ANGULAR_SPRING_STIFFNESS, 0);
-	set_param_x(PARAM_ANGULAR_SPRING_DAMPING, 0);
-	set_param_x(PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT, 0);
-	set_param_x(PARAM_ANGULAR_DRIVE_TORQUE_LIMIT, FLT_MAX);
-
-	set_flag_x(FLAG_ENABLE_ANGULAR_LIMIT, true);
-	set_flag_x(FLAG_ENABLE_LINEAR_LIMIT, true);
-	set_flag_x(FLAG_ENABLE_ANGULAR_SPRING, false);
-	set_flag_x(FLAG_ENABLE_LINEAR_SPRING, false);
-	set_flag_x(FLAG_ENABLE_ANGULAR_MOTOR, false);
-	set_flag_x(FLAG_ENABLE_LINEAR_MOTOR, false);
-
-	set_param_y(PARAM_LINEAR_LOWER_LIMIT, 0);
-	set_param_y(PARAM_LINEAR_UPPER_LIMIT, 0);
-	set_param_y(PARAM_LINEAR_LIMIT_SOFTNESS, 0.7);
-	set_param_y(PARAM_LINEAR_RESTITUTION, 0.5);
-	set_param_y(PARAM_LINEAR_DAMPING, 1.0);
-	set_param_y(PARAM_LINEAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_y(PARAM_LINEAR_MOTOR_FORCE_LIMIT, 0);
-	set_param_y(PARAM_LINEAR_SPRING_STIFFNESS, 0.01);
-	set_param_y(PARAM_LINEAR_SPRING_DAMPING, 0.01);
-	set_param_y(PARAM_LINEAR_SPRING_EQUILIBRIUM_POINT, 0.0);
-	set_param_y(PARAM_LINEAR_DRIVE_FORCE_LIMIT, FLT_MAX);
-	set_param_y(PARAM_ANGULAR_LOWER_LIMIT, 0);
-	set_param_y(PARAM_ANGULAR_UPPER_LIMIT, 0);
-	set_param_y(PARAM_ANGULAR_LIMIT_SOFTNESS, 0.5f);
-	set_param_y(PARAM_ANGULAR_DAMPING, 1.0f);
-	set_param_y(PARAM_ANGULAR_RESTITUTION, 0);
-	set_param_y(PARAM_ANGULAR_FORCE_LIMIT, 0);
-	set_param_y(PARAM_ANGULAR_ERP, 0.5);
-	set_param_y(PARAM_ANGULAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_y(PARAM_ANGULAR_MOTOR_FORCE_LIMIT, 300);
-	set_param_y(PARAM_ANGULAR_SPRING_STIFFNESS, 0);
-	set_param_y(PARAM_ANGULAR_SPRING_DAMPING, 0);
-	set_param_y(PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT, 0);
-	set_param_y(PARAM_ANGULAR_DRIVE_TORQUE_LIMIT, FLT_MAX);
-
-	set_flag_y(FLAG_ENABLE_ANGULAR_LIMIT, true);
-	set_flag_y(FLAG_ENABLE_LINEAR_LIMIT, true);
-	set_flag_y(FLAG_ENABLE_ANGULAR_SPRING, false);
-	set_flag_y(FLAG_ENABLE_LINEAR_SPRING, false);
-	set_flag_y(FLAG_ENABLE_ANGULAR_MOTOR, false);
-	set_flag_y(FLAG_ENABLE_LINEAR_MOTOR, false);
-
-	set_param_z(PARAM_LINEAR_LOWER_LIMIT, 0);
-	set_param_z(PARAM_LINEAR_UPPER_LIMIT, 0);
-	set_param_z(PARAM_LINEAR_LIMIT_SOFTNESS, 0.7);
-	set_param_z(PARAM_LINEAR_RESTITUTION, 0.5);
-	set_param_z(PARAM_LINEAR_DAMPING, 1.0);
-	set_param_z(PARAM_LINEAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_z(PARAM_LINEAR_MOTOR_FORCE_LIMIT, 0);
-	set_param_z(PARAM_LINEAR_SPRING_STIFFNESS, 0.01);
-	set_param_z(PARAM_LINEAR_SPRING_DAMPING, 0.01);
-	set_param_z(PARAM_LINEAR_SPRING_EQUILIBRIUM_POINT, 0.0);
-	set_param_z(PARAM_LINEAR_DRIVE_FORCE_LIMIT, FLT_MAX);
-	set_param_z(PARAM_ANGULAR_LOWER_LIMIT, 0);
-	set_param_z(PARAM_ANGULAR_UPPER_LIMIT, 0);
-	set_param_z(PARAM_ANGULAR_LIMIT_SOFTNESS, 0.5f);
-	set_param_z(PARAM_ANGULAR_DAMPING, 1.0f);
-	set_param_z(PARAM_ANGULAR_RESTITUTION, 0);
-	set_param_z(PARAM_ANGULAR_FORCE_LIMIT, 0);
-	set_param_z(PARAM_ANGULAR_ERP, 0.5);
-	set_param_z(PARAM_ANGULAR_MOTOR_TARGET_VELOCITY, 0);
-	set_param_z(PARAM_ANGULAR_MOTOR_FORCE_LIMIT, 300);
-	set_param_z(PARAM_ANGULAR_SPRING_STIFFNESS, 0);
-	set_param_z(PARAM_ANGULAR_SPRING_DAMPING, 0);
-	set_param_z(PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT, 0);
-	set_param_z(PARAM_ANGULAR_DRIVE_TORQUE_LIMIT, FLT_MAX);
-
-	set_flag_z(FLAG_ENABLE_ANGULAR_LIMIT, true);
-	set_flag_z(FLAG_ENABLE_LINEAR_LIMIT, true);
-	set_flag_z(FLAG_ENABLE_ANGULAR_SPRING, false);
-	set_flag_z(FLAG_ENABLE_LINEAR_SPRING, false);
-	set_flag_z(FLAG_ENABLE_ANGULAR_MOTOR, false);
-	set_flag_z(FLAG_ENABLE_LINEAR_MOTOR, false);
-
-	setting_default_params = false;
 }
 
 

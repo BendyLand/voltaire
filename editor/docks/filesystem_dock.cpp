@@ -1911,8 +1911,6 @@ void FileSystemDock::_split_dragged(int p_offset)
 	}
 }
 
-void FileSystemDock::fix_dependencies(const String& p_for_file) { deps_editor->edit(p_for_file); }
-
 void FileSystemDock::update_all()
 {
 	if (tree->is_visible()) {

@@ -166,43 +166,7 @@ void TileMapEditorPlugin::forward_canvas_draw_over_viewport(Control* p_overlay)
 
 bool TileMapEditorPlugin::is_editor_visible() const { return editor->is_visible_in_tree(); }
 
-TileMapEditorPlugin::TileMapEditorPlugin()
-{
-	if (!TilesEditorUtils::get_singleton()) {
-		memnew(TilesEditorUtils);
-	}
-	tile_map_plugin_singleton = this;
-
-	editor = memnew(TileMapLayerEditor);
-	editor->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
-	editor->hide();
-
-	EditorDockManager::get_singleton()->add_dock(editor);
-	editor->close();
-}
-
 TileMapEditorPlugin::~TileMapEditorPlugin() { tile_map_plugin_singleton = nullptr; }
-
-void TileSetEditorPlugin::open_editor() { editor->open(); }
-
-TileSetEditorPlugin::TileSetEditorPlugin()
-{
-	if (!TilesEditorUtils::get_singleton()) {
-		memnew(TilesEditorUtils);
-	}
-	tile_set_plugin_singleton = this;
-
-	editor = memnew(TileSetEditor);
-	editor->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
-	editor->hide();
-
-	EditorDockManager::get_singleton()->add_dock(editor);
-	editor->close();
-}
 
 TileSetEditorPlugin::~TileSetEditorPlugin() { tile_set_plugin_singleton = nullptr; }
 

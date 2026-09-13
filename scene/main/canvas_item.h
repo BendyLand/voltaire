@@ -88,7 +88,7 @@ public:
 	};
 
 private:
-	mutable SelfList<Node> xform_change;
+	mutable SelfList<Node> xform_change = { this };
 
 	RID canvas_item;
 	StringName canvas_group;
@@ -539,7 +539,7 @@ public:
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	CanvasItem();
+	CanvasItem() = default;
 	~CanvasItem();
 };
 

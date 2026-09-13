@@ -940,11 +940,6 @@ Vector3 SpringBoneSimulator3D::get_bone_vector(int p_index, int p_joint) const
 	return joints[p_joint]->verlet->forward_vector * joints[p_joint]->verlet->length;
 }
 
-void SpringBoneSimulator3D::_redraw_gizmo()
-{
-	update_gizmos();
-	gizmo_dirty = false;
-}
 #endif
 
 void SpringBoneSimulator3D::_set_active(bool p_active)

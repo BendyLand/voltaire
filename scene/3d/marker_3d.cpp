@@ -30,17 +30,7 @@
 
 #include "marker_3d.h"
 
-void Marker3D::set_gizmo_extents(real_t p_extents)
-{
-	if (Math::is_equal_approx(gizmo_extents, p_extents)) {
-		return;
-	}
-	gizmo_extents = p_extents;
-	update_gizmos();
-}
-
 real_t Marker3D::get_gizmo_extents() const { return gizmo_extents; }
-
 
 Marker3D::Marker3D() {}
 

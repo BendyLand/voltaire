@@ -30,70 +30,16 @@
 
 #include "hinge_joint_3d.h"
 
-
-void HingeJoint3D::set_param(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	params[p_param] = p_value;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->hinge_joint_set_param(
-			get_rid(), PS3DE::HingeJointParam(p_param), p_value);
-	}
-
-	update_gizmos();
-}
-
 real_t HingeJoint3D::get_param(Param p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
 	return params[p_param];
 }
 
-void HingeJoint3D::set_flag(Flag p_flag, bool p_value)
-{
-	ERR_FAIL_INDEX(p_flag, FLAG_MAX);
-	flags[p_flag] = p_value;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->hinge_joint_set_flag(
-			get_rid(), PS3DE::HingeJointFlag(p_flag), p_value);
-	}
-
-	update_gizmos();
-}
-
 bool HingeJoint3D::get_flag(Flag p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
 	return flags[p_flag];
-}
-
-void HingeJoint3D::_configure_joint(RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b)
-{
-	Transform3D gt = get_global_transform();
-	Transform3D ainv = body_a->get_global_transform().affine_inverse();
-
-	Transform3D local_a = ainv * gt;
-	local_a.orthonormalize();
-	Transform3D local_b = gt;
-
-	if (body_b) {
-		Transform3D binv = body_b->get_global_transform().affine_inverse();
-		local_b = binv * gt;
-	}
-
-	local_b.orthonormalize();
-
-	PhysicsServer3D::get_singleton()->joint_make_hinge(
-		p_joint, body_a->get_rid(), local_a, body_b ? body_b->get_rid() : RID(), local_b);
-	for (int i = 0; i < PARAM_MAX; i++) {
-		PhysicsServer3D::get_singleton()->hinge_joint_set_param(
-			p_joint, PS3DE::HingeJointParam(i), params[i]);
-	}
-	for (int i = 0; i < FLAG_MAX; i++) {
-		set_flag(Flag(i), flags[i]);
-		PhysicsServer3D::get_singleton()->hinge_joint_set_flag(
-			p_joint, PS3DE::HingeJointFlag(i), flags[i]);
-	}
 }
 
 HingeJoint3D::HingeJoint3D()

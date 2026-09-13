@@ -113,10 +113,7 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _focus_current_search_box();
 	void _focus_current_path_box();
 
-	void _editor_restart_request();
 	void _editor_restart();
-	void _editor_restart_close();
-
 	void _add_feature_overrides();
 
 	void _action_added(const String& p_name);
@@ -134,10 +131,8 @@ public:
 	static ProjectSettingsEditor* get_singleton() { return singleton; }
 
 	void popup_project_settings(bool p_clear_filter = false);
-	void popup_for_override(const String& p_override);
 
 	void set_plugins_page();
-	void set_general_page(const String& p_category);
 	void update_plugins();
 	void init_autoloads();
 

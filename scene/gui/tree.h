@@ -593,7 +593,6 @@ private:
 	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
 	void value_editor_changed(double p_value);
 	void _update_popup_menu(const TreeItem::Cell& p_cell);
-	void _update_value_editor(const TreeItem::Cell& p_cell);
 
 	void popup_select(int p_option);
 
@@ -738,7 +737,6 @@ private:
 	bool v_scroll_enabled = true;
 
 	Size2 get_internal_min_size() const;
-	void update_scrollbars();
 
 	Rect2 search_item_rect(TreeItem* p_from, TreeItem* p_item);
 	uint64_t last_keypress = 0;
@@ -913,7 +911,6 @@ public:
 	TreeItem* get_item_with_text(const String& p_find) const;
 
 	Point2 get_scroll() const;
-	void scroll_to_item(TreeItem* p_item, bool p_center_on_item = false);
 	void set_h_scroll_enabled(bool p_enable);
 	bool is_h_scroll_enabled() const;
 	void set_v_scroll_enabled(bool p_enable);
@@ -958,7 +955,7 @@ public:
 
 	Size2 get_minimum_size() const override;
 
-	Tree();
+	Tree() = default;
 	~Tree();
 };
 

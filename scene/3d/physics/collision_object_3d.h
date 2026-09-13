@@ -100,6 +100,7 @@ private:
 
 protected:
 	CollisionObject3D(RID p_rid, bool p_area);
+	CollisionObject3D(PS3DE::BodyMode p_body_mode) : body_mode(p_body_mode) {}
 
 	_FORCE_INLINE_ void lock_callback() { callback_lock++; }
 
@@ -145,7 +146,6 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	void remove_shape_owner(uint32_t owner);
 	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 
@@ -155,13 +155,11 @@ public:
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
 
-	void shape_owner_add_shape(uint32_t p_owner, Shape3D* rp_shape);
 	int shape_owner_get_shape_count(uint32_t p_owner) const;
 	Ref<Shape3D> shape_owner_get_shape(uint32_t p_owner, int p_shape) const;
 	int shape_owner_get_shape_index(uint32_t p_owner, int p_shape) const;
 
 	void shape_owner_remove_shape(uint32_t p_owner, int p_shape);
-	void shape_owner_clear_shapes(uint32_t p_owner);
 
 	uint32_t shape_find_owner(int p_shape_index) const;
 
@@ -175,7 +173,7 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	CollisionObject3D();
+	CollisionObject3D() = default;
 	~CollisionObject3D();
 };
 

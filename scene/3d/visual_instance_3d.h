@@ -80,7 +80,7 @@ public:
 	void set_sorting_use_aabb_center(bool p_enabled);
 	bool is_sorting_use_aabb_center() const;
 
-	VisualInstance3D();
+	VisualInstance3D() = default;
 	~VisualInstance3D();
 };
 
@@ -185,7 +185,6 @@ public:
 	void set_lightmap_texel_scale(float p_scale);
 	float get_lightmap_texel_scale() const;
 
-	void set_custom_aabb(AABB p_aabb);
 	AABB get_custom_aabb() const;
 
 	void set_ignore_occlusion_culling(bool p_enabled);
@@ -194,7 +193,7 @@ public:
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const;
 
 	PackedStringArray get_configuration_warnings() const override;
-	GeometryInstance3D();
+	GeometryInstance3D() = default;
 	virtual ~GeometryInstance3D();
 };
 

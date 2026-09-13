@@ -57,22 +57,6 @@ void TileSetAtlasSourceEditor::_inspector_property_selected(const String& p_prop
 	_update_current_tile_data_editor();
 }
 
-void TileSetAtlasSourceEditor::_update_tile_id_label()
-{
-	if (selection.size() == 1) {
-		TileSelection selected = selection.front()->get();
-		tool_tile_id_label->set_text(
-			vformat("%d, %s, %d", tile_set_atlas_source_id, selected.tile, selected.alternative));
-		tool_tile_id_label->set_tooltip_text(
-			vformat(TTR("Selected tile:\nSource: %d\nAtlas coordinates: %s\nAlternative: %d"),
-				tile_set_atlas_source_id, selected.tile, selected.alternative));
-		tool_tile_id_label->show();
-	}
-	else {
-		tool_tile_id_label->hide();
-	}
-}
-
 void TileSetAtlasSourceEditor::_update_fix_selected_and_hovered_tiles()
 {
 	// Fix selected.
@@ -153,36 +137,6 @@ void TileSetAtlasSourceEditor::_tile_data_editor_dropdown_button_pressed()
 		Size2(0, size.height * get_global_transform().get_scale().y));
 	tile_data_editors_popup->set_size(Size2(size.width, 0));
 	tile_data_editors_popup->popup();
-}
-
-void TileSetAtlasSourceEditor::_update_toolbar()
-{
-	// Show the tools and settings.
-	Control* current_tile_data_editor_toolbar = nullptr;
-	if (current_tile_data_editor) {
-		current_tile_data_editor_toolbar = current_tile_data_editor->get_toolbar();
-	}
-	if (tools_button_group->get_pressed_button() == tool_setup_atlas_source_button) {
-		if (current_tile_data_editor_toolbar) {
-			current_tile_data_editor_toolbar->hide();
-		}
-		tools_settings_erase_button->show();
-		tool_advanced_menu_button->show();
-	}
-	else if (tools_button_group->get_pressed_button() == tool_select_button) {
-		if (current_tile_data_editor_toolbar) {
-			current_tile_data_editor_toolbar->hide();
-		}
-		tools_settings_erase_button->hide();
-		tool_advanced_menu_button->hide();
-	}
-	else if (tools_button_group->get_pressed_button() == tool_paint_button) {
-		if (current_tile_data_editor_toolbar) {
-			current_tile_data_editor_toolbar->show();
-		}
-		tools_settings_erase_button->hide();
-		tool_advanced_menu_button->hide();
-	}
 }
 
 void TileSetAtlasSourceEditor::_tile_atlas_control_draw()

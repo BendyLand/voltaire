@@ -46,51 +46,7 @@
 
 bool ScenePaint2DEditor::_is_node_valid() { return node && node->is_inside_tree(); }
 
-void ScenePaint2DEditor::_clear_instance(bool p_hide)
-{
-	if (p_hide && instance_container) {
-		instance_container->hide();
-	}
-	else if (instance) {
-		instance->queue_free();
-		instance = nullptr;
-	}
-}
-
-void ScenePaint2DEditor::_update_instance()
-{
-	if (_is_instance_valid()) {
-		_clear_instance();
-	}
-	if (!_is_instance_valid()) {
-		_add_instance();
-	}
-}
-
 bool ScenePaint2DEditor::_is_instance_valid() { return instance && instance->is_inside_tree(); }
-
-void ScenePaint2DEditor::_update_hint_label()
-{
-	if (!is_tool_selected) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			String(), String());
-	}
-	else if (!cache_node) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			TTRC("Select a Node2D to enable painting."),
-			TTRC("The node will be used as a parent for the painted scenes."));
-	}
-	else if (!selected_scene) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			TTRC("Pick a scene for painting."),
-			vformat(TTR("Use the Scene Picker from the toolbar or %s+Click a 2D scene instance."),
-				keycode_get_string(Key::CMD_OR_CTRL)));
-	}
-	else {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			String(), String());
-	}
-}
 
 Vector2 ScenePaint2DEditor::_get_mouse_grid_cell()
 {

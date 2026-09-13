@@ -69,66 +69,6 @@ int Polygon2DEditor::_get_polygon_count() const
 	}
 }
 
-void Polygon2DEditor::_select_mode(int p_mode)
-{
-	current_mode = Mode(p_mode);
-	mode_buttons[current_mode]->set_pressed(true);
-	for (int i = 0; i < ACTION_MAX; i++) {
-		action_buttons[i]->hide();
-	}
-	bone_scroll_main_vb->hide();
-	bone_paint_strength->hide();
-	bone_paint_radius->hide();
-	bone_paint_radius_label->hide();
-	switch (current_mode) {
-	case MODE_POINTS: {
-		action_buttons[ACTION_CREATE]->show();
-		action_buttons[ACTION_CREATE_INTERNAL]->show();
-		action_buttons[ACTION_REMOVE_INTERNAL]->show();
-		action_buttons[ACTION_EDIT_POINT]->show();
-		action_buttons[ACTION_MOVE]->show();
-		action_buttons[ACTION_ROTATE]->show();
-		action_buttons[ACTION_SCALE]->show();
-
-		if (node->get_polygon().is_empty()) {
-			_set_action(ACTION_CREATE);
-		}
-		else {
-			_set_action(ACTION_EDIT_POINT);
-		}
-	} break;
-	case MODE_POLYGONS: {
-		action_buttons[ACTION_ADD_POLYGON]->show();
-		action_buttons[ACTION_REMOVE_POLYGON]->show();
-		_set_action(ACTION_ADD_POLYGON);
-	} break;
-	case MODE_UV: {
-		if (node->get_uv().size() != node->get_polygon().size()) {
-			_edit_menu_option(MENU_POLYGON_TO_UV);
-		}
-		action_buttons[ACTION_EDIT_POINT]->show();
-		action_buttons[ACTION_MOVE]->show();
-		action_buttons[ACTION_ROTATE]->show();
-		action_buttons[ACTION_SCALE]->show();
-		_set_action(ACTION_EDIT_POINT);
-	} break;
-	case MODE_BONES: {
-		action_buttons[ACTION_PAINT_WEIGHT]->show();
-		action_buttons[ACTION_CLEAR_WEIGHT]->show();
-		_set_action(ACTION_PAINT_WEIGHT);
-
-		bone_scroll_main_vb->show();
-		bone_paint_strength->show();
-		bone_paint_radius->show();
-		bone_paint_radius_label->show();
-		_update_bone_list(node);
-		bone_paint_pos = Vector2(-100000, -100000); // Send brush away when switching.
-	} break;
-	default:
-		break;
-	}
-}
-
 void Polygon2DEditor::_set_action(int p_action)
 {
 	polygon_create.clear();

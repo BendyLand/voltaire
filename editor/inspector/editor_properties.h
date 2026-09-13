@@ -166,9 +166,6 @@ class EditorPropertyTextEnum : public EditorProperty
 	void _emit_changed_value(const String& p_string);
 	void _option_selected(int p_which);
 
-	void _edit_custom_value();
-	void _custom_value_submitted(const String& p_value);
-	void _custom_value_accepted();
 	void _custom_value_canceled();
 
 protected:
@@ -556,7 +553,6 @@ class EditorPropertyQuaternion : public EditorProperty
 	Vector3 edit_euler;
 
 	void _value_changed(double p_val, const String& p_name);
-	void _edit_custom_value();
 	void _custom_value_changed(double p_val);
 	void _warning_pressed();
 
@@ -568,7 +564,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const EditorPropertyRangeHint& p_range_hint, bool p_hide_editor = false);
 	EditorPropertyQuaternion();
 };
 
@@ -697,8 +692,6 @@ class EditorPropertyNodePath : public EditorProperty
 	Node* get_base_node();
 	void _update_menu();
 	void _menu_option(int p_idx);
-	void _accept_text();
-	void _text_submitted(const String& p_text);
 	const NodePath _get_node_path() const;
 
 protected:

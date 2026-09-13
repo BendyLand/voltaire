@@ -332,16 +332,6 @@ void GeometryInstance3D::set_lod_bias(float p_bias)
 
 float GeometryInstance3D::get_lod_bias() const { return lod_bias; }
 
-void GeometryInstance3D::set_custom_aabb(AABB p_aabb)
-{
-	if (p_aabb == custom_aabb) {
-		return;
-	}
-	custom_aabb = p_aabb;
-	RS::get_singleton()->instance_set_custom_aabb(get_instance(), custom_aabb);
-	update_gizmos();
-}
-
 AABB GeometryInstance3D::get_custom_aabb() const { return custom_aabb; }
 
 void GeometryInstance3D::set_lightmap_texel_scale(float p_scale) { lightmap_texel_scale = p_scale; }

@@ -228,7 +228,7 @@ private:
 class QuickOpenResultItem : public HBoxContainer
 {
 public:
-	QuickOpenResultItem();
+	QuickOpenResultItem() = default;
 
 	bool enable_highlights = true;
 

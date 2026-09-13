@@ -89,22 +89,6 @@ void GotoLinePopup::_notification(int p_what)
 	}
 }
 
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
-void FindReplaceBar::input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_action_pressed(SNAME("ui_cancel"), false, true)) {
-		Control* focus_owner = get_viewport()->gui_get_focus_owner();
-
-		if (text_editor->has_focus() || (focus_owner && is_ancestor_of(focus_owner))) {
-			_hide_bar();
-			accept_event();
-		}
-	}
-}
-
 void FindReplaceBar::_update_flags(bool p_direction_backwards)
 {
 	flags = 0;
@@ -337,96 +321,8 @@ bool FindReplaceBar::search_current()
 	return _search(flags, line, col);
 }
 
-bool FindReplaceBar::search_prev()
-{
-	if (is_selection_only() && !replace_all_mode) {
-		return false;
-	}
 
-	if (!is_visible()) {
-		popup_search(true);
-	}
 
-	String text = get_search_text();
-
-	if ((flags & TextEdit::SEARCH_BACKWARDS) == 0) {
-		needs_to_count_results = true;
-	}
-
-	_update_flags(true);
-
-	int line, col;
-	_get_search_from(line, col, SEARCH_PREV);
-
-	col -= text.length();
-	if (col < 0) {
-		line -= 1;
-		if (line < 0) {
-			line = text_editor->get_line_count() - 1;
-		}
-		col = text_editor->get_line(line).length();
-	}
-
-	return _search(flags, line, col);
-}
-
-bool FindReplaceBar::search_next()
-{
-	if (is_selection_only() && !replace_all_mode) {
-		return false;
-	}
-
-	if (!is_visible()) {
-		popup_search(true);
-	}
-
-	if (flags & TextEdit::SEARCH_BACKWARDS) {
-		needs_to_count_results = true;
-	}
-
-	_update_flags(false);
-
-	int line, col;
-	_get_search_from(line, col, SEARCH_NEXT);
-
-	return _search(flags, line, col);
-}
-
-void FindReplaceBar::_hide_bar()
-{
-	text_editor->grab_focus();
-	text_editor->set_search_text("");
-	result_line = -1;
-	result_col = -1;
-	hide();
-}
-
-void FindReplaceBar::popup_search(bool p_show_only)
-{
-	replace_text->hide();
-	hbc_button_replace->hide();
-	hbc_option_replace->hide();
-	selection_only->set_pressed(false);
-	_update_toggle_replace_button(false);
-
-	_show_search(false, p_show_only);
-}
-
-void FindReplaceBar::popup_replace()
-{
-	if (!replace_text->is_visible_in_tree()) {
-		replace_text->show();
-		hbc_button_replace->show();
-		hbc_option_replace->show();
-		_update_toggle_replace_button(true);
-	}
-
-	selection_only->set_pressed(
-		text_editor->has_selection(0) &&
-		text_editor->get_selection_from_line(0) < text_editor->get_selection_to_line(0));
-
-	_show_search(true, false);
-}
 
 void FindReplaceBar::_search_options_changed(bool p_pressed)
 {
@@ -456,43 +352,13 @@ void FindReplaceBar::_search_text_changed(const String& p_text)
 	search_current();
 }
 
-void FindReplaceBar::_search_text_submitted(const String& p_text)
-{
-	if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
-		search_prev();
-	}
-	else {
-		search_next();
-	}
-}
 
-void FindReplaceBar::_replace_text_submitted(const String& p_text)
-{
-	if (selection_only->is_pressed() && text_editor->has_selection(0)) {
-		_replace_all();
-		_hide_bar();
-	}
-	else if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
-		_replace();
-		search_prev();
-	}
-	else {
-		_replace();
-		search_next();
-	}
-}
 
-void FindReplaceBar::_replace_button_pressed()
-{
-	_replace();
-	search_next();
-}
 
-void FindReplaceBar::_toggle_replace_pressed()
-{
-	bool replace_visible = replace_text->is_visible_in_tree();
-	replace_visible ? popup_search(true) : popup_replace();
-}
+
+
+
+
 
 String FindReplaceBar::get_search_text() const { return search_text->get_text(); }
 
@@ -507,72 +373,6 @@ bool FindReplaceBar::is_selection_only() const { return selection_only->is_press
 /*** CODE EDITOR ****/
 
 static constexpr float ZOOM_FACTOR_PRESETS[8] = {0.5f, 0.75f, 0.9f, 1.0f, 1.1f, 1.25f, 1.5f, 2.0f};
-
-// This function should be used to handle shortcuts that could otherwise
-// be handled too late if they weren't handled here.
-void CodeTextEditor::input(const Ref<InputEvent>& event)
-{
-	ERR_FAIL_COND(event.is_null());
-
-	const Ref<InputEventKey> key_event = event;
-
-	if (key_event.is_null()) {
-		return;
-	}
-	if (!key_event->is_pressed()) {
-		return;
-	}
-
-	if (!text_editor->has_focus()) {
-		if ((find_replace_bar != nullptr && find_replace_bar->is_visible()) &&
-			(find_replace_bar->has_focus() ||
-				(get_viewport()->gui_get_focus_owner() &&
-					find_replace_bar->is_ancestor_of(get_viewport()->gui_get_focus_owner())))) {
-			if (ED_IS_SHORTCUT("script_text_editor/find_next", key_event)) {
-				find_replace_bar->search_next();
-				accept_event();
-				return;
-			}
-			if (ED_IS_SHORTCUT("script_text_editor/find_previous", key_event)) {
-				find_replace_bar->search_prev();
-				accept_event();
-				return;
-			}
-		}
-		return;
-	}
-
-	if (ED_IS_SHORTCUT("script_text_editor/move_up", key_event)) {
-		text_editor->move_lines_up();
-		accept_event();
-		return;
-	}
-	if (ED_IS_SHORTCUT("script_text_editor/move_down", key_event)) {
-		text_editor->move_lines_down();
-		accept_event();
-		return;
-	}
-	if (ED_IS_SHORTCUT("script_text_editor/delete_line", key_event)) {
-		text_editor->delete_lines();
-		accept_event();
-		return;
-	}
-	if (ED_IS_SHORTCUT("script_text_editor/join_lines", key_event)) {
-		text_editor->join_lines();
-		accept_event();
-		return;
-	}
-	if (ED_IS_SHORTCUT("script_text_editor/duplicate_selection", key_event)) {
-		text_editor->duplicate_selection();
-		accept_event();
-		return;
-	}
-	if (ED_IS_SHORTCUT("script_text_editor/duplicate_lines", key_event)) {
-		text_editor->duplicate_lines();
-		accept_event();
-		return;
-	}
-}
 
 void CodeTextEditor::_text_editor_gui_input(const Ref<InputEvent>& p_event)
 {
@@ -1074,7 +874,5 @@ void CodeTextEditor::set_toggle_list_control(Control* p_toggle_list_control)
 {
 	toggle_files_list = p_toggle_list_control;
 }
-
-void CodeTextEditor::show_toggle_files_button() { toggle_files_button->show(); }
 
 

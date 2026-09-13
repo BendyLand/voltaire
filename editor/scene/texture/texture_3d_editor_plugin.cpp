@@ -134,50 +134,6 @@ void Texture3DEditor::_texture_rect_update_area()
 	texture_rect->set_size(Vector2(tex_width, tex_height));
 }
 
-void Texture3DEditor::_update_gui()
-{
-	if (texture.is_null()) {
-		return;
-	}
-
-	_texture_rect_update_area();
-
-	layer->set_max(texture->get_depth() - 1);
-
-	const Image::Format format = texture->get_format();
-	const String format_name = Image::get_format_name(format);
-
-	if (texture->has_mipmaps()) {
-		const int mip_count =
-			Image::get_image_required_mipmaps(texture->get_width(), texture->get_height(), format);
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, true) *
-			texture->get_depth();
-
-		info->set_text(
-			vformat(String::utf8("%d×%d×%d %s\n") + TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"),
-				texture->get_width(), texture->get_height(), texture->get_depth(), format_name,
-				mip_count, String::humanize_size(memory)));
-
-	}
-	else {
-		const int memory =
-			Image::get_image_data_size(texture->get_width(), texture->get_height(), format, false) *
-			texture->get_depth();
-
-		info->set_text(
-			vformat(String::utf8("%d×%d×%d %s\n") + TTR("No Mipmaps") + "\n" + TTR("Memory: %s"),
-				texture->get_width(), texture->get_height(), texture->get_depth(), format_name,
-				String::humanize_size(memory)));
-	}
-
-	const uint32_t components_mask = Image::get_format_component_mask(format);
-	if (Math::is_power_of_2(components_mask)) {
-		// Only one channel available, no point in showing a channel selector.
-		channel_selector->hide();
-	}
-}
-
 void Texture3DEditor::on_selected_channels_changed() { _update_material(false); }
 
 void Texture3DEditor::init_shaders()

@@ -170,10 +170,6 @@ void PhysicalBone3D::_update_joint_offset()
 	set_ignore_transform_notification(true);
 	reset_to_rest_position();
 	set_ignore_transform_notification(false);
-
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif
 }
 
 void PhysicalBone3D::_fix_joint_offset()

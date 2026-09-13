@@ -63,21 +63,11 @@ class NavigationRegion3DEditor : public Control
 	NavigationRegion3D* currently_baking_region = nullptr;
 
 	bool bake_in_process = false;
-
-	void _bake_pressed();
-	void _clear_pressed();
-
-	void _on_navmesh_multibake_confirmed();
 	void _on_navmesh_multibake_canceled();
-	void _process_regions_to_bake();
-
-protected:
-	void _node_removed(Node* p_node);
-	void _notification(int p_what);
 
 public:
 	void edit(LocalVector<NavigationRegion3D*> p_regions);
-	NavigationRegion3DEditor();
+	NavigationRegion3DEditor() = default;
 };
 
 class NavigationRegion3DEditorPlugin : public EditorPlugin
@@ -89,7 +79,7 @@ class NavigationRegion3DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "NavigationRegion3D"; }
 
-	NavigationRegion3DEditorPlugin();
+	NavigationRegion3DEditorPlugin() = default;
 };
 
 

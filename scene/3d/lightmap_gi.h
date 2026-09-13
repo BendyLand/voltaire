@@ -288,7 +288,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_light_data(const Ref<LightmapGIData>& p_data);
 	Ref<LightmapGIData> get_light_data() const;
 
 	void set_bake_quality(BakeQuality p_quality);

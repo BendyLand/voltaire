@@ -42,8 +42,6 @@ class GroupsDock : public EditorDock
 public:
 	static GroupsDock* get_singleton() { return singleton; }
 
-	void set_selection(const Vector<Node*>& p_nodes);
-
 	GroupsDock();
 	~GroupsDock();
 };

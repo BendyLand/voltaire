@@ -132,8 +132,6 @@ public:
 	void set_search_text(const String& p_text);
 	void set_replace_text(const String& p_text);
 
-	void set_replace_mode(bool p_replace);
-
 	String get_search_text() const;
 	String get_replace_text() const;
 	bool is_match_case() const;
@@ -277,8 +275,6 @@ class FindInFiles
 	void _files_modified();
 
 public:
-	void open_dialog(const String& p_initial_text, bool p_replace = false);
-
 	FindInFiles();
 };
 

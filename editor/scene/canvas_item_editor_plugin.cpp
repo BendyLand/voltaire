@@ -332,17 +332,6 @@ real_t CanvasItemEditor::snap_angle(real_t p_target, real_t p_start) const
 	}
 }
 
-void CanvasItemEditor::_keying_changed()
-{
-	AnimationTrackEditor* te = AnimationPlayerEditor::get_singleton()->get_track_editor();
-	if (te && te->is_visible_in_tree() && te->get_current_animation().is_valid()) {
-		animation_hb->show();
-	}
-	else {
-		animation_hb->hide();
-	}
-}
-
 Rect2 CanvasItemEditor::_get_encompassing_rect_from_list(const List<CanvasItem*>& p_list)
 {
 	ERR_FAIL_COND_V(p_list.is_empty(), Rect2());
@@ -941,42 +930,6 @@ void CanvasItemEditor::center_at(const Point2& p_pos)
 
 CanvasItemEditor* CanvasItemEditor::singleton = nullptr;
 
-CanvasItemEditorPlugin::CanvasItemEditorPlugin()
-{
-	canvas_item_editor = memnew(CanvasItemEditor);
-	canvas_item_editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(
-		canvas_item_editor);
-	canvas_item_editor->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	canvas_item_editor->hide();
-}
-
-void CanvasItemEditorViewport::_on_mouse_exit()
-{
-	if (!texture_node_type_selector->is_visible() && preview_node->get_parent()) {
-		_remove_preview();
-	}
-}
-
-void CanvasItemEditorViewport::_on_change_type_closed() { _remove_preview(); }
-
-void CanvasItemEditorViewport::_remove_preview()
-{
-	if (!canvas_item_editor->message.is_empty()) {
-		canvas_item_editor->message = "";
-		canvas_item_editor->update_viewport();
-	}
-	tooltip_panel->hide();
-	if (preview_node->get_parent()) {
-		for (int i = preview_node->get_child_count() - 1; i >= 0; i--) {
-			Node* node = preview_node->get_child(i);
-			node->queue_free();
-			preview_node->remove_child(node);
-		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
-	}
-}
-
 bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 	const String& p_target_scene_path, Node* p_desired_node) const
 {
@@ -993,21 +946,6 @@ bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 		}
 	}
 	return false;
-}
-
-void CanvasItemEditorViewport::set_hint_label(
-	const String& p_title, const String& p_description) const
-{
-	if (p_title.is_empty() && p_description.is_empty()) {
-		tooltip_panel->hide();
-		return;
-	}
-
-	tooltip_panel->set_text(vformat("[font_size=%s][b][color=%s]%s[/color][/b][/font_size]\n%s",
-		get_theme_default_font_size() + 2,
-		get_theme_color(SNAME("accent_color"), EditorStringName(Editor)).to_html(false), p_title,
-		p_description));
-	tooltip_panel->show();
 }
 
 CanvasItemEditorViewport::~CanvasItemEditorViewport() { memdelete(preview_node); }
