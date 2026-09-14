@@ -149,41 +149,6 @@ void EditorDebuggerNode::stop(bool p_force)
 	set_process(false);
 }
 
-void EditorDebuggerNode::_update_errors()
-{
-	int error_count = 0;
-	int warning_count = 0;
-
-	if (error_count != last_error_count || warning_count != last_warning_count) {
-		last_error_count = error_count;
-		last_warning_count = warning_count;
-
-		if (error_count == 0 && warning_count == 0) {
-			set_title("");
-			set_dock_icon(Ref<Texture2D>());
-			set_title_color(Color(0, 0, 0, 0));
-			set_force_show_icon(false);
-		}
-		else {
-			set_title(TTR("Debugger") + " (" + itos(error_count + warning_count) + ")");
-			if (error_count >= 1 && warning_count >= 1) {
-				set_dock_icon(get_editor_theme_icon(SNAME("ErrorWarning")));
-				// Use error color to represent the highest level of severity reported.
-				set_title_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-			}
-			else if (error_count >= 1) {
-				set_dock_icon(get_editor_theme_icon(SNAME("Error")));
-				set_title_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-			}
-			else {
-				set_dock_icon(get_editor_theme_icon(SNAME("Warning")));
-				set_title_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-			}
-			set_force_show_icon(true);
-		}
-	}
-}
-
 void EditorDebuggerNode::_update_margins()
 {
 	Ref<StyleBox> bottom_panel_margins =

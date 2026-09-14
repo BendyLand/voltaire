@@ -70,7 +70,6 @@ private:
 	void _update_metadata_label_text();
 
 protected:
-	void _notification(int p_what);
 	void _update_texture_display_ratio();
 	void on_selected_channels_changed();
 	void on_selected_mipmap_changed(double p_value);

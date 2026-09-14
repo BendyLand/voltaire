@@ -41,48 +41,7 @@ PackedStringArray LookAtModifier3D::get_configuration_warnings() const
 	return warnings;
 }
 
-void LookAtModifier3D::_validate_bone_names()
-{
-	// Prior bone name.
-	if (!bone_name.is_empty()) {
-		set_bone_name(bone_name);
-	}
-	else if (bone != -1) {
-		set_bone(bone);
-	}
-	if (!origin_bone_name.is_empty()) {
-		set_origin_bone_name(origin_bone_name);
-	}
-	else if (origin_bone != -1) {
-		set_origin_bone(origin_bone);
-	}
-}
-
-void LookAtModifier3D::set_bone_name(const String& p_bone_name)
-{
-	bone_name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_bone(sk->find_bone(bone_name));
-	}
-}
-
 String LookAtModifier3D::get_bone_name() const { return bone_name; }
-
-void LookAtModifier3D::set_bone(int p_bone)
-{
-	bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (bone <= -1 || bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Bone index '" + itos(p_bone) + "' is out of range!");
-			bone = -1;
-		}
-		else {
-			bone_name = sk->get_bone_name(bone);
-		}
-	}
-}
 
 int LookAtModifier3D::get_bone() const { return bone; }
 
@@ -110,35 +69,9 @@ bool LookAtModifier3D::is_relative() const { return relative; }
 
 NodePath LookAtModifier3D::get_target_node() const { return target_node; }
 
-// For origin settings.
-
 LookAtModifier3D::OriginFrom LookAtModifier3D::get_origin_from() const { return origin_from; }
 
-void LookAtModifier3D::set_origin_bone_name(const String& p_bone_name)
-{
-	origin_bone_name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_origin_bone(sk->find_bone(origin_bone_name));
-	}
-}
-
 String LookAtModifier3D::get_origin_bone_name() const { return origin_bone_name; }
-
-void LookAtModifier3D::set_origin_bone(int p_bone)
-{
-	origin_bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (origin_bone <= -1 || origin_bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Origin bone index '" + itos(p_bone) + "' is out of range!");
-			origin_bone = -1;
-		}
-		else {
-			origin_bone_name = sk->get_bone_name(origin_bone);
-		}
-	}
-}
 
 int LookAtModifier3D::get_origin_bone() const { return origin_bone; }
 
@@ -151,8 +84,6 @@ Vector3 LookAtModifier3D::get_origin_offset() const { return origin_offset; }
 void LookAtModifier3D::set_origin_safe_margin(float p_margin) { origin_safe_margin = p_margin; }
 
 float LookAtModifier3D::get_origin_safe_margin() const { return origin_safe_margin; }
-
-// For time-based interpolation.
 
 void LookAtModifier3D::set_duration(float p_duration)
 {
@@ -178,8 +109,6 @@ Tween::TransitionType LookAtModifier3D::get_transition_type() const { return tra
 void LookAtModifier3D::set_ease_type(Tween::EaseType p_ease_type) { ease_type = p_ease_type; }
 
 Tween::EaseType LookAtModifier3D::get_ease_type() const { return ease_type; }
-
-// For angle limitation.
 
 bool LookAtModifier3D::is_using_angle_limitation() const { return use_angle_limitation; }
 

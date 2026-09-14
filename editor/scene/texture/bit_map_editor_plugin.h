@@ -49,9 +49,6 @@ private:
 
 	void _draw_outline();
 
-protected:
-	void _notification(int p_what);
-
 public:
 	void setup(const Ref<BitMap>& p_bitmap);
 

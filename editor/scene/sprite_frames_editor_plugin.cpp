@@ -573,24 +573,6 @@ String SpriteFramesEditor::_generate_unique_animation_name(const String& p_base_
 	return new_name;
 }
 
-void SpriteFramesEditor::_menu_selected(int p_id)
-{
-	switch (p_id) {
-	case MENU_SHOW_IN_FILESYSTEM: {
-		Ref<Texture2D> frame_texture = frames->get_frame_texture(edited_anim, right_clicked_frame);
-		ERR_FAIL_COND(frame_texture.is_null());
-		String path = frame_texture->get_path();
-		// Check if the file is an atlas resource, if it is find the source texture.
-		Ref<AtlasTexture> at = frame_texture;
-		while (at.is_valid() && at->get_atlas().is_valid()) {
-			path = at->get_atlas()->get_path();
-			at = at->get_atlas();
-		}
-		FileSystemDock::get_singleton()->navigate_to_path(path);
-	} break;
-	}
-}
-
 void SpriteFramesEditor::_frame_list_item_selected(int p_index, bool p_selected)
 {
 	if (updating) {

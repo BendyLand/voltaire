@@ -31,54 +31,8 @@
 #include "core/config/engine.h"
 #include "modifier_bone_target_3d.h"
 
-void ModifierBoneTarget3D::_validate_bone_names()
-{
-	// Prior bone name.
-	if (!bone_name.is_empty()) {
-		set_bone_name(bone_name);
-	}
-	else if (bone != -1) {
-		set_bone(bone);
-	}
-}
-
-void ModifierBoneTarget3D::set_bone_name(const String& p_bone_name)
-{
-	bone_name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_bone(sk->find_bone(bone_name));
-	}
-}
-
 String ModifierBoneTarget3D::get_bone_name() const { return bone_name; }
 
-void ModifierBoneTarget3D::set_bone(int p_bone)
-{
-	bone = p_bone;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		if (bone <= -1 || bone >= sk->get_bone_count()) {
-			WARN_PRINT_ED("Bone index '" + itos(p_bone) + "' is out of range!");
-			bone = -1;
-		}
-		else {
-			bone_name = sk->get_bone_name(bone);
-		}
-	}
-}
-
 int ModifierBoneTarget3D::get_bone() const { return bone; }
-
-
-void ModifierBoneTarget3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton || bone < 0 || bone >= skeleton->get_bone_count()) {
-		return;
-	}
-
-	set_transform(skeleton->get_bone_global_pose(bone));
-}
 
 

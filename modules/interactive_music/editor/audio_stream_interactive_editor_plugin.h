@@ -65,7 +65,6 @@ class AudioStreamInteractiveTransitionEditor : public AcceptDialog
 	Vector<Vector2i> selected;
 	bool updating = false;
 	void _cell_selected(TreeItem* p_item, int p_column, bool p_selected);
-	void _update_transitions();
 
 	void _update_selection();
 	void _edited();

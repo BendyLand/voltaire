@@ -38,15 +38,12 @@ class SkeletonIK3D;
 class SkeletonIK3DEditorPlugin : public EditorPlugin
 {
 	SkeletonIK3D* skeleton_ik = nullptr;
-
 	Button* play_btn = nullptr;
-
-	void _play();
 
 public:
 	virtual String get_plugin_name() const override { return "SkeletonIK3D"; }
 
-	SkeletonIK3DEditorPlugin();
+	SkeletonIK3DEditorPlugin() = default;
 };
 
 

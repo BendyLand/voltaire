@@ -52,40 +52,6 @@ void IKModifier3D::_notification(int p_what)
 	}
 }
 
-void IKModifier3D::_set_active(bool p_active)
-{
-	if (p_active) {
-		reset();
-	}
-}
-
-void IKModifier3D::_rest_updated()
-{
-	_make_all_joints_dirty();
-	if (is_inside_tree()) {
-		Skeleton3D* skeleton = get_skeleton();
-		if (skeleton) {
-			for (uint32_t i = 0; i < settings.size(); i++) {
-				_init_joints(skeleton, i);
-			}
-		}
-	}
-#ifdef TOOLS_ENABLED
-	_update_mutable_info();
-	_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
-}
-
-void IKModifier3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	_process_ik(skeleton, p_delta);
-}
-
 void IKModifier3D::set_mutable_bone_axes(bool p_enabled)
 {
 	mutable_bone_axes = p_enabled;
@@ -133,18 +99,6 @@ Vector3 IKModifier3D::get_bone_axis(
 }
 
 int IKModifier3D::get_setting_count() const { return settings.size(); }
-
-void IKModifier3D::reset()
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		_make_simulation_dirty(i);
-		_init_joints(skeleton, i);
-	}
-}
 
 IKModifier3D::~IKModifier3D() { clear_settings(); }
 

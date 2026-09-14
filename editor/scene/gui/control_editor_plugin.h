@@ -158,7 +158,6 @@ protected:
 
 	void _add_row_button(HBoxContainer* p_row, const int p_preset, const String& p_name);
 	void _add_separator(BoxContainer* p_box, Separator* p_separator);
-	void _update_preset_button_state(int p_preset);
 };
 
 class AnchorPresetPicker : public ControlEditorPresetPicker
@@ -169,8 +168,6 @@ protected:
 	void _notification(int p_notification);
 
 public:
-	void set_selected_preset(int p_preset);
-
 	AnchorPresetPicker();
 };
 
@@ -188,7 +185,6 @@ protected:
 
 public:
 	void set_allowed_flags(Vector<SizeFlags>& p_flags);
-	void set_selected_preset(int p_preset);
 	void set_expand_flag(bool p_expand);
 
 	SizeFlagPresetPicker(bool p_vertical);

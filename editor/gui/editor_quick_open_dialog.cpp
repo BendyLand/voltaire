@@ -155,22 +155,6 @@ void style_button(Button* p_button)
 	p_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 }
 
-void QuickOpenResultContainer::_menu_option(int p_option)
-{
-	ERR_FAIL_COND(get_selected() == ResourceUID::INVALID_ID);
-	String selected_path = get_selected_path();
-
-	switch (p_option) {
-	case FILE_SHOW_IN_FILESYSTEM: {
-		FileSystemDock::get_singleton()->navigate_to_path(selected_path);
-	} break;
-	case FILE_SHOW_IN_FILE_MANAGER: {
-		String dir = ProjectSettings::get_singleton()->globalize_path(selected_path);
-		OS::get_singleton()->shell_show_in_file_manager(dir, true);
-	} break;
-	}
-}
-
 void QuickOpenResultContainer::_sort_uids(int p_max_results)
 {
 	struct FilepathComparator
@@ -568,11 +552,6 @@ void QuickOpenResultItem::reset()
 void QuickOpenResultItem::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		selected_stylebox = get_theme_stylebox("selected", "Tree");
-		hovering_stylebox = get_theme_stylebox(SNAME("hovered"), "Tree");
-		highlighted_font_color = get_theme_color("font_focus_color", EditorStringName(Editor));
-	} break;
 	case NOTIFICATION_DRAW: {
 		if (is_selected) {
 			draw_style_box(selected_stylebox.ptr(), Rect2(Point2(), get_size()));
@@ -681,16 +660,6 @@ void QuickOpenResultListItem::highlight_item(const Color& p_color)
 void QuickOpenResultListItem::remove_highlight()
 {
 	name->remove_theme_color_override(SceneStringName(font_color));
-}
-
-void QuickOpenResultListItem::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		path->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color("font_disabled_color", EditorStringName(Editor)));
-	} break;
-	}
 }
 
 QuickOpenResultGridItem::QuickOpenResultGridItem()

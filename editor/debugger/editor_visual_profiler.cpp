@@ -56,15 +56,6 @@ void EditorVisualProfiler::clear()
 	seeking = false;
 }
 
-Color EditorVisualProfiler::_get_color_from_signature(const StringName& p_signature) const
-{
-	Color bc = get_theme_color(SNAME("error_color"), EditorStringName(Editor));
-	double rot = Math::abs(double(p_signature.hash()) / double(0x7FFFFFFF));
-	Color c;
-	c.set_hsv(rot, bc.get_s(), bc.get_v());
-	return c.lerp(get_theme_color(SNAME("base_color"), EditorStringName(Editor)), 0.07);
-}
-
 void EditorVisualProfiler::_item_selected()
 {
 	if (updating_frame) {
@@ -162,86 +153,6 @@ void EditorVisualProfiler::_update_frame(bool p_focus_selected)
 void EditorVisualProfiler::_autostart_toggled(bool p_toggled_on)
 {
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
-}
-
-void EditorVisualProfiler::_graph_tex_draw()
-{
-	if (last_metric < 0) {
-		return;
-	}
-
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-	const Color color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	Size2 graph_size = graph->get_size();
-
-	if (seeking) {
-		int max_frames = frame_metrics.size();
-
-		int64_t first_visible_frame =
-			static_cast<int64_t>(frame_metrics[last_metric].frame_number) - max_frames + 1;
-		int frame = (cursor_metric_edit->get_value() - first_visible_frame);
-		if (frame < 0) {
-			frame = 0;
-		}
-
-		int half_width = graph_size.x / 2;
-		int cur_x = frame * half_width / max_frames;
-
-		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph_size.y), color * Color(1, 1, 1));
-		graph->draw_line(Vector2(cur_x + half_width, 0), Vector2(cur_x + half_width, graph_size.y),
-			color * Color(1, 1, 1));
-	}
-
-	if (graph_height_cpu > 0) {
-		int cpu_height = graph_limit * graph_size.y / graph_height_cpu;
-		cpu_height = CLAMP(cpu_height, 0, graph_size.y - (font->get_ascent(font_size) + 2) * 2);
-		int frame_y = graph_size.y - cpu_height - 1;
-
-		int half_width = graph_size.x / 2;
-
-		graph->draw_line(
-			Vector2(0, frame_y), Vector2(half_width, frame_y), color * Color(1, 1, 1, 0.5));
-
-		const String limit_str = String::num(graph_limit, 2) + " ms";
-		graph->draw_string(font.ptr(),
-			Vector2(
-				half_width -
-					font->get_string_size(limit_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x -
-					2,
-				frame_y - 2),
-			limit_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color * Color(1, 1, 1, 0.75));
-	}
-
-	if (graph_height_gpu > 0) {
-		int gpu_height = graph_limit * graph_size.y / graph_height_gpu;
-		gpu_height = CLAMP(gpu_height, 0, graph_size.y - (font->get_ascent(font_size) + 2) * 2);
-		int frame_y = graph_size.y - gpu_height - 1;
-
-		int half_width = graph_size.x / 2;
-
-		graph->draw_line(Vector2(half_width, frame_y), Vector2(graph_size.x, frame_y),
-			color * Color(1, 1, 1, 0.5));
-
-		const String limit_str = String::num(graph_limit, 2) + " ms";
-		graph->draw_string(font.ptr(),
-			Vector2(
-				half_width * 2 -
-					font->get_string_size(limit_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x -
-					2,
-				frame_y - 2),
-			limit_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color * Color(1, 1, 1, 0.75));
-	}
-
-	graph->draw_string(font.ptr(),
-		Vector2(font->get_string_size("X", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x,
-			font->get_ascent(font_size) + 2),
-		"CPU: " + cpu_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color * Color(1, 1, 1, 0.75));
-	graph->draw_string(font.ptr(),
-		Vector2(font->get_string_size("X", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x +
-					graph_size.width / 2,
-			font->get_ascent(font_size) + 2),
-		"GPU: " + gpu_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color * Color(1, 1, 1, 0.75));
 }
 
 int EditorVisualProfiler::_get_cursor_index() const

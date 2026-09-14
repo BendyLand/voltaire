@@ -191,10 +191,8 @@ class FindInFilesPanel : public MarginContainer
 	void _on_button_clicked(TreeItem* p_item, int p_column, int p_id, int p_mouse_button_index);
 	void _on_result_found(
 		const String& p_fpath, int p_line_number, int p_begin, int p_end, const String& p_text);
-	void _on_theme_changed();
 	void _on_close_button_clicked();
 	void _on_result_selected();
-	void _on_item_edited();
 	void _on_replace_text_changed(const String& p_text);
 	void _on_replace_all_clicked();
 

@@ -71,14 +71,6 @@ void EditorResourcePicker::_update_menu()
 	edit_menu->popup();
 }
 
-void EditorResourcePicker::_button_draw()
-{
-	if (dropping) {
-		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		assign_button->draw_rect(Rect2(Point2(), assign_button->get_size()), color, false);
-	}
-}
-
 void EditorResourcePicker::_button_input(const Ref<InputEvent>& p_event)
 {
 	Ref<InputEventMouseButton> mb = p_event;

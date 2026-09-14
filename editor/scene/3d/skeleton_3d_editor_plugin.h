@@ -86,9 +86,6 @@ class BonePropertiesEditor : public VBoxContainer
 
 	HashMap<StringName, EditorProperty*> meta_editors;
 
-protected:
-	void _notification(int p_what);
-
 public:
 	BonePropertiesEditor(Skeleton3D* p_skeleton);
 
@@ -184,8 +181,6 @@ class Skeleton3DEditor : public VBoxContainer
 	void insert_keys(const bool p_all_bones, const bool p_enable_modifier);
 
 	void create_physical_skeleton();
-	PhysicalBone3D* create_physical_bone(
-		int bone_id, int bone_child_id, const Vector<BoneInfo>& bones_infos);
 
 	void export_skeleton_profile();
 

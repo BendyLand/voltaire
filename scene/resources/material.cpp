@@ -2140,16 +2140,9 @@ Ref<Material> BaseMaterial3D::get_material_for_2d(bool p_shaded, Transparency p_
 	material->set_shading_mode(p_shaded ? SHADING_MODE_PER_PIXEL : SHADING_MODE_UNSHADED);
 	material->set_transparency(p_transparency);
 	material->set_cull_mode(p_double_sided ? CULL_DISABLED : CULL_BACK);
-	material->set_flag(FLAG_SRGB_VERTEX_COLOR, true);
-	material->set_flag(FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	material->set_flag(FLAG_ALBEDO_TEXTURE_MSDF, p_msdf);
-	material->set_flag(FLAG_DISABLE_DEPTH_TEST, p_no_depth);
-	material->set_flag(FLAG_FIXED_SIZE, p_fixed_size);
-	material->set_flag(FLAG_USE_TEXTURE_REPEAT, p_texture_repeat);
 	material->set_alpha_antialiasing(p_alpha_antialiasing_mode);
 	material->set_texture_filter(p_filter);
 	if (p_billboard || p_billboard_y) {
-		material->set_flag(FLAG_BILLBOARD_KEEP_SCALE, true);
 		material->set_billboard_mode(p_billboard_y ? BILLBOARD_FIXED_Y : BILLBOARD_ENABLED);
 	}
 
@@ -2166,7 +2159,6 @@ void BaseMaterial3D::set_on_top_of_alpha()
 {
 	set_transparency(TRANSPARENCY_DISABLED);
 	set_render_priority(RENDER_PRIORITY_MAX);
-	set_flag(FLAG_DISABLE_DEPTH_TEST, true);
 }
 
 bool BaseMaterial3D::is_proximity_fade_enabled() const { return proximity_fade_enabled; }

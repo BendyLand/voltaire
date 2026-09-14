@@ -135,7 +135,6 @@ public:
 	// Editor docks.
 
 	FileSystemDock* get_file_system_dock() const;
-	void select_file(const String& p_file);
 	Vector<String> get_selected_paths() const;
 	String get_current_path() const;
 	String get_current_directory() const;

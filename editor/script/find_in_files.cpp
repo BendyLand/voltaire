@@ -434,12 +434,8 @@ void FindInFilesPanel::update_layout(EditorDock::DockLayout p_layout, int p_slot
 void FindInFilesPanel::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		_on_theme_changed();
-	} break;
 	case NOTIFICATION_TRANSLATION_CHANGED: {
 		_update_matches_text();
-
 		TreeItem* file_item = results_display->get_root()->get_first_child();
 		while (file_item) {
 			if (with_replace) {
@@ -473,64 +469,6 @@ void FindInFilesPanel::_notification(int p_what)
 	} break;
 	}
 }
-
-void FindInFilesPanel::_on_theme_changed()
-{
-	results_display->add_theme_font_override(SceneStringName(font),
-		get_theme_font(SNAME("source"), EditorStringName(EditorFonts)).ptr());
-	results_display->add_theme_font_size_override(SceneStringName(font_size),
-		get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts)));
-
-	Color file_item_color =
-		results_display->get_theme_color(SceneStringName(font_color)) * Color(1, 1, 1, 0.67);
-	Ref<Texture2D> remove_texture = get_editor_theme_icon(SNAME("Close"));
-	Ref<Texture2D> replace_texture = get_editor_theme_icon(SNAME("ReplaceText"));
-
-	TreeItem* file_item = results_display->get_root()->get_first_child();
-	while (file_item) {
-		file_item->set_custom_color(0, file_item_color);
-		if (with_replace) {
-			file_item->set_button(
-				0, file_item->get_button_by_id(0, FIND_BUTTON_REPLACE), replace_texture);
-		}
-		file_item->set_button(
-			0, file_item->get_button_by_id(0, FIND_BUTTON_REMOVE), remove_texture);
-
-		TreeItem* result_item = file_item->get_first_child();
-		while (result_item) {
-			if (with_replace) {
-				result_item->set_button(
-					1, result_item->get_button_by_id(1, FIND_BUTTON_REPLACE), replace_texture);
-				result_item->set_button(
-					1, result_item->get_button_by_id(1, FIND_BUTTON_REMOVE), remove_texture);
-			}
-			else {
-				result_item->set_button(
-					0, result_item->get_button_by_id(0, FIND_BUTTON_REMOVE), remove_texture);
-			}
-
-			result_item = result_item->get_next();
-		}
-
-		file_item = file_item->get_next();
-	}
-}
-
-void FindInFilesPanel::_on_item_edited()
-{
-	TreeItem* item = results_display->get_selected();
-
-	// Change opacity to half if checkbox is checked, otherwise full.
-	Color use_color = results_display->get_theme_color(SceneStringName(font_color));
-	if (!item->is_checked(0)) {
-		use_color.a *= 0.5;
-	}
-	item->set_custom_color(1, use_color);
-}
-
-
-
-
 
 void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_replace_buttons(); }
 

@@ -487,7 +487,6 @@ Error FBXDocument::_parse_materials(Ref<FBXState> p_state)
 		else {
 			material->set_name(vformat("material_%s", itos(material_i)));
 		}
-		material->set_flag(BaseMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
 
 		if (fbx_material->pbr.base_color.has_value) {
 			Color albedo =
@@ -503,7 +502,6 @@ Error FBXDocument::_parse_materials(Ref<FBXState> p_state)
 		if (base_texture) {
 			bool wrap = base_texture->wrap_u == UFBX_WRAP_REPEAT &&
 						base_texture->wrap_v == UFBX_WRAP_REPEAT;
-			material->set_flag(BaseMaterial3D::FLAG_USE_TEXTURE_REPEAT, wrap);
 
 			Ref<Texture2D> albedo_texture = _get_texture(
 				p_state, GLTFTextureIndex(base_texture->file_index), TEXTURE_TYPE_GENERIC);

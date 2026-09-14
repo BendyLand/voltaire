@@ -125,12 +125,9 @@ private:
 
 	void _graph_tex_mouse_exit();
 
-	void _graph_tex_draw();
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
 	int _get_cursor_index() const;
-
-	Color _get_color_from_signature(const StringName& p_signature) const;
 
 	void _cursor_metric_changed(double);
 

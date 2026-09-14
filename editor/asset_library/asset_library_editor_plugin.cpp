@@ -67,17 +67,6 @@ void EditorAssetLibraryItem::_notification(int p_what)
 		icon->set_texture(get_editor_theme_icon(SNAME("AssetThumbLoading")));
 	} break;
 
-	case NOTIFICATION_THEME_CHANGED: {
-		author->add_theme_color_override(
-			SceneStringName(font_color), get_theme_color(SNAME("faded_text"), SNAME("AssetLib")));
-		license->add_theme_color_override(
-			SceneStringName(font_color), get_theme_color(SNAME("faded_text"), SNAME("AssetLib")));
-		verified->set_texture(get_editor_theme_icon(SNAME("Verified")));
-		rating_icon->set_texture(get_editor_theme_icon(SNAME("ThumbsUp")));
-
-		_calculate_misc_links_size();
-	} break;
-
 	case NOTIFICATION_TRANSLATION_CHANGED: {
 		_calculate_misc_links_size();
 	} break;
@@ -287,23 +276,6 @@ void EditorAssetLibraryItemDescription::_zoom_toggled(bool p_pressed)
 	}
 }
 
-void EditorAssetLibraryItemDownload::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("AssetLib")).ptr());
-		version->add_theme_color_override(
-			SceneStringName(font_color), get_theme_color(SNAME("faded_text"), SNAME("AssetLib")));
-		dismiss_button->set_texture_normal(get_theme_icon(SNAME("dismiss"), SNAME("AssetLib")));
-		spacer->set_custom_minimum_size(Size2(0, 8 * EDSCALE));
-
-		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Button"));
-		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Button"));
-	} break;
-	}
-}
-
 void EditorAssetLibraryItemDownload::_close()
 {
 	// Clean up downloaded file.
@@ -320,17 +292,6 @@ void EditorAssetLibrary::_notification(int p_what)
 		add_theme_style_override(
 			SceneStringName(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
 		error_label->move_to_front();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		error_tr->set_texture(get_editor_theme_icon(SNAME("Error")));
-		filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-		library_scroll->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-		downloads_scroll->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("downloads"), SNAME("AssetLib")).ptr());
-		error_label->add_theme_color_override(
-			"color", get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {

@@ -327,9 +327,6 @@ private:
 	void _update_flag(bool p_replace);
 	Size2 get_grid_size() const;
 
-protected:
-	void _notification(int p_what);
-
 public:
 	uint32_t value = 0;
 	int layer_group_size = 0;
@@ -688,7 +685,6 @@ class EditorPropertyNodePath : public EditorProperty
 	Vector<StringName> valid_types;
 	void _node_selected(const NodePath& p_path, bool p_absolute = true);
 	void _node_assign();
-	void _assign_draw();
 	Node* get_base_node();
 	void _update_menu();
 	void _menu_option(int p_idx);

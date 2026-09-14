@@ -102,7 +102,6 @@ class AnimationBezierTrackEdit : public Control
 	bool _hide_track(int p_track);
 	bool _show_track(int p_track);
 
-	void _play_position_draw();
 	bool _is_track_displayed(int p_track_index);
 	bool _is_track_curves_displayed(int p_track_index);
 

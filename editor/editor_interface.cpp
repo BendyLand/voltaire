@@ -78,8 +78,6 @@ void EditorInterface::restart_editor(bool p_save)
 	EditorNode::get_singleton()->restart_editor();
 }
 
-// Editor tools.
-
 EditorCommandPalette* EditorInterface::get_command_palette() const
 {
 	return EditorCommandPalette::get_singleton();
@@ -250,8 +248,6 @@ bool EditorInterface::is_plugin_enabled(const String& p_plugin) const
 	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
 }
 
-// Editor GUI.
-
 Ref<Theme> EditorInterface::get_editor_theme() const
 {
 	return EditorNode::get_singleton()->get_editor_theme();
@@ -359,18 +355,9 @@ void EditorInterface::set_current_feature_profile(const String& p_profile_name)
 	EditorFeatureProfileManager::get_singleton()->set_current_profile(p_profile_name, true);
 }
 
-// Editor dialogs.
-
-// Editor docks.
-
 FileSystemDock* EditorInterface::get_file_system_dock() const
 {
 	return FileSystemDock::get_singleton();
-}
-
-void EditorInterface::select_file(const String& p_file)
-{
-	FileSystemDock::get_singleton()->select_file(p_file);
 }
 
 Vector<String> EditorInterface::get_selected_paths() const
@@ -392,8 +379,6 @@ EditorInspector* EditorInterface::get_inspector() const
 {
 	return InspectorDock::get_inspector_singleton();
 }
-
-// Object/Resource/Node editing.
 
 void EditorInterface::edit_resource(const Ref<Resource>& p_resource)
 {
@@ -487,8 +472,6 @@ Error EditorInterface::close_scene()
 	return EditorNode::get_singleton()->close_scene() ? OK : ERR_DOES_NOT_EXIST;
 }
 
-// Scene playback.
-
 void EditorInterface::play_main_scene() { EditorRunBar::get_singleton()->play_main_scene(); }
 
 void EditorInterface::play_current_scene() { EditorRunBar::get_singleton()->play_current_scene(); }
@@ -537,9 +520,6 @@ void EditorInterface::get_argument_options(
 		}
 	}
 }
-
-// Base.
-
 
 void EditorInterface::create() { memnew(EditorInterface); }
 

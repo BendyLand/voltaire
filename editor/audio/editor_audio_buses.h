@@ -142,9 +142,6 @@ public:
 class EditorAudioBusDrop : public Control
 {
 	mutable bool hovering_drop = false;
-
-protected:
-	void _notification(int p_what);
 };
 
 class EditorAudioBuses : public EditorDock
@@ -185,7 +182,6 @@ class EditorAudioBuses : public EditorDock
 	void _server_save();
 	void _file_moved(const String& p_old_path, const String& p_new_path);
 
-	void _select_layout();
 	void _load_layout();
 	void _save_as_layout();
 	void _load_default_layout();
@@ -255,8 +251,6 @@ public:
 	Size2 get_minimum_size() const override;
 
 private:
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
 	void _draw_audio_notches();
 };

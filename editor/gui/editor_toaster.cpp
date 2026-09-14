@@ -55,42 +55,6 @@ void EditorToaster::_update_vbox_position()
 	vbox_container->set_position(pos);
 }
 
-void EditorToaster::_draw_button()
-{
-	bool has_one = false;
-	Severity highest_severity = SEVERITY_INFO;
-	for (const KeyValue<Control*, Toast>& element : toasts) {
-		if (!element.key->is_visible()) {
-			continue;
-		}
-		has_one = true;
-		if (element.value.severity > highest_severity) {
-			highest_severity = element.value.severity;
-		}
-	}
-
-	if (!has_one) {
-		return;
-	}
-
-	Color color;
-	real_t button_radius = main_button->get_size().x / 8;
-	switch (highest_severity) {
-	case SEVERITY_INFO:
-		color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		break;
-	case SEVERITY_WARNING:
-		color = get_theme_color(SNAME("warning_color"), EditorStringName(Editor));
-		break;
-	case SEVERITY_ERROR:
-		color = get_theme_color(SNAME("error_color"), EditorStringName(Editor));
-		break;
-	default:
-		break;
-	}
-	main_button->draw_circle(Vector2(button_radius * 2, button_radius * 2), button_radius, color);
-}
-
 void EditorToaster::_draw_progress(Control* panel)
 {
 	if (toasts.has(panel) && toasts[panel].remaining_time > 0 && toasts[panel].duration > 0) {

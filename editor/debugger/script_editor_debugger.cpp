@@ -248,38 +248,6 @@ Size2 ScriptEditorDebugger::get_minimum_size() const
 	return ms;
 }
 
-void ScriptEditorDebugger::_set_reason_text(const String& p_reason, MessageType p_type)
-{
-	switch (p_type) {
-	case MESSAGE_ERROR:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		break;
-	case MESSAGE_WARNING:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		break;
-	default:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		break;
-	}
-
-	reason->set_text(p_reason);
-
-	_update_reason_content_height();
-
-	const PackedInt32Array boundaries = TS->string_get_word_breaks(p_reason, "", 80);
-	PackedStringArray lines;
-	for (int i = 0; i < boundaries.size(); i += 2) {
-		const int start = boundaries[i];
-		const int end = boundaries[i + 1];
-		lines.append(p_reason.substr(start, end - start));
-	}
-
-	reason->set_tooltip_text(String("\n").join(lines));
-}
-
 void ScriptEditorDebugger::_update_reason_content_height()
 {
 	float margin_height = 0;
@@ -294,12 +262,6 @@ void ScriptEditorDebugger::_update_reason_content_height()
 	}
 
 	reason->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
-}
-
-void ScriptEditorDebugger::_stop_and_notify()
-{
-	stop();
-	_set_reason_text(TTRC("Debug session closed."), MESSAGE_WARNING);
 }
 
 void ScriptEditorDebugger::stop()
@@ -526,19 +488,6 @@ void ScriptEditorDebugger::_collapse_errors_list()
 	}
 }
 
-void ScriptEditorDebugger::_vmem_item_activated()
-{
-	TreeItem* selected = vmem_tree->get_selected();
-	if (!selected) {
-		return;
-	}
-	const String path = selected->get_text(0);
-	if (path.is_empty() || !FileAccess::exists(path)) {
-		return;
-	}
-	FileSystemDock::get_singleton()->navigate_to_path(path);
-}
-
 void ScriptEditorDebugger::_vmem_tree_rmb_selected(const Vector2& p_pos, MouseButton p_button)
 {
 	if (p_button != MouseButton::RIGHT) {
@@ -568,9 +517,6 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 
 	String path = item->get_text(0);
 	switch (p_option) {
-	case VMEM_MENU_SHOW_IN_FILESYSTEM: {
-		FileSystemDock::get_singleton()->navigate_to_path(path);
-	} break;
 	case VMEM_MENU_SHOW_IN_EXPLORER: {
 		OS::get_singleton()->shell_show_in_file_manager(
 			ProjectSettings::get_singleton()->globalize_path(path), true);

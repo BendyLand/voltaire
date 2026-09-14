@@ -59,8 +59,6 @@ protected:
 	void _play();
 	void _stop();
 	void _on_finished();
-	void _draw_preview();
-	void _draw_indicator();
 	void _on_input_indicator(Ref<InputEvent> p_event);
 	void _seek_to(real_t p_x);
 	void _stream_changed();

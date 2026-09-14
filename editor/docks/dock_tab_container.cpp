@@ -61,12 +61,6 @@ void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
 void EditorDockDragHint::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		const Color valid_drop_color =
-			get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		dock_drop_highlight->set_border_color(valid_drop_color);
-		dock_drop_highlight->set_bg_color(valid_drop_color * Color(1, 1, 1, 0.1));
-	} break;
 	case NOTIFICATION_DRAG_BEGIN: {
 		EditorDock* dragged_dock = EditorDockManager::get_singleton()->_get_dock_tab_dragged();
 		if (!dragged_dock) {

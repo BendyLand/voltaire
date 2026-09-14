@@ -80,15 +80,6 @@ void EditorProfiler::clear()
 	_update_button_text();
 }
 
-Color EditorProfiler::_get_color_from_signature(const StringName& p_signature) const
-{
-	Color bc = get_theme_color(SNAME("error_color"), EditorStringName(Editor));
-	double rot = Math::abs(double(p_signature.hash()) / double(0x7FFFFFFF));
-	Color c;
-	c.set_hsv(rot, bc.get_s(), bc.get_v());
-	return c.lerp(get_theme_color(SNAME("base_color"), EditorStringName(Editor)), 0.07);
-}
-
 int EditorProfiler::_get_zoom_left_border() const
 {
 	const int max_profiles_shown = frame_metrics.size() / Math::exp(graph_zoom);
@@ -115,71 +106,6 @@ void EditorProfiler::_item_edited()
 	_update_plot();
 }
 
-void EditorProfiler::_update_frame()
-{
-	int cursor_metric = cursor_metric_edit->get_value() - _get_frame_metric(0).frame_number;
-
-	updating_frame = true;
-	variables->clear();
-
-	TreeItem* root = variables->create_item();
-	const Metric& m = _get_frame_metric(cursor_metric);
-
-	int dtime = display_time->get_selected();
-
-	for (int i = 0; i < m.categories.size(); i++) {
-		TreeItem* category = variables->create_item(root);
-		category->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-		category->set_editable(0, true);
-		category->set_text(0, String(m.categories[i].name));
-		category->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
-		category->set_text(1, _get_time_as_text(m, m.categories[i].total_time, 1));
-
-		if (collapsed_categories.has(m.categories[i].signature)) {
-			category->set_collapsed(true);
-		}
-
-		if (plot_sigs.has(m.categories[i].signature)) {
-			category->set_checked(0, true);
-			category->set_custom_color(0, _get_color_from_signature(m.categories[i].signature));
-		}
-
-		for (int j = 0; j < m.categories[i].items.size(); j++) {
-			const Metric::Category::Item& it = m.categories[i].items[j];
-
-			if (it.internal == it.total && !display_internal_profiles->is_pressed() &&
-				m.categories[i].name == "Script Functions") {
-				continue;
-			}
-			TreeItem* item = variables->create_item(category);
-			item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-			item->set_editable(0, true);
-			item->set_text(0, it.name);
-			item->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
-			item->set_text_alignment(2, HORIZONTAL_ALIGNMENT_RIGHT);
-			item->set_tooltip_text(0, it.name + "\n" + it.script + ":" + itos(it.line));
-
-			float time = dtime == DISPLAY_SELF_TIME ? it.self : it.total;
-			if (dtime == DISPLAY_SELF_TIME && !display_internal_profiles->is_pressed()) {
-				time += it.internal;
-			}
-
-			item->set_text(1, _get_time_as_text(m, time, it.calls));
-
-			item->set_text(2, itos(it.calls));
-
-			if (plot_sigs.has(it.signature)) {
-				item->set_checked(0, true);
-				item->set_custom_color(0, _get_color_from_signature(it.signature));
-			}
-		}
-	}
-
-	updating_frame = false;
-}
-
-void EditorProfiler::_internal_profiles_pressed() { _combo_changed(0); }
-
 void EditorProfiler::_autostart_toggled(bool p_toggled_on)
 {
 	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
@@ -204,12 +130,6 @@ void EditorProfiler::_graph_tex_draw()
 		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y),
 			theme_cache.seek_line_hover_color);
 	}
-}
-
-void EditorProfiler::_combo_changed(int)
-{
-	_update_frame();
-	_update_plot();
 }
 
 void EditorProfiler::set_profiling(bool p_pressed)

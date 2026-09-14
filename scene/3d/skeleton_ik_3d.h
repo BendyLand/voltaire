@@ -152,10 +152,8 @@ public:
 	SkeletonIK3D();
 	virtual ~SkeletonIK3D();
 
-	void set_root_bone(const StringName& p_root_bone);
 	StringName get_root_bone() const;
 
-	void set_tip_bone(const StringName& p_tip_bone);
 	StringName get_tip_bone() const;
 
 	void set_target_transform(const Transform3D& p_target);
@@ -180,9 +178,6 @@ public:
 	void set_max_iterations(int p_iterations);
 
 	int get_max_iterations() const { return max_iterations; }
-
-	Skeleton3D* get_parent_skeleton() const;
-
 	bool is_running();
 
 	void start(bool p_one_time = false);
@@ -190,7 +185,6 @@ public:
 
 private:
 	Transform3D _get_target_transform();
-	void reload_chain();
 	void reload_goal();
 	void _solve_chain();
 };

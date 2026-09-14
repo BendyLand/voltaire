@@ -223,11 +223,8 @@ class GameView : public VBoxContainer
 	void _selection_options_menu_id_pressed(int p_id);
 	void _game_window_options_menu_menu_id_pressed(int p_id);
 
-	void _reset_time_scales();
 	void _speed_state_menu_pressed(int p_id);
 	void _update_speed_buttons();
-	void _update_speed_state_icon(int p_id);
-	void _update_speed_state_color();
 	void _update_speed_state_size();
 
 	void _play_pressed();

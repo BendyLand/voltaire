@@ -114,8 +114,6 @@ class MeshInstance3DEditor : public Control
 	void _create_uv_lines(int p_layer);
 	friend class MeshInstance3DEditorPlugin;
 
-	void _debug_uv_draw();
-
 protected:
 	void _notification(int p_what);
 

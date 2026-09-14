@@ -41,9 +41,6 @@ class HBoxContainer;
 
 class ProgressIndicator : public TextureProgressBar
 {
-protected:
-	void _notification(int p_what);
-
 public:
 	ProgressIndicator();
 };

@@ -863,26 +863,6 @@ void Node3DEditorViewport::set_message(const String& p_message, float p_time)
 	message_time = p_time;
 }
 
-static void override_label_colors(Control* p_control)
-{
-	p_control->begin_bulk_theme_override();
-	p_control->add_theme_color_override(SceneStringName(font_color),
-		p_control->get_theme_color(SNAME("font_dark_background_color"), EditorStringName(Editor)));
-	p_control->add_theme_color_override(
-		"font_hover_color", p_control->get_theme_color(SNAME("font_dark_background_hover_color"),
-								EditorStringName(Editor)));
-	p_control->add_theme_color_override(
-		"font_focus_color", p_control->get_theme_color(SNAME("font_dark_background_focus_color"),
-								EditorStringName(Editor)));
-	p_control->add_theme_color_override("font_pressed_color",
-		p_control->get_theme_color(
-			SNAME("font_dark_background_pressed_color"), EditorStringName(Editor)));
-	p_control->add_theme_color_override("font_hover_pressed_color",
-		p_control->get_theme_color(
-			SNAME("font_dark_background_hover_pressed_color"), EditorStringName(Editor)));
-	p_control->end_bulk_theme_override();
-}
-
 static void draw_indicator_bar(Control& p_surface, real_t p_fill, const Ref<Texture2D> p_icon,
 	const Ref<Font> p_font, int p_font_size, const String& p_text, const Color& p_color)
 {

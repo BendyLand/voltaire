@@ -154,36 +154,6 @@ void ControlEditorPresetPicker::_add_separator(BoxContainer* p_box, Separator* p
 	p_box->add_child(p_separator);
 }
 
-void ControlEditorPresetPicker::_update_preset_button_state(int p_preset)
-{
-	for (KeyValue<int, Button*>& E : preset_buttons) {
-		Button* button = E.value;
-
-		if (!button) {
-			continue;
-		}
-
-		button->begin_bulk_theme_override();
-
-		if (E.key == p_preset) {
-			const Color pressed_color = get_theme_color(SNAME("icon_pressed_color"), "Button");
-			button->add_theme_color_override(SNAME("icon_normal_color"), pressed_color);
-			button->add_theme_color_override(SNAME("icon_hover_color"), pressed_color);
-		}
-		else {
-			button->remove_theme_color_override(SNAME("icon_normal_color"));
-			button->remove_theme_color_override(SNAME("icon_hover_color"));
-		}
-
-		button->end_bulk_theme_override();
-	}
-}
-
-void AnchorPresetPicker::set_selected_preset(int p_preset)
-{
-	_update_preset_button_state(p_preset);
-}
-
 AnchorPresetPicker::AnchorPresetPicker()
 {
 	VBoxContainer* main_vb = memnew(VBoxContainer);
@@ -235,11 +205,6 @@ AnchorPresetPicker::AnchorPresetPicker()
 	_add_row_button(extra_row, PRESET_RIGHT_WIDE, TTRC("Right Wide"));
 	_add_separator(extra_row, memnew(VSeparator));
 	_add_row_button(extra_row, PRESET_FULL_RECT, TTRC("Full Rect"));
-}
-
-void SizeFlagPresetPicker::set_selected_preset(int p_preset)
-{
-	_update_preset_button_state(p_preset);
 }
 
 void SizeFlagPresetPicker::set_expand_flag(bool p_expand) { expand_button->set_pressed(p_expand); }

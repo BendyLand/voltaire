@@ -103,8 +103,6 @@ private:
 	Vector2 get_view_pos(const Vector2& p_world_pos) const;
 	Vector2 get_world_pos(const Vector2& p_view_pos) const;
 
-	void _redraw();
-
 private:
 	const float ASPECT_RATIO = 6.f / 13.f;
 	const float LINE_WIDTH = 0.5f;

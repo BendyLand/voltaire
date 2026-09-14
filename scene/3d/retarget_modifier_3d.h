@@ -75,10 +75,6 @@ private:
 	void _force_update_child_skeletons();
 #endif // TOOLS_ENABLED
 
-	void cache_rests_with_reset();
-	void cache_rests();
-	Vector<RetargetBoneInfo> cache_bone_global_rests(Skeleton3D* p_skeleton);
-	Vector<RetargetBoneInfo> cache_bone_rests(Skeleton3D* p_skeleton);
 	Vector<RetargetBoneInfo> get_humanoid_bone_rests(Skeleton3D* p_skeleton);
 
 	void _retarget_global_pose();

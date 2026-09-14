@@ -96,14 +96,11 @@ protected:
 	bool active = true;
 	real_t influence = 1.0;
 
-	void _update_skeleton();
 	void _update_skeleton_path();
-	void _force_update_skeleton_skin();
 
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new);
 	virtual void _validate_bone_names();
 
-	void _notification(int p_what);
 	virtual void _set_active(bool p_active);
 	virtual void _process_modification(double p_delta);
 	bool should_check_node_path();
@@ -117,13 +114,9 @@ public:
 	} // Return true if modifier needs to modify bone pose without external animation such as
 	  // physics, jiggle and etc.
 
-	void set_active(bool p_active);
 	bool is_active() const;
-
 	void set_influence(real_t p_influence);
 	real_t get_influence() const;
-
-	Skeleton3D* get_skeleton() const;
 
 	void process_modification(double p_delta);
 

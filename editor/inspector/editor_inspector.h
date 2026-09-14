@@ -396,7 +396,6 @@ class EditorInspectorCategory : public Control
 	void _handle_menu_option(int p_option);
 	void _popup_context_menu(const Point2i& p_position);
 	void _update_icon();
-	void _theme_changed();
 
 protected:
 
@@ -847,8 +846,6 @@ public:
 
 	static void initialize_section_theme(
 		EditorInspectorSection::ThemeCache& p_cache, Control* p_control);
-	static void initialize_category_theme(
-		EditorInspectorCategory::ThemeCache& p_cache, Control* p_control);
 	static void initialize_property_theme(EditorProperty::ThemeCache& p_cache, Control* p_control);
 
 	static PropertyClipboard::Type get_property_clipboard_type() { return property_clipboard.type; }

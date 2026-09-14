@@ -101,7 +101,6 @@ private:
 	void _update_vbox_position();
 	void _auto_hide_or_free_toasts();
 
-	void _draw_button();
 	void _draw_progress(Control* panel);
 
 	void _set_notifications_enabled(bool p_enabled);

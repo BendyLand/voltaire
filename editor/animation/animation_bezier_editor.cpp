@@ -377,25 +377,6 @@ Control::CursorShape AnimationBezierTrackEdit::get_cursor_shape(const Point2& p_
 	return get_default_cursor_shape();
 }
 
-void AnimationBezierTrackEdit::_play_position_draw()
-{
-	if (animation.is_null() || play_position_pos < 0) {
-		return;
-	}
-
-	float scale = timeline->get_zoom_scale();
-	int h = get_size().height;
-
-	int limit = timeline->get_name_limit();
-
-	int px = (-timeline->get_value() + play_position_pos) * scale + limit;
-
-	if (px >= limit && px < (get_size().width)) {
-		const Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		play_position->draw_line(Point2(px, 0), Point2(px, h), color, Math::round(2 * EDSCALE));
-	}
-}
-
 void AnimationBezierTrackEdit::set_root(Node* p_root) { root = p_root; }
 
 void AnimationBezierTrackEdit::_zoom_vertically(real_t p_minimum_value, real_t p_maximum_value)

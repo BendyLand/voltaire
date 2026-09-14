@@ -648,32 +648,6 @@ Control::CursorShape CanvasItemEditor::get_cursor_shape(const Point2& p_pos) con
 	return c;
 }
 
-void CanvasItemEditor::_draw_text_at_position(
-	Point2 p_position, const String& p_string, Side p_side)
-{
-	Color color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	color.a = 0.8;
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-	Size2 text_size = font->get_string_size(p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
-	switch (p_side) {
-	case SIDE_LEFT:
-		p_position += Vector2(-text_size.x - 5, text_size.y / 2);
-		break;
-	case SIDE_TOP:
-		p_position += Vector2(-text_size.x / 2, -5);
-		break;
-	case SIDE_RIGHT:
-		p_position += Vector2(5, text_size.y / 2);
-		break;
-	case SIDE_BOTTOM:
-		p_position += Vector2(-text_size.x / 2, text_size.y + 5);
-		break;
-	}
-	viewport->draw_string(
-		font.ptr(), p_position, p_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color);
-}
-
 void CanvasItemEditor::_draw_focus()
 {
 	// Draw the focus around the base viewport

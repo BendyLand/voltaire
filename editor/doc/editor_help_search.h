@@ -176,9 +176,6 @@ class EditorHelpSearch::Runner : public RefCounted
 
 public:
 	bool work(uint64_t slot = 100000);
-
-	Runner(Control* p_icon_service, Tree* p_results_tree, TreeCache* p_tree_cache,
-		const String& p_term, int p_search_flags);
 };
 
 

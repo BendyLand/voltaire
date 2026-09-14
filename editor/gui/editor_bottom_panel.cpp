@@ -154,16 +154,6 @@ EditorBottomPanel::~EditorBottomPanel()
 	}
 }
 
-void ProgressIndicator::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		const Ref<Texture2D> ring_texture = get_editor_theme_icon(SNAME("ProgressRing"));
-		set_progress_texture(ring_texture);
-		set_tint_progress(get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
-		set_under_texture(ring_texture);
-	}
-}
-
 ProgressIndicator::ProgressIndicator()
 {
 	set_fill_mode(FILL_CLOCKWISE);

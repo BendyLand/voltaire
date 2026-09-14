@@ -262,65 +262,6 @@ void GameView::_suspend_button_toggled(bool p_pressed)
 	debugger->set_suspend(p_pressed);
 }
 
-void GameView::_reset_time_scales()
-{
-	time_scale_index = DEFAULT_TIME_SCALE_INDEX;
-	debugger->reset_time_scale();
-	if (is_inside_tree()) {
-		_update_speed_state_icon(DEFAULT_TIME_SCALE_INDEX);
-		_update_speed_buttons();
-	}
-}
-
-void GameView::_update_speed_state_icon(int p_id)
-{
-	PopupMenu* menu = speed_state_button->get_popup();
-	for (int i = 0; i < speed_state_button->get_item_count(); i++) {
-		if (i == DEFAULT_TIME_SCALE_INDEX) {
-			continue;
-		}
-
-		menu->set_item_icon(i, nullptr);
-	}
-
-	menu->set_item_icon(p_id, get_editor_theme_icon(SNAME("KeyValue")));
-	if (p_id == DEFAULT_TIME_SCALE_INDEX) {
-		menu->set_item_icon_modulate(
-			p_id, get_theme_color(SNAME("mono_color"), EditorStringName(Editor)));
-	}
-	else {
-		menu->set_item_icon(
-			DEFAULT_TIME_SCALE_INDEX, get_editor_theme_icon(SNAME("KeyBezierHandle")));
-
-		if (p_id > DEFAULT_TIME_SCALE_INDEX) {
-			menu->set_item_icon_modulate(
-				p_id, get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		}
-		else {
-			menu->set_item_icon_modulate(
-				p_id, get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		}
-	}
-}
-
-void GameView::_update_speed_state_color()
-{
-	Color text_color;
-	if (time_scale_index == DEFAULT_TIME_SCALE_INDEX) {
-		text_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	}
-	else if (time_scale_index > DEFAULT_TIME_SCALE_INDEX) {
-		text_color = get_theme_color(SNAME("success_color"), EditorStringName(Editor));
-	}
-	else if (time_scale_index < DEFAULT_TIME_SCALE_INDEX) {
-		text_color = get_theme_color(SNAME("warning_color"), EditorStringName(Editor));
-	}
-	speed_state_button->add_theme_color_override(SceneStringName(font_color), text_color);
-	speed_state_button->add_theme_color_override(SNAME("font_hover_color"), text_color);
-	speed_state_button->add_theme_color_override(SNAME("font_hover_pressed_color"), text_color);
-	speed_state_button->add_theme_color_override(SNAME("font_pressed_color"), text_color);
-}
-
 void GameView::_update_embed_menu_options()
 {
 	PopupMenu* menu = game_window_options_menu->get_popup();

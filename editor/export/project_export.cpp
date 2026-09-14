@@ -58,16 +58,6 @@
 #include "scene/gui/tree.h"
 #include "servers/display/display_server.h"
 
-void ProjectExportTextureFormatError::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		texture_format_error_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-	} break;
-	}
-}
-
 void ProjectExportDialog::_add_preset(int p_platform)
 {
 	Ref<EditorExportPreset> preset =

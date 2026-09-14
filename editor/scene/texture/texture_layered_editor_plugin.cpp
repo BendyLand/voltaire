@@ -192,16 +192,6 @@ void TextureLayeredEditor::_notification(int p_what)
 		draw_texture_rect(checkerboard.ptr(), texture_rect->get_rect(), true);
 		_draw_outline();
 	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (info) {
-			Ref<Font> metadata_label_font =
-				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-			info->add_theme_font_override(SceneStringName(font), metadata_label_font.ptr());
-		}
-		theme_cache.outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-	} break;
 	}
 }
 

@@ -61,27 +61,6 @@ void EditorAudioBus::_notification(int p_what)
 		set_process(true);
 	} break;
 
-	case NOTIFICATION_DRAW: {
-		if (is_master) {
-			draw_style_box(get_theme_stylebox(SNAME("master"), SNAME("EditorAudioBus")).ptr(),
-				Rect2(Vector2(), get_size()));
-		}
-		else if (has_focus()) {
-			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("EditorAudioBus")).ptr(),
-				Rect2(Vector2(), get_size()));
-		}
-		else {
-			draw_style_box(get_theme_stylebox(SNAME("normal"), SNAME("EditorAudioBus")).ptr(),
-				Rect2(Vector2(), get_size()));
-		}
-
-		if (get_index() != 0 && hovering_drop) {
-			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-			accent.a *= 0.7;
-			draw_rect(Rect2(Point2(), get_size()), accent, false);
-		}
-	} break;
-
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 		for (int i = 0; i < CHANNELS_MAX; i++) {
 			channel[i].peak_l = -100;
@@ -467,19 +446,6 @@ EditorAudioBus::EditorAudioBus(EditorAudioBuses* p_buses, bool p_is_master)
 	add_child(delete_effect_popup);
 }
 
-void EditorAudioBusDrop::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_DRAW: {
-		if (hovering_drop) {
-			Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-			accent.a *= 0.7;
-			draw_rect(Rect2(Point2(), get_size()), accent, false);
-		}
-	} break;
-	}
-}
-
 void EditorAudioBuses::_update_file_label()
 {
 	const String filename = ResourceUID::ensure_path(edited_path).get_file();
@@ -524,11 +490,6 @@ void EditorAudioBuses::_notification(int p_what)
 		}
 	} break;
 	}
-}
-
-void EditorAudioBuses::_select_layout()
-{
-	FileSystemDock::get_singleton()->navigate_to_path(ResourceUID::ensure_path(edited_path));
 }
 
 void EditorAudioBuses::_save_as_layout()
@@ -690,17 +651,6 @@ Size2 EditorAudioMeterNotches::get_minimum_size() const
 	width += line_length + label_space;
 
 	return Size2(width, height);
-}
-
-void EditorAudioMeterNotches::_update_theme_item_cache()
-{
-	Control::_update_theme_item_cache();
-
-	theme_cache.notch_color =
-		get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-
-	theme_cache.font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	theme_cache.font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
 }
 
 void EditorAudioMeterNotches::_notification(int p_what)

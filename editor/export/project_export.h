@@ -60,9 +60,6 @@ class ProjectExportTextureFormatError : public HBoxContainer
 	LinkButton* fix_texture_format_button = nullptr;
 	String setting_identifier;
 
-protected:
-	void _notification(int p_what);
-
 public:
 	ProjectExportTextureFormatError(ProjectExportDialog* p_export_dialog);
 };

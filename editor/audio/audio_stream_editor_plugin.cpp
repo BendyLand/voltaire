@@ -36,57 +36,6 @@
 #include "scene/resources/audio_stream_wav.h"
 #include "servers/rendering/rendering_server.h"
 
-void AudioStreamEditor::_draw_preview()
-{
-	Size2 size = get_size();
-	int width = size.width;
-	if (width <= 0) {
-		return; // No points to draw.
-	}
-
-	Rect2 rect = _preview->get_rect();
-
-	Ref<AudioStreamPreview> preview =
-		AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
-	float preview_len = preview->get_length();
-
-	Vector<Vector2> points;
-	points.resize(width * 2);
-
-	for (int i = 0; i < width; i++) {
-		float ofs = i * preview_len / size.width;
-		float ofs_n = (i + 1) * preview_len / size.width;
-		float max = preview->get_max(ofs, ofs_n) * 0.5 + 0.5;
-		float min = preview->get_min(ofs, ofs_n) * 0.5 + 0.5;
-
-		int idx = i;
-		points.write[idx * 2 + 0] = Vector2(i + 1, rect.position.y + min * rect.size.y);
-		points.write[idx * 2 + 1] = Vector2(i + 1, rect.position.y + max * rect.size.y);
-	}
-
-	Vector<Color> colors = {get_theme_color(SNAME("contrast_color_2"), EditorStringName(Editor))};
-
-	RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
-}
-
-void AudioStreamEditor::_draw_indicator()
-{
-	if (stream.is_null()) {
-		return;
-	}
-
-	Rect2 rect = _preview->get_rect();
-	float len = stream->get_length();
-	float ofs_x = _current / len * rect.size.width;
-	const Color col = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-	Ref<Texture2D> icon = get_editor_theme_icon(SNAME("TimelineIndicator"));
-	_indicator->draw_line(
-		Point2(ofs_x, 0), Point2(ofs_x, rect.size.height), col, Math::round(2 * EDSCALE));
-	_indicator->draw_texture(icon.ptr(), Point2(ofs_x - icon->get_width() * 0.5, 0), col);
-
-	_current_label->set_text(String::num(_current, 2).pad_decimals(2) + " /");
-}
-
 void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event)
 {
 	const Ref<InputEventMouseButton> mb = p_event;

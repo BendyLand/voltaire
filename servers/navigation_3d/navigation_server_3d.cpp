@@ -58,12 +58,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_m
 	face_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	face_material->set_albedo(get_debug_navigation_geometry_face_color());
 	face_material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	face_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (enabled_geometry_face_random_color) {
-		face_material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-		face_material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	}
-
 	debug_navigation_geometry_face_material = face_material;
 
 	return debug_navigation_geometry_face_material;
@@ -80,11 +74,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_m
 	Ref<StandardMaterial3D> line_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	line_material->set_albedo(get_debug_navigation_geometry_edge_color());
-	line_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (enabled_edge_lines_xray) {
-		line_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
-
 	debug_navigation_geometry_edge_material = line_material;
 
 	return debug_navigation_geometry_edge_material;
@@ -101,7 +90,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_d
 	face_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	face_disabled_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	face_disabled_material->set_albedo(get_debug_navigation_geometry_face_disabled_color());
-	face_disabled_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 
 	debug_navigation_geometry_face_disabled_material = face_disabled_material;
 
@@ -120,10 +108,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_d
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	line_disabled_material->set_albedo(get_debug_navigation_geometry_edge_disabled_color());
-	line_disabled_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (enabled_edge_lines_xray) {
-		line_disabled_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 
 	debug_navigation_geometry_edge_disabled_material = line_disabled_material;
 
@@ -142,10 +126,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_edge_connection
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	edge_connections_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	edge_connections_material->set_albedo(get_debug_navigation_edge_connection_color());
-	edge_connections_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (enabled_edge_connections_xray) {
-		edge_connections_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 	edge_connections_material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_edge_connections_material = edge_connections_material;
@@ -162,10 +142,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_link_connection
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	material->set_albedo(debug_navigation_link_connection_color);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (debug_navigation_enable_link_connections_xray) {
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_link_connections_material = material;
@@ -182,10 +158,6 @@ NavigationServer3D::get_debug_navigation_link_connections_disabled_material()
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	material->set_albedo(debug_navigation_link_connection_disabled_color);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (debug_navigation_enable_link_connections_xray) {
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_link_connections_disabled_material = material;
@@ -202,10 +174,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_line
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 
 	material->set_albedo(debug_navigation_agent_path_color);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (debug_navigation_enable_agent_paths_xray) {
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_agent_path_line_material = material;
@@ -220,12 +188,7 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_poin
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_albedo(debug_navigation_agent_path_color);
-	material->set_flag(StandardMaterial3D::FLAG_USE_POINT_SIZE, true);
 	material->set_point_size(debug_navigation_agent_path_point_size);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	if (debug_navigation_enable_agent_paths_xray) {
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-	}
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_agent_path_point_material = material;
@@ -257,7 +220,6 @@ NavigationServer3D::get_debug_navigation_avoidance_obstacles_radius_material()
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	material->set_albedo(debug_navigation_avoidance_obstacles_radius_color);
@@ -276,7 +238,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_face_m
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushin_face_color);
@@ -295,7 +256,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_face_
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushout_face_color);
@@ -314,12 +274,10 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_m
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 	// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushin_edge_color);
 	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
 
 	debug_navigation_avoidance_static_obstacle_pushin_edge_material = material;
 	return debug_navigation_avoidance_static_obstacle_pushin_edge_material;
@@ -334,12 +292,10 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 	/// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushout_edge_color);
 	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
-	material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
 
 	debug_navigation_avoidance_static_obstacle_pushout_edge_material = material;
 	return debug_navigation_avoidance_static_obstacle_pushout_edge_material;
@@ -479,11 +435,6 @@ bool NavigationServer3D::get_debug_navigation_enable_edge_connections() const
 void NavigationServer3D::set_debug_navigation_enable_edge_connections_xray(const bool p_value)
 {
 	debug_navigation_enable_edge_connections_xray = p_value;
-	if (debug_navigation_edge_connections_material.is_valid()) {
-		debug_navigation_edge_connections_material->set_flag(
-			StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST,
-			debug_navigation_enable_edge_connections_xray);
-	}
 }
 
 bool NavigationServer3D::get_debug_navigation_enable_edge_connections_xray() const
@@ -499,10 +450,6 @@ bool NavigationServer3D::get_debug_navigation_enable_edge_lines() const
 void NavigationServer3D::set_debug_navigation_enable_edge_lines_xray(const bool p_value)
 {
 	debug_navigation_enable_edge_lines_xray = p_value;
-	if (debug_navigation_geometry_edge_material.is_valid()) {
-		debug_navigation_geometry_edge_material->set_flag(
-			StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, debug_navigation_enable_edge_lines_xray);
-	}
 }
 
 bool NavigationServer3D::get_debug_navigation_enable_edge_lines_xray() const
@@ -523,11 +470,6 @@ bool NavigationServer3D::get_debug_navigation_enable_link_connections() const
 void NavigationServer3D::set_debug_navigation_enable_link_connections_xray(const bool p_value)
 {
 	debug_navigation_enable_link_connections_xray = p_value;
-	if (debug_navigation_link_connections_material.is_valid()) {
-		debug_navigation_link_connections_material->set_flag(
-			StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST,
-			debug_navigation_enable_link_connections_xray);
-	}
 }
 
 bool NavigationServer3D::get_debug_navigation_enable_link_connections_xray() const
@@ -646,14 +588,6 @@ bool NavigationServer3D::get_debug_navigation_enable_agent_paths() const
 void NavigationServer3D::set_debug_navigation_enable_agent_paths_xray(const bool p_value)
 {
 	debug_navigation_enable_agent_paths_xray = p_value;
-	if (debug_navigation_agent_path_line_material.is_valid()) {
-		debug_navigation_agent_path_line_material->set_flag(
-			StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, debug_navigation_enable_agent_paths_xray);
-	}
-	if (debug_navigation_agent_path_point_material.is_valid()) {
-		debug_navigation_agent_path_point_material->set_flag(
-			StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, debug_navigation_enable_agent_paths_xray);
-	}
 }
 
 bool NavigationServer3D::get_debug_navigation_enable_agent_paths_xray() const

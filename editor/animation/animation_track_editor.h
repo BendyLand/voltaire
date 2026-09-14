@@ -203,7 +203,6 @@ class AnimationTimelineEdit : public Range
 									  // changed are much faster
 	HScrollBar* hscroll = nullptr;
 
-	void _play_position_draw();
 	Rect2 hsize_rect;
 
 	bool editing = false;
@@ -300,7 +299,6 @@ class AnimationMarkerEdit : public Control
 
 	Ref<Texture2D> icon_cache;
 
-	void _play_position_draw();
 	bool _is_ui_pos_in_current_section(const Point2& p_pos);
 
 	float insert_at_pos = 0.0f;
@@ -449,7 +447,6 @@ class AnimationTrackEdit : public Control
 	String path_cache;
 
 	void _path_submitted(const String& p_text);
-	void _play_position_draw();
 
 	int lookup_key_idx = -1;
 	bool _lookup_key(int p_key_idx) const;
@@ -711,7 +708,6 @@ class AnimationTrackEditor : public VBoxContainer
 	Control* box_selection_container = nullptr;
 
 	Control* box_selection = nullptr;
-	void _box_selection_draw();
 	bool box_selecting = false;
 	Vector2 box_selecting_from;
 	Vector2 box_selecting_to;

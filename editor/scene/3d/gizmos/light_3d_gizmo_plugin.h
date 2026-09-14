@@ -49,7 +49,7 @@ public:
 		Camera3D* p_camera, const Point2& p_point) override;
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 
-	Light3DGizmoPlugin();
+	Light3DGizmoPlugin() = default;
 };
 
 

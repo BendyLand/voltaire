@@ -177,12 +177,7 @@ public:
 		bool p_on_top = false, bool p_use_vertex_color = false);
 	void create_icon_material(const String& p_name, const Ref<Texture2D>& p_texture,
 		bool p_on_top = false, const Color& p_albedo = Color(1, 1, 1, 1));
-	void create_handle_material(
-		const String& p_name, bool p_billboard = false, const Ref<Texture2D>& p_texture = nullptr);
 	void add_material(const String& p_name, Ref<StandardMaterial3D> p_material);
-
-	Ref<StandardMaterial3D> get_material(
-		const String& p_name, const Ref<EditorNode3DGizmo>& p_gizmo = Ref<EditorNode3DGizmo>());
 
 	virtual bool has_gizmo(Node3D* p_spatial);
 	virtual String get_gizmo_name() const;

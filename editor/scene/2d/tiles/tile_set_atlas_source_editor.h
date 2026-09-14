@@ -133,7 +133,6 @@ private:
 	Button* tile_data_editor_dropdown_button = nullptr;
 	Popup* tile_data_editors_popup = nullptr;
 	Tree* tile_data_editors_tree = nullptr;
-	void _tile_data_editor_dropdown_button_draw();
 	void _tile_data_editor_dropdown_button_pressed();
 
 	// -- Tile data editors --

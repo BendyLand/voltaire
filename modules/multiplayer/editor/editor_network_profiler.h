@@ -92,8 +92,6 @@ private:
 		TreeItem* p_item, int p_column, int p_idx, MouseButton p_button);
 
 protected:
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
 
 public:

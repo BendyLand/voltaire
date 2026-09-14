@@ -44,10 +44,4 @@ String AudioListener3DGizmoPlugin::get_gizmo_name() const { return "AudioListene
 
 int AudioListener3DGizmoPlugin::get_priority() const { return -1; }
 
-void AudioListener3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo)
-{
-	const Ref<Material> icon = get_material("audio_listener_3d_icon", p_gizmo);
-	p_gizmo->add_unscaled_billboard(icon, 0.05);
-}
-
 

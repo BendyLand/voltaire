@@ -51,18 +51,6 @@
 #include "scene/resources/surface_tool.h"
 #include "skeleton_3d_editor_plugin.h"
 
-void BonePropertiesEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		const Color section_color =
-			get_theme_color(SNAME("prop_subsection"), EditorStringName(Editor));
-		section->set_bg_color(section_color);
-		rest_section->set_bg_color(section_color);
-	} break;
-	}
-}
-
 BonePropertiesEditor::BonePropertiesEditor(Skeleton3D* p_skeleton)
 {
 	create_editors();
@@ -117,50 +105,6 @@ void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 		break;
 	}
 	}
-}
-
-PhysicalBone3D* Skeleton3DEditor::create_physical_bone(
-	int bone_id, int bone_child_id, const Vector<BoneInfo>& bones_infos)
-{
-	const Transform3D child_rest = skeleton->get_bone_rest(bone_child_id);
-
-	const real_t half_height(child_rest.origin.length() * 0.5);
-	const real_t radius(half_height * 0.2);
-
-	Ref<CapsuleShape3D> bone_shape_capsule;
-	bone_shape_capsule.instantiate();
-	bone_shape_capsule->set_height(half_height * 2);
-	bone_shape_capsule->set_radius(radius);
-
-	CollisionShape3D* bone_shape = memnew(CollisionShape3D);
-	bone_shape->set_shape(bone_shape_capsule);
-	bone_shape->set_name("CollisionShape3D");
-
-	Transform3D capsule_transform;
-	capsule_transform.basis.rows[0] = Vector3(1, 0, 0);
-	capsule_transform.basis.rows[1] = Vector3(0, 0, 1);
-	capsule_transform.basis.rows[2] = Vector3(0, -1, 0);
-	bone_shape->set_transform(capsule_transform);
-
-	/// Get an up vector not collinear with child rest origin
-	Vector3 up = Vector3(0, 1, 0);
-	if (up.cross(child_rest.origin).is_zero_approx()) {
-		up = Vector3(0, 0, 1);
-	}
-
-	Transform3D body_transform;
-	body_transform.basis = Basis::looking_at(child_rest.origin, up);
-	body_transform.origin = body_transform.basis.xform(Vector3(0, 0, -half_height));
-
-	Transform3D joint_transform;
-	joint_transform.origin = Vector3(0, 0, half_height);
-
-	PhysicalBone3D* physical_bone = memnew(PhysicalBone3D);
-	physical_bone->add_child(bone_shape);
-	physical_bone->set_name("Physical Bone " + skeleton->get_bone_name(bone_id));
-	physical_bone->set_body_offset(body_transform);
-	physical_bone->set_joint_offset(joint_transform);
-	return physical_bone;
 }
 
 void Skeleton3DEditor::export_skeleton_profile()
@@ -468,11 +412,6 @@ Skeleton3DGizmoPlugin::Skeleton3DGizmoPlugin()
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	selection_materials.unselected_mat->set_flag(
-		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
 	selection_materials.selected_mat.instantiate();
 	Ref<Shader> selected_sh = Ref<Shader>(memnew(Shader));
 	selected_sh->set_code(R"(

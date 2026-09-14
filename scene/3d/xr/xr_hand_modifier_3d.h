@@ -48,7 +48,6 @@ public:
 		BONE_UPDATE_MAX
 	};
 
-	void set_hand_tracker(const StringName& p_tracker_name);
 	StringName get_hand_tracker() const;
 
 	void set_bone_update(BoneUpdate p_bone_update);
@@ -59,8 +58,6 @@ public:
 	void _notification(int p_what);
 
 protected:
-
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 	virtual void _process_modification(double p_delta) override;
 
 private:
@@ -76,9 +73,6 @@ private:
 
 	bool has_stored_previous_transforms = false;
 	Vector<Transform3D> previous_relative_transforms;
-
-	void _get_joint_data();
-	void _tracker_changed(StringName p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
 
 

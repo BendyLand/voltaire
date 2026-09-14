@@ -147,12 +147,8 @@ class EditorHelp : public VBoxContainer
 	void _class_desc_scroll_to_paragraph(int p_line, bool p_save_history);
 	bool _need_save_new_history() const;
 
-	void _add_text(const String& p_bbcode);
 	bool scroll_locked = false;
 
-	// void _button_pressed(int p_idx);
-	void _add_type(
-		const String& p_type, const String& p_enum = String(), bool p_is_bitfield = false);
 	void _add_type_icon(const String& p_type, int p_size = 0, const String& p_fallback = "");
 
 	void _add_bulletpoint();
@@ -199,8 +195,6 @@ class EditorHelp : public VBoxContainer
 	static void _compute_doc_version_hash();
 
 protected:
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
 
 public:
@@ -321,7 +315,6 @@ class EditorHelpBit : public VBoxContainer
 	static HelpData _get_annotation_help_data(
 		const StringName& p_class_name, const StringName& p_annotation_name);
 
-	void _add_type_to_title(const DocType& p_doc_type);
 	void _go_to_help(const String& p_what);
 	void _go_to_url(const String& p_what);
 	void _meta_clicked(const String& p_select);

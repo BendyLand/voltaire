@@ -776,8 +776,6 @@ public:
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_font_size(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
-	Color get_theme_color(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 	int get_theme_constant(
 		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
 #ifdef TOOLS_ENABLED

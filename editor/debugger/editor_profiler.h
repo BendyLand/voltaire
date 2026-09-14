@@ -142,13 +142,10 @@ Vector<Metric> frame_metrics;
 	Timer* plot_delay = nullptr;
 
 	void _update_button_text();
-	void _update_frame();
 
 	void _activate_pressed();
 	void _clear_pressed();
 	void _autostart_toggled(bool p_toggled_on);
-
-	void _internal_profiles_pressed();
 
 	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
 
@@ -163,12 +160,9 @@ Vector<Metric> frame_metrics;
 	void _graph_tex_draw();
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
-	Color _get_color_from_signature(const StringName& p_signature) const;
 	int _get_zoom_left_border() const;
 
 	void _cursor_metric_changed(double);
-
-	void _combo_changed(int);
 
 	const Metric& _get_frame_metric(int index) const;
 

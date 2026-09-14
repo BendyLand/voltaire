@@ -89,8 +89,6 @@ class GroupsEditor : public VBoxContainer
 
 	void _check_rename();
 
-	void _update_tree();
-
 	void _update_groups();
 	void _load_scene_groups(Node* p_node);
 
@@ -109,7 +107,6 @@ class GroupsEditor : public VBoxContainer
 	void _item_mouse_selected(const Vector2& p_pos, MouseButton p_mouse_button);
 	void _menu_id_pressed(int p_id);
 
-	void _update_groups_and_tree();
 	void _queue_update_groups_and_tree();
 
 	void _groups_gui_input(Ref<InputEvent> p_event);

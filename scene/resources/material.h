@@ -769,7 +769,6 @@ public:
 	void set_specular_mode(SpecularMode p_mode);
 	SpecularMode get_specular_mode() const;
 
-	void set_flag(Flags p_flag, bool p_enabled);
 	bool get_flag(Flags p_flag) const;
 
 	void set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture);

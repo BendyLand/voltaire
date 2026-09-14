@@ -84,51 +84,6 @@ void TileSetAtlasSourceEditor::_update_fix_selected_and_hovered_tiles()
 	}
 }
 
-void TileSetAtlasSourceEditor::_tile_data_editor_dropdown_button_draw()
-{
-	if (!has_theme_icon(SNAME("arrow"), SNAME("OptionButton"))) {
-		return;
-	}
-
-	RID ci = tile_data_editor_dropdown_button->get_canvas_item();
-	Ref<Texture2D> arrow = Control::get_theme_icon(SNAME("arrow"), SNAME("OptionButton"));
-	Color clr = Color(1, 1, 1);
-	if (get_theme_constant(SNAME("modulate_arrow"))) {
-		switch (tile_data_editor_dropdown_button->get_draw_mode()) {
-		case BaseButton::DRAW_PRESSED:
-			clr = get_theme_color(SNAME("font_pressed_color"));
-			break;
-		case BaseButton::DRAW_HOVER:
-			clr = get_theme_color(SNAME("font_hover_color"));
-			break;
-		case BaseButton::DRAW_DISABLED:
-			clr = get_theme_color(SNAME("font_disabled_color"));
-			break;
-		default:
-			if (tile_data_editor_dropdown_button->has_focus()) {
-				clr = get_theme_color(SNAME("font_focus_color"));
-			}
-			else {
-				clr = get_theme_color(SceneStringName(font_color));
-			}
-		}
-	}
-
-	Size2 size = tile_data_editor_dropdown_button->get_size();
-
-	Point2 ofs;
-	if (is_layout_rtl()) {
-		ofs = Point2(get_theme_constant(SNAME("arrow_margin"), SNAME("OptionButton")),
-			int(Math::abs((size.height - arrow->get_height()) / 2)));
-	}
-	else {
-		ofs = Point2(size.width - arrow->get_width() -
-						 get_theme_constant(SNAME("arrow_margin"), SNAME("OptionButton")),
-			int(Math::abs((size.height - arrow->get_height()) / 2)));
-	}
-	arrow->draw(ci, ofs, clr);
-}
-
 void TileSetAtlasSourceEditor::_tile_data_editor_dropdown_button_pressed()
 {
 	Size2 size = tile_data_editor_dropdown_button->get_size();

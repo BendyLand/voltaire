@@ -181,7 +181,6 @@ private:
 	void _toggle_instant_preview(bool p_pressed);
 	void _toggle_include_addons(bool p_pressed);
 	void _toggle_fuzzy_search(bool p_pressed);
-	void _menu_option(int p_option);
 
 	String _get_cache_file_path() const;
 
@@ -212,9 +211,6 @@ public:
 	void set_content(const QuickOpenResultCandidate& p_candidate, bool p_highlight);
 	void highlight_item(const Color& p_color);
 	void remove_highlight();
-
-protected:
-	void _notification(int p_what);
 
 private:
 	HBoxContainer* hbc = nullptr;

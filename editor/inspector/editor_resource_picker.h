@@ -97,7 +97,6 @@ class EditorResourcePicker : public HBoxContainer
 	void _update_menu_items();
 	void _edit_menu_cbk(int p_which);
 
-	void _button_draw();
 	void _button_input(const Ref<InputEvent>& p_event);
 	void _on_unique_button_pressed();
 

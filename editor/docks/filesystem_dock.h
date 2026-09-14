@@ -281,13 +281,6 @@ private:
 
 	Ref<Texture2D> _get_tree_item_icon(
 		bool p_is_valid, const String& p_file_type, const String& p_icon_path);
-	void _create_tree(TreeItem* p_parent, EditorFileSystemDirectory* p_dir,
-		const Vector<String>& p_uncollapsed_paths, const Vector<String>& p_selected_paths);
-	void _update_tree(const Vector<String>& p_uncollapsed_paths = Vector<String>(),
-		bool p_uncollapse_root = false, bool p_scroll_to_selected = true,
-		const Vector<String>& p_override_selection = Vector<String>());
-	void _navigate_to_path(
-		const String& p_path, bool p_select_in_favorites = false, bool p_grab_focus = false);
 	bool _update_filtered_items(TreeItem* p_tree_item = nullptr);
 	void _append_favorite_items();
 
@@ -296,14 +289,10 @@ private:
 
 	HashSet<String> _get_valid_conversions_for_file_paths(const Vector<String>& p_paths);
 
-	void _update_file_list(
-		bool p_keep_selection, const Vector<String>& p_override_selection = Vector<String>());
 	void _toggle_file_display();
 	void _set_file_display(bool p_active);
 	void _fs_changed();
 
-	void _select_file(
-		const String& p_path, bool p_select_in_favorites = false, bool p_navigate = true);
 	void _tree_activate_file();
 	void _file_list_activate_file(int p_idx);
 	void _file_multi_selected(int p_index, bool p_selected);
@@ -364,11 +353,9 @@ private:
 	void _change_split_mode();
 	void _split_dragged(int p_offset);
 
-	void _search_changed(const String& p_text, const Control* p_from);
 	bool _matches_all_search_tokens(const String& p_text);
 
 	MenuButton* _create_file_menu_button();
-	void _file_sort_popup(int p_id);
 
 	void _folder_color_index_pressed(int p_index, PopupMenu* p_menu);
 	void _file_and_folders_fill_popup(PopupMenu* p_popup, const Vector<String>& p_paths,
@@ -379,7 +366,6 @@ private:
 		int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index);
 	void _file_list_empty_clicked(const Vector2& p_pos, MouseButton p_mouse_button_index);
 	void _tree_empty_click(const Vector2& p_pos, MouseButton p_button);
-	void _tree_empty_selected();
 
 	void _search(EditorFileSystemDirectory* p_path, List<FileInfo>* matches, int p_max_items);
 
@@ -440,14 +426,11 @@ public:
 	String get_current_directory() const;
 	String get_folder_path_at_mouse_position() const;
 
-	void navigate_to_path(const String& p_path);
 	void focus_on_path();
 	void focus_on_filter();
 	void create_directory(const String& p_path, const String& p_base_dir);
 
 	ScriptCreateDialog* get_script_create_dialog() const;
-
-	void update_all();
 
 	int get_h_split_offset() const { return split_box_offset_h; }
 
@@ -457,13 +440,9 @@ public:
 
 	void set_v_split_offset(int p_offset) { split_box_offset_v = p_offset; }
 
-	void select_file(const String& p_file);
-
 	void set_display_mode(DisplayMode p_display_mode);
 
 	DisplayMode get_display_mode() const { return display_mode; }
-
-	void set_file_sort(FileSortOption p_file_sort);
 
 	FileSortOption get_file_sort() const { return file_sort; }
 
@@ -477,7 +456,6 @@ public:
 
 	void add_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin>& p_plugin);
 	void remove_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin>& p_plugin);
-	Control* create_tooltip_for_path(const String& p_path) const;
 
 	FileSystemDock();
 	~FileSystemDock();

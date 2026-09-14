@@ -230,9 +230,6 @@ class EditorAssetLibraryItemDownload : public MarginContainer
 
 	void _close();
 
-protected:
-	void _notification(int p_what);
-
 public:
 	void set_external_install(bool p_enable) { external_install = p_enable; }
 

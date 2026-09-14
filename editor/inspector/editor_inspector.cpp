@@ -285,14 +285,6 @@ Size2 EditorInspectorCategory::get_minimum_size() const
 	return ms;
 }
 
-void EditorInspectorCategory::_theme_changed()
-{
-	// This needs to be done via the signal, as it's fired before the minimum since is updated.
-	EditorInspector::initialize_category_theme(theme_cache, this);
-	menu_icon_dirty = true;
-	_update_icon();
-}
-
 EditorInspectorCategory::EditorInspectorCategory() { set_focus_mode(FOCUS_ACCESSIBILITY); }
 
 void EditorInspectorSection::_test_unfold()
@@ -465,49 +457,6 @@ VBoxContainer* EditorInspectorArray::get_vbox(int p_index)
 
 Ref<EditorInspectorPlugin> EditorInspector::inspector_plugins[MAX_PLUGINS];
 int EditorInspector::inspector_plugin_count = 0;
-
-void EditorInspector::initialize_category_theme(
-	EditorInspectorCategory::ThemeCache& p_cache, Control* p_control)
-{
-	EditorInspector* parent_inspector = _get_control_parent_inspector(p_control);
-	if (parent_inspector && parent_inspector != p_control) {
-		p_cache = parent_inspector->category_theme_cache;
-		return;
-	}
-
-	p_cache.horizontal_separation =
-		p_control->get_theme_constant(SNAME("h_separation"), SNAME("Tree"));
-	p_cache.vertical_separation =
-		p_control->get_theme_constant(SNAME("separation"), SNAME("EditorPropertyContainer"));
-	p_cache.class_icon_size =
-		p_control->get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-
-	p_cache.font_color = p_control->get_theme_color(SceneStringName(font_color), SNAME("Tree"));
-
-	p_cache.bold_font = p_control->get_theme_font(SNAME("bold"), EditorStringName(EditorFonts));
-	p_cache.bold_font_size =
-		p_control->get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
-
-	p_cache.icon_copy = p_control->get_editor_theme_icon(SNAME("ActionCopy"));
-	p_cache.icon_paste = p_control->get_editor_theme_icon(SNAME("ActionPaste"));
-
-	p_cache.icon_favorites = p_control->get_editor_theme_icon(SNAME("Favorites"));
-	p_cache.icon_unfavorite = p_control->get_editor_theme_icon(SNAME("Unfavorite"));
-	p_cache.icon_help = p_control->get_editor_theme_icon(SNAME("Help"));
-
-	p_cache.background =
-		p_control->get_theme_stylebox(SNAME("bg"), SNAME("EditorInspectorCategory"));
-
-	if (p_control == parent_inspector) {
-		// Only initialize for the inspector, as stand-alone categories won't need it.
-		p_cache.sub_inspector_background = p_control->get_theme_stylebox(
-			"sub_inspector_category_bg", EditorStringName(EditorStyles));
-		for (int i = 0; i <= 16; i++) {
-			p_cache.sub_inspector_color_background[i] = p_control->get_theme_stylebox(
-				"sub_inspector_color_category_bg" + itos(i), EditorStringName(EditorStyles));
-		}
-	}
-}
 
 void EditorInspector::add_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin)
 {
