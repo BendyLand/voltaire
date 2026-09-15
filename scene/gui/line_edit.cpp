@@ -1199,66 +1199,6 @@ Key LineEdit::_get_menu_action_accelerator(const String& p_action)
 	}
 }
 
-void LineEdit::_update_context_menu()
-{
-	if (!menu) {
-		_generate_context_menu();
-	}
-
-	int idx = -1;
-
-#define MENU_ITEM_ACTION_DISABLED(m_menu, m_id, m_action, m_disabled)                              \
-	idx = m_menu->get_item_index(m_id);                                                            \
-	if (idx >= 0) {                                                                                \
-		m_menu->set_item_accelerator(                                                              \
-			idx, shortcut_keys_enabled ? _get_menu_action_accelerator(m_action) : Key::NONE);      \
-		m_menu->set_item_disabled(idx, m_disabled);                                                \
-	}
-
-#define MENU_ITEM_ACTION(m_menu, m_id, m_action)                                                   \
-	idx = m_menu->get_item_index(m_id);                                                            \
-                                                                                                   \
-	if (idx >= 0) {                                                                                \
-		m_menu->set_item_accelerator(                                                              \
-			idx, shortcut_keys_enabled ? _get_menu_action_accelerator(m_action) : Key::NONE);      \
-	}
-
-#define MENU_ITEM_DISABLED(m_menu, m_id, m_disabled)                                               \
-	idx = m_menu->get_item_index(m_id);                                                            \
-	if (idx >= 0) {                                                                                \
-		m_menu->set_item_disabled(idx, m_disabled);                                                \
-	}
-
-#define MENU_ITEM_CHECKED(m_menu, m_id, m_checked)                                                 \
-	idx = m_menu->get_item_index(m_id);                                                            \
-	if (idx >= 0) {                                                                                \
-		m_menu->set_item_checked(idx, m_checked);                                                  \
-	}
-
-	if (DisplayServer::get_singleton()->has_feature(
-			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
-		MENU_ITEM_DISABLED(menu, MENU_EMOJI_AND_SYMBOL, !editable || !emoji_menu_enabled)
-	}
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_CUT, "ui_cut", !editable)
-	MENU_ITEM_ACTION(menu, MENU_COPY, "ui_copy")
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_PASTE, "ui_paste", !editable)
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_SELECT_ALL, "ui_text_select_all", !selecting_enabled)
-	MENU_ITEM_DISABLED(menu, MENU_CLEAR, !editable)
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_UNDO, "ui_undo", !editable || !has_undo())
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_REDO, "ui_redo", !editable || !has_redo())
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_INHERITED, text_direction == TEXT_DIRECTION_INHERITED)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_AUTO, text_direction == TEXT_DIRECTION_AUTO)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_LTR, text_direction == TEXT_DIRECTION_LTR)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_RTL, text_direction == TEXT_DIRECTION_RTL)
-	MENU_ITEM_CHECKED(menu, MENU_DISPLAY_UCC, draw_control_chars)
-	MENU_ITEM_DISABLED(menu, MENU_SUBMENU_INSERT_UCC, !editable)
-
-#undef MENU_ITEM_ACTION_DISABLED
-#undef MENU_ITEM_ACTION
-#undef MENU_ITEM_DISABLED
-#undef MENU_ITEM_CHECKED
-}
-
 LineEdit::LineEdit(const String& p_placeholder)
 {
 	text_rid = TS->create_shaped_text();

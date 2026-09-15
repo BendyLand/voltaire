@@ -282,13 +282,10 @@ public:
 	void set_spread(real_t p_spread);
 	real_t get_spread() const;
 
-	void set_param_min(Parameter p_param, real_t p_value);
 	real_t get_param_min(Parameter p_param) const;
 
-	void set_param_max(Parameter p_param, real_t p_value);
 	real_t get_param_max(Parameter p_param) const;
 
-	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
 	void set_color(const Color& p_color);
@@ -336,7 +333,7 @@ public:
 
 	void convert_from_particles(Node* p_particles);
 
-	CPUParticles2D();
+	CPUParticles2D() = default;
 	~CPUParticles2D();
 };
 

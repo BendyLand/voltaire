@@ -593,7 +593,6 @@ public:
 	virtual Size2 get_combined_maximum_size() const;
 	virtual Size2 get_inner_combined_maximum_size() const;
 
-	void set_custom_maximum_size(const Size2& p_custom);
 	Size2 get_custom_maximum_size() const;
 
 	void set_parent_maximum_size_cache(const Size2& p_size);
@@ -700,7 +699,6 @@ public:
 
 	virtual String get_accessibility_container_name(const Node* p_node) const;
 
-	void set_accessibility_name(const String& p_name);
 	String get_accessibility_name() const;
 
 	virtual String _get_accessibility_name() const;
@@ -827,7 +825,6 @@ public:
 	// Extra properties.
 
 	String get_tooltip_text() const;
-	void set_tooltip_text(const String& text);
 	StringName get_translation_context() const;
 	void set_translation_context(const StringName& p_context);
 	virtual Control* make_custom_tooltip(const String& p_text) const;

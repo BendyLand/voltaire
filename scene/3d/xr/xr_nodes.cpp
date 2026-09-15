@@ -56,12 +56,6 @@ void XRCamera3D::_pose_changed(const Ref<XRPose>& p_pose)
 	}
 }
 
-void XRCamera3D::_physics_interpolated_changed()
-{
-	Camera3D::_physics_interpolated_changed();
-	update_configuration_warnings();
-}
-
 Vector3 XRCamera3D::project_local_ray_normal(const Point2& p_pos) const
 {
 	// get our XRServer
@@ -295,10 +289,6 @@ void XRNode3D::_update_visibility()
 	}
 }
 
-void XRNode3D::_physics_interpolated_changed() { update_configuration_warnings(); }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 XRPositionalTracker::TrackerHand XRController3D::get_tracker_hand() const
 {
 	// get our XRServer
@@ -322,7 +312,6 @@ Plane XRAnchor3D::get_plane() const
 }
 
 Vector<XROrigin3D*> XROrigin3D::origin_nodes;
-
 
 real_t XROrigin3D::get_world_scale() const
 {

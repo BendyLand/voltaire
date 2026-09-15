@@ -226,17 +226,6 @@ real_t PathFollow3D::get_progress_ratio() const
 	}
 }
 
-void PathFollow3D::set_rotation_mode(RotationMode p_rotation_mode)
-{
-	if (rotation_mode == p_rotation_mode) {
-		return;
-	}
-	rotation_mode = p_rotation_mode;
-
-	update_configuration_warnings();
-	update_transform();
-}
-
 PathFollow3D::RotationMode PathFollow3D::get_rotation_mode() const { return rotation_mode; }
 
 void PathFollow3D::set_use_model_front(bool p_use_model_front)

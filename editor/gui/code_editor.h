@@ -118,7 +118,6 @@ protected:
 
 	bool _search(uint32_t p_flags, int p_from_line, int p_from_col);
 
-	void _replace();
 	void _replace_all();
 
 
@@ -210,7 +209,6 @@ protected:
 
 	void _text_changed_idle_timeout();
 	void _code_complete_timer_timeout();
-	void _text_changed();
 	void _line_col_changed();
 	void _notification(int);
 
@@ -218,9 +216,7 @@ protected:
 	bool is_errors_panel_opened = false;
 
 public:
-	void trim_trailing_whitespace();
 	void trim_final_newlines();
-	void insert_final_newline();
 
 	enum CaseStyle
 	{
@@ -229,13 +225,7 @@ public:
 		CAPITALIZE,
 	};
 
-	void convert_case(CaseStyle p_case);
-
 	void set_indent_using_spaces(bool p_use_spaces);
-
-	/// Toggle inline comment on currently selected lines, or on current line if nothing is
-	/// selected, by adding or removing comment delimiter
-	void toggle_inline_comment(const String& delimiter);
 
 	void adjust_viewport_to_caret();
 	void center_viewport_to_caret();
@@ -286,8 +276,6 @@ public:
 
 	void set_zoom_factor(float p_zoom_factor);
 	float get_zoom_factor();
-
-	void validate_script();
 
 	void set_toggle_list_control(Control* p_toggle_list_control);
 	void update_toggle_files_button();

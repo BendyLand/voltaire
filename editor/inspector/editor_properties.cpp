@@ -119,18 +119,6 @@ void EditorPropertyText::_text_submitted(const String& p_string)
 	}
 }
 
-void EditorPropertyText::set_string_name(bool p_enabled)
-{
-	string_name = p_enabled;
-	if (p_enabled) {
-		Label* prefix = memnew(Label("&"));
-		prefix->set_tooltip_text("StringName");
-		prefix->set_mouse_filter(MOUSE_FILTER_STOP);
-		text->get_parent()->add_child(prefix);
-		text->get_parent()->move_child(prefix, 0);
-	}
-}
-
 void EditorPropertyText::set_secret(bool p_enabled) { text->set_secret(p_enabled); }
 
 void EditorPropertyText::set_placeholder(const String& p_string)
@@ -227,20 +215,6 @@ EditorPropertyFlags::EditorPropertyFlags()
 	add_child(vbox);
 }
 
-void EditorPropertyLayersGrid::_rename_pressed(int p_menu)
-{
-	// Show rename popup for active layer.
-	ERR_FAIL_INDEX(renamed_layer_index, names.size());
-	String name = names[renamed_layer_index];
-	rename_dialog->set_title(vformat(TTR("Renaming Layer %d:"), renamed_layer_index + 1));
-	rename_dialog_text->set_text(name);
-	// Indicate that leaving it blank reverts back to "Layer [Number]".
-	rename_dialog_text->set_placeholder(vformat(TTR("Layer %d"), renamed_layer_index + 1));
-	rename_dialog_text->select(0, name.length());
-	rename_dialog->popup_centered(Size2(300, 80) * EDSCALE);
-	rename_dialog_text->grab_focus();
-}
-
 Size2 EditorPropertyLayersGrid::get_grid_size() const
 {
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
@@ -276,35 +250,6 @@ void EditorPropertyLayers::_notification(int p_what)
 	}
 }
 
-void EditorPropertyLayers::_button_pressed()
-{
-	int layer_count = grid->layer_count;
-	layers->clear();
-	for (int i = 0; i < layer_count; i++) {
-		const String name = get_layer_name(i);
-		if (name.is_empty()) {
-			continue;
-		}
-		layers->add_check_item(name, i);
-		int idx = layers->get_item_index(i);
-		layers->set_item_checked(idx, grid->value & (1u << i));
-	}
-
-	if (layers->get_item_count() == 0) {
-		layers->add_item(TTR("No Named Layers"));
-		layers->set_item_disabled(0, true);
-	}
-	layers->add_separator();
-	layers->add_icon_item(
-		get_editor_theme_icon("Edit"), TTR("Edit Layer Names"), grid->layer_count);
-
-	Rect2 gp = button->get_screen_rect();
-	layers->reset_size();
-	Vector2 popup_pos = gp.position - Vector2(layers->get_contents_minimum_size().x, 0);
-	layers->set_position(popup_pos);
-	layers->popup();
-}
-
 void EditorPropertyLayers::_refresh_names() { setup(layer_type); }
 
 void EditorPropertyInteger::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
@@ -314,24 +259,6 @@ void EditorPropertyInteger::set_deferred_drag_mode_enabled(bool p_enabled)
 	EditorProperty::set_deferred_drag_mode_enabled(p_enabled);
 
 	spin->set_deferred_drag_mode_enabled(p_enabled);
-}
-
-void EditorPropertyInteger::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	spin->set_min(p_range_hint.min);
-	spin->set_max(p_range_hint.max);
-	spin->set_step(Math::round(p_range_hint.step));
-	if (p_range_hint.hide_control) {
-		spin->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-	}
-	else {
-		spin->set_control_state(p_range_hint.prefer_slider
-									? EditorSpinSlider::CONTROL_STATE_PREFER_SLIDER
-									: EditorSpinSlider::CONTROL_STATE_DEFAULT);
-	}
-	spin->set_allow_greater(p_range_hint.or_greater);
-	spin->set_allow_lesser(p_range_hint.or_less);
-	spin->set_suffix(p_range_hint.suffix);
 }
 
 void EditorPropertyObjectID::_notification(int p_what)
@@ -346,15 +273,6 @@ void EditorPropertyObjectID::_notification(int p_what)
 
 void EditorPropertyObjectID::setup(const String& p_base_type) { base_type = p_base_type; }
 
-EditorPropertyCallable::EditorPropertyCallable()
-{
-	edit = memnew(Button);
-	edit->set_theme_type_variation(SNAME("EditorInspectorButton"));
-	edit->set_accessibility_name(TTRC("Edit"));
-	add_child(edit);
-	add_focusable(edit);
-}
-
 void EditorPropertyFloat::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
 
 void EditorPropertyFloat::set_deferred_drag_mode_enabled(bool p_enabled)
@@ -362,21 +280,6 @@ void EditorPropertyFloat::set_deferred_drag_mode_enabled(bool p_enabled)
 	EditorProperty::set_deferred_drag_mode_enabled(p_enabled);
 
 	spin->set_deferred_drag_mode_enabled(p_enabled);
-}
-
-void EditorPropertyFloat::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	radians_as_degrees = p_range_hint.radians_as_degrees;
-	spin->set_min(p_range_hint.min);
-	spin->set_max(p_range_hint.max);
-	spin->set_step(p_range_hint.step);
-	if (p_range_hint.hide_control) {
-		spin->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-	}
-	spin->set_exp_ratio(p_range_hint.exp_range);
-	spin->set_allow_greater(p_range_hint.or_greater);
-	spin->set_allow_lesser(p_range_hint.or_less);
-	spin->set_suffix(p_range_hint.suffix);
 }
 
 void EditorPropertyEasing::_set_read_only(bool p_read_only) { spin->set_read_only(p_read_only); }
@@ -455,21 +358,6 @@ void EditorPropertyRect2::_notification(int p_what)
 	}
 }
 
-void EditorPropertyRect2::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 4; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		spin[i]->set_suffix(p_range_hint.suffix);
-	}
-}
-
 void EditorPropertyRect2i::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 4; i++) {
@@ -486,19 +374,6 @@ void EditorPropertyRect2i::_notification(int p_what)
 			spin[i]->add_theme_color_override("label_color", colors[i % 2]);
 		}
 	} break;
-	}
-}
-
-void EditorPropertyRect2i::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 4; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(1);
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		spin[i]->set_suffix(p_range_hint.suffix);
-		spin[i]->set_editing_integer(true);
 	}
 }
 
@@ -519,21 +394,6 @@ void EditorPropertyPlane::_notification(int p_what)
 		}
 	} break;
 	}
-}
-
-void EditorPropertyPlane::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 4; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-	}
-	spin[3]->set_suffix(p_range_hint.suffix);
 }
 
 void EditorPropertyQuaternion::_set_read_only(bool p_read_only)
@@ -574,8 +434,6 @@ bool EditorPropertyQuaternion::is_grabbing_euler()
 	return is_grabbing;
 }
 
-void EditorPropertyQuaternion::_warning_pressed() { warning_dialog->popup_centered(); }
-
 void EditorPropertyAABB::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 6; i++) {
@@ -592,21 +450,6 @@ void EditorPropertyAABB::_notification(int p_what)
 			spin[i]->add_theme_color_override("label_color", colors[i % 3]);
 		}
 	} break;
-	}
-}
-
-void EditorPropertyAABB::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 6; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		spin[i]->set_suffix(p_range_hint.suffix);
 	}
 }
 
@@ -635,23 +478,6 @@ void EditorPropertyTransform2D::_notification(int p_what)
 	}
 }
 
-void EditorPropertyTransform2D::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 6; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		if (i % 3 == 2) {
-			spin[i]->set_suffix(p_range_hint.suffix);
-		}
-	}
-}
-
 void EditorPropertyBasis::_set_read_only(bool p_read_only)
 {
 	for (int i = 0; i < 9; i++) {
@@ -668,23 +494,6 @@ void EditorPropertyBasis::_notification(int p_what)
 			spin[i]->add_theme_color_override("label_color", colors[i % 3]);
 		}
 	} break;
-	}
-}
-
-void EditorPropertyBasis::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 9; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		// Basis is inherently unitless, however someone may want to use it as
-		// a generic way to store 9 values, so we'll still respect the suffix.
-		spin[i]->set_suffix(p_range_hint.suffix);
 	}
 }
 
@@ -720,23 +529,6 @@ void EditorPropertyTransform3D::_notification(int p_what)
 			spin[i]->add_theme_color_override("label_color", colors[i % 4]);
 		}
 	} break;
-	}
-}
-
-void EditorPropertyTransform3D::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 12; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		if (i % 4 == 3) {
-			spin[i]->set_suffix(p_range_hint.suffix);
-		}
 	}
 }
 
@@ -776,23 +568,6 @@ void EditorPropertyProjection::_notification(int p_what)
 			spin[i]->add_theme_color_override("label_color", colors[i % 4]);
 		}
 	} break;
-	}
-}
-
-void EditorPropertyProjection::setup(const EditorPropertyRangeHint& p_range_hint)
-{
-	for (int i = 0; i < 16; i++) {
-		spin[i]->set_min(p_range_hint.min);
-		spin[i]->set_max(p_range_hint.max);
-		spin[i]->set_step(p_range_hint.step);
-		if (p_range_hint.hide_control) {
-			spin[i]->set_control_state(EditorSpinSlider::CONTROL_STATE_HIDE);
-		}
-		spin[i]->set_allow_greater(true);
-		spin[i]->set_allow_lesser(true);
-		if (i % 4 == 3) {
-			spin[i]->set_suffix(p_range_hint.suffix);
-		}
 	}
 }
 

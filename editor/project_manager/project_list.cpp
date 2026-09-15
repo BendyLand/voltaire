@@ -64,20 +64,6 @@ void ProjectListItemControl::_update_favorite_button_focus_color()
 	}
 }
 
-void ProjectListItemControl::set_project_title(const String& p_title)
-{
-	project_title->set_text(p_title);
-	project_title->set_accessibility_name(TTRC("Project Name"));
-	queue_accessibility_update();
-}
-
-void ProjectListItemControl::set_project_path(const String& p_path)
-{
-	project_path->set_text(p_path);
-	project_path->set_accessibility_name(TTRC("Project Path"));
-	queue_accessibility_update();
-}
-
 void ProjectListItemControl::set_project_icon(const Ref<Texture2D>& p_icon)
 {
 	icon_needs_reload = false;
@@ -103,19 +89,6 @@ void ProjectListItemControl::set_project_version(const String& p_info)
 
 bool ProjectListItemControl::should_load_project_icon() const { return icon_needs_reload; }
 
-void ProjectListItemControl::set_is_favorite(bool p_favorite)
-{
-	is_favorite = p_favorite;
-	if (p_favorite) {
-		favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Favorites")));
-		favorite_button->set_accessibility_name(TTRC("Remove from Favorites"));
-	}
-	else {
-		favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Unfavorite")));
-		favorite_button->set_accessibility_name(TTRC("Add to Favorites"));
-	}
-}
-
 void ProjectListItemControl::set_is_grayed(bool p_grayed)
 {
 	if (p_grayed) {
@@ -132,47 +105,6 @@ void ProjectListItemControl::set_is_grayed(bool p_grayed)
 void ProjectListItemControl::set_project_title_index(int p_title_index)
 {
 	project_title_index = p_title_index;
-}
-
-void ProjectListItemControl::resize_project_title()
-{
-	if (get_window() == nullptr) {
-		return;
-	}
-
-	int window_size = get_window()->get_size().x;
-	int difference = window_size - window_size_cache;
-	window_size_cache = window_size;
-
-	int& title_size_cache = get_list()->title_size_cache[project_title_index];
-	title_size_cache += difference;
-
-	if (title_size_cache > title_fullsize_cache + tag_size_cache) {
-		project_title->set_custom_maximum_size(Vector2(-1, -1));
-		project_title->set_custom_minimum_size(Vector2(0, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_OFF);
-
-		return;
-	}
-	ProjectTag tag = ProjectTag("dummy");
-	int tag_maxsize = tag.get_custom_maximum_size().x;
-	int title_maxsize = title_size_cache - tag_size_cache;
-	int title_minsize = title_size_cache - tag_maxsize;
-
-	int abs_minsize = (200 * EDSCALE);
-	if (title_fullsize_cache > abs_minsize) {
-		if (title_minsize < abs_minsize) {
-			title_minsize = abs_minsize + tag_maxsize - tag_size_cache;
-		}
-		if (title_maxsize < title_minsize) {
-			project_title->set_custom_maximum_size(Vector2(title_minsize, -1));
-		}
-		else {
-			project_title->set_custom_maximum_size(Vector2(title_maxsize, -1));
-		}
-		project_title->set_custom_minimum_size(Vector2(title_minsize, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	}
 }
 
 struct ProjectListComparator
@@ -628,13 +560,6 @@ void ProjectList::erase_selected_projects(bool p_delete_project_contents)
 	_last_clicked = "";
 
 	update_dock_menu();
-}
-
-void ProjectList::resize_project_titles()
-{
-	for (Item& item : _projects) {
-		item.control->resize_project_title();
-	}
 }
 
 bool ProjectList::is_any_project_missing() const

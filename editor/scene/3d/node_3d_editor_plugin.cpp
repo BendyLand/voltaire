@@ -107,8 +107,6 @@
 
 using namespace Node3DEditorConstants;
 
-///////////////////////////////////////////////////////////////////
-
 Node3DEditor* Node3DEditor::singleton = nullptr;
 
 void Node3DEditor::select_gizmo_highlight_axis(int p_axis)
@@ -186,27 +184,6 @@ void Node3DEditor::_finish_grid()
 	}
 }
 
-void Node3DEditor::update_grid()
-{
-	const Camera3D::ProjectionType current_projection = viewports[0]->camera->get_projection();
-
-	if (current_projection != grid_camera_last_update_perspective) {
-		grid_init_draw = false; // redraw
-		grid_camera_last_update_perspective = current_projection;
-	}
-
-	// Gets a orthogonal or perspective position correctly (for the grid comparison)
-	const Vector3 camera_position = get_editor_viewport(0)->camera->get_position();
-
-	if (!grid_init_draw ||
-		grid_camera_last_update_position.distance_squared_to(camera_position) >= 100.0f) {
-		_finish_grid();
-		_init_grid();
-		grid_init_draw = true;
-		grid_camera_last_update_position = camera_position;
-	}
-}
-
 void Node3DEditor::snap_selected_nodes_to_floor() { do_snap_selected_nodes_to_floor = true; }
 
 void Node3DEditor::_sun_environ_settings_pressed()
@@ -237,51 +214,6 @@ Node3DEditorViewport* Node3DEditor::get_freelook_viewport() const { return freel
 
 void Node3DEditor::_viewport_clicked(int p_viewport_idx) { last_used_viewport = p_viewport_idx; }
 
-void Node3DEditor::_register_all_gizmos()
-{
-	add_gizmo_plugin(Ref<Camera3DGizmoPlugin>(memnew(Camera3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<Light3DGizmoPlugin>(memnew(Light3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<AudioStreamPlayer3DGizmoPlugin>(memnew(AudioStreamPlayer3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<AudioListener3DGizmoPlugin>(memnew(AudioListener3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<MeshInstance3DGizmoPlugin>(memnew(MeshInstance3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<OccluderInstance3DGizmoPlugin>(memnew(OccluderInstance3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<SpriteBase3DGizmoPlugin>(memnew(SpriteBase3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<Label3DGizmoPlugin>(memnew(Label3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<GeometryInstance3DGizmoPlugin>(memnew(GeometryInstance3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<Marker3DGizmoPlugin>(memnew(Marker3DGizmoPlugin)));
-	add_gizmo_plugin(
-		Ref<SpringBoneCollision3DGizmoPlugin>(memnew(SpringBoneCollision3DGizmoPlugin)));
-	add_gizmo_plugin(
-		Ref<SpringBoneSimulator3DGizmoPlugin>(memnew(SpringBoneSimulator3DGizmoPlugin)));
-	add_gizmo_plugin(
-		Ref<VisibleOnScreenNotifier3DGizmoPlugin>(memnew(VisibleOnScreenNotifier3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<GPUParticles3DGizmoPlugin>(memnew(GPUParticles3DGizmoPlugin)));
-	add_gizmo_plugin(
-		Ref<GPUParticlesCollision3DGizmoPlugin>(memnew(GPUParticlesCollision3DGizmoPlugin)));
-	add_gizmo_plugin(
-		Ref<Particles3DEmissionShapeGizmoPlugin>(memnew(Particles3DEmissionShapeGizmoPlugin)));
-	add_gizmo_plugin(Ref<CPUParticles3DGizmoPlugin>(memnew(CPUParticles3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<ReflectionProbeGizmoPlugin>(memnew(ReflectionProbeGizmoPlugin)));
-	add_gizmo_plugin(Ref<DecalGizmoPlugin>(memnew(DecalGizmoPlugin)));
-	add_gizmo_plugin(Ref<VoxelGIGizmoPlugin>(memnew(VoxelGIGizmoPlugin)));
-	add_gizmo_plugin(Ref<LightmapGIGizmoPlugin>(memnew(LightmapGIGizmoPlugin)));
-	add_gizmo_plugin(Ref<LightmapProbeGizmoPlugin>(memnew(LightmapProbeGizmoPlugin)));
-	add_gizmo_plugin(Ref<FogVolumeGizmoPlugin>(memnew(FogVolumeGizmoPlugin)));
-	add_gizmo_plugin(Ref<TwoBoneIK3DGizmoPlugin>(memnew(TwoBoneIK3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<ChainIK3DGizmoPlugin>(memnew(ChainIK3DGizmoPlugin)));
-	// Physics gizmo plugins.
-	add_gizmo_plugin(Ref<CollisionObject3DGizmoPlugin>(memnew(CollisionObject3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<CollisionShape3DGizmoPlugin>(memnew(CollisionShape3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<CollisionPolygon3DGizmoPlugin>(memnew(CollisionPolygon3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<Joint3DGizmoPlugin>(memnew(Joint3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<SoftBody3DGizmoPlugin>(memnew(SoftBody3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<ShapeCast3DGizmoPlugin>(memnew(ShapeCast3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<SpringArm3DGizmoPlugin>(memnew(SpringArm3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<PhysicalBone3DGizmoPlugin>(memnew(PhysicalBone3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<VehicleWheel3DGizmoPlugin>(memnew(VehicleWheel3DGizmoPlugin)));
-	add_gizmo_plugin(Ref<RayCast3DGizmoPlugin>(memnew(RayCast3DGizmoPlugin)));
-}
-
 void Node3DEditor::_preview_settings_changed()
 {
 	if (sun_environ_updating) {
@@ -306,38 +238,6 @@ void Node3DEditor::_preview_settings_changed()
 										? Environment::TONE_MAPPER_FILMIC
 										: Environment::TONE_MAPPER_LINEAR);
 	}
-}
-
-void Node3DEditor::_load_default_preview_settings()
-{
-	sun_environ_updating = true;
-
-	// These default rotations place the preview sun at an angular altitude
-	// of 60 degrees (must be negative) and an azimuth of 30 degrees clockwise
-	// from north (or 150 CCW from south), from north east, facing south west.
-	// On any not-tidally-locked planet, a sun would have an angular altitude
-	// of 60 degrees as the average of all points on the sphere at noon.
-	// The azimuth choice is arbitrary, but ideally shouldn't be on an axis.
-	sun_rotation = Vector2(-Math::deg_to_rad(60.0), Math::deg_to_rad(150.0));
-
-	sun_angle_altitude->set_value_no_signal(-Math::rad_to_deg(sun_rotation.x));
-	sun_angle_azimuth->set_value_no_signal(180.0 - Math::rad_to_deg(sun_rotation.y));
-	environ_sky_color->set_pick_color(Color(0.385, 0.454, 0.55));
-	environ_ground_color->set_pick_color(Color(0.2, 0.169, 0.133));
-	environ_energy->set_value_no_signal(1.0);
-	if (OS::get_singleton()->get_current_rendering_method() != "gl_compatibility" &&
-		OS::get_singleton()->get_current_rendering_method() != "dummy") {
-		environ_glow_button->set_pressed_no_signal(true);
-	}
-	environ_tonemap_button->set_pressed_no_signal(false);
-	environ_ao_button->set_pressed_no_signal(false);
-	environ_gi_button->set_pressed_no_signal(false);
-	sun_shadow_max_distance->set_value_no_signal(100);
-
-	sun_color->set_pick_color(Color(1, 1, 1));
-	sun_energy->set_value_no_signal(1.0);
-
-	sun_environ_updating = false;
 }
 
 Node3DEditor::~Node3DEditor()
@@ -378,11 +278,6 @@ bool Node3DEditor::is_gizmo_visible() const
 bool Node3DEditor::are_local_coords_enabled() const
 {
 	return tool_option_button[Node3DEditor::TOOL_OPT_LOCAL_COORDS]->is_pressed();
-}
-
-void Node3DEditor::set_local_coords_enabled(bool on) const
-{
-	tool_option_button[Node3DEditor::TOOL_OPT_LOCAL_COORDS]->set_pressed(on);
 }
 
 bool Node3DEditor::is_preserve_children_transform_enabled() const
@@ -442,26 +337,6 @@ struct _GizmoPluginNameComparator
 		return p_a->get_gizmo_name() < p_b->get_gizmo_name();
 	}
 };
-
-void Node3DEditor::add_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin)
-{
-	ERR_FAIL_COND(p_plugin.is_null());
-
-	gizmo_plugins_by_priority.push_back(p_plugin);
-	gizmo_plugins_by_priority.sort_custom<_GizmoPluginPriorityComparator>();
-
-	gizmo_plugins_by_name.push_back(p_plugin);
-	gizmo_plugins_by_name.sort_custom<_GizmoPluginNameComparator>();
-
-	_update_gizmos_menu();
-}
-
-void Node3DEditor::remove_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin)
-{
-	gizmo_plugins_by_priority.erase(p_plugin);
-	gizmo_plugins_by_name.erase(p_plugin);
-	_update_gizmos_menu();
-}
 
 DynamicBVH::ID Node3DEditor::insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb)
 {

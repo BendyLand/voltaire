@@ -436,13 +436,11 @@ public:
 
 	void popup(const Rect2i& p_screen_rect = Rect2i());
 	void popup_on_parent(const Rect2i& p_parent_rect);
-	void popup_centered(const Size2i& p_minsize = Size2i());
 	void popup_centered_ratio(float p_ratio = 0.8);
 	void popup_centered_clamped(const Size2i& p_size = Size2i(), float p_fallback_ratio = 0.75);
 
 	void popup_exclusive(Node* p_from_node, const Rect2i& p_screen_rect = Rect2i());
 	void popup_exclusive_on_parent(Node* p_from_node, const Rect2i& p_parent_rect);
-	void popup_exclusive_centered(Node* p_from_node, const Size2i& p_minsize = Size2i());
 	void popup_exclusive_centered_ratio(Node* p_from_node, float p_ratio = 0.8);
 	void popup_exclusive_centered_clamped(
 		Node* p_from_node, const Size2i& p_size = Size2i(), float p_fallback_ratio = 0.75);
@@ -460,7 +458,6 @@ public:
 
 	Rect2i get_usable_parent_rect() const;
 
-	void set_accessibility_name(const String& p_name);
 	String get_accessibility_name() const;
 
 	void set_accessibility_description(const String& p_description);

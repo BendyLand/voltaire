@@ -93,11 +93,9 @@ class EditorResourcePicker : public HBoxContainer
 	void _resource_changed();
 	void _file_selected(const String& p_path);
 
-	void _update_menu();
 	void _update_menu_items();
 	void _edit_menu_cbk(int p_which);
 
-	void _button_input(const Ref<InputEvent>& p_event);
 	void _on_unique_button_pressed();
 
 	String _get_owner_path() const;
@@ -135,9 +133,7 @@ public:
 
 	void set_force_allow_unique(bool p_force) { force_allow_unique = p_force; }
 
-	void set_toggle_mode(bool p_enable);
 	bool is_toggle_mode() const;
-	void set_toggle_pressed(bool p_pressed);
 	bool is_toggle_pressed() const;
 
 	void set_property_path(const StringName& p_path) { property_path = p_path; }

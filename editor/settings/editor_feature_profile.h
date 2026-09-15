@@ -167,7 +167,6 @@ class EditorFeatureProfileManager : public AcceptDialog
 	void _class_list_item_selected();
 	void _class_list_item_edited();
 	void _property_item_edited();
-	void _save_and_update();
 
 	Timer* update_timer = nullptr;
 	void _emit_current_profile_changed();

@@ -46,8 +46,6 @@ private:
 	void _started();
 	void _stopped();
 
-protected:
-
 public:
 	void detach_debugger();
 
@@ -57,8 +55,6 @@ public:
 	bool is_debuggable();
 	bool is_active();
 
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
-
 	EditorDebuggerSession(ScriptEditorDebugger* p_debugger);
 	~EditorDebuggerSession();
 };
@@ -67,8 +63,6 @@ class EditorDebuggerPlugin : public RefCounted
 {
 private:
 	List<Ref<EditorDebuggerSession>> sessions;
-
-protected:
 
 public:
 	void create_session(ScriptEditorDebugger* p_debugger);

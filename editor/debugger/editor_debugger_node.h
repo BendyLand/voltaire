@@ -141,7 +141,6 @@ protected:
 	void _remote_selection_cleared(int p_debugger);
 
 	void _paused();
-	void _break_state_changed();
 	void _menu_option(int p_id);
 	void _update_debug_options();
 
@@ -202,8 +201,6 @@ public:
 	String get_server_uri() const;
 
 	void set_keep_open(bool p_keep_open);
-	Error start(const String& p_uri = "tcp://");
-	void stop(bool p_force = false);
 
 	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
 	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);

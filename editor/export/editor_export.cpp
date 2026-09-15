@@ -35,15 +35,6 @@
 
 EditorExport* EditorExport::singleton = nullptr;
 
-void EditorExport::save_presets()
-{
-	if (block_save) {
-		return;
-	}
-	save_timer->start();
-}
-
-
 void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
 	p_platform->initialize();
@@ -115,13 +106,6 @@ Ref<EditorExportPreset> EditorExport::get_export_preset(int p_idx)
 	return export_presets[p_idx];
 }
 
-void EditorExport::remove_export_preset(int p_idx)
-{
-	export_presets.remove_at(p_idx);
-	save_presets();
-	emit_presets_runnable_changed();
-}
-
 void EditorExport::add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
 {
 	if (!export_plugins.has(p_plugin)) {
@@ -137,23 +121,6 @@ void EditorExport::remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
 }
 
 Vector<Ref<EditorExportPlugin>> EditorExport::get_export_plugins() { return export_plugins; }
-
-void EditorExport::set_runnable_preset(const Ref<EditorExportPreset>& p_preset)
-{
-	runnable_presets[p_preset->get_platform()] = p_preset;
-	emit_presets_runnable_changed();
-	save_presets();
-}
-
-void EditorExport::unset_runnable_preset(const Ref<EditorExportPreset>& p_preset)
-{
-	const Ref<EditorExportPreset>* current = runnable_presets.getptr(p_preset->get_platform());
-	if (current && *current == p_preset) {
-		runnable_presets.erase(p_preset->get_platform());
-		emit_presets_runnable_changed();
-		save_presets();
-	}
-}
 
 Ref<EditorExportPreset> EditorExport::get_runnable_preset_for_platform(
 	const Ref<EditorExportPlatform>& p_for_platform) const

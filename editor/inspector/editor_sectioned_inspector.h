@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/split_container.h"
 
 class CheckButton;

@@ -51,7 +51,9 @@ class CheckButton : public Button
 
 		Color button_checked_color;
 		Color button_unchecked_color;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 protected:
 	Size2 get_icon_size() const;
@@ -60,8 +62,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	CheckButton(const String& p_text = String());
-	~CheckButton();
+	CheckButton(const String& p_text = String()) : Button(p_text) {}
+	~CheckButton() = default;
 };
 
 

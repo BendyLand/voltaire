@@ -1124,13 +1124,6 @@ void Window::popup_exclusive_on_parent(Node* p_from_node, const Rect2i& p_parent
 	}
 }
 
-void Window::popup_exclusive_centered(Node* p_from_node, const Size2i& p_minsize)
-{
-	if (_try_parent_dialog(p_from_node)) {
-		popup_centered(p_minsize);
-	}
-}
-
 void Window::popup_exclusive_centered_ratio(Node* p_from_node, float p_ratio)
 {
 	if (_try_parent_dialog(p_from_node)) {
@@ -1285,16 +1278,6 @@ Rect2i Window::get_usable_parent_rect() const
 			DisplayServer::get_singleton()->window_get_current_screen(w->get_window_id()));
 	}
 	return parent_rect;
-}
-
-void Window::set_accessibility_name(const String& p_name)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (accessibility_name != p_name) {
-		accessibility_name = p_name;
-		queue_accessibility_update();
-		update_configuration_warnings();
-	}
 }
 
 void Window::set_accessibility_description(const String& p_description)

@@ -104,7 +104,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _feature_selected(int p_index);
 
 	String _get_setting_name() const;
-	void _setting_edited(const String& p_name);
 	void _setting_selected(const String& p_path);
 	void _add_setting();
 	void _delete_setting();
@@ -146,7 +145,6 @@ public:
 
 	SectionedInspector* get_inspector() { return general_settings_inspector; }
 
-	void queue_save();
 	void connect_filesystem_dock_signals(FileSystemDock* p_fs_dock);
 
 	ProjectSettingsEditor(EditorData* p_data);

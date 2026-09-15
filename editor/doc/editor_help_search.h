@@ -167,12 +167,6 @@ class EditorHelpSearch::Runner : public RefCounted
 	bool _match_string(const String& p_term, const String& p_string) const;
 	String _match_keywords(const String& p_term, const String& p_keywords) const;
 	void _match_item(TreeItem* p_item, const String& p_text, bool p_is_keywords = false);
-	TreeItem* _create_category_item(TreeItem* p_parent, const String& p_class,
-		const StringName& p_icon, const String& p_text, const String& p_metatype);
-	TreeItem* _create_member_item(TreeItem* p_parent, const String& p_class_name,
-		const StringName& p_icon, const String& p_name, const String& p_text, const String& p_type,
-		const String& p_metatype, const String& p_tooltip, const String& p_keywords,
-		bool p_is_deprecated, bool p_is_experimental, const String& p_matching_keyword);
 
 public:
 	bool work(uint64_t slot = 100000);

@@ -46,15 +46,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/packed_scene.h"
 
-void AnimationLibraryEditor::_add_library()
-{
-	add_library_name->set_text("");
-	add_library_dialog->popup_centered();
-	add_library_name->grab_focus();
-	adding_animation = false;
-	adding_animation_to_library = StringName();
-}
-
 void AnimationLibraryEditor::_load_library()
 {
 	List<String> extensions;
@@ -71,131 +62,6 @@ void AnimationLibraryEditor::_load_library()
 	file_dialog->popup_centered_ratio();
 
 	file_dialog_action = FILE_DIALOG_ACTION_OPEN_LIBRARY;
-}
-
-void AnimationLibraryEditor::update_tree()
-{
-	if (updating) {
-		return;
-	}
-
-	tree->clear();
-	ERR_FAIL_NULL(mixer);
-
-	Color ss_color = get_theme_color(SNAME("prop_subsection"), EditorStringName(Editor));
-
-	TreeItem* root = tree->create_item();
-	LocalVector<StringName> libs;
-
-	mixer->get_animation_library_list(&libs);
-
-	for (const StringName& K : libs) {
-		TreeItem* libitem = tree->create_item(root);
-		libitem->set_text(0, K);
-		if (K == StringName()) {
-			libitem->set_suffix(0, TTR("[Global]"));
-		}
-		else {
-			libitem->set_suffix(0, "");
-		}
-
-		Ref<AnimationLibrary> al = mixer->get_animation_library(K);
-		bool animation_library_is_foreign = false;
-		String al_path = al->get_path();
-		if (!al_path.is_resource_file()) {
-			libitem->set_text(1, TTR("[built-in]"));
-			libitem->set_tooltip_text(1, al_path);
-			int srpos = al_path.find("::");
-			if (srpos != -1) {
-				String base = al_path.substr(0, srpos);
-				if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-					if (!get_tree()->get_edited_scene_root() ||
-						get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
-						animation_library_is_foreign = true;
-						libitem->set_text(1, TTR("[foreign]"));
-					}
-				}
-				else {
-					if (FileAccess::exists(base + ".import")) {
-						animation_library_is_foreign = true;
-						libitem->set_text(1, TTR("[imported]"));
-					}
-				}
-			}
-		}
-		else {
-			if (FileAccess::exists(al_path + ".import")) {
-				animation_library_is_foreign = true;
-				libitem->set_text(1, TTR("[imported]"));
-			}
-			else {
-				libitem->set_text(1, al_path.get_file());
-			}
-		}
-
-		libitem->set_editable(0, true);
-		libitem->set_icon(0, get_editor_theme_icon("AnimationLibrary"));
-
-		libitem->add_button(0, get_editor_theme_icon("Add"), LIB_BUTTON_ADD,
-			animation_library_is_foreign, TTR("Add animation to library."));
-		libitem->add_button(0, get_editor_theme_icon("Load"), LIB_BUTTON_LOAD,
-			animation_library_is_foreign, TTR("Load animation from file and add to library."));
-		libitem->add_button(0, get_editor_theme_icon("ActionPaste"), LIB_BUTTON_PASTE,
-			animation_library_is_foreign, TTR("Paste animation to library from clipboard."));
-
-		libitem->add_button(1, get_editor_theme_icon("Save"), LIB_BUTTON_FILE, false,
-			TTR("Save animation library to resource on disk."));
-		libitem->add_button(1, get_editor_theme_icon("Remove"), LIB_BUTTON_DELETE, false,
-			TTR("Remove animation library."));
-
-		libitem->set_custom_bg_color(0, ss_color);
-
-		LocalVector<StringName> animations;
-		al->get_animation_list(&animations);
-		for (const StringName& L : animations) {
-			TreeItem* anitem = tree->create_item(libitem);
-			anitem->set_text(0, L);
-			anitem->set_editable(0, !animation_library_is_foreign);
-			anitem->set_icon(0, get_editor_theme_icon("Animation"));
-			anitem->add_button(0, get_editor_theme_icon("ActionCopy"), ANIM_BUTTON_COPY,
-				animation_library_is_foreign, TTR("Copy animation to clipboard."));
-
-			Ref<Animation> anim = al->get_animation(L);
-			String anim_path = anim->get_path();
-			if (!anim_path.is_resource_file()) {
-				anitem->set_text(1, TTR("[built-in]"));
-				anitem->set_tooltip_text(1, anim_path);
-				int srpos = anim_path.find("::");
-				if (srpos != -1) {
-					String base = anim_path.substr(0, srpos);
-					if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-						if (!get_tree()->get_edited_scene_root() ||
-							get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
-							anitem->set_text(1, TTR("[foreign]"));
-						}
-					}
-					else {
-						if (FileAccess::exists(base + ".import")) {
-							anitem->set_text(1, TTR("[imported]"));
-						}
-					}
-				}
-			}
-			else {
-				if (FileAccess::exists(anim_path + ".import")) {
-					anitem->set_text(1, TTR("[imported]"));
-				}
-				else {
-					anitem->set_text(1, anim_path.get_file());
-				}
-			}
-
-			anitem->add_button(1, get_editor_theme_icon("Save"), ANIM_BUTTON_FILE,
-				animation_library_is_foreign, TTR("Save animation to resource on disk."));
-			anitem->add_button(1, get_editor_theme_icon("Remove"), ANIM_BUTTON_DELETE,
-				animation_library_is_foreign, TTR("Remove animation from Library."));
-		}
-	}
 }
 
 void AnimationLibraryEditor::_save_mixer_lib_folding(TreeItem* p_item)
@@ -278,12 +144,6 @@ String AnimationLibraryEditor::_get_mixer_signature() const
 	}
 
 	return signature.md5_text();
-}
-
-void AnimationLibraryEditor::show_dialog()
-{
-	update_tree();
-	popup_centered_ratio(0.5);
 }
 
 

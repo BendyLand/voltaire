@@ -51,28 +51,6 @@ void MultiMeshEditor::_browsed(const NodePath& p_path)
 	}
 }
 
-void MultiMeshEditor::_menu_option(int p_option)
-{
-	switch (p_option) {
-	case MENU_OPTION_POPULATE: {
-		if (_last_pp_node != node) {
-			surface_source->set_text("..");
-			mesh_source->set_text("..");
-			populate_axis->select(1);
-			populate_rotate_random->set_value(0);
-			populate_tilt_random->set_value(0);
-			populate_scale_random->set_value(0);
-			populate_scale->set_value(1);
-			populate_amount->set_value(128);
-
-			_last_pp_node = node;
-		}
-		populate_dialog->popup_centered(Size2(250, 380));
-
-	} break;
-	}
-}
-
 void MultiMeshEditor::edit(MultiMeshInstance3D* p_multimesh) { node = p_multimesh; }
 
 void MultiMeshEditor::_browse(bool p_source)

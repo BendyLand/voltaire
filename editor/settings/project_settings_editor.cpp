@@ -51,12 +51,6 @@ void ProjectSettingsEditor::connect_filesystem_dock_signals(FileSystemDock* p_fs
 
 void ProjectSettingsEditor::set_filter(const String& p_filter) { search_box->set_text(p_filter); }
 
-void ProjectSettingsEditor::queue_save()
-{
-	settings_changed = true;
-	timer->start();
-}
-
 void ProjectSettingsEditor::_save()
 {
 	settings_changed = false;
@@ -77,17 +71,6 @@ void ProjectSettingsEditor::set_plugins_page()
 void ProjectSettingsEditor::update_plugins() { plugin_settings->update_plugins(); }
 
 void ProjectSettingsEditor::init_autoloads() { autoload_settings->init_autoloads(); }
-
-void ProjectSettingsEditor::_setting_edited(const String& p_name)
-{
-	const String full_name = general_settings_inspector->get_full_item_path(p_name);
-	if (full_name.begins_with(ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX)) {
-		EditorSettings::get_singleton()->mark_setting_changed(
-			full_name.trim_prefix(ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX));
-		pending_override_notify = true;
-	}
-	queue_save();
-}
 
 void ProjectSettingsEditor::_on_category_changed(const String& p_new_category)
 {

@@ -524,16 +524,7 @@ void FileDialog::_make_dir_confirm()
 		update_filters();
 		_push_history();
 	}
-	else {
-		mkdirerr->popup_centered(Size2(250, 50));
-	}
 	new_dir_name->set_text(""); // reset label
-}
-
-void FileDialog::_make_dir()
-{
-	make_dir_dialog->popup_centered(Size2(250, 80));
-	new_dir_name->grab_focus();
 }
 
 void FileDialog::_change_dir(const String& p_new_dir)

@@ -185,11 +185,6 @@ static void _add_qualifiers_to_rt(const String& p_qualifiers, RichTextLabel* p_r
 		if (hint.is_empty()) {
 			p_rt->add_text(qualifier);
 		}
-		else {
-			p_rt->push_hint(hint);
-			p_rt->add_text(qualifier);
-			p_rt->pop(); // hint
-		}
 	}
 }
 
@@ -351,22 +346,6 @@ void EditorHelp::_class_desc_resized(bool p_force_update_theme)
 	}
 }
 
-void EditorHelp::_add_type_icon(const String& p_type, int p_size, const String& p_fallback)
-{
-	Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(p_type, p_fallback);
-	if (icon.is_null()) {
-		icon = EditorNode::get_singleton()->get_class_icon("Object");
-		ERR_FAIL_COND(icon.is_null());
-	}
-	Vector2i size = Vector2i(icon->get_width(), icon->get_height());
-	if (p_size > 0) {
-		// Ensures icon scales proportionally on both axes, based on icon height.
-		float ratio = p_size / float(size.height);
-		size.width *= ratio;
-		size.height *= ratio;
-	}
-}
-
 // Macros for assigning the deprecated/experimental marks to class members in overview.
 #define DEPRECATED_DOC_TAG                                                                         \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
@@ -425,44 +404,6 @@ void EditorHelp::_add_bulletpoint()
 {
 	static const char32_t prefix[3] = {0x25CF /* filled circle */, ' ', 0};
 	class_desc->add_text(String(prefix));
-}
-
-void EditorHelp::_push_normal_font()
-{
-	class_desc->push_font(theme_cache.doc_font);
-	class_desc->push_font_size(theme_cache.doc_font_size);
-}
-
-void EditorHelp::_pop_normal_font()
-{
-	class_desc->pop(); // font_size
-	class_desc->pop(); // font
-}
-
-void EditorHelp::_push_title_font()
-{
-	class_desc->push_font(theme_cache.doc_title_font);
-	class_desc->push_font_size(theme_cache.doc_title_font_size);
-	class_desc->push_color(theme_cache.title_color);
-}
-
-void EditorHelp::_pop_title_font()
-{
-	class_desc->pop(); // color
-	class_desc->pop(); // font_size
-	class_desc->pop(); // font
-}
-
-void EditorHelp::_push_code_font()
-{
-	class_desc->push_font(theme_cache.doc_code_font);
-	class_desc->push_font_size(theme_cache.doc_code_font_size);
-}
-
-void EditorHelp::_pop_code_font()
-{
-	class_desc->pop(); // font_size
-	class_desc->pop(); // font
 }
 
 bool EditorHelp::_need_save_new_history() const
@@ -994,9 +935,6 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 			ProjectSettings::get_singleton()->globalize_path(p_select.trim_prefix("open-file:"));
 		OS::get_singleton()->shell_show_in_file_manager(path, true);
 	}
-	else if (p_select.begins_with("open-res:")) {
-		EditorNode::get_singleton()->load_scene_or_resource(p_select.trim_prefix("open-res:"));
-	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
 		OS::get_singleton()->shell_open(p_select);
 	}
@@ -1251,13 +1189,6 @@ void EditorHelpBit::update_content_height()
 
 bool EditorHelpBitTooltip::_is_tooltip_visible = false;
 
-void EditorHelpBitTooltip::_start_timer()
-{
-	if (timer->is_inside_tree() && timer->is_stopped()) {
-		timer->start();
-	}
-}
-
 void EditorHelpBitTooltip::_target_gui_input(const Ref<InputEvent>& p_event)
 {
 	// Only scrolling is not checked in `NOTIFICATION_INTERNAL_PROCESS`.
@@ -1295,31 +1226,6 @@ void EditorHelpBitTooltip::_notification(int p_what)
 		_is_mouse_inside_tooltip = true;
 		timer->stop();
 		break;
-	case NOTIFICATION_WM_MOUSE_EXIT:
-		_is_mouse_inside_tooltip = false;
-		_start_timer();
-		break;
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		// A workaround to hide the tooltip since the window does not receive keyboard events
-		// with `FLAG_POPUP` and `FLAG_NO_FOCUS` flags, so we can't use `_input_from_window()`.
-		if (is_inside_tree()) {
-			if (Input::get_singleton()->is_action_just_pressed(SNAME("ui_cancel"), true)) {
-				queue_free();
-				get_parent_viewport()->set_input_as_handled();
-			}
-			else if (Input::get_singleton()->is_any_key_pressed()) {
-				if (!_is_shortcut_pressed) {
-					queue_free();
-				}
-			}
-			else if (!Input::get_singleton()->get_last_mouse_velocity().is_zero_approx()) {
-				if (!_is_mouse_inside_tooltip &&
-					OS::get_singleton()->get_ticks_msec() - _enter_tree_time > 350) {
-					_start_timer();
-				}
-			}
-		}
-	} break;
 	}
 }
 
@@ -1383,30 +1289,6 @@ EditorHelpHighlighter::HighlightData EditorHelpHighlighter::_get_highlight_data(
 	}
 
 	return result;
-}
-
-void EditorHelpHighlighter::highlight(
-	RichTextLabel* p_rich_text_label, Language p_language, const String& p_source, bool p_use_cache)
-{
-	ERR_FAIL_NULL(p_rich_text_label);
-
-	const HighlightData highlight_data = _get_highlight_data(p_language, p_source, p_use_cache);
-
-	if (!highlight_data.is_empty()) {
-		for (int i = 1; i < highlight_data.size(); i++) {
-			const Pair<int, Color>& prev = highlight_data[i - 1];
-			const Pair<int, Color>& curr = highlight_data[i];
-			p_rich_text_label->push_color(prev.second);
-			p_rich_text_label->add_text(
-				_fix_newlines(p_source.substr(prev.first, curr.first - prev.first)));
-			p_rich_text_label->pop(); // color
-		}
-
-		const Pair<int, Color>& last = highlight_data[highlight_data.size() - 1];
-		p_rich_text_label->push_color(last.second);
-		p_rich_text_label->add_text(p_source.substr(last.first));
-		p_rich_text_label->pop(); // color
-	}
 }
 
 void EditorHelpHighlighter::reset_cache()

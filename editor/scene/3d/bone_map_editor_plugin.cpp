@@ -91,8 +91,6 @@ BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_pro
 
 void BonePicker::_confirm() { _ok_pressed(); }
 
-void BonePicker::popup_bones_tree(const Size2i& p_minsize) { popup_centered(p_minsize); }
-
 bool BonePicker::has_selected_bone()
 {
 	TreeItem* selected = bones->get_selected();
@@ -141,12 +139,6 @@ void BoneMapper::update_group_idx()
 		profile_group_selector->update_property();
 		profile_group_selector->set_read_only(false);
 	}
-}
-
-void BoneMapper::_pick_bone(const StringName& p_bone_name)
-{
-	picker_key_name = p_bone_name;
-	picker->popup_bones_tree(Size2(500, 500) * EDSCALE);
 }
 
 void BoneMapper::_apply_picker_selection()

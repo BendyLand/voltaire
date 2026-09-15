@@ -166,27 +166,6 @@ void CreateDialog::_hide_requested()
 
 void CreateDialog::cancel_pressed() { _cleanup(); }
 
-void CreateDialog::_favorite_toggled()
-{
-	TreeItem* item = search_options->get_selected();
-	if (!item) {
-		return;
-	}
-
-	String name = get_selected_type_name();
-
-	if (favorite_list.has(name)) {
-		favorite_list.erase(name);
-		favorite->set_pressed(false);
-	}
-	else {
-		favorite_list.push_back(name);
-		favorite->set_pressed(true);
-	}
-
-	_save_and_update_favorite_list();
-}
-
 void CreateDialog::_history_selected(int p_idx)
 {
 	search_box->set_text(recent->get_item_text(p_idx));

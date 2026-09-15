@@ -39,23 +39,6 @@
 #include "scene/gui/label.h"
 #include "scene/resources/image_texture.h"
 
-void EditorVisualProfiler::clear()
-{
-	frame_metrics.clear();
-	last_metric = -1;
-	variables->clear();
-	// activate->set_pressed(false);
-	category_folding.clear();
-
-	updating_frame = true;
-	cursor_metric_edit->set_min(0);
-	cursor_metric_edit->set_max(0);
-	cursor_metric_edit->set_value(0);
-	updating_frame = false;
-	hover_metric = -1;
-	seeking = false;
-}
-
 void EditorVisualProfiler::_item_selected()
 {
 	if (updating_frame) {
@@ -67,87 +50,6 @@ void EditorVisualProfiler::_item_selected()
 		return;
 	}
 	_update_plot();
-}
-
-void EditorVisualProfiler::_update_frame(bool p_focus_selected)
-{
-	int cursor_metric = _get_cursor_index();
-
-	Ref<Texture> track_icon = get_editor_theme_icon(SNAME("TrackColor"));
-
-	ERR_FAIL_INDEX(cursor_metric, frame_metrics.size());
-
-	updating_frame = true;
-	variables->clear();
-
-	TreeItem* root = variables->create_item();
-	const Metric& m = frame_metrics[cursor_metric];
-
-	List<TreeItem*> stack;
-	List<TreeItem*> categories;
-
-	TreeItem* ensure_selected = nullptr;
-
-	for (int i = 1; i < m.areas.size() - 1; i++) {
-		TreeItem* parent = stack.size() ? stack.back()->get() : root;
-
-		String name = m.areas[i].name;
-
-		float cpu_time = m.areas[i].cpu_time;
-		float gpu_time = m.areas[i].gpu_time;
-		if (i < m.areas.size() - 1) {
-			cpu_time = m.areas[i + 1].cpu_time - cpu_time;
-			gpu_time = m.areas[i + 1].gpu_time - gpu_time;
-		}
-
-		if (name.begins_with(">")) {
-			TreeItem* category = variables->create_item(parent);
-
-			stack.push_back(category);
-			categories.push_back(category);
-
-			name = name.substr(1);
-
-			category->set_text(0, name);
-
-			if (category_folding.has(m.areas[i].fullpath_cache)) {
-				category->set_collapsed(category_folding[m.areas[i].fullpath_cache]);
-			}
-			continue;
-		}
-
-		if (name.begins_with("<")) {
-			stack.pop_back();
-			continue;
-		}
-		TreeItem* category = variables->create_item(parent);
-
-		category->set_icon(0, track_icon);
-		category->set_icon_modulate(0, m.areas[i].color_cache);
-		category->set_selectable(0, true);
-		category->set_text(0, m.areas[i].name);
-		category->set_text(1, _get_time_as_text(cpu_time));
-		category->set_text(2, _get_time_as_text(gpu_time));
-
-		if (selected_area == m.areas[i].fullpath_cache) {
-			category->select(0);
-			if (p_focus_selected) {
-				ensure_selected = category;
-			}
-		}
-	}
-
-	if (ensure_selected) {
-		// Make visible when it's collapsed.
-		TreeItem* node = ensure_selected->get_parent();
-		while (node) {
-			node->set_collapsed(false);
-			node = node->get_parent();
-		}
-		ensure_selected->select(0);
-		variables->ensure_cursor_is_visible();
-	}
-	updating_frame = false;
 }
 
 void EditorVisualProfiler::_autostart_toggled(bool p_toggled_on)
@@ -172,18 +74,6 @@ int EditorVisualProfiler::_get_cursor_index() const
 	}
 
 	return idx;
-}
-
-void EditorVisualProfiler::_combo_changed(int)
-{
-	_update_frame();
-	_update_plot();
-}
-
-void EditorVisualProfiler::set_profiling(bool p_profiling)
-{
-	activate->set_pressed(p_profiling);
-	_update_button_text();
 }
 
 bool EditorVisualProfiler::is_profiling() { return activate->is_pressed(); }

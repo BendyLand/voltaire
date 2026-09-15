@@ -345,7 +345,6 @@ private:
 	void _filename_filter_selected();
 	void _file_list_select_first();
 	void _delete_confirm();
-	void _make_dir();
 	void _make_dir_confirm();
 	void _go_up();
 	void _go_back();

@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/control.h"
 #include "scene/resources/text_paragraph.h"
 #include "servers/display/accessibility_server.h"
@@ -234,8 +233,6 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	void _select_bind_compat_119367(int p_column);
-	void _add_button_bind_compat_76829(int p_column, const Ref<Texture2D>& p_button, int p_id,
-		bool p_disabled, const String& p_tooltip);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -271,10 +268,8 @@ private:
 	TreeItem* _get_next_in_tree(bool p_wrap = false, bool p_include_invisible = false);
 
 public:
-	void set_text(int p_column, String p_text);
 	String get_text(int p_column) const;
 
-	void set_description(int p_column, String p_text);
 	String get_description(int p_column) const;
 
 	void set_text_direction(int p_column, Control::TextDirection p_text_direction);
@@ -314,18 +309,14 @@ public:
 	int get_icon_max_width(int p_column) const;
 
 	void clear_buttons();
-	void add_button(int p_column, const Ref<Texture2D>& p_button, int p_id = -1,
-		bool p_disabled = false, const String& p_tooltip = "", const String& p_description = "");
 	int get_button_count(int p_column) const;
 	String get_button_tooltip_text(int p_column, int p_index) const;
 	Ref<Texture2D> get_button(int p_column, int p_index) const;
 	int get_button_id(int p_column, int p_index) const;
-	void erase_button(int p_column, int p_index);
 	int get_button_by_id(int p_column, int p_id) const;
 	Color get_button_color(int p_column, int p_index) const;
 	void set_button_tooltip_text(int p_column, int p_index, const String& p_tooltip);
 	void set_button(int p_column, int p_index, const Ref<Texture2D>& p_button);
-	void set_button_description(int p_column, int p_index, const String& p_description);
 	void set_button_color(int p_column, int p_index, const Color& p_color);
 	void set_button_disabled(int p_column, int p_index, bool p_disabled);
 	bool is_button_disabled(int p_column, int p_index) const;

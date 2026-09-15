@@ -35,7 +35,6 @@
 #include "core/io/resource.h"
 #include "core/os/keyboard.h"
 #include "core/os/process_id.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/types.h"
 #include "servers/display/display_server_enums.h"
 

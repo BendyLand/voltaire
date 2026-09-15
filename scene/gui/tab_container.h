@@ -155,8 +155,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-	void _maximum_size_changed();
-
 	void _notification(int p_what);
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;

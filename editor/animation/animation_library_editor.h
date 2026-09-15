@@ -99,7 +99,6 @@ class AnimationLibraryEditor : public AcceptDialog
 
 	AnimationMixer* mixer = nullptr;
 
-	void _add_library();
 	void _load_library();
 
 	void _save_mixer_lib_folding(TreeItem* p_item);
@@ -111,8 +110,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void show_dialog();
-	void update_tree();
 	AnimationLibraryEditor();
 };
 

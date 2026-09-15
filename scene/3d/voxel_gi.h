@@ -137,7 +137,6 @@ public:
 	static BakeStepFunc bake_step_function;
 	static BakeEndFunc bake_end_function;
 
-	void set_probe_data(const Ref<VoxelGIData>& p_data);
 	Ref<VoxelGIData> get_probe_data() const;
 
 	Subdiv get_subdiv() const;

@@ -309,36 +309,6 @@ Size2 TabContainer::get_inner_combined_maximum_size() const
 	return ms;
 }
 
-void TabContainer::_maximum_size_changed()
-{
-	if (!tab_bar) {
-		return;
-	}
-
-	Size2 ms = get_combined_maximum_size();
-	if (theme_cache.tabbar_style.is_valid()) {
-		if (ms.width >= 0) {
-			ms.width -= theme_cache.tabbar_style->get_margin(SIDE_LEFT) +
-						theme_cache.tabbar_style->get_margin(SIDE_RIGHT);
-			if (get_popup() && popup_button) {
-				ms.width -= popup_button->get_minimum_size().x;
-			}
-			if (theme_cache.side_margin > 0 && get_tab_alignment() != TabBar::ALIGNMENT_CENTER &&
-				(get_tab_alignment() != TabBar::ALIGNMENT_RIGHT || !get_popup())) {
-				ms.width -= theme_cache.side_margin;
-			}
-			ms.width = MAX(ms.width, 0);
-		}
-		if (ms.height >= 0) {
-			ms.height -= theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-						 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
-			ms.height = MAX(ms.height, 0);
-		}
-	}
-	internal_container->set_parent_maximum_size_cache(Size2(-1, -1));
-	tab_bar->set_custom_maximum_size(ms);
-}
-
 void TabContainer::set_switch_on_drag_hover(bool p_enabled)
 {
 	tab_bar->set_switch_on_drag_hover(p_enabled);

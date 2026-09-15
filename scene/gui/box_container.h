@@ -49,7 +49,9 @@ private:
 	struct ThemeCache
 	{
 		int separation = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	bool reverse_sort = false;
 
@@ -93,9 +95,6 @@ class MarginContainer;
 class VBoxContainer : public BoxContainer
 {
 public:
-	MarginContainer* add_margin_child(
-		const String& p_label, Control* p_control, bool p_expand = false);
-
 	VBoxContainer() : BoxContainer(true) { is_fixed = true; }
 };
 

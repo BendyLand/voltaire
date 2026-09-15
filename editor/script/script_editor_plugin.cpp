@@ -108,17 +108,6 @@ void ScriptEditorQuickOpen::_confirmed()
 
 ScriptEditor* ScriptEditor::script_editor = nullptr;
 
-// Compress the history and remove duplicate patterns.
-// Example 1: If the history is ...ABAB..., it will be compressed to ...AB....
-// Example 2: If the history is ...ABCABC..., it will be compressed to ...ABC....
-
-void ScriptEditor::_show_error_dialog(const String& p_path)
-{
-	error_dialog->set_text(
-		vformat(TTR("Can't open '%s'. The file could have been moved or deleted."), p_path));
-	error_dialog->popup_centered();
-}
-
 void ScriptEditor::_close_current_tab(bool p_save)
 {
 	_close_tab(tab_container->get_current_tab(), p_save);
@@ -169,13 +158,6 @@ void ScriptEditor::_close_all_tabs()
 		script_close_queue.push_back(i);
 	}
 	_queue_close_tabs();
-}
-
-void ScriptEditor::_ask_close_current_unsaved_tab(ScriptEditorBase* current)
-{
-	erase_tab_confirm->set_text(
-		TTR("Close and save changes?") + "\n\"" + current->get_name() + "\"");
-	erase_tab_confirm->popup_centered();
 }
 
 void ScriptEditor::_scene_saved_callback(const String& p_path)
@@ -235,69 +217,6 @@ void ScriptEditor::_theme_option(int p_option)
 		ScriptEditor::_show_save_theme_as_dialog();
 	} break;
 	}
-}
-
-void ScriptEditor::_prepare_file_menu()
-{
-	PopupMenu* menu = file_menu->get_popup();
-	ScriptEditorBase* editor = _get_current_editor();
-	const Ref<Resource> res = editor ? editor->get_edited_resource() : Ref<Resource>();
-
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_REOPEN_CLOSED), previous_scripts.is_empty());
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE), res.is_null());
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE_AS), res.is_null());
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE_ALL), !_has_script_tab());
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SOFT_RELOAD_TOOL), res.is_null());
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_COPY_PATH), res.is_null() || res->get_path().is_empty());
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_COPY_UID),
-		res.is_null() ||
-			ResourceLoader::get_resource_uid(res->get_path()) == ResourceUID::INVALID_ID);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SHOW_IN_FILE_SYSTEM), res.is_null());
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_HISTORY_PREV), history_pos <= 0);
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_HISTORY_NEXT), history_pos >= history.size() - 1);
-
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_CLOSE), tab_container->get_tab_count() < 1);
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_CLOSE_ALL), tab_container->get_tab_count() < 1);
-	menu->set_item_disabled(
-		menu->get_item_index(FILE_MENU_CLOSE_OTHER_TABS), tab_container->get_tab_count() <= 1);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE_TABS_BELOW),
-		tab_container->get_current_tab() >= tab_container->get_tab_count() - 1);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE_DOCS), !_has_docs_tab());
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_RUN), res.is_null());
-}
-
-void ScriptEditor::_file_menu_closed()
-{
-	PopupMenu* menu = file_menu->get_popup();
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_REOPEN_CLOSED), false);
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE_AS), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SAVE_ALL), false);
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SOFT_RELOAD_TOOL), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_COPY_PATH), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_SHOW_IN_FILE_SYSTEM), false);
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_HISTORY_PREV), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_HISTORY_NEXT), false);
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE_ALL), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE_OTHER_TABS), false);
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_CLOSE_DOCS), false);
-
-	menu->set_item_disabled(menu->get_item_index(FILE_MENU_RUN), false);
 }
 
 void ScriptEditor::_tab_changed(int p_which) { ensure_select_current(); }
@@ -406,20 +325,9 @@ Ref<Resource> ScriptEditor::open_file(const String& p_file)
 	return Ref<Resource>();
 }
 
-void ScriptEditor::_save_layout()
-{
-	if (restoring_layout) {
-		return;
-	}
-
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
-
 void ScriptEditor::_filesystem_changed() { _update_script_names(); }
 
 void ScriptEditor::_autosave_scripts() { save_all_scripts(); }
-
-void ScriptEditor::_split_dragged(float) { _save_layout(); }
 
 void ScriptEditor::_script_list_clicked(
 	int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index)

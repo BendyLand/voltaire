@@ -69,18 +69,6 @@ int Polygon2DEditor::_get_polygon_count() const
 	}
 }
 
-void Polygon2DEditor::_set_action(int p_action)
-{
-	polygon_create.clear();
-	is_dragging = false;
-	is_creating = false;
-
-	selected_action = Action(p_action);
-	for (int i = 0; i < ACTION_MAX; i++) {
-		action_buttons[i]->set_pressed(p_action == i);
-	}
-}
-
 void Polygon2DEditor::_center_view()
 {
 	Size2 texture_size;

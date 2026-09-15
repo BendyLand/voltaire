@@ -284,7 +284,6 @@ protected:
 
 public:
 	void edit(Ref<TileSet> p_tile_set, TileSetAtlasSource* p_tile_set_source, int p_source_id);
-	void init_new_atlases(const Vector<Ref<TileSetAtlasSource>>& p_atlases);
 
 	TileSetAtlasSourceEditor();
 	~TileSetAtlasSourceEditor();

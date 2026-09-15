@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class Control;
 class CreateDialog;
@@ -69,10 +68,6 @@ class EditorInterface
 	SceneTreeDialog* node_selector = nullptr;
 	CreateDialog* create_dialog = nullptr;
 
-	// Editor tools.
-
-	AABB _calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb);
-
 protected:
 
 public:
@@ -93,11 +88,6 @@ public:
 	EditorUndoRedoManager* get_editor_undo_redo() const;
 	ScenePaint2DEditor* get_scene_paint_2d() const;
 
-	Vector<Ref<Texture2D>> make_mesh_previews(
-		const Vector<Ref<Mesh>>& p_meshes, Vector<Transform3D>* p_transforms, int p_preview_size);
-	void make_scene_preview(const String& p_path, Node* p_scene, int p_preview_size);
-
-	void set_plugin_enabled(const String& p_plugin, bool p_enabled);
 	bool is_plugin_enabled(const String& p_plugin) const;
 
 	// Editor GUI.
@@ -111,9 +101,7 @@ public:
 	SubViewport* get_editor_viewport_3d(int p_idx = 0) const;
 
 	void set_main_screen_editor(const String& p_name);
-	void set_distraction_free_mode(bool p_enter);
 	bool is_distraction_free_mode_enabled() const;
-	bool is_multi_window_enabled() const;
 
 	float get_editor_scale() const;
 	String get_editor_language() const;
@@ -124,7 +112,6 @@ public:
 	real_t get_node_3d_scale_snap() const;
 
 	void popup_dialog(Window* p_dialog, const Rect2i& p_screen_rect = Rect2i());
-	void popup_dialog_centered(Window* p_dialog, const Size2i& p_minsize = Size2i());
 	void popup_dialog_centered_ratio(Window* p_dialog, float p_ratio = 0.8);
 	void popup_dialog_centered_clamped(
 		Window* p_dialog, const Size2i& p_size = Size2i(), float p_fallback_ratio = 0.75);
@@ -135,7 +122,6 @@ public:
 	// Editor docks.
 
 	FileSystemDock* get_file_system_dock() const;
-	Vector<String> get_selected_paths() const;
 	String get_current_path() const;
 	String get_current_directory() const;
 
@@ -143,27 +129,15 @@ public:
 
 	// Object/Resource/Node editing.
 
-	void edit_resource(const Ref<Resource>& p_resource);
-	void edit_node(Node* p_node);
-	void open_scene_from_path(const String& scene_path, bool p_set_inherited = false);
-	void reload_scene_from_path(const String& scene_path);
-
 	PackedStringArray get_open_scenes() const;
 	PackedStringArray get_unsaved_scenes() const;
 
 	Vector<Node*> get_open_scene_roots() const;
 	Node* get_edited_scene_root() const;
 
-	void add_root_node(Node* p_node);
-
-	Error save_scene();
-	void save_scene_as(const String& p_scene, bool p_with_preview = true);
 	void mark_scene_as_unsaved();
-	void save_all_scenes();
-	Error close_scene();
 
 	// Scene playback.
-
 	void play_main_scene();
 	void play_current_scene();
 	void play_custom_scene(const String& scene_path);
@@ -185,5 +159,4 @@ public:
 
 	EditorInterface();
 };
-
 

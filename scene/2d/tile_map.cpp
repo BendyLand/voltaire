@@ -56,8 +56,6 @@
 RID TileMap::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_2D_DISABLED
 
-void TileMap::_tile_set_changed() { update_configuration_warnings(); }
-
 Vector<int> TileMap::_get_tile_map_data_using_compatibility_format(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, (int)layers.size(), Vector<int>());
@@ -187,21 +185,9 @@ Color TileMap::get_layer_modulate(int p_layer) const
 	TILEMAP_CALL_FOR_LAYER_V(p_layer, Color(), get_modulate);
 }
 
-void TileMap::set_layer_y_sort_enabled(int p_layer, bool p_y_sort_enabled)
-{
-	TILEMAP_CALL_FOR_LAYER(p_layer, set_y_sort_enabled, p_y_sort_enabled);
-	update_configuration_warnings();
-}
-
 bool TileMap::is_layer_y_sort_enabled(int p_layer) const
 {
 	TILEMAP_CALL_FOR_LAYER_V(p_layer, false, is_y_sort_enabled);
-}
-
-void TileMap::set_layer_y_sort_origin(int p_layer, int p_y_sort_origin)
-{
-	TILEMAP_CALL_FOR_LAYER(p_layer, set_y_sort_origin, p_y_sort_origin);
-	update_configuration_warnings();
 }
 
 int TileMap::get_layer_y_sort_origin(int p_layer) const
@@ -291,16 +277,6 @@ TileMap::VisibilityMode TileMap::get_navigation_visibility_mode() const
 	return navigation_visibility_mode;
 }
 #endif // NAVIGATION_2D_DISABLED
-
-void TileMap::set_y_sort_enabled(bool p_enable)
-{
-	if (is_y_sort_enabled() == p_enable) {
-		return;
-	}
-	Node2D::set_y_sort_enabled(p_enable);
-	_emit_changed();
-	update_configuration_warnings();
-}
 
 void TileMap::set_cell(int p_layer, const Vector2i& p_coords, int p_source_id,
 	const Vector2i p_atlas_coords, int p_alternative_tile)

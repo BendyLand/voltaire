@@ -128,11 +128,6 @@ void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_m
 	_queue_update_size_cache();
 }
 
-void OptionButton::set_item_disabled(int p_idx, bool p_disabled)
-{
-	popup->set_item_disabled(p_idx, p_disabled);
-}
-
 String OptionButton::get_item_text(int p_idx) const { return popup->get_item_text(p_idx); }
 
 Ref<Texture2D> OptionButton::get_item_icon(int p_idx) const { return popup->get_item_icon(p_idx); }

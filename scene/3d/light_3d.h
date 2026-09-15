@@ -106,7 +106,6 @@ public:
 
 	real_t get_param(Param p_param) const;
 
-	void set_shadow(bool p_enable);
 	bool has_shadow() const;
 
 	void set_negative(bool p_enable);

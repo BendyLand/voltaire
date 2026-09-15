@@ -156,7 +156,6 @@ class Path3DEditorPlugin : public EditorPlugin
 	bool snap_to_collider = true;
 
 	void _create_curve();
-	void _confirm_clear_points();
 	void _clear_points();
 	void _clear_curve_points();
 	void _restore_curve_points(const PackedVector3Array& p_points);

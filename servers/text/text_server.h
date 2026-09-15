@@ -32,7 +32,6 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "core/types.h"
 

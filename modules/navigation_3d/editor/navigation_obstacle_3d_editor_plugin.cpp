@@ -51,40 +51,6 @@ int NavigationObstacle3DGizmoPlugin::get_priority() const { return -1; }
 
 NavigationObstacle3DGizmoPlugin::NavigationObstacle3DGizmoPlugin() { current_state = VISIBLE; }
 
-void NavigationObstacle3DEditorPlugin::set_mode(int p_option)
-{
-	if (p_option == NavigationObstacle3DEditorPlugin::ACTION_FLIP) {
-		button_flip->set_pressed(false);
-		action_flip_vertices();
-		return;
-	}
-
-	if (p_option == NavigationObstacle3DEditorPlugin::ACTION_CLEAR) {
-		button_clear->set_pressed(false);
-		button_clear_dialog->reset_size();
-		button_clear_dialog->popup_centered();
-		return;
-	}
-
-	mode = p_option;
-
-	button_create->set_pressed(p_option == NavigationObstacle3DEditorPlugin::MODE_CREATE);
-	button_edit->set_pressed(p_option == NavigationObstacle3DEditorPlugin::MODE_EDIT);
-	button_delete->set_pressed(p_option == NavigationObstacle3DEditorPlugin::MODE_DELETE);
-	button_flip->set_pressed(false);
-	button_clear->set_pressed(false);
-}
-
-void NavigationObstacle3DEditorPlugin::_wip_cancel()
-{
-	wip_vertices.clear();
-	wip_active = false;
-
-	edited_point = -1;
-
-	redraw();
-}
-
 NavigationObstacle3DEditorPlugin* NavigationObstacle3DEditorPlugin::singleton = nullptr;
 
 NavigationObstacle3DEditorPlugin::~NavigationObstacle3DEditorPlugin()

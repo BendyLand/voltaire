@@ -101,7 +101,6 @@ class ScriptCreateDialog : public ConfirmationDialog
 	void _browse_class_in_tree();
 	virtual void ok_pressed() override;
 	void _create_new();
-	void _load_exist();
 	void _update_template_menu();
 	void _update_dialog();
 	String _adjust_file_path(const String& p_base_path) const;

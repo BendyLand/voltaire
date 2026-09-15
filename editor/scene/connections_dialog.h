@@ -104,7 +104,6 @@ private:
 	void _method_selected();
 	void _update_method_tree();
 	void _method_check_button_pressed(const CheckButton* p_button);
-	void _open_method_popup();
 
 	void _unbind_count_changed(double p_count);
 	void _add_bind();
@@ -199,7 +198,6 @@ class ConnectionsDock : public VBoxContainer
 	void _go_to_method(TreeItem& p_item);
 
 	void _handle_class_menu_option(int p_option);
-	void _class_menu_about_to_popup();
 	void _handle_signal_menu_option(int p_option);
 	void _signal_menu_about_to_popup();
 	void _handle_slot_menu_option(int p_option);

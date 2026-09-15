@@ -78,7 +78,6 @@ private:
 
 	// Left side.
 	Control* base_tiles_root_control = nullptr;
-	void _base_tiles_root_control_gui_input(const Ref<InputEvent>& p_event);
 
 	Control* base_tiles_drawing_root = nullptr;
 
@@ -100,7 +99,6 @@ private:
 
 	// Right side.
 	Control* alternative_tiles_root_control = nullptr;
-	void _alternative_tiles_root_control_gui_input(const Ref<InputEvent>& p_event);
 
 	Control* alternative_tiles_drawing_root = nullptr;
 

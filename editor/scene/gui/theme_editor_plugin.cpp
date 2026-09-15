@@ -357,21 +357,6 @@ void ThemeItemImportTree::set_base_theme(const Ref<Theme>& p_theme) { base_theme
 
 bool ThemeItemImportTree::has_selected_items() const { return (selected_items.size() > 0); }
 
-void ThemeItemEditorDialog::ok_pressed()
-{
-	if (import_default_theme_items->has_selected_items() ||
-		import_editor_theme_items->has_selected_items() ||
-		import_other_theme_items->has_selected_items()) {
-		confirm_closing_dialog->set_text(
-			TTR("Import Items tab has some items selected. Selection will be lost upon closing "
-				"this window.\nClose anyway?"));
-		confirm_closing_dialog->popup_centered(Size2(380, 120) * EDSCALE);
-		return;
-	}
-
-	hide();
-}
-
 void ThemeItemEditorDialog::_close_dialog() { hide(); }
 
 void ThemeItemEditorDialog::_edited_type_selected()
@@ -415,11 +400,6 @@ void ThemeTypeDialog::_dialog_about_to_show()
 	add_type_filter->grab_focus();
 
 	_update_add_type_options();
-}
-
-void ThemeTypeDialog::ok_pressed()
-{
-	_add_type_selected(add_type_filter->get_text().strip_edges());
 }
 
 void ThemeTypeDialog::_update_add_type_options(const String& p_filter)
@@ -469,32 +449,9 @@ void ThemeTypeDialog::_add_type_options_cbk(int p_index)
 	add_type_filter->set_caret_column(add_type_filter->get_text().length());
 }
 
-void ThemeTypeDialog::_add_type_dialog_entered(const String& p_value)
-{
-	_add_type_selected(Theme::validate_type_name(p_value));
-}
-
-void ThemeTypeDialog::_add_type_dialog_activated(int p_index)
-{
-	_add_type_selected(add_type_options->get_item_text(p_index));
-}
-
-void ThemeTypeDialog::_add_type_selected(const String& p_type_name)
-{
-	pre_submitted_value = p_type_name;
-	if (p_type_name.is_empty()) {
-		add_type_confirmation->popup_centered();
-		return;
-	}
-
-	_add_type_confirmed();
-}
-
 void ThemeTypeDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
 
 void ThemeTypeDialog::set_include_own_types(bool p_enable) { include_own_types = p_enable; }
-
-void ThemeTypeEditor::_update_type_list_debounced() { update_debounce_timer->start(); }
 
 HashMap<StringName, bool> ThemeTypeEditor::_get_type_items(
 	String p_type_name, Theme::DataType p_type, bool p_include_default)
@@ -569,23 +526,6 @@ void ThemeTypeEditor::_list_type_selected(int p_index)
 	_update_type_items();
 }
 
-void ThemeTypeEditor::_add_type_button_cbk()
-{
-	add_type_mode = ADD_THEME_TYPE;
-	add_type_dialog->set_title(TTR("Add Item Type"));
-	add_type_dialog->set_ok_button_text(TTR("Add Type"));
-	add_type_dialog->set_include_own_types(false);
-	add_type_dialog->popup_centered(Size2(560, 420) * EDSCALE);
-}
-
-void ThemeTypeEditor::_rename_type_button_cbk()
-{
-	theme_type_rename_line_edit->set_text(edited_type);
-	theme_type_rename_dialog->reset_size();
-	theme_type_rename_dialog->popup_centered();
-	theme_type_rename_line_edit->grab_focus();
-}
-
 void ThemeTypeEditor::_item_add_lineedit_cbk(String p_value, int p_data_type, Control* p_control)
 {
 	_item_add_cbk(p_data_type, p_control);
@@ -600,15 +540,6 @@ void ThemeTypeEditor::_item_rename_entered(
 void ThemeTypeEditor::_edit_resource_item(Ref<Resource> p_resource, bool p_edit)
 {
 	EditorNode::get_singleton()->edit_resource(p_resource);
-}
-
-void ThemeTypeEditor::_add_type_variation_cbk()
-{
-	add_type_mode = ADD_VARIATION_BASE;
-	add_type_dialog->set_title(TTR("Set Variation Base Type"));
-	add_type_dialog->set_ok_button_text(TTR("Set Base Type"));
-	add_type_dialog->set_include_own_types(true);
-	add_type_dialog->popup_centered(Size2(560, 420) * EDSCALE);
 }
 
 void ThemeTypeEditor::_add_type_dialog_selected(const String p_type_name)
@@ -662,37 +593,6 @@ void ThemeEditor::_theme_edit_button_cbk()
 	theme_edit_dialog->popup_centered_clamped(Size2(850, 700) * EDSCALE, 0.8);
 }
 
-void ThemeEditor::_theme_close_button_cbk()
-{
-	close();
-	_dock_closed_cbk();
-}
-
-void ThemeEditor::_resource_saved(const Ref<Resource>& p_resource)
-{
-	if (theme.is_valid() && theme == p_resource) {
-		_update_theme_name(theme->get_path().get_file());
-	}
-}
-
-void ThemeEditor::_files_moved(const String& p_old_path, const String& p_new_path)
-{
-	// Theme's path may not have been updated to new path yet - need to check both old and new.
-	if (theme.is_valid() && (theme->get_path() == p_old_path || theme->get_path() == p_new_path)) {
-		_update_theme_name(p_new_path.get_file());
-	}
-}
-
-void ThemeEditor::_update_theme_name(const String& p_name)
-{
-	theme_name->set_text(p_name);
-	theme_name->set_tooltip_text(p_name);
-
-	int label_min_width =
-		theme_name->get_minimum_size().x + theme_name->get_character_bounds(0).size.x;
-	theme_name->set_custom_minimum_size(Size2(label_min_width, 0));
-}
-
 void ThemeEditor::_add_preview_button_cbk() { preview_scene_dialog->popup_file_dialog(); }
 
 void ThemeEditor::_remove_preview_tab_invalid(Node* p_tab_control)
@@ -739,13 +639,5 @@ void ThemeEditor::_preview_tabs_resized()
 }
 
 bool ThemeEditorPlugin::can_auto_hide() const { return theme_editor->theme.is_null(); }
-
-ThemeEditorPlugin::ThemeEditorPlugin()
-{
-	theme_editor = memnew(ThemeEditor);
-	theme_editor->plugin = this;
-	EditorDockManager::get_singleton()->add_dock(theme_editor);
-	theme_editor->close();
-}
 
 

@@ -176,32 +176,6 @@ void RenameDialog::_iterate_scene(const Node* node, List<Node*>& selection, int*
 	}
 }
 
-void RenameDialog::reset()
-{
-	lock_preview_update = true;
-
-	lne_prefix->clear();
-	lne_suffix->clear();
-	lne_search->clear();
-	lne_replace->clear();
-
-	cbut_substitute->set_pressed(false);
-	cbut_regex->set_pressed(false);
-	cbut_process->set_pressed(false);
-
-	chk_per_level_counter->set_pressed(true);
-
-	spn_count_start->set_value(1);
-	spn_count_step->set_value(1);
-	spn_count_padding->set_value(1);
-
-	opt_style->select(0);
-	opt_case->select(0);
-
-	lock_preview_update = false;
-	_update_preview();
-}
-
 bool RenameDialog::_is_main_field(LineEdit* line_edit)
 {
 	return line_edit && (line_edit == lne_search || line_edit == lne_replace ||

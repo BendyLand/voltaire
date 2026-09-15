@@ -691,38 +691,6 @@ QuickOpenResultGridItem::QuickOpenResultGridItem()
 	vbc->add_child(name);
 }
 
-void QuickOpenResultGridItem::set_content(
-	const QuickOpenResultCandidate& p_candidate, bool p_highlight)
-{
-	thumbnail->set_texture(p_candidate.thumbnail);
-
-	String file_path = ResourceUID::get_singleton()->get_id_path(p_candidate.uid);
-	name->set_text(file_path.get_file());
-	name->set_tooltip_text(file_path);
-	name->reset_highlights();
-
-	if (p_highlight && p_candidate.result.is_valid()) {
-		for (const FuzzyTokenMatch& match : p_candidate.result->get_token_matches()) {
-			for (const Vector2i& interval : match.substrings) {
-				name->add_highlight(
-					_get_name_interval(interval, p_candidate.result->get_dir_index()));
-			}
-		}
-	}
-
-	bool uses_icon = p_candidate.thumbnail->get_width() < (32 * EDSCALE);
-
-	if (uses_icon ||
-		p_candidate.thumbnail->get_height() <= thumbnail->get_custom_minimum_size().y) {
-		thumbnail->set_expand_mode(TextureRect::EXPAND_KEEP_SIZE);
-		thumbnail->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	}
-	else {
-		thumbnail->set_expand_mode(TextureRect::EXPAND_FIT_WIDTH_PROPORTIONAL);
-		thumbnail->set_stretch_mode(TextureRect::StretchMode::STRETCH_SCALE);
-	}
-}
-
 void QuickOpenResultGridItem::reset()
 {
 	thumbnail->set_texture(nullptr);

@@ -70,18 +70,6 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
 	menu->add_item(TTRC("glTF 2.0 Scene..."));
 }
 
-void SceneExporterGLTFPlugin::_popup_gltf_settings_dialog(const String& p_selected_path)
-{
-	export_path = p_selected_path;
-
-	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
-	ERR_FAIL_NULL(root);
-	// Generate and refresh the export settings.
-	_export_settings->generate_property_list(_gltf_document, root);
-	// Show the config dialog.
-	_config_dialog->popup_centered();
-}
-
 void SceneExporterGLTFPlugin::_popup_gltf_export_dialog()
 {
 	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();

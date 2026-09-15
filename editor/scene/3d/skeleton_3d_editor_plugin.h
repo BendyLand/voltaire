@@ -184,8 +184,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 	void export_skeleton_profile();
 
-	void set_bone_options_enabled(const bool p_bone_options_enabled);
-
 	// Handle.
 	MeshInstance3D* handles_mesh_instance = nullptr;
 	Ref<ImmediateMesh> handles_mesh;
@@ -290,7 +288,7 @@ public:
 	virtual void set_subgizmo_transform(
 		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
 	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
-		const Vector<Transform3D>& p_restore, bool p_cancel) override;
+		const Vector<Transform3D>& p_restore, bool p_cancel);
 
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 

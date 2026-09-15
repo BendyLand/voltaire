@@ -489,17 +489,6 @@ void FindInFilesContainer::_on_theme_changed()
 	}
 }
 
-void FindInFilesContainer::_close_panel(FindInFilesPanel* p_panel)
-{
-	ERR_FAIL_COND_MSG(p_panel->get_parent() != tabs, "This panel is not a child!");
-	tabs->remove_child(p_panel);
-	p_panel->queue_free();
-	_update_bar_visibility();
-	if (tabs->get_tab_count() == 0) {
-		close();
-	}
-}
-
 void FindInFilesContainer::_on_dock_closed()
 {
 	while (tabs->get_tab_count() > 0) {
@@ -508,22 +497,6 @@ void FindInFilesContainer::_on_dock_closed()
 		tab->queue_free();
 	}
 	_update_bar_visibility();
-}
-
-void FindInFilesContainer::_bar_input(const Ref<InputEvent>& p_input)
-{
-	int tab_id = tabs->get_tab_bar()->get_hovered_tab();
-	Ref<InputEventMouseButton> mb = p_input;
-
-	if (tab_id >= 0 && mb.is_valid() && mb->is_pressed() &&
-		mb->get_button_index() == MouseButton::RIGHT) {
-		tabs_context_menu->set_item_disabled(tabs_context_menu->get_item_index(PANEL_CLOSE_RIGHT),
-			tab_id == tabs->get_tab_count() - 1);
-		tabs_context_menu->set_position(
-			tabs->get_tab_bar()->get_screen_position() + mb->get_position());
-		tabs_context_menu->reset_size();
-		tabs_context_menu->popup();
-	}
 }
 
 

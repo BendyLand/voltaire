@@ -59,9 +59,6 @@ private:
 	Ref<MultiplayerEditorDebugger> debugger;
 
 	void _open_request(const String& p_path);
-	void _node_removed(Node* p_node);
-
-	void _pinned();
 
 protected:
 	void _notification(int p_what);

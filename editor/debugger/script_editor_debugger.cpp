@@ -264,31 +264,6 @@ void ScriptEditorDebugger::_update_reason_content_height()
 	reason->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
 }
 
-void ScriptEditorDebugger::stop()
-{
-	set_process(false);
-	threads_debugged.clear();
-	debugging_thread_id = Thread::UNASSIGNED_ID;
-	remote_pid = 0;
-	_clear_execution();
-
-	inspector->clear_cache();
-
-	node_path_cache.clear();
-	res_path_cache.clear();
-	profiler_signature.clear();
-
-	profiler->set_enabled(false, false);
-	profiler->set_profiling(false);
-
-	visual_profiler->set_enabled(false);
-	visual_profiler->set_profiling(false);
-
-	audio_muted_on_break = false;
-
-	_update_buttons_state();
-}
-
 void ScriptEditorDebugger::_profiler_seeked()
 {
 	if (is_breaked()) {
@@ -407,40 +382,6 @@ void ScriptEditorDebugger::_mute_audio_on_break(bool p_mute)
 }
 
 CameraOverride ScriptEditorDebugger::get_camera_override() const { return camera_override; }
-
-void ScriptEditorDebugger::set_breakpoint(const String& p_path, int p_line, bool p_enabled)
-{
-	TreeItem* path_item = breakpoints_tree->search_item_text(p_path);
-	if (path_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		path_item = breakpoints_tree->create_item();
-		path_item->set_text(0, p_path);
-	}
-
-	int idx = 0;
-	TreeItem* breakpoint_item;
-	for (breakpoint_item = path_item->get_first_child(); breakpoint_item;
-		 breakpoint_item = breakpoint_item->get_next()) {
-	}
-
-	if (breakpoint_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		breakpoint_item = breakpoints_tree->create_item(path_item, idx);
-		breakpoint_item->set_text(0, vformat(TTR("Line %d"), p_line));
-		return;
-	}
-
-	if (!p_enabled) {
-		path_item->remove_child(breakpoint_item);
-		if (path_item->get_first_child() == nullptr) {
-			breakpoints_tree->get_root()->remove_child(path_item);
-		}
-	}
-}
 
 bool ScriptEditorDebugger::is_skip_breakpoints() const { return skip_breakpoints_value; }
 

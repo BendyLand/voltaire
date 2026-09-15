@@ -260,10 +260,6 @@ void PopupPanel::_notification(int p_what)
 		}
 
 		_update_child_rects();
-
-#ifdef TOOLS_ENABLED
-		update_configuration_warnings();
-#endif
 	} break;
 
 	case Control::NOTIFICATION_TRANSLATION_CHANGED:

@@ -31,7 +31,6 @@
 #include "connections_dialog.h"
 #include "core/config/project_settings.h"
 #include "core/templates/hash_set.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/doc/editor_help.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/docks/signals_dock.h"
@@ -62,13 +61,6 @@ void ConnectDialog::_cancel_pressed() { hide(); }
 void ConnectDialog::_item_activated()
 {
 	_ok_pressed(); // From AcceptDialog.
-}
-
-void ConnectDialog::_open_method_popup()
-{
-	method_popup->popup_centered();
-	method_search->clear();
-	method_search->grab_focus();
 }
 
 ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
@@ -124,12 +116,6 @@ void ConnectionsDock::_handle_class_menu_option(int p_option)
 			EditorMainScreen::EDITOR_SCRIPT);
 		break;
 	}
-}
-
-void ConnectionsDock::_class_menu_about_to_popup()
-{
-	class_menu->set_item_disabled(
-		class_menu->get_item_index(CLASS_MENU_OPEN_DOCS), class_menu_doc_class_name.is_empty());
 }
 
 void ConnectionsDock::_notification(int p_what)

@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "scene/gui/popup.h"
 #include "scene/gui/split_container.h"
@@ -105,12 +104,9 @@ private:
 
 	EditorDock* _get_dock_tab_dragged();
 	void _dock_drag_stopped();
-	void _dock_split_dragged(int p_offset);
-	void _update_layout();
 
 	void _docks_menu_option(int p_id);
 
-	void _window_close_request(WindowWrapper* p_wrapper);
 	EditorDock* _close_window(WindowWrapper* p_wrapper);
 
 	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
@@ -150,10 +146,8 @@ public:
 	void load_docks_from_config(
 		Ref<ConfigFile> p_layout, const String& p_section, bool p_first_load = false);
 
-	void close_dock(EditorDock* p_dock);
 	void focus_dock(EditorDock* p_dock);
 
-	void set_docks_visible(bool p_show);
 	bool are_docks_visible() const;
 
 	void add_dock(EditorDock* p_dock);
@@ -203,10 +197,8 @@ private:
 
 	EditorDockManager* dock_manager = nullptr;
 
-	void _slot_clicked(int p_slot);
 	void _tab_move_left();
 	void _tab_move_right();
-	void _close_dock();
 
 	void _update_buttons();
 

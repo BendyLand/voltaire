@@ -452,13 +452,6 @@ Vector2i TileSetAtlasSourceEditor::_get_drag_offset_tile_coords(const Vector2i& 
 	return new_base_tiles_coords.maxi(-1).min(tile_set_atlas_source->get_atlas_grid_size());
 }
 
-void TileSetAtlasSourceEditor::init_new_atlases(const Vector<Ref<TileSetAtlasSource>>& p_atlases)
-{
-	tool_setup_atlas_source_button->set_pressed(true);
-	atlases_to_auto_create_tiles = p_atlases;
-	confirm_auto_create_tiles->popup_centered();
-}
-
 void TileSetAtlasSourceEditor::_cancel_auto_create_tiles() { atlases_to_auto_create_tiles.clear(); }
 
 void TileSetAtlasSourceEditor::_notification(int p_what)
@@ -553,17 +546,6 @@ void TileSetAtlasSourceEditor::_notification(int p_what)
 		tile_inspector->add_custom_property_description("AtlasTileProxyObject", "probability",
 			TTRC("The relative probability of this tile appearing when painting with \"Place "
 				 "Random Tile\" enabled."));
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		outside_tiles_warning->set_tooltip_text(
-			vformat(TTR("The current atlas source has tiles outside the texture.\nYou can clear it "
-						"using \"%s\" option in the 3 dots menu."),
-				TTR("Remove Tiles Outside the Texture")));
-		if (tile_set.is_valid()) {
-			_update_tile_data_editors();
-			_update_atlas_view();
-		}
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {

@@ -122,28 +122,7 @@ GPUParticlesCollisionSDF3D::Resolution GPUParticlesCollisionSDF3D::get_resolutio
 	return resolution;
 }
 
-void GPUParticlesCollisionSDF3D::set_bake_mask(uint32_t p_mask)
-{
-	bake_mask = p_mask;
-	update_configuration_warnings();
-}
-
 uint32_t GPUParticlesCollisionSDF3D::get_bake_mask() const { return bake_mask; }
-
-void GPUParticlesCollisionSDF3D::set_bake_mask_value(int p_layer_number, bool p_value)
-{
-	ERR_FAIL_COND_MSG(p_layer_number < 1 || p_layer_number > 20,
-		vformat(
-			"The render layer number (%d) must be between 1 and 20 (inclusive).", p_layer_number));
-	uint32_t mask = get_bake_mask();
-	if (p_value) {
-		mask |= 1 << (p_layer_number - 1);
-	}
-	else {
-		mask &= ~(1 << (p_layer_number - 1));
-	}
-	set_bake_mask(mask);
-}
 
 bool GPUParticlesCollisionSDF3D::get_bake_mask_value(int p_layer_number) const
 {

@@ -163,10 +163,8 @@ public:
 
 	Resolution get_resolution() const;
 
-	void set_bake_mask(uint32_t p_mask);
 	uint32_t get_bake_mask() const;
 
-	void set_bake_mask_value(int p_layer_number, bool p_enable);
 	bool get_bake_mask_value(int p_layer_number) const;
 
 	void set_texture(const Ref<Texture3D>& p_texture);

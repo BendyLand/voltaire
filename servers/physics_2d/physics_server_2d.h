@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 #include "servers/physics_2d/physics_server_2d_enums.h"

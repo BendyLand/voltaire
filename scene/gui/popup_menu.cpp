@@ -1170,15 +1170,6 @@ bool PopupMenu::is_hide_on_multistate_item_selection() const
 	return hide_on_multistate_item_selection;
 }
 
-void PopupMenu::set_submenu_popup_delay(float p_time)
-{
-	if (p_time <= 0) {
-		p_time = 0.01;
-	}
-	submenu_timer_popup_delay = p_time;
-	submenu_timer->set_wait_time(p_time);
-}
-
 float PopupMenu::get_submenu_popup_delay() const { return submenu_timer->get_wait_time(); }
 
 void PopupMenu::set_allow_search(bool p_allow) { allow_search = p_allow; }

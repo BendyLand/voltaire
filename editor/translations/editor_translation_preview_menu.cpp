@@ -32,38 +32,6 @@
 #include "editor/editor_node.h"
 #include "editor_translation_preview_menu.h"
 
-void EditorTranslationPreviewMenu::_prepare()
-{
-	const String current_preview_locale = EditorNode::get_singleton()->get_preview_locale();
-
-	clear();
-	reset_size();
-
-	add_radio_check_item(TTRC("None"));
-	if (current_preview_locale.is_empty()) {
-		set_item_checked(-1, true);
-	}
-
-	add_separator();
-
-	const Vector<String> locales = TranslationServer::get_singleton()->get_loaded_locales();
-	if (locales.is_empty()) {
-		add_item(TTRC("No Translations Configured"));
-		set_item_tooltip(-1, TTRC("You can add translations in the Project Settings."));
-		set_item_disabled(-1, true);
-		return;
-	}
-
-	for (const String& locale : locales) {
-		const String name = TranslationServer::get_singleton()->get_locale_name(locale);
-		add_radio_check_item(name == locale ? name : name + " [" + locale + "]");
-		set_item_auto_translate_mode(-1, AUTO_TRANSLATE_MODE_DISABLED);
-		if (locale == current_preview_locale) {
-			set_item_checked(-1, true);
-		}
-	}
-}
-
 EditorTranslationPreviewMenu::EditorTranslationPreviewMenu()
 {
 	set_hide_on_checkable_item_selection(false);

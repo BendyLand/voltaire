@@ -41,12 +41,6 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/tree.h"
 
-void EditorPluginSettings::_create_clicked()
-{
-	plugin_config_dialog->config("");
-	plugin_config_dialog->popup_centered();
-}
-
 Vector<String> EditorPluginSettings::_get_plugins(const String& p_dir)
 {
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);

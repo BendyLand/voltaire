@@ -221,10 +221,6 @@ void DebuggerEditorPlugin::_notification(int p_what)
 		_update_debug_options();
 		initializing = false;
 	} break;
-
-	case NOTIFICATION_PROCESS: {
-		file_server->poll();
-	} break;
 	}
 }
 

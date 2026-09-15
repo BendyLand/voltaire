@@ -630,16 +630,6 @@ void LightmapGI::set_directional(bool p_enable) { directional = p_enable; }
 
 bool LightmapGI::is_directional() const { return directional; }
 
-void LightmapGI::set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode)
-{
-	shadowmask_mode = p_mode;
-	if (light_data.is_valid()) {
-		light_data->update_shadowmask_mode(p_mode);
-	}
-
-	update_configuration_warnings();
-}
-
 LightmapGIData::ShadowmaskMode LightmapGI::get_shadowmask_mode() const { return shadowmask_mode; }
 
 void LightmapGI::set_use_texture_for_bounces(bool p_enable) { use_texture_for_bounces = p_enable; }

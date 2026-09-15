@@ -63,8 +63,6 @@ void EditorSettingsDialog::ok_pressed()
 	_settings_save();
 }
 
-void EditorSettingsDialog::_settings_changed() { timer->start(); }
-
 void EditorSettingsDialog::_settings_save()
 {
 	if (!timer->is_stopped()) {
@@ -81,11 +79,6 @@ void EditorSettingsDialog::cancel_pressed()
 	}
 
 	EditorSettings::get_singleton()->notify_changes();
-}
-
-void EditorSettingsDialog::set_advanced_mode_enabled(bool p_enabled)
-{
-	advanced_switch->set_pressed(p_enabled);
 }
 
 void EditorSettingsDialog::_undo_redo_callback(void* p_self, const String& p_name)

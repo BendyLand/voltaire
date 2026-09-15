@@ -68,7 +68,6 @@ public:
 	Transform2D cache_transform;
 	bool copy_transform_to_cache = true;
 
-	void set_rest(const Transform2D& p_rest);
 	Transform2D get_rest() const;
 	void apply_rest();
 	Transform2D get_skeleton_rest() const;

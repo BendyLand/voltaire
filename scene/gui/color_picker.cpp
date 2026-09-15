@@ -548,41 +548,6 @@ void ColorPicker::_target_gui_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-void ColorPicker::_update_menu_items()
-{
-	options_menu->clear();
-	options_menu->reset_size();
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("save"), SNAME("FileDialog")), ETR("Save"),
-		static_cast<int>(MenuOption::MENU_SAVE));
-	options_menu->set_item_tooltip(-1, ETR("Save the current color palette to reuse later."));
-	options_menu->set_item_disabled(-1, presets.is_empty());
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("save"), SNAME("FileDialog")), ETR("Save As"),
-		static_cast<int>(MenuOption::MENU_SAVE_AS));
-	options_menu->set_item_tooltip(
-		-1, ETR("Save the current color palette as a new to reuse later."));
-	options_menu->set_item_disabled(-1, palette_path.is_empty());
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("load"), SNAME("FileDialog")), ETR("Load"),
-		static_cast<int>(MenuOption::MENU_LOAD));
-	options_menu->set_item_tooltip(-1, ETR("Load existing color palette."));
-
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		options_menu->add_icon_item(get_theme_icon(SNAME("load"), SNAME("FileDialog")),
-			TTRC("Quick Load"), static_cast<int>(MenuOption::MENU_QUICKLOAD));
-		options_menu->set_item_tooltip(-1, TTRC("Load existing color palette."));
-	}
-#endif // TOOLS_ENABLED
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("clear"), SNAME("FileDialog")), ETR("Clear"),
-		static_cast<int>(MenuOption::MENU_CLEAR));
-	options_menu->set_item_tooltip(
-		-1, ETR("Clear the currently loaded color palettes in the picker."));
-	options_menu->set_item_disabled(-1, presets.is_empty());
-}
-
 void ColorPicker::_block_input_on_popup_show()
 {
 	if (!get_tree()->get_root()->is_embedding_subwindows()) {
@@ -646,17 +611,6 @@ void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
 		_close_pressed();
 	}
 	PopupPanel::_input_from_window(p_event);
-}
-
-void ColorPickerButton::_about_to_popup()
-{
-	if (!get_tree()->get_root()->is_embedding_subwindows()) {
-		get_viewport()->set_disable_input(true);
-	}
-	set_pressed(true);
-	if (picker) {
-		picker->set_old_color(color);
-	}
 }
 
 void ColorPickerButton::_notification(int p_what)
@@ -739,11 +693,6 @@ PopupPanel* ColorPickerButton::get_popup()
 {
 	_update_picker();
 	return popup;
-}
-
-ColorPickerButton::ColorPickerButton(const String& p_text) : Button(p_text)
-{
-	set_toggle_mode(true);
 }
 
 void ColorPresetButton::_notification(int p_what)
@@ -832,7 +781,5 @@ void ColorPresetButton::set_preset_color(const Color& p_color)
 }
 
 Color ColorPresetButton::get_preset_color() const { return preset_color; }
-
-ColorPresetButton::~ColorPresetButton() {}
 
 

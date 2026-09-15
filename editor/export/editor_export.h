@@ -58,7 +58,6 @@ class EditorExport : public Node
 
 protected:
 	friend class EditorExportPreset;
-	void save_presets();
 	void emit_presets_runnable_changed();
 
 	void _notification(int p_what);
@@ -85,14 +84,11 @@ public:
 	void add_export_preset(const Ref<EditorExportPreset>& p_preset, int p_at_pos = -1);
 	int get_export_preset_count() const;
 	Ref<EditorExportPreset> get_export_preset(int p_idx);
-	void remove_export_preset(int p_idx);
 
 	void add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
 	void remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
 	Vector<Ref<EditorExportPlugin>> get_export_plugins();
 
-	void set_runnable_preset(const Ref<EditorExportPreset>& p_preset);
-	void unset_runnable_preset(const Ref<EditorExportPreset>& p_preset);
 	Ref<EditorExportPreset> get_runnable_preset_for_platform(
 		const Ref<EditorExportPlatform>& p_for_platform) const;
 

@@ -53,49 +53,6 @@
 #include "scene/resources/image_texture.h"
 #include "servers/rendering/rendering_server.h"
 
-void EditorResourcePicker::_update_menu()
-{
-	if (edit_menu && edit_menu->is_visible()) {
-		edit_button->set_pressed(false);
-		edit_menu->hide();
-		return;
-	}
-
-	_update_menu_items();
-
-	Rect2 gt = edit_button->get_screen_rect();
-	edit_menu->reset_size();
-	int ms = edit_menu->get_contents_minimum_size().width;
-	Vector2 popup_pos = gt.get_end() - Vector2(ms, 0);
-	edit_menu->set_position(popup_pos);
-	edit_menu->popup();
-}
-
-void EditorResourcePicker::_button_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> mb = p_event;
-
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::RIGHT) {
-		// Only attempt to update and show the menu if we have
-		// a valid resource or the Picker is editable, as
-		// there will otherwise be nothing to display.
-		if (edited_resource.is_valid() || is_editable()) {
-			if (edit_menu && edit_menu->is_visible()) {
-				edit_button->set_pressed(false);
-				edit_menu->hide();
-				return;
-			}
-
-			_update_menu_items();
-
-			Vector2 pos = get_screen_position() + mb->get_position();
-			edit_menu->reset_size();
-			edit_menu->set_position(pos);
-			edit_menu->popup();
-		}
-	}
-}
-
 void EditorResourcePicker::_on_unique_button_pressed()
 {
 	if (Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
@@ -164,21 +121,7 @@ void EditorResourcePicker::set_edited_resource_no_check(Ref<Resource> p_resource
 
 Ref<Resource> EditorResourcePicker::get_edited_resource() { return edited_resource; }
 
-void EditorResourcePicker::set_toggle_mode(bool p_enable)
-{
-	assign_button->set_toggle_mode(p_enable);
-}
-
 bool EditorResourcePicker::is_toggle_mode() const { return assign_button->is_toggle_mode(); }
-
-void EditorResourcePicker::set_toggle_pressed(bool p_pressed)
-{
-	if (!is_toggle_mode()) {
-		return;
-	}
-
-	assign_button->set_pressed(p_pressed);
-}
 
 bool EditorResourcePicker::is_toggle_pressed() const { return assign_button->is_pressed(); }
 

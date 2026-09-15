@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
 class Node;

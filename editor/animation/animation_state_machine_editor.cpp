@@ -130,54 +130,6 @@ Control::CursorShape AnimationNodeStateMachineEditor::get_cursor_shape(const Poi
 	return cursor_shape;
 }
 
-void AnimationNodeStateMachineEditor::_open_menu(const Vector2& p_position)
-{
-	AnimationTree* tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
-	if (!tree) {
-		return;
-	}
-
-	menu->clear(false);
-	animations_menu->clear();
-	animations_to_add.clear();
-
-	LocalVector<StringName> animation_names = tree->get_sorted_animation_list();
-	menu->add_submenu_node_item(TTR("Add Animation"), animations_menu);
-	if (animation_names.is_empty()) {
-		menu->set_item_disabled(menu->get_item_idx_from_text(TTR("Add Animation")), true);
-	}
-	else {
-		for (const StringName& name : animation_names) {
-			animations_menu->add_icon_item(theme_cache.animation_icon, name);
-			animations_to_add.push_back(name);
-		}
-	}
-
-	LocalVector<StringName> classes;
-	classes.sort_custom<StringName::AlphCompare>();
-
-	for (const StringName& class_name : classes) {
-		String name = String(class_name).replace_first("AnimationNode", "");
-		if (name == "Animation" || name == "StartState" || name == "EndState") {
-			continue; // nope
-		}
-		int idx = menu->get_item_count();
-		menu->add_item(vformat(TTR("Add %s"), name), idx);
-	}
-	Ref<AnimationNode> clipb = EditorSettings::get_singleton()->get_resource_clipboard();
-
-	if (clipb.is_valid()) {
-		menu->add_separator();
-		menu->add_item(TTR("Paste"), MENU_PASTE);
-	}
-	menu->add_separator();
-	menu->add_item(TTR("Load..."), MENU_LOAD_FILE);
-
-	menu->set_position(state_machine_draw->get_screen_transform().xform(p_position));
-	menu->popup();
-	add_node_pos = p_position / EDSCALE + state_machine->get_graph_offset();
-}
-
 bool AnimationNodeStateMachineEditor::_create_submenu(PopupMenu* p_menu,
 	Ref<AnimationNodeStateMachine> p_nodesm, const StringName& p_name, const StringName& p_path)
 {

@@ -32,7 +32,6 @@
 
 #include "core/string/translation.h"
 #include "core/string/translation_domain.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class TranslationServer
 {

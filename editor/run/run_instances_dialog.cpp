@@ -44,10 +44,6 @@
 #include "scene/gui/tree.h"
 #include "scene/main/timer.h"
 
-void RunInstancesDialog::_start_main_timer() { main_apply_timer->start(); }
-
-void RunInstancesDialog::_start_instance_timer() { instance_apply_timer->start(); }
-
 Vector<String> RunInstancesDialog::_split_cmdline_args(const String& p_arg_string) const
 {
 	Vector<String> split_args;

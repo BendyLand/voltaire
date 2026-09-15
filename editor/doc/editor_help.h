@@ -149,16 +149,7 @@ class EditorHelp : public VBoxContainer
 
 	bool scroll_locked = false;
 
-	void _add_type_icon(const String& p_type, int p_size = 0, const String& p_fallback = "");
-
 	void _add_bulletpoint();
-
-	void _push_normal_font();
-	void _pop_normal_font();
-	void _push_title_font();
-	void _pop_title_font();
-	void _push_code_font();
-	void _pop_code_font();
 
 	void _class_desc_finished();
 	void _class_desc_select(const String& p_select);
@@ -339,7 +330,6 @@ class EditorHelpBitTooltip : public PopupPanel
 
 	static Control* _make_invisible_control();
 
-	void _start_timer();
 	void _target_gui_input(const Ref<InputEvent>& p_event);
 	void _shortcut_pressed(Control* p_target);
 
@@ -384,8 +374,6 @@ public:
 	static void free_singleton();
 	static EditorHelpHighlighter* get_singleton();
 
-	void highlight(RichTextLabel* p_rich_text_label, Language p_language, const String& p_source,
-		bool p_use_cache);
 	void reset_cache();
 
 	EditorHelpHighlighter();

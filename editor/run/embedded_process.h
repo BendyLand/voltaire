@@ -62,7 +62,6 @@ public:
 	virtual bool is_embedding_completed() const = 0;
 	virtual bool is_embedding_in_progress() const = 0;
 	virtual bool is_process_focused() const = 0;
-	virtual void embed_process(ProcessID p_pid) = 0;
 	virtual int get_embedded_pid() const = 0;
 	virtual void reset() = 0;
 	virtual void reset_timers() = 0;
@@ -115,7 +114,6 @@ public:
 	bool is_embedding_in_progress() const override;
 	bool is_embedding_completed() const override;
 	bool is_process_focused() const override;
-	void embed_process(ProcessID p_pid) override;
 	int get_embedded_pid() const override;
 	void reset() override;
 	void reset_timers() override;

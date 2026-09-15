@@ -37,33 +37,14 @@
 #include "replication_editor.h"
 #include "scene/main/scene_tree.h"
 
-
 bool MultiplayerEditorDebugger::has_capture(const String& p_capture) const
 {
 	return p_capture == "multiplayer";
 }
 
-/// MultiplayerEditorPlugin
-
 void MultiplayerEditorPlugin::_open_request(const String& p_path)
 {
 	EditorInterface::get_singleton()->open_scene_from_path(p_path);
-}
-
-void MultiplayerEditorPlugin::_node_removed(Node* p_node)
-{
-	if (p_node && p_node == repl_editor->get_current()) {
-		repl_editor->edit(nullptr);
-		repl_editor->close();
-		repl_editor->get_pin()->set_pressed(false);
-	}
-}
-
-void MultiplayerEditorPlugin::_pinned()
-{
-	if (!repl_editor->get_pin()->is_pressed() && repl_editor->get_current() == nullptr) {
-		repl_editor->close();
-	}
 }
 
 

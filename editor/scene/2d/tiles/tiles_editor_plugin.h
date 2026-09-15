@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/semaphore.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/2d/tiles/tile_map_layer_editor.h"
 #include "editor/scene/2d/tiles/tile_set_editor.h"

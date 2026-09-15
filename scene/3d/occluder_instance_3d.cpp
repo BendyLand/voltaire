@@ -348,12 +348,6 @@ AABB OccluderInstance3D::get_aabb() const
 
 Ref<Occluder3D> OccluderInstance3D::get_occluder() const { return occluder; }
 
-void OccluderInstance3D::set_bake_mask(uint32_t p_mask)
-{
-	bake_mask = p_mask;
-	update_configuration_warnings();
-}
-
 uint32_t OccluderInstance3D::get_bake_mask() const { return bake_mask; }
 
 void OccluderInstance3D::set_bake_simplification_distance(float p_dist)
@@ -364,22 +358,6 @@ void OccluderInstance3D::set_bake_simplification_distance(float p_dist)
 float OccluderInstance3D::get_bake_simplification_distance() const
 {
 	return bake_simplification_dist;
-}
-
-void OccluderInstance3D::set_bake_mask_value(int p_layer_number, bool p_value)
-{
-	ERR_FAIL_COND_MSG(
-		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
-	uint32_t mask = get_bake_mask();
-	if (p_value) {
-		mask |= 1 << (p_layer_number - 1);
-	}
-	else {
-		mask &= ~(1 << (p_layer_number - 1));
-	}
-	set_bake_mask(mask);
 }
 
 bool OccluderInstance3D::get_bake_mask_value(int p_layer_number) const

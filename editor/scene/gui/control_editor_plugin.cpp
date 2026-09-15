@@ -43,44 +43,6 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 
-void ControlPositioningWarning::_update_toggler()
-{
-	Ref<Texture2D> arrow;
-	if (hint_label->is_visible()) {
-		arrow = get_theme_icon(SNAME("arrow"), SNAME("Tree"));
-		set_tooltip_text(TTR("Collapse positioning hint."));
-	}
-	else {
-		if (is_layout_rtl()) {
-			arrow = get_theme_icon(SNAME("arrow_collapsed"), SNAME("Tree"));
-		}
-		else {
-			arrow = get_theme_icon(SNAME("arrow_collapsed_mirrored"), SNAME("Tree"));
-		}
-		set_tooltip_text(TTR("Expand positioning hint."));
-	}
-
-	hint_icon->set_texture(arrow);
-}
-
-void ControlPositioningWarning::set_control(Control* p_node)
-{
-	control_node = p_node;
-	_update_warning();
-}
-
-void ControlPositioningWarning::_notification(int p_notification)
-{
-	switch (p_notification) {
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED:
-		_update_warning();
-		_update_toggler();
-		break;
-	}
-}
-
 Size2 ControlEditorPopupButton::get_minimum_size() const
 {
 	Vector2 base_size = Vector2(26, 26) * EDSCALE;
@@ -114,8 +76,6 @@ void ControlEditorPopupButton::toggled(bool p_pressed)
 
 	popup_panel->popup();
 }
-
-void ControlEditorPopupButton::_popup_visibility_changed(bool p_visible) { set_pressed(p_visible); }
 
 void ControlEditorPopupButton::_notification(int p_what)
 {
@@ -153,61 +113,6 @@ void ControlEditorPresetPicker::_add_separator(BoxContainer* p_box, Separator* p
 	p_separator->set_custom_minimum_size(Size2i(1, 1));
 	p_box->add_child(p_separator);
 }
-
-AnchorPresetPicker::AnchorPresetPicker()
-{
-	VBoxContainer* main_vb = memnew(VBoxContainer);
-	main_vb->add_theme_constant_override("separation", grid_separation);
-	add_child(main_vb);
-
-	HBoxContainer* top_row = memnew(HBoxContainer);
-	top_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	top_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(top_row);
-
-	_add_row_button(top_row, PRESET_TOP_LEFT, TTRC("Top Left"));
-	_add_row_button(top_row, PRESET_CENTER_TOP, TTRC("Center Top"));
-	_add_row_button(top_row, PRESET_TOP_RIGHT, TTRC("Top Right"));
-	_add_separator(top_row, memnew(VSeparator));
-	_add_row_button(top_row, PRESET_TOP_WIDE, TTRC("Top Wide"));
-
-	HBoxContainer* mid_row = memnew(HBoxContainer);
-	mid_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	mid_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(mid_row);
-
-	_add_row_button(mid_row, PRESET_CENTER_LEFT, TTRC("Center Left"));
-	_add_row_button(mid_row, PRESET_CENTER, TTRC("Center"));
-	_add_row_button(mid_row, PRESET_CENTER_RIGHT, TTRC("Center Right"));
-	_add_separator(mid_row, memnew(VSeparator));
-	_add_row_button(mid_row, PRESET_HCENTER_WIDE, TTRC("HCenter Wide"));
-
-	HBoxContainer* bot_row = memnew(HBoxContainer);
-	bot_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	bot_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(bot_row);
-
-	_add_row_button(bot_row, PRESET_BOTTOM_LEFT, TTRC("Bottom Left"));
-	_add_row_button(bot_row, PRESET_CENTER_BOTTOM, TTRC("Center Bottom"));
-	_add_row_button(bot_row, PRESET_BOTTOM_RIGHT, TTRC("Bottom Right"));
-	_add_separator(bot_row, memnew(VSeparator));
-	_add_row_button(bot_row, PRESET_BOTTOM_WIDE, TTRC("Bottom Wide"));
-
-	_add_separator(main_vb, memnew(HSeparator));
-
-	HBoxContainer* extra_row = memnew(HBoxContainer);
-	extra_row->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	extra_row->add_theme_constant_override("separation", grid_separation);
-	main_vb->add_child(extra_row);
-
-	_add_row_button(extra_row, PRESET_LEFT_WIDE, TTRC("Left Wide"));
-	_add_row_button(extra_row, PRESET_VCENTER_WIDE, TTRC("VCenter Wide"));
-	_add_row_button(extra_row, PRESET_RIGHT_WIDE, TTRC("Right Wide"));
-	_add_separator(extra_row, memnew(VSeparator));
-	_add_row_button(extra_row, PRESET_FULL_RECT, TTRC("Full Rect"));
-}
-
-void SizeFlagPresetPicker::set_expand_flag(bool p_expand) { expand_button->set_pressed(p_expand); }
 
 Vector2 ControlEditorToolbar::_position_to_anchor(const Control* p_control, Vector2 position)
 {

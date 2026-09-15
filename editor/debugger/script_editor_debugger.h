@@ -281,8 +281,6 @@ public:
 
 	void request_remote_evaluate(const String& p_expression, int p_stack_frame);
 
-	void stop();
-
 	void debug_skip_breakpoints();
 	void debug_ignore_error_breaks();
 	void debug_copy();
@@ -335,8 +333,6 @@ public:
 
 	EditorDebuggerNode::CameraOverride get_camera_override() const;
 	void set_camera_override(EditorDebuggerNode::CameraOverride p_override);
-
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
 
 	void update_live_edit_root();
 

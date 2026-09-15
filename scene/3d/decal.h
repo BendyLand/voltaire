@@ -94,7 +94,6 @@ public:
 	void set_distance_fade_length(real_t p_length);
 	real_t get_distance_fade_length() const;
 
-	void set_cull_mask(uint32_t p_layers);
 	uint32_t get_cull_mask() const;
 
 	virtual AABB get_aabb() const override;

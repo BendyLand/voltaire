@@ -66,7 +66,7 @@ protected:
 public:
 	void set_stream(const Ref<AudioStream>& p_stream);
 
-	AudioStreamEditor();
+	AudioStreamEditor() = default;
 };
 
 class EditorInspectorPluginAudioStream : public EditorInspectorPlugin

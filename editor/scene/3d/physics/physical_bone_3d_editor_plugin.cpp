@@ -47,13 +47,4 @@ void PhysicalBone3DEditor::_set_move_joint()
 	}
 }
 
-void PhysicalBone3DEditor::set_selected(PhysicalBone3D* p_pb)
-{
-	button_transform_joint->set_pressed(false);
-
-	_set_move_joint();
-	selected = p_pb;
-	_set_move_joint();
-}
-
 

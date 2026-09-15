@@ -350,7 +350,6 @@ public:
 
 	/* ORDERING */
 
-	virtual void set_z_index(int p_z);
 	int get_z_index() const;
 	int get_effective_z_index() const;
 

@@ -61,7 +61,6 @@ class EditorBottomPanel : public DockTabContainer
 	LocalVector<Button*> legacy_buttons;
 
 	void _repaint();
-	void _on_tab_changed(int p_idx);
 	void _pin_button_toggled(bool p_pressed);
 	void _expand_button_toggled(bool p_pressed);
 	void _update_center_split_offset();
@@ -88,7 +87,6 @@ public:
 	void make_item_visible(Control* p_item, bool p_visible = true, bool p_ignore_lock = false);
 	void hide_bottom_panel();
 	void toggle_last_opened_bottom_panel();
-	void set_expanded(bool p_expanded);
 	void _theme_changed();
 
 	bool is_locked() const { return lock_panel_switching; }

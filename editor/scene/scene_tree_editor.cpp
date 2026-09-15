@@ -417,16 +417,6 @@ void SceneTreeEditor::_empty_clicked(const Vector2& p_pos, MouseButton p_button)
 	_rmb_select(p_pos);
 }
 
-void SceneTreeEditor::update_warning() { _warning_changed(nullptr); }
-
-void SceneTreeEditor::_warning_changed(Node* p_for_node)
-{
-	node_cache.mark_dirty(p_for_node);
-
-	// Should use a timer.
-	update_timer->start();
-}
-
 void SceneTreeEditor::set_connect_to_script_mode(bool p_enable)
 {
 	connect_to_script_mode = p_enable;

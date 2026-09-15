@@ -72,17 +72,6 @@ void LocalizationEditor::_translation_res_option_popup(bool p_arrow_clicked)
 	locale_select->popup_locale_dialog();
 }
 
-void LocalizationEditor::_translation_res_option_selected(const String& p_locale)
-{
-	TreeItem* ed = translation_remap_options->get_edited();
-	ERR_FAIL_NULL(ed);
-
-	ed->set_text(1, TranslationServer::get_singleton()->get_locale_name(p_locale));
-	ed->set_tooltip_text(1, p_locale);
-
-	LocalizationEditor::_translation_res_option_changed();
-}
-
 void LocalizationEditor::_template_source_file_open()
 {
 	template_source_open_dialog->popup_file_dialog();
@@ -99,10 +88,6 @@ void LocalizationEditor::_template_generate_command()
 	if (!current_path.is_empty() && current_path.get_file().is_valid_filename()) {
 		_template_generate(current_path);
 		EditorToaster::get_singleton()->popup_str(TTR("Template generated."));
-	}
-	else {
-		ProjectSettingsEditor::get_singleton()->popup_centered();
-		_template_generate_open();
 	}
 }
 

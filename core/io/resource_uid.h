@@ -33,7 +33,6 @@
 #include "core/types.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class FileAccess;
 

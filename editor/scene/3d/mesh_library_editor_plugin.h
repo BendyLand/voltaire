@@ -131,7 +131,7 @@ class MeshLibraryEditorPlugin : public EditorPlugin
 public:
 	_FORCE_INLINE_ static MeshLibraryEditorPlugin* get_singleton() { return singleton; }
 
-	MeshLibraryEditorPlugin();
+	MeshLibraryEditorPlugin() = default;
 
 	~MeshLibraryEditorPlugin() { singleton = nullptr; }
 };

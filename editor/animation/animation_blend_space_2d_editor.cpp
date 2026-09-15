@@ -109,12 +109,6 @@ void AnimationNodeBlendSpace2DEditor::_update_edited_point_name()
 	}
 }
 
-void AnimationNodeBlendSpace2DEditor::_index_edit_focus_exited()
-{
-	index_edit_has_focus = false;
-	index_focus_cooldown_timer->start();
-}
-
 void AnimationNodeBlendSpace2DEditor::_inline_editor_text_changed(const String& p_text)
 {
 	if (!inline_editor) {

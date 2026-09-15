@@ -80,14 +80,6 @@ void EditorNode3DGizmo::clear()
 	secondary_handle_ids.clear();
 }
 
-void EditorNode3DGizmo::redraw()
-{
-	_update_bvh();
-	if (Node3DEditor::get_singleton()->is_current_selected_gizmo(this)) {
-		Node3DEditor::get_singleton()->update_transform_gizmo();
-	}
-}
-
 String EditorNode3DGizmo::get_handle_name(int p_id, bool p_secondary) const
 {
 	ERR_FAIL_NULL_V(gizmo_plugin, "");
@@ -191,12 +183,6 @@ void EditorNode3DGizmo::_update_bvh()
 	}
 
 	Node3DEditor::get_singleton()->update_gizmo_bvh_node(bvh_node_id, aabb);
-}
-
-void EditorNode3DGizmo::add_lines(const Vector<Vector3>& p_lines, const Ref<Material>& p_material,
-	bool p_billboard, const Color& p_modulate)
-{
-	add_vertices(p_lines, p_material, Mesh::PRIMITIVE_LINES, p_billboard, p_modulate);
 }
 
 void EditorNode3DGizmo::add_collision_triangles(const Ref<TriangleMesh>& p_tmesh)
@@ -500,27 +486,6 @@ bool EditorNode3DGizmo::intersect_ray(
 	return false;
 }
 
-bool EditorNode3DGizmo::is_subgizmo_selected(int p_id) const
-{
-	Node3DEditor* ed = Node3DEditor::get_singleton();
-	ERR_FAIL_NULL_V(ed, false);
-	return ed->is_current_selected_gizmo(this) && ed->is_subgizmo_selected(p_id);
-}
-
-Vector<int> EditorNode3DGizmo::get_subgizmo_selection() const
-{
-	Vector<int> ret;
-
-	Node3DEditor* ed = Node3DEditor::get_singleton();
-	ERR_FAIL_NULL_V(ed, ret);
-
-	if (ed->is_current_selected_gizmo(this)) {
-		ret = ed->get_subgizmo_selection();
-	}
-
-	return ret;
-}
-
 void EditorNode3DGizmo::create()
 {
 	ERR_FAIL_NULL(spatial_node);
@@ -642,17 +607,6 @@ void EditorNode3DGizmoPlugin::unregister_gizmo(EditorNode3DGizmo* p_gizmo)
 
 EditorNode3DGizmoPlugin::EditorNode3DGizmoPlugin() { current_state = VISIBLE; }
 
-EditorNode3DGizmoPlugin::~EditorNode3DGizmoPlugin()
-{
-	for (EditorNode3DGizmo* current : current_gizmos) {
-		current->set_plugin(nullptr);
-		current->get_node_3d()->remove_gizmo(current);
-	}
-	if (Node3DEditor::get_singleton()) {
-		Node3DEditor::get_singleton()->update_all_gizmos();
-	}
-}
-
 bool EditorNode3DGizmoPlugin::can_be_hidden() const { return true; }
 
 bool EditorNode3DGizmoPlugin::is_selectable_when_hidden() const { return false; }
@@ -706,6 +660,8 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial) 
 }
 
 int EditorNode3DGizmoPlugin::get_priority() const { return 0; }
+
+void EditorNode3DGizmo::redraw() {}
 
 void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
 

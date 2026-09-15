@@ -91,10 +91,8 @@ protected:
 	void _validate_textures();
 	void _mask_img_path_line_edit_text_changed(const String& p_text);
 	void _direction_img_path_line_edit_text_changed(const String& p_text);
-	void _emission_mask_mode_item_changed(int p_idx) const;
 	void _emission_direction_mode_item_changed(int p_idx);
 	void _browse_mask_texture_pressed();
-	void _browse_direction_texture_pressed();
 	void _file_selected(const String& p_file);
 	void _process_emission_masks(PackedVector2Array& r_valid_positions,
 		PackedVector2Array& r_valid_normals, PackedByteArray& r_valid_colors,

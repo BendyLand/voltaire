@@ -43,6 +43,7 @@
 #include "scene/gui/slider.h"
 #include "scene/gui/texture_progress_bar.h"
 #include "scene/gui/tree.h"
+#include "scene/resources/gradient_texture.h"
 
 class EditorAudioBuses;
 class EditorFileDialog;
@@ -133,10 +134,12 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void update_bus();
 	void update_send();
 
-	EditorAudioBus(EditorAudioBuses* p_buses = nullptr, bool p_is_master = false);
+	EditorAudioBus(EditorAudioBuses* p_buses = nullptr, bool p_is_master = false)
+		: buses(p_buses), is_master(p_is_master)
+	{
+	}
 };
 
 class EditorAudioBusDrop : public Control
@@ -170,7 +173,6 @@ class EditorAudioBuses : public EditorDock
 	Timer* save_timer = nullptr;
 	String edited_path;
 
-	void _update_file_label();
 	void _update_file_label_size();
 
 	void _rebuild_buses();
@@ -197,7 +199,7 @@ protected:
 public:
 	static EditorAudioBuses* register_editor();
 
-	EditorAudioBuses();
+	EditorAudioBuses() = default;
 };
 
 class EditorAudioMeterNotches : public Control

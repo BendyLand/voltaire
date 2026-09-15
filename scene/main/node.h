@@ -349,7 +349,6 @@ private:
 	void _propagate_ready();
 	void _propagate_exit_tree();
 	void _propagate_after_exit_tree();
-	void _propagate_physics_interpolated(bool p_interpolated);
 	void _propagate_physics_interpolation_reset_requested(bool p_requested);
 	void _propagate_process_owner(
 		Node* p_owner, int p_pause_notification, int p_enabled_notification);
@@ -621,7 +620,6 @@ public:
 	Node* get_owner() const;
 	void get_owned_by(Node* p_by, List<Node*>* p_owned);
 
-	void set_unique_name_in_owner(bool p_enabled);
 	bool is_unique_name_in_owner() const;
 
 	_FORCE_INLINE_ int get_index(bool p_include_internal = true) const
@@ -798,8 +796,6 @@ public:
 	bool can_process() const;
 	bool can_process_notification(int p_what) const;
 
-	void set_physics_interpolation_mode(PhysicsInterpolationMode p_mode);
-
 	PhysicsInterpolationMode get_physics_interpolation_mode() const
 	{
 		return data.physics_interpolation_mode;
@@ -840,8 +836,6 @@ public:
 	_FORCE_INLINE_ Viewport* get_viewport() const { return data.viewport; }
 
 	virtual Vector<String> get_configuration_warnings() const;
-
-	void update_configuration_warnings();
 
 	void set_display_folded(bool p_folded);
 	bool is_displayed_folded() const;

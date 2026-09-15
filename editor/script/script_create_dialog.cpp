@@ -92,19 +92,6 @@ void ScriptCreateDialog::_parent_name_changed(const String&
 	validation_panel->update();
 }
 
-void ScriptCreateDialog::_load_exist()
-{
-	String path = file_path->get_text();
-	Ref<Resource> p_script = ResourceLoader::load(path, "Script");
-	if (p_script.is_null()) {
-		alert->set_text(vformat(TTR("Error loading script from %s"), path));
-		alert->popup_centered();
-		return;
-	}
-
-	hide();
-}
-
 void ScriptCreateDialog::_built_in_pressed()
 {
 	if (built_in->is_pressed()) {

@@ -51,7 +51,6 @@
 // input/output paths.
 
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "openxr_action.h"
 
 #define XR_PATH_UNSUPPORTED_NAME "unsupported"

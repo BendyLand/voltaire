@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/color_picker.h"
 
 class ColorPickerShape

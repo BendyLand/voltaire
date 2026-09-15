@@ -43,16 +43,6 @@
 bool Bone2D::_editor_get_show_bone_gizmo() const { return _editor_show_bone_gizmo; }
 #endif // TOOLS_ENABLED
 
-void Bone2D::set_rest(const Transform2D& p_rest)
-{
-	rest = p_rest;
-	if (skeleton) {
-		skeleton->_make_bone_setup_dirty();
-	}
-
-	update_configuration_warnings();
-}
-
 Transform2D Bone2D::get_rest() const { return rest; }
 
 Transform2D Bone2D::get_skeleton_rest() const

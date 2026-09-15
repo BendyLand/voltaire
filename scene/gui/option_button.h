@@ -77,7 +77,7 @@ class OptionButton : public Button
 
 	void _dummy_setter() {} // Stub for PropertyListHelper (_set() doesn't use it).
 
-	virtual void pressed() override;
+	virtual void pressed();
 
 protected:
 	Size2 get_minimum_size() const override;
@@ -104,7 +104,6 @@ public:
 	void set_item_text(int p_idx, const String& p_text);
 	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
 	void set_item_id(int p_idx, int p_id);
-	void set_item_disabled(int p_idx, bool p_disabled);
 	void set_item_tooltip(int p_idx, const String& p_tooltip);
 	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
 

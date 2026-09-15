@@ -69,20 +69,6 @@ void EditorLog::_notification(int p_what)
 	}
 }
 
-void EditorLog::_set_collapse(bool p_collapse)
-{
-	collapse = p_collapse;
-	_start_state_save_timer();
-	_rebuild_log();
-}
-
-void EditorLog::_start_state_save_timer()
-{
-	if (!is_loading_state) {
-		save_state_timer->start();
-	}
-}
-
 void EditorLog::_meta_clicked(const String& p_meta)
 {
 	if (!p_meta.contains_char(':')) {
@@ -275,13 +261,6 @@ bool EditorLog::_check_display_message(LogMessage& p_message)
 	}
 
 	return filter_active && search_match;
-}
-
-void EditorLog::_set_filter_active(bool p_active, MessageType p_message_type)
-{
-	type_filter_map[p_message_type]->set_active(p_active);
-	_start_state_save_timer();
-	_rebuild_log();
 }
 
 void EditorLog::_search_changed(const String& p_text) { _rebuild_log(); }

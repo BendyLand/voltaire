@@ -203,22 +203,6 @@ bool EditorHelpSearch::Runner::_phase_fill_member_items_init()
 	return true;
 }
 
-TreeItem* EditorHelpSearch::Runner::_create_category_item(TreeItem* p_parent, const String& p_class,
-	const StringName& p_icon, const String& p_text, const String& p_metatype)
-{
-	const String item_meta = "class_" + p_metatype + ":" + p_class;
-
-	TreeItem* item = nullptr;
-	if (_find_or_create_item(p_parent, item_meta, item)) {
-		item->set_icon(0, ui_service->get_editor_theme_icon(p_icon));
-		item->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_ALWAYS);
-		item->set_text(0, p_text);
-	}
-	item->set_collapsed(true);
-
-	return item;
-}
-
 bool EditorHelpSearch::Runner::_slice()
 {
 	bool phase_done = false;
@@ -412,55 +396,6 @@ bool EditorHelpSearch::Runner::_find_or_create_item(
 
 		return true;
 	}
-}
-
-TreeItem* EditorHelpSearch::Runner::_create_member_item(TreeItem* p_parent,
-	const String& p_class_name, const StringName& p_icon, const String& p_name,
-	const String& p_text, const String& p_type, const String& p_metatype, const String& p_tooltip,
-	const String& p_keywords, bool p_is_deprecated, bool p_is_experimental,
-	const String& p_matching_keyword)
-{
-	const String item_meta = "class_" + p_metatype + ":" + p_class_name + ":" + p_name;
-
-	TreeItem* item = nullptr;
-	if (_find_or_create_item(p_parent, item_meta, item)) {
-		item->set_icon(0, ui_service->get_editor_theme_icon(p_icon));
-		item->set_text(1, TTRGET(p_type));
-		item->set_tooltip_text(0, p_tooltip);
-		item->set_tooltip_text(1, p_tooltip);
-
-		if (p_is_deprecated) {
-			Ref<Texture2D> error_icon = ui_service->get_editor_theme_icon(SNAME("StatusError"));
-			item->add_button(0, error_icon, 0, false, TTR("This member is marked as deprecated."));
-		}
-		else if (p_is_experimental) {
-			Ref<Texture2D> warning_icon = ui_service->get_editor_theme_icon(SNAME("NodeWarning"));
-			item->add_button(
-				0, warning_icon, 0, false, TTR("This member is marked as experimental."));
-		}
-	}
-
-	String text;
-	if (search_flags & SEARCH_SHOW_HIERARCHY) {
-		text = p_text;
-	}
-	else {
-		text = p_class_name + "." + p_text;
-	}
-	if (!p_matching_keyword.is_empty()) {
-		text += "      - " + vformat(TTR("Matches the \"%s\" keyword."), p_matching_keyword);
-	}
-	item->set_text(0, text);
-
-	// Don't match member items for short searches.
-	if (term.length() > 1 || term == "@") {
-		_match_item(item, p_name);
-	}
-	for (const String& keyword : p_keywords.split(",")) {
-		_match_item(item, keyword.strip_edges(), true);
-	}
-
-	return item;
 }
 
 bool EditorHelpSearch::Runner::work(uint64_t slot)

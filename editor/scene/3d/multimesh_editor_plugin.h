@@ -72,7 +72,6 @@ class MultiMeshEditor : public Control
 	};
 
 	void _browsed(const NodePath& p_path);
-	void _menu_option(int);
 	void _populate();
 	void _browse(bool p_source);
 

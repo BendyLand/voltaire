@@ -45,19 +45,7 @@ String LookAtModifier3D::get_bone_name() const { return bone_name; }
 
 int LookAtModifier3D::get_bone() const { return bone; }
 
-void LookAtModifier3D::set_forward_axis(BoneAxis p_axis)
-{
-	forward_axis = p_axis;
-	update_configuration_warnings();
-}
-
 SkeletonModifier3D::BoneAxis LookAtModifier3D::get_forward_axis() const { return forward_axis; }
-
-void LookAtModifier3D::set_primary_rotation_axis(Vector3::Axis p_axis)
-{
-	primary_rotation_axis = p_axis;
-	update_configuration_warnings();
-}
 
 Vector3::Axis LookAtModifier3D::get_primary_rotation_axis() const { return primary_rotation_axis; }
 

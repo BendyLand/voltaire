@@ -231,12 +231,6 @@ void Path3DEditorPlugin::_handle_option_pressed(int p_option)
 	pm = handle_menu->get_popup();
 
 	switch (p_option) {
-	case HANDLE_OPTION_ANGLE: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_ANGLE);
-		mirror_handle_angle = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
-		pm->set_item_disabled(HANDLE_OPTION_LENGTH, !mirror_handle_angle);
-	} break;
 	case HANDLE_OPTION_LENGTH: {
 		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
 		mirror_handle_length = !is_checked;
@@ -248,15 +242,6 @@ void Path3DEditorPlugin::_handle_option_pressed(int p_option)
 		pm->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
 	} break;
 	}
-}
-
-void Path3DEditorPlugin::_confirm_clear_points()
-{
-	if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {
-		return;
-	}
-	clear_points_dialog->reset_size();
-	clear_points_dialog->popup_centered();
 }
 
 void Path3DEditorPlugin::_clear_curve_points()

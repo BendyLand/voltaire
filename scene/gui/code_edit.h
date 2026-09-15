@@ -73,8 +73,6 @@ private:
 	int _calculate_spaces_till_next_left_indent(int p_column) const;
 	int _calculate_spaces_till_next_right_indent(int p_column) const;
 
-	void _new_line(bool p_split_current_line = true, bool p_above = false);
-
 	/* Auto brace completion */
 	bool auto_brace_completion_enabled = false;
 
@@ -328,21 +326,12 @@ private:
 	void _line_col_changed();
 	void _text_changed();
 
-	void _apply_project_settings();
-
 protected:
 	void _notification(int p_what);
 
 	virtual void _unhide_carets() override;
 
 	virtual void _draw_guidelines() override;
-
-	/* Text manipulation */
-
-	// Overridable actions
-	virtual void _handle_unicode_input_internal(const uint32_t p_unicode, int p_caret) override;
-	virtual void _backspace_internal(int p_caret) override;
-	virtual void _cut_internal(int p_caret) override;
 
 	virtual RID get_focused_accessibility_element() const override;
 
@@ -362,13 +351,6 @@ public:
 
 	void set_auto_indent_prefixes(const TypedArray<String>& p_prefixes);
 	TypedArray<String> get_auto_indent_prefixes() const;
-
-	void do_indent();
-
-	void indent_lines();
-	void unindent_lines();
-
-	void convert_indent(int p_from_line = -1, int p_to_line = -1);
 
 	/* Auto brace completion */
 	void set_auto_brace_completion_enabled(bool p_enabled);
@@ -519,14 +501,6 @@ public:
 	/* Symbol tooltip */
 	void set_symbol_tooltip_on_hover_enabled(bool p_enabled);
 	bool is_symbol_tooltip_on_hover_enabled() const;
-
-	/* Text manipulation */
-	void move_lines_up();
-	void move_lines_down();
-	void delete_lines();
-	void join_lines(const String& p_line_ending = " ");
-	void duplicate_selection();
-	void duplicate_lines();
 
 	CodeEdit();
 	~CodeEdit();

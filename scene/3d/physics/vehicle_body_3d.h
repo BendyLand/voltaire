@@ -194,7 +194,7 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	VehicleWheel3D();
+	VehicleWheel3D() = default;
 };
 
 class VehicleBody3D : public RigidBody3D

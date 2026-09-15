@@ -94,12 +94,9 @@ class EditorAutoloadSettings : public VBoxContainer
 
 	void _create_script_autoload();
 	void _create_scene_autoload();
-	void _autoload_file_selected(const String& p_path);
 	void _scene_file_selected(const String& p_path);
 
-	void _scene_created();
 	void _add_autoload(const String& p_name, const String& p_path);
-	void _try_add_autoload(const String& p_name, const String& p_path);
 	void _confirm_autoload_name();
 
 protected:

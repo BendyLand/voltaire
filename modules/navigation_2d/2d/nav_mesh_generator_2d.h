@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #ifdef CLIPPER2_ENABLED
 
 #include "servers/navigation_2d/navigation_server_2d.h"

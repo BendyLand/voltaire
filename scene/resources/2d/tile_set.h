@@ -32,7 +32,6 @@
 
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 #include "scene/2d/light_occluder_2d.h"

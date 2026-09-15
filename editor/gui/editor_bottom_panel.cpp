@@ -54,15 +54,6 @@ void EditorBottomPanel::_notification(int p_what)
 	}
 }
 
-void EditorBottomPanel::_on_tab_changed(int p_idx)
-{
-	_update_center_split_offset();
-	_repaint();
-	if (p_idx >= 0 && p_idx < get_tab_count()) {
-		set_accessibility_name(get_tab_title(p_idx));
-	}
-}
-
 void EditorBottomPanel::_theme_changed()
 {
 	if (get_current_tab() == -1) {
@@ -117,8 +108,6 @@ void EditorBottomPanel::toggle_last_opened_bottom_panel()
 }
 
 void EditorBottomPanel::_pin_button_toggled(bool p_pressed) { lock_panel_switching = p_pressed; }
-
-void EditorBottomPanel::set_expanded(bool p_expanded) { expand_button->set_pressed(p_expanded); }
 
 void EditorBottomPanel::_update_center_split_offset()
 {

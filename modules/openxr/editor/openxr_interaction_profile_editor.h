@@ -46,8 +46,6 @@ private:
 	VBoxContainer* toolbar_vb = nullptr;
 	Button* binding_modifiers_btn = nullptr;
 
-	void _on_open_binding_modifiers();
-
 protected:
 	EditorUndoRedoManager* undo_redo;
 	Ref<OpenXRInteractionProfile> interaction_profile;

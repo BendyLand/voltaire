@@ -305,7 +305,6 @@ public:
 	void set_directional(bool p_enable);
 	bool is_directional() const;
 
-	void set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode);
 	LightmapGIData::ShadowmaskMode get_shadowmask_mode() const;
 
 	void set_use_texture_for_bounces(bool p_enable);

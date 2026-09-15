@@ -245,10 +245,3 @@ void Parallax2D::set_ignore_camera_scroll(bool p_ignore) { ignore_camera_scroll 
 bool Parallax2D::is_ignore_camera_scroll() { return ignore_camera_scroll; }
 
 
-Parallax2D::Parallax2D()
-{
-	// Parallax2D is always updated every frame so there is no need to interpolate.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-}
-
-

@@ -108,13 +108,6 @@ void Decal::set_distance_fade_length(real_t p_length)
 
 real_t Decal::get_distance_fade_length() const { return distance_fade_length; }
 
-void Decal::set_cull_mask(uint32_t p_layers)
-{
-	cull_mask = p_layers;
-	RS::get_singleton()->decal_set_cull_mask(decal, cull_mask);
-	update_configuration_warnings();
-}
-
 uint32_t Decal::get_cull_mask() const { return cull_mask; }
 
 AABB Decal::get_aabb() const

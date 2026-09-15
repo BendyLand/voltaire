@@ -84,10 +84,6 @@ constexpr int GODOT4_CONFIG_VERSION = 5;
 
 ProjectManager* ProjectManager::singleton = nullptr;
 
-// Notifications.
-
-// Utility data.
-
 Ref<Texture2D> ProjectManager::_file_dialog_get_icon(const String& p_path)
 {
 	if (p_path.has_extension("godot")) {
@@ -118,10 +114,6 @@ void ProjectManager::_build_icon_type_cache(Ref<Theme> p_theme)
 	}
 }
 
-// Main layout.
-
-void ProjectManager::_show_about() { about_dialog->popup_centered(Size2(780, 500) * EDSCALE); }
-
 void ProjectManager::_project_list_menu_option(int p_option)
 {
 	switch (p_option) {
@@ -132,14 +124,6 @@ void ProjectManager::_project_list_menu_option(int p_option)
 	case ProjectList::MENU_EDIT_VERBOSE:
 		open_in_verbose_mode = true;
 		_open_selected_projects_check_warnings();
-		break;
-
-	case ProjectList::MENU_EDIT_RECOVERY:
-		_open_recovery_mode_ask(true);
-		break;
-
-	case ProjectList::MENU_RUN:
-		_run_project_confirm();
 		break;
 
 	case ProjectList::MENU_SHOW_IN_FILE_MANAGER:
@@ -165,17 +149,7 @@ void ProjectManager::_project_list_menu_option(int p_option)
 	case ProjectList::MENU_DUPLICATE:
 		_duplicate_project();
 		break;
-
-	case ProjectList::MENU_REMOVE:
-		_erase_project();
-		break;
 	}
-}
-
-void ProjectManager::_show_error(const String& p_message, const Size2& p_min_size)
-{
-	error_dialog->set_text(p_message);
-	error_dialog->popup_centered(p_min_size);
 }
 
 void ProjectManager::_dim_window()
@@ -190,19 +164,6 @@ void ProjectManager::_dim_window()
 	set_modulate(dim_color);
 }
 
-// Quick settings.
-
-void ProjectManager::_show_quick_settings()
-{
-	if (!EditorPropertyNameProcessor::get_singleton()) {
-		EditorPropertyNameProcessor* epnp = memnew(EditorPropertyNameProcessor);
-		add_child(epnp);
-
-		EditorHelp::generate_doc();
-	}
-	quick_settings_dialog->popup_centered(Size2(640, 200) * EDSCALE);
-}
-
 void ProjectManager::_restart_confirmed()
 {
 	List<String> args = OS::get_singleton()->get_cmdline_args();
@@ -213,111 +174,7 @@ void ProjectManager::_restart_confirmed()
 	get_tree()->quit();
 }
 
-// Project list.
-
 void ProjectManager::_scan_projects() { scan_dir->popup_file_dialog(); }
-
-void ProjectManager::_run_project()
-{
-	const HashSet<String>& selected_list = project_list->get_selected_project_keys();
-
-	if (selected_list.size() < 1) {
-		return;
-	}
-
-	if (selected_list.size() > 1) {
-		multi_run_ask->set_text(
-			vformat(TTR("Are you sure to run %d projects at once?"), selected_list.size()));
-		multi_run_ask->popup_centered();
-	}
-	else {
-		_run_project_confirm();
-	}
-}
-
-void ProjectManager::_run_project_confirm()
-{
-	Vector<ProjectList::Item> selected_list = project_list->get_selected_projects();
-
-	for (int i = 0; i < selected_list.size(); ++i) {
-		const String& selected_main = selected_list[i].main_scene;
-		if (selected_main.is_empty()) {
-			_show_error(TTRC("Can't run project: Project has no main scene defined.\nPlease edit "
-							 "the project and set the main scene in the Project Settings under the "
-							 "\"Application\" category."));
-			continue;
-		}
-
-		const String& path = selected_list[i].path;
-
-		// `.substr(6)` on `ProjectSettings::get_singleton()->get_imported_files_path()` strips away
-		// the leading "res://".
-		if (!DirAccess::exists(path.path_join(
-				ProjectSettings::get_singleton()->get_imported_files_path().substr(6)))) {
-			_show_error(TTRC("Can't run project: Assets need to be imported first.\nPlease edit "
-							 "the project to trigger the initial import."));
-			continue;
-		}
-
-		__print_line("Running project: " + path);
-
-		List<String> args;
-
-		for (const String& a : Main::get_forwardable_cli_arguments(Main::CLI_SCOPE_PROJECT)) {
-			args.push_back(a);
-		}
-
-		args.push_back("--path");
-		args.push_back(path);
-
-		Error err = OS::get_singleton()->create_instance(args);
-		ERR_FAIL_COND(err);
-	}
-}
-
-void ProjectManager::_open_selected_projects_check_recovery_mode()
-{
-	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
-
-	if (selected_projects.is_empty()) {
-		return;
-	}
-
-	const ProjectList::Item& project = selected_projects[0];
-	if (project.missing) {
-		return;
-	}
-
-	open_in_verbose_mode = false;
-	open_in_recovery_mode = false;
-	// Check if the project failed to load during last startup.
-	if (project.recovery_mode) {
-		_open_recovery_mode_ask(false);
-		return;
-	}
-
-	_open_selected_projects_check_warnings();
-}
-
-void ProjectManager::_open_selected_projects_with_migration()
-{
-	if (ask_update_backup->is_pressed() && project_list->get_selected_projects().size() == 1) {
-		ask_update_settings->hide();
-		ask_update_backup->set_pressed(false);
-
-		_duplicate_project_with_action(POST_DUPLICATE_ACTION_OPEN);
-		return;
-	}
-
-#ifndef DISABLE_DEPRECATED
-	if (project_list->get_selected_projects().size() == 1) {
-		// Only migrate if a single project is opened.
-		_minor_project_migrate();
-	}
-#endif
-	_open_selected_projects();
-	ask_upgrade_tool->set_pressed(false);
-}
 
 void ProjectManager::_install_project(const String& p_zip_path, const String& p_title)
 {
@@ -391,34 +248,6 @@ void ProjectManager::_show_project_in_file_manager()
 	}
 }
 
-void ProjectManager::_erase_project()
-{
-	const HashSet<String>& selected_list = project_list->get_selected_project_keys();
-
-	if (selected_list.is_empty()) {
-		return;
-	}
-
-	String confirm_message;
-	if (selected_list.size() >= 2) {
-		confirm_message = vformat(TTR("Remove %d projects from the list?"), selected_list.size());
-	}
-	else {
-		confirm_message = TTRC("Remove this project from the list?");
-	}
-
-	erase_ask_label->set_text(confirm_message);
-	// delete_project_contents->set_pressed(false);
-	erase_ask->popup_centered();
-}
-
-void ProjectManager::_erase_missing_projects()
-{
-	erase_missing_ask->set_text(TTRC("Remove all missing projects from the list?\nThe project "
-									 "folders' contents won't be modified."));
-	erase_missing_ask->popup_centered();
-}
-
 void ProjectManager::_erase_project_confirm()
 {
 	project_list->erase_selected_projects(false);
@@ -443,34 +272,6 @@ void ProjectManager::_open_options_popup()
 	open_options_popup->popup();
 }
 
-void ProjectManager::_open_recovery_mode_ask(bool manual)
-{
-	String recovery_mode_details;
-
-	// Only show the initial crash preamble if this popup wasn't manually triggered.
-	if (!manual) {
-		recovery_mode_details +=
-			TTR("It looks like Godot crashed when opening this project the last time. If you're "
-				"having problems editing this project, you can try to open it in Recovery Mode.") +
-			String::utf8("\n\n");
-	}
-
-	recovery_mode_details +=
-		TTR("Recovery Mode is a special mode that may help to recover projects that crash the "
-			"engine during initialization. This mode temporarily disables the following "
-			"features:") +
-		String::utf8("\n\n•  ") + TTR("Tool scripts") + String::utf8("\n•  ") +
-		TTR("Editor plugins") + String::utf8("\n•  ") + TTR("GDExtension addons") +
-		String::utf8("\n•  ") + TTR("Automatic scene restoring") + String::utf8("\n\n") +
-		TTR("This mode is intended only for basic editing to troubleshoot such issues, and "
-			"therefore it will not be possible to run the project during this mode. It is also a "
-			"good idea to make a backup of your project before proceeding.") +
-		String::utf8("\n\n") + TTR("Edit the project in Recovery Mode?");
-
-	open_recovery_mode_ask->set_text(recovery_mode_details);
-	open_recovery_mode_ask->popup_centered(Size2(550, 70) * EDSCALE);
-}
-
 void ProjectManager::_on_projects_updated()
 {
 	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
@@ -491,9 +292,6 @@ void ProjectManager::_on_open_options_selected(int p_option)
 	case 0: // Edit in verbose mode.
 		open_in_verbose_mode = true;
 		_open_selected_projects_check_warnings();
-		break;
-	case 1: // Edit in recovery mode.
-		_open_recovery_mode_ask(true);
 		break;
 	}
 }
@@ -537,14 +335,6 @@ void ProjectManager::_on_project_duplicated(
 	else {
 		project_list->add_project(p_duplicate_path, false);
 		project_list->save_config();
-
-		if (post_duplicate_action == POST_DUPLICATE_ACTION_OPEN) {
-			_open_selected_projects_with_migration();
-		}
-		else if (post_duplicate_action == POST_DUPLICATE_ACTION_FULL_CONVERSION) {
-			_full_convert_button_pressed();
-		}
-
 		project_list->update_dock_menu();
 	}
 
@@ -570,15 +360,6 @@ void ProjectManager::_on_search_term_changed(const String& p_term)
 	_update_project_buttons();
 }
 
-void ProjectManager::_on_search_term_submitted(const String& p_text)
-{
-	if (current_main_view != MAIN_VIEW_PROJECTS) {
-		return;
-	}
-
-	_open_selected_projects_check_recovery_mode();
-}
-
 LineEdit* ProjectManager::get_search_box() { return search_box; }
 
 void ProjectManager::_create_new_tag()
@@ -596,28 +377,11 @@ void ProjectManager::_create_new_tag()
 	_add_project_tag(new_tag);
 }
 
-void ProjectManager::_full_convert_button_pressed()
-{
-	ask_update_settings->hide();
-
-	if (ask_update_backup->is_pressed()) {
-		ask_update_backup->set_pressed(false);
-
-		_duplicate_project_with_action(POST_DUPLICATE_ACTION_FULL_CONVERSION);
-		return;
-	}
-
-	ask_full_convert_dialog->popup_centered(Size2i(600.0 * EDSCALE, 0));
-	ask_full_convert_dialog->get_cancel_button()->grab_focus();
-}
-
 void ProjectManager::_migration_guide_button_pressed()
 {
 	const String url = vformat("%s/tutorials/migrating/index.html", VLTR_VERSION_DOCS_URL);
 	OS::get_singleton()->shell_open(url);
 }
-
-// Input and I/O.
 
 void ProjectManager::_files_dropped(PackedStringArray p_files)
 {

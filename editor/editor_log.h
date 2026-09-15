@@ -100,12 +100,6 @@ private:
 
 		bool is_active() { return active; }
 
-		void set_active(bool p_active)
-		{
-			toggle_button->set_pressed(p_active);
-			active = p_active;
-		}
-
 		LogFilter(MessageType p_type) : type(p_type) {}
 	};
 
@@ -147,16 +141,12 @@ private:
 	void _add_log_line(LogMessage& p_message, bool p_replace_previous = false);
 	bool _check_display_message(LogMessage& p_message);
 
-	void _set_filter_active(bool p_active, MessageType p_message_type);
 	void _search_changed(const String& p_text);
 
 	void _process_message(const String& p_msg, MessageType p_type, bool p_clear);
 	void _reset_message_counts();
 	void _set_dock_tab_icon(Ref<Texture2D> p_icon);
 
-	void _set_collapse(bool p_collapse);
-
-	void _start_state_save_timer();
 	void _save_state();
 	void _load_state();
 

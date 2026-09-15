@@ -75,8 +75,6 @@ private:
 	void _update_value(const NodePath& p_prop, int p_column, int p_checked);
 	void _update_config();
 	void _dialog_closed(bool p_confirmed);
-	void _add_property(
-		const NodePath& p_property, bool p_spawn, SceneReplicationConfig::ReplicationMode p_mode);
 
 	void _pick_node_filter_text_changed(const String& p_newtext);
 	void _pick_node_select_recursive(

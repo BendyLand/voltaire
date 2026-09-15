@@ -49,10 +49,6 @@ void RigidBody3D::_notification(int p_what)
 			set_notify_local_transform(true); // Used for warnings and only in editor.
 		}
 	} break;
-
-	case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
-		update_configuration_warnings();
-	} break;
 	}
 #endif
 }

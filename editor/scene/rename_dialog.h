@@ -104,7 +104,6 @@ protected:
 	virtual void _post_popup() override;
 
 public:
-	void reset();
 	void rename();
 
 	RenameDialog(SceneTreeEditor* p_scene_tree_editor);

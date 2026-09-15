@@ -328,13 +328,6 @@ String EditorInspectorSection::get_section() const { return section; }
 
 VBoxContainer* EditorInspectorSection::get_vbox() { return vbox; }
 
-void EditorInspectorSection::reset_timer()
-{
-	if (dropping_for_unfold && !dropping_unfold_timer->is_stopped()) {
-		dropping_unfold_timer->start();
-	}
-}
-
 bool EditorInspectorSection::has_revertable_properties() const
 {
 	return !revertable_properties.is_empty();
@@ -391,16 +384,6 @@ void EditorInspectorArray::_panel_draw(int p_index)
 		array_elements[p_index].panel->draw_style_box(
 			style.ptr(), Rect2(Vector2(), array_elements[p_index].panel->get_size()));
 	}
-}
-
-void EditorInspectorArray::show_menu(int p_index, const Vector2& p_offset)
-{
-	popup_array_index_pressed = begin_array_index + p_index;
-	rmb_popup->set_item_disabled(OPTION_MOVE_UP, popup_array_index_pressed == 0);
-	rmb_popup->set_item_disabled(OPTION_MOVE_DOWN, popup_array_index_pressed == count - 1);
-	rmb_popup->set_position(get_screen_position() + p_offset);
-	rmb_popup->reset_size();
-	rmb_popup->popup();
 }
 
 int EditorInspectorArray::_drop_position() const

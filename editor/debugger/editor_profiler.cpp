@@ -56,54 +56,11 @@ const EditorProfiler::Metric& EditorProfiler::_get_frame_metric(int index) const
 						 frame_metrics.size()];
 }
 
-void EditorProfiler::clear()
-{
-	frame_metrics.clear();
-	total_metrics = 0;
-	last_metric = -1;
-	variables->clear();
-	plot_sigs.clear();
-	plot_sigs.insert("physics_frame_time");
-	plot_sigs.insert("category_frame_time");
-
-	updating_frame = true;
-	cursor_metric_edit->set_min(0);
-	cursor_metric_edit->set_max(
-		100); // Doesn't make much sense, but we can't have min == max. Doesn't hurt.
-	cursor_metric_edit->set_value(0);
-	cursor_metric_edit->set_editable(false);
-	updating_frame = false;
-	hover_metric = -1;
-	seeking = false;
-
-	// Ensure button text (start, stop) is correct
-	_update_button_text();
-}
-
 int EditorProfiler::_get_zoom_left_border() const
 {
 	const int max_profiles_shown = frame_metrics.size() / Math::exp(graph_zoom);
 	return CLAMP(
 		zoom_center - max_profiles_shown / 2, 0, frame_metrics.size() - max_profiles_shown);
-}
-
-void EditorProfiler::_item_edited()
-{
-	if (updating_frame) {
-		return;
-	}
-
-	TreeItem* item = variables->get_edited();
-	if (!item) {
-		return;
-	}
-
-	if (!frame_delay->is_processing()) {
-		frame_delay->set_wait_time(0.1);
-		frame_delay->start();
-	}
-
-	_update_plot();
 }
 
 void EditorProfiler::_autostart_toggled(bool p_toggled_on)
@@ -130,12 +87,6 @@ void EditorProfiler::_graph_tex_draw()
 		graph->draw_line(Vector2(cur_x, 0), Vector2(cur_x, graph->get_size().y),
 			theme_cache.seek_line_hover_color);
 	}
-}
-
-void EditorProfiler::set_profiling(bool p_pressed)
-{
-	activate->set_pressed(p_pressed);
-	_update_button_text();
 }
 
 bool EditorProfiler::is_profiling() { return activate->is_pressed(); }

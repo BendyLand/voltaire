@@ -110,7 +110,6 @@ class Path2DEditor : public HBoxContainer
 	void _update_toolbar();
 
 	void _create_curve();
-	void _confirm_clear_points();
 	void _clear_curve_points(Path2D* p_path2d);
 	void _restore_curve_points(Path2D* p_path2d, const PackedVector2Array& p_points);
 

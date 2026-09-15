@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "scene/gui/dialogs.h"
 
@@ -242,7 +241,6 @@ class FindInFilesContainer : public EditorDock
 	void _on_tab_close_pressed(int p_tab);
 	void _update_bar_visibility();
 	void _bar_menu_option(int p_option);
-	void _bar_input(const Ref<InputEvent>& p_input);
 	void _on_theme_changed();
 
 	FindInFilesPanel* _create_new_panel();
@@ -250,7 +248,6 @@ class FindInFilesContainer : public EditorDock
 
 	void _result_selected(const String& p_fpath, int p_line_number, int p_begin, int p_end);
 	void _files_modified();
-	void _close_panel(FindInFilesPanel* p_panel);
 	void _on_dock_closed();
 
 protected:

@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/inspector/editor_properties.h"
 #include "editor/scene/2d/tiles/tile_atlas_view.h"
 #include "scene/gui/box_container.h"
@@ -259,7 +258,7 @@ public:
 	virtual void draw_over_tile(CanvasItem* p_canvas_item, Transform2D p_transform,
 		TileMapCell p_cell, bool p_selected = false) override;
 
-	TileDataDefaultEditor();
+	TileDataDefaultEditor() = default;
 	~TileDataDefaultEditor();
 };
 

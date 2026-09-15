@@ -31,7 +31,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_importer.h"
 #include "core/io/resource_saver.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
@@ -79,8 +78,6 @@ void SceneImportSettingsDialog::_update_scene()
 }
 
 void SceneImportSettingsDialog::request_generate_collider() { generate_collider = true; }
-
-void SceneImportSettingsDialog::update_view() { update_view_timer->start(); }
 
 SceneImportSettingsDialog* SceneImportSettingsDialog::singleton = nullptr;
 
@@ -164,23 +161,6 @@ void SceneImportSettingsDialog::_menu_callback(int p_id)
 	save_path->set_current_dir(base_path.get_base_dir());
 	current_action = p_id;
 	save_path->popup_centered_ratio();
-}
-
-void SceneImportSettingsDialog::_save_path_changed(const String& p_path)
-{
-	save_path_item->set_text(1, p_path);
-
-	if (FileAccess::exists(p_path)) {
-		save_path_item->set_text(2, TTR("Warning: File exists"));
-		save_path_item->set_tooltip_text(
-			2, TTR("Existing file with the same name will be replaced."));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusWarning")));
-
-	}
-	else {
-		save_path_item->set_text(2, TTR("Will create new file"));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusSuccess")));
-	}
 }
 
 SceneImportSettingsDialog::~SceneImportSettingsDialog() { memdelete(scene_import_settings_data); }

@@ -54,55 +54,6 @@ void AudioStreamEditor::_on_input_indicator(Ref<InputEvent> p_event)
 	}
 }
 
-AudioStreamEditor::AudioStreamEditor()
-{
-	set_custom_minimum_size(Size2(1, 100) * EDSCALE);
-
-	_player = memnew(AudioStreamPlayer);
-	add_child(_player);
-
-	VBoxContainer* vbox = memnew(VBoxContainer);
-	vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	add_child(vbox);
-
-	_preview = memnew(ColorRect);
-	_preview->set_v_size_flags(SIZE_EXPAND_FILL);
-	vbox->add_child(_preview);
-
-	_indicator = memnew(Control);
-	_indicator->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	_preview->add_child(_indicator);
-
-	HBoxContainer* hbox = memnew(HBoxContainer);
-	hbox->add_theme_constant_override("separation", 0);
-	vbox->add_child(hbox);
-
-	_play_button = memnew(Button);
-	hbox->add_child(_play_button);
-	_play_button->set_flat(true);
-	_play_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	_play_button->set_shortcut(ED_SHORTCUT("audio_stream_editor/audio_preview_play_pause",
-		TTRC("Audio Preview Play/Pause"), Key::SPACE));
-	_play_button->set_accessibility_name(TTRC("Play"));
-
-	_stop_button = memnew(Button);
-	hbox->add_child(_stop_button);
-	_stop_button->set_flat(true);
-	_stop_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	_stop_button->set_accessibility_name(TTRC("Stop"));
-
-	_current_label = memnew(Label);
-	_current_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
-	_current_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	_current_label->set_modulate(Color(1, 1, 1, 0.5));
-	hbox->add_child(_current_label);
-
-	_duration_label = memnew(Label);
-	hbox->add_child(_duration_label);
-}
-
-// AudioStreamEditorPlugin
-
 AudioStreamEditorPlugin::AudioStreamEditorPlugin()
 {
 	Ref<EditorInspectorPluginAudioStream> plugin;

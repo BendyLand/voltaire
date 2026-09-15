@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/os/thread_safe.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "core/types.h"
 

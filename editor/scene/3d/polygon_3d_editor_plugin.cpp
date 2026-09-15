@@ -46,22 +46,6 @@
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 
-void Polygon3DEditor::_menu_option(int p_option)
-{
-	switch (p_option) {
-	case MODE_CREATE: {
-		mode = MODE_CREATE;
-		button_create->set_pressed(true);
-		button_edit->set_pressed(false);
-	} break;
-	case MODE_EDIT: {
-		mode = MODE_EDIT;
-		button_create->set_pressed(false);
-		button_edit->set_pressed(true);
-	} break;
-	}
-}
-
 Polygon3DEditor::~Polygon3DEditor() { memdelete(imgeom); }
 
 

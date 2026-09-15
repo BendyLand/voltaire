@@ -49,7 +49,6 @@ class Joint2D : public Node2D
 
 protected:
 	void _disconnect_signals();
-	void _body_exit_tree();
 	void _update_joint(bool p_only_free = false);
 
 	void _notification(int p_what);

@@ -73,11 +73,6 @@
 #include "scene_tree_dock.h"
 #include "servers/display/display_server.h"
 
-void SceneTreeDock::_quick_open(const String& p_file_path)
-{
-	instantiate_scenes({p_file_path}, scene_tree->get_selected());
-}
-
 void SceneTreeDock::_reset_hovering_timer()
 {
 	if (!inspect_hovered_node_delay->is_stopped()) {
@@ -99,43 +94,6 @@ void SceneTreeDock::_scene_tree_gui_input(Ref<InputEvent> p_event)
 		filter->select_all();
 		accept_event();
 	}
-	else if (ED_IS_SHORTCUT("scene_tree/open_scene_in_editor", p_event)) {
-		_tool_selected(TOOL_SCENE_OPEN);
-		accept_event();
-	}
-}
-
-void SceneTreeDock::instantiate(const String& p_file)
-{
-	Vector<String> scenes;
-	scenes.push_back(p_file);
-	instantiate_scenes(scenes, scene_tree->get_selected());
-}
-
-void SceneTreeDock::instantiate_scenes(const Vector<String>& p_files, Node* p_parent)
-{
-	Node* parent = p_parent;
-
-	if (!parent) {
-		parent = scene_tree->get_selected();
-	}
-
-	if (!parent) {
-		parent = edited_scene;
-	}
-
-	if (!parent) {
-		if (p_files.size() == 1) {
-			accept->set_text(TTR("No parent to instantiate a child at."));
-		}
-		else {
-			accept->set_text(TTR("No parent to instantiate the scenes at."));
-		}
-		accept->popup_centered();
-		return;
-	};
-
-	_perform_instantiate_scenes(p_files, parent, -1);
 }
 
 bool SceneTreeDock::_cyclical_dependency_exists(
@@ -192,18 +150,6 @@ bool SceneTreeDock::_track_inherit(const String& p_target_scene_path, Node* p_de
 	}
 	return result;
 }
-
-void SceneTreeDock::_node_selected()
-{
-	Node* node = scene_tree->get_selected();
-
-	if (!node) {
-		return;
-	}
-	_handle_select(node);
-}
-
-void SceneTreeDock::_node_renamed() { _node_selected(); }
 
 void SceneTreeDock::_fill_path_renames(Vector<StringName> base_path,
 	Vector<StringName> new_base_path, Node* p_node, HashMap<Node*, NodePath>* p_renames)
@@ -304,124 +250,6 @@ bool SceneTreeDock::_update_node_path(
 	return false;
 }
 
-void SceneTreeDock::_node_prerenamed(Node* p_node, const String& p_new_name)
-{
-	HashMap<Node*, NodePath> path_renames;
-
-	Vector<StringName> base_path;
-	Node* n = p_node->get_parent();
-	while (n) {
-		base_path.push_back(n->get_name());
-		n = n->get_parent();
-	}
-	base_path.reverse();
-
-	Vector<StringName> new_base_path = base_path;
-	base_path.push_back(p_node->get_name());
-
-	new_base_path.push_back(p_new_name);
-
-	NodePath new_path(new_base_path, true);
-	path_renames[p_node] = new_path;
-
-	for (int i = 0; i < p_node->get_child_count(); i++) {
-		_fill_path_renames(base_path, new_base_path, p_node->get_child(i), &path_renames);
-	}
-
-	perform_node_renames(nullptr, &path_renames);
-}
-
-bool SceneTreeDock::_validate_no_foreign_selected(const List<Node*>& p_selected)
-{
-	for (Node* E : p_selected) {
-		if (E != edited_scene && E->get_owner() != edited_scene) {
-			accept->set_text(TTR("Can't operate on nodes from a foreign scene!"));
-			accept->popup_centered();
-			return false;
-		}
-
-		if (edited_scene->get_scene_inherited_state().is_valid()) {
-			// When edited_scene inherits from another one the root Node will be the parent Scene,
-			// we don't want to consider that Node a foreign one otherwise we would not be able to
-			// delete it.
-			if (edited_scene == E && current_option != TOOL_CHANGE_TYPE) {
-				continue;
-			}
-
-			if (edited_scene == E || edited_scene->get_scene_inherited_state()->find_node_by_path(
-										 edited_scene->get_path_to(E)) >= 0) {
-				accept->set_text(TTR("Can't operate on nodes the current scene inherits from!"));
-				accept->popup_centered();
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-bool SceneTreeDock::_validate_no_instance_selected(const List<Node*>& p_selected)
-{
-	for (Node* E : p_selected) {
-		if (E != edited_scene && E->is_instance()) {
-			accept->set_text(TTR("This operation can't be done on instantiated scenes."));
-			accept->popup_centered();
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void SceneTreeDock::_node_reparent(NodePath p_path, bool p_keep_global_xform)
-{
-	Node* new_parent = scene_root->get_node(p_path);
-	ERR_FAIL_NULL(new_parent);
-
-	const List<Node*> selection = editor_selection->get_top_selected_node_list();
-
-	if (selection.is_empty()) {
-		return; // Nothing to reparent.
-	}
-
-	Vector<Node*> nodes;
-
-	for (Node* E : selection) {
-		nodes.push_back(E);
-	}
-
-	_do_reparent(new_parent, -1, nodes, p_keep_global_xform);
-}
-
-void SceneTreeDock::_toggle_editable_children_from_selection()
-{
-	const List<Node*> selection = editor_selection->get_top_selected_node_list();
-	const List<Node*>::Element* e = selection.front();
-
-	if (e) {
-		_toggle_editable_children(e->get());
-	}
-}
-
-void SceneTreeDock::_toggle_placeholder_from_selection()
-{
-	const List<Node*> selection = editor_selection->get_top_selected_node_list();
-	const List<Node*>::Element* e = selection.front();
-
-	if (e) {
-		Node* node = e->get();
-		if (node) {
-			_toggle_editable_children(node);
-
-			bool placeholder = node->get_scene_instance_load_placeholder();
-			placeholder = !placeholder;
-
-			node->set_scene_instance_load_placeholder(placeholder);
-			scene_tree->update_tree();
-		}
-	}
-}
-
 void SceneTreeDock::set_selected(Node* p_node, bool p_emit_selected)
 {
 	scene_tree->set_selected(p_node, p_emit_selected);
@@ -504,25 +332,6 @@ void SceneTreeDock::_normalize_drop(Node*& to_node, int& to_pos, int p_type)
 	}
 }
 
-void SceneTreeDock::_filter_changed(const String& p_filter)
-{
-	scene_tree->set_filter(p_filter);
-
-	String warning = scene_tree->get_filter_term_warning();
-	if (!warning.is_empty()) {
-		filter->add_theme_icon_override(
-			SNAME("clear"), get_editor_theme_icon(SNAME("NodeWarning")).ptr());
-		filter->set_tooltip_text(warning);
-	}
-	else {
-		filter->remove_theme_icon_override(SNAME("clear"));
-		filter->set_tooltip_text(
-			TTRC("Filter nodes by entering a part of their name, type (if prefixed with \"type:\" "
-				 "or \"t:\")\nor group (if prefixed with \"group:\" or \"g:\"). Filtering is "
-				 "case-insensitive."));
-	}
-}
-
 void SceneTreeDock::_filter_option_selected(int p_option)
 {
 	String filter_parameter;
@@ -567,50 +376,7 @@ void SceneTreeDock::set_filter(const String& p_filter)
 	scene_tree->set_filter(p_filter);
 }
 
-void SceneTreeDock::save_branch_to_file(const String& p_directory)
-{
-	new_scene_from_dialog->set_current_dir(p_directory);
-	determine_path_automatically = false;
-	_tool_selected(TOOL_NEW_SCENE_FROM);
-}
-
-void SceneTreeDock::open_script_dialog(Node* p_for_node, bool p_extend)
-{
-	scene_tree->set_selected(p_for_node, false);
-
-	if (p_extend) {
-		_tool_selected(TOOL_EXTEND_SCRIPT);
-	}
-	else {
-		_tool_selected(TOOL_ATTACH_SCRIPT);
-	}
-}
-
-void SceneTreeDock::open_shader_dialog(
-	const Ref<ShaderMaterial>& p_for_material, int p_preferred_mode)
-{
-	selected_shader_material = p_for_material;
-	attach_shader_to_selected(p_preferred_mode);
-}
-
-void SceneTreeDock::open_add_child_dialog()
-{
-	create_dialog->set_base_type("CanvasItem");
-	_tool_selected(TOOL_NEW, true);
-	reset_create_dialog = true;
-}
-
-void SceneTreeDock::open_instance_child_dialog() { _tool_selected(TOOL_INSTANTIATE, true); }
-
 List<Node*> SceneTreeDock::get_node_clipboard() const { return List<Node*>(node_clipboard); }
-
-void SceneTreeDock::show_remote_tree() { _remote_tree_selected(); }
-
-void SceneTreeDock::_favorite_root_selected(const String& p_class)
-{
-	selected_favorite_root = p_class;
-	_tool_selected(TOOL_CREATE_FAVORITE);
-}
 
 void SceneTreeDock::_clear_clipboard()
 {

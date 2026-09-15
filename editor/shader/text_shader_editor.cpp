@@ -481,14 +481,6 @@ static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName
 
 static String complete_from_path;
 
-void TextShaderEditor::_prepare_edit_menu()
-{
-	const CodeEdit* tx = code_editor->get_text_editor();
-	PopupMenu* popup = edit_menu->get_popup();
-	popup->set_item_disabled(popup->get_item_index(EDIT_UNDO), !tx->has_undo());
-	popup->set_item_disabled(popup->get_item_index(EDIT_REDO), !tx->has_redo());
-}
-
 void TextShaderEditor::_notification(int p_what)
 {
 	switch (p_what) {
@@ -499,16 +491,6 @@ void TextShaderEditor::_notification(int p_what)
 			EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor")) {
 			_apply_editor_settings();
 		}
-	} break;
-
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_visible_in_tree() && preview_timer->is_inside_tree()) {
-			preview_timer->start();
-		}
-	} break;
-
-	case NOTIFICATION_RESIZED: {
-		preview_timer->start();
 	} break;
 
 	case NOTIFICATION_APPLICATION_FOCUS_IN: {
@@ -523,17 +505,6 @@ void TextShaderEditor::goto_line_selection(int p_line, int p_begin, int p_end)
 }
 
 void TextShaderEditor::_project_settings_changed() { _update_warnings(true); }
-
-void TextShaderEditor::_focus_preview_line(int p_line)
-{
-	code_editor->goto_line_centered(p_line);
-
-	TextShaderPreview* preview = code_editor->get_preview(p_line);
-	if (preview) {
-		preview_sbox->ensure_control_visible(preview);
-	}
-	preview_timer->start();
-}
 
 void TextShaderEditor::_reload()
 {
@@ -584,45 +555,6 @@ void TextShaderEditor::use_menu_bar(MenuButton* p_file_menu)
 	menu_bar_hbox->move_child(p_file_menu, 0);
 }
 
-void TextShaderEditor::save_external_data(const String& p_str)
-{
-	if (shader.is_null() && shader_inc.is_null()) {
-		disk_changed->hide();
-		return;
-	}
-
-	if (trim_trailing_whitespace_on_save) {
-		trim_trailing_whitespace();
-	}
-
-	if (trim_final_newlines_on_save) {
-		trim_final_newlines();
-	}
-
-	apply_shaders();
-
-	Ref<Shader> edited_shader = code_editor->get_edited_shader();
-	if (edited_shader.is_valid()) {
-		ResourceSaver::save(edited_shader.ptr());
-	}
-	if (shader.is_valid() && shader != edited_shader) {
-		ResourceSaver::save(shader.ptr());
-	}
-
-	Ref<ShaderInclude> edited_shader_inc = code_editor->get_edited_shader_include();
-	if (edited_shader_inc.is_valid()) {
-		ResourceSaver::save(edited_shader_inc.ptr());
-	}
-	if (shader_inc.is_valid() && shader_inc != edited_shader_inc) {
-		ResourceSaver::save(shader_inc.ptr());
-	}
-	code_editor->get_text_editor()->tag_saved_version();
-
-	disk_changed->hide();
-}
-
-void TextShaderEditor::trim_trailing_whitespace() { code_editor->trim_trailing_whitespace(); }
-
 void TextShaderEditor::trim_final_newlines() { code_editor->trim_final_newlines(); }
 
 void TextShaderEditor::set_toggle_list_control(Control* p_toggle_list_control)
@@ -641,43 +573,6 @@ bool TextShaderEditor::is_unsaved() const
 }
 
 void TextShaderEditor::tag_saved_version() { code_editor->get_text_editor()->tag_saved_version(); }
-
-void TextShaderEditor::_make_context_menu(bool p_selection, Vector2 p_position)
-{
-	context_menu->clear();
-	if (DisplayServer::get_singleton()->has_feature(
-			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
-		context_menu->add_item(TTRC("Emoji & Symbols"), EDIT_EMOJI_AND_SYMBOL);
-		context_menu->add_separator();
-	}
-	if (p_selection) {
-		context_menu->add_shortcut(ED_GET_SHORTCUT("ui_cut"), EDIT_CUT);
-		context_menu->add_shortcut(ED_GET_SHORTCUT("ui_copy"), EDIT_COPY);
-	}
-
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_paste"), EDIT_PASTE);
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_text_select_all"), EDIT_SELECT_ALL);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_undo"), EDIT_UNDO);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_redo"), EDIT_REDO);
-
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent"), EDIT_INDENT);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/unindent"), EDIT_UNINDENT);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_bookmark"), BOOKMARK_TOGGLE);
-
-	context_menu->set_item_disabled(
-		context_menu->get_item_index(EDIT_UNDO), !code_editor->get_text_editor()->has_undo());
-	context_menu->set_item_disabled(
-		context_menu->get_item_index(EDIT_REDO), !code_editor->get_text_editor()->has_redo());
-
-	context_menu->set_position(get_screen_position() + p_position);
-	context_menu->reset_size();
-	context_menu->popup();
-}
 
 void TextShaderEditor::register_editor()
 {

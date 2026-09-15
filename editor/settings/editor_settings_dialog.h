@@ -79,7 +79,6 @@ class EditorSettingsDialog : public AcceptDialog
 	virtual void cancel_pressed() override;
 	virtual void ok_pressed() override;
 
-	void _settings_changed();
 	void _settings_property_edited();
 	void _settings_save();
 
@@ -116,7 +115,6 @@ public:
 	void popup_edit_settings();
 	static void update_3d_navigation_preset();
 	void set_current_section(const String& p_section);
-	void set_advanced_mode_enabled(bool p_enabled);
 
 	static EditorSettingsDialog* get_singleton() { return singleton; }
 

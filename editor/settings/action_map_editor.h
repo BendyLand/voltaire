@@ -107,8 +107,6 @@ public:
 	LineEdit* get_path_box() const;
 	InputEventConfigurationDialog* get_configuration_dialog();
 
-	void show_message(const String& p_message);
-
 	ActionMapEditor() = default;
 };
 

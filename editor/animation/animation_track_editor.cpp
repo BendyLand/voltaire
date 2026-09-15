@@ -901,11 +901,6 @@ void AnimationTrackEditor::_pick_track_filter_text_changed(const String& p_newte
 	pick_track->get_scene_tree()->set_selected(to_select);
 }
 
-void AnimationTrackEditor::popup_read_only_dialog()
-{
-	read_only_dialog->popup_centered(Size2(200, 100) * EDSCALE);
-}
-
 AnimationTrackEditor::~AnimationTrackEditor()
 {
 	memdelete(key_edit);
@@ -1034,13 +1029,6 @@ void AnimationMarkerEdit::_move_selection_begin()
 {
 	moving_selection = true;
 	moving_selection_offset = 0;
-}
-
-void AnimationMarkerEdit::_rename_marker(const StringName& p_name)
-{
-	marker_rename_confirm->popup_centered(Size2i(200, 0) * EDSCALE);
-	marker_rename_prev_name = p_name;
-	marker_rename_new_name->set_text(p_name);
 }
 
 float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_time(marker_name); }

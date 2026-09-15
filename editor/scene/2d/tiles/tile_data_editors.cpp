@@ -137,20 +137,6 @@ void TileDataDefaultEditor::forward_draw_over_alternatives(TileAtlasView* p_tile
 {
 }
 
-TileDataDefaultEditor::TileDataDefaultEditor()
-{
-	label = memnew(Label);
-	label->set_text(TTR("Painting:"));
-	label->set_theme_type_variation("HeaderSmall");
-	add_child(label);
-
-	picker_button = memnew(Button);
-	picker_button->set_theme_type_variation(SceneStringName(FlatButton));
-	picker_button->set_toggle_mode(true);
-	picker_button->set_shortcut(ED_GET_SHORTCUT("tiles_editor/picker"));
-	toolbar->add_child(picker_button);
-}
-
 TileDataDefaultEditor::~TileDataDefaultEditor()
 {
 	toolbar->queue_free();

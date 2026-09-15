@@ -49,9 +49,7 @@ private:
 	void _notification(int p_what);
 
 	void on_channel_button_toggled(bool p_unused_pressed);
-	void create_button(unsigned int p_channel_index, const String& p_text, Control* p_parent);
 	void on_toggled(bool p_pressed);
-
 
 	Button* channel_buttons[CHANNEL_COUNT] = {};
 	PanelContainer* panel = nullptr;

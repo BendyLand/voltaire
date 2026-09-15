@@ -83,8 +83,6 @@ private:
 	Transform2D last_valid_transform;
 	Transform2D new_transform;
 
-	void _tile_set_changed();
-
 	void _emit_changed();
 
 	// Kept for compatibility with TileMap. With TileMapLayers as individual nodes, the format is
@@ -142,9 +140,7 @@ public:
 	bool is_layer_enabled(int p_layer) const;
 	void set_layer_modulate(int p_layer, Color p_modulate);
 	Color get_layer_modulate(int p_layer) const;
-	void set_layer_y_sort_enabled(int p_layer, bool p_enabled);
 	bool is_layer_y_sort_enabled(int p_layer) const;
-	void set_layer_y_sort_origin(int p_layer, int p_y_sort_origin);
 	int get_layer_y_sort_origin(int p_layer) const;
 	void set_layer_z_index(int p_layer, int p_z_index);
 	int get_layer_z_index(int p_layer) const;
@@ -215,8 +211,6 @@ public:
 	// Not exposed to users.
 	TileMapCell get_cell(int p_layer, const Vector2i& p_coords, bool p_use_proxies = false) const;
 	int get_effective_quadrant_size(int p_layer) const;
-
-	virtual void set_y_sort_enabled(bool p_enable) override;
 
 	Vector2 map_to_local(const Vector2i& p_pos) const;
 	Vector2i local_to_map(const Vector2& p_pos) const;

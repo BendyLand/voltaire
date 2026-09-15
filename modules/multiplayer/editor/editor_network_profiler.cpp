@@ -68,18 +68,6 @@ void EditorNetworkProfiler::_refresh()
 	refresh_replication_data();
 }
 
-void EditorNetworkProfiler::_activate_pressed()
-{
-	_update_button_text();
-
-	if (activate->is_pressed()) {
-		refresh_timer->start();
-	}
-	else {
-		refresh_timer->stop();
-	}
-}
-
 void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)
 {
 	incoming_bandwidth = p_incoming;

@@ -142,24 +142,6 @@ VoxelGIData::~VoxelGIData()
 	RS::get_singleton()->free_rid(probe);
 }
 
-//////////////////////
-//////////////////////
-
-void VoxelGI::set_probe_data(const Ref<VoxelGIData>& p_data)
-{
-	if (p_data.is_valid()) {
-		RS::get_singleton()->instance_set_base(get_instance(), p_data->get_rid());
-		RS::get_singleton()->voxel_gi_set_baked_exposure_normalization(
-			p_data->get_rid(), _get_camera_exposure_normalization());
-	}
-	else {
-		RS::get_singleton()->instance_set_base(get_instance(), RID());
-	}
-
-	probe_data = p_data;
-	update_configuration_warnings();
-}
-
 Ref<VoxelGIData> VoxelGI::get_probe_data() const { return probe_data; }
 
 VoxelGI::Subdiv VoxelGI::get_subdiv() const { return subdiv; }

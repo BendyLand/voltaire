@@ -254,7 +254,6 @@ class TextShaderEditor : public ShaderEditor
 	bool compilation_success = true;
 
 	void _menu_option(int p_option);
-	void _prepare_edit_menu();
 	mutable Ref<Shader> shader;
 	mutable Ref<ShaderInclude> shader_inc;
 
@@ -266,7 +265,6 @@ class TextShaderEditor : public ShaderEditor
 	void _reload_shader_include_from_disk();
 	void _reload();
 	void _update_warnings(bool p_validate);
-	void _focus_preview_line(int p_line);
 
 	uint32_t dependencies_version = 0xFFFFFFFF;
 
@@ -280,7 +278,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-	void _make_context_menu(bool p_selection, Vector2 p_position);
 	void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	void _on_shader_preview_toggled(int p_line);
 
@@ -296,7 +293,6 @@ public:
 
 	virtual void apply_shaders() override;
 	virtual bool is_unsaved() const override;
-	virtual void save_external_data(const String& p_str = "") override;
 	virtual void set_toggle_list_control(Control* p_toggle_list_control) override;
 	virtual void update_toggle_files_button() override;
 	virtual void validate_script() override;
@@ -308,7 +304,6 @@ public:
 	bool get_trim_final_newlines_on_save() const { return trim_final_newlines_on_save; }
 
 	void goto_line_selection(int p_line, int p_begin, int p_end);
-	void trim_trailing_whitespace();
 	void trim_final_newlines();
 	void tag_saved_version();
 

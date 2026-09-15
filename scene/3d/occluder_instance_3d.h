@@ -183,13 +183,11 @@ public:
 
 	virtual AABB get_aabb() const override;
 
-	void set_bake_mask(uint32_t p_mask);
 	uint32_t get_bake_mask() const;
 
 	void set_bake_simplification_distance(float p_dist);
 	float get_bake_simplification_distance() const;
 
-	void set_bake_mask_value(int p_layer_number, bool p_enable);
 	bool get_bake_mask_value(int p_layer_number) const;
 
 	BakeError bake_scene(Node* p_from_node, String p_occluder_path = "");

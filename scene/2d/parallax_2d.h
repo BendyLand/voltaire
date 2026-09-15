@@ -91,7 +91,7 @@ public:
 	void set_ignore_camera_scroll(bool p_ignore);
 	bool is_ignore_camera_scroll();
 
-	Parallax2D();
+	Parallax2D() = default;
 };
 
 

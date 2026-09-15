@@ -57,20 +57,6 @@
 
 EditorRunBar* EditorRunBar::singleton = nullptr;
 
-void EditorRunBar::_movie_maker_item_pressed(int p_id)
-{
-	switch (p_id) {
-	case MOVIE_MAKER_TOGGLE: {
-		bool new_enabled = !is_movie_maker_enabled();
-		set_movie_maker_enabled(new_enabled);
-		write_movie_button->get_popup()->set_item_checked(0, new_enabled);
-		write_movie_button->set_pressed(new_enabled);
-		_write_movie_toggled(new_enabled);
-		break;
-	}
-	}
-}
-
 void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
@@ -110,8 +96,6 @@ void EditorRunBar::_quick_run_selected(const String& p_file_path, int p_menu_ite
 	play_custom_scene(
 		p_file_path, _get_xr_mode_play_args(static_cast<RunXRModeMenuItem>(p_menu_item)));
 }
-
-void EditorRunBar::recovery_mode_show_dialog() { recovery_mode_popup->popup_centered(); }
 
 void EditorRunBar::recovery_mode_reload_project()
 {

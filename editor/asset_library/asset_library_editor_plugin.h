@@ -95,7 +95,7 @@ public:
 		const String& p_author_id, bool p_verified, const String& p_license_type,
 		const String& p_license_url, int p_rating);
 
-	EditorAssetLibraryItem(bool p_clickable = false);
+	EditorAssetLibraryItem(bool p_clickable = false) : is_clickable(p_clickable) {}
 };
 
 class EditorAssetLibraryZoomMode : public CanvasLayer
@@ -330,9 +330,6 @@ class EditorAssetLibrary : public PanelContainer
 	HashMap<int, ImageQueue> image_queue;
 
 	static void _image_update(void* p_image_queue);
-	void _image_request_completed(int p_status, int p_code, const PackedStringArray& headers,
-		const PackedByteArray& p_data, int p_queue_id);
-	void _update_image_queue();
 
 	int current_page = 0;
 

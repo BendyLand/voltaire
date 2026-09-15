@@ -78,7 +78,7 @@ private:
 	void _shape();
 
 protected:
-	virtual void pressed() override;
+	virtual void pressed();
 	virtual Size2 get_minimum_size() const override;
 
 	void _notification(int p_what);

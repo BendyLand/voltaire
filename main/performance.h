@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 
 #define PERF_WARN_OFFLINE_FUNCTION
 #define PERF_WARN_PROCESS_SYNC

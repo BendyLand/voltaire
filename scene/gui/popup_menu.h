@@ -357,7 +357,6 @@ public:
 	void set_item_indeterminate(int p_idx, bool p_indeterminate);
 	void set_item_id(int p_idx, int p_id);
 	void set_item_accelerator(int p_idx, Key p_accel);
-	void set_item_disabled(int p_idx, bool p_disabled);
 	void set_item_submenu(int p_idx, const String& p_submenu);
 	void set_item_submenu_node(int p_idx, PopupMenu* p_submenu);
 	void set_item_as_separator(int p_idx, bool p_separator);
@@ -453,7 +452,6 @@ public:
 	void set_hide_on_multistate_item_selection(bool p_enabled);
 	bool is_hide_on_multistate_item_selection() const;
 
-	void set_submenu_popup_delay(float p_time);
 	float get_submenu_popup_delay() const;
 
 	void set_allow_search(bool p_allow);

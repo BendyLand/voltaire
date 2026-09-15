@@ -78,23 +78,6 @@ Button* EditorPlugin::add_control_to_bottom_panel(
 	return EditorNode::get_bottom_panel()->add_item(p_title, p_control, p_shortcut);
 }
 
-void EditorPlugin::add_control_to_dock(
-	DockSlot p_slot, Control* p_control, const Ref<Shortcut>& p_shortcut)
-{
-	ERR_FAIL_NULL(p_control);
-	ERR_FAIL_COND(legacy_docks.has(p_control));
-	ERR_FAIL_COND(p_control->get_parent() != nullptr);
-
-	EditorDock* dock = memnew(EditorDock);
-	dock->set_title(p_control->get_name());
-	dock->set_dock_shortcut(p_shortcut);
-	dock->set_default_slot((EditorDock::DockSlot)p_slot);
-	dock->add_child(p_control);
-	legacy_docks[p_control] = dock;
-
-	EditorDockManager::get_singleton()->add_dock(dock);
-}
-
 void EditorPlugin::remove_control_from_docks(Control* p_control)
 {
 	ERR_FAIL_NULL(p_control);
@@ -140,24 +123,11 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 	case CONTAINER_TOOLBAR: {
 		EditorNode::get_title_bar()->add_child(p_control);
 	} break;
-
-	case CONTAINER_SPATIAL_EDITOR_MENU: {
-		Node3DEditor::get_singleton()->add_control_to_menu_panel(p_control);
-
-	} break;
-	case CONTAINER_SPATIAL_EDITOR_SIDE_LEFT: {
-		Node3DEditor::get_singleton()->add_control_to_left_panel(p_control);
-	} break;
-	case CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT: {
-		Node3DEditor::get_singleton()->add_control_to_right_panel(p_control);
-	} break;
 	case CONTAINER_SPATIAL_EDITOR_BOTTOM: {
 		Node3DEditor::get_singleton()->get_shader_split()->add_child(p_control);
-
 	} break;
 	case CONTAINER_CANVAS_EDITOR_MENU: {
 		CanvasItemEditor::get_singleton()->add_control_to_menu_panel(p_control);
-
 	} break;
 	case CONTAINER_CANVAS_EDITOR_SIDE_LEFT: {
 		CanvasItemEditor::get_singleton()->add_control_to_left_panel(p_control);
@@ -167,11 +137,9 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 	} break;
 	case CONTAINER_CANVAS_EDITOR_BOTTOM: {
 		CanvasItemEditor::get_singleton()->get_bottom_split()->add_child(p_control);
-
 	} break;
 	case CONTAINER_INSPECTOR_BOTTOM: {
 		InspectorDock::get_singleton()->get_addon_area()->add_child(p_control);
-
 	} break;
 	case CONTAINER_PROJECT_SETTING_TAB_LEFT: {
 		ProjectSettingsEditor::get_singleton()->get_tabs()->add_child(p_control);
@@ -193,17 +161,6 @@ void EditorPlugin::remove_control_from_container(
 	switch (p_location) {
 	case CONTAINER_TOOLBAR: {
 		EditorNode::get_title_bar()->remove_child(p_control);
-	} break;
-
-	case CONTAINER_SPATIAL_EDITOR_MENU: {
-		Node3DEditor::get_singleton()->remove_control_from_menu_panel(p_control);
-
-	} break;
-	case CONTAINER_SPATIAL_EDITOR_SIDE_LEFT: {
-		Node3DEditor::get_singleton()->remove_control_from_left_panel(p_control);
-	} break;
-	case CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT: {
-		Node3DEditor::get_singleton()->remove_control_from_right_panel(p_control);
 	} break;
 	case CONTAINER_SPATIAL_EDITOR_BOTTOM: {
 		Node3DEditor::get_singleton()->get_shader_split()->remove_child(p_control);
@@ -324,18 +281,6 @@ void EditorPlugin::remove_export_platform(const Ref<EditorExportPlatform>& p_pla
 	EditorExport::get_singleton()->remove_export_platform(p_platform);
 }
 
-void EditorPlugin::add_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin)
-{
-	ERR_FAIL_COND(p_gizmo_plugin.is_null());
-	Node3DEditor::get_singleton()->add_gizmo_plugin(p_gizmo_plugin);
-}
-
-void EditorPlugin::remove_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin)
-{
-	ERR_FAIL_COND(p_gizmo_plugin.is_null());
-	Node3DEditor::get_singleton()->remove_gizmo_plugin(p_gizmo_plugin);
-}
-
 void EditorPlugin::add_scene_format_importer_plugin(
 	const Ref<EditorSceneFormatImporter>& p_importer, bool p_first_priority)
 {
@@ -401,11 +346,6 @@ void EditorPlugin::run_scene(const String& p_scene, Vector<String>& r_args)
 	r_args = new_args;
 }
 
-void EditorPlugin::queue_save_layout()
-{
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
-
 void EditorPlugin::make_bottom_panel_item_visible(Control* p_item)
 {
 	EditorNode::get_bottom_panel()->make_item_visible(p_item);
@@ -462,8 +402,6 @@ String EditorPlugin::get_unsaved_status(const String& p_for_scene) const { retur
 void EditorPlugin::save_external_data() {}
 
 int EditorPlugins::creation_func_count = 0;
-
-EditorPlugin::~EditorPlugin() {}
 
 bool EditorPlugin::forward_canvas_gui_input(const Ref<InputEvent>& p_event) { return false; }
 

@@ -40,10 +40,7 @@ class Camera3DEditor : public Control
 	Button* preview = nullptr;
 	Node* node = nullptr;
 
-	void _pressed();
-
 public:
-	void edit(Node* p_camera);
 	Camera3DEditor();
 };
 
@@ -55,12 +52,10 @@ class Camera3DPreview : public MarginContainer
 
 	static bool camera_preview_folded;
 
-	void _update_sub_viewport_size();
-	void _project_settings_changed();
 	void _toggle_folding(bool p_folded);
 
 public:
-	Camera3DPreview(Camera3D* p_camera);
+	Camera3DPreview(Camera3D* p_camera) : camera(p_camera) {}
 };
 
 class Camera3DEditorPlugin : public EditorPlugin
@@ -68,7 +63,7 @@ class Camera3DEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "Camera3D"; }
 
-	Camera3DEditorPlugin();
+	Camera3DEditorPlugin() = default;
 };
 
 

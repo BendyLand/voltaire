@@ -245,7 +245,6 @@ private:
 
 	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
-	void _update_context_menu();
 
 	void _shape();
 	void _fit_to_width();

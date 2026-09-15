@@ -76,7 +76,6 @@ protected:
 public:
 	void set_value(double p_val);
 	void set_value_no_signal(double p_val);
-	void set_min(double p_min);
 	void set_max(double p_max);
 	void set_step(double p_step);
 	void set_page(double p_page);
@@ -92,7 +91,6 @@ public:
 	void set_use_rounded_values(bool p_enable);
 	bool is_using_rounded_values() const;
 
-	void set_exp_ratio(bool p_enable);
 	bool is_ratio_exp() const;
 
 	void set_allow_greater(bool p_allow);

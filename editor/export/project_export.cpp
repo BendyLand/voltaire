@@ -58,45 +58,6 @@
 #include "scene/gui/tree.h"
 #include "servers/display/display_server.h"
 
-void ProjectExportDialog::_add_preset(int p_platform)
-{
-	Ref<EditorExportPreset> preset =
-		EditorExport::get_singleton()->get_export_platform(p_platform)->create_preset();
-	ERR_FAIL_COND(preset.is_null());
-
-	String preset_name = EditorExport::get_singleton()->get_export_platform(p_platform)->get_name();
-	int attempt = 1;
-	while (true) {
-		bool valid = true;
-
-		for (int i = 0; i < EditorExport::get_singleton()->get_export_preset_count(); i++) {
-			Ref<EditorExportPreset> p = EditorExport::get_singleton()->get_export_preset(i);
-			if (p->get_name() == preset_name) {
-				valid = false;
-				break;
-			}
-		}
-
-		if (valid) {
-			break;
-		}
-
-		attempt++;
-		preset_name = EditorExport::get_singleton()->get_export_platform(p_platform)->get_name() +
-					  " " + itos(attempt);
-	}
-
-	preset->set_name(preset_name);
-	if (EditorExport::get_singleton()
-			->get_runnable_preset_for_platform(preset->get_platform())
-			.is_null()) {
-		EditorExport::get_singleton()->set_runnable_preset(preset);
-	}
-	EditorExport::get_singleton()->add_export_preset(preset);
-	_update_presets();
-	_edit_preset(EditorExport::get_singleton()->get_export_preset_count() - 1);
-}
-
 void ProjectExportDialog::_update_current_preset() { _edit_preset(presets->get_current()); }
 
 void ProjectExportDialog::_update_feature_list()
@@ -144,89 +105,11 @@ void ProjectExportDialog::_update_feature_list()
 	custom_feature_display->add_text(text);
 }
 
-void ProjectExportDialog::_custom_features_changed(const String& p_text)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_custom_features(p_text);
-	_update_feature_list();
-}
-
 void ProjectExportDialog::_tab_changed(int) { _update_feature_list(); }
 
 void ProjectExportDialog::_update_parameters(const String& p_edited_property)
 {
 	_update_current_preset();
-}
-
-void ProjectExportDialog::_runnable_pressed()
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	if (runnable->is_pressed()) {
-		EditorExport::get_singleton()->set_runnable_preset(current);
-	}
-	else {
-		EditorExport::get_singleton()->unset_runnable_preset(current);
-	}
-
-	_update_presets();
-}
-
-void ProjectExportDialog::_name_changed(const String& p_string)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	int current_index = presets->get_current();
-
-	String trimmed_name = p_string.strip_edges();
-	if (trimmed_name.is_empty()) {
-		ERR_PRINT_ED("Invalid preset name: preset name cannot be empty!");
-		name->set_text(current->get_name());
-		return;
-	}
-
-	if (EditorExport::get_singleton()->has_preset_with_name(trimmed_name, current_index)) {
-		ERR_PRINT_ED(vformat(
-			"Invalid preset name: a preset with the name '%s' already exists!", trimmed_name));
-		name->set_text(current->get_name());
-		return;
-	}
-
-	current->set_name(trimmed_name);
-	_update_presets();
-}
-
-void ProjectExportDialog::_name_editing_finished()
-{
-	if (updating) {
-		return;
-	}
-
-	_name_changed(name->get_text());
-}
-
-void ProjectExportDialog::set_export_path(const String& p_value)
-{
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_export_path(p_value);
 }
 
 String ProjectExportDialog::get_export_path()
@@ -242,74 +125,11 @@ Ref<EditorExportPreset> ProjectExportDialog::get_current_preset() const
 	return EditorExport::get_singleton()->get_export_preset(presets->get_current());
 }
 
-void ProjectExportDialog::_enc_filters_changed(const String& p_filters)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_enc_in_filter(enc_in_filters->get_text());
-	current->set_enc_ex_filter(enc_ex_filters->get_text());
-
-	updating_enc_filters = true;
-	_update_current_preset();
-	updating_enc_filters = false;
-}
-
 void ProjectExportDialog::_open_key_help_link()
 {
 	OS::get_singleton()->shell_open(
 		vformat("%s/engine_details/development/compiling/compiling_with_script_encryption_key.html",
 			VLTR_VERSION_DOCS_URL));
-}
-
-void ProjectExportDialog::_seed_input_changed(const String& p_text)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_seed(seed_input->get_text().to_int());
-
-	updating_seed = true;
-	_update_current_preset();
-	updating_seed = false;
-}
-
-void ProjectExportDialog::_enc_directory_changed(bool p_pressed)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_enc_directory(p_pressed);
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_script_encryption_key_changed(const String& p_key)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_script_encryption_key(p_key);
-
-	updating_script_key = true;
-	_update_current_preset();
-	updating_script_key = false;
 }
 
 bool ProjectExportDialog::_validate_script_encryption_key(const String& p_key)
@@ -320,31 +140,6 @@ bool ProjectExportDialog::_validate_script_encryption_key(const String& p_key)
 		is_valid = true;
 	}
 	return is_valid;
-}
-
-void ProjectExportDialog::_script_export_mode_changed(EditorExportPreset::ScriptExportMode p_mode)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_script_export_mode(p_mode);
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_delete_preset()
-{
-	Ref<EditorExportPreset> current = get_current_preset();
-	if (current.is_null()) {
-		return;
-	}
-
-	delete_confirm->set_text(vformat(TTR("Delete preset '%s'?"), current->get_name()));
-	delete_confirm->popup_centered();
 }
 
 String ProjectExportDialog::_get_resource_export_header(
@@ -360,21 +155,6 @@ String ProjectExportDialog::_get_resource_export_header(
 	}
 }
 
-void ProjectExportDialog::_filter_changed(const String& p_filter)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	if (current.is_null()) {
-		return;
-	}
-
-	current->set_include_filter(include_filters->get_text());
-	current->set_exclude_filter(exclude_filters->get_text());
-}
-
 void ProjectExportDialog::_tree_popup_edited(bool p_arrow_clicked)
 {
 	Rect2 bounds = include_files->get_custom_popup_rect();
@@ -384,111 +164,6 @@ void ProjectExportDialog::_tree_popup_edited(bool p_arrow_clicked)
 		bounds.position += get_position();
 	}
 	file_mode_popup->popup(bounds);
-}
-
-void ProjectExportDialog::_patch_delta_encoding_changed(bool p_pressed)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_patch_delta_encoding_enabled(p_pressed);
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_patch_delta_include_filter_changed(const String& p_filter)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_patch_delta_include_filter(patch_delta_include_filter->get_text());
-
-	updating_patch_delta_filters = true;
-	_update_current_preset();
-	updating_patch_delta_filters = false;
-}
-
-void ProjectExportDialog::_patch_delta_exclude_filter_changed(const String& p_filter)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_patch_delta_exclude_filter(patch_delta_exclude_filter->get_text());
-
-	updating_patch_delta_filters = true;
-	_update_current_preset();
-	updating_patch_delta_filters = false;
-}
-
-void ProjectExportDialog::_patch_delta_zstd_level_changed(double p_value)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_patch_delta_zstd_level((int)p_value);
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_patch_delta_min_reduction_changed(double p_value)
-{
-	if (updating) {
-		return;
-	}
-
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	current->set_patch_delta_min_reduction(p_value / 100.0);
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_patch_file_selected(const String& p_path)
-{
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	String relative_path =
-		ProjectSettings::get_singleton()->get_resource_path().path_to_file(p_path);
-
-	Vector<String> preset_patches = current->get_patches();
-	if (patch_index >= preset_patches.size()) {
-		current->add_patch(relative_path);
-	}
-	else {
-		current->set_patch(patch_index, relative_path);
-	}
-
-	_update_current_preset();
-}
-
-void ProjectExportDialog::_patch_delete_confirmed()
-{
-	Ref<EditorExportPreset> current = get_current_preset();
-	ERR_FAIL_COND(current.is_null());
-
-	Vector<String> preset_patches = current->get_patches();
-	if (patch_index < preset_patches.size()) {
-		current->remove_patch(patch_index);
-		_update_current_preset();
-	}
 }
 
 void ProjectExportDialog::_patch_add_pack_pressed()
@@ -509,12 +184,6 @@ void ProjectExportDialog::_export_pck_zip()
 	export_pck_zip->set_current_dir(dir);
 
 	export_pck_zip->popup_file_dialog();
-}
-
-void ProjectExportDialog::_open_export_template_manager()
-{
-	hide();
-	EditorNode::get_singleton()->open_export_template_manager();
 }
 
 void ProjectExportDialog::_export_project()
@@ -553,12 +222,6 @@ void ProjectExportDialog::_export_project()
 	}
 	export_project->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	export_project->popup_file_dialog();
-}
-
-void ProjectExportDialog::_export_all_dialog()
-{
-	export_all_dialog->show();
-	export_all_dialog->popup_centered(Size2(300, 80));
 }
 
 void ProjectExportDialog::_export_all_dialog_action(const String& p_str)

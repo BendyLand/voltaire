@@ -35,10 +35,10 @@
 class EditorTranslationPreviewButton : public Button
 {
 protected:
-	virtual void pressed() override;
+	virtual void pressed();
 
 public:
-	EditorTranslationPreviewButton();
+	EditorTranslationPreviewButton() = default;
 };
 
 

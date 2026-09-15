@@ -102,8 +102,6 @@ private:
 protected:
 	String _get_property_warning(const StringName& p_name) const;
 
-
-
 #ifndef DISABLE_DEPRECATED
 	int _get_script_export_mode_bind_compat_107167() const;
 	static void _bind_compatibility_methods();
@@ -120,84 +118,57 @@ public:
 	void set_selected_files(const HashSet<String>& p_files);
 	int get_customized_files_count() const;
 
-	void add_export_file(const String& p_path);
-	void remove_export_file(const String& p_path);
 	bool has_export_file(const String& p_path);
 
-	void set_file_export_mode(const String& p_path, FileExportMode p_mode);
 	FileExportMode get_file_export_mode(
 		const String& p_path, FileExportMode p_default = MODE_FILE_NOT_CUSTOMIZED) const;
 
-	void set_name(const String& p_name);
 	String get_name() const;
 
-	void set_runnable(bool p_enable);
 	bool is_runnable() const;
 
 	bool are_advanced_options_enabled() const;
 	void set_options_search_active(bool p_active);
 
-	void set_dedicated_server(bool p_enable);
 	bool is_dedicated_server() const;
 
-	void set_export_filter(ExportFilter p_filter);
 	ExportFilter get_export_filter() const;
 
-	void set_include_filter(const String& p_include);
 	String get_include_filter() const;
 
-	void set_exclude_filter(const String& p_exclude);
 	String get_exclude_filter() const;
 
-	void add_patch(const String& p_path, int p_at_pos = -1);
-	void set_patch(int p_index, const String& p_path);
-
 	String get_patch(int p_index);
-	void remove_patch(int p_index);
 
 	void set_patches(const Vector<String>& p_patches);
 	Vector<String> get_patches() const;
 
-	void set_patch_delta_encoding_enabled(bool p_enable);
 	bool is_patch_delta_encoding_enabled() const;
 
-	void set_patch_delta_zstd_level(int p_level);
 	int get_patch_delta_zstd_level() const;
 
-	void set_patch_delta_min_reduction(double p_ratio);
 	double get_patch_delta_min_reduction() const;
 
-	void set_patch_delta_include_filter(const String& p_filter);
 	String get_patch_delta_include_filter() const;
 
-	void set_patch_delta_exclude_filter(const String& p_filter);
 	String get_patch_delta_exclude_filter() const;
 
-	void set_custom_features(const String& p_custom_features);
 	String get_custom_features() const;
 
-	void set_export_path(const String& p_path);
 	String get_export_path() const;
 
-	void set_enc_in_filter(const String& p_filter);
 	String get_enc_in_filter() const;
 
-	void set_enc_ex_filter(const String& p_filter);
 	String get_enc_ex_filter() const;
 
-	void set_seed(uint64_t p_seed);
 	uint64_t get_seed() const;
 
-	void set_enc_pck(bool p_enabled);
 	bool get_enc_pck() const;
 
-	void set_enc_directory(bool p_enabled);
 	bool get_enc_directory() const;
 
-	void set_script_encryption_key(const String& p_key);
 	String get_script_encryption_key() const;
 
-	void set_script_export_mode(ScriptExportMode p_mode);
 	ScriptExportMode get_script_export_mode() const;
 
 	// Return the preset's version number, or fall back to the

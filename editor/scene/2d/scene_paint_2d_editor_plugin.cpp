@@ -88,19 +88,6 @@ bool ScenePaint2DEditor::_is_scene_painted(Node2D* p_node) const
 	return p_node && p_node->has_meta("_scene_painted") && p_node->get_parent() == node;
 }
 
-void ScenePaint2DEditor::_set_pinned(bool p_pinned, Node* p_pinned_node)
-{
-	pinned = p_pinned;
-	pin_node_button->set_pressed_no_signal(pinned);
-	String tooltip_text = TTR("Pin the current node.\nWhen enabled, the painting parent node will "
-							  "not change when selecting other nodes in the scene.");
-	if (p_pinned_node && pinned) {
-		tooltip_text += vformat("\n" + TTR("Pinned Node: %s"),
-			EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_pinned_node));
-	}
-	pin_node_button->set_tooltip_text(tooltip_text);
-}
-
 void ScenePaint2DEditor::_advanced_settings_pressed()
 {
 	Vector2 pos =

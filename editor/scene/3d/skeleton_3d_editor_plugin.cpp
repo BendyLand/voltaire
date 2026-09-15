@@ -66,15 +66,6 @@ void BonePropertiesEditor::set_keyable(const bool p_keyable)
 
 Skeleton3DEditor* Skeleton3DEditor::singleton = nullptr;
 
-void Skeleton3DEditor::set_bone_options_enabled(const bool p_bone_options_enabled)
-{
-	skeleton_options->get_popup()->set_item_disabled(
-		SKELETON_OPTION_RESET_SELECTED_POSES, !p_bone_options_enabled);
-	skeleton_options->get_popup()->set_item_disabled(
-		SKELETON_OPTION_SELECTED_POSES_TO_RESTS, !p_bone_options_enabled);
-}
-
-
 void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 {
 	ERR_FAIL_COND(!skeleton);

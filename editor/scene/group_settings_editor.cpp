@@ -188,12 +188,6 @@ bool GroupSettingsEditor::rename_node_references(
 	return edited;
 }
 
-void GroupSettingsEditor::show_message(const String& p_message)
-{
-	message->set_text(p_message);
-	message->popup_centered();
-}
-
 LineEdit* GroupSettingsEditor::get_name_box() const { return group_name; }
 
 

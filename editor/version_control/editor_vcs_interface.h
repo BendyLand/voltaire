@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/string/ustring.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class EditorVCSInterface
 {

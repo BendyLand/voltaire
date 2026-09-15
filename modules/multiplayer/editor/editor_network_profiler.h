@@ -81,9 +81,10 @@ private:
 
 		Color incoming_bandwidth_color;
 		Color outgoing_bandwidth_color;
-	} theme_cache;
+	};
 
-	void _activate_pressed();
+	ThemeCache theme_cache;
+
 	void _clear_pressed();
 	void _autostart_toggled(bool p_toggled_on);
 	void _refresh();

@@ -411,47 +411,6 @@ void DependencyRemoveDialog::_find_all_removed_dependencies(
 	}
 }
 
-void DependencyRemoveDialog::_build_removed_dependency_tree(
-	const Vector<RemovedDependency>& p_removed)
-{
-	owners->clear();
-	owners->create_item(); // root
-
-	HashMap<String, TreeItem*> tree_items;
-	for (int i = 0; i < p_removed.size(); i++) {
-		RemovedDependency rd = p_removed[i];
-
-		// Ensure that the dependency is already in the tree
-		if (!tree_items.has(rd.dependency)) {
-			if (rd.dependency_folder.length() > 0) {
-				// Ensure the ancestor folder is already in the tree
-				if (!tree_items.has(rd.dependency_folder)) {
-					TreeItem* folder_item = owners->create_item(owners->get_root());
-					folder_item->set_text(0, rd.dependency_folder);
-					folder_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Folder")));
-					tree_items[rd.dependency_folder] = folder_item;
-				}
-				TreeItem* dependency_item = owners->create_item(tree_items[rd.dependency_folder]);
-				dependency_item->set_text(0, rd.dependency);
-				dependency_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Warning")));
-				tree_items[rd.dependency] = dependency_item;
-			}
-			else {
-				TreeItem* dependency_item = owners->create_item(owners->get_root());
-				dependency_item->set_text(0, rd.dependency);
-				dependency_item->set_icon(0, owners->get_editor_theme_icon(SNAME("Warning")));
-				tree_items[rd.dependency] = dependency_item;
-			}
-		}
-
-		// List this file under this dependency
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(rd.file_type);
-		TreeItem* file_item = owners->create_item(tree_items[rd.dependency]);
-		file_item->set_text(0, rd.file);
-		file_item->set_icon(0, icon);
-	}
-}
-
 void DependencyRemoveDialog::_show_files_to_delete_list()
 {
 	files_to_delete_list->clear();
@@ -476,20 +435,6 @@ enum
 void DependencyErrorDialog::ok_pressed()
 {
 	EditorNode::get_singleton()->load_scene_or_resource(for_file, !errors_fixed);
-}
-
-void OrphanResourcesDialog::ok_pressed()
-{
-	paths.clear();
-
-	_find_to_delete(files->get_root(), paths);
-	if (paths.is_empty()) {
-		return;
-	}
-
-	delete_confirm->set_text(
-		vformat(TTR("Permanently delete %d item(s)? (No undo!)"), paths.size()));
-	delete_confirm->popup_centered();
 }
 
 void OrphanResourcesDialog::refresh()

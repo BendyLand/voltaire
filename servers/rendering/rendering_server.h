@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rid.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_device_enums.h"

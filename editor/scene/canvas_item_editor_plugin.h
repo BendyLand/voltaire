@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 
@@ -435,7 +434,6 @@ private:
 	Vector2 _anchor_to_position(const Control* p_control, Vector2 anchor);
 	Vector2 _position_to_anchor(const Control* p_control, Vector2 position);
 
-	void _prepare_view_menu();
 	void _popup_callback(int p_op);
 	bool updating_scroll = false;
 	void _update_scroll(real_t);
@@ -510,7 +508,6 @@ private:
 	bool _gui_input_rotate(const Ref<InputEvent>& p_event);
 	bool _gui_input_select(const Ref<InputEvent>& p_event);
 	bool _gui_input_ruler_tool(const Ref<InputEvent>& p_event);
-	bool _gui_input_zoom_or_pan(const Ref<InputEvent>& p_event, bool p_already_accepted);
 	bool _gui_input_rulers_and_guides(const Ref<InputEvent>& p_event);
 	bool _gui_input_hover(const Ref<InputEvent>& p_event);
 
@@ -542,9 +539,6 @@ private:
 	VBoxContainer* controls_vb = nullptr;
 	Button* button_center_view = nullptr;
 	EditorZoomWidget* zoom_widget = nullptr;
-	void _update_zoom(real_t p_zoom);
-	void _shortcut_zoom_set(real_t p_zoom);
-	void _zoom_on_position(real_t p_zoom, Point2 p_position = Point2());
 	void _button_toggle_local_space(bool p_status);
 	void _button_toggle_smart_snap(bool p_status);
 	void _button_toggle_grid_snap(bool p_status);

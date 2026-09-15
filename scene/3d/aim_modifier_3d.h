@@ -56,11 +56,9 @@ protected:
 	virtual void _validate_setting(int p_index) override;
 
 public:
-	void set_forward_axis(int p_index, BoneAxis p_axis);
 	BoneAxis get_forward_axis(int p_index) const;
 	void set_use_euler(int p_index, bool p_enabled);
 	bool is_using_euler(int p_index) const;
-	void set_primary_rotation_axis(int p_index, Vector3::Axis p_axis);
 	Vector3::Axis get_primary_rotation_axis(int p_index) const;
 	void set_use_secondary_rotation(int p_index, bool p_enabled);
 	bool is_using_secondary_rotation(int p_index) const;

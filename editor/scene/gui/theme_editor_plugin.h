@@ -254,7 +254,6 @@ class ThemeItemEditorDialog : public AcceptDialog
 
 	ConfirmationDialog* confirm_closing_dialog = nullptr;
 
-	void ok_pressed() override;
 	void _close_dialog();
 
 	void _update_edit_types();
@@ -298,16 +297,12 @@ class ThemeTypeDialog : public ConfirmationDialog
 	ConfirmationDialog* add_type_confirmation = nullptr;
 
 	void _dialog_about_to_show();
-	void ok_pressed() override;
 
 	void _update_add_type_options(const String& p_filter = "");
 
 	void _add_type_filter_cbk(const String& p_value);
 	void _add_type_options_cbk(int p_index);
-	void _add_type_dialog_entered(const String& p_value);
-	void _add_type_dialog_activated(int p_index);
 
-	void _add_type_selected(const String& p_type_name);
 	void _add_type_confirmed();
 
 protected:
@@ -371,7 +366,6 @@ class ThemeTypeEditor : public MarginContainer
 
 	VBoxContainer* _create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
-	void _update_type_list_debounced();
 	HashMap<StringName, bool> _get_type_items(
 		String p_type_name, Theme::DataType p_type, bool p_include_default);
 	HBoxContainer* _create_property_control(
@@ -380,8 +374,6 @@ class ThemeTypeEditor : public MarginContainer
 	void _update_type_items();
 
 	void _list_type_selected(int p_index);
-	void _add_type_button_cbk();
-	void _rename_type_button_cbk();
 	void _theme_type_rename_dialog_confirmed();
 	void _remove_type_button_cbk();
 	void _add_default_type_items();
@@ -412,7 +404,6 @@ class ThemeTypeEditor : public MarginContainer
 	void _update_stylebox_from_leading();
 
 	void _type_variation_changed(const String p_value);
-	void _add_type_variation_cbk();
 
 	void _add_type_dialog_selected(const String p_type_name);
 
@@ -451,12 +442,8 @@ class ThemeEditor : public EditorDock
 
 	void _theme_save_button_cbk(bool p_save_as);
 	void _theme_edit_button_cbk();
-	void _theme_close_button_cbk();
 	void _dock_closed_cbk();
 	void _scene_closed(const String& p_path);
-	void _resource_saved(const Ref<Resource>& p_resource);
-	void _files_moved(const String& p_old_path, const String& p_new_path);
-	void _update_theme_name(const String& p_name);
 
 	void _add_preview_button_cbk();
 	void _preview_scene_dialog_cbk(const String& p_path);
@@ -491,7 +478,7 @@ public:
 
 	virtual bool can_auto_hide() const override;
 
-	ThemeEditorPlugin();
+	ThemeEditorPlugin() = default;
 };
 
 

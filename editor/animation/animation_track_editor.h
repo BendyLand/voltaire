@@ -31,7 +31,6 @@
 #pragma once
 
 #include <cfloat> // FLT_MAX
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/rb_map.h"
 #include "editor/editor_data.h"
 #include "editor/inspector/editor_properties.h"
@@ -319,7 +318,6 @@ class AnimationMarkerEdit : public Control
 	void _deselect_key(const StringName& p_name);
 
 	void _insert_marker(float p_ofs);
-	void _rename_marker(const StringName& p_name);
 
 	ConfirmationDialog* marker_insert_confirm = nullptr;
 	LineEdit* marker_insert_new_name = nullptr;
@@ -897,7 +895,6 @@ public:
 	bool is_function_name_pressed();
 
 	bool is_read_only() const;
-	void popup_read_only_dialog();
 
 	MenuButton* get_edit_menu();
 	AnimationTrackEditor();

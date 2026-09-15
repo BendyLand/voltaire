@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/inspector/editor_inspector.h"
 
 class SceneDebuggerObject;

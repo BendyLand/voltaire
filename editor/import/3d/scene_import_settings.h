@@ -227,7 +227,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	Vector<TreeItem*> save_path_items;
 
 	TreeItem* save_path_item = nullptr;
-	void _save_path_changed(const String& p_path);
 	void _save_dir_confirm();
 
 	bool generate_collider = false;
@@ -245,7 +244,6 @@ public:
 	}
 
 	void request_generate_collider();
-	void update_view();
 	void open_settings(const String& p_path, const String& p_scene_import_type = "PackedScene");
 	static SceneImportSettingsDialog* get_singleton();
 	Node* get_selected_node();

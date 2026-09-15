@@ -520,7 +520,6 @@ public:
 	void unfold();
 	void fold();
 	void set_bg_color(const Color& p_bg_color);
-	void reset_timer();
 	void set_checkable(
 		const String& p_related_check_property, bool p_checkbox_only, bool p_checked);
 
@@ -655,8 +654,6 @@ protected:
 
 public:
 	VBoxContainer* get_vbox(int p_index);
-
-	void show_menu(int p_index, const Vector2& p_offset);
 
 	EditorInspectorArray(bool p_read_only);
 };

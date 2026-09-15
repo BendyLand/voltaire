@@ -91,64 +91,6 @@ String EditorDebuggerNode::get_server_uri() const
 	return server.is_valid() ? server->get_uri() : "";
 }
 
-Error EditorDebuggerNode::start(const String& p_uri)
-{
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		return ERR_UNAVAILABLE;
-	}
-
-	ERR_FAIL_COND_V(!p_uri.contains("://"), ERR_INVALID_PARAMETER);
-	if (keep_open && current_uri == p_uri && server.is_valid()) {
-		return OK;
-	}
-	stop(true);
-	current_uri = p_uri;
-
-	server = Ref<EditorDebuggerServer>(
-		EditorDebuggerServer::create(p_uri.substr(0, p_uri.find("://") + 3)));
-	const Error err = server->start(p_uri);
-	if (err != OK) {
-		return err;
-	}
-	set_process(true);
-	EditorNode::get_log()->add_message(
-		"--- Debugging process started ---", EditorLog::MSG_TYPE_EDITOR);
-	return OK;
-}
-
-void EditorDebuggerNode::stop(bool p_force)
-{
-	if (keep_open && !p_force) {
-		return;
-	}
-
-	remote_scene_tree_wait = false;
-	inspect_edited_object_wait = false;
-
-	current_uri.clear();
-	// Also close all debugging sessions.
-
-	if (server.is_valid()) {
-		server->stop();
-		EditorNode::get_log()->add_message(
-			"--- Debugging process stopped ---", EditorLog::MSG_TYPE_EDITOR);
-
-		if (EditorRunBar::get_singleton()->is_movie_maker_enabled()) {
-			// Request attention in case the user was doing something else when movie recording is
-			// finished.
-			DisplayServer::get_singleton()->window_request_attention();
-		}
-
-		server.unref();
-	}
-
-	_break_state_changed();
-	breakpoints.clear();
-	EditorUndoRedoManager::get_singleton()->clear_history(
-		EditorUndoRedoManager::REMOTE_HISTORY, false);
-	set_process(false);
-}
-
 void EditorDebuggerNode::_update_margins()
 {
 	Ref<StyleBox> bottom_panel_margins =
@@ -158,25 +100,6 @@ void EditorDebuggerNode::_update_margins()
 	add_theme_constant_override("margin_left", -bottom_panel_margins->get_margin(SIDE_LEFT));
 	add_theme_constant_override("margin_right", -bottom_panel_margins->get_margin(SIDE_RIGHT));
 	add_theme_constant_override("margin_bottom", -bottom_panel_margins->get_margin(SIDE_BOTTOM));
-}
-
-void EditorDebuggerNode::_break_state_changed()
-{
-	const bool breaked = get_current_debugger()->is_breaked();
-	const bool can_debug = get_current_debugger()->is_debuggable();
-	if (breaked) { // Show debugger.
-		EditorDockManager::get_singleton()->focus_dock(this);
-	}
-
-	// Update script menu.
-	if (!script_menu) {
-		return;
-	}
-	PopupMenu* p = script_menu->get_popup();
-	p->set_item_disabled(p->get_item_index(DEBUG_NEXT), !(breaked && can_debug));
-	p->set_item_disabled(p->get_item_index(DEBUG_STEP), !(breaked && can_debug));
-	p->set_item_disabled(p->get_item_index(DEBUG_BREAK), breaked);
-	p->set_item_disabled(p->get_item_index(DEBUG_CONTINUE), !breaked);
 }
 
 void EditorDebuggerNode::_menu_option(int p_id)

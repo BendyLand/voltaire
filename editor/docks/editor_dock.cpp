@@ -39,23 +39,6 @@ void EditorDock::_set_default_slot_bind(DockSlot p_slot)
 	default_slot = p_slot;
 }
 
-void EditorDock::close()
-{
-	if (is_open) {
-		EditorDockManager::get_singleton()->close_dock(this);
-	}
-}
-
-void EditorDock::set_title(const String& p_title)
-{
-	if (title == p_title) {
-		return;
-	}
-	title = p_title;
-	set_accessibility_name(get_display_title());
-	_emit_changed();
-}
-
 void EditorDock::set_global(bool p_global)
 {
 	if (global == p_global) {

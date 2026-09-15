@@ -74,19 +74,11 @@ public:
 		GeometryInstance3D::ShadowCastingSetting p_shadow_casting_setting);
 	GeometryInstance3D::ShadowCastingSetting get_cast_shadows_setting() const;
 
-	void set_visibility_range_begin(float p_dist);
 	float get_visibility_range_begin() const;
-
-	void set_visibility_range_end(float p_dist);
 	float get_visibility_range_end() const;
-
-	void set_visibility_range_begin_margin(float p_dist);
 	float get_visibility_range_begin_margin() const;
-
-	void set_visibility_range_end_margin(float p_dist);
 	float get_visibility_range_end_margin() const;
 
-	void set_visibility_range_fade_mode(GeometryInstance3D::VisibilityRangeFadeMode p_mode);
 	GeometryInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 };
 

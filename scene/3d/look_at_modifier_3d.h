@@ -113,9 +113,7 @@ public:
 	String get_bone_name() const;
 	int get_bone() const;
 
-	void set_forward_axis(BoneAxis p_axis);
 	BoneAxis get_forward_axis() const;
-	void set_primary_rotation_axis(Vector3::Axis p_axis);
 	Vector3::Axis get_primary_rotation_axis() const;
 	void set_use_secondary_rotation(bool p_enabled);
 	bool is_using_secondary_rotation() const;

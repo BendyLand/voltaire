@@ -57,12 +57,6 @@ void Particles2DEditorPlugin::_browse_mask_texture_pressed()
 	file_dialog->popup_file_dialog();
 }
 
-void Particles2DEditorPlugin::_browse_direction_texture_pressed()
-{
-	browsing_texture_type = TEXTURE_TYPE_DIRECTION;
-	file_dialog->popup_centered();
-}
-
 void Particles2DEditorPlugin::_file_selected(const String& p_file)
 {
 	switch (browsing_texture_type) {
@@ -243,16 +237,6 @@ void Particles2DEditorPlugin::_process_emission_masks(PackedVector2Array& r_vali
 void Particles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
 {
 	p_menu->add_item(TTR("Load Emission Mask"), MENU_LOAD_EMISSION_MASK);
-}
-
-void Particles2DEditorPlugin::_emission_mask_mode_item_changed(int p_idx) const
-{
-	emission_direction_mode->set_item_disabled(
-		DIRECTION_MODE_GENERATE, p_idx == static_cast<int>(MASK_MODE_SOLID));
-
-	if (emission_direction_mode->get_selected() == DIRECTION_MODE_GENERATE) {
-		emission_direction_mode->select(DIRECTION_MODE_NONE);
-	}
 }
 
 CPUParticles2DEditorPlugin::CPUParticles2DEditorPlugin()

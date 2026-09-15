@@ -182,11 +182,7 @@ private:
 	void _remote_selected(int p_index);
 	void _remove_branch();
 	void _remove_remote();
-	void _popup_branch_remove_confirm(int p_index);
-	void _popup_remote_remove_confirm(int p_index);
 	void _move_item(Tree* p_tree, TreeItem* p_itme);
-	void _display_diff_split_view(List<EditorVCSInterface::DiffLine>& p_diff_content);
-	void _display_diff_unified_view(List<EditorVCSInterface::DiffLine>& p_diff_content);
 	void _discard_file(const String& p_file_path, EditorVCSInterface::ChangeType p_change);
 	void _add_new_item(
 		Tree* p_tree, const String& p_file_path, EditorVCSInterface::ChangeType p_change);
@@ -205,7 +201,6 @@ protected:
 public:
 	static VersionControlEditorPlugin* get_singleton();
 
-	void popup_vcs_metadata_dialog();
 	void popup_vcs_set_up_dialog(const Control* p_gui_base);
 
 	PopupMenu* get_version_control_actions_panel() const { return version_control_actions; }

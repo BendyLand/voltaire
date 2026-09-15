@@ -69,8 +69,6 @@ class EditorPlugin : public Node
 
 #ifndef DISABLE_DEPRECATED
 	static inline HashMap<Control*, EditorDock*> legacy_docks;
-
-	void _editor_project_settings_changed();
 #endif
 
 public:
@@ -115,8 +113,6 @@ public:
 	};
 
 protected:
-	void _notification(int p_what);
-
 	EditorUndoRedoManager* get_undo_redo();
 
 	void remove_custom_type(const String& p_type);
@@ -124,11 +120,8 @@ protected:
 #ifndef DISABLE_DEPRECATED
 	Button* _add_control_to_bottom_panel_bind_compat_88081(
 		Control* p_control, const String& p_title);
-	void _add_control_to_dock_bind_compat_88081(DockSlot p_slot, Control* p_control);
 	static void _bind_compatibility_methods();
 
-	void add_control_to_dock(
-		DockSlot p_slot, Control* p_control, const Ref<Shortcut>& p_shortcut = nullptr);
 	void remove_control_from_docks(Control* p_control);
 	void set_dock_tab_icon(Control* p_control, const Ref<Texture2D>& p_icon);
 
@@ -138,7 +131,7 @@ protected:
 #endif
 
 public:
-	virtual ~EditorPlugin();
+	virtual ~EditorPlugin() = default;
 	// TODO: send a resource for editing to the editor node?
 
 	void add_control_to_container(CustomControlContainer p_location, Control* p_control);
@@ -162,12 +155,6 @@ public:
 	void set_force_draw_over_forwarding_enabled();
 
 	bool is_force_draw_over_forwarding_enabled() { return force_draw_over_forwarding_enabled; }
-
-	void notify_main_screen_changed(const String& screen_name);
-	void notify_scene_changed(const Node* scn_root);
-	void notify_scene_closed(const String& scene_filepath);
-	void notify_resource_saved(const Ref<Resource>& p_resource);
-	void notify_scene_saved(const String& p_scene_filepath);
 
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay);
@@ -206,28 +193,17 @@ public:
 	EditorInterface* get_editor_interface();
 	ScriptCreateDialog* get_script_create_dialog();
 
-	int update_overlays() const;
-
-	void queue_save_layout();
-
 	void make_bottom_panel_item_visible(Control* p_item);
 	void hide_bottom_panel();
 
 	void add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser);
 	void remove_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser);
 
-	void add_import_plugin(
-		const Ref<EditorImportPlugin>& p_importer, bool p_first_priority = false);
-	void remove_import_plugin(const Ref<EditorImportPlugin>& p_importer);
-
 	void add_export_plugin(const Ref<EditorExportPlugin>& p_exporter);
 	void remove_export_plugin(const Ref<EditorExportPlugin>& p_exporter);
 
 	void add_export_platform(const Ref<EditorExportPlatform>& p_platform);
 	void remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
-
-	void add_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin);
-	void remove_node_3d_gizmo_plugin(const Ref<EditorNode3DGizmoPlugin>& p_gizmo_plugin);
 
 	void add_scene_format_importer_plugin(
 		const Ref<EditorSceneFormatImporter>& p_importer, bool p_first_priority = false);
@@ -240,7 +216,6 @@ public:
 	void add_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin);
 	void remove_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin);
 
-	void add_autoload_singleton(const String& p_name, const String& p_path);
 	void remove_autoload_singleton(const String& p_name);
 
 	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);

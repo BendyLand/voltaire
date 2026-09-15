@@ -208,8 +208,6 @@ real_t VehicleWheel3D::get_skidinfo() const { return m_skidInfo; }
 
 real_t VehicleWheel3D::get_rpm() const { return m_rpm; }
 
-VehicleWheel3D::VehicleWheel3D() { set_physics_interpolation_mode(PHYSICS_INTERPOLATION_MODE_OFF); }
-
 void VehicleBody3D::_update_wheel_transform(VehicleWheel3D& wheel, PhysicsDirectBodyState3D* s)
 {
 	wheel.m_raycastInfo.m_isInContact = false;

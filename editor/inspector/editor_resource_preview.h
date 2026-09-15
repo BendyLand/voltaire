@@ -32,7 +32,6 @@
 
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 

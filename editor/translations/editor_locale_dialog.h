@@ -67,22 +67,10 @@ class EditorLocaleDialog : public ConfirmationDialog
 	bool updating_lists = false;
 
 protected:
-	void _notification(int p_what);
-	virtual void _post_popup() override;
 	virtual void ok_pressed() override;
 
-	void _item_selected();
-	void _filter_lang_option_changed();
-	void _filter_script_option_changed();
-	void _filter_cnt_option_changed();
-	void _filter_mode_changed(int p_mode);
-	void _edit_filters(bool p_checked);
-	void _toggle_advanced(bool p_checked);
-
-	void _update_tree();
-
 public:
-	EditorLocaleDialog();
+	EditorLocaleDialog() = default;
 
 	void set_locale(const String& p_locale);
 	void popup_locale_dialog();

@@ -32,7 +32,6 @@
 
 #include "core/os/thread_safe.h"
 #include "core/types.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class XRInterface;
 class XRTracker;

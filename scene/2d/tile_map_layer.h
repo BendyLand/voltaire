@@ -650,7 +650,7 @@ public:
 	int get_y_sort_origin() const;
 	void set_x_draw_order_reversed(bool p_x_draw_order_reversed);
 	bool is_x_draw_order_reversed() const;
-	virtual void set_z_index(int p_z_index) override;
+	virtual void set_z_index(int p_z_index);
 	virtual void set_light_mask(int p_light_mask) override;
 	void set_rendering_quadrant_size(int p_size);
 	int get_rendering_quadrant_size() const;

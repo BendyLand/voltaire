@@ -254,7 +254,6 @@ public:
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;
 
-	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh() const;
 
 	void set_use_fixed_seed(bool p_use_fixed_seed = false);
@@ -277,13 +276,10 @@ public:
 	void set_flatness(real_t p_flatness);
 	real_t get_flatness() const;
 
-	void set_param_min(Parameter p_param, real_t p_value);
 	real_t get_param_min(Parameter p_param) const;
 
-	void set_param_max(Parameter p_param, real_t p_value);
 	real_t get_param_max(Parameter p_param) const;
 
-	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
 	void set_color(const Color& p_color);
@@ -333,7 +329,7 @@ public:
 
 	AABB capture_aabb() const;
 
-	CPUParticles3D();
+	CPUParticles3D() = default;
 	~CPUParticles3D();
 };
 

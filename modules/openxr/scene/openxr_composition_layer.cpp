@@ -207,38 +207,7 @@ Size2i OpenXRCompositionLayer::get_android_surface_size() const { return android
 
 SubViewport* OpenXRCompositionLayer::get_layer_viewport() const { return layer_viewport; }
 
-void OpenXRCompositionLayer::set_enable_hole_punch(bool p_enable)
-{
-	if (enable_hole_punch == p_enable) {
-		return;
-	}
-
-	enable_hole_punch = p_enable;
-	if (_should_use_fallback_node()) {
-		if (fallback) {
-			_reset_fallback_material();
-		}
-		else {
-			_create_fallback_node();
-		}
-	}
-	else if (fallback) {
-		_remove_fallback_node();
-	}
-
-	update_configuration_warnings();
-}
-
 bool OpenXRCompositionLayer::get_enable_hole_punch() const { return enable_hole_punch; }
-
-void OpenXRCompositionLayer::set_sort_order(int p_order)
-{
-	sort_order = p_order;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_sort_order(composition_layer, p_order);
-	}
-	update_configuration_warnings();
-}
 
 int OpenXRCompositionLayer::get_sort_order() const { return sort_order; }
 

@@ -99,8 +99,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_project_title(const String& p_title);
-	void set_project_path(const String& p_path);
 	void set_tags(const PackedStringArray& p_tags, ProjectList* p_parent_list);
 	void set_project_icon(const Ref<Texture2D>& p_icon);
 	void set_last_edited_info(const String& p_info);
@@ -116,13 +114,10 @@ public:
 
 	void set_selected(bool p_selected, bool p_hide_focus = false);
 
-	void set_is_favorite(bool p_favorite);
 	void set_is_missing(bool p_missing);
 	void set_is_grayed(bool p_grayed);
 	void set_project_title_index(int p_title_index);
 	void set_project_title_autowrap();
-
-	void resize_project_title();
 
 	ProjectListItemControl();
 };
@@ -327,10 +322,6 @@ public:
 	const HashSet<String>& get_selected_project_keys() const;
 	int get_single_selected_index() const;
 	void erase_selected_projects(bool p_delete_project_contents);
-
-	// Resize project titles.
-
-	void resize_project_titles();
 
 	// Missing projects.
 

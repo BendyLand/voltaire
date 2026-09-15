@@ -158,7 +158,6 @@ class Polygon2DEditor : public AbstractPolygon2DEditor
 	void _canvas_input(const Ref<InputEvent>& p_input);
 	void _center_view_on_draw(bool p_enabled = true);
 	void _canvas_draw();
-	void _set_action(int p_mode);
 
 	void _set_use_snap(bool p_use);
 	void _set_show_grid(bool p_show);

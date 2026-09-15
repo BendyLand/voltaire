@@ -160,7 +160,7 @@ class AnimationNodeAnimationEditorDialog : public ConfirmationDialog
 	OptionButton* select_end = nullptr;
 
 public:
-	AnimationNodeAnimationEditorDialog();
+	AnimationNodeAnimationEditorDialog() = default;
 };
 
 class AnimationNodeAnimationEditor : public VBoxContainer
@@ -168,8 +168,6 @@ class AnimationNodeAnimationEditor : public VBoxContainer
 	Ref<AnimationNodeAnimation> animation_node_animation;
 	Button* button = nullptr;
 	AnimationNodeAnimationEditorDialog* dialog = nullptr;
-	void _open_set_custom_timeline_from_marker_dialog();
-	void _validate_markers(int p_id);
 	void _confirm_set_custom_timeline_from_marker_dialog();
 
 public:

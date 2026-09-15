@@ -98,26 +98,9 @@ void ReplicationEditor::_pick_node_property_selected(String p_name)
 	_add_sync_property(adding_prop_path);
 }
 
-/// ReplicationEditor
-
-void _set_replication_mode_options(TreeItem* p_item)
-{
-	p_item->set_text(2, TTR("Never", "Replication Mode") + "," + TTR("Always", "Replication Mode") +
-							"," + TTR("On Change", "Replication Mode"));
-}
-
 void ReplicationEditor::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		TreeItem* root = tree->get_root();
-		if (root) {
-			for (TreeItem* ti = root->get_first_child(); ti; ti = ti->get_next()) {
-				_set_replication_mode_options(ti);
-			}
-		}
-	} break;
-
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		if (!EditorThemeManager::is_generated_theme_outdated()) {
 			break;
@@ -190,49 +173,6 @@ void ReplicationEditor::edit(MultiplayerSynchronizer* p_sync)
 		config.unref();
 	}
 	_update_config();
-}
-
-void ReplicationEditor::_add_property(
-	const NodePath& p_property, bool p_spawn, SceneReplicationConfig::ReplicationMode p_mode)
-{
-	String prop = String(p_property);
-	TreeItem* item = tree->create_item();
-	item->set_selectable(0, false);
-	item->set_selectable(1, false);
-	item->set_selectable(2, false);
-	item->set_selectable(3, false);
-	item->set_text(0, prop);
-	item->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED);
-	Node* root_node = current && !current->get_root_path().is_empty()
-						  ? current->get_node(current->get_root_path())
-						  : nullptr;
-	Ref<Texture2D> icon = _get_class_icon(root_node);
-	if (root_node) {
-		String path = prop.substr(0, prop.find_char(':'));
-		String subpath = prop.substr(path.size());
-		Node* node = root_node->get_node_or_null(path);
-		if (!node) {
-			node = root_node;
-		}
-		item->set_text(0, String(node->get_name()) + ":" + subpath);
-		icon = _get_class_icon(node);
-		item->set_icon(0, icon);
-	}
-	else {
-		item->set_icon(0, icon);
-	}
-	item->add_button(3, get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
-	item->set_text_alignment(1, HORIZONTAL_ALIGNMENT_CENTER);
-	item->set_cell_mode(1, TreeItem::CELL_MODE_CHECK);
-	item->set_checked(1, p_spawn);
-	item->set_editable(1, true);
-	item->set_text_alignment(2, HORIZONTAL_ALIGNMENT_CENTER);
-	item->set_cell_mode(2, TreeItem::CELL_MODE_RANGE);
-	item->set_range_config(2, 0, 2, 1);
-	item->set_auto_translate_mode(2, AUTO_TRANSLATE_MODE_DISABLED);
-	_set_replication_mode_options(item);
-	item->set_range(2, (int)p_mode);
-	item->set_editable(2, true);
 }
 
 

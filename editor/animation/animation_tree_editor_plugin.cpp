@@ -65,44 +65,6 @@ void AnimationTreeEditor::_animation_list_changed()
 	}
 }
 
-void AnimationTreeEditor::_update_path()
-{
-	while (path_hb->get_child_count() > 1) {
-		memdelete(path_hb->get_child(1));
-	}
-
-	Ref<ButtonGroup> group;
-	group.instantiate();
-
-	Button* b = memnew(Button);
-	b->set_text(TTR("Root"));
-	b->set_toggle_mode(true);
-	b->set_button_group(group);
-	b->set_pressed(true);
-	b->set_focus_mode(FOCUS_ACCESSIBILITY);
-	path_hb->add_child(b);
-	for (int i = 0; i < button_path.size(); i++) {
-		// bread crumbs.
-		TextureRect* texture_rect = memnew(TextureRect);
-		texture_rect->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
-		texture_rect->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
-		texture_rect->set_custom_minimum_size(Size2(16, 16) * EDSCALE);
-		texture_rect->set_texture(get_editor_theme_icon(SNAME("GuiTreeArrowRight")));
-		path_hb->add_child(texture_rect);
-
-		b = memnew(Button);
-		b->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-		b->set_text(button_path[i]);
-		b->set_toggle_mode(true);
-		b->set_button_group(group);
-		path_hb->add_child(b);
-		b->set_pressed(true);
-		b->set_focus_mode(FOCUS_ACCESSIBILITY);
-	}
-}
-
-
-
 Vector<String> AnimationTreeEditor::get_edited_path() const { return button_path; }
 
 AnimationTreeEditor* AnimationTreeEditor::singleton = nullptr;
@@ -148,14 +110,6 @@ LocalVector<StringName> AnimationTreeEditor::get_animation_list()
 	}
 
 	return tree->get_sorted_animation_list();
-}
-
-AnimationTreeEditorPlugin::AnimationTreeEditorPlugin()
-{
-	anim_tree_editor = memnew(AnimationTreeEditor);
-	anim_tree_editor->set_custom_minimum_size(Size2(0, 300) * EDSCALE);
-	EditorDockManager::get_singleton()->add_dock(anim_tree_editor);
-	anim_tree_editor->close();
 }
 
 

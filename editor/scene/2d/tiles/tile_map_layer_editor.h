@@ -32,7 +32,6 @@
 
 #include "core/math/random_pcg.h"
 #include "core/os/thread.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "editor/scene/2d/tiles/tile_atlas_view.h"
 #include "scene/gui/box_container.h"
@@ -140,7 +139,6 @@ private:
 	void _update_transform_buttons();
 	void _set_transform_buttons_state(const Vector<Button*>& p_enabled_buttons,
 		const Vector<Button*>& p_disabled_buttons, const String& p_why_disabled);
-	void _update_translation();
 
 	///// Tilemap editing. /////
 	bool has_mouse = false;
@@ -363,7 +361,6 @@ private:
 
 public:
 	virtual Vector<TabData> get_tabs() const override;
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
 	TileMapLayerEditorTerrainsPlugin();

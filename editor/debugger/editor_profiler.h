@@ -150,7 +150,6 @@ Vector<Metric> frame_metrics;
 	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
 
 	void _make_metric_ptrs(Metric& m);
-	void _item_edited();
 	void _item_collapsed(TreeItem* p_item);
 
 	void _update_plot();
@@ -172,14 +171,11 @@ protected:
 public:
 	void add_frame_metric(const Metric& p_metric, bool p_final = false);
 	void set_enabled(bool p_enable, bool p_clear = true);
-	void set_profiling(bool p_pressed);
 	bool is_profiling();
 
 	bool is_seeking() { return seeking; }
 
 	void disable_seeking();
-
-	void clear();
 
 	Vector<Vector<String>> get_data_as_csv() const;
 

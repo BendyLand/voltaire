@@ -59,25 +59,4 @@ Vector4 ColorChannelSelector::get_selected_channel_factors() const
 	return channel_factors;
 }
 
-void ColorChannelSelector::create_button(
-	unsigned int p_channel_index, const String& p_text, Control* p_parent)
-{
-	ERR_FAIL_COND(p_channel_index >= CHANNEL_COUNT);
-	ERR_FAIL_COND(channel_buttons[p_channel_index] != nullptr);
-	Button* button = memnew(Button);
-	button->set_text(p_text);
-	button->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	button->set_toggle_mode(true);
-	button->set_pressed(true);
-
-	// Don't show focus, it stands out too much and remains visible which can be confusing.
-	button->add_theme_style_override("focus", memnew(StyleBoxEmpty));
-
-	// Make it look similar to toolbar buttons.
-	button->set_theme_type_variation(SceneStringName(FlatButton));
-
-	p_parent->add_child(button);
-	channel_buttons[p_channel_index] = button;
-}
-
 

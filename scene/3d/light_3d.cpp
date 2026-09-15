@@ -41,14 +41,6 @@ real_t Light3D::get_param(Param p_param) const
 	return param[p_param];
 }
 
-void Light3D::set_shadow(bool p_enable)
-{
-	shadow = p_enable;
-	RS::get_singleton()->light_set_shadow(light, p_enable);
-
-	update_configuration_warnings();
-}
-
 bool Light3D::has_shadow() const { return shadow; }
 
 void Light3D::set_negative(bool p_enable)
@@ -206,9 +198,6 @@ void Light3D::_update_visibility()
 void Light3D::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_TRANSFORM_CHANGED: {
-		update_configuration_warnings();
-	} break;
 	case NOTIFICATION_VISIBILITY_CHANGED:
 	case NOTIFICATION_ENTER_TREE: {
 		_update_visibility();

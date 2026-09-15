@@ -126,7 +126,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 	void _cancel_inline_edit();
 	void _inline_editor_text_changed(const String& p_text);
 	void _index_edit_focus_entered();
-	void _index_edit_focus_exited();
 	void _index_focus_cooldown_timeout();
 	void _show_indices_with_cooldown();
 

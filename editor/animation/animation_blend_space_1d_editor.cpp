@@ -126,12 +126,6 @@ void AnimationNodeBlendSpace1DEditor::_inline_editor_text_changed(const String& 
 	inline_editor->set_position(Vector2(editor_x, inline_editor->get_position().y));
 }
 
-void AnimationNodeBlendSpace1DEditor::_index_edit_focus_exited()
-{
-	index_edit_has_focus = false;
-	index_focus_cooldown_timer->start();
-}
-
 AnimationNodeBlendSpace1DEditor* AnimationNodeBlendSpace1DEditor::singleton = nullptr;
 
 

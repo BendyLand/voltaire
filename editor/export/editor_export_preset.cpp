@@ -36,7 +36,6 @@
 #include "editor_export_preset.compat.inc"
 #include "editor_export_preset.h"
 
-
 Ref<EditorExportPlatform> EditorExportPreset::get_platform() const { return platform; }
 
 void EditorExportPreset::update_files()
@@ -87,105 +86,29 @@ void EditorExportPreset::set_selected_files(const HashSet<String>& p_files)
 
 int EditorExportPreset::get_customized_files_count() const { return customized_files.size(); }
 
-void EditorExportPreset::set_name(const String& p_name)
-{
-	name = p_name;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_name() const { return name; }
-
-void EditorExportPreset::set_runnable(bool p_enable)
-{
-	if (p_enable) {
-		EditorExport::singleton->set_runnable_preset(this);
-	}
-	else {
-		EditorExport::singleton->unset_runnable_preset(this);
-	}
-}
 
 bool EditorExportPreset::is_runnable() const
 {
 	return EditorExport::singleton->get_runnable_preset_for_platform(platform).ptr() == this;
 }
 
-void EditorExportPreset::set_dedicated_server(bool p_enable)
-{
-	dedicated_server = p_enable;
-	EditorExport::singleton->save_presets();
-}
-
 bool EditorExportPreset::is_dedicated_server() const { return dedicated_server; }
-
-void EditorExportPreset::set_export_filter(ExportFilter p_filter)
-{
-	export_filter = p_filter;
-	EditorExport::singleton->save_presets();
-}
 
 EditorExportPreset::ExportFilter EditorExportPreset::get_export_filter() const
 {
 	return export_filter;
 }
 
-void EditorExportPreset::set_include_filter(const String& p_include)
-{
-	include_filter = p_include;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_include_filter() const { return include_filter; }
-
-void EditorExportPreset::set_export_path(const String& p_path)
-{
-	export_path = p_path;
-	/* NOTE(SonerSound): if there is a need to implement a PropertyHint that specifically indicates
-	 * a relative path, this should be removed. */
-	if (export_path.is_absolute_path()) {
-		String res_path = OS::get_singleton()->get_resource_dir();
-		export_path = res_path.path_to_file(export_path);
-	}
-	EditorExport::singleton->save_presets();
-}
 
 String EditorExportPreset::get_export_path() const { return export_path; }
 
-void EditorExportPreset::set_exclude_filter(const String& p_exclude)
-{
-	exclude_filter = p_exclude;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_exclude_filter() const { return exclude_filter; }
-
-void EditorExportPreset::add_export_file(const String& p_path)
-{
-	selected_files.insert(p_path);
-	EditorExport::singleton->save_presets();
-}
-
-void EditorExportPreset::remove_export_file(const String& p_path)
-{
-	selected_files.erase(p_path);
-	EditorExport::singleton->save_presets();
-}
 
 bool EditorExportPreset::has_export_file(const String& p_path)
 {
 	return selected_files.has(p_path);
-}
-
-void EditorExportPreset::set_file_export_mode(
-	const String& p_path, EditorExportPreset::FileExportMode p_mode)
-{
-	if (p_mode == FileExportMode::MODE_FILE_NOT_CUSTOMIZED) {
-		customized_files.erase(p_path);
-	}
-	else {
-		customized_files.insert(p_path, p_mode);
-	}
-	EditorExport::singleton->save_presets();
 }
 
 EditorExportPreset::FileExportMode EditorExportPreset::get_file_export_mode(
@@ -198,78 +121,26 @@ EditorExportPreset::FileExportMode EditorExportPreset::get_file_export_mode(
 	return p_default;
 }
 
-void EditorExportPreset::add_patch(const String& p_path, int p_at_pos)
-{
-	ERR_FAIL_COND_EDMSG(patches.has(p_path),
-		vformat("Failed to add patch \"%s\". Patches must be unique.", p_path));
-
-	if (p_at_pos < 0) {
-		patches.push_back(p_path);
-	}
-	else {
-		patches.insert(p_at_pos, p_path);
-	}
-
-	EditorExport::singleton->save_presets();
-}
-
-void EditorExportPreset::set_patch(int p_index, const String& p_path)
-{
-	remove_patch(p_index);
-	add_patch(p_path, p_index);
-}
-
 String EditorExportPreset::get_patch(int p_index)
 {
 	ERR_FAIL_INDEX_V(p_index, patches.size(), String());
 	return patches[p_index];
 }
 
-void EditorExportPreset::remove_patch(int p_index)
-{
-	ERR_FAIL_INDEX(p_index, patches.size());
-	patches.remove_at(p_index);
-	EditorExport::singleton->save_presets();
-}
-
 void EditorExportPreset::set_patches(const Vector<String>& p_patches) { patches = p_patches; }
 
 Vector<String> EditorExportPreset::get_patches() const { return patches; }
-
-void EditorExportPreset::set_patch_delta_encoding_enabled(bool p_enable)
-{
-	patch_delta_encoding_enabled = p_enable;
-	EditorExport::singleton->save_presets();
-}
 
 bool EditorExportPreset::is_patch_delta_encoding_enabled() const
 {
 	return patch_delta_encoding_enabled;
 }
 
-void EditorExportPreset::set_patch_delta_zstd_level(int p_level)
-{
-	patch_delta_zstd_level = p_level;
-	EditorExport::singleton->save_presets();
-}
-
 int EditorExportPreset::get_patch_delta_zstd_level() const { return patch_delta_zstd_level; }
-
-void EditorExportPreset::set_patch_delta_min_reduction(double p_ratio)
-{
-	patch_delta_min_reduction = p_ratio;
-	EditorExport::singleton->save_presets();
-}
 
 double EditorExportPreset::get_patch_delta_min_reduction() const
 {
 	return patch_delta_min_reduction;
-}
-
-void EditorExportPreset::set_patch_delta_include_filter(const String& p_filter)
-{
-	patch_delta_include_filter = p_filter;
-	EditorExport::singleton->save_presets();
 }
 
 String EditorExportPreset::get_patch_delta_include_filter() const
@@ -277,78 +148,24 @@ String EditorExportPreset::get_patch_delta_include_filter() const
 	return patch_delta_include_filter;
 }
 
-void EditorExportPreset::set_patch_delta_exclude_filter(const String& p_filter)
-{
-	patch_delta_exclude_filter = p_filter;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_patch_delta_exclude_filter() const
 {
 	return patch_delta_exclude_filter;
 }
 
-void EditorExportPreset::set_custom_features(const String& p_custom_features)
-{
-	custom_features = p_custom_features;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_custom_features() const { return custom_features; }
-
-void EditorExportPreset::set_enc_in_filter(const String& p_filter)
-{
-	enc_in_filters = p_filter;
-	EditorExport::singleton->save_presets();
-}
 
 String EditorExportPreset::get_enc_in_filter() const { return enc_in_filters; }
 
-void EditorExportPreset::set_enc_ex_filter(const String& p_filter)
-{
-	enc_ex_filters = p_filter;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_enc_ex_filter() const { return enc_ex_filters; }
-
-void EditorExportPreset::set_seed(uint64_t p_seed)
-{
-	seed = p_seed;
-	EditorExport::singleton->save_presets();
-}
 
 uint64_t EditorExportPreset::get_seed() const { return seed; }
 
-void EditorExportPreset::set_enc_pck(bool p_enabled)
-{
-	enc_pck = p_enabled;
-	EditorExport::singleton->save_presets();
-}
-
 bool EditorExportPreset::get_enc_pck() const { return enc_pck; }
-
-void EditorExportPreset::set_enc_directory(bool p_enabled)
-{
-	enc_directory = p_enabled;
-	EditorExport::singleton->save_presets();
-}
 
 bool EditorExportPreset::get_enc_directory() const { return enc_directory; }
 
-void EditorExportPreset::set_script_encryption_key(const String& p_key)
-{
-	script_key = p_key;
-	EditorExport::singleton->save_presets();
-}
-
 String EditorExportPreset::get_script_encryption_key() const { return script_key; }
-
-void EditorExportPreset::set_script_export_mode(ScriptExportMode p_mode)
-{
-	script_mode = p_mode;
-	EditorExport::singleton->save_presets();
-}
 
 EditorExportPreset::ScriptExportMode EditorExportPreset::get_script_export_mode() const
 {

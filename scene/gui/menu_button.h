@@ -54,7 +54,7 @@ protected:
 	}
 
 public:
-	virtual void pressed() override;
+	virtual void pressed();
 
 	PopupMenu* get_popup() const;
 	void show_popup();

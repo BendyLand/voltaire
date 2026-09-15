@@ -34,7 +34,6 @@
 
 class EditorTranslationPreviewMenu : public PopupMenu
 {
-	void _prepare();
 	void _pressed(int p_index);
 
 protected:

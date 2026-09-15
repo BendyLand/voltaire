@@ -233,7 +233,6 @@ class SpriteFramesEditor : public EditorDock {
 	void _animation_cut();
 	void _animation_copy();
 	void _animation_paste();
-	void _animation_remove();
 	void _animation_remove_confirmed();
 	void _animation_search_text_changed(const String &p_text);
 	void _animation_loop_pressed();
@@ -311,5 +310,5 @@ class SpriteFramesEditorPlugin : public EditorPlugin {
 public:
 	virtual String get_plugin_name() const override { return "SpriteFrames"; }
 
-	SpriteFramesEditorPlugin();
+	SpriteFramesEditorPlugin() = default;
 };

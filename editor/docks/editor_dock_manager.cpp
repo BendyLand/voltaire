@@ -59,40 +59,10 @@ void DockSplitContainer::_notification(int p_what)
 
 void EditorDockManager::_dock_drag_stopped() { dock_tab_dragged = nullptr; }
 
-void EditorDockManager::_dock_split_dragged(int p_offset)
-{
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
-
-void EditorDockManager::_update_layout()
-{
-	if (!dock_context_popup->is_inside_tree() || EditorNode::get_singleton()->is_exiting()) {
-		return;
-	}
-	dock_context_popup->docks_updated();
-	update_docks_menu();
-	EditorNode::get_singleton()->save_editor_layout_delayed();
-}
-
 DockTabContainer* EditorDockManager::get_dock_container(int p_slot) const
 {
 	ERR_FAIL_INDEX_V(p_slot, EditorDock::DOCK_SLOT_MAX, nullptr);
 	return dock_slots[p_slot];
-}
-
-void EditorDockManager::_window_close_request(WindowWrapper* p_wrapper)
-{
-	// Give the dock back to the original owner.
-	EditorDock* dock = _close_window(p_wrapper);
-	ERR_FAIL_COND(!all_docks.has(dock));
-
-	if (dock->dock_slot_index != EditorDock::DOCK_SLOT_NONE) {
-		dock->is_open = false;
-		focus_dock(dock);
-	}
-	else {
-		close_dock(dock);
-	}
 }
 
 void EditorDockManager::_update_dirty_dock_tabs()
@@ -107,27 +77,6 @@ void EditorDockManager::_update_dirty_dock_tabs()
 	if (update_menu) {
 		update_docks_menu();
 	}
-}
-
-void EditorDockManager::close_dock(EditorDock* p_dock)
-{
-	ERR_FAIL_NULL(p_dock);
-	ERR_FAIL_COND_MSG(!all_docks.has(p_dock),
-		vformat("Cannot close unknown dock '%s'.", p_dock->get_display_title()));
-
-	if (!p_dock->is_open) {
-		return;
-	}
-
-	p_dock->is_open = false;
-	DockTabContainer* parent_container = p_dock->get_parent_container();
-	if (parent_container) {
-		parent_container->dock_closed(p_dock);
-	}
-
-	_move_dock(p_dock, closed_dock_parent);
-
-	_update_layout();
 }
 
 void EditorDockManager::_make_dock_visible(EditorDock* p_dock, bool p_grab_focus)
@@ -154,20 +103,6 @@ void EditorDockManager::_make_dock_visible(EditorDock* p_dock, bool p_grab_focus
 	}
 }
 
-void EditorDockManager::set_docks_visible(bool p_show)
-{
-	if (docks_visible == p_show) {
-		return;
-	}
-	docks_visible = p_show;
-	for (int i = 0; i < EditorDock::DOCK_SLOT_MAX; i++) {
-		// Show and hide in reverse order due to the SplitContainer prioritizing the last split
-		// offset.
-		dock_slots[docks_visible ? i : EditorDock::DOCK_SLOT_MAX - i - 1]->update_visibility();
-	}
-	_update_layout();
-}
-
 bool EditorDockManager::are_docks_visible() const { return docks_visible; }
 
 void EditorDockManager::update_tab_styles()
@@ -187,23 +122,6 @@ void EditorDockManager::set_tab_icon_max_width(int p_max_width)
 int EditorDockManager::get_vsplit_count() const { return vsplits.size(); }
 
 PopupMenu* EditorDockManager::get_docks_menu() { return docks_menu; }
-
-void DockContextPopup::_slot_clicked(int p_slot)
-{
-	DockTabContainer* target_tab_container = dock_manager->dock_slots[p_slot];
-	if (context_dock->get_parent_container() != target_tab_container) {
-		dock_manager->_move_dock(
-			context_dock, target_tab_container, target_tab_container->get_tab_count());
-		dock_manager->_update_layout();
-		hide();
-	}
-}
-
-void DockContextPopup::_close_dock()
-{
-	hide();
-	dock_manager->close_dock(context_dock);
-}
 
 void DockContextPopup::set_dock(EditorDock* p_dock)
 {

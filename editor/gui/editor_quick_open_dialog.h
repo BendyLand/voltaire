@@ -192,7 +192,6 @@ public:
 	QuickOpenResultGridItem();
 
 	void reset();
-	void set_content(const QuickOpenResultCandidate& p_candidate, bool p_highlight);
 	void highlight_item(const Color& p_color);
 	void remove_highlight();
 

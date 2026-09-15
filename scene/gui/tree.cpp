@@ -223,71 +223,10 @@ bool TreeItem::is_indeterminate(int p_column) const
 	return cells[p_column].indeterminate;
 }
 
-void TreeItem::set_text(int p_column, String p_text)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-
-	if (cells[p_column].text == p_text) {
-		return;
-	}
-
-	cells.write[p_column].text = p_text;
-	cells.write[p_column].dirty = true;
-
-	if (cells[p_column].mode == TreeItem::CELL_MODE_RANGE) {
-		Vector<String> strings = p_text.split(",");
-		cells.write[p_column].min = INT_MAX;
-		cells.write[p_column].max = INT_MIN;
-		for (int i = 0; i < strings.size(); i++) {
-			int value = i;
-			if (!strings[i].get_slicec(':', 1).is_empty()) {
-				value = strings[i].get_slicec(':', 1).to_int();
-			}
-			cells.write[p_column].min = MIN(cells[p_column].min, value);
-			cells.write[p_column].max = MAX(cells[p_column].max, value);
-		}
-		cells.write[p_column].step = 0;
-	}
-	else {
-		// Don't auto translate if it's in string mode and editable, as the text can be changed to
-		// anything by the user.
-		if (tree &&
-			(!cells[p_column].editable || cells[p_column].mode != TreeItem::CELL_MODE_STRING)) {
-			cells.write[p_column].xl_text = atr(p_column, p_text);
-		}
-		else {
-			cells.write[p_column].xl_text = p_text;
-		}
-	}
-
-	cells.write[p_column].cached_minimum_size_dirty = true;
-
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
-}
-
 String TreeItem::get_text(int p_column) const
 {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
 	return cells[p_column].text;
-}
-
-void TreeItem::set_description(int p_column, String p_text)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-
-	if (cells[p_column].description == p_text) {
-		return;
-	}
-
-	cells.write[p_column].description = p_text;
-
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
 }
 
 String TreeItem::get_description(int p_column) const
@@ -1035,29 +974,6 @@ void TreeItem::clear_buttons()
 	}
 }
 
-void TreeItem::add_button(int p_column, const Ref<Texture2D>& p_button, int p_id, bool p_disabled,
-	const String& p_tooltip, const String& p_description)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_COND(p_button.is_null());
-	TreeItem::Cell::Button button;
-	button.texture = p_button;
-	if (p_id < 0) {
-		p_id = cells[p_column].buttons.size();
-	}
-	button.id = p_id;
-	button.disabled = p_disabled;
-	button.tooltip = p_tooltip;
-	button.description = p_description;
-	cells.write[p_column].buttons.push_back(button);
-	cells.write[p_column].cached_minimum_size_dirty = true;
-
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
-}
-
 int TreeItem::get_button_count(int p_column) const
 {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
@@ -1083,21 +999,6 @@ int TreeItem::get_button_id(int p_column, int p_index) const
 	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
 	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), -1);
 	return cells[p_column].buttons[p_index].id;
-}
-
-void TreeItem::erase_button(int p_column, int p_index)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
-	if (cells[p_column].buttons[p_index].accessibility_button_element.is_valid()) {
-		AccessibilityServer::get_singleton()->free_element(
-			cells.write[p_column].buttons.write[p_index].accessibility_button_element);
-	}
-	cells.write[p_column].buttons.remove_at(p_index);
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
 }
 
 int TreeItem::get_button_by_id(int p_column, int p_id) const
@@ -1149,25 +1050,6 @@ void TreeItem::set_button(int p_column, int p_index, const Ref<Texture2D>& p_but
 	cells.write[p_column].cached_minimum_size_dirty = true;
 
 	_changed_notify(p_column);
-}
-
-void TreeItem::set_button_description(int p_column, int p_index, const String& p_description)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-	if (p_index < 0) {
-		p_index += cells[p_column].buttons.size();
-	}
-	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
-
-	if (cells[p_column].buttons[p_index].description == p_description) {
-		return;
-	}
-
-	cells.write[p_column].buttons.write[p_index].description = p_description;
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
 }
 
 void TreeItem::set_button_color(int p_column, int p_index, const Color& p_color)

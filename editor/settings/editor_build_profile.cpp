@@ -546,11 +546,6 @@ void EditorBuildProfileManager::_profile_action(int p_action)
 	last_action = Action(p_action);
 
 	switch (p_action) {
-	case ACTION_RESET: {
-		confirm_dialog->set_text(TTRC("Reset the edited profile?"));
-		confirm_dialog->popup_centered();
-	} break;
-
 	case ACTION_LOAD: {
 		import_profile->popup_file_dialog();
 	} break;
@@ -568,30 +563,6 @@ void EditorBuildProfileManager::_profile_action(int p_action)
 	case ACTION_SAVE_AS: {
 		export_profile->popup_file_dialog();
 		export_profile->set_current_file(profile_path->get_text());
-	} break;
-
-	case ACTION_NEW: {
-		confirm_dialog->set_text(TTRC("Create a new profile?"));
-		confirm_dialog->popup_centered();
-	} break;
-
-	case ACTION_DETECT: {
-		String text =
-			TTR("This will scan all files in the current project to detect used classes.\nNote "
-				"that the first scan may take a while, specially in larger projects.");
-#ifdef MODULE_MONO_ENABLED
-		text += "\n\n" + TTR("Warning: Class detection for C# scripts is not currently available, "
-							 "and such files will be ignored.");
-#endif // MODULE_MONO_ENABLED
-		confirm_dialog->set_text(text);
-		confirm_dialog->popup_centered();
-	} break;
-
-	case ACTION_CLEAR_CACHE: {
-		confirm_dialog->set_text(TTRC(
-			"Clear cache of used classes per file? This will make it so that those files will need "
-			"to be re-scanned, but it can also help fix problems related to outdated caching."));
-		confirm_dialog->popup_centered();
 	} break;
 
 	case ACTION_MAX: {

@@ -88,7 +88,6 @@ protected:
 
 public:
 	LineEdit* get_name_box() const;
-	void show_message(const String& p_message);
 
 	void remove_references(const StringName& p_name);
 	void rename_references(const StringName& p_old_name, const StringName& p_new_name);

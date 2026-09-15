@@ -85,7 +85,7 @@ public:
 	virtual void notify_rebind_required();
 #endif
 
-	BoneAttachment3D();
+	BoneAttachment3D() = default;
 };
 
 

@@ -63,7 +63,7 @@ public:
 	static ShaderFileEditor* singleton;
 	void edit(const Ref<RDShaderFile>& p_shader);
 
-	ShaderFileEditor();
+	ShaderFileEditor() = default;
 };
 
 class ShaderFileEditorPlugin : public EditorPlugin
@@ -75,7 +75,7 @@ public:
 
 	ShaderFileEditor* get_shader_editor() const { return shader_editor; }
 
-	ShaderFileEditorPlugin();
+	ShaderFileEditorPlugin() = default;
 };
 
 

@@ -193,33 +193,11 @@ void CPUParticles2D::set_spread(real_t p_spread) { spread = p_spread; }
 
 real_t CPUParticles2D::get_spread() const { return spread; }
 
-void CPUParticles2D::set_param_min(Parameter p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	parameters_min[p_param] = p_value;
-	if (parameters_min[p_param] > parameters_max[p_param]) {
-		set_param_max(p_param, p_value);
-	}
-}
-
 real_t CPUParticles2D::get_param_min(Parameter p_param) const
 {
 	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
 
 	return parameters_min[p_param];
-}
-
-void CPUParticles2D::set_param_max(Parameter p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	parameters_max[p_param] = p_value;
-	if (parameters_min[p_param] > parameters_max[p_param]) {
-		set_param_min(p_param, p_value);
-	}
-
-	update_configuration_warnings();
 }
 
 real_t CPUParticles2D::get_param_max(Parameter p_param) const
@@ -237,54 +215,6 @@ static void _adjust_curve_range(const Ref<Curve>& p_curve, real_t p_min, real_t 
 	}
 
 	curve->ensure_default_setup(p_min, p_max);
-}
-
-void CPUParticles2D::set_param_curve(Parameter p_param, const Ref<Curve>& p_curve)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-
-	curve_parameters[p_param] = p_curve;
-
-	switch (p_param) {
-	case PARAM_INITIAL_LINEAR_VELOCITY: {
-		// do none for this one
-	} break;
-	case PARAM_ANGULAR_VELOCITY: {
-		_adjust_curve_range(p_curve, -360, 360);
-	} break;
-	case PARAM_ORBIT_VELOCITY: {
-		_adjust_curve_range(p_curve, -500, 500);
-	} break;
-	case PARAM_LINEAR_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_RADIAL_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_TANGENTIAL_ACCEL: {
-		_adjust_curve_range(p_curve, -200, 200);
-	} break;
-	case PARAM_DAMPING: {
-		_adjust_curve_range(p_curve, 0, 100);
-	} break;
-	case PARAM_ANGLE: {
-		_adjust_curve_range(p_curve, -360, 360);
-	} break;
-	case PARAM_SCALE: {
-	} break;
-	case PARAM_HUE_VARIATION: {
-		_adjust_curve_range(p_curve, -1, 1);
-	} break;
-	case PARAM_ANIM_SPEED: {
-		_adjust_curve_range(p_curve, 0, 200);
-	} break;
-	case PARAM_ANIM_OFFSET: {
-	} break;
-	default: {
-	}
-	}
-
-	update_configuration_warnings();
 }
 
 Ref<Curve> CPUParticles2D::get_param_curve(Parameter p_param) const
@@ -1069,60 +999,6 @@ void CPUParticles2D::_draw_emission_gizmo()
 	}
 }
 #endif
-
-CPUParticles2D::CPUParticles2D()
-{
-	mesh = RenderingServer::get_singleton()->mesh_create();
-	multimesh = RenderingServer::get_singleton()->multimesh_create();
-	RenderingServer::get_singleton()->multimesh_set_mesh(multimesh, mesh);
-
-	set_emitting(true);
-	set_amount(8);
-	set_use_local_coordinates(false);
-	set_seed(Math::rand());
-
-	rng.instantiate();
-
-	set_param_min(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_min(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_min(PARAM_ORBIT_VELOCITY, 0);
-	set_param_min(PARAM_LINEAR_ACCEL, 0);
-	set_param_min(PARAM_RADIAL_ACCEL, 0);
-	set_param_min(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_min(PARAM_DAMPING, 0);
-	set_param_min(PARAM_ANGLE, 0);
-	set_param_min(PARAM_SCALE, 1);
-	set_param_min(PARAM_HUE_VARIATION, 0);
-	set_param_min(PARAM_ANIM_SPEED, 0);
-	set_param_min(PARAM_ANIM_OFFSET, 0);
-
-	set_param_max(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_max(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_max(PARAM_ORBIT_VELOCITY, 0);
-	set_param_max(PARAM_LINEAR_ACCEL, 0);
-	set_param_max(PARAM_RADIAL_ACCEL, 0);
-	set_param_max(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_max(PARAM_DAMPING, 0);
-	set_param_max(PARAM_ANGLE, 0);
-	set_param_max(PARAM_SCALE, 1);
-	set_param_max(PARAM_HUE_VARIATION, 0);
-	set_param_max(PARAM_ANIM_SPEED, 0);
-	set_param_max(PARAM_ANIM_OFFSET, 0);
-
-	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
-		particle_flags[i] = false;
-	}
-
-	set_color(Color(1, 1, 1, 1));
-
-	_update_mesh_texture();
-
-	// CPUParticles2D defaults to interpolation off.
-	// This is because the result often looks better when the particles are updated every frame.
-	// Note that children will need to explicitly turn back on interpolation if they want to use it,
-	// rather than relying on inherit mode.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-}
 
 CPUParticles2D::~CPUParticles2D()
 {

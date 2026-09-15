@@ -506,20 +506,6 @@ void SpriteFramesEditor::_animation_copy()
 	EditorSettings::get_singleton()->set_resource_clipboard(clipboard_anim);
 }
 
-void SpriteFramesEditor::_animation_remove()
-{
-	if (updating) {
-		return;
-	}
-
-	if (!frames->has_animation(edited_anim)) {
-		return;
-	}
-
-	delete_dialog->set_text(TTRC("Delete Animation?"));
-	delete_dialog->popup_centered();
-}
-
 void SpriteFramesEditor::_animation_remove_confirmed()
 {
 	_animation_remove_undo_redo(TTR("Remove Animation"), nullptr);
@@ -634,14 +620,6 @@ void SpriteFramesEditor::_node_removed(Node* p_node)
 		}
 		_remove_sprite_node();
 	}
-}
-
-SpriteFramesEditorPlugin::SpriteFramesEditorPlugin()
-{
-	frames_editor = memnew(SpriteFramesEditor);
-	frames_editor->set_custom_minimum_size(Size2(0, 300) * EDSCALE);
-	EditorDockManager::get_singleton()->add_dock(frames_editor);
-	frames_editor->close();
 }
 
 Ref<ClipboardAnimation> ClipboardAnimation::from_sprite_frames(

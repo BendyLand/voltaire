@@ -102,7 +102,6 @@ class BonePicker : public AcceptDialog
 	Tree* bones = nullptr;
 
 public:
-	void popup_bones_tree(const Size2i& p_minsize = Size2i());
 	bool has_selected_bone();
 	StringName get_selected_bone();
 
@@ -150,7 +149,6 @@ class BoneMapper : public VBoxContainer
 	/* Bone picker */
 	BonePicker* picker = nullptr;
 	StringName picker_key_name;
-	void _pick_bone(const StringName& p_bone_name);
 	void _apply_picker_selection();
 	void _clear_mapping_current_group();
 

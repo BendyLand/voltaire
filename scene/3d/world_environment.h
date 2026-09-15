@@ -49,13 +49,10 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void set_environment(const Ref<Environment>& p_environment);
 	Ref<Environment> get_environment() const;
 
-	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
-	void set_compositor(const Ref<Compositor>& p_compositor);
 	Ref<Compositor> get_compositor() const;
 
 	PackedStringArray get_configuration_warnings() const override;

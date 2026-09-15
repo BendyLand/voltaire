@@ -74,37 +74,16 @@ class Polygon3DEditor : public HBoxContainer
 
 	float prev_depth = 0.0f;
 
-	void _wip_close();
-	void _polygon_draw();
-	void _menu_option(int p_option);
-
-	float _get_depth();
-	PackedVector2Array _get_polygon();
-	void _set_polygon(const PackedVector2Array& p_poly);
-
-protected:
-	void _notification(int p_what);
-
 public:
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
-		Camera3D* p_camera, const Ref<InputEvent>& p_event);
-	void edit(Node* p_node);
-	Polygon3DEditor();
+	Polygon3DEditor() = default;
 	~Polygon3DEditor();
 };
 
 class Polygon3DEditorPlugin : public EditorPlugin
 {
-
 	Polygon3DEditor* polygon_editor = nullptr;
 
 public:
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
-		Camera3D* p_camera, const Ref<InputEvent>& p_event) override
-	{
-		return polygon_editor->forward_3d_gui_input(p_camera, p_event);
-	}
-
 	virtual String get_plugin_name() const override { return "Polygon3DEditor"; }
 
 	Polygon3DEditorPlugin() = default;

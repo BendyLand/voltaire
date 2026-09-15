@@ -62,8 +62,9 @@ protected:
 	bool is_radio() const;
 
 public:
-	CheckBox(const String& p_text = String());
-	~CheckBox();
+	CheckBox(const String& p_text = String()) : Button(p_text) {}
+
+	~CheckBox() = default;
 };
 
 

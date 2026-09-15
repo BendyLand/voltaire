@@ -30,13 +30,6 @@
 
 #include "joint_3d.h"
 
-void Joint3D::_body_exit_tree()
-{
-	_disconnect_signals();
-	_update_joint(true);
-	update_configuration_warnings();
-}
-
 void Joint3D::set_node_a(const NodePath& p_node_a)
 {
 	if (a == p_node_a) {
