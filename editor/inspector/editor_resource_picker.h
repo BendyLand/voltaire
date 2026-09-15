@@ -101,8 +101,6 @@ class EditorResourcePicker : public HBoxContainer
 	String _get_owner_path() const;
 	String _get_resource_type(const Ref<Resource>& p_resource) const;
 	void _ensure_allowed_types() const;
-	bool _is_type_valid(
-		const String& p_type_name, const HashSet<StringName>& p_allowed_types) const;
 	bool _is_custom_type_script() const;
 
 	void _ensure_resource_menu();
@@ -156,11 +154,7 @@ class EditorScriptPicker : public EditorResourcePicker
 
 	Node* script_owner = nullptr;
 
-protected:
-
 public:
-	virtual bool handle_menu_selected(int p_which) override;
-
 	void set_script_owner(Node* p_owner);
 	Node* get_script_owner() const;
 };
@@ -176,8 +170,6 @@ class EditorShaderPicker : public EditorResourcePicker
 	int preferred_mode = -1;
 
 public:
-	virtual bool handle_menu_selected(int p_which) override;
-
 	void set_edited_material(ShaderMaterial* p_material);
 	ShaderMaterial* get_edited_material() const;
 	void set_preferred_mode(int p_preferred_mode);

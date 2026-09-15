@@ -394,55 +394,6 @@ void ThemeItemEditorDialog::_open_select_another_theme()
 
 void ThemeItemEditorDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme = p_theme; }
 
-void ThemeTypeDialog::_dialog_about_to_show()
-{
-	add_type_filter->set_text("");
-	add_type_filter->grab_focus();
-
-	_update_add_type_options();
-}
-
-void ThemeTypeDialog::_update_add_type_options(const String& p_filter)
-{
-	add_type_options->clear();
-
-	List<StringName> names;
-	ThemeDB::get_singleton()->get_default_theme()->get_type_list(&names);
-	if (include_own_types) {
-		edited_theme->get_type_list(&names);
-	}
-	names.sort_custom<StringName::AlphCompare>();
-
-	Vector<StringName> unique_names;
-	for (const StringName& E : names) {
-		// Filter out undesired values.
-		if (!p_filter.is_subsequence_ofn(String(E))) {
-			continue;
-		}
-
-		// Skip duplicate values.
-		if (unique_names.has(E)) {
-			continue;
-		}
-		unique_names.append(E);
-
-		Ref<Texture2D> item_icon;
-		if (E == "") {
-			item_icon = get_editor_theme_icon(SNAME("NodeDisabled"));
-		}
-		else {
-			item_icon = EditorNode::get_singleton()->get_class_icon(E, "NodeDisabled");
-		}
-
-		add_type_options->add_item(E, item_icon);
-	}
-}
-
-void ThemeTypeDialog::_add_type_filter_cbk(const String& p_value)
-{
-	_update_add_type_options(p_value);
-}
-
 void ThemeTypeDialog::_add_type_options_cbk(int p_index)
 {
 	add_type_filter->set_text(add_type_options->get_item_text(p_index));
@@ -535,11 +486,6 @@ void ThemeTypeEditor::_item_rename_entered(
 	String p_value, int p_data_type, String p_item_name, Control* p_control)
 {
 	_item_rename_confirmed(p_data_type, p_item_name, p_control);
-}
-
-void ThemeTypeEditor::_edit_resource_item(Ref<Resource> p_resource, bool p_edit)
-{
-	EditorNode::get_singleton()->edit_resource(p_resource);
 }
 
 void ThemeTypeEditor::_add_type_dialog_selected(const String p_type_name)

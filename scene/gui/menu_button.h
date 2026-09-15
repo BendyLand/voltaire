@@ -43,8 +43,6 @@ class MenuButton : public Button
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
 
-	void _popup_visibility_changed(bool p_visible);
-
 protected:
 	void _notification(int p_what);
 

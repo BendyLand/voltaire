@@ -51,37 +51,6 @@
 #include "scene/gui/tab_bar.h"
 #include "scene/gui/texture_rect.h"
 
-void EditorSceneTabs::_scene_tab_input(const Ref<InputEvent>& p_input)
-{
-	Ref<InputEventMouseButton> mb = p_input;
-
-	if (mb.is_valid()) {
-		int tab_idx = scene_tabs->get_tab_idx_at_point(mb->get_position());
-		if (tab_idx < 0 && mb->get_button_index() == MouseButton::LEFT && mb->is_double_click()) {
-			int tab_buttons = 0;
-			if (scene_tabs->get_offset_buttons_visible()) {
-				tab_buttons = get_theme_icon(SNAME("increment"), SNAME("TabBar"))->get_width() +
-							  get_theme_icon(SNAME("decrement"), SNAME("TabBar"))->get_width();
-			}
-
-			if ((is_layout_rtl() && mb->get_position().x > tab_buttons) ||
-				(!is_layout_rtl() &&
-					mb->get_position().x < scene_tabs->get_size().width - tab_buttons)) {
-				EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_NEW_SCENE, true);
-			}
-		}
-		else if (mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
-			// Context menu.
-			_update_context_menu(tab_idx);
-
-			scene_tabs_context_menu->set_position(
-				scene_tabs->get_screen_position() + mb->get_position());
-			scene_tabs_context_menu->reset_size();
-			scene_tabs_context_menu->popup();
-		}
-	}
-}
-
 void EditorSceneTabs::_reposition_active_tab(int p_to_index)
 {
 	EditorNode::get_editor_data().move_edited_scene_to_index(p_to_index);

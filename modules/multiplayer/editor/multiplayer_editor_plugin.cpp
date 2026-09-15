@@ -42,9 +42,4 @@ bool MultiplayerEditorDebugger::has_capture(const String& p_capture) const
 	return p_capture == "multiplayer";
 }
 
-void MultiplayerEditorPlugin::_open_request(const String& p_path)
-{
-	EditorInterface::get_singleton()->open_scene_from_path(p_path);
-}
-
 

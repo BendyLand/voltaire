@@ -98,17 +98,6 @@ struct DependencyEditorSortByFile
 	}
 };
 
-void DependencyEditor::_searched(const String& p_path)
-{
-	HashMap<String, String> dep_rename;
-	dep_rename[replacing] = p_path;
-
-	ResourceLoader::rename_dependencies(editing, dep_rename);
-
-	_update_list();
-	_update_file();
-}
-
 void DependencyEditor::_fix_and_find(
 	EditorFileSystemDirectory* efsd, HashMap<String, HashMap<String, String>>& candidates)
 {
@@ -162,45 +151,6 @@ void DependencyEditor::_fix_and_find(
 		}
 	}
 }
-
-void DependencyEditor::_fix_all()
-{
-	if (!EditorFileSystem::get_singleton()->get_filesystem()) {
-		return;
-	}
-
-	HashMap<String, HashMap<String, String>> candidates;
-
-	for (const String& E : missing) {
-		String base = E.get_file();
-		if (!candidates.has(base)) {
-			candidates[base] = HashMap<String, String>();
-		}
-
-		candidates[base][E] = "";
-	}
-
-	_fix_and_find(EditorFileSystem::get_singleton()->get_filesystem(), candidates);
-
-	HashMap<String, String> remaps;
-
-	for (KeyValue<String, HashMap<String, String>>& E : candidates) {
-		for (const KeyValue<String, String>& F : E.value) {
-			if (!F.value.is_empty()) {
-				remaps[F.key] = F.value;
-			}
-		}
-	}
-
-	if (remaps.size()) {
-		ResourceLoader::rename_dependencies(editing, remaps);
-
-		_update_list();
-		_update_file();
-	}
-}
-
-void DependencyEditor::_update_file() { EditorFileSystem::get_singleton()->update_file(editing); }
 
 static String _get_resolved_dep_path(const String& p_dep)
 {
@@ -328,35 +278,6 @@ void DependencyEditorOwners::_file_option(int p_option)
 	}
 }
 
-void DependencyEditorOwners::_fill_owners(EditorFileSystemDirectory* efsd)
-{
-	if (!efsd) {
-		return;
-	}
-
-	for (int i = 0; i < efsd->get_subdir_count(); i++) {
-		_fill_owners(efsd->get_subdir(i));
-	}
-
-	for (int i = 0; i < efsd->get_file_count(); i++) {
-		Vector<String> deps = efsd->get_file_deps(i);
-		bool found = false;
-		for (int j = 0; j < deps.size(); j++) {
-			if (deps[j] == editing) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			continue;
-		}
-
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(efsd->get_file_type(i));
-
-		owners->add_item(efsd->get_file_path(i), icon);
-	}
-}
-
 void DependencyRemoveDialog::_find_files_in_removed_folder(
 	EditorFileSystemDirectory* efsd, const String& p_folder)
 {
@@ -432,11 +353,6 @@ enum
 	BUTTON_ID_OPEN_DEPS_EDITOR,
 };
 
-void DependencyErrorDialog::ok_pressed()
-{
-	EditorNode::get_singleton()->load_scene_or_resource(for_file, !errors_fixed);
-}
-
 void OrphanResourcesDialog::refresh()
 {
 	HashMap<String, int> refs;
@@ -450,16 +366,6 @@ void OrphanResourcesDialog::show()
 {
 	refresh();
 	popup_centered_ratio(0.4);
-}
-
-void OrphanResourcesDialog::_delete_confirm()
-{
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	for (const String& E : paths) {
-		da->remove(E);
-		EditorFileSystem::get_singleton()->update_file(E);
-	}
-	refresh();
 }
 
 

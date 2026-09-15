@@ -185,7 +185,6 @@ class AnimationPlayerEditor : public EditorDock
 
 	float _get_editor_step() const;
 
-	void _animation_resource_edit();
 	void _scale_changed(const String& p_scale);
 
 	void _animation_finished(const String& p_name);

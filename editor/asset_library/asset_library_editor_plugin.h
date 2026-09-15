@@ -107,7 +107,7 @@ class EditorAssetLibraryZoomMode : public CanvasLayer
 public:
 	Control* remove_previews();
 
-	EditorAssetLibraryZoomMode(Control* p_previews);
+	EditorAssetLibraryZoomMode(Control* p_previews) : previews(p_previews) {}
 };
 
 class EditorAssetLibraryItemDescription : public ConfirmationDialog
@@ -382,8 +382,6 @@ public:
 	static bool is_available();
 
 	virtual String get_plugin_name() const override { return TTRC("Asset Store"); }
-
-	virtual const Ref<Texture2D> get_plugin_icon() const override;
 
 	bool has_main_screen() const override { return true; }
 };

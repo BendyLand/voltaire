@@ -44,13 +44,7 @@ bool EditorFileDialog::_should_hide_file(const String& p_file) const
 	return EditorFileSystem::_should_skip_directory(full_path);
 }
 
-Color EditorFileDialog::_get_folder_color(const String& p_path) const
-{
-	return FileSystemDock::get_dir_icon_color(p_path, FileDialog::_get_folder_color(p_path));
-}
-
 Vector2i EditorFileDialog::_get_list_mode_icon_size() const { return Vector2i(); }
-
 
 void EditorFileDialog::_dir_contents_changed()
 {
@@ -72,9 +66,6 @@ void EditorFileDialog::_dir_contents_changed()
 			ProjectSettings::get_singleton()->localize_path(get_current_dir());
 		scan_required = localized_path.is_resource_file();
 	} break;
-	}
-	if (scan_required) {
-		EditorFileSystem::get_singleton()->scan_changes();
 	}
 }
 

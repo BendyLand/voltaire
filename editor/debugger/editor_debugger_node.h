@@ -31,6 +31,7 @@
 #pragma once
 
 #include "editor/debugger/editor_debugger_server.h"
+#include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/docks/editor_dock.h"
 
 class Button;
@@ -124,12 +125,11 @@ private:
 	HashSet<Ref<EditorDebuggerPlugin>> debugger_plugins;
 
 	ScriptEditorDebugger* _add_debugger();
-	void _update_margins();
 
 	friend class DebuggerEditorPlugin;
 	friend class DebugAdapterParser;
 	static EditorDebuggerNode* singleton;
-	EditorDebuggerNode();
+	EditorDebuggerNode() = default;
 
 protected:
 	void _debugger_stopped(int p_id);

@@ -78,15 +78,6 @@ float AnimationPlayerEditor::_get_editor_step() const
 	return Input::get_singleton()->is_key_pressed(Key::SHIFT) ? step * 0.25 : step;
 }
 
-void AnimationPlayerEditor::_animation_resource_edit()
-{
-	String current = _get_current();
-	if (current != String()) {
-		Ref<Animation> anim = player->get_animation(current);
-		EditorNode::get_singleton()->edit_resource(anim);
-	}
-}
-
 void AnimationPlayerEditor::_scale_changed(const String& p_scale)
 {
 	player->set_speed_scale(p_scale.to_float());

@@ -73,20 +73,6 @@ static bool _should_hide_type(const StringName& p_type)
 	return false;
 }
 
-bool EditorResourcePicker::_is_type_valid(
-	const String& p_type_name, const HashSet<StringName>& p_allowed_types) const
-{
-	for (const StringName& E : p_allowed_types) {
-		String at = E;
-		if (p_type_name == at ||
-			EditorNode::get_editor_data().script_class_is_parent(p_type_name, at)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void EditorResourcePicker::set_assign_button_min_size(const Size2i& p_size)
 {
 	assign_button_min_size = p_size;
@@ -127,47 +113,9 @@ bool EditorResourcePicker::is_toggle_pressed() const { return assign_button->is_
 
 bool EditorResourcePicker::is_editable() const { return editable; }
 
-bool EditorScriptPicker::handle_menu_selected(int p_which)
-{
-	switch (p_which) {
-	case OBJ_MENU_NEW_SCRIPT: {
-		if (script_owner) {
-			SceneTreeDock::get_singleton()->open_script_dialog(script_owner, false);
-		}
-		return true;
-	}
-
-	case OBJ_MENU_EXTEND_SCRIPT: {
-		if (script_owner) {
-			SceneTreeDock::get_singleton()->open_script_dialog(script_owner, true);
-		}
-		return true;
-	}
-	}
-
-	return false;
-}
-
 void EditorScriptPicker::set_script_owner(Node* p_owner) { script_owner = p_owner; }
 
 Node* EditorScriptPicker::get_script_owner() const { return script_owner; }
-
-bool EditorShaderPicker::handle_menu_selected(int p_which)
-{
-	Ref<ShaderMaterial> ed_material = Ref<ShaderMaterial>(get_edited_material());
-
-	switch (p_which) {
-	case OBJ_MENU_NEW_SHADER: {
-		if (ed_material.is_valid()) {
-			SceneTreeDock::get_singleton()->open_shader_dialog(ed_material, preferred_mode);
-			return true;
-		}
-	} break;
-	default:
-		break;
-	}
-	return false;
-}
 
 void EditorShaderPicker::set_edited_material(ShaderMaterial* p_material)
 {

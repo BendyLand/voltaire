@@ -296,11 +296,6 @@ class ThemeTypeDialog : public ConfirmationDialog
 	ItemList* add_type_options = nullptr;
 	ConfirmationDialog* add_type_confirmation = nullptr;
 
-	void _dialog_about_to_show();
-
-	void _update_add_type_options(const String& p_filter = "");
-
-	void _add_type_filter_cbk(const String& p_value);
 	void _add_type_options_cbk(int p_index);
 
 	void _add_type_confirmed();
@@ -392,7 +387,6 @@ class ThemeTypeEditor : public MarginContainer
 	void _color_item_changed(Color p_value, String p_item_name);
 	void _constant_item_changed(float p_value, String p_item_name);
 	void _font_size_item_changed(float p_value, String p_item_name);
-	void _edit_resource_item(Ref<Resource> p_resource, bool p_edit);
 	void _font_item_changed(Ref<Font> p_value, String p_item_name);
 	void _icon_item_changed(Ref<Texture2D> p_value, String p_item_name);
 	void _stylebox_item_changed(Ref<StyleBox> p_value, String p_item_name);

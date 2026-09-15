@@ -364,19 +364,13 @@ private:
 	void _slider_draw(int p_which);
 	void _alpha_slider_draw();
 
-	void _slider_or_spin_input(const Ref<InputEvent>& p_event);
 	void _line_edit_input(const Ref<InputEvent>& p_event);
 	void _text_changed(const String& p_new_text);
-	void _html_focus_exit();
-	void _target_gui_input(const Ref<InputEvent>& p_event);
 	void _block_input_on_popup_show();
 	void _enable_input_on_popup_hide();
 
 	inline int _get_preset_size();
-	void _save_palette(bool p_is_save_as);
 	void _load_palette();
-
-	void _set_mode_popup_value(ColorModeType p_mode);
 
 protected:
 	virtual void _update_theme_item_cache() override;
@@ -393,8 +387,6 @@ public:
 
 	bool is_editing_intensity() const;
 
-	void _set_pick_color(const Color& p_color, bool p_update_sliders, bool p_calc_intensity);
-	void set_pick_color(const Color& p_color);
 	Color get_pick_color() const;
 	void set_old_color(const Color& p_color);
 
@@ -468,14 +460,9 @@ protected:
 public:
 	Color get_pick_color() const;
 
-	void set_edit_alpha(bool p_show);
 	bool is_editing_alpha() const;
 
-	void set_edit_intensity(bool p_show);
 	bool is_editing_intensity() const;
-
-	ColorPicker* get_picker();
-	PopupPanel* get_popup();
 
 	ColorPickerButton(const String& p_text = String()) : Button(p_text) {}
 };

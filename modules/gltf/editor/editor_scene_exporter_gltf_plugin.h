@@ -49,7 +49,6 @@ class SceneExporterGLTFPlugin : public EditorPlugin
 	EditorFileDialog* _file_dialog = nullptr;
 
 	void _popup_gltf_export_dialog();
-	void _export_scene_as_gltf();
 
 public:
 	virtual String get_plugin_name() const override;

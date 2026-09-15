@@ -53,53 +53,9 @@
 
 EditorDebuggerNode* EditorDebuggerNode::singleton = nullptr;
 
-EditorDebuggerNode::EditorDebuggerNode()
-{
-	set_name(TTRC("Debugger"));
-	set_icon_name("Debug");
-	set_layout_key("Debugger");
-	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_debugger_bottom_panel",
-		TTRC("Toggle Debugger Dock"), KeyModifierMask::ALT | Key::D));
-	set_default_slot(EditorDock::DOCK_SLOT_BOTTOM);
-	set_available_layouts(EditorDock::DOCK_LAYOUT_HORIZONTAL | EditorDock::DOCK_LAYOUT_FLOATING);
-
-	_update_margins();
-
-	if (!singleton) {
-		singleton = this;
-	}
-
-	tabs = memnew(TabContainer);
-	tabs->set_tabs_visible(false);
-	add_child(tabs);
-
-	Ref<StyleBoxEmpty> empty;
-	empty.instantiate();
-	tabs->add_theme_style_override(SceneStringName(panel), empty.ptr());
-
-	_add_debugger();
-
-	// Remote scene tree
-	remote_scene_tree = memnew(EditorDebuggerTree);
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		return;
-	}
-}
-
 String EditorDebuggerNode::get_server_uri() const
 {
 	return server.is_valid() ? server->get_uri() : "";
-}
-
-void EditorDebuggerNode::_update_margins()
-{
-	Ref<StyleBox> bottom_panel_margins =
-		EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-			SNAME("BottomPanel"), EditorStringName(EditorStyles));
-	add_theme_constant_override("margin_top", -bottom_panel_margins->get_margin(SIDE_TOP));
-	add_theme_constant_override("margin_left", -bottom_panel_margins->get_margin(SIDE_LEFT));
-	add_theme_constant_override("margin_right", -bottom_panel_margins->get_margin(SIDE_RIGHT));
-	add_theme_constant_override("margin_bottom", -bottom_panel_margins->get_margin(SIDE_BOTTOM));
 }
 
 void EditorDebuggerNode::_menu_option(int p_id)

@@ -43,10 +43,6 @@ class PhysicalBone3DEditor
 
 	PhysicalBone3D* selected = nullptr;
 
-private:
-	void _on_toggle_button_transform_joint(bool p_is_pressed);
-	void _set_move_joint();
-
 public:
 	PhysicalBone3DEditor() = default;
 };

@@ -77,7 +77,6 @@ class BonePropertiesEditor : public VBoxContainer
 
 	void create_editors();
 
-
 	void _property_keyed(const String& p_path, bool p_advance);
 
 	void _meta_deleted(const String& p_property);
@@ -102,7 +101,6 @@ public:
 
 class Skeleton3DEditor : public VBoxContainer
 {
-
 	friend class Skeleton3DEditorPlugin;
 
 	enum SkeletonOption
@@ -170,7 +168,6 @@ class Skeleton3DEditor : public VBoxContainer
 	EditorFileDialog* file_export_lib = nullptr;
 
 	void update_joint_tree();
-	void update_all();
 
 	void create_editors();
 
@@ -204,7 +201,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 	void _joint_tree_selection_changed();
 	void _joint_tree_rmb_select(const Vector2& p_pos, MouseButton p_button);
-	void _update_properties();
 
 	void _subgizmo_selection_change();
 	void _disconnect_from_skeleton();
@@ -232,8 +228,12 @@ public:
 
 	Vector3 get_bone_original_scale() const { return bone_original_scale; }
 
-	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton);
-	~Skeleton3DEditor();
+	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton)
+		: editor_plugin(e_plugin), skeleton(skeleton)
+	{
+	}
+
+	~Skeleton3DEditor() = default;
 };
 
 class EditorInspectorPluginSkeleton : public EditorInspectorPlugin
@@ -258,10 +258,11 @@ public:
 
 	virtual String get_plugin_name() const override { return "Skeleton3D"; }
 
-	Skeleton3DEditorPlugin();
+	Skeleton3DEditorPlugin() = default;
 };
 
-class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin
+class Skeleton3DGizmoPlugin
+ : public EditorNode3DGizmoPlugin
 {
 	struct SelectionMaterials
 	{

@@ -161,7 +161,6 @@ class ShaderTextEditor : public CodeTextEditor
 	uint32_t dependencies_version = 0; // Incremented if deps changed
 
 protected:
-	void _notification(int p_what);
 	virtual void _load_theme_settings() override;
 
 public:

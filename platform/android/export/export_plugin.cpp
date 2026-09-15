@@ -831,17 +831,6 @@ int EditorExportPlatformAndroid::get_options_count() const
 	return devices.size() + 1;
 }
 
-Ref<Texture2D> EditorExportPlatformAndroid::get_option_icon(int p_index) const
-{
-	if (p_index == 0) {
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		ERR_FAIL_COND_V(theme.is_null(), Ref<ImageTexture>());
-		return theme->get_icon(use_scrcpy ? SNAME("GuiChecked") : SNAME("GuiUnchecked"),
-			EditorStringName(EditorIcons));
-	}
-	return EditorExportPlatform::get_option_icon(p_index - 1);
-}
-
 String EditorExportPlatformAndroid::get_options_tooltip() const
 {
 	return TTR("Select device from the list");

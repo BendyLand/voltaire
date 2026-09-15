@@ -241,7 +241,6 @@ class FindInFilesContainer : public EditorDock
 	void _on_tab_close_pressed(int p_tab);
 	void _update_bar_visibility();
 	void _bar_menu_option(int p_option);
-	void _on_theme_changed();
 
 	FindInFilesPanel* _create_new_panel();
 	FindInFilesPanel* _get_current_panel();

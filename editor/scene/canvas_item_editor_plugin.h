@@ -501,7 +501,6 @@ private:
 
 	bool _gui_input_anchors(const Ref<InputEvent>& p_event);
 	bool _gui_input_move(const Ref<InputEvent>& p_event);
-	bool _gui_input_open_scene_on_double_click(const Ref<InputEvent>& p_event);
 	bool _gui_input_scale(const Ref<InputEvent>& p_event);
 	bool _gui_input_pivot(const Ref<InputEvent>& p_event);
 	bool _gui_input_resize(const Ref<InputEvent>& p_event);
@@ -616,8 +615,6 @@ public:
 	Vector2 get_grid_step() const { return grid_step; }
 
 	Vector2 get_grid_offset() const { return grid_offset; }
-
-	void edit(CanvasItem* p_canvas_item);
 
 	void focus_selection();
 	void center_at(const Point2& p_pos);

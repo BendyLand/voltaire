@@ -153,9 +153,6 @@ private:
 	void _ssh_private_key_selected(const String& p_path);
 	void _populate_available_vcs_names();
 	void _update_remotes_list();
-	void _update_set_up_warning(const String& p_new_text);
-	void _update_opened_tabs();
-	void _update_extra_options();
 
 	bool _load_plugin(const String& p_name);
 
@@ -178,12 +175,10 @@ private:
 	void _create_remote();
 	void _update_branch_create_button(const String& p_new_text);
 	void _update_remote_create_button(const String& p_new_text);
-	void _branch_item_selected(int p_index);
 	void _remote_selected(int p_index);
 	void _remove_branch();
 	void _remove_remote();
 	void _move_item(Tree* p_tree, TreeItem* p_itme);
-	void _discard_file(const String& p_file_path, EditorVCSInterface::ChangeType p_change);
 	void _add_new_item(
 		Tree* p_tree, const String& p_file_path, EditorVCSInterface::ChangeType p_change);
 	void _update_commit_button();

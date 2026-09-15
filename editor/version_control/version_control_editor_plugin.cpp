@@ -99,26 +99,6 @@ void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_ba
 	}
 }
 
-void VersionControlEditorPlugin::_update_set_up_warning(const String& p_new_text)
-{
-	bool empty_settings = set_up_username->get_text().strip_edges().is_empty() &&
-						  set_up_password->get_text().is_empty() &&
-						  set_up_ssh_public_key_path->get_text().strip_edges().is_empty() &&
-						  set_up_ssh_private_key_path->get_text().strip_edges().is_empty() &&
-						  set_up_ssh_passphrase->get_text().is_empty();
-
-	if (empty_settings) {
-		set_up_warning_text->add_theme_color_override(
-			SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(
-											 SNAME("warning_color"), EditorStringName(Editor)));
-		set_up_warning_text->set_text(
-			TTR("Remote settings are empty. VCS features that use the network may not work."));
-	}
-	else {
-		set_up_warning_text->set_text("");
-	}
-}
-
 String VersionControlEditorPlugin::_get_date_string_from(
 	int64_t p_unix_timestamp, int64_t p_offset_minutes) const
 {
@@ -141,24 +121,6 @@ void VersionControlEditorPlugin::_toggle_amend_commit(bool p_toggled)
 		previous_commit_message = "";
 	}
 	_update_commit_button();
-}
-
-void VersionControlEditorPlugin::_branch_item_selected(int p_index)
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	String branch_name = branch_select->get_item_text(p_index);
-	EditorVCSInterface::get_singleton()->checkout_branch(branch_name);
-
-	EditorFileSystem::get_singleton()->scan_changes();
-	ScriptEditor::get_singleton()->reload_scripts();
-
-	_refresh_branch_list();
-	_refresh_commit_list();
-	_refresh_stage_area();
-	_clear_diff();
-
-	_update_opened_tabs();
 }
 
 void VersionControlEditorPlugin::_remote_selected(int p_index) { _refresh_remote_list(); }
@@ -208,34 +170,6 @@ int VersionControlEditorPlugin::_get_item_count(Tree* p_tree)
 	return p_tree->get_root()->get_children().size();
 }
 
-void VersionControlEditorPlugin::_discard_file(
-	const String& p_file_path, EditorVCSInterface::ChangeType p_change)
-{
-	CHECK_PLUGIN_INITIALIZED();
-
-	if (p_change == EditorVCSInterface::CHANGE_TYPE_NEW) {
-		Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		dir->remove(p_file_path);
-	}
-	else {
-		CHECK_PLUGIN_INITIALIZED();
-		EditorVCSInterface::get_singleton()->discard_file(p_file_path);
-	}
-	// FIXIT: The project.godot file shows weird behavior
-	EditorFileSystem::get_singleton()->update_file(p_file_path);
-}
-
-void VersionControlEditorPlugin::_update_opened_tabs()
-{
-	Vector<EditorData::EditedScene> open_scenes = EditorNode::get_editor_data().get_edited_scenes();
-	for (int i = 0; i < open_scenes.size(); i++) {
-		if (open_scenes[i].root == nullptr) {
-			continue;
-		}
-		EditorNode::get_singleton()->reload_scene(open_scenes[i].path);
-	}
-}
-
 void VersionControlEditorPlugin::_clear_diff()
 {
 	diff->clear();
@@ -272,27 +206,6 @@ void VersionControlEditorPlugin::_extra_option_selected(int p_index)
 		_force_push();
 		break;
 	}
-}
-
-void VersionControlEditorPlugin::_update_extra_options()
-{
-	extra_options_remove_branch_list->clear();
-	for (int i = 0; i < branch_select->get_item_count(); i++) {
-		extra_options_remove_branch_list->add_icon_item(
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(
-				SNAME("VcsBranches"), EditorStringName(EditorIcons)),
-			branch_select->get_item_text(branch_select->get_item_id(i)));
-	}
-	extra_options_remove_branch_list->update_canvas_items();
-
-	extra_options_remove_remote_list->clear();
-	for (int i = 0; i < remote_select->get_item_count(); i++) {
-		extra_options_remove_remote_list->add_icon_item(
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(
-				SNAME("ArrowUp"), EditorStringName(EditorIcons)),
-			remote_select->get_item_text(remote_select->get_item_id(i)));
-	}
-	extra_options_remove_remote_list->update_canvas_items();
 }
 
 bool VersionControlEditorPlugin::_is_staging_area_empty()

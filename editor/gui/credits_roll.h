@@ -65,8 +65,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void roll_credits();
-
 	CreditsRoll();
 };
 

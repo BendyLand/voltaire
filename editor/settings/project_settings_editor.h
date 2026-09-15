@@ -112,7 +112,6 @@ class ProjectSettingsEditor : public AcceptDialog
 	void _focus_current_search_box();
 	void _focus_current_path_box();
 
-	void _editor_restart();
 	void _add_feature_overrides();
 
 	void _action_added(const String& p_name);

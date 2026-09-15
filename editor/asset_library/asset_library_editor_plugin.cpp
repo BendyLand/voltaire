@@ -108,35 +108,6 @@ void EditorAssetLibraryZoomMode::input(const Ref<InputEvent>& p_event)
 	get_tree()->get_root()->set_input_as_handled();
 }
 
-EditorAssetLibraryZoomMode::EditorAssetLibraryZoomMode(Control* p_previews)
-{
-	ERR_FAIL_NULL(p_previews);
-	ERR_FAIL_COND(p_previews->get_parent());
-
-	Ref<Theme> theme;
-	if (EditorNode::get_singleton()) {
-		theme = EditorNode::get_singleton()->get_editor_theme();
-	}
-	else if (ProjectManager::get_singleton()) {
-		theme = ProjectManager::get_singleton()->get_theme();
-	}
-	else {
-		return;
-	}
-
-	ColorRect* dim = memnew(ColorRect);
-	dim->set_color(theme->get_color(SNAME("base_color"), EditorStringName(Editor)));
-	dim->set_anchors_preset(Control::PRESET_FULL_RECT);
-	add_child(dim);
-
-	previews = p_previews;
-	add_child(previews);
-	p_previews->set_anchors_and_offsets_preset(
-		Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 40 * EDSCALE);
-
-	set_process_input(true);
-}
-
 void EditorAssetLibraryItemDescription::_store_pressed()
 {
 	OS::get_singleton()->shell_open(store_url);
@@ -367,12 +338,6 @@ bool AssetLibraryEditorPlugin::is_available()
 #else
 	return StreamPeerTLS::is_available() && !Engine::get_singleton()->is_recovery_mode_hint();
 #endif
-}
-
-const Ref<Texture2D> AssetLibraryEditorPlugin::get_plugin_icon() const
-{
-	return EditorNode::get_singleton()->get_editor_theme()->get_icon(
-		SNAME("AssetStore"), EditorStringName(EditorIcons));
 }
 
 

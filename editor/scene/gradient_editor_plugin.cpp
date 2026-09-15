@@ -84,27 +84,6 @@ int GradientEdit::_get_gradient_rect_width() const
 	return get_size().width - get_size().height - draw_spacing - handle_width;
 }
 
-void GradientEdit::_show_color_picker()
-{
-	if (selected_index == -1) {
-		return;
-	}
-
-	picker->set_pick_color(gradient->get_color(selected_index));
-	Size2 minsize = popup->get_contents_minimum_size();
-	float viewport_height = get_viewport_rect().size.y;
-
-	// Determine in which direction to show the popup. By default popup below.
-	// But if the popup doesn't fit below and the Gradient Editor is in the bottom half of the
-	// viewport, show above.
-	bool show_above = get_global_position().y + get_size().y + minsize.y > viewport_height &&
-					  get_global_position().y * 2 + get_size().y > viewport_height;
-
-	float v_offset = show_above ? -minsize.y : get_size().y;
-	popup->set_position(get_screen_position() + Vector2(0, v_offset));
-	popup->popup();
-}
-
 void GradientEdit::_color_changed(const Color& p_color) { set_color(selected_index, p_color); }
 
 const Ref<Gradient>& GradientEdit::get_gradient() const { return gradient; }

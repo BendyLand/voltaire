@@ -177,23 +177,6 @@ void Skeleton3DEditor::_file_selected(const String& p_file)
 // May be not used with single select mode.
 void Skeleton3DEditor::_joint_tree_rmb_select(const Vector2& p_pos, MouseButton p_button) {}
 
-void Skeleton3DEditor::_update_properties()
-{
-	if (pose_editor) {
-		pose_editor->_update_properties();
-	}
-	if (!skeleton || !skeleton->is_inside_tree()) {
-		return;
-	}
-	Node3DEditor::get_singleton()->update_transform_gizmo();
-}
-
-void Skeleton3DEditor::update_all()
-{
-	_update_properties();
-	update_joint_tree();
-}
-
 void Skeleton3DEditor::_loc_toggled(bool p_toggled_on)
 {
 	if (!editor_plugin) {
@@ -327,29 +310,6 @@ void Skeleton3DEditor::_subgizmo_selection_change()
 	else {
 		skeleton->clear_subgizmo_selection();
 	}
-}
-
-Skeleton3DEditor::~Skeleton3DEditor()
-{
-	singleton = nullptr;
-
-	handles_mesh_instance->queue_free();
-
-	Node3DEditor* ne = Node3DEditor::get_singleton();
-
-	ne->remove_control_from_menu_panel(topmenu_bar);
-	memdelete(topmenu_bar);
-}
-
-Skeleton3DEditorPlugin::Skeleton3DEditorPlugin()
-{
-	skeleton_plugin = memnew(EditorInspectorPluginSkeleton);
-
-	EditorInspector::add_inspector_plugin(skeleton_plugin);
-
-	Ref<Skeleton3DGizmoPlugin> gizmo_plugin =
-		Ref<Skeleton3DGizmoPlugin>(memnew(Skeleton3DGizmoPlugin));
-	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
 }
 
 EditorPlugin::AfterGUIInput Skeleton3DEditorPlugin::forward_3d_gui_input(

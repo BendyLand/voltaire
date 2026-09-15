@@ -180,61 +180,6 @@ void QuickOpenResultContainer::_sort_uids(int p_max_results)
 	}
 }
 
-void QuickOpenResultContainer::_create_initial_results()
-{
-	file_type_icons.clear();
-	file_type_icons.insert(SNAME("__default_icon"), get_editor_theme_icon(SNAME("Object")));
-	uids.clear();
-	filetypes.clear();
-	history_set.clear();
-
-	Vector<ResourceUID::ID>* history = _get_history();
-	if (history) {
-		for (const ResourceUID::ID& uid : *history) {
-			history_set.insert(uid);
-		}
-	}
-
-	_find_uids_in_folder(
-		EditorFileSystem::get_singleton()->get_filesystem(), include_addons_toggle->is_pressed());
-	_sort_uids(result_items.size());
-	max_total_results = MIN(uids.size(), result_items.size());
-	update_results();
-}
-
-void QuickOpenResultContainer::_find_uids_in_folder(
-	EditorFileSystemDirectory* p_directory, bool p_include_addons)
-{
-	for (int i = 0; i < p_directory->get_subdir_count(); i++) {
-		if (p_include_addons || p_directory->get_name() != "addons") {
-			_find_uids_in_folder(p_directory->get_subdir(i), p_include_addons);
-		}
-	}
-
-	for (int i = 0; i < p_directory->get_file_count(); i++) {
-		ResourceUID::ID uid = p_directory->get_file_uid(i);
-		if (uid == ResourceUID::INVALID_ID) {
-			continue;
-		}
-
-		const StringName engine_type = p_directory->get_file_type(i);
-		const StringName script_type = p_directory->get_file_resource_script_class(i);
-
-		const bool is_engine_type = script_type == StringName();
-		const StringName& actual_type = is_engine_type ? engine_type : script_type;
-
-		for (const StringName& parent_type : base_types) {
-			bool is_valid = !is_engine_type && EditorNode::get_editor_data().script_class_is_parent(
-												   script_type, parent_type);
-			if (is_valid) {
-				uids.push_back(uid);
-				filetypes.insert(uid, actual_type);
-				break; // Stop testing base types as soon as we get a match.
-			}
-		}
-	}
-}
-
 void QuickOpenResultContainer::set_query_and_update(const String& p_query)
 {
 	query = p_query;

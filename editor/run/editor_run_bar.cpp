@@ -97,12 +97,6 @@ void EditorRunBar::_quick_run_selected(const String& p_file_path, int p_menu_ite
 		p_file_path, _get_xr_mode_play_args(static_cast<RunXRModeMenuItem>(p_menu_item)));
 }
 
-void EditorRunBar::recovery_mode_reload_project()
-{
-	EditorNode::get_singleton()->trigger_menu_option(
-		EditorNode::PROJECT_RELOAD_CURRENT_PROJECT, false);
-}
-
 void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_play_args)
 {
 	if (Engine::get_singleton()->is_recovery_mode_hint()) {
@@ -119,30 +113,6 @@ void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_p
 		stop_playing();
 
 		current_mode = RunMode::RUN_MAIN;
-		_run_scene("", p_play_args);
-	}
-}
-
-void EditorRunBar::play_current_scene(bool p_reload, const Vector<String>& p_play_args)
-{
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
-		EditorToaster::get_singleton()->popup_str(
-			TTR("Recovery Mode is enabled. Disable it to run the project."),
-			EditorToaster::SEVERITY_WARNING);
-		return;
-	}
-
-	String last_current_scene =
-		run_current_filename; // This is necessary to have a copy of the string.
-
-	EditorNode::get_singleton()->save_default_environment();
-	stop_playing();
-
-	current_mode = RunMode::RUN_CURRENT;
-	if (p_reload) {
-		_run_scene(last_current_scene, p_play_args);
-	}
-	else {
 		_run_scene("", p_play_args);
 	}
 }

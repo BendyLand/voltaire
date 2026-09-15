@@ -57,10 +57,6 @@ class RenameDialog : public ConfirmationDialog
 	String _substitute(const String& subject, const Node* node, int count);
 	String _regex(const String& pattern, const String& subject, const String& replacement);
 	String _postprocess(const String& subject);
-	void _update_preview(const String& new_text = "");
-	void _update_preview_int(int new_value = 0);
-	static void _error_handler(void* p_self, const char* p_func, const char* p_file, int p_line,
-		const char* p_error, const char* p_errorexp, bool p_editor_notify, ErrorHandlerType p_type);
 
 	SceneTreeEditor* scene_tree_editor = nullptr;
 	int global_count = 0;

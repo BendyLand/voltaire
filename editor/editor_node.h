@@ -526,7 +526,6 @@ private:
 	static void _file_dialog_register(FileDialog* p_dialog);
 	static void _file_dialog_unregister(FileDialog* p_dialog);
 
-	static void _print_handler_impl(const String& p_string, bool p_error, bool p_rich);
 	static void _resource_loaded(Ref<Resource> p_resource, const String& p_path);
 
 	void _build_icon_type_cache();
@@ -754,8 +753,6 @@ public:
 
 	ProcessID has_child_process(ProcessID p_pid) const;
 	void stop_child_process(ProcessID p_pid);
-
-	Ref<Theme> get_editor_theme() const { return theme; }
 
 	void show_save_accept(const String& p_text, const String& p_ok_text = TTRC("OK"));
 	void show_warning(const String& p_text, const String& p_title = TTRC("Warning!"));

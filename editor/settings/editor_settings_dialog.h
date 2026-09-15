@@ -100,8 +100,6 @@ class EditorSettingsDialog : public AcceptDialog
 	void _shortcut_cell_double_clicked();
 	static void _set_shortcut_input(const String& p_name, Ref<InputEventKey>& p_event);
 
-	static void _undo_redo_callback(void* p_self, const String& p_name);
-
 	void _remove_setting_override(const String& p_setting);
 
 	Label* restart_label = nullptr;

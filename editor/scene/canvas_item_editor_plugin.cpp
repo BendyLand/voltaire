@@ -305,25 +305,6 @@ void CanvasItemEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_eve
 	update_viewport();
 }
 
-bool CanvasItemEditor::_gui_input_open_scene_on_double_click(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> b = p_event;
-
-	// Open a sub-scene on double-click
-	if (b.is_valid() && b->get_button_index() == MouseButton::LEFT && b->is_pressed() &&
-		b->is_double_click() && tool == TOOL_SELECT) {
-		List<CanvasItem*> selection = _get_edited_canvas_items();
-		if (selection.size() == 1) {
-			CanvasItem* ci = selection.front()->get();
-			if (ci->is_instance() && ci != EditorNode::get_singleton()->get_edited_scene()) {
-				EditorNode::get_singleton()->open_scene(ci->get_scene_file_path());
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 void CanvasItemEditor::_update_cursor()
 {
 	if (cursor_shape_override != CURSOR_ARROW) {
@@ -573,18 +554,6 @@ void CanvasItemEditor::_draw_viewport()
 }
 
 void CanvasItemEditor::set_current_tool(Tool p_tool) { _button_tool_select(p_tool); }
-
-void CanvasItemEditor::edit(CanvasItem* p_canvas_item)
-{
-	if (!p_canvas_item) {
-		return;
-	}
-
-	List<Node*> selection = editor_selection->get_full_selected_node_list();
-	if (selection.size() != 1) {
-		_reset_drag();
-	}
-}
 
 void CanvasItemEditor::_update_oversampling()
 {

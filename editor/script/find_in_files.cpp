@@ -474,21 +474,6 @@ void FindInFilesPanel::_on_replace_text_changed(const String& p_text) { _update_
 
 String FindInFilesPanel::_get_replace_text() { return replace_line_edit->get_text(); }
 
-void FindInFilesContainer::_on_theme_changed()
-{
-	const Ref<StyleBox> bottom_panel_style =
-		EditorNode::get_singleton()->get_editor_theme()->get_stylebox(
-			SNAME("BottomPanel"), EditorStringName(EditorStyles));
-	if (bottom_panel_style.is_valid()) {
-		begin_bulk_theme_override();
-		add_theme_constant_override("margin_top", -bottom_panel_style->get_margin(SIDE_TOP));
-		add_theme_constant_override("margin_left", -bottom_panel_style->get_margin(SIDE_LEFT));
-		add_theme_constant_override("margin_right", -bottom_panel_style->get_margin(SIDE_RIGHT));
-		add_theme_constant_override("margin_bottom", -bottom_panel_style->get_margin(SIDE_BOTTOM));
-		end_bulk_theme_override();
-	}
-}
-
 void FindInFilesContainer::_on_dock_closed()
 {
 	while (tabs->get_tab_count() > 0) {

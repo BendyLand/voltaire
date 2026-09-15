@@ -311,9 +311,6 @@ public:
 
 	bool is_android_template_installed(const Ref<EditorExportPreset>& p_preset);
 	bool can_install_android_template(const Ref<EditorExportPreset>& p_preset);
-	Error install_android_template(const Ref<EditorExportPreset>& p_preset);
-	Error install_android_template_from_file(
-		const String& p_file, const Ref<EditorExportPreset>& p_preset);
 
 	bool is_downloading() const;
 

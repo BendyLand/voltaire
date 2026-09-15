@@ -255,16 +255,6 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(
 
 Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const { return run_icon; }
 
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const
-{
-	if (p_index == 1) {
-		return stop_icon;
-	}
-	else {
-		return EditorExportPlatform::get_option_icon(p_index);
-	}
-}
-
 int EditorExportPlatformLinuxBSD::get_options_count() const { return menu_options; }
 
 String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const
@@ -299,29 +289,6 @@ void EditorExportPlatformLinuxBSD::cleanup()
 	}
 	ssh_pid = 0;
 	cleanup_commands.clear();
-}
-
-void EditorExportPlatformLinuxBSD::initialize()
-{
-	if (EditorNode::get_singleton()) {
-		Ref<Image> img = memnew(Image);
-		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
-
-		ImageLoaderSVG::create_image_from_string(img, _linuxbsd_logo_svg, EDSCALE, upsample, false);
-		set_logo(ImageTexture::create_from_image(img));
-
-		ImageLoaderSVG::create_image_from_string(
-			img, _linuxbsd_run_icon_svg, EDSCALE, upsample, false);
-		run_icon = ImageTexture::create_from_image(img);
-
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		if (theme.is_valid()) {
-			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-		}
-		else {
-			stop_icon.instantiate();
-		}
-	}
 }
 
 

@@ -632,7 +632,6 @@ class EditorPropertyColor : public EditorProperty
 	ColorPickerButton* picker = nullptr;
 	void _color_changed(const Color& p_color);
 	void _picker_created();
-	void _popup_opening();
 	void _popup_closed();
 
 	Color last_color;
@@ -644,7 +643,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(bool p_show_alpha);
 	void set_live_changes_enabled(bool p_enabled);
 	EditorPropertyColor();
 };

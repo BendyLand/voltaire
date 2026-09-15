@@ -88,25 +88,4 @@ void SceneExporterGLTFPlugin::_popup_gltf_export_dialog()
 	_file_dialog->popup_file_dialog();
 }
 
-void SceneExporterGLTFPlugin::_export_scene_as_gltf()
-{
-	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
-	ERR_FAIL_NULL(root);
-	Ref<GLTFState> state;
-	state.instantiate();
-	state->set_copyright(_export_settings->get_copyright());
-	int32_t flags = 0;
-	flags |= EditorSceneFormatImporter::IMPORT_USE_NAMED_SKIN_BINDS;
-	state->set_bake_fps(_export_settings->get_bake_fps());
-	Error err = _gltf_document->append_from_scene(root, state, flags);
-	if (err != OK) {
-		ERR_PRINT(vformat("glTF2 save scene error %s.", itos(err)));
-	}
-	err = _gltf_document->write_to_filesystem(state, export_path);
-	if (err != OK) {
-		ERR_PRINT(vformat("glTF2 save scene error %s.", itos(err)));
-	}
-	EditorFileSystem::get_singleton()->scan_changes();
-}
-
 

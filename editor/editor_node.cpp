@@ -1321,22 +1321,6 @@ static Node* _resource_get_edited_scene()
 	return EditorNode::get_singleton()->get_edited_scene();
 }
 
-void EditorNode::_print_handler_impl(const String& p_string, bool p_error, bool p_rich)
-{
-	if (!singleton) {
-		return;
-	}
-	if (p_error) {
-		singleton->log->add_message(p_string, EditorLog::MSG_TYPE_ERROR);
-	}
-	else if (p_rich) {
-		singleton->log->add_message(p_string, EditorLog::MSG_TYPE_STD_RICH);
-	}
-	else {
-		singleton->log->add_message(p_string, EditorLog::MSG_TYPE_STD);
-	}
-}
-
 static void _execute_thread(void* p_ud)
 {
 	EditorNode::ExecuteThreadArgs* eta = (EditorNode::ExecuteThreadArgs*)p_ud;

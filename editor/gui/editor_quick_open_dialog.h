@@ -159,8 +159,6 @@ private:
 
 	void _ensure_result_vector_capacity();
 	void _sort_uids(int p_max_results);
-	void _create_initial_results();
-	void _find_uids_in_folder(EditorFileSystemDirectory* p_directory, bool p_include_addons);
 
 	Vector<ResourceUID::ID>* _get_history();
 	void _add_candidate(QuickOpenResultCandidate& p_candidate);

@@ -257,8 +257,6 @@ public:
 
 	virtual int get_options_count() const override;
 
-	virtual Ref<Texture2D> get_option_icon(int p_index) const override;
-
 	virtual bool is_option_runnable(int p_index) const override { return p_index != 0; }
 
 	virtual String get_options_tooltip() const override;

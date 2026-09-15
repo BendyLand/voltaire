@@ -79,14 +79,11 @@ class DependencyEditor : public AcceptDialog
 	void _fix_and_find(
 		EditorFileSystemDirectory* efsd, HashMap<String, HashMap<String, String>>& candidates);
 
-	void _searched(const String& p_path);
 	List<String> _filter_deps(const List<String>& p_deps);
-	void _fix_all();
 	void _update_list();
 
 	void _update_menu_sort();
 	void _sort_option_selected(int p_id);
-	void _update_file();
 
 protected:
 	void _notification(int p_what);
@@ -103,8 +100,6 @@ class DependencyEditorOwners : public AcceptDialog
 	ItemList* owners = nullptr;
 	PopupMenu* file_options = nullptr;
 	String editing;
-
-	void _fill_owners(EditorFileSystemDirectory* efsd);
 
 	void _list_rmb_clicked(int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index);
 	void _select_file(int p_idx);
@@ -181,8 +176,6 @@ class DependencyErrorDialog : public ConfirmationDialog
 	EditorFileDialog* replacement_file_dialog = nullptr;
 	DependencyEditor* deps_editor = nullptr;
 
-	void ok_pressed() override;
-
 	void _on_files_button_clicked(TreeItem* p_item, int p_column, int p_id, MouseButton p_button);
 	void _on_replacement_file_selected(const String& p_path);
 	void _check_for_resolved();
@@ -204,7 +197,6 @@ class OrphanResourcesDialog : public ConfirmationDialog
 
 	List<String> paths;
 	void _find_to_delete(TreeItem* p_item, List<String>& r_paths);
-	void _delete_confirm();
 
 	void refresh();
 

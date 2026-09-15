@@ -81,11 +81,6 @@ void EditorSettingsDialog::cancel_pressed()
 	EditorSettings::get_singleton()->notify_changes();
 }
 
-void EditorSettingsDialog::_undo_redo_callback(void* p_self, const String& p_name)
-{
-	EditorNode::get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
-}
-
 bool EditorSettingsDialog::_is_in_project_manager() const
 {
 	return !ProjectSettings::get_singleton()->is_project_loaded();

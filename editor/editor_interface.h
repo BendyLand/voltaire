@@ -92,8 +92,6 @@ public:
 
 	// Editor GUI.
 
-	Ref<Theme> get_editor_theme() const;
-
 	Control* get_base_control() const;
 	VBoxContainer* get_editor_main_screen() const;
 	ScriptEditor* get_script_editor() const;
@@ -139,7 +137,6 @@ public:
 
 	// Scene playback.
 	void play_main_scene();
-	void play_current_scene();
 	void play_custom_scene(const String& scene_path);
 	void stop_playing_scene();
 	bool is_playing_scene() const;

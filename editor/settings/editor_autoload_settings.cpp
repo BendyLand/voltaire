@@ -81,21 +81,6 @@ void EditorAutoloadSettings::_autoload_selected()
 	selected_autoload = "autoload/" + ti->get_text(0);
 }
 
-void EditorAutoloadSettings::_autoload_activated()
-{
-	TreeItem* ti = tree->get_selected();
-	if (!ti) {
-		return;
-	}
-	_autoload_open(ti->get_text(1));
-}
-
-void EditorAutoloadSettings::_autoload_open(const String& fpath)
-{
-	EditorNode::get_singleton()->load_scene_or_resource(fpath);
-	ProjectSettingsEditor::get_singleton()->hide();
-}
-
 void EditorAutoloadSettings::_create_scene_autoload()
 {
 	scene_file_dialog->set_current_file("new_autoload_scene.tscn");

@@ -103,8 +103,6 @@ class EditorResourcePreview : public Node
 
 	Vector<Ref<EditorResourcePreviewGenerator>> preview_generators;
 
-	void _update_thumbnail_sizes();
-
 protected:
 	void _notification(int p_what);
 

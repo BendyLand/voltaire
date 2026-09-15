@@ -233,7 +233,6 @@ private:
 	Ref<Texture2D> resize_handle_disabled;
 	Control* tile_atlas_control = nullptr;
 	Control* tile_atlas_control_unscaled = nullptr;
-	void _tile_atlas_control_draw();
 	void _tile_atlas_control_unscaled_draw();
 	void _tile_atlas_control_mouse_exited();
 	void _tile_atlas_control_gui_input(const Ref<InputEvent>& p_event);
@@ -247,7 +246,6 @@ private:
 	Control* alternative_tiles_control = nullptr;
 	Control* alternative_tiles_control_unscaled = nullptr;
 	void _tile_alternatives_create_button_pressed(const Vector2i& p_atlas_coords);
-	void _tile_alternatives_control_draw();
 	void _tile_alternatives_control_unscaled_draw();
 	void _tile_alternatives_control_mouse_exited();
 	void _tile_alternatives_control_gui_input(const Ref<InputEvent>& p_event);

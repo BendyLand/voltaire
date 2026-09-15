@@ -88,8 +88,6 @@ class EditorAutoloadSettings : public VBoxContainer
 
 	void _autoload_selected();
 	void _autoload_edited();
-	void _autoload_activated();
-	void _autoload_open(const String& fpath);
 	Node* _create_autoload(const String& p_path);
 
 	void _create_script_autoload();

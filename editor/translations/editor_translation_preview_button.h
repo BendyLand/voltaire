@@ -34,9 +34,6 @@
 
 class EditorTranslationPreviewButton : public Button
 {
-protected:
-	virtual void pressed();
-
 public:
 	EditorTranslationPreviewButton() = default;
 };

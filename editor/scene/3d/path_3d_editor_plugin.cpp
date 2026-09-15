@@ -220,11 +220,6 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D* p_camera, con
 	}
 }
 
-void Path3DGizmo::_update_transform_gizmo()
-{
-	Node3DEditor::get_singleton()->update_transform_gizmo();
-}
-
 void Path3DEditorPlugin::_handle_option_pressed(int p_option)
 {
 	PopupMenu* pm;

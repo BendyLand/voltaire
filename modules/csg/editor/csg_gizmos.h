@@ -90,7 +90,7 @@ class EditorPluginCSG : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "CSGShape3D"; }
 
-	EditorPluginCSG();
+	EditorPluginCSG() = default;
 };
 
 

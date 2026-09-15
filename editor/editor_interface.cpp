@@ -117,11 +117,6 @@ bool EditorInterface::is_plugin_enabled(const String& p_plugin) const
 	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
 }
 
-Ref<Theme> EditorInterface::get_editor_theme() const
-{
-	return EditorNode::get_singleton()->get_editor_theme();
-}
-
 Control* EditorInterface::get_base_control() const
 {
 	return EditorNode::get_singleton()->get_gui_base();
@@ -280,8 +275,6 @@ void EditorInterface::mark_scene_as_unsaved()
 }
 
 void EditorInterface::play_main_scene() { EditorRunBar::get_singleton()->play_main_scene(); }
-
-void EditorInterface::play_current_scene() { EditorRunBar::get_singleton()->play_current_scene(); }
 
 void EditorInterface::play_custom_scene(const String& scene_path)
 {

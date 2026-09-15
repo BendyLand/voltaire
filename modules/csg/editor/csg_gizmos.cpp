@@ -44,14 +44,4 @@
 
 String CSGShape3DGizmoPlugin::get_gizmo_name() const { return "CSGShape3D"; }
 
-EditorPluginCSG::EditorPluginCSG()
-{
-	Ref<CSGShape3DGizmoPlugin> gizmo_plugin =
-		Ref<CSGShape3DGizmoPlugin>(memnew(CSGShape3DGizmoPlugin));
-	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
-
-	csg_shape_editor = memnew(CSGShapeEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(csg_shape_editor);
-}
-
 

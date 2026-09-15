@@ -87,11 +87,6 @@ void GDShaderSyntaxHighlighter::set_disabled_branch_color(const Color& p_color)
 void TextShaderPreviewLineLayer::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		line_color = Color(EditorNode::get_singleton()->get_editor_theme()->get_color(
-							   SceneStringName(font_color), EditorStringName(Editor)),
-			0.7);
-	} break;
 	case NOTIFICATION_DRAW: {
 		int total_gutter_width = code_editor->get_line_start_margin();
 		for (int i = 0; i < code_editor->get_gutter_count() - 1; i++) {
@@ -321,27 +316,6 @@ static bool saved_warnings_enabled = false;
 static bool saved_treat_warning_as_errors = false;
 static HashMap<ShaderWarning::Code, bool> saved_warnings;
 static uint32_t saved_warning_flags = 0U;
-
-void ShaderTextEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		get_text_editor()->add_theme_color_override(
-			"breakpoint_color", EditorNode::get_singleton()->get_editor_theme()->get_color(
-									SceneStringName(font_color), EditorStringName(Editor)));
-		get_text_editor()->add_theme_icon_override(
-			"breakpoint", get_editor_theme_icon(SNAME("GuiVisibilityVisible")).ptr());
-
-		if (is_visible_in_tree()) {
-			_load_theme_settings();
-			if (warnings.size() > 0 && last_compile_result == OK) {
-				warnings_panel->clear();
-				_update_warning_panel();
-			}
-		}
-	} break;
-	}
-}
 
 Ref<Shader> ShaderTextEditor::get_edited_shader() const { return shader; }
 

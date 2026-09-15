@@ -571,17 +571,6 @@ void EditorPropertyProjection::_notification(int p_what)
 	}
 }
 
-void EditorPropertyColor::_popup_opening()
-{
-	if (EditorNode::get_singleton()) {
-		EditorNode::get_singleton()->setup_color_picker(picker->get_picker());
-	}
-	last_color = picker->get_pick_color();
-	was_checked = !is_checkable() || is_checked();
-}
-
-void EditorPropertyColor::setup(bool p_show_alpha) { picker->set_edit_alpha(p_show_alpha); }
-
 void EditorPropertyColor::set_live_changes_enabled(bool p_enabled)
 {
 	live_changes_enabled = p_enabled;

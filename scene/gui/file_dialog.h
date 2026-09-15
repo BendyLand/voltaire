@@ -464,7 +464,6 @@ public:
 	void set_file_mode(FileMode p_mode);
 	FileMode get_file_mode() const;
 
-	void set_display_mode(DisplayMode p_mode);
 	DisplayMode get_display_mode() const;
 
 	static void set_favorite_list(const PackedStringArray& p_favorites);
@@ -484,7 +483,6 @@ public:
 	void set_access(Access p_access);
 	Access get_access() const;
 
-	void set_show_hidden_files(bool p_show);
 	bool is_showing_hidden_files() const;
 	void set_show_filename_filter(bool p_show);
 	bool get_show_filename_filter() const;

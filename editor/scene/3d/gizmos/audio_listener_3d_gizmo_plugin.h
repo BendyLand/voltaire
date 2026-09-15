@@ -39,7 +39,7 @@ public:
 	String get_gizmo_name() const override;
 	int get_priority() const override;
 
-	AudioListener3DGizmoPlugin();
+	AudioListener3DGizmoPlugin() = default;
 };
 
 

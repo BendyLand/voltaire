@@ -371,25 +371,6 @@ bool FileDialog::is_mode_overriding_title() const { return mode_overrides_title;
 
 FileDialog::FileMode FileDialog::get_file_mode() const { return mode; }
 
-void FileDialog::set_display_mode(DisplayMode p_mode)
-{
-	ERR_FAIL_INDEX((int)p_mode, DISPLAY_MAX);
-	if (display_mode == p_mode) {
-		return;
-	}
-	display_mode = p_mode;
-
-	if (p_mode == DISPLAY_THUMBNAILS) {
-		thumbnail_mode_button->set_pressed(true);
-		list_mode_button->set_pressed(false);
-	}
-	else {
-		thumbnail_mode_button->set_pressed(false);
-		list_mode_button->set_pressed(true);
-	}
-	invalidate();
-}
-
 FileDialog::DisplayMode FileDialog::get_display_mode() const { return display_mode; }
 
 void FileDialog::set_favorite_list(const PackedStringArray& p_favorites)
@@ -721,16 +702,6 @@ void FileDialog::add_option(const String& p_name, const Vector<String>& p_values
 }
 
 int FileDialog::get_option_count() const { return options.size(); }
-
-void FileDialog::set_show_hidden_files(bool p_show)
-{
-	if (show_hidden_files == p_show) {
-		return;
-	}
-	show_hidden->set_pressed_no_signal(p_show);
-	show_hidden_files = p_show;
-	invalidate();
-}
 
 bool FileDialog::get_show_filename_filter() const { return show_filename_filter; }
 

@@ -75,8 +75,6 @@ private:
 	List<Ref<DAPeer>> clients;
 	Ref<TCPServer> server;
 
-	Error on_client_connected();
-	void on_client_disconnected(const Ref<DAPeer>& p_peer);
 	void on_debug_paused();
 	void on_debug_stopped();
 	void on_debug_output(const String& p_message, int p_type);
@@ -141,12 +139,11 @@ public:
 	void notify_continued();
 	void notify_breakpoint(const DAP::Breakpoint& p_breakpoint, const bool& p_enabled);
 
-	void poll();
 	Error start(int p_port, const IPAddress& p_bind_ip);
 	void stop();
 
-	DebugAdapterProtocol();
-	~DebugAdapterProtocol();
+	DebugAdapterProtocol() = default;
+	~DebugAdapterProtocol() = default;
 };
 
 

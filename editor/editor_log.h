@@ -59,7 +59,7 @@ private:
 		int count = 1;
 		bool clear = true;
 
-		LogMessage() {}
+		LogMessage() = default;
 
 		LogMessage(const String& p_text, MessageType p_type, bool p_clear)
 			: text(p_text), type(p_type), clear(p_clear)
@@ -132,38 +132,19 @@ private:
 
 	ErrorHandlerList eh;
 
-	// void _dragged(const Point2& p_ofs);
-	void _meta_clicked(const String& p_meta);
 	void _clear_request();
-	static void _undo_redo_cbk(void* p_self, const String& p_name);
 
-	void _rebuild_log();
-	void _add_log_line(LogMessage& p_message, bool p_replace_previous = false);
 	bool _check_display_message(LogMessage& p_message);
 
-	void _search_changed(const String& p_text);
-
-	void _process_message(const String& p_msg, MessageType p_type, bool p_clear);
 	void _reset_message_counts();
 	void _set_dock_tab_icon(Ref<Texture2D> p_icon);
 
-	void _save_state();
-	void _load_state();
-
-	void _update_theme();
-	void _editor_settings_changed();
-
-protected:
-	void _notification(int p_what);
-
 public:
-	void add_message(const String& p_msg, MessageType p_type = MSG_TYPE_STD);
-	void register_undo_redo(UndoRedo* p_undo_redo);
 	void deinit();
 
 	void clear();
 
-	EditorLog();
+	EditorLog() = default;
 	~EditorLog();
 };
 

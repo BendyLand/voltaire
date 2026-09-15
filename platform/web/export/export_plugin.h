@@ -110,7 +110,6 @@ public:
 	virtual int get_options_count() const override;
 	virtual String get_option_label(int p_index) const override;
 	virtual String get_option_tooltip(int p_index) const override;
-	virtual Ref<Texture2D> get_option_icon(int p_index) const override;
 	virtual Error run(
 		const Ref<EditorExportPreset>& p_preset, int p_option, uint32_t p_debug_flags) override;
 	virtual Ref<Texture2D> get_run_icon() const override;
@@ -128,8 +127,7 @@ public:
 
 	String get_debug_protocol() const override { return "ws://"; }
 
-	virtual void initialize() override;
-	~EditorExportPlatformWeb();
+	~EditorExportPlatformWeb() = default;
 };
 
 
