@@ -246,7 +246,6 @@ private:
 	SpinBox* settings_zfar = nullptr;
 
 	void _snap_update();
-	void _update_vertex_snap_tooltips();
 	// Used for secondary menu items which are displayed depending on the currently selected node
 	// (such as MeshInstance's "Mesh" menu).
 	PanelContainer* context_toolbar_panel = nullptr;

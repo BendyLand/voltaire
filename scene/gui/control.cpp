@@ -1156,6 +1156,8 @@ Size2 Control::get_minimum_size() const
 	return ms;
 }
 
+void Control::set_custom_minimum_size(const Size2& p_custom) {}
+
 Size2 Control::get_custom_minimum_size() const
 {
 	ERR_READ_THREAD_GUARD_V(Size2());
@@ -1295,11 +1297,15 @@ Size2 Control::get_bound_minimum_size() const
 
 void Control::_clear_size_warning() { data.size_warning = false; }
 
+void Control::set_h_size_flags(uint32_t p_flags) {}
+
 uint32_t Control::get_h_size_flags() const
 {
 	ERR_READ_THREAD_GUARD_V(SIZE_EXPAND_FILL);
 	return data.h_size_flags;
 }
+
+void Control::set_v_size_flags(uint32_t p_flags) {}
 
 uint32_t Control::get_v_size_flags() const
 {
@@ -1411,6 +1417,10 @@ bool Control::has_point(const Point2& p_point) const
 	ERR_READ_THREAD_GUARD_V(false);
 	return Rect2(Point2(), get_size()).has_point(p_point);
 }
+
+bool Control::has_theme_icon(const StringName& p_name, const StringName& p_theme_type) const {}
+
+void Control::set_mouse_filter(MouseFilter p_filter) {}
 
 Control::MouseFilter Control::get_mouse_filter() const
 {
@@ -1832,6 +1842,8 @@ Ref<Theme> Control::get_theme() const
 	return data.theme;
 }
 
+void Control::set_theme_type_variation(const StringName& p_theme_type) {}
+
 StringName Control::get_theme_type_variation() const
 {
 	ERR_READ_THREAD_GUARD_V(StringName());
@@ -1879,6 +1891,22 @@ void Control::remove_theme_color_override(const StringName& p_name)
 	data.theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
 }
+
+
+int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const
+{
+	return 0;
+}
+
+int Control::get_theme_font_size(const StringName& p_name, const StringName& p_theme_type) const {}
+
+Ref<Font> Control::get_theme_font(
+	const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<Font> font = memnew(Font);
+	return font;
+}
+
 
 void Control::remove_theme_constant_override(const StringName& p_name)
 {
@@ -1929,6 +1957,17 @@ bool Control::has_theme_constant_override(const StringName& p_name) const
 	return constant != nullptr;
 }
 
+Ref<StyleBox> Control::get_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<StyleBox> sb = memnew(StyleBox);
+	return sb;
+}
+
+bool Control::has_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
+{
+	return true;
+}
+
 float Control::get_theme_default_base_scale() const
 {
 	ERR_READ_THREAD_GUARD_V(0);
@@ -1946,6 +1985,8 @@ int Control::get_theme_default_font_size() const
 	ERR_READ_THREAD_GUARD_V(0);
 	return data.theme_owner->get_theme_default_font_size();
 }
+
+void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
 void Control::begin_bulk_theme_override()
 {

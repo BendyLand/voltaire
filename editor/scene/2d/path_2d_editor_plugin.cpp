@@ -49,20 +49,6 @@ void Path2DEditor::_node_visibility_changed()
 	_update_toolbar();
 }
 
-void Path2DEditor::_handle_option_pressed(int p_option)
-{
-	PopupMenu* pm;
-	pm = handle_menu->get_popup();
-
-	switch (p_option) {
-	case HANDLE_OPTION_LENGTH: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
-		mirror_handle_length = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
-	} break;
-	}
-}
-
 void Path2DEditor::_cancel_current_action()
 {
 	ERR_FAIL_NULL(node);

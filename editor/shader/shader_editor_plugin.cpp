@@ -142,46 +142,6 @@ void ShaderEditorPlugin::_shader_list_clicked(
 	}
 }
 
-void ShaderEditorPlugin::_setup_popup_menu(PopupMenuType p_type, PopupMenu* p_menu)
-{
-	if (p_type == FILE) {
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/new"), FILE_MENU_NEW);
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/new_include"), FILE_MENU_NEW_INCLUDE);
-		p_menu->add_separator();
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/open"), FILE_MENU_OPEN);
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/open_include"), FILE_MENU_OPEN_INCLUDE);
-	}
-
-	if (p_type == FILE || p_type == CONTEXT_VALID_ITEM) {
-		p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/save"), FILE_MENU_SAVE);
-		p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/save_as"), FILE_MENU_SAVE_AS);
-	}
-
-	if (p_type == FILE) {
-		p_menu->add_separator();
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/open_in_inspector"), FILE_MENU_INSPECT);
-		p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/inspect_native_code"),
-			FILE_MENU_INSPECT_NATIVE_SHADER_CODE);
-		p_menu->add_separator();
-		p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/close_file"), FILE_MENU_CLOSE);
-		p_menu->add_separator();
-		p_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_editor/toggle_files_panel"), FILE_MENU_TOGGLE_FILES_PANEL);
-	}
-	else {
-		p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/close_file"), FILE_MENU_CLOSE);
-		p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/close_all"), FILE_MENU_CLOSE_ALL);
-		p_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_editor/close_other_tabs"), FILE_MENU_CLOSE_OTHER_TABS);
-		if (p_type == CONTEXT_VALID_ITEM) {
-			p_menu->add_separator();
-			p_menu->add_shortcut(ED_GET_SHORTCUT("shader_editor/copy_path"), FILE_MENU_COPY_PATH);
-			p_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/show_in_file_system"),
-				FILE_MENU_SHOW_IN_FILE_SYSTEM);
-		}
-	}
-}
-
 void ShaderEditorPlugin::_close_builtin_shaders_from_scene(const String& p_scene)
 {
 	for (uint32_t i = 0; i < edited_shaders.size();) {

@@ -1051,6 +1051,8 @@ void Theme::clear_type_variation(const StringName& p_theme_type)
 	_emit_theme_changed(true);
 }
 
+void Theme::_emit_theme_changed(bool p_notify_list_changed) {}
+
 StringName Theme::get_type_variation_base(const StringName& p_theme_type) const
 {
 	if (!variation_map.has(p_theme_type)) {

@@ -165,7 +165,7 @@ public:
 	VerticalAlignment get_vertical_icon_alignment() const;
 
 	Button(const String& p_text = String());
-	~Button();
+	~Button() = default;
 };
 
 

@@ -360,8 +360,8 @@ private:
 public:
 	static CopyEffects *get_singleton();
 
-	CopyEffects(uint32_t p_raster_effects);
-	~CopyEffects();
+	CopyEffects(uint32_t p_raster_effects) : raster_effects(p_raster_effects) {}
+	~CopyEffects() = default;
 
 	uint32_t get_raster_effects() { return raster_effects; }
 

@@ -353,7 +353,6 @@ private:
 
 	void _change_dir(const String& p_new_dir);
 	void _update_drives(bool p_select = true);
-	void _sort_option_selected(int p_option);
 
 	void _favorite_selected(int p_item);
 	void _favorite_pressed();

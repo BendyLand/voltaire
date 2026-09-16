@@ -1082,7 +1082,6 @@ void Node3DEditorViewport::_reset_follow_mode_count()
 void Node3DEditorViewport::_selection_menu_hide()
 {
 	selection_results.clear();
-	selection_menu->clear();
 	selection_menu->reset_size();
 }
 

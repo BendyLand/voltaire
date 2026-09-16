@@ -48,7 +48,6 @@
 void GPUParticles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
 {
 	Particles2DEditorPlugin::_add_menu_options(p_menu);
-	p_menu->add_item(TTR("Generate Visibility Rect"), MENU_GENERATE_VISIBILITY_RECT);
 }
 
 void Particles2DEditorPlugin::_browse_mask_texture_pressed()
@@ -235,9 +234,7 @@ void Particles2DEditorPlugin::_process_emission_masks(PackedVector2Array& r_vali
 
 
 void Particles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
-{
-	p_menu->add_item(TTR("Load Emission Mask"), MENU_LOAD_EMISSION_MASK);
-}
+{}
 
 CPUParticles2DEditorPlugin::CPUParticles2DEditorPlugin()
 {

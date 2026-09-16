@@ -97,25 +97,4 @@ void EditorPropertyFontNamesArray::_add_element()
 	menu->popup();
 }
 
-EditorPropertyFontNamesArray::EditorPropertyFontNamesArray()
-{
-	menu = memnew(PopupMenu);
-	menu->add_item("Sans-Serif", 0);
-	menu->add_item("Serif", 1);
-	menu->add_item("Monospace", 2);
-	menu->add_item("Fantasy", 3);
-	menu->add_item("Cursive", 4);
-
-	menu->add_separator();
-
-	if (OS::get_singleton()) {
-		Vector<String> fonts = OS::get_singleton()->get_system_fonts();
-		fonts.sort();
-		for (int i = 0; i < fonts.size(); i++) {
-			menu->add_item(fonts[i], i + 6);
-		}
-	}
-	add_child(menu);
-}
-
 

@@ -55,6 +55,8 @@ void Window::set_root_layout_direction(int p_root_dir) { root_layout_direction =
 
 Window* Window::focused_window = nullptr;
 
+void Window::set_title(const String &p_title) {}
+
 String Window::get_title() const
 {
 	ERR_READ_THREAD_GUARD_V(String());
@@ -1073,6 +1075,8 @@ Window* Window::get_non_popup_window() const
 	}
 	return w;
 }
+
+void Window::popup(const Rect2i& p_screen_rect) {}
 
 void Window::popup_on_parent(const Rect2i& p_parent_rect)
 {

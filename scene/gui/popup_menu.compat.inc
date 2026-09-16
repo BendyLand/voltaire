@@ -35,16 +35,14 @@
 void PopupMenu::_add_shortcut_bind_compat_36493(
 	const Ref<Shortcut>& p_shortcut, int p_id, bool p_global)
 {
-	add_shortcut(p_shortcut, p_id, p_global, false);
 }
 
 void PopupMenu::_add_icon_shortcut_bind_compat_36493(
 	const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut, int p_id, bool p_global)
 {
-	add_icon_shortcut(p_icon, p_shortcut, p_id, p_global, false);
 }
 
-void PopupMenu::_clear_bind_compat_79965() { clear(false); }
+void PopupMenu::_clear_bind_compat_79965() {}
 
 void PopupMenu::_set_system_menu_root_bind_compat_87452(const String& p_special)
 {
