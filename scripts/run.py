@@ -288,8 +288,6 @@ void _vltrvirtual_set_method_info_args(MethodInfo &p_method_info) {
 n = utils.get_run_arg()
 match n:
     case 0:
-        run_make_virtuals(["core/object/gdvirtual.gen.h"], ["core/object/make_virtuals.py"])
-    case 1:
         run_make_ltc_lut(
             ["servers/rendering/storage/ltc_lut.gen.h"],
             [

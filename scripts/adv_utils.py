@@ -72,9 +72,10 @@ def get_num_workers():
 def try_exec(cmd, shell):
     try:
         subprocess.run(cmd, check=True, shell=shell)
+        return True
     except subprocess.CalledProcessError as e:
-        print(f"\n[FATAL] Command failed with exit code {e.returncode}: {cmd}")
-        sys.exit(e.returncode)
+        print(f"Error: {e}")
+        return False
 
 
 def get_shell_command(string):
@@ -236,44 +237,36 @@ lines = read_file("comp")
 def run_command_serial(line):
     line_str = line.strip()
     if not line_str:
-        return
+        return True
     for option in options:
         if line_str.startswith(option):
             shell = "wayland-scanner" in line_str
             cmd = line_str if shell else get_shell_command(line_str)
             print(line_str)
-            try_exec(cmd, shell)
-            return
+            return try_exec(cmd, shell)
     cmd = construct_python_command(line_str)
     print(line_str)
-    try_exec(get_shell_command(cmd), False)
+    return try_exec(get_shell_command(cmd), False)
 
 
-def compile_single_file(cmd_line):
-    cmd_line = cmd_line.strip()
-    if not cmd_line:
-        return 0
-    print(cmd_line)
-    cmd = get_shell_command(cmd_line)
-    res = subprocess.run(cmd, shell=False)
-    return res.returncode
+def execute_compile_command(line):
+    line_str = line.strip()
+    if not line_str:
+        return True
+    print(line_str)
+    cmd = get_shell_command(line_str)
+    return try_exec(cmd, shell=False)
 
 
-def run_parallel_compilation(compilers, workers):
-    print(f"Compiling {len(compilers)} files across {workers} workers...")
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
-    futures = {executor.submit(compile_single_file, cmd): cmd for cmd in compilers}
-
-    for future in concurrent.futures.as_completed(futures):
-        returncode = future.result()
-        if returncode != 0:
-            cmd = futures[future]
-            print(f"\n[FATAL] Compilation failed with exit code {returncode}:")
-            print(f"{cmd}")
-            # executor.shutdown(wait=False, cancel_futures=True)
-            sys._exit(returncode)
-
-    executor.shutdown(wait=True)
+def run_parallel_compilation(commands, workers=None):
+    if workers is None:
+        workers = get_num_workers()
+    print(f"Compiling {len(commands)} files across {workers} workers...")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        results = list(executor.map(execute_compile_command, commands))
+        if not all(results):
+            print("Build encountered compilation errors.")
+            sys.exit(1)
 
 
 def run_full_build():
@@ -289,8 +282,10 @@ def run_full_build():
         else:
             generators.append(line_str)
 
-    for gen_cmd in generators:
-        run_command_serial(gen_cmd)
+    for line in generators:
+        if not run_command_serial(line):
+            print("Header/code generator step failed.")
+            sys.exit(1)
 
     if compilers:
         run_parallel_compilation(compilers, workers)
@@ -314,8 +309,10 @@ def run_incremental_build():
         else:
             generators.append(line_str)
 
-    for gen_cmd in generators:
-        run_command_serial(gen_cmd)
+    for line in generators:
+        if not run_command_serial(line):
+            print("Header/code generator step failed.")
+            sys.exit(1)
 
     if compilers:
         run_parallel_compilation(compilers, workers)
@@ -323,8 +320,9 @@ def run_incremental_build():
 
 # TODO: make platform agnostic
 def link_object_files():
-    print("Linking binary...")
-    cmd = shlex.split(
-        "g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl"
+    subprocess.run(
+        shlex.split(
+            "g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl"
+        ),
+        check=True,
     )
-    try_exec(cmd, shell=False)

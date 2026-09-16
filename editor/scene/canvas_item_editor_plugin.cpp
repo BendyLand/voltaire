@@ -269,13 +269,6 @@ void CanvasItemEditor::_selection_result_pressed(int p_result)
 	selection_results_menu.clear();
 }
 
-void CanvasItemEditor::_selection_menu_hide()
-{
-	selection_results.clear();
-	selection_menu->clear();
-	selection_menu->reset_size();
-}
-
 void CanvasItemEditor::_reset_create_position() { node_create_position = Point2(); }
 
 bool CanvasItemEditor::is_grid_visible() const
@@ -289,13 +282,6 @@ bool CanvasItemEditor::is_grid_visible() const
 		return false;
 	}
 	ERR_FAIL_V_MSG(true, "Unexpected grid_visibility value");
-}
-
-void CanvasItemEditor::_prepare_grid_menu()
-{
-	for (int i = GRID_VISIBILITY_SHOW; i <= GRID_VISIBILITY_HIDE; i++) {
-		grid_menu->set_item_checked(i, i == grid_visibility);
-	}
 }
 
 void CanvasItemEditor::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
