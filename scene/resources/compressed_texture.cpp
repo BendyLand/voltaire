@@ -192,41 +192,6 @@ Ref<Image> CompressedTexture2D::get_image() const
 	}
 }
 
-bool CompressedTexture2D::is_pixel_opaque(int p_x, int p_y) const
-{
-	if (alpha_cache.is_null()) {
-		Ref<Image> img = get_image();
-		if (img.is_valid()) {
-			if (img->is_compressed()) { // must decompress, if compressed
-				Ref<Image> decom = img->duplicate();
-				decom->decompress();
-				img = decom;
-			}
-
-			alpha_cache.instantiate();
-			alpha_cache->create_from_image_alpha(img);
-		}
-	}
-
-	if (alpha_cache.is_valid()) {
-		int aw = int(alpha_cache->get_size().width);
-		int ah = int(alpha_cache->get_size().height);
-		if (aw == 0 || ah == 0) {
-			return true;
-		}
-
-		int x = p_x * aw / w;
-		int y = p_y * ah / h;
-
-		x = CLAMP(x, 0, aw - 1);
-		y = CLAMP(y, 0, ah - 1);
-
-		return alpha_cache->get_bit(x, y);
-	}
-
-	return true;
-}
-
 void CompressedTexture2D::reload_from_file()
 {
 	String path = get_path();

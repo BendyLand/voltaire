@@ -705,11 +705,6 @@ void EditorExportPlatformAndroid::_process_launcher_icons(const String& p_file_n
 {
 	Ref<Image> working_image = p_source_image;
 
-	if (p_source_image->get_width() != dimension || p_source_image->get_height() != dimension) {
-		working_image = p_source_image->duplicate();
-		working_image->resize(dimension, dimension, Image::Interpolation::INTERPOLATE_LANCZOS);
-	}
-
 	Vector<uint8_t> buffer = working_image->save_webp_to_buffer();
 	p_data.resize(buffer.size());
 	memcpy(p_data.ptrw(), buffer.ptr(), p_data.size());

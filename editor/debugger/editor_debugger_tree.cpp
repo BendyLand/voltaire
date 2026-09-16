@@ -83,31 +83,6 @@ void EditorDebuggerTree::_scene_tree_selected()
 	}
 }
 
-void EditorDebuggerTree::_scene_tree_rmb_selected(const Vector2& p_position, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	TreeItem* item = get_item_at_position(p_position);
-	if (!item) {
-		return;
-	}
-
-	item->select(0);
-
-	item_menu->clear();
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("CreateNewSceneFrom")),
-		TTR("Save Branch as Scene..."), ITEM_MENU_SAVE_REMOTE_NODE);
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("CopyNodePath")), TTR("Copy Node Path"),
-		ITEM_MENU_COPY_NODE_PATH);
-	item_menu->add_icon_item(get_editor_theme_icon(SNAME("Collapse")),
-		TTR("Expand/Collapse Branch"), ITEM_MENU_EXPAND_COLLAPSE);
-	item_menu->set_position(get_screen_position() + get_local_mouse_position());
-	item_menu->reset_size();
-	item_menu->popup();
-}
-
 void EditorDebuggerTree::clear_selection()
 {
 	if (!updating_scene_tree) {

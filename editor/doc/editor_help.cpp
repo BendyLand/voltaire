@@ -327,25 +327,6 @@ void EditorHelp::_class_desc_select(const String& p_select)
 
 void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 
-void EditorHelp::_class_desc_resized(bool p_force_update_theme)
-{
-	// Add extra horizontal margins for better readability.
-	// The margins increase as the width of the editor help container increases.
-	real_t char_width =
-		theme_cache.doc_code_font->get_char_size('x', theme_cache.doc_code_font_size).width;
-	const int new_display_margin =
-		MAX(30 * EDSCALE, get_parent_anchorable_rect().size.width - char_width * 120 * EDSCALE) *
-		0.5;
-	if (display_margin != new_display_margin || p_force_update_theme) {
-		display_margin = new_display_margin;
-
-		Ref<StyleBox> class_desc_stylebox = theme_cache.background_style->duplicate();
-		class_desc_stylebox->set_content_margin(SIDE_LEFT, display_margin);
-		class_desc_stylebox->set_content_margin(SIDE_RIGHT, display_margin);
-		class_desc->add_theme_style_override("focused", class_desc_stylebox.ptr());
-	}
-}
-
 // Macros for assigning the deprecated/experimental marks to class members in overview.
 #define DEPRECATED_DOC_TAG                                                                         \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
@@ -686,20 +667,6 @@ void EditorHelp::_notification(int p_what)
 	case NOTIFICATION_READY: {
 		_wait_for_thread();
 		_update_doc();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (is_inside_tree()) {
-			if (is_visible_in_tree()) {
-				_update_doc();
-			}
-			else {
-				update_pending = true;
-			}
-
-			_class_desc_resized(true);
-		}
-		update_toggle_files_button();
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {

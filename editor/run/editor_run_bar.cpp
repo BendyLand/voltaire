@@ -165,7 +165,6 @@ ProcessID EditorRunBar::get_current_process() const { return editor_run.get_curr
 void EditorRunBar::set_movie_maker_enabled(bool p_enabled)
 {
 	movie_maker_enabled = p_enabled;
-	write_movie_button->get_popup()->set_item_checked(0, p_enabled);
 }
 
 bool EditorRunBar::is_movie_maker_enabled() const { return movie_maker_enabled; }

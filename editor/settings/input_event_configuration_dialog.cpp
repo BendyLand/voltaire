@@ -49,7 +49,6 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 
 	// Create an editable reference and a copy of full event.
 	Ref<InputEvent> received_event = p_event;
-	Ref<InputEvent> received_original_event = received_event->duplicate();
 
 	// Check what the type is and if it is allowed.
 	Ref<InputEventKey> k = received_event;
@@ -106,8 +105,6 @@ void InputEventConfigurationDialog::_on_listen_input_changed(const Ref<InputEven
 
 	// Maintain device selection.
 	received_event->set_device(_get_current_device());
-
-	_set_event(received_event, received_original_event);
 }
 
 void InputEventConfigurationDialog::_search_term_updated(const String&) { _update_input_list(); }

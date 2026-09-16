@@ -72,7 +72,6 @@ static Error _parse_material_library(const String& p_path,
 			c.r = v[1].to_float();
 			c.g = v[2].to_float();
 			c.b = v[3].to_float();
-			current->set_albedo(c);
 		}
 		else if (l.begins_with("Ks ")) {
 			// Specular color.
@@ -101,7 +100,6 @@ static Error _parse_material_library(const String& p_path,
 			float d = v[1].to_float();
 			Color c = current->get_albedo();
 			c.a = d;
-			current->set_albedo(c);
 			if (c.a < 0.99) {
 				current->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 			}
@@ -114,7 +112,6 @@ static Error _parse_material_library(const String& p_path,
 			float d = v[1].to_float();
 			Color c = current->get_albedo();
 			c.a = 1.0 - d;
-			current->set_albedo(c);
 			if (c.a < 0.99) {
 				current->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 			}

@@ -1005,42 +1005,6 @@ bool EditorNode::is_cmdline_mode()
 
 void EditorNode::cleanup() { _init_callbacks.clear(); }
 
-void EditorNode::_update_layouts_menu()
-{
-	editor_layouts->clear();
-	overridden_default_layout = false;
-
-	editor_layouts->reset_size();
-	editor_layouts->add_shortcut(ED_SHORTCUT("layout/save", TTRC("Save Layout...")), LAYOUT_SAVE);
-	editor_layouts->add_shortcut(
-		ED_SHORTCUT("layout/delete", TTRC("Delete Layout...")), LAYOUT_DELETE);
-	editor_layouts->add_separator();
-
-	Ref<ConfigFile> config;
-	config.instantiate();
-	Error err = config->load(EditorSettings::get_singleton()->get_editor_layouts_config());
-	if (err == OK && config->has_section("Default")) {
-		overridden_default_layout = true;
-	}
-
-	editor_layouts->add_shortcut(
-		ED_SHORTCUT("layout/default",
-			overridden_default_layout ? TTRC("Default (Overridden)") : TTRC("Default")),
-		LAYOUT_DEFAULT);
-
-	if (err != OK) {
-		return; // No config.
-	}
-
-	Vector<String> layouts = config->get_sections();
-	for (const String& layout : layouts) {
-		if (layout != "Default" && !layout.contains_char('/')) {
-			editor_layouts->add_item(layout);
-			editor_layouts->set_item_auto_translate_mode(-1, AUTO_TRANSLATE_MODE_DISABLED);
-		}
-	}
-}
-
 bool EditorNode::_is_closing_editor() const
 {
 	return tab_closing_menu_option == SCENE_QUIT ||
@@ -1073,33 +1037,6 @@ void EditorNode::_prepare_save_confirmation_popup()
 bool EditorNode::is_distraction_free_mode_enabled() const { return distraction_free->is_pressed(); }
 
 void EditorNode::set_center_split_offset(int p_offset) { center_split->set_split_offset(p_offset); }
-
-void EditorNode::add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu)
-{
-	ERR_FAIL_NULL(p_submenu);
-	ERR_FAIL_COND(p_submenu->get_parent() != nullptr);
-	tool_menu->add_submenu_node_item(p_name, p_submenu, TOOLS_CUSTOM);
-}
-
-void EditorNode::remove_tool_menu_item(const String& p_name)
-{
-	for (int i = 0; i < tool_menu->get_item_count(); i++) {
-		if (tool_menu->get_item_id(i) != TOOLS_CUSTOM) {
-			continue;
-		}
-
-		if (tool_menu->get_item_text(i) == p_name) {
-			if (tool_menu->get_item_submenu(i) != "") {
-				Node* n = tool_menu->get_node(tool_menu->get_item_submenu(i));
-				tool_menu->remove_child(n);
-				memdelete(n);
-			}
-			tool_menu->remove_item(i);
-			tool_menu->reset_size();
-			return;
-		}
-	}
-}
 
 PopupMenu* EditorNode::get_export_as_menu() { return export_as_menu; }
 

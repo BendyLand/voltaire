@@ -351,23 +351,6 @@ void SceneTreeDock::_filter_option_selected(int p_option)
 	}
 }
 
-void SceneTreeDock::_append_filter_options_to(PopupMenu* p_menu)
-{
-	if (p_menu->get_item_count() > 0) {
-		p_menu->add_separator();
-	}
-
-	p_menu->add_item(TTRC("Filter by Type"), FILTER_BY_TYPE);
-	p_menu->set_item_tooltip(-1, TTRC("Selects all Nodes of the given type.\nInserts \"type:\". "
-									  "You can also use the shorthand \"t:\"."));
-
-	p_menu->add_item(TTRC("Filter by Group"), FILTER_BY_GROUP);
-	p_menu->set_item_tooltip(-1,
-		TTRC(
-			"Selects all Nodes belonging to the given group.\nIf empty, selects any Node belonging "
-			"to any group.\nInserts \"group:\". You can also use the shorthand \"g:\"."));
-}
-
 String SceneTreeDock::get_filter() { return filter->get_text(); }
 
 void SceneTreeDock::set_filter(const String& p_filter)

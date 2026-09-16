@@ -254,10 +254,6 @@ void GridMap::set_debug_octant_color(const Color& p_color)
 	}
 
 	debug_octant_color = p_color;
-
-	if (debug_octant_line_material.is_valid()) {
-		debug_octant_line_material->set_albedo(debug_octant_color);
-	}
 #endif
 }
 

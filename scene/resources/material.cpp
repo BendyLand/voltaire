@@ -2269,9 +2269,6 @@ void BaseMaterial3D::set_stencil_effect_color(const Color& p_color)
 	stencil_effect_color = p_color;
 
 	Ref<BaseMaterial3D> stencil_next_pass = _get_stencil_next_pass();
-	if (stencil_next_pass.is_valid()) {
-		stencil_next_pass->set_albedo(p_color);
-	}
 }
 
 Color BaseMaterial3D::get_stencil_effect_color() const { return stencil_effect_color; }
@@ -2308,7 +2305,6 @@ BaseMaterial3D::BaseMaterial3D(bool p_orm) : element(this)
 {
 	orm = p_orm;
 	// Initialize to the same values as the shader
-	set_albedo(Color(1.0, 1.0, 1.0, 1.0));
 	set_specular(0.5);
 	set_roughness(1.0);
 	set_metallic(0.0);
@@ -2409,4 +2405,4 @@ RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
 
-
+void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode) {}

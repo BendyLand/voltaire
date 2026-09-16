@@ -340,7 +340,6 @@ private:
 		String tooltip;
 		StringName translation_context;
 		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
-
 	};
 
 	Data data;
@@ -382,10 +381,9 @@ private:
 	void _grow_to_desired_size();
 	void _size_changed();
 
-	void _top_level_changed() override {
-	} // Controls don't need to do anything, only other CanvasItems.
+	void _top_level_changed() {} // Controls don't need to do anything, only other CanvasItems.
 
-	void _top_level_changed_on_parent() override;
+	void _top_level_changed_on_parent();
 
 	void _clear_size_warning();
 

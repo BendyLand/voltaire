@@ -56,7 +56,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_m
 	Ref<StandardMaterial3D> face_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	face_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	face_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	face_material->set_albedo(get_debug_navigation_geometry_face_color());
 	face_material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
 	debug_navigation_geometry_face_material = face_material;
 
@@ -73,7 +72,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_m
 
 	Ref<StandardMaterial3D> line_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	line_material->set_albedo(get_debug_navigation_geometry_edge_color());
 	debug_navigation_geometry_edge_material = line_material;
 
 	return debug_navigation_geometry_edge_material;
@@ -89,7 +87,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_d
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	face_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	face_disabled_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	face_disabled_material->set_albedo(get_debug_navigation_geometry_face_disabled_color());
 
 	debug_navigation_geometry_face_disabled_material = face_disabled_material;
 
@@ -107,7 +104,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_d
 	Ref<StandardMaterial3D> line_disabled_material =
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	line_disabled_material->set_albedo(get_debug_navigation_geometry_edge_disabled_color());
 
 	debug_navigation_geometry_edge_disabled_material = line_disabled_material;
 
@@ -125,7 +121,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_edge_connection
 	Ref<StandardMaterial3D> edge_connections_material =
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	edge_connections_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	edge_connections_material->set_albedo(get_debug_navigation_edge_connection_color());
 	edge_connections_material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_edge_connections_material = edge_connections_material;
@@ -141,7 +136,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_link_connection
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_albedo(debug_navigation_link_connection_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_link_connections_material = material;
@@ -157,7 +151,6 @@ NavigationServer3D::get_debug_navigation_link_connections_disabled_material()
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	material->set_albedo(debug_navigation_link_connection_disabled_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_link_connections_disabled_material = material;
@@ -173,7 +166,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_line
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 
-	material->set_albedo(debug_navigation_agent_path_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
 	debug_navigation_agent_path_line_material = material;
@@ -187,7 +179,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_poin
 	}
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
-	material->set_albedo(debug_navigation_agent_path_color);
 	material->set_point_size(debug_navigation_agent_path_point_size);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
 
@@ -204,7 +195,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_avoidance_agent
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_agents_radius_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_agents_radius_material = material;
@@ -222,7 +212,6 @@ NavigationServer3D::get_debug_navigation_avoidance_obstacles_radius_material()
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_obstacles_radius_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_obstacles_radius_material = material;
@@ -240,7 +229,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_face_m
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushin_face_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_static_obstacle_pushin_face_material = material;
@@ -258,7 +246,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_face_
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushout_face_color);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_static_obstacle_pushout_face_material = material;
@@ -276,7 +263,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_m
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushin_edge_color);
 	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_static_obstacle_pushin_edge_material = material;
@@ -294,7 +280,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	/// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	material->set_albedo(debug_navigation_avoidance_static_obstacle_pushout_edge_color);
 	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	debug_navigation_avoidance_static_obstacle_pushout_edge_material = material;
@@ -304,10 +289,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_
 void NavigationServer3D::set_debug_navigation_edge_connection_color(const Color& p_color)
 {
 	debug_navigation_edge_connection_color = p_color;
-	if (debug_navigation_edge_connections_material.is_valid()) {
-		debug_navigation_edge_connections_material->set_albedo(
-			debug_navigation_edge_connection_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_edge_connection_color() const
@@ -318,9 +299,6 @@ Color NavigationServer3D::get_debug_navigation_edge_connection_color() const
 void NavigationServer3D::set_debug_navigation_geometry_edge_color(const Color& p_color)
 {
 	debug_navigation_geometry_edge_color = p_color;
-	if (debug_navigation_geometry_edge_material.is_valid()) {
-		debug_navigation_geometry_edge_material->set_albedo(debug_navigation_geometry_edge_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_geometry_edge_color() const
@@ -331,9 +309,6 @@ Color NavigationServer3D::get_debug_navigation_geometry_edge_color() const
 void NavigationServer3D::set_debug_navigation_geometry_face_color(const Color& p_color)
 {
 	debug_navigation_geometry_face_color = p_color;
-	if (debug_navigation_geometry_face_material.is_valid()) {
-		debug_navigation_geometry_face_material->set_albedo(debug_navigation_geometry_face_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_geometry_face_color() const
@@ -344,10 +319,6 @@ Color NavigationServer3D::get_debug_navigation_geometry_face_color() const
 void NavigationServer3D::set_debug_navigation_geometry_edge_disabled_color(const Color& p_color)
 {
 	debug_navigation_geometry_edge_disabled_color = p_color;
-	if (debug_navigation_geometry_edge_disabled_material.is_valid()) {
-		debug_navigation_geometry_edge_disabled_material->set_albedo(
-			debug_navigation_geometry_edge_disabled_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_geometry_edge_disabled_color() const
@@ -358,10 +329,6 @@ Color NavigationServer3D::get_debug_navigation_geometry_edge_disabled_color() co
 void NavigationServer3D::set_debug_navigation_geometry_face_disabled_color(const Color& p_color)
 {
 	debug_navigation_geometry_face_disabled_color = p_color;
-	if (debug_navigation_geometry_face_disabled_material.is_valid()) {
-		debug_navigation_geometry_face_disabled_material->set_albedo(
-			debug_navigation_geometry_face_disabled_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_geometry_face_disabled_color() const
@@ -372,10 +339,6 @@ Color NavigationServer3D::get_debug_navigation_geometry_face_disabled_color() co
 void NavigationServer3D::set_debug_navigation_link_connection_color(const Color& p_color)
 {
 	debug_navigation_link_connection_color = p_color;
-	if (debug_navigation_link_connections_material.is_valid()) {
-		debug_navigation_link_connections_material->set_albedo(
-			debug_navigation_link_connection_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_link_connection_color() const
@@ -386,10 +349,6 @@ Color NavigationServer3D::get_debug_navigation_link_connection_color() const
 void NavigationServer3D::set_debug_navigation_link_connection_disabled_color(const Color& p_color)
 {
 	debug_navigation_link_connection_disabled_color = p_color;
-	if (debug_navigation_link_connections_disabled_material.is_valid()) {
-		debug_navigation_link_connections_disabled_material->set_albedo(
-			debug_navigation_link_connection_disabled_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_link_connection_disabled_color() const
@@ -414,12 +373,6 @@ real_t NavigationServer3D::get_debug_navigation_agent_path_point_size() const
 void NavigationServer3D::set_debug_navigation_agent_path_color(const Color& p_color)
 {
 	debug_navigation_agent_path_color = p_color;
-	if (debug_navigation_agent_path_line_material.is_valid()) {
-		debug_navigation_agent_path_line_material->set_albedo(debug_navigation_agent_path_color);
-	}
-	if (debug_navigation_agent_path_point_material.is_valid()) {
-		debug_navigation_agent_path_point_material->set_albedo(debug_navigation_agent_path_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_agent_path_color() const
@@ -495,10 +448,6 @@ bool NavigationServer3D::get_debug_navigation_avoidance_enable_obstacles_static(
 void NavigationServer3D::set_debug_navigation_avoidance_agents_radius_color(const Color& p_color)
 {
 	debug_navigation_avoidance_agents_radius_color = p_color;
-	if (debug_navigation_avoidance_agents_radius_material.is_valid()) {
-		debug_navigation_avoidance_agents_radius_material->set_albedo(
-			debug_navigation_avoidance_agents_radius_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_agents_radius_color() const
@@ -509,10 +458,6 @@ Color NavigationServer3D::get_debug_navigation_avoidance_agents_radius_color() c
 void NavigationServer3D::set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color)
 {
 	debug_navigation_avoidance_obstacles_radius_color = p_color;
-	if (debug_navigation_avoidance_obstacles_radius_material.is_valid()) {
-		debug_navigation_avoidance_obstacles_radius_material->set_albedo(
-			debug_navigation_avoidance_obstacles_radius_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_obstacles_radius_color() const
@@ -524,10 +469,6 @@ void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushin_f
 	const Color& p_color)
 {
 	debug_navigation_avoidance_static_obstacle_pushin_face_color = p_color;
-	if (debug_navigation_avoidance_static_obstacle_pushin_face_material.is_valid()) {
-		debug_navigation_avoidance_static_obstacle_pushin_face_material->set_albedo(
-			debug_navigation_avoidance_static_obstacle_pushin_face_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_face_color() const
@@ -539,10 +480,6 @@ void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushout_
 	const Color& p_color)
 {
 	debug_navigation_avoidance_static_obstacle_pushout_face_color = p_color;
-	if (debug_navigation_avoidance_static_obstacle_pushout_face_material.is_valid()) {
-		debug_navigation_avoidance_static_obstacle_pushout_face_material->set_albedo(
-			debug_navigation_avoidance_static_obstacle_pushout_face_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_face_color() const
@@ -554,10 +491,6 @@ void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushin_e
 	const Color& p_color)
 {
 	debug_navigation_avoidance_static_obstacle_pushin_edge_color = p_color;
-	if (debug_navigation_avoidance_static_obstacle_pushin_edge_material.is_valid()) {
-		debug_navigation_avoidance_static_obstacle_pushin_edge_material->set_albedo(
-			debug_navigation_avoidance_static_obstacle_pushin_edge_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_color() const
@@ -569,10 +502,6 @@ void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushout_
 	const Color& p_color)
 {
 	debug_navigation_avoidance_static_obstacle_pushout_edge_color = p_color;
-	if (debug_navigation_avoidance_static_obstacle_pushout_edge_material.is_valid()) {
-		debug_navigation_avoidance_static_obstacle_pushout_edge_material->set_albedo(
-			debug_navigation_avoidance_static_obstacle_pushout_edge_color);
-	}
 }
 
 Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_color() const

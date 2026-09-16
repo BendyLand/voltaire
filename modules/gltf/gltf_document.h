@@ -146,8 +146,6 @@ private:
 		Ref<GLTFState> p_state, const GLTFSkeletonIndex p_skel_i, const String& p_name);
 	GLTFTextureIndex _set_texture(Ref<GLTFState> p_state, Ref<Texture2D> p_texture,
 		StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
-	Ref<Texture2D> _get_texture(
-		Ref<GLTFState> p_state, const GLTFTextureIndex p_texture, int p_texture_type);
 	GLTFTextureSamplerIndex _set_sampler_for_mode(
 		Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
 	Ref<GLTFTextureSampler> _get_sampler_for_texture(

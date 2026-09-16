@@ -73,13 +73,6 @@ void EditorDebuggerNode::_menu_option(int p_id)
 	case DEBUG_CONTINUE: {
 		debug_continue();
 	} break;
-	case DEBUG_WITH_EXTERNAL_EDITOR: {
-		bool ischecked = script_menu->get_popup()->is_item_checked(
-			script_menu->get_popup()->get_item_index(DEBUG_WITH_EXTERNAL_EDITOR));
-		debug_with_external_editor = !ischecked;
-		script_menu->get_popup()->set_item_checked(
-			script_menu->get_popup()->get_item_index(DEBUG_WITH_EXTERNAL_EDITOR), !ischecked);
-	} break;
 	}
 }
 

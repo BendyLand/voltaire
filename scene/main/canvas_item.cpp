@@ -256,12 +256,6 @@ Color CanvasItem::get_modulate_in_tree() const
 	return final_modulate;
 }
 
-void CanvasItem::_top_level_changed_on_parent()
-{
-	// Inform children that top_level status has changed on a parent.
-	_top_level_changed();
-}
-
 bool CanvasItem::is_set_as_top_level() const { return top_level; }
 
 void CanvasItem::set_self_modulate(const Color& p_self_modulate)

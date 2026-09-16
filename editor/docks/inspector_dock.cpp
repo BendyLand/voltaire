@@ -46,15 +46,7 @@
 #include "inspector_dock.h"
 #include "scene/gui/box_container.h"
 
-void InspectorDock::_prepare_menu()
-{
-	PopupMenu* menu = object_menu->get_popup();
-	for (int i = EditorPropertyNameProcessor::STYLE_RAW;
-		 i <= EditorPropertyNameProcessor::STYLE_LOCALIZED; i++) {
-		menu->set_item_checked(
-			menu->get_item_index(PROPERTY_NAME_STYLE_RAW + i), i == property_name_style);
-	}
-}
+void InspectorDock::_prepare_menu() {}
 
 void InspectorDock::_new_resource() { new_resource_dialog->popup_create(true); }
 

@@ -290,7 +290,6 @@ void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
 	}
 
 	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
-	material->set_albedo(color);
 }
 
 void ShapeCast3D::_clear_debug_shape()

@@ -321,7 +321,6 @@ void ThemeClassic::populate_shared_styles(
 			p_config.widget_margin =
 				Vector2(p_config.increased_margin + 2, p_config.increased_margin + 1) * EDSCALE;
 
-			p_config.button_style = p_config.base_style->duplicate();
 			p_config.button_style->set_content_margin_individual(p_config.widget_margin.x,
 				p_config.widget_margin.y, p_config.widget_margin.x, p_config.widget_margin.y);
 			p_config.button_style->set_bg_color(p_config.dark_color_1);
@@ -333,7 +332,6 @@ void ThemeClassic::populate_shared_styles(
 				p_config.button_style->set_border_color(p_config.dark_color_2);
 			}
 
-			p_config.button_style_disabled = p_config.button_style->duplicate();
 			p_config.button_style_disabled->set_bg_color(p_config.disabled_bg_color);
 			if (p_config.draw_extra_borders) {
 				p_config.button_style_disabled->set_border_color(p_config.extra_border_color_2);
@@ -342,15 +340,12 @@ void ThemeClassic::populate_shared_styles(
 				p_config.button_style_disabled->set_border_color(p_config.disabled_border_color);
 			}
 
-			p_config.button_style_focus = p_config.button_style->duplicate();
 			p_config.button_style_focus->set_draw_center(false);
 			p_config.button_style_focus->set_border_width_all(Math::round(2 * MAX(1, EDSCALE)));
 			p_config.button_style_focus->set_border_color(p_config.accent_color);
 
-			p_config.button_style_pressed = p_config.button_style->duplicate();
 			p_config.button_style_pressed->set_bg_color(p_config.dark_color_1.darkened(0.125));
 
-			p_config.button_style_hover = p_config.button_style->duplicate();
 			p_config.button_style_hover->set_bg_color(p_config.mono_color * Color(1, 1, 1, 0.11));
 			if (p_config.draw_extra_borders) {
 				p_config.button_style_hover->set_border_color(p_config.extra_border_color_1);
@@ -363,7 +358,6 @@ void ThemeClassic::populate_shared_styles(
 
 		// Windows and popups.
 		{
-			p_config.popup_style = p_config.base_style->duplicate();
 			p_config.popup_style->set_content_margin_all(p_config.popup_margin);
 			p_config.popup_style->set_border_color(p_config.contrast_color_1);
 			p_config.popup_style->set_shadow_color(p_config.shadow_color);
@@ -373,7 +367,6 @@ void ThemeClassic::populate_shared_styles(
 			// (e.g. running with compositing disabled).
 			p_config.popup_style->set_corner_radius_all(0);
 
-			p_config.popup_border_style = p_config.popup_style->duplicate();
 			p_config.popup_border_style->set_content_margin_all(
 				MAX(Math::round(EDSCALE), p_config.border_width) + 2 +
 				(p_config.base_margin * 1.5) * EDSCALE);
@@ -388,13 +381,11 @@ void ThemeClassic::populate_shared_styles(
 				p_config.popup_border_style->set_border_color(p_config.dark_color_2);
 			}
 
-			p_config.window_style = p_config.popup_style->duplicate();
 			p_config.window_style->set_border_color(p_config.base_color);
 			p_config.window_style->set_border_width(SIDE_TOP, 24 * EDSCALE);
 			p_config.window_style->set_expand_margin(SIDE_TOP, 24 * EDSCALE);
 
 			// Prevent corner artifacts between window title and body.
-			p_config.dialog_style = p_config.base_style->duplicate();
 			p_config.dialog_style->set_corner_radius(CORNER_TOP_LEFT, 0);
 			p_config.dialog_style->set_corner_radius(CORNER_TOP_RIGHT, 0);
 			p_config.dialog_style->set_content_margin_all(p_config.popup_margin);
@@ -404,7 +395,6 @@ void ThemeClassic::populate_shared_styles(
 
 		// Panels.
 		{
-			p_config.panel_container_style = p_config.button_style->duplicate();
 			p_config.panel_container_style->set_draw_center(false);
 			p_config.panel_container_style->set_border_width_all(0);
 
@@ -413,7 +403,6 @@ void ThemeClassic::populate_shared_styles(
 			// Compensate for the border.
 			const int content_panel_margin = p_config.base_margin * EDSCALE + p_config.border_width;
 
-			p_config.content_panel_style = p_config.base_style->duplicate();
 			p_config.content_panel_style->set_border_color(p_config.dark_color_3);
 			p_config.content_panel_style->set_border_width_all(p_config.border_width);
 			p_config.content_panel_style->set_border_width(Side::SIDE_TOP, 0);
@@ -424,9 +413,6 @@ void ThemeClassic::populate_shared_styles(
 
 			p_config.tab_container_style = p_config.content_panel_style;
 
-			// Trees and similarly inset panels.
-
-			p_config.tree_panel_style = p_config.base_style->duplicate();
 			// Make Trees easier to distinguish from other controls by using a darker background
 			// color.
 			p_config.tree_panel_style->set_bg_color(

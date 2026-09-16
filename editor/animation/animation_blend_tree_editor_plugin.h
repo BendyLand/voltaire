@@ -88,8 +88,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 
 	Vector<AddOption> add_options;
 
-	void _update_options_menu(bool p_has_input_ports = false);
-
 	StringName animation_node_name_meta = StringName("_animation_node_name");
 	static AnimationNodeBlendTreeEditor* singleton;
 
@@ -108,12 +106,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	void _filter_clear_selection_recursive(EditorUndoRedoManager* p_undo_redo, TreeItem* p_item);
 	Ref<AnimationNode> _filter_edit;
 
-	void _popup(bool p_has_input_ports, const Vector2& p_node_position);
-	void _popup_request(const Vector2& p_position);
-	void _connection_to_empty(
-		const String& p_from, int p_from_slot, const Vector2& p_release_position);
-	void _connection_from_empty(
-		const String& p_to, int p_to_slot, const Vector2& p_release_position);
 	void _popup_hide();
 
 	void _update_editor_settings();

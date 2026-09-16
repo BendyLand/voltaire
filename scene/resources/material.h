@@ -652,7 +652,6 @@ protected:
 	virtual bool _can_use_render_priority() const override { return true; }
 
 public:
-	void set_albedo(const Color& p_albedo);
 	Color get_albedo() const;
 
 	void set_specular(float p_specular);

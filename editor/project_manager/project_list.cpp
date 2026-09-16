@@ -373,32 +373,7 @@ void ProjectList::_on_explore_pressed(const String& p_path)
 	OS::get_singleton()->shell_show_in_file_manager(p_path, true);
 }
 
-void ProjectList::_update_menu_icons()
-{
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_EDIT), get_editor_theme_icon("Edit"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_VERBOSE),
-		get_editor_theme_icon("Notification"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_RECOVERY),
-		get_editor_theme_icon("NodeWarning"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RUN), get_editor_theme_icon("Play"));
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_SHOW_IN_FILE_MANAGER),
-		get_editor_theme_icon("Load"));
-#endif
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_COPY_PATH), get_editor_theme_icon("ActionCopy"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RENAME), get_editor_theme_icon("Rename"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_MANAGE_TAGS), get_editor_theme_icon("Script"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_DUPLICATE), get_editor_theme_icon("Duplicate"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_REMOVE), get_editor_theme_icon("Remove"));
-}
+void ProjectList::_update_menu_icons() {}
 
 void ProjectList::_clear_project_selection()
 {

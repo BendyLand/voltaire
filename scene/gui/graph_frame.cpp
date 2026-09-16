@@ -70,24 +70,7 @@ void GraphFrame::_notification(int p_what)
 		Rect2 body_rect(Point2(0, titlebar_rect.size.height), body_size);
 
 		// Draw body stylebox.
-		if (tint_color_enabled) {
-			if (sb_panel_flat.is_valid()) {
-				Color original_border_color = sb_panel_flat->get_border_color();
-				sb_panel_flat = sb_panel_flat->duplicate();
-				sb_panel_flat->set_bg_color(tint_color);
-				sb_panel_flat->set_border_color(
-					selected ? original_border_color : tint_color.lightened(0.3));
-				draw_style_box(sb_panel_flat.ptr(), body_rect);
-			}
-			else if (sb_panel_texture.is_valid()) {
-				sb_panel_texture = sb_panel_texture->duplicate();
-				sb_panel_texture->set_modulate(tint_color);
-				draw_style_box(sb_panel_texture.ptr(), body_rect);
-			}
-		}
-		else {
-			draw_style_box(sb_panel_flat.ptr(), body_rect);
-		}
+		draw_style_box(sb_panel_flat.ptr(), body_rect);
 
 		// Draw title bar stylebox above.
 		draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);

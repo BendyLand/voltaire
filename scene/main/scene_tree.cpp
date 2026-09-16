@@ -463,7 +463,6 @@ Ref<Material> SceneTree::get_debug_paths_material()
 	Ref<StandardMaterial3D> _debug_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	_debug_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	_debug_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	_debug_material->set_albedo(get_debug_paths_color());
 
 	debug_paths_material = _debug_material;
 

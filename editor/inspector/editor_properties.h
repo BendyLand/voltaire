@@ -473,8 +473,6 @@ class EditorPropertyEasing : public EditorProperty
 	void _spin_value_changed(double p_value);
 	void _spin_focus_exited();
 
-	void _notification(int p_what);
-
 protected:
 	virtual void _set_read_only(bool p_read_only) override;
 

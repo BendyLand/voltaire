@@ -210,7 +210,6 @@ class SceneTreeDock : public EditorDock
 	void _normalize_drop(Node*& to_node, int& to_pos, int p_type);
 
 	void _filter_option_selected(int option);
-	void _append_filter_options_to(PopupMenu* p_menu);
 
 	void _clear_clipboard();
 

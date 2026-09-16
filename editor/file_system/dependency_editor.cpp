@@ -206,52 +206,7 @@ void DependencyEditor::_sort_option_selected(int p_id)
 	_update_list();
 }
 
-void DependencyEditor::_update_menu_sort()
-{
-	for (int i = 0; i != (int)DependencyEditorSortBy::MAX; i++) {
-		menu_sort->get_popup()->set_item_checked(i, (i == (int)sort_by));
-	}
-}
-
-void DependencyEditorOwners::_list_rmb_clicked(
-	int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index)
-{
-	if (p_mouse_button_index != MouseButton::RIGHT) {
-		return;
-	}
-
-	file_options->clear();
-	file_options->reset_size();
-	if (p_item >= 0) {
-		PackedInt32Array selected_items = owners->get_selected_items();
-		bool only_scenes_selected = true;
-
-		for (int i = 0; i < selected_items.size(); i++) {
-			int item_idx = selected_items[i];
-			if (ResourceLoader::get_resource_type(owners->get_item_text(item_idx)) !=
-				"PackedScene") {
-				only_scenes_selected = false;
-				break;
-			}
-		}
-
-		if (only_scenes_selected) {
-			file_options->add_icon_item(get_editor_theme_icon(SNAME("Load")),
-				TTRN("Open Scene", "Open Scenes", selected_items.size()), FILE_MENU_OPEN);
-		}
-		else if (selected_items.size() == 1) {
-			file_options->add_icon_item(
-				get_editor_theme_icon(SNAME("Load")), TTR("Open"), FILE_MENU_OPEN);
-		}
-		else {
-			return;
-		}
-	}
-
-	file_options->set_position(owners->get_screen_position() + p_pos);
-	file_options->reset_size();
-	file_options->popup();
-}
+void DependencyEditor::_update_menu_sort() {}
 
 void DependencyEditorOwners::_empty_clicked(const Vector2& p_pos, MouseButton p_mouse_button_index)
 {

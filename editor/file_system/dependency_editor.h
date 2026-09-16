@@ -101,7 +101,6 @@ class DependencyEditorOwners : public AcceptDialog
 	PopupMenu* file_options = nullptr;
 	String editing;
 
-	void _list_rmb_clicked(int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index);
 	void _select_file(int p_idx);
 	void _empty_clicked(const Vector2& p_pos, MouseButton p_mouse_button_index);
 	void _file_option(int p_option);

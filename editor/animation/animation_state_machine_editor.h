@@ -248,8 +248,6 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	void _clip_dst_line_to_rect(const Vector2& p_from, Vector2& r_to, const Rect2& p_rect);
 
 	void _update_mode();
-	bool _create_submenu(PopupMenu* p_menu, Ref<AnimationNodeStateMachine> p_nodesm,
-		const StringName& p_name, const StringName& p_path);
 	void _stop_connecting();
 
 	bool last_active = false;

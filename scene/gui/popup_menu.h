@@ -248,7 +248,9 @@ class PopupMenu : public Popup
 		Color font_separator_color;
 		int font_separator_outline_size = 0;
 		Color font_separator_outline_color;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _draw_items();
 	void _items_focus_entered();
@@ -308,70 +310,15 @@ public:
 
 	virtual RID get_focused_accessibility_element() const override;
 
-	virtual void _parent_focused() override;
-
-	RID bind_global_menu();
 	void unbind_global_menu();
 	bool is_system_menu() const;
 
 	void set_system_menu(NativeMenu::SystemMenus p_system_menu_id);
 	NativeMenu::SystemMenus get_system_menu() const;
-
-	void add_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
-	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
-		Key p_accel = Key::NONE);
-	void add_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
-	void add_icon_check_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
-		Key p_accel = Key::NONE);
-	void add_radio_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
-	void add_icon_radio_check_item(const Ref<Texture2D>& p_icon, const String& p_label,
-		int p_id = -1, Key p_accel = Key::NONE);
-
-	void add_multistate_item(const String& p_label, int p_max_states, int p_default_state = 0,
-		int p_id = -1, Key p_accel = Key::NONE);
-
-	void add_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false,
-		bool p_allow_echo = false);
-	void add_icon_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
-		int p_id = -1, bool p_global = false, bool p_allow_echo = false);
-	void add_check_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
-	void add_icon_check_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
-		int p_id = -1, bool p_global = false);
 	void add_radio_check_shortcut(
 		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
 	void add_icon_radio_check_shortcut(const Ref<Texture2D>& p_icon,
 		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
-
-	void add_submenu_item(const String& p_label, const String& p_submenu, int p_id = -1);
-	void add_submenu_node_item(const String& p_label, PopupMenu* p_submenu, int p_id = -1);
-
-	void set_item_text(int p_idx, const String& p_text);
-
-	void set_item_text_direction(int p_idx, Control::TextDirection p_text_direction);
-	void set_item_language(int p_idx, const String& p_language);
-	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
-	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
-	void set_item_icon_max_width(int p_idx, int p_width);
-	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
-	void set_item_checked(int p_idx, bool p_checked);
-	void set_item_indeterminate(int p_idx, bool p_indeterminate);
-	void set_item_id(int p_idx, int p_id);
-	void set_item_accelerator(int p_idx, Key p_accel);
-	void set_item_submenu(int p_idx, const String& p_submenu);
-	void set_item_submenu_node(int p_idx, PopupMenu* p_submenu);
-	void set_item_as_separator(int p_idx, bool p_separator);
-	void set_item_as_checkable(int p_idx, bool p_checkable);
-	void set_item_as_radio_checkable(int p_idx, bool p_radio_checkable);
-	void set_item_tooltip(int p_idx, const String& p_tooltip);
-	void set_item_shortcut(int p_idx, const Ref<Shortcut>& p_shortcut, bool p_global = false);
-	void set_item_indent(int p_idx, int p_indent);
-	void set_item_max_states(int p_idx, int p_max_states);
-	void set_item_multistate(int p_idx, int p_state);
-	void toggle_item_multistate(int p_idx);
-	void set_item_shortcut_disabled(int p_idx, bool p_disabled);
-	void set_item_index(int p_idx, int p_target_idx);
-
-	void toggle_item_checked(int p_idx);
 
 	String get_item_text(int p_idx) const;
 	String get_item_xl_text(int p_idx) const;
@@ -400,18 +347,11 @@ public:
 	int get_item_indent(int p_idx) const;
 	int get_item_max_states(int p_idx) const;
 	int get_item_state(int p_idx) const;
-
-	void set_focused_item(int p_idx);
 	int get_focused_item() const;
-
-	void set_item_count(int p_count);
 	int get_item_count() const;
-
 	void set_prefer_native_menu(bool p_enabled);
 	bool is_prefer_native_menu() const;
-
 	bool is_search_bar_enabled() const;
-
 	int get_search_bar_min_item_count() const;
 
 	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
@@ -425,16 +365,6 @@ public:
 	void scroll_to_item(int p_idx);
 
 	bool activate_item_by_event(const Ref<InputEvent>& p_event, bool p_for_global_only = false);
-	void activate_item(int p_idx);
-
-	void _about_to_popup();
-	void _about_to_close();
-
-	void remove_item(int p_idx);
-
-	void add_separator(const String& p_text = String(), int p_id = -1);
-
-	void clear(bool p_free_submenus = true);
 
 #ifdef TOOLS_ENABLED
 	PackedStringArray get_configuration_warnings() const override;

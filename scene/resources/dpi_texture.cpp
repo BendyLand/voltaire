@@ -318,14 +318,6 @@ void DPITexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const 
 
 bool DPITexture::is_pixel_opaque(int p_x, int p_y) const
 {
-	if (alpha_cache.is_null()) {
-		Ref<Image> img = get_image();
-		if (img.is_valid()) {
-			alpha_cache.instantiate();
-			alpha_cache->create_from_image_alpha(img);
-		}
-	}
-
 	if (alpha_cache.is_valid()) {
 		int aw = int(alpha_cache->get_size().width);
 		int ah = int(alpha_cache->get_size().height);

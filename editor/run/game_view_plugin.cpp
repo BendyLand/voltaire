@@ -104,16 +104,7 @@ void GameView::_embedded_process_focused()
 	}
 }
 
-void GameView::_update_embed_menu_options()
-{
-	PopupMenu* menu = game_window_options_menu->get_popup();
-	menu->set_item_checked(
-		menu->get_item_index(WINDOW_SIZE_MODE_FIXED), embed_size_mode == SIZE_MODE_FIXED);
-	menu->set_item_checked(menu->get_item_index(WINDOW_SIZE_MODE_KEEP_ASPECT),
-		embed_size_mode == SIZE_MODE_KEEP_ASPECT);
-	menu->set_item_checked(
-		menu->get_item_index(WINDOW_SIZE_MODE_STRETCH), embed_size_mode == SIZE_MODE_STRETCH);
-}
+void GameView::_update_embed_menu_options() {}
 
 void GameView::_update_embed_window_size()
 {

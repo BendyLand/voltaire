@@ -129,19 +129,6 @@ void ImageTexture::draw_lcd_rect_region(
 
 bool ImageTexture::is_pixel_opaque(int p_x, int p_y) const
 {
-	if (alpha_cache.is_null()) {
-		Ref<Image> img = get_image();
-		if (img.is_valid()) {
-			if (img->is_compressed()) { // must decompress, if compressed
-				Ref<Image> decom = img->duplicate();
-				decom->decompress();
-				img = decom;
-			}
-			alpha_cache.instantiate();
-			alpha_cache->create_from_image_alpha(img);
-		}
-	}
-
 	if (alpha_cache.is_valid()) {
 		int aw = int(alpha_cache->get_size().width);
 		int ah = int(alpha_cache->get_size().height);

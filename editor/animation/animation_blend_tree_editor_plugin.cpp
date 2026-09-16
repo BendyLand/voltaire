@@ -51,77 +51,7 @@
 #include "scene/gui/view_panner.h"
 #include "scene/main/window.h"
 
-void AnimationNodeBlendTreeEditor::_update_options_menu(bool p_has_input_ports)
-{
-	add_node->get_popup()->clear();
-	add_node->get_popup()->reset_size();
-	for (int i = 0; i < add_options.size(); i++) {
-		if (p_has_input_ports && add_options[i].input_port_count == 0) {
-			continue;
-		}
-		add_node->get_popup()->add_item(add_options[i].name, i);
-	}
-
-	Ref<AnimationNode> clipb = EditorSettings::get_singleton()->get_resource_clipboard();
-	if (clipb.is_valid()) {
-		add_node->get_popup()->add_separator();
-		add_node->get_popup()->add_item(TTR("Paste"), MENU_PASTE);
-	}
-	add_node->get_popup()->add_separator();
-	add_node->get_popup()->add_item(TTR("Load..."), MENU_LOAD_FILE);
-	use_position_from_popup_menu = false;
-}
-
 Size2 AnimationNodeBlendTreeEditor::get_minimum_size() const { return Size2(10, 200); }
-
-void AnimationNodeBlendTreeEditor::_popup(bool p_has_input_ports, const Vector2& p_node_position)
-{
-	_update_options_menu(p_has_input_ports);
-	use_position_from_popup_menu = true;
-	position_from_popup_menu = p_node_position;
-	add_node->get_popup()->set_position(
-		graph->get_screen_position() + graph->get_local_mouse_position());
-	add_node->get_popup()->reset_size();
-	add_node->get_popup()->popup();
-}
-
-void AnimationNodeBlendTreeEditor::_popup_request(const Vector2& p_position)
-{
-	if (read_only) {
-		return;
-	}
-
-	_popup(false, p_position);
-}
-
-void AnimationNodeBlendTreeEditor::_connection_to_empty(
-	const String& p_from, int p_from_slot, const Vector2& p_release_position)
-{
-	if (read_only) {
-		return;
-	}
-
-	Ref<AnimationNode> node = blend_tree->get_node(p_from);
-	if (node.is_valid()) {
-		from_node = p_from;
-		_popup(true, p_release_position);
-	}
-}
-
-void AnimationNodeBlendTreeEditor::_connection_from_empty(
-	const String& p_to, int p_to_slot, const Vector2& p_release_position)
-{
-	if (read_only) {
-		return;
-	}
-
-	Ref<AnimationNode> node = blend_tree->get_node(p_to);
-	if (node.is_valid()) {
-		to_node = p_to;
-		to_slot = p_to_slot;
-		_popup(false, p_release_position);
-	}
-}
 
 void AnimationNodeBlendTreeEditor::_popup_hide()
 {
@@ -147,7 +77,6 @@ void AnimationNodeBlendTreeEditor::_scroll_changed(const Vector2& p_scroll)
 	blend_tree->set_graph_offset(p_scroll / EDSCALE);
 	updating = false;
 }
-
 
 AnimationNodeBlendTreeEditor* AnimationNodeBlendTreeEditor::singleton = nullptr;
 

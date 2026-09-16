@@ -107,7 +107,6 @@ public:
 	{
 		DummyTexture* t = texture_owner.get_or_null(p_texture);
 		ERR_FAIL_NULL(t);
-		t->image = p_image->duplicate();
 	}
 
 	virtual void texture_2d_layered_initialize(RID p_texture, const Vector<Ref<Image>>& p_layers,

@@ -130,48 +130,6 @@ Control::CursorShape AnimationNodeStateMachineEditor::get_cursor_shape(const Poi
 	return cursor_shape;
 }
 
-bool AnimationNodeStateMachineEditor::_create_submenu(PopupMenu* p_menu,
-	Ref<AnimationNodeStateMachine> p_nodesm, const StringName& p_name, const StringName& p_path)
-{
-	LocalVector<StringName> nodes = p_nodesm->get_node_list();
-
-	PopupMenu* nodes_menu = memnew(PopupMenu);
-	nodes_menu->set_name(p_name);
-	p_menu->add_child(nodes_menu);
-
-	bool node_added = false;
-	for (const StringName& E : nodes) {
-		if (p_nodesm->can_edit_node(E)) {
-			Ref<AnimationNodeStateMachine> ansm = p_nodesm->get_node(E);
-
-			String path = String(p_path) + "/" + E;
-
-			if (ansm == state_machine) {
-				end_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(SceneStringName(End));
-				continue;
-			}
-
-			if (ansm.is_valid()) {
-				state_machine_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(path);
-
-				if (_create_submenu(nodes_menu, ansm, E, path)) {
-					nodes_menu->add_submenu_item(E, E);
-					node_added = true;
-				}
-			}
-			else {
-				nodes_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(path);
-				node_added = true;
-			}
-		}
-	}
-
-	return node_added;
-}
-
 void AnimationNodeStateMachineEditor::_connection_draw(const Vector2& p_from, const Vector2& p_to,
 	AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
 	bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group, float p_opacity,

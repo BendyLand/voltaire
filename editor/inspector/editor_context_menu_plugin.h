@@ -101,8 +101,6 @@ public:
 	void remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
 
 	bool has_plugins_for_slot(ContextMenuSlot p_slot);
-	void add_options_from_plugins(PopupMenu* p_popup, ContextMenuSlot p_slot,
-		const Vector<String>& p_paths, int p_id_offset = 0);
 
 	static void create();
 	static void cleanup();

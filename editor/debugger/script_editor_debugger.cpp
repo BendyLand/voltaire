@@ -465,44 +465,6 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 	}
 }
 
-void ScriptEditorDebugger::_breakpoints_item_rmb_selected(
-	const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	breakpoints_menu->clear();
-	breakpoints_menu->set_size(Size2(1, 1));
-
-	const TreeItem* selected = breakpoints_tree->get_selected();
-	String file = selected->get_text(0);
-	file = selected->get_parent()->get_text(0);
-}
-
-// Right click on specific file(s) or folder(s).
-void ScriptEditorDebugger::_error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	item_menu->clear();
-	item_menu->reset_size();
-
-	if (error_tree->is_anything_selected()) {
-		item_menu->add_icon_item(
-			get_editor_theme_icon(SNAME("ActionCopy")), TTRC("Copy Error"), ACTION_COPY_ERROR);
-		item_menu->add_icon_item(get_editor_theme_icon(SNAME("ExternalLink")),
-			TTRC("Open C++ Source on GitHub"), ACTION_OPEN_SOURCE);
-	}
-
-	if (item_menu->get_item_count() > 0) {
-		item_menu->set_position(error_tree->get_screen_position() + p_pos);
-		item_menu->popup();
-	}
-}
-
 void ScriptEditorDebugger::_item_menu_id_pressed(int p_option)
 {
 	switch (p_option) {

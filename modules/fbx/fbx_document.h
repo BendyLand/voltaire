@@ -75,15 +75,12 @@ private:
 	Error _parse_nodes(Ref<FBXState> p_state);
 	String _sanitize_animation_name(const String& p_name);
 	String _gen_unique_animation_name(Ref<FBXState> p_state, const String& p_name);
-	Ref<Texture2D> _get_texture(
-		Ref<FBXState> p_state, const GLTFTextureIndex p_texture, int p_texture_type);
 	Error _parse_meshes(Ref<FBXState> p_state);
 	Ref<Image> _parse_image_bytes_into_image(Ref<FBXState> p_state, const Vector<uint8_t>& p_bytes,
 		const String& p_filename, int p_index);
 	GLTFImageIndex _parse_image_save_image(Ref<FBXState> p_state, const Vector<uint8_t>& p_bytes,
 		const String& p_file_extension, int p_index, Ref<Image> p_image);
 	Error _parse_images(Ref<FBXState> p_state, const String& p_base_path);
-	Error _parse_materials(Ref<FBXState> p_state);
 	Error _parse_skins(Ref<FBXState> p_state);
 	Error _parse_animations(Ref<FBXState> p_state);
 	BoneAttachment3D* _generate_bone_attachment(Ref<FBXState> p_state, Skeleton3D* p_skeleton,

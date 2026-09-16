@@ -298,9 +298,7 @@ void EditorAssetLibrary::_image_update(void* p_image_queue)
 }
 
 void EditorAssetLibrary::_licenses_id_pressed(int p_id)
-{
-	licenses->get_popup()->set_item_checked(p_id, !licenses->get_popup()->is_item_checked(p_id));
-}
+{}
 
 void EditorAssetLibrary::_request_current_config()
 {

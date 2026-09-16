@@ -195,13 +195,9 @@ void EditorPlugin::remove_control_from_container(
 void EditorPlugin::add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu)
 {
 	ERR_FAIL_NULL(p_submenu);
-	EditorNode::get_singleton()->add_tool_submenu_item(p_name, p_submenu);
 }
 
-void EditorPlugin::remove_tool_menu_item(const String& p_name)
-{
-	EditorNode::get_singleton()->remove_tool_menu_item(p_name);
-}
+void EditorPlugin::remove_tool_menu_item(const String& p_name) {}
 
 PopupMenu* EditorPlugin::get_export_as_menu()
 {

@@ -566,8 +566,6 @@ private:
 
 	Ref<ConfigFile> _load_scene_config(const String& p_scene_path);
 
-	void _update_layouts_menu();
-
 	void _reload_project_settings();
 
 	bool _is_class_editor_disabled_by_feature_profile(const StringName& p_class);
@@ -774,9 +772,6 @@ public:
 	bool is_exiting() const { return exiting; }
 
 	EditorQuickOpenDialog* get_quick_open_dialog() { return quick_open_dialog; }
-
-	void add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu);
-	void remove_tool_menu_item(const String& p_name);
 
 	PopupMenu* get_export_as_menu();
 
