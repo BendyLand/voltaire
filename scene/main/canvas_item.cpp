@@ -88,6 +88,11 @@ void CanvasItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
 	_handle_visibility_change(p_parent_visible_in_tree);
 }
 
+void CanvasItem::set_visible(bool p_visible)
+{
+	visible = p_visible;
+}
+
 void CanvasItem::show()
 {
 	ERR_MAIN_THREAD_GUARD;

@@ -54,8 +54,6 @@
 #include "servers/rendering/shader_types.h"
 #include "text_shader_editor.h"
 
-/*** SHADER SYNTAX HIGHLIGHTER ****/
-
 void GDShaderSyntaxHighlighter::add_disabled_branch_region(const Point2i& p_region)
 {
 	ERR_FAIL_COND(p_region.x < 0);
@@ -85,8 +83,6 @@ void GDShaderSyntaxHighlighter::set_disabled_branch_color(const Color& p_color)
 	disabled_branch_color = p_color;
 	clear_highlighting_cache();
 }
-
-/*** SHADER PREVIEW LINE LAYER ****/
 
 void TextShaderPreviewLineLayer::_notification(int p_what)
 {
@@ -155,8 +151,6 @@ void TextShaderPreviewLineLayer::set_scroll_container(ScrollContainer* p_scroll_
 }
 
 TextShaderPreviewLineLayer::TextShaderPreviewLineLayer() { set_as_top_level(true); }
-
-/***  SHADER PREVIEW ****/
 
 class SquareMarginContainer : public MarginContainer
 {
@@ -438,8 +432,6 @@ void TextShaderPreview::set_shader_code(const String& p_code, int p_line, bool p
 	surface->show(); // Edit may have called hide() earlier on failed compilation.
 }
 
-/*** SHADER SCRIPT EDITOR ****/
-
 static bool saved_warnings_enabled = false;
 static bool saved_treat_warning_as_errors = false;
 static HashMap<ShaderWarning::Code, bool> saved_warnings;
@@ -610,8 +602,6 @@ static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName
 }
 
 static String complete_from_path;
-
-/*** SCRIPT EDITOR ******/
 
 void TextShaderEditor::_prepare_edit_menu()
 {
