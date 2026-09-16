@@ -119,6 +119,12 @@ Transform2D CanvasItem::get_screen_transform() const
 	return get_viewport()->get_popup_base_transform() * get_global_transform_with_canvas();
 }
 
+CanvasItem* CanvasItem::get_parent_item() const
+{
+	CanvasItem ci = CanvasItem();
+	return &ci;
+}
+
 Transform2D CanvasItem::get_global_transform() const
 {
 	ERR_READ_THREAD_GUARD_V(Transform2D());
@@ -1092,12 +1098,16 @@ CanvasItem::TextureFilter CanvasItem::get_texture_filter_in_tree() const
 	return (TextureFilter)texture_filter_cache;
 }
 
-CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree()
-const
+CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
 {
 	ERR_READ_THREAD_GUARD_V(TEXTURE_REPEAT_DISABLED);
 	_refresh_texture_repeat_cache();
 	return (TextureRepeat)texture_repeat_cache;
+}
+
+PackedStringArray CanvasItem::get_configuration_warnings() const
+{
+	return PackedStringArray();
 }
 
 CanvasItem::~CanvasItem()

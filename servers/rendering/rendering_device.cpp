@@ -1162,6 +1162,11 @@ void RenderingDevice::update_perf_report()
 	copy_bytes_count = 0;
 }
 
+Vector<uint8_t> RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_offset, uint32_t p_size)
+{
+	return Vector<uint8_t>();
+}
+
 Error RenderingDevice::buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size)
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
@@ -1256,6 +1261,18 @@ RID RenderingDevice::texture_buffer_create(
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
 	return id;
+}
+
+RID RenderingDevice::storage_buffer_create(
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	return RID();
+}
+
+RID RenderingDevice::texture_create(
+	const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
+{
+	return RID();
 }
 
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
@@ -3283,6 +3300,13 @@ uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 	return shader->vertex_input_mask;
 }
 
+
+RID RenderingDevice::uniform_set_create(const VectorView<Uniform>& p_uniforms, RID p_shader,
+	uint32_t p_shader_set, bool p_linear_pool)
+{
+	return RID();
+}
+
 void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 {
 	for (UniformSet::SharedTexture shared : p_uniform_set->shared_textures_to_update) {
@@ -3448,8 +3472,7 @@ int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen) co
 	return context->surface_get_height(surface);
 }
 
-int RenderingDevice::
-screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
+int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
 {
 	_THREAD_SAFE_METHOD_
 
@@ -3467,7 +3490,8 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
 	_THREAD_SAFE_METHOD_
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-		screen_swap_chains.find(p_screen);
+
+	screen_swap_chains.find(p_screen);
 	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
 
 	DataFormat format = driver->swap_chain_get_format(it->value);

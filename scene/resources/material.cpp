@@ -2155,6 +2155,8 @@ Ref<Material> BaseMaterial3D::get_material_for_2d(bool p_shaded, Transparency p_
 	return materials_for_2d[key];
 }
 
+void BaseMaterial3D::set_transparency(Transparency p_transparency) {}
+
 void BaseMaterial3D::set_on_top_of_alpha()
 {
 	set_transparency(TRANSPARENCY_DISABLED);

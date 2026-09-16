@@ -220,25 +220,6 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D* p_camera, con
 	}
 }
 
-void Path3DEditorPlugin::_handle_option_pressed(int p_option)
-{
-	PopupMenu* pm;
-	pm = handle_menu->get_popup();
-
-	switch (p_option) {
-	case HANDLE_OPTION_LENGTH: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
-		mirror_handle_length = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
-	} break;
-	case HANDLE_OPTION_SNAP_COLLIDER: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_SNAP_COLLIDER);
-		snap_to_collider = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
-	} break;
-	}
-}
-
 void Path3DEditorPlugin::_clear_curve_points()
 {
 	if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {

@@ -144,6 +144,8 @@ void SkeletonModificationStack2D::set_enabled(bool p_enabled) { enabled = p_enab
 
 bool SkeletonModificationStack2D::get_enabled() const { return enabled; }
 
+void SkeletonModificationStack2D::set_editor_gizmos_dirty(bool p_dirty) {}
+
 void SkeletonModificationStack2D::set_strength(float p_strength)
 {
 	ERR_FAIL_COND_MSG(p_strength < 0, "Strength cannot be less than zero!");

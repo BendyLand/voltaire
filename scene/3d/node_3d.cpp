@@ -109,6 +109,8 @@ void Node3D::_update_rotation_and_scale() const
 	_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
 }
 
+void Node3D::set_transform(const Transform3D& p_transform) {}
+
 void Node3D::set_basis(const Basis& p_basis)
 {
 	ERR_THREAD_GUARD;

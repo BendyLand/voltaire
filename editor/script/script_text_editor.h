@@ -127,7 +127,6 @@ class ScriptTextEditor : public CodeEditorBase
 	{
 		PopupMenu* breakpoints_menu = nullptr;
 
-		void _update_breakpoint_list();
 		void _breakpoint_item_pressed(int p_idx);
 
 	public:

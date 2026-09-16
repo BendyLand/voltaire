@@ -486,6 +486,8 @@ bool LineEdit::has_redo() const
 	return undo_stack_pos != nullptr && undo_stack_pos != undo_stack.back();
 }
 
+void LineEdit::deselect() {}
+
 void LineEdit::undo()
 {
 	if (!editable) {

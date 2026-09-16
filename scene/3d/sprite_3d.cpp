@@ -55,6 +55,8 @@ Color SpriteBase3D::_get_color_accum()
 	return color_accum;
 }
 
+void SpriteBase3D::_queue_redraw() {}
+
 void SpriteBase3D::_propagate_color_changed()
 {
 	if (color_dirty) {

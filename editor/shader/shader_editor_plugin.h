@@ -103,7 +103,6 @@ class ShaderEditorPlugin : public EditorPlugin
 	void _shader_selected(int p_index, bool p_push_item = true);
 	void _shader_list_clicked(
 		int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index);
-	void _setup_popup_menu(PopupMenuType p_type, PopupMenu* p_menu);
 	void _make_script_list_context_menu();
 	void _menu_item_pressed(int p_index);
 	void _close_shader(int p_index);

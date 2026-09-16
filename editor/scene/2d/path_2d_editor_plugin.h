@@ -103,7 +103,6 @@ class Path2DEditor : public HBoxContainer
 	int control_points_in_range = 0;
 
 	void _mode_selected(int p_mode);
-	void _handle_option_pressed(int p_option);
 	void _cancel_current_action();
 
 	void _node_visibility_changed();

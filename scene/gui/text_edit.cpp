@@ -1441,6 +1441,8 @@ bool TextEdit::has_undo() const
 
 bool TextEdit::has_redo() const { return undo_stack_pos != nullptr; }
 
+void TextEdit::deselect(int p_caret) {}
+
 void TextEdit::undo()
 {
 	if (!editable) {
@@ -2421,6 +2423,8 @@ void TextEdit::merge_overlapping_carets()
 		i--;
 	}
 }
+
+void TextEdit::select(int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column, int p_caret) {}
 
 // Starts a multicaret edit operation. Call this before iterating over the carets and call
 // [end_multicaret_edit] afterwards.

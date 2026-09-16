@@ -67,7 +67,6 @@
 #include "servers/display/display_server.h"
 
 #ifdef MODULE_VISUAL_SHADER_ENABLED
-#include "modules/visual_shader/vs_nodes/visual_shader_nodes.h"
 #endif // MODULE_VISUAL_SHADER_ENABLED
 
 void EditorPropertyNil::update_property() {}

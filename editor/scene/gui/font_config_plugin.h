@@ -34,8 +34,6 @@
 #include "editor/inspector/editor_properties_array_dict.h"
 #include "editor/plugins/editor_plugin.h"
 
-/*************************************************************************/
-
 class EditorPropertyFontMetaOverride : public EditorProperty
 {
 	MarginContainer* container = nullptr;
@@ -66,8 +64,6 @@ public:
 	EditorPropertyFontMetaOverride(bool p_script);
 };
 
-/*************************************************************************/
-
 class EditorPropertyOTVariation : public EditorProperty
 {
 	MarginContainer* container = nullptr;
@@ -89,8 +85,6 @@ public:
 
 	EditorPropertyOTVariation();
 };
-
-/*************************************************************************/
 
 class EditorPropertyOTFeatures : public EditorProperty
 {
@@ -133,8 +127,6 @@ public:
 	EditorPropertyOTFeatures();
 };
 
-/*************************************************************************/
-
 class FontPreview : public Control
 {
 protected:
@@ -150,8 +142,6 @@ public:
 	void set_data(const Ref<Font>& p_f);
 };
 
-/*************************************************************************/
-
 class EditorPropertyFontNamesArray : public EditorPropertyArray
 {
 	PopupMenu* menu = nullptr;
@@ -162,10 +152,8 @@ protected:
 	void _add_font(int p_option);
 
 public:
-	EditorPropertyFontNamesArray();
+	EditorPropertyFontNamesArray() = default;
 };
-
-/*************************************************************************/
 
 class FontEditorPlugin : public EditorPlugin
 {

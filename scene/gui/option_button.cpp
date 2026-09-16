@@ -78,7 +78,6 @@ void OptionButton::pressed()
 void OptionButton::add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id)
 {
 	bool first_selectable = !has_selectable_items();
-	popup->add_icon_radio_check_item(p_icon, p_label, p_id);
 	if (first_selectable) {
 		select(get_item_count() - 1);
 	}
@@ -88,7 +87,6 @@ void OptionButton::add_icon_item(const Ref<Texture2D>& p_icon, const String& p_l
 void OptionButton::add_item(const String& p_label, int p_id)
 {
 	bool first_selectable = !has_selectable_items();
-	popup->add_radio_check_item(p_label, p_id);
 	if (first_selectable) {
 		select(get_item_count() - 1);
 	}
@@ -97,20 +95,16 @@ void OptionButton::add_item(const String& p_label, int p_id)
 
 void OptionButton::set_item_text(int p_idx, const String& p_text)
 {
-	popup->set_item_text(p_idx, p_text);
-
 	if (current == p_idx) {
 		set_text(p_text);
 	}
 	_queue_update_size_cache();
 }
 
-void OptionButton::set_item_id(int p_idx, int p_id) { popup->set_item_id(p_idx, p_id); }
+void OptionButton::set_item_id(int p_idx, int p_id) {}
 
 void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip)
-{
-	popup->set_item_tooltip(p_idx, p_tooltip);
-}
+{}
 
 void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
 {
@@ -120,8 +114,6 @@ void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_m
 	if (popup->get_item_auto_translate_mode(p_idx) == p_mode) {
 		return;
 	}
-	popup->set_item_auto_translate_mode(p_idx, p_mode);
-
 	if (current == p_idx) {
 		set_text(popup->get_item_text(p_idx));
 	}
@@ -228,7 +220,7 @@ int OptionButton::get_search_bar_fuzzy_search_max_misses() const
 	return popup->get_search_bar_fuzzy_search_max_misses();
 }
 
-void OptionButton::add_separator(const String& p_text) { popup->add_separator(p_text); }
+void OptionButton::add_separator(const String& p_text) {}
 
 void OptionButton::_select_int(int p_which)
 {
@@ -252,7 +244,6 @@ int OptionButton::get_selected_id() const { return get_item_id(current); }
 
 void OptionButton::remove_item(int p_idx)
 {
-	popup->remove_item(p_idx);
 	if (current == p_idx) {
 		_select(NONE_SELECTED);
 	}
@@ -270,23 +261,12 @@ void OptionButton::show_popup()
 	// If not triggered by the mouse, start the popup with the checked item (or the first enabled
 	// one) focused.
 	if (current != NONE_SELECTED && !popup->is_item_disabled(current)) {
-		if (!_was_pressed_by_mouse()) {
-			popup->set_focused_item(current);
-		}
-		else {
-			popup->scroll_to_item(current);
-		}
+		popup->scroll_to_item(current);
 	}
 	else {
 		for (int i = 0; i < popup->get_item_count(); i++) {
 			if (!popup->is_item_disabled(i)) {
-				if (!_was_pressed_by_mouse()) {
-					popup->set_focused_item(i);
-				}
-				else {
-					popup->scroll_to_item(i);
-				}
-
+				popup->scroll_to_item(i);
 				break;
 			}
 		}

@@ -145,28 +145,6 @@ void Node3DEditor::_snap_update()
 	snap_scale->set_value(snap_scale_value);
 }
 
-void Node3DEditor::_update_vertex_snap_tooltips()
-{
-	String snap_key = ED_GET_SHORTCUT("spatial_editor/vertex_snap")->get_as_text();
-	PopupMenu* p = transform_menu->get_popup();
-	p->set_item_tooltip(p->get_item_index(MENU_VERTEX_SNAP_BASE_VERTEX),
-		vformat(
-			TTR("Hold %s to highlight a vertex on the currently selected node,\nthen drag to move "
-				"the node and snap it to vertices on neighboring nodes.\n\nFor nodes without a "
-				"vertex-based representation,\nSnap Origin to Vertex is always used instead."),
-			snap_key));
-	p->set_item_tooltip(p->get_item_index(MENU_VERTEX_SNAP_BASE_ORIGIN),
-		vformat(TTR("Hold %s to highlight another node's vertex,\nthen click to teleport the "
-					"selected node to the highlighted vertex."),
-			snap_key));
-	p->set_item_tooltip(p->get_item_index(MENU_VERTEX_SNAP_SOURCE_MESH),
-		TTR("Snap to vertices of visual meshes.\nHold Shift while vertex snapping to temporarily "
-			"snap to collision shapes instead."));
-	p->set_item_tooltip(p->get_item_index(MENU_VERTEX_SNAP_SOURCE_COLLISION),
-		TTR("Snap to vertices of collision shapes.\nHold Shift while vertex snapping to "
-			"temporarily snap to mesh vertices instead."));
-}
-
 void Node3DEditor::_finish_indicators()
 {
 	RenderingServer::get_singleton()->free_rid(origin_instance);

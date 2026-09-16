@@ -371,6 +371,8 @@ bool FileDialog::is_mode_overriding_title() const { return mode_overrides_title;
 
 FileDialog::FileMode FileDialog::get_file_mode() const { return mode; }
 
+void FileDialog::set_file_mode(FileMode p_mode) {}
+
 FileDialog::DisplayMode FileDialog::get_display_mode() const { return display_mode; }
 
 void FileDialog::set_favorite_list(const PackedStringArray& p_favorites)
@@ -531,16 +533,6 @@ void FileDialog::_change_dir(const String& p_new_dir)
 
 	invalidate();
 	update_dir();
-}
-
-void FileDialog::_sort_option_selected(int p_option)
-{
-	for (int i = 0; i < int(FileSortOption::MAX); i++) {
-		file_sort_button->get_popup()->set_item_checked(i, (i == p_option));
-	}
-	file_sort = FileSortOption(p_option);
-	ensure_visible_after_invalidating = true;
-	invalidate();
 }
 
 void FileDialog::_favorite_pressed()

@@ -141,7 +141,6 @@ protected:
 
 		TextEditorBase* _get_active_editor();
 		void _edit_option(int p_op);
-		void _update_highlighter_menu();
 		void _change_syntax_highlighter(int p_idx);
 		void _update_bookmark_list();
 		void _bookmark_item_pressed(int p_idx);
@@ -268,7 +267,7 @@ protected:
 	class EditMenusCEB : public EditMenus
 	{
 	public:
-		EditMenusCEB();
+		EditMenusCEB() = default;
 	};
 
 	VSplitContainer* editor_box = nullptr;

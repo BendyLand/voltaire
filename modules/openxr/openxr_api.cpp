@@ -74,9 +74,6 @@
 #define OPENXR_LOADER_NAME "libopenxr_loader.so"
 #endif
 
-////////////////////////////////////
-// OpenXRAPI::OpenXRSwapChainInfo
-
 Vector<OpenXRAPI::OpenXRSwapChainInfo> OpenXRAPI::OpenXRSwapChainInfo::free_queue;
 
 bool OpenXRAPI::OpenXRSwapChainInfo::create(XrSwapchainCreateFlags p_create_flags,
@@ -186,9 +183,6 @@ bool OpenXRAPI::OpenXRSwapChainInfo::release()
 	return true;
 }
 
-////////////////////////////////////
-// OpenXRAPI
-
 OpenXRAPI* OpenXRAPI::singleton = nullptr;
 
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
@@ -201,6 +195,8 @@ bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 		}
 	}
 }
+
+String OpenXRAPI::get_error_string(XrResult result) const { return String(); }
 
 void OpenXRAPI::set_object_name(
 	XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name)

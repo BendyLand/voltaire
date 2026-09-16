@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 
+import os
 import methods
 
 
 def make_doc_header(target, source):
-    buffer = b"".join([methods.get_buffer(src) for src in map(str, source)])
+    out_path = str(target[0])
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    valid_sources = [src for src in map(str, source) if os.path.isfile(src)]
+    buffer = b"".join([methods.get_buffer(src) for src in valid_sources])
     decomp_size = len(buffer)
     buffer = methods.compress_buffer(buffer)
 
-    with methods.generated_wrapper(str(target[0])) as file:
+    with methods.generated_wrapper(out_path) as file:
         file.write(f"""\
 inline constexpr const char *_doc_data_hash = "{hash(buffer)}";
 inline constexpr int _doc_data_compressed_size = {len(buffer)};

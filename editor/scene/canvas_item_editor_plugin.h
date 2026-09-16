@@ -440,12 +440,10 @@ private:
 	void _update_scrollbars();
 	void _snap_changed();
 	void _selection_result_pressed(int);
-	void _selection_menu_hide();
 	void _add_node_pressed(int p_result);
 	void _adjust_new_node_position(Node* p_node);
 	void _reset_create_position();
 	void _update_editor_settings();
-	void _prepare_grid_menu();
 	void _on_grid_menu_id_pressed(int p_id);
 	void _reset_transform(TransformType p_type);
 	void _update_oversampling();

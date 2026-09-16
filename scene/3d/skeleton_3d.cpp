@@ -44,6 +44,7 @@ void SkinReference::_skin_changed()
 	skeleton_version = 0;
 }
 
+void Skeleton3D::_make_dirty() {}
 
 RID SkinReference::get_skeleton() const { return skeleton; }
 

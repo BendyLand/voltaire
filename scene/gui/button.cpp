@@ -292,5 +292,4 @@ Button::Button(const String& p_text)
 	set_text(p_text);
 }
 
-Button::~Button() {}
 
