@@ -290,7 +290,6 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 	}
 
 	colorize_sliders = p_colorize_sliders;
-	mode_popup->set_item_checked(MODE_MAX + 1, colorize_sliders);
 
 	if (colorize_sliders) {
 		Ref<StyleBoxEmpty> style_box_empty(memnew(StyleBoxEmpty));

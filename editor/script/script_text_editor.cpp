@@ -91,51 +91,6 @@ ConnectionInfoDialog::ConnectionInfoDialog()
 	tree->set_allow_rmb_select(true);
 }
 
-void ScriptTextEditor::EditMenusSTE::_update_breakpoint_list()
-{
-	breakpoints_menu->clear();
-	breakpoints_menu->reset_size();
-
-	breakpoints_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_breakpoint"), DEBUG_TOGGLE_BREAKPOINT);
-	breakpoints_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/remove_all_breakpoints"), DEBUG_REMOVE_ALL_BREAKPOINTS);
-	breakpoints_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/goto_next_breakpoint"), DEBUG_GOTO_NEXT_BREAKPOINT);
-	breakpoints_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/goto_previous_breakpoint"), DEBUG_GOTO_PREV_BREAKPOINT);
-
-	TextEditorBase* script_text_editor = _get_active_editor();
-	if (script_text_editor == nullptr) {
-		return;
-	}
-
-	PackedInt32Array breakpoint_list =
-		script_text_editor->get_code_editor()->get_text_editor()->get_breakpointed_lines();
-	if (breakpoint_list.is_empty()) {
-		return;
-	}
-
-	breakpoints_menu->add_separator();
-
-	for (int i = 0; i < breakpoint_list.size(); i++) {
-		// Strip edges to remove spaces or tabs.
-		// Also replace any tabs by spaces, since we can't print tabs in the menu.
-		String line = script_text_editor->get_code_editor()
-						  ->get_text_editor()
-						  ->get_line(breakpoint_list[i])
-						  .replace("\t", "  ")
-						  .strip_edges();
-
-		// Limit the size of the line if too big.
-		if (line.length() > 50) {
-			line = line.substr(0, 50);
-		}
-
-		breakpoints_menu->add_item(String::num_int64(breakpoint_list[i] + 1) + " - `" + line + "`");
-	}
-}
-
 String ScriptTextEditor::_picker_color_stringify(const Color& p_color, COLOR_MODE p_mode)
 {
 	String result;

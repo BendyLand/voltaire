@@ -118,6 +118,11 @@ bool JoltObject3D::can_collide_with(const JoltObject3D& p_other) const
 	return (collision_mask & p_other.get_collision_layer()) != 0;
 }
 
+String JoltObject3D::to_string() const
+{
+	return String();
+}
+
 bool JoltObject3D::can_interact_with(const JoltObject3D& p_other) const
 {
 	if (const JoltBody3D* other_body = p_other.as_body()) {

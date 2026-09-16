@@ -106,6 +106,12 @@ void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
 
 void XRServer::set_camera_locked_to_origin(bool p_enable) { camera_locked_to_origin = p_enable; }
 
+Ref<XRInterface> XRServer::get_primary_interface() const
+{
+	Ref<XRInterface> xri = memnew(XRInterface);
+	return xri;
+}
+
 XRServer::XRServer() { singleton = this; }
 
 

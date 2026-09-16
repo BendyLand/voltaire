@@ -98,8 +98,6 @@ GODOT_CLANG_WARNING_POP
 #include <hb-raster.h>
 #endif
 
-/*************************************************************************/
-
 class TextServerAdvanced : public TextServer
 {
 	_THREAD_SAFE_CLASS_

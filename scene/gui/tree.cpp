@@ -535,6 +535,8 @@ void TreeItem::get_range_config(int p_column, double& r_min, double& r_max, doub
 	r_step = cells[p_column].step;
 }
 
+void TreeItem::set_collapsed(bool p_collapsed) {}
+
 bool TreeItem::is_collapsed() { return collapsed; }
 
 void TreeItem::set_collapsed_recursive(bool p_collapsed)
@@ -1686,12 +1688,6 @@ void Tree::_update_popup_menu(const TreeItem::Cell& p_cell)
 		popup_menu->set_shrink_width(false);
 		popup_menu->hide();
 		add_child(popup_menu, false, INTERNAL_MODE_FRONT);
-	}
-	popup_menu->clear();
-	for (int i = 0; i < p_cell.text.get_slice_count(","); i++) {
-		String s = p_cell.text.get_slicec(',', i);
-		popup_menu->add_item(s.get_slicec(':', 0),
-			s.get_slicec(':', 1).is_empty() ? i : s.get_slicec(':', 1).to_int());
 	}
 }
 

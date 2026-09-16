@@ -83,7 +83,6 @@ private:
 	void _reposition_active_tab(int p_to_index);
 	void _update_context_menu(int p_index);
 	void _custom_menu_option(int p_option);
-	void _update_scene_list();
 
 	void _project_settings_changed();
 

@@ -4379,6 +4379,11 @@ RID TextServerAdvanced::_shaped_text_get_parent(const RID& p_shaped) const
 	return sd->parent;
 }
 
+bool TextServerAdvanced::_shaped_text_shape(const RID& p_shaped)
+{
+	return true;
+}
+
 double TextServerAdvanced::_shaped_text_tab_align(
 	const RID& p_shaped, const PackedFloat32Array& p_tab_stops)
 {
@@ -5732,6 +5737,14 @@ int TextServerAdvanced::ft_cubic_to(
 	const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user)
 {
 	return 0;
+}
+
+
+bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced* p_font_data, const Vector2i& p_size,
+	FontForSizeAdvanced*& r_cache_for_size, bool p_silent,
+	uint32_t p_oversampling) const
+{
+	return true;
 }
 
 

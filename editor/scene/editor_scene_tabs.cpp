@@ -62,17 +62,6 @@ int EditorSceneTabs::get_option_tab() const
 	return last_hovered_tab >= 0 ? last_hovered_tab : scene_tabs->get_current_tab();
 }
 
-void EditorSceneTabs::_update_scene_list()
-{
-	PopupMenu* popup = scene_list->get_popup();
-	popup->clear();
-
-	for (int i = 0; i < scene_tabs->get_tab_count(); i++) {
-		popup->add_item(scene_tabs->get_tab_title(i), i);
-		popup->set_item_icon(i, scene_tabs->get_tab_icon(i));
-	}
-}
-
 void EditorSceneTabs::_scene_tabs_resized()
 {
 	const Size2 add_button_size = Size2(scene_tab_add->get_size().x, scene_tabs->get_size().y);

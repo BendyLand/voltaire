@@ -275,12 +275,12 @@ public:
 	// Save and restore a CanvasItem state
 
 	// Used to move the node
-	virtual void _edit_set_position(const Point2& p_position) = 0;
-	virtual Point2 _edit_get_position() const = 0;
+	virtual void _edit_set_position(const Point2& p_position);
+	virtual Point2 _edit_get_position() const;
 
 	// Used to scale the node
-	virtual void _edit_set_scale(const Size2& p_scale) = 0;
-	virtual Size2 _edit_get_scale() const = 0;
+	virtual void _edit_set_scale(const Size2& p_scale);
+	virtual Size2 _edit_get_scale() const;
 
 	// Used to rotate the node
 	virtual bool _edit_use_rotation() const { return false; }
@@ -474,7 +474,7 @@ public:
 
 	CanvasItem* get_parent_item() const;
 
-	virtual Transform2D get_transform() const = 0;
+	virtual Transform2D get_transform() const;
 
 	virtual Transform2D get_global_transform() const;
 	virtual Transform2D get_global_transform_const() const;

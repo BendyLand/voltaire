@@ -689,11 +689,18 @@ bool Label::is_clipping_text() const { return clip; }
 
 PackedFloat32Array Label::get_tab_stops() const { return tab_stops; }
 
+void Label::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior) {}
+
 TextServer::OverrunBehavior Label::get_text_overrun_behavior() const { return overrun_behavior; }
 
 String Label::get_ellipsis_char() const { return el_char; }
 
 String Label::get_text() const { return text; }
+
+void Label::set_text(const String& p_string)
+{
+	text = p_string;
+}
 
 int Label::get_visible_characters() const { return visible_chars; }
 

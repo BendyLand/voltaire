@@ -77,20 +77,6 @@ void TextEditorBase::EditMenus::_edit_option(int p_op)
 	script_text_editor->_edit_option(p_op);
 }
 
-void TextEditorBase::EditMenus::_update_highlighter_menu()
-{
-	TextEditorBase* script_text_editor = _get_active_editor();
-	ERR_FAIL_NULL(script_text_editor);
-
-	Ref<EditorSyntaxHighlighter> current_highlighter =
-		script_text_editor->get_code_editor()->get_text_editor()->get_syntax_highlighter();
-	highlighter_menu->clear();
-	for (const Ref<EditorSyntaxHighlighter>& highlighter : script_text_editor->highlighters) {
-		highlighter_menu->add_radio_check_item(highlighter->_get_name());
-		highlighter_menu->set_item_checked(-1, highlighter == current_highlighter);
-	}
-}
-
 void TextEditorBase::EditMenus::_change_syntax_highlighter(int p_idx)
 {
 	TextEditorBase* script_text_editor = _get_active_editor();
@@ -147,14 +133,5 @@ void TextEditorBase::enable_editor()
 }
 
 TextEditorBase::~TextEditorBase() { highlighters.clear(); }
-
-CodeEditorBase::EditMenusCEB::EditMenusCEB()
-{
-	edit_menu->get_popup()->add_shortcut(
-		ED_GET_SHORTCUT("ui_text_completion_query"), EDIT_COMPLETE);
-	_popup_move_item(EDIT_TRIM_TRAILING_WHITESAPCE, edit_menu->get_popup(), false);
-	edit_menu_line->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
-}
 
 

@@ -37,6 +37,8 @@
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 
+void EditorMainScreen::select(int p_index) {}
+
 void EditorMainScreen::_notification(int p_what)
 {
 	switch (p_what) {
