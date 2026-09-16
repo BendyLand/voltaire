@@ -81,12 +81,15 @@ void SkeletonModifier3D::set_active(bool p_active)
 
 bool SkeletonModifier3D::is_active() const { return active; }
 
-void SkeletonModifier3D::_set_active(bool p_active)
-{
-	//
-}
+void SkeletonModifier3D::_set_active(bool p_active) {}
 
 void SkeletonModifier3D::set_influence(real_t p_influence) { influence = p_influence; }
+
+Skeleton3D* SkeletonModifier3D::get_skeleton() const
+{
+	Skeleton3D s = Skeleton3D();
+	return &s;
+}
 
 real_t SkeletonModifier3D::get_influence() const { return influence; }
 

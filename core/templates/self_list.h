@@ -182,6 +182,8 @@ public:
 	// Forbid copying, which has broken behavior.
 	void operator=(const SelfList<T>&) = delete;
 
+	_FORCE_INLINE_ SelfList() { this; }
+
 	_FORCE_INLINE_ SelfList(T* p_self) { _self = p_self; }
 
 	_FORCE_INLINE_ ~SelfList()

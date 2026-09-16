@@ -602,8 +602,6 @@ EditorNode3DGizmo::~EditorNode3DGizmo()
 	clear();
 }
 
-/////
-
 void EditorNode3DGizmoPlugin::create_handle_material(
 	const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon)
 {
@@ -764,7 +762,5 @@ Ref<EditorNode3DGizmo> EditorNode3DGizmoPlugin::create_gizmo(Node3D* p_spatial) 
 int EditorNode3DGizmoPlugin::get_priority() const { return 0; }
 
 void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
-
-//////
 
 

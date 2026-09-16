@@ -836,8 +836,8 @@ public:
 
 	virtual String accessibility_get_contextual_info() const;
 
-	Control();
-	~Control();
+	Control() = default;
+	~Control() = default;
 };
 
 // G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
