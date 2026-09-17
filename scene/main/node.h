@@ -34,11 +34,7 @@
 #include "core/os/thread_safe.h"
 #include "core/templates/iterable.h"
 #include "core/templates/mem_unique_ptr.h"
-#include "scene/resources/packed_scene.h"
-#include "scene/resources/material.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
-#include "scene/resources/packed_scene.h"
-#include "scene/resources/material.h"
 
 class MultiplayerAPI;
 class NodePath;
@@ -352,6 +348,7 @@ private:
 	void _propagate_ready();
 	void _propagate_exit_tree();
 	void _propagate_after_exit_tree();
+	void _propagate_physics_interpolated(bool p_interpolated);
 	void _propagate_physics_interpolation_reset_requested(bool p_requested);
 	void _propagate_process_owner(
 		Node* p_owner, int p_pause_notification, int p_enabled_notification);
@@ -420,6 +417,7 @@ protected:
 
 	void _propagate_replace_owner(Node* p_owner, Node* p_by_owner);
 
+	static void _bind_methods();
 	static String _get_name_num_separator();
 
 	friend class SceneState;
@@ -545,6 +543,7 @@ public:
 	/* NODE/TREE */
 
 	StringName get_name() const;
+	String get_description(bool p_show_not_in_tree = false) const;
 	void set_name(const StringName& p_name);
 
 	InternalMode get_internal_mode() const;
@@ -623,6 +622,7 @@ public:
 	Node* get_owner() const;
 	void get_owned_by(Node* p_by, List<Node*>* p_owned);
 
+	void set_unique_name_in_owner(bool p_enabled);
 	bool is_unique_name_in_owner() const;
 
 	_FORCE_INLINE_ int get_index(bool p_include_internal = true) const
@@ -799,6 +799,8 @@ public:
 	bool can_process() const;
 	bool can_process_notification(int p_what) const;
 
+	void set_physics_interpolation_mode(PhysicsInterpolationMode p_mode);
+
 	PhysicsInterpolationMode get_physics_interpolation_mode() const
 	{
 		return data.physics_interpolation_mode;
@@ -839,6 +841,8 @@ public:
 	_FORCE_INLINE_ Viewport* get_viewport() const { return data.viewport; }
 
 	virtual Vector<String> get_configuration_warnings() const;
+
+	void update_configuration_warnings();
 
 	void set_display_folded(bool p_folded);
 	bool is_displayed_folded() const;
@@ -888,7 +892,7 @@ public:
 
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
-	Node() = default;
+	Node();
 	~Node();
 };
 
@@ -906,34 +910,34 @@ template <typename... VarArgs> Error Node::rpc(const StringName& p_method, VarAr
 #ifdef DEBUG_ENABLED
 #define ERR_THREAD_GUARD                                                                           \
 	ERR_FAIL_COND_MSG(!is_accessible_from_caller_thread(),                                         \
-		vformat("The caller thread can't call the function `%s()` on this node. Use "          \
+		vformat("%s: The caller thread can't call the function `%s()` on this node. Use "          \
 				"`call_deferred()` or `call_deferred_thread_group()` instead.",                    \
-			FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #define ERR_THREAD_GUARD_V(m_ret)                                                                  \
 	ERR_FAIL_COND_V_MSG(!is_accessible_from_caller_thread(), (m_ret),                              \
-		vformat("The caller thread can't call the function `%s()` on this node. Use "          \
+		vformat("%s: The caller thread can't call the function `%s()` on this node. Use "          \
 				"`call_deferred()` or `call_deferred_thread_group()` instead.",                    \
-			 FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #define ERR_MAIN_THREAD_GUARD                                                                      \
 	ERR_FAIL_COND_MSG(is_inside_tree() && !is_current_thread_safe_for_nodes(),                     \
-		vformat("The function `%s()` on this node can only be accessed from the main thread. " \
+		vformat("%s: The function `%s()` on this node can only be accessed from the main thread. " \
 				"Use `call_deferred()` instead.",                                                  \
-			 FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #define ERR_MAIN_THREAD_GUARD_V(m_ret)                                                             \
 	ERR_FAIL_COND_V_MSG(is_inside_tree() && !is_current_thread_safe_for_nodes(), (m_ret),          \
-		vformat("The function `%s()` on this node can only be accessed from the main thread. " \
+		vformat("%s: The function `%s()` on this node can only be accessed from the main thread. " \
 				"Use `call_deferred()` instead.",                                                  \
-			 FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #define ERR_READ_THREAD_GUARD                                                                      \
 	ERR_FAIL_COND_MSG(!is_readable_from_caller_thread(),                                           \
-		vformat("The function `%s()` on this node can only be accessed from either the main "  \
+		vformat("%s: The function `%s()` on this node can only be accessed from either the main "  \
 				"thread or a thread group. Use `call_deferred()` instead.",                        \
-			 FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #define ERR_READ_THREAD_GUARD_V(m_ret)                                                             \
 	ERR_FAIL_COND_V_MSG(!is_readable_from_caller_thread(), (m_ret),                                \
-		vformat("The function `%s()` on this node can only be accessed from either the main "  \
+		vformat("%s: The function `%s()` on this node can only be accessed from either the main "  \
 				"thread or a thread group. Use `call_deferred()` instead.",                        \
-			 FUNCTION_STR));
+			get_description(), FUNCTION_STR));
 #else
 #define ERR_THREAD_GUARD
 #define ERR_THREAD_GUARD_V(m_ret)

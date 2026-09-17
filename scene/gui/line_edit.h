@@ -245,6 +245,7 @@ private:
 
 	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
+	void _update_context_menu();
 
 	void _shape();
 	void _fit_to_width();
@@ -287,6 +288,7 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
+	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _edit_bind_compat_111117();

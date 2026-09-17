@@ -4337,4 +4337,3 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 TextEdit::~TextEdit() { RS::get_singleton()->free_rid(text_ci); }
 
 
-void TextEdit::deselect(int p_caret) {}

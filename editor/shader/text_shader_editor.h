@@ -93,14 +93,21 @@ private:
 	void _sync_shader_parameters(
 		const Ref<ShaderMaterial>& p_source, Ref<ShaderMaterial>& p_target);
 	void _reset_shader_parameters(Ref<ShaderMaterial>& p_target);
+	void _show_error(const String& p_error);
 	void _goto_pressed();
 	void _delete_pressed();
+	void _on_hover_enter();
+	void _on_hover_exit();
 	Ref<ShaderMaterial> _get_source_material() const;
 
 protected:
+	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
+	void set_shader_code(const String& p_code, int p_line, bool p_in_comment);
+	void show_shader_compile_error();
+	void recompile(const String& p_code);
 	void sync_shader_parameters();
 	void update_panel_color(const Color& p_color);
 	PanelContainer* get_panel_container() const;
@@ -161,6 +168,8 @@ class ShaderTextEditor : public CodeTextEditor
 	uint32_t dependencies_version = 0; // Incremented if deps changed
 
 protected:
+	void _notification(int p_what);
+	static void _bind_methods();
 	virtual void _load_theme_settings() override;
 
 public:
@@ -190,6 +199,7 @@ public:
 	void set_preview_box(Control* p_box);
 	void clear_previews();
 	void redraw_preview_lines();
+	void recompile_previews();
 	void update_parameters();
 
 	ShaderTextEditor();
@@ -253,6 +263,7 @@ class TextShaderEditor : public ShaderEditor
 	bool compilation_success = true;
 
 	void _menu_option(int p_option);
+	void _prepare_edit_menu();
 	mutable Ref<Shader> shader;
 	mutable Ref<ShaderInclude> shader_inc;
 
@@ -263,7 +274,9 @@ class TextShaderEditor : public ShaderEditor
 	void _reload_shader_from_disk();
 	void _reload_shader_include_from_disk();
 	void _reload();
+	void _show_warnings_panel(bool p_show);
 	void _update_warnings(bool p_validate);
+	void _focus_preview_line(int p_line);
 
 	uint32_t dependencies_version = 0xFFFFFFFF;
 
@@ -277,8 +290,11 @@ private:
 
 protected:
 	void _notification(int p_what);
+	static void _bind_methods();
+	void _make_context_menu(bool p_selection, Vector2 p_position);
 	void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
 	void _on_shader_preview_toggled(int p_line);
+	void _update_shader_previews();
 
 	void _update_bookmark_list();
 	void _bookmark_item_pressed(int p_idx);
@@ -292,6 +308,7 @@ public:
 
 	virtual void apply_shaders() override;
 	virtual bool is_unsaved() const override;
+	virtual void save_external_data(const String& p_str = "");
 	virtual void set_toggle_list_control(Control* p_toggle_list_control) override;
 	virtual void update_toggle_files_button() override;
 	virtual void validate_script() override;
@@ -303,6 +320,7 @@ public:
 	bool get_trim_final_newlines_on_save() const { return trim_final_newlines_on_save; }
 
 	void goto_line_selection(int p_line, int p_begin, int p_end);
+	void trim_trailing_whitespace();
 	void trim_final_newlines();
 	void tag_saved_version();
 

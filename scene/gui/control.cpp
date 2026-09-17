@@ -1922,16 +1922,6 @@ int Control::get_theme_constant(const StringName& p_name, const StringName& p_th
 	return 0;
 }
 
-int Control::get_theme_font_size(const StringName& p_name, const StringName& p_theme_type) const {}
-
-Ref<Font> Control::get_theme_font(
-	const StringName& p_name, const StringName& p_theme_type) const
-{
-	Ref<Font> font = memnew(Font);
-	return font;
-}
-
-
 void Control::remove_theme_constant_override(const StringName& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1981,12 +1971,6 @@ bool Control::has_theme_constant_override(const StringName& p_name) const
 	return constant != nullptr;
 }
 
-Ref<StyleBox> Control::get_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
-{
-	Ref<StyleBox> sb = memnew(StyleBox);
-	return sb;
-}
-
 bool Control::has_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
 {
 	return true;
@@ -2009,8 +1993,6 @@ int Control::get_theme_default_font_size() const
 	ERR_READ_THREAD_GUARD_V(0);
 	return data.theme_owner->get_theme_default_font_size();
 }
-
-void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
 void Control::begin_bulk_theme_override()
 {
@@ -2125,9 +2107,5 @@ void Control::_ensure_allocated_offset_transform()
 
 	data.offset_transform = memnew(Data::OffsetTransform);
 }
-
-void Control::set_v_size_flags(uint32_t p_flags) {}
-
-int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const {}
 
 

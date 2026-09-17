@@ -49,9 +49,7 @@ private:
 	struct ThemeCache
 	{
 		int click_margin = 0;
-	};
-
-	ThemeCache theme_cache;
+	} theme_cache;
 
 	uint32_t button_mask = 0;
 	bool toggle_mode = false;
@@ -72,16 +70,26 @@ private:
 		bool pressed_down_with_focus = false;
 		bool disabled = false;
 		int touch_index = -1;
-	};
-
-	Status status;
+	} status;
 
 	Ref<ButtonGroup> button_group;
 
+	void _unpress_group();
+	void _pressed();
+	void _toggled(bool p_pressed);
+
+	void on_action_event(Ref<InputEvent> p_event);
+
 	Timer* shortcut_feedback_timer = nullptr;
 	bool in_shortcut_feedback = false;
+	void _shortcut_feedback_timeout();
 
 protected:
+	virtual void pressed();
+	virtual void toggled(bool p_pressed);
+	static void _bind_methods();
+	void _notification(int p_what);
+
 	bool _was_pressed_by_mouse() const;
 
 public:
@@ -104,11 +112,15 @@ public:
 	bool is_pressing() const; ///< return whether button is pressed (toggled in)
 	bool is_hovered() const;
 
+	void set_pressed(bool p_pressed); // Only works in toggle mode.
+	void set_pressed_no_signal(bool p_pressed);
+	void set_toggle_mode(bool p_on);
 	bool is_toggle_mode() const;
 
 	void set_shortcut_in_tooltip(bool p_on);
 	bool is_shortcut_in_tooltip_enabled() const;
 
+	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
 	void set_action_mode(ActionMode p_mode);
@@ -126,6 +138,9 @@ public:
 	void set_shortcut(const Ref<Shortcut>& p_shortcut);
 	Ref<Shortcut> get_shortcut() const;
 
+	virtual Control* make_custom_tooltip(const String& p_text) const override;
+
+	void set_button_group(const Ref<ButtonGroup>& p_group);
 	Ref<ButtonGroup> get_button_group() const;
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -139,6 +154,9 @@ class ButtonGroup : public Resource
 	friend class BaseButton;
 	HashSet<BaseButton*> buttons;
 	bool allow_unpress = false;
+
+protected:
+	static void _bind_methods();
 
 public:
 	BaseButton* get_pressed_button();

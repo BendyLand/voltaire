@@ -2450,12 +2450,6 @@ void RichTextLabel::menu_option(int p_option)
 	}
 }
 
-RichTextLabel::~RichTextLabel()
-{
-	_stop_thread();
-	memdelete(main);
-}
-
 void RichTextLabel::add_text(const String& p_text) {}
 
 void RichTextLabel::wait_until_finished() {}
