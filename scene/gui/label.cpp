@@ -706,8 +706,6 @@ int Label::get_visible_characters() const { return visible_chars; }
 
 float Label::get_visible_ratio() const { return visible_ratio; }
 
-void Label::set_text(const String& p_string) {}
-
 TextServer::VisibleCharactersBehavior Label::get_visible_characters_behavior() const
 {
 	return visible_chars_behavior;
@@ -731,4 +729,5 @@ Label::~Label()
 	paragraphs.clear();
 }
 
+void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {}
 

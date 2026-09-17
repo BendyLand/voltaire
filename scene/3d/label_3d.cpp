@@ -461,4 +461,5 @@ Label3D::~Label3D()
 	surfaces.clear();
 }
 
+void Label3D::_queue_update() {}
 

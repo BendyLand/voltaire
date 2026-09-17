@@ -352,4 +352,6 @@ Camera2D::Camera2D()
 	set_hide_clip_children(true);
 }
 
+void Camera2D::_update_scroll() {}
+
 

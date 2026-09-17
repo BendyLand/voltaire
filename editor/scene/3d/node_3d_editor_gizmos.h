@@ -177,6 +177,7 @@ public:
 	virtual void set_subgizmo_transform(
 		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform);
 	virtual Ref<EditorNode3DGizmo> create_gizmo(Node3D* p_spatial) const;
+	void create_handle_material(const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon);
 
 	void set_state(int p_state);
 	int get_state() const;

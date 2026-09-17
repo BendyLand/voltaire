@@ -116,4 +116,6 @@ void ProjectDialog::ask_for_path_and_show()
 	_browse_project_path();
 }
 
+void ProjectDialog::show_dialog(bool p_reset_name, bool p_is_confirmed) {}
+
 

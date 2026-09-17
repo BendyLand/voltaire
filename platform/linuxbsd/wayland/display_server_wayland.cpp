@@ -1952,6 +1952,11 @@ void DisplayServerWayland::register_wayland_driver()
 	register_create_function("wayland", create_func, get_rendering_drivers_func);
 }
 
+void DisplayServerWayland::_send_window_event(DisplayServerEnums::WindowEvent p_event,
+	DisplayServerEnums::WindowID p_window_id)
+{
+}
+
 #endif // WAYLAND_ENABLED
 
 

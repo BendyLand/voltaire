@@ -273,6 +273,12 @@ void TextEdit::Text::invalidate_all_lines()
 	tab_size_dirty = false;
 }
 
+void TextEdit::_selection_changed(int p_caret) {}
+
+void TextEdit::set_text_direction(TextDirection p_text_direction) {}
+
+void TextEdit::Text::invalidate_cache(int p_line, bool p_text_changed) {}
+
 void TextEdit::Text::invalidate_font()
 {
 	if (!is_dirty) {
@@ -929,6 +935,8 @@ void TextEdit::_update_ime_window_position()
 	// immediately.
 	DisplayServer::get_singleton()->window_set_ime_position(pos, wid);
 }
+
+void TextEdit::_caret_changed(int p_caret) {}
 
 void TextEdit::_show_virtual_keyboard()
 {
@@ -4337,4 +4345,3 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 TextEdit::~TextEdit() { RS::get_singleton()->free_rid(text_ci); }
 
 
-void TextEdit::deselect(int p_caret) {}

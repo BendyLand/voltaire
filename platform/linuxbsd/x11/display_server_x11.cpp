@@ -5992,6 +5992,8 @@ void DisplayServerX11::register_x11_driver()
 	register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
+void DisplayServerX11::_send_window_event(const WindowData& wd, DisplayServerEnums::WindowEvent p_event) {}
+
 #endif // X11 enabled
 
 

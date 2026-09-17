@@ -209,4 +209,8 @@ EditorUndoRedoManager::~EditorUndoRedoManager()
 	}
 }
 
-
+EditorUndoRedoManager::History& EditorUndoRedoManager::get_or_create_history(int p_idx)
+{
+	EditorUndoRedoManager::History eh = EditorUndoRedoManager::History();
+	return eh;
+}

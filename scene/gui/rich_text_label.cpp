@@ -2450,14 +2450,17 @@ void RichTextLabel::menu_option(int p_option)
 	}
 }
 
-RichTextLabel::~RichTextLabel()
-{
-	_stop_thread();
-	memdelete(main);
-}
-
 void RichTextLabel::add_text(const String& p_text) {}
 
 void RichTextLabel::wait_until_finished() {}
+
+bool RichTextLabel::_validate_line_caches()
+{
+	return true;
+}
+
+void RichTextLabel::clear() {}
+
+void RichTextLabel::_push_def_font(DefaultFont p_def_font) {}
 
 

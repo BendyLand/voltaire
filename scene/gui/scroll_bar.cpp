@@ -119,6 +119,8 @@ Size2 ScrollBar::get_minimum_size() const
 
 void ScrollBar::scroll(double p_amount) { scroll_to(get_value() + p_amount); }
 
+void ScrollBar::scroll_to(double p_position) {}
+
 void ScrollBar::set_custom_step(float p_custom_step) { custom_step = p_custom_step; }
 
 float ScrollBar::get_custom_step() const { return custom_step; }

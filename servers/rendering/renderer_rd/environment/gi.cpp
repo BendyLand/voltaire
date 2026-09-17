@@ -1313,4 +1313,8 @@ void GI::debug_voxel_gi(RID p_voxel_gi, RD::DrawListID p_draw_list, RID p_frameb
 
 void GI::enable_vrs_shader_group() { shader.enable_group(GROUP_VRS); }
 
+RID RendererRD::GI::RenderBuffersGI::get_voxel_gi_buffer()
+{
+	return RID();
+}
 

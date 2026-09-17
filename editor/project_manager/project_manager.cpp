@@ -451,4 +451,6 @@ ProjectManager::~ProjectManager()
 	EditorThemeManager::finalize();
 }
 
+void ProjectManager::_open_selected_projects_check_warnings() {}
+
 

@@ -627,4 +627,10 @@ void PackedScene::reset_state() { clear(); }
 
 PackedScene::PackedScene() { state.instantiate(); }
 
+Ref<SceneState> SceneState::get_base_scene_state() const
+{
+	Ref<SceneState> ss = memnew(SceneState);
+	return ss;
+}
+
 

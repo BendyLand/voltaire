@@ -324,4 +324,5 @@ Ref<OpenXRAction> OpenXRActionMap::get_action(const String& p_path) const
 	return Ref<OpenXRAction>();
 }
 
+void OpenXRActionMap::add_interaction_profile(const Ref<OpenXRInteractionProfile>& p_interaction_profile) {}
 

@@ -319,6 +319,11 @@ PackedInt32Array CodeEdit::get_breakpointed_lines() const
 	return ret;
 }
 
+bool CodeEdit::is_line_bookmarked(int p_line) const
+{
+	return true;
+}
+
 void CodeEdit::clear_bookmarked_lines()
 {
 	for (int i = 0; i < get_line_count(); i++) {
@@ -1501,5 +1506,7 @@ void CodeEdit::_line_col_changed()
 }
 
 CodeEdit::~CodeEdit() { _clear_line_number_text_cache(); }
+
+void CodeEdit::unfold_line(int p_line) {}
 
 

@@ -137,4 +137,5 @@ String ConfirmationDialog::get_cancel_button_text() const { return cancel->get_t
 
 Button* ConfirmationDialog::get_cancel_button() { return cancel; }
 
+void AcceptDialog::_cancel_pressed() {}
 

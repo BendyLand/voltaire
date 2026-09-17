@@ -1014,6 +1014,7 @@ public:
 	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
 
 	void reload_effects();
+	void wait_until_finished();
 
 	virtual Size2 get_minimum_size() const override;
 

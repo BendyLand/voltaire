@@ -1079,8 +1079,6 @@ struct CaretInfo
 
 class TextServerManager
 {
-protected:
-
 private:
 	static TextServerManager* singleton;
 

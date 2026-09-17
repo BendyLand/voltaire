@@ -44,19 +44,19 @@ protected:
 
 public:
 	virtual bool intersect_ray(
-		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) = 0;
+		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result);
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
-		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
+		PS3DT::ShapeResult* r_results, int p_result_max);
 	virtual int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
-		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
+		PS3DT::ShapeResult* r_results, int p_result_max);
 	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
-		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr) = 0;
+		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
 	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
-		int p_result_max, int& r_result_count) = 0;
+		int p_result_max, int& r_result_count);
 	virtual bool rest_info(
-		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info) = 0;
+		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info);
 	virtual Vector3 get_closest_point_to_object_volume(
-		RID p_object, const Vector3 p_point) const = 0;
+		RID p_object, const Vector3 p_point) const;
 	PhysicsDirectSpaceState3D();
 };
 

@@ -652,4 +652,5 @@ void TextShaderEditor::register_editor()
 		TTRC("Go to Previous Shader Preview"), KeyModifierMask::CTRL | Key::COMMA);
 }
 
+void TextShaderPreview::_show_error(const String& p_error) {}
 

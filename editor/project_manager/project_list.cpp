@@ -608,4 +608,6 @@ ProjectList::ProjectList()
 	_migrate_config();
 }
 
+void ProjectList::update_dock_menu() {}
+
 

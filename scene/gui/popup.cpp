@@ -308,4 +308,8 @@ void PopupPanel::_notification(int p_what)
 	}
 }
 
+void PopupPanel::_update_child_rects() const {}
+
+void Popup::_close_pressed() {}
+
 

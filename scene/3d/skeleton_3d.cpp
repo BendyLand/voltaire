@@ -771,4 +771,8 @@ Skeleton3D::~Skeleton3D()
 	}
 }
 
+void Skeleton3D::_update_process_order() const {}
+
+void Skeleton3D::_force_update_all_bone_transforms() const {}
+
 

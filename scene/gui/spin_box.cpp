@@ -231,4 +231,6 @@ void SpinBox::_value_changed(double p_value)
 	Range::_value_changed(p_value);
 }
 
+void SpinBox::_update_text(bool p_only_update_if_value_changed) {}
+
 

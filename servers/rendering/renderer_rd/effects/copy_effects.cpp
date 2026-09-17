@@ -41,6 +41,12 @@ CopyEffects* CopyEffects::singleton = nullptr;
 
 CopyEffects* CopyEffects::get_singleton() { return singleton; }
 
+void CopyEffects::copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
+	bool p_flip_y, bool p_force_luminance, bool p_all_source, bool p_8_bit_dst,
+	bool p_alpha_to_one, bool p_sanitize_inf_nan)
+{
+}
+
 void CopyEffects::copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
 	const Rect2i& p_rect, bool p_flip_y, bool p_force_luminance, bool p_alpha_to_zero, bool p_srgb,
 	RID p_secondary, bool p_multiview, bool alpha_to_one, bool p_linear, bool p_normal,

@@ -272,6 +272,8 @@ void ScriptEditorDebugger::_profiler_seeked()
 	debug_break();
 }
 
+void ScriptEditorDebugger::_clear_execution() {}
+
 void ScriptEditorDebugger::_export_csv()
 {
 	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
@@ -584,5 +586,7 @@ void ScriptEditorDebugger::update_layout(EditorDock::DockLayout p_layout, int p_
 		vmem_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTTOM);
 	}
 }
+
+void ScriptEditorDebugger::_send_debug_mute_audio_msg(bool p_mute) {}
 
 

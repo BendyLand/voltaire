@@ -870,4 +870,6 @@ void TabBar::set_deselect_enabled(bool p_enabled)
 
 bool TabBar::get_deselect_enabled() const { return deselect_enabled; }
 
+void TabBar::set_current_tab(int p_current) {}
+
 

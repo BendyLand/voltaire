@@ -33,6 +33,18 @@
 #include "scene/theme/theme_db.h"
 #include "theme_owner.h"
 
+Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
+{
+	Node n = Node();
+	return &n;
+}
+
+Ref<Theme> ThemeOwner::_get_owner_node_theme(Node* p_owner_node) const
+{
+	Ref<Theme> t = memnew(Theme);
+	return t;
+}
+
 ThemeContext* ThemeOwner::_get_active_owner_context() const
 {
 	if (owner_context) {

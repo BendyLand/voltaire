@@ -436,4 +436,6 @@ Control::CursorShape TextureRegionEditorOverlay::get_cursor_shape(const Point2& 
 	return CURSOR_ARROW;
 }
 
+void TextureRegionEditor::_zoom_on_position(float p_zoom, Point2 p_position) {}
+
 

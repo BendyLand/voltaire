@@ -609,4 +609,12 @@ Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName& p_name) co
 	return Ref<AnimationNode>();
 }
 
+void AnimationRootNode::_tree_changed() {}
+
+void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node) {}
+
+bool AnimationNode::add_input(const String& p_name)
+{
+	return true;
+}
 

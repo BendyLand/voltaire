@@ -292,8 +292,6 @@ int Animation::_marker_insert(
 	return -1;
 }
 
-////
-
 int Animation::position_track_insert_key(int p_track, double p_time, const Vector3& p_position)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), -1);
@@ -379,8 +377,6 @@ Vector3 Animation::position_track_interpolate(int p_track, double p_time, bool p
 		err, ret, "3D Position Track: '" + String(tracks[p_track]->path) + "' is unavailable.");
 	return ret;
 }
-
-////
 
 int Animation::rotation_track_insert_key(int p_track, double p_time, const Quaternion& p_rotation)
 {
@@ -468,8 +464,6 @@ Quaternion Animation::rotation_track_interpolate(int p_track, double p_time, boo
 	return ret;
 }
 
-////
-
 int Animation::scale_track_insert_key(int p_track, double p_time, const Vector3& p_scale)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), -1);
@@ -555,8 +549,6 @@ Vector3 Animation::scale_track_interpolate(int p_track, double p_time, bool p_ba
 		err, ret, "3D Scale Track: '" + String(tracks[p_track]->path) + "' is unavailable.");
 	return ret;
 }
-
-////
 
 int Animation::blend_shape_track_insert_key(int p_track, double p_time, float p_blend_shape)
 {
@@ -644,7 +636,10 @@ float Animation::blend_shape_track_interpolate(int p_track, double p_time, bool 
 	return ret;
 }
 
-////
+int Animation::track_get_key_count(int p_track) const
+{
+	return 0;
+}
 
 void Animation::track_remove_key_at_time(int p_track, double p_time)
 {
@@ -740,8 +735,6 @@ int Animation::_find(
 	return middle;
 }
 
-// Linear interpolation for anytype.
-
 Vector3 Animation::_interpolate(const Vector3& p_a, const Vector3& p_b, real_t p_c) const
 {
 	return p_a.lerp(p_b, p_c);
@@ -751,8 +744,6 @@ Quaternion Animation::_interpolate(const Quaternion& p_a, const Quaternion& p_b,
 {
 	return p_a.slerp(p_b, p_c);
 }
-
-// Cubic interpolation for anytype.
 
 Vector3 Animation::_cubic_interpolate_in_time(const Vector3& p_pre_a, const Vector3& p_a,
 	const Vector3& p_b, const Vector3& p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t,
@@ -1657,8 +1648,6 @@ bool Animation::audio_track_is_use_blend(int p_track) const
 
 	return at->use_blend;
 }
-
-//
 
 int Animation::animation_track_insert_key(int p_track, double p_time, const StringName& p_animation)
 {
@@ -3034,6 +3023,11 @@ Animation::~Animation()
 	for (uint32_t i = 0; i < tracks.size(); i++) {
 		memdelete(tracks[i]);
 	}
+}
+
+double Animation::track_get_key_time(int p_track, int p_key_idx) const
+{
+	return 0.0;
 }
 
 

@@ -874,4 +874,6 @@ TextParagraph::~TextParagraph()
 	TS->free_rid(dropcap_rid);
 }
 
+void TextParagraph::_shape_lines() const {}
+
 

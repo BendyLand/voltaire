@@ -2537,4 +2537,16 @@ template class Viewport::CameraOverride<Camera3D>;
 #endif // _3D_DISABLED
 #endif // DEBUG_ENABLED
 
+void Viewport::_sub_window_grab_focus(Window* p_window) {}
+
+bool Viewport::_set_size(const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override, bool p_allocated)
+{
+	return true;
+}
+
+void Viewport::set_input_as_handled() {}
+
+bool Viewport::is_input_handled() const {}
+
+void Viewport::_camera_3d_set(Camera3D* p_camera) {}
 

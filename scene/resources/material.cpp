@@ -2019,6 +2019,8 @@ void BaseMaterial3D::set_texture_filter(TextureFilter p_filter)
 
 BaseMaterial3D::TextureFilter BaseMaterial3D::get_texture_filter() const { return texture_filter; }
 
+void BaseMaterial3D::set_point_size(float p_point_size) {}
+
 float BaseMaterial3D::get_point_size() const { return point_size; }
 
 Vector3 BaseMaterial3D::get_uv1_scale() const { return uv1_scale; }
@@ -2162,8 +2164,6 @@ Ref<Material> BaseMaterial3D::get_material_for_2d(bool p_shaded, Transparency p_
 
 	return materials_for_2d[key];
 }
-
-void BaseMaterial3D::set_transparency(Transparency p_transparency) {}
 
 void BaseMaterial3D::set_on_top_of_alpha()
 {
@@ -2415,4 +2415,6 @@ RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
 
-void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode) {}
+void ShaderMaterial::set_shader(const Ref<Shader>& p_shader) {}
+
+void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture) {}

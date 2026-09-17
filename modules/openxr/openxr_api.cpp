@@ -1260,6 +1260,11 @@ void OpenXRAPI::parse_velocities(
 	}
 }
 
+XrPath OpenXRAPI::get_xr_path(const String& p_path)
+{
+	return XrPath();
+}
+
 String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 {
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, String());
@@ -2278,4 +2283,10 @@ OpenXRAPI::OpenXRAlphaBlendModeSupport OpenXRAPI::is_environment_blend_mode_alph
 	return OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE;
 }
 
+RID OpenXRAPI::OpenXRSwapChainInfo::get_image()
+{
+	return RID();
+}
+
+bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool& p_should_render) {}
 

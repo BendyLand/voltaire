@@ -173,4 +173,10 @@ void EditorDebuggerNode::remove_debugger_plugin(const Ref<EditorDebuggerPlugin>&
 	Ref<EditorDebuggerPlugin>(p_plugin)->clear();
 }
 
+ScriptEditorDebugger* EditorDebuggerNode::get_current_debugger() const
+{
+	ScriptEditorDebugger sed = ScriptEditorDebugger();
+	return &sed;
+}
+
 

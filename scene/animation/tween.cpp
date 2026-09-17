@@ -254,6 +254,11 @@ bool Tween::custom_step(double p_delta)
 	return ret;
 }
 
+bool Tween::step(double p_delta)
+{
+	return true;
+}
+
 bool Tween::can_process(bool p_tree_paused) const
 {
 	if (is_bound && pause_mode == TWEEN_PAUSE_BOUND) {

@@ -142,4 +142,6 @@ void CreateDialog::_favorite_activated()
 	_confirmed();
 }
 
+void CreateDialog::_update_search() {}
+
 

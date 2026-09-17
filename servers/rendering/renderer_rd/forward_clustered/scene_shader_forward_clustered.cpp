@@ -909,4 +909,10 @@ RID SceneShaderForwardClustered::get_default_shader_rd(bool p_is_multiview)
 	return shader_rd;
 }
 
+RID RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::_get_shader_variant(
+	uint16_t p_shader_version) const
+{
+	return RID();
+}
+
 

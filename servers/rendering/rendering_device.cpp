@@ -1274,6 +1274,12 @@ RID RenderingDevice::texture_create(
 	return RID();
 }
 
+Vector<uint8_t> RenderingDevice::texture_get_data(
+	RID p_texture, uint32_t p_layer)
+{
+	return Vector<uint8_t>();
+}
+
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
 {
 	Texture* src_texture = texture_owner.get_or_null(p_with_texture);
@@ -3004,6 +3010,11 @@ RID RenderingDevice::sampler_create(const SamplerState& p_state)
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
 	return id;
+}
+
+RID RenderingDevice::vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	return RID();
 }
 
 bool RenderingDevice::sampler_is_format_supported_for_filter(
@@ -5938,5 +5949,7 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 	return Vector<uint8_t>();
 }
 #endif
+
+void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {}
 
 

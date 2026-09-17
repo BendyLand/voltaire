@@ -4388,4 +4388,6 @@ PackedVector2Array TileData::get_transformed_vertices(const PackedVector2Array& 
 	return new_points;
 }
 
+void TileSetAtlasSource::_queue_update_padded_texture() {}
+
 

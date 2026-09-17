@@ -50,24 +50,12 @@
       3 Window::get_theme_font(StringName const&, StringName const&) const
       3 Window::get_from_id(int)
       3 WaylandThread::_window_hover(int)
-      3 vtable for TileDataDefaultEditor
-      3 vtable for SkeletonModification2DTwoBoneIK
-      3 vtable for SkeletonModification2DPhysicalBones
-      3 vtable for SkeletonModification2DLookAt
-      3 vtable for SkeletonModification2DJiggle
-      3 vtable for SkeletonModification2DCCDIK
-      3 vtable for RendererRD::MaterialStorage::TexBlitShaderData
-      3 vtable for ImageTexture
-      3 vtable for EditorFileDialog
-      3 vtable for EditorExportPlatformAppleEmbedded
-      3 vtable for AudioStreamPlaybackMicrophone
       3 VisibleOnScreenEnabler3D::_update_enable_mode(bool)
       3 VisibleOnScreenEnabler2D::_update_enable_mode(bool)
       3 Viewport::is_visible_subviewport() const
       3 Viewport::gui_perform_drop_at(Vector2 const&, Control*)
       3 Viewport::get_base_window()
       3 VersionControlEditorPlugin::_refresh_remote_list()
-      3 typeinfo for ImageTexture
       3 Tree::set_column_title(int, String const&)
       3 Tree::item_selected(int, TreeItem*, bool)
       3 TreeItem::_change_tree(Tree*)
@@ -155,7 +143,6 @@
       3 FileDialog::_native_popup()
       3 ExportTemplateManager::_item_is_file(TreeItem const*) const
       3 EmbeddedProcessBase::set_window_size(Vector2i const&)
-      3 ED_SHORTCUT_ARRAY(String const&, String const&, Vector<int> const&, bool)
       3 EditorSceneTabs::update_scene_tabs()
       3 EditorRunNative::start_run_native(int)
       3 EditorPropertyMultilineText::_update_theme()
@@ -215,39 +202,6 @@
       2 WebSocketMultiplayerPeer::_poll_server()
       2 WebSocketMultiplayerPeer::_poll_client()
       2 WebPCommon::_webp_lossless_pack(Ref<Image> const&)
-      2 vtable for VideoStreamPlaybackTheora
-      2 vtable for TwoBoneIK3DGizmoPlugin
-      2 vtable for Tween
-      2 vtable for TranslationServer
-      2 vtable for TileSet
-      2 vtable for SystemFont
-      2 vtable for SpringBoneSimulator3DGizmoPlugin
-      2 vtable for SpringBoneCollision3DGizmoPlugin
-      2 vtable for SplitContainer
-      2 vtable for SkeletonModification2DFABRIK
-      2 vtable for Skeleton3DGizmoPlugin
-      2 vtable for Skeleton3D
-      2 vtable for SceneMultiplayer
-      2 vtable for RetargetModifier3D
-      2 vtable for RendererRD::SkyRD::SkyShaderData
-      2 vtable for RendererRD::ParticlesStorage::ParticlesShaderData
-      2 vtable for PhysicsServer3DWrapMT
-      2 vtable for PhysicsServer2DWrapMT
-      2 vtable for PhysicalBone2D
-      2 vtable for PanelContainer
-      2 vtable for OpenXRCompositionLayerEquirect
-      2 vtable for OpenXRCompositionLayerCylinder
-      2 vtable for OpenXRActionMap
-      2 vtable for MenuBar
-      2 vtable for GPUParticles2D
-      2 vtable for FoldableContainer
-      2 vtable for CollisionShape3D
-      2 vtable for ChainIK3DGizmoPlugin
-      2 vtable for CanvasGroup
-      2 vtable for BaseButton
-      2 vtable for AudioServer
-      2 vtable for AnimationTree
-      2 vtable for AnimationPlayer
       2 VoxelGI::bake(Node*, bool)
       2 Viewport::Viewport()
       2 ViewportRotationControl::_get_sorted_axis(Vector<ViewportRotationControl::Axis2D>&)
@@ -673,87 +627,6 @@
       1 Window::_accessibility_notify_enter(Node*)
       1 WebRTCMultiplayerPeer::close()
       1 WebPCommon::_webp_packer(Ref<Image> const&, float, bool)
-      1 vtable for XRInterface
-      1 vtable for WorldBoundaryShape3D
-      1 vtable for Viewport
-      1 vtable for TouchScreenButton
-      1 vtable for TileDataTerrainsEditor
-      1 vtable for TileDataCollisionEditor
-      1 vtable for TextEditorBase
-      1 vtable for TextEditor
-      1 vtable for TabContainer
-      1 vtable for SubViewportContainer
-      1 vtable for SpriteFrames
-      1 vtable for SpringBoneSimulator3D
-      1 vtable for SplitContainerMultiDragger
-      1 vtable for SphereShape3D
-      1 vtable for ShaderEditorPlugin
-      1 vtable for SeparationRayShape3D
-      1 vtable for ScriptTextEditor
-      1 vtable for ScriptEditor
-      1 vtable for RigidBody3D
-      1 vtable for RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData
-      1 vtable for RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData
-      1 vtable for RendererCanvasRenderRD::CanvasShaderData
-      1 vtable for RemoteTransform3D
-      1 vtable for RemoteTransform2D
-      1 vtable for PhysicsDirectSpaceState3D
-      1 vtable for PackedSceneEditorTranslationParserPlugin
-      1 vtable for OpenXRSelectInteractionProfileDialog
-      1 vtable for OpenXRSelectActionDialog
-      1 vtable for OpenXRInteractionProfile
-      1 vtable for OpenXRExportPlugin
-      1 vtable for Node3DEditorViewport
-      1 vtable for MarginContainer
-      1 vtable for JoltWorldBoundaryShape3D
-      1 vtable for JoltPhysicsDirectSpaceState3D
-      1 vtable for JoltCylinderShape3D
-      1 vtable for JoltConvexPolygonShape3D
-      1 vtable for JoltConcavePolygonShape3D
-      1 vtable for JoltBoxShape3D
-      1 vtable for IKModifier3D
-      1 vtable for HeightMapShape3D
-      1 vtable for GraphNode
-      1 vtable for GradientTexture2DEdit
-      1 vtable for GPUParticles3DEditorPlugin
-      1 vtable for GodotPhysicsDirectSpaceState3D
-      1 vtable for GodotAreaSoftBodyPair3D
-      1 vtable for GodotAreaPair3D
-      1 vtable for GodotAreaPair2D
-      1 vtable for GodotArea2Pair3D
-      1 vtable for GodotArea2Pair2D
-      1 vtable for FilterLineEdit
-      1 vtable for FileDialog
-      1 vtable for EditorStandardSyntaxHighlighter
-      1 vtable for EditorPropertyRID
-      1 vtable for EditorPropertyFlags
-      1 vtable for EditorMarkdownSyntaxHighlighter
-      1 vtable for EditorJSONSyntaxHighlighter
-      1 vtable for EditorExportPlatformLinuxBSD
-      1 vtable for EditorExportPlatformAndroid
-      1 vtable for EditorDebuggerServerTCP
-      1 vtable for EditorConfigFileSyntaxHighlighter
-      1 vtable for DockTabContainer
-      1 vtable for CylinderShape3D
-      1 vtable for CSGPolygon3D
-      1 vtable for CPUParticles3DEditorPlugin
-      1 vtable for CPUParticles2DEditorPlugin
-      1 vtable for CPUParticles2D
-      1 vtable for ConvexPolygonShape3D
-      1 vtable for Container
-      1 vtable for ConnectionInfoDialog
-      1 vtable for ConnectDialog
-      1 vtable for ConcavePolygonShape3D
-      1 vtable for CollisionPolygon3DGizmoPlugin
-      1 vtable for CollisionObject3D
-      1 vtable for CharFXTransform
-      1 vtable for CapsuleShape3D
-      1 vtable for Camera2D
-      1 vtable for CallbackTweener
-      1 vtable for BoxShape3D
-      1 vtable for BoneMapperItem
-      1 vtable for AspectRatioContainer
-      1 vtable for AnimationLibrary
       1 VisibleOnScreenNotifier3D::VisibleOnScreenNotifier3D()
       1 VisibleOnScreenNotifier2D::set_rect(Rect2 const&)
       1 Viewport::_update_texture_repeat_changed(bool)
@@ -791,11 +664,6 @@
       1 VehicleBody3D::_ray_cast(int, PhysicsDirectBodyState3D*)
       1 unregister_server_types()
       1 unregister_scene_types()
-      1 typeinfo for SystemFont
-      1 typeinfo for Skeleton3DGizmoPlugin
-      1 typeinfo for RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData
-      1 typeinfo for RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData
-      1 typeinfo for OpenXRActionMap
       1 Tween::get_bound_node() const
       1 TTS_Linux::speech_init_thread_func(void*)
       1 Tree::update_column(int)
@@ -1550,8 +1418,6 @@
       1 GLTFDocument::_encode_accessors(Ref<GLTFState>)
       1 GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState>, MeshInstance3D*)
       1 GLTFDocument::_convert_mesh_instances(Ref<GLTFState>)
-      1 _get_screen_sizes_tag(Ref<EditorExportPreset> const&)
-      1 _get_application_tag(Ref<EditorExportPlatform> const&, Ref<EditorExportPreset> const&, bool, bool, Vector<MetadataInfo> const&)
       1 GeometryInstance3D::set_material_override(Ref<Material> const&)
       1 FreeDesktopPortalDesktop::_thread_monitor(void*)
       1 FontFile::_load_bitmap_font(String const&, List<String, DefaultAllocator>*)
@@ -1568,7 +1434,6 @@
       1 FindInFilesPanel::_update_matches_text()
       1 FindInFilesContainer::_update_bar_visibility()
       1 FindBar::_update_matches_label()
-      1 fill_default_theme(Ref<Theme>&, Ref<Font> const&, Ref<Font> const&, Ref<Font> const&, Ref<Font> const&, Ref<Texture2D>&, Ref<StyleBox>&, float)
       1 FileDialog::set_filename_filter(String const&)
       1 FileDialog::_get_item_path(int) const
       1 FileDialog::_file_list_selected(int)
@@ -1582,7 +1447,6 @@
       1 EmbeddedProcess::_try_embed_process()
       1 EmbeddedProcess::_check_mouse_over()
       1 EmbeddedProcess::_check_focused_process_id()
-      1 ED_SHORTCUT_OVERRIDE_ARRAY(String const&, String const&, Vector<int> const&, bool)
       1 EditorZoomWidget::_update_zoom_label()
       1 EditorVisualProfiler::_update_plot()
       1 EditorVariantTypePopupMenu::_update_menu_icons()
@@ -1607,7 +1471,6 @@
       1 EditorResourcePicker::set_editable(bool)
       1 EditorResourcePicker::_is_uniqueness_enabled(bool)
       1 EditorResourcePicker::_ensure_allowed_types() const
-      1 editor_register_icons(Ref<Theme> const&, bool, float, int, float)
       1 EditorQuickOpenDialog::preview_property()
       1 EditorProperty::_update_property_bg()
       1 EditorProperty::update_editor_property_status()

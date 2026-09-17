@@ -40,8 +40,6 @@ class ConfigFile : public RefCounted
 
 	Error _parse(const String& p_path);
 
-protected:
-
 public:
 	bool has_section(const String& p_section) const;
 	bool has_section_key(const String& p_section, const String& p_key) const;

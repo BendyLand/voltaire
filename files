@@ -1,0 +1,2212 @@
+// core/input/shortcut.cpp
+Vector<Ref<InputEvent>> Shortcut::get_events() const {}
+void Shortcut::set_events(Vector<Ref<InputEvent>> const&) {}
+
+// core/io/config_file.cpp
+Error ConfigFile::_internal_save(Ref<FileAccess>) {}
+Error ConfigFile::_internal_load(String const&, Ref<FileAccess>) {}
+void ConfigFile::erase_section(String const&) {}
+bool ConfigFile::has_section(String const&) const {}
+
+// core/io/json.cpp
+Error JSON::parse(String const&, bool) {}
+
+// core/io/resource_importer.cpp
+void ResourceFormatImporter::get_internal_resource_path_list(String const&, List<String, DefaultAllocator>*) {}
+
+// core/math/a_star_grid_2d.cpp
+Vector<Vector2i> AStarGrid2D::get_id_path(Vector2i const&, Vector2i const&, bool) {}
+
+// core/math/expression.cpp
+Error Expression::_parse_expression() {}
+
+// drivers/png/resource_saver_png.cpp
+Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) {}
+
+// editor/animation/animation_blend_space_2d_editor.cpp
+void AnimationNodeBlendSpace2D::_update_triangles() {}
+void AnimationNodeBlendSpace2D::_queue_auto_triangles() {}
+
+// editor/animation/animation_blend_tree_editor_plugin.cpp
+void AnimationNodeBlendTreeEditor::update_graph() {}
+
+// editor/animation/animation_track_editor.cpp
+void AnimationTrackKeyEdit::notify_change() {}
+void AnimationTrackEditor::_clear_key_edit() {}
+void AnimationMultiTrackKeyEdit::notify_change() {}
+void AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}
+
+// editor/animation/animation_track_editor_plugins.cpp
+AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio() {}
+
+// editor/asset_library/asset_library_editor_plugin.cpp
+void EditorAssetLibrary::_repository_changed(int) {}
+void EditorAssetLibrary::_update_repository_options() {}
+void EditorAssetLibraryItem::_calculate_misc_links_size() {}
+
+// editor/audio/audio_stream_editor_plugin.cpp
+void AudioStreamEditor::_seek_to(float) {}
+
+// editor/audio/audio_stream_preview.cpp
+void AudioStreamPreviewGenerator::generate_preview(Ref<AudioStream> const&) {}
+
+// editor/audio/editor_audio_buses.cpp
+void EditorAudioBuses::_rebuild_buses() {}
+void EditorAudioBuses::_load_default_layout() {}
+
+// editor/debugger/debugger_editor_plugin.cpp
+void DebuggerEditorPlugin::_update_debug_options() {}
+
+// editor/debugger/editor_debugger_inspector.cpp
+void EditorDebuggerInspector::get_stack_variable(String const&) {}
+void EditorDebuggerInspector::clear_remote_inspector() {}
+
+// editor/debugger/editor_debugger_node.cpp
+void EditorDebuggerNode::stop_waiting_inspection() {}
+void EditorDebuggerNode::set_camera_override(EditorDebuggerNode::CameraOverride) {}
+ScriptEditorDebugger* EditorDebuggerNode::get_default_debugger() const {}
+ScriptEditorDebugger* EditorDebuggerNode::get_debugger(int) const {}
+void EditorDebuggerNode::set_debug_mute_audio(bool) {}
+void EditorDebuggerNode::reload_scripts(Vector<String> const&) {}
+
+// editor/debugger/editor_debugger_server.cpp
+Ref<EditorDebuggerServer> EditorDebuggerServerUDS::create(String const&) {}
+
+// editor/debugger/editor_debugger_tree.cpp
+String EditorDebuggerTree::get_selected_path() {}
+void EditorDebuggerTree::select_nodes(TypedArray<long> const&) {}
+
+// editor/debugger/editor_visual_profiler.cpp
+void EditorVisualProfiler::_update_plot() {}
+
+// editor/debugger/script_editor_debugger.cpp
+void ScriptEditorDebugger::clear_inspector(bool) {}
+ScriptEditorDebugger::ScriptEditorDebugger() {}
+ScriptEditorDebugger::~ScriptEditorDebugger() {}
+void ScriptEditorDebugger::request_remote_evaluate(String const&, int) {}
+void ScriptEditorDebugger::_video_mem_request() {}
+void ScriptEditorDebugger::request_remote_tree() {}
+void ScriptEditorDebugger::request_remote_objects(TypedArray<unsigned long> const&, bool) {}
+ScriptLanguage::StackInfo ScriptEditorDebugger::get_stack_script_frame() const {}
+void ScriptEditorDebugger::_clear_breakpoints() {}
+void EditorDebuggerSession::detach_debugger() {}
+EditorDebuggerSession::EditorDebuggerSession(ScriptEditorDebugger*) {}
+
+// editor/doc/editor_help.cpp
+void EditorHelp::update_toggle_files_button() {}
+void EditorHelp::_update_doc() {}
+void EditorHelp::_class_desc_scroll_to_paragraph(int, bool) {}
+void EditorHelp::_load_doc_thread(void*) {}
+void EditorHelp::_gen_doc_thread(void*) {}
+uint64_t EditorHelp::_compute_doc_version_hash() {}
+DocData::ThemeItemDoc EditorHelpBit::_get_theme_item_help_data(StringName const&, StringName const&) {}
+DocData::MethodDoc EditorHelpBit::_get_signal_help_data(StringName const&, StringName const&) {}
+DocData::PropertyDoc EditorHelpBit::_get_property_help_data(StringName const&, StringName const&) {}
+DocData::MethodDoc EditorHelpBit::_get_method_help_data(StringName const&, StringName const&) {}
+DocData::ConstantDoc EditorHelpBit::_get_enum_help_data(StringName const&, StringName const&) {}
+DocData::ConstantDoc EditorHelpBit::_get_constant_help_data(StringName const&, StringName const&) {}
+DocData::ClassDoc EditorHelpBit::_get_class_help_data(StringName const&) {}
+DocData::AnnotationDoc EditorHelpBit::_get_annotation_help_data(StringName const&, StringName const&) {}
+
+// editor/doc/editor_help_search.cpp
+void EditorHelpSearch::_update_results() {}
+bool EditorHelpSearch::Runner::_phase_member_items_init() {}
+bool EditorHelpSearch::Runner::_phase_member_items() {}
+bool EditorHelpSearch::Runner::_phase_match_classes_init() {}
+bool EditorHelpSearch::Runner::_phase_match_classes() {}
+bool EditorHelpSearch::Runner::_phase_fill_member_items() {}
+bool EditorHelpSearch::Runner::_phase_class_items_init() {}
+bool EditorHelpSearch::Runner::_phase_class_items() {}
+
+// editor/docks/editor_dock.cpp
+void EditorDock::_emit_changed() {}
+void EditorDock::update_tab_style() {}
+void EditorDock::set_dock_shortcut(Ref<Shortcut> const&) {}
+
+// editor/docks/editor_dock_manager.cpp
+void EditorDockManager::add_dock(EditorDock*) {}
+void EditorDockManager::remove_dock(EditorDock*) {}
+void EditorDockManager::update_docks_menu() {}
+EditorDock* EditorDockManager::_get_dock_tab_dragged() {}
+void EditorDockManager::_move_dock(EditorDock*, Control*, int, bool) {}
+
+// editor/docks/groups_editor.cpp
+void GroupsEditor::_menu_id_pressed(int) {}
+GroupsEditor::GroupsEditor() {}
+
+// editor/docks/import_dock.cpp
+void ImportDock::_reimport_attempt() {}
+void ImportDock::set_edit_path(String const&) {}
+void ImportDock::set_edit_multiple_paths(Vector<String> const&) {}
+
+// editor/export/editor_export_platform_apple_embedded.cpp
+Error EditorExportPlatformAppleEmbedded::_copy_asset(Ref<EditorExportPreset> const&, String const&, String const&, String const*, bool, bool, Vector<EditorExportPlatformAppleEmbedded::AppleEmbeddedExportAsset>&) {}
+void EditorExportPlatformAppleEmbedded::_process_config_file_line(Ref<EditorExportPreset> const&, String const&, EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData const&, bool, EditorExportPlatformAppleEmbedded::CodeSigningDetails const&) {}
+Error EditorExportPlatformAppleEmbedded::_export_project_helper(Ref<EditorExportPreset> const&, bool, String const&, unsigned int, bool, bool) {}
+
+// editor/export/export_template_manager.cpp
+String ExportTemplateManager::_get_item_path(TreeItem*) const {}
+bool ExportTemplateManager::_item_is_file(TreeItem const*) const {}
+void ExportTemplateManager::_update_version_list() {}
+void ExportTemplateManager::_update_install_button() {}
+void ExportTemplateManager::_queue_process_download_queue() {}
+void ExportTemplateManager::_fill_template_tree(Tree*, HashMap<ExportTemplateManager::TemplateID, LocalVector<String, unsigned int, false, false>, HashMapHasherDefault, HashMapComparatorDefault<ExportTemplateManager::TemplateID, void>, DefaultTypedAllocator<HashMapElement<ExportTemplateManager::TemplateID, LocalVector<String, unsigned int, false, false>>> > const&, bool) {}
+String ExportTemplateManager::_get_current_mirror_url() const {}
+String ExportTemplateManager::get_android_source_zip(Ref<EditorExportPreset> const&) {}
+
+// editor/export/project_export.cpp
+void ProjectExportDialog::_edit_preset(int) {}
+void EditorExport::emit_presets_runnable_changed() {}
+
+// editor/export/project_zip_packer.cpp
+String ProjectZIPPacker::_zip_file(String const&, String const&, void*) {}
+
+// editor/file_system/dependency_editor.cpp
+void OrphanResourcesDialog::_fill_owners(EditorFileSystemDirectory*, HashMap<String, int, HashMapHasherDefault, HashMapComparatorDefault<String, void>, DefaultTypedAllocator<HashMapElement<String, int>> >&, TreeItem*) {}
+void DependencyEditor::_update_list() {}
+void DependencyEditorOwners::_select_file(int) {}
+
+// editor/gui/code_editor.cpp
+void CodeTextEditor::_zoom_to(float) {}
+void CodeTextEditor::update_toggle_files_button() {}
+void CodeTextEditor::trim_final_newlines() {}
+void CodeTextEditor::set_zoom_factor(float) {}
+void CodeTextEditor::_set_show_warnings_panel(bool) {}
+void CodeTextEditor::_set_show_errors_panel(bool) {}
+void CodeTextEditor::adjust_viewport_to_caret() {}
+void FindReplaceBar::_update_matches_display() {}
+void FindReplaceBar::set_text_edit(CodeTextEditor*) {}
+void FindBar::_update_matches_label() {}
+void CodeTextEditor::_update_error_content_height() {}
+void CodeTextEditor::update_editor_settings() {}
+void CodeTextEditor::store_previous_state() {}
+void CodeTextEditor::set_preview_navigation_change(bool) {}
+void CodeTextEditor::center_viewport_to_caret() {}
+
+// editor/gui/create_dialog.cpp
+void CreateDialog::set_base_type(String const&) {}
+void CreateDialog::popup_create(bool, bool, String const&, String const&) {}
+void CreateDialog::select_type(String const&, bool) {}
+void CreateDialog::_confirmed() {}
+void CreateDialog::_update_filter_button_state() {}
+String CreateDialog::get_selected_type() {}
+
+// editor/gui/editor_bottom_panel.cpp
+void EditorBottomPanel::set_bottom_panel_offset(int) {}
+void EditorBottomPanel::make_item_visible(Control*, bool, bool) {}
+Button* EditorBottomPanel::_get_dock_from_control(Control*) const {}
+int EditorBottomPanel::get_bottom_panel_offset() {}
+Button* EditorBottomPanel::add_item(String, Control*, Ref<Shortcut> const&, bool) {}
+
+// editor/gui/editor_quick_open_dialog.cpp
+void QuickOpenResultItem::_set_enabled(bool) {}
+void QuickOpenResultContainer::_select_item(int) {}
+void QuickOpenResultContainer::save_selected_item() {}
+void EditorQuickOpenDialog::update_property() {}
+bool EditorQuickOpenDialog::_is_instant_preview_active() const {}
+void QuickOpenResultItem::set_display_mode(QuickOpenDisplayMode) {}
+void QuickOpenResultContainer::_update_result_items(int, int) {}
+void QuickOpenResultContainer::_set_display_mode(QuickOpenDisplayMode) {}
+void QuickOpenResultContainer::_get_fuzzy_search_results() {}
+void EditorQuickOpenDialog::preview_property() {}
+
+// editor/gui/editor_spin_slider.cpp
+void EditorSpinSlider::_evaluate_input_text() {}
+void EditorSpinSlider::set_control_state(EditorSpinSlider::ControlState) {}
+void EditorSpinSlider::_ensure_value_input() {}
+
+// editor/gui/editor_validation_panel.cpp
+void EditorValidationPanel::_update() {}
+
+// editor/gui/editor_variant_type_selectors.cpp
+void EditorVariantTypePopupMenu::_update_menu_icons() {}
+
+// editor/gui/editor_zoom_widget.cpp
+void EditorZoomWidget::_update_zoom_label() {}
+
+// editor/gui/progress_dialog.cpp
+void BackgroundProgress::task_step(String const&, int) {}
+void BackgroundProgress::end_task(String const&) {}
+void BackgroundProgress::add_task(String const&, String const&, int) {}
+
+// editor/import/3d/scene_import_settings.cpp
+void SceneImportSettingsDialog::open_settings(String const&, String const&) {}
+void SceneImportSettingsDialog::_fill_scene(Node*, TreeItem*) {}
+
+// editor/import/audio_stream_import_settings.cpp
+void AudioStreamImportSettingsDialog::edit(String const&, String const&, Ref<AudioStream> const&) {}
+
+// editor/import/dynamic_font_import_settings.cpp
+void DynamicFontImportSettingsDialog::_variations_validate() {}
+void DynamicFontImportSettingsDialog::open_settings(String const&) {}
+
+// editor/import/fbx_importer_manager.cpp
+bool FBXImporterManager::_validate_path(String const&) {}
+
+// editor/import/import_defaults_editor.cpp
+void ImportDefaultsEditor::_update_importer() {}
+
+// editor/inspector/editor_inspector.cpp
+void EditorInspectorSection::update_property() {}
+void EditorInspector::expand_revertable() {}
+EditorInspector::EditorInspector() {}
+void EditorInspectorSection::unfold() {}
+void EditorInspectorSection::set_keying(bool) {}
+Ref<Texture2D> EditorInspectorSection::_get_arrow() {}
+void EditorInspectorSection::fold() {}
+void EditorInspectorCategory::_update_icon() {}
+void EditorInspectorArray::_resize_array(int) {}
+void EditorInspectorArray::_clear_array() {}
+
+// editor/inspector/editor_properties.cpp
+void EditorPropertyMultilineText::_update_theme() {}
+void EditorProperty::set_label(String const&) {}
+void EditorPropertyResource::_select_resource(Ref<Resource> const&, bool, bool) {}
+void EditorProperty::_update_property_bg() {}
+void EditorProperty::update_editor_property_status() {}
+void EditorPropertyText::_text_changed(String const&) {}
+void EditorProperty::set_name_fixed_size(float) {}
+void EditorProperty::set_keying(bool) {}
+void EditorPropertyResource::fold_resource() {}
+void EditorPropertyQuaternion::_value_changed(double, String const&) {}
+void EditorPropertyPath::_update_uid_icon() {}
+void EditorPropertyPath::_path_selected(String const&) {}
+void EditorPropertyLocale::_locale_selected(String const&) {}
+void EditorPropertyLayers::setup(EditorPropertyLayers::LayerType) {}
+EditorInspector* EditorProperty::get_parent_inspector() const {}
+void EditorPropertyEnum::setup(Vector<String> const&) {}
+void EditorProperty::deselect() {}
+
+// editor/inspector/editor_property_name_processor.cpp
+EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_settings_style() {}
+
+// editor/inspector/editor_resource_picker.cpp
+void EditorResourcePicker::_edit_menu_cbk(int) {}
+void EditorResourcePicker::set_editable(bool) {}
+void EditorResourcePicker::_is_uniqueness_enabled(bool) {}
+void EditorResourcePicker::_ensure_allowed_types() const {}
+
+// editor/inspector/editor_resource_preview.cpp
+void EditorResourcePreview::stop() {}
+void EditorResourcePreview::_iterate() {}
+void EditorResourcePreviewGenerator::DrawRequester::request_and_wait(RID) {}
+
+// editor/inspector/editor_sectioned_inspector.cpp
+String SectionedInspector::get_current_section() const {}
+void SectionedInspector::update_category_list() {}
+
+// editor/inspector/multi_node_edit.cpp
+StringName MultiNodeEdit::get_edited_class_name() const {}
+
+// editor/inspector/property_selector.cpp
+void PropertySelector::_update_search() {}
+
+// editor/plugins/editor_plugin_settings.cpp
+void EditorPluginSettings::update_plugins() {}
+
+// editor/project_manager/project_dialog.cpp
+void ProjectDialog::_browse_project_path() {}
+
+// editor/project_manager/project_list.cpp
+void ProjectListItemControl::set_selected(bool, bool) {}
+void ProjectList::add_project(String const&, bool) {}
+void ProjectList::sort_projects() {}
+void ProjectList::refresh_project(String const&) {}
+void ProjectList::find_projects_multiple(Vector<String> const&) {}
+void ProjectList::update_project_list() {}
+void ProjectList::set_order_option(int, bool) {}
+void ProjectList::_migrate_config() {}
+
+// editor/project_manager/project_manager.cpp
+void ProjectManager::_update_project_buttons() {}
+void ProjectManager::_update_list_placeholder() {}
+void ProjectManager::_open_selected_projects() {}
+void ProjectManager::_manage_project_tags() {}
+void ProjectManager::_add_project_tag(String const&) {}
+void ProjectManager::add_new_tag(String const&) {}
+
+// editor/project_manager/quick_settings_dialog.cpp
+void QuickSettingsDialog::_update_current_values() {}
+
+// editor/project_upgrade/project_converter_3_to_4.cpp
+void ProjectConverter3To4::rename_joypad_buttons_and_axes(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
+void ProjectConverter3To4::rename_input_map_scancode(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
+
+// editor/project_upgrade/project_converter_3_to_4.cpp
+bool ProjectConverter3To4::validate_conversion() {}
+bool ProjectConverter3To4::convert() {}
+
+// editor/run/editor_run_bar.cpp
+void EditorRunBar::update_profiler_autostart_indicator() {}
+void EditorRunBar::_run_scene(String const&, Vector<String> const&) {}
+String EditorRunBar::get_playing_scene() const {}
+
+// editor/run/editor_run_native.cpp
+void EditorRunNative::start_run_native(int) {}
+
+// editor/run/embedded_process.cpp
+void EmbeddedProcessBase::set_window_size(Vector2i const&) {}
+void EmbeddedProcess::reset() {}
+void EmbeddedProcessBase::set_keep_aspect(bool) {}
+void EmbeddedProcess::_try_embed_process() {}
+void EmbeddedProcess::_check_mouse_over() {}
+void EmbeddedProcess::_check_focused_process_id() {}
+
+// editor/scene/2d/abstract_polygon_2d_editor.cpp
+void AbstractPolygon2DEditor::set_edit_origin_and_center(bool) {}
+
+// editor/scene/2d/camera_2d_editor_plugin.cpp
+bool Camera2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+Camera2DEditor::Camera2DEditor(EditorPlugin*) {}
+
+// editor/scene/2d/parallax_background_editor_plugin.cpp
+void ParallaxBackgroundEditorPlugin::convert_to_parallax2d() {}
+
+// editor/scene/2d/particles_2d_editor_plugin.cpp
+void Particles2DEditorPlugin::_validate_textures() {}
+Particles2DEditorPlugin::Particles2DEditorPlugin() {}
+
+// editor/scene/2d/path_2d_editor_plugin.cpp
+void Path2DEditor::_mode_selected(int) {}
+void Path2DEditor::_update_toolbar() {}
+
+// editor/scene/2d/physics/cast_2d_editor_plugin.cpp
+bool Cast2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+void Cast2DEditor::forward_canvas_draw_over_viewport(Control*) {}
+
+// editor/scene/2d/physics/collision_shape_2d_editor_plugin.cpp
+bool CollisionShape2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+CollisionShape2DEditor::CollisionShape2DEditor() {}
+
+// editor/scene/2d/polygon_2d_editor_plugin.cpp
+void Polygon2DEditor::_update_zoom_and_pan(bool) {}
+Polygon2DEditor::Polygon2DEditor() {}
+
+// editor/scene/2d/scene_paint_2d_editor_plugin.cpp
+void ScenePaint2DEditor::_update_draw_overlay() {}
+void ScenePaint2DEditor::_set_picked_scene(Node2D*) {}
+void ScenePaint2DEditor::forward_canvas_draw_over_viewport(Control*) {}
+
+// editor/scene/2d/sprite_2d_editor_plugin.cpp
+void Sprite2DEditor::_popup_debug_uv_dialog() {}
+void Sprite2DEditor::_create_light_occluder_2d_node() {}
+void Sprite2DEditor::_create_collision_polygon_2d_node() {}
+void Sprite2DEditor::_convert_to_polygon_2d_node() {}
+void Sprite2DEditor::_convert_to_mesh_2d_node() {}
+
+// editor/scene/2d/tiles/atlas_merging_dialog.cpp
+void AtlasMergingDialog::update_tile_set(Ref<TileSet>) {}
+void AtlasMergingDialog::_update_texture() {}
+
+// editor/scene/2d/tiles/tile_atlas_view.cpp
+void TileAtlasView::_update_zoom_and_panning(bool, Vector2 const&) {}
+
+// editor/scene/2d/tiles/tile_data_editors.cpp
+void TileDataCollisionEditor::_polygons_changed() {}
+void GenericTilePolygonEditor::set_tile_set(Ref<TileSet>) {}
+void GenericTilePolygonEditor::set_polygons_color(Color) {}
+void GenericTilePolygonEditor::set_background_tile(TileSetAtlasSource const*, Vector2 const&, int) {}
+GenericTilePolygonEditor::GenericTilePolygonEditor() {}
+void GenericTilePolygonEditor::clear_polygons() {}
+void GenericTilePolygonEditor::add_polygon(Vector<Vector2> const&, int) {}
+TileData* TileDataEditor::_get_tile_data(TileMapCell) {}
+
+// editor/scene/2d/tiles/tile_map_layer_editor.cpp
+TileMapLayer* TileMapLayerSubEditorPlugin::_get_edited_layer() const {}
+void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_tiles_selection() {}
+void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_pattern_selection() {}
+void TileMapLayerEditorTilesPlugin::_set_transform_buttons_state(Vector<Button*> const&, Vector<Button*> const&, String const&) {}
+void TileMapLayerEditorTerrainsPlugin::_update_terrains_tree() {}
+void TileMapLayerEditor::_update_layers_selector() {}
+void TileMapLayerEditorTilesPlugin::_update_tile_set_sources_list() {}
+void TileMapLayerEditorTilesPlugin::_update_source_display() {}
+void TileMapLayerEditorTilesPlugin::_update_patterns_list() {}
+void TileMapLayerEditorTilesPlugin::_update_fix_selected_and_hovered() {}
+void TileMapLayerEditorTerrainsPlugin::_update_tiles_list() {}
+void TileMapLayerEditor::forward_canvas_draw_over_viewport(Control*) {}
+void TileMapLayerEditor::_find_tile_map_layers_in_scene(Node*, Node const*, Vector<TileMapLayer*>&) const {}
+
+// editor/scene/2d/tiles/tile_proxies_manager_dialog.cpp
+void TileProxiesManagerDialog::_update_lists() {}
+void TileProxiesManagerDialog::_delete_selected_bindings() {}
+
+// editor/scene/2d/tiles/tile_set_atlas_source_editor.cpp
+void TileSetAtlasSourceEditor::_update_atlas_view() {}
+void TileSetAtlasSourceEditor::_update_current_tile_data_editor() {}
+
+// editor/scene/2d/tiles/tile_set_scenes_collection_source_editor.cpp
+void TileSetScenesCollectionSourceEditor::_update_action_buttons() {}
+void TileSetScenesCollectionSourceEditor::_update_tile_inspector() {}
+void TileSetScenesCollectionSourceEditor::_update_source_inspector() {}
+
+// editor/scene/3d/bone_map_editor_plugin.cpp
+void BoneMapper::recreate_items() {}
+void BoneMapper::recreate_editor() {}
+void BonePropertiesEditor::set_skeleton(Skeleton3D*) {}
+void BonePropertiesEditor::create_editors() {}
+void BonePicker::create_editors() {}
+void BoneMapEditor::fetch_objects() {}
+
+// editor/scene/3d/gpu_particles_collision_sdf_editor_plugin.cpp
+void GPUParticlesCollisionSDF3DEditorPlugin::_sdf_save_path_and_bake(String const&) {}
+
+// editor/scene/3d/material_3d_conversion_plugins.cpp
+EditorInspectorPluginMaterial::EditorInspectorPluginMaterial() {}
+
+// editor/scene/3d/mesh_library_editor_plugin.cpp
+void MeshLibraryEditor::_update_mesh_items(bool, Ref<MeshLibrary>) {}
+void MeshLibraryEditor::_import_scene(Node*, Ref<MeshLibrary>, bool, bool) {}
+
+// editor/scene/3d/node_3d_editor_gizmos.cpp
+Ref<Node3DGizmo> EditorNode3DGizmo::Instance::create_instance(Node3D*, bool) {}
+
+// editor/scene/3d/node_3d_editor_viewport.cpp
+void ViewportRotationControl::_get_sorted_axis(Vector<ViewportRotationControl::Axis2D>&) {}
+void Node3DEditorViewport::_sync_cursor_from_transform(Transform3D const&) {}
+void ViewportNavigationControl::_update_navigation() {}
+void ViewportNavigationControl::_draw() {}
+void Node3DEditorViewport::_pilot_commit_undo_session() {}
+void Node3DEditorViewport::_menu_option(int) {}
+bool Node3DEditorViewport::_is_node_locked(Node const*) const {}
+int Node3DEditorViewport::get_selected_count() const {}
+void Node3DEditorViewport::apply_transform(Vector3, double) {}
+
+// editor/scene/3d/occluder_instance_3d_editor_plugin.cpp
+void OccluderInstance3DEditorPlugin::_bake_select_file(String const&) {}
+
+// editor/scene/3d/particles_3d_editor_plugin.cpp
+Particles3DEditorPlugin::Particles3DEditorPlugin() {}
+
+// editor/scene/3d/skeleton_3d_editor_plugin.cpp
+void Skeleton3DEditor::reset_pose(bool) {}
+void Skeleton3DEditor::pose_to_rest(bool) {}
+void Skeleton3DEditor::create_physical_skeleton() {}
+
+// editor/scene/canvas_item_editor_plugin.cpp
+void CanvasItemEditor::_select_click_on_item(CanvasItem*, Vector2, bool) {}
+void CanvasItemEditor::remove_control_from_menu_panel(Control*) {}
+Vector<CanvasItem*> CanvasItemEditor::_get_edited_canvas_items(bool, bool, bool*) const {}
+void CanvasItemEditor::_focus_selection(int) {}
+void CanvasItemEditor::_expand_encompassing_rect_using_children(Rect2&, Node const*, bool&, Transform2D const&, Transform2D const&, bool) {}
+void CanvasItemEditor::_draw_smart_snapping() {}
+void CanvasItemEditor::_draw_selection() {}
+void CanvasItemEditor::_draw_ruler_tool() {}
+void CanvasItemEditor::_draw_rulers() {}
+void CanvasItemEditor::_draw_message() {}
+void CanvasItemEditor::_draw_locks_and_groups(Node*, Transform2D const&, Transform2D const&) {}
+void CanvasItemEditor::_draw_invisible_nodes_positions(Node*, Transform2D const&, Transform2D const&) {}
+void CanvasItemEditor::_draw_guides() {}
+void CanvasItemEditor::_draw_grid() {}
+void CanvasItemEditor::_draw_axis() {}
+void CanvasItemEditor::_button_tool_select(int) {}
+void CanvasItemEditor::add_control_to_menu_panel(Control*) {}
+
+// editor/scene/connections_dialog.cpp
+void ConnectionsDock::update_tree() {}
+ConnectionsDock::ConnectionsDock() {}
+
+// editor/scene/curve_editor_plugin.cpp
+void CurveEdit::toggle_linear(int, CurveEdit::TangentIndex) {}
+void CurveEdit::remove_point(int) {}
+void CurveEdit::use_preset(int) {}
+void CurveEdit::set_snap_count(int) {}
+void CurveEdit::set_curve(Ref<Curve>) {}
+
+// editor/scene/editor_scene_tabs.cpp
+void EditorSceneTabs::update_scene_tabs() {}
+
+// editor/scene/gradient_editor_plugin.cpp
+void GradientEdit::set_snap_count(int) {}
+void GradientEdit::set_gradient(Ref<Gradient> const&) {}
+void GradientEdit::set_color(int, Color const&) {}
+
+// editor/scene/group_settings_editor.cpp
+void GroupSettingsEditor::_add_group(String const&, String const&) {}
+void GroupSettingsEditor::update_groups() {}
+void GroupSettingsEditor::connect_filesystem_dock_signals(FileSystemDock*) {}
+
+// editor/scene/gui/theme_editor_plugin.cpp
+void ThemeTypeEditor::_update_type_items() {}
+void ThemeTypeEditor::_update_type_list() {}
+void ThemeTypeEditor::_type_variation_changed(String) {}
+void ThemeTypeEditor::_item_rename_confirmed(int, String, Control*) {}
+void ThemeTypeEditor::_item_add_cbk(int, Control*) {}
+void ThemeItemImportTree::_update_items_tree() {}
+void ThemeItemEditorDialog::_update_edit_item_tree(String) {}
+void ThemeItemEditorDialog::_confirm_edit_theme_item() {}
+
+// editor/scene/material_editor_plugin.cpp
+void MaterialEditor::_store_rotation_metadata() {}
+void MaterialEditor::make_shader_material(Ref<Material> const&, bool) {}
+void MaterialEditor::edit(Ref<Material>, Ref<Environment> const&) {}
+
+// editor/scene/particle_process_material_editor_plugin.cpp
+void ParticleProcessMaterialMinMaxPropertyEditor::_update_slider_values() {}
+void ParticleProcessMaterialMinMaxPropertyEditor::_sync_property() {}
+
+// editor/scene/rename_dialog.cpp
+void RenameDialog::_substitute(String const&, Node const*, int) {}
+void RenameDialog::_postprocess(String const&) {}
+
+// editor/scene/resource_preloader_editor_plugin.cpp
+void ResourcePreloaderEditor::_update_library() {}
+
+// editor/scene/scene_tree_editor.cpp
+void SceneTreeEditor::_update_filter(TreeItem*, bool) {}
+void SceneTreeEditor::_update_selection(TreeItem*) {}
+void SceneTreeEditor::_rmb_select(Vector2 const&, MouseButton) {}
+void SceneTreeEditor::NodeCache::remove(Node*, bool) {}
+TreeItem* SceneTreeEditor::_find(TreeItem*, NodePath const&) {}
+void SceneTreeEditor::clear_cache() {}
+void SceneTreeDialog::set_valid_types(Vector<StringName> const&) {}
+
+// editor/scene/sprite_frames_editor_plugin.cpp
+void SpriteFramesEditor::_animation_remove_undo_redo(StringName const&, Vector<ClipboardSpriteFrames::Frame> const*) {}
+void SpriteFramesEditor::_update_library(bool) {}
+void SpriteFramesEditor::_remove_sprite_node() {}
+void SpriteFramesEditor::_paste_texture(Ref<Texture2D> const&) {}
+void SpriteFramesEditor::_paste_frame_array(Ref<ClipboardSpriteFrames> const&) {}
+
+// editor/scene/texture/gradient_texture_2d_editor_plugin.cpp
+void GradientTexture2DEdit::set_texture(Ref<GradientTexture2D>&) {}
+void GradientTexture2DEdit::set_snap_count(int) {}
+
+// editor/scene/texture/texture_3d_editor_plugin.cpp
+void Texture3DEditor::_update_material(bool) {}
+
+// editor/scene/texture/texture_layered_editor_plugin.cpp
+void TextureLayeredEditor::_update_material(bool) {}
+
+// editor/scene/texture/texture_region_editor_plugin.cpp
+TextureRegionEditor::TextureRegionEditor() {}
+void TextureRegionEditor::_edit_region() {}
+void TextureRegionEditor::_clear_edited_object() {}
+
+// editor/script/find_in_files.cpp
+void FindInFilesSearch::_scan_file(String const&) {}
+void FindInFilesPanel::_update_replace_buttons() {}
+void FindInFilesPanel::_update_matches_text() {}
+void FindInFilesContainer::_update_bar_visibility() {}
+
+// editor/script/script_create_dialog.cpp
+bool ScriptCreateDialog::_validate_path(String const&, bool, bool*) {}
+void ScriptCreateDialog::config(String const&, String const&, bool, bool) {}
+
+// editor/script/script_editor_base.cpp
+ScriptEditorBase* TextEditorBase::EditMenus::_get_active_editor() {}
+TextEditorBase::TextEditorBase() {}
+TextEditorBase::EditMenus::EditMenus() {}
+
+// editor/script/script_editor_plugin.cpp
+void ScriptEditor::_update_history_pos(int) {}
+void ScriptEditor::_queue_close_tabs() {}
+void ScriptEditor::_menu_option(int) {}
+void ScriptEditorQuickOpen::_update_search() {}
+void ScriptEditor::_update_script_names() {}
+void ScriptEditor::save_all_scripts() {}
+ScriptEditorBase* ScriptEditor::_get_current_editor() const {}
+void ScriptEditor::get_breakpoints(List<String, DefaultAllocator>*) {}
+void ScriptEditor::ensure_select_current() {}
+void ScriptEditor::edit(Ref<Resource> const&, int, int, bool) {}
+void ScriptEditor::toggle_files_panel() {}
+void ScriptEditor::_show_save_theme_as_dialog() {}
+void ScriptEditor::_script_selected(int) {}
+void ScriptEditor::reload_scripts(bool) {}
+void ScriptEditor::_mark_built_in_scripts_as_saved(String const&) {}
+void ScriptEditor::_make_script_list_context_menu() {}
+Ref<Resource> ScriptEditor::_load_text_file(String const&, Error*) const {}
+void ScriptEditor::_go_to_tab(int, bool) {}
+Vector<Ref<Resource>> ScriptEditor::get_unsaved_scripts() const {}
+void ScriptEditor::_connect_to_scene_recursive(Node*, Node*) {}
+void ScriptEditor::_close_tab(int, bool) {}
+void ScriptEditor::apply_scripts() const {}
+
+// editor/script/script_text_editor.cpp
+void ScriptTextEditor::_update_warnings() {}
+void ScriptTextEditor::_update_errors() {}
+void ScriptTextEditor::_update_background_color() {}
+ScriptTextEditor::EditMenusSTE::EditMenusSTE() {}
+ScriptEditorBase* ScriptTextEditor::create_editor(Ref<Resource> const&) {}
+
+// editor/script/text_editor.cpp
+ScriptEditorBase* TextEditor::create_editor(Ref<Resource> const&) {}
+
+// editor/settings/editor_autoload_settings.cpp
+void EditorAutoloadSettings::autoload_add(String const&, String const&, bool) {}
+void EditorAutoloadSettings::init_autoloads() {}
+void EditorAutoloadSettings::autoload_remove(StringName const&) {}
+
+// editor/settings/editor_build_profile.cpp
+Error EditorBuildProfile::save_to_file(String const&) {}
+void EditorBuildProfileManager::_update_edited_profile() {}
+void EditorBuildProfileManager::_detect_from_project() {}
+EditorBuildProfile::EditorBuildProfile() {}
+
+// editor/settings/editor_command_palette.cpp
+void EditorCommandPalette::add_shortcut_command(String const&, String const&, Ref<Shortcut>) {}
+
+// editor/settings/editor_event_search_bar.cpp
+void EditorEventSearchBar::_value_changed() {}
+
+// editor/settings/editor_feature_profile.cpp
+Error EditorFeatureProfile::save_to_file(String const&) {}
+void EditorFeatureProfileManager::_update_profile_list(String const&) {}
+void EditorFeatureProfileManager::set_current_profile(String const&, bool) {}
+String EditorFeatureProfileManager::_get_selected_profile() {}
+Error EditorFeatureProfile::load_from_file(String const&) {}
+void EditorFeatureProfileManager::_update_selected_profile() {}
+void EditorFeatureProfileManager::_emit_current_profile_changed() {}
+
+// editor/settings/editor_settings_dialog.cpp
+void EditorSettingsDialog::_update_dynamic_property_hints() {}
+
+// editor/settings/event_listener_line_edit.cpp
+void EventListenerLineEdit::clear_event() {}
+
+// editor/settings/input_event_configuration_dialog.cpp
+void InputEventConfigurationDialog::_set_event(Ref<InputEvent> const&, Ref<InputEvent> const&, bool) {}
+void InputEventConfigurationDialog::_update_input_list() {}
+
+// editor/settings/project_settings_editor.cpp
+void ProjectSettingsEditor::_update_property_box() {}
+void ProjectSettingsEditor::popup_project_settings(bool) {}
+
+// editor/shader/shader_editor_plugin.cpp
+void ShaderEditorPlugin::_close_shader(int) {}
+void ShaderEditorPlugin::_update_shader_list() {}
+void ShaderEditorPlugin::_make_script_list_context_menu() {}
+
+// editor/shader/shader_file_editor_plugin.cpp
+void ShaderFileEditor::_update_options() {}
+
+// editor/shader/text_shader_editor.cpp
+void TextShaderPreview::_sync_shader_parameters(Ref<ShaderMaterial> const&, Ref<ShaderMaterial>&) {}
+void TextShaderPreview::_reset_shader_parameters(Ref<ShaderMaterial>&) {}
+Ref<ShaderMaterial> TextShaderPreview::_get_source_material() const {}
+TextShaderEditor::TextShaderEditor() {}
+void ShaderTextEditor::set_edited_shader(Ref<Shader> const&, String const&) {}
+void ShaderTextEditor::set_edited_shader_include(Ref<ShaderInclude> const&, String const&) {}
+bool TextShaderPreview::_find_var_type(Vector<String> const&, String const&, int, bool) {}
+bool TextShaderPreview::_find_statement(Vector<String> const&, int, String&, int&, int&) const {}
+void TextShaderEditor::_update_warnings(bool) {}
+void TextShaderEditor::_reload_shader_include_from_disk() {}
+void TextShaderEditor::_reload_shader_from_disk() {}
+void TextShaderEditor::_check_for_external_edit() {}
+void TextShaderEditor::_apply_editor_settings() {}
+
+// editor/themes/theme_classic.cpp
+void ThemeClassic::populate_standard_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+void ThemeClassic::populate_editor_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+
+// editor/themes/theme_modern.cpp
+void ThemeModern::populate_standard_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+void ThemeModern::populate_editor_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+
+// editor/translations/editor_translation_parser.cpp
+void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>>&) const {}
+
+// editor/translations/localization_editor.cpp
+void LocalizationEditor::_translation_add(Vector<String> const&) {}
+void LocalizationEditor::_template_generate(String const&) {}
+void LocalizationEditor::connect_filesystem_dock_signals(FileSystemDock*) {}
+
+// editor/version_control/version_control_editor_plugin.cpp
+void VersionControlEditorPlugin::_refresh_remote_list() {}
+void VersionControlEditorPlugin::shut_down() {}
+void VersionControlEditorPlugin::_refresh_branch_list() {}
+VersionControlEditorPlugin::VersionControlEditorPlugin() {}
+void VersionControlEditorPlugin::_update_commit_button() {}
+void VersionControlEditorPlugin::_set_vcs_ui_state(bool) {}
+void VersionControlEditorPlugin::_refresh_commit_list() {}
+void VersionControlEditorPlugin::_initialize_vcs() {}
+void VersionControlEditorPlugin::_force_push() {}
+
+// main/main.cpp
+void Main::setup_boot_logo() {}
+
+// modules/camera/camera_feed_linux.cpp
+void CameraFeedLinux::deactivate_feed() {}
+bool CameraFeedLinux::_create_buffer_decoder() {}
+
+// modules/csg/csg_shape.cpp
+Ref<CSGBrush> CSGShape3D::_get_brush() {}
+void CSGShape3D::navmesh_parse_init() {}
+
+// modules/fbx/fbx_document.cpp
+Error FBXDocument::_parse(Ref<FBXState>, String const&, Ref<FileAccess>) {}
+Error FBXDocument::_parse_image_save_image(Ref<FBXState>, Vector<unsigned char> const&, String const&, int, Ref<Image>) {}
+
+// modules/gltf/editor/editor_scene_exporter_gltf_settings.cpp
+void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument>, Node*) {}
+
+// modules/gltf/extensions/gltf_light.cpp
+Ref<GLTFLight> GLTFLight::from_node(Light3D const*) {}
+
+// modules/gltf/gltf_document.cpp
+Error GLTFDocument::_parse(Ref<GLTFState>, String const&, Ref<FileAccess>) {}
+Error GLTFDocument::_convert_scene_node(Ref<GLTFState>, Node*, int, int) {}
+Error GLTFDocument::_serialize_textures(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_texture_samplers(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_skins(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_scenes(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_nodes(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_meshes(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_materials(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_lights(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_images(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_gltf_extensions(Ref<GLTFState>) const {}
+Error GLTFDocument::_serialize_glb_buffer(Ref<GLTFState>, Error*) {}
+Error GLTFDocument::_serialize_file(Ref<GLTFState>, String) {}
+Error GLTFDocument::_serialize_cameras(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_asset_header(Ref<GLTFState>) {}
+Error GLTFDocument::_serialize_animations(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_textures(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_texture_samplers(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_skins(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_scenes(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_nodes(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_meshes(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_materials(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_lights(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_images(Ref<GLTFState>, String const&) {}
+Error GLTFDocument::_parse_gltf_extensions(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_cameras(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_buffer_views(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_buffers(Ref<GLTFState>, String const&) {}
+Error GLTFDocument::_parse_animations(Ref<GLTFState>) {}
+Error GLTFDocument::_parse_accessors(Ref<GLTFState>) {}
+Error GLTFDocument::_encode_buffer_views(Ref<GLTFState>) {}
+Error GLTFDocument::_encode_accessors(Ref<GLTFState>) {}
+Node3D* GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState>, MeshInstance3D*) {}
+Error GLTFDocument::_convert_mesh_instances(Ref<GLTFState>) {}
+
+// modules/gltf/structures/gltf_accessor.cpp
+Vector<unsigned char> GLTFAccessor::encode_ints_as_bytes(Vector<long> const&) {}
+
+// modules/godot_physics_2d/godot_area_2d.cpp
+void GodotArea2D::call_queries() {}
+
+// modules/godot_physics_2d/godot_body_2d.cpp
+void GodotBody2D::integrate_velocities(float) {}
+void GodotBody2D::integrate_forces(float) {}
+void GodotBody2D::call_queries() {}
+
+// modules/godot_physics_3d/godot_area_3d.cpp
+void GodotArea3D::call_queries() {}
+
+// modules/godot_physics_3d/godot_body_3d.cpp
+void GodotBody3D::integrate_velocities(float) {}
+void GodotBody3D::integrate_forces(float) {}
+void GodotBody3D::call_queries() {}
+
+// modules/godot_physics_3d/godot_soft_body_3d.cpp
+void GodotSoftBody3D::set_mesh(RID) {}
+
+// modules/gridmap/grid_map.cpp
+void GridMap::_debug_update() {}
+void GridMap::_update_octant_navigation_debug_edge_connections_mesh(GridMap::OctantKey const&) {}
+void GridMap::set_cell_item(Vector3i const&, int, int) {}
+void GridMap::_octant_exit_world(GridMap::OctantKey const&) {}
+void GridMap::_update_physics_bodies_characteristics() {}
+void GridMap::_octant_update(GridMap::OctantKey const&) {}
+void GridMap::_octant_transform(GridMap::OctantKey const&) {}
+void GridMap::_octant_enter_world(GridMap::OctantKey const&) {}
+void GridMap::navmesh_parse_init() {}
+void GridMap::_debug_update_octants() {}
+
+// modules/interactive_music/editor/audio_stream_interactive_editor_plugin.cpp
+AudioStreamInteractiveTransitionEditor::AudioStreamInteractiveTransitionEditor() {}
+
+// modules/jolt_physics/objects/jolt_area_3d.cpp
+bool JoltArea3D::can_monitor(JoltArea3D const&) const {}
+void JoltArea3D::body_shape_exited(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&) {}
+void JoltArea3D::_update_sleeping() {}
+bool JoltArea3D::can_monitor(JoltSoftBody3D const&) const {}
+bool JoltArea3D::can_monitor(JoltBody3D const&) const {}
+void JoltArea3D::body_shape_entered(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&) {}
+void JoltArea3D::area_shape_exited(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&) {}
+void JoltArea3D::_remove_all_overlaps() {}
+void JoltArea3D::call_queries() {}
+void JoltArea3D::area_shape_entered(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&) {}
+
+// modules/jolt_physics/objects/jolt_body_3d.cpp
+bool JoltBody3D::reports_all_kinematic_contacts() const {}
+void JoltBody3D::add_contact(JoltBody3D const*, float, int, int, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&) {}
+void JoltBody3D::_on_wake_up() {}
+void JoltBody3D::call_queries() {}
+
+// modules/jolt_physics/objects/jolt_shaped_object_3d.cpp
+void JoltShapedObject3D::set_shape_transform(int, Transform3D) {}
+void JoltShapedObject3D::set_shape(int, JoltShape3D*) {}
+void JoltShapedObject3D::set_shape_disabled(int, bool) {}
+void JoltShapedObject3D::remove_shape(int) {}
+Transform3D JoltShapedObject3D::get_shape_transform_scaled(int) const {}
+JoltShape3D* JoltShapedObject3D::get_shape(int) const {}
+void JoltShapedObject3D::clear_shapes() {}
+void JoltShapedObject3D::add_shape(JoltShape3D*, Transform3D, bool) {}
+bool JoltShapedObject3D::_try_build_shape(bool) {}
+void JoltShapedObject3D::remove_shape(JoltShape3D const*) {}
+AABB JoltShapedObject3D::get_aabb() const {}
+int JoltShapedObject3D::find_shape_index(unsigned int) const {}
+
+// modules/jolt_physics/objects/jolt_soft_body_3d.cpp
+void JoltSoftBody3D::_update_mass() {}
+void JoltSoftBody3D::_update_damping() {}
+void JoltSoftBody3D::_update_group_filter() {}
+bool JoltSoftBody3D::has_collision_exception(RID const&) const {}
+void JoltSoftBody3D::apply_vertex_impulse(int, Vector3 const&) {}
+void JoltSoftBody3D::update_rendering_server(PhysicsServer3DRenderingServerHandler*) {}
+void JoltSoftBody3D::unpin_vertex(int) {}
+void JoltSoftBody3D::unpin_all_vertices() {}
+void JoltSoftBody3D::set_vertex_position(int, Vector3 const&) {}
+void JoltSoftBody3D::remove_collision_exception(RID const&) {}
+void JoltSoftBody3D::remove_area(JoltArea3D*) {}
+void JoltSoftBody3D::pin_vertex(int) {}
+bool JoltSoftBody3D::is_vertex_pinned(int) const {}
+Vector3 JoltSoftBody3D::get_vertex_position(int) {}
+bool JoltSoftBody3D::can_interact_with(JoltBody3D const&) const {}
+void JoltSoftBody3D::_apply_environmental_forces(float) {}
+void JoltSoftBody3D::add_collision_exception(RID const&) {}
+void JoltSoftBody3D::add_area(JoltArea3D*) {}
+
+// modules/jolt_physics/shapes/jolt_height_map_shape_3d.cpp
+void JoltHeightMapShape3D::_build_mesh() const {}
+void JoltHeightMapShape3D::_build_height_field() const {}
+
+// modules/jolt_physics/spaces/jolt_job_system.cpp
+void JoltJobSystem::Job::queue() {}
+void JoltJobSystem::pre_step() {}
+JoltJobSystem::JoltJobSystem() {}
+JoltJobSystem::Job::~Job() {}
+void JoltJobSystem::flush_timings() {}
+
+// modules/jolt_physics/spaces/jolt_physics_direct_space_state_3d.cpp
+void JoltPhysicsDirectSpaceState3D::_collide_shape_queries(JPH::Shape const*, JPH::Vec3, JPH::Mat44 const&, JPH::CollideShapeSettings const&, JPH::Vec3, JPH::CollisionCollector<JPH::CollideShapeResult, JPH::CollisionCollectorTraitsCollideShape>&, JPH::BroadPhaseLayerFilter const&, JPH::ObjectLayerFilter const&, JPH::BodyFilter const&, JPH::ShapeFilter const&) const {}
+bool JoltPhysicsDirectSpaceState3D::body_test_motion(JoltBody3D const&, PhysicsServer3DTypes::MotionParameters const&, PhysicsServer3DTypes::MotionResult*) const {}
+
+// modules/jolt_physics/spaces/jolt_space_3d.cpp
+void JoltSpace3D::dump_debug_snapshot(String const&) {}
+void JoltSpace3D::step(float) {}
+JoltSpace3D::JoltSpace3D(JPH::JobSystem*, JPH::TempAllocator*) {}
+void JoltSpace3D::add_object(JoltObject3D const&, JPH::BodyCreationSettings const&, bool) {}
+
+// modules/jolt_physics/spaces/jolt_temp_allocator.cpp
+JoltTempAllocator::JoltTempAllocator() {}
+
+// modules/jpg/movie_writer_mjpeg.cpp
+MovieWriterMJPEG::MovieWriterMJPEG() {}
+
+// modules/multiplayer/editor/editor_network_profiler.cpp
+void EditorNetworkProfiler::refresh_rpc_data() {}
+void EditorNetworkProfiler::refresh_replication_data() {}
+
+// modules/multiplayer/editor/replication_editor.cpp
+void ReplicationEditor::_add_sync_property(String) {}
+void ReplicationEditor::_update_config() {}
+void ReplicationEditor::_pick_node_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}
+
+// modules/multiplayer/multiplayer_spawner.cpp
+void MultiplayerSpawner::clear_spawnable_scenes() {}
+void MultiplayerSpawner::add_spawnable_scene(String const&) {}
+
+// modules/multiplayer/multiplayer_synchronizer.cpp
+void MultiplayerSynchronizer::update_visibility(int) {}
+void MultiplayerSynchronizer::_stop() {}
+void MultiplayerSynchronizer::_start() {}
+void MultiplayerSynchronizer::_update_process() {}
+
+// modules/multiplayer/scene_multiplayer.cpp
+void SceneMultiplayer::_admit_peer(int) {}
+void SceneMultiplayer::set_multiplayer_peer(Ref<MultiplayerPeer> const&) {}
+void SceneMultiplayer::_process_packet(int, unsigned char const*, int) {}
+void SceneMultiplayer::_del_peer(int) {}
+void SceneMultiplayer::clear() {}
+
+// modules/multiplayer/scene_rpc_interface.cpp
+void SceneRPCInterface::_process_rpc(Node*, unsigned short, int, unsigned char const*, int, int) {}
+void SceneRPCInterface::_process_get_node(int, unsigned char const*, unsigned int, int) {}
+
+// modules/navigation_2d/editor/navigation_link_2d_editor_plugin.cpp
+bool NavigationLink2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+
+// modules/navigation_2d/editor/navigation_region_2d_editor_plugin.cpp
+NavigationRegion2DEditor::NavigationRegion2DEditor() {}
+
+// modules/navigation_2d/nav_agent_2d.cpp
+void NavAgent2D::cancel_sync_request() {}
+bool NavAgent2D::has_avoidance_callback() const {}
+void NavAgent2D::dispatch_avoidance_callback() {}
+
+// modules/navigation_2d/nav_link_2d.cpp
+void NavLink2D::cancel_sync_request() {}
+
+// modules/navigation_2d/nav_map_2d.cpp
+NavMap2D::~NavMap2D() {}
+void NavMap2D::sync() {}
+void NavMap2D::_sync_dirty_avoidance_update_requests() {}
+void NavMap2D::step(double) {}
+NavMap2D::NavMap2D() {}
+
+// modules/navigation_2d/nav_obstacle_2d.cpp
+void NavObstacle2D::cancel_sync_request() {}
+
+// modules/navigation_2d/nav_region_2d.cpp
+void NavRegion2D::cancel_async_thread_join() {}
+void NavRegion2D::cancel_sync_request() {}
+void NavRegion2D::set_navigation_mesh(Ref<NavigationPolygon>) {}
+void NavRegion2D::_build_iteration() {}
+
+// modules/navigation_3d/nav_agent_3d.cpp
+void NavAgent3D::dispatch_avoidance_callback() {}
+bool NavAgent3D::has_avoidance_callback() const {}
+
+// modules/navigation_3d/nav_map_3d.cpp
+NavMap3D::~NavMap3D() {}
+void NavMap3D::sync() {}
+void NavMap3D::step(double) {}
+NavMap3D::NavMap3D() {}
+
+// modules/navigation_3d/nav_region_3d.cpp
+NavRegion3D::~NavRegion3D() {}
+void NavRegion3D::sync_async_tasks() {}
+NavRegion3D::NavRegion3D() {}
+void NavRegion3D::_build_iteration() {}
+
+// modules/noise/editor/noise_editor_plugin.cpp
+NoiseEditorPlugin::NoiseEditorPlugin() {}
+
+// modules/openxr/action_map/openxr_action_map.cpp
+int OpenXRActionMap::get_interaction_profile_count() const {}
+void OpenXRActionMap::add_action_set(Ref<OpenXRActionSet> const&) {}
+void OpenXRActionMap::remove_interaction_profile(Ref<OpenXRInteractionProfile> const&) {}
+void OpenXRActionMap::remove_action_set(Ref<OpenXRActionSet> const&) {}
+Ref<OpenXRInteractionProfile> OpenXRActionMap::get_interaction_profile(int) const {}
+Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const {}
+
+// modules/openxr/action_map/openxr_action_set.cpp
+void OpenXRActionSet::clear_actions() {}
+void OpenXRActionSet::add_action(Ref<OpenXRAction> const&) {}
+void OpenXRActionSet::remove_action(Ref<OpenXRAction> const&) {}
+Ref<OpenXRAction> OpenXRActionSet::get_action(String const&) const {}
+
+// modules/openxr/editor/openxr_action_editor.cpp
+void OpenXRActionEditor::_theme_changed() {}
+
+// modules/openxr/editor/openxr_action_map_editor.cpp
+void OpenXRActionMapEditor::_create_interaction_profiles() {}
+void OpenXRActionMapEditor::_create_action_sets() {}
+void OpenXRActionMapEditor::_clear_action_map() {}
+
+// modules/openxr/editor/openxr_action_set_editor.cpp
+void OpenXRActionSetEditor::_theme_changed() {}
+
+// modules/openxr/editor/openxr_binding_modifiers_dialog.cpp
+void OpenXRBindingModifiersDialog::_create_binding_modifiers() {}
+
+// modules/openxr/editor/openxr_interaction_profile_editor.cpp
+OpenXRInteractionProfileEditorBase::OpenXRInteractionProfileEditorBase() {}
+void OpenXRInteractionProfileEditor::_add_io_path(VBoxContainer*, OpenXRInteractionProfileMetadata::IOPath const*) {}
+
+// modules/openxr/editor/openxr_select_action_dialog.cpp
+void OpenXRSelectActionDialog::open() {}
+
+// modules/openxr/editor/openxr_select_interaction_profile_dialog.cpp
+void OpenXRSelectInteractionProfileDialog::open(Vector<String> const&) {}
+
+// modules/openxr/extensions/openxr_future_extension.cpp
+void OpenXRFutureResult::_mark_as_cancelled() {}
+void OpenXRFutureResult::_mark_as_finished() {}
+
+// modules/openxr/openxr_interface.cpp
+void OpenXRInterface::uninitialize() {}
+void OpenXRInterface::on_refresh_rate_changes(float) {}
+void OpenXRInterface::on_gpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}
+void OpenXRInterface::on_cpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}
+
+// modules/openxr/scene/openxr_hand.cpp
+void OpenXRHand::_update_skeleton() {}
+void OpenXRHand::_set_motion_range() {}
+Skeleton3D* OpenXRHand::get_skeleton() {}
+
+// modules/openxr/scene/openxr_render_model_manager.cpp
+void OpenXRRenderModelManager::_update_models() {}
+
+// modules/raycast/raycast_occlusion_cull.cpp
+void RaycastOcclusionCull::Scenario::_update_dirty_instance(int, RID*) {}
+void RaycastOcclusionCull::Scenario::update() {}
+void RaycastOcclusionCull::Scenario::raycast(RTCRayHit16*, unsigned int const*, unsigned int) const {}
+RaycastOcclusionCull::RaycastOcclusionCull() {}
+void RaycastOcclusionCull::RaycastHZBuffer::update_camera_rays(Transform3D const&, Vector3 const&, Vector2 const&, float, bool) {}
+
+// modules/theora/editor/movie_writer_ogv.cpp
+MovieWriterOGV::MovieWriterOGV() {}
+
+// modules/vorbis/audio_stream_ogg_vorbis.cpp
+void AudioStreamOggVorbis::maybe_update_info() {}
+
+// modules/webrtc/webrtc_multiplayer_peer.cpp
+void WebRTCMultiplayerPeer::close() {}
+
+// modules/websocket/websocket_multiplayer_peer.cpp
+void WebSocketMultiplayerPeer::_poll_server() {}
+void WebSocketMultiplayerPeer::_poll_client() {}
+
+// modules/websocket/wsl_peer.cpp
+bool WSLPeer::Resolver::try_next_candidate(Ref<StreamPeerTCP> const&) {}
+Error WSLPeer::Resolver::start(String const&, int) {}
+Error WSLPeer::_do_client_handshake() {}
+
+// modules/zip/zip_packer.cpp
+Error ZIPPacker::start_file(String const&, unsigned int, unsigned long) {}
+
+// platform/linuxbsd/freedesktop_screensaver.cpp
+void FreeDesktopScreenSaver::inhibit() {}
+
+// platform/linuxbsd/os_linuxbsd.cpp
+void OS_LinuxBSD::run() {}
+
+// platform/linuxbsd/wayland/display_server_wayland.cpp
+void WaylandThread::_window_hover(int) {}
+void DisplayServerWayland::_update_window_rect(Rect2i const&, int) {}
+DisplayServerWayland::DisplayServerWayland(String const&, DisplayServerEnums::WindowMode, DisplayServerEnums::VSyncMode, unsigned int, Vector2i const&, DisplayServerEnums::Context, long, Error&) {}
+void DisplayServerWayland::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+// platform/linuxbsd/x11/display_server_x11.cpp
+void DisplayServerX11::_window_changed(_XEvent*) {}
+void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
+void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawCallbackStruct*) {}
+DisplayServerX11::DisplayServerX11(String const&, DisplayServerEnums::WindowMode, DisplayServerEnums::VSyncMode, unsigned int, Vector2i const*, Vector2i const&, int, DisplayServerEnums::Context, long, Error&) {}
+void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+// platform/windows/export/template_modifier.cpp
+Vector<String> TemplateModifier::_get_strings(Ref<EditorExportPreset> const&) const {}
+
+// scene/2d/animated_sprite_2d.cpp
+void AnimatedSprite2D::_stop_internal(bool) {}
+
+// scene/2d/audio_stream_player_2d.cpp
+StringName AudioStreamPlayer2D::_get_actual_bus() {}
+
+// scene/2d/camera_2d.cpp
+bool Camera2D::is_current() const {}
+void Camera2D::make_current() {}
+void Camera2D::clear_current() {}
+
+// scene/2d/canvas_group.cpp
+void CanvasGroup::set_fit_margin(float) {}
+
+// scene/2d/canvas_modulate.cpp
+void CanvasModulate::_on_in_canvas_visibility_changed(bool) {}
+
+// scene/2d/light_occluder_2d.cpp
+void LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&) {}
+
+// scene/2d/line_2d.cpp
+void Line2D::_draw() {}
+
+// scene/2d/navigation/navigation_agent_2d.cpp
+void NavigationAgent2D::_update_navigation() {}
+void NavigationAgent2D::set_agent_parent(Node*) {}
+void NavigationAgent2D::_trigger_waypoint_reached() {}
+
+// scene/2d/navigation/navigation_link_2d.cpp
+void NavigationLink2D::set_start_position(Vector2) {}
+void NavigationLink2D::set_end_position(Vector2) {}
+void NavigationLink2D::_link_update_transform() {}
+void NavigationLink2D::_link_enter_navigation_map() {}
+
+// scene/2d/navigation/navigation_obstacle_2d.cpp
+void NavigationObstacle2D::_update_transform() {}
+void NavigationObstacle2D::_update_static_obstacle_debug() {}
+
+// scene/2d/navigation/navigation_region_2d.cpp
+void NavigationRegion2D::_update_debug_mesh() {}
+void NavigationRegion2D::set_navigation_polygon(Ref<NavigationPolygon> const&) {}
+void NavigationRegion2D::_region_update_transform() {}
+void NavigationRegion2D::_region_enter_navigation_map() {}
+
+// scene/2d/node_2d.cpp
+void Node2D::_update_transform() {}
+void Node2D::set_transform(Transform2D const&) {}
+
+// scene/2d/parallax_layer.cpp
+void ParallaxLayer::_update_mirroring() {}
+
+// scene/2d/path_2d.cpp
+void Path2D::_debug_update() {}
+
+// scene/2d/physics/area_2d.cpp
+void Area2D::_clear_monitoring() {}
+
+// scene/2d/physics/character_body_2d.cpp
+void CharacterBody2D::_apply_floor_snap(bool) {}
+Ref<KinematicCollision2D> CharacterBody2D::_get_slide_collision(int) {}
+
+// scene/2d/physics/collision_object_2d.cpp
+CollisionObject2D::CollisionObject2D(RID, bool) {}
+
+// scene/2d/physics/joints/joint_2d.cpp
+void Joint2D::_disconnect_signals() {}
+
+// scene/2d/physics/physical_bone_2d.cpp
+void PhysicalBone2D::_auto_configure_joint() {}
+void PhysicalBone2D::_find_skeleton_parent() {}
+void PhysicalBone2D::_find_joint_child() {}
+
+// scene/2d/physics/ray_cast_2d.cpp
+void RayCast2D::_update_raycast_state() {}
+
+// scene/2d/physics/rigid_body_2d.cpp
+RigidBody2D::RigidBody2D() {}
+RigidBody2D::~RigidBody2D() {}
+
+// scene/2d/physics/shape_cast_2d.cpp
+void ShapeCast2D::_update_shapecast_state() {}
+
+// scene/2d/remote_transform_2d.cpp
+void RemoteTransform2D::_update_remote() {}
+void RemoteTransform2D::_update_cache() {}
+
+// scene/2d/sprite_2d.cpp
+void Sprite2D::set_frame(int) {}
+
+// scene/2d/tile_map.cpp
+int TileMap::get_cell_alternative_tile(int, Vector2i const&, bool) const {}
+void TileMap::_emit_changed() {}
+void TileMap::_set_tile_map_data_using_compatibility_format(int, TileMapDataFormat, Vector<int> const&) {}
+
+// scene/2d/tile_map_layer.cpp
+void TileMapLayer::_build_runtime_update_tile_data_for_cell(CellData&, bool, bool) {}
+void TileMapLayer::_scenes_update_cell(CellData&) {}
+void TileMapLayer::_queue_internal_update() {}
+void TileMapLayer::notify_runtime_tile_data_update() {}
+void TileMapLayer::_navigation_update_cell(CellData&) {}
+void TileMapLayer::draw_tile(RID, Vector2 const&, Ref<TileSet>, int, Vector2i const&, int, int, TileData const*, float) {}
+void TileMapLayer::_update_cells_callback(bool) {}
+void TileMapLayer::set_use_kinematic_bodies(bool) {}
+void TileMapLayer::set_rendering_quadrant_size(int) {}
+void TileMapLayer::set_pattern(Vector2i const&, Ref<TileMapPattern>) {}
+void TileMapLayer::set_navigation_visibility_mode(TileMapLayer::DebugVisibilityMode) {}
+void TileMapLayer::set_navigation_map(RID) {}
+void TileMapLayer::set_navigation_enabled(bool) {}
+void TileMapLayer::set_enabled(bool) {}
+void TileMapLayer::set_collision_visibility_mode(TileMapLayer::DebugVisibilityMode) {}
+void TileMapLayer::_scenes_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+void TileMapLayer::_rendering_update(bool) {}
+void TileMapLayer::_rendering_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+void TileMapLayer::_physics_update(bool) {}
+void TileMapLayer::_physics_draw_quadrant_debug(RID const&, DebugQuadrant&) {}
+void TileMapLayer::_navigation_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+void TileMapLayer::fix_invalid_tiles() {}
+
+// scene/2d/visible_on_screen_notifier_2d.cpp
+void VisibleOnScreenEnabler2D::_update_enable_mode(bool) {}
+void VisibleOnScreenNotifier2D::set_rect(Rect2 const&) {}
+
+// scene/3d/audio_stream_player_3d.cpp
+Area3D* AudioStreamPlayer3D::_get_overriding_area() {}
+
+// scene/3d/bone_attachment_3d.cpp
+Skeleton3D* BoneAttachment3D::get_skeleton() {}
+void BoneAttachment3D::_check_bind() {}
+void BoneAttachment3D::_update_external_skeleton_cache() {}
+void BoneAttachment3D::_check_unbind() {}
+void BoneAttachment3D::set_bone_idx(int const&) {}
+
+// scene/3d/bone_constraint_3d.cpp
+void BoneConstraint3D::set_setting_count(int) {}
+
+// scene/3d/bone_twist_disperser_3d.cpp
+void BoneTwistDisperser3D::_make_joints_dirty(int) {}
+void BoneTwistDisperser3D::set_setting_count(int) {}
+
+// scene/3d/gpu_particles_3d.cpp
+void GPUParticles3D::set_use_fixed_seed(bool) {}
+void GPUParticles3D::set_transform_align(GPUParticles3D::TransformAlign) {}
+void GPUParticles3D::set_draw_passes(int) {}
+
+// scene/3d/iterate_ik_3d.cpp
+void IterateIK3D::_unbind_joint_limitations(int) {}
+void IterateIK3D::_bind_joint_limitations(int) {}
+
+// scene/3d/label_3d.cpp
+Ref<Font> Label3D::_get_font_or_default() const {}
+
+// scene/3d/lightmap_gi.cpp
+bool LightmapGIData::has_shadowmask_textures() {}
+void LightmapGI::_clear_lightmaps() {}
+void LightmapGI::_assign_lightmaps() {}
+
+// scene/3d/limit_angular_velocity_modifier_3d.cpp
+void LimitAngularVelocityModifier3D::_make_joints_dirty() {}
+
+// scene/3d/mesh_instance_3d.cpp
+void MeshInstance3D::_resolve_skeleton_path() {}
+void MeshInstance3D::set_mesh(Ref<Mesh> const&) {}
+MeshInstance3D::MeshInstance3D() {}
+void MeshInstance3D::create_debug_tangents_node() {}
+
+// scene/3d/navigation/navigation_agent_3d.cpp
+void NavigationAgent3D::_update_navigation() {}
+void NavigationAgent3D::set_agent_parent(Node*) {}
+void NavigationAgent3D::_update_debug_path() {}
+void NavigationAgent3D::_trigger_waypoint_reached() {}
+
+// scene/3d/navigation/navigation_link_3d.cpp
+void NavigationLink3D::_update_debug_mesh() {}
+
+// scene/3d/navigation/navigation_obstacle_3d.cpp
+void NavigationObstacle3D::_update_static_obstacle_debug() {}
+void NavigationObstacle3D::_update_fake_agent_radius_debug() {}
+
+// scene/3d/navigation/navigation_region_3d.cpp
+void NavigationRegion3D::_update_debug_mesh() {}
+void NavigationRegion3D::_update_debug_edge_connections_mesh() {}
+
+// scene/3d/node_3d.cpp
+void Node3D::_update_visibility_parent(bool) {}
+void Node3D::set_subgizmo_selection(Ref<Node3DGizmo>, int, Transform3D) {}
+void Node3D::set_scale(Vector3 const&) {}
+void Node3D::set_rotation(Vector3 const&) {}
+void Node3D::_propagate_visibility_changed() {}
+void Node3D::_propagate_transform_changed(Node3D*) {}
+void Node3D::clear_subgizmo_selection() {}
+
+// scene/3d/occluder_instance_3d.cpp
+void OccluderInstance3D::set_occluder(Ref<Occluder3D> const&) {}
+void OccluderInstance3D::_bake_node(Node*, Vector<Vector3>&, Vector<int>&) {}
+
+// scene/3d/path_3d.cpp
+void Path3D::_update_debug_path_material() {}
+void Path3D::_update_debug_mesh() {}
+
+// scene/3d/physics/area_3d.cpp
+void Area3D::_initialize_wind() {}
+void Area3D::_clear_monitoring() {}
+
+// scene/3d/physics/character_body_3d.cpp
+void CharacterBody3D::_set_collision_direction(PhysicsServer3DTypes::MotionResult const&, CharacterBody3D::CollisionState&, CharacterBody3D::CollisionState) {}
+Ref<KinematicCollision3D> CharacterBody3D::_get_slide_collision(int) {}
+
+// scene/3d/physics/collision_object_3d.cpp
+void CollisionObject3D::_update_shape_data(unsigned int) {}
+
+// scene/3d/physics/joints/joint_3d.cpp
+void Joint3D::_disconnect_signals() {}
+
+// scene/3d/physics/physical_bone_3d.cpp
+void PhysicalBone3D::_stop_physics_simulation() {}
+void PhysicalBone3D::_start_physics_simulation() {}
+SkeletonModifier3D* PhysicalBone3D::get_simulator() const {}
+
+// scene/3d/physics/rigid_body_3d.cpp
+void RigidBody3D::set_mass(float) {}
+void RigidBody3D::set_linear_velocity(Vector3 const&) {}
+void RigidBody3D::set_inertia(Vector3 const&) {}
+void RigidBody3D::set_center_of_mass(Vector3 const&) {}
+void RigidBody3D::set_center_of_mass_mode(RigidBody3D::CenterOfMassMode) {}
+void RigidBody3D::set_angular_velocity(Vector3 const&) {}
+RigidBody3D::RigidBody3D() {}
+void RigidBody3D::_body_state_changed(PhysicsDirectBodyState3D*) {}
+
+// scene/3d/physics/soft_body_3d.cpp
+void SoftBody3D::_prepare_physics_server() {}
+void SoftBody3D::_update_cache_pin_points_datas() {}
+void SoftBody3D::_reset_points_offsets() {}
+void SoftBody3D::_add_pinned_point(int, NodePath const&, int) {}
+void SoftBody3D::add_collision_exception_with(Node*) {}
+
+// scene/3d/physics/spring_arm_3d.cpp
+void SpringArm3D::process_spring() {}
+
+// scene/3d/physics/vehicle_body_3d.cpp
+void VehicleBody3D::_ray_cast(int, PhysicsDirectBodyState3D*) {}
+
+// scene/3d/remote_transform_3d.cpp
+void RemoteTransform3D::_update_remote() {}
+void RemoteTransform3D::_update_cache() {}
+
+// scene/3d/retarget_modifier_3d.cpp
+void RetargetModifier3D::_update_child_skeletons() {}
+void RetargetModifier3D::_retarget_pose() {}
+void RetargetModifier3D::_retarget_global_pose() {}
+void RetargetModifier3D::_profile_changed(Ref<SkeletonProfile>, Ref<SkeletonProfile>) {}
+
+// scene/3d/skeleton_3d.cpp
+void Skeleton3D::_notification(int) {}
+void Skeleton3D::add_bone(String const&) {}
+void Skeleton3D::register_skin(Ref<Skin> const&) {}
+
+// scene/3d/skeleton_ik_3d.cpp
+Transform3D SkeletonIK3D::_get_target_transform() {}
+
+// scene/3d/skeleton_modifier_3d.cpp
+void SkeletonModifier3D::process_modification(double) {}
+
+// scene/3d/spring_bone_collision_3d.cpp
+void SpringBoneCollision3D::set_bone(int) {}
+Skeleton3D* SpringBoneCollision3D::get_skeleton() const {}
+
+// scene/3d/spring_bone_simulator_3d.cpp
+void SpringBoneSimulator3D::set_setting_count(int) {}
+void SpringBoneSimulator3D::set_rotation_axis(int, SkeletonModifier3D::RotationAxis) {}
+void SpringBoneSimulator3D::set_joint_rotation_axis(int, int, SkeletonModifier3D::RotationAxis) {}
+void SpringBoneSimulator3D::set_exclude_collision_count(int, int) {}
+void SpringBoneSimulator3D::set_collision_count(int, int) {}
+
+// scene/3d/sprite_3d.cpp
+SpriteBase3D::SpriteBase3D() {}
+void SpriteBase3D::draw_texture_rect(Ref<Texture2D>, Rect2, Rect2) {}
+void Sprite3D::set_frame(int) {}
+
+// scene/3d/visible_on_screen_notifier_3d.cpp
+void VisibleOnScreenEnabler3D::_update_enable_mode(bool) {}
+VisibleOnScreenNotifier3D::VisibleOnScreenNotifier3D() {}
+
+// scene/3d/visual_instance_3d.cpp
+void GeometryInstance3D::set_material_override(Ref<Material> const&) {}
+
+// scene/3d/voxel_gi.cpp
+void VoxelGI::bake(Node*, bool) {}
+
+// scene/3d/world_environment.cpp
+void WorldEnvironment::_update_current_environment() {}
+void WorldEnvironment::_update_current_camera_attributes() {}
+void WorldEnvironment::_update_current_compositor() {}
+
+// scene/3d/xr/xr_body_modifier_3d.cpp
+void XRBodyModifier3D::_get_joint_data() {}
+
+// scene/3d/xr/xr_face_modifier_3d.cpp
+MeshInstance3D* XRFaceModifier3D::get_mesh_instance() const {}
+
+// scene/3d/xr/xr_nodes.cpp
+void XRNode3D::_set_has_tracking_data(bool) {}
+void XRCamera3D::_unbind_tracker() {}
+void XRCamera3D::_bind_tracker() {}
+
+// scene/animation/animation_blend_space_2d.cpp
+// (Methods mapped in editor/animation/animation_blend_space_2d_editor.cpp
+
+
+// scene/animation/animation_mixer.cpp
+void AnimationMixer::_animation_set_cache_update() {}
+
+// scene/animation/animation_node_extension.cpp
+void AnimationRootNode::_remove_node(Ref<AnimationNode> const&) {}
+void AnimationNode::_pre_process(AnimationNode::ProcessState&, AnimationNodeInstance&, AnimationMixer::PlaybackInfo const&, bool) {}
+void AnimationNode::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const {}
+
+// scene/animation/animation_node_state_machine.cpp
+void AnimationNodeStateMachinePlayback::_signal_state_change(AnimationTree*, StringName const&, bool) {}
+void AnimationNodeStateMachine::remove_transition_by_index(int) {}
+void AnimationNodeStateMachinePlayback::_start_children(AnimationTree*, AnimationNodeStateMachine*, String const&, bool) {}
+void AnimationNodeStateMachinePlayback::_make_travel_path(AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, bool, Vector<StringName>&, bool) {}
+AnimationNodeStateMachinePlayback* AnimationNodeStateMachinePlayback::_get_parent_playback(AnimationTree*) const {}
+void AnimationNodeStateMachinePlayback::_clear_path_children(AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, bool) {}
+bool AnimationNodeStateMachine::can_edit_node(StringName const&) const {}
+
+// scene/animation/animation_player.cpp
+void AnimationPlayer::_capture(StringName const&, bool, double, Tween::TransitionType, Tween::EaseType) {}
+void AnimationPlayer::_stop_internal(bool, bool) {}
+void AnimationPlayer::play_section(StringName const&, double, double, double, float, bool) {}
+void AnimationPlayer::set_current_animation(StringName const&) {}
+void AnimationPlayer::set_assigned_animation(StringName const&) {}
+
+// scene/animation/animation_tree.cpp
+void AnimationTree::_update_properties() const {}
+void AnimationTree::_update_connections() {}
+void AnimationTree::_setup_animation_player() {}
+
+// scene/animation/tween.cpp
+void Tweener::set_tween(Ref<Tween> const&) {}
+void Tweener::_finish() {}
+Ref<Tween> Tween::bind_node(Node const*) {}
+Node* Tween::get_bound_node() const {}
+
+// scene/gui/aspect_ratio_container.cpp
+void AspectRatioContainer::set_ratio(float) {}
+
+// scene/gui/box_container.cpp
+void BoxContainer::set_vertical(bool) {}
+Size2 BoxContainer::_get_minimum_size(bool) const {}
+void BoxContainer::_resort() {}
+
+// scene/gui/button.cpp
+void Button::set_clip_text(bool) {}
+void Button::_shape(Ref<TextParagraph>, String) const {}
+void Button::set_flat(bool) {}
+
+// scene/gui/code_edit.cpp
+void CodeEdit::set_line_as_breakpoint(int, bool) {}
+void CodeEdit::set_line_as_bookmarked(int, bool) {}
+void CodeEdit::set_code_hint(String const&) {}
+bool CodeEdit::is_line_breakpointed(int) const {}
+bool CodeEdit::is_line_executing(int) const {}
+void CodeEdit::set_line_as_executing(int, bool) {}
+void CodeEdit::_set_delimiters(TypedArray<String> const&, CodeEdit::DelimiterType) {}
+void CodeEdit::fold_line(int) {}
+void CodeEdit::_text_changed() {}
+void CodeEdit::request_code_completion(bool) {}
+void CodeEdit::cancel_code_completion() {}
+
+// scene/gui/color_rect.cpp
+void ColorRect::set_color(Color const&) {}
+
+// scene/gui/container.cpp
+void Container::fit_child_in_rect(Control*, Rect2 const&) {}
+
+// scene/gui/control.cpp
+bool Control::has_theme_icon(StringName const&, StringName const&) const {}
+void Control::add_theme_icon_override(StringName const&, Texture2D*) {}
+void Control::set_shortcut_context(Node const*) {}
+void Control::_propagate_mouse_behavior_recursive_recursively(bool, bool) {}
+void Control::_propagate_focus_behavior_recursive_recursively(bool, bool) {}
+String Control::get_accessibility_name() const {}
+void Control::update_maximum_size() {}
+void Control::set_rotation(float) {}
+void Control::set_clip_contents(bool) {}
+void Control::remove_theme_style_override(StringName const&) {}
+void Control::_notification(int) {}
+bool Control::has_theme_color(StringName const&, StringName const&) const {}
+PackedStringArray Control::get_accessibility_configuration_warnings() const {}
+void Control::set_theme(Ref<Theme> const&) {}
+void Control::set_scale(Vector2 const&) {}
+void Control::set_pivot_offset(Vector2 const&) {}
+void Control::set_pivot_offset_ratio(Vector2 const&) {}
+void Control::set_offset_transform_visual_only(bool) {}
+void Control::set_offset_transform_scale(Vector2 const&) {}
+void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
+void Control::set_offset_transform_enabled(bool) {}
+Control::LayoutMode Control::_get_layout_mode() const {}
+Control* Control::_get_focus_neighbor(Side, int) {}
+
+// scene/gui/dialogs.cpp
+void AcceptDialog::_ok_pressed() {}
+void AcceptDialog::_update_child_rects() {}
+
+// scene/gui/file_dialog.cpp
+void FileDialog::update_dir() {}
+void FileDialog::_push_history() {}
+void FileDialog::_native_popup() {}
+void FileDialog::_update_recent_list() {}
+void FileDialog::update_file_list() {}
+void FileDialog::_update_favorite_list() {}
+void FileDialog::_update_drives(bool) {}
+void FileDialog::_popup_menu(Vector2 const&, int) {}
+void FileDialog::set_filename_filter(String const&) {}
+String FileDialog::_get_item_path(int) const {}
+void FileDialog::_file_list_selected(int) {}
+void FileDialog::deselect_all() {}
+
+// scene/gui/flow_container.cpp
+void FlowContainer::_resort() {}
+Size2 FlowContainer::_get_minimum_size(bool) const {}
+
+// scene/gui/foldable_container.cpp
+void FoldableContainer::set_folded(bool) {}
+void FoldableContainer::set_title(String const&) {}
+
+// scene/gui/graph_edit_arranger.cpp
+void GraphEditArranger::arrange_nodes() {}
+
+// scene/gui/graph_edit.cpp
+bool GraphEdit::is_in_port_hotzone(Vector2 const&, Vector2 const&, Vector2i const&, bool) {}
+void GraphEdit::set_scroll_offset(Vector2 const&) {}
+bool GraphEdit::_filter_input(Vector2 const&) {}
+Error GraphEdit::connect_node(StringName const&, int, StringName const&, int, bool) {}
+
+// scene/gui/graph_element.cpp
+void GraphElement::set_selected(bool) {}
+
+// scene/gui/graph_frame.cpp
+Size2 GraphFrame::_get_minimum_size(bool) const {}
+
+// scene/gui/graph_node.cpp
+Size2 GraphNode::_get_minimum_size(bool) const {}
+
+// scene/gui/grid_container.cpp
+Size2 GridContainer::_get_minimum_size(bool) const {}
+void GridContainer::set_columns(int) {}
+
+// scene/gui/item_list.cpp
+void ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode) {}
+void ItemList::set_fixed_column_width(int) {}
+void ItemList::set_fixed_icon_size(Vector2i const&) {}
+void ItemList::select(int, bool) {}
+void ItemList::set_current(int) {}
+void ItemList::ensure_current_is_visible() {}
+void ItemList::clear() {}
+int ItemList::add_item(String const&, Ref<Texture2D> const&, bool) {}
+void ItemList::set_icon_scale(float) {}
+ItemList::ItemList() {}
+
+// scene/gui/label.cpp
+void Label::set_autowrap_mode(TextServer::AutowrapMode) {}
+void HighlightedLabel::add_highlight(Vector2i const&) {}
+void Label::_shape() const {}
+void Label::set_vertical_alignment(VerticalAlignment) {}
+
+// scene/gui/line_edit.cpp
+void LineEdit::set_right_icon(Ref<Texture2D> const&) {}
+void LineEdit::set_placeholder(String) {}
+void LineEdit::insert_text_at_caret(String) {}
+void LineEdit::_set_text(String, bool) {}
+void LineEdit::set_editable(bool) {}
+void LineEdit::set_caret_blink_enabled(bool) {}
+void LineEdit::_reset_caret_blink_timer() {}
+void LineEdit::_generate_context_menu() {}
+void LineEdit::_edit(bool, bool) {}
+void LineEdit::set_secret(bool) {}
+void LineEdit::set_horizontal_alignment(HorizontalAlignment) {}
+void LineEdit::set_clear_button_enabled(bool) {}
+void LineEdit::clear_internal() {}
+
+// scene/gui/link_button.cpp
+void LinkButton::set_underline_mode(LinkButton::UnderlineMode) {}
+void LinkButton::set_text(String const&) {}
+
+// scene/gui/margin_container.cpp
+Size2 MarginContainer::get_minimum_size() const {}
+
+// scene/gui/menu_bar.cpp
+Vector<PopupMenu*> MenuBar::_get_popups() const {}
+void MenuBar::bind_global_menu() {}
+
+// scene/gui/menu_button.cpp
+void MenuButton::show_popup() {}
+
+// scene/gui/option_button.cpp
+void OptionButton::clear() {}
+void OptionButton::_refresh_size_cache() {}
+
+// scene/gui/popup_menu.cpp
+PopupMenu::PopupMenu() {}
+void PopupMenu::_shape_item(int) const {}
+void PopupMenu::_input_from_window_internal(Ref<InputEvent> const&) {}
+void PopupMenu::_close_or_suspend() {}
+void PopupMenu::_activate_submenu(int, bool) {}
+
+// scene/gui/range.cpp
+void Range::_value_changed_notify() {}
+void Range::_changed_notify() {}
+void Range::Shared::redraw_owners() {}
+
+// scene/gui/rich_text_label.cpp
+void RichTextLabel::deselect() {}
+void RichTextLabel::set_use_bbcode(bool) {}
+void RichTextLabel::select_all() {}
+bool RichTextLabel::search(String const&, bool, bool) {}
+RichTextLabel::RichTextLabel(String const&) {}
+void RichTextLabel::push_font(Ref<Font> const&, int) {}
+String RichTextLabel::get_selected_text() const {}
+void RichTextLabel::_generate_context_menu() {}
+String RichTextLabel::_find_language(RichTextLabel::Item*) {}
+bool RichTextLabel::_find_click_in_line(RichTextLabel::ItemFrame*, int, Vector2 const&, int, float, Vector2i const&, RichTextLabel::ItemFrame**, int*, RichTextLabel::Item**, int*, bool, bool) {}
+void RichTextLabel::_apply_translation() {}
+void RichTextLabel::append_text(String const&) {}
+
+// scene/gui/scroll_container.cpp
+Size2 ScrollContainer::_get_minimum_size(bool) const {}
+void ScrollContainer::_cancel_drag() {}
+void ScrollContainer::_reposition_children() {}
+void ScrollContainer::ensure_control_visible(Control*) {}
+
+// scene/gui/spin_box.cpp
+void SpinBox::_text_submitted(String const&) {}
+void SpinBox::set_editable(bool) {}
+void SpinBox::_update_buttons_state_for_current_value() {}
+
+// scene/gui/split_container.cpp
+void SplitContainer::show_grabber_icon(int) {}
+void SplitContainer::_update_nested_ancestors(bool) {}
+void SplitContainer::_update_all_nested_descendents(Control*, Control*) {}
+void SplitContainer::set_drag_area_margin_begin(int) {}
+void SplitContainer::_resort() {}
+void SplitContainer::_remove_valid_child(Control*) {}
+void SplitContainer::_remove_nested_descendent(SplitContainer*) {}
+void SplitContainerDragger::update_touch_dragger() {}
+void SplitContainerDragger::stop_dragging() {}
+void SplitContainerDragger::set_touch_dragger_enabled(bool) {}
+int SplitContainer::clamp_split_offset(int) {}
+void SplitContainer::_add_valid_child(Control*) {}
+
+// scene/gui/subviewport_container.cpp
+bool SubViewportContainer::_is_propagated_in_gui_input(Ref<InputEvent> const&) {}
+
+// scene/gui/tab_bar.cpp
+void TabBar::_update_hover() {}
+void TabBar::set_tab_button_icon(int, Ref<Texture2D> const&) {}
+void TabBar::set_tab_alignment(TabBar::AlignmentMode) {}
+void TabBar::set_clip_tabs(bool) {}
+void TabBar::ensure_tab_visible(int) {}
+
+// scene/gui/tab_container.cpp
+PopupMenu* TabContainer::get_popup() const {}
+Control* TabContainer::_as_tab_control(Node*) const {}
+void TabContainer::_update_margins() {}
+void TabContainer::_repaint_internal() {}
+void TabContainer::set_tab_icon(int, Ref<Texture2D> const&) {}
+void TabContainer::set_popup(Node*) {}
+
+// scene/gui/text_edit.cpp
+void TextEdit::_update_scrollbars() {}
+void TextEdit::_update_placeholder() {}
+void TextEdit::_update_gutter_width() {}
+void TextEdit::set_line_background_color(int, Color const&) {}
+void TextEdit::_set_line_as_hidden(int, bool) {}
+void TextEdit::_adjust_viewport_to_caret_horizontally(int, bool) {}
+void TextEdit::_update_ime_text() {}
+void TextEdit::_set_text(String const&, bool) {}
+void TextEdit::set_tab_size(int) {}
+void TextEdit::set_syntax_highlighter(Ref<SyntaxHighlighter>) {}
+void TextEdit::_set_symbol_lookup_word(String const&) {}
+void TextEdit::_set_hiding_enabled(bool) {}
+void TextEdit::set_gutter_clickable(int, bool) {}
+void TextEdit::set_draw_control_chars(bool) {}
+void TextEdit::_scroll_moved(double) {}
+CursorShape TextEdit::get_cursor_shape(Vector2 const&) const {}
+void TextEdit::_generate_context_menu() {}
+void TextEdit::clear() {}
+void TextEdit::_base_remove_text(int, int, int, int) {}
+void TextEdit::_base_insert_text(int, int, String const&, int&, int&) {}
+
+// scene/gui/texture_button.cpp
+void TextureButton::_texture_changed() {}
+
+// scene/gui/texture_progress_bar.cpp
+void TextureProgressBar::_set_texture(Ref<Texture2D>*, Ref<Texture2D> const&) {}
+void TextureProgressBar::set_tint_under(Color const&) {}
+void TextureProgressBar::set_fill_mode(int) {}
+
+// scene/gui/tree.cpp
+void Tree::set_column_title(int, String const&) {}
+void Tree::item_selected(int, TreeItem*, bool) {}
+void TreeItem::_change_tree(Tree*) {}
+void Tree::deselect_all() {}
+void Tree::item_deselected(int, TreeItem*) {}
+void Tree::_apply_multiline_edit(bool) {}
+void Tree::update_column(int) {}
+void Tree::set_hide_root(bool) {}
+void Tree::set_hide_folding(bool) {}
+void Tree::set_column_titles_visible(bool) {}
+void Tree::set_columns(int) {}
+void Tree::select_single_item(TreeItem*, TreeItem*, int, TreeItem*, bool*, bool) {}
+void Tree::_line_editor_submit(String) {}
+void TreeItem::set_as_cursor(int) {}
+void TreeItem::move_before(TreeItem*) {}
+void TreeItem::move_after(TreeItem*) {}
+TreeItem* TreeItem::create_child(int) {}
+void Tree::_determine_hovered_item() {}
+
+// scene/gui/video_stream_player.cpp
+void VideoStreamPlayer::_notification(int) {}
+
+// scene/gui/view_panner.cpp
+bool ViewPanner::gui_input(Ref<InputEvent> const&, Rect2) {}
+
+// scene/main/canvas_item.cpp
+Transform2D CanvasItem::get_canvas_transform() const {}
+void CanvasItem::set_texture_filter(CanvasItem::TextureFilter) {}
+void CanvasItem::_handle_visibility_change(bool) {}
+void CanvasItem::_update_oversampling(bool) {}
+void CanvasItem::set_texture_repeat(CanvasItem::TextureRepeat) {}
+void CanvasItem::set_as_top_level(bool) {}
+bool CanvasItem::get_top_level() const {}
+
+// scene/main/canvas_layer.cpp
+void CanvasLayer::set_visible(bool) {}
+
+// scene/main/node.cpp
+void Node::set_process_shortcut_input(bool) {}
+void Node::set_process_input(bool) {}
+void Node::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const {}
+void Node::notify_deferred_thread_group(int) {}
+void Node::_generate_serial_child_name(Node const*, StringName&) const {}
+void Node::_duplicate_signals(Node const*, Node*) const {}
+void Node::_duplicate_scripts(Node const*, Node*) const {}
+void Node::_duplicate_properties(Node const*, Node const*, Node*, int) const {}
+Node* Node::_duplicate(int, HashMap<Node const*, Node*, HashMapHasherDefault, HashMapComparatorDefault<Node const*, void>, DefaultTypedAllocator<HashMapElement<Node const*, Node*>>>*) const {}
+void Node::_validate_child_name(Node*, bool) {}
+void Node::set_process_unhandled_key_input(bool) {}
+void Node::set_process_unhandled_input(bool) {}
+void Node::remap_node_resources(Node*, Node*, HashMap<Node*, HashMap<Ref<Resource>, Ref<Resource>, HashMapHasherDefault, HashMapComparatorDefault<Ref<Resource>, void>, DefaultTypedAllocator<HashMapElement<Ref<Resource>, Ref<Resource>>>>, HashMapHasherDefault, HashMapComparatorDefault<Node*, void>, DefaultTypedAllocator<HashMapElement<Node*, HashMap<Ref<Resource>, Ref<Resource>, HashMapHasherDefault, HashMapComparatorDefault<Ref<Resource>, void>, DefaultTypedAllocator<HashMapElement<Ref<Resource>, Ref<Resource>>>>>>>&) const {}
+void Node::_propagate_translation_domain_dirty() {}
+void Node::_propagate_suspend_notification(bool) {}
+void Node::_propagate_ready() {}
+void Node::_propagate_pause_notification(bool) {}
+void Node::_propagate_exit_tree() {}
+void Node::_propagate_enter_tree() {}
+void Node::_propagate_after_exit_tree() {}
+bool Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<StringName>&, bool) const {}
+void Node::_add_child_nocheck(Node*, StringName const&, Node::InternalMode) {}
+
+// scene/main/resource_preloader.cpp
+void ResourcePreloader::add_resource(StringName const&, Ref<Resource> const&) {}
+
+// scene/main/scene_tree_fti.cpp
+void SceneTreeFTI::_update_request_resets() {}
+void SceneTreeFTI::_reset_flags(Node*) {}
+
+// scene/main/scene_tree.cpp
+void SceneTree::tree_changed() {}
+void SceneTreeTimer::release_connections() {}
+SceneTree::SceneTree() {}
+void SceneTree::flush_transform_notifications() {}
+void SceneTree::_flush_delete_queue() {}
+Error SceneTree::change_scene_to_node(Node*) {}
+void SceneTree::_process_group(SceneTree::ProcessGroup*, bool) {}
+void SceneTree::notify_group_flags(unsigned int, StringName const&, int) {}
+void SceneTree::_flush_ugc() {}
+void SceneTree::_accessibility_notify_change(Node const*, bool) {}
+
+// scene/main/viewport.cpp
+void Viewport::CameraOverride<Camera3D>::enable(Viewport*, Camera3D const*) {}
+void Viewport::CameraOverride<Camera3D>::disable(Camera3D*) {}
+void Viewport::CameraOverride<Camera2D>::set_overridden_camera(Camera2D const*) {}
+void Viewport::CameraOverride<Camera2D>::enable(Viewport*, Camera2D const*) {}
+void Viewport::CameraOverride<Camera2D>::disable(Camera2D*) {}
+
+// scene/main/viewport.cpp
+bool Viewport::is_visible_subviewport() const {}
+void Viewport::gui_perform_drop_at(Vector2 const&, Control*) {}
+Window* Viewport::get_base_window() {}
+void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
+Viewport::Viewport() {}
+void Viewport::_push_text_input(String const&, bool) {}
+void Viewport::_gui_update_mouse_over() {}
+void Viewport::_gui_show_tooltip_at(Vector2i const&) {}
+void Viewport::gui_release_focus() {}
+void Viewport::_drop_mouse_focus() {}
+void Viewport::_update_texture_repeat_changed(bool) {}
+void Viewport::_update_texture_filter_changed(bool) {}
+void Viewport::_refresh_texture_repeat_cache() const {}
+void Viewport::_refresh_texture_filter_cache() const {}
+void Viewport::_push_unhandled_input_internal(Ref<InputEvent> const&) {}
+void Viewport::push_input(InputEvent*, bool) {}
+void Viewport::_propagate_world_2d_changed(Node*) {}
+void Viewport::_propagate_exit_world_3d(Node*) {}
+void Viewport::_propagate_enter_world_3d(Node*) {}
+void Viewport::_mouse_leave_viewport() {}
+Ref<InputEvent> Viewport::_make_input_local(Ref<InputEvent> const&) {}
+void Viewport::_gui_sort_roots() {}
+void Viewport::_gui_set_drag_preview(Control*, Control*) {}
+void Viewport::_gui_grab_click_focus(Control*) {}
+Control* Viewport::_gui_find_control_at_pos(CanvasItem*, Vector2 const&, Transform2D const&) {}
+void Viewport::_gui_control_grab_focus(Control*, bool) {}
+Camera3D* Viewport::CameraOverride<Camera3D>::get_overridden_camera() const {}
+Camera2D* Viewport::CameraOverride<Camera2D>::get_overridden_camera() const {}
+
+// scene/main/window.cpp
+void Window::set_visible(bool) {}
+Ref<Font> Window::get_theme_font(StringName const&, StringName const&) const {}
+Window* Window::get_from_id(int) {}
+void Window::_window_input(Ref<InputEvent> const&) {}
+void Window::_propagate_window_notification(Node*, int) {}
+void Window::_popup_base(Rect2i const&) {}
+int Window::get_theme_font_size(StringName const&, StringName const&) const {}
+void Window::_update_theme_item_cache() {}
+void Window::_settings_changed() {}
+void Window::_make_transient() {}
+Ref<Texture2D> Window::get_theme_icon(StringName const&, StringName const&) const {}
+void Window::_event_callback(DisplayServerEnums::WindowEvent) {}
+void Window::add_theme_font_override(StringName const&, Ref<Font> const&) {}
+void Window::_accessibility_notify_exit(Node*) {}
+void Window::_accessibility_notify_enter(Node*) {}
+
+// scene/resources/2d/capsule_shape_2d.cpp
+void CapsuleShape2D::_update_shape() {}
+
+// scene/resources/2d/circle_shape_2d.cpp
+void CircleShape2D::_update_shape() {}
+
+// scene/resources/2d/concave_polygon_shape_2d.cpp
+void ConcavePolygonShape2D::set_segments(Vector<Vector2> const&) {}
+
+// scene/resources/2d/convex_polygon_shape_2d.cpp
+void ConvexPolygonShape2D::_update_shape() {}
+
+// scene/resources/2d/navigation_polygon.cpp
+bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const {}
+
+// scene/resources/2d/rectangle_shape_2d.cpp
+void RectangleShape2D::_update_shape() {}
+
+// scene/resources/2d/segment_shape_2d.cpp
+void SegmentShape2D::_update_shape() {}
+
+// scene/resources/2d/separation_ray_shape_2d.cpp
+void SeparationRayShape2D::_update_shape() {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_ccdik.cpp
+void SkeletonModification2DCCDIK::update_tip_cache() {}
+void SkeletonModification2DCCDIK::update_target_cache() {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_fabrik.cpp
+void SkeletonModification2DFABRIK::update_target_cache() {}
+void SkeletonModification2DFABRIK::fabrik_joint_update_bone2d_cache(int) {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_jiggle.cpp
+void SkeletonModification2DJiggle::update_target_cache() {}
+void SkeletonModification2DJiggle::set_jiggle_joint_use_gravity(int, bool) {}
+void SkeletonModification2DJiggle::jiggle_joint_update_bone2d_cache(int) {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_lookat.cpp
+void SkeletonModification2DLookAt::update_target_cache() {}
+void SkeletonModification2DLookAt::update_bone2d_cache() {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_physicalbones.cpp
+void SkeletonModification2DPhysicalBones::_physical_bone_update_cache(int) {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_stackholder.cpp
+void SkeletonModification2D::editor_draw_angle_constraints(Bone2D*, float, float, bool, bool, bool) {}
+
+// scene/resources/2d/skeleton/skeleton_modification_2d_twoboneik.cpp
+void SkeletonModification2DTwoBoneIK::update_target_cache() {}
+void SkeletonModification2DTwoBoneIK::update_joint_two_bone2d_cache() {}
+void SkeletonModification2DTwoBoneIK::update_joint_one_bone2d_cache() {}
+
+// scene/resources/2d/skeleton/skeleton_modification_stack_2d.cpp
+void SkeletonModificationStack2D::execute(float, int) {}
+void Skeleton2D::execute_modifications(float, int) {}
+
+// scene/resources/2d/world_boundary_shape_2d.cpp
+void WorldBoundaryShape2D::_update_shape() {}
+
+// scene/resources/3d/box_shape_3d.cpp
+void BoxShape3D::_update_shape() {}
+
+// scene/resources/3d/capsule_shape_3d.cpp
+void CapsuleShape3D::_update_shape() {}
+
+// scene/resources/3d/cylinder_shape_3d.cpp
+void CylinderShape3D::_update_shape() {}
+
+// scene/resources/3d/fog_material.cpp
+void FogMaterial::set_height_falloff(float) {}
+void FogMaterial::set_emission(Color) {}
+void FogMaterial::set_edge_fade(float) {}
+void FogMaterial::set_density(float) {}
+void FogMaterial::set_albedo(Color) {}
+
+// scene/resources/3d/height_map_shape_3d.cpp
+void HeightMapShape3D::_update_shape() {}
+
+// scene/resources/3d/importer_mesh.cpp
+Ref<Mesh> ImporterMesh::get_mesh(Ref<ArrayMesh> const&) {}
+Ref<ImporterMesh> ImporterMesh::from_mesh(Ref<Mesh> const&) {}
+
+// scene/resources/3d/mesh_library.cpp
+void MeshLibrary::create_item(int) {}
+void MeshLibrary::clear() {}
+
+// scene/resources/3d/navigation_mesh_source_geometry_data_3d.cpp
+void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D const&) {}
+
+// scene/resources/3d/primitive_meshes.cpp
+void PrimitiveMesh::set_material(Ref<Material> const&) {}
+
+// scene/resources/3d/separation_ray_shape_3d.cpp
+void SeparationRayShape3D::_update_shape() {}
+
+// scene/resources/3d/shape_3d.cpp
+Ref<ArrayMesh> Shape3D::get_debug_mesh() {}
+
+// scene/resources/3d/sky_material.cpp
+void ProceduralSkyMaterial::set_sky_top_color(Color const&) {}
+void ProceduralSkyMaterial::set_sky_horizon_color(Color const&) {}
+void ProceduralSkyMaterial::set_ground_horizon_color(Color const&) {}
+void ProceduralSkyMaterial::set_ground_bottom_color(Color const&) {}
+void ProceduralSkyMaterial::set_energy_multiplier(float) {}
+void ProceduralSkyMaterial::set_sun_curve(float) {}
+void ProceduralSkyMaterial::set_sun_angle_max(float) {}
+void ProceduralSkyMaterial::set_sky_energy_multiplier(float) {}
+void ProceduralSkyMaterial::set_sky_curve(float) {}
+void ProceduralSkyMaterial::set_sky_cover_modulate(Color const&) {}
+void ProceduralSkyMaterial::set_ground_energy_multiplier(float) {}
+void ProceduralSkyMaterial::set_ground_curve(float) {}
+void PhysicalSkyMaterial::set_turbidity(float) {}
+void PhysicalSkyMaterial::set_sun_disk_scale(float) {}
+void PhysicalSkyMaterial::set_rayleigh_color(Color) {}
+void PhysicalSkyMaterial::set_rayleigh_coefficient(float) {}
+void PhysicalSkyMaterial::set_mie_eccentricity(float) {}
+void PhysicalSkyMaterial::set_mie_color(Color) {}
+void PhysicalSkyMaterial::set_mie_coefficient(float) {}
+void PhysicalSkyMaterial::set_ground_color(Color) {}
+void PhysicalSkyMaterial::set_energy_multiplier(float) {}
+void PanoramaSkyMaterial::set_energy_multiplier(float) {}
+
+// scene/resources/3d/sphere_shape_3d.cpp
+void SphereShape3D::_update_shape() {}
+
+// scene/resources/3d/world_boundary_shape_3d.cpp
+void WorldBoundaryShape3D::_update_shape() {}
+
+// scene/resources/atlas_texture.cpp
+void AtlasTexture::set_atlas(Ref<Texture2D> const&) {}
+
+// scene/resources/bone_map.cpp
+void BoneMap::set_skeleton_bone_name(StringName const&, StringName const&) {}
+
+// scene/resources/compressed_texture.cpp
+Error CompressedTextureLayered::load(String const&) {}
+Error CompressedTexture3D::load(String const&) {}
+Error CompressedTexture2D::load(String const&) {}
+
+// scene/resources/curve.cpp
+int Curve2D::add_point(Vector2 const&, Vector2 const&, Vector2 const&, int) {}
+void Curve::remove_point(int) {}
+void Curve3D::clear_points() {}
+void Curve2D::remove_point(int) {}
+void Curve2D::clear_points() {}
+void Curve3D::set_closed(bool) {}
+int Curve3D::add_point(Vector3 const&, Vector3 const&, Vector3 const&, int) {}
+Curve2D::Curve2D() {}
+
+// scene/resources/curve_texture.cpp
+void CurveXYZTexture::set_curve_z(Ref<Curve>) {}
+void CurveXYZTexture::set_curve_y(Ref<Curve>) {}
+void CurveXYZTexture::set_curve_x(Ref<Curve>) {}
+void CurveTexture::_update() {}
+void CurveTexture::set_curve(Ref<Curve>) {}
+void CurveXYZTexture::_update() {}
+
+// scene/resources/environment.cpp
+void Environment::set_tonemapper(Environment::ToneMapper) {}
+
+// scene/resources/font.cpp
+Error FontFile::_load_bitmap_font(String const&, List<String, DefaultAllocator>*) {}
+
+// scene/resources/gradient_texture.cpp
+void GradientTexture2D::set_gradient(Ref<Gradient>) {}
+void GradientTexture1D::_queue_update() {}
+void GradientTexture2D::_update() const {}
+void GradientTexture1D::_update() const {}
+
+// scene/resources/image_texture.cpp
+void ImageTexture::set_image(Ref<Image> const&) {}
+
+// scene/resources/material.cpp
+void BaseMaterial3D::set_roughness(float) {}
+void BaseMaterial3D::set_metallic(float) {}
+void BaseMaterial3D::set_emission(Color const&) {}
+void BaseMaterial3D::set_billboard_mode(BaseMaterial3D::BillboardMode) {}
+Ref<Material> BaseMaterial3D::_get_stencil_next_pass() const {}
+void BaseMaterial3D::set_specular(float) {}
+void BaseMaterial3D::set_metallic_texture_channel(BaseMaterial3D::TextureChannel) {}
+void BaseMaterial3D::set_grow(float) {}
+void BaseMaterial3D::set_alpha_antialiasing(BaseMaterial3D::AlphaAntiAliasing) {}
+void ShaderMaterial::_check_material_rid() const {}
+void BaseMaterial3D::set_z_clip_scale(float) {}
+void BaseMaterial3D::set_uv2_triplanar_blend_sharpness(float) {}
+void BaseMaterial3D::set_uv2_scale(Vector3 const&) {}
+void BaseMaterial3D::set_uv2_offset(Vector3 const&) {}
+void BaseMaterial3D::set_uv1_triplanar_blend_sharpness(float) {}
+void BaseMaterial3D::set_uv1_scale(Vector3 const&) {}
+void BaseMaterial3D::set_uv1_offset(Vector3 const&) {}
+void BaseMaterial3D::set_transmittance_depth(float) {}
+void BaseMaterial3D::set_transmittance_color(Color const&) {}
+void BaseMaterial3D::set_transmittance_boost(float) {}
+void BaseMaterial3D::set_subsurface_scattering_strength(float) {}
+void BaseMaterial3D::set_stencil_mode(BaseMaterial3D::StencilMode) {}
+void BaseMaterial3D::set_rim_tint(float) {}
+void BaseMaterial3D::set_rim(float) {}
+void BaseMaterial3D::set_refraction_texture_channel(BaseMaterial3D::TextureChannel) {}
+void BaseMaterial3D::set_refraction(float) {}
+void BaseMaterial3D::set_proximity_fade_distance(float) {}
+void BaseMaterial3D::set_particles_anim_v_frames(int) {}
+void BaseMaterial3D::set_particles_anim_loop(bool) {}
+void BaseMaterial3D::set_particles_anim_h_frames(int) {}
+void BaseMaterial3D::set_normal_scale(float) {}
+void BaseMaterial3D::set_msdf_pixel_range(float) {}
+void BaseMaterial3D::set_msdf_outline_size(float) {}
+void BaseMaterial3D::set_heightmap_scale(float) {}
+void BaseMaterial3D::set_heightmap_deep_parallax_min_layers(int) {}
+void BaseMaterial3D::set_heightmap_deep_parallax_max_layers(int) {}
+void BaseMaterial3D::set_heightmap_deep_parallax_flip_tangent(bool) {}
+void BaseMaterial3D::set_fov_override(float) {}
+void BaseMaterial3D::set_emission_energy_multiplier(float) {}
+void BaseMaterial3D::set_distance_fade_min_distance(float) {}
+void BaseMaterial3D::set_distance_fade_max_distance(float) {}
+void BaseMaterial3D::set_clearcoat_roughness(float) {}
+void BaseMaterial3D::set_clearcoat(float) {}
+void BaseMaterial3D::set_backlight(Color const&) {}
+void BaseMaterial3D::set_ao_texture_channel(BaseMaterial3D::TextureChannel) {}
+void BaseMaterial3D::set_ao_light_affect(float) {}
+void BaseMaterial3D::set_anisotropy(float) {}
+void BaseMaterial3D::set_alpha_scissor_threshold(float) {}
+void BaseMaterial3D::set_alpha_hash_scale(float) {}
+void BaseMaterial3D::set_alpha_antialiasing_edge(float) {}
+void BaseMaterial3D::_check_material_rid() {}
+
+// scene/resources/mesh_data_tool.cpp
+Error MeshDataTool::commit_to_surface(Ref<ArrayMesh> const&, unsigned long) {}
+
+// scene/resources/mesh.cpp
+Ref<TriangleMesh> Mesh::create_convex_shape(bool, bool) const {}
+Ref<TriangleMesh> Mesh::generate_surface_triangle_mesh(int) const {}
+
+// scene/resources/packed_scene.cpp
+Node* PackedScene::instantiate(PackedScene::GenEditState) const {}
+Error SceneState::pack(Node*) {}
+void SceneState::clear() {}
+
+// scene/resources/particle_process_material.cpp
+void ParticleProcessMaterial::_update_shader() {}
+void ParticleProcessMaterial::set_use_scale_3d(bool) {}
+void ParticleProcessMaterial::set_use_rotation_3d(bool) {}
+void ParticleProcessMaterial::set_turbulence_noise_strength(float) {}
+void ParticleProcessMaterial::set_turbulence_noise_speed(Vector3 const&) {}
+void ParticleProcessMaterial::set_turbulence_noise_speed_random(float) {}
+void ParticleProcessMaterial::set_turbulence_noise_scale(float) {}
+void ParticleProcessMaterial::set_turbulence_enabled(bool) {}
+void ParticleProcessMaterial::set_sub_emitter_mode(ParticleProcessMaterial::SubEmitterMode) {}
+void ParticleProcessMaterial::set_sub_emitter_keep_velocity(bool) {}
+void ParticleProcessMaterial::set_sub_emitter_frequency(double) {}
+void ParticleProcessMaterial::set_sub_emitter_amount_at_start(int) {}
+void ParticleProcessMaterial::set_sub_emitter_amount_at_end(int) {}
+void ParticleProcessMaterial::set_sub_emitter_amount_at_collision(int) {}
+void ParticleProcessMaterial::set_spread(float) {}
+void ParticleProcessMaterial::set_scale_3d_min(Vector3 const&) {}
+void ParticleProcessMaterial::set_scale_3d_max(Vector3 const&) {}
+void ParticleProcessMaterial::set_rotation_3d_min(Vector3 const&) {}
+void ParticleProcessMaterial::set_rotation_3d_max(Vector3 const&) {}
+void ParticleProcessMaterial::set_lifetime_randomness(double) {}
+void ParticleProcessMaterial::set_gravity(Vector3 const&) {}
+void ParticleProcessMaterial::set_flatness(float) {}
+void ParticleProcessMaterial::set_emission_sphere_radius(float) {}
+void ParticleProcessMaterial::set_emission_shape_scale(Vector3 const&) {}
+void ParticleProcessMaterial::set_emission_shape(ParticleProcessMaterial::EmissionShape) {}
+void ParticleProcessMaterial::set_emission_shape_offset(Vector3 const&) {}
+void ParticleProcessMaterial::set_emission_ring_radius(float) {}
+void ParticleProcessMaterial::set_emission_ring_inner_radius(float) {}
+void ParticleProcessMaterial::set_emission_ring_height(float) {}
+void ParticleProcessMaterial::set_emission_ring_cone_angle(float) {}
+void ParticleProcessMaterial::set_emission_ring_axis(Vector3) {}
+void ParticleProcessMaterial::set_emission_box_extents(Vector3) {}
+void ParticleProcessMaterial::set_direction(Vector3) {}
+void ParticleProcessMaterial::set_color(Color const&) {}
+void ParticleProcessMaterial::set_collision_mode(ParticleProcessMaterial::CollisionMode) {}
+void ParticleProcessMaterial::set_collision_friction(float) {}
+void ParticleProcessMaterial::set_collision_bounce(float) {}
+
+// scene/resources/resource_format_text.cpp
+Ref<Resource> ResourceLoaderText::open(Ref<FileAccess>, bool) {}
+Error ResourceLoaderText::rename_dependencies(Ref<FileAccess>, String const&, HashMap<String, String, HashMapHasherDefault, HashMapComparatorDefault<String, void>, DefaultTypedAllocator<HashMapElement<String, String>>> const&) {}
+String ResourceLoaderText::recognize_script_class(Ref<FileAccess>) {}
+bool ResourceLoaderText::recognize(Ref<FileAccess>) {}
+Ref<Resource> ResourceLoaderText::load() {}
+ResourceUID::ID ResourceLoaderText::get_uid(Ref<FileAccess>) {}
+void ResourceLoaderText::get_dependencies(Ref<FileAccess>, List<String, DefaultAllocator>*, bool) {}
+void ResourceLoaderText::get_classes_used(HashSet<StringName, HashMapHasherDefault, HashMapComparatorDefault<StringName, void>>*) {}
+void ResourceFormatSaverTextInstance::_write_resource(Ref<Resource> const&) {}
+Error ResourceFormatSaverTextInstance::save(String const&, Ref<Resource> const&, unsigned int) {}
+
+// scene/resources/skeleton_profile.cpp
+void SkeletonProfile::set_reference_pose(int, Transform3D const&) {}
+void SkeletonProfile::set_handle_offset(int, Vector2 const&) {}
+void SkeletonProfile::set_group_size(int) {}
+void SkeletonProfile::set_bone_size(int) {}
+void SkeletonProfile::set_bone_parent(int, StringName const&) {}
+void SkeletonProfile::set_bone_name(int, StringName const&) {}
+
+// scene/resources/surface_tool.cpp
+void SurfaceTool::_create_list(Ref<Mesh> const&, int, LocalVector<SurfaceTool::Vertex, unsigned int, false, false>*, LocalVector<int, unsigned int, false, false>*, unsigned long&) {}
+Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}
+
+// scene/resources/text_file.cpp
+Error TextFile::load_text(String const&) {}
+
+// scene/resources/text_line.cpp
+TextLine::TextLine(String const&, Ref<Font> const&, int, String const&, TextServer::Direction, TextServer::Orientation) {}
+
+// scene/resources/theme.cpp
+void Theme::set_icon(StringName const&, StringName const&, Ref<Texture2D> const&) {}
+void Theme::set_font(StringName const&, StringName const&, Ref<Font> const&) {}
+void Theme::set_default_font(Ref<Font> const&) {}
+void Theme::remove_stylebox_type(StringName const&) {}
+void Theme::remove_icon_type(StringName const&) {}
+void Theme::remove_font_type(StringName const&) {}
+void Theme::clear_stylebox(StringName const&, StringName const&) {}
+void Theme::clear_icon(StringName const&, StringName const&) {}
+void Theme::clear_font(StringName const&, StringName const&) {}
+void Theme::clear() {}
+
+// scene/resources/world_2d.cpp
+RID World2D::get_space() const {}
+
+// scene/theme/theme_owner.cpp
+void ThemeOwner::set_owner_node(Node*) {}
+void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
+void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
+ThemeDB::ThemeDB() {}
+void ThemeDB::update_class_instance_items(Node*) {}
+void ThemeDB::set_fallback_stylebox(Ref<StyleBox> const&) {}
+void ThemeDB::set_fallback_icon(Ref<Texture2D> const&) {}
+void ThemeDB::set_fallback_font_size(int) {}
+void ThemeDB::set_fallback_font(Ref<Font> const&) {}
+void ThemeDB::set_fallback_base_scale(float) {}
+void ThemeDB::initialize_theme() {}
+ThemeContext* ThemeDB::create_theme_context(Node*, Vector<Ref<Theme>>&) {}
+void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}
+
+// servers/audio/audio_server.cpp
+void AudioStreamPlayerInternal::set_stream(Ref<AudioStream>) {}
+void AudioStreamPlayerInternal::set_playing(bool) {}
+void AudioStreamPlayerInternal::seek(float) {}
+void AudioStreamPlayerInternal::play_basic() {}
+void AudioServer::set_input_device_active(bool) {}
+float AudioDriver::_get_configured_mix_rate() {}
+void AudioStreamPlayerInternal::process() {}
+void AudioStreamPlayerInternal::notification(int) {}
+void AudioServer::_update_bus_effects(int) {}
+void AudioServer::set_bus_volume_db(int, float) {}
+void AudioServer::init() {}
+void AudioDriverManager::initialize(int) {}
+
+// servers/camera/camera_feed.cpp
+void CameraFeed::set_rgb_image(Ref<Image> const&) {}
+void CameraServer::add_feed(Ref<CameraFeed> const&) {}
+void CameraServer::remove_feed(Ref<CameraFeed> const&) {}
+void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}
+
+// servers/display/display_server_headless.cpp
+void DisplayServerHeadless::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+// servers/physics_2d/queries/physics_ray_query_parameters_2d.cpp
+void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}
+
+// servers/rendering/renderer_compositor.cpp
+RendererCompositor::RendererCompositor() {}
+
+// servers/rendering/renderer_rd/cluster_builder_rd.cpp
+void ClusterBuilderRD::debug(ClusterBuilderRD::ElementType) {}
+ClusterBuilderRD::ClusterBuilderRD() {}
+void ClusterBuilderRD::bake_cluster() {}
+
+// servers/rendering/renderer_rd/renderer_canvas_render_rd.cpp
+RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(RendererCanvasRenderRD::CanvasShaderData*, RendererCanvasRenderRD::PipelineKey&, RendererCanvasRenderRD::PushConstant&, RID, void*, unsigned int, RID*) {}
+RID RendererCanvasRenderRD::CanvasShaderData::get_shader(RendererCanvasRenderRD::ShaderVariant, bool) const {}
+
+// servers/rendering/renderer_rd/renderer_compositor_rd.cpp
+RID RendererCompositorRD::_get_blit_pipelines_for_format(long) {}
+
+// servers/rendering/renderer_rd/shader_rd.cpp
+void ShaderRD::_initialize_version(ShaderRD::Version*) {}
+void ShaderRD::_compile_version_start(ShaderRD::Version*, int) {}
+
+// servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp
+RID RenderSceneBuffersRD::create_texture_view(StringName const&, StringName const&, StringName const&, RenderingDevice::TextureView) {}
+
+// servers/rendering/renderer_scene_cull.cpp
+void RendererSceneCull::_render_reflection_probe_step(RendererSceneCull::Instance*, int) {}
+RendererSceneCull::RendererSceneCull() {}
+
+// servers/rendering/rendering_server_default.cpp
+void RenderingServerDefault::init() {}
+
+// servers/rendering/shader_language.cpp
+void ShaderLanguage::_check_warning_accums() {}
+
+// servers/xr/xr_positional_tracker.cpp
+void XRPositionalTracker::set_pose(StringName const&, Transform3D const&, Vector3 const&, Vector3 const&, XRPose::TrackingConfidence) {}

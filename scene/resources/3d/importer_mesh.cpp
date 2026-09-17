@@ -164,6 +164,8 @@ void ImporterMesh::clear()
 
 Ref<ImporterMesh> ImporterMesh::get_shadow_mesh() const { return shadow_mesh; }
 
+Vector<Face3> ImporterMesh::get_faces() const {}
+
 #ifndef PHYSICS_3D_DISABLED
 Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	const Ref<MeshConvexDecompositionSettings>& p_settings) const

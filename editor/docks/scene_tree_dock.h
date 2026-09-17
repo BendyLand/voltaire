@@ -34,6 +34,7 @@
 #include "editor/scene/scene_tree_editor.h"
 #include "editor/script/script_create_dialog.h"
 #include "scene/resources/animation.h"
+#include "scene/resources/material.h"
 
 class CheckBox;
 class EditorData;

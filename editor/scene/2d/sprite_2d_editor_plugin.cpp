@@ -214,4 +214,6 @@ void Sprite2DEditor::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<I
 	_update_zoom_and_pan(false);
 }
 
+void Sprite2DEditor::_update_zoom_and_pan(bool p_zoom_at_center) {}
+
 

@@ -5747,4 +5747,6 @@ bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced* p_font_data, const
 	return true;
 }
 
+void TextServerAdvanced::full_copy(ShapedTextDataAdvanced* p_shaped) {}
+
 

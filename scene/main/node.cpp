@@ -605,7 +605,6 @@ void Node::_set_name_nocheck(const StringName& p_name) { data.name = p_name; }
 
 static SafeRefCount node_hrcr_count;
 
-
 void Node::queue_free() {}
 
 void Node::init_node_hrcr() { node_hrcr_count.init(1); }
@@ -699,8 +698,6 @@ void Node::add_sibling(Node* rp_sibling, bool p_force_readable_name)
 	data.parent->_update_children_cache();
 	data.parent->_move_child(rp_sibling, get_index() + 1);
 }
-
-void Node::remove_child(Node *rp_child) {}
 
 void Node::_update_children_cache_impl() const
 {
@@ -1807,8 +1804,6 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-void Node::queue_free() {}
-
 Node::~Node()
 {
 	data.grouped.clear();
@@ -1823,5 +1818,15 @@ Node::~Node()
 	total_node_count.decrement();
 #endif
 }
+
+String Node::get_description(bool p_show_not_in_tree) const { return String(); }
+
+void Node::set_name(const StringName& p_name) { data.name = p_name; }
+
+void Node::propagate_notification(int p_notification) {}
+
+void Node::_emit_editor_state_changed() {}
+
+void Node::_move_child(Node* p_child, int p_index, bool p_ignore_end) {}
 
 

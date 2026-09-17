@@ -2022,4 +2022,5 @@ RID RendererSceneRenderRD::_render_buffers_get_velocity_texture(
 
 void RendererSceneRenderRD::base_uniforms_changed() {}
 
+void RendererSceneRenderRD::_process_compositor_effects(RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD* p_render_data) {}
 

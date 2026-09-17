@@ -32,6 +32,7 @@
 
 #include "scene/main/node.h"
 #include "scene/resources/environment.h"
+#include "scene/resources/material.h"
 #include "scene/resources/texture.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/text/text_server.h"
@@ -88,7 +89,7 @@ public:
 	};
 
 private:
-	mutable SelfList<Node> xform_change = { this };
+	mutable SelfList<Node> xform_change;
 
 	RID canvas_item;
 	StringName canvas_group;
@@ -168,8 +169,8 @@ private:
 	void _propagate_visibility_changed(bool p_parent_visible_in_tree);
 	void _handle_visibility_change(bool p_visible);
 
-	virtual void _top_level_changed_on_parent();
 	virtual void _top_level_changed();
+	virtual void _top_level_changed_on_parent();
 
 	void _redraw_callback();
 
@@ -203,6 +204,7 @@ protected:
 	void set_canvas_item_use_identity_transform(bool p_enable);
 
 	void _notification(int p_what);
+	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _draw_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -324,9 +326,15 @@ public:
 
 	void update_draw_order();
 
+	/* VISIBILITY */
+
+	void set_visible(bool p_visible);
 	bool is_visible() const;
 	bool is_visible_in_tree() const;
+	void show();
+	void hide();
 
+	void queue_redraw();
 	void move_to_front();
 
 	void set_clip_children_mode(ClipChildrenMode p_clip_mode);
@@ -350,6 +358,7 @@ public:
 
 	/* ORDERING */
 
+	virtual void set_z_index(int p_z);
 	int get_z_index() const;
 	int get_effective_z_index() const;
 
@@ -556,6 +565,7 @@ class CanvasTexture : public Texture2D
 	CanvasItem::TextureRepeat texture_repeat = CanvasItem::TEXTURE_REPEAT_PARENT_NODE;
 
 protected:
+	static void _bind_methods();
 
 public:
 	void set_diffuse_texture(const Ref<Texture2D>& p_diffuse);

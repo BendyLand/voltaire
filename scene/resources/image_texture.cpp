@@ -48,6 +48,8 @@ Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 
 Image::Format ImageTexture::get_format() const { return format; }
 
+void ImageTexture::update(const Ref<Image>& p_image) {}
+
 Ref<Image> ImageTexture::get_image() const
 {
 	if (image_stored) {

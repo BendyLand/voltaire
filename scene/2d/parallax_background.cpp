@@ -111,4 +111,5 @@ ParallaxBackground::ParallaxBackground()
 	set_layer(-100); // behind all by default
 }
 
+void ParallaxBackground::_update_scroll() {}
 

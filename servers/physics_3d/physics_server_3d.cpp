@@ -113,4 +113,3 @@ PhysicsServer3DManager::PhysicsServer3DManager() { singleton = this; }
 
 PhysicsServer3DManager::~PhysicsServer3DManager() { singleton = nullptr; }
 
-

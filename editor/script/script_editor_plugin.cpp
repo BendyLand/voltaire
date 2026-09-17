@@ -564,4 +564,6 @@ void ScriptEditorPlugin::get_breakpoints(List<String>* p_breakpoints)
 
 void ScriptEditorPlugin::edited_scene_changed() { script_editor->edited_scene_changed(); }
 
+void ScriptEditor::_help_class_goto(const String& p_desc) {}
+
 
