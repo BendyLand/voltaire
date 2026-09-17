@@ -764,3 +764,7 @@ float TemplateDownloader::get_download_progress() const
 }
 
 
+String ExportTemplateManager::get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
+{
+	return String();
+}

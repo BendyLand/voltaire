@@ -1268,4 +1268,10 @@ LineEdit::~LineEdit() { TS->free_rid(text_rid); }
 
 void LineEdit::select_all() {}
 
+void LineEdit::_emit_text_change() {}
+
+void LineEdit::select(int p_from, int p_to) {}
+
+void LineEdit::delete_text(int p_from_column, int p_to_column) {}
+
 

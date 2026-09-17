@@ -94,4 +94,6 @@ TextureRect::TextureRect() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
 TextureRect::~TextureRect() {}
 
+void TextureRect::set_texture(const Ref<Texture2D>& p_tex) {}
+
 

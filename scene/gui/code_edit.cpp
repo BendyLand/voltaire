@@ -1502,4 +1502,6 @@ void CodeEdit::_line_col_changed()
 
 CodeEdit::~CodeEdit() { _clear_line_number_text_cache(); }
 
+void CodeEdit::unfold_line(int p_line) {}
+
 

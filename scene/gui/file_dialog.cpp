@@ -729,4 +729,6 @@ FileDialog::~FileDialog()
 	}
 }
 
+void FileDialog::invalidate() {}
+
 

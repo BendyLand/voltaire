@@ -930,6 +930,8 @@ void TextEdit::_update_ime_window_position()
 	DisplayServer::get_singleton()->window_set_ime_position(pos, wid);
 }
 
+void TextEdit::_caret_changed(int p_caret) {}
+
 void TextEdit::_show_virtual_keyboard()
 {
 	_update_ime_window_position();

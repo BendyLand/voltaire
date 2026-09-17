@@ -381,6 +381,13 @@ const RD::TextureFormat RenderSceneBuffersRD::get_texture_format(
 	return named_textures[key].format;
 }
 
+RID RenderSceneBuffersRD::get_texture_slice_view(const StringName& p_context, const StringName& p_texture_name,
+	const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers,
+	const uint32_t p_mipmaps, RD::TextureView p_view)
+{
+	return RID();
+}
+
 RID RenderSceneBuffersRD::get_texture_slice(const StringName& p_context,
 	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
 	const uint32_t p_layers, const uint32_t p_mipmaps)

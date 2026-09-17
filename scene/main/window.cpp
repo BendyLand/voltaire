@@ -1701,4 +1701,15 @@ Window::Window()
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 }
 
+void Window::_update_viewport_size() {}
+
+Color Window::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
+{
+	return Color();
+}
+
+Window* Window::get_parent_visible_window() const {}
+
+void Window::_notify_theme_override_changed() {}
+
 

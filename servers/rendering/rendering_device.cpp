@@ -1274,6 +1274,12 @@ RID RenderingDevice::texture_create(
 	return RID();
 }
 
+Vector<uint8_t> RenderingDevice::texture_get_data(
+	RID p_texture, uint32_t p_layer)
+{
+	return Vector<uint8_t>();
+}
+
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
 {
 	Texture* src_texture = texture_owner.get_or_null(p_with_texture);

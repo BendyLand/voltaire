@@ -572,6 +572,6 @@ public:
 	virtual Size2 _get_contents_minimum_size() const;
 
 	Window();
-	~Window();
+	~Window() = default;
 };
 

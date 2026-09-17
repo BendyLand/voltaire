@@ -1479,4 +1479,6 @@ InputEventShortcut::InputEventShortcut() { pressed = true; }
 
 uint32_t InputEventMouse::get_button_mask() const { return 0; }
 
+void InputEventMouse::set_button_mask(uint32_t p_mask) {}
+
 

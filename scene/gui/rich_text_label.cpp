@@ -2459,4 +2459,7 @@ bool RichTextLabel::_validate_line_caches()
 	return true;
 }
 
+void RichTextLabel::clear() {}
+
+
 

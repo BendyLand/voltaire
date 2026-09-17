@@ -545,4 +545,8 @@ ParticleProcessMaterial::~ParticleProcessMaterial()
 	}
 }
 
+void ParticleProcessMaterial::set_param_min(Parameter p_param, float p_value) {}
+
+void ParticleProcessMaterial::set_param_max(Parameter p_param, float p_value) {}
+
 

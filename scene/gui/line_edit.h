@@ -179,7 +179,9 @@ private:
 		bool creating = false;
 		bool double_click = false;
 		bool drag_attempt = false;
-	} selection;
+	};
+
+	Selection selection;
 
 	struct TextOperation
 	{
@@ -234,7 +236,9 @@ private:
 		Color clear_button_color_pressed;
 
 		float base_scale = 1.0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _close_ime_window();
 	void _update_ime_window_position();

@@ -2111,4 +2111,14 @@ void Control::_ensure_allocated_offset_transform()
 	data.offset_transform = memnew(Data::OffsetTransform);
 }
 
+void Control::_size_changed() {}
+
+void Control::_notify_theme_override_changed() {}
+
+Ref<Texture2D> Control::get_theme_icon(const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<Texture2D> t = memnew(Texture2D);
+	return t;
+}
+
 

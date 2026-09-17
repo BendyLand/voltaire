@@ -487,6 +487,8 @@ bool EditorInspector::is_main_editor_inspector() const
 
 String EditorInspector::get_selected_path() const { return property_selected; }
 
+void EditorInspector::update_tree() {}
+
 void EditorInspector::update_property(const String& p_prop)
 {
 	if (!editor_property_map.has(p_prop)) {
@@ -708,5 +710,7 @@ void EditorInspector::set_restrict_to_basic_settings(bool p_restrict)
 void EditorProperty::_set_read_only(bool p_read_only) {}
 
 void EditorProperty::update_property() {}
+
+void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {}
 
 

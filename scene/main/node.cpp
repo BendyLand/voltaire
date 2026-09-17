@@ -1831,4 +1831,6 @@ void Node::set_name(const StringName& p_name)
 	data.name = p_name;
 }
 
+void Node::propagate_notification(int p_notification) {}
+
 

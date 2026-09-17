@@ -579,4 +579,7 @@ void SceneTreeEditor::NodeCache::clear()
 	current_has_pin = false;
 }
 
+void SceneTreeEditor::_update_tree(bool p_scroll_to_selected) {}
+
+void SceneTreeEditor::_update_if_clean() {}
 

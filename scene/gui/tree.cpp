@@ -3343,4 +3343,10 @@ Tree::~Tree()
 
 void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}
 
+void Tree::set_scroll_hint_mode(ScrollHintMode p_mode) {}
+
+void Tree::update_item_cell(TreeItem* p_item, int p_col) const {}
+
+void Tree::clear() {}
+
 

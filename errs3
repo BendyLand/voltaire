@@ -1,50 +1,3 @@
-      9 ParticleProcessMaterial::set_param_min(ParticleProcessMaterial::Parameter, float)
-      9 ParticleProcessMaterial::set_param_max(ParticleProcessMaterial::Parameter, float)
-      9 IKModifier3D::_make_gizmo_dirty()
-      9 EditorValidationPanel::update()
-      9 Curve::set_min_value(float)
-      9 Curve::set_max_value(float)
-      9 Control::_size_changed()
-      9 BaseMaterial3D::set_texture(BaseMaterial3D::TextureParam, Ref<Texture2D> const&)
-      8 Window::_update_viewport_size()
-      8 Window::get_theme_color(StringName const&, StringName const&) const
-      8 Window::get_parent_visible_window() const
-      8 Viewport::_sub_window_grab_focus(Window*)
-      8 Tree::set_scroll_hint_mode(Tree::ScrollHintMode)
-      8 TextureRect::set_texture(Ref<Texture2D> const&)
-      8 SyntaxHighlighter::clear_highlighting_cache()
-      8 Skeleton3D::_update_process_order() const
-      8 ScriptEditor::_help_class_goto(String const&)
-      8 RenderSceneBuffersRD::get_texture_slice_view(StringName const&, StringName const&, unsigned int, unsigned int, unsigned int, unsigned int, RenderingDevice::TextureView)
-      8 RendererSceneRenderImplementation::RenderForwardClustered::_setup_environment(RenderDataRD const*, bool, Vector2i const&, Vector2 const&, Color const&, bool, bool, bool)
-      8 LineEdit::_emit_text_change()
-      8 InputEventMouse::set_button_mask(unsigned int)
-      8 FileDialog::invalidate()
-      8 ExportTemplateManager::get_android_build_directory(Ref<EditorExportPreset> const&)
-      8 EditorInspector::update_tree()
-      8 CodeEdit::unfold_line(int)
-      7 XRServer::get_reference_frame() const
-      7 Window::~Window()
-      7 Window::_notify_theme_override_changed()
-      7 typeinfo for Font
-      7 Tree::update_item_cell(TreeItem*, int) const
-      7 Tree::clear()
-      7 TextEdit::_caret_changed(int)
-      7 SpringBoneSimulator3D::_make_joints_dirty(int, bool)
-      7 SceneTreeEditor::_update_tree(bool)
-      7 SceneTreeEditor::_update_if_clean()
-      7 SceneState::get_base_scene_state() const
-      7 RichTextLabel::clear()
-      7 RenderingDevice::texture_get_data(RID, unsigned int)
-      7 RendererSceneRenderImplementation::RenderForwardClustered::_render_list_with_draw_list(RendererSceneRenderImplementation::RenderForwardClustered::RenderListParameters*, RID, unsigned int, Vector<Color> const&, float, unsigned int, Rect2 const&)
-      7 Node::propagate_notification(int)
-      7 LineEdit::select(int, int)
-      7 LineEdit::delete_text(int, int)
-      7 EditorUndoRedoManager::get_or_create_history(int)
-      7 EditorInspectorArray::_move_element(int, int)
-      7 Control::_notify_theme_override_changed()
-      7 Control::get_theme_icon(StringName const&, StringName const&) const
-      7 CanvasItem::item_rect_changed(bool)
       6 vtable for AcceptDialog
       6 Viewport::_set_size(Vector2i const&, int, Vector2 const&, bool)
       6 typeinfo for FontVariation
@@ -348,8 +301,6 @@
       3 ExportTemplateManager::_item_is_file(TreeItem const*) const
       3 EmbeddedProcessBase::set_window_size(Vector2i const&)
       3 ED_SHORTCUT_ARRAY(String const&, String const&, Vector<int> const&, bool)
-      3 EditorUndoRedoManager::undo_history(int)
-      3 EditorUndoRedoManager::redo_history(int)
       3 EditorSceneTabs::update_scene_tabs()
       3 EditorRunNative::start_run_native(int)
       3 EditorPropertyMultilineText::_update_theme()
@@ -436,7 +387,6 @@
       2 vtable for MenuBar
       2 vtable for GPUParticles2D
       2 vtable for FontVariation
-      2 vtable for Font
       2 vtable for FoldableContainer
       2 vtable for CollisionShape3D
       2 vtable for ChainIK3DGizmoPlugin
@@ -652,7 +602,6 @@
       2 LineEdit::_reset_caret_blink_timer()
       2 LineEdit::_generate_context_menu()
       2 LineEdit::_edit(bool, bool)
-      2 LineEdit::clear_internal()
       2 Label::set_autowrap_mode(TextServer::AutowrapMode)
       2 JSON::parse(String const&, bool)
       2 JoltSpace3D::dump_debug_snapshot(String const&)
@@ -714,6 +663,8 @@
       2 ExportTemplateManager::_fill_template_tree(Tree*, HashMap<ExportTemplateManager::TemplateID, LocalVector<String, unsigned int, false, false>, HashMapHasherDefault, HashMapComparatorDefault<ExportTemplateManager::TemplateID, void>, DefaultTypedAllocator<HashMapElement<ExportTemplateManager::TemplateID, LocalVector<String, unsigned int, false, false> > > > const&, bool)
       2 EmbeddedProcess::reset()
       2 EmbeddedProcessBase::set_keep_aspect(bool)
+      2 EditorUndoRedoManager::undo_history(int)
+      2 EditorUndoRedoManager::redo_history(int)
       2 EditorUndoRedoManager::is_history_unsaved(int)
       2 EditorSpinSlider::_evaluate_input_text()
       2 EditorSettings::get_language() const
@@ -1607,6 +1558,7 @@
       1 LineEdit::set_secret(bool)
       1 LineEdit::set_horizontal_alignment(HorizontalAlignment)
       1 LineEdit::set_clear_button_enabled(bool)
+      1 LineEdit::clear_internal()
       1 Line2D::_draw()
       1 LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&)
       1 LightmapGIData::has_shadowmask_textures()

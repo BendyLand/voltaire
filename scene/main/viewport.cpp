@@ -2537,4 +2537,6 @@ template class Viewport::CameraOverride<Camera3D>;
 #endif // _3D_DISABLED
 #endif // DEBUG_ENABLED
 
+void Viewport::_sub_window_grab_focus(Window* p_window) {}
+
 

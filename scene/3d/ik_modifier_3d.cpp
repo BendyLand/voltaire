@@ -31,6 +31,8 @@
 #include "core/config/engine.h"
 #include "ik_modifier_3d.h"
 
+void IKModifier3D::_make_gizmo_dirty() {}
+
 void IKModifier3D::_notification(int p_what)
 {
 	switch (p_what) {

@@ -2415,4 +2415,4 @@ RID Material::get_shader_rid() const { return RID(); }
 
 void ShaderMaterial::set_shader(const Ref<Shader>& p_shader) {}
 
-
+void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture) {}

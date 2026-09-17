@@ -37,10 +37,6 @@
 class TextLine;
 class TextParagraph;
 
-/*************************************************************************/
-/*  Font                                                                 */
-/*************************************************************************/
-
 class Font : public Resource
 {
 	struct ShapedTextKey
@@ -102,10 +98,9 @@ protected:
 	// Fallbacks.
 	static constexpr int MAX_FALLBACK_DEPTH = 64;
 
-
+	virtual void reset_state() override;
 	virtual void _update_rids_fb(const Font* p_f, int p_depth) const;
 	virtual void _update_rids() const;
-	virtual void reset_state() override;
 
 #ifndef DISABLE_DEPRECATED
 	void _draw_string_bind_compat_104872(RID p_canvas_item, const Point2& p_pos,
@@ -258,10 +253,6 @@ public:
 	~Font();
 };
 
-/*************************************************************************/
-/*  FontFile                                                             */
-/*************************************************************************/
-
 class FontFile : public Font
 {
 	// Font source data.
@@ -305,7 +296,6 @@ class FontFile : public Font
 	void _convert_mono_4bit(Ref<Image>& p_source, int p_page, int p_ch, int p_sz, int p_ol);
 
 protected:
-
 	virtual void reset_state() override;
 
 public:
@@ -487,10 +477,6 @@ public:
 	~FontFile();
 };
 
-/*************************************************************************/
-/*  FontVariation                                                        */
-/*************************************************************************/
-
 class FontVariation : public Font
 {
 	struct Variation
@@ -511,7 +497,6 @@ class FontVariation : public Font
 	Vector<Color> custom_colors;
 
 protected:
-
 	virtual void _update_rids() const override;
 
 	virtual void reset_state() override;
@@ -549,10 +534,6 @@ public:
 	~FontVariation();
 };
 
-/*************************************************************************/
-/*  SystemFont                                                           */
-/*************************************************************************/
-
 class SystemFont : public Font
 {
 	PackedStringArray names;
@@ -583,7 +564,6 @@ class SystemFont : public Font
 	int msdf_size = 48;
 
 protected:
-
 	virtual void _update_base_font();
 	virtual void _update_rids() const override;
 

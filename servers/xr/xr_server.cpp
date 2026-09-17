@@ -104,6 +104,11 @@ void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
 	xr_server->render_state.reference_frame = p_reference_frame;
 }
 
+Transform3D XRServer::get_reference_frame() const
+{
+	return Transform3D();
+}
+
 void XRServer::set_camera_locked_to_origin(bool p_enable) { camera_locked_to_origin = p_enable; }
 
 Ref<XRInterface> XRServer::get_primary_interface() const
