@@ -183,6 +183,12 @@ void Resource::set_scene_unique_id(const String& p_id)
 
 String Resource::get_scene_unique_id() const { return scene_unique_id; }
 
+Ref<Resource> Resource::duplicate(bool p_deep) const
+{
+	Ref<Resource> res = memnew(Resource);
+	return res;
+}
+
 void Resource::set_name(const String& p_name)
 {
 	name = p_name;
@@ -267,8 +273,6 @@ String Resource::get_id_for_path(const String& p_referrer_path) const
 {
 	return "";
 }
-
-void Resource::_bind_methods() {}
 
 Resource::~Resource()
 {

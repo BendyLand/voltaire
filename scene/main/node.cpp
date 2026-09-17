@@ -36,7 +36,6 @@
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Mesh);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, DisplayServer);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, Shader);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, OS);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Engine);
 
@@ -752,6 +751,8 @@ void Node::add_child(Node* rp_child, bool p_force_readable_name, InternalMode p_
 
 	_add_child_nocheck(rp_child, rp_child->data.name, p_internal);
 }
+
+void Node::remove_child(Node* rp_child) {}
 
 void Node::add_sibling(Node* rp_sibling, bool p_force_readable_name)
 {
@@ -1805,6 +1806,8 @@ PackedStringArray Node::get_configuration_warnings() const
 	return ret;
 }
 
+void Node::update_configuration_warnings() {}
+
 void Node::set_display_folded(bool p_folded)
 {
 	ERR_THREAD_GUARD
@@ -1886,7 +1889,7 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-void Node::_bind_methods() {}
+void Node::queue_free() {}
 
 Node::~Node()
 {

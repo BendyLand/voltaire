@@ -1142,6 +1142,11 @@ Error RenderingDevice::driver_callback_add(
 	return OK;
 }
 
+RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	return RID();
+}
+
 String RenderingDevice::get_perf_report() const
 {
 	String perf_report_text;
@@ -1256,6 +1261,12 @@ RID RenderingDevice::texture_buffer_create(
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
 	return id;
+}
+
+RID RenderingDevice::texture_create(
+	const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
+{
+	return RID();
 }
 
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
@@ -3448,8 +3459,7 @@ int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen) co
 	return context->surface_get_height(surface);
 }
 
-int RenderingDevice::
-screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
+int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
 {
 	_THREAD_SAFE_METHOD_
 

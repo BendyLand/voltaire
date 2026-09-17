@@ -110,8 +110,6 @@ bool LookAtModifier3D::is_relative() const { return relative; }
 
 NodePath LookAtModifier3D::get_target_node() const { return target_node; }
 
-// For origin settings.
-
 LookAtModifier3D::OriginFrom LookAtModifier3D::get_origin_from() const { return origin_from; }
 
 void LookAtModifier3D::set_origin_bone_name(const String& p_bone_name)

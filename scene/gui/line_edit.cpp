@@ -1259,23 +1259,20 @@ void LineEdit::_update_context_menu()
 #undef MENU_ITEM_CHECKED
 }
 
+void LineEdit::set_caret_column(int p_column) {}
+
 LineEdit::LineEdit(const String& p_placeholder)
 {
 	text_rid = TS->create_shaped_text();
 	_create_undo_state();
-
 	deselect();
 	set_focus_mode(FOCUS_ALL);
 	set_default_cursor_shape(CURSOR_IBEAM);
 	set_mouse_filter(MOUSE_FILTER_STOP);
 	set_process_unhandled_key_input(true);
-
 	set_caret_blink_enabled(false);
-
 	set_placeholder(p_placeholder);
-
-	set_editable(
-		true); // Initialize to opposite first, so we get past the early-out in set_editable.
+	set_editable(true); // Initialize to opposite first, so we get past the early-out in set_editable.
 }
 
 LineEdit::~LineEdit() { TS->free_rid(text_rid); }

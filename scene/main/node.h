@@ -34,6 +34,8 @@
 #include "core/os/thread_safe.h"
 #include "core/templates/iterable.h"
 #include "core/templates/mem_unique_ptr.h"
+#include "scene/resources/packed_scene.h"
+#include "scene/resources/material.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
 
 class MultiplayerAPI;
@@ -417,7 +419,6 @@ protected:
 
 	void _propagate_replace_owner(Node* p_owner, Node* p_by_owner);
 
-	static void _bind_methods();
 	static String _get_name_num_separator();
 
 	friend class SceneState;
@@ -891,7 +892,7 @@ public:
 
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
-	Node();
+	Node() = default;
 	~Node();
 };
 

@@ -1,87 +1,34 @@
-    200 Resource::Resource()
-    148 CanvasItem::set_visible(bool)
-    126 Node3D::update_gizmos()
-    119 Control::get_theme_color(StringName const&, StringName const&) const
-     97 Label::set_text(String const&)
-     87 BaseMaterial3D::set_flag(BaseMaterial3D::Flags, bool)
-     83 Node::update_configuration_warnings()
-     81 BaseButton::set_pressed(bool)
-     80 Control::set_custom_minimum_size(Vector2 const&)
-     79 Window::popup_centered(Vector2i const&)
-     79 SkeletonModifier3D::get_skeleton() const
-     79 PopupMenu::set_item_disabled(int, bool)
-     68 Control::set_theme_type_variation(StringName const&)
-     66 Control::set_h_size_flags(unsigned int)
-     63 PopupMenu::add_shortcut(Ref<Shortcut> const&, int, bool, bool)
-     60 Control::set_v_size_flags(unsigned int)
-     58 Control::~Control()
-     55 RichTextLabel::add_text(String const&)
-     54 Node::Node()
-     53 PopupMenu::add_item(String const&, int, Key)
-     52 Label::Label(String const&)
-     50 Control::Control()
-     49 Window::set_title(String const&)
-     49 PopupMenu::add_separator(String const&, int)
-     48 Control::get_theme_font(StringName const&, StringName const&) const
-     48 BaseMaterial3D::set_albedo(Color const&)
-     44 Resource::duplicate(bool) const
-     42 PopupMenu::set_item_checked(int, bool)
-     42 Node::remove_child(Node*)
-     41 Control::get_theme_font_size(StringName const&, StringName const&) const
-     39 BaseMaterial3D::set_shading_mode(BaseMaterial3D::ShadingMode)
-     38 Window::popup(Rect2i const&)
-     38 vtable for Container
-     38 PopupMenu::add_icon_item(Ref<Texture2D> const&, String const&, int, Key)
-     37 Control::set_mouse_filter(Control::MouseFilter)
-     36 PopupMenu::set_item_icon(int, Ref<Texture2D> const&)
-     36 LineEdit::set_caret_column(int)
-     36 Control::get_theme_constant(StringName const&, StringName const&) const
-     35 Node::queue_free()
-     34 RenderingDevice::texture_create(RenderingDeviceCommons::TextureFormat const&, RenderingDevice::TextureView const&, Vector<Vector<unsigned char> > const&)
-     33 BaseMaterial3D::set_transparency(BaseMaterial3D::Transparency)
-     32 RichTextLabel::wait_until_finished()
-     32 CSGShape3D::_make_dirty(bool)
-     32 Control::add_theme_style_override(StringName const&, StyleBox*)
-     31 TextEdit::deselect(int)
-     31 PopupMenu::clear(bool)
-     31 Control::get_theme_stylebox(StringName const&, StringName const&) const
-     31 Button::set_text(String const&)
-     30 RenderingDevice::storage_buffer_create(unsigned int, Span<unsigned char>, unsigned int)
-     29 TextServerAdvanced::_ensure_cache_for_size(TextServerAdvanced::FontAdvanced*, Vector2i const&, TextServerAdvanced::FontForSizeAdvanced*&, bool, unsigned int) const
-     29 OpenXRAPI::get_error_string(XrResult) const
+     28 OpenXRAPI::get_error_string(XrResult) const
      28 Node2D::Node2D()
      28 Control::get_theme_icon(StringName const&, StringName const&) const
      27 TreeItem::set_collapsed(bool)
      27 PopupMenu::set_item_tooltip(int, String const&)
-     26 PopupMenu::set_item_accelerator(int, Key)
-     25 Tree::item_changed(int, TreeItem*)
+     26 TextServerAdvanced::_ensure_cache_for_size(TextServerAdvanced::FontAdvanced*, Vector2i const&, TextServerAdvanced::FontForSizeAdvanced*&, bool, unsigned int) const
      25 RenderingDevice::uniform_set_create(VectorView<RenderingDevice::Uniform> const&, RID, unsigned int, bool)
      24 TextureRect::set_texture(Ref<Texture2D> const&)
      24 Node3D::set_transform(Transform3D const&)
      23 Tree::clear()
      23 Shader::set_code(String const&)
-     22 RichTextLabel::_add_item(RichTextLabel::Item*, bool, bool)
+     23 CSGShape3D::_make_dirty(bool)
      22 Node3D::Node3D()
      20 EditorMainScreen::select(int)
      20 CodeEdit::unfold_line(int)
      19 RichTextLabel::push_font(Ref<Font> const&, int)
      19 Node::set_name(StringName const&)
      19 FileDialog::set_file_mode(FileDialog::FileMode)
-     19 EditorNode::get_editor_theme_native_menu_icon(StringName const&, bool, bool) const
      19 EditorNode3DGizmoPlugin::create_material(String const&, Color const&, bool, bool, bool)
      18 TextEdit::select(int, int, int, int, int)
-     18 LineEdit::deselect()
      18 Curve::add_point(Vector2, float, float, Curve::TangentMode, Curve::TangentMode)
      17 SkeletonModificationStack2D::set_editor_gizmos_dirty(bool)
      17 JoltObject3D::to_string() const
      17 IKModifier3D::_make_gizmo_dirty()
      17 CanvasItemEditor::update_viewport()
-     16 Window::popup_centered_ratio(float)
+     16 Tree::item_changed(int, TreeItem*)
      16 Theme::_emit_theme_changed(bool)
      16 RichTextLabel::clear()
-     16 ProjectExportDialog::_edit_preset(int)
      16 PopupMenu::add_icon_shortcut(Ref<Texture2D> const&, Ref<Shortcut> const&, int, bool, bool)
      16 LineEdit::select_all()
+     16 LineEdit::deselect()
      16 Control::has_theme_stylebox(StringName const&, StringName const&) const
      15 TextureRect::set_stretch_mode(TextureRect::StretchMode)
      15 SplitContainer::set_split_offset(int, int)
@@ -91,13 +38,14 @@
      15 CanvasItem::get_parent_item() const
      15 BaseMaterial3D::set_texture(BaseMaterial3D::TextureParam, Ref<Texture2D> const&)
      14 XRServer::get_primary_interface() const
-     14 RenderingDevice::buffer_get_data(RID, unsigned int, unsigned int)
+     14 ProjectExportDialog::_edit_preset(int)
+     14 PopupMenu::set_item_accelerator(int, Key)
      14 FileDialog::invalidate()
      14 EditorDockManager::add_dock(EditorDock*)
      14 CanvasItem::get_configuration_warnings() const
      13 TextServerAdvanced::_shaped_text_shape(RID const&)
      13 Skeleton3D::_make_dirty()
-     13 PhysicalBone3D::get_simulator() const
+     13 RenderingDevice::buffer_get_data(RID, unsigned int, unsigned int)
      13 EditorValidationPanel::update()
      13 EditorSpinSlider::set_control_state(EditorSpinSlider::ControlState)
      12 TreeItem::propagate_check(int, bool)
@@ -116,24 +64,24 @@
      11 AnimationRootNode::_tree_changed()
      10 World3D::get_navigation_map() const
      10 World2D::get_navigation_map() const
-     10 Window::popup_centered_clamped(Vector2i const&, float)
      10 Window::get_parent_visible_window() const
      10 vtable for AnimationRootNode
      10 TileSetAtlasSource::_queue_update_padded_texture()
      10 TilesEditorUtils::SourceNameComparator::operator()(int const&, int const&) const
      10 ShaderMaterial::set_shader(Ref<Shader> const&)
+     10 RichTextLabel::_add_item(RichTextLabel::Item*, bool, bool)
      10 PrimitiveMesh::_update() const
-     10 PopupMenu::set_item_text(int, String const&)
      10 PopupMenu::PopupMenu()
+     10 PhysicalBone3D::get_simulator() const
      10 Node::set_process_input(bool)
      10 EditorSpinSlider::set_read_only(bool)
      10 EditorSceneTabs::update_scene_tabs()
      10 Control::add_theme_font_override(StringName const&, Font*)
-     10 BaseButton::set_pressed_no_signal(bool)
       9 Window::get_theme_color(StringName const&, StringName const&) const
       9 Tree::set_scroll_hint_mode(Tree::ScrollHintMode)
       9 SpringBoneSimulator3D::_make_joints_dirty(int, bool)
       9 SceneTreeEditor::_update_tree(bool)
+      9 PopupMenu::set_item_text(int, String const&)
       9 ParticleProcessMaterial::set_param_min(ParticleProcessMaterial::Parameter, float)
       9 ParticleProcessMaterial::set_param_max(ParticleProcessMaterial::Parameter, float)
       9 LineEdit::select(int, int)
@@ -142,6 +90,7 @@
       9 EditorUndoRedoManager::get_or_create_history(int)
       9 EditorRunBar::stop_playing()
       9 EditorNode::_menu_option_confirm(int, bool)
+      9 EditorNode::get_editor_theme_native_menu_icon(StringName const&, bool, bool) const
       9 Curve::set_min_value(float)
       9 Curve::set_max_value(float)
       9 Control::_size_changed()
@@ -198,7 +147,6 @@
       7 EditorDock::set_dock_shortcut(Ref<Shortcut> const&)
       7 CPUParticles3D::_set_redraw(bool)
       7 CPUParticles2D::_set_do_redraw(bool)
-      7 ColorPickerShape::handle_cursor_editing(Ref<InputEvent> const&, Control*)
       7 CanvasItem::item_rect_changed(bool)
       6 XRServer::set_primary_interface(Ref<XRInterface> const&)
       6 Window::_notify_theme_override_changed()
@@ -343,6 +291,7 @@
       5 ConfigFile::has_section_key(String const&, String const&) const
       5 ConfigFile::erase_section_key(String const&, String const&)
       5 ConcavePolygonShape2D::get_segments() const
+      5 ColorPickerShape::handle_cursor_editing(Ref<InputEvent> const&, Control*)
       5 ColorPicker::add_recent_preset(Color const&)
       5 CodeTextEditor::trigger_history_save_on_navigate()
       5 CodeEdit::is_line_breakpointed(int) const
@@ -1328,6 +1277,7 @@
       1 vtable for CPUParticles3DEditorPlugin
       1 vtable for CPUParticles2DEditorPlugin
       1 vtable for ConvexPolygonShape3D
+      1 vtable for Container
       1 vtable for ConnectDialog
       1 vtable for ConcavePolygonShape3D
       1 vtable for ColorPickerButton
@@ -1336,7 +1286,6 @@
       1 vtable for CollisionObject3D
       1 vtable for CharFXTransform
       1 vtable for CapsuleShape3D
-      1 vtable for CanvasItem
       1 vtable for Camera2D
       1 vtable for CallbackTweener
       1 vtable for BoxShape3D

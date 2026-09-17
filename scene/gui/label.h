@@ -191,7 +191,7 @@ public:
 
 	Rect2 get_character_bounds(int p_pos) const;
 
-	Label(const String& p_text = String());
+	Label(const String& p_text = String()) : text(p_text) {}
 	~Label();
 
 	template <typename... VarArgsFunc, typename... VarArgs>
