@@ -333,7 +333,9 @@ private:
 
 		mutable NodePath* path_cache = nullptr;
 
-	} data;
+	};
+
+	Data data;
 
 	String _get_tree_string_pretty(const String& p_prefix, bool p_last);
 	String _get_tree_string(const Node* p_node);

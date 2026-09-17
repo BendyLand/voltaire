@@ -1,24 +1,3 @@
-     12 InputEventMouse::get_button_mask() const
-     12 EditorDebuggerNode::get_current_debugger() const
-     12 CanvasItemEditor::update_viewport()
-     11 Tree::item_changed(int, TreeItem*)
-     11 RichTextLabel::_validate_line_caches()
-     11 RenderingDevice::vertex_buffer_create(unsigned int, Span<unsigned char>, unsigned int)
-     11 Node::set_name(StringName const&)
-     11 LineEdit::select_all()
-     11 Camera2D::_update_scroll()
-     11 AnimationRootNode::_tree_changed()
-     10 World3D::get_navigation_map() const
-     10 World2D::get_navigation_map() const
-     10 vtable for AnimationRootNode
-     10 TreeItem::propagate_check(int, bool)
-     10 TileSetAtlasSource::_queue_update_padded_texture()
-     10 TilesEditorUtils::SourceNameComparator::operator()(int const&, int const&) const
-     10 ShaderMaterial::set_shader(Ref<Shader> const&)
-     10 PrimitiveMesh::_update() const
-     10 EditorSpinSlider::set_read_only(bool)
-     10 Control::set_anchor(Side, float, bool, bool)
-     10 Animation::track_get_key_time(int, int) const
       9 ParticleProcessMaterial::set_param_min(ParticleProcessMaterial::Parameter, float)
       9 ParticleProcessMaterial::set_param_max(ParticleProcessMaterial::Parameter, float)
       9 IKModifier3D::_make_gizmo_dirty()
@@ -69,7 +48,6 @@
       6 vtable for AcceptDialog
       6 Viewport::_set_size(Vector2i const&, int, Vector2 const&, bool)
       6 typeinfo for FontVariation
-      6 typeinfo for AnimationRootNode
       6 TabBar::set_current_tab(int)
       6 SkeletonModifier3D::get_configuration_warnings() const
       6 RenderSceneBuffersRD::create_texture_from_format(StringName const&, StringName const&, RenderingDeviceCommons::TextureFormat const&, RenderingDevice::TextureView, bool)
@@ -557,6 +535,8 @@
       2 ScriptEditor::get_breakpoints(List<String, DefaultAllocator>*)
       2 ScriptEditor::ensure_select_current()
       2 ScriptEditor::edit(Ref<Resource> const&, int, int, bool)
+      2 ScriptEditorDebugger::ScriptEditorDebugger()
+      2 ScriptEditorDebugger::~ScriptEditorDebugger()
       2 ScriptEditorDebugger::request_remote_evaluate(String const&, int)
       2 SceneTree::SceneTree()
       2 SceneTree::flush_transform_notifications()

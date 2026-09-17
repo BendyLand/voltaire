@@ -1266,4 +1266,6 @@ LineEdit::LineEdit(const String& p_placeholder)
 
 LineEdit::~LineEdit() { TS->free_rid(text_rid); }
 
+void LineEdit::select_all() {}
+
 

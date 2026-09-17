@@ -3328,6 +3328,8 @@ void Tree::set_auto_tooltip(bool p_enable) { enable_auto_tooltip = p_enable; }
 
 bool Tree::is_auto_tooltip_enabled() const { return enable_auto_tooltip; }
 
+void Tree::item_changed(int p_column, TreeItem* p_item) {}
+
 Tree::~Tree()
 {
 	memdelete(root);
@@ -3338,5 +3340,7 @@ Tree::~Tree()
 	RenderingServer::get_singleton()->free_rid(stylebox_ci);
 	RenderingServer::get_singleton()->free_rid(last_sticky_ci);
 }
+
+void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}
 
 

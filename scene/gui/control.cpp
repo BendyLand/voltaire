@@ -274,6 +274,11 @@ void Control::_top_level_changed_on_parent()
 
 void Control::_set_anchor(Side p_side, real_t p_anchor) { set_anchor(p_side, p_anchor); }
 
+void Control::set_anchor(
+	Side p_side, real_t p_anchor, bool p_keep_offset, bool p_push_opposite_anchor)
+{
+}
+
 real_t Control::get_anchor(Side p_side) const
 {
 	ERR_READ_THREAD_GUARD_V(0);
@@ -1871,7 +1876,6 @@ void Control::add_theme_color_override(const StringName& p_name, const Color& p_
 	_notify_theme_override_changed();
 }
 
-
 Color Control::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
 {
 	return Color();
@@ -1915,7 +1919,6 @@ void Control::remove_theme_color_override(const StringName& p_name)
 	data.theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
 }
-
 
 int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const
 {

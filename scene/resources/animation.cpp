@@ -3036,4 +3036,9 @@ Animation::~Animation()
 	}
 }
 
+double Animation::track_get_key_time(int p_track, int p_key_idx) const
+{
+	return 0.0;
+}
+
 

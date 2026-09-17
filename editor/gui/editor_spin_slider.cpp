@@ -115,6 +115,8 @@ void EditorSpinSlider::_value_input_hidden()
 
 bool EditorSpinSlider::is_read_only() const { return read_only; }
 
+void EditorSpinSlider::set_read_only(bool p_enable) {}
+
 bool EditorSpinSlider::is_flat() const { return flat; }
 
 bool EditorSpinSlider::is_grabbing() const { return grabbing_grabber || grabbing_spinner; }

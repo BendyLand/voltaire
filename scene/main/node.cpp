@@ -1826,4 +1826,9 @@ String Node::get_description(bool p_show_not_in_tree) const
 	return String();
 }
 
+void Node::set_name(const StringName& p_name)
+{
+	data.name = p_name;
+}
+
 

@@ -156,4 +156,9 @@ TileMapEditorPlugin::~TileMapEditorPlugin() { tile_map_plugin_singleton = nullpt
 
 TileSetEditorPlugin::~TileSetEditorPlugin() { tile_set_plugin_singleton = nullptr; }
 
+bool TilesEditorUtils::SourceNameComparator::operator()(const int& p_a, const int& p_b) const
+{
+	return p_a < p_b;
+}
+
 

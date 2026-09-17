@@ -541,6 +541,8 @@ void CanvasItemEditor::_draw_viewport()
 
 void CanvasItemEditor::set_current_tool(Tool p_tool) { _button_tool_select(p_tool); }
 
+void CanvasItemEditor::update_viewport() {}
+
 void CanvasItemEditor::_update_oversampling()
 {
 	EditorNode::get_singleton()->get_scene_root()->set_oversampling_override(

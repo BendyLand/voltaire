@@ -2454,4 +2454,9 @@ void RichTextLabel::add_text(const String& p_text) {}
 
 void RichTextLabel::wait_until_finished() {}
 
+bool RichTextLabel::_validate_line_caches()
+{
+	return true;
+}
+
 

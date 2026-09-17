@@ -609,4 +609,6 @@ Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName& p_name) co
 	return Ref<AnimationNode>();
 }
 
+void AnimationRootNode::_tree_changed() {}
+
 

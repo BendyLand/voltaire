@@ -3006,6 +3006,11 @@ RID RenderingDevice::sampler_create(const SamplerState& p_state)
 	return id;
 }
 
+RID RenderingDevice::vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	return RID();
+}
+
 bool RenderingDevice::sampler_is_format_supported_for_filter(
 	DataFormat p_format, SamplerFilter p_sampler_filter) const
 {

@@ -1141,4 +1141,6 @@ void TextMesh::set_uppercase(bool p_uppercase)
 
 bool TextMesh::is_uppercase() const { return uppercase; }
 
+void PrimitiveMesh::_update() const {}
+
 

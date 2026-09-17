@@ -2413,4 +2413,6 @@ RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
 
+void ShaderMaterial::set_shader(const Ref<Shader>& p_shader) {}
+
 
