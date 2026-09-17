@@ -32,6 +32,7 @@
 
 #include "scene/main/node.h"
 #include "scene/resources/environment.h"
+#include "scene/resources/material.h"
 #include "scene/resources/texture.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/text/text_server.h"
@@ -546,7 +547,7 @@ public:
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	CanvasItem();
+	CanvasItem() = default;
 	~CanvasItem();
 };
 

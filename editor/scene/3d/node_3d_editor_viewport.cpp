@@ -1221,8 +1221,6 @@ void Node3DEditorViewport::_load_viewport_inputs()
 
 Node3DEditorViewport::~Node3DEditorViewport() { memdelete(ruler); }
 
-//////////////////////////////////////////////////////////////
-
 void Node3DEditorViewportContainer::_update_split_drag_margin()
 {
 	if (view != VIEW_USE_4_VIEWPORTS && view != VIEW_USE_3_VIEWPORTS) {

@@ -390,7 +390,7 @@ public:
 	void set_visibility_parent(const NodePath& p_path);
 	NodePath get_visibility_parent() const;
 
-	Node3D();
+	Node3D() = default;
 	~Node3D();
 };
 

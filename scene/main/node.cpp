@@ -1821,3 +1821,9 @@ Node::~Node()
 }
 
 
+String Node::get_description(bool p_show_not_in_tree) const
+{
+	return String();
+}
+
+

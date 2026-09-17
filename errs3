@@ -1,14 +1,7 @@
-    197 Node::get_description(bool) const
-     53 Control::~Control()
-     50 Control::Control()
-     43 Node3D::Node3D()
-     34 vtable for Container
-     33 Node::Node()
-     28 CanvasItem::CanvasItem()
-     15 Tree::item_changed(int, TreeItem*)
      12 InputEventMouse::get_button_mask() const
      12 EditorDebuggerNode::get_current_debugger() const
      12 CanvasItemEditor::update_viewport()
+     11 Tree::item_changed(int, TreeItem*)
      11 RichTextLabel::_validate_line_caches()
      11 RenderingDevice::vertex_buffer_create(unsigned int, Span<unsigned char>, unsigned int)
      11 Node::set_name(StringName const&)
@@ -959,6 +952,7 @@
       1 vtable for CPUParticles2DEditorPlugin
       1 vtable for CPUParticles2D
       1 vtable for ConvexPolygonShape3D
+      1 vtable for Container
       1 vtable for ConnectionInfoDialog
       1 vtable for ConnectDialog
       1 vtable for ConcavePolygonShape3D
@@ -966,7 +960,6 @@
       1 vtable for CollisionObject3D
       1 vtable for CharFXTransform
       1 vtable for CapsuleShape3D
-      1 vtable for CanvasItem
       1 vtable for Camera2D
       1 vtable for CallbackTweener
       1 vtable for BoxShape3D

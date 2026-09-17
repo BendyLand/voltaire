@@ -1249,4 +1249,8 @@ CanvasTexture::~CanvasTexture()
 	RS::get_singleton()->free_rid(canvas_texture);
 }
 
+void CanvasItem::_top_level_changed() {}
+
+void CanvasItem::_top_level_changed_on_parent() {}
+
 
