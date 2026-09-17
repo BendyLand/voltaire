@@ -349,3 +349,7 @@ void FoldableGroup::get_containers(List<FoldableContainer*>* r_containers) const
 FoldableGroup::FoldableGroup() { set_local_to_scene(true); }
 
 
+
+void FoldableContainer::set_folded(bool) {}
+
+void FoldableContainer::set_title(String const&) {}

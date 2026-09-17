@@ -1582,4 +1582,12 @@ AudioBusLayout::AudioBusLayout()
 	buses.write[0].name = SceneStringName(Master);
 }
 
+void AudioServer::_update_bus_effects(int) {}
+
+void AudioServer::set_bus_volume_db(int, float) {}
+
+void AudioServer::init() {}
+
+void AudioDriverManager::initialize(int) {}
+
 

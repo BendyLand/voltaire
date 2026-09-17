@@ -1951,6 +1951,27 @@ void Viewport::update_mouse_cursor_state()
 	}
 }
 
+template<>
+Camera3D* Viewport::CameraOverride<Camera3D>::get_overridden_camera() const {}
+
+template<>
+Camera2D* Viewport::CameraOverride<Camera2D>::get_overridden_camera() const {}
+
+template<>
+void Viewport::CameraOverride<Camera3D>::enable(Viewport*, Camera3D const*) {}
+
+template<>
+void Viewport::CameraOverride<Camera3D>::disable(Camera3D*) {}
+
+template<>
+void Viewport::CameraOverride<Camera2D>::set_overridden_camera(Camera2D const*) {}
+
+template<>
+void Viewport::CameraOverride<Camera2D>::enable(Viewport*, Camera2D const*) {}
+
+template<>
+void Viewport::CameraOverride<Camera2D>::disable(Camera2D*) {}
+
 void Viewport::set_canvas_cull_mask(uint32_t p_canvas_cull_mask)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -2537,4 +2558,78 @@ template class Viewport::CameraOverride<Camera3D>;
 #endif // _3D_DISABLED
 #endif // DEBUG_ENABLED
 
+void Viewport::_sub_window_grab_focus(Window* p_window) {}
+
+bool Viewport::_set_size(const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override, bool p_allocated)
+{
+	return true;
+}
+
+void Viewport::set_input_as_handled() {}
+
+bool Viewport::is_input_handled() const {}
+
+void Viewport::_camera_3d_set(Camera3D* p_camera) {}
+
+bool Viewport::is_visible_subviewport() const {}
+
+void Viewport::gui_perform_drop_at(Vector2 const&, Control*) {}
+
+Window* Viewport::get_base_window() {}
+
+void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
+
+Viewport::Viewport() {}
+
+void Viewport::_push_text_input(String const&, bool) {}
+
+void Viewport::_gui_update_mouse_over() {}
+
+void Viewport::_gui_show_tooltip_at(Vector2i const&) {}
+
+void Viewport::gui_release_focus() {}
+
+void Viewport::_drop_mouse_focus() {}
+
+void Viewport::_update_texture_repeat_changed(bool) {}
+
+void Viewport::_update_texture_filter_changed(bool) {}
+
+void Viewport::_refresh_texture_repeat_cache() const {}
+
+void Viewport::_refresh_texture_filter_cache() const {}
+
+void Viewport::_push_unhandled_input_internal(Ref<InputEvent> const&) {}
+
+void Viewport::push_input(InputEvent*, bool) {}
+
+void Viewport::_propagate_world_2d_changed(Node*) {}
+
+void Viewport::_propagate_exit_world_3d(Node*) {}
+
+void Viewport::_propagate_enter_world_3d(Node*) {}
+
+void Viewport::_mouse_leave_viewport() {}
+
+void Viewport::_update_mouse_over(Vector2 p_pos) {}
+
+Ref<InputEvent> Viewport::_make_input_local(Ref<InputEvent> const&)
+{
+	Ref<InputEvent> ie = memnew(InputEvent);
+	return ie;
+}
+
+void Viewport::_gui_sort_roots() {}
+
+void Viewport::_gui_set_drag_preview(Control*, Control*) {}
+
+void Viewport::_gui_grab_click_focus(Control*) {}
+
+Control* Viewport::_gui_find_control_at_pos(CanvasItem*, Vector2 const&, Transform2D const&)
+{
+	Control c = Control();
+	return &c;
+}
+
+void Viewport::_gui_control_grab_focus(Control*, bool) {}
 

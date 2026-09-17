@@ -41,6 +41,12 @@ CopyEffects* CopyEffects::singleton = nullptr;
 
 CopyEffects* CopyEffects::get_singleton() { return singleton; }
 
+void CopyEffects::copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
+	bool p_flip_y, bool p_force_luminance, bool p_all_source, bool p_8_bit_dst, bool p_alpha_to_one,
+	bool p_sanitize_inf_nan)
+{
+}
+
 void CopyEffects::copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
 	const Rect2i& p_rect, bool p_flip_y, bool p_force_luminance, bool p_alpha_to_zero, bool p_srgb,
 	RID p_secondary, bool p_multiview, bool alpha_to_one, bool p_linear, bool p_normal,
@@ -67,5 +73,51 @@ static constexpr int _compute_dispatch_size(bool p_use_array)
 
 	return (size + GROUP - 1) / GROUP;
 }
+
+void RendererRD::CopyEffects::make_mipmap(RID p_source, RID p_dest, const Vector2i& p_size) {}
+
+void RendererRD::CopyEffects::gaussian_glow(RID p_source, RID p_dest, const Vector2i& p_size,
+	float p_strength, bool p_first_pass, float p_luminance_cap, float p_exposure, float p_white,
+	float p_scale, float p_glow_bloom, RID p_glow_map, float p_glow_map_strength)
+{
+}
+
+void RendererRD::CopyEffects::
+gaussian_blur(
+	RID p_source, RID p_dest, const Rect2i& p_region, const Vector2i& p_size, bool p_vertical)
+{
+}
+
+void RendererRD::CopyEffects::gaussian_blur_raster(
+	RID p_source, RID p_dest, const Rect2i& p_region, const Vector2i& p_size)
+{
+}
+
+void RendererRD::CopyEffects::set_color(
+	RID p_dest, const Color& p_color, const Rect2i& p_rect, bool p_all_layers)
+{
+}
+
+void RendererRD::CopyEffects::set_color_raster(
+	RID p_dest, const Color& p_color, const Rect2i& p_rect)
+{
+}
+
+void RendererRD::CopyEffects::merge_specular(
+	RID p_dest, RID p_specular, RID p_base, RID p_glow, unsigned int p_view_count)
+{
+}
+
+void RendererRD::CopyEffects::copy_octmap_to_panorama(RID p_source, RID p_dest,
+	const Vector2i& p_size, float p_lod, bool p_half_res, const Vector2& p_uv_offset)
+{
+}
+
+void RendererRD::CopyEffects::copy_depth_to_rect(
+	RID p_source, RID p_dest, const Rect2i& p_rect, bool p_flip_y)
+{
+}
+
+void RendererRD::CopyEffects::copy_cubemap_to_octmap(RID p_source, RID p_dest, float p_lod) {}
 
 

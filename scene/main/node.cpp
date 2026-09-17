@@ -605,7 +605,6 @@ void Node::_set_name_nocheck(const StringName& p_name) { data.name = p_name; }
 
 static SafeRefCount node_hrcr_count;
 
-
 void Node::queue_free() {}
 
 void Node::init_node_hrcr() { node_hrcr_count.init(1); }
@@ -699,8 +698,6 @@ void Node::add_sibling(Node* rp_sibling, bool p_force_readable_name)
 	data.parent->_update_children_cache();
 	data.parent->_move_child(rp_sibling, get_index() + 1);
 }
-
-void Node::remove_child(Node *rp_child) {}
 
 void Node::_update_children_cache_impl() const
 {
@@ -1758,6 +1755,8 @@ void Node::_call_unhandled_input(const Ref<InputEvent>& p_event)
 	unhandled_input(p_event);
 }
 
+String Node::_to_string() { return String(); }
+
 void Node::_call_unhandled_key_input(const Ref<InputEvent>& p_event)
 {
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
@@ -1807,8 +1806,6 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-void Node::queue_free() {}
-
 Node::~Node()
 {
 	data.grouped.clear();
@@ -1823,5 +1820,88 @@ Node::~Node()
 	total_node_count.decrement();
 #endif
 }
+
+String Node::get_description(bool p_show_not_in_tree) const { return String(); }
+
+void Node::set_name(const StringName& p_name) { data.name = p_name; }
+
+void Node::propagate_notification(int p_notification) {}
+
+void Node::_emit_editor_state_changed() {}
+
+void Node::_move_child(Node* p_child, int p_index, bool p_ignore_end) {}
+
+void Node::set_process_shortcut_input(bool) {}
+
+void Node::set_process_input(bool) {}
+
+void Node::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const {}
+
+void Node::notify_deferred_thread_group(int) {}
+
+void Node::_generate_serial_child_name(Node const*, StringName&) const {}
+
+void Node::_duplicate_signals(Node const*, Node*) const {}
+
+void Node::_duplicate_scripts(Node const*, Node*) const {}
+
+void Node::_duplicate_properties(Node const*, Node const*, Node*, int) const {}
+
+Node* Node::_duplicate(int,
+	HashMap<Node const*, Node*, HashMapHasherDefault, HashMapComparatorDefault<Node const*, void>,
+		DefaultTypedAllocator<HashMapElement<Node const*, Node*>>>*) const
+{
+	Node n = Node();
+	return &n;
+}
+
+void Node::_validate_child_name(Node*, bool) {}
+
+void Node::set_process_unhandled_key_input(bool) {}
+
+void Node::set_process_unhandled_input(bool) {}
+
+void Node::remap_node_resources(Node* p_node, Node* p_scene_root,
+	HashMap<Node*, HashMap<Ref<Resource>, Ref<Resource>>>& p_resource_remap) const
+{
+}
+
+void Node::_propagate_translation_domain_dirty() {}
+
+void Node::_propagate_suspend_notification(bool) {}
+
+void Node::_propagate_ready() {}
+
+void Node::_propagate_pause_notification(bool) {}
+
+void Node::_propagate_exit_tree() {}
+
+void Node::_propagate_enter_tree() {}
+
+void Node::_propagate_after_exit_tree() {}
+
+Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<StringName>&, bool) const
+{
+	Node n = Node();
+	return &n;
+}
+
+void Node::_add_child_nocheck(Node*, StringName const&, Node::InternalMode) {}
+
+void Node::set_translation_domain(const StringName& p_domain) {}
+
+void Node::remove_meta(const StringName& p_name) {}
+
+bool Node::has_signal(const StringName& p_name) const { return false; }
+
+bool Node::has_meta(const StringName& p_name) const { return false; }
+
+bool Node::has_connections(const StringName& p_signal) const { return false; }
+
+StringName Node::get_translation_domain() const { return StringName(); }
+
+int Node::get_persistent_signal_connection_count() const { return 0; }
+
+void Node::get_meta_list(List<StringName>* p_list) const {}
 
 

@@ -274,3 +274,5 @@ AABB NavigationMeshSourceGeometryData3D::get_bounds()
 }
 
 
+
+void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D const&) {}

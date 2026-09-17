@@ -76,3 +76,11 @@ Ref<OpenXRAction> OpenXRActionSet::add_new_action(const char* p_name, const char
 OpenXRActionSet::~OpenXRActionSet() { clear_actions(); }
 
 
+
+void OpenXRActionSet::clear_actions() {}
+
+void OpenXRActionSet::add_action(Ref<OpenXRAction> const&) {}
+
+void OpenXRActionSet::remove_action(Ref<OpenXRAction> const&) {}
+
+Ref<OpenXRAction> OpenXRActionSet::get_action(String const&) const {}

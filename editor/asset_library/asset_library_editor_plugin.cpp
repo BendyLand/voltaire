@@ -339,3 +339,9 @@ bool AssetLibraryEditorPlugin::is_available()
 }
 
 
+
+void EditorAssetLibrary::_repository_changed(int) {}
+
+void EditorAssetLibrary::_update_repository_options() {}
+
+void EditorAssetLibraryItem::_calculate_misc_links_size() {}

@@ -113,4 +113,8 @@ void ScriptCreateDialog::_path_changed(const String& p_path)
 	validation_panel->update();
 }
 
+String ScriptCreateDialog::_validate_path(String const&, bool, bool*) { return String(); }
+
+void ScriptCreateDialog::config(String const&, String const&, bool, bool) {}
+
 

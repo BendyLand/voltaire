@@ -485,7 +485,7 @@ public:
 		bool interpolation_enabled = false;
 	} _interpolation_data;
 
-	RendererCanvasCull();
+	RendererCanvasCull() = default;
 	~RendererCanvasCull();
 };
 

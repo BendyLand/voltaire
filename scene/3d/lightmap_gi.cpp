@@ -769,3 +769,9 @@ PackedStringArray LightmapGI::get_configuration_warnings() const
 LightmapGI::LightmapGI() {}
 
 
+
+bool LightmapGIData::has_shadowmask_textures() {}
+
+void LightmapGI::_clear_lightmaps() {}
+
+void LightmapGI::_assign_lightmaps() {}

@@ -247,4 +247,32 @@ int JoltShapedObject3D::find_shape_index(const JPH::SubShapeID& p_sub_shape_id) 
 	return find_shape_index((uint32_t)jolt_shape->GetSubShapeUserData(p_sub_shape_id));
 }
 
+void JoltShapedObject3D::set_shape_transform(int, Transform3D) {}
+
+void JoltShapedObject3D::set_shape(int, JoltShape3D*) {}
+
+void JoltShapedObject3D::set_shape_disabled(int, bool) {}
+
+void JoltShapedObject3D::remove_shape(int) {}
+
+Transform3D JoltShapedObject3D::get_shape_transform_scaled(int) const { return Transform3D(); }
+
+JoltShape3D* JoltShapedObject3D::get_shape(int) const
+{
+	JoltShape3D js = JoltShape3D();
+	return &js;
+}
+
+void JoltShapedObject3D::clear_shapes() {}
+
+void JoltShapedObject3D::add_shape(JoltShape3D*, Transform3D, bool) {}
+
+JPH::ShapeRefC JoltShapedObject3D::_try_build_shape(bool) {}
+
+void JoltShapedObject3D::remove_shape(JoltShape3D const*) {}
+
+AABB JoltShapedObject3D::get_aabb() const {}
+
+int JoltShapedObject3D::find_shape_index(unsigned int) const {}
+
 

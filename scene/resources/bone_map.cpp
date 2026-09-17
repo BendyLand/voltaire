@@ -112,3 +112,5 @@ BoneMap::BoneMap() { _validate_bone_map(); }
 BoneMap::~BoneMap() {}
 
 
+
+void BoneMap::set_skeleton_bone_name(StringName const&, StringName const&) {}

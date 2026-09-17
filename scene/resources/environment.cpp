@@ -938,3 +938,5 @@ Environment::~Environment()
 }
 
 
+
+void Environment::set_tonemapper(Environment::ToneMapper) {}

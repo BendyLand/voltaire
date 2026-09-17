@@ -697,16 +697,11 @@ String Label::get_ellipsis_char() const { return el_char; }
 
 String Label::get_text() const { return text; }
 
-void Label::set_text(const String& p_string)
-{
-	text = p_string;
-}
+void Label::set_text(const String& p_string) { text = p_string; }
 
 int Label::get_visible_characters() const { return visible_chars; }
 
 float Label::get_visible_ratio() const { return visible_ratio; }
-
-void Label::set_text(const String& p_string) {}
 
 TextServer::VisibleCharactersBehavior Label::get_visible_characters_behavior() const
 {
@@ -730,5 +725,13 @@ Label::~Label()
 	}
 	paragraphs.clear();
 }
+
+void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {}
+
+void Label::set_autowrap_mode(TextServer::AutowrapMode) {}
+
+void Label::_shape() const {}
+
+void Label::set_vertical_alignment(VerticalAlignment) {}
 
 

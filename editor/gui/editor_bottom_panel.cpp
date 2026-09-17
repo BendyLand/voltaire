@@ -151,4 +151,22 @@ ProgressIndicator::ProgressIndicator()
 	set_max(1.0);
 }
 
+void EditorBottomPanel::set_bottom_panel_offset(int) {}
+
+void EditorBottomPanel::make_item_visible(Control*, bool, bool) {}
+
+EditorDock* EditorBottomPanel::_get_dock_from_control(Control*) const
+{
+	EditorDock ed = EditorDock();
+	return &ed;
+}
+
+int EditorBottomPanel::get_bottom_panel_offset() { return 0; }
+
+Button* EditorBottomPanel::add_item(String, Control*, Ref<Shortcut> const&, bool)
+{
+	Button b = Button();
+	return &b;
+}
+
 

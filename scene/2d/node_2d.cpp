@@ -359,3 +359,7 @@ Point2 Node2D::to_global(const Point2& p_local) const
 }
 
 
+
+void Node2D::_update_transform() {}
+
+void Node2D::set_transform(Transform2D const&) {}

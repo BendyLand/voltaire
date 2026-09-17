@@ -606,3 +606,9 @@ PackedStringArray TileMap::get_configuration_warnings() const
 #undef TILEMAP_CALL_FOR_LAYER_V
 
 
+
+int TileMap::get_cell_alternative_tile(int, Vector2i const&, bool) const {}
+
+void TileMap::_emit_changed() {}
+
+void TileMap::_set_tile_map_data_using_compatibility_format(int, TileMapDataFormat, Vector<int> const&) {}

@@ -115,14 +115,13 @@ protected:
 	void _on_transform_changed();
 
 	friend class Viewport;
+	virtual void _space_changed(const RID& p_new_space);
 	virtual void _input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
 		const Vector3& p_pos, const Vector3& p_normal, int p_shape);
 	virtual void _mouse_enter();
 	virtual void _mouse_exit();
 
 	void set_body_mode(PS3DE::BodyMode p_mode);
-
-	virtual void _space_changed(const RID& p_new_space);
 
 	void set_only_update_transform_changes(bool p_enable);
 	bool is_only_update_transform_changes_enabled() const;

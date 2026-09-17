@@ -332,3 +332,5 @@ VideoStreamPlayer::~VideoStreamPlayer()
 }
 
 
+
+void VideoStreamPlayer::_notification(int) {}

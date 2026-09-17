@@ -55,4 +55,6 @@ void NavigationPathQueryResult3D::set_path_length(float p_length) { path_length 
 
 float NavigationPathQueryResult3D::get_path_length() const { return path_length; }
 
+void NavigationPathQueryResult3D::reset() {}
+
 

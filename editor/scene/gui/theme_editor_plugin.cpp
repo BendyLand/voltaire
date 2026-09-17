@@ -586,4 +586,24 @@ void ThemeEditor::_preview_tabs_resized()
 
 bool ThemeEditorPlugin::can_auto_hide() const { return theme_editor->theme.is_null(); }
 
+void ThemeItemImportTree::_store_selected_item(TreeItem* p_tree_item) {}
 
+void ThemeEditor::_remove_preview_tab(int p_tab) {}
+
+
+
+void ThemeTypeEditor::_update_type_items() {}
+
+void ThemeTypeEditor::_update_type_list() {}
+
+void ThemeTypeEditor::_type_variation_changed(String) {}
+
+void ThemeTypeEditor::_item_rename_confirmed(int, String, Control*) {}
+
+void ThemeTypeEditor::_item_add_cbk(int, Control*) {}
+
+void ThemeItemImportTree::_update_items_tree() {}
+
+void ThemeItemEditorDialog::_update_edit_item_tree(String) {}
+
+void ThemeItemEditorDialog::_confirm_edit_theme_item() {}

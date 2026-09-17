@@ -253,4 +253,5 @@ VoxelGI::~VoxelGI()
 	RS::get_singleton()->free_rid(voxel_gi);
 }
 
+void VoxelGI::bake(Node*, bool) {}
 

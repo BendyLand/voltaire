@@ -627,4 +627,16 @@ void PackedScene::reset_state() { clear(); }
 
 PackedScene::PackedScene() { state.instantiate(); }
 
+Ref<SceneState> SceneState::get_base_scene_state() const
+{
+	Ref<SceneState> ss = memnew(SceneState);
+	return ss;
+}
 
+
+
+Node* PackedScene::instantiate(PackedScene::GenEditState) const {}
+
+Error SceneState::pack(Node*) {}
+
+void SceneState::clear() {}

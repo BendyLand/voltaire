@@ -1577,3 +1577,23 @@ Theme::Theme() {}
 Theme::~Theme() {}
 
 
+
+void Theme::set_icon(StringName const&, StringName const&, Ref<Texture2D> const&) {}
+
+void Theme::set_font(StringName const&, StringName const&, Ref<Font> const&) {}
+
+void Theme::set_default_font(Ref<Font> const&) {}
+
+void Theme::remove_stylebox_type(StringName const&) {}
+
+void Theme::remove_icon_type(StringName const&) {}
+
+void Theme::remove_font_type(StringName const&) {}
+
+void Theme::clear_stylebox(StringName const&, StringName const&) {}
+
+void Theme::clear_icon(StringName const&, StringName const&) {}
+
+void Theme::clear_font(StringName const&, StringName const&) {}
+
+void Theme::clear() {}

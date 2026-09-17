@@ -410,6 +410,8 @@ void CodeTextEditor::remove_find_replace_bar()
 	find_replace_bar = nullptr;
 }
 
+void CodeTextEditor::trigger_history_save_on_navigate() {}
+
 void CodeTextEditor::set_indent_using_spaces(bool p_use_spaces)
 {
 	text_editor->set_indent_using_spaces(p_use_spaces);
@@ -631,5 +633,33 @@ void CodeTextEditor::set_toggle_list_control(Control* p_toggle_list_control)
 {
 	toggle_files_list = p_toggle_list_control;
 }
+
+void CodeTextEditor::_zoom_to(float) {}
+
+void CodeTextEditor::update_toggle_files_button() {}
+
+void CodeTextEditor::trim_final_newlines() {}
+
+void CodeTextEditor::set_zoom_factor(float) {}
+
+void CodeTextEditor::_set_show_warnings_panel(bool) {}
+
+void CodeTextEditor::_set_show_errors_panel(bool) {}
+
+void CodeTextEditor::adjust_viewport_to_caret() {}
+
+void FindReplaceBar::_update_matches_display() {}
+
+void FindReplaceBar::set_text_edit(CodeTextEditor*) {}
+
+void CodeTextEditor::_update_error_content_height() {}
+
+void CodeTextEditor::update_editor_settings() {}
+
+void CodeTextEditor::store_previous_state() {}
+
+void CodeTextEditor::set_preview_navigation_change(bool) {}
+
+void CodeTextEditor::center_viewport_to_caret() {}
 
 

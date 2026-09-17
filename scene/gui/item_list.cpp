@@ -420,4 +420,27 @@ bool ItemList::is_scroll_hint_tiled() { return tile_scroll_hint; }
 
 ItemList::~ItemList() {}
 
+void ItemList::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
+void ItemList::deselect_all() {}
+
+
+void ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode) {}
+
+void ItemList::set_fixed_column_width(int) {}
+
+void ItemList::set_fixed_icon_size(Vector2i const&) {}
+
+void ItemList::select(int, bool) {}
+
+void ItemList::set_current(int) {}
+
+void ItemList::ensure_current_is_visible() {}
+
+void ItemList::clear() {}
+
+int ItemList::add_item(String const&, Ref<Texture2D> const&, bool) {}
+
+void ItemList::set_icon_scale(float) {}
+
+ItemList::ItemList() {}

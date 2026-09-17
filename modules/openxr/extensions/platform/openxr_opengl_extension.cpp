@@ -442,6 +442,7 @@ String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_form
 	}
 }
 
-#endif // GLES3_ENABLED
+bool OpenXROpenGLExtension::check_graphics_api_support(unsigned long p_api) { return false; }
 
+#endif // GLES3_ENABLED
 

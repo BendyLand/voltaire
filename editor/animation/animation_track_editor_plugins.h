@@ -95,7 +95,7 @@ public:
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
-	AnimationTrackEditTypeAudio();
+	AnimationTrackEditTypeAudio() = default;
 };
 
 class AnimationTrackEditTypeAnimation : public AnimationTrackEdit

@@ -381,4 +381,36 @@ ResourceFormatSaverText* ResourceFormatSaverText::singleton = nullptr;
 
 ResourceFormatSaverText::ResourceFormatSaverText() { singleton = this; }
 
+void ResourceLoaderText::open(Ref<FileAccess>, bool) {}
+
+Error ResourceLoaderText::rename_dependencies(Ref<FileAccess>, String const&,
+	HashMap<String, String, HashMapHasherDefault, HashMapComparatorDefault<String, void>,
+		DefaultTypedAllocator<HashMapElement<String, String>>> const&)
+{
+	return OK;
+}
+
+String ResourceLoaderText::recognize_script_class(Ref<FileAccess>) { return String(); }
+
+String ResourceLoaderText::recognize(Ref<FileAccess>) { return String(); }
+
+Error ResourceLoaderText::load() { return OK; }
+
+ResourceUID::ID ResourceLoaderText::get_uid(Ref<FileAccess>) { return ResourceUID::ID(); }
+
+void ResourceLoaderText::get_dependencies(Ref<FileAccess>, List<String, DefaultAllocator>*, bool) {}
+
+Error ResourceLoaderText::get_classes_used(
+	HashSet<StringName, HashMapHasherDefault, HashMapComparatorDefault<StringName, void>>*)
+{
+	return OK;
+}
+
+String ResourceFormatSaverTextInstance::_write_resource(Ref<Resource> const&) { return String(); }
+
+Error ResourceFormatSaverTextInstance::save(String const&, Ref<Resource> const&, unsigned int)
+{
+	return OK;
+}
+
 

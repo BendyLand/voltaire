@@ -282,8 +282,8 @@ public:
 	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
-	NavigationServer3D();
-	~NavigationServer3D();
+	NavigationServer3D() = default;
+	~NavigationServer3D() = default;
 
 	/* DEBUG API */
 
@@ -499,8 +499,6 @@ class NavigationServer3DManager
 	int default_server_priority = -1;
 
 	void on_servers_changed();
-
-protected:
 
 public:
 	static const String setting_property_name;

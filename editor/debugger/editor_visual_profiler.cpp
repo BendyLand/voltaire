@@ -134,3 +134,5 @@ Vector<Vector<String>> EditorVisualProfiler::get_data_as_csv() const
 }
 
 
+
+void EditorVisualProfiler::_update_plot() {}

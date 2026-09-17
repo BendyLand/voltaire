@@ -644,6 +644,8 @@ void AnimationTrackEditor::_add_track(int p_type)
 	pick_track->get_filter_line_edit()->grab_focus();
 }
 
+void AnimationTrackEditor::_redraw_tracks() {}
+
 int AnimationTrackEditor::_get_track_selected()
 {
 	for (int i = 0; i < track_edits.size(); i++) {
@@ -1034,5 +1036,15 @@ void AnimationMarkerEdit::_move_selection_begin()
 float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_time(marker_name); }
 
 void AnimationMarkerKeyEdit::_set_marker_name(const StringName& p_name) { marker_name = p_name; }
+
+
+
+void AnimationTrackKeyEdit::notify_change() {}
+
+void AnimationTrackEditor::_clear_key_edit() {}
+
+void AnimationMultiTrackKeyEdit::notify_change() {}
+
+void AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}
 
 

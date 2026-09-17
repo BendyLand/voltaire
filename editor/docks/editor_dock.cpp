@@ -126,3 +126,9 @@ void EditorDock::set_tab_index(int p_index, bool p_set_current)
 EditorDock::EditorDock() { set_accessibility_region(true); }
 
 
+
+void EditorDock::_emit_changed() {}
+
+void EditorDock::update_tab_style() {}
+
+void EditorDock::set_dock_shortcut(Ref<Shortcut> const&) {}

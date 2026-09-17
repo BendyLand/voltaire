@@ -71,3 +71,5 @@ Vector<String> EditorPluginSettings::_get_plugins(const String& p_dir)
 }
 
 
+
+void EditorPluginSettings::update_plugins() {}

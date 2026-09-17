@@ -223,6 +223,15 @@ void CollisionObject3D::set_body_mode(PS3DE::BodyMode p_mode)
 	PhysicsServer3D::get_singleton()->body_set_mode(rid, p_mode);
 }
 
+void CollisionObject3D::_input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
+	const Vector3& p_pos, const Vector3& p_normal, int p_shape)
+{
+}
+
+void CollisionObject3D::_mouse_enter() {}
+
+void CollisionObject3D::_mouse_exit() {}
+
 void CollisionObject3D::_space_changed(const RID& p_new_space) {}
 
 void CollisionObject3D::set_only_update_transform_changes(bool p_enable)
@@ -444,5 +453,7 @@ CollisionObject3D::~CollisionObject3D()
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 	PhysicsServer3D::get_singleton()->free_rid(rid);
 }
+
+void CollisionObject3D::_update_shape_data(unsigned int) {}
 
 

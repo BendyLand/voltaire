@@ -230,4 +230,6 @@ TTS_Linux::~TTS_Linux()
 	singleton = nullptr;
 }
 
+void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
+
 

@@ -264,3 +264,9 @@ ClusterBuilderRD::~ClusterBuilderRD()
 }
 
 
+
+void ClusterBuilderRD::debug(ClusterBuilderRD::ElementType) {}
+
+ClusterBuilderRD::ClusterBuilderRD() {}
+
+void ClusterBuilderRD::bake_cluster() {}

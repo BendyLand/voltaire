@@ -600,3 +600,13 @@ void NavMap2D::set_use_async_iterations(bool p_enabled)
 bool NavMap2D::get_use_async_iterations() const { return use_async_iterations; }
 
 
+
+NavMap2D::~NavMap2D() {}
+
+void NavMap2D::sync() {}
+
+void NavMap2D::_sync_dirty_avoidance_update_requests() {}
+
+void NavMap2D::step(double) {}
+
+NavMap2D::NavMap2D() {}

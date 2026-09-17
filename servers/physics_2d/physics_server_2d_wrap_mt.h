@@ -302,8 +302,8 @@ public:
 	FUNC1(free_rid, RID);
 	FUNC1(set_active, bool);
 
-	virtual void init() override;
 	virtual void step(real_t p_step) override;
+	virtual void init() override;
 	virtual void sync() override;
 	virtual void end_sync() override;
 	virtual void flush_queries() override;

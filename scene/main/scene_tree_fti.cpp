@@ -398,3 +398,7 @@ SceneTreeFTI::~SceneTreeFTI()
 #endif // ndef _3D_DISABLED
 
 
+
+void SceneTreeFTI::_update_request_resets() {}
+
+void SceneTreeFTI::_reset_flags(Node*) {}

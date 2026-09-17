@@ -252,9 +252,6 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////
-// MaterialStorage::ShaderData
-
 void MaterialStorage::ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
 void MaterialStorage::ShaderData::set_default_texture_parameter(
@@ -275,6 +272,11 @@ void MaterialStorage::ShaderData::set_default_texture_parameter(
 		}
 		default_texture_params[p_name][p_index] = p_texture;
 	}
+}
+
+void RendererRD::MaterialStorage::ShaderData::get_instance_param_list(
+	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+{
 }
 
 bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param) const
@@ -538,8 +540,6 @@ void MaterialStorage::MaterialData::set_as_used()
 	}
 }
 
-/* TextureBlit SHADER */
-
 bool MaterialStorage::TexBlitShaderData::is_animated() const { return false; }
 
 bool MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }
@@ -584,9 +584,6 @@ MaterialStorage::MaterialData* MaterialStorage::_create_tex_blit_material_func(
 	// update will happen later anyway so do nothing.
 	return material_data;
 }
-
-///////////////////////////////////////////////////////////////////////////
-// MaterialStorage::Samplers
 
 template void MaterialStorage::Samplers::append_uniforms(
 	LocalVector<RD::Uniform>& p_uniforms, int p_first_index) const;
@@ -636,9 +633,6 @@ bool MaterialStorage::Samplers::is_valid() const { return rids[1][1].is_valid();
 
 bool MaterialStorage::Samplers::is_null() const { return rids[1][1].is_null(); }
 
-///////////////////////////////////////////////////////////////////////////
-// MaterialStorage
-
 MaterialStorage* MaterialStorage::singleton = nullptr;
 
 MaterialStorage* MaterialStorage::get_singleton() { return singleton; }
@@ -673,8 +667,6 @@ bool MaterialStorage::free(RID p_rid)
 
 	return false;
 }
-
-/* GLOBAL SHADER UNIFORM API */
 
 int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 {
@@ -859,8 +851,6 @@ void MaterialStorage::_update_global_shader_uniforms()
 		global_shader_uniforms.must_update_texture_materials = false;
 	}
 }
-
-/* SHADER API */
 
 RID MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
 
@@ -1096,8 +1086,6 @@ void MaterialStorage::shader_embedded_set_lock() { embedded_set_mutex.lock(); }
 const HashSet<RID>& MaterialStorage::shader_embedded_set_get() const { return embedded_set; }
 
 void MaterialStorage::shader_embedded_set_unlock() { embedded_set_mutex.unlock(); }
-
-/* MATERIAL API */
 
 void MaterialStorage::_material_uniform_set_erased(void* p_material)
 {
@@ -1416,5 +1404,7 @@ MaterialStorage::MaterialDataRequestFunction MaterialStorage::material_get_data_
 	ERR_FAIL_INDEX_V(p_shader_type, SHADER_TYPE_MAX, nullptr);
 	return material_data_request_func[p_shader_type];
 }
+
+void RendererRD::MaterialStorage::_update_queued_materials() {}
 
 

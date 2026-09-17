@@ -209,3 +209,5 @@ void MeshDataTool::set_material(const Ref<Material>& p_material) { material = p_
 MeshDataTool::MeshDataTool() { clear(); }
 
 
+
+Error MeshDataTool::commit_to_surface(Ref<ArrayMesh> const&, unsigned long) {}

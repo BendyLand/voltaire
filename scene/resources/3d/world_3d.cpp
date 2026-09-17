@@ -146,4 +146,16 @@ World3D::~World3D()
 #endif // NAVIGATION_3D_DISABLED
 }
 
+#ifndef NAVIGATION_3D_DISABLED
+RID World3D::get_navigation_map() const
+{
+	return RID();
+}
+#endif // NAVIGATION_3D_DISABLED
+
+RID World3D::get_space() const
+{
+	return RID();
+}
+
 

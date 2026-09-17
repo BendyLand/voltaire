@@ -229,3 +229,5 @@ int WebRTCMultiplayerPeer::get_max_packet_size() const { return 1200; }
 WebRTCMultiplayerPeer::~WebRTCMultiplayerPeer() { close(); }
 
 
+
+void WebRTCMultiplayerPeer::close() {}

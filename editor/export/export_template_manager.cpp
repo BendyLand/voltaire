@@ -763,4 +763,31 @@ float TemplateDownloader::get_download_progress() const
 	return 0.0f;
 }
 
+String ExportTemplateManager::get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
+{
+	return String();
+}
+
+String ExportTemplateManager::_get_item_path(TreeItem*) const {}
+
+bool ExportTemplateManager::_item_is_file(TreeItem const*) const {}
+
+void ExportTemplateManager::_update_version_list() {}
+
+void ExportTemplateManager::_update_install_button() {}
+
+void ExportTemplateManager::_queue_process_download_queue() {}
+
+void ExportTemplateManager::_fill_template_tree(Tree* p_tree,
+	const HashMap<TemplateID, LocalVector<String>>& p_installed_template_files,
+	bool p_is_current_version)
+{
+}
+
+String ExportTemplateManager::_get_current_mirror_url() const {}
+
+String ExportTemplateManager::get_android_source_zip(Ref<EditorExportPreset> const&) {}
+
+void TemplateDownloader::_download_failed(const String& p_reason) {}
+
 

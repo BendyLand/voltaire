@@ -52,6 +52,8 @@ void CollisionShape3D::resource_changed(Ref<Resource> res) {}
 
 Ref<Shape3D> CollisionShape3D::get_shape() const { return shape; }
 
+void CollisionShape3D::set_shape(const Ref<Shape3D>& p_shape) {}
+
 bool CollisionShape3D::is_disabled() const { return disabled; }
 
 Color CollisionShape3D::_get_default_debug_color() const
@@ -111,5 +113,10 @@ CollisionShape3D::CollisionShape3D()
 }
 
 CollisionShape3D::~CollisionShape3D() {}
+
+PackedStringArray CollisionShape3D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
 
 

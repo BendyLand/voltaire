@@ -51,4 +51,8 @@ Vector<int> AspectRatioContainer::get_allowed_size_flags_vertical() const
 	return flags;
 }
 
+Size2 AspectRatioContainer::get_minimum_size() const { return Size2(); }
+
+void AspectRatioContainer::set_ratio(float) {}
+
 

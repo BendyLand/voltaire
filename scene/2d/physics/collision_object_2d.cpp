@@ -521,4 +521,6 @@ CollisionObject2D::~CollisionObject2D()
 	PhysicsServer2D::get_singleton()->free_rid(rid);
 }
 
+CollisionObject2D::CollisionObject2D(RID p_rid, bool p_area) : rid(p_rid), area(p_area) {}
+
 

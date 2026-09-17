@@ -236,4 +236,10 @@ void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPa
 	save_get_id_for_path = p_callback;
 }
 
+Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const String& p_path)
+{
+	Ref<ResourceFormatSaver> rfs = memnew(ResourceFormatSaver);
+	return rfs;
+}
+
 

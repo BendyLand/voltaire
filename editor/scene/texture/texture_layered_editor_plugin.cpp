@@ -259,3 +259,5 @@ void TextureLayeredEditor::finish_shaders()
 }
 
 
+
+void TextureLayeredEditor::_update_material(bool) {}

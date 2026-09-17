@@ -88,10 +88,7 @@ void CanvasItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
 	_handle_visibility_change(p_parent_visible_in_tree);
 }
 
-void CanvasItem::set_visible(bool p_visible)
-{
-	visible = p_visible;
-}
+void CanvasItem::set_visible(bool p_visible) { visible = p_visible; }
 
 void CanvasItem::show()
 {
@@ -917,6 +914,14 @@ bool CanvasItem::get_use_parent_material() const
 	return use_parent_material;
 }
 
+void CanvasItem::set_material(const Ref<Material>& p_material) {}
+
+void CanvasItem::_update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat) {}
+
+void CanvasItem::_update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter) {}
+
+void CanvasItem::set_z_index(int p_z) {}
+
 Ref<Material> CanvasItem::get_material() const
 {
 	ERR_READ_THREAD_GUARD_V(Ref<Material>());
@@ -1122,10 +1127,7 @@ CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
 	return (TextureRepeat)texture_repeat_cache;
 }
 
-PackedStringArray CanvasItem::get_configuration_warnings() const
-{
-	return PackedStringArray();
-}
+PackedStringArray CanvasItem::get_configuration_warnings() const { return PackedStringArray(); }
 
 CanvasItem::~CanvasItem()
 {
@@ -1248,5 +1250,39 @@ CanvasTexture::~CanvasTexture()
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(canvas_texture);
 }
+
+void CanvasItem::_top_level_changed() {}
+
+void CanvasItem::_top_level_changed_on_parent() {}
+
+void CanvasItem::item_rect_changed(bool p_size_changed) {}
+
+Transform2D CanvasItem::get_canvas_transform() const { return Transform2D(); }
+
+void CanvasItem::set_texture_filter(CanvasItem::TextureFilter) {}
+
+void CanvasItem::_handle_visibility_change(bool) {}
+
+void CanvasItem::_update_oversampling(bool) {}
+
+void CanvasItem::set_texture_repeat(CanvasItem::TextureRepeat) {}
+
+void CanvasItem::set_as_top_level(bool) {}
+
+CanvasItem* CanvasItem::get_top_level() const
+{
+	CanvasItem ci = CanvasItem();
+	return &ci;
+}
+
+void CanvasTexture::set_diffuse_texture(const Ref<Texture2D>& p_diffuse) {}
+
+void CanvasItem::_edit_set_scale(const Size2& p_scale) {}
+
+Size2 CanvasItem::_edit_get_scale() const { return Size2(); }
+
+Point2 CanvasItem::_edit_get_position() const { return Point2(); }
+
+void CanvasItem::_edit_set_position(const Point2& p_position) {}
 
 

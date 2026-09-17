@@ -40,10 +40,13 @@ class MarginContainer : public Container
 		int margin_top = 0;
 		int margin_right = 0;
 		int margin_bottom = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 protected:
 	void _notification(int p_what);
+	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;

@@ -32,10 +32,6 @@
 
 #include "scene/resources/2d/skeleton/skeleton_modification_stack_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2D
-///////////////////////////////////////
-
 class Bone2D;
 
 class SkeletonModification2D : public Resource

@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "jolt_shape_3d.h"
+#include "jolt_concave_polygon_shape_3d.h"
 
 #include "../misc/jolt_type_conversions.h"
 #include "../objects/jolt_shaped_object_3d.h"
@@ -58,6 +59,16 @@ String JoltShape3D::_owners_to_string() const {
 	const JoltShapedObject3D &random_owner = *ref_counts_by_owner.begin()->key;
 
 	return vformat("'%s' and %d other object(s)", random_owner.to_string(), owner_count - 1);
+}
+
+JPH::ShapeRefC JoltShape3D::_build() const
+{
+	return JPH::ShapeRefC();
+}
+
+JPH::ShapeRefC JoltConcavePolygonShape3D::_build() const
+{
+	return JPH::ShapeRefC();
 }
 
 JoltShape3D::~JoltShape3D() = default;

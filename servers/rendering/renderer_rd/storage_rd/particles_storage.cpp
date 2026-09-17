@@ -1559,4 +1559,9 @@ void ParticlesStorage::particles_collision_instance_set_active(
 	pci->active = p_active;
 }
 
+void RendererRD::ParticlesStorage::_particles_update_buffers(
+	RendererRD::ParticlesStorage::Particles* p_particles)
+{
+}
+
 

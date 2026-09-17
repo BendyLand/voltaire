@@ -58,3 +58,5 @@ void EditorZoomWidget::set_shortcut_context(Node* p_node) const
 }
 
 
+
+void EditorZoomWidget::_update_zoom_label() {}

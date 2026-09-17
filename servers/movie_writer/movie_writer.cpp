@@ -165,6 +165,8 @@ void MovieWriter::add_frame()
 
 void MovieWriter::write_end() {}
 
-bool MovieWriter::handles_file(const String& p_path) const { return false; }
+bool MovieWriter::handles_file(const String& p_path) const { return true; }
+
+void MovieWriter::end() {}
 
 

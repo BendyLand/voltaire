@@ -224,6 +224,8 @@ AnimationNode::NodeTimeInfo AnimationNode::_blend_node(ProcessState& p_process_s
 	return p_other.resource->_pre_process(p_process_state, p_other, p_playback_info, p_test_only);
 }
 
+void AnimationNode::get_child_nodes(LocalVector<ChildNode>* r_child_nodes) {}
+
 String AnimationNode::get_caption() const
 {
 	String ret = "Node";
@@ -609,4 +611,18 @@ Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName& p_name) co
 	return Ref<AnimationNode>();
 }
 
+void AnimationRootNode::_tree_changed() {}
 
+void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node) {}
+
+bool AnimationNode::add_input(const String& p_name)
+{
+	return true;
+}
+
+
+void AnimationTree::_update_properties() const {}
+
+void AnimationTree::_update_connections() {}
+
+void AnimationTree::_setup_animation_player() {}

@@ -100,3 +100,5 @@ void BoneConstraint3D::_process_constraint_by_node(int p_index, Skeleton3D* p_sk
 BoneConstraint3D::~BoneConstraint3D() { clear_settings(); }
 
 
+
+void BoneConstraint3D::set_setting_count(int) {}

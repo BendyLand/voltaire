@@ -73,6 +73,8 @@ void EditorValidationPanel::add_line(int p_id, const String& p_valid_message)
 
 void EditorValidationPanel::set_accept_button(Button* p_button) { accept_button = p_button; }
 
+void EditorValidationPanel::update() {}
+
 bool EditorValidationPanel::is_valid() const { return valid; }
 
 EditorValidationPanel::EditorValidationPanel()
@@ -84,3 +86,5 @@ EditorValidationPanel::EditorValidationPanel()
 }
 
 
+
+void EditorValidationPanel::_update() {}

@@ -461,4 +461,7 @@ Label3D::~Label3D()
 	surfaces.clear();
 }
 
+void Label3D::_queue_update() {}
 
+
+Ref<Font> Label3D::_get_font_or_default() const {}

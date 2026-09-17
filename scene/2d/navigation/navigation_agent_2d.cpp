@@ -757,3 +757,9 @@ void NavigationAgent2D::_update_debug_path()
 #endif // DEBUG_ENABLED
 
 
+
+void NavigationAgent2D::_update_navigation() {}
+
+void NavigationAgent2D::set_agent_parent(Node*) {}
+
+void NavigationAgent2D::_trigger_waypoint_reached() {}

@@ -1280,11 +1280,12 @@ EditorHelpHighlighter::EditorHelpHighlighter()
 	csharp_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
 
 	// See G
-H-89610.
-	// Ref<CSharpScript> csharp;
-	// csharp.instantiate();
+	H - 89610.
+		// Ref<CSharpScript> csharp;
+		// csharp.instantiate();
 
-	Ref<EditorStandardSyntaxHighlighter> csharp_highlighter;
+		Ref<EditorStandardSyntaxHighlighter>
+			csharp_highlighter;
 	csharp_highlighter.instantiate();
 	csharp_highlighter->set_text_edit(csharp_text_edit);
 	// csharp_highlighter->_set_edited_resource(csharp);
@@ -1398,5 +1399,61 @@ void FindBar::_search_text_submitted(const String& p_text)
 }
 
 void EditorHelp::init_gdext_pointers() {}
+
+void EditorHelp::update_toggle_files_button() {}
+
+void EditorHelp::_update_doc() {}
+
+void EditorHelp::_class_desc_scroll_to_paragraph(int, bool) {}
+
+void EditorHelp::_load_doc_thread(void*) {}
+
+void EditorHelp::_gen_doc_thread(void*) {}
+
+void EditorHelp::_compute_doc_version_hash() {}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_theme_item_help_data(
+	StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_enum_help_data(StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_constant_help_data(StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_class_help_data(StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+EditorHelpBit::HelpData EditorHelpBit::_get_annotation_help_data(
+	StringName const&, StringName const&)
+{
+	return EditorHelpBit::HelpData();
+}
+
+void FindBar::_update_matches_label() {}
 
 

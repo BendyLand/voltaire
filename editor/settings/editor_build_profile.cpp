@@ -612,3 +612,11 @@ Ref<EditorBuildProfile> EditorBuildProfileManager::get_current_profile() { retur
 EditorBuildProfileManager* EditorBuildProfileManager::singleton = nullptr;
 
 
+
+Error EditorBuildProfile::save_to_file(String const&) {}
+
+void EditorBuildProfileManager::_update_edited_profile() {}
+
+void EditorBuildProfileManager::_detect_from_project() {}
+
+EditorBuildProfile::EditorBuildProfile() {}

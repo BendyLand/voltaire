@@ -351,3 +351,17 @@ String EditorFeatureProfileManager::get_current_profile_name() const { return cu
 EditorFeatureProfileManager* EditorFeatureProfileManager::singleton = nullptr;
 
 
+
+Error EditorFeatureProfile::save_to_file(String const&) {}
+
+void EditorFeatureProfileManager::_update_profile_list(String const&) {}
+
+void EditorFeatureProfileManager::set_current_profile(String const&, bool) {}
+
+String EditorFeatureProfileManager::_get_selected_profile() {}
+
+Error EditorFeatureProfile::load_from_file(String const&) {}
+
+void EditorFeatureProfileManager::_update_selected_profile() {}
+
+void EditorFeatureProfileManager::_emit_current_profile_changed() {}

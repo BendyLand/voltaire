@@ -96,7 +96,6 @@ Ref<Resource> Material::create_placeholder() const
 	return placeholder;
 }
 
-
 Material::Material() { render_priority = 0; }
 
 Material::~Material()
@@ -2019,6 +2018,8 @@ void BaseMaterial3D::set_texture_filter(TextureFilter p_filter)
 
 BaseMaterial3D::TextureFilter BaseMaterial3D::get_texture_filter() const { return texture_filter; }
 
+void BaseMaterial3D::set_point_size(float p_point_size) {}
+
 float BaseMaterial3D::get_point_size() const { return point_size; }
 
 Vector3 BaseMaterial3D::get_uv1_scale() const { return uv1_scale; }
@@ -2162,8 +2163,6 @@ Ref<Material> BaseMaterial3D::get_material_for_2d(bool p_shaded, Transparency p_
 
 	return materials_for_2d[key];
 }
-
-void BaseMaterial3D::set_transparency(Transparency p_transparency) {}
 
 void BaseMaterial3D::set_on_top_of_alpha()
 {
@@ -2310,7 +2309,6 @@ RID BaseMaterial3D::get_shader_rid() const
 
 Shader::Mode BaseMaterial3D::get_shader_mode() const { return Shader::MODE_SPATIAL; }
 
-
 BaseMaterial3D::BaseMaterial3D(bool p_orm) : element(this)
 {
 	orm = p_orm;
@@ -2415,4 +2413,115 @@ RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
 
-void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode) {}
+void ShaderMaterial::set_shader(const Ref<Shader>& p_shader) {}
+
+void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture) {}
+
+void BaseMaterial3D::set_roughness(float) {}
+
+void BaseMaterial3D::set_metallic(float) {}
+
+void BaseMaterial3D::set_emission(Color const&) {}
+
+void BaseMaterial3D::set_billboard_mode(BaseMaterial3D::BillboardMode) {}
+
+Ref<BaseMaterial3D> BaseMaterial3D::_get_stencil_next_pass() const
+{
+	Ref<BaseMaterial3D> bm = memnew(BaseMaterial3D);
+	return bm;
+}
+
+void BaseMaterial3D::set_specular(float) {}
+
+void BaseMaterial3D::set_metallic_texture_channel(BaseMaterial3D::TextureChannel) {}
+
+void BaseMaterial3D::set_grow(float) {}
+
+void BaseMaterial3D::set_alpha_antialiasing(BaseMaterial3D::AlphaAntiAliasing) {}
+
+void ShaderMaterial::_check_material_rid() const {}
+
+void BaseMaterial3D::set_z_clip_scale(float) {}
+
+void BaseMaterial3D::set_uv2_triplanar_blend_sharpness(float) {}
+
+void BaseMaterial3D::set_uv2_scale(Vector3 const&) {}
+
+void BaseMaterial3D::set_uv2_offset(Vector3 const&) {}
+
+
+void BaseMaterial3D::set_uv1_triplanar_blend_sharpness(float) {}
+
+void BaseMaterial3D::set_uv1_scale(Vector3 const&) {}
+
+void BaseMaterial3D::set_uv1_offset(Vector3 const&) {}
+
+void BaseMaterial3D::set_transmittance_depth(float) {}
+
+void BaseMaterial3D::set_transmittance_color(Color const&) {}
+
+void BaseMaterial3D::set_transmittance_boost(float) {}
+
+void BaseMaterial3D::set_subsurface_scattering_strength(float) {}
+
+void BaseMaterial3D::set_stencil_mode(BaseMaterial3D::StencilMode) {}
+
+void BaseMaterial3D::set_rim_tint(float) {}
+
+void BaseMaterial3D::set_rim(float) {}
+
+void BaseMaterial3D::set_refraction_texture_channel(BaseMaterial3D::TextureChannel) {}
+
+void BaseMaterial3D::set_refraction(float) {}
+
+void BaseMaterial3D::set_proximity_fade_distance(float) {}
+
+void BaseMaterial3D::set_particles_anim_v_frames(int) {}
+
+void BaseMaterial3D::set_particles_anim_loop(bool) {}
+
+void BaseMaterial3D::set_particles_anim_h_frames(int) {}
+
+void BaseMaterial3D::set_normal_scale(float) {}
+
+void BaseMaterial3D::set_msdf_pixel_range(float) {}
+
+void BaseMaterial3D::set_msdf_outline_size(float) {}
+
+void BaseMaterial3D::set_heightmap_scale(float) {}
+
+void BaseMaterial3D::set_heightmap_deep_parallax_min_layers(int) {}
+
+void BaseMaterial3D::set_heightmap_deep_parallax_max_layers(int) {}
+
+void BaseMaterial3D::set_heightmap_deep_parallax_flip_tangent(bool) {}
+
+void BaseMaterial3D::set_fov_override(float) {}
+
+void BaseMaterial3D::set_emission_energy_multiplier(float) {}
+
+void BaseMaterial3D::set_distance_fade_min_distance(float) {}
+
+void BaseMaterial3D::set_distance_fade_max_distance(float) {}
+
+void BaseMaterial3D::set_clearcoat_roughness(float) {}
+
+void BaseMaterial3D::set_clearcoat(float) {}
+
+void BaseMaterial3D::set_backlight(Color const&) {}
+
+void BaseMaterial3D::set_ao_texture_channel(BaseMaterial3D::TextureChannel) {}
+
+void BaseMaterial3D::set_ao_light_affect(float) {}
+
+void BaseMaterial3D::set_anisotropy(float) {}
+
+void BaseMaterial3D::set_alpha_scissor_threshold(float) {}
+
+void BaseMaterial3D::set_alpha_hash_scale(float) {}
+
+void BaseMaterial3D::set_alpha_antialiasing_edge(float) {}
+
+void BaseMaterial3D::_check_material_rid() {}
+
+

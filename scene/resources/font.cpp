@@ -65,6 +65,86 @@ bool Font::_is_base_cyclic(const Ref<Font>& p_f, int p_depth) const
 	return false;
 }
 
+real_t Font::draw_char_outline(RID p_canvas_item, const Point2& p_pos, char32_t p_char,
+	int p_font_size, int p_size, const Color& p_modulate, float p_oversampling) const
+{
+	return 0.0;
+}
+
+real_t Font::draw_char(RID p_canvas_item, const Point2& p_pos, char32_t p_char, int p_font_size,
+	const Color& p_modulate, float p_oversampling) const
+{
+	return 0.0;
+}
+
+void Font::draw_multiline_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
+	HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_max_lines,
+	const Color& p_modulate, uint32_t p_brk_flags, uint32_t p_jst_flags,
+	TextServer::Direction p_direction, TextServer::Orientation p_orientation,
+	float p_oversampling) const
+{
+}
+
+void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2& p_pos,
+	const String& p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size,
+	int p_max_lines, int p_size, const Color& p_modulate, uint32_t p_brk_flags,
+	uint32_t p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation,
+	float p_oversampling) const
+{
+}
+
+void Font::draw_string_outline(RID p_canvas_item, const Point2& p_pos, const String& p_text,
+	HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_size,
+	const Color& p_modulate, uint32_t p_jst_flags, TextServer::Direction p_direction,
+	TextServer::Orientation p_orientation, float p_oversampling) const
+{
+}
+
+void Font::draw_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
+	HorizontalAlignment p_alignment, float p_width, int p_font_size, const Color& p_modulate,
+	uint32_t p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation,
+	float p_oversampling) const
+{
+}
+
+real_t Font::get_ascent(int p_font_size) const { return 0.0; }
+
+Size2 Font::get_char_size(char32_t p_char, int p_font_size) const { return Size2(); }
+
+real_t Font::get_descent(int p_font_size) const { return 0.0; }
+
+real_t Font::get_height(int p_font_size) const { return 0.0; }
+
+Size2 Font::get_multiline_string_size(const String& p_text, HorizontalAlignment p_alignment,
+	float p_width, int p_font_size, int p_max_lines, uint32_t p_brk_flags, uint32_t p_jst_flags,
+	TextServer::Direction p_direction, TextServer::Orientation p_orientation) const
+{
+	return Size2();
+}
+
+Size2 Font::get_string_size(const String& p_text, HorizontalAlignment p_alignment, float p_width,
+	int p_font_size, uint32_t p_jst_flags, TextServer::Direction p_direction,
+	TextServer::Orientation p_orientation) const
+{
+	return Size2();
+}
+
+String Font::get_supported_chars() const { return String(); }
+
+real_t Font::get_underline_position(int p_font_size) const { return 0.0; }
+
+real_t Font::get_underline_thickness(int p_font_size) const { return 0.0; }
+
+bool Font::has_char(char32_t p_char) const { return true; }
+
+void Font::_invalidate_rids() {}
+
+bool Font::_is_cyclic(const Ref<Font>& p_f, int p_depth) const { return true; }
+
+void Font::_update_rids_fb(const Font* p_f, int p_depth) const {}
+
+void Font::_update_rids() const {}
+
 void Font::reset_state() { _invalidate_rids(); }
 
 String Font::get_font_name() const { return TS->font_get_name(_get_rid()); }
@@ -985,10 +1065,18 @@ int SystemFont::get_spacing(TextServer::SpacingType p_spacing) const
 
 int64_t SystemFont::get_face_count() const { return face_indices.size(); }
 
+void SystemFont::_update_base_font() {}
+
 SystemFont::SystemFont()
 { /* NOP */
 }
 
 SystemFont::~SystemFont() {}
+
+void FontVariation::_update_rids() const {}
+
+void FontVariation::reset_state() {}
+
+Error FontFile::_load_bitmap_font(String const&, List<String, DefaultAllocator>*) {}
 
 

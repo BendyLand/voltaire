@@ -376,3 +376,5 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor()
 EditorPropertyNameProcessor::~EditorPropertyNameProcessor() { singleton = nullptr; }
 
 
+
+EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_settings_style() {}

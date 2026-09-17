@@ -76,3 +76,5 @@ void ResourcePreloader::get_resource_list(List<StringName>* p_list)
 ResourcePreloader::ResourcePreloader() {}
 
 
+
+void ResourcePreloader::add_resource(StringName const&, Ref<Resource> const&) {}

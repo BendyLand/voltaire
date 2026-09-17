@@ -11796,3 +11796,5 @@ ShaderLanguage::~ShaderLanguage()
 }
 
 
+
+void ShaderLanguage::_check_warning_accums() {}

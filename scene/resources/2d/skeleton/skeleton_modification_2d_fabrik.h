@@ -33,14 +33,11 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DFABRIK
-///////////////////////////////////////
-
-class SkeletonModification2DFABRIK : public SkeletonModification2D {
-
+class SkeletonModification2DFABRIK : public SkeletonModification2D
+{
 private:
-	struct FABRIK_Joint_Data2D {
+	struct FABRIK_Joint_Data2D
+	{
 		int bone_idx = -1;
 		NodePath bone2d_node;
 
@@ -54,8 +51,9 @@ private:
 
 	// Unlike in 3D, we need a vector of Transform2D objects to perform FABRIK.
 	// This is because FABRIK (unlike CCDIK) needs to operate on transforms that are NOT
-	// affected by each other, making the transforms stored in Bone2D unusable, as well as those in Skeleton2D.
-	// For this reason, this modification stores a vector of Transform2Ds used for the calculations, which are then applied at the end.
+	// affected by each other, making the transforms stored in Bone2D unusable, as well as those in
+	// Skeleton2D. For this reason, this modification stores a vector of Transform2Ds used for the
+	// calculations, which are then applied at the end.
 	Vector<Transform2D> fabrik_transform_chain;
 
 	NodePath target_node;
@@ -72,16 +70,16 @@ private:
 	void chain_forwards();
 
 public:
+	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
 	void _execute(float p_delta) override;
-	void _setup_modification(SkeletonModificationStack2D *p_stack) override;
 
-	void set_target_node(const NodePath &p_target_node);
+	void set_target_node(const NodePath& p_target_node);
 	NodePath get_target_node() const;
 
 	int get_fabrik_data_chain_length();
 	void set_fabrik_data_chain_length(int p_new_length);
 
-	void set_fabrik_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node);
+	void set_fabrik_joint_bone2d_node(int p_joint_idx, const NodePath& p_target_node);
 	NodePath get_fabrik_joint_bone2d_node(int p_joint_idx) const;
 	void set_fabrik_joint_bone_index(int p_joint_idx, int p_bone_idx);
 	int get_fabrik_joint_bone_index(int p_joint_idx) const;
@@ -94,3 +92,5 @@ public:
 	SkeletonModification2DFABRIK();
 	~SkeletonModification2DFABRIK();
 };
+
+

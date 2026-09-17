@@ -276,7 +276,7 @@ public:
 
 	virtual int get_process_info(PS2DE::ProcessInfo p_info) = 0;
 
-	PhysicsServer2D();
+	PhysicsServer2D() = default;
 	~PhysicsServer2D();
 };
 

@@ -31,6 +31,8 @@
 #include "margin_container.h"
 #include "scene/theme/theme_db.h"
 
+Size2 MarginContainer::get_desired_size() const { return Size2(); }
+
 Size2 MarginContainer::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Container::get_inner_combined_maximum_size();
@@ -82,3 +84,5 @@ int MarginContainer::get_margin_size(Side p_side) const
 MarginContainer::MarginContainer() {}
 
 
+
+Size2 MarginContainer::get_minimum_size() const {}

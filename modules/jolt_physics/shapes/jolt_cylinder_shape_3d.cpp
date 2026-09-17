@@ -44,6 +44,11 @@ void JoltCylinderShape3D::set_margin(float p_margin)
 	destroy();
 }
 
+JPH::ShapeRefC JoltCylinderShape3D::_build() const
+{
+	return JPH::ShapeRefC();
+}
+
 AABB JoltCylinderShape3D::get_aabb() const
 {
 	const Vector3 half_extents(radius, height / 2.0f, radius);

@@ -125,6 +125,8 @@ void DockTabContainer::_tab_rmb_clicked(int p_tab_idx)
 	dock_context_popup->popup();
 }
 
+void DockTabContainer::update_visibility() {}
+
 bool DockTabContainer::can_switch_dock() const
 {
 	return EditorDockManager::get_singleton()->are_docks_visible();
@@ -225,4 +227,9 @@ Rect2 BottomSideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 		get_size() - Vector2(0, tab_bar_height));
 }
 
+EditorDock* DockTabContainer::get_dock(int p_idx) const
+{
+	EditorDock ed = EditorDock();
+	return &ed;
+}
 

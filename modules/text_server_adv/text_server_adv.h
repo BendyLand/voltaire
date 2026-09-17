@@ -549,7 +549,6 @@ class TextServerAdvanced : public TextServer
 
 			int font_size = 0;
 
-
 			String language;
 		};
 
@@ -865,12 +864,11 @@ class TextServerAdvanced : public TextServer
 	};
 
 protected:
-
 	void full_copy(ShapedTextDataAdvanced* p_shaped);
 	void invalidate(ShapedTextDataAdvanced* p_shaped, bool p_text = false);
 
 public:
-	TextServerAdvanced();
+	TextServerAdvanced() = default;
 	bool _has_feature(Feature p_feature) const;
 	String _get_name() const;
 	String _get_short_name() const;
@@ -886,10 +884,6 @@ public:
 	bool _is_locale_right_to_left(const String& p_locale) const;
 	int64_t _name_to_tag(const String& p_name) const;
 	String _tag_to_name(int64_t p_tag) const;
-
-	/*************************************************************************/
-	/* Font Glyph Rendering                                                  */
-	/*************************************************************************/
 
 #ifdef MODULE_MSDFGEN_ENABLED
 

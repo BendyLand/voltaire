@@ -119,3 +119,7 @@ bool FlowContainer::is_reverse_fill() const { return reverse_fill; }
 FlowContainer::FlowContainer(bool p_vertical) { vertical = p_vertical; }
 
 
+
+void FlowContainer::_resort() {}
+
+Size2 FlowContainer::_get_minimum_size(bool) const {}

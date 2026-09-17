@@ -34,6 +34,8 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
+Size2 AcceptDialog::_get_contents_minimum_size() const { return Size2(); }
+
 void AcceptDialog::_input_from_window(const Ref<InputEvent>& p_event)
 {
 	if (close_on_escape && p_event->is_action_pressed(SNAME("ui_close_dialog"), false, true)) {
@@ -137,4 +139,9 @@ String ConfirmationDialog::get_cancel_button_text() const { return cancel->get_t
 
 Button* ConfirmationDialog::get_cancel_button() { return cancel; }
 
+void AcceptDialog::_cancel_pressed() {}
 
+
+void AcceptDialog::_ok_pressed() {}
+
+void AcceptDialog::_update_child_rects() {}

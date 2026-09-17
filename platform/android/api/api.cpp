@@ -66,6 +66,7 @@ Ref<JavaClass> JavaClassWrapper::_wrap(const String&, bool) { return Ref<JavaCla
 
 JavaClassWrapper::JavaClassWrapper() { singleton = this; }
 
-#endif
+void register_android_api() {}
 
+#endif
 

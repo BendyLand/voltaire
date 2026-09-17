@@ -244,3 +244,7 @@ float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const
 }
 
 
+
+void ParticleProcessMaterialMinMaxPropertyEditor::_update_slider_values() {}
+
+void ParticleProcessMaterialMinMaxPropertyEditor::_sync_property() {}

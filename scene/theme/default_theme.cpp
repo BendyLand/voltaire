@@ -151,4 +151,10 @@ void make_default_theme(float p_scale, Ref<Font> p_font,
 	ThemeDB::get_singleton()->set_fallback_font_size(default_font_size * default_scale);
 }
 
+void fill_default_theme(Ref<Theme>& r_theme, const Ref<Font>& p_font, const Ref<Font>& p_bold_font,
+	const Ref<Font>& p_bold_italics_font, const Ref<Font>& p_italics_font, Ref<Texture2D>& r_icons,
+	Ref<StyleBox>& r_style, float p_scale)
+{
+}
+
 

@@ -149,4 +149,4 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level)
 	OpenXRAPI::cleanup_extension_wrappers();
 }
 
-
+void initialize_openxr_module(ModuleInitializationLevel p_level) {}

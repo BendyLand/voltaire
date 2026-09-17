@@ -614,3 +614,43 @@ void EditorPropertyResource::_notification(int p_what)
 }
 
 
+
+void EditorPropertyMultilineText::_update_theme() {}
+
+void EditorProperty::set_label(String const&) {}
+
+void EditorPropertyResource::_select_resource(Ref<Resource> const&, bool, bool) {}
+
+void EditorProperty::_update_property_bg() {}
+
+void EditorProperty::update_editor_property_status() {}
+
+void EditorPropertyText::_text_changed(String const&) {}
+
+void EditorProperty::set_name_fixed_size(float) {}
+
+void EditorProperty::set_keying(bool) {}
+
+void EditorPropertyResource::fold_resource() {}
+
+void EditorPropertyQuaternion::_value_changed(double, String const&) {}
+
+void EditorPropertyPath::_update_uid_icon() {}
+
+void EditorPropertyPath::_path_selected(String const&) {}
+
+void EditorPropertyLocale::_locale_selected(String const&) {}
+
+void EditorPropertyLayers::setup(EditorPropertyLayers::LayerType) {}
+
+EditorInspector* EditorProperty::get_parent_inspector() const {}
+
+void EditorPropertyEnum::setup(Vector<String> const&) {}
+
+void EditorProperty::deselect() {}
+
+void EditorPropertyRID::update_property() {}
+
+void EditorPropertyFlags::_set_read_only(bool p_read_only) {}
+
+

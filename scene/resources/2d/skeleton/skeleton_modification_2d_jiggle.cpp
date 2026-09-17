@@ -250,3 +250,9 @@ void SkeletonModification2DJiggle::reset()
 SkeletonModification2DJiggle::~SkeletonModification2DJiggle() {}
 
 
+
+void SkeletonModification2DJiggle::update_target_cache() {}
+
+void SkeletonModification2DJiggle::set_jiggle_joint_use_gravity(int, bool) {}
+
+void SkeletonModification2DJiggle::jiggle_joint_update_bone2d_cache(int) {}

@@ -131,7 +131,6 @@ void AnimationNodeStateMachineTransition::set_priority(int p_priority)
 
 int AnimationNodeStateMachineTransition::get_priority() const { return priority; }
 
-
 AnimationNodeStateMachineTransition::AnimationNodeStateMachineTransition() {}
 
 ////////////////////////////////////////////////////////
@@ -869,7 +868,6 @@ AnimationNodeStateMachinePlayback::_get_group_end_transition() const
 	return group_end_transition;
 }
 
-
 AnimationNodeStateMachinePlayback::AnimationNodeStateMachinePlayback()
 {
 	set_local_to_scene(true); // Only one per instantiated scene.
@@ -1278,5 +1276,37 @@ AnimationNodeStateMachine::AnimationNodeStateMachine()
 	end.position = Vector2(900, 100);
 	states[SceneStringName(End)] = end;
 }
+
+void AnimationNodeStateMachinePlayback::_signal_state_change(
+	AnimationTree*, StringName const&, bool)
+{
+}
+
+void AnimationNodeStateMachine::remove_transition_by_index(int) {}
+
+void AnimationNodeStateMachinePlayback::_start_children(
+	AnimationTree*, AnimationNodeStateMachine*, String const&, bool)
+{
+}
+
+bool AnimationNodeStateMachinePlayback::_make_travel_path(AnimationNode::ProcessState&,
+	AnimationTree*, AnimationNodeStateMachine*, bool, Vector<StringName>&, bool)
+{
+	return true;
+}
+
+Ref<AnimationNodeStateMachinePlayback> AnimationNodeStateMachinePlayback::_get_parent_playback(
+	AnimationTree*) const
+{
+	Ref<AnimationNodeStateMachinePlayback> ansmp = memnew(AnimationNodeStateMachinePlayback);
+	return ansmp;
+}
+
+void AnimationNodeStateMachinePlayback::_clear_path_children(
+	AnimationNode::ProcessState&, AnimationTree*, AnimationNodeStateMachine*, bool)
+{
+}
+
+bool AnimationNodeStateMachine::can_edit_node(StringName const&) const { return true; }
 
 

@@ -729,4 +729,34 @@ FileDialog::~FileDialog()
 	}
 }
 
+void FileDialog::invalidate() {}
+
+void FileDialog::_update_option_controls() {}
+
+void FileDialog::update_filters() {}
+
+void FileDialog::update_dir() {}
+
+void FileDialog::_push_history() {}
+
+void FileDialog::_native_popup() {}
+
+void FileDialog::_update_recent_list() {}
+
+void FileDialog::update_file_list() {}
+
+void FileDialog::_update_favorite_list() {}
+
+void FileDialog::_update_drives(bool) {}
+
+void FileDialog::_popup_menu(Vector2 const&, int) {}
+
+void FileDialog::set_filename_filter(String const&) {}
+
+String FileDialog::_get_item_path(int) const {}
+
+void FileDialog::_file_list_selected(int) {}
+
+void FileDialog::deselect_all() {}
+
 

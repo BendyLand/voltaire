@@ -87,3 +87,5 @@ NavigationLink2DEditorPlugin::NavigationLink2DEditorPlugin()
 }
 
 
+
+bool NavigationLink2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}

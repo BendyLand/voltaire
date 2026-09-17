@@ -164,6 +164,8 @@ void ImporterMesh::clear()
 
 Ref<ImporterMesh> ImporterMesh::get_shadow_mesh() const { return shadow_mesh; }
 
+Vector<Face3> ImporterMesh::get_faces() const {}
+
 #ifndef PHYSICS_3D_DISABLED
 Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	const Ref<MeshConvexDecompositionSettings>& p_settings) const
@@ -204,7 +206,8 @@ Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	Vector<Vector<Vector3>> decomposed = Mesh::convex_decomposition_function(
 		(real_t*)vertices.ptr(), vertex_count, indices.ptr(), face_count, p_settings, nullptr);
 
-	Vector<Ref<Shape3D>> ret;
+	Vector
+<Ref<Shape3D>> ret;
 
 	for (int i = 0; i < decomposed.size(); i++) {
 		Ref<ConvexPolygonShape3D> shape;
@@ -303,5 +306,17 @@ static const uint32_t custom_shift[RSE::ARRAY_CUSTOM_COUNT] = {Mesh::ARRAY_FORMA
 void ImporterMesh::set_lightmap_size_hint(const Size2i& p_size) { lightmap_size_hint = p_size; }
 
 Size2i ImporterMesh::get_lightmap_size_hint() const { return lightmap_size_hint; }
+
+Ref<ArrayMesh> ImporterMesh::get_mesh(Ref<ArrayMesh> const&)
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
+
+Ref<ImporterMesh> ImporterMesh::from_mesh(Ref<Mesh> const&)
+{
+	Ref<ImporterMesh> im = memnew(ImporterMesh);
+	return im;
+}
 
 

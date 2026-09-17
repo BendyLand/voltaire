@@ -576,4 +576,8 @@ void NavigationServer3DManager::finalize_server_manager()
 	memdelete(singleton);
 }
 
+void NavigationServer3DManager::initialize_server() {}
+
+int NavigationServer3DManager::find_server_id(const String& p_name) { return -1; }
+
 

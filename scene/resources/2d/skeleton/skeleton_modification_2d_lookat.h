@@ -33,10 +33,6 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DLookAt
-///////////////////////////////////////
-
 class SkeletonModification2DLookAt : public SkeletonModification2D
 {
 private:
@@ -57,8 +53,8 @@ private:
 	void update_target_cache();
 
 public:
-	void _execute(float p_delta) override;
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
+	void _execute(float p_delta) override;
 	void _draw_editor_gizmo() override;
 
 	void set_bone2d_node(const NodePath& p_target_node);

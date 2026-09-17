@@ -340,3 +340,13 @@ SceneMultiplayer::~SceneMultiplayer()
 }
 
 
+
+void SceneMultiplayer::_admit_peer(int) {}
+
+void SceneMultiplayer::set_multiplayer_peer(Ref<MultiplayerPeer> const&) {}
+
+void SceneMultiplayer::_process_packet(int, unsigned char const*, int) {}
+
+void SceneMultiplayer::_del_peer(int) {}
+
+void SceneMultiplayer::clear() {}

@@ -1241,19 +1241,6 @@ void LineEdit::_update_context_menu()
 			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
 		MENU_ITEM_DISABLED(menu, MENU_EMOJI_AND_SYMBOL, !editable || !emoji_menu_enabled)
 	}
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_CUT, "ui_cut", !editable)
-	MENU_ITEM_ACTION(menu, MENU_COPY, "ui_copy")
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_PASTE, "ui_paste", !editable)
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_SELECT_ALL, "ui_text_select_all", !selecting_enabled)
-	MENU_ITEM_DISABLED(menu, MENU_CLEAR, !editable)
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_UNDO, "ui_undo", !editable || !has_undo())
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_REDO, "ui_redo", !editable || !has_redo())
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_INHERITED, text_direction == TEXT_DIRECTION_INHERITED)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_AUTO, text_direction == TEXT_DIRECTION_AUTO)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_LTR, text_direction == TEXT_DIRECTION_LTR)
-	MENU_ITEM_CHECKED(menu_dir, MENU_DIR_RTL, text_direction == TEXT_DIRECTION_RTL)
-	MENU_ITEM_CHECKED(menu, MENU_DISPLAY_UCC, draw_control_chars)
-	MENU_ITEM_DISABLED(menu, MENU_SUBMENU_INSERT_UCC, !editable)
 
 #undef MENU_ITEM_ACTION_DISABLED
 #undef MENU_ITEM_ACTION
@@ -1279,5 +1266,39 @@ LineEdit::LineEdit(const String& p_placeholder)
 
 LineEdit::~LineEdit() { TS->free_rid(text_rid); }
 
-void LineEdit::set_caret_column(int p_column) {}
+void LineEdit::select_all() {}
 
+void LineEdit::_emit_text_change() {}
+
+void LineEdit::select(int p_from, int p_to) {}
+
+void LineEdit::delete_text(int p_from_column, int p_to_column) {}
+
+void LineEdit::_shape() {}
+
+
+void LineEdit::set_right_icon(Ref<Texture2D> const&) {}
+
+void LineEdit::set_placeholder(String) {}
+
+void LineEdit::insert_text_at_caret(String) {}
+
+void LineEdit::_set_text(String, bool) {}
+
+void LineEdit::set_editable(bool) {}
+
+void LineEdit::set_caret_blink_enabled(bool) {}
+
+void LineEdit::_reset_caret_blink_timer() {}
+
+void LineEdit::_generate_context_menu() {}
+
+void LineEdit::_edit(bool, bool) {}
+
+void LineEdit::set_secret(bool) {}
+
+void LineEdit::set_horizontal_alignment(HorizontalAlignment) {}
+
+void LineEdit::set_clear_button_enabled(bool) {}
+
+void LineEdit::clear_internal() {}

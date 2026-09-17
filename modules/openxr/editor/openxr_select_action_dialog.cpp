@@ -60,4 +60,6 @@ OpenXRSelectActionDialog::OpenXRSelectActionDialog(const Ref<OpenXRActionMap>& p
 	scroll->add_child(main_vb);
 }
 
+void OpenXRSelectActionDialog::ok_pressed() {}
 
+void OpenXRSelectActionDialog::open() {}

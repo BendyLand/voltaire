@@ -912,4 +912,6 @@ InputMap::InputMap()
 
 InputMap::~InputMap() { singleton = nullptr; }
 
+void InputMap::load_from_project_settings() {}
+
 

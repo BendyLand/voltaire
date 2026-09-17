@@ -108,6 +108,8 @@ protected:
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 
+	Skeleton3D* get_skeleton() const;
+
 	virtual bool has_process() const
 	{
 		return false;

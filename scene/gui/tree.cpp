@@ -597,6 +597,8 @@ bool TreeItem::is_any_collapsed(bool p_only_visible)
 	return _is_any_collapsed(p_only_visible);
 }
 
+void TreeItem::set_visible(bool p_visible) {}
+
 bool TreeItem::is_visible() { return visible; }
 
 bool TreeItem::is_visible_in_tree() const { return visible && parent_visible_in_tree; }
@@ -3328,6 +3330,8 @@ void Tree::set_auto_tooltip(bool p_enable) { enable_auto_tooltip = p_enable; }
 
 bool Tree::is_auto_tooltip_enabled() const { return enable_auto_tooltip; }
 
+void Tree::item_changed(int p_column, TreeItem* p_item) {}
+
 Tree::~Tree()
 {
 	memdelete(root);
@@ -3339,4 +3343,48 @@ Tree::~Tree()
 	RenderingServer::get_singleton()->free_rid(last_sticky_ci);
 }
 
+void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}
 
+void Tree::set_scroll_hint_mode(ScrollHintMode p_mode) {}
+
+void Tree::update_item_cell(TreeItem* p_item, int p_col) const {}
+
+void Tree::clear() {}
+
+
+
+void Tree::set_column_title(int, String const&) {}
+
+void Tree::item_selected(int, TreeItem*, bool) {}
+
+void TreeItem::_change_tree(Tree*) {}
+
+void Tree::deselect_all() {}
+
+void Tree::item_deselected(int, TreeItem*) {}
+
+void Tree::_apply_multiline_edit(bool) {}
+
+void Tree::update_column(int) {}
+
+void Tree::set_hide_root(bool) {}
+
+void Tree::set_hide_folding(bool) {}
+
+void Tree::set_column_titles_visible(bool) {}
+
+void Tree::set_columns(int) {}
+
+void Tree::select_single_item(TreeItem*, TreeItem*, int, TreeItem*, bool*, bool) {}
+
+void Tree::_line_editor_submit(String) {}
+
+void TreeItem::set_as_cursor(int) {}
+
+void TreeItem::move_before(TreeItem*) {}
+
+void TreeItem::move_after(TreeItem*) {}
+
+TreeItem* TreeItem::create_child(int) {}
+
+void Tree::_determine_hovered_item() {}

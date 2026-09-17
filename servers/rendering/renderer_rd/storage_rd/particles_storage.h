@@ -393,8 +393,8 @@ private:
 		bool userdatas_used[ParticlesShader::MAX_USERDATAS] = {};
 		uint32_t userdata_count = 0;
 
-		virtual void set_code(const String& p_Code);
 		virtual bool is_animated() const;
+		virtual void set_code(const String& p_Code);
 		virtual bool casts_shadows() const;
 		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
 		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;

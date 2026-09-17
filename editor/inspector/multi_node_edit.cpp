@@ -58,3 +58,5 @@ NodePath MultiNodeEdit::get_node(int p_index) const
 }
 
 
+
+StringName MultiNodeEdit::get_edited_class_name() const {}

@@ -419,3 +419,39 @@ AABB JoltSoftBody3D::get_bounds() const
 }
 
 
+
+void JoltSoftBody3D::_update_mass() {}
+
+void JoltSoftBody3D::_update_damping() {}
+
+void JoltSoftBody3D::_update_group_filter() {}
+
+bool JoltSoftBody3D::has_collision_exception(RID const&) const {}
+
+void JoltSoftBody3D::apply_vertex_impulse(int, Vector3 const&) {}
+
+void JoltSoftBody3D::update_rendering_server(PhysicsServer3DRenderingServerHandler*) {}
+
+void JoltSoftBody3D::unpin_vertex(int) {}
+
+void JoltSoftBody3D::unpin_all_vertices() {}
+
+void JoltSoftBody3D::set_vertex_position(int, Vector3 const&) {}
+
+void JoltSoftBody3D::remove_collision_exception(RID const&) {}
+
+void JoltSoftBody3D::remove_area(JoltArea3D*) {}
+
+void JoltSoftBody3D::pin_vertex(int) {}
+
+bool JoltSoftBody3D::is_vertex_pinned(int) const {}
+
+Vector3 JoltSoftBody3D::get_vertex_position(int) {}
+
+bool JoltSoftBody3D::can_interact_with(JoltBody3D const&) const {}
+
+void JoltSoftBody3D::_apply_environmental_forces(float) {}
+
+void JoltSoftBody3D::add_collision_exception(RID const&) {}
+
+void JoltSoftBody3D::add_area(JoltArea3D*) {}

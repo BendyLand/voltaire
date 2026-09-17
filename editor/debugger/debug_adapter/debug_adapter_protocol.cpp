@@ -255,4 +255,18 @@ void DebugAdapterProtocol::stop()
 	_initialized = false;
 }
 
+void DebugAdapterProtocol::notify_continued() {}
 
+bool DebugAdapterProtocol::process_message(const String& p_message) {}
+
+void DebugAdapterProtocol::notify_terminated() {}
+
+void DebugAdapterProtocol::notify_stopped_step() {}
+
+void DebugAdapterProtocol::notify_stopped_paused() {}
+
+void DebugAdapterProtocol::notify_stopped_exception(const String& p_error) {}
+
+void DebugAdapterProtocol::notify_exited(const int& p_exit_code) {}
+
+void DebugAdapterProtocol::notify_breakpoint( const DAP::Breakpoint& p_breakpoint, const bool& p_verified) { }

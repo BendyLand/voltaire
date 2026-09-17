@@ -118,6 +118,20 @@ bool EditorProperty::is_draw_label() const { return draw_label; }
 
 bool EditorProperty::is_draw_background() const { return draw_background; }
 
+Control* EditorProperty::make_custom_tooltip(const String& p_text) const
+{
+	Control c = Control();
+	return &c;
+}
+
+Size2 EditorProperty::get_minimum_size() const { return Size2(); }
+
+bool EditorProperty::is_cache_valid() const { return true; }
+
+void EditorProperty::update_cache() {}
+
+bool EditorProperty::use_keying_next() const { return false; }
+
 bool EditorProperty::is_checkable() const { return checkable; }
 
 bool EditorProperty::is_checked() const { return checked; }
@@ -487,6 +501,8 @@ bool EditorInspector::is_main_editor_inspector() const
 
 String EditorInspector::get_selected_path() const { return property_selected; }
 
+void EditorInspector::update_tree() {}
+
 void EditorInspector::update_property(const String& p_prop)
 {
 	if (!editor_property_map.has(p_prop)) {
@@ -709,4 +725,26 @@ void EditorProperty::_set_read_only(bool p_read_only) {}
 
 void EditorProperty::update_property() {}
 
+void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {}
 
+
+
+void EditorInspectorSection::update_property() {}
+
+void EditorInspector::expand_revertable() {}
+
+EditorInspector::EditorInspector() {}
+
+void EditorInspectorSection::unfold() {}
+
+void EditorInspectorSection::set_keying(bool) {}
+
+Ref<Texture2D> EditorInspectorSection::_get_arrow() {}
+
+void EditorInspectorSection::fold() {}
+
+void EditorInspectorCategory::_update_icon() {}
+
+void EditorInspectorArray::_resize_array(int) {}
+
+void EditorInspectorArray::_clear_array() {}

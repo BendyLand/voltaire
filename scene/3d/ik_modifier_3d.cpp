@@ -31,6 +31,8 @@
 #include "core/config/engine.h"
 #include "ik_modifier_3d.h"
 
+void IKModifier3D::_make_gizmo_dirty() {}
+
 void IKModifier3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -101,5 +103,13 @@ Vector3 IKModifier3D::get_bone_axis(
 int IKModifier3D::get_setting_count() const { return settings.size(); }
 
 IKModifier3D::~IKModifier3D() { clear_settings(); }
+
+void IKModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) {}
+
+void IKModifier3D::_validate_bone_names() {}
+
+void IKModifier3D::_update_mutable_info() {}
+
+void IKModifier3D::_update_joints(int p_index) {}
 
 

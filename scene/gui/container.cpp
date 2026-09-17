@@ -42,6 +42,12 @@ Vector<int> Container::get_allowed_size_flags_horizontal() const
 	return flags;
 }
 
+PackedStringArray Container::get_configuration_warnings() const { return PackedStringArray(); }
+
+void Container::move_child_notify(Node* p_child) {}
+
+void Container::remove_child_notify(Node* p_child) {}
+
 Vector<int> Container::get_allowed_size_flags_vertical() const
 {
 	Vector<int> flags;
@@ -90,5 +96,9 @@ Container::Container()
 	// All containers should contain their children within their maximum size by default.
 	set_propagate_maximum_size(true);
 }
+
+void Container::add_child_notify(Node* p_child) {}
+
+void Container::fit_child_in_rect(Control*, Rect2 const&) {}
 
 

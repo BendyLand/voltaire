@@ -426,3 +426,7 @@ Control::CursorShape TileSetAtlasSourceEditor::TileAtlasControl::get_cursor_shap
 }
 
 
+
+void TileSetAtlasSourceEditor::_update_atlas_view() {}
+
+void TileSetAtlasSourceEditor::_update_current_tile_data_editor() {}

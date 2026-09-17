@@ -70,3 +70,5 @@ NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin()
 }
 
 
+
+NavigationRegion2DEditor::NavigationRegion2DEditor() {}

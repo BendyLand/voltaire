@@ -57,4 +57,8 @@ const OpenXRHandTrackingExtension::HandTracker* OpenXRHandTrackingExtension::get
 	return &hand_trackers[p_hand];
 }
 
+bool OpenXRHandTrackingExtension::get_active() { return true; }
+
+void OpenXRHandTrackingExtension::cleanup_hand_tracking() {}
+
 

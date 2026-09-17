@@ -93,3 +93,5 @@ CylinderShape3D::CylinderShape3D()
 }
 
 
+
+void CylinderShape3D::_update_shape() {}

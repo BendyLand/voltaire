@@ -313,3 +313,7 @@ void NavigationObstacle2D::_update_fake_agent_radius_debug()
 #endif // DEBUG_ENABLED
 
 
+
+void NavigationObstacle2D::_update_transform() {}
+
+void NavigationObstacle2D::_update_static_obstacle_debug() {}

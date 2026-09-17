@@ -144,6 +144,12 @@ void BaseButton::set_shortcut(const Ref<Shortcut>& p_shortcut)
 
 Ref<Shortcut> BaseButton::get_shortcut() const { return shortcut; }
 
+Control* BaseButton::make_custom_tooltip(const String& p_text) const
+{
+	Control c = Control();
+	return &c;
+}
+
 Ref<ButtonGroup> BaseButton::get_button_group() const { return button_group; }
 
 bool BaseButton::_was_pressed_by_mouse() const { return was_mouse_pressed; }
@@ -192,5 +198,9 @@ void ButtonGroup::set_allow_unpress(bool p_enabled) { allow_unpress = p_enabled;
 bool ButtonGroup::is_allow_unpress() { return allow_unpress; }
 
 ButtonGroup::ButtonGroup() { set_local_to_scene(true); }
+
+void BaseButton::pressed() {}
+
+void BaseButton::toggled(bool p_pressed) {}
 
 

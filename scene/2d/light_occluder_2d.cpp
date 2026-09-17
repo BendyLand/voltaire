@@ -191,3 +191,5 @@ LightOccluder2D::~LightOccluder2D()
 }
 
 
+
+void LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&) {}

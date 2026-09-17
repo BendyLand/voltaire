@@ -275,3 +275,7 @@ void NavigationRegion3D::_update_bounds()
 }
 
 
+
+void NavigationRegion3D::_update_debug_mesh() {}
+
+void NavigationRegion3D::_update_debug_edge_connections_mesh() {}

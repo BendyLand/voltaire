@@ -102,3 +102,5 @@ CanvasModulate::CanvasModulate() {}
 CanvasModulate::~CanvasModulate() {}
 
 
+
+void CanvasModulate::_on_in_canvas_visibility_changed(bool) {}

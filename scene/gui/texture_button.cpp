@@ -318,4 +318,6 @@ bool TextureButton::is_flipped_h() const { return hflip; }
 
 bool TextureButton::is_flipped_v() const { return vflip; }
 
+void TextureButton::_set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture) {}
 
+void TextureButton::_texture_changed() {}

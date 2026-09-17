@@ -211,7 +211,8 @@ void Particles2DEditorPlugin::_process_emission_masks(PackedVector2Array& r_vali
 		for (int i = 0; i < valid_point_count; ++i) {
 			const Point2i point = r_valid_positions.get(i);
 			const uint8_t normal_r =
-				normal_img_ptr[(point.y * normal_img_size.width + point.x) * 3 + 0];
+				normal_img_ptr[(point.y * normal_img_size.width + point.x) * 3
++ 0];
 			const uint8_t normal_g =
 				normal_img_ptr[(point.y * normal_img_size.width + point.x) * 3 + 1];
 
@@ -231,15 +232,18 @@ void Particles2DEditorPlugin::_process_emission_masks(PackedVector2Array& r_vali
 	}
 }
 
-
-
-void Particles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
-{}
+void Particles2DEditorPlugin::_add_menu_options(PopupMenu* p_menu) {}
 
 CPUParticles2DEditorPlugin::CPUParticles2DEditorPlugin()
 {
 	handled_type = TTRC("CPUParticles2D");
 	conversion_option_name = TTR("Convert to GPUParticles2D");
 }
+
+void Particles2DEditorPlugin::_validate_textures() {}
+
+Particles2DEditorPlugin::Particles2DEditorPlugin() {}
+
+void CPUParticles2DEditorPlugin::_generate_emission_mask() {}
 
 

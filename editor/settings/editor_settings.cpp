@@ -677,4 +677,31 @@ Ref<Shortcut> ED_SHORTCUT(
 	return ED_SHORTCUT_ARRAY(p_path, p_name, arr, p_physical);
 }
 
+void EditorSettings::_rename_setting(const String& p_old_name, const String& p_new_name) {}
+
+void EditorSettings::erase(const String& p_setting) {}
+
+String EditorSettings::get_language() const { return String(); }
+
+void EditorSettings::set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog) {}
+
+void EditorSettings::set_favorite_properties(
+	const HashMap<String, PackedStringArray>& p_favorite_properties)
+{
+}
+
+void EditorSettings::notify_changes() {}
+
+void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
+	const PackedInt32Array& p_keycodes, bool p_physical)
+{
+}
+
+Ref<Shortcut> ED_SHORTCUT_ARRAY(
+	const String& p_path, const String& p_name, const PackedInt32Array& p_keycodes, bool p_physical)
+{
+	Ref<Shortcut> s = memnew(Shortcut);
+	return s;
+}
+
 

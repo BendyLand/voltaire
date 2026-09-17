@@ -476,3 +476,5 @@ void XRFaceModifier3D::_notification(int p_what)
 }
 
 
+
+MeshInstance3D* XRFaceModifier3D::get_mesh_instance() const {}

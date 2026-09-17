@@ -331,4 +331,5 @@ Skeleton2D::~Skeleton2D()
 	RS::get_singleton()->free_rid(skeleton);
 }
 
+void Skeleton2D::_update_bone_setup() {}
 

@@ -546,6 +546,7 @@ FreeDesktopPortalDesktop::~FreeDesktopPortalDesktop()
 	}
 }
 
-#endif // DBUS_ENABLED
+void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 
+#endif // DBUS_ENABLED
 

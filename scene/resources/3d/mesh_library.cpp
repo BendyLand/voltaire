@@ -231,3 +231,7 @@ int MeshLibrary::get_last_unused_item_id() const
 void MeshLibrary::reset_state() { clear(); }
 
 
+
+void MeshLibrary::create_item(int) {}
+
+void MeshLibrary::clear() {}

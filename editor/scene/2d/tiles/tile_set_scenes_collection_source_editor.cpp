@@ -61,6 +61,8 @@ void TileSetScenesCollectionSourceEditor::_scene_thumbnail_done(const String& p_
 	}
 }
 
+void TileSetScenesCollectionSourceEditor::_update_scenes_list() {}
+
 void TileSetScenesCollectionSourceEditor::_update_all()
 {
 	_update_scenes_list();
@@ -123,3 +125,9 @@ void TileSetScenesCollectionSourceEditor::_notification(int p_what)
 }
 
 
+
+void TileSetScenesCollectionSourceEditor::_update_action_buttons() {}
+
+void TileSetScenesCollectionSourceEditor::_update_tile_inspector() {}
+
+void TileSetScenesCollectionSourceEditor::_update_source_inspector() {}

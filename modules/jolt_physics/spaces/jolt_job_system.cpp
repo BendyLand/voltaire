@@ -150,3 +150,13 @@ void JoltJobSystem::_reclaim_jobs()
 void JoltJobSystem::post_step() { _reclaim_jobs(); }
 
 
+
+void JoltJobSystem::Job::queue() {}
+
+void JoltJobSystem::pre_step() {}
+
+JoltJobSystem::JoltJobSystem() {}
+
+JoltJobSystem::Job::~Job() {}
+
+void JoltJobSystem::flush_timings() {}

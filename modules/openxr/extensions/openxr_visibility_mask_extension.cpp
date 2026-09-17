@@ -216,4 +216,4 @@ void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
 	}
 }
 
-
+void OpenXRVisibilityMaskExtension::_update_mesh() {}

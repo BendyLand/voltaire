@@ -1367,8 +1367,8 @@ void ShaderPreprocessor::get_pragma_list(List<String>* r_pragmas)
 	r_pragmas->push_back("disable_preprocessor");
 }
 
-ShaderPreprocessor::ShaderPreprocessor() {}
+void ShaderPreprocessor::process_if(ShaderPreprocessor::Tokenizer* p_tokenizer) {}
 
-ShaderPreprocessor::~ShaderPreprocessor() {}
+void ShaderPreprocessor::process_elif(ShaderPreprocessor::Tokenizer* p_tokenizer) {}
 
 

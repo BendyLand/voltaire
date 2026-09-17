@@ -100,3 +100,7 @@ bool Shortcut::has_valid_event() const
 }
 
 
+
+Vector<Ref<InputEvent>> Shortcut::get_events() const {}
+
+void Shortcut::set_events(Vector<Ref<InputEvent>> const&) {}

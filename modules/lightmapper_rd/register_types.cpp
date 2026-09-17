@@ -44,4 +44,6 @@ void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
 	}
 }
 
+void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}
+
 

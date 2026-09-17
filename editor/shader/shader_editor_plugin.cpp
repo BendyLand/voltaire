@@ -197,3 +197,9 @@ ShaderEditorPlugin::~ShaderEditorPlugin()
 }
 
 
+
+void ShaderEditorPlugin::_close_shader(int) {}
+
+void ShaderEditorPlugin::_update_shader_list() {}
+
+void ShaderEditorPlugin::_make_script_list_context_menu() {}

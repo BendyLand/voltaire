@@ -131,3 +131,5 @@ void LimitAngularVelocityModifier3D::reset() { init_needed = true; }
 LimitAngularVelocityModifier3D::~LimitAngularVelocityModifier3D() { clear_chains(); }
 
 
+
+void LimitAngularVelocityModifier3D::_make_joints_dirty() {}

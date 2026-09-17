@@ -260,4 +260,14 @@ NavRegion2D::~NavRegion2D()
 	iteration = Ref<NavRegionIteration2D>();
 }
 
+void NavRegion2D::request_sync() {}
 
+
+
+void NavRegion2D::cancel_async_thread_join() {}
+
+void NavRegion2D::cancel_sync_request() {}
+
+void NavRegion2D::set_navigation_mesh(Ref<NavigationPolygon>) {}
+
+void NavRegion2D::_build_iteration() {}

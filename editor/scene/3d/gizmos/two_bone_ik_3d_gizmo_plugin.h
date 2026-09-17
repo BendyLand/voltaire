@@ -53,8 +53,8 @@ public:
 	static void draw_arrow(Ref<SurfaceTool>& p_surface_tool, const Vector3& p_origin,
 		const Vector3& p_direction, real_t p_length, const Color& p_color);
 
-	bool has_gizmo(Node3D* p_spatial) override;
 	String get_gizmo_name() const override;
+	bool has_gizmo(Node3D* p_spatial) override;
 	int get_priority() const override;
 
 	void redraw(EditorNode3DGizmo* p_gizmo) override;

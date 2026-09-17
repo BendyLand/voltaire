@@ -125,6 +125,12 @@ void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions)
 	}
 }
 
+Error ResourceFormatLoader::rename_dependencies(
+	const String& p_path, const HashMap<String, String>& p_map)
+{
+	return OK;
+}
+
 void ResourceFormatLoader::get_dependencies(
 	const String& p_path, List<String>* p_dependencies, bool p_add_types)
 {
@@ -134,6 +140,8 @@ void ResourceFormatLoader::get_dependencies(
 		p_dependencies->push_back(r[i]);
 	}
 }
+
+void ResourceLoader::LoadToken::clear() {}
 
 ResourceLoader::LoadToken::~LoadToken() { clear(); }
 
@@ -256,6 +264,8 @@ void ResourceLoader::_load_threaded_request_setup_user_token(
 	user_load_tokens[p_path] = p_token;
 	print_lt("REQUEST: user load tokens: " + itos(user_load_tokens.size()));
 }
+
+void ResourceLoader::resource_changed_emit(Resource* p_source) {}
 
 Ref<Resource> ResourceLoader::load(
 	const String& p_path, const String& p_type_hint, CacheMode p_cache_mode, Error* r_error)
@@ -1189,5 +1199,9 @@ String ResourceFormatLoader::get_resource_script_class(const String& p_path) con
 }
 
 bool ResourceFormatLoader::has_custom_uid_support() const { return false; }
+
+void ResourceLoader::_run_load_task(void* p_userdata) {}
+
+void ResourceLoader::load_translation_remaps() {}
 
 

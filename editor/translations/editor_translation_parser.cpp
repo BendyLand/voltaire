@@ -154,3 +154,5 @@ EditorTranslationParser::~EditorTranslationParser()
 }
 
 
+
+void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>>&) const {}

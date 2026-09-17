@@ -214,4 +214,16 @@ void Sprite2DEditor::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<I
 	_update_zoom_and_pan(false);
 }
 
+void Sprite2DEditor::_update_zoom_and_pan(bool p_zoom_at_center) {}
 
+
+
+void Sprite2DEditor::_popup_debug_uv_dialog() {}
+
+void Sprite2DEditor::_create_light_occluder_2d_node() {}
+
+void Sprite2DEditor::_create_collision_polygon_2d_node() {}
+
+void Sprite2DEditor::_convert_to_polygon_2d_node() {}
+
+void Sprite2DEditor::_convert_to_mesh_2d_node() {}

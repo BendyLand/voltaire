@@ -686,3 +686,5 @@ Vector<Vector2> AStarGrid2D::get_point_path(
 }
 
 
+
+Vector<Vector2i> AStarGrid2D::get_id_path(Vector2i const&, Vector2i const&, bool) {}

@@ -284,4 +284,16 @@ PackedStringArray MeshInstance3D::get_configuration_warnings() const
 	return warnings;
 }
 
+void MeshInstance3D::_resolve_skeleton_path() {}
+
+void MeshInstance3D::set_mesh(Ref<Mesh> const&) {}
+
+MeshInstance3D::MeshInstance3D() {}
+
+MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
+{
+	MeshInstance3D mi = MeshInstance3D();
+	return &mi;
+}
+
 

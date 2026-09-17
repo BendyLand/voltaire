@@ -132,4 +132,6 @@ void EditorExportPlatformWindows::cleanup()
 	cleanup_commands.clear();
 }
 
+void register_windows_exporter() {}
+
 

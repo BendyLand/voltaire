@@ -121,9 +121,9 @@ class GraphNode : public GraphElement
 protected:
 	void _notification(int p_what);
 
-	virtual void _resort() override;
-
 	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
+
+	virtual void _resort() override;
 
 	virtual String _get_accessibility_name() const override;
 

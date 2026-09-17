@@ -106,4 +106,10 @@ EditorAutoloadSettings::~EditorAutoloadSettings()
 	}
 }
 
+bool EditorAutoloadSettings::autoload_add(String const&, String const&, bool) { return true; }
+
+void EditorAutoloadSettings::init_autoloads() {}
+
+void EditorAutoloadSettings::autoload_remove(StringName const&) {}
+
 

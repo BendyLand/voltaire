@@ -304,3 +304,5 @@ HeightMapShape3D::HeightMapShape3D()
 }
 
 
+
+void HeightMapShape3D::_update_shape() {}

@@ -386,3 +386,5 @@ GeometryInstance3D::~GeometryInstance3D()
 AABB VisualInstance3D::get_aabb() const { return AABB(); }
 
 
+
+void GeometryInstance3D::set_material_override(Ref<Material> const&) {}

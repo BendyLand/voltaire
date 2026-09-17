@@ -233,6 +233,8 @@ public:
 		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
 		const Vector<uint8_t>& p_key, uint64_t p_seed);
 
+	virtual String get_name() const override;
+
 	virtual void get_preset_features(
 		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
 
@@ -243,8 +245,6 @@ public:
 
 	virtual String get_export_option_warning(
 		const EditorExportPreset* p_preset, const StringName& p_name) const override;
-
-	virtual String get_name() const override;
 
 	virtual String get_os_name() const override;
 
@@ -327,5 +327,4 @@ public:
 
 	~EditorExportPlatformAndroid();
 };
-
 

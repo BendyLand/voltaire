@@ -61,7 +61,9 @@ class AcceptDialog : public Window
 		int buttons_separation = 0;
 		int buttons_min_width = 0;
 		int buttons_min_height = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _custom_action(const String& p_action);
 	void _button_visibility_changed(Button* button);
@@ -73,8 +75,8 @@ class AcceptDialog : public Window
 	void _parent_focused();
 
 protected:
-	virtual Size2 _get_contents_minimum_size() const override;
 	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual Size2 _get_contents_minimum_size() const override;
 	virtual void _post_popup() override;
 
 	void _notification(int p_what);

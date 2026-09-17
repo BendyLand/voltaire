@@ -85,3 +85,5 @@ FreeDesktopScreenSaver::FreeDesktopScreenSaver() {}
 #endif // DBUS_ENABLED
 
 
+
+void FreeDesktopScreenSaver::inhibit() {}

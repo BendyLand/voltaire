@@ -117,3 +117,5 @@ EditorSettingsDialog::~EditorSettingsDialog() { singleton = nullptr; }
 void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }
 
 
+
+void EditorSettingsDialog::_update_dynamic_property_hints() {}

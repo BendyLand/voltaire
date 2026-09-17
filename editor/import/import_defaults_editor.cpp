@@ -84,3 +84,5 @@ void ImportDefaultsEditor::clear()
 ImportDefaultsEditor::~ImportDefaultsEditor() { memdelete(settings); }
 
 
+
+void ImportDefaultsEditor::_update_importer() {}

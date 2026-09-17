@@ -33,6 +33,18 @@
 #include "scene/theme/theme_db.h"
 #include "theme_owner.h"
 
+Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
+{
+	Node n = Node();
+	return &n;
+}
+
+Ref<Theme> ThemeOwner::_get_owner_node_theme(Node* p_owner_node) const
+{
+	Ref<Theme> t = memnew(Theme);
+	return t;
+}
+
 ThemeContext* ThemeOwner::_get_active_owner_context() const
 {
 	if (owner_context) {
@@ -176,3 +188,29 @@ int ThemeOwner::get_theme_default_font_size()
 }
 
 
+
+void ThemeOwner::set_owner_node(Node*) {}
+
+void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
+
+void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
+
+ThemeDB::ThemeDB() {}
+
+void ThemeDB::update_class_instance_items(Node*) {}
+
+void ThemeDB::set_fallback_stylebox(Ref<StyleBox> const&) {}
+
+void ThemeDB::set_fallback_icon(Ref<Texture2D> const&) {}
+
+void ThemeDB::set_fallback_font_size(int) {}
+
+void ThemeDB::set_fallback_font(Ref<Font> const&) {}
+
+void ThemeDB::set_fallback_base_scale(float) {}
+
+void ThemeDB::initialize_theme() {}
+
+ThemeContext* ThemeDB::create_theme_context(Node*, Vector<Ref<Theme>>&) {}
+
+void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}

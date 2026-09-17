@@ -787,3 +787,11 @@ void NavMap3D::set_use_async_iterations(bool p_enabled)
 bool NavMap3D::get_use_async_iterations() const { return use_async_iterations; }
 
 
+
+NavMap3D::~NavMap3D() {}
+
+void NavMap3D::sync() {}
+
+void NavMap3D::step(double) {}
+
+NavMap3D::NavMap3D() {}

@@ -803,3 +803,5 @@ VehicleBody3D::VehicleBody3D()
 }
 
 
+
+real_t VehicleBody3D::_ray_cast(int, PhysicsDirectBodyState3D*) { return 0; }

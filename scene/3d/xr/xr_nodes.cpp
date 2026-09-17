@@ -403,3 +403,9 @@ void XROrigin3D::_physics_interpolated_changed()
 }
 
 
+
+void XRNode3D::_set_has_tracking_data(bool) {}
+
+void XRCamera3D::_unbind_tracker() {}
+
+void XRCamera3D::_bind_tracker() {}

@@ -572,10 +572,7 @@ void EditorNode3DGizmoPlugin::create_handle_material(
 
 	handle_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	handle_material->set_flag(StandardMaterial3D::FLAG_USE_POINT_SIZE, true);
-	Ref<Texture2D> handle_t = p_icon.is_valid()
-								  ? p_icon
-								  : EditorNode::get_singleton()->get_editor_theme()->get_icon(
-										SNAME("Editor3DHandle"), EditorStringName(EditorIcons));
+	Ref<Texture2D> handle_t = p_icon;
 	handle_material->set_point_size(handle_t->get_width());
 	handle_material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, handle_t);
 	handle_material->set_albedo(Color(1, 1, 1));
@@ -692,5 +689,7 @@ int EditorNode3DGizmoPlugin::get_priority() const { return 0; }
 void EditorNode3DGizmo::redraw() {}
 
 void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
+void EditorNode3DGizmo::Instance::create_instance(Node3D*, bool) {}
 
 

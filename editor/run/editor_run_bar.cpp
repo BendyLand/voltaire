@@ -171,4 +171,11 @@ bool EditorRunBar::is_movie_maker_enabled() const { return movie_maker_enabled; 
 
 HBoxContainer* EditorRunBar::get_buttons_container() { return main_hbox; }
 
+void EditorRunBar::stop_playing() {}
 
+
+void EditorRunBar::update_profiler_autostart_indicator() {}
+
+void EditorRunBar::_run_scene(String const&, Vector<String> const&) {}
+
+String EditorRunBar::get_playing_scene() const {}

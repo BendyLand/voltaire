@@ -2667,7 +2667,6 @@ void RenderForwardClustered::_render_scene(
 			RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE, p_render_data);
 	}
 
-
 	if (debug_sdfgi_probes) {
 		Projection dc;
 		dc.set_depth_correction(true);
@@ -5048,8 +5047,7 @@ void RenderForwardClustered::_geometry_instance_add_surface(
 	if (ginstance->data->material_overlay.is_valid()) {
 		m_src = ginstance->data->material_overlay;
 
-		material = static_cast<
-SceneShaderForwardClustered::MaterialData*>(
+		material = static_cast<SceneShaderForwardClustered::MaterialData*>(
 			material_storage->material_get_data(
 				m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		if (material && material->shader_data->is_valid()) {
@@ -5361,7 +5359,8 @@ static RD::FramebufferFormatID _get_depth_framebuffer_format_for_pipeline(
 			RenderForwardClustered::RenderBufferDataForwardClustered::get_voxelgi_usage_bits(
 				false, multisampling, p_can_be_storage);
 		attachments.push_back(attachment);
-	}
+
+}
 
 	thread_local Vector<RD::FramebufferPass> passes;
 	passes.resize(1);
@@ -5968,7 +5967,6 @@ void RenderForwardClustered::_update_shader_quality_settings()
 		decals_get_filter() == RSE::DECAL_FILTER_LINEAR_MIPMAPS ||
 		decals_get_filter() == RSE::DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
 		decals_get_filter() == RSE::DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
-	;
 	specialization.projector_use_mipmaps =
 		light_projectors_get_filter() == RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS ||
 		light_projectors_get_filter() == RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS ||
@@ -6052,6 +6050,54 @@ RenderForwardClustered::~RenderForwardClustered()
 		RD::get_singleton()->free_rid(sdfgi_framebuffer_size_cache.begin()->value);
 		sdfgi_framebuffer_size_cache.remove(sdfgi_framebuffer_size_cache.begin());
 	}
+}
+
+uint32_t RendererSceneRenderImplementation::RenderForwardClustered::_setup_environment(
+	const RenderDataRD* p_render_data, bool p_no_fog, const Size2i& p_screen_size,
+	const Size2& p_viewport_size, const Color& p_default_bg_color, bool p_opaque_render_buffers,
+	bool p_apply_alpha_multiplier, bool p_pancake_shadows)
+{
+	return 0;
+}
+
+void RendererSceneRenderImplementation::RenderForwardClustered::_render_list_with_draw_list(
+	RenderListParameters* p_params, RID p_framebuffer, uint32_t p_draw_flags,
+	const Vector<Color>& p_clear_color_values, float p_clear_depth_value,
+	uint32_t p_clear_stencil_value, const Rect2& p_region)
+{
+}
+
+void RendererRD::GI::SDFGI::store_probes() {}
+
+void RendererRD::GI::SDFGI::debug_probes(
+	RID p_framebuffer, unsigned int p_flags, const Projection* p_projection)
+{
+}
+
+void RendererRD::GI::SDFGI::update_probes(RID p_env, RendererRD::SkyRD::Sky* p_sky) {}
+
+void RendererRD::GI::SDFGI::update_light() {}
+
+void RendererRD::GI::SDFGI::render_static_lights(RenderDataRD* p_render_data,
+	Ref<RenderSceneBuffersRD> p_render_buffers, unsigned int p_light_count,
+	const unsigned int* p_lights, const PagedArray<RID>* p_shadow_atlases)
+{
+}
+
+void RendererRD::GI::SDFGI::render_region(Ref<RenderSceneBuffersRD> p_render_buffers, int p_region,
+	const PagedArray<RenderGeometryInstance*>& p_geometry_instances, float p_exposure)
+{
+}
+
+void RendererRD::GI::SDFGI::debug_draw(unsigned int p_mode, const Projection* p_projection,
+	const Transform3D& p_transform, int p_width, int p_height, RID p_dest_framebuffer, RID p_color,
+	const Vector<RID>& p_lights)
+{
+}
+
+void RendererRD::GI::SDFGI::create(RID p_env, const Vector3& p_world_position,
+	unsigned int p_requested_history_size, RendererRD::GI* p_gi)
+{
 }
 
 

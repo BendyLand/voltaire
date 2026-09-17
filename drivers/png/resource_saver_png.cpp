@@ -84,3 +84,5 @@ ResourceSaverPNG::ResourceSaverPNG()
 }
 
 
+
+Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) {}

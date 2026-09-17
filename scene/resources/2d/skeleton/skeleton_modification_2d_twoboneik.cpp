@@ -130,4 +130,8 @@ SkeletonModification2DTwoBoneIK::SkeletonModification2DTwoBoneIK()
 
 SkeletonModification2DTwoBoneIK::~SkeletonModification2DTwoBoneIK() {}
 
+void SkeletonModification2DTwoBoneIK::update_target_cache() {}
 
+void SkeletonModification2DTwoBoneIK::update_joint_two_bone2d_cache() {}
+
+void SkeletonModification2DTwoBoneIK::update_joint_one_bone2d_cache() {}

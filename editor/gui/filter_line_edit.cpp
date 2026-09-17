@@ -45,4 +45,6 @@ void FilterLineEdit::set_forward_control(Control* p_control)
 
 FilterLineEdit::FilterLineEdit() { set_clear_button_enabled(true); }
 
+void FilterLineEdit::gui_input(const Ref<InputEvent>& p_event) {}
+
 

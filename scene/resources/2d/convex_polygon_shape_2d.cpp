@@ -131,3 +131,5 @@ ConvexPolygonShape2D::ConvexPolygonShape2D()
 }
 
 
+
+void ConvexPolygonShape2D::_update_shape() {}

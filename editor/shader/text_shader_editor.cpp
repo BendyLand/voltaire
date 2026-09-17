@@ -652,4 +652,38 @@ void TextShaderEditor::register_editor()
 		TTRC("Go to Previous Shader Preview"), KeyModifierMask::CTRL | Key::COMMA);
 }
 
+void TextShaderPreview::_show_error(const String& p_error) {}
+
+void TextShaderPreview::_sync_shader_parameters(Ref<ShaderMaterial> const&, Ref<ShaderMaterial>&) {}
+
+void TextShaderPreview::_reset_shader_parameters(Ref<ShaderMaterial>&) {}
+
+Ref<ShaderMaterial> TextShaderPreview::_get_source_material() const {}
+
+TextShaderEditor::TextShaderEditor() {}
+
+void ShaderTextEditor::set_edited_shader(Ref<Shader> const&, String const&) {}
+
+void ShaderTextEditor::set_edited_shader_include(Ref<ShaderInclude> const&, String const&) {}
+
+String TextShaderPreview::_find_var_type(Vector<String> const&, String const&, int, bool)
+{
+	return String();
+}
+
+bool TextShaderPreview::_find_statement(Vector<String> const&, int, String&, int&, int&) const
+{
+	return true;
+}
+
+void TextShaderEditor::_update_warnings(bool) {}
+
+void TextShaderEditor::_reload_shader_include_from_disk() {}
+
+void TextShaderEditor::_reload_shader_from_disk() {}
+
+void TextShaderEditor::_check_for_external_edit() {}
+
+void TextShaderEditor::_apply_editor_settings() {}
+
 

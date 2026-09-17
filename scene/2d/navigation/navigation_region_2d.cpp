@@ -309,3 +309,11 @@ void NavigationRegion2D::_update_bounds()
 }
 
 
+
+void NavigationRegion2D::_update_debug_mesh() {}
+
+void NavigationRegion2D::set_navigation_polygon(Ref<NavigationPolygon> const&) {}
+
+void NavigationRegion2D::_region_update_transform() {}
+
+void NavigationRegion2D::_region_enter_navigation_map() {}

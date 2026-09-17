@@ -65,13 +65,9 @@ void EditorSceneFormatImporter::get_import_options(
 	current_option_list = nullptr;
 }
 
-/////////////////////////////////
-
 String EditorScenePostImport::get_source_file() const { return source_file; }
 
 void EditorScenePostImport::init(const String& p_source_file) { source_file = p_source_file; }
-
-///////////////////////////////////////////////////////
 
 void EditorScenePostImportPlugin::get_internal_import_options(
 	InternalImportCategory p_category, List<ResourceImporter::ImportOption>* r_options)
@@ -86,8 +82,6 @@ void EditorScenePostImportPlugin::get_import_options(
 	current_option_list = r_options;
 	current_option_list = nullptr;
 }
-
-/////////////////////////////////////////////////////////
 
 const String ResourceImporterScene::material_extension[3] = {".tres", ".res", ".material"};
 
@@ -334,8 +328,6 @@ void ResourceImporterScene::get_scene_importer_extensions(List<String>* p_extens
 		importer_elem->get_extensions(p_extensions);
 	}
 }
-
-///////////////////////////////////////
 
 void EditorSceneFormatImporterESCN::get_extensions(List<String>* r_extensions) const
 {

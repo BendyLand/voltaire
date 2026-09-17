@@ -211,4 +211,8 @@ NavObstacle2D::NavObstacle2D() : sync_dirty_request_list_element(this) {}
 
 NavObstacle2D::~NavObstacle2D() { cancel_sync_request(); }
 
+void NavObstacle2D::request_sync() {}
 
+
+
+void NavObstacle2D::cancel_sync_request() {}

@@ -43,9 +43,8 @@ private:
 protected:
 	TextEdit* text_edit = nullptr;
 
-
 public:
-	void clear_highlighting_cache();
+	void clear_highlighting_cache() {}
 
 	virtual void _clear_highlighting_cache() {}
 
@@ -58,8 +57,6 @@ public:
 
 	virtual ~SyntaxHighlighter() {}
 };
-
-///////////////////////////////////////////////////////////////////////////////
 
 class CodeHighlighter : public SyntaxHighlighter
 {
@@ -84,7 +81,6 @@ private:
 	bool uint_suffix_enabled = false;
 
 protected:
-
 public:
 	virtual void _clear_highlighting_cache() override;
 	virtual void _update_cache() override;

@@ -47,3 +47,5 @@ void ParallaxBackgroundEditorPlugin::_menu_callback(int p_idx)
 }
 
 
+
+void ParallaxBackgroundEditorPlugin::convert_to_parallax2d() {}

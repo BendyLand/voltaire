@@ -75,3 +75,5 @@ void GPUParticlesCollisionSDF3DEditorPlugin::bake_func_end()
 }
 
 
+
+void GPUParticlesCollisionSDF3DEditorPlugin::_sdf_save_path_and_bake(String const&) {}

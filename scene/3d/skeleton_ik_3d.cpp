@@ -426,3 +426,5 @@ void SkeletonIK3D::_solve_chain()
 }
 
 
+
+Transform3D SkeletonIK3D::_get_target_transform() {}

@@ -122,7 +122,6 @@ bool InputEvent::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) co
 
 bool InputEvent::is_action_type() const { return false; }
 
-
 void InputEventFromWindow::set_window_id(int64_t p_id)
 {
 	window_id = p_id;
@@ -130,8 +129,6 @@ void InputEventFromWindow::set_window_id(int64_t p_id)
 }
 
 int64_t InputEventFromWindow::get_window_id() const { return window_id; }
-
-///////////////////////////////////
 
 void InputEventWithModifiers::set_command_or_control_autoremap(bool p_enabled)
 {
@@ -241,9 +238,6 @@ String InputEventWithModifiers::as_text() const
 }
 
 String InputEventWithModifiers::_to_string() { return as_text(); }
-
-
-///////////////////////////////////
 
 void InputEventKey::set_pressed(bool p_pressed)
 {
@@ -537,7 +531,7 @@ bool InputEventKey::action_match(const Ref<InputEvent>& p_event, bool p_exact_ma
 
 bool InputEventKey::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventKey> key = static_cast<InputEventKey *>(p_event.ptr());
+	Ref<InputEventKey> key = static_cast<InputEventKey*>(p_event.ptr());
 	if (key.is_null()) {
 		return false;
 	}
@@ -562,10 +556,7 @@ bool InputEventKey::is_match(const Ref<InputEvent>& p_event, bool p_exact_match)
 	}
 }
 
-
 InputEventKey::InputEventKey() { set_device(DEVICE_ID_KEYBOARD); }
-
-///////////////////////////////////
 
 void InputEventMouse::set_position(const Vector2& p_pos) { pos = p_pos; }
 
@@ -578,10 +569,7 @@ void InputEventMouse::set_global_position(const Vector2& p_global_pos)
 
 Vector2 InputEventMouse::get_global_position() const { return global_pos; }
 
-
 InputEventMouse::InputEventMouse() { set_device(DEVICE_ID_MOUSE); }
-
-///////////////////////////////////
 
 void InputEventMouseButton::set_factor(float p_factor) { factor = p_factor; }
 
@@ -753,9 +741,6 @@ String InputEventMouseButton::_to_string()
 		index_and_mods, p, canceled_state, String(get_position()), get_button_mask(), d);
 }
 
-
-///////////////////////////////////
-
 void InputEventMouseMotion::set_tilt(const Vector2& p_tilt) { tilt = p_tilt; }
 
 Vector2 InputEventMouseMotion::get_tilt() const { return tilt; }
@@ -827,7 +812,6 @@ String InputEventMouseMotion::_to_string()
 	uint32_t mouse_button_mask = get_button_mask();
 	String button_mask_string = itos((int64_t)mouse_button_mask);
 
-
 	// Work around the fact vformat can only take 5 substitutions but 7 need to be passed.
 	String mask_and_position_and_relative = vformat("button_mask=%s, position=(%s), relative=(%s)",
 		button_mask_string, String(get_position()), String(get_relative()));
@@ -885,9 +869,6 @@ bool InputEventMouseMotion::accumulate(const Ref<InputEvent>& p_event)
 
 	return true;
 }
-
-
-///////////////////////////////////
 
 void InputEventJoypadMotion::set_axis(JoyAxis p_axis)
 {
@@ -1002,9 +983,6 @@ Ref<InputEventJoypadMotion> InputEventJoypadMotion::create_reference(
 	return ie;
 }
 
-
-///////////////////////////////////
-
 void InputEventJoypadButton::set_button_index(JoyButton p_index)
 {
 	button_index = p_index;
@@ -1047,7 +1025,7 @@ bool InputEventJoypadButton::action_match(const Ref<InputEvent>& p_event, bool p
 
 bool InputEventJoypadButton::is_match(const Ref<InputEvent>& p_event, bool p_exact_match) const
 {
-	Ref<InputEventJoypadButton> button = static_cast<InputEventJoypadButton *>(p_event.ptr());
+	Ref<InputEventJoypadButton> button = static_cast<InputEventJoypadButton*>(p_event.ptr());
 	if (button.is_null()) {
 		return false;
 	}
@@ -1112,9 +1090,6 @@ Ref<InputEventJoypadButton> InputEventJoypadButton::create_reference(
 	return ie;
 }
 
-
-///////////////////////////////////
-
 void InputEventScreenTouch::set_index(int p_index) { index = p_index; }
 
 int InputEventScreenTouch::get_index() const { return index; }
@@ -1164,9 +1139,6 @@ String InputEventScreenTouch::_to_string()
 		"InputEventScreenTouch: index=%d, pressed=%s, canceled=%s, position=(%s), double_tap=%s",
 		index, p, canceled_state, String(get_position()), double_tap_string);
 }
-
-
-///////////////////////////////////
 
 void InputEventScreenDrag::set_index(int p_index) { index = p_index; }
 
@@ -1268,9 +1240,6 @@ bool InputEventScreenDrag::accumulate(const Ref<InputEvent>& p_event)
 	return true;
 }
 
-
-///////////////////////////////////
-
 void InputEventAction::set_action(const StringName& p_action) { action = p_action; }
 
 StringName InputEventAction::get_action() const { return action; }
@@ -1343,15 +1312,9 @@ String InputEventAction::_to_string()
 	return vformat("InputEventAction: action=\"%s\", pressed=%s", action, p);
 }
 
-
-///////////////////////////////////
-
 void InputEventGesture::set_position(const Vector2& p_pos) { pos = p_pos; }
 
-
 Vector2 InputEventGesture::get_position() const { return pos; }
-
-///////////////////////////////////
 
 void InputEventMagnifyGesture::set_factor(real_t p_factor) { factor = p_factor; }
 
@@ -1386,9 +1349,6 @@ String InputEventMagnifyGesture::_to_string()
 		"InputEventMagnifyGesture: factor=%.2f, position=(%s)", factor, String(get_position()));
 }
 
-
-///////////////////////////////////
-
 void InputEventPanGesture::set_delta(const Vector2& p_delta) { delta = p_delta; }
 
 Vector2 InputEventPanGesture::get_delta() const { return delta; }
@@ -1421,9 +1381,6 @@ String InputEventPanGesture::_to_string()
 	return vformat("InputEventPanGesture: delta=(%s), position=(%s)", String(get_delta()),
 		String(get_position()));
 }
-
-
-///////////////////////////////////
 
 void InputEventMIDI::set_channel(const int p_channel) { channel = p_channel; }
 
@@ -1498,9 +1455,6 @@ String InputEventMIDI::_to_string()
 	return "InputEventMIDI: " + ret;
 }
 
-
-///////////////////////////////////
-
 void InputEventShortcut::set_shortcut(Ref<Shortcut> p_shortcut)
 {
 	shortcut = p_shortcut;
@@ -1508,7 +1462,6 @@ void InputEventShortcut::set_shortcut(Ref<Shortcut> p_shortcut)
 }
 
 Ref<Shortcut> InputEventShortcut::get_shortcut() { return shortcut; }
-
 
 String InputEventShortcut::as_text() const
 {
@@ -1523,5 +1476,9 @@ String InputEventShortcut::_to_string()
 }
 
 InputEventShortcut::InputEventShortcut() { pressed = true; }
+
+uint32_t InputEventMouse::get_button_mask() const { return 0; }
+
+void InputEventMouse::set_button_mask(uint32_t p_mask) {}
 
 

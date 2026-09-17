@@ -113,4 +113,8 @@ String JoltHeightMapShape3D::to_string() const
 	return vformat("{height_count=%d width=%d depth=%d}", heights.size(), width, depth);
 }
 
+JPH::ShapeRefC JoltHeightMapShape3D::_build_mesh() const { return JPH::ShapeRefC(); }
+
+JPH::ShapeRefC JoltHeightMapShape3D::_build_height_field() const { return JPH::ShapeRefC(); }
+
 

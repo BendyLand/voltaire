@@ -153,3 +153,9 @@ bool EditorResourcePreviewGenerator::generate_small_preview_automatically() cons
 bool EditorResourcePreviewGenerator::handles(const String& p_type) const { return false; }
 
 
+
+void EditorResourcePreview::stop() {}
+
+void EditorResourcePreview::_iterate() {}
+
+void EditorResourcePreviewGenerator::DrawRequester::request_and_wait(RID) {}

@@ -223,3 +223,7 @@ void ProjectSettingsEditor::_focus_current_path_box()
 }
 
 
+
+void ProjectSettingsEditor::_update_property_box() {}
+
+void ProjectSettingsEditor::popup_project_settings(bool) {}

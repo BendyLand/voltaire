@@ -813,7 +813,8 @@ Vector<TemplateModifier::SectionEntry> TemplateModifier::_get_section_entries(
 
 	p_executable->seek(pe_header_offset + 6);
 	int num_sections = p_executable->get_16();
-	p_executable->seek(pe_header_offset + 20);
+	p_executable->seek(pe_header_offset + 20
+);
 	uint16_t size_of_optional_header = p_executable->get_16();
 	p_executable->seek(pe_header_offset + COFF_HEADER_SIZE + size_of_optional_header);
 
@@ -831,6 +832,11 @@ Error TemplateModifier::modify(const Ref<EditorExportPreset>& p_preset,
 {
 	TemplateModifier template_modifier;
 	return template_modifier._modify_template(p_preset, p_template_path, p_icon_path);
+}
+
+HashMap<String, String> TemplateModifier::_get_strings(Ref<EditorExportPreset> const&) const
+{
+	return HashMap<String, String>();
 }
 
 

@@ -41,6 +41,8 @@
 
 TextServerManager* TextServerManager::singleton = nullptr;
 
+void TextServerManager::add_interface(const Ref<TextServer>& p_interface) {}
+
 int TextServerManager::get_interface_count() const { return interfaces.size(); }
 
 Ref<TextServer> TextServerManager::get_interface(int p_index) const
@@ -75,8 +77,6 @@ TextServerManager::~TextServerManager()
 	}
 	singleton = nullptr;
 }
-
-/*************************************************************************/
 
 bool Glyph::operator==(const Glyph& p_a) const
 {
@@ -265,6 +265,18 @@ void TextServer::draw_hex_code_box(const RID& p_canvas, int64_t p_size, const Ve
 		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(6, 8) * sz, b, p_color);
 		_draw_hex_code_box_number(p_canvas, sz, pos + Point2(10, 8) * sz, a, p_color);
 	}
+}
+
+PackedInt32Array TextServer::shaped_text_get_line_breaks_adv(const RID& p_shaped,
+	const PackedFloat32Array& p_width, int64_t p_start, bool p_once, uint32_t p_break_flags) const
+{
+	return PackedInt32Array();
+}
+
+PackedInt32Array TextServer::shaped_text_get_line_breaks(
+	const RID& p_shaped, double p_width, int64_t p_start, uint32_t p_break_flags) const
+{
+	return PackedInt32Array();
 }
 
 bool TextServer::shaped_text_has_visible_chars(const RID& p_shaped) const
@@ -1253,6 +1265,6 @@ bool TextServer::is_valid_identifier(const String& p_string) const
 
 bool TextServer::is_valid_letter(uint64_t p_unicode) const { return is_unicode_letter(p_unicode); }
 
-TextServer::~TextServer() {}
+void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface) {}
 
 

@@ -85,4 +85,6 @@ void ProjectZIPPacker::_zip_recursive(
 	}
 }
 
+void ProjectZIPPacker::_zip_file(String const&, String const&, void*) {}
+
 

@@ -37,6 +37,7 @@
 class PhysicsBody3D : public CollisionObject3D
 {
 protected:
+	PhysicsBody3D() = default;
 	PhysicsBody3D(PS3DE::BodyMode p_mode) : CollisionObject3D(p_mode) {}
 
 	Ref<KinematicCollision3D> motion_cache;

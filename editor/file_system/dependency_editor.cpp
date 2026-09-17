@@ -242,7 +242,8 @@ void DependencyRemoveDialog::_find_files_in_removed_folder(
 
 	for (int i = 0; i < efsd->get_subdir_count(); ++i) {
 		_find_files_in_removed_folder(efsd->get_subdir(i), p_folder);
-	}
+
+}
 	for (int i = 0; i < efsd->get_file_count(); i++) {
 		String file = efsd->get_file_path(i);
 		ERR_FAIL_COND(all_remove_files.has(file)); // We are deleting a directory which is contained
@@ -322,5 +323,17 @@ void OrphanResourcesDialog::show()
 	refresh();
 	popup_centered_ratio(0.4);
 }
+
+bool OrphanResourcesDialog::_fill_owners(EditorFileSystemDirectory*,
+	HashMap<String, int, HashMapHasherDefault, HashMapComparatorDefault<String, void>,
+		DefaultTypedAllocator<HashMapElement<String, int>>>&,
+	TreeItem*)
+{
+	return true;
+}
+
+void DependencyEditor::_update_list() {}
+
+void DependencyEditorOwners::_select_file(int) {}
 
 

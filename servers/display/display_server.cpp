@@ -91,6 +91,16 @@ void DisplayServer::tts_speak(const String& p_text, const String& p_voice, int p
 	WARN_PRINT("TTS is not supported by this display server.");
 }
 
+PackedStringArray DisplayServer::tts_get_voices_for_language(const String& p_language) const
+{
+	return PackedStringArray();
+}
+
+void DisplayServer::tts_post_utterance_event(
+	DisplayServerEnums::TTSUtteranceEvent p_event, int64_t p_id, int p_pos)
+{
+}
+
 void DisplayServer::tts_stop() { WARN_PRINT("TTS is not supported by this display server."); }
 
 bool DisplayServer::_get_window_early_clear_override(Color& r_color)
@@ -1284,5 +1294,7 @@ DisplayServer::DisplayServer()
 }
 
 DisplayServer::~DisplayServer() { singleton = nullptr; }
+
+bool DisplayServer::can_create_rendering_device() { return true; }
 
 

@@ -35,6 +35,8 @@
 #include "../extensions/openxr_render_model_extension.h"
 #include "core/config/project_settings.h"
 
+void OpenXRRenderModel::_load_render_model_scene() {}
+
 String OpenXRRenderModel::get_top_level_path() const
 {
 	String ret;

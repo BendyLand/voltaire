@@ -254,6 +254,8 @@ bool Tween::custom_step(double p_delta)
 	return ret;
 }
 
+bool Tween::step(double p_delta) { return true; }
+
 bool Tween::can_process(bool p_tree_paused) const
 {
 	if (is_bound && pause_mode == TWEEN_PAUSE_BOUND) {
@@ -364,8 +366,7 @@ IntervalTweener::IntervalTweener()
 
 CallbackTweener* CallbackTweener::set_delay(double p_delay)
 {
-	delay
-= p_delay;
+	delay = p_delay;
 	return this;
 }
 
@@ -480,5 +481,25 @@ AwaitTweener::AwaitTweener()
 {
 	ERR_FAIL_MSG("AwaitTweener can't be created directly. Use the tween_await() method in Tween.");
 }
+
+void Tweener::set_tween(Ref<Tween> const&) {}
+
+void Tweener::_finish() {}
+
+Tween* Tween::bind_node(Node const*)
+{
+	Tween t = Tween();
+	return &t;
+}
+
+Node* Tween::get_bound_node() const
+{
+	Node n = Node();
+	return &n;
+}
+
+String Tween::_to_string() { return String(); }
+
+bool CallbackTweener::step(double& r_delta) { return true; }
 
 

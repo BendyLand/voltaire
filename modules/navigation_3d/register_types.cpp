@@ -64,4 +64,6 @@ void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
 #endif // DISABLE_DEPRECATED
 }
 
+void initialize_navigation_3d_module(ModuleInitializationLevel p_level) {}
+
 

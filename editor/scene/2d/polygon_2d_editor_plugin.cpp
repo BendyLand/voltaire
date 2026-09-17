@@ -123,3 +123,7 @@ Polygon2DEditorPlugin::Polygon2DEditorPlugin()
 }
 
 
+
+void Polygon2DEditor::_update_zoom_and_pan(bool) {}
+
+Polygon2DEditor::Polygon2DEditor() {}

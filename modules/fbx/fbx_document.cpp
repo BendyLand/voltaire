@@ -775,4 +775,12 @@ Transform3D FBXDocument::_as_xform(const ufbx_matrix& p_mat)
 	return xform;
 }
 
+Error FBXDocument::_parse(Ref<FBXState>, String const&, Ref<FileAccess>) { return OK; }
+
+GLTFImageIndex FBXDocument::_parse_image_save_image(
+	Ref<FBXState>, Vector<unsigned char> const&, String const&, int, Ref<Image>)
+{
+	return GLTFImageIndex();
+}
+
 

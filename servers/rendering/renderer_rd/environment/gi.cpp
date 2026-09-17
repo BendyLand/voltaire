@@ -1313,4 +1313,21 @@ void GI::debug_voxel_gi(RID p_voxel_gi, RD::DrawListID p_draw_list, RID p_frameb
 
 void GI::enable_vrs_shader_group() { shader.enable_group(GROUP_VRS); }
 
+RID RendererRD::GI::RenderBuffersGI::get_voxel_gi_buffer() { return RID(); }
+
+void RendererRD::GI::VoxelGIInstance::update(bool p_update_light_instances,
+	const Vector<RID>& p_light_instances,
+	const PagedArray<RenderGeometryInstance*>& p_dynamic_objects)
+{
+}
+
+void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
+	const RID* p_color_buffers, RID p_dest_buffer, RID p_environment, unsigned int p_view_count,
+	const Projection* p_projections, const Vector3* p_eye_offsets,
+	const Transform3D& p_cam_transform, const PagedArray<RID>& p_position_buffers)
+{
+}
+
+RendererRD::GI::GI() {}
+
 

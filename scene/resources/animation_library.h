@@ -40,8 +40,6 @@ class AnimationLibrary : public Resource
 	friend class AnimationMixer; // For faster access.
 	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
 
-protected:
-
 public:
 	static bool is_valid_animation_name(const String& p_name);
 	static bool is_valid_library_name(const String& p_name);

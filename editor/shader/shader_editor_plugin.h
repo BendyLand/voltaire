@@ -126,6 +126,8 @@ protected:
 public:
 	static ShaderEditorPlugin* get_singleton() { return shader_editor_plugin; }
 
+	virtual String get_unsaved_status(const String& p_for_scene) const override;
+
 	virtual String get_plugin_name() const override { return "Shader"; }
 
 	virtual void set_current() override;
@@ -135,7 +137,6 @@ public:
 	virtual void set_window_layout(Ref<ConfigFile> p_layout) override;
 	virtual void get_window_layout(Ref<ConfigFile> p_layout) override;
 
-	virtual String get_unsaved_status(const String& p_for_scene) const override;
 	virtual void apply_changes() override;
 
 	ShaderEditorPlugin();

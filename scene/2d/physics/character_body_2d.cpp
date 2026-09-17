@@ -197,3 +197,7 @@ void CharacterBody2D::set_up_direction(const Vector2& p_up_direction)
 CharacterBody2D::CharacterBody2D() : PhysicsBody2D(PS2DE::BODY_MODE_KINEMATIC) {}
 
 
+
+void CharacterBody2D::_apply_floor_snap(bool) {}
+
+Ref<KinematicCollision2D> CharacterBody2D::_get_slide_collision(int) {}

@@ -179,7 +179,9 @@ private:
 		bool creating = false;
 		bool double_click = false;
 		bool drag_attempt = false;
-	} selection;
+	};
+
+	Selection selection;
 
 	struct TextOperation
 	{
@@ -234,7 +236,9 @@ private:
 		Color clear_button_color_pressed;
 
 		float base_scale = 1.0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _close_ime_window();
 	void _update_ime_window_position();
@@ -245,6 +249,7 @@ private:
 
 	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
+	void _update_context_menu();
 
 	void _shape();
 	void _fit_to_width();
@@ -287,6 +292,7 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
+	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _edit_bind_compat_111117();

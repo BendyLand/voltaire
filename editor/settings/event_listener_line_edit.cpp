@@ -183,3 +183,5 @@ EventListenerLineEdit::EventListenerLineEdit()
 }
 
 
+
+void EventListenerLineEdit::clear_event() {}

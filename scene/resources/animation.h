@@ -679,7 +679,7 @@ public:
 
 	static TrackType get_cache_type(TrackType p_type);
 
-	Animation();
+	Animation() = default;
 	~Animation();
 };
 

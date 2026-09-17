@@ -507,4 +507,12 @@ void JoltSpace3D::set_max_debug_contacts(int p_count)
 
 #endif
 
+void JoltSpace3D::dump_debug_snapshot(String const&) {}
+
+void JoltSpace3D::step(float) {}
+
+JoltSpace3D::JoltSpace3D(JPH::JobSystem*, JPH::TempAllocator*) {}
+
+JPH::Body* JoltSpace3D::add_object(JoltObject3D const&, JPH::BodyCreationSettings const&, bool) {}
+
 

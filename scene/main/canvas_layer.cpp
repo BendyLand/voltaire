@@ -226,3 +226,5 @@ CanvasLayer::~CanvasLayer()
 }
 
 
+
+void CanvasLayer::set_visible(bool) {}

@@ -67,3 +67,5 @@ void DebuggerEditorPlugin::_notification(int p_what)
 }
 
 
+
+void DebuggerEditorPlugin::_update_debug_options() {}

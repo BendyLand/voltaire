@@ -272,6 +272,8 @@ void ScriptEditorDebugger::_profiler_seeked()
 	debug_break();
 }
 
+void ScriptEditorDebugger::_clear_execution() {}
+
 void ScriptEditorDebugger::_export_csv()
 {
 	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
@@ -584,5 +586,29 @@ void ScriptEditorDebugger::update_layout(EditorDock::DockLayout p_layout, int p_
 		vmem_tree->set_scroll_hint_mode(Tree::SCROLL_HINT_MODE_BOTTOM);
 	}
 }
+
+void ScriptEditorDebugger::_send_debug_mute_audio_msg(bool p_mute) {}
+
+void ScriptEditorDebugger::clear_inspector(bool) {}
+
+ScriptEditorDebugger::ScriptEditorDebugger() {}
+
+ScriptEditorDebugger::~ScriptEditorDebugger() {}
+
+void ScriptEditorDebugger::request_remote_evaluate(String const&, int) {}
+
+void ScriptEditorDebugger::_video_mem_request() {}
+
+void ScriptEditorDebugger::request_remote_tree() {}
+
+void ScriptEditorDebugger::request_remote_objects(TypedArray<unsigned long> const&, bool) {}
+
+int ScriptEditorDebugger::get_stack_script_frame() const {}
+
+void ScriptEditorDebugger::_clear_breakpoints() {}
+
+void EditorDebuggerSession::detach_debugger() {}
+
+EditorDebuggerSession::EditorDebuggerSession(ScriptEditorDebugger*) {}
 
 

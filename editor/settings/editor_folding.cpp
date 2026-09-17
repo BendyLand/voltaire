@@ -49,6 +49,10 @@ void EditorFolding::unfold_scene(Node* p_scene)
 	_do_node_unfolds(p_scene, p_scene, resources);
 }
 
+void EditorFolding::_do_node_unfolds(Node* p_root, Node* p_node, HashSet<Ref<Resource>>& resources)
+{
+}
+
 Vector<String> EditorFolding::_get_animation_folds(const Animation* p_animation)
 {
 	Vector<String> folded_groups;
@@ -71,5 +75,9 @@ void EditorFolding::_set_animation_folds(Animation* p_animation, const Vector<St
 		p_animation->editor_add_folded_group(group_name);
 	}
 }
+
+void EditorFolding::load_resource_folding(Ref<Resource> p_resource, const String& p_path) {}
+
+void _do_node_unfolds(Node* p_root, Node* p_node, HashSet<Ref<Resource>>& resources) {}
 
 

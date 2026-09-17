@@ -84,6 +84,8 @@ Ref<Texture2D> TextureRect::get_texture() const { return texture; }
 
 TextureRect::ExpandMode TextureRect::get_expand_mode() const { return expand_mode; }
 
+void TextureRect::set_expand_mode(ExpandMode p_mode) {}
+
 TextureRect::StretchMode TextureRect::get_stretch_mode() const { return stretch_mode; }
 
 bool TextureRect::is_flipped_h() const { return hflip; }
@@ -93,5 +95,9 @@ bool TextureRect::is_flipped_v() const { return vflip; }
 TextureRect::TextureRect() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
 TextureRect::~TextureRect() {}
+
+void TextureRect::set_texture(const Ref<Texture2D>& p_tex) {}
+
+void TextureRect::set_stretch_mode(StretchMode p_mode) {}
 
 

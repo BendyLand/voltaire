@@ -159,3 +159,7 @@ SkeletonModification2DLookAt::SkeletonModification2DLookAt()
 SkeletonModification2DLookAt::~SkeletonModification2DLookAt() {}
 
 
+
+void SkeletonModification2DLookAt::update_target_cache() {}
+
+void SkeletonModification2DLookAt::update_bone2d_cache() {}

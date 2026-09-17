@@ -396,4 +396,38 @@ void SSEffects::sss_set_scale(float p_scale, float p_depth_scale)
 	sss_depth_scale = p_depth_scale;
 }
 
+void RendererRD::SSEffects::sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers,
+	RID p_dest_framebuffer, RID p_source_color, const Projection& p_projection,
+	const Vector2i& p_screen_size)
+{
+}
+
+void RendererRD::SSEffects::screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers,
+	RendererRD::SSEffects::SSRRenderBuffers& p_ssr_buffers, const RID* p_color_buffers,
+	int p_color_buffer_count, float p_intensity, float p_max_distance, float p_fade_in,
+	const Projection* p_projections, const Projection* p_camera_projections,
+	const Vector3* p_eye_offsets, RendererRD::CopyEffects& p_copy_effects)
+{
+}
+
+void RendererRD::SSEffects::screen_space_indirect_lighting(
+	Ref<RenderSceneBuffersRD> p_render_buffers,
+	RendererRD::SSEffects::SSILRenderBuffers& p_ssil_buffers, unsigned int p_pass,
+	RID p_dest_framebuffer, const Projection& p_projection, const Projection& p_camera_projection,
+	const RendererRD::SSEffects::SSILSettings& p_settings)
+{
+}
+
+void RendererRD::SSEffects::generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers,
+	RendererRD::SSEffects::SSAORenderBuffers& p_ssao_buffers, unsigned int p_pass,
+	RID p_dest_framebuffer, const Projection& p_projection,
+	const RendererRD::SSEffects::SSAOSettings& p_settings)
+{
+}
+
+void RendererRD::SSEffects::downsample_depth(
+	Ref<RenderSceneBuffersRD> p_render_buffers, unsigned int p_pass, const Projection& p_projection)
+{
+}
+
 

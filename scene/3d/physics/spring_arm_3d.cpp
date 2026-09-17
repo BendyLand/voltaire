@@ -79,3 +79,5 @@ void SpringArm3D::clear_excluded_objects() { excluded_objects.clear(); }
 real_t SpringArm3D::get_hit_length() { return current_spring_length; }
 
 
+
+void SpringArm3D::process_spring() {}

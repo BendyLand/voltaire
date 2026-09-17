@@ -698,7 +698,6 @@ void GridMap::_update_octants_callback()
 #endif
 }
 
-
 void GridMap::set_cell_scale(float p_scale)
 {
 	cell_scale = p_scale;
@@ -855,5 +854,25 @@ void GridMap::_navigation_map_changed(RID p_map)
 	}
 }
 #endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
+
+void GridMap::_debug_update() {}
+
+void GridMap::_update_octant_navigation_debug_edge_connections_mesh(GridMap::OctantKey const&) {}
+
+void GridMap::set_cell_item(Vector3i const&, int, int) {}
+
+void GridMap::_octant_exit_world(GridMap::OctantKey const&) {}
+
+void GridMap::_update_physics_bodies_characteristics() {}
+
+bool GridMap::_octant_update(GridMap::OctantKey const&) { return true; }
+
+void GridMap::_octant_transform(GridMap::OctantKey const&) {}
+
+void GridMap::_octant_enter_world(GridMap::OctantKey const&) {}
+
+void GridMap::navmesh_parse_init() {}
+
+void GridMap::_debug_update_octants() {}
 
 

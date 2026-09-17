@@ -711,3 +711,11 @@ void NavigationAgent3D::_navigation_debug_changed() { debug_path_dirty = true; }
 #endif // DEBUG_ENABLED
 
 
+
+void NavigationAgent3D::_update_navigation() {}
+
+void NavigationAgent3D::set_agent_parent(Node*) {}
+
+void NavigationAgent3D::_update_debug_path() {}
+
+void NavigationAgent3D::_trigger_waypoint_reached() {}

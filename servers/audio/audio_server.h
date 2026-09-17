@@ -150,7 +150,7 @@ public:
 
 	virtual void unregister_sample(const Ref<AudioSample>& p_sample) {}
 
-	virtual void start_sample_playback(const Ref<AudioSamplePlayback>& p_playback);
+	virtual void start_sample_playback(const Ref<AudioSamplePlayback>& p_playback) {}
 
 	virtual void stop_sample_playback(const Ref<AudioSamplePlayback>& p_playback) {}
 

@@ -297,6 +297,8 @@ void IterateIK3D::_update_bone_axis(Skeleton3D* p_skeleton, int p_index)
 #endif // TOOLS_ENABLED
 }
 
+void IterateIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
+
 void IterateIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 	IterateIK3DSetting* p_setting, const Vector3& p_destination)
 {
@@ -347,3 +349,7 @@ IterateIK3D::~IterateIK3D()
 }
 
 
+
+void IterateIK3D::_unbind_joint_limitations(int) {}
+
+void IterateIK3D::_bind_joint_limitations(int) {}

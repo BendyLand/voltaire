@@ -49,7 +49,7 @@ public:
 	RID font;
 
 	CharFXTransform();
-	~CharFXTransform();
+	~CharFXTransform() = default;
 
 	void set_transform(const Transform2D& p_transform) { transform = p_transform; }
 

@@ -53,3 +53,7 @@ Cast2DEditorPlugin::Cast2DEditorPlugin()
 }
 
 
+
+bool Cast2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+
+void Cast2DEditor::forward_canvas_draw_over_viewport(Control*) {}

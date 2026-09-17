@@ -62,3 +62,7 @@ void TileProxiesManagerDialog::update_tile_set(Ref<TileSet> p_tile_set)
 }
 
 
+
+void TileProxiesManagerDialog::_update_lists() {}
+
+void TileProxiesManagerDialog::_delete_selected_bindings() {}

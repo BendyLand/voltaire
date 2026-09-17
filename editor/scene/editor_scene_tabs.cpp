@@ -115,3 +115,5 @@ void EditorSceneTabs::_project_settings_changed()
 }
 
 
+
+void EditorSceneTabs::update_scene_tabs() {}

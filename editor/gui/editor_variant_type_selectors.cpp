@@ -59,3 +59,5 @@ void EditorVariantTypePopupMenu::_popup_base(const Rect2i& p_bounds)
 }
 
 
+
+void EditorVariantTypePopupMenu::_update_menu_icons() {}

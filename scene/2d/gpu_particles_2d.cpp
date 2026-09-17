@@ -392,7 +392,6 @@ void GPUParticles2D::_draw_emission_gizmo()
 }
 #endif
 
-
 GPUParticles2D::GPUParticles2D()
 {
 	particles = RS::get_singleton()->particles_create();
@@ -430,5 +429,9 @@ GPUParticles2D::~GPUParticles2D()
 	RS::get_singleton()->free_rid(particles);
 	RS::get_singleton()->free_rid(mesh);
 }
+
+PackedStringArray GPUParticles2D::get_configuration_warnings() const { return PackedStringArray(); }
+
+void GPUParticles2D::set_visibility_rect(const Rect2& p_visibility_rect) {}
 
 

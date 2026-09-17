@@ -63,7 +63,6 @@ class ConcavePolygonShape3D : public Shape3D
 	};
 
 protected:
-
 	virtual void _update_shape() override;
 
 public:

@@ -97,4 +97,8 @@ GodotAreaSoftBodyPair3D::GodotAreaSoftBodyPair3D(
 	area->add_constraint(this);
 }
 
+bool GodotAreaSoftBodyPair3D::setup(real_t p_step) { return true; }
+
+bool GodotAreaPair3D::setup(real_t p_step) { return true; }
+
 

@@ -274,6 +274,11 @@ void Control::_top_level_changed_on_parent()
 
 void Control::_set_anchor(Side p_side, real_t p_anchor) { set_anchor(p_side, p_anchor); }
 
+void Control::set_anchor(
+	Side p_side, real_t p_anchor, bool p_keep_offset, bool p_push_opposite_anchor)
+{
+}
+
 real_t Control::get_anchor(Side p_side) const
 {
 	ERR_READ_THREAD_GUARD_V(0);
@@ -1610,6 +1615,10 @@ Control::FocusBehaviorRecursive Control::get_focus_behavior_recursive() const
 	return data.focus_behavior_recursive;
 }
 
+void Control::add_child_notify(Node* p_child) {}
+
+void Control::remove_child_notify(Node* p_child) {}
+
 bool Control::_is_focusable() const
 {
 	bool ac_enabled = is_inside_tree() && get_tree()->is_accessibility_enabled();
@@ -1857,6 +1866,8 @@ Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 
 void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
+void Control::add_theme_font_override(const StringName& p_name, Font* rp_font) {}
+
 void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1870,7 +1881,6 @@ void Control::add_theme_color_override(const StringName& p_name, const Color& p_
 	data.theme_color_override[p_name] = p_color;
 	_notify_theme_override_changed();
 }
-
 
 Color Control::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
 {
@@ -1916,21 +1926,10 @@ void Control::remove_theme_color_override(const StringName& p_name)
 	_notify_theme_override_changed();
 }
 
-
 int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const
 {
 	return 0;
 }
-
-int Control::get_theme_font_size(const StringName& p_name, const StringName& p_theme_type) const {}
-
-Ref<Font> Control::get_theme_font(
-	const StringName& p_name, const StringName& p_theme_type) const
-{
-	Ref<Font> font = memnew(Font);
-	return font;
-}
-
 
 void Control::remove_theme_constant_override(const StringName& p_name)
 {
@@ -1981,12 +1980,6 @@ bool Control::has_theme_constant_override(const StringName& p_name) const
 	return constant != nullptr;
 }
 
-Ref<StyleBox> Control::get_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
-{
-	Ref<StyleBox> sb = memnew(StyleBox);
-	return sb;
-}
-
 bool Control::has_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
 {
 	return true;
@@ -2009,8 +2002,6 @@ int Control::get_theme_default_font_size() const
 	ERR_READ_THREAD_GUARD_V(0);
 	return data.theme_owner->get_theme_default_font_size();
 }
-
-void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
 void Control::begin_bulk_theme_override()
 {
@@ -2038,6 +2029,19 @@ void Control::set_layout_direction(Control::LayoutDirection p_direction)
 	data.layout_dir = p_direction;
 
 	propagate_notification(NOTIFICATION_LAYOUT_DIRECTION_CHANGED);
+}
+
+bool Control::is_layout_rtl() const { return false; }
+
+void Control::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
+Control* Control::make_custom_tooltip(const String& p_text) const
+{
+	Control c = Control();
+	return &c;
 }
 
 Control::LayoutDirection Control::get_layout_direction() const
@@ -2126,8 +2130,63 @@ void Control::_ensure_allocated_offset_transform()
 	data.offset_transform = memnew(Data::OffsetTransform);
 }
 
-void Control::set_v_size_flags(uint32_t p_flags) {}
+void Control::_size_changed() {}
 
-int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const {}
+void Control::_notify_theme_override_changed() {}
+
+Ref<Texture2D> Control::get_theme_icon(
+	const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<Texture2D> t = memnew(Texture2D);
+	return t;
+}
+
+void Control::set_stretch_ratio(real_t p_ratio) {}
+
+bool Control::has_theme_icon(StringName const&, StringName const&) const {}
+
+void Control::add_theme_icon_override(StringName const&, Texture2D*) {}
+
+void Control::set_shortcut_context(Node const*) {}
+
+void Control::_propagate_mouse_behavior_recursive_recursively(bool, bool) {}
+
+void Control::_propagate_focus_behavior_recursive_recursively(bool, bool) {}
+
+String Control::get_accessibility_name() const {}
+
+void Control::update_maximum_size() {}
+
+void Control::set_rotation(float) {}
+
+void Control::set_clip_contents(bool) {}
+
+void Control::remove_theme_style_override(StringName const&) {}
+
+void Control::_notification(int) {}
+
+bool Control::has_theme_color(StringName const&, StringName const&) const {}
+
+PackedStringArray Control::get_accessibility_configuration_warnings() const {}
+
+void Control::set_theme(Ref<Theme> const&) {}
+
+void Control::set_scale(Vector2 const&) {}
+
+void Control::set_pivot_offset(Vector2 const&) {}
+
+void Control::set_pivot_offset_ratio(Vector2 const&) {}
+
+void Control::set_offset_transform_visual_only(bool) {}
+
+void Control::set_offset_transform_scale(Vector2 const&) {}
+
+void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
+
+void Control::set_offset_transform_enabled(bool) {}
+
+Control::LayoutMode Control::_get_layout_mode() const {}
+
+Control* Control::_get_focus_neighbor(Side, int) {}
 
 

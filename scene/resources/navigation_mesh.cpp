@@ -296,4 +296,6 @@ void NavigationMesh::get_data(Vector<Vector3>& r_vertices, Vector<Vector<int>>& 
 	r_polygons = polygons;
 }
 
+void NavigationMesh::set_vertices(const Vector<Vector3>& p_vertices) {}
+
 

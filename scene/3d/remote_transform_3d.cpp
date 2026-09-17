@@ -89,3 +89,9 @@ RemoteTransform3D::RemoteTransform3D()
 }
 
 
+
+void RemoteTransform3D::_update_remote() {}
+
+PackedStringArray RemoteTransform3D::get_configuration_warnings() const { return PackedStringArray(); }
+
+void RemoteTransform3D::_update_cache() {}

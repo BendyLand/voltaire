@@ -77,3 +77,7 @@ void MeshLibraryEditor::_icon_size_changed(float p_value)
 }
 
 
+
+void MeshLibraryEditor::_update_mesh_items(bool, Ref<MeshLibrary>) {}
+
+void MeshLibraryEditor::_import_scene(Node*, Ref<MeshLibrary>, bool, bool) {}

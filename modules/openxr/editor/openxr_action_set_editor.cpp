@@ -86,3 +86,5 @@ void OpenXRActionSetEditor::set_focus_on_entry()
 }
 
 
+
+void OpenXRActionSetEditor::_theme_changed() {}

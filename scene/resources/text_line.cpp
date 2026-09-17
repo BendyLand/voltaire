@@ -323,4 +323,7 @@ TextLine::TextLine() { rid = TS->create_shaped_text(); }
 
 TextLine::~TextLine() { TS->free_rid(rid); }
 
+void TextLine::_shape() const {}
 
+
+TextLine::TextLine(String const&, Ref<Font> const&, int, String const&, TextServer::Direction, TextServer::Orientation) {}

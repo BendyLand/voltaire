@@ -785,3 +785,61 @@ void OpenXRCompositionLayerExtension::CompositionLayer::create_android_surface()
 #endif
 
 
+void OpenXRCompositionLayerExtension::composition_layer_set_viewport( RID p_layer, RID p_viewport, const Vector2i& p_size) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface( RID p_layer, bool p_enable, const Vector2i& p_size) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_unregister(RID p_layer) {}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap( RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle( RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_quad_size( RID p_layer, const Vector2& p_size) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_protected_content( RID p_layer, bool p_protected) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode( RID p_layer, OpenXRCompositionLayerExtension::MipmapMode p_mode) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_min_filter( RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy( RID p_layer, float p_anisotropy) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_mag_filter( RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap( RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle( RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility( RID p_layer, OpenXRCompositionLayerExtension::EyeVisibility p_visibility) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle( RID p_layer, float p_angle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius( RID p_layer, float p_radius) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle( RID p_layer, float p_angle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle( RID p_layer, float p_angle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius( RID p_layer, float p_radius) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle( RID p_layer, float p_angle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio( RID p_layer, float p_ratio) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_border_color( RID p_layer, const Color& p_color) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle( RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle( RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(RID p_layer, bool p_blend) { }
+
+void OpenXRCompositionLayerExtension::composition_layer_register(RID p_layer) { }
+
+XrCompositionLayerBaseHeader* OpenXRCompositionLayerExtension::CompositionLayer::get_composition_layer()
+{
+	XrCompositionLayerBaseHeader xclbh = XrCompositionLayerBaseHeader();
+	return &xclbh;
+}
+

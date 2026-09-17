@@ -34,6 +34,8 @@
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/margin_container.h"
+#include "scene/resources/immediate_mesh.h"
+#include "scene/resources/gradient.h"
 
 class AcceptDialog;
 class CheckBox;
@@ -567,7 +569,11 @@ public:
 
 	Control* get_surface() { return surface; }
 
-	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index);
+	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index)
+		: spatial_editor(p_spatial_editor), index(p_index)
+	{
+	}
+
 	~Node3DEditorViewport();
 };
 

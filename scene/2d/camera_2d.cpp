@@ -352,4 +352,14 @@ Camera2D::Camera2D()
 	set_hide_clip_children(true);
 }
 
+void Camera2D::_update_scroll() {}
+
+bool Camera2D::is_current() const {}
+
+void Camera2D::make_current() {}
+
+void Camera2D::clear_current() {}
+
+Transform2D Camera2D::get_camera_transform() { return Transform2D(); }
+
 

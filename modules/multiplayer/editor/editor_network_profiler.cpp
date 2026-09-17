@@ -86,3 +86,7 @@ void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)
 bool EditorNetworkProfiler::is_profiling() { return activate->is_pressed(); }
 
 
+
+void EditorNetworkProfiler::refresh_rpc_data() {}
+
+void EditorNetworkProfiler::refresh_replication_data() {}

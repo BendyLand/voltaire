@@ -66,6 +66,8 @@ void TilesEditorUtils::set_sources_lists_current(int p_current)
 	atlas_sources_lists_current = p_current;
 }
 
+void TilesEditorUtils::_thread() {}
+
 void TilesEditorUtils::set_atlas_view_transform(float p_zoom, Vector2 p_scroll)
 {
 	atlas_view_zoom = p_zoom;
@@ -155,5 +157,10 @@ bool TileMapEditorPlugin::is_editor_visible() const { return editor->is_visible_
 TileMapEditorPlugin::~TileMapEditorPlugin() { tile_map_plugin_singleton = nullptr; }
 
 TileSetEditorPlugin::~TileSetEditorPlugin() { tile_set_plugin_singleton = nullptr; }
+
+bool TilesEditorUtils::SourceNameComparator::operator()(const int& p_a, const int& p_b) const
+{
+	return p_a < p_b;
+}
 
 

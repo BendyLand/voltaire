@@ -150,4 +150,12 @@ static String _get_rpc_mode_string(MultiplayerAPI::RPCMode p_mode)
 	ERR_FAIL_V_MSG(String(), "Invalid RPC mode.");
 }
 
+void SceneRPCInterface::_process_rpc(Node*, unsigned short, int, unsigned char const*, int, int) {}
+
+Node* SceneRPCInterface::_process_get_node(int, unsigned char const*, unsigned int, int)
+{
+	Node n = Node();
+	return &n;
+}
+
 

@@ -270,6 +270,8 @@ void AnimationMixer::set_dummy(bool p_dummy) { dummy = p_dummy; }
 bool AnimationMixer::is_dummy() const { return dummy; }
 #endif // TOOLS_ENABLED
 
+void AnimationMixer::_clear_caches(bool p_clear_track_cache) {}
+
 void AnimationMixer::_init_root_motion_cache()
 {
 	root_motion_cache.loc = Vector3(0, 0, 0);
@@ -611,3 +613,5 @@ AnimationMixer::TrackCache* AnimatedValuesBackup::get_cache_copy(
 }
 
 
+
+void AnimationMixer::_animation_set_cache_update() {}

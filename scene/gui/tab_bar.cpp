@@ -870,4 +870,16 @@ void TabBar::set_deselect_enabled(bool p_enabled)
 
 bool TabBar::get_deselect_enabled() const { return deselect_enabled; }
 
+void TabBar::set_current_tab(int p_current) {}
 
+
+
+void TabBar::_update_hover() {}
+
+void TabBar::set_tab_button_icon(int, Ref<Texture2D> const&) {}
+
+void TabBar::set_tab_alignment(TabBar::AlignmentMode) {}
+
+void TabBar::set_clip_tabs(bool) {}
+
+void TabBar::ensure_tab_visible(int) {}

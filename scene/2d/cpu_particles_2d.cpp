@@ -1007,4 +1007,8 @@ CPUParticles2D::~CPUParticles2D()
 	RS::get_singleton()->free_rid(mesh);
 }
 
+void CPUParticles2D::_set_do_redraw(bool p_do_redraw) {}
+
+PackedStringArray CPUParticles2D::get_configuration_warnings() const { return PackedStringArray(); }
+
 

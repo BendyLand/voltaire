@@ -4332,3 +4332,5 @@ void Main::cleanup(bool p_force)
 }
 
 
+
+void Main::setup_boot_logo() {}

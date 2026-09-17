@@ -128,8 +128,8 @@ protected:
 	}
 
 public:
-	virtual void play() override;
 	virtual void stop() override;
+	virtual void play() override;
 	virtual bool is_playing() const override;
 
 	virtual void set_paused(bool p_paused) override;

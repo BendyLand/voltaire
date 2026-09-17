@@ -176,4 +176,22 @@ Error DocTools::load_xml(const uint8_t* p_data, int64_t p_size)
 	return OK;
 }
 
+Error DocTools::_load(Ref<XMLParser> parser) { return OK; }
+
+void DocTools::remove_doc(const String& p_class_name) {}
+
+bool DocTools::has_doc(const String& p_class_name) { return false; }
+
+void DocTools::generate(unsigned int p_flags) {}
+
+void DocTools::remove_script_doc_by_path(const String& p_path) {}
+
+void DocTools::merge_from(const DocTools& p_data) {}
+
+Error DocTools::save_classes(const String& p_default_path,
+	const HashMap<String, String>& p_class_path, bool p_use_relative_schema)
+{
+	return OK;
+}
+
 

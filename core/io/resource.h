@@ -108,6 +108,7 @@ protected:
 	virtual String _to_string();
 
 public:
+	Ref<Resource> duplicate(bool p_deep) const;
 	static Node* (*_get_local_scene_func)();		// Used by the editor.
 	static void (*_update_configuration_warning)(); // Used by the editor.
 

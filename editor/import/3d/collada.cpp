@@ -2408,4 +2408,6 @@ Error Collada::load(const String& p_path, int p_flags)
 	return OK;
 }
 
+void Collada::_parse_effect_material(XMLParser& p_parser, Collada::Effect& r_effect, String& r_id) {}
+
 

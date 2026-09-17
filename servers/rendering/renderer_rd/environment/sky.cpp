@@ -1169,4 +1169,31 @@ float SkyRD::sky_get_uv_border_size(RID p_sky)
 	return sky->uv_border_size;
 }
 
+void RendererRD::SkyRD::ReflectionData::update_reflection_data(int p_size, int p_mipmaps,
+	bool p_use_float, RID p_radiance_texture, int p_roughness_layers, bool p_use_fast_filter,
+	int p_sample_count, RenderingDeviceCommons::DataFormat p_format, float p_intensity)
+{
+}
+
+void RendererRD::SkyRD::ReflectionData::create_reflection_importance_sample(
+	bool p_use_float, int p_sample_count, unsigned int p_layers)
+{
+}
+
+void RendererRD::SkyRD::ReflectionData::create_reflection_fast_filter(bool p_use_float) {}
+
+void RendererRD::SkyRD::update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_sky,
+	double p_time, float p_step, float p_luminance_multiplier)
+{
+}
+
+void RendererRD::SkyRD::update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+	RID p_sky, const Vector3& p_cam_pos, double p_time, float p_step, float p_luminance_multiplier)
+{
+}
+
+RID RendererRD::SkyRD::SkyShader::get_default_shader_rd(bool p_wireframe) { return RID(); }
+
+RendererRD::SkyRD::SkyRD() {}
+
 

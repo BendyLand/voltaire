@@ -273,3 +273,7 @@ void CharacterBody3D::set_up_direction(const Vector3& p_up_direction)
 CharacterBody3D::CharacterBody3D() : PhysicsBody3D(PS3DE::BODY_MODE_KINEMATIC) {}
 
 
+
+void CharacterBody3D::_set_collision_direction(PhysicsServer3DTypes::MotionResult const&, CharacterBody3D::CollisionState&, CharacterBody3D::CollisionState) {}
+
+Ref<KinematicCollision3D> CharacterBody3D::_get_slide_collision(int) {}

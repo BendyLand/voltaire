@@ -176,3 +176,9 @@ void ReplicationEditor::edit(MultiplayerSynchronizer* p_sync)
 }
 
 
+
+void ReplicationEditor::_add_sync_property(String) {}
+
+void ReplicationEditor::_update_config() {}
+
+void ReplicationEditor::_pick_node_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}

@@ -60,7 +60,6 @@ class SceneTreeTimer : public RefCounted
 	bool ignore_time_scale = false;
 
 protected:
-
 public:
 	void set_time_left(double p_time);
 	double get_time_left() const;
@@ -199,7 +198,6 @@ private:
 
 	_FORCE_INLINE_ void _update_group_order(SceneTreeGroup& g);
 
-
 	Node* current_scene = nullptr;
 
 	Color debug_collisions_color;
@@ -316,9 +314,9 @@ public:
 	void _process_accessibility_changes(
 		int p_window_id); // Effectively DisplayServerEnums::WindowID
 
-	virtual void initialize() override;
-
 	virtual void iteration_prepare() override;
+
+	virtual void initialize() override;
 
 	virtual bool physics_process(double p_time) override;
 	virtual void iteration_end() override;
@@ -341,8 +339,7 @@ public:
 	void set_pause(bool p_enabled);
 	bool is_paused() const;
 	void set_suspend(bool p_enabled);
-	bool is_suspended() const
-;
+	bool is_suspended() const;
 
 #ifdef DEBUG_ENABLED
 	void set_debug_collisions_hint(bool p_enabled);

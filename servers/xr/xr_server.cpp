@@ -45,7 +45,6 @@ XRServer* XRServer::singleton = nullptr;
 
 XRServer* XRServer::get_singleton() { return singleton; }
 
-
 double XRServer::get_world_scale() const
 {
 	RenderingServer* rendering_server = RenderingServer::get_singleton();
@@ -99,10 +98,13 @@ void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer* xr_server = XRServer::get_singleton();
+	XRServer*
+ xr_server = XRServer::get_singleton();
 	ERR_FAIL_NULL(xr_server);
 	xr_server->render_state.reference_frame = p_reference_frame;
 }
+
+Transform3D XRServer::get_reference_frame() const { return Transform3D(); }
 
 void XRServer::set_camera_locked_to_origin(bool p_enable) { camera_locked_to_origin = p_enable; }
 
@@ -112,6 +114,32 @@ Ref<XRInterface> XRServer::get_primary_interface() const
 	return xri;
 }
 
+void XRServer::remove_tracker(const Ref<XRTracker>& p_tracker) {}
+
 XRServer::XRServer() { singleton = this; }
+
+void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface) {}
+
+void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
+
+Ref<XRTracker> XRServer::get_tracker(const StringName& p_name) const
+{
+	Ref<XRTracker> xpt = memnew(XRTracker);
+	return xpt;
+}
+
+void XRServer::set_render_world_scale(double p_scale) {}
+
+void XRServer::remove_interface(const Ref<XRInterface>& p_interface) {}
+
+Transform3D XRServer::get_world_origin() const { return Transform3D(); }
+
+void XRServer::set_world_origin(const Transform3D& p_world_origin) {}
+
+void XRServer::_process() {}
+
+void XRServer::clear_reference_frame() {}
+
+void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
 
 

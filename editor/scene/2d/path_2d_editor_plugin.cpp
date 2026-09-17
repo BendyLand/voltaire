@@ -138,3 +138,7 @@ Path2DEditor::~Path2DEditor()
 }
 
 
+
+void Path2DEditor::_mode_selected(int) {}
+
+void Path2DEditor::_update_toolbar() {}

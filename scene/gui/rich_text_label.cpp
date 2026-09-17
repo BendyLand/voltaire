@@ -2102,7 +2102,6 @@ float RichTextLabel::get_selection_line_offset() const
 				theme_cache.line_separation;
 		}
 
-
 		// Add nested frame (e.g. table cell) offset.
 		ItemFrame* it = selection.from_frame;
 		while (it->parent_frame != nullptr) {
@@ -2374,7 +2373,8 @@ Size2 RichTextLabel::get_minimum_size() const
 
 	if (fit_content) {
 		if (!wrap_with_max_width) {
-			min_size.x = get_content_width();
+			min_size.x = get_content_width()
+;
 		}
 		min_size.y = get_content_height();
 	}
@@ -2450,14 +2450,42 @@ void RichTextLabel::menu_option(int p_option)
 	}
 }
 
-RichTextLabel::~RichTextLabel()
-{
-	_stop_thread();
-	memdelete(main);
-}
-
 void RichTextLabel::add_text(const String& p_text) {}
 
 void RichTextLabel::wait_until_finished() {}
+
+bool RichTextLabel::_validate_line_caches() { return true; }
+
+void RichTextLabel::clear() {}
+
+void RichTextLabel::_push_def_font(DefaultFont p_def_font) {}
+
+void RichTextLabel::deselect() {}
+
+void RichTextLabel::set_use_bbcode(bool) {}
+
+void RichTextLabel::select_all() {}
+
+bool RichTextLabel::search(String const&, bool, bool) { return true; }
+
+RichTextLabel::RichTextLabel(String const&) {}
+
+void RichTextLabel::push_font(Ref<Font> const&, int) {}
+
+String RichTextLabel::get_selected_text() const { return String(); }
+
+void RichTextLabel::_generate_context_menu() {}
+
+String RichTextLabel::_find_language(RichTextLabel::Item*) {return String();}
+
+float RichTextLabel::_find_click_in_line(RichTextLabel::ItemFrame*, int, Vector2 const&, int, float,
+	Vector2i const&, RichTextLabel::ItemFrame**, int*, RichTextLabel::Item**, int*, bool, bool)
+{
+	return 0.0;
+}
+
+void RichTextLabel::_apply_translation() {}
+
+void RichTextLabel::append_text(String const&) {}
 
 

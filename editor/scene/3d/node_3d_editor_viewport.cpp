@@ -103,10 +103,6 @@ void ViewportNavigationControl::_notification(int p_what)
 	}
 }
 
-
-
-
-
 void ViewportNavigationControl::set_viewport(Node3DEditorViewport* p_viewport)
 {
 	viewport = p_viewport;
@@ -120,7 +116,6 @@ void ViewportRotationControl::_notification(int p_what)
 			_draw();
 		}
 	} break;
-
 
 	case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
 		gizmo_activated = false;
@@ -817,8 +812,6 @@ void Node3DEditorViewport::_surface_focus_enter()
 
 void Node3DEditorViewport::_surface_focus_exit() { view_display_menu->set_disable_shortcuts(true); }
 
-
-
 void Node3DEditorViewport::_pilot_ensure_undo_session()
 {
 	if (pilot_undo_session_active || !previewing) {
@@ -839,8 +832,6 @@ void Node3DEditorViewport::_pilot_tick_undo_session(real_t p_delta)
 		_pilot_commit_undo_session();
 	}
 }
-
-
 
 bool Node3DEditorViewport::_is_nav_modifier_pressed(const String& p_name)
 {
@@ -918,8 +909,6 @@ void Node3DEditorViewport::_apply_camera_transform_to_cursor()
 	}
 	_sync_cursor_from_transform(camera->get_camera_transform());
 }
-
-
 
 void Node3DEditorViewport::_update_centered_labels()
 {
@@ -1221,9 +1210,8 @@ void Node3DEditorViewport::_load_viewport_inputs()
 
 Node3DEditorViewport::~Node3DEditorViewport() { memdelete(ruler); }
 
-//////////////////////////////////////////////////////////////
-
-void Node3DEditorViewportContainer::_update_split_drag_margin()
+void Node3DEditorViewportContainer::_update_split_drag_margin
+()
 {
 	if (view != VIEW_USE_4_VIEWPORTS && view != VIEW_USE_3_VIEWPORTS) {
 		return;
@@ -1260,5 +1248,33 @@ Node3DEditorViewportContainer::Node3DEditorViewportContainer()
 	main_split->add_child(second_split);
 	add_child(main_split);
 }
+
+void Node3DEditorViewport::register_shortcut_action(
+	const String& p_path, const String& p_name, Key p_keycode, bool p_physical)
+{
+}
+
+void Node3DEditorViewport::_compute_edit(const Point2& p_point) {}
+
+
+void ViewportRotationControl::_get_sorted_axis(Vector<ViewportRotationControl::Axis2D>&) {}
+
+void Node3DEditorViewport::_sync_cursor_from_transform(Transform3D const&) {}
+
+void ViewportNavigationControl::_update_navigation() {}
+
+void ViewportNavigationControl::_draw() {}
+
+void Node3DEditorViewport::_pilot_commit_undo_session() {}
+
+void Node3DEditorViewport::_menu_option(int) {}
+
+bool Node3DEditorViewport::_is_node_locked(Node const*) const {}
+
+int Node3DEditorViewport::get_selected_count() const {}
+
+void Node3DEditorViewport::apply_transform(Vector3, double) {}
+
+void Node3DEditorViewport::input(const Ref<InputEvent>& p_event) {}
 
 

@@ -158,3 +158,7 @@ Camera2DEditorPlugin::Camera2DEditorPlugin()
 }
 
 
+
+bool Camera2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+
+Camera2DEditor::Camera2DEditor(EditorPlugin*) {}

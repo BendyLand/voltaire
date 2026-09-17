@@ -223,6 +223,8 @@ HScrollBar* ScrollContainer::get_h_scroll_bar() { return h_scroll; }
 
 VScrollBar* ScrollContainer::get_v_scroll_bar() { return v_scroll; }
 
+PackedStringArray ScrollContainer::get_configuration_warnings() const { return PackedStringArray(); }
+
 void ScrollContainer::set_draw_focus_border(bool p_draw)
 {
 	if (draw_focus_border == p_draw) {
@@ -243,3 +245,11 @@ bool ScrollContainer::child_has_focus()
 }
 
 
+
+Size2 ScrollContainer::_get_minimum_size(bool) const {}
+
+void ScrollContainer::_cancel_drag() {}
+
+void ScrollContainer::_reposition_children() {}
+
+void ScrollContainer::ensure_control_visible(Control*) {}

@@ -72,4 +72,9 @@ void SMAA::allocate_render_targets(Ref<RenderSceneBuffersRD> p_render_buffers)
 		true, true);
 }
 
+void RendererRD::SMAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_dest_framebuffer,
+	RID p_source_color, bool p_use_srgb)
+{
+}
+
 

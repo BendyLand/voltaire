@@ -96,11 +96,11 @@ public:
 
 	real_t get_min_value() const { return _min_value; }
 
-	void set_min_value(real_t p_min);
+	void set_min_value(real_t p_min) {}
 
 	real_t get_max_value() const { return _max_value; }
 
-	void set_max_value(real_t p_max);
+	void set_max_value(real_t p_max) {}
 
 	real_t get_value_range() const { return _max_value - _min_value; }
 

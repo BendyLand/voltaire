@@ -39,6 +39,7 @@
 #include "openxr_util.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
+#include "servers/xr/xr_hand_tracker.h"
 
 #ifdef ANDROID_ENABLED
 #include "core/os/os.h"
@@ -1260,6 +1261,8 @@ void OpenXRAPI::parse_velocities(
 	}
 }
 
+XrPath OpenXRAPI::get_xr_path(const String& p_path) { return XrPath(); }
+
 String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 {
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, String());
@@ -2044,6 +2047,7 @@ float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 	ERR_FAIL_NULL_V(tracker, 0.0);
 
 	if (!running) {
+
 		return 0.0;
 	}
 
@@ -2277,5 +2281,66 @@ OpenXRAPI::OpenXRAlphaBlendModeSupport OpenXRAPI::is_environment_blend_mode_alph
 	}
 	return OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE;
 }
+
+RID OpenXRAPI::OpenXRSwapChainInfo::get_image() { return RID(); }
+
+bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool& p_should_render) { return true; }
+
+void OpenXRAPI::set_render_environment_blend_mode(XrEnvironmentBlendMode p_mode) {}
+
+void OpenXRAPI::destroy_session() {}
+
+void OpenXRAPI::update_main_swapchain_size() {}
+
+bool OpenXRAPI::setup_view_space() { return true; }
+
+void OpenXRAPI::set_render_state_render_region(const Rect2i& p_render_region) {}
+
+void OpenXRAPI::set_render_state_multiplier(double p_render_target_size_multiplier) {}
+
+void OpenXRAPI::pre_render() {}
+
+bool OpenXRAPI::pre_draw_viewport(RID p_render_target) { return true; }
+
+void OpenXRAPI::post_draw_viewport(RID p_render_target) {}
+
+RID OpenXRAPI::OpenXRSwapChainInfo::get_density_map() { return RID(); }
+
+OpenXRAPI::~OpenXRAPI() {}
+
+bool OpenXRAPI::obtain_swapchain_formats() { return true; }
+
+bool OpenXRAPI::load_supported_swapchain_formats() { return true; }
+
+bool OpenXRAPI::load_supported_reference_spaces() { return true; }
+
+bool OpenXRAPI::get_view_projection(
+	uint32_t p_view, double p_z_near, double p_z_far, Projection& p_camera_matrix)
+{
+	return true;
+}
+
+Size2 OpenXRAPI::get_play_space_bounds() const { return Size2(); }
+
+XrHandTrackerEXT OpenXRAPI::get_hand_tracker(int p_hand_index) { return XrHandTrackerEXT(); }
+
+Vector2 OpenXRAPI::get_eye_focus(uint32_t p_view, float p_aspect) { return Vector2(); }
+
+PackedStringArray OpenXRAPI::get_all_requested_extensions(XrVersion p_xr_version)
+{
+	return PackedStringArray();
+}
+
+void OpenXRAPI::end_frame() {}
+
+void OpenXRAPI::destroy_instance() {}
+
+bool OpenXRAPI::create_session() { return true; }
+
+void OpenXRAPI::cleanup_extension_wrappers() {}
+
+void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer) {}
+
+String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) const { return String(); }
 
 

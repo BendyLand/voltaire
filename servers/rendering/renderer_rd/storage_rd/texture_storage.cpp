@@ -3557,4 +3557,9 @@ uint32_t TextureStorage::render_target_get_color_usage_bits(bool p_msaa)
 	}
 }
 
+void RendererRD::TextureStorage::_render_target_allocate_sdf(
+	RendererRD::TextureStorage::RenderTarget* p_render_target)
+{
+}
+
 

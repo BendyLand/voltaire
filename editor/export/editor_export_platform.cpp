@@ -940,6 +940,20 @@ void EditorExportPlatform::get_preset_features(
 {
 }
 
+bool EditorExportPlatform::fill_log_messages(RichTextLabel* p_log, Error p_err) { return true; }
+
+Ref<EditorExportPreset> EditorExportPlatform::create_preset()
+{
+	Ref<EditorExportPreset> eep = memnew(EditorExportPreset);
+	return eep;
+}
+
+bool EditorExportPlatform::can_export(const Ref<EditorExportPreset>& p_preset, String& r_error,
+	bool& r_missing_templates, bool p_debug) const
+{
+	return true;
+}
+
 void EditorExportPlatform::get_export_options(List<ExportOption>* r_options) const {}
 
 String EditorExportPlatform::get_os_name() const { return "CustomOS"; }
@@ -973,7 +987,25 @@ Error EditorExportPlatform::export_project(const Ref<EditorExportPreset>& p_pres
 	return OK;
 }
 
-void EditorExportPlatform::get_platform_features(List<String>*
- r_features) const {}
+Error EditorExportPlatform::ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
+	const Vector<String>& p_ssh_args, const String& p_cmd_args, ProcessID* r_pid,
+	int p_port_fwd) const
+{
+	return OK;
+}
+
+void EditorExportPlatform::get_platform_features(List<String>* r_features) const {}
+
+Vector<String> EditorExportPlatform::get_forced_export_files(
+	const Ref<EditorExportPreset>& p_preset)
+{
+	return Vector<String>();
+}
+
+Error EditorExportPlatform::ssh_run_on_remote(const String& p_host, const String& p_port,
+	const Vector<String>& p_ssh_args, const String& p_cmd_args, String* r_out, int p_port_fwd) const
+{
+	return OK;
+}
 
 

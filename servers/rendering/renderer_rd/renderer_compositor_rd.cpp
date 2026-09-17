@@ -332,4 +332,4 @@ RendererCompositorRD::~RendererCompositorRD()
 	ShaderRD::set_shader_cache_res_dir(String());
 }
 
-
+RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long) { return RendererCompositorRD::BlitPipelines(); }

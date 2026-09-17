@@ -686,6 +686,8 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 		return;
 	}
 }
+void TranslationServer::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const {}
 
 TranslationServer::TranslationServer()
 {
@@ -702,4 +704,5 @@ TranslationServer::TranslationServer()
 	init_locale_info();
 }
 
+void TranslationServer::setup() {}
 

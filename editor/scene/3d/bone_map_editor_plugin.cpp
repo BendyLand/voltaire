@@ -1208,4 +1208,16 @@ void BoneMapEditor::_notification(int p_what)
 
 BoneMapEditor::BoneMapEditor(Ref<BoneMap>& p_bone_map) { bone_map = p_bone_map; }
 
+void BoneMapperButton::set_state(BoneMapState p_state) {}
+
+void BoneMapper::recreate_items() {}
+
+void BoneMapper::recreate_editor() {}
+
+void BonePicker::create_editors() {}
+
+void BoneMapEditor::fetch_objects() {}
+
+void BoneMapperItem::create_editor() {}
+
 

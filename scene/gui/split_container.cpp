@@ -290,6 +290,8 @@ void SplitContainer::_update_dragger_positions(int p_clamp_index)
 	}
 }
 
+void SplitContainer::add_child_notify(Node* p_child) {}
+
 Size2 SplitContainer::_get_minimum_size(bool p_use_desired_sizes) const
 {
 	const int sep = _get_separation();
@@ -360,7 +362,8 @@ void SplitContainer::set_dragging_enabled(bool p_enabled)
 		}
 	}
 	if (get_viewport()) {
-		get_viewport()->update_mouse_cursor_state();
+		get_viewport()->update_mouse_cursor_state()
+;
 	}
 	_resort();
 }
@@ -442,6 +445,37 @@ SplitContainer::SplitContainer(bool p_vertical)
 	SplitContainerDragger* dragger = memnew(SplitContainerDragger);
 	dragging_area_controls.push_back(dragger);
 	add_child(dragger, false, Node::INTERNAL_MODE_BACK);
+}
+
+void SplitContainer::set_split_offset(int p_offset, int p_index) {}
+
+void SplitContainer::show_grabber_icon(int) {}
+
+void SplitContainer::_update_nested_ancestors(bool) {}
+
+void SplitContainer::_update_all_nested_descendents(Control*, Control*) {}
+
+void SplitContainer::set_drag_area_margin_begin(int) {}
+
+void SplitContainer::_resort() {}
+
+void SplitContainer::_remove_valid_child(Control*) {}
+
+void SplitContainer::_remove_nested_descendent(SplitContainer*) {}
+
+void SplitContainerDragger::update_touch_dragger() {}
+
+void SplitContainerDragger::stop_dragging() {}
+
+void SplitContainerDragger::set_touch_dragger_enabled(bool) {}
+
+void SplitContainer::clamp_split_offset(int) {}
+
+void SplitContainer::_add_valid_child(Control*) {}
+
+Control::CursorShape SplitContainerMultiDragger::get_cursor_shape(const Point2& p_pos) const
+{
+	return Control::CursorShape();
 }
 
 

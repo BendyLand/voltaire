@@ -886,4 +886,23 @@ Node3D::~Node3D()
 	}
 }
 
+Transform3D Node3D::get_global_transform_interpolated()
+{
+	return Transform3D();
+}
 
+
+
+void Node3D::_update_visibility_parent(bool) {}
+
+void Node3D::set_subgizmo_selection(Ref<Node3DGizmo>, int, Transform3D) {}
+
+void Node3D::set_scale(Vector3 const&) {}
+
+void Node3D::set_rotation(Vector3 const&) {}
+
+void Node3D::_propagate_visibility_changed() {}
+
+void Node3D::_propagate_transform_changed(Node3D*) {}
+
+void Node3D::clear_subgizmo_selection() {}

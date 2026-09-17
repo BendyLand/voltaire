@@ -53,6 +53,11 @@ bool ConcavePolygonShape2D::_edit_is_selected_on_click(
 	return false;
 }
 
+Vector<Vector2> ConcavePolygonShape2D::get_segments() const
+{
+	return Vector<Vector2>();
+}
+
 void ConcavePolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
 	Vector<Vector2> s = get_segments();
@@ -111,3 +116,5 @@ ConcavePolygonShape2D::ConcavePolygonShape2D()
 }
 
 
+
+void ConcavePolygonShape2D::set_segments(Vector<Vector2> const&) {}

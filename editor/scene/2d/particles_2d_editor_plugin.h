@@ -85,8 +85,8 @@ protected:
 	Label* error_message = nullptr;
 	TextureType browsing_texture_type = TEXTURE_TYPE_MASK;
 
-	virtual void _menu_callback(int p_idx) override;
 	virtual void _add_menu_options(PopupMenu* p_menu) override;
+	virtual void _menu_callback(int p_idx) override;
 
 	void _validate_textures();
 	void _mask_img_path_line_edit_text_changed(const String& p_text);
@@ -135,9 +135,9 @@ public:
 class CPUParticles2DEditorPlugin : public Particles2DEditorPlugin
 {
 protected:
-	Node* _convert_particles() override;
-
 	void _generate_emission_mask() override;
+
+	Node* _convert_particles() override;
 
 public:
 	CPUParticles2DEditorPlugin();

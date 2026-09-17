@@ -66,7 +66,9 @@ class MaterialEditor : public Control
 		Ref<Texture2D> box_icon;
 		Ref<Texture2D> quad_icon;
 		Ref<Texture2D> checkerboard;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	// 2D canvas materials.
 	SubViewportContainer* vc_2d = nullptr;
@@ -111,8 +113,11 @@ protected:
 	void gui_input(const Ref<InputEvent>& p_event);
 
 public:
+	void set_autohide_buttons(bool p_autohide);
+
 	static Ref<ShaderMaterial> make_shader_material(
 		const Ref<Material>& p_from, bool p_copy_params = true);
+	void edit(Ref<Material> p_material, const Ref<Environment>& p_env);
 	MaterialEditor();
 };
 

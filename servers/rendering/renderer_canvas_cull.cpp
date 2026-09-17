@@ -2813,7 +2813,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 			item->xform_prev = item->xform_curr;                                                   \
 		}                                                                                          \
 	}                                                                                              \
-	/* and now for any in the transform list (being actively interpolated), */                     \
+	/* and now
+for any in the transform list (being actively interpolated), */                     \
 	/* keep the previous transform value up to date and ready for next tick */                     \
 	if (p_process) {                                                                               \
 		for (unsigned int n = 0; n < _interpolation_data.m_list_curr->size(); n++) {               \
@@ -2887,5 +2888,7 @@ RendererCanvasCull::~RendererCanvasCull()
 	memfree(z_last_list);
 	_canvas_cull_singleton = nullptr;
 }
+
+void RendererCanvasCull::finalize() {}
 
 

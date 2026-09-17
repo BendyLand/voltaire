@@ -110,3 +110,5 @@ Shape3D::~Shape3D()
 }
 
 
+
+Ref<ArrayMesh> Shape3D::get_debug_mesh() {}

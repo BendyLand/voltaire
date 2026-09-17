@@ -80,3 +80,5 @@ SkeletonModification2DPhysicalBones::SkeletonModification2DPhysicalBones()
 SkeletonModification2DPhysicalBones::~SkeletonModification2DPhysicalBones() {}
 
 
+
+void SkeletonModification2DPhysicalBones::_physical_bone_update_cache(int) {}

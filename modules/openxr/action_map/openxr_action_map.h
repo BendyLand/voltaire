@@ -48,8 +48,7 @@ public:
 
 	void clear_interaction_profiles(); // Remove all our interaction profiles
 
-	int
-	get_interaction_profile_count() const; // Retrieve the number of interaction profiles we have
+	int get_interaction_profile_count() const; // Retrieve the number of interaction profiles we have
 	Ref<OpenXRInteractionProfile> find_interaction_profile(
 		const String& p_path) const; // Find an interaction profile by path
 	Ref<OpenXRInteractionProfile> get_interaction_profile(
@@ -75,7 +74,7 @@ public:
 	// TODO add validation to display in the interface that checks if we have action sets with the
 	// same name or if we have interaction profiles for the same path
 
-	~OpenXRActionMap();
+	~OpenXRActionMap() = default;
 };
 
 

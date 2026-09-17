@@ -299,3 +299,7 @@ void EditorAudioMeterNotches::_draw_audio_notches()
 }
 
 
+
+void EditorAudioBuses::_rebuild_buses() {}
+
+void EditorAudioBuses::_load_default_layout() {}

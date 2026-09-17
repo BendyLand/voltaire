@@ -259,3 +259,7 @@ void InputEventConfigurationDialog::set_allowed_input_types(int p_type_masks)
 }
 
 
+
+void InputEventConfigurationDialog::_set_event(Ref<InputEvent> const&, Ref<InputEvent> const&, bool) {}
+
+void InputEventConfigurationDialog::_update_input_list() {}

@@ -242,7 +242,7 @@ public:
 
 	uint64_t get_elapsed_time(ElapsedTime p_time) const { return elapsed_time[p_time]; }
 
-	GodotSpace2D();
+	GodotSpace2D() = default;
 	~GodotSpace2D();
 };
 

@@ -248,3 +248,5 @@ void NavigationLink3D::_link_update_transform()
 }
 
 
+
+void NavigationLink3D::_update_debug_mesh() {}

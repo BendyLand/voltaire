@@ -156,4 +156,10 @@ void GradientTexture2DEditor::set_texture(Ref<GradientTexture2D>& p_texture)
 	texture_editor_rect->set_texture(p_texture);
 }
 
+void GradientTexture2DEdit::set_texture(Ref<GradientTexture2D>&) {}
+
+void GradientTexture2DEdit::set_snap_count(int) {}
+
+void GradientTexture2DEdit::gui_input(const Ref<InputEvent>& p_event) {}
+
 

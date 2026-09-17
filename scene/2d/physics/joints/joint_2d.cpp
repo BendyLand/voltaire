@@ -105,4 +105,7 @@ Joint2D::~Joint2D()
 	PhysicsServer2D::get_singleton()->free_rid(joint);
 }
 
+void Joint2D::_update_joint(bool p_only_free) {}
 
+
+void Joint2D::_disconnect_signals() {}

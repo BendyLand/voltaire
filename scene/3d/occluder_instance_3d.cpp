@@ -476,3 +476,7 @@ OccluderInstance3D::OccluderInstance3D() {}
 OccluderInstance3D::~OccluderInstance3D() {}
 
 
+
+void OccluderInstance3D::set_occluder(Ref<Occluder3D> const&) {}
+
+void OccluderInstance3D::_bake_node(Node*, Vector<Vector3>&, Vector<int>&) {}

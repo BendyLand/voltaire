@@ -179,4 +179,10 @@ Vector2 OpenXRCompositionLayerEquirect::intersects_ray(
 	return Vector2(u, v);
 }
 
+Ref<Mesh> OpenXRCompositionLayerEquirect::_create_fallback_mesh()
+{
+	Ref<Mesh> m = memnew(Mesh);
+	return m;
+}
+
 

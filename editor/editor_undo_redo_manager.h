@@ -71,8 +71,6 @@ private:
 
 	History* _get_newest_undo();
 
-protected:
-
 public:
 	History& get_or_create_history(int p_idx);
 	void force_fixed_history();

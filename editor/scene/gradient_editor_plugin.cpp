@@ -120,3 +120,9 @@ void GradientEditor::set_gradient(const Ref<Gradient>& p_gradient)
 }
 
 
+
+void GradientEdit::set_snap_count(int) {}
+
+void GradientEdit::set_gradient(Ref<Gradient> const&) {}
+
+void GradientEdit::set_color(int, Color const&) {}

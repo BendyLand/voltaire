@@ -89,6 +89,15 @@ static const Image::Format BETSY_TO_IMAGE_FORMAT[BETSY_FORMAT_MAX] = {
 	Image::FORMAT_BPTC_RGBFU,
 };
 
+void BetsyCompressor::init() {}
+
+void BetsyCompressor::finish() {}
+
+Error BetsyCompressor::_compress(BetsyFormat p_format, Image* r_img)
+{
+	return OK;
+}
+
 void BetsyCompressor::_thread_exit()
 {
 	exit = true;

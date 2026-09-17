@@ -45,4 +45,14 @@ ToneMapper::~ToneMapper()
 	}
 }
 
+void RendererRD::ToneMapper::tonemapper(
+	RID p_source_color, RID p_dst_framebuffer, const TonemapSettings& p_settings)
+{
+}
+
+void RendererRD::ToneMapper::tonemapper_subpass(long p_subpass, RID p_framebuffer,
+	long p_render_pass, const RendererRD::ToneMapper::TonemapSettings& p_settings)
+{
+}
+
 

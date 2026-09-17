@@ -435,7 +435,6 @@ void SceneTreeEditor::set_update_when_invisible(bool p_enable)
 	_update_tree();
 }
 
-
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
 
 void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_marked_node,
@@ -450,7 +449,6 @@ void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_mark
 void SceneTreeDialog::_cancel() { hide(); }
 
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
-
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
 
@@ -578,5 +576,27 @@ void SceneTreeEditor::NodeCache::clear()
 	current_pinned_node = nullptr;
 	current_has_pin = false;
 }
+
+void SceneTreeEditor::_update_tree(bool p_scroll_to_selected) {}
+
+void SceneTreeEditor::_update_if_clean() {}
+
+bool SceneTreeEditor::_update_filter(TreeItem*, bool) { return true; }
+
+void SceneTreeEditor::_update_selection(TreeItem*) {}
+
+void SceneTreeEditor::_rmb_select(Vector2 const&, MouseButton) {}
+
+void SceneTreeEditor::NodeCache::remove(Node*, bool) {}
+
+TreeItem* SceneTreeEditor::_find(TreeItem*, NodePath const&)
+{
+	TreeItem ti = TreeItem(this->tree);
+	return &ti;
+}
+
+void SceneTreeEditor::clear_cache() {}
+
+void SceneTreeDialog::set_valid_types(Vector<StringName> const&) {}
 
 

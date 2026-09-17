@@ -115,6 +115,8 @@ void EditorSpinSlider::_value_input_hidden()
 
 bool EditorSpinSlider::is_read_only() const { return read_only; }
 
+void EditorSpinSlider::set_read_only(bool p_enable) {}
+
 bool EditorSpinSlider::is_flat() const { return flat; }
 
 bool EditorSpinSlider::is_grabbing() const { return grabbing_grabber || grabbing_spinner; }
@@ -127,3 +129,9 @@ void EditorSpinSlider::set_deferred_drag_mode_enabled(bool p_enabled)
 bool EditorSpinSlider::is_deferred_drag_mode_enabled() const { return deferred_drag_mode; }
 
 
+
+void EditorSpinSlider::_evaluate_input_text() {}
+
+void EditorSpinSlider::set_control_state(EditorSpinSlider::ControlState) {}
+
+void EditorSpinSlider::_ensure_value_input() {}

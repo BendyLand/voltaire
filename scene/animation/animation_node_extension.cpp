@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "animation_node_extension.h"
+#include "scene/animation/animation_tree.h"
 
 AnimationNode::NodeTimeInfo AnimationNodeExtension::_process(ProcessState& p_process_state,
 	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
@@ -48,7 +49,6 @@ double AnimationNodeExtension::get_remaining_time(
 {
 	return _array_to_node_time_info(p_node_info).get_remain(p_break_loop);
 }
-
 
 AnimationNode::NodeTimeInfo AnimationNodeExtension::_array_to_node_time_info(
 	const PackedFloat32Array& p_node_info)
@@ -79,6 +79,19 @@ PackedFloat64Array AnimationNodeExtension::_playback_info_to_array(
 	playback_info_array.push_back(p_playback_info.weight);
 
 	return playback_info_array;
+}
+
+void AnimationRootNode::_remove_node(Ref<AnimationNode> const&) {}
+
+AnimationNode::NodeTimeInfo AnimationNode::_pre_process(
+	AnimationNode::ProcessState&, AnimationNodeInstance&, AnimationMixer::PlaybackInfo const&, bool)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+void AnimationNode::get_argument_options(
+	StringName const&, int, List<String, DefaultAllocator>*) const
+{
 }
 
 
