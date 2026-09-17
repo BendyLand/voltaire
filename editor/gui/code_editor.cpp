@@ -410,6 +410,8 @@ void CodeTextEditor::remove_find_replace_bar()
 	find_replace_bar = nullptr;
 }
 
+void CodeTextEditor::trigger_history_save_on_navigate() {}
+
 void CodeTextEditor::set_indent_using_spaces(bool p_use_spaces)
 {
 	text_editor->set_indent_using_spaces(p_use_spaces);
