@@ -1418,8 +1418,6 @@ bool Control::has_point(const Point2& p_point) const
 	return Rect2(Point2(), get_size()).has_point(p_point);
 }
 
-bool Control::has_theme_icon(const StringName& p_name, const StringName& p_theme_type) const {}
-
 void Control::set_mouse_filter(MouseFilter p_filter) {}
 
 Control::MouseFilter Control::get_mouse_filter() const
@@ -1857,6 +1855,8 @@ Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 }
 #endif // TOOLS_ENABLED
 
+void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
+
 void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1871,6 +1871,12 @@ void Control::add_theme_color_override(const StringName& p_name, const Color& p_
 	_notify_theme_override_changed();
 }
 
+
+Color Control::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
+{
+	return Color();
+}
+
 void Control::add_theme_constant_override(const StringName& p_name, int p_constant)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1883,6 +1889,24 @@ void Control::remove_theme_font_size_override(const StringName& p_name)
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_font_size_override.erase(p_name);
 	_notify_theme_override_changed();
+}
+
+int Control::get_theme_font_size(const StringName& p_name, const StringName& p_theme_type) const
+{
+	return 0;
+}
+
+Ref<StyleBox> Control::get_theme_stylebox(
+	const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<StyleBox> sb = memnew(StyleBox);
+	return sb;
+}
+
+Ref<Font> Control::get_theme_font(const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<Font> font = memnew(Font);
+	return font;
 }
 
 void Control::remove_theme_color_override(const StringName& p_name)
@@ -2101,5 +2125,9 @@ void Control::_ensure_allocated_offset_transform()
 
 	data.offset_transform = memnew(Data::OffsetTransform);
 }
+
+void Control::set_v_size_flags(uint32_t p_flags) {}
+
+int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const {}
 
 

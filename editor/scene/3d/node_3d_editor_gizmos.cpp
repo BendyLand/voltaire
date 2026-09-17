@@ -565,6 +565,34 @@ EditorNode3DGizmo::~EditorNode3DGizmo()
 	clear();
 }
 
+void EditorNode3DGizmoPlugin::create_handle_material(
+	const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon)
+{
+	Ref<StandardMaterial3D> handle_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+
+	handle_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	handle_material->set_flag(StandardMaterial3D::FLAG_USE_POINT_SIZE, true);
+	Ref<Texture2D> handle_t = p_icon.is_valid()
+								  ? p_icon
+								  : EditorNode::get_singleton()->get_editor_theme()->get_icon(
+										SNAME("Editor3DHandle"), EditorStringName(EditorIcons));
+	handle_material->set_point_size(handle_t->get_width());
+	handle_material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, handle_t);
+	handle_material->set_albedo(Color(1, 1, 1));
+	handle_material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
+	handle_material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
+	handle_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+	handle_material->set_on_top_of_alpha();
+	if (p_billboard) {
+		handle_material->set_billboard_mode(StandardMaterial3D::BILLBOARD_ENABLED);
+		handle_material->set_on_top_of_alpha();
+	}
+	handle_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+
+	materials[p_name] = Vector<Ref<StandardMaterial3D>>();
+	materials[p_name].push_back(handle_material);
+}
+
 void EditorNode3DGizmoPlugin::add_material(const String& p_name, Ref<StandardMaterial3D> p_material)
 {
 	materials[p_name] = Vector<Ref<StandardMaterial3D>>();

@@ -248,6 +248,8 @@ TextServer::OverrunBehavior Button::get_text_overrun_behavior() const { return o
 
 String Button::get_text() const { return text; }
 
+void Button::set_text(const String& p_text) {}
+
 TextServer::AutowrapMode Button::get_autowrap_mode() const { return autowrap_mode; }
 
 uint32_t Button::get_autowrap_trim_flags() const { return autowrap_flags_trim; }

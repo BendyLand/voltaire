@@ -41,6 +41,8 @@ bool BaseButton::is_pressing() const { return status.press_attempt; }
 
 bool BaseButton::is_pressed() const { return toggle_mode ? status.pressed : status.press_attempt; }
 
+void BaseButton::set_pressed(bool p_pressed) {}
+
 bool BaseButton::is_hovered() const { return status.hovering; }
 
 BaseButton::DrawMode BaseButton::get_draw_mode() const
@@ -87,6 +89,20 @@ bool BaseButton::has_point(const Point2& p_point) const
 	ERR_READ_THREAD_GUARD_V(false);
 	Rect2 rect = Rect2(Point2(), get_size()).grow(theme_cache.click_margin);
 	return rect.has_area() && rect.has_point(p_point);
+}
+
+void BaseButton::set_pressed_no_signal(bool p_pressed) {}
+
+void BaseButton::set_toggle_mode(bool p_on)
+{
+	// Make sure to set 'pressed' to false if we are not in toggle mode
+	if (!p_on) {
+		set_pressed(false);
+	}
+	queue_accessibility_update();
+
+	toggle_mode = p_on;
+	update_configuration_warnings();
 }
 
 bool BaseButton::is_toggle_mode() const { return toggle_mode; }
