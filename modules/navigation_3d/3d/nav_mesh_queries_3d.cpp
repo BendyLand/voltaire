@@ -1191,4 +1191,6 @@ void NavMeshQueries3D::simplify_path_segment(int p_start_inx, int p_end_inx,
 	}
 }
 
+void NavMeshQueries3D::_query_task_push_back_point_with_metadata(NavMeshPathQueryTask3D& p_query_task,
+	const Vector3& p_point, const Nav3D::Polygon* p_point_polygon) {}
 

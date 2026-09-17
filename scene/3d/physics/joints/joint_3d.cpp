@@ -130,4 +130,6 @@ Joint3D::~Joint3D()
 	PhysicsServer3D::get_singleton()->free_rid(joint);
 }
 
+void Joint3D::_update_joint(bool p_only_free) {}
+
 

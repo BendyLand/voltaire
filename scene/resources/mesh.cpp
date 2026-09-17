@@ -1110,4 +1110,9 @@ void Mesh::set_blend_shape_name(int p_idx, const StringName& p_name) {}
 
 AABB Mesh::get_aabb() const { return AABB(); }
 
+Ref<TriangleMesh> Mesh::generate_triangle_mesh() const
+{
+	Ref<TriangleMesh> tm = memnew(TriangleMesh);
+	return tm;
+}
 

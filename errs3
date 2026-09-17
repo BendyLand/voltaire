@@ -1,100 +1,3 @@
-      6 vtable for AcceptDialog
-      6 Viewport::_set_size(Vector2i const&, int, Vector2 const&, bool)
-      6 typeinfo for FontVariation
-      6 TabBar::set_current_tab(int)
-      6 SkeletonModifier3D::get_configuration_warnings() const
-      6 RenderSceneBuffersRD::create_texture_from_format(StringName const&, StringName const&, RenderingDeviceCommons::TextureFormat const&, RenderingDevice::TextureView, bool)
-      6 RendererRD::CopyEffects::copy_to_rect(RID, RID, Rect2i const&, bool, bool, bool, bool, bool, bool)
-      6 ProjectList::update_dock_menu()
-      6 OptionButton::_select(int, bool)
-      6 OpenXRAPI::OpenXRSwapChainInfo::get_image()
-      6 OpenXRAPI::get_xr_path(String const&)
-      6 Node::_emit_editor_state_changed()
-      6 NavRegion2D::request_sync()
-      6 Mesh::generate_triangle_mesh() const
-      6 LineEdit::_shape()
-      6 Label::set_horizontal_alignment(HorizontalAlignment)
-      6 Joint3D::_update_joint(bool)
-      6 Joint2D::_update_joint(bool)
-      6 ImporterMesh::get_faces() const
-      6 GraphEdit::set_zoom_custom(float, Vector2 const&)
-      6 GradientTexture2D::_queue_update()
-      6 EditorToaster::popup_str(String const&, EditorToaster::Severity, String const&)
-      6 DockTabContainer::get_dock(int) const
-      6 CurveEdit::set_selected_index(int)
-      6 CPUParticles3D::_set_redraw(bool)
-      6 AnimationRootNode::_add_node(Ref<AnimationNode> const&)
-      6 AnimationNode::add_input(String const&)
-      6 AcceptDialog::_cancel_pressed()
-      5 XRServer::set_primary_interface(Ref<XRInterface> const&)
-      5 World3D::get_space() const
-      5 Window::is_layout_rtl() const
-      5 Viewport::set_input_as_handled()
-      5 ThemeItemImportTree::_store_selected_item(TreeItem*)
-      5 TextureRect::set_stretch_mode(TextureRect::StretchMode)
-      5 TextureButton::_set_texture(Ref<Texture2D>*, Ref<Texture2D> const&)
-      5 TextServerAdvanced::full_copy(TextServerAdvanced::ShapedTextDataAdvanced*)
-      5 TextParagraph::_shape_lines() const
-      5 TextLine::_shape() const
-      5 SplitContainer::set_split_offset(int, int)
-      5 SpinBox::_update_text(bool)
-      5 Skeleton3D::_force_update_all_bone_transforms() const
-      5 Skeleton2D::_update_bone_setup()
-      5 ShaderRD::_compile_version_end(ShaderRD::Version*, int)
-      5 ScriptEditorDebugger::_send_debug_mute_audio_msg(bool)
-      5 RichTextLabel::_push_def_font(RichTextLabel::DefaultFont)
-      5 RenderingDeviceGraph::_add_command_to_graph(RenderingDeviceGraph::ResourceTracker**, RenderingDeviceGraph::ResourceUsage*, unsigned int, int, RenderingDeviceGraph::RecordedCommand*)
-      5 RendererSceneRenderRD::_process_compositor_effects(RenderingServerEnums::CompositorEffectCallbackType, RenderDataRD const*)
-      5 RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::_get_shader_variant(unsigned short) const
-      5 RendererRD::Resolve::resolve_depth(RID, RID, Vector2i, int)
-      5 ProjectManager::_open_selected_projects_check_warnings()
-      5 ProjectDialog::show_dialog(bool, bool)
-      5 PopupPanel::_update_child_rects() const
-      5 Popup::_close_pressed()
-      5 ParallaxBackground::_update_scroll()
-      5 OptionButton::set_item_icon(int, Ref<Texture2D> const&)
-      5 OpenXRAPI::OpenXRSwapChainInfo::acquire(bool&)
-      5 OpenXRActionMap::add_interaction_profile(Ref<OpenXRInteractionProfile> const&)
-      5 NoiseTexture3D::_queue_update()
-      5 NoiseTexture2D::_queue_update()
-      5 Node::_move_child(Node*, int, bool)
-      5 Node3D::get_global_transform_interpolated()
-      5 Node3DEditorViewport::register_shortcut_action(String const&, String const&, Key, bool)
-      5 Node3DEditorViewport::_compute_edit(Vector2 const&)
-      5 NavObstacle2D::request_sync()
-      5 NavMeshQueries3D::_query_task_push_back_point_with_metadata(NavMeshQueries3D::NavMeshPathQueryTask3D&, Vector3 const&, Nav3D::Polygon const*)
-      5 NavMeshQueries2D::_query_task_push_back_point_with_metadata(NavMeshQueries2D::NavMeshPathQueryTask2D&, Vector2 const&, Nav2D::Polygon const*)
-      5 NavLink2D::request_sync()
-      5 NavigationPathQueryResult3D::reset()
-      5 NavigationPathQueryResult2D::reset()
-      5 NavAgent2D::request_sync()
-      5 Label3D::_queue_update()
-      5 JoltJoint3D::_shift_reference_frames(Vector3 const&, Vector3 const&, Transform3D&, Transform3D&)
-      5 JoltArea3D::_notify_bodies_updated(bool)
-      5 Joint3D::_disconnect_signals()
-      5 ItemList::set_item_icon(int, Ref<Texture2D> const&)
-      5 ItemList::deselect_all()
-      5 ImageTexture::update(Ref<Image> const&)
-      5 HTTPRequest::_defer_done(int, int, Vector<String> const&, Vector<unsigned char> const&)
-      5 HighlightedLabel::reset_highlights()
-      5 GraphNode::_port_pos_update()
-      5 FileDialog::_update_option_controls()
-      5 FileDialog::update_filters()
-      5 EditorSettings::_rename_setting(String const&, String const&)
-      5 EditorSettings::erase(String const&)
-      5 EditorRunBar::stop_playing()
-      5 DocTools::_load(Ref<XMLParser>)
-      5 DisplayServerX11::_send_window_event(DisplayServerX11::WindowData const&, DisplayServerEnums::WindowEvent)
-      5 DisplayServerWayland::_send_window_event(DisplayServerEnums::WindowEvent, int)
-      5 CSGShape3D::_make_dirty(bool)
-      5 CreateDialog::_update_search()
-      5 CPUParticles3D::_particles_process(double)
-      5 CPUParticles2D::_set_do_redraw(bool)
-      5 Control::set_stretch_ratio(float)
-      5 Control::add_theme_font_override(StringName const&, Font*)
-      5 ConfigFile::has_section_key(String const&, String const&) const
-      5 ConfigFile::erase_section_key(String const&, String const&)
-      5 ConcavePolygonShape2D::get_segments() const
       5 CollisionShape3D::set_shape(Ref<Shape3D> const&)
       5 CodeTextEditor::trigger_history_save_on_navigate()
       5 CodeEdit::is_line_bookmarked(int) const
@@ -136,7 +39,6 @@
       4 RetargetModifier3D::_reset_child_skeleton_poses()
       4 ResourceLoader::resource_changed_emit(Resource*)
       4 ResourceLoader::LoadToken::clear()
-      4 RenderingDevice::render_pipeline_create(RID, long, long, RenderingDeviceCommons::RenderPrimitive, RenderingDeviceCommons::PipelineRasterizationState const&, RenderingDeviceCommons::PipelineMultisampleState const&, RenderingDeviceCommons::PipelineDepthStencilState const&, RenderingDeviceCommons::PipelineColorBlendState const&, unsigned int, unsigned int, Vector<RenderingDeviceCommons::PipelineSpecializationConstant> const&)
       4 RenderingDevice::draw_list_bind_index_array(long, RID)
       4 RendererViewport::_draw_3d(RendererViewport::Viewport*)
       4 RendererRD::ToneMapper::tonemapper(RID, RID, RendererRD::ToneMapper::TonemapSettings const&)
@@ -161,6 +63,7 @@
       4 LimitAngularVelocityModifier3D::_make_joints_dirty()
       4 JoltSoftBody3D::_update_mass()
       4 JoltSoftBody3D::_update_damping()
+      4 Joint3D::_disconnect_signals()
       4 ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode)
       4 ItemList::set_fixed_column_width(int)
       4 GridMap::_debug_update()
@@ -246,6 +149,7 @@
       3 SceneTreeEditor::_update_filter(TreeItem*, bool)
       3 RigidBody3D::set_mass(float)
       3 ResourceLoaderText::open(Ref<FileAccess>, bool)
+      3 RenderingDevice::render_pipeline_create(RID, long, long, RenderingDeviceCommons::RenderPrimitive, RenderingDeviceCommons::PipelineRasterizationState const&, RenderingDeviceCommons::PipelineMultisampleState const&, RenderingDeviceCommons::PipelineDepthStencilState const&, RenderingDeviceCommons::PipelineColorBlendState const&, unsigned int, unsigned int, Vector<RenderingDeviceCommons::PipelineSpecializationConstant> const&)
       3 RenderingDevice::~RenderingDevice()
       3 RenderingDeviceGraph::_group_barriers_for_render_commands(RenderingDeviceDriver::CommandBufferID, RenderingDeviceGraph::RecordedCommandSort const*, unsigned int, bool)
       3 RenderingDevice::compute_list_add_barrier(long)
@@ -283,7 +187,6 @@
       3 JoltJobSystem::Job::queue()
       3 JoltArea3D::can_monitor(JoltArea3D const&) const
       3 JoltArea3D::body_shape_exited(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
-      3 Joint2D::_disconnect_signals()
       3 IterateIK3D::_unbind_joint_limitations(int)
       3 ItemList::set_fixed_icon_size(Vector2i const&)
       3 ItemList::select(int, bool)
@@ -386,7 +289,6 @@
       2 vtable for OpenXRActionMap
       2 vtable for MenuBar
       2 vtable for GPUParticles2D
-      2 vtable for FontVariation
       2 vtable for FoldableContainer
       2 vtable for CollisionShape3D
       2 vtable for ChainIK3DGizmoPlugin
@@ -623,6 +525,7 @@
       2 JoltArea3D::can_monitor(JoltBody3D const&) const
       2 JoltArea3D::body_shape_entered(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
       2 JoltArea3D::area_shape_exited(JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
+      2 Joint2D::_disconnect_signals()
       2 ItemList::set_current(int)
       2 ItemList::ensure_current_is_visible()
       2 ItemList::clear()
@@ -841,6 +744,7 @@
       1 vtable for RendererCanvasRenderRD::CanvasShaderData
       1 vtable for RemoteTransform3D
       1 vtable for RemoteTransform2D
+      1 vtable for PhysicsDirectSpaceState3D
       1 vtable for PackedSceneEditorTranslationParserPlugin
       1 vtable for OpenXRSelectInteractionProfileDialog
       1 vtable for OpenXRSelectActionDialog

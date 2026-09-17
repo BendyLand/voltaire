@@ -420,4 +420,7 @@ bool ItemList::is_scroll_hint_tiled() { return tile_scroll_hint; }
 
 ItemList::~ItemList() {}
 
+void ItemList::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
+
+void ItemList::deselect_all() {}
 

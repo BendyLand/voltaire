@@ -44,4 +44,5 @@ Resolve::~Resolve()
 	}
 }
 
+void Resolve::resolve_depth(RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples) {}
 

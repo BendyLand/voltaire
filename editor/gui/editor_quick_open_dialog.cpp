@@ -653,4 +653,5 @@ void QuickOpenResultGridItem::remove_highlight()
 	name->remove_theme_color_override(SceneStringName(font_color));
 }
 
+void HighlightedLabel::reset_highlights() {}
 

@@ -605,7 +605,6 @@ void Node::_set_name_nocheck(const StringName& p_name) { data.name = p_name; }
 
 static SafeRefCount node_hrcr_count;
 
-
 void Node::queue_free() {}
 
 void Node::init_node_hrcr() { node_hrcr_count.init(1); }
@@ -1820,17 +1819,14 @@ Node::~Node()
 #endif
 }
 
+String Node::get_description(bool p_show_not_in_tree) const { return String(); }
 
-String Node::get_description(bool p_show_not_in_tree) const
-{
-	return String();
-}
-
-void Node::set_name(const StringName& p_name)
-{
-	data.name = p_name;
-}
+void Node::set_name(const StringName& p_name) { data.name = p_name; }
 
 void Node::propagate_notification(int p_notification) {}
+
+void Node::_emit_editor_state_changed() {}
+
+void Node::_move_child(Node* p_child, int p_index, bool p_ignore_end) {}
 
 

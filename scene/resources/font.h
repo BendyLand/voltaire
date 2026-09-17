@@ -502,8 +502,8 @@ protected:
 	virtual void reset_state() override;
 
 public:
-	virtual void set_base_font(const Ref<Font>& p_font);
 	virtual Ref<Font> get_base_font() const;
+	virtual void set_base_font(const Ref<Font>& p_font);
 	virtual Ref<Font> _get_base_font_or_default() const;
 
 	virtual void set_variation_embolden(float p_strength);

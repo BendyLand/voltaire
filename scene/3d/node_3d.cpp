@@ -886,4 +886,9 @@ Node3D::~Node3D()
 	}
 }
 
+Transform3D Node3D::get_global_transform_interpolated()
+{
+	return Transform3D();
+}
+
 

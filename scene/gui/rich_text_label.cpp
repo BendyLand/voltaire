@@ -2461,5 +2461,6 @@ bool RichTextLabel::_validate_line_caches()
 
 void RichTextLabel::clear() {}
 
+void RichTextLabel::_push_def_font(DefaultFont p_def_font) {}
 
 

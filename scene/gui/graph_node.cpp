@@ -289,4 +289,5 @@ GraphNode::GraphNode()
 	set_focus_mode(FOCUS_ACCESSIBILITY);
 }
 
+void GraphNode::_port_pos_update() {}
 

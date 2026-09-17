@@ -96,4 +96,6 @@ TextureRect::~TextureRect() {}
 
 void TextureRect::set_texture(const Ref<Texture2D>& p_tex) {}
 
+void TextureRect::set_stretch_mode(StretchMode p_mode) {}
+
 

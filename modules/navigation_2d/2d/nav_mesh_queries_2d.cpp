@@ -1042,4 +1042,6 @@ void NavMeshQueries2D::simplify_path_segment(int p_start_inx, int p_end_inx,
 	}
 }
 
+void NavMeshQueries2D::_query_task_push_back_point_with_metadata(NavMeshPathQueryTask2D& p_query_task,
+	const Vector2& p_point, const Nav2D::Polygon* p_point_polygon) {}
 

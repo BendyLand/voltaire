@@ -163,4 +163,5 @@ Vector<Ref<Image>> NoiseTexture3D::get_data() const
 
 Image::Format NoiseTexture3D::get_format() const { return format; }
 
+void NoiseTexture3D::_queue_update() {}
 

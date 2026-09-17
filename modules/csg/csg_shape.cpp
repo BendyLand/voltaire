@@ -1497,4 +1497,5 @@ CSGPolygon3D::CSGPolygon3D()
 	path = nullptr;
 }
 
+void CSGShape3D::_make_dirty(bool p_parent_removing) {}
 

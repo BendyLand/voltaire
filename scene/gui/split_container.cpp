@@ -444,4 +444,6 @@ SplitContainer::SplitContainer(bool p_vertical)
 	add_child(dragger, false, Node::INTERNAL_MODE_BACK);
 }
 
+void SplitContainer::set_split_offset(int p_offset, int p_index) {}
+
 

@@ -119,4 +119,6 @@ Ref<XRInterface> XRServer::get_primary_interface() const
 
 XRServer::XRServer() { singleton = this; }
 
+void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface) {}
+
 

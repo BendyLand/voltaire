@@ -310,4 +310,5 @@ bool JoltArea3D::shape_exited(const JPH::BodyID& p_body_id, const JPH::SubShapeI
 		   area_shape_exited(p_body_id, p_other_shape_id, p_self_shape_id);
 }
 
+void JoltArea3D::_notify_bodies_updated(bool p_priority_changed) {}
 

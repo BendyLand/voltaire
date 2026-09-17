@@ -171,4 +171,5 @@ bool EditorRunBar::is_movie_maker_enabled() const { return movie_maker_enabled; 
 
 HBoxContainer* EditorRunBar::get_buttons_container() { return main_hbox; }
 
+void EditorRunBar::stop_playing() {}
 

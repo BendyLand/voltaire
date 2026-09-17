@@ -649,4 +649,5 @@ bool GraphEdit::is_node_hover_valid(
 	return true;
 }
 
+void GraphEdit::set_zoom_custom(float p_zoom, const Vector2& p_center) {}
 

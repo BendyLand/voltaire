@@ -1135,4 +1135,6 @@ ShaderRD::~ShaderRD()
 	}
 }
 
+void ShaderRD::_compile_version_end(Version *p_version, int p_group) {}
+
 

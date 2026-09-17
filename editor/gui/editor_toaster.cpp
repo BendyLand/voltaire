@@ -86,6 +86,9 @@ void EditorToaster::_draw_progress(Control* panel)
 	}
 }
 
+void EditorToaster::popup_str(const String& p_message, Severity p_severity,
+	const String& p_tooltip) {}
+
 void EditorToaster::close(Control* p_control)
 {
 	ERR_FAIL_COND(!toasts.has(p_control));

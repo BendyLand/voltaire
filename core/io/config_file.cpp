@@ -32,6 +32,13 @@
 #include "core/io/file_access_encrypted.h"
 #include "core/string/string_builder.h"
 
+void ConfigFile::erase_section_key(const String& p_section, const String& p_key) {}
+
+bool ConfigFile::has_section_key(const String& p_section, const String& p_key) const
+{
+	return true;
+}
+
 Error ConfigFile::save(const String& p_path)
 {
 	Error err;

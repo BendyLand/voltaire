@@ -1862,6 +1862,8 @@ Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 
 void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
+void Control::add_theme_font_override(const StringName& p_name, Font* rp_font) {}
+
 void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -2120,5 +2122,7 @@ Ref<Texture2D> Control::get_theme_icon(const StringName& p_name, const StringNam
 	Ref<Texture2D> t = memnew(Texture2D);
 	return t;
 }
+
+void Control::set_stretch_ratio(real_t p_ratio) {}
 
 

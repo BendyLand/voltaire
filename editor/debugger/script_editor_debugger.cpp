@@ -585,4 +585,6 @@ void ScriptEditorDebugger::update_layout(EditorDock::DockLayout p_layout, int p_
 	}
 }
 
+void ScriptEditorDebugger::_send_debug_mute_audio_msg(bool p_mute) {}
+
 

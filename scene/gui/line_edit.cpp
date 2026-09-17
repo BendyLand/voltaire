@@ -1274,4 +1274,5 @@ void LineEdit::select(int p_from, int p_to) {}
 
 void LineEdit::delete_text(int p_from_column, int p_to_column) {}
 
+void LineEdit::_shape() {}
 

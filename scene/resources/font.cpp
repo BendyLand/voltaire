@@ -992,3 +992,8 @@ SystemFont::SystemFont()
 SystemFont::~SystemFont() {}
 
 
+void FontVariation::_update_rids() const {}
+
+void FontVariation::reset_state() {}
+
+

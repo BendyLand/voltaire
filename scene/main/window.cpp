@@ -1712,4 +1712,5 @@ Window* Window::get_parent_visible_window() const {}
 
 void Window::_notify_theme_override_changed() {}
 
+bool Window::is_layout_rtl() const {}
 

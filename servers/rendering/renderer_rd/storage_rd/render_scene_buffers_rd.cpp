@@ -855,4 +855,10 @@ float RenderSceneBuffersRD::get_luminance_multiplier() const
 	return (force_hdr || can_be_storage) ? 1.0 : 2.0;
 }
 
+RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
+	const RD::TextureFormat& p_texture_format, RD::TextureView p_view,
+	bool p_unique)
+{
+	return RID();
+}
 

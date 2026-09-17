@@ -606,8 +606,7 @@ void CPUParticles3D::_notification(int p_what)
 					ptr[6] = t.basis.rows[1][2];
 					ptr[7] = t.origin.y;
 					ptr[8] = t.basis.rows[2][0];
-					ptr[9]
- = t.basis.rows[2][1];
+					ptr[9] = t.basis.rows[2][1];
 					ptr[10] = t.basis.rows[2][2];
 					ptr[11] = t.origin.z;
 				}
@@ -629,5 +628,9 @@ CPUParticles3D::~CPUParticles3D()
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free_rid(multimesh);
 }
+
+void CPUParticles3D::_set_redraw(bool p_redraw) {}
+
+void CPUParticles3D::_particles_process(double p_delta) {}
 
 

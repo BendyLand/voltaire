@@ -236,4 +236,5 @@ RID NoiseTexture2D::get_rid() const
 
 Ref<Image> NoiseTexture2D::get_image() const { return image; }
 
+void NoiseTexture2D::_queue_update() {}
 

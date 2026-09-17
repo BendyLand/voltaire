@@ -332,7 +332,6 @@ private:
 		int32_t unique_scene_id = UNIQUE_SCENE_ID_UNASSIGNED;
 
 		mutable NodePath* path_cache = nullptr;
-
 	};
 
 	Data data;

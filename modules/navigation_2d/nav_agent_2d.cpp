@@ -271,4 +271,5 @@ NavAgent2D::NavAgent2D() : sync_dirty_request_list_element(this) {}
 
 NavAgent2D::~NavAgent2D() { cancel_sync_request(); }
 
+void NavAgent2D::request_sync() {}
 

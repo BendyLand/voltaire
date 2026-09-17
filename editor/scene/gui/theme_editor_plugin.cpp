@@ -586,4 +586,6 @@ void ThemeEditor::_preview_tabs_resized()
 
 bool ThemeEditorPlugin::can_auto_hide() const { return theme_editor->theme.is_null(); }
 
+void ThemeItemImportTree::_store_selected_item(TreeItem* p_tree_item) {}
+
 

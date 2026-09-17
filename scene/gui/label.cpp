@@ -729,4 +729,5 @@ Label::~Label()
 	paragraphs.clear();
 }
 
+void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {}
 

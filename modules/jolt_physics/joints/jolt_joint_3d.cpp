@@ -34,8 +34,6 @@
 #include "../spaces/jolt_space_3d.h"
 #include "jolt_joint_3d.h"
 
-
-
 void JoltJoint3D::_wake_up_bodies()
 {
 	if (body_a != nullptr) {
@@ -115,7 +113,8 @@ JoltJoint3D::~JoltJoint3D()
 		body_a->remove_joint(this);
 	}
 
-	if (body_b != nullptr) {
+	if (body_b != nullptr)
+{
 		body_b->remove_joint(this);
 	}
 
@@ -228,6 +227,11 @@ void JoltJoint3D::destroy()
 	}
 
 	jolt_ref = nullptr;
+}
+
+void JoltJoint3D::_shift_reference_frames(const Vector3& p_linear_shift,
+	const Vector3& p_angular_shift, Transform3D& r_shifted_ref_a, Transform3D& r_shifted_ref_b)
+{
 }
 
 

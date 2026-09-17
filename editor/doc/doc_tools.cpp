@@ -176,4 +176,8 @@ Error DocTools::load_xml(const uint8_t* p_data, int64_t p_size)
 	return OK;
 }
 
+Error DocTools::_load(Ref<XMLParser> parser)
+{
+	return OK;
+}
 

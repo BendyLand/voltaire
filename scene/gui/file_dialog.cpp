@@ -731,4 +731,8 @@ FileDialog::~FileDialog()
 
 void FileDialog::invalidate() {}
 
+void FileDialog::_update_option_controls() {}
+
+void FileDialog::update_filters() {}
+
 

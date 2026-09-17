@@ -260,4 +260,6 @@ NavRegion2D::~NavRegion2D()
 	iteration = Ref<NavRegionIteration2D>();
 }
 
+void NavRegion2D::request_sync() {}
+
 

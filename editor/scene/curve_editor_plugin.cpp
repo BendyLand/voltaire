@@ -500,4 +500,5 @@ void CurveEditor::set_curve(const Ref<Curve>& p_curve) { curve_editor_rect->set_
 
 bool CurvePreviewGenerator::handles(const String& p_type) const { return p_type == "Curve"; }
 
+void CurveEdit::set_selected_index(int p_index) {}
 

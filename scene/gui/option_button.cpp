@@ -294,4 +294,8 @@ PackedStringArray OptionButton::get_configuration_warnings() const
 }
 #endif
 
+void OptionButton::_select(int p_which, bool p_emit) {}
+
+void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
+
 
