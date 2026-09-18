@@ -273,6 +273,12 @@ void TextEdit::Text::invalidate_all_lines()
 	tab_size_dirty = false;
 }
 
+void TextEdit::_selection_changed(int p_caret) {}
+
+void TextEdit::set_text_direction(TextDirection p_text_direction) {}
+
+void TextEdit::Text::invalidate_cache(int p_line, bool p_text_changed) {}
+
 void TextEdit::Text::invalidate_font()
 {
 	if (!is_dirty) {

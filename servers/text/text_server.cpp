@@ -41,6 +41,8 @@
 
 TextServerManager* TextServerManager::singleton = nullptr;
 
+void TextServerManager::add_interface(const Ref<TextServer>& p_interface) {}
+
 int TextServerManager::get_interface_count() const { return interfaces.size(); }
 
 Ref<TextServer> TextServerManager::get_interface(int p_index) const

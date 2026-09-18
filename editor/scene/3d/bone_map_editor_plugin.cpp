@@ -1209,3 +1209,4 @@ void BoneMapEditor::_notification(int p_what)
 BoneMapEditor::BoneMapEditor(Ref<BoneMap>& p_bone_map) { bone_map = p_bone_map; }
 
 
+void BoneMapperButton::set_state(BoneMapState p_state) {}

@@ -117,8 +117,12 @@ Ref<XRInterface> XRServer::get_primary_interface() const
 	return xri;
 }
 
+void XRServer::remove_tracker(const Ref<XRTracker>& p_tracker) {}
+
 XRServer::XRServer() { singleton = this; }
 
 void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface) {}
+
+void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
 
 

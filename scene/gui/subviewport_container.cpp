@@ -100,4 +100,5 @@ SubViewportContainer::SubViewportContainer()
 	set_focus_mode(FOCUS_CLICK);
 }
 
+void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_event) {}
 

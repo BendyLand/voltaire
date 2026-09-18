@@ -240,7 +240,7 @@ public:
 	void end_frame();
 
 	XRServer();
-	~XRServer();
+	~XRServer() = default;
 };
 
 #define XR XRServer

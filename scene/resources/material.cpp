@@ -2019,6 +2019,8 @@ void BaseMaterial3D::set_texture_filter(TextureFilter p_filter)
 
 BaseMaterial3D::TextureFilter BaseMaterial3D::get_texture_filter() const { return texture_filter; }
 
+void BaseMaterial3D::set_point_size(float p_point_size) {}
+
 float BaseMaterial3D::get_point_size() const { return point_size; }
 
 Vector3 BaseMaterial3D::get_uv1_scale() const { return uv1_scale; }

@@ -2097,6 +2097,8 @@ void WaylandThread::_wl_pointer_on_motion(void* data, struct wl_pointer* wl_poin
 	}
 }
 
+void WaylandThread::_wl_pointer_on_frame(void* data, struct wl_pointer* wl_pointer) {}
+
 void WaylandThread::_wl_pointer_on_axis(
 	void* data, struct wl_pointer* wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
 {

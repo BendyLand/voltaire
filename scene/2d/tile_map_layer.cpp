@@ -887,6 +887,12 @@ Rect2 TileMapLayer::get_rect(bool& r_changed) const
 #endif
 	return rect_cache;
 }
+HashMap<Vector2i, TileSet::TerrainsPattern> TileMapLayer::terrain_fill_constraints(
+	const Vector<Vector2i>& p_to_replace, int p_terrain_set,
+	const RBSet<TerrainConstraint>& p_constraints) const
+{
+	return HashMap<Vector2i, TileSet::TerrainsPattern>();
+}
 
 HashMap<Vector2i, TileSet::TerrainsPattern> TileMapLayer::terrain_fill_connect(
 	const Vector<Vector2i>& p_coords_array, int p_terrain_set, int p_terrain,

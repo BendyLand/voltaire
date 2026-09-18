@@ -84,6 +84,8 @@ void RetargetModifier3D::set_enable_flags(uint32_t p_enable_flag)
 
 uint32_t RetargetModifier3D::get_enable_flags() const { return enable_flags; }
 
+void RetargetModifier3D::_reset_child_skeleton_poses() {}
+
 void RetargetModifier3D::_notification(int p_what)
 {
 	switch (p_what) {

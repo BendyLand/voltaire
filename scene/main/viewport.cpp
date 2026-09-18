@@ -2546,4 +2546,7 @@ bool Viewport::_set_size(const Size2i& p_size, const int p_view_count, const Siz
 
 void Viewport::set_input_as_handled() {}
 
+bool Viewport::is_input_handled() const {}
+
+void Viewport::_camera_3d_set(Camera3D* p_camera) {}
 

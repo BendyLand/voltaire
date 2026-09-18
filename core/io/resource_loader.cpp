@@ -135,6 +135,8 @@ void ResourceFormatLoader::get_dependencies(
 	}
 }
 
+void ResourceLoader::LoadToken::clear() {}
+
 ResourceLoader::LoadToken::~LoadToken() { clear(); }
 
 Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_original_path,
@@ -256,6 +258,8 @@ void ResourceLoader::_load_threaded_request_setup_user_token(
 	user_load_tokens[p_path] = p_token;
 	print_lt("REQUEST: user load tokens: " + itos(user_load_tokens.size()));
 }
+
+void ResourceLoader::resource_changed_emit(Resource* p_source) {}
 
 Ref<Resource> ResourceLoader::load(
 	const String& p_path, const String& p_type_hint, CacheMode p_cache_mode, Error* r_error)

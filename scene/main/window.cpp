@@ -1021,6 +1021,8 @@ void Window::set_wrap_controls(bool p_enable)
 	}
 }
 
+void Window::child_controls_changed() {}
+
 bool Window::is_wrapping_controls() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
@@ -1430,6 +1432,12 @@ void Window::remove_theme_color_override(const StringName& p_name)
 	ERR_MAIN_THREAD_GUARD;
 	theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
+}
+
+Ref<StyleBox> Window::get_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
+{
+	Ref<StyleBox> sb = memnew(StyleBox);
+	return sb;
 }
 
 void Window::remove_theme_constant_override(const StringName& p_name)

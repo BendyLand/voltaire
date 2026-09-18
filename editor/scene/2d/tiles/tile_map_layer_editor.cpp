@@ -504,8 +504,7 @@ void TileMapLayerEditor::_tile_map_layer_changed() { tile_map_layer_changed_need
 
 bool TileMapLayerEditor::forward_canvas_gui_input(const Ref<InputEvent>& p_event)
 {
-	if (ED_IS_SHORTCUT("tiles_editor/select_next_layer", p_event) && p_event->
-is_pressed()) {
+	if (ED_IS_SHORTCUT("tiles_editor/select_next_layer", p_event) && p_event->is_pressed()) {
 		_layers_select_next_or_previous(true);
 		return true;
 	}
@@ -545,4 +544,5 @@ TileMapLayerEditor::~TileMapLayerEditor()
 	}
 }
 
+void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {}
 

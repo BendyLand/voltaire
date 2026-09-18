@@ -1,0 +1,306 @@
+// File: editor/rename_dialog.cpp
+String RenameDialog::_substitute(const String& p_string, const Node* p_node, int p_index) { return String(); }
+
+// File: scene/3d/remote_transform_3d.cpp
+void RemoteTransform3D::_update_remote() {}
+
+// File: scene/2d/remote_transform_2d.cpp
+void RemoteTransform2D::_update_remote() {}
+
+// File: editor/plugins/polygon_2d_editor_plugin.cpp
+void Polygon2DEditor::_update_zoom_and_pan(bool p_zoom_at_mouse) {}
+
+// File: scene/gui/option_button.cpp
+void OptionButton::clear() {}
+
+// File: modules/openxr/extensions/openxr_composition_layer_extension.cpp
+void OpenXRCompositionLayerExtension::composition_layer_set_viewport( RID p_layer, RID p_viewport, const Vector2i& p_size) { }
+
+// File: scene/2d/node_2d.cpp
+void Node2D::_update_transform() {}
+
+// File: scene/2d/node_2d.cpp
+void Node2D::set_transform(const Transform2D& p_transform) {}
+
+// File: modules/navigation/nav_region_3d.cpp
+NavRegion3D::~NavRegion3D() {}
+
+// File: modules/navigation/nav_map_3d.cpp
+NavMap3D::~NavMap3D() {}
+
+// File: modules/navigation/nav_map_2d.cpp
+NavMap2D::~NavMap2D() {}
+
+// File: scene/3d/navigation_agent_3d.cpp
+void NavigationAgent3D::_update_navigation() {}
+
+// File: scene/3d/navigation_agent_3d.cpp
+void NavigationAgent3D::set_agent_parent(Node* p_parent) {}
+
+// File: scene/2d/navigation_agent_2d.cpp
+void NavigationAgent2D::_update_navigation() {}
+
+// File: scene/2d/navigation_agent_2d.cpp
+void NavigationAgent2D::set_agent_parent(Node* p_parent) {}
+
+// File: scene/3d/limit_angular_velocity_modifier_3d.cpp
+void LimitAngularVelocityModifier3D::_make_joints_dirty() {}
+
+// File: modules/jolt_physics/objects/jolt_soft_body_3d.cpp
+void JoltSoftBody3D::_update_mass() {}
+
+// File: modules/jolt_physics/objects/jolt_soft_body_3d.cpp
+void JoltSoftBody3D::_update_damping() {}
+
+// File: scene/3d/physics/joint_3d.cpp
+void Joint3D::_disconnect_signals() {}
+
+// File: scene/gui/item_list.cpp
+void ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode p_mode) {}
+
+// File: scene/gui/item_list.cpp
+void ItemList::set_fixed_column_width(int p_width) {}
+
+// File: modules/gridmap/grid_map.cpp
+void GridMap::_debug_update() {}
+
+// File: scene/gui/file_dialog.cpp
+void FileDialog::update_dir() {}
+
+// File: scene/gui/file_dialog.cpp
+void FileDialog::_push_history() {}
+
+// File: editor/export/export_template_manager.cpp
+String ExportTemplateManager::_get_item_path(TreeItem* p_item) const { return String(); }
+
+// File: editor/settings/editor_settings.cpp
+void EditorSettings::notify_changes() {}
+
+// File: editor/settings/editor_feature_profile.cpp
+Error EditorFeatureProfile::save_to_file(const String& p_path) { return OK; }
+
+// File: editor/settings/editor_feature_profile.cpp
+void EditorFeatureProfileManager::_update_profile_list(const String& p_selected) {}
+
+// File: editor/gui/editor_dock_manager.cpp
+void EditorDockManager::add_dock(EditorDock* p_dock) {}
+
+// File: editor/gui/editor_dock.cpp
+void EditorDock::_emit_changed() {}
+
+// File: editor/gui/editor_create_dialog.cpp
+void CreateDialog::set_base_type(const String& p_type) {}
+
+// File: editor/gui/editor_create_dialog.cpp
+void CreateDialog::popup_create(bool p_dont_clear_selection, bool p_replace_mode, const String& p_select_type, const String& p_desired_name) { }
+
+// File: scene/gui/control.cpp
+bool Control::has_theme_icon(const StringName& p_name, const StringName& p_theme_type) const { return false; }
+
+// File: scene/gui/control.cpp
+void Control::add_theme_icon_override(const StringName& p_name, const Ref<Texture2D>& p_icon) {}
+
+// File: editor/gui/code_editor.cpp
+void CodeTextEditor::_zoom_to(float p_zoom) {}
+
+// File: scene/gui/code_edit.cpp
+void CodeEdit::set_line_as_breakpoint(int p_line, bool p_breakpointed) {}
+
+// File: scene/gui/code_edit.cpp
+void CodeEdit::set_line_as_bookmarked(int p_line, bool p_bookmarked) {}
+
+// File: scene/gui/code_edit.cpp
+void CodeEdit::set_code_hint(const String& p_hint) {}
+
+// File: scene/gui/code_edit.cpp
+bool CodeEdit::is_line_breakpointed(int p_line) const { return false; }
+
+// File: scene/resources/2d/capsule_shape_2d.cpp
+void CapsuleShape2D::_update_shape() {}
+
+// File: scene/main/canvas_item.cpp
+Transform2D CanvasItem::get_canvas_transform() const { return Transform2D(); }
+
+// File: servers/camera_feed.cpp
+void CameraFeed::set_rgb_image(const Ref<Image>& p_image) {}
+
+// File: scene/3d/bone_twist_disperser_3d.cpp
+void BoneTwistDisperser3D::_make_joints_dirty(int p_joint) {}
+
+// File: scene/3d/physics/area_3d.cpp
+void Area3D::_initialize_wind() {}
+
+// File: scene/animation/animation_blend_space_2d.cpp
+void AnimationNodeBlendSpace2D::_update_triangles() {}
+
+// File: servers/xr_server.cpp
+Ref<XRPositionalTracker> XRServer::get_tracker(const StringName& p_name) const
+{
+	return Ref<XRPositionalTracker>();
+}
+
+// File: scene/3d/xr_body_modifier_3d.cpp
+void XRBodyModifier3D::_get_joint_data() {}
+
+// File: scene/resources/2d/world_boundary_shape_2d.cpp
+void WorldBoundaryShape2D::_update_shape() {}
+
+// File: scene/main/window.cpp
+void Window::set_visible(bool p_visible) {}
+
+// File: scene/main/window.cpp
+Ref<Font> Window::get_theme_font(const StringName& p_name, const StringName& p_theme_type) const { return Ref<Font>(); }
+
+// File: scene/main/window.cpp
+Window* Window::get_from_id(DisplayServer::WindowID p_id) { return nullptr; }
+
+// File: platform/linuxbsd/wayland/wayland_thread.cpp
+void WaylandThread::_window_hover(int p_window) {}
+
+// File: editor/plugins/tiles/tile_data_default_editor.cpp
+// Note: Missing vtable indicates the translation unit is excluded from the build,
+// or the key virtual function / destructor is missing definition:
+TileDataDefaultEditor::~TileDataDefaultEditor() {}
+
+// File: scene/2d/skeleton_modification_2d_twoboneik.cpp
+SkeletonModification2DTwoBoneIK::~SkeletonModification2DTwoBoneIK() {}
+
+// File: scene/2d/skeleton_modification_2d_physicalbones.cpp
+SkeletonModification2DPhysicalBones::~SkeletonModification2DPhysicalBones() {}
+
+// File: scene/2d/skeleton_modification_2d_lookat.cpp
+SkeletonModification2DLookAt::~SkeletonModification2DLookAt() {}
+
+// File: scene/2d/skeleton_modification_2d_jiggle.cpp
+SkeletonModification2DJiggle::~SkeletonModification2DJiggle() {}
+
+// File: scene/2d/skeleton_modification_2d_ccdik.cpp
+SkeletonModification2DCCDIK::~SkeletonModification2DCCDIK() {}
+
+// File: servers/rendering/renderer_rd/storage_rd/material_storage.cpp
+RendererRD::MaterialStorage::TexBlitShaderData::~TexBlitShaderData() {}
+
+// File: scene/resources/image_texture.cpp
+ImageTexture::~ImageTexture() {}
+
+// File: editor/gui/editor_file_dialog.cpp
+EditorFileDialog::~EditorFileDialog() {}
+
+// File: platform/macos/export/export_platform_apple_embedded.cpp
+EditorExportPlatformAppleEmbedded::~EditorExportPlatformAppleEmbedded() {}
+
+// File: modules/audio_recorder/audio_stream_playback_microphone.cpp
+AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {}
+
+// File: scene/3d/visible_on_screen_notifier_3d.cpp
+void VisibleOnScreenEnabler3D::_update_enable_mode(bool p_enable) {}
+
+// File: scene/2d/visible_on_screen_notifier_2d.cpp
+void VisibleOnScreenEnabler2D::_update_enable_mode(bool p_enable) {}
+
+// File: scene/main/viewport.cpp
+bool Viewport::is_visible_subviewport() const { return false; }
+
+// File: scene/main/viewport.cpp
+void Viewport::gui_perform_drop_at(const Vector2& p_pos, Control* p_control) {}
+
+// File: scene/main/viewport.cpp
+Window* Viewport::get_base_window() { return nullptr; }
+
+// File: editor/plugins/version_control_editor_plugin.cpp
+void VersionControlEditorPlugin::_refresh_remote_list() {}
+
+// File: scene/resources/image_texture.cpp
+// Note: Emitted with ImageTexture vtable; resolving ImageTexture compilation fixes RTTI emission.
+
+// File: scene/gui/tree.cpp
+void Tree::set_column_title(int p_column, const String& p_title) {}
+
+// File: scene/gui/tree.cpp
+void Tree::item_selected(int p_column, TreeItem* p_item, bool p_selected) {}
+
+// File: scene/gui/tree.cpp
+void TreeItem::_change_tree(Tree* p_tree) {}
+
+// File: scene/gui/tree.cpp
+void Tree::deselect_all() {}
+
+// File: editor/plugins/tiles/tile_set_scenes_collection_source_editor.cpp
+void TileSetScenesCollectionSourceEditor::_update_action_buttons() {}
+
+// File: editor/plugins/tiles/tile_map_layer_editor_plugin.cpp
+TileMapLayer* TileMapLayerSubEditorPlugin::_get_edited_layer() const { return nullptr; }
+
+// File: scene/2d/tile_map_layer.cpp
+void TileMapLayer::_build_runtime_update_tile_data_for_cell( CellData& r_cell_data, bool p_use_kinematic_bodies, bool p_runtime_tile_data_cache) { }
+
+// File: scene/2d/tile_map.cpp
+int TileMap::get_cell_alternative_tile( int p_layer, const Vector2i& p_coords, bool p_use_proxies) const { return -1; }
+
+// File: scene/2d/tile_map.cpp
+void TileMap::_emit_changed() {}
+
+// File: scene/resources/2d/tile_data.cpp
+void TileData::notify_tile_data_properties_should_change() {}
+
+// File: scene/gui/texture_progress_bar.cpp
+void TextureProgressBar::_set_texture( Ref<Texture2D>* p_texture, const Ref<Texture2D>& p_new_texture) { }
+
+// File: scene/gui/tab_container.cpp
+Popup* TabContainer::get_popup() const { return nullptr; }
+
+// File: scene/gui/tab_container.cpp
+Control* TabContainer::_as_tab_control(Node* p_node) const { return nullptr; }
+
+// File: scene/main/sub_viewport.cpp
+void SubViewport::_internal_set_size( const Vector2i& p_size, int p_subwindow_size, bool p_keep_camera) { }
+
+// File: scene/gui/sub_viewport_container.cpp
+bool SubViewportContainer::_is_propagated_in_gui_input(const Ref<InputEvent>& p_event) { return false; }
+
+// File: scene/3d/spring_bone_collision_3d.cpp
+void SpringBoneCollision3D::set_bone(int p_bone) {}
+
+// File: scene/3d/spring_bone_collision_3d.cpp
+Skeleton3D* SpringBoneCollision3D::get_skeleton() const { return nullptr; }
+
+// File: scene/resources/shortcut.cpp
+Array Shortcut::get_events() const { return Array(); }
+
+// File: servers/rendering/renderer_rd/shader_rd.cpp
+void ShaderRD::_initialize_version(ShaderRD::Version* p_version) {}
+
+// File: servers/rendering/renderer_rd/shader_rd.cpp
+void ShaderRD::_compile_version_start(ShaderRD::Version* p_version, int p_variant) {}
+
+// File: editor/plugins/shader_file_editor_plugin.cpp
+void ShaderFileEditor::_update_options() {}
+
+// File: editor/plugins/shader_editor_plugin.cpp
+void ShaderEditorPlugin::_close_shader(int p_index) {}
+
+// File: scene/resources/2d/separation_ray_shape_2d.cpp
+void SeparationRayShape2D::_update_shape() {}
+
+// File: scene/resources/2d/segment_shape_2d.cpp
+void SegmentShape2D::_update_shape() {}
+
+// File: editor/plugins/script_editor_plugin.cpp
+void ScriptEditor::_update_history_pos(int p_pos) {}
+
+// File: editor/plugins/script_editor_plugin.cpp
+void ScriptEditor::_queue_close_tabs() {}
+
+// File: editor/plugins/script_editor_plugin.cpp
+void ScriptEditor::_menu_option(int p_option) {}
+
+// File: editor/debugger/script_editor_debugger.cpp
+void ScriptEditorDebugger::clear_inspector(bool p_clear_cache) {}
+
+// File: scene/main/scene_tree.cpp
+void SceneTree::tree_changed() {}
+
+// File: scene/main/scene_tree.cpp
+void SceneTreeTimer::release_connections() {}
+
+

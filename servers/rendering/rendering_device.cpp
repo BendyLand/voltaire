@@ -5950,4 +5950,6 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 }
 #endif
 
+void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {}
+
 

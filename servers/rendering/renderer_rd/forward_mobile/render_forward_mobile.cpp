@@ -2920,7 +2920,8 @@ void RenderForwardMobile::_geometry_instance_dependency_changed(
 		static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata)->data->dirty_dependencies =
 			true;
 	} break;
-	case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES: {
+	case
+ Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES: {
 		GeometryInstanceForwardMobile* ginstance =
 			static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata);
 		if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
@@ -3000,6 +3001,11 @@ RenderForwardMobile::~RenderForwardMobile()
 		RD::get_singleton()->free_rid(scene_state.lightmap_capture_buffer);
 		memdelete_arr(scene_state.lightmap_captures);
 	}
+}
+
+void RendererRD::CopyEffects::copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer,
+	const Rect2& p_rect, const Vector2& p_dst_size, float p_z_near, float p_z_far, bool p_dp_flip)
+{
 }
 
 

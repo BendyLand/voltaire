@@ -644,6 +644,8 @@ void AnimationTrackEditor::_add_track(int p_type)
 	pick_track->get_filter_line_edit()->grab_focus();
 }
 
+void AnimationTrackEditor::_redraw_tracks() {}
+
 int AnimationTrackEditor::_get_track_selected()
 {
 	for (int i = 0; i < track_edits.size(); i++) {

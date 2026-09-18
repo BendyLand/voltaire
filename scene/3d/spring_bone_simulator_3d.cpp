@@ -571,4 +571,6 @@ SpringBoneSimulator3D::~SpringBoneSimulator3D() { clear_settings(); }
 
 void SpringBoneSimulator3D::_make_joints_dirty(int p_index, bool p_reset) {}
 
+void SpringBoneSimulator3D::_make_gizmo_dirty() {}
+
 

@@ -597,6 +597,8 @@ bool TreeItem::is_any_collapsed(bool p_only_visible)
 	return _is_any_collapsed(p_only_visible);
 }
 
+void TreeItem::set_visible(bool p_visible) {}
+
 bool TreeItem::is_visible() { return visible; }
 
 bool TreeItem::is_visible_in_tree() const { return visible && parent_visible_in_tree; }

@@ -31,6 +31,8 @@
 #include "servers/xr/xr_controller_tracker.h"
 #include "xr_positional_tracker.h"
 
+void XRPositionalTracker::set_tracker_profile(const String& p_profile) {}
+
 String XRPositionalTracker::get_tracker_profile() const { return profile; }
 
 XRPositionalTracker::TrackerHand XRPositionalTracker::get_tracker_hand() const

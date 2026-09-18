@@ -588,4 +588,6 @@ bool ThemeEditorPlugin::can_auto_hide() const { return theme_editor->theme.is_nu
 
 void ThemeItemImportTree::_store_selected_item(TreeItem* p_tree_item) {}
 
+void ThemeEditor::_remove_preview_tab(int p_tab) {}
+
 

@@ -272,6 +272,8 @@ void ScriptEditorDebugger::_profiler_seeked()
 	debug_break();
 }
 
+void ScriptEditorDebugger::_clear_execution() {}
+
 void ScriptEditorDebugger::_export_csv()
 {
 	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);

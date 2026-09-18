@@ -84,6 +84,8 @@ Ref<Texture2D> TextureRect::get_texture() const { return texture; }
 
 TextureRect::ExpandMode TextureRect::get_expand_mode() const { return expand_mode; }
 
+void TextureRect::set_expand_mode(ExpandMode p_mode) {}
+
 TextureRect::StretchMode TextureRect::get_stretch_mode() const { return stretch_mode; }
 
 bool TextureRect::is_flipped_h() const { return hflip; }

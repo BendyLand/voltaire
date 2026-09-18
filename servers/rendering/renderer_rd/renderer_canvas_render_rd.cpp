@@ -1445,6 +1445,10 @@ uint32_t RendererCanvasRenderRD::get_pipeline_compilations(RSE::PipelineSource p
 	return shader.pipeline_compilations[p_source];
 }
 
+void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target, int p_item_count,
+	const Transform2D& p_canvas_transform_inverse, Light* p_lights, bool& r_sdf_used,
+	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info) {}
+
 void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTarget p_render_target,
 	const Transform2D& p_base_transform, Item*& r_current_clip, Light* p_lights,
 	bool& r_batch_broken, bool& r_sdf_used, Batch*& r_current_batch)
