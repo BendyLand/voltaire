@@ -326,3 +326,15 @@ Ref<OpenXRAction> OpenXRActionMap::get_action(const String& p_path) const
 
 void OpenXRActionMap::add_interaction_profile(const Ref<OpenXRInteractionProfile>& p_interaction_profile) {}
 
+
+int OpenXRActionMap::get_interaction_profile_count() const {}
+
+void OpenXRActionMap::add_action_set(Ref<OpenXRActionSet> const&) {}
+
+void OpenXRActionMap::remove_interaction_profile(Ref<OpenXRInteractionProfile> const&) {}
+
+void OpenXRActionMap::remove_action_set(Ref<OpenXRActionSet> const&) {}
+
+Ref<OpenXRInteractionProfile> OpenXRActionMap::get_interaction_profile(int) const {}
+
+Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const {}

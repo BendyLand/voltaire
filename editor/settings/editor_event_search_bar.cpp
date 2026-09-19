@@ -61,3 +61,5 @@ void EditorEventSearchBar::_notification(int p_what)
 }
 
 
+
+void EditorEventSearchBar::_value_changed() {}

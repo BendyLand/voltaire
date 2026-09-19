@@ -409,4 +409,12 @@ ResourceImporterTexture::~ResourceImporterTexture()
 	}
 }
 
+void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
+	CompressMode p_compress_mode, Image::UsedChannels p_channels,
+	Image::CompressMode p_compress_format, Image::CompressProfile p_compress_profile,
+	float p_lossy_quality, const Image::BasisUniversalPackerParams& p_basisu_params,
+	Image::BPTCFormat p_bptc_format)
+{
+}
+
 

@@ -1,13 +1,30 @@
 #!/bin/bash
 
-METHODS=( $(awk '{print $2}' errs4) )
+# METHODS=( $(awk '{print $2}' errs3) )
+# for item in "${METHODS[@]}"; do
+# 	[[ "$item" != *"::"* ]] && continue
+
+#     class="${item%%::*}"
+#     file=$(rg "class $class[^;]" -l | head -n 1)
+
+#     if [[ -n "$file" ]]; then
+#         echo "$file"
+#     fi
+# done
+
+METHODS=( $(awk '{print $2}' errs3) )
 for item in "${METHODS[@]}"; do
-	[[ "$item" != *"::"* ]] && continue
+    [[ "$item" != *"::"* ]] && continue
 
     class="${item%%::*}"
     file=$(rg "class $class[^;]" -l | head -n 1)
 
     if [[ -n "$file" ]]; then
-        echo "$file"
+        echo -e "\n// $item {}\n" >> "$file"
     fi
 done
+
+
+
+
+

@@ -86,3 +86,5 @@ EditorValidationPanel::EditorValidationPanel()
 }
 
 
+
+void EditorValidationPanel::_update() {}

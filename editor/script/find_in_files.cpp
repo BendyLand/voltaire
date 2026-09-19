@@ -485,3 +485,11 @@ void FindInFilesContainer::_on_dock_closed()
 }
 
 
+
+void FindInFilesSearch::_scan_file(String const&) {}
+
+void FindInFilesPanel::_update_replace_buttons() {}
+
+void FindInFilesPanel::_update_matches_text() {}
+
+void FindInFilesContainer::_update_bar_visibility() {}

@@ -30,9 +30,9 @@
 
 #pragma once
 
+#include "core/io/dir_access.h"
 #include "scene/gui/dialogs.h"
 #include "scene/property_list_helper.h"
-#include "core/io/dir_access.h"
 
 class DirAccess;
 class FlowContainer;
@@ -386,11 +386,11 @@ protected:
 	bool recents_changed = false;
 
 	bool _can_use_native_popup() const;
+	virtual bool _should_use_native_popup() const;
+
 	virtual void _item_menu_id_pressed(int p_option);
 
 	virtual void _dir_contents_changed() {}
-
-	virtual bool _should_use_native_popup() const;
 
 	virtual bool _should_hide_file(const String& p_file) const { return false; }
 
@@ -410,7 +410,6 @@ protected:
 	{
 		return property_helper.property_can_revert(p_name);
 	}
-
 
 #ifndef DISABLE_DEPRECATED
 	void _add_filter_bind_compat_111439(const String& p_filter, const String& p_description = "");

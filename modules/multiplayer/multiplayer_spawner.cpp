@@ -83,3 +83,7 @@ int MultiplayerSpawner::find_spawnable_scene_index_from_path(const String& p_sce
 }
 
 
+
+void MultiplayerSpawner::clear_spawnable_scenes() {}
+
+void MultiplayerSpawner::add_spawnable_scene(String const&) {}

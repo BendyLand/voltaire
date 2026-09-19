@@ -488,3 +488,7 @@ void ThemeModern::populate_shared_styles(
 }
 
 
+
+void ThemeModern::populate_standard_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+
+void ThemeModern::populate_editor_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}

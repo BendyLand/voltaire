@@ -260,11 +260,7 @@ struct _VCSort
 	}
 };
 
-
-void ProjectSettings::_queue_changed(const StringName& p_name)
-{
-	changed_settings.insert(p_name);
-}
+void ProjectSettings::_queue_changed(const StringName& p_name) { changed_settings.insert(p_name); }
 
 void ProjectSettings::_emit_changed()
 {
@@ -420,7 +416,8 @@ Error ProjectSettings::_setup(
 
 		// If we opened our package, try and load our project.
 		if (found) {
-			Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
+			Error err =
+				_load_settings_text_or_binary("res://project.godot", "res://project.binary");
 			return err;
 		}
 	}
@@ -753,7 +750,6 @@ Error ProjectSettings::save_custom(const String& p_path, const CustomMap& p_cust
 	ERR_FAIL_COND_V_MSG(
 		p_path.is_empty(), ERR_INVALID_PARAMETER, "Project settings save path cannot be empty.");
 
-
 	RBSet<_VCSort> vclist;
 	RBMap<String, List<String>> save_props;
 
@@ -928,4 +924,17 @@ bool ProjectSettings::has_editor_setting_override(const String& p_setting) const
 {
 	return has_setting(EDITOR_SETTING_OVERRIDE_PREFIX + p_setting);
 }
+
+bool ProjectSettings::has_setting(const String& p_var) const { return true; }
+
+ProjectSettings::ProjectSettings() {}
+
+ProjectSettings::~ProjectSettings() {}
+
+void ProjectSettings::load_scene_groups_cache() {}
+
+void ProjectSettings::_convert_to_last_version(int p_from_version) {}
+
+void ProjectSettings::refresh_global_class_list() {}
+
 

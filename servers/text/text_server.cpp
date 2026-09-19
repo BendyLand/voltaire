@@ -78,8 +78,6 @@ TextServerManager::~TextServerManager()
 	singleton = nullptr;
 }
 
-/*************************************************************************/
-
 bool Glyph::operator==(const Glyph& p_a) const
 {
 	return (p_a.index == index) && (p_a.font_rid == font_rid) && (p_a.font_size == font_size) &&
@@ -1254,7 +1252,5 @@ bool TextServer::is_valid_identifier(const String& p_string) const
 }
 
 bool TextServer::is_valid_letter(uint64_t p_unicode) const { return is_unicode_letter(p_unicode); }
-
-TextServer::~TextServer() {}
 
 

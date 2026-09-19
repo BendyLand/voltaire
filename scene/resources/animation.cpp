@@ -636,10 +636,7 @@ float Animation::blend_shape_track_interpolate(int p_track, double p_time, bool 
 	return ret;
 }
 
-int Animation::track_get_key_count(int p_track) const
-{
-	return 0;
-}
+int Animation::track_get_key_count(int p_track) const { return 0; }
 
 void Animation::track_remove_key_at_time(int p_track, double p_time)
 {
@@ -2296,7 +2293,8 @@ struct AnimationCompressionDataState
 		}
 		uint32_t size_bytes = size_bits / 8; // wrap to words
 		if (size_bytes % 4 != 0) {
-			size_bytes += 4 - (size_bytes % 4);
+			size_bytes += 4 -
+(size_bytes % 4);
 		}
 		return size_bytes;
 	}
@@ -3016,8 +3014,6 @@ bool Animation::inform_variant_array(int& r_min, int& r_max)
 	return true;
 }
 
-Animation::Animation() {}
-
 Animation::~Animation()
 {
 	for (uint32_t i = 0; i < tracks.size(); i++) {
@@ -3025,9 +3021,22 @@ Animation::~Animation()
 	}
 }
 
-double Animation::track_get_key_time(int p_track, int p_key_idx) const
+double Animation::track_get_key_time(int p_track, int p_key_idx) const { return 0.0; }
+
+void Animation::track_remove_key(int p_track, int p_idx) {}
+
+int Animation::track_find_key(
+	int p_track, double p_time, FindMode p_find_mode, bool p_limit, bool p_backward) const
 {
-	return 0.0;
+	return 0;
 }
 
+void Animation::_value_track_optimize(int p_idx, real_t p_allowed_velocity_err,
+	real_t p_allowed_angular_err, real_t p_allowed_precision_error)
+{
+}
 
+void Animation::compress(uint32_t p_page_size, uint32_t p_fps, float p_split_tolerance) {}
+
+
+real_t Animation::track_get_key_transition(int p_track, int p_key_idx) const { return 0.0; }

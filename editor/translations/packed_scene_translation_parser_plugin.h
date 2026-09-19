@@ -40,9 +40,9 @@ class PackedSceneEditorTranslationParserPlugin : public EditorTranslationParserP
 	HashMap<String, Vector<String>> exception_list;
 
 public:
+	virtual void get_recognized_extensions(List<String>* r_extensions) const override;
 	virtual Error parse_file(const String& p_path, Vector<Vector<String>>* r_translations) override;
 	bool match_property(const String& p_property_name, const String& p_node_type);
-	virtual void get_recognized_extensions(List<String>* r_extensions) const override;
 
 	PackedSceneEditorTranslationParserPlugin();
 };

@@ -138,3 +138,11 @@ Error ConfigFile::load_encrypted_pass(const String& p_path, const String& p_pass
 }
 
 
+
+Error ConfigFile::_internal_save(Ref<FileAccess>) {}
+
+Error ConfigFile::_internal_load(String const&, Ref<FileAccess>) {}
+
+void ConfigFile::erase_section(String const&) {}
+
+bool ConfigFile::has_section(String const&) const {}

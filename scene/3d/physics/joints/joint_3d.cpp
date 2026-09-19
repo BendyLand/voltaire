@@ -133,3 +133,5 @@ Joint3D::~Joint3D()
 void Joint3D::_update_joint(bool p_only_free) {}
 
 
+
+void Joint3D::_disconnect_signals() {}

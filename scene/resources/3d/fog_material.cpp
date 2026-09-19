@@ -120,3 +120,13 @@ FogMaterial::FogMaterial()
 FogMaterial::~FogMaterial() { RS::get_singleton()->material_set_shader(_get_material(), RID()); }
 
 
+
+void FogMaterial::set_height_falloff(float) {}
+
+void FogMaterial::set_emission(Color) {}
+
+void FogMaterial::set_edge_fade(float) {}
+
+void FogMaterial::set_density(float) {}
+
+void FogMaterial::set_albedo(Color) {}

@@ -446,3 +446,5 @@ CollisionObject3D::~CollisionObject3D()
 }
 
 
+
+void CollisionObject3D::_update_shape_data(unsigned int) {}

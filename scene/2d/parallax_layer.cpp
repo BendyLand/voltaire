@@ -94,3 +94,5 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 }
 
 
+
+void ParallaxLayer::_update_mirroring() {}

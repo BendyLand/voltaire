@@ -1242,3 +1242,11 @@ bool JoltBody3D::can_interact_with(const JoltArea3D& p_other) const
 }
 
 
+
+bool JoltBody3D::reports_all_kinematic_contacts() const {}
+
+void JoltBody3D::add_contact(JoltBody3D const*, float, int, int, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&, Vector3 const&) {}
+
+void JoltBody3D::_on_wake_up() {}
+
+void JoltBody3D::call_queries() {}

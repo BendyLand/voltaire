@@ -156,3 +156,13 @@ void BoneAttachment3D::notify_rebind_required()
 #endif // TOOLS_ENABLED
 
 
+
+Skeleton3D* BoneAttachment3D::get_skeleton() {}
+
+void BoneAttachment3D::_check_bind() {}
+
+void BoneAttachment3D::_update_external_skeleton_cache() {}
+
+void BoneAttachment3D::_check_unbind() {}
+
+void BoneAttachment3D::set_bone_idx(int const&) {}

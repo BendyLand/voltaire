@@ -299,3 +299,7 @@ void OptionButton::_select(int p_which, bool p_emit) {}
 void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
 
+
+void OptionButton::clear() {}
+
+void OptionButton::_refresh_size_cache() {}

@@ -690,4 +690,6 @@ void EditorNode3DGizmo::redraw() {}
 
 void EditorNode3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
 
+void EditorNode3DGizmo::Instance::create_instance(Node3D*, bool) {}
+
 

@@ -62,4 +62,8 @@ void TextEditor::register_editor()
 
 TextEditor::TextEditor() { add_child(code_editor); }
 
+ScriptEditorBase* TextEditor::create_editor(Ref<Resource> const&) {}
+
+void TextEditor::_validate_script() {}
+
 

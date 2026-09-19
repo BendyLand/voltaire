@@ -985,6 +985,8 @@ int SystemFont::get_spacing(TextServer::SpacingType p_spacing) const
 
 int64_t SystemFont::get_face_count() const { return face_indices.size(); }
 
+void SystemFont::_update_base_font() {}
+
 SystemFont::SystemFont()
 { /* NOP */
 }
@@ -997,3 +999,5 @@ void FontVariation::_update_rids() const {}
 void FontVariation::reset_state() {}
 
 
+
+Error FontFile::_load_bitmap_font(String const&, List<String, DefaultAllocator>*) {}

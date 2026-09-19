@@ -622,3 +622,40 @@ bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 CanvasItemEditorViewport::~CanvasItemEditorViewport() { memdelete(preview_node); }
 
 
+
+bool CanvasItemEditor::_select_click_on_item(CanvasItem*, Vector2, bool) { return true; }
+
+void CanvasItemEditor::remove_control_from_menu_panel(Control*) {}
+
+List<CanvasItem*> CanvasItemEditor::_get_edited_canvas_items(bool, bool, bool*) const
+{
+	return List<CanvasItem*>();
+}
+
+void CanvasItemEditor::_focus_selection(int) {}
+
+void CanvasItemEditor::_expand_encompassing_rect_using_children(Rect2&, Node const*, bool&, Transform2D const&, Transform2D const&, bool) {}
+
+void CanvasItemEditor::_draw_smart_snapping() {}
+
+void CanvasItemEditor::_draw_selection() {}
+
+void CanvasItemEditor::_draw_ruler_tool() {}
+
+void CanvasItemEditor::_draw_rulers() {}
+
+void CanvasItemEditor::_draw_message() {}
+
+void CanvasItemEditor::_draw_locks_and_groups(Node*, Transform2D const&, Transform2D const&) {}
+
+void CanvasItemEditor::_draw_invisible_nodes_positions(Node*, Transform2D const&, Transform2D const&) {}
+
+void CanvasItemEditor::_draw_guides() {}
+
+void CanvasItemEditor::_draw_grid() {}
+
+void CanvasItemEditor::_draw_axis() {}
+
+void CanvasItemEditor::_button_tool_select(int) {}
+
+void CanvasItemEditor::add_control_to_menu_panel(Control*) {}

@@ -454,3 +454,15 @@ ProjectManager::~ProjectManager()
 void ProjectManager::_open_selected_projects_check_warnings() {}
 
 
+
+void ProjectManager::_update_project_buttons() {}
+
+void ProjectManager::_update_list_placeholder() {}
+
+void ProjectManager::_open_selected_projects() {}
+
+void ProjectManager::_manage_project_tags() {}
+
+void ProjectManager::_add_project_tag(String const&) {}
+
+void ProjectManager::add_new_tag(String const&) {}

@@ -394,3 +394,7 @@ NavAgent3D::NavAgent3D() : sync_dirty_request_list_element(this) {}
 NavAgent3D::~NavAgent3D() { cancel_sync_request(); }
 
 
+
+void NavAgent3D::dispatch_avoidance_callback() {}
+
+bool NavAgent3D::has_avoidance_callback() const {}

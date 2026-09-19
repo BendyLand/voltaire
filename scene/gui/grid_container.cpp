@@ -42,3 +42,7 @@ Size2 GridContainer::get_minimum_size() const { return _get_minimum_size(false);
 Size2 GridContainer::get_desired_size() const { return _get_minimum_size(true); }
 
 
+
+Size2 GridContainer::_get_minimum_size(bool) const {}
+
+void GridContainer::set_columns(int) {}

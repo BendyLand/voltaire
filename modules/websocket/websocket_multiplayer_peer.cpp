@@ -290,3 +290,7 @@ void WebSocketMultiplayerPeer::disconnect_peer(int p_peer_id, bool p_force)
 void WebSocketMultiplayerPeer::close() { _clear(); }
 
 
+
+void WebSocketMultiplayerPeer::_poll_server() {}
+
+void WebSocketMultiplayerPeer::_poll_client() {}

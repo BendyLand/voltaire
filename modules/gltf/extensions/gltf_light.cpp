@@ -83,3 +83,5 @@ void GLTFLight::set_outer_cone_angle(float p_outer_cone_angle)
 }
 
 
+
+Ref<GLTFLight> GLTFLight::from_node(Light3D const*) {}

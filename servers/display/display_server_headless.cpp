@@ -66,3 +66,5 @@ DisplayServerHeadless::~DisplayServerHeadless()
 }
 
 
+
+void DisplayServerHeadless::_dispatch_input_event(Ref<InputEvent> const&) {}

@@ -51,3 +51,5 @@ BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::get_singleton()->shape_creat
 }
 
 
+
+void BoxShape3D::_update_shape() {}

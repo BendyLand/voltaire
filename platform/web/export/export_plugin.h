@@ -129,5 +129,3 @@ public:
 
 	~EditorExportPlatformWeb() = default;
 };
-
-

@@ -254,3 +254,5 @@ VoxelGI::~VoxelGI()
 }
 
 
+
+void VoxelGI::bake(Node*, bool) {}

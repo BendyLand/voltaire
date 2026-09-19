@@ -53,6 +53,8 @@ void SubViewportContainer::unhandled_input(const Ref<InputEvent>& p_event)
 	_propagate_nonpositional_event(p_event);
 }
 
+void SubViewportContainer::add_child_notify(Node* p_child) {}
+
 void SubViewportContainer::_propagate_nonpositional_event(const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
@@ -102,3 +104,5 @@ SubViewportContainer::SubViewportContainer()
 
 void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_event) {}
 
+
+bool SubViewportContainer::_is_propagated_in_gui_input(Ref<InputEvent> const&) {}

@@ -74,3 +74,5 @@ void ShaderFileEditor::_shader_changed()
 ShaderFileEditor* ShaderFileEditor::singleton = nullptr;
 
 
+
+void ShaderFileEditor::_update_options() {}

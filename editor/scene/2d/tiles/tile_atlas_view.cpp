@@ -491,3 +491,5 @@ void TileAtlasView::_update_theme_item_cache()
 TileAtlasView::~TileAtlasView() { _clear_material_canvas_items(); }
 
 
+
+void TileAtlasView::_update_zoom_and_panning(bool, Vector2 const&) {}

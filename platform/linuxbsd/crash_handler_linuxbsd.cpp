@@ -99,4 +99,6 @@ void CrashHandler::disable()
 	disabled = true;
 }
 
+void CrashHandler::initialize() {}
+
 

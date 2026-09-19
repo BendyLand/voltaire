@@ -81,6 +81,8 @@ bool RemoteTransform2D::get_update_scale() const { return update_remote_scale; }
 
 void RemoteTransform2D::force_update_cache() { _update_cache(); }
 
+PackedStringArray RemoteTransform2D::get_configuration_warnings() const { return PackedStringArray(); }
+
 RemoteTransform2D::RemoteTransform2D()
 {
 	set_notify_transform(use_global_coordinates);
@@ -89,3 +91,7 @@ RemoteTransform2D::RemoteTransform2D()
 }
 
 
+
+void RemoteTransform2D::_update_remote() {}
+
+void RemoteTransform2D::_update_cache() {}

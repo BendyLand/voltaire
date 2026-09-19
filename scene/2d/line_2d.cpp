@@ -121,3 +121,5 @@ int Line2D::get_round_precision() const { return _round_precision; }
 bool Line2D::get_antialiased() const { return _antialiased; }
 
 
+
+void Line2D::_draw() {}

@@ -82,6 +82,8 @@ public:
 	JoltPhysicsDirectSpaceState3D() = default;
 	explicit JoltPhysicsDirectSpaceState3D(JoltSpace3D* p_space);
 
+	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
+		int p_result_max, int& r_result_count) override;
 	virtual bool intersect_ray(
 		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) override;
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
@@ -90,8 +92,6 @@ public:
 		PS3DT::ShapeResult* r_results, int p_result_max) override;
 	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& r_closest_safe,
 		real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr) override;
-	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
-		int p_result_max, int& r_result_count) override;
 	virtual bool rest_info(
 		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info) override;
 	virtual Vector3 get_closest_point_to_object_volume(

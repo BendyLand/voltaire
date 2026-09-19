@@ -107,3 +107,5 @@ Joint2D::~Joint2D()
 
 void Joint2D::_update_joint(bool p_only_free) {}
 
+
+void Joint2D::_disconnect_signals() {}

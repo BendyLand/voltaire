@@ -638,3 +638,13 @@ Ref<ClipboardAnimation> ClipboardAnimation::from_sprite_frames(
 }
 
 
+
+void SpriteFramesEditor::_animation_remove_undo_redo(StringName const&, Vector<ClipboardSpriteFrames::Frame> const*) {}
+
+void SpriteFramesEditor::_update_library(bool) {}
+
+void SpriteFramesEditor::_remove_sprite_node() {}
+
+void SpriteFramesEditor::_paste_texture(Ref<Texture2D> const&) {}
+
+void SpriteFramesEditor::_paste_frame_array(Ref<ClipboardSpriteFrames> const&) {}

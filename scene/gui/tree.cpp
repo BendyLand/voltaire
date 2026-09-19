@@ -3352,3 +3352,39 @@ void Tree::update_item_cell(TreeItem* p_item, int p_col) const {}
 void Tree::clear() {}
 
 
+
+void Tree::set_column_title(int, String const&) {}
+
+void Tree::item_selected(int, TreeItem*, bool) {}
+
+void TreeItem::_change_tree(Tree*) {}
+
+void Tree::deselect_all() {}
+
+void Tree::item_deselected(int, TreeItem*) {}
+
+void Tree::_apply_multiline_edit(bool) {}
+
+void Tree::update_column(int) {}
+
+void Tree::set_hide_root(bool) {}
+
+void Tree::set_hide_folding(bool) {}
+
+void Tree::set_column_titles_visible(bool) {}
+
+void Tree::set_columns(int) {}
+
+void Tree::select_single_item(TreeItem*, TreeItem*, int, TreeItem*, bool*, bool) {}
+
+void Tree::_line_editor_submit(String) {}
+
+void TreeItem::set_as_cursor(int) {}
+
+void TreeItem::move_before(TreeItem*) {}
+
+void TreeItem::move_after(TreeItem*) {}
+
+TreeItem* TreeItem::create_child(int) {}
+
+void Tree::_determine_hovered_item() {}

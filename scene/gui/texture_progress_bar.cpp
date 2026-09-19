@@ -545,3 +545,9 @@ Point2 TextureProgressBar::get_radial_center_offset() { return rad_center_off; }
 TextureProgressBar::TextureProgressBar() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
 
+
+void TextureProgressBar::_set_texture(Ref<Texture2D>*, Ref<Texture2D> const&) {}
+
+void TextureProgressBar::set_tint_under(Color const&) {}
+
+void TextureProgressBar::set_fill_mode(int) {}

@@ -1522,4 +1522,82 @@ String GLTFDocument::_gen_unique_name_static(HashSet<String>& r_unique_names, co
 	return u_name;
 }
 
+Error GLTFDocument::_parse(Ref<GLTFState>, String const&, Ref<FileAccess>) { return OK; }
+
+void GLTFDocument::_convert_scene_node(Ref<GLTFState>, Node*, int, int) {}
+
+Error GLTFDocument::_serialize_textures(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_texture_samplers(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_skins(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_scenes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_nodes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_meshes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_materials(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_lights(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_images(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_gltf_extensions(Ref<GLTFState>) const { return OK; }
+
+PackedByteArray GLTFDocument::_serialize_glb_buffer(Ref<GLTFState>, Error*)
+{
+	return PackedByteArray();
+}
+
+Error GLTFDocument::_serialize_file(Ref<GLTFState>, String) { return OK; }
+
+Error GLTFDocument::_serialize_cameras(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_asset_header(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_serialize_animations(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_textures(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_texture_samplers(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_skins(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_scenes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_nodes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_meshes(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_materials(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_lights(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_images(Ref<GLTFState>, String const&) { return OK; }
+
+Error GLTFDocument::_parse_gltf_extensions(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_cameras(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_buffer_views(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_buffers(Ref<GLTFState>, String const&) { return OK; }
+
+Error GLTFDocument::_parse_animations(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_parse_accessors(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_encode_buffer_views(Ref<GLTFState>) { return OK; }
+
+Error GLTFDocument::_encode_accessors(Ref<GLTFState>) { return OK; }
+
+GLTFMeshIndex GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState>, MeshInstance3D*)
+{
+	return GLTFMeshIndex();
+}
+
+void GLTFDocument::_convert_mesh_instances(Ref<GLTFState>) {}
+
 

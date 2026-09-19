@@ -354,4 +354,18 @@ ScriptTextEditor::~ScriptTextEditor()
 	}
 }
 
+void ScriptTextEditor::_update_warnings() {}
+
+void ScriptTextEditor::_update_errors() {}
+
+void ScriptTextEditor::_update_background_color() {}
+
+ScriptTextEditor::EditMenusSTE::EditMenusSTE() {}
+
+void ScriptTextEditor::_text_edit_gui_input(const Ref<InputEvent>& p_ev) {}
+
+ScriptEditorBase* ScriptTextEditor::create_editor(Ref<Resource> const&) {}
+
+void ConnectionInfoDialog::ok_pressed() {}
+
 

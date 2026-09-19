@@ -1510,3 +1510,25 @@ CodeEdit::~CodeEdit() { _clear_line_number_text_cache(); }
 void CodeEdit::unfold_line(int p_line) {}
 
 
+
+void CodeEdit::set_line_as_breakpoint(int, bool) {}
+
+void CodeEdit::set_line_as_bookmarked(int, bool) {}
+
+void CodeEdit::set_code_hint(String const&) {}
+
+bool CodeEdit::is_line_breakpointed(int) const {}
+
+bool CodeEdit::is_line_executing(int) const {}
+
+void CodeEdit::set_line_as_executing(int, bool) {}
+
+void CodeEdit::_set_delimiters(TypedArray<String> const&, CodeEdit::DelimiterType) {}
+
+void CodeEdit::fold_line(int) {}
+
+void CodeEdit::_text_changed() {}
+
+void CodeEdit::request_code_completion(bool) {}
+
+void CodeEdit::cancel_code_completion() {}

@@ -618,4 +618,13 @@ RenderingServer::RenderingServer()
 
 RenderingServer::~RenderingServer() { singleton = nullptr; }
 
+void RenderingServer::fix_surface_compatibility(
+	RenderingServerTypes::SurfaceData& p_surface, const String& p_path)
+{
+}
+
+void RenderingServer::init() {}
+
+RID RenderingServer::_make_test_cube() { return RID(); }
+
 

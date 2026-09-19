@@ -224,6 +224,6 @@ void RayCast3D::_clear_debug_shape()
 	}
 }
 
-RayCast3D::RayCast3D() {}
+void RayCast3D::_update_raycast_state() {}
 
 

@@ -374,3 +374,7 @@ Vector3 JoltPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 }
 
 
+
+void JoltPhysicsDirectSpaceState3D::_collide_shape_queries(JPH::Shape const*, JPH::Vec3, JPH::Mat44 const&, JPH::CollideShapeSettings const&, JPH::Vec3, JPH::CollisionCollector<JPH::CollideShapeResult, JPH::CollisionCollectorTraitsCollideShape>&, JPH::BroadPhaseLayerFilter const&, JPH::ObjectLayerFilter const&, JPH::BodyFilter const&, JPH::ShapeFilter const&) const {}
+
+bool JoltPhysicsDirectSpaceState3D::body_test_motion(JoltBody3D const&, PhysicsServer3DTypes::MotionParameters const&, PhysicsServer3DTypes::MotionResult*) const {}

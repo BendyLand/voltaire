@@ -1339,3 +1339,5 @@ GLTFAccessorIndex GLTFAccessor::encode_new_sparse_accessor_from_vec3s(
 }
 
 
+
+Vector<unsigned char> GLTFAccessor::encode_ints_as_bytes(Vector<long> const&) {}

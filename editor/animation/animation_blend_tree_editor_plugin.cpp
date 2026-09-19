@@ -105,3 +105,5 @@ bool AnimationNodeBlendTreeEditor::can_edit(const Ref<AnimationNode>& p_node)
 }
 
 
+
+void AnimationNodeBlendTreeEditor::update_graph() {}

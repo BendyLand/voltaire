@@ -1285,4 +1285,6 @@ DisplayServer::DisplayServer()
 
 DisplayServer::~DisplayServer() { singleton = nullptr; }
 
+bool DisplayServer::can_create_rendering_device() { return true; }
+
 

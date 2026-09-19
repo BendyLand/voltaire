@@ -164,4 +164,15 @@ bool BlitMaterialConversionPlugin::handles(const Ref<Resource>& p_resource) cons
 	return mat.is_valid();
 }
 
+void MaterialEditor::_store_rotation_metadata() {}
+
+Ref<ShaderMaterial> MaterialEditor::make_shader_material(Ref<Material> const&, bool)
+{
+	Ref<ShaderMaterial> sm = memnew(ShaderMaterial);
+	return sm;
+}
+
+void MaterialEditor::edit(Ref<Material>, Ref<Environment> const&) {}
+
+EditorInspectorPluginMaterial::EditorInspectorPluginMaterial() {}
 

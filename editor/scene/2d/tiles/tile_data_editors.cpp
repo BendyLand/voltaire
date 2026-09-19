@@ -132,6 +132,11 @@ void GenericTilePolygonEditor::set_multiple_polygon_mode(bool p_multiple_polygon
 	multiple_polygon_mode = p_multiple_polygon_mode;
 }
 
+void TileDataDefaultEditor::_set_painted_value(
+	TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile)
+{
+}
+
 void TileDataDefaultEditor::forward_draw_over_alternatives(TileAtlasView* p_tile_atlas_view,
 	TileSetAtlasSource* p_tile_set_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
 {
@@ -226,7 +231,8 @@ TileDataTerrainsEditor::~TileDataTerrainsEditor()
 }
 
 void TileDataNavigationEditor::_set_painted_value(
-	TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile)
+	TileSetAtlasSource* p_tile_set_atlas_source,
+ Vector2 p_coords, int p_alternative_tile)
 {
 	TileData* tile_data = p_tile_set_atlas_source->get_tile_data(p_coords, p_alternative_tile);
 	ERR_FAIL_NULL(tile_data);
@@ -262,4 +268,26 @@ TileDataNavigationEditor::TileDataNavigationEditor()
 	add_child(polygon_editor);
 }
 
+void TileDataCollisionEditor::_polygons_changed() {}
+
+void GenericTilePolygonEditor::set_tile_set(Ref<TileSet>) {}
+
+void GenericTilePolygonEditor::set_polygons_color(Color) {}
+
+void GenericTilePolygonEditor::set_background_tile(TileSetAtlasSource const*, Vector2 const&, int)
+{
+}
+
+GenericTilePolygonEditor::GenericTilePolygonEditor() {}
+
+void GenericTilePolygonEditor::clear_polygons() {}
+
+int GenericTilePolygonEditor::add_polygon(Vector<Vector2> const&, int) { return 0; }
+
+TileData* TileDataEditor::_get_tile_data(TileMapCell) {}
+
+void TileDataTerrainsEditor::_tile_set_changed() {}
+
+void TileDataCollisionEditor::_set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
+	int p_alternative_tile) {}
 

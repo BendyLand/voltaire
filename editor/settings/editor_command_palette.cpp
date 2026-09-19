@@ -137,4 +137,11 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY_AND_COMMAND(const String& p_path, const String& 
 	return shortcut;
 }
 
+Ref<Shortcut> EditorCommandPalette::add_shortcut_command(
+	String const&, String const&, Ref<Shortcut>)
+{
+	Ref<Shortcut> s = memnew(Shortcut);
+	return s;
+}
+
 

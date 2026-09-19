@@ -263,3 +263,7 @@ PackedStringArray RigidBody2D::get_configuration_warnings() const
 }
 
 
+
+RigidBody2D::RigidBody2D() {}
+
+RigidBody2D::~RigidBody2D() {}

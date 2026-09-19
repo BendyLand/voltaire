@@ -243,3 +243,11 @@ bool ScrollContainer::child_has_focus()
 }
 
 
+
+Size2 ScrollContainer::_get_minimum_size(bool) const {}
+
+void ScrollContainer::_cancel_drag() {}
+
+void ScrollContainer::_reposition_children() {}
+
+void ScrollContainer::ensure_control_visible(Control*) {}

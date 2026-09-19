@@ -61,4 +61,6 @@ OpenXRSelectInteractionProfileDialog::OpenXRSelectInteractionProfileDialog()
 	main_vb->add_child(all_selected);
 }
 
+void OpenXRSelectInteractionProfileDialog::ok_pressed() {}
 
+void OpenXRSelectInteractionProfileDialog::open(Vector<String> const&) {}

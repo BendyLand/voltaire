@@ -126,3 +126,7 @@ Vector3 SpringBoneCollision3D::_collide(const Transform3D& p_center, float p_bon
 }
 
 
+
+void SpringBoneCollision3D::set_bone(int) {}
+
+Skeleton3D* SpringBoneCollision3D::get_skeleton() const {}

@@ -225,3 +225,7 @@ void ProjectExportDialog::_export_project()
 }
 
 
+
+void ProjectExportDialog::_edit_preset(int) {}
+
+void EditorExport::emit_presets_runnable_changed() {}

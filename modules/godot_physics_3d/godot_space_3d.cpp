@@ -251,8 +251,6 @@ Vector3 GodotPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 
 GodotPhysicsDirectSpaceState3D::GodotPhysicsDirectSpaceState3D() { space = nullptr; }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 int GodotSpace3D::_cull_aabb_for_body(GodotBody3D* p_body, const AABB& p_aabb)
 {
 	int amount = broadphase->cull_aabb(p_aabb, intersection_query_results, INTERSECTION_QUERY_MAX,

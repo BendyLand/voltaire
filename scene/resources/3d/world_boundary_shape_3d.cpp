@@ -68,3 +68,5 @@ WorldBoundaryShape3D::WorldBoundaryShape3D()
 }
 
 
+
+void WorldBoundaryShape3D::_update_shape() {}

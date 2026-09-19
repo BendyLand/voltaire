@@ -47,3 +47,5 @@ bool RendererCompositor::is_xr_enabled() const { return xr_enabled; }
 RendererCompositor::~RendererCompositor() { singleton = nullptr; }
 
 
+
+RendererCompositor::RendererCompositor() {}

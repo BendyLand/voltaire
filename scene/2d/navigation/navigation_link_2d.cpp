@@ -300,3 +300,11 @@ NavigationLink2D::~NavigationLink2D()
 }
 
 
+
+void NavigationLink2D::set_start_position(Vector2) {}
+
+void NavigationLink2D::set_end_position(Vector2) {}
+
+void NavigationLink2D::_link_update_transform() {}
+
+void NavigationLink2D::_link_enter_navigation_map() {}

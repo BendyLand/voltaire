@@ -72,8 +72,6 @@ Ref<EditorSyntaxHighlighter> EditorMarkdownSyntaxHighlighter::_create() const
 	return syntax_highlighter;
 }
 
-///
-
 Ref<EditorSyntaxHighlighter> EditorConfigFileSyntaxHighlighter::_create() const
 {
 	Ref<EditorConfigFileSyntaxHighlighter> syntax_highlighter;

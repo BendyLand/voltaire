@@ -225,3 +225,9 @@ void OpenXRActionMapEditor::register_binding_modifier_editor(
 }
 
 
+
+void OpenXRActionMapEditor::_create_interaction_profiles() {}
+
+void OpenXRActionMapEditor::_create_action_sets() {}
+
+void OpenXRActionMapEditor::_clear_action_map() {}

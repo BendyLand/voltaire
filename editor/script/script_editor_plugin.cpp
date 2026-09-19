@@ -38,6 +38,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/fuzzy_search.h"
+#include "core/types.h"
 #include "core/version.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
@@ -565,5 +566,55 @@ void ScriptEditorPlugin::get_breakpoints(List<String>* p_breakpoints)
 void ScriptEditorPlugin::edited_scene_changed() { script_editor->edited_scene_changed(); }
 
 void ScriptEditor::_help_class_goto(const String& p_desc) {}
+
+void ScriptEditor::_update_history_pos(int) {}
+
+void ScriptEditor::_queue_close_tabs() {}
+
+void ScriptEditor::_menu_option(int) {}
+
+void ScriptEditorQuickOpen::_update_search() {}
+
+void ScriptEditor::_update_script_names() {}
+
+void ScriptEditor::save_all_scripts() {}
+
+ScriptEditorBase* ScriptEditor::_get_current_editor() const {}
+
+void ScriptEditor::get_breakpoints(List<String, DefaultAllocator>*) {}
+
+void ScriptEditor::ensure_select_current() {}
+
+bool ScriptEditor::edit(Ref<Resource> const&, int, int, bool) { return true; }
+
+bool ScriptEditor::toggle_files_panel() { return true; }
+
+void ScriptEditor::_show_save_theme_as_dialog() {}
+
+void ScriptEditor::_script_selected(int) {}
+
+void ScriptEditor::reload_scripts(bool) {}
+
+void ScriptEditor::_mark_built_in_scripts_as_saved(String const&) {}
+
+void ScriptEditor::_make_script_list_context_menu() {}
+
+Ref<TextFile> ScriptEditor::_load_text_file(String const&, Error*) const
+{
+	Ref<TextFile> tf = memnew(TextFile);
+	return tf;
+}
+
+void ScriptEditor::_go_to_tab(int, bool) {}
+
+PackedStringArray ScriptEditor::get_unsaved_scripts() const { return PackedStringArray(); }
+
+void ScriptEditor::_connect_to_scene_recursive(Node*, Node*) {}
+
+void ScriptEditor::_close_tab(int, bool) {}
+
+void ScriptEditor::apply_scripts() const {}
+
+void ScriptEditor::input(const Ref<InputEvent>& p_event) {}
 
 

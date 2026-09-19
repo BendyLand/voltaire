@@ -607,3 +607,9 @@ CompressedTextureLayered::~CompressedTextureLayered()
 }
 
 
+
+Error CompressedTextureLayered::load(String const&) {}
+
+Error CompressedTexture3D::load(String const&) {}
+
+Error CompressedTexture2D::load(String const&) {}

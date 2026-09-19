@@ -102,3 +102,5 @@ void ResourcePreloaderEditor::update_layout(EditorDock::DockLayout p_layout, int
 }
 
 
+
+void ResourcePreloaderEditor::_update_library() {}

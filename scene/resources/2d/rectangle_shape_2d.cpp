@@ -77,3 +77,5 @@ RectangleShape2D::RectangleShape2D()
 }
 
 
+
+void RectangleShape2D::_update_shape() {}

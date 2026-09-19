@@ -118,4 +118,8 @@ bool RenameDialog::_is_main_field(LineEdit* line_edit)
 							line_edit == lne_prefix || line_edit == lne_suffix);
 }
 
+String RenameDialog::_substitute(String const&, Node const*, int) { return String(); }
+
+String RenameDialog::_postprocess(String const&) { return String(); }
+
 

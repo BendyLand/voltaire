@@ -169,7 +169,6 @@ bool MeshConvexDecompositionSettings::get_project_hull_vertices() const
 	return project_hull_vertices;
 }
 
-
 #ifndef PHYSICS_3D_DISABLED
 Mesh::ConvexDecompositionFunc Mesh::convex_decomposition_function = nullptr;
 #endif // PHYSICS_3D_DISABLED
@@ -282,7 +281,6 @@ Ref<Resource> Mesh::create_placeholder() const
 	placeholder->set_aabb(get_aabb());
 	return placeholder;
 }
-
 
 void Mesh::clear_cache() const
 {
@@ -1115,4 +1113,23 @@ Ref<TriangleMesh> Mesh::generate_triangle_mesh() const
 	Ref<TriangleMesh> tm = memnew(TriangleMesh);
 	return tm;
 }
+
+Ref<ConvexPolygonShape3D> Mesh::create_convex_shape(bool, bool) const
+{
+	Ref<ConvexPolygonShape3D> cps = memnew(ConvexPolygonShape3D);
+	return cps;
+}
+
+Ref<TriangleMesh> Mesh::generate_surface_triangle_mesh(int) const
+{
+	Ref<TriangleMesh> tm = memnew(TriangleMesh);
+	return tm;
+}
+
+Error ArrayMesh::lightmap_unwrap_cached(const Transform3D& p_base_transform, float p_texel_size,
+	const Vector<uint8_t>& p_src_cache, Vector<uint8_t>& r_dst_cache, bool p_generate_cache)
+{
+	return OK;
+}
+
 

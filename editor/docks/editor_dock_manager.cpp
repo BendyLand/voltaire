@@ -181,4 +181,20 @@ Size2 DockSlotGrid::get_minimum_size() const
 	return GRID_SIZE * CELL_SIZE * EDSCALE + (GRID_SIZE - Vector2i(1, 0)) * MARGINS * EDSCALE;
 }
 
+void EditorDockManager::add_dock(EditorDock*) {}
+
+void EditorDockManager::remove_dock(EditorDock*) {}
+
+void EditorDockManager::update_docks_menu() {}
+
+EditorDock* EditorDockManager::_get_dock_tab_dragged()
+{
+	EditorDock ed = EditorDock();
+	return &ed;
+}
+
+void EditorDockManager::_move_dock(EditorDock*, Control*, int, bool) {}
+
+void DockContextPopup::_update_buttons() {}
+
 

@@ -46,3 +46,5 @@ void PropertySelector::_hide_requested()
 }
 
 
+
+void PropertySelector::_update_search() {}

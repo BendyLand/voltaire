@@ -69,3 +69,5 @@ void GraphElement::set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_s
 bool GraphElement::is_scaling_menus() const { return scaling_menus; }
 
 
+
+void GraphElement::set_selected(bool) {}

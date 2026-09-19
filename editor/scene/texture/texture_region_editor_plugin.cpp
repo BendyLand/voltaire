@@ -439,3 +439,9 @@ Control::CursorShape TextureRegionEditorOverlay::get_cursor_shape(const Point2& 
 void TextureRegionEditor::_zoom_on_position(float p_zoom, Point2 p_position) {}
 
 
+
+TextureRegionEditor::TextureRegionEditor() {}
+
+void TextureRegionEditor::_edit_region() {}
+
+void TextureRegionEditor::_clear_edited_object() {}

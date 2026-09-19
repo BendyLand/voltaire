@@ -135,3 +135,5 @@ HashMap<int, Vector<StringName>> GraphEditArranger::_layering(
 }
 
 
+
+void GraphEditArranger::arrange_nodes() {}

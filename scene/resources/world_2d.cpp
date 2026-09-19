@@ -78,3 +78,5 @@ RID World2D::get_navigation_map() const
 	return RID();
 }
 #endif // NAVIGATION_2D_DISABLED
+
+RID World2D::get_space() const {}

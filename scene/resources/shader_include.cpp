@@ -37,4 +37,6 @@ String ShaderInclude::get_code() const { return code; }
 
 void ShaderInclude::set_include_path(const String& p_path) { include_path = p_path; }
 
+void set_code(const String& p_text) {}
+
 

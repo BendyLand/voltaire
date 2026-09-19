@@ -127,7 +127,7 @@ public:
 	void remove_exception(const CollisionObject3D* rp_node);
 	void clear_exceptions();
 
-	RayCast3D();
+	RayCast3D() = default;
 };
 
 

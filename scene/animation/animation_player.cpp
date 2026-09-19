@@ -698,3 +698,13 @@ AnimationPlayer::AnimationPlayer() {}
 AnimationPlayer::~AnimationPlayer() {}
 
 
+
+void AnimationPlayer::_capture(StringName const&, bool, double, Tween::TransitionType, Tween::EaseType) {}
+
+void AnimationPlayer::_stop_internal(bool, bool) {}
+
+void AnimationPlayer::play_section(StringName const&, double, double, double, float, bool) {}
+
+void AnimationPlayer::set_current_animation(StringName const&) {}
+
+void AnimationPlayer::set_assigned_animation(StringName const&) {}

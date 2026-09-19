@@ -72,3 +72,7 @@ void AtlasMergingDialog::_notification(int p_what)
 }
 
 
+
+void AtlasMergingDialog::update_tile_set(Ref<TileSet>) {}
+
+void AtlasMergingDialog::_update_texture() {}

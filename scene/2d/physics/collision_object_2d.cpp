@@ -522,3 +522,5 @@ CollisionObject2D::~CollisionObject2D()
 }
 
 
+
+CollisionObject2D::CollisionObject2D(RID, bool) {}

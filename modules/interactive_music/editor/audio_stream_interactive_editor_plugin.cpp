@@ -73,3 +73,5 @@ AudioStreamInteractiveEditorPlugin::AudioStreamInteractiveEditorPlugin()
 }
 
 
+
+AudioStreamInteractiveTransitionEditor::AudioStreamInteractiveTransitionEditor() {}

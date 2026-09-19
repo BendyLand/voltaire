@@ -152,3 +152,7 @@ void EditorDebuggerTree::_item_menu_id_pressed(int p_option)
 }
 
 
+
+String EditorDebuggerTree::get_selected_path() {}
+
+void EditorDebuggerTree::select_nodes(TypedArray<long> const&) {}

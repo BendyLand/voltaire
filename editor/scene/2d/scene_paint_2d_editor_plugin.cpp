@@ -129,3 +129,9 @@ void ScenePaint2DEditorPlugin::forward_canvas_draw_over_viewport(Control* p_over
 }
 
 
+
+void ScenePaint2DEditor::_update_draw_overlay() {}
+
+void ScenePaint2DEditor::_set_picked_scene(Node2D*) {}
+
+void ScenePaint2DEditor::forward_canvas_draw_over_viewport(Control*) {}

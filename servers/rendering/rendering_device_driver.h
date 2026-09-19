@@ -1135,8 +1135,6 @@ public:
 
 	virtual DriverWorkarounds get_driver_workarounds() const { return DriverWorkarounds(); }
 
-	/******************/
-
 	virtual ~RenderingDeviceDriver();
 };
 

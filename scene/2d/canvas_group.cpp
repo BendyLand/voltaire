@@ -55,4 +55,8 @@ CanvasGroup::~CanvasGroup()
 		get_canvas_item(), RSE::CANVAS_GROUP_MODE_DISABLED);
 }
 
+PackedStringArray CanvasGroup::get_configuration_warnings() const { return PackedStringArray(); }
+
+void CanvasGroup::set_fit_margin(float) {}
+
 

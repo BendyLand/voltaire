@@ -139,3 +139,7 @@ Button* ConfirmationDialog::get_cancel_button() { return cancel; }
 
 void AcceptDialog::_cancel_pressed() {}
 
+
+void AcceptDialog::_ok_pressed() {}
+
+void AcceptDialog::_update_child_rects() {}

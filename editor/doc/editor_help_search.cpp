@@ -420,3 +420,19 @@ bool EditorHelpSearch::Runner::work(uint64_t slot)
 }
 
 
+
+void EditorHelpSearch::_update_results() {}
+
+bool EditorHelpSearch::Runner::_phase_member_items_init() {}
+
+bool EditorHelpSearch::Runner::_phase_member_items() {}
+
+bool EditorHelpSearch::Runner::_phase_match_classes_init() {}
+
+bool EditorHelpSearch::Runner::_phase_match_classes() {}
+
+bool EditorHelpSearch::Runner::_phase_fill_member_items() {}
+
+bool EditorHelpSearch::Runner::_phase_class_items_init() {}
+
+bool EditorHelpSearch::Runner::_phase_class_items() {}

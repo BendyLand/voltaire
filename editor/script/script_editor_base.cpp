@@ -134,4 +134,14 @@ void TextEditorBase::enable_editor()
 
 TextEditorBase::~TextEditorBase() { highlighters.clear(); }
 
+TextEditorBase* TextEditorBase::EditMenus::_get_active_editor()
+{
+	TextEditorBase teb = TextEditorBase();
+	return &teb;
+}
+
+TextEditorBase::TextEditorBase() {}
+
+TextEditorBase::EditMenus::EditMenus() {}
+
 

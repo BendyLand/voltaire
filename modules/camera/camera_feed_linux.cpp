@@ -272,4 +272,12 @@ CameraFeedLinux::~CameraFeedLinux()
 	}
 }
 
+void CameraFeedLinux::deactivate_feed() {}
+
+BufferDecoder* CameraFeedLinux::_create_buffer_decoder()
+{
+	BufferDecoder bd = BufferDecoder();
+	return &bd;
+}
+
 

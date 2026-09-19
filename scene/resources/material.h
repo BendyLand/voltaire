@@ -901,6 +901,7 @@ public:
 
 	virtual Shader::Mode get_shader_mode() const override;
 
+	BaseMaterial3D() = default;
 	BaseMaterial3D(bool p_orm);
 	virtual ~BaseMaterial3D();
 };

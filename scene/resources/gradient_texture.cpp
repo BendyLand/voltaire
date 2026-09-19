@@ -255,3 +255,11 @@ void GradientTexture2D::update_now() const
 void GradientTexture2D::_queue_update() {}
 
 
+
+void GradientTexture2D::set_gradient(Ref<Gradient>) {}
+
+void GradientTexture1D::_queue_update() {}
+
+void GradientTexture2D::_update() const {}
+
+void GradientTexture1D::_update() const {}

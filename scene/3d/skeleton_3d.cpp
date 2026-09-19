@@ -775,4 +775,16 @@ void Skeleton3D::_update_process_order() const {}
 
 void Skeleton3D::_force_update_all_bone_transforms() const {}
 
+void Skeleton3D::_notification(int) {}
+
+int Skeleton3D::add_bone(String const&) { return 0; }
+
+Ref<SkinReference> Skeleton3D::register_skin(Ref<Skin> const&)
+{
+	Ref<SkinReference> sr = memnew(SkinReference);
+	return sr;
+}
+
+void Skeleton3D::add_child_notify(Node* p_child) {}
+
 

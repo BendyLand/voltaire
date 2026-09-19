@@ -103,3 +103,9 @@ void LocalizationEditor::_update_template_source_file_extensions()
 }
 
 
+
+void LocalizationEditor::_translation_add(Vector<String> const&) {}
+
+void LocalizationEditor::_template_generate(String const&) {}
+
+void LocalizationEditor::connect_filesystem_dock_signals(FileSystemDock*) {}

@@ -47,4 +47,10 @@ Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
 
 PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D() {}
 
+bool PhysicsDirectSpaceState3D::intersect_ray(
+	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
+{
+	return true;
+}
+
 

@@ -86,3 +86,5 @@ AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() cons
 }
 
 
+
+void AbstractPolygon2DEditor::set_edit_origin_and_center(bool) {}

@@ -183,4 +183,24 @@ void AudioStreamPlayer::set_playback_type(AudioServer::PlaybackType p_playback_t
 
 AudioStreamPlayer::~AudioStreamPlayer() { memdelete(internal); }
 
+void AudioStreamPlayerInternal::set_stream(Ref<AudioStream>) {}
+
+void AudioStreamPlayerInternal::set_playing(bool) {}
+
+void AudioStreamPlayerInternal::seek(float) {}
+
+Ref<AudioStreamPlayback> AudioStreamPlayerInternal::play_basic()
+{
+	Ref<AudioStreamPlayback> asp = memnew(AudioStreamPlayback);
+	return asp;
+}
+
+Error AudioServer::set_input_device_active(bool) { return OK; }
+
+int AudioDriver::_get_configured_mix_rate() { return 0; }
+
+void AudioStreamPlayerInternal::process() {}
+
+void AudioStreamPlayerInternal::notification(int) {}
+
 

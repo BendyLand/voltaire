@@ -315,3 +315,5 @@ void AudioStreamPlayer2D::set_playback_type(AudioServer::PlaybackType p_playback
 AudioStreamPlayer2D::~AudioStreamPlayer2D() { memdelete(internal); }
 
 
+
+StringName AudioStreamPlayer2D::_get_actual_bus() {}

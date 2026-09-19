@@ -76,3 +76,7 @@ NodePath VisibleOnScreenEnabler3D::get_enable_node_path() { return enable_node_p
 VisibleOnScreenEnabler3D::VisibleOnScreenEnabler3D() {}
 
 
+
+void VisibleOnScreenEnabler3D::_update_enable_mode(bool) {}
+
+VisibleOnScreenNotifier3D::VisibleOnScreenNotifier3D() {}

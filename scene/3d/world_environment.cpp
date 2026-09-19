@@ -124,3 +124,9 @@ PackedStringArray WorldEnvironment::get_configuration_warnings() const
 WorldEnvironment::WorldEnvironment() {}
 
 
+
+void WorldEnvironment::_update_current_environment() {}
+
+void WorldEnvironment::_update_current_camera_attributes() {}
+
+void WorldEnvironment::_update_current_compositor() {}

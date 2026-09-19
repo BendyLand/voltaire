@@ -332,3 +332,9 @@ void Range::_value_changed(double p_value)
 }
 
 
+
+void Range::_value_changed_notify() {}
+
+void Range::_changed_notify() {}
+
+void Range::Shared::redraw_owners() {}

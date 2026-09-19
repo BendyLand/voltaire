@@ -203,3 +203,5 @@ NavLink2D::~NavLink2D()
 
 void NavLink2D::request_sync() {}
 
+
+void NavLink2D::cancel_sync_request() {}

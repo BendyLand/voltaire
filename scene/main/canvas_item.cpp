@@ -88,10 +88,7 @@ void CanvasItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
 	_handle_visibility_change(p_parent_visible_in_tree);
 }
 
-void CanvasItem::set_visible(bool p_visible)
-{
-	visible = p_visible;
-}
+void CanvasItem::set_visible(bool p_visible) { visible = p_visible; }
 
 void CanvasItem::show()
 {
@@ -1122,10 +1119,7 @@ CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
 	return (TextureRepeat)texture_repeat_cache;
 }
 
-PackedStringArray CanvasItem::get_configuration_warnings() const
-{
-	return PackedStringArray();
-}
+PackedStringArray CanvasItem::get_configuration_warnings() const { return PackedStringArray(); }
 
 CanvasItem::~CanvasItem()
 {
@@ -1254,5 +1248,25 @@ void CanvasItem::_top_level_changed() {}
 void CanvasItem::_top_level_changed_on_parent() {}
 
 void CanvasItem::item_rect_changed(bool p_size_changed) {}
+
+Transform2D CanvasItem::get_canvas_transform() const { return Transform2D(); }
+
+void CanvasItem::set_texture_filter(CanvasItem::TextureFilter) {}
+
+void CanvasItem::_handle_visibility_change(bool) {}
+
+void CanvasItem::_update_oversampling(bool) {}
+
+void CanvasItem::set_texture_repeat(CanvasItem::TextureRepeat) {}
+
+void CanvasItem::set_as_top_level(bool) {}
+
+CanvasItem* CanvasItem::get_top_level() const
+{
+	CanvasItem ci = CanvasItem();
+	return &ci;
+}
+
+void CanvasTexture::set_diffuse_texture(const Ref<Texture2D>& p_diffuse) {}
 
 

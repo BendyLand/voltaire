@@ -52,18 +52,18 @@ public:
 	virtual String get_name();
 	virtual Ref<Texture2D> get_theme_icon();
 
-	virtual void set_toggle_list_control(Control* p_toggle_list_control) = 0;
-	virtual void update_toggle_files_button() = 0;
+	virtual void set_toggle_list_control(Control* p_toggle_list_control);
+	virtual void update_toggle_files_button();
 
 	virtual bool show_members_overview() { return false; }
 
-	virtual void set_edited_resource(const Ref<Resource>& p_res) = 0;
+	virtual void set_edited_resource(const Ref<Resource>& p_res);
 
 	virtual Ref<Resource> get_edited_resource() const { return edited_res; }
 
-	virtual void apply_code() = 0;
-	virtual void validate_script() = 0;
-	virtual bool is_unsaved() = 0;
+	virtual void apply_code();
+	virtual void validate_script();
+	virtual bool is_unsaved();
 	virtual void tag_saved_version();
 
 	virtual void add_syntax_highlighter(Ref<EditorSyntaxHighlighter> p_highlighter) {}
@@ -166,11 +166,11 @@ protected:
 	PopupMenu* context_menu = nullptr;
 	MenuButton* search_menu = nullptr;
 
-	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
-	virtual bool _edit_option(int p_op);
-
 	virtual void _load_theme_settings();
 	virtual void _validate_script();
+
+	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
+	virtual bool _edit_option(int p_op);
 
 	int previous_history_line = -1;
 	void _emit_request_save_new_history();
@@ -188,7 +188,7 @@ public:
 	virtual void reload_text();
 	virtual void enable_editor();
 
-	virtual Control* get_edit_menu() = 0;
+	virtual Control* get_edit_menu();
 
 	virtual Control* get_base_editor() const override { return code_editor->get_text_editor(); }
 

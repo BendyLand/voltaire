@@ -86,4 +86,6 @@ private:
 	}
 };
 
+String NoiseEditorPlugin::get_plugin_name() const { return String(); }
 
+NoiseEditorPlugin::NoiseEditorPlugin() {}

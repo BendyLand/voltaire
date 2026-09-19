@@ -1034,11 +1034,9 @@ public:
 
 	virtual void cleanup() {}
 
-	TextServer();
-	~TextServer();
+	TextServer() = default;
+	~TextServer() = default;
 };
-
-/*************************************************************************/
 
 struct Glyph
 {
@@ -1075,8 +1073,6 @@ struct CaretInfo
 	TextServer::Direction t_dir;
 };
 
-/*************************************************************************/
-
 class TextServerManager
 {
 private:
@@ -1101,8 +1097,6 @@ public:
 	TextServerManager();
 	~TextServerManager();
 };
-
-/*************************************************************************/
 
 #define TS TextServerManager::get_singleton()->get_primary_interface()
 

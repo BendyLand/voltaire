@@ -175,3 +175,7 @@ OpenXRInteractionProfileEditor::OpenXRInteractionProfileEditor()
 }
 
 
+
+OpenXRInteractionProfileEditorBase::OpenXRInteractionProfileEditorBase() {}
+
+void OpenXRInteractionProfileEditor::_add_io_path(VBoxContainer*, OpenXRInteractionProfileMetadata::IOPath const*) {}

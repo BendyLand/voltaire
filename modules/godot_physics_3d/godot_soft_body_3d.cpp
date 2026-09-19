@@ -1294,3 +1294,5 @@ Vector3 GodotSoftBodyShape3D::get_closest_point_to(const Vector3& p_point) const
 }
 
 
+
+void GodotSoftBody3D::set_mesh(RID) {}

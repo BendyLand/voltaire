@@ -182,3 +182,5 @@ GraphFrame::GraphFrame()
 }
 
 
+
+Size2 GraphFrame::_get_minimum_size(bool) const {}

@@ -2236,7 +2236,6 @@ double TextServerAdvanced::_font_get_ascent(const RID& p_font_rid, int64_t p_siz
 			return ffsd->ascent * (double)p_size / (double)fd->fixed_size;
 		}
 		else {
-
 			return ffsd->ascent * Math::round((double)p_size / (double)fd->fixed_size);
 		}
 	}
@@ -4379,10 +4378,7 @@ RID TextServerAdvanced::_shaped_text_get_parent(const RID& p_shaped) const
 	return sd->parent;
 }
 
-bool TextServerAdvanced::_shaped_text_shape(const RID& p_shaped)
-{
-	return true;
-}
+bool TextServerAdvanced::_shaped_text_shape(const RID& p_shaped) { return true; }
 
 double TextServerAdvanced::_shaped_text_tab_align(
 	const RID& p_shaped, const PackedFloat32Array& p_tab_stops)
@@ -5739,14 +5735,20 @@ int TextServerAdvanced::ft_cubic_to(
 	return 0;
 }
 
-
 bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced* p_font_data, const Vector2i& p_size,
-	FontForSizeAdvanced*& r_cache_for_size, bool p_silent,
-	uint32_t p_oversampling) const
+	FontForSizeAdvanced*& r_cache_for_size, bool p_silent, uint32_t p_oversampling) const
 {
 	return true;
 }
 
 void TextServerAdvanced::full_copy(ShapedTextDataAdvanced* p_shaped) {}
+
+bool TextServerAdvanced::_shaped_text_update_breaks(const RID& p_shaped) { return true; }
+
+bool TextServerAdvanced::_shape_substr(ShapedTextDataAdvanced* p_new_sd,
+	const ShapedTextDataAdvanced* p_sd, int64_t p_start, int64_t p_length) const
+{
+	return true;
+}
 
 

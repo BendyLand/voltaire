@@ -74,3 +74,5 @@ SphereShape3D::SphereShape3D()
 }
 
 
+
+void SphereShape3D::_update_shape() {}

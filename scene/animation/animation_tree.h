@@ -33,10 +33,10 @@
 #include "scene/animation/animation_mixer.h"
 #include "scene/resources/animation.h"
 
-	   /**
-		 * 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
-		 * length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
-		 */
+/**
+ * 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
+ * length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
+ */
 #define HUGE_LENGTH 31540000
 
 #ifdef TOOLS_ENABLED
@@ -202,7 +202,6 @@ protected:
 		const String& p_error, int p_input_index = -1) const;
 	void make_invalid(
 		ProcessState& p_process_state, AnimationNodeInstance& p_instance, const String& p_reason);
-
 
 private:
 	mutable uint32_t filters_version = 1;
@@ -444,11 +443,9 @@ private:
 	void _setup_animation_player();
 	void _animation_player_changed();
 
+	virtual void _set_active(bool p_active) override;
 	virtual uint32_t _get_libraries_property_usage() const override;
 	void _notification(int p_what);
-
-
-	virtual void _set_active(bool p_active) override;
 
 	// Make animation instances.
 	virtual bool _blend_pre_process(

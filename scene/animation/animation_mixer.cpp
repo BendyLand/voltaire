@@ -613,3 +613,5 @@ AnimationMixer::TrackCache* AnimatedValuesBackup::get_cache_copy(
 }
 
 
+
+void AnimationMixer::_animation_set_cache_update() {}

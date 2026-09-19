@@ -273,3 +273,9 @@ NavAgent2D::~NavAgent2D() { cancel_sync_request(); }
 
 void NavAgent2D::request_sync() {}
 
+
+void NavAgent2D::cancel_sync_request() {}
+
+bool NavAgent2D::has_avoidance_callback() const {}
+
+void NavAgent2D::dispatch_avoidance_callback() {}

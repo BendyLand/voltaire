@@ -145,3 +145,15 @@ void CreateDialog::_favorite_activated()
 void CreateDialog::_update_search() {}
 
 
+
+void CreateDialog::set_base_type(String const&) {}
+
+void CreateDialog::popup_create(bool, bool, String const&, String const&) {}
+
+void CreateDialog::select_type(String const&, bool) {}
+
+void CreateDialog::_confirmed() {}
+
+void CreateDialog::_update_filter_button_state() {}
+
+String CreateDialog::get_selected_type() {}

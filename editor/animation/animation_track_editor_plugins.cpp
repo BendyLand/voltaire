@@ -227,9 +227,6 @@ Control::CursorShape AnimationTrackEditTypeAudio::get_cursor_shape(const Point2&
 	}
 }
 
-////////////////////
-/// SUB ANIMATION ///
-
 bool AnimationTrackEditTypeAnimation::is_key_selectable_by_distance() const { return false; }
 
 AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
@@ -237,4 +234,6 @@ AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
 	return memnew(AnimationTrackEditTypeAudio);
 }
 
+AnimationTrackEdit::AnimationTrackEdit() {}
 
+AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio() {}

@@ -2585,3 +2585,7 @@ RendererCanvasRenderRD::~RendererCanvasRenderRD()
 }
 
 
+
+RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(RendererCanvasRenderRD::CanvasShaderData*, RendererCanvasRenderRD::PipelineKey&, RendererCanvasRenderRD::PushConstant&, RID, void*, unsigned int, RID*) {}
+
+RID RendererCanvasRenderRD::CanvasShaderData::get_shader(RendererCanvasRenderRD::ShaderVariant, bool) const {}

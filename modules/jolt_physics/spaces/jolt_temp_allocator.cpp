@@ -115,3 +115,5 @@ void JoltTempAllocator::Free(void* p_ptr, uint32_t p_size)
 }
 
 
+
+JoltTempAllocator::JoltTempAllocator() {}

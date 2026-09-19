@@ -373,3 +373,11 @@ MenuBar::MenuBar()
 MenuBar::~MenuBar() {}
 
 
+
+Vector<PopupMenu*> MenuBar::_get_popups() const {}
+
+void MenuBar::bind_global_menu() {}
+
+void MenuBar::add_child_notify(Node* p_child) {}
+
+

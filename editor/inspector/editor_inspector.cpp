@@ -714,3 +714,23 @@ void EditorProperty::update_property() {}
 void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {}
 
 
+
+void EditorInspectorSection::update_property() {}
+
+void EditorInspector::expand_revertable() {}
+
+EditorInspector::EditorInspector() {}
+
+void EditorInspectorSection::unfold() {}
+
+void EditorInspectorSection::set_keying(bool) {}
+
+Ref<Texture2D> EditorInspectorSection::_get_arrow() {}
+
+void EditorInspectorSection::fold() {}
+
+void EditorInspectorCategory::_update_icon() {}
+
+void EditorInspectorArray::_resize_array(int) {}
+
+void EditorInspectorArray::_clear_array() {}

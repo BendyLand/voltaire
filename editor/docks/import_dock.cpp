@@ -118,3 +118,9 @@ ImportDock::~ImportDock()
 }
 
 
+
+void ImportDock::_reimport_attempt() {}
+
+void ImportDock::set_edit_path(String const&) {}
+
+void ImportDock::set_edit_multiple_paths(Vector<String> const&) {}

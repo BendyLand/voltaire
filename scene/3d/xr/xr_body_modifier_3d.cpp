@@ -73,3 +73,5 @@ void XRBodyModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new)
 }
 
 
+
+void XRBodyModifier3D::_get_joint_data() {}

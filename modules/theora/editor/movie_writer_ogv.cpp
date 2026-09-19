@@ -446,3 +446,5 @@ void MovieWriterOGV::write_end()
 }
 
 
+
+MovieWriterOGV::MovieWriterOGV() {}

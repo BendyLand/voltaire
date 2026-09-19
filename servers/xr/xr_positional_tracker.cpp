@@ -63,3 +63,5 @@ Ref<XRPose> XRPositionalTracker::get_pose(const StringName& p_action_name) const
 }
 
 
+
+void XRPositionalTracker::set_pose(StringName const&, Transform3D const&, Vector3 const&, Vector3 const&, XRPose::TrackingConfidence) {}

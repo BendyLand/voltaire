@@ -3222,3 +3222,11 @@ String ProjectConverter3To4::collect_string_from_vector(Vector<SourceLine>& vect
 #endif // DISABLE_DEPRECATED
 
 
+
+void ProjectConverter3To4::rename_joypad_buttons_and_axes(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
+
+void ProjectConverter3To4::rename_input_map_scancode(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
+
+bool ProjectConverter3To4::validate_conversion() {}
+
+bool ProjectConverter3To4::convert() {}

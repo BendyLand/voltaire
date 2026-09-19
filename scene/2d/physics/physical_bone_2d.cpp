@@ -164,7 +164,6 @@ void PhysicalBone2D::set_follow_bone_when_simulating(bool p_follow_bone)
 
 bool PhysicalBone2D::get_follow_bone_when_simulating() const { return follow_bone_when_simulating; }
 
-
 PhysicalBone2D::PhysicalBone2D()
 {
 	// Stop the RigidBody from executing its force integration.
@@ -176,5 +175,13 @@ PhysicalBone2D::PhysicalBone2D()
 }
 
 PhysicalBone2D::~PhysicalBone2D() {}
+
+void PhysicalBone2D::_auto_configure_joint() {}
+
+void PhysicalBone2D::_find_skeleton_parent() {}
+
+PackedStringArray PhysicalBone2D::get_configuration_warnings() const { return PackedStringArray(); }
+
+void PhysicalBone2D::_find_joint_child() {}
 
 

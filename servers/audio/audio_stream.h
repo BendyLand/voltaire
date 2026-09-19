@@ -200,8 +200,8 @@ class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled
 	Ref<AudioStreamMicrophone> microphone;
 
 protected:
-	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual float get_stream_sampling_rate() override;
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
 	virtual double get_playback_position() const override;
 
 public:

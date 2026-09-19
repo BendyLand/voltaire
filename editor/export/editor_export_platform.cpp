@@ -733,8 +733,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
+				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						  // required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -773,8 +773,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
+				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						  // required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -973,7 +973,25 @@ Error EditorExportPlatform::export_project(const Ref<EditorExportPreset>& p_pres
 	return OK;
 }
 
-void EditorExportPlatform::get_platform_features(List<String>*
- r_features) const {}
+Error EditorExportPlatform::ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
+	const Vector<String>& p_ssh_args, const String& p_cmd_args, ProcessID* r_pid,
+	int p_port_fwd) const
+{
+	return OK;
+}
+
+void EditorExportPlatform::get_platform_features(List<String>* r_features) const {}
+
+Vector<String> EditorExportPlatform::get_forced_export_files(
+	const Ref<EditorExportPreset>& p_preset)
+{
+	return Vector<String>();
+}
+
+Error EditorExportPlatform::ssh_run_on_remote(const String& p_host, const String& p_port,
+	const Vector<String>& p_ssh_args, const String& p_cmd_args, String* r_out, int p_port_fwd) const
+{
+	return OK;
+}
 
 

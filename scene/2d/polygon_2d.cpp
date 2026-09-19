@@ -152,4 +152,6 @@ Polygon2D::~Polygon2D()
 	RS::get_singleton()->free_rid(mesh);
 }
 
+void Polygon2D::set_offset(const Vector2& p_offset) {}
+
 

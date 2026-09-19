@@ -1960,3 +1960,11 @@ void DisplayServerWayland::_send_window_event(DisplayServerEnums::WindowEvent p_
 #endif // WAYLAND_ENABLED
 
 
+
+void WaylandThread::_window_hover(int) {}
+
+void DisplayServerWayland::_update_window_rect(Rect2i const&, int) {}
+
+DisplayServerWayland::DisplayServerWayland(String const&, DisplayServerEnums::WindowMode, DisplayServerEnums::VSyncMode, unsigned int, Vector2i const&, DisplayServerEnums::Context, long, Error&) {}
+
+void DisplayServerWayland::_dispatch_input_event(Ref<InputEvent> const&) {}

@@ -149,4 +149,10 @@ Vector2 OpenXRCompositionLayerCylinder::intersects_ray(
 	return Vector2(u, v);
 }
 
+Ref<Mesh> OpenXRCompositionLayerCylinder::_create_fallback_mesh()
+{
+	Ref<Mesh> m = memnew(Mesh);
+	return m;
+}
+
 

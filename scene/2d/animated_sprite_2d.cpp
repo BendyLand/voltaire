@@ -178,3 +178,5 @@ void AnimatedSprite2D::get_argument_options(
 AnimatedSprite2D::AnimatedSprite2D() {}
 
 
+
+void AnimatedSprite2D::_stop_internal(bool) {}

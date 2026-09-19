@@ -35,35 +35,41 @@
 
 class CameraFeed;
 
-struct StreamingBuffer {
-	void *start = nullptr;
+struct StreamingBuffer
+{
+	void* start = nullptr;
 	size_t length = 0;
 };
 
-class BufferDecoder {
+class BufferDecoder
+{
 protected:
-	CameraFeed *camera_feed = nullptr;
+	CameraFeed* camera_feed = nullptr;
 	Ref<Image> image;
 	int width = 0;
 	int height = 0;
 
 public:
-	virtual void decode(StreamingBuffer p_buffer) = 0;
+	virtual void decode(StreamingBuffer p_buffer);
 
-	BufferDecoder(CameraFeed *p_camera_feed);
-	virtual ~BufferDecoder() {}
+	BufferDecoder() = default;
+	BufferDecoder(CameraFeed* p_camera_feed);
+
+	virtual ~BufferDecoder();
 };
 
-class AbstractYuyvBufferDecoder : public BufferDecoder {
+class AbstractYuyvBufferDecoder : public BufferDecoder
+{
 protected:
-	int *component_indexes = nullptr;
+	int* component_indexes = nullptr;
 
 public:
-	AbstractYuyvBufferDecoder(CameraFeed *p_camera_feed);
+	AbstractYuyvBufferDecoder(CameraFeed* p_camera_feed);
 	~AbstractYuyvBufferDecoder();
 };
 
-class SeparateYuyvBufferDecoder : public AbstractYuyvBufferDecoder {
+class SeparateYuyvBufferDecoder : public AbstractYuyvBufferDecoder
+{
 private:
 	Vector<uint8_t> y_image_data;
 	Vector<uint8_t> cbcr_image_data;
@@ -71,43 +77,49 @@ private:
 	Ref<Image> cbcr_image;
 
 public:
-	SeparateYuyvBufferDecoder(CameraFeed *p_camera_feed);
+	SeparateYuyvBufferDecoder(CameraFeed* p_camera_feed);
 	virtual void decode(StreamingBuffer p_buffer) override;
 };
 
-class YuyvToGrayscaleBufferDecoder : public AbstractYuyvBufferDecoder {
+class YuyvToGrayscaleBufferDecoder : public AbstractYuyvBufferDecoder
+{
 private:
 	Vector<uint8_t> image_data;
 
 public:
-	YuyvToGrayscaleBufferDecoder(CameraFeed *p_camera_feed);
+	YuyvToGrayscaleBufferDecoder(CameraFeed* p_camera_feed);
 	virtual void decode(StreamingBuffer p_buffer) override;
 };
 
-class YuyvToRgbBufferDecoder : public AbstractYuyvBufferDecoder {
+class YuyvToRgbBufferDecoder : public AbstractYuyvBufferDecoder
+{
 private:
 	Vector<uint8_t> image_data;
 
 public:
-	YuyvToRgbBufferDecoder(CameraFeed *p_camera_feed);
+	YuyvToRgbBufferDecoder(CameraFeed* p_camera_feed);
 	virtual void decode(StreamingBuffer p_buffer) override;
 };
 
-class CopyBufferDecoder : public BufferDecoder {
+class CopyBufferDecoder : public BufferDecoder
+{
 private:
 	Vector<uint8_t> image_data;
 	bool rgba = false;
 
 public:
-	CopyBufferDecoder(CameraFeed *p_camera_feed, bool p_rgba);
+	CopyBufferDecoder(CameraFeed* p_camera_feed, bool p_rgba);
 	virtual void decode(StreamingBuffer p_buffer) override;
 };
 
-class JpegBufferDecoder : public BufferDecoder {
+class JpegBufferDecoder : public BufferDecoder
+{
 private:
 	Vector<uint8_t> image_data;
 
 public:
-	JpegBufferDecoder(CameraFeed *p_camera_feed);
+	JpegBufferDecoder(CameraFeed* p_camera_feed);
 	virtual void decode(StreamingBuffer p_buffer) override;
 };
+
+

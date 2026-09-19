@@ -283,3 +283,5 @@ void SkeletonModifier3D::_validate_bone_names() {}
 void SkeletonModifier3D::_process_modification(double p_delta) {}
 
 
+
+void SkeletonModifier3D::process_modification(double) {}

@@ -429,3 +429,7 @@ void ThemeClassic::populate_shared_styles(
 }
 
 
+
+void ThemeClassic::populate_standard_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}
+
+void ThemeClassic::populate_editor_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&) {}

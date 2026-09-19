@@ -192,3 +192,7 @@ void OpenXRFutureExtension::on_process()
 }
 
 
+
+void OpenXRFutureResult::_mark_as_cancelled() {}
+
+void OpenXRFutureResult::_mark_as_finished() {}

@@ -418,7 +418,6 @@ private:
 		float p_overlap, TileSet::TileOffsetAxis p_offset_axis, TileSet::CellNeighbor p_bit);
 
 protected:
-
 public:
 	// --- Accessors for TileSet data ---
 
@@ -590,7 +589,6 @@ class TileSetSource : public Resource
 {
 protected:
 	const TileSet* tile_set = nullptr;
-
 
 public:
 	static const Vector2i INVALID_ATLAS_COORDS; // Vector2i(-1, -1);

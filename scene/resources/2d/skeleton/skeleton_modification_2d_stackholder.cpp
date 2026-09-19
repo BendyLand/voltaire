@@ -92,3 +92,5 @@ SkeletonModification2DStackHolder::SkeletonModification2DStackHolder()
 SkeletonModification2DStackHolder::~SkeletonModification2DStackHolder() {}
 
 
+
+void SkeletonModification2D::editor_draw_angle_constraints(Bone2D*, float, float, bool, bool, bool) {}

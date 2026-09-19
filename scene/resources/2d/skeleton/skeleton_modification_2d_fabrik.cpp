@@ -112,3 +112,7 @@ SkeletonModification2DFABRIK::SkeletonModification2DFABRIK()
 SkeletonModification2DFABRIK::~SkeletonModification2DFABRIK() {}
 
 
+
+void SkeletonModification2DFABRIK::update_target_cache() {}
+
+void SkeletonModification2DFABRIK::fabrik_joint_update_bone2d_cache(int) {}

@@ -94,13 +94,14 @@ public:
 
 	static String get_config_key(int p_idx) { return "dock_" + itos(p_idx + 1); }
 
+	virtual bool can_switch_dock() const;
+
 	virtual void dock_closed(EditorDock* p_dock) {}
 
 	virtual void dock_focused(EditorDock* p_dock, bool p_was_visible) {}
 
 	virtual void update_visibility();
 	virtual TabStyle get_tab_style() const;
-	virtual bool can_switch_dock() const;
 
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock)
 	{

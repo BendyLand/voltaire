@@ -421,4 +421,18 @@ int Skeleton3DGizmoPlugin::skeleton_intersect_ray(
 	return closest_idx;
 }
 
+void BonePropertiesEditor::set_skeleton(Skeleton3D*) {}
 
+void BonePropertiesEditor::create_editors() {}
+
+void Skeleton3DEditor::reset_pose(bool) {}
+
+void Skeleton3DEditor::pose_to_rest(bool) {}
+
+void Skeleton3DEditor::create_physical_skeleton() {}
+
+int Skeleton3DGizmoPlugin::subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
+	const Vector2& p_point) const
+{
+	return 0;
+}

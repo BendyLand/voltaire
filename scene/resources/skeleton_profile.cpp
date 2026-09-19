@@ -539,3 +539,15 @@ SkeletonProfileHumanoid::~SkeletonProfileHumanoid() {}
 //////////////////////////////////////
 
 
+
+void SkeletonProfile::set_reference_pose(int, Transform3D const&) {}
+
+void SkeletonProfile::set_handle_offset(int, Vector2 const&) {}
+
+void SkeletonProfile::set_group_size(int) {}
+
+void SkeletonProfile::set_bone_size(int) {}
+
+void SkeletonProfile::set_bone_parent(int, StringName const&) {}
+
+void SkeletonProfile::set_bone_name(int, StringName const&) {}

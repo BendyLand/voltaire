@@ -103,3 +103,11 @@ RetargetModifier3D::RetargetModifier3D() {}
 RetargetModifier3D::~RetargetModifier3D() {}
 
 
+
+void RetargetModifier3D::_update_child_skeletons() {}
+
+void RetargetModifier3D::_retarget_pose() {}
+
+void RetargetModifier3D::_retarget_global_pose() {}
+
+void RetargetModifier3D::_profile_changed(Ref<SkeletonProfile>, Ref<SkeletonProfile>) {}

@@ -74,3 +74,7 @@ VisibleOnScreenEnabler2D::EnableMode VisibleOnScreenEnabler2D::get_enable_mode()
 NodePath VisibleOnScreenEnabler2D::get_enable_node_path() { return enable_node_path; }
 
 
+
+void VisibleOnScreenEnabler2D::_update_enable_mode(bool) {}
+
+void VisibleOnScreenNotifier2D::set_rect(Rect2 const&) {}

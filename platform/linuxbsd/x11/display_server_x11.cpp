@@ -5997,3 +5997,13 @@ void DisplayServerX11::_send_window_event(const WindowData& wd, DisplayServerEnu
 #endif // X11 enabled
 
 
+
+void DisplayServerX11::_window_changed(_XEvent*) {}
+
+void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
+
+void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawCallbackStruct*) {}
+
+DisplayServerX11::DisplayServerX11(String const&, DisplayServerEnums::WindowMode, DisplayServerEnums::VSyncMode, unsigned int, Vector2i const*, Vector2i const&, int, DisplayServerEnums::Context, long, Error&) {}
+
+void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}

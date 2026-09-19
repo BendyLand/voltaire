@@ -111,3 +111,9 @@ Vector<int> BoxContainer::get_allowed_size_flags_vertical() const
 BoxContainer::BoxContainer(bool p_vertical) { vertical = p_vertical; }
 
 
+
+void BoxContainer::set_vertical(bool) {}
+
+Size2 BoxContainer::_get_minimum_size(bool) const {}
+
+void BoxContainer::_resort() {}

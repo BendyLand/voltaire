@@ -214,3 +214,5 @@ NavObstacle2D::~NavObstacle2D() { cancel_sync_request(); }
 void NavObstacle2D::request_sync() {}
 
 
+
+void NavObstacle2D::cancel_sync_request() {}

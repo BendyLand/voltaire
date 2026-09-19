@@ -61,6 +61,8 @@ public:
 	virtual Error start(const String& p_uri) override;
 };
 
+Error EditorDebuggerServerTCP::start(const String& p_uri) { return OK; }
+
 Ref<EditorDebuggerServer> EditorDebuggerServerTCP::create(const String& p_protocol)
 {
 	ERR_FAIL_COND_V(p_protocol != "tcp://", nullptr);
@@ -119,3 +121,5 @@ void EditorDebuggerServer::initialize()
 void EditorDebuggerServer::deinitialize() { protocols.clear(); }
 
 
+
+Ref<EditorDebuggerServer> EditorDebuggerServerUDS::create(String const&) {}

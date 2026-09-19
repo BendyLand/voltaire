@@ -267,3 +267,19 @@ PackedStringArray RigidBody3D::get_configuration_warnings() const
 RigidBody3D::~RigidBody3D() { memdelete(contact_monitor); }
 
 
+
+void RigidBody3D::set_mass(float) {}
+
+void RigidBody3D::set_linear_velocity(Vector3 const&) {}
+
+void RigidBody3D::set_inertia(Vector3 const&) {}
+
+void RigidBody3D::set_center_of_mass(Vector3 const&) {}
+
+void RigidBody3D::set_center_of_mass_mode(RigidBody3D::CenterOfMassMode) {}
+
+void RigidBody3D::set_angular_velocity(Vector3 const&) {}
+
+RigidBody3D::RigidBody3D() {}
+
+void RigidBody3D::_body_state_changed(PhysicsDirectBodyState3D*) {}

@@ -164,3 +164,9 @@ void ProgressDialog::_cancel_pressed() { canceled = true; }
 ProgressDialog::~ProgressDialog() { singleton = nullptr; }
 
 
+
+void BackgroundProgress::task_step(String const&, int) {}
+
+void BackgroundProgress::end_task(String const&) {}
+
+void BackgroundProgress::add_task(String const&, String const&, int) {}

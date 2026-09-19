@@ -114,4 +114,9 @@ CollisionShape3D::CollisionShape3D()
 
 CollisionShape3D::~CollisionShape3D() {}
 
+PackedStringArray CollisionShape3D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
 

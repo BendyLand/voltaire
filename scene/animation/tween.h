@@ -241,8 +241,6 @@ public:
 
 	CallbackTweener();
 
-protected:
-
 private:
 	double delay = 0;
 

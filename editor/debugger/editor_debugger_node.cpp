@@ -180,3 +180,15 @@ ScriptEditorDebugger* EditorDebuggerNode::get_current_debugger() const
 }
 
 
+
+void EditorDebuggerNode::stop_waiting_inspection() {}
+
+void EditorDebuggerNode::set_camera_override(EditorDebuggerNode::CameraOverride) {}
+
+ScriptEditorDebugger* EditorDebuggerNode::get_default_debugger() const {}
+
+ScriptEditorDebugger* EditorDebuggerNode::get_debugger(int) const {}
+
+void EditorDebuggerNode::set_debug_mute_audio(bool) {}
+
+void EditorDebuggerNode::reload_scripts(Vector<String> const&) {}

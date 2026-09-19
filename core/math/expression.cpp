@@ -590,4 +590,9 @@ String Expression::get_error_text() const { return error_str; }
 
 Expression::~Expression() { memdelete(nodes); }
 
+Expression::ENode* Expression::_parse_expression()
+{
+	ENode en = ENode();
+	return &en;
+}
 

@@ -107,8 +107,16 @@ public:
 protected:
 	_THREAD_SAFE_CLASS_
 
-
 public:
+	virtual PackedStringArray
+	get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
+	virtual PackedStringArray get_suggested_pose_names(const StringName& p_tracker_name)
+		const; /* return a list of likely/suggested action names for this tracker */
+	virtual TrackingStatus get_tracking_status() const; /* get the status of our current tracking */
+	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
+		double p_frequency, double p_amplitude, double p_duration_sec,
+		double p_delay_sec = 0); /* trigger a haptic pulse */
+
 	/** general interface information **/
 	virtual StringName get_name() const;
 	virtual uint32_t get_capabilities() const;
@@ -120,17 +128,6 @@ public:
 	virtual bool initialize();	 /* initialize this interface, if this has an HMD it becomes the
 										primary interface */
 	virtual void uninitialize(); /* deinitialize this interface */
-
-	/** input and output **/
-
-	virtual PackedStringArray
-	get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
-	virtual PackedStringArray get_suggested_pose_names(const StringName& p_tracker_name)
-		const; /* return a list of likely/suggested action names for this tracker */
-	virtual TrackingStatus get_tracking_status() const; /* get the status of our current tracking */
-	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
-		double p_frequency, double p_amplitude, double p_duration_sec,
-		double p_delay_sec = 0); /* trigger a haptic pulse */
 
 	/** specific to VR **/
 	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode
@@ -161,14 +158,14 @@ public:
 	// These methods can be called from both main and render thread.
 	virtual Size2 get_render_target_size(); /* returns the recommended render target size per
 												   eye for this device */
-	virtual uint32_t get_view_count(); /* returns the view count we need (1 is monoscopic, 2 is
-											  stereoscopic but can be more) */
+	virtual uint32_t get_view_count();		/* returns the view count we need (1 is monoscopic, 2 is
+												   stereoscopic but can be more) */
 
 	// These methods are called from the rendering thread.
 	virtual Transform3D get_transform_for_view(
 		uint32_t p_view, const Transform3D& p_cam_transform); /* get each views transform */
 	virtual Projection get_projection_for_view(uint32_t p_view, double p_aspect, double p_z_near,
-		double p_z_far);		 /* get each view projection matrix */
+		double p_z_far);			 /* get each view projection matrix */
 	virtual RID get_color_texture(); /* obtain color output texture (if applicable) */
 	virtual RID
 	get_depth_texture(); /* obtain depth output texture (if applicable, used for reprojection) */
@@ -186,8 +183,7 @@ public:
 	} /* inform XR interface we are about to start our viewport draw process */
 
 	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(RID p_render_target,
-		const Rect2&
-			p_screen_rect); /* inform XR interface we finished our viewport draw process */
+		const Rect2& p_screen_rect); /* inform XR interface we finished our viewport draw process */
 
 	virtual void end_frame() {}
 
@@ -200,7 +196,6 @@ public:
 	virtual bool start_passthrough() { return false; }
 
 	virtual void stop_passthrough() {}
-
 
 	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const
 	{
@@ -217,6 +212,5 @@ public:
 	XRInterface();
 	~XRInterface();
 };
-
 
 

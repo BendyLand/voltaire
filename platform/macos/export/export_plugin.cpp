@@ -281,4 +281,12 @@ String EditorExportPlatformMacOS::get_option_tooltip(int p_index) const
 					 : TTR("Run exported project on remote macOS system");
 }
 
+Error EditorExportPlatformMacOS::_copy_and_sign_files(Ref<DirAccess>& dir_access,
+	const String& p_src_path, const String& p_in_app_path, bool p_sign_enabled,
+	const Ref<EditorExportPreset>& p_preset, const String& p_ent_path,
+	const String& p_helper_ent_path, bool p_should_error_on_non_code_sign, bool p_sandbox)
+{
+	return OK;
+}
+
 

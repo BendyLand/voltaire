@@ -92,3 +92,5 @@ ZIPPacker::~ZIPPacker()
 }
 
 
+
+Error ZIPPacker::start_file(String const&, unsigned int, unsigned long) {}

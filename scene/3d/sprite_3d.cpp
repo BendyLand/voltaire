@@ -384,8 +384,6 @@ SpriteBase3D::~SpriteBase3D()
 	RenderingServer::get_singleton()->free_rid(material);
 }
 
-///////////////////////////////////////////
-
 void Sprite3D::_draw()
 {
 	if (get_base() != get_mesh()) {
@@ -633,4 +631,8 @@ void AnimatedSprite3D::get_argument_options(
 
 AnimatedSprite3D::AnimatedSprite3D() {}
 
+void AnimatedSprite3D::_stop_internal(bool p_reset) {}
 
+void SpriteBase3D::draw_texture_rect(Ref<Texture2D>, Rect2, Rect2) {}
+
+void Sprite3D::set_frame(int) {}

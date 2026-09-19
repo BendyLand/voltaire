@@ -1038,3 +1038,11 @@ float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_ti
 void AnimationMarkerKeyEdit::_set_marker_name(const StringName& p_name) { marker_name = p_name; }
 
 
+
+void AnimationTrackKeyEdit::notify_change() {}
+
+void AnimationTrackEditor::_clear_key_edit() {}
+
+void AnimationMultiTrackKeyEdit::notify_change() {}
+
+void AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}

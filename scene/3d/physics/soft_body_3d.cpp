@@ -523,3 +523,13 @@ void PhysicsServer3DRenderingServerHandler::set_normal(int p_vertex, const Vecto
 void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB& p_aabb) {}
 
 
+
+void SoftBody3D::_prepare_physics_server() {}
+
+void SoftBody3D::_update_cache_pin_points_datas() {}
+
+void SoftBody3D::_reset_points_offsets() {}
+
+void SoftBody3D::_add_pinned_point(int, NodePath const&, int) {}
+
+void SoftBody3D::add_collision_exception_with(Node*) {}

@@ -1142,7 +1142,8 @@ Error RenderingDevice::driver_callback_add(
 	return OK;
 }
 
-RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+RID RenderingDevice::storage_buffer_create(
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
 	return RID();
 }
@@ -1274,8 +1275,7 @@ RID RenderingDevice::texture_create(
 	return RID();
 }
 
-Vector<uint8_t> RenderingDevice::texture_get_data(
-	RID p_texture, uint32_t p_layer)
+Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_layer)
 {
 	return Vector<uint8_t>();
 }
@@ -1772,7 +1772,8 @@ void RenderingDevice::_texture_copy_shared(
 				update_copy.from_buffer = shared_buffer;
 				update_copy.region.buffer_offset = get_data_region.buffer_offset;
 				update_copy.region.row_pitch = get_data_region.row_pitch;
-				update_copy.region.texture_subresource.aspect = RDD::TEXTURE_ASPECT_COLOR;
+				update_copy.region.texture_subresource.aspect = RDD
+::TEXTURE_ASPECT_COLOR;
 				update_copy.region.texture_subresource.layer = texture_subresource.layer;
 				update_copy.region.texture_subresource.mipmap = texture_subresource.mipmap;
 				update_copy.region.texture_region_size.x = get_data_region.texture_region_size.x;
@@ -3012,7 +3013,8 @@ RID RenderingDevice::sampler_create(const SamplerState& p_state)
 	return id;
 }
 
-RID RenderingDevice::vertex_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+RID RenderingDevice::vertex_buffer_create(
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
 	return RID();
 }
@@ -3310,9 +3312,8 @@ uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 	return shader->vertex_input_mask;
 }
 
-
-RID RenderingDevice::uniform_set_create(const VectorView<Uniform>& p_uniforms, RID p_shader,
-	uint32_t p_shader_set, bool p_linear_pool)
+RID RenderingDevice::uniform_set_create(
+	const VectorView<Uniform>& p_uniforms, RID p_shader, uint32_t p_shader_set, bool p_linear_pool)
 {
 	return RID();
 }
@@ -3482,7 +3483,8 @@ int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen) co
 	return context->surface_get_height(surface);
 }
 
-int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
+int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen)
+ const
 {
 	_THREAD_SAFE_METHOD_
 
@@ -3501,7 +3503,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 
-	screen_swap_chains.find(p_screen);
+		screen_swap_chains.find(p_screen);
 	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
 
 	DataFormat format = driver->swap_chain_get_format(it->value);
@@ -5952,4 +5954,43 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 
 void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {}
 
+RenderingDevice::~RenderingDevice() {}
 
+void RenderingDevice::swap_buffers(bool) {}
+
+Error RenderingDevice::screen_prepare_for_drawing(int) { return OK; }
+
+Error RenderingDevice::screen_free(int) { return OK; }
+
+RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
+	VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
+	const PipelineRasterizationState& p_rasterization_state,
+	const PipelineMultisampleState& p_multisample_state,
+	const PipelineDepthStencilState& p_depth_stencil_state,
+	const PipelineColorBlendState& p_blend_state, uint32_t p_dynamic_state_flags,
+	uint32_t p_for_render_pass,
+	const Vector<PipelineSpecializationConstant>& p_specialization_constants)
+{
+	return RID();
+}
+
+RID RenderingDevice::texture_create_from_extension(TextureType p_type, DataFormat p_format,
+	TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
+	uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps)
+{
+	return RID();
+}
+
+RenderingDevice* RenderingDevice::create_local_device()
+{
+	RenderingDevice rd = RenderingDevice();
+	return &rd;
+}
+
+Error RenderingDevice::texture_update(
+	RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data)
+{
+	return OK;
+}
+
+void RenderingDevice::compute_list_add_barrier(ComputeListID p_list) {}

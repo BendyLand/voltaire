@@ -242,3 +242,21 @@ VersionControlEditorPlugin::~VersionControlEditorPlugin()
 }
 
 
+
+void VersionControlEditorPlugin::_refresh_remote_list() {}
+
+void VersionControlEditorPlugin::shut_down() {}
+
+void VersionControlEditorPlugin::_refresh_branch_list() {}
+
+VersionControlEditorPlugin::VersionControlEditorPlugin() {}
+
+void VersionControlEditorPlugin::_update_commit_button() {}
+
+void VersionControlEditorPlugin::_set_vcs_ui_state(bool) {}
+
+void VersionControlEditorPlugin::_refresh_commit_list() {}
+
+void VersionControlEditorPlugin::_initialize_vcs() {}
+
+void VersionControlEditorPlugin::_force_push() {}

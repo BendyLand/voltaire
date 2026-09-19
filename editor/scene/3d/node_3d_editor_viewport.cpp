@@ -1256,3 +1256,25 @@ void Node3DEditorViewport::register_shortcut_action(
 
 void Node3DEditorViewport::_compute_edit(const Point2& p_point) {}
 
+
+void ViewportRotationControl::_get_sorted_axis(Vector<ViewportRotationControl::Axis2D>&) {}
+
+void Node3DEditorViewport::_sync_cursor_from_transform(Transform3D const&) {}
+
+void ViewportNavigationControl::_update_navigation() {}
+
+void ViewportNavigationControl::_draw() {}
+
+void Node3DEditorViewport::_pilot_commit_undo_session() {}
+
+void Node3DEditorViewport::_menu_option(int) {}
+
+bool Node3DEditorViewport::_is_node_locked(Node const*) const {}
+
+int Node3DEditorViewport::get_selected_count() const {}
+
+void Node3DEditorViewport::apply_transform(Vector3, double) {}
+
+void Node3DEditorViewport::input(const Ref<InputEvent>& p_event) {}
+
+

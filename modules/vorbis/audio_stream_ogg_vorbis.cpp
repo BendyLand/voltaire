@@ -618,3 +618,5 @@ Ref<AudioStreamOggVorbis> AudioStreamOggVorbis::load_from_file(const String& p_p
 }
 
 
+
+void AudioStreamOggVorbis::maybe_update_info() {}

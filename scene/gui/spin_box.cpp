@@ -234,3 +234,9 @@ void SpinBox::_value_changed(double p_value)
 void SpinBox::_update_text(bool p_only_update_if_value_changed) {}
 
 
+
+void SpinBox::_text_submitted(String const&) {}
+
+void SpinBox::set_editable(bool) {}
+
+void SpinBox::_update_buttons_state_for_current_value() {}

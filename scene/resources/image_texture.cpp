@@ -35,6 +35,8 @@
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 
+void ImageTexture::reload_from_file() {}
+
 Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 {
 	ERR_FAIL_COND_V_MSG(p_image.is_null(), Ref<ImageTexture>(), "Invalid image: null");
@@ -400,3 +402,5 @@ Ref<Resource> CubemapArray::create_placeholder() const
 }
 
 
+
+void ImageTexture::set_image(Ref<Image> const&) {}

@@ -193,4 +193,6 @@ bool ButtonGroup::is_allow_unpress() { return allow_unpress; }
 
 ButtonGroup::ButtonGroup() { set_local_to_scene(true); }
 
+void BaseButton::pressed() {}
+
 

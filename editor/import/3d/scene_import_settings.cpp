@@ -166,3 +166,7 @@ void SceneImportSettingsDialog::_menu_callback(int p_id)
 SceneImportSettingsDialog::~SceneImportSettingsDialog() { memdelete(scene_import_settings_data); }
 
 
+
+void SceneImportSettingsDialog::open_settings(String const&, String const&) {}
+
+void SceneImportSettingsDialog::_fill_scene(Node*, TreeItem*) {}

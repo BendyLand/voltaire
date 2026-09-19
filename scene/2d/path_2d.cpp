@@ -256,3 +256,5 @@ void PathFollow2D::set_loop(bool p_loop) { loop = p_loop; }
 bool PathFollow2D::has_loop() const { return loop; }
 
 
+
+void Path2D::_debug_update() {}

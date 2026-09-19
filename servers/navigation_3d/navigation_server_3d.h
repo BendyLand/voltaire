@@ -282,8 +282,8 @@ public:
 	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
-	NavigationServer3D();
-	~NavigationServer3D();
+	NavigationServer3D() = default;
+	~NavigationServer3D() = default;
 
 	/* DEBUG API */
 

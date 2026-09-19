@@ -1955,3 +1955,47 @@ TerrainConstraint::TerrainConstraint(Ref<TileSet> p_tile_set, const Vector2i& p_
 }
 
 
+
+void TileMapLayer::_build_runtime_update_tile_data_for_cell(CellData&, bool, bool) {}
+
+void TileMapLayer::_scenes_update_cell(CellData&) {}
+
+void TileMapLayer::_queue_internal_update() {}
+
+void TileMapLayer::notify_runtime_tile_data_update() {}
+
+void TileMapLayer::_navigation_update_cell(CellData&) {}
+
+void TileMapLayer::draw_tile(RID, Vector2 const&, Ref<TileSet>, int, Vector2i const&, int, int, TileData const*, float) {}
+
+void TileMapLayer::_update_cells_callback(bool) {}
+
+void TileMapLayer::set_use_kinematic_bodies(bool) {}
+
+void TileMapLayer::set_rendering_quadrant_size(int) {}
+
+void TileMapLayer::set_pattern(Vector2i const&, Ref<TileMapPattern>) {}
+
+void TileMapLayer::set_navigation_visibility_mode(TileMapLayer::DebugVisibilityMode) {}
+
+void TileMapLayer::set_navigation_map(RID) {}
+
+void TileMapLayer::set_navigation_enabled(bool) {}
+
+void TileMapLayer::set_enabled(bool) {}
+
+void TileMapLayer::set_collision_visibility_mode(TileMapLayer::DebugVisibilityMode) {}
+
+void TileMapLayer::_scenes_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+
+void TileMapLayer::_rendering_update(bool) {}
+
+void TileMapLayer::_rendering_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+
+void TileMapLayer::_physics_update(bool) {}
+
+void TileMapLayer::_physics_draw_quadrant_debug(RID const&, DebugQuadrant&) {}
+
+void TileMapLayer::_navigation_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
+
+void TileMapLayer::fix_invalid_tiles() {}

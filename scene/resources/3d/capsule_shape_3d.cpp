@@ -113,3 +113,5 @@ CapsuleShape3D::CapsuleShape3D()
 }
 
 
+
+void CapsuleShape3D::_update_shape() {}

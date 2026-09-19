@@ -82,3 +82,5 @@ int MarginContainer::get_margin_size(Side p_side) const
 MarginContainer::MarginContainer() {}
 
 
+
+Size2 MarginContainer::get_minimum_size() const {}

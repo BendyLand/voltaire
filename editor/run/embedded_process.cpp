@@ -244,3 +244,15 @@ EmbeddedProcess::~EmbeddedProcess()
 }
 
 
+
+void EmbeddedProcessBase::set_window_size(Vector2i const&) {}
+
+void EmbeddedProcess::reset() {}
+
+void EmbeddedProcessBase::set_keep_aspect(bool) {}
+
+void EmbeddedProcess::_try_embed_process() {}
+
+void EmbeddedProcess::_check_mouse_over() {}
+
+void EmbeddedProcess::_check_focused_process_id() {}

@@ -125,3 +125,9 @@ void TileSetScenesCollectionSourceEditor::_notification(int p_what)
 }
 
 
+
+void TileSetScenesCollectionSourceEditor::_update_action_buttons() {}
+
+void TileSetScenesCollectionSourceEditor::_update_tile_inspector() {}
+
+void TileSetScenesCollectionSourceEditor::_update_source_inspector() {}

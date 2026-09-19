@@ -42,3 +42,5 @@ void OpenXRActionEditor::_notification(int p_what)
 }
 
 
+
+void OpenXRActionEditor::_theme_changed() {}

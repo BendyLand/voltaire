@@ -81,10 +81,8 @@ private:
 	void _retarget_pose();
 
 protected:
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
-
 	virtual void _notification(int p_what);
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
@@ -92,6 +90,8 @@ protected:
 
 	virtual void _set_active(bool p_active) override;
 	virtual void _process_modification(double p_delta) override;
+
+	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;

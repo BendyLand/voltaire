@@ -2013,4 +2013,20 @@ PackedVector3Array Curve3D::tessellate_even_length(int p_max_stages, real_t p_le
 	return tess;
 }
 
+void Curve2D::add_point(Vector2 const&, Vector2 const&, Vector2 const&, int) {}
+
+void Curve::remove_point(int) {}
+
+void Curve3D::clear_points() {}
+
+void Curve2D::remove_point(int) {}
+
+void Curve2D::clear_points() {}
+
+void Curve3D::set_closed(bool) {}
+
+void Curve3D::add_point(Vector3 const&, Vector3 const&, Vector3 const&, int) {}
+
+Curve2D::Curve2D() {}
+
 

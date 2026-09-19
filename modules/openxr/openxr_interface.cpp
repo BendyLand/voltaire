@@ -1067,3 +1067,11 @@ OpenXRInterface::~OpenXRInterface()
 }
 
 
+
+void OpenXRInterface::uninitialize() {}
+
+void OpenXRInterface::on_refresh_rate_changes(float) {}
+
+void OpenXRInterface::on_gpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}
+
+void OpenXRInterface::on_cpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}

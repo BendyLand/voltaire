@@ -88,4 +88,6 @@ EditorRun::EditorRun()
 	running_scene = "";
 }
 
+EditorRun::WindowPlacement EditorRun::get_window_placement() {}
+
 

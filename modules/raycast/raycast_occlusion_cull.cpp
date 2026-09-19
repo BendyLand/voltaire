@@ -558,3 +558,13 @@ RaycastOcclusionCull::~RaycastOcclusionCull()
 }
 
 
+
+void RaycastOcclusionCull::Scenario::_update_dirty_instance(int, RID*) {}
+
+void RaycastOcclusionCull::Scenario::update() {}
+
+void RaycastOcclusionCull::Scenario::raycast(RTCRayHit16*, unsigned int const*, unsigned int) const {}
+
+RaycastOcclusionCull::RaycastOcclusionCull() {}
+
+void RaycastOcclusionCull::RaycastHZBuffer::update_camera_rays(Transform3D const&, Vector3 const&, Vector2 const&, float, bool) {}

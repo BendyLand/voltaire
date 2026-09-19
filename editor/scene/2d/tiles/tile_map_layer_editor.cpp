@@ -546,3 +546,29 @@ TileMapLayerEditor::~TileMapLayerEditor()
 
 void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {}
 
+
+TileMapLayer* TileMapLayerSubEditorPlugin::_get_edited_layer() const {}
+
+void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_tiles_selection() {}
+
+void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_pattern_selection() {}
+
+void TileMapLayerEditorTilesPlugin::_set_transform_buttons_state(Vector<Button*> const&, Vector<Button*> const&, String const&) {}
+
+void TileMapLayerEditorTerrainsPlugin::_update_terrains_tree() {}
+
+void TileMapLayerEditor::_update_layers_selector() {}
+
+void TileMapLayerEditorTilesPlugin::_update_tile_set_sources_list() {}
+
+void TileMapLayerEditorTilesPlugin::_update_source_display() {}
+
+void TileMapLayerEditorTilesPlugin::_update_patterns_list() {}
+
+void TileMapLayerEditorTilesPlugin::_update_fix_selected_and_hovered() {}
+
+void TileMapLayerEditorTerrainsPlugin::_update_tiles_list() {}
+
+void TileMapLayerEditor::forward_canvas_draw_over_viewport(Control*) {}
+
+void TileMapLayerEditor::_find_tile_map_layers_in_scene(Node*, Node const*, Vector<TileMapLayer*>&) const {}

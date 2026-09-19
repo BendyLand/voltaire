@@ -326,3 +326,11 @@ void NavRegion3D::set_use_async_iterations(bool p_enabled)
 bool NavRegion3D::get_use_async_iterations() const { return use_async_iterations; }
 
 
+
+NavRegion3D::~NavRegion3D() {}
+
+void NavRegion3D::sync_async_tasks() {}
+
+NavRegion3D::NavRegion3D() {}
+
+void NavRegion3D::_build_iteration() {}

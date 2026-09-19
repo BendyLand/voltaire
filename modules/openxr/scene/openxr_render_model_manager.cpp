@@ -140,3 +140,5 @@ String OpenXRRenderModelManager::get_make_local_to_pose() const { return make_lo
 #endif // MODULE_GLTF_ENABLED
 
 
+
+void OpenXRRenderModelManager::_update_models() {}

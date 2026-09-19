@@ -91,4 +91,8 @@ Container::Container()
 	set_propagate_maximum_size(true);
 }
 
+void Container::add_child_notify(Node* p_child) {}
+
+void Container::fit_child_in_rect(Control*, Rect2 const&) {}
+
 

@@ -101,3 +101,5 @@ SeparationRayShape2D::SeparationRayShape2D()
 }
 
 
+
+void SeparationRayShape2D::_update_shape() {}

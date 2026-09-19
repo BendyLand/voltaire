@@ -634,3 +634,9 @@ Ref<SceneState> SceneState::get_base_scene_state() const
 }
 
 
+
+Node* PackedScene::instantiate(PackedScene::GenEditState) const {}
+
+Error SceneState::pack(Node*) {}
+
+void SceneState::clear() {}

@@ -198,3 +198,7 @@ void GroupsEditor::_groups_gui_input(Ref<InputEvent> p_event)
 }
 
 
+
+void GroupsEditor::_menu_id_pressed(int) {}
+
+GroupsEditor::GroupsEditor() {}

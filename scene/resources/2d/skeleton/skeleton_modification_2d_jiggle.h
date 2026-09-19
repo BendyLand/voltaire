@@ -77,8 +77,8 @@ private:
 
 public:
 	void reset();
-	void _execute(float p_delta) override;
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
+	void _execute(float p_delta) override;
 
 	void set_target_node(const NodePath& p_target_node);
 	NodePath get_target_node() const;

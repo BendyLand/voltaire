@@ -862,3 +862,5 @@ RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context
 	return RID();
 }
 
+
+RID RenderSceneBuffersRD::create_texture_view(StringName const&, StringName const&, StringName const&, RenderingDevice::TextureView) {}

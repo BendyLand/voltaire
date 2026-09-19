@@ -33,10 +33,6 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DJIGGLE
-///////////////////////////////////////
-
 class SkeletonModification2DPhysicalBones : public SkeletonModification2D
 {
 private:
@@ -54,8 +50,8 @@ private:
 	void _update_simulation_state();
 
 public:
-	void _execute(float p_delta) override;
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
+	void _execute(float p_delta) override;
 
 	int get_physical_bone_chain_length();
 	void set_physical_bone_chain_length(int p_new_length);

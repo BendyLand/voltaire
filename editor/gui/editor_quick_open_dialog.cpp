@@ -655,3 +655,29 @@ void QuickOpenResultGridItem::remove_highlight()
 
 void HighlightedLabel::reset_highlights() {}
 
+void QuickOpenResultItem::_set_enabled(bool) {}
+
+void QuickOpenResultContainer::_select_item(int) {}
+
+void QuickOpenResultContainer::save_selected_item() {}
+
+void EditorQuickOpenDialog::update_property() {}
+
+bool EditorQuickOpenDialog::_is_instant_preview_active() const { return true; }
+
+void QuickOpenResultItem::set_display_mode(QuickOpenDisplayMode) {}
+
+void QuickOpenResultContainer::_update_result_items(int, int) {}
+
+void QuickOpenResultContainer::_set_display_mode(QuickOpenDisplayMode) {}
+
+Vector<Ref<FuzzySearchMatch>> QuickOpenResultContainer::_get_fuzzy_search_results()
+{
+	return Vector<Ref<FuzzySearchMatch>>();
+}
+
+void EditorQuickOpenDialog::preview_property() {}
+
+void HighlightedLabel::add_highlight(Vector2i const&) {}
+
+

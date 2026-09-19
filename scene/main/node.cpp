@@ -1829,4 +1829,61 @@ void Node::_emit_editor_state_changed() {}
 
 void Node::_move_child(Node* p_child, int p_index, bool p_ignore_end) {}
 
+void Node::set_process_shortcut_input(bool) {}
+
+void Node::set_process_input(bool) {}
+
+void Node::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const {}
+
+void Node::notify_deferred_thread_group(int) {}
+
+void Node::_generate_serial_child_name(Node const*, StringName&) const {}
+
+void Node::_duplicate_signals(Node const*, Node*) const {}
+
+void Node::_duplicate_scripts(Node const*, Node*) const {}
+
+void Node::_duplicate_properties(Node const*, Node const*, Node*, int) const {}
+
+Node* Node::_duplicate(int,
+	HashMap<Node const*, Node*, HashMapHasherDefault, HashMapComparatorDefault<Node const*, void>,
+		DefaultTypedAllocator<HashMapElement<Node const*, Node*>>>*) const
+{
+	Node n = Node();
+	return &n;
+}
+
+void Node::_validate_child_name(Node*, bool) {}
+
+void Node::set_process_unhandled_key_input(bool) {}
+
+void Node::set_process_unhandled_input(bool) {}
+
+void Node::remap_node_resources(Node* p_node, Node* p_scene_root,
+	HashMap<Node*, HashMap<Ref<Resource>, Ref<Resource>>>& p_resource_remap) const
+{
+}
+
+void Node::_propagate_translation_domain_dirty() {}
+
+void Node::_propagate_suspend_notification(bool) {}
+
+void Node::_propagate_ready() {}
+
+void Node::_propagate_pause_notification(bool) {}
+
+void Node::_propagate_exit_tree() {}
+
+void Node::_propagate_enter_tree() {}
+
+void Node::_propagate_after_exit_tree() {}
+
+Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<StringName>&, bool) const
+{
+	Node n = Node();
+	return &n;
+}
+
+void Node::_add_child_nocheck(Node*, StringName const&, Node::InternalMode) {}
+
 

@@ -618,3 +618,9 @@ bool AnimationNode::add_input(const String& p_name)
 	return true;
 }
 
+
+void AnimationTree::_update_properties() const {}
+
+void AnimationTree::_update_connections() {}
+
+void AnimationTree::_setup_animation_player() {}

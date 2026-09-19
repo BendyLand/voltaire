@@ -135,3 +135,5 @@ void Texture3DEditor::init_shaders()
 void Texture3DEditor::finish_shaders() { texture_shader.unref(); }
 
 
+
+void Texture3DEditor::_update_material(bool) {}

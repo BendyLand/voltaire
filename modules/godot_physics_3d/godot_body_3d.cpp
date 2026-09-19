@@ -359,3 +359,9 @@ GodotBody3D::GodotBody3D()
 GodotBody3D::~GodotBody3D() { memdelete(direct_state); }
 
 
+
+void GodotBody3D::integrate_velocities(float) {}
+
+void GodotBody3D::integrate_forces(float) {}
+
+void GodotBody3D::call_queries() {}

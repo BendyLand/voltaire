@@ -163,9 +163,9 @@ protected:
 	void _notification(int p_what);
 
 	// Make animation instances.
+	virtual void _blend_capture(double p_delta) override;
 	virtual bool _blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map) override;
-	virtual void _blend_capture(double p_delta) override;
 	virtual void _blend_post_process() override;
 
 	virtual void _animation_changed(const StringName& p_name) override;

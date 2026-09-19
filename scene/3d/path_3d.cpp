@@ -262,3 +262,7 @@ void PathFollow3D::set_tilt_enabled(bool p_enabled)
 bool PathFollow3D::is_tilt_enabled() const { return tilt_enabled; }
 
 
+
+void Path3D::_update_debug_path_material() {}
+
+void Path3D::_update_debug_mesh() {}

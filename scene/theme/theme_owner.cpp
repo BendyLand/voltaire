@@ -188,3 +188,29 @@ int ThemeOwner::get_theme_default_font_size()
 }
 
 
+
+void ThemeOwner::set_owner_node(Node*) {}
+
+void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
+
+void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
+
+ThemeDB::ThemeDB() {}
+
+void ThemeDB::update_class_instance_items(Node*) {}
+
+void ThemeDB::set_fallback_stylebox(Ref<StyleBox> const&) {}
+
+void ThemeDB::set_fallback_icon(Ref<Texture2D> const&) {}
+
+void ThemeDB::set_fallback_font_size(int) {}
+
+void ThemeDB::set_fallback_font(Ref<Font> const&) {}
+
+void ThemeDB::set_fallback_base_scale(float) {}
+
+void ThemeDB::initialize_theme() {}
+
+ThemeContext* ThemeDB::create_theme_context(Node*, Vector<Ref<Theme>>&) {}
+
+void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}

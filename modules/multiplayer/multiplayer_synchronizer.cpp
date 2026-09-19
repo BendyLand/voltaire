@@ -224,3 +224,11 @@ MultiplayerSynchronizer::MultiplayerSynchronizer()
 }
 
 
+
+void MultiplayerSynchronizer::update_visibility(int) {}
+
+void MultiplayerSynchronizer::_stop() {}
+
+void MultiplayerSynchronizer::_start() {}
+
+void MultiplayerSynchronizer::_update_process() {}

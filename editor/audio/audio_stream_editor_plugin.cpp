@@ -62,3 +62,5 @@ AudioStreamEditorPlugin::AudioStreamEditorPlugin()
 }
 
 
+
+void AudioStreamEditor::_seek_to(float) {}

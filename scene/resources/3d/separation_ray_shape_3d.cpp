@@ -73,3 +73,5 @@ SeparationRayShape3D::SeparationRayShape3D()
 }
 
 
+
+void SeparationRayShape3D::_update_shape() {}

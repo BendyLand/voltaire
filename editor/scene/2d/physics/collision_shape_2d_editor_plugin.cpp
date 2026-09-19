@@ -186,3 +186,7 @@ CollisionShape2DEditorPlugin::CollisionShape2DEditorPlugin()
 }
 
 
+
+bool CollisionShape2DEditor::forward_canvas_gui_input(Ref<InputEvent> const&) {}
+
+CollisionShape2DEditor::CollisionShape2DEditor() {}

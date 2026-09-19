@@ -1212,4 +1212,9 @@ RenderingShaderContainer::RenderingShaderContainer() {}
 
 RenderingShaderContainer::~RenderingShaderContainer() {}
 
+template <typename T>
+void RenderingShaderContainer::ReflectSymbol<T>::set_spv_reflect(
+	RDC::ShaderStage p_stage, const T* p_spv)
+{
+}
 

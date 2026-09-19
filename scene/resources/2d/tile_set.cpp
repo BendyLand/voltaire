@@ -139,8 +139,6 @@ void TileMapPattern::clear()
 	emit_changed();
 }
 
-/////////////////////////////// TileSet //////////////////////////////////////
-
 bool TileSet::TerrainsPattern::is_valid() const { return valid; }
 
 bool TileSet::TerrainsPattern::is_erase_pattern() const { return not_empty_terrains_count == 0; }
@@ -419,7 +417,6 @@ int TileSet::get_source_id(int p_index) const
 	return source_ids[p_index];
 }
 
-// Rendering
 void TileSet::set_uv_clipping(bool p_uv_clipping)
 {
 	if (uv_clipping == p_uv_clipping) {
@@ -672,7 +669,6 @@ bool TileSet::is_valid_terrain_peering_bit(
 }
 
 #ifndef NAVIGATION_2D_DISABLED
-// Navigation
 int TileSet::get_navigation_layers_count() const { return navigation_layers.size(); }
 
 void TileSet::set_navigation_layer_layers(int p_layer_index, uint32_t p_layers)
@@ -2811,6 +2807,7 @@ Vector2i TileSet::transform_coords_layout(const Vector2i& p_coords,
 const Vector2i TileSetSource::INVALID_ATLAS_COORDS = Vector2i(-1, -1);
 const int TileSetSource::INVALID_TILE_ALTERNATIVE = -1;
 
+void TileSet::reset_state() {}
 
 TileSet::TileSet()
 {
@@ -2831,16 +2828,11 @@ TileSet::~TileSet()
 	}
 }
 
-/////////////////////////////// TileSetSource //////////////////////////////////////
-
 void TileSetSource::set_tile_set(const TileSet* p_tile_set) { tile_set = p_tile_set; }
 
 TileSet* TileSetSource::get_tile_set() const { return (TileSet*)tile_set; }
 
 void TileSetSource::reset_state() { tile_set = nullptr; }
-
-
-/////////////////////////////// TileSetAtlasSource //////////////////////////////////////
 
 void TileSetAtlasSource::set_tile_set(const TileSet* p_tile_set)
 {
@@ -3864,6 +3856,7 @@ void TileSetScenesCollectionSource::set_scene_tile_id(int p_id, int p_new_id)
 
 void TileSetScenesCollectionSource::set_scene_tile_scene(int p_id, Ref<PackedScene> p_packed_scene)
 {
+
 	ERR_FAIL_COND(!scenes.has(p_id));
 	if (p_packed_scene.is_valid()) {
 		// Check if it extends CanvasItem.
@@ -4389,5 +4382,15 @@ PackedVector2Array TileData::get_transformed_vertices(const PackedVector2Array& 
 }
 
 void TileSetAtlasSource::_queue_update_padded_texture() {}
+
+void TileData::notify_tile_data_properties_should_change() {}
+
+void TileData::remove_custom_data_layer(int) {}
+
+void TileData::move_custom_data_layer(int p_from_index, int p_to_pos) {}
+
+void TileData::add_custom_data_layer(int p_index) {}
+
+void TileSet::remove_source(int p_source_id) {}
 
 

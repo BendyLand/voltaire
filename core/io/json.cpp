@@ -290,3 +290,5 @@ Error JSON::_get_token(
 String JSON::get_parsed_text() const { return text; }
 
 
+
+Error JSON::parse(String const&, bool) {}

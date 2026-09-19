@@ -156,3 +156,5 @@ PackedStringArray ShapeCast2D::get_configuration_warnings() const
 ShapeCast2D::ShapeCast2D() { set_hide_clip_children(true); }
 
 
+
+void ShapeCast2D::_update_shapecast_state() {}

@@ -1009,6 +1009,7 @@ void EditorExportPlatformAppleEmbedded::_initialize(
 	run_icon = ImageTexture::create_from_image(img);
 
 	plugins_changed.set();
+
 	devices_changed.set();
 #ifdef MACOS_ENABLED
 	_update_preset_status();
@@ -1016,5 +1017,25 @@ void EditorExportPlatformAppleEmbedded::_initialize(
 }
 
 EditorExportPlatformAppleEmbedded::~EditorExportPlatformAppleEmbedded() {}
+
+Error EditorExportPlatformAppleEmbedded::_copy_asset(Ref<EditorExportPreset> const&, String const&,
+	String const&, String const*, bool, bool,
+	Vector<EditorExportPlatformAppleEmbedded::AppleEmbeddedExportAsset>&)
+{
+	return OK;
+}
+
+String EditorExportPlatformAppleEmbedded::_process_config_file_line(Ref<EditorExportPreset> const&,
+	String const&, EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData const&, bool,
+	EditorExportPlatformAppleEmbedded::CodeSigningDetails const&)
+{
+	return String();
+}
+
+Error EditorExportPlatformAppleEmbedded::_export_project_helper(
+	Ref<EditorExportPreset> const&, bool, String const&, unsigned int, bool, bool)
+{
+	return OK;
+}
 
 

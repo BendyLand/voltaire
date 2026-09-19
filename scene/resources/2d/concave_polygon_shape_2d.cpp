@@ -116,3 +116,5 @@ ConcavePolygonShape2D::ConcavePolygonShape2D()
 }
 
 
+
+void ConcavePolygonShape2D::set_segments(Vector<Vector2> const&) {}

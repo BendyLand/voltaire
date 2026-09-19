@@ -291,3 +291,5 @@ GraphNode::GraphNode()
 
 void GraphNode::_port_pos_update() {}
 
+
+Size2 GraphNode::_get_minimum_size(bool) const {}

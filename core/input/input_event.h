@@ -82,7 +82,7 @@ public:
 	bool is_released() const;
 	virtual bool is_echo() const;
 
-	virtual String as_text() const = 0;
+	virtual String as_text() const;
 
 	virtual InputEvent* xformed_by(
 		const Transform2D& p_xform, const Vector2& p_local_ofs = Vector2()) const;
@@ -117,8 +117,6 @@ class InputEventWithModifiers : public InputEventFromWindow
 	bool alt_pressed = false;
 	bool meta_pressed = false; // "Command" on macOS, "Meta/Win" key on other platforms.
 	bool ctrl_pressed = false;
-
-protected:
 
 public:
 	uint32_t get_modifiers_mask() const

@@ -99,4 +99,5 @@ ConcavePolygonShape3D::ConcavePolygonShape3D()
 	// set_planes(Vector3(1,1,1));
 }
 
+void ConcavePolygonShape3D::_update_shape() {}
 

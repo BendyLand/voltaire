@@ -217,3 +217,7 @@ void BoneTwistDisperser3D::clear_settings() { set_setting_count(0); }
 BoneTwistDisperser3D::~BoneTwistDisperser3D() { clear_settings(); }
 
 
+
+void BoneTwistDisperser3D::_make_joints_dirty(int) {}
+
+void BoneTwistDisperser3D::set_setting_count(int) {}

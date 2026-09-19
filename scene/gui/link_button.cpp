@@ -118,3 +118,7 @@ LinkButton::LinkButton(const String& p_text)
 }
 
 
+
+void LinkButton::set_underline_mode(LinkButton::UnderlineMode) {}
+
+void LinkButton::set_text(String const&) {}

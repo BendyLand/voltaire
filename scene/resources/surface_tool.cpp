@@ -840,3 +840,7 @@ SurfaceTool::SurfaceTool()
 }
 
 
+
+void SurfaceTool::_create_list(Ref<Mesh> const&, int, LocalVector<SurfaceTool::Vertex, unsigned int, false, false>*, LocalVector<int, unsigned int, false, false>*, unsigned long&) {}
+
+Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}

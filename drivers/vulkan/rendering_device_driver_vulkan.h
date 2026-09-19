@@ -982,4 +982,3 @@ public:
 
 using VKC = RenderingContextDriverVulkan;
 
-

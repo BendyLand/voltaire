@@ -54,4 +54,6 @@ void FBXImporterManager::_browse_install()
 
 FBXImporterManager* FBXImporterManager::singleton = nullptr;
 
+void FBXImporterManager::_validate_path(String const&) {}
+
 

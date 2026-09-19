@@ -347,3 +347,7 @@ IterateIK3D::~IterateIK3D()
 }
 
 
+
+void IterateIK3D::_unbind_joint_limitations(int) {}
+
+void IterateIK3D::_bind_joint_limitations(int) {}

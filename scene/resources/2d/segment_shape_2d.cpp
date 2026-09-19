@@ -84,3 +84,5 @@ SegmentShape2D::SegmentShape2D() : Shape2D(PhysicsServer2D::get_singleton()->seg
 }
 
 
+
+void SegmentShape2D::_update_shape() {}

@@ -50,3 +50,5 @@ void ColorRect::_notification(int p_what)
 }
 
 
+
+void ColorRect::set_color(Color const&) {}

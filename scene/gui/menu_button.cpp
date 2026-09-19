@@ -66,3 +66,5 @@ PackedStringArray MenuButton::get_configuration_warnings() const
 MenuButton::~MenuButton() {}
 
 
+
+void MenuButton::show_popup() {}

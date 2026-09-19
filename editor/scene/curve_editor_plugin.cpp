@@ -502,3 +502,13 @@ bool CurvePreviewGenerator::handles(const String& p_type) const { return p_type 
 
 void CurveEdit::set_selected_index(int p_index) {}
 
+
+void CurveEdit::toggle_linear(int, CurveEdit::TangentIndex) {}
+
+void CurveEdit::remove_point(int) {}
+
+void CurveEdit::use_preset(int) {}
+
+void CurveEdit::set_snap_count(int) {}
+
+void CurveEdit::set_curve(Ref<Curve>) {}

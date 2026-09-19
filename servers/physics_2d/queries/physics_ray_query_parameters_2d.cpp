@@ -43,3 +43,5 @@ Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
 }
 
 
+
+void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}

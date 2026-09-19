@@ -197,3 +197,9 @@ void OpenXRHand::_notification(int p_what)
 }
 
 
+
+void OpenXRHand::_update_skeleton() {}
+
+void OpenXRHand::_set_motion_range() {}
+
+Skeleton3D* OpenXRHand::get_skeleton() {}

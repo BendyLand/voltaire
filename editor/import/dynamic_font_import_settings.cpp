@@ -99,3 +99,7 @@ DynamicFontImportSettingsDialog* DynamicFontImportSettingsDialog::get_singleton(
 }
 
 
+
+void DynamicFontImportSettingsDialog::_variations_validate() {}
+
+void DynamicFontImportSettingsDialog::open_settings(String const&) {}

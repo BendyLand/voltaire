@@ -138,4 +138,12 @@ void EditorAudioStreamPicker::_notification(int p_what)
 
 bool EditorResourcePicker::handle_menu_selected(int p_idx) { return true; }
 
+void EditorResourcePicker::_edit_menu_cbk(int) {}
+
+void EditorResourcePicker::set_editable(bool) {}
+
+bool EditorResourcePicker::_is_uniqueness_enabled(bool) { return true; }
+
+void EditorResourcePicker::_ensure_allowed_types() const {}
+
 

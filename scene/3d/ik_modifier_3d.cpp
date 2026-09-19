@@ -104,4 +104,6 @@ int IKModifier3D::get_setting_count() const { return settings.size(); }
 
 IKModifier3D::~IKModifier3D() { clear_settings(); }
 
+void IKModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) {}
+
 

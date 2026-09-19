@@ -56,8 +56,8 @@ private:
 	void update_joint_two_bone2d_cache();
 
 public:
-	void _execute(float p_delta) override;
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
+	void _execute(float p_delta) override;
 	void _draw_editor_gizmo() override;
 
 	void set_target_node(const NodePath& p_target_node);

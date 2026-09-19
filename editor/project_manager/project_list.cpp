@@ -610,4 +610,20 @@ ProjectList::ProjectList()
 
 void ProjectList::update_dock_menu() {}
 
+void ProjectListItemControl::set_selected(bool, bool) {}
+
+void ProjectList::add_project(String const&, bool) {}
+
+void ProjectList::sort_projects() {}
+
+int ProjectList::refresh_project(String const&) { return 0; }
+
+void ProjectList::find_projects_multiple(Vector<String> const&) {}
+
+void ProjectList::update_project_list() {}
+
+void ProjectList::set_order_option(int, bool) {}
+
+void ProjectList::_migrate_config() {}
+
 

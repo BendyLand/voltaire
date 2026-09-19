@@ -261,3 +261,5 @@ Rect2 Sprite2D::get_rect() const
 }
 
 
+
+void Sprite2D::set_frame(int) {}

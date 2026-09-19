@@ -159,3 +159,15 @@ CurveXYZTexture::~CurveXYZTexture()
 }
 
 
+
+void CurveXYZTexture::set_curve_z(Ref<Curve>) {}
+
+void CurveXYZTexture::set_curve_y(Ref<Curve>) {}
+
+void CurveXYZTexture::set_curve_x(Ref<Curve>) {}
+
+void CurveTexture::_update() {}
+
+void CurveTexture::set_curve(Ref<Curve>) {}
+
+void CurveXYZTexture::_update() {}

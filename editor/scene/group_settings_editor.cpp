@@ -108,3 +108,9 @@ bool GroupSettingsEditor::rename_node_references(
 LineEdit* GroupSettingsEditor::get_name_box() const { return group_name; }
 
 
+
+void GroupSettingsEditor::_add_group(String const&, String const&) {}
+
+void GroupSettingsEditor::update_groups() {}
+
+void GroupSettingsEditor::connect_filesystem_dock_signals(FileSystemDock*) {}

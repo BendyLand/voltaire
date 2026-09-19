@@ -1194,4 +1194,8 @@ String ResourceFormatLoader::get_resource_script_class(const String& p_path) con
 
 bool ResourceFormatLoader::has_custom_uid_support() const { return false; }
 
+void ResourceLoader::_run_load_task(void* p_userdata) {}
+
+void ResourceLoader::load_translation_remaps() {}
+
 

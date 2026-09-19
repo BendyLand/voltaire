@@ -275,3 +275,5 @@ void MovieWriterMJPEG::write_end()
 }
 
 
+
+MovieWriterMJPEG::MovieWriterMJPEG() {}

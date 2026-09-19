@@ -797,3 +797,5 @@ void AudioStreamPlayer3D::set_playback_type(AudioServer::PlaybackType p_playback
 AudioStreamPlayer3D::~AudioStreamPlayer3D() { memdelete(internal); }
 
 
+
+Area3D* AudioStreamPlayer3D::_get_overriding_area() {}

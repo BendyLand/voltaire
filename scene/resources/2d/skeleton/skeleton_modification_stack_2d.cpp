@@ -158,3 +158,7 @@ float SkeletonModificationStack2D::get_strength() const { return strength; }
 SkeletonModificationStack2D::SkeletonModificationStack2D() {}
 
 
+
+void SkeletonModificationStack2D::execute(float, int) {}
+
+void Skeleton2D::execute_modifications(float, int) {}

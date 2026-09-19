@@ -1276,3 +1276,29 @@ void LineEdit::delete_text(int p_from_column, int p_to_column) {}
 
 void LineEdit::_shape() {}
 
+
+void LineEdit::set_right_icon(Ref<Texture2D> const&) {}
+
+void LineEdit::set_placeholder(String) {}
+
+void LineEdit::insert_text_at_caret(String) {}
+
+void LineEdit::_set_text(String, bool) {}
+
+void LineEdit::set_editable(bool) {}
+
+void LineEdit::set_caret_blink_enabled(bool) {}
+
+void LineEdit::_reset_caret_blink_timer() {}
+
+void LineEdit::_generate_context_menu() {}
+
+void LineEdit::_edit(bool, bool) {}
+
+void LineEdit::set_secret(bool) {}
+
+void LineEdit::set_horizontal_alignment(HorizontalAlignment) {}
+
+void LineEdit::set_clear_button_enabled(bool) {}
+
+void LineEdit::clear_internal() {}

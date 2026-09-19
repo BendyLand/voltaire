@@ -299,8 +299,6 @@ public:
 	EditorPropertyFlags();
 };
 
-///////////////////// LAYERS /////////////////////////
-
 class EditorPropertyLayersGrid : public Control
 {
 private:

@@ -792,6 +792,12 @@ const String OpenXRRenderModelData::get_node_name(uint32_t p_node_index) const
 	return node_names[p_node_index];
 }
 
+Node3D* OpenXRRenderModelData::new_scene_instance()
+{
+	Node3D n = Node3D();
+	return &n;
+}
+
 OpenXRRenderModelData::OpenXRRenderModelData() {}
 
 OpenXRRenderModelData::~OpenXRRenderModelData() {}

@@ -1250,3 +1250,13 @@ void PopupMenu::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 PopupMenu::~PopupMenu() { unbind_global_menu(); }
 
 
+
+PopupMenu::PopupMenu() {}
+
+void PopupMenu::_shape_item(int) const {}
+
+void PopupMenu::_input_from_window_internal(Ref<InputEvent> const&) {}
+
+void PopupMenu::_close_or_suspend() {}
+
+void PopupMenu::_activate_submenu(int, bool) {}

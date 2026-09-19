@@ -131,3 +131,11 @@ bool CameraFeed::activate_feed() { return false; }
 void CameraFeed::deactivate_feed() {}
 
 
+
+void CameraFeed::set_rgb_image(Ref<Image> const&) {}
+
+void CameraServer::add_feed(Ref<CameraFeed> const&) {}
+
+void CameraServer::remove_feed(Ref<CameraFeed> const&) {}
+
+void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}

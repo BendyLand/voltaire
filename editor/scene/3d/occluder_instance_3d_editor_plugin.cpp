@@ -38,3 +38,5 @@
 void OccluderInstance3DEditorPlugin::_bake() { _bake_select_file(""); }
 
 
+
+void OccluderInstance3DEditorPlugin::_bake_select_file(String const&) {}

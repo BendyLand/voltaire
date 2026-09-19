@@ -48,14 +48,14 @@ protected:
 	RID rid;
 	JPH::ShapeRefC jolt_ref;
 
-	virtual JPH::ShapeRefC _build() const = 0;
+	virtual JPH::ShapeRefC _build() const;
 
 	String _owners_to_string() const;
 
 public:
 	typedef PS3DE::ShapeType ShapeType;
 
-	virtual ~JoltShape3D() = 0;
+	virtual ~JoltShape3D();
 
 	RID get_rid() const { return rid; }
 
@@ -65,13 +65,13 @@ public:
 	void remove_owner(JoltShapedObject3D* p_owner);
 	void remove_self();
 
-	virtual ShapeType get_type() const = 0;
-	virtual bool is_convex() const = 0;
+	virtual ShapeType get_type() const;
+	virtual bool is_convex() const;
 
-	virtual float get_margin() const = 0;
-	virtual void set_margin(float p_margin) = 0;
+	virtual float get_margin() const;
+	virtual void set_margin(float p_margin);
 
-	virtual AABB get_aabb() const = 0;
+	virtual AABB get_aabb() const;
 
 	float get_solver_bias() const;
 	void set_solver_bias(float p_bias);

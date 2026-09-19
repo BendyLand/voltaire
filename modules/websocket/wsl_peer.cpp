@@ -780,4 +780,10 @@ WSLPeer::~WSLPeer() { close(-1); }
 
 #endif // WEB_ENABLED
 
+void WSLPeer::Resolver::try_next_candidate(Ref<StreamPeerTCP> const&) {}
+
+void WSLPeer::Resolver::start(String const&, int) {}
+
+void WSLPeer::_do_client_handshake() {}
+
 

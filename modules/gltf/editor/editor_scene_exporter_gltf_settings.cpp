@@ -46,3 +46,5 @@ void EditorSceneExporterGLTFSettings::set_bake_fps(const double p_bake_fps)
 }
 
 
+
+void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument>, Node*) {}

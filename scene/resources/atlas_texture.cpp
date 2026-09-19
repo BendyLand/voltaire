@@ -234,3 +234,5 @@ Ref<Image> AtlasTexture::get_image() const
 }
 
 
+
+void AtlasTexture::set_atlas(Ref<Texture2D> const&) {}

@@ -520,3 +520,5 @@ Error ResourceFormatImporterSaver::set_uid(const String& p_path, ResourceUID::ID
 }
 
 
+
+void ResourceFormatImporter::get_internal_resource_path_list(String const&, List<String, DefaultAllocator>*) {}

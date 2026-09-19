@@ -103,7 +103,6 @@ protected:
 
 	OpenXRActionMap* action_map = nullptr;
 
-
 public:
 	static Ref<OpenXRInteractionProfile> new_profile(
 		const char* p_input_profile_path); // Helper function to create a new interaction profile
@@ -141,7 +140,7 @@ public:
 	void remove_binding_modifier(
 		const Ref<OpenXRIPBindingModifier>& p_binding_modifier); // Remove a binding modifier object
 
-	~OpenXRInteractionProfile();
+	~OpenXRInteractionProfile() = default;
 };
 
 

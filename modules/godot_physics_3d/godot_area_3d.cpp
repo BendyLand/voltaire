@@ -159,3 +159,5 @@ GodotArea3D::GodotArea3D()
 GodotArea3D::~GodotArea3D() {}
 
 
+
+void GodotArea3D::call_queries() {}

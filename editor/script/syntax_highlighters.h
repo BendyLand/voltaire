@@ -56,11 +56,11 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
+	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+
 	virtual void _update_cache() override;
 
 	virtual String _get_name() const override { return TTR("Standard"); }
-
-	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	EditorStandardSyntaxHighlighter() { highlighter.instantiate(); }
 };
@@ -79,6 +79,8 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
+	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+
 	virtual void _update_cache() override;
 
 	virtual PackedStringArray _get_supported_languages() const override
@@ -87,8 +89,6 @@ public:
 	}
 
 	virtual String _get_name() const override { return TTR("JSON"); }
-
-	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	EditorJSONSyntaxHighlighter() { highlighter.instantiate(); }
 };
@@ -99,6 +99,8 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
+	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+
 	virtual void _update_cache() override;
 
 	virtual PackedStringArray _get_supported_languages() const override
@@ -107,8 +109,6 @@ public:
 	}
 
 	virtual String _get_name() const override { return TTR("Markdown"); }
-
-	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	EditorMarkdownSyntaxHighlighter() { highlighter.instantiate(); }
 };
@@ -119,6 +119,8 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
+	virtual Ref<EditorSyntaxHighlighter> _create() const override;
+
 	virtual void _update_cache() override;
 
 	// While not explicitly designed for those formats, this highlighter happens
@@ -131,8 +133,6 @@ public:
 	}
 
 	virtual String _get_name() const override { return TTR("ConfigFile"); }
-
-	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	EditorConfigFileSyntaxHighlighter() { highlighter.instantiate(); }
 };

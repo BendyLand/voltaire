@@ -140,3 +140,5 @@ void OpenXRBindingModifiersDialog::setup(const Ref<OpenXRActionMap>& p_action_ma
 }
 
 
+
+void OpenXRBindingModifiersDialog::_create_binding_modifiers() {}

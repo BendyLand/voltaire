@@ -78,3 +78,7 @@ EditorInspector* SectionedInspector::get_inspector() { return inspector; }
 SectionedInspector::~SectionedInspector() {}
 
 
+
+String SectionedInspector::get_current_section() const {}
+
+void SectionedInspector::update_category_list() {}

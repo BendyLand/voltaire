@@ -123,3 +123,5 @@ CapsuleShape2D::CapsuleShape2D() : Shape2D(PhysicsServer2D::get_singleton()->cap
 }
 
 
+
+void CapsuleShape2D::_update_shape() {}

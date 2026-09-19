@@ -489,3 +489,47 @@ PhysicalSkyMaterial::PhysicalSkyMaterial()
 PhysicalSkyMaterial::~PhysicalSkyMaterial() {}
 
 
+
+void ProceduralSkyMaterial::set_sky_top_color(Color const&) {}
+
+void ProceduralSkyMaterial::set_sky_horizon_color(Color const&) {}
+
+void ProceduralSkyMaterial::set_ground_horizon_color(Color const&) {}
+
+void ProceduralSkyMaterial::set_ground_bottom_color(Color const&) {}
+
+void ProceduralSkyMaterial::set_energy_multiplier(float) {}
+
+void ProceduralSkyMaterial::set_sun_curve(float) {}
+
+void ProceduralSkyMaterial::set_sun_angle_max(float) {}
+
+void ProceduralSkyMaterial::set_sky_energy_multiplier(float) {}
+
+void ProceduralSkyMaterial::set_sky_curve(float) {}
+
+void ProceduralSkyMaterial::set_sky_cover_modulate(Color const&) {}
+
+void ProceduralSkyMaterial::set_ground_energy_multiplier(float) {}
+
+void ProceduralSkyMaterial::set_ground_curve(float) {}
+
+void PhysicalSkyMaterial::set_turbidity(float) {}
+
+void PhysicalSkyMaterial::set_sun_disk_scale(float) {}
+
+void PhysicalSkyMaterial::set_rayleigh_color(Color) {}
+
+void PhysicalSkyMaterial::set_rayleigh_coefficient(float) {}
+
+void PhysicalSkyMaterial::set_mie_eccentricity(float) {}
+
+void PhysicalSkyMaterial::set_mie_color(Color) {}
+
+void PhysicalSkyMaterial::set_mie_coefficient(float) {}
+
+void PhysicalSkyMaterial::set_ground_color(Color) {}
+
+void PhysicalSkyMaterial::set_energy_multiplier(float) {}
+
+void PanoramaSkyMaterial::set_energy_multiplier(float) {}

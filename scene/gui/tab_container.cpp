@@ -240,6 +240,8 @@ Ref<Texture2D> TabContainer::get_tab_button_icon(int p_tab) const
 	return tab_bar->get_tab_button_icon(p_tab);
 }
 
+void TabContainer::add_child_notify(Node* p_child) {}
+
 Size2 TabContainer::_get_minimum_size(bool p_use_desired_sizes) const
 {
 	Size2 ms;
@@ -335,5 +337,25 @@ bool TabContainer::get_use_hidden_tabs_for_min_size() const { return use_hidden_
 Vector<int> TabContainer::get_allowed_size_flags_horizontal() const { return Vector<int>(); }
 
 Vector<int> TabContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
+
+Popup* TabContainer::get_popup() const
+{
+	Popup p = Popup();
+	return &p;
+}
+
+Control* TabContainer::_as_tab_control(Node*) const
+{
+	Control c = Control();
+	return &c;
+}
+
+void TabContainer::_update_margins() {}
+
+void TabContainer::_repaint_internal() {}
+
+void TabContainer::set_tab_icon(int, Ref<Texture2D> const&) {}
+
+void TabContainer::set_popup(Node*) {}
 
 

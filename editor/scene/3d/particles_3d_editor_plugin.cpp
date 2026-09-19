@@ -72,4 +72,10 @@ CPUParticles3DEditorPlugin::CPUParticles3DEditorPlugin()
 	conversion_option_name = TTR("Convert to GPUParticles3D");
 }
 
+void Particles3DEditorPlugin::_generate_emission_points() {}
 
+void GPUParticles3DEditorPlugin::_generate_emission_points() {}
+
+Particles3DEditorPlugin::Particles3DEditorPlugin() {}
+
+void CPUParticles3DEditorPlugin::_generate_emission_points() {}

@@ -107,3 +107,5 @@ StringName Area2D::get_audio_bus_name() const
 }
 
 
+
+void Area2D::_clear_monitoring() {}

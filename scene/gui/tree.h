@@ -166,8 +166,6 @@ private:
 	bool is_root = false; // For tree root.
 	Tree* tree = nullptr; // Tree (for reference).
 
-	TreeItem(Tree* p_tree);
-
 	void _changed_notify(int p_cell);
 	void _changed_notify();
 	void _cell_selected(int p_cell, bool p_set_as_cursor);
@@ -230,13 +228,13 @@ private:
 	bool _is_any_collapsed(bool p_only_visible);
 
 protected:
-
 #ifndef DISABLE_DEPRECATED
 	void _select_bind_compat_119367(int p_column);
 	static void _bind_compatibility_methods();
 #endif
 
 public:
+	TreeItem(Tree* p_tree);
 	// Cell mode.
 	void set_cell_mode(int p_column, TreeCellMode p_mode);
 	TreeCellMode get_cell_mode(int p_column) const;

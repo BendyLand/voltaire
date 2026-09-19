@@ -147,3 +147,5 @@ bool RayCast2D::is_hit_from_inside_enabled() const { return hit_from_inside; }
 RayCast2D::RayCast2D() { set_hide_clip_children(true); }
 
 
+
+void RayCast2D::_update_raycast_state() {}

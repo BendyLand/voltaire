@@ -138,3 +138,5 @@ WorldBoundaryShape2D::WorldBoundaryShape2D()
 }
 
 
+
+void WorldBoundaryShape2D::_update_shape() {}

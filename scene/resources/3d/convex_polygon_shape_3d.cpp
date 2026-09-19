@@ -58,4 +58,5 @@ ConvexPolygonShape3D::ConvexPolygonShape3D()
 {
 }
 
+void ConvexPolygonShape3D::_update_shape() {}
 

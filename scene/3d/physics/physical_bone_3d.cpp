@@ -171,4 +171,14 @@ PhysicalBone3D::~PhysicalBone3D()
 	PhysicsServer3D::get_singleton()->free_rid(joint);
 }
 
+void PhysicalBone3D::_stop_physics_simulation() {}
+
+void PhysicalBone3D::_start_physics_simulation() {}
+
+PhysicalBoneSimulator3D* PhysicalBone3D::get_simulator() const
+{
+	PhysicalBoneSimulator3D pbs = PhysicalBoneSimulator3D();
+	return &pbs;
+}
+
 

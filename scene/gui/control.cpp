@@ -2126,3 +2126,49 @@ Ref<Texture2D> Control::get_theme_icon(const StringName& p_name, const StringNam
 void Control::set_stretch_ratio(real_t p_ratio) {}
 
 
+
+bool Control::has_theme_icon(StringName const&, StringName const&) const {}
+
+void Control::add_theme_icon_override(StringName const&, Texture2D*) {}
+
+void Control::set_shortcut_context(Node const*) {}
+
+void Control::_propagate_mouse_behavior_recursive_recursively(bool, bool) {}
+
+void Control::_propagate_focus_behavior_recursive_recursively(bool, bool) {}
+
+String Control::get_accessibility_name() const {}
+
+void Control::update_maximum_size() {}
+
+void Control::set_rotation(float) {}
+
+void Control::set_clip_contents(bool) {}
+
+void Control::remove_theme_style_override(StringName const&) {}
+
+void Control::_notification(int) {}
+
+bool Control::has_theme_color(StringName const&, StringName const&) const {}
+
+PackedStringArray Control::get_accessibility_configuration_warnings() const {}
+
+void Control::set_theme(Ref<Theme> const&) {}
+
+void Control::set_scale(Vector2 const&) {}
+
+void Control::set_pivot_offset(Vector2 const&) {}
+
+void Control::set_pivot_offset_ratio(Vector2 const&) {}
+
+void Control::set_offset_transform_visual_only(bool) {}
+
+void Control::set_offset_transform_scale(Vector2 const&) {}
+
+void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
+
+void Control::set_offset_transform_enabled(bool) {}
+
+Control::LayoutMode Control::_get_layout_mode() const {}
+
+Control* Control::_get_focus_neighbor(Side, int) {}

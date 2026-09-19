@@ -1722,3 +1722,33 @@ void Window::_notify_theme_override_changed() {}
 
 bool Window::is_layout_rtl() const {}
 
+
+void Window::set_visible(bool) {}
+
+Ref<Font> Window::get_theme_font(StringName const&, StringName const&) const {}
+
+Window* Window::get_from_id(int) {}
+
+void Window::_window_input(Ref<InputEvent> const&) {}
+
+void Window::_propagate_window_notification(Node*, int) {}
+
+void Window::_popup_base(Rect2i const&) {}
+
+int Window::get_theme_font_size(StringName const&, StringName const&) const {}
+
+void Window::_update_theme_item_cache() {}
+
+void Window::_settings_changed() {}
+
+void Window::_make_transient() {}
+
+Ref<Texture2D> Window::get_theme_icon(StringName const&, StringName const&) const {}
+
+void Window::_event_callback(DisplayServerEnums::WindowEvent) {}
+
+void Window::add_theme_font_override(StringName const&, Ref<Font> const&) {}
+
+void Window::_accessibility_notify_exit(Node*) {}
+
+void Window::_accessibility_notify_enter(Node*) {}

@@ -80,4 +80,9 @@ int AnimationLibrary::get_animation_list_size() const { return animations.size()
 
 AnimationLibrary::AnimationLibrary() {}
 
+void AnimationLibrary::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
 

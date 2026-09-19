@@ -550,3 +550,77 @@ void ParticleProcessMaterial::set_param_min(Parameter p_param, float p_value) {}
 void ParticleProcessMaterial::set_param_max(Parameter p_param, float p_value) {}
 
 
+
+void ParticleProcessMaterial::_update_shader() {}
+
+void ParticleProcessMaterial::set_use_scale_3d(bool) {}
+
+void ParticleProcessMaterial::set_use_rotation_3d(bool) {}
+
+void ParticleProcessMaterial::set_turbulence_noise_strength(float) {}
+
+void ParticleProcessMaterial::set_turbulence_noise_speed(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_turbulence_noise_speed_random(float) {}
+
+void ParticleProcessMaterial::set_turbulence_noise_scale(float) {}
+
+void ParticleProcessMaterial::set_turbulence_enabled(bool) {}
+
+void ParticleProcessMaterial::set_sub_emitter_mode(ParticleProcessMaterial::SubEmitterMode) {}
+
+void ParticleProcessMaterial::set_sub_emitter_keep_velocity(bool) {}
+
+void ParticleProcessMaterial::set_sub_emitter_frequency(double) {}
+
+void ParticleProcessMaterial::set_sub_emitter_amount_at_start(int) {}
+
+void ParticleProcessMaterial::set_sub_emitter_amount_at_end(int) {}
+
+void ParticleProcessMaterial::set_sub_emitter_amount_at_collision(int) {}
+
+void ParticleProcessMaterial::set_spread(float) {}
+
+void ParticleProcessMaterial::set_scale_3d_min(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_scale_3d_max(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_rotation_3d_min(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_rotation_3d_max(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_lifetime_randomness(double) {}
+
+void ParticleProcessMaterial::set_gravity(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_flatness(float) {}
+
+void ParticleProcessMaterial::set_emission_sphere_radius(float) {}
+
+void ParticleProcessMaterial::set_emission_shape_scale(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_emission_shape(ParticleProcessMaterial::EmissionShape) {}
+
+void ParticleProcessMaterial::set_emission_shape_offset(Vector3 const&) {}
+
+void ParticleProcessMaterial::set_emission_ring_radius(float) {}
+
+void ParticleProcessMaterial::set_emission_ring_inner_radius(float) {}
+
+void ParticleProcessMaterial::set_emission_ring_height(float) {}
+
+void ParticleProcessMaterial::set_emission_ring_cone_angle(float) {}
+
+void ParticleProcessMaterial::set_emission_ring_axis(Vector3) {}
+
+void ParticleProcessMaterial::set_emission_box_extents(Vector3) {}
+
+void ParticleProcessMaterial::set_direction(Vector3) {}
+
+void ParticleProcessMaterial::set_color(Color const&) {}
+
+void ParticleProcessMaterial::set_collision_mode(ParticleProcessMaterial::CollisionMode) {}
+
+void ParticleProcessMaterial::set_collision_friction(float) {}
+
+void ParticleProcessMaterial::set_collision_bounce(float) {}

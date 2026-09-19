@@ -1204,4 +1204,30 @@ EditorExportPlatformAndroid::~EditorExportPlatformAndroid()
 #endif
 }
 
+Vector<PluginConfigAndroid> EditorExportPlatformAndroid::get_enabled_plugins(
+	const Ref<EditorExportPreset>& p_presets)
+{
+	return Vector<PluginConfigAndroid>();
+}
+
+void EditorExportPlatformAndroid::_check_for_changes_poll_thread(void* ud) {}
+
+String EditorExportPlatformAndroid::get_valid_basename(
+	const Ref<EditorExportPreset>& p_preset) const
+{
+	return String();
+}
+
+String EditorExportPlatformAndroid::_get_plugins_names(
+	const Ref<EditorExportPreset>& p_preset) const
+{
+	return String();
+}
+
+void EditorExportPlatformAndroid::_get_manifest_info(const Ref<EditorExportPreset>& p_preset,
+	bool p_give_internet, Vector<String>& r_permissions, Vector<FeatureInfo>& r_features,
+	Vector<MetadataInfo>& r_metadata)
+{
+}
+
 

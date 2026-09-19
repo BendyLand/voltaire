@@ -39,7 +39,6 @@
 
 RID NavigationObstacle3D::_navmesh_source_geometry_parser;
 
-
 void NavigationObstacle3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -157,10 +156,6 @@ void NavigationObstacle3D::_notification(int p_what)
 	} break;
 	}
 }
-
-
-
-
 
 void NavigationObstacle3D::set_vertices(const Vector<Vector3>& p_vertices)
 {
@@ -284,8 +279,6 @@ void NavigationObstacle3D::set_avoidance_enabled(bool p_enabled)
 
 bool NavigationObstacle3D::get_avoidance_enabled() const { return avoidance_enabled; }
 
-
-
 void NavigationObstacle3D::set_velocity(const Vector3 p_velocity)
 {
 	velocity = p_velocity;
@@ -328,10 +321,6 @@ PackedStringArray NavigationObstacle3D::get_configuration_warnings() const
 
 	return warnings;
 }
-
-
-
-
 
 void NavigationObstacle3D::_update_map(RID p_map)
 {
@@ -394,7 +383,6 @@ void NavigationObstacle3D::_update_debug()
 	}
 }
 
-
 #endif // DEBUG_ENABLED
 
 #ifdef DEBUG_ENABLED
@@ -408,5 +396,11 @@ void NavigationObstacle3D::_clear_debug()
 	rs->instance_set_scenario(static_obstacle_debug_instance_rid, RID());
 }
 #endif // DEBUG_ENABLED
+
+void NavigationObstacle3D::_update_static_obstacle_debug() {}
+
+void NavigationObstacle3D::_update_fake_agent_radius_debug() {}
+
+void NavigationMesh::set_vertices(const Vector<Vector3>& p_vertices) {}
 
 

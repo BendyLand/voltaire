@@ -651,3 +651,11 @@ bool GraphEdit::is_node_hover_valid(
 
 void GraphEdit::set_zoom_custom(float p_zoom, const Vector2& p_center) {}
 
+
+bool GraphEdit::is_in_port_hotzone(Vector2 const&, Vector2 const&, Vector2i const&, bool) {}
+
+void GraphEdit::set_scroll_offset(Vector2 const&) {}
+
+bool GraphEdit::_filter_input(Vector2 const&) {}
+
+Error GraphEdit::connect_node(StringName const&, int, StringName const&, int, bool) {}

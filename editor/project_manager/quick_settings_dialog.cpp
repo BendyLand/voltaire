@@ -92,3 +92,5 @@ SettingLabel::SettingLabel(const String& p_text, const String& p_setting) : Labe
 }
 
 
+
+void QuickSettingsDialog::_update_current_values() {}

@@ -81,7 +81,7 @@ public:
 
 	void clear_binds();
 
-	Skin();
+	Skin() = default;
 };
 
 

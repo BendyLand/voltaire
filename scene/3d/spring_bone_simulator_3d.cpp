@@ -53,8 +53,6 @@ void SpringBoneSimulator3D::_notification(int p_what)
 	}
 }
 
-
-
 String SpringBoneSimulator3D::get_root_bone_name(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
@@ -569,8 +567,20 @@ void SpringBoneSimulator3D::_make_collisions_dirty() { collisions_dirty = true; 
 
 SpringBoneSimulator3D::~SpringBoneSimulator3D() { clear_settings(); }
 
+void SpringBoneSimulator3D::_validate_bone_names() {}
+
 void SpringBoneSimulator3D::_make_joints_dirty(int p_index, bool p_reset) {}
 
 void SpringBoneSimulator3D::_make_gizmo_dirty() {}
+
+void SpringBoneSimulator3D::set_setting_count(int) {}
+
+void SpringBoneSimulator3D::set_rotation_axis(int, SkeletonModifier3D::RotationAxis) {}
+
+void SpringBoneSimulator3D::set_joint_rotation_axis(int, int, SkeletonModifier3D::RotationAxis) {}
+
+void SpringBoneSimulator3D::set_exclude_collision_count(int, int) {}
+
+void SpringBoneSimulator3D::set_collision_count(int, int) {}
 
 

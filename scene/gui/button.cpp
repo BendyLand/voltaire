@@ -295,3 +295,9 @@ Button::Button(const String& p_text)
 }
 
 
+
+void Button::set_clip_text(bool) {}
+
+void Button::_shape(Ref<TextParagraph>, String) const {}
+
+void Button::set_flat(bool) {}

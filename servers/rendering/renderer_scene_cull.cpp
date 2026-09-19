@@ -1892,7 +1892,8 @@ void RendererSceneCull::_update_instance(Instance* p_instance) const
 		} break;
 		case RSE::INSTANCE_REFLECTION_PROBE: {
 			idata.instance_data_rid =
-				static_cast<InstanceReflectionProbeData*>(p_instance->base_data)->instance.get_id();
+
+			static_cast<InstanceReflectionProbeData*>(p_instance->base_data)->instance.get_id();
 		} break;
 		case RSE::INSTANCE_DECAL: {
 			idata.instance_data_rid =
@@ -3524,5 +3525,12 @@ RendererSceneCull::~RendererSceneCull()
 		light_culler = nullptr;
 	}
 }
+
+bool RendererSceneCull::_render_reflection_probe_step(RendererSceneCull::Instance*, int)
+{
+	return true;
+}
+
+RendererSceneCull::RendererSceneCull() {}
 
 

@@ -697,10 +697,7 @@ String Label::get_ellipsis_char() const { return el_char; }
 
 String Label::get_text() const { return text; }
 
-void Label::set_text(const String& p_string)
-{
-	text = p_string;
-}
+void Label::set_text(const String& p_string) { text = p_string; }
 
 int Label::get_visible_characters() const { return visible_chars; }
 
@@ -730,4 +727,11 @@ Label::~Label()
 }
 
 void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {}
+
+void Label::set_autowrap_mode(TextServer::AutowrapMode) {}
+
+void Label::_shape() const {}
+
+void Label::set_vertical_alignment(VerticalAlignment) {}
+
 

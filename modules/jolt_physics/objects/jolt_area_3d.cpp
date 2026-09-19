@@ -312,3 +312,38 @@ bool JoltArea3D::shape_exited(const JPH::BodyID& p_body_id, const JPH::SubShapeI
 
 void JoltArea3D::_notify_bodies_updated(bool p_priority_changed) {}
 
+bool JoltArea3D::can_monitor(JoltArea3D const&) const { return true; }
+
+bool JoltArea3D::body_shape_exited(
+	JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
+{
+	return true;
+}
+
+void JoltArea3D::_update_sleeping() {}
+
+bool JoltArea3D::can_monitor(JoltSoftBody3D const&) const { return true; }
+
+bool JoltArea3D::can_monitor(JoltBody3D const&) const { return true; }
+
+void JoltArea3D::body_shape_entered(
+	JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
+{
+}
+
+bool JoltArea3D::area_shape_exited(
+	JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
+{
+	return true;
+}
+
+void JoltArea3D::_remove_all_overlaps() {}
+
+void JoltArea3D::call_queries() {}
+
+void JoltArea3D::area_shape_entered(
+	JPH::BodyID const&, JPH::SubShapeID const&, JPH::SubShapeID const&)
+{
+}
+
+

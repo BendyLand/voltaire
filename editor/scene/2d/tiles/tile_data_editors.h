@@ -52,7 +52,6 @@ protected:
 
 	virtual void _tile_set_changed() {}
 
-
 public:
 	void set_tile_set(Ref<TileSet> p_tile_set);
 
@@ -245,10 +244,10 @@ protected:
 public:
 	virtual Control* get_toolbar() override { return toolbar; }
 
-	virtual void forward_draw_over_atlas(TileAtlasView* p_tile_atlas_view,
+	virtual void forward_draw_over_alternatives(TileAtlasView* p_tile_atlas_view,
 		TileSetAtlasSource* p_tile_atlas_source, CanvasItem* p_canvas_item,
 		Transform2D p_transform) override;
-	virtual void forward_draw_over_alternatives(TileAtlasView* p_tile_atlas_view,
+	virtual void forward_draw_over_atlas(TileAtlasView* p_tile_atlas_view,
 		TileSetAtlasSource* p_tile_atlas_source, CanvasItem* p_canvas_item,
 		Transform2D p_transform) override;
 	virtual void forward_painting_atlas_gui_input(TileAtlasView* p_tile_atlas_view,

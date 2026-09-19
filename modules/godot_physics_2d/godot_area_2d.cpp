@@ -150,3 +150,5 @@ GodotArea2D::GodotArea2D()
 GodotArea2D::~GodotArea2D() {}
 
 
+
+void GodotArea2D::call_queries() {}

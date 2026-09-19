@@ -1499,3 +1499,18 @@ CSGPolygon3D::CSGPolygon3D()
 
 void CSGShape3D::_make_dirty(bool p_parent_removing) {}
 
+CSGBrush* CSGShape3D::_get_brush()
+{
+	CSGBrush csgb = CSGBrush();
+	return &csgb;
+}
+
+void CSGShape3D::navmesh_parse_init() {}
+
+CSGBrush* CSGPolygon3D::_build_brush()
+{
+	CSGBrush csgb = CSGBrush();
+	return &csgb;
+}
+
+

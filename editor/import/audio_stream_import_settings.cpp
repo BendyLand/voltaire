@@ -211,3 +211,5 @@ int AudioStreamImportSettingsDialog::_get_beat_at_pos(real_t p_x)
 }
 
 
+
+void AudioStreamImportSettingsDialog::edit(String const&, String const&, Ref<AudioStream> const&) {}
