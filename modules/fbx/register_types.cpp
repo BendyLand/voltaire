@@ -60,4 +60,6 @@ void uninitialize_fbx_module(ModuleInitializationLevel p_level)
 	FBXDocument::unregister_all_gltf_document_extensions();
 }
 
+void initialize_fbx_module(ModuleInitializationLevel p_level) {}
+
 

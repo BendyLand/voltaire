@@ -42,6 +42,12 @@ Vector<int> Container::get_allowed_size_flags_horizontal() const
 	return flags;
 }
 
+PackedStringArray Container::get_configuration_warnings() const { return PackedStringArray(); }
+
+void Container::move_child_notify(Node* p_child) {}
+
+void Container::remove_child_notify(Node* p_child) {}
+
 Vector<int> Container::get_allowed_size_flags_vertical() const
 {
 	Vector<int> flags;

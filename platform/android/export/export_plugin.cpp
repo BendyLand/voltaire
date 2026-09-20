@@ -1230,4 +1230,12 @@ void EditorExportPlatformAndroid::_get_manifest_info(const Ref<EditorExportPrese
 {
 }
 
+String _get_screen_sizes_tag(const Ref<EditorExportPreset>& p_preset) { return String(); }
+
+String _get_application_tag(const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset, bool p_is_in_front, bool p_is_engine, const Vector<MetadataInfo>& p_metadata) { return String(); }
+
+void register_android_exporter() {}
+
+PluginConfigAndroid PluginConfigAndroid::load_plugin_config( Ref<ConfigFile> p_config_file, const String& p_path) { return PluginConfigAndroid(); }
+
 

@@ -194,7 +194,6 @@ void EditorExportPlugin::end_generate_apple_embedded_project(
 
 void EditorExportPlugin::skip() { skipped = true; }
 
-
 bool EditorExportPlugin::_begin_customize_resources(
 	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_targets)
 {
@@ -227,6 +226,11 @@ PackedStringArray EditorExportPlugin::_get_export_features(
 	return PackedStringArray();
 }
 
+void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform>& p_export_platform,
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
+}
+
 bool EditorExportPlugin::_should_update_export_options(
 	const Ref<EditorExportPlatform>& p_platform) const
 {
@@ -240,7 +244,8 @@ bool EditorExportPlugin::_get_export_option_visibility(
 }
 
 String EditorExportPlugin::_get_export_option_warning(
-	const Ref<EditorExportPlatform>& p_platform, const String& p_option) const
+	const Ref<EditorExportPlatform>& p_platform
+, const String& p_option) const
 {
 	return String();
 }

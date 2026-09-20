@@ -116,4 +116,6 @@ void OpenXREditorPlugin::_notification(int p_what)
 	}
 }
 
-bool OpenXRExportPlugin::is_openxr_mode() const {}
+bool OpenXRExportPlugin::is_openxr_mode() const { return false; }
+
+

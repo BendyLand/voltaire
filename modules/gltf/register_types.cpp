@@ -68,4 +68,6 @@ void uninitialize_gltf_module(ModuleInitializationLevel p_level)
 	GLTFDocument::unregister_all_gltf_document_extensions();
 }
 
+void initialize_gltf_module(ModuleInitializationLevel p_level) {}
+
 

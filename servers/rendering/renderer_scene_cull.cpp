@@ -1119,6 +1119,8 @@ void RendererSceneCull::instance_set_transform(RID p_instance, const Transform3D
 	_instance_queue_update(instance, true);
 }
 
+void RendererSceneCull::instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) {}
+
 void RendererSceneCull::instance_set_surface_override_material(
 	RID p_instance, int p_surface, RID p_material)
 {
@@ -3531,6 +3533,6 @@ bool RendererSceneCull::_render_reflection_probe_step(RendererSceneCull::Instanc
 	return true;
 }
 
-RendererSceneCull::RendererSceneCull() {}
+void RendererSceneCull::update() {}
 
 

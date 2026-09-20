@@ -43,4 +43,6 @@ void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 	jolt_deinitialize();
 }
 
+void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {}
+
 

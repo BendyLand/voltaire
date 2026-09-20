@@ -153,4 +153,9 @@ DebugEffects::~DebugEffects()
 	motion_vectors.shader.version_free(motion_vectors.shader_version);
 }
 
+void RendererRD::DebugEffects::draw_shadow_frustum(RID p_dest_framebuffer,
+	const Projection& p_projection, const Transform3D& p_transform, RID p_depth, Rect2 p_rect)
+{
+}
+
 

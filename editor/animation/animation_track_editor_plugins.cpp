@@ -234,6 +234,4 @@ AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
 	return memnew(AnimationTrackEditTypeAudio);
 }
 
-AnimationTrackEdit::AnimationTrackEdit() {}
 
-AnimationTrackEditTypeAudio::AnimationTrackEditTypeAudio() {}

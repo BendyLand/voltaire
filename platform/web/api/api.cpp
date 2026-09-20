@@ -38,6 +38,8 @@ void unregister_web_api() { memdelete(javascript_bridge_singleton); }
 
 JavaScriptBridge* JavaScriptBridge::singleton = nullptr;
 
+void register_web_api() {}
+
 JavaScriptBridge* JavaScriptBridge::get_singleton() { return singleton; }
 
 JavaScriptBridge::JavaScriptBridge()

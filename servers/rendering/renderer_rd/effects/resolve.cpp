@@ -44,5 +44,14 @@ Resolve::~Resolve()
 	}
 }
 
-void Resolve::resolve_depth(RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples) {}
+void Resolve::resolve_depth(
+	RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples)
+{
+}
+
+void RendererRD::Resolve::resolve_gi(RID p_source_color, RID p_source_depth, RID p_dest_color,
+	RID p_dest_depth, RID p_velocity, RID p_normal, Vector2i p_size, int p_samples)
+{
+}
+
 

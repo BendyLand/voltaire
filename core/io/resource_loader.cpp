@@ -125,6 +125,12 @@ void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions)
 	}
 }
 
+Error ResourceFormatLoader::rename_dependencies(
+	const String& p_path, const HashMap<String, String>& p_map)
+{
+	return OK;
+}
+
 void ResourceFormatLoader::get_dependencies(
 	const String& p_path, List<String>* p_dependencies, bool p_add_types)
 {

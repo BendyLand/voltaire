@@ -142,6 +142,22 @@ void TileDataDefaultEditor::forward_draw_over_alternatives(TileAtlasView* p_tile
 {
 }
 
+void TileDataDefaultEditor::forward_draw_over_atlas(TileAtlasView* p_tile_atlas_view,
+	TileSetAtlasSource* p_tile_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
+{
+}
+
+void TileDataDefaultEditor::forward_painting_alternatives_gui_input(
+	TileAtlasView* p_tile_atlas_view, TileSetAtlasSource* p_tile_atlas_source,
+	const Ref<InputEvent>& p_event)
+{
+}
+
+void TileDataDefaultEditor::forward_painting_atlas_gui_input(TileAtlasView* p_tile_atlas_view,
+	TileSetAtlasSource* p_tile_atlas_source, const Ref<InputEvent>& p_event)
+{
+}
+
 TileDataDefaultEditor::~TileDataDefaultEditor()
 {
 	toolbar->queue_free();
@@ -231,8 +247,7 @@ TileDataTerrainsEditor::~TileDataTerrainsEditor()
 }
 
 void TileDataNavigationEditor::_set_painted_value(
-	TileSetAtlasSource* p_tile_set_atlas_source,
- Vector2 p_coords, int p_alternative_tile)
+	TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile)
 {
 	TileData* tile_data = p_tile_set_atlas_source->get_tile_data(p_coords, p_alternative_tile);
 	ERR_FAIL_NULL(tile_data);
@@ -288,6 +303,9 @@ TileData* TileDataEditor::_get_tile_data(TileMapCell) {}
 
 void TileDataTerrainsEditor::_tile_set_changed() {}
 
-void TileDataCollisionEditor::_set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,
-	int p_alternative_tile) {}
+void TileDataCollisionEditor::_set_painted_value(
+	TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile)
+{
+}
+
 

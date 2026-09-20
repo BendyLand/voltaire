@@ -223,6 +223,8 @@ HScrollBar* ScrollContainer::get_h_scroll_bar() { return h_scroll; }
 
 VScrollBar* ScrollContainer::get_v_scroll_bar() { return v_scroll; }
 
+PackedStringArray ScrollContainer::get_configuration_warnings() const { return PackedStringArray(); }
+
 void ScrollContainer::set_draw_focus_border(bool p_draw)
 {
 	if (draw_focus_border == p_draw) {

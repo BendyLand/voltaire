@@ -64,4 +64,4 @@ void uninitialize_websocket_module(ModuleInitializationLevel p_level)
 	}
 }
 
-
+void initialize_websocket_module(ModuleInitializationLevel p_level) {}

@@ -29,9 +29,7 @@ summary:
 		echo "Missing first error file. Try linking first."
 		exit
 	fi
-	if [[ -f errs2 ]]; then
-		awk -F "undefined reference to \`" 'NF>1 {print $2}' errs2 | sed "s/'$//" | sort | uniq -c | sort -nr > errs3
-	else
-		sed -E '/.*x86_64\.o.*/d' errs > errs2
-		lash summary
-	fi
+	awk '{print $2,$6}' errs > errs2
+	awk '{print $2}' errs2 | sort > errs3
+	uniq -c errs3 | sort -nr > errs4
+

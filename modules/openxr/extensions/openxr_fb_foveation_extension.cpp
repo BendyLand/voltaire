@@ -173,4 +173,11 @@ void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_active(boo
 	foveation_with_subsampled_images_active = p_active;
 }
 
+void OpenXRFBFoveationExtension::update_profile() {}
+
+void OpenXRFBFoveationExtension::get_fragment_density_offsets(
+	LocalVector<Vector2i, unsigned int, false, false>& r_offsets)
+{
+}
+
 

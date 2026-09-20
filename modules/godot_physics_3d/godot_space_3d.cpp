@@ -547,4 +547,13 @@ GodotSpace3D::~GodotSpace3D()
 	memdelete(direct_access);
 }
 
+bool GodotSpace3D::test_body_motion(GodotBody3D* p_body,
+	const PhysicsServer3DTypes::MotionParameters& p_parameters,
+	PhysicsServer3DTypes::MotionResult* r_result)
+{
+	return false;
+}
+
+GodotSpace3D::GodotSpace3D() {}
+
 

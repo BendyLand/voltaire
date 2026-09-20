@@ -515,13 +515,15 @@ void ColladaImport::create_animations(bool p_import_value_tracks)
 	}
 }
 
-/*********************************************************************************/
-/*************************************** SCENE ***********************************/
-/*********************************************************************************/
-
 void EditorSceneFormatImporterCollada::get_extensions(List<String>* r_extensions) const
 {
 	r_extensions->push_back("dae");
 }
+
+void ColladaImport::create_animation(int p_clip, bool p_bake) {}
+
+Error ColladaImport::_create_scene(Collada::Node* p_node, Node3D* p_parent) { return OK; }
+
+Error ColladaImport::_create_resources(Collada::Node* p_node, bool p_is_root) { return OK; }
 
 

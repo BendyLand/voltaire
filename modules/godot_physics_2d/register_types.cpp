@@ -41,4 +41,6 @@ void uninitialize_godot_physics_2d_module(ModuleInitializationLevel p_level)
 	}
 }
 
+void initialize_godot_physics_2d_module(ModuleInitializationLevel p_level) {}
+
 

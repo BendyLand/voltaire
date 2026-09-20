@@ -6067,4 +6067,37 @@ void RendererSceneRenderImplementation::RenderForwardClustered::_render_list_wit
 {
 }
 
+void RendererRD::GI::SDFGI::store_probes() {}
+
+void RendererRD::GI::SDFGI::debug_probes(
+	RID p_framebuffer, unsigned int p_flags, const Projection* p_projection)
+{
+}
+
+void RendererRD::GI::SDFGI::update_probes(RID p_env, RendererRD::SkyRD::Sky* p_sky) {}
+
+void RendererRD::GI::SDFGI::update_light() {}
+
+void RendererRD::GI::SDFGI::render_static_lights(RenderDataRD* p_render_data,
+	Ref<RenderSceneBuffersRD> p_render_buffers, unsigned int p_light_count,
+	const unsigned int* p_lights, const PagedArray<RID>* p_shadow_atlases)
+{
+}
+
+void RendererRD::GI::SDFGI::render_region(Ref<RenderSceneBuffersRD> p_render_buffers, int p_region,
+	const PagedArray<RenderGeometryInstance*>& p_geometry_instances, float p_exposure)
+{
+}
+
+void RendererRD::GI::SDFGI::debug_draw(unsigned int p_mode, const Projection* p_projection,
+	const Transform3D& p_transform, int p_width, int p_height, RID p_dest_framebuffer, RID p_color,
+	const Vector<RID>& p_lights)
+{
+}
+
+void RendererRD::GI::SDFGI::create(RID p_env, const Vector3& p_world_position,
+	unsigned int p_requested_history_size, RendererRD::GI* p_gi)
+{
+}
+
 

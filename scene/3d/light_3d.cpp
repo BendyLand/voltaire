@@ -106,6 +106,8 @@ void Light3D::set_shadow_caster_mask(uint32_t p_caster_mask)
 
 uint32_t Light3D::get_shadow_caster_mask() const { return shadow_caster_mask; }
 
+AABB Light3D::get_aabb() const { return AABB(); }
+
 PackedStringArray Light3D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();

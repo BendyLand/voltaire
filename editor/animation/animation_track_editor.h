@@ -504,7 +504,7 @@ public:
 
 	void set_in_group(bool p_enable);
 
-	AnimationTrackEdit();
+	AnimationTrackEdit() = default;
 };
 
 class AnimationTrackEditPlugin : public RefCounted

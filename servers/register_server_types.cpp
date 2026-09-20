@@ -134,4 +134,8 @@ static MovieWriterPNGWAV* writer_pngwav = nullptr;
 
 void register_server_singletons() {}
 
+void unregister_server_types() {}
+
+void register_server_types() {}
+
 

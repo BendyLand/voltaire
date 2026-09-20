@@ -636,3 +636,5 @@ void AnimatedSprite3D::_stop_internal(bool p_reset) {}
 void SpriteBase3D::draw_texture_rect(Ref<Texture2D>, Rect2, Rect2) {}
 
 void Sprite3D::set_frame(int) {}
+
+

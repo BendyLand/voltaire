@@ -692,3 +692,16 @@ void EditorSettings::set_favorite_properties(
 
 void EditorSettings::notify_changes() {}
 
+void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
+	const PackedInt32Array& p_keycodes, bool p_physical)
+{
+}
+
+Ref<Shortcut> ED_SHORTCUT_ARRAY(
+	const String& p_path, const String& p_name, const PackedInt32Array& p_keycodes, bool p_physical)
+{
+	Ref<Shortcut> s = memnew(Shortcut);
+	return s;
+}
+
+

@@ -240,6 +240,10 @@ Ref<Texture2D> TabContainer::get_tab_button_icon(int p_tab) const
 	return tab_bar->get_tab_button_icon(p_tab);
 }
 
+void TabContainer::remove_child_notify(Node* p_child) {}
+
+void TabContainer::move_child_notify(Node* p_child) {}
+
 void TabContainer::add_child_notify(Node* p_child) {}
 
 Size2 TabContainer::_get_minimum_size(bool p_use_desired_sizes) const

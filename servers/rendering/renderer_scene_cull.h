@@ -440,7 +440,7 @@ public:
 
 	struct InstanceBaseData
 	{
-		virtual ~InstanceBaseData() {}
+		virtual ~InstanceBaseData() = default;
 	};
 
 	struct Instance
@@ -1515,7 +1515,7 @@ public:
 		bool interpolation_enabled = false;
 	} _interpolation_data;
 
-	RendererSceneCull();
+	RendererSceneCull() = default;
 	virtual ~RendererSceneCull();
 };
 

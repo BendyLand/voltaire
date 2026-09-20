@@ -915,4 +915,10 @@ RID RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::
 	return RID();
 }
 
+void RendererSceneRenderImplementation::SceneShaderForwardClustered::set_default_specialization(
+	const RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderSpecialization&
+		p_specialization)
+{
+}
+
 

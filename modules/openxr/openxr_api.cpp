@@ -2304,8 +2304,7 @@ bool OpenXRAPI::pre_draw_viewport(RID p_render_target) { return true; }
 
 void OpenXRAPI::post_draw_viewport(RID p_render_target) {}
 
-RID OpenXRAPI::OpenXRSwapChainInfo::get_density_map() { return RID()
-; }
+RID OpenXRAPI::OpenXRSwapChainInfo::get_density_map() { return RID(); }
 
 OpenXRAPI::~OpenXRAPI() {}
 
@@ -2341,5 +2340,7 @@ bool OpenXRAPI::create_session() { return true; }
 void OpenXRAPI::cleanup_extension_wrappers() {}
 
 void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer) {}
+
+String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) const { return String(); }
 
 

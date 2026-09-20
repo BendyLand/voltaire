@@ -274,6 +274,11 @@ void MaterialStorage::ShaderData::set_default_texture_parameter(
 	}
 }
 
+void RendererRD::MaterialStorage::ShaderData::get_instance_param_list(
+	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+{
+}
+
 bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param) const
 {
 	if (!uniforms.has(p_param)) {
@@ -1399,5 +1404,7 @@ MaterialStorage::MaterialDataRequestFunction MaterialStorage::material_get_data_
 	ERR_FAIL_INDEX_V(p_shader_type, SHADER_TYPE_MAX, nullptr);
 	return material_data_request_func[p_shader_type];
 }
+
+void RendererRD::MaterialStorage::_update_queued_materials() {}
 
 

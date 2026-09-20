@@ -199,7 +199,6 @@ static bool _bind_is_committing_action()
 	return false;
 }
 
-
 EditorUndoRedoManager* EditorUndoRedoManager::get_singleton() { return singleton; }
 
 EditorUndoRedoManager::~EditorUndoRedoManager()
@@ -214,3 +213,17 @@ EditorUndoRedoManager::History& EditorUndoRedoManager::get_or_create_history(int
 	EditorUndoRedoManager::History eh = EditorUndoRedoManager::History();
 	return eh;
 }
+
+bool EditorUndoRedoManager::undo_history(int p_history_id) { return false; }
+
+bool EditorUndoRedoManager::redo_history(int p_history_id) { return false; }
+
+bool EditorUndoRedoManager::is_history_unsaved(int p_history_id) { return false; }
+
+void EditorUndoRedoManager::set_history_as_saved(int p_history_id) {}
+
+void EditorUndoRedoManager::discard_history(int p_history_id, bool p_erase_from_map) {}
+
+void EditorUndoRedoManager::commit_action(bool p_execute) {}
+
+

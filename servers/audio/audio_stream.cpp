@@ -163,6 +163,12 @@ uint64_t AudioStream::get_tagged_frame() const { return tagged_frame; }
 
 uint32_t AudioStream::get_tagged_frame_count() const { return offset_count; }
 
+Ref<AudioSample> AudioStream::generate_sample() const
+{
+	Ref<AudioSample> as = memnew(AudioSample);
+	return as;
+}
+
 float AudioStream::get_tagged_frame_offset(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, MAX_TAGGED_OFFSETS, 0);

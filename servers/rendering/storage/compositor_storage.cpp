@@ -110,4 +110,19 @@ Vector<RID> RendererCompositorStorage::compositor_get_compositor_effects(
 	}
 }
 
+void RendererCompositorStorage::compositor_effect_set_flag(
+	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag, bool p_set)
+{
+}
+
+void RendererCompositorStorage::compositor_effect_set_enabled(RID p_effect, bool p_enabled) {}
+
+bool RendererCompositorStorage::compositor_effect_get_flag(
+	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag) const
+{
+	return false;
+}
+
+void RendererCompositorStorage::compositor_effect_free(RID p_effect) {}
+
 

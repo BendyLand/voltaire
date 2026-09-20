@@ -48,8 +48,6 @@
 namespace GLES3
 {
 
-/* Shader Structs */
-
 struct ShaderData
 {
 	String path;
@@ -88,8 +86,6 @@ struct Shader
 	HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
 	HashSet<Material*> owners;
 };
-
-/* Material structs */
 
 struct MaterialData
 {
@@ -136,8 +132,6 @@ struct Material
 
 	Material() : update_element(this) {}
 };
-
-/* CanvasItem Materials */
 
 struct CanvasShaderData : public ShaderData
 {
@@ -201,8 +195,6 @@ struct CanvasMaterialData : public MaterialData
 
 MaterialData* _create_canvas_material_func(ShaderData* p_shader);
 
-/* Sky Materials */
-
 struct SkyShaderData : public ShaderData
 {
 	// All these members are (re)initialized in `set_code`.
@@ -248,8 +240,6 @@ struct SkyMaterialData : public MaterialData
 };
 
 MaterialData* _create_sky_material_func(ShaderData* p_shader);
-
-/* Scene Materials */
 
 struct SceneShaderData : public ShaderData
 {
@@ -393,8 +383,6 @@ struct SceneMaterialData : public MaterialData
 
 MaterialData* _create_scene_material_func(ShaderData* p_shader);
 
-/* Particle Shader */
-
 enum
 {
 	PARTICLES_MAX_USERDATAS = 6
@@ -448,8 +436,6 @@ struct ParticleProcessMaterialData : public MaterialData
 
 MaterialData* _create_particles_material_func(ShaderData* p_shader);
 
-/* Texture Blit Shader */
-
 struct TexBlitShaderData : public ShaderData
 {
 	enum BlendMode
@@ -498,7 +484,6 @@ struct TexBlitMaterialData : public MaterialData
 
 MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
 
-/* Global shader uniform structs */
 struct GlobalShaderUniforms
 {
 	enum

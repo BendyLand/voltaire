@@ -632,4 +632,10 @@ String OpenXRSpatialAnchorCapability::get_spatial_persistence_context_result_nam
 	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)
 }
 
+Ref<OpenXRFutureResult> OpenXRSpatialAnchorCapability::_create_spatial_context()
+{
+	Ref<OpenXRFutureResult> oxfr = memnew(OpenXRFutureResult);
+	return oxfr;
+}
+
 

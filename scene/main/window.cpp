@@ -1687,6 +1687,8 @@ Viewport* Window::get_section_root_viewport() const
 
 bool Window::is_attached_in_viewport() const { return get_embedder(); }
 
+void Window::_update_mouse_over(Vector2 p_pos) {}
+
 void Window::_mouse_leave_viewport()
 {
 	Viewport::_mouse_leave_viewport();
@@ -1752,3 +1754,7 @@ void Window::add_theme_font_override(StringName const&, Ref<Font> const&) {}
 void Window::_accessibility_notify_exit(Node*) {}
 
 void Window::_accessibility_notify_enter(Node*) {}
+
+Size2 Window::_get_contents_minimum_size() const { return Size2(); }
+
+

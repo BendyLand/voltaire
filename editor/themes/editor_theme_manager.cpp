@@ -299,4 +299,21 @@ void EditorThemeManager::finalize()
 	EditorTheme::finalize();
 }
 
+void EditorThemeManager::_populate_visual_shader_styles(
+	const Ref<EditorTheme>& p_theme, EditorThemeManager::ThemeConfiguration& p_config)
+{
+}
+
+void EditorThemeManager::_populate_text_editor_styles(
+	const Ref<EditorTheme>& p_theme, EditorThemeManager::ThemeConfiguration& p_config)
+{
+}
+
+bool EditorThemeManager::is_dark_icon_and_font() { return true; }
+
+EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config()
+{
+	return EditorThemeManager::ThemeConfiguration();
+}
+
 

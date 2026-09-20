@@ -500,8 +500,6 @@ class NavigationServer3DManager
 
 	void on_servers_changed();
 
-protected:
-
 public:
 	static const String setting_property_name;
 

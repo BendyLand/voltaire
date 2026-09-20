@@ -267,6 +267,18 @@ void TextServer::draw_hex_code_box(const RID& p_canvas, int64_t p_size, const Ve
 	}
 }
 
+PackedInt32Array TextServer::shaped_text_get_line_breaks_adv(const RID& p_shaped,
+	const PackedFloat32Array& p_width, int64_t p_start, bool p_once, uint32_t p_break_flags) const
+{
+	return PackedInt32Array();
+}
+
+PackedInt32Array TextServer::shaped_text_get_line_breaks(
+	const RID& p_shaped, double p_width, int64_t p_start, uint32_t p_break_flags) const
+{
+	return PackedInt32Array();
+}
+
 bool TextServer::shaped_text_has_visible_chars(const RID& p_shaped) const
 {
 	int v_size = shaped_text_get_glyph_count(p_shaped);
@@ -1252,5 +1264,7 @@ bool TextServer::is_valid_identifier(const String& p_string) const
 }
 
 bool TextServer::is_valid_letter(uint64_t p_unicode) const { return is_unicode_letter(p_unicode); }
+
+void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface) {}
 
 

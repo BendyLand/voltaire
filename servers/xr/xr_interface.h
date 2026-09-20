@@ -32,6 +32,7 @@
 
 #include "core/os/thread_safe.h"
 #include "core/types.h"
+#include "servers/rendering/rendering_server_types.h"
 /**
 	The XR interface is a template class on top of which we build interface to different AR, VR and
    tracking SDKs. The idea is that we subclass this class, implement the logic, and then instantiate
@@ -108,8 +109,7 @@ protected:
 	_THREAD_SAFE_CLASS_
 
 public:
-	virtual PackedStringArray
-	get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
+	virtual PackedStringArray get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
 	virtual PackedStringArray get_suggested_pose_names(const StringName& p_tracker_name)
 		const; /* return a list of likely/suggested action names for this tracker */
 	virtual TrackingStatus get_tracking_status() const; /* get the status of our current tracking */
@@ -132,13 +132,11 @@ public:
 	/** specific to VR **/
 	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode
 			p_mode); /* query if this interface supports this play area mode */
-	virtual XRInterface::PlayAreaMode
-	get_play_area_mode() const; /* get the current play area mode */
+	virtual XRInterface::PlayAreaMode get_play_area_mode() const; /* get the current play area mode */
 	virtual bool set_play_area_mode(
 		XRInterface::PlayAreaMode p_mode); /* change the play area mode, note that this should
 											  return false if the mode is not available */
-	virtual PackedVector3Array
-	get_play_area() const; /* if available, returns an array of vectors denoting the play area the
+	virtual PackedVector3Array get_play_area() const; /* if available, returns an array of vectors denoting the play area the
 							  player can move around in */
 
 	/** specific to AR **/
@@ -149,8 +147,7 @@ public:
 	/** rendering and internal **/
 
 	// These methods are called from the main thread.
-	virtual Transform3D
-	get_camera_transform(); /* returns the position of our camera, only used for updating
+	virtual Transform3D get_camera_transform(); /* returns the position of our camera, only used for updating
 								   reference frame. For monoscopic this is equal to the views
 								   transform, for stereoscopic this should be an average */
 	virtual void process();
@@ -167,10 +164,8 @@ public:
 	virtual Projection get_projection_for_view(uint32_t p_view, double p_aspect, double p_z_near,
 		double p_z_far);			 /* get each view projection matrix */
 	virtual RID get_color_texture(); /* obtain color output texture (if applicable) */
-	virtual RID
-	get_depth_texture(); /* obtain depth output texture (if applicable, used for reprojection) */
-	virtual RID
-	get_velocity_texture(); /* obtain velocity output texture (if applicable, used for spacewarp) */
+	virtual RID get_depth_texture(); /* obtain depth output texture (if applicable, used for reprojection) */
+	virtual RID get_velocity_texture(); /* obtain velocity output texture (if applicable, used for spacewarp) */
 	virtual RID get_velocity_depth_texture();
 	virtual Size2i get_velocity_target_size();
 	virtual Rect2i get_render_region();
@@ -209,8 +204,8 @@ public:
 
 	virtual VRSTextureFormat get_vrs_texture_format() { return XR_VRS_TEXTURE_FORMAT_UNIFIED; }
 
-	XRInterface();
-	~XRInterface();
+	XRInterface() = default;
+	~XRInterface() = default;
 };
 
 

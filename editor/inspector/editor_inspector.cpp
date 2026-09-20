@@ -118,6 +118,20 @@ bool EditorProperty::is_draw_label() const { return draw_label; }
 
 bool EditorProperty::is_draw_background() const { return draw_background; }
 
+Control* EditorProperty::make_custom_tooltip(const String& p_text) const
+{
+	Control c = Control();
+	return &c;
+}
+
+Size2 EditorProperty::get_minimum_size() const { return Size2(); }
+
+bool EditorProperty::is_cache_valid() const { return true; }
+
+void EditorProperty::update_cache() {}
+
+bool EditorProperty::use_keying_next() const { return false; }
+
 bool EditorProperty::is_checkable() const { return checkable; }
 
 bool EditorProperty::is_checked() const { return checked; }

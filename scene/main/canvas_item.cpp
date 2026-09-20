@@ -914,6 +914,14 @@ bool CanvasItem::get_use_parent_material() const
 	return use_parent_material;
 }
 
+void CanvasItem::set_material(const Ref<Material>& p_material) {}
+
+void CanvasItem::_update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat) {}
+
+void CanvasItem::_update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter) {}
+
+void CanvasItem::set_z_index(int p_z) {}
+
 Ref<Material> CanvasItem::get_material() const
 {
 	ERR_READ_THREAD_GUARD_V(Ref<Material>());
@@ -1268,5 +1276,13 @@ CanvasItem* CanvasItem::get_top_level() const
 }
 
 void CanvasTexture::set_diffuse_texture(const Ref<Texture2D>& p_diffuse) {}
+
+void CanvasItem::_edit_set_scale(const Size2& p_scale) {}
+
+Size2 CanvasItem::_edit_get_scale() const { return Size2(); }
+
+Point2 CanvasItem::_edit_get_position() const { return Point2(); }
+
+void CanvasItem::_edit_set_position(const Point2& p_position) {}
 
 

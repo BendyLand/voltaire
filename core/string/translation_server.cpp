@@ -704,4 +704,5 @@ TranslationServer::TranslationServer()
 	init_locale_info();
 }
 
+void TranslationServer::setup() {}
 

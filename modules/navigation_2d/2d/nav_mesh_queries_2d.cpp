@@ -322,9 +322,9 @@ void NavMeshQueries2D::_query_task_build_path_corridor(
 		// unreachable.
 		if (traversable_polys.is_empty()) {
 			// Thus use the further reachable polygon
-			ERR_BREAK_MSG(
-				is_reachable == false, "Invalid navigation index or connection pointers. Check "
-									   "preceding navmesh geometry or placement errors.");
+			ERR_BREAK_MSG(is_reachable == false,
+				"Invalid navigation index or connection pointers. Check "
+				"preceding navmesh geometry or placement errors.");
 			is_reachable = false;
 			if (reachable_end == nullptr) {
 				// The path is not found and there is not a way out.
@@ -994,8 +994,7 @@ bool NavMeshQueries2D::_query_task_is_connection_owner_usable(
 		}
 	}
 
-	return
-owner_usable;
+	return owner_usable;
 }
 
 LocalVector<uint32_t> NavMeshQueries2D::get_simplified_path_indices(
@@ -1042,6 +1041,15 @@ void NavMeshQueries2D::simplify_path_segment(int p_start_inx, int p_end_inx,
 	}
 }
 
-void NavMeshQueries2D::_query_task_push_back_point_with_metadata(NavMeshPathQueryTask2D& p_query_task,
-	const Vector2& p_point, const Nav2D::Polygon* p_point_polygon) {}
+void NavMeshQueries2D::_query_task_push_back_point_with_metadata(
+	NavMeshPathQueryTask2D& p_query_task, const Vector2& p_point,
+	const Nav2D::Polygon* p_point_polygon)
+{
+}
+
+void NavMeshQueries2D::query_task_map_iteration_get_path(
+	NavMeshQueries2D::NavMeshPathQueryTask2D& p_task, const NavMapIteration2D& p_map_iteration)
+{
+}
+
 

@@ -60,4 +60,8 @@ int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
 	return total_bandwidth;
 }
 
+void MultiplayerDebugger::initialize() {}
+
+void MultiplayerDebugger::deinitialize() {}
+
 

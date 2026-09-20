@@ -1755,6 +1755,8 @@ void Node::_call_unhandled_input(const Ref<InputEvent>& p_event)
 	unhandled_input(p_event);
 }
 
+String Node::_to_string() { return String(); }
+
 void Node::_call_unhandled_key_input(const Ref<InputEvent>& p_event)
 {
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
@@ -1885,5 +1887,21 @@ Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<String
 }
 
 void Node::_add_child_nocheck(Node*, StringName const&, Node::InternalMode) {}
+
+void Node::set_translation_domain(const StringName& p_domain) {}
+
+void Node::remove_meta(const StringName& p_name) {}
+
+bool Node::has_signal(const StringName& p_name) const { return false; }
+
+bool Node::has_meta(const StringName& p_name) const { return false; }
+
+bool Node::has_connections(const StringName& p_signal) const { return false; }
+
+StringName Node::get_translation_domain() const { return StringName(); }
+
+int Node::get_persistent_signal_connection_count() const { return 0; }
+
+void Node::get_meta_list(List<StringName>* p_list) const {}
 
 

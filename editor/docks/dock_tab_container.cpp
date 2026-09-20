@@ -125,6 +125,8 @@ void DockTabContainer::_tab_rmb_clicked(int p_tab_idx)
 	dock_context_popup->popup();
 }
 
+void DockTabContainer::update_visibility() {}
+
 bool DockTabContainer::can_switch_dock() const
 {
 	return EditorDockManager::get_singleton()->are_docks_visible();

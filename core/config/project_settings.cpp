@@ -937,4 +937,9 @@ void ProjectSettings::_convert_to_last_version(int p_from_version) {}
 
 void ProjectSettings::refresh_global_class_list() {}
 
+void ProjectSettings::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
 

@@ -31,9 +31,9 @@
 #include "panel_container.h"
 #include "scene/theme/theme_db.h"
 
+Size2 PanelContainer::get_desired_size() const { return Size2(); }
 
-
-
+Size2 PanelContainer::get_minimum_size() const { return Size2(); }
 
 Size2 PanelContainer::get_inner_combined_maximum_size() const
 {

@@ -1046,3 +1046,5 @@ void AnimationTrackEditor::_clear_key_edit() {}
 void AnimationMultiTrackKeyEdit::notify_change() {}
 
 void AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}
+
+

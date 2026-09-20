@@ -50,4 +50,9 @@ void RendererRD::ToneMapper::tonemapper(
 {
 }
 
+void RendererRD::ToneMapper::tonemapper_subpass(long p_subpass, RID p_framebuffer,
+	long p_render_pass, const RendererRD::ToneMapper::TonemapSettings& p_settings)
+{
+}
+
 

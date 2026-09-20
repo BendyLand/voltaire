@@ -39,4 +39,6 @@ void ShaderInclude::set_include_path(const String& p_path) { include_path = p_pa
 
 void set_code(const String& p_text) {}
 
+void ShaderInclude::set_code(const String& p_code) {}
+
 

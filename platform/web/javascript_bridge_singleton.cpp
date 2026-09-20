@@ -409,3 +409,7 @@ Error JavaScriptBridge::pwa_update() {
 void JavaScriptBridge::force_fs_sync() {
 	OS_Web::get_singleton()->force_fs_sync();
 }
+
+void register_web_api() {}
+
+

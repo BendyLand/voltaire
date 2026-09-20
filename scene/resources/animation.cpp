@@ -3038,5 +3038,6 @@ void Animation::_value_track_optimize(int p_idx, real_t p_allowed_velocity_err,
 
 void Animation::compress(uint32_t p_page_size, uint32_t p_fps, float p_split_tolerance) {}
 
-
 real_t Animation::track_get_key_transition(int p_track, int p_key_idx) const { return 0.0; }
+
+

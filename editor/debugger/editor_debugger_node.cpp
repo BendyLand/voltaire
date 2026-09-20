@@ -179,8 +179,6 @@ ScriptEditorDebugger* EditorDebuggerNode::get_current_debugger() const
 	return &sed;
 }
 
-
-
 void EditorDebuggerNode::stop_waiting_inspection() {}
 
 void EditorDebuggerNode::set_camera_override(EditorDebuggerNode::CameraOverride) {}
@@ -192,3 +190,7 @@ ScriptEditorDebugger* EditorDebuggerNode::get_debugger(int) const {}
 void EditorDebuggerNode::set_debug_mute_audio(bool) {}
 
 void EditorDebuggerNode::reload_scripts(Vector<String> const&) {}
+
+void EditorDebuggerRemoteObjects::clear() {}
+
+

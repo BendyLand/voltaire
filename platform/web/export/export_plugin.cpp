@@ -335,4 +335,6 @@ Error EditorExportPlatformWeb::_stop_server()
 
 Ref<Texture2D> EditorExportPlatformWeb::get_run_icon() const { return run_icon; }
 
+void register_web_exporter() {}
+
 

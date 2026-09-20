@@ -48,6 +48,8 @@ void Button::_set_internal_margin(Side p_side, float p_value)
 	_internal_margin[p_side] = p_value;
 }
 
+String Button::_get_translated_text(const String& p_text) const { return String(); }
+
 void Button::_queue_update_size_cache() {}
 
 void Button::_update_theme_item_cache()

@@ -44,9 +44,6 @@
 
 using namespace GLES3;
 
-///////////////////////////////////////////////////////////////////////////
-// UBI helper functions
-
 _FORCE_INLINE_ static void _fill_std140_ubo_value(
 	ShaderLanguage::DataType type, const Vector<ShaderLanguage::Scalar>& value, uint8_t* data)
 {
@@ -248,8 +245,8 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////
-// ShaderData
+void ShaderData::get_instance_param_list(
+	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const {}
 
 void ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
@@ -281,8 +278,6 @@ bool ShaderData::is_parameter_texture(const StringName& p_param) const
 	return uniforms[p_param].is_texture();
 }
 
-///////////////////////////////////////////////////////////////////////////
-// MaterialData
 
 // Look up table to translate ShaderLanguage::DataType to GL_TEXTURE_*
 static const GLenum target_from_type[ShaderLanguage::TYPE_MAX] = {
@@ -500,9 +495,6 @@ RID MaterialData::get_default_texture_id(
 
 	return gl_texture;
 }
-
-///////////////////////////////////////////////////////////////////////////
-// Material Storage
 
 MaterialStorage* MaterialStorage::singleton = nullptr;
 
@@ -988,8 +980,6 @@ MaterialStorage::~MaterialStorage()
 	singleton = nullptr;
 }
 
-/* GLOBAL SHADER UNIFORM API */
-
 int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 {
 	int32_t idx = 0;
@@ -1184,8 +1174,6 @@ void MaterialStorage::_update_global_shader_uniforms()
 	}
 }
 
-/* SHADER API */
-
 RID MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
 
 void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
@@ -1377,8 +1365,6 @@ RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_
 	return RenderingServerTypes::ShaderNativeSourceCode();
 }
 
-/* MATERIAL API */
-
 void MaterialStorage::_material_queue_update(
 	GLES3::Material* material, bool p_uniform, bool p_texture)
 {
@@ -1569,8 +1555,6 @@ LocalVector<ShaderGLES3::TextureUniformData> get_texture_uniform_data(
 	return texture_uniform_data;
 }
 
-/* Canvas Shader Data */
-
 void CanvasShaderData::set_code(const String& p_code)
 {
 	// Initialize and compile the shader.
@@ -1760,9 +1744,6 @@ GLES3::MaterialData* GLES3::_create_canvas_material_func(ShaderData* p_shader)
 	return material_data;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// SKY SHADER
-
 void SkyShaderData::set_code(const String& p_code)
 {
 	// Initialize and compile the shader.
@@ -1882,9 +1863,6 @@ GLES3::ShaderData* GLES3::_create_sky_shader_func()
 	return shader_data;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Sky material
-
 SkyMaterialData::~SkyMaterialData() {}
 
 GLES3::MaterialData* GLES3::_create_sky_material_func(ShaderData* p_shader)
@@ -1902,9 +1880,6 @@ void SkyMaterialData::bind_uniforms()
 
 	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// Scene SHADER
 
 void SceneShaderData::set_code(const String& p_code)
 {
@@ -2254,8 +2229,6 @@ void SceneMaterialData::bind_uniforms()
 	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
 }
 
-/* Particles SHADER */
-
 void ParticlesShaderData::set_code(const String& p_code)
 {
 	// Initialize and compile the shader.
@@ -2362,8 +2335,6 @@ void ParticleProcessMaterialData::bind_uniforms()
 	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms,
 		1); // Start at GL_TEXTURE1 because texture slot 0 is reserved for the heightmap texture.
 }
-
-/* TextureBlit SHADER */
 
 void TexBlitShaderData::set_code(const String& p_code)
 {

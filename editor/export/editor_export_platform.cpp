@@ -733,8 +733,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						  // required to store Unix file permissions
+				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						// required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -773,8 +773,8 @@ void EditorExportPlatform::zip_folder_recursive(
 			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
 				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
 				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314,	  // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						  // required to store Unix file permissions
+				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
+						// required to store Unix file permissions
 				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
 						  // fields must be encoded using UTF-8.
 
@@ -938,6 +938,20 @@ String EditorExportPlatform::simplify_path(const String& p_path)
 void EditorExportPlatform::get_preset_features(
 	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
 {
+}
+
+bool EditorExportPlatform::fill_log_messages(RichTextLabel* p_log, Error p_err) { return true; }
+
+Ref<EditorExportPreset> EditorExportPlatform::create_preset()
+{
+	Ref<EditorExportPreset> eep = memnew(EditorExportPreset);
+	return eep;
+}
+
+bool EditorExportPlatform::can_export(const Ref<EditorExportPreset>& p_preset, String& r_error,
+	bool& r_missing_templates, bool p_debug) const
+{
+	return true;
 }
 
 void EditorExportPlatform::get_export_options(List<ExportOption>* r_options) const {}

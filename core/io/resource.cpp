@@ -244,6 +244,12 @@ void Resource::reset_local_to_scene()
 	// Restores the state as if setup_local_to_scene() hadn't been called.
 }
 
+Ref<Resource> Resource::_duplicate(bool p_subresources) const
+{
+	Ref<Resource> r = memnew(Resource);
+	return r;
+}
+
 String Resource::_to_string()
 {
 	return (name.is_empty() ? "" : String(name) + " ") + "(" + path_cache +
@@ -397,4 +403,7 @@ void Resource::reset_state()
 
 RID Resource::get_rid() const { return RID(); }
 
+void Resource::reload_from_file() {}
+
+void Resource::setup_local_to_scene() {}
 

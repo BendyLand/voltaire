@@ -1,204 +1,713 @@
-      4 OpenXRCompositionLayerExtension::composition_layer_set_viewport(RID, RID, Vector2i const&)
-      3 XRServer::get_tracker(StringName const&) const
-      3 RenderingDeviceGraph::_group_barriers_for_render_commands(RenderingDeviceDriver::CommandBufferID, RenderingDeviceGraph::RecordedCommandSort const*, unsigned int, bool)
-      3 RendererRD::ParticlesStorage::_particles_update_buffers(RendererRD::ParticlesStorage::Particles*)
-      3 RendererRD::MeshStorage::_update_dirty_multimeshes()
-      3 OpenXRFBFoveationExtension::update_profile()
-      3 OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(RID, bool, Vector2i const&)
-      3 ED_SHORTCUT_ARRAY(String const&, String const&, Vector<int> const&, bool)
-      3 DocTools::remove_doc(String const&)
-      3 DocTools::has_doc(String const&)
-      3 DocTools::generate(unsigned int)
-      2 XRServer::set_render_world_scale(double)
-      2 XRServer::remove_interface(Ref<XRInterface> const&)
-      2 XRServer::get_world_origin() const
-      2 WebPCommon::_webp_lossless_pack(Ref<Image> const&)
-      2 vtable for ProjectSettings
-      2 RenderingDeviceGraph::_wait_for_secondary_command_buffer_tasks()
-      2 RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderVersion, bool) const
-      2 RendererSceneRenderImplementation::RenderForwardMobile::_render_list_with_draw_list(RendererSceneRenderImplementation::RenderForwardMobile::RenderListParameters*, RID, unsigned int, Vector<Color> const&, float, unsigned int, Rect2 const&)
-      2 RendererRD::VRS::copy_vrs(RID, RID, bool)
-      2 RendererRD::SMAA::process(Ref<RenderSceneBuffersRD>, RID, RID, bool)
-      2 RendererRD::SkyRD::ReflectionData::update_reflection_data(int, int, bool, RID, int, bool, int, RenderingDeviceCommons::DataFormat, float)
-      2 RendererRD::MeshStorage::_update_dirty_skeletons()
-      2 RendererRD::GI::SDFGI::store_probes()
-      2 RendererRD::GI::SDFGI::debug_probes(RID, unsigned int, Projection const*)
-      2 RendererRD::CopyEffects::make_mipmap(RID, RID, Vector2i const&)
-      2 RendererRD::CopyEffects::gaussian_glow(RID, RID, Vector2i const&, float, bool, float, float, float, float, float, RID, float)
-      2 RendererRD::CopyEffects::gaussian_blur(RID, RID, Rect2i const&, Vector2i const&, bool)
-      2 RendererRD::CopyEffects::gaussian_blur_raster(RID, RID, Rect2i const&, Vector2i const&)
-      2 OpenXRVisibilityMaskExtension::_update_mesh()
-      2 OpenXRCompositionLayerExtension::composition_layer_unregister(RID)
-      2 NavMeshGenerator3D::sync()
-      2 NavMeshGenerator3D::cleanup()
-      2 NavMeshGenerator2D::sync()
-      2 NavMeshGenerator2D::cleanup()
-      2 EditorUndoRedoManager::undo_history(int)
-      2 EditorUndoRedoManager::redo_history(int)
-      2 EditorUndoRedoManager::is_history_unsaved(int)
-      2 DocTools::remove_script_doc_by_path(String const&)
-      2 DocTools::merge_from(DocTools const&)
-      2 DebugAdapterProtocol::notify_continued()
-      2 ColladaImport::create_animation(int, bool)
-      1 XRServer::set_world_origin(Transform3D const&)
-      1 XRServer::_process()
-      1 XRServer::clear_reference_frame()
-      1 XRServer::add_interface(Ref<XRInterface> const&)
-      1 WebPCommon::_webp_packer(Ref<Image> const&, float, bool)
-      1 unregister_server_types()
-      1 unregister_scene_types()
-      1 TTS_Linux::speech_init_thread_func(void*)
-      1 TranslationServer::setup()
-      1 TilesEditorUtils::_thread()
-      1 TextServerManager::set_primary_interface(Ref<TextServer> const&)
-      1 ShaderPreprocessor::process_if(ShaderPreprocessor::Tokenizer*)
-      1 ShaderPreprocessor::process_elif(ShaderPreprocessor::Tokenizer*)
-      1 ShaderInclude::set_code(String const&)
-      1 RendererViewport::RendererViewport()
-      1 RendererSceneRenderImplementation::SceneShaderForwardMobile::set_default_specialization(RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderSpecialization const&)
-      1 RendererSceneRenderImplementation::SceneShaderForwardMobile::get_default_shader_rd(bool)
-      1 RendererSceneRenderImplementation::SceneShaderForwardClustered::set_default_specialization(RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderSpecialization const&)
-      1 RendererSceneRenderImplementation::RenderForwardMobile::_update_global_pipeline_data_requirements_from_project()
-      1 RendererRD::ToneMapper::tonemapper_subpass(long, RID, long, RendererRD::ToneMapper::TonemapSettings const&)
-      1 RendererRD::TextureStorage::_render_target_allocate_sdf(RendererRD::TextureStorage::RenderTarget*)
-      1 RendererRD::TAA::resolve(RID, RID, RID, RID, RID, RID, Vector2, float, float)
-      1 RendererRD::SSEffects::sub_surface_scattering(Ref<RenderSceneBuffersRD>, RID, RID, Projection const&, Vector2i const&)
-      1 RendererRD::SSEffects::screen_space_reflection(Ref<RenderSceneBuffersRD>, RendererRD::SSEffects::SSRRenderBuffers&, RID const*, int, float, float, float, Projection const*, Projection const*, Vector3 const*, RendererRD::CopyEffects&)
-      1 RendererRD::SSEffects::screen_space_indirect_lighting(Ref<RenderSceneBuffersRD>, RendererRD::SSEffects::SSILRenderBuffers&, unsigned int, RID, Projection const&, Projection const&, RendererRD::SSEffects::SSILSettings const&)
-      1 RendererRD::SSEffects::generate_ssao(Ref<RenderSceneBuffersRD>, RendererRD::SSEffects::SSAORenderBuffers&, unsigned int, RID, Projection const&, RendererRD::SSEffects::SSAOSettings const&)
-      1 RendererRD::SSEffects::downsample_depth(Ref<RenderSceneBuffersRD>, unsigned int, Projection const&)
-      1 RendererRD::SkyRD::update_res_buffers(Ref<RenderSceneBuffersRD>, RID, double, float, float)
-      1 RendererRD::SkyRD::update_radiance_buffers(Ref<RenderSceneBuffersRD>, RID, Vector3 const&, double, float, float)
-      1 RendererRD::SkyRD::SkyShader::get_default_shader_rd(bool)
-      1 RendererRD::SkyRD::SkyRD()
-      1 RendererRD::SkyRD::ReflectionData::create_reflection_importance_sample(bool, int, unsigned int)
-      1 RendererRD::SkyRD::ReflectionData::create_reflection_fast_filter(bool)
-      1 RendererRD::Resolve::resolve_gi(RID, RID, RID, RID, RID, RID, Vector2i, int)
-      1 RendererRD::MaterialStorage::_update_queued_materials()
-      1 RendererRD::Luminance::luminance_reduction(RID, Vector2i, Ref<RendererRD::Luminance::LuminanceBuffers>, float, float, float, bool)
-      1 RendererRD::GI::VoxelGIInstance::update(bool, Vector<RID> const&, PagedArray<RenderGeometryInstance*> const&)
-      1 RendererRD::GI::SDFGI::update_probes(RID, RendererRD::SkyRD::Sky*)
-      1 RendererRD::GI::SDFGI::update_light()
-      1 RendererRD::GI::SDFGI::render_static_lights(RenderDataRD*, Ref<RenderSceneBuffersRD>, unsigned int, unsigned int const*, PagedArray<RID> const*)
-      1 RendererRD::GI::SDFGI::render_region(Ref<RenderSceneBuffersRD>, int, PagedArray<RenderGeometryInstance*> const&, float)
-      1 RendererRD::GI::SDFGI::debug_draw(unsigned int, Projection const*, Transform3D const&, int, int, RID, RID, Vector<RID> const&)
-      1 RendererRD::GI::SDFGI::create(RID, Vector3 const&, unsigned int, RendererRD::GI*)
-      1 RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD>, RID const*, RID, RID, unsigned int, Projection const*, Vector3 const*, Transform3D const&, PagedArray<RID> const&)
-      1 RendererRD::GI::GI()
-      1 RendererRD::Fog::volumetric_fog_update(RendererRD::Fog::VolumetricFogSettings const&, Projection const&, Transform3D const&, Transform3D const&, RID, int, bool, int, int, PagedArray<RID> const&)
-      1 RendererRD::DebugEffects::draw_shadow_frustum(RID, Projection const&, Transform3D const&, RID, Rect2)
-      1 RendererRD::CopyEffects::set_color(RID, Color const&, Rect2i const&, bool)
-      1 RendererRD::CopyEffects::set_color_raster(RID, Color const&, Rect2i const&)
-      1 RendererRD::CopyEffects::merge_specular(RID, RID, RID, RID, unsigned int)
-      1 RendererRD::CopyEffects::copy_octmap_to_panorama(RID, RID, Vector2i const&, float, bool, Vector2 const&)
-      1 RendererRD::CopyEffects::copy_depth_to_rect(RID, RID, Rect2i const&, bool)
-      1 RendererRD::CopyEffects::copy_cubemap_to_octmap(RID, RID, float)
-      1 RendererRD::BokehDOF::bokeh_dof_compute(RendererRD::BokehDOF::BokehBuffers const&, RID, float, float, bool)
-      1 RendererCompositorStorage::compositor_effect_set_flag(RID, RenderingServerEnums::CompositorEffectFlags, bool)
-      1 RendererCompositorStorage::compositor_effect_set_enabled(RID, bool)
-      1 RendererCompositorStorage::compositor_effect_get_flag(RID, RenderingServerEnums::CompositorEffectFlags) const
-      1 RendererCompositorStorage::compositor_effect_free(RID)
-      1 RendererCanvasCull::RendererCanvasCull()
-      1 RendererCanvasCull::finalize()
-      1 register_windows_exporter()
-      1 register_web_exporter()
-      1 register_web_api()
-      1 register_server_types()
-      1 register_scene_types()
-      1 register_scene_singletons()
-      1 register_macos_exporter()
-      1 register_android_exporter()
-      1 register_android_api()
-      1 PropertyListHelper::is_property_valid(String const&, int*) const
-      1 PropertyListHelper::clear()
-      1 PluralRules::evaluate(int) const
-      1 PluginConfigAndroid::load_plugin_config(Ref<ConfigFile>, String const&)
-      1 PhysicsServer2DManager::find_server_id(String const&)
-      1 OpenXRSpatialAnchorCapability::_create_spatial_context()
-      1 OpenXROpenGLExtension::check_graphics_api_support(unsigned long)
-      1 OpenXRHandTrackingExtension::get_active()
-      1 OpenXRHandTrackingExtension::cleanup_hand_tracking()
-      1 OpenXRFBFoveationExtension::get_fragment_density_offsets(LocalVector<Vector2i, unsigned int, false, false>&)
-      1 OpenXRDisplayRefreshRateExtension::set_refresh_rate(float)
-      1 OpenXRDisplayRefreshRateExtension::get_refresh_rate() const
-      1 OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap(RID, OpenXRCompositionLayerExtension::Wrap)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle(RID, OpenXRCompositionLayerExtension::Swizzle)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_quad_size(RID, Vector2 const&)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_protected_content(RID, bool)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode(RID, OpenXRCompositionLayerExtension::MipmapMode)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_min_filter(RID, OpenXRCompositionLayerExtension::Filter)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_mag_filter(RID, OpenXRCompositionLayerExtension::Filter)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap(RID, OpenXRCompositionLayerExtension::Wrap)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle(RID, OpenXRCompositionLayerExtension::Swizzle)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility(RID, OpenXRCompositionLayerExtension::EyeVisibility)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(RID, float)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_border_color(RID, Color const&)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle(RID, OpenXRCompositionLayerExtension::Swizzle)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle(RID, OpenXRCompositionLayerExtension::Swizzle)
-      1 OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(RID, bool)
-      1 OpenXRCompositionLayerExtension::composition_layer_register(RID)
-      1 OpenXRCompositionLayerExtension::CompositionLayer::get_composition_layer()
-      1 OpenXRAPI::get_swapchain_format_name(long) const
-      1 NavMeshQueries3D::query_task_map_iteration_get_path(NavMeshQueries3D::NavMeshPathQueryTask3D&, NavMapIteration3D const&)
-      1 NavMeshQueries2D::query_task_map_iteration_get_path(NavMeshQueries2D::NavMeshPathQueryTask2D&, NavMapIteration2D const&)
-      1 NavMeshGenerator2D::NavMeshGenerator2D()
-      1 NavigationServer3DManager::initialize_server()
-      1 NavigationServer3DManager::find_server_id(String const&)
-      1 NavigationServer2DManager::set_default_server(String const&, int)
-      1 NavigationServer2DManager::initialize_server()
-      1 MultiplayerDebugger::initialize()
-      1 MultiplayerDebugger::deinitialize()
-      1 InputMap::load_from_project_settings()
-      1 initialize_websocket_module(ModuleInitializationLevel)
-      1 initialize_webrtc_module(ModuleInitializationLevel)
-      1 initialize_openxr_module(ModuleInitializationLevel)
-      1 initialize_navigation_3d_module(ModuleInitializationLevel)
-      1 initialize_lightmapper_rd_module(ModuleInitializationLevel)
-      1 initialize_jolt_physics_module(ModuleInitializationLevel)
-      1 initialize_godot_physics_3d_module(ModuleInitializationLevel)
-      1 initialize_godot_physics_2d_module(ModuleInitializationLevel)
-      1 initialize_gltf_module(ModuleInitializationLevel)
-      1 initialize_fbx_module(ModuleInitializationLevel)
-      1 GodotSpace3D::test_body_motion(GodotBody3D*, PhysicsServer3DTypes::MotionParameters const&, PhysicsServer3DTypes::MotionResult*)
-      1 GodotSpace3D::GodotSpace3D()
-      1 GodotSpace2D::test_body_motion(GodotBody2D*, PhysicsServer2DTypes::MotionParameters const&, PhysicsServer2DTypes::MotionResult*)
-      1 GodotSpace2D::GodotSpace2D()
-      1 GodotHeightMapShape3D::GodotHeightMapShape3D()
-      1 GodotConcavePolygonShape3D::GodotConcavePolygonShape3D()
-      1 _get_screen_sizes_tag(Ref<EditorExportPreset> const&)
-      1 _get_application_tag(Ref<EditorExportPlatform> const&, Ref<EditorExportPreset> const&, bool, bool, Vector<MetadataInfo> const&)
-      1 FreeDesktopPortalDesktop::_thread_monitor(void*)
-      1 fill_default_theme(Ref<Theme>&, Ref<Font> const&, Ref<Font> const&, Ref<Font> const&, Ref<Font> const&, Ref<Texture2D>&, Ref<StyleBox>&, float)
-      1 ED_SHORTCUT_OVERRIDE_ARRAY(String const&, String const&, Vector<int> const&, bool)
-      1 EditorUndoRedoManager::set_history_as_saved(int)
-      1 EditorUndoRedoManager::discard_history(int, bool)
-      1 EditorUndoRedoManager::commit_action(bool)
-      1 EditorThemeManager::_populate_visual_shader_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&)
-      1 EditorThemeManager::_populate_text_editor_styles(Ref<EditorTheme> const&, EditorThemeManager::ThemeConfiguration&)
-      1 EditorThemeManager::is_dark_icon_and_font()
-      1 EditorThemeManager::_create_theme_config()
-      1 editor_register_icons(Ref<Theme> const&, bool, float, int, float)
-      1 EditorFolding::load_resource_folding(Ref<Resource>, String const&)
-      1 EditorFolding::_do_node_unfolds(Node*, Node*, HashSet<Ref<Resource>, HashMapHasherDefault, HashMapComparatorDefault<Ref<Resource>, void> >&)
-      1 EditorFileSystemImportFormatSupportQueryBlend::_validate_path(String)
-      1 EditorDebuggerRemoteObjects::clear()
-      1 DocTools::save_classes(String const&, HashMap<String, String, HashMapHasherDefault, HashMapComparatorDefault<String, void>, DefaultTypedAllocator<HashMapElement<String, String> > > const&, bool)
-      1 DebugAdapterProtocol::process_message(String const&)
-      1 DebugAdapterProtocol::notify_terminated()
-      1 DebugAdapterProtocol::notify_stopped_step()
-      1 DebugAdapterProtocol::notify_stopped_paused()
-      1 DebugAdapterProtocol::notify_stopped_exception(String const&)
-      1 DebugAdapterProtocol::notify_exited(int const&)
-      1 DebugAdapterProtocol::notify_breakpoint(DAP::Breakpoint const&, bool const&)
-      1 Collada::_parse_effect_material(XMLParser&, Collada::Effect&, String&)
-      1 ColladaImport::_create_scene(Collada::Node*, Node3D*)
-      1 ColladaImport::_create_resources(Collada::Node*, bool)
-      1 BetsyCompressor::init()
-      1 BetsyCompressor::finish()
+`AimModifier3D::_process_constraint_by_node(int,
+`AnimationMixer::_animation_renamed(StringName
+`AnimationMixer::_animation_renamed(StringName
+`AnimationMixer::_animation_renamed(StringName
+`AnimationMixer::_blend_post_process()'
+`AnimationMixer::_blend_post_process()'
+`AnimationMixer::_get_libraries_property_usage()
+`AnimationMixer::_get_libraries_property_usage()
+`AnimationMixer::_process_animation(double,
+`AnimationMixer::_process_animation(double,
+`AnimationMixer::_process_animation(double,
+`AnimationMixer::_remove_animation(StringName
+`AnimationMixer::_remove_animation(StringName
+`AnimationMixer::_remove_animation(StringName
+`AnimationMixer::_set_active(bool)'
+`AnimationMixer::_set_active(bool)'
+`AnimationNodeAdd2::_process(AnimationNode::ProcessState&,
+`AnimationNodeAdd3::_process(AnimationNode::ProcessState&,
+`AnimationNodeAnimation::_process(AnimationNode::ProcessState&,
+`AnimationNodeBlend2::_process(AnimationNode::ProcessState&,
+`AnimationNodeBlend3::_process(AnimationNode::ProcessState&,
+`AnimationNodeBlendSpace1DEditor::edit(Ref<AnimationNode>
+`AnimationNodeBlendSpace1D::_process(AnimationNode::ProcessState&,
+`AnimationNodeBlendSpace2DEditor::edit(Ref<AnimationNode>
+`AnimationNodeBlendSpace2D::_process(AnimationNode::ProcessState&,
+`AnimationNodeBlendTreeEditor::edit(Ref<AnimationNode>
+`AnimationNodeBlendTree::reset_state()'
+`AnimationNodeOneShot::_process(AnimationNode::ProcessState&,
+`AnimationNodeStateMachineEditor::edit(Ref<AnimationNode>
+`AnimationNodeStateMachine::_process(AnimationNode::ProcessState&,
+`AnimationNodeStateMachine::validate_node(AnimationTree
+`AnimationNodeSub2::_process(AnimationNode::ProcessState&,
+`AnimationNodeTimeScale::_process(AnimationNode::ProcessState&,
+`AnimationNodeTimeSeek::_process(AnimationNode::ProcessState&,
+`AnimationNodeTransition::_process(AnimationNode::ProcessState&,
+`AnimationNodeTransition::set_input_name(int,
+`AnimationPlayer::_blend_post_process()'
+`AnimationPlayer::_blend_pre_process(double,
+`AnimationTrackEdit::draw_key_link(int,
+`AnimationTrackEdit::draw_key_link(int,
+`AnimationTrackEdit::draw_key_link(int,
+`AnimationTrackEditVolumeDB::draw_key_link(int,
+`AnimationTree::_get_libraries_property_usage()
+`ArrayMesh::reload_from_file()'
+`AudioServer::get_argument_options(StringName
+`AudioServer::load_default_bus_layout()'
+`AudioServer::update()'
+`AudioStreamOggVorbis::generate_sample()
+`AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame*,
+`AudioStreamWAV::generate_sample()
+`AwaitTweener::step(double&)'
+`BlitMaterialConversionPlugin::convert(Ref<Resource>
+`BoneAttachment3D::get_configuration_warnings()
+`BoxShape3D::get_debug_arraymesh_faces(Color
+`BoxShape3D::get_debug_mesh_lines()
+`CanvasItem::get_transform()
+`CanvasItemMaterialConversionPlugin::convert(Ref<Resource>
+`CapsuleShape3D::get_debug_arraymesh_faces(Color
+`CenterContainer::get_allowed_size_flags_horizontal()
+`CenterContainer::get_allowed_size_flags_vertical()
+`CenterContainer::get_desired_size()
+`CenterContainer::get_minimum_size()
+`ChainIK3DGizmoPlugin::get_priority()
+`ChainIK3DGizmoPlugin::has_gizmo(Node3D*)'
+`ChainIK3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`ChainIK3D::_set_joint_count(int,
+`CodeEdit::_draw_guidelines()'
+`CodeEdit::get_focused_accessibility_element()
+`CollisionPolygon2D::_edit_is_selected_on_click(Vector2
+`CollisionPolygon2DEditor::_set_node(Node*)'
+`CollisionPolygon2D::get_configuration_warnings()
+`CollisionPolygon3D::get_configuration_warnings()
+`CollisionPolygon3DGizmoPlugin::get_priority()
+`CollisionPolygon3DGizmoPlugin::has_gizmo(Node3D*)'
+`CollisionPolygon3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`CollisionShape2D::get_configuration_warnings()
+`ColorPickerShapeCircle::_initialize_controls()'
+`ColorPickerShapeOKHLRectangle::_square_draw()'
+`ColorPickerShapeOKHSLCircle::_circle_draw()'
+`ColorPickerShapeOKHSRectangle::_initialize_controls()'
+`ConcavePolygonShape3D::get_debug_arraymesh_faces(Color
+`ConnectDialog::_post_popup()'
+`ConvertTransformModifier3D::_process_constraint_by_node(int,
+`ConvexPolygonShape3D::get_debug_arraymesh_faces(Color
+`ConvexPolygonShape3D::get_debug_mesh_lines()
+`CopyTransformModifier3D::_process_constraint_by_node(int,
+`CopyTransformModifier3D::_process_copy(int,
+`CPUParticles2DEditorPlugin::_convert_particles()'
+`CPUParticles3DEditorPlugin::_convert_particles()'
+`CPUParticles3D::get_configuration_warnings()
+`CylinderShape3D::get_debug_arraymesh_faces(Color
+`DedicatedServerExportPlugin::_customize_resource(Ref<Resource>
+`DedicatedServerExportPlugin::_get_customization_configuration_hash()
+`DisplayServer::mouse_get_button_state()
+`DisplayServer::mouse_get_button_state()
+`DisplayServerWayland::process_events()'
+`DisplayServerWayland::show_window(int)'
+`DisplayServerX11::cursor_set_custom_image(Ref<Resource>
+`DisplayServerX11::delete_sub_window(int)'
+`DisplayServerX11::mouse_get_button_state()
+`DisplayServerX11::process_events()'
+`DockTabContainer::get_tab_style()
+`DockTabContainer::get_tab_style()
+`DockTabContainer::get_tab_style()
+`EditorBottomPanel::get_tab_style()
+`EditorBottomPanel::load_selected_tab(int)'
+`EditorConfigFileSyntaxHighlighter::_update_cache()'
+`EditorDebuggerServerWebSocket::start(String
+`EditorExportPlatformAndroid::export_project(Ref<EditorExportPreset>
+`EditorExportPlatformAndroid::get_binary_extensions(Ref<EditorExportPreset>
+`EditorExportPlatformAndroid::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorExportPlatformAndroid::get_export_option_visibility(EditorExportPreset
+`EditorExportPlatformAndroid::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformAndroid::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformAndroid::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAndroid::has_valid_project_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAndroid::initialize()'
+`EditorExportPlatformAndroid::run(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorExportPlatformAppleEmbedded::get_export_option_visibility(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_export_option_visibility(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_export_option_visibility(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformAppleEmbedded::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::has_valid_project_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::has_valid_project_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformAppleEmbedded::has_valid_project_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformIOS::_export_icons(Ref<EditorExportPreset>
+`EditorExportPlatformIOS::_export_loading_screen_file(Ref<EditorExportPreset>
+`EditorExportPlatformIOS::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorExportPlatformIOS::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformIOS::_process_config_file_line(Ref<EditorExportPreset>
+`EditorExportPlatformLinuxBSD::export_project(Ref<EditorExportPreset>
+`EditorExportPlatformLinuxBSD::get_binary_extensions(Ref<EditorExportPreset>
+`EditorExportPlatformLinuxBSD::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorExportPlatformLinuxBSD::get_export_option_visibility(EditorExportPreset
+`EditorExportPlatformLinuxBSD::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformLinuxBSD::poll_export()'
+`EditorExportPlatformLinuxBSD::run(Ref<EditorExportPreset>
+`EditorExportPlatformPC::export_project_data(Ref<EditorExportPreset>
+`EditorExportPlatformPC::export_project_data(Ref<EditorExportPreset>
+`EditorExportPlatformPC::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorExportPlatformPC::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformPC::get_export_option_warning(EditorExportPreset
+`EditorExportPlatformPC::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformPC::get_preset_features(Ref<EditorExportPreset>
+`EditorExportPlatformPC::has_valid_export_configuration(Ref<EditorExportPreset>
+`EditorExportPlatformPC::prepare_template(Ref<EditorExportPreset>
+`EditorExportPlatformPC::prepare_template(Ref<EditorExportPreset>
+`EditorExportPlatformVisionOS::get_export_options(List<EditorExportPlatform::ExportOption,
+`EditorFileDialog::_item_menu_id_pressed(int)'
+`EditorFileDialog::_should_use_native_popup()
+`EditorImportPlugin::get_import_options(String
+`EditorImportPlugin::get_recognized_extensions(List<String,
+`EditorJSONSyntaxHighlighter::_update_cache()'
+`EditorMarkdownSyntaxHighlighter::_update_cache()'
+`EditorPropertyAABB::update_property()'
+`EditorPropertyArray::_change_type_menu(int)'
+`EditorPropertyArray::_edit_pressed()'
+`EditorPropertyArray::_length_changed(double)'
+`EditorPropertyArray::_remove_pressed(int)'
+`EditorPropertyArray::update_property()'
+`EditorPropertyBasis::update_property()'
+`EditorPropertyEasing::update_property()'
+`EditorPropertyFlags::update_property()'
+`EditorPropertyFloat::update_property()'
+`EditorPropertyInteger::update_property()'
+`EditorPropertyPlane::update_property()'
+`EditorPropertyProjection::update_property()'
+`EditorPropertyQuaternion::update_property()'
+`EditorPropertyRect2i::update_property()'
+`EditorPropertyRect2::update_property()'
+`EditorPropertyResource::is_colored(EditorProperty::ColorationMode)'
+`EditorPropertyResource::update_property()'
+`EditorPropertyText::update_property()'
+`EditorPropertyTransform2D::update_property()'
+`EditorPropertyTransform3D::update_property()'
+`EditorPropertyVectorN::update_property()'
+`EditorSceneFormatImporterBlend::get_import_options(String
+`EditorSceneFormatImporterGLTF::get_import_options(String
+`EditorSceneFormatImporterUFBX::get_import_options(String
+`EditorStandardSyntaxHighlighter::_update_cache()'
+`EditorSyntaxHighlighter::_create()
+`ENetMultiplayerPeer::poll()'
+exit
+`FBXDocument::generate_scene(Ref<GLTFState>,
+`FileDialog::_item_menu_id_pressed(int)'
+`FoldableContainer::get_desired_size()
+`FoldableContainer::get_minimum_size()
+`FoldableContainer::get_tooltip(Vector2
+`FoldableContainer::gui_input(Ref<InputEvent>
+`FontFile::clear_glyphs(int,
+`FontFile::clear_kerning_map(int,
+`FontFile::clear_size_cache(int)'
+`FontFile::clear_textures(int,
+`FontFile::get_cache_ascent(int,
+`FontFile::get_cache_descent(int,
+`FontFile::get_cache_scale(int,
+`FontFile::get_cache_underline_position(int,
+`FontFile::get_cache_underline_thickness(int,
+`FontFile::get_char_from_glyph_index(int,
+`FontFile::get_embolden(int)
+`FontFile::get_extra_baseline_offset(int)
+`FontFile::get_extra_spacing(int,
+`FontFile::get_face_index(int)
+`FontFile::get_glyph_advance(int,
+`FontFile::get_glyph_index(int,
+`FontFile::get_glyph_list(int,
+`FontFile::get_glyph_offset(int,
+`FontFile::get_glyph_size(int,
+`FontFile::get_glyph_texture_idx(int,
+`FontFile::get_glyph_uv_rect(int,
+`FontFile::get_kerning(int,
+`FontFile::_get_rid()
+`FontFile::get_texture_count(int,
+`FontFile::get_texture_image(int,
+`FontFile::get_texture_offsets(int,
+`FontFile::get_transform(int)
+`FontFile::remove_glyph(int,
+`FontFile::remove_kerning(int,
+`FontFile::remove_language_support_override(String
+`FontFile::remove_script_support_override(String
+`FontFile::remove_size_cache(int,
+`FontFile::remove_texture(int,
+`FontFile::render_glyph(int,
+`FontFile::render_range(int,
+`FontFile::set_allow_system_fallback(bool)'
+`FontFile::set_antialiasing(TextServer::FontAntialiasing)'
+`FontFile::set_cache_ascent(int,
+`FontFile::set_cache_descent(int,
+`FontFile::set_cache_scale(int,
+`FontFile::set_cache_underline_position(int,
+`FontFile::set_cache_underline_thickness(int,
+`FontFile::set_disable_embedded_bitmaps(bool)'
+`FontFile::set_embolden(int,
+`FontFile::set_extra_baseline_offset(int,
+`FontFile::set_extra_spacing(int,
+`FontFile::set_face_index(int,
+`FontFile::set_fixed_size(int)'
+`FontFile::set_fixed_size_scale_mode(TextServer::FixedSizeScaleMode)'
+`FontFile::set_font_name(String
+`FontFile::set_font_stretch(int)'
+`FontFile::set_font_style_name(String
+`FontFile::set_font_style(unsigned
+`FontFile::set_font_weight(int)'
+`FontFile::set_force_autohinter(bool)'
+`FontFile::set_generate_mipmaps(bool)'
+`FontFile::set_glyph_advance(int,
+`FontFile::set_glyph_offset(int,
+`FontFile::set_glyph_size(int,
+`FontFile::set_glyph_texture_idx(int,
+`FontFile::set_glyph_uv_rect(int,
+`FontFile::set_hinting(TextServer::Hinting)'
+`FontFile::set_keep_rounding_remainders(bool)'
+`FontFile::set_kerning(int,
+`FontFile::set_language_support_override(String
+`FontFile::set_modulate_color_glyphs(bool)'
+`FontFile::set_msdf_pixel_range(int)'
+`FontFile::set_msdf_size(int)'
+`FontFile::set_multichannel_signed_distance_field(bool)'
+`FontFile::set_oversampling(float)'
+`FontFile::set_script_support_override(String
+`FontFile::set_subpixel_positioning(TextServer::SubpixelPositioning)'
+`FontFile::set_texture_image(int,
+`FontFile::set_texture_offsets(int,
+`FontFile::set_transform(int,
+`FontVariation::_get_base_font_or_default()
+`FontVariation::_get_rid()
+`FontVariation::set_base_font(Ref<Font>
+`GLES3::MaterialStorage::global_shader_parameters_load_settings(bool)'
+`GLES3::MaterialStorage::material_free(RID)'
+`GLTFDocument::generate_scene(Ref<GLTFState>,
+`GodotArea2Pair2D::~GodotArea2Pair2D()'
+`GodotArea2Pair2D::~GodotArea2Pair2D()'
+`GodotArea2Pair2D::setup(float)'
+`GodotArea2Pair3D::~GodotArea2Pair3D()'
+`GodotArea2Pair3D::~GodotArea2Pair3D()'
+`GodotArea2Pair3D::setup(float)'
+`GodotAreaPair2D::~GodotAreaPair2D()'
+`GodotAreaPair2D::~GodotAreaPair2D()'
+`GodotAreaPair2D::pre_solve(float)'
+`GodotAreaPair2D::setup(float)'
+`GodotAreaPair3D::~GodotAreaPair3D()'
+`GodotAreaPair3D::~GodotAreaPair3D()'
+`GodotAreaPair3D::pre_solve(float)'
+`GodotAreaPair3D::solve(float)'
+`GodotAreaSoftBodyPair3D::~GodotAreaSoftBodyPair3D()'
+`GodotAreaSoftBodyPair3D::~GodotAreaSoftBodyPair3D()'
+`GodotAreaSoftBodyPair3D::pre_solve(float)'
+`GodotAreaSoftBodyPair3D::solve(float)'
+`GodotNavigationServer3D::init()'
+`GodotNavigationServer3D::map_get_path(RID,
+`GodotNavigationServer3D::region_bake_navigation_mesh(Ref<NavigationMesh>,
+`GodotNavigationServer3D::source_geometry_parser_create()'
+`GodotPhysicsDirectBodyState2D::set_transform(Transform2D
+`GodotPhysicsDirectBodyState3D::set_transform(Transform3D
+`GodotPhysicsDirectSpaceState2D::cast_motion(PhysicsServer2DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState2D::collide_shape(PhysicsServer2DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState2D::intersect_shape(PhysicsServer2DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState2D::rest_info(PhysicsServer2DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState3D::cast_motion(PhysicsServer3DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState3D::intersect_point(PhysicsServer3DTypes::PointParameters
+`GodotPhysicsDirectSpaceState3D::intersect_ray(PhysicsServer3DTypes::RayParameters
+`GodotPhysicsDirectSpaceState3D::intersect_shape(PhysicsServer3DTypes::ShapeParameters
+`GodotPhysicsDirectSpaceState3D::rest_info(PhysicsServer3DTypes::ShapeParameters
+`GodotPhysicsServer2D::flush_queries()'
+`GodotPhysicsServer3D::flush_queries()'
+`GodotPhysicsServer3D::soft_body_set_transform(RID,
+`GodotSoftBody3D::_shapes_changed()'
+`GPUParticles3DEditorPlugin::_can_generate_points()
+`GPUParticles3DEditorPlugin::_convert_particles()'
+`GPUParticles3D::get_configuration_warnings()
+`GraphEdit::add_child_notify(Node*)'
+`GraphEdit::remove_child_notify(Node*)'
+`GraphElement::_edit_set_position(Vector2
+`GraphElement::_edit_set_position(Vector2
+`GraphNode::get_accessibility_container_name(Node
+`GraphNode::_get_accessibility_name()
+`GraphNode::_resort()'
+`HeightMapShape3D::get_debug_arraymesh_faces(Color
+`IKModifier3D::_init_joints(Skeleton3D*,
+`IKModifier3D::_init_joints(Skeleton3D*,
+`IKModifier3D::_make_all_joints_dirty()'
+`IKModifier3D::_make_simulation_dirty(int)'
+`IKModifier3D::_make_simulation_dirty(int)'
+`IKModifier3D::_process_ik(Skeleton3D*,
+`IKModifier3D::_update_bone_axis(Skeleton3D*,
+`IKModifier3D::_update_bone_axis(Skeleton3D*,
+`InputEvent::as_text()
+`JoltArea3D::_add_to_space()'
+`JoltBody3D::pre_step(float)'
+`JoltPhysicsDirectSpaceState3D::cast_motion(PhysicsServer3DTypes::ShapeParameters
+`JoltPhysicsDirectSpaceState3D::intersect_point(PhysicsServer3DTypes::PointParameters
+`JoltPhysicsDirectSpaceState3D::intersect_ray(PhysicsServer3DTypes::RayParameters
+`JoltPhysicsDirectSpaceState3D::intersect_shape(PhysicsServer3DTypes::ShapeParameters
+`JoltPhysicsDirectSpaceState3D::rest_info(PhysicsServer3DTypes::ShapeParameters
+`JoltPhysicsServer3D::area_get_shape_count(RID)
+`JoltPhysicsServer3D::body_get_shape_count(RID)
+`JoltPhysicsServer3D::soft_body_get_collision_exceptions(RID,
+`JoltShape3D::get_aabb()
+`JoltShape3D::get_margin()
+`JoltShape3D::get_type()
+`JoltShape3D::is_convex()
+`JoltShape3D::set_margin(float)'
+`JoltSoftBody3D::_add_to_space()'
+`JoltSoftBody3D::_space_changing()'
+`JoltWorldBoundaryShape3D::get_aabb()
+`LightmapperRD::bake(Lightmapper::BakeQuality,
+`LightmapperRD::get_bake_mesh_texture_slice(int)
+`LightmapperRD::get_bake_probe_point(int)
+`LightOccluder2DEditor::_create_resource()'
+`LightOccluder2DEditor::_set_node(Node*)'
+`Line2DEditor::_set_node(Node*)'
+`LineEdit::_get_accessibility_name()
+`LineEdit::_get_accessibility_name()
+`LineEdit::_get_accessibility_name()
+`LookAtModifier3D::_process_modification(double)'
+`MenuBar::move_child_notify(Node*)'
+`MenuBar::remove_child_notify(Node*)'
+`MethodTweener::step(double&)'
+`NavigationObstacle2DEditor::_action_remove_polygon(int)'
+`NavigationObstacle2DEditor::_set_node(Node*)'
+`NavigationRegion2DEditor::_action_remove_polygon(int)'
+`NavigationRegion2DEditor::_create_resource()'
+`NavigationRegion2DEditor::_set_node(Node*)'
+`NoiseTexture2D::~NoiseTexture2D()'
+`NoiseTexture2D::~NoiseTexture2D()'
+`NoiseTexture3D::~NoiseTexture3D()'
+`NoiseTexture3D::~NoiseTexture3D()'
+`non-virtual
+`OccluderPolygon2D::_edit_is_selected_on_click(Vector2
+`OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession_T*)'
+`OpenXRCompositionLayerDepthExtension::get_composition_layer_count()'
+`OpenXRCompositionLayerDepthExtension::get_composition_layer_order(int)'
+`OpenXRCompositionLayerExtension::on_session_created(XrSession_T*)'
+`OpenXRCompositionLayerExtension::on_session_destroyed()'
+`OpenXRDebugUtilsExtension::on_instance_created(XrInstance_T*)'
+`OpenXRExportPlugin::get_android_manifest_element_contents(Ref<EditorExportPlatform>
+`OpenXRExportPlugin::_get_export_option_warning(Ref<EditorExportPlatform>
+`OpenXRExportPlugin::supports_platform(Ref<EditorExportPlatform>
+`OpenXRFBFoveationExtension::get_requested_extensions(unsigned
+`OpenXRFrameSynthesisExtension::get_requested_extensions(unsigned
+`OpenXRFrameSynthesisExtension::on_instance_created(XrInstance_T*)'
+`OpenXRFrameSynthesisExtension::on_instance_destroyed()'
+`OpenXRFrameSynthesisExtension::on_main_swapchains_created()'
+`OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned
+`OpenXRHandInteractionExtension::get_requested_extensions(unsigned
+`OpenXRHandTrackingExtension::on_instance_destroyed()'
+`OpenXRHandTrackingExtension::on_process()'
+`OpenXRHandTrackingExtension::on_state_ready()'
+`OpenXRHandTrackingExtension::set_system_properties_and_get_next_pointer(void*)'
+`OpenXRInteractionProfileEditorBase::_theme_changed()'
+`OpenXRInteractionProfileEditor::setup(Ref<OpenXRActionMap>
+`OpenXRInteractionProfileEditor::_theme_changed()'
+`OpenXRInterface::get_suggested_tracker_names()
+`OpenXRInterface::initialize()'
+`OpenXRInterface::is_passthrough_supported()'
+`OpenXRInterface::process()'
+`OpenXRRenderModelExtension::get_requested_extensions(unsigned
+`OpenXRSpatialAnchorCapability::on_process()'
+`OpenXRSpatialAnchorCapability::on_session_created(XrSession_T*)'
+`OpenXRSpatialAnchorCapability::on_session_destroyed()'
+`OpenXRSpatialEntityExtension::on_event_polled(XrEventDataBuffer
+`OpenXRSpatialEntityExtension::on_session_destroyed()'
+`OpenXRSpatialMarkerTrackingCapability::on_process()'
+`OpenXRSpatialMarkerTrackingCapability::on_session_created(XrSession_T*)'
+`OpenXRSpatialMarkerTrackingCapability::on_session_destroyed()'
+`OpenXRSpatialPlaneTrackingCapability::on_process()'
+`OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T*)'
+`OpenXRSpatialPlaneTrackingCapability::on_session_destroyed()'
+`OpenXRUserPresenceExtension::get_requested_extensions(unsigned
+`OpenXRUserPresenceExtension::on_event_polled(XrEventDataBuffer
+`OpenXRVulkanExtension::create_vulkan_device(VkDeviceCreateInfo
+`OpenXRVulkanExtension::create_vulkan_instance(VkInstanceCreateInfo
+`OpenXRVulkanExtension::get_physical_device(VkPhysicalDevice_T**)'
+`OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T*,
+`OptionButton::_get_translated_text(String
+`OptionButton::_queue_update_size_cache()'
+`OS::get_user_data_dir()
+`OS::get_user_data_dir()
+`OS::get_user_data_dir()
+`OS_LinuxBSD::_test_create_rendering_device(String
+`PackedSceneEditorTranslationParserPlugin::parse_file(String
+`PackedScene::reload_from_file()'
+`Particles2DEditorPlugin::_menu_callback(int)'
+`Particles2DEditorPlugin::_menu_callback(int)'
+`Path3DGizmo::redraw()'
+`PhysicalBoneSimulator3D::_skeleton_changed(Skeleton3D*,
+`PhysicsDirectSpaceState3D::cast_motion(PhysicsServer3DTypes::ShapeParameters
+`PhysicsDirectSpaceState3D::collide_shape(PhysicsServer3DTypes::ShapeParameters
+`PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(RID,
+`PhysicsDirectSpaceState3D::intersect_point(PhysicsServer3DTypes::PointParameters
+`PhysicsDirectSpaceState3D::intersect_shape(PhysicsServer3DTypes::ShapeParameters
+`PhysicsDirectSpaceState3D::rest_info(PhysicsServer3DTypes::ShapeParameters
+`PhysicsServer2DWrapMT::finish()'
+`PhysicsServer2DWrapMT::init()'
+`PhysicsServer3DWrapMT::finish()'
+`PhysicsServer3DWrapMT::init()'
+`Polygon2D::_edit_is_selected_on_click(Vector2
+`Polygon2DEditor::_commit_action()'
+`Polygon2DEditor::_set_node(Node*)'
+`PopupMenu::add_child_notify(Node*)'
+`PopupMenu::add_child_notify(Node*)'
+`PopupMenu::add_child_notify(Node*)'
+`PopupMenu::_get_accessibility_name()
+`PopupMenu::_get_accessibility_name()
+`PopupMenu::_get_accessibility_name()
+`PopupMenu::_parent_focused()'
+`PopupMenu::_parent_focused()'
+`PopupMenu::_parent_focused()'
+`PopupMenu::_pre_popup(Vector2i
+`PopupMenu::_pre_popup(Vector2i
+`PopupMenu::_pre_popup(Vector2i
+`PopupMenu::remove_child_notify(Node*)'
+`PopupMenu::remove_child_notify(Node*)'
+`PopupMenu::remove_child_notify(Node*)'
+`PopupMenu::set_visible(bool)'
+`PopupMenu::set_visible(bool)'
+`PopupMenu::set_visible(bool)'
+`PopupPanel::_get_contents_minimum_size()
+`PopupPanel::_get_contents_minimum_size()
+`PropertyTweener::start()'
+`PropertyTweener::step(double&)'
+`RendererCanvasRenderRD::CanvasShaderData::~CanvasShaderData()'
+`RendererCanvasRenderRD::CanvasShaderData::~CanvasShaderData()'
+`RendererCanvasRenderRD::CanvasShaderData::set_code(String
+`RendererCanvasRenderRD::light_update_directional_shadow(RID,
+`RendererCanvasRenderRD::light_update_shadow(RID,
+`RendererCanvasRenderRD::render_sdf(RID,
+`RendererDummy::MaterialStorage::global_shader_parameter_get_type(StringName
+`RendererDummy::MaterialStorage::global_shader_parameters_load_settings(bool)'
+`RendererDummy::MaterialStorage::material_get_instance_shader_parameters(RID,
+`RendererRD::FSR::process(Ref<RenderSceneBuffersRD>,
+`RendererRD::LightStorage::reflection_atlas_create()'
+`RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool)'
+`RendererRD::MaterialStorage::material_free(RID)'
+`RendererRD::MaterialStorage::TexBlitShaderData::set_code(String
+`RendererRD::MeshStorage::mesh_surface_update_attribute_region(RID,
+`RendererRD::MeshStorage::mesh_surface_update_index_region(RID,
+`RendererRD::MeshStorage::mesh_surface_update_skin_region(RID,
+`RendererRD::MeshStorage::mesh_surface_update_vertex_region(RID,
+`RendererRD::MeshStorage::_multimesh_set_buffer(RID,
+`RendererRD::MeshStorage::_multimesh_set_visible_instances(RID,
+`RendererRD::MeshStorage::update_mesh_instances()'
+`RendererRD::ParticlesStorage::particles_set_view_axis(RID,
+`RendererRD::ParticlesStorage::ParticlesShaderData::set_code(String
+`RendererRD::ParticlesStorage::update_particles()'
+`RendererRD::SkyRD::SkyShaderData::set_code(String
+`RendererRD::TextureStorage::texture_drawable_generate_mipmaps(RID)'
+`RendererRD::Utilities::visibility_notifier_call(RID,
+`RendererSceneCull::free(RID)'
+`RendererSceneCull::render_camera(Ref<RenderSceneBuffers>
+`RendererSceneRenderImplementation::RenderForwardMobile::enable_features(unsigned
+`RendererSceneRenderImplementation::RenderForwardMobile::mesh_generate_pipelines(RID,
+`RendererSceneRenderImplementation::RenderForwardMobile::_render_scene(RenderDataRD*,
+`RendererSceneRenderImplementation::RenderForwardMobile::_render_uv2(PagedArray<RenderGeometryInstance*>
+`RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::set_code(String
+`RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::~ShaderData()'
+`RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::~ShaderData()'
+`RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::set_code(String
+`RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::~ShaderData()'
+`RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::~ShaderData()'
+`RenderingServerDefault::draw(bool,
+`RenderingServerDefault::finish()'
+`RenderingServer::get_argument_options(StringName
+`RenderingServer::get_argument_options(StringName
+`RenderingServer::make_sphere_mesh(int,
+`RenderingServer::make_sphere_mesh(int,
+`RenderingServer::mesh_add_surface_from_mesh_data(RID,
+`RenderingServer::mesh_add_surface_from_mesh_data(RID,
+`ResourceFormatSaverCrypto::get_recognized_extensions(Ref<Resource>
+`ResourceFormatSaverCrypto::recognize(Ref<Resource>
+`ResourceFormatSaverShader::get_recognized_extensions(Ref<Resource>
+`ResourceFormatSaverShaderInclude::get_recognized_extensions(Ref<Resource>
+`ResourceFormatSaverShaderInclude::recognize(Ref<Resource>
+`ResourceFormatSaverShader::recognize(Ref<Resource>
+`ResourceImporterBitMap::get_import_options(String
+`ResourceImporterBMFont::get_import_options(String
+`ResourceImporterCSVTranslation::get_import_options(String
+`ResourceImporterDynamicFont::get_import_options(String
+`ResourceImporterImageFont::get_import_options(String
+`ResourceImporterLayeredTexture::get_import_options(String
+`ResourceImporterLayeredTexture::get_import_settings_string()
+`ResourceImporterMP3::get_import_options(String
+`ResourceImporterOBJ::get_import_options(String
+`ResourceImporterOggVorbis::get_import_options(String
+`ResourceImporterOggVorbis::get_preset_count()
+`ResourceImporterOggVorbis::get_preset_name(int)
+`ResourceImporterScene::get_import_options(String
+`ResourceImporterSVG::get_import_options(String
+`ResourceImporterTextureAtlas::get_import_options(String
+`ResourceImporterTexture::get_import_options(String
+`ResourceImporterTexture::get_import_settings_string()
+`ResourceImporterWAV::get_import_options(String
+`ResourceSaverPNG::get_recognized_extensions(Ref<Resource>
+`ResourceSaverPNG::recognize(Ref<Resource>
+`ResourceSaverWebP::get_recognized_extensions(Ref<Resource>
+`ResourceSaverWebP::recognize(Ref<Resource>
+`RetargetModifier3D::add_child_notify(Node*)'
+`RetargetModifier3D::move_child_notify(Node*)'
+`RetargetModifier3D::remove_child_notify(Node*)'
+`RetargetModifier3D::_skeleton_changed(Skeleton3D*,
+`RichTextLabel::get_cursor_shape(Vector2
+`SceneMultiplayer::poll()'
+`SceneTree::initialize()'
+`SceneTree::physics_process(double)'
+`SceneTree::process(double)'
+`SceneTree::~SceneTree()'
+`SceneTree::~SceneTree()'
+`ScriptEditorBase::apply_code()'
+`ScriptEditorBase::apply_code()'
+`ScriptEditorBase::apply_code()'
+`ScriptEditorBase::is_unsaved()'
+`ScriptEditorBase::set_edited_resource(Ref<Resource>
+`ScriptEditorBase::set_toggle_list_control(Control*)'
+`ScriptEditorBase::update_toggle_files_button()'
+`ScriptEditor::edited_scene_changed()'
+`ScriptEditorPlugin::get_window_layout(Ref<ConfigFile>)'
+`ScriptEditorPlugin::set_window_layout(Ref<ConfigFile>)'
+`ScriptTextEditor::add_callback(String
+`ScriptTextEditor::apply_code()'
+`ScriptTextEditor::_edit_option(int)'
+`ScriptTextEditor::enable_editor()'
+`ScriptTextEditor::get_functions()'
+`ScriptTextEditor::get_theme_icon()'
+`ScriptTextEditor::_load_theme_settings()'
+`ScriptTextEditor::set_edited_resource(Ref<Resource>
+`ScriptTextEditor::update_settings()'
+`ScriptTextEditor::_validate_script()'
+`ShaderBakerExportPlugin::_begin_customize_resources(Ref<EditorExportPlatform>
+`ShaderBakerExportPlugin::_customize_scene(Node*,
+`ShaderBakerExportPlugin::_customize_shader_version(ShaderRD*,
+`ShaderBakerExportPlugin::_end_customize_resources()'
+`ShaderBakerExportPlugin::_initialize_container_format(Ref<EditorExportPlatform>
+`ShaderCreateDialog::ok_pressed()'
+`ShaderEditorPlugin::get_window_layout(Ref<ConfigFile>)'
+`ShaderEditorPlugin::set_current()'
+`ShaderEditorPlugin::set_window_layout(Ref<ConfigFile>)'
+`Skeleton3DGizmoPlugin::commit_subgizmos(EditorNode3DGizmo
+`Skeleton3DGizmoPlugin::get_subgizmo_transform(EditorNode3DGizmo
+`Skeleton3DGizmoPlugin::has_gizmo(Node3D*)'
+`Skeleton3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`Skeleton3DGizmoPlugin::set_subgizmo_transform(EditorNode3DGizmo
+`Skeleton3D::move_child_notify(Node*)'
+`Skeleton3D::remove_child_notify(Node*)'
+`SkeletonIK3D::_process_modification(double)'
+`SkeletonModification2DCCDIK::_execute(float)'
+`SkeletonModification2DFABRIK::_execute(float)'
+`SkeletonModification2DJiggle::_execute(float)'
+`SkeletonModification2DLookAt::_execute(float)'
+`SkeletonModification2DPhysicalBones::_execute(float)'
+`SkeletonModification2DTwoBoneIK::_draw_editor_gizmo()'
+`SkeletonModification2DTwoBoneIK::_execute(float)'
+`SphereShape3D::get_debug_arraymesh_faces(Color
+`SplineIK3D::_process_ik(Skeleton3D*,
+`SplitContainerDragger::get_cursor_shape(Vector2
+`SplitContainer::move_child_notify(Node*)'
+`SplitContainer::move_child_notify(Node*)'
+`SplitContainer::move_child_notify(Node*)'
+`SplitContainer::remove_child_notify(Node*)'
+`SplitContainer::remove_child_notify(Node*)'
+`SplitContainer::remove_child_notify(Node*)'
+`SpringBoneCollision3D::get_configuration_warnings()
+`SpringBoneCollision3D::get_configuration_warnings()
+`SpringBoneCollision3D::get_configuration_warnings()
+`SpringBoneCollision3DGizmoPlugin::get_priority()
+`SpringBoneCollision3DGizmoPlugin::has_gizmo(Node3D*)'
+`SpringBoneCollision3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`SpringBoneSimulator3D::add_child_notify(Node*)'
+`SpringBoneSimulator3DGizmoPlugin::get_priority()
+`SpringBoneSimulator3DGizmoPlugin::has_gizmo(Node3D*)'
+`SpringBoneSimulator3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`SpringBoneSimulator3D::move_child_notify(Node*)'
+`SpringBoneSimulator3D::_process_modification(double)'
+`SpringBoneSimulator3D::remove_child_notify(Node*)'
+`SpringBoneSimulator3D::_skeleton_changed(Skeleton3D*,
+`SubViewportContainer::get_configuration_warnings()
+`SubViewportContainer::get_configuration_warnings()
+`SubViewportContainer::get_minimum_size()
+`SubViewportContainer::get_minimum_size()
+`SubViewportContainer::remove_child_notify(Node*)'
+`SubViewportContainer::remove_child_notify(Node*)'
+`SubViewport::get_popup_base_transform()
+`SubViewport::get_screen_transform_internal(bool)
+`SubViewport::get_section_root_viewport()
+`SubViewport::is_attached_in_viewport()
+`SystemFont::_get_base_font_or_default()
+`SystemFont::_get_rid()
+`SystemFont::reset_state()'
+`SystemFont::_update_rids()
+`TextEdit::_get_accessibility_name()
+`TextEdit::_get_accessibility_name()
+`TextEditorBase::get_edit_menu()'
+`TextEditorBase::get_edit_menu()'
+`TextEditorBase::_validate_script()'
+`TextEditorBase::_validate_script()'
+`TextShaderEditor::apply_shaders()'
+`TextShaderEditor::save_external_data(String
+`Texture3D::get_data()
+`Texture3D::get_data()
+`TileDataCollisionEditor::draw_over_tile(CanvasItem*,
+`TileDataDefaultEditor::draw_over_tile(CanvasItem*,
+`TileDataNavigationEditor::draw_over_tile(CanvasItem*,
+`TileDataOcclusionShapeEditor::draw_over_tile(CanvasItem*,
+`TileDataTerrainsEditor::forward_draw_over_alternatives(TileAtlasView*,
+`TileDataTerrainsEditor::forward_draw_over_atlas(TileAtlasView*,
+`TileDataTerrainsEditor::forward_painting_alternatives_gui_input(TileAtlasView*,
+`TileDataTerrainsEditor::forward_painting_atlas_gui_input(TileAtlasView*,
+`TileMapLayerEditorTerrainsPlugin::forward_canvas_draw_over_viewport(Control*)'
+`TileMapLayerEditorTilesPlugin::forward_canvas_draw_over_viewport(Control*)'
+`TileMapLayerEditorTilesPlugin::forward_canvas_gui_input(Ref<InputEvent>
+`TileMapLayer::set_light_mask(int)'
+`TileMapLayer::set_self_modulate(Color
+`TileMapLayer::set_y_sort_enabled(bool)'
+`TileMapLayer::set_z_index(int)'
+`TileMapLayer::_update_self_texture_filter(RenderingServerEnums::CanvasItemTextureFilter)'
+`TileMapLayer::_update_self_texture_repeat(RenderingServerEnums::CanvasItemTextureRepeat)'
+`TwoBoneIK3DGizmoPlugin::get_priority()
+`TwoBoneIK3DGizmoPlugin::has_gizmo(Node3D*)'
+`TwoBoneIK3DGizmoPlugin::redraw(EditorNode3DGizmo*)'
+`TwoBoneIK3D::_process_ik(Skeleton3D*,
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`typeinfo
+`VideoStreamPlaybackTheora::play()'
+`ViewportTexture::setup_local_to_scene()'
+`WaylandThread::_wl_pointer_on_button(void*,
+`WaylandThread::_wp_tablet_tool_on_button(void*,
+`WaylandThread::_wp_tablet_tool_on_down(void*,
+`WaylandThread::_wp_tablet_tool_on_frame(void*,
+`WaylandThread::_wp_tablet_tool_on_proximity_out(void*,
+`WaylandThread::_wp_tablet_tool_on_up(void*,
+`WebRTCMultiplayerPeer::poll()'
+`WorldBoundaryShape3D::get_debug_arraymesh_faces(Color
+`WSLPeer::accept_stream(Ref<StreamPeer>
+`XRBodyModifier3D::_process_modification(double)'
+`XROrigin3D::get_configuration_warnings()

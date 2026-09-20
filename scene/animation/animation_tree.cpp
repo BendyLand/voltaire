@@ -224,6 +224,8 @@ AnimationNode::NodeTimeInfo AnimationNode::_blend_node(ProcessState& p_process_s
 	return p_other.resource->_pre_process(p_process_state, p_other, p_playback_info, p_test_only);
 }
 
+void AnimationNode::get_child_nodes(LocalVector<ChildNode>* r_child_nodes) {}
+
 String AnimationNode::get_caption() const
 {
 	String ret = "Node";

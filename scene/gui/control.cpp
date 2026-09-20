@@ -1615,6 +1615,10 @@ Control::FocusBehaviorRecursive Control::get_focus_behavior_recursive() const
 	return data.focus_behavior_recursive;
 }
 
+void Control::add_child_notify(Node* p_child) {}
+
+void Control::remove_child_notify(Node* p_child) {}
+
 bool Control::_is_focusable() const
 {
 	bool ac_enabled = is_inside_tree() && get_tree()->is_accessibility_enabled();
@@ -2027,6 +2031,19 @@ void Control::set_layout_direction(Control::LayoutDirection p_direction)
 	propagate_notification(NOTIFICATION_LAYOUT_DIRECTION_CHANGED);
 }
 
+bool Control::is_layout_rtl() const { return false; }
+
+void Control::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
+Control* Control::make_custom_tooltip(const String& p_text) const
+{
+	Control c = Control();
+	return &c;
+}
+
 Control::LayoutDirection Control::get_layout_direction() const
 {
 	ERR_READ_THREAD_GUARD_V(LAYOUT_DIRECTION_INHERITED);
@@ -2117,15 +2134,14 @@ void Control::_size_changed() {}
 
 void Control::_notify_theme_override_changed() {}
 
-Ref<Texture2D> Control::get_theme_icon(const StringName& p_name, const StringName& p_theme_type) const
+Ref<Texture2D> Control::get_theme_icon(
+	const StringName& p_name, const StringName& p_theme_type) const
 {
 	Ref<Texture2D> t = memnew(Texture2D);
 	return t;
 }
 
 void Control::set_stretch_ratio(real_t p_ratio) {}
-
-
 
 bool Control::has_theme_icon(StringName const&, StringName const&) const {}
 
@@ -2172,3 +2188,5 @@ void Control::set_offset_transform_enabled(bool) {}
 Control::LayoutMode Control::_get_layout_mode() const {}
 
 Control* Control::_get_focus_neighbor(Side, int) {}
+
+

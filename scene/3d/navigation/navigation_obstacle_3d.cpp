@@ -401,6 +401,4 @@ void NavigationObstacle3D::_update_static_obstacle_debug() {}
 
 void NavigationObstacle3D::_update_fake_agent_radius_debug() {}
 
-void NavigationMesh::set_vertices(const Vector<Vector3>& p_vertices) {}
-
 

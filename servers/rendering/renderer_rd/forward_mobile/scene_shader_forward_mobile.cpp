@@ -441,4 +441,23 @@ SceneShaderForwardMobile::~SceneShaderForwardMobile()
 	material_storage->material_free(debug_shadow_splits_material);
 }
 
+RID RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(
+	RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderVersion p_version,
+	bool p_is_wireframe) const
+{
+	return RID();
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::set_default_specialization(
+	const RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderSpecialization&
+		p_specialization)
+{
+}
+
+RID RendererSceneRenderImplementation::SceneShaderForwardMobile::get_default_shader_rd(
+	bool p_wireframe)
+{
+	return RID();
+}
+
 

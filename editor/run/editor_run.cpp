@@ -90,4 +90,3 @@ EditorRun::EditorRun()
 
 EditorRun::WindowPlacement EditorRun::get_window_placement() {}
 
-

@@ -509,8 +509,6 @@ PackedStringArray OpenXRCompositionLayer::get_configuration_warnings() const
 	return warnings;
 }
 
-OpenXRCompositionLayer::~OpenXRCompositionLayer() {}
-
 void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}
 
 

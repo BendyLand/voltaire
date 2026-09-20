@@ -61,7 +61,13 @@ bool AbstractPolygon2DEditor::_has_uv() const { return false; }
 
 int AbstractPolygon2DEditor::_get_polygon_count() const { return 1; }
 
+void AbstractPolygon2DEditor::_action_remove_polygon(int p_idx) {}
+
+void AbstractPolygon2DEditor::_commit_action() {}
+
 Vector2 AbstractPolygon2DEditor::_get_offset(int p_idx) const { return Vector2(0, 0); }
+
+Vector2 AbstractPolygon2DEditor::_get_geometric_center() const { return Vector2(); }
 
 bool AbstractPolygon2DEditor::_has_resource() const { return true; }
 

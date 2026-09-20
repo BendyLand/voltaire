@@ -40,6 +40,12 @@
 #include "script_editor_base.h"
 #include "servers/display/display_server.h"
 
+Ref<Texture2D> ScriptEditorBase::get_theme_icon()
+{
+	Ref<Texture2D> t = memnew(Texture2D);
+	return t;
+}
+
 String ScriptEditorBase::get_name()
 {
 	String name;
@@ -65,6 +71,8 @@ String ScriptEditorBase::get_name()
 	return name;
 }
 
+void ScriptEditorBase::validate_script() {}
+
 void ScriptEditorBase::tag_saved_version()
 {
 	edited_file_data.last_modified_time = FileAccess::get_modified_time(edited_file_data.path);
@@ -84,6 +92,12 @@ void TextEditorBase::EditMenus::_change_syntax_highlighter(int p_idx)
 	ERR_FAIL_INDEX(p_idx, (int)script_text_editor->highlighters.size());
 	script_text_editor->set_syntax_highlighter(script_text_editor->highlighters[p_idx]);
 }
+
+bool TextEditorBase::_edit_option(int p_op) { return true; }
+
+void TextEditorBase::set_edited_resource(const Ref<Resource>& p_res) {}
+
+void TextEditorBase::_text_edit_gui_input(const Ref<InputEvent>& p_ev) {}
 
 void TextEditorBase::_load_theme_settings()
 {
@@ -118,6 +132,8 @@ void TextEditorBase::tag_saved_version()
 	code_editor->get_text_editor()->tag_saved_version();
 	ScriptEditorBase::tag_saved_version();
 }
+
+void TextEditorBase::reload_text() {}
 
 void TextEditorBase::enable_editor()
 {

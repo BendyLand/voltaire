@@ -121,8 +121,6 @@ Vector<String> EditorFileSystemImportFormatSupportQueryBlend::get_file_extension
 	return ret;
 }
 
-
-
 bool EditorFileSystemImportFormatSupportQueryBlend::_autodetect_path()
 {
 	// Autodetect
@@ -198,5 +196,7 @@ void EditorFileSystemImportFormatSupportQueryBlend::_browse_install()
 
 	browse_dialog->popup_centered_ratio();
 }
+
+void EditorFileSystemImportFormatSupportQueryBlend::_validate_path(String p_path) {}
 
 

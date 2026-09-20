@@ -106,4 +106,10 @@ IKModifier3D::~IKModifier3D() { clear_settings(); }
 
 void IKModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) {}
 
+void IKModifier3D::_validate_bone_names() {}
+
+void IKModifier3D::_update_mutable_info() {}
+
+void IKModifier3D::_update_joints(int p_index) {}
+
 

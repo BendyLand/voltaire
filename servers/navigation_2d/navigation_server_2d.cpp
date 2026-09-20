@@ -353,4 +353,8 @@ void NavigationServer2DManager::finalize_server_manager()
 	memdelete(singleton);
 }
 
+void NavigationServer2DManager::set_default_server(const String& p_name, int p_priority) {}
+
+void NavigationServer2DManager::initialize_server() {}
+
 

@@ -245,8 +245,6 @@ RenderingServerDefault::RenderingServerDefault(bool p_create_thread)
 	create_thread = p_create_thread;
 }
 
-RenderingServerDefault::~RenderingServerDefault() {}
-
-
-
 void RenderingServerDefault::init() {}
+
+

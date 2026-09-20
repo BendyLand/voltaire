@@ -68,4 +68,6 @@ PhysicsServer2DManager::PhysicsServer2DManager() { singleton = this; }
 
 PhysicsServer2DManager::~PhysicsServer2DManager() { singleton = nullptr; }
 
+int PhysicsServer2DManager::find_server_id(const String& p_name) { return -1; }
+
 

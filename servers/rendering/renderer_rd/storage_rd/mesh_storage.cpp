@@ -2066,8 +2066,7 @@ AABB MeshStorage::_multimesh_get_aabb(RID p_multimesh)
 
 MeshStorage::MultiMeshInterpolator* MeshStorage::_multimesh_get_interpolator(RID p_multimesh) const
 {
-	MultiMesh* multimesh =
- multimesh_owner.get_or_null(p_multimesh);
+	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V_MSG(multimesh, nullptr, "Multimesh not found: " + itos(p_multimesh.get_id()));
 
 	return &multimesh->interpolator;
@@ -2084,7 +2083,8 @@ void MeshStorage::skeleton_free(RID p_rid)
 {
 	_update_dirty_skeletons();
 	skeleton_allocate_data(p_rid, 0);
-	Skeleton* skeleton = skeleton_owner.get_or_null(p_rid);
+	Skeleton* skeleton = skeleton_owner.
+get_or_null(p_rid);
 	skeleton->dependency.deleted_notify(p_rid);
 	skeleton_owner.free(p_rid);
 }
@@ -2269,5 +2269,9 @@ void MeshStorage::skeleton_update_dependency(RID p_skeleton, DependencyTracker* 
 
 	p_instance->update_dependency(&skeleton->dependency);
 }
+
+void RendererRD::MeshStorage::_update_dirty_multimeshes() {}
+
+void RendererRD::MeshStorage::_update_dirty_skeletons() {}
 
 

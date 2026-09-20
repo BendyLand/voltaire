@@ -320,9 +320,9 @@ void NavMeshQueries3D::_query_task_build_path_corridor(
 		// unreachable.
 		if (traversable_polys.is_empty()) {
 			// Thus use the further reachable polygon
-			ERR_BREAK_MSG(
-				is_reachable == false, "Invalid navigation index or connection pointers. Check "
-									   "preceding navmesh geometry or placement errors.");
+			ERR_BREAK_MSG(is_reachable == false,
+				"Invalid navigation index or connection pointers. Check "
+				"preceding navmesh geometry or placement errors.");
 			is_reachable = false;
 			if (reachable_end == nullptr) {
 				// The path is not found and there is not a way out.
@@ -1191,6 +1191,15 @@ void NavMeshQueries3D::simplify_path_segment(int p_start_inx, int p_end_inx,
 	}
 }
 
-void NavMeshQueries3D::_query_task_push_back_point_with_metadata(NavMeshPathQueryTask3D& p_query_task,
-	const Vector3& p_point, const Nav3D::Polygon* p_point_polygon) {}
+void NavMeshQueries3D::_query_task_push_back_point_with_metadata(
+	NavMeshPathQueryTask3D& p_query_task, const Vector3& p_point,
+	const Nav3D::Polygon* p_point_polygon)
+{
+}
+
+void NavMeshQueries3D::query_task_map_iteration_get_path(
+	NavMeshQueries3D::NavMeshPathQueryTask3D& p_task, const NavMapIteration3D& p_map_iteration)
+{
+}
+
 

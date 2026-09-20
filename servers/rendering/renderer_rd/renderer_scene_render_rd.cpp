@@ -2022,5 +2022,17 @@ RID RendererSceneRenderRD::_render_buffers_get_velocity_texture(
 
 void RendererSceneRenderRD::base_uniforms_changed() {}
 
-void RendererSceneRenderRD::_process_compositor_effects(RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD* p_render_data) {}
+void RendererSceneRenderRD::_process_compositor_effects(
+	RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD* p_render_data)
+{
+}
+
+void RendererRD::Fog::volumetric_fog_update(
+	const RendererRD::Fog::VolumetricFogSettings& p_settings, const Projection& p_cam_projection,
+	const Transform3D& p_cam_transform, const Transform3D& p_view_transform, RID p_environment,
+	int p_directional_light_count, bool p_use_temporal_reprojection, int p_frame_index, int p_step,
+	const PagedArray<RID>& p_lights)
+{
+}
+
 

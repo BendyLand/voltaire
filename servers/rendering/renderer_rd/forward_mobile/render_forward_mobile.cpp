@@ -3008,4 +3008,16 @@ void RendererRD::CopyEffects::copy_cubemap_to_dp(RID p_source_rd_texture, RID p_
 {
 }
 
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_list_with_draw_list(
+	RendererSceneRenderImplementation::RenderForwardMobile::RenderListParameters* p_params,
+	RID p_draw_list, unsigned int p_flags, const Vector<Color>& p_clear_colors, float p_clear_depth,
+	unsigned int p_clear_stencil, const Rect2& p_region)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::
+	_update_global_pipeline_data_requirements_from_project()
+{
+}
+
 

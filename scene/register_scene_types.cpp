@@ -384,6 +384,10 @@ static Ref<ResourceFormatLoaderShader> resource_loader_shader;
 static Ref<ResourceFormatSaverShaderInclude> resource_saver_shader_include;
 static Ref<ResourceFormatLoaderShaderInclude> resource_loader_shader_include;
 
+void unregister_scene_types() {}
 
+void register_scene_types() {}
+
+void register_scene_singletons() {}
 
 

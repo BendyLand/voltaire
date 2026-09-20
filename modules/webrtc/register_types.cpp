@@ -41,4 +41,6 @@ void uninitialize_webrtc_module(ModuleInitializationLevel p_level)
 	}
 }
 
+void initialize_webrtc_module(ModuleInitializationLevel p_level) {}
+
 

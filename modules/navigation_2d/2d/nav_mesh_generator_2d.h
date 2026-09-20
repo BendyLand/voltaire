@@ -93,7 +93,7 @@ public:
 	static bool is_baking(Ref<NavigationPolygon>
  p_navigation_polygon);
 
-	NavMeshGenerator2D();
+	NavMeshGenerator2D() = default;
 	~NavMeshGenerator2D();
 };
 
