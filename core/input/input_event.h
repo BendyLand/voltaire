@@ -57,9 +57,8 @@ protected:
 	bool canceled = false;
 	bool pressed = false;
 
-	static void _bind_methods();
-
 public:
+	InputEvent() = default;
 	static constexpr int DEVICE_ID_EMULATION = -1;
 	static constexpr int DEVICE_ID_INTERNAL = -2;
 	static constexpr int DEVICE_ID_KEYBOARD = 16; // IDs 0-15 are reserved for joypads.
@@ -83,7 +82,7 @@ public:
 	bool is_released() const;
 	virtual bool is_echo() const;
 
-	virtual String as_text() const = 0;
+	virtual String as_text() const;
 
 	virtual InputEvent* xformed_by(
 		const Transform2D& p_xform, const Vector2& p_local_ofs = Vector2()) const;
@@ -101,12 +100,9 @@ public:
 
 class InputEventFromWindow : public InputEvent
 {
-	VLTRCLASS(InputEventFromWindow, InputEvent);
-
 	int64_t window_id = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_window_id(int64_t p_id);
@@ -115,8 +111,6 @@ public:
 
 class InputEventWithModifiers : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventWithModifiers, InputEventFromWindow);
-
 	bool command_or_control_autoremap = false;
 
 	bool shift_pressed = false;
@@ -124,11 +118,28 @@ class InputEventWithModifiers : public InputEventFromWindow
 	bool meta_pressed = false; // "Command" on macOS, "Meta/Win" key on other platforms.
 	bool ctrl_pressed = false;
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
-
 public:
+	uint32_t get_modifiers_mask() const
+	{
+		uint32_t mask = 0;
+		if (command_or_control_autoremap) {
+			mask |= (uint32_t)KeyModifierMask::CMD_OR_CTRL;
+		}
+		if (shift_pressed) {
+			mask |= (uint32_t)KeyModifierMask::SHIFT;
+		}
+		if (alt_pressed) {
+			mask |= (uint32_t)KeyModifierMask::ALT;
+		}
+		if (ctrl_pressed) {
+			mask |= (uint32_t)KeyModifierMask::CTRL;
+		}
+		if (meta_pressed) {
+			mask |= (uint32_t)KeyModifierMask::META;
+		}
+		return mask;
+	}
+
 	void set_command_or_control_autoremap(bool p_enabled);
 	bool is_command_or_control_autoremap() const;
 
@@ -148,16 +159,12 @@ public:
 
 	void set_modifiers_from_event(const InputEventWithModifiers* p_event);
 
-	BitField<KeyModifierMask> get_modifiers_mask() const;
-
 	virtual String as_text() const override;
 	virtual String _to_string() override;
 };
 
 class InputEventKey : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventKey, InputEventWithModifiers);
-
 	Key keycode = Key::NONE; // Key enum, without modifier masks.
 	Key physical_keycode = Key::NONE;
 	Key key_label = Key::NONE;
@@ -167,7 +174,6 @@ class InputEventKey : public InputEventWithModifiers
 	bool echo = false; /// true if this is an echo key
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_pressed(bool p_pressed);
@@ -217,19 +223,14 @@ public:
 
 class InputEventMouse : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventMouse, InputEventWithModifiers);
-
-	BitField<MouseButtonMask> button_mask = MouseButtonMask::NONE;
-
 	Vector2 pos;
 	Vector2 global_pos;
 
 protected:
-	static void _bind_methods();
 
 public:
-	void set_button_mask(BitField<MouseButtonMask> p_mask);
-	BitField<MouseButtonMask> get_button_mask() const;
+	void set_button_mask(uint32_t p_mask);
+	uint32_t get_button_mask() const;
 
 	void set_position(const Vector2& p_pos);
 	Vector2 get_position() const;
@@ -242,14 +243,11 @@ public:
 
 class InputEventMouseButton : public InputEventMouse
 {
-	VLTRCLASS(InputEventMouseButton, InputEventMouse);
-
 	float factor = 1;
 	MouseButton button_index = MouseButton::NONE;
 	bool double_click = false; // last even less than double click time
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_factor(float p_factor);
@@ -281,8 +279,6 @@ public:
 
 class InputEventMouseMotion : public InputEventMouse
 {
-	VLTRCLASS(InputEventMouseMotion, InputEventMouse);
-
 	Vector2 tilt;
 	float pressure = 0;
 	Vector2 relative;
@@ -292,7 +288,6 @@ class InputEventMouseMotion : public InputEventMouse
 	bool pen_inverted = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_tilt(const Vector2& p_tilt);
@@ -328,12 +323,10 @@ public:
 
 class InputEventJoypadMotion : public InputEvent
 {
-	VLTRCLASS(InputEventJoypadMotion, InputEvent);
 	JoyAxis axis = (JoyAxis)0; ///< Joypad axis
 	float axis_value = 0;	   ///< -1 to 1
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_axis(JoyAxis p_axis);
@@ -360,12 +353,9 @@ public:
 
 class InputEventJoypadButton : public InputEvent
 {
-	VLTRCLASS(InputEventJoypadButton, InputEvent);
-
 	JoyButton button_index = (JoyButton)0;
 	float pressure = 0; // 0 to 1
 protected:
-	static void _bind_methods();
 
 public:
 	void set_button_index(JoyButton p_index);
@@ -393,13 +383,11 @@ public:
 
 class InputEventScreenTouch : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventScreenTouch, InputEventFromWindow);
 	int index = 0;
 	Vector2 pos;
 	bool double_tap = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_index(int p_index);
@@ -424,7 +412,6 @@ public:
 
 class InputEventScreenDrag : public InputEventFromWindow
 {
-	VLTRCLASS(InputEventScreenDrag, InputEventFromWindow);
 	int index = 0;
 	Vector2 pos;
 	Vector2 relative;
@@ -436,7 +423,6 @@ class InputEventScreenDrag : public InputEventFromWindow
 	bool pen_inverted = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_index(int p_index);
@@ -478,14 +464,11 @@ public:
 
 class InputEventAction : public InputEvent
 {
-	VLTRCLASS(InputEventAction, InputEvent);
-
 	StringName action;
 	float strength = 1.0f;
 	int event_index = -1;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_action(const StringName& p_action);
@@ -515,12 +498,9 @@ public:
 
 class InputEventGesture : public InputEventWithModifiers
 {
-	VLTRCLASS(InputEventGesture, InputEventWithModifiers);
-
 	Vector2 pos;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_position(const Vector2& p_pos);
@@ -529,11 +509,9 @@ public:
 
 class InputEventMagnifyGesture : public InputEventGesture
 {
-	VLTRCLASS(InputEventMagnifyGesture, InputEventGesture);
 	real_t factor = 1.0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_factor(real_t p_factor);
@@ -549,11 +527,9 @@ public:
 
 class InputEventPanGesture : public InputEventGesture
 {
-	VLTRCLASS(InputEventPanGesture, InputEventGesture);
 	Vector2 delta;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_delta(const Vector2& p_delta);
@@ -569,8 +545,6 @@ public:
 
 class InputEventMIDI : public InputEvent
 {
-	VLTRCLASS(InputEventMIDI, InputEvent);
-
 	int channel = 0;
 	MIDIMessage message = MIDIMessage::NONE;
 	int pitch = 0;
@@ -581,7 +555,6 @@ class InputEventMIDI : public InputEvent
 	int controller_value = 0;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_channel(const int p_channel);
@@ -616,12 +589,9 @@ public:
 
 class InputEventShortcut : public InputEvent
 {
-	VLTRCLASS(InputEventShortcut, InputEvent);
-
 	Ref<Shortcut> shortcut;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_shortcut(Ref<Shortcut> p_shortcut);

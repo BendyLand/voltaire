@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "stream_peer_socket.compat.inc"
 #include "stream_peer_socket.h"
@@ -230,8 +229,6 @@ int StreamPeerSocket::get_available_bytes() const
 	ERR_FAIL_COND_V(_sock.is_null(), -1);
 	return _sock->get_available_bytes();
 }
-
-void StreamPeerSocket::_bind_methods() {}
 
 StreamPeerSocket::StreamPeerSocket() : _sock(NetSocket::create()) {}
 

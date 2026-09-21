@@ -35,8 +35,8 @@
 
 class AudioEffectFilter;
 
-class AudioEffectFilterInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectFilterInstance, AudioEffectInstance);
+class AudioEffectFilterInstance : public AudioEffectInstance
+{
 	friend class AudioEffectFilter;
 
 	Ref<AudioEffectFilter> base;
@@ -45,19 +45,21 @@ class AudioEffectFilterInstance : public AudioEffectInstance {
 	AudioFilterSW::Processor filter_process[2][4];
 
 	template <int S>
-	void _process_filter(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count);
+	void _process_filter(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 
 public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	virtual void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
 
 	AudioEffectFilterInstance();
 };
 
-class AudioEffectFilter : public AudioEffect {
-	VLTRCLASS(AudioEffectFilter, AudioEffect);
-
+class AudioEffectFilter : public AudioEffect
+{
 public:
-	enum FilterDB {
+	enum FilterDB
+	{
 		FILTER_6DB,
 		FILTER_12DB,
 		FILTER_18DB,
@@ -70,9 +72,6 @@ public:
 	float resonance;
 	float gain;
 	FilterDB db;
-
-protected:
-	static void _bind_methods();
 
 public:
 	void set_cutoff(float p_freq);
@@ -92,90 +91,46 @@ public:
 	AudioEffectFilter(AudioFilterSW::Mode p_mode = AudioFilterSW::LOWPASS);
 };
 
-VARIANT_ENUM_CAST(AudioEffectFilter::FilterDB)
-
-class AudioEffectLowPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectLowPassFilter, AudioEffectFilter);
-
-	void _validate_property(PropertyInfo &p_property) const {
-		if (p_property.name == "gain") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
+class AudioEffectLowPassFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectLowPassFilter() :
-			AudioEffectFilter(AudioFilterSW::LOWPASS) {}
+	AudioEffectLowPassFilter() : AudioEffectFilter(AudioFilterSW::LOWPASS) {}
 };
 
-class AudioEffectHighPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectHighPassFilter, AudioEffectFilter);
-	void _validate_property(PropertyInfo &p_property) const {
-		if (p_property.name == "gain") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
+class AudioEffectHighPassFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectHighPassFilter() :
-			AudioEffectFilter(AudioFilterSW::HIGHPASS) {}
+	AudioEffectHighPassFilter() : AudioEffectFilter(AudioFilterSW::HIGHPASS) {}
 };
 
-class AudioEffectBandPassFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectBandPassFilter, AudioEffectFilter);
-	void _validate_property(PropertyInfo &p_property) const {
-		if (p_property.name == "gain") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
+class AudioEffectBandPassFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectBandPassFilter() :
-			AudioEffectFilter(AudioFilterSW::BANDPASS) {}
+	AudioEffectBandPassFilter() : AudioEffectFilter(AudioFilterSW::BANDPASS) {}
 };
 
-class AudioEffectNotchFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectNotchFilter, AudioEffectFilter);
-
-protected:
-	void _validate_property(PropertyInfo &p_property) const {
-		if (p_property.name == "gain") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
+class AudioEffectNotchFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectNotchFilter() :
-			AudioEffectFilter(AudioFilterSW::NOTCH) {}
+	AudioEffectNotchFilter() : AudioEffectFilter(AudioFilterSW::NOTCH) {}
 };
 
-class AudioEffectBandLimitFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectBandLimitFilter, AudioEffectFilter);
-
-protected:
-	void _validate_property(PropertyInfo &p_property) const {
-		if (p_property.name == "gain") {
-			p_property.usage = PROPERTY_USAGE_NONE;
-		}
-	}
-
+class AudioEffectBandLimitFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectBandLimitFilter() :
-			AudioEffectFilter(AudioFilterSW::BANDLIMIT) {}
+	AudioEffectBandLimitFilter() : AudioEffectFilter(AudioFilterSW::BANDLIMIT) {}
 };
 
-class AudioEffectLowShelfFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectLowShelfFilter, AudioEffectFilter);
-
+class AudioEffectLowShelfFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectLowShelfFilter() :
-			AudioEffectFilter(AudioFilterSW::LOWSHELF) {}
+	AudioEffectLowShelfFilter() : AudioEffectFilter(AudioFilterSW::LOWSHELF) {}
 };
 
-class AudioEffectHighShelfFilter : public AudioEffectFilter {
-	VLTRCLASS(AudioEffectHighShelfFilter, AudioEffectFilter);
-
+class AudioEffectHighShelfFilter : public AudioEffectFilter
+{
 public:
-	AudioEffectHighShelfFilter() :
-			AudioEffectFilter(AudioFilterSW::HIGHSHELF) {}
+	AudioEffectHighShelfFilter() : AudioEffectFilter(AudioFilterSW::HIGHSHELF) {}
 };
+
+

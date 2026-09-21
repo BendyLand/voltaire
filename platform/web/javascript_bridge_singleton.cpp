@@ -35,7 +35,6 @@
 #include <emscripten.h>
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
-#include "core/object/callable_mp.h"
 #endif
 
 extern "C" {
@@ -68,7 +67,6 @@ extern int godot_js_wrapper_object_transfer_buffer(int p_id, void *p_byte_arr, v
 };
 
 class JavaScriptObjectImpl : public JavaScriptObject {
-	VLTRSOFTCLASS(JavaScriptObjectImpl, JavaScriptObject);
 
 private:
 	friend class JavaScriptBridge;
@@ -411,3 +409,7 @@ Error JavaScriptBridge::pwa_update() {
 void JavaScriptBridge::force_fs_sync() {
 	OS_Web::get_singleton()->force_fs_sync();
 }
+
+void register_web_api() {}
+
+

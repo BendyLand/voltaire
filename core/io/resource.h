@@ -31,9 +31,8 @@
 #pragma once
 
 #include "core/io/resource_uid.h" // IWYU pragma: export. Make available to all resources.
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/self_list.h"
+#include "core/types.h"
 
 class Node;
 class RWLock;
@@ -55,8 +54,6 @@ private:
 class Resource : public RefCounted
 {
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::RESOURCE;
-
 	static void register_custom_data_to_otdb();
 
 	virtual String get_base_extension() const { return "res"; }
@@ -64,13 +61,6 @@ public:
 protected:
 	static void _add_resource_base_extension_to_classdb(
 		const String& p_extension, const String& p_class);
-
-	struct DuplicateParams
-	{
-		bool deep = false;
-		ResourceDeepDuplicateMode subres_mode = RESOURCE_DEEP_DUPLICATE_MAX;
-		Node* local_scene = nullptr;
-	};
 
 private:
 	friend class ResourceCache;
@@ -97,25 +87,14 @@ private:
 	friend class SceneState;
 	Node* local_scene = nullptr;
 
-	SelfList<Resource> remapped_list;
+	SelfList<Resource> remapped_list = { this };
 
 	using DuplicateRemapCacheT = HashMap<Ref<Resource>, Ref<Resource>>;
 	static thread_local inline DuplicateRemapCacheT* thread_duplicate_remap_cache = nullptr;
 	static thread_local inline bool thread_duplicate_remap_cache_needs_deallocation = true;
 
-	Variant _duplicate_recursive(
-		const Variant& p_variant, const DuplicateParams& p_params, uint32_t p_usage = 0) const;
-	void _find_sub_resources(const Variant& p_variant, HashSet<Ref<Resource>>& p_resources_found);
-
-	// Only for binding the deep duplicate method, so it doesn't need actual members.
-	enum DeepDuplicateMode : int;
-
-	_ALWAYS_INLINE_ Ref<Resource> _duplicate_deep_bind(
-		DeepDuplicateMode p_deep_subresources_mode) const;
-
 protected:
 	virtual void _resource_path_changed();
-	static void _bind_methods();
 
 	void _block_emit_changed();
 	void _unblock_emit_changed();
@@ -125,10 +104,11 @@ protected:
 
 	virtual void reset_local_to_scene();
 
-	virtual Ref<Resource> _duplicate(const DuplicateParams& p_params) const;
+	virtual Ref<Resource> _duplicate(bool p_subresources = false) const;
 	virtual String _to_string();
 
 public:
+	Ref<Resource> duplicate(bool p_deep) const;
 	static Node* (*_get_local_scene_func)();		// Used by the editor.
 	static void (*_update_configuration_warning)(); // Used by the editor.
 
@@ -141,9 +121,6 @@ public:
 	virtual void reload_from_file();
 
 	void emit_changed();
-	void connect_changed(const Callable& p_callable, uint32_t p_flags = 0);
-	void disconnect_changed(const Callable& p_callable);
-
 	void set_name(const String& p_name);
 	String get_name() const;
 
@@ -163,14 +140,6 @@ public:
 	void set_scene_unique_id(const String& p_id);
 	String get_scene_unique_id() const;
 
-	Ref<Resource> duplicate(bool p_deep = false) const;
-	Ref<Resource> duplicate_deep(ResourceDeepDuplicateMode p_deep_subresources_mode =
-									 RESOURCE_DEEP_DUPLICATE_INTERNAL) const;
-	Ref<Resource> _duplicate_from_variant(bool p_deep,
-		ResourceDeepDuplicateMode p_deep_subresources_mode, int p_recursion_count) const;
-	static void _teardown_duplicate_from_variant();
-	Ref<Resource> duplicate_for_local_scene(
-		Node* p_for_scene, HashMap<Ref<Resource>, Ref<Resource>>& p_remap_cache) const;
 	void configure_for_local_scene(
 		Node* p_for_scene, HashMap<Ref<Resource>, Ref<Resource>>& p_remap_cache);
 
@@ -179,27 +148,6 @@ public:
 	virtual void setup_local_to_scene();
 
 	Node* get_local_scene() const;
-
-#ifdef TOOLS_ENABLED
-
-	virtual uint32_t hash_edited_version_for_preview() const;
-
-	virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
-
-	uint64_t get_last_modified_time() const { return last_modified_time; }
-
-	virtual void set_import_last_modified_time(uint64_t p_time)
-	{
-		import_last_modified_time = p_time;
-	}
-
-	uint64_t get_import_last_modified_time() const { return import_last_modified_time; }
-
-	void set_import_path(const String& p_path) { import_path = p_path; }
-
-	String get_import_path() const { return import_path; }
-
-#endif
 
 	void set_as_translation_remapped(bool p_remapped);
 
@@ -217,11 +165,9 @@ public:
 
 	String get_id_for_path(const String& p_referrer_path) const;
 
-	Resource();
+	Resource() = default;
 	~Resource();
 };
-
-VARIANT_ENUM_CAST(Resource::DeepDuplicateMode);
 
 class ResourceCache
 {

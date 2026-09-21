@@ -53,8 +53,6 @@ class AnimatedSprite2D : public Node2D
 	bool hflip = false;
 	bool vflip = false;
 
-	void _res_changed();
-
 	double _get_frame_duration();
 	void _calc_frame_speed_scale();
 	void _stop_internal(bool p_reset);
@@ -62,23 +60,13 @@ class AnimatedSprite2D : public Node2D
 	Rect2 _get_rect() const;
 
 protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif // DISABLE_DEPRECATED
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
-#ifdef TOOLS_ENABLED
-	virtual Dictionary _edit_get_state() const override;
-	virtual void _edit_set_state(const Dictionary& p_state) override;
-
-	virtual void _edit_set_pivot(const Point2& p_pivot) override;
-	virtual Point2 _edit_get_pivot() const override;
-	virtual bool _edit_use_pivot() const override;
-#endif // TOOLS_ENABLED
-
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
@@ -89,8 +77,6 @@ public:
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
-	void play(const StringName& p_name = StringName(), float p_custom_scale = 1.0,
-		bool p_from_end = false);
 	void play_backwards(const StringName& p_name = StringName());
 	void pause();
 	void stop();
@@ -108,8 +94,6 @@ public:
 
 	void set_frame_progress(real_t p_progress);
 	real_t get_frame_progress() const;
-
-	void set_frame_and_progress(int p_frame, real_t p_progress);
 
 	void set_speed_scale(float p_speed_scale);
 	float get_speed_scale() const;

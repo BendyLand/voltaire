@@ -35,7 +35,6 @@
 class AudioEffectStereoEnhance;
 
 class AudioEffectStereoEnhanceInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectStereoEnhanceInstance, AudioEffectInstance);
 	friend class AudioEffectStereoEnhance;
 	Ref<AudioEffectStereoEnhance> base;
 
@@ -54,7 +53,6 @@ public:
 };
 
 class AudioEffectStereoEnhance : public AudioEffect {
-	VLTRCLASS(AudioEffectStereoEnhance, AudioEffect);
 
 	friend class AudioEffectStereoEnhanceInstance;
 	float volume_db = 0.0f;
@@ -64,7 +62,6 @@ class AudioEffectStereoEnhance : public AudioEffect {
 	float surround = 0.0f;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

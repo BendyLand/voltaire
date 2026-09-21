@@ -28,52 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "foldable_container.h"
 #include "scene/resources/text_line.h"
 #include "scene/theme/theme_db.h"
-
-Size2 FoldableContainer::get_minimum_size() const
-{
-	_update_title_min_size();
-
-	if (folded) {
-		return title_minimum_size;
-	}
-	Size2 ms;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		ms = ms.max(c->get_bound_minimum_size());
-	}
-	ms += theme_cache.panel_style->get_minimum_size();
-
-	return Size2(MAX(ms.width, title_minimum_size.width), ms.height + title_minimum_size.height);
-}
-
-Size2 FoldableContainer::get_desired_size() const
-{
-	_update_title_min_size();
-
-	if (folded) {
-		return title_minimum_size;
-	}
-	Size2 ds;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		ds = ds.max(c->get_bound_desired_size());
-	}
-	ds += theme_cache.panel_style->get_minimum_size();
-
-	return Size2(MAX(ds.width, title_minimum_size.width), ds.height + title_minimum_size.height);
-}
 
 Size2 FoldableContainer::get_inner_combined_maximum_size() const
 {
@@ -86,149 +43,24 @@ Size2 FoldableContainer::get_inner_combined_maximum_size() const
 	return ms;
 }
 
-void FoldableContainer::fold()
-{
-	set_folded(true);
-	this->obj->emit_signal(SNAME("folding_changed"), folded);
-}
-
-void FoldableContainer::expand()
-{
-	set_folded(false);
-	this->obj->emit_signal(SNAME("folding_changed"), folded);
-}
-
-void FoldableContainer::set_folded(bool p_folded)
-{
-	if (folded != p_folded) {
-		if (!changing_group && foldable_group.is_valid()) {
-			if (!p_folded) {
-				_update_group();
-				foldable_group->obj->emit_signal(SNAME("expanded"), this);
-			}
-			else if (!foldable_group->updating_group &&
-					   foldable_group->get_expanded_container() == this &&
-					   !foldable_group->is_allow_folding_all()) {
-				return;
-			}
-		}
-		folded = p_folded;
-
-		update_minimum_size();
-		queue_sort();
-		queue_redraw();
-	}
-}
-
 bool FoldableContainer::is_folded() const { return folded; }
-
-void FoldableContainer::set_foldable_group(const Ref<FoldableGroup>& p_group)
-{
-	if (foldable_group.is_valid()) {
-		foldable_group->containers.erase(this);
-	}
-
-	foldable_group = p_group;
-
-	if (foldable_group.is_valid()) {
-		changing_group = true;
-		if (folded && !foldable_group->get_expanded_container() &&
-			!foldable_group->is_allow_folding_all()) {
-			set_folded(false);
-		}
-		else if (!folded && foldable_group->get_expanded_container()) {
-			set_folded(true);
-		}
-		foldable_group->containers.insert(this);
-		changing_group = false;
-	}
-
-	queue_redraw();
-}
 
 Ref<FoldableGroup> FoldableContainer::get_foldable_group() const { return foldable_group; }
 
-void FoldableContainer::set_title(const String& p_text)
-{
-	if (title == p_text) {
-		return;
-	}
-	title = p_text;
-	_shape();
-	update_minimum_size();
-	queue_redraw();
-}
-
 String FoldableContainer::get_title() const { return title; }
-
-void FoldableContainer::set_title_alignment(HorizontalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 3);
-	title_alignment = p_alignment;
-
-	if (_get_actual_alignment() != text_buf->get_horizontal_alignment()) {
-		_shape();
-		queue_redraw();
-	}
-}
 
 HorizontalAlignment FoldableContainer::get_title_alignment() const { return title_alignment; }
 
-void FoldableContainer::set_language(const String& p_language)
-{
-	if (language == p_language) {
-		return;
-	}
-	language = p_language;
-	_shape();
-	update_minimum_size();
-	queue_redraw();
-}
-
 String FoldableContainer::get_language() const { return language; }
-
-void FoldableContainer::set_title_text_direction(TextDirection p_text_direction)
-{
-	ERR_FAIL_INDEX(int(p_text_direction), 4);
-	if (title_text_direction == p_text_direction) {
-		return;
-	}
-	title_text_direction = p_text_direction;
-	_shape();
-	queue_redraw();
-}
 
 Control::TextDirection FoldableContainer::get_title_text_direction() const
 {
 	return title_text_direction;
 }
 
-void FoldableContainer::set_title_text_overrun_behavior(
-	TextServer::OverrunBehavior p_overrun_behavior)
-{
-	if (overrun_behavior == p_overrun_behavior) {
-		return;
-	}
-	overrun_behavior = p_overrun_behavior;
-	_shape();
-	update_minimum_size();
-	queue_redraw();
-}
-
 TextServer::OverrunBehavior FoldableContainer::get_title_text_overrun_behavior() const
 {
 	return overrun_behavior;
-}
-
-void FoldableContainer::set_title_position(TitlePosition p_title_position)
-{
-	ERR_FAIL_INDEX(p_title_position, POSITION_MAX);
-	if (title_position == p_title_position) {
-		return;
-	}
-	title_position = p_title_position;
-	queue_redraw();
-	queue_sort();
 }
 
 FoldableContainer::TitlePosition FoldableContainer::get_title_position() const
@@ -257,54 +89,6 @@ void FoldableContainer::remove_title_bar_control(Control* p_control)
 
 	title_controls.remove_at(index);
 	remove_child(p_control);
-}
-
-void FoldableContainer::gui_input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventMouseMotion> m = p_event;
-	if (m.is_valid()) {
-		if (_get_title_rect().has_point(m->get_position())) {
-			if (!is_hovering) {
-				is_hovering = true;
-				queue_redraw();
-			}
-		}
-		else if (is_hovering) {
-			is_hovering = false;
-			queue_redraw();
-		}
-		return;
-	}
-
-	if (p_event->is_action_pressed(SNAME("ui_accept"), false, true)) {
-		set_folded(!folded);
-		this->obj->emit_signal(SNAME("folding_changed"), folded);
-		accept_event();
-		return;
-	}
-
-	Ref<InputEventMouseButton> b = p_event;
-	if (b.is_valid()) {
-		if (b->get_button_index() == MouseButton::LEFT && b->is_pressed() &&
-			_get_title_rect().has_point(b->get_position())) {
-			set_folded(!folded);
-			this->obj->emit_signal(SNAME("folding_changed"), folded);
-			accept_event();
-		}
-	}
-}
-
-String FoldableContainer::get_tooltip(const Point2& p_pos) const
-{
-	if (Rect2(0,
-			(title_position == POSITION_TOP) ? 0 : get_size().height - title_minimum_size.height,
-			get_size().width, title_minimum_size.height)
-			.has_point(p_pos)) {
-		return Control::get_tooltip(p_pos);
-	}
-	return String();
 }
 
 bool FoldableContainer::has_point(const Point2& p_point) const
@@ -387,91 +171,6 @@ void FoldableContainer::_notification(int p_what)
 			Rect2 focus_rect = folded ? title_rect : Rect2(Point2(), size);
 			_draw_flippable_stylebox(theme_cache.focus_style, focus_rect);
 		}
-	} break;
-
-	case NOTIFICATION_SORT_CHILDREN: {
-		bool rtl = is_layout_rtl();
-		const Vector2 size = get_size();
-		const Ref<StyleBox> title_style = _get_title_style();
-
-		uint32_t title_count = title_controls.size();
-		if (title_count > 0) {
-			int h_separation = MAX(theme_cache.h_separation, 0);
-			real_t offset = 0.0;
-			if (rtl) {
-				offset = title_style->get_margin(SIDE_LEFT);
-			}
-			else {
-				offset = _get_title_controls_width();
-				offset = size.x - title_style->get_margin(SIDE_RIGHT) - offset;
-			}
-
-			real_t v_center = title_minimum_size.y * 0.5;
-			if (title_position == POSITION_BOTTOM) {
-				v_center =
-					size.y - v_center +
-					(title_style->get_margin(SIDE_BOTTOM) - title_style->get_margin(SIDE_TOP)) *
-						0.5;
-			}
-			else {
-				v_center +=
-					(title_style->get_margin(SIDE_TOP) - title_style->get_margin(SIDE_BOTTOM)) *
-					0.5;
-			}
-
-			for (uint32_t i = 0; i < title_count; i++) {
-				Control* control = title_controls[rtl ? title_count - i - 1 : i];
-				if (!control->is_visible()) {
-					continue;
-				}
-				Rect2 rect(Vector2(), control->get_bound_minimum_size());
-				rect.position.x = offset;
-				rect.position.y = v_center - rect.size.y * 0.5;
-				fit_child_in_rect(control, rect);
-
-				offset += rect.size.x + h_separation;
-			}
-		}
-
-		Rect2 inner_rect;
-		inner_rect.position.x = rtl ? theme_cache.panel_style->get_margin(SIDE_RIGHT)
-									: theme_cache.panel_style->get_margin(SIDE_LEFT);
-		inner_rect.size.x = size.x - theme_cache.panel_style->get_margin(SIDE_LEFT) -
-							theme_cache.panel_style->get_margin(SIDE_RIGHT);
-		inner_rect.position.y = theme_cache.panel_style->get_margin(SIDE_TOP);
-
-		inner_rect.size.y = size.y - theme_cache.panel_style->get_margin(SIDE_TOP) -
-							theme_cache.panel_style->get_margin(SIDE_BOTTOM) - title_minimum_size.y;
-		if (title_position == POSITION_TOP) {
-			inner_rect.position.y += title_minimum_size.y;
-		}
-
-		for (int i = 0; i < get_child_count(false); i++) {
-			Control* c = as_sortable_control(get_child(i, false), SortableVisibilityMode::IGNORE);
-			if (!c) {
-				continue;
-			}
-			c->set_visible(!folded);
-
-			if (!folded) {
-				fit_child_in_rect(c, inner_rect);
-			}
-		}
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		if (is_hovering) {
-			is_hovering = false;
-			queue_redraw();
-		}
-	} break;
-
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_THEME_CHANGED: {
-		_shape();
-		update_minimum_size();
-		queue_redraw();
 	} break;
 	}
 }
@@ -563,30 +262,6 @@ void FoldableContainer::_update_title_min_size() const
 	}
 }
 
-void FoldableContainer::_shape()
-{
-	Ref<Font> font = theme_cache.title_font;
-	int font_size = theme_cache.title_font_size;
-	if (font.is_null() || font_size == 0) {
-		return;
-	}
-
-	text_buf->clear();
-	text_buf->set_width(-1);
-
-	if (title_text_direction == TEXT_DIRECTION_INHERITED) {
-		text_buf->set_direction(
-			is_layout_rtl() ? TextServer::DIRECTION_RTL : TextServer::DIRECTION_LTR);
-	}
-	else {
-		text_buf->set_direction((TextServer::Direction)title_text_direction);
-	}
-	text_buf->set_horizontal_alignment(_get_actual_alignment());
-	text_buf->set_text_overrun_behavior(overrun_behavior);
-	const String& lang = language.is_empty() ? this->obj->_get_locale() : language;
-	text_buf->add_string(atr(title), font, font_size, lang);
-}
-
 HorizontalAlignment FoldableContainer::_get_actual_alignment() const
 {
 	if (is_layout_rtl()) {
@@ -625,8 +300,6 @@ void FoldableContainer::_draw_flippable_stylebox(
 		p_stylebox->draw(get_canvas_item(), p_rect);
 	}
 }
-
-void FoldableContainer::_bind_methods() {}
 
 FoldableContainer::FoldableContainer(const String& p_text)
 {
@@ -673,18 +346,18 @@ void FoldableGroup::get_containers(List<FoldableContainer*>* r_containers) const
 	}
 }
 
-Array FoldableGroup::_get_containers() const
-{
-	Array foldable_containers;
-	for (const FoldableContainer* container : containers) {
-		foldable_containers.push_back(container);
-	}
-
-	return foldable_containers;
-}
-
-void FoldableGroup::_bind_methods() {}
-
 FoldableGroup::FoldableGroup() { set_local_to_scene(true); }
+
+Size2 FoldableContainer::get_minimum_size() const { return Size2(); }
+
+Size2 FoldableContainer::get_desired_size() const { return Size2(); }
+
+void FoldableContainer::gui_input(const Ref<InputEvent>& p_event) {}
+
+String FoldableContainer::get_tooltip(const Vector2& p_pos) const { return String(); }
+
+void FoldableContainer::set_folded(bool) {}
+
+void FoldableContainer::set_title(String const&) {}
 
 

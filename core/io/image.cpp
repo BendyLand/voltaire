@@ -33,9 +33,7 @@
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "core/templates/hash_map.h"
-#include "core/variant/dictionary.h"
 #include "image.compat.inc"
 #include "image.h"
 
@@ -2146,7 +2144,8 @@ int64_t Image::_get_dst_image_size(int p_width, int p_height, Format p_format, i
 
 	while (true) {
 		int bw = w % block != 0 ? w + (block - w % block) : w;
-		int bh = h % block != 0 ? h + (block - h % block) : h;
+		int bh = h % block != 0 ? h + (block - h % block
+) : h;
 
 		int64_t s = bw * bh;
 
@@ -2462,179 +2461,6 @@ Error Image::generate_mipmaps(bool p_renormalize)
 	}
 
 	mipmaps = true;
-
-	return OK;
-}
-
-Error Image::generate_mipmap_roughness(
-	RoughnessChannel p_roughness_channel, const Ref<Image>& p_normal_map)
-{
-	LocalVector<double> normal_sat_vec; // summed area table
-	int normal_w = 0, normal_h = 0;
-
-	ERR_FAIL_COND_V_MSG(p_normal_map.is_null() || p_normal_map->is_empty(), ERR_INVALID_PARAMETER,
-		"Must provide a valid normal map for roughness mipmaps");
-
-	Ref<Image> nm = p_normal_map->duplicate();
-	if (nm->is_compressed()) {
-		nm->decompress();
-	}
-
-	normal_w = nm->get_width();
-	normal_h = nm->get_height();
-
-	normal_sat_vec.resize(normal_w * normal_h * 3);
-	double* normal_sat = normal_sat_vec.ptr();
-
-	// Create summed area table.
-	for (int y = 0; y < normal_h; y++) {
-		double line_sum[3] = {0, 0, 0};
-		for (int x = 0; x < normal_w; x++) {
-			double normal[3];
-			Color color = nm->get_pixel(x, y);
-			normal[0] = color.r * 2.0 - 1.0;
-			normal[1] = color.g * 2.0 - 1.0;
-			normal[2] = Math::sqrt(MAX(0.0,
-				1.0 - (normal[0] * normal[0] + normal[1] * normal[1]))); // reconstruct if missing
-
-			line_sum[0] += normal[0];
-			line_sum[1] += normal[1];
-			line_sum[2] += normal[2];
-
-			uint32_t ofs = (y * normal_w + x) * 3;
-
-			normal_sat[ofs + 0] = line_sum[0];
-			normal_sat[ofs + 1] = line_sum[1];
-			normal_sat[ofs + 2] = line_sum[2];
-
-			if (y > 0) {
-				uint32_t prev_ofs = ((y - 1) * normal_w + x) * 3;
-				normal_sat[ofs + 0] += normal_sat[prev_ofs + 0];
-				normal_sat[ofs + 1] += normal_sat[prev_ofs + 1];
-				normal_sat[ofs + 2] += normal_sat[prev_ofs + 2];
-			}
-		}
-	}
-
-	int mmcount;
-
-	_get_dst_image_size(width, height, format, mmcount);
-
-	uint8_t* base_ptr = data.ptrw();
-
-	for (int i = 1; i <= mmcount; i++) {
-		int64_t ofs;
-		int w, h;
-		_get_mipmap_offset_and_size(i, ofs, w, h);
-		uint8_t* ptr = &base_ptr[ofs];
-
-		for (int x = 0; x < w; x++) {
-			for (int y = 0; y < h; y++) {
-				int from_x = x * normal_w / w;
-				int from_y = y * normal_h / h;
-				int to_x = (x + 1) * normal_w / w;
-				int to_y = (y + 1) * normal_h / h;
-				to_x = MIN(to_x - 1, normal_w);
-				to_y = MIN(to_y - 1, normal_h);
-
-				int size_x = (to_x - from_x) + 1;
-				int size_y = (to_y - from_y) + 1;
-
-				// summed area table version (much faster)
-
-				double avg[3] = {0, 0, 0};
-
-				if (from_x > 0 && from_y > 0) {
-					uint32_t tofs = ((from_y - 1) * normal_w + (from_x - 1)) * 3;
-					avg[0] += normal_sat[tofs + 0];
-					avg[1] += normal_sat[tofs + 1];
-					avg[2] += normal_sat[tofs + 2];
-				}
-
-				if (from_y > 0 && to_x > 0) {
-					uint32_t tofs = ((from_y - 1) * normal_w + to_x) * 3;
-					avg[0] -= normal_sat[tofs + 0];
-					avg[1] -= normal_sat[tofs + 1];
-					avg[2] -= normal_sat[tofs + 2];
-				}
-
-				if (from_x > 0 && to_y > 0) {
-					uint32_t tofs = (to_y * normal_w + (from_x - 1)) * 3;
-					avg[0] -= normal_sat[tofs + 0];
-					avg[1] -= normal_sat[tofs + 1];
-					avg[2] -= normal_sat[tofs + 2];
-				}
-
-				if (to_y > 0 && to_x > 0) {
-					uint32_t tofs = (to_y * normal_w + to_x) * 3;
-					avg[0] += normal_sat[tofs + 0];
-					avg[1] += normal_sat[tofs + 1];
-					avg[2] += normal_sat[tofs + 2];
-				}
-
-				double div = double(size_x * size_y);
-				Vector3 vec(avg[0] / div, avg[1] / div, avg[2] / div);
-
-				float r = vec.length();
-
-				int pixel_ofs = y * w + x;
-				Color c = _get_color_at_ofs(ptr, pixel_ofs);
-
-				float roughness = 0;
-
-				switch (p_roughness_channel) {
-				case ROUGHNESS_CHANNEL_R: {
-					roughness = c.r;
-				} break;
-				case ROUGHNESS_CHANNEL_G: {
-					roughness = c.g;
-				} break;
-				case ROUGHNESS_CHANNEL_B: {
-					roughness = c.b;
-				} break;
-				case ROUGHNESS_CHANNEL_L: {
-					roughness = c.get_v();
-				} break;
-				case ROUGHNESS_CHANNEL_A: {
-					roughness = c.a;
-				} break;
-				}
-
-				float variance = 0;
-				if (r < 1.0f) {
-					float r2 = r * r;
-					float kappa = (3.0f * r - r * r2) / (1.0f - r2);
-					variance = 0.25f / kappa;
-				}
-
-				float threshold = 0.4;
-				roughness =
-					Math::sqrt(roughness * roughness + MIN(3.0f * variance, threshold * threshold));
-
-				switch (p_roughness_channel) {
-				case ROUGHNESS_CHANNEL_R: {
-					c.r = roughness;
-				} break;
-				case ROUGHNESS_CHANNEL_G: {
-					c.g = roughness;
-				} break;
-				case ROUGHNESS_CHANNEL_B: {
-					c.b = roughness;
-				} break;
-				case ROUGHNESS_CHANNEL_L: {
-					c.r = roughness;
-					c.g = roughness;
-					c.b = roughness;
-				} break;
-				case ROUGHNESS_CHANNEL_A: {
-					c.a = roughness;
-				} break;
-				}
-
-				_set_color_at_ofs(ptr, pixel_ofs, c);
-			}
-		}
-	}
 
 	return OK;
 }
@@ -3328,38 +3154,6 @@ Error Image::_compress_from_channels(CompressMode p_mode, UsedChannels p_channel
 	ERR_FAIL_COND_V(data.is_empty(), ERR_INVALID_DATA);
 
 	// RenderingDevice only.
-	if (GLOBAL_GET("rendering/textures/vram_compression/compress_with_gpu")) {
-		switch (p_mode) {
-		case COMPRESS_BPTC: {
-			// BC7 is unsupported currently.
-			if ((format >= FORMAT_RF && format <= FORMAT_RGBE9995) &&
-				_image_compress_bptc_rd_func) {
-				Error result = _image_compress_bptc_rd_func(this, p_channels, p_bptc_format);
-
-				// If the image was compressed successfully, we return here. If not, we fall back to
-				// the default compression scheme.
-				if (result == OK) {
-					return OK;
-				}
-			}
-		} break;
-		case COMPRESS_S3TC: {
-			if (_image_compress_bc_rd_func) {
-				Error result = _image_compress_bc_rd_func(this, p_channels);
-
-				// If the image was compressed successfully, we return here. If not, we fall back to
-				// the default compression scheme.
-				if (result == OK) {
-					return OK;
-				}
-			}
-		} break;
-
-		default: {
-		}
-		}
-	}
-
 	switch (p_mode) {
 	case COMPRESS_S3TC: {
 		ERR_FAIL_NULL_V(_image_compress_bc_func, ERR_UNAVAILABLE);
@@ -3762,43 +3556,6 @@ void Image::fill_rect(const Rect2i& p_rect, const Color& p_color)
 				r.size.x * pixel_size);
 		}
 	}
-}
-
-void Image::_set_data(const Dictionary& p_data)
-{
-	ERR_FAIL_COND(!p_data.has("width"));
-	ERR_FAIL_COND(!p_data.has("height"));
-	ERR_FAIL_COND(!p_data.has("format"));
-	ERR_FAIL_COND(!p_data.has("mipmaps"));
-	ERR_FAIL_COND(!p_data.has("data"));
-
-	int dwidth = p_data["width"];
-	int dheight = p_data["height"];
-	String dformat = p_data["format"];
-	bool dmipmaps = p_data["mipmaps"];
-	Vector<uint8_t> ddata = p_data["data"];
-	Format ddformat = FORMAT_MAX;
-	for (int i = 0; i < FORMAT_MAX; i++) {
-		if (dformat == get_format_name(Format(i))) {
-			ddformat = Format(i);
-			break;
-		}
-	}
-
-	ERR_FAIL_COND(ddformat == FORMAT_MAX);
-
-	initialize_data(dwidth, dheight, dmipmaps, ddformat, ddata);
-}
-
-Dictionary Image::_get_data() const
-{
-	Dictionary d;
-	d["width"] = width;
-	d["height"] = height;
-	d["format"] = get_format_name(format);
-	d["mipmaps"] = mipmaps;
-	d["data"] = data;
-	return d;
 }
 
 Color Image::get_pixelv(const Point2i& p_point) const { return get_pixel(p_point.x, p_point.y); }
@@ -4278,8 +4035,6 @@ void Image::optimize_channels()
 	}
 }
 
-void Image::_bind_methods() {}
-
 void Image::normal_map_to_xy()
 {
 	convert(Image::FORMAT_RGBA8);
@@ -4444,8 +4199,7 @@ void Image::srgb_to_linear()
 		70, 71, 72, 73, 74, 75, 76, 77, 78, 80, 81, 82, 83, 84, 85, 87, 88, 89, 90, 92, 93, 94, 95,
 		97, 98, 99, 101, 102, 103, 105, 106, 107, 109, 110, 112, 113, 114, 116, 117, 119, 120, 122,
 		123, 125, 126, 128, 129, 131, 132, 134, 135, 137, 139, 140, 142, 144, 145, 147, 148, 150,
-		152, 153, 155, 157, 159, 160, 162, 164, 166, 167, 169, 171,
-173, 175, 176, 178, 180, 182,
+		152, 153, 155, 157, 159, 160, 162, 164, 166, 167, 169, 171, 173, 175, 176, 178, 180, 182,
 		184, 186, 188, 190, 192, 193, 195, 197, 199, 201, 203, 205, 207, 209, 211, 213, 215, 218,
 		220, 222, 224, 226, 228, 230, 232, 235, 237, 239, 241, 243, 245, 248, 250, 252, 255};
 
@@ -4488,7 +4242,8 @@ void Image::linear_to_srgb()
 		161, 161, 162, 163, 164, 165, 165, 166, 167, 168, 168, 169, 170, 171, 171, 172, 173, 174,
 		174, 175, 176, 176, 177, 178, 179, 179, 180, 181, 181, 182, 183, 183, 184, 185, 185, 186,
 		187, 187, 188, 189, 189, 190, 191, 191, 192, 193, 193, 194, 194, 195, 196, 196, 197, 197,
-		198, 199, 199, 200, 201, 201, 202, 202, 203, 204, 204, 205, 205, 206, 206, 207, 208, 208,
+		198, 199, 199, 200, 201, 201, 202, 202, 203, 204, 204, 205, 205, 206, 206, 207, 208,
+ 208,
 		209, 209, 210, 210, 211, 212, 212, 213, 213, 214, 214, 215, 215, 216, 217, 217, 218, 218,
 		219, 219, 220, 220, 221, 221, 222, 222, 223, 223, 224, 224, 225, 226, 226, 227, 227, 228,
 		228, 229, 229, 230, 230, 231, 231, 232, 232, 233, 233, 234, 234, 235, 235, 236, 236, 237,
@@ -4969,7 +4724,8 @@ void Image::renormalize_uint16(uint16_t* p_rgb)
 	n *= 65535;
 	p_rgb[0] = CLAMP(int(Math::round(n.x)), 0, 65535);
 	p_rgb[1] = CLAMP(int(Math::round(n.y)), 0, 65535);
-	p_rgb[2] = CLAMP(int(Math::round(n.z)), 0, 65535);
+	p_rgb[2] = CLAMP(int(Math::round
+(n.z)), 0, 65535);
 }
 
 Image::Image(const uint8_t* p_mem_png_jpg, int p_len)
@@ -4992,14 +4748,6 @@ Image::Image(const uint8_t* p_mem_png_jpg, int p_len)
 	}
 }
 
-Ref<Resource> Image::_duplicate(const DuplicateParams& p_params) const
-{
-	Ref<Image> copy;
-	copy.instantiate();
-	copy->_copy_internals_from(*this);
-	return copy;
-}
-
 void Image::set_as_black() { memset(data.ptrw(), 0, data.size()); }
 
 void Image::copy_internals_from(const Ref<Image>& p_image)
@@ -5010,142 +4758,6 @@ void Image::copy_internals_from(const Ref<Image>& p_image)
 	height = p_image->height;
 	mipmaps = p_image->mipmaps;
 	data = p_image->data;
-}
-
-Dictionary Image::compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric)
-{
-	// https://github.com/richgel999/bc7enc_rdo/blob/master/LICENSE
-	//
-	// This is free and unencumbered software released into the public domain.
-	// Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
-	// software, either in source code form or as a compiled binary, for any purpose,
-	// commercial or non - commercial, and by any means.
-	// In jurisdictions that recognize copyright laws, the author or authors of this
-	// software dedicate any and all copyright interest in the software to the public
-	// domain. We make this dedication for the benefit of the public at large and to
-	// the detriment of our heirs and successors. We intend this dedication to be an
-	// overt act of relinquishment in perpetuity of all present and future rights to
-	// this software under copyright law.
-	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-	// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-	// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-	// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-	Dictionary result;
-	result["max"] = Math::INF;
-	result["mean"] = Math::INF;
-	result["mean_squared"] = Math::INF;
-	result["root_mean_squared"] = Math::INF;
-	result["peak_snr"] = 0.0f;
-
-	ERR_FAIL_COND_V(p_compared_image.is_null(), result);
-	Error err = OK;
-	Ref<Image> compared_image = duplicate(true);
-	if (compared_image->is_compressed()) {
-		err = compared_image->decompress();
-	}
-	ERR_FAIL_COND_V(err != OK, result);
-	Ref<Image> source_image = p_compared_image->duplicate(true);
-	if (source_image->is_compressed()) {
-		err = source_image->decompress();
-	}
-	ERR_FAIL_COND_V(err != OK, result);
-
-	ERR_FAIL_COND_V_MSG((compared_image->get_format() >= Image::FORMAT_RH) &&
-							(compared_image->get_format() <= Image::FORMAT_RGBE9995),
-		result, "Metrics on HDR images are not supported.");
-	ERR_FAIL_COND_V_MSG((source_image->get_format() >= Image::FORMAT_RH) &&
-							(source_image->get_format() <= Image::FORMAT_RGBE9995),
-		result, "Metrics on HDR images are not supported.");
-
-	double image_metric_max, image_metric_mean, image_metric_mean_squared,
-		image_metric_root_mean_squared, image_metric_peak_snr = 0.0;
-	const bool average_component_error = true;
-
-	const uint32_t w = MIN(compared_image->get_width(), source_image->get_width());
-	const uint32_t h = MIN(compared_image->get_height(), source_image->get_height());
-
-	// Histogram approach originally due to Charles Bloom.
-	double hist[256];
-	memset(hist, 0, sizeof(hist));
-
-	for (uint32_t y = 0; y < h; y++) {
-		for (uint32_t x = 0; x < w; x++) {
-			const Color color_a = compared_image->get_pixel(x, y);
-
-			const Color color_b = source_image->get_pixel(x, y);
-
-			if (!p_luma_metric) {
-				ERR_FAIL_COND_V_MSG(color_a.r > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				ERR_FAIL_COND_V_MSG(color_b.r > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				hist[Math::abs(color_a.get_r8() - color_b.get_r8())]++;
-				ERR_FAIL_COND_V_MSG(color_a.g > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				ERR_FAIL_COND_V_MSG(color_b.g > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				hist[Math::abs(color_a.get_g8() - color_b.get_g8())]++;
-				ERR_FAIL_COND_V_MSG(color_a.b > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				ERR_FAIL_COND_V_MSG(color_b.b > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				hist[Math::abs(color_a.get_b8() - color_b.get_b8())]++;
-				ERR_FAIL_COND_V_MSG(color_a.a > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				ERR_FAIL_COND_V_MSG(color_b.a > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				hist[Math::abs(color_a.get_a8() - color_b.get_a8())]++;
-			}
-			else {
-				ERR_FAIL_COND_V_MSG(color_a.r > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				ERR_FAIL_COND_V_MSG(color_b.r > 1.0f, Dictionary(), "Can't compare HDR colors.");
-				// REC709 weightings
-				int luma_a = (13938U * color_a.get_r8() + 46869U * color_a.get_g8() +
-								 4729U * color_a.get_b8() + 32768U) >>
-							 16U;
-				int luma_b = (13938U * color_b.get_r8() + 46869U * color_b.get_g8() +
-								 4729U * color_b.get_b8() + 32768U) >>
-							 16U;
-				hist[Math::abs(luma_a - luma_b)]++;
-			}
-		}
-	}
-
-	image_metric_max = 0;
-	double sum = 0.0f, sum2 = 0.0f;
-	for (uint32_t i = 0; i < 256; i++) {
-		if (!hist[i]) {
-			continue;
-		}
-
-		image_metric_max = i;
-
-		double x = i * hist[i];
-
-		sum += x;
-		sum2 += i * x;
-	}
-
-	// See http://richg42.blogspot.com/2016/09/how-to-compute-psnr-from-old-berkeley.html
-	double total_values = w * h;
-
-	if (average_component_error) {
-		total_values *= 4;
-	}
-
-	image_metric_mean = CLAMP(sum / total_values, 0.0f, 255.0f);
-	image_metric_mean_squared = CLAMP(sum2 / total_values, 0.0f, 255.0f * 255.0f);
-
-	image_metric_root_mean_squared = std::sqrt(image_metric_mean_squared);
-
-	if (!image_metric_root_mean_squared) {
-		image_metric_peak_snr = 1e+10f;
-	}
-	else {
-		image_metric_peak_snr =
-			CLAMP(std::log10(255.0f / image_metric_root_mean_squared) * 20.0f, 0.0f, 500.0f);
-	}
-	result["max"] = image_metric_max;
-	result["mean"] = image_metric_mean;
-	result["mean_squared"] = image_metric_mean_squared;
-	result["root_mean_squared"] = image_metric_root_mean_squared;
-	result["peak_snr"] = image_metric_peak_snr;
-	return result;
 }
 
 

@@ -83,8 +83,6 @@ private:
 	ScrollMode horizontal_scroll_mode = SCROLL_MODE_AUTO;
 	ScrollMode vertical_scroll_mode = SCROLL_MODE_AUTO;
 
-	void _update_scroll_hints();
-
 	int deadzone = 0;
 	bool follow_focus = false;
 	int scroll_border = 20;
@@ -136,21 +134,12 @@ protected:
 	void _reposition_children();
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	bool _updating_scrollbars = false;
 	void _update_scrollbar_position();
 	void _scroll_moved(float);
 
-	void _accessibility_action_scroll_set(const Variant& p_data);
-	void _accessibility_action_scroll_up(const Variant& p_data);
-	void _accessibility_action_scroll_down(const Variant& p_data);
-	void _accessibility_action_scroll_left(const Variant& p_data);
-	void _accessibility_action_scroll_right(const Variant& p_data);
-
 public:
-	virtual void gui_input(const Ref<InputEvent>& p_gui_input) override;
-
 	void set_h_scroll(int p_pos);
 	int get_h_scroll() const;
 
@@ -175,7 +164,6 @@ public:
 	void set_deadzone(int p_deadzone);
 	int get_deadzone() const;
 
-	void set_scroll_hint_mode(ScrollHintMode p_mode);
 	ScrollHintMode get_scroll_hint_mode() const;
 
 	void set_tile_scroll_hint(bool p_enable);
@@ -195,10 +183,7 @@ public:
 	void set_draw_focus_border(bool p_draw);
 	bool get_draw_focus_border();
 
-	ScrollContainer();
+	ScrollContainer() = default;
 };
-
-VARIANT_ENUM_CAST(ScrollContainer::ScrollMode);
-VARIANT_ENUM_CAST(ScrollContainer::ScrollHintMode);
 
 

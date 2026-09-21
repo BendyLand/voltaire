@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/math/geometry_2d.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "line_2d.h"
 #include "scene/2d/line_builder.h"
 #include "servers/rendering/rendering_server.h"
@@ -77,56 +75,18 @@ bool Line2D::_edit_is_selected_on_click(const Point2& p_point, double p_toleranc
 }
 #endif
 
-void Line2D::set_points(const Vector<Vector2>& p_points)
-{
-	_points = p_points;
-	queue_redraw();
-}
-
-void Line2D::set_closed(bool p_closed)
-{
-	_closed = p_closed;
-	queue_redraw();
-}
-
 bool Line2D::is_closed() const { return _closed; }
-
-void Line2D::set_width(float p_width)
-{
-	if (p_width < 0.0) {
-		p_width = 0.0;
-	}
-	_width = p_width;
-	queue_redraw();
-}
 
 float Line2D::get_width() const { return _width; }
 
-void Line2D::set_curve(const Ref<Curve>& p_curve)
-{
-	if (_curve.is_valid()) {
-		_curve->disconnect_changed(callable_mp(this, &Line2D::_curve_changed));
-	}
+<<<<<<< HEAD
 
-	_curve = p_curve;
 
-	if (_curve.is_valid()) {
-		_curve->connect_changed(callable_mp(this, &Line2D::_curve_changed));
-	}
-
-	queue_redraw();
-}
-
+=======
+>>>>>>> fix/remove-object
 Ref<Curve> Line2D::get_curve() const { return _curve; }
 
 Vector<Vector2> Line2D::get_points() const { return _points; }
-
-void Line2D::set_point_position(int i, Vector2 p_pos)
-{
-	ERR_FAIL_INDEX(i, _points.size());
-	_points.set(i, p_pos);
-	queue_redraw();
-}
 
 Vector2 Line2D::get_point_position(int i) const
 {
@@ -136,94 +96,22 @@ Vector2 Line2D::get_point_position(int i) const
 
 int Line2D::get_point_count() const { return _points.size(); }
 
-void Line2D::clear_points()
-{
-	int count = _points.size();
-	if (count > 0) {
-		_points.clear();
-		queue_redraw();
-	}
-}
-
-void Line2D::add_point(Vector2 p_pos, int p_atpos)
-{
-	if (p_atpos < 0 || _points.size() < p_atpos) {
-		_points.push_back(p_pos);
-	}
-	else {
-		_points.insert(p_atpos, p_pos);
-	}
-	queue_redraw();
-}
-
-void Line2D::remove_point(int i)
-{
-	_points.remove_at(i);
-	queue_redraw();
-}
-
-void Line2D::set_default_color(Color p_color)
-{
-	_default_color = p_color;
-	queue_redraw();
-}
-
 Color Line2D::get_default_color() const { return _default_color; }
 
-void Line2D::set_gradient(const Ref<Gradient>& p_gradient)
-{
-	if (_gradient.is_valid()) {
-		_gradient->disconnect_changed(callable_mp(this, &Line2D::_gradient_changed));
-	}
+<<<<<<< HEAD
 
-	_gradient = p_gradient;
 
-	if (_gradient.is_valid()) {
-		_gradient->connect_changed(callable_mp(this, &Line2D::_gradient_changed));
-	}
-
-	queue_redraw();
-}
-
+=======
+>>>>>>> fix/remove-object
 Ref<Gradient> Line2D::get_gradient() const { return _gradient; }
-
-void Line2D::set_texture(const Ref<Texture2D>& p_texture)
-{
-	_texture = p_texture;
-	queue_redraw();
-}
 
 Ref<Texture2D> Line2D::get_texture() const { return _texture; }
 
-void Line2D::set_texture_mode(const LineTextureMode p_mode)
-{
-	_texture_mode = p_mode;
-	queue_redraw();
-}
-
 Line2D::LineTextureMode Line2D::get_texture_mode() const { return _texture_mode; }
-
-void Line2D::set_joint_mode(LineJointMode p_mode)
-{
-	_joint_mode = p_mode;
-	queue_redraw();
-}
 
 Line2D::LineJointMode Line2D::get_joint_mode() const { return _joint_mode; }
 
-void Line2D::set_begin_cap_mode(LineCapMode p_mode)
-{
-	_begin_cap_mode = p_mode;
-	queue_redraw();
-}
-
 Line2D::LineCapMode Line2D::get_begin_cap_mode() const { return _begin_cap_mode; }
-
-void Line2D::set_end_cap_mode(LineCapMode p_mode)
-{
-	_end_cap_mode = p_mode;
-	queue_redraw();
-}
 
 Line2D::LineCapMode Line2D::get_end_cap_mode() const { return _end_cap_mode; }
 
@@ -236,92 +124,18 @@ void Line2D::_notification(int p_what)
 	}
 }
 
-void Line2D::set_sharp_limit(float p_limit)
-{
-	if (p_limit < 0.f) {
-		p_limit = 0.f;
-	}
-	_sharp_limit = p_limit;
-	queue_redraw();
-}
-
 float Line2D::get_sharp_limit() const { return _sharp_limit; }
-
-void Line2D::set_round_precision(int p_precision)
-{
-	_round_precision = MAX(1, p_precision);
-	queue_redraw();
-}
 
 int Line2D::get_round_precision() const { return _round_precision; }
 
-void Line2D::set_antialiased(bool p_antialiased)
-{
-	_antialiased = p_antialiased;
-	queue_redraw();
-}
-
 bool Line2D::get_antialiased() const { return _antialiased; }
 
-void Line2D::_draw()
-{
-	int len = _points.size();
-	if (len <= 1 || _width == 0.f) {
-		return;
-	}
-
-	// TODO Maybe have it as member rather than copying parameters and allocating memory?
-	LineBuilder lb;
-	lb.points = _points;
-	lb.closed = _closed;
-	lb.default_color = _default_color;
-	lb.gradient = *_gradient;
-	lb.texture_mode = _texture_mode;
-	lb.joint_mode = _joint_mode;
-	lb.begin_cap_mode = _begin_cap_mode;
-	lb.end_cap_mode = _end_cap_mode;
-	lb.round_precision = _round_precision;
-	lb.sharp_limit = _sharp_limit;
-	lb.width = _width;
-	lb.curve = *_curve;
-
-	RID texture_rid;
-	if (_texture.is_valid()) {
-		texture_rid = _texture->get_scaled_rid();
-
-		lb.tile_aspect = _texture->get_size().aspect();
-	}
-
-	lb.build();
-	if (lb.indices.is_empty()) {
-		return;
-	}
-
-	RS::get_singleton()->canvas_item_add_triangle_array(get_canvas_item(), lb.indices, lb.vertices,
-		lb.colors, lb.uvs, Vector<int>(), Vector<float>(), texture_rid);
-
-	// DEBUG: Draw wireframe
-	//	if (lb.indices.size() % 3 == 0) {
-	//		Color col(0, 0, 0);
-	//		for (int i = 0; i < lb.indices.size(); i += 3) {
-	//			Vector2 a = lb.vertices[lb.indices[i]];
-	//			Vector2 b = lb.vertices[lb.indices[i+1]];
-	//			Vector2 c = lb.vertices[lb.indices[i+2]];
-	//			draw_line(a, b, col);
-	//			draw_line(b, c, col);
-	//			draw_line(c, a, col);
-	//		}
-	//		for (int i = 0; i < lb.vertices.size(); ++i) {
-	//			Vector2 p = lb.vertices[i];
-	//			draw_rect(Rect2(p.x - 1, p.y - 1, 2, 2), Color(0, 0, 0, 0.5));
-	//		}
-	//	}
-}
-
+<<<<<<< HEAD
 void Line2D::_gradient_changed() { queue_redraw(); }
 
 void Line2D::_curve_changed() { queue_redraw(); }
+=======
+>>>>>>> fix/remove-object
 
-void Line2D::_bind_methods() {}
 
-
+void Line2D::_draw() {}

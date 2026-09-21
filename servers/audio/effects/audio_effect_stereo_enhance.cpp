@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_stereo_enhance.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectStereoEnhanceInstance::process(
@@ -122,7 +121,6 @@ void AudioEffectStereoEnhance::set_surround(float p_amount) { surround = p_amoun
 
 float AudioEffectStereoEnhance::get_surround() const { return surround; }
 
-void AudioEffectStereoEnhance::_bind_methods() {}
 
 AudioEffectStereoEnhance::AudioEffectStereoEnhance() {}
 

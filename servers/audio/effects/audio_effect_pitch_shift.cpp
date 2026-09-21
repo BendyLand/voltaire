@@ -30,7 +30,6 @@
 
 #include "audio_effect_pitch_shift.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 /* Thirdparty code, so disable clang-format with Godot style */
@@ -351,6 +350,5 @@ void AudioEffectPitchShift::set_fft_size(FFTSize p_fft_size)
 
 AudioEffectPitchShift::FFTSize AudioEffectPitchShift::get_fft_size() const { return fft_size; }
 
-void AudioEffectPitchShift::_bind_methods() {}
 
 

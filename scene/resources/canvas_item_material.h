@@ -32,11 +32,11 @@
 
 #include "scene/resources/material.h"
 
-class CanvasItemMaterial : public Material {
-	VLTRCLASS(CanvasItemMaterial, Material);
-
+class CanvasItemMaterial : public Material
+{
 public:
-	enum BlendMode {
+	enum BlendMode
+	{
 		BLEND_MODE_MIX,
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
@@ -45,15 +45,18 @@ public:
 		BLEND_MODE_DISABLED
 	};
 
-	enum LightMode {
+	enum LightMode
+	{
 		LIGHT_MODE_NORMAL,
 		LIGHT_MODE_UNSHADED,
 		LIGHT_MODE_LIGHT_ONLY
 	};
 
 private:
-	union MaterialKey {
-		struct {
+	union MaterialKey
+	{
+		struct
+		{
 			uint32_t blend_mode : 4;
 			uint32_t light_mode : 4;
 			uint32_t particles_animation : 1;
@@ -62,23 +65,22 @@ private:
 
 		uint32_t key = 0;
 
-		static uint32_t hash(const MaterialKey &p_key) {
-			return hash_murmur3_one_32(p_key.key);
-		}
-		bool operator==(const MaterialKey &p_key) const {
-			return key == p_key.key;
-		}
+		static uint32_t hash(const MaterialKey& p_key) { return hash_murmur3_one_32(p_key.key); }
+
+		bool operator==(const MaterialKey& p_key) const { return key == p_key.key; }
 	};
 
-	struct ShaderNames {
+	struct ShaderNames
+	{
 		StringName particles_anim_h_frames;
 		StringName particles_anim_v_frames;
 		StringName particles_anim_loop;
 	};
 
-	static ShaderNames *shader_names;
+	static ShaderNames* shader_names;
 
-	struct ShaderData {
+	struct ShaderData
+	{
 		RID shader;
 		int users = 0;
 	};
@@ -87,7 +89,8 @@ private:
 
 	MaterialKey current_key;
 
-	_FORCE_INLINE_ MaterialKey _compute_key() const {
+	_FORCE_INLINE_ MaterialKey _compute_key() const
+	{
 		MaterialKey mk;
 		mk.key = 0;
 		mk.blend_mode = blend_mode;
@@ -111,10 +114,6 @@ private:
 	int particles_anim_h_frames = 0;
 	int particles_anim_v_frames = 0;
 	bool particles_anim_loop = false;
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	void set_blend_mode(BlendMode p_blend_mode);
@@ -146,5 +145,4 @@ public:
 	virtual ~CanvasItemMaterial();
 };
 
-VARIANT_ENUM_CAST(CanvasItemMaterial::BlendMode)
-VARIANT_ENUM_CAST(CanvasItemMaterial::LightMode)
+

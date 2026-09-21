@@ -28,10 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "image_loader.h"
-
-void ImageFormatLoader::_bind_methods() {}
 
 bool ImageFormatLoader::recognize(const String& p_extension) const
 {
@@ -47,7 +44,7 @@ bool ImageFormatLoader::recognize(const String& p_extension) const
 }
 
 Error ImageFormatLoaderExtension::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
-	BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale)
+	uint32_t p_flags, float p_scale)
 {
 	Error err = ERR_UNAVAILABLE;
 	return err;
@@ -60,10 +57,8 @@ void ImageFormatLoaderExtension::remove_format_loader()
 	ImageLoader::remove_image_format_loader(this);
 }
 
-void ImageFormatLoaderExtension::_bind_methods() {}
-
 Error ImageLoader::load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom,
-	BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale)
+	uint32_t p_flags, float p_scale)
 {
 	ERR_FAIL_COND_V_MSG(
 		p_image.is_null(), ERR_INVALID_PARAMETER, "Can't load an image: invalid Image object.");

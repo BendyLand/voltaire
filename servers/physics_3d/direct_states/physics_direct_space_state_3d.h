@@ -30,8 +30,10 @@
 
 #pragma once
 
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
+=======
+>>>>>>> fix/remove-object
 #include "servers/physics_3d/physics_server_3d_types.h"
 #include "servers/physics_3d/queries/physics_point_query_parameters_3d.h"
 #include "servers/physics_3d/queries/physics_ray_query_parameters_3d.h"
@@ -40,35 +42,25 @@
 class PhysicsDirectSpaceState3D
 {
 private:
-	Dictionary _intersect_ray(PhysicsRayQueryParameters3D* rp_ray_query);
-	Array _intersect_point(
-		PhysicsPointQueryParameters3D* rp_point_query, int p_max_results = 32);
-	Array _intersect_shape(
-		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
-	Array _collide_shape(
-		PhysicsShapeQueryParameters3D* rp_shape_query, int p_max_results = 32);
-	Dictionary _get_rest_info(PhysicsShapeQueryParameters3D* rp_shape_query);
 
 protected:
-	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	virtual bool intersect_ray(
-		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result) = 0;
+		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result);
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
-		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
+		PS3DT::ShapeResult* r_results, int p_result_max);
 	virtual int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
-		PS3DT::ShapeResult* r_results, int p_result_max) = 0;
+		PS3DT::ShapeResult* r_results, int p_result_max);
 	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
-		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr) = 0;
+		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
 	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
-		int p_result_max, int& r_result_count) = 0;
+		int p_result_max, int& r_result_count);
 	virtual bool rest_info(
-		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info) = 0;
+		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info);
 	virtual Vector3 get_closest_point_to_object_volume(
-		RID p_object, const Vector3 p_point) const = 0;
+		RID p_object, const Vector3 p_point) const;
 	PhysicsDirectSpaceState3D();
 };
 

@@ -37,9 +37,6 @@ class Material;
 
 class Shape3D : public Resource
 {
-	VLTRCLASS(Shape3D, Resource);
-	OBJ_SAVE_TYPE_NO(Shape3D);
-	RES_BASE_EXTENSION("shape");
 	RID shape;
 	real_t custom_bias = 0.0;
 	real_t margin = 0.04;
@@ -54,7 +51,6 @@ class Shape3D : public Resource
 #endif // DEBUG_ENABLED
 
 protected:
-	static void _bind_methods();
 
 	_FORCE_INLINE_ RID get_shape() const { return shape; }
 

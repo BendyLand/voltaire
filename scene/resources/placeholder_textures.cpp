@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -54,7 +53,6 @@ RID PlaceholderTexture2D::get_rid() const
 	return rid;
 }
 
-void PlaceholderTexture2D::_bind_methods() {}
 
 PlaceholderTexture2D::PlaceholderTexture2D() {}
 
@@ -96,7 +94,6 @@ RID PlaceholderTexture3D::get_rid() const
 	return rid;
 }
 
-void PlaceholderTexture3D::_bind_methods() {}
 
 PlaceholderTexture3D::PlaceholderTexture3D() {}
 
@@ -146,7 +143,6 @@ RID PlaceholderTextureLayered::get_rid() const
 	return rid;
 }
 
-void PlaceholderTextureLayered::_bind_methods() {}
 
 PlaceholderTextureLayered::PlaceholderTextureLayered(LayeredType p_type) { layered_type = p_type; }
 

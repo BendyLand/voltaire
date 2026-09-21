@@ -32,7 +32,6 @@
 #include "core/io/file_access.h"
 #include "core/io/file_access_encrypted.h"
 #include "core/io/file_access_pack.h" // PACK_HEADER_MAGIC, PACK_FORMAT_VERSION
-#include "core/object/class_db.h"
 #include "core/version.h"
 #include "pck_packer.h"
 
@@ -46,8 +45,6 @@ static int _get_pad(int p_alignment, int p_n)
 
 	return pad;
 }
-
-void PCKPacker::_bind_methods() {}
 
 Error PCKPacker::pck_start(
 	const String& p_pck_path, int p_alignment, const String& p_key, bool p_encrypt_directory)
@@ -277,7 +274,7 @@ Error PCKPacker::flush(bool p_verbose)
 		fhead->store_32(flags);
 
 		if (p_verbose) {
-			print_line(vformat("[%d/%d - %d%%] PCKPacker flush: %s -> %s", i + 1, file_num,
+			__print_line(vformat("[%d/%d - %d%%] PCKPacker flush: %s -> %s", i + 1, file_num,
 				float(i + 1) / file_num * 100, files[i].src_path, files[i].path));
 		}
 	}

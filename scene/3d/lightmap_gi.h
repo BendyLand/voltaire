@@ -42,9 +42,6 @@ class Sky;
 
 class LightmapGIData : public Resource
 {
-	VLTRCLASS(LightmapGIData, Resource);
-	RES_BASE_EXTENSION("lmbake")
-
 public:
 	enum ShadowmaskMode
 	{
@@ -58,11 +55,6 @@ private:
 	// The 'merged' texture atlases actually used by the renderer.
 	Ref<TextureLayered> combined_light_texture;
 	Ref<TextureLayered> combined_shadowmask_texture;
-
-	// The temporary texture atlas arrays which are used for storage.
-	// If a single atlas is too large, it's split and recombined during loading.
-	Array storage_light_textures;
-	Array storage_shadowmask_textures;
 
 	bool uses_spherical_harmonics = false;
 	bool interior = false;
@@ -84,16 +76,10 @@ private:
 
 	Vector<User> users;
 
-	void _set_user_data(const Array& p_data);
-	Array _get_user_data() const;
-	void _set_probe_data(const Dictionary& p_data);
-	Dictionary _get_probe_data() const;
-
 	void _reset_lightmap_textures();
 	void _reset_shadowmask_textures();
 
 protected:
-	static void _bind_methods();
 
 public:
 	void add_user(const NodePath& p_path, const Rect2& p_uv_scale, int p_slice_index,
@@ -108,9 +94,6 @@ public:
 #ifndef DISABLE_DEPRECATED
 	void set_light_texture(const Ref<TextureLayered>& p_light_texture);
 	Ref<TextureLayered> get_light_texture() const;
-
-	void _set_light_textures_data(const Array& p_data);
-	Array _get_light_textures_data() const;
 #endif
 
 	void set_uses_spherical_harmonics(bool p_enable);
@@ -138,11 +121,6 @@ public:
 
 	void clear();
 
-	void set_lightmap_textures(const Array& p_data);
-	Array get_lightmap_textures() const;
-
-	void set_shadowmask_textures(const Array& p_data);
-	Array get_shadowmask_textures() const;
 	void clear_shadowmask_textures();
 	bool has_shadowmask_textures();
 
@@ -153,8 +131,6 @@ public:
 
 class LightmapGI : public VisualInstance3D
 {
-	VLTRCLASS(LightmapGI, VisualInstance3D);
-
 public:
 	enum BakeQuality
 	{
@@ -304,19 +280,18 @@ private:
 		const Vector<Vector3>& probe_positions, LocalVector<Vector3>& new_probe_positions,
 		HashMap<Vector3i, bool>& positions_used, const AABB& p_bounds);
 
-	BakeError _save_and_reimport_atlas_textures(const Ref<Lightmapper> p_lightmapper,
-		const String& p_base_name, Array& r_textures, bool p_is_shadowmask = false) const;
 	void _build_area_light_texture_atlas(const Vector<LightmapGI::LightsFound>& lights_found,
 		HashMap<Ref<Texture2D>, AreaLightAtlasTexture>& r_texture_rects, Size2i& r_atlas_size,
 		int& r_mipmaps) const;
 
 protected:
-	void _validate_property(PropertyInfo& p_property) const;
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:
-	void set_light_data(const Ref<LightmapGIData>& p_data);
 	Ref<LightmapGIData> get_light_data() const;
 
 	void set_bake_quality(BakeQuality p_quality);
@@ -334,7 +309,6 @@ public:
 	void set_directional(bool p_enable);
 	bool is_directional() const;
 
-	void set_shadowmask_mode(LightmapGIData::ShadowmaskMode p_mode);
 	LightmapGIData::ShadowmaskMode get_shadowmask_mode() const;
 
 	void set_use_texture_for_bounces(bool p_enable);
@@ -391,11 +365,5 @@ public:
 
 	LightmapGI();
 };
-
-VARIANT_ENUM_CAST(LightmapGIData::ShadowmaskMode);
-VARIANT_ENUM_CAST(LightmapGI::BakeQuality);
-VARIANT_ENUM_CAST(LightmapGI::GenerateProbes);
-VARIANT_ENUM_CAST(LightmapGI::BakeError);
-VARIANT_ENUM_CAST(LightmapGI::EnvironmentMode);
 
 

@@ -30,11 +30,12 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/os/thread_safe.h"
+#include "core/types.h"
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
-#include "core/variant/type_info.h"
-#include "core/variant/variant.h"
+=======
+>>>>>>> fix/remove-object
 
 class XRInterface;
 class XRTracker;
@@ -57,7 +58,6 @@ class XRServer
 	_THREAD_SAFE_CLASS_
 
 public:
-	mem_unique_ptr<Object> obj;
 	enum XRMode
 	{
 		XRMODE_DEFAULT, /* Default behavior, means we check project settings */
@@ -94,16 +94,8 @@ public:
 private:
 	static XRMode xr_mode;
 
-	LocalVector<Ref<XRInterface>> interfaces;
-	Dictionary trackers;
-
-	Ref<XRInterface> primary_interface; /* we'll identify one interface as primary, this will be
-										   used by our viewports */
 
 	double world_scale = 1.0; /* scale by which we multiply our tracker positions */
-	Transform3D world_origin; /* our world origin point, maps a location in our virtual world to the
-								 origin point in our real world tracking volume */
-	Transform3D reference_frame; /* our reference frame */
 	bool camera_locked_to_origin = false;
 
 	// As we may be updating our main state for our next frame while we're still rendering our
@@ -114,7 +106,9 @@ private:
 		Transform3D world_origin; /* our world origin point, maps a location in our virtual world to
 									 the origin point in our real world tracking volume */
 		Transform3D reference_frame; /* our reference frame */
-	} render_state;
+	};
+
+	RenderState render_state;
 
 	static void _set_render_world_scale(double p_world_scale);
 	static void _set_render_world_origin(const Transform3D& p_world_origin);
@@ -127,7 +121,6 @@ private:
 protected:
 	static XRServer* singleton;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
@@ -210,7 +203,6 @@ public:
 	int get_interface_count() const;
 	Ref<XRInterface> get_interface(int p_index) const;
 	Ref<XRInterface> find_interface(const String& p_name) const;
-	TypedArray<Dictionary> get_interfaces() const;
 
 	/*
 		note, more then one interface can technically be active, especially on mobile, but only one
@@ -227,7 +219,6 @@ public:
 	*/
 	void add_tracker(const Ref<XRTracker>& p_tracker);
 	void remove_tracker(const Ref<XRTracker>& p_tracker);
-	Dictionary get_trackers(int p_tracker_types);
 	Ref<XRTracker> get_tracker(const StringName& p_name) const;
 
 	/*
@@ -253,12 +244,9 @@ public:
 	void end_frame();
 
 	XRServer();
-	~XRServer();
+	~XRServer() = default;
 };
 
 #define XR XRServer
-
-VARIANT_ENUM_CAST(XRServer::TrackerType);
-VARIANT_ENUM_CAST(XRServer::RotationMode);
 
 

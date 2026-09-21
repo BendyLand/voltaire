@@ -32,7 +32,6 @@
 
 #include "core/string/translation.h"
 #include "core/string/translation_domain.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class TranslationServer
 {
@@ -52,7 +51,6 @@ class TranslationServer
 
 	static inline TranslationServer* singleton = nullptr;
 
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	String _standardize_locale_bind_compat_98972(const String& p_locale) const;
@@ -100,8 +98,6 @@ class TranslationServer
 	void init_locale_info();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	_FORCE_INLINE_ static TranslationServer* get_singleton() { return singleton; }
 
 	// Built-in domain accessors. For engine code only, user code should use `get_or_add_domain()`
@@ -127,8 +123,6 @@ public:
 #endif
 
 	bool has_translation(const Ref<Translation>& p_translation) const;
-	Array get_translations() const;
-	Array find_translations(const String& p_locale, bool p_exact) const;
 	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
 
 	Vector<String> get_all_languages() const;

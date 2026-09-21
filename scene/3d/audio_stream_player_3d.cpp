@@ -31,8 +31,6 @@
 #include "audio_stream_player_3d.compat.inc"
 #include "audio_stream_player_3d.h"
 #include "core/config/project_settings.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/3d/audio_listener_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/velocity_tracker_3d.h"
@@ -332,53 +330,6 @@ void AudioStreamPlayer3D::_notification(int p_what)
 	}
 }
 
-#ifndef PHYSICS_3D_DISABLED
-// Interacts with PhysicsServer3D, so can only be called during _physics_process
-Area3D* AudioStreamPlayer3D::_get_overriding_area()
-{
-	if (area_mask == 0) {
-		return nullptr;
-	}
-
-	// check if any area is diverting sound into a bus
-	Ref<World3D> world_3d = get_world_3d();
-	ERR_FAIL_COND_V(world_3d.is_null(), nullptr);
-
-	Vector3 global_pos = get_global_transform().origin;
-
-	PhysicsDirectSpaceState3D* space_state =
-		PhysicsServer3D::get_singleton()->space_get_direct_state(world_3d->get_space());
-
-	PS3DT::ShapeResult sr[MAX_INTERSECT_AREAS];
-
-	PS3DT::PointParameters point_params;
-	point_params.position = global_pos;
-	point_params.collision_mask = area_mask;
-	point_params.collide_with_bodies = false;
-	point_params.collide_with_areas = true;
-
-	int areas = space_state->intersect_point(point_params, sr, MAX_INTERSECT_AREAS);
-
-	for (int i = 0; i < areas; i++) {
-		if (!sr[i].collider) {
-			continue;
-		}
-
-		Area3D* tarea = Object::cast_to<Area3D>(sr[i].collider);
-		if (!tarea) {
-			continue;
-		}
-
-		if (!tarea->is_overriding_audio_bus() && !tarea->is_using_reverb_bus()) {
-			continue;
-		}
-
-		return tarea;
-	}
-	return nullptr;
-}
-#endif // PHYSICS_3D_DISABLED
-
 // Interacts with PhysicsServer3D, so can only be called during _physics_process.
 StringName AudioStreamPlayer3D::_get_actual_bus()
 {
@@ -673,12 +624,6 @@ void AudioStreamPlayer3D::set_volume_linear(float p_volume)
 
 float AudioStreamPlayer3D::get_volume_linear() const { return Math::db_to_linear(get_volume_db()); }
 
-void AudioStreamPlayer3D::set_unit_size(float p_volume)
-{
-	unit_size = p_volume;
-	update_gizmos();
-}
-
 float AudioStreamPlayer3D::get_unit_size() const { return unit_size; }
 
 void AudioStreamPlayer3D::set_max_db(float p_boost) { max_db = p_boost; }
@@ -749,11 +694,7 @@ bool AudioStreamPlayer3D::is_autoplay_enabled() const { return internal->autopla
 
 void AudioStreamPlayer3D::_set_playing(bool p_enable) { internal->set_playing(p_enable); }
 
-void AudioStreamPlayer3D::_validate_property(PropertyInfo& p_property) const
-{
-	internal->validate_property(p_property);
-}
-
+<<<<<<< HEAD
 void AudioStreamPlayer3D::set_max_distance(float p_metres)
 {
 	ERR_FAIL_COND(p_metres < 0.0);
@@ -761,26 +702,15 @@ void AudioStreamPlayer3D::set_max_distance(float p_metres)
 	update_gizmos();
 }
 
+=======
+>>>>>>> fix/remove-object
 float AudioStreamPlayer3D::get_max_distance() const { return max_distance; }
 
 void AudioStreamPlayer3D::set_area_mask(uint32_t p_mask) { area_mask = p_mask; }
 
 uint32_t AudioStreamPlayer3D::get_area_mask() const { return area_mask; }
 
-void AudioStreamPlayer3D::set_emission_angle_enabled(bool p_enable)
-{
-	emission_angle_enabled = p_enable;
-	update_gizmos();
-}
-
 bool AudioStreamPlayer3D::is_emission_angle_enabled() const { return emission_angle_enabled; }
-
-void AudioStreamPlayer3D::set_emission_angle(float p_angle)
-{
-	ERR_FAIL_COND(p_angle < 0 || p_angle > 90);
-	emission_angle = p_angle;
-	update_gizmos();
-}
 
 float AudioStreamPlayer3D::get_emission_angle() const { return emission_angle; }
 
@@ -807,13 +737,6 @@ float AudioStreamPlayer3D::get_attenuation_filter_cutoff_hz() const
 void AudioStreamPlayer3D::set_attenuation_filter_db(float p_db) { attenuation_filter_db = p_db; }
 
 float AudioStreamPlayer3D::get_attenuation_filter_db() const { return attenuation_filter_db; }
-
-void AudioStreamPlayer3D::set_attenuation_model(AttenuationModel p_model)
-{
-	ERR_FAIL_INDEX((int)p_model, 4);
-	attenuation_model = p_model;
-	update_gizmos();
-}
 
 AudioStreamPlayer3D::AttenuationModel AudioStreamPlayer3D::get_attenuation_model() const
 {
@@ -881,32 +804,8 @@ void AudioStreamPlayer3D::set_playback_type(AudioServer::PlaybackType p_playback
 	internal->set_playback_type(p_playback_type);
 }
 
-bool AudioStreamPlayer3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	return internal->set(p_name, p_value);
-}
-
-bool AudioStreamPlayer3D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	return internal->get(p_name, r_ret);
-}
-
-void AudioStreamPlayer3D::_get_property_list(List<PropertyInfo>* p_list) const
-{
-	internal->get_property_list(p_list);
-}
-
-void AudioStreamPlayer3D::_bind_methods() {}
-
-AudioStreamPlayer3D::AudioStreamPlayer3D()
-{
-	internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayer3D::play),
-		callable_mp(this, &AudioStreamPlayer3D::stop), true));
-	velocity_tracker.instantiate();
-	set_disable_scale(true);
-	cached_global_panning_strength = GLOBAL_GET_CACHED(float, "audio/general/3d_panning_strength");
-}
-
 AudioStreamPlayer3D::~AudioStreamPlayer3D() { memdelete(internal); }
 
 
+
+Area3D* AudioStreamPlayer3D::_get_overriding_area() {}

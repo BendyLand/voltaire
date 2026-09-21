@@ -28,15 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "spring_bone_collision_sphere_3d.h"
 
 void SpringBoneCollisionSphere3D::set_radius(float p_radius)
 {
 	radius = p_radius;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 float SpringBoneCollisionSphere3D::get_radius() const { return radius; }
@@ -44,14 +40,10 @@ float SpringBoneCollisionSphere3D::get_radius() const { return radius; }
 void SpringBoneCollisionSphere3D::set_inside(bool p_enabled)
 {
 	inside = p_enabled;
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
 }
 
 bool SpringBoneCollisionSphere3D::is_inside() const { return inside; }
 
-void SpringBoneCollisionSphere3D::_bind_methods() {}
 
 Vector3 SpringBoneCollisionSphere3D::_collide_sphere(const Vector3& p_origin, float p_radius,
 	bool p_inside, float p_bone_radius, float p_bone_length, const Vector3& p_current)

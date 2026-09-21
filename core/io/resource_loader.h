@@ -32,8 +32,6 @@
 
 #include "core/io/resource.h"
 #include "core/io/resource_loader_constants.h"
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/worker_thread_pool.h"
 #include "core/os/thread.h"
 
 namespace CoreBind
@@ -47,8 +45,6 @@ template <int Tag> class SafeBinaryMutex;
 
 class ResourceFormatLoader : public RefCounted
 {
-	VLTRCLASS(ResourceFormatLoader, RefCounted);
-
 public:
 	using CacheMode = ResourceLoaderConstants::CacheMode;
 	static constexpr CacheMode CACHE_MODE_IGNORE = ResourceLoaderConstants::CACHE_MODE_IGNORE;
@@ -58,9 +54,6 @@ public:
 		ResourceLoaderConstants::CACHE_MODE_IGNORE_DEEP;
 	static constexpr CacheMode CACHE_MODE_REPLACE_DEEP =
 		ResourceLoaderConstants::CACHE_MODE_REPLACE_DEEP;
-
-protected:
-	static void _bind_methods();
 
 public:
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
@@ -89,7 +82,7 @@ public:
 
 	virtual String get_import_group_file(const String& p_path) const { return ""; } // no group
 
-	virtual ~ResourceFormatLoader() {}
+	virtual ~ResourceFormatLoader() = default;
 };
 
 typedef void (*ResourceLoadErrorNotify)(const String& p_text);
@@ -191,7 +184,6 @@ private:
 
 	struct ThreadLoadTask
 	{
-		WorkerThreadPool::TaskID task_id = 0; // Used if run on a worker thread from the pool.
 		Thread::ID thread_id =
 			0; // Used if running on an user thread (e.g., simple non-threaded load).
 		int thread_index = -1;
@@ -227,7 +219,6 @@ private:
 		struct ResourceChangedConnection
 		{
 			Resource* source = nullptr;
-			Callable callable;
 			uint32_t flags = 0;
 		};
 
@@ -273,9 +264,6 @@ public:
 
 	static bool is_within_load() { return load_nesting > 0; }
 
-	static void resource_changed_connect(
-		Resource* p_source, const Callable& p_callable, uint32_t p_flags);
-	static void resource_changed_disconnect(Resource* p_source, const Callable& p_callable);
 	static void resource_changed_emit(Resource* p_source);
 
 	static Ref<Resource> load(const String& p_path, const String& p_type_hint = "",

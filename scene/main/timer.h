@@ -43,10 +43,6 @@ class Timer : public Node
 
 	double time_left = -1.0;
 
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
 public:
 	enum TimerProcessCallback
 	{
@@ -54,7 +50,6 @@ public:
 		TIMER_PROCESS_IDLE,
 	};
 
-	void set_wait_time(double p_time);
 	double get_wait_time() const;
 
 	void set_one_shot(bool p_one_shot);
@@ -63,7 +58,6 @@ public:
 	void set_autostart(bool p_start);
 	bool has_autostart() const;
 
-	void start(double p_time = -1);
 	void stop();
 
 	void set_paused(bool p_paused);
@@ -85,7 +79,5 @@ private:
 	TimerProcessCallback timer_process_callback = TIMER_PROCESS_IDLE;
 	void _set_process(bool p_process, bool p_force = false);
 };
-
-VARIANT_ENUM_CAST(Timer::TimerProcessCallback);
 
 

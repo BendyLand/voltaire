@@ -35,55 +35,50 @@
 
 class SubViewport;
 
-class Camera3DEditor : public Control {
-	VLTRCLASS(Camera3DEditor, Control);
-
-	Button *preview = nullptr;
-	Node *node = nullptr;
+class Camera3DEditor : public Control
+{
+	Button* preview = nullptr;
+	Node* node = nullptr;
+<<<<<<< HEAD
 
 	void _pressed();
 
 protected:
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	void edit(Node *p_camera);
+	void edit(Node* p_camera);
+=======
+
+public:
+>>>>>>> fix/remove-object
 	Camera3DEditor();
 };
 
-class Camera3DPreview : public MarginContainer {
-	VLTRCLASS(Camera3DPreview, MarginContainer);
-
-	Camera3D *camera = nullptr;
-	AspectRatioContainer *centering_container = nullptr;
-	SubViewport *sub_viewport = nullptr;
+class Camera3DPreview : public MarginContainer
+{
+	Camera3D* camera = nullptr;
+	AspectRatioContainer* centering_container = nullptr;
+	SubViewport* sub_viewport = nullptr;
 
 	static bool camera_preview_folded;
 
-	void _update_sub_viewport_size();
-	void _project_settings_changed();
 	void _toggle_folding(bool p_folded);
 
 public:
-	Camera3DPreview(Camera3D *p_camera);
+<<<<<<< HEAD
+	Camera3DPreview(Camera3D* p_camera);
+=======
+	Camera3DPreview(Camera3D* p_camera) : camera(p_camera) {}
+>>>>>>> fix/remove-object
 };
 
-class EditorInspectorPluginCamera3DPreview : public EditorInspectorPluginTexture {
-	VLTRCLASS(EditorInspectorPluginCamera3DPreview, EditorInspectorPluginTexture);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class Camera3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(Camera3DEditorPlugin, EditorPlugin);
-
+class Camera3DEditorPlugin : public EditorPlugin
+{
 public:
 	virtual String get_plugin_name() const override { return "Camera3D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
-	Camera3DEditorPlugin();
+	Camera3DEditorPlugin() = default;
 };
+
+

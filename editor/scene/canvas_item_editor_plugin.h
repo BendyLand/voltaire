@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 
@@ -57,7 +56,6 @@ class VSplitContainer;
 class CanvasItemEditorSelectedItem
 {
 public:
-	mem_unique_ptr<Object> obj;
 	Transform2D prev_xform;
 	Rect2 prev_rect;
 	Vector2 prev_pivot;
@@ -68,15 +66,10 @@ public:
 	Rect2 pre_drag_rect;
 
 	List<real_t> pre_drag_bones_length;
-	List<Dictionary> pre_drag_bones_undo_state;
-
-	Dictionary undo_state;
 };
 
 class CanvasItemEditor : public VBoxContainer
 {
-	VLTRCLASS(CanvasItemEditor, VBoxContainer);
-
 public:
 	enum Tool
 	{
@@ -330,23 +323,6 @@ private:
 
 	uint64_t bone_last_frame = 0;
 
-	struct BoneKey
-	{
-		ObjectID from;
-		ObjectID to;
-
-		_FORCE_INLINE_ bool operator<(const BoneKey& p_key) const
-		{
-			if (from == p_key.from) {
-				return to < p_key.to;
-			}
-			else {
-				return from < p_key.from;
-			}
-		}
-	};
-
-	HashMap<BoneKey, BoneList> bone_list;
 	MenuButton* skeleton_menu = nullptr;
 
 	struct PoseClipboard
@@ -354,7 +330,6 @@ private:
 		Vector2 pos;
 		Vector2 scale;
 		real_t rot = 0;
-		ObjectID id;
 	};
 
 	List<PoseClipboard> pose_clipboard;
@@ -459,19 +434,16 @@ private:
 	Vector2 _anchor_to_position(const Control* p_control, Vector2 anchor);
 	Vector2 _position_to_anchor(const Control* p_control, Vector2 position);
 
-	void _prepare_view_menu();
 	void _popup_callback(int p_op);
 	bool updating_scroll = false;
 	void _update_scroll(real_t);
 	void _update_scrollbars();
 	void _snap_changed();
 	void _selection_result_pressed(int);
-	void _selection_menu_hide();
 	void _add_node_pressed(int p_result);
 	void _adjust_new_node_position(Node* p_node);
 	void _reset_create_position();
 	void _update_editor_settings();
-	void _prepare_grid_menu();
 	void _on_grid_menu_id_pressed(int p_id);
 	void _reset_transform(TransformType p_type);
 	void _update_oversampling();
@@ -499,15 +471,14 @@ private:
 		const Transform2D& p_canvas_xform = Transform2D(), bool include_locked_nodes = true);
 	Rect2 _get_encompassing_rect(const Node* p_node);
 
-	CanvasItemEditorSelectedItem* _get_editor_data(Object* p_what);
-
 	void _insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing);
 
+<<<<<<< HEAD
 	void _keying_changed();
 
-	virtual void shortcut_input(const Ref<InputEvent>& p_ev) override;
-
 	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
+=======
+>>>>>>> fix/remove-object
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);
 	void _draw_percentage_at_position(real_t p_value, Point2 p_position, Side p_side);
 	void _draw_straight_line(Point2 p_from, Point2 p_to, Color p_color);
@@ -534,14 +505,12 @@ private:
 
 	bool _gui_input_anchors(const Ref<InputEvent>& p_event);
 	bool _gui_input_move(const Ref<InputEvent>& p_event);
-	bool _gui_input_open_scene_on_double_click(const Ref<InputEvent>& p_event);
 	bool _gui_input_scale(const Ref<InputEvent>& p_event);
 	bool _gui_input_pivot(const Ref<InputEvent>& p_event);
 	bool _gui_input_resize(const Ref<InputEvent>& p_event);
 	bool _gui_input_rotate(const Ref<InputEvent>& p_event);
 	bool _gui_input_select(const Ref<InputEvent>& p_event);
 	bool _gui_input_ruler_tool(const Ref<InputEvent>& p_event);
-	bool _gui_input_zoom_or_pan(const Ref<InputEvent>& p_event, bool p_already_accepted);
 	bool _gui_input_rulers_and_guides(const Ref<InputEvent>& p_event);
 	bool _gui_input_hover(const Ref<InputEvent>& p_event);
 
@@ -573,9 +542,6 @@ private:
 	VBoxContainer* controls_vb = nullptr;
 	Button* button_center_view = nullptr;
 	EditorZoomWidget* zoom_widget = nullptr;
-	void _update_zoom(real_t p_zoom);
-	void _shortcut_zoom_set(real_t p_zoom);
-	void _zoom_on_position(real_t p_zoom, Point2 p_position = Point2());
 	void _button_toggle_local_space(bool p_status);
 	void _button_toggle_smart_snap(bool p_status);
 	void _button_toggle_grid_snap(bool p_status);
@@ -592,7 +558,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-	static void _bind_methods();
 
 	static CanvasItemEditor* singleton;
 
@@ -622,8 +587,6 @@ public:
 
 	static CanvasItemEditor* get_singleton() { return singleton; }
 
-	Dictionary get_state() const;
-	void set_state(const Dictionary& p_state);
 	void clear();
 
 	void add_control_to_menu_panel(Control* p_control);
@@ -657,8 +620,6 @@ public:
 
 	Vector2 get_grid_offset() const { return grid_offset; }
 
-	void edit(CanvasItem* p_canvas_item);
-
 	void focus_selection();
 	void center_at(const Point2& p_pos);
 
@@ -674,8 +635,6 @@ public:
 
 class CanvasItemEditorPlugin : public EditorPlugin
 {
-	VLTRCLASS(CanvasItemEditorPlugin, EditorPlugin);
-
 	CanvasItemEditor* canvas_item_editor = nullptr;
 
 protected:
@@ -686,22 +645,13 @@ public:
 
 	bool has_main_screen() const override { return true; }
 
-	virtual void edit(Object* p_object) override;
-	virtual bool handles(Object* p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-	virtual Dictionary get_state() const override;
-	virtual void set_state(const Dictionary& p_state) override;
-	virtual void clear() override;
-
 	CanvasItemEditor* get_canvas_item_editor() { return canvas_item_editor; }
 
-	CanvasItemEditorPlugin();
+	CanvasItemEditorPlugin() = default;
 };
 
 class CanvasItemEditorViewport : public Control
 {
-	VLTRCLASS(CanvasItemEditorViewport, Control);
-
 	// The type of node that will be created when dropping texture into the viewport.
 	String default_texture_node_type;
 	// Node types that are available to select from when dropping texture into viewport.
@@ -718,13 +668,13 @@ class CanvasItemEditorViewport : public Control
 	RichTextLabel* tooltip_panel = nullptr;
 	Ref<ButtonGroup> button_group;
 
+<<<<<<< HEAD
 	void _on_mouse_exit();
-	void _on_select_texture_node_type(Object* selected);
+=======
+>>>>>>> fix/remove-object
 	void _on_change_type_confirmed();
-	void _on_change_type_closed();
 
 	void _create_preview(const Vector<String>& files) const;
-	void _remove_preview();
 
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
 	bool _is_any_texture_selected() const;
@@ -742,11 +692,11 @@ protected:
 	void _notification(int p_what);
 
 public:
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
-
+<<<<<<< HEAD
 	void set_hint_label(const String& p_title, const String& p_description) const;
 
+=======
+>>>>>>> fix/remove-object
 	CanvasItemEditorViewport(CanvasItemEditor* p_canvas_item_editor);
 	~CanvasItemEditorViewport();
 };

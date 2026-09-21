@@ -31,7 +31,6 @@
 #ifndef DISABLE_DEPRECATED
 
 #include "animation_player.h"
-#include "core/object/class_db.h"
 
 void AnimationPlayer::_set_process_callback_bind_compat_80813(
 	AnimationPlayer::AnimationProcessCallback p_mode)
@@ -44,13 +43,6 @@ AnimationPlayer::AnimationProcessCallback
 AnimationPlayer::_get_process_callback_bind_compat_80813() const
 {
 	return static_cast<AnimationProcessCallback>(static_cast<int>(get_callback_mode_process()));
-}
-
-void AnimationPlayer::_set_method_call_mode_bind_compat_80813(
-	AnimationPlayer::AnimationMethodCallMode p_mode)
-{
-	set_callback_mode_method(
-		static_cast<AnimationMixer::AnimationCallbackModeMethod>(static_cast<int>(p_mode)));
 }
 
 AnimationPlayer::AnimationMethodCallMode
@@ -66,15 +58,6 @@ NodePath AnimationPlayer::_get_root_bind_compat_80813() const { return get_root_
 void AnimationPlayer::_seek_bind_compat_80813(double p_time, bool p_update)
 {
 	seek(p_time, p_update, false);
-}
-
-Vector<String> AnimationPlayer::_get_queue_bind_compat_110767()
-{
-	Vector<String> queue;
-	for (const Variant& E : get_queue()) {
-		queue.push_back(E);
-	}
-	return queue;
 }
 
 String AnimationPlayer::_get_current_animation_bind_compat_110767() const

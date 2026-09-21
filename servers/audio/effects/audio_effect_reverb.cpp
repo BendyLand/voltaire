@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_reverb.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectReverbInstance::process(
@@ -127,7 +126,6 @@ float AudioEffectReverb::get_wet() const { return wet; }
 
 float AudioEffectReverb::get_hpf() const { return hpf; }
 
-void AudioEffectReverb::_bind_methods() {}
 
 AudioEffectReverb::AudioEffectReverb()
 {

@@ -34,8 +34,6 @@
 
 class VideoStreamPlayback : public Resource
 {
-	VLTRCLASS(VideoStreamPlayback, Resource);
-
 public:
 	typedef int (*AudioMixCallback)(void* p_udata, const float* p_data, int p_frames);
 
@@ -44,7 +42,6 @@ protected:
 	void* mix_udata = nullptr;
 	mutable int _channel_count = 0; // Used only to assist with bounds checking in mix_audio.
 
-	static void _bind_methods();
 	int mix_audio(int num_frames, PackedFloat32Array buffer = {}, int offset = 0);
 
 public:
@@ -76,12 +73,7 @@ public:
 
 class VideoStream : public Resource
 {
-	VLTRCLASS(VideoStream, Resource);
-	OBJ_SAVE_TYPE_NO(VideoStream);
-
 protected:
-	static void _bind_methods();
-
 	String file;
 	int audio_track = 0;
 

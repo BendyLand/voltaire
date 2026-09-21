@@ -29,32 +29,36 @@
 /**************************************************************************/
 
 #include "panel_container.h"
-
 #include "scene/theme/theme_db.h"
 
-Size2 PanelContainer::get_minimum_size() const {
+<<<<<<< HEAD
+Size2 PanelContainer::get_minimum_size() const
+{
 	Size2 ms;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
+		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
+=======
+Size2 PanelContainer::get_desired_size() const { return Size2(); }
+>>>>>>> fix/remove-object
 
-		Size2 minsize = c->get_bound_minimum_size();
-		ms = ms.max(minsize);
-	}
+Size2 PanelContainer::get_minimum_size() const { return Size2(); }
 
+<<<<<<< HEAD
 	if (theme_cache.panel_style.is_valid()) {
 		ms += theme_cache.panel_style->get_minimum_size();
 	}
 	return ms;
 }
 
-Size2 PanelContainer::get_desired_size() const {
+Size2 PanelContainer::get_desired_size() const
+{
 	Size2 ds;
 
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
+		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
@@ -68,7 +72,10 @@ Size2 PanelContainer::get_desired_size() const {
 	return ds;
 }
 
-Size2 PanelContainer::get_inner_combined_maximum_size() const {
+=======
+>>>>>>> fix/remove-object
+Size2 PanelContainer::get_inner_combined_maximum_size() const
+{
 	Size2 ms = Container::get_inner_combined_maximum_size();
 
 	if (theme_cache.panel_style.is_valid()) {
@@ -78,7 +85,8 @@ Size2 PanelContainer::get_inner_combined_maximum_size() const {
 	return ms;
 }
 
-Vector<int> PanelContainer::get_allowed_size_flags_horizontal() const {
+Vector<int> PanelContainer::get_allowed_size_flags_horizontal() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_SHRINK_BEGIN);
@@ -87,7 +95,8 @@ Vector<int> PanelContainer::get_allowed_size_flags_horizontal() const {
 	return flags;
 }
 
-Vector<int> PanelContainer::get_allowed_size_flags_vertical() const {
+Vector<int> PanelContainer::get_allowed_size_flags_vertical() const
+{
 	Vector<int> flags;
 	flags.append(SIZE_FILL);
 	flags.append(SIZE_SHRINK_BEGIN);
@@ -96,38 +105,41 @@ Vector<int> PanelContainer::get_allowed_size_flags_vertical() const {
 	return flags;
 }
 
-void PanelContainer::_notification(int p_what) {
+void PanelContainer::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_DRAW: {
-			RID ci = get_canvas_item();
-			theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
-		} break;
+	case NOTIFICATION_DRAW: {
+		RID ci = get_canvas_item();
+		theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
+	} break;
+<<<<<<< HEAD
 
-		case NOTIFICATION_SORT_CHILDREN: {
-			Size2 size = get_size();
-			Point2 ofs;
-			if (theme_cache.panel_style.is_valid()) {
-				size -= theme_cache.panel_style->get_minimum_size();
-				ofs += theme_cache.panel_style->get_offset();
+	case NOTIFICATION_SORT_CHILDREN: {
+		Size2 size = get_size();
+		Point2 ofs;
+		if (theme_cache.panel_style.is_valid()) {
+			size -= theme_cache.panel_style->get_minimum_size();
+			ofs += theme_cache.panel_style->get_offset();
+		}
+
+		for (int i = 0; i < get_child_count(); i++) {
+			Control* c = as_sortable_control(get_child(i));
+			if (!c) {
+				continue;
 			}
 
-			for (int i = 0; i < get_child_count(); i++) {
-				Control *c = as_sortable_control(get_child(i));
-				if (!c) {
-					continue;
-				}
-
-				fit_child_in_rect(c, Rect2(ofs, size));
-			}
-		} break;
+			fit_child_in_rect(c, Rect2(ofs, size));
+		}
+	} break;
+=======
+>>>>>>> fix/remove-object
 	}
 }
 
-void PanelContainer::_bind_methods() {
-	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_STYLEBOX, PanelContainer, panel_style, "panel");
-}
-
-PanelContainer::PanelContainer() {
+PanelContainer::PanelContainer()
+{
 	// Has visible stylebox, so stop by default.
 	set_mouse_filter(MOUSE_FILTER_STOP);
 }
+
+

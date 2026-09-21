@@ -32,9 +32,7 @@
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
-#include "core/object/class_db.h"
 
-void PhysicsMaterial::_bind_methods() {}
 
 void PhysicsMaterial::set_friction(real_t p_val)
 {

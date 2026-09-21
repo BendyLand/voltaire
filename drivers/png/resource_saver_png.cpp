@@ -77,23 +77,19 @@ Vector<uint8_t> ResourceSaverPNG::save_image_to_buffer(const Ref<Image>& p_img)
 	return buffer;
 }
 
-bool ResourceSaverPNG::recognize(const Ref<Resource>& p_resource) const
-{
-	return (p_resource.is_valid() && p_resource->obj->is_class("ImageTexture"));
-}
-
-void ResourceSaverPNG::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-	if (Object::cast_to<ImageTexture>(*p_resource)) {
-		p_extensions->push_back("png");
-	}
-}
-
 ResourceSaverPNG::ResourceSaverPNG()
 {
 	Image::save_png_func = &save_image;
 	Image::save_png_buffer_func = &save_image_to_buffer;
+}
+
+Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) { return OK; }
+
+bool ResourceSaverPNG::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceSaverPNG::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
 }
 
 

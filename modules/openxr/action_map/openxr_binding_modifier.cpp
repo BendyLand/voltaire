@@ -30,24 +30,21 @@
 
 #include "openxr_binding_modifier.h"
 
-#include "core/object/class_db.h" // IWYU pragma: keep. `VLTRVIRTUAL_BIND` macro.
+<<<<<<< HEAD
 
 PackedByteArray OpenXRBindingModifier::get_ip_modification() {
 	return PackedByteArray();
 }
+=======
+PackedByteArray OpenXRBindingModifier::get_ip_modification() { return PackedByteArray(); }
+>>>>>>> fix/remove-object
 
 #include "openxr_binding_modifier.h"
 
-void OpenXRBindingModifier::_bind_methods() {
-    // Bind class methods to ClassDB here
-}
+String OpenXRBindingModifier::get_description() const { return ""; }
 
-String OpenXRBindingModifier::get_description() const {
-    return "";
-}
+OpenXRBindingModifier::OpenXRBindingModifier() {}
 
-OpenXRBindingModifier::OpenXRBindingModifier() {
-}
+OpenXRBindingModifier::~OpenXRBindingModifier() {}
 
-OpenXRBindingModifier::~OpenXRBindingModifier() {
-}
+

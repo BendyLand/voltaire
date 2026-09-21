@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "multiplayer_peer.h"
 
@@ -67,7 +66,6 @@ bool MultiplayerPeer::is_refusing_new_connections() const { return refuse_connec
 
 bool MultiplayerPeer::is_server_relay_supported() const { return false; }
 
-void MultiplayerPeer::_bind_methods() {}
 
 /*************/
 
@@ -109,5 +107,4 @@ bool MultiplayerPeerExtension::is_server_relay_supported() const
 	return MultiplayerPeer::is_server_relay_supported();
 }
 
-void MultiplayerPeerExtension::_bind_methods() {}
 

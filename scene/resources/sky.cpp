@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 #include "sky.h"
 
@@ -65,7 +64,6 @@ Ref<Material> Sky::get_material() const { return sky_material; }
 
 RID Sky::get_rid() const { return sky; }
 
-void Sky::_bind_methods() {}
 
 Sky::Sky() { sky = RS::get_singleton()->sky_create(); }
 

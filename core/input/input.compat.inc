@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "input.h"
 
 void Input::_vibrate_handheld_bind_compat_91143(int p_duration_ms)

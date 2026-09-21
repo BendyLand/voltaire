@@ -30,6 +30,4 @@
 
 #include "gltf_texture_sampler.h"
 
-#include "core/object/class_db.h"
 
-void GLTFTextureSampler::_bind_methods() {}

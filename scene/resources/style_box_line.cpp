@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 #include "style_box_line.h"
 
@@ -107,6 +106,5 @@ void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 	vs->canvas_item_add_rect(p_canvas_item, r, color);
 }
 
-void StyleBoxLine::_bind_methods() {}
 
 

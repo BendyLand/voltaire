@@ -33,7 +33,6 @@
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/immediate_mesh.h"
 class RootMotionView : public VisualInstance3D {
-	VLTRCLASS(RootMotionView, VisualInstance3D);
 
 public:
 	Ref<ImmediateMesh> immediate;
@@ -51,7 +50,6 @@ public:
 
 private:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_animation_mixer(const NodePath &p_path);

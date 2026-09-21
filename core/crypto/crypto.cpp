@@ -28,10 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "crypto.h"
-
-/// Resources
 
 CryptoKey* (*CryptoKey::_create)(bool p_notify_postinitialize) = nullptr;
 
@@ -43,8 +40,6 @@ CryptoKey* CryptoKey::create(bool p_notify_postinitialize)
 	return nullptr;
 }
 
-void CryptoKey::_bind_methods() {}
-
 X509Certificate* (*X509Certificate::_create)(bool p_notify_postinitialize) = nullptr;
 
 X509Certificate* X509Certificate::create(bool p_notify_postinitialize)
@@ -54,10 +49,6 @@ X509Certificate* X509Certificate::create(bool p_notify_postinitialize)
 	}
 	return nullptr;
 }
-
-void X509Certificate::_bind_methods() {}
-
-/// TLSOptions
 
 Ref<TLSOptions> TLSOptions::client(
 	Ref<X509Certificate> p_trusted_chain, const String& p_common_name_override)
@@ -89,12 +80,6 @@ Ref<TLSOptions> TLSOptions::server(Ref<CryptoKey> p_own_key, Ref<X509Certificate
 	return opts;
 }
 
-void TLSOptions::_bind_methods() {}
-
-/// HMACContext
-
-void HMACContext::_bind_methods() {}
-
 HMACContext* (*HMACContext::_create)(bool p_notify_postinitialize) = nullptr;
 
 HMACContext* HMACContext::create(bool p_notify_postinitialize)
@@ -104,8 +89,6 @@ HMACContext* HMACContext::create(bool p_notify_postinitialize)
 	}
 	ERR_FAIL_V_MSG(nullptr, "HMACContext is not available when the mbedtls module is disabled.");
 }
-
-/// Crypto
 
 void (*Crypto::_load_default_certificates)(const String& p_path) = nullptr;
 Crypto* (*Crypto::_create)(bool p_notify_postinitialize) = nullptr;
@@ -125,16 +108,16 @@ void Crypto::load_default_certificates(const String& p_path)
 	}
 }
 
-PackedByteArray Crypto::hmac_digest(HashingContext::HashType p_hash_type,
-	const PackedByteArray& p_key, const PackedByteArray& p_msg)
+Vector<uint8_t> Crypto::hmac_digest(HashingContext::HashType p_hash_type,
+	const Vector<uint8_t>& p_key, const Vector<uint8_t>& p_msg)
 {
 	Ref<HMACContext> ctx = Ref<HMACContext>(HMACContext::create());
 	ERR_FAIL_COND_V_MSG(
-		ctx.is_null(), PackedByteArray(), "HMAC is not available without mbedtls module.");
+		ctx.is_null(), Vector<uint8_t>(), "HMAC is not available without mbedtls module.");
 	Error err = ctx->start(p_hash_type, p_key);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	err = ctx->update(p_msg);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
+	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	return ctx->finish();
 }
 
@@ -143,7 +126,7 @@ PackedByteArray Crypto::hmac_digest(HashingContext::HashType p_hash_type,
 // @see:
 // https://paragonie.com/blog/2015/11/preventing-timing-attacks-on-string-comparison-with-double-hmac-strategy
 bool Crypto::constant_time_compare(
-	const PackedByteArray& p_trusted, const PackedByteArray& p_received)
+	const Vector<uint8_t>& p_trusted, const Vector<uint8_t>& p_received)
 {
 	const uint8_t* t = p_trusted.ptr();
 	const uint8_t* r = p_received.ptr();
@@ -160,7 +143,5 @@ bool Crypto::constant_time_compare(
 	}
 	return v == 0;
 }
-
-void Crypto::_bind_methods() {}
 
 

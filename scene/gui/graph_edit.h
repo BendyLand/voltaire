@@ -48,8 +48,6 @@ class VScrollBar;
 
 class GraphEditFilter : public Control
 {
-	VLTRCLASS(GraphEditFilter, Control);
-
 	friend class GraphEdit;
 	friend class GraphEditMinimap;
 
@@ -63,8 +61,6 @@ public:
 
 class GraphEditMinimap : public Control
 {
-	VLTRCLASS(GraphEditMinimap, Control);
-
 	friend class GraphEdit;
 	friend class GraphEditFilter;
 
@@ -97,12 +93,9 @@ class GraphEditMinimap : public Control
 	Vector2 _convert_from_graph_position(const Vector2& p_position);
 	Vector2 _convert_to_graph_position(const Vector2& p_position);
 
-	virtual void gui_input(const Ref<InputEvent>& p_ev) override;
-
 	void _adjust_graph_scroll(const Vector2& p_offset);
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
@@ -115,8 +108,6 @@ public:
 
 class GraphEdit : public Control
 {
-	VLTRCLASS(GraphEdit, Control);
-
 public:
 	struct Connection : RefCounted
 	{
@@ -324,8 +315,6 @@ private:
 	HashMap<StringName, HashSet<StringName>> frame_attached_nodes;
 	HashMap<StringName, StringName> linked_parent_map;
 
-	Dictionary type_names;
-
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
 	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
 
@@ -349,7 +338,6 @@ private:
 	void _update_scrollbars();
 	void _update_scroll_offset();
 	void _scrollbar_moved(double);
-	virtual void gui_input(const Ref<InputEvent>& p_ev) override;
 	void _top_connection_layer_input(const Ref<InputEvent>& p_ev);
 
 	float _get_shader_line_width();
@@ -365,13 +353,6 @@ private:
 
 	bool is_in_port_hotzone(
 		const Vector2& p_pos, const Vector2& p_mouse_pos, const Vector2i& p_port_size, bool p_left);
-
-	void set_connections(const TypedArray<Dictionary>& p_connections);
-	TypedArray<Dictionary> _get_connection_list() const;
-	Dictionary _get_closest_connection_at_point(
-		const Vector2& p_point, float p_max_distance = 4.0) const;
-	TypedArray<Dictionary> _get_connections_intersecting_with_rect(const Rect2& p_rect) const;
-	TypedArray<Dictionary> _get_connection_list_from_node(const StringName& p_node) const;
 
 	Rect2 _compute_shrinked_frame_rect(const GraphFrame* p_frame);
 	void _set_drag_frame_attached_nodes(GraphFrame* p_frame, bool p_drag);
@@ -391,7 +372,6 @@ private:
 
 #ifndef DISABLE_DEPRECATED
 	bool _is_arrange_nodes_button_hidden_bind_compat_81582() const;
-	void _set_arrange_nodes_button_hidden_bind_compat_81582(bool p_enable);
 	PackedVector2Array _get_connection_line_bind_compat_86158(
 		const Vector2& p_from, const Vector2& p_to);
 	Error _connect_node_bind_compat_97449(
@@ -405,7 +385,6 @@ protected:
 	virtual void remove_child_notify(Node* p_child) override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 #endif
@@ -453,9 +432,6 @@ public:
 	void start_keyboard_connecting(GraphNode* p_node, int p_in_port, int p_out_port);
 	void end_keyboard_connecting(GraphNode* p_node, int p_in_port, int p_out_port);
 
-	Dictionary get_type_names() const;
-	void set_type_names(const Dictionary& p_names);
-
 	virtual bool is_node_hover_valid(
 		const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port);
 
@@ -498,17 +474,11 @@ public:
 	void set_minimap_enabled(bool p_enable);
 	bool is_minimap_enabled() const;
 
-	void set_show_menu(bool p_hidden);
 	bool is_showing_menu() const;
-	void set_show_zoom_label(bool p_hidden);
 	bool is_showing_zoom_label() const;
-	void set_show_grid_buttons(bool p_hidden);
 	bool is_showing_grid_buttons() const;
-	void set_show_zoom_buttons(bool p_hidden);
 	bool is_showing_zoom_buttons() const;
-	void set_show_minimap_button(bool p_hidden);
 	bool is_showing_minimap_button() const;
-	void set_show_arrange_button(bool p_hidden);
 	bool is_showing_arrange_button() const;
 
 	Control* get_top_layer() const { return top_layer; }
@@ -561,8 +531,5 @@ public:
 
 	GraphEdit();
 };
-
-VARIANT_ENUM_CAST(GraphEdit::PanningScheme);
-VARIANT_ENUM_CAST(GraphEdit::GridPattern);
 
 

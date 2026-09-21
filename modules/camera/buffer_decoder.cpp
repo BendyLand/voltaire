@@ -28,59 +28,63 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <linux/videodev2.h>
 #include "buffer_decoder.h"
-
 #include "servers/camera/camera_feed.h"
 
-#include <linux/videodev2.h>
+void BufferDecoder::decode(StreamingBuffer p_buffer) {}
 
-BufferDecoder::BufferDecoder(CameraFeed *p_camera_feed) {
+BufferDecoder::~BufferDecoder() {}
+
+BufferDecoder::BufferDecoder(CameraFeed* p_camera_feed)
+{
 	camera_feed = p_camera_feed;
 	width = camera_feed->get_format().width;
 	height = camera_feed->get_format().height;
 	image.instantiate();
 }
 
-AbstractYuyvBufferDecoder::AbstractYuyvBufferDecoder(CameraFeed *p_camera_feed) :
-		BufferDecoder(p_camera_feed) {
+AbstractYuyvBufferDecoder::AbstractYuyvBufferDecoder(CameraFeed* p_camera_feed)
+	: BufferDecoder(p_camera_feed)
+{
 	switch (camera_feed->get_format().pixel_format) {
-		case V4L2_PIX_FMT_YYUV:
-			component_indexes = new int[4]{ 0, 1, 2, 3 };
-			break;
-		case V4L2_PIX_FMT_YVYU:
-			component_indexes = new int[4]{ 0, 2, 3, 1 };
-			break;
-		case V4L2_PIX_FMT_UYVY:
-			component_indexes = new int[4]{ 1, 3, 0, 2 };
-			break;
-		case V4L2_PIX_FMT_VYUY:
-			component_indexes = new int[4]{ 1, 3, 2, 0 };
-			break;
-		default:
-			component_indexes = new int[4]{ 0, 2, 1, 3 };
+	case V4L2_PIX_FMT_YYUV:
+		component_indexes = new int[4]{0, 1, 2, 3};
+		break;
+	case V4L2_PIX_FMT_YVYU:
+		component_indexes = new int[4]{0, 2, 3, 1};
+		break;
+	case V4L2_PIX_FMT_UYVY:
+		component_indexes = new int[4]{1, 3, 0, 2};
+		break;
+	case V4L2_PIX_FMT_VYUY:
+		component_indexes = new int[4]{1, 3, 2, 0};
+		break;
+	default:
+		component_indexes = new int[4]{0, 2, 1, 3};
 	}
 }
 
-AbstractYuyvBufferDecoder::~AbstractYuyvBufferDecoder() {
-	delete[] component_indexes;
-}
+AbstractYuyvBufferDecoder::~AbstractYuyvBufferDecoder() { delete[] component_indexes; }
 
-SeparateYuyvBufferDecoder::SeparateYuyvBufferDecoder(CameraFeed *p_camera_feed) :
-		AbstractYuyvBufferDecoder(p_camera_feed) {
+SeparateYuyvBufferDecoder::SeparateYuyvBufferDecoder(CameraFeed* p_camera_feed)
+	: AbstractYuyvBufferDecoder(p_camera_feed)
+{
 	y_image_data.resize(width * height);
 	cbcr_image_data.resize(width * height);
 	y_image.instantiate();
 	cbcr_image.instantiate();
 }
 
-void SeparateYuyvBufferDecoder::decode(StreamingBuffer p_buffer) {
-	uint8_t *y_dst = (uint8_t *)y_image_data.ptrw();
-	uint8_t *uv_dst = (uint8_t *)cbcr_image_data.ptrw();
-	uint8_t *src = (uint8_t *)p_buffer.start;
-	uint8_t *y0_src = src + component_indexes[0];
-	uint8_t *y1_src = src + component_indexes[1];
-	uint8_t *u_src = src + component_indexes[2];
-	uint8_t *v_src = src + component_indexes[3];
+void SeparateYuyvBufferDecoder::decode(StreamingBuffer p_buffer)
+{
+	uint8_t* y_dst = (uint8_t*)y_image_data.ptrw();
+	uint8_t* uv_dst = (uint8_t*)cbcr_image_data.ptrw();
+	uint8_t* src = (uint8_t*)p_buffer.start;
+	uint8_t* y0_src = src + component_indexes[0];
+	uint8_t* y1_src = src + component_indexes[1];
+	uint8_t* u_src = src + component_indexes[2];
+	uint8_t* v_src = src + component_indexes[3];
 
 	for (int i = 0; i < width * height; i += 2) {
 		*y_dst++ = *y0_src;
@@ -96,28 +100,32 @@ void SeparateYuyvBufferDecoder::decode(StreamingBuffer p_buffer) {
 
 	if (y_image.is_valid()) {
 		y_image->set_data(width, height, false, Image::FORMAT_L8, y_image_data);
-	} else {
+	}
+	else {
 		y_image.instantiate(width, height, false, Image::FORMAT_RGB8, y_image_data);
 	}
 	if (cbcr_image.is_valid()) {
 		cbcr_image->set_data(width, height, false, Image::FORMAT_L8, cbcr_image_data);
-	} else {
+	}
+	else {
 		cbcr_image.instantiate(width, height, false, Image::FORMAT_RGB8, cbcr_image_data);
 	}
 
 	camera_feed->set_ycbcr_images(y_image, cbcr_image);
 }
 
-YuyvToGrayscaleBufferDecoder::YuyvToGrayscaleBufferDecoder(CameraFeed *p_camera_feed) :
-		AbstractYuyvBufferDecoder(p_camera_feed) {
+YuyvToGrayscaleBufferDecoder::YuyvToGrayscaleBufferDecoder(CameraFeed* p_camera_feed)
+	: AbstractYuyvBufferDecoder(p_camera_feed)
+{
 	image_data.resize(width * height);
 }
 
-void YuyvToGrayscaleBufferDecoder::decode(StreamingBuffer p_buffer) {
-	uint8_t *dst = (uint8_t *)image_data.ptrw();
-	uint8_t *src = (uint8_t *)p_buffer.start;
-	uint8_t *y0_src = src + component_indexes[0];
-	uint8_t *y1_src = src + component_indexes[1];
+void YuyvToGrayscaleBufferDecoder::decode(StreamingBuffer p_buffer)
+{
+	uint8_t* dst = (uint8_t*)image_data.ptrw();
+	uint8_t* src = (uint8_t*)p_buffer.start;
+	uint8_t* y0_src = src + component_indexes[0];
+	uint8_t* y1_src = src + component_indexes[1];
 
 	for (int i = 0; i < width * height; i += 2) {
 		*dst++ = *y0_src;
@@ -129,25 +137,28 @@ void YuyvToGrayscaleBufferDecoder::decode(StreamingBuffer p_buffer) {
 
 	if (image.is_valid()) {
 		image->set_data(width, height, false, Image::FORMAT_L8, image_data);
-	} else {
+	}
+	else {
 		image.instantiate(width, height, false, Image::FORMAT_RGB8, image_data);
 	}
 
 	camera_feed->set_rgb_image(image);
 }
 
-YuyvToRgbBufferDecoder::YuyvToRgbBufferDecoder(CameraFeed *p_camera_feed) :
-		AbstractYuyvBufferDecoder(p_camera_feed) {
+YuyvToRgbBufferDecoder::YuyvToRgbBufferDecoder(CameraFeed* p_camera_feed)
+	: AbstractYuyvBufferDecoder(p_camera_feed)
+{
 	image_data.resize(width * height * 3);
 }
 
-void YuyvToRgbBufferDecoder::decode(StreamingBuffer p_buffer) {
-	uint8_t *src = (uint8_t *)p_buffer.start;
-	uint8_t *y0_src = src + component_indexes[0];
-	uint8_t *y1_src = src + component_indexes[1];
-	uint8_t *u_src = src + component_indexes[2];
-	uint8_t *v_src = src + component_indexes[3];
-	uint8_t *dst = (uint8_t *)image_data.ptrw();
+void YuyvToRgbBufferDecoder::decode(StreamingBuffer p_buffer)
+{
+	uint8_t* src = (uint8_t*)p_buffer.start;
+	uint8_t* y0_src = src + component_indexes[0];
+	uint8_t* y1_src = src + component_indexes[1];
+	uint8_t* u_src = src + component_indexes[2];
+	uint8_t* v_src = src + component_indexes[3];
+	uint8_t* dst = (uint8_t*)image_data.ptrw();
 
 	for (int i = 0; i < width * height; i += 2) {
 		int u = *u_src;
@@ -172,41 +183,48 @@ void YuyvToRgbBufferDecoder::decode(StreamingBuffer p_buffer) {
 
 	if (image.is_valid()) {
 		image->set_data(width, height, false, Image::FORMAT_RGB8, image_data);
-	} else {
+	}
+	else {
 		image.instantiate(width, height, false, Image::FORMAT_RGB8, image_data);
 	}
 
 	camera_feed->set_rgb_image(image);
 }
 
-CopyBufferDecoder::CopyBufferDecoder(CameraFeed *p_camera_feed, bool p_rgba) :
-		BufferDecoder(p_camera_feed) {
+CopyBufferDecoder::CopyBufferDecoder(CameraFeed* p_camera_feed, bool p_rgba)
+	: BufferDecoder(p_camera_feed)
+{
 	rgba = p_rgba;
 	image_data.resize(width * height * (rgba ? 4 : 2));
 }
 
-void CopyBufferDecoder::decode(StreamingBuffer p_buffer) {
-	uint8_t *dst = (uint8_t *)image_data.ptrw();
+void CopyBufferDecoder::decode(StreamingBuffer p_buffer)
+{
+	uint8_t* dst = (uint8_t*)image_data.ptrw();
 	memcpy(dst, p_buffer.start, p_buffer.length);
 
 	if (image.is_valid()) {
-		image->set_data(width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
-	} else {
-		image.instantiate(width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
+		image->set_data(
+			width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
+	}
+	else {
+		image.instantiate(
+			width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
 	}
 
 	camera_feed->set_rgb_image(image);
 }
 
-JpegBufferDecoder::JpegBufferDecoder(CameraFeed *p_camera_feed) :
-		BufferDecoder(p_camera_feed) {
-}
+JpegBufferDecoder::JpegBufferDecoder(CameraFeed* p_camera_feed) : BufferDecoder(p_camera_feed) {}
 
-void JpegBufferDecoder::decode(StreamingBuffer p_buffer) {
+void JpegBufferDecoder::decode(StreamingBuffer p_buffer)
+{
 	image_data.resize(p_buffer.length);
-	uint8_t *dst = (uint8_t *)image_data.ptrw();
+	uint8_t* dst = (uint8_t*)image_data.ptrw();
 	memcpy(dst, p_buffer.start, p_buffer.length);
 	if (image->load_jpg_from_buffer(image_data) == OK) {
 		camera_feed->set_rgb_image(image);
 	}
 }
+
+

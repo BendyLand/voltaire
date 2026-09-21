@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
+import os
 import re
 import shlex
 import subprocess
@@ -56,11 +58,23 @@ def get_run_arg():
         sys.exit(1)
 
 
+def get_num_workers():
+    for i, arg in enumerate(sys.argv):
+        if arg == "-j":
+            if i + 1 < len(sys.argv) and sys.argv[i + 1].isdigit():
+                return int(sys.argv[i + 1])
+            return os.cpu_count() or 4
+        if arg.startswith("-j") and arg[2:].isdigit():
+            return int(arg[2:])
+    return os.cpu_count() or 4
+
+
 def try_exec(cmd, shell):
     try:
         subprocess.run(cmd, check=True, shell=shell)
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
+        print(f"\n[FATAL] Command failed with exit code {e.returncode}: {cmd}")
+        sys.exit(e.returncode)
 
 
 def get_shell_command(string):
@@ -132,10 +146,8 @@ def get_changed_files():
         if not output_paths:
             break
         discovered_files = set(output_paths.split())
-        # Identify files not yet seen in previous iterations
         new_files = discovered_files - all_files
         all_files.update(new_files)
-        # Prepare only the newly discovered headers for the next pass
         headers_to_trace = {f for f in new_files if f.endswith(HEADER_EXTS)}
     result = list(all_files)
     result = remove_headers(result)
@@ -193,7 +205,6 @@ def generate_comp_file(name, obj_list_name):
     comp_commands = []
     object_files = []
     obj_pattern = re.compile(r"-o\s+([^\s]+|\"[^\"]+\")")
-    # the first 7 lines are scons boilerplate
     for line in lines[6:]:
         line_str = line.strip()
         if not line_str or line_str.startswith(("ar ", "ranlib ", "scons:", "INFO:")):
@@ -222,57 +233,98 @@ options = {"gcc", "g++", "wayland-scanner"}
 lines = read_file("comp")
 
 
+def run_command_serial(line):
+    line_str = line.strip()
+    if not line_str:
+        return
+    for option in options:
+        if line_str.startswith(option):
+            shell = "wayland-scanner" in line_str
+            cmd = line_str if shell else get_shell_command(line_str)
+            print(line_str)
+            try_exec(cmd, shell)
+            return
+    cmd = construct_python_command(line_str)
+    print(line_str)
+    try_exec(get_shell_command(cmd), False)
+
+
+def compile_single_file(cmd_line):
+    cmd_line = cmd_line.strip()
+    if not cmd_line:
+        return 0
+    print(cmd_line)
+    cmd = get_shell_command(cmd_line)
+    res = subprocess.run(cmd, shell=False)
+    return res.returncode
+
+
+def run_parallel_compilation(compilers, workers):
+    print(f"Compiling {len(compilers)} files across {workers} workers...")
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
+    futures = {executor.submit(compile_single_file, cmd): cmd for cmd in compilers}
+
+    for future in concurrent.futures.as_completed(futures):
+        returncode = future.result()
+        if returncode != 0:
+            cmd = futures[future]
+            print(f"\n[FATAL] Compilation failed with exit code {returncode}:")
+            print(f"{cmd}")
+            # executor.shutdown(wait=False, cancel_futures=True)
+            sys._exit(returncode)
+
+    executor.shutdown(wait=True)
+
+
 def run_full_build():
+    workers = get_num_workers()
+    generators = []
+    compilers = []
     for line in lines:
-        found = False
-        for option in options:
-            if line.startswith(option):
-                found = True
-                shell = False
-                if "wayland-scanner" in line:
-                    shell = True
-                    cmd = line
-                else:
-                    cmd = get_shell_command(line)
-                print(line)
-                try_exec(cmd, shell)
-        # if nothing executed by here, search for python funtion
-        if not found:
-            if line:
-                cmd = construct_python_command(line)
-                print(line)
-                try_exec(get_shell_command(cmd), False)
+        line_str = line.strip()
+        if not line_str:
+            continue
+        if line_str.startswith(("gcc", "g++")):
+            compilers.append(line_str)
+        else:
+            generators.append(line_str)
+
+    for gen_cmd in generators:
+        run_command_serial(gen_cmd)
+
+    if compilers:
+        run_parallel_compilation(compilers, workers)
 
 
 def run_incremental_build():
+    workers = get_num_workers()
     changed_files = get_changed_files()
+    if not changed_files:
+        return
     compilation_commands = get_compilation_cmds(changed_files, lines)
+
+    generators = []
+    compilers = []
     for line in compilation_commands:
-        found = False
-        for option in options:
-            if line.startswith(option):
-                found = True
-                shell = False
-                if "wayland-scanner" in line:
-                    shell = True
-                    cmd = line
-                else:
-                    cmd = get_shell_command(line)
-                print(f"{line}\n")
-                try_exec(cmd, shell)
-        # if nothing executed by here, search for python funtion
-        if not found:
-            if line:
-                cmd = construct_python_command(line)
-                print(f"{line}\n")
-                try_exec(get_shell_command(cmd), False)
+        line_str = line.strip()
+        if not line_str:
+            continue
+        if line_str.startswith(("gcc", "g++")):
+            compilers.append(line_str)
+        else:
+            generators.append(line_str)
+
+    for gen_cmd in generators:
+        run_command_serial(gen_cmd)
+
+    if compilers:
+        run_parallel_compilation(compilers, workers)
 
 
 # TODO: make platform agnostic
 def link_object_files():
-    subprocess.run(
-        shlex.split(
-            "g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl"
-        ),
-        check=True,
+    print("Linking binary...")
+    cmd = shlex.split(
+        "g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl"
     )
+    try_exec(cmd, shell=False)

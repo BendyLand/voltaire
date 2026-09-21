@@ -29,9 +29,6 @@
 /**************************************************************************/
 
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/message_queue.h"
-#include "core/object/undo_redo.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/version.h"
@@ -50,31 +47,7 @@
 #include "scene/resources/font.h"
 #include "servers/display/display_server.h"
 
-void EditorLog::_error_handler(void* p_self, const char* p_func, const char* p_file, int p_line,
-	const char* p_error, const char* p_errorexp, bool p_editor_notify, ErrorHandlerType p_type)
-{
-	EditorLog* self = static_cast<EditorLog*>(p_self);
-
-	String err_str;
-	if (p_errorexp && p_errorexp[0]) {
-		err_str = String::utf8(p_errorexp).replace("[", "[lb]");
-	}
-	else {
-		err_str = vformat("[url]%s:%d[/url] - %s", String::utf8(p_file).replace("[", "[lb]"),
-			p_line, String::utf8(p_error).replace("[", "[lb]"));
-	}
-
-	MessageType message_type = p_type == ERR_HANDLER_WARNING ? MSG_TYPE_WARNING : MSG_TYPE_ERROR;
-
-	if (!Thread::is_main_thread()) {
-		MessageQueue::get_main_singleton()->push_callable(
-			callable_mp(self, &EditorLog::add_message), err_str, message_type);
-	}
-	else {
-		self->add_message(err_str, message_type);
-	}
-}
-
+<<<<<<< HEAD
 void EditorLog::_update_theme()
 {
 	const Ref<Font> normal_font =
@@ -162,15 +135,6 @@ void EditorLog::_update_theme()
 		Color(1, 1, 1, 0.6);
 }
 
-void EditorLog::_editor_settings_changed()
-{
-	int new_line_limit = int(EDITOR_GET("run/output/max_lines"));
-	if (new_line_limit != line_limit) {
-		line_limit = new_line_limit;
-		_rebuild_log();
-	}
-}
-
 void EditorLog::_notification(int p_what)
 {
 	switch (p_what) {
@@ -193,18 +157,6 @@ void EditorLog::_notification(int p_what)
 	}
 }
 
-void EditorLog::shortcut_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventKey> key = p_event;
-	if (key.is_valid() && key->is_pressed() && !key->is_echo()) {
-		if (ED_IS_SHORTCUT("editor/open_search", p_event)) {
-			search_box->grab_focus();
-			search_box->select_all();
-			accept_event();
-		}
-	}
-}
-
 void EditorLog::_set_collapse(bool p_collapse)
 {
 	collapse = p_collapse;
@@ -217,28 +169,6 @@ void EditorLog::_start_state_save_timer()
 	if (!is_loading_state) {
 		save_state_timer->start();
 	}
-}
-
-void EditorLog::_save_state()
-{
-	for (const KeyValue<MessageType, LogFilter*>& E : type_filter_map) {
-		EditorSettings::get_singleton()->set_setting(
-			"_editor_log_filter_" + itos(E.key), E.value->is_active());
-	}
-	EditorSettings::get_singleton()->set_setting("_editor_log_collapse", collapse);
-	EditorSettings::save();
-}
-
-void EditorLog::_load_state()
-{
-	is_loading_state = true;
-
-	for (const KeyValue<MessageType, LogFilter*>& E : type_filter_map) {
-		E.value->set_active(EDITOR_DEF("_editor_log_filter_" + itos(E.key), true));
-	}
-	collapse_button->set_pressed(EDITOR_DEF("_editor_log_collapse", false));
-
-	is_loading_state = false;
 }
 
 void EditorLog::_meta_clicked(const String& p_meta)
@@ -293,6 +223,8 @@ void EditorLog::_meta_clicked(const String& p_meta)
 	}
 }
 
+=======
+>>>>>>> fix/remove-object
 void EditorLog::_clear_request()
 {
 	log->clear();
@@ -303,53 +235,13 @@ void EditorLog::_clear_request()
 
 void EditorLog::clear() { _clear_request(); }
 
-void EditorLog::_process_message(const String& p_msg, MessageType p_type, bool p_clear)
-{
-	if (messages.size() > 0 && messages[messages.size() - 1].text == p_msg &&
-		messages[messages.size() - 1].type == p_type) {
-		// If previous message is the same as the new one, increase previous count rather than
-		// adding another instance to the messages list.
-		LogMessage& previous = messages.write[messages.size() - 1];
-		previous.count++;
-
-		_add_log_line(previous, collapse);
-	}
-	else {
-		// Different message to the previous one received.
-		LogMessage message(p_msg, p_type, p_clear);
-		_add_log_line(message);
-		messages.push_back(message);
-	}
-
-	type_filter_map[p_type]->set_message_count(type_filter_map[p_type]->get_message_count() + 1);
-}
-
-void EditorLog::add_message(const String& p_msg, MessageType p_type)
-{
-	// Make text split by new lines their own message.
-	// See #41321 for reasoning. At time of writing, multiple print()'s in running projects
-	// get grouped together and sent to the editor log as one message. This can mess with the
-	// search functionality (see the comments on the PR above for more details). This behavior
-	// also matches that of other IDE's.
-	Vector<String> lines = p_msg.split("\n", true);
-	int line_count = lines.size();
-
-	for (int i = 0; i < line_count; i++) {
-		_process_message(lines[i], p_type, i == line_count - 1);
-	}
-}
-
 void EditorLog::_set_dock_tab_icon(Ref<Texture2D> p_icon)
 {
 	set_dock_icon(p_icon);
 	set_force_show_icon(p_icon.is_valid());
 }
 
-void EditorLog::register_undo_redo(UndoRedo* p_undo_redo)
-{
-	p_undo_redo->set_commit_notify_callback(_undo_redo_cbk, this);
-}
-
+<<<<<<< HEAD
 void EditorLog::_undo_redo_cbk(void* p_self, const String& p_name)
 {
 	EditorLog* self = static_cast<EditorLog*>(p_self);
@@ -411,6 +303,8 @@ void EditorLog::_rebuild_log()
 	}
 }
 
+=======
+>>>>>>> fix/remove-object
 bool EditorLog::_check_display_message(LogMessage& p_message)
 {
 	bool filter_active = type_filter_map[p_message.type]->is_active();
@@ -440,94 +334,7 @@ bool EditorLog::_check_display_message(LogMessage& p_message)
 	return filter_active && search_match;
 }
 
-void EditorLog::_add_log_line(LogMessage& p_message, bool p_replace_previous)
-{
-	if (!is_inside_tree()) {
-		// The log will be built all at once when it enters the tree and has its theme items.
-		return;
-	}
-
-	if (unlikely(log->is_updating())) {
-		// The new message arrived during log RTL text processing/redraw (invalid BiDi control
-		// characters / font error), ignore it to avoid RTL data corruption.
-		return;
-	}
-
-	// Only add the message to the log if it passes the filters.
-	if (!_check_display_message(p_message)) {
-		return;
-	}
-
-	if (p_replace_previous) {
-		// Remove last line if replacing, as it will be replace by the next added line.
-		// Why "- 2"? RichTextLabel is weird. When you add a line with add_newline(), it also adds
-		// an element to the list of lines which is null/blank, but it still counts as a line. So if
-		// you remove the last line (count - 1) you are actually removing nothing...
-		log->remove_paragraph(log->get_paragraph_count() - 2);
-	}
-
-	switch (p_message.type) {
-	case MSG_TYPE_STD: {
-	} break;
-	case MSG_TYPE_STD_RICH: {
-	} break;
-	case MSG_TYPE_ERROR: {
-		log->push_color(theme_cache.error_color);
-		Ref<Texture2D> icon = theme_cache.error_icon;
-		log->add_image(icon);
-		log->push_bold();
-		log->add_text(U" ERROR: ");
-		log->pop(); // bold
-		_set_dock_tab_icon(icon);
-	} break;
-	case MSG_TYPE_WARNING: {
-		log->push_color(theme_cache.warning_color);
-		Ref<Texture2D> icon = theme_cache.warning_icon;
-		log->add_image(icon);
-		log->push_bold();
-		log->add_text(U" WARNING: ");
-		log->pop(); // bold
-		_set_dock_tab_icon(icon);
-	} break;
-	case MSG_TYPE_EDITOR: {
-		// Distinguish editor messages from messages printed by the project
-		log->push_color(theme_cache.message_color);
-	} break;
-	}
-
-	// If collapsing, add the count of this message in bold at the start of the line.
-	if (collapse && p_message.count > 1) {
-		log->push_bold();
-		log->add_text(vformat("(%s) ", itos(p_message.count)));
-		log->pop();
-	}
-
-	// Note that errors and warnings only support BBCode in the file part of the message.
-	if (p_message.type == MSG_TYPE_STD_RICH || p_message.type == MSG_TYPE_ERROR ||
-		p_message.type == MSG_TYPE_WARNING) {
-		log->append_text(p_message.text);
-	}
-	else {
-		log->add_text(p_message.text);
-	}
-	if (p_message.clear || p_message.type != MSG_TYPE_STD_RICH) {
-		log->pop_all(); // Pop all unclosed tags.
-	}
-	log->add_newline();
-
-	if (p_replace_previous) {
-		// Force sync last line update (skip if number of unprocessed log messages is too large to
-		// avoid editor lag).
-		if (log->get_pending_paragraphs() < 100) {
-			log->wait_until_finished();
-		}
-	}
-
-	while (log->get_paragraph_count() > line_limit + 1) {
-		log->remove_paragraph(0, true);
-	}
-}
-
+<<<<<<< HEAD
 void EditorLog::_set_filter_active(bool p_active, MessageType p_message_type)
 {
 	type_filter_map[p_message_type]->set_active(p_active);
@@ -537,131 +344,13 @@ void EditorLog::_set_filter_active(bool p_active, MessageType p_message_type)
 
 void EditorLog::_search_changed(const String& p_text) { _rebuild_log(); }
 
+=======
+>>>>>>> fix/remove-object
 void EditorLog::_reset_message_counts()
 {
 	for (const KeyValue<MessageType, LogFilter*>& E : type_filter_map) {
 		E.value->set_message_count(0);
 	}
-}
-
-EditorLog::EditorLog()
-{
-	set_name(TTRC("Output"));
-	set_icon_name("Output");
-	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_output_bottom_panel",
-		TTRC("Toggle Output Dock"), KeyModifierMask::ALT | Key::O));
-	set_default_slot(EditorDock::DOCK_SLOT_BOTTOM);
-	set_available_layouts(EditorDock::DOCK_LAYOUT_HORIZONTAL | EditorDock::DOCK_LAYOUT_FLOATING);
-	set_process_shortcut_input(true);
-	set_shortcut_context(this);
-
-	save_state_timer = memnew(Timer);
-	save_state_timer->set_wait_time(2);
-	save_state_timer->set_one_shot(true);
-	save_state_timer->connect("timeout", callable_mp(this, &EditorLog::_save_state));
-	add_child(save_state_timer);
-
-	line_limit = int(EDITOR_GET("run/output/max_lines"));
-	EditorSettings::get_singleton()->obj->connect(
-		"settings_changed", callable_mp(this, &EditorLog::_editor_settings_changed));
-
-	HBoxContainer* hb = memnew(HBoxContainer);
-	add_child(hb);
-
-	VBoxContainer* vb_left = memnew(VBoxContainer);
-	vb_left->set_custom_minimum_size(Size2(0, 90 * EDSCALE));
-	vb_left->set_v_size_flags(SIZE_EXPAND_FILL);
-	vb_left->set_h_size_flags(SIZE_EXPAND_FILL);
-	hb->add_child(vb_left);
-
-	// Log - Rich Text Label.
-	log = memnew(RichTextLabel);
-	log->set_threaded(true);
-	log->set_use_bbcode(true);
-	log->set_scroll_follow(true);
-	log->set_selection_enabled(true);
-	log->set_context_menu_enabled(true);
-	log->set_focus_mode(FOCUS_CLICK);
-	log->set_v_size_flags(SIZE_EXPAND_FILL);
-	log->set_h_size_flags(SIZE_EXPAND_FILL);
-	log->set_deselect_on_focus_loss_enabled(false);
-	log->connect("meta_clicked", callable_mp(this, &EditorLog::_meta_clicked));
-	vb_left->add_child(log);
-
-	HFlowContainer* bottom_hf = memnew(HFlowContainer);
-	bottom_hf->set_alignment(FlowContainer::ALIGNMENT_END);
-	vb_left->add_child(bottom_hf);
-
-	// Clear.
-	clear_button = memnew(Button);
-	clear_button->set_accessibility_name(TTRC("Clear Log"));
-	clear_button->set_theme_type_variation("BottomPanelButton");
-	clear_button->set_focus_mode(FOCUS_ACCESSIBILITY);
-	clear_button->set_shortcut(ED_SHORTCUT("editor/clear_output", TTRC("Clear Output"),
-		KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT | Key::K));
-	clear_button->connect(SceneStringName(pressed), callable_mp(this, &EditorLog::_clear_request));
-	bottom_hf->add_child(clear_button);
-
-	// Collapse.
-	collapse_button = memnew(Button);
-	collapse_button->set_theme_type_variation("BottomPanelButton");
-	collapse_button->set_focus_mode(FOCUS_ACCESSIBILITY);
-	collapse_button->set_tooltip_text(
-		TTR("Collapse duplicate messages into one log entry. Shows number of occurrences."));
-	collapse_button->set_toggle_mode(true);
-	collapse_button->set_pressed(false);
-	collapse_button->connect(
-		SceneStringName(toggled), callable_mp(this, &EditorLog::_set_collapse));
-	bottom_hf->add_child(collapse_button);
-
-	// Search box
-	search_box = memnew(LineEdit);
-	search_box->set_custom_minimum_size(Vector2(150 * EDSCALE, 0));
-	search_box->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	search_box->set_placeholder(TTRC("Filter Messages"));
-	search_box->set_accessibility_name(TTRC("Filter Messages"));
-	search_box->set_clear_button_enabled(true);
-	search_box->connect(
-		SceneStringName(text_changed), callable_mp(this, &EditorLog::_search_changed));
-	bottom_hf->add_child(search_box);
-
-	HBoxContainer* hbox = memnew(HBoxContainer);
-	bottom_hf->add_child(hbox);
-
-	// Message Type Filters.
-	LogFilter* std_filter = memnew(LogFilter(MSG_TYPE_STD));
-	std_filter->initialize_button(TTRC("Standard Messages"),
-		TTRC("Toggle visibility of standard output messages."),
-		callable_mp(this, &EditorLog::_set_filter_active));
-	hbox->add_child(std_filter->toggle_button);
-	type_filter_map.insert(MSG_TYPE_STD, std_filter);
-	type_filter_map.insert(MSG_TYPE_STD_RICH, std_filter);
-
-	LogFilter* error_filter = memnew(LogFilter(MSG_TYPE_ERROR));
-	error_filter->initialize_button(TTRC("Errors"), TTRC("Toggle visibility of errors."),
-		callable_mp(this, &EditorLog::_set_filter_active));
-	hbox->add_child(error_filter->toggle_button);
-	type_filter_map.insert(MSG_TYPE_ERROR, error_filter);
-
-	LogFilter* warning_filter = memnew(LogFilter(MSG_TYPE_WARNING));
-	warning_filter->initialize_button(TTRC("Warnings"), TTRC("Toggle visibility of warnings."),
-		callable_mp(this, &EditorLog::_set_filter_active));
-	hbox->add_child(warning_filter->toggle_button);
-	type_filter_map.insert(MSG_TYPE_WARNING, warning_filter);
-
-	LogFilter* editor_filter = memnew(LogFilter(MSG_TYPE_EDITOR));
-	editor_filter->initialize_button(TTRC("Editor Messages"),
-		TTRC("Toggle visibility of editor messages."),
-		callable_mp(this, &EditorLog::_set_filter_active));
-	hbox->add_child(editor_filter->toggle_button);
-	type_filter_map.insert(MSG_TYPE_EDITOR, editor_filter);
-
-	add_message(VLTR_VERSION_FULL_NAME
-		" (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.");
-
-	eh.errfunc = _error_handler;
-	eh.userdata = this;
-	add_error_handler(&eh);
 }
 
 void EditorLog::deinit() { remove_error_handler(&eh); }

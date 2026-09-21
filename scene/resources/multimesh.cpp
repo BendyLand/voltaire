@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "multimesh.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -426,7 +425,6 @@ void MultiMesh::set_transform_format(TransformFormat p_transform_format)
 
 MultiMesh::TransformFormat MultiMesh::get_transform_format() const { return transform_format; }
 
-void MultiMesh::_bind_methods() {}
 
 MultiMesh::MultiMesh() { multimesh = RenderingServer::get_singleton()->multimesh_create(); }
 

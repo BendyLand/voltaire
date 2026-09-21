@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/variant/callable_bind.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 
@@ -49,83 +48,26 @@ class SpinBox;
 
 class ConnectDialog : public ConfirmationDialog
 {
-	VLTRCLASS(ConnectDialog, ConfirmationDialog);
 
 public:
 	struct ConnectionData
 	{
-		Object* source = nullptr;
-		Object* target = nullptr;
 		StringName signal;
 		StringName method;
 		uint32_t flags = 0;
 		int unbinds = 0;
-		Vector<Variant> binds;
 
 		ConnectionData() {}
-
-		ConnectionData(const Object::Connection& p_connection)
-		{
-			source = p_connection.signal.get_object();
-			signal = p_connection.signal.get_name();
-			target = p_connection.callable.get_object();
-			flags = p_connection.flags;
-
-			Callable base_callable;
-			if (p_connection.callable.is_custom()) {
-				CallableCustomBind* ccb =
-					dynamic_cast<CallableCustomBind*>(p_connection.callable.get_custom());
-				if (ccb) {
-					binds = ccb->get_binds();
-					unbinds = ccb->get_unbound_arguments_count();
-
-					base_callable = ccb->get_callable();
-				}
-
-				CallableCustomUnbind* ccu =
-					dynamic_cast<CallableCustomUnbind*>(p_connection.callable.get_custom());
-				if (ccu) {
-					ccu->get_bound_arguments(binds);
-					unbinds = ccu->get_unbinds();
-					base_callable = ccu->get_callable();
-				}
-			}
-			else {
-				base_callable = p_connection.callable;
-			}
-			method = base_callable.get_method();
-		}
-
-		Callable get_callable() const
-		{
-			Callable callable = Callable(target, method);
-
-			if (!binds.is_empty()) {
-				const Variant** argptrs = (const Variant**)alloca(sizeof(Variant*) * binds.size());
-				for (int i = 0; i < binds.size(); i++) {
-					argptrs[i] = &binds[i];
-				}
-				callable = callable.bindp(argptrs, binds.size());
-			}
-
-			if (unbinds > 0) {
-				callable = callable.unbind(unbinds);
-			}
-
-			return callable;
-		}
 	};
 
 private:
 	Label* connect_to_label = nullptr;
 	LineEdit* from_signal = nullptr;
 	LineEdit* filter_nodes = nullptr;
-	Object* source = nullptr;
 	ConnectionData source_connection_data;
 	StringName signal;
 	PackedStringArray signal_args;
 	LineEdit* dst_method = nullptr;
-	ConnectDialogBinds* cdbinds = nullptr;
 	bool edit_mode = false;
 	bool first_popup = true;
 	NodePath dst_path;
@@ -160,12 +102,8 @@ private:
 	void _focus_currently_connected();
 
 	void _method_selected();
-	void _create_method_tree_items(const List<MethodInfo>& p_methods, TreeItem* p_parent_item);
-	List<MethodInfo> _filter_method_list(const List<MethodInfo>& p_methods,
-		const MethodInfo& p_signal, const String& p_search_string) const;
 	void _update_method_tree();
 	void _method_check_button_pressed(const CheckButton* p_button);
-	void _open_method_popup();
 
 	void _unbind_count_changed(double p_count);
 	void _add_bind();
@@ -177,12 +115,8 @@ private:
 protected:
 	virtual void _post_popup() override;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	static StringName generate_method_callback_name(
-		Object* p_source, const String& p_signal_name, Object* p_target);
-	Object* get_source() const;
 	ConnectionData get_source_connection_data() const;
 	StringName get_signal_name() const;
 	PackedStringArray get_signal_args() const;
@@ -191,15 +125,11 @@ public:
 	StringName get_dst_method_name() const;
 	void set_dst_method(const StringName& p_method);
 	int get_unbinds() const;
-	Vector<Variant> get_binds() const;
-	String get_signature(const MethodInfo& p_method, PackedStringArray* r_arg_names = nullptr);
 
 	bool get_deferred() const;
 	bool get_one_shot() const;
 	bool get_append_source() const;
 	bool is_editing() const;
-
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
 
 	void init(
 		const ConnectionData& p_cd, const PackedStringArray& p_signal_args, bool p_edit = false);
@@ -209,18 +139,8 @@ public:
 	~ConnectDialog();
 };
 
-//////////////////////////////////////////
-
-// Custom `Tree` needed to use `EditorHelpBit` to display signal documentation.
-class ConnectionsDockTree : public Tree
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
-};
-
 class ConnectionsDock : public VBoxContainer
 {
-	VLTRCLASS(ConnectionsDock, VBoxContainer);
-
 	enum TreeItemType
 	{
 		TREE_ITEM_TYPE_ROOT,
@@ -253,9 +173,11 @@ class ConnectionsDock : public VBoxContainer
 	VBoxContainer* holder = nullptr;
 	Label* select_an_object = nullptr;
 
-	Object* selected_object = nullptr;
+<<<<<<< HEAD
 	ConnectionsDockTree* tree = nullptr;
 
+=======
+>>>>>>> fix/remove-object
 	ConfirmationDialog* disconnect_all_dialog = nullptr;
 	ConnectDialog* connect_dialog = nullptr;
 	Button* connect_button = nullptr;
@@ -275,30 +197,28 @@ class ConnectionsDock : public VBoxContainer
 	void _disconnect_all();
 
 	void _tree_item_selected();
+<<<<<<< HEAD
 	void _tree_item_activated();
 	TreeItemType _get_item_type(const TreeItem& p_item) const;
-	bool _is_connection_inherited(Object::Connection& p_connection);
+=======
+>>>>>>> fix/remove-object
 
 	void _open_connection_dialog(TreeItem& p_item);
 	void _open_edit_connection_dialog(TreeItem& p_item);
 	void _go_to_method(TreeItem& p_item);
 
 	void _handle_class_menu_option(int p_option);
-	void _class_menu_about_to_popup();
 	void _handle_signal_menu_option(int p_option);
 	void _signal_menu_about_to_popup();
 	void _handle_slot_menu_option(int p_option);
 	void _slot_menu_about_to_popup();
 	void _tree_gui_input(const Ref<InputEvent>& p_event);
-	void _close();
 
 protected:
 	void _connect_pressed();
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	void set_object(Object* p_object);
 	void update_tree();
 
 	ConnectionsDock();

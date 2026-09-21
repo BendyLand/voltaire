@@ -60,6 +60,4 @@ uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait) {
 	}
 }
 
-/******************/
-
 RenderingDeviceDriver::~RenderingDeviceDriver() {}

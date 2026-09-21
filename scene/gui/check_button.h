@@ -32,10 +32,10 @@
 
 #include "scene/gui/button.h"
 
-class CheckButton : public Button {
-	VLTRCLASS(CheckButton, Button);
-
-	struct ThemeCache {
+class CheckButton : public Button
+{
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int check_v_offset = 0;
 		Ref<StyleBox> normal_style;
@@ -51,16 +51,24 @@ class CheckButton : public Button {
 
 		Color button_checked_color;
 		Color button_unchecked_color;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 protected:
 	Size2 get_icon_size() const;
 	virtual Size2 get_minimum_size() const override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	CheckButton(const String &p_text = String());
+<<<<<<< HEAD
+	CheckButton(const String& p_text = String());
 	~CheckButton();
+=======
+	CheckButton(const String& p_text = String()) : Button(p_text) {}
+	~CheckButton() = default;
+>>>>>>> fix/remove-object
 };
+
+

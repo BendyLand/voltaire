@@ -86,8 +86,6 @@ class ScrollBar : public Range
 	void _drag_node_exit();
 	void _drag_node_input(const Ref<InputEvent>& p_input);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
-
 protected:
 	struct ThemeCache
 	{
@@ -112,7 +110,6 @@ protected:
 	} theme_cache;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static inline const int PAGE_DIVISOR = 8;
@@ -138,7 +135,6 @@ public:
 class HScrollBar : public ScrollBar
 {
 protected:
-	static void _bind_methods();
 
 public:
 	HScrollBar() : ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
@@ -147,7 +143,6 @@ public:
 class VScrollBar : public ScrollBar
 {
 protected:
-	static void _bind_methods();
 
 public:
 	VScrollBar() : ScrollBar(VERTICAL) { set_h_size_flags(0); }

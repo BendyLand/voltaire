@@ -30,7 +30,6 @@
 
 #include "audio_stream_polyphonic.compat.inc"
 #include "audio_stream_polyphonic.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 constexpr uint64_t ID_MASK = 0xFFFFFFFF;
@@ -57,7 +56,6 @@ void AudioStreamPolyphonic::set_polyphony(int p_voices)
 
 int AudioStreamPolyphonic::get_polyphony() const { return polyphony; }
 
-void AudioStreamPolyphonic::_bind_methods() {}
 
 AudioStreamPolyphonic::AudioStreamPolyphonic() {}
 
@@ -352,7 +350,6 @@ void AudioStreamPlaybackPolyphonic::set_sample_playback(const Ref<AudioSamplePla
 	}
 }
 
-void AudioStreamPlaybackPolyphonic::_bind_methods() {}
 
 AudioStreamPlaybackPolyphonic::AudioStreamPlaybackPolyphonic() {}
 

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "dtls_server.h"
 
 DTLSServer* DTLSServer::create(bool p_notify_postinitialize)
@@ -40,7 +39,5 @@ DTLSServer* DTLSServer::create(bool p_notify_postinitialize)
 }
 
 bool DTLSServer::is_available() { return available; }
-
-void DTLSServer::_bind_methods() {}
 
 

@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "scene/gui/popup.h"
 #include "scene/gui/split_container.h"
@@ -48,8 +47,6 @@ class StyleBoxFlat;
 
 class DockSplitContainer : public SplitContainer
 {
-	VLTRCLASS(DockSplitContainer, SplitContainer);
-
 private:
 	bool is_updating = false;
 
@@ -68,11 +65,6 @@ public:
 
 class DockShortcutHandler : public Node
 {
-	VLTRCLASS(DockShortcutHandler, Node);
-
-protected:
-	virtual void shortcut_input(const Ref<InputEvent>& p_event) override;
-
 public:
 	DockShortcutHandler() { set_process_shortcut_input(true); }
 };
@@ -112,16 +104,15 @@ private:
 
 	EditorDock* _get_dock_tab_dragged();
 	void _dock_drag_stopped();
-	void _dock_split_dragged(int p_offset);
-	void _update_layout();
 
 	void _docks_menu_option(int p_id);
 
-	void _window_close_request(WindowWrapper* p_wrapper);
 	EditorDock* _close_window(WindowWrapper* p_wrapper);
+<<<<<<< HEAD
 	void _open_dock_in_window(
 		EditorDock* p_dock, bool p_show_window = true, bool p_reset_size = false);
-	void _restore_dock_to_saved_window(EditorDock* p_dock, const Dictionary& p_window_dump);
+=======
+>>>>>>> fix/remove-object
 
 	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
 	void _move_dock(
@@ -133,7 +124,6 @@ private:
 	void _register_split(DockSplitContainer** p_var, DockSplitContainer* p_split);
 
 public:
-	mem_unique_ptr<Object> obj;
 	static EditorDockManager* get_singleton() { return singleton; }
 
 	DockTabContainer* get_dock_container(int p_slot) const;
@@ -161,15 +151,8 @@ public:
 	void load_docks_from_config(
 		Ref<ConfigFile> p_layout, const String& p_section, bool p_first_load = false);
 
-	void set_dock_slot_highlighted(int p_slot, bool p_highlighted);
-
-	void set_dock_enabled(EditorDock* p_dock, bool p_enabled);
-	void close_dock(EditorDock* p_dock);
-	void open_dock(EditorDock* p_dock, bool p_set_current = true);
 	void focus_dock(EditorDock* p_dock);
-	void make_dock_floating(EditorDock* p_dock);
 
-	void set_docks_visible(bool p_show);
 	bool are_docks_visible() const;
 
 	void add_dock(EditorDock* p_dock);
@@ -180,8 +163,6 @@ public:
 
 class DockSlotGrid : public Control
 {
-	VLTRCLASS(DockSlotGrid, Control);
-
 	static constexpr Vector2 GRID_SIZE = Vector2(8, 8);
 	static constexpr Vector2 MARGINS = Vector2(4, 8);
 	static constexpr Vector2 CELL_SIZE = Vector2(24, 12);
@@ -197,10 +178,8 @@ class DockSlotGrid : public Control
 	void _update_rect_cache();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
 	virtual Size2 get_minimum_size() const override;
 
 public:
@@ -209,8 +188,6 @@ public:
 
 class DockContextPopup : public PopupPanel
 {
-	VLTRCLASS(DockContextPopup, PopupPanel);
-
 private:
 	VBoxContainer* dock_select_popup_vb = nullptr;
 
@@ -225,11 +202,8 @@ private:
 
 	EditorDockManager* dock_manager = nullptr;
 
-	void _slot_clicked(int p_slot);
 	void _tab_move_left();
 	void _tab_move_right();
-	void _close_dock();
-	void _float_dock();
 
 	void _update_buttons();
 

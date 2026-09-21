@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "parallax_2d.h"
 #include "scene/main/viewport.h"
 #include "servers/rendering/rendering_server.h"
@@ -78,13 +77,6 @@ void Parallax2D::_edit_set_position(const Point2& p_position)
 	_update_scroll();
 }
 #endif // TOOLS_ENABLED
-
-void Parallax2D::_validate_property(PropertyInfo& p_property) const
-{
-	if (p_property.name == "position") {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-}
 
 void Parallax2D::_camera_moved(
 	const Transform2D& p_transform, const Point2& p_screen_offset, const Point2& p_adj_screen_pos)
@@ -251,13 +243,5 @@ bool Parallax2D::get_follow_viewport() { return follow_viewport; }
 void Parallax2D::set_ignore_camera_scroll(bool p_ignore) { ignore_camera_scroll = p_ignore; }
 
 bool Parallax2D::is_ignore_camera_scroll() { return ignore_camera_scroll; }
-
-void Parallax2D::_bind_methods() {}
-
-Parallax2D::Parallax2D()
-{
-	// Parallax2D is always updated every frame so there is no need to interpolate.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-}
 
 

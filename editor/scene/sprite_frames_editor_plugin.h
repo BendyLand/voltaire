@@ -47,7 +47,6 @@ class OptionButton;
 class EditorFileDialog;
 
 class ClipboardSpriteFrames : public Resource {
-	VLTRCLASS(ClipboardSpriteFrames, Resource);
 
 public:
 	struct Frame {
@@ -58,7 +57,6 @@ public:
 };
 
 class ClipboardAnimation : public Resource {
-	VLTRCLASS(ClipboardAnimation, Resource);
 
 public:
 	String name;
@@ -70,7 +68,6 @@ public:
 };
 
 class SpriteFramesEditor : public EditorDock {
-	VLTRCLASS(SpriteFramesEditor, EditorDock);
 
 	Ref<SpriteFrames> frames;
 	Node *animated_sprite = nullptr;
@@ -236,7 +233,6 @@ class SpriteFramesEditor : public EditorDock {
 	void _animation_cut();
 	void _animation_copy();
 	void _animation_paste();
-	void _animation_remove();
 	void _animation_remove_confirmed();
 	void _animation_search_text_changed(const String &p_text);
 	void _animation_loop_pressed();
@@ -252,8 +248,6 @@ class SpriteFramesEditor : public EditorDock {
 	void _frame_list_gui_input(const Ref<InputEvent> &p_event);
 	void _frame_list_item_selected(int p_index, bool p_selected);
 
-	void _menu_selected(int p_id);
-
 	void _zoom_in();
 	void _zoom_out();
 	void _zoom_reset();
@@ -263,10 +257,6 @@ class SpriteFramesEditor : public EditorDock {
 
 	bool updating;
 	bool updating_split_settings = false; // Skip SpinBox/Range callback when setting value by code.
-
-	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
-	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
-	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
 
 	void _open_sprite_sheet();
 	void _auto_slice_sprite_sheet();
@@ -305,7 +295,6 @@ class SpriteFramesEditor : public EditorDock {
 protected:
 	void _notification(int p_what);
 	void _node_removed(Node *p_node);
-	static void _bind_methods();
 
 public:
 	void edit(Ref<SpriteFrames> p_frames);
@@ -315,15 +304,11 @@ public:
 };
 
 class SpriteFramesEditorPlugin : public EditorPlugin {
-	VLTRCLASS(SpriteFramesEditorPlugin, EditorPlugin);
 
 	SpriteFramesEditor *frames_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "SpriteFrames"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
-	SpriteFramesEditorPlugin();
+	SpriteFramesEditorPlugin() = default;
 };

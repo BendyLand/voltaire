@@ -31,14 +31,10 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 
 class ResourceFormatSaver : public RefCounted
 {
-	VLTRCLASS(ResourceFormatSaver, RefCounted);
-
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0);

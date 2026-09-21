@@ -29,18 +29,7 @@
 /**************************************************************************/
 
 #include "color_rect.h"
-#include "core/object/class_db.h"
 #include "servers/display/accessibility_server.h"
-
-void ColorRect::set_color(const Color& p_color)
-{
-	if (color == p_color) {
-		return;
-	}
-	color = p_color;
-	queue_accessibility_update();
-	queue_redraw();
-}
 
 Color ColorRect::get_color() const { return color; }
 
@@ -60,6 +49,9 @@ void ColorRect::_notification(int p_what)
 	}
 }
 
-void ColorRect::_bind_methods() {}
+<<<<<<< HEAD
+=======
 
+>>>>>>> fix/remove-object
 
+void ColorRect::set_color(Color const&) {}

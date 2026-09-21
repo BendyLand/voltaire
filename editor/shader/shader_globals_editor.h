@@ -37,30 +37,30 @@
 
 class ShaderGlobalsEditorInterface;
 
-class ShaderGlobalsEditor : public VBoxContainer {
-	VLTRCLASS(ShaderGlobalsEditor, VBoxContainer)
+class ShaderGlobalsEditor : public VBoxContainer
+{
+	ShaderGlobalsEditorInterface* interface = nullptr;
+	EditorInspector* inspector = nullptr;
 
-	ShaderGlobalsEditorInterface *interface = nullptr;
-	EditorInspector *inspector = nullptr;
+	LineEdit* variable_name = nullptr;
+	OptionButton* variable_type = nullptr;
+	Button* variable_add = nullptr;
 
-	LineEdit *variable_name = nullptr;
-	OptionButton *variable_type = nullptr;
-	Button *variable_add = nullptr;
+	String _check_new_variable_name(const String& p_variable_name);
 
-	String _check_new_variable_name(const String &p_variable_name);
-
-	void _variable_name_text_changed(const String &p_variable_name);
+	void _variable_name_text_changed(const String& p_variable_name);
 	void _variable_added();
-	void _variable_deleted(const String &p_variable);
+	void _variable_deleted(const String& p_variable);
 	void _changed();
 
 protected:
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	LineEdit *get_name_box() const;
+	LineEdit* get_name_box() const;
 
 	ShaderGlobalsEditor();
 	~ShaderGlobalsEditor();
 };
+
+

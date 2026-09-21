@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/profiling/profiling.h"
 #include "core/templates/safe_refcount.h"
 #include "memory.h"
 
@@ -61,8 +60,6 @@ void* Memory::alloc_aligned_static(size_t p_bytes, size_t p_alignment)
 	if ((p1 = (void*)malloc(p_bytes + p_alignment - 1 + sizeof(uint32_t))) == nullptr) {
 		return nullptr;
 	}
-	GodotProfileAlloc(p1, p_bytes + p_alignment - 1 + sizeof(uint32_t));
-
 	p2 = (void*)(((uintptr_t)p1 + sizeof(uint32_t) + p_alignment - 1) & ~((p_alignment)-1));
 	*((uint32_t*)p2 - 1) = (uint32_t)((uintptr_t)p2 - (uintptr_t)p1);
 	return p2;
@@ -87,7 +84,6 @@ void Memory::free_aligned_static(void* p_memory)
 {
 	uint32_t offset = *((uint32_t*)p_memory - 1);
 	void* p = (void*)((uint8_t*)p_memory - offset);
-	GodotProfileFree(p);
 	free(p);
 }
 
@@ -108,7 +104,6 @@ template <bool p_ensure_zero> void* Memory::alloc_static(size_t p_bytes, bool p_
 	}
 
 	ERR_FAIL_NULL_V(mem, nullptr);
-	GodotProfileAlloc(mem, p_bytes + (prepad ? DATA_OFFSET : 0));
 
 	if (prepad) {
 		uint8_t* s8 = (uint8_t*)mem;
@@ -159,32 +154,23 @@ void* Memory::realloc_static(void* p_memory, size_t p_bytes, bool p_pad_align)
 #endif
 
 		if (p_bytes == 0) {
-			GodotProfileFree(mem);
 			free(mem);
 			return nullptr;
 		}
 		else {
 			*s = p_bytes;
 
-			GodotProfileFree(mem);
 			mem = (uint8_t*)realloc(mem, p_bytes + DATA_OFFSET);
 			ERR_FAIL_NULL_V(mem, nullptr);
-			GodotProfileAlloc(mem, p_bytes + DATA_OFFSET);
-
 			s = (uint64_t*)(mem + SIZE_OFFSET);
-
 			*s = p_bytes;
 
 			return mem + DATA_OFFSET;
 		}
 	}
 	else {
-		GodotProfileFree(mem);
 		mem = (uint8_t*)realloc(mem, p_bytes);
-
 		ERR_FAIL_COND_V(mem == nullptr && p_bytes > 0, nullptr);
-		GodotProfileAlloc(mem, p_bytes);
-
 		return mem;
 	}
 }
@@ -203,17 +189,13 @@ void Memory::free_static(void* p_ptr, bool p_pad_align)
 
 	if (prepad) {
 		mem -= DATA_OFFSET;
-
 #ifdef DEBUG_ENABLED
 		uint64_t* s = (uint64_t*)(mem + SIZE_OFFSET);
 		_current_mem_usage.sub(*s);
 #endif
-
-		GodotProfileFree(mem);
 		free(mem);
 	}
 	else {
-		GodotProfileFree(mem);
 		free(mem);
 	}
 }

@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_panner.h"
-#include "core/object/class_db.h"
 
 void AudioEffectPannerInstance::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
@@ -55,7 +54,6 @@ void AudioEffectPanner::set_pan(float p_cpanume) { pan = p_cpanume; }
 
 float AudioEffectPanner::get_pan() const { return pan; }
 
-void AudioEffectPanner::_bind_methods() {}
 
 AudioEffectPanner::AudioEffectPanner() { pan = 0; }
 

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/main/canvas_item.h"
 #include "style_box.h"
 
@@ -99,7 +98,6 @@ CanvasItem* StyleBox::get_current_item_drawn() const
 	return CanvasItem::get_current_item_drawn();
 }
 
-void StyleBox::_bind_methods() {}
 
 StyleBox::StyleBox()
 {

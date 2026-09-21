@@ -61,8 +61,10 @@ protected:
 	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 
 	virtual void _parent_focused();
 
@@ -95,7 +97,6 @@ protected:
 	void _update_child_rects() const;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual Size2 _get_contents_minimum_size() const override;
 

@@ -29,10 +29,7 @@
 /**************************************************************************/
 
 #include "core/io/file_access.h"
-#include "core/object/class_db.h"
 #include "xml_parser.h"
-
-// #define DEBUG_XML
 
 static inline bool _is_white_space(char p_char)
 {
@@ -355,8 +352,6 @@ Error XMLParser::seek(uint64_t p_pos)
 
 	return read();
 }
-
-void XMLParser::_bind_methods() {}
 
 Error XMLParser::read()
 {

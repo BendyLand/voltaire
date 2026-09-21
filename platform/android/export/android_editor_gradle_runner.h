@@ -32,8 +32,10 @@
 
 #ifdef ANDROID_ENABLED
 
-#include "core/object/object.h"
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
+=======
+>>>>>>> fix/remove-object
 
 class ConfirmationDialog;
 class RichTextLabel;

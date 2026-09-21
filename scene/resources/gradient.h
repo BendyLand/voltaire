@@ -35,9 +35,6 @@
 
 class Gradient : public Resource
 {
-	VLTRCLASS(Gradient, Resource);
-	OBJ_SAVE_TYPE_NO(Gradient);
-
 public:
 	enum InterpolationMode
 	{
@@ -111,7 +108,6 @@ private:
 		case GRADIENT_COLOR_SPACE_LINEAR_SRGB:
 			return p_color.linear_to_srgb();
 
-
 		case GRADIENT_COLOR_SPACE_OKLAB:
 			ok_color::Lab lab{};
 			lab.L = p_color.r;
@@ -126,8 +122,10 @@ private:
 	}
 
 protected:
+<<<<<<< HEAD
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
+=======
+>>>>>>> fix/remove-object
 
 public:
 	Gradient();
@@ -250,8 +248,5 @@ public:
 
 	int get_point_count() const;
 };
-
-VARIANT_ENUM_CAST(Gradient::InterpolationMode);
-VARIANT_ENUM_CAST(Gradient::ColorSpace);
 
 

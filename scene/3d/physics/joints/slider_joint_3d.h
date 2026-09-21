@@ -32,11 +32,11 @@
 
 #include "scene/3d/physics/joints/joint_3d.h"
 
-class SliderJoint3D : public Joint3D {
-	VLTRCLASS(SliderJoint3D, Joint3D);
-
+class SliderJoint3D : public Joint3D
+{
 public:
-	enum Param {
+	enum Param
+	{
 		PARAM_LINEAR_LIMIT_UPPER = PS3DE::SLIDER_JOINT_LINEAR_LIMIT_UPPER,
 		PARAM_LINEAR_LIMIT_LOWER = PS3DE::SLIDER_JOINT_LINEAR_LIMIT_LOWER,
 		PARAM_LINEAR_LIMIT_SOFTNESS = PS3DE::SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS,
@@ -66,14 +66,17 @@ public:
 
 protected:
 	real_t params[PARAM_MAX];
-	virtual void _configure_joint(RID p_joint, PhysicsBody3D *body_a, PhysicsBody3D *body_b) override;
+	virtual void _configure_joint(
+		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 
 public:
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
 	SliderJoint3D();
 };
 
-VARIANT_ENUM_CAST(SliderJoint3D::Param);
+

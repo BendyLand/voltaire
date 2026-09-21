@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
@@ -38,93 +36,12 @@
 #include "servers/rendering/rendering_server.h"
 #include "shape_cast_3d.h"
 
-void ShapeCast3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (Engine::get_singleton()->is_editor_hint()) {
-			_update_debug_shape_vertices();
-		}
-		if (enabled && !Engine::get_singleton()->is_editor_hint()) {
-			set_physics_process_internal(true);
-		}
-		else {
-			set_physics_process_internal(false);
-		}
+<<<<<<< HEAD
 
-		if (get_tree()->is_debugging_collisions_hint()) {
-			_update_debug_shape();
-		}
 
-		if (Object::cast_to<CollisionObject3D>(get_parent())) {
-			if (exclude_parent_body) {
-				exclude.insert(Object::cast_to<CollisionObject3D>(get_parent())->get_rid());
-			}
-			else {
-				exclude.erase(Object::cast_to<CollisionObject3D>(get_parent())->get_rid());
-			}
-		}
-	} break;
 
-	case NOTIFICATION_EXIT_TREE: {
-		if (enabled) {
-			set_physics_process_internal(false);
-		}
 
-		if (debug_instance.is_valid()) {
-			_clear_debug_shape();
-		}
-	} break;
 
-	case NOTIFICATION_VISIBILITY_CHANGED: {
-		if (is_inside_tree() && debug_instance.is_valid()) {
-			RenderingServer::get_singleton()->instance_set_visible(
-				debug_instance, is_visible_in_tree());
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-		if (!enabled) {
-			break;
-		}
-
-		bool prev_collision_state = collided;
-		_update_shapecast_state();
-		if (get_tree()->is_debugging_collisions_hint()) {
-			if (prev_collision_state != collided) {
-				_update_debug_shape_material(true);
-			}
-			if (collided) {
-				_update_debug_shape();
-			}
-			if (prev_collision_state == collided && !collided) {
-				_update_debug_shape();
-			}
-			if (is_inside_tree() && debug_instance.is_valid()) {
-				RenderingServer::get_singleton()->instance_set_transform(
-					debug_instance, get_global_transform());
-			}
-		}
-	} break;
-	}
-}
-
-void ShapeCast3D::_bind_methods() {}
-
-PackedStringArray ShapeCast3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (shape.is_null()) {
-		warnings.push_back(
-			RTR("This node cannot interact with other objects unless a Shape3D is assigned."));
-	}
-	if (shape.is_valid() && Object::cast_to<ConcavePolygonShape3D>(*shape)) {
-		warnings.push_back(RTR("ShapeCast3D does not support ConcavePolygonShape3Ds. Collisions "
-							   "will not be reported."));
-	}
-	return warnings;
-}
 
 void ShapeCast3D::set_enabled(bool p_enabled)
 {
@@ -148,25 +65,9 @@ void ShapeCast3D::set_enabled(bool p_enabled)
 	}
 }
 
+=======
+>>>>>>> fix/remove-object
 bool ShapeCast3D::is_enabled() const { return enabled; }
-
-void ShapeCast3D::set_target_position(const Vector3& p_point)
-{
-	target_position = p_point;
-	if (is_inside_tree() && get_tree()->is_debugging_collisions_hint()) {
-		_update_debug_shape();
-	}
-	update_gizmos();
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (is_inside_tree()) {
-			_update_debug_shape_vertices();
-		}
-	}
-	else if (debug_instance.is_valid()) {
-		_update_debug_shape();
-	}
-}
 
 Vector3 ShapeCast3D::get_target_position() const { return target_position; }
 
@@ -211,16 +112,11 @@ int ShapeCast3D::get_collision_count() const { return result.size(); }
 
 bool ShapeCast3D::is_colliding() const { return collided; }
 
-Object* ShapeCast3D::get_collider(int p_idx) const
-{
-	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), nullptr, "No collider found.");
+<<<<<<< HEAD
 
-	if (result[p_idx].collider_id.is_null()) {
-		return nullptr;
-	}
-	return ObjectDB::get_instance(result[p_idx].collider_id);
-}
 
+=======
+>>>>>>> fix/remove-object
 RID ShapeCast3D::get_collider_rid(int p_idx) const
 {
 	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), RID(), "No collider RID found.");
@@ -256,6 +152,7 @@ real_t ShapeCast3D::get_closest_collision_unsafe_fraction() const
 void ShapeCast3D::resource_changed(Ref<Resource> p_res) {}
 #endif
 
+<<<<<<< HEAD
 void ShapeCast3D::_shape_changed()
 {
 	update_gizmos();
@@ -265,50 +162,16 @@ void ShapeCast3D::_shape_changed()
 	}
 }
 
-void ShapeCast3D::set_shape(const Ref<Shape3D>& p_shape)
-{
-	if (p_shape == shape) {
-		return;
-	}
-	if (shape.is_valid()) {
-		shape->disconnect_changed(callable_mp(this, &ShapeCast3D::_shape_changed));
-	}
-	shape = p_shape;
-	if (shape.is_valid()) {
-		shape->connect_changed(callable_mp(this, &ShapeCast3D::_shape_changed));
-		shape_rid = shape->get_rid();
-	}
 
-	bool is_editor = Engine::get_singleton()->is_editor_hint();
-	if (is_inside_tree() && (is_editor || get_tree()->is_debugging_collisions_hint())) {
-		_update_debug_shape();
-	}
-	update_gizmos();
-	update_configuration_warnings();
-}
 
 Ref<Shape3D> ShapeCast3D::get_shape() const { return shape; }
 
-void ShapeCast3D::set_exclude_parent_body(bool p_exclude_parent_body)
-{
-	if (exclude_parent_body == p_exclude_parent_body) {
-		return;
-	}
-	exclude_parent_body = p_exclude_parent_body;
 
-	if (!is_inside_tree()) {
-		return;
-	}
-	if (Object::cast_to<CollisionObject3D>(get_parent())) {
-		if (exclude_parent_body) {
-			exclude.insert(Object::cast_to<CollisionObject3D>(get_parent())->get_rid());
-		}
-		else {
-			exclude.erase(Object::cast_to<CollisionObject3D>(get_parent())->get_rid());
-		}
-	}
-}
 
+=======
+Ref<Shape3D> ShapeCast3D::get_shape() const { return shape; }
+
+>>>>>>> fix/remove-object
 bool ShapeCast3D::get_exclude_parent_body() const { return exclude_parent_body; }
 
 void ShapeCast3D::_update_shapecast_state()
@@ -392,27 +255,11 @@ void ShapeCast3D::set_collide_with_bodies(bool p_clip) { collide_with_bodies = p
 
 bool ShapeCast3D::is_collide_with_bodies_enabled() const { return collide_with_bodies; }
 
-Array ShapeCast3D::get_collision_result() const
-{
-	Array ret;
+<<<<<<< HEAD
 
-	for (int i = 0; i < result.size(); ++i) {
-		const PS3DT::ShapeRestInfo& sri = result[i];
 
-		Dictionary col;
-		col["point"] = sri.point;
-		col["normal"] = sri.normal;
-		col["rid"] = sri.rid;
-		col["collider"] = ObjectDB::get_instance(sri.collider_id);
-		col["collider_id"] = sri.collider_id;
-		col["shape"] = sri.shape;
-		col["linear_velocity"] = sri.linear_velocity;
-
-		ret.push_back(col);
-	}
-	return ret;
-}
-
+=======
+>>>>>>> fix/remove-object
 void ShapeCast3D::_update_debug_shape_vertices()
 {
 	debug_shape_vertices.clear();
@@ -478,7 +325,6 @@ void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
 		debug_material = material;
 
 		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-		material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 		// Use double-sided rendering so that the RayCast can be seen if the camera is inside.
 		material->set_cull_mode(BaseMaterial3D::CULL_DISABLED);
 		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
@@ -503,60 +349,10 @@ void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
 	}
 
 	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
+<<<<<<< HEAD
 	material->set_albedo(color);
-}
-
-void ShapeCast3D::_update_debug_shape()
-{
-	if (!enabled) {
-		return;
-	}
-
-	if (!debug_instance.is_valid()) {
-		_create_debug_shape();
-	}
-
-	_update_debug_shape_vertices();
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	if (!debug_instance.is_valid() || debug_mesh.is_null()) {
-		return;
-	}
-
-	debug_mesh->clear_surfaces();
-
-	Array a;
-	a.resize(Mesh::ARRAY_MAX);
-
-	uint32_t flags = 0;
-	int surface_count = 0;
-
-	if (!debug_shape_vertices.is_empty()) {
-		a[Mesh::ARRAY_VERTEX] = debug_shape_vertices;
-		debug_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, a, Array(), Dictionary(), flags);
-		debug_mesh->surface_set_material(surface_count, debug_material);
-		++surface_count;
-	}
-
-	if (!debug_line_vertices.is_empty()) {
-		a[Mesh::ARRAY_VERTEX] = debug_line_vertices;
-		debug_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, a, Array(), Dictionary(), flags);
-		debug_mesh->surface_set_material(surface_count, debug_material);
-		++surface_count;
-	}
-
-	RenderingServer::get_singleton()->instance_set_base(debug_instance, debug_mesh->get_rid());
-	if (is_inside_tree()) {
-		RenderingServer::get_singleton()->instance_set_scenario(
-			debug_instance, get_world_3d()->get_scenario());
-		RenderingServer::get_singleton()->instance_set_visible(
-			debug_instance, is_visible_in_tree());
-		RenderingServer::get_singleton()->instance_set_transform(
-			debug_instance, get_global_transform());
-	}
+=======
+>>>>>>> fix/remove-object
 }
 
 void ShapeCast3D::_clear_debug_shape()

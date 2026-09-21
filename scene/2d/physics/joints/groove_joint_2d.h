@@ -34,16 +34,19 @@
 
 class PhysicsBody2D;
 
-class GrooveJoint2D : public Joint2D {
-	VLTRCLASS(GrooveJoint2D, Joint2D);
-
+class GrooveJoint2D : public Joint2D
+{
 	real_t length = 50.0;
 	real_t initial_offset = 25.0;
 
 protected:
 	void _notification(int p_what);
-	virtual void _configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) override;
+	virtual void _configure_joint(
+		RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b) override;
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 
 public:
 	void set_length(real_t p_length);
@@ -54,3 +57,5 @@ public:
 
 	GrooveJoint2D();
 };
+
+

@@ -29,37 +29,9 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "skeleton_modifier_3d.h"
 
-PackedStringArray SkeletonModifier3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-	if (skeleton_id.is_null()) {
-		warnings.push_back(
-			RTR("Skeleton3D node not set! SkeletonModifier3D must be child of Skeleton3D."));
-	}
-	return warnings;
-}
-
-/* Skeleton3D */
-
-Skeleton3D* SkeletonModifier3D::get_skeleton() const
-{
-	return ObjectDB::get_instance<Skeleton3D>(skeleton_id);
-}
-
-void SkeletonModifier3D::_update_skeleton_path()
-{
-	skeleton_id = ObjectID();
-
-	// Make sure parent is a Skeleton3D.
-	Skeleton3D* sk = Object::cast_to<Skeleton3D>(get_parent());
-	if (sk) {
-		skeleton_id = sk->obj->get_instance_id();
-	}
-}
-
+<<<<<<< HEAD
 void SkeletonModifier3D::_update_skeleton()
 {
 	if (!is_inside_tree()) {
@@ -89,6 +61,8 @@ void SkeletonModifier3D::_force_update_skeleton_skin()
 	skeleton->force_update_deferred();
 }
 
+=======
+>>>>>>> fix/remove-object
 bool SkeletonModifier3D::should_check_node_path()
 {
 	return (bool)GLOBAL_GET_CACHED(
@@ -96,38 +70,26 @@ bool SkeletonModifier3D::should_check_node_path()
 		   is_inside_tree();
 }
 
-/* Process */
-
-void SkeletonModifier3D::set_active(bool p_active)
-{
-	if (active == p_active) {
-		return;
-	}
-	active = p_active;
-	_set_active(active);
-	_force_update_skeleton_skin();
-}
-
 bool SkeletonModifier3D::is_active() const { return active; }
 
-void SkeletonModifier3D::_set_active(bool p_active)
-{
-	//
-}
+void SkeletonModifier3D::_set_active(bool p_active) {}
 
 void SkeletonModifier3D::set_influence(real_t p_influence) { influence = p_influence; }
 
-real_t SkeletonModifier3D::get_influence() const { return influence; }
-
-void SkeletonModifier3D::process_modification(double p_delta)
+PackedStringArray SkeletonModifier3D::get_configuration_warnings() const
 {
-	if (!is_inside_tree() || !active) {
-		return;
-	}
-	_process_modification(p_delta);
-	this->obj->emit_signal(SNAME("modification_processed"));
+	return PackedStringArray();
 }
 
+Skeleton3D* SkeletonModifier3D::get_skeleton() const
+{
+	Skeleton3D s = Skeleton3D();
+	return &s;
+}
+
+real_t SkeletonModifier3D::get_influence() const { return influence; }
+
+<<<<<<< HEAD
 void SkeletonModifier3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -142,8 +104,8 @@ void SkeletonModifier3D::_notification(int p_what)
 	}
 }
 
-void SkeletonModifier3D::_bind_methods() {}
-
+=======
+>>>>>>> fix/remove-object
 Vector3 SkeletonModifier3D::get_vector_from_bone_axis(BoneAxis p_axis)
 {
 	Vector3 ret;
@@ -370,3 +332,5 @@ void SkeletonModifier3D::_validate_bone_names() {}
 void SkeletonModifier3D::_process_modification(double p_delta) {}
 
 
+
+void SkeletonModifier3D::process_modification(double) {}

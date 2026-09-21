@@ -33,10 +33,12 @@
 class String;
 
 #include <cstdint>
+#include "core/types.h"
 
 // Keep the values in this enum in sync with `_keycodes` in `keyboard.cpp`,
 // and the bindings in `core_constants.cpp`.
-enum class Key {
+enum class Key
+{
 	NONE = 0,
 	// Special key: The strategy here is similar to the one used by toolkits,
 	// which consists in leaving the 21 bits unicode range for printable
@@ -248,10 +250,11 @@ enum class Key {
 	SECTION = 0x00A7,
 };
 
-enum class KeyModifierMask {
-	CODE_MASK = ((1 << 23) - 1), ///< Apply this mask to any keycode to remove modifiers.
+enum class KeyModifierMask
+{
+	CODE_MASK = ((1 << 23) - 1),  ///< Apply this mask to any keycode to remove modifiers.
 	MODIFIER_MASK = (0x7F << 24), ///< Apply this mask to isolate modifiers.
-	//RESERVED = (1 << 23),
+	// RESERVED = (1 << 23),
 	CMD_OR_CTRL = (1 << 24),
 	SHIFT = (1 << 25),
 	ALT = (1 << 26),
@@ -261,7 +264,8 @@ enum class KeyModifierMask {
 	GROUP_SWITCH = (1 << 30)
 };
 
-enum class KeyLocation {
+enum class KeyLocation
+{
 	UNSPECIFIED,
 	LEFT,
 	RIGHT
@@ -269,82 +273,93 @@ enum class KeyLocation {
 
 // To avoid having unnecessary operators, only define the ones that are needed.
 
-constexpr Key operator-(uint32_t p_left, Key p_right) {
-	return (Key)(p_left - (uint32_t)p_right);
-}
+constexpr Key operator-(uint32_t p_left, Key p_right) { return (Key)(p_left - (uint32_t)p_right); }
 
-constexpr Key &operator-=(Key &p_left, int p_right) {
+constexpr Key& operator-=(Key& p_left, int p_right)
+{
 	p_left = static_cast<Key>(static_cast<int>(p_left) - static_cast<int>(p_right));
 	return p_left;
 }
 
-constexpr Key operator+(Key p_left, int p_right) {
-	return (Key)((int)p_left + (int)p_right);
-}
+constexpr Key operator+(Key p_left, int p_right) { return (Key)((int)p_left + (int)p_right); }
 
-constexpr Key operator+(Key p_left, Key p_right) {
-	return (Key)((int)p_left + (int)p_right);
-}
+constexpr Key operator+(Key p_left, Key p_right)
+ { return (Key)((int)p_left + (int)p_right); }
 
-constexpr Key operator-(Key p_left, Key p_right) {
-	return (Key)((int)p_left - (int)p_right);
-}
+constexpr Key operator-(Key p_left, Key p_right) { return (Key)((int)p_left - (int)p_right); }
 
-constexpr Key operator&(Key p_left, Key p_right) {
-	return (Key)((int)p_left & (int)p_right);
-}
+constexpr Key operator&(Key p_left, Key p_right) { return (Key)((int)p_left & (int)p_right); }
 
-constexpr Key operator|(Key p_left, Key p_right) {
-	return (Key)((int)p_left | (int)p_right);
-}
+constexpr Key operator|(Key p_left, Key p_right) { return (Key)((int)p_left | (int)p_right); }
 
-constexpr Key &operator|=(Key &p_left, Key p_right) {
+constexpr Key& operator|=(Key& p_left, Key p_right)
+{
 	p_left = static_cast<Key>(static_cast<int>(p_left) | static_cast<int>(p_right));
 	return p_left;
 }
 
-constexpr Key &operator|=(Key &p_left, KeyModifierMask p_right) {
+constexpr Key& operator|=(Key& p_left, KeyModifierMask p_right)
+{
 	p_left = static_cast<Key>(static_cast<int>(p_left) | static_cast<int>(p_right));
 	return p_left;
 }
 
-constexpr Key &operator&=(Key &p_left, KeyModifierMask p_right) {
+constexpr Key& operator&=(Key& p_left, KeyModifierMask p_right)
+{
 	p_left = static_cast<Key>(static_cast<int>(p_left) & static_cast<int>(p_right));
 	return p_left;
 }
 
-constexpr Key operator|(Key p_left, KeyModifierMask p_right) {
+constexpr Key operator|(Key p_left, KeyModifierMask p_right)
+{
 	return (Key)((int)p_left | (int)p_right);
 }
 
-constexpr Key operator&(Key p_left, KeyModifierMask p_right) {
+constexpr Key operator&(Key p_left, KeyModifierMask p_right)
+{
 	return (Key)((int)p_left & (int)p_right);
 }
 
-constexpr Key operator+(KeyModifierMask p_left, Key p_right) {
+constexpr Key operator+(KeyModifierMask p_left, Key p_right)
+{
 	return (Key)((int)p_left + (int)p_right);
 }
 
-constexpr Key operator|(KeyModifierMask p_left, Key p_right) {
+constexpr Key operator|(KeyModifierMask p_left, Key p_right)
+{
 	return (Key)((int)p_left | (int)p_right);
 }
 
-constexpr KeyModifierMask operator+(KeyModifierMask p_left, KeyModifierMask p_right) {
+constexpr KeyModifierMask operator+(KeyModifierMask p_left, KeyModifierMask p_right)
+{
 	return (KeyModifierMask)((int)p_left + (int)p_right);
 }
 
-constexpr KeyModifierMask operator|(KeyModifierMask p_left, KeyModifierMask p_right) {
+constexpr KeyModifierMask operator|(KeyModifierMask p_left, KeyModifierMask p_right)
+{
 	return (KeyModifierMask)((int)p_left | (int)p_right);
+}
+
+constexpr Key operator|(Key p_left, uint32_t p_right)
+{
+	return static_cast<Key>(static_cast<uint32_t>(p_left) | p_right);
+}
+
+constexpr Key operator|(uint32_t p_left, Key p_right)
+{
+	return static_cast<Key>(p_left | static_cast<uint32_t>(p_right));
 }
 
 String keycode_get_string(Key p_code);
 bool keycode_has_unicode(Key p_keycode);
-Key find_keycode(const String &p_codestr);
-const char *find_keycode_name(Key p_keycode);
+Key find_keycode(const String& p_codestr);
+const char* find_keycode_name(Key p_keycode);
 int keycode_get_count();
 int keycode_get_value_by_index(int p_index);
-const char *keycode_get_name_by_index(int p_index);
+const char* keycode_get_name_by_index(int p_index);
 
 char32_t fix_unicode(char32_t p_char);
 Key fix_keycode(char32_t p_char, Key p_key);
 Key fix_key_label(char32_t p_char, Key p_key);
+
+

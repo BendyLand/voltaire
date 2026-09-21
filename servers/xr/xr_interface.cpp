@@ -28,11 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/xr/xr_server.h"
 #include "xr_interface.h"
-
-void XRInterface::_bind_methods() {}
 
 bool XRInterface::is_primary()
 {
@@ -56,10 +53,6 @@ void XRInterface::set_primary(bool p_primary)
 		xr_server->set_primary_interface(nullptr);
 	}
 }
-
-XRInterface::XRInterface() {}
-
-XRInterface::~XRInterface() {}
 
 // query if this interface supports this play area mode
 bool XRInterface::supports_play_area_mode(XRInterface::PlayAreaMode p_mode)
@@ -131,9 +124,42 @@ void XRInterface::trigger_haptic_pulse(const String& p_action_name,
 {
 }
 
-Array XRInterface::get_supported_environment_blend_modes()
+<<<<<<< HEAD
+=======
+StringName XRInterface::get_name() const { return StringName(); }
+
+uint32_t XRInterface::get_capabilities() const { return 0; }
+
+bool XRInterface::is_initialized() const { return true; }
+
+bool XRInterface::initialize() { return true; }
+
+void XRInterface::uninitialize() {}
+
+Transform3D XRInterface::get_camera_transform() { return Transform3D(); }
+
+void XRInterface::process() {}
+
+Size2 XRInterface::get_render_target_size() { return Size2(); }
+
+uint32_t XRInterface::get_view_count() { return 0; }
+
+Transform3D XRInterface::get_transform_for_view(uint32_t p_view, const Transform3D& p_cam_transform)
 {
-	return Array{XR_ENV_BLEND_MODE_OPAQUE};
+	return Transform3D();
 }
 
+Projection XRInterface::get_projection_for_view(
+	uint32_t p_view, double p_aspect, double p_z_near, double p_z_far)
+{
+	return Projection();
+}
+
+Vector<RenderingServerTypes::BlitToScreen> XRInterface::post_draw_viewport(
+	RID p_render_target, const Rect2& p_screen_rect)
+{
+	return Vector<RenderingServerTypes::BlitToScreen>();
+}
+
+>>>>>>> fix/remove-object
 

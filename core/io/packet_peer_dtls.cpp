@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "packet_peer_dtls.h"
 
 PacketPeerDTLS* PacketPeerDTLS::create(bool p_notify_postinitialize)
@@ -40,7 +39,5 @@ PacketPeerDTLS* PacketPeerDTLS::create(bool p_notify_postinitialize)
 }
 
 bool PacketPeerDTLS::is_available() { return available; }
-
-void PacketPeerDTLS::_bind_methods() {}
 
 

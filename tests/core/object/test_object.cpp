@@ -28,15 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/templates/mem_unique_ptr.h"
 #include "tests/test_macros.h"
 
 TEST_FORCE_LINK(test_object)
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
-#include "core/object/object.h"
-#include "core/object/script_language.h"
 #include "tests/signal_watcher.h"
 
 namespace TestObject

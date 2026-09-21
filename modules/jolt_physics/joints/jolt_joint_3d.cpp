@@ -29,38 +29,16 @@
 /**************************************************************************/
 
 #include "../jolt_physics_server_3d.h"
-#include "../jolt_project_settings.h"
 #include "../misc/jolt_type_conversions.h"
 #include "../objects/jolt_body_3d.h"
 #include "../spaces/jolt_space_3d.h"
 #include "jolt_joint_3d.h"
 
-void JoltJoint3D::_shift_reference_frames(const Vector3& p_linear_shift,
-	const Vector3& p_angular_shift, Transform3D& r_shifted_ref_a, Transform3D& r_shifted_ref_b)
-{
-	Vector3 origin_a = local_ref_a.origin;
-	Vector3 origin_b = local_ref_b.origin;
+<<<<<<< HEAD
 
-	if (body_a != nullptr) {
-		origin_a *= body_a->get_scale();
-		origin_a -= to_godot(body_a->get_jolt_shape()->GetCenterOfMass());
-	}
 
-	if (body_b != nullptr) {
-		origin_b *= body_b->get_scale();
-		origin_b -= to_godot(body_b->get_jolt_shape()->GetCenterOfMass());
-	}
-
-	const Basis& basis_a = local_ref_a.basis;
-	const Basis& basis_b = local_ref_b.basis;
-
-	const Basis shifted_basis_a = basis_a * Basis::from_euler(p_angular_shift, EulerOrder::ZYX);
-	const Vector3 shifted_origin_a = origin_a - basis_a.xform(p_linear_shift);
-
-	r_shifted_ref_a = Transform3D(shifted_basis_a, shifted_origin_a);
-	r_shifted_ref_b = Transform3D(basis_b, origin_b);
-}
-
+=======
+>>>>>>> fix/remove-object
 void JoltJoint3D::_wake_up_bodies()
 {
 	if (body_a != nullptr) {
@@ -132,16 +110,6 @@ JoltJoint3D::JoltJoint3D(const JoltJoint3D& p_old_joint, JoltBody3D* p_body_a, J
 	if (body_b != nullptr) {
 		body_b->add_joint(this);
 	}
-
-	if (body_b == nullptr && JoltProjectSettings::joint_world_node == JOLT_JOINT_WORLD_NODE_A) {
-		// The joint scene nodes will, when omitting one of the two body nodes, always pass in a
-		// null `body_b` to indicate it being the "world node", regardless of which body node you
-		// leave blank. So we need to correct for that if we wish to use the arguably more intuitive
-		// alternative where `body_a` is the "world node" instead.
-
-		SWAP(body_a, body_b);
-		SWAP(local_ref_a, local_ref_b);
-	}
 }
 
 JoltJoint3D::~JoltJoint3D()
@@ -150,7 +118,8 @@ JoltJoint3D::~JoltJoint3D()
 		body_a->remove_joint(this);
 	}
 
-	if (body_b != nullptr) {
+	if (body_b != nullptr)
+{
 		body_b->remove_joint(this);
 	}
 
@@ -263,6 +232,11 @@ void JoltJoint3D::destroy()
 	}
 
 	jolt_ref = nullptr;
+}
+
+void JoltJoint3D::_shift_reference_frames(const Vector3& p_linear_shift,
+	const Vector3& p_angular_shift, Transform3D& r_shifted_ref_a, Transform3D& r_shifted_ref_b)
+{
 }
 
 

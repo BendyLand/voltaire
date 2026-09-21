@@ -33,13 +33,12 @@
 // Mach-O binary object file format parser and editor.
 
 #include "core/io/file_access.h"
-#include "core/object/ref_counted.h"
 
-class MachO : public RefCounted {
-	VLTRSOFTCLASS(MachO, RefCounted);
-
+class MachO : public RefCounted
+{
 public:
-	struct MachHeader {
+	struct MachHeader
+	{
 		uint32_t cputype;
 		uint32_t cpusubtype;
 		uint32_t filetype;
@@ -48,7 +47,8 @@ public:
 		uint32_t flags;
 	};
 
-	enum LoadCommandID {
+	enum LoadCommandID
+	{
 		LC_SEGMENT = 0x00000001,
 		LC_SYMTAB = 0x00000002,
 		LC_SYMSEG = 0x00000003,
@@ -101,7 +101,8 @@ public:
 		LC_BUILD_VERSION = 0x00000032,
 	};
 
-	enum PlatformID {
+	enum PlatformID
+	{
 		PLATFORM_UNKNOWN = 0,
 		PLATFORM_MACOS = 1,
 		PLATFORM_IOS = 2,
@@ -117,12 +118,14 @@ public:
 		PLATFORM_VISIONOSSIMULATOR = 12,
 	};
 
-	struct LoadCommandHeader {
+	struct LoadCommandHeader
+	{
 		uint32_t cmd;
 		uint32_t cmdsize;
 	};
 
-	struct LoadCommandSegment {
+	struct LoadCommandSegment
+	{
 		char segname[16];
 		uint32_t vmaddr;
 		uint32_t vmsize;
@@ -134,7 +137,8 @@ public:
 		uint32_t flags;
 	};
 
-	struct LoadCommandSegment64 {
+	struct LoadCommandSegment64
+	{
 		char segname[16];
 		uint64_t vmaddr;
 		uint64_t vmsize;
@@ -146,7 +150,8 @@ public:
 		uint32_t flags;
 	};
 
-	struct Section {
+	struct Section
+	{
 		char sectname[16];
 		char segname[16];
 		uint32_t addr;
@@ -160,7 +165,8 @@ public:
 		uint32_t reserved2;
 	};
 
-	struct Section64 {
+	struct Section64
+	{
 		char sectname[16];
 		char segname[16];
 		uint64_t addr;
@@ -193,15 +199,13 @@ private:
 	uint32_t seg_align(uint64_t p_vmaddr, uint32_t p_min, uint32_t p_max);
 	bool alloc_signature(uint64_t p_size);
 
-	static inline size_t PAD(size_t s, size_t a) {
-		return (a - s % a);
-	}
+	static inline size_t PAD(size_t s, size_t a) { return (a - s % a); }
 
 public:
-	static bool is_macho(const String &p_path);
-	static uint32_t get_filetype(const String &p_path);
+	static bool is_macho(const String& p_path);
+	static uint32_t get_filetype(const String& p_path);
 
-	bool open_file(const String &p_path);
+	bool open_file(const String& p_path);
 
 	uint64_t get_exe_base();
 	uint64_t get_exe_limit();
@@ -225,3 +229,5 @@ public:
 	uint64_t get_signature_size();
 	bool set_signature_size(uint64_t p_size);
 };
+
+

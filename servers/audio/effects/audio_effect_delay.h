@@ -35,7 +35,6 @@
 class AudioEffectDelay;
 
 class AudioEffectDelayInstance : public AudioEffectInstance {
-	VLTRCLASS(AudioEffectDelayInstance, AudioEffectInstance);
 
 	friend class AudioEffectDelay;
 	Ref<AudioEffectDelay> base;
@@ -58,7 +57,6 @@ public:
 };
 
 class AudioEffectDelay : public AudioEffect {
-	VLTRCLASS(AudioEffectDelay, AudioEffect);
 
 	friend class AudioEffectDelayInstance;
 	enum {
@@ -84,7 +82,6 @@ class AudioEffectDelay : public AudioEffect {
 	float feedback_lowpass = 16000.0f;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_dry(float p_dry);

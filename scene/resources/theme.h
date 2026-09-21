@@ -37,9 +37,6 @@
 
 class Theme : public Resource
 {
-	VLTRCLASS(Theme, Resource);
-	RES_BASE_EXTENSION("theme");
-
 #ifdef TOOLS_ENABLED
 	friend class ThemeItemImportTree;
 	friend class ThemeItemEditorDialog;
@@ -90,10 +87,6 @@ private:
 	Vector<String> _get_type_list() const;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
 	// Default values configurable for each individual theme.
 	float default_base_scale = 0.0;
 	Ref<Font> default_font;
@@ -108,7 +101,6 @@ protected:
 	HashMap<StringName, StringName> variation_map;
 	HashMap<StringName, List<StringName>> variation_base_map;
 
-	static void _bind_methods();
 
 	void _freeze_change_propagation();
 	void _unfreeze_and_propagate_changes();
@@ -146,8 +138,6 @@ public:
 	void rename_icon_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
 	void get_icon_type_list(List<StringName>* p_list) const;
 
-	void set_stylebox(
-		const StringName& p_name, const StringName& p_theme_type, const Ref<StyleBox>& p_style);
 	virtual Ref<StyleBox> get_stylebox(
 		const StringName& p_name, const StringName& p_theme_type) const;
 	bool has_stylebox(const StringName& p_name, const StringName& p_theme_type) const;
@@ -216,10 +206,6 @@ public:
 	void rename_constant_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
 	void get_constant_type_list(List<StringName>* p_list) const;
 
-	void set_theme_item(DataType p_data_type, const StringName& p_name,
-		const StringName& p_theme_type, const Variant& p_value);
-	Variant get_theme_item(
-		DataType p_data_type, const StringName& p_name, const StringName& p_theme_type) const;
 	bool has_theme_item(
 		DataType p_data_type, const StringName& p_name, const StringName& p_theme_type) const;
 	bool has_theme_item_nocheck(
@@ -256,7 +242,5 @@ const StringName& p_theme_type);
 	Theme();
 	~Theme();
 };
-
-VARIANT_ENUM_CAST(Theme::DataType);
 
 

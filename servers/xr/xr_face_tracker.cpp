@@ -28,10 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "xr_face_tracker.h"
 
-void XRFaceTracker::_bind_methods() {}
 
 void XRFaceTracker::set_tracker_type(XRServer::TrackerType p_type)
 {

@@ -28,18 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "openxr_haptic_feedback.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRHapticBase
 
-void OpenXRHapticBase::_bind_methods() {}
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRHapticVibration
 
-void OpenXRHapticVibration::_bind_methods() {}
 
 void OpenXRHapticVibration::set_duration(int64_t p_duration)
 {

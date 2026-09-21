@@ -31,7 +31,6 @@
 #pragma once
 
 #include "core/templates/local_vector.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
 
@@ -200,11 +199,8 @@ class FramebufferCacheRD
 	}
 
 private:
-	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	template <typename... Args> RID get_cache(Args... args)
 	{
 		uint32_t h = hash_murmur3_one_32(1); // 1 view
@@ -311,9 +307,6 @@ public:
 		// Not in cache, create:
 		return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
 	}
-
-	static RID get_cache_multipass_array(const Array& p_textures,
-		const Array& p_passes, uint32_t p_views = 1);
 
 	static FramebufferCacheRD* get_singleton() { return singleton; }
 

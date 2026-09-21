@@ -29,9 +29,9 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "timer.h"
 
+<<<<<<< HEAD
 void Timer::_notification(int p_what)
 {
 	switch (p_what) {
@@ -46,53 +46,6 @@ void Timer::_notification(int p_what)
 			autostart = false;
 		}
 	} break;
-
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		if (!processing || timer_process_callback == TIMER_PROCESS_PHYSICS ||
-			!is_processing_internal()) {
-			return;
-		}
-		if (ignore_time_scale) {
-			time_left -= Engine::get_singleton()->get_process_step();
-		}
-		else {
-			time_left -= get_process_delta_time();
-		}
-
-		if (time_left < 0) {
-			if (!one_shot) {
-				time_left += wait_time;
-			}
-			else {
-				stop();
-			}
-
-			this->obj->emit_signal(SNAME("timeout"));
-		}
-	} break;
-
-	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-		if (!processing || timer_process_callback == TIMER_PROCESS_IDLE ||
-			!is_physics_processing_internal()) {
-			return;
-		}
-		if (ignore_time_scale) {
-			time_left -= Engine::get_singleton()->get_process_step();
-		}
-		else {
-			time_left -= get_physics_process_delta_time();
-		}
-
-		if (time_left < 0) {
-			if (!one_shot) {
-				time_left += wait_time;
-			}
-			else {
-				stop();
-			}
-			this->obj->emit_signal(SNAME("timeout"));
-		}
-	} break;
 	}
 }
 
@@ -103,6 +56,8 @@ void Timer::set_wait_time(double p_time)
 	update_configuration_warnings();
 }
 
+=======
+>>>>>>> fix/remove-object
 double Timer::get_wait_time() const { return wait_time; }
 
 void Timer::set_one_shot(bool p_one_shot) { one_shot = p_one_shot; }
@@ -112,18 +67,6 @@ bool Timer::is_one_shot() const { return one_shot; }
 void Timer::set_autostart(bool p_start) { autostart = p_start; }
 
 bool Timer::has_autostart() const { return autostart; }
-
-void Timer::start(double p_time)
-{
-	ERR_FAIL_COND_MSG(!is_inside_tree(), "Unable to start the timer because it's not inside the "
-										 "scene tree. Either add it or set autostart to true.");
-
-	if (p_time > 0) {
-		set_wait_time(p_time);
-	}
-	time_left = wait_time;
-	_set_process(true);
-}
 
 void Timer::stop()
 {
@@ -161,7 +104,8 @@ void Timer::set_timer_process_callback(TimerProcessCallback p_callback)
 	switch (timer_process_callback) {
 	case TIMER_PROCESS_PHYSICS:
 		if (is_physics_processing_internal()) {
-			set_physics_process_internal(false);
+
+		set_physics_process_internal(false);
 			set_process_internal(true);
 		}
 		break;
@@ -206,7 +150,5 @@ PackedStringArray Timer::get_configuration_warnings() const
 
 	return warnings;
 }
-
-void Timer::_bind_methods() {}
 
 

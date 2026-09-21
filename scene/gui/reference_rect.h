@@ -33,7 +33,6 @@
 #include "scene/gui/control.h"
 
 class ReferenceRect : public Control {
-	VLTRCLASS(ReferenceRect, Control);
 
 	Color border_color = Color(1, 0, 0);
 	float border_width = 1.0;
@@ -41,7 +40,6 @@ class ReferenceRect : public Control {
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_border_color(const Color &p_color);

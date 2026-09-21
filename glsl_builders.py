@@ -179,13 +179,13 @@ def include_file_in_rd_header(filename: str, header_data: RDHeaderStruct, depth:
 def build_rd_header_lines_for_raytracing_stage(lines, stage: str):
     if lines:
         return f"""\
-		static const char _{stage}_code[] = {{
+        static const char _{stage}_code[] = {{
 {to_raw_cstring(lines)}
-		}};
+        }};
 """
     else:
         return f"""\
-		static const char *_{stage}_code = nullptr;
+        static const char *_{stage}_code = nullptr;
 """
 
 
@@ -195,11 +195,12 @@ def build_rd_header(filename: str, shader: str) -> None:
 
     with generated_wrapper(filename) as file:
         file.write(f"""\
+#include "core/types.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
 
 class {class_name} : public ShaderRD {{
 public:
-	{class_name}() {{
+    {class_name}() {{
 """)
 
         if (
@@ -215,31 +216,31 @@ public:
             file.write(build_rd_header_lines_for_raytracing_stage(header_data.miss_lines, "miss"))
             file.write(build_rd_header_lines_for_raytracing_stage(header_data.intersection_lines, "intersection"))
             file.write(f"""\
-		setup_raytracing(_raygen_code, _any_hit_code, _closest_hit_code, _miss_code, _intersection_code, "{class_name}");
+        setup_raytracing(_raygen_code, _any_hit_code, _closest_hit_code, _miss_code, _intersection_code, "{class_name}");
 """)
         elif header_data.compute_lines:
             file.write(f"""\
-		static const char *_vertex_code = nullptr;
-		static const char *_fragment_code = nullptr;
-		static const char _compute_code[] = {{
+        static const char *_vertex_code = nullptr;
+        static const char *_fragment_code = nullptr;
+        static const char _compute_code[] = {{
 {to_raw_cstring(header_data.compute_lines)}
-		}};
-		setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
+        }};
+        setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
 """)
         else:
             file.write(f"""\
-		static const char _vertex_code[] = {{
+        static const char _vertex_code[] = {{
 {to_raw_cstring(header_data.vertex_lines)}
-		}};
-		static const char _fragment_code[] = {{
+        }};
+        static const char _fragment_code[] = {{
 {to_raw_cstring(header_data.fragment_lines)}
-		}};
-		static const char *_compute_code = nullptr;
-		setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
+        }};
+        static const char *_compute_code = nullptr;
+        setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
 """)
 
         file.write("""\
-	}
+    }
 };
 """)
 
@@ -262,8 +263,10 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
         while line:
             while line.find("#include ") != -1:
                 includeline = line.replace("#include ", "").strip()[1:-1]
-
-                included_file = os.path.relpath(os.path.dirname(filename) + "/" + includeline)
+                if includeline.startswith("thirdparty/"):
+                    included_file = os.path.relpath(includeline)
+                else:
+                    included_file = os.path.relpath(os.path.dirname(filename) + "/" + includeline)
                 include_file_in_raw_header(included_file, header_data, depth + 1)
 
                 line = fs.readline()
@@ -277,6 +280,8 @@ def build_raw_header(filename: str, shader: str) -> None:
 
     with generated_wrapper(filename) as file:
         file.write(f"""\
+#include "core/types.h"
+
 static const char {os.path.basename(shader).replace(".glsl", "_shader_glsl")}[] = {{
 {to_raw_cstring(header_data.code)}
 }};

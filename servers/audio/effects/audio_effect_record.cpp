@@ -30,7 +30,6 @@
 
 #include "audio_effect_record.h"
 #include "core/io/marshalls.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 
 void AudioEffectRecordInstance::process(
@@ -290,7 +289,6 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	return sample;
 }
 
-void AudioEffectRecord::_bind_methods() {}
 
 AudioEffectRecord::AudioEffectRecord() { format = AudioStreamWAV::FORMAT_16_BITS; }
 

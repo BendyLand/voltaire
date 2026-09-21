@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "dock_tab_container.h"
 #include "editor/docks/editor_dock.h"
 #include "editor/docks/editor_dock_manager.h"
@@ -37,34 +36,6 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/resources/style_box_flat.h"
-
-bool EditorDockDragHint::can_drop_data(const Point2& p_point, const Variant& p_data) const
-{
-	return can_drop_dock;
-}
-
-void EditorDockDragHint::drop_data(const Point2& p_point, const Variant& p_data)
-{
-	// Drop dock into last spot if not over tabbar.
-	if (mouse_inside_tabbar) {
-		drop_tabbar->_handle_drop_data("tab_container_tab", p_point, p_data,
-			callable_mp(this, &EditorDockDragHint::_drag_move_tab),
-			callable_mp(this, &EditorDockDragHint::_drag_move_tab_from));
-	}
-	else {
-		EditorDockManager* dock_manager = EditorDockManager::get_singleton();
-		if (mouse_margin_index == -1) {
-			dock_manager->_move_dock(dock_manager->_get_dock_tab_dragged(), dock_container,
-				drop_tabbar->get_tab_count());
-		}
-		else {
-			DockTabContainer* target_container =
-				EditorDockManager::get_singleton()->get_dock_container(mouse_margin_target_slot);
-			dock_manager->_move_dock(dock_manager->_get_dock_tab_dragged(), target_container,
-				target_container->get_tab_count());
-		}
-	}
-}
 
 void EditorDockDragHint::_drag_move_tab(int p_from_index, int p_to_index)
 {
@@ -78,62 +49,6 @@ void EditorDockDragHint::_drag_move_tab_from(
 	dock_manager->_move_dock(dock_manager->_get_dock_tab_dragged(), dock_container, p_to_index);
 }
 
-void EditorDockDragHint::gui_input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		if (mouse_inside_tabbar) {
-			// Always redraw, to update tab indicators.
-			queue_redraw();
-		}
-		const Point2 pos = mm->get_position();
-		mouse_inside_tabbar = drop_tabbar_parent->get_rect().has_point(pos);
-
-		if (mouse_inside_tabbar) {
-			mouse_margin_index = -1;
-			return;
-		}
-		const Vector2 size = get_size();
-
-		int new_margin_index = -1;
-		if (pos.x < size.x * SIDE_DROP_MARGIN && dock_container) {
-			new_margin_index = SIDE_LEFT;
-		}
-		else if (pos.x > size.x * (1.0 - SIDE_DROP_MARGIN)) {
-			new_margin_index = SIDE_RIGHT;
-		}
-		else if (pos.y < size.y * SIDE_DROP_MARGIN) {
-			new_margin_index = SIDE_TOP;
-		}
-		else if (pos.y > size.y * (1.0 - SIDE_DROP_MARGIN)) {
-			new_margin_index = SIDE_BOTTOM;
-		}
-		if (new_margin_index > -1) {
-			mouse_margin_target_slot = dock_container->get_margin_drop_slot(new_margin_index);
-			if (mouse_margin_target_slot == -1) {
-				new_margin_index = -1;
-			}
-			else {
-				EditorDock* dragged_dock =
-					EditorDockManager::get_singleton()->_get_dock_tab_dragged();
-				DockTabContainer* target_container =
-					EditorDockManager::get_singleton()->get_dock_container(
-						mouse_margin_target_slot);
-				if (!(dragged_dock->get_available_layouts() & target_container->layout)) {
-					new_margin_index = -1;
-				}
-			}
-		}
-
-		if (new_margin_index != mouse_margin_index) {
-			mouse_margin_index = new_margin_index;
-			queue_redraw();
-		}
-	}
-}
-
 void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
 {
 	dock_container = p_slot;
@@ -141,28 +56,10 @@ void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
 	drop_tabbar_parent = (Control*)p_slot->get_internal_container();
 }
 
-void EditorDockDragHint::set_highlighted(bool p_highlighted)
-{
-	if (highlighted == p_highlighted) {
-		return;
-	}
-	highlighted = p_highlighted;
-	queue_redraw();
-}
-
 void EditorDockDragHint::_notification(int p_what)
 {
 	switch (p_what) {
-	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group("interface/theme")) {
-			dock_drop_highlight->set_corner_radius_all(
-				EDSCALE * EDITOR_GET("interface/theme/corner_radius").operator int());
-			if (mouse_inside) {
-				queue_redraw();
-			}
-		}
-	} break;
-
+<<<<<<< HEAD
 	case NOTIFICATION_THEME_CHANGED: {
 		const Color valid_drop_color =
 			get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
@@ -176,6 +73,8 @@ void EditorDockDragHint::_notification(int p_what)
 		queue_redraw();
 	} break;
 
+=======
+>>>>>>> fix/remove-object
 	case NOTIFICATION_DRAG_BEGIN: {
 		EditorDock* dragged_dock = EditorDockManager::get_singleton()->_get_dock_tab_dragged();
 		if (!dragged_dock) {
@@ -184,14 +83,6 @@ void EditorDockDragHint::_notification(int p_what)
 
 		can_drop_dock = dragged_dock->get_available_layouts() & dock_container->layout;
 
-	} break;
-	case NOTIFICATION_DRAG_END: {
-		EditorDockManager::get_singleton()->_dock_drag_stopped();
-		can_drop_dock = false;
-		mouse_inside = false;
-		highlighted = false;
-		mouse_margin_index = -1;
-		hide();
 	} break;
 
 	case NOTIFICATION_DRAW: {
@@ -229,17 +120,18 @@ void EditorDockDragHint::_notification(int p_what)
 	}
 }
 
+<<<<<<< HEAD
 EditorDockDragHint::EditorDockDragHint()
 {
 	set_as_top_level(true);
 	hide();
 
 	dock_drop_highlight.instantiate();
-	dock_drop_highlight->set_corner_radius_all(
-		EDSCALE * EDITOR_GET("interface/theme/corner_radius").operator int());
 	dock_drop_highlight->set_border_width_all(Math::round(2 * EDSCALE));
 }
 
+=======
+>>>>>>> fix/remove-object
 void DockTabContainer::_pre_popup(const Size2i& p_size)
 {
 	dock_context_popup->set_dock(get_dock(get_current_tab()));
@@ -259,25 +151,15 @@ void DockTabContainer::_tab_rmb_clicked(int p_tab_idx)
 	dock_context_popup->popup();
 }
 
-void DockTabContainer::_notification(int p_what)
-{
-	if (p_what == Object::NOTIFICATION_POSTINITIALIZE) {
-		connect(
-			"pre_popup_pressed", callable_mp(this, &DockTabContainer::_pre_popup).bind(Size2i()));
-		connect("child_order_changed", callable_mp(this, &DockTabContainer::update_visibility));
-	}
-}
-
+<<<<<<< HEAD
 void DockTabContainer::update_visibility()
 {
 	// Hide the dock container if there are no tabs.
 	set_visible(EditorDockManager::get_singleton()->are_docks_visible() && get_tab_count() > 0);
 }
-
-DockTabContainer::TabStyle DockTabContainer::get_tab_style() const
-{
-	return (TabStyle)EDITOR_GET("interface/editor/docks/dock_tab_style").operator int();
-}
+=======
+void DockTabContainer::update_visibility() {}
+>>>>>>> fix/remove-object
 
 bool DockTabContainer::can_switch_dock() const
 {
@@ -314,19 +196,13 @@ void DockTabContainer::save_docks_to_config(Ref<ConfigFile> p_layout, const Stri
 	}
 
 	const String config_key = DockTabContainer::get_config_key(dock_slot);
-	if (!names.is_empty()) {
-		p_layout->set_value(p_section, config_key, String(",").join(names));
-	}
-	else if (p_layout->has_section_key(p_section, config_key)) {
+	if (p_layout->has_section_key(p_section, config_key)) {
 		p_layout->erase_section_key(p_section, config_key);
 	}
 
 	const String tab_key = config_key + "_selected_tab_idx";
 	int selected_tab_idx = get_current_tab();
-	if (selected_tab_idx >= 0) {
-		p_layout->set_value(p_section, tab_key, selected_tab_idx);
-	}
-	else if (p_layout->has_section_key(p_section, tab_key)) {
+	if (p_layout->has_section_key(p_section, tab_key)) {
 		p_layout->erase_section_key(p_section, tab_key);
 	}
 }
@@ -337,9 +213,7 @@ void DockTabContainer::load_selected_tab(int p_idx)
 	if (!selected_dock) {
 		return;
 	}
-	this->obj->set_block_signals(true);
 	set_current_tab(p_idx);
-	this->obj->set_block_signals(false);
 }
 
 void DockTabContainer::set_dock_context_popup(DockContextPopup* p_popup)
@@ -350,19 +224,13 @@ void DockTabContainer::set_dock_context_popup(DockContextPopup* p_popup)
 
 void DockTabContainer::move_dock_index(EditorDock* p_dock, int p_to_index, bool p_set_current)
 {
-	this->obj->set_block_signals(true);
 	int target_index = CLAMP(p_to_index, 0, get_tab_count() - 1);
 	move_child(p_dock, get_dock(target_index)->get_index(false));
 
 	if (p_set_current && !p_dock->is_visible_in_tree()) {
 		set_current_tab(target_index);
 	}
-	this->obj->set_block_signals(false);
-}
-
-EditorDock* DockTabContainer::get_dock(int p_idx) const
-{
-	return Object::cast_to<EditorDock>(get_tab_control(p_idx));
+<<<<<<< HEAD
 }
 
 void DockTabContainer::show_drag_hint()
@@ -372,6 +240,8 @@ void DockTabContainer::show_drag_hint()
 	}
 	drag_hint->set_rect(get_global_rect());
 	drag_hint->show();
+=======
+>>>>>>> fix/remove-object
 }
 
 Rect2 DockTabContainer::get_default_floating_dock_rect(EditorDock* p_dock)
@@ -383,6 +253,7 @@ Rect2 DockTabContainer::get_default_floating_dock_rect(EditorDock* p_dock)
 	return ret;
 }
 
+<<<<<<< HEAD
 DockTabContainer::DockTabContainer(int p_slot)
 {
 	ERR_FAIL_INDEX(p_slot, EditorDock::DOCK_SLOT_MAX);
@@ -398,10 +269,10 @@ DockTabContainer::DockTabContainer(int p_slot)
 	EditorNode::get_singleton()->get_gui_base()->add_child(drag_hint);
 
 	get_tab_bar()->set_switch_on_release(true);
-	get_tab_bar()->connect(
-		"tab_rmb_clicked", callable_mp(this, &DockTabContainer::_tab_rmb_clicked));
 }
 
+=======
+>>>>>>> fix/remove-object
 Rect2 SideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 {
 	if (p_dock->is_visible_in_tree()) {
@@ -410,15 +281,6 @@ Rect2 SideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 	const float tab_bar_height = get_tab_bar()->get_size().y;
 	return Rect2(get_screen_position() + Vector2(0, tab_bar_height),
 		get_size() - Vector2(0, tab_bar_height));
-}
-
-SideDockTabContainer::SideDockTabContainer(int p_slot, const Rect2i& p_slot_rect)
-	: DockTabContainer(p_slot)
-{
-	grid_rect = p_slot_rect;
-	set_custom_minimum_size(Size2(170 * EDSCALE, 0));
-	set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	set_use_hidden_tabs_for_min_size(true);
 }
 
 Rect2 BottomSideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
@@ -431,15 +293,15 @@ Rect2 BottomSideDockTabContainer::get_floating_dock_rect(EditorDock* p_dock)
 		get_size() - Vector2(0, tab_bar_height));
 }
 
-BottomSideDockTabContainer::BottomSideDockTabContainer(int p_slot, const Rect2i& p_slot_rect)
-	: DockTabContainer(p_slot)
+EditorDock* DockTabContainer::get_dock(int p_idx) const
 {
-	grid_rect = p_slot_rect;
-	layout = EditorDock::DOCK_LAYOUT_HORIZONTAL;
+	EditorDock ed = EditorDock();
+	return &ed;
+}
 
-	set_custom_minimum_size(Size2(0, 170 * EDSCALE));
-	set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	set_use_hidden_tabs_for_min_size(true);
+DockTabContainer::TabStyle DockTabContainer::get_tab_style() const
+{
+	return DockTabContainer::TabStyle();
 }
 
 

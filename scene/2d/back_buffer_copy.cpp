@@ -30,7 +30,6 @@
 
 #include "back_buffer_copy.h"
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 
 void BackBufferCopy::_update_copy_mode()
@@ -70,22 +69,9 @@ void BackBufferCopy::set_copy_mode(CopyMode p_mode)
 {
 	copy_mode = p_mode;
 	_update_copy_mode();
-	this->obj->notify_property_list_changed();
 }
 
 BackBufferCopy::CopyMode BackBufferCopy::get_copy_mode() const { return copy_mode; }
-
-void BackBufferCopy::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (copy_mode != COPY_MODE_RECT && p_property.name == "rect") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void BackBufferCopy::_bind_methods() {}
 
 BackBufferCopy::BackBufferCopy()
 {

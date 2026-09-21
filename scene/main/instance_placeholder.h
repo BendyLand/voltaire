@@ -38,32 +38,13 @@ class InstancePlaceholder : public Node
 {
 	String path;
 
-	struct PropSet
-	{
-		StringName name;
-		Variant value;
-	};
-
-	List<PropSet> stored_values;
-
 private:
-	void set_value_on_instance(
-		InstancePlaceholder* p_placeholder, Node* p_instance, const PropSet& p_set);
 	Node* try_get_node(
 		InstancePlaceholder* p_placeholder, Node* p_instance, const NodePath& p_path);
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-
-	static void _bind_methods();
 
 public:
 	void set_instance_path(const String& p_name);
 	String get_instance_path() const;
-
-	Dictionary get_stored_values(bool p_with_order = false);
 
 	Node* create_instance(
 		bool p_replace = false, const Ref<PackedScene>& p_custom_scene = Ref<PackedScene>());

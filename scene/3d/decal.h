@@ -32,11 +32,11 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class Decal : public VisualInstance3D {
-	VLTRCLASS(Decal, VisualInstance3D);
-
+class Decal : public VisualInstance3D
+{
 public:
-	enum DecalTexture {
+	enum DecalTexture
+	{
 		TEXTURE_ALBEDO,
 		TEXTURE_NORMAL,
 		TEXTURE_ORM,
@@ -59,21 +59,16 @@ private:
 	real_t distance_fade_begin = 40.0;
 	real_t distance_fade_length = 10.0;
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_property) const;
-#endif // DISABLE_DEPRECATED
-
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	void set_size(const Vector3 &p_size);
+<<<<<<< HEAD
+	void set_size(const Vector3& p_size);
+=======
+>>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
-	void set_texture(DecalTexture p_type, const Ref<Texture2D> &p_texture);
+	void set_texture(DecalTexture p_type, const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture(DecalTexture p_type) const;
 
 	void set_emission_energy(real_t p_energy);
@@ -103,7 +98,6 @@ public:
 	void set_distance_fade_length(real_t p_length);
 	real_t get_distance_fade_length() const;
 
-	void set_cull_mask(uint32_t p_layers);
 	uint32_t get_cull_mask() const;
 
 	virtual AABB get_aabb() const override;
@@ -112,4 +106,4 @@ public:
 	~Decal();
 };
 
-VARIANT_ENUM_CAST(Decal::DecalTexture);
+

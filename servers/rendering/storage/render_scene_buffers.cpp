@@ -28,12 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "render_scene_buffers.h"
 #include "servers/rendering/rendering_server.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
-void RenderSceneBuffersConfiguration::_bind_methods() {}
 
-void RenderSceneBuffers::_bind_methods() {}
 
 

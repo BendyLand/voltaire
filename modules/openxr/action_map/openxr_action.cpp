@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "openxr_action.h"
 #include "openxr_action_set.h"
 
-void OpenXRAction::_bind_methods() {}
 
 Ref<OpenXRAction> OpenXRAction::new_action(const char* p_name, const char* p_localized_name,
 	const ActionType p_action_type, const char* p_toplevel_paths)

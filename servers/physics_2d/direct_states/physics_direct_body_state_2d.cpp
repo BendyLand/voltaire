@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "physics_direct_body_state_2d.h"
 
 void PhysicsDirectBodyState2D::integrate_forces()
@@ -58,15 +57,6 @@ void PhysicsDirectBodyState2D::integrate_forces()
 	set_linear_velocity(lv);
 	set_angular_velocity(av);
 }
-
-Object* PhysicsDirectBodyState2D::get_contact_collider_object(int p_contact_idx) const
-{
-	ObjectID objid = get_contact_collider_id(p_contact_idx);
-	Object* obj = ObjectDB::get_instance(objid);
-	return obj;
-}
-
-void PhysicsDirectBodyState2D::_bind_methods() {}
 
 PhysicsDirectBodyState2D::PhysicsDirectBodyState2D() {}
 

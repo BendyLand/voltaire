@@ -31,6 +31,7 @@
 #pragma once
 
 #include "scene/3d/physics/physics_body_3d.h"
+#include "scene/resources/physics_material.h"
 
 class PhysicsMaterial;
 
@@ -41,8 +42,6 @@ class NavigationMeshSourceGeometryData3D;
 
 class StaticBody3D : public PhysicsBody3D
 {
-	VLTRCLASS(StaticBody3D, PhysicsBody3D);
-
 private:
 	Vector3 constant_linear_velocity;
 	Vector3 constant_angular_velocity;
@@ -50,7 +49,6 @@ private:
 	Ref<PhysicsMaterial> physics_material_override;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_physics_material_override(const Ref<PhysicsMaterial>& p_physics_material_override);
@@ -68,7 +66,6 @@ private:
 	void _reload_physics_characteristics();
 
 #ifndef NAVIGATION_3D_DISABLED
-	static Callable _navmesh_source_geometry_parsing_callback;
 	static RID _navmesh_source_geometry_parser;
 
 public:

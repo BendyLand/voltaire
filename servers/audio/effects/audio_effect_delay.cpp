@@ -30,7 +30,6 @@
 
 #include "audio_effect_delay.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectDelayInstance::process(
@@ -203,6 +202,5 @@ void AudioEffectDelay::set_feedback_lowpass(float p_lowpass)
 
 float AudioEffectDelay::get_feedback_lowpass() const { return feedback_lowpass; }
 
-void AudioEffectDelay::_bind_methods() {}
 
 

@@ -166,8 +166,10 @@ public:
 
 	void set_debug_next_frame() { data.periodic_debug_log = true; }
 
-	SceneTreeFTI();
+	SceneTreeFTI() = default;
 	~SceneTreeFTI();
 };
 
 #endif // ndef _3D_DISABLED
+
+

@@ -36,8 +36,6 @@ static const float SPRITE_FRAME_MINIMUM_DURATION = 0.01;
 
 class SpriteFrames : public Resource
 {
-	VLTRCLASS(SpriteFrames, Resource);
-
 public:
 	enum LoopMode
 	{
@@ -62,11 +60,7 @@ private:
 
 	HashMap<StringName, Anim> animations;
 
-	Array _get_animations() const;
-	void _set_animations(const Array& p_animations);
-
 protected:
-	static void _bind_methods();
 
 public:
 	void add_animation(const StringName& p_anim);
@@ -133,5 +127,4 @@ public:
 	SpriteFrames();
 };
 
-VARIANT_ENUM_CAST(SpriteFrames::LoopMode);
 

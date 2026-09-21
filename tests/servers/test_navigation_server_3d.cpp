@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/templates/mem_unique_ptr.h"
 #include "tests/test_macros.h"
 
 TEST_FORCE_LINK(test_navigation_server_3d)
@@ -37,7 +36,6 @@ TEST_FORCE_LINK(test_navigation_server_3d)
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "core/object/callable_mp.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "nine_patch_rect.h"
 #include "servers/rendering/rendering_server.h"
 
@@ -60,49 +58,16 @@ Size2 NinePatchRect::get_minimum_size() const
 	return Size2(margin[SIDE_LEFT] + margin[SIDE_RIGHT], margin[SIDE_TOP] + margin[SIDE_BOTTOM]);
 }
 
-void NinePatchRect::_bind_methods() {}
-
+<<<<<<< HEAD
 void NinePatchRect::_texture_changed()
 {
 	queue_redraw();
 	update_minimum_size();
 }
 
-void NinePatchRect::set_texture(const Ref<Texture2D>& p_tex)
-{
-	if (texture == p_tex) {
-		return;
-	}
-
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &NinePatchRect::_texture_changed));
-	}
-
-	texture = p_tex;
-
-	if (texture.is_valid()) {
-		texture->connect_changed(callable_mp(this, &NinePatchRect::_texture_changed));
-	}
-
-	queue_redraw();
-	update_minimum_size();
-	this->obj->emit_signal(SceneStringName(texture_changed));
-}
-
+=======
+>>>>>>> fix/remove-object
 Ref<Texture2D> NinePatchRect::get_texture() const { return texture; }
-
-void NinePatchRect::set_patch_margin(Side p_side, int p_size)
-{
-	ERR_FAIL_INDEX((int)p_side, 4);
-
-	if (margin[p_side] == p_size) {
-		return;
-	}
-
-	margin[p_side] = p_size;
-	queue_redraw();
-	update_minimum_size();
-}
 
 int NinePatchRect::get_patch_margin(Side p_side) const
 {
@@ -123,39 +88,9 @@ void NinePatchRect::set_region_rect(const Rect2& p_region_rect)
 
 Rect2 NinePatchRect::get_region_rect() const { return region_rect; }
 
-void NinePatchRect::set_draw_center(bool p_enabled)
-{
-	if (draw_center == p_enabled) {
-		return;
-	}
-
-	draw_center = p_enabled;
-	queue_redraw();
-}
-
 bool NinePatchRect::is_draw_center_enabled() const { return draw_center; }
 
-void NinePatchRect::set_h_axis_stretch_mode(AxisStretchMode p_mode)
-{
-	if (axis_h == p_mode) {
-		return;
-	}
-
-	axis_h = p_mode;
-	queue_redraw();
-}
-
 NinePatchRect::AxisStretchMode NinePatchRect::get_h_axis_stretch_mode() const { return axis_h; }
-
-void NinePatchRect::set_v_axis_stretch_mode(AxisStretchMode p_mode)
-{
-	if (axis_v == p_mode) {
-		return;
-	}
-
-	axis_v = p_mode;
-	queue_redraw();
-}
 
 NinePatchRect::AxisStretchMode NinePatchRect::get_v_axis_stretch_mode() const { return axis_v; }
 

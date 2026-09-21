@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/typedefs.h"
 #include "texture_button.h"
 
@@ -266,8 +264,6 @@ void TextureButton::_notification(int p_what)
 	}
 }
 
-void TextureButton::_bind_methods() {}
-
 void TextureButton::set_texture_normal(const Ref<Texture2D>& p_normal)
 {
 	_set_texture(&normal, p_normal);
@@ -314,79 +310,23 @@ void TextureButton::set_texture_focused(const Ref<Texture2D>& p_focused)
 	_set_texture(&focused, p_focused);
 }
 
-void TextureButton::_set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture)
-{
-	DEV_ASSERT(p_destination);
-	Ref<Texture2D>& destination = *p_destination;
-	if (destination == p_texture) {
-		return;
-	}
-	if (destination.is_valid()) {
-		destination->disconnect_changed(callable_mp(this, &TextureButton::_texture_changed));
-	}
-	destination = p_texture;
-	if (destination.is_valid()) {
-		// Pass `CONNECT_REFERENCE_COUNTED` to avoid early disconnect in case the same texture is
-		// assigned to different "slots".
-		destination->connect_changed(
-			callable_mp(this, &TextureButton::_texture_changed), Object::CONNECT_REFERENCE_COUNTED);
-	}
-	_texture_changed();
-}
-
+<<<<<<< HEAD
 void TextureButton::_texture_changed()
 {
 	queue_redraw();
 	update_minimum_size();
 }
 
+=======
+>>>>>>> fix/remove-object
 bool TextureButton::get_ignore_texture_size() const { return ignore_texture_size; }
-
-void TextureButton::set_ignore_texture_size(bool p_ignore)
-{
-	if (ignore_texture_size == p_ignore) {
-		return;
-	}
-
-	ignore_texture_size = p_ignore;
-	update_minimum_size();
-	queue_redraw();
-}
-
-void TextureButton::set_stretch_mode(StretchMode p_stretch_mode)
-{
-	if (stretch_mode == p_stretch_mode) {
-		return;
-	}
-
-	stretch_mode = p_stretch_mode;
-	queue_redraw();
-}
 
 TextureButton::StretchMode TextureButton::get_stretch_mode() const { return stretch_mode; }
 
-void TextureButton::set_flip_h(bool p_flip)
-{
-	if (hflip == p_flip) {
-		return;
-	}
-
-	hflip = p_flip;
-	queue_redraw();
-}
-
 bool TextureButton::is_flipped_h() const { return hflip; }
-
-void TextureButton::set_flip_v(bool p_flip)
-{
-	if (vflip == p_flip) {
-		return;
-	}
-
-	vflip = p_flip;
-	queue_redraw();
-}
 
 bool TextureButton::is_flipped_v() const { return vflip; }
 
+void TextureButton::_set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture) {}
 
+void TextureButton::_texture_changed() {}

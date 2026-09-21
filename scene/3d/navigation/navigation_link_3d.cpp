@@ -29,189 +29,9 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "navigation_link_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 #include "servers/rendering/rendering_server.h"
-
-#ifdef DEBUG_ENABLED
-void NavigationLink3D::_update_debug_mesh()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		// don't update inside Editor as node 3d gizmo takes care of this
-		// as collisions and selections for Editor Viewport need to be updated
-		return;
-	}
-
-	if (!NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
-		if (debug_instance.is_valid()) {
-			RS::get_singleton()->instance_set_visible(debug_instance, false);
-		}
-		return;
-	}
-
-	if (!debug_instance.is_valid()) {
-		debug_instance = RenderingServer::get_singleton()->instance_create();
-	}
-
-	if (debug_mesh.is_null()) {
-		debug_mesh.instantiate();
-	}
-
-	RID nav_map = get_world_3d()->get_navigation_map();
-	real_t search_radius =
-		NavigationServer3D::get_singleton()->map_get_link_connection_radius(nav_map);
-	Vector3 up_vector = NavigationServer3D::get_singleton()->map_get_up(nav_map);
-	Vector3::Axis up_axis = up_vector.max_axis_index();
-
-	debug_mesh->clear_surfaces();
-
-	Vector<Vector3> lines;
-
-	// Draw line between the points.
-	lines.push_back(start_position);
-	lines.push_back(end_position);
-
-	// Draw start position search radius
-	for (int i = 0; i < 30; i++) {
-		// Create a circle
-		const float ra = Math::deg_to_rad((float)(i * 12));
-		const float rb = Math::deg_to_rad((float)((i + 1) * 12));
-		const Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * search_radius;
-		const Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * search_radius;
-
-		// Draw axis-aligned circle
-		switch (up_axis) {
-		case Vector3::AXIS_X:
-			lines.append(start_position + Vector3(0, a.x, a.y));
-			lines.append(start_position + Vector3(0, b.x, b.y));
-			break;
-		case Vector3::AXIS_Y:
-			lines.append(start_position + Vector3(a.x, 0, a.y));
-			lines.append(start_position + Vector3(b.x, 0, b.y));
-			break;
-		case Vector3::AXIS_Z:
-			lines.append(start_position + Vector3(a.x, a.y, 0));
-			lines.append(start_position + Vector3(b.x, b.y, 0));
-			break;
-		}
-	}
-
-	// Draw end position search radius
-	for (int i = 0; i < 30; i++) {
-		// Create a circle
-		const float ra = Math::deg_to_rad((float)(i * 12));
-		const float rb = Math::deg_to_rad((float)((i + 1) * 12));
-		const Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * search_radius;
-		const Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * search_radius;
-
-		// Draw axis-aligned circle
-		switch (up_axis) {
-		case Vector3::AXIS_X:
-			lines.append(end_position + Vector3(0, a.x, a.y));
-			lines.append(end_position + Vector3(0, b.x, b.y));
-			break;
-		case Vector3::AXIS_Y:
-			lines.append(end_position + Vector3(a.x, 0, a.y));
-			lines.append(end_position + Vector3(b.x, 0, b.y));
-			break;
-		case Vector3::AXIS_Z:
-			lines.append(end_position + Vector3(a.x, a.y, 0));
-			lines.append(end_position + Vector3(b.x, b.y, 0));
-			break;
-		}
-	}
-
-	const Vector3 link_segment = end_position - start_position;
-	const Vector3 up = Vector3(0.0, 1.0, 0.0);
-	const float arror_len = 0.5;
-
-	{
-		Vector3 anchor = start_position + (link_segment * 0.75);
-		Vector3 direction = start_position.direction_to(end_position);
-		Vector3 arrow_dir = direction.cross(up);
-		lines.push_back(anchor);
-		lines.push_back(anchor + (arrow_dir - direction) * arror_len);
-
-		arrow_dir = -direction.cross(up);
-		lines.push_back(anchor);
-		lines.push_back(anchor + (arrow_dir - direction) * arror_len);
-	}
-
-	if (is_bidirectional()) {
-		Vector3 anchor = start_position + (link_segment * 0.25);
-		Vector3 direction = end_position.direction_to(start_position);
-		Vector3 arrow_dir = direction.cross(up);
-		lines.push_back(anchor);
-		lines.push_back(anchor + (arrow_dir - direction) * arror_len);
-
-		arrow_dir = -direction.cross(up);
-		lines.push_back(anchor);
-		lines.push_back(anchor + (arrow_dir - direction) * arror_len);
-	}
-
-	Array mesh_array;
-	mesh_array.resize(Mesh::ARRAY_MAX);
-	mesh_array[Mesh::ARRAY_VERTEX] = lines;
-
-	debug_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, mesh_array);
-
-	RS::get_singleton()->instance_set_base(debug_instance, debug_mesh->get_rid());
-	RS::get_singleton()->instance_set_scenario(debug_instance, get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_set_visible(debug_instance, is_visible_in_tree());
-
-	Ref<StandardMaterial3D> link_material =
-		NavigationServer3D::get_singleton()->get_debug_navigation_link_connections_material();
-	Ref<StandardMaterial3D> disabled_link_material =
-		NavigationServer3D::get_singleton()
-			->get_debug_navigation_link_connections_disabled_material();
-
-	if (enabled) {
-		RS::get_singleton()->instance_set_surface_override_material(
-			debug_instance, 0, link_material->get_rid());
-	}
-	else {
-		RS::get_singleton()->instance_set_surface_override_material(
-			debug_instance, 0, disabled_link_material->get_rid());
-	}
-
-	RS::get_singleton()->instance_set_transform(debug_instance, get_global_transform());
-}
-#endif // DEBUG_ENABLED
-
-void NavigationLink3D::_bind_methods() {}
-
-#ifndef DISABLE_DEPRECATED
-bool NavigationLink3D::_set(const StringName& p_name, const Variant& p_value)
-{
-	if (p_name == "start_location") {
-		set_start_position(p_value);
-		return true;
-	}
-	if (p_name == "end_location") {
-		set_end_position(p_value);
-		return true;
-	}
-	return false;
-}
-
-bool NavigationLink3D::_get(const StringName& p_name, Variant& r_ret) const
-{
-	if (p_name == "start_location") {
-		r_ret = get_start_position();
-		return true;
-	}
-	if (p_name == "end_location") {
-		r_ret = get_end_position();
-		return true;
-	}
-	return false;
-}
-#endif // DISABLE_DEPRECATED
 
 void NavigationLink3D::_notification(int p_what)
 {
@@ -236,20 +56,6 @@ void NavigationLink3D::_notification(int p_what)
 	}
 }
 
-NavigationLink3D::NavigationLink3D()
-{
-	link = NavigationServer3D::get_singleton()->link_create();
-
-	NavigationServer3D::get_singleton()->link_set_owner_id(link, this->obj->get_instance_id());
-	NavigationServer3D::get_singleton()->link_set_enter_cost(link, enter_cost);
-	NavigationServer3D::get_singleton()->link_set_travel_cost(link, travel_cost);
-	NavigationServer3D::get_singleton()->link_set_navigation_layers(link, navigation_layers);
-	NavigationServer3D::get_singleton()->link_set_bidirectional(link, bidirectional);
-	NavigationServer3D::get_singleton()->link_set_enabled(link, enabled);
-
-	set_notify_transform(true);
-}
-
 NavigationLink3D::~NavigationLink3D()
 {
 	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
@@ -268,38 +74,6 @@ NavigationLink3D::~NavigationLink3D()
 }
 
 RID NavigationLink3D::get_rid() const { return link; }
-
-void NavigationLink3D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-
-	enabled = p_enabled;
-
-	NavigationServer3D::get_singleton()->link_set_enabled(link, enabled);
-
-#ifdef DEBUG_ENABLED
-	if (debug_instance.is_valid() && debug_mesh.is_valid()) {
-		if (enabled) {
-			Ref<StandardMaterial3D> link_material =
-				NavigationServer3D::get_singleton()
-					->get_debug_navigation_link_connections_material();
-			RS::get_singleton()->instance_set_surface_override_material(
-				debug_instance, 0, link_material->get_rid());
-		}
-		else {
-			Ref<StandardMaterial3D> disabled_link_material =
-				NavigationServer3D::get_singleton()
-					->get_debug_navigation_link_connections_disabled_material();
-			RS::get_singleton()->instance_set_surface_override_material(
-				debug_instance, 0, disabled_link_material->get_rid());
-		}
-	}
-#endif // DEBUG_ENABLED
-
-	update_gizmos();
-}
 
 void NavigationLink3D::set_navigation_map(RID p_navigation_map)
 {
@@ -321,23 +95,6 @@ RID NavigationLink3D::get_navigation_map() const
 		return get_world_3d()->get_navigation_map();
 	}
 	return RID();
-}
-
-void NavigationLink3D::set_bidirectional(bool p_bidirectional)
-{
-	if (bidirectional == p_bidirectional) {
-		return;
-	}
-
-	bidirectional = p_bidirectional;
-
-	NavigationServer3D::get_singleton()->link_set_bidirectional(link, bidirectional);
-
-#ifdef DEBUG_ENABLED
-	_update_debug_mesh();
-#endif // DEBUG_ENABLED
-
-	update_gizmos();
 }
 
 void NavigationLink3D::set_navigation_layers(uint32_t p_navigation_layers)
@@ -380,62 +137,6 @@ bool NavigationLink3D::get_navigation_layer_value(int p_layer_number) const
 	return get_navigation_layers() & (1 << (p_layer_number - 1));
 }
 
-void NavigationLink3D::set_start_position(Vector3 p_position)
-{
-	if (start_position.is_equal_approx(p_position)) {
-		return;
-	}
-
-	start_position = p_position;
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer3D::get_singleton()->link_set_start_position(
-		link, get_global_transform().xform(start_position));
-
-#ifdef DEBUG_ENABLED
-	_update_debug_mesh();
-#endif // DEBUG_ENABLED
-
-	update_gizmos();
-	update_configuration_warnings();
-}
-
-void NavigationLink3D::set_end_position(Vector3 p_position)
-{
-	if (end_position.is_equal_approx(p_position)) {
-		return;
-	}
-
-	end_position = p_position;
-
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer3D::get_singleton()->link_set_end_position(
-		link, get_global_transform().xform(end_position));
-
-#ifdef DEBUG_ENABLED
-	_update_debug_mesh();
-#endif // DEBUG_ENABLED
-
-	update_gizmos();
-	update_configuration_warnings();
-}
-
-void NavigationLink3D::set_global_start_position(Vector3 p_position)
-{
-	if (is_inside_tree()) {
-		set_start_position(to_local(p_position));
-	}
-	else {
-		set_start_position(p_position);
-	}
-}
-
 Vector3 NavigationLink3D::get_global_start_position() const
 {
 	if (is_inside_tree()) {
@@ -443,16 +144,6 @@ Vector3 NavigationLink3D::get_global_start_position() const
 	}
 	else {
 		return start_position;
-	}
-}
-
-void NavigationLink3D::set_global_end_position(Vector3 p_position)
-{
-	if (is_inside_tree()) {
-		set_end_position(to_local(p_position));
-	}
-	else {
-		set_end_position(p_position);
 	}
 }
 
@@ -557,3 +248,5 @@ void NavigationLink3D::_link_update_transform()
 }
 
 
+
+void NavigationLink3D::_update_debug_mesh() {}

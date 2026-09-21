@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "websocket_peer.h"
 
 WebSocketPeer* (*WebSocketPeer::_create)(bool p_notify_postinitialize) = nullptr;
@@ -37,7 +36,6 @@ WebSocketPeer::WebSocketPeer() {}
 
 WebSocketPeer::~WebSocketPeer() {}
 
-void WebSocketPeer::_bind_methods() {}
 
 Error WebSocketPeer::_send_bind(const PackedByteArray& p_message, WriteMode p_mode)
 {

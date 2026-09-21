@@ -32,23 +32,21 @@
 
 #include "scene/gui/container.h"
 
-class GridContainer : public Container {
-	VLTRCLASS(GridContainer, Container);
-
+class GridContainer : public Container
+{
 	int columns = 1;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int v_separation = 0;
 	} theme_cache;
 
 private:
-	void _resort();
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_columns(int p_columns);
@@ -58,3 +56,5 @@ public:
 
 	int get_h_separation() const;
 };
+
+

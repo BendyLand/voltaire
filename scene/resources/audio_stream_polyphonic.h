@@ -37,12 +37,10 @@
 
 class AudioStreamPolyphonic : public AudioStream
 {
-	VLTRCLASS(AudioStreamPolyphonic, AudioStream)
 	int polyphony = 32;
 
 	AudioServer::PlaybackType playback_type;
 
-	static void _bind_methods();
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
@@ -58,8 +56,6 @@ public:
 
 class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback
 {
-	VLTRCLASS(AudioStreamPlaybackPolyphonic, AudioStreamPlayback)
-
 	constexpr static uint32_t INTERNAL_BUFFER_LEN = 128;
 
 	struct Stream
@@ -93,7 +89,6 @@ class AudioStreamPlaybackPolyphonic : public AudioStreamPlayback
 	friend class AudioStreamPolyphonic;
 
 protected:
-	static void _bind_methods();
 
 public:
 	typedef int64_t ID;

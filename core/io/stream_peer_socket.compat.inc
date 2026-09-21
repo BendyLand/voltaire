@@ -30,7 +30,6 @@
 
 #ifndef DISABLE_DEPRECATED
 
-#include "core/object/class_db.h"
 #include "stream_peer_socket.h"
 
 namespace compat::StreamPeerTCP
@@ -43,8 +42,6 @@ enum class Status
 	STATUS_ERROR = StreamPeerSocket::STATUS_ERROR,
 };
 }
-
-VARIANT_ENUM_CAST(compat::StreamPeerTCP::Status);
 
 compat::StreamPeerTCP::Status StreamPeerSocket::_get_status_bind_compat_107954() const
 {

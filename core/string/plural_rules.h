@@ -30,9 +30,12 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/lru.h"
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
+=======
+>>>>>>> fix/remove-object
+#include "core/types.h"
 
 class Expression;
 
@@ -47,8 +50,6 @@ class PluralRules
 	// Cache temporary variables related to `evaluate()` to make it faster.
 	class EQNode : public RefCounted
 	{
-		VLTRSOFTCLASS(EQNode, RefCounted);
-
 	public:
 		String regex;
 		Ref<EQNode> left;
@@ -59,15 +60,11 @@ class PluralRules
 	Ref<Expression> expr;
 
 	int _find_unquoted(const String& p_src, char32_t p_chr) const;
-	int _eq_test(
-		const Array& p_input_val, const Ref<EQNode>& p_node, const Variant& p_result) const;
 	void _cache_plural_tests(const String& p_plural_rule, Ref<EQNode>& p_node);
 
 	PluralRules(int p_nplurals, const String& p_plural);
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	int evaluate(int p_n) const;
 
 	int get_nplurals() const { return nplurals; }
@@ -76,4 +73,5 @@ public:
 
 	static PluralRules* parse(const String& p_rules);
 };
+
 

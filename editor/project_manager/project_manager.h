@@ -118,20 +118,17 @@ class ProjectManager : public Control
 
 	EditorAbout* about_dialog = nullptr;
 
-	void _show_about();
 	void _open_asset_library_confirmed();
 	void _project_list_menu_option(int p_option);
 
 	AcceptDialog* error_dialog = nullptr;
 
-	void _show_error(const String& p_message, const Size2& p_min_size = Size2());
 	void _dim_window();
 
 	// Quick settings.
 
 	QuickSettingsDialog* quick_settings_dialog = nullptr;
 
-	void _show_quick_settings();
 	void _restart_confirmed();
 
 	// Project list.
@@ -185,12 +182,8 @@ class ProjectManager : public Control
 	ProjectDialog* project_dialog = nullptr;
 
 	void _scan_projects();
-	void _run_project();
-	void _run_project_confirm();
 	void _open_selected_projects();
-	void _open_selected_projects_with_migration();
 	void _open_selected_projects_check_warnings();
-	void _open_selected_projects_check_recovery_mode();
 
 	void _install_project(const String& p_zip_path, const String& p_title);
 	void _import_project();
@@ -199,13 +192,10 @@ class ProjectManager : public Control
 	void _duplicate_project();
 	void _duplicate_project_with_action(PostDuplicateAction p_action);
 	void _show_project_in_file_manager();
-	void _erase_project();
-	void _erase_missing_projects();
 	void _erase_project_confirm();
 	void _erase_missing_projects_confirm();
 	void _update_project_buttons();
 	void _open_options_popup();
-	void _open_recovery_mode_ask(bool manual = false);
 	void _open_donate_page();
 
 	void _on_project_created(const String& dir, bool edit);
@@ -218,7 +208,6 @@ class ProjectManager : public Control
 
 	void _on_order_option_changed(int p_idx);
 	void _on_search_term_changed(const String& p_term);
-	void _on_search_term_submitted(const String& p_text);
 
 	// Project tag management.
 
@@ -261,13 +250,10 @@ class ProjectManager : public Control
 #ifndef DISABLE_DEPRECATED
 	void _minor_project_migrate();
 #endif
-	void _full_convert_button_pressed();
 	void _migration_guide_button_pressed();
 	void _perform_full_project_conversion();
 
 	// Input and I/O.
-
-	virtual void shortcut_input(const Ref<InputEvent>& p_ev) override;
 
 	void _files_dropped(PackedStringArray p_files);
 

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_server.h"
 #include "style_box_texture.h"
 
@@ -193,6 +192,5 @@ void StyleBoxTexture::draw(RID p_canvas_item, const Rect2& p_rect) const
 		RSE::NinePatchAxisMode(axis_v), draw_center, modulate);
 }
 
-void StyleBoxTexture::_bind_methods() {}
 
 

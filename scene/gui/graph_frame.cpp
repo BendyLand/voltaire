@@ -29,60 +29,12 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/class_db.h"
 #include "graph_frame.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/label.h"
 #include "scene/resources/style_box_flat.h"
 #include "scene/resources/style_box_texture.h"
 #include "scene/theme/theme_db.h"
-
-void GraphFrame::gui_input(const Ref<InputEvent>& p_ev)
-{
-	ERR_FAIL_COND(p_ev.is_null());
-
-	Ref<InputEventMouseButton> mb = p_ev;
-	if (mb.is_valid()) {
-		ERR_FAIL_NULL_MSG(
-			get_parent_control(), "GraphFrame must be the child of a GraphEdit node.");
-
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			Vector2 mpos = mb->get_position();
-
-			Ref<Texture2D> resizer = theme_cache.resizer;
-
-			if (resizable && mpos.x > get_size().x - resizer->get_width() &&
-				mpos.y > get_size().y - resizer->get_height()) {
-				resizing = true;
-				resizing_from = mpos;
-				resizing_from_size = get_size();
-				accept_event();
-				return;
-			}
-
-			this->obj->emit_signal(SNAME("raise_request"));
-		}
-
-		if (!mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
-			if (resizing) {
-				resizing = false;
-				this->obj->emit_signal(SNAME("resize_end"), get_size());
-				return;
-			}
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_ev;
-
-	// Only resize if the frame is not auto-resizing based on linked nodes.
-	if (resizing && !autoshrink_enabled && mm.is_valid()) {
-		Vector2 mpos = mm->get_position();
-
-		Vector2 diff = mpos - resizing_from;
-
-		this->obj->emit_signal(SNAME("resize_request"), resizing_from_size + diff);
-	}
-}
 
 Control::CursorShape GraphFrame::get_cursor_shape(const Point2& p_pos) const
 {
@@ -118,24 +70,7 @@ void GraphFrame::_notification(int p_what)
 		Rect2 body_rect(Point2(0, titlebar_rect.size.height), body_size);
 
 		// Draw body stylebox.
-		if (tint_color_enabled) {
-			if (sb_panel_flat.is_valid()) {
-				Color original_border_color = sb_panel_flat->get_border_color();
-				sb_panel_flat = sb_panel_flat->duplicate();
-				sb_panel_flat->set_bg_color(tint_color);
-				sb_panel_flat->set_border_color(
-					selected ? original_border_color : tint_color.lightened(0.3));
-				draw_style_box(sb_panel_flat.ptr(), body_rect);
-			}
-			else if (sb_panel_texture.is_valid()) {
-				sb_panel_texture = sb_panel_texture->duplicate();
-				sb_panel_texture->set_modulate(tint_color);
-				draw_style_box(sb_panel_texture.ptr(), body_rect);
-			}
-		}
-		else {
-			draw_style_box(sb_panel_flat.ptr(), body_rect);
-		}
+		draw_style_box(sb_panel_flat.ptr(), body_rect);
 
 		// Draw title bar stylebox above.
 		draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);
@@ -174,6 +109,7 @@ void GraphFrame::_resort()
 	Point2 offset = Point2(
 		sb_panel->get_margin(SIDE_LEFT), sb_panel->get_margin(SIDE_TOP) + titlebar_min_size.height +
 											 sb_titlebar->get_minimum_size().height);
+<<<<<<< HEAD
 
 	for (int i = 0; i < get_child_count(false); i++) {
 		Control* child = as_sortable_control(get_child(i, false));
@@ -181,18 +117,6 @@ void GraphFrame::_resort()
 			continue;
 		}
 		fit_child_in_rect(child, Rect2(offset, size));
-	}
-}
-
-void GraphFrame::_bind_methods() {}
-
-void GraphFrame::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name == "resizable") {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
 
@@ -206,30 +130,13 @@ void GraphFrame::set_title(const String& p_title)
 		title_label->set_text(title);
 	}
 	update_minimum_size();
+=======
+>>>>>>> fix/remove-object
 }
 
 String GraphFrame::get_title() const { return title; }
 
-void GraphFrame::set_autoshrink_enabled(bool p_shrink)
-{
-	if (autoshrink_enabled == p_shrink) {
-		return;
-	}
-	autoshrink_enabled = p_shrink;
-	this->obj->emit_signal("autoshrink_changed", get_size());
-	queue_redraw();
-}
-
 bool GraphFrame::is_autoshrink_enabled() const { return autoshrink_enabled; }
-
-void GraphFrame::set_autoshrink_margin(const int& p_margin)
-{
-	if (autoshrink_margin == p_margin) {
-		return;
-	}
-	autoshrink_margin = p_margin;
-	this->obj->emit_signal("autoshrink_changed", get_size());
-}
 
 int GraphFrame::get_autoshrink_margin() const { return autoshrink_margin; }
 
@@ -244,19 +151,7 @@ void GraphFrame::set_drag_margin(int p_margin) { drag_margin = p_margin; }
 
 int GraphFrame::get_drag_margin() const { return drag_margin; }
 
-void GraphFrame::set_tint_color_enabled(bool p_enable)
-{
-	tint_color_enabled = p_enable;
-	queue_redraw();
-}
-
 bool GraphFrame::is_tint_color_enabled() const { return tint_color_enabled; }
-
-void GraphFrame::set_tint_color(const Color& p_color)
-{
-	tint_color = p_color;
-	queue_redraw();
-}
 
 Color GraphFrame::get_tint_color() const { return tint_color; }
 
@@ -288,34 +183,6 @@ bool GraphFrame::has_point(const Point2& p_point) const
 	return false;
 }
 
-Size2 GraphFrame::_get_minimum_size(bool p_use_desired_sizes) const
-{
-	Ref<StyleBox> sb_panel = theme_cache.panel;
-	Ref<StyleBox> sb_titlebar = theme_cache.titlebar;
-
-	Size2 minsize = (p_use_desired_sizes ? titlebar_hbox->get_bound_desired_size()
-										 : titlebar_hbox->get_minimum_size()) +
-					sb_titlebar->get_minimum_size();
-
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false));
-		if (!child) {
-			continue;
-		}
-
-		Size2i size =
-			p_use_desired_sizes ? child->get_bound_desired_size() : child->get_bound_minimum_size();
-		size.width += sb_panel->get_minimum_size().width;
-
-		minsize.x = MAX(minsize.x, size.x);
-		minsize.y += MAX(minsize.y, size.y);
-	}
-
-	minsize.height += sb_panel->get_minimum_size().height;
-
-	return minsize;
-}
-
 Size2 GraphFrame::get_minimum_size() const { return _get_minimum_size(false); }
 
 Size2 GraphFrame::get_desired_size() const { return _get_minimum_size(true); }
@@ -338,3 +205,5 @@ GraphFrame::GraphFrame()
 }
 
 
+
+Size2 GraphFrame::_get_minimum_size(bool) const {}

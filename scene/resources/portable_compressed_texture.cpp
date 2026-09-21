@@ -30,7 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/marshalls.h"
-#include "core/object/class_db.h"
 #include "portable_compressed_texture.h"
 #include "scene/resources/bit_map.h"
 #include "servers/rendering/rendering_server.h"
@@ -237,25 +236,6 @@ void PortableCompressedTexture2D::create_from_image(const Ref<Image>& p_image,
 					compression_mode_names[expected_compression_mode],
 					compression_mode_names[p_compression_mode]));
 		}
-		else {
-			copy = p_image->duplicate();
-			switch (p_compression_mode) {
-			case COMPRESSION_MODE_S3TC:
-				copy->compress(Image::COMPRESS_S3TC);
-				break;
-			case COMPRESSION_MODE_ETC2:
-				copy->compress(Image::COMPRESS_ETC2);
-				break;
-			case COMPRESSION_MODE_BPTC:
-				copy->compress(Image::COMPRESS_BPTC);
-				break;
-			case COMPRESSION_MODE_ASTC:
-				copy->compress(Image::COMPRESS_ASTC);
-				break;
-			default: {
-			}
-			}
-		}
 		encode_uint32(copy->get_format(), buffer.ptrw() + 4);
 		buffer.append_array(copy->get_data());
 
@@ -327,19 +307,6 @@ void PortableCompressedTexture2D::draw_rect_region(RID p_canvas_item, const Rect
 
 bool PortableCompressedTexture2D::is_pixel_opaque(int p_x, int p_y) const
 {
-	if (alpha_cache.is_null()) {
-		Ref<Image> img = get_image();
-		if (img.is_valid()) {
-			if (img->is_compressed()) { // must decompress, if compressed
-				Ref<Image> decom = img->duplicate();
-				decom->decompress();
-				img = decom;
-			}
-			alpha_cache.instantiate();
-			alpha_cache->create_from_image_alpha(img);
-		}
-	}
-
 	if (alpha_cache.is_valid()) {
 		int aw = int(alpha_cache->get_size().width);
 		int ah = int(alpha_cache->get_size().height);
@@ -409,7 +376,6 @@ void PortableCompressedTexture2D::set_basisu_compressor_params(
 	basisu_params.rdo_quality_loss = p_rdo_quality_loss;
 }
 
-void PortableCompressedTexture2D::_bind_methods() {}
 
 PortableCompressedTexture2D::~PortableCompressedTexture2D()
 {

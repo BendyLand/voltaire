@@ -30,8 +30,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/string/fuzzy_search.h"
 #include "core/templates/fixed_vector.h"
@@ -81,20 +79,6 @@ void HighlightedLabel::draw_substr_rects(
 	}
 }
 
-void HighlightedLabel::add_highlight(const Vector2i& p_interval)
-{
-	if (p_interval.y > 0) {
-		highlights.append(p_interval);
-		queue_redraw();
-	}
-}
-
-void HighlightedLabel::reset_highlights()
-{
-	highlights.clear();
-	queue_redraw();
-}
-
 void HighlightedLabel::_notification(int p_notification)
 {
 	if (p_notification == NOTIFICATION_DRAW) {
@@ -113,46 +97,6 @@ void HighlightedLabel::_notification(int p_notification)
 	}
 }
 
-EditorQuickOpenDialog::EditorQuickOpenDialog()
-{
-	VBoxContainer* vbc = memnew(VBoxContainer);
-	vbc->add_theme_constant_override("separation", 0);
-	add_child(vbc);
-
-	{
-		// Search bar
-		MarginContainer* mc = memnew(MarginContainer);
-		mc->add_theme_constant_override("margin_top", 6);
-		mc->add_theme_constant_override("margin_bottom", 6);
-		mc->add_theme_constant_override("margin_left", 1);
-		mc->add_theme_constant_override("margin_right", 1);
-		vbc->add_child(mc);
-
-		search_box = memnew(LineEdit);
-		search_box->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		search_box->set_placeholder(TTR("Search files..."));
-		search_box->set_accessibility_name(TTRC("Search"));
-		search_box->set_clear_button_enabled(true);
-		mc->add_child(search_box);
-	}
-
-	{
-		container = memnew(QuickOpenResultContainer);
-		container->connect(
-			"selection_changed", callable_mp(this, &EditorQuickOpenDialog::selection_changed));
-		container->connect(
-			"result_clicked", callable_mp(this, &EditorQuickOpenDialog::item_pressed));
-		vbc->add_child(container);
-	}
-
-	search_box->connect(SceneStringName(text_changed),
-		callable_mp(this, &EditorQuickOpenDialog::_search_box_text_changed));
-	search_box->connect(SceneStringName(gui_input),
-		callable_mp(container, &QuickOpenResultContainer::handle_search_box_input));
-	register_text_enter(search_box);
-	get_ok_button()->hide();
-}
-
 String EditorQuickOpenDialog::get_dialog_title(const Vector<StringName>& p_base_types)
 {
 	if (p_base_types.size() > 1) {
@@ -166,45 +110,7 @@ String EditorQuickOpenDialog::get_dialog_title(const Vector<StringName>& p_base_
 	return vformat(TTR("Select %s"), p_base_types[0]);
 }
 
-void EditorQuickOpenDialog::popup_dialog(const Vector<StringName>& p_base_types,
-	const Callable& p_item_selected_callback, bool p_allow_type_switching)
-{
-	ERR_FAIL_COND(p_base_types.is_empty());
-	ERR_FAIL_COND(!p_item_selected_callback.is_valid());
-
-	property_object = nullptr;
-	property_path = "";
-	item_selected_callback = p_item_selected_callback;
-	allow_type_switching = p_allow_type_switching;
-
-	is_cycling_items = false;
-	container->init(p_base_types);
-	container->set_instant_preview_toggle_visible(false);
-	_finish_dialog_setup(p_base_types);
-}
-
-void EditorQuickOpenDialog::popup_dialog_for_property(const Vector<StringName>& p_base_types,
-	Object* p_obj, const StringName& p_path, const Callable& p_item_selected_callback)
-{
-	ERR_FAIL_NULL(p_obj);
-	ERR_FAIL_COND(p_base_types.is_empty());
-	ERR_FAIL_COND(!p_item_selected_callback.is_valid());
-
-	property_object = p_obj;
-	property_path = p_path;
-	item_selected_callback = p_item_selected_callback;
-	initial_property_value = property_object->get(property_path);
-	allow_type_switching = false;
-
-	// Reset this, so that the property isn't updated immediately upon opening
-	// the window.
-	initial_selection_performed = false;
-
-	container->init(p_base_types);
-	container->set_instant_preview_toggle_visible(true);
-	_finish_dialog_setup(p_base_types);
-}
-
+<<<<<<< HEAD
 void EditorQuickOpenDialog::_finish_dialog_setup(const Vector<StringName>& p_base_types)
 {
 	set_process_shortcut_input(allow_type_switching);
@@ -214,6 +120,8 @@ void EditorQuickOpenDialog::_finish_dialog_setup(const Vector<StringName>& p_bas
 	search_box->grab_focus();
 }
 
+=======
+>>>>>>> fix/remove-object
 void EditorQuickOpenDialog::ok_pressed()
 {
 	container->save_selected_item();
@@ -222,11 +130,6 @@ void EditorQuickOpenDialog::ok_pressed()
 	container->cleanup();
 	search_box->clear();
 	hide();
-}
-
-bool EditorQuickOpenDialog::_is_instant_preview_active() const
-{
-	return property_object != nullptr && container->is_instant_preview_enabled();
 }
 
 void EditorQuickOpenDialog::selection_changed()
@@ -258,134 +161,7 @@ void EditorQuickOpenDialog::item_pressed(bool p_double_click)
 	}
 }
 
-void EditorQuickOpenDialog::preview_property()
-{
-	ERR_FAIL_COND(container->get_selected() == ResourceUID::INVALID_ID);
-	String path = container->get_selected_path();
-
-	Ref<Resource> loaded_resource = ResourceLoader::load(path);
-	ERR_FAIL_COND_MSG(loaded_resource.is_null(), "Cannot load resource from path '" + path + "'.");
-
-	Resource* res = Object::cast_to<Resource>(property_object);
-	if (res) {
-		HashSet<Resource*> resources_found;
-		resources_found.insert(res);
-		if (EditorNode::find_recursive_resources(loaded_resource, resources_found)) {
-			EditorToaster::get_singleton()->popup_str(
-				TTR("Recursion detected, Instant Preview failed."), EditorToaster::SEVERITY_ERROR);
-			loaded_resource = Ref<Resource>();
-		}
-	}
-
-	// MultiNodeEdit has adding to the undo/redo stack baked into its set function.
-	// As such, we have to specifically call a version of its setter that doesn't
-	// create undo/redo actions.
-	property_object->set_block_signals(true);
-	if (Object::cast_to<MultiNodeEdit>(property_object)) {
-		Object::cast_to<MultiNodeEdit>(property_object)
-			->_set_impl(property_path, loaded_resource, "", false);
-	}
-	else {
-		property_object->set(property_path, loaded_resource);
-	}
-	property_object->set_block_signals(false);
-}
-
-void EditorQuickOpenDialog::update_property()
-{
-	// Set the property back to the initial value first, so that the undo action
-	// has the correct object.
-	if (property_object) {
-		if (Object::cast_to<MultiNodeEdit>(property_object)) {
-			Object::cast_to<MultiNodeEdit>(property_object)
-				->_set_impl(property_path, initial_property_value, "", false);
-		}
-		else {
-			property_object->set(property_path, initial_property_value);
-		}
-	}
-
-	if (!item_selected_callback.is_valid()) {
-		String err_msg = "The callback provided to the Quick Open dialog was invalid.";
-		if (_is_instant_preview_active()) {
-			err_msg += " Try disabling \"Instant Preview\" as a workaround.";
-		}
-		ERR_FAIL_MSG(err_msg);
-	}
-
-	item_selected_callback.call(container->get_selected_path());
-}
-
-void EditorQuickOpenDialog::cancel_pressed()
-{
-	if (property_object) {
-		if (Object::cast_to<MultiNodeEdit>(property_object)) {
-			Object::cast_to<MultiNodeEdit>(property_object)
-				->_set_impl(property_path, initial_property_value, "", false);
-		}
-		else {
-			property_object->set(property_path, initial_property_value);
-		}
-	}
-	container->cleanup();
-	search_box->clear();
-}
-
-void EditorQuickOpenDialog::shortcut_input(const Ref<InputEvent>& p_event)
-{
-	// If the user is cycling through items (with up/down arrows), confirm selection when releasing
-	// the keys.
-	Ref<InputEventWithModifiers> iewm = p_event;
-	if (is_cycling_items && iewm.is_valid() && p_event->is_released() &&
-		iewm->get_modifiers_mask().is_empty()) {
-		ok_pressed();
-		return;
-	}
-
-	if (p_event.is_null() || !p_event->is_pressed() || p_event->is_echo()) {
-		return;
-	}
-
-	Vector<StringName> new_base_types;
-	if (EditorSettings* settings = EditorSettings::get_singleton()) {
-		if (settings->is_shortcut("editor/quick_open", p_event)) {
-			new_base_types.push_back("Resource");
-		}
-		else if (settings->is_shortcut("editor/quick_open_scene", p_event)) {
-			new_base_types.push_back("PackedScene");
-		}
-		else if (settings->is_shortcut("editor/quick_open_script", p_event)) {
-			new_base_types.push_back("Script");
-		}
-	}
-
-	if (new_base_types.size() != 1) {
-		return;
-	}
-
-	// Check if we're already showing this dialog type.
-	const Vector<StringName>& current_base_types = container->get_base_types();
-	if (current_base_types.size() == 1 && current_base_types[0] == new_base_types[0]) {
-		// Already showing the requested dialog type, move next.
-		Ref<InputEventKey> down_event = memnew(InputEventKey);
-		down_event->set_keycode(Key::DOWN);
-		down_event->set_pressed(true);
-		container->handle_search_box_input(down_event);
-		is_cycling_items = true;
-	}
-	else {
-		// Switch to the new dialog type.
-		container->init(new_base_types);
-		container->set_instant_preview_toggle_visible(false);
-		is_cycling_items = false;
-		set_title(get_dialog_title(new_base_types));
-		search_box->clear();
-		search_box->grab_focus();
-	}
-
-	set_input_as_handled();
-}
-
+<<<<<<< HEAD
 void EditorQuickOpenDialog::_search_box_text_changed(const String& p_query)
 {
 	container->set_query_and_update(p_query);
@@ -394,138 +170,15 @@ void EditorQuickOpenDialog::_search_box_text_changed(const String& p_query)
 
 //------------------------- Result Container
 
+=======
+>>>>>>> fix/remove-object
 void style_button(Button* p_button)
 {
 	p_button->set_flat(true);
 	p_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 }
 
-QuickOpenResultContainer::QuickOpenResultContainer()
-{
-	set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	add_theme_constant_override("separation", 0);
-	history_file.instantiate();
-
-	{
-		// Results section
-		panel_container = memnew(PanelContainer);
-		panel_container->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-		add_child(panel_container);
-
-		{
-			// No search results
-			no_results_container = memnew(CenterContainer);
-			no_results_container->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-			no_results_container->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-			panel_container->add_child(no_results_container);
-
-			no_results_label = memnew(Label);
-			no_results_label->set_focus_mode(FOCUS_ACCESSIBILITY);
-			no_results_label->add_theme_font_size_override(
-				SceneStringName(font_size), 24 * EDSCALE);
-			no_results_container->add_child(no_results_label);
-			no_results_container->hide();
-		}
-
-		{
-			MarginContainer* mc = memnew(MarginContainer);
-			mc->set_theme_type_variation("NoBorderHorizontalWindow");
-			mc->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-			mc->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-			panel_container->add_child(mc);
-
-			// Search results
-			scroll_container = memnew(ScrollContainer);
-			scroll_container->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
-			scroll_container->set_scroll_hint_mode(ScrollContainer::SCROLL_HINT_MODE_ALL);
-			scroll_container->hide();
-			panel_container->add_child(scroll_container);
-
-			list = memnew(VBoxContainer);
-			list->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-			list->add_theme_constant_override(SNAME("separation"), 0);
-			list->hide();
-			scroll_container->add_child(list);
-
-			grid = memnew(HFlowContainer);
-			grid->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-			grid->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-			grid->add_theme_constant_override(SNAME("v_separation"), 0);
-			grid->add_theme_constant_override(SNAME("h_separation"), 0);
-			grid->hide();
-			scroll_container->add_child(grid);
-
-			file_context_menu = memnew(PopupMenu);
-			file_context_menu->add_item(TTR("Show in FileSystem"), FILE_SHOW_IN_FILESYSTEM);
-			file_context_menu->add_item(
-				OS::get_singleton()->get_platform_string(OS::PLATFORM_STRING_FILE_MANAGER_SHOW),
-				FILE_SHOW_IN_FILE_MANAGER);
-			file_context_menu->connect(SceneStringName(id_pressed),
-				callable_mp(this, &QuickOpenResultContainer::_menu_option));
-			file_context_menu->hide();
-			scroll_container->add_child(file_context_menu);
-		}
-	}
-
-	{
-		// Selected filepath
-		file_details_path = memnew(Label);
-		file_details_path->set_focus_mode(FOCUS_ACCESSIBILITY);
-		file_details_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		file_details_path->set_horizontal_alignment(
-			HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
-		file_details_path->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-		add_child(file_details_path);
-	}
-
-	{
-		// Bottom bar
-		HBoxContainer* bottom_bar = memnew(HBoxContainer);
-		bottom_bar->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		bottom_bar->set_alignment(ALIGNMENT_END);
-		bottom_bar->add_theme_constant_override("separation", 3);
-		add_child(bottom_bar);
-
-		instant_preview_toggle = memnew(CheckButton);
-		style_button(instant_preview_toggle);
-		instant_preview_toggle->set_text(TTRC("Instant Preview"));
-		instant_preview_toggle->set_tooltip_text(
-			TTRC("Selected resource will be previewed in the editor before accepting."));
-		instant_preview_toggle->connect(SceneStringName(toggled),
-			callable_mp(this, &QuickOpenResultContainer::_toggle_instant_preview));
-		bottom_bar->add_child(instant_preview_toggle);
-
-		fuzzy_search_toggle = memnew(CheckButton);
-		style_button(fuzzy_search_toggle);
-		fuzzy_search_toggle->set_text(TTR("Fuzzy Search"));
-		fuzzy_search_toggle->set_tooltip_text(TTRC("Include approximate matches."));
-		fuzzy_search_toggle->connect(SceneStringName(toggled),
-			callable_mp(this, &QuickOpenResultContainer::_toggle_fuzzy_search));
-		bottom_bar->add_child(fuzzy_search_toggle);
-
-		include_addons_toggle = memnew(CheckButton);
-		style_button(include_addons_toggle);
-		include_addons_toggle->set_text(TTR("Addons"));
-		include_addons_toggle->set_tooltip_text(TTR("Include files from addons"));
-		include_addons_toggle->connect(SceneStringName(toggled),
-			callable_mp(this, &QuickOpenResultContainer::_toggle_include_addons));
-		bottom_bar->add_child(include_addons_toggle);
-
-		VSeparator* vsep = memnew(VSeparator);
-		vsep->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
-		vsep->set_custom_minimum_size(Size2i(0, 14 * EDSCALE));
-		bottom_bar->add_child(vsep);
-
-		display_mode_toggle = memnew(Button);
-		display_mode_toggle->set_accessibility_name(TTRC("Display Mode"));
-		style_button(display_mode_toggle);
-		display_mode_toggle->connect(SceneStringName(pressed),
-			callable_mp(this, &QuickOpenResultContainer::_toggle_display_mode));
-		bottom_bar->add_child(display_mode_toggle);
-	}
-}
-
+<<<<<<< HEAD
 void QuickOpenResultContainer::_menu_option(int p_option)
 {
 	ERR_FAIL_COND(get_selected() == ResourceUID::INVALID_ID);
@@ -542,151 +195,8 @@ void QuickOpenResultContainer::_menu_option(int p_option)
 	}
 }
 
-void QuickOpenResultContainer::_ensure_result_vector_capacity()
-{
-	int target_size = EDITOR_GET("filesystem/quick_open_dialog/max_results");
-	int initial_size = result_items.size();
-	for (int i = target_size; i < initial_size; i++) {
-		result_items[i]->queue_free();
-	}
-	result_items.resize(target_size);
-	for (int i = initial_size; i < target_size; i++) {
-		QuickOpenResultItem* item = memnew(QuickOpenResultItem);
-		item->connect(SceneStringName(gui_input),
-			callable_mp(this, &QuickOpenResultContainer::_item_input).bind(i));
-		result_items.write[i] = item;
-		if (!never_opened) {
-			_layout_result_item(item);
-		}
-	}
-}
-
-void QuickOpenResultContainer::init(const Vector<StringName>& p_base_types)
-{
-	_ensure_result_vector_capacity();
-	base_types = p_base_types;
-
-	const int display_mode_behavior =
-		EDITOR_GET("filesystem/quick_open_dialog/default_display_mode");
-	const bool adaptive_display_mode = (display_mode_behavior == 0);
-	const bool first_open = never_opened;
-
-	if (adaptive_display_mode) {
-		_set_display_mode(get_adaptive_display_mode(p_base_types));
-	}
-	else if (never_opened) {
-		int last = EditorSettings::get_singleton()->get_project_metadata(
-			"quick_open_dialog", "last_mode", (int)QuickOpenDisplayMode::LIST);
-		_set_display_mode((QuickOpenDisplayMode)last);
-	}
-
-	const bool do_instant_preview = EDITOR_GET("filesystem/quick_open_dialog/instant_preview");
-	const bool fuzzy_matching = EDITOR_GET("filesystem/quick_open_dialog/enable_fuzzy_matching");
-	const bool include_addons = EDITOR_GET("filesystem/quick_open_dialog/include_addons");
-	instant_preview_toggle->set_pressed_no_signal(do_instant_preview);
-	fuzzy_search_toggle->set_pressed_no_signal(fuzzy_matching);
-	include_addons_toggle->set_pressed_no_signal(include_addons);
-	never_opened = false;
-
-	const bool enable_highlights = EDITOR_GET("filesystem/quick_open_dialog/show_search_highlight");
-	for (QuickOpenResultItem* E : result_items) {
-		E->enable_highlights = enable_highlights;
-	}
-
-	bool history_modified = false;
-
-	if (first_open && history_file->load(_get_cache_file_path()) == OK) {
-		// Load history when opening for the first time.
-		file_type_icons.insert(SNAME("__default_icon"), get_editor_theme_icon(SNAME("Object")));
-
-		Vector<String> history_keys = history_file->get_section_keys("selected_history");
-		for (const String& type : history_keys) {
-			const StringName type_name = type;
-			const PackedStringArray history_uids =
-				history_file->get_value("selected_history", type);
-
-			PackedStringArray cleaned_text_uids;
-			cleaned_text_uids.resize(history_uids.size());
-
-			Vector<ResourceUID::ID> cleaned_ids;
-			cleaned_ids.resize(history_uids.size());
-
-			{
-				String* text_write = cleaned_text_uids.ptrw();
-				ResourceUID::ID* id_write = cleaned_ids.ptrw();
-				int i = 0;
-				for (String uid : history_uids) {
-#ifndef DISABLE_DEPRECATED
-					if (!uid.begins_with("uid://")) {
-						// uid might be a path here, if config was written by older editor version
-						ResourceUID::ID id = EditorFileSystem::get_singleton()->get_file_uid(uid);
-						if (id == ResourceUID::INVALID_ID) {
-							continue;
-						}
-						uid = ResourceUID::get_singleton()->id_to_text(id);
-					}
-#endif
-
-					ResourceUID::ID id = ResourceUID::get_singleton()->text_to_id(uid);
-					if (id == ResourceUID::INVALID_ID ||
-						!ResourceUID::get_singleton()->has_id(id)) {
-						continue;
-					}
-
-					filetypes.insert(id, type_name);
-					text_write[i] = uid;
-					id_write[i] = id;
-					i++;
-				}
-
-				cleaned_text_uids.resize(i);
-				selected_history.insert(type, cleaned_ids);
-
-				if (i < history_uids.size()) {
-					// Some paths removed, need to update history.
-					if (i == 0) {
-						history_file->erase_section_key("selected_history", type);
-					}
-					else {
-						history_file->set_value("selected_history", type, cleaned_text_uids);
-					}
-					history_modified = true;
-				}
-			}
-		}
-	}
-	else if (!first_open && base_types.size() == 1) {
-		const StringName& type = base_types[0];
-		Vector<ResourceUID::ID>* history = selected_history.getptr(type);
-
-		if (history) {
-			Vector<ResourceUID::ID> clean_history;
-
-			for (const ResourceUID::ID& uid : *history) {
-				if (ResourceUID::get_singleton()->has_id(uid)) {
-					clean_history.push_back(uid);
-				}
-				else {
-					history_modified = true;
-				}
-			}
-
-			if (clean_history.is_empty()) {
-				selected_history.erase(type);
-			}
-			else if (history_modified) {
-				*history = clean_history;
-			}
-		}
-	}
-
-	if (history_modified) {
-		history_file->save(_get_cache_file_path());
-	}
-
-	_create_initial_results();
-}
-
+=======
+>>>>>>> fix/remove-object
 void QuickOpenResultContainer::_sort_uids(int p_max_results)
 {
 	struct FilepathComparator
@@ -709,61 +219,6 @@ void QuickOpenResultContainer::_sort_uids(int p_max_results)
 	}
 	else {
 		sorter.sort(uids.ptr(), uids.size());
-	}
-}
-
-void QuickOpenResultContainer::_create_initial_results()
-{
-	file_type_icons.clear();
-	file_type_icons.insert(SNAME("__default_icon"), get_editor_theme_icon(SNAME("Object")));
-	uids.clear();
-	filetypes.clear();
-	history_set.clear();
-
-	Vector<ResourceUID::ID>* history = _get_history();
-	if (history) {
-		for (const ResourceUID::ID& uid : *history) {
-			history_set.insert(uid);
-		}
-	}
-
-	_find_uids_in_folder(
-		EditorFileSystem::get_singleton()->get_filesystem(), include_addons_toggle->is_pressed());
-	_sort_uids(result_items.size());
-	max_total_results = MIN(uids.size(), result_items.size());
-	update_results();
-}
-
-void QuickOpenResultContainer::_find_uids_in_folder(
-	EditorFileSystemDirectory* p_directory, bool p_include_addons)
-{
-	for (int i = 0; i < p_directory->get_subdir_count(); i++) {
-		if (p_include_addons || p_directory->get_name() != "addons") {
-			_find_uids_in_folder(p_directory->get_subdir(i), p_include_addons);
-		}
-	}
-
-	for (int i = 0; i < p_directory->get_file_count(); i++) {
-		ResourceUID::ID uid = p_directory->get_file_uid(i);
-		if (uid == ResourceUID::INVALID_ID) {
-			continue;
-		}
-
-		const StringName engine_type = p_directory->get_file_type(i);
-		const StringName script_type = p_directory->get_file_resource_script_class(i);
-
-		const bool is_engine_type = script_type == StringName();
-		const StringName& actual_type = is_engine_type ? engine_type : script_type;
-
-		for (const StringName& parent_type : base_types) {
-			bool is_valid = !is_engine_type && EditorNode::get_editor_data().script_class_is_parent(
-												   script_type, parent_type);
-			if (is_valid) {
-				uids.push_back(uid);
-				filetypes.insert(uid, actual_type);
-				break; // Stop testing base types as soon as we get a match.
-			}
-		}
 	}
 }
 
@@ -910,27 +365,6 @@ void QuickOpenResultContainer::_use_default_candidates()
 	}
 }
 
-Vector<Ref<FuzzySearchMatch>> QuickOpenResultContainer::_get_fuzzy_search_results()
-{
-	FuzzySearch fuzzy_search;
-	fuzzy_search.set_start_offset(6); // Don't match against "res://" at the start of each filepath.
-	fuzzy_search.set_case_sensitive(!query.is_lowercase());
-	fuzzy_search.set_max_results(max_total_results);
-	bool fuzzy_matching = EDITOR_GET("filesystem/quick_open_dialog/enable_fuzzy_matching");
-	int max_misses = EDITOR_GET("filesystem/quick_open_dialog/max_fuzzy_misses");
-	fuzzy_search.set_use_exact_tokens(!fuzzy_matching);
-	fuzzy_search.set_max_misses(fuzzy_matching ? max_misses : 0);
-
-	PackedStringArray paths;
-	paths.reserve_exact(uids.size());
-
-	for (const ResourceUID::ID& uid : uids) {
-		paths.push_back(ResourceUID::get_singleton()->get_id_path(uid));
-	}
-
-	return fuzzy_search.search_all(query, paths);
-}
-
 void QuickOpenResultContainer::_score_and_sort_candidates()
 {
 	for (const Ref<FuzzySearchMatch>& result : _get_fuzzy_search_results()) {
@@ -944,6 +378,7 @@ void QuickOpenResultContainer::_score_and_sort_candidates()
 	}
 }
 
+<<<<<<< HEAD
 void QuickOpenResultContainer::_update_result_items(
 	int p_new_visible_results_count, int p_new_selection_index)
 {
@@ -978,45 +413,8 @@ void QuickOpenResultContainer::_update_result_items(
 	}
 }
 
-void QuickOpenResultContainer::handle_search_box_input(const Ref<InputEvent>& p_ie)
-{
-	if (num_visible_results < 0) {
-		return;
-	}
-
-	Ref<InputEventKey> key_event = p_ie;
-	if (key_event.is_valid() && key_event->is_pressed()) {
-		bool move_selection = false;
-
-		switch (key_event->get_keycode()) {
-		case Key::UP:
-		case Key::DOWN:
-		case Key::PAGEUP:
-		case Key::PAGEDOWN: {
-			move_selection = true;
-		} break;
-		case Key::LEFT:
-		case Key::RIGHT: {
-			if (content_display_mode == QuickOpenDisplayMode::GRID) {
-				// Maybe strip off the shift modifier to allow non-selecting navigation by
-				// character?
-				if (key_event->get_modifiers_mask().is_empty()) {
-					move_selection = true;
-				}
-			}
-		} break;
-		default:
-			break; // Let the event through so it will reach the search box.
-		}
-
-		if (move_selection) {
-			_move_selection_index(key_event->get_keycode());
-			queue_redraw();
-			accept_event();
-		}
-	}
-}
-
+=======
+>>>>>>> fix/remove-object
 void QuickOpenResultContainer::_move_selection_index(Key p_key)
 {
 	// Don't move selection if there are no results.
@@ -1066,86 +464,10 @@ void QuickOpenResultContainer::_move_selection_index(Key p_key)
 	_select_item(idx);
 }
 
-void QuickOpenResultContainer::_select_item(int p_index)
-{
-	if (!has_nothing_selected()) {
-		result_items[selection_index]->highlight_item(false);
-	}
-
-	selection_index = p_index;
-
-	if (has_nothing_selected()) {
-		file_details_path->set_text("");
-		return;
-	}
-
-	result_items[selection_index]->highlight_item(true);
-	bool in_history = history_set.has(candidates[selection_index].uid);
-	file_details_path->set_text(
-		get_selected_path() + (in_history ? TTR(" (recently opened)") : ""));
-
-	this->obj->emit_signal(SNAME("selection_changed"));
-
-	const QuickOpenResultItem* item = result_items[selection_index];
-
-	// Copied from Tree.
-	const int selected_position = item->get_position().y;
-	const int selected_size = item->get_size().y;
-	const int scroll_window_size = scroll_container->get_size().y;
-	const int scroll_position = scroll_container->get_v_scroll();
-
-	if (selected_position <= scroll_position) {
-		scroll_container->set_v_scroll(selected_position);
-	}
-	else if (selected_position + selected_size > scroll_position + scroll_window_size) {
-		scroll_container->set_v_scroll(selected_position + selected_size - scroll_window_size);
-	}
-}
-
-void QuickOpenResultContainer::_item_input(const Ref<InputEvent>& p_ev, int p_index)
-{
-	Ref<InputEventMouseButton> mb = p_ev;
-
-	if (mb.is_valid() && mb->is_pressed()) {
-		if (mb->get_button_index() == MouseButton::LEFT) {
-			_select_item(p_index);
-			this->obj->emit_signal(SNAME("result_clicked"), mb->is_double_click());
-		}
-		else if (mb->get_button_index() == MouseButton::RIGHT) {
-			_select_item(p_index);
-			file_context_menu->set_position(
-				result_items[p_index]->get_screen_position() + mb->get_position());
-			file_context_menu->reset_size();
-			file_context_menu->popup();
-		}
-	}
-}
-
-void QuickOpenResultContainer::_toggle_instant_preview(bool p_pressed)
-{
-	EditorSettings::get_singleton()->obj->set(
-		"filesystem/quick_open_dialog/instant_preview", p_pressed);
-}
-
-void QuickOpenResultContainer::_toggle_fuzzy_search(bool p_pressed)
-{
-	EditorSettings::get_singleton()->obj->set(
-		"filesystem/quick_open_dialog/enable_fuzzy_matching", p_pressed);
-	update_results();
-}
-
 String QuickOpenResultContainer::_get_cache_file_path() const
 {
 	return EditorPaths::get_singleton()->get_project_settings_dir().path_join(
 		"quick_open_dialog_cache.cfg");
-}
-
-void QuickOpenResultContainer::_toggle_include_addons(bool p_pressed)
-{
-	EditorSettings::get_singleton()->obj->set(
-		"filesystem/quick_open_dialog/include_addons", p_pressed);
-	cleanup();
-	_create_initial_results();
 }
 
 void QuickOpenResultContainer::_toggle_display_mode()
@@ -1174,39 +496,6 @@ void QuickOpenResultContainer::_layout_result_item(QuickOpenResultItem* item)
 		parent->remove_child(item);
 	}
 	_get_result_root()->add_child(item);
-}
-
-void QuickOpenResultContainer::_set_display_mode(QuickOpenDisplayMode p_display_mode)
-{
-	CanvasItem* prev_root = _get_result_root();
-
-	if (prev_root->is_visible() && content_display_mode == p_display_mode) {
-		return;
-	}
-
-	content_display_mode = p_display_mode;
-	CanvasItem* next_root = _get_result_root();
-
-	EditorSettings::get_singleton()->set_project_metadata(
-		"quick_open_dialog", "last_mode", (int)content_display_mode);
-
-	prev_root->hide();
-	next_root->show();
-
-	for (QuickOpenResultItem* item : result_items) {
-		_layout_result_item(item);
-	}
-
-	_update_result_items(num_visible_results, selection_index);
-
-	if (content_display_mode == QuickOpenDisplayMode::LIST) {
-		display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileThumbnail")));
-		display_mode_toggle->set_tooltip_text(TTR("Grid view"));
-	}
-	else {
-		display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileList")));
-		display_mode_toggle->set_tooltip_text(TTR("List view"));
-	}
 }
 
 bool QuickOpenResultContainer::has_nothing_selected() const { return selection_index < 0; }
@@ -1263,57 +552,14 @@ bool QuickOpenResultContainer::is_instant_preview_enabled() const
 		   instant_preview_toggle->is_pressed();
 }
 
+<<<<<<< HEAD
 void QuickOpenResultContainer::set_instant_preview_toggle_visible(bool p_visible)
 {
 	instant_preview_toggle->set_visible(p_visible);
 }
 
-void QuickOpenResultContainer::save_selected_item()
-{
-	if (base_types.size() > 1) {
-		// Getting the type of the file and checking which base type it belongs to should be
-		// possible. However, for now these are not supported, and we don't record this.
-		return;
-	}
-
-	const StringName& base_type = base_types[0];
-	ResourceUID::ID selected = get_selected();
-	Vector<ResourceUID::ID>* type_history = selected_history.getptr(base_type);
-
-	if (!type_history) {
-		selected_history.insert(base_type, Vector<ResourceUID::ID>());
-		type_history = selected_history.getptr(base_type);
-	}
-	else {
-		for (int i = 0; i < type_history->size(); i++) {
-			if (selected == type_history->get(i)) {
-				type_history->remove_at(i);
-				break;
-			}
-		}
-	}
-
-	history_set.insert(selected);
-	type_history->insert(0, selected);
-	if (type_history->size() > MAX_HISTORY_SIZE) {
-		type_history->resize(MAX_HISTORY_SIZE);
-	}
-
-	PackedStringArray history_uids;
-	history_uids.resize(type_history->size());
-	{
-		String* uids_write = history_uids.ptrw();
-
-		int i = 0;
-		for (const ResourceUID::ID& uid : *type_history) {
-			uids_write[i] = ResourceUID::get_singleton()->id_to_text(uid);
-			i++;
-		}
-	}
-	history_file->set_value("selected_history", base_type, history_uids);
-	history_file->save(_get_cache_file_path());
-}
-
+=======
+>>>>>>> fix/remove-object
 void QuickOpenResultContainer::cleanup()
 {
 	num_visible_results = 0;
@@ -1326,80 +572,6 @@ void QuickOpenResultContainer::cleanup()
 	}
 }
 
-void QuickOpenResultContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		Color text_color = get_theme_color("font_readonly_color", EditorStringName(Editor));
-		file_details_path->add_theme_color_override(SceneStringName(font_color), text_color);
-		no_results_label->add_theme_color_override(SceneStringName(font_color), text_color);
-
-		file_context_menu->set_item_icon(
-			FILE_SHOW_IN_FILESYSTEM, get_editor_theme_icon(SNAME("ShowInFileSystem")));
-		file_context_menu->set_item_icon(
-			FILE_SHOW_IN_FILE_MANAGER, get_editor_theme_icon(SNAME("Filesystem")));
-
-		panel_container->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-
-		if (content_display_mode == QuickOpenDisplayMode::LIST) {
-			display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileThumbnail")));
-		}
-		else {
-			display_mode_toggle->set_button_icon(get_editor_theme_icon(SNAME("FileList")));
-		}
-	} break;
-	}
-}
-
-void QuickOpenResultContainer::_bind_methods() {}
-
-//------------------------- Result Item
-
-QuickOpenResultItem::QuickOpenResultItem()
-{
-	set_focus_mode(FocusMode::FOCUS_NONE);
-	_set_enabled(false);
-
-	list_item = memnew(QuickOpenResultListItem);
-	list_item->hide();
-	add_child(list_item);
-
-	grid_item = memnew(QuickOpenResultGridItem);
-	grid_item->hide();
-	add_child(grid_item);
-}
-
-void QuickOpenResultItem::set_display_mode(QuickOpenDisplayMode p_display_mode)
-{
-	if (p_display_mode == QuickOpenDisplayMode::LIST) {
-		grid_item->hide();
-		grid_item->reset();
-		list_item->show();
-	}
-	else {
-		list_item->hide();
-		list_item->reset();
-		grid_item->show();
-	}
-
-	queue_redraw();
-}
-
-void QuickOpenResultItem::set_content(const QuickOpenResultCandidate& p_candidate)
-{
-	_set_enabled(true);
-
-	if (list_item->is_visible()) {
-		list_item->set_content(p_candidate, enable_highlights);
-	}
-	else {
-		grid_item->set_content(p_candidate, enable_highlights);
-	}
-
-	queue_redraw();
-}
-
 void QuickOpenResultItem::reset()
 {
 	_set_enabled(false);
@@ -1409,50 +581,9 @@ void QuickOpenResultItem::reset()
 	grid_item->reset();
 }
 
-void QuickOpenResultItem::highlight_item(bool p_enabled)
-{
-	is_selected = p_enabled;
-
-	if (list_item->is_visible()) {
-		if (p_enabled) {
-			list_item->highlight_item(highlighted_font_color);
-		}
-		else {
-			list_item->remove_highlight();
-		}
-	}
-	else {
-		if (p_enabled) {
-			grid_item->highlight_item(highlighted_font_color);
-		}
-		else {
-			grid_item->remove_highlight();
-		}
-	}
-
-	queue_redraw();
-}
-
-void QuickOpenResultItem::_set_enabled(bool p_enabled)
-{
-	set_visible(p_enabled);
-	set_process(p_enabled);
-	set_process_input(p_enabled);
-}
-
 void QuickOpenResultItem::_notification(int p_what)
 {
 	switch (p_what) {
-	case NOTIFICATION_MOUSE_ENTER:
-	case NOTIFICATION_MOUSE_EXIT: {
-		is_hovering = is_visible() && p_what == NOTIFICATION_MOUSE_ENTER;
-		queue_redraw();
-	} break;
-	case NOTIFICATION_THEME_CHANGED: {
-		selected_stylebox = get_theme_stylebox("selected", "Tree");
-		hovering_stylebox = get_theme_stylebox(SNAME("hovered"), "Tree");
-		highlighted_font_color = get_theme_color("font_focus_color", EditorStringName(Editor));
-	} break;
 	case NOTIFICATION_DRAW: {
 		if (is_selected) {
 			draw_style_box(selected_stylebox.ptr(), Rect2(Point2(), get_size()));
@@ -1463,8 +594,6 @@ void QuickOpenResultItem::_notification(int p_what)
 	} break;
 	}
 }
-
-//----------------- List item
 
 static Vector2i _get_path_interval(const Vector2i& p_interval, int p_dir_index)
 {
@@ -1565,18 +694,6 @@ void QuickOpenResultListItem::remove_highlight()
 	name->remove_theme_color_override(SceneStringName(font_color));
 }
 
-void QuickOpenResultListItem::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		path->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color("font_disabled_color", EditorStringName(Editor)));
-	} break;
-	}
-}
-
-//--------------- Grid Item
-
 QuickOpenResultGridItem::QuickOpenResultGridItem()
 {
 	set_custom_minimum_size(Size2i(120 * EDSCALE, 0));
@@ -1606,38 +723,6 @@ QuickOpenResultGridItem::QuickOpenResultGridItem()
 	vbc->add_child(name);
 }
 
-void QuickOpenResultGridItem::set_content(
-	const QuickOpenResultCandidate& p_candidate, bool p_highlight)
-{
-	thumbnail->set_texture(p_candidate.thumbnail);
-
-	String file_path = ResourceUID::get_singleton()->get_id_path(p_candidate.uid);
-	name->set_text(file_path.get_file());
-	name->set_tooltip_text(file_path);
-	name->reset_highlights();
-
-	if (p_highlight && p_candidate.result.is_valid()) {
-		for (const FuzzyTokenMatch& match : p_candidate.result->get_token_matches()) {
-			for (const Vector2i& interval : match.substrings) {
-				name->add_highlight(
-					_get_name_interval(interval, p_candidate.result->get_dir_index()));
-			}
-		}
-	}
-
-	bool uses_icon = p_candidate.thumbnail->get_width() < (32 * EDSCALE);
-
-	if (uses_icon ||
-		p_candidate.thumbnail->get_height() <= thumbnail->get_custom_minimum_size().y) {
-		thumbnail->set_expand_mode(TextureRect::EXPAND_KEEP_SIZE);
-		thumbnail->set_stretch_mode(TextureRect::StretchMode::STRETCH_KEEP_CENTERED);
-	}
-	else {
-		thumbnail->set_expand_mode(TextureRect::EXPAND_FIT_WIDTH_PROPORTIONAL);
-		thumbnail->set_stretch_mode(TextureRect::StretchMode::STRETCH_SCALE);
-	}
-}
-
 void QuickOpenResultGridItem::reset()
 {
 	thumbnail->set_texture(nullptr);
@@ -1654,5 +739,32 @@ void QuickOpenResultGridItem::remove_highlight()
 {
 	name->remove_theme_color_override(SceneStringName(font_color));
 }
+
+void HighlightedLabel::reset_highlights() {}
+
+void QuickOpenResultItem::_set_enabled(bool) {}
+
+void QuickOpenResultContainer::_select_item(int) {}
+
+void QuickOpenResultContainer::save_selected_item() {}
+
+void EditorQuickOpenDialog::update_property() {}
+
+bool EditorQuickOpenDialog::_is_instant_preview_active() const { return true; }
+
+void QuickOpenResultItem::set_display_mode(QuickOpenDisplayMode) {}
+
+void QuickOpenResultContainer::_update_result_items(int, int) {}
+
+void QuickOpenResultContainer::_set_display_mode(QuickOpenDisplayMode) {}
+
+Vector<Ref<FuzzySearchMatch>> QuickOpenResultContainer::_get_fuzzy_search_results()
+{
+	return Vector<Ref<FuzzySearchMatch>>();
+}
+
+void EditorQuickOpenDialog::preview_property() {}
+
+void HighlightedLabel::add_highlight(Vector2i const&) {}
 
 

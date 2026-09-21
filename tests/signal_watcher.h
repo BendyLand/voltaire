@@ -30,8 +30,10 @@
 
 #pragma once
 
-#include "core/object/object.h"
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
+=======
+>>>>>>> fix/remove-object
 #include "tests/test_macros.h"
 
 // Utility class / macros for testing signals

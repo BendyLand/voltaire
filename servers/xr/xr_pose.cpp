@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/xr/xr_server.h"
 #include "xr_pose.h"
 
-void XRPose::_bind_methods() {}
 
 void XRPose::set_has_tracking_data(const bool p_has_tracking_data)
 {

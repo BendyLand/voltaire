@@ -31,6 +31,7 @@
 #pragma once
 
 #include "editor/gui/code_editor.h"
+#include "editor/script/syntax_highlighters.h"
 #include "scene/gui/box_container.h"
 
 class EditorSyntaxHighlighter;
@@ -42,8 +43,6 @@ class ScriptEditorBase : public VBoxContainer
 protected:
 	Ref<Resource> edited_res;
 
-	static void _bind_methods();
-
 public:
 	struct EditedFileData
 	{
@@ -54,18 +53,18 @@ public:
 	virtual String get_name();
 	virtual Ref<Texture2D> get_theme_icon();
 
-	virtual void set_toggle_list_control(Control* p_toggle_list_control) = 0;
-	virtual void update_toggle_files_button() = 0;
+	virtual void set_toggle_list_control(Control* p_toggle_list_control);
+	virtual void update_toggle_files_button();
 
 	virtual bool show_members_overview() { return false; }
 
-	virtual void set_edited_resource(const Ref<Resource>& p_res) = 0;
+	virtual void set_edited_resource(const Ref<Resource>& p_res);
 
 	virtual Ref<Resource> get_edited_resource() const { return edited_res; }
 
-	virtual void apply_code() = 0;
-	virtual void validate_script() = 0;
-	virtual bool is_unsaved() = 0;
+	virtual void apply_code();
+	virtual void validate_script();
+	virtual bool is_unsaved();
 	virtual void tag_saved_version();
 
 	virtual void add_syntax_highlighter(Ref<EditorSyntaxHighlighter> p_highlighter) {}
@@ -77,8 +76,6 @@ typedef ScriptEditorBase* (*CreateScriptEditorFunc)(const Ref<Resource>& p_resou
 
 class TextEditorBase : public ScriptEditorBase
 {
-	VLTRCLASS(TextEditorBase, ScriptEditorBase);
-
 	void _post_init();
 
 protected:
@@ -131,8 +128,6 @@ protected:
 
 	class EditMenus : public HBoxContainer
 	{
-		VLTRCLASS(EditMenus, HBoxContainer);
-
 	protected:
 		MenuButton* edit_menu = nullptr;
 		MenuButton* search_menu = nullptr;
@@ -147,8 +142,6 @@ protected:
 
 		TextEditorBase* _get_active_editor();
 		void _edit_option(int p_op);
-		void _prepare_edit_menu();
-		void _update_highlighter_menu();
 		void _change_syntax_highlighter(int p_idx);
 		void _update_bookmark_list();
 		void _bookmark_item_pressed(int p_idx);
@@ -160,10 +153,6 @@ protected:
 	static void _popup_move_item(
 		int p_target_id, PopupMenu* r_popup, bool p_move_after = true, int p_idx = -1)
 	{
-		int target_idx = r_popup->get_item_index(p_target_id) + p_move_after;
-		if (target_idx >= 0 && target_idx < r_popup->get_item_count()) {
-			r_popup->set_item_index(p_idx, target_idx);
-		}
 	}
 
 	static inline EditMenus* edit_menus = nullptr;
@@ -178,17 +167,11 @@ protected:
 	PopupMenu* context_menu = nullptr;
 	MenuButton* search_menu = nullptr;
 
-	void _make_context_menu(bool p_selection, bool p_foldable,
-		const Vector2& p_position = Vector2(0, 0), bool p_show = true);
-	void _show_context_menu(const Vector2& p_position);
-
-	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
-	virtual bool _edit_option(int p_op);
-
 	virtual void _load_theme_settings();
 	virtual void _validate_script();
 
-	void _convert_case(CodeTextEditor::CaseStyle p_case) { code_editor->convert_case(p_case); }
+	virtual void _text_edit_gui_input(const Ref<InputEvent>& p_ev);
+	virtual bool _edit_option(int p_op);
 
 	int previous_history_line = -1;
 	void _emit_request_save_new_history();
@@ -206,23 +189,15 @@ public:
 	virtual void reload_text();
 	virtual void enable_editor();
 
-	virtual Control* get_edit_menu() = 0;
+	virtual Control* get_edit_menu();
 
 	virtual Control* get_base_editor() const override { return code_editor->get_text_editor(); }
 
 	virtual CodeTextEditor* get_code_editor() const { return code_editor; }
 
-	virtual void set_tooltip_request_func(const Callable& p_toolip_callback);
-
 	virtual void ensure_focus() { code_editor->get_text_editor()->grab_focus(); }
 
-	virtual void convert_indent() { code_editor->get_text_editor()->convert_indent(); }
-
-	virtual void trim_trailing_whitespace() { code_editor->trim_trailing_whitespace(); }
-
 	virtual void trim_final_newlines() { code_editor->trim_final_newlines(); }
-
-	virtual void insert_final_newline() { code_editor->insert_final_newline(); }
 
 	virtual void goto_line_without_history(int p_line, int p_column = 0)
 	{
@@ -258,20 +233,12 @@ public:
 
 	virtual void clear_executing_line() { code_editor->clear_executing_line(); }
 
-	virtual Variant get_edit_state() { return code_editor->get_edit_state(); }
-
-	virtual void set_edit_state(const Variant& p_state);
-
-	virtual Variant get_navigation_state() { return code_editor->get_navigation_state(); }
-
 	virtual void update_settings() { code_editor->update_editor_settings(); }
 
 	virtual void set_find_replace_bar(FindReplaceBar* p_bar)
 	{
 		code_editor->set_find_replace_bar(p_bar);
 	}
-
-	virtual void validate_script() override { code_editor->validate_script(); }
 
 	virtual void set_toggle_list_control(Control* p_toggle_list_control) override
 	{
@@ -283,7 +250,7 @@ public:
 		code_editor->update_toggle_files_button();
 	}
 
-	TextEditorBase();
+	TextEditorBase() = default;
 	~TextEditorBase();
 };
 
@@ -300,18 +267,12 @@ protected:
 
 	class EditMenusCEB : public EditMenus
 	{
-		VLTRCLASS(EditMenusCEB, EditMenus);
-
 	public:
-		EditMenusCEB();
+		EditMenusCEB() = default;
 	};
 
 	VSplitContainer* editor_box = nullptr;
 	RichTextLabel* warnings_panel = nullptr;
-
-	virtual void _code_complete_script(const String& p_code,
-		List<ScriptLanguage::CodeCompletionOption>* r_options, bool& r_force) = 0;
-	virtual bool _warning_clicked(const Variant& p_line);
 
 public:
 	virtual bool show_members_overview() override { return true; }

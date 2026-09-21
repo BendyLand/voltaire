@@ -46,8 +46,6 @@ class VSeparator;
 
 class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 {
-	VLTRCLASS(AnimationNodeBlendSpace2DEditor, AnimationTreeNodeEditorPlugin);
-
 	Ref<AnimationNodeBlendSpace2D> blend_space;
 	bool read_only = false;
 
@@ -94,13 +92,8 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	static AnimationNodeBlendSpace2DEditor* singleton;
 
-	void _blend_space_gui_input(const Ref<InputEvent>& p_event);
-	void _blend_space_draw();
-
 	void _update_space();
 
-	void _config_changed(double);
-	void _labels_changed(String);
 	void _snap_toggled();
 
 	PopupMenu* menu = nullptr;
@@ -125,30 +118,20 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	Vector<int> making_triangle;
 
-	void _add_menu_type(int p_index);
-	void _add_animation_type(int p_index);
-
 	void _tool_switch(int p_tool);
 	void _update_edited_point_pos();
 	void _update_edited_point_name();
+<<<<<<< HEAD
 	void _update_tool_erase();
-	void _erase_selected();
-	void _edit_point_pos(double);
-	void _edit_point_name(const String& p_name);
-	void _edit_point_index(double p_index);
+=======
+>>>>>>> fix/remove-object
 	void _set_selected_point(int p_index);
 	void _start_inline_edit(int p_point);
-	void _finish_inline_edit();
-	void _finish_inline_edit_with_text(const String& p_text);
 	void _cancel_inline_edit();
 	void _inline_editor_text_changed(const String& p_text);
-	void _open_editor();
 	void _index_edit_focus_entered();
-	void _index_edit_focus_exited();
 	void _index_focus_cooldown_timeout();
 	void _show_indices_with_cooldown();
-
-	void _auto_triangles_toggled();
 
 	StringName get_blend_position_path() const;
 	String _get_safe_name(
@@ -156,7 +139,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	EditorFileDialog* open_file = nullptr;
 	Ref<AnimationNode> file_loaded;
-	void _file_opened(const String& p_file);
 
 	enum
 	{
@@ -169,7 +151,6 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	static AnimationNodeBlendSpace2DEditor* get_singleton() { return singleton; }
@@ -178,7 +159,7 @@ public:
 
 	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
 	virtual void edit(const Ref<AnimationNode>& p_node) override;
-	AnimationNodeBlendSpace2DEditor();
+	AnimationNodeBlendSpace2DEditor() = default;
 };
 
 

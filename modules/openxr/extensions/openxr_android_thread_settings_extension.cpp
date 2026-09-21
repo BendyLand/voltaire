@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/string/print_string.h"
 #include "openxr_android_thread_settings_extension.h"
 #include "servers/rendering/rendering_server.h"
@@ -53,8 +51,6 @@ OpenXRAndroidThreadSettingsExtension::~OpenXRAndroidThreadSettingsExtension()
 	singleton = nullptr;
 }
 
-void OpenXRAndroidThreadSettingsExtension::_bind_methods() {}
-
 HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(
 	XrVersion p_version)
 {
@@ -77,22 +73,6 @@ void OpenXRAndroidThreadSettingsExtension::on_instance_created(XrInstance p_inst
 		print_error("OpenXR: Failed to initialize android thread settings extension");
 		available = false;
 	}
-}
-
-void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession p_session)
-{
-	if (!available) {
-		return;
-	}
-
-	// Attempt to mark this thread as the "main thread".
-	set_application_thread_type(THREAD_TYPE_APPLICATION_MAIN);
-
-	// Attempt to mark the render thread too.
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	rendering_server->call_on_render_thread(
-		callable_mp(this, &OpenXRAndroidThreadSettingsExtension::_set_render_thread_type));
 }
 
 bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
@@ -153,5 +133,7 @@ void OpenXRAndroidThreadSettingsExtension::_set_render_thread_type()
 
 	set_application_thread_type(THREAD_TYPE_RENDERER_MAIN);
 }
+
+void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession_T* p_session) {}
 
 

@@ -35,7 +35,6 @@
 #include "servers/display/display_server_enums.h"
 
 class StatusIndicator : public Node {
-	VLTRCLASS(StatusIndicator, Node);
 
 	Ref<Texture2D> icon;
 	String tooltip;
@@ -45,7 +44,6 @@ class StatusIndicator : public Node {
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	void _callback(MouseButton p_index, const Point2i &p_pos);
 

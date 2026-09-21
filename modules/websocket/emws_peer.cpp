@@ -33,7 +33,6 @@
 #ifdef WEB_ENABLED
 
 #include "core/io/ip.h"
-#include "core/object/class_db.h"
 
 WebSocketPeer *EMWSPeer::_create(bool p_notify_postinitialize) {
 	return static_cast<WebSocketPeer *>(ClassDB::creator<EMWSPeer>(p_notify_postinitialize));

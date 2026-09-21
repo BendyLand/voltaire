@@ -33,9 +33,8 @@
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class GradientTexture1D : public Texture2D {
-	VLTRCLASS(GradientTexture1D, Texture2D);
-
+class GradientTexture1D : public Texture2D
+{
 private:
 	Ref<Gradient> gradient;
 	mutable bool update_pending = false;
@@ -47,7 +46,6 @@ private:
 	void _update() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_gradient(Ref<Gradient> p_gradient);
@@ -60,7 +58,9 @@ public:
 	bool is_using_hdr() const;
 
 	virtual RID get_rid() const override;
+
 	virtual int get_height() const override { return 1; }
+
 	virtual bool has_alpha() const override { return true; }
 
 	virtual Ref<Image> get_image() const override;
@@ -70,17 +70,19 @@ public:
 	virtual ~GradientTexture1D();
 };
 
-class GradientTexture2D : public Texture2D {
-	VLTRCLASS(GradientTexture2D, Texture2D);
-
+class GradientTexture2D : public Texture2D
+{
 public:
-	enum Fill {
+	enum Fill
+	{
 		FILL_LINEAR,
 		FILL_RADIAL,
 		FILL_SQUARE,
 		FILL_CONIC,
 	};
-	enum Repeat {
+
+	enum Repeat
+	{
 		REPEAT_NONE,
 		REPEAT,
 		REPEAT_MIRROR,
@@ -108,7 +110,6 @@ private:
 	void _update() const;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_gradient(Ref<Gradient> p_gradient);
@@ -133,7 +134,9 @@ public:
 	Repeat get_repeat() const;
 
 	virtual RID get_rid() const override;
+
 	virtual bool has_alpha() const override { return true; }
+
 	virtual Ref<Image> get_image() const override;
 	void update_now() const;
 
@@ -141,5 +144,4 @@ public:
 	virtual ~GradientTexture2D();
 };
 
-VARIANT_ENUM_CAST(GradientTexture2D::Fill);
-VARIANT_ENUM_CAST(GradientTexture2D::Repeat);
+

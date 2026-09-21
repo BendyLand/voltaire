@@ -32,6 +32,7 @@
 
 #include "core/os/process_id.h"
 #include "editor/export/editor_export_preset.h"
+#include "scene/resources/texture.h"
 
 class DirAccess;
 class EditorExportPlugin;
@@ -50,10 +51,7 @@ const String ENV_SCRIPT_ENCRYPTION_KEY = "GODOT_SCRIPT_ENCRYPTION_KEY";
 
 class EditorExportPlatform : public RefCounted
 {
-	VLTRCLASS(EditorExportPlatform, RefCounted);
-
 protected:
-	static void _bind_methods();
 
 public:
 
@@ -145,36 +143,14 @@ private:
 		HashSet<String>& p_paths);
 	void _export_find_dependencies(const String& p_path, HashSet<String>& p_paths);
 
-	static Error _save_pack_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-	static Error _save_pack_patch_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
 	static Error _pack_add_shared_object(
 		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
 
 	static Error _remove_pack_file(
 		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const String& p_path);
 
-	static Error _save_zip_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-	static Error _save_zip_patch_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
 	static Error _zip_add_shared_object(
 		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	struct ScriptCallbackData
-	{
-		Callable file_cb;
-		Callable so_cb;
-	};
 
 	static Error _script_save_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
 		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
@@ -204,12 +180,6 @@ private:
 		bool used = false;
 	};
 
-	bool _export_customize_dictionary(
-		Dictionary& dict, LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins);
-	bool _export_customize_array(
-		Array& array, LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins);
-	bool _export_customize_object(
-		Object* p_object, LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins);
 	bool _export_customize_scene_resources(Node* p_root, Node* p_node,
 		LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins);
 	bool _is_editable_ancestor(Node* p_root, Node* p_node);
@@ -226,42 +196,19 @@ protected:
 		bool enabled = true;
 
 		ExportNotifier(EditorExportPlatform& p_platform, const Ref<EditorExportPreset>& p_preset,
-			bool p_debug, const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags,
+			bool p_debug, const String& p_path, uint32_t p_flags,
 			bool p_enabled = true);
 		~ExportNotifier();
 	};
 
 	HashSet<String> get_features(const Ref<EditorExportPreset>& p_preset, bool p_debug) const;
 
-	Dictionary _find_export_template(const String& p_template_file_name) const
-	{
-		Dictionary ret;
-		String err;
-
-		String path = find_export_template(p_template_file_name, &err);
-		ret["result"] = (err.is_empty() && !path.is_empty()) ? OK : FAILED;
-		ret["path"] = path;
-		ret["error_string"] = err;
-
-		return ret;
-	}
-
 	bool exists_export_template(const String& p_template_file_name, String* r_err) const;
 	String find_export_template(const String& p_template_file_name, String* r_err = nullptr) const;
-	Vector<String> gen_export_flags(BitField<EditorExportPlatform::DebugFlags> p_flags);
+	Vector<String> gen_export_flags(uint32_t p_flags);
 
 	virtual void zip_folder_recursive(zipFile& p_zip, const String& p_root_path,
 		const String& p_folder, const String& p_pkg_name);
-
-	Error _ssh_run_on_remote(const String& p_host, const String& p_port,
-		const Vector<String>& p_ssh_args, const String& p_cmd_args, Array r_output = Array(),
-		int p_port_fwd = -1) const
-	{
-		String pipe;
-		Error err = ssh_run_on_remote(p_host, p_port, p_ssh_args, p_cmd_args, &pipe, p_port_fwd);
-		r_output.push_back(pipe);
-		return err;
-	}
 
 	ProcessID _ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
 		const Vector<String>& p_ssh_args, const String& p_cmd_args, int p_port_fwd = -1) const
@@ -295,31 +242,20 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	Error _export_project_bind_compat_118787(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	static Vector<String> _get_forced_export_files_bind_compat_71542();
 	static void _bind_compatibility_methods();
 #endif
 
 public:
 	static String simplify_path(const String& p_path);
-	static Variant get_project_setting(
-		const Ref<EditorExportPreset>& p_preset, const StringName& p_name);
 	virtual void get_preset_features(
 		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const;
 
 	struct ExportOption
 	{
-		PropertyInfo option;
-		Variant default_value;
 		bool update_visibility = false;
 		bool required = false;
-
-		ExportOption(const PropertyInfo& p_info, const Variant& p_default,
-			bool p_update_visibility = false, bool p_required = false)
-			: option(p_info), default_value(p_default), update_visibility(p_update_visibility),
-			  required(p_required)
-		{
-		}
 
 		ExportOption() {}
 	};
@@ -340,7 +276,7 @@ public:
 		messages.push_back(msg);
 		switch (p_type) {
 		case EXPORT_MESSAGE_INFO: {
-			print_line(vformat("%s: %s", msg.category, msg.text));
+			__print_line(vformat("%s: %s", msg.category, msg.text));
 		} break;
 		case EXPORT_MESSAGE_WARNING: {
 			WARN_PRINT(vformat("%s: %s", msg.category, msg.text));
@@ -388,8 +324,6 @@ public:
 		return worst_type;
 	}
 
-	Dictionary get_internal_export_files(const Ref<EditorExportPreset>& p_preset, bool p_debug);
-
 	static Vector<String> get_forced_export_files(const Ref<EditorExportPreset>& p_preset);
 
 	virtual bool fill_log_messages(RichTextLabel* p_log, Error p_err);
@@ -414,24 +348,11 @@ public:
 	virtual String get_name() const;
 	virtual Ref<Texture2D> get_logo() const;
 
-	Array get_current_presets() const;
-
-	Error _export_project_files(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const Callable& p_save_func, const Callable& p_so_func);
 	Error export_project_files(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		EditorExportSaveFunction p_save_func, EditorExportRemoveFunction p_remove_func,
 		void* p_udata, EditorExportSaveSharedObject p_so_func = nullptr);
 
-	Dictionary _save_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, bool p_embed = false);
-	Dictionary _save_zip(
-		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path);
-
-	Dictionary _save_pack_patch(
-		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path);
-	Dictionary _save_zip_patch(
-		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path);
-
+<<<<<<< HEAD
 	Error save_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
 		Vector<SharedObject>* p_so_files = nullptr, EditorExportSaveFunction p_save_func = nullptr,
 		EditorExportRemoveFunction p_remove_func = nullptr, bool p_embed = false,
@@ -445,6 +366,8 @@ public:
 	Error save_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, Vector<SharedObject>* p_so_files = nullptr);
 
+=======
+>>>>>>> fix/remove-object
 	virtual bool poll_export() { return false; }
 
 	virtual int get_options_count() const { return 0; }
@@ -452,8 +375,6 @@ public:
 	virtual bool is_option_runnable(int p_index) const { return true; }
 
 	virtual String get_options_tooltip() const { return ""; }
-
-	virtual Ref<Texture2D> get_option_icon(int p_index) const;
 
 	virtual String get_option_label(int p_device) const { return ""; }
 
@@ -464,7 +385,7 @@ public:
 	virtual void cleanup() {}
 
 	virtual Error run(const Ref<EditorExportPreset>& p_preset, int p_device,
-		BitField<EditorExportPlatform::DebugFlags> p_debug_flags)
+		uint32_t p_debug_flags)
 	{
 		return OK;
 	}
@@ -480,18 +401,21 @@ public:
 
 	virtual List<String> get_binary_extensions(const Ref<EditorExportPreset>& p_preset) const;
 	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0,
+		const String& p_path, uint32_t p_flags = 0,
 		bool p_notify = true);
+<<<<<<< HEAD
 	virtual Error export_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	virtual Error export_zip(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		const String& p_path, uint32_t p_flags = 0);
 	virtual Error export_pack_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		uint32_t p_flags = 0);
 	virtual Error export_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		BitField<EditorExportPlatform::DebugFlags> p_flags = 0);
+		uint32_t p_flags = 0);
+=======
+>>>>>>> fix/remove-object
 	virtual void get_platform_features(List<String>* r_features) const;
 
 	virtual void resolve_platform_feature_priorities(
@@ -501,16 +425,7 @@ public:
 
 	virtual String get_debug_protocol() const { return "tcp://"; }
 
-	virtual HashMap<String, Variant> get_custom_project_settings(
-		const Ref<EditorExportPreset>& p_preset) const
-	{
-		return HashMap<String, Variant>();
-	}
-
 	virtual void initialize() {}
 };
-
-VARIANT_ENUM_CAST(EditorExportPlatform::ExportMessageType)
-VARIANT_BITFIELD_CAST(EditorExportPlatform::DebugFlags);
 
 

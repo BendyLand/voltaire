@@ -30,8 +30,7 @@
 
 #pragma once
 
-#include "core/object/object.h"
-#include "core/templates/mem_unique_ptr.h"
+#include "core/types.h"
 
 class ShaderIncludeDB
 {
@@ -39,10 +38,8 @@ private:
 	static HashMap<String, String> built_in_includes;
 
 protected:
-	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
 	static void register_built_in_include_file(
 		const String& p_filename, const String& p_shader_code);
 	static PackedStringArray list_built_in_include_files();

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "atlas_texture.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 
 int AtlasTexture::get_width() const
 {
@@ -74,24 +72,6 @@ bool AtlasTexture::has_alpha() const
 	}
 
 	return false;
-}
-
-void AtlasTexture::set_atlas(const Ref<Texture2D>& p_atlas)
-{
-	ERR_FAIL_COND(p_atlas == this);
-	if (atlas == p_atlas) {
-		return;
-	}
-	// Support recursive AtlasTextures.
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->disconnect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
-	}
-	atlas = p_atlas;
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
-		atlas->connect_changed(callable_mp((Resource*)this, &AtlasTexture::emit_changed));
-	}
-
-	emit_changed();
 }
 
 Ref<Texture2D> AtlasTexture::get_atlas() const { return atlas; }
@@ -141,7 +121,6 @@ Rect2 AtlasTexture::_get_region_rect() const
 	return rc;
 }
 
-void AtlasTexture::_bind_methods() {}
 
 void AtlasTexture::draw(
 	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const
@@ -255,3 +234,5 @@ Ref<Image> AtlasTexture::get_image() const
 }
 
 
+
+void AtlasTexture::set_atlas(Ref<Texture2D> const&) {}

@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include <thirdparty/misc/r128.h>
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "range.h"
 #include "servers/display/accessibility_server.h"
 
@@ -85,63 +83,6 @@ PackedStringArray Range::get_configuration_warnings() const
 	return warnings;
 }
 
-void Range::_value_changed_notify()
-{
-	_value_changed(shared->val);
-	this->obj->emit_signal(SceneStringName(value_changed), shared->val);
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void Range::_accessibility_action_inc(const Variant& p_data)
-{
-	double step = ((shared->step > 0) ? shared->step : 1);
-	set_value(shared->val + step);
-}
-
-void Range::_accessibility_action_dec(const Variant& p_data)
-{
-	double step = ((shared->step > 0) ? shared->step : 1);
-	set_value(shared->val - step);
-}
-
-void Range::_accessibility_action_set_value(const Variant& p_data)
-{
-	double new_val = p_data;
-	set_value(new_val);
-}
-
-void Range::_notification(int p_what)
-{
-	ERR_MAIN_THREAD_GUARD;
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::get_singleton()->update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_SPIN_BUTTON);
-		AccessibilityServer::get_singleton()->update_set_num_value(ae, shared->val);
-		AccessibilityServer::get_singleton()->update_set_num_range(ae, shared->min, shared->max);
-		if (shared->step > 0) {
-			AccessibilityServer::get_singleton()->update_set_num_step(ae, shared->step);
-		}
-		else {
-			AccessibilityServer::get_singleton()->update_set_num_step(ae, 1);
-		}
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_DECREMENT,
-			callable_mp(this, &Range::_accessibility_action_dec));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_INCREMENT,
-			callable_mp(this, &Range::_accessibility_action_inc));
-		AccessibilityServer::get_singleton()->update_add_action(ae,
-			AccessibilityServerEnums::AccessibilityAction::ACTION_SET_VALUE,
-			callable_mp(this, &Range::_accessibility_action_set_value));
-	} break;
-	}
-}
-
 void Range::Shared::emit_value_changed()
 {
 	for (Range* E : owners) {
@@ -153,12 +94,6 @@ void Range::Shared::emit_value_changed()
 	}
 }
 
-void Range::_changed_notify()
-{
-	this->obj->emit_signal(CoreStringName(changed));
-	queue_redraw();
-}
-
 void Range::Shared::emit_changed()
 {
 	for (Range* E : owners) {
@@ -167,20 +102,6 @@ void Range::Shared::emit_changed()
 			continue;
 		}
 		r->_changed_notify();
-	}
-}
-
-void Range::Shared::redraw_owners()
-{
-	for (Range* E : owners) {
-		Range* r = E;
-		if (!r->is_inside_tree()) {
-			continue;
-		}
-
-		r->_value_changed(val);
-		r->queue_accessibility_update();
-		r->queue_redraw();
 	}
 }
 
@@ -237,24 +158,6 @@ void Range::set_value_no_signal(double p_val)
 	if (shared->val != prev_val) {
 		shared->redraw_owners();
 	}
-}
-
-void Range::set_min(double p_min)
-{
-	if (shared->min == p_min) {
-		return;
-	}
-
-	shared->min = p_min;
-	shared->max = MAX(shared->max, shared->min);
-	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
-	set_value(shared->val);
-
-	shared->emit_changed();
-
-	update_configuration_warnings();
-
-	queue_accessibility_update();
 }
 
 void Range::set_max(double p_max)
@@ -354,13 +257,6 @@ double Range::get_as_ratio() const
 	}
 }
 
-void Range::_share(Node* p_range)
-{
-	Range* r = Object::cast_to<Range>(p_range);
-	ERR_FAIL_NULL(r);
-	share(r);
-}
-
 void Range::share(Range* p_range)
 {
 	ERR_FAIL_NULL(p_range);
@@ -408,22 +304,9 @@ void Range::_unref_shared()
 	}
 }
 
-void Range::_bind_methods() {}
-
 void Range::set_use_rounded_values(bool p_enable) { _rounded_values = p_enable; }
 
 bool Range::is_using_rounded_values() const { return _rounded_values; }
-
-void Range::set_exp_ratio(bool p_enable)
-{
-	if (shared->exp_ratio == p_enable) {
-		return;
-	}
-
-	shared->exp_ratio = p_enable;
-
-	update_configuration_warnings();
-}
 
 bool Range::is_ratio_exp() const { return shared->exp_ratio; }
 
@@ -449,3 +332,9 @@ void Range::_value_changed(double p_value)
 }
 
 
+
+void Range::_value_changed_notify() {}
+
+void Range::_changed_notify() {}
+
+void Range::Shared::redraw_owners() {}

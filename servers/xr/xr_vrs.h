@@ -30,9 +30,12 @@
 
 #pragma once
 
+#include "core/types.h"
 #include "core/math/vector2i.h"
-#include "core/object/object.h"
+<<<<<<< HEAD
 #include "core/templates/mem_unique_ptr.h"
+=======
+>>>>>>> fix/remove-object
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
 
@@ -51,12 +54,10 @@ private:
 	Vector<Vector2> eye_foci;
 
 protected:
-	static void _bind_methods();
 
 public:
 	~XRVRS();
 
-	mem_unique_ptr<Object> obj;
 	float get_vrs_min_radius() const;
 	void set_vrs_min_radius(float p_vrs_min_radius);
 	float get_vrs_strength() const;

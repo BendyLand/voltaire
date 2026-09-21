@@ -28,36 +28,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "virtual_joystick_editor_plugin.h"
-
-#include "core/object/callable_mp.h"
 #include "editor/scene/canvas_item_editor_plugin.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/virtual_joystick.h"
+#include "virtual_joystick_editor_plugin.h"
 
-void VirtualJoystickEditorPlugin::edit(Object *p_object) {
-	if (virtual_joystick) {
-		virtual_joystick->disconnect(SceneStringName(draw), callable_mp(CanvasItemEditor::get_singleton(), &CanvasItemEditor::update_viewport));
-	}
-
-	virtual_joystick = Object::cast_to<VirtualJoystick>(p_object);
-
-	if (virtual_joystick) {
-		virtual_joystick->connect(SceneStringName(draw), callable_mp(CanvasItemEditor::get_singleton(), &CanvasItemEditor::update_viewport));
-	}
-	CanvasItemEditor::get_singleton()->update_viewport();
-}
-
-bool VirtualJoystickEditorPlugin::handles(Object *p_object) const {
-	return Object::cast_to<VirtualJoystick>(p_object) != nullptr;
-}
-
-void VirtualJoystickEditorPlugin::forward_canvas_draw_over_viewport(Control *p_viewport_control) {
+void VirtualJoystickEditorPlugin::forward_canvas_draw_over_viewport(Control* p_viewport_control)
+{
 	if (!virtual_joystick || !virtual_joystick->is_visible_in_tree()) {
 		return;
 	}
 
-	Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() * virtual_joystick->get_screen_transform();
+	Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() *
+						virtual_joystick->get_screen_transform();
 
 	Vector2 center = virtual_joystick->get_joystick_position();
 	float base_radius = virtual_joystick->get_joystick_size() * 0.5f;
@@ -72,7 +55,11 @@ void VirtualJoystickEditorPlugin::forward_canvas_draw_over_viewport(Control *p_v
 
 	int width = Math::round(1 * EDSCALE);
 
-	p_viewport_control->draw_circle(xform.xform(center), clampzone_radius * xform.get_scale().x, clampzone_color, false, width);
+	p_viewport_control->draw_circle(
+		xform.xform(center), clampzone_radius * xform.get_scale().x, clampzone_color, false, width);
 
-	p_viewport_control->draw_circle(xform.xform(center), deadzone_radius * xform.get_scale().x, deadzone_color, false, width);
+	p_viewport_control->draw_circle(
+		xform.xform(center), deadzone_radius * xform.get_scale().x, deadzone_color, false, width);
 }
+
+

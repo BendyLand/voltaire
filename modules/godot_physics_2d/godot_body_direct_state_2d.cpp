@@ -83,11 +83,6 @@ real_t GodotPhysicsDirectBodyState2D::get_angular_velocity() const
 	return body->get_angular_velocity();
 }
 
-void GodotPhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform)
-{
-	body->set_state(PS2DE::BODY_STATE_TRANSFORM, p_transform);
-}
-
 Transform2D GodotPhysicsDirectBodyState2D::get_transform() const { return body->get_transform(); }
 
 Vector2 GodotPhysicsDirectBodyState2D::get_velocity_at_local_position(
@@ -241,12 +236,6 @@ Vector2 GodotPhysicsDirectBodyState2D::get_contact_collider_position(int p_conta
 	return body->contacts[p_contact_idx].collider_pos;
 }
 
-ObjectID GodotPhysicsDirectBodyState2D::get_contact_collider_id(int p_contact_idx) const
-{
-	ERR_FAIL_INDEX_V(p_contact_idx, body->contact_count, ObjectID());
-	return body->contacts[p_contact_idx].collider_instance_id;
-}
-
 int GodotPhysicsDirectBodyState2D::get_contact_collider_shape(int p_contact_idx) const
 {
 	ERR_FAIL_INDEX_V(p_contact_idx, body->contact_count, 0);
@@ -275,5 +264,7 @@ real_t GodotPhysicsDirectBodyState2D::get_step() const
 {
 	return body->get_space()->get_last_step();
 }
+
+void GodotPhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform) {}
 
 

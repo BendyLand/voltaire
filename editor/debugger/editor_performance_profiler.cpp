@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/callable_mp.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_string_names.h"
 #include "editor/inspector/editor_property_name_processor.h"
@@ -48,39 +47,17 @@ EditorPerformanceProfiler::Monitor::Monitor(const String& p_name, const String& 
 	base = p_base;
 }
 
-void EditorPerformanceProfiler::Monitor::reset()
-{
-	history.clear();
-	max = 0.0f;
-	if (item) {
-		item->set_text(1, "");
-		item->set_tooltip_text(1, "");
-	}
-}
-
 String EditorPerformanceProfiler::_format_label(
 	float p_value, Performance::MonitorType p_type) const
 {
-	const String& lang = this->obj->_get_locale();
 	const TranslationServer* ts = TranslationServer::get_singleton();
 
 	switch (p_type) {
-	case Performance::MONITOR_TYPE_QUANTITY: {
-		return ts->format_number(itos(p_value), lang);
-	}
 	case Performance::MONITOR_TYPE_MEMORY: {
 		return String::humanize_size(p_value);
 	}
-	case Performance::MONITOR_TYPE_TIME: {
-		return ts->format_number(rtos(p_value * 1000).pad_decimals(2), lang) + " " + TTR("ms");
 	}
-	case Performance::MONITOR_TYPE_PERCENTAGE: {
-		return ts->format_number(rtos(p_value * 100).pad_decimals(2), lang) + "%";
-	}
-	default: {
-		return ts->format_number(rtos(p_value), lang);
-	}
-	}
+<<<<<<< HEAD
 }
 
 void EditorPerformanceProfiler::_update_monitor_value(Monitor* p_monitor, float p_value)
@@ -125,7 +102,6 @@ void EditorPerformanceProfiler::_monitor_draw()
 
 	info_message->hide();
 
-	Ref<StyleBox> graph_style_box = get_theme_stylebox(CoreStringName(normal), SNAME("TextEdit"));
 	Ref<Font> graph_font = get_theme_font(SceneStringName(font), SNAME("TextEdit"));
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("TextEdit"));
 
@@ -143,10 +119,6 @@ void EditorPerformanceProfiler::_monitor_draw()
 		Monitor& current = monitors[active[i]];
 		Rect2i rect(Point2i(i % columns, i / columns) * cell_size + Point2i(MARGIN, MARGIN),
 			cell_size - Point2i(MARGIN, MARGIN) * 2);
-		monitor_draw->draw_style_box(graph_style_box.ptr(), rect);
-
-		rect.position += graph_style_box->get_offset();
-		rect.size -= graph_style_box->get_minimum_size();
 		Color draw_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 		draw_color.set_hsv(Math::fmod(hue_shift * float(current.frame_index), 0.9f),
 			draw_color.get_s() * 0.9f, draw_color.get_v() * value_multiplier, 0.6f);
@@ -329,10 +301,6 @@ void EditorPerformanceProfiler::_marker_input(const Ref<InputEvent>& p_event)
 				else {
 					marker_key = "";
 				}
-				Ref<StyleBox> graph_style_box =
-					get_theme_stylebox(CoreStringName(normal), SNAME("TextEdit"));
-				rect.position += graph_style_box->get_offset();
-				rect.size -= graph_style_box->get_minimum_size();
 				Vector2 point = mb->get_position() - rect.position;
 				if (point.x >= rect.size.x) {
 					marker_frame = 0;
@@ -426,6 +394,8 @@ void EditorPerformanceProfiler::add_profile_frame(const Vector<float>& p_values)
 	}
 	marker_frame++;
 	monitor_draw->queue_redraw();
+=======
+>>>>>>> fix/remove-object
 }
 
 List<float>* EditorPerformanceProfiler::get_monitor_data(const StringName& p_name)
@@ -436,6 +406,7 @@ List<float>* EditorPerformanceProfiler::get_monitor_data(const StringName& p_nam
 	return nullptr;
 }
 
+<<<<<<< HEAD
 void EditorPerformanceProfiler::_notification(int p_what)
 {
 	switch (p_what) {
@@ -478,8 +449,6 @@ EditorPerformanceProfiler::EditorPerformanceProfiler()
 	monitor_tree->set_column_custom_minimum_width(1, 100 * EDSCALE);
 	monitor_tree->set_column_expand(1, false);
 	monitor_tree->set_column_titles_visible(true);
-	monitor_tree->connect(
-		"item_edited", callable_mp(this, &EditorPerformanceProfiler::_monitor_select));
 	monitor_tree->create_item();
 	monitor_tree->set_hide_root(true);
 	monitor_tree->set_theme_type_variation("TreeSecondary");
@@ -488,10 +457,6 @@ EditorPerformanceProfiler::EditorPerformanceProfiler()
 	monitor_draw = memnew(Control);
 	monitor_draw->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
 	monitor_draw->set_clip_contents(true);
-	monitor_draw->connect(
-		SceneStringName(draw), callable_mp(this, &EditorPerformanceProfiler::_monitor_draw));
-	monitor_draw->connect(
-		SceneStringName(gui_input), callable_mp(this, &EditorPerformanceProfiler::_marker_input));
 	add_child(monitor_draw);
 
 	info_message = memnew(Label);
@@ -518,4 +483,6 @@ EditorPerformanceProfiler::EditorPerformanceProfiler()
 	_build_monitor_tree();
 }
 
+=======
+>>>>>>> fix/remove-object
 

@@ -30,10 +30,10 @@
 
 #pragma once
 
-#include "core/object/worker_thread_pool.h"
 #include "core/templates/rid_owner.h"
 #include "scene/gui/control.h"
 #include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/themes/editor_scale.h"
@@ -150,49 +150,23 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size);
+<<<<<<< HEAD
 	void _set_table_column_expand_bind_compat_79053(int p_column, bool p_expand, int p_ratio);
-	void _push_meta_bind_compat_99481(const Variant& p_meta, MetaUnderline p_underline_mode);
-	void _push_meta_bind_compat_89024(const Variant& p_meta);
 	void _add_image_bind_compat_80410(const Ref<Texture2D>& p_image, const int p_width,
 		const int p_height, const Color& p_color, InlineAlignment p_alignment,
 		const Rect2& p_region);
-	void _add_image_bind_compat_76829(const Ref<Texture2D>& p_image, const int p_width,
-		const int p_height, const Color& p_color, InlineAlignment p_alignment,
-		const Rect2& p_region, const Variant& p_key, bool p_pad, const String& p_tooltip,
-		bool p_size_in_percent);
 	void _push_table_bind_compat_76829(
 		int p_columns, InlineAlignment p_alignment, int p_align_to_row);
 	bool _remove_paragraph_bind_compat_91098(int p_paragraph);
 	void _set_table_column_expand_bind_compat_101482(int p_column, bool p_expand, int p_ratio);
 	void _push_underline_bind_compat_106300();
 	void _push_strikethrough_bind_compat_106300();
-	void _add_image_bind_compat_107347(const Ref<Texture2D>& p_image, int p_width = 0,
-		int p_height = 0, const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
-		bool p_size_in_percent = false, const String& p_alt_text = String());
-	void _update_image_bind_compat_107347(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
-		const Ref<Texture2D>& p_image, int p_width = 0, int p_height = 0,
-		const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		bool p_pad = false, const String& p_tooltip = String(), bool p_size_in_percent = false);
-	void _add_image_bind_compat_112617(const Ref<Texture2D>& p_image, int p_width = 0,
-		int p_height = 0, const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
-		bool p_width_in_percent = false, bool p_height_in_percent = false,
-		const String& p_alt_text = String());
-	void _update_image_bind_compat_112617(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
-		const Ref<Texture2D>& p_image, int p_width = 0, int p_height = 0,
-		const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		bool p_pad = false, const String& p_tooltip = String(), bool p_width_in_percent = false,
-		bool p_height_in_percent = false);
 	static void _bind_compatibility_methods();
+=======
+>>>>>>> fix/remove-object
 #endif
 
 private:
@@ -311,7 +285,6 @@ private:
 		int ol_size = 0;
 		Color ol_color;
 		Rect2 dropcap_margins;
-		ObjectID owner;
 
 		ItemDropcap() { type = ITEM_DROPCAP; }
 
@@ -330,9 +303,7 @@ private:
 		Size2 size;
 		Size2 rq_size;
 		Color color;
-		Variant key;
 		String tooltip;
-		ObjectID owner;
 
 		ItemImage() { type = ITEM_IMAGE; }
 
@@ -346,7 +317,6 @@ private:
 		bool variation = false;
 		bool def_size = false;
 		int font_size = 0;
-		ObjectID owner;
 
 		ItemFont() { type = ITEM_FONT; }
 
@@ -397,7 +367,6 @@ private:
 
 	struct ItemMeta : public Item
 	{
-		Variant meta;
 		MetaUnderline underline = META_UNDERLINE_ALWAYS;
 		String tooltip;
 
@@ -424,7 +393,7 @@ private:
 		String language;
 		Control::TextDirection direction = Control::TEXT_DIRECTION_AUTO;
 		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-		BitField<TextServer::JustificationFlag> jst_flags =
+		uint32_t jst_flags =
 			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
 			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
 			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
@@ -590,35 +559,11 @@ private:
 		ItemContext() { type = ITEM_CONTEXT; }
 	};
 
-	const Array formatting_items = {
-		// all ITEM types affecting glyph appearance.
-		ITEM_FONT,
-		ITEM_FONT_SIZE,
-		ITEM_FONT_FEATURES,
-		ITEM_COLOR,
-		ITEM_OUTLINE_SIZE,
-		ITEM_OUTLINE_COLOR,
-		ITEM_UNDERLINE,
-		ITEM_STRIKETHROUGH,
-		ITEM_FADE,
-		ITEM_SHAKE,
-		ITEM_WAVE,
-		ITEM_TORNADO,
-		ITEM_RAINBOW,
-		ITEM_BGCOLOR,
-		ITEM_FGCOLOR,
-		ITEM_META,
-		ITEM_HINT,
-		ITEM_CUSTOMFX,
-		ITEM_LANGUAGE,
-		ITEM_PULSE,
-	};
 
 	ItemFrame* main = nullptr;
 	Item* current = nullptr;
 	ItemFrame* current_frame = nullptr;
 
-	WorkerThreadPool::TaskID task = WorkerThreadPool::INVALID_TASK_ID;
 	Mutex data_mutex;
 	bool threaded = false;
 	std::atomic<bool> stop_thread;
@@ -633,7 +578,7 @@ private:
 	VScrollBar* vscroll = nullptr;
 
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
-	BitField<TextServer::LineBreakFlag> autowrap_flags_trim =
+	uint32_t autowrap_flags_trim =
 		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
 
 	bool scroll_visible = false;
@@ -658,16 +603,13 @@ private:
 
 	HorizontalAlignment default_alignment = HORIZONTAL_ALIGNMENT_LEFT;
 	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_TOP;
-	BitField<TextServer::JustificationFlag> default_jst_flags =
+	uint32_t default_jst_flags =
 		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
 		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
 		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 	PackedFloat32Array default_tab_stops;
 
 	ItemMeta* meta_hovering = nullptr;
-	Variant current_meta;
-
-	Array custom_effects;
 
 	HashMap<RID, Rect2> ac_element_bounds_cache;
 
@@ -679,11 +621,8 @@ private:
 
 	void _thread_function(void* p_userdata);
 	void _thread_end();
-	void _stop_thread();
 	bool _validate_line_caches();
 	void _process_line_caches();
-	_FORCE_INLINE_ float _update_scroll_exceeds(float p_total_height, float p_ctrl_height,
-		float p_width, int p_idx, float p_old_scroll, float p_text_rect_height);
 
 	void _add_item(Item* p_item, bool p_enter = false, bool p_ensure_newline = false);
 	void _remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line, bool p_erase,
@@ -698,8 +637,6 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
-
 	struct Selection
 	{
 		ItemFrame* click_frame = nullptr;
@@ -735,7 +672,6 @@ private:
 	Selection selection;
 	uint64_t last_double_click = 0;
 	Vector2 last_double_click_pos;
-	Callable selection_modifier;
 	bool deselect_on_focus_loss_enabled = true;
 	bool drag_and_drop_selection_enabled = true;
 
@@ -750,7 +686,6 @@ private:
 	// Context menu.
 	PopupMenu* menu = nullptr;
 	void _generate_context_menu();
-	void _update_context_menu();
 	Key _get_menu_action_accelerator(const String& p_action);
 
 	int visible_characters = -1;
@@ -810,7 +745,7 @@ private:
 	int _find_margin(Item* p_item, const Ref<Font>& p_base_font, int p_base_font_size);
 	PackedFloat32Array _find_tab_stops(Item* p_item);
 	HorizontalAlignment _find_alignment(Item* p_item);
-	BitField<TextServer::JustificationFlag> _find_jst_flags(Item* p_item);
+	uint32_t _find_jst_flags(Item* p_item);
 	TextServer::Direction _find_direction(Item* p_item);
 	TextServer::StructuredTextParser _find_stt(Item* p_item);
 	String _find_language(Item* p_item);
@@ -818,7 +753,6 @@ private:
 	Color _find_outline_color(Item* p_item, const Color& p_default_color);
 	bool _find_underline(Item* p_item, Color* r_color = nullptr);
 	bool _find_strikethrough(Item* p_item, Color* r_color = nullptr);
-	bool _find_meta(Item* p_item, Variant* r_meta, ItemMeta** r_item = nullptr);
 	bool _find_hint(Item* p_item, String* r_description);
 	Color _find_bgcolor(Item* p_item);
 	Color _find_fgcolor(Item* p_item);
@@ -843,8 +777,6 @@ private:
 
 	_FORCE_INLINE_ float _calculate_line_vertical_offset(const Line& line) const;
 
-	virtual void gui_input(const Ref<InputEvent>& p_event) override;
-	virtual String get_tooltip(const Point2& p_pos) const override;
 	Item* _get_next_item(Item* p_item, bool p_free = false) const;
 	Item* _get_prev_item(Item* p_item, bool p_free = false) const;
 
@@ -854,7 +786,6 @@ private:
 	void _maximum_size_changed();
 
 	Ref<RichTextEffect> _get_custom_effect_by_code(String p_bbcode_identifier);
-	virtual Dictionary parse_expressions_for_values(Vector<String> p_expressions);
 
 	void _invalidate_fonts();
 
@@ -870,24 +801,12 @@ private:
 	static Vector<String> _split_unquoted(const String& p_src, char32_t p_splitter);
 	static String _get_tag_value(const String& p_tag);
 
-#ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
 	bool use_bbcode = false;
 	String text;
 	void _apply_translation();
 
 	bool internal_stack_editing = false;
 	bool stack_externally_modified = false;
-
-	void _accessibility_action_menu(const Variant& p_data);
-	void _accessibility_scroll_down(const Variant& p_data);
-	void _accessibility_scroll_up(const Variant& p_data);
-	void _accessibility_scroll_set(const Variant& p_data);
-	void _accessibility_focus_item(
-		const Variant& p_data, uint64_t p_item, bool p_line, bool p_foucs);
-	void _accessibility_scroll_to_item(const Variant& p_data, uint64_t p_item);
 
 	RID accessibility_scroll_element;
 
@@ -945,25 +864,13 @@ private:
 
 public:
 	virtual RID get_focused_accessibility_element() const override;
-	PackedStringArray get_accessibility_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const;
 
 	String get_parsed_text() const;
 	void add_text(const String& p_text);
 	void add_hr(int p_width = 90, int p_height = 2, const Color& p_color = Color(1.0, 1.0, 1.0),
 		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, bool p_width_in_percent = true,
 		bool p_height_in_percent = false);
-	void add_image(const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
-		const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		const Variant& p_key = Variant(), bool p_pad = false, const String& p_tooltip = String(),
-		ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL,
-		const String& p_alt_text = String());
-	void update_image(const Variant& p_key, BitField<ImageUpdateMask> p_mask,
-		const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
-		const Color& p_color = Color(1.0, 1.0, 1.0),
-		InlineAlignment p_alignment = INLINE_ALIGNMENT_CENTER, const Rect2& p_region = Rect2(),
-		bool p_pad = false, const String& p_tooltip = String(),
-		ImageUnit p_width_unit = IMAGE_UNIT_PIXEL, ImageUnit p_height_unit = IMAGE_UNIT_PIXEL);
 	void add_newline();
 	bool remove_paragraph(int p_paragraph, bool p_no_invalidate = false);
 	bool invalidate_paragraph(int p_paragraph);
@@ -973,13 +880,12 @@ public:
 	void _push_def_font(DefaultFont p_def_font);
 	void _push_def_font_var(DefaultFont p_def_font, const Ref<Font>& p_font, int p_size = -1);
 	void push_font(const Ref<Font>& p_font, int p_size = 0);
-	void push_font_size(int p_font_size);
-	void push_outline_size(int p_font_size);
 	void push_normal();
 	void push_bold();
 	void push_bold_italics();
 	void push_italics();
 	void push_mono();
+<<<<<<< HEAD
 	void push_color(const Color& p_color);
 	void push_outline_color(const Color& p_color);
 	void push_underline(const Color& p_color = Color(0, 0, 0, 0));
@@ -989,7 +895,7 @@ public:
 		Control::TextDirection p_direction = Control::TEXT_DIRECTION_INHERITED,
 		const String& p_language = "",
 		TextServer::StructuredTextParser p_st_parser = TextServer::STRUCTURED_TEXT_DEFAULT,
-		BitField<TextServer::JustificationFlag> p_jst_flags =
+		uint32_t p_jst_flags =
 			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
 			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
 			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE,
@@ -997,8 +903,6 @@ public:
 	void push_indent(int p_level);
 	void push_list(int p_level, ListType p_list, bool p_capitalize,
 		const String& p_bullet = String::utf8("•"));
-	void push_meta(const Variant& p_meta, MetaUnderline p_underline_mode = META_UNDERLINE_ALWAYS,
-		const String& p_tooltip = String());
 	void push_hint(const String& p_string);
 	void push_table(int p_columns, InlineAlignment p_alignment = INLINE_ALIGNMENT_TOP,
 		int p_align_to_row = -1, const String& p_name = String());
@@ -1010,7 +914,6 @@ public:
 	void push_pulse(const Color& p_color, float p_frequency, float p_ease);
 	void push_bgcolor(const Color& p_color);
 	void push_fgcolor(const Color& p_color);
-	void push_customfx(Ref<RichTextEffect> p_custom_effect, Dictionary p_environment);
 	void push_context();
 	void set_table_column_expand(
 		int p_column, bool p_expand, int p_ratio = 1, bool p_shrink = true);
@@ -1019,11 +922,9 @@ public:
 	void set_cell_border_color(const Color& p_color);
 	void set_cell_size_override(const Size2& p_min_size, const Size2& p_max_size);
 	void set_cell_padding(const Rect2& p_padding);
+=======
+>>>>>>> fix/remove-object
 	int get_current_table_column() const;
-	void push_cell();
-	void pop();
-	void pop_context();
-	void pop_all();
 
 	void clear();
 
@@ -1084,8 +985,6 @@ public:
 	VScrollBar* get_v_scroll_bar() { return vscroll; }
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
-	virtual Variant get_drag_data(const Point2& p_point)
-override;
 
 	void set_selection_enabled(bool p_enabled);
 	bool is_selection_enabled() const;
@@ -1094,11 +993,6 @@ override;
 	float get_selection_line_offset() const;
 	String get_selected_text() const;
 	void select_all();
-
-	_FORCE_INLINE_ void set_selection_modifier(const Callable& p_modifier)
-	{
-		selection_modifier = p_modifier;
-	}
 
 	void set_deselect_on_focus_loss_enabled(const bool p_enabled);
 	bool is_deselect_on_focus_loss_enabled() const;
@@ -1111,7 +1005,6 @@ override;
 	int get_pending_paragraphs() const;
 	bool is_finished() const;
 	bool is_updating() const;
-	void wait_until_finished();
 
 	void set_threaded(bool p_threaded);
 	bool is_threaded() const;
@@ -1139,8 +1032,8 @@ override;
 	void set_vertical_alignment(VerticalAlignment p_alignment);
 	VerticalAlignment get_vertical_alignment() const;
 
-	void set_justification_flags(BitField<TextServer::JustificationFlag> p_flags);
-	BitField<TextServer::JustificationFlag> get_justification_flags() const;
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
 
 	void set_tab_stops(const PackedFloat32Array& p_tab_stops);
 	PackedFloat32Array get_tab_stops() const;
@@ -1154,14 +1047,11 @@ override;
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
 	TextServer::AutowrapMode get_autowrap_mode() const;
 
-	void set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags);
-	BitField<TextServer::LineBreakFlag> get_autowrap_trim_flags() const;
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
-
-	void set_structured_text_bidi_override_options(const Array& p_args);
-	Array get_structured_text_bidi_override_options() const;
 
 	void set_visible_characters(int p_visible);
 	int get_visible_characters() const;
@@ -1176,22 +1066,13 @@ override;
 	TextServer::VisibleCharactersBehavior get_visible_characters_behavior() const;
 	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
 
-	void set_effects(const Array& p_effects);
-	Array get_effects();
-
-	void install_effect(const Variant effect);
 	void reload_effects();
+	void wait_until_finished();
 
 	virtual Size2 get_minimum_size() const override;
 
 	RichTextLabel(const String& p_text = String());
-	~RichTextLabel();
+	~RichTextLabel() = default;
 };
-
-VARIANT_ENUM_CAST(RichTextLabel::ListType);
-VARIANT_ENUM_CAST(RichTextLabel::MenuItems);
-VARIANT_ENUM_CAST(RichTextLabel::MetaUnderline);
-VARIANT_BITFIELD_CAST(RichTextLabel::ImageUpdateMask);
-VARIANT_ENUM_CAST(RichTextLabel::ImageUnit);
 
 

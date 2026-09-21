@@ -28,21 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "slider_joint_3d.h"
-
-void SliderJoint3D::_bind_methods() {}
-
-void SliderJoint3D::set_param(Param p_param, real_t p_value)
-{
-	ERR_FAIL_INDEX(p_param, PARAM_MAX);
-	params[p_param] = p_value;
-	if (is_configured()) {
-		PhysicsServer3D::get_singleton()->slider_joint_set_param(
-			get_rid(), PS3DE::SliderJointParam(p_param), p_value);
-	}
-	update_gizmos();
-}
 
 real_t SliderJoint3D::get_param(Param p_param) const
 {

@@ -34,20 +34,27 @@
 
 class Button;
 
-class ProjectTag : public HBoxContainer {
-	VLTRCLASS(ProjectTag, HBoxContainer);
-
+class ProjectTag : public HBoxContainer
+{
 	String tag_string;
 	bool display_close = false;
 
-	Button *button = nullptr;
+	Button* button = nullptr;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	void connect_button_to(const Callable &p_callable);
 	const String get_tag() const;
 
-	ProjectTag(const String &p_text, bool p_display_close = false);
+<<<<<<< HEAD
+	ProjectTag(const String& p_text, bool p_display_close = false);
+=======
+	ProjectTag(const String& p_text, bool p_display_close = false)
+		: tag_string(p_text), display_close(p_display_close)
+	{
+	}
+>>>>>>> fix/remove-object
 };
+
+

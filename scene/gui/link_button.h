@@ -33,11 +33,11 @@
 #include "scene/gui/base_button.h"
 #include "scene/resources/text_line.h"
 
-class LinkButton : public BaseButton {
-	VLTRCLASS(LinkButton, BaseButton);
-
+class LinkButton : public BaseButton
+{
 public:
-	enum UnderlineMode {
+	enum UnderlineMode
+	{
 		UNDERLINE_MODE_ALWAYS,
 		UNDERLINE_MODE_ON_HOVER,
 		UNDERLINE_MODE_NEVER
@@ -53,11 +53,11 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
 	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
 	String el_char = U"…";
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> focus;
 
 		Color font_color;
@@ -78,36 +78,32 @@ private:
 	void _shape();
 
 protected:
-	virtual void pressed() override;
+	virtual void pressed();
 	virtual Size2 get_minimum_size() const override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual String _get_accessibility_name() const override;
 
 public:
-	void set_text(const String &p_text);
+	void set_text(const String& p_text);
 	String get_text() const;
-	void set_uri(const String &p_uri);
+	void set_uri(const String& p_uri);
 	String get_uri() const;
 
 	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
 	TextServer::OverrunBehavior get_text_overrun_behavior() const;
 
-	void set_ellipsis_char(const String &p_char);
+	void set_ellipsis_char(const String& p_char);
 	String get_ellipsis_char() const;
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
 
-	void set_structured_text_bidi_override_options(const Array &p_args);
-	Array get_structured_text_bidi_override_options() const;
-
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
 	void set_underline_mode(UnderlineMode p_underline_mode);
@@ -116,9 +112,9 @@ public:
 	Ref<Font> get_button_font() const;
 	int get_button_font_size() const;
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
-	LinkButton(const String &p_text = String());
+	LinkButton(const String& p_text = String());
 };
 
-VARIANT_ENUM_CAST(LinkButton::UnderlineMode);
+

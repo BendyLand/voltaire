@@ -32,7 +32,6 @@
 
 #include "core/math/random_pcg.h"
 #include "core/os/thread.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "editor/scene/2d/tiles/tile_atlas_view.h"
 #include "scene/gui/box_container.h"
@@ -55,27 +54,21 @@ class GridContainer;
 
 class SwitchSeparator : public MarginContainer
 {
-	VLTRCLASS(SwitchSeparator, MarginContainer);
-
 	HSeparator* h_separator = nullptr;
 	VSeparator* v_separator = nullptr;
 
 public:
-	void set_vertical(bool p_vertical);
-
-	SwitchSeparator();
+	SwitchSeparator() = default;
 };
 
 class TileMapLayerSubEditorPlugin
 {
 protected:
-	ObjectID edited_tile_map_layer_id;
 	TileMapLayer* _get_edited_layer() const;
 	static void _add_to_output_if_tile_changed(HashMap<Vector2i, TileMapCell>& p_output,
 		const TileMapLayer* p_layer, Vector2i p_coords, const TileMapCell& p_cell);
 
 public:
-	mem_unique_ptr<Object> obj;
 	struct TabData
 	{
 		Vector<Control*> toolbar;
@@ -90,8 +83,6 @@ public:
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) {}
 
 	virtual void tile_set_changed() {}
-
-	virtual void edit(ObjectID p_tile_map_layer_id) {}
 
 	virtual void draw_tile_coords_over_viewport(Control* p_overlay,
 		const TileMapLayer* p_edited_layer, Ref<TileSet> p_tile_set, bool p_show_rectangle_size,
@@ -143,14 +134,11 @@ private:
 	float scattering = 0.0;
 	Label* scatter_label = nullptr;
 	SpinBox* scatter_spinbox = nullptr;
-	void _on_random_tile_checkbox_toggled(bool p_pressed);
 	void _on_scattering_spinbox_changed(double p_value);
 
-	void _update_toolbar();
 	void _update_transform_buttons();
 	void _set_transform_buttons_state(const Vector<Button*>& p_enabled_buttons,
 		const Vector<Button*>& p_disabled_buttons, const String& p_why_disabled);
-	void _update_translation();
 
 	///// Tilemap editing. /////
 	bool has_mouse = false;
@@ -273,16 +261,14 @@ private:
 	// Update callback
 	virtual void tile_set_changed() override;
 
-protected:
-	static void _bind_methods();
-
 public:
 	virtual Vector<TabData> get_tabs() const override;
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
+<<<<<<< HEAD
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-
-	virtual void edit(ObjectID p_tile_map_layer_id) override;
+=======
+>>>>>>> fix/remove-object
 
 	TileMapLayerEditorTilesPlugin();
 };
@@ -307,7 +293,6 @@ private:
 	Button* erase_button = nullptr;
 
 	CheckBox* bucket_contiguous_checkbox = nullptr;
-	void _update_toolbar();
 
 	// Main vbox.
 	BoxContainer* main_box_container = nullptr;
@@ -380,23 +365,20 @@ private:
 
 public:
 	virtual Vector<TabData> get_tabs() const override;
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
+<<<<<<< HEAD
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-
-	virtual void edit(ObjectID p_tile_map_layer_id) override;
+=======
+>>>>>>> fix/remove-object
 
 	TileMapLayerEditorTerrainsPlugin();
 };
 
 class TileMapLayerEditor : public EditorDock
 {
-	VLTRCLASS(TileMapLayerEditor, EditorDock);
-
 private:
 	bool tile_map_layer_changed_needs_update = false;
 
-	ObjectID edited_tile_map_layer_id;
 	bool is_multi_node_edit = false;
 	Vector<TileMapLayer*> tile_map_layers_in_scene_cache;
 	bool layers_in_scene_list_cache_needs_update = false;
@@ -456,7 +438,6 @@ private:
 	PanelContainer* tabs_panel = nullptr;
 	LocalVector<TileMapLayerSubEditorPlugin::TabData> tabs_data;
 	LocalVector<TileMapLayerSubEditorPlugin*> tabs_plugins;
-	void _update_bottom_panel();
 
 	// TileMap.
 	Ref<Texture2D> missing_tile_texture;
@@ -469,21 +450,15 @@ private:
 	// Updates.
 	void _layers_select_next_or_previous(bool p_next);
 
-	// Inspector undo/redo callback.
-	void _move_tile_map_array_element(Object* p_undo_redo, Object* p_edited,
-		const String& p_array_prefix, int p_from_index, int p_to_pos);
-
 protected:
 	void _notification(int p_what);
 	void _draw_shape(Control* p_control, Rect2 p_region, TileSet::TileShape p_shape,
 		TileSet::TileOffsetAxis p_offset_axis, Color p_color);
-	virtual void update_layout(DockLayout p_layout, int p_slot) override;
 
 public:
 	bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
 	void forward_canvas_draw_over_viewport(Control* p_overlay);
 
-	void edit(Object* p_tile_map_layer);
 	void set_show_layer_selector(bool p_show_layer_selector);
 
 	TileMapLayerEditor();
@@ -493,7 +468,5 @@ public:
 	static Vector<Vector2i> get_line(
 		const TileMapLayer* p_tile_map_layer, Vector2i p_from_cell, Vector2i p_to_cell);
 };
-
-VARIANT_ENUM_CAST(TileMapLayerEditorTilesPlugin::TileTransformType);
 
 

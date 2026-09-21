@@ -53,8 +53,6 @@ class Timer;
 
 class SceneImportSettingsDialog : public ConfirmationDialog
 {
-	VLTRCLASS(SceneImportSettingsDialog, ConfirmationDialog)
-
 	static SceneImportSettingsDialog* singleton;
 
 	enum Actions
@@ -136,8 +134,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 		float cam_rot_x = -Math::PI / 4;
 		float cam_rot_y = -Math::PI / 4;
 		float cam_zoom = 1;
-
-		HashMap<StringName, Variant> settings;
 	};
 
 	HashMap<String, MaterialData> material_map;
@@ -153,7 +149,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 		float cam_rot_x = -Math::PI / 4;
 		float cam_rot_y = -Math::PI / 4;
 		float cam_zoom = 1;
-		HashMap<StringName, Variant> settings;
 	};
 
 	HashMap<String, MeshData> mesh_map;
@@ -162,7 +157,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	{
 		Ref<Animation> animation;
 		TreeItem* scene_node = nullptr;
-		HashMap<StringName, Variant> settings;
 	};
 
 	HashMap<String, AnimationData> animation_map;
@@ -171,13 +165,10 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	{
 		Node* node = nullptr;
 		TreeItem* scene_node = nullptr;
-		HashMap<StringName, Variant> settings;
 	};
 
 	HashMap<String, NodeData> node_map;
 
-	bool _get_current(const StringName& p_name, Variant& r_ret) const;
-	void _set_default(const StringName& p_name, const Variant& p_value);
 	void _fill_material(Tree* p_tree, const Ref<Material>& p_material, TreeItem* p_parent);
 	void _fill_mesh(Tree* p_tree, const Ref<Mesh>& p_mesh, TreeItem* p_parent);
 	void _fill_animation(
@@ -192,7 +183,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	bool selecting = false;
 
 	void _update_view_gizmos();
-	void _update_camera();
 	void _select(Tree* p_from, const String& p_type, const String& p_id);
 	void _inspector_property_edited(const String& p_name);
 	void _reset_bone_transforms();
@@ -212,8 +202,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	void _on_light_rotate_switch_pressed();
 
 	void _viewport_input(const Ref<InputEvent>& p_input);
-
-	HashMap<StringName, Variant> defaults;
 
 	SceneImportSettingsData* scene_import_settings_data = nullptr;
 	Ref<ResourceImporterScene> _resource_importer_scene;
@@ -239,15 +227,11 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	Vector<TreeItem*> save_path_items;
 
 	TreeItem* save_path_item = nullptr;
+<<<<<<< HEAD
 	void _save_path_changed(const String& p_path);
-	void _browse_save_callback(Object* p_item, int p_column, int p_id, MouseButton p_button);
+=======
+>>>>>>> fix/remove-object
 	void _save_dir_confirm();
-
-	Dictionary base_subresource_settings;
-
-	void _load_default_subresource_settings(HashMap<StringName, Variant>& settings,
-		const String& p_type, const String& p_import_id,
-		ResourceImporterScene::InternalImportCategory p_category);
 
 	bool generate_collider = false;
 
@@ -264,7 +248,6 @@ public:
 	}
 
 	void request_generate_collider();
-	void update_view();
 	void open_settings(const String& p_path, const String& p_scene_import_type = "PackedScene");
 	static SceneImportSettingsDialog* get_singleton();
 	Node* get_selected_node();

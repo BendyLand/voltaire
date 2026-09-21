@@ -85,7 +85,6 @@ private:
 
 	class RenderBufferDataForwardMobile : public RenderBufferCustomDataRD
 	{
-		VLTRCLASS(RenderBufferDataForwardMobile, RenderBufferCustomDataRD);
 
 	public:
 		enum FramebufferConfigType
@@ -496,15 +495,11 @@ private:
 	static_assert(std::is_trivially_destructible_v<RenderElementInfo>);
 	static_assert(std::is_trivially_constructible_v<RenderElementInfo>);
 
-	template <PassMode p_pass_mode>
-	_FORCE_INLINE_ void _render_list_template(RenderingDevice::DrawListID p_draw_list,
-		RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
-		uint32_t p_from_element, uint32_t p_to_element);
 	void _render_list(RenderingDevice::DrawListID p_draw_list,
 		RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
 		uint32_t p_from_element, uint32_t p_to_element);
 	void _render_list_with_draw_list(RenderListParameters* p_params, RID p_framebuffer,
-		BitField<RD::DrawFlags> p_clear_colors = RD::DRAW_DEFAULT_ALL,
+		uint32_t p_clear_colors = RD::DRAW_DEFAULT_ALL,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 0.0, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2());
@@ -922,7 +917,7 @@ public:
 
 	/* SHADER LIBRARY */
 
-	virtual void enable_features(BitField<FeatureBits> p_feature_bits) override;
+	virtual void enable_features(uint32_t p_feature_bits) override;
 	virtual String get_name() const override;
 
 	virtual bool free(RID p_rid) override;

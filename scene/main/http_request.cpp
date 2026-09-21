@@ -31,8 +31,6 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/stream_peer_gzip.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "http_request.h"
@@ -109,76 +107,6 @@ String HTTPRequest::get_header_value(
 	}
 
 	return value;
-}
-
-Error HTTPRequest::request(const String& p_url, const Vector<String>& p_custom_headers,
-	HTTPClient::Method p_method, const String& p_request_data)
-{
-	// Copy the string into a raw buffer.
-	Vector<uint8_t> raw_data;
-
-	CharString charstr = p_request_data.utf8();
-	size_t len = charstr.length();
-	if (len > 0) {
-		raw_data.resize(len);
-		uint8_t* w = raw_data.ptrw();
-		memcpy(w, charstr.ptr(), len);
-	}
-
-	return request_raw(p_url, p_custom_headers, p_method, raw_data);
-}
-
-Error HTTPRequest::request_raw(const String& p_url, const Vector<String>& p_custom_headers,
-	HTTPClient::Method p_method, const Vector<uint8_t>& p_request_data_raw)
-{
-	ERR_FAIL_COND_V(!is_inside_tree(), ERR_UNCONFIGURED);
-	ERR_FAIL_COND_V_MSG(requesting, ERR_BUSY,
-		"HTTPRequest is processing a request. Wait for completion or cancel it before attempting a "
-		"new one.");
-
-	if (timeout > 0) {
-		timer->stop();
-		timer->start(timeout);
-	}
-
-	method = p_method;
-
-	Error err = _parse_url(p_url);
-	if (err) {
-		return err;
-	}
-
-	headers = p_custom_headers;
-
-	if (accept_gzip) {
-		// If the user has specified an Accept-Encoding header, don't overwrite it.
-		if (!has_header(headers, "Accept-Encoding")) {
-			headers.push_back("Accept-Encoding: gzip, deflate");
-		}
-	}
-
-	request_data = p_request_data_raw;
-
-	requesting = true;
-
-	if (use_threads.is_set()) {
-		thread_done.clear();
-		thread_request_quit.clear();
-		client->set_blocking_mode(true);
-		thread.start(_thread_func, this);
-	}
-	else {
-		client->set_blocking_mode(false);
-		err = _request();
-		if (err != OK) {
-			_defer_done(RESULT_CANT_CONNECT, 0, PackedStringArray(), PackedByteArray());
-			return ERR_CANT_CONNECT;
-		}
-
-		set_process_internal(true);
-	}
-
-	return OK;
 }
 
 void HTTPRequest::_thread_func(void* p_userdata)
@@ -594,21 +522,6 @@ bool HTTPRequest::_update_connection()
 	ERR_FAIL_V(false);
 }
 
-void HTTPRequest::_defer_done(
-	int p_status, int p_code, const PackedStringArray& p_headers, const PackedByteArray& p_data)
-{
-	callable_mp(this, &HTTPRequest::_request_done)
-		.call_deferred(p_status, p_code, p_headers, p_data);
-}
-
-void HTTPRequest::_request_done(
-	int p_status, int p_code, const PackedStringArray& p_headers, const PackedByteArray& p_data)
-{
-	cancel_request();
-
-	this->obj->emit_signal(SNAME("request_completed"), p_status, p_code, p_headers, p_data);
-}
-
 void HTTPRequest::_notification(int p_what)
 {
 	switch (p_what) {
@@ -719,17 +632,9 @@ void HTTPRequest::set_tls_options(const Ref<TLSOptions>& p_options)
 	tls_options = p_options;
 }
 
-void HTTPRequest::_bind_methods() {}
-
-HTTPRequest::HTTPRequest()
-{
-	client = Ref<HTTPClient>(HTTPClient::create());
-	tls_options = TLSOptions::client();
-	timer = memnew(Timer);
-	timer->set_one_shot(true);
-	timer->set_ignore_time_scale(true);
-	timer->connect("timeout", callable_mp(this, &HTTPRequest::_timeout));
-	add_child(timer);
-}
-
+<<<<<<< HEAD
+=======
+void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray& p_headers,
+	const PackedByteArray& p_data) {}
+>>>>>>> fix/remove-object
 

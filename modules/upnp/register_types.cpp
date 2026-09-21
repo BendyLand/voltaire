@@ -37,7 +37,6 @@
 #include "upnp_miniupnp.h"
 #endif
 
-#include "core/object/class_db.h"
 
 void initialize_upnp_module(ModuleInitializationLevel p_level)
 {

@@ -61,7 +61,9 @@ class AcceptDialog : public Window
 		int buttons_separation = 0;
 		int buttons_min_width = 0;
 		int buttons_min_height = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 	void _custom_action(const String& p_action);
 	void _button_visibility_changed(Button* button);
@@ -73,13 +75,15 @@ class AcceptDialog : public Window
 	void _parent_focused();
 
 protected:
-	virtual Size2 _get_contents_minimum_size() const override;
 	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual Size2 _get_contents_minimum_size() const override;
 	virtual void _post_popup() override;
 
 	void _notification(int p_what);
+<<<<<<< HEAD
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
+=======
+>>>>>>> fix/remove-object
 
 	virtual void ok_pressed() {}
 
@@ -104,15 +108,9 @@ protected:
 public:
 	Label* get_label() { return message_label; }
 
-	static void set_swap_cancel_ok(bool p_swap);
-
-	void register_text_enter(LineEdit* p_line_edit);
-
 	Button* get_ok_button() { return ok_button; }
 
-	Button* add_button(const String& p_text, bool p_right = false, const String& p_action = "");
-	Button* add_cancel_button(const String& p_cancel = "");
-	void remove_button(Button* p_button);
+	static void set_swap_cancel_ok(bool p_swap);
 
 	void set_hide_on_ok(bool p_hide);
 	bool get_hide_on_ok() const;
@@ -129,16 +127,13 @@ public:
 	void set_ok_button_text(String p_ok_button_text);
 	String get_ok_button_text() const;
 
-	AcceptDialog();
-	~AcceptDialog();
+	AcceptDialog() = default;
+	~AcceptDialog() = default;
 };
 
 class ConfirmationDialog : public AcceptDialog
 {
 	Button* cancel = nullptr;
-
-protected:
-	static void _bind_methods();
 
 public:
 	Button* get_cancel_button();
@@ -146,7 +141,7 @@ public:
 	void set_cancel_button_text(String p_cancel_button_text);
 	String get_cancel_button_text() const;
 
-	ConfirmationDialog();
+	ConfirmationDialog() = default;
 };
 
 

@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "external_texture.h"
 #include "servers/rendering/rendering_server.h"
 
-void ExternalTexture::_bind_methods() {}
 
 uint64_t ExternalTexture::get_external_texture_id() const
 {

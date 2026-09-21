@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/object/class_db.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "shape_2d.h"
 
@@ -103,7 +102,6 @@ PackedVector2Array Shape2D::collide_and_get_contacts(const Transform2D& p_local_
 	return results;
 }
 
-void Shape2D::_bind_methods() {}
 
 bool Shape2D::is_collision_outline_enabled()
 {

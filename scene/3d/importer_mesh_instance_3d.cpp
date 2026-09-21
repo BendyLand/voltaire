@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "importer_mesh_instance_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 
@@ -81,49 +80,18 @@ GeometryInstance3D::ShadowCastingSetting ImporterMeshInstance3D::get_cast_shadow
 	return shadow_casting_setting;
 }
 
-void ImporterMeshInstance3D::set_visibility_range_begin(float p_dist)
-{
-	visibility_range_begin = p_dist;
-	update_configuration_warnings();
-}
-
 float ImporterMeshInstance3D::get_visibility_range_begin() const { return visibility_range_begin; }
 
-void ImporterMeshInstance3D::set_visibility_range_end(float p_dist)
-{
-	visibility_range_end = p_dist;
-	update_configuration_warnings();
-}
-
 float ImporterMeshInstance3D::get_visibility_range_end() const { return visibility_range_end; }
-
-void ImporterMeshInstance3D::set_visibility_range_begin_margin(float p_dist)
-{
-	visibility_range_begin_margin = p_dist;
-	update_configuration_warnings();
-}
 
 float ImporterMeshInstance3D::get_visibility_range_begin_margin() const
 {
 	return visibility_range_begin_margin;
 }
 
-void ImporterMeshInstance3D::set_visibility_range_end_margin(float p_dist)
-{
-	visibility_range_end_margin = p_dist;
-	update_configuration_warnings();
-}
-
 float ImporterMeshInstance3D::get_visibility_range_end_margin() const
 {
 	return visibility_range_end_margin;
-}
-
-void ImporterMeshInstance3D::set_visibility_range_fade_mode(
-	GeometryInstance3D::VisibilityRangeFadeMode p_mode)
-{
-	visibility_range_fade_mode = p_mode;
-	update_configuration_warnings();
 }
 
 GeometryInstance3D::VisibilityRangeFadeMode
@@ -132,6 +100,5 @@ ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 	return visibility_range_fade_mode;
 }
 
-void ImporterMeshInstance3D::_bind_methods() {}
 
 

@@ -31,15 +31,12 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 #include "servers/rendering/storage/render_data.h"
 
 /* Compositor Effect */
 
 class CompositorEffect : public Resource
 {
-	VLTRCLASS(CompositorEffect, Resource);
-
 public:
 	enum EffectCallbackType
 	{
@@ -63,8 +60,10 @@ private:
 	bool needs_separate_specular = false;
 
 protected:
+<<<<<<< HEAD
 	static void _bind_methods();
-	void _validate_property(PropertyInfo& p_property) const;
+=======
+>>>>>>> fix/remove-object
 
 	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
 
@@ -96,14 +95,11 @@ public:
 	~CompositorEffect();
 };
 
-VARIANT_ENUM_CAST(CompositorEffect::EffectCallbackType)
 
 /* Compositor */
 
 class Compositor : public Resource
 {
-	VLTRCLASS(Compositor, Resource);
-
 private:
 	RID compositor;
 
@@ -111,17 +107,12 @@ private:
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual RID get_rid() const override { return compositor; }
 
 	Compositor();
 	~Compositor();
-
-	// Compositor effects
-	void set_compositor_effects(const Array& p_compositor_effects);
-	Array get_compositor_effects() const;
 };
 
 

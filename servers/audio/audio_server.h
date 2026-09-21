@@ -30,11 +30,9 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include <atomic>
 #include "core/math/audio_frame.h"
 #include "core/templates/safe_list.h"
-#include "core/variant/variant.h"
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/audio_filter_sw.h"
 
@@ -152,7 +150,7 @@ public:
 
 	virtual void unregister_sample(const Ref<AudioSample>& p_sample) {}
 
-	virtual void start_sample_playback(const Ref<AudioSamplePlayback>& p_playback);
+	virtual void start_sample_playback(const Ref<AudioSamplePlayback>& p_playback) {}
 
 	virtual void stop_sample_playback(const Ref<AudioSamplePlayback>& p_playback) {}
 
@@ -228,8 +226,6 @@ class AudioBusLayout;
 class AudioServer
 {
 public:
-	mem_unique_ptr<Object> obj;
-
 	// re-expose this here, as AudioDriver is not exposed to script
 	enum SpeakerMode
 	{
@@ -422,7 +418,6 @@ private:
 	LocalVector<Ref<AudioSamplePlayback>> sample_playback_list;
 
 protected:
-	static void _bind_methods();
 
 public:
 	_FORCE_INLINE_ int get_channel_count() const
@@ -606,13 +601,8 @@ public:
 	virtual ~AudioServer();
 };
 
-VARIANT_ENUM_CAST(AudioServer::SpeakerMode)
-VARIANT_ENUM_CAST(AudioServer::PlaybackType)
-
 class AudioBusLayout : public Resource
 {
-	VLTRCLASS(AudioBusLayout, Resource);
-
 	friend class AudioServer;
 
 	struct Bus
@@ -635,13 +625,7 @@ class AudioBusLayout : public Resource
 
 		Bus() {}
 	};
-
 	Vector<Bus> buses;
-
-protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
 
 public:
 	AudioBusLayout();

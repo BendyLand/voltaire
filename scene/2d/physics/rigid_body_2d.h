@@ -36,26 +36,29 @@
 
 class PhysicsMaterial;
 
-class RigidBody2D : public PhysicsBody2D {
-	VLTRCLASS(RigidBody2D, PhysicsBody2D);
-
+class RigidBody2D : public PhysicsBody2D
+{
 public:
-	enum FreezeMode {
+	enum FreezeMode
+	{
 		FREEZE_MODE_STATIC,
 		FREEZE_MODE_KINEMATIC,
 	};
 
-	enum CenterOfMassMode {
+	enum CenterOfMassMode
+	{
 		CENTER_OF_MASS_MODE_AUTO,
 		CENTER_OF_MASS_MODE_CUSTOM,
 	};
 
-	enum DampMode {
+	enum DampMode
+	{
 		DAMP_MODE_COMBINE,
 		DAMP_MODE_REPLACE,
 	};
 
-	enum CCDMode {
+	enum CCDMode
+	{
 		CCD_MODE_DISABLED,
 		CCD_MODE_CAST_RAY,
 		CCD_MODE_CAST_SHAPE,
@@ -92,11 +95,14 @@ private:
 
 	CCDMode ccd_mode = CCD_MODE_DISABLED;
 
-	struct ShapePair {
+	struct ShapePair
+	{
 		int body_shape = 0;
 		int local_shape = 0;
 		bool tagged = false;
-		bool operator<(const ShapePair &p_sp) const {
+
+		bool operator<(const ShapePair& p_sp) const
+		{
 			if (body_shape == p_sp.body_shape) {
 				return local_shape < p_sp.local_shape;
 			}
@@ -105,45 +111,35 @@ private:
 		}
 
 		ShapePair() {}
-		ShapePair(int p_bs, int p_ls) {
+
+		ShapePair(int p_bs, int p_ls)
+		{
 			body_shape = p_bs;
 			local_shape = p_ls;
 		}
 	};
-	struct RigidBody2D_RemoveAction {
+
+	struct RigidBody2D_RemoveAction
+	{
 		RID rid;
-		ObjectID body_id;
 		ShapePair pair;
 	};
-	struct BodyState {
+
+	struct BodyState
+	{
 		RID rid;
-		//int rc;
+		// int rc;
 		bool in_scene = false;
 		VSet<ShapePair> shapes;
 	};
 
-	struct ContactMonitor {
-		bool locked = false;
-		HashMap<ObjectID, BodyState> body_map;
-	};
+	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState2D* p_state);
+	void _body_state_changed(PhysicsDirectBodyState2D* p_state);
 
-	ContactMonitor *contact_monitor = nullptr;
-	void _body_enter_tree(ObjectID p_id);
-	void _body_exit_tree(ObjectID p_id);
-
-	void _body_inout(int p_status, const RID &p_body, ObjectID p_instance, int p_body_shape, int p_local_shape);
-
-	static void _body_state_changed_callback(void *p_instance, PhysicsDirectBodyState2D *p_state);
-	void _body_state_changed(PhysicsDirectBodyState2D *p_state);
-
-	void _sync_body_state(PhysicsDirectBodyState2D *p_state);
+	void _sync_body_state(PhysicsDirectBodyState2D* p_state);
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
-
-	void _validate_property(PropertyInfo &p_property) const;
-
 	void _apply_body_mode();
 
 public:
@@ -165,10 +161,10 @@ public:
 	void set_center_of_mass_mode(CenterOfMassMode p_mode);
 	CenterOfMassMode get_center_of_mass_mode() const;
 
-	void set_center_of_mass(const Vector2 &p_center_of_mass);
-	const Vector2 &get_center_of_mass() const;
+	void set_center_of_mass(const Vector2& p_center_of_mass);
+	const Vector2& get_center_of_mass() const;
 
-	void set_physics_material_override(const Ref<PhysicsMaterial> &p_physics_material_override);
+	void set_physics_material_override(const Ref<PhysicsMaterial>& p_physics_material_override);
 	Ref<PhysicsMaterial> get_physics_material_override() const;
 
 	void set_gravity_scale(real_t p_gravity_scale);
@@ -186,10 +182,10 @@ public:
 	void set_angular_damp(real_t p_angular_damp);
 	real_t get_angular_damp() const;
 
-	void set_linear_velocity(const Vector2 &p_velocity);
+	void set_linear_velocity(const Vector2& p_velocity);
 	Vector2 get_linear_velocity() const;
 
-	void set_axis_velocity(const Vector2 &p_axis);
+	void set_axis_velocity(const Vector2& p_axis);
 
 	void set_angular_velocity(real_t p_velocity);
 	real_t get_angular_velocity() const;
@@ -213,25 +209,23 @@ public:
 	void set_continuous_collision_detection_mode(CCDMode p_mode);
 	CCDMode get_continuous_collision_detection_mode() const;
 
-	void apply_central_impulse(const Vector2 &p_impulse);
-	void apply_impulse(const Vector2 &p_impulse, const Vector2 &p_position = Vector2());
+	void apply_central_impulse(const Vector2& p_impulse);
+	void apply_impulse(const Vector2& p_impulse, const Vector2& p_position = Vector2());
 	void apply_torque_impulse(real_t p_torque);
 
-	void apply_central_force(const Vector2 &p_force);
-	void apply_force(const Vector2 &p_force, const Vector2 &p_position = Vector2());
+	void apply_central_force(const Vector2& p_force);
+	void apply_force(const Vector2& p_force, const Vector2& p_position = Vector2());
 	void apply_torque(real_t p_torque);
 
-	void add_constant_central_force(const Vector2 &p_force);
-	void add_constant_force(const Vector2 &p_force, const Vector2 &p_position = Vector2());
+	void add_constant_central_force(const Vector2& p_force);
+	void add_constant_force(const Vector2& p_force, const Vector2& p_position = Vector2());
 	void add_constant_torque(real_t p_torque);
 
-	void set_constant_force(const Vector2 &p_force);
+	void set_constant_force(const Vector2& p_force);
 	Vector2 get_constant_force() const;
 
 	void set_constant_torque(real_t p_torque);
 	real_t get_constant_torque() const;
-
-	Array get_colliding_bodies() const;
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
@@ -242,7 +236,4 @@ private:
 	void _reload_physics_characteristics();
 };
 
-VARIANT_ENUM_CAST(RigidBody2D::FreezeMode);
-VARIANT_ENUM_CAST(RigidBody2D::CenterOfMassMode);
-VARIANT_ENUM_CAST(RigidBody2D::DampMode);
-VARIANT_ENUM_CAST(RigidBody2D::CCDMode);
+

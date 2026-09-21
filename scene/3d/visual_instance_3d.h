@@ -52,11 +52,8 @@ protected:
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::VISUAL_INSTANCE_3D;
-
 	enum GetFacesFlags
 	{
 		FACES_SOLID = 1, // solid geometry
@@ -83,15 +80,13 @@ public:
 	void set_sorting_use_aabb_center(bool p_enabled);
 	bool is_sorting_use_aabb_center() const;
 
-	VisualInstance3D();
+	VisualInstance3D() = default;
 	~VisualInstance3D();
 };
 
 class GeometryInstance3D : public VisualInstance3D
 {
 public:
-	static constexpr Object::AncestralClass static_ancestral_class = Object::AncestralClass::GEOMETRY_INSTANCE_3D;
-
 	enum ShadowCastingSetting
 	{
 		SHADOW_CASTING_SETTING_OFF = RSE::SHADOW_CASTING_SETTING_OFF,
@@ -138,7 +133,6 @@ private:
 
 	float lod_bias = 1.0;
 
-	mutable HashMap<StringName, Variant> instance_shader_parameters;
 	mutable HashMap<StringName, StringName> instance_shader_parameter_property_remap;
 
 	float extra_cull_margin = 0.0;
@@ -150,33 +144,25 @@ private:
 	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-	void _get_property_list(List<PropertyInfo>* p_list) const;
-	void _validate_property(PropertyInfo& p_property) const;
-
+<<<<<<< HEAD
 	static void _bind_methods();
+=======
+>>>>>>> fix/remove-object
 
 public:
 	void set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting);
 	ShadowCastingSetting get_cast_shadows_setting() const;
 
-	void set_transparency(float p_transparency);
 	float get_transparency() const;
 
-	void set_visibility_range_begin(float p_dist);
 	float get_visibility_range_begin() const;
 
-	void set_visibility_range_end(float p_dist);
 	float get_visibility_range_end() const;
 
-	void set_visibility_range_begin_margin(float p_dist);
 	float get_visibility_range_begin_margin() const;
 
-	void set_visibility_range_end_margin(float p_dist);
 	float get_visibility_range_end_margin() const;
 
-	void set_visibility_range_fade_mode(VisibilityRangeFadeMode p_mode);
 	VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 
 	void set_material_override(const Ref<Material>& p_material);
@@ -197,15 +183,10 @@ public:
 	void set_lightmap_texel_scale(float p_scale);
 	float get_lightmap_texel_scale() const;
 
-#ifndef DISABLE_DEPRECATED
-	void set_lightmap_scale(GeometryInstance3D::LightmapScale p_scale);
-	LightmapScale get_lightmap_scale() const;
-#endif // DISABLE_DEPRECATED
-
-	void set_instance_shader_parameter(const StringName& p_name, const Variant& p_value);
-	Variant get_instance_shader_parameter(const StringName& p_name) const;
-
+<<<<<<< HEAD
 	void set_custom_aabb(AABB p_aabb);
+=======
+>>>>>>> fix/remove-object
 	AABB get_custom_aabb() const;
 
 	void set_ignore_occlusion_culling(bool p_enabled);
@@ -214,13 +195,8 @@ public:
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const;
 
 	PackedStringArray get_configuration_warnings() const override;
-	GeometryInstance3D();
+	GeometryInstance3D() = default;
 	virtual ~GeometryInstance3D();
 };
-
-VARIANT_ENUM_CAST(GeometryInstance3D::ShadowCastingSetting);
-VARIANT_ENUM_CAST(GeometryInstance3D::GIMode);
-VARIANT_ENUM_CAST(GeometryInstance3D::LightmapScale);
-VARIANT_ENUM_CAST(GeometryInstance3D::VisibilityRangeFadeMode);
 
 

@@ -28,29 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "uniform_set_cache_rd.h"
 
 UniformSetCacheRD* UniformSetCacheRD::singleton = nullptr;
-
-void UniformSetCacheRD::_bind_methods() {}
-
-RID UniformSetCacheRD::get_cache_array(
-	RID p_shader, uint32_t p_set, const TypedArray<RDUniform>& p_uniforms)
-{
-	thread_local LocalVector<RD::Uniform> uniforms;
-	uniforms.clear();
-
-	for (int i = 0; i < p_uniforms.size(); i++) {
-		Ref<RDUniform> uniform = p_uniforms[i];
-		if (uniform.is_valid()) {
-			uniforms.push_back(uniform->base);
-		}
-	}
-
-	return UniformSetCacheRD::get_singleton()->get_cache_vec(p_shader, p_set, uniforms);
-}
 
 void UniformSetCacheRD::_invalidate(Cache* p_cache)
 {

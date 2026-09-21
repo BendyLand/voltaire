@@ -105,7 +105,6 @@ private:
 protected:
 	Color _get_color_accum();
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _draw() = 0;
 	void draw_texture_rect(Ref<Texture2D> p_texture, Rect2 p_dst_rect, Rect2 p_src_rect);
 
@@ -181,7 +180,7 @@ public:
 
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
 
-	SpriteBase3D();
+	SpriteBase3D() = default;
 	~SpriteBase3D();
 };
 
@@ -199,9 +198,10 @@ class Sprite3D : public SpriteBase3D
 
 protected:
 	virtual void _draw() override;
+<<<<<<< HEAD
 	static void _bind_methods();
-
-	void _validate_property(PropertyInfo& p_property) const;
+=======
+>>>>>>> fix/remove-object
 
 public:
 	void set_texture(const Ref<Texture2D>& p_texture);
@@ -252,20 +252,13 @@ class AnimatedSprite3D : public SpriteBase3D
 	void _stop_internal(bool p_reset);
 
 protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName& p_name, const Variant& p_value);
-#endif
 	virtual void _draw() override;
-	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo& p_property) const;
 
 public:
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
-	void play(const StringName& p_name = StringName(), float p_custom_scale = 1.0,
-		bool p_from_end = false);
 	void play_backwards(const StringName& p_name = StringName());
 	void pause();
 	void stop();
@@ -284,8 +277,6 @@ public:
 	void set_frame_progress(real_t p_progress);
 	real_t get_frame_progress() const;
 
-	void set_frame_and_progress(int p_frame, real_t p_progress);
-
 	void set_speed_scale(float p_speed_scale);
 	float get_speed_scale() const;
 	float get_playing_speed() const;
@@ -301,8 +292,5 @@ public:
 
 	AnimatedSprite3D();
 };
-
-VARIANT_ENUM_CAST(SpriteBase3D::DrawFlags);
-VARIANT_ENUM_CAST(SpriteBase3D::AlphaCutMode);
 
 

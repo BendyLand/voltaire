@@ -28,10 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "socket_server.h"
-
-void SocketServer::_bind_methods() {}
 
 Error SocketServer::_listen(const NetSocket::Address& p_addr)
 {

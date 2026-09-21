@@ -31,25 +31,14 @@
 #pragma once
 
 #include "core/templates/rb_map.h"
-#include "core/variant/typed_array.h"
 #include "scene/resources/animation.h"
 
 class AnimationLibrary : public Resource
 {
-	VLTRCLASS(AnimationLibrary, Resource)
-
-	void _set_data(const Dictionary& p_data);
-	Dictionary _get_data() const;
-
-	TypedArray<StringName> _get_animation_list() const;
-
 	void _animation_changed(const StringName& p_name);
 
 	friend class AnimationMixer; // For faster access.
 	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
-
-protected:
-	static void _bind_methods();
 
 public:
 	static bool is_valid_animation_name(const String& p_name);

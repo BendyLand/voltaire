@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "center_container.h"
-#include "core/object/class_db.h"
+<<<<<<< HEAD
 
 Size2 CenterContainer::get_minimum_size() const
 {
@@ -78,31 +78,17 @@ void CenterContainer::set_use_top_left(bool p_enable)
 	update_minimum_size();
 	queue_sort();
 }
+=======
+>>>>>>> fix/remove-object
 
 bool CenterContainer::is_using_top_left() const { return use_top_left; }
+
+Size2 CenterContainer::get_minimum_size() const { return Size2(); }
+
+Size2 CenterContainer::get_desired_size() const { return Size2(); }
 
 Vector<int> CenterContainer::get_allowed_size_flags_horizontal() const { return Vector<int>(); }
 
 Vector<int> CenterContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
-
-void CenterContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		Size2 size = get_size();
-		for (int i = 0; i < get_child_count(); i++) {
-			Control* c = as_sortable_control(get_child(i));
-			if (!c) {
-				continue;
-			}
-			Size2 minsize = c->get_bound_minimum_size();
-			Point2 ofs = use_top_left ? (-minsize * 0.5).floor() : ((size - minsize) / 2.0).floor();
-			fit_child_in_rect(c, Rect2(ofs, minsize));
-		}
-	} break;
-	}
-}
-
-void CenterContainer::_bind_methods() {}
 
 

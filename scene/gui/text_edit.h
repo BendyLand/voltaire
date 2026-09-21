@@ -136,8 +136,6 @@ private:
 		bool draw = true;
 		bool clickable = false;
 		bool overwritable = false;
-
-		Callable custom_draw_callback;
 	};
 
 	class Text
@@ -145,7 +143,6 @@ private:
 	public:
 		struct Gutter
 		{
-			Variant metadata;
 			bool clickable = false;
 
 			Ref<Texture2D> icon;
@@ -158,12 +155,10 @@ private:
 			Vector<Gutter> gutters;
 
 			String data;
-			Array bidi_override;
 			Ref<TextParagraph> data_buf;
 			Vector<RID> accessibility_text_root_element;
 
 			String ime_data;
-			Array ime_bidi_override;
 
 			Color background_color = Color(0, 0, 0, 0);
 			bool hidden = false;
@@ -186,12 +181,11 @@ private:
 
 		String language;
 		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
-		BitField<TextServer::LineBreakFlag> brk_flags = TextServer::BREAK_MANDATORY;
+		uint32_t brk_flags = TextServer::BREAK_MANDATORY;
 		bool draw_control_chars = false;
 		String custom_word_separators;
 		bool use_default_word_separators = true;
 		bool use_custom_word_separators = false;
-		Callable inline_object_parser;
 
 		mutable bool max_line_width_dirty = true;
 		mutable bool max_line_height_dirty = true;
@@ -215,7 +209,6 @@ private:
 		void set_direction_and_language(
 			TextServer::Direction p_direction, const String& p_language);
 		void set_draw_control_chars(bool p_enabled);
-		void set_inline_object_parser(const Callable& p_parser);
 
 		int get_line_height() const;
 		int get_line_width(int p_line, int p_wrap_index = -1) const;
@@ -235,8 +228,8 @@ private:
 
 		void set_width(float p_width);
 		float get_width() const;
-		void set_brk_flags(BitField<TextServer::LineBreakFlag> p_flags);
-		BitField<TextServer::LineBreakFlag> get_brk_flags() const;
+		void set_brk_flags(uint32_t p_flags);
+		uint32_t get_brk_flags() const;
 		int get_line_wrap_amount(int p_line) const;
 
 		const Vector<RID> get_accessibility_elements(int p_line);
@@ -253,11 +246,8 @@ private:
 		const Ref<TextParagraph> get_line_data(int p_line) const;
 		float get_indent_offset(int p_line, bool p_rtl) const;
 
-		void set(int p_line, const String& p_text, const Array& p_bidi_override);
-		void set_ime(int p_line, const String& p_text, const Array& p_bidi_override);
 		void set_hidden(int p_line, bool p_hidden);
 		bool is_hidden(int p_line) const;
-		void insert(int p_at, const Vector<String>& p_text, const Vector<Array>& p_bidi_override);
 		void remove_range(int p_from_line, int p_to_line);
 
 		int size() const { return text.size(); }
@@ -276,16 +266,6 @@ private:
 		void add_gutter(int p_at);
 		void remove_gutter(int p_gutter);
 		void move_gutters(int p_from_line, int p_to_line);
-
-		void set_line_gutter_metadata(int p_line, int p_gutter, const Variant& p_metadata)
-		{
-			text.write[p_line].gutters.write[p_gutter].metadata = p_metadata;
-		}
-
-		const Variant& get_line_gutter_metadata(int p_line, int p_gutter) const
-		{
-			return text[p_line].gutters[p_gutter].metadata;
-		}
 
 		void set_line_gutter_text(int p_line, int p_gutter, const String& p_text)
 		{
@@ -365,7 +345,6 @@ private:
 
 	// Placeholder
 	String placeholder_text = "";
-	Array placeholder_bidi_override;
 	Ref<TextParagraph> placeholder_data_buf;
 	int placeholder_line_height = -1;
 	int placeholder_max_width = -1;
@@ -384,7 +363,6 @@ private:
 	String language = "";
 
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	Array st_args;
 
 	void _clear();
 	void _update_caches(bool p_invalidate_all = false);
@@ -412,12 +390,8 @@ private:
 	PopupMenu* menu_dir = nullptr;
 	PopupMenu* menu_ctl = nullptr;
 
-	Callable inline_object_drawer;
-	Callable inline_object_click_handler;
-
 	Key _get_menu_action_accelerator(const String& p_action);
 	void _generate_context_menu();
-	void _update_context_menu();
 
 	/* Versioning */
 	struct Caret;
@@ -475,9 +449,6 @@ private:
 
 	int _get_column_pos_of_word(const String& p_key, const String& p_search,
 		uint32_t p_search_flags, int p_from_column) const;
-
-	/* Tooltip. */
-	Callable tooltip_callback;
 
 	/* Mouse */
 	struct LineDrawingCache
@@ -609,10 +580,6 @@ private:
 
 	void _selection_changed(int p_caret = -1);
 	void _click_selection_held();
-
-	void _update_selection_mode_pointer(bool p_initial = false);
-	void _update_selection_mode_word(bool p_initial = false);
-	void _update_selection_mode_line(bool p_initial = false);
 
 	void _pre_shift_selection(int p_caret);
 
@@ -770,10 +737,6 @@ private:
 	void _text_changed();
 	void _emit_text_changed();
 
-	void _insert_text(int p_line, int p_char, const String& p_text, int* r_end_line = nullptr,
-		int* r_end_char = nullptr);
-	void _remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
-
 	void _base_insert_text(
 		int p_line, int p_char, const String& p_text, int& r_end_line, int& r_end_column);
 	String _base_get_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column) const;
@@ -781,7 +744,6 @@ private:
 
 	/* Input actions. */
 	void _swap_current_input_direction();
-	void _new_line(bool p_split_current = true, bool p_above = false);
 	void _move_caret_left(bool p_select, bool p_move_by_word = false);
 	void _move_caret_right(bool p_select, bool p_move_by_word = false);
 	void _move_caret_up(bool p_select);
@@ -790,15 +752,12 @@ private:
 	void _move_caret_to_line_end(bool p_select);
 	void _move_caret_page_up(bool p_select);
 	void _move_caret_page_down(bool p_select);
-	void _do_backspace(bool p_word = false, bool p_all_to_left = false);
-	void _delete(bool p_word = false, bool p_all_to_right = false);
 	void _move_caret_document_start(bool p_select);
 	void _move_caret_document_end(bool p_select);
 	bool _clear_carets_and_selection();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
 	void _set_selection_mode_bind_compat_86978(
@@ -857,40 +816,23 @@ protected:
 	virtual Ref<Texture2D> _get_folded_eol_icon() const { return Ref<Texture2D>(); }
 
 	/* Text manipulation */
-
-	// Overridable actions
-	virtual void _handle_unicode_input_internal(const uint32_t p_unicode, int p_caret);
-	virtual void _backspace_internal(int p_caret);
-
-	virtual void _cut_internal(int p_caret);
 	virtual void _copy_internal(int p_caret);
+<<<<<<< HEAD
 	virtual void _paste_internal(int p_caret);
 	virtual void _paste_primary_clipboard_internal(int p_caret);
-
-	void _accessibility_action_set_selection(const Variant& p_data);
-	void _accessibility_action_replace_selected(const Variant& p_data);
-	void _accessibility_action_set_value(const Variant& p_data);
-	void _accessibility_action_menu(const Variant& p_data);
-	void _accessibility_scroll_down(const Variant& p_data);
-	void _accessibility_scroll_left(const Variant& p_data);
-	void _accessibility_scroll_right(const Variant& p_data);
-	void _accessibility_scroll_up(const Variant& p_data);
-	void _accessibility_scroll_set(const Variant& p_data);
-	void _accessibility_action_scroll_into_view(const Variant& p_data, int p_line, int p_wrap);
 
 public:
 	/* General overrides. */
 	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
-	virtual void gui_input(const Ref<InputEvent>& p_gui_input) override;
 	bool alt_input(const Ref<InputEvent>& p_gui_input);
+=======
+
+public:
+	/* General overrides. */
+>>>>>>> fix/remove-object
 	virtual Size2 get_minimum_size() const override;
 	virtual bool is_text_field() const override;
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
-	virtual Variant get_drag_data(const Point2& p_point) override;
-	virtual bool can_drop_data(const Point2& p_point, const Variant& p_data) const override;
-	virtual void drop_data(const Point2& p_point, const Variant& p_data) override;
-	virtual String get_tooltip(const Point2& p_pos) const override;
-	void set_tooltip_request_func(const Callable& p_tooltip_callback);
 
 	/* Text */
 	// Text properties.
@@ -898,7 +840,6 @@ public:
 
 	bool has_ime_text() const;
 	void cancel_ime();
-	void apply_ime();
 
 	void set_editable(bool p_editable);
 	bool is_editable() const;
@@ -911,8 +852,6 @@ public:
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
-	void set_structured_text_bidi_override_options(const Array& p_args);
-	Array get_structured_text_bidi_override_options() const;
 
 	void set_tab_size(const int p_size);
 	int get_tab_size() const;
@@ -965,7 +904,6 @@ public:
 	void set_placeholder(const String& p_text);
 	String get_placeholder() const;
 
-	void set_line(int p_line, const String& p_new_text);
 	String get_line(int p_line) const;
 	String get_line_with_ime(int p_line) const;
 
@@ -975,32 +913,15 @@ public:
 	int get_indent_level(int p_line) const;
 	int get_first_non_whitespace_column(int p_line) const;
 
-	void swap_lines(int p_from_line, int p_to_line);
-
-	void insert_line_at(int p_line, const String& p_text);
 	void remove_line_at(int p_line, bool p_move_carets_down = true);
-
-	void insert_text_at_caret(const String& p_text, int p_caret = -1);
-	void insert_text(const String& p_text, int p_line, int p_column,
-		bool p_before_selection_begin = true, bool p_before_selection_end = false);
-	void remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
 
 	int get_last_unhidden_line() const;
 	int get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const;
 	Point2i get_next_visible_line_index_offset_from(
 		int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
 
-	void set_inline_object_handlers(
-		const Callable& p_parser, const Callable& p_drawer, const Callable& p_click_handler);
-
 	// Overridable actions
-	void handle_unicode_input(const uint32_t p_unicode, int p_caret = -1);
-	void backspace(int p_caret = -1);
-
-	void cut(int p_caret = -1);
 	void copy(int p_caret = -1);
-	void paste(int p_caret = -1);
-	void paste_primary_clipboard(int p_caret = -1);
 
 	// Context menu.
 	PopupMenu* get_menu() const;
@@ -1056,10 +977,8 @@ public:
 	void set_caret_type(CaretType p_type);
 	CaretType get_caret_type() const;
 
-	void set_caret_blink_enabled(bool p_enabled);
 	bool is_caret_blink_enabled() const;
 
-	void set_caret_blink_interval(const float p_interval);
 	float get_caret_blink_interval() const;
 
 	void set_draw_caret_when_editable_disabled(bool p_enable);
@@ -1151,7 +1070,6 @@ public:
 	bool is_caret_after_selection_origin(int p_caret = 0) const;
 
 	void deselect(int p_caret = -1);
-	void delete_selection(int p_caret = -1);
 
 	void set_selection_handle_enabled(bool p_enabled);
 	bool is_selection_handle_enabled() const;
@@ -1253,12 +1171,6 @@ public:
 
 	void merge_gutters(int p_from_line, int p_to_line);
 
-	void set_gutter_custom_draw(int p_gutter, const Callable& p_draw_callback);
-
-	// Line gutters.
-	void set_line_gutter_metadata(int p_line, int p_gutter, const Variant& p_metadata);
-	Variant get_line_gutter_metadata(int p_line, int p_gutter) const;
-
 	void set_line_gutter_text(int p_line, int p_gutter, const String& p_text);
 	String get_line_gutter_text(int p_line, int p_gutter) const;
 
@@ -1323,13 +1235,5 @@ public:
 	TextEdit(const String& p_placeholder = String());
 	~TextEdit();
 };
-
-VARIANT_ENUM_CAST(TextEdit::EditAction);
-VARIANT_ENUM_CAST(TextEdit::CaretType);
-VARIANT_ENUM_CAST(TextEdit::LineWrappingMode);
-VARIANT_ENUM_CAST(TextEdit::SelectionMode);
-VARIANT_ENUM_CAST(TextEdit::GutterType);
-VARIANT_ENUM_CAST(TextEdit::MenuItems);
-VARIANT_ENUM_CAST(TextEdit::SearchFlags);
 
 

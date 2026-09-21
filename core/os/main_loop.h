@@ -30,18 +30,12 @@
 
 #pragma once
 
-#include "core/object/gdvirtual.gen.h"
-#include "core/object/object.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class MainLoop
 {
 protected:
-	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	enum
 	{
 		// make sure these are replicated in Node

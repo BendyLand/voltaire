@@ -30,7 +30,6 @@
 
 #include "audio_effect_distortion.h"
 #include "core/math/math_funcs.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectDistortionInstance::process(
@@ -132,7 +131,6 @@ void AudioEffectDistortion::set_post_gain(float p_post_gain) { post_gain = p_pos
 
 float AudioEffectDistortion::get_post_gain() const { return post_gain; }
 
-void AudioEffectDistortion::_bind_methods() {}
 
 AudioEffectDistortion::AudioEffectDistortion()
 {

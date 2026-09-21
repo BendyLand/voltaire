@@ -35,11 +35,10 @@
 
 class CanvasItemEditor;
 
-class NavigationLink2DEditor : public Control {
-	VLTRCLASS(NavigationLink2DEditor, Control);
-
-	CanvasItemEditor *canvas_item_editor = nullptr;
-	NavigationLink2D *node = nullptr;
+class NavigationLink2DEditor : public Control
+{
+	CanvasItemEditor* canvas_item_editor = nullptr;
+	NavigationLink2D* node = nullptr;
 
 	bool start_grabbed = false;
 	Vector2 original_start_position;
@@ -49,27 +48,32 @@ class NavigationLink2DEditor : public Control {
 
 protected:
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
+	void _node_removed(Node* p_node);
 
 public:
-	bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
-	void edit(NavigationLink2D *p_node);
+	bool forward_canvas_gui_input(const Ref<InputEvent>& p_event);
+	void forward_canvas_draw_over_viewport(Control* p_overlay);
+	void edit(NavigationLink2D* p_node);
 };
 
-class NavigationLink2DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(NavigationLink2DEditorPlugin, EditorPlugin);
-
-	NavigationLink2DEditor *editor = nullptr;
+class NavigationLink2DEditorPlugin : public EditorPlugin
+{
+	NavigationLink2DEditor* editor = nullptr;
 
 public:
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event) override { return editor->forward_canvas_gui_input(p_event); }
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { editor->forward_canvas_draw_over_viewport(p_overlay); }
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
+	{
+		return editor->forward_canvas_gui_input(p_event);
+	}
+
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
+	{
+		editor->forward_canvas_draw_over_viewport(p_overlay);
+	}
 
 	virtual String get_plugin_name() const override { return "NavigationLink2D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	NavigationLink2DEditorPlugin();
 };
+
+

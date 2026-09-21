@@ -50,7 +50,6 @@ public:
 		Vector3 velocity;
 		Vector3 collider_velocity;
 		Vector3 impulse;
-		ObjectID collider_id;
 		RID collider_rid;
 		float depth = 0.0f;
 		int shape_index = 0;
@@ -67,8 +66,6 @@ private:
 	LocalVector<JoltArea3D*> areas;
 	LocalVector<JoltJoint3D*> joints;
 
-	Variant custom_integration_userdata;
-
 	Transform3D kinematic_transform;
 
 	Vector3 inertia;
@@ -78,9 +75,6 @@ private:
 	Vector3 linear_surface_velocity;
 	Vector3 angular_surface_velocity;
 	Vector3 total_gravity;
-
-	Callable state_sync_callback;
-	Callable custom_integration_callback;
 
 	JoltPhysicsDirectBodyState3D* direct_state = nullptr;
 
@@ -114,11 +108,6 @@ private:
 	virtual JPH::EMotionType _get_motion_type() const override;
 
 	virtual void _add_to_space() override;
-
-	bool _should_call_queries() const
-	{
-		return state_sync_callback.is_valid() || custom_integration_callback.is_valid();
-	}
 
 	void _enqueue_call_queries();
 	void _dequeue_call_queries();
@@ -164,24 +153,6 @@ public:
 	virtual ~JoltBody3D() override;
 
 	void set_transform(Transform3D p_transform);
-
-	Variant get_state(PS3DE::BodyState p_state) const;
-	void set_state(PS3DE::BodyState p_state, const Variant& p_value);
-
-	Variant get_param(PS3DE::BodyParameter p_param) const;
-	void set_param(PS3DE::BodyParameter p_param, const Variant& p_value);
-
-	bool has_state_sync_callback() const { return state_sync_callback.is_valid(); }
-
-	void set_state_sync_callback(const Callable& p_callback) { state_sync_callback = p_callback; }
-
-	bool has_custom_integration_callback() const { return custom_integration_callback.is_valid(); }
-
-	void set_custom_integration_callback(const Callable& p_callback, const Variant& p_userdata)
-	{
-		custom_integration_callback = p_callback;
-		custom_integration_userdata = p_userdata;
-	}
 
 	bool has_custom_integrator() const { return custom_integrator; }
 

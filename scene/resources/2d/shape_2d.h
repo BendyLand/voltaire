@@ -34,14 +34,10 @@
 
 class Shape2D : public Resource
 {
-	VLTRCLASS(Shape2D, Resource);
-	OBJ_SAVE_TYPE_NO(Shape2D);
-
 	RID shape;
 	real_t custom_bias = 0.0;
 
 protected:
-	static void _bind_methods();
 	Shape2D(const RID& p_rid);
 
 public:

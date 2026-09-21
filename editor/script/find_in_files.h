@@ -31,15 +31,12 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "core/templates/mem_unique_ptr.h"
 #include "editor/docks/editor_dock.h"
 #include "scene/gui/dialogs.h"
 
 // Performs the actual search.
 class FindInFilesSearch : public Node
 {
-	VLTRCLASS(FindInFilesSearch, Node);
-
 	// Config.
 	String pattern;
 	HashSet<String> extension_filter;
@@ -67,7 +64,6 @@ class FindInFilesSearch : public Node
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void set_search_text(const String& p_pattern);
@@ -100,8 +96,6 @@ class HBoxContainer;
 // Prompts search parameters.
 class FindInFilesDialog : public AcceptDialog
 {
-	VLTRCLASS(FindInFilesDialog, AcceptDialog);
-
 	void _on_folder_button_pressed();
 	void _on_folder_selected(String p_path);
 	void _on_search_text_modified(const String& p_text);
@@ -132,13 +126,10 @@ protected:
 	void _notification(int p_what);
 
 	virtual void custom_action(const String& p_action) override;
-	static void _bind_methods();
 
 public:
 	void set_search_text(const String& p_text);
 	void set_replace_text(const String& p_text);
-
-	void set_replace_mode(bool p_replace);
 
 	String get_search_text() const;
 	String get_replace_text() const;
@@ -161,8 +152,6 @@ class ProgressBar;
 // Display search results.
 class FindInFilesPanel : public MarginContainer
 {
-	VLTRCLASS(FindInFilesPanel, MarginContainer);
-
 	enum FindButtons
 	{
 		FIND_BUTTON_REPLACE,
@@ -201,13 +190,8 @@ class FindInFilesPanel : public MarginContainer
 	void _on_button_clicked(TreeItem* p_item, int p_column, int p_id, int p_mouse_button_index);
 	void _on_result_found(
 		const String& p_fpath, int p_line_number, int p_begin, int p_end, const String& p_text);
-	void _on_theme_changed();
-	void _on_finished();
-	void _on_refresh_button_clicked();
-	void _on_cancel_button_clicked();
 	void _on_close_button_clicked();
 	void _on_result_selected();
-	void _on_item_edited();
 	void _on_replace_text_changed(const String& p_text);
 	void _on_replace_all_clicked();
 
@@ -217,24 +201,16 @@ class FindInFilesPanel : public MarginContainer
 	void _update_matches_text();
 	String _get_replace_text();
 
-	void _draw_result_text(Object* p_item_obj, const Rect2& p_rect);
-
 	void _clear();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	FindInFilesSearch* get_finder() const { return finder; }
 
-	void set_with_replace(bool p_with_replace);
 	void set_replace_text(const String& p_text);
 	bool is_keep_results() const;
-	void set_search_labels_visibility(bool p_visible);
-
-	void start_search();
-	void stop_search();
 
 	void update_layout(EditorDock::DockLayout p_layout, int p_slot);
 
@@ -250,8 +226,6 @@ class TabContainer;
 // results can remain at the same time.
 class FindInFilesContainer : public EditorDock
 {
-	VLTRCLASS(FindInFilesContainer, EditorDock);
-
 	enum PanelMenuOptions
 	{
 		PANEL_CLOSE,
@@ -267,20 +241,16 @@ class FindInFilesContainer : public EditorDock
 	void _on_tab_close_pressed(int p_tab);
 	void _update_bar_visibility();
 	void _bar_menu_option(int p_option);
-	void _bar_input(const Ref<InputEvent>& p_input);
-	void _on_theme_changed();
 
 	FindInFilesPanel* _create_new_panel();
 	FindInFilesPanel* _get_current_panel();
 
 	void _result_selected(const String& p_fpath, int p_line_number, int p_begin, int p_end);
 	void _files_modified();
-	void _close_panel(FindInFilesPanel* p_panel);
 	void _on_dock_closed();
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
@@ -292,21 +262,18 @@ public:
 
 class FindInFiles
 {
-
 	FindInFilesDialog* dialog = nullptr;
 	FindInFilesContainer* container = nullptr;
 
-	void _start_search(bool p_with_replace);
 	void _result_selected(const String& p_fpath, int p_line_number, int p_begin, int p_end);
 	void _files_modified();
 
-protected:
-	static void _bind_methods();
-
 public:
-	mem_unique_ptr<Object> obj;
+<<<<<<< HEAD
 	void open_dialog(const String& p_initial_text, bool p_replace = false);
 
+=======
+>>>>>>> fix/remove-object
 	FindInFiles();
 };
 

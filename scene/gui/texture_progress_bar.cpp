@@ -29,8 +29,6 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/object/callable_mp.h"
-#include "core/object/class_db.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/rendering_server.h"
 #include "texture_progress_bar.h"
@@ -49,35 +47,10 @@ void TextureProgressBar::set_over_texture(const Ref<Texture2D>& p_texture)
 
 Ref<Texture2D> TextureProgressBar::get_over_texture() const { return over; }
 
-void TextureProgressBar::set_stretch_margin(Side p_side, int p_size)
-{
-	ERR_FAIL_INDEX((int)p_side, 4);
-
-	if (stretch_margin[p_side] == p_size) {
-		return;
-	}
-
-	stretch_margin[p_side] = p_size;
-	queue_redraw();
-	update_minimum_size();
-}
-
 int TextureProgressBar::get_stretch_margin(Side p_side) const
 {
 	ERR_FAIL_INDEX_V((int)p_side, 4, 0);
 	return stretch_margin[p_side];
-}
-
-void TextureProgressBar::set_nine_patch_stretch(bool p_stretch)
-{
-	if (nine_patch_stretch == p_stretch) {
-		return;
-	}
-
-	nine_patch_stretch = p_stretch;
-	queue_redraw();
-	update_minimum_size();
-	this->obj->notify_property_list_changed();
 }
 
 bool TextureProgressBar::get_nine_patch_stretch() const { return nine_patch_stretch; }
@@ -109,81 +82,23 @@ void TextureProgressBar::set_progress_texture(const Ref<Texture2D>& p_texture)
 
 Ref<Texture2D> TextureProgressBar::get_progress_texture() const { return progress; }
 
-void TextureProgressBar::set_progress_offset(Point2 p_offset)
-{
-	if (progress_offset == p_offset) {
-		return;
-	}
-
-	progress_offset = p_offset;
-	queue_redraw();
-}
-
 Point2 TextureProgressBar::get_progress_offset() const { return progress_offset; }
-
-void TextureProgressBar::set_tint_under(const Color& p_tint)
-{
-	if (tint_under == p_tint) {
-		return;
-	}
-
-	tint_under = p_tint;
-	queue_redraw();
-}
 
 Color TextureProgressBar::get_tint_under() const { return tint_under; }
 
-void TextureProgressBar::set_tint_progress(const Color& p_tint)
-{
-	if (tint_progress == p_tint) {
-		return;
-	}
-
-	tint_progress = p_tint;
-	queue_redraw();
-}
-
 Color TextureProgressBar::get_tint_progress() const { return tint_progress; }
-
-void TextureProgressBar::set_tint_over(const Color& p_tint)
-{
-	if (tint_over == p_tint) {
-		return;
-	}
-
-	tint_over = p_tint;
-	queue_redraw();
-}
 
 Color TextureProgressBar::get_tint_over() const { return tint_over; }
 
-void TextureProgressBar::_set_texture(
-	Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture)
-{
-	DEV_ASSERT(p_destination);
-	Ref<Texture2D>& destination = *p_destination;
-	if (destination == p_texture) {
-		return;
-	}
-	if (destination.is_valid()) {
-		destination->disconnect_changed(callable_mp(this, &TextureProgressBar::_texture_changed));
-	}
-	destination = p_texture;
-	if (destination.is_valid()) {
-		// Pass `CONNECT_REFERENCE_COUNTED` to avoid early disconnect in case the same texture is
-		// assigned to different "slots".
-		destination->connect_changed(callable_mp(this, &TextureProgressBar::_texture_changed),
-			Object::CONNECT_REFERENCE_COUNTED);
-	}
-	_texture_changed();
-}
-
+<<<<<<< HEAD
 void TextureProgressBar::_texture_changed()
 {
 	update_minimum_size();
 	queue_redraw();
 }
 
+=======
+>>>>>>> fix/remove-object
 Point2 TextureProgressBar::unit_val_to_uv(float val)
 {
 	if (progress.is_null()) {
@@ -628,82 +543,20 @@ void TextureProgressBar::_notification(int p_what)
 	}
 }
 
-void TextureProgressBar::set_fill_mode(int p_fill)
-{
-	ERR_FAIL_INDEX(p_fill, FILL_MODE_MAX);
-
-	if (mode == (FillMode)p_fill) {
-		return;
-	}
-
-	mode = (FillMode)p_fill;
-	queue_redraw();
-	this->obj->notify_property_list_changed();
-}
-
 int TextureProgressBar::get_fill_mode() { return mode; }
-
-void TextureProgressBar::set_radial_initial_angle(float p_angle)
-{
-	ERR_FAIL_COND_MSG(!Math::is_finite(p_angle), "Angle is non-finite.");
-
-	if (p_angle < 0.0 || p_angle > 360.0) {
-		p_angle = Math::fposmodp(p_angle, 360.0f);
-	}
-
-	if (rad_init_angle == p_angle) {
-		return;
-	}
-
-	rad_init_angle = p_angle;
-	queue_redraw();
-}
 
 float TextureProgressBar::get_radial_initial_angle() { return rad_init_angle; }
 
-void TextureProgressBar::set_fill_degrees(float p_angle)
-{
-	float angle_clamped = CLAMP(p_angle, 0, 360);
-
-	if (rad_max_degrees == angle_clamped) {
-		return;
-	}
-
-	rad_max_degrees = angle_clamped;
-	queue_redraw();
-}
-
 float TextureProgressBar::get_fill_degrees() { return rad_max_degrees; }
 
-void TextureProgressBar::set_radial_center_offset(const Point2& p_off)
-{
-	if (rad_center_off == p_off) {
-		return;
-	}
-
-	rad_center_off = p_off;
-	queue_redraw();
-}
-
 Point2 TextureProgressBar::get_radial_center_offset() { return rad_center_off; }
-
-void TextureProgressBar::_validate_property(PropertyInfo& p_property) const
-{
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	if (p_property.name.begins_with("stretch_margin_") && !nine_patch_stretch) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-	else if (p_property.name.begins_with("radial_") &&
-			   (mode != FillMode::FILL_CLOCKWISE && mode != FillMode::FILL_COUNTER_CLOCKWISE &&
-				   mode != FillMode::FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE)) {
-		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-	}
-}
-
-void TextureProgressBar::_bind_methods() {}
 
 TextureProgressBar::TextureProgressBar() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
 
+
+void TextureProgressBar::_set_texture(Ref<Texture2D>*, Ref<Texture2D> const&) {}
+
+void TextureProgressBar::set_tint_under(Color const&) {}
+
+void TextureProgressBar::set_fill_mode(int) {}

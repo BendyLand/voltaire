@@ -30,24 +30,17 @@
 
 #pragma once
 
-#include "core/templates/mem_unique_ptr.h"
 #include "scene/gui/split_container.h"
 
 class CheckButton;
 class EditorInspector;
 class LineEdit;
-class SectionedInspectorFilter;
 class Tree;
 class TreeItem;
 
 class SectionedInspector : public HSplitContainer
 {
-	VLTRCLASS(SectionedInspector, HSplitContainer);
-
-	ObjectID objID;
-
 	Tree* sections = nullptr;
-	SectionedInspectorFilter* filter = nullptr;
 
 	HashMap<String, TreeItem*> section_map;
 	EditorInspector* inspector = nullptr;
@@ -58,7 +51,6 @@ class SectionedInspector : public HSplitContainer
 
 	bool restrict_to_basic = false;
 
-	static void _bind_methods();
 	void _section_selected();
 
 	void _search_changed(const String& p_what);
@@ -68,15 +60,12 @@ protected:
 	void _notification(int p_notification);
 
 public:
-	mem_unique_ptr<Object> obj;
 	void register_search_box(LineEdit* p_box);
 	void register_advanced_toggle(CheckButton* p_toggle);
 
 	EditorInspector* get_inspector();
-	void edit(Object* p_object);
 	String get_full_item_path(const String& p_item);
 
-	void set_current_section(const String& p_section);
 	String get_current_section() const;
 
 	void update_category_list();

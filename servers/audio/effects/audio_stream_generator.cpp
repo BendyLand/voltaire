@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_stream_generator.h"
-#include "core/object/class_db.h"
 
 void AudioStreamGenerator::set_mix_rate(float p_mix_rate) { mix_rate = p_mix_rate; }
 
@@ -78,7 +77,6 @@ double AudioStreamGenerator::get_length() const { return 0; }
 
 bool AudioStreamGenerator::is_monophonic() const { return true; }
 
-void AudioStreamGenerator::_bind_methods() {}
 
 ////////////////
 
@@ -194,7 +192,6 @@ void AudioStreamGeneratorPlayback::seek(double p_time)
 
 void AudioStreamGeneratorPlayback::tag_used_streams() { generator->tag_used(0); }
 
-void AudioStreamGeneratorPlayback::_bind_methods() {}
 
 AudioStreamGeneratorPlayback::AudioStreamGeneratorPlayback()
 {

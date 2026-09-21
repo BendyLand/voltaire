@@ -30,26 +30,20 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
-
-class OpenXRLocalFloorExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRLocalFloorExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRLocalFloorExtension
+{
 public:
-	static OpenXRLocalFloorExtension *get_singleton();
+	static OpenXRLocalFloorExtension* get_singleton();
 
 	OpenXRLocalFloorExtension();
-	virtual ~OpenXRLocalFloorExtension() override;
-
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
+	virtual ~OpenXRLocalFloorExtension();
 
 	bool is_available();
 
 private:
-	static OpenXRLocalFloorExtension *singleton;
+	static OpenXRLocalFloorExtension* singleton;
 
 	bool available = false;
 };
+
+

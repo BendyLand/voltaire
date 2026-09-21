@@ -29,10 +29,8 @@
 /**************************************************************************/
 
 #include "core/io/image.h"
-#include "core/object/class_db.h"
 #include "gltf_spec_gloss.h"
 
-void GLTFSpecGloss::_bind_methods() {}
 
 Ref<Image> GLTFSpecGloss::get_diffuse_img() { return diffuse_img; }
 

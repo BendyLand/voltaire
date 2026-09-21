@@ -39,7 +39,6 @@
 /// The implementation use jni in order to comply with Android filesystem
 /// access restriction.
 class DirAccessJAndroid : public DirAccessUnix {
-	VLTRSOFTCLASS(DirAccessJAndroid, DirAccessUnix);
 	static jobject dir_access_handler;
 	static jclass cls;
 

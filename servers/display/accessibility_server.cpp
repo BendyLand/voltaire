@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "accessibility_server.h"
-#include "core/object/class_db.h"
 #include "servers/display/accessibility_server_dummy.h"
 
 AccessibilityServer::AccessibilityServerCreate
@@ -38,7 +37,6 @@ AccessibilityServer::AccessibilityServerCreate
 
 int AccessibilityServer::server_create_count = 1;
 
-void AccessibilityServer::_bind_methods() {}
 
 AccessibilityServer* AccessibilityServer::create(int p_index, Error& r_error)
 {

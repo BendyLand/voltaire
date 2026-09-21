@@ -30,9 +30,7 @@
 
 #pragma once
 
-#include "core/object/object.h"
 #include "core/string/ustring.h"
-#include "core/templates/mem_unique_ptr.h"
 
 class EditorPaths
 {
@@ -52,11 +50,8 @@ class EditorPaths
 	static EditorPaths* singleton;
 
 protected:
-	static void _bind_methods();
 
 public:
-	mem_unique_ptr<Object> obj;
-
 	bool are_paths_valid() const;
 
 	String get_data_dir() const;

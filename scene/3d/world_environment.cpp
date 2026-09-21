@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
@@ -81,56 +80,7 @@ void WorldEnvironment::_notification(int p_what)
 	}
 }
 
-void WorldEnvironment::_update_current_environment()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-
-	if (first) {
-		get_viewport()->find_world_3d()->set_environment(first->environment);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_environment(Ref<Environment>());
-	}
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
-void WorldEnvironment::_update_current_camera_attributes()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_camera_attributes_" +
-		itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-	if (first) {
-		get_viewport()->find_world_3d()->set_camera_attributes(first->camera_attributes);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_camera_attributes(Ref<CameraAttributes>());
-	}
-
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_camera_attributes_" +
-			itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
-void WorldEnvironment::_update_current_compositor()
-{
-	WorldEnvironment* first = Object::cast_to<WorldEnvironment>(get_tree()->get_first_node_in_group(
-		"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id())));
-	if (first) {
-		get_viewport()->find_world_3d()->set_compositor(first->compositor);
-	}
-	else {
-		get_viewport()->find_world_3d()->set_compositor(Ref<Compositor>());
-	}
-
-	get_tree()->call_group_flags(SceneTree::GROUP_CALL_DEFERRED,
-		"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()),
-		"update_configuration_warnings");
-}
-
+<<<<<<< HEAD
 void WorldEnvironment::set_environment(const Ref<Environment>& p_environment)
 {
 	if (environment == p_environment) {
@@ -156,60 +106,11 @@ void WorldEnvironment::set_environment(const Ref<Environment>& p_environment)
 	}
 }
 
+=======
+>>>>>>> fix/remove-object
 Ref<Environment> WorldEnvironment::get_environment() const { return environment; }
 
-void WorldEnvironment::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes)
-{
-	if (camera_attributes == p_camera_attributes) {
-		return;
-	}
-
-	if (is_inside_tree() && camera_attributes.is_valid() &&
-		get_viewport()->find_world_3d()->get_camera_attributes() == camera_attributes) {
-		remove_from_group("_world_camera_attributes_" +
-						  itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	camera_attributes = p_camera_attributes;
-	if (is_inside_tree() && camera_attributes.is_valid()) {
-		add_to_group("_world_camera_attributes_" +
-					 itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	if (is_inside_tree()) {
-		_update_current_camera_attributes();
-	}
-	else {
-		update_configuration_warnings();
-	}
-}
-
 Ref<CameraAttributes> WorldEnvironment::get_camera_attributes() const { return camera_attributes; }
-
-void WorldEnvironment::set_compositor(const Ref<Compositor>& p_compositor)
-{
-	if (compositor == p_compositor) {
-		return;
-	}
-	if (is_inside_tree() && compositor.is_valid()) {
-		remove_from_group(
-			"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	compositor = p_compositor;
-
-	if (is_inside_tree() && compositor.is_valid()) {
-		add_to_group(
-			"_world_compositor_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	if (is_inside_tree()) {
-		_update_current_compositor();
-	}
-	else {
-		update_configuration_warnings();
-	}
-}
 
 Ref<Compositor> WorldEnvironment::get_compositor() const { return compositor; }
 
@@ -248,8 +149,12 @@ PackedStringArray WorldEnvironment::get_configuration_warnings() const
 	return warnings;
 }
 
-void WorldEnvironment::_bind_methods() {}
-
 WorldEnvironment::WorldEnvironment() {}
 
 
+
+void WorldEnvironment::_update_current_environment() {}
+
+void WorldEnvironment::_update_current_camera_attributes() {}
+
+void WorldEnvironment::_update_current_compositor() {}

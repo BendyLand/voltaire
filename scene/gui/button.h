@@ -44,7 +44,7 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-	BitField<TextServer::LineBreakFlag> autowrap_flags_trim =
+	uint32_t autowrap_flags_trim =
 		TextServer::BREAK_TRIM_END_EDGE_SPACES;
 	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
 
@@ -119,7 +119,6 @@ protected:
 	Ref<StyleBox> _get_current_stylebox() const;
 	Size2 _get_largest_stylebox_size() const;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual String _get_accessibility_name() const override;
 
@@ -137,8 +136,8 @@ public:
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
 	TextServer::AutowrapMode get_autowrap_mode() const;
 
-	void set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags);
-	BitField<TextServer::LineBreakFlag> get_autowrap_trim_flags() const;
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
 
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
@@ -146,7 +145,6 @@ public:
 	void set_language(const String& p_language);
 	String get_language() const;
 
-	void set_button_icon(const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_button_icon() const;
 
 	void set_expand_icon(bool p_enabled);
@@ -167,7 +165,7 @@ public:
 	VerticalAlignment get_vertical_icon_alignment() const;
 
 	Button(const String& p_text = String());
-	~Button();
+	~Button() = default;
 };
 
 

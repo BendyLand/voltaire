@@ -31,14 +31,12 @@
 #pragma once
 
 #include "scene/resources/texture.h"
+#include "scene/resources/bit_map.h"
 
 class BitMap;
 
 class ImageTexture : public Texture2D
 {
-	VLTRCLASS(ImageTexture, Texture2D);
-	RES_BASE_EXTENSION("tex");
-
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
 	bool mipmaps = false;
@@ -50,7 +48,6 @@ class ImageTexture : public Texture2D
 
 protected:
 	virtual void reload_from_file() override;
-	static void _bind_methods();
 
 public:
 	void set_image(const Ref<Image>& p_image);
@@ -92,8 +89,6 @@ public:
 
 class ImageTextureLayered : public TextureLayered
 {
-	VLTRCLASS(ImageTextureLayered, TextureLayered);
-
 	LayeredType layered_type;
 
 	mutable RID texture;
@@ -104,13 +99,7 @@ class ImageTextureLayered : public TextureLayered
 	int layers = 0;
 	bool mipmaps = false;
 
-	Error _create_from_images(const Array& p_images);
-
-	Array _get_images() const;
-	void _set_images(const Array& p_images);
-
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Image::Format get_format() const override;
@@ -133,8 +122,6 @@ public:
 
 class ImageTexture3D : public Texture3D
 {
-	VLTRCLASS(ImageTexture3D, Texture3D);
-
 	mutable RID texture;
 
 	Image::Format format = Image::FORMAT_L8;
@@ -144,15 +131,11 @@ class ImageTexture3D : public Texture3D
 	bool mipmaps = false;
 	bool images_stored = false;
 
-	Array _get_images() const;
-	void _set_images(const Array& p_images);
-
 protected:
+<<<<<<< HEAD
 	static void _bind_methods();
-
-	Error _create(Image::Format p_format, int p_width, int p_height, int p_depth, bool p_mipmaps,
-		const Array& p_data);
-	void _update(const Array& p_data);
+=======
+>>>>>>> fix/remove-object
 
 public:
 	virtual Image::Format get_format() const override;
@@ -175,10 +158,7 @@ public:
 
 class Texture2DArray : public ImageTextureLayered
 {
-	VLTRCLASS(Texture2DArray, ImageTextureLayered)
-
 protected:
-	static void _bind_methods();
 
 public:
 	Texture2DArray() : ImageTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
@@ -188,10 +168,7 @@ public:
 
 class Cubemap : public ImageTextureLayered
 {
-	VLTRCLASS(Cubemap, ImageTextureLayered);
-
 protected:
-	static void _bind_methods();
 
 public:
 	Cubemap() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP) {}
@@ -201,10 +178,7 @@ public:
 
 class CubemapArray : public ImageTextureLayered
 {
-	VLTRCLASS(CubemapArray, ImageTextureLayered);
-
 protected:
-	static void _bind_methods();
 
 public:
 	CubemapArray() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}

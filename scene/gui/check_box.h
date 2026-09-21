@@ -32,10 +32,10 @@
 
 #include "scene/gui/button.h"
 
-class CheckBox : public Button {
-	VLTRCLASS(CheckBox, Button);
-
-	struct ThemeCache {
+class CheckBox : public Button
+{
+	struct ThemeCache
+	{
 		int h_separation = 0;
 		int check_v_offset = 0;
 		Ref<StyleBox> normal_style;
@@ -58,11 +58,18 @@ protected:
 	Size2 get_minimum_size() const override;
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	bool is_radio() const;
 
 public:
-	CheckBox(const String &p_text = String());
+<<<<<<< HEAD
+	CheckBox(const String& p_text = String());
 	~CheckBox();
+=======
+	CheckBox(const String& p_text = String()) : Button(p_text) {}
+
+	~CheckBox() = default;
+>>>>>>> fix/remove-object
 };
+
+

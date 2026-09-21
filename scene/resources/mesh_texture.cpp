@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/object/class_db.h"
 #include "mesh_texture.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
@@ -129,7 +128,6 @@ bool MeshTexture::get_rect_region(
 
 bool MeshTexture::is_pixel_opaque(int p_x, int p_y) const { return true; }
 
-void MeshTexture::_bind_methods() {}
 
 MeshTexture::MeshTexture() {}
 

@@ -30,7 +30,6 @@
 
 #include "core/io/ip.h"
 #include "core/io/udp_server.h"
-#include "core/object/class_db.h"
 #include "packet_peer_udp.h"
 
 void PacketPeerUDP::set_blocking_mode(bool p_enable) { blocking = p_enable; }
@@ -375,9 +374,8 @@ void PacketPeerUDP::set_dest_address(const IPAddress& p_address, int p_port)
 	peer_port = p_port;
 }
 
-void PacketPeerUDP::_bind_methods() {}
-
 PacketPeerUDP::PacketPeerUDP() : _sock(Ref<NetSocket>(NetSocket::create())) { rb.resize(16); }
 
 PacketPeerUDP::~PacketPeerUDP() { close(); }
+
 

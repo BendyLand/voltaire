@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "audio_effect_phaser.h"
-#include "core/object/class_db.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectPhaserInstance::process(
@@ -105,7 +104,6 @@ void AudioEffectPhaser::set_depth(float p_depth) { depth = p_depth; }
 
 float AudioEffectPhaser::get_depth() const { return depth; }
 
-void AudioEffectPhaser::_bind_methods() {}
 
 AudioEffectPhaser::AudioEffectPhaser()
 {

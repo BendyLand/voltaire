@@ -35,20 +35,22 @@
 class Button;
 class SkeletonIK3D;
 
-class SkeletonIK3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(SkeletonIK3DEditorPlugin, EditorPlugin);
+class SkeletonIK3DEditorPlugin : public EditorPlugin
+{
+	SkeletonIK3D* skeleton_ik = nullptr;
+<<<<<<< HEAD
 
-	SkeletonIK3D *skeleton_ik = nullptr;
-
-	Button *play_btn = nullptr;
+	Button* play_btn = nullptr;
 
 	void _play();
+=======
+	Button* play_btn = nullptr;
+>>>>>>> fix/remove-object
 
 public:
 	virtual String get_plugin_name() const override { return "SkeletonIK3D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
-	SkeletonIK3DEditorPlugin();
+	SkeletonIK3DEditorPlugin() = default;
 };
+
+
