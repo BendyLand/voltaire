@@ -312,6 +312,86 @@ PanelContainer* TextShaderPreview::get_panel_container() const { return panel; }
 
 Control* TextShaderPreview::get_hover_control() const { return surface_hover; }
 
+void TextShaderPreview::set_shader_code(const String& p_code, int p_line, bool p_in_comment)
+{
+	line = p_line;
+	in_comment = p_in_comment;
+	goto_button->set_text(itos(line + 1));
+
+	String shader_type = ShaderLanguage::get_shader_type(p_code);
+	bool mode_3d = shader_type == "spatial";
+
+	if (shader_type != "canvas_item" && !mode_3d) {
+		_show_error(TTRC("For previews, shader type must be CanvasItem or Spatial."));
+		return;
+	}
+
+	const PackedStringArray lines = p_code.split("\n");
+	String enclosing_function = _get_enclosing_function(lines, p_line);
+
+	if (enclosing_function != "fragment") {
+		_show_error(TTRC("Previewed line must be inside fragment() function."));
+		return;
+	}
+
+	if (_is_inside_loop(lines, p_line)) {
+		_show_error(TTRC("Preview not supported inside loops."));
+		return;
+	}
+
+	String var_name;
+	int start;
+	int end;
+
+	if (in_comment || !_find_statement(lines, p_line, var_name, start, end)) {
+		_show_error(TTRC("Previewed line must contain an assignment."));
+		return;
+	}
+
+	String type = _find_var_type(lines, var_name, end, mode_3d);
+
+	// All code before assignment stays as it was.
+	PackedStringArray truncated_lines = lines.slice(0, end + 1);
+
+	String injection;
+	HashMap<String, String>& assignments = mode_3d ? spatial_assignments : canvas_assignments;
+	if (!assignments.has(type)) {
+		_show_error(TTRC("Preview only available for bool, int, float, vec2, vec3, vec4."));
+		return;
+	}
+	injection = assignments[type].replace("%s", var_name);
+	truncated_lines.append(injection);
+
+	String full_truncated_text = "\n";
+	full_truncated_text = full_truncated_text.join(truncated_lines);
+
+	int open_braces = full_truncated_text.count("{");
+	int closed_braces = full_truncated_text.count("}");
+	int needed_closures = open_braces - closed_braces;
+
+	for (int i = 0; i < needed_closures; i++) {
+		full_truncated_text += "\n}";
+	}
+
+	Ref<Shader> shader;
+	shader.instantiate();
+	shader->set_code(full_truncated_text);
+	shader_material->set_shader(shader);
+
+	const Ref<ShaderMaterial> src_mat = _get_source_material();
+	if (src_mat.is_valid()) {
+		_sync_shader_parameters(src_mat, shader_material);
+	}
+	else {
+		_reset_shader_parameters(shader_material);
+	}
+
+	error_container->hide();
+	surface_container->show();
+	surface->edit(shader_material.ptr(), env);
+	surface->show(); // Edit may have called hide() earlier on failed compilation.
+}
+
 static bool saved_warnings_enabled = false;
 static bool saved_treat_warning_as_errors = false;
 static HashMap<ShaderWarning::Code, bool> saved_warnings;
@@ -454,6 +534,14 @@ static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName
 }
 
 static String complete_from_path;
+
+void TextShaderEditor::_prepare_edit_menu()
+{
+	const CodeEdit* tx = code_editor->get_text_editor();
+	PopupMenu* popup = edit_menu->get_popup();
+	popup->set_item_disabled(popup->get_item_index(EDIT_UNDO), !tx->has_undo());
+	popup->set_item_disabled(popup->get_item_index(EDIT_REDO), !tx->has_redo());
+}
 
 void TextShaderEditor::_notification(int p_what)
 {

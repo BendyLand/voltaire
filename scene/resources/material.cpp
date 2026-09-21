@@ -1811,6 +1811,8 @@ void BaseMaterial3D::_queue_shader_change()
 	}
 }
 
+void BaseMaterial3D::set_albedo(const Color& p_albedo) {}
+
 Color BaseMaterial3D::get_albedo() const { return albedo; }
 
 float BaseMaterial3D::get_specular() const { return specular; }
@@ -1891,12 +1893,16 @@ BaseMaterial3D::BlendMode BaseMaterial3D::get_detail_blend_mode() const
 	return detail_blend_mode;
 }
 
+void BaseMaterial3D::set_transparency(Transparency p_transparency) {}
+
 BaseMaterial3D::Transparency BaseMaterial3D::get_transparency() const { return transparency; }
 
 BaseMaterial3D::AlphaAntiAliasing BaseMaterial3D::get_alpha_antialiasing() const
 {
 	return alpha_antialiasing_mode;
 }
+
+void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode) {}
 
 BaseMaterial3D::ShadingMode BaseMaterial3D::get_shading_mode() const { return shading_mode; }
 
@@ -1962,6 +1968,8 @@ void BaseMaterial3D::set_specular_mode(SpecularMode p_mode)
 }
 
 BaseMaterial3D::SpecularMode BaseMaterial3D::get_specular_mode() const { return specular_mode; }
+
+void BaseMaterial3D::set_flag(Flags p_flag, bool p_enabled) {}
 
 bool BaseMaterial3D::get_flag(Flags p_flag) const
 {

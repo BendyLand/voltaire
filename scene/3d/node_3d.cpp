@@ -536,6 +536,8 @@ void Node3D::_update_gizmos()
 #endif
 }
 
+void Node3D::update_gizmos() {}
+
 void Node3D::set_disable_gizmos(bool p_enabled)
 {
 	ERR_THREAD_GUARD;

@@ -111,12 +111,21 @@ bool PopupMenu::is_system_menu() const
 	return (global_menu == system_menu) && (system_menu_id != NativeMenu::INVALID_MENU_ID);
 }
 
+void PopupMenu::add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id, Key p_accel) {}
+
+void PopupMenu::add_item(const String& p_label, int p_id, Key p_accel) {}
+
 void PopupMenu::set_system_menu(NativeMenu::SystemMenus p_system_menu_id)
 {
 	if (is_inside_tree() && system_menu_id != NativeMenu::INVALID_MENU_ID) {
 		unbind_global_menu();
 	}
 	system_menu_id = p_system_menu_id;
+}
+
+void PopupMenu::add_shortcut(
+	const Ref<Shortcut>& p_shortcut, int p_id, bool p_global, bool p_allow_echo)
+{
 }
 
 NativeMenu::SystemMenus PopupMenu::get_system_menu() const { return system_menu_id; }
@@ -632,6 +641,24 @@ void PopupMenu::_draw_items()
 	}
 }
 
+void PopupMenu::_update_search_bar_visibility()
+{
+	if (search_bar) {
+		if (search_bar_enabled) {
+			int item_count = 0;
+			for (const Item& item : items) {
+				if (!item.separator) {
+					item_count++;
+				}
+			}
+			search_bar->set_visible(item_count >= search_bar_min_item_count);
+		}
+		else {
+			search_bar->hide();
+		}
+	}
+}
+
 void PopupMenu::_filter_items(const String& p_query)
 {
 	for (PopupMenu::Item& item : items) {
@@ -771,10 +798,6 @@ RID PopupMenu::get_focused_accessibility_element() const
 	}
 }
 
-/* Methods to add items with or without icon, checkbox, shortcut.
- * Be sure to keep them in sync when adding new properties in the Item struct.
- */
-
 #define ITEM_SETUP_WITH_ACCEL(p_label, p_id, p_accel)                                              \
 	item.text = p_label;                                                                           \
 	item.xl_text = atr(p_label);                                                                   \
@@ -809,6 +832,10 @@ void PopupMenu::_close_suspended_timeout()
 		items[active_submenu_index].submenu->_close_pressed();
 	}
 }
+
+void PopupMenu::set_item_checked(int p_idx, bool p_checked) {}
+
+void PopupMenu::set_item_disabled(int p_idx, bool p_disabled) {}
 
 String PopupMenu::get_item_text(int p_idx) const
 {
@@ -1025,6 +1052,8 @@ bool PopupMenu::is_native_menu() const
 	return global_menu.is_valid();
 }
 
+void PopupMenu::add_separator(const String& p_text, int p_id) {}
+
 bool PopupMenu::activate_item_by_event(const Ref<InputEvent>& p_event, bool p_for_global_only)
 {
 	ERR_FAIL_COND_V(p_event.is_null(), false);
@@ -1130,6 +1159,8 @@ int PopupMenu::get_search_bar_fuzzy_search_max_misses() const
 	return search_bar_fuzzy_search_max_misses;
 }
 
+void PopupMenu::clear(bool p_free_submenus) {}
+
 #ifdef TOOLS_ENABLED
 PackedStringArray PopupMenu::get_configuration_warnings() const
 {
@@ -1213,6 +1244,8 @@ RID PopupMenuItems::get_focused_accessibility_element() const
 {
 	return popup->get_focused_accessibility_element();
 }
+
+void PopupMenu::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
 PopupMenu::~PopupMenu() { unbind_global_menu(); }
 

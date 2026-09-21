@@ -168,6 +168,9 @@ private:
 	void _propagate_visibility_changed(bool p_parent_visible_in_tree);
 	void _handle_visibility_change(bool p_visible);
 
+	virtual void _top_level_changed_on_parent();
+	virtual void _top_level_changed();
+
 	void _redraw_callback();
 
 	void _enter_canvas();
