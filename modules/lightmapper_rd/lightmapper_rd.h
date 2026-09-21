@@ -395,7 +395,7 @@ public:
 	Vector3 get_bake_probe_point(int p_probe) const override;
 	Vector<Color> get_bake_probe_sh(int p_probe) const override;
 
-	LightmapperRD();
+	LightmapperRD() = default;
 };
 
 

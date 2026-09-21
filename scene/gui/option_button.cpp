@@ -103,8 +103,7 @@ void OptionButton::set_item_text(int p_idx, const String& p_text)
 
 void OptionButton::set_item_id(int p_idx, int p_id) {}
 
-void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip)
-{}
+void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip) {}
 
 void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
 {
@@ -298,8 +297,12 @@ void OptionButton::_select(int p_which, bool p_emit) {}
 
 void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
-
-
 void OptionButton::clear() {}
 
 void OptionButton::_refresh_size_cache() {}
+
+void OptionButton::_queue_update_size_cache() {}
+
+String OptionButton::_get_translated_text(const String& p_text) const { return p_text; }
+
+

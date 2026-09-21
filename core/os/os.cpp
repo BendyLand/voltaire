@@ -753,4 +753,6 @@ OS::~OS()
 	singleton = nullptr;
 }
 
+String OS::get_user_data_dir() const { return String(); }
+
 

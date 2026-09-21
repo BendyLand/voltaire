@@ -119,4 +119,12 @@ void DedicatedServerExportPlugin::_end_customize_resources()
 	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
 }
 
+Ref<Resource> DedicatedServerExportPlugin::_customize_resource(
+	const Ref<Resource>& p_resource, const String& p_path)
+{
+	return p_resource;
+}
+
+uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const { return 0; }
+
 

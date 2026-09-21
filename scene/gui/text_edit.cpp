@@ -4387,4 +4387,6 @@ void TextEdit::_base_remove_text(int, int, int, int) {}
 
 void TextEdit::_base_insert_text(int, int, String const&, int&, int&) {}
 
+String TextEdit::_get_accessibility_name() const { return String(); }
+
 

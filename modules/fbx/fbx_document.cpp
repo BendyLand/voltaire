@@ -783,4 +783,10 @@ GLTFImageIndex FBXDocument::_parse_image_save_image(
 	return GLTFImageIndex();
 }
 
+Node* FBXDocument::generate_scene(
+	Ref<GLTFState> p_state, float p_bake_fps, bool p_save_fps, bool p_trim_fps)
+{
+	return nullptr;
+}
+
 

@@ -99,7 +99,7 @@ public:
 	virtual Image::Format get_format() const override;
 
 	NoiseTexture3D();
-	virtual ~NoiseTexture3D();
+	virtual ~NoiseTexture3D() = default;
 };
 
 

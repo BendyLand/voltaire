@@ -49,4 +49,9 @@ int ResourceImporterWAV::get_preset_count() const { return 0; }
 
 String ResourceImporterWAV::get_preset_name(int p_idx) const { return String(); }
 
+void ResourceImporterWAV::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
 

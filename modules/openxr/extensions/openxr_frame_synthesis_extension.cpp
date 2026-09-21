@@ -43,7 +43,6 @@ OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::singleton = nullpt
 
 OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::get_singleton() { return singleton; }
 
-
 OpenXRFrameSynthesisExtension::OpenXRFrameSynthesisExtension() { singleton = this; }
 
 OpenXRFrameSynthesisExtension::~OpenXRFrameSynthesisExtension() { singleton = nullptr; }
@@ -228,5 +227,21 @@ void OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt()
 {
 	render_state.skip_next_frame = true;
 }
+
+HashMap<String, bool*> OpenXRFrameSynthesisExtension::get_requested_extensions(
+	unsigned long p_extension_flags)
+{
+	return HashMap<String, bool*>();
+}
+
+void OpenXRFrameSynthesisExtension::on_instance_created(XrInstance_T* p_instance) {}
+
+void OpenXRFrameSynthesisExtension::on_instance_destroyed() {}
+
+void OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned int p_view_config) const
+{
+}
+
+void OpenXRFrameSynthesisExtension::on_main_swapchains_created() {}
 
 

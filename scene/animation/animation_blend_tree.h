@@ -455,7 +455,7 @@ public:
 #endif
 
 	AnimationNodeBlendTree();
-	~AnimationNodeBlendTree();
+	~AnimationNodeBlendTree() = default;
 };
 
 

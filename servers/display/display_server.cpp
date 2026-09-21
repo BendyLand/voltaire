@@ -1297,4 +1297,5 @@ DisplayServer::~DisplayServer() { singleton = nullptr; }
 
 bool DisplayServer::can_create_rendering_device() { return true; }
 
+uint32_t DisplayServer::mouse_get_button_state() const { return 0; }
 

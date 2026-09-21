@@ -167,7 +167,7 @@ public:
 	virtual String get_tooltip(const Point2& p_pos) const;
 
 	MenuBar();
-	~MenuBar();
+	~MenuBar() = default;
 };
 
 

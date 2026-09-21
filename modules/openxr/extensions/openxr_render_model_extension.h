@@ -58,8 +58,8 @@ public:
 	PackedStringArray get_node_names() const;
 	const String get_node_name(uint32_t p_node_index) const;
 
-	OpenXRRenderModelData();
-	~OpenXRRenderModelData();
+	OpenXRRenderModelData() = default;
+	~OpenXRRenderModelData() = default;
 };
 
 class OpenXRRenderModelExtension

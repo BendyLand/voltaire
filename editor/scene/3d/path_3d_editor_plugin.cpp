@@ -248,4 +248,6 @@ void Path3DEditorPlugin::_restore_curve_points(const PackedVector3Array& p_point
 
 String Path3DGizmoPlugin::get_gizmo_name() const { return "Path3D"; }
 
+void Path3DGizmo::redraw() {}
+
 

@@ -92,6 +92,12 @@ CylinderShape3D::CylinderShape3D()
 	_update_shape();
 }
 
-
+Ref<ArrayMesh> CylinderShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
 
 void CylinderShape3D::_update_shape() {}
+
+

@@ -686,4 +686,8 @@ void TextShaderEditor::_check_for_external_edit() {}
 
 void TextShaderEditor::_apply_editor_settings() {}
 
+void TextShaderEditor::apply_shaders() {}
+
+void TextShaderEditor::save_external_data(const String& p_path) {}
+
 

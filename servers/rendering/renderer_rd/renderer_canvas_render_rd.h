@@ -193,7 +193,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 		bool is_valid() const;
 
 		CanvasShaderData();
-		virtual ~CanvasShaderData();
+		virtual ~CanvasShaderData() = default;
 	};
 
 	struct

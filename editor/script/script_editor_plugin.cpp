@@ -617,4 +617,31 @@ void ScriptEditor::apply_scripts() const {}
 
 void ScriptEditor::input(const Ref<InputEvent>& p_event) {}
 
+void ScriptEditorPlugin::set_window_layout(Ref<ConfigFile> p_layout) {}
+
+void ScriptEditorPlugin::get_window_layout(Ref<ConfigFile> p_layout) {}
+
+void ScriptEditor::edited_scene_changed() {}
+
+Ref<EditorSyntaxHighlighter> EditorSyntaxHighlighter::_create() const
+{
+	return Ref<EditorSyntaxHighlighter>();
+}
+
+void EditorStandardSyntaxHighlighter::_update_cache() {}
+
+void EditorJSONSyntaxHighlighter::_update_cache() {}
+
+void EditorMarkdownSyntaxHighlighter::_update_cache() {}
+
+void EditorConfigFileSyntaxHighlighter::_update_cache() {}
+
+void ScriptEditorBase::set_toggle_list_control(Control* p_control) {}
+
+void ScriptEditorBase::update_toggle_files_button() {}
+
+void ScriptEditorBase::set_edited_resource(const Ref<Resource>& p_res) {}
+
+bool ScriptEditorBase::is_unsaved() { return false; }
+
 

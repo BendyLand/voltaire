@@ -220,8 +220,10 @@ SkeletonModification2DCCDIK::SkeletonModification2DCCDIK()
 
 SkeletonModification2DCCDIK::~SkeletonModification2DCCDIK() {}
 
-
+void SkeletonModification2DCCDIK::_execute(float p_delta) {}
 
 void SkeletonModification2DCCDIK::update_tip_cache() {}
 
 void SkeletonModification2DCCDIK::update_target_cache() {}
+
+

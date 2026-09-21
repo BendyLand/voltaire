@@ -242,8 +242,14 @@ CPUParticles2DEditorPlugin::CPUParticles2DEditorPlugin()
 
 void Particles2DEditorPlugin::_validate_textures() {}
 
-Particles2DEditorPlugin::Particles2DEditorPlugin() {}
-
 void CPUParticles2DEditorPlugin::_generate_emission_mask() {}
+
+void Particles2DEditorPlugin::_menu_callback(int p_idx) {}
+
+Node* CPUParticles2DEditorPlugin::_convert_particles()
+{
+	Node n = Node();
+	return &n;
+}
 
 

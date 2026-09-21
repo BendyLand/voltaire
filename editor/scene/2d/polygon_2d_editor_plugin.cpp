@@ -122,8 +122,10 @@ Polygon2DEditorPlugin::Polygon2DEditorPlugin()
 {
 }
 
-
-
 void Polygon2DEditor::_update_zoom_and_pan(bool) {}
 
-Polygon2DEditor::Polygon2DEditor() {}
+void Polygon2DEditor::_set_node(Node* p_node) {}
+
+void Polygon2DEditor::_commit_action() {}
+
+

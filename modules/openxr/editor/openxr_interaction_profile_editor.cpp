@@ -174,8 +174,18 @@ OpenXRInteractionProfileEditor::OpenXRInteractionProfileEditor()
 	interaction_profile_sc->add_child(interaction_profile_hb);
 }
 
+void OpenXRInteractionProfileEditor::_add_io_path(
+	VBoxContainer*, OpenXRInteractionProfileMetadata::IOPath const*)
+{
+}
+
+void OpenXRInteractionProfileEditorBase::_theme_changed() {}
+
+void OpenXRInteractionProfileEditor::_theme_changed() {}
+
+void OpenXRInteractionProfileEditor::setup(const Ref<OpenXRActionMap>& p_action_map,
+	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
+{
+}
 
 
-OpenXRInteractionProfileEditorBase::OpenXRInteractionProfileEditorBase() {}
-
-void OpenXRInteractionProfileEditor::_add_io_path(VBoxContainer*, OpenXRInteractionProfileMetadata::IOPath const*) {}

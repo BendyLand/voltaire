@@ -50,6 +50,14 @@ BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::get_singleton()->shape_creat
 	set_size(Vector3(1, 1, 1));
 }
 
+Vector<Vector3> BoxShape3D::get_debug_mesh_lines() const { return Vector<Vector3>(); }
 
+Ref<ArrayMesh> BoxShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
 
 void BoxShape3D::_update_shape() {}
+
+

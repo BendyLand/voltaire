@@ -288,4 +288,9 @@ void ConvertTransformModifier3D::_process_convert(int p_index, Skeleton3D* p_ske
 
 ConvertTransformModifier3D::~ConvertTransformModifier3D() { clear_settings(); }
 
+void ConvertTransformModifier3D::_process_constraint_by_node(int p_index, Skeleton3D* p_skeleton,
+	int p_bone, const NodePath& p_target_node, float p_influence)
+{
+}
+
 

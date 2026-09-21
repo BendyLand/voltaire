@@ -584,4 +584,6 @@ void AudioStreamPlayback::tag_used_streams() {}
 
 int AudioStreamPlayback::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) { return 0; }
 
+int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame* p_buffer, int p_frames) { return 0; }
+
 

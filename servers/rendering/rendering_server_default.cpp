@@ -247,4 +247,8 @@ RenderingServerDefault::RenderingServerDefault(bool p_create_thread)
 
 void RenderingServerDefault::init() {}
 
+void RenderingServerDefault::draw(bool p_swap_buffers, double p_frame_step) {}
+
+void RenderingServerDefault::finish() {}
+
 

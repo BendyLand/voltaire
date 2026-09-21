@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
+#include "core/types.h"
 #include "scene/main/viewport.h"
 #include "subviewport_container.h"
 
@@ -104,5 +105,16 @@ SubViewportContainer::SubViewportContainer()
 
 void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_event) {}
 
+void SubViewportContainer::remove_child_notify(Node* p_child) {}
 
 bool SubViewportContainer::_is_propagated_in_gui_input(Ref<InputEvent> const&) {}
+
+Size2 SubViewportContainer::get_minimum_size() const { return Size2(); }
+
+PackedStringArray SubViewportContainer::get_configuration_warnings() const { return PackedStringArray(); }
+
+
+
+
+
+

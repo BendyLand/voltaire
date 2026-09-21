@@ -1600,4 +1600,10 @@ GLTFMeshIndex GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState>, MeshInstance3D
 
 void GLTFDocument::_convert_mesh_instances(Ref<GLTFState>) {}
 
+Node* GLTFDocument::generate_scene(
+	Ref<GLTFState> p_state, float p_bake_fps, bool p_save_fps, bool p_trim_fps)
+{
+	return nullptr;
+}
+
 

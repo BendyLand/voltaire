@@ -71,4 +71,9 @@ CollisionPolygon3D::CollisionPolygon3D()
 	debug_color = _get_default_debug_color();
 }
 
+PackedStringArray CollisionPolygon3D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
 

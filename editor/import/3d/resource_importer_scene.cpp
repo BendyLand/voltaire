@@ -336,4 +336,11 @@ void EditorSceneFormatImporterESCN::get_extensions(List<String>* r_extensions) c
 
 Node* EditorScenePostImport::post_import(Node* p_scene) { return p_scene; }
 
+void ResourceImporterScene::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const {}
+
 

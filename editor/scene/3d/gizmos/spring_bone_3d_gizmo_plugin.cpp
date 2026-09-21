@@ -315,4 +315,16 @@ void SpringBoneCollision3DGizmoPlugin::draw_plane(
 	}
 }
 
+bool SpringBoneSimulator3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+int SpringBoneSimulator3DGizmoPlugin::get_priority() const { return 0; }
+
+void SpringBoneSimulator3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
+bool SpringBoneCollision3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+int SpringBoneCollision3DGizmoPlugin::get_priority() const { return 0; }
+
+void SpringBoneCollision3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
 

@@ -759,4 +759,6 @@ void FileDialog::_file_list_selected(int) {}
 
 void FileDialog::deselect_all() {}
 
+void FileDialog::_item_menu_id_pressed(int p_id) {}
+
 

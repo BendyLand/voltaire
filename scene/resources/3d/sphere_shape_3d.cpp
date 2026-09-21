@@ -73,6 +73,12 @@ SphereShape3D::SphereShape3D()
 	set_radius(0.5);
 }
 
-
+Ref<ArrayMesh> SphereShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
 
 void SphereShape3D::_update_shape() {}
+
+

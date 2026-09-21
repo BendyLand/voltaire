@@ -91,4 +91,36 @@ Vector<EditorExportPlatformAppleEmbedded::IconInfo> EditorExportPlatformIOS::get
 	};
 }
 
+void EditorExportPlatformIOS::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
+}
+
+bool EditorExportPlatformIOS::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
+	return false;
+}
+
+String EditorExportPlatformIOS::_process_config_file_line(const Ref<EditorExportPreset>& p_preset,
+	const String& p_line,
+	const EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData& p_config_data, bool p_is_main,
+	const EditorExportPlatformAppleEmbedded::CodeSigningDetails& p_signing_details)
+{
+	return String();
+}
+
+Error EditorExportPlatformIOS::_export_loading_screen_file(
+	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
+{
+	return OK;
+}
+
+Error EditorExportPlatformIOS::_export_icons(
+	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
+{
+	return OK;
+}
+
 

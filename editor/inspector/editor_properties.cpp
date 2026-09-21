@@ -613,8 +613,6 @@ void EditorPropertyResource::_notification(int p_what)
 	}
 }
 
-
-
 void EditorPropertyMultilineText::_update_theme() {}
 
 void EditorProperty::set_label(String const&) {}
@@ -652,5 +650,39 @@ void EditorProperty::deselect() {}
 void EditorPropertyRID::update_property() {}
 
 void EditorPropertyFlags::_set_read_only(bool p_read_only) {}
+
+void EditorPropertyText::update_property() {}
+
+void EditorPropertyInteger::update_property() {}
+
+void EditorPropertyFloat::update_property() {}
+
+void EditorPropertyEasing::update_property() {}
+
+void EditorPropertyRect2::update_property() {}
+
+void EditorPropertyRect2i::update_property() {}
+
+void EditorPropertyPlane::update_property() {}
+
+void EditorPropertyQuaternion::update_property() {}
+
+void EditorPropertyAABB::update_property() {}
+
+void EditorPropertyTransform2D::update_property() {}
+
+void EditorPropertyBasis::update_property() {}
+
+void EditorPropertyTransform3D::update_property() {}
+
+void EditorPropertyProjection::update_property() {}
+
+void EditorPropertyResource::update_property() {}
+
+bool EditorPropertyResource::is_colored(EditorProperty::ColorationMode p_mode) { return false; }
+
+void EditorPropertyFlags::update_property() {}
+
+void EditorPropertyVectorN::update_property() {}
 
 

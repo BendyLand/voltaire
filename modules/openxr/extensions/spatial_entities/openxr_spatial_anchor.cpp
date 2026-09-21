@@ -39,7 +39,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationAnchor
 
-
 bool OpenXRSpatialCapabilityConfigurationAnchor::has_valid_configuration() const
 {
 	OpenXRSpatialAnchorCapability* capability = OpenXRSpatialAnchorCapability::get_singleton();
@@ -92,7 +91,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationAnchor::_get_enabled_compon
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialComponentAnchorList
 
-
 void OpenXRSpatialComponentAnchorList::set_capacity(uint32_t p_capacity)
 {
 	entity_poses.resize(p_capacity);
@@ -124,7 +122,6 @@ Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) c
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialContextPersistenceConfig
-
 
 bool OpenXRSpatialContextPersistenceConfig::has_valid_configuration() const
 {
@@ -251,7 +248,6 @@ String OpenXRSpatialComponentPersistenceList::get_persistence_state_name(
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRAnchorTracker
 
-
 bool OpenXRAnchorTracker::has_uuid() const
 {
 	for (int i = 0; i < XR_UUID_SIZE; i++) {
@@ -302,7 +298,6 @@ OpenXRSpatialAnchorCapability* OpenXRSpatialAnchorCapability::get_singleton() { 
 OpenXRSpatialAnchorCapability::OpenXRSpatialAnchorCapability() { singleton = this; }
 
 OpenXRSpatialAnchorCapability::~OpenXRSpatialAnchorCapability() { singleton = nullptr; }
-
 
 HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(XrVersion p_version)
 {
@@ -627,15 +622,19 @@ String OpenXRSpatialAnchorCapability::get_spatial_persistence_scope_name(
 	XrSpatialPersistenceScopeEXT p_scope){XR_ENUM_SWITCH(XrSpatialPersistenceScopeEXT, p_scope)}
 
 String OpenXRSpatialAnchorCapability::get_spatial_persistence_context_result_name(
-	XrSpatialPersistenceContextResultEXT p_result)
-{
-	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)
-}
+	XrSpatialPersistenceContextResultEXT p_result){
+	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)}
 
 Ref<OpenXRFutureResult> OpenXRSpatialAnchorCapability::_create_spatial_context()
 {
 	Ref<OpenXRFutureResult> oxfr = memnew(OpenXRFutureResult);
 	return oxfr;
 }
+
+void OpenXRSpatialAnchorCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialAnchorCapability::on_session_destroyed() {}
+
+void OpenXRSpatialAnchorCapability::on_process() {}
 
 

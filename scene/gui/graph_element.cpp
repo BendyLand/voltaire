@@ -68,6 +68,12 @@ void GraphElement::set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_s
 
 bool GraphElement::is_scaling_menus() const { return scaling_menus; }
 
-
+void GraphElement::_edit_set_position(const Point2& p_position) {}
 
 void GraphElement::set_selected(bool) {}
+
+Size2 GraphElement::get_minimum_size() const { return Size2(); }
+
+void GraphElement::_resort() {}
+
+

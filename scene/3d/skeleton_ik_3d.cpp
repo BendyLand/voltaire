@@ -371,7 +371,8 @@ void SkeletonIK3D::set_target_transform(const Transform3D& p_target)
 
 const Transform3D& SkeletonIK3D::get_target_transform() const { return target; }
 
-NodePath SkeletonIK3D::get_target_node() { return target_node_path_override; }
+NodePath
+SkeletonIK3D::get_target_node() { return target_node_path_override; }
 
 void SkeletonIK3D::set_override_tip_basis(bool p_override) { override_tip_basis = p_override; }
 
@@ -425,6 +426,8 @@ void SkeletonIK3D::_solve_chain()
 	FabrikInverseKinematic::solve(task, override_tip_basis, use_magnet, magnet_position);
 }
 
+Transform3D SkeletonIK3D::_get_target_transform() { return Transform3D(); }
+
+void SkeletonIK3D::_process_modification(double p_delta) {}
 
 
-Transform3D SkeletonIK3D::_get_target_transform() {}

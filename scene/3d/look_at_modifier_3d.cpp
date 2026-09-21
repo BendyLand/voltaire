@@ -346,7 +346,8 @@ Transform3D LookAtModifier3D::look_at_with_axes(const Transform3D& p_rest)
 		get_projection_vector(p_rest.basis.xform_inv(current_vector), primary_rotation_axis)
 			.normalized();
 	real_t calculated_angle = src_vec2.angle_to(dst_vec2);
-	Transform3D primary_result =
+	Transform3D primary_result
+=
 		p_rest.rotated_local(get_vector_from_axis(primary_rotation_axis), calculated_angle);
 	Transform3D current_result =
 		primary_result; // primary_result will be used by calculation of secondary rotation,
@@ -429,5 +430,7 @@ void LookAtModifier3D::init_transition()
 	from_q = prev_q;
 	remaining = 1.0;
 }
+
+void LookAtModifier3D::_process_modification(double p_delta) {}
 
 

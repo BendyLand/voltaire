@@ -786,4 +786,6 @@ void WSLPeer::Resolver::start(String const&, int) {}
 
 void WSLPeer::_do_client_handshake() {}
 
+Error WSLPeer::accept_stream(const Ref<StreamPeer>& p_stream) { return OK; }
+
 

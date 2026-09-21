@@ -53,4 +53,46 @@ bool PhysicsDirectSpaceState3D::intersect_ray(
 	return true;
 }
 
+// servers/physics_3d/direct_states/physics_direct_space_state_3d.h / .cpp
+int PhysicsDirectSpaceState3D::intersect_point(
+	const PhysicsServer3DTypes::PointParameters& p_point_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState3D::intersect_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState3D::cast_motion(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
+	float& r_closest_unsafe, PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::collide_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, Vector3* r_results,
+	int p_result_max, int& r_result_count)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::rest_info(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
+	RID p_object, Vector3 p_point) const
+{
+	return Vector3();
+}
+
 

@@ -185,4 +185,9 @@ void AimModifier3D::_process_aim(
 
 AimModifier3D::~AimModifier3D() { clear_settings(); }
 
+void AimModifier3D::_process_constraint_by_node(int p_index, Skeleton3D* p_skeleton, int p_bone,
+	const NodePath& p_target_node, float p_influence)
+{
+}
+
 

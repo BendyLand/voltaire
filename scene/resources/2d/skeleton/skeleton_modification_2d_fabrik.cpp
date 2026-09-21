@@ -109,10 +109,10 @@ SkeletonModification2DFABRIK::SkeletonModification2DFABRIK()
 	editor_draw_gizmo = false;
 }
 
-SkeletonModification2DFABRIK::~SkeletonModification2DFABRIK() {}
-
-
-
 void SkeletonModification2DFABRIK::update_target_cache() {}
 
 void SkeletonModification2DFABRIK::fabrik_joint_update_bone2d_cache(int) {}
+
+void SkeletonModification2DFABRIK::_execute(float p_delta) {}
+
+

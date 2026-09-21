@@ -99,6 +99,14 @@ void TextEditorBase::set_edited_resource(const Ref<Resource>& p_res) {}
 
 void TextEditorBase::_text_edit_gui_input(const Ref<InputEvent>& p_ev) {}
 
+Control* TextEditorBase::get_edit_menu()
+{
+	Control c = Control();
+	return &c;
+}
+
+void TextEditorBase::_validate_script() {}
+
 void TextEditorBase::_load_theme_settings()
 {
 	code_editor->get_text_editor()->get_syntax_highlighter()->update_cache();
@@ -156,8 +164,8 @@ TextEditorBase* TextEditorBase::EditMenus::_get_active_editor()
 	return &teb;
 }
 
-TextEditorBase::TextEditorBase() {}
-
 TextEditorBase::EditMenus::EditMenus() {}
+
+void ScriptEditorBase::apply_code() {}
 
 

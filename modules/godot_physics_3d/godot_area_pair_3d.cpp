@@ -101,4 +101,14 @@ bool GodotAreaSoftBodyPair3D::setup(real_t p_step) { return true; }
 
 bool GodotAreaPair3D::setup(real_t p_step) { return true; }
 
+bool GodotArea2Pair3D::setup(float p_step) { return false; }
+
+bool GodotAreaSoftBodyPair3D::pre_solve(float p_step) { return false; }
+
+void GodotAreaSoftBodyPair3D::solve(float p_step) {}
+
+bool GodotAreaPair3D::pre_solve(float p_step) { return false; }
+
+void GodotAreaPair3D::solve(float p_step) {}
+
 

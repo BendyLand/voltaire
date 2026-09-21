@@ -360,10 +360,12 @@ GPUParticles3D::~GPUParticles3D()
 	RS::get_singleton()->free_rid(particles);
 }
 
-
+PackedStringArray GPUParticles3D::get_configuration_warnings() const { return PackedStringArray(); }
 
 void GPUParticles3D::set_use_fixed_seed(bool) {}
 
 void GPUParticles3D::set_transform_align(GPUParticles3D::TransformAlign) {}
 
 void GPUParticles3D::set_draw_passes(int) {}
+
+

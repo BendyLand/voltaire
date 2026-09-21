@@ -51,7 +51,6 @@ OpenXRAndroidThreadSettingsExtension::~OpenXRAndroidThreadSettingsExtension()
 	singleton = nullptr;
 }
 
-
 HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(
 	XrVersion p_version)
 {
@@ -134,5 +133,7 @@ void OpenXRAndroidThreadSettingsExtension::_set_render_thread_type()
 
 	set_application_thread_type(THREAD_TYPE_RENDERER_MAIN);
 }
+
+void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession_T* p_session) {}
 
 

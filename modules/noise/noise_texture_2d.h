@@ -113,7 +113,7 @@ public:
 	virtual Ref<Image> get_image() const override;
 
 	NoiseTexture2D();
-	virtual ~NoiseTexture2D();
+	virtual ~NoiseTexture2D() = default;
 };
 
 

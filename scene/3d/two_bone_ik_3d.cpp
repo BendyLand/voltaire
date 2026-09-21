@@ -452,4 +452,6 @@ void TwoBoneIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 
 TwoBoneIK3D::~TwoBoneIK3D() { clear_settings(); }
 
+void TwoBoneIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
+
 

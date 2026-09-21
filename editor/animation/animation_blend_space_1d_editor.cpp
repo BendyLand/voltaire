@@ -102,6 +102,8 @@ void AnimationNodeBlendSpace1DEditor::_update_edited_point_name()
 	}
 }
 
+void AnimationNodeBlendSpace1DEditor::edit(const Ref<AnimationNode> &p_node) {}
+
 bool AnimationNodeBlendSpace1DEditor::can_edit(const Ref<AnimationNode>& p_node)
 {
 	Ref<AnimationNodeBlendSpace1D> b1d = p_node;

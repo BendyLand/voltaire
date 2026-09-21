@@ -133,4 +133,15 @@ CollisionPolygon2D::CollisionPolygon2D()
 	set_hide_clip_children(true);
 }
 
+PackedStringArray CollisionPolygon2D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
+bool CollisionPolygon2D::_edit_is_selected_on_click(
+	const Vector2& p_point, double p_tolerance) const
+{
+	return false;
+}
+
 

@@ -128,10 +128,14 @@ SkeletonModification2DTwoBoneIK::SkeletonModification2DTwoBoneIK()
 	editor_draw_gizmo = true;
 }
 
-SkeletonModification2DTwoBoneIK::~SkeletonModification2DTwoBoneIK() {}
-
 void SkeletonModification2DTwoBoneIK::update_target_cache() {}
 
 void SkeletonModification2DTwoBoneIK::update_joint_two_bone2d_cache() {}
 
 void SkeletonModification2DTwoBoneIK::update_joint_one_bone2d_cache() {}
+
+void SkeletonModification2DTwoBoneIK::_execute(float p_delta) {}
+
+void SkeletonModification2DTwoBoneIK::_draw_editor_gizmo() {}
+
+

@@ -92,7 +92,6 @@ void ConcavePolygonShape3D::set_backface_collision_enabled(bool p_enabled)
 
 bool ConcavePolygonShape3D::is_backface_collision_enabled() const { return backface_collision; }
 
-
 ConcavePolygonShape3D::ConcavePolygonShape3D()
 	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONCAVE_POLYGON))
 {
@@ -100,4 +99,11 @@ ConcavePolygonShape3D::ConcavePolygonShape3D()
 }
 
 void ConcavePolygonShape3D::_update_shape() {}
+
+Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
+
 

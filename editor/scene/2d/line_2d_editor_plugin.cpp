@@ -41,4 +41,6 @@ Line2DEditorPlugin::Line2DEditorPlugin()
 {
 }
 
+void Line2DEditor::_set_node(Node* p_node) {}
+
 

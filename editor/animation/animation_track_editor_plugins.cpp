@@ -42,7 +42,6 @@
 #include "servers/audio/audio_stream.h"
 #include "servers/rendering/rendering_server.h"
 
-/// BOOL ///
 int AnimationTrackEditBool::get_key_height() const
 {
 	Ref<Texture2D> checked = get_theme_icon(SNAME("checked"), SNAME("CheckBox"));
@@ -56,8 +55,6 @@ Rect2 AnimationTrackEditBool::get_key_rect(int p_index, float p_pixels_sec)
 }
 
 bool AnimationTrackEditBool::is_key_selectable_by_distance() const { return false; }
-
-/// COLOR ///
 
 int AnimationTrackEditColor::get_key_height() const
 {
@@ -136,11 +133,7 @@ bool AnimationTrackEditSpriteFrame::is_key_selectable_by_distance() const { retu
 
 void AnimationTrackEditSpriteFrame::set_as_coords() { is_coords = true; }
 
-/// SUB ANIMATION ///
-
 bool AnimationTrackEditSubAnim::is_key_selectable_by_distance() const { return false; }
-
-//// VOLUME DB ////
 
 int AnimationTrackEditVolumeDB::get_key_height() const
 {
@@ -170,10 +163,6 @@ void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right)
 
 	draw_line(Vector2(p_clip_left, db0), Vector2(p_clip_right, db0), Color(1, 1, 1, 0.3));
 }
-
-////////////////////////
-
-/// AUDIO ///
 
 int AnimationTrackEditTypeAudio::get_key_height() const
 {
@@ -231,7 +220,36 @@ bool AnimationTrackEditTypeAnimation::is_key_selectable_by_distance() const { re
 
 AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
 {
-	return memnew(AnimationTrackEditTypeAudio);
+	AnimationTrackEdit ate = AnimationTrackEdit();
+	return &ate;
+}
+
+int AnimationTrackEditSpriteFrame::get_key_height() const { return 0; }
+
+int AnimationTrackEditAudio::get_key_height() const { return 0; }
+
+int AnimationTrackEditSubAnim::get_key_height() const { return 0; }
+
+int AnimationTrackEditTypeAnimation::get_key_height() const { return 0; }
+
+Rect2 AnimationTrackEditSpriteFrame::get_key_rect(int p_index, float p_pixels_per_second)
+{
+	return Rect2();
+}
+
+Rect2 AnimationTrackEditAudio::get_key_rect(int p_index, float p_pixels_per_second)
+{
+	return Rect2();
+}
+
+Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_per_second)
+{
+	return Rect2();
+}
+
+Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_per_second)
+{
+	return Rect2();
 }
 
 

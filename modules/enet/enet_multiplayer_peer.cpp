@@ -379,7 +379,8 @@ void ENetMultiplayerPeer::set_refuse_new_connections(bool p_enabled)
 	MultiplayerPeer::set_refuse_new_connections(p_enabled);
 }
 
-Ref<ENetConnection> ENetMultiplayerPeer::get_host() const
+Ref<ENetConnection> ENetMultiplayerPeer::get_host(
+) const
 {
 	ERR_FAIL_COND_V(!_is_active(), nullptr);
 	ERR_FAIL_COND_V(active_mode == MODE_MESH, nullptr);
@@ -407,5 +408,7 @@ ENetMultiplayerPeer::~ENetMultiplayerPeer()
 		close();
 	}
 }
+
+void ENetMultiplayerPeer::poll() {}
 
 

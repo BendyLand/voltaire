@@ -416,6 +416,7 @@ void SceneShaderForwardMobile::enable_multiview_shader_group()
 
 	if (shader.is_group_enabled(SHADER_GROUP_FP16)) {
 		shader.enable_group(SHADER_GROUP_FP16_MULTIVIEW);
+
 	}
 }
 
@@ -458,6 +459,11 @@ RID RendererSceneRenderImplementation::SceneShaderForwardMobile::get_default_sha
 	bool p_wireframe)
 {
 	return RID();
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::set_code(
+	const String& p_code)
+{
 }
 
 

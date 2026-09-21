@@ -69,4 +69,10 @@ PackedSceneEditorTranslationParserPlugin::PackedSceneEditorTranslationParserPlug
 	exception_list.insert("Control", {"tooltip_text"});
 }
 
+Error PackedSceneEditorTranslationParserPlugin::parse_file(
+	const String& p_path, Vector<Vector<String>>* r_ids_and_comments)
+{
+	return OK;
+}
+
 

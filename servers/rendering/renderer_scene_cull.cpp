@@ -1119,7 +1119,9 @@ void RendererSceneCull::instance_set_transform(RID p_instance, const Transform3D
 	_instance_queue_update(instance, true);
 }
 
-void RendererSceneCull::instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) {}
+void RendererSceneCull::instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight)
+{
+}
 
 void RendererSceneCull::instance_set_surface_override_material(
 	RID p_instance, int p_surface, RID p_material)
@@ -1895,7 +1897,7 @@ void RendererSceneCull::_update_instance(Instance* p_instance) const
 		case RSE::INSTANCE_REFLECTION_PROBE: {
 			idata.instance_data_rid =
 
-			static_cast<InstanceReflectionProbeData*>(p_instance->base_data)->instance.get_id();
+				static_cast<InstanceReflectionProbeData*>(p_instance->base_data)->instance.get_id();
 		} break;
 		case RSE::INSTANCE_DECAL: {
 			idata.instance_data_rid =
@@ -3438,7 +3440,8 @@ void RendererSceneCull::render_particle_colliders()
 				InstanceGeometryData* geom =
 					static_cast<InstanceGeometryData*>(instance->base_data);
 				ERR_FAIL_NULL(geom->geometry_instance);
-				scene_cull_result.geometry_instances.push_back(geom->geometry_instance);
+				scene_cull_result.geometry_instances.push_back(geom->geometry_instance)
+;
 			}
 
 			scene_render->render_particle_collider_heightfield(
@@ -3534,5 +3537,14 @@ bool RendererSceneCull::_render_reflection_probe_step(RendererSceneCull::Instanc
 }
 
 void RendererSceneCull::update() {}
+
+void RendererSceneCull::render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
+	RID p_scenario, RID p_viewport, Vector2 p_viewport_size, unsigned int p_layers,
+	float p_screen_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
+	float p_render_scale, RenderingServerTypes::RenderInfo* p_render_info)
+{
+}
+
+bool RendererSceneCull::free(RID p_rid) { return false; }
 
 

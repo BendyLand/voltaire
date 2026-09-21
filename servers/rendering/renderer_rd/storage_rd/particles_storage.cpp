@@ -1564,4 +1564,13 @@ void RendererRD::ParticlesStorage::_particles_update_buffers(
 {
 }
 
+void RendererRD::ParticlesStorage::particles_set_view_axis(
+	RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis)
+{
+}
+
+void RendererRD::ParticlesStorage::update_particles() {}
+
+void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p_code) {}
+
 

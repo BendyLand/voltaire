@@ -627,4 +627,16 @@ void RenderingServer::init() {}
 
 RID RenderingServer::_make_test_cube() { return RID(); }
 
+void RenderingServer::mesh_add_surface_from_mesh_data(
+	RID p_mesh, const Geometry3D::MeshData& p_mesh_data)
+{
+}
+
+RID RenderingServer::make_sphere_mesh(int p_lats, int p_lons, real_t p_radius) { return RID(); }
+
+void RenderingServer::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
 

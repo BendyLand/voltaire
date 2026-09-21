@@ -188,4 +188,25 @@ void ShaderBakerExportPlugin::remove_platform(Ref<ShaderBakerExportPluginPlatfor
 	platforms.erase(p_platform);
 }
 
+bool ShaderBakerExportPlugin::_begin_customize_resources(
+	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
+{
+	return false;
+}
+
+Node* ShaderBakerExportPlugin::_customize_scene(Node* p_scene, const String& p_path)
+{
+	return p_scene;
+}
+
+void ShaderBakerExportPlugin::_end_customize_resources() {}
+
+bool ShaderBakerExportPlugin::_initialize_container_format(
+	const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset)
+{
+	return false;
+}
+
+void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID p_version) {}
+
 

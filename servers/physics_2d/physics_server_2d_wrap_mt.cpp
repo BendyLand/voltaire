@@ -74,4 +74,8 @@ PhysicsServer2DWrapMT::PhysicsServer2DWrapMT(PhysicsServer2D* p_contained, bool 
 
 PhysicsServer2DWrapMT::~PhysicsServer2DWrapMT() { memdelete(physics_server_2d); }
 
+void PhysicsServer2DWrapMT::init() {}
+
+void PhysicsServer2DWrapMT::finish() {}
+
 

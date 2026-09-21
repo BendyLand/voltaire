@@ -819,7 +819,6 @@ VideoStreamPlaybackTheora::VideoStreamPlaybackTheora() { texture.instantiate(); 
 
 VideoStreamPlaybackTheora::~VideoStreamPlaybackTheora() { clear(); }
 
-
 Ref<Resource> ResourceFormatLoaderTheora::load(const String& p_path, const String& p_original_path,
 	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
 {
@@ -862,5 +861,7 @@ String ResourceFormatLoaderTheora::get_resource_type(const String& p_path) const
 	}
 	return "";
 }
+
+void VideoStreamPlaybackTheora::play() {}
 
 

@@ -348,8 +348,16 @@ void FoldableGroup::get_containers(List<FoldableContainer*>* r_containers) const
 
 FoldableGroup::FoldableGroup() { set_local_to_scene(true); }
 
+Size2 FoldableContainer::get_minimum_size() const { return Size2(); }
 
+Size2 FoldableContainer::get_desired_size() const { return Size2(); }
+
+void FoldableContainer::gui_input(const Ref<InputEvent>& p_event) {}
+
+String FoldableContainer::get_tooltip(const Vector2& p_pos) const { return String(); }
 
 void FoldableContainer::set_folded(bool) {}
 
 void FoldableContainer::set_title(String const&) {}
+
+

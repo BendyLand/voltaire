@@ -28,44 +28,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_debug_utils_extension.h"
-
+#include <openxr/openxr.h>
 #include "../openxr_api.h"
-
 #include "core/config/project_settings.h"
 #include "core/string/print_string.h"
+#include "openxr_debug_utils_extension.h"
 
-#include <openxr/openxr.h>
+OpenXRDebugUtilsExtension* OpenXRDebugUtilsExtension::singleton = nullptr;
 
-OpenXRDebugUtilsExtension *OpenXRDebugUtilsExtension::singleton = nullptr;
+OpenXRDebugUtilsExtension* OpenXRDebugUtilsExtension::get_singleton() { return singleton; }
 
-OpenXRDebugUtilsExtension *OpenXRDebugUtilsExtension::get_singleton() {
-	return singleton;
-}
+OpenXRDebugUtilsExtension::OpenXRDebugUtilsExtension() { singleton = this; }
 
-OpenXRDebugUtilsExtension::OpenXRDebugUtilsExtension() {
-	singleton = this;
-}
+OpenXRDebugUtilsExtension::~OpenXRDebugUtilsExtension() { singleton = nullptr; }
 
-OpenXRDebugUtilsExtension::~OpenXRDebugUtilsExtension() {
-	singleton = nullptr;
-}
-
-HashMap<String, bool *> OpenXRDebugUtilsExtension::get_requested_extensions(XrVersion p_version) {
-	HashMap<String, bool *> request_extensions;
+HashMap<String, bool*> OpenXRDebugUtilsExtension::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
 
 	request_extensions[XR_EXT_DEBUG_UTILS_EXTENSION_NAME] = &debug_utils_ext;
 
 	return request_extensions;
 }
 
-
-
-void OpenXRDebugUtilsExtension::on_instance_destroyed() {
+void OpenXRDebugUtilsExtension::on_instance_destroyed()
+{
 	if (default_messenger != XR_NULL_HANDLE) {
 		XrResult result = xrDestroyDebugUtilsMessengerEXT(default_messenger);
 		if (XR_FAILED(result)) {
-			ERR_PRINT("OpenXR: Failed to destroy debug callback [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+			ERR_PRINT("OpenXR: Failed to destroy debug callback [" +
+					  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
 		}
 
 		default_messenger = XR_NULL_HANDLE;
@@ -80,94 +72,118 @@ void OpenXRDebugUtilsExtension::on_instance_destroyed() {
 	debug_utils_ext = false;
 }
 
-bool OpenXRDebugUtilsExtension::get_active() {
-	return debug_utils_ext;
-}
+bool OpenXRDebugUtilsExtension::get_active() { return debug_utils_ext; }
 
-void OpenXRDebugUtilsExtension::set_object_name(XrObjectType p_object_type, uint64_t p_object_handle, const char *p_object_name) {
+void OpenXRDebugUtilsExtension::set_object_name(
+	XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name)
+{
 	ERR_FAIL_COND(!debug_utils_ext);
 	ERR_FAIL_NULL(xrSetDebugUtilsObjectNameEXT_ptr);
 
 	const XrDebugUtilsObjectNameInfoEXT space_name_info = {
 		XR_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, // type
-		nullptr, // next
-		p_object_type, // objectType
-		p_object_handle, // objectHandle
-		p_object_name, // objectName
+		nullptr,								  // next
+		p_object_type,							  // objectType
+		p_object_handle,						  // objectHandle
+		p_object_name,							  // objectName
 	};
 
-	XrResult result = xrSetDebugUtilsObjectNameEXT_ptr(OpenXRAPI::get_singleton()->get_instance(), &space_name_info);
+	XrResult result = xrSetDebugUtilsObjectNameEXT_ptr(
+		OpenXRAPI::get_singleton()->get_instance(), &space_name_info);
 	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to set object name [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+		ERR_PRINT("OpenXR: Failed to set object name [" +
+				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
 	}
 }
 
-void OpenXRDebugUtilsExtension::begin_debug_label_region(const char *p_label_name) {
+void OpenXRDebugUtilsExtension::begin_debug_label_region(const char* p_label_name)
+{
 	ERR_FAIL_COND(!debug_utils_ext);
 	ERR_FAIL_NULL(xrSessionBeginDebugUtilsLabelRegionEXT_ptr);
 
 	const XrDebugUtilsLabelEXT session_active_region_label = {
 		XR_TYPE_DEBUG_UTILS_LABEL_EXT, // type
-		nullptr, // next
-		p_label_name, // labelName
+		nullptr,					   // next
+		p_label_name,				   // labelName
 	};
 
-	XrResult result = xrSessionBeginDebugUtilsLabelRegionEXT_ptr(OpenXRAPI::get_singleton()->get_session(), &session_active_region_label);
+	XrResult result = xrSessionBeginDebugUtilsLabelRegionEXT_ptr(
+		OpenXRAPI::get_singleton()->get_session(), &session_active_region_label);
 	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to begin label region [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+		ERR_PRINT("OpenXR: Failed to begin label region [" +
+				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
 	}
 }
 
-void OpenXRDebugUtilsExtension::end_debug_label_region() {
+void OpenXRDebugUtilsExtension::end_debug_label_region()
+{
 	ERR_FAIL_COND(!debug_utils_ext);
 	ERR_FAIL_NULL(xrSessionEndDebugUtilsLabelRegionEXT_ptr);
 
-	XrResult result = xrSessionEndDebugUtilsLabelRegionEXT_ptr(OpenXRAPI::get_singleton()->get_session());
+	XrResult result =
+		xrSessionEndDebugUtilsLabelRegionEXT_ptr(OpenXRAPI::get_singleton()->get_session());
 	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to end label region [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+		ERR_PRINT("OpenXR: Failed to end label region [" +
+				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
 	}
 }
 
-void OpenXRDebugUtilsExtension::insert_debug_label(const char *p_label_name) {
+void OpenXRDebugUtilsExtension::insert_debug_label(const char* p_label_name)
+{
 	ERR_FAIL_COND(!debug_utils_ext);
 	ERR_FAIL_NULL(xrSessionInsertDebugUtilsLabelEXT_ptr);
 
 	const XrDebugUtilsLabelEXT session_active_region_label = {
 		XR_TYPE_DEBUG_UTILS_LABEL_EXT, // type
-		nullptr, // next
-		p_label_name, // labelName
+		nullptr,					   // next
+		p_label_name,				   // labelName
 	};
 
-	XrResult result = xrSessionInsertDebugUtilsLabelEXT_ptr(OpenXRAPI::get_singleton()->get_session(), &session_active_region_label);
+	XrResult result = xrSessionInsertDebugUtilsLabelEXT_ptr(
+		OpenXRAPI::get_singleton()->get_session(), &session_active_region_label);
 	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to insert label [" + OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+		ERR_PRINT("OpenXR: Failed to insert label [" +
+				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
 	}
 }
 
-XrBool32 XRAPI_PTR OpenXRDebugUtilsExtension::_debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity, XrDebugUtilsMessageTypeFlagsEXT p_message_types, const XrDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data) {
-	OpenXRDebugUtilsExtension *debug_utils = OpenXRDebugUtilsExtension::get_singleton();
+XrBool32 XRAPI_PTR OpenXRDebugUtilsExtension::_debug_callback(
+	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
+{
+	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
 
 	if (debug_utils) {
-		return debug_utils->debug_callback(p_message_severity, p_message_types, p_callback_data, p_user_data);
+		return debug_utils->debug_callback(
+			p_message_severity, p_message_types, p_callback_data, p_user_data);
 	}
 
 	return XR_FALSE;
 }
 
-XrBool32 OpenXRDebugUtilsExtension::debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity, XrDebugUtilsMessageTypeFlagsEXT p_message_types, const XrDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data) {
+XrBool32 OpenXRDebugUtilsExtension::debug_callback(
+	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
+{
 	String msg;
 
 	ERR_FAIL_NULL_V(p_callback_data, XR_FALSE);
 
 	if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
 		msg = ", type: General";
-	} else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
 		msg = ", type: Validation";
-	} else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
 		msg = ", type: Performance";
-	} else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT) {
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT) {
 		msg = ", type: Conformance";
-	} else {
+	}
+	else {
 		msg = ", type: Unknown (" + String::num_uint64(p_message_types) + ")";
 	}
 
@@ -209,12 +225,19 @@ XrBool32 OpenXRDebugUtilsExtension::debug_callback(XrDebugUtilsMessageSeverityFl
 
 	if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		ERR_PRINT("OpenXR: Severity: Error" + msg);
-	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+	}
+	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		WARN_PRINT("OpenXR: Severity: Warning" + msg);
-	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-		// This is a bit double because we won't output this unless verbose messaging in Godot is on.
+	}
+	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+		// This is a bit double because we won't output this unless verbose messaging in Godot is
+		// on.
 		print_verbose("OpenXR: Severity: Verbose" + msg);
 	}
 
 	return XR_FALSE;
 }
+
+void OpenXRDebugUtilsExtension::on_instance_created(XrInstance_T* p_instance) {}
+
+

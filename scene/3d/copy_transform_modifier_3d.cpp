@@ -80,7 +80,8 @@ void CopyTransformModifier3D::set_additive(int p_index, bool p_enabled)
 bool CopyTransformModifier3D::is_additive(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
-	CopyTransform3DSetting* setting = static_cast<CopyTransform3DSetting*>(settings[p_index]);
+	CopyTransform3DSetting* setting = static_cast<CopyTransform3DSetting*>(settings[p_index
+]);
 	return setting->additive;
 }
 
@@ -103,5 +104,15 @@ void CopyTransformModifier3D::_process_constraint_by_bone(
 }
 
 CopyTransformModifier3D::~CopyTransformModifier3D() { clear_settings(); }
+
+void CopyTransformModifier3D::_process_constraint_by_node(int p_index, Skeleton3D* p_skeleton,
+	int p_bone, const NodePath& p_target_node, float p_influence)
+{
+}
+
+void CopyTransformModifier3D::_process_copy(int p_index, Skeleton3D* p_skeleton, int p_bone,
+	const Transform3D& p_target_transform, float p_influence)
+{
+}
 
 

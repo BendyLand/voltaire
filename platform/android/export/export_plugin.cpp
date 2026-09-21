@@ -1232,10 +1232,71 @@ void EditorExportPlatformAndroid::_get_manifest_info(const Ref<EditorExportPrese
 
 String _get_screen_sizes_tag(const Ref<EditorExportPreset>& p_preset) { return String(); }
 
-String _get_application_tag(const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset, bool p_is_in_front, bool p_is_engine, const Vector<MetadataInfo>& p_metadata) { return String(); }
+String _get_application_tag(const Ref<EditorExportPlatform>& p_platform,
+	const Ref<EditorExportPreset>& p_preset, bool p_is_in_front, bool p_is_engine,
+	const Vector<MetadataInfo>& p_metadata)
+{
+	return String();
+}
 
 void register_android_exporter() {}
 
-PluginConfigAndroid PluginConfigAndroid::load_plugin_config( Ref<ConfigFile> p_config_file, const String& p_path) { return PluginConfigAndroid(); }
+PluginConfigAndroid PluginConfigAndroid::load_plugin_config(
+	Ref<ConfigFile> p_config_file, const String& p_path)
+{
+	return PluginConfigAndroid();
+}
+
+Error EditorExportPlatformAndroid::run(
+	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
+{
+	return OK;
+}
+
+void EditorExportPlatformAndroid::initialize() {}
+
+bool EditorExportPlatformAndroid::has_valid_project_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error) const
+{
+	return false;
+}
+
+bool EditorExportPlatformAndroid::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
+	return false;
+}
+
+void EditorExportPlatformAndroid::get_preset_features(
+	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
+{
+}
+
+String EditorExportPlatformAndroid::get_export_option_warning(
+	const EditorExportPreset* p_preset, const StringName& p_name) const
+{
+	return String();
+}
+
+bool EditorExportPlatformAndroid::get_export_option_visibility(
+	const EditorExportPreset* p_preset, const String& p_option) const
+{
+	return false;
+}
+
+void EditorExportPlatformAndroid::get_export_options(List<ExportOption>* r_options) const {}
+
+List<String> EditorExportPlatformAndroid::get_binary_extensions(
+	const Ref<EditorExportPreset>& p_preset) const
+{
+	return List<String>();
+}
+
+Error EditorExportPlatformAndroid::export_project(const Ref<EditorExportPreset>& p_preset,
+	bool p_debug, const String& p_path, uint32_t p_flags, bool p_notify)
+{
+	return OK;
+}
 
 

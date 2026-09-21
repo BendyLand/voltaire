@@ -129,12 +129,12 @@ void ConnectionsDock::_notification(int p_what)
 	}
 }
 
-
-
 void ConnectionsDock::update_tree() {}
 
 ConnectionsDock::ConnectionsDock() {}
 
 void ConnectDialog::ok_pressed() {}
+
+void ConnectDialog::_post_popup() {}
 
 

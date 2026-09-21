@@ -2274,4 +2274,32 @@ void RendererRD::MeshStorage::_update_dirty_multimeshes() {}
 
 void RendererRD::MeshStorage::_update_dirty_skeletons() {}
 
+void RendererRD::MeshStorage::update_mesh_instances() {}
+
+void RendererRD::MeshStorage::_multimesh_set_visible_instances(RID p_multimesh, int p_visible) {}
+
+void RendererRD::MeshStorage::_multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer)
+{
+}
+
+void RendererRD::MeshStorage::mesh_surface_update_vertex_region(
+	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+{
+}
+
+void RendererRD::MeshStorage::mesh_surface_update_skin_region(
+	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+{
+}
+
+void RendererRD::MeshStorage::mesh_surface_update_index_region(
+	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+{
+}
+
+void RendererRD::MeshStorage::mesh_surface_update_attribute_region(
+	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+{
+}
+
 

@@ -4453,6 +4453,7 @@ void DisplayServerX11::_xim_destroy_callback(::XIM im, ::XPointer client_data, :
 	}
 }
 
+
 DisplayServerEnums::WindowID DisplayServerX11::_get_focused_window_or_popup() const
 {
 	const List<DisplayServerEnums::WindowID>::Element* E = popup_list.back();
@@ -5959,7 +5960,6 @@ DisplayServerX11::~DisplayServerX11()
 
 	for (int i = 0; i < DisplayServerEnums::CURSOR_MAX; i++) {
 		if (cursors[i] != None) {
-
 			XFreeCursor(x11_display, cursors[i]);
 		}
 		if (cursor_img[i] != nullptr) {
@@ -5992,11 +5992,23 @@ void DisplayServerX11::register_x11_driver()
 	register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
-void DisplayServerX11::_send_window_event(const WindowData& wd, DisplayServerEnums::WindowEvent p_event) {}
+void DisplayServerX11::_send_window_event(
+	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
+{
+}
 
 #endif // X11 enabled
 
+void DisplayServerX11::process_events() {}
 
+uint32_t DisplayServerX11::mouse_get_button_state() const { return 0; }
+
+void DisplayServerX11::cursor_set_custom_image(const Ref<Resource>& p_cursor,
+	DisplayServerEnums::CursorShape p_shape, const Vector2& p_hotspot)
+{
+}
+
+void DisplayServerX11::delete_sub_window(int p_window) {}
 
 void DisplayServerX11::_window_changed(_XEvent*) {}
 
@@ -6004,6 +6016,12 @@ void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
 
 void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawCallbackStruct*) {}
 
-DisplayServerX11::DisplayServerX11(String const&, DisplayServerEnums::WindowMode, DisplayServerEnums::VSyncMode, unsigned int, Vector2i const*, Vector2i const&, int, DisplayServerEnums::Context, long, Error&) {}
+DisplayServerX11::DisplayServerX11(String const&, DisplayServerEnums::WindowMode,
+	DisplayServerEnums::VSyncMode, unsigned int, Vector2i const*, Vector2i const&, int,
+	DisplayServerEnums::Context, long, Error&)
+{
+}
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+

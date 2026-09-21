@@ -169,4 +169,11 @@ Button* EditorBottomPanel::add_item(String, Control*, Ref<Shortcut> const&, bool
 	return &b;
 }
 
+EditorBottomPanel::TabStyle EditorBottomPanel::get_tab_style() const
+{
+	return TabStyle::TEXT_AND_ICON;
+}
+
+void EditorBottomPanel::load_selected_tab(int p_index) {}
+
 

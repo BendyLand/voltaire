@@ -333,7 +333,8 @@ void SplineIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 					p_setting->twists[HEAD] = 0.0;
 				}
 				else if (p_setting->tilt_fade_in == 0) {
-					p_setting->twists[HEAD] = tilts[0];
+					p_setting->twists[HEAD]
+ = tilts[0];
 				}
 				else {
 					// Decreases monotonically in a straight line, fetch the distance.
@@ -425,5 +426,7 @@ void SplineIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 }
 
 SplineIK3D::~SplineIK3D() { clear_settings(); }
+
+void SplineIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
 
 

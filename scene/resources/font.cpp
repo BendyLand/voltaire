@@ -32,6 +32,7 @@
 #include "core/io/image_loader.h"
 #include "core/os/os.h"
 #include "core/templates/hash_map.h"
+#include "core/types.h"
 #include "font.compat.inc"
 #include "font.h"
 #include "scene/resources/image_texture.h"
@@ -1078,5 +1079,253 @@ void FontVariation::_update_rids() const {}
 void FontVariation::reset_state() {}
 
 Error FontFile::_load_bitmap_font(String const&, List<String, DefaultAllocator>*) {}
+
+void FontFile::set_transform(int p_cache_index, Transform2D p_transform) {}
+
+void FontFile::set_texture_offsets(int p_cache_index, const Vector2i& p_size, int p_texture_index,
+	const PackedInt32Array& p_offset)
+{
+}
+
+void FontFile::set_texture_image(
+	int p_cache_index, const Vector2i& p_size, int p_texture_index, const Ref<Image>& p_image)
+{
+}
+
+void FontFile::set_subpixel_positioning(TextServer::SubpixelPositioning p_subpixel) {}
+
+void FontFile::set_script_support_override(const String& p_script, bool p_supported) {}
+
+void FontFile::set_oversampling(real_t p_oversampling) {}
+
+void FontFile::set_multichannel_signed_distance_field(bool p_msdf) {}
+
+void FontFile::set_msdf_size(int p_msdf_size) {}
+
+void FontFile::set_msdf_pixel_range(int p_msdf_pixel_range) {}
+
+void FontFile::set_modulate_color_glyphs(bool p_modulate) {}
+
+void FontFile::set_language_support_override(const String& p_language, bool p_supported) {}
+
+void FontFile::set_kerning(
+	int p_cache_index, int p_size, const Vector2i& p_glyph_pair, const Vector2& p_kerning)
+{
+}
+
+void FontFile::set_keep_rounding_remainders(bool p_keep_rounding_remainders) {}
+
+void FontFile::set_hinting(TextServer::Hinting p_hinting) {}
+
+void FontFile::set_glyph_uv_rect(
+	int p_cache_index, const Vector2i& p_size, int32_t p_glyph, const Rect2& p_uv_rect)
+{
+}
+
+void FontFile::set_glyph_texture_idx(
+	int p_cache_index, const Vector2i& p_size, int32_t p_glyph, int p_texture_idx)
+{
+}
+
+void FontFile::set_glyph_size(
+	int p_cache_index, const Vector2i& p_size, int32_t p_glyph, const Vector2& p_gl_size)
+{
+}
+
+void FontFile::set_glyph_offset(
+	int p_cache_index, const Vector2i& p_size, int32_t p_glyph, const Vector2& p_offset)
+{
+}
+
+void FontFile::set_glyph_advance(
+	int p_cache_index, int p_size, int32_t p_glyph, const Vector2& p_advance)
+{
+}
+
+void FontFile::set_generate_mipmaps(bool p_generate_mipmaps) {}
+
+void FontFile::set_force_autohinter(bool p_force_autohinter) {}
+
+void FontFile::set_font_weight(int p_weight) {}
+
+void FontFile::set_font_style(uint32_t p_style) {}
+
+void FontFile::set_font_style_name(const String& p_name) {}
+
+void FontFile::set_font_stretch(int p_stretch) {}
+
+void FontFile::set_font_name(const String& p_name) {}
+
+void FontFile::set_fixed_size_scale_mode(TextServer::FixedSizeScaleMode p_fixed_size_scale_mode) {}
+
+void FontFile::set_fixed_size(int p_fixed_size) {}
+
+void FontFile::set_face_index(int p_cache_index, int64_t p_index) {}
+
+void FontFile::set_extra_spacing(
+	int p_cache_index, TextServer::SpacingType p_spacing, int64_t p_value)
+{
+}
+
+void FontFile::set_extra_baseline_offset(int p_cache_index, float p_baseline_offset) {}
+
+void FontFile::set_embolden(int p_cache_index, float p_strength) {}
+
+void FontFile::set_disable_embedded_bitmaps(bool p_disable_embedded_bitmaps) {}
+
+void FontFile::set_cache_underline_thickness(
+	int p_cache_index, int p_size, real_t p_underline_thickness)
+{
+}
+
+void FontFile::set_cache_underline_position(
+	int p_cache_index, int p_size, real_t p_underline_position)
+{
+}
+
+void FontFile::set_cache_scale(int p_cache_index, int p_size, real_t p_scale) {}
+
+void FontFile::set_cache_descent(int p_cache_index, int p_size, real_t p_descent) {}
+
+void FontFile::set_cache_ascent(int p_cache_index, int p_size, real_t p_ascent) {}
+
+void FontFile::set_antialiasing(TextServer::FontAntialiasing p_antialiasing) {}
+
+void FontFile::set_allow_system_fallback(bool p_allow_system_fallback) {}
+
+void FontFile::render_range(
+	int p_cache_index, const Vector2i& p_size, char32_t p_start, char32_t p_end)
+{
+}
+
+void FontFile::render_glyph(int p_cache_index, const Vector2i& p_size, int32_t p_index) {}
+
+void FontFile::remove_texture(int p_cache_index, const Vector2i& p_size, int p_texture_index) {}
+
+void FontFile::remove_size_cache(int p_cache_index, const Vector2i& p_size) {}
+
+void FontFile::remove_script_support_override(const String& p_script) {}
+
+void FontFile::remove_language_support_override(const String& p_language) {}
+
+void FontFile::remove_kerning(int p_cache_index, int p_size, const Vector2i& p_glyph_pair) {}
+
+void FontFile::remove_glyph(int p_cache_index, const Vector2i& p_size, int32_t p_glyph) {}
+
+Transform2D FontFile::get_transform(int p_cache_index) const { return Transform2D(); }
+
+PackedInt32Array FontFile::get_texture_offsets(
+	int p_cache_index, const Vector2i& p_size, int p_texture_index) const
+{
+	return PackedInt32Array();
+}
+
+Ref<Image> FontFile::get_texture_image(
+	int p_cache_index, const Vector2i& p_size, int p_texture_index) const
+{
+	Ref<Image> i = memnew(Image);
+	return i;
+}
+
+int FontFile::get_texture_count(int p_cache_index, const Vector2i& p_size) const { return 0; }
+
+Vector2 FontFile::get_kerning(int p_cache_index, int p_size, const Vector2i& p_glyph_pair) const
+{
+	return Vector2();
+}
+
+Rect2 FontFile::get_glyph_uv_rect(int p_cache_index, const Vector2i& p_size, int32_t p_glyph) const
+{
+	return Rect2();
+}
+
+int FontFile::get_glyph_texture_idx(
+	int p_cache_index, const Vector2i& p_size, int32_t p_glyph) const
+{
+	return 0;
+}
+
+Vector2 FontFile::get_glyph_size(int p_cache_index, const Vector2i& p_size, int32_t p_glyph) const
+{
+	return Vector2();
+}
+
+Vector2 FontFile::get_glyph_offset(int p_cache_index, const Vector2i& p_size, int32_t p_glyph) const
+{
+	return Vector2();
+}
+
+PackedInt32Array FontFile::get_glyph_list(int p_cache_index, const Vector2i& p_size) const
+{
+	return PackedInt32Array();
+}
+
+int32_t FontFile::get_glyph_index(int p_size, char32_t p_char, char32_t p_variation_selector) const
+{
+	return 0;
+}
+
+Vector2 FontFile::get_glyph_advance(int p_cache_index, int p_size, int32_t p_glyph) const
+{
+	return Vector2();
+}
+
+int64_t FontFile::get_face_index(int p_cache_index) const { return 0; }
+
+int64_t FontFile::get_extra_spacing(int p_cache_index, TextServer::SpacingType p_spacing) const
+{
+	return 0;
+}
+
+float FontFile::get_extra_baseline_offset(int p_cache_index) const { return 0.0; }
+
+float FontFile::get_embolden(int p_cache_index) const { return 0.0; }
+
+char32_t FontFile::get_char_from_glyph_index(int p_size, int32_t p_glyph_index) const
+{
+	return ' ';
+}
+
+real_t FontFile::get_cache_underline_thickness(int p_cache_index, int p_size) const { return 0.0; }
+
+real_t FontFile::get_cache_underline_position(int p_cache_index, int p_size) const { return 0.0; }
+
+real_t FontFile::get_cache_scale(int p_cache_index, int p_size) const { return 0.0; }
+
+real_t FontFile::get_cache_descent(int p_cache_index, int p_size) const { return 0.0; }
+
+real_t FontFile::get_cache_ascent(int p_cache_index, int p_size) const { return 0.0; }
+
+void FontFile::clear_textures(int p_cache_index, const Vector2i& p_size) {}
+
+void FontFile::clear_size_cache(int p_cache_index) {}
+
+void FontFile::clear_kerning_map(int p_cache_index, int p_size) {}
+
+void FontFile::clear_glyphs(int p_cache_index, const Vector2i& p_size) {}
+
+RID FontFile::_get_rid() const { return RID(); }
+
+void SystemFont::reset_state() {}
+
+void SystemFont::_update_rids() const {}
+
+RID SystemFont::_get_rid() const { return RID(); }
+
+Ref<Font> SystemFont::_get_base_font_or_default() const
+{
+	Ref<Font> f = memnew(Font);
+	return f;
+}
+
+RID FontVariation::_get_rid() const { return RID(); }
+
+void FontVariation::set_base_font(const Ref<Font>& p_font) {}
+
+Ref<Font> FontVariation::_get_base_font_or_default() const
+{
+	Ref<Font> f = memnew(Font);
+	return f;
+}
 
 

@@ -1302,3 +1302,7 @@ void LineEdit::set_horizontal_alignment(HorizontalAlignment) {}
 void LineEdit::set_clear_button_enabled(bool) {}
 
 void LineEdit::clear_internal() {}
+
+String LineEdit::_get_accessibility_name() const { return String(); }
+
+

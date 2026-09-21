@@ -405,6 +405,8 @@ void ColorPickerShapeOKHSRectangle::_update_cursor(
 	}
 }
 
+void ColorPickerShapeOKHSRectangle::_square_draw() {}
+
 void ColorPickerShapeOKHSRectangle::_square_overlay_draw()
 {
 	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
@@ -724,5 +726,13 @@ void ColorPickerShapeOKHSLCircle::_update_cursor(
 			CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
 	}
 }
+
+void ColorPickerShapeOKHSRectangle::_initialize_controls() {}
+
+void ColorPickerShapeOKHLRectangle::_square_draw() {}
+
+void ColorPickerShapeCircle::_initialize_controls() {}
+
+void ColorPickerShapeOKHSLCircle::_circle_draw() {}
 
 

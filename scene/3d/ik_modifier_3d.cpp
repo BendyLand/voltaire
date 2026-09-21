@@ -112,4 +112,14 @@ void IKModifier3D::_update_mutable_info() {}
 
 void IKModifier3D::_update_joints(int p_index) {}
 
+void IKModifier3D::_update_bone_axis(Skeleton3D* p_skeleton, int p_index) {}
+
+void IKModifier3D::_make_simulation_dirty(int p_index) {}
+
+void IKModifier3D::_init_joints(Skeleton3D* p_skeleton, int p_index) {}
+
+void IKModifier3D::_make_all_joints_dirty() {}
+
+void IKModifier3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
+
 

@@ -1590,4 +1590,13 @@ void AudioServer::init() {}
 
 void AudioDriverManager::initialize(int) {}
 
+void AudioServer::update() {}
+
+void AudioServer::load_default_bus_layout() {}
+
+void AudioServer::get_argument_options(
+	const StringName& p_function, int p_idx, List<String>* r_options) const
+{
+}
+
 

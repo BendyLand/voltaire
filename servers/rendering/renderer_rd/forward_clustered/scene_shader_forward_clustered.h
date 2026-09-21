@@ -356,7 +356,7 @@ public:
 
 		SelfList<ShaderData> shader_list_element;
 		ShaderData();
-		virtual ~ShaderData();
+		virtual ~ShaderData() = default;
 	};
 
 	SelfList<ShaderData>::List shader_list;

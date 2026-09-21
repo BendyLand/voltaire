@@ -28,6 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
 #include "../misc/jolt_type_conversions.h"
 #include "../spaces/jolt_broad_phase_layer.h"
 #include "../spaces/jolt_space_3d.h"
@@ -38,9 +40,6 @@
 #include "jolt_soft_body_3d.h"
 #include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
 #include "servers/rendering/rendering_server.h"
-
-#include <Jolt/Jolt.h>
-#include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
 
 namespace
 {
@@ -177,8 +176,6 @@ JoltSoftBody3D::~JoltSoftBody3D()
 		jolt_settings = nullptr;
 	}
 }
-
-
 
 bool JoltSoftBody3D::can_interact_with(const JoltSoftBody3D& p_other) const
 {
@@ -418,8 +415,6 @@ AABB JoltSoftBody3D::get_bounds() const
 	return to_godot(jolt_body->GetWorldSpaceBounds());
 }
 
-
-
 void JoltSoftBody3D::_update_mass() {}
 
 void JoltSoftBody3D::_update_damping() {}
@@ -455,3 +450,9 @@ void JoltSoftBody3D::_apply_environmental_forces(float) {}
 void JoltSoftBody3D::add_collision_exception(RID const&) {}
 
 void JoltSoftBody3D::add_area(JoltArea3D*) {}
+
+void JoltSoftBody3D::_add_to_space() {}
+
+void JoltSoftBody3D::_space_changing() {}
+
+

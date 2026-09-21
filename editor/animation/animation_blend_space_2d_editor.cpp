@@ -129,8 +129,10 @@ void AnimationNodeBlendSpace2DEditor::_inline_editor_text_changed(const String& 
 
 AnimationNodeBlendSpace2DEditor* AnimationNodeBlendSpace2DEditor::singleton = nullptr;
 
-
-
 void AnimationNodeBlendSpace2D::_update_triangles() {}
 
 void AnimationNodeBlendSpace2D::_queue_auto_triangles() {}
+
+void AnimationNodeBlendSpace2DEditor::edit(const Ref<AnimationNode>& p_node) {}
+
+

@@ -196,10 +196,16 @@ ShaderEditorPlugin::~ShaderEditorPlugin()
 	memdelete(file_menu);
 }
 
-
-
 void ShaderEditorPlugin::_close_shader(int) {}
 
 void ShaderEditorPlugin::_update_shader_list() {}
 
 void ShaderEditorPlugin::_make_script_list_context_menu() {}
+
+void ShaderEditorPlugin::set_current() {}
+
+void ShaderEditorPlugin::set_window_layout(Ref<ConfigFile> p_layout) {}
+
+void ShaderEditorPlugin::get_window_layout(Ref<ConfigFile> p_layout) {}
+
+

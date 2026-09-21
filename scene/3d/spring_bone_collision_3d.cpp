@@ -102,7 +102,6 @@ Transform3D SpringBoneCollision3D::get_transform_from_skeleton(const Transform3D
 	return gtr;
 }
 
-
 void SpringBoneCollision3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -125,8 +124,13 @@ Vector3 SpringBoneCollision3D::_collide(const Transform3D& p_center, float p_bon
 	return Vector3(0, 0, 0);
 }
 
-
+PackedStringArray SpringBoneCollision3D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
 
 void SpringBoneCollision3D::set_bone(int) {}
 
 Skeleton3D* SpringBoneCollision3D::get_skeleton() const {}
+
+

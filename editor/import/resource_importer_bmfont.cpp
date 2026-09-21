@@ -50,4 +50,9 @@ String ResourceImporterBMFont::get_save_extension() const { return "fontdata"; }
 
 String ResourceImporterBMFont::get_resource_type() const { return "FontFile"; }
 
+void ResourceImporterBMFont::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
 

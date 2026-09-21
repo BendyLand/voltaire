@@ -1309,4 +1309,16 @@ void AnimationNodeStateMachinePlayback::_clear_path_children(
 
 bool AnimationNodeStateMachine::can_edit_node(StringName const&) const { return true; }
 
+void AnimationNodeStateMachine::validate_node(
+	const AnimationTree* p_tree, const StringName& p_node) const
+{
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeStateMachine::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
 

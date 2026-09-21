@@ -117,4 +117,10 @@ void TwoBoneIK3DGizmoPlugin::draw_arrow(Ref<SurfaceTool>& p_surface_tool, const 
 	}
 }
 
+bool TwoBoneIK3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+int TwoBoneIK3DGizmoPlugin::get_priority() const { return 0; }
+
+void TwoBoneIK3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
 

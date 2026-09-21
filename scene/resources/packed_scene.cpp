@@ -603,7 +603,8 @@ Vector<String> SceneState::_get_node_groups(int p_idx) const
 	return ret;
 }
 
-Error PackedScene::pack(Node* p_scene) { return state->pack(p_scene); }
+Error PackedScene::pack(Node*
+p_scene) { return state->pack(p_scene); }
 
 void PackedScene::clear() { state->clear(); }
 
@@ -633,10 +634,12 @@ Ref<SceneState> SceneState::get_base_scene_state() const
 	return ss;
 }
 
-
-
 Node* PackedScene::instantiate(PackedScene::GenEditState) const {}
 
 Error SceneState::pack(Node*) {}
 
 void SceneState::clear() {}
+
+void PackedScene::reload_from_file() {}
+
+

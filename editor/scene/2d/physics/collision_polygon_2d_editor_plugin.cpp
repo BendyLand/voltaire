@@ -39,4 +39,6 @@ CollisionPolygon2DEditorPlugin::CollisionPolygon2DEditorPlugin()
 {
 }
 
+void CollisionPolygon2DEditor::_set_node(Node* p_node) {}
+
 

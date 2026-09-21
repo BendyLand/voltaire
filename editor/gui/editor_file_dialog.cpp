@@ -69,4 +69,8 @@ void EditorFileDialog::_dir_contents_changed()
 	}
 }
 
+bool EditorFileDialog::_should_use_native_popup() const { return false; }
+
+void EditorFileDialog::_item_menu_id_pressed(int p_id) {}
+
 

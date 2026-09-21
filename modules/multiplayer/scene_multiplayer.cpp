@@ -319,7 +319,6 @@ int SceneMultiplayer::get_max_delta_packet_size() const
 	return replicator->get_max_delta_packet_size();
 }
 
-
 SceneMultiplayer::SceneMultiplayer()
 {
 	relay_buffer.instantiate();
@@ -339,8 +338,6 @@ SceneMultiplayer::~SceneMultiplayer()
 	cache.unref();
 }
 
-
-
 void SceneMultiplayer::_admit_peer(int) {}
 
 void SceneMultiplayer::set_multiplayer_peer(Ref<MultiplayerPeer> const&) {}
@@ -350,3 +347,7 @@ void SceneMultiplayer::_process_packet(int, unsigned char const*, int) {}
 void SceneMultiplayer::_del_peer(int) {}
 
 void SceneMultiplayer::clear() {}
+
+Error SceneMultiplayer::poll() { return OK; }
+
+

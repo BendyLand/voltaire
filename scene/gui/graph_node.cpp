@@ -291,5 +291,12 @@ GraphNode::GraphNode()
 
 void GraphNode::_port_pos_update() {}
 
-
 Size2 GraphNode::_get_minimum_size(bool) const {}
+
+String GraphNode::get_accessibility_container_name(const Node* p_child) const { return String(); }
+
+String GraphNode::_get_accessibility_name() const { return String(); }
+
+void GraphNode::_resort() {}
+
+

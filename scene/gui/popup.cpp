@@ -312,4 +312,8 @@ void PopupPanel::_update_child_rects() const {}
 
 void Popup::_close_pressed() {}
 
+Size2 PopupPanel::_get_contents_minimum_size() const { return Size2(); }
+
+
+
 

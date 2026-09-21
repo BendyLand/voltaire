@@ -154,4 +154,9 @@ Polygon2D::~Polygon2D()
 
 void Polygon2D::set_offset(const Vector2& p_offset) {}
 
+bool Polygon2D::_edit_is_selected_on_click(const Vector2& p_point, double p_tolerance) const
+{
+	return false;
+}
+
 

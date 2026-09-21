@@ -106,4 +106,14 @@ Error ResourceFormatSaverShaderInclude::save(
 	return OK;
 }
 
+bool ResourceFormatSaverShaderInclude::recognize(const Ref<Resource>& p_resource) const
+{
+	return false;
+}
+
+void ResourceFormatSaverShaderInclude::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
+
 

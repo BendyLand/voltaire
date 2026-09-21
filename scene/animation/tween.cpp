@@ -502,4 +502,12 @@ String Tween::_to_string() { return String(); }
 
 bool CallbackTweener::step(double& r_delta) { return true; }
 
+void PropertyTweener::start() {}
+
+bool PropertyTweener::step(double& r_delta) { return true; }
+
+bool MethodTweener::step(double& r_delta) { return true; }
+
+bool AwaitTweener::step(double& r_delta) { return true; }
+
 

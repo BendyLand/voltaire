@@ -39,4 +39,9 @@ void EditorSceneFormatImporterGLTF::get_extensions(List<String>* r_extensions) c
 	r_extensions->push_back("glb");
 }
 
+void EditorSceneFormatImporterGLTF::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
+{
+}
+
 

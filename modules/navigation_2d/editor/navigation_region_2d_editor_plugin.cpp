@@ -69,6 +69,10 @@ NavigationRegion2DEditorPlugin::NavigationRegion2DEditorPlugin()
 {
 }
 
+void NavigationRegion2DEditor::_set_node(Node* p_node) {}
+
+void NavigationRegion2DEditor::_action_remove_polygon(int p_idx) {}
+
+void NavigationRegion2DEditor::_create_resource() {}
 
 
-NavigationRegion2DEditor::NavigationRegion2DEditor() {}

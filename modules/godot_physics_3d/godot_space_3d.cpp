@@ -554,6 +554,39 @@ bool GodotSpace3D::test_body_motion(GodotBody3D* p_body,
 	return false;
 }
 
-GodotSpace3D::GodotSpace3D() {}
+bool GodotPhysicsDirectSpaceState3D::intersect_ray(
+	const PhysicsServer3DTypes::RayParameters& p_ray_params,
+	PhysicsServer3DTypes::RayResult& r_result)
+{
+	return false;
+}
+
+int GodotPhysicsDirectSpaceState3D::intersect_point(
+	const PhysicsServer3DTypes::PointParameters& p_point_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int GodotPhysicsDirectSpaceState3D::intersect_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool GodotPhysicsDirectSpaceState3D::cast_motion(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
+	float& r_closest_unsafe, PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+bool GodotPhysicsDirectSpaceState3D::rest_info(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
 
 

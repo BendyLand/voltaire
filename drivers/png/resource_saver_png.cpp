@@ -83,6 +83,13 @@ ResourceSaverPNG::ResourceSaverPNG()
 	Image::save_png_buffer_func = &save_image_to_buffer;
 }
 
+Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) { return OK; }
+
+bool ResourceSaverPNG::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceSaverPNG::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
 
 
-Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) {}

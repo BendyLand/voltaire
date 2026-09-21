@@ -77,8 +77,8 @@ SkeletonModification2DPhysicalBones::SkeletonModification2DPhysicalBones()
 	editor_draw_gizmo = false; // Nothing to really show in a gizmo right now.
 }
 
-SkeletonModification2DPhysicalBones::~SkeletonModification2DPhysicalBones() {}
-
-
-
 void SkeletonModification2DPhysicalBones::_physical_bone_update_cache(int) {}
+
+void SkeletonModification2DPhysicalBones::_execute(float p_delta) {}
+
+

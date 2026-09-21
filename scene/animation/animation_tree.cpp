@@ -483,8 +483,7 @@ bool AnimationTree::_blend_pre_process(
 		}
 
 		AnimationNode::tls_process_state = &process_state;
-		root_animation_node->_pre_process(process_state, instance,
- pi, false);
+		root_animation_node->_pre_process(process_state, instance, pi, false);
 		AnimationNode::tls_process_state = nullptr;
 	}
 
@@ -615,14 +614,14 @@ void AnimationRootNode::_tree_changed() {}
 
 void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node) {}
 
-bool AnimationNode::add_input(const String& p_name)
-{
-	return true;
-}
+bool AnimationNode::add_input(const String& p_name) { return true; }
 
+uint32_t AnimationTree::_get_libraries_property_usage() const { return 0; }
 
 void AnimationTree::_update_properties() const {}
 
 void AnimationTree::_update_connections() {}
 
 void AnimationTree::_setup_animation_player() {}
+
+

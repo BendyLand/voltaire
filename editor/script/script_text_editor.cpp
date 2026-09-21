@@ -368,4 +368,28 @@ ScriptEditorBase* ScriptTextEditor::create_editor(Ref<Resource> const&) {}
 
 void ConnectionInfoDialog::ok_pressed() {}
 
+void ScriptTextEditor::_validate_script() {}
+
+void ScriptTextEditor::update_settings() {}
+
+void ScriptTextEditor::set_edited_resource(const Ref<Resource>& p_res) {}
+
+void ScriptTextEditor::_load_theme_settings() {}
+
+Ref<Texture2D> ScriptTextEditor::get_theme_icon()
+{
+	Ref<Texture2D> t = memnew(Texture2D);
+	return t;
+}
+
+Vector<String> ScriptTextEditor::get_functions() { return Vector<String>(); }
+
+void ScriptTextEditor::enable_editor() {}
+
+bool ScriptTextEditor::_edit_option(int p_op) {}
+
+void ScriptTextEditor::apply_code() {}
+
+void ScriptTextEditor::add_callback(const String& p_function, const PackedStringArray& p_args) {}
+
 

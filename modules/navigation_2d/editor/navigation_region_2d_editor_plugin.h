@@ -75,7 +75,7 @@ protected:
 	virtual void _create_resource() override;
 
 public:
-	NavigationRegion2DEditor();
+	NavigationRegion2DEditor() = default;
 };
 
 class NavigationRegion2DEditorPlugin : public AbstractPolygon2DEditorPlugin

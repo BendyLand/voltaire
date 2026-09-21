@@ -346,4 +346,6 @@ void JoltArea3D::area_shape_entered(
 {
 }
 
+void JoltArea3D::_add_to_space() {}
+
 
