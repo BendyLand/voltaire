@@ -130,13 +130,10 @@ RID Luminance::get_current_luminance_buffer(Ref<RenderSceneBuffersRD> p_render_b
 	return RID();
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::Luminance::luminance_reduction(RID p_source_texture, Vector2i p_size,
 	Ref<RendererRD::Luminance::LuminanceBuffers> p_buffers, float p_min_luminance,
 	float p_max_luminance, float p_frame_time, bool p_immediate)
 {
 }
 
->>>>>>> fix/remove-object
 

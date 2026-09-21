@@ -40,12 +40,9 @@ FSR::~FSR()
 	fsr_shader.version_free(shader_version);
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::FSR::process(
 	Ref<RenderSceneBuffersRD> p_buffers, RID p_color_image, RID p_dst_image)
 {
 }
 
->>>>>>> fix/remove-object
 

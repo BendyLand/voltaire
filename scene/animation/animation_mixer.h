@@ -328,10 +328,6 @@ protected:
 	virtual void _process_animation(double p_delta, bool p_update_only = false);
 
 	// For post process with retrieved key value during blending.
-<<<<<<< HEAD
-	void _blend_init();
-=======
->>>>>>> fix/remove-object
 	virtual bool _blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map);
 	virtual void _blend_capture(double p_delta);

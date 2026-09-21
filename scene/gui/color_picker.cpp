@@ -218,70 +218,6 @@ void ColorPicker::_reset_sliders_theme()
 	alpha_slider->end_bulk_theme_override();
 }
 
-<<<<<<< HEAD
-void ColorPicker::_update_color(bool p_update_sliders)
-{
-	updating = true;
-
-	if (p_update_sliders) {
-		float step = modes[current_mode]->get_slider_step();
-		float spinbox_arrow_step = modes[current_mode]->get_spinbox_arrow_step();
-		for (int i = 0; i < current_slider_count; i++) {
-			sliders[i]->set_max(modes[current_mode]->get_slider_max(i));
-			sliders[i]->set_step(step);
-			sliders[i]->set_value(modes[current_mode]->get_slider_value(i));
-			values[i]->set_custom_arrow_step(spinbox_arrow_step);
-			values[i]->set_allow_greater(modes[current_mode]->get_allow_greater());
-		}
-		alpha_slider->set_max(modes[current_mode]->get_alpha_slider_max());
-		alpha_slider->set_step(step);
-		alpha_slider->set_value(modes[current_mode]->get_alpha_slider_value());
-		intensity_slider->set_value(intensity);
-		intensity_value->set_prefix(intensity < 0 ? "" : "+");
-	}
-
-	_update_text_value();
-
-	if (current_shape != SHAPE_NONE) {
-		for (Control* control : shapes[get_current_shape_index()]->controls) {
-			control->queue_redraw();
-		}
-	}
-
-	sample->queue_redraw();
-
-	for (int i = 0; i < current_slider_count; i++) {
-		sliders[i]->queue_redraw();
-	}
-	alpha_slider->queue_redraw();
-	updating = false;
-	queue_accessibility_update();
-}
-
-#ifdef TOOLS_ENABLED
-void ColorPicker::_text_type_toggled()
-{
-	text_is_constructor = !text_is_constructor;
-	if (text_is_constructor) {
-		hex_label->set_text(ETR("Expr"));
-		text_type->set_text("");
-		text_type->set_button_icon(theme_cache.color_script);
-
-		c_text->set_tooltip_text(RTR("Execute an expression as a color."));
-	}
-	else {
-		hex_label->set_text(ETR("Hex"));
-		text_type->set_text("#");
-		text_type->set_button_icon(nullptr);
-
-		c_text->set_tooltip_text(ETR("Enter a hex code (\"#ff0000\") or named color (\"red\")."));
-	}
-	_update_color();
-}
-#endif // TOOLS_ENABLED
-
-=======
->>>>>>> fix/remove-object
 void ColorPicker::_text_copy_pressed()
 {
 	DisplayServer::get_singleton()->clipboard_set(c_text->get_text());
@@ -322,48 +258,6 @@ GridContainer* ColorPicker::get_slider_container() { return slider_gc; }
 
 #endif // ifdef TOOLS_ENABLED
 
-<<<<<<< HEAD
-void ColorPicker::_show_hide_preset(
-	const bool& p_is_btn_pressed, Button* p_btn_preset, Container* p_preset_container)
-{
-	if (p_is_btn_pressed) {
-		p_preset_container->show();
-	}
-	else {
-		p_preset_container->hide();
-	}
-	_update_drop_down_arrow(p_is_btn_pressed, p_btn_preset);
-
-	palette_name->hide();
-	if (btn_preset->is_pressed() && !palette_name->get_text().is_empty()) {
-		palette_name->show();
-	}
-}
-
-void ColorPicker::_update_drop_down_arrow(const bool& p_is_btn_pressed, Button* p_btn_preset)
-{
-	if (p_is_btn_pressed) {
-		p_btn_preset->set_button_icon(theme_cache.expanded_arrow);
-	}
-	else {
-		p_btn_preset->set_button_icon(theme_cache.folded_arrow);
-	}
-}
-
-void ColorPicker::_set_mode_popup_value(ColorModeType p_mode)
-{
-	ERR_FAIL_INDEX(p_mode, MODE_MAX + 1);
-
-	if (p_mode == MODE_MAX) {
-		set_colorize_sliders(!colorize_sliders);
-	}
-	else {
-		set_color_mode(p_mode);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 PackedColorArray ColorPicker::get_presets() const
 {
 	PackedColorArray arr;
@@ -425,31 +319,6 @@ void ColorPicker::set_deferred_mode(bool p_enabled) { deferred_mode_enabled = p_
 
 bool ColorPicker::is_deferred_mode() const { return deferred_mode_enabled; }
 
-<<<<<<< HEAD
-void ColorPicker::_update_text_value()
-{
-	if (text_is_constructor || !is_color_valid_hex(color)) {
-		String t = "Color" + color_to_string(color, edit_alpha && color.a < 1, true);
-
-		text_type->set_text("");
-		text_type->set_button_icon(theme_cache.color_script);
-		text_type->set_disabled(!is_color_valid_hex(color));
-		hex_label->set_text(ETR("Expr"));
-		c_text->set_text(t);
-		c_text->set_tooltip_text(RTR("Execute an expression as a color."));
-	}
-	else {
-		text_type->set_text("#");
-		text_type->set_button_icon(nullptr);
-		text_type->set_disabled(false);
-		hex_label->set_text(ETR("Hex"));
-		c_text->set_text(color.to_html(edit_alpha && color.a < 1));
-		c_text->set_tooltip_text(ETR("Enter a hex code (\"#ff0000\") or named color (\"red\")."));
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ColorPicker::_sample_draw()
 {
 	// Covers the right half of the sample if the old color is being displayed,
@@ -568,81 +437,6 @@ void ColorPicker::_line_edit_input(const Ref<InputEvent>& p_event)
 
 void ColorPicker::_text_changed(const String&) { text_changed = true; }
 
-<<<<<<< HEAD
-void ColorPicker::_target_gui_input(const Ref<InputEvent>& p_event)
-{
-	const Ref<InputEventMouseButton> mouse_event = p_event;
-	if (mouse_event.is_null()) {
-		return;
-	}
-	if (mouse_event->get_button_index() == MouseButton::LEFT) {
-		if (mouse_event->is_pressed()) {
-			picker_window->hide();
-			_pick_finished();
-		}
-	}
-	else if (mouse_event->get_button_index() == MouseButton::RIGHT) {
-		set_pick_color(pre_picking_color); // Cancel.
-		is_picking_color = false;
-		set_process_internal(false);
-		picker_window->hide();
-	}
-	else {
-		Window* w = picker_window->get_parent_visible_window();
-		while (w) {
-			Point2i win_mpos = w->get_mouse_position(); // Mouse position local to the window.
-			Size2i win_size = w->get_size();
-			if (win_mpos.x >= 0 && win_mpos.y >= 0 && win_mpos.x <= win_size.x &&
-				win_mpos.y <= win_size.y) {
-				// Mouse event inside window bounds, forward this event to the window.
-				Ref<InputEventMouseButton> new_ev = p_event->duplicate();
-				new_ev->set_position(win_mpos);
-				new_ev->set_global_position(win_mpos);
-				w->push_input(new_ev.ptr(), true);
-				return;
-			}
-			w = w->get_parent_visible_window();
-		}
-	}
-}
-
-void ColorPicker::_update_menu_items()
-{
-	options_menu->clear();
-	options_menu->reset_size();
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("save"), SNAME("FileDialog")), ETR("Save"),
-		static_cast<int>(MenuOption::MENU_SAVE));
-	options_menu->set_item_tooltip(-1, ETR("Save the current color palette to reuse later."));
-	options_menu->set_item_disabled(-1, presets.is_empty());
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("save"), SNAME("FileDialog")), ETR("Save As"),
-		static_cast<int>(MenuOption::MENU_SAVE_AS));
-	options_menu->set_item_tooltip(
-		-1, ETR("Save the current color palette as a new to reuse later."));
-	options_menu->set_item_disabled(-1, palette_path.is_empty());
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("load"), SNAME("FileDialog")), ETR("Load"),
-		static_cast<int>(MenuOption::MENU_LOAD));
-	options_menu->set_item_tooltip(-1, ETR("Load existing color palette."));
-
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		options_menu->add_icon_item(get_theme_icon(SNAME("load"), SNAME("FileDialog")),
-			TTRC("Quick Load"), static_cast<int>(MenuOption::MENU_QUICKLOAD));
-		options_menu->set_item_tooltip(-1, TTRC("Load existing color palette."));
-	}
-#endif // TOOLS_ENABLED
-
-	options_menu->add_icon_item(get_theme_icon(SNAME("clear"), SNAME("FileDialog")), ETR("Clear"),
-		static_cast<int>(MenuOption::MENU_CLEAR));
-	options_menu->set_item_tooltip(
-		-1, ETR("Clear the currently loaded color palettes in the picker."));
-	options_menu->set_item_disabled(-1, presets.is_empty());
-}
-
-=======
->>>>>>> fix/remove-object
 void ColorPicker::_block_input_on_popup_show()
 {
 	if (!get_tree()->get_root()->is_embedding_subwindows()) {
@@ -657,39 +451,6 @@ void ColorPicker::_enable_input_on_popup_hide()
 	}
 }
 
-<<<<<<< HEAD
-void ColorPicker::_html_focus_exit()
-{
-	if (c_text->is_menu_visible()) {
-		return;
-	}
-
-	if (is_visible_in_tree()) {
-		_html_submitted(c_text->get_text());
-	}
-	else {
-		_update_text_value();
-	}
-}
-
-void ColorPicker::set_can_add_swatches(bool p_enabled)
-{
-	if (can_add_swatches == p_enabled) {
-		return;
-	}
-	can_add_swatches = p_enabled;
-	if (!p_enabled) {
-		btn_add_preset->set_disabled(true);
-		btn_add_preset->set_focus_mode(FOCUS_NONE);
-	}
-	else {
-		btn_add_preset->set_disabled(false);
-		btn_add_preset->set_focus_mode(FOCUS_ALL);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool ColorPicker::are_swatches_enabled() const { return can_add_swatches; }
 
 bool ColorPicker::are_presets_visible() const { return presets_visible; }
@@ -702,11 +463,6 @@ bool ColorPicker::are_sliders_visible() const { return sliders_visible; }
 
 bool ColorPicker::is_hex_visible() const { return hex_visible; }
 
-<<<<<<< HEAD
-void ColorPicker::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void ColorPicker::_req_permission()
 {
 #ifdef MACOS_ENABLED
@@ -732,22 +488,6 @@ void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
 	PopupPanel::_input_from_window(p_event);
 }
 
-<<<<<<< HEAD
-/////////////////
-
-void ColorPickerButton::_about_to_popup()
-{
-	if (!get_tree()->get_root()->is_embedding_subwindows()) {
-		get_viewport()->set_disable_input(true);
-	}
-	set_pressed(true);
-	if (picker) {
-		picker->set_old_color(color);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ColorPickerButton::_notification(int p_what)
 {
 	switch (p_what) {
@@ -796,28 +536,6 @@ bool ColorPickerButton::is_editing_alpha() const { return edit_alpha; }
 
 bool ColorPickerButton::is_editing_intensity() const { return edit_intensity; }
 
-<<<<<<< HEAD
-ColorPicker* ColorPickerButton::get_picker()
-{
-	_update_picker();
-	return picker;
-}
-
-PopupPanel* ColorPickerButton::get_popup()
-{
-	_update_picker();
-	return popup;
-}
-
-ColorPickerButton::ColorPickerButton(const String& p_text) : Button(p_text)
-{
-	set_toggle_mode(true);
-}
-
-/////////////////
-
-=======
->>>>>>> fix/remove-object
 void ColorPresetButton::_notification(int p_what)
 {
 	switch (p_what) {
@@ -840,9 +558,4 @@ void ColorPresetButton::set_preset_color(const Color& p_color)
 
 Color ColorPresetButton::get_preset_color() const { return preset_color; }
 
-<<<<<<< HEAD
-ColorPresetButton::~ColorPresetButton() {}
-
-=======
->>>>>>> fix/remove-object
 

@@ -108,11 +108,6 @@ private:
 	void _docks_menu_option(int p_id);
 
 	EditorDock* _close_window(WindowWrapper* p_wrapper);
-<<<<<<< HEAD
-	void _open_dock_in_window(
-		EditorDock* p_dock, bool p_show_window = true, bool p_reset_size = false);
-=======
->>>>>>> fix/remove-object
 
 	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
 	void _move_dock(

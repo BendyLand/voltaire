@@ -155,12 +155,9 @@ static void _plot_triangle(Vector2i* p_vertices, const Vector2i& p_offset, bool 
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ResourceImporterTextureAtlas::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
 }
->>>>>>> fix/remove-object
 
 

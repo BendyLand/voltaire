@@ -34,23 +34,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void MenuButton::_popup_visibility_changed(bool p_visible)
-{
-	set_pressed(p_visible);
-
-	if (!p_visible) {
-		set_process_internal(false);
-		return;
-	}
-
-	if (switch_on_hover) {
-		set_process_internal(true);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void MenuButton::pressed()
 {
 	if (popup->is_visible()) {

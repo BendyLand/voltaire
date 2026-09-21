@@ -59,11 +59,6 @@ private:
 	bool init_needed = true;
 
 protected:
-<<<<<<< HEAD
-	void _notification(int p_what);
-
-=======
->>>>>>> fix/remove-object
 	virtual void _set_active(bool p_active) override;
 	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
 

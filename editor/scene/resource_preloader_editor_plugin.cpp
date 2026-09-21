@@ -51,13 +51,6 @@ void ResourcePreloaderEditor::_notification(int p_what)
 			_update_library();
 		}
 	} break;
-<<<<<<< HEAD
-
-	case NOTIFICATION_THEME_CHANGED: {
-		load->set_button_icon(get_editor_theme_icon(SNAME("Folder")));
-	} break;
-=======
->>>>>>> fix/remove-object
 	}
 }
 
@@ -108,15 +101,6 @@ void ResourcePreloaderEditor::update_layout(EditorDock::DockLayout p_layout, int
 	}
 }
 
-<<<<<<< HEAD
-ResourcePreloaderEditorPlugin::ResourcePreloaderEditorPlugin()
-{
-	preloader_editor = memnew(ResourcePreloaderEditor);
-	EditorDockManager::get_singleton()->add_dock(preloader_editor);
-	preloader_editor->close();
-}
-=======
->>>>>>> fix/remove-object
 
 
 void ResourcePreloaderEditor::_update_library() {}

@@ -93,14 +93,6 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 	_update_mirroring();
 }
 
-<<<<<<< HEAD
-ParallaxLayer::ParallaxLayer()
-{
-	// ParallaxLayer is always updated every frame so there is no need to interpolate.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-}
-=======
->>>>>>> fix/remove-object
 
 
 void ParallaxLayer::_update_mirroring() {}

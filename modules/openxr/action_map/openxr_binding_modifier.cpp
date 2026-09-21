@@ -30,14 +30,7 @@
 
 #include "openxr_binding_modifier.h"
 
-<<<<<<< HEAD
-
-PackedByteArray OpenXRBindingModifier::get_ip_modification() {
-	return PackedByteArray();
-}
-=======
 PackedByteArray OpenXRBindingModifier::get_ip_modification() { return PackedByteArray(); }
->>>>>>> fix/remove-object
 
 #include "openxr_binding_modifier.h"
 

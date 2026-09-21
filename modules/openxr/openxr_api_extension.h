@@ -138,7 +138,3 @@ public:
 	OpenXRAPIExtension();
 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

@@ -37,19 +37,6 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/resources/image_texture.h"
 
-<<<<<<< HEAD
-void BitMapEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		cached_outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void BitMapEditor::_draw_outline()
 {
 	const float outline_width = Math::round(EDSCALE);

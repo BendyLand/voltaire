@@ -874,21 +874,6 @@ public:
 	RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
 		const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
 
-<<<<<<< HEAD
-	RID index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
-		Span<uint8_t> p_data = {}, bool p_use_restart_indices = false,
-		uint32_t p_creation_bits = 0);
-
-	RID _index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format,
-		const Vector<uint8_t>& p_data, bool p_use_restart_indices = false,
-		uint32_t p_creation_bits = 0)
-	{
-		return index_buffer_create(
-			p_index_count, p_format, p_data, p_use_restart_indices, p_creation_bits);
-	}
-
-=======
->>>>>>> fix/remove-object
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
 private:
@@ -1621,13 +1606,6 @@ public:
 	/**
 	 * @param p_clear_color_values Color values must use linear encoding when HDR 2D is active.
 	 */
-<<<<<<< HEAD
-	DrawListID draw_list_begin(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
-		VectorView<Color> p_clear_color_values = VectorView<Color>(),
-		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
-		const Rect2& p_region = Rect2(), uint32_t p_breadcrumb = 0);
-=======
->>>>>>> fix/remove-object
 	DrawListID _draw_list_begin_bind(RID p_framebuffer, uint32_t p_draw_flags = DRAW_DEFAULT_ALL,
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 1.0f, uint32_t p_clear_stencil_value = 0,
@@ -1982,11 +1960,6 @@ public:
 #endif
 
 public:
-<<<<<<< HEAD
-	void finalize();
-
-=======
->>>>>>> fix/remove-object
 	void _set_max_fps(int p_max_fps);
 
 	void free_rid(RID p_rid);

@@ -66,24 +66,4 @@ void EditorDirDialog::_item_activated()
 	}
 }
 
-<<<<<<< HEAD
-void EditorDirDialog::_make_dir_confirm(const String& p_path, const String& p_base_dir)
-{
-	FileSystemDock::get_singleton()->create_directory(p_path, p_base_dir);
-
-	// Multiple level of directories can be created at once.
-	String base_dir = p_path.get_base_dir();
-	while (true) {
-		opened_paths.insert(base_dir + "/");
-		if (base_dir == "res://") {
-			break;
-		}
-		base_dir = base_dir.get_base_dir();
-	}
-
-	new_dir_path = p_path + "/";
-}
-
-=======
->>>>>>> fix/remove-object
 

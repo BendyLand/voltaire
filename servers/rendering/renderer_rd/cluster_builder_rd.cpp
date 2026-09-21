@@ -264,12 +264,9 @@ ClusterBuilderRD::~ClusterBuilderRD()
 }
 
 
-<<<<<<< HEAD
-=======
 
 void ClusterBuilderRD::debug(ClusterBuilderRD::ElementType) {}
 
 ClusterBuilderRD::ClusterBuilderRD() {}
 
 void ClusterBuilderRD::bake_cluster() {}
->>>>>>> fix/remove-object

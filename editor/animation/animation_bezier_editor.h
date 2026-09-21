@@ -98,13 +98,6 @@ class AnimationBezierTrackEdit : public Control
 	bool _unlock_track(int p_track);
 	bool _show_track(int p_track);
 
-<<<<<<< HEAD
-	void _play_position_draw();
-	bool _is_track_displayed(int p_track_index);
-	bool _is_track_curves_displayed(int p_track_index);
-
-=======
->>>>>>> fix/remove-object
 	typedef Pair<int, int> IntPair;
 
 	bool moving_selection_attempt = false;
@@ -200,12 +193,6 @@ class AnimationBezierTrackEdit : public Control
 	float _bezier_h_to_pixel(float p_h);
 	void _zoom_vertically(real_t p_minimum_value, real_t p_maximum_value);
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	Ref<Animation> get_animation() const;
 
@@ -213,14 +200,6 @@ public:
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
 	void set_root(Node* p_root);
-<<<<<<< HEAD
-	void set_filtered(bool p_filtered);
-	void auto_fit_vertically();
-
-	void set_play_position(real_t p_pos);
-	void update_play_position();
-=======
->>>>>>> fix/remove-object
 
 	void _bezier_track_insert_key_at_anim(const Ref<Animation>& p_anim, int p_track, double p_time,
 		real_t p_value, const Vector2& p_in_handle, const Vector2& p_out_handle,

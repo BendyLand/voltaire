@@ -153,12 +153,6 @@ private:
 	void _ssh_private_key_selected(const String& p_path);
 	void _populate_available_vcs_names();
 	void _update_remotes_list();
-<<<<<<< HEAD
-	void _update_set_up_warning(const String& p_new_text);
-	void _update_opened_tabs();
-	void _update_extra_options();
-=======
->>>>>>> fix/remove-object
 
 	bool _load_plugin(const String& p_name);
 
@@ -181,23 +175,10 @@ private:
 	void _create_remote();
 	void _update_branch_create_button(const String& p_new_text);
 	void _update_remote_create_button(const String& p_new_text);
-<<<<<<< HEAD
-	void _branch_item_selected(int p_index);
-	void _remote_selected(int p_index);
-	void _remove_branch();
-	void _remove_remote();
-	void _popup_branch_remove_confirm(int p_index);
-	void _popup_remote_remove_confirm(int p_index);
-	void _move_item(Tree* p_tree, TreeItem* p_itme);
-	void _display_diff_split_view(List<EditorVCSInterface::DiffLine>& p_diff_content);
-	void _display_diff_unified_view(List<EditorVCSInterface::DiffLine>& p_diff_content);
-	void _discard_file(const String& p_file_path, EditorVCSInterface::ChangeType p_change);
-=======
 	void _remote_selected(int p_index);
 	void _remove_branch();
 	void _remove_remote();
 	void _move_item(Tree* p_tree, TreeItem* p_itme);
->>>>>>> fix/remove-object
 	void _add_new_item(
 		Tree* p_tree, const String& p_file_path, EditorVCSInterface::ChangeType p_change);
 	void _update_commit_button();
@@ -215,10 +196,6 @@ protected:
 public:
 	static VersionControlEditorPlugin* get_singleton();
 
-<<<<<<< HEAD
-	void popup_vcs_metadata_dialog();
-=======
->>>>>>> fix/remove-object
 	void popup_vcs_set_up_dialog(const Control* p_gui_base);
 
 	PopupMenu* get_version_control_actions_panel() const { return version_control_actions; }

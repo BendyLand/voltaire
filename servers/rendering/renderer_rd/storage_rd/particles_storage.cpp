@@ -1115,11 +1115,6 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	if (sub_emitter && sub_emitter->emission_storage_buffer.is_valid()) {
 		//	print_line("updating subemitter buffer");
 		int32_t zero[4] = {0, sub_emitter->amount, 0, 0};
-<<<<<<< HEAD
-		RD::get_singleton()->buffer_update(
-			sub_emitter->emission_storage_buffer, 0, sizeof(uint32_t) * 4, zero);
-=======
->>>>>>> fix/remove-object
 		push_constant.can_emit = true;
 
 		if (sub_emitter->emitting) {
@@ -1138,13 +1133,6 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	}
 
 	if (p_particles->emission_buffer && p_particles->emission_buffer->particle_count) {
-<<<<<<< HEAD
-		RD::get_singleton()->buffer_update(p_particles->emission_storage_buffer, 0,
-			sizeof(uint32_t) * 4 +
-				sizeof(ParticleEmissionBuffer::Data) * p_particles->emission_buffer->particle_count,
-			p_particles->emission_buffer);
-=======
->>>>>>> fix/remove-object
 		p_particles->emission_buffer->particle_count = 0;
 	}
 
@@ -1166,13 +1154,6 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		p_particles->trail_params[0] = p_particles->frame_history[0];
 	}
 
-<<<<<<< HEAD
-	RD::get_singleton()->buffer_update(p_particles->frame_params_buffer, 0,
-		sizeof(ParticlesFrameParams) * p_particles->trail_params.size(),
-		p_particles->trail_params.ptr());
-
-=======
->>>>>>> fix/remove-object
 	ParticleProcessMaterialData* m =
 		static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
 			p_particles->process_material, MaterialStorage::SHADER_TYPE_PARTICLES));
@@ -1578,8 +1559,6 @@ void ParticlesStorage::particles_collision_instance_set_active(
 	pci->active = p_active;
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::ParticlesStorage::_particles_update_buffers(
 	RendererRD::ParticlesStorage::Particles* p_particles)
 {
@@ -1594,5 +1573,4 @@ void RendererRD::ParticlesStorage::update_particles() {}
 
 void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p_code) {}
 
->>>>>>> fix/remove-object
 

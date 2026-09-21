@@ -60,14 +60,11 @@ void JoltConvexPolygonShape3D::set_margin(float p_margin)
 	destroy();
 }
 
-<<<<<<< HEAD
-=======
 JPH::ShapeRefC JoltConvexPolygonShape3D::_build() const
 {
 	return JPH::ShapeRefC();
 }
 
->>>>>>> fix/remove-object
 String JoltConvexPolygonShape3D::to_string() const
 {
 	return vformat("{vertex_count=%d margin=%f}", vertices.size(), margin);

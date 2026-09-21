@@ -42,13 +42,9 @@ static Ref<Image> _webp_mem_loader_func(const uint8_t* p_webp_data, int p_size)
 	return img;
 }
 
-<<<<<<< HEAD
-Error ImageLoaderWebP::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
-=======
 Error ImageLoaderWebP::load_image(
 	Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
 {
->>>>>>> fix/remove-object
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);

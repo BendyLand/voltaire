@@ -171,10 +171,7 @@ float Area3D::get_reverb_uniformity() const { return reverb_uniformity; }
 Area3D::Area3D() {}
 
 
-<<<<<<< HEAD
-=======
 
 void Area3D::_initialize_wind() {}
 
 void Area3D::_clear_monitoring() {}
->>>>>>> fix/remove-object

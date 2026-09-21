@@ -110,8 +110,6 @@ Vector<RID> RendererCompositorStorage::compositor_get_compositor_effects(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererCompositorStorage::compositor_effect_set_flag(
 	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag, bool p_set)
 {
@@ -127,5 +125,4 @@ bool RendererCompositorStorage::compositor_effect_get_flag(
 
 void RendererCompositorStorage::compositor_effect_free(RID p_effect) {}
 
->>>>>>> fix/remove-object
 

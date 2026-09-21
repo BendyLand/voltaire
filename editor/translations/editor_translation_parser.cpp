@@ -42,11 +42,6 @@ void EditorTranslationParserPlugin::get_recognized_extensions(List<String>* r_ex
 	}
 }
 
-<<<<<<< HEAD
-/////////////////////////
-
-=======
->>>>>>> fix/remove-object
 void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensions) const
 {
 	HashSet<String> extensions;
@@ -156,8 +151,6 @@ EditorTranslationParser::~EditorTranslationParser()
 	singleton = nullptr;
 }
 
-<<<<<<< HEAD
-=======
 void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>>&) const {}
 
 Error EditorTranslationParserPlugin::parse_file(
@@ -166,5 +159,4 @@ Error EditorTranslationParserPlugin::parse_file(
 	return OK;
 }
 
->>>>>>> fix/remove-object
 

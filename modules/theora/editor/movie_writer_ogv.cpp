@@ -446,8 +446,5 @@ void MovieWriterOGV::write_end()
 }
 
 
-<<<<<<< HEAD
-=======
 
 MovieWriterOGV::MovieWriterOGV() {}
->>>>>>> fix/remove-object

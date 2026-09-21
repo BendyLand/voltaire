@@ -580,11 +580,6 @@ void AnimatedSprite3D::set_autoplay(const String& p_name)
 
 String AnimatedSprite3D::get_autoplay() const { return autoplay; }
 
-<<<<<<< HEAD
-void AnimatedSprite3D::play_backwards(const StringName& p_name) { play(p_name, -1, true); }
-
-=======
->>>>>>> fix/remove-object
 void AnimatedSprite3D::pause() { _stop_internal(false); }
 
 void AnimatedSprite3D::stop() { _stop_internal(true); }

@@ -229,14 +229,6 @@ class EditorAssetLibraryItemDownload : public MarginContainer
 	EditorAssetInstaller* asset_installer = nullptr;
 
 	void _close();
-<<<<<<< HEAD
-	void _make_request();
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_external_install(bool p_enable) { external_install = p_enable; }
@@ -244,11 +236,6 @@ public:
 	String get_asset_id() { return asset_id; }
 
 	bool can_install() const;
-<<<<<<< HEAD
-
-	EditorAssetLibraryItemDownload();
-=======
->>>>>>> fix/remove-object
 };
 
 class EditorAssetLibrary : public PanelContainer
@@ -267,11 +254,6 @@ class EditorAssetLibrary : public PanelContainer
 	VBoxContainer* library_message_box = nullptr;
 	Label* library_message = nullptr;
 	Button* library_message_button = nullptr;
-<<<<<<< HEAD
-
-	void _set_library_message(const String& p_message);
-=======
->>>>>>> fix/remove-object
 
 	LineEdit* filter = nullptr;
 	Timer* filter_debounce_timer = nullptr;
@@ -348,12 +330,6 @@ class EditorAssetLibrary : public PanelContainer
 	HashMap<int, ImageQueue> image_queue;
 
 	static void _image_update(void* p_image_queue);
-<<<<<<< HEAD
-	void _image_request_completed(int p_status, int p_code, const PackedStringArray& headers,
-		const PackedByteArray& p_data, int p_queue_id);
-	void _update_image_queue();
-=======
->>>>>>> fix/remove-object
 
 	int current_page = 0;
 
@@ -377,20 +353,9 @@ class EditorAssetLibrary : public PanelContainer
 
 	EditorAssetLibraryItemDescription* description = nullptr;
 
-<<<<<<< HEAD
-	void _tag_clicked(const String& p_tag);
-
-=======
->>>>>>> fix/remove-object
 	void _select_author(const String& p_author);
 	void _manage_plugins();
 
-<<<<<<< HEAD
-	void _search(int p_page = 1);
-	void _api_request(
-		const String& p_request, RequestType p_request_type, bool p_is_parallel = false);
-=======
->>>>>>> fix/remove-object
 	void _request_current_config();
 	EditorAssetLibraryItemDownload* _get_asset_in_progress(const String& p_asset_id) const;
 
@@ -419,11 +384,6 @@ public:
 	virtual String get_plugin_name() const override { return TTRC("Asset Store"); }
 
 	bool has_main_screen() const override { return true; }
-<<<<<<< HEAD
-
-	AssetLibraryEditorPlugin();
-=======
->>>>>>> fix/remove-object
 };
 
 

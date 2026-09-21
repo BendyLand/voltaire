@@ -37,63 +37,9 @@
 
 TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }
 
-<<<<<<< HEAD
-void Label::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim == (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		return;
-	}
-
-	autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	update_configuration_warnings();
-
-	if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
-		update_minimum_size();
-	}
-	update_desired_size();
-}
-
-uint32_t Label::get_autowrap_trim_flags() const
-{
-	return autowrap_flags_trim;
-}
-
-void Label::set_justification_flags(uint32_t p_flags)
-{
-	if (jst_flags == p_flags) {
-		return;
-	}
-
-	jst_flags = p_flags;
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-}
-
-uint32_t Label::get_justification_flags() const { return jst_flags; }
-
-void Label::set_uppercase(bool p_uppercase)
-{
-	if (uppercase == p_uppercase) {
-		return;
-	}
-
-	uppercase = p_uppercase;
-	text_dirty = true;
-
-	queue_accessibility_update();
-	queue_redraw();
-}
-=======
 uint32_t Label::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
 
 uint32_t Label::get_justification_flags() const { return jst_flags; }
->>>>>>> fix/remove-object
 
 bool Label::is_uppercase() const { return uppercase; }
 
@@ -128,11 +74,6 @@ int Label::get_line_height(int p_line) const
 	}
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void Label::_update_visible() const
 {
 	int line_spacing =
@@ -731,34 +672,6 @@ HorizontalAlignment Label::get_horizontal_alignment() const { return horizontal_
 
 VerticalAlignment Label::get_vertical_alignment() const { return vertical_alignment; }
 
-<<<<<<< HEAD
-
-
-void Label::_invalidate()
-{
-	font_dirty = true;
-	queue_redraw();
-	update_configuration_warnings();
-}
-
-void Label::_maximum_size_changed()
-{
-	if (autowrap_mode == TextServer::AUTOWRAP_OFF &&
-		overrun_behavior == TextServer::OVERRUN_NO_TRIMMING) {
-		return;
-	}
-
-	for (Paragraph& para : paragraphs) {
-		para.lines_dirty = true;
-	}
-	queue_redraw();
-	update_minimum_size();
-	update_desired_size();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<LabelSettings> Label::get_label_settings() const { return settings; }
 
 TextServer::StructuredTextParser Label::get_structured_text_bidi_override() const
@@ -766,13 +679,6 @@ TextServer::StructuredTextParser Label::get_structured_text_bidi_override() cons
 	return st_parser;
 }
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 Control::TextDirection Label::get_text_direction() const { return text_direction; }
 
 String Label::get_language() const { return language; }

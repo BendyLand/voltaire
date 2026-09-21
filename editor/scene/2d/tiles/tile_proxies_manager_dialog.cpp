@@ -43,44 +43,6 @@ void TileProxiesManagerDialog::_menu_id_pressed(int p_id)
 	}
 }
 
-<<<<<<< HEAD
-void TileProxiesManagerDialog::_update_enabled_property_editors()
-{
-	if (from.source_id == TileSet::INVALID_SOURCE) {
-		from.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-		to.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-		from.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-		to.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-		coords_from_property_editor->hide();
-		coords_to_property_editor->hide();
-		alternative_from_property_editor->hide();
-		alternative_to_property_editor->hide();
-	}
-	else if (from.get_atlas_coords().x == -1 || from.get_atlas_coords().y == -1) {
-		from.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-		to.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-		coords_from_property_editor->show();
-		coords_to_property_editor->show();
-		alternative_from_property_editor->hide();
-		alternative_to_property_editor->hide();
-	}
-	else {
-		coords_from_property_editor->show();
-		coords_to_property_editor->show();
-		alternative_from_property_editor->show();
-		alternative_to_property_editor->show();
-	}
-
-	source_from_property_editor->update_property();
-	source_to_property_editor->update_property();
-	coords_from_property_editor->update_property();
-	coords_to_property_editor->update_property();
-	alternative_from_property_editor->update_property();
-	alternative_to_property_editor->update_property();
-}
-
-=======
->>>>>>> fix/remove-object
 void TileProxiesManagerDialog::cancel_pressed()
 {
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
@@ -99,10 +61,7 @@ void TileProxiesManagerDialog::update_tile_set(Ref<TileSet> p_tile_set)
 	_update_lists();
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void TileProxiesManagerDialog::_update_lists() {}
 

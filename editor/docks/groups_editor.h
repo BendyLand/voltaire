@@ -88,12 +88,6 @@ class GroupsEditor : public VBoxContainer
 	void _show_remove_group_dialog();
 
 	void _check_rename();
-<<<<<<< HEAD
-	void _validate_name(const String& p_name, EditorValidationPanel* p_validation_panel);
-
-	void _update_tree();
-=======
->>>>>>> fix/remove-object
 
 	void _update_groups();
 	void _load_scene_groups(Node* p_node);
@@ -133,11 +127,6 @@ public:
 		CONVERT_GROUP,
 	};
 
-<<<<<<< HEAD
-	void set_selection(const Vector<Node*>& p_nodes);
-
-=======
->>>>>>> fix/remove-object
 	GroupsEditor();
 };
 

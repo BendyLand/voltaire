@@ -429,21 +429,6 @@ void LineEdit::unhandled_key_input(const Ref<InputEvent>& p_event)
 	}
 }
 
-<<<<<<< HEAD
-void LineEdit::set_horizontal_alignment(HorizontalAlignment p_alignment)
-{
-	ERR_FAIL_INDEX((int)p_alignment, 4);
-	if (alignment == p_alignment) {
-		return;
-	}
-
-	alignment = p_alignment;
-	_shape();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 HorizontalAlignment LineEdit::get_horizontal_alignment() const { return alignment; }
 
 Control::CursorShape LineEdit::get_cursor_shape(const Point2& p_pos) const
@@ -803,28 +788,6 @@ void LineEdit::delete_char()
 	_text_changed();
 }
 
-<<<<<<< HEAD
-void LineEdit::_set_text(String p_text, bool p_emit_signal)
-{
-	clear_internal();
-
-	String previous_text = get_text();
-	insert_text_at_caret(p_text);
-
-	if (get_text() != previous_text) {
-		_create_undo_state();
-		if (p_emit_signal) {
-			_text_changed();
-		}
-	}
-
-	queue_redraw();
-	caret_column = 0;
-	scroll_offset = 0.0;
-}
-
-=======
->>>>>>> fix/remove-object
 void LineEdit::set_text(String p_text) { _set_text(p_text); }
 
 Control::TextDirection LineEdit::get_text_direction() const { return text_direction; }
@@ -910,21 +873,6 @@ void LineEdit::set_scroll_offset(float p_pos)
 
 float LineEdit::get_scroll_offset() const { return scroll_offset; }
 
-<<<<<<< HEAD
-void LineEdit::clear_internal()
-{
-	deselect();
-	_clear_undo_stack();
-	caret_column = 0;
-	scroll_offset = 0.0;
-	undo_text = "";
-	text = "";
-	_shape();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 Size2 LineEdit::get_minimum_size() const
 {
 	Ref<Font> font = theme_cache.font;
@@ -1025,27 +973,6 @@ void LineEdit::selection_fill_at_caret()
 	queue_accessibility_update();
 }
 
-<<<<<<< HEAD
-void LineEdit::select_all()
-{
-	if (!selecting_enabled) {
-		return;
-	}
-
-	if (text.is_empty()) {
-		set_caret_column(0);
-		return;
-	}
-
-	selection.begin = 0;
-	selection.end = text.length();
-	selection.enabled = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool LineEdit::is_editable() const { return editable; }
 
 bool LineEdit::is_secret() const { return pass; }
@@ -1093,16 +1020,6 @@ PopupMenu* LineEdit::get_menu() const
 	return menu;
 }
 
-<<<<<<< HEAD
-void LineEdit::set_expand_to_text_length_enabled(bool p_enabled)
-{
-	expand_to_text_length = p_enabled;
-	update_minimum_size();
-	set_caret_column(caret_column);
-}
-
-=======
->>>>>>> fix/remove-object
 bool LineEdit::is_expand_to_text_length_enabled() const { return expand_to_text_length; }
 
 bool LineEdit::is_clear_button_enabled() const { return clear_button_enabled; }
@@ -1178,16 +1095,6 @@ bool LineEdit::is_drag_and_drop_selection_enabled() const
 	return drag_and_drop_selection_enabled;
 }
 
-<<<<<<< HEAD
-void LineEdit::_texture_changed()
-{
-	_fit_to_width();
-	update_minimum_size();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> LineEdit::get_right_icon() { return right_icon; }
 
 LineEdit::ExpandMode LineEdit::get_icon_expand_mode() const { return icon_expand_mode; }
@@ -1341,11 +1248,8 @@ void LineEdit::_update_context_menu()
 #undef MENU_ITEM_CHECKED
 }
 
-<<<<<<< HEAD
-=======
 void LineEdit::set_caret_column(int p_column) {}
 
->>>>>>> fix/remove-object
 LineEdit::LineEdit(const String& p_placeholder)
 {
 	text_rid = TS->create_shaped_text();

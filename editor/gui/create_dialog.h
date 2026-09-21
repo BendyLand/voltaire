@@ -99,11 +99,6 @@ class CreateDialog : public ConfirmationDialog
 		const StringName& p_type, TypeCategory p_type_category, const String& p_match_keyword);
 	void _configure_search_option_item(TreeItem* r_item, const StringName& p_type,
 		TypeCategory p_type_category, const String& p_match_keyword);
-<<<<<<< HEAD
-	float _score_type(const String& p_type, const String& p_search) const;
-	bool _is_type_preferred(const String& p_type) const;
-=======
->>>>>>> fix/remove-object
 	void _script_button_clicked(
 		TreeItem* p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index);
 
@@ -128,10 +123,6 @@ class CreateDialog : public ConfirmationDialog
 	void _favorite_activated();
 
 	bool _is_class_disabled_by_feature_profile(const StringName& p_class) const;
-<<<<<<< HEAD
-	void _load_favorites_and_history();
-=======
->>>>>>> fix/remove-object
 
 protected:
 	void _notification(int p_what);

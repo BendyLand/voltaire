@@ -29,19 +29,6 @@
 /**************************************************************************/
 
 #include "chain_ik_3d.h"
-<<<<<<< HEAD
-
-void ChainIK3D::set_root_bone_name(int p_index, const String& p_bone_name)
-{
-	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	chain_settings[p_index]->root_bone.name = p_bone_name;
-	Skeleton3D* sk = get_skeleton();
-	if (sk) {
-		set_root_bone(p_index, sk->find_bone(chain_settings[p_index]->root_bone.name));
-	}
-}
-=======
->>>>>>> fix/remove-object
 
 String ChainIK3D::get_root_bone_name(int p_index) const
 {
@@ -124,29 +111,6 @@ int ChainIK3D::get_joint_count(int p_index) const
 	return joints.size();
 }
 
-<<<<<<< HEAD
-void ChainIK3D::_validate_bone_names()
-{
-	for (uint32_t i = 0; i < settings.size(); i++) {
-		// Prior bone name.
-		if (!chain_settings[i]->root_bone.name.is_empty()) {
-			set_root_bone_name(i, chain_settings[i]->root_bone.name);
-		}
-		else if (chain_settings[i]->root_bone.bone != -1) {
-			set_root_bone(i, chain_settings[i]->root_bone.bone);
-		}
-		// Prior bone name.
-		if (!chain_settings[i]->end_bone.name.is_empty()) {
-			set_end_bone_name(i, chain_settings[i]->end_bone.name);
-		}
-		else if (chain_settings[i]->end_bone.bone != -1) {
-			set_end_bone(i, chain_settings[i]->end_bone.bone);
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ChainIK3D::_validate_axes(Skeleton3D* p_skeleton) const
 {
 	for (uint32_t i = 0; i < settings.size(); i++) {

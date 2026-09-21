@@ -61,11 +61,8 @@ public:
 	virtual Error start(const String& p_uri) override;
 };
 
-<<<<<<< HEAD
-=======
 Error EditorDebuggerServerTCP::start(const String& p_uri) { return OK; }
 
->>>>>>> fix/remove-object
 Ref<EditorDebuggerServer> EditorDebuggerServerTCP::create(const String& p_protocol)
 {
 	ERR_FAIL_COND_V(p_protocol != "tcp://", nullptr);
@@ -95,38 +92,8 @@ class EditorDebuggerServerUDS : public EditorDebuggerServerSocket<UDSServer>
 {
 public:
 	static Ref<EditorDebuggerServer> create(const String& p_protocol);
-<<<<<<< HEAD
-
-	virtual Error start(const String& p_uri) override;
 };
 
-Ref<EditorDebuggerServer> EditorDebuggerServerUDS::create(const String& p_protocol)
-{
-	ERR_FAIL_COND_V(p_protocol != "unix://", nullptr);
-	return memnew(EditorDebuggerServerUDS);
-}
-
-Error EditorDebuggerServerUDS::start(const String& p_uri)
-{
-	String bind_path =
-		p_uri.is_empty() ? String("/tmp/godot_debugger.sock") : p_uri.replace("unix://", "");
-
-	const Error err = server->listen(bind_path);
-	if (err != OK) {
-		EditorNode::get_log()->add_message(
-			vformat("Cannot listen at path %s, remote debugging unavailable.", bind_path),
-			EditorLog::MSG_TYPE_ERROR);
-		return err;
-	}
-	endpoint = "unix://" + bind_path;
-	return OK;
-}
-
-/// EditorDebuggerServer
-=======
-};
-
->>>>>>> fix/remove-object
 HashMap<StringName, EditorDebuggerServer::CreateServerFunc> EditorDebuggerServer::protocols;
 
 Ref<EditorDebuggerServer> EditorDebuggerServer::create(const String& p_protocol)
@@ -154,8 +121,5 @@ void EditorDebuggerServer::initialize()
 void EditorDebuggerServer::deinitialize() { protocols.clear(); }
 
 
-<<<<<<< HEAD
-=======
 
 Ref<EditorDebuggerServer> EditorDebuggerServerUDS::create(String const&) {}
->>>>>>> fix/remove-object

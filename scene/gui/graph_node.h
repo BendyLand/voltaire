@@ -125,11 +125,6 @@ protected:
 
 	virtual void _resort() override;
 
-<<<<<<< HEAD
-	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
-
-=======
->>>>>>> fix/remove-object
 	virtual String _get_accessibility_name() const override;
 
 public:

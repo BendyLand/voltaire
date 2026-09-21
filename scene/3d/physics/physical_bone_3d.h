@@ -175,35 +175,16 @@ private:
 	real_t angular_damp = 0.0;
 
 protected:
-<<<<<<< HEAD
-	void _notification(int p_what);
-	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
-	void _body_state_changed(PhysicsDirectBodyState3D* p_state);
-
-	static void _bind_methods();
-
-private:
-	void _sync_body_state(PhysicsDirectBodyState3D* p_state);
-
-	void _update_joint_offset();
-=======
 	static void _body_state_changed_callback(void* p_instance, PhysicsDirectBodyState3D* p_state);
 
 private:
 	void _sync_body_state(PhysicsDirectBodyState3D* p_state);
->>>>>>> fix/remove-object
 	void _fix_joint_offset();
 	void _update_simulator_path();
 
 public:
 	PhysicalBoneSimulator3D* get_simulator() const;
 
-<<<<<<< HEAD
-	PhysicalBoneSimulator3D* get_simulator() const;
-	Skeleton3D* get_skeleton() const;
-
-=======
->>>>>>> fix/remove-object
 	void set_linear_velocity(const Vector3& p_velocity);
 	Vector3 get_linear_velocity() const override;
 
@@ -228,30 +209,16 @@ public:
 	void set_joint_type(JointType p_joint_type);
 	JointType get_joint_type() const;
 
-<<<<<<< HEAD
-	void set_joint_offset(const Transform3D& p_offset);
-	const Transform3D& get_joint_offset() const;
-
-	void set_joint_rotation(const Vector3& p_euler_rad);
-	Vector3 get_joint_rotation() const;
-
-	void set_body_offset(const Transform3D& p_offset);
-=======
 	const Transform3D& get_joint_offset() const;
 
 	Vector3 get_joint_rotation() const;
 
->>>>>>> fix/remove-object
 	const Transform3D& get_body_offset() const;
 
 	void set_simulate_physics(bool p_simulate);
 	bool get_simulate_physics();
 	bool is_simulating_physics();
 
-<<<<<<< HEAD
-	void set_bone_name(const String& p_name);
-=======
->>>>>>> fix/remove-object
 	const String& get_bone_name() const;
 
 	void set_mass(real_t p_mass);

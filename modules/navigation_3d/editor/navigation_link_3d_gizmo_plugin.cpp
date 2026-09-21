@@ -34,18 +34,6 @@
 #include "scene/3d/navigation/navigation_link_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
-<<<<<<< HEAD
-NavigationLink3DGizmoPlugin::NavigationLink3DGizmoPlugin()
-{
-	create_material("navigation_link_material",
-		NavigationServer3D::get_singleton()->get_debug_navigation_link_connection_color());
-	create_material("navigation_link_material_disabled",
-		NavigationServer3D::get_singleton()->get_debug_navigation_link_connection_disabled_color());
-	create_handle_material("handles");
-}
-
-=======
->>>>>>> fix/remove-object
 String NavigationLink3DGizmoPlugin::get_gizmo_name() const { return "NavigationLink3D"; }
 
 String NavigationLink3DGizmoPlugin::get_handle_name(

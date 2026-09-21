@@ -32,15 +32,6 @@
 #include "scene/main/scene_tree.h"
 #include "spring_arm_3d_gizmo_plugin.h"
 
-<<<<<<< HEAD
-SpringArm3DGizmoPlugin::SpringArm3DGizmoPlugin()
-{
-	Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
-	create_material("shape_material", gizmo_color);
-}
-
-=======
->>>>>>> fix/remove-object
 String SpringArm3DGizmoPlugin::get_gizmo_name() const { return "SpringArm3D"; }
 
 

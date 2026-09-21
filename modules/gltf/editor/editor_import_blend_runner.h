@@ -40,10 +40,6 @@ class EditorImportBlendRunner : public Node
 	static EditorImportBlendRunner* singleton;
 
 	Timer* kill_timer;
-<<<<<<< HEAD
-	void _resources_reimported(const PackedStringArray& p_files);
-=======
->>>>>>> fix/remove-object
 	void _kill_blender();
 	void _notification(int p_what);
 	bool _extract_error_message_xml(

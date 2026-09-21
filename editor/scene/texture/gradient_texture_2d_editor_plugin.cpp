@@ -145,15 +145,6 @@ GradientTexture2DEdit::GradientTexture2DEdit()
 
 const int GradientTexture2DEditor::DEFAULT_SNAP = 10;
 
-<<<<<<< HEAD
-void GradientTexture2DEditor::_set_snap_enabled(bool p_enabled)
-{
-	texture_editor_rect->set_snap_enabled(p_enabled);
-	snap_count_edit->set_visible(p_enabled);
-}
-
-=======
->>>>>>> fix/remove-object
 void GradientTexture2DEditor::_set_snap_count(int p_snap_count)
 {
 	texture_editor_rect->set_snap_count(p_snap_count);
@@ -165,13 +156,10 @@ void GradientTexture2DEditor::set_texture(Ref<GradientTexture2D>& p_texture)
 	texture_editor_rect->set_texture(p_texture);
 }
 
-<<<<<<< HEAD
-=======
 void GradientTexture2DEdit::set_texture(Ref<GradientTexture2D>&) {}
 
 void GradientTexture2DEdit::set_snap_count(int) {}
 
 void GradientTexture2DEdit::gui_input(const Ref<InputEvent>& p_event) {}
 
->>>>>>> fix/remove-object
 

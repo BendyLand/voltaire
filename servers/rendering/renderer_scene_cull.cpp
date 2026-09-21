@@ -1119,13 +1119,10 @@ void RendererSceneCull::instance_set_transform(RID p_instance, const Transform3D
 	_instance_queue_update(instance, true);
 }
 
-<<<<<<< HEAD
-=======
 void RendererSceneCull::instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight)
 {
 }
 
->>>>>>> fix/remove-object
 void RendererSceneCull::instance_set_surface_override_material(
 	RID p_instance, int p_surface, RID p_material)
 {

@@ -368,10 +368,6 @@ private:
 
 	void _invalidate();
 	void _setup_button(Button* p_button, const Ref<Texture2D>& p_icon);
-<<<<<<< HEAD
-	void _update_make_dir_visible();
-=======
->>>>>>> fix/remove-object
 
 	void _native_popup();
 	void _native_dialog_cb(bool p_ok, const Vector<String>& p_files, int p_filter);
@@ -382,11 +378,6 @@ private:
 	void _update_option_controls();
 	void _option_changed_checkbox_toggled(bool p_pressed, const String& p_name);
 	void _option_changed_item_selected(int p_idx, const String& p_name);
-<<<<<<< HEAD
-
-	virtual void _post_popup() override;
-=======
->>>>>>> fix/remove-object
 
 protected:
 	Ref<DirAccess> dir_access;
@@ -401,11 +392,6 @@ protected:
 
 	virtual void _dir_contents_changed() {}
 
-<<<<<<< HEAD
-	virtual bool _should_use_native_popup() const;
-
-=======
->>>>>>> fix/remove-object
 	virtual bool _should_hide_file(const String& p_file) const { return false; }
 
 	virtual Color _get_folder_color(const String& p_path) const
@@ -419,14 +405,6 @@ protected:
 	void _clear_changed_status();
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-
-	bool _property_can_revert(const StringName& p_name) const
-	{
-		return property_helper.property_can_revert(p_name);
-	}
-=======
->>>>>>> fix/remove-object
 
 	bool _property_can_revert(const StringName& p_name) const
 	{
@@ -448,10 +426,6 @@ public:
 		const String& p_filter, const String& p_description = "", const String& p_mime = "");
 	void set_filters(const Vector<String>& p_filters);
 	Vector<String> get_filters() const;
-<<<<<<< HEAD
-	void clear_filename_filter();
-=======
->>>>>>> fix/remove-object
 	void set_filename_filter(const String& p_filename_filter);
 	String get_filename_filter() const;
 

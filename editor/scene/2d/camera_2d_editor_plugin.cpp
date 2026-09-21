@@ -46,16 +46,6 @@ void Camera2DEditor::forward_canvas_draw_over_viewport(Control* p_overlay)
 	p_overlay->draw_rect(limit_rect, Color(1, 1, 0.25, 0.63), false, 3);
 }
 
-<<<<<<< HEAD
-void Camera2DEditor::_update_overlays_if_needed(Camera2D* p_camera)
-{
-	if (p_camera == selected_camera) {
-		plugin->update_overlays();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 {
 	if (CanvasItemEditor::get_singleton()->get_current_tool() != CanvasItemEditor::TOOL_SELECT) {
@@ -161,18 +151,6 @@ void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 	}
 }
 
-<<<<<<< HEAD
-void Camera2DEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		options->set_button_icon(get_editor_theme_icon(SNAME("Camera2D")));
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Camera2DEditorPlugin::Camera2DEditorPlugin()
 {
 	camera_2d_editor = memnew(Camera2DEditor(this));

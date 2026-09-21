@@ -1269,8 +1269,6 @@ RID RenderingDevice::texture_buffer_create(
 	return id;
 }
 
-<<<<<<< HEAD
-=======
 RID RenderingDevice::texture_create(
 	const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
 {
@@ -1282,7 +1280,6 @@ Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_laye
 	return Vector<uint8_t>();
 }
 
->>>>>>> fix/remove-object
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
 {
 	Texture* src_texture = texture_owner.get_or_null(p_with_texture);
@@ -3315,15 +3312,12 @@ uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 	return shader->vertex_input_mask;
 }
 
-<<<<<<< HEAD
-=======
 RID RenderingDevice::uniform_set_create(
 	const VectorView<Uniform>& p_uniforms, RID p_shader, uint32_t p_shader_set, bool p_linear_pool)
 {
 	return RID();
 }
 
->>>>>>> fix/remove-object
 void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 {
 	for (UniformSet::SharedTexture shared : p_uniform_set->shared_textures_to_update) {
@@ -3333,25 +3327,6 @@ void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 	}
 }
 
-<<<<<<< HEAD
-void RenderingDevice::_uniform_set_update_clears(UniformSet* p_uniform_set)
-{
-	if (p_uniform_set->pending_clear_textures.is_empty()) {
-		return;
-	}
-
-	for (RID texture_id : p_uniform_set->pending_clear_textures) {
-		Texture* texture = texture_owner.get_or_null(texture_id);
-		if (texture != nullptr) {
-			_texture_check_pending_clear(texture_id, texture);
-		}
-	}
-
-	p_uniform_set->pending_clear_textures.clear();
-}
-
-=======
->>>>>>> fix/remove-object
 bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
 {
 	_THREAD_SAFE_METHOD_
@@ -3508,13 +3483,8 @@ int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen) co
 	return context->surface_get_height(surface);
 }
 
-<<<<<<< HEAD
-int RenderingDevice::
-screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen) const
-=======
 int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen)
  const
->>>>>>> fix/remove-object
 {
 	_THREAD_SAFE_METHOD_
 

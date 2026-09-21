@@ -58,15 +58,6 @@ public:
 
 protected:
 	LocalVector<BoneConstraint3DSetting*> settings;
-<<<<<<< HEAD
-
-	virtual void _validate_bone_names() override;
-	static void _bind_methods();
-
-	virtual void _process_modification(double p_delta) override;
-
-=======
->>>>>>> fix/remove-object
 	virtual void _process_constraint_by_bone(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
 		int p_reference_bone, float p_amount);
 	virtual void _process_constraint_by_node(int p_index, Skeleton3D* p_skeleton, int p_apply_bone,
@@ -77,20 +68,12 @@ public:
 	void set_amount(int p_index, float p_amount);
 	float get_amount(int p_index) const;
 
-<<<<<<< HEAD
-	void set_apply_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_apply_bone_name(int p_index) const;
 	int get_apply_bone(int p_index) const;
 
 	void set_reference_type(int p_index, ReferenceType p_type);
 	ReferenceType get_reference_type(int p_index) const;
 
-<<<<<<< HEAD
-	void set_reference_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_reference_bone_name(int p_index) const;
 	int get_reference_bone(int p_index) const;
 

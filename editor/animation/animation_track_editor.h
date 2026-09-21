@@ -85,10 +85,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -122,10 +118,6 @@ public:
 	void set_use_fps(bool p_enable);
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _update_obj(const Ref<Animation>& p_anim);
 	void _key_ofs_changed(const Ref<Animation>& p_anim, float from, float to);
 };
@@ -174,10 +166,6 @@ public:
 	bool _is_read_only() { return animation_read_only; }
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 };
 
 class AnimationTimelineEdit : public Range
@@ -214,10 +202,6 @@ class AnimationTimelineEdit : public Range
 									  // changed are much faster
 	HScrollBar* hscroll = nullptr;
 
-<<<<<<< HEAD
-	void _play_position_draw();
-=======
->>>>>>> fix/remove-object
 	Rect2 hsize_rect;
 
 	bool editing = false;
@@ -249,10 +233,6 @@ class AnimationTimelineEdit : public Range
 	void _scroll_to_start();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	int get_name_limit() const;
@@ -318,10 +298,6 @@ class AnimationMarkerEdit : public Control
 
 	Ref<Texture2D> icon_cache;
 
-<<<<<<< HEAD
-	void _play_position_draw();
-=======
->>>>>>> fix/remove-object
 	bool _is_ui_pos_in_current_section(const Point2& p_pos);
 
 	float insert_at_pos = 0.0f;
@@ -342,10 +318,6 @@ class AnimationMarkerEdit : public Control
 	void _deselect_key(const StringName& p_name);
 
 	void _insert_marker(float p_ofs);
-<<<<<<< HEAD
-	void _rename_marker(const StringName& p_name);
-=======
->>>>>>> fix/remove-object
 
 	ConfirmationDialog* marker_insert_confirm = nullptr;
 	LineEdit* marker_insert_new_name = nullptr;
@@ -361,12 +333,6 @@ class AnimationMarkerEdit : public Control
 
 	bool should_show_all_marker_names = false;
 
-<<<<<<< HEAD
-	////////////// edit menu stuff
-
-	void _marker_insert_new_name_changed(const String& p_text);
-=======
->>>>>>> fix/remove-object
 	void _marker_rename_new_name_changed(const String& p_text);
 
 	AnimationTrackEditor* editor = nullptr;
@@ -378,12 +344,6 @@ class AnimationMarkerEdit : public Control
 	AnimationMarkerKeyEdit* key_edit = nullptr;
 	AnimationMultiMarkerKeyEdit* multi_key_edit = nullptr;
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	virtual int get_key_height() const;
 	virtual Rect2 get_key_rect(float p_pixels_sec) const;
@@ -485,10 +445,6 @@ class AnimationTrackEdit : public Control
 	String path_cache;
 
 	void _path_submitted(const String& p_text);
-<<<<<<< HEAD
-	void _play_position_draw();
-=======
->>>>>>> fix/remove-object
 
 	int lookup_key_idx = -1;
 	bool _lookup_key(int p_key_idx) const;
@@ -659,11 +615,6 @@ class AnimationTrackEditor : public VBoxContainer
 	void _track_grab_focus(int p_track);
 
 	void _update_scroll(double);
-<<<<<<< HEAD
-	void _update_nearest_fps_label();
-	void _update_fps_compat_mode(bool p_enabled);
-=======
->>>>>>> fix/remove-object
 
 	void _add_track(int p_type);
 	void _store_snap_states();
@@ -867,13 +818,6 @@ class AnimationTrackEditor : public VBoxContainer
 	double snap_unit = 0;
 	bool fps_compatible = true;
 	int nearest_fps = 0;
-<<<<<<< HEAD
-	void _update_snap_unit();
-
-protected:
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	// Public for use as signal callback.
@@ -951,10 +895,6 @@ public:
 	bool is_function_name_pressed();
 
 	bool is_read_only() const;
-<<<<<<< HEAD
-	void popup_read_only_dialog();
-=======
->>>>>>> fix/remove-object
 
 	MenuButton* get_edit_menu();
 	AnimationTrackEditor();

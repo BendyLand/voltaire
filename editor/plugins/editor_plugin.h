@@ -193,13 +193,6 @@ public:
 	EditorInterface* get_editor_interface();
 	ScriptCreateDialog* get_script_create_dialog();
 
-<<<<<<< HEAD
-	int update_overlays() const;
-
-	void queue_save_layout();
-
-=======
->>>>>>> fix/remove-object
 	void make_bottom_panel_item_visible(Control* p_item);
 	void hide_bottom_panel();
 

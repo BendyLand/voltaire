@@ -183,10 +183,6 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 
 		void _clear_vertex_input_mask_cache();
 		void _create_pipeline(PipelineKey p_pipeline_key);
-<<<<<<< HEAD
-		virtual void set_code(const String& p_Code);
-=======
->>>>>>> fix/remove-object
 		virtual bool is_animated() const;
 		virtual void set_code(const String& p_Code);
 		virtual bool casts_shadows() const;

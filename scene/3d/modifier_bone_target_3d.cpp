@@ -35,19 +35,4 @@ String ModifierBoneTarget3D::get_bone_name() const { return bone_name; }
 
 int ModifierBoneTarget3D::get_bone() const { return bone; }
 
-<<<<<<< HEAD
-void ModifierBoneTarget3D::_bind_methods() {}
-
-void ModifierBoneTarget3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton || bone < 0 || bone >= skeleton->get_bone_count()) {
-		return;
-	}
-
-	set_transform(skeleton->get_bone_global_pose(bone));
-}
-
-=======
->>>>>>> fix/remove-object
 

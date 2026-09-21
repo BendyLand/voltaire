@@ -40,11 +40,6 @@
 
 RID NavigationObstacle2D::_navmesh_source_geometry_parser;
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void NavigationObstacle2D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -293,13 +288,6 @@ PackedStringArray NavigationObstacle2D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 void NavigationObstacle2D::_update_map(RID p_map)
 {
 	map_current = p_map;
@@ -324,10 +312,7 @@ void NavigationObstacle2D::_update_fake_agent_radius_debug()
 }
 #endif // DEBUG_ENABLED
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void NavigationObstacle2D::_update_transform() {}
 

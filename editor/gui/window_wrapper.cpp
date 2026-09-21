@@ -107,68 +107,6 @@ int WindowWrapper::get_window_screen() const
 	return window->get_current_screen();
 }
 
-<<<<<<< HEAD
-void WindowWrapper::restore_window(const Rect2i& p_rect, int p_screen)
-{
-	ERR_FAIL_COND(!is_window_available());
-	ERR_FAIL_INDEX(p_screen, DisplayServer::get_singleton()->get_screen_count());
-
-	_set_window_enabled_with_rect(true, p_rect);
-	window->set_current_screen(p_screen);
-}
-
-void WindowWrapper::restore_window_from_saved_position(
-	const Rect2 p_window_rect, int p_screen, const Rect2 p_screen_rect)
-{
-	ERR_FAIL_COND(!is_window_available());
-
-	Rect2 window_rect = p_window_rect;
-	int screen = p_screen;
-	Rect2 restored_screen_rect = p_screen_rect;
-
-	if (screen < 0 || screen >= DisplayServer::get_singleton()->get_screen_count()) {
-		// Fallback to the main window screen if the saved screen is not available.
-		screen = get_window()->get_window_id();
-	}
-
-	Rect2i real_screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
-
-	if (restored_screen_rect == Rect2i()) {
-		// Fallback to the target screen rect.
-		restored_screen_rect = real_screen_rect;
-	}
-
-	if (window_rect == Rect2i()) {
-		// Fallback to a standard rect.
-		window_rect = Rect2i(restored_screen_rect.position + restored_screen_rect.size / 4,
-			restored_screen_rect.size / 2);
-	}
-
-	// Adjust the window rect size in case the resolution changes.
-	Vector2 screen_ratio = Vector2(real_screen_rect.size) / Vector2(restored_screen_rect.size);
-
-	// The screen positioning may change, so remove the original screen position.
-	window_rect.position -= restored_screen_rect.position;
-	window_rect = Rect2i(window_rect.position * screen_ratio, window_rect.size * screen_ratio);
-	window_rect.position += real_screen_rect.position;
-
-	// Make sure to restore the window if the user minimized it the last time it was displayed.
-	if (window->get_mode() == Window::MODE_MINIMIZED) {
-		window->set_mode(Window::MODE_WINDOWED);
-	}
-
-	// All good, restore the window.
-	window->set_current_screen(p_screen);
-	if (window->is_visible()) {
-		_set_window_rect(window_rect);
-	}
-	else {
-		_set_window_enabled_with_rect(true, window_rect);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void WindowWrapper::set_window_title(const String& p_title)
 {
 	if (!is_window_available()) {
@@ -231,22 +169,6 @@ void WindowWrapper::set_override_close_request(bool p_enabled)
 	override_close_request = p_enabled;
 }
 
-<<<<<<< HEAD
-// ScreenSelect
-
-void ScreenSelect::_handle_mouse_shortcut(const Ref<InputEvent>& p_event)
-{
-	const Ref<InputEventMouseButton> mouse_button = p_event;
-	if (mouse_button.is_valid()) {
-		if (mouse_button->is_pressed() && mouse_button->get_button_index() == MouseButton::LEFT) {
-			_emit_screen_signal(get_window()->get_current_screen());
-			accept_event();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ScreenSelect::_show_popup()
 {
 	// Adapted from /scene/gui/menu_button.cpp::show_popup
@@ -266,18 +188,4 @@ void ScreenSelect::_show_popup()
 	popup->popup();
 }
 
-<<<<<<< HEAD
-void ScreenSelect::pressed()
-{
-	if (popup->is_visible()) {
-		popup->hide();
-		return;
-	}
-
-	_build_advanced_menu();
-	_show_popup();
-}
-
-=======
->>>>>>> fix/remove-object
 

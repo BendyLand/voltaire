@@ -64,10 +64,6 @@ class Sprite2D : public Node2D
 protected:
 	void _notification(int p_what);
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 #ifdef DEBUG_ENABLED

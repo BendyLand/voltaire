@@ -338,8 +338,6 @@ SceneMultiplayer::~SceneMultiplayer()
 	cache.unref();
 }
 
-<<<<<<< HEAD
-=======
 void SceneMultiplayer::_admit_peer(int) {}
 
 void SceneMultiplayer::set_multiplayer_peer(Ref<MultiplayerPeer> const&) {}
@@ -352,5 +350,4 @@ void SceneMultiplayer::clear() {}
 
 Error SceneMultiplayer::poll() { return OK; }
 
->>>>>>> fix/remove-object
 

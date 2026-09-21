@@ -107,49 +107,12 @@ String EditorSpinSlider::get_label() const { return label; }
 
 String EditorSpinSlider::get_suffix() const { return suffix; }
 
-<<<<<<< HEAD
-void EditorSpinSlider::_value_input_submitted(const String& p_text)
-{
-	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
-	if (value_input) {
-		value_input_focus_visible = value_input->has_focus(true);
-		value_input->hide();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorSpinSlider::_value_input_hidden()
 {
 	_evaluate_input_text();
 	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
 }
 
-<<<<<<< HEAD
-void EditorSpinSlider::_grabber_mouse_entered()
-{
-	mouse_over_grabber = true;
-	queue_redraw();
-}
-
-void EditorSpinSlider::_grabber_mouse_exited()
-{
-	mouse_over_grabber = false;
-	queue_redraw();
-}
-
-void EditorSpinSlider::set_read_only(bool p_enable)
-{
-	read_only = p_enable;
-	if (read_only && value_input && value_input->is_inside_tree()) {
-		value_input->release_focus();
-	}
-
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorSpinSlider::is_read_only() const { return read_only; }
 
 void EditorSpinSlider::set_read_only(bool p_enable) {}
@@ -165,10 +128,7 @@ void EditorSpinSlider::set_deferred_drag_mode_enabled(bool p_enabled)
 
 bool EditorSpinSlider::is_deferred_drag_mode_enabled() const { return deferred_drag_mode; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorSpinSlider::_evaluate_input_text() {}
 

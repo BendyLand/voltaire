@@ -31,14 +31,6 @@
 #pragma once
 
 #include "core/types.h"
-<<<<<<< HEAD
-
-class EditorTranslationParserPlugin : public RefCounted
-{
-protected:
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 class EditorTranslationParserPlugin : public RefCounted
 {

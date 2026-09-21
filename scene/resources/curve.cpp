@@ -237,15 +237,12 @@ void Curve::_set_point_position(int p_index, const Vector2& p_position)
 	set_point_offset(p_index, p_position.x);
 }
 
-<<<<<<< HEAD
-=======
 int Curve::add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent,
 	TangentMode p_left_mode, TangentMode p_right_mode)
 {
 	return 0;
 }
 
->>>>>>> fix/remove-object
 void Curve::set_point_value(int p_index, real_t p_position)
 {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, _points.size());
@@ -2016,8 +2013,6 @@ PackedVector3Array Curve3D::tessellate_even_length(int p_max_stages, real_t p_le
 	return tess;
 }
 
-<<<<<<< HEAD
-=======
 void Curve2D::add_point(Vector2 const&, Vector2 const&, Vector2 const&, int) {}
 
 void Curve::remove_point(int) {}
@@ -2034,5 +2029,4 @@ void Curve3D::add_point(Vector3 const&, Vector3 const&, Vector3 const&, int) {}
 
 Curve2D::Curve2D() {}
 
->>>>>>> fix/remove-object
 

@@ -417,19 +417,6 @@ void SceneTreeEditor::_empty_clicked(const Vector2& p_pos, MouseButton p_button)
 	_rmb_select(p_pos);
 }
 
-<<<<<<< HEAD
-void SceneTreeEditor::update_warning() { _warning_changed(nullptr); }
-
-void SceneTreeEditor::_warning_changed(Node* p_for_node)
-{
-	node_cache.mark_dirty(p_for_node);
-
-	// Should use a timer.
-	update_timer->start();
-}
-
-=======
->>>>>>> fix/remove-object
 void SceneTreeEditor::set_connect_to_script_mode(bool p_enable)
 {
 	connect_to_script_mode = p_enable;
@@ -448,11 +435,6 @@ void SceneTreeEditor::set_update_when_invisible(bool p_enable)
 	_update_tree();
 }
 
-<<<<<<< HEAD
-void SceneTreeEditor::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 SceneTreeEditor::~SceneTreeEditor() { memdelete(script_types); }
 
 void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_marked_node,
@@ -466,20 +448,10 @@ void SceneTreeDialog::popup_scenetree_dialog(Node* p_selected_node, Node* p_mark
 
 void SceneTreeDialog::_cancel() { hide(); }
 
-<<<<<<< HEAD
-void SceneTreeDialog::_selected_changed() { get_ok_button()->set_disabled(!tree->get_selected()); }
-
-=======
->>>>>>> fix/remove-object
 void SceneTreeDialog::_filter_changed(const String& p_filter) { tree->set_filter(p_filter); }
 
 LineEdit* SceneTreeDialog::get_filter_line_edit() { return filter; }
 
-<<<<<<< HEAD
-/******** CACHE *********/
-
-=======
->>>>>>> fix/remove-object
 HashMap<Node*, SceneTreeEditor::CachedNode>::Iterator SceneTreeEditor::NodeCache::add(
 	Node* p_node, TreeItem* p_item)
 {

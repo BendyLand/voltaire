@@ -49,8 +49,5 @@ public:
 };
 
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> fix/remove-object

@@ -80,10 +80,6 @@ protected:
 	_FORCE_INLINE_ RID _get_light() const { return canvas_light; }
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_enabled(bool p_enabled);

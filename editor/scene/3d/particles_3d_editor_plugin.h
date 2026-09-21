@@ -67,12 +67,6 @@ public:
 class GPUParticles3DEditorPlugin : public Particles3DEditorPlugin
 {
 protected:
-<<<<<<< HEAD
-	Node* _convert_particles() override;
-
-	bool _can_generate_points() const override;
-=======
->>>>>>> fix/remove-object
 	void _generate_emission_points() override;
 	Node* _convert_particles() override;
 	bool _can_generate_points() const override;
@@ -84,19 +78,11 @@ public:
 class CPUParticles3DEditorPlugin : public Particles3DEditorPlugin
 {
 protected:
-<<<<<<< HEAD
-	Node* _convert_particles() override;
-
-	bool _can_generate_points() const override { return true; }
-
-	void _generate_emission_points() override;
-=======
 	void _generate_emission_points() override;
 
 	Node* _convert_particles() override;
 
 	bool _can_generate_points() const override { return true; }
->>>>>>> fix/remove-object
 
 public:
 	CPUParticles3DEditorPlugin();

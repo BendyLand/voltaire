@@ -290,11 +290,8 @@ void SplitContainer::_update_dragger_positions(int p_clamp_index)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void SplitContainer::add_child_notify(Node* p_child) {}
 
->>>>>>> fix/remove-object
 Size2 SplitContainer::_get_minimum_size(bool p_use_desired_sizes) const
 {
 	const int sep = _get_separation();
@@ -321,54 +318,6 @@ Size2 SplitContainer::get_minimum_size() const { return _get_minimum_size(false)
 
 Size2 SplitContainer::get_desired_size() const { return _get_minimum_size(true); }
 
-<<<<<<< HEAD
-void SplitContainer::move_child_notify(Node* p_child)
-{
-	Container::move_child_notify(p_child);
-
-	Control* moved_child = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
-	const int prev_index = valid_children.find(moved_child);
-	if (prev_index == -1) {
-		return;
-	}
-
-	PackedInt32Array desired_sizes;
-	if (initialized && !split_offset_pending && valid_children.size() > 2u &&
-		split_offsets.size() == (int)default_dragger_positions.size()) {
-		desired_sizes = _get_desired_sizes();
-	}
-
-	valid_children.remove_at(prev_index);
-
-	// Get new index.
-	int index = 0;
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false), SortableVisibilityMode::IGNORE);
-		if (!child) {
-			continue;
-		}
-		if (child == moved_child) {
-			break;
-		}
-		if (valid_children.has(child)) {
-			index++;
-		}
-	}
-
-	valid_children.insert(index, moved_child);
-
-	if (desired_sizes.is_empty()) {
-		return;
-	}
-
-	const int prev_desired_size = desired_sizes[prev_index];
-	desired_sizes.remove_at(prev_index);
-	desired_sizes.insert(index, prev_desired_size);
-	_set_desired_sizes(desired_sizes, index);
-}
-
-=======
->>>>>>> fix/remove-object
 void SplitContainer::_on_child_visibility_changed(Control* p_control)
 {
 	if (p_control->is_visible()) {
@@ -379,20 +328,6 @@ void SplitContainer::_on_child_visibility_changed(Control* p_control)
 	}
 }
 
-<<<<<<< HEAD
-void SplitContainer::set_split_offset(int p_offset, int p_index)
-{
-	ERR_FAIL_INDEX(p_index, split_offsets.size());
-	if (split_offsets[p_index] == p_offset) {
-		return;
-	}
-
-	split_offsets.write[p_index] = p_offset;
-	queue_sort();
-}
-
-=======
->>>>>>> fix/remove-object
 int SplitContainer::get_split_offset(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, split_offsets.size(), 0);

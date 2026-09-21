@@ -36,11 +36,6 @@
 #include "editor_export_preset.compat.inc"
 #include "editor_export_preset.h"
 
-<<<<<<< HEAD
-void EditorExportPreset::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 Ref<EditorExportPlatform> EditorExportPreset::get_platform() const { return platform; }
 
 void EditorExportPreset::update_files()
@@ -91,15 +86,6 @@ void EditorExportPreset::set_selected_files(const HashSet<String>& p_files)
 
 int EditorExportPreset::get_customized_files_count() const { return customized_files.size(); }
 
-<<<<<<< HEAD
-void EditorExportPreset::set_name(const String& p_name)
-{
-	name = p_name;
-	EditorExport::singleton->save_presets();
-}
-
-=======
->>>>>>> fix/remove-object
 String EditorExportPreset::get_name() const { return name; }
 
 bool EditorExportPreset::is_runnable() const
@@ -107,15 +93,6 @@ bool EditorExportPreset::is_runnable() const
 	return EditorExport::singleton->get_runnable_preset_for_platform(platform).ptr() == this;
 }
 
-<<<<<<< HEAD
-void EditorExportPreset::set_dedicated_server(bool p_enable)
-{
-	dedicated_server = p_enable;
-	EditorExport::singleton->save_presets();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorExportPreset::is_dedicated_server() const { return dedicated_server; }
 
 EditorExportPreset::ExportFilter EditorExportPreset::get_export_filter() const

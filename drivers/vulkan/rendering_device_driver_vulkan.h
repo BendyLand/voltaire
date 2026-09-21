@@ -982,7 +982,3 @@ public:
 
 using VKC = RenderingContextDriverVulkan;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

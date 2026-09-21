@@ -61,15 +61,7 @@ void TileSetScenesCollectionSourceEditor::_scene_thumbnail_done(const String& p_
 	}
 }
 
-<<<<<<< HEAD
-void TileSetScenesCollectionSourceEditor::_update_action_buttons()
-{
-	Vector<int> selected_indices = scene_tiles_list->get_selected_items();
-	scene_tile_delete_button->set_disabled(selected_indices.is_empty() || read_only);
-}
-=======
 void TileSetScenesCollectionSourceEditor::_update_scenes_list() {}
->>>>>>> fix/remove-object
 
 void TileSetScenesCollectionSourceEditor::_update_all()
 {
@@ -132,10 +124,7 @@ void TileSetScenesCollectionSourceEditor::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void TileSetScenesCollectionSourceEditor::_update_action_buttons() {}
 

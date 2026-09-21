@@ -36,10 +36,7 @@
 class PhysicsBody2D : public CollisionObject2D
 {
 protected:
-<<<<<<< HEAD
-=======
 	PhysicsBody2D() = default;
->>>>>>> fix/remove-object
 	PhysicsBody2D(PS2DE::BodyMode p_mode);
 
 	Ref<KinematicCollision2D> motion_cache;

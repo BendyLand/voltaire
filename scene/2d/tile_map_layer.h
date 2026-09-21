@@ -525,10 +525,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_self_texture_filter(
 		RSE::CanvasItemTextureFilter p_texture_filter) override;

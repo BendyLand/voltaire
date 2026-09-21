@@ -88,15 +88,6 @@ void GradientEdit::_color_changed(const Color& p_color) { set_color(selected_ind
 
 const Ref<Gradient>& GradientEdit::get_gradient() const { return gradient; }
 
-<<<<<<< HEAD
-void GradientEdit::set_selected_index(int p_index)
-{
-	selected_index = p_index;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 ColorPicker* GradientEdit::get_picker() const { return picker; }
 
 PopupPanel* GradientEdit::get_popup() const { return popup; }
@@ -116,11 +107,6 @@ void GradientEdit::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-///////////////////////
-
-=======
->>>>>>> fix/remove-object
 const int GradientEditor::DEFAULT_SNAP = 10;
 
 void GradientEditor::_set_snap_count(int p_count)
@@ -133,10 +119,7 @@ void GradientEditor::set_gradient(const Ref<Gradient>& p_gradient)
 	gradient_editor_rect->set_gradient(p_gradient);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void GradientEdit::set_snap_count(int) {}
 

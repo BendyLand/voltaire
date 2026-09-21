@@ -70,10 +70,6 @@ protected:
 	// Copy of our texel_size project setting.
 	float texel_size = 0.2;
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	Vector2 get_uv2_scale(Vector2 p_margin_scale = Vector2(1.0, 1.0)) const;
 	float get_lightmap_texel_size() const;
@@ -131,10 +127,6 @@ private:
 	int rings = 8;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_lightmap_size() override;
 
@@ -164,10 +156,6 @@ private:
 	int subdivide_d = 0;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_lightmap_size() override;
 
@@ -201,10 +189,6 @@ private:
 	bool cap_bottom = true;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	virtual void _update_lightmap_size() override;
 
 public:
@@ -251,10 +235,6 @@ private:
 	Orientation orientation = FACE_Y;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_lightmap_size() override;
 
@@ -301,10 +281,6 @@ private:
 	int subdivide_d = 0;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_lightmap_size() override;
 
@@ -338,10 +314,6 @@ private:
 	bool is_hemisphere = false;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	virtual void _update_lightmap_size() override;
 
 public:
@@ -373,10 +345,6 @@ private:
 	int ring_segments = 32;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _update_lightmap_size() override;
 
@@ -420,10 +388,6 @@ private:
 	void _curve_changed();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_radius(const float p_radius);
@@ -478,10 +442,6 @@ private:
 	void _curve_changed();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_shape(Shape p_shape);

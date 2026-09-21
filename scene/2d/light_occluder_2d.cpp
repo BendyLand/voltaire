@@ -126,11 +126,6 @@ void LightOccluder2D::_physics_interpolated_changed()
 		occluder, is_physics_interpolated());
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 #ifdef DEBUG_ENABLED
 Rect2 LightOccluder2D::_edit_get_rect() const
 {

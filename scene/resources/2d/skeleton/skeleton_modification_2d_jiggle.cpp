@@ -250,8 +250,6 @@ void SkeletonModification2DJiggle::reset()
 
 SkeletonModification2DJiggle::~SkeletonModification2DJiggle() {}
 
-<<<<<<< HEAD
-=======
 void SkeletonModification2DJiggle::_execute(float p_delta) {}
 
 void SkeletonModification2DJiggle::update_target_cache() {}
@@ -260,5 +258,4 @@ void SkeletonModification2DJiggle::set_jiggle_joint_use_gravity(int, bool) {}
 
 void SkeletonModification2DJiggle::jiggle_joint_update_bone2d_cache(int) {}
 
->>>>>>> fix/remove-object
 

@@ -32,44 +32,6 @@
 #include "physical_bone_simulator_3d.h"
 #include "scene/3d/physics/physical_bone_3d.h"
 
-<<<<<<< HEAD
-void PhysicalBoneSimulator3D::_bone_list_changed()
-{
-	bones.clear();
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-	for (int i = 0; i < skeleton->get_bone_count(); i++) {
-		SimulatedBone sb;
-		sb.parent = skeleton->get_bone_parent(i);
-		sb.child_bones = skeleton->get_bone_children(i);
-		bones.push_back(sb);
-	}
-	_rebuild_physical_bones_cache();
-	_pose_updated();
-}
-
-void PhysicalBoneSimulator3D::_pose_updated()
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton || simulating) {
-		return;
-	}
-	// If this triggers that means that we likely haven't rebuilt the bone list yet.
-	if (skeleton->get_bone_count() != (int)bones.size()) {
-		// NOTE: this is re-entrant and will call _pose_updated again.
-		_bone_list_changed();
-	}
-	else {
-		for (int i = 0; i < skeleton->get_bone_count(); i++) {
-			_bone_pose_updated(skeleton, i);
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D* p_skeleton, int p_bone_id)
 {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_bone_id, bones.size());
@@ -135,23 +97,6 @@ PhysicalBone3D* PhysicalBoneSimulator3D::_get_physical_bone_parent(int p_bone)
 	}
 }
 
-<<<<<<< HEAD
-void PhysicalBoneSimulator3D::_rebuild_physical_bones_cache()
-{
-	const int b_size = bones.size();
-	for (int i = 0; i < b_size; ++i) {
-		PhysicalBone3D* parent_pb = _get_physical_bone_parent(i);
-		if (parent_pb != bones[i].cache_parent_physical_bone) {
-			bones[i].cache_parent_physical_bone = parent_pb;
-			if (bones[i].physical_bone) {
-				bones[i].physical_bone->_on_bone_parent_changed();
-			}
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Transform3D PhysicalBoneSimulator3D::get_bone_global_pose(int p_bone) const
 {
 	const int bone_size = bones.size();

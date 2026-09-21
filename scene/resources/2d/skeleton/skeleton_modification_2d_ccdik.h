@@ -33,17 +33,8 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-<<<<<<< HEAD
-///////////////////////////////////////
-// SkeletonModification2DCCDIK
-///////////////////////////////////////
-
-class SkeletonModification2DCCDIK : public SkeletonModification2D {
-
-=======
 class SkeletonModification2DCCDIK : public SkeletonModification2D
 {
->>>>>>> fix/remove-object
 private:
 	struct CCDIK_Joint_Data2D
 	{
@@ -69,11 +60,7 @@ private:
 	void update_tip_cache();
 
 	void ccdik_joint_update_bone2d_cache(int p_joint_idx);
-<<<<<<< HEAD
-	void _execute_ccdik_joint(int p_joint_idx, Node2D *p_target, Node2D *p_tip);
-=======
 	void _execute_ccdik_joint(int p_joint_idx, Node2D* p_target, Node2D* p_tip);
->>>>>>> fix/remove-object
 
 public:
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;

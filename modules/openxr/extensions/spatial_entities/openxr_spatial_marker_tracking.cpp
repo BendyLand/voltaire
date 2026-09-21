@@ -332,12 +332,6 @@ uint32_t OpenXRSpatialComponentMarkerList::get_marker_id(int64_t p_index) const
 	return marker_data[p_index].markerId;
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////
-// OpenXRMarkerTracker
-
-=======
->>>>>>> fix/remove-object
 void OpenXRMarkerTracker::set_bounds_size(const Vector2& p_bounds_size)
 {
 	bounds_size = p_bounds_size;
@@ -361,12 +355,6 @@ void OpenXRMarkerTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
 
 uint32_t OpenXRMarkerTracker::get_marker_id() const { return marker_id; }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialMarkerTrackingCapability
-
-=======
->>>>>>> fix/remove-object
 OpenXRSpatialMarkerTrackingCapability* OpenXRSpatialMarkerTrackingCapability::singleton = nullptr;
 
 OpenXRSpatialMarkerTrackingCapability* OpenXRSpatialMarkerTrackingCapability::get_singleton()
@@ -433,12 +421,6 @@ bool OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()
 	return se_extension->supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////
-// Discovery logic
-
-=======
->>>>>>> fix/remove-object
 void OpenXRSpatialMarkerTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
 {
 	spatial_context = p_spatial_context;
@@ -453,13 +435,10 @@ void OpenXRSpatialMarkerTrackingCapability::_on_spatial_discovery_recommended(RI
 	}
 }
 
-<<<<<<< HEAD
-=======
 void OpenXRSpatialMarkerTrackingCapability::on_session_created(XrSession_T* p_session) {}
 
 void OpenXRSpatialMarkerTrackingCapability::on_session_destroyed() {}
 
 void OpenXRSpatialMarkerTrackingCapability::on_process() {}
 
->>>>>>> fix/remove-object
 

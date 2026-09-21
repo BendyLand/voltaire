@@ -122,10 +122,6 @@ private:
 	}
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Gradient();

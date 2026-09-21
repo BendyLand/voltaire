@@ -73,10 +73,6 @@ class LocalizationEditor : public VBoxContainer
 	void _translation_res_option_add(const PackedStringArray& p_paths);
 	void _translation_res_option_changed();
 	void _translation_res_option_popup(bool p_arrow_clicked);
-<<<<<<< HEAD
-	void _translation_res_option_selected(const String& p_locale);
-=======
->>>>>>> fix/remove-object
 
 	void _template_source_add(const PackedStringArray& p_paths);
 	void _template_source_file_open();

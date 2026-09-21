@@ -47,8 +47,6 @@ Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
 
 PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D() {}
 
-<<<<<<< HEAD
-=======
 bool PhysicsDirectSpaceState3D::intersect_ray(
 	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
 {
@@ -97,5 +95,4 @@ Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 	return Vector3();
 }
 
->>>>>>> fix/remove-object
 

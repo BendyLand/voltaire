@@ -198,10 +198,6 @@ class Sprite3D : public SpriteBase3D
 
 protected:
 	virtual void _draw() override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_texture(const Ref<Texture2D>& p_texture);

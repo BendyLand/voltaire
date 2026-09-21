@@ -47,12 +47,6 @@ public:
 private:
 	List<StringName> _existing_metas;
 
-<<<<<<< HEAD
-	void _check_meta_name();
-	void _complete_init(const StringName& p_label);
-
-=======
->>>>>>> fix/remove-object
 	LineEdit* add_meta_name = nullptr;
 	EditorVariantTypeOptionButton* add_meta_type = nullptr;
 	EditorValidationPanel* validation_panel = nullptr;

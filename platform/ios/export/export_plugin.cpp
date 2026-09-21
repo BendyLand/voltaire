@@ -91,8 +91,6 @@ Vector<EditorExportPlatformAppleEmbedded::IconInfo> EditorExportPlatformIOS::get
 	};
 }
 
-<<<<<<< HEAD
-=======
 void EditorExportPlatformIOS::get_export_options(
 	List<EditorExportPlatform::ExportOption>* r_options) const
 {
@@ -125,5 +123,4 @@ Error EditorExportPlatformIOS::_export_icons(
 	return OK;
 }
 
->>>>>>> fix/remove-object
 

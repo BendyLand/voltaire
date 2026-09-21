@@ -42,17 +42,9 @@ private:
 
 protected:
 	TextEdit* text_edit = nullptr;
-<<<<<<< HEAD
-
-	static void _bind_methods();
-
-public:
-	void clear_highlighting_cache();
-=======
 
 public:
 	void clear_highlighting_cache() {}
->>>>>>> fix/remove-object
 
 	virtual void _clear_highlighting_cache() {}
 
@@ -66,11 +58,6 @@ public:
 	virtual ~SyntaxHighlighter() {}
 };
 
-<<<<<<< HEAD
-///////////////////////////////////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 class CodeHighlighter : public SyntaxHighlighter
 {
 private:

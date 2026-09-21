@@ -792,11 +792,6 @@ const String OpenXRRenderModelData::get_node_name(uint32_t p_node_index) const
 	return node_names[p_node_index];
 }
 
-<<<<<<< HEAD
-OpenXRRenderModelData::OpenXRRenderModelData() {}
-
-OpenXRRenderModelData::~OpenXRRenderModelData() {}
-=======
 Node3D* OpenXRRenderModelData::new_scene_instance()
 {
 	Node3D n = Node3D();
@@ -808,7 +803,6 @@ HashMap<String, bool*> OpenXRRenderModelExtension::get_requested_extensions(
 {
 	return HashMap<String, bool*>();
 }
->>>>>>> fix/remove-object
 #endif // MODULE_GLTF_ENABLED
 
 

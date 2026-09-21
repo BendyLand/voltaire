@@ -45,46 +45,6 @@
 #include "scene/gui/tab_container.h"
 #include "scene/main/scene_tree.h"
 
-<<<<<<< HEAD
-void RenameDialog::_update_preview_int(int new_value) { _update_preview(); }
-
-void RenameDialog::_update_preview(const String& new_text)
-{
-	if (lock_preview_update || preview_node == nullptr) {
-		return;
-	}
-
-	has_errors = false;
-	add_error_handler(&eh);
-
-	String new_name = _apply_rename(preview_node, spn_count_start->get_value());
-
-	if (!has_errors) {
-		lbl_preview_title->set_text(TTR("Preview:"));
-		lbl_preview->set_text(new_name);
-
-		if (new_name == preview_node->get_name()) {
-			// New name is identical to the old one. Don't color it as much to avoid distracting the
-			// user.
-			const Color accent_color = EditorNode::get_singleton()->get_editor_theme()->get_color(
-				SNAME("accent_color"), EditorStringName(Editor));
-			const Color text_color = EditorNode::get_singleton()->get_editor_theme()->get_color(
-				SNAME("default_color"), SNAME("RichTextLabel"));
-			lbl_preview->add_theme_color_override(
-				SceneStringName(font_color), accent_color.lerp(text_color, 0.5));
-		}
-		else {
-			lbl_preview->add_theme_color_override(SceneStringName(font_color),
-				EditorNode::get_singleton()->get_editor_theme()->get_color(
-					SNAME("success_color"), EditorStringName(Editor)));
-		}
-	}
-
-	remove_error_handler(&eh);
-}
-
-=======
->>>>>>> fix/remove-object
 String RenameDialog::_apply_rename(const Node* node, int count)
 {
 	String search = lne_search->get_text();
@@ -116,36 +76,6 @@ String RenameDialog::_apply_rename(const Node* node, int count)
 	return new_name;
 }
 
-<<<<<<< HEAD
-void RenameDialog::_error_handler(void* p_self, const char* p_func, const char* p_file, int p_line,
-	const char* p_error, const char* p_errorexp, bool p_editor_notify, ErrorHandlerType p_type)
-{
-	RenameDialog* self = (RenameDialog*)p_self;
-	String source_file = String::utf8(p_file);
-
-	// Only show first error that is related to "regex"
-	if (self->has_errors || !source_file.contains("regex")) {
-		return;
-	}
-
-	String err_str;
-	if (p_errorexp && p_errorexp[0]) {
-		err_str = String::utf8(p_errorexp);
-	}
-	else {
-		err_str = String::utf8(p_error);
-	}
-
-	self->has_errors = true;
-	self->lbl_preview_title->set_text(TTR("Regular Expression Error:"));
-	self->lbl_preview->add_theme_color_override(
-		SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(
-										 SNAME("error_color"), EditorStringName(Editor)));
-	self->lbl_preview->set_text(vformat(TTR("At character %s"), err_str));
-}
-
-=======
->>>>>>> fix/remove-object
 String RenameDialog::_regex(const String& pattern, const String& subject, const String& replacement)
 {
 	RegEx regex(pattern);
@@ -182,60 +112,14 @@ void RenameDialog::_iterate_scene(const Node* node, List<Node*>& selection, int*
 	}
 }
 
-<<<<<<< HEAD
-void RenameDialog::reset()
-{
-	lock_preview_update = true;
-
-	lne_prefix->clear();
-	lne_suffix->clear();
-	lne_search->clear();
-	lne_replace->clear();
-
-	cbut_substitute->set_pressed(false);
-	cbut_regex->set_pressed(false);
-	cbut_process->set_pressed(false);
-
-	chk_per_level_counter->set_pressed(true);
-
-	spn_count_start->set_value(1);
-	spn_count_step->set_value(1);
-	spn_count_padding->set_value(1);
-
-	opt_style->select(0);
-	opt_case->select(0);
-
-	lock_preview_update = false;
-	_update_preview();
-}
-
-=======
->>>>>>> fix/remove-object
 bool RenameDialog::_is_main_field(LineEdit* line_edit)
 {
 	return line_edit && (line_edit == lne_search || line_edit == lne_replace ||
 							line_edit == lne_prefix || line_edit == lne_suffix);
 }
 
-<<<<<<< HEAD
-void RenameDialog::_features_toggled(bool pressed)
-{
-	if (pressed) {
-		tabc_features->show();
-	}
-	else {
-		tabc_features->hide();
-	}
-
-	// Adjust to minimum size in y
-	Size2i new_size = get_size();
-	new_size.y = 0;
-	set_size(new_size);
-}
-=======
 String RenameDialog::_substitute(String const&, Node const*, int) { return String(); }
 
 String RenameDialog::_postprocess(String const&) { return String(); }
->>>>>>> fix/remove-object
 
 

@@ -201,11 +201,7 @@ NavLink2D::~NavLink2D()
 	iteration = Ref<NavLinkIteration2D>();
 }
 
-<<<<<<< HEAD
-
-=======
 void NavLink2D::request_sync() {}
 
 
 void NavLink2D::cancel_sync_request() {}
->>>>>>> fix/remove-object

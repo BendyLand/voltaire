@@ -373,8 +373,6 @@ Vector3 JoltPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void JoltPhysicsDirectSpaceState3D::_collide_shape_queries(JPH::Shape const*, JPH::Vec3,
 	JPH::Mat44 const&, JPH::CollideShapeSettings const&, JPH::Vec3,
 	JPH::CollisionCollector<JPH::CollideShapeResult, JPH::CollisionCollectorTraitsCollideShape>&,
@@ -423,5 +421,4 @@ bool JoltPhysicsDirectSpaceState3D::rest_info(
 	return false;
 }
 
->>>>>>> fix/remove-object
 

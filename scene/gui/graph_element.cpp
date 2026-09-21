@@ -33,39 +33,6 @@
 #include "scene/gui/graph_edit.h"
 #include "scene/theme/theme_db.h"
 
-<<<<<<< HEAD
-void GraphElement::_resort()
-{
-	Size2 size = get_size();
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* child = as_sortable_control(get_child(i));
-		if (!child) {
-			continue;
-		}
-		fit_child_in_rect(child, Rect2(Point2(), size));
-	}
-}
-
-Size2 GraphElement::get_minimum_size() const
-{
-	Size2 minsize;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* child = as_sortable_control(get_child(i), SortableVisibilityMode::IGNORE);
-		if (!child) {
-			continue;
-		}
-
-		Size2i size = child->get_bound_minimum_size();
-
-		minsize = minsize.max(size);
-	}
-
-	return minsize;
-}
-
-=======
->>>>>>> fix/remove-object
 void GraphElement::_notification(int p_what)
 {
 	switch (p_what) {
@@ -81,18 +48,6 @@ bool GraphElement::is_selected() { return selected; }
 
 Vector2 GraphElement::get_drag_from() { return drag_from; }
 
-<<<<<<< HEAD
-void GraphElement::set_resizable(bool p_enable)
-{
-	if (resizable == p_enable) {
-		return;
-	}
-	resizable = p_enable;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool GraphElement::is_resizable() const { return resizable; }
 
 void GraphElement::set_draggable(bool p_draggable) { draggable = p_draggable; }
@@ -113,8 +68,6 @@ void GraphElement::set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_s
 
 bool GraphElement::is_scaling_menus() const { return scaling_menus; }
 
-<<<<<<< HEAD
-=======
 void GraphElement::_edit_set_position(const Point2& p_position) {}
 
 void GraphElement::set_selected(bool) {}
@@ -123,5 +76,4 @@ Size2 GraphElement::get_minimum_size() const { return Size2(); }
 
 void GraphElement::_resort() {}
 
->>>>>>> fix/remove-object
 

@@ -46,10 +46,6 @@ class SkeletonModificationStack2D : public Resource
 	friend class SkeletonModification2D;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Skeleton2D* skeleton = nullptr;

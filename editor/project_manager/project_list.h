@@ -99,19 +99,10 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	void set_project_title(const String& p_title);
-	void set_project_path(const String& p_path);
-=======
->>>>>>> fix/remove-object
 	void set_tags(const PackedStringArray& p_tags, ProjectList* p_parent_list);
 	void set_project_icon(const Ref<Texture2D>& p_icon);
 	void set_last_edited_info(const String& p_info);
 	void set_project_version(const String& p_version);
-<<<<<<< HEAD
-	void set_unsupported_features(PackedStringArray p_features);
-=======
->>>>>>> fix/remove-object
 
 	bool should_load_project_icon() const;
 
@@ -269,10 +260,6 @@ private:
 	// Project list items.
 
 	void _create_project_item_control(int p_index);
-<<<<<<< HEAD
-	void _update_project_control_translatable_fields(const Item& item);
-=======
->>>>>>> fix/remove-object
 	void _toggle_project(int p_index);
 	void _remove_project(int p_index, bool p_update_settings);
 

@@ -60,9 +60,6 @@ void EditorEventSearchBar::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorEventSearchBar::_value_changed() {}

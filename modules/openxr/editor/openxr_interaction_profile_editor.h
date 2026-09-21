@@ -45,11 +45,6 @@ private:
 	OpenXRBindingModifiersDialog* binding_modifiers_dialog = nullptr;
 	VBoxContainer* toolbar_vb = nullptr;
 	Button* binding_modifiers_btn = nullptr;
-<<<<<<< HEAD
-
-	void _on_open_binding_modifiers();
-=======
->>>>>>> fix/remove-object
 
 protected:
 	EditorUndoRedoManager* undo_redo;

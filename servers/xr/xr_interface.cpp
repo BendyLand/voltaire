@@ -124,8 +124,6 @@ void XRInterface::trigger_haptic_pulse(const String& p_action_name,
 {
 }
 
-<<<<<<< HEAD
-=======
 StringName XRInterface::get_name() const { return StringName(); }
 
 uint32_t XRInterface::get_capabilities() const { return 0; }
@@ -161,5 +159,4 @@ Vector<RenderingServerTypes::BlitToScreen> XRInterface::post_draw_viewport(
 	return Vector<RenderingServerTypes::BlitToScreen>();
 }
 
->>>>>>> fix/remove-object
 

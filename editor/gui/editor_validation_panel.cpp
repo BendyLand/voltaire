@@ -47,16 +47,6 @@ void EditorValidationPanel::_notification(int p_what)
 		}
 	} break;
 
-<<<<<<< HEAD
-	case NOTIFICATION_THEME_CHANGED: {
-		theme_cache.valid_color = get_theme_color(SNAME("success_color"), EditorStringName(Editor));
-		theme_cache.warning_color =
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor));
-		theme_cache.error_color = get_theme_color(SNAME("error_color"), EditorStringName(Editor));
-	} break;
-
-=======
->>>>>>> fix/remove-object
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 		if (is_visible_in_tree() && pending_update) {
 			_update();
@@ -83,45 +73,7 @@ void EditorValidationPanel::add_line(int p_id, const String& p_valid_message)
 
 void EditorValidationPanel::set_accept_button(Button* p_button) { accept_button = p_button; }
 
-<<<<<<< HEAD
-void EditorValidationPanel::set_message(
-	int p_id, const String& p_text, MessageType p_type, bool p_auto_prefix)
-{
-	ERR_FAIL_COND(!valid_messages.has(p_id));
-
-	Label* label = labels[p_id];
-	if (p_text.is_empty()) {
-		label->hide();
-		return;
-	}
-	label->show();
-
-	if (p_auto_prefix) {
-		label->set_text(String(U"•  ") + TTR(p_text));
-	}
-	else {
-		label->set_text(TTR(p_text));
-	}
-
-	switch (p_type) {
-	case MSG_OK:
-		label->add_theme_color_override(SceneStringName(font_color), theme_cache.valid_color);
-		break;
-	case MSG_WARNING:
-		label->add_theme_color_override(SceneStringName(font_color), theme_cache.warning_color);
-		break;
-	case MSG_ERROR:
-		label->add_theme_color_override(SceneStringName(font_color), theme_cache.error_color);
-		valid = false;
-		break;
-	case MSG_INFO:
-		label->remove_theme_color_override(SceneStringName(font_color));
-		break;
-	}
-}
-=======
 void EditorValidationPanel::update() {}
->>>>>>> fix/remove-object
 
 bool EditorValidationPanel::is_valid() const { return valid; }
 
@@ -134,8 +86,5 @@ EditorValidationPanel::EditorValidationPanel()
 }
 
 
-<<<<<<< HEAD
-=======
 
 void EditorValidationPanel::_update() {}
->>>>>>> fix/remove-object

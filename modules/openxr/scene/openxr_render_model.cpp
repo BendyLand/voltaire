@@ -34,11 +34,8 @@
 
 #include "../extensions/openxr_render_model_extension.h"
 #include "core/config/project_settings.h"
-<<<<<<< HEAD
-=======
 
 void OpenXRRenderModel::_load_render_model_scene() {}
->>>>>>> fix/remove-object
 
 String OpenXRRenderModel::get_top_level_path() const
 {

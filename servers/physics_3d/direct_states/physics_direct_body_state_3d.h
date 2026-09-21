@@ -30,10 +30,6 @@
 
 #pragma once
 
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
 
 class PhysicsDirectBodyState3D

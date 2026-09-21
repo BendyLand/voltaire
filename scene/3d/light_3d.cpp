@@ -106,11 +106,8 @@ void Light3D::set_shadow_caster_mask(uint32_t p_caster_mask)
 
 uint32_t Light3D::get_shadow_caster_mask() const { return shadow_caster_mask; }
 
-<<<<<<< HEAD
-=======
 AABB Light3D::get_aabb() const { return AABB(); }
 
->>>>>>> fix/remove-object
 PackedStringArray Light3D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
@@ -218,64 +215,6 @@ void Light3D::set_editor_only(bool p_editor_only)
 
 bool Light3D::is_editor_only() const { return editor_only; }
 
-<<<<<<< HEAD
-
-Light3D::Light3D(RSE::LightType p_type)
-{
-	type = p_type;
-	switch (p_type) {
-	case RSE::LIGHT_DIRECTIONAL:
-		light = RenderingServer::get_singleton()->directional_light_create();
-		break;
-	case RSE::LIGHT_OMNI:
-		light = RenderingServer::get_singleton()->omni_light_create();
-		break;
-	case RSE::LIGHT_SPOT:
-		light = RenderingServer::get_singleton()->spot_light_create();
-		break;
-	case RSE::LIGHT_AREA:
-		light = RenderingServer::get_singleton()->area_light_create();
-		break;
-	default: {
-	};
-	}
-
-	RS::get_singleton()->instance_set_base(get_instance(), light);
-
-	set_color(Color(1, 1, 1, 1));
-	set_shadow(false);
-	set_negative(false);
-	set_cull_mask(0xFFFFFFFF);
-
-	set_param(PARAM_ENERGY, 1);
-	set_param(PARAM_INDIRECT_ENERGY, 1);
-	set_param(PARAM_VOLUMETRIC_FOG_ENERGY, 1);
-	set_param(PARAM_SPECULAR, 0.5);
-	set_param(PARAM_RANGE, 5);
-	set_param(PARAM_SIZE, 0);
-	set_param(PARAM_ATTENUATION, 1);
-	set_param(PARAM_SPOT_ANGLE, 45);
-	set_param(PARAM_SPOT_ATTENUATION, 1);
-	set_param(PARAM_SHADOW_MAX_DISTANCE, 0);
-	set_param(PARAM_SHADOW_SPLIT_1_OFFSET, 0.1);
-	set_param(PARAM_SHADOW_SPLIT_2_OFFSET, 0.2);
-	set_param(PARAM_SHADOW_SPLIT_3_OFFSET, 0.5);
-	set_param(PARAM_SHADOW_FADE_START, 0.8);
-	set_param(PARAM_SHADOW_PANCAKE_SIZE, 20.0);
-	set_param(PARAM_SHADOW_OPACITY, 1.0);
-	set_param(PARAM_SHADOW_BLUR, 1.0);
-	set_param(PARAM_SHADOW_BIAS, 0.1);
-	set_param(PARAM_SHADOW_NORMAL_BIAS, 1.0);
-	set_param(PARAM_TRANSMITTANCE_BIAS, 0.05);
-	set_param(PARAM_SHADOW_FADE_START, 1);
-	// For OmniLight3D and SpotLight3D, specified in Lumens.
-	set_param(PARAM_INTENSITY, 1000.0);
-	set_temperature(6500.0); // Nearly white.
-	set_disable_scale(true);
-}
-
-=======
->>>>>>> fix/remove-object
 Light3D::Light3D()
 {
 	ERR_PRINT("Light3D should not be instantiated directly; use the DirectionalLight3D, "
@@ -311,24 +250,6 @@ void DirectionalLight3D::set_sky_mode(SkyMode p_mode)
 
 DirectionalLight3D::SkyMode DirectionalLight3D::get_sky_mode() const { return sky_mode; }
 
-<<<<<<< HEAD
-
-
-DirectionalLight3D::DirectionalLight3D() : Light3D(RSE::LIGHT_DIRECTIONAL)
-{
-	set_param(PARAM_SHADOW_MAX_DISTANCE, 100);
-	set_param(PARAM_SHADOW_FADE_START, 0.8);
-	// Increase the default shadow normal bias to better suit most scenes.
-	set_param(PARAM_SHADOW_NORMAL_BIAS, 2.0);
-	set_param(PARAM_INTENSITY, 100000.0); // Specified in Lux, approximate mid-day sun.
-	set_param(PARAM_SPECULAR, 1.0);
-	set_shadow_mode(SHADOW_PARALLEL_4_SPLITS);
-	blend_splits = false;
-	set_sky_mode(SKY_MODE_LIGHT_AND_SKY);
-}
-
-=======
->>>>>>> fix/remove-object
 void OmniLight3D::set_shadow_mode(ShadowMode p_mode)
 {
 	shadow_mode = p_mode;
@@ -382,15 +303,6 @@ PackedStringArray SpotLight3D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-SpotLight3D::SpotLight3D() : Light3D(RSE::LIGHT_SPOT)
-{
-	// Decrease the default shadow bias to better suit most scenes.
-	set_param(PARAM_SHADOW_BIAS, 0.03);
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> AreaLight3D::get_area_texture() const { return area_texture; }
 
 Vector2 AreaLight3D::get_area_size() const { return area_size; }
@@ -403,21 +315,6 @@ void AreaLight3D::set_area_normalize_energy(bool p_enabled)
 
 bool AreaLight3D::is_area_normalizing_energy() const { return area_normalize_energy; }
 
-<<<<<<< HEAD
-AreaLight3D::AreaLight3D() : Light3D(RSE::LIGHT_AREA)
-{
-	// Decrease the default shadow bias to better suit most scenes.
-	set_param(PARAM_SHADOW_BIAS, 0.1);
-	set_param(PARAM_SIZE, 0.5);
-	set_param(PARAM_SPECULAR, 1.0);
-	set_area_size(Vector2(1, 1));
-	set_area_normalize_energy(true);
-}
-
-
-
-=======
->>>>>>> fix/remove-object
 PackedStringArray AreaLight3D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Light3D::get_configuration_warnings();

@@ -85,15 +85,6 @@ Rect2 AnimatedSprite2D::_get_rect() const
 	return Rect2(ofs, s);
 }
 
-<<<<<<< HEAD
-
-
-
-
-
-
-=======
->>>>>>> fix/remove-object
 Ref<SpriteFrames> AnimatedSprite2D::get_sprite_frames() const { return frames; }
 
 int AnimatedSprite2D::get_frame() const { return frame; }
@@ -102,38 +93,6 @@ void AnimatedSprite2D::set_frame_progress(real_t p_progress) { frame_progress = 
 
 real_t AnimatedSprite2D::get_frame_progress() const { return frame_progress; }
 
-<<<<<<< HEAD
-void AnimatedSprite2D::set_frame_and_progress(int p_frame, real_t p_progress)
-{
-	if (frames.is_null()) {
-		return;
-	}
-
-	bool has_animation = frames->has_animation(animation);
-	int end_frame = has_animation ? MAX(0, frames->get_frame_count(animation) - 1) : 0;
-	bool is_changed = frame != p_frame;
-
-	if (p_frame < 0) {
-		frame = 0;
-	}
-	else if (has_animation && p_frame > end_frame) {
-		frame = end_frame;
-	}
-	else {
-		frame = p_frame;
-	}
-
-	_calc_frame_speed_scale();
-	frame_progress = p_progress;
-
-	if (!is_changed) {
-		return; // No change, don't redraw.
-	}
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void AnimatedSprite2D::set_speed_scale(float p_speed_scale) { speed_scale = p_speed_scale; }
 
 float AnimatedSprite2D::get_speed_scale() const { return speed_scale; }
@@ -154,15 +113,6 @@ bool AnimatedSprite2D::is_flipped_h() const { return hflip; }
 
 bool AnimatedSprite2D::is_flipped_v() const { return vflip; }
 
-<<<<<<< HEAD
-void AnimatedSprite2D::_res_changed()
-{
-	set_frame_and_progress(frame, frame_progress);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool AnimatedSprite2D::is_playing() const { return playing; }
 
 void AnimatedSprite2D::set_autoplay(const String& p_name)
@@ -176,13 +126,6 @@ void AnimatedSprite2D::set_autoplay(const String& p_name)
 
 String AnimatedSprite2D::get_autoplay() const { return autoplay; }
 
-<<<<<<< HEAD
-
-
-void AnimatedSprite2D::play_backwards(const StringName& p_name) { play(p_name, -1, true); }
-
-=======
->>>>>>> fix/remove-object
 void AnimatedSprite2D::pause() { _stop_internal(false); }
 
 void AnimatedSprite2D::stop() { _stop_internal(true); }

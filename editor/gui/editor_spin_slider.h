@@ -85,10 +85,6 @@ private:
 
 	void _grabber_gui_input(const Ref<InputEvent>& p_event);
 	void _value_input_hidden();
-<<<<<<< HEAD
-	void _value_input_submitted(const String&);
-=======
->>>>>>> fix/remove-object
 	void _value_focus_exited();
 	void _value_input_gui_input(const Ref<InputEvent>& p_event);
 
@@ -106,10 +102,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _grabber_mouse_entered();
 	void _grabber_mouse_exited();
 	void _focus_entered(bool p_hide_focus = false);

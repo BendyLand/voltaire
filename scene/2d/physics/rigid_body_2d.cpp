@@ -262,10 +262,7 @@ PackedStringArray RigidBody2D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 RigidBody2D::RigidBody2D() {}
 

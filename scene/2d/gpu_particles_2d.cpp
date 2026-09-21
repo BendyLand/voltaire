@@ -144,47 +144,6 @@ void GPUParticles2D::_update_particle_emission_transform()
 	RS::get_singleton()->particles_set_emission_transform(particles, xf);
 }
 
-<<<<<<< HEAD
-void GPUParticles2D::set_trail_enabled(bool p_enabled)
-{
-	trail_enabled = p_enabled;
-	RS::get_singleton()->particles_set_trails(particles, trail_enabled, trail_lifetime);
-	queue_redraw();
-	update_configuration_warnings();
-
-	RS::get_singleton()->particles_set_transform_align(
-		particles, p_enabled ? RSE::PARTICLES_TRANSFORM_ALIGN_Y_TO_VELOCITY
-							 : RSE::PARTICLES_TRANSFORM_ALIGN_DISABLED);
-}
-
-void GPUParticles2D::set_trail_lifetime(double p_seconds)
-{
-	ERR_FAIL_COND(p_seconds < 0.01 - CMP_EPSILON);
-	trail_lifetime = p_seconds;
-	RS::get_singleton()->particles_set_trails(particles, trail_enabled, trail_lifetime);
-	queue_redraw();
-}
-
-void GPUParticles2D::set_trail_sections(int p_sections)
-{
-	ERR_FAIL_COND(p_sections < 2);
-	ERR_FAIL_COND(p_sections > 128);
-
-	trail_sections = p_sections;
-	queue_redraw();
-}
-
-void GPUParticles2D::set_trail_section_subdivisions(int p_subdivisions)
-{
-	ERR_FAIL_COND(p_subdivisions < 1);
-	ERR_FAIL_COND(p_subdivisions > 1024);
-
-	trail_section_subdivisions = p_subdivisions;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void GPUParticles2D::set_interp_to_end(float p_interp)
 {
 	interp_to_end_factor = CLAMP(p_interp, 0.0, 1.0);
@@ -342,32 +301,6 @@ void GPUParticles2D::emit_particle(const Transform2D& p_transform2d, const Vecto
 		particles, emit_transform, velocity, p_color, p_custom, p_emit_flags);
 }
 
-<<<<<<< HEAD
-void GPUParticles2D::_texture_changed()
-{
-	// Changes to the texture need to trigger an update to make
-	// the editor redraw the sprite with the updated texture.
-	if (texture.is_valid()) {
-		queue_redraw();
-	}
-}
-
-void GPUParticles2D::set_sub_emitter(const NodePath& p_path)
-{
-	if (is_inside_tree()) {
-		RS::get_singleton()->particles_set_subemitter(particles, RID());
-	}
-
-	sub_emitter = p_path;
-
-	if (is_inside_tree() && sub_emitter != NodePath()) {
-		_attach_sub_emitter();
-	}
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 NodePath GPUParticles2D::get_sub_emitter() const { return sub_emitter; }
 
 void GPUParticles2D::set_amount_ratio(float p_ratio)

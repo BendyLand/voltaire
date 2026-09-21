@@ -784,8 +784,6 @@ void OpenXRCompositionLayerExtension::CompositionLayer::create_android_surface()
 }
 #endif
 
-<<<<<<< HEAD
-=======
 void OpenXRCompositionLayerExtension::composition_layer_set_viewport(
 	RID p_layer, RID p_viewport, const Vector2i& p_size)
 {
@@ -920,5 +918,4 @@ void OpenXRCompositionLayerExtension::on_session_created(XrSession_T* p_session)
 
 void OpenXRCompositionLayerExtension::on_session_destroyed() {}
 
->>>>>>> fix/remove-object
 

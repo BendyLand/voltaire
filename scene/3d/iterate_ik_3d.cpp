@@ -297,11 +297,8 @@ void IterateIK3D::_update_bone_axis(Skeleton3D* p_skeleton, int p_index)
 #endif // TOOLS_ENABLED
 }
 
-<<<<<<< HEAD
-=======
 void IterateIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
 
->>>>>>> fix/remove-object
 void IterateIK3D::_process_joints(double p_delta, Skeleton3D* p_skeleton,
 	IterateIK3DSetting* p_setting, const Vector3& p_destination)
 {
@@ -343,51 +340,6 @@ void IterateIK3D::_solve_iteration(double p_delta, Skeleton3D* p_skeleton,
 {
 }
 
-<<<<<<< HEAD
-void IterateIK3D::_update_joint_limitation(int p_index, int p_joint)
-{
-	ERR_FAIL_INDEX(p_index, (int)iterate_settings.size());
-	iterate_settings[p_index]->simulated = false;
-	const LocalVector<IterateIK3DJointSetting*>& joint_settings =
-		iterate_settings[p_index]->joint_settings;
-	ERR_FAIL_INDEX(p_joint,
-		(int)
-			joint_settings.size()); // p_joint is unused directly, but need to identify bound index.
-#ifdef TOOLS_ENABLED
-	update_gizmos();
-#endif // TOOLS_ENABLED
-}
-
-#ifdef TOOLS_ENABLED
-Vector3 IterateIK3D::get_bone_vector(int p_index, int p_joint) const
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return Vector3();
-	}
-	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
-	IterateIK3DSetting* setting = iterate_settings[p_index];
-	if (!setting) {
-		return Vector3();
-	}
-	const LocalVector<BoneJoint>& joints = setting->joints;
-	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), Vector3());
-	const LocalVector<IKModifier3DSolverInfo*>& solver_info_list = setting->solver_info_list;
-	if (p_joint >= (int)solver_info_list.size() || !solver_info_list[p_joint]) {
-		if (p_joint == (int)joints.size() - 1) {
-			return IKModifier3D::get_bone_axis(skeleton, setting->end_bone.bone,
-					   setting->end_bone_direction, mutable_bone_axes) *
-				   setting->end_bone_length;
-		}
-		return mutable_bone_axes ? skeleton->get_bone_pose(joints[p_joint + 1].bone).origin
-								 : skeleton->get_bone_rest(joints[p_joint + 1].bone).origin;
-	}
-	return solver_info_list[p_joint]->forward_vector * solver_info_list[p_joint]->length;
-}
-#endif // TOOLS_ENABLED
-
-=======
->>>>>>> fix/remove-object
 IterateIK3D::~IterateIK3D()
 {
 	for (uint32_t i = 0; i < iterate_settings.size(); i++) {

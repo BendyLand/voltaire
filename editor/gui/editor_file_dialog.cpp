@@ -46,11 +46,6 @@ bool EditorFileDialog::_should_hide_file(const String& p_file) const
 
 Vector2i EditorFileDialog::_get_list_mode_icon_size() const { return Vector2i(); }
 
-<<<<<<< HEAD
-void EditorFileDialog::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void EditorFileDialog::_dir_contents_changed()
 {
 	if (!EditorFileSystem::get_singleton()) {
@@ -74,11 +69,8 @@ void EditorFileDialog::_dir_contents_changed()
 	}
 }
 
-<<<<<<< HEAD
-=======
 bool EditorFileDialog::_should_use_native_popup() const { return false; }
 
 void EditorFileDialog::_item_menu_id_pressed(int p_id) {}
 
->>>>>>> fix/remove-object
 

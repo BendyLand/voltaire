@@ -38,13 +38,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "voxel_gi.h"
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,
 	const Vector3& p_octree_size, const Vector<uint8_t>& p_octree_cells,
 	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
@@ -167,13 +160,6 @@ void VoxelGI::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 
 Ref<CameraAttributes> VoxelGI::get_camera_attributes() const { return camera_attributes; }
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 VoxelGI::BakeBeginFunc VoxelGI::bake_begin_function = nullptr;
 VoxelGI::BakeStepFunc VoxelGI::bake_step_function = nullptr;
 VoxelGI::BakeEndFunc VoxelGI::bake_end_function = nullptr;

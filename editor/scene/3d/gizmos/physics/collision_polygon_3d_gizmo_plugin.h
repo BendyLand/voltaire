@@ -37,10 +37,6 @@ class CollisionPolygon3DGizmoPlugin : public EditorNode3DGizmoPlugin
 	void create_collision_material(const String& p_name, float p_alpha);
 
 public:
-<<<<<<< HEAD
-	bool has_gizmo(Node3D* p_spatial) override;
-=======
->>>>>>> fix/remove-object
 	String get_gizmo_name() const override;
 	bool has_gizmo(Node3D* p_spatial) override;
 	int get_priority() const override;

@@ -62,10 +62,6 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Control* add_spacer(bool p_begin = false);

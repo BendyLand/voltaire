@@ -69,10 +69,6 @@ private:
 	void _finish_non_thread_safe_setup();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_frames(int p_frames);

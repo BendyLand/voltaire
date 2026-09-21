@@ -34,18 +34,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 
-<<<<<<< HEAD
-#ifdef TOOLS_ENABLED
-void Camera2D::_project_settings_changed()
-{
-	if (screen_drawing_enabled) {
-		queue_redraw();
-	}
-}
-#endif
-
-=======
->>>>>>> fix/remove-object
 void Camera2D::_update_process_callback()
 {
 	if (is_physics_interpolated_and_enabled()) {

@@ -495,9 +495,6 @@ void NavigationPolygon::set_baking_rect_offset(const Vector2& p_rect_offset)
 
 Vector2 NavigationPolygon::get_baking_rect_offset() const { return baking_rect_offset; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const {}

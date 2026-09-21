@@ -66,40 +66,6 @@ void EditorBottomPanel::_theme_changed()
 	}
 }
 
-<<<<<<< HEAD
-void EditorBottomPanel::_repaint()
-{
-	bool panel_collapsed = get_current_tab() == -1;
-
-	if (panel_collapsed && get_popup()) {
-		set_popup(nullptr);
-	}
-	else if (!panel_collapsed && !get_popup()) {
-		set_popup(dock_context_popup);
-	}
-	if (!panel_collapsed && (previous_tab != -1)) {
-		return;
-	}
-	previous_tab = get_current_tab();
-
-	DockSplitContainer* center_split = EditorNode::get_center_split();
-	ERR_FAIL_NULL(center_split);
-
-	center_split->set_dragger_visibility(
-		panel_collapsed ? SplitContainer::DRAGGER_HIDDEN : SplitContainer::DRAGGER_VISIBLE);
-	center_split->set_collapsed(panel_collapsed);
-
-	expand_button->set_visible(!panel_collapsed);
-	if (expand_button->is_pressed()) {
-		_expand_button_toggled(!panel_collapsed);
-	}
-	else {
-		_theme_changed();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorBottomPanel::dock_closed(EditorDock* p_dock)
 {
 	if (p_dock == get_current_tab_control()) {
@@ -134,21 +100,6 @@ Rect2 EditorBottomPanel::get_floating_dock_rect(EditorDock* p_dock)
 	return ret;
 }
 
-<<<<<<< HEAD
-void EditorBottomPanel::make_item_visible(Control* p_item, bool p_visible, bool p_ignore_lock)
-{
-	// Don't allow changing tabs involuntarily when tabs are locked.
-	if (!p_ignore_lock && lock_panel_switching) {
-		return;
-	}
-
-	EditorDock* dock = _get_dock_from_control(p_item);
-	ERR_FAIL_NULL(dock);
-	dock->set_visible(p_visible);
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorBottomPanel::hide_bottom_panel() { set_current_tab(-1); }
 
 void EditorBottomPanel::toggle_last_opened_bottom_panel()
@@ -158,11 +109,6 @@ void EditorBottomPanel::toggle_last_opened_bottom_panel()
 
 void EditorBottomPanel::_pin_button_toggled(bool p_pressed) { lock_panel_switching = p_pressed; }
 
-<<<<<<< HEAD
-void EditorBottomPanel::set_expanded(bool p_expanded) { expand_button->set_pressed(p_expanded); }
-
-=======
->>>>>>> fix/remove-object
 void EditorBottomPanel::_update_center_split_offset()
 {
 	DockSplitContainer* center_split = EditorNode::get_center_split();
@@ -190,19 +136,6 @@ void EditorBottomPanel::remove_item(Control* p_item)
 	dock->queue_free();
 }
 
-<<<<<<< HEAD
-void EditorBottomPanel::_on_button_visibility_changed(Button* p_button, EditorDock* p_dock)
-{
-	if (p_button->is_visible()) {
-		p_dock->open();
-	}
-	else {
-		p_dock->close();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 EditorBottomPanel::~EditorBottomPanel()
 {
 	for (Button* b : legacy_buttons) {
@@ -210,19 +143,6 @@ EditorBottomPanel::~EditorBottomPanel()
 	}
 }
 
-<<<<<<< HEAD
-void ProgressIndicator::_notification(int p_what)
-{
-	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		const Ref<Texture2D> ring_texture = get_editor_theme_icon(SNAME("ProgressRing"));
-		set_progress_texture(ring_texture);
-		set_tint_progress(get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
-		set_under_texture(ring_texture);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 ProgressIndicator::ProgressIndicator()
 {
 	set_fill_mode(FILL_CLOCKWISE);

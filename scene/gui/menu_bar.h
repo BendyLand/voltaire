@@ -123,10 +123,6 @@ protected:
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_switch_on_hover(bool p_enabled);

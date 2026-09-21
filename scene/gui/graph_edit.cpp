@@ -471,42 +471,6 @@ void GraphEdit::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputE
 	set_zoom_custom(zoom * p_zoom_factor, p_origin);
 }
 
-<<<<<<< HEAD
-void GraphEdit::reset_all_connection_activity()
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	bool changed = false;
-	for (Ref<Connection>& conn : connections) {
-		if (conn->activity > 0) {
-			changed = true;
-			conn->_cache.dirty = true;
-		}
-		conn->activity = 0;
-	}
-	if (changed) {
-		connections_layer->queue_redraw();
-	}
-}
-
-void GraphEdit::clear_connections()
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	for (Ref<Connection>& conn : connections) {
-		conn->_cache.line->queue_free();
-	}
-
-	connections.clear();
-	connection_map.clear();
-
-	minimap->queue_redraw();
-	queue_redraw();
-	connections_layer->queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void GraphEdit::set_panning_scheme(PanningScheme p_scheme)
 {
 	panning_scheme = p_scheme;
@@ -627,20 +591,6 @@ bool GraphEdit::is_valid_connection_type(int p_type, int p_with_type) const
 	return valid_connection_types.has(ct);
 }
 
-<<<<<<< HEAD
-void GraphEdit::set_snapping_enabled(bool p_enable)
-{
-	if (snapping_enabled == p_enable) {
-		return;
-	}
-
-	snapping_enabled = p_enable;
-	toggle_snapping_button->set_pressed(p_enable);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool GraphEdit::is_snapping_enabled() const { return snapping_enabled; }
 
 int GraphEdit::get_snapping_distance() const { return snapping_distance; }
@@ -673,50 +623,8 @@ bool GraphEdit::is_showing_minimap_button() const { return show_minimap_button; 
 
 bool GraphEdit::is_showing_arrange_button() const { return show_arrange_button; }
 
-<<<<<<< HEAD
-void GraphEdit::_minimap_toggled()
-{
-	if (is_minimap_enabled()) {
-		minimap->set_visible(true);
-		minimap->queue_redraw();
-	}
-	else {
-		minimap->set_visible(false);
-	}
-}
-
-void GraphEdit::set_connection_lines_curvature(float p_curvature)
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-
-	lines_curvature = p_curvature;
-	_invalidate_connection_line_cache();
-	connections_layer->queue_redraw();
-	queue_redraw();
-}
-
 float GraphEdit::get_connection_lines_curvature() const { return lines_curvature; }
 
-void GraphEdit::set_connection_lines_thickness(float p_thickness)
-{
-	ERR_FAIL_NULL_MSG(connections_layer, "connections_layer is missing.");
-	ERR_FAIL_COND_MSG
-(
-		p_thickness < 0, "Connection lines thickness must be greater than or equal to 0.");
-
-	if (lines_thickness == p_thickness) {
-		return;
-	}
-	lines_thickness = p_thickness;
-	_invalidate_connection_line_cache();
-	connections_layer->queue_redraw();
-	queue_redraw();
-}
-
-=======
-float GraphEdit::get_connection_lines_curvature() const { return lines_curvature; }
-
->>>>>>> fix/remove-object
 float GraphEdit::get_connection_lines_thickness() const { return lines_thickness; }
 
 bool GraphEdit::is_connection_lines_antialiased() const { return lines_antialiased; }

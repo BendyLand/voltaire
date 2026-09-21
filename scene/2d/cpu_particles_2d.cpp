@@ -130,17 +130,6 @@ void CPUParticles2D::set_draw_order(DrawOrder p_order) { draw_order = p_order; }
 
 CPUParticles2D::DrawOrder CPUParticles2D::get_draw_order() const { return draw_order; }
 
-<<<<<<< HEAD
-void CPUParticles2D::_texture_changed()
-{
-	if (texture.is_valid()) {
-		queue_redraw();
-		_update_mesh_texture();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void CPUParticles2D::_refresh_interpolation_state()
 {
 	if (!is_inside_tree()) {
@@ -262,35 +251,6 @@ bool CPUParticles2D::get_particle_flag(ParticleFlags p_particle_flag) const
 	return particle_flags[p_particle_flag];
 }
 
-<<<<<<< HEAD
-void CPUParticles2D::set_emission_sphere_radius(real_t p_radius)
-{
-	if (p_radius == emission_sphere_radius) {
-		return;
-	}
-	emission_sphere_radius = p_radius;
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-#endif
-}
-
-void CPUParticles2D::set_emission_rect_extents(Vector2 p_extents)
-{
-	if (p_extents == emission_rect_extents) {
-		return;
-	}
-	emission_rect_extents = p_extents;
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		queue_redraw();
-	}
-#endif
-}
-
-=======
->>>>>>> fix/remove-object
 void CPUParticles2D::set_emission_points(const Vector<Vector2>& p_points)
 {
 	emission_points = p_points;
@@ -1035,72 +995,11 @@ void CPUParticles2D::_draw_emission_gizmo()
 		break;
 	default:
 
-<<<<<<< HEAD
-	break;
-=======
 		break;
->>>>>>> fix/remove-object
 	}
 }
 #endif
 
-<<<<<<< HEAD
-CPUParticles2D::CPUParticles2D()
-{
-	mesh = RenderingServer::get_singleton()->mesh_create();
-	multimesh = RenderingServer::get_singleton()->multimesh_create();
-	RenderingServer::get_singleton()->multimesh_set_mesh(multimesh, mesh);
-
-	set_emitting(true);
-	set_amount(8);
-	set_use_local_coordinates(false);
-	set_seed(Math::rand());
-
-	rng.instantiate();
-
-	set_param_min(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_min(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_min(PARAM_ORBIT_VELOCITY, 0);
-	set_param_min(PARAM_LINEAR_ACCEL, 0);
-	set_param_min(PARAM_RADIAL_ACCEL, 0);
-	set_param_min(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_min(PARAM_DAMPING, 0);
-	set_param_min(PARAM_ANGLE, 0);
-	set_param_min(PARAM_SCALE, 1);
-	set_param_min(PARAM_HUE_VARIATION, 0);
-	set_param_min(PARAM_ANIM_SPEED, 0);
-	set_param_min(PARAM_ANIM_OFFSET, 0);
-
-	set_param_max(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_max(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_max(PARAM_ORBIT_VELOCITY, 0);
-	set_param_max(PARAM_LINEAR_ACCEL, 0);
-	set_param_max(PARAM_RADIAL_ACCEL, 0);
-	set_param_max(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_max(PARAM_DAMPING, 0);
-	set_param_max(PARAM_ANGLE, 0);
-	set_param_max(PARAM_SCALE, 1);
-	set_param_max(PARAM_HUE_VARIATION, 0);
-	set_param_max(PARAM_ANIM_SPEED, 0);
-	set_param_max(PARAM_ANIM_OFFSET, 0);
-
-	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
-		particle_flags[i] = false;
-	}
-
-	set_color(Color(1, 1, 1, 1));
-
-	_update_mesh_texture();
-
-	// CPUParticles2D defaults to interpolation off.
-	// This is because the result often looks better when the particles are updated every frame.
-	// Note that children will need to explicitly turn back on interpolation if they want to use it,
-	// rather than relying on inherit mode.
-	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
-}
-
-=======
->>>>>>> fix/remove-object
 CPUParticles2D::~CPUParticles2D()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

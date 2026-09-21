@@ -99,34 +99,17 @@ class AnimationLibraryEditor : public AcceptDialog
 
 	AnimationMixer* mixer = nullptr;
 
-<<<<<<< HEAD
-	void _add_library();
-	void _add_library_validate(const String& p_name);
 	void _load_library();
 
 	void _save_mixer_lib_folding(TreeItem* p_item);
-	Vector<String> _load_mixer_libs_folding();
-=======
-	void _load_library();
-
-	void _save_mixer_lib_folding(TreeItem* p_item);
->>>>>>> fix/remove-object
 	String _get_mixer_signature() const;
 
 	bool updating = false;
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
 
 public:
-	void show_dialog();
-	void update_tree();
-=======
-
-public:
->>>>>>> fix/remove-object
 	AnimationLibraryEditor();
 };
 

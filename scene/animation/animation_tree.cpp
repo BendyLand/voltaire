@@ -483,8 +483,7 @@ bool AnimationTree::_blend_pre_process(
 		}
 
 		AnimationNode::tls_process_state = &process_state;
-		root_animation_node->_pre_process(process_state, instance,
- pi, false);
+		root_animation_node->_pre_process(process_state, instance, pi, false);
 		AnimationNode::tls_process_state = nullptr;
 	}
 

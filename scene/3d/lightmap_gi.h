@@ -285,10 +285,6 @@ private:
 		int& r_mipmaps) const;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

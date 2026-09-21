@@ -338,11 +338,6 @@ public:
 				   !uses_z_clip_scale && !stencil_enabled;
 		}
 
-<<<<<<< HEAD
-		virtual void set_code(const String& p_Code);
-
-=======
->>>>>>> fix/remove-object
 		virtual bool is_animated() const;
 		virtual void set_code(const String& p_Code);
 		virtual bool casts_shadows() const;

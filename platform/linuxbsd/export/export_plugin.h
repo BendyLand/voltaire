@@ -74,11 +74,8 @@ class EditorExportPlatformLinuxBSD : public EditorExportPlatformPC
 	String _get_exe_arch(const String& p_path) const;
 
 public:
-<<<<<<< HEAD
-=======
 	virtual String get_template_file_name(
 		const String& p_target, const String& p_arch) const override;
->>>>>>> fix/remove-object
 	virtual void get_export_options(List<ExportOption>* r_options) const override;
 	virtual List<String> get_binary_extensions(
 		const Ref<EditorExportPreset>& p_preset) const override;
@@ -88,11 +85,6 @@ public:
 		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
 	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-<<<<<<< HEAD
-	virtual String get_template_file_name(
-		const String& p_target, const String& p_arch) const override;
-=======
->>>>>>> fix/remove-object
 	virtual Error fixup_embedded_pck(
 		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size) override;
 	virtual bool is_executable(const String& p_path) const override;

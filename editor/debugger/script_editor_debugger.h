@@ -212,10 +212,6 @@ private:
 	/// Message handler function for _parse_message.
 	static void _init_parse_message_handlers();
 
-<<<<<<< HEAD
-	void _set_reason_text(const String& p_reason, MessageType p_type);
-=======
->>>>>>> fix/remove-object
 	void _update_reason_content_height();
 	void _update_buttons_state();
 
@@ -237,10 +233,6 @@ private:
 	void _expand_errors_list();
 	void _collapse_errors_list();
 
-<<<<<<< HEAD
-	void _vmem_item_activated();
-=======
->>>>>>> fix/remove-object
 	void _vmem_tree_rmb_selected(const Vector2& p_pos, MouseButton p_button);
 	void _vmem_item_menu_id_pressed(int p_option);
 
@@ -249,11 +241,6 @@ private:
 
 	void _clear_errors_list();
 
-<<<<<<< HEAD
-	void _breakpoints_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
-	void _error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button);
-=======
->>>>>>> fix/remove-object
 	void _item_menu_id_pressed(int p_option);
 	void _tab_changed(int p_tab);
 
@@ -291,11 +278,6 @@ public:
 	const SceneDebuggerTree* get_remote_tree();
 
 	void request_remote_evaluate(const String& p_expression, int p_stack_frame);
-<<<<<<< HEAD
-
-	void stop();
-=======
->>>>>>> fix/remove-object
 
 	void debug_skip_breakpoints();
 	void debug_ignore_error_breaks();
@@ -350,11 +332,6 @@ public:
 	EditorDebuggerNode::CameraOverride get_camera_override() const;
 	void set_camera_override(EditorDebuggerNode::CameraOverride p_override);
 
-<<<<<<< HEAD
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
-
-=======
->>>>>>> fix/remove-object
 	void update_live_edit_root();
 
 	void reload_all_scripts();

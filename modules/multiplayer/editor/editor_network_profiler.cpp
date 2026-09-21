@@ -68,40 +68,6 @@ void EditorNetworkProfiler::_refresh()
 	refresh_replication_data();
 }
 
-<<<<<<< HEAD
-void EditorNetworkProfiler::_activate_pressed()
-{
-	_update_button_text();
-
-	if (activate->is_pressed()) {
-		refresh_timer->start();
-	}
-	else {
-		refresh_timer->stop();
-	}
-}
-
-void EditorNetworkProfiler::_update_button_text()
-{
-	if (activate->is_pressed()) {
-		activate->set_button_icon(theme_cache.stop_icon);
-		activate->set_text(TTRC("Stop"));
-	}
-	else {
-		activate->set_button_icon(theme_cache.play_icon);
-		activate->set_text(TTRC("Start"));
-	}
-}
-
-void EditorNetworkProfiler::stopped()
-{
-	activate->set_disabled(true);
-	set_profiling(false);
-	refresh_timer->stop();
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)
 {
 	incoming_bandwidth = p_incoming;
@@ -119,10 +85,7 @@ void EditorNetworkProfiler::set_bandwidth(int p_incoming, int p_outgoing)
 
 bool EditorNetworkProfiler::is_profiling() { return activate->is_pressed(); }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorNetworkProfiler::refresh_rpc_data() {}
 

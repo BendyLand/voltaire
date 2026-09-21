@@ -31,49 +31,10 @@
 #include "panel_container.h"
 #include "scene/theme/theme_db.h"
 
-<<<<<<< HEAD
-Size2 PanelContainer::get_minimum_size() const
-{
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-=======
 Size2 PanelContainer::get_desired_size() const { return Size2(); }
->>>>>>> fix/remove-object
 
 Size2 PanelContainer::get_minimum_size() const { return Size2(); }
 
-<<<<<<< HEAD
-	if (theme_cache.panel_style.is_valid()) {
-		ms += theme_cache.panel_style->get_minimum_size();
-	}
-	return ms;
-}
-
-Size2 PanelContainer::get_desired_size() const
-{
-	Size2 ds;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-
-		Size2 minsize = c->get_desired_size();
-		ds = ds.max(minsize);
-	}
-	if (theme_cache.panel_style.is_valid()) {
-		ds += theme_cache.panel_style->get_minimum_size();
-	}
-	return ds;
-}
-
-=======
->>>>>>> fix/remove-object
 Size2 PanelContainer::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Container::get_inner_combined_maximum_size();
@@ -112,27 +73,6 @@ void PanelContainer::_notification(int p_what)
 		RID ci = get_canvas_item();
 		theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
 	} break;
-<<<<<<< HEAD
-
-	case NOTIFICATION_SORT_CHILDREN: {
-		Size2 size = get_size();
-		Point2 ofs;
-		if (theme_cache.panel_style.is_valid()) {
-			size -= theme_cache.panel_style->get_minimum_size();
-			ofs += theme_cache.panel_style->get_offset();
-		}
-
-		for (int i = 0; i < get_child_count(); i++) {
-			Control* c = as_sortable_control(get_child(i));
-			if (!c) {
-				continue;
-			}
-
-			fit_child_in_rect(c, Rect2(ofs, size));
-		}
-	} break;
-=======
->>>>>>> fix/remove-object
 	}
 }
 

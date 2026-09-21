@@ -57,9 +57,6 @@ NodePath MultiNodeEdit::get_node(int p_index) const
 	return nodes[p_index];
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 StringName MultiNodeEdit::get_edited_class_name() const {}

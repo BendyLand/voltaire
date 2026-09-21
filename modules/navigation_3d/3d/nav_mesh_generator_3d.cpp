@@ -431,12 +431,8 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_FINISHED; // step #12
 }
 
-<<<<<<< HEAD
-
-=======
 void NavMeshGenerator3D::sync() {}
 
 void NavMeshGenerator3D::cleanup() {}
 
 
->>>>>>> fix/remove-object

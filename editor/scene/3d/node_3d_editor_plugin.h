@@ -105,11 +105,6 @@ private:
 	VSplitContainer* shader_split = nullptr;
 	HSplitContainer* left_panel_split = nullptr;
 	HSplitContainer* right_panel_split = nullptr;
-<<<<<<< HEAD
-
-	/////
-=======
->>>>>>> fix/remove-object
 
 	ToolMode tool_mode = TOOL_MODE_TRANSFORM;
 
@@ -274,19 +269,10 @@ private:
 
 	static Node3DEditor* singleton;
 
-<<<<<<< HEAD
-	void _node_added(Node* p_node);
-	void _node_removed(Node* p_node);
-=======
->>>>>>> fix/remove-object
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_priority;
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_name;
 
 	bool do_snap_selected_nodes_to_floor = false;
-<<<<<<< HEAD
-	void _snap_selected_nodes_to_floor();
-=======
->>>>>>> fix/remove-object
 
 	uint32_t world_env_count = 0;
 	uint32_t directional_light_count = 0;
@@ -334,50 +320,11 @@ private:
 
 	bool sun_environ_updating = false;
 
-<<<<<<< HEAD
-	void _sun_direction_draw();
-	void _sun_direction_input(const Ref<InputEvent>& p_event);
-	void _sun_direction_set_altitude(float p_altitude);
-	void _sun_direction_set_azimuth(float p_azimuth);
-	void _sun_set_color(const Color& p_color);
-	void _sun_set_energy(float p_energy);
-	void _sun_set_shadow_max_distance(float p_shadow_max_distance);
-
-	void _environ_set_sky_color(const Color& p_color);
-	void _environ_set_ground_color(const Color& p_color);
-	void _environ_set_sky_energy(float p_energy);
-	void _environ_set_ao();
-	void _environ_set_glow();
-	void _environ_set_tonemap();
-	void _environ_set_gi();
-
-	void _load_default_preview_settings();
-	void _update_preview_environment();
-
-	void _preview_settings_changed();
-	void _sun_environ_settings_pressed();
-
-	void _add_sun_to_scene(bool p_already_added_environment = false);
-	void _add_environment_to_scene(bool p_already_added_sun = false);
-
-	void _update_theme();
-
-protected:
-	void _notification(int p_what);
-
-	static void _bind_methods();
-
-public:
-	static Node3DEditor* get_singleton() { return singleton; }
-
-	static Size2i get_camera_viewport_size(Camera3D* p_camera);
-=======
 	void _preview_settings_changed();
 	void _sun_environ_settings_pressed();
 
 public:
 	static Node3DEditor* get_singleton() { return singleton; }
->>>>>>> fix/remove-object
 
 	Vector3 snap_point(Vector3 p_target, Vector3 p_start = Vector3(0, 0, 0)) const;
 
@@ -419,46 +366,12 @@ public:
 
 	Ref<ArrayMesh> get_trackball_sphere_gizmo() const { return trackball_sphere_gizmo; }
 
-<<<<<<< HEAD
-	void update_grid();
-	void update_transform_gizmo();
-	void update_all_gizmos(Node* p_node = nullptr);
-	void update_gizmo_opacity();
-	void snap_selected_nodes_to_floor();
-	void select_gizmo_highlight_axis(int p_axis);
-
-	void set_custom_camera(Node* p_camera) { custom_camera = p_camera; }
-
-	Ref<Environment> get_viewport_environment() { return viewport_environment; }
-
-	void add_control_to_menu_panel(Control* p_control);
-	void remove_control_from_menu_panel(Control* p_control);
-
-	void add_control_to_left_panel(Control* p_control);
-	void remove_control_from_left_panel(Control* p_control);
-
-	void add_control_to_right_panel(Control* p_control);
-	void remove_control_from_right_panel(Control* p_control);
-
-	void move_control_to_left_panel(Control* p_control);
-	void move_control_to_right_panel(Control* p_control);
-
-	VSplitContainer* get_shader_split();
-
-	Node3D* get_single_selected_node() { return selected; }
-
-	bool is_current_selected_gizmo(const EditorNode3DGizmo* p_gizmo);
-	bool is_subgizmo_selected(int p_id);
-	Vector<int> get_subgizmo_selection();
-	void refresh_dirty_gizmos();
-=======
 	void snap_selected_nodes_to_floor();
 	void select_gizmo_highlight_axis(int p_axis);
 
 	VSplitContainer* get_shader_split();
 
 	Node3D* get_single_selected_node() { return selected; }
->>>>>>> fix/remove-object
 
 	Ref<EditorNode3DGizmo> get_current_hover_gizmo() const { return current_hover_gizmo; }
 
@@ -476,11 +389,6 @@ public:
 		return current_hover_gizmo_handle;
 	}
 
-<<<<<<< HEAD
-	void set_can_preview(Camera3D* p_preview);
-
-=======
->>>>>>> fix/remove-object
 	void set_preview_material(Ref<Material> p_material) { preview_material = p_material; }
 
 	Ref<Material> get_preview_material() { return preview_material; }
@@ -503,12 +411,6 @@ public:
 	}
 
 	Node3DEditorViewport* get_last_used_viewport();
-<<<<<<< HEAD
-
-	void set_freelook_viewport(Node3DEditorViewport* p_viewport);
-	Node3DEditorViewport* get_freelook_viewport() const;
-=======
->>>>>>> fix/remove-object
 
 	void set_freelook_viewport(Node3DEditorViewport* p_viewport);
 	Node3DEditorViewport* get_freelook_viewport() const;
@@ -519,14 +421,7 @@ public:
 	Vector<Node3D*> gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
 	Vector<Node3D*> gizmo_bvh_frustum_query(const Vector<Plane>& p_frustum);
 
-<<<<<<< HEAD
-	void edit(Node3D* p_spatial);
-	void clear();
-
-	Node3DEditor();
-=======
 	Node3DEditor() = default;
->>>>>>> fix/remove-object
 	~Node3DEditor();
 };
 
@@ -536,23 +431,12 @@ class Node3DEditorPlugin : public EditorPlugin
 
 public:
 	Node3DEditor* get_spatial_editor() { return spatial_editor; }
-<<<<<<< HEAD
-
-	virtual String get_plugin_name() const override { return TTRC("3D"); }
-
-	bool has_main_screen() const override { return true; }
-
-	virtual void edited_scene_changed() override;
-
-	Node3DEditorPlugin();
-=======
 
 	virtual String get_plugin_name() const override { return TTRC("3D"); }
 
 	bool has_main_screen() const override { return true; }
 
 	Node3DEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

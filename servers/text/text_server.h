@@ -32,10 +32,6 @@
 #pragma once
 
 #include "core/io/image.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "core/templates/rid.h"
 #include "core/types.h"
 

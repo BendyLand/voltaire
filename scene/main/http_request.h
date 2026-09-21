@@ -134,17 +134,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	Error request(const String& p_url, const Vector<String>& p_custom_headers = Vector<String>(),
-		HTTPClient::Method p_method = HTTPClient::METHOD_GET,
-		const String& p_request_data = ""); // connects to a full url and perform request
-	Error request_raw(const String& p_url,
-		const Vector<String>& p_custom_headers = Vector<String>(),
-		HTTPClient::Method p_method = HTTPClient::METHOD_GET,
-		const Vector<uint8_t>& p_request_data_raw =
-			Vector<uint8_t>()); // connects to a full url and perform request
-=======
->>>>>>> fix/remove-object
 	void cancel_request();
 	HTTPClient::Status get_http_client_status() const;
 

@@ -36,21 +36,6 @@
 #include "font_config_plugin.h"
 #include "scene/gui/margin_container.h"
 
-<<<<<<< HEAD
-/*************************************************************************/
-/*  EditorPropertyFontMetaObject                                         */
-/*************************************************************************/
-
-/*************************************************************************/
-/*  EditorPropertyFontOTObject                                           */
-/*************************************************************************/
-
-/*************************************************************************/
-/* EditorPropertyFontMetaOverride                                        */
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyFontMetaOverride::_add_menu()
 {
 	if (script_editor) {
@@ -74,13 +59,6 @@ void EditorPropertyFontMetaOverride::_page_changed(int p_page)
 	update_property();
 }
 
-<<<<<<< HEAD
-/*************************************************************************/
-/* EditorPropertyOTVariation                                             */
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyOTVariation::_page_changed(int p_page)
 {
 	if (updating) {
@@ -90,13 +68,6 @@ void EditorPropertyOTVariation::_page_changed(int p_page)
 	update_property();
 }
 
-<<<<<<< HEAD
-/*************************************************************************/
-/* EditorPropertyOTFeatures                                              */
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyOTFeatures::_add_menu()
 {
 	Size2 size = get_size();
@@ -117,11 +88,6 @@ void EditorPropertyOTFeatures::_page_changed(int p_page)
 
 Size2 FontPreview::get_minimum_size() const { return Vector2(64, 64) * EDSCALE; }
 
-<<<<<<< HEAD
-void FontPreview::_preview_changed() { queue_redraw(); }
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyFontNamesArray::_add_element()
 {
 	Size2 size = get_size();
@@ -131,28 +97,6 @@ void EditorPropertyFontNamesArray::_add_element()
 	menu->popup();
 }
 
-<<<<<<< HEAD
-EditorPropertyFontNamesArray::EditorPropertyFontNamesArray()
-{
-	menu = memnew(PopupMenu);
-	menu->add_item("Sans-Serif", 0);
-	menu->add_item("Serif", 1);
-	menu->add_item("Monospace", 2);
-	menu->add_item("Fantasy", 3);
-	menu->add_item("Cursive", 4);
-
-	menu->add_separator();
-
-	if (OS::get_singleton()) {
-		Vector<String> fonts = OS::get_singleton()->get_system_fonts();
-		fonts.sort();
-		for (int i = 0; i < fonts.size(); i++) {
-			menu->add_item(fonts[i], i + 6);
-		}
-	}
-	add_child(menu);
-}
-=======
 void EditorPropertyArray::update_property() {}
 
 void EditorPropertyArray::_length_changed(double p_page) {}
@@ -164,6 +108,5 @@ void EditorPropertyArray::_change_type_menu(int p_index) {}
 void EditorPropertyArray::_remove_pressed(int p_index) {}
 
 void EditorPropertyArray::_add_element() {}
->>>>>>> fix/remove-object
 
 

@@ -70,10 +70,6 @@ class Skeleton3D : public Node3D
 #if !defined(DISABLE_DEPRECATED) && !defined(PHYSICS_3D_DISABLED)
 	bool animate_physical_bones = true;
 	Node* simulator = nullptr;
-<<<<<<< HEAD
-	void setup_simulator();
-=======
->>>>>>> fix/remove-object
 #endif // _DISABLE_DEPRECATED && PHYSICS_3D_DISABLED
 
 public:
@@ -332,8 +328,5 @@ public:
 };
 
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> fix/remove-object

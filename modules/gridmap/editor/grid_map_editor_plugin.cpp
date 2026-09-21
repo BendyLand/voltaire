@@ -60,42 +60,6 @@
 #include "scene/main/window.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void GridMapEditor::_update_cursor_transform()
-{
-	cursor_transform = Transform3D();
-	cursor_transform.origin = cursor_origin;
-	cursor_transform.basis *= node->get_cell_scale();
-	cursor_transform = node->get_global_transform() * cursor_transform;
-
-	if (mode_buttons_group->get_pressed_button() == paint_mode_button) {
-		// Auto-deselect the selection when painting.
-		if (selection.active) {
-			_set_selection(false);
-		}
-		// Rotation is only applied in paint mode, we don't want the cursor box to rotate otherwise.
-		cursor_transform.basis *= node->get_basis_with_orthogonal_index(cursor_rot);
-		if (selected_palette >= 0 && node && node->get_mesh_library().is_valid()) {
-			cursor_transform *= node->get_mesh_library()->get_item_mesh_transform(selected_palette);
-		}
-	}
-	else {
-		Transform3D xf;
-		xf.scale(node->get_cell_size());
-		xf.origin.x = node->get_center_x() ? -node->get_cell_size().x / 2 : 0;
-		xf.origin.y = node->get_center_y() ? -node->get_cell_size().y / 2 : 0;
-		xf.origin.z = node->get_center_z() ? -node->get_cell_size().z / 2 : 0;
-		cursor_transform *= xf;
-	}
-
-	if (cursor_instance.is_valid()) {
-		RenderingServer::get_singleton()->instance_set_transform(cursor_instance, cursor_transform);
-		RenderingServer::get_singleton()->instance_set_visible(cursor_instance, cursor_visible);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void GridMapEditor::_update_selection_transform()
 {
 	Transform3D xf_zero;
@@ -365,37 +329,6 @@ struct _CGMEItemSort
 	_FORCE_INLINE_ bool operator<(const _CGMEItemSort& r_it) const { return name < r_it.name; }
 };
 
-<<<<<<< HEAD
-void GridMapEditor::_set_display_mode(int p_mode)
-{
-	if (display_mode == p_mode) {
-		return;
-	}
-
-	if (p_mode == DISPLAY_LIST) {
-		mode_list->set_pressed(true);
-		mode_thumbnail->set_pressed(false);
-	}
-	else { // DISPLAY_THUMBNAIL
-		mode_list->set_pressed(false);
-		mode_thumbnail->set_pressed(true);
-	}
-
-	display_mode = p_mode;
-
-	update_palette();
-}
-
-void GridMapEditor::_text_changed(const String& p_text) { update_palette(); }
-
-void GridMapEditor::_icon_size_changed(float p_value)
-{
-	mesh_library_palette->set_icon_scale(p_value);
-	update_palette();
-}
-
-=======
->>>>>>> fix/remove-object
 void GridMapEditor::update_layout(EditorDock::DockLayout p_layout, int p_slot)
 {
 	if (categories->is_visible()) {
@@ -449,50 +382,6 @@ void GridMapEditor::update_grid()
 	updating = false;
 }
 
-<<<<<<< HEAD
-void GridMapEditor::_update_theme()
-{
-	transform_mode_button->set_button_icon(
-		get_theme_icon(SNAME("ToolMove"), EditorStringName(EditorIcons)));
-	select_mode_button->set_button_icon(
-		get_theme_icon(SNAME("ToolSelect"), EditorStringName(EditorIcons)));
-	erase_mode_button->set_button_icon(
-		get_theme_icon(SNAME("Eraser"), EditorStringName(EditorIcons)));
-	paint_mode_button->set_button_icon(
-		get_theme_icon(SNAME("Paint"), EditorStringName(EditorIcons)));
-	pick_mode_button->set_button_icon(
-		get_theme_icon(SNAME("ColorPick"), EditorStringName(EditorIcons)));
-	fill_action_button->set_button_icon(
-		get_theme_icon(SNAME("Bucket"), EditorStringName(EditorIcons)));
-	move_action_button->set_button_icon(
-		get_theme_icon(SNAME("ActionCut"), EditorStringName(EditorIcons)));
-	duplicate_action_button->set_button_icon(
-		get_theme_icon(SNAME("ActionCopy"), EditorStringName(EditorIcons)));
-	delete_action_button->set_button_icon(
-		get_theme_icon(SNAME("Clear"), EditorStringName(EditorIcons)));
-	rotate_x_button->set_button_icon(
-		get_theme_icon(SNAME("RotateLeft"), EditorStringName(EditorIcons)));
-	rotate_y_button->set_button_icon(
-		get_theme_icon(SNAME("ToolRotate"), EditorStringName(EditorIcons)));
-	rotate_z_button->set_button_icon(
-		get_theme_icon(SNAME("RotateRight"), EditorStringName(EditorIcons)));
-	clear_rotation_button->set_button_icon(
-		get_theme_icon(SNAME("UndoRedo"), EditorStringName(EditorIcons)));
-	mode_thumbnail->set_button_icon(
-		get_theme_icon(SNAME("FileThumbnail"), EditorStringName(EditorIcons)));
-	mode_list->set_button_icon(get_theme_icon(SNAME("FileList"), EditorStringName(EditorIcons)));
-	options->set_button_icon(get_theme_icon(SNAME("Tools"), EditorStringName(EditorIcons)));
-}
-
-void GridMapEditor::_on_tool_mode_changed()
-{
-	_show_viewports_transform_gizmo(
-		mode_buttons_group->get_pressed_button() == transform_mode_button);
-	_update_cursor_instance();
-}
-
-=======
->>>>>>> fix/remove-object
 void GridMapEditor::_floor_mouse_exited() { floor->get_line_edit()->release_focus(); }
 
 GridMapEditor::~GridMapEditor()
@@ -568,27 +457,6 @@ bool GridMapEditorPlugin::has_selection() const
 	return grid_map_editor->_has_selection();
 }
 
-<<<<<<< HEAD
-void GridMapEditorPlugin::set_selected_palette_item(int p_item) const
-{
-	ERR_FAIL_NULL(grid_map_editor);
-	if (grid_map_editor->node && grid_map_editor->node->get_mesh_library().is_valid()) {
-		if (p_item < -1) {
-			p_item = -1;
-		}
-		else if (p_item >= grid_map_editor->node->get_mesh_library()->get_item_list().size()) {
-			p_item = grid_map_editor->node->get_mesh_library()->get_item_list().size() - 1;
-		}
-		if (p_item != grid_map_editor->selected_palette) {
-			grid_map_editor->selected_palette = p_item;
-			grid_map_editor->_update_cursor_instance();
-			grid_map_editor->update_palette();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int GridMapEditorPlugin::get_selected_palette_item() const
 {
 	ERR_FAIL_NULL_V(grid_map_editor, 0);

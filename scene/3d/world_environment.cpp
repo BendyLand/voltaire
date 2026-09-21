@@ -80,34 +80,6 @@ void WorldEnvironment::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void WorldEnvironment::set_environment(const Ref<Environment>& p_environment)
-{
-	if (environment == p_environment) {
-		return;
-	}
-	if (is_inside_tree() && environment.is_valid()) {
-		remove_from_group(
-			"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	environment = p_environment;
-
-	if (is_inside_tree() && environment.is_valid()) {
-		add_to_group(
-			"_world_environment_" + itos(get_viewport()->find_world_3d()->get_scenario().get_id()));
-	}
-
-	if (is_inside_tree()) {
-		_update_current_environment();
-	}
-	else {
-		update_configuration_warnings();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Environment> WorldEnvironment::get_environment() const { return environment; }
 
 Ref<CameraAttributes> WorldEnvironment::get_camera_attributes() const { return camera_attributes; }

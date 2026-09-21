@@ -41,11 +41,8 @@
 
 TextServerManager* TextServerManager::singleton = nullptr;
 
-<<<<<<< HEAD
-=======
 void TextServerManager::add_interface(const Ref<TextServer>& p_interface) {}
 
->>>>>>> fix/remove-object
 int TextServerManager::get_interface_count() const { return interfaces.size(); }
 
 Ref<TextServer> TextServerManager::get_interface(int p_index) const
@@ -1268,10 +1265,6 @@ bool TextServer::is_valid_identifier(const String& p_string) const
 
 bool TextServer::is_valid_letter(uint64_t p_unicode) const { return is_unicode_letter(p_unicode); }
 
-<<<<<<< HEAD
-TextServer::~TextServer() {}
-=======
 void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface) {}
->>>>>>> fix/remove-object
 
 

@@ -116,10 +116,6 @@ protected:
 	int get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spacing) const;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual Size2 get_minimum_size() const override;

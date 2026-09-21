@@ -602,8 +602,7 @@ void CPUParticles3D::_notification(int p_what)
 					ptr[6] = t.basis.rows[1][2];
 					ptr[7] = t.origin.y;
 					ptr[8] = t.basis.rows[2][0];
-					ptr[9]
- = t.basis.rows[2][1];
+					ptr[9] = t.basis.rows[2][1];
 					ptr[10] = t.basis.rows[2][2];
 					ptr[11] = t.origin.z;
 				}
@@ -620,65 +619,6 @@ void CPUParticles3D::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-CPUParticles3D::CPUParticles3D()
-{
-	set_notify_transform(true);
-
-	multimesh = RenderingServer::get_singleton()->multimesh_create();
-	RenderingServer::get_singleton()->multimesh_set_visible_instances(multimesh, 0);
-	set_base(multimesh);
-
-	set_emitting(true);
-	set_amount(8);
-	set_seed(Math::rand());
-
-	rng.instantiate();
-
-	set_param_min(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_min(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_min(PARAM_ORBIT_VELOCITY, 0);
-	set_param_min(PARAM_LINEAR_ACCEL, 0);
-	set_param_min(PARAM_RADIAL_ACCEL, 0);
-	set_param_min(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_min(PARAM_DAMPING, 0);
-	set_param_min(PARAM_ANGLE, 0);
-	set_param_min(PARAM_SCALE, 1);
-	set_param_min(PARAM_HUE_VARIATION, 0);
-	set_param_min(PARAM_ANIM_SPEED, 0);
-	set_param_min(PARAM_ANIM_OFFSET, 0);
-	set_param_max(PARAM_INITIAL_LINEAR_VELOCITY, 0);
-	set_param_max(PARAM_ANGULAR_VELOCITY, 0);
-	set_param_max(PARAM_ORBIT_VELOCITY, 0);
-	set_param_max(PARAM_LINEAR_ACCEL, 0);
-	set_param_max(PARAM_RADIAL_ACCEL, 0);
-	set_param_max(PARAM_TANGENTIAL_ACCEL, 0);
-	set_param_max(PARAM_DAMPING, 0);
-	set_param_max(PARAM_ANGLE, 0);
-	set_param_max(PARAM_SCALE, 1);
-	set_param_max(PARAM_HUE_VARIATION, 0);
-	set_param_max(PARAM_ANIM_SPEED, 0);
-	set_param_max(PARAM_ANIM_OFFSET, 0);
-	set_emission_shape(EMISSION_SHAPE_POINT);
-	set_emission_sphere_radius(1);
-	set_emission_box_extents(Vector3(1, 1, 1));
-	set_emission_ring_axis(Vector3(0, 0, 1.0));
-	set_emission_ring_height(1);
-	set_emission_ring_radius(1);
-	set_emission_ring_inner_radius(0);
-	set_emission_ring_cone_angle(90);
-
-	set_gravity(Vector3(0, -9.8, 0));
-
-	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
-		particle_flags[i] = false;
-	}
-
-	set_color(Color(1, 1, 1, 1));
-}
-
-=======
->>>>>>> fix/remove-object
 CPUParticles3D::~CPUParticles3D()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

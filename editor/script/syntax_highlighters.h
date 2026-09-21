@@ -56,21 +56,12 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
-<<<<<<< HEAD
-	virtual void _update_cache() override;
-
-	virtual String _get_name() const override { return TTR("Standard"); }
-
-	virtual Ref<EditorSyntaxHighlighter> _create() const override;
-
-=======
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	virtual void _update_cache() override;
 
 	virtual String _get_name() const override { return TTR("Standard"); }
 
->>>>>>> fix/remove-object
 	EditorStandardSyntaxHighlighter() { highlighter.instantiate(); }
 };
 
@@ -88,18 +79,6 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
-<<<<<<< HEAD
-	virtual void _update_cache() override;
-
-	virtual PackedStringArray _get_supported_languages() const override
-	{
-		return PackedStringArray{"json"};
-	}
-
-	virtual String _get_name() const override { return TTR("JSON"); }
-
-=======
->>>>>>> fix/remove-object
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	virtual void _update_cache() override;
@@ -120,18 +99,6 @@ private:
 	Ref<CodeHighlighter> highlighter;
 
 public:
-<<<<<<< HEAD
-	virtual void _update_cache() override;
-
-	virtual PackedStringArray _get_supported_languages() const override
-	{
-		return PackedStringArray{"md", "markdown"};
-	}
-
-	virtual String _get_name() const override { return TTR("Markdown"); }
-
-=======
->>>>>>> fix/remove-object
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 
 	virtual void _update_cache() override;
@@ -164,11 +131,6 @@ public:
 	{
 		return PackedStringArray{"ini", "cfg", "tscn", "tres", "godot"};
 	}
-<<<<<<< HEAD
-
-	virtual String _get_name() const override { return TTR("ConfigFile"); }
-=======
->>>>>>> fix/remove-object
 
 	virtual String _get_name() const override { return TTR("ConfigFile"); }
 

@@ -36,19 +36,6 @@
 #include "scene/theme/theme_db.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void Label3D::_im_update()
-{
-	_shape();
-
-	triangle_mesh.unref();
-	update_gizmos();
-
-	pending_update = false;
-}
-
-=======
->>>>>>> fix/remove-object
 AABB Label3D::get_aabb() const { return aabb; }
 
 Ref<TriangleMesh> Label3D::generate_triangle_mesh() const

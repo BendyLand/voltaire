@@ -56,10 +56,6 @@
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 void ConnectDialog::_cancel_pressed() { hide(); }
 
 void ConnectDialog::_item_activated()
@@ -67,38 +63,6 @@ void ConnectDialog::_item_activated()
 	_ok_pressed(); // From AcceptDialog.
 }
 
-<<<<<<< HEAD
-
-void ConnectDialog::_open_method_popup()
-{
-	method_popup->popup_centered();
-	method_search->clear();
-	method_search->grab_focus();
-}
-
-/*
- * Enables or disables the connect button. The connect button is enabled if a
- * node is selected and valid in the selected mode.
- */
-void ConnectDialog::_update_ok_enabled()
-{
-	Node* target = tree->get_selected();
-
-	if (target == nullptr) {
-		get_ok_button()->set_disabled(true);
-		return;
-	}
-
-	if (dst_method->get_text().is_empty()) {
-		get_ok_button()->set_disabled(true);
-		return;
-	}
-
-	get_ok_button()->set_disabled(false);
-}
-
-=======
->>>>>>> fix/remove-object
 ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
 {
 	return source_connection_data;
@@ -139,66 +103,10 @@ bool ConnectDialog::get_append_source() const
  */
 bool ConnectDialog::is_editing() const { return edit_mode; }
 
-<<<<<<< HEAD
-/*
- * Initialize ConnectDialog and populate fields with expected data.
- * If creating a connection from scratch, sensible defaults are used.
- * If editing an existing connection, previous data is retained.
- */
-
-ConnectDialog::~ConnectDialog() {}
-
-//////////////////////////////////////////
-
-Control* ConnectionsDockTree::make_custom_tooltip(const String& p_text) const
-{
-	// If it's not a doc tooltip, fallback to the default one.
-	if (p_text.is_empty() || p_text.contains(" :: ")) {
-		return nullptr;
-	}
-
-	return EditorHelpBitTooltip::make_tooltip(const_cast<ConnectionsDockTree*>(this), p_text);
-}
-
-void ConnectionsDock::_filter_changed(const String& p_text) { update_tree(); }
-
-void ConnectionsDock::_tree_item_activated()
-{ // "Activation" on double-click.
-	TreeItem* item = tree->get_selected();
-	if (!item) {
-		return;
-	}
-
-	if (_get_item_type(*item) == TREE_ITEM_TYPE_SIGNAL) {
-		_open_connection_dialog(*item);
-	}
-	else if (_get_item_type(*item) == TREE_ITEM_TYPE_CONNECTION) {
-		_go_to_method(*item);
-	}
-}
-
-ConnectionsDock::TreeItemType ConnectionsDock::_get_item_type(const TreeItem& p_item) const
-{
-	if (&p_item == tree->get_root()) {
-		return TREE_ITEM_TYPE_ROOT;
-	}
-	else if (p_item.get_parent() == tree->get_root()) {
-		return TREE_ITEM_TYPE_CLASS;
-	}
-	else if (p_item.get_parent()->get_parent() == tree->get_root()) {
-		return TREE_ITEM_TYPE_SIGNAL;
-	}
-	else {
-		return TREE_ITEM_TYPE_CONNECTION;
-	}
-}
-
-=======
 ConnectDialog::~ConnectDialog() {}
 
 void ConnectionsDock::_filter_changed(const String& p_text) { update_tree(); }
 
->>>>>>> fix/remove-object
 void ConnectionsDock::_handle_class_menu_option(int p_option)
 {
 	switch (p_option) {
@@ -210,17 +118,6 @@ void ConnectionsDock::_handle_class_menu_option(int p_option)
 	}
 }
 
-<<<<<<< HEAD
-void ConnectionsDock::_class_menu_about_to_popup()
-{
-	class_menu->set_item_disabled(
-		class_menu->get_item_index(CLASS_MENU_OPEN_DOCS), class_menu_doc_class_name.is_empty());
-}
-
-void ConnectionsDock::_close() { hide(); }
-
-=======
->>>>>>> fix/remove-object
 void ConnectionsDock::_notification(int p_what)
 {
 	switch (p_what) {
@@ -232,8 +129,6 @@ void ConnectionsDock::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ConnectionsDock::update_tree() {}
 
 ConnectionsDock::ConnectionsDock() {}
@@ -242,5 +137,4 @@ void ConnectDialog::ok_pressed() {}
 
 void ConnectDialog::_post_popup() {}
 
->>>>>>> fix/remove-object
 

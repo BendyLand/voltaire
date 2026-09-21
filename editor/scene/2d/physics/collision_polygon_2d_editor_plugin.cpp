@@ -39,10 +39,6 @@ CollisionPolygon2DEditorPlugin::CollisionPolygon2DEditorPlugin()
 {
 }
 
-<<<<<<< HEAD
-
-=======
 void CollisionPolygon2DEditor::_set_node(Node* p_node) {}
 
 
->>>>>>> fix/remove-object

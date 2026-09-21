@@ -84,10 +84,6 @@ private:
 	bool closable = false;
 	DockLayout current_layout;
 	uint32_t available_layouts = DOCK_LAYOUT_VERTICAL | DOCK_LAYOUT_FLOATING;
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 	bool is_open = false;
 	bool enabled = true;
 	int previous_tab_index = -1;
@@ -143,21 +139,9 @@ public:
 	void set_available_layouts(uint32_t p_layouts) { available_layouts = p_layouts; }
 
 	uint32_t get_available_layouts() const { return available_layouts; }
-<<<<<<< HEAD
-
-	String get_display_title() const;
-	String get_effective_layout_key() const;
 
 	DockTabContainer* get_parent_container() const { return parent_dock_container; }
 
-	void set_tab_index(int p_index, bool p_set_current);
-	void update_tab_style();
-
-=======
-
-	DockTabContainer* get_parent_container() const { return parent_dock_container; }
-
->>>>>>> fix/remove-object
 	DockLayout get_current_layout() const { return current_layout; }
 
 	DockSlot get_current_slot() const { return (DockSlot)dock_slot_index; }

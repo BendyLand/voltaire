@@ -46,13 +46,8 @@ OpenXRCompositionLayerDepthExtension::~OpenXRCompositionLayerDepthExtension()
 
 bool OpenXRCompositionLayerDepthExtension::is_available() { return available; }
 
-<<<<<<< HEAD
-
-
-=======
 int OpenXRCompositionLayerDepthExtension::get_composition_layer_count() { return 0; }
 
 int OpenXRCompositionLayerDepthExtension::get_composition_layer_order(int p_index) { return 0; }
 
 
->>>>>>> fix/remove-object

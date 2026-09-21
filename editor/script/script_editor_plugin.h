@@ -341,11 +341,6 @@ class ScriptEditor : public PanelContainer
 
 	void _update_online_doc();
 
-<<<<<<< HEAD
-	void _split_dragged(float);
-
-=======
->>>>>>> fix/remove-object
 	virtual void input(const Ref<InputEvent>& p_event) override;
 
 	void _script_list_clicked(

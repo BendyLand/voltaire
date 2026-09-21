@@ -82,15 +82,12 @@ void Shader::set_include_path(const String& p_path)
 	include_path = p_path;
 }
 
-<<<<<<< HEAD
-=======
 
 void Shader::set_code(const String& p_code)
 {
 	code = p_code;
 }
 
->>>>>>> fix/remove-object
 String Shader::get_code() const
 {
 	_update_shader();

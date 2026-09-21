@@ -48,10 +48,6 @@ public:
 		BONE_UPDATE_MAX
 	};
 
-<<<<<<< HEAD
-	void set_hand_tracker(const StringName& p_tracker_name);
-=======
->>>>>>> fix/remove-object
 	StringName get_hand_tracker() const;
 
 	void set_bone_update(BoneUpdate p_bone_update);
@@ -62,12 +58,6 @@ public:
 	void _notification(int p_what);
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-=======
->>>>>>> fix/remove-object
 	virtual void _process_modification(double p_delta) override;
 
 private:

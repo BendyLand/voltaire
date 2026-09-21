@@ -88,8 +88,5 @@ EditorRun::EditorRun()
 	running_scene = "";
 }
 
-<<<<<<< HEAD
-=======
 EditorRun::WindowPlacement EditorRun::get_window_placement() {}
->>>>>>> fix/remove-object
 

@@ -70,10 +70,6 @@ protected:
 
 	void _notification(int p_what);
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	bool _rounded_values = false;
 

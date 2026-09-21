@@ -133,23 +133,6 @@ void ProgressDialog::_update_ui()
 	}
 }
 
-<<<<<<< HEAD
-void ProgressDialog::_reparent_and_show()
-{
-	Window* current_window = SceneTree::get_singleton()->get_root()->get_last_exclusive_window();
-	ERR_FAIL_NULL(current_window);
-	reparent(current_window);
-
-	// Ensures that events are properly released before the dialog blocks input.
-	bool window_is_input_disabled = current_window->is_input_disabled();
-	current_window->set_disable_input(!window_is_input_disabled);
-	current_window->set_disable_input(window_is_input_disabled);
-
-	show();
-}
-
-=======
->>>>>>> fix/remove-object
 bool ProgressDialog::task_step(
 	const String& p_task, const String& p_state, int p_step, bool p_force_redraw)
 {

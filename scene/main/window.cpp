@@ -55,11 +55,8 @@ void Window::set_root_layout_direction(int p_root_dir) { root_layout_direction =
 
 Window* Window::focused_window = nullptr;
 
-<<<<<<< HEAD
-=======
 void Window::set_title(const String& p_title) {}
 
->>>>>>> fix/remove-object
 String Window::get_title() const
 {
 	ERR_READ_THREAD_GUARD_V(String());
@@ -1081,11 +1078,8 @@ Window* Window::get_non_popup_window() const
 	return w;
 }
 
-<<<<<<< HEAD
-=======
 void Window::popup(const Rect2i& p_screen_rect) {}
 
->>>>>>> fix/remove-object
 void Window::popup_on_parent(const Rect2i& p_parent_rect)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1298,19 +1292,6 @@ Rect2i Window::get_usable_parent_rect() const
 	return parent_rect;
 }
 
-<<<<<<< HEAD
-void Window::set_accessibility_name(const String& p_name)
-{
-	ERR_MAIN_THREAD_GUARD;
-	if (accessibility_name != p_name) {
-		accessibility_name = p_name;
-		queue_accessibility_update();
-		update_configuration_warnings();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Window::set_accessibility_description(const String& p_description)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1706,11 +1687,8 @@ Viewport* Window::get_section_root_viewport() const
 
 bool Window::is_attached_in_viewport() const { return get_embedder(); }
 
-<<<<<<< HEAD
-=======
 void Window::_update_mouse_over(Vector2 p_pos) {}
 
->>>>>>> fix/remove-object
 void Window::_mouse_leave_viewport()
 {
 	Viewport::_mouse_leave_viewport();
@@ -1733,8 +1711,6 @@ Window::Window()
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 }
 
-<<<<<<< HEAD
-=======
 void Window::_update_viewport_size() {}
 
 Color Window::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
@@ -1781,5 +1757,4 @@ void Window::_accessibility_notify_enter(Node*) {}
 
 Size2 Window::_get_contents_minimum_size() const { return Size2(); }
 
->>>>>>> fix/remove-object
 

@@ -41,9 +41,6 @@ void uninitialize_webrtc_module(ModuleInitializationLevel p_level)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void initialize_webrtc_module(ModuleInitializationLevel p_level) {}
 
->>>>>>> fix/remove-object
 

@@ -1068,34 +1068,6 @@ Ref<Image> TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_image,
 	}
 
 	if (need_decompress || p_force_decompress) {
-<<<<<<< HEAD
-		if (image.is_valid()) {
-			image = image->duplicate();
-			image->decompress();
-			ERR_FAIL_COND_V(image->is_compressed(), image);
-
-			if (decompress_ra_to_rg) {
-				image->convert_ra_rgba8_to_rg();
-				image->convert(Image::FORMAT_RG8);
-			}
-
-			Error err = _get_gl_uncompressed_format(image, image->get_format(), r_real_format,
-				r_gl_format, r_gl_internal_format, r_gl_type);
-			ERR_FAIL_COND_V_MSG(err != OK, Ref<Image>(),
-				vformat("The image format %d is not supported by the Compatibility renderer.",
-					image->get_format()));
-
-			r_real_format = image->get_format();
-			r_compressed = false;
-
-			if (p_format != image->get_format()) {
-				WARN_PRINT(vformat("Image format %s not supported by hardware, converting to %s.",
-					Image::get_format_name(p_format), Image::get_format_name(image->get_format())));
-			}
-		}
-
-=======
->>>>>>> fix/remove-object
 		return image;
 	}
 
@@ -2109,13 +2081,6 @@ void TextureStorage::_texture_set_data(
 			ERR_PRINT("Texture '" + texture->path +
 					  "' is required to be a power of 2 because it uses either mipmaps or repeat, "
 					  "so it was decompressed. This will hurt performance and memory usage.");
-<<<<<<< HEAD
-		}
-
-		if (img == p_image) {
-			img = img->duplicate();
-=======
->>>>>>> fix/remove-object
 		}
 		img->resize_to_po2(false);
 	}

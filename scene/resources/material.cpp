@@ -1810,11 +1810,8 @@ void BaseMaterial3D::_queue_shader_change()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void BaseMaterial3D::set_albedo(const Color& p_albedo) {}
 
->>>>>>> fix/remove-object
 Color BaseMaterial3D::get_albedo() const { return albedo; }
 
 float BaseMaterial3D::get_specular() const { return specular; }
@@ -1895,11 +1892,8 @@ BaseMaterial3D::BlendMode BaseMaterial3D::get_detail_blend_mode() const
 	return detail_blend_mode;
 }
 
-<<<<<<< HEAD
-=======
 void BaseMaterial3D::set_transparency(Transparency p_transparency) {}
 
->>>>>>> fix/remove-object
 BaseMaterial3D::Transparency BaseMaterial3D::get_transparency() const { return transparency; }
 
 BaseMaterial3D::AlphaAntiAliasing BaseMaterial3D::get_alpha_antialiasing() const
@@ -1907,11 +1901,8 @@ BaseMaterial3D::AlphaAntiAliasing BaseMaterial3D::get_alpha_antialiasing() const
 	return alpha_antialiasing_mode;
 }
 
-<<<<<<< HEAD
-=======
 void BaseMaterial3D::set_shading_mode(ShadingMode p_shading_mode) {}
 
->>>>>>> fix/remove-object
 BaseMaterial3D::ShadingMode BaseMaterial3D::get_shading_mode() const { return shading_mode; }
 
 void BaseMaterial3D::set_depth_draw_mode(DepthDrawMode p_mode)
@@ -1977,11 +1968,8 @@ void BaseMaterial3D::set_specular_mode(SpecularMode p_mode)
 
 BaseMaterial3D::SpecularMode BaseMaterial3D::get_specular_mode() const { return specular_mode; }
 
-<<<<<<< HEAD
-=======
 void BaseMaterial3D::set_flag(Flags p_flag, bool p_enabled) {}
 
->>>>>>> fix/remove-object
 bool BaseMaterial3D::get_flag(Flags p_flag) const
 {
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
@@ -2030,11 +2018,8 @@ void BaseMaterial3D::set_texture_filter(TextureFilter p_filter)
 
 BaseMaterial3D::TextureFilter BaseMaterial3D::get_texture_filter() const { return texture_filter; }
 
-<<<<<<< HEAD
-=======
 void BaseMaterial3D::set_point_size(float p_point_size) {}
 
->>>>>>> fix/remove-object
 float BaseMaterial3D::get_point_size() const { return point_size; }
 
 Vector3 BaseMaterial3D::get_uv1_scale() const { return uv1_scale; }
@@ -2183,10 +2168,6 @@ void BaseMaterial3D::set_on_top_of_alpha()
 {
 	set_transparency(TRANSPARENCY_DISABLED);
 	set_render_priority(RENDER_PRIORITY_MAX);
-<<<<<<< HEAD
-	set_flag(FLAG_DISABLE_DEPTH_TEST, true);
-=======
->>>>>>> fix/remove-object
 }
 
 bool BaseMaterial3D::is_proximity_fade_enabled() const { return proximity_fade_enabled; }
@@ -2432,8 +2413,6 @@ RID Material::get_shader_rid() const { return RID(); }
 
 #endif // DISABLE_DEPRECATED
 
-<<<<<<< HEAD
-=======
 void ShaderMaterial::set_shader(const Ref<Shader>& p_shader) {}
 
 void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture) {}
@@ -2545,5 +2524,4 @@ void BaseMaterial3D::set_alpha_antialiasing_edge(float) {}
 
 void BaseMaterial3D::_check_material_rid() {}
 
->>>>>>> fix/remove-object
 

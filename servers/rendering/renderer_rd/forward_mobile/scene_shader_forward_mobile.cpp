@@ -442,8 +442,6 @@ SceneShaderForwardMobile::~SceneShaderForwardMobile()
 	material_storage->material_free(debug_shadow_splits_material);
 }
 
-<<<<<<< HEAD
-=======
 RID RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(
 	RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderVersion p_version,
 	bool p_is_wireframe) const
@@ -468,5 +466,4 @@ void RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::se
 {
 }
 
->>>>>>> fix/remove-object
 

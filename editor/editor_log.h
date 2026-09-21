@@ -100,15 +100,6 @@ private:
 
 		bool is_active() { return active; }
 
-<<<<<<< HEAD
-		void set_active(bool p_active)
-		{
-			toggle_button->set_pressed(p_active);
-			active = p_active;
-		}
-
-=======
->>>>>>> fix/remove-object
 		LogFilter(MessageType p_type) : type(p_type) {}
 	};
 
@@ -141,39 +132,6 @@ private:
 
 	ErrorHandlerList eh;
 
-<<<<<<< HEAD
-	// void _dragged(const Point2& p_ofs);
-	void _meta_clicked(const String& p_meta);
-	void _clear_request();
-	static void _undo_redo_cbk(void* p_self, const String& p_name);
-
-	void _rebuild_log();
-	void _add_log_line(LogMessage& p_message, bool p_replace_previous = false);
-	bool _check_display_message(LogMessage& p_message);
-
-	void _set_filter_active(bool p_active, MessageType p_message_type);
-	void _search_changed(const String& p_text);
-
-	void _process_message(const String& p_msg, MessageType p_type, bool p_clear);
-	void _reset_message_counts();
-	void _set_dock_tab_icon(Ref<Texture2D> p_icon);
-
-	void _set_collapse(bool p_collapse);
-
-	void _start_state_save_timer();
-	void _save_state();
-	void _load_state();
-
-	void _update_theme();
-	void _editor_settings_changed();
-
-protected:
-	void _notification(int p_what);
-
-public:
-	void add_message(const String& p_msg, MessageType p_type = MSG_TYPE_STD);
-	void register_undo_redo(UndoRedo* p_undo_redo);
-=======
 	void _clear_request();
 
 	bool _check_display_message(LogMessage& p_message);
@@ -182,7 +140,6 @@ public:
 	void _set_dock_tab_icon(Ref<Texture2D> p_icon);
 
 public:
->>>>>>> fix/remove-object
 	void deinit();
 
 	void clear();

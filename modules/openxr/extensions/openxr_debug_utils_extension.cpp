@@ -51,14 +51,8 @@ HashMap<String, bool*> OpenXRDebugUtilsExtension::get_requested_extensions(XrVer
 	return request_extensions;
 }
 
-<<<<<<< HEAD
-
-
-void OpenXRDebugUtilsExtension::on_instance_destroyed() {
-=======
 void OpenXRDebugUtilsExtension::on_instance_destroyed()
 {
->>>>>>> fix/remove-object
 	if (default_messenger != XR_NULL_HANDLE) {
 		XrResult result = xrDestroyDebugUtilsMessengerEXT(default_messenger);
 		if (XR_FAILED(result)) {
@@ -234,15 +228,10 @@ XrBool32 OpenXRDebugUtilsExtension::debug_callback(
 	}
 	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		WARN_PRINT("OpenXR: Severity: Warning" + msg);
-<<<<<<< HEAD
-	} else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-		// This is a bit double because we won't output this unless verbose messaging in Godot is on.
-=======
 	}
 	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
 		// This is a bit double because we won't output this unless verbose messaging in Godot is
 		// on.
->>>>>>> fix/remove-object
 		print_verbose("OpenXR: Severity: Verbose" + msg);
 	}
 

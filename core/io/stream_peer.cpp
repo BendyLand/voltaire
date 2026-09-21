@@ -325,13 +325,6 @@ String StreamPeer::get_utf8_string(int p_bytes)
 	return String::utf8((const char*)buf.ptr(), buf.size());
 }
 
-<<<<<<< HEAD
-void StreamPeer::_bind_methods() {}
-
-////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 Error StreamPeerExtension::get_data(uint8_t* r_buffer, int p_bytes)
 {
 	WARN_PRINT_ONCE("StreamPeerExtension::_get_data is unimplemented!");

@@ -102,11 +102,6 @@ protected:
 	friend class OpenXRActionMap;
 
 	OpenXRActionMap* action_map = nullptr;
-<<<<<<< HEAD
-
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	static Ref<OpenXRInteractionProfile> new_profile(

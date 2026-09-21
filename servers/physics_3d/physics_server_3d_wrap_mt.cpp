@@ -74,11 +74,8 @@ PhysicsServer3DWrapMT::PhysicsServer3DWrapMT(PhysicsServer3D* p_contained, bool 
 
 PhysicsServer3DWrapMT::~PhysicsServer3DWrapMT() { memdelete(physics_server_3d); }
 
-<<<<<<< HEAD
-=======
 void PhysicsServer3DWrapMT::init() {}
 
 void PhysicsServer3DWrapMT::finish() {}
 
->>>>>>> fix/remove-object
 

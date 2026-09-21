@@ -702,9 +702,5 @@ void StyleBoxFlat::draw(RID p_canvas_item, const Rect2& p_rect) const
 	vs->canvas_item_add_triangle_array(p_canvas_item, indices, verts, colors, uvs);
 }
 
-<<<<<<< HEAD
-void StyleBoxFlat::_bind_methods() {}
-=======
->>>>>>> fix/remove-object
 
 

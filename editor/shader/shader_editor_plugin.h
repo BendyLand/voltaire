@@ -103,20 +103,12 @@ class ShaderEditorPlugin : public EditorPlugin
 	void _shader_selected(int p_index, bool p_push_item = true);
 	void _shader_list_clicked(
 		int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index);
-<<<<<<< HEAD
-	void _setup_popup_menu(PopupMenuType p_type, PopupMenu* p_menu);
-=======
->>>>>>> fix/remove-object
 	void _make_script_list_context_menu();
 	void _menu_item_pressed(int p_index);
 	void _close_shader(int p_index);
 	void _close_builtin_shaders_from_scene(const String& p_scene);
 	void _file_removed(const String& p_removed_file);
 	void _res_saved_callback(const Ref<Resource>& p_res);
-<<<<<<< HEAD
-	void _set_file_specific_items_disabled(bool p_disabled);
-=======
->>>>>>> fix/remove-object
 
 	void _shader_created(Ref<Shader> p_shader);
 	void _shader_include_created(Ref<ShaderInclude> p_shader_inc);
@@ -126,11 +118,6 @@ class ShaderEditorPlugin : public EditorPlugin
 	void _set_text_shader_zoom_factor(float p_zoom_factor);
 	void _update_shader_editor_zoom_factor(CodeTextEditor* p_shader_editor) const;
 
-<<<<<<< HEAD
-	void _switch_to_editor(ShaderEditor* p_editor);
-
-=======
->>>>>>> fix/remove-object
 	static inline ShaderEditorPlugin* shader_editor_plugin = nullptr;
 
 protected:
@@ -138,11 +125,8 @@ protected:
 
 public:
 	static ShaderEditorPlugin* get_singleton() { return shader_editor_plugin; }
-<<<<<<< HEAD
-=======
 
 	virtual String get_unsaved_status(const String& p_for_scene) const override;
->>>>>>> fix/remove-object
 
 	virtual String get_plugin_name() const override { return "Shader"; }
 
@@ -153,11 +137,6 @@ public:
 	virtual void set_window_layout(Ref<ConfigFile> p_layout) override;
 	virtual void get_window_layout(Ref<ConfigFile> p_layout) override;
 
-<<<<<<< HEAD
-	virtual String get_unsaved_status(const String& p_for_scene) const override;
-	virtual void save_external_data() override;
-=======
->>>>>>> fix/remove-object
 	virtual void apply_changes() override;
 
 	ShaderEditorPlugin();

@@ -48,10 +48,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	void set_remote_node(const NodePath& p_remote_node);
-=======
->>>>>>> fix/remove-object
 	NodePath get_remote_node() const;
 
 	void set_use_global_coordinates(const bool p_enable);

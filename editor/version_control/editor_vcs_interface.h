@@ -31,10 +31,6 @@
 #pragma once
 
 #include "core/string/ustring.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 
 class EditorVCSInterface
 {
@@ -100,10 +96,6 @@ public:
 protected:
 	static EditorVCSInterface* singleton;
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	static EditorVCSInterface* get_singleton();

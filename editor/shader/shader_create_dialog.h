@@ -89,10 +89,6 @@ class ShaderCreateDialog : public ConfirmationDialog
 	void _built_in_toggled(bool p_enabled);
 	void _template_changed(int p_template = 0);
 	void _mode_changed(int p_mode = 0);
-<<<<<<< HEAD
-	void _browse_path();
-=======
->>>>>>> fix/remove-object
 	void _file_selected(const String& p_file);
 	void _refresh_type_icons();
 	String _validate_path(const String& p_path);

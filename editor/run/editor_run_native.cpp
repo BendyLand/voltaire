@@ -43,9 +43,6 @@ void EditorRunNative::_confirm_run_native()
 
 void EditorRunNative::resume_run_native() { start_run_native(resume_id); }
 
-<<<<<<< HEAD
-=======
 Error EditorRunNative::start_run_native(int) { return OK; }
 
->>>>>>> fix/remove-object
 

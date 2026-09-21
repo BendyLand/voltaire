@@ -71,11 +71,8 @@ void XRBodyModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new)
 	_get_joint_data();
 }
 
-<<<<<<< HEAD
-=======
 void XRBodyModifier3D::_get_joint_data() {}
 
 void XRBodyModifier3D::_process_modification(double p_delta) {}
 
->>>>>>> fix/remove-object
 

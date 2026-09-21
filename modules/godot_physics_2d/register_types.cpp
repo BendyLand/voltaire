@@ -41,9 +41,6 @@ void uninitialize_godot_physics_2d_module(ModuleInitializationLevel p_level)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void initialize_godot_physics_2d_module(ModuleInitializationLevel p_level) {}
 
->>>>>>> fix/remove-object
 

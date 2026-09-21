@@ -59,17 +59,6 @@ protected:
 	Node* edited_node = nullptr;
 
 
-<<<<<<< HEAD
-	bool need_show_lifetime_dialog(SpinBox* p_seconds);
-	virtual void _menu_callback(int p_idx);
-
-	virtual void _add_menu_options(PopupMenu* p_menu) {}
-
-	virtual Node* _convert_particles() = 0;
-
-public:
-	ParticlesEditorPlugin();
-=======
 	virtual void _menu_callback(int p_idx) {}
 
 	virtual void _add_menu_options(PopupMenu* p_menu) {}
@@ -78,7 +67,6 @@ public:
 
 public:
 	ParticlesEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

@@ -70,14 +70,6 @@ void OpenXRInteractionProfileEditorBase::remove_all_for_action_set(
 	// TODO update binding modifiers
 }
 
-<<<<<<< HEAD
-void OpenXRInteractionProfileEditorBase::_on_open_binding_modifiers()
-{
-	binding_modifiers_dialog->popup_centered(Size2i(500, 400));
-}
-
-=======
->>>>>>> fix/remove-object
 void OpenXRInteractionProfileEditorBase::setup(const Ref<OpenXRActionMap>& p_action_map,
 	const Ref<OpenXRInteractionProfile>& p_interaction_profile)
 {
@@ -182,8 +174,6 @@ OpenXRInteractionProfileEditor::OpenXRInteractionProfileEditor()
 	interaction_profile_sc->add_child(interaction_profile_hb);
 }
 
-<<<<<<< HEAD
-=======
 void OpenXRInteractionProfileEditor::_add_io_path(
 	VBoxContainer*, OpenXRInteractionProfileMetadata::IOPath const*)
 {
@@ -198,5 +188,4 @@ void OpenXRInteractionProfileEditor::setup(const Ref<OpenXRActionMap>& p_action_
 {
 }
 
->>>>>>> fix/remove-object
 

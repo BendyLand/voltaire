@@ -32,21 +32,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "visible_on_screen_notifier_3d.h"
 
-<<<<<<< HEAD
-void VisibleOnScreenNotifier3D::set_aabb(const AABB& p_aabb)
-{
-	if (aabb == p_aabb) {
-		return;
-	}
-	aabb = p_aabb;
-
-	RS::get_singleton()->visibility_notifier_set_aabb(get_base(), aabb);
-
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 AABB VisibleOnScreenNotifier3D::get_aabb() const { return aabb; }
 
 bool VisibleOnScreenNotifier3D::is_on_screen() const { return on_screen; }

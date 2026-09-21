@@ -247,9 +247,6 @@ int JoltShapedObject3D::find_shape_index(const JPH::SubShapeID& p_sub_shape_id) 
 	return find_shape_index((uint32_t)jolt_shape->GetSubShapeUserData(p_sub_shape_id));
 }
 
-<<<<<<< HEAD
-
-=======
 void JoltShapedObject3D::set_shape_transform(int, Transform3D) {}
 
 void JoltShapedObject3D::set_shape(int, JoltShape3D*) {}
@@ -279,4 +276,3 @@ AABB JoltShapedObject3D::get_aabb() const {}
 int JoltShapedObject3D::find_shape_index(unsigned int) const {}
 
 
->>>>>>> fix/remove-object

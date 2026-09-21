@@ -603,14 +603,8 @@ Vector<String> SceneState::_get_node_groups(int p_idx) const
 	return ret;
 }
 
-<<<<<<< HEAD
-SceneState::SceneState() {}
-
-Error PackedScene::pack(Node* p_scene) { return state->pack(p_scene); }
-=======
 Error PackedScene::pack(Node*
 p_scene) { return state->pack(p_scene); }
->>>>>>> fix/remove-object
 
 void PackedScene::clear() { state->clear(); }
 

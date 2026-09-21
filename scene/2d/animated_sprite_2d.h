@@ -60,10 +60,6 @@ class AnimatedSprite2D : public Node2D
 	Rect2 _get_rect() const;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

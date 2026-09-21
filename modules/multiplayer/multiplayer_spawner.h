@@ -81,10 +81,6 @@ public:
 	void clear_spawnable_scenes();
 
 	NodePath get_spawn_path() const;
-<<<<<<< HEAD
-	void set_spawn_path(const NodePath& p_path);
-=======
->>>>>>> fix/remove-object
 
 	uint32_t get_spawn_limit() const { return spawn_limit; }
 

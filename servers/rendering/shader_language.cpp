@@ -11796,8 +11796,5 @@ ShaderLanguage::~ShaderLanguage()
 }
 
 
-<<<<<<< HEAD
-=======
 
 void ShaderLanguage::_check_warning_accums() {}
->>>>>>> fix/remove-object

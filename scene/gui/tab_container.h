@@ -140,10 +140,6 @@ private:
 	void _on_tab_selected(int p_tab);
 	void _on_tab_button_pressed(int p_tab);
 	void _on_active_tab_rearranged(int p_tab);
-<<<<<<< HEAD
-	void _on_tab_visibility_changed(Control* p_child);
-=======
->>>>>>> fix/remove-object
 
 	void _drag_move_tab(int p_from_index, int p_to_index);
 	void _drag_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
@@ -158,20 +154,11 @@ protected:
 	{
 		return property_helper.property_can_revert(p_name);
 	}
-<<<<<<< HEAD
-
-	void _maximum_size_changed();
-=======
->>>>>>> fix/remove-object
 
 	void _notification(int p_what);
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual bool accessibility_override_tree_hierarchy() const override { return true; }

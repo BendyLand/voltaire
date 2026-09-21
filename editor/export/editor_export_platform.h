@@ -352,22 +352,6 @@ public:
 		EditorExportSaveFunction p_save_func, EditorExportRemoveFunction p_remove_func,
 		void* p_udata, EditorExportSaveSharedObject p_so_func = nullptr);
 
-<<<<<<< HEAD
-	Error save_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-		Vector<SharedObject>* p_so_files = nullptr, EditorExportSaveFunction p_save_func = nullptr,
-		EditorExportRemoveFunction p_remove_func = nullptr, bool p_embed = false,
-		int64_t* r_embedded_start = nullptr, int64_t* r_embedded_size = nullptr);
-	Error save_zip(const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-		Vector<SharedObject>* p_so_files = nullptr, EditorExportSaveFunction p_save_func = nullptr);
-
-	Error save_pack_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, Vector<SharedObject>* p_so_files = nullptr, bool p_embed = false,
-		int64_t* r_embedded_start = nullptr, int64_t* r_embedded_size = nullptr);
-	Error save_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, Vector<SharedObject>* p_so_files = nullptr);
-
-=======
->>>>>>> fix/remove-object
 	virtual bool poll_export() { return false; }
 
 	virtual int get_options_count() const { return 0; }
@@ -403,19 +387,6 @@ public:
 	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
 		const String& p_path, uint32_t p_flags = 0,
 		bool p_notify = true);
-<<<<<<< HEAD
-	virtual Error export_pack(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0);
-	virtual Error export_zip(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0);
-	virtual Error export_pack_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		uint32_t p_flags = 0);
-	virtual Error export_zip_patch(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, const Vector<String>& p_patches = Vector<String>(),
-		uint32_t p_flags = 0);
-=======
->>>>>>> fix/remove-object
 	virtual void get_platform_features(List<String>* r_features) const;
 
 	virtual void resolve_platform_feature_priorities(

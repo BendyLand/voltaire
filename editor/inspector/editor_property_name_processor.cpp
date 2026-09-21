@@ -376,8 +376,5 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor()
 EditorPropertyNameProcessor::~EditorPropertyNameProcessor() { singleton = nullptr; }
 
 
-<<<<<<< HEAD
-=======
 
 EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_settings_style() {}
->>>>>>> fix/remove-object

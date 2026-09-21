@@ -64,33 +64,8 @@ private:
 	int64_t scr_rq_id = 0;
 	HashMap<uint64_t, ScreenshotCB> screenshot_callbacks;
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
 public:
 	virtual bool has_capture(const String& p_capture) const override;
-
-	void window_request_size();
-	void hdr_output_request_state();
-
-	void set_suspend(bool p_enabled);
-	void next_frame();
-
-	void set_time_scale(double p_scale);
-	void reset_time_scale();
-
-	void set_node_type(int p_type);
-	void set_select_mode(int p_mode);
-
-	void set_selection_visible(bool p_visible);
-
-	void set_selection_avoid_locked(bool p_enabled);
-	void set_selection_prefer_group(bool p_enabled);
-=======
-public:
-	virtual bool has_capture(const String& p_capture) const override;
->>>>>>> fix/remove-object
 
 	void set_debug_mute_audio(bool p_enabled);
 
@@ -203,73 +178,23 @@ class GameView : public VBoxContainer
 
 	MenuButton* speed_state_button = nullptr;
 
-<<<<<<< HEAD
-	void _sessions_changed();
-
-	void _update_debugger_buttons();
-
-	void _handle_shortcut_requested(int p_embed_action);
-	void _toggle_suspend_button();
-	void _suspend_button_toggled(bool p_pressed);
-
-	void _node_type_pressed(int p_option);
-	void _select_mode_pressed(int p_option);
-	void _game_embed_mode_pressed(int p_option);
-	void _selection_options_menu_id_pressed(int p_id);
-	void _game_window_options_menu_menu_id_pressed(int p_id);
-
-	void _reset_time_scales();
-	void _speed_state_menu_pressed(int p_id);
-	void _update_speed_buttons();
-	void _update_speed_state_icon(int p_id);
-	void _update_speed_state_color();
-	void _update_speed_state_size();
-
-	void _play_pressed();
-	static void _instance_starting_static(int p_idx, List<String>& r_arguments);
-	void _instance_starting(int p_idx, List<String>& r_arguments);
-	void _stop_pressed();
-	void _embedding_completed();
-=======
->>>>>>> fix/remove-object
 	void _embedding_failed();
 	void _embedded_process_focused();
 
 	void _update_embed_menu_options();
 	void _update_embed_window_size();
-<<<<<<< HEAD
-	void _update_arguments_for_instance(int p_idx, List<String>& r_arguments);
-	void _show_update_window_wrapper();
 
-	void _debug_mute_audio_button_pressed();
-	void _setup_complete();
-
-	void _camera_override_button_toggled(bool p_pressed);
-	void _camera_override_menu_id_pressed(int p_id);
-
-	void _window_close_request();
-=======
-
->>>>>>> fix/remove-object
 	void _update_floating_window_settings();
 	void _remote_window_title_changed(String title);
 
 	void _debugger_breaked(bool p_breaked, bool p_can_debug);
 
 public:
-<<<<<<< HEAD
-	void set_window_layout(Ref<ConfigFile> p_layout);
-	void get_window_layout(Ref<ConfigFile> p_layout);
-
-	GameView(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase* p_embedded_process,
-		WindowWrapper* p_wrapper);
-=======
 	GameView(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase* p_embedded_process,
 		WindowWrapper* p_wrapper)
 		: debugger(p_debugger), embedded_process(p_embedded_process), window_wrapper(p_wrapper)
 	{
 	}
->>>>>>> fix/remove-object
 };
 
 class GameViewPluginBase : public EditorPlugin
@@ -283,42 +208,15 @@ class GameViewPluginBase : public EditorPlugin
 
 	String last_editor;
 
-<<<<<<< HEAD
-#ifndef ANDROID_ENABLED
-	void _window_visibility_changed(bool p_visible);
-#endif // ANDROID_ENABLED
-=======
->>>>>>> fix/remove-object
 	void _save_last_editor(const String& p_editor);
 	void _focus_another_editor();
 	bool _is_window_wrapper_enabled() const;
 
-<<<<<<< HEAD
-protected:
-	void _notification(int p_what);
-#ifndef ANDROID_ENABLED
-	void setup(Ref<GameViewDebugger> p_debugger, EmbeddedProcessBase* p_embedded_process);
-#endif
-
 public:
-	virtual String get_plugin_name() const override { return TTRC("Game"); }
-
-	bool has_main_screen() const override { return true; }
-
-=======
-public:
->>>>>>> fix/remove-object
 	virtual void selected_notify() override;
 
 	Ref<GameViewDebugger> get_debugger() const { return debugger; }
 
-<<<<<<< HEAD
-#ifndef ANDROID_ENABLED
-	virtual void set_window_layout(Ref<ConfigFile> p_layout) override;
-	virtual void get_window_layout(Ref<ConfigFile> p_layout) override;
-#endif // ANDROID_ENABLED
-=======
->>>>>>> fix/remove-object
 	GameViewPluginBase();
 };
 

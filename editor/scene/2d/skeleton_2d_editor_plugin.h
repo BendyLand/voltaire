@@ -51,17 +51,8 @@ class Skeleton2DEditor : public Control
 
 	void _menu_option(int p_option);
 
-<<<<<<< HEAD
-	// void _create_uv_lines();
 	friend class Skeleton2DEditorPlugin;
 
-protected:
-	void _node_removed(Node* p_node);
-
-=======
-	friend class Skeleton2DEditorPlugin;
-
->>>>>>> fix/remove-object
 public:
 	void edit(Skeleton2D* p_sprite);
 	Skeleton2DEditor();

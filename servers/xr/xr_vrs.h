@@ -32,10 +32,6 @@
 
 #include "core/types.h"
 #include "core/math/vector2i.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "core/templates/rid.h"
 #include "core/templates/vector.h"
 

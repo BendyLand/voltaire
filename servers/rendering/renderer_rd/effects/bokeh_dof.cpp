@@ -51,12 +51,9 @@ BokehDOF::~BokehDOF()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::BokehDOF::bokeh_dof_compute(const RendererRD::BokehDOF::BokehBuffers& p_buffers,
 	RID p_dest_framebuffer, float p_bokeh_size, float p_blur_size, bool p_use_jitter)
 {
 }
 
->>>>>>> fix/remove-object
 

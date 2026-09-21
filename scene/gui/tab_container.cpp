@@ -57,148 +57,12 @@ int TabContainer::_get_tab_height() const
 	return height;
 }
 
-<<<<<<< HEAD
-Control* TabContainer::_as_tab_control(Node* p_child) const
-{
-	Control* control = as_sortable_control(p_child, SortableVisibilityMode::IGNORE);
-	if (!control || control == internal_container || children_removing.has(control)) {
-		return nullptr;
-	}
-	return control;
-}
-
-void TabContainer::_on_theme_changed()
-{
-	if (!theme_changing) {
-		return;
-	}
-
-	tab_bar->begin_bulk_theme_override();
-
-	tab_bar->add_theme_style_override(
-		SNAME("tab_unselected"), theme_cache.tab_unselected_style.ptr());
-	tab_bar->add_theme_style_override(SNAME("tab_hovered"), theme_cache.tab_hovered_style.ptr());
-	tab_bar->add_theme_style_override(SNAME("tab_selected"), theme_cache.tab_selected_style.ptr());
-	tab_bar->add_theme_style_override(SNAME("tab_disabled"), theme_cache.tab_disabled_style.ptr());
-	tab_bar->add_theme_style_override(SNAME("tab_focus"), theme_cache.tab_focus_style.ptr());
-
-	tab_bar->add_theme_icon_override(SNAME("increment"), theme_cache.increment_icon.ptr());
-	tab_bar->add_theme_icon_override(
-		SNAME("increment_highlight"), theme_cache.increment_hl_icon.ptr());
-	tab_bar->add_theme_icon_override(SNAME("decrement"), theme_cache.decrement_icon.ptr());
-	tab_bar->add_theme_icon_override(
-		SNAME("decrement_highlight"), theme_cache.decrement_hl_icon.ptr());
-	tab_bar->add_theme_icon_override(SNAME("drop_mark"), theme_cache.drop_mark_icon.ptr());
-	tab_bar->add_theme_color_override(SNAME("drop_mark_color"), theme_cache.drop_mark_color);
-
-	tab_bar->add_theme_color_override(
-		SNAME("font_selected_color"), theme_cache.font_selected_color);
-	tab_bar->add_theme_color_override(SNAME("font_hovered_color"), theme_cache.font_hovered_color);
-	tab_bar->add_theme_color_override(
-		SNAME("font_unselected_color"), theme_cache.font_unselected_color);
-	tab_bar->add_theme_color_override(
-		SNAME("font_disabled_color"), theme_cache.font_disabled_color);
-	tab_bar->add_theme_color_override(SNAME("font_outline_color"), theme_cache.font_outline_color);
-
-	tab_bar->add_theme_color_override(
-		SNAME("icon_selected_color"), theme_cache.icon_selected_color);
-	tab_bar->add_theme_color_override(SNAME("icon_hovered_color"), theme_cache.icon_hovered_color);
-	tab_bar->add_theme_color_override(
-		SNAME("icon_unselected_color"), theme_cache.icon_unselected_color);
-	tab_bar->add_theme_color_override(
-		SNAME("icon_disabled_color"), theme_cache.icon_disabled_color);
-
-	tab_bar->add_theme_font_override(SceneStringName(font), theme_cache.tab_font.ptr());
-	tab_bar->add_theme_font_size_override(SceneStringName(font_size), theme_cache.tab_font_size);
-
-	tab_bar->add_theme_constant_override(SNAME("h_separation"), theme_cache.icon_separation);
-	tab_bar->add_theme_constant_override(SNAME("tab_separation"), theme_cache.tab_separation);
-	tab_bar->add_theme_constant_override(SNAME("icon_max_width"), theme_cache.icon_max_width);
-	tab_bar->add_theme_constant_override(SNAME("outline_size"), theme_cache.outline_size);
-
-	tab_bar->end_bulk_theme_override();
-
-	_update_margins();
-	if (get_tab_count() > 0) {
-		_repaint();
-	}
-	else {
-		update_minimum_size();
-		update_desired_size();
-	}
-	queue_redraw();
-
-	theme_changing = false;
-}
-
-=======
->>>>>>> fix/remove-object
 void TabContainer::_repaint()
 {
 	layout_pending_start();
 	_repaint_internal();
 }
 
-<<<<<<< HEAD
-void TabContainer::_repaint_internal()
-{
-	Vector<Control*> controls = _get_tab_controls();
-	int current = get_current_tab();
-
-	float top_margin = theme_cache.tabbar_style->get_margin(SIDE_TOP);
-	float bottom_margin = theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
-
-	// Move the TabBar to the top or bottom.
-	// Don't change the left and right offsets since the TabBar will resize and may change tab
-	// offset.
-	if (tabs_position == POSITION_BOTTOM) {
-		internal_container->set_anchor_and_offset(SIDE_BOTTOM, 1.0, -bottom_margin);
-		internal_container->set_anchor_and_offset(SIDE_TOP, 1.0, top_margin - _get_tab_height());
-	}
-	else {
-		internal_container->set_anchor_and_offset(SIDE_TOP, 0.0, top_margin);
-		internal_container->set_anchor_and_offset(
-			SIDE_BOTTOM, 0.0, _get_tab_height() - bottom_margin);
-	}
-
-	updating_visibility = true;
-	for (int i = 0; i < controls.size(); i++) {
-		Control* c = controls[i];
-
-		if (i == current) {
-			c->show();
-			c->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-
-			if (tabs_visible) {
-				if (tabs_position == POSITION_BOTTOM) {
-					c->set_offset(SIDE_BOTTOM, -_get_tab_height());
-				}
-				else {
-					c->set_offset(SIDE_TOP, _get_tab_height());
-				}
-			}
-
-			c->set_offset(
-				SIDE_TOP, c->get_offset(SIDE_TOP) + theme_cache.panel_style->get_margin(SIDE_TOP));
-			c->set_offset(SIDE_LEFT,
-				c->get_offset(SIDE_LEFT) + theme_cache.panel_style->get_margin(SIDE_LEFT));
-			c->set_offset(SIDE_RIGHT,
-				c->get_offset(SIDE_RIGHT) - theme_cache.panel_style->get_margin(SIDE_RIGHT));
-			c->set_offset(SIDE_BOTTOM,
-				c->get_offset(SIDE_BOTTOM) - theme_cache.panel_style->get_margin(SIDE_BOTTOM));
-		}
-		else {
-			c->hide();
-		}
-	}
-	updating_visibility = false;
-
-	update_minimum_size();
-	layout_pending_finish();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<Control*> TabContainer::_get_tab_controls() const
 {
 	Vector<Control*> controls;
@@ -218,60 +82,6 @@ void TabContainer::_drag_move_tab(int p_from_index, int p_to_index)
 	move_child(get_tab_control(p_from_index), get_tab_control(p_to_index)->get_index(false));
 }
 
-<<<<<<< HEAD
-void TabContainer::_popup_button_hovered(bool p_hover)
-{
-	if (p_hover) {
-		popup_button->set_button_icon(theme_cache.menu_hl_icon);
-	}
-	else {
-		popup_button->set_button_icon(theme_cache.menu_icon);
-	}
-}
-
-void TabContainer::_on_tab_visibility_changed(Control* p_child)
-{
-	if (updating_visibility) {
-		return;
-	}
-	int tab_index = get_tab_idx_from_control(p_child);
-	if (tab_index == -1) {
-		return;
-	}
-	// Only allow one tab to be visible.
-	bool made_visible = p_child->is_visible();
-	updating_visibility = true;
-
-	if (!made_visible && get_current_tab() == tab_index) {
-		if (get_deselect_enabled() || get_tab_count() == 0) {
-			// Deselect.
-			set_current_tab(-1);
-		}
-		else if (get_tab_count() == 1) {
-			// Only tab, cannot deselect.
-			p_child->show();
-		}
-		else {
-			// Set a different tab to be the current tab.
-			bool selected = select_next_available();
-			if (!selected) {
-				selected = select_previous_available();
-			}
-			if (!selected) {
-				// No available tabs, deselect.
-				set_current_tab(-1);
-			}
-		}
-	}
-	else if (made_visible && get_current_tab() != tab_index) {
-		set_current_tab(tab_index);
-	}
-
-	updating_visibility = false;
-}
-
-=======
->>>>>>> fix/remove-object
 TabBar* TabContainer::get_tab_bar() const { return tab_bar; }
 
 int TabContainer::get_tab_count() const { return tab_bar->get_tab_count(); }
@@ -505,39 +315,6 @@ Size2 TabContainer::get_inner_combined_maximum_size() const
 	return ms;
 }
 
-<<<<<<< HEAD
-void TabContainer::_maximum_size_changed()
-{
-	if (!tab_bar) {
-		return;
-	}
-
-	Size2 ms = get_combined_maximum_size();
-	if (theme_cache.tabbar_style.is_valid()) {
-		if (ms.width >= 0) {
-			ms.width -= theme_cache.tabbar_style->get_margin(SIDE_LEFT) +
-						theme_cache.tabbar_style->get_margin(SIDE_RIGHT);
-			if (get_popup() && popup_button) {
-				ms.width -= popup_button->get_minimum_size().x;
-			}
-			if (theme_cache.side_margin > 0 && get_tab_alignment() != TabBar::ALIGNMENT_CENTER &&
-				(get_tab_alignment() != TabBar::ALIGNMENT_RIGHT || !get_popup())) {
-				ms.width -= theme_cache.side_margin;
-			}
-			ms.width = MAX(ms.width, 0);
-		}
-		if (ms.height >= 0) {
-			ms.height -= theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-						 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
-			ms.height = MAX(ms.height, 0);
-		}
-	}
-	internal_container->set_parent_maximum_size_cache(Size2(-1, -1));
-	tab_bar->set_custom_maximum_size(ms);
-}
-
-=======
->>>>>>> fix/remove-object
 void TabContainer::set_switch_on_drag_hover(bool p_enabled)
 {
 	tab_bar->set_switch_on_drag_hover(p_enabled);
@@ -565,8 +342,6 @@ Vector<int> TabContainer::get_allowed_size_flags_horizontal() const { return Vec
 
 Vector<int> TabContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
 
-<<<<<<< HEAD
-=======
 Popup* TabContainer::get_popup() const
 {
 	Popup p = Popup();
@@ -587,5 +362,4 @@ void TabContainer::set_tab_icon(int, Ref<Texture2D> const&) {}
 
 void TabContainer::set_popup(Node*) {}
 
->>>>>>> fix/remove-object
 

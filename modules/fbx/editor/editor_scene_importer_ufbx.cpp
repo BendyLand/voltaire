@@ -39,13 +39,9 @@ void EditorSceneFormatImporterUFBX::get_extensions(List<String>* r_extensions) c
 	r_extensions->push_back("fbx");
 }
 
-<<<<<<< HEAD
-
-=======
 void EditorSceneFormatImporterUFBX::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
 {
 }
 
 
->>>>>>> fix/remove-object

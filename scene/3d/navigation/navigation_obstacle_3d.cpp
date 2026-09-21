@@ -157,13 +157,6 @@ void NavigationObstacle3D::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 void NavigationObstacle3D::set_vertices(const Vector<Vector3>& p_vertices)
 {
 	vertices = p_vertices;
@@ -286,11 +279,6 @@ void NavigationObstacle3D::set_avoidance_enabled(bool p_enabled)
 
 bool NavigationObstacle3D::get_avoidance_enabled() const { return avoidance_enabled; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void NavigationObstacle3D::set_velocity(const Vector3 p_velocity)
 {
 	velocity = p_velocity;
@@ -334,13 +322,6 @@ PackedStringArray NavigationObstacle3D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fix/remove-object
 void NavigationObstacle3D::_update_map(RID p_map)
 {
 	NavigationServer3D::get_singleton()->obstacle_set_map(obstacle, p_map);
@@ -402,10 +383,6 @@ void NavigationObstacle3D::_update_debug()
 	}
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 #endif // DEBUG_ENABLED
 
 #ifdef DEBUG_ENABLED

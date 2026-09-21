@@ -38,23 +38,10 @@ class Node;
 
 class EditorScript : public RefCounted
 {
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-public:
-	void add_root_node(Node* p_node);
-#ifndef DISABLE_DEPRECATED
-	Node* get_scene() const;
-#endif // DISABLE_DEPRECATED
-	EditorInterface* get_editor_interface() const;
-
-=======
 public:
 #ifndef DISABLE_DEPRECATED
 	EditorInterface* get_editor_interface() const;
 #endif
->>>>>>> fix/remove-object
 	virtual void run();
 };
 

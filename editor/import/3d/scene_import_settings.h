@@ -227,10 +227,6 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	Vector<TreeItem*> save_path_items;
 
 	TreeItem* save_path_item = nullptr;
-<<<<<<< HEAD
-	void _save_path_changed(const String& p_path);
-=======
->>>>>>> fix/remove-object
 	void _save_dir_confirm();
 
 	bool generate_collider = false;

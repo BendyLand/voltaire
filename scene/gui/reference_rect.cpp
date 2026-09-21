@@ -31,14 +31,8 @@
 #include "core/config/engine.h"
 #include "reference_rect.h"
 
-<<<<<<< HEAD
-#include "core/config/engine.h"
-
-void ReferenceRect::_notification(int p_what) {
-=======
 void ReferenceRect::_notification(int p_what)
 {
->>>>>>> fix/remove-object
 	switch (p_what) {
 	case NOTIFICATION_DRAW: {
 		if (!is_inside_tree()) {

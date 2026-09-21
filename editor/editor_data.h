@@ -82,11 +82,6 @@ public:
 	int get_history_len();
 	int get_history_pos();
 
-<<<<<<< HEAD
-	bool next();
-	bool previous();
-=======
->>>>>>> fix/remove-object
 	bool is_current_inspector_only() const;
 
 	// Gets the size of the path of the current history item.
@@ -168,21 +163,11 @@ public:
 	bool has_extension_editor_plugin(const StringName& p_class_name);
 	EditorPlugin* get_extension_editor_plugin(const StringName& p_class_name);
 
-<<<<<<< HEAD
-	void remove_move_array_element_function(const StringName& p_class);
-
-=======
->>>>>>> fix/remove-object
 	void remove_custom_type(const String& p_type);
 
 	const HashMap<String, Vector<CustomType>>& get_custom_types() const { return custom_types; }
 
 	const CustomType* get_custom_type_by_name(const String& p_name) const;
-<<<<<<< HEAD
-	const CustomType* get_custom_type_by_path(const String& p_path) const;
-	bool is_type_recognized(const String& p_type) const;
-=======
->>>>>>> fix/remove-object
 
 	int add_edited_scene(int p_at_pos);
 	void set_scene_root(int p_idx, Node* p_root);
@@ -217,16 +202,6 @@ public:
 	void set_plugin_window_layout(Ref<ConfigFile> p_layout);
 	void get_plugin_window_layout(Ref<ConfigFile> p_layout);
 
-<<<<<<< HEAD
-	void notify_edited_scene_changed();
-	void notify_resource_saved(const Ref<Resource>& p_resource);
-	void notify_scene_saved(const String& p_path);
-	void load_editor_plugin_states_from_config(const Ref<ConfigFile>& p_config_file, int p_idx);
-
-	bool script_class_is_parent(const String& p_class, const String& p_inherits);
-
-=======
->>>>>>> fix/remove-object
 	StringName script_class_get_name(const String& p_path) const;
 	void script_class_set_name(const String& p_path, const StringName& p_class);
 
@@ -259,35 +234,8 @@ class EditorSelection
 	bool changed = false;
 	bool node_list_changed = false;
 
-<<<<<<< HEAD
-	void _node_removed(Node* p_node);
-
-	void _update_node_list();
-	void _emit_change();
-
-protected:
-	static void _bind_methods();
-
-public:
-	void add_node(Node* p_node);
-	void remove_node(Node* p_node);
-	bool is_selected(Node* p_node) const;
-
-	void update(bool p_deferred = true);
-	void clear();
-
-	// Returns only the top level selected nodes.
-	// That is, if the selection includes some node and a child of that node, only the parent is
-	// returned.
-	List<Node*> get_top_selected_node_list();
-	// Returns all the selected nodes (list version of "get_selected_nodes").
-	List<Node*> get_full_selected_node_list();
-
-	~EditorSelection();
-=======
 public:
 	~EditorSelection() = default;
->>>>>>> fix/remove-object
 };
 
 

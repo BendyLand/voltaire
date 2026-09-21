@@ -35,11 +35,8 @@
 #include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-=======
 void ImageTexture::reload_from_file() {}
 
->>>>>>> fix/remove-object
 Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 {
 	ERR_FAIL_COND_V_MSG(p_image.is_null(), Ref<ImageTexture>(), "Invalid image: null");
@@ -53,11 +50,8 @@ Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 
 Image::Format ImageTexture::get_format() const { return format; }
 
-<<<<<<< HEAD
-=======
 void ImageTexture::update(const Ref<Image>& p_image) {}
 
->>>>>>> fix/remove-object
 Ref<Image> ImageTexture::get_image() const
 {
 	if (image_stored) {

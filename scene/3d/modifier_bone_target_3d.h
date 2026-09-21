@@ -37,22 +37,10 @@ class ModifierBoneTarget3D : public SkeletonModifier3D
 	String bone_name;
 	int bone = -1;
 
-<<<<<<< HEAD
-protected:
-	virtual void _validate_bone_names() override;
-	static void _bind_methods();
-	virtual void _process_modification(double p_delta) override;
-
-=======
->>>>>>> fix/remove-object
 public:
 #ifdef TOOLS_ENABLED
 	virtual bool is_processed_on_saving() const override { return true; }
 #endif
-<<<<<<< HEAD
-	void set_bone_name(const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_bone_name() const;
 	int get_bone() const;
 };

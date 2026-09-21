@@ -43,9 +43,6 @@ void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 	jolt_deinitialize();
 }
 
-<<<<<<< HEAD
-=======
 void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {}
 
->>>>>>> fix/remove-object
 

@@ -43,11 +43,8 @@ class GodotPhysicsDirectSpaceState3D : public PhysicsDirectSpaceState3D
 public:
 	GodotSpace3D* space = nullptr;
 
-<<<<<<< HEAD
-=======
 	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
 		int p_result_max, int& r_result_count) override;
->>>>>>> fix/remove-object
 	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
 		PS3DT::ShapeResult* r_results, int p_result_max) override;
 	virtual bool intersect_ray(
@@ -56,11 +53,6 @@ public:
 		PS3DT::ShapeResult* r_results, int p_result_max) override;
 	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
 		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr) override;
-<<<<<<< HEAD
-	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
-		int p_result_max, int& r_result_count) override;
-=======
->>>>>>> fix/remove-object
 	virtual bool rest_info(
 		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info) override;
 	virtual Vector3 get_closest_point_to_object_volume(

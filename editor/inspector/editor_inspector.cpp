@@ -100,90 +100,6 @@ String EditorProperty::get_tooltip_string(const String& p_string) const
 		   String((p_string.length() > TOOLTIP_MAX_LENGTH) ? "..." : "");
 }
 
-<<<<<<< HEAD
-Size2 EditorProperty::get_minimum_size() const
-{
-	if (theme_cache.font.is_null()) {
-		// Too early.
-		return Vector2();
-	}
-
-	Size2 ms = Size2(0, theme_cache.inspector_property_height);
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		if (c == bottom_editor) {
-			continue;
-		}
-		if (c == left_container) {
-			continue;
-		}
-		if (c == right_container) {
-			continue;
-		}
-
-		Size2 minsize = c->get_combined_minimum_size();
-		ms = ms.max(minsize);
-	}
-
-	if (!label.is_empty()) {
-		ms.width += theme_cache.font_offset + theme_cache.horizontal_separation;
-	}
-
-	// Always take the revert and pin values into account, since their state can be changed at whim
-	// and we don't want to update the min width every time this happens.
-	{
-		if (!is_read_only()) {
-			ms.width += theme_cache.revert_icon->get_width() + theme_cache.padding +
-						theme_cache.horizontal_separation;
-		}
-
-		ms.width += theme_cache.pin_icon->get_width() + theme_cache.horizontal_separation;
-	}
-
-	if (keying) {
-		ms.width += theme_cache.key_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	if (deletable) {
-		ms.width += theme_cache.delete_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	if (checkable) {
-		ms.width += theme_cache.checked_icon->get_width() + theme_cache.padding +
-					theme_cache.horizontal_separation;
-	}
-
-	Size2 ls = left_container->get_combined_minimum_size();
-	ms.width += ls.x;
-	ms.height = MAX(ms.height, ls.y);
-
-	Size2 rs = right_container->get_combined_minimum_size();
-	ms.width += rs.x;
-	ms.height = MAX(ms.height, rs.y);
-
-	if (bottom_editor != nullptr && bottom_editor->is_visible()) {
-		ms.height += label.is_empty() ? 0 : _get_v_separation();
-		Size2 bems = bottom_editor->get_combined_minimum_size();
-		ms.height += bems.height;
-		ms.width = MAX(ms.width, bems.width);
-	}
-
-	return ms;
-}
-
-void EditorProperty::set_label(const String& p_label)
-{
-	label = p_label;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorProperty::set_doc_path(const String& p_doc_path) { doc_path = p_doc_path; }
 
 void EditorProperty::set_internal(bool p_internal) { internal = p_internal; }
@@ -198,16 +114,6 @@ bool EditorProperty::is_read_only() const { return read_only; }
 
 StringName EditorProperty::_get_revert_property() const { return property; }
 
-<<<<<<< HEAD
-void EditorProperty::set_draw_label(bool p_draw_label)
-{
-	draw_label = p_draw_label;
-	queue_redraw();
-	queue_sort();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorProperty::is_draw_label() const { return draw_label; }
 
 bool EditorProperty::is_draw_background() const { return draw_background; }
@@ -251,16 +157,6 @@ void EditorProperty::grab_focus(int p_focusable)
 	}
 }
 
-<<<<<<< HEAD
-void EditorProperty::deselect()
-{
-	selected = false;
-	selected_focusable = -1;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorProperty::is_selected() const { return selected; }
 
 void EditorProperty::add_inline_control(Control* p_control, InlineControlSide p_side)
@@ -338,12 +234,6 @@ void EditorProperty::set_favoritable(bool p_favoritable) { can_favorite = p_favo
 
 bool EditorProperty::is_favoritable() const { return can_favorite; }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 void EditorInspectorPlugin::add_custom_control(Control* control)
 {
 	AddedEditor ae;
@@ -372,22 +262,6 @@ void EditorInspectorPlugin::add_property_editor_for_multiple_properties(
 	added_editors.push_back(ae);
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
-Control* EditorInspectorCategory::make_custom_tooltip(const String& p_text) const
-{
-	// If it's not a doc tooltip, fallback to the default one.
-	if (doc_class_name.is_empty()) {
-		return nullptr;
-	}
-
-	return EditorHelpBitTooltip::make_tooltip(const_cast<EditorInspectorCategory*>(this), p_text);
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorInspectorCategory::set_as_favorite()
 {
 	is_favorite = true;
@@ -425,17 +299,6 @@ Size2 EditorInspectorCategory::get_minimum_size() const
 	return ms;
 }
 
-<<<<<<< HEAD
-void EditorInspectorCategory::_theme_changed()
-{
-	// This needs to be done via the signal, as it's fired before the minimum since is updated.
-	EditorInspector::initialize_category_theme(theme_cache, this);
-	menu_icon_dirty = true;
-	_update_icon();
-}
-
-=======
->>>>>>> fix/remove-object
 EditorInspectorCategory::EditorInspectorCategory() { set_focus_mode(FOCUS_ACCESSIBILITY); }
 
 void EditorInspectorSection::_test_unfold()
@@ -475,87 +338,10 @@ int EditorInspectorSection::_get_header_height()
 	return header_height;
 }
 
-<<<<<<< HEAD
-Size2 EditorInspectorSection::get_minimum_size() const
-{
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i));
-		if (!c) {
-			continue;
-		}
-		Size2 minsize = c->get_combined_minimum_size();
-		ms = ms.max(minsize);
-	}
-
-	if (theme_cache.font.is_valid()) {
-		ms.height +=
-			theme_cache.font->get_height(theme_cache.font_size) + theme_cache.vertical_separation;
-		ms.width += theme_cache.inspector_margin;
-	}
-
-	if (indent_depth > 0 && theme_cache.indent_size > 0) {
-		ms.width += indent_depth * theme_cache.indent_size;
-	}
-	if (indent_depth > 0 && theme_cache.indent_box.is_valid()) {
-		ms.width += theme_cache.indent_box->get_margin(SIDE_LEFT) +
-					theme_cache.indent_box->get_margin(SIDE_RIGHT);
-	}
-
-	return ms;
-}
-
-=======
->>>>>>> fix/remove-object
 String EditorInspectorSection::get_section() const { return section; }
 
 VBoxContainer* EditorInspectorSection::get_vbox() { return vbox; }
 
-<<<<<<< HEAD
-void EditorInspectorSection::set_bg_color(const Color& p_bg_color)
-{
-	bg_color = p_bg_color;
-	queue_redraw();
-}
-
-void EditorInspectorSection::set_keying(bool p_keying)
-{
-	if (keying == (checkable && p_keying)) {
-		return;
-	}
-
-	keying = checkable && p_keying;
-	if (checkable) {
-		queue_redraw();
-	}
-}
-
-void EditorInspectorSection::reset_timer()
-{
-	if (dropping_for_unfold && !dropping_unfold_timer->is_stopped()) {
-		dropping_unfold_timer->start();
-	}
-}
-
-void EditorInspectorSection::set_checked(bool p_checked)
-{
-	if (checked == p_checked) {
-		return;
-	}
-
-	checked = p_checked;
-	if (!checkbox_only && checkable && !checked) {
-		vbox->hide();
-	}
-	else if (!checkbox_only) {
-		unfold();
-	}
-
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorInspectorSection::has_revertable_properties() const
 {
 	return !revertable_properties.is_empty();
@@ -568,12 +354,6 @@ void EditorInspectorSection::_property_edited(const String& p_property)
 	}
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 void EditorInspectorArray::_add_button_pressed() { _move_element(-1, -1); }
 
 void EditorInspectorArray::_rmb_popup_id_pressed(int p_id)
@@ -606,14 +386,6 @@ void EditorInspectorArray::_rmb_popup_id_pressed(int p_id)
 	}
 }
 
-<<<<<<< HEAD
-void EditorInspectorArray::_vbox_visibility_changed()
-{
-	control_dropping->set_visible(vbox->is_visible_in_tree());
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorInspectorArray::_panel_draw(int p_index)
 {
 	ERR_FAIL_INDEX(p_index, (int)array_elements.size());
@@ -628,33 +400,6 @@ void EditorInspectorArray::_panel_draw(int p_index)
 	}
 }
 
-<<<<<<< HEAD
-void EditorInspectorArray::_panel_gui_focus(int p_index)
-{
-	array_elements[p_index].panel->queue_redraw();
-	selected = p_index;
-}
-
-void EditorInspectorArray::_panel_gui_unfocus(int p_index)
-{
-	array_elements[p_index].panel->queue_redraw();
-	if (selected == p_index) {
-		selected = -1;
-	}
-}
-
-void EditorInspectorArray::show_menu(int p_index, const Vector2& p_offset)
-{
-	popup_array_index_pressed = begin_array_index + p_index;
-	rmb_popup->set_item_disabled(OPTION_MOVE_UP, popup_array_index_pressed == 0);
-	rmb_popup->set_item_disabled(OPTION_MOVE_DOWN, popup_array_index_pressed == count - 1);
-	rmb_popup->set_position(get_screen_position() + p_offset);
-	rmb_popup->reset_size();
-	rmb_popup->popup();
-}
-
-=======
->>>>>>> fix/remove-object
 int EditorInspectorArray::_drop_position() const
 {
 	for (int i = 0; i < (int)array_elements.size(); i++) {
@@ -707,94 +452,9 @@ VBoxContainer* EditorInspectorArray::get_vbox(int p_index)
 	}
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
-void EditorPaginator::update(int p_page, int p_max_page)
-{
-	page = p_page;
-	max_page = p_max_page;
-
-	// Update buttons.
-	first_page_button->set_disabled(page == 0);
-	prev_page_button->set_disabled(page == 0);
-	next_page_button->set_disabled(page == max_page);
-	last_page_button->set_disabled(page == max_page);
-
-	// Update page number and page count.
-	page_line_edit->set_text(vformat("%d", page + 1));
-	page_count_label->set_text(vformat("/ %d", max_page + 1));
-}
-
-void EditorPaginator::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		first_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageFirst")));
-		prev_page_button->set_button_icon(get_editor_theme_icon(SNAME("PagePrevious")));
-		next_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageNext")));
-		last_page_button->set_button_icon(get_editor_theme_icon(SNAME("PageLast")));
-	} break;
-	}
-}
-
-void EditorPaginator::_bind_methods() {}
-
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 Ref<EditorInspectorPlugin> EditorInspector::inspector_plugins[MAX_PLUGINS];
 int EditorInspector::inspector_plugin_count = 0;
 
-void EditorInspector::initialize_category_theme(
-	EditorInspectorCategory::ThemeCache& p_cache, Control* p_control)
-{
-	EditorInspector* parent_inspector = _get_control_parent_inspector(p_control);
-	if (parent_inspector && parent_inspector != p_control) {
-		p_cache = parent_inspector->category_theme_cache;
-		return;
-	}
-
-	p_cache.horizontal_separation =
-		p_control->get_theme_constant(SNAME("h_separation"), SNAME("Tree"));
-	p_cache.vertical_separation =
-		p_control->get_theme_constant(SNAME("separation"), SNAME("EditorPropertyContainer"));
-	p_cache.class_icon_size =
-		p_control->get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-
-	p_cache.font_color = p_control->get_theme_color(SceneStringName(font_color), SNAME("Tree"));
-
-	p_cache.bold_font = p_control->get_theme_font(SNAME("bold"), EditorStringName(EditorFonts));
-	p_cache.bold_font_size =
-		p_control->get_theme_font_size(SNAME("bold_size"), EditorStringName(EditorFonts));
-
-	p_cache.icon_copy = p_control->get_editor_theme_icon(SNAME("ActionCopy"));
-	p_cache.icon_paste = p_control->get_editor_theme_icon(SNAME("ActionPaste"));
-
-	p_cache.icon_favorites = p_control->get_editor_theme_icon(SNAME("Favorites"));
-	p_cache.icon_unfavorite = p_control->get_editor_theme_icon(SNAME("Unfavorite"));
-	p_cache.icon_help = p_control->get_editor_theme_icon(SNAME("Help"));
-
-	p_cache.background =
-		p_control->get_theme_stylebox(SNAME("bg"), SNAME("EditorInspectorCategory"));
-
-	if (p_control == parent_inspector) {
-		// Only initialize for the inspector, as stand-alone categories won't need it.
-		p_cache.sub_inspector_background = p_control->get_theme_stylebox(
-			"sub_inspector_category_bg", EditorStringName(EditorStyles));
-		for (int i = 0; i <= 16; i++) {
-			p_cache.sub_inspector_color_background[i] = p_control->get_theme_stylebox(
-				"sub_inspector_color_category_bg" + itos(i), EditorStringName(EditorStyles));
-		}
-	}
-}
-
-=======
-Ref<EditorInspectorPlugin> EditorInspector::inspector_plugins[MAX_PLUGINS];
-int EditorInspector::inspector_plugin_count = 0;
-
->>>>>>> fix/remove-object
 void EditorInspector::add_inspector_plugin(const Ref<EditorInspectorPlugin>& p_plugin)
 {
 	ERR_FAIL_COND(inspector_plugin_count == MAX_PLUGINS);
@@ -841,11 +501,8 @@ bool EditorInspector::is_main_editor_inspector() const
 
 String EditorInspector::get_selected_path() const { return property_selected; }
 
-<<<<<<< HEAD
-=======
 void EditorInspector::update_tree() {}
 
->>>>>>> fix/remove-object
 void EditorInspector::update_property(const String& p_prop)
 {
 	if (!editor_property_map.has(p_prop)) {
@@ -1064,19 +721,11 @@ void EditorInspector::set_restrict_to_basic_settings(bool p_restrict)
 	update_tree();
 }
 
-<<<<<<< HEAD
-void EditorInspector::_bind_methods() {}
-
-void EditorProperty::_set_read_only(bool p_read_only) {}
-
-void EditorProperty::update_property() {}
-=======
 void EditorProperty::_set_read_only(bool p_read_only) {}
 
 void EditorProperty::update_property() {}
 
 void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {}
->>>>>>> fix/remove-object
 
 
 

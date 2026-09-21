@@ -354,11 +354,8 @@ void NavMeshGenerator2D::generator_bake_from_source_geometry_data(
 
 #endif // CLIPPER2_ENABLED
 
-<<<<<<< HEAD
-=======
 void NavMeshGenerator2D::sync() {}
 
 void NavMeshGenerator2D::cleanup() {}
 
->>>>>>> fix/remove-object
 

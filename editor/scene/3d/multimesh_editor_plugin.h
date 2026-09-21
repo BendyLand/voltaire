@@ -72,19 +72,9 @@ class MultiMeshEditor : public Control
 	};
 
 	void _browsed(const NodePath& p_path);
-<<<<<<< HEAD
-	void _menu_option(int);
 	void _populate();
 	void _browse(bool p_source);
 
-protected:
-	void _node_removed(Node* p_node);
-
-=======
-	void _populate();
-	void _browse(bool p_source);
-
->>>>>>> fix/remove-object
 public:
 	void edit(MultiMeshInstance3D* p_multimesh);
 	MultiMeshEditor();

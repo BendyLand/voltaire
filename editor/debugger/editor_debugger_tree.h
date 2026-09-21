@@ -94,10 +94,6 @@ public:
 	String get_selected_path();
 	int get_current_debugger(); // Would love to have one tree for every debugger.
 
-<<<<<<< HEAD
-	void update_scene_tree(const SceneDebuggerTree* p_tree, int p_debugger);
-=======
->>>>>>> fix/remove-object
 	void select_nodes(const TypedArray<int64_t>& p_ids);
 	void clear_selection();
 

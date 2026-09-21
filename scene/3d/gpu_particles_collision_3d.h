@@ -43,10 +43,6 @@ class GPUParticlesCollision3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type);
 
@@ -74,15 +70,7 @@ class GPUParticlesCollisionBox3D : public GPUParticlesCollision3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
-=======
-public:
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -171,10 +159,6 @@ public:
 	void set_thickness(float p_thickness);
 	float get_thickness() const;
 
-<<<<<<< HEAD
-	void set_size(const Vector3& p_size);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	Resolution get_resolution() const;
@@ -230,15 +214,8 @@ private:
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
 
 public:
-	void set_size(const Vector3& p_size);
-=======
-
-public:
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	Resolution get_resolution() const;
@@ -272,10 +249,6 @@ class GPUParticlesAttractor3D : public VisualInstance3D
 protected:
 	_FORCE_INLINE_ RID _get_collision() { return collision; }
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type);
 
@@ -311,15 +284,7 @@ class GPUParticlesAttractorBox3D : public GPUParticlesAttractor3D
 {
 	Vector3 size = Vector3(2, 2, 2);
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
-=======
-public:
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	virtual AABB get_aabb() const override;
@@ -333,15 +298,7 @@ class GPUParticlesAttractorVectorField3D : public GPUParticlesAttractor3D
 	Vector3 size = Vector3(2, 2, 2);
 	Ref<Texture3D> texture;
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
 public:
-	void set_size(const Vector3& p_size);
-=======
-public:
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	void set_texture(const Ref<Texture3D>& p_texture);

@@ -33,17 +33,8 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-<<<<<<< HEAD
-///////////////////////////////////////
-// SkeletonModification2DFABRIK
-///////////////////////////////////////
-
-class SkeletonModification2DFABRIK : public SkeletonModification2D {
-
-=======
 class SkeletonModification2DFABRIK : public SkeletonModification2D
 {
->>>>>>> fix/remove-object
 private:
 	struct FABRIK_Joint_Data2D
 	{

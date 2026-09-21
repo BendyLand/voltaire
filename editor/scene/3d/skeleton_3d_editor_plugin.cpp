@@ -51,21 +51,6 @@
 #include "scene/resources/surface_tool.h"
 #include "skeleton_3d_editor_plugin.h"
 
-<<<<<<< HEAD
-void BonePropertiesEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		const Color section_color =
-			get_theme_color(SNAME("prop_subsection"), EditorStringName(Editor));
-		section->set_bg_color(section_color);
-		rest_section->set_bg_color(section_color);
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 BonePropertiesEditor::BonePropertiesEditor(Skeleton3D* p_skeleton)
 {
 	create_editors();
@@ -113,53 +98,6 @@ void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 	}
 }
 
-<<<<<<< HEAD
-PhysicalBone3D* Skeleton3DEditor::create_physical_bone(
-	int bone_id, int bone_child_id, const Vector<BoneInfo>& bones_infos)
-{
-	const Transform3D child_rest = skeleton->get_bone_rest(bone_child_id);
-
-	const real_t half_height(child_rest.origin.length() * 0.5);
-	const real_t radius(half_height * 0.2);
-
-	Ref<CapsuleShape3D> bone_shape_capsule;
-	bone_shape_capsule.instantiate();
-	bone_shape_capsule->set_height(half_height * 2);
-	bone_shape_capsule->set_radius(radius);
-
-	CollisionShape3D* bone_shape = memnew(CollisionShape3D);
-	bone_shape->set_shape(bone_shape_capsule);
-	bone_shape->set_name("CollisionShape3D");
-
-	Transform3D capsule_transform;
-	capsule_transform.basis.rows[0] = Vector3(1, 0, 0);
-	capsule_transform.basis.rows[1] = Vector3(0, 0, 1);
-	capsule_transform.basis.rows[2] = Vector3(0, -1, 0);
-	bone_shape->set_transform(capsule_transform);
-
-	/// Get an up vector not collinear with child rest origin
-	Vector3 up = Vector3(0, 1, 0);
-	if (up.cross(child_rest.origin).is_zero_approx()) {
-		up = Vector3(0, 0, 1);
-	}
-
-	Transform3D body_transform;
-	body_transform.basis = Basis::looking_at(child_rest.origin, up);
-	body_transform.origin = body_transform.basis.xform(Vector3(0, 0, -half_height));
-
-	Transform3D joint_transform;
-	joint_transform.origin = Vector3(0, 0, half_height);
-
-	PhysicalBone3D* physical_bone = memnew(PhysicalBone3D);
-	physical_bone->add_child(bone_shape);
-	physical_bone->set_name("Physical Bone " + skeleton->get_bone_name(bone_id));
-	physical_bone->set_body_offset(body_transform);
-	physical_bone->set_joint_offset(joint_transform);
-	return physical_bone;
-}
-
-=======
->>>>>>> fix/remove-object
 void Skeleton3DEditor::export_skeleton_profile()
 {
 	if (!skeleton->get_bone_count()) {
@@ -239,26 +177,6 @@ void Skeleton3DEditor::_file_selected(const String& p_file)
 // May be not used with single select mode.
 void Skeleton3DEditor::_joint_tree_rmb_select(const Vector2& p_pos, MouseButton p_button) {}
 
-<<<<<<< HEAD
-void Skeleton3DEditor::_update_properties()
-{
-	if (pose_editor) {
-		pose_editor->_update_properties();
-	}
-	if (!skeleton || !skeleton->is_inside_tree()) {
-		return;
-	}
-	Node3DEditor::get_singleton()->update_transform_gizmo();
-}
-
-void Skeleton3DEditor::update_all()
-{
-	_update_properties();
-	update_joint_tree();
-}
-
-=======
->>>>>>> fix/remove-object
 void Skeleton3DEditor::_loc_toggled(bool p_toggled_on)
 {
 	if (!editor_plugin) {
@@ -283,28 +201,6 @@ void Skeleton3DEditor::_scl_toggled(bool p_toggled_on)
 	editor_plugin->scl_pressed = p_toggled_on;
 }
 
-<<<<<<< HEAD
-void Skeleton3DEditor::_node_removed(Node* p_node)
-{
-	if (!skeleton || p_node != skeleton) {
-		return;
-	}
-
-	_disconnect_from_tree();
-	_disconnect_from_skeleton();
-	if (pose_editor) {
-		pose_editor->set_skeleton(nullptr);
-		pose_editor->set_visible(false);
-	}
-	edit_mode = false;
-	skeleton = nullptr;
-	skeleton_options->hide();
-
-	_update_properties();
-}
-
-=======
->>>>>>> fix/remove-object
 void Skeleton3DEditor::edit_mode_toggled(const bool pressed)
 {
 	edit_mode = pressed;
@@ -416,54 +312,6 @@ void Skeleton3DEditor::_subgizmo_selection_change()
 	}
 }
 
-<<<<<<< HEAD
-void Skeleton3DEditor::select_bone(int p_idx)
-{
-	if (p_idx >= 0) {
-		TreeItem* ti = _find(joint_tree->get_root(), "bones/" + itos(p_idx));
-		if (ti) {
-			// Make visible when it's collapsed.
-			TreeItem* node = ti->get_parent();
-			while (node && node != joint_tree->get_root()) {
-				node->set_collapsed(false);
-				node = node->get_parent();
-			}
-			ti->select(0);
-			joint_tree->scroll_to_item(ti);
-		}
-	}
-	else {
-		selected_bone = -1;
-		joint_tree->deselect_all();
-		_joint_tree_selection_changed();
-	}
-}
-
-Skeleton3DEditor::~Skeleton3DEditor()
-{
-	singleton = nullptr;
-
-	handles_mesh_instance->queue_free();
-
-	Node3DEditor* ne = Node3DEditor::get_singleton();
-
-	ne->remove_control_from_menu_panel(topmenu_bar);
-	memdelete(topmenu_bar);
-}
-
-Skeleton3DEditorPlugin::Skeleton3DEditorPlugin()
-{
-	skeleton_plugin = memnew(EditorInspectorPluginSkeleton);
-
-	EditorInspector::add_inspector_plugin(skeleton_plugin);
-
-	Ref<Skeleton3DGizmoPlugin> gizmo_plugin =
-		Ref<Skeleton3DGizmoPlugin>(memnew(Skeleton3DGizmoPlugin));
-	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
-}
-
-=======
->>>>>>> fix/remove-object
 EditorPlugin::AfterGUIInput Skeleton3DEditorPlugin::forward_3d_gui_input(
 	Camera3D* p_camera, const Ref<InputEvent>& p_event)
 {
@@ -573,8 +421,6 @@ int Skeleton3DGizmoPlugin::skeleton_intersect_ray(
 	return closest_idx;
 }
 
-<<<<<<< HEAD
-=======
 void BonePropertiesEditor::set_skeleton(Skeleton3D*) {}
 
 void BonePropertiesEditor::create_editors() {}
@@ -610,5 +456,4 @@ void Skeleton3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo* p_gizmo,
 	const Vector<int>& p_ids, const Vector<Transform3D>& p_restore, bool p_cancel)
 {
 }
->>>>>>> fix/remove-object
 

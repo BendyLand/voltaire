@@ -61,10 +61,6 @@ private:
 	RID get_shader_cache() const;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_sky_top_color(const Color& p_sky_top);

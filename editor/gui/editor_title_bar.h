@@ -44,10 +44,6 @@ protected:
 
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 
-<<<<<<< HEAD
-	static void _bind_methods() {}
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_center_control(Control* p_center_control);

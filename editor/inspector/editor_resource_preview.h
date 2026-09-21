@@ -67,12 +67,7 @@ public:
 
 class EditorResourcePreview : public Node
 {
-<<<<<<< HEAD
-	static constexpr int CURRENT_METADATA_VERSION =
-		1; // Increment this number to invalidate all previews.
-=======
 	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
->>>>>>> fix/remove-object
 	inline static EditorResourcePreview* singleton = nullptr;
 
 	struct QueueItem
@@ -108,11 +103,6 @@ class EditorResourcePreview : public Node
 
 	Vector<Ref<EditorResourcePreviewGenerator>> preview_generators;
 
-<<<<<<< HEAD
-	void _update_thumbnail_sizes();
-
-=======
->>>>>>> fix/remove-object
 protected:
 	void _notification(int p_what);
 

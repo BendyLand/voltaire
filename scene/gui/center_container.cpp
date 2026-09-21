@@ -29,57 +29,6 @@
 /**************************************************************************/
 
 #include "center_container.h"
-<<<<<<< HEAD
-
-Size2 CenterContainer::get_minimum_size() const
-{
-	if (use_top_left) {
-		return Size2();
-	}
-	Size2 ms;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-		Size2 minsize = c->get_bound_minimum_size();
-		ms = ms.max(minsize);
-	}
-
-	return ms;
-}
-
-Size2 CenterContainer::get_desired_size() const
-{
-	if (use_top_left) {
-		return Size2();
-	}
-	Size2 ds;
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c) {
-			continue;
-		}
-		Size2 minsize = c->get_bound_desired_size();
-		ds = ds.max(minsize);
-	}
-
-	return ds;
-}
-
-void CenterContainer::set_use_top_left(bool p_enable)
-{
-	if (use_top_left == p_enable) {
-		return;
-	}
-
-	use_top_left = p_enable;
-
-	update_minimum_size();
-	queue_sort();
-}
-=======
->>>>>>> fix/remove-object
 
 bool CenterContainer::is_using_top_left() const { return use_top_left; }
 

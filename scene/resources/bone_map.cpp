@@ -111,9 +111,6 @@ BoneMap::BoneMap() { _validate_bone_map(); }
 
 BoneMap::~BoneMap() {}
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void BoneMap::set_skeleton_bone_name(StringName const&, StringName const&) {}

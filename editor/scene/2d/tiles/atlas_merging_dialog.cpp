@@ -71,10 +71,7 @@ void AtlasMergingDialog::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void AtlasMergingDialog::update_tile_set(Ref<TileSet>) {}
 

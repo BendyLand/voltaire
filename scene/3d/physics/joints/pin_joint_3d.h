@@ -46,10 +46,6 @@ protected:
 	real_t params[3];
 	virtual void _configure_joint(
 		RID p_joint, PhysicsBody3D* body_a, PhysicsBody3D* body_b) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_param(Param p_param, real_t p_value);

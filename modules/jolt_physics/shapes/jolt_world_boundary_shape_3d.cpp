@@ -35,12 +35,8 @@
 
 String JoltWorldBoundaryShape3D::to_string() const { return vformat("{plane=%s}", plane); }
 
-<<<<<<< HEAD
-
-=======
 JPH::ShapeRefC JoltWorldBoundaryShape3D::_build() const { return JPH::ShapeRefC(); }
 
 AABB JoltWorldBoundaryShape3D::get_aabb() const { return AABB(); }
 
 
->>>>>>> fix/remove-object

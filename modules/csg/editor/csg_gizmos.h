@@ -77,18 +77,9 @@ class CSGShapeEditor : public Control
 	void _create_baked_collision_shape();
 
 protected:
-<<<<<<< HEAD
-	void _node_removed(Node* p_node);
-
 	void _notification(int p_what);
 
 public:
-	void edit(CSGShape3D* p_csg_shape);
-=======
-	void _notification(int p_what);
-
-public:
->>>>>>> fix/remove-object
 	CSGShapeEditor();
 };
 

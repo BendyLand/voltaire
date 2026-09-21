@@ -79,10 +79,6 @@ void Skin::clear_binds()
 
 void Skin::reset_state() { clear_binds(); }
 
-<<<<<<< HEAD
-Skin::Skin() {}
-=======
 void Skin::set_bind_name(int p_index, const StringName& p_name) {}
->>>>>>> fix/remove-object
 
 

@@ -77,25 +77,13 @@ class BonePropertiesEditor : public VBoxContainer
 
 	void create_editors();
 
-<<<<<<< HEAD
-
 	void _property_keyed(const String& p_path, bool p_advance);
 
-=======
-	void _property_keyed(const String& p_path, bool p_advance);
-
->>>>>>> fix/remove-object
 	void _meta_deleted(const String& p_property);
 	void _show_add_meta_dialog();
 	void _add_meta_confirm();
 
 	HashMap<StringName, EditorProperty*> meta_editors;
-<<<<<<< HEAD
-
-protected:
-	void _notification(int p_what);
-=======
->>>>>>> fix/remove-object
 
 public:
 	BonePropertiesEditor(Skeleton3D* p_skeleton);
@@ -113,11 +101,6 @@ public:
 
 class Skeleton3DEditor : public VBoxContainer
 {
-<<<<<<< HEAD
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 	friend class Skeleton3DEditorPlugin;
 
 	enum SkeletonOption
@@ -195,20 +178,9 @@ class Skeleton3DEditor : public VBoxContainer
 	void insert_keys(const bool p_all_bones, const bool p_enable_modifier);
 
 	void create_physical_skeleton();
-<<<<<<< HEAD
-	PhysicalBone3D* create_physical_bone(
-		int bone_id, int bone_child_id, const Vector<BoneInfo>& bones_infos);
 
 	void export_skeleton_profile();
 
-	void set_keyable(const bool p_keyable);
-	void set_bone_options_enabled(const bool p_bone_options_enabled);
-
-=======
-
-	void export_skeleton_profile();
-
->>>>>>> fix/remove-object
 	// Handle.
 	MeshInstance3D* handles_mesh_instance = nullptr;
 	Ref<ImmediateMesh> handles_mesh;
@@ -229,10 +201,6 @@ class Skeleton3DEditor : public VBoxContainer
 
 	void _joint_tree_selection_changed();
 	void _joint_tree_rmb_select(const Vector2& p_pos, MouseButton p_button);
-<<<<<<< HEAD
-	void _update_properties();
-=======
->>>>>>> fix/remove-object
 
 	void _subgizmo_selection_change();
 	void _disconnect_from_skeleton();
@@ -240,19 +208,8 @@ class Skeleton3DEditor : public VBoxContainer
 
 	int selected_bone = -1;
 
-<<<<<<< HEAD
-protected:
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
-
 public:
 	static Skeleton3DEditor* get_singleton() { return singleton; }
-
-	void select_bone(int p_idx);
-=======
-public:
-	static Skeleton3DEditor* get_singleton() { return singleton; }
->>>>>>> fix/remove-object
 
 	int get_selected_bone() const;
 
@@ -271,17 +228,12 @@ public:
 
 	Vector3 get_bone_original_scale() const { return bone_original_scale; }
 
-<<<<<<< HEAD
-	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton);
-	~Skeleton3DEditor();
-=======
 	Skeleton3DEditor(EditorInspectorPluginSkeleton* e_plugin, Skeleton3D* skeleton)
 		: editor_plugin(e_plugin), skeleton(skeleton)
 	{
 	}
 
 	~Skeleton3DEditor() = default;
->>>>>>> fix/remove-object
 };
 
 class EditorInspectorPluginSkeleton : public EditorInspectorPlugin
@@ -325,8 +277,6 @@ public:
 	static int skeleton_intersect_ray(
 		const Skeleton3D* p_skeleton, Camera3D* p_camera, const Vector2& p_point);
 
-<<<<<<< HEAD
-=======
 	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
 		const Vector2& p_point) const override;
 	virtual Transform3D get_subgizmo_transform(
@@ -336,23 +286,10 @@ public:
 	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
 		const Vector<Transform3D>& p_restore, bool p_cancel);
 
->>>>>>> fix/remove-object
 	bool has_gizmo(Node3D* p_spatial) override;
 	String get_gizmo_name() const override;
 	int get_priority() const override;
 
-<<<<<<< HEAD
-	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
-		const Vector2& p_point) const override;
-	virtual Transform3D get_subgizmo_transform(
-		const EditorNode3DGizmo* p_gizmo, int p_id) const override;
-	virtual void set_subgizmo_transform(
-		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
-	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
-		const Vector<Transform3D>& p_restore, bool p_cancel) override;
-
-=======
->>>>>>> fix/remove-object
 	void redraw(EditorNode3DGizmo* p_gizmo) override;
 
 	Skeleton3DGizmoPlugin();

@@ -550,7 +550,3 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 
 #endif // DBUS_ENABLED
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

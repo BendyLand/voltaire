@@ -294,8 +294,5 @@ void OpenXRInteractionProfile::remove_binding_modifier(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void OpenXRInteractionProfile::add_binding(const Ref<OpenXRIPBinding>& p_binding) {}
->>>>>>> fix/remove-object
 

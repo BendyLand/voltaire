@@ -181,11 +181,8 @@ private:
 		bool drag_attempt = false;
 	};
 
-<<<<<<< HEAD
-=======
 	Selection selection;
 
->>>>>>> fix/remove-object
 	struct TextOperation
 	{
 		int caret_column = 0;

@@ -137,18 +137,10 @@ public:
 	static BakeStepFunc bake_step_function;
 	static BakeEndFunc bake_end_function;
 
-<<<<<<< HEAD
-	void set_probe_data(const Ref<VoxelGIData>& p_data);
-=======
->>>>>>> fix/remove-object
 	Ref<VoxelGIData> get_probe_data() const;
 
 	Subdiv get_subdiv() const;
 
-<<<<<<< HEAD
-	void set_size(const Vector3& p_size);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);

@@ -62,10 +62,6 @@ private:
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-<<<<<<< HEAD
-	void set_size(const Vector3& p_size);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	void set_texture(DecalTexture p_type, const Ref<Texture2D>& p_texture);

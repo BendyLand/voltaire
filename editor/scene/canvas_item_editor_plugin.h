@@ -473,12 +473,6 @@ private:
 
 	void _insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing);
 
-<<<<<<< HEAD
-	void _keying_changed();
-
-	void _draw_text_at_position(Point2 p_position, const String& p_string, Side p_side);
-=======
->>>>>>> fix/remove-object
 	void _draw_margin_at_position(int p_value, Point2 p_position, Side p_side);
 	void _draw_percentage_at_position(real_t p_value, Point2 p_position, Side p_side);
 	void _draw_straight_line(Point2 p_from, Point2 p_to, Color p_color);
@@ -668,10 +662,6 @@ class CanvasItemEditorViewport : public Control
 	RichTextLabel* tooltip_panel = nullptr;
 	Ref<ButtonGroup> button_group;
 
-<<<<<<< HEAD
-	void _on_mouse_exit();
-=======
->>>>>>> fix/remove-object
 	void _on_change_type_confirmed();
 
 	void _create_preview(const Vector<String>& files) const;
@@ -692,11 +682,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	void set_hint_label(const String& p_title, const String& p_description) const;
-
-=======
->>>>>>> fix/remove-object
 	CanvasItemEditorViewport(CanvasItemEditor* p_canvas_item_editor);
 	~CanvasItemEditorViewport();
 };

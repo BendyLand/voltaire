@@ -90,11 +90,6 @@ class TemplateDownloader : public HTTPRequest
 	int64_t _get_fragment_download_size() const;
 	int64_t _get_partial_download_size() const;
 	void _clear_partial_download();
-<<<<<<< HEAD
-	Error _request_file_fragment();
-	bool _retry_file_fragment(const String& p_reason);
-=======
->>>>>>> fix/remove-object
 	void _download_completed();
 
 	static constexpr int MAX_DOWNLOAD_RETRIES = 3;
@@ -103,10 +98,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	Error download_template(const String& p_file_name, const String& p_source);
-=======
->>>>>>> fix/remove-object
 	void cancel_download();
 
 	bool is_downloading() const { return current_step != Step::WAITING; }
@@ -237,10 +228,6 @@ class ExportTemplateManager : public AcceptDialog
 	ConfirmationDialog* confirm_delete = nullptr;
 	EditorFileDialog* tpz_selection_dialog = nullptr;
 
-<<<<<<< HEAD
-	void _request_mirrors();
-=======
->>>>>>> fix/remove-object
 	void _mirrors_request_completed(int p_result, int p_response_code,
 		const PackedStringArray& p_headers, const PackedByteArray& p_body);
 	void _set_empty_mirror_list();
@@ -271,24 +258,12 @@ class ExportTemplateManager : public AcceptDialog
 	void _version_selected();
 	void _tree_button_clicked(TreeItem* p_item, int p_column, int p_id, MouseButton p_button);
 	void _tree_item_edited();
-<<<<<<< HEAD
-	void _install_templates(TreeItem* p_files = nullptr);
-	void _open_template_directory();
-
-	void _queue_download_tree_item(TreeItem* p_item);
-	void _process_download_queue();
-	void _queue_process_download_queue();
-	TemplateDownloader* _get_available_downloader(int* r_from_index);
-	void _download_request_completed(const String& p_filename);
-	void _download_request_failed(const String& p_filename, const String& p_reason);
-=======
 	void _open_template_directory();
 
 	void _queue_download_tree_item(TreeItem* p_item);
 	void _queue_process_download_queue();
 	TemplateDownloader* _get_available_downloader(int* r_from_index);
 	void _download_request_completed(const String& p_filename);
->>>>>>> fix/remove-object
 	bool _is_template_download_finished(TreeItem* p_template);
 
 	void _set_item_type(TreeItem* p_item, int p_type);
@@ -296,12 +271,6 @@ class ExportTemplateManager : public AcceptDialog
 	FileMetadata* _get_file_metadata(const String& p_text) const;
 	FileMetadata* _get_file_metadata(const TreeItem* p_item) const;
 	void _apply_item_folding(TreeItem* p_item, bool p_default = false);
-<<<<<<< HEAD
-	void _cancel_item_download(TreeItem* p_item);
-	void _item_download_failed(TreeItem* p_item, const String& p_reason);
-	void _add_fail_reason_button(TreeItem* p_item, const String& p_filename = String());
-=======
->>>>>>> fix/remove-object
 
 	String _get_item_path(TreeItem* p_item) const;
 	bool _item_is_file(const TreeItem* p_item) const;
@@ -342,12 +311,6 @@ public:
 
 	bool is_android_template_installed(const Ref<EditorExportPreset>& p_preset);
 	bool can_install_android_template(const Ref<EditorExportPreset>& p_preset);
-<<<<<<< HEAD
-	Error install_android_template(const Ref<EditorExportPreset>& p_preset);
-	Error install_android_template_from_file(
-		const String& p_file, const Ref<EditorExportPreset>& p_preset);
-=======
->>>>>>> fix/remove-object
 
 	bool is_downloading() const;
 

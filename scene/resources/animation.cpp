@@ -742,11 +742,6 @@ Quaternion Animation::_interpolate(const Quaternion& p_a, const Quaternion& p_b,
 	return p_a.slerp(p_b, p_c);
 }
 
-<<<<<<< HEAD
-// Cubic interpolation for anytype.
-
-=======
->>>>>>> fix/remove-object
 Vector3 Animation::_cubic_interpolate_in_time(const Vector3& p_pre_a, const Vector3& p_a,
 	const Vector3& p_b, const Vector3& p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t,
 	real_t p_post_b_t) const

@@ -29,10 +29,7 @@
 /**************************************************************************/
 
 #include "animation_node_extension.h"
-<<<<<<< HEAD
-=======
 #include "scene/animation/animation_tree.h"
->>>>>>> fix/remove-object
 
 AnimationNode::NodeTimeInfo AnimationNodeExtension::_process(ProcessState& p_process_state,
 	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,

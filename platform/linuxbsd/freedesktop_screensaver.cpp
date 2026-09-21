@@ -85,8 +85,5 @@ FreeDesktopScreenSaver::FreeDesktopScreenSaver() {}
 #endif // DBUS_ENABLED
 
 
-<<<<<<< HEAD
-=======
 
 void FreeDesktopScreenSaver::inhibit() {}
->>>>>>> fix/remove-object

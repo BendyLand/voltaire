@@ -446,7 +446,3 @@ bool OpenXROpenGLExtension::check_graphics_api_support(unsigned long p_api) { re
 
 #endif // GLES3_ENABLED
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

@@ -106,9 +106,6 @@ StringName Area2D::get_audio_bus_name() const
 	return SceneStringName(Master);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void Area2D::_clear_monitoring() {}

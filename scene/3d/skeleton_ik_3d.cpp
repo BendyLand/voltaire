@@ -371,12 +371,8 @@ void SkeletonIK3D::set_target_transform(const Transform3D& p_target)
 
 const Transform3D& SkeletonIK3D::get_target_transform() const { return target; }
 
-<<<<<<< HEAD
-NodePath SkeletonIK3D::get_target_node() { return target_node_path_override; }
-=======
 NodePath
 SkeletonIK3D::get_target_node() { return target_node_path_override; }
->>>>>>> fix/remove-object
 
 void SkeletonIK3D::set_override_tip_basis(bool p_override) { override_tip_basis = p_override; }
 
@@ -413,27 +409,6 @@ void SkeletonIK3D::start(bool p_one_time)
 
 void SkeletonIK3D::stop() { internal_active = false; }
 
-<<<<<<< HEAD
-void SkeletonIK3D::reload_chain()
-{
-	FabrikInverseKinematic::free_task(task);
-	task = nullptr;
-
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	task = FabrikInverseKinematic::create_simple_task(skeleton, skeleton->find_bone(root_bone),
-		skeleton->find_bone(tip_bone), _get_target_transform());
-	if (task) {
-		task->max_iterations = max_iterations;
-		task->min_distance = min_distance;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void SkeletonIK3D::reload_goal()
 {
 	if (!task) {

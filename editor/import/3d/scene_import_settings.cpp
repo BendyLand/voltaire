@@ -31,10 +31,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_importer.h"
 #include "core/io/resource_saver.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
@@ -81,60 +77,8 @@ void SceneImportSettingsDialog::_update_scene()
 	_fill_scene(scene, nullptr);
 }
 
-<<<<<<< HEAD
-void SceneImportSettingsDialog::_update_camera()
-{
-	AABB camera_aabb;
-
-	float rot_x = cam_rot_x;
-	float rot_y = cam_rot_y;
-	float zoom = cam_zoom;
-
-	if (selected_type == "Node" || selected_type == "Animation" || selected_type.is_empty()) {
-		camera_aabb = contents_aabb;
-	}
-	else {
-		if (mesh_preview->get_mesh().is_valid()) {
-			camera_aabb = mesh_preview->get_transform().xform(mesh_preview->get_mesh()->get_aabb());
-		}
-		else {
-			camera_aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
-		}
-		if (selected_type == "Mesh" && mesh_map.has(selected_id)) {
-			const MeshData& md = mesh_map[selected_id];
-			rot_x = md.cam_rot_x;
-			rot_y = md.cam_rot_y;
-			zoom = md.cam_zoom;
-		}
-		else if (selected_type == "Material" && material_map.has(selected_id)) {
-			const MaterialData& md = material_map[selected_id];
-			rot_x = md.cam_rot_x;
-			rot_y = md.cam_rot_y;
-			zoom = md.cam_zoom;
-		}
-	}
-
-	Vector3 center = camera_aabb.get_center();
-	float camera_size = camera_aabb.get_longest_axis_size();
-
-	camera->set_orthogonal(camera_size * zoom, 0.0001, camera_size * 2);
-
-	Transform3D xf;
-	xf.basis = Basis(Vector3(0, 1, 0), rot_y) * Basis(Vector3(1, 0, 0), rot_x);
-	xf.origin = center;
-	xf.translate_local(0, 0, camera_size);
-
-	camera->set_transform(xf);
-}
-
 void SceneImportSettingsDialog::request_generate_collider() { generate_collider = true; }
 
-void SceneImportSettingsDialog::update_view() { update_view_timer->start(); }
-
-=======
-void SceneImportSettingsDialog::request_generate_collider() { generate_collider = true; }
-
->>>>>>> fix/remove-object
 SceneImportSettingsDialog* SceneImportSettingsDialog::singleton = nullptr;
 
 SceneImportSettingsDialog* SceneImportSettingsDialog::get_singleton() { return singleton; }
@@ -154,52 +98,6 @@ void SceneImportSettingsDialog::_reset_bone_transforms()
 	}
 }
 
-<<<<<<< HEAD
-void SceneImportSettingsDialog::_play_animation()
-{
-	if (animation_player == nullptr) {
-		return;
-	}
-	StringName id = StringName(selected_id);
-	if (animation_player->has_animation(id)) {
-		if (animation_player->is_playing()) {
-			animation_player->pause();
-			animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-			set_process(false);
-		}
-		else {
-			animation_player->play(id);
-			animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-			set_process(true);
-		}
-	}
-}
-
-void SceneImportSettingsDialog::_stop_current_animation()
-{
-	animation_pingpong = false;
-	animation_player->stop();
-	animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-	animation_slider->set_value_no_signal(0.0);
-	set_process(false);
-}
-
-void SceneImportSettingsDialog::_animation_slider_value_changed(double p_value)
-{
-	if (animation_player == nullptr || !animation_map.has(selected_id) ||
-		animation_map[selected_id].animation.is_null()) {
-		return;
-	}
-	if (animation_player->is_playing()) {
-		animation_player->stop();
-		animation_play_button->set_button_icon(get_editor_theme_icon(SNAME("MainPlay")));
-		set_process(false);
-	}
-	animation_player->seek(p_value * animation_map[selected_id].animation->get_length(), true);
-}
-
-=======
->>>>>>> fix/remove-object
 void SceneImportSettingsDialog::_skeleton_tree_entered(Skeleton3D* p_skeleton)
 {
 	bones_mesh_preview->set_skeleton_path(p_skeleton->get_path());
@@ -265,26 +163,6 @@ void SceneImportSettingsDialog::_menu_callback(int p_id)
 	save_path->popup_centered_ratio();
 }
 
-<<<<<<< HEAD
-void SceneImportSettingsDialog::_save_path_changed(const String& p_path)
-{
-	save_path_item->set_text(1, p_path);
-
-	if (FileAccess::exists(p_path)) {
-		save_path_item->set_text(2, TTR("Warning: File exists"));
-		save_path_item->set_tooltip_text(
-			2, TTR("Existing file with the same name will be replaced."));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusWarning")));
-
-	}
-	else {
-		save_path_item->set_text(2, TTR("Will create new file"));
-		save_path_item->set_icon(2, get_editor_theme_icon(SNAME("StatusSuccess")));
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 SceneImportSettingsDialog::~SceneImportSettingsDialog() { memdelete(scene_import_settings_data); }
 
 

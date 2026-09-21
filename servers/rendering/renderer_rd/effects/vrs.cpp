@@ -99,9 +99,6 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::VRS::copy_vrs(RID p_source, RID p_dest, bool p_is_mobile) {}
 
->>>>>>> fix/remove-object
 

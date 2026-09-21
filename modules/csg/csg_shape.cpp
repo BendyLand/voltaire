@@ -706,16 +706,6 @@ Vector<Vector3> CSGShape3D::get_brush_faces()
 	return faces;
 }
 
-<<<<<<< HEAD
-void CSGShape3D::set_operation(Operation p_operation)
-{
-	operation = p_operation;
-	_make_dirty();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 CSGShape3D::Operation CSGShape3D::get_operation() const { return operation; }
 
 void CSGShape3D::set_calculate_tangents(bool p_calculate_tangents)
@@ -1083,16 +1073,6 @@ CSGBrush* CSGBox3D::_build_brush()
 
 Vector3 CSGBox3D::get_size() const { return size; }
 
-<<<<<<< HEAD
-void CSGBox3D::set_material(const Ref<Material>& p_material)
-{
-	material = p_material;
-	_make_dirty();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Material> CSGBox3D::get_material() const { return material; }
 
 CSGBrush* CSGCylinder3D::_build_brush()
@@ -1432,29 +1412,10 @@ CSGTorus3D::CSGTorus3D()
 	smooth_faces = true;
 }
 
-<<<<<<< HEAD
-void CSGPolygon3D::_path_changed()
-{
-	_make_dirty();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 void CSGPolygon3D::_path_exited() { path = nullptr; }
 
 Vector<Vector2> CSGPolygon3D::get_polygon() const { return polygon; }
 
-<<<<<<< HEAD
-void CSGPolygon3D::set_mode(Mode p_mode)
-{
-	mode = p_mode;
-	_make_dirty();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 CSGPolygon3D::Mode CSGPolygon3D::get_mode() const { return mode; }
 
 float CSGPolygon3D::get_depth() const { return depth; }
@@ -1467,16 +1428,6 @@ void CSGPolygon3D::set_path_continuous_u(bool p_enable)
 
 bool CSGPolygon3D::is_path_continuous_u() const { return path_continuous_u; }
 
-<<<<<<< HEAD
-void CSGPolygon3D::set_path_u_distance(real_t p_path_u_distance)
-{
-	path_u_distance = p_path_u_distance;
-	_make_dirty();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 real_t CSGPolygon3D::get_path_u_distance() const { return path_u_distance; }
 
 float CSGPolygon3D::get_spin_degrees() const { return spin_degrees; }

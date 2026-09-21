@@ -31,38 +31,6 @@
 #include "core/config/project_settings.h"
 #include "skeleton_modifier_3d.h"
 
-<<<<<<< HEAD
-void SkeletonModifier3D::_update_skeleton()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-	Skeleton3D* old_sk = get_skeleton();
-	_update_skeleton_path();
-	Skeleton3D* new_sk = get_skeleton();
-	if (old_sk != new_sk) {
-		_skeleton_changed(old_sk, new_sk);
-	}
-	if (new_sk) {
-		_validate_bone_names();
-	}
-	update_configuration_warnings();
-}
-
-void SkeletonModifier3D::_force_update_skeleton_skin()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-	skeleton->force_update_deferred();
-}
-
-=======
->>>>>>> fix/remove-object
 bool SkeletonModifier3D::should_check_node_path()
 {
 	return (bool)GLOBAL_GET_CACHED(
@@ -89,23 +57,6 @@ Skeleton3D* SkeletonModifier3D::get_skeleton() const
 
 real_t SkeletonModifier3D::get_influence() const { return influence; }
 
-<<<<<<< HEAD
-void SkeletonModifier3D::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE:
-	case NOTIFICATION_PARENTED: {
-		_update_skeleton();
-	} break;
-	case NOTIFICATION_EXIT_TREE:
-	case NOTIFICATION_UNPARENTED: {
-		_force_update_skeleton_skin();
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 SkeletonModifier3D::get_vector_from_bone_axis(BoneAxis p_axis)
 {
 	Vector3 ret;

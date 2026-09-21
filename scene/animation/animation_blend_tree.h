@@ -102,10 +102,6 @@ public:
 	AnimationNodeAnimation();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 private:
 	PlayMode play_mode = PLAY_MODE_FORWARD;
@@ -329,10 +325,6 @@ class AnimationNodeTransition : public AnimationNodeSync
 	bool pending_update = false;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
@@ -398,10 +390,6 @@ class AnimationNodeBlendTree : public AnimationRootNode
 	void _initialize_node_tree();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _tree_changed() override;
 

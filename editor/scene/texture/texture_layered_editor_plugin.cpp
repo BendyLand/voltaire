@@ -192,39 +192,9 @@ void TextureLayeredEditor::_notification(int p_what)
 		draw_texture_rect(checkerboard.ptr(), texture_rect->get_rect(), true);
 		_draw_outline();
 	} break;
-<<<<<<< HEAD
-
-	case NOTIFICATION_THEME_CHANGED: {
-		if (info) {
-			Ref<Font> metadata_label_font =
-				get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-			info->add_theme_font_override(SceneStringName(font), metadata_label_font.ptr());
-		}
-		theme_cache.outline_color =
-			get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-	} break;
 	}
 }
 
-void TextureLayeredEditor::_texture_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-
-	setting = true;
-	_update_gui();
-	setting = false;
-
-	_update_material(true);
-	queue_redraw();
-}
-
-=======
-	}
-}
-
->>>>>>> fix/remove-object
 void TextureLayeredEditor::on_selected_channels_changed() { _update_material(false); }
 
 void TextureLayeredEditor::_draw_outline()
@@ -288,9 +258,6 @@ void TextureLayeredEditor::finish_shaders()
 	shaders[2].unref();
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void TextureLayeredEditor::_update_material(bool) {}

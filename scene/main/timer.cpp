@@ -31,33 +31,6 @@
 #include "core/config/engine.h"
 #include "timer.h"
 
-<<<<<<< HEAD
-void Timer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_READY: {
-		if (autostart) {
-#ifdef TOOLS_ENABLED
-			if (is_part_of_edited_scene()) {
-				break;
-			}
-#endif
-			start();
-			autostart = false;
-		}
-	} break;
-	}
-}
-
-void Timer::set_wait_time(double p_time)
-{
-	ERR_FAIL_COND_MSG(p_time <= 0, "Time should be greater than zero.");
-	wait_time = p_time;
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 double Timer::get_wait_time() const { return wait_time; }
 
 void Timer::set_one_shot(bool p_one_shot) { one_shot = p_one_shot; }

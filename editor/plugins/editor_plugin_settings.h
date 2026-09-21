@@ -58,10 +58,6 @@ class EditorPluginSettings : public VBoxContainer
 	bool updating = false;
 
 	void _plugin_activity_changed();
-<<<<<<< HEAD
-	void _create_clicked();
-=======
->>>>>>> fix/remove-object
 
 	static Vector<String> _get_plugins(const String& p_dir);
 

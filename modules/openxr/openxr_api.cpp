@@ -184,12 +184,6 @@ bool OpenXRAPI::OpenXRSwapChainInfo::release()
 	return true;
 }
 
-<<<<<<< HEAD
-////////////////////////////////////
-// OpenXRAPI
-
-=======
->>>>>>> fix/remove-object
 OpenXRAPI* OpenXRAPI::singleton = nullptr;
 
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
@@ -203,11 +197,8 @@ bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 	}
 }
 
-<<<<<<< HEAD
-=======
 String OpenXRAPI::get_error_string(XrResult result) const { return String(); }
 
->>>>>>> fix/remove-object
 void OpenXRAPI::set_object_name(
 	XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name)
 {
@@ -1270,11 +1261,8 @@ void OpenXRAPI::parse_velocities(
 	}
 }
 
-<<<<<<< HEAD
-=======
 XrPath OpenXRAPI::get_xr_path(const String& p_path) { return XrPath(); }
 
->>>>>>> fix/remove-object
 String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 {
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, String());
@@ -2294,8 +2282,6 @@ OpenXRAPI::OpenXRAlphaBlendModeSupport OpenXRAPI::is_environment_blend_mode_alph
 	return OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE;
 }
 
-<<<<<<< HEAD
-=======
 RID OpenXRAPI::OpenXRSwapChainInfo::get_image() { return RID(); }
 
 bool OpenXRAPI::OpenXRSwapChainInfo::acquire(bool& p_should_render) { return true; }
@@ -2357,5 +2343,4 @@ void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth
 
 String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) const { return String(); }
 
->>>>>>> fix/remove-object
 

@@ -277,11 +277,6 @@ public:
 	void set_zoom_factor(float p_zoom_factor);
 	float get_zoom_factor();
 
-<<<<<<< HEAD
-	void validate_script();
-
-=======
->>>>>>> fix/remove-object
 	void set_toggle_list_control(Control* p_toggle_list_control);
 	void update_toggle_files_button();
 

@@ -96,10 +96,6 @@ public:
 class Texture3D : public Texture
 {
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual Image::Format get_format() const;

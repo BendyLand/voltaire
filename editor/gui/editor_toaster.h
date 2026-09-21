@@ -101,25 +101,13 @@ private:
 	void _update_vbox_position();
 	void _auto_hide_or_free_toasts();
 
-<<<<<<< HEAD
-	void _draw_button();
-=======
->>>>>>> fix/remove-object
 	void _draw_progress(Control* panel);
 
 	void _set_notifications_enabled(bool p_enabled);
 	void _repop_old();
-<<<<<<< HEAD
-	void _popup_str(const String& p_message, Severity p_severity, const String& p_tooltip);
 	void _toast_theme_changed(Control* p_control);
 
 protected:
-	static void _bind_methods();
-=======
-	void _toast_theme_changed(Control* p_control);
-
-protected:
->>>>>>> fix/remove-object
 	static EditorToaster* singleton;
 
 	void _notification(int p_what);

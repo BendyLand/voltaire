@@ -41,8 +41,5 @@ void TextFile::set_text(const String& p_code) { text = p_code; }
 void TextFile::reload_from_file() { load_text(path); }
 
 
-<<<<<<< HEAD
-=======
 
 Error TextFile::load_text(String const&) {}
->>>>>>> fix/remove-object

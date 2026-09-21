@@ -33,41 +33,6 @@
 #include "grid_container.h"
 #include "scene/theme/theme_db.h"
 
-<<<<<<< HEAD
-void GridContainer::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_SORT_CHILDREN: {
-		_resort();
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		update_minimum_size();
-	} break;
-
-	case NOTIFICATION_TRANSLATION_CHANGED:
-	case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
-		queue_sort();
-	} break;
-	}
-}
-
-void GridContainer::set_columns(int p_columns)
-{
-	ERR_FAIL_COND(p_columns < 1);
-
-	if (columns == p_columns) {
-		return;
-	}
-
-	columns = p_columns;
-	queue_sort();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 int GridContainer::get_columns() const { return columns; }
 
 int GridContainer::get_h_separation() const { return theme_cache.h_separation; }

@@ -55,10 +55,6 @@ private:
 
 	String _sanitize_input(const String& p_input) const;
 	String _validate_path(const String& p_path) const;
-<<<<<<< HEAD
-	void _on_dir_path_changed();
-=======
->>>>>>> fix/remove-object
 
 protected:
 	virtual void ok_pressed() override;

@@ -202,11 +202,6 @@ void EditorFileSystemImportFormatSupportQueryBlend::_validate_path(String p_path
 void EditorSceneFormatImporterBlend::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
 {
-<<<<<<< HEAD
-	blender_path_browse->set_button_icon(
-		blender_path_browse->get_editor_theme_icon(SNAME("FolderBrowse")));
-=======
->>>>>>> fix/remove-object
 }
 
 

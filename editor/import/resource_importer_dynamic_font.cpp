@@ -67,11 +67,6 @@ void ResourceImporterDynamicFont::get_build_dependencies(
 	}
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 int ResourceImporterDynamicFont::get_preset_count() const { return PRESET_MAX; }
 
 String ResourceImporterDynamicFont::get_preset_name(int p_idx) const
@@ -86,11 +81,6 @@ String ResourceImporterDynamicFont::get_preset_name(int p_idx) const
 	}
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 bool ResourceImporterDynamicFont::has_advanced_options() const { return true; }
 
 void ResourceImporterDynamicFont::show_advanced_options(const String& p_path)
@@ -98,13 +88,9 @@ void ResourceImporterDynamicFont::show_advanced_options(const String& p_path)
 	DynamicFontImportSettingsDialog::get_singleton()->open_settings(p_path);
 }
 
-<<<<<<< HEAD
-
-=======
 void ResourceImporterDynamicFont::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
 }
->>>>>>> fix/remove-object
 
 

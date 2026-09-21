@@ -74,17 +74,12 @@ public:
 	void set_preset_color(const Color& p_color);
 	Color get_preset_color() const;
 
-<<<<<<< HEAD
-	ColorPresetButton(Color p_color, int p_size, bool p_recent);
-	~ColorPresetButton();
-=======
 	ColorPresetButton(Color p_color, int p_size, bool p_recent)
 		: preset_color(p_color), recent(p_recent)
 	{
 	}
 
 	~ColorPresetButton() = default;
->>>>>>> fix/remove-object
 };
 
 class ColorPicker : public VBoxContainer
@@ -377,17 +372,6 @@ private:
 	inline int _get_preset_size();
 	void _load_palette();
 
-<<<<<<< HEAD
-	void _show_hide_preset(
-		const bool& p_is_btn_pressed, Button* p_btn_preset, Container* p_preset_container);
-	void _update_drop_down_arrow(const bool& p_is_btn_pressed, Button* p_btn_preset);
-
-	void _set_mode_popup_value(ColorModeType p_mode);
-
-	void _ensure_file_dialog();
-
-=======
->>>>>>> fix/remove-object
 protected:
 	virtual void _update_theme_item_cache() override;
 
@@ -472,10 +456,6 @@ class ColorPickerButton : public Button
 
 protected:
 	void _notification(int);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Color get_pick_color() const;

@@ -304,12 +304,9 @@ GodotBody2D::GodotBody2D()
 GodotBody2D::~GodotBody2D() { memdelete(direct_state); }
 
 
-<<<<<<< HEAD
-=======
 
 void GodotBody2D::integrate_velocities(float) {}
 
 void GodotBody2D::integrate_forces(float) {}
 
 void GodotBody2D::call_queries() {}
->>>>>>> fix/remove-object

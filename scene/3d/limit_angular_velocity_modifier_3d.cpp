@@ -114,29 +114,6 @@ void LimitAngularVelocityModifier3D::_skeleton_changed(Skeleton3D* p_old, Skelet
 	_make_joints_dirty();
 }
 
-<<<<<<< HEAD
-void LimitAngularVelocityModifier3D::_validate_bone_names()
-{
-	for (uint32_t i = 0; i < chains.size(); i++) {
-		// Prior bone name.
-		if (!chains[i].root_bone.name.is_empty()) {
-			set_root_bone_name(i, chains[i].root_bone.name);
-		}
-		else if (chains[i].root_bone.bone != -1) {
-			set_root_bone(i, chains[i].root_bone.bone);
-		}
-		// Prior bone name.
-		if (!chains[i].end_bone.name.is_empty()) {
-			set_end_bone_name(i, chains[i].end_bone.name);
-		}
-		else if (chains[i].end_bone.bone != -1) {
-			set_end_bone(i, chains[i].end_bone.bone);
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool LimitAngularVelocityModifier3D::_is_joint_contained(int p_bone)
 {
 	bool ret = false;
@@ -149,40 +126,6 @@ bool LimitAngularVelocityModifier3D::_is_joint_contained(int p_bone)
 	return ret;
 }
 
-<<<<<<< HEAD
-void LimitAngularVelocityModifier3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	if (init_needed) {
-		// Note:
-		// The pose retrieval within `_update_joints()` is done outside the skeleton's update
-		// process, so it ignores the pose resulting from the previous modifier's modification. This
-		// causes unintended initialization when `active` is set to true, so it must be initialized
-		// here.
-		for (uint32_t i = 0; i < bones.size(); i++) {
-			bones[i].second = skeleton->get_bone_pose_rotation(bones[i].first);
-		}
-		init_needed = false;
-	}
-
-	double limit_in_frame = max_angular_velocity * p_delta;
-	for (uint32_t i = 0; i < bones.size(); i++) {
-		int bn = bones[i].first;
-		Quaternion dest = skeleton->get_bone_pose_rotation(bn);
-		double diff = bones[i].second.angle_to(dest);
-		if (!Math::is_zero_approx(diff)) {
-			bones[i].second = bones[i].second.slerp(dest, MIN(1.0, limit_in_frame / diff));
-		}
-		skeleton->set_bone_pose_rotation(bn, bones[i].second);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void LimitAngularVelocityModifier3D::reset() { init_needed = true; }
 
 LimitAngularVelocityModifier3D::~LimitAngularVelocityModifier3D() { clear_chains(); }

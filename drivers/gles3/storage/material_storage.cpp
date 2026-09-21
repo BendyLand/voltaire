@@ -44,12 +44,6 @@
 
 using namespace GLES3;
 
-<<<<<<< HEAD
-///////////////////////////////////////////////////////////////////////////
-// UBI helper functions
-
-=======
->>>>>>> fix/remove-object
 _FORCE_INLINE_ static void _fill_std140_ubo_value(
 	ShaderLanguage::DataType type, const Vector<ShaderLanguage::Scalar>& value, uint8_t* data)
 {
@@ -503,12 +497,6 @@ RID MaterialData::get_default_texture_id(
 	return gl_texture;
 }
 
-<<<<<<< HEAD
-///////////////////////////////////////////////////////////////////////////
-// Material Storage
-
-=======
->>>>>>> fix/remove-object
 MaterialStorage* MaterialStorage::singleton = nullptr;
 
 MaterialStorage* MaterialStorage::get_singleton() { return singleton; }
@@ -1877,12 +1865,6 @@ GLES3::ShaderData* GLES3::_create_sky_shader_func()
 	return shader_data;
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////////
-// Sky material
-
-=======
->>>>>>> fix/remove-object
 SkyMaterialData::~SkyMaterialData() {}
 
 GLES3::MaterialData* GLES3::_create_sky_material_func(ShaderData* p_shader)

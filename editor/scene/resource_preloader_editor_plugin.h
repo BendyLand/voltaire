@@ -86,11 +86,7 @@ class ResourcePreloaderEditorPlugin : public EditorPlugin
 	ResourcePreloaderEditor* preloader_editor = nullptr;
 
 public:
-<<<<<<< HEAD
-	ResourcePreloaderEditorPlugin();
-=======
 	ResourcePreloaderEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

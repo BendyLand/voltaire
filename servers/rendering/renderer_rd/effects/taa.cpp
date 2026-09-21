@@ -87,13 +87,10 @@ void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_f
 	RD::get_singleton()->draw_command_end_label();
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::TAA::resolve(RID p_dest_framebuffer, RID p_current_color, RID p_previous_color,
 	RID p_velocity, RID p_depth, RID p_feedback, Vector2 p_jitter, float p_feedback_weight,
 	float p_scale)
 {
 }
 
->>>>>>> fix/remove-object
 

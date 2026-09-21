@@ -675,10 +675,6 @@ StringName TranslationServer::pseudolocalize(const StringName& p_message) const
 	return main_domain->pseudolocalize(p_message);
 }
 
-<<<<<<< HEAD
-void TranslationServer::_bind_methods() {}
-=======
->>>>>>> fix/remove-object
 
 void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domain)
 {

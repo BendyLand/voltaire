@@ -46,10 +46,6 @@ protected:
 	virtual bool _should_hide_file(const String& p_file) const override;
 	virtual Vector2i _get_list_mode_icon_size() const override;
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

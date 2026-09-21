@@ -78,10 +78,6 @@ public:
 	void set_accept_button(Button* p_button);
 
 	void update();
-<<<<<<< HEAD
-	void set_message(int p_id, const String& p_text, MessageType p_type, bool p_auto_prefix = true);
-=======
->>>>>>> fix/remove-object
 	bool is_valid() const;
 
 	EditorValidationPanel();

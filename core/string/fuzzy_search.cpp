@@ -224,14 +224,8 @@ void FuzzySearchMatch::_add_token_match(const FuzzyTokenMatch& p_match)
 	token_matches.append(p_match);
 }
 
-<<<<<<< HEAD
-void FuzzySearchMatch::_bind_methods() {}
-
-static void remove_low_scores(Vector<Ref<FuzzySearchMatch>> &p_results, float p_cull_score) {
-=======
 static void remove_low_scores(Vector<Ref<FuzzySearchMatch>>& p_results, float p_cull_score)
 {
->>>>>>> fix/remove-object
 	// Removes all results with score < p_cull_score in-place.
 	int i = 0;
 	int j = p_results.size() - 1;
@@ -421,8 +415,4 @@ Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(
 	return results;
 }
 
-<<<<<<< HEAD
-void FuzzySearch::_bind_methods() {}
-=======
->>>>>>> fix/remove-object
 

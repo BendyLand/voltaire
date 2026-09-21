@@ -51,10 +51,6 @@ public:
 	static void draw_line(Ref<SurfaceTool>& p_surface_tool, const Vector3& p_begin_pos,
 		const Vector3& p_end_pos, const Color& p_color);
 
-<<<<<<< HEAD
-	bool has_gizmo(Node3D* p_spatial) override;
-=======
->>>>>>> fix/remove-object
 	String get_gizmo_name() const override;
 	bool has_gizmo(Node3D* p_spatial) override;
 	int get_priority() const override;

@@ -40,16 +40,6 @@
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
-<<<<<<< HEAD
-
-void Bone2D::_editor_set_show_bone_gizmo(bool p_show_gizmo)
-{
-	_editor_show_bone_gizmo = p_show_gizmo;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool Bone2D::_editor_get_show_bone_gizmo() const { return _editor_show_bone_gizmo; }
 #endif // TOOLS_ENABLED
 

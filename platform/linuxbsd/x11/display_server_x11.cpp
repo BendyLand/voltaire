@@ -4453,10 +4453,7 @@ void DisplayServerX11::_xim_destroy_callback(::XIM im, ::XPointer client_data, :
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 DisplayServerEnums::WindowID DisplayServerX11::_get_focused_window_or_popup() const
 {
 	const List<DisplayServerEnums::WindowID>::Element* E = popup_list.back();
@@ -5963,7 +5960,6 @@ DisplayServerX11::~DisplayServerX11()
 
 	for (int i = 0; i < DisplayServerEnums::CURSOR_MAX; i++) {
 		if (cursors[i] != None) {
-
 			XFreeCursor(x11_display, cursors[i]);
 		}
 		if (cursor_img[i] != nullptr) {

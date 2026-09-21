@@ -124,10 +124,6 @@ public:
 	void set_pre_process_time(double p_time);
 	void set_explosiveness_ratio(real_t p_ratio);
 	void set_randomness_ratio(real_t p_ratio);
-<<<<<<< HEAD
-	void set_visibility_aabb(const AABB& p_aabb);
-=======
->>>>>>> fix/remove-object
 	void set_use_local_coordinates(bool p_enable);
 	void set_process_material(const Ref<Material>& p_material);
 	void set_speed_scale(double p_scale);
@@ -175,15 +171,8 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-<<<<<<< HEAD
-	void set_sub_emitter(const NodePath& p_path);
 	NodePath get_sub_emitter() const;
 
-	void set_skin(const Ref<Skin>& p_skin);
-=======
-	NodePath get_sub_emitter() const;
-
->>>>>>> fix/remove-object
 	Ref<Skin> get_skin() const;
 
 	void set_transform_align(TransformAlign p_align);

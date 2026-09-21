@@ -235,13 +235,8 @@ public:
 		bool p_ignore_context_keywords = false);
 	static void get_pragma_list(List<String>* r_pragmas);
 
-<<<<<<< HEAD
-	ShaderPreprocessor();
-	~ShaderPreprocessor();
-=======
 	ShaderPreprocessor() = default;
 	~ShaderPreprocessor() = default;
->>>>>>> fix/remove-object
 };
 
 

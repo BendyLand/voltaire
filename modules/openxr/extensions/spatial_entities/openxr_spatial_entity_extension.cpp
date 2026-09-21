@@ -831,7 +831,6 @@ RID OpenXRSpatialEntityExtension::add_spatial_entity(
 	return spatial_entity_owner.make_rid(spatial_entity_data);
 }
 
-
 RID OpenXRSpatialEntityExtension::_add_entity(
 	RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity)
 {

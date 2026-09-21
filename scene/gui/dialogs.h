@@ -80,10 +80,6 @@ protected:
 	virtual void _post_popup() override;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void ok_pressed() {}
 

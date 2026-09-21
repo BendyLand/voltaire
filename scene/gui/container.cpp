@@ -31,21 +31,6 @@
 #include "container.h"
 #include "servers/display/accessibility_server.h"
 
-<<<<<<< HEAD
-void Container::_child_minsize_changed()
-{
-	update_minimum_size();
-	queue_sort();
-}
-
-void Container::_child_desired_size_changed()
-{
-	update_desired_size();
-	queue_sort();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<int> Container::get_allowed_size_flags_horizontal() const
 {
 	Vector<int> flags;

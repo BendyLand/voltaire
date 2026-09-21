@@ -145,10 +145,6 @@ private:
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _space_changed(const RID& p_new_space) override;
 

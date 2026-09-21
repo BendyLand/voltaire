@@ -40,11 +40,6 @@ OpenXRUserPresenceExtension::OpenXRUserPresenceExtension() { singleton = this; }
 
 OpenXRUserPresenceExtension::~OpenXRUserPresenceExtension() { singleton = nullptr; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void* OpenXRUserPresenceExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
 {
 	if (!available) {

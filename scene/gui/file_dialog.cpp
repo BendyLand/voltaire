@@ -165,45 +165,6 @@ void FileDialog::_dir_submitted(String p_dir)
 	_push_history();
 }
 
-<<<<<<< HEAD
-void FileDialog::_post_popup()
-{
-	ConfirmationDialog::_post_popup();
-	if (mode == FILE_MODE_SAVE_FILE) {
-		filename_edit->grab_focus(true);
-	}
-	else {
-		file_list->grab_focus(true);
-	}
-
-	// For open dir mode, deselect all items on file dialog open.
-	if (mode == FILE_MODE_OPEN_DIR) {
-		deselect_all();
-		file_box->set_visible(false);
-	}
-	else {
-		file_box->set_visible(true);
-	}
-
-	local_history.clear();
-	local_history_pos = -1;
-	_push_history();
-}
-
-void FileDialog::_push_history()
-{
-	local_history.resize(local_history_pos + 1);
-	String new_path = dir_access->get_current_dir();
-	if (local_history.is_empty() || new_path != local_history[local_history_pos]) {
-		local_history.push_back(new_path);
-		local_history_pos++;
-		dir_prev->set_disabled(local_history_pos == 0);
-		dir_next->set_disabled(true);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::_cancel_pressed()
 {
 	filename_edit->set_text("");
@@ -222,19 +183,6 @@ int FileDialog::_get_selected_file_idx()
 	return selected.is_empty() ? -1 : selected[0];
 }
 
-<<<<<<< HEAD
-void FileDialog::_file_list_multi_selected(int p_item, bool p_selected)
-{
-	if (p_selected) {
-		_file_list_selected(p_item);
-	}
-	else {
-		get_ok_button()->set_disabled(_is_open_should_be_disabled());
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::update_file_name()
 {
 	int idx = filter->get_selected() - 1;
@@ -297,46 +245,6 @@ void FileDialog::_delete_confirm()
 	}
 }
 
-<<<<<<< HEAD
-void FileDialog::update_customization()
-{
-	_update_make_dir_visible();
-	show_hidden->set_visible(customization_flags[CUSTOMIZATION_HIDDEN_FILES]);
-	layout_container->set_visible(customization_flags[CUSTOMIZATION_LAYOUT]);
-	layout_separator->set_visible(customization_flags[CUSTOMIZATION_FILE_FILTER] ||
-								  customization_flags[CUSTOMIZATION_FILE_SORT]);
-	show_filename_filter_button->set_visible(customization_flags[CUSTOMIZATION_FILE_FILTER]);
-	file_sort_button->set_visible(customization_flags[CUSTOMIZATION_FILE_SORT]);
-	show_hidden_separator->set_visible(customization_flags[CUSTOMIZATION_HIDDEN_FILES] &&
-									   (customization_flags[CUSTOMIZATION_LAYOUT] ||
-										   customization_flags[CUSTOMIZATION_FILE_FILTER] ||
-										   customization_flags[CUSTOMIZATION_FILE_SORT]));
-	favorite_button->set_visible(customization_flags[CUSTOMIZATION_FAVORITES]);
-	favorite_vbox->set_visible(customization_flags[CUSTOMIZATION_FAVORITES]);
-	recent_vbox->set_visible(customization_flags[CUSTOMIZATION_RECENT]);
-}
-
-void FileDialog::clear_filename_filter()
-{
-	set_filename_filter("");
-	update_filename_filter_gui();
-	invalidate();
-}
-
-void FileDialog::update_filename_filter_gui()
-{
-	filename_filter_box->set_visible(show_filename_filter);
-	if (!show_filename_filter) {
-		file_name_filter.clear();
-	}
-	if (filename_filter->get_text() == file_name_filter) {
-		return;
-	}
-	filename_filter->set_text(file_name_filter);
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::update_filename_filter()
 {
 	if (filename_filter->get_text() == file_name_filter) {
@@ -602,15 +510,6 @@ void FileDialog::_make_dir_confirm()
 	new_dir_name->set_text(""); // reset label
 }
 
-<<<<<<< HEAD
-void FileDialog::_make_dir()
-{
-	make_dir_dialog->popup_centered(Size2(250, 80));
-	new_dir_name->grab_focus();
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::_change_dir(const String& p_new_dir)
 {
 	if (access == ACCESS_RESOURCES && p_new_dir.begins_with("user://")) {
@@ -636,19 +535,6 @@ void FileDialog::_change_dir(const String& p_new_dir)
 	update_dir();
 }
 
-<<<<<<< HEAD
-void FileDialog::_sort_option_selected(int p_option)
-{
-	for (int i = 0; i < int(FileSortOption::MAX); i++) {
-		file_sort_button->get_popup()->set_item_checked(i, (i == p_option));
-	}
-	file_sort = FileSortOption(p_option);
-	ensure_visible_after_invalidating = true;
-	invalidate();
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::_favorite_pressed()
 {
 	String directory = get_current_dir();
@@ -678,16 +564,6 @@ void FileDialog::_favorite_pressed()
 	_update_favorite_list();
 }
 
-<<<<<<< HEAD
-void FileDialog::_update_fav_buttons()
-{
-	const int current = favorite_list->get_current();
-	fav_up_button->set_disabled(current < 1);
-	fav_down_button->set_disabled(current == -1 || current >= favorite_list->get_item_count() - 1);
-}
-
-=======
->>>>>>> fix/remove-object
 void FileDialog::_save_to_recent()
 {
 	String directory = get_current_dir();
@@ -819,19 +695,6 @@ void FileDialog::add_option(const String& p_name, const Vector<String>& p_values
 
 int FileDialog::get_option_count() const { return options.size(); }
 
-<<<<<<< HEAD
-void FileDialog::set_show_hidden_files(bool p_show)
-{
-	if (show_hidden_files == p_show) {
-		return;
-	}
-	show_hidden->set_pressed_no_signal(p_show);
-	show_hidden_files = p_show;
-	invalidate();
-}
-
-=======
->>>>>>> fix/remove-object
 bool FileDialog::get_show_filename_filter() const { return show_filename_filter; }
 
 bool FileDialog::is_showing_hidden_files() const { return show_hidden_files; }

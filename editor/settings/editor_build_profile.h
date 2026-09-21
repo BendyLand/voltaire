@@ -200,12 +200,6 @@ class EditorBuildProfileManager : public AcceptDialog
 		Vector<String> build_deps;
 	};
 
-<<<<<<< HEAD
-	void _find_files(EditorFileSystemDirectory* p_dir, const HashMap<String, DetectedFile>& p_cache,
-		HashMap<String, DetectedFile>& r_detected);
-
-=======
->>>>>>> fix/remove-object
 	static EditorBuildProfileManager* singleton;
 
 protected:

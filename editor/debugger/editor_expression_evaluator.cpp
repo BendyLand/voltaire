@@ -41,10 +41,6 @@ void EditorExpressionEvaluator::set_editor_debugger(ScriptEditorDebugger* p_edit
 	editor_debugger = p_editor_debugger;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 void EditorExpressionEvaluator::_line_edit_gui_input(const Ref<InputEvent>& p_event)
 {
 	if (!expression_input->is_editing()) {
@@ -103,22 +99,6 @@ void EditorExpressionEvaluator::_evaluate()
 
 void EditorExpressionEvaluator::_clear() { inspector->clear_stack_variables(); }
 
-<<<<<<< HEAD
-void EditorExpressionEvaluator::_on_expression_input_changed(const String& p_expression)
-{
-	evaluate_btn->set_disabled(p_expression.is_empty());
-	expression_index = -1;
-}
-
-void EditorExpressionEvaluator::_on_debugger_breaked(bool p_breaked, bool p_can_debug)
-{
-	expression_input->set_editable(p_breaked);
-	evaluate_btn->set_disabled(!p_breaked);
-}
-
-
-=======
->>>>>>> fix/remove-object
 void EditorExpressionEvaluator::_notification(int p_what)
 {
 	switch (p_what) {
@@ -131,49 +111,4 @@ void EditorExpressionEvaluator::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-EditorExpressionEvaluator::EditorExpressionEvaluator()
-{
-	set_h_size_flags(SIZE_EXPAND_FILL);
-
-	HBoxContainer* hb = memnew(HBoxContainer);
-	add_child(hb);
-
-	expression_input = memnew(LineEdit);
-	expression_input->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	expression_input->set_placeholder(TTRC("Expression to evaluate (Up/Down: Navigate history)"));
-	expression_input->set_accessibility_name(TTRC("Expression to evaluate"));
-	expression_input->set_clear_button_enabled(true);
-	expression_input->set_keep_editing_on_text_submit(true);
-	hb->add_child(expression_input);
-
-	clear_on_run_checkbox = memnew(CheckBox);
-	clear_on_run_checkbox->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-	clear_on_run_checkbox->set_text(TTRC("Clear on Run"));
-	clear_on_run_checkbox->set_pressed(true);
-	hb->add_child(clear_on_run_checkbox);
-
-	evaluate_btn = memnew(Button);
-	evaluate_btn->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-	evaluate_btn->set_text(TTRC("Evaluate"));
-	hb->add_child(evaluate_btn);
-
-	clear_btn = memnew(Button);
-	clear_btn->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-	clear_btn->set_text(TTRC("Clear"));
-	hb->add_child(clear_btn);
-
-	inspector = memnew(EditorDebuggerInspector);
-	inspector->set_v_size_flags(SIZE_EXPAND_FILL);
-	inspector->set_property_name_style(EditorPropertyNameProcessor::STYLE_RAW);
-	inspector->set_read_only(true);
-	inspector->set_use_filter(true);
-	add_child(inspector);
-
-	expression_input->set_editable(false);
-	evaluate_btn->set_disabled(true);
-}
-
-=======
->>>>>>> fix/remove-object
 

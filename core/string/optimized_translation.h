@@ -88,10 +88,6 @@ class OptimizedTranslation : public Translation
 	virtual Vector<String> _get_message_list() const override;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 #ifndef DISABLE_DEPRECATED
 	void _generate_bind_compat_119563(const Ref<Translation>& p_from);

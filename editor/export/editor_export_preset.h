@@ -101,12 +101,6 @@ private:
 
 protected:
 	String _get_property_warning(const StringName& p_name) const;
-<<<<<<< HEAD
-
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
-
 
 #ifndef DISABLE_DEPRECATED
 	int _get_script_export_mode_bind_compat_107167() const;
@@ -124,23 +118,11 @@ public:
 	void set_selected_files(const HashSet<String>& p_files);
 	int get_customized_files_count() const;
 
-<<<<<<< HEAD
-	void add_export_file(const String& p_path);
-	void remove_export_file(const String& p_path);
-	bool has_export_file(const String& p_path);
-
-	void set_file_export_mode(const String& p_path, FileExportMode p_mode);
-	FileExportMode get_file_export_mode(
-		const String& p_path, FileExportMode p_default = MODE_FILE_NOT_CUSTOMIZED) const;
-
-	void set_name(const String& p_name);
-=======
 	bool has_export_file(const String& p_path);
 
 	FileExportMode get_file_export_mode(
 		const String& p_path, FileExportMode p_default = MODE_FILE_NOT_CUSTOMIZED) const;
 
->>>>>>> fix/remove-object
 	String get_name() const;
 
 	bool is_runnable() const;
@@ -152,22 +134,10 @@ public:
 
 	ExportFilter get_export_filter() const;
 
-<<<<<<< HEAD
-	void set_include_filter(const String& p_include);
-	String get_include_filter() const;
-
-	void set_exclude_filter(const String& p_exclude);
-	String get_exclude_filter() const;
-
-	void add_patch(const String& p_path, int p_at_pos = -1);
-	void set_patch(int p_index, const String& p_path);
-
-=======
 	String get_include_filter() const;
 
 	String get_exclude_filter() const;
 
->>>>>>> fix/remove-object
 	String get_patch(int p_index);
 
 	void set_patches(const Vector<String>& p_patches);
@@ -179,24 +149,6 @@ public:
 
 	double get_patch_delta_min_reduction() const;
 
-<<<<<<< HEAD
-	void set_patch_delta_include_filter(const String& p_filter);
-	String get_patch_delta_include_filter() const;
-
-	void set_patch_delta_exclude_filter(const String& p_filter);
-	String get_patch_delta_exclude_filter() const;
-
-	void set_custom_features(const String& p_custom_features);
-	String get_custom_features() const;
-
-	void set_export_path(const String& p_path);
-	String get_export_path() const;
-
-	void set_enc_in_filter(const String& p_filter);
-	String get_enc_in_filter() const;
-
-	void set_enc_ex_filter(const String& p_filter);
-=======
 	String get_patch_delta_include_filter() const;
 
 	String get_patch_delta_exclude_filter() const;
@@ -207,7 +159,6 @@ public:
 
 	String get_enc_in_filter() const;
 
->>>>>>> fix/remove-object
 	String get_enc_ex_filter() const;
 
 	uint64_t get_seed() const;
@@ -216,10 +167,6 @@ public:
 
 	bool get_enc_directory() const;
 
-<<<<<<< HEAD
-	void set_script_encryption_key(const String& p_key);
-=======
->>>>>>> fix/remove-object
 	String get_script_encryption_key() const;
 
 	ScriptExportMode get_script_export_mode() const;

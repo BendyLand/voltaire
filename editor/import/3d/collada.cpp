@@ -2408,9 +2408,6 @@ Error Collada::load(const String& p_path, int p_flags)
 	return OK;
 }
 
-<<<<<<< HEAD
-=======
 void Collada::_parse_effect_material(XMLParser& p_parser, Collada::Effect& r_effect, String& r_id) {}
 
->>>>>>> fix/remove-object
 

@@ -34,17 +34,6 @@
 #include "scene/resources/environment.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void FogVolume::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	size = size.maxf(0);
-	RS::get_singleton()->fog_volume_set_size(_get_volume(), size);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 FogVolume::get_size() const { return size; }
 
 RSE::FogVolumeShape FogVolume::get_shape() const { return shape; }

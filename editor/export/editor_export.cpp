@@ -35,19 +35,6 @@
 
 EditorExport* EditorExport::singleton = nullptr;
 
-<<<<<<< HEAD
-void EditorExport::save_presets()
-{
-	if (block_save) {
-		return;
-	}
-	save_timer->start();
-}
-
-void EditorExport::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
 	p_platform->initialize();

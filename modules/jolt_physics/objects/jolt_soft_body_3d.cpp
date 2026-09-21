@@ -28,11 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-<<<<<<< HEAD
-=======
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
->>>>>>> fix/remove-object
 #include "../misc/jolt_type_conversions.h"
 #include "../spaces/jolt_broad_phase_layer.h"
 #include "../spaces/jolt_space_3d.h"
@@ -44,12 +41,6 @@
 #include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-#include <Jolt/Jolt.h>
-#include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
-
-=======
->>>>>>> fix/remove-object
 namespace
 {
 
@@ -186,11 +177,6 @@ JoltSoftBody3D::~JoltSoftBody3D()
 	}
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 bool JoltSoftBody3D::can_interact_with(const JoltSoftBody3D& p_other) const
 {
 	return (can_collide_with(p_other) || p_other.can_collide_with(*this)) &&
@@ -429,9 +415,6 @@ AABB JoltSoftBody3D::get_bounds() const
 	return to_godot(jolt_body->GetWorldSpaceBounds());
 }
 
-<<<<<<< HEAD
-
-=======
 void JoltSoftBody3D::_update_mass() {}
 
 void JoltSoftBody3D::_update_damping() {}
@@ -473,4 +456,3 @@ void JoltSoftBody3D::_add_to_space() {}
 void JoltSoftBody3D::_space_changing() {}
 
 
->>>>>>> fix/remove-object

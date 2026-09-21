@@ -30,10 +30,6 @@
 
 #pragma once
 
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "servers/navigation_3d/navigation_server_3d.h"
 
 class Node;

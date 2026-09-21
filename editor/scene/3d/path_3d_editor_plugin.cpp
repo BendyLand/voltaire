@@ -220,48 +220,6 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D* p_camera, con
 	}
 }
 
-<<<<<<< HEAD
-void Path3DGizmo::_update_transform_gizmo()
-{
-	Node3DEditor::get_singleton()->update_transform_gizmo();
-}
-
-void Path3DEditorPlugin::_handle_option_pressed(int p_option)
-{
-	PopupMenu* pm;
-	pm = handle_menu->get_popup();
-
-	switch (p_option) {
-	case HANDLE_OPTION_ANGLE: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_ANGLE);
-		mirror_handle_angle = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
-		pm->set_item_disabled(HANDLE_OPTION_LENGTH, !mirror_handle_angle);
-	} break;
-	case HANDLE_OPTION_LENGTH: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
-		mirror_handle_length = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
-	} break;
-	case HANDLE_OPTION_SNAP_COLLIDER: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_SNAP_COLLIDER);
-		snap_to_collider = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
-	} break;
-	}
-}
-
-void Path3DEditorPlugin::_confirm_clear_points()
-{
-	if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {
-		return;
-	}
-	clear_points_dialog->reset_size();
-	clear_points_dialog->popup_centered();
-}
-
-=======
->>>>>>> fix/remove-object
 void Path3DEditorPlugin::_clear_curve_points()
 {
 	if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {
@@ -288,35 +246,8 @@ void Path3DEditorPlugin::_restore_curve_points(const PackedVector3Array& p_point
 	}
 }
 
-<<<<<<< HEAD
-void Path3DEditorPlugin::_update_theme()
-{
-	curve_edit->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveEdit")));
-	curve_edit_curve->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveCurve")));
-	curve_edit_tilt->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveTilt")));
-	curve_create->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveCreate")));
-	curve_del->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveDelete")));
-	curve_closed->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveClose")));
-	curve_clear_points->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Clear")));
-	create_curve_button->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Curve3D")));
-}
-
-void Path3DEditorPlugin::_update_toolbar()
-{
-	if (!path) {
-		return;
-	}
-	bool has_curve = path->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
-}
-
-String Path3DGizmoPlugin::get_gizmo_name() const { return "Path3D"; }
-
-=======
 String Path3DGizmoPlugin::get_gizmo_name() const { return "Path3D"; }
 
 void Path3DGizmo::redraw() {}
 
->>>>>>> fix/remove-object
 

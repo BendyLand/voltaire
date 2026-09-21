@@ -280,49 +280,6 @@ void AnimationBezierTrackEdit::_draw_line_clipped(const Vector2& p_from, const V
 	draw_line(from, to, p_color, Math::round(EDSCALE), true);
 }
 
-<<<<<<< HEAD
-// Check if a track is displayed in the bezier editor (track type = bezier and track not filtered).
-bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index)
-{
-	if (animation->track_get_type(p_track_index) != Animation::TrackType::TYPE_BEZIER) {
-		return false;
-	}
-
-	if (is_filtered) {
-		String path = String(animation->track_get_path(p_track_index));
-		if (root && root->has_node(path)) {
-			Node* node = root->get_node(path);
-			if (!node) {
-				return false; // No node, no filter.
-			}
-			if (!EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
-				return false; // Skip track due to not selected.
-			}
-		}
-	}
-
-	return true;
-}
-
-// Check if the curves for a track are displayed in the editor (not hidden). Includes the check on
-// the track visibility.
-bool AnimationBezierTrackEdit::_is_track_curves_displayed(int p_track_index)
-{
-	// Is the track is visible in the editor?
-	if (!_is_track_displayed(p_track_index)) {
-		return false;
-	}
-
-	// And curves visible?
-	if (hidden_tracks.has(p_track_index)) {
-		return false;
-	}
-
-	return true;
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Animation> AnimationBezierTrackEdit::get_animation() const { return animation; }
 
 Size2 AnimationBezierTrackEdit::get_minimum_size() const { return Vector2(1, 1); }
@@ -380,36 +337,6 @@ Control::CursorShape AnimationBezierTrackEdit::get_cursor_shape(const Point2& p_
 	return get_default_cursor_shape();
 }
 
-<<<<<<< HEAD
-void AnimationBezierTrackEdit::_play_position_draw()
-{
-	if (animation.is_null() || play_position_pos < 0) {
-		return;
-	}
-
-	float scale = timeline->get_zoom_scale();
-	int h = get_size().height;
-
-	int limit = timeline->get_name_limit();
-
-	int px = (-timeline->get_value() + play_position_pos) * scale + limit;
-
-	if (px >= limit && px < (get_size().width)) {
-		const Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		play_position->draw_line(Point2(px, 0), Point2(px, h), color, Math::round(2 * EDSCALE));
-	}
-}
-
-void AnimationBezierTrackEdit::set_play_position(real_t p_pos)
-{
-	play_position_pos = p_pos;
-	play_position->queue_redraw();
-}
-
-void AnimationBezierTrackEdit::update_play_position() { play_position->queue_redraw(); }
-
-=======
->>>>>>> fix/remove-object
 void AnimationBezierTrackEdit::set_root(Node* p_root) { root = p_root; }
 
 void AnimationBezierTrackEdit::_zoom_vertically(real_t p_minimum_value, real_t p_maximum_value)
@@ -466,51 +393,6 @@ bool AnimationBezierTrackEdit::_unlock_track(int p_track) { return locked_tracks
 
 bool AnimationBezierTrackEdit::_show_track(int p_track) { return hidden_tracks.erase(p_track); }
 
-<<<<<<< HEAD
-void AnimationBezierTrackEdit::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event)
-{
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		if (mm->get_position().x > timeline->get_name_limit()) {
-			timeline_v_scroll += p_scroll_vec.y * timeline_v_zoom;
-			timeline_v_scroll = CLAMP(timeline_v_scroll, -100000, 100000);
-			timeline->set_value(
-				timeline->get_value() - p_scroll_vec.x / timeline->get_zoom_scale());
-		}
-		else {
-			track_v_scroll += p_scroll_vec.y;
-			if (track_v_scroll < -track_v_scroll_max) {
-				track_v_scroll = -track_v_scroll_max;
-			}
-			else if (track_v_scroll > 0) {
-				track_v_scroll = 0;
-			}
-		}
-		queue_redraw();
-	}
-}
-
-void AnimationBezierTrackEdit::_zoom_callback(
-	float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event)
-{
-	const float v_zoom_orig = timeline_v_zoom;
-	Ref<InputEventWithModifiers> iewm = p_event;
-	if (iewm.is_valid() && iewm->is_alt_pressed()) {
-		// Alternate zoom (doesn't affect timeline).
-		timeline_v_zoom = CLAMP(timeline_v_zoom / p_zoom_factor, 0.000001, 100000);
-	}
-	else {
-		float zoom_factor = p_zoom_factor > 1.0 ? AnimationTimelineEdit::SCROLL_ZOOM_FACTOR_IN
-												: AnimationTimelineEdit::SCROLL_ZOOM_FACTOR_OUT;
-		timeline->_zoom_callback(zoom_factor, p_origin, p_event);
-	}
-	timeline_v_scroll =
-		timeline_v_scroll + (p_origin.y - get_size().y / 2.0) * (timeline_v_zoom - v_zoom_orig);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void AnimationBezierTrackEdit::_bezier_track_insert_key_at_anim(const Ref<Animation>& p_anim,
 	int p_track, double p_time, real_t p_value, const Vector2& p_in_handle,
 	const Vector2& p_out_handle, const Animation::HandleMode p_handle_mode,

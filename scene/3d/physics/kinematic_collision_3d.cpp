@@ -76,9 +76,5 @@ Vector3 KinematicCollision3D::get_collider_velocity(int p_collision_index) const
 	return result.collisions[p_collision_index].collider_velocity;
 }
 
-<<<<<<< HEAD
-void KinematicCollision3D::_bind_methods() {}
-=======
->>>>>>> fix/remove-object
 
 

@@ -174,13 +174,9 @@ class GridMapEditor : public EditorDock
 		Vector3 begin;
 		Vector3 end;
 		bool active = false;
-<<<<<<< HEAD
-	} selection;
-=======
 	};
 
 	Selection selection;
->>>>>>> fix/remove-object
 
 	Selection last_selection;
 
@@ -243,28 +239,8 @@ class GridMapEditor : public EditorDock
 	Label* info_message = nullptr;
 
 	void update_grid(); // Change which and where the grid is displayed.
-<<<<<<< HEAD
-	void _draw_grids(const Vector3& cell_size);
-	void _menu_option(int);
-	void update_palette();
 	void _update_resource_preview(const String& p_path, const Ref<Texture2D>& p_preview,
 		const Ref<Texture2D>& p_small_preview, int p_idx);
-	void _update_mesh_library();
-	void _set_display_mode(int p_mode);
-	void _item_selected_cbk(int idx);
-	void _update_cursor_transform();
-	void _update_cursor_instance();
-	void _on_tool_mode_changed();
-	void _update_theme();
-
-	void _text_changed(const String& p_text);
-	void _mesh_library_palette_input(const Ref<InputEvent>& p_ie);
-
-	void _icon_size_changed(float p_value);
-=======
-	void _update_resource_preview(const String& p_path, const Ref<Texture2D>& p_preview,
-		const Ref<Texture2D>& p_small_preview, int p_idx);
->>>>>>> fix/remove-object
 
 	void _clear_clipboard_data();
 	void _set_clipboard_data();
@@ -272,29 +248,15 @@ class GridMapEditor : public EditorDock
 	void _cancel_pending_move();
 	void _update_selection_transform();
 	void _validate_selection();
-<<<<<<< HEAD
-	void _set_selection(
-		bool p_active, const Vector3& p_begin = Vector3(), const Vector3& p_end = Vector3());
 	AABB _get_selection() const;
 	bool _has_selection() const;
 
-	void _update_edit_axis();
-=======
-	AABB _get_selection() const;
-	bool _has_selection() const;
-
->>>>>>> fix/remove-object
 	Vector3::Axis _get_facing_axis(const Basis& p_grid_basis, const Vector3& p_direction) const;
 
 	Vector3::Axis _get_edit_axis() const
 	{
 		return allow_viewport_override ? viewport_axis : edit_axis_select;
 	}
-<<<<<<< HEAD
-
-	void _view_state_changed(Node3DEditorViewport* p_viewport);
-=======
->>>>>>> fix/remove-object
 
 	String _get_cursor_coordinates() const;
 
@@ -303,74 +265,30 @@ class GridMapEditor : public EditorDock
 	void _delete_selection();
 	void _setup_paste_mode();
 
-<<<<<<< HEAD
-	bool do_input_action(Camera3D* p_camera, const Point2& p_point, bool p_click);
-
-=======
->>>>>>> fix/remove-object
 	friend class GridMapEditorPlugin;
 
 	void _on_categories_item_activated();
 
-<<<<<<< HEAD
-	void _rebuild_categories();
-
-=======
->>>>>>> fix/remove-object
 protected:
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 public:
-<<<<<<< HEAD
-	EditorPlugin::AfterGUIInput forward_spatial_input_event(
-		Camera3D* p_camera, const Ref<InputEvent>& p_event);
-
-	void edit(GridMap* p_gridmap);
-	GridMapEditor();
-=======
 	GridMapEditor() = default;
->>>>>>> fix/remove-object
 	~GridMapEditor();
 };
 
 class GridMapEditorPlugin : public EditorPlugin
 {
 	GridMapEditor* grid_map_editor = nullptr;
-<<<<<<< HEAD
-
-	void _overlay_update_requested();
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual void forward_3d_draw_over_viewport(Control* p_overlay) override;
 
-<<<<<<< HEAD
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
-		Camera3D* p_camera, const Ref<InputEvent>& p_event) override
-	{
-		return grid_map_editor->forward_spatial_input_event(p_camera, p_event);
-	}
-
-	virtual String get_plugin_name() const override { return "GridMap"; }
-
-	GridMap* get_current_grid_map() const;
-	void set_selection(const Vector3i& p_begin, const Vector3i& p_end);
-	void clear_selection();
-	AABB get_selection() const;
-	bool has_selection() const;
-	void set_selected_palette_item(int p_item) const;
-=======
 	virtual String get_plugin_name() const override { return "GridMap"; }
 
 	GridMap* get_current_grid_map() const;
 	AABB get_selection() const;
 	bool has_selection() const;
->>>>>>> fix/remove-object
 	int get_selected_palette_item() const;
 };
 

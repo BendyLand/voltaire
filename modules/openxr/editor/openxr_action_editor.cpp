@@ -32,14 +32,6 @@
 #include "editor/themes/editor_scale.h"
 #include "openxr_action_editor.h"
 
-<<<<<<< HEAD
-void OpenXRActionEditor::_theme_changed()
-{
-	rem_action->set_button_icon(get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
-}
-
-=======
->>>>>>> fix/remove-object
 void OpenXRActionEditor::_notification(int p_what)
 {
 	switch (p_what) {
@@ -49,9 +41,6 @@ void OpenXRActionEditor::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void OpenXRActionEditor::_theme_changed() {}

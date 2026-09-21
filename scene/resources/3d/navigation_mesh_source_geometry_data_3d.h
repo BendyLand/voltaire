@@ -50,10 +50,6 @@ private:
 	Vector<ProjectedObstruction> _projected_obstructions;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 private:
 	void _add_vertex(const Vector3& p_vec3);

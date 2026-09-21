@@ -2794,18 +2794,6 @@ void RendererCanvasCull::_item_queue_update(Item* p_item, bool p_update_dependen
 	}
 }
 
-<<<<<<< HEAD
-void RendererCanvasCull::finalize()
-{
-	_free_rids(canvas_owner, "Canvas");
-	_free_rids(canvas_item_owner, "CanvasItem");
-	_free_rids(canvas_light_owner, "CanvasLight");
-	_free_rids(canvas_light_occluder_owner, "CanvasLightOccluder");
-	_free_rids(canvas_light_occluder_polygon_owner, "CanvasLightOccluderPolygon");
-}
-
-=======
->>>>>>> fix/remove-object
 void RendererCanvasCull::tick()
 {
 	if (_interpolation_data.interpolation_enabled) {
@@ -2825,12 +2813,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 			item->xform_prev = item->xform_curr;                                                   \
 		}                                                                                          \
 	}                                                                                              \
-<<<<<<< HEAD
-	/* and now for any in the transform list (being actively interpolated), */                     \
-=======
 	/* and now
 for any in the transform list (being actively interpolated), */                     \
->>>>>>> fix/remove-object
 	/* keep the previous transform value up to date and ready for next tick */                     \
 	if (p_process) {                                                                               \
 		for (unsigned int n = 0; n < _interpolation_data.m_list_curr->size(); n++) {               \
@@ -2905,9 +2889,6 @@ RendererCanvasCull::~RendererCanvasCull()
 	_canvas_cull_singleton = nullptr;
 }
 
-<<<<<<< HEAD
-=======
 void RendererCanvasCull::finalize() {}
 
->>>>>>> fix/remove-object
 

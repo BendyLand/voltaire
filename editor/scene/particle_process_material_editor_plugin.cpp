@@ -224,15 +224,6 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_set_clamped_values(float p_mi
 	_sync_property();
 }
 
-<<<<<<< HEAD
-void ParticleProcessMaterialMinMaxPropertyEditor::_sync_property()
-{
-	const Vector2 value = Vector2(min_range->get_value(), max_range->get_value());
-	range_edit_widget->queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const
 {
 	float max_spread = max_range->get_max() - min_range->get_min();
@@ -252,29 +243,6 @@ float ParticleProcessMaterialMinMaxPropertyEditor::_get_max_spread() const
 	return max_spread;
 }
 
-<<<<<<< HEAD
-void ParticleProcessMaterialMinMaxPropertyEditor::setup(
-	float p_min, float p_max, float p_step, bool p_allow_less, bool p_allow_greater, bool p_degrees)
-{
-	property_range = Vector2(p_min, p_max);
-
-	// Initially all Ranges share properties.
-	for (Range* range : Vector<Range*>{min_range, min_edit, max_range, max_edit}) {
-		range->set_min(p_min);
-		range->set_max(p_max);
-		range->set_step(p_step);
-		range->set_allow_lesser(p_allow_less);
-		range->set_allow_greater(p_allow_greater);
-	}
-
-	if (p_degrees) {
-		min_edit->set_suffix(U" \u00B0");
-		max_edit->set_suffix(U" \u00B0");
-	}
-	_update_mode();
-}
-=======
->>>>>>> fix/remove-object
 
 
 void ParticleProcessMaterialMinMaxPropertyEditor::_update_slider_values() {}

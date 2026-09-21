@@ -67,12 +67,6 @@ class AnimationTreeEditor : public EditorDock
 	Vector<String> edited_path;
 	Vector<AnimationTreeNodeEditorPlugin*> editors;
 
-<<<<<<< HEAD
-	void _update_path();
-	void _clear_editors();
-
-=======
->>>>>>> fix/remove-object
 	void _path_button_pressed(int p_path);
 	void _animation_list_changed();
 
@@ -108,11 +102,7 @@ class AnimationTreeEditorPlugin : public EditorPlugin
 public:
 	virtual String get_plugin_name() const override { return "AnimationTree"; }
 
-<<<<<<< HEAD
-	AnimationTreeEditorPlugin();
-=======
 	AnimationTreeEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

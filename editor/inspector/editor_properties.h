@@ -165,12 +165,6 @@ class EditorPropertyTextEnum : public EditorProperty
 	void _emit_changed_value(const String& p_string);
 	void _option_selected(int p_which);
 
-<<<<<<< HEAD
-	void _edit_custom_value();
-	void _custom_value_submitted(const String& p_value);
-	void _custom_value_accepted();
-=======
->>>>>>> fix/remove-object
 	void _custom_value_canceled();
 
 protected:
@@ -305,11 +299,6 @@ public:
 	EditorPropertyFlags();
 };
 
-<<<<<<< HEAD
-///////////////////// LAYERS /////////////////////////
-
-=======
->>>>>>> fix/remove-object
 class EditorPropertyLayersGrid : public Control
 {
 private:
@@ -395,10 +384,6 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyInteger();
 };
 
@@ -452,10 +437,6 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyFloat();
 };
 
@@ -510,10 +491,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyRect2(bool p_force_wide = false);
 };
 
@@ -528,10 +505,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyRect2i(bool p_force_wide = false);
 };
 
@@ -546,10 +519,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyPlane(bool p_force_wide = false);
 };
 
@@ -569,10 +538,6 @@ class EditorPropertyQuaternion : public EditorProperty
 	Vector3 edit_euler;
 
 	void _value_changed(double p_val, const String& p_name);
-<<<<<<< HEAD
-	void _edit_custom_value();
-=======
->>>>>>> fix/remove-object
 	void _custom_value_changed(double p_val);
 
 	bool is_grabbing_euler();
@@ -583,10 +548,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint, bool p_hide_editor = false);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyQuaternion();
 };
 
@@ -601,10 +562,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyAABB();
 };
 
@@ -619,10 +576,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyTransform2D(bool p_include_origin = true);
 };
 
@@ -637,10 +590,6 @@ protected:
 
 public:
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyBasis();
 };
 
@@ -656,10 +605,6 @@ protected:
 public:
 	virtual void update_property() override;
 	virtual void update_using_transform(Transform3D p_transform);
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyTransform3D();
 };
 
@@ -675,10 +620,6 @@ protected:
 public:
 	virtual void update_property() override;
 	virtual void update_using_transform(Projection p_transform);
-<<<<<<< HEAD
-	void setup(const EditorPropertyRangeHint& p_range_hint);
-=======
->>>>>>> fix/remove-object
 	EditorPropertyProjection();
 };
 
@@ -724,18 +665,9 @@ class EditorPropertyNodePath : public EditorProperty
 	Vector<StringName> valid_types;
 	void _node_selected(const NodePath& p_path, bool p_absolute = true);
 	void _node_assign();
-<<<<<<< HEAD
-	void _assign_draw();
 	Node* get_base_node();
 	void _update_menu();
 	void _menu_option(int p_idx);
-	void _accept_text();
-	void _text_submitted(const String& p_text);
-=======
-	Node* get_base_node();
-	void _update_menu();
-	void _menu_option(int p_idx);
->>>>>>> fix/remove-object
 	const NodePath _get_node_path() const;
 
 protected:

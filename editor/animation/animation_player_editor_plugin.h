@@ -184,46 +184,15 @@ class AnimationPlayerEditor : public EditorDock
 	} onion;
 
 	float _get_editor_step() const;
-<<<<<<< HEAD
-	void _play_pressed();
-	void _play_from_pressed();
-	void _play_bw_pressed();
-	void _play_bw_from_pressed();
-	void _animation_new();
-	void _animation_rename();
-
-	void _animation_remove();
-	void _animation_duplicate();
-	Ref<Animation> _animation_clone(const Ref<Animation> p_anim);
-	void _animation_resource_edit();
-	void _scale_changed(const String& p_scale);
-
-	void _edit_animation_blend();
-	void _update_animation_blend();
-
-	void _animation_finished(const String& p_name);
-	void _update_animation();
-	void _set_controls_disabled(bool p_disabled);
-	void _update_animation_list_icons();
-	void _update_name_dialog_library_dropdown();
-	void _update_playback_tooltips();
-=======
 
 	void _scale_changed(const String& p_scale);
 
 	void _animation_finished(const String& p_name);
 	void _update_animation_list_icons();
->>>>>>> fix/remove-object
 
 	void _animation_key_editor_anim_len_changed(float p_len);
 	void _animation_update_key_frame();
 
-<<<<<<< HEAD
-	void _onion_skinning_menu(int p_option);
-
-	void _editor_visibility_changed();
-=======
->>>>>>> fix/remove-object
 	bool _are_onion_layers_valid();
 	void _allocate_onion_layers();
 	void _free_onion_layers();
@@ -235,19 +204,9 @@ class AnimationPlayerEditor : public EditorDock
 
 	~AnimationPlayerEditor();
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
 public:
 	AnimationMixer* get_editing_node() const;
 	AnimationPlayer* get_player() const;
-	Node* get_cached_root_node() const;
-=======
-public:
-	AnimationMixer* get_editing_node() const;
-	AnimationPlayer* get_player() const;
->>>>>>> fix/remove-object
 
 	static AnimationPlayerEditor* get_singleton() { return singleton; }
 
@@ -268,14 +227,6 @@ class AnimationPlayerEditorPlugin : public EditorPlugin
 
 	void _clear_dummy_player();
 
-<<<<<<< HEAD
-protected:
-	void _notification(int p_what);
-
-	void _update_keying();
-
-=======
->>>>>>> fix/remove-object
 public:
 	virtual String get_plugin_name() const override { return "Anim"; }
 
@@ -289,11 +240,7 @@ public:
 		anim_editor->forward_force_draw_over_viewport(p_overlay);
 	}
 
-<<<<<<< HEAD
-	~AnimationPlayerEditorPlugin();
-=======
 	~AnimationPlayerEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 class EditorInspectorPluginAnimationTrackKeyEdit : public EditorInspectorPlugin

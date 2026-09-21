@@ -409,9 +409,6 @@ ENetMultiplayerPeer::~ENetMultiplayerPeer()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ENetMultiplayerPeer::poll() {}
 
->>>>>>> fix/remove-object
 

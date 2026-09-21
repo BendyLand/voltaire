@@ -159,18 +159,6 @@ bool EditorImportBlendRunner::_extract_error_message_xml(
 	return r_error_message.size();
 }
 
-<<<<<<< HEAD
-void EditorImportBlendRunner::_resources_reimported(const PackedStringArray& p_files)
-{
-	if (is_running()) {
-		// After a batch of imports is done, wait a few seconds before trying to kill blender,
-		// in case of having multiple imports trigger in quick succession.
-		kill_timer->start();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorImportBlendRunner::_kill_blender()
 {
 	kill_timer->stop();

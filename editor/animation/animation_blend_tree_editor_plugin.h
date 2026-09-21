@@ -88,11 +88,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 
 	Vector<AddOption> add_options;
 
-<<<<<<< HEAD
-	void _update_options_menu(bool p_has_input_ports = false);
-
-=======
->>>>>>> fix/remove-object
 	StringName animation_node_name_meta = StringName("_animation_node_name");
 	static AnimationNodeBlendTreeEditor* singleton;
 
@@ -104,10 +99,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	bool updating = false;
 
 	void _scroll_changed(const Vector2& p_scroll);
-<<<<<<< HEAD
-	void _open_in_editor(const String& p_which);
-=======
->>>>>>> fix/remove-object
 
 	void _filter_fill_selection_recursive(
 		EditorUndoRedoManager* p_undo_redo, TreeItem* p_item, bool p_parent_filtered);
@@ -133,10 +124,6 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	Ref<Tween> pan_to_tween;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	static AnimationNodeBlendTreeEditor* get_singleton() { return singleton; }
@@ -148,11 +135,7 @@ public:
 
 	void update_graph();
 
-<<<<<<< HEAD
-	AnimationNodeBlendTreeEditor();
-=======
 	AnimationNodeBlendTreeEditor() = default;
->>>>>>> fix/remove-object
 };
 
 // EditorPluginAnimationNodeAnimation

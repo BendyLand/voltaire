@@ -1212,13 +1212,10 @@ RenderingShaderContainer::RenderingShaderContainer() {}
 
 RenderingShaderContainer::~RenderingShaderContainer() {}
 
-<<<<<<< HEAD
-=======
 template <typename T>
 void RenderingShaderContainer::ReflectSymbol<T>::set_spv_reflect(
 	RDC::ShaderStage p_stage, const T* p_spv)
 {
 }
 
->>>>>>> fix/remove-object
 

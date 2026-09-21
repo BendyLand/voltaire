@@ -47,8 +47,5 @@ bool RendererCompositor::is_xr_enabled() const { return xr_enabled; }
 RendererCompositor::~RendererCompositor() { singleton = nullptr; }
 
 
-<<<<<<< HEAD
-=======
 
 RendererCompositor::RendererCompositor() {}
->>>>>>> fix/remove-object

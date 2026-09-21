@@ -97,11 +97,6 @@ protected:
 
 	// Fallbacks.
 	static constexpr int MAX_FALLBACK_DEPTH = 64;
-<<<<<<< HEAD
-
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void reset_state() override;
 	virtual void _update_rids_fb(const Font* p_f, int p_depth) const;
@@ -301,11 +296,6 @@ class FontFile : public Font
 	void _convert_mono_4bit(Ref<Image>& p_source, int p_page, int p_ch, int p_sz, int p_ol);
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 	virtual void reset_state() override;
 
 public:
@@ -507,11 +497,6 @@ class FontVariation : public Font
 	Vector<Color> custom_colors;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 	virtual void _update_rids() const override;
 
 	virtual void reset_state() override;

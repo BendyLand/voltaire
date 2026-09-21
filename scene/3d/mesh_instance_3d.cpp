@@ -52,17 +52,6 @@
 RID MeshInstance3D::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-=======
->>>>>>> fix/remove-object
 Ref<Mesh> MeshInstance3D::get_mesh() const { return mesh; }
 
 int MeshInstance3D::get_blend_shape_count() const
@@ -102,11 +91,6 @@ void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value)
 		get_instance(), p_blend_shape, p_value);
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void MeshInstance3D::set_skin(const Ref<Skin>& p_skin)
 {
 	skin_internal = p_skin;
@@ -160,11 +144,6 @@ Node* MeshInstance3D::create_trimesh_collision_node()
 	return static_body;
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 Node* MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify)
 {
 	if (mesh.is_null()) {
@@ -183,11 +162,6 @@ Node* MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify
 	return static_body;
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 Node* MeshInstance3D::create_multiple_convex_collisions_node(
 	const Ref<MeshConvexDecompositionSettings>& p_settings)
 {
@@ -217,16 +191,8 @@ Node* MeshInstance3D::create_multiple_convex_collisions_node(
 	return static_body;
 }
 
-<<<<<<< HEAD
-
 #endif // PHYSICS_3D_DISABLED
 
-
-
-=======
-#endif // PHYSICS_3D_DISABLED
-
->>>>>>> fix/remove-object
 int MeshInstance3D::get_surface_override_material_count() const
 {
 	return surface_override_materials.size();
@@ -275,43 +241,6 @@ Ref<Material> MeshInstance3D::get_active_material(int p_surface) const
 	return m->surface_get_material(p_surface);
 }
 
-<<<<<<< HEAD
-void MeshInstance3D::_mesh_changed()
-{
-	ERR_FAIL_COND(mesh.is_null());
-	const int surface_count = mesh->get_surface_count();
-
-	surface_override_materials.resize(surface_count);
-
-	uint32_t initialize_bs_from = blend_shape_tracks.size();
-	blend_shape_tracks.resize(mesh->get_blend_shape_count());
-
-	if (surface_count > 0) {
-		for (uint32_t i = 0; i < blend_shape_tracks.size(); i++) {
-			blend_shape_properties["blend_shapes/" + String(mesh->get_blend_shape_name(i))] = i;
-			if (i < initialize_bs_from) {
-				set_blend_shape_value(i, blend_shape_tracks[i]);
-			}
-			else {
-				set_blend_shape_value(i, 0);
-			}
-		}
-	}
-
-	for (int surface_index = 0; surface_index < surface_count; ++surface_index) {
-		if (surface_override_materials[surface_index].is_valid()) {
-			RS::get_singleton()->instance_set_surface_override_material(get_instance(),
-				surface_index, surface_override_materials[surface_index]->get_rid());
-		}
-	}
-
-	update_gizmos();
-}
-
-
-
-=======
->>>>>>> fix/remove-object
 void MeshInstance3D::create_debug_tangents()
 {
 	MeshInstance3D* mi = create_debug_tangents_node();
@@ -337,15 +266,6 @@ bool MeshInstance3D::_property_can_revert(const StringName& p_name) const
 	return false;
 }
 
-<<<<<<< HEAD
-
-
-
-
-
-
-=======
->>>>>>> fix/remove-object
 Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const
 {
 	if (mesh.is_valid()) {
@@ -364,9 +284,6 @@ PackedStringArray MeshInstance3D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-
-=======
 void MeshInstance3D::_resolve_skeleton_path() {}
 
 void MeshInstance3D::set_mesh(Ref<Mesh> const&) {}
@@ -378,6 +295,5 @@ MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
 	MeshInstance3D mi = MeshInstance3D();
 	return &mi;
 }
->>>>>>> fix/remove-object
 
 

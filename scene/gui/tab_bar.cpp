@@ -462,29 +462,6 @@ bool TabBar::is_tab_hidden(int p_tab) const
 	return tabs[p_tab].hidden;
 }
 
-<<<<<<< HEAD
-void TabBar::set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon)
-{
-	ERR_FAIL_INDEX(p_tab, tabs.size());
-
-	if (tabs[p_tab].right_button == p_icon) {
-		return;
-	}
-
-	tabs.write[p_tab].right_button = p_icon;
-
-	_update_cache();
-	_ensure_no_over_offset();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> TabBar::get_tab_button_icon(int p_tab) const
 {
 	ERR_FAIL_INDEX_V(p_tab, tabs.size(), Ref<Texture2D>());
@@ -669,81 +646,6 @@ Size2 TabBar::get_desired_size() const
 
 void TabBar::_hover_switch_timeout() { set_current_tab(hover); }
 
-<<<<<<< HEAD
-void TabBar::_on_mouse_exited()
-{
-	rb_hover = -1;
-	cb_hover = -1;
-	hover = -1;
-	highlight_arrow = -1;
-	dragging_valid_tab = false;
-
-	_update_cache(false);
-	queue_redraw();
-}
-
-void TabBar::add_tab(const String& p_str, const Ref<Texture2D>& p_icon)
-{
-	Tab t;
-	t.text = p_str;
-	t.text_buf->set_direction(
-		is_layout_rtl() ? TextServer::DIRECTION_RTL : TextServer::DIRECTION_LTR);
-	t.icon = p_icon;
-	tabs.push_back(t);
-
-	_shape(tabs.size() - 1);
-	_update_cache();
-	if (scroll_to_selected) {
-		ensure_tab_visible(current);
-	}
-	queue_accessibility_update();
-	queue_redraw();
-	update_desired_size();
-	update_minimum_size();
-
-	if (!deselect_enabled && tabs.size() == 1) {
-		if (is_inside_tree()) {
-			set_current_tab(0);
-		}
-		else {
-			current = 0;
-			previous = -1;
-		}
-	}
-}
-
-void TabBar::_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index)
-{
-	Tab moving_tab = p_from_tabbar->tabs[p_from_index];
-	moving_tab.accessibility_item_element = RID();
-	moving_tab.accessibility_item_dirty = true;
-	p_from_tabbar->remove_tab(p_from_index);
-	tabs.insert(p_to_index, moving_tab);
-
-	if (tabs.size() > 1) {
-		if (current >= p_to_index) {
-			current++;
-		}
-		if (previous >= p_to_index) {
-			previous++;
-		}
-	}
-
-	if (!is_tab_disabled(p_to_index)) {
-		set_current_tab(p_to_index);
-	}
-	else {
-		_update_cache();
-		queue_redraw();
-	}
-
-	queue_accessibility_update();
-	update_desired_size();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 int TabBar::get_tab_idx_at_point(const Point2& p_point) const
 {
 	if (tabs.is_empty()) {
@@ -968,11 +870,8 @@ void TabBar::set_deselect_enabled(bool p_enabled)
 
 bool TabBar::get_deselect_enabled() const { return deselect_enabled; }
 
-<<<<<<< HEAD
-=======
 void TabBar::set_current_tab(int p_current) {}
 
->>>>>>> fix/remove-object
 
 
 void TabBar::_update_hover() {}

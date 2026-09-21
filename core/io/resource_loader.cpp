@@ -125,15 +125,12 @@ void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions)
 	}
 }
 
-<<<<<<< HEAD
-=======
 Error ResourceFormatLoader::rename_dependencies(
 	const String& p_path, const HashMap<String, String>& p_map)
 {
 	return OK;
 }
 
->>>>>>> fix/remove-object
 void ResourceFormatLoader::get_dependencies(
 	const String& p_path, List<String>* p_dependencies, bool p_add_types)
 {
@@ -144,11 +141,8 @@ void ResourceFormatLoader::get_dependencies(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ResourceLoader::LoadToken::clear() {}
 
->>>>>>> fix/remove-object
 ResourceLoader::LoadToken::~LoadToken() { clear(); }
 
 Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_original_path,

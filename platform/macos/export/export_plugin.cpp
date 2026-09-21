@@ -268,19 +268,6 @@ Error EditorExportPlatformMacOS::_export_debug_script(const Ref<EditorExportPres
 
 Ref<Texture2D> EditorExportPlatformMacOS::get_run_icon() const { return run_icon; }
 
-<<<<<<< HEAD
-Ref<Texture2D> EditorExportPlatformMacOS::get_option_icon(int p_index) const
-{
-	if (p_index == 1) {
-		return stop_icon;
-	}
-	else {
-		return EditorExportPlatform::get_option_icon(p_index);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int EditorExportPlatformMacOS::get_options_count() const { return menu_options; }
 
 String EditorExportPlatformMacOS::get_option_label(int p_index) const
@@ -294,36 +281,12 @@ String EditorExportPlatformMacOS::get_option_tooltip(int p_index) const
 					 : TTR("Run exported project on remote macOS system");
 }
 
-<<<<<<< HEAD
-void EditorExportPlatformMacOS::initialize()
-{
-	if (EditorNode::get_singleton()) {
-		Ref<Image> img = memnew(Image);
-		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
-
-		ImageLoaderSVG::create_image_from_string(img, _macos_logo_svg, EDSCALE, upsample, false);
-		logo = ImageTexture::create_from_image(img);
-
-		ImageLoaderSVG::create_image_from_string(
-			img, _macos_run_icon_svg, EDSCALE, upsample, false);
-		run_icon = ImageTexture::create_from_image(img);
-
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-		if (theme.is_valid()) {
-			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
-		}
-		else {
-			stop_icon.instantiate();
-		}
-	}
-=======
 Error EditorExportPlatformMacOS::_copy_and_sign_files(Ref<DirAccess>& dir_access,
 	const String& p_src_path, const String& p_in_app_path, bool p_sign_enabled,
 	const Ref<EditorExportPreset>& p_preset, const String& p_ent_path,
 	const String& p_helper_ent_path, bool p_should_error_on_non_code_sign, bool p_sandbox)
 {
 	return OK;
->>>>>>> fix/remove-object
 }
 
 

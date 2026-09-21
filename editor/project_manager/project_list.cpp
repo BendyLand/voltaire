@@ -54,117 +54,6 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 
-<<<<<<< HEAD
-void ProjectListItemControl::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		if (icon_needs_reload) {
-			// The project icon may not be loaded by the time the control is displayed,
-			// so use a loading placeholder.
-			project_icon->set_texture(get_editor_theme_icon(SNAME("ProjectIconLoading")));
-		}
-
-		project_title->begin_bulk_theme_override();
-		project_title->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("title"), EditorStringName(EditorFonts)).ptr());
-		project_title->add_theme_font_size_override(SceneStringName(font_size),
-			get_theme_font_size(SNAME("title_size"), EditorStringName(EditorFonts)));
-		project_title->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), SNAME("ProjectList")));
-		project_title->end_bulk_theme_override();
-
-		project_path->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SceneStringName(font_color), SNAME("ProjectList")));
-
-		switch (version_match_type) {
-		case VersionMatchType::PROJECT_USES_OLDER_MAJOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectUpgradeMajor")));
-			break;
-		case VersionMatchType::PROJECT_USES_OLDER_MINOR:
-			project_different_version->set_texture(get_editor_theme_icon(SNAME("ProjectUpgrade")));
-			break;
-		case VersionMatchType::PROJECT_USES_NEWER_MAJOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectDowngradeMajor")));
-			break;
-		case VersionMatchType::PROJECT_USES_NEWER_MINOR:
-			project_different_version->set_texture(
-				get_editor_theme_icon(SNAME("ProjectDowngrade")));
-			break;
-		default:
-			break;
-		}
-
-		project_unsupported_features->set_texture(get_editor_theme_icon(SNAME("NodeWarning")));
-
-		favorite_focus_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		_update_favorite_button_focus_color();
-		if (is_favorite) {
-			favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Favorites")));
-		}
-		else {
-			favorite_button->set_texture_normal(get_editor_theme_icon(SNAME("Unfavorite")));
-		}
-
-		if (project_is_missing) {
-			explore_button->set_button_icon(get_editor_theme_icon(SNAME("FileBroken")));
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-		}
-		else {
-			explore_button->set_button_icon(get_editor_theme_icon(SNAME("Load")));
-#endif
-		}
-		if (touch_menu_button) {
-			touch_menu_button->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
-		}
-	} break;
-
-	case NOTIFICATION_MOUSE_ENTER: {
-		is_hovering = true;
-		queue_redraw();
-		queue_accessibility_update();
-	} break;
-
-	case NOTIFICATION_MOUSE_EXIT: {
-		is_hovering = false;
-		queue_redraw();
-		queue_accessibility_update();
-	} break;
-
-	case NOTIFICATION_DRAW: {
-		if (is_selected && is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hover_pressed"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		else if (is_selected) {
-			draw_style_box(get_theme_stylebox(SNAME("selected"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		else if (is_hovering) {
-			draw_style_box(get_theme_stylebox(SNAME("hovered"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-		// Due to how this control works, we can't rely on the built-in way of checking for focus
-		// visibility.
-		if (has_focus() && !is_focus_hidden) {
-			draw_style_box(get_theme_stylebox(SNAME("focus"), SNAME("ProjectList")).ptr(),
-				Rect2(Point2(), get_size()));
-		}
-
-		draw_line(Point2(0, get_size().y + 1), Point2(get_size().x, get_size().y + 1),
-			get_theme_color(SNAME("guide_color"), SNAME("ProjectList")));
-	} break;
-
-	case NOTIFICATION_READY: {
-		set_project_title_autowrap();
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectListItemControl::_update_favorite_button_focus_color()
 {
 	if (favorite_button->has_focus()) {
@@ -175,23 +64,6 @@ void ProjectListItemControl::_update_favorite_button_focus_color()
 	}
 }
 
-<<<<<<< HEAD
-void ProjectListItemControl::set_project_title(const String& p_title)
-{
-	project_title->set_text(p_title);
-	project_title->set_accessibility_name(TTRC("Project Name"));
-	queue_accessibility_update();
-}
-
-void ProjectListItemControl::set_project_path(const String& p_path)
-{
-	project_path->set_text(p_path);
-	project_path->set_accessibility_name(TTRC("Project Path"));
-	queue_accessibility_update();
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectListItemControl::set_project_icon(const Ref<Texture2D>& p_icon)
 {
 	icon_needs_reload = false;
@@ -235,52 +107,6 @@ void ProjectListItemControl::set_project_title_index(int p_title_index)
 	project_title_index = p_title_index;
 }
 
-<<<<<<< HEAD
-void ProjectListItemControl::resize_project_title()
-{
-	if (get_window() == nullptr) {
-		return;
-	}
-
-	int window_size = get_window()->get_size().x;
-	int difference = window_size - window_size_cache;
-	window_size_cache = window_size;
-
-	int& title_size_cache = get_list()->title_size_cache[project_title_index];
-	title_size_cache += difference;
-
-	if (title_size_cache > title_fullsize_cache + tag_size_cache) {
-		project_title->set_custom_maximum_size(Vector2(-1, -1));
-		project_title->set_custom_minimum_size(Vector2(0, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_OFF);
-
-		return;
-	}
-	ProjectTag tag = ProjectTag("dummy");
-	int tag_maxsize = tag.get_custom_maximum_size().x;
-	int title_maxsize = title_size_cache - tag_size_cache;
-	int title_minsize = title_size_cache - tag_maxsize;
-
-	int abs_minsize = (200 * EDSCALE);
-	if (title_fullsize_cache > abs_minsize) {
-		if (title_minsize < abs_minsize) {
-			title_minsize = abs_minsize + tag_maxsize - tag_size_cache;
-		}
-		if (title_maxsize < title_minsize) {
-			project_title->set_custom_maximum_size(Vector2(title_minsize, -1));
-		}
-		else {
-			project_title->set_custom_maximum_size(Vector2(title_maxsize, -1));
-		}
-		project_title->set_custom_minimum_size(Vector2(title_minsize, 0));
-		project_title->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	}
-}
-
-void ProjectListItemControl::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 struct ProjectListComparator
 {
 	ProjectList::FilterOption order_option = ProjectList::FilterOption::EDIT_DATE;
@@ -410,18 +236,8 @@ void ProjectList::_scan_finished()
 	}
 }
 
-<<<<<<< HEAD
-// Initialization & loading.
-
 void ProjectList::save_config() { _config.save(_config_path); }
 
-// Load project data from p_property_key and return it in a ProjectList::Item.
-// p_favorite is passed directly into the Item.
-
-=======
-void ProjectList::save_config() { _config.save(_config_path); }
-
->>>>>>> fix/remove-object
 void ProjectList::_update_icons_async()
 {
 	_icon_load_index = 0;
@@ -451,81 +267,6 @@ void ProjectList::_load_project_icon(int p_index)
 	item.control->set_project_icon(icon);
 }
 
-<<<<<<< HEAD
-void ProjectList::sort_projects()
-{
-	SortArray<Item, ProjectListComparator> sorter;
-	sorter.compare.order_option = _order_option;
-	sorter.sort(_projects.ptrw(), _projects.size());
-
-	String search_term;
-	PackedStringArray tags;
-
-	if (!_search_term.is_empty()) {
-		PackedStringArray search_parts = _search_term.split(" ");
-		if (search_parts.size() > 1 || search_parts[0].begins_with("tag:")) {
-			PackedStringArray remaining;
-			for (const String& part : search_parts) {
-				if (part.begins_with("tag:")) {
-					tags.push_back(part.get_slicec(':', 1));
-				}
-				else {
-					remaining.append(part);
-				}
-			}
-			search_term = String(" ").join(remaining); // Search term without tags.
-		}
-		else {
-			search_term = _search_term;
-		}
-	}
-
-	for (int i = 0; i < _projects.size(); ++i) {
-		Item& item = _projects.write[i];
-
-		bool item_visible = true;
-		if (!_search_term.is_empty()) {
-			String search_path;
-			if (search_term.contains_char('/')) {
-				// Search path will match the whole path
-				search_path = item.path;
-			}
-			else {
-				// Search path will only match the last path component to make searching more strict
-				search_path = item.path.get_file();
-			}
-
-			bool missing_tags = false;
-			for (const String& tag : tags) {
-				if (!item.tags.has(tag)) {
-					missing_tags = true;
-					break;
-				}
-			}
-
-			// When searching, display projects whose name or path contain the search term and whose
-			// tags match the searched tags.
-			item_visible = !missing_tags &&
-						   (search_term.is_empty() || item.project_name.containsn(search_term) ||
-							   search_path.containsn(search_term));
-		}
-
-		item.control->set_visible(item_visible);
-	}
-
-	for (int i = 0; i < _projects.size(); ++i) {
-		Item& item = _projects.write[i];
-		item.control->get_parent()->move_child(item.control, i);
-	}
-
-	// Rewind the coroutine because order of projects changed
-	_update_icons_async();
-	update_dock_menu();
-	queue_accessibility_update();
-}
-
-=======
->>>>>>> fix/remove-object
 int ProjectList::get_project_count() const { return _projects.size(); }
 
 void ProjectList::find_projects(const String& p_path)
@@ -591,18 +332,6 @@ void ProjectList::ensure_project_visible(int p_index)
 	item.control->grab_focus(true);
 }
 
-<<<<<<< HEAD
-void ProjectList::_update_project_control_translatable_fields(const Item& item)
-{
-	ProjectListItemControl* control = item.control;
-
-	control->set_project_title(!item.missing ? item.project_name : TTR("Missing Project"));
-	control->set_last_edited_info(item.get_last_edited_string());
-	control->set_unsupported_features(item.unsupported_features.duplicate());
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectList::_toggle_project(int p_index)
 {
 	// This methods adds to the selection or removes from the
@@ -644,38 +373,7 @@ void ProjectList::_on_explore_pressed(const String& p_path)
 	OS::get_singleton()->shell_show_in_file_manager(p_path, true);
 }
 
-<<<<<<< HEAD
-void ProjectList::_update_menu_icons()
-{
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_EDIT), get_editor_theme_icon("Edit"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_VERBOSE),
-		get_editor_theme_icon("Notification"));
-	project_context_menu->set_item_icon(project_context_menu->get_item_index(MENU_EDIT_RECOVERY),
-		get_editor_theme_icon("NodeWarning"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RUN), get_editor_theme_icon("Play"));
-#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_SHOW_IN_FILE_MANAGER),
-		get_editor_theme_icon("Load"));
-#endif
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_COPY_PATH), get_editor_theme_icon("ActionCopy"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_RENAME), get_editor_theme_icon("Rename"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_MANAGE_TAGS), get_editor_theme_icon("Script"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_DUPLICATE), get_editor_theme_icon("Duplicate"));
-	project_context_menu->set_item_icon(
-		project_context_menu->get_item_index(MENU_REMOVE), get_editor_theme_icon("Remove"));
-}
-
-// Project list selection.
-=======
 void ProjectList::_update_menu_icons() {}
->>>>>>> fix/remove-object
 
 void ProjectList::_clear_project_selection()
 {
@@ -898,13 +596,6 @@ void ProjectList::add_search_tag(const String& p_tag)
 	sort_projects();
 }
 
-<<<<<<< HEAD
-// Object methods.
-
-void ProjectList::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 ProjectList::ProjectList()
 {
 	set_follow_focus(true);

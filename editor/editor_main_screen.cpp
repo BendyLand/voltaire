@@ -37,11 +37,8 @@
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 
-<<<<<<< HEAD
-=======
 void EditorMainScreen::select(int p_index) {}
 
->>>>>>> fix/remove-object
 void EditorMainScreen::_notification(int p_what)
 {
 	switch (p_what) {
@@ -65,41 +62,11 @@ void EditorMainScreen::_notification(int p_what)
 
 		select(-1);
 	} break;
-<<<<<<< HEAD
-	case NOTIFICATION_THEME_CHANGED: {
-		for (int i = 0; i < buttons.size(); i++) {
-			Button* tb = buttons[i];
-			EditorPlugin* p_editor = editor_table[i];
-			Ref<Texture2D> icon = p_editor->get_plugin_icon();
-
-			if (icon.is_valid()) {
-				tb->set_button_icon(icon);
-			}
-			else if (has_theme_icon(p_editor->get_plugin_name(), EditorStringName(EditorIcons))) {
-				tb->set_button_icon(
-					get_theme_icon(p_editor->get_plugin_name(), EditorStringName(EditorIcons)));
-			}
-		}
-	} break;
-=======
->>>>>>> fix/remove-object
 	}
 }
 
 void EditorMainScreen::set_button_container(HBoxContainer* p_button_hb) { button_hb = p_button_hb; }
 
-<<<<<<< HEAD
-void EditorMainScreen::set_button_enabled(int p_index, bool p_enabled)
-{
-	ERR_FAIL_INDEX(p_index, buttons.size());
-	buttons[p_index]->set_visible(p_enabled);
-	if (!p_enabled && buttons[p_index]->is_pressed()) {
-		select(EDITOR_2D);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorMainScreen::is_button_enabled(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, buttons.size(), false);

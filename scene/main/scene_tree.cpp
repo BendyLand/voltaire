@@ -852,8 +852,6 @@ void SceneTree::add_idle_callback(IdleCallback p_callback)
 
 void SceneTree::set_disable_node_threading(bool p_disable) { node_threading_disabled = p_disable; }
 
-<<<<<<< HEAD
-=======
 void SceneTree::tree_changed() {}
 
 void SceneTreeTimer::release_connections() {}
@@ -878,5 +876,4 @@ bool SceneTree::physics_process(double p_time) { return false; }
 
 bool SceneTree::process(double p_time) { return false; }
 
->>>>>>> fix/remove-object
 

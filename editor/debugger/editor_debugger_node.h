@@ -136,10 +136,6 @@ protected:
 	void _debugger_wants_stop(int p_id);
 	void _remote_tree_select_requested(const TypedArray<int64_t>& p_ids, int p_debugger);
 	void _remote_tree_clear_selection_requested(int p_debugger);
-<<<<<<< HEAD
-	void _remote_tree_updated(int p_debugger);
-=======
->>>>>>> fix/remove-object
 	void _remote_objects_updated(EditorDebuggerRemoteObjects* p_objs, int p_debugger);
 	void _remote_objects_requested(const TypedArray<uint64_t>& p_ids, int p_debugger);
 	void _remote_selection_cleared(int p_debugger);

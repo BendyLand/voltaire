@@ -87,23 +87,12 @@ protected:
 
 	virtual void _add_menu_options(PopupMenu* p_menu) override;
 	virtual void _menu_callback(int p_idx) override;
-<<<<<<< HEAD
-	virtual void _add_menu_options(PopupMenu* p_menu) override;
-=======
->>>>>>> fix/remove-object
 
 	void _validate_textures();
 	void _mask_img_path_line_edit_text_changed(const String& p_text);
 	void _direction_img_path_line_edit_text_changed(const String& p_text);
-<<<<<<< HEAD
-	void _emission_mask_mode_item_changed(int p_idx) const;
 	void _emission_direction_mode_item_changed(int p_idx);
 	void _browse_mask_texture_pressed();
-	void _browse_direction_texture_pressed();
-=======
-	void _emission_direction_mode_item_changed(int p_idx);
-	void _browse_mask_texture_pressed();
->>>>>>> fix/remove-object
 	void _file_selected(const String& p_file);
 	void _process_emission_masks(PackedVector2Array& r_valid_positions,
 		PackedVector2Array& r_valid_normals, PackedByteArray& r_valid_colors,
@@ -146,11 +135,6 @@ public:
 class CPUParticles2DEditorPlugin : public Particles2DEditorPlugin
 {
 protected:
-<<<<<<< HEAD
-	Node* _convert_particles() override;
-
-=======
->>>>>>> fix/remove-object
 	void _generate_emission_mask() override;
 
 	Node* _convert_particles() override;

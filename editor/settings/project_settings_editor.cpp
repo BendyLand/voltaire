@@ -49,17 +49,6 @@ void ProjectSettingsEditor::connect_filesystem_dock_signals(FileSystemDock* p_fs
 	group_settings->connect_filesystem_dock_signals(p_fs_dock);
 }
 
-<<<<<<< HEAD
-void ProjectSettingsEditor::popup_for_override(const String& p_override)
-{
-	popup_project_settings();
-	tab_container->set_current_tab(0);
-	general_settings_inspector->set_current_section(
-		ProjectSettings::EDITOR_SETTING_OVERRIDE_PREFIX + p_override.get_slicec('/', 0));
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectSettingsEditor::set_filter(const String& p_filter) { search_box->set_text(p_filter); }
 
 void ProjectSettingsEditor::_save()
@@ -234,27 +223,7 @@ void ProjectSettingsEditor::_focus_current_path_box()
 }
 
 
-<<<<<<< HEAD
-void ProjectSettingsEditor::_editor_restart_request() { restart_container->show(); }
-
-void ProjectSettingsEditor::_editor_restart_close() { restart_container->hide(); }
-
-void ProjectSettingsEditor::_update_theme()
-{
-	add_button->set_button_icon(get_editor_theme_icon(SNAME("Add")));
-	del_button->set_button_icon(get_editor_theme_icon(SNAME("Remove")));
-	search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-	restart_close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	restart_container->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-	restart_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
-	restart_label->add_theme_color_override(SceneStringName(font_color),
-		get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-}
-
-=======
 
 void ProjectSettingsEditor::_update_property_box() {}
->>>>>>> fix/remove-object
 
 void ProjectSettingsEditor::popup_project_settings(bool) {}

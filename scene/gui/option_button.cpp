@@ -103,22 +103,7 @@ void OptionButton::set_item_text(int p_idx, const String& p_text)
 
 void OptionButton::set_item_id(int p_idx, int p_id) {}
 
-<<<<<<< HEAD
-	if (current == p_idx) {
-		set_button_icon(p_icon);
-	}
-	_queue_update_size_cache();
-}
-
-void OptionButton::set_item_id(int p_idx, int p_id) { popup->set_item_id(p_idx, p_id); }
-
-void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip)
-{
-	popup->set_item_tooltip(p_idx, p_tooltip);
-}
-=======
 void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip) {}
->>>>>>> fix/remove-object
 
 void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
 {
@@ -234,20 +219,7 @@ int OptionButton::get_search_bar_fuzzy_search_max_misses() const
 	return popup->get_search_bar_fuzzy_search_max_misses();
 }
 
-<<<<<<< HEAD
-void OptionButton::add_separator(const String& p_text) { popup->add_separator(p_text); }
-
-void OptionButton::clear()
-{
-	popup->clear();
-	set_text("");
-	set_button_icon(Ref<Texture2D>());
-	current = NONE_SELECTED;
-	_refresh_size_cache();
-}
-=======
 void OptionButton::add_separator(const String& p_text) {}
->>>>>>> fix/remove-object
 
 void OptionButton::_select_int(int p_which)
 {
@@ -263,23 +235,6 @@ void OptionButton::_select_int(int p_which)
 	_select(p_which, false);
 }
 
-<<<<<<< HEAD
-void OptionButton::_refresh_size_cache()
-{
-	cache_refresh_pending = false;
-
-	if (fit_to_longest_item) {
-		_cached_size = theme_cache.normal->get_minimum_size();
-		for (int i = 0; i < get_item_count(); i++) {
-			_cached_size = _cached_size.max(
-				get_minimum_size_for_text_and_icon(popup->get_item_xl_text(i), get_item_icon(i)));
-		}
-	}
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 void OptionButton::select(int p_idx) { _select(p_idx, false); }
 
 int OptionButton::get_selected() const { return current; }
@@ -338,9 +293,6 @@ PackedStringArray OptionButton::get_configuration_warnings() const
 }
 #endif
 
-<<<<<<< HEAD
-OptionButton::~OptionButton() {}
-=======
 void OptionButton::_select(int p_which, bool p_emit) {}
 
 void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
@@ -352,6 +304,5 @@ void OptionButton::_refresh_size_cache() {}
 void OptionButton::_queue_update_size_cache() {}
 
 String OptionButton::_get_translated_text(const String& p_text) const { return p_text; }
->>>>>>> fix/remove-object
 
 

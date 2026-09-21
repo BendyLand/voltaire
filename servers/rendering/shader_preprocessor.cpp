@@ -1367,14 +1367,8 @@ void ShaderPreprocessor::get_pragma_list(List<String>* r_pragmas)
 	r_pragmas->push_back("disable_preprocessor");
 }
 
-<<<<<<< HEAD
-ShaderPreprocessor::ShaderPreprocessor() {}
-
-ShaderPreprocessor::~ShaderPreprocessor() {}
-=======
 void ShaderPreprocessor::process_if(ShaderPreprocessor::Tokenizer* p_tokenizer) {}
 
 void ShaderPreprocessor::process_elif(ShaderPreprocessor::Tokenizer* p_tokenizer) {}
->>>>>>> fix/remove-object
 
 

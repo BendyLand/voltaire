@@ -48,25 +48,6 @@
 #include "scene/main/scene_tree.h"
 #include "tile_map_layer_editor.h"
 
-<<<<<<< HEAD
-void SwitchSeparator::set_vertical(bool p_vertical)
-{
-	h_separator->set_visible(p_vertical);
-	v_separator->set_visible(!p_vertical);
-}
-
-SwitchSeparator::SwitchSeparator()
-{
-	h_separator = memnew(HSeparator);
-	h_separator->hide();
-	add_child(h_separator);
-
-	v_separator = memnew(VSeparator);
-	add_child(v_separator);
-}
-
-=======
->>>>>>> fix/remove-object
 void TileMapLayerSubEditorPlugin::_add_to_output_if_tile_changed(
 	HashMap<Vector2i, TileMapCell>& p_output, const TileMapLayer* p_layer, Vector2i p_coords,
 	const TileMapCell& p_cell)
@@ -183,36 +164,6 @@ void TileMapLayerEditorTilesPlugin::_scenes_list_lmb_empty_clicked(
 	_update_selection_pattern_from_tileset_tiles_selection();
 }
 
-<<<<<<< HEAD
-void TileMapLayerEditorTilesPlugin::_update_theme()
-{
-	source_sort_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("Sort")));
-	select_tool_button->set_button_icon(
-		tiles_bottom_panel->get_editor_theme_icon(SNAME("ToolSelect")));
-	paint_tool_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("Edit")));
-	line_tool_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("Line")));
-	rect_tool_button->set_button_icon(
-		tiles_bottom_panel->get_editor_theme_icon(SNAME("Rectangle")));
-	bucket_tool_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("Bucket")));
-
-	picker_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("ColorPick")));
-	erase_button->set_button_icon(tiles_bottom_panel->get_editor_theme_icon(SNAME("Eraser")));
-	random_tile_toggle->set_button_icon(
-		tiles_bottom_panel->get_editor_theme_icon(SNAME("RandomNumberGenerator")));
-
-	transform_button_rotate_left->set_button_icon(
-		tiles_bottom_panel->get_editor_theme_icon("RotateLeft"));
-	transform_button_rotate_right->set_button_icon(
-		tiles_bottom_panel->get_editor_theme_icon("RotateRight"));
-	transform_button_flip_h->set_button_icon(tiles_bottom_panel->get_editor_theme_icon("MirrorX"));
-	transform_button_flip_v->set_button_icon(tiles_bottom_panel->get_editor_theme_icon("MirrorY"));
-
-	missing_atlas_texture_icon = tiles_bottom_panel->get_editor_theme_icon(SNAME("TileSet"));
-	_update_tile_set_sources_list();
-}
-
-=======
->>>>>>> fix/remove-object
 void TileMapLayerEditorTilesPlugin::_mouse_exited_viewport()
 {
 	has_mouse = false;
@@ -326,57 +277,6 @@ void TileMapLayerEditorTilesPlugin::patterns_item_list_empty_clicked(
 	}
 }
 
-<<<<<<< HEAD
-void TileMapLayerEditorTilesPlugin::_tile_atlas_control_mouse_exited()
-{
-	hovered_tile.source_id = TileSet::INVALID_SOURCE;
-	hovered_tile.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-	hovered_tile.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-	tile_atlas_control->queue_redraw();
-}
-
-void TileMapLayerEditorTilesPlugin::_tile_alternatives_control_mouse_exited()
-{
-	hovered_tile.source_id = TileSet::INVALID_SOURCE;
-	hovered_tile.set_atlas_coords(TileSetSource::INVALID_ATLAS_COORDS);
-	hovered_tile.alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE;
-	alternative_tiles_control->queue_redraw();
-}
-
-void TileMapLayerEditorTilesPlugin::_bind_methods() {}
-
-void TileMapLayerEditorTilesPlugin::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DOCK_LAYOUT_VERTICAL);
-	atlas_sources_split_container->set_vertical(is_vertical);
-	atlas_sources_split_container->move_child(split_container_left_side, is_vertical ? -1 : 0);
-	split_container_left_side->set_vertical(!is_vertical);
-
-	tilemap_tiles_tools_buttons->set_vertical(is_vertical);
-	transform_toolbar->set_vertical(is_vertical);
-	tools_settings->set_vertical(is_vertical);
-	tools_settings_vsep->set_vertical(is_vertical);
-	transform_separator->set_vertical(is_vertical);
-
-	wide_toolbar->set_visible(is_vertical);
-	bucket_contiguous_checkbox->reparent(is_vertical ? wide_toolbar : tools_settings);
-	scatter_controls_container->reparent(is_vertical ? wide_toolbar : tools_settings);
-
-	if (p_layout == EditorDock::DOCK_LAYOUT_FLOATING ||
-		(!is_vertical && p_slot != EditorDock::DOCK_SLOT_BOTTOM)) {
-		patterns_mc->set_theme_type_variation("NoBorderHorizontalBottom");
-		patterns_item_list->set_scroll_hint_mode(ItemList::SCROLL_HINT_MODE_TOP);
-	}
-	else {
-		patterns_mc->set_theme_type_variation(is_vertical ? "" : "NoBorderHorizontal");
-		patterns_item_list->set_scroll_hint_mode(
-			is_vertical ? ItemList::SCROLL_HINT_MODE_DISABLED : ItemList::SCROLL_HINT_MODE_BOTH);
-	}
-	patterns_item_list->set_theme_type_variation(is_vertical ? "ItemListSecondary" : "");
-}
-
-=======
->>>>>>> fix/remove-object
 void TileMapLayerEditorTerrainsPlugin::tile_set_changed()
 {
 	_update_terrains_cache();
@@ -400,192 +300,6 @@ void TileMapLayerEditorTerrainsPlugin::_mouse_exited_viewport()
 	CanvasItemEditor::get_singleton()->update_viewport();
 }
 
-<<<<<<< HEAD
-bool TileMapLayerEditorTerrainsPlugin::forward_canvas_gui_input(const Ref<InputEvent>& p_event)
-{
-	if (!main_box_container->is_visible_in_tree()) {
-		// If the bottom editor is not visible, we ignore inputs.
-		return false;
-	}
-
-	if (CanvasItemEditor::get_singleton()->get_current_tool() != CanvasItemEditor::TOOL_SELECT) {
-		return false;
-	}
-
-	TileMapLayer* edited_layer = _get_edited_layer();
-	if (!edited_layer) {
-		return false;
-	}
-
-	Ref<TileSet> tile_set = edited_layer->get_tile_set();
-	if (tile_set.is_null()) {
-		return false;
-	}
-
-	_update_selection();
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_pressed() && !k->is_echo()) {
-		for (BaseButton* b : viewport_shortcut_buttons) {
-			if (b->get_shortcut().is_valid() && b->get_shortcut()->matches_event(p_event)) {
-				b->set_pressed(b->get_button_group().is_valid() || !b->is_pressed());
-				return true;
-			}
-		}
-	}
-
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		has_mouse = true;
-		Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() *
-							edited_layer->get_global_transform_with_canvas();
-		Vector2 mpos = xform.affine_inverse().xform(mm->get_position());
-
-		switch (drag_type) {
-		case DRAG_TYPE_PAINT: {
-			if (selected_terrain_set >= 0) {
-				HashMap<Vector2i, TileMapCell> to_draw =
-					_draw_line(tile_set->local_to_map(drag_last_mouse_pos),
-						tile_set->local_to_map(mpos), drag_erasing);
-				for (const KeyValue<Vector2i, TileMapCell>& E : to_draw) {
-					if (!drag_modified.has(E.key)) {
-						drag_modified[E.key] = edited_layer->get_cell(E.key);
-					}
-					edited_layer->set_cell(E.key, E.value.source_id, E.value.get_atlas_coords(),
-						E.value.alternative_tile);
-				}
-			}
-		} break;
-		default:
-			break;
-		}
-		drag_last_mouse_pos = mpos;
-		CanvasItemEditor::get_singleton()->update_viewport();
-
-		return true;
-	}
-
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid()) {
-		has_mouse = true;
-		Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() *
-							edited_layer->get_global_transform_with_canvas();
-		Vector2 mpos = xform.affine_inverse().xform(mb->get_position());
-
-		if (mb->get_button_index() == MouseButton::LEFT ||
-			mb->get_button_index() == MouseButton::RIGHT) {
-			if (mb->is_pressed()) {
-				// Pressed
-				if (erase_button->is_pressed() || mb->get_button_index() == MouseButton::RIGHT) {
-					drag_erasing = true;
-				}
-
-				if (picker_button->is_pressed()) {
-					drag_type = DRAG_TYPE_PICK;
-				}
-				else {
-					// Paint otherwise.
-					const BaseButton* pressed_tool = tool_buttons_group->get_pressed_button();
-					if (pressed_tool == paint_tool_button &&
-						!Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL) &&
-						!Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
-						if (selected_terrain_set < 0 || selected_terrain < 0 ||
-							(selected_type == SELECTED_TYPE_PATTERN &&
-								!selected_terrains_pattern.is_valid())) {
-							return true;
-						}
-
-						drag_type = DRAG_TYPE_PAINT;
-						drag_start_mouse_pos = mpos;
-
-						drag_modified.clear();
-						Vector2i cell = tile_set->local_to_map(mpos);
-						HashMap<Vector2i, TileMapCell> to_draw =
-							_draw_line(cell, cell, drag_erasing);
-						for (const KeyValue<Vector2i, TileMapCell>& E : to_draw) {
-							drag_modified[E.key] = edited_layer->get_cell(E.key);
-							edited_layer->set_cell(E.key, E.value.source_id,
-								E.value.get_atlas_coords(), E.value.alternative_tile);
-						}
-					}
-					else if (pressed_tool == line_tool_button ||
-							   (pressed_tool == paint_tool_button &&
-								   Input::get_singleton()->is_key_pressed(Key::SHIFT) &&
-								   !Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL))) {
-						if (selected_terrain_set < 0 || selected_terrain < 0 ||
-							(selected_type == SELECTED_TYPE_PATTERN &&
-								!selected_terrains_pattern.is_valid())) {
-							return true;
-						}
-						drag_type = DRAG_TYPE_LINE;
-						drag_start_mouse_pos = mpos;
-						drag_modified.clear();
-					}
-					else if (pressed_tool == rect_tool_button ||
-							   (pressed_tool == paint_tool_button &&
-								   Input::get_singleton()->is_key_pressed(Key::SHIFT) &&
-								   Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL))) {
-						if (selected_terrain_set < 0 || selected_terrain < 0 ||
-							(selected_type == SELECTED_TYPE_PATTERN &&
-								!selected_terrains_pattern.is_valid())) {
-							return true;
-						}
-						drag_type = DRAG_TYPE_RECT;
-						drag_start_mouse_pos = mpos;
-						drag_modified.clear();
-					}
-					else if (pressed_tool == bucket_tool_button) {
-						if (selected_terrain_set < 0 || selected_terrain < 0 ||
-							(selected_type == SELECTED_TYPE_PATTERN &&
-								!selected_terrains_pattern.is_valid())) {
-							return true;
-						}
-						drag_type = DRAG_TYPE_BUCKET;
-						drag_start_mouse_pos = mpos;
-						drag_modified.clear();
-						Vector<Vector2i> line = TileMapLayerEditor::get_line(edited_layer,
-							tile_set->local_to_map(drag_last_mouse_pos),
-							tile_set->local_to_map(mpos));
-						for (int i = 0; i < line.size(); i++) {
-							if (!drag_modified.has(line[i])) {
-								HashMap<Vector2i, TileMapCell> to_draw = _draw_bucket_fill(line[i],
-									bucket_contiguous_checkbox->is_pressed(), drag_erasing);
-								for (const KeyValue<Vector2i, TileMapCell>& E : to_draw) {
-									if (!drag_erasing &&
-										E.value.source_id == TileSet::INVALID_SOURCE) {
-										continue;
-									}
-									Vector2i coords = E.key;
-									if (!drag_modified.has(coords)) {
-										drag_modified.insert(
-											coords, edited_layer->get_cell(coords));
-									}
-									edited_layer->set_cell(coords, E.value.source_id,
-										E.value.get_atlas_coords(), E.value.alternative_tile);
-								}
-							}
-						}
-					}
-				}
-			}
-			else {
-				// Released
-				_stop_dragging();
-				drag_erasing = false;
-			}
-
-			CanvasItemEditor::get_singleton()->update_viewport();
-
-			return true;
-		}
-		drag_last_mouse_pos = mpos;
-	}
-
-	return false;
-}
-
-=======
->>>>>>> fix/remove-object
 void TileMapLayerEditorTerrainsPlugin::_update_terrains_cache()
 {
 	const TileMapLayer* edited_layer = _get_edited_layer();
@@ -662,44 +376,8 @@ void TileMapLayerEditorTerrainsPlugin::_update_terrains_cache()
 	}
 }
 
-<<<<<<< HEAD
-void TileMapLayerEditorTerrainsPlugin::_update_theme()
-{
-	paint_tool_button->set_button_icon(main_box_container->get_editor_theme_icon(SNAME("Edit")));
-	line_tool_button->set_button_icon(main_box_container->get_editor_theme_icon(SNAME("Line")));
-	rect_tool_button->set_button_icon(
-		main_box_container->get_editor_theme_icon(SNAME("Rectangle")));
-	bucket_tool_button->set_button_icon(main_box_container->get_editor_theme_icon(SNAME("Bucket")));
-
-	picker_button->set_button_icon(main_box_container->get_editor_theme_icon(SNAME("ColorPick")));
-	erase_button->set_button_icon(main_box_container->get_editor_theme_icon(SNAME("Eraser")));
-
-	_update_tiles_list();
-}
-
 void TileMapLayerEditorTerrainsPlugin::_update_translation() { _update_terrains_tree(); }
 
-void TileMapLayerEditorTerrainsPlugin::update_layout(EditorDock::DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DockLayout::DOCK_LAYOUT_VERTICAL);
-	// Main Panel.
-	main_box_container->set_vertical(is_vertical);
-	tilemap_tab_terrains->move_child(terrains_tree, is_vertical ? 1 : 0);
-	tilemap_tab_terrains->set_vertical(is_vertical);
-
-	// Toolbar.
-	tilemap_tiles_tools_buttons->set_vertical(is_vertical);
-	tools_settings->set_vertical(is_vertical);
-	tools_settings_vsep->set_vertical(is_vertical);
-
-	wide_toolbar->set_visible(is_vertical);
-	bucket_contiguous_checkbox->reparent(is_vertical ? wide_toolbar : tools_settings);
-}
-
-=======
-void TileMapLayerEditorTerrainsPlugin::_update_translation() { _update_terrains_tree(); }
-
->>>>>>> fix/remove-object
 void TileMapLayerEditor::_update_tile_map_layers_in_scene_list_cache()
 {
 	if (!layers_in_scene_list_cache_needs_update) {
@@ -724,52 +402,6 @@ void TileMapLayerEditor::_select_previous_layer_pressed()
 
 void TileMapLayerEditor::_select_next_layer_pressed() { _layers_select_next_or_previous(true); }
 
-<<<<<<< HEAD
-void TileMapLayerEditor::_update_bottom_panel()
-{
-	const TileMapLayer* edited_layer = _get_edited_layer();
-	Ref<TileSet> tile_set;
-	if (edited_layer) {
-		tile_set = edited_layer->get_tile_set();
-	}
-
-	// Update state labels.
-	if (is_multi_node_edit) {
-		cant_edit_label->set_text(TTRC("Can't edit multiple layers at once."));
-		cant_edit_label->show();
-	}
-	else if (!edited_layer) {
-		cant_edit_label->set_text(TTRC("The selected TileMap has no layer to edit."));
-		cant_edit_label->show();
-	}
-	else if (!edited_layer->is_enabled() || !edited_layer->is_visible_in_tree()) {
-		cant_edit_label->set_text(TTRC("The edited layer is disabled or invisible"));
-		cant_edit_label->show();
-	}
-	else if (tile_set.is_null()) {
-		cant_edit_label->set_text(
-			TTRC("The edited TileMap or TileMapLayer node has no TileSet resource.\nCreate or load "
-				 "a TileSet resource in the Tile Set property in the inspector."));
-		cant_edit_label->show();
-	}
-	else {
-		cant_edit_label->hide();
-	}
-
-	// Update tabs visibility.
-	for (int i = 0; i < int(tabs_data.size()); i++) {
-		TileMapLayerSubEditorPlugin::TabData& tab_data = tabs_data[i];
-		if (i == tabs_bar->get_current_tab()) {
-			tab_data.panel->set_visible(!cant_edit_label->is_visible());
-		}
-		else {
-			tab_data.panel->hide();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<Vector2i> TileMapLayerEditor::get_line(
 	const TileMapLayer* p_tile_map_layer, Vector2i p_from_cell, Vector2i p_to_cell)
 {
@@ -905,42 +537,6 @@ void TileMapLayerEditor::_update_layer_selector_layout(bool p_is_vertical)
 	}
 }
 
-<<<<<<< HEAD
-void TileMapLayerEditor::update_layout(DockLayout p_layout, int p_slot)
-{
-	bool is_vertical = (p_layout == EditorDock::DockLayout::DOCK_LAYOUT_VERTICAL);
-	tile_map_toolbar->set_vertical(is_vertical);
-	layer_selector_separator->set_vertical(is_vertical);
-	tile_map_toolbar->set_h_size_flags(is_vertical ? SIZE_SHRINK_BEGIN : SIZE_EXPAND_FILL);
-	tile_map_toolbar->set_v_size_flags(is_vertical ? SIZE_EXPAND_FILL : SIZE_SHRINK_BEGIN);
-
-	main_box_container->move_child(padding_control, is_vertical ? 0 : 2);
-	if (is_vertical) {
-		main_box_container->remove_theme_constant_override(SNAME("h_separation"));
-	}
-	else {
-		main_box_container->add_theme_constant_override(SNAME("h_separation"), 0);
-	}
-
-	if (is_vertical) {
-		tabs_panel->reparent(tile_map_wide_toolbar);
-		tile_map_wide_toolbar->move_child(tabs_panel, 0);
-	}
-	else {
-		tabs_panel->reparent(tile_map_toolbar);
-		tile_map_toolbar->move_child(tabs_panel, 0);
-	}
-
-	_update_layer_selector_layout(is_vertical);
-
-	// Propagate layout change to sub plugins
-	for (TileMapLayerSubEditorPlugin* tab_plugin : tabs_plugins) {
-		tab_plugin->update_layout(p_layout, p_slot);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 TileMapLayerEditor::~TileMapLayerEditor()
 {
 	for (int i = 0; i < tile_map_editor_plugins.size(); i++) {

@@ -87,10 +87,6 @@ private:
 	String current_message;
 
 	bool _can_check_updates() const;
-<<<<<<< HEAD
-	void _check_update();
-=======
->>>>>>> fix/remove-object
 	void _http_request_completed(int p_result, int p_response_code,
 		const PackedStringArray& p_headers, const PackedByteArray& p_body);
 

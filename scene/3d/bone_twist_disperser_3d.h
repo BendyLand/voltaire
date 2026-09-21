@@ -94,10 +94,6 @@ protected:
 
 	virtual void _set_active(bool p_active) override;
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-<<<<<<< HEAD
-	virtual void _validate_bone_names() override;
-=======
->>>>>>> fix/remove-object
 
 	void _make_all_joints_dirty();
 
@@ -114,17 +110,9 @@ public:
 	void clear_settings();
 
 	// Setting.
-<<<<<<< HEAD
-	void set_root_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_root_bone_name(int p_index) const;
 	int get_root_bone(int p_index) const;
 
-<<<<<<< HEAD
-	void set_end_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;

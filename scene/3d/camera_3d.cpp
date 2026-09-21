@@ -111,27 +111,6 @@ void Camera3D::fti_update_servers_xform()
 	Node3D::fti_update_servers_xform();
 }
 
-<<<<<<< HEAD
-void Camera3D::_update_camera_mode()
-{
-	force_change = true;
-	switch (mode) {
-	case PROJECTION_PERSPECTIVE: {
-		set_perspective(fov, _near, _far);
-
-	} break;
-	case PROJECTION_ORTHOGONAL: {
-		set_orthogonal(size, _near, _far);
-	} break;
-	case PROJECTION_FRUSTUM: {
-		set_frustum(size, frustum_offset, _near, _far);
-	} break;
-	}
-	fti_notify_node_changed(false);
-}
-
-=======
->>>>>>> fix/remove-object
 void Camera3D::_update_camera()
 {
 	if (!is_inside_tree()) {
@@ -211,63 +190,6 @@ Projection Camera3D::get_camera_projection() const
 	return _get_camera_projection(_near);
 }
 
-<<<<<<< HEAD
-void Camera3D::set_perspective(real_t p_fovy_degrees, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && fov == p_fovy_degrees && p_z_near == _near && p_z_far == _far &&
-		mode == PROJECTION_PERSPECTIVE) {
-		return;
-	}
-
-	fov = p_fovy_degrees;
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_PERSPECTIVE;
-
-	RenderingServer::get_singleton()->camera_set_perspective(camera, fov, _near, _far);
-	update_gizmos();
-	force_change = false;
-}
-
-void Camera3D::set_orthogonal(real_t p_size, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && size == p_size && p_z_near == _near && p_z_far == _far &&
-		mode == PROJECTION_ORTHOGONAL) {
-		return;
-	}
-
-	size = p_size;
-
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_ORTHOGONAL;
-	force_change = false;
-
-	RenderingServer::get_singleton()->camera_set_orthogonal(camera, size, _near, _far);
-	update_gizmos();
-}
-
-void Camera3D::set_frustum(real_t p_size, Vector2 p_offset, real_t p_z_near, real_t p_z_far)
-{
-	if (!force_change && size == p_size && frustum_offset == p_offset && p_z_near == _near &&
-		p_z_far == _far && mode == PROJECTION_FRUSTUM) {
-		return;
-	}
-
-	size = p_size;
-	frustum_offset = p_offset;
-
-	_near = p_z_near;
-	_far = p_z_far;
-	mode = PROJECTION_FRUSTUM;
-	force_change = false;
-
-	RenderingServer::get_singleton()->camera_set_frustum(camera, size, frustum_offset, _near, _far);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 RID Camera3D::get_camera() const { return camera; }
 
 void Camera3D::make_current()
@@ -453,21 +375,6 @@ Ref<Environment> Camera3D::get_environment() const { return environment; }
 
 Ref<CameraAttributes> Camera3D::get_attributes() const { return attributes; }
 
-<<<<<<< HEAD
-void Camera3D::set_compositor(const Ref<Compositor>& p_compositor)
-{
-	compositor = p_compositor;
-	if (compositor.is_valid()) {
-		RS::get_singleton()->camera_set_compositor(camera, compositor->get_rid());
-	}
-	else {
-		RS::get_singleton()->camera_set_compositor(camera, RID());
-	}
-	_update_camera_mode();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Compositor> Camera3D::get_compositor() const { return compositor; }
 
 Camera3D::KeepAspect Camera3D::get_keep_aspect_mode() const { return keep_aspect; }
@@ -544,20 +451,6 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 	}
 }
 
-<<<<<<< HEAD
-Camera3D::Camera3D()
-{
-	camera = RenderingServer::get_singleton()->camera_create();
-	set_perspective(75.0, 0.05, 4000.0);
-	RenderingServer::get_singleton()->camera_set_cull_mask(camera, layers);
-	// active=false;
-	velocity_tracker.instantiate();
-	set_notify_transform(true);
-	set_disable_scale(true);
-}
-
-=======
->>>>>>> fix/remove-object
 Camera3D::~Camera3D()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

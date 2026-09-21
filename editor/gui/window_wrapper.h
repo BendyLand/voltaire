@@ -52,14 +52,6 @@ class WindowWrapper : public MarginContainer
 
 	Rect2 _get_default_window_rect() const;
 	Node* _get_wrapped_control_parent() const;
-<<<<<<< HEAD
-
-	void _set_window_enabled_with_rect(bool p_visible, const Rect2 p_rect);
-	void _set_window_rect(const Rect2 p_rect);
-	void _window_size_changed();
-	void _window_close_request();
-=======
->>>>>>> fix/remove-object
 
 protected:
 	void _notification(int p_what);
@@ -68,10 +60,6 @@ public:
 	void set_wrapped_control(
 		Control* p_control, const Ref<Shortcut>& p_enable_shortcut = Ref<Shortcut>());
 	Control* get_wrapped_control() const;
-<<<<<<< HEAD
-	Control* release_wrapped_control();
-=======
->>>>>>> fix/remove-object
 
 	bool is_window_available() const;
 
@@ -80,14 +68,6 @@ public:
 	Rect2i get_window_rect() const;
 	int get_window_screen() const;
 
-<<<<<<< HEAD
-	void restore_window(const Rect2i& p_rect, int p_screen = -1);
-	void restore_window_from_saved_position(
-		const Rect2 p_window_rect, int p_screen, const Rect2 p_screen_rect);
-	void enable_window_on_screen(int p_screen = -1, bool p_auto_scale = false);
-
-=======
->>>>>>> fix/remove-object
 	void set_window_title(const String& p_title);
 	void set_margins_enabled(bool p_enabled);
 	Size2 get_margins_size();
@@ -105,13 +85,6 @@ class ScreenSelect : public Button
 	Popup* popup = nullptr;
 	HBoxContainer* screen_list = nullptr;
 
-<<<<<<< HEAD
-	void _build_advanced_menu();
-
-	void _emit_screen_signal(int p_screen_idx);
-	void _handle_mouse_shortcut(const Ref<InputEvent>& p_event);
-=======
->>>>>>> fix/remove-object
 	void _show_popup();
 
 public:

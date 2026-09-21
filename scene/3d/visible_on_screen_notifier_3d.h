@@ -49,10 +49,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	void set_aabb(const AABB& p_aabb);
-=======
->>>>>>> fix/remove-object
 	virtual AABB get_aabb() const override;
 	bool is_on_screen() const;
 

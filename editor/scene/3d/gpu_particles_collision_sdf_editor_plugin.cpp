@@ -74,9 +74,6 @@ void GPUParticlesCollisionSDF3DEditorPlugin::bake_func_end()
 	tmp_progress = nullptr;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void GPUParticlesCollisionSDF3DEditorPlugin::_sdf_save_path_and_bake(String const&) {}

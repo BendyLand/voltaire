@@ -90,11 +90,6 @@ void EditorSelectionHistory::clear()
 
 EditorSelectionHistory::EditorSelectionHistory() { current_elem_idx = -1; }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 EditorPlugin* EditorData::get_editor_by_name(const String& p_name)
 {
 	for (int i = editor_plugins.size() - 1; i > -1; i--) {
@@ -113,31 +108,6 @@ void EditorData::get_editor_breakpoints(List<String>* p_breakpoints)
 	}
 }
 
-<<<<<<< HEAD
-void EditorData::notify_edited_scene_changed()
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->edited_scene_changed();
-		editor_plugins[i]->notify_scene_changed(get_edited_scene_root());
-	}
-}
-
-void EditorData::notify_resource_saved(const Ref<Resource>& p_resource)
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->notify_resource_saved(p_resource);
-	}
-}
-
-void EditorData::notify_scene_saved(const String& p_path)
-{
-	for (int i = 0; i < editor_plugins.size(); i++) {
-		editor_plugins[i]->notify_scene_saved(p_path);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorData::save_editor_external_data()
 {
 	for (int i = 0; i < editor_plugins.size(); i++) {
@@ -558,19 +528,9 @@ void EditorData::clear_script_icon_cache() { _script_icon_cache.clear(); }
 
 EditorData::~EditorData() { memdelete(undo_redo_manager); }
 
-<<<<<<< HEAD
-///////////////////////////////////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> EditorData::extension_class_get_icon(const String& p_class) const
 {
 	return Ref<Texture2D>();
 }
 
-<<<<<<< HEAD
-EditorSelection::~EditorSelection() { clear(); }
-
-=======
->>>>>>> fix/remove-object
 

@@ -39,10 +39,6 @@ private:
 	RID camera_attributes;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	float exposure_multiplier = 1.0;
 	float exposure_sensitivity = 100.0; // In ISO.
@@ -95,10 +91,6 @@ private:
 	virtual void _update_auto_exposure() override;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	// DOF blur
@@ -147,10 +139,6 @@ private:
 	virtual void _update_auto_exposure() override;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_aperture(float p_aperture);

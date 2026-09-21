@@ -109,11 +109,8 @@ PluralRules::PluralRules(int p_nplurals, const String& p_plural)
 	expr.instantiate();
 }
 
-<<<<<<< HEAD
-=======
 int PluralRules::evaluate(int p_n) const { return 0; }
 
->>>>>>> fix/remove-object
 PluralRules* PluralRules::parse(const String& p_rules)
 {
 	// `p_rules` should be in the format "nplurals=<N>; plural=<Expression>;".

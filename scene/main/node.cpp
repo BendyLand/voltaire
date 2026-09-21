@@ -28,10 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "core/templates/vector.h"
 #include "node.h"
 #include "scene/resources/environment.h"
@@ -65,42 +61,6 @@ SafeNumeric<uint64_t> Node::total_node_count{0};
 
 thread_local Node* Node::current_process_thread_group = nullptr;
 
-<<<<<<< HEAD
-void Node::_propagate_physics_interpolated(bool p_interpolated)
-{
-	switch (data.physics_interpolation_mode) {
-	case PHYSICS_INTERPOLATION_MODE_INHERIT:
-		// Keep the parent p_interpolated.
-		break;
-	case PHYSICS_INTERPOLATION_MODE_OFF: {
-		p_interpolated = false;
-	} break;
-	case PHYSICS_INTERPOLATION_MODE_ON: {
-		p_interpolated = true;
-	} break;
-	}
-
-	// No change? No need to propagate further.
-	if (data.physics_interpolated == p_interpolated) {
-		return;
-	}
-
-	data.physics_interpolated = p_interpolated;
-
-	// Allow a call to the RenderingServer etc. in derived classes.
-	_physics_interpolated_changed();
-
-	update_configuration_warnings();
-
-	data.blocked++;
-	for (KeyValue<StringName, Node*>& K : data.children) {
-		K.value->_propagate_physics_interpolated(p_interpolated);
-	}
-	data.blocked--;
-}
-
-=======
->>>>>>> fix/remove-object
 void Node::_propagate_physics_interpolation_reset_requested(bool p_requested)
 {
 	if (is_physics_interpolated()) {
@@ -257,10 +217,6 @@ bool Node::is_multiplayer_authority() const
 	return api.is_valid() && (api->get_unique_id() == data.multiplayer_authority);
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 Ref<MultiplayerAPI> Node::get_multiplayer() const
 {
 	if (!is_inside_tree()) {
@@ -269,10 +225,6 @@ Ref<MultiplayerAPI> Node::get_multiplayer() const
 	return data.tree->get_multiplayer(get_path());
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 bool Node::can_process_notification(int p_what) const
 {
 	switch (p_what) {
@@ -1000,10 +952,6 @@ Node* Node::find_child(const String& p_pattern, bool p_recursive, bool p_owned) 
 	return nullptr;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 void Node::reparent(Node* rp_parent, bool p_keep_global_transform)
 {
 	ERR_THREAD_GUARD
@@ -1691,11 +1639,6 @@ Node* Node::duplicate_from_editor(HashMap<const Node*, Node*>& r_duplimap, Node*
 
 #endif
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 static void find_owned_by(Node* p_by, Node* p_node, List<Node*>* p_owned)
 {
 	if (p_node->get_owner() == p_by) {
@@ -1778,11 +1721,8 @@ PackedStringArray Node::get_configuration_warnings() const
 	return ret;
 }
 
-<<<<<<< HEAD
-=======
 void Node::update_configuration_warnings() {}
 
->>>>>>> fix/remove-object
 void Node::set_display_folded(bool p_folded)
 {
 	ERR_THREAD_GUARD
@@ -1866,11 +1806,6 @@ RID Node::get_accessibility_element() const
 	return data.accessibility_element;
 }
 
-<<<<<<< HEAD
-void Node::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 Node::~Node()
 {
 	data.grouped.clear();
@@ -1886,8 +1821,6 @@ Node::~Node()
 #endif
 }
 
-<<<<<<< HEAD
-=======
 String Node::get_description(bool p_show_not_in_tree) const { return String(); }
 
 void Node::set_name(const StringName& p_name) { data.name = p_name; }
@@ -1970,6 +1903,5 @@ StringName Node::get_translation_domain() const { return StringName(); }
 int Node::get_persistent_signal_connection_count() const { return 0; }
 
 void Node::get_meta_list(List<StringName>* p_list) const {}
->>>>>>> fix/remove-object
 
 

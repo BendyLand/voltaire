@@ -239,10 +239,6 @@ void Light2D::set_shadow_smooth(real_t p_amount)
 
 real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
-<<<<<<< HEAD
-void Light2D::_bind_methods() {}
-=======
->>>>>>> fix/remove-object
 
 Light2D::Light2D()
 {

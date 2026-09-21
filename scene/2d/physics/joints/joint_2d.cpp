@@ -33,16 +33,6 @@
 #include "scene/2d/physics/physics_body_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-<<<<<<< HEAD
-void Joint2D::_body_exit_tree()
-{
-	_disconnect_signals();
-	_update_joint(true);
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 NodePath Joint2D::get_node_a() const { return a; }
 
 NodePath Joint2D::get_node_b() const { return b; }

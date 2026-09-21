@@ -90,23 +90,6 @@ void Texture3DEditor::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void Texture3DEditor::_texture_changed()
-{
-	if (!is_visible()) {
-		return;
-	}
-
-	setting = true;
-	_update_gui();
-	setting = false;
-
-	_update_material(true);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void Texture3DEditor::_draw_outline()
 {
 	const float outline_width = Math::round(EDSCALE);
@@ -151,9 +134,6 @@ void Texture3DEditor::init_shaders()
 
 void Texture3DEditor::finish_shaders() { texture_shader.unref(); }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void Texture3DEditor::_update_material(bool) {}

@@ -144,10 +144,6 @@ class SkeletonIK3D : public SkeletonModifier3D
 #endif // DISABLE_DEPRECATED
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	virtual void _notification(int p_what);
 
 	virtual void _process_modification(double p_delta) override;
@@ -156,15 +152,8 @@ public:
 	SkeletonIK3D();
 	virtual ~SkeletonIK3D();
 
-<<<<<<< HEAD
-	void set_root_bone(const StringName& p_root_bone);
 	StringName get_root_bone() const;
 
-	void set_tip_bone(const StringName& p_tip_bone);
-=======
-	StringName get_root_bone() const;
-
->>>>>>> fix/remove-object
 	StringName get_tip_bone() const;
 
 	void set_target_transform(const Transform3D& p_target);
@@ -189,12 +178,6 @@ public:
 	void set_max_iterations(int p_iterations);
 
 	int get_max_iterations() const { return max_iterations; }
-<<<<<<< HEAD
-
-	Skeleton3D* get_parent_skeleton() const;
-
-=======
->>>>>>> fix/remove-object
 	bool is_running();
 
 	void start(bool p_one_time = false);

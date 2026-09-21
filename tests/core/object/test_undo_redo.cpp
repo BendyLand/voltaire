@@ -32,10 +32,6 @@
 
 TEST_FORCE_LINK(test_undo_redo)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 namespace TestUndoRedo
 {
 

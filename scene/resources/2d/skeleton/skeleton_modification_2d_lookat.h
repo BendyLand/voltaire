@@ -33,13 +33,6 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-<<<<<<< HEAD
-///////////////////////////////////////
-// SkeletonModification2DLookAt
-///////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 class SkeletonModification2DLookAt : public SkeletonModification2D
 {
 private:
@@ -62,10 +55,6 @@ private:
 public:
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
 	void _execute(float p_delta) override;
-<<<<<<< HEAD
-	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
-=======
->>>>>>> fix/remove-object
 	void _draw_editor_gizmo() override;
 
 	void set_bone2d_node(const NodePath& p_target_node);

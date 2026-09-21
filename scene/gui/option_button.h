@@ -85,16 +85,6 @@ protected:
 	virtual String _get_translated_text(const String& p_text) const override;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-
-	bool _property_can_revert(const StringName& p_name) const
-	{
-		return property_helper.property_can_revert(p_name);
-	}
-
-	static void _bind_methods();
-
-=======
 
 	bool _property_can_revert(const StringName& p_name) const
 	{
@@ -102,7 +92,6 @@ protected:
 	}
 
 
->>>>>>> fix/remove-object
 public:
 	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
 	// returned by `_get_items()` ever changes, this value should be updated to reflect the new
@@ -115,10 +104,6 @@ public:
 	void set_item_text(int p_idx, const String& p_text);
 	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
 	void set_item_id(int p_idx, int p_id);
-<<<<<<< HEAD
-	void set_item_disabled(int p_idx, bool p_disabled);
-=======
->>>>>>> fix/remove-object
 	void set_item_tooltip(int p_idx, const String& p_tooltip);
 	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
 
@@ -171,11 +156,7 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 #endif
 
-<<<<<<< HEAD
-	OptionButton(const String& p_text = String());
-=======
 	OptionButton(const String& p_text = String()) : Button(p_text) {}
->>>>>>> fix/remove-object
 	~OptionButton();
 };
 

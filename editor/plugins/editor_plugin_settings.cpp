@@ -41,15 +41,6 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/tree.h"
 
-<<<<<<< HEAD
-void EditorPluginSettings::_create_clicked()
-{
-	plugin_config_dialog->config("");
-	plugin_config_dialog->popup_centered();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<String> EditorPluginSettings::_get_plugins(const String& p_dir)
 {
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
@@ -79,9 +70,6 @@ Vector<String> EditorPluginSettings::_get_plugins(const String& p_dir)
 	return plugins;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorPluginSettings::update_plugins() {}

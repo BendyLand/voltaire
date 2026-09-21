@@ -68,17 +68,10 @@ public:
 	virtual ShapeType get_type() const;
 	virtual bool is_convex() const;
 
-<<<<<<< HEAD
-	virtual float get_margin() const = 0;
-	virtual void set_margin(float p_margin) = 0;
-
-	virtual AABB get_aabb() const = 0;
-=======
 	virtual float get_margin() const;
 	virtual void set_margin(float p_margin);
 
 	virtual AABB get_aabb() const;
->>>>>>> fix/remove-object
 
 	float get_solver_bias() const;
 	void set_solver_bias(float p_bias);

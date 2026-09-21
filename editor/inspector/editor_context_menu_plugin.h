@@ -30,10 +30,6 @@
 
 #pragma once
 
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "core/types.h"
 
 class InputEvent;
@@ -105,11 +101,6 @@ public:
 	void remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
 
 	bool has_plugins_for_slot(ContextMenuSlot p_slot);
-<<<<<<< HEAD
-	void add_options_from_plugins(PopupMenu* p_popup, ContextMenuSlot p_slot,
-		const Vector<String>& p_paths, int p_id_offset = 0);
-=======
->>>>>>> fix/remove-object
 
 	static void create();
 	static void cleanup();

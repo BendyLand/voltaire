@@ -36,37 +36,6 @@
 #include "servers/rendering/rendering_server.h"
 #include "shape_cast_3d.h"
 
-<<<<<<< HEAD
-
-
-
-
-
-
-void ShapeCast3D::set_enabled(bool p_enabled)
-{
-	enabled = p_enabled;
-	update_gizmos();
-
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
-		set_physics_process_internal(p_enabled);
-	}
-	if (!p_enabled) {
-		collided = false;
-	}
-
-	if (is_inside_tree() && get_tree()->is_debugging_collisions_hint()) {
-		if (p_enabled) {
-			_update_debug_shape();
-		}
-		else {
-			_clear_debug_shape();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool ShapeCast3D::is_enabled() const { return enabled; }
 
 Vector3 ShapeCast3D::get_target_position() const { return target_position; }
@@ -112,11 +81,6 @@ int ShapeCast3D::get_collision_count() const { return result.size(); }
 
 bool ShapeCast3D::is_colliding() const { return collided; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 RID ShapeCast3D::get_collider_rid(int p_idx) const
 {
 	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), RID(), "No collider RID found.");
@@ -152,26 +116,8 @@ real_t ShapeCast3D::get_closest_collision_unsafe_fraction() const
 void ShapeCast3D::resource_changed(Ref<Resource> p_res) {}
 #endif
 
-<<<<<<< HEAD
-void ShapeCast3D::_shape_changed()
-{
-	update_gizmos();
-	bool is_editor = Engine::get_singleton()->is_editor_hint();
-	if (is_inside_tree() && (is_editor || get_tree()->is_debugging_collisions_hint())) {
-		_update_debug_shape();
-	}
-}
-
-
-
 Ref<Shape3D> ShapeCast3D::get_shape() const { return shape; }
 
-
-
-=======
-Ref<Shape3D> ShapeCast3D::get_shape() const { return shape; }
-
->>>>>>> fix/remove-object
 bool ShapeCast3D::get_exclude_parent_body() const { return exclude_parent_body; }
 
 void ShapeCast3D::_update_shapecast_state()
@@ -255,11 +201,6 @@ void ShapeCast3D::set_collide_with_bodies(bool p_clip) { collide_with_bodies = p
 
 bool ShapeCast3D::is_collide_with_bodies_enabled() const { return collide_with_bodies; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void ShapeCast3D::_update_debug_shape_vertices()
 {
 	debug_shape_vertices.clear();
@@ -349,10 +290,6 @@ void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
 	}
 
 	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
-<<<<<<< HEAD
-	material->set_albedo(color);
-=======
->>>>>>> fix/remove-object
 }
 
 void ShapeCast3D::_clear_debug_shape()

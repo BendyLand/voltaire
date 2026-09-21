@@ -40,10 +40,6 @@ class MissingNode : public Node
 	bool recording_signals = false;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_original_class(const String& p_class);

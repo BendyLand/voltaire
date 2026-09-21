@@ -62,13 +62,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	CheckButton(const String& p_text = String());
-	~CheckButton();
-=======
 	CheckButton(const String& p_text = String()) : Button(p_text) {}
 	~CheckButton() = default;
->>>>>>> fix/remove-object
 };
 
 

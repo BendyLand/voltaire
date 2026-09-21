@@ -231,10 +231,6 @@ private:
 	void _update_adjustment();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual RID get_rid() const override;

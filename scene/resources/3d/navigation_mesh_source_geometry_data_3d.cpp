@@ -274,8 +274,5 @@ AABB NavigationMeshSourceGeometryData3D::get_bounds()
 }
 
 
-<<<<<<< HEAD
-=======
 
 void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D const&) {}
->>>>>>> fix/remove-object

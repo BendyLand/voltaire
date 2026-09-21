@@ -1266,12 +1266,8 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 					  "\" to the trash can \"" + trash_path + "/files\"");
 			Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 			err = dir_access->rename(renamed_path, path);
-<<<<<<< HEAD
-			ERR_FAIL_COND_V_MSG(err != OK, err,
-=======
 
 	ERR_FAIL_COND_V_MSG(err != OK, err,
->>>>>>> fix/remove-object
 				"Could not rename \"" + renamed_path + "\" back to its original name: \"" + path +
 					"\"");
 			return FAILED;
@@ -1422,8 +1418,6 @@ OS_LinuxBSD::~OS_LinuxBSD()
 #endif // FONTCONFIG_ENABLED
 }
 
-<<<<<<< HEAD
-=======
 bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) const
 {
 	return false;
@@ -1431,5 +1425,4 @@ bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) 
 
 void OS_LinuxBSD::run() {}
 
->>>>>>> fix/remove-object
 

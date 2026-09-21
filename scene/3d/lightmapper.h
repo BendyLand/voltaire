@@ -31,10 +31,7 @@
 #pragma once
 
 #include "core/types.h"
-<<<<<<< HEAD
-=======
 #include "core/io/image.h"
->>>>>>> fix/remove-object
 
 class Image;
 
@@ -211,7 +208,3 @@ public:
 	Lightmapper();
 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

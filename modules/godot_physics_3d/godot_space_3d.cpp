@@ -251,11 +251,6 @@ Vector3 GodotPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 
 GodotPhysicsDirectSpaceState3D::GodotPhysicsDirectSpaceState3D() { space = nullptr; }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 int GodotSpace3D::_cull_aabb_for_body(GodotBody3D* p_body, const AABB& p_aabb)
 {
 	int amount = broadphase->cull_aabb(p_aabb, intersection_query_results, INTERSECTION_QUERY_MAX,
@@ -552,8 +547,6 @@ GodotSpace3D::~GodotSpace3D()
 	memdelete(direct_access);
 }
 
-<<<<<<< HEAD
-=======
 bool GodotSpace3D::test_body_motion(GodotBody3D* p_body,
 	const PhysicsServer3DTypes::MotionParameters& p_parameters,
 	PhysicsServer3DTypes::MotionResult* r_result)
@@ -596,5 +589,4 @@ bool GodotPhysicsDirectSpaceState3D::rest_info(
 	return false;
 }
 
->>>>>>> fix/remove-object
 

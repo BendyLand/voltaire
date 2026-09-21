@@ -265,10 +265,6 @@ public:
 	virtual Vector<TabData> get_tabs() const override;
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
-<<<<<<< HEAD
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-=======
->>>>>>> fix/remove-object
 
 	TileMapLayerEditorTilesPlugin();
 };
@@ -366,10 +362,6 @@ private:
 public:
 	virtual Vector<TabData> get_tabs() const override;
 	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
-<<<<<<< HEAD
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-=======
->>>>>>> fix/remove-object
 
 	TileMapLayerEditorTerrainsPlugin();
 };

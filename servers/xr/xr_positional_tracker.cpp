@@ -31,11 +31,8 @@
 #include "servers/xr/xr_controller_tracker.h"
 #include "xr_positional_tracker.h"
 
-<<<<<<< HEAD
-=======
 void XRPositionalTracker::set_tracker_profile(const String& p_profile) {}
 
->>>>>>> fix/remove-object
 String XRPositionalTracker::get_tracker_profile() const { return profile; }
 
 XRPositionalTracker::TrackerHand XRPositionalTracker::get_tracker_hand() const
@@ -65,9 +62,6 @@ Ref<XRPose> XRPositionalTracker::get_pose(const StringName& p_action_name) const
 	return pose;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void XRPositionalTracker::set_pose(StringName const&, Transform3D const&, Vector3 const&, Vector3 const&, XRPose::TrackingConfidence) {}

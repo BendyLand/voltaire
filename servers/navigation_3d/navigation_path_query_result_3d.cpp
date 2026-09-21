@@ -55,9 +55,6 @@ void NavigationPathQueryResult3D::set_path_length(float p_length) { path_length 
 
 float NavigationPathQueryResult3D::get_path_length() const { return path_length; }
 
-<<<<<<< HEAD
-=======
 void NavigationPathQueryResult3D::reset() {}
 
->>>>>>> fix/remove-object
 

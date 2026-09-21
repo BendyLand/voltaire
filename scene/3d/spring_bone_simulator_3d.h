@@ -162,37 +162,14 @@ protected:
 	LocalVector<SpringBone3DSetting*> settings;
 	Vector3 external_force;
 	bool mutable_bone_axes = true;
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 	virtual void _validate_bone_names() override;
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-<<<<<<< HEAD
-
-	static void _bind_methods();
-
-	virtual void _set_active(bool p_active) override;
 	virtual void _process_modification(double p_delta) override;
-	void _init_joints(Skeleton3D* p_skeleton, SpringBone3DSetting* p_setting);
-=======
-	virtual void _process_modification(double p_delta) override;
->>>>>>> fix/remove-object
 
 	void _init_joints(Skeleton3D* p_skeleton, SpringBone3DSetting* p_setting);
 	void _make_joints_dirty(int p_index, bool p_reset = false);
-<<<<<<< HEAD
-	void _make_all_joints_dirty();
-
-	void _update_joint_array(int p_index);
-	void _update_joints(bool p_reset);
-	void _set_joint_bone(int p_index, int p_joint, int p_bone);
-
-	void _update_bone_axis(Skeleton3D* p_skeleton, SpringBone3DSetting* p_setting);
-=======
->>>>>>> fix/remove-object
 
 #ifdef TOOLS_ENABLED
 	bool gizmo_dirty = false;
@@ -202,12 +179,6 @@ protected:
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-<<<<<<< HEAD
-
-	void _validate_rotation_axes(Skeleton3D* p_skeleton) const;
-	void _validate_rotation_axis(Skeleton3D* p_skeleton, int p_index, int p_joint) const;
-=======
->>>>>>> fix/remove-object
 
 #ifndef DISABLE_DEPRECATED
 	compat::SpringBoneSimulator3D::BoneDirection _get_end_bone_direction_bind_compat_110120(
@@ -228,17 +199,9 @@ protected:
 
 public:
 	// Setting.
-<<<<<<< HEAD
-	void set_root_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_root_bone_name(int p_index) const;
 	int get_root_bone(int p_index) const;
 
-<<<<<<< HEAD
-	void set_end_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
@@ -254,10 +217,6 @@ public:
 	CenterFrom get_center_from(int p_index) const;
 	void set_center_node(int p_index, const NodePath& p_node_path);
 	NodePath get_center_node(int p_index) const;
-<<<<<<< HEAD
-	void set_center_bone_name(int p_index, const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_center_bone_name(int p_index) const;
 	int get_center_bone(int p_index) const;
 
@@ -297,10 +256,6 @@ public:
 
 	void set_joint_rotation_axis(int p_index, int p_joint, RotationAxis p_axis);
 	RotationAxis get_joint_rotation_axis(int p_index, int p_joint) const;
-<<<<<<< HEAD
-	void set_joint_rotation_axis_vector(int p_index, int p_joint, const Vector3& p_vector);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_joint_rotation_axis_vector(int p_index, int p_joint) const;
 	void set_joint_radius(int p_index, int p_joint, float p_radius);
 	float get_joint_radius(int p_index, int p_joint) const;
@@ -341,11 +296,6 @@ public:
 	bool are_bone_axes_mutable() const;
 
 #ifdef TOOLS_ENABLED
-<<<<<<< HEAD
-	Vector3 get_bone_vector(int p_index, int p_joint) const;
-
-=======
->>>>>>> fix/remove-object
 	virtual bool is_processed_on_saving() const override { return true; }
 #endif // TOOLS_ENABLED
 

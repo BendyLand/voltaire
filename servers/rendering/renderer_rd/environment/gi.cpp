@@ -654,12 +654,6 @@ void GI::SDFGI::update_cascades()
 		cascade_data[i].probe_offset[2] = cascades[i].position.z / probe_divisor;
 		cascade_data[i].pad = 0;
 	}
-<<<<<<< HEAD
-
-	RD::get_singleton()->buffer_update(
-		cascades_ubo, 0, sizeof(SDFGI::Cascade::UBO) * SDFGI::MAX_CASCADES, cascade_data);
-=======
->>>>>>> fix/remove-object
 }
 
 void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_render_data)
@@ -928,14 +922,6 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			idx++;
 		}
 
-<<<<<<< HEAD
-		if (idx > 0) {
-			RD::get_singleton()->buffer_update(
-				cascade.lights_buffer, 0, idx * sizeof(SDFGIShader::Light), lights);
-		}
-
-=======
->>>>>>> fix/remove-object
 		cascade_dynamic_light_count[i] = idx;
 	}
 }
@@ -1249,15 +1235,6 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 
 	if (p_voxel_gi_instances.size() > 0) {
 		RD::get_singleton()->draw_command_begin_label("VoxelGIs Setup");
-<<<<<<< HEAD
-
-		RD::get_singleton()->buffer_update(voxel_gi_buffer, 0,
-			sizeof(VoxelGIData) *
-				MIN((uint64_t)MAX_VOXEL_GI_INSTANCES, p_voxel_gi_instances.size()),
-			voxel_gi_data);
-
-=======
->>>>>>> fix/remove-object
 		RD::get_singleton()->draw_command_end_label();
 	}
 }
@@ -1336,8 +1313,6 @@ void GI::debug_voxel_gi(RID p_voxel_gi, RD::DrawListID p_draw_list, RID p_frameb
 
 void GI::enable_vrs_shader_group() { shader.enable_group(GROUP_VRS); }
 
-<<<<<<< HEAD
-=======
 RID RendererRD::GI::RenderBuffersGI::get_voxel_gi_buffer() { return RID(); }
 
 void RendererRD::GI::VoxelGIInstance::update(bool p_update_light_instances,
@@ -1355,5 +1330,4 @@ void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
 
 RendererRD::GI::GI() {}
 
->>>>>>> fix/remove-object
 

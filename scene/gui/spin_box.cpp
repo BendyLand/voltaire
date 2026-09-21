@@ -80,18 +80,6 @@ void SpinBox::_arrow_clicked(bool p_up)
 	}
 }
 
-<<<<<<< HEAD
-void SpinBox::_mouse_exited()
-{
-	if (state_cache.up_button_hovered || state_cache.down_button_hovered) {
-		state_cache.up_button_hovered = false;
-		state_cache.down_button_hovered = false;
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void SpinBox::_line_edit_editing_toggled(bool p_toggled_on)
 {
 	if (p_toggled_on) {
@@ -246,12 +234,9 @@ void SpinBox::_value_changed(double p_value)
 void SpinBox::_update_text(bool p_only_update_if_value_changed) {}
 
 
-<<<<<<< HEAD
-=======
 
 void SpinBox::_text_submitted(String const&) {}
 
 void SpinBox::set_editable(bool) {}
->>>>>>> fix/remove-object
 
 void SpinBox::_update_buttons_state_for_current_value() {}

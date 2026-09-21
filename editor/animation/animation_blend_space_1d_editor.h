@@ -110,11 +110,6 @@ class AnimationNodeBlendSpace1DEditor : public AnimationTreeNodeEditorPlugin
 	void _tool_switch(int p_tool);
 	void _update_edited_point_pos();
 	void _update_edited_point_name();
-<<<<<<< HEAD
-	void _update_tool_erase();
-	void _set_selected_point(int p_index);
-=======
->>>>>>> fix/remove-object
 	void _start_inline_edit(int p_point);
 	void _cancel_inline_edit();
 	void _inline_editor_text_changed(const String& p_text);

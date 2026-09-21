@@ -39,14 +39,6 @@ class EditorPropertyFontMetaOverride : public EditorProperty
 	MarginContainer* container = nullptr;
 	VBoxContainer* property_vbox = nullptr;
 
-<<<<<<< HEAD
-class EditorPropertyFontMetaOverride : public EditorProperty
-{
-	MarginContainer* container = nullptr;
-	VBoxContainer* property_vbox = nullptr;
-
-=======
->>>>>>> fix/remove-object
 	Button* edit = nullptr;
 	PopupMenu* menu = nullptr;
 	EditorLocaleDialog* locale_select = nullptr;
@@ -77,14 +69,6 @@ class EditorPropertyOTVariation : public EditorProperty
 	MarginContainer* container = nullptr;
 	VBoxContainer* property_vbox = nullptr;
 
-<<<<<<< HEAD
-class EditorPropertyOTVariation : public EditorProperty
-{
-	MarginContainer* container = nullptr;
-	VBoxContainer* property_vbox = nullptr;
-
-=======
->>>>>>> fix/remove-object
 	Button* edit = nullptr;
 
 	bool updating = false;
@@ -102,11 +86,6 @@ public:
 	EditorPropertyOTVariation();
 };
 
-<<<<<<< HEAD
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 class EditorPropertyOTFeatures : public EditorProperty
 {
 	enum FeatureGroups
@@ -148,11 +127,6 @@ public:
 	EditorPropertyOTFeatures();
 };
 
-<<<<<<< HEAD
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 class FontPreview : public Control
 {
 protected:
@@ -168,11 +142,6 @@ public:
 	void set_data(const Ref<Font>& p_f);
 };
 
-<<<<<<< HEAD
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 class EditorPropertyFontNamesArray : public EditorPropertyArray
 {
 	PopupMenu* menu = nullptr;
@@ -186,11 +155,6 @@ public:
 	EditorPropertyFontNamesArray() = default;
 };
 
-<<<<<<< HEAD
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 class FontEditorPlugin : public EditorPlugin
 {
 public:

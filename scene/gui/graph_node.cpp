@@ -50,27 +50,6 @@ void GraphNode::draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Co
 	port_icon->draw(get_canvas_item(), p_pos + icon_offset, p_color);
 }
 
-<<<<<<< HEAD
-void GraphNode::clear_slot(int p_slot_index)
-{
-	slot_table.erase(p_slot_index);
-
-	queue_accessibility_update();
-	queue_redraw();
-	port_pos_dirty = true;
-}
-
-void GraphNode::clear_all_slots()
-{
-	slot_table.clear();
-
-	queue_accessibility_update();
-	queue_redraw();
-	port_pos_dirty = true;
-}
-
-=======
->>>>>>> fix/remove-object
 bool GraphNode::is_slot_enabled_left(int p_slot_index) const
 {
 	if (!slot_table.has(p_slot_index)) {

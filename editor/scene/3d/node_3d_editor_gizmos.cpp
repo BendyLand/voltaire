@@ -185,15 +185,6 @@ void EditorNode3DGizmo::_update_bvh()
 	Node3DEditor::get_singleton()->update_gizmo_bvh_node(bvh_node_id, aabb);
 }
 
-<<<<<<< HEAD
-void EditorNode3DGizmo::add_lines(const Vector<Vector3>& p_lines, const Ref<Material>& p_material,
-	bool p_billboard, const Color& p_modulate)
-{
-	add_vertices(p_lines, p_material, Mesh::PRIMITIVE_LINES, p_billboard, p_modulate);
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorNode3DGizmo::add_collision_triangles(const Ref<TriangleMesh>& p_tmesh)
 {
 	collision_meshes.push_back(p_tmesh);
@@ -574,11 +565,6 @@ EditorNode3DGizmo::~EditorNode3DGizmo()
 	clear();
 }
 
-<<<<<<< HEAD
-/////
-
-=======
->>>>>>> fix/remove-object
 void EditorNode3DGizmoPlugin::create_handle_material(
 	const String& p_name, bool p_billboard, const Ref<Texture2D>& p_icon)
 {

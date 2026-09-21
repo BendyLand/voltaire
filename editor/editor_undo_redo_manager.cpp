@@ -208,8 +208,6 @@ EditorUndoRedoManager::~EditorUndoRedoManager()
 	}
 }
 
-<<<<<<< HEAD
-=======
 EditorUndoRedoManager::History& EditorUndoRedoManager::get_or_create_history(int p_idx)
 {
 	EditorUndoRedoManager::History eh = EditorUndoRedoManager::History();
@@ -228,5 +226,4 @@ void EditorUndoRedoManager::discard_history(int p_history_id, bool p_erase_from_
 
 void EditorUndoRedoManager::commit_action(bool p_execute) {}
 
->>>>>>> fix/remove-object
 

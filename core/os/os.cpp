@@ -753,9 +753,6 @@ OS::~OS()
 	singleton = nullptr;
 }
 
-<<<<<<< HEAD
-=======
 String OS::get_user_data_dir() const { return String(); }
 
->>>>>>> fix/remove-object
 

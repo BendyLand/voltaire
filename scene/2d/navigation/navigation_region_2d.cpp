@@ -180,11 +180,6 @@ void NavigationRegion2D::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 Ref<NavigationPolygon> NavigationRegion2D::get_navigation_polygon() const
 {
 	return navigation_polygon;
@@ -212,35 +207,6 @@ RID NavigationRegion2D::get_navigation_map() const
 	return RID();
 }
 
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion2D::_navigation_map_changed(RID p_map)
-{
-	if (is_inside_tree() && get_world_2d()->get_navigation_map() == p_map) {
-		queue_redraw();
-	}
-}
-#endif // DEBUG_ENABLED
-
-#ifdef DEBUG_ENABLED
-void NavigationRegion2D::_navigation_debug_changed()
-{
-	if (is_inside_tree()) {
-		queue_redraw();
-	}
-}
-#endif // DEBUG_ENABLED
-
-=======
->>>>>>> fix/remove-object
 PackedStringArray NavigationRegion2D::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Node2D::get_configuration_warnings();
@@ -255,61 +221,11 @@ PackedStringArray NavigationRegion2D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-
-
-#ifndef DISABLE_DEPRECATED
-// Compatibility with earlier 4.0 betas.
-
-
-
-#endif // DISABLE_DEPRECATED
-
-
-
-
-
-void NavigationRegion2D::_region_enter_navigation_map()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	if (map_override.is_valid()) {
-		NavigationServer2D::get_singleton()->region_set_map(region, map_override);
-	}
-	else {
-		NavigationServer2D::get_singleton()->region_set_map(
-			region, get_world_2d()->get_navigation_map());
-	}
-
-	NavigationServer2D::get_singleton()->region_set_transform(region, get_global_transform());
-	NavigationServer2D::get_singleton()->region_set_enabled(region, enabled);
-
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void NavigationRegion2D::_region_exit_navigation_map()
 {
 	NavigationServer2D::get_singleton()->region_set_map(region, RID());
 }
 
-<<<<<<< HEAD
-void NavigationRegion2D::_region_update_transform()
-{
-	if (!is_inside_tree()) {
-		return;
-	}
-
-	NavigationServer2D::get_singleton()->region_set_transform(region, get_global_transform());
-
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 #ifdef DEBUG_ENABLED
 void NavigationRegion2D::_update_debug_edge_connections_mesh()
 {

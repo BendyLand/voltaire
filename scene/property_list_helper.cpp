@@ -70,8 +70,6 @@ bool PropertyListHelper::property_can_revert(const String& p_property) const
 	return is_property_valid(p_property);
 }
 
-<<<<<<< HEAD
-=======
 bool PropertyListHelper::is_property_valid(const String& p_property, int* r_index) const
 {
 	return false;
@@ -79,5 +77,4 @@ bool PropertyListHelper::is_property_valid(const String& p_property, int* r_inde
 
 void PropertyListHelper::clear() {}
 
->>>>>>> fix/remove-object
 

@@ -47,14 +47,6 @@ SpringBoneSimulator3DGizmoPlugin::SpringBoneSimulator3DGizmoPlugin()
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-<<<<<<< HEAD
-	selection_materials.unselected_mat->set_flag(
-		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
-=======
->>>>>>> fix/remove-object
 	selection_materials.selected_mat.instantiate();
 	Ref<Shader> sh;
 	sh.instantiate();
@@ -146,14 +138,6 @@ SpringBoneCollision3DGizmoPlugin::SpringBoneCollision3DGizmoPlugin()
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-<<<<<<< HEAD
-	selection_materials.unselected_mat->set_flag(
-		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
-=======
->>>>>>> fix/remove-object
 	selection_materials.selected_mat.instantiate();
 	Ref<Shader> sh;
 	sh.instantiate();
@@ -331,8 +315,6 @@ void SpringBoneCollision3DGizmoPlugin::draw_plane(
 	}
 }
 
-<<<<<<< HEAD
-=======
 bool SpringBoneSimulator3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
 
 int SpringBoneSimulator3DGizmoPlugin::get_priority() const { return 0; }
@@ -345,5 +327,4 @@ int SpringBoneCollision3DGizmoPlugin::get_priority() const { return 0; }
 
 void SpringBoneCollision3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
 
->>>>>>> fix/remove-object
 

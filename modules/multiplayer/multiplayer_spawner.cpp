@@ -72,16 +72,6 @@ void MultiplayerSpawner::_set_spawnable_scenes(const Vector<String>& p_scenes)
 
 NodePath MultiplayerSpawner::get_spawn_path() const { return spawn_path; }
 
-<<<<<<< HEAD
-void MultiplayerSpawner::set_spawn_path(const NodePath& p_path)
-{
-	spawn_path = p_path;
-	_update_spawn_node();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 int MultiplayerSpawner::find_spawnable_scene_index_from_path(const String& p_scene) const
 {
 	for (uint32_t i = 0; i < spawnable_scenes.size(); i++) {
@@ -92,10 +82,7 @@ int MultiplayerSpawner::find_spawnable_scene_index_from_path(const String& p_sce
 	return INVALID_ID;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void MultiplayerSpawner::clear_spawnable_scenes() {}
 

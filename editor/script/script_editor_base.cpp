@@ -71,21 +71,13 @@ String ScriptEditorBase::get_name()
 	return name;
 }
 
-<<<<<<< HEAD
-=======
 void ScriptEditorBase::validate_script() {}
 
->>>>>>> fix/remove-object
 void ScriptEditorBase::tag_saved_version()
 {
 	edited_file_data.last_modified_time = FileAccess::get_modified_time(edited_file_data.path);
 }
 
-<<<<<<< HEAD
-//// TextEditorBase
-
-=======
->>>>>>> fix/remove-object
 void TextEditorBase::EditMenus::_edit_option(int p_op)
 {
 	TextEditorBase* script_text_editor = _get_active_editor();
@@ -101,59 +93,6 @@ void TextEditorBase::EditMenus::_change_syntax_highlighter(int p_idx)
 	script_text_editor->set_syntax_highlighter(script_text_editor->highlighters[p_idx]);
 }
 
-<<<<<<< HEAD
-void TextEditorBase::_make_context_menu(
-	bool p_selection, bool p_foldable, const Vector2& p_position, bool p_show)
-{
-	context_menu->clear();
-	if (DisplayServer::get_singleton()->has_feature(
-			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
-		context_menu->add_item(TTRC("Emoji & Symbols"), EDIT_EMOJI_AND_SYMBOL);
-		context_menu->add_separator();
-	}
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_undo"), EDIT_UNDO);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_redo"), EDIT_REDO);
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_cut"), EDIT_CUT);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_copy"), EDIT_COPY);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_paste"), EDIT_PASTE);
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_text_select_all"), EDIT_SELECT_ALL);
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent"), EDIT_INDENT);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/unindent"), EDIT_UNINDENT);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_bookmark"), BOOKMARK_TOGGLE);
-
-	if (p_selection) {
-		context_menu->add_separator();
-		context_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_text_editor/convert_to_uppercase"), EDIT_TO_UPPERCASE);
-		context_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_text_editor/convert_to_lowercase"), EDIT_TO_LOWERCASE);
-	}
-
-	if (p_foldable) {
-		context_menu->add_shortcut(
-			ED_GET_SHORTCUT("script_text_editor/toggle_fold_line"), EDIT_TOGGLE_FOLD_LINE);
-	}
-
-	if (p_show) {
-		_show_context_menu(p_position);
-	}
-}
-
-void TextEditorBase::_show_context_menu(const Vector2& p_position)
-{
-	const CodeEdit* tx = code_editor->get_text_editor();
-	context_menu->set_item_disabled(context_menu->get_item_index(EDIT_UNDO), !tx->has_undo());
-	context_menu->set_item_disabled(context_menu->get_item_index(EDIT_REDO), !tx->has_redo());
-
-	context_menu->set_position(get_screen_position() + p_position);
-	context_menu->reset_size();
-	context_menu->popup();
-}
-=======
 bool TextEditorBase::_edit_option(int p_op) { return true; }
 
 void TextEditorBase::set_edited_resource(const Ref<Resource>& p_res) {}
@@ -167,7 +106,6 @@ Control* TextEditorBase::get_edit_menu()
 }
 
 void TextEditorBase::_validate_script() {}
->>>>>>> fix/remove-object
 
 void TextEditorBase::_load_theme_settings()
 {
@@ -203,11 +141,8 @@ void TextEditorBase::tag_saved_version()
 	ScriptEditorBase::tag_saved_version();
 }
 
-<<<<<<< HEAD
-=======
 void TextEditorBase::reload_text() {}
 
->>>>>>> fix/remove-object
 void TextEditorBase::enable_editor()
 {
 	if (editor_enabled) {
@@ -223,19 +158,6 @@ void TextEditorBase::enable_editor()
 
 TextEditorBase::~TextEditorBase() { highlighters.clear(); }
 
-<<<<<<< HEAD
-//// CodeEditorBase
-
-CodeEditorBase::EditMenusCEB::EditMenusCEB()
-{
-	edit_menu->get_popup()->add_shortcut(
-		ED_GET_SHORTCUT("ui_text_completion_query"), EDIT_COMPLETE);
-	_popup_move_item(EDIT_TRIM_TRAILING_WHITESAPCE, edit_menu->get_popup(), false);
-	edit_menu_line->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
-}
-
-=======
 TextEditorBase* TextEditorBase::EditMenus::_get_active_editor()
 {
 	TextEditorBase teb = TextEditorBase();
@@ -246,5 +168,4 @@ TextEditorBase::EditMenus::EditMenus() {}
 
 void ScriptEditorBase::apply_code() {}
 
->>>>>>> fix/remove-object
 

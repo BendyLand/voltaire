@@ -632,9 +632,6 @@ void HTTPRequest::set_tls_options(const Ref<TLSOptions>& p_options)
 	tls_options = p_options;
 }
 
-<<<<<<< HEAD
-=======
 void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray& p_headers,
 	const PackedByteArray& p_data) {}
->>>>>>> fix/remove-object
 

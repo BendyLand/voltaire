@@ -396,8 +396,6 @@ void SSEffects::sss_set_scale(float p_scale, float p_depth_scale)
 	sss_depth_scale = p_depth_scale;
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::SSEffects::sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers,
 	RID p_dest_framebuffer, RID p_source_color, const Projection& p_projection,
 	const Vector2i& p_screen_size)
@@ -432,5 +430,4 @@ void RendererRD::SSEffects::downsample_depth(
 {
 }
 
->>>>>>> fix/remove-object
 

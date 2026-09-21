@@ -71,10 +71,6 @@ class ArrayOccluder3D : public Occluder3D
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices);
@@ -93,10 +89,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Size2 get_size() const;
@@ -114,10 +106,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Vector3 get_size() const;
@@ -137,10 +125,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	float get_radius() const;
@@ -160,10 +144,6 @@ private:
 protected:
 	virtual void _update_arrays(
 		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_polygon(const Vector<Vector2>& p_polygon);
@@ -180,11 +160,6 @@ private:
 	uint32_t bake_mask = 0xFFFFFFFF;
 	float bake_simplification_dist = 0.1f;
 
-<<<<<<< HEAD
-	void _occluder_changed();
-
-=======
->>>>>>> fix/remove-object
 	void _bake_node(Node* p_node, PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
 
 	bool _is_editable_3d_polygon() const;

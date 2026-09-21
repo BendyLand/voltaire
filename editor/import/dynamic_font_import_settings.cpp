@@ -98,10 +98,7 @@ DynamicFontImportSettingsDialog* DynamicFontImportSettingsDialog::get_singleton(
 	return singleton;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void DynamicFontImportSettingsDialog::_variations_validate() {}
 

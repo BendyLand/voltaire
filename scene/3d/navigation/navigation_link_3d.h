@@ -62,21 +62,11 @@ public:
 
 	RID get_rid() const;
 
-<<<<<<< HEAD
-	void set_enabled(bool p_enabled);
-
-=======
->>>>>>> fix/remove-object
 	bool is_enabled() const { return enabled; }
 
 	void set_navigation_map(RID p_navigation_map);
 	RID get_navigation_map() const;
 
-<<<<<<< HEAD
-	void set_bidirectional(bool p_bidirectional);
-
-=======
->>>>>>> fix/remove-object
 	bool is_bidirectional() const { return bidirectional; }
 
 	void set_navigation_layers(uint32_t p_navigation_layers);
@@ -86,17 +76,8 @@ public:
 	void set_navigation_layer_value(int p_layer_number, bool p_value);
 	bool get_navigation_layer_value(int p_layer_number) const;
 
-<<<<<<< HEAD
-	void set_start_position(Vector3 p_position);
-
 	Vector3 get_start_position() const { return start_position; }
 
-	void set_end_position(Vector3 p_position);
-
-=======
-	Vector3 get_start_position() const { return start_position; }
-
->>>>>>> fix/remove-object
 	Vector3 get_end_position() const { return end_position; }
 
 	Vector3 get_global_start_position() const;

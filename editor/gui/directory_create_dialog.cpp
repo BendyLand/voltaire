@@ -100,39 +100,6 @@ String DirectoryCreateDialog::_validate_path(const String& p_path) const
 	return String();
 }
 
-<<<<<<< HEAD
-void DirectoryCreateDialog::_on_dir_path_changed()
-{
-	const String path = _sanitize_input(dir_path->get_text());
-	const String error = _validate_path(path);
-
-	if (error.is_empty()) {
-		if (path.contains_char('/')) {
-			if (mode == MODE_DIRECTORY) {
-				validation_panel->set_message(EditorValidationPanel::MSG_ID_DEFAULT,
-					TTRC("Using slashes in folder names will create subfolders recursively."),
-					EditorValidationPanel::MSG_OK);
-			}
-			else {
-				validation_panel->set_message(EditorValidationPanel::MSG_ID_DEFAULT,
-					TTRC("Using slashes in path will create the file in subfolder, creating new "
-						 "subfolders if necessary."),
-					EditorValidationPanel::MSG_OK);
-			}
-		}
-		else if (mode == MODE_FILE) {
-			validation_panel->set_message(EditorValidationPanel::MSG_ID_DEFAULT,
-				TTRC("File name is valid."), EditorValidationPanel::MSG_OK);
-		}
-	}
-	else {
-		validation_panel->set_message(
-			EditorValidationPanel::MSG_ID_DEFAULT, error, EditorValidationPanel::MSG_ERROR);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void DirectoryCreateDialog::_post_popup()
 {
 	ConfirmationDialog::_post_popup();

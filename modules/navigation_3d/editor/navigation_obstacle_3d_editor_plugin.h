@@ -41,33 +41,11 @@ class NavigationObstacle3D;
 class NavigationObstacle3DGizmoPlugin : public EditorNode3DGizmoPlugin
 {
 public:
-<<<<<<< HEAD
-	virtual bool has_gizmo(Node3D* p_spatial) override;
-	virtual String get_gizmo_name() const override;
-
-	virtual void redraw(EditorNode3DGizmo* p_gizmo) override;
-
-	bool can_be_hidden() const override;
-	int get_priority() const override;
-
-	virtual int subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
-		const Vector2& p_point) const override;
-	virtual Vector<int> subgizmos_intersect_frustum(const EditorNode3DGizmo* p_gizmo,
-		const Camera3D* p_camera, const Vector<Plane>& p_frustum) const override;
-	virtual Transform3D get_subgizmo_transform(
-		const EditorNode3DGizmo* p_gizmo, int p_id) const override;
-	virtual void set_subgizmo_transform(
-		const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform) override;
-	virtual void commit_subgizmos(const EditorNode3DGizmo* p_gizmo, const Vector<int>& p_ids,
-		const Vector<Transform3D>& p_restore, bool p_cancel = false) override;
-
-=======
 	virtual String get_gizmo_name() const override;
 
 	bool can_be_hidden() const override;
 	int get_priority() const override;
 
->>>>>>> fix/remove-object
 	NavigationObstacle3DGizmoPlugin();
 };
 
@@ -111,47 +89,15 @@ private:
 	Button* button_flip = nullptr;
 	Button* button_clear = nullptr;
 
-<<<<<<< HEAD
-	Button* button_create = nullptr;
-	Button* button_edit = nullptr;
-	Button* button_delete = nullptr;
-	Button* button_flip = nullptr;
-	Button* button_clear = nullptr;
-
 	ConfirmationDialog* button_clear_dialog = nullptr;
-
-protected:
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
-=======
-	ConfirmationDialog* button_clear_dialog = nullptr;
->>>>>>> fix/remove-object
 
 public:
 	HBoxContainer* obstacle_editor = nullptr;
 	static NavigationObstacle3DEditorPlugin* singleton;
 
-<<<<<<< HEAD
-	void redraw();
-
-	void set_mode(int p_mode);
-
-	int get_mode() { return mode; }
-
-	void action_flip_vertices();
-	void action_clear_vertices();
-
-	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(
-		Camera3D* p_camera, const Ref<InputEvent>& p_event) override;
-
-	virtual String get_plugin_name() const override { return "NavigationObstacle3DEditor"; }
-
-	NavigationObstacle3DEditorPlugin();
-=======
 	int get_mode() { return mode; }
 
 	NavigationObstacle3DEditorPlugin() = default;
->>>>>>> fix/remove-object
 	~NavigationObstacle3DEditorPlugin();
 };
 

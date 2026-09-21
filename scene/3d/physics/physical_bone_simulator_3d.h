@@ -46,12 +46,6 @@ class PhysicalBoneSimulator3D : public SkeletonModifier3D
 		PhysicalBone3D* physical_bone = nullptr;
 		PhysicalBone3D* cache_parent_physical_bone = nullptr;
 
-<<<<<<< HEAD
-		PhysicalBone3D* physical_bone = nullptr;
-		PhysicalBone3D* cache_parent_physical_bone = nullptr;
-
-=======
->>>>>>> fix/remove-object
 		SimulatedBone()
 		{
 			parent = -1;
@@ -65,25 +59,11 @@ class PhysicalBoneSimulator3D : public SkeletonModifier3D
 
 	/// This is a slow API, so it's cached
 	PhysicalBone3D* _get_physical_bone_parent(int p_bone);
-<<<<<<< HEAD
-	void _rebuild_physical_bones_cache();
-=======
->>>>>>> fix/remove-object
 	void _reset_physical_bones_state();
 
 protected:
 	virtual void _set_active(bool p_active) override;
-<<<<<<< HEAD
-
-	void _bone_list_changed();
-	void _pose_updated();
 	void _bone_pose_updated(Skeleton3D* skeleton, int p_bone_id);
-
-	virtual void _process_modification(double p_delta) override;
-
-=======
-	void _bone_pose_updated(Skeleton3D* skeleton, int p_bone_id);
->>>>>>> fix/remove-object
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 
 public:
@@ -91,27 +71,11 @@ public:
 	bool is_compat = false;
 #endif // _DISABLE_DEPRECATED
 	bool is_simulating_physics() const;
-<<<<<<< HEAD
-
-	int find_bone(const String& p_name) const;
-	String get_bone_name(int p_bone) const;
-=======
->>>>>>> fix/remove-object
 	int get_bone_count() const;
 	Transform3D get_bone_global_pose(int p_bone) const;
 	void set_bone_global_pose(int p_bone, const Transform3D& p_pose);
-<<<<<<< HEAD
-
-	void bind_physical_bone_to_bone(int p_bone, PhysicalBone3D* p_physical_bone);
-	void unbind_physical_bone_from_bone(int p_bone);
-
 	PhysicalBone3D* get_physical_bone(int p_bone);
 	PhysicalBone3D* get_physical_bone_parent(int p_bone);
-
-=======
-	PhysicalBone3D* get_physical_bone(int p_bone);
-	PhysicalBone3D* get_physical_bone_parent(int p_bone);
->>>>>>> fix/remove-object
 	void physical_bones_stop_simulation();
 	void physical_bones_start_simulation_on(const TypedArray<StringName>& p_bones);
 	void physical_bones_add_collision_exception(RID p_exception);

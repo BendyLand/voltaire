@@ -46,64 +46,8 @@
 
 bool ScenePaint2DEditor::_is_node_valid() { return node && node->is_inside_tree(); }
 
-<<<<<<< HEAD
-void ScenePaint2DEditor::_clear_instance(bool p_hide)
-{
-	if (p_hide && instance_container) {
-		instance_container->hide();
-	}
-	else if (instance) {
-		instance->queue_free();
-		instance = nullptr;
-	}
-}
-
-void ScenePaint2DEditor::_update_instance()
-{
-	if (_is_instance_valid()) {
-		_clear_instance();
-	}
-	if (!_is_instance_valid()) {
-		_add_instance();
-	}
-}
-
 bool ScenePaint2DEditor::_is_instance_valid() { return instance && instance->is_inside_tree(); }
 
-void ScenePaint2DEditor::_update_draw_overlay()
-{
-	if (custom_overlay) {
-		custom_overlay->queue_redraw();
-	}
-}
-
-void ScenePaint2DEditor::_update_hint_label()
-{
-	if (!is_tool_selected) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			String(), String());
-	}
-	else if (!cache_node) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			TTRC("Select a Node2D to enable painting."),
-			TTRC("The node will be used as a parent for the painted scenes."));
-	}
-	else if (!selected_scene) {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			TTRC("Pick a scene for painting."),
-			vformat(TTR("Use the Scene Picker from the toolbar or %s+Click a 2D scene instance."),
-				keycode_get_string(Key::CMD_OR_CTRL)));
-	}
-	else {
-		CanvasItemEditor::get_singleton()->get_viewport_control()->set_hint_label(
-			String(), String());
-	}
-}
-
-=======
-bool ScenePaint2DEditor::_is_instance_valid() { return instance && instance->is_inside_tree(); }
-
->>>>>>> fix/remove-object
 Vector2 ScenePaint2DEditor::_get_mouse_grid_cell()
 {
 	if (!_is_node_valid()) {
@@ -144,22 +88,6 @@ bool ScenePaint2DEditor::_is_scene_painted(Node2D* p_node) const
 	return p_node && p_node->has_meta("_scene_painted") && p_node->get_parent() == node;
 }
 
-<<<<<<< HEAD
-void ScenePaint2DEditor::_set_pinned(bool p_pinned, Node* p_pinned_node)
-{
-	pinned = p_pinned;
-	pin_node_button->set_pressed_no_signal(pinned);
-	String tooltip_text = TTR("Pin the current node.\nWhen enabled, the painting parent node will "
-							  "not change when selecting other nodes in the scene.");
-	if (p_pinned_node && pinned) {
-		tooltip_text += vformat("\n" + TTR("Pinned Node: %s"),
-			EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_pinned_node));
-	}
-	pin_node_button->set_tooltip_text(tooltip_text);
-}
-
-=======
->>>>>>> fix/remove-object
 void ScenePaint2DEditor::_advanced_settings_pressed()
 {
 	Vector2 pos =
@@ -177,26 +105,6 @@ void ScenePaint2DEditor::_grid_toggled(bool p_toggled)
 	_update_draw_overlay();
 }
 
-<<<<<<< HEAD
-void ScenePaint2DEditor::_update_paint_mode()
-{
-	switch (paint_mode) {
-	case PAINT_MODE_FREE:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("SnapDisable")));
-		break;
-	case PAINT_MODE_SNAP_GRID:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("SnapGrid")));
-		break;
-	case PAINT_MODE_SNAP_GRID_CELL_CENTER:
-		advanced_settings_button->set_button_icon(get_editor_theme_icon(SNAME("Snap")));
-		break;
-	}
-	advanced_settings_popup->set_item_disabled(
-		MENU_ITEM_ALLOW_OVERLAPPING, paint_mode == PAINT_MODE_FREE);
-}
-
-=======
->>>>>>> fix/remove-object
 void ScenePaint2DEditor::_grid_step_changed()
 {
 	grid_step = CanvasItemEditor::get_singleton()->get_grid_step();
@@ -220,10 +128,7 @@ void ScenePaint2DEditorPlugin::forward_canvas_draw_over_viewport(Control* p_over
 	scene_paint_2d_editor->forward_canvas_draw_over_viewport(p_overlay);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void ScenePaint2DEditor::_update_draw_overlay() {}
 

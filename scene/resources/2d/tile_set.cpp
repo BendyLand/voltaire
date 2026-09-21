@@ -139,11 +139,6 @@ void TileMapPattern::clear()
 	emit_changed();
 }
 
-<<<<<<< HEAD
-/////////////////////////////// TileSet //////////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 bool TileSet::TerrainsPattern::is_valid() const { return valid; }
 
 bool TileSet::TerrainsPattern::is_erase_pattern() const { return not_empty_terrains_count == 0; }
@@ -2812,10 +2807,7 @@ Vector2i TileSet::transform_coords_layout(const Vector2i& p_coords,
 const Vector2i TileSetSource::INVALID_ATLAS_COORDS = Vector2i(-1, -1);
 const int TileSetSource::INVALID_TILE_ALTERNATIVE = -1;
 
-<<<<<<< HEAD
-=======
 void TileSet::reset_state() {}
->>>>>>> fix/remove-object
 
 TileSet::TileSet()
 {
@@ -4389,8 +4381,6 @@ PackedVector2Array TileData::get_transformed_vertices(const PackedVector2Array& 
 	return new_points;
 }
 
-<<<<<<< HEAD
-=======
 void TileSetAtlasSource::_queue_update_padded_texture() {}
 
 void TileData::notify_tile_data_properties_should_change() {}
@@ -4403,5 +4393,4 @@ void TileData::add_custom_data_layer(int p_index) {}
 
 void TileSet::remove_source(int p_source_id) {}
 
->>>>>>> fix/remove-object
 

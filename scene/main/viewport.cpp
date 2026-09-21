@@ -383,26 +383,6 @@ bool Viewport::_can_hide_focus_state()
 		   GLOBAL_GET_CACHED(int, "gui/common/show_focus_state_on_pointer_event") < 2;
 }
 
-<<<<<<< HEAD
-void Viewport::_on_settings_changed()
-{
-	if (!gui.hide_focus || _can_hide_focus_state()) {
-		return;
-	}
-
-	gui.hide_focus = false;
-	// Show previously hidden focus.
-	if (gui.key_focus) {
-		gui.key_focus->queue_redraw();
-	}
-}
-
-#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-
-#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-
-=======
->>>>>>> fix/remove-object
 RID Viewport::get_viewport_rid() const
 {
 	ERR_READ_THREAD_GUARD_V(RID());
@@ -2320,11 +2300,6 @@ void Viewport::_own_world_3d_changed()
 		_propagate_exit_world_3d(this);
 	}
 
-<<<<<<< HEAD
-	own_world_3d = world_3d->duplicate();
-
-=======
->>>>>>> fix/remove-object
 	if (is_inside_tree()) {
 		_propagate_enter_world_3d(this);
 	}
@@ -2441,7 +2416,6 @@ Viewport::AnisotropicFiltering Viewport::get_anisotropic_filtering_level() const
 {
 	ERR_READ_THREAD_GUARD_V(ANISOTROPY_DISABLED);
 	return anisotropic_filtering_level;
-
 }
 
 #endif // _3D_DISABLED

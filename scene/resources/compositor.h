@@ -60,10 +60,6 @@ private:
 	bool needs_separate_specular = false;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
 

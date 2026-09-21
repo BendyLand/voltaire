@@ -786,10 +786,7 @@ void NavMap3D::set_use_async_iterations(bool p_enabled)
 
 bool NavMap3D::get_use_async_iterations() const { return use_async_iterations; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 NavMap3D::~NavMap3D() {}
 

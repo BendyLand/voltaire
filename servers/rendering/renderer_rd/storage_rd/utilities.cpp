@@ -363,12 +363,9 @@ uint64_t Utilities::get_maximum_uniform_buffer_size() const
 		RenderingDevice::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::Utilities::visibility_notifier_call(
 	RID p_notifier, bool p_enter_call, bool p_deferred)
 {
 }
 
->>>>>>> fix/remove-object
 

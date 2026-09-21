@@ -44,16 +44,7 @@ class PhysicalBone3DEditor
 	PhysicalBone3D* selected = nullptr;
 
 public:
-<<<<<<< HEAD
-	PhysicalBone3DEditor();
-
-	void set_selected(PhysicalBone3D* p_pb);
-
-	void hide();
-	void show();
-=======
 	PhysicalBone3DEditor() = default;
->>>>>>> fix/remove-object
 };
 
 class PhysicalBone3DEditorPlugin : public EditorPlugin

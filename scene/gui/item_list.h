@@ -157,11 +157,6 @@ private:
 	void _mouse_exited();
 	void _shift_range_select(int p_from, int p_to);
 
-<<<<<<< HEAD
-	String _atr(int p_idx, const String& p_text) const;
-
-=======
->>>>>>> fix/remove-object
 protected:
 	struct ThemeCache
 	{
@@ -206,11 +201,6 @@ protected:
 	{
 		return property_helper.property_can_revert(p_name);
 	}
-<<<<<<< HEAD
-
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual RID get_focused_accessibility_element() const override;

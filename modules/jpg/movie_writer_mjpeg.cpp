@@ -275,8 +275,5 @@ void MovieWriterMJPEG::write_end()
 }
 
 
-<<<<<<< HEAD
-=======
 
 MovieWriterMJPEG::MovieWriterMJPEG() {}
->>>>>>> fix/remove-object

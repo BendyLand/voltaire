@@ -73,10 +73,6 @@ class GradientEdit : public Control
 	int _get_gradient_rect_width() const;
 
 	void _color_changed(const Color& p_color);
-<<<<<<< HEAD
-	void _redraw();
-=======
->>>>>>> fix/remove-object
 
 	int _get_point_at(int p_xpos) const;
 	int _predict_insertion_index(float p_offset);

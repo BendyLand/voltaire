@@ -393,16 +393,9 @@ private:
 public:
 	static CopyEffects* get_singleton();
 
-<<<<<<< HEAD
-	CopyEffects(uint32_t p_raster_effects);
-	~CopyEffects();
-
-	uint32_t get_raster_effects() { return raster_effects; }
-=======
 	CopyEffects(uint32_t p_raster_effects) : raster_effects(p_raster_effects) {}
 
 	~CopyEffects() = default;
->>>>>>> fix/remove-object
 
 	uint32_t get_raster_effects() { return raster_effects; }
 

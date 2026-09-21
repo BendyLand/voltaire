@@ -71,12 +71,6 @@ private:
 
 	History* _get_newest_undo();
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	History& get_or_create_history(int p_idx);
 	void force_fixed_history();

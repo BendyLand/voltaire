@@ -29,46 +29,12 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-<<<<<<< HEAD
-#include "scene/main/viewport.h"
-#include "subviewport_container.h"
-
-void SubViewportContainer::set_stretch(bool p_enable)
-{
-	if (stretch == p_enable) {
-		return;
-	}
-
-	stretch = p_enable;
-	recalc_force_viewport_sizes();
-	update_minimum_size();
-	queue_sort();
-	queue_redraw();
-}
-
-bool SubViewportContainer::is_stretch_enabled() const { return stretch; }
-
-void SubViewportContainer::set_stretch_shrink(int p_shrink)
-{
-	ERR_FAIL_COND(p_shrink < 1);
-	if (shrink == p_shrink) {
-		return;
-	}
-
-	shrink = p_shrink;
-
-	recalc_force_viewport_sizes();
-	queue_redraw();
-}
-
-=======
 #include "core/types.h"
 #include "scene/main/viewport.h"
 #include "subviewport_container.h"
 
 bool SubViewportContainer::is_stretch_enabled() const { return stretch; }
 
->>>>>>> fix/remove-object
 int SubViewportContainer::get_stretch_shrink() const { return shrink; }
 
 Vector<int> SubViewportContainer::get_allowed_size_flags_horizontal() const

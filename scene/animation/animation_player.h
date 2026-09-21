@@ -163,11 +163,6 @@ protected:
 	void _notification(int p_what);
 
 	// Make animation instances.
-<<<<<<< HEAD
-	virtual bool _blend_pre_process(
-		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map) override;
-=======
->>>>>>> fix/remove-object
 	virtual void _blend_capture(double p_delta) override;
 	virtual bool _blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map) override;
@@ -176,11 +171,7 @@ protected:
 	virtual void _animation_changed(const StringName& p_name) override;
 	virtual void _animation_removed(const StringName& p_name, const StringName& p_library) override;
 	virtual void _rename_animation(
-<<<<<<< HEAD
-		const StringName& p_from_name, const StringName& p_to_name) override;
-=======
 		const StringName& p_from_name, const StringName& p_to_name);
->>>>>>> fix/remove-object
 
 #ifndef DISABLE_DEPRECATED
 	void _set_process_callback_bind_compat_80813(AnimationProcessCallback p_mode);

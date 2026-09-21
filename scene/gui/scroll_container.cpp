@@ -138,106 +138,6 @@ void ScrollContainer::_update_scrollbar_position()
 	_updating_scrollbars = false;
 }
 
-<<<<<<< HEAD
-void ScrollContainer::_gui_focus_changed(Control* p_control)
-{
-	if (follow_focus && is_ancestor_of(p_control)) {
-		following = true;
-		ensure_control_visible(p_control);
-		following = false;
-	}
-	if (draw_focus_border) {
-		const bool _should_draw_focus_border = has_focus(true) || child_has_focus();
-		if (focus_border_is_drawn != _should_draw_focus_border) {
-			queue_redraw();
-		}
-	}
-}
-
-void ScrollContainer::_update_scroll_hints()
-{
-	Size2 size = get_size();
-	Rect2 margins = _get_margins();
-	Size2 scroll_size = size - margins.position - margins.size;
-
-	float v_scroll_value = v_scroll->get_value();
-	bool v_scroll_below_max =
-		v_scroll_value < (largest_child_min_size.height - scroll_size.height - 1);
-	bool show_vertical_hints = v_scroll_value > 1 || v_scroll_below_max;
-
-	float h_scroll_value = h_scroll->get_value();
-	bool h_scroll_below_max =
-		h_scroll_value < (largest_child_min_size.width - scroll_size.width - 1);
-	bool show_horizontal_hints = h_scroll_value > 1 || h_scroll_below_max;
-
-	bool rtl = is_layout_rtl();
-	if (show_vertical_hints) {
-		scroll_hint_top_left->set_texture(theme_cache.scroll_hint_vertical);
-		scroll_hint_top_left->set_modulate(theme_cache.scroll_hint_vertical_color);
-		scroll_hint_top_left->set_visible(!show_horizontal_hints &&
-										  (scroll_hint_mode == SCROLL_HINT_MODE_ALL ||
-											  scroll_hint_mode == SCROLL_HINT_MODE_TOP_AND_LEFT) &&
-										  v_scroll_value > 1);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_LEFT, ANCHOR_BEGIN, rtl ? -size.x : 0);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_RIGHT, ANCHOR_END, rtl ? 0 : size.x);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_TOP, ANCHOR_BEGIN, 0);
-		scroll_hint_top_left->set_anchor_and_offset(
-			SIDE_BOTTOM, ANCHOR_BEGIN, theme_cache.scroll_hint_vertical->get_height());
-
-		scroll_hint_bottom_right->set_flip_h(false);
-		scroll_hint_bottom_right->set_flip_v(true);
-		scroll_hint_bottom_right->set_texture(theme_cache.scroll_hint_vertical);
-		scroll_hint_bottom_right->set_modulate(theme_cache.scroll_hint_vertical_color);
-		scroll_hint_bottom_right->set_visible(
-			!show_horizontal_hints &&
-			(scroll_hint_mode == SCROLL_HINT_MODE_ALL ||
-				scroll_hint_mode == SCROLL_HINT_MODE_BOTTOM_AND_RIGHT) &&
-			v_scroll_below_max);
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_LEFT, ANCHOR_BEGIN, rtl ? -size.x : 0);
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_RIGHT, ANCHOR_END, rtl ? 0 : size.x);
-		scroll_hint_bottom_right->set_anchor_and_offset(
-			SIDE_TOP, ANCHOR_END, -theme_cache.scroll_hint_vertical->get_height());
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_BOTTOM, ANCHOR_END, 0);
-	}
-	else {
-		scroll_hint_top_left->set_texture(theme_cache.scroll_hint_horizontal);
-		scroll_hint_top_left->set_modulate(theme_cache.scroll_hint_horizontal_color);
-		scroll_hint_top_left->set_visible(
-			!show_vertical_hints &&
-			(scroll_hint_mode == SCROLL_HINT_MODE_ALL ||
-				(rtl ? scroll_hint_mode == SCROLL_HINT_MODE_BOTTOM_AND_RIGHT
-					 : scroll_hint_mode == SCROLL_HINT_MODE_TOP_AND_LEFT)) &&
-			h_scroll_value > 1);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_LEFT, ANCHOR_BEGIN,
-			rtl ? (size.x - theme_cache.scroll_hint_horizontal->get_width()) : 0);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_RIGHT, ANCHOR_BEGIN,
-			rtl ? size.x : theme_cache.scroll_hint_horizontal->get_width());
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_TOP, ANCHOR_BEGIN, 0);
-		scroll_hint_top_left->set_anchor_and_offset(SIDE_BOTTOM, ANCHOR_END, 0);
-
-		scroll_hint_bottom_right->set_flip_h(true);
-		scroll_hint_bottom_right->set_flip_v(false);
-		scroll_hint_bottom_right->set_texture(theme_cache.scroll_hint_horizontal);
-		scroll_hint_bottom_right->set_modulate(theme_cache.scroll_hint_horizontal_color);
-		scroll_hint_bottom_right->set_visible(
-			!show_vertical_hints &&
-			(scroll_hint_mode == SCROLL_HINT_MODE_ALL ||
-				(rtl ? scroll_hint_mode == SCROLL_HINT_MODE_TOP_AND_LEFT
-					 : scroll_hint_mode == SCROLL_HINT_MODE_BOTTOM_AND_RIGHT)) &&
-			h_scroll_below_max);
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_LEFT, ANCHOR_END,
-			rtl ? -size.x : -theme_cache.scroll_hint_horizontal->get_width());
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_RIGHT, ANCHOR_END,
-			rtl ? (-size.x + theme_cache.scroll_hint_horizontal->get_width()) : 0);
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_TOP, ANCHOR_BEGIN, 0);
-		scroll_hint_bottom_right->set_anchor_and_offset(SIDE_BOTTOM, ANCHOR_END, 0);
-	}
-}
-
-void ScrollContainer::_scroll_moved(float) { queue_sort(); }
-
-=======
->>>>>>> fix/remove-object
 void ScrollContainer::set_h_scroll(int p_pos)
 {
 	h_scroll->set_value(p_pos);
@@ -317,45 +217,14 @@ bool ScrollContainer::is_following_focus() const { return follow_focus; }
 
 void ScrollContainer::set_follow_focus(bool p_follow) { follow_focus = p_follow; }
 
-<<<<<<< HEAD
-PackedStringArray ScrollContainer::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Container::get_configuration_warnings();
-
-	int found = 0;
-
-	for (int i = 0; i < get_child_count(); i++) {
-		Control* c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
-		if (!c || c == h_scroll || c == v_scroll || c == focus_panel || c == scroll_hint_top_left ||
-			c == scroll_hint_bottom_right) {
-			continue;
-		}
-
-		found++;
-	}
-
-	if (found != 1) {
-		warnings.push_back(RTR(
-			"ScrollContainer is intended to work with a single child control.\nUse a container as "
-			"child (VBox, HBox, etc.), or a Control and set the custom minimum size manually."));
-	}
-
-	return warnings;
-}
-
-=======
->>>>>>> fix/remove-object
 void ScrollContainer::set_scroll_on_drag_hover(bool p_scroll) { scroll_on_drag_hover = p_scroll; }
 
 HScrollBar* ScrollContainer::get_h_scroll_bar() { return h_scroll; }
 
 VScrollBar* ScrollContainer::get_v_scroll_bar() { return v_scroll; }
 
-<<<<<<< HEAD
-=======
 PackedStringArray ScrollContainer::get_configuration_warnings() const { return PackedStringArray(); }
 
->>>>>>> fix/remove-object
 void ScrollContainer::set_draw_focus_border(bool p_draw)
 {
 	if (draw_focus_border == p_draw) {
@@ -375,10 +244,7 @@ bool ScrollContainer::child_has_focus()
 	return focus_owner && focus_owner->has_focus(true) && is_ancestor_of(focus_owner);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 Size2 ScrollContainer::_get_minimum_size(bool) const {}
 

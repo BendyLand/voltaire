@@ -2154,11 +2154,7 @@ void GodotHeightMapShape3D::_build_accelerator()
 	if (bound_grid_size < 2) {
 		// Grid is empty or just one chunk.
 
-<<<<<<< HEAD
-return;
-=======
 		return;
->>>>>>> fix/remove-object
 	}
 
 	bounds_grid.resize(bound_grid_size);
@@ -2233,11 +2229,8 @@ void GodotHeightMapShape3D::_setup(const Vector<real_t>& p_heights, int p_width,
 	configure(aabb_new);
 }
 
-<<<<<<< HEAD
-=======
 GodotHeightMapShape3D::GodotHeightMapShape3D() {}
 
 GodotConcavePolygonShape3D::GodotConcavePolygonShape3D() {}
 
 
->>>>>>> fix/remove-object

@@ -35,28 +35,6 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void ItemList::set_item_text(int p_idx, const String& p_text)
-{
-	if (p_idx < 0) {
-		p_idx += get_item_count();
-	}
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (items[p_idx].text == p_text) {
-		return;
-	}
-
-	items.write[p_idx].text = p_text;
-	items.write[p_idx].xl_text = _atr(p_idx, p_text);
-	_shape_text(p_idx);
-	queue_accessibility_update();
-	queue_redraw();
-	shape_changed = true;
-}
-
-=======
->>>>>>> fix/remove-object
 String ItemList::get_item_text(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, items.size(), String());
@@ -189,71 +167,6 @@ bool ItemList::is_item_disabled(int p_idx) const
 	return items[p_idx].disabled;
 }
 
-<<<<<<< HEAD
-void ItemList::select(int p_idx, bool p_single)
-{
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (p_single || select_mode == SELECT_SINGLE) {
-		if (!items[p_idx].selectable || items[p_idx].disabled) {
-			return;
-		}
-
-		for (int i = 0; i < items.size(); i++) {
-			if (items.write[i].selected != (p_idx == i)) {
-				items.write[i].selected = (p_idx == i);
-				items.write[i].accessibility_item_dirty = true;
-			}
-		}
-
-		current = p_idx;
-		ensure_selected_visible = false;
-	}
-	else {
-		if (items[p_idx].selectable && !items[p_idx].disabled) {
-			items.write[p_idx].selected = true;
-			items.write[p_idx].accessibility_item_dirty = true;
-		}
-	}
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void ItemList::deselect(int p_idx)
-{
-	ERR_FAIL_INDEX(p_idx, items.size());
-
-	if (select_mode == SELECT_SINGLE) {
-		items.write[p_idx].selected = false;
-		current = -1;
-	}
-	else {
-		items.write[p_idx].selected = false;
-	}
-	items.write[p_idx].accessibility_item_dirty = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void ItemList::deselect_all()
-{
-	if (items.is_empty()) {
-		return;
-	}
-
-	for (int i = 0; i < items.size(); i++) {
-		if (items.write[i].selected) {
-			items.write[i].selected = false;
-			items.write[i].accessibility_item_dirty = true;
-		}
-	}
-	current = -1;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool ItemList::is_selected(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
@@ -265,22 +178,6 @@ int ItemList::get_current() const { return current; }
 
 int ItemList::get_item_count() const { return items.size(); }
 
-<<<<<<< HEAD
-void ItemList::set_fixed_column_width(int p_size)
-{
-	ERR_FAIL_COND(p_size < 0);
-
-	if (fixed_column_width == p_size) {
-		return;
-	}
-
-	fixed_column_width = p_size;
-	queue_redraw();
-	shape_changed = true;
-}
-
-=======
->>>>>>> fix/remove-object
 int ItemList::get_fixed_column_width() const { return fixed_column_width; }
 
 bool ItemList::is_same_column_width() const { return same_column_width; }
@@ -315,26 +212,6 @@ Size2 ItemList::Item::get_icon_size() const
 	return size_result;
 }
 
-<<<<<<< HEAD
-void ItemList::set_fixed_tag_icon_size(const Size2i& p_size)
-{
-	if (fixed_tag_icon_size == p_size) {
-		return;
-	}
-
-	fixed_tag_icon_size = p_size;
-	queue_redraw();
-	shape_changed = true;
-}
-
-void ItemList::ensure_current_is_visible()
-{
-	ensure_selected_visible = true;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void ItemList::center_on_current(bool p_center_verically, bool p_center_horizontally)
 {
 	if (current < 0 || current >= items.size()) {
@@ -395,215 +272,6 @@ RID ItemList::get_focused_accessibility_element() const
 	}
 }
 
-<<<<<<< HEAD
-void ItemList::force_update_list_size()
-{
-	if (!shape_changed) {
-		return;
-	}
-
-	int scroll_bar_v_minwidth = scroll_bar_v->get_minimum_size().x;
-	Size2 size = get_size();
-	float max_column_width = 0.0;
-
-	// 1- compute item minimum sizes
-	for (int i = 0; i < items.size(); i++) {
-		Size2 minsize;
-		if (items[i].icon.is_valid()) {
-			if (fixed_icon_size.x > 0 && fixed_icon_size.y > 0) {
-				minsize = fixed_icon_size * icon_scale;
-			}
-			else {
-				minsize = items[i].get_icon_size() * icon_scale;
-			}
-
-			if (!items[i].text.is_empty()) {
-				if (icon_mode == ICON_MODE_TOP) {
-					minsize.y += theme_cache.icon_margin;
-				}
-				else {
-					minsize.x += theme_cache.icon_margin;
-				}
-			}
-		}
-
-		if (!items[i].text.is_empty()) {
-			int max_width = -1;
-			if (fixed_column_width) {
-				max_width = fixed_column_width;
-			}
-			items.write[i].text_buf->set_width(max_width);
-			Size2 s = items[i].text_buf->get_size();
-
-			if (icon_mode == ICON_MODE_TOP) {
-				minsize.x = MAX(minsize.x, s.width);
-				if (max_text_lines > 0) {
-					minsize.y += s.height + theme_cache.line_separation * max_text_lines;
-				}
-				else {
-					minsize.y += s.height;
-				}
-
-			}
-			else {
-				minsize.y = MAX(minsize.y, s.height);
-				minsize.x += s.width;
-			}
-		}
-
-		if (fixed_column_width > 0) {
-			minsize.x = fixed_column_width;
-		}
-		max_column_width = MAX(max_column_width, minsize.x);
-
-		// Elements need to adapt to the selected size.
-		minsize.y += MAX(theme_cache.v_separation, 0);
-		minsize.x += MAX(theme_cache.h_separation, 0);
-
-		items.write[i].rect_cache.size = minsize;
-		items.write[i].min_rect_cache.size = minsize;
-
-		items.write[i].accessibility_item_dirty = true;
-	}
-
-	int fit_size = size.x - theme_cache.panel_style->get_minimum_size().width;
-	if (!wraparound_items) {
-		fit_size += (scroll_bar_h->get_max() - scroll_bar_h->get_page());
-	}
-
-	// 2-attempt best fit
-	current_columns = 0x7FFFFFFF;
-	if (max_columns > 0) {
-		current_columns = max_columns;
-	}
-
-	// Repeat until all items fit.
-	while (true) {
-		bool all_fit = true;
-		Vector2 ofs;
-		int col = 0;
-		int max_w = 0;
-		int max_h = 0;
-
-		separators.clear();
-
-		for (int i = 0; i < items.size(); i++) {
-			if (current_columns > 1 && items[i].rect_cache.size.width + ofs.x > fit_size &&
-				!auto_width && wraparound_items) {
-				// Went past.
-				current_columns = MAX(col, 1);
-				all_fit = false;
-				break;
-			}
-
-			if (same_column_width) {
-				items.write[i].rect_cache.size.x =
-					max_column_width + MAX(theme_cache.h_separation, 0);
-			}
-			items.write[i].rect_cache.position = ofs;
-
-			max_h = MAX(max_h, items[i].rect_cache.size.y);
-			ofs.x += items[i].rect_cache.size.x;
-			max_w = MAX(max_w, ofs.x);
-
-			items.write[i].column = col;
-			col++;
-			if (col == current_columns) {
-				if (i < items.size() - 1) {
-					separators.push_back(ofs.y + max_h);
-				}
-
-				for (int j = i; j >= 0 && col > 0; j--, col--) {
-					items.write[j].rect_cache.size.y = max_h;
-				}
-
-				ofs.x = 0;
-				ofs.y += max_h;
-				col = 0;
-				max_h = 0;
-			}
-		}
-
-		float scroll_bar_v_page =
-			MAX(0, size.height - theme_cache.panel_style->get_minimum_size().height);
-		float scroll_bar_v_max = MAX(scroll_bar_v_page, ofs.y + max_h);
-		float scroll_bar_h_page =
-			MAX(0, size.width - theme_cache.panel_style->get_minimum_size().width);
-		float scroll_bar_h_max = 0;
-		if (!wraparound_items) {
-			scroll_bar_h_max = MAX(scroll_bar_h_page, max_w);
-		}
-
-		if (scroll_bar_v_page >= scroll_bar_v_max || is_layout_rtl()) {
-			fit_size -= scroll_bar_v_minwidth;
-		}
-
-		if (all_fit) {
-			for (int j = items.size() - 1; j >= 0 && col > 0; j--, col--) {
-				items.write[j].rect_cache.size.y = max_h;
-			}
-
-			if (auto_height) {
-				auto_height_value =
-					ofs.y + max_h + theme_cache.panel_style->get_minimum_size().height;
-			}
-			if (auto_width) {
-				auto_width_value = max_w + theme_cache.panel_style->get_minimum_size().width;
-			}
-			scroll_bar_v->set_max(scroll_bar_v_max);
-			scroll_bar_v->set_page(scroll_bar_v_page);
-			if (scroll_bar_v_max <= scroll_bar_v_page) {
-				scroll_bar_v->set_value(0);
-				scroll_bar_v->hide();
-			}
-			else {
-				auto_width_value += scroll_bar_v_minwidth;
-				scroll_bar_v->show();
-
-				if (do_autoscroll_to_bottom) {
-					scroll_bar_v->set_value(scroll_bar_v_max);
-				}
-			}
-
-			if (is_layout_rtl() && !wraparound_items) {
-				scroll_bar_h->set_max(scroll_bar_h_page);
-				scroll_bar_h->set_min(-(scroll_bar_h_max - scroll_bar_h_page));
-			}
-			else {
-				scroll_bar_h->set_max(scroll_bar_h_max);
-				scroll_bar_h->set_min(0);
-			}
-			scroll_bar_h->set_page(scroll_bar_h_page);
-			if (scroll_bar_h_max <= scroll_bar_h_page) {
-				scroll_bar_h->set_value(0);
-				scroll_bar_h->hide();
-			}
-			else {
-				auto_height_value += scroll_bar_h->get_minimum_size().y;
-				scroll_bar_h->show();
-			}
-			break;
-		}
-	}
-
-	update_minimum_size();
-	shape_changed = false;
-}
-
-void ItemList::_scroll_changed(double) { queue_redraw(); }
-
-void ItemList::_mouse_exited()
-{
-	if (hovered > -1) {
-		prev_hovered = hovered;
-		hovered = -1;
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int ItemList::get_item_at_position(const Point2& p_pos, bool p_exact) const
 {
 	Vector2 pos = p_pos;
@@ -681,26 +349,6 @@ Node::AutoTranslateMode ItemList::get_tooltip_auto_translate_mode_at(const Point
 	return Control::get_tooltip_auto_translate_mode_at(p_at);
 }
 
-<<<<<<< HEAD
-void ItemList::sort_items_by_text()
-{
-	items.sort();
-	queue_accessibility_update();
-	queue_redraw();
-	shape_changed = true;
-
-	if (select_mode == SELECT_SINGLE) {
-		for (int i = 0; i < items.size(); i++) {
-			if (items[i].selected) {
-				select(i);
-				return;
-			}
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ItemList::set_allow_rmb_select(bool p_allow) { allow_rmb_select = p_allow; }
 
 bool ItemList::get_allow_rmb_select() const { return allow_rmb_select; }

@@ -79,11 +79,6 @@ bool Line2D::is_closed() const { return _closed; }
 
 float Line2D::get_width() const { return _width; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 Ref<Curve> Line2D::get_curve() const { return _curve; }
 
 Vector<Vector2> Line2D::get_points() const { return _points; }
@@ -98,11 +93,6 @@ int Line2D::get_point_count() const { return _points.size(); }
 
 Color Line2D::get_default_color() const { return _default_color; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 Ref<Gradient> Line2D::get_gradient() const { return _gradient; }
 
 Ref<Texture2D> Line2D::get_texture() const { return _texture; }
@@ -130,12 +120,6 @@ int Line2D::get_round_precision() const { return _round_precision; }
 
 bool Line2D::get_antialiased() const { return _antialiased; }
 
-<<<<<<< HEAD
-void Line2D::_gradient_changed() { queue_redraw(); }
-
-void Line2D::_curve_changed() { queue_redraw(); }
-=======
->>>>>>> fix/remove-object
 
 
 void Line2D::_draw() {}

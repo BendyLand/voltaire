@@ -1338,9 +1338,6 @@ GLTFAccessorIndex GLTFAccessor::encode_new_sparse_accessor_from_vec3s(
 		p_gltf_state, base_reference_encoded_bytes, p_main_buffer_view_target, 0, p_deduplicate);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 Vector<unsigned char> GLTFAccessor::encode_ints_as_bytes(Vector<long> const&) {}

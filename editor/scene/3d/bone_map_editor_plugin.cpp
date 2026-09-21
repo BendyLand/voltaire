@@ -1208,8 +1208,6 @@ void BoneMapEditor::_notification(int p_what)
 
 BoneMapEditor::BoneMapEditor(Ref<BoneMap>& p_bone_map) { bone_map = p_bone_map; }
 
-<<<<<<< HEAD
-=======
 void BoneMapperButton::set_state(BoneMapState p_state) {}
 
 void BoneMapper::recreate_items() {}
@@ -1222,5 +1220,4 @@ void BoneMapEditor::fetch_objects() {}
 
 void BoneMapperItem::create_editor() {}
 
->>>>>>> fix/remove-object
 

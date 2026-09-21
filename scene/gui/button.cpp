@@ -50,11 +50,8 @@ void Button::_set_internal_margin(Side p_side, float p_value)
 
 String Button::_get_translated_text(const String& p_text) const { return String(); }
 
-<<<<<<< HEAD
-=======
 void Button::_queue_update_size_cache() {}
 
->>>>>>> fix/remove-object
 void Button::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
@@ -249,25 +246,6 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String& p_text, Ref<Textu
 		   minsize;
 }
 
-<<<<<<< HEAD
-void Button::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
-{
-	if (overrun_behavior != p_behavior) {
-		bool need_update_cache = overrun_behavior == TextServer::OVERRUN_NO_TRIMMING ||
-								 p_behavior == TextServer::OVERRUN_NO_TRIMMING;
-		overrun_behavior = p_behavior;
-		_shape();
-
-		if (need_update_cache) {
-			_queue_update_size_cache();
-		}
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 TextServer::OverrunBehavior Button::get_text_overrun_behavior() const { return overrun_behavior; }
 
 String Button::get_text() const { return text; }
@@ -276,46 +254,12 @@ void Button::set_text(const String& p_text) {}
 
 TextServer::AutowrapMode Button::get_autowrap_mode() const { return autowrap_mode; }
 
-<<<<<<< HEAD
-void Button::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-		_shape();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 uint32_t Button::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
-
-void Button::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		_shape();
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-=======
-uint32_t Button::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
->>>>>>> fix/remove-object
 
 Control::TextDirection Button::get_text_direction() const { return text_direction; }
 
 String Button::get_language() const { return language; }
 
-<<<<<<< HEAD
-void Button::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 void Button::_update_style_margins(const Ref<StyleBox>& p_stylebox)
 {
 	theme_cache.max_style_size = theme_cache.max_style_size.max(p_stylebox->get_minimum_size());

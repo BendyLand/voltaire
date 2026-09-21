@@ -52,10 +52,6 @@ protected:
 	void _changed_tracker(const StringName& p_tracker_name, int p_tracker_type);
 	void _removed_tracker(const StringName& p_tracker_name, int p_tracker_type);
 	void _pose_changed(const Ref<XRPose>& p_pose);
-<<<<<<< HEAD
-	virtual void _physics_interpolated_changed() override;
-=======
->>>>>>> fix/remove-object
 
 public:
 	PackedStringArray get_configuration_warnings() const override;

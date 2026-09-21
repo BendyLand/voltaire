@@ -61,10 +61,6 @@ protected:
 	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _parent_focused();
 

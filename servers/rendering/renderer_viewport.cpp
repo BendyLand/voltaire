@@ -345,11 +345,8 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererViewport::_draw_3d(Viewport* p_viewport) {}
 
->>>>>>> fix/remove-object
 void RendererViewport::_draw_viewport(Viewport* p_viewport)
 {
 	if (p_viewport->measure_render_time) {

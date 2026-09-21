@@ -63,19 +63,11 @@ class Bone2D : public Node2D
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	Transform2D cache_transform;
 	bool copy_transform_to_cache = true;
 
-<<<<<<< HEAD
-	void set_rest(const Transform2D& p_rest);
-=======
->>>>>>> fix/remove-object
 	Transform2D get_rest() const;
 	void apply_rest();
 	Transform2D get_skeleton_rest() const;

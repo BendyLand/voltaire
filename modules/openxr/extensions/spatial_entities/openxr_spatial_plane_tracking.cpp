@@ -541,12 +541,6 @@ bool OpenXRSpatialPlaneTrackingCapability::is_supported()
 	return spatial_plane_tracking_supported;
 }
 
-<<<<<<< HEAD
-////////////////////////////////////////////////////////////////////////////
-// Discovery logic
-
-=======
->>>>>>> fix/remove-object
 void OpenXRSpatialPlaneTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
 {
 	spatial_context = p_spatial_context;
@@ -561,13 +555,10 @@ void OpenXRSpatialPlaneTrackingCapability::_on_spatial_discovery_recommended(RID
 	}
 }
 
-<<<<<<< HEAD
-=======
 void OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T* p_session) {}
 
 void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
 
 void OpenXRSpatialPlaneTrackingCapability::on_process() {}
 
->>>>>>> fix/remove-object
 

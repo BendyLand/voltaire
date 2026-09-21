@@ -113,10 +113,6 @@ class Sprite2DEditor : public Control
 	void _update_sprite_resize_mode_button();
 
 protected:
-<<<<<<< HEAD
-	void _node_removed(Node* p_node);
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

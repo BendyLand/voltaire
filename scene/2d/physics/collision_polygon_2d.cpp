@@ -97,60 +97,16 @@ void CollisionPolygon2D::_update_in_shape_owner(bool p_xform_only)
 	collision_object->shape_owner_set_one_way_collision_margin(owner_id, one_way_collision_margin);
 }
 
-<<<<<<< HEAD
-void CollisionPolygon2D::set_polygon(const Vector<Point2>& p_polygon)
-{
-	polygon = p_polygon;
-
-	{
-		for (int i = 0; i < polygon.size(); i++) {
-			if (i == 0) {
-				aabb = Rect2(polygon[i], Size2());
-			}
-			else {
-				aabb.expand_to(polygon[i]);
-			}
-		}
-		if (aabb == Rect2()) {
-			aabb = Rect2(-10, -10, 20, 20);
-		}
-		else {
-			aabb.position -= aabb.size * 0.3;
-			aabb.size += aabb.size * 0.6;
-		}
-	}
-
-	if (collision_object) {
-		_build_polygon();
-		_update_in_shape_owner();
-	}
-	queue_redraw();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<Point2> CollisionPolygon2D::get_polygon() const { return polygon; }
 
 CollisionPolygon2D::BuildMode CollisionPolygon2D::get_build_mode() const { return build_mode; }
 
 #ifdef DEBUG_ENABLED
 Rect2 CollisionPolygon2D::_edit_get_rect() const { return aabb; }
+
 bool CollisionPolygon2D::_edit_use_rect() const { return true; }
 #endif
 
-<<<<<<< HEAD
-void CollisionPolygon2D::set_disabled(bool p_disabled)
-{
-	disabled = p_disabled;
-	queue_redraw();
-	if (collision_object) {
-		collision_object->shape_owner_set_disabled(owner_id, p_disabled);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool CollisionPolygon2D::is_disabled() const { return disabled; }
 
 bool CollisionPolygon2D::is_one_way_collision_enabled() const { return one_way_collision; }

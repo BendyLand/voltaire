@@ -289,8 +289,6 @@ ResourceImporterLayeredTexture::~ResourceImporterLayeredTexture()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ResourceImporterLayeredTexture::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
@@ -298,5 +296,4 @@ void ResourceImporterLayeredTexture::get_import_options(
 
 String ResourceImporterLayeredTexture::get_import_settings_string() const { return String(); }
 
->>>>>>> fix/remove-object
 

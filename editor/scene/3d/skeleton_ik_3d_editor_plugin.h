@@ -38,14 +38,7 @@ class SkeletonIK3D;
 class SkeletonIK3DEditorPlugin : public EditorPlugin
 {
 	SkeletonIK3D* skeleton_ik = nullptr;
-<<<<<<< HEAD
-
 	Button* play_btn = nullptr;
-
-	void _play();
-=======
-	Button* play_btn = nullptr;
->>>>>>> fix/remove-object
 
 public:
 	virtual String get_plugin_name() const override { return "SkeletonIK3D"; }

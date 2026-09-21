@@ -1333,9 +1333,6 @@ GodotPhysicsServer2D::GodotPhysicsServer2D(bool p_using_threads)
 	using_threads = p_using_threads;
 }
 
-<<<<<<< HEAD
-=======
 void GodotPhysicsServer2D::flush_queries() {}
 
->>>>>>> fix/remove-object
 

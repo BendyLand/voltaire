@@ -28,10 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "editor/editor_string_names.h"
 #include "editor/inspector/editor_inspector.h"
 #include "editor/inspector/editor_property_name_processor.h"
@@ -58,18 +54,6 @@ static bool _property_path_matches(const String& p_property_path, const String& 
 	return false;
 }
 
-<<<<<<< HEAD
-void SectionedInspector::set_current_section(const String& p_section)
-{
-	if (section_map.has(p_section)) {
-		TreeItem* item = section_map[p_section];
-		item->select(0);
-		sections->scroll_to_item(item);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 String SectionedInspector::get_full_item_path(const String& p_item)
 {
 	String base = get_current_section();
@@ -82,27 +66,6 @@ String SectionedInspector::get_full_item_path(const String& p_item)
 	}
 }
 
-<<<<<<< HEAD
-void SectionedInspector::_search_changed(const String& p_what)
-{
-	if (advanced_toggle) {
-		if (p_what.is_empty()) {
-			advanced_toggle->set_pressed_no_signal(!restrict_to_basic);
-			advanced_toggle->set_disabled(false);
-			advanced_toggle->set_tooltip_text(String());
-		}
-		else {
-			advanced_toggle->set_pressed_no_signal(true);
-			advanced_toggle->set_disabled(true);
-			advanced_toggle->set_tooltip_text(
-				TTRC("Advanced settings are always shown when searching."));
-		}
-	}
-	update_category_list();
-}
-
-=======
->>>>>>> fix/remove-object
 void SectionedInspector::_advanced_toggled(bool p_toggled_on)
 {
 	restrict_to_basic = !p_toggled_on;

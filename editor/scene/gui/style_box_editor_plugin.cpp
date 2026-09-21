@@ -35,15 +35,6 @@
 
 bool StyleBoxPreview::grid_preview_enabled = true;
 
-<<<<<<< HEAD
-void StyleBoxPreview::_grid_preview_toggled(bool p_active)
-{
-	grid_preview_enabled = p_active;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void StyleBoxPreview::_notification(int p_what)
 {
 	switch (p_what) {

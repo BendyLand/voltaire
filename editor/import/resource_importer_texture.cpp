@@ -109,106 +109,6 @@ String ResourceImporterTexture::get_preset_name(int p_idx) const
 	return TTRGET(preset_names[p_idx]);
 }
 
-<<<<<<< HEAD
-void ResourceImporterTexture::_save_ctex(const Ref<Image>& p_image, const String& p_to_path,
-	CompressMode p_compress_mode, float p_lossy_quality,
-	const Image::BasisUniversalPackerParams& p_basisu_params,
-	Image::CompressMode p_vram_compression, Image::CompressProfile p_vram_compression_profile,
-	bool p_mipmaps, bool p_streamable, bool p_detect_3d, bool p_detect_roughness,
-	bool p_detect_normal, bool p_force_normal, bool p_srgb_friendly,
-	bool p_force_po2_for_compressed, uint32_t p_limit_mipmap, const Ref<Image>& p_normal,
-	Image::RoughnessChannel p_roughness_channel)
-{
-	Ref<FileAccess> f = FileAccess::open(p_to_path, FileAccess::WRITE);
-	ERR_FAIL_COND(f.is_null());
-
-	// Godot Streamable Texture 2D.
-	f->store_8('G');
-	f->store_8('S');
-	f->store_8('T');
-	f->store_8('2');
-
-	// Current format version.
-	f->store_32(CompressedTexture2D::FORMAT_VERSION);
-
-	// Texture may be resized later, so original size must be saved first.
-	f->store_32(p_image->get_width());
-	f->store_32(p_image->get_height());
-
-	uint32_t flags = 0;
-	if (p_streamable) {
-		flags |= CompressedTexture2D::FORMAT_BIT_STREAM;
-	}
-	if (p_mipmaps) {
-		flags |= CompressedTexture2D::FORMAT_BIT_HAS_MIPMAPS;
-	}
-	if (p_detect_3d) {
-		flags |= CompressedTexture2D::FORMAT_BIT_DETECT_3D;
-	}
-	if (p_detect_roughness) {
-		flags |= CompressedTexture2D::FORMAT_BIT_DETECT_ROUGNESS;
-	}
-	if (p_detect_normal) {
-		flags |= CompressedTexture2D::FORMAT_BIT_DETECT_NORMAL;
-	}
-
-	f->store_32(flags);
-	f->store_32(p_limit_mipmap);
-
-	// Reserved.
-	f->store_32(0);
-	f->store_32(0);
-	f->store_32(0);
-
-	if ((p_compress_mode == COMPRESS_LOSSLESS || p_compress_mode == COMPRESS_LOSSY) &&
-		p_image->get_format() >= Image::FORMAT_RF) {
-		p_compress_mode = COMPRESS_VRAM_UNCOMPRESSED; // these can't go as lossy
-	}
-
-	Ref<Image> image = p_image->duplicate();
-
-	if (p_mipmaps) {
-		if (p_force_po2_for_compressed && (p_compress_mode == COMPRESS_BASIS_UNIVERSAL ||
-											  p_compress_mode == COMPRESS_VRAM_COMPRESSED)) {
-			image->resize_to_po2();
-		}
-
-		if (!image->has_mipmaps() || p_force_normal) {
-			image->generate_mipmaps(p_force_normal);
-		}
-
-	}
-	else {
-		image->clear_mipmaps();
-	}
-
-	// Generate roughness mipmaps from normal texture.
-	if (image->has_mipmaps() && p_normal.is_valid()) {
-		image->generate_mipmap_roughness(p_roughness_channel, p_normal);
-	}
-
-	// Optimization: Only check for color channels when compressing as BasisU or VRAM.
-	Image::UsedChannels used_channels = Image::USED_CHANNELS_RGBA;
-
-	if (p_compress_mode == COMPRESS_BASIS_UNIVERSAL ||
-		p_compress_mode == COMPRESS_VRAM_COMPRESSED) {
-		Image::CompressSource comp_source = Image::COMPRESS_SOURCE_GENERIC;
-		if (p_force_normal) {
-			comp_source = Image::COMPRESS_SOURCE_NORMAL;
-		}
-		else if (p_srgb_friendly) {
-			comp_source = Image::COMPRESS_SOURCE_SRGB;
-		}
-
-		used_channels = image->detect_used_channels(comp_source);
-	}
-
-	save_to_ctex_format(f, image, p_compress_mode, used_channels, p_vram_compression,
-		p_vram_compression_profile, p_lossy_quality, p_basisu_params, Image::BPTC_DETECT);
-}
-
-=======
->>>>>>> fix/remove-object
 void ResourceImporterTexture::_remap_channels(Ref<Image>& r_image, ChannelRemap p_options[4])
 {
 	ERR_FAIL_COND(r_image->is_compressed());
@@ -477,12 +377,8 @@ void ResourceImporterTexture::_clamp_hdr_exposure(Ref<Image>& r_image)
 				clamped_color = color;
 			}
 			else {
-<<<<<<< HEAD
-				clamped_color = (color / luma) * ((linear * linear - compressed * luma) /
-=======
 				clamped_color = (color / luma) * ((linear * linear - compressed *
 luma) /
->>>>>>> fix/remove-object
 													 (2 * linear - compressed - luma));
 			}
 
@@ -514,8 +410,6 @@ ResourceImporterTexture::~ResourceImporterTexture()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
 	CompressMode p_compress_mode, Image::UsedChannels p_channels,
 	Image::CompressMode p_compress_format, Image::CompressProfile p_compress_profile,
@@ -531,5 +425,4 @@ void ResourceImporterTexture::get_import_options(
 
 String ResourceImporterTexture::get_import_settings_string() const { return String(); }
 
->>>>>>> fix/remove-object
 

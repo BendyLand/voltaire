@@ -31,11 +31,6 @@
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor_debugger_plugin.h"
 
-<<<<<<< HEAD
-void EditorDebuggerSession::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void EditorDebuggerSession::add_session_tab(Control* p_tab)
 {
 	ERR_FAIL_COND(!p_tab || !debugger);
@@ -62,15 +57,6 @@ bool EditorDebuggerSession::is_debuggable()
 	return debugger->is_debuggable();
 }
 
-<<<<<<< HEAD
-void EditorDebuggerSession::set_breakpoint(const String& p_path, int p_line, bool p_enabled)
-{
-	ERR_FAIL_NULL_MSG(debugger, "Plugin is not attached to debugger.");
-	debugger->set_breakpoint(p_path, p_line, p_enabled);
-}
-
-=======
->>>>>>> fix/remove-object
 EditorDebuggerSession::~EditorDebuggerSession() { detach_debugger(); }
 
 EditorDebuggerPlugin::~EditorDebuggerPlugin() { clear(); }

@@ -58,10 +58,6 @@ private:
 public:
 	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
 	void _execute(float p_delta) override;
-<<<<<<< HEAD
-	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
-=======
->>>>>>> fix/remove-object
 	void _draw_editor_gizmo() override;
 
 	void set_target_node(const NodePath& p_target_node);

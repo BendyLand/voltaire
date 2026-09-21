@@ -39,33 +39,6 @@
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void Path2DEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		curve_edit->set_button_icon(get_editor_theme_icon(SNAME("CurveEdit")));
-		curve_edit_curve->set_button_icon(get_editor_theme_icon(SNAME("CurveCurve")));
-		curve_create->set_button_icon(get_editor_theme_icon(SNAME("CurveCreate")));
-		curve_del->set_button_icon(get_editor_theme_icon(SNAME("CurveDelete")));
-		curve_close->set_button_icon(get_editor_theme_icon(SNAME("CurveClose")));
-		curve_clear_points->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
-
-		create_curve_button->set_button_icon(get_editor_theme_icon(SNAME("Curve2D")));
-	} break;
-	}
-}
-
-void Path2DEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		hide();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Path2DEditor::_node_visibility_changed()
 {
 	if (!node) {
@@ -76,39 +49,6 @@ void Path2DEditor::_node_visibility_changed()
 	_update_toolbar();
 }
 
-<<<<<<< HEAD
-void Path2DEditor::_update_toolbar()
-{
-	if (!node) {
-		return;
-	}
-	bool has_curve = node->get_curve().is_valid();
-	toolbar->set_visible(has_curve);
-	create_curve_button->set_visible(!has_curve);
-}
-
-void Path2DEditor::_handle_option_pressed(int p_option)
-{
-	PopupMenu* pm;
-	pm = handle_menu->get_popup();
-
-	switch (p_option) {
-	case HANDLE_OPTION_ANGLE: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_ANGLE);
-		mirror_handle_angle = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
-		pm->set_item_disabled(HANDLE_OPTION_LENGTH, !mirror_handle_angle);
-	} break;
-	case HANDLE_OPTION_LENGTH: {
-		bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
-		mirror_handle_length = !is_checked;
-		pm->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Path2DEditor::_cancel_current_action()
 {
 	ERR_FAIL_NULL(node);
@@ -148,21 +88,6 @@ void Path2DEditor::_cancel_current_action()
 	action = ACTION_NONE;
 }
 
-<<<<<<< HEAD
-void Path2DEditor::_confirm_clear_points()
-{
-	if (!node || node->get_curve().is_null()) {
-		return;
-	}
-	if (node->get_curve()->get_point_count() == 0) {
-		return;
-	}
-	clear_points_dialog->reset_size();
-	clear_points_dialog->popup_centered();
-}
-
-=======
->>>>>>> fix/remove-object
 void Path2DEditor::_clear_curve_points(Path2D* p_path2d)
 {
 	if (!p_path2d || p_path2d->get_curve().is_null()) {
@@ -212,15 +137,6 @@ Path2DEditor::~Path2DEditor()
 	RS::get_singleton()->free_rid(debug_handle_mesh_rid);
 }
 
-<<<<<<< HEAD
-Path2DEditorPlugin::Path2DEditorPlugin()
-{
-	path2d_editor = memnew(Path2DEditor);
-	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(path2d_editor);
-	path2d_editor->hide();
-}
-=======
->>>>>>> fix/remove-object
 
 
 void Path2DEditor::_mode_selected(int) {}

@@ -638,27 +638,6 @@ void RichTextLabel::_find_click(ItemFrame* p_frame, const Point2i& p_click,
 	}
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_scroll_changed(double)
-{
-	if (updating_scroll) {
-		return;
-	}
-
-	if (scroll_follow && vscroll->get_value() > (vscroll->get_max() - vscroll->get_page() - 1)) {
-		scroll_following = true;
-	}
-	else {
-		scroll_following = false;
-	}
-
-	scroll_updated = true;
-
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void RichTextLabel::_update_fx(RichTextLabel::ItemFrame* p_frame, double p_delta_time)
 {
 	Item* it = p_frame;
@@ -795,104 +774,6 @@ void RichTextLabel::_prepare_scroll_anchor()
 	vscroll->set_anchor_and_offset(SIDE_LEFT, ANCHOR_END, -scroll_w);
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_update_selection()
-{
-	ItemFrame* c_frame = nullptr;
-	int c_line = 0;
-	Item* c_item = nullptr;
-	int c_index = 0;
-	bool outside;
-
-	// Handle auto scrolling.
-	const Size2 size = get_size();
-	if (!(local_mouse_pos.x >= 0.0 && local_mouse_pos.y >= 0.0 && local_mouse_pos.x < size.x &&
-			local_mouse_pos.y < size.y)) {
-		real_t scroll_delta = 0.0;
-		if (local_mouse_pos.y < 0) {
-			scroll_delta = -auto_scroll_speed * (1 - (local_mouse_pos.y / 15.0));
-		}
-		else if (local_mouse_pos.y > size.y) {
-			scroll_delta = auto_scroll_speed * (1 + (local_mouse_pos.y - size.y) / 15.0);
-		}
-
-		if (scroll_delta != 0.0) {
-			vscroll->scroll(scroll_delta);
-			queue_redraw();
-		}
-	}
-
-	// Update selection area.
-	_find_click(
-		main, last_clamped_mouse_pos, &c_frame, &c_line, &c_item, &c_index, &outside, false);
-	if (selection.click_item && c_item) {
-		selection.from_frame = selection.click_frame;
-		selection.from_line = selection.click_line;
-		selection.from_item = selection.click_item;
-		selection.from_char = selection.click_char;
-
-		selection.to_frame = c_frame;
-		selection.to_line = c_line;
-		selection.to_item = c_item;
-		selection.to_char = c_index;
-
-		bool swap = false;
-		if (selection.click_frame && c_frame) {
-			const Line& l1 = c_frame->lines[c_line];
-			const Line& l2 = selection.click_frame->lines[selection.click_line];
-			if (l1.char_offset + c_index < l2.char_offset + selection.click_char) {
-				swap = true;
-			}
-			else if (l1.char_offset + c_index == l2.char_offset + selection.click_char &&
-					   selection.selection_mode == Selection::SINGLE_CLICK) {
-				deselect();
-				return;
-			}
-		}
-
-		if (swap) {
-			SWAP(selection.from_frame, selection.to_frame);
-			SWAP(selection.from_line, selection.to_line);
-			SWAP(selection.from_item, selection.to_item);
-			SWAP(selection.from_char, selection.to_char);
-		}
-
-		if (selection.selection_mode == Selection::TRIPLE_CLICK && c_frame) {
-			// Expand the selection to paragraph edges.
-			selection.from_char = 0;
-			selection.to_char = selection.to_frame->lines[selection.to_line].char_count;
-		}
-		else if (selection.selection_mode == Selection::DOUBLE_CLICK && c_frame) {
-			// Expand the selection to word edges.
-
-			Line* l = &selection.from_frame->lines[selection.from_line];
-			MutexLock lock(l->text_buf->get_mutex());
-			PackedInt32Array words = TS->shaped_text_get_word_breaks(l->text_buf->get_rid());
-			for (int i = 0; i < words.size(); i = i + 2) {
-				if (selection.from_char > words[i] && selection.from_char < words[i + 1]) {
-					selection.from_char = words[i];
-					break;
-				}
-			}
-			l = &selection.to_frame->lines[selection.to_line];
-			lock = MutexLock(l->text_buf->get_mutex());
-			words = TS->shaped_text_get_word_breaks(l->text_buf->get_rid());
-			for (int i = 0; i < words.size(); i = i + 2) {
-				if (selection.to_char > words[i] && selection.to_char < words[i + 1]) {
-					selection.to_char = words[i + 1];
-					break;
-				}
-			}
-		}
-
-		selection.active = true;
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void RichTextLabel::_find_frame(Item* p_item, ItemFrame** r_frame, int* r_line)
 {
 	if (r_frame != nullptr) {
@@ -1456,29 +1337,6 @@ bool RichTextLabel::_find_layout_subitem(Item* from, Item* to)
 	return false;
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_thread_end()
-{
-	set_physics_process_internal(false);
-	if (!scroll_visible) {
-		vscroll->hide();
-	}
-	if (is_visible_in_tree()) {
-		queue_accessibility_update();
-		queue_redraw();
-	}
-}
-
-void RichTextLabel::_stop_thread()
-{
-	if (threaded) {
-		stop_thread.store(true);
-		wait_until_finished();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int RichTextLabel::get_pending_paragraphs() const
 {
 	int to_line = main->first_invalid_line.load();
@@ -1501,69 +1359,12 @@ bool RichTextLabel::is_finished() const
 
 bool RichTextLabel::is_updating() const { return updating.load() || validating.load(); }
 
-<<<<<<< HEAD
-void RichTextLabel::set_threaded(bool p_threaded)
-{
-	if (threaded != p_threaded) {
-		_stop_thread();
-		threaded = p_threaded;
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool RichTextLabel::is_threaded() const { return threaded; }
 
 void RichTextLabel::set_progress_bar_delay(int p_delay_ms) { progress_delay = p_delay_ms; }
 
 int RichTextLabel::get_progress_bar_delay() const { return progress_delay; }
 
-<<<<<<< HEAD
-_FORCE_INLINE_ float RichTextLabel::_update_scroll_exceeds(float p_total_height,
-	float p_ctrl_height, float p_width, int p_idx, float p_old_scroll, float p_text_rect_height)
-{
-	updating_scroll = true;
-
-	float total_height = p_total_height;
-	bool exceeds = scroll_active && p_total_height > p_ctrl_height &&
-				   p_width > vscroll->get_bound_minimum_size().width;
-	if (exceeds != scroll_visible) {
-		if (exceeds) {
-			scroll_visible = true;
-			_prepare_scroll_anchor();
-			vscroll->show();
-		}
-		else {
-			scroll_visible = false;
-			scroll_w = 0;
-		}
-
-		main->first_resized_line.store(0);
-
-		total_height = 0;
-		for (int j = 0; j <= p_idx; j++) {
-			total_height = _resize_line(main, j, theme_cache.normal_font,
-				theme_cache.normal_font_size, p_width - scroll_w, total_height);
-
-			main->first_resized_line.store(j);
-		}
-	}
-	vscroll->set_max(total_height);
-	vscroll->set_page(p_text_rect_height);
-	if (scroll_follow && scroll_following) {
-		vscroll->set_value(total_height);
-	}
-	else {
-		vscroll->set_value(p_old_scroll);
-	}
-	updating_scroll = false;
-
-	return total_height;
-}
-
-=======
->>>>>>> fix/remove-object
 void RichTextLabel::_invalidate_current_line(ItemFrame* p_frame)
 {
 	if ((int)p_frame->lines.size() - 1 <= p_frame->first_invalid_line) {
@@ -1619,26 +1420,6 @@ Size2 RichTextLabel::_get_image_size(
 	return ret;
 }
 
-<<<<<<< HEAD
-void RichTextLabel::add_newline()
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (current->type == ITEM_TABLE) {
-		return;
-	}
-	ItemNewline* item = memnew(ItemNewline);
-	item->rid = items.make_rid(item);
-	item->line = current_frame->lines.size();
-	_add_item(item, false);
-	current_frame->lines.resize(current_frame->lines.size() + 1);
-	_invalidate_current_line(current_frame);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line,
 	bool p_erase, int p_char_offset, int p_line_offset)
 {
@@ -1686,152 +1467,6 @@ void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_fra
 	}
 }
 
-<<<<<<< HEAD
-bool RichTextLabel::remove_paragraph(int p_paragraph, bool p_no_invalidate)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (p_paragraph >= (int)main->lines.size() || p_paragraph < 0) {
-		return false;
-	}
-
-	stack_externally_modified = true;
-
-	if (main->lines.size() == 1) {
-		// Clear all.
-		main->_clear_children();
-		current = main;
-		current_frame = main;
-		main->lines.clear();
-		main->lines.resize(1);
-
-		current_char_ofs = 0;
-	}
-	else {
-		HashSet<Item*> erase_list;
-		Line& l = main->lines[p_paragraph];
-		int off = l.char_count;
-		for (int i = p_paragraph; i < (int)main->lines.size(); i++) {
-			if (i == p_paragraph) {
-				_remove_frame(erase_list, main, i, true, off, 0);
-			}
-			else {
-				_remove_frame(erase_list, main, i, false, off, 1);
-
-				Item* it_to = (i + 1 < (int)main->lines.size()) ? main->lines[i + 1].from : nullptr;
-				Line& nl = main->lines[i];
-				while (erase_list.has(nl.from)) {
-					nl.from = _get_next_item(nl.from);
-					if (nl.from == it_to) {
-						nl.from = nullptr;
-						break;
-					}
-				}
-			}
-		}
-		for (HashSet<Item*>::Iterator E = erase_list.begin(); E; ++E) {
-			Item* it = *E;
-			if (current_frame == it) {
-				current_frame = main;
-			}
-			if (current == it) {
-				current = main;
-			}
-			if (!erase_list.has(it->parent)) {
-				it->E->erase();
-			}
-			it->subitems.clear();
-			memdelete(it);
-		}
-		main->lines.remove_at(p_paragraph);
-		current_char_ofs -= off;
-	}
-
-	selection.click_frame = nullptr;
-	selection.click_item = nullptr;
-	selection.active = false;
-
-	if (is_processing_internal()) {
-		bool process_enabled = false;
-		Item* it = main;
-		while (it) {
-			Vector<ItemFX*> fx_stack;
-			_fetch_item_fx_stack(it, fx_stack);
-			if (fx_stack.size()) {
-				process_enabled = true;
-				break;
-			}
-			it = _get_next_item(it, true);
-		}
-		set_process_internal(process_enabled);
-	}
-
-	if (p_no_invalidate) {
-		// Do not invalidate cache, only update vertical offsets of the paragraphs after deleted one
-		// and scrollbar.
-		int to_line = main->first_invalid_line.load() - 1;
-		float total_height =
-			(p_paragraph == 0) ? 0 : _calculate_line_vertical_offset(main->lines[p_paragraph - 1]);
-		for (int i = p_paragraph; i < to_line; i++) {
-			MutexLock lock(main->lines[to_line - 1].text_buf->get_mutex());
-			main->lines[i].offset.y = total_height;
-			total_height = _calculate_line_vertical_offset(main->lines[i]);
-		}
-		updating_scroll = true;
-		vscroll->set_max(total_height);
-		updating_scroll = false;
-
-		main->first_invalid_line.store(MAX(main->first_invalid_line.load() - 1, 0));
-		main->first_resized_line.store(MAX(main->first_resized_line.load() - 1, 0));
-		main->first_invalid_font_line.store(MAX(main->first_invalid_font_line.load() - 1, 0));
-	}
-	else {
-		// Invalidate cache after the deleted paragraph.
-		main->first_invalid_line.store(MIN(main->first_invalid_line.load(), p_paragraph));
-		main->first_resized_line.store(MIN(main->first_resized_line.load(), p_paragraph));
-		main->first_invalid_font_line.store(MIN(main->first_invalid_font_line.load(), p_paragraph));
-	}
-	queue_redraw();
-
-	return true;
-}
-
-bool RichTextLabel::invalidate_paragraph(int p_paragraph)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	if (p_paragraph >= (int)main->lines.size() || p_paragraph < 0) {
-		return false;
-	}
-
-	// Invalidate cache.
-	main->first_invalid_line.store(MIN(main->first_invalid_line.load(), p_paragraph));
-	main->first_resized_line.store(MIN(main->first_resized_line.load(), p_paragraph));
-	main->first_invalid_font_line.store(MIN(main->first_invalid_font_line.load(), p_paragraph));
-
-	_invalidate_accessibility();
-	if (is_inside_tree()) {
-		queue_accessibility_update();
-	}
-	queue_redraw();
-	update_configuration_warnings();
-
-	return true;
-}
-
-void RichTextLabel::_invalidate_fonts()
-{
-	_stop_thread();
-	main->first_invalid_font_line.store(0); // Invalidate all lines.
-	_invalidate_accessibility();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void RichTextLabel::push_normal()
 {
 	ERR_FAIL_COND(theme_cache.normal_font.is_null());
@@ -1871,379 +1506,6 @@ void RichTextLabel::push_mono()
 	_push_def_font(RTL_MONO_FONT);
 }
 
-<<<<<<< HEAD
-void RichTextLabel::push_font_size(int p_font_size)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemFontSize* item = memnew(ItemFontSize);
-	item->font_size = p_font_size;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_outline_size(int p_ol_size)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemOutlineSize* item = memnew(ItemOutlineSize);
-	item->outline_size = p_ol_size;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_color(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemColor* item = memnew(ItemColor);
-	item->color = p_color;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_outline_color(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemOutlineColor* item = memnew(ItemOutlineColor);
-	item->color = p_color;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_underline(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemUnderline* item = memnew(ItemUnderline);
-	item->color = p_color;
-
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_strikethrough(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemStrikethrough* item = memnew(ItemStrikethrough);
-	item->color = p_color;
-
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_paragraph(HorizontalAlignment p_alignment,
-	Control::TextDirection p_direction, const String& p_language,
-	TextServer::StructuredTextParser p_st_parser, uint32_t p_jst_flags,
-	const PackedFloat32Array& p_tab_stops)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-
-	ItemParagraph* item = memnew(ItemParagraph);
-	item->alignment = p_alignment;
-	item->direction = p_direction;
-	item->language = p_language;
-	item->st_parser = p_st_parser;
-	item->jst_flags = p_jst_flags;
-	item->tab_stops = p_tab_stops;
-	_add_item(item, true, true);
-}
-
-void RichTextLabel::push_indent(int p_level)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ERR_FAIL_COND(p_level < 0);
-
-	ItemIndent* item = memnew(ItemIndent);
-	item->level = p_level;
-	_add_item(item, true, true);
-}
-
-void RichTextLabel::push_list(
-	int p_level, ListType p_list, bool p_capitalize, const String& p_bullet)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ERR_FAIL_COND(p_level < 0);
-
-	ItemList* item = memnew(ItemList);
-	item->list_type = p_list;
-	item->level = p_level;
-	item->capitalize = p_capitalize;
-	item->bullet = p_bullet;
-	_add_item(item, true, true);
-}
-
-void RichTextLabel::push_language(const String& p_language)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemLanguage* item = memnew(ItemLanguage);
-	item->language = p_language;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_hint(const String& p_string)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemHint* item = memnew(ItemHint);
-	item->description = p_string;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_table(
-	int p_columns, InlineAlignment p_alignment, int p_align_to_row, const String& p_alt_text)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ERR_FAIL_COND(p_columns < 1);
-	ItemTable* item = memnew(ItemTable);
-	item->rid = items.make_rid(item);
-	item->name = p_alt_text;
-	item->columns.resize(p_columns);
-	item->total_width = 0;
-	item->inline_align = p_alignment;
-	item->align_to_row = p_align_to_row;
-	for (int i = 0; i < (int)item->columns.size(); i++) {
-		item->columns[i].expand = false;
-		item->columns[i].shrink = true;
-		item->columns[i].expand_ratio = 1;
-	}
-	_add_item(item, true, false);
-}
-
-void RichTextLabel::push_fade(int p_start_index, int p_length)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemFade* item = memnew(ItemFade);
-	item->starting_index = p_start_index;
-	item->length = p_length;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_shake(int p_strength = 10, float p_rate = 24.0f, bool p_connected = true)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemShake* item = memnew(ItemShake);
-	item->strength = p_strength;
-	item->rate = p_rate;
-	item->connected = p_connected;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_wave(
-	float p_frequency = 1.0f, float p_amplitude = 10.0f, bool p_connected = true)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemWave* item = memnew(ItemWave);
-	item->frequency = p_frequency;
-	item->amplitude = p_amplitude;
-	item->connected = p_connected;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_tornado(
-	float p_frequency = 1.0f, float p_radius = 10.0f, bool p_connected = true)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemTornado* item = memnew(ItemTornado);
-	item->frequency = p_frequency;
-	item->radius = p_radius;
-	item->connected = p_connected;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_rainbow(
-	float p_saturation, float p_value, float p_frequency, float p_speed)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemRainbow* item = memnew(ItemRainbow);
-	item->speed = p_speed;
-	item->frequency = p_frequency;
-	item->saturation = p_saturation;
-	item->value = p_value;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_pulse(const Color& p_color, float p_frequency, float p_ease)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ItemPulse* item = memnew(ItemPulse);
-	item->color = p_color;
-	item->frequency = p_frequency;
-	item->ease = p_ease;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_bgcolor(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemBGColor* item = memnew(ItemBGColor);
-	item->color = p_color;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_fgcolor(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemFGColor* item = memnew(ItemFGColor);
-	item->color = p_color;
-	_add_item(item, true);
-}
-
-void RichTextLabel::push_context()
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type == ITEM_TABLE);
-	ItemContext* item = memnew(ItemContext);
-	_add_item(item, true);
-}
-
-void RichTextLabel::set_table_column_expand(int p_column, bool p_expand, int p_ratio, bool p_shrink)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_TABLE);
-
-	ItemTable* table = static_cast<ItemTable*>(current);
-	ERR_FAIL_INDEX(p_column, (int)table->columns.size());
-	table->columns[p_column].expand = p_expand;
-	table->columns[p_column].shrink = p_shrink;
-	table->columns[p_column].expand_ratio = p_ratio;
-}
-
-void RichTextLabel::set_table_column_name(int p_column, const String& p_name)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_TABLE);
-
-	ItemTable* table = static_cast<ItemTable*>(current);
-	ERR_FAIL_INDEX(p_column, (int)table->columns.size());
-	table->columns[p_column].name = p_name;
-}
-
-void RichTextLabel::set_cell_row_background_color(
-	const Color& p_odd_row_bg, const Color& p_even_row_bg)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_FRAME);
-
-	ItemFrame* cell = static_cast<ItemFrame*>(current);
-	ERR_FAIL_COND(!cell->cell);
-	cell->odd_row_bg = p_odd_row_bg;
-	cell->even_row_bg = p_even_row_bg;
-}
-
-void RichTextLabel::set_cell_border_color(const Color& p_color)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_FRAME);
-
-	ItemFrame* cell = static_cast<ItemFrame*>(current);
-	ERR_FAIL_COND(!cell->cell);
-	cell->border = p_color;
-}
-
-void RichTextLabel::set_cell_size_override(const Size2& p_min_size, const Size2& p_max_size)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_FRAME);
-
-	ItemFrame* cell = static_cast<ItemFrame*>(current);
-	ERR_FAIL_COND(!cell->cell);
-	cell->min_size_over = p_min_size;
-	cell->max_size_over = p_max_size;
-}
-
-void RichTextLabel::set_cell_padding(const Rect2& p_padding)
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_FRAME);
-
-	ItemFrame* cell = static_cast<ItemFrame*>(current);
-	ERR_FAIL_COND(!cell->cell);
-	cell->padding = p_padding;
-}
-
-void RichTextLabel::push_cell()
-{
-	_stop_thread();
-	MutexLock data_lock(data_mutex);
-
-	ERR_FAIL_COND(current->type != ITEM_TABLE);
-
-	ItemFrame* item = memnew(ItemFrame);
-	item->parent_frame = current_frame;
-	_add_item(item, true);
-	current_frame = item;
-	item->cell = true;
-	item->lines.resize(1);
-	item->lines[0].from = nullptr;
-	item->first_invalid_line.store(0); // parent frame last line ???
-	queue_accessibility_update();
-}
-
-=======
->>>>>>> fix/remove-object
 int RichTextLabel::get_current_table_column() const
 {
 	ERR_FAIL_COND_V(current->type != ITEM_TABLE, -1);
@@ -2784,66 +2046,6 @@ PopupMenu* RichTextLabel::get_menu() const
 
 bool RichTextLabel::is_menu_visible() const { return menu && menu->is_visible(); }
 
-<<<<<<< HEAD
-void RichTextLabel::deselect()
-{
-	selection.active = false;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void RichTextLabel::select_all()
-{
-	_validate_line_caches();
-
-	if (!selection.enabled) {
-		return;
-	}
-
-	Item* it = main;
-	Item* from_item = nullptr;
-	Item* to_item = nullptr;
-
-	while (it) {
-		if (it->type != ITEM_FRAME) {
-			if (!from_item) {
-				from_item = it;
-			}
-			to_item = it;
-		}
-		it = _get_next_item(it, true);
-	}
-	if (!from_item) {
-		return;
-	}
-
-	ItemFrame* from_frame = nullptr;
-	int from_line = 0;
-	_find_frame(from_item, &from_frame, &from_line);
-	if (!from_frame) {
-		return;
-	}
-	ItemFrame* to_frame = nullptr;
-	int to_line = 0;
-	_find_frame(to_item, &to_frame, &to_line);
-	if (!to_frame) {
-		return;
-	}
-	selection.from_line = from_line;
-	selection.from_frame = from_frame;
-	selection.from_char = 0;
-	selection.from_item = from_item;
-	selection.to_line = to_line;
-	selection.to_frame = to_frame;
-	selection.to_char = to_frame->lines[to_line].char_count;
-	selection.to_item = to_item;
-	selection.active = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool RichTextLabel::is_selection_enabled() const { return selection.enabled; }
 
 bool RichTextLabel::is_deselect_on_focus_loss_enabled() const
@@ -2967,45 +2169,7 @@ HorizontalAlignment RichTextLabel::get_horizontal_alignment() const { return def
 
 VerticalAlignment RichTextLabel::get_vertical_alignment() const { return vertical_alignment; }
 
-<<<<<<< HEAD
-void RichTextLabel::set_justification_flags(uint32_t p_flags)
-{
-	_stop_thread();
-
-	if (default_jst_flags != p_flags) {
-		default_jst_flags = p_flags;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-
 uint32_t RichTextLabel::get_justification_flags() const { return default_jst_flags; }
-
-void RichTextLabel::set_tab_stops(const PackedFloat32Array& p_tab_stops)
-{
-	_stop_thread();
-
-	if (default_tab_stops != p_tab_stops) {
-		default_tab_stops = p_tab_stops;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-=======
-uint32_t RichTextLabel::get_justification_flags() const { return default_jst_flags; }
->>>>>>> fix/remove-object
 
 PackedFloat32Array RichTextLabel::get_tab_stops() const { return default_tab_stops; }
 
@@ -3014,120 +2178,11 @@ TextServer::StructuredTextParser RichTextLabel::get_structured_text_bidi_overrid
 	return st_parser;
 }
 
-<<<<<<< HEAD
-void RichTextLabel::set_language(const String& p_language)
-{
-	if (language != p_language) {
-		_stop_thread();
-
-		language = p_language;
-		if (!stack_externally_modified) {
-			_apply_translation();
-		}
-		else {
-			main->first_invalid_line.store(0); // Invalidate all lines.
-			_invalidate_accessibility();
-			_validate_line_caches();
-		}
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 String RichTextLabel::get_language() const { return language; }
 
 TextServer::AutowrapMode RichTextLabel::get_autowrap_mode() const { return autowrap_mode; }
 
-<<<<<<< HEAD
-void RichTextLabel::set_autowrap_trim_flags(uint32_t p_flags)
-{
-	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
-		_stop_thread();
-
-		autowrap_flags_trim = p_flags & TextServer::BREAK_TRIM_MASK;
-		main->first_invalid_line = 0; // Invalidate all lines.
-		_validate_line_caches();
-		queue_redraw();
-		update_minimum_size();
-	}
-}
-
 uint32_t RichTextLabel::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
-
-void RichTextLabel::set_visible_ratio(float p_ratio)
-{
-	if (visible_ratio != p_ratio) {
-		_stop_thread();
-
-		int prev_vc = visible_characters;
-		if (p_ratio >= 1.0) {
-			visible_characters = -1;
-			visible_ratio = 1.0;
-		}
-		else if (p_ratio < 0.0) {
-			visible_characters = 0;
-			visible_ratio = 0.0;
-		}
-		else {
-			visible_characters = get_total_character_count() * p_ratio;
-			visible_ratio = p_ratio;
-		}
-
-		if (visible_chars_behavior == TextServer::VC_CHARS_BEFORE_SHAPING &&
-			visible_characters != prev_vc) {
-			int new_vc =
-				(visible_characters < 0) ? get_total_character_count() : visible_characters;
-			int old_vc = (prev_vc < 0) ? get_total_character_count() : prev_vc;
-			int to_line = main->first_invalid_line.load();
-			int old_from_l = to_line;
-			int new_from_l = to_line;
-			for (int i = 0; i < to_line; i++) {
-				const Line& l = main->lines[i];
-				if (l.char_offset <= old_vc && l.char_offset + l.char_count > old_vc) {
-					old_from_l = i;
-				}
-				if (l.char_offset <= new_vc && l.char_offset + l.char_count > new_vc) {
-					new_from_l = i;
-				}
-			}
-			Rect2 text_rect = _get_text_rect();
-			int first_invalid = MIN(new_from_l, old_from_l);
-			int second_invalid = MAX(new_from_l, old_from_l);
-
-			float total_height = (first_invalid == 0) ? 0
-													  : _calculate_line_vertical_offset(
-															main->lines[first_invalid - 1]);
-			if (first_invalid < to_line) {
-				int total_chars = main->lines[first_invalid].char_offset;
-				total_height = _shape_line(main, first_invalid, theme_cache.normal_font,
-					theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-					total_height, &total_chars);
-			}
-			if (first_invalid != second_invalid) {
-				for (int i = first_invalid + 1; i < second_invalid; i++) {
-					main->lines[i].offset.y = total_height;
-					total_height = _calculate_line_vertical_offset(main->lines[i]);
-				}
-				if (second_invalid < to_line) {
-					int total_chars = main->lines[second_invalid].char_offset;
-					total_height = _shape_line(main, second_invalid, theme_cache.normal_font,
-						theme_cache.normal_font_size, text_rect.get_size().width - scroll_w,
-						total_height, &total_chars);
-				}
-			}
-			for (int i = second_invalid + 1; i < to_line; i++) {
-				main->lines[i].offset.y = total_height;
-				total_height = _calculate_line_vertical_offset(main->lines[i]);
-			}
-		}
-		_update_follow_vc();
-		queue_redraw();
-	}
-}
-=======
-uint32_t RichTextLabel::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
->>>>>>> fix/remove-object
 
 float RichTextLabel::get_visible_ratio() const { return visible_ratio; }
 
@@ -3211,25 +2266,6 @@ int RichTextLabel::get_line_width(int p_line) const
 	return 0;
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_maximum_size_changed()
-{
-	if (!fit_content || autowrap_mode == TextServer::AUTOWRAP_OFF) {
-		return;
-	}
-
-	_stop_thread();
-	main->first_resized_line.store(0); // Invalidate all lines.
-	_invalidate_accessibility();
-	_validate_line_caches();
-	queue_redraw();
-	update_minimum_size();
-}
-
-void RichTextLabel::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 TextServer::VisibleCharactersBehavior RichTextLabel::get_visible_characters_behavior() const
 {
 	return visible_chars_behavior;
@@ -3305,11 +2341,7 @@ int RichTextLabel::get_total_character_count() const
 		it = _get_next_item(it, true);
 	}
 
-<<<<<<< HEAD
-return tc;
-=======
 	return tc;
->>>>>>> fix/remove-object
 }
 
 int RichTextLabel::get_total_glyph_count() const
@@ -3371,31 +2403,6 @@ Size2 RichTextLabel::get_minimum_size() const
 				   : min_size);
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_update_context_menu()
-{
-	if (!menu) {
-		_generate_context_menu();
-	}
-
-	int idx = -1;
-
-#define MENU_ITEM_ACTION_DISABLED(m_menu, m_id, m_action, m_disabled)                              \
-	idx = m_menu->get_item_index(m_id);                                                            \
-	if (idx >= 0) {                                                                                \
-		m_menu->set_item_accelerator(                                                              \
-			idx, shortcut_keys_enabled ? _get_menu_action_accelerator(m_action) : Key::NONE);      \
-		m_menu->set_item_disabled(idx, m_disabled);                                                \
-	}
-
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_COPY, "ui_copy", !selection.enabled)
-	MENU_ITEM_ACTION_DISABLED(menu, MENU_SELECT_ALL, "ui_text_select_all", !selection.enabled)
-
-#undef MENU_ITEM_ACTION_DISABLED
-}
-
-=======
->>>>>>> fix/remove-object
 Key RichTextLabel::_get_menu_action_accelerator(const String& p_action)
 {
 	const List<Ref<InputEvent>>* events = InputMap::get_singleton()->action_get_events(p_action);
@@ -3442,12 +2449,6 @@ void RichTextLabel::menu_option(int p_option)
 	}
 }
 
-<<<<<<< HEAD
-RichTextLabel::~RichTextLabel()
-{
-	_stop_thread();
-	memdelete(main);
-=======
 void RichTextLabel::add_text(const String& p_text) {}
 
 void RichTextLabel::wait_until_finished() {}
@@ -3489,7 +2490,6 @@ void RichTextLabel::append_text(String const&) {}
 Control::CursorShape RichTextLabel::get_cursor_shape(const Vector2& p_pos) const
 {
 	return Control::CURSOR_ARROW;
->>>>>>> fix/remove-object
 }
 
 

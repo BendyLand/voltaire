@@ -85,10 +85,6 @@ class ImporterMesh : public Resource
 	Size2i lightmap_size_hint;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void add_blend_shape(const String& p_name);

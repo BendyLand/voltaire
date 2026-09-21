@@ -53,10 +53,7 @@ class NavigationServer2D
 
 public:
 	static NavigationServer2D* get_singleton();
-<<<<<<< HEAD
-=======
 	~NavigationServer2D();
->>>>>>> fix/remove-object
 
 	/* MAP API */
 

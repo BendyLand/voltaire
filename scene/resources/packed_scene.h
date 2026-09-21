@@ -251,10 +251,6 @@ protected:
 		return false;
 	} // this is handled by editor better
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	virtual void reset_state() override;
 
 public:

@@ -183,10 +183,6 @@ protected:
 public:
 	void set_edited_theme(const Ref<Theme>& p_theme);
 	void set_base_theme(const Ref<Theme>& p_theme);
-<<<<<<< HEAD
-	void reset_item_tree();
-=======
->>>>>>> fix/remove-object
 
 	bool has_selected_items() const;
 
@@ -279,10 +275,6 @@ class ThemeItemEditorDialog : public AcceptDialog
 	void _edit_theme_item_gui_input(const Ref<InputEvent>& p_event);
 
 	void _open_select_another_theme();
-<<<<<<< HEAD
-	void _select_another_theme_cbk(const String& p_path);
-=======
->>>>>>> fix/remove-object
 
 protected:
 	void _notification(int p_what);
@@ -304,22 +296,8 @@ class ThemeTypeDialog : public ConfirmationDialog
 	ItemList* add_type_options = nullptr;
 	ConfirmationDialog* add_type_confirmation = nullptr;
 
-<<<<<<< HEAD
-	void _dialog_about_to_show();
-	void ok_pressed() override;
-
-	void _update_add_type_options(const String& p_filter = "");
-
-	void _add_type_filter_cbk(const String& p_value);
-	void _add_type_options_cbk(int p_index);
-	void _add_type_dialog_entered(const String& p_value);
-	void _add_type_dialog_activated(int p_index);
-
-	void _add_type_selected(const String& p_type_name);
-=======
 	void _add_type_options_cbk(int p_index);
 
->>>>>>> fix/remove-object
 	void _add_type_confirmed();
 
 protected:
@@ -332,15 +310,6 @@ public:
 	ThemeTypeDialog();
 };
 
-<<<<<<< HEAD
-// Custom `Label` needed to use `EditorHelpBit` to display theme item documentation.
-class ThemeItemLabel : public Label
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
-};
-
-=======
->>>>>>> fix/remove-object
 class ThemeTypeEditor : public MarginContainer
 {
 	Ref<Theme> edited_theme;
@@ -392,10 +361,6 @@ class ThemeTypeEditor : public MarginContainer
 
 	VBoxContainer* _create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
-<<<<<<< HEAD
-	void _update_type_list_debounced();
-=======
->>>>>>> fix/remove-object
 	HashMap<StringName, bool> _get_type_items(
 		String p_type_name, Theme::DataType p_type, bool p_include_default);
 	HBoxContainer* _create_property_control(
@@ -473,12 +438,6 @@ class ThemeEditor : public EditorDock
 	void _theme_edit_button_cbk();
 	void _dock_closed_cbk();
 	void _scene_closed(const String& p_path);
-<<<<<<< HEAD
-	void _resource_saved(const Ref<Resource>& p_resource);
-	void _files_moved(const String& p_old_path, const String& p_new_path);
-	void _update_theme_name(const String& p_name);
-=======
->>>>>>> fix/remove-object
 
 	void _add_preview_button_cbk();
 	void _preview_scene_dialog_cbk(const String& p_path);

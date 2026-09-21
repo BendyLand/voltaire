@@ -34,11 +34,6 @@
 #include "export_plugin.h"
 
 void register_macos_exporter_types() {}
-<<<<<<< HEAD
-
-
-=======
 void register_macos_exporter() {}
->>>>>>> fix/remove-object
 
 

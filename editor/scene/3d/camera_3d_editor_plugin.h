@@ -39,19 +39,8 @@ class Camera3DEditor : public Control
 {
 	Button* preview = nullptr;
 	Node* node = nullptr;
-<<<<<<< HEAD
-
-	void _pressed();
-
-protected:
-	void _node_removed(Node* p_node);
 
 public:
-	void edit(Node* p_camera);
-=======
-
-public:
->>>>>>> fix/remove-object
 	Camera3DEditor();
 };
 
@@ -66,11 +55,7 @@ class Camera3DPreview : public MarginContainer
 	void _toggle_folding(bool p_folded);
 
 public:
-<<<<<<< HEAD
-	Camera3DPreview(Camera3D* p_camera);
-=======
 	Camera3DPreview(Camera3D* p_camera) : camera(p_camera) {}
->>>>>>> fix/remove-object
 };
 
 class Camera3DEditorPlugin : public EditorPlugin

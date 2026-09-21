@@ -42,49 +42,6 @@
 #include "scene/gui/menu_button.h"
 #include "scene/main/scene_tree.h"
 
-<<<<<<< HEAD
-void CSGShapeEditor::_node_removed(Node* p_node)
-{
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
-void CSGShapeEditor::edit(CSGShape3D* p_csg_shape)
-{
-	node = p_csg_shape;
-	if (node) {
-		options->show();
-	}
-	else {
-		options->hide();
-	}
-}
-
-void CSGShapeEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		options->set_button_icon(get_editor_theme_icon(SNAME("CSGCombiner3D")));
-	} break;
-	}
-}
-
 String CSGShape3DGizmoPlugin::get_gizmo_name() const { return "CSGShape3D"; }
 
-EditorPluginCSG::EditorPluginCSG()
-{
-	Ref<CSGShape3DGizmoPlugin> gizmo_plugin =
-		Ref<CSGShape3DGizmoPlugin>(memnew(CSGShape3DGizmoPlugin));
-	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
-
-	csg_shape_editor = memnew(CSGShapeEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(csg_shape_editor);
-}
-
-=======
-String CSGShape3DGizmoPlugin::get_gizmo_name() const { return "CSGShape3D"; }
-
->>>>>>> fix/remove-object
 

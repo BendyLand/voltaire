@@ -212,11 +212,6 @@ public:
 	TileMapCell get_cell(int p_layer, const Vector2i& p_coords, bool p_use_proxies = false) const;
 	int get_effective_quadrant_size(int p_layer) const;
 
-<<<<<<< HEAD
-	virtual void set_y_sort_enabled(bool p_enable) override;
-
-=======
->>>>>>> fix/remove-object
 	Vector2 map_to_local(const Vector2i& p_pos) const;
 	Vector2i local_to_map(const Vector2& p_pos) const;
 	bool is_existing_neighbor(TileSet::CellNeighbor p_cell_neighbor) const;

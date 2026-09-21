@@ -79,33 +79,6 @@ void ScriptEditorDebugger::debug_copy()
 	DisplayServer::get_singleton()->clipboard_set(msg);
 }
 
-<<<<<<< HEAD
-void ScriptEditorDebugger::debug_skip_breakpoints()
-{
-	skip_breakpoints_value = !skip_breakpoints_value;
-	if (skip_breakpoints_value) {
-		skip_breakpoints->set_button_icon(get_editor_theme_icon(SNAME("DebugSkipBreakpointsOn")));
-	}
-	else {
-		skip_breakpoints->set_button_icon(get_editor_theme_icon(SNAME("DebugSkipBreakpointsOff")));
-	}
-}
-
-void ScriptEditorDebugger::debug_ignore_error_breaks()
-{
-	ignore_error_breaks_value = !ignore_error_breaks_value;
-	if (ignore_error_breaks_value) {
-		ignore_error_breaks->set_button_icon(
-			get_theme_icon(SNAME("NotificationDisabled"), SNAME("EditorIcons")));
-	}
-	else {
-		ignore_error_breaks->set_button_icon(
-			get_theme_icon(SNAME("Notification"), SNAME("EditorIcons")));
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ScriptEditorDebugger::debug_out()
 {
 	ERR_FAIL_COND(!is_breaked());
@@ -275,41 +248,6 @@ Size2 ScriptEditorDebugger::get_minimum_size() const
 	return ms;
 }
 
-<<<<<<< HEAD
-void ScriptEditorDebugger::_set_reason_text(const String& p_reason, MessageType p_type)
-{
-	switch (p_type) {
-	case MESSAGE_ERROR:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		break;
-	case MESSAGE_WARNING:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		break;
-	default:
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("success_color"), EditorStringName(Editor)));
-		break;
-	}
-
-	reason->set_text(p_reason);
-
-	_update_reason_content_height();
-
-	const PackedInt32Array boundaries = TS->string_get_word_breaks(p_reason, "", 80);
-	PackedStringArray lines;
-	for (int i = 0; i < boundaries.size(); i += 2) {
-		const int start = boundaries[i];
-		const int end = boundaries[i + 1];
-		lines.append(p_reason.substr(start, end - start));
-	}
-
-	reason->set_tooltip_text(String("\n").join(lines));
-}
-
-=======
->>>>>>> fix/remove-object
 void ScriptEditorDebugger::_update_reason_content_height()
 {
 	float margin_height = 0;
@@ -326,145 +264,6 @@ void ScriptEditorDebugger::_update_reason_content_height()
 	reason->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
 }
 
-<<<<<<< HEAD
-void ScriptEditorDebugger::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_TRANSLATION_CHANGED: {
-		if (is_ready()) {
-			for (TreeItem* file_item = breakpoints_tree->get_root()->get_first_child(); file_item;
-				 file_item = file_item->get_next()) {
-				for (TreeItem* breakpoint_item = file_item->get_first_child(); breakpoint_item;
-					 breakpoint_item = breakpoint_item->get_next()) {
-				}
-			}
-			update_tabs();
-		}
-	} break;
-
-	case NOTIFICATION_THEME_CHANGED: {
-		tabs->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("DebuggerPanel"), EditorStringName(EditorStyles)).ptr());
-
-		skip_breakpoints->set_button_icon(
-			get_editor_theme_icon(skip_breakpoints_value ? SNAME("DebugSkipBreakpointsOn")
-														 : SNAME("DebugSkipBreakpointsOff")));
-		ignore_error_breaks->set_button_icon(get_editor_theme_icon(
-			ignore_error_breaks_value ? SNAME("NotificationDisabled") : SNAME("Notification")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_normal_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_hover_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_pressed_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		ignore_error_breaks->add_theme_color_override(
-			"icon_focus_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
-		copy->set_button_icon(get_editor_theme_icon(SNAME("ActionCopy")));
-		step->set_button_icon(get_editor_theme_icon(SNAME("DebugStep")));
-		next->set_button_icon(get_editor_theme_icon(SNAME("DebugNext")));
-		out->set_button_icon(get_editor_theme_icon(SNAME("DebugOut")));
-		dobreak->set_button_icon(get_editor_theme_icon(SNAME("Pause")));
-		docontinue->set_button_icon(get_editor_theme_icon(SNAME("DebugContinue")));
-		vmem_notice_icon->set_texture(get_editor_theme_icon(SNAME("NodeInfo")));
-		vmem_refresh->set_button_icon(get_editor_theme_icon(SNAME("Reload")));
-		vmem_export->set_button_icon(get_editor_theme_icon(SNAME("Save")));
-		vmem_item_menu->set_item_icon(
-			VMEM_MENU_SHOW_IN_FILESYSTEM, get_editor_theme_icon(SNAME("ShowInFileSystem")));
-		vmem_item_menu->set_item_icon(
-			VMEM_MENU_SHOW_IN_EXPLORER, get_editor_theme_icon(SNAME("Filesystem")));
-		search->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-
-		reason->add_theme_color_override(SNAME("default_color"),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
-		reason->add_theme_style_override(SNAME("normal"),
-			get_theme_stylebox(SNAME("normal"), SNAME("Label")).ptr()); // Empty stylebox.
-
-		const Ref<Font> source_font =
-			get_theme_font(SNAME("output_source"), EditorStringName(EditorFonts));
-		if (source_font.is_valid()) {
-			error_tree->add_theme_font_override("font", source_font.ptr());
-		}
-		const int font_size =
-			get_theme_font_size(SNAME("output_source_size"), EditorStringName(EditorFonts));
-		error_tree->add_theme_font_size_override("font_size", font_size);
-
-		TreeItem* error_root = error_tree->get_root();
-		if (error_root) {
-			TreeItem* error = error_root->get_first_child();
-			while (error) {
-				error = error->get_next();
-			}
-		}
-	} break;
-	}
-}
-
-void ScriptEditorDebugger::_update_buttons_state()
-{
-	const bool has_editor_tree = editor_remote_tree && editor_remote_tree->get_selected();
-	step->set_disabled(!is_breaked() || !is_debuggable());
-	next->set_disabled(!is_breaked() || !is_debuggable());
-	out->set_disabled(!is_breaked() || !is_debuggable());
-	copy->set_disabled(!is_breaked());
-	docontinue->set_disabled(!is_breaked());
-	dobreak->set_disabled(is_breaked());
-
-	thread_list_updating = true;
-	LocalVector<ThreadDebugged*> threadss;
-	for (KeyValue<uint64_t, ThreadDebugged>& I : threads_debugged) {
-		threadss.push_back(&I.value);
-	}
-	threads->set_disabled(threadss.is_empty());
-
-	threadss.sort_custom<ThreadSort>();
-	threads->clear();
-	int32_t selected_index = -1;
-	for (uint32_t i = 0; i < threadss.size(); i++) {
-		if (debugging_thread_id == threadss[i]->thread_id) {
-			selected_index = i;
-		}
-		threads->add_item(threadss[i]->name);
-	}
-	if (selected_index != -1) {
-		threads->select(selected_index);
-	}
-
-	thread_list_updating = false;
-}
-
-void ScriptEditorDebugger::_stop_and_notify()
-{
-	stop();
-	_set_reason_text(TTRC("Debug session closed."), MESSAGE_WARNING);
-}
-
-void ScriptEditorDebugger::stop()
-{
-	set_process(false);
-	threads_debugged.clear();
-	debugging_thread_id = Thread::UNASSIGNED_ID;
-	remote_pid = 0;
-	_clear_execution();
-
-	inspector->clear_cache();
-
-	node_path_cache.clear();
-	res_path_cache.clear();
-	profiler_signature.clear();
-
-	profiler->set_enabled(false, false);
-	profiler->set_profiling(false);
-
-	visual_profiler->set_enabled(false);
-	visual_profiler->set_profiling(false);
-
-	audio_muted_on_break = false;
-
-	_update_buttons_state();
-}
-
-=======
->>>>>>> fix/remove-object
 void ScriptEditorDebugger::_profiler_seeked()
 {
 	if (is_breaked()) {
@@ -473,11 +272,8 @@ void ScriptEditorDebugger::_profiler_seeked()
 	debug_break();
 }
 
-<<<<<<< HEAD
-=======
 void ScriptEditorDebugger::_clear_execution() {}
 
->>>>>>> fix/remove-object
 void ScriptEditorDebugger::_export_csv()
 {
 	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
@@ -589,43 +385,6 @@ void ScriptEditorDebugger::_mute_audio_on_break(bool p_mute)
 
 CameraOverride ScriptEditorDebugger::get_camera_override() const { return camera_override; }
 
-<<<<<<< HEAD
-void ScriptEditorDebugger::set_breakpoint(const String& p_path, int p_line, bool p_enabled)
-{
-	TreeItem* path_item = breakpoints_tree->search_item_text(p_path);
-	if (path_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		path_item = breakpoints_tree->create_item();
-		path_item->set_text(0, p_path);
-	}
-
-	int idx = 0;
-	TreeItem* breakpoint_item;
-	for (breakpoint_item = path_item->get_first_child(); breakpoint_item;
-		 breakpoint_item = breakpoint_item->get_next()) {
-	}
-
-	if (breakpoint_item == nullptr) {
-		if (!p_enabled) {
-			return;
-		}
-		breakpoint_item = breakpoints_tree->create_item(path_item, idx);
-		breakpoint_item->set_text(0, vformat(TTR("Line %d"), p_line));
-		return;
-	}
-
-	if (!p_enabled) {
-		path_item->remove_child(breakpoint_item);
-		if (path_item->get_first_child() == nullptr) {
-			breakpoints_tree->get_root()->remove_child(path_item);
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool ScriptEditorDebugger::is_skip_breakpoints() const { return skip_breakpoints_value; }
 
 bool ScriptEditorDebugger::is_ignore_error_breaks() const { return ignore_error_breaks_value; }
@@ -705,62 +464,6 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 		OS::get_singleton()->shell_show_in_file_manager(
 			ProjectSettings::get_singleton()->globalize_path(path), true);
 	} break;
-<<<<<<< HEAD
-	case VMEM_MENU_OWNERS: {
-		FileSystemDock::get_owners_dialog()->show(path);
-	} break;
-	}
-}
-
-void ScriptEditorDebugger::_clear_errors_list()
-{
-	error_tree->clear();
-	error_count = 0;
-	warning_count = 0;
-	update_tabs();
-
-	expand_all_button->set_disabled(true);
-	collapse_all_button->set_disabled(true);
-	clear_button->set_disabled(true);
-}
-
-void ScriptEditorDebugger::_breakpoints_item_rmb_selected(
-	const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	breakpoints_menu->clear();
-	breakpoints_menu->set_size(Size2(1, 1));
-
-	const TreeItem* selected = breakpoints_tree->get_selected();
-	String file = selected->get_text(0);
-	file = selected->get_parent()->get_text(0);
-}
-
-// Right click on specific file(s) or folder(s).
-void ScriptEditorDebugger::_error_tree_item_rmb_selected(const Vector2& p_pos, MouseButton p_button)
-{
-	if (p_button != MouseButton::RIGHT) {
-		return;
-	}
-
-	item_menu->clear();
-	item_menu->reset_size();
-
-	if (error_tree->is_anything_selected()) {
-		item_menu->add_icon_item(
-			get_editor_theme_icon(SNAME("ActionCopy")), TTRC("Copy Error"), ACTION_COPY_ERROR);
-		item_menu->add_icon_item(get_editor_theme_icon(SNAME("ExternalLink")),
-			TTRC("Open C++ Source on GitHub"), ACTION_OPEN_SOURCE);
-	}
-
-	if (item_menu->get_item_count() > 0) {
-		item_menu->set_position(error_tree->get_screen_position() + p_pos);
-		item_menu->popup();
-=======
->>>>>>> fix/remove-object
 	}
 }
 
@@ -884,8 +587,6 @@ void ScriptEditorDebugger::update_layout(EditorDock::DockLayout p_layout, int p_
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ScriptEditorDebugger::_send_debug_mute_audio_msg(bool p_mute) {}
 
 void ScriptEditorDebugger::clear_inspector(bool) {}
@@ -911,4 +612,3 @@ void EditorDebuggerSession::detach_debugger() {}
 EditorDebuggerSession::EditorDebuggerSession(ScriptEditorDebugger*) {}
 
 
->>>>>>> fix/remove-object

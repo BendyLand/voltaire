@@ -145,10 +145,6 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-<<<<<<< HEAD
-	void remove_shape_owner(uint32_t owner);
-=======
->>>>>>> fix/remove-object
 	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 

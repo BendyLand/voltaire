@@ -89,25 +89,6 @@ void GotoLinePopup::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
-void FindReplaceBar::input(const Ref<InputEvent>& p_event)
-{
-	ERR_FAIL_COND(p_event.is_null());
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_action_pressed(SNAME("ui_cancel"), false, true)) {
-		Control* focus_owner = get_viewport()->gui_get_focus_owner();
-
-		if (text_editor->has_focus() || (focus_owner && is_ancestor_of(focus_owner))) {
-			_hide_bar();
-			accept_event();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void FindReplaceBar::_update_flags(bool p_direction_backwards)
 {
 	flags = 0;
@@ -162,65 +143,6 @@ bool FindReplaceBar::_search(uint32_t p_flags, int p_from_line, int p_from_col)
 	return pos.x != -1;
 }
 
-<<<<<<< HEAD
-void FindReplaceBar::_replace()
-{
-	text_editor->begin_complex_operation();
-	text_editor->remove_secondary_carets();
-	bool selection_enabled = text_editor->has_selection(0);
-	Point2i selection_begin, selection_end;
-	if (selection_enabled) {
-		selection_begin = Point2i(
-			text_editor->get_selection_from_line(0), text_editor->get_selection_from_column(0));
-		selection_end =
-			Point2i(text_editor->get_selection_to_line(0), text_editor->get_selection_to_column(0));
-	}
-
-	String repl_text = get_replace_text();
-	int search_text_len = get_search_text().length();
-
-	if (selection_enabled && is_selection_only()) {
-		// Restrict search_current() to selected region.
-		text_editor->set_caret_line(selection_begin.width, false, true, -1, 0);
-		text_editor->set_caret_column(selection_begin.height, true, 0);
-	}
-
-	if (search_current()) {
-		text_editor->unfold_line(result_line);
-		text_editor->select(result_line, result_col, result_line, result_col + search_text_len, 0);
-
-		if (selection_enabled && is_selection_only()) {
-			Point2i match_from(result_line, result_col);
-			Point2i match_to(result_line, result_col + search_text_len);
-			if (!(match_from < selection_begin || match_to > selection_end)) {
-				text_editor->insert_text_at_caret(repl_text, 0);
-				if (match_to.x == selection_end.x) {
-					// Adjust selection bounds if necessary.
-					selection_end.y += repl_text.length() - search_text_len;
-				}
-			}
-		}
-		else {
-			text_editor->insert_text_at_caret(repl_text, 0);
-		}
-	}
-	text_editor->end_complex_operation();
-	results_count = -1;
-	results_count_to_current = -1;
-	needs_to_count_results = true;
-
-	if (selection_enabled && is_selection_only()) {
-		// Reselect in order to keep 'Replace' restricted to selection.
-		text_editor->select(
-			selection_begin.x, selection_begin.y, selection_end.x, selection_end.y, 0);
-	}
-	else {
-		text_editor->deselect(0);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void FindReplaceBar::_get_search_from(int& r_line, int& r_col, SearchMode p_search_mode)
 {
 	if (!text_editor->has_selection(0) || is_selection_only()) {
@@ -343,113 +265,6 @@ bool FindReplaceBar::search_current()
 	return _search(flags, line, col);
 }
 
-<<<<<<< HEAD
-bool FindReplaceBar::search_prev()
-{
-	if (is_selection_only() && !replace_all_mode) {
-		return false;
-	}
-
-	if (!is_visible()) {
-		popup_search(true);
-	}
-
-	String text = get_search_text();
-
-	if ((flags & TextEdit::SEARCH_BACKWARDS) == 0) {
-		needs_to_count_results = true;
-	}
-
-	_update_flags(true);
-
-	int line, col;
-	_get_search_from(line, col, SEARCH_PREV);
-
-	col -= text.length();
-	if (col < 0) {
-		line -= 1;
-		if (line < 0) {
-			line = text_editor->get_line_count() - 1;
-		}
-		col = text_editor->get_line(line).length();
-	}
-
-	return _search(flags, line, col);
-}
-
-bool FindReplaceBar::search_next()
-{
-	if (is_selection_only() && !replace_all_mode) {
-		return false;
-	}
-
-	if (!is_visible()) {
-		popup_search(true);
-	}
-
-	if (flags & TextEdit::SEARCH_BACKWARDS) {
-		needs_to_count_results = true;
-	}
-
-	_update_flags(false);
-
-	int line, col;
-	_get_search_from(line, col, SEARCH_NEXT);
-
-	return _search(flags, line, col);
-}
-
-void FindReplaceBar::_hide_bar()
-{
-	text_editor->grab_focus();
-	text_editor->set_search_text("");
-	result_line = -1;
-	result_col = -1;
-	hide();
-}
-
-void FindReplaceBar::_update_toggle_replace_button(bool p_replace_visible)
-{
-	String tooltip = p_replace_visible ? TTRC("Hide Replace") : TTRC("Show Replace");
-	String shortcut = ED_GET_SHORTCUT(
-		p_replace_visible ? "script_text_editor/find" : "script_text_editor/replace")
-						  ->get_as_text();
-	toggle_replace_button->set_tooltip_text(vformat("%s (%s)", tooltip, shortcut));
-	StringName rtl_compliant_arrow =
-		is_layout_rtl() ? SNAME("GuiTreeArrowLeft") : SNAME("GuiTreeArrowRight");
-	toggle_replace_button->set_button_icon(
-		get_editor_theme_icon(p_replace_visible ? SNAME("GuiTreeArrowDown") : rtl_compliant_arrow));
-}
-
-void FindReplaceBar::popup_search(bool p_show_only)
-{
-	replace_text->hide();
-	hbc_button_replace->hide();
-	hbc_option_replace->hide();
-	selection_only->set_pressed(false);
-	_update_toggle_replace_button(false);
-
-	_show_search(false, p_show_only);
-}
-
-void FindReplaceBar::popup_replace()
-{
-	if (!replace_text->is_visible_in_tree()) {
-		replace_text->show();
-		hbc_button_replace->show();
-		hbc_option_replace->show();
-		_update_toggle_replace_button(true);
-	}
-
-	selection_only->set_pressed(
-		text_editor->has_selection(0) &&
-		text_editor->get_selection_from_line(0) < text_editor->get_selection_to_line(0));
-
-	_show_search(true, false);
-}
-
-=======
->>>>>>> fix/remove-object
 void FindReplaceBar::_search_options_changed(bool p_pressed)
 {
 	results_count = -1;
@@ -604,73 +419,6 @@ void CodeTextEditor::set_indent_using_spaces(bool p_use_spaces)
 		p_use_spaces ? TTR("Spaces", "Indentation") : TTR("Tabs", "Indentation"));
 }
 
-<<<<<<< HEAD
-void CodeTextEditor::toggle_inline_comment(const String& delimiter)
-{
-	text_editor->begin_complex_operation();
-	text_editor->begin_multicaret_edit();
-
-	Vector<Point2i> line_ranges = text_editor->get_line_ranges_from_carets();
-	int folded_to = 0;
-	for (Point2i line_range : line_ranges) {
-		int from_line = line_range.x;
-		int to_line = line_range.y;
-		// If last line is folded, extends to the end of the folded section
-		if (text_editor->is_line_folded(to_line)) {
-			folded_to = text_editor->get_next_visible_line_offset_from(to_line + 1, 1) - 1;
-			to_line += folded_to;
-		}
-		// Check first if there's any uncommented lines in selection.
-		bool is_commented = true;
-		bool is_all_empty = true;
-		for (int line = from_line; line <= to_line; line++) {
-			// `+ delimiter.length()` here because comment delimiter is not actually `in comment` so
-			// we check first character after it
-			int delimiter_idx = text_editor->is_in_comment(
-				line, text_editor->get_first_non_whitespace_column(line) + delimiter.length());
-			// Empty lines should not be counted.
-			bool is_empty = text_editor->get_line(line).strip_edges().is_empty();
-			is_all_empty = is_all_empty && is_empty;
-			// get_delimiter_start_key will return `##` instead of `#` when there is multiple
-			// comment delimiter in a line.
-			if (!is_empty &&
-				(delimiter_idx == -1 ||
-					!text_editor->get_delimiter_start_key(delimiter_idx).begins_with(delimiter))) {
-				is_commented = false;
-				break;
-			}
-		}
-
-		// Special case for commenting empty lines, treat it/them as uncommented lines.
-		is_commented = is_commented && !is_all_empty;
-
-		// Comment/uncomment.
-		for (int line = from_line; line <= to_line; line++) {
-			if (is_all_empty) {
-				text_editor->insert_text(delimiter, line, 0);
-				continue;
-			}
-
-			if (is_commented) {
-				int delimiter_column = text_editor->get_line(line).find(delimiter);
-				if (delimiter_column != -1) {
-					text_editor->remove_text(
-						line, delimiter_column, line, delimiter_column + delimiter.length());
-				}
-			}
-			else {
-				text_editor->insert_text(
-					delimiter, line, text_editor->get_first_non_whitespace_column(line));
-			}
-		}
-	}
-
-	text_editor->end_multicaret_edit();
-	text_editor->end_complex_operation();
-}
-
-=======
->>>>>>> fix/remove-object
 void CodeTextEditor::goto_line_without_history(int p_line, int p_column)
 {
 	text_editor->remove_secondary_carets();
@@ -776,11 +524,6 @@ void CodeTextEditor::goto_error()
 	}
 }
 
-<<<<<<< HEAD
-void CodeTextEditor::validate_script() { idle->start(); }
-
-=======
->>>>>>> fix/remove-object
 void CodeTextEditor::_error_button_pressed()
 {
 	_set_show_errors_panel(!is_errors_panel_opened);
@@ -801,31 +544,6 @@ void CodeTextEditor::_error_pressed(const Ref<InputEvent>& p_event)
 	}
 }
 
-<<<<<<< HEAD
-void CodeTextEditor::set_error_count(int p_error_count)
-{
-	error_button->set_text(itos(p_error_count));
-	error_button->set_visible(p_error_count > 0);
-	if (p_error_count > 0) {
-		idle->set_wait_time(idle_time_with_errors); // Parsing should happen sooner.
-	}
-	else {
-		_set_show_errors_panel(false);
-		idle->set_wait_time(idle_time);
-	}
-}
-
-void CodeTextEditor::set_warning_count(int p_warning_count)
-{
-	warning_button->set_text(itos(p_warning_count));
-	warning_button->set_visible(p_warning_count > 0);
-	if (!p_warning_count) {
-		_set_show_warnings_panel(false);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void CodeTextEditor::toggle_bookmark()
 {
 	Vector<int> sorted_carets = text_editor->get_sorted_carets();
@@ -920,8 +638,6 @@ void CodeTextEditor::_zoom_to(float) {}
 
 void CodeTextEditor::update_toggle_files_button() {}
 
-<<<<<<< HEAD
-=======
 void CodeTextEditor::trim_final_newlines() {}
 
 void CodeTextEditor::set_zoom_factor(float) {}
@@ -946,5 +662,4 @@ void CodeTextEditor::set_preview_navigation_change(bool) {}
 
 void CodeTextEditor::center_viewport_to_caret() {}
 
->>>>>>> fix/remove-object
 

@@ -45,9 +45,6 @@ void PropertySelector::_hide_requested()
 	_cancel_pressed(); // From AcceptDialog.
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void PropertySelector::_update_search() {}

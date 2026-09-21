@@ -76,55 +76,6 @@ bool EditorContextMenuPluginManager::has_plugins_for_slot(ContextMenuSlot p_slot
 	return false;
 }
 
-<<<<<<< HEAD
-void EditorContextMenuPluginManager::add_options_from_plugins(
-	PopupMenu* p_popup, ContextMenuSlot p_slot, const Vector<String>& p_paths, int p_id_offset)
-{
-	bool separator_added = false;
-	const int icon_size =
-		p_popup->get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-	int id = EditorContextMenuPlugin::BASE_ID + p_id_offset;
-
-	for (Ref<EditorContextMenuPlugin>& plugin : plugin_list) {
-		if (plugin->slot != p_slot) {
-			continue;
-		}
-		plugin->context_menu_items.clear();
-		plugin->get_options(p_paths);
-
-		HashMap<String, EditorContextMenuPlugin::ContextMenuItem>& items =
-			plugin->context_menu_items;
-		if (items.size() > 0 && !separator_added) {
-			separator_added = true;
-			p_popup->add_separator();
-		}
-
-		for (KeyValue<String, EditorContextMenuPlugin::ContextMenuItem>& E : items) {
-			EditorContextMenuPlugin::ContextMenuItem& item = E.value;
-			item.id = id;
-
-			if (item.submenu) {
-				p_popup->add_submenu_node_item(item.item_name, item.submenu, id);
-			}
-			else {
-				p_popup->add_item(item.item_name, id);
-			}
-
-			if (item.icon.is_valid()) {
-				p_popup->set_item_icon(-1, item.icon);
-				p_popup->set_item_icon_max_width(-1, icon_size);
-			}
-
-			if (item.shortcut.is_valid()) {
-				p_popup->set_item_shortcut(-1, item.shortcut, true);
-			}
-			id++;
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorContextMenuPluginManager::create()
 {
 	ERR_FAIL_COND(singleton != nullptr);

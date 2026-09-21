@@ -51,54 +51,6 @@
 #include "scene/gui/tab_bar.h"
 #include "scene/gui/texture_rect.h"
 
-<<<<<<< HEAD
-void EditorSceneTabs::_scene_tab_exit() { tab_preview_panel->hide(); }
-
-void EditorSceneTabs::_scene_tab_input(const Ref<InputEvent>& p_input)
-{
-	Ref<InputEventMouseButton> mb = p_input;
-
-	if (mb.is_valid()) {
-		int tab_idx = scene_tabs->get_tab_idx_at_point(mb->get_position());
-		if (tab_idx < 0 && mb->get_button_index() == MouseButton::LEFT && mb->is_double_click()) {
-			int tab_buttons = 0;
-			if (scene_tabs->get_offset_buttons_visible()) {
-				tab_buttons = get_theme_icon(SNAME("increment"), SNAME("TabBar"))->get_width() +
-							  get_theme_icon(SNAME("decrement"), SNAME("TabBar"))->get_width();
-			}
-
-			if ((is_layout_rtl() && mb->get_position().x > tab_buttons) ||
-				(!is_layout_rtl() &&
-					mb->get_position().x < scene_tabs->get_size().width - tab_buttons)) {
-				EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_NEW_SCENE, true);
-			}
-		}
-		else if (mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
-			// Context menu.
-			_update_context_menu(tab_idx);
-
-			scene_tabs_context_menu->set_position(
-				scene_tabs->get_screen_position() + mb->get_position());
-			scene_tabs_context_menu->reset_size();
-			scene_tabs_context_menu->popup();
-		}
-	}
-}
-
-void EditorSceneTabs::unhandled_key_input(const Ref<InputEvent>& p_event)
-{
-	if (!tab_preview_panel->is_visible()) {
-		return;
-	}
-
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_action_pressed(SNAME("ui_cancel"), false, true)) {
-		tab_preview_panel->hide();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorSceneTabs::_reposition_active_tab(int p_to_index)
 {
 	EditorNode::get_editor_data().move_edited_scene_to_index(p_to_index);
@@ -110,20 +62,6 @@ int EditorSceneTabs::get_option_tab() const
 	return last_hovered_tab >= 0 ? last_hovered_tab : scene_tabs->get_current_tab();
 }
 
-<<<<<<< HEAD
-void EditorSceneTabs::_update_scene_list()
-{
-	PopupMenu* popup = scene_list->get_popup();
-	popup->clear();
-
-	for (int i = 0; i < scene_tabs->get_tab_count(); i++) {
-		popup->add_item(scene_tabs->get_tab_title(i), i);
-		popup->set_item_icon(i, scene_tabs->get_tab_icon(i));
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorSceneTabs::_scene_tabs_resized()
 {
 	const Size2 add_button_size = Size2(scene_tab_add->get_size().x, scene_tabs->get_size().y);
@@ -162,22 +100,6 @@ void EditorSceneTabs::_scene_tabs_resized()
 	}
 }
 
-<<<<<<< HEAD
-void EditorSceneTabs::_tab_preview_done(const String& p_path, const Ref<Texture2D>& p_preview,
-	const Ref<Texture2D>& p_small_preview, int p_tab)
-{
-	if (p_preview.is_valid()) {
-		tab_preview->set_texture(p_preview);
-
-		Rect2 rect = scene_tabs->get_tab_rect(p_tab);
-		rect.position += scene_tabs->get_global_position();
-		tab_preview_panel->set_global_position(rect.position + Vector2(0, rect.size.height));
-		tab_preview_panel->show();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorSceneTabs::add_extra_button(Button* p_button) { tabbar_container->add_child(p_button); }
 
 void EditorSceneTabs::set_current_tab(int p_tab) { scene_tabs->set_current_tab(p_tab); }
@@ -192,9 +114,6 @@ void EditorSceneTabs::_project_settings_changed()
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorSceneTabs::update_scene_tabs() {}

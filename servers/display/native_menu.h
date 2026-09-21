@@ -31,10 +31,6 @@
 #pragma once
 
 #include "core/os/keyboard.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 
 class Texture2D;
 

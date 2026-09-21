@@ -162,23 +162,4 @@ void CheckBox::_notification(int p_what)
 
 bool CheckBox::is_radio() const { return get_button_group().is_valid(); }
 
-<<<<<<< HEAD
-CheckBox::CheckBox(const String& p_text) : Button(p_text)
-{
-	set_toggle_mode(true);
-
-	set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
-
-	if (is_layout_rtl()) {
-		_set_internal_margin(SIDE_RIGHT, get_icon_size().width);
-	}
-	else {
-		_set_internal_margin(SIDE_LEFT, get_icon_size().width);
-	}
-}
-
-CheckBox::~CheckBox() {}
-
-=======
->>>>>>> fix/remove-object
 

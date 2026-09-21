@@ -59,26 +59,14 @@ protected:
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	real_t get_depth() const;
 
-<<<<<<< HEAD
-	void set_polygon(const Vector<Point2>& p_polygon);
-=======
->>>>>>> fix/remove-object
 	Vector<Point2> get_polygon() const;
 
 	bool is_disabled() const;
 
-<<<<<<< HEAD
-	void set_debug_color(const Color& p_color);
-=======
->>>>>>> fix/remove-object
 	Color get_debug_color() const;
 
 	bool get_debug_fill_enabled() const;

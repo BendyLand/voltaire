@@ -57,14 +57,4 @@ bool Camera3DPreview::camera_preview_folded = false;
 
 void Camera3DPreview::_toggle_folding(bool p_folded) { camera_preview_folded = p_folded; }
 
-<<<<<<< HEAD
-void Camera3DPreview::_project_settings_changed()
-{
-	if (ProjectSettings::get_singleton()->check_changed_settings_in_group("display/window/size")) {
-		_update_sub_viewport_size();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 

@@ -260,10 +260,6 @@ private:
 	PlaybackMode playback_mode = PLAYBACK_RANDOM_NO_REPEATS;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	bool _property_can_revert(const StringName& p_name) const
 	{

@@ -41,13 +41,6 @@ class HBoxContainer;
 
 class ProgressIndicator : public TextureProgressBar
 {
-<<<<<<< HEAD
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	ProgressIndicator();
 };
@@ -66,10 +59,6 @@ class EditorBottomPanel : public DockTabContainer
 	HashMap<String, int> dock_offsets;
 
 	LocalVector<Button*> legacy_buttons;
-<<<<<<< HEAD
-	void _on_button_visibility_changed(Button* p_button, EditorDock* p_dock);
-=======
->>>>>>> fix/remove-object
 
 	void _repaint();
 	void _pin_button_toggled(bool p_pressed);
@@ -84,11 +73,6 @@ public:
 	virtual void dock_closed(EditorDock* p_dock) override;
 	virtual void dock_focused(EditorDock* p_dock, bool p_was_visible) override;
 
-<<<<<<< HEAD
-	virtual void update_visibility() override { show(); } // Never hide bottom panel.
-
-=======
->>>>>>> fix/remove-object
 	virtual TabStyle get_tab_style() const override;
 	virtual bool can_switch_dock() const override;
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock) override;

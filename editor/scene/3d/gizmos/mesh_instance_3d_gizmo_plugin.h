@@ -50,15 +50,7 @@ public:
 	void set_handle(const EditorNode3DGizmo* p_gizmo, int p_id, bool p_secondary,
 		Camera3D* p_camera, const Point2& p_point) override;
 
-<<<<<<< HEAD
-	MeshInstance3DGizmoPlugin()
-	{
-		helper.instantiate();
-		create_handle_material("handles");
-	}
-=======
 	MeshInstance3DGizmoPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

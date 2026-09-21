@@ -33,7 +33,6 @@
 #include "core/string/translation_server.h"
 #include "core/types.h"
 #include "translation.h"
-#include "core/types.h"
 
 void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
 {

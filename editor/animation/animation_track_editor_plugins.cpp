@@ -56,11 +56,6 @@ Rect2 AnimationTrackEditBool::get_key_rect(int p_index, float p_pixels_sec)
 
 bool AnimationTrackEditBool::is_key_selectable_by_distance() const { return false; }
 
-<<<<<<< HEAD
-/// COLOR ///
-
-=======
->>>>>>> fix/remove-object
 int AnimationTrackEditColor::get_key_height() const
 {
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
@@ -138,17 +133,8 @@ bool AnimationTrackEditSpriteFrame::is_key_selectable_by_distance() const { retu
 
 void AnimationTrackEditSpriteFrame::set_as_coords() { is_coords = true; }
 
-<<<<<<< HEAD
-/// SUB ANIMATION ///
-
 bool AnimationTrackEditSubAnim::is_key_selectable_by_distance() const { return false; }
 
-//// VOLUME DB ////
-
-=======
-bool AnimationTrackEditSubAnim::is_key_selectable_by_distance() const { return false; }
-
->>>>>>> fix/remove-object
 int AnimationTrackEditVolumeDB::get_key_height() const
 {
 	Ref<Texture2D> volume_texture = get_editor_theme_icon(SNAME("ColorTrackVu"));
@@ -178,13 +164,6 @@ void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right)
 	draw_line(Vector2(p_clip_left, db0), Vector2(p_clip_right, db0), Color(1, 1, 1, 0.3));
 }
 
-<<<<<<< HEAD
-////////////////////////
-
-/// AUDIO ///
-
-=======
->>>>>>> fix/remove-object
 int AnimationTrackEditTypeAudio::get_key_height() const
 {
 	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
@@ -237,12 +216,6 @@ Control::CursorShape AnimationTrackEditTypeAudio::get_cursor_shape(const Point2&
 	}
 }
 
-<<<<<<< HEAD
-////////////////////
-/// SUB ANIMATION ///
-
-=======
->>>>>>> fix/remove-object
 bool AnimationTrackEditTypeAnimation::is_key_selectable_by_distance() const { return false; }
 
 AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
@@ -251,8 +224,6 @@ AnimationTrackEdit* AnimationTrackEditDefaultPlugin::create_audio_track_edit()
 	return &ate;
 }
 
-<<<<<<< HEAD
-=======
 int AnimationTrackEditSpriteFrame::get_key_height() const { return 0; }
 
 int AnimationTrackEditAudio::get_key_height() const { return 0; }
@@ -281,5 +252,4 @@ Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_
 	return Rect2();
 }
 
->>>>>>> fix/remove-object
 

@@ -39,132 +39,12 @@ PackedStringArray RetargetModifier3D::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-void RetargetModifier3D::cache_rests_with_reset()
-{
-	_reset_child_skeleton_poses();
-	cache_rests();
-}
-
-void RetargetModifier3D::cache_rests()
-{
-	source_bone_ids.clear();
-
-	Skeleton3D* source_skeleton = get_skeleton();
-	if (profile.is_null() || !source_skeleton) {
-		return;
-	}
-
-	PackedStringArray bone_names = profile->get_bone_names();
-	for (const String& E : bone_names) {
-		source_bone_ids.push_back(source_skeleton->find_bone(E));
-	}
-
-	for (int i = 0; i < child_skeletons.size(); i++) {
-		_update_child_skeleton_rests(i);
-	}
-}
-
-Vector<RetargetModifier3D::RetargetBoneInfo> RetargetModifier3D::cache_bone_global_rests(
-	Skeleton3D* p_skeleton)
-{
-	// Retarget global pose in model space:
-	// tgt_global_pose.basis = src_global_pose.basis * src_rest.basis.inv *
-	// src_parent_global_rest.basis.inv * tgt_parent_global_rest.basis * tgt_rest.basis
-	// tgt_global_pose.origin = src_global_pose.origin
-	Skeleton3D* source_skeleton = get_skeleton();
-	Vector<RetargetBoneInfo> bone_rests;
-	if (profile.is_null() || !source_skeleton) {
-		return bone_rests;
-	}
-	PackedStringArray bone_names = profile->get_bone_names();
-	for (const String& E : bone_names) {
-		RetargetBoneInfo rbi;
-		int source_bone_id = source_skeleton->find_bone(E);
-		if (source_bone_id >= 0) {
-			Transform3D parent_global_rest;
-			int bone_parent = source_skeleton->get_bone_parent(source_bone_id);
-			if (bone_parent >= 0) {
-				parent_global_rest = source_skeleton->get_bone_global_rest(bone_parent);
-			}
-			rbi.post_basis = source_skeleton->get_bone_rest(source_bone_id).basis.inverse() *
-							 parent_global_rest.basis.inverse();
-		}
-		int target_bone_id = p_skeleton->find_bone(E);
-		rbi.bone_id = target_bone_id;
-		if (target_bone_id >= 0) {
-			Transform3D parent_global_rest;
-			int bone_parent = p_skeleton->get_bone_parent(target_bone_id);
-			if (bone_parent >= 0) {
-				parent_global_rest = p_skeleton->get_bone_global_rest(bone_parent);
-			}
-			rbi.post_basis = rbi.post_basis * parent_global_rest.basis *
-							 p_skeleton->get_bone_rest(target_bone_id).basis;
-		}
-		bone_rests.push_back(rbi);
-	}
-	return bone_rests;
-}
-
-Vector<RetargetModifier3D::RetargetBoneInfo> RetargetModifier3D::cache_bone_rests(
-	Skeleton3D* p_skeleton)
-{
-	// Retarget pose in model space:
-	// tgt_pose.basis = tgt_parent_global_rest.basis.inv * src_parent_global_rest.basis *
-	// src_pose.basis * src_rest.basis.inv * src_parent_global_rest.basis.inv *
-	// tgt_parent_global_rest.basis * tgt_rest.basis tgt_pose.origin =
-	// tgt_parent_global_rest.basis.inv.xform(src_parent_global_rest.basis.xform(src_pose.origin -
-	// src_rest.origin)) + tgt_rest.origin
-	Skeleton3D* source_skeleton = get_skeleton();
-	Vector<RetargetBoneInfo> bone_rests;
-	if (profile.is_null() || !source_skeleton) {
-		return bone_rests;
-	}
-	PackedStringArray bone_names = profile->get_bone_names();
-	for (const String& E : bone_names) {
-		RetargetBoneInfo rbi;
-		int source_bone_id = source_skeleton->find_bone(E);
-		if (source_bone_id >= 0) {
-			Transform3D parent_global_rest;
-			int bone_parent = source_skeleton->get_bone_parent(source_bone_id);
-			if (bone_parent >= 0) {
-				parent_global_rest = source_skeleton->get_bone_global_rest(bone_parent);
-			}
-			rbi.pre_basis = parent_global_rest.basis;
-			rbi.post_basis = source_skeleton->get_bone_rest(source_bone_id).basis.inverse() *
-							 parent_global_rest.basis.inverse();
-		}
-
-		int target_bone_id = p_skeleton->find_bone(E);
-		rbi.bone_id = target_bone_id;
-		if (target_bone_id >= 0) {
-			Transform3D parent_global_rest;
-			int bone_parent = p_skeleton->get_bone_parent(target_bone_id);
-			if (bone_parent >= 0) {
-				parent_global_rest = p_skeleton->get_bone_global_rest(bone_parent);
-			}
-			rbi.pre_basis = parent_global_rest.basis.inverse() * rbi.pre_basis;
-			rbi.post_basis = rbi.post_basis * parent_global_rest.basis *
-							 p_skeleton->get_bone_rest(target_bone_id).basis;
-		}
-		bone_rests.push_back(rbi);
-	}
-	return bone_rests;
-}
-
-=======
->>>>>>> fix/remove-object
 void RetargetModifier3D::_reset_child_skeletons()
 {
 	_reset_child_skeleton_poses();
 	child_skeletons.clear();
 }
 
-<<<<<<< HEAD
-/// General functions
-
-=======
->>>>>>> fix/remove-object
 void RetargetModifier3D::_set_active(bool p_active)
 {
 	if (!p_active) {
@@ -203,11 +83,8 @@ void RetargetModifier3D::set_enable_flags(uint32_t p_enable_flag)
 }
 
 uint32_t RetargetModifier3D::get_enable_flags() const { return enable_flags; }
-<<<<<<< HEAD
-=======
 
 void RetargetModifier3D::_reset_child_skeleton_poses() {}
->>>>>>> fix/remove-object
 
 void RetargetModifier3D::_notification(int p_what)
 {

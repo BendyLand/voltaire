@@ -2456,8 +2456,6 @@ void RenderingDeviceGraph::framebuffer_cache_free(RDD* p_driver, FramebufferCach
 	memdelete(p_cache);
 }
 
-<<<<<<< HEAD
-=======
 void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_trackers,
 	ResourceUsage* p_resource_usages, uint32_t p_resource_count, int32_t p_command_index,
 	RecordedCommand* r_command)
@@ -2473,5 +2471,4 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 
 void RenderingDeviceGraph::_wait_for_secondary_command_buffer_tasks() {}
 
->>>>>>> fix/remove-object
 

@@ -344,14 +344,8 @@ public:
 	void call_set_vsync_mode(
 		DisplayServerEnums::VSyncMode p_mode, DisplayServerEnums::WindowID p_window);
 
-<<<<<<< HEAD
-	RendererViewport();
-
-	virtual ~RendererViewport() {}
-=======
 	RendererViewport() = default;
 	virtual ~RendererViewport() = default;
->>>>>>> fix/remove-object
 };
 
 

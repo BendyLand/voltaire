@@ -51,17 +51,6 @@ Size2 ProgressBar::get_minimum_size() const
 	return minimum_size;
 }
 
-<<<<<<< HEAD
-void ProgressBar::set_fill_mode(int p_fill)
-{
-	ERR_FAIL_INDEX(p_fill, FILL_MODE_MAX);
-	mode = (FillMode)p_fill;
-	_indeterminate_fill_progress = 0;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 int ProgressBar::get_fill_mode() { return mode; }
 
 bool ProgressBar::is_percentage_shown() const { return show_percentage; }

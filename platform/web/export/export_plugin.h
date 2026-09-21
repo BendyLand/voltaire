@@ -110,10 +110,6 @@ public:
 	virtual int get_options_count() const override;
 	virtual String get_option_label(int p_index) const override;
 	virtual String get_option_tooltip(int p_index) const override;
-<<<<<<< HEAD
-	virtual Ref<Texture2D> get_option_icon(int p_index) const override;
-=======
->>>>>>> fix/remove-object
 	virtual Error run(
 		const Ref<EditorExportPreset>& p_preset, int p_option, uint32_t p_debug_flags) override;
 	virtual Ref<Texture2D> get_run_icon() const override;
@@ -133,5 +129,3 @@ public:
 
 	~EditorExportPlatformWeb() = default;
 };
-
-

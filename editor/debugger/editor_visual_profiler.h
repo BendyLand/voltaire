@@ -123,19 +123,10 @@ private:
 
 	void _graph_tex_mouse_exit();
 
-<<<<<<< HEAD
-	void _graph_tex_draw();
-=======
->>>>>>> fix/remove-object
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
 	int _get_cursor_index() const;
 
-<<<<<<< HEAD
-	Color _get_color_from_signature(const StringName& p_signature) const;
-
-=======
->>>>>>> fix/remove-object
 	void _cursor_metric_changed(double);
 
 protected:
@@ -146,13 +137,6 @@ public:
 	void add_frame_metric(const Metric& p_metric);
 	void set_enabled(bool p_enable);
 	bool is_profiling();
-<<<<<<< HEAD
-
-	bool is_seeking() { return seeking; }
-
-	void disable_seeking();
-=======
->>>>>>> fix/remove-object
 
 	bool is_seeking() { return seeking; }
 

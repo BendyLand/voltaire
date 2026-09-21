@@ -60,11 +60,8 @@ int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
 	return total_bandwidth;
 }
 
-<<<<<<< HEAD
-=======
 void MultiplayerDebugger::initialize() {}
 
 void MultiplayerDebugger::deinitialize() {}
 
->>>>>>> fix/remove-object
 

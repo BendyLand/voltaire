@@ -817,19 +817,9 @@ protected:
 
 	/* Text manipulation */
 	virtual void _copy_internal(int p_caret);
-<<<<<<< HEAD
-	virtual void _paste_internal(int p_caret);
-	virtual void _paste_primary_clipboard_internal(int p_caret);
 
 public:
 	/* General overrides. */
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
-	bool alt_input(const Ref<InputEvent>& p_gui_input);
-=======
-
-public:
-	/* General overrides. */
->>>>>>> fix/remove-object
 	virtual Size2 get_minimum_size() const override;
 	virtual bool is_text_field() const override;
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;

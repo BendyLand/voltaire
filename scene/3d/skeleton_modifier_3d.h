@@ -96,10 +96,6 @@ protected:
 	bool active = true;
 	real_t influence = 1.0;
 
-<<<<<<< HEAD
-	void _update_skeleton();
-=======
->>>>>>> fix/remove-object
 	void _update_skeleton_path();
 
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new);
@@ -111,15 +107,6 @@ protected:
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
-<<<<<<< HEAD
-
-	virtual bool has_process() const
-	{
-		return false;
-	} // Return true if modifier needs to modify bone pose without external animation such as
-	  // physics, jiggle and etc.
-=======
->>>>>>> fix/remove-object
 
 	Skeleton3D* get_skeleton() const;
 
@@ -133,11 +120,6 @@ public:
 	void set_influence(real_t p_influence);
 	real_t get_influence() const;
 
-<<<<<<< HEAD
-	Skeleton3D* get_skeleton() const;
-
-=======
->>>>>>> fix/remove-object
 	void process_modification(double p_delta);
 
 	// Utility APIs.

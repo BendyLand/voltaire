@@ -142,13 +142,7 @@ class TileSetEditorPlugin : public EditorPlugin
 	TileSetEditor* editor = nullptr;
 
 public:
-<<<<<<< HEAD
-	void open_editor();
-
-	TileSetEditorPlugin();
-=======
 	TileSetEditorPlugin() = default;
->>>>>>> fix/remove-object
 	~TileSetEditorPlugin();
 };
 

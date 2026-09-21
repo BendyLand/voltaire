@@ -223,54 +223,6 @@ bool TreeItem::is_indeterminate(int p_column) const
 	return cells[p_column].indeterminate;
 }
 
-<<<<<<< HEAD
-void TreeItem::set_text(int p_column, String p_text)
-{
-	ERR_FAIL_INDEX(p_column, cells.size());
-
-	if (cells[p_column].text == p_text) {
-		return;
-	}
-
-	cells.write[p_column].text = p_text;
-	cells.write[p_column].dirty = true;
-
-	if (cells[p_column].mode == TreeItem::CELL_MODE_RANGE) {
-		Vector<String> strings = p_text.split(",");
-		cells.write[p_column].min = INT_MAX;
-		cells.write[p_column].max = INT_MIN;
-		for (int i = 0; i < strings.size(); i++) {
-			int value = i;
-			if (!strings[i].get_slicec(':', 1).is_empty()) {
-				value = strings[i].get_slicec(':', 1).to_int();
-			}
-			cells.write[p_column].min = MIN(cells[p_column].min, value);
-			cells.write[p_column].max = MAX(cells[p_column].max, value);
-		}
-		cells.write[p_column].step = 0;
-	}
-	else {
-		// Don't auto translate if it's in string mode and editable, as the text can be changed to
-		// anything by the user.
-		if (tree &&
-			(!cells[p_column].editable || cells[p_column].mode != TreeItem::CELL_MODE_STRING)) {
-			cells.write[p_column].xl_text = atr(p_column, p_text);
-		}
-		else {
-			cells.write[p_column].xl_text = p_text;
-		}
-	}
-
-	cells.write[p_column].cached_minimum_size_dirty = true;
-
-	_changed_notify(p_column);
-	if (get_tree()) {
-		get_tree()->update_configuration_warnings();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 String TreeItem::get_text(int p_column) const
 {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
@@ -583,11 +535,8 @@ void TreeItem::get_range_config(int p_column, double& r_min, double& r_max, doub
 	r_step = cells[p_column].step;
 }
 
-<<<<<<< HEAD
-=======
 void TreeItem::set_collapsed(bool p_collapsed) {}
 
->>>>>>> fix/remove-object
 bool TreeItem::is_collapsed() { return collapsed; }
 
 void TreeItem::set_collapsed_recursive(bool p_collapsed)
@@ -1742,47 +1691,6 @@ void Tree::_update_popup_menu(const TreeItem::Cell& p_cell)
 		popup_menu->hide();
 		add_child(popup_menu, false, INTERNAL_MODE_FRONT);
 	}
-<<<<<<< HEAD
-	popup_menu->clear();
-	for (int i = 0; i < p_cell.text.get_slice_count(","); i++) {
-		String s = p_cell.text.get_slicec(',', i);
-		popup_menu->add_item(s.get_slicec(':', 0),
-			s.get_slicec(':', 1).is_empty() ? i : s.get_slicec(':', 1).to_int());
-	}
-}
-
-void Tree::_update_value_editor(const TreeItem::Cell& p_cell)
-{
-	if (value_editor == nullptr) {
-		value_editor = memnew(HSlider);
-		value_editor->set_v_size_flags(SIZE_EXPAND_FILL);
-		value_editor->hide();
-		popup_editor_vb->add_child(value_editor);
-	}
-	updating_value_editor = true;
-	value_editor->set_min(p_cell.min);
-	value_editor->set_max(p_cell.max);
-	value_editor->set_step(p_cell.step);
-	value_editor->set_value(p_cell.val);
-	value_editor->set_exp_ratio(p_cell.expr);
-	updating_value_editor = false;
-}
-
-void Tree::popup_select(int p_option)
-{
-	if (!popup_edited_item) {
-		return;
-	}
-
-	if (popup_edited_item_col < 0 || popup_edited_item_col > columns.size()) {
-		return;
-	}
-
-	popup_edited_item->cells.write[popup_edited_item_col].val = p_option;
-	queue_redraw();
-	item_edited(popup_edited_item_col, popup_edited_item);
-=======
->>>>>>> fix/remove-object
 }
 
 bool Tree::_scroll(bool p_horizontal, float p_pages)
@@ -2272,96 +2180,6 @@ TreeItem* Tree::get_last_item() const
 	return last;
 }
 
-<<<<<<< HEAD
-void Tree::item_changed(int p_column, TreeItem* p_item)
-{
-	if (p_item != nullptr) {
-		if (p_column >= 0 && p_column < p_item->cells.size()) {
-			p_item->cells.write[p_column].dirty = true;
-			columns.write[p_column].cached_minimum_width_dirty = true;
-		}
-		else if (p_column == -1) {
-			for (int i = 0; i < p_item->cells.size(); i++) {
-				p_item->cells.write[i].dirty = true;
-				columns.write[i].cached_minimum_width_dirty = true;
-			}
-		}
-		p_item->accessibility_row_dirty = true;
-	}
-	update_min_size_for_item_change();
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void Tree::item_selected(int p_column, TreeItem* p_item, bool p_set_as_cursor)
-{
-	if (select_mode == SELECT_MULTI) {
-		if (!p_item->cells[p_column].selectable) {
-			return;
-		}
-
-		p_item->cells.write[p_column].selected = true;
-		// emit_signal(SNAME("multi_selected"),p_item,p_column,true); - NO this is for
-		// `TreeItem::select`
-
-		if (p_set_as_cursor) {
-			selected_col = p_column;
-			selected_item = p_item;
-			selected_button = -1;
-		}
-	}
-	else {
-		select_single_item(p_item, root, p_column);
-	}
-	p_item->accessibility_row_dirty = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void Tree::item_deselected(int p_column, TreeItem* p_item)
-{
-	if (select_mode == SELECT_SINGLE && selected_item == p_item && selected_col == p_column) {
-		selected_item = nullptr;
-		selected_col = -1;
-	}
-	else {
-		if (select_mode == SELECT_ROW && selected_item == p_item) {
-			selected_item = nullptr;
-			selected_col = -1;
-		}
-		else {
-			if (select_mode == SELECT_MULTI) {
-				selected_item = p_item;
-				selected_col = p_column;
-			}
-		}
-	}
-	selected_button = -1;
-
-	if (select_mode == SELECT_MULTI || select_mode == SELECT_SINGLE) {
-		p_item->cells.write[p_column].selected = false;
-	}
-	else if (select_mode == SELECT_ROW) {
-		for (int i = 0; i < p_item->cells.size(); i++) {
-			p_item->cells.write[i].selected = false;
-		}
-	}
-	p_item->accessibility_row_dirty = true;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-void Tree::update_min_size_for_item_change()
-{
-	// Only need to update when any scroll bar is disabled because that's the only time item size
-	// affects tree size.
-	if (!h_scroll_enabled || !v_scroll_enabled) {
-		update_minimum_size();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Tree::set_select_mode(SelectMode p_mode) { select_mode = p_mode; }
 
 Tree::SelectMode Tree::get_select_mode() const { return select_mode; }
@@ -3512,83 +3330,7 @@ void Tree::set_auto_tooltip(bool p_enable) { enable_auto_tooltip = p_enable; }
 
 bool Tree::is_auto_tooltip_enabled() const { return enable_auto_tooltip; }
 
-<<<<<<< HEAD
-Tree::Tree()
-{
-	columns.resize(1);
-
-	set_focus_mode(FOCUS_ALL);
-
-	RenderingServer* rs = RenderingServer::get_singleton();
-
-	stylebox_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(stylebox_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(stylebox_ci, true);
-
-	custom_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(custom_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(custom_ci, true);
-
-	content_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(content_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(content_ci, true);
-
-	header_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(header_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(header_ci, true);
-
-	drop_indicator_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(drop_indicator_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(drop_indicator_ci, true);
-
-	last_sticky_ci = rs->canvas_item_create();
-	rs->canvas_item_set_parent(last_sticky_ci, get_canvas_item());
-	rs->canvas_item_set_use_parent_material(last_sticky_ci, true);
-
-	popup_editor = memnew(Popup);
-	add_child(popup_editor, false, INTERNAL_MODE_FRONT);
-
-	popup_editor_vb = memnew(VBoxContainer);
-	popup_editor_vb->add_theme_constant_override("separation", 0);
-	popup_editor_vb->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
-	popup_editor->add_child(popup_editor_vb);
-
-	line_editor = memnew(LineEdit);
-	line_editor->set_theme_type_variation("TreeLineEdit");
-	line_editor->set_v_size_flags(SIZE_EXPAND_FILL);
-	line_editor->hide();
-	popup_editor_vb->add_child(line_editor);
-
-	text_editor = memnew(TextEdit);
-	text_editor->set_v_size_flags(SIZE_EXPAND_FILL);
-	text_editor->hide();
-	popup_editor_vb->add_child(text_editor);
-
-	h_scroll = memnew(HScrollBar);
-	h_scroll->set_use_parent_material(true);
-
-	v_scroll = memnew(VScrollBar);
-	v_scroll->set_use_parent_material(true);
-
-	add_child(h_scroll, false, INTERNAL_MODE_FRONT);
-	add_child(v_scroll, false, INTERNAL_MODE_FRONT);
-
-	range_click_timer = memnew(Timer);
-	add_child(range_click_timer, false, INTERNAL_MODE_FRONT);
-
-	dropping_unfold_timer = memnew(Timer);
-	dropping_unfold_timer->set_one_shot(true);
-	add_child(dropping_unfold_timer);
-
-	set_notify_transform(true);
-
-	set_mouse_filter(MOUSE_FILTER_STOP);
-
-	set_clip_contents(true);
-}
-=======
 void Tree::item_changed(int p_column, TreeItem* p_item) {}
->>>>>>> fix/remove-object
 
 Tree::~Tree()
 {

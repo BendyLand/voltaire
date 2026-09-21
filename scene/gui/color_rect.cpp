@@ -49,9 +49,6 @@ void ColorRect::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void ColorRect::set_color(Color const&) {}

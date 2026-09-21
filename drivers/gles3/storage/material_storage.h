@@ -48,11 +48,6 @@
 namespace GLES3
 {
 
-<<<<<<< HEAD
-/* Shader Structs */
-
-=======
->>>>>>> fix/remove-object
 struct ShaderData
 {
 	String path;
@@ -92,11 +87,6 @@ struct Shader
 	HashSet<Material*> owners;
 };
 
-<<<<<<< HEAD
-/* Material structs */
-
-=======
->>>>>>> fix/remove-object
 struct MaterialData
 {
 	RID get_default_texture_id(
@@ -143,11 +133,6 @@ struct Material
 	Material() : update_element(this) {}
 };
 
-<<<<<<< HEAD
-/* CanvasItem Materials */
-
-=======
->>>>>>> fix/remove-object
 struct CanvasShaderData : public ShaderData
 {
 	enum BlendMode
@@ -210,11 +195,6 @@ struct CanvasMaterialData : public MaterialData
 
 MaterialData* _create_canvas_material_func(ShaderData* p_shader);
 
-<<<<<<< HEAD
-/* Sky Materials */
-
-=======
->>>>>>> fix/remove-object
 struct SkyShaderData : public ShaderData
 {
 	// All these members are (re)initialized in `set_code`.
@@ -261,11 +241,6 @@ struct SkyMaterialData : public MaterialData
 
 MaterialData* _create_sky_material_func(ShaderData* p_shader);
 
-<<<<<<< HEAD
-/* Scene Materials */
-
-=======
->>>>>>> fix/remove-object
 struct SceneShaderData : public ShaderData
 {
 	enum BlendMode
@@ -408,11 +383,6 @@ struct SceneMaterialData : public MaterialData
 
 MaterialData* _create_scene_material_func(ShaderData* p_shader);
 
-<<<<<<< HEAD
-/* Particle Shader */
-
-=======
->>>>>>> fix/remove-object
 enum
 {
 	PARTICLES_MAX_USERDATAS = 6
@@ -466,11 +436,6 @@ struct ParticleProcessMaterialData : public MaterialData
 
 MaterialData* _create_particles_material_func(ShaderData* p_shader);
 
-<<<<<<< HEAD
-/* Texture Blit Shader */
-
-=======
->>>>>>> fix/remove-object
 struct TexBlitShaderData : public ShaderData
 {
 	enum BlendMode
@@ -519,10 +484,6 @@ struct TexBlitMaterialData : public MaterialData
 
 MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
 
-<<<<<<< HEAD
-/* Global shader uniform structs */
-=======
->>>>>>> fix/remove-object
 struct GlobalShaderUniforms
 {
 	enum

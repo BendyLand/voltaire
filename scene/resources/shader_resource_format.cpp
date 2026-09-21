@@ -101,8 +101,6 @@ Error ResourceFormatSaverShader::save(
 	return OK;
 }
 
-<<<<<<< HEAD
-=======
 bool ResourceFormatSaverShader::recognize(const Ref<Resource>& p_resource) const { return false; }
 
 void ResourceFormatSaverShader::get_recognized_extensions(
@@ -110,5 +108,4 @@ void ResourceFormatSaverShader::get_recognized_extensions(
 {
 }
 
->>>>>>> fix/remove-object
 

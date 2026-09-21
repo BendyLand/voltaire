@@ -90,9 +90,6 @@ int EditorExportPlatformPC::get_chmod_flags() const { return chmod_flags; }
 
 void EditorExportPlatformPC::set_chmod_flags(int p_flags) { chmod_flags = p_flags; }
 
-<<<<<<< HEAD
-
-=======
 Error EditorExportPlatformPC::prepare_template(
 	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags)
 {
@@ -128,4 +125,3 @@ bool EditorExportPlatformPC::has_valid_export_configuration(const Ref<EditorExpo
 }
 
 
->>>>>>> fix/remove-object

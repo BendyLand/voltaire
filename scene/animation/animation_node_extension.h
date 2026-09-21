@@ -32,13 +32,8 @@
 
 #include "scene/animation/animation_tree.h"
 
-<<<<<<< HEAD
-class AnimationNodeExtension : public AnimationNode {
-
-=======
 class AnimationNodeExtension : public AnimationNode
 {
->>>>>>> fix/remove-object
 public:
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;

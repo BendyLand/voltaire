@@ -694,16 +694,6 @@ bool AudioStreamPlayer3D::is_autoplay_enabled() const { return internal->autopla
 
 void AudioStreamPlayer3D::_set_playing(bool p_enable) { internal->set_playing(p_enable); }
 
-<<<<<<< HEAD
-void AudioStreamPlayer3D::set_max_distance(float p_metres)
-{
-	ERR_FAIL_COND(p_metres < 0.0);
-	max_distance = p_metres;
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 float AudioStreamPlayer3D::get_max_distance() const { return max_distance; }
 
 void AudioStreamPlayer3D::set_area_mask(uint32_t p_mask) { area_mask = p_mask; }

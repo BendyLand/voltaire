@@ -42,9 +42,6 @@ Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
 	return params;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}

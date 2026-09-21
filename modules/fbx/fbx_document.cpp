@@ -537,21 +537,6 @@ ImporterMeshInstance3D* FBXDocument::_generate_mesh_instance(
 	return mi;
 }
 
-<<<<<<< HEAD
-Camera3D* FBXDocument::_generate_camera(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> fbx_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(fbx_node->camera, p_state->cameras.size(), nullptr);
-
-	print_verbose("FBX: Creating camera for: " + fbx_node->get_name());
-
-	Ref<GLTFCamera> c = p_state->cameras[fbx_node->camera];
-	return c->to_node();
-}
-
-=======
->>>>>>> fix/remove-object
 Node3D* FBXDocument::_generate_spatial(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index)
 {
 	Ref<GLTFNode> fbx_node = p_state->nodes[p_node_index];

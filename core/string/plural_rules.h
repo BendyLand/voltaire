@@ -31,10 +31,6 @@
 #pragma once
 
 #include "core/templates/lru.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 #include "core/types.h"
 
 class Expression;

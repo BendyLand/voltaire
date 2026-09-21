@@ -109,10 +109,6 @@ class Path2DEditor : public HBoxContainer
 	void _update_toolbar();
 
 	void _create_curve();
-<<<<<<< HEAD
-	void _confirm_clear_points();
-=======
->>>>>>> fix/remove-object
 	void _clear_curve_points(Path2D* p_path2d);
 	void _restore_curve_points(Path2D* p_path2d, const PackedVector2Array& p_points);
 
@@ -131,11 +127,6 @@ class Path2DEditor : public HBoxContainer
 
 protected:
 	void _notification(int p_what);
-<<<<<<< HEAD
-	void _node_removed(Node* p_node);
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	bool forward_gui_input(const Ref<InputEvent>& p_event);

@@ -88,11 +88,8 @@ void CanvasItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
 	_handle_visibility_change(p_parent_visible_in_tree);
 }
 
-<<<<<<< HEAD
-=======
 void CanvasItem::set_visible(bool p_visible) { visible = p_visible; }
 
->>>>>>> fix/remove-object
 void CanvasItem::show()
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -279,15 +276,6 @@ Color CanvasItem::get_modulate_in_tree() const
 	return final_modulate;
 }
 
-<<<<<<< HEAD
-void CanvasItem::_top_level_changed_on_parent()
-{
-	// Inform children that top_level status has changed on a parent.
-	_top_level_changed();
-}
-
-=======
->>>>>>> fix/remove-object
 bool CanvasItem::is_set_as_top_level() const { return top_level; }
 
 void CanvasItem::set_self_modulate(const Color& p_self_modulate)
@@ -324,20 +312,6 @@ int CanvasItem::get_light_mask() const
 	return light_mask;
 }
 
-<<<<<<< HEAD
-void CanvasItem::set_z_index(int p_z)
-{
-	ERR_THREAD_GUARD;
-	ERR_FAIL_COND_MSG(p_z < RSE::CANVAS_ITEM_Z_MIN || p_z > RSE::CANVAS_ITEM_Z_MAX,
-		vformat("Tried to set Z index to an invalid value: %d. Z index must be between %d and %d.",
-			p_z, RSE::CANVAS_ITEM_Z_MIN, RSE::CANVAS_ITEM_Z_MAX));
-	z_index = p_z;
-	RS::get_singleton()->canvas_item_set_z_index(canvas_item, z_index);
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 void CanvasItem::set_z_as_relative(bool p_enabled)
 {
 	ERR_THREAD_GUARD;
@@ -1101,16 +1075,6 @@ void CanvasItem::_refresh_texture_filter_cache() const
 	}
 }
 
-<<<<<<< HEAD
-void CanvasItem::_update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter)
-{
-	RS::get_singleton()->canvas_item_set_default_texture_filter(
-		get_canvas_item(), p_texture_filter);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 CanvasItem::TextureFilter CanvasItem::get_texture_filter() const
 {
 	ERR_READ_THREAD_GUARD_V(TEXTURE_FILTER_NEAREST);
@@ -1137,16 +1101,6 @@ void CanvasItem::_refresh_texture_repeat_cache() const
 	}
 }
 
-<<<<<<< HEAD
-void CanvasItem::_update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat)
-{
-	RS::get_singleton()->canvas_item_set_default_texture_repeat(
-		get_canvas_item(), p_texture_repeat);
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 CanvasItem::ClipChildrenMode CanvasItem::get_clip_children_mode() const
 {
 	ERR_READ_THREAD_GUARD_V(CLIP_CHILDREN_DISABLED);
@@ -1173,11 +1127,8 @@ CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
 	return (TextureRepeat)texture_repeat_cache;
 }
 
-<<<<<<< HEAD
-=======
 PackedStringArray CanvasItem::get_configuration_warnings() const { return PackedStringArray(); }
 
->>>>>>> fix/remove-object
 CanvasItem::~CanvasItem()
 {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());

@@ -226,14 +226,11 @@ PackedStringArray EditorExportPlugin::_get_export_features(
 	return PackedStringArray();
 }
 
-<<<<<<< HEAD
-=======
 void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform>& p_export_platform,
 	List<EditorExportPlatform::ExportOption>* r_options) const
 {
 }
 
->>>>>>> fix/remove-object
 bool EditorExportPlugin::_should_update_export_options(
 	const Ref<EditorExportPlatform>& p_platform) const
 {

@@ -324,9 +324,6 @@ Ref<OpenXRAction> OpenXRActionMap::get_action(const String& p_path) const
 	return Ref<OpenXRAction>();
 }
 
-<<<<<<< HEAD
-
-=======
 void OpenXRActionMap::add_interaction_profile(const Ref<OpenXRInteractionProfile>& p_interaction_profile) {}
 
 
@@ -341,4 +338,3 @@ void OpenXRActionMap::remove_action_set(Ref<OpenXRActionSet> const&) {}
 Ref<OpenXRInteractionProfile> OpenXRActionMap::get_interaction_profile(int) const {}
 
 Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const {}
->>>>>>> fix/remove-object

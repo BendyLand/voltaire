@@ -89,11 +89,6 @@ public:
 	void remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
 	Vector<Ref<EditorExportPlugin>> get_export_plugins();
 
-<<<<<<< HEAD
-	void set_runnable_preset(const Ref<EditorExportPreset>& p_preset);
-	void unset_runnable_preset(const Ref<EditorExportPreset>& p_preset);
-=======
->>>>>>> fix/remove-object
 	Ref<EditorExportPreset> get_runnable_preset_for_platform(
 		const Ref<EditorExportPlatform>& p_for_platform) const;
 

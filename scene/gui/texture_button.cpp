@@ -310,15 +310,6 @@ void TextureButton::set_texture_focused(const Ref<Texture2D>& p_focused)
 	_set_texture(&focused, p_focused);
 }
 
-<<<<<<< HEAD
-void TextureButton::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 bool TextureButton::get_ignore_texture_size() const { return ignore_texture_size; }
 
 TextureButton::StretchMode TextureButton::get_stretch_mode() const { return stretch_mode; }

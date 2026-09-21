@@ -127,11 +127,6 @@ void MaterialEditor::_on_light_2_switch_pressed()
 	light2->set_visible(light_2_switch->is_pressed());
 }
 
-<<<<<<< HEAD
-///////////////////////
-
-=======
->>>>>>> fix/remove-object
 MaterialEditorPlugin::MaterialEditorPlugin()
 {
 	Ref<EditorInspectorPluginMaterial> plugin;
@@ -169,8 +164,6 @@ bool BlitMaterialConversionPlugin::handles(const Ref<Resource>& p_resource) cons
 	return mat.is_valid();
 }
 
-<<<<<<< HEAD
-=======
 void MaterialEditor::_store_rotation_metadata() {}
 
 Ref<ShaderMaterial> MaterialEditor::make_shader_material(Ref<Material> const&, bool)
@@ -195,5 +188,4 @@ Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource>& p_resou
 	return r;
 }
 
->>>>>>> fix/remove-object
 

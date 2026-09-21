@@ -60,7 +60,3 @@ void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
 	}
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

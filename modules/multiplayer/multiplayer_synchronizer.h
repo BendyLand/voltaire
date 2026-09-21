@@ -93,10 +93,6 @@ public:
 	void set_replication_config(Ref<SceneReplicationConfig> p_config);
 	Ref<SceneReplicationConfig> get_replication_config();
 
-<<<<<<< HEAD
-	void set_root_path(const NodePath& p_path);
-=======
->>>>>>> fix/remove-object
 	NodePath get_root_path() const;
 	virtual void set_multiplayer_authority(int p_peer_id, bool p_recursive = true) override;
 

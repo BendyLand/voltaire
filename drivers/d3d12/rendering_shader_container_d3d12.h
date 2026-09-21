@@ -73,13 +73,8 @@ struct RenderingDXIL
 		RenderingDeviceCommons::ShaderStage p_stage, Vector<uint8_t>& r_dxil_blob);
 };
 
-<<<<<<< HEAD
-class RenderingShaderContainerD3D12 : public RenderingShaderContainer {
-
-=======
 class RenderingShaderContainerD3D12 : public RenderingShaderContainer
 {
->>>>>>> fix/remove-object
 public:
 	static constexpr uint32_t REQUIRED_SHADER_MODEL = 0x62; // D3D_SHADER_MODEL_6_2
 	static constexpr uint32_t ROOT_CONSTANT_REGISTER =
@@ -142,11 +137,6 @@ protected:
 	uint32_t root_signature_crc = 0;
 
 #if NIR_ENABLED
-<<<<<<< HEAD
-	bool _convert_spirv_to_nir(Span<ReflectShaderStage> p_spirv, const nir_shader_compiler_options *p_compiler_options, HashMap<int, nir_shader *> &r_stages_nir_shaders, Vector<RenderingDeviceCommons::ShaderStage> &r_stages, uint32_t &r_stages_processed);
-	bool _convert_nir_to_dxil(const HashMap<int, nir_shader *> &p_stages_nir_shaders, uint32_t &r_dxil_blobs);
-	bool _convert_spirv_to_dxil(Span<ReflectShaderStage> p_spirv, HashMap<RenderingDeviceCommons::ShaderStage, Vector<uint8_t>> &r_dxil_blobs, Vector<RenderingDeviceCommons::ShaderStage> &r_stages, uint32_t &r_stages_processed);
-=======
 	bool _convert_spirv_to_nir(Span<ReflectShaderStage> p_spirv,
 		const nir_shader_compiler_options* p_compiler_options,
 		HashMap<int, nir_shader*>& r_stages_nir_shaders,
@@ -156,7 +146,6 @@ protected:
 	bool _convert_spirv_to_dxil(Span<ReflectShaderStage> p_spirv,
 		HashMap<RenderingDeviceCommons::ShaderStage, Vector<uint8_t>>& r_dxil_blobs,
 		Vector<RenderingDeviceCommons::ShaderStage>& r_stages, uint32_t& r_stages_processed);
->>>>>>> fix/remove-object
 	bool _generate_root_signature(uint32_t p_stages_processed);
 
 	// GodotNirCallbacks.

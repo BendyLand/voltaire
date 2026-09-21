@@ -56,11 +56,6 @@
 RID TileMap::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_2D_DISABLED
 
-<<<<<<< HEAD
-void TileMap::_tile_set_changed() { update_configuration_warnings(); }
-
-=======
->>>>>>> fix/remove-object
 Vector<int> TileMap::_get_tile_map_data_using_compatibility_format(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, (int)layers.size(), Vector<int>());

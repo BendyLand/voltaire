@@ -88,12 +88,8 @@ bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer&
 	}
 }
 
-<<<<<<< HEAD
-
-=======
 void OpenXRDisplayRefreshRateExtension::set_refresh_rate(float p_rate) {}
 
 float OpenXRDisplayRefreshRateExtension::get_refresh_rate() const { return 0.0f; }
 
 
->>>>>>> fix/remove-object

@@ -40,13 +40,8 @@
 
 class ViewPanner;
 
-<<<<<<< HEAD
-class TileAtlasView : public Control {
-
-=======
 class TileAtlasView : public Control
 {
->>>>>>> fix/remove-object
 private:
 	Ref<TileSet> tile_set;
 	Ref<TileSetAtlasSource> tile_set_atlas_source;
@@ -61,11 +56,7 @@ private:
 		bool p_zoom_on_mouse_pos = false, const Vector2& p_mouse_pos = Vector2());
 	void _zoom_widget_changed();
 	void _center_view();
-<<<<<<< HEAD
-	virtual void gui_input(const Ref<InputEvent> &p_event);
-=======
 	virtual void gui_input(const Ref<InputEvent>& p_event);
->>>>>>> fix/remove-object
 
 	Ref<ViewPanner> panner;
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);

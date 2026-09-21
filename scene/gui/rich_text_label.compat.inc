@@ -37,39 +37,6 @@ void RichTextLabel::_push_font_bind_compat_79053(const Ref<Font>& p_font, int p_
 	push_font(p_font, p_size);
 }
 
-<<<<<<< HEAD
-void RichTextLabel::_set_table_column_expand_bind_compat_79053(
-	int p_column, bool p_expand, int p_ratio)
-{
-	set_table_column_expand(p_column, p_expand, p_ratio, true);
-}
-
-void RichTextLabel::_set_table_column_expand_bind_compat_101482(
-	int p_column, bool p_expand, int p_ratio)
-{
-	set_table_column_expand(p_column, p_expand, p_ratio, true);
-}
-
-void RichTextLabel::_push_table_bind_compat_76829(
-	int p_columns, InlineAlignment p_alignment, int p_align_to_row)
-{
-	push_table(p_columns, p_alignment, p_align_to_row, String());
-}
-
-bool RichTextLabel::_remove_paragraph_bind_compat_91098(int p_paragraph)
-{
-	return remove_paragraph(p_paragraph, false);
-}
-
-void RichTextLabel::_push_underline_bind_compat_106300() { push_underline(Color(0, 0, 0, 0)); }
-
-void RichTextLabel::_push_strikethrough_bind_compat_106300()
-{
-	push_strikethrough(Color(0, 0, 0, 0));
-}
-
-=======
->>>>>>> fix/remove-object
 #endif // DISABLE_DEPRECATED
 
 

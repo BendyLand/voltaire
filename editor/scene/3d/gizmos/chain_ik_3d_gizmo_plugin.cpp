@@ -40,14 +40,6 @@ ChainIK3DGizmoPlugin::ChainIK3DGizmoPlugin()
 	selection_materials.unselected_mat.instantiate();
 	selection_materials.unselected_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	selection_materials.unselected_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-<<<<<<< HEAD
-	selection_materials.unselected_mat->set_flag(
-		StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	selection_materials.unselected_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
-=======
->>>>>>> fix/remove-object
 	selection_materials.selected_mat.instantiate();
 	Ref<Shader> sh;
 	sh.instantiate();
@@ -91,13 +83,10 @@ void ChainIK3DGizmoPlugin::draw_line(Ref<SurfaceTool>& p_surface_tool, const Vec
 	p_surface_tool->add_vertex(p_end_pos);
 }
 
-<<<<<<< HEAD
-=======
 bool ChainIK3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
 
 int ChainIK3DGizmoPlugin::get_priority() const { return 0; }
 
 void ChainIK3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
 
->>>>>>> fix/remove-object
 

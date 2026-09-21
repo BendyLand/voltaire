@@ -107,21 +107,9 @@ private:
 
 protected:
 	virtual PackedStringArray get_configuration_warnings() const override;
-<<<<<<< HEAD
-
-	virtual void _validate_bone_names() override;
-
-	static void _bind_methods();
-
 	virtual void _process_modification(double p_delta) override;
 
 public:
-	void set_bone_name(const String& p_bone_name);
-=======
-	virtual void _process_modification(double p_delta) override;
-
-public:
->>>>>>> fix/remove-object
 	String get_bone_name() const;
 	int get_bone() const;
 
@@ -134,10 +122,6 @@ public:
 
 	void set_origin_from(OriginFrom p_origin_from);
 	OriginFrom get_origin_from() const;
-<<<<<<< HEAD
-	void set_origin_bone_name(const String& p_bone_name);
-=======
->>>>>>> fix/remove-object
 	String get_origin_bone_name() const;
 	int get_origin_bone() const;
 	void set_origin_external_node(const NodePath& p_external_node);

@@ -60,18 +60,6 @@ bool CollisionShape2D::_edit_is_selected_on_click(const Point2& p_point, double 
 	return shape->_edit_is_selected_on_click(p_point, p_tolerance);
 }
 
-<<<<<<< HEAD
-void CollisionShape2D::set_disabled(bool p_disabled)
-{
-	disabled = p_disabled;
-	queue_redraw();
-	if (collision_object) {
-		collision_object->shape_owner_set_disabled(owner_id, p_disabled);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool CollisionShape2D::is_disabled() const { return disabled; }
 
 bool CollisionShape2D::is_one_way_collision_enabled() const { return one_way_collision; }

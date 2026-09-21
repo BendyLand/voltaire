@@ -85,9 +85,6 @@ void ProjectZIPPacker::_zip_recursive(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void ProjectZIPPacker::_zip_file(String const&, String const&, void*) {}
 
->>>>>>> fix/remove-object
 

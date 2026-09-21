@@ -677,8 +677,6 @@ Ref<Shortcut> ED_SHORTCUT(
 	return ED_SHORTCUT_ARRAY(p_path, p_name, arr, p_physical);
 }
 
-<<<<<<< HEAD
-=======
 void EditorSettings::_rename_setting(const String& p_old_name, const String& p_new_name) {}
 
 void EditorSettings::erase(const String& p_setting) {}
@@ -706,5 +704,4 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY(
 	return s;
 }
 
->>>>>>> fix/remove-object
 

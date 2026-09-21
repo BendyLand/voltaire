@@ -1314,30 +1314,6 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 		r_positional_light_count++;
 	}
-<<<<<<< HEAD
-
-	// update without barriers
-	if (omni_light_count) {
-		RD::get_singleton()->buffer_update(
-			omni_light_buffer, 0, sizeof(LightData) * omni_light_count, omni_lights);
-	}
-
-	if (spot_light_count) {
-		RD::get_singleton()->buffer_update(
-			spot_light_buffer, 0, sizeof(LightData) * spot_light_count, spot_lights);
-	}
-
-	if (area_light_count) {
-		RD::get_singleton()->buffer_update(
-			area_light_buffer, 0, sizeof(LightData) * area_light_count, area_lights);
-	}
-
-	if (r_directional_light_count) {
-		RD::get_singleton()->buffer_update(directional_light_buffer, 0,
-			sizeof(DirectionalLightData) * r_directional_light_count, directional_lights);
-	}
-=======
->>>>>>> fix/remove-object
 }
 
 RID LightStorage::reflection_probe_allocate() { return reflection_probe_owner.allocate_rid(); }
@@ -1946,8 +1922,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 
 					reflection_probe_instance_owner.get_or_null(atlas->reflections[i].owner);
 				if (rpi2->last_pass < pass_min) {
-
-				pass_min = rpi2->last_pass;
+					pass_min = rpi2->last_pass;
 					rpi->atlas_index = i;
 				}
 			}
@@ -2212,14 +2187,6 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 		// hook for subclass to do further processing.
 		RendererSceneRenderRD::get_singleton()->setup_added_reflection_probe(transform, extents);
 	}
-<<<<<<< HEAD
-
-	if (reflection_count) {
-		RD::get_singleton()->buffer_update(
-			reflection_buffer, 0, reflection_count * sizeof(ReflectionData), reflections);
-	}
-=======
->>>>>>> fix/remove-object
 }
 
 RD::DataFormat LightStorage::get_reflection_probe_color_format()
@@ -3152,9 +3119,6 @@ bool LightStorage::get_shadow_cubemaps_used() const { return shadow_cubemaps_use
 
 bool LightStorage::get_shadow_dual_paraboloid_used() const { return shadow_dual_paraboloid_used; }
 
-<<<<<<< HEAD
-=======
 RID RendererRD::LightStorage::reflection_atlas_create() { return RID(); }
 
->>>>>>> fix/remove-object
 

@@ -266,12 +266,9 @@ int ResourceImporterOBJ::get_preset_count() const { return 0; }
 
 String ResourceImporterOBJ::get_preset_name(int p_idx) const { return ""; }
 
-<<<<<<< HEAD
-=======
 void ResourceImporterOBJ::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
 }
 
->>>>>>> fix/remove-object
 

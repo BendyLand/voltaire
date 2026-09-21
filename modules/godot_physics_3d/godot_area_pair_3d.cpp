@@ -97,8 +97,6 @@ GodotAreaSoftBodyPair3D::GodotAreaSoftBodyPair3D(
 	area->add_constraint(this);
 }
 
-<<<<<<< HEAD
-=======
 bool GodotAreaSoftBodyPair3D::setup(real_t p_step) { return true; }
 
 bool GodotAreaPair3D::setup(real_t p_step) { return true; }
@@ -113,5 +111,4 @@ bool GodotAreaPair3D::pre_solve(float p_step) { return false; }
 
 void GodotAreaPair3D::solve(float p_step) {}
 
->>>>>>> fix/remove-object
 

@@ -63,11 +63,6 @@ String GroupSettingsEditor::_check_new_group_name(const String& p_name)
 	return "";
 }
 
-<<<<<<< HEAD
-void GroupSettingsEditor::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void GroupSettingsEditor::_add_group()
 {
 	_add_group(group_name->get_text(), group_description->get_text());
@@ -110,20 +105,9 @@ bool GroupSettingsEditor::rename_node_references(
 	return edited;
 }
 
-<<<<<<< HEAD
-void GroupSettingsEditor::show_message(const String& p_message)
-{
-	message->set_text(p_message);
-	message->popup_centered();
-}
-
-LineEdit* GroupSettingsEditor::get_name_box() const { return group_name; }
-
-=======
 LineEdit* GroupSettingsEditor::get_name_box() const { return group_name; }
 
 
->>>>>>> fix/remove-object
 
 void GroupSettingsEditor::_add_group(String const&, String const&) {}
 

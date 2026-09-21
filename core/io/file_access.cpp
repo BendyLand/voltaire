@@ -727,12 +727,7 @@ uint32_t FileAccess::get_unix_permissions(const String& p_file)
 	return fa->_get_unix_permissions(p_file);
 }
 
-<<<<<<< HEAD
-Error FileAccess::set_unix_permissions(
-	const String& p_file, uint32_t p_permissions)
-=======
 Error FileAccess::set_unix_permissions(const String& p_file, uint32_t p_permissions)
->>>>>>> fix/remove-object
 {
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
 		(PackedData::get_singleton()->has_path(p_file) ||

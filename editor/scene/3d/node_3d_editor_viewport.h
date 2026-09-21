@@ -356,11 +356,6 @@ private:
 	float get_zfar() const;
 	float get_fov() const;
 
-<<<<<<< HEAD
-	void _show_tooltip(const String& p_title, const String& p_description) const;
-
-=======
->>>>>>> fix/remove-object
 	Vector<Node3D*> selection_results;
 	Vector<Node3D*> selection_results_menu;
 	bool clicked_wants_append = false;
@@ -509,10 +504,6 @@ private:
 	Node* _sanitize_preview_node(Node* p_node) const;
 
 	void _create_preview_node(const Vector<String>& files) const;
-<<<<<<< HEAD
-	void _remove_preview_node();
-=======
->>>>>>> fix/remove-object
 	void _reset_preview_material() const;
 	void _remove_preview_material();
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node) const;
@@ -578,15 +569,11 @@ public:
 
 	Control* get_surface() { return surface; }
 
-<<<<<<< HEAD
-	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index);
-=======
 	Node3DEditorViewport(Node3DEditor* p_spatial_editor, int p_index)
 		: spatial_editor(p_spatial_editor), index(p_index)
 	{
 	}
 
->>>>>>> fix/remove-object
 	~Node3DEditorViewport();
 };
 

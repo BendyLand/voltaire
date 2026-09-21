@@ -40,17 +40,10 @@ class OpenXRExportPlugin : public EditorExportPlugin
 public:
 	virtual String get_name() const override { return "OpenXRExportPlugin"; }
 
-<<<<<<< HEAD
-	virtual bool supports_platform(
-		const Ref<EditorExportPlatform>& p_export_platform) const override;
-	virtual PackedStringArray get_android_dependencies(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const override;
-=======
 	virtual PackedStringArray get_android_dependencies(
 		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const override;
 	virtual bool supports_platform(
 		const Ref<EditorExportPlatform>& p_export_platform) const override;
->>>>>>> fix/remove-object
 
 protected:
 	virtual String _get_export_option_warning(const Ref<EditorExportPlatform>& p_export_platform,

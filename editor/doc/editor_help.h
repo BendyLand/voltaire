@@ -149,14 +149,6 @@ class EditorHelp : public VBoxContainer
 
 	bool scroll_locked = false;
 
-<<<<<<< HEAD
-	// void _button_pressed(int p_idx);
-	void _add_type(
-		const String& p_type, const String& p_enum = String(), bool p_is_bitfield = false);
-	void _add_type_icon(const String& p_type, int p_size = 0, const String& p_fallback = "");
-
-=======
->>>>>>> fix/remove-object
 	void _add_bulletpoint();
 
 	void _class_desc_finished();
@@ -164,10 +156,6 @@ class EditorHelp : public VBoxContainer
 	void _class_desc_input(const Ref<InputEvent>& p_input);
 	int display_margin = 0;
 
-<<<<<<< HEAD
-	Error _goto_desc(const String& p_class, bool p_can_trigger_save_history);
-=======
->>>>>>> fix/remove-object
 	void _update_doc();
 
 	void _search(bool p_search_previous = false);

@@ -35,46 +35,8 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-<<<<<<< HEAD
-void BaseButton::_unpress_group()
-{
-	if (button_group.is_null()) {
-		return;
-	}
-
-	if (toggle_mode && !button_group->is_allow_unpress()) {
-		status.pressed = true;
-		queue_accessibility_update();
-	}
-
-	for (BaseButton* E : button_group->buttons) {
-		if (E == this) {
-			continue;
-		}
-
-		E->set_pressed(false);
-	}
-}
-
 bool BaseButton::is_disabled() const { return status.disabled; }
 
-void BaseButton::set_pressed_no_signal(bool p_pressed)
-{
-	if (!toggle_mode) {
-		return;
-	}
-	if (status.pressed == p_pressed) {
-		return;
-	}
-	status.pressed = p_pressed;
-	queue_accessibility_update();
-	queue_redraw();
-}
-
-=======
-bool BaseButton::is_disabled() const { return status.disabled; }
-
->>>>>>> fix/remove-object
 bool BaseButton::is_pressing() const { return status.press_attempt; }
 
 bool BaseButton::is_pressed() const { return toggle_mode ? status.pressed : status.press_attempt; }
@@ -182,34 +144,10 @@ void BaseButton::set_shortcut(const Ref<Shortcut>& p_shortcut)
 
 Ref<Shortcut> BaseButton::get_shortcut() const { return shortcut; }
 
-<<<<<<< HEAD
-void BaseButton::_shortcut_feedback_timeout()
-{
-	in_shortcut_feedback = false;
-	queue_redraw();
-}
-
-void BaseButton::set_button_group(const Ref<ButtonGroup>& p_group)
-{
-	if (button_group.is_valid()) {
-		button_group->buttons.erase(this);
-	}
-
-	button_group = p_group;
-
-	if (button_group.is_valid()) {
-		button_group->buttons.insert(this);
-	}
-
-	queue_accessibility_update();
-	queue_redraw(); // checkbox changes to radio if set a buttongroup
-	update_configuration_warnings();
-=======
 Control* BaseButton::make_custom_tooltip(const String& p_text) const
 {
 	Control c = Control();
 	return &c;
->>>>>>> fix/remove-object
 }
 
 Ref<ButtonGroup> BaseButton::get_button_group() const { return button_group; }

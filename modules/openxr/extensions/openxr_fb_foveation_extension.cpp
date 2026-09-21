@@ -173,9 +173,6 @@ void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_active(boo
 	foveation_with_subsampled_images_active = p_active;
 }
 
-<<<<<<< HEAD
-
-=======
 void OpenXRFBFoveationExtension::update_profile() {}
 
 void OpenXRFBFoveationExtension::get_fragment_density_offsets(
@@ -190,4 +187,3 @@ HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(
 }
 
 
->>>>>>> fix/remove-object

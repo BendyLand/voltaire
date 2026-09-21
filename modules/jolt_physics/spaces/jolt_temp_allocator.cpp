@@ -115,8 +115,5 @@ void JoltTempAllocator::Free(void* p_ptr, uint32_t p_size)
 }
 
 
-<<<<<<< HEAD
-=======
 
 JoltTempAllocator::JoltTempAllocator() {}
->>>>>>> fix/remove-object

@@ -134,9 +134,6 @@ HashMap<int, Vector<StringName>> GraphEditArranger::_layering(
 	return l;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void GraphEditArranger::arrange_nodes() {}

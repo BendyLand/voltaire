@@ -91,10 +91,6 @@ public:
 	void set_shape(const Ref<Shape3D>& p_shape);
 	Ref<Shape3D> get_shape() const;
 
-<<<<<<< HEAD
-	void set_target_position(const Vector3& p_point);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_target_position() const;
 
 	void set_margin(real_t p_margin);

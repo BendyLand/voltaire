@@ -63,11 +63,6 @@ void EditorSettingsDialog::ok_pressed()
 	_settings_save();
 }
 
-<<<<<<< HEAD
-void EditorSettingsDialog::_settings_changed() { timer->start(); }
-
-=======
->>>>>>> fix/remove-object
 void EditorSettingsDialog::_settings_save()
 {
 	if (!timer->is_stopped()) {
@@ -86,37 +81,6 @@ void EditorSettingsDialog::cancel_pressed()
 	EditorSettings::get_singleton()->notify_changes();
 }
 
-<<<<<<< HEAD
-void EditorSettingsDialog::set_advanced_mode_enabled(bool p_enabled)
-{
-	advanced_switch->set_pressed(p_enabled);
-}
-
-void EditorSettingsDialog::set_current_section(const String& p_section)
-{
-	inspector->set_current_section(p_section);
-}
-
-void EditorSettingsDialog::_undo_redo_callback(void* p_self, const String& p_name)
-{
-	EditorNode::get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
-}
-
-void EditorSettingsDialog::_update_icons()
-{
-	search_box->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-	search_box->set_clear_button_enabled(true);
-
-	restart_close_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	restart_container->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
-	restart_icon->set_texture(get_editor_theme_icon(SNAME("StatusWarning")));
-	restart_label->add_theme_color_override(SceneStringName(font_color),
-		get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorSettingsDialog::_is_in_project_manager() const
 {
 	return !ProjectSettings::get_singleton()->is_project_loaded();
@@ -148,59 +112,10 @@ void EditorSettingsDialog::_focus_current_search_box()
 	}
 }
 
-<<<<<<< HEAD
-void EditorSettingsDialog::_editor_restart_request() { restart_container->show(); }
-
-void EditorSettingsDialog::_editor_restart_close() { restart_container->hide(); }
-
-EditorSettingsDialog::~EditorSettingsDialog() { singleton = nullptr; }
-
-void EditorSettingsPropertyWrapper::_update_override()
-{
-	// Don't allow overriding theme properties, because it causes problems. Overriding Project
-	// Manager settings makes no sense.
-	// TODO: Find a better way to define exception prefixes (if the list happens to grow).
-	if (property.begins_with("interface/theme") || property.begins_with("project_manager") ||
-		Engine::get_singleton()->is_project_manager_hint()) {
-		can_override = false;
-		return;
-	}
-
-	const bool has_override =
-		ProjectSettings::get_singleton()->is_project_loaded() &&
-		ProjectSettings::get_singleton()->has_editor_setting_override(property);
-	if (has_override) {
-		if (!override_container) {
-			_setup_override_info();
-		}
-		override_editor_property->update_property();
-		set_bottom_editor(override_container);
-		override_container->show();
-	}
-	else if (override_container) {
-		override_container->hide();
-		set_bottom_editor(nullptr);
-	}
-	can_override = !has_override;
-}
-
-void EditorSettingsPropertyWrapper::_notification(int p_what)
-{
-	if (override_container && p_what == NOTIFICATION_THEME_CHANGED) {
-		override_icon->set_texture(get_editor_theme_icon(SNAME("Hierarchy")));
-		goto_button->set_button_icon(get_editor_theme_icon(SNAME("MethodOverride")));
-		remove_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
-	}
-}
-
-void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }
-
-=======
 EditorSettingsDialog::~EditorSettingsDialog() { singleton = nullptr; }
 
 void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }
 
 
->>>>>>> fix/remove-object
 
 void EditorSettingsDialog::_update_dynamic_property_hints() {}

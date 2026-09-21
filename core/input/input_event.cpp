@@ -558,11 +558,6 @@ bool InputEventKey::is_match(const Ref<InputEvent>& p_event, bool p_exact_match)
 
 InputEventKey::InputEventKey() { set_device(DEVICE_ID_KEYBOARD); }
 
-<<<<<<< HEAD
-///////////////////////////////////
-
-=======
->>>>>>> fix/remove-object
 void InputEventMouse::set_position(const Vector2& p_pos) { pos = p_pos; }
 
 Vector2 InputEventMouse::get_position() const { return pos; }

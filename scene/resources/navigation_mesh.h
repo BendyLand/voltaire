@@ -43,10 +43,6 @@ class NavigationMesh : public Resource
 	Ref<ArrayMesh> debug_mesh;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	enum SamplePartitionType

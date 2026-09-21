@@ -54,10 +54,6 @@ class StyleBoxFlat : public StyleBox
 
 protected:
 	virtual float get_style_margin(Side p_side) const override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_bg_color(const Color& p_color);

@@ -155,8 +155,6 @@ void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material
 	material->next_pass = p_next_material;
 }
 
-<<<<<<< HEAD
-=======
 RSE::GlobalShaderParameterType RendererDummy::MaterialStorage::global_shader_parameter_get_type(
 	const StringName& p_name) const
 {
@@ -170,5 +168,4 @@ void RendererDummy::MaterialStorage::material_get_instance_shader_parameters(
 {
 }
 
->>>>>>> fix/remove-object
 

@@ -35,21 +35,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/surface_tool.h"
 
-<<<<<<< HEAD
-CollisionObject3DGizmoPlugin::CollisionObject3DGizmoPlugin()
-{
-	const Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
-	create_material("shape_material", gizmo_color);
-	const float gizmo_value = gizmo_color.get_v();
-	const Color gizmo_color_disabled = Color(gizmo_value, gizmo_value, gizmo_value, 0.65);
-	create_material("shape_material_disabled", gizmo_color_disabled);
-}
-
 String CollisionObject3DGizmoPlugin::get_gizmo_name() const { return "CollisionObject3D"; }
 
 
-=======
-String CollisionObject3DGizmoPlugin::get_gizmo_name() const { return "CollisionObject3D"; }
-
-
->>>>>>> fix/remove-object

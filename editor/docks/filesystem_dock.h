@@ -60,13 +60,7 @@ class EditorResourceTooltipPlugin;
 class VBoxContainer;
 
 class FileSystemTree : public Tree
-<<<<<<< HEAD
-{
-	virtual Control* make_custom_tooltip(const String& p_text) const;
-};
-=======
 {};
->>>>>>> fix/remove-object
 
 class FileSystemList : public ItemList
 {
@@ -74,16 +68,6 @@ class FileSystemList : public ItemList
 	VBoxContainer* popup_editor_vb = nullptr;
 	Popup* popup_editor = nullptr;
 	LineEdit* line_editor = nullptr;
-<<<<<<< HEAD
-
-	virtual Control* make_custom_tooltip(const String& p_text) const override;
-	void _line_editor_submit(const String& p_text);
-	void _text_editor_popup_modal_close();
-
-protected:
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	bool edit_selected();
@@ -241,11 +225,7 @@ private:
 		String path;
 		bool is_file = false;
 
-<<<<<<< HEAD
-		FileOrFolder() {}
-=======
 		FileOrFolder() = default;
->>>>>>> fix/remove-object
 
 		FileOrFolder(const String& p_path, bool p_is_file) : path(p_path), is_file(p_is_file) {}
 	};
@@ -291,81 +271,10 @@ private:
 
 	Ref<Texture2D> _get_tree_item_icon(
 		bool p_is_valid, const String& p_file_type, const String& p_icon_path);
-<<<<<<< HEAD
-	void _create_tree(TreeItem* p_parent, EditorFileSystemDirectory* p_dir,
-		const Vector<String>& p_uncollapsed_paths, const Vector<String>& p_selected_paths);
-	void _update_tree(const Vector<String>& p_uncollapsed_paths = Vector<String>(),
-		bool p_uncollapse_root = false, bool p_scroll_to_selected = true,
-		const Vector<String>& p_override_selection = Vector<String>());
-	void _navigate_to_path(
-		const String& p_path, bool p_select_in_favorites = false, bool p_grab_focus = false);
 	bool _update_filtered_items(TreeItem* p_tree_item = nullptr);
-	void _append_favorite_items();
-=======
-	bool _update_filtered_items(TreeItem* p_tree_item = nullptr);
->>>>>>> fix/remove-object
 
 	HashSet<String> _get_valid_conversions_for_file_paths(const Vector<String>& p_paths);
 
-<<<<<<< HEAD
-	HashSet<String> _get_valid_conversions_for_file_paths(const Vector<String>& p_paths);
-
-	void _update_file_list(
-		bool p_keep_selection, const Vector<String>& p_override_selection = Vector<String>());
-	void _toggle_file_display();
-	void _set_file_display(bool p_active);
-	void _fs_changed();
-
-	void _select_file(
-		const String& p_path, bool p_select_in_favorites = false, bool p_navigate = true);
-	void _tree_activate_file();
-	void _file_list_activate_file(int p_idx);
-	void _file_multi_selected(int p_index, bool p_selected);
-
-	bool _get_imported_files(
-		const String& p_path, String& r_extension, Vector<String>& r_files) const;
-	void _update_import_dock();
-
-	void _get_all_items_in_dir(EditorFileSystemDirectory* p_efsd, Vector<String>& r_files,
-		Vector<String>& r_folders) const;
-	void _find_file_owners(EditorFileSystemDirectory* p_efsd, const HashSet<String>& p_renames,
-		HashSet<String>& r_file_owners) const;
-	void _try_move_item(const FileOrFolder& p_item, const String& p_new_path,
-		HashMap<String, String>& p_file_renames, HashMap<String, String>& p_folder_renames);
-	void _try_duplicate_item(const FileOrFolder& p_item, const String& p_new_path) const;
-	void _before_move(HashSet<String>& r_file_owners) const;
-	void _update_dependencies_after_move(
-		const HashMap<String, String>& p_renames, const HashSet<String>& p_file_owners) const;
-	void _update_resource_paths_after_move(const HashMap<String, String>& p_renames) const;
-	void _update_favorites_after_move(const HashMap<String, String>& p_files_renames,
-		const HashMap<String, String>& p_folders_renames) const;
-	void _update_project_settings_after_move(
-		const HashMap<String, String>& p_renames, const HashMap<String, String>& p_folders_renames);
-	String _get_unique_name(const FileOrFolder& p_entry, const String& p_at_path);
-
-	void _update_folder_colors_setting();
-
-	void _resource_removed(const Ref<Resource>& p_resource);
-	void _file_removed(const String& p_file);
-	void _folder_removed(const String& p_folder);
-
-	void _resource_created();
-	void _script_or_shader_created(const Ref<Resource>& p_resource);
-	void _make_scene_confirm();
-	void _rename_operation_confirm();
-	void _duplicate_operation_confirm(const String& p_path);
-	void _move_confirm();
-	void _overwrite_dialog_action(bool p_overwrite);
-	void _convert_dialog_action();
-	Vector<String> _check_existing();
-	void _move_operation_confirm(
-		const String& p_to_path, bool p_copy = false, Overwrite p_overwrite = OVERWRITE_UNDECIDED);
-
-	void _tree_rmb_option(int p_option);
-	void _file_list_rmb_option(int p_option);
-	void _generic_rmb_option_selected(int p_option);
-	void _file_option(int p_option, const Vector<String>& p_selected);
-=======
 	bool _get_imported_files(
 		const String& p_path, String& r_extension, Vector<String>& r_files) const;
 
@@ -379,53 +288,10 @@ private:
 
 	Vector<String> _check_existing();
 
->>>>>>> fix/remove-object
 	int _get_menu_option_from_key(const Ref<InputEventKey>& p_key);
 
 	void _split_dragged(int p_offset);
 
-<<<<<<< HEAD
-	void _search_changed(const String& p_text, const Control* p_from);
-	bool _matches_all_search_tokens(const String& p_text);
-
-	MenuButton* _create_file_menu_button();
-	void _file_sort_popup(int p_id);
-
-	void _folder_color_index_pressed(int p_index, PopupMenu* p_menu);
-	void _file_and_folders_fill_popup(PopupMenu* p_popup, const Vector<String>& p_paths,
-		bool p_display_path_dependent_options = true);
-	void _add_create_options(PopupMenu* p_popup, const String& p_base_folder);
-	void _tree_rmb_select(const Vector2& p_pos, MouseButton p_button);
-	void _file_list_item_clicked(
-		int p_item, const Vector2& p_pos, MouseButton p_mouse_button_index);
-	void _file_list_empty_clicked(const Vector2& p_pos, MouseButton p_mouse_button_index);
-	void _tree_empty_click(const Vector2& p_pos, MouseButton p_button);
-	void _tree_empty_selected();
-
-	void _search(EditorFileSystemDirectory* p_path, List<FileInfo>* matches, int p_max_items);
-
-	void _set_current_path_line_edit_text(const String& p_path);
-
-	void _get_drag_target_folder(
-		String& target, bool& target_favorites, const Point2& p_point, Control* p_from) const;
-
-	void _preview_invalidated(const String& p_path);
-	void _file_list_thumbnail_done(const String& p_path, const Ref<Texture2D>& p_preview,
-		const Ref<Texture2D>& p_small_preview, int p_index, const String& p_filename);
-	Ref<Texture2D> _apply_thumbnail_filter(
-		const Ref<Texture2D>& p_thumbnail, const String& p_file_path) const;
-
-	void _update_display_mode(bool p_force = false);
-
-	Vector<String> _tree_get_selected(
-		bool remove_self_inclusion = true, bool p_include_unselected_cursor = false) const;
-	Vector<String> _file_list_get_selected() const;
-
-	bool _is_file_type_disabled_by_feature_profile(const StringName& p_class);
-
-	void _feature_profile_changed();
-	void _project_settings_changed();
-=======
 	bool _matches_all_search_tokens(const String& p_text);
 
 	void _search(EditorFileSystemDirectory* p_path, List<FileInfo>* matches, int p_max_items);
@@ -445,7 +311,6 @@ private:
 
 	bool _is_file_type_disabled_by_feature_profile(const StringName& p_class);
 
->>>>>>> fix/remove-object
 	static Vector<String> _remove_self_included_paths(Vector<String> selected_strings);
 
 private:
@@ -453,21 +318,8 @@ private:
 
 public:
 	static FileSystemDock* get_singleton() { return singleton; }
-<<<<<<< HEAD
 
 	static DependencyEditorOwners* get_owners_dialog() { return singleton->owners_editor; }
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
-
-	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
-	virtual void save_layout_to_config(Ref<ConfigFile>& p_layout, const String& p_section) const;
-	virtual void load_layout_from_config(const Ref<ConfigFile>& p_layout, const String& p_section);
-=======
-
-	static DependencyEditorOwners* get_owners_dialog() { return singleton->owners_editor; }
->>>>>>> fix/remove-object
 
 public:
 	static constexpr double ITEM_COLOR_SCALE = 1.75;
@@ -475,52 +327,11 @@ public:
 	static constexpr double ITEM_ALPHA_MAX = 0.15;
 	static constexpr double ITEM_BG_DARK_SCALE = 0.3;
 
-<<<<<<< HEAD
-	static Color get_dir_icon_color(const String& p_dir_path, const Color& p_default);
-
 	const HashMap<String, Color>& get_folder_colors() const;
-
-	Vector<String> get_selected_paths() const;
-	Vector<String> get_uncollapsed_paths() const;
-=======
-	const HashMap<String, Color>& get_folder_colors() const;
->>>>>>> fix/remove-object
 
 	String get_current_path() const;
 	String get_current_directory() const;
 
-<<<<<<< HEAD
-	void navigate_to_path(const String& p_path);
-	void focus_on_path();
-	void focus_on_filter();
-	void create_directory(const String& p_path, const String& p_base_dir);
-
-	ScriptCreateDialog* get_script_create_dialog() const;
-
-	void fix_dependencies(const String& p_for_file);
-	void update_all();
-
-	int get_h_split_offset() const { return split_box_offset_h; }
-
-	void set_h_split_offset(int p_offset) { split_box_offset_h = p_offset; }
-
-	int get_v_split_offset() const { return split_box_offset_v; }
-
-	void set_v_split_offset(int p_offset) { split_box_offset_v = p_offset; }
-
-	void select_file(const String& p_file);
-
-	void set_display_mode(DisplayMode p_display_mode);
-
-	DisplayMode get_display_mode() const { return display_mode; }
-
-	void set_file_sort(FileSortOption p_file_sort);
-
-	FileSortOption get_file_sort() const { return file_sort; }
-
-	void set_file_list_display_mode(FileListDisplayMode p_mode);
-
-=======
 	void focus_on_path();
 	void focus_on_filter();
 
@@ -538,19 +349,11 @@ public:
 
 	FileSortOption get_file_sort() const { return file_sort; }
 
->>>>>>> fix/remove-object
 	FileListDisplayMode get_file_list_display_mode() const { return file_list_display_mode; }
 
 	Tree* get_tree_control() { return tree; }
 
 	ItemList* get_list_control() { return files; }
-<<<<<<< HEAD
-
-	void add_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin>& p_plugin);
-	void remove_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin>& p_plugin);
-	Control* create_tooltip_for_path(const String& p_path) const;
-=======
->>>>>>> fix/remove-object
 
 	void add_resource_tooltip_plugin(const Ref<EditorResourceTooltipPlugin>& p_plugin);
 

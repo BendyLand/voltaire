@@ -164,11 +164,8 @@ void ImporterMesh::clear()
 
 Ref<ImporterMesh> ImporterMesh::get_shadow_mesh() const { return shadow_mesh; }
 
-<<<<<<< HEAD
-=======
 Vector<Face3> ImporterMesh::get_faces() const {}
 
->>>>>>> fix/remove-object
 #ifndef PHYSICS_3D_DISABLED
 Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	const Ref<MeshConvexDecompositionSettings>& p_settings) const
@@ -310,8 +307,6 @@ void ImporterMesh::set_lightmap_size_hint(const Size2i& p_size) { lightmap_size_
 
 Size2i ImporterMesh::get_lightmap_size_hint() const { return lightmap_size_hint; }
 
-<<<<<<< HEAD
-=======
 Ref<ArrayMesh> ImporterMesh::get_mesh(Ref<ArrayMesh> const&)
 {
 	Ref<ArrayMesh> am = memnew(ArrayMesh);
@@ -324,5 +319,4 @@ Ref<ImporterMesh> ImporterMesh::from_mesh(Ref<Mesh> const&)
 	return im;
 }
 
->>>>>>> fix/remove-object
 

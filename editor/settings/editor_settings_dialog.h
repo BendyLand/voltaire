@@ -100,9 +100,6 @@ class EditorSettingsDialog : public AcceptDialog
 	void _shortcut_cell_double_clicked();
 	static void _set_shortcut_input(const String& p_name, Ref<InputEventKey>& p_event);
 
-<<<<<<< HEAD
-	static void _undo_redo_callback(void* p_self, const String& p_name);
-
 	void _remove_setting_override(const String& p_setting);
 
 	Label* restart_label = nullptr;
@@ -110,26 +107,12 @@ class EditorSettingsDialog : public AcceptDialog
 	PanelContainer* restart_container = nullptr;
 	Button* restart_close_button = nullptr;
 
-	void _editor_restart_request();
-=======
-	void _remove_setting_override(const String& p_setting);
-
-	Label* restart_label = nullptr;
-	TextureRect* restart_icon = nullptr;
-	PanelContainer* restart_container = nullptr;
-	Button* restart_close_button = nullptr;
-
->>>>>>> fix/remove-object
 	void _editor_restart();
 
 public:
 	void popup_edit_settings();
 	static void update_3d_navigation_preset();
 	void set_current_section(const String& p_section);
-<<<<<<< HEAD
-	void set_advanced_mode_enabled(bool p_enabled);
-=======
->>>>>>> fix/remove-object
 
 	static EditorSettingsDialog* get_singleton() { return singleton; }
 

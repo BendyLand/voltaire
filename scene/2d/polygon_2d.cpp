@@ -81,18 +81,6 @@ bool Polygon2D::_edit_use_rect() const { return polygon.size() > 0; }
 
 #endif // DEBUG_ENABLED
 
-<<<<<<< HEAD
-void Polygon2D::_skeleton_bone_setup_changed() { queue_redraw(); }
-
-void Polygon2D::set_polygon(const Vector<Vector2>& p_polygon)
-{
-	polygon = p_polygon;
-	rect_cache_dirty = true;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<Vector2> Polygon2D::get_polygon() const { return polygon; }
 
 void Polygon2D::set_internal_vertex_count(int p_count) { internal_vertices = p_count; }
@@ -101,15 +89,6 @@ int Polygon2D::get_internal_vertex_count() const { return internal_vertices; }
 
 Vector<Vector2> Polygon2D::get_uv() const { return uv; }
 
-<<<<<<< HEAD
-void Polygon2D::set_color(const Color& p_color)
-{
-	color = p_color;
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 Color Polygon2D::get_color() const { return color; }
 
 Vector<Color> Polygon2D::get_vertex_colors() const { return vertex_colors; }
@@ -161,40 +140,8 @@ void Polygon2D::erase_bone(int p_idx)
 
 void Polygon2D::clear_bones() { bone_weights.clear(); }
 
-<<<<<<< HEAD
-void Polygon2D::set_bone_weights(int p_index, const Vector<float>& p_weights)
-{
-	ERR_FAIL_INDEX(p_index, bone_weights.size());
-	bone_weights.write[p_index].weights = p_weights;
-	queue_redraw();
-}
-
-void Polygon2D::set_bone_path(int p_index, const NodePath& p_path)
-{
-	ERR_FAIL_INDEX(p_index, bone_weights.size());
-	bone_weights.write[p_index].path = p_path;
-	queue_redraw();
-}
-
-void Polygon2D::set_skeleton(const NodePath& p_skeleton)
-{
-	if (skeleton == p_skeleton) {
-		return;
-	}
-	skeleton = p_skeleton;
-	queue_redraw();
-}
-
 NodePath Polygon2D::get_skeleton() const { return skeleton; }
 
-#ifndef NAVIGATION_2D_DISABLED
-
-#endif // NAVIGATION_2D_DISABLED
-
-=======
-NodePath Polygon2D::get_skeleton() const { return skeleton; }
-
->>>>>>> fix/remove-object
 Polygon2D::Polygon2D() { mesh = RS::get_singleton()->mesh_create(); }
 
 Polygon2D::~Polygon2D()

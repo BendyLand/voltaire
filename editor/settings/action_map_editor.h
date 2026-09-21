@@ -90,15 +90,8 @@ private:
 	void _event_config_confirmed();
 
 	void _add_action_pressed();
-<<<<<<< HEAD
-	void _add_edit_text_changed(const String& p_name);
 	String _check_new_action_name(const String& p_name);
 	bool _has_action(const String& p_name) const;
-	void _add_action(const String& p_name);
-=======
-	String _check_new_action_name(const String& p_name);
-	bool _has_action(const String& p_name) const;
->>>>>>> fix/remove-object
 	void _action_edited();
 
 	void _tree_item_activated();
@@ -114,16 +107,7 @@ public:
 	LineEdit* get_path_box() const;
 	InputEventConfigurationDialog* get_configuration_dialog();
 
-<<<<<<< HEAD
-	// Dictionary represents an Action with "events" (Array) and "deadzone" (float) items. Pass with
-	// no param to update list from cached action map.
-	void update_action_list(const Vector<ActionInfo>& p_action_infos = Vector<ActionInfo>());
-	void show_message(const String& p_message);
-
-	ActionMapEditor();
-=======
 	ActionMapEditor() = default;
->>>>>>> fix/remove-object
 };
 
 

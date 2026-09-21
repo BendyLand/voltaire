@@ -473,18 +473,6 @@ void GLTFDocument::set_fallback_image_quality(float p_fallback_image_quality)
 
 float GLTFDocument::get_fallback_image_quality() const { return _fallback_image_quality; }
 
-<<<<<<< HEAD
-static inline Ref<Image> _duplicate_and_decompress_image(const Ref<Image>& p_image)
-{
-	Ref<Image> img = p_image->duplicate();
-	if (img->is_compressed()) {
-		img->decompress();
-	}
-	return img;
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Image> GLTFDocument::_parse_image_bytes_into_image(Ref<GLTFState> p_state,
 	const Vector<uint8_t>& p_bytes, const String& p_mime_type, int p_index,
 	String& r_file_extension)

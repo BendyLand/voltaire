@@ -55,11 +55,6 @@ public:
 	bool is_debuggable();
 	bool is_active();
 
-<<<<<<< HEAD
-	void set_breakpoint(const String& p_path, int p_line, bool p_enabled);
-
-=======
->>>>>>> fix/remove-object
 	EditorDebuggerSession(ScriptEditorDebugger* p_debugger);
 	~EditorDebuggerSession();
 };

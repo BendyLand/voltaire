@@ -90,15 +90,6 @@ Color TextureProgressBar::get_tint_progress() const { return tint_progress; }
 
 Color TextureProgressBar::get_tint_over() const { return tint_over; }
 
-<<<<<<< HEAD
-void TextureProgressBar::_texture_changed()
-{
-	update_minimum_size();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 Point2 TextureProgressBar::unit_val_to_uv(float val)
 {
 	if (progress.is_null()) {

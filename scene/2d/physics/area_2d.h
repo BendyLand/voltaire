@@ -133,10 +133,6 @@ private:
 	StringName audio_bus;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _space_changed(const RID& p_new_space) override;
 

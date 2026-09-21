@@ -43,19 +43,6 @@ void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only)
 	collision_object->shape_owner_set_disabled(owner_id, disabled);
 }
 
-<<<<<<< HEAD
-void CollisionPolygon3D::set_polygon(const Vector<Point2>& p_polygon)
-{
-	polygon = p_polygon;
-	if (collision_object) {
-		_build_polygon();
-	}
-	update_configuration_warnings();
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector<Point2> CollisionPolygon3D::get_polygon() const { return polygon; }
 
 AABB CollisionPolygon3D::get_item_rect() const { return aabb; }
@@ -76,17 +63,6 @@ bool CollisionPolygon3D::get_debug_fill_enabled() const { return debug_fill; }
 
 real_t CollisionPolygon3D::get_margin() const { return margin; }
 
-<<<<<<< HEAD
-void CollisionPolygon3D::set_margin(real_t p_margin)
-{
-	margin = p_margin;
-	if (collision_object) {
-		_build_polygon();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool CollisionPolygon3D::_is_editable_3d_polygon() const { return true; }
 
 CollisionPolygon3D::CollisionPolygon3D()

@@ -52,12 +52,9 @@ String JoltBoxShape3D::to_string() const
 
 AABB JoltBoxShape3D::get_aabb() const { return AABB(-half_extents, half_extents * 2.0f); }
 
-<<<<<<< HEAD
-=======
 JPH::ShapeRefC JoltBoxShape3D::_build() const
 {
 	return JPH::ShapeRefC();
 }
 
->>>>>>> fix/remove-object
 

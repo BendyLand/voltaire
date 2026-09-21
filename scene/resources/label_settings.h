@@ -78,10 +78,6 @@ private:
 	void _font_changed();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	bool _property_can_revert(const StringName& p_name) const
 	{

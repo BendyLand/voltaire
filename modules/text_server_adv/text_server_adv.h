@@ -98,11 +98,6 @@ GODOT_CLANG_WARNING_POP
 #include <hb-raster.h>
 #endif
 
-<<<<<<< HEAD
-/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 class TextServerAdvanced : public TextServer
 {
 	_THREAD_SAFE_CLASS_
@@ -554,10 +549,6 @@ class TextServerAdvanced : public TextServer
 
 			int font_size = 0;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 			String language;
 		};
 
@@ -873,11 +864,6 @@ class TextServerAdvanced : public TextServer
 	};
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 	void full_copy(ShapedTextDataAdvanced* p_shaped);
 	void invalidate(ShapedTextDataAdvanced* p_shaped, bool p_text = false);
 
@@ -899,13 +885,6 @@ public:
 	int64_t _name_to_tag(const String& p_name) const;
 	String _tag_to_name(int64_t p_tag) const;
 
-<<<<<<< HEAD
-	/*************************************************************************/
-	/* Font Glyph Rendering                                                  */
-	/*************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 #ifdef MODULE_MSDFGEN_ENABLED
 
 	struct MSContext

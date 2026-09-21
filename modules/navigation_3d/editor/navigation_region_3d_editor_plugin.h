@@ -64,22 +64,10 @@ class NavigationRegion3DEditor : public Control
 
 	bool bake_in_process = false;
 	void _on_navmesh_multibake_canceled();
-<<<<<<< HEAD
-	void _process_regions_to_bake();
-
-protected:
-	void _node_removed(Node* p_node);
-	void _notification(int p_what);
-
-public:
-	void edit(LocalVector<NavigationRegion3D*> p_regions);
-	NavigationRegion3DEditor();
-=======
 
 public:
 	void edit(LocalVector<NavigationRegion3D*> p_regions);
 	NavigationRegion3DEditor() = default;
->>>>>>> fix/remove-object
 };
 
 class NavigationRegion3DEditorPlugin : public EditorPlugin

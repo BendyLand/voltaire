@@ -183,13 +183,6 @@ class SceneTreeDock : public EditorDock
 
 	Ref<ShaderMaterial> selected_shader_material;
 
-<<<<<<< HEAD
-	void _node_reparent(NodePath p_path, bool p_keep_global_xform);
-	void _do_reparent(Node* p_new_parent, int p_position_in_parent, Vector<Node*> p_nodes,
-		bool p_keep_global_xform);
-
-=======
->>>>>>> fix/remove-object
 	enum ReplaceOwnerMode
 	{
 		MODE_BIDI,
@@ -197,42 +190,9 @@ class SceneTreeDock : public EditorDock
 		MODE_UNDO
 	};
 
-<<<<<<< HEAD
-	void _node_replace_owner(
-		Node* p_base, Node* p_node, Node* p_root, ReplaceOwnerMode p_mode = MODE_BIDI);
-	void _node_strip_signal_inheritance(Node* p_node);
-	void _load_request(const String& p_path);
-	void _handle_select(Node* p_node);
-
 	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node);
 	bool _track_inherit(const String& p_target_scene_path, Node* p_desired_node);
 
-	void _node_selected();
-	void _node_renamed();
-	void _shader_created(Ref<Shader> p_shader);
-	void _script_creation_closed();
-	void _shader_creation_closed();
-
-	void _delete_confirm(bool p_cut = false);
-	void _delete_dialog_closed();
-
-	void _toggle_editable_children_from_selection();
-
-	void _toggle_editable_children(Node* p_node);
-
-	void _toggle_placeholder_from_selection();
-
-	void _node_prerenamed(Node* p_node, const String& p_new_name);
-
-	void _nodes_drag_begin();
-
-	void _handle_hover_to_inspect();
-	void _inspect_hovered_node();
-=======
-	bool _cyclical_dependency_exists(const String& p_target_scene_path, Node* p_desired_node);
-	bool _track_inherit(const String& p_target_scene_path, Node* p_desired_node);
-
->>>>>>> fix/remove-object
 	void _reset_hovering_timer();
 	Timer* inspect_hovered_node_delay = nullptr;
 	TreeItem* tree_item_inspected = nullptr;
@@ -240,10 +200,6 @@ class SceneTreeDock : public EditorDock
 	Node* node_hovered_previously = nullptr;
 	bool scene_tree_drag_active = false;
 
-<<<<<<< HEAD
-	virtual void input(const Ref<InputEvent>& p_event) override;
-=======
->>>>>>> fix/remove-object
 	void _scene_tree_gui_input(Ref<InputEvent> p_event);
 
 	void _set_node_owner_recursive(
@@ -254,19 +210,6 @@ class SceneTreeDock : public EditorDock
 
 	void _normalize_drop(Node*& to_node, int& to_pos, int p_type);
 
-<<<<<<< HEAD
-	void _files_dropped(const Vector<String>& p_files, NodePath p_to, int p_type);
-	void _script_dropped(const String& p_file, NodePath p_to);
-	void _quick_open(const String& p_file_path);
-
-	void _tree_rmb(const Vector2& p_menu_pos);
-	void _setup_tree_menu();
-	void _update_tree_menu();
-
-	void _filter_changed(const String& p_filter);
-	void _filter_gui_input(const Ref<InputEvent>& p_event);
-=======
->>>>>>> fix/remove-object
 	void _filter_option_selected(int option);
 
 	void _clear_clipboard();
@@ -277,10 +220,6 @@ class SceneTreeDock : public EditorDock
 
 	bool _update_node_path(
 		Node* p_root_node, NodePath& r_node_path, HashMap<Node*, NodePath>* p_renames) const;
-<<<<<<< HEAD
-	void _replace_node(Node* p_node, Node* p_by_node, bool p_keep_properties = true);
-=======
->>>>>>> fix/remove-object
 
 private:
 	static SceneTreeDock* singleton;

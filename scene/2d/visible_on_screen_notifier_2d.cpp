@@ -73,10 +73,7 @@ VisibleOnScreenEnabler2D::EnableMode VisibleOnScreenEnabler2D::get_enable_mode()
 
 NodePath VisibleOnScreenEnabler2D::get_enable_node_path() { return enable_node_path; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void VisibleOnScreenEnabler2D::_update_enable_mode(bool) {}
 

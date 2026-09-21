@@ -102,11 +102,6 @@ private:
 	Vector2 get_tangent_view_pos(int p_index, TangentIndex p_tangent) const;
 	Vector2 get_view_pos(const Vector2& p_world_pos) const;
 	Vector2 get_world_pos(const Vector2& p_view_pos) const;
-<<<<<<< HEAD
-
-	void _redraw();
-=======
->>>>>>> fix/remove-object
 
 private:
 	const float ASPECT_RATIO = 6.f / 13.f;

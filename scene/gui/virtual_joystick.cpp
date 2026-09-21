@@ -64,11 +64,8 @@ void VirtualJoystick::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-=======
 void VirtualJoystick::_reset() {}
 
->>>>>>> fix/remove-object
 void VirtualJoystick::_handle_input_actions()
 {
 	Input* input = Input::get_singleton();

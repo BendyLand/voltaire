@@ -105,74 +105,24 @@ class InspectorDock : public EditorDock
 	void _prepare_menu();
 
 	void _new_resource();
-<<<<<<< HEAD
-	void _load_resource(const String& p_type = "");
-
-	void _open_resource_selector() { _load_resource(); } // just used to call from arg-less signal
-
-	void _resource_file_selected(const String& p_file);
-	void _save_resource(bool save_as);
-	void _unref_resource();
-	void _copy_resource();
-	void _paste_resource();
-	void _prepare_resource_extra_popup();
-	Ref<Resource> _get_current_resource() const;
-
-	void _info_pressed();
-	void _resource_created();
-	void _resource_selected(const Ref<Resource>& p_res, const String& p_property);
-	void _files_moved(const String& p_old_file, const String& p_new_file);
-	void _edit_forward();
-	void _edit_back();
-	void _menu_collapseall();
-	void _menu_expandall();
-	void _menu_expand_revertable();
-	void _select_history(int p_idx);
-	void _prepare_history();
-=======
 
 	void _menu_collapseall();
 	void _menu_expandall();
 	void _menu_expand_revertable();
->>>>>>> fix/remove-object
 
 private:
 	static inline InspectorDock* singleton = nullptr;
 
 public:
 	static InspectorDock* get_singleton() { return singleton; }
-<<<<<<< HEAD
-
-	static EditorInspector* get_inspector_singleton() { return singleton->inspector; }
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
-public:
-	void go_back();
-	void edit_resource(const Ref<Resource>& p_resource);
-	void open_resource(const String& p_type);
-	void clear();
-	void set_info(const String& p_button_text, const String& p_message, bool p_is_warning);
-	Container* get_addon_area();
-
-	EditorInspector* get_inspector() { return inspector; }
-=======
 	static EditorInspector* get_inspector_singleton() { return singleton->inspector; }
 
 	void clear();
 	Container* get_addon_area();
->>>>>>> fix/remove-object
 
 	EditorInspector* get_inspector() { return inspector; }
 	EditorPropertyNameProcessor::Style get_property_name_style() const;
-<<<<<<< HEAD
-
-	InspectorDock(EditorData& p_editor_data);
-=======
 	InspectorDock(EditorData& p_editor_data) : editor_data(&p_editor_data) {}
->>>>>>> fix/remove-object
 	~InspectorDock();
 };
 

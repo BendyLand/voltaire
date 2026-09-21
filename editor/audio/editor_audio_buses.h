@@ -125,10 +125,6 @@ class EditorAudioBus : public PanelContainer
 	void _enable_indicator_fall();
 	void _effect_selected();
 	void _effect_rmb(const Vector2& p_pos, MouseButton p_button);
-<<<<<<< HEAD
-	void _update_visible_channels();
-=======
->>>>>>> fix/remove-object
 
 	friend class EditorAudioBuses;
 

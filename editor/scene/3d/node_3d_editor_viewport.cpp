@@ -103,46 +103,6 @@ void ViewportNavigationControl::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void ViewportNavigationControl::_process_click(int p_index, Vector2 p_position, bool p_pressed)
-{
-	hovered = false;
-	queue_redraw();
-
-	if (focused_index != -1 && focused_index != p_index) {
-		return;
-	}
-	if (p_pressed) {
-		if (p_position.distance_to(get_size() / 2.0) < get_size().x / 2.0) {
-			focused_pos = p_position;
-			focused_index = p_index;
-			queue_redraw();
-		}
-	}
-	else {
-		focused_index = -1;
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
-			Input::get_singleton()->warp_mouse(focused_mouse_start);
-		}
-	}
-}
-
-void ViewportNavigationControl::_process_drag(
-	int p_index, Vector2 p_position, Vector2 p_relative_position)
-{
-	if (focused_index == p_index) {
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
-			focused_mouse_start = p_position;
-		}
-		focused_pos += p_relative_position;
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void ViewportNavigationControl::set_viewport(Node3DEditorViewport* p_viewport)
 {
 	viewport = p_viewport;
@@ -852,15 +812,6 @@ void Node3DEditorViewport::_surface_focus_enter()
 
 void Node3DEditorViewport::_surface_focus_exit() { view_display_menu->set_disable_shortcuts(true); }
 
-<<<<<<< HEAD
-void Node3DEditorViewport::_cursor_distance_scaled()
-{
-	zoom_indicator_delay = ZOOM_FREELOOK_INDICATOR_DELAY_S;
-	surface->queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void Node3DEditorViewport::_pilot_ensure_undo_session()
 {
 	if (pilot_undo_session_active || !previewing) {
@@ -903,29 +854,6 @@ void Node3DEditorViewport::set_message(const String& p_message, float p_time)
 	message_time = p_time;
 }
 
-<<<<<<< HEAD
-static void override_label_colors(Control* p_control)
-{
-	p_control->begin_bulk_theme_override();
-	p_control->add_theme_color_override(SceneStringName(font_color),
-		p_control->get_theme_color(SNAME("font_dark_background_color"), EditorStringName(Editor)));
-	p_control->add_theme_color_override(
-		"font_hover_color", p_control->get_theme_color(SNAME("font_dark_background_hover_color"),
-								EditorStringName(Editor)));
-	p_control->add_theme_color_override(
-		"font_focus_color", p_control->get_theme_color(SNAME("font_dark_background_focus_color"),
-								EditorStringName(Editor)));
-	p_control->add_theme_color_override("font_pressed_color",
-		p_control->get_theme_color(
-			SNAME("font_dark_background_pressed_color"), EditorStringName(Editor)));
-	p_control->add_theme_color_override("font_hover_pressed_color",
-		p_control->get_theme_color(
-			SNAME("font_dark_background_hover_pressed_color"), EditorStringName(Editor)));
-	p_control->end_bulk_theme_override();
-}
-
-=======
->>>>>>> fix/remove-object
 static void draw_indicator_bar(Control& p_surface, real_t p_fill, const Ref<Texture2D> p_icon,
 	const Ref<Font> p_font, int p_font_size, const String& p_text, const Color& p_color)
 {
@@ -982,16 +910,6 @@ void Node3DEditorViewport::_apply_camera_transform_to_cursor()
 	_sync_cursor_from_transform(camera->get_camera_transform());
 }
 
-<<<<<<< HEAD
-void Node3DEditorViewport::_preview_camera_property_changed()
-{
-	if (previewing) {
-		surface->queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Node3DEditorViewport::_update_centered_labels()
 {
 	if (cinema_label->is_visible()) {
@@ -1156,18 +1074,6 @@ void Node3DEditorViewport::_selection_menu_hide()
 	selection_menu->reset_size();
 }
 
-<<<<<<< HEAD
-void Node3DEditorViewport::set_can_preview(Camera3D* p_preview)
-{
-	preview = p_preview;
-
-	if (!preview_camera->is_pressed() && !previewing_cinema) {
-		preview_camera->set_visible(p_preview);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Node3DEditorViewport::update_transform_gizmo_highlight()
 {
 	if (!is_visible_in_tree() ||
@@ -1185,24 +1091,6 @@ void Node3DEditorViewport::assign_pending_data_pointers(
 	accept = p_accept;
 }
 
-<<<<<<< HEAD
-void Node3DEditorViewport::_remove_preview_node()
-{
-	tooltip_panel->hide();
-
-	set_message("");
-	if (preview_node->get_parent()) {
-		for (int i = preview_node->get_child_count() - 1; i >= 0; i--) {
-			Node* node = preview_node->get_child(i);
-			node->queue_free();
-			preview_node->remove_child(node);
-		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool Node3DEditorViewport::_cyclical_dependency_exists(
 	const String& p_target_scene_path, Node* p_desired_node) const
 {
@@ -1220,58 +1108,6 @@ bool Node3DEditorViewport::_cyclical_dependency_exists(
 	return false;
 }
 
-<<<<<<< HEAD
-void Node3DEditorViewport::_show_tooltip(const String& p_title, const String& p_description) const
-{
-	tooltip_panel->set_text(vformat("[font_size=%s][b][color=%s]%s[/color][/b][/font_size]\n%s",
-		get_theme_default_font_size() + 2,
-		get_theme_color(SNAME("accent_color"), EditorStringName(Editor)).to_html(false), p_title,
-		p_description));
-	tooltip_panel->show();
-}
-
-void Node3DEditorViewport::begin_transform(TransformMode p_mode, bool instant)
-{
-	if (previewing) {
-		return;
-	}
-
-	if (get_selected_count() > 0) {
-		if (!_has_unlocked_selection()) {
-			return;
-		}
-		_edit.children_original_globals.clear();
-
-		_edit.mode = p_mode;
-		_compute_edit(_edit.mouse_pos);
-		_edit.instant = instant;
-		_edit.initial_click_vector = Vector3();
-		_edit.previous_rotation_vector = Vector3();
-		_edit.accumulated_rotation_angle = 0.0;
-		_edit.rotation_angle = 0.0;
-		_edit.gizmo_initiated = false;
-		switch (p_mode) {
-		case TRANSFORM_ROTATE:
-			_edit.show_rotation_line = true;
-			set_message(vformat(TTR("Rotating %s degrees."), String::num(0, 0)));
-			break;
-		case TRANSFORM_TRANSLATE:
-			set_message(vformat(TTR("Translating: %s"), vformat("%.0v", Vector3())));
-			break;
-		case TRANSFORM_SCALE:
-			set_message(vformat(TTR("Scaling: %s"), vformat("%.0v", Vector3())));
-			break;
-		default:
-			break;
-		}
-		update_transform_gizmo_view();
-		set_process_input(instant);
-		surface->queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Node3DEditorViewport::update_transform_numeric()
 {
 	Vector3 motion;
@@ -1389,83 +1225,6 @@ void Node3DEditorViewportContainer::_update_split_drag_margin
 	}
 }
 
-<<<<<<< HEAD
-void Node3DEditorViewportContainer::set_view(View p_view)
-{
-	view = p_view;
-
-	Node3DEditorViewport* viewports[4];
-	for (uint32_t i = 0; i < 4; i++) {
-		viewports[i] = Node3DEditor::get_singleton()->get_editor_viewport(i);
-		ERR_FAIL_NULL(viewports[i]);
-	}
-
-	const bool previous_main_vertical = !first_split->is_vertical();
-	const float horizontal_offset =
-		previous_main_vertical ? first_split->get_split_offset() : main_split->get_split_offset();
-	const float vertical_offset =
-		previous_main_vertical ? main_split->get_split_offset() : first_split->get_split_offset();
-
-	first_split->set_dragging_enabled(true);
-	second_split->set_drag_area_margin_begin(0);
-	viewports[0]->show();
-
-	switch (view) {
-	case VIEW_USE_1_VIEWPORT: {
-		for (int i = 1; i < 4; i++) {
-			viewports[i]->hide();
-		}
-		second_split->hide();
-	} break;
-	case VIEW_USE_2_VIEWPORTS:
-	case VIEW_USE_2_VIEWPORTS_ALT: {
-		viewports[1]->show();
-		viewports[2]->hide();
-		viewports[3]->hide();
-		second_split->hide();
-		const bool is_vertical = view == VIEW_USE_2_VIEWPORTS;
-		if (first_split->is_vertical() != is_vertical) {
-			first_split->set_vertical(is_vertical);
-			first_split->set_split_offset(is_vertical ? vertical_offset : horizontal_offset);
-			main_split->set_split_offset(
-				is_vertical ? horizontal_offset
-							: vertical_offset); // Store the other offset here for later.
-		}
-	} break;
-	case VIEW_USE_3_VIEWPORTS:
-	case VIEW_USE_3_VIEWPORTS_ALT: {
-		// Default mode has two on bottom (second_split). Alt mode has two on the left
-		// (first_split).
-		const bool main_vertical = view == VIEW_USE_3_VIEWPORTS;
-		viewports[1]->set_visible(!main_vertical);
-		viewports[2]->show();
-		viewports[3]->set_visible(main_vertical);
-		second_split->show();
-		main_split->set_vertical(main_vertical);
-		main_split->set_split_offset(main_vertical ? vertical_offset : horizontal_offset);
-		first_split->set_vertical(!main_vertical);
-		first_split->set_split_offset(main_vertical ? horizontal_offset : vertical_offset);
-		second_split->set_split_offset(main_vertical ? horizontal_offset : vertical_offset);
-	} break;
-	case VIEW_USE_4_VIEWPORTS: {
-		for (int i = 1; i < 4; i++) {
-			viewports[i]->show();
-		}
-		second_split->show();
-		main_split->set_vertical(true);
-		main_split->set_split_offset(vertical_offset);
-		first_split->set_vertical(false);
-		first_split->set_split_offset(horizontal_offset);
-		second_split->set_split_offset(horizontal_offset);
-
-		first_split->set_dragging_enabled(false);
-		_update_split_drag_margin();
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Node3DEditorViewportContainer::View Node3DEditorViewportContainer::get_view() { return view; }
 
 Node3DEditorViewportContainer::Node3DEditorViewportContainer()

@@ -62,34 +62,6 @@ void EditorLocaleDialog::ok_pressed()
 	hide();
 }
 
-<<<<<<< HEAD
-void EditorLocaleDialog::_toggle_advanced(bool p_checked)
-{
-	if (!p_checked) {
-		script_code->set_text("");
-		variant_code->set_text("");
-	}
-	_update_tree();
-}
-
-void EditorLocaleDialog::_post_popup()
-{
-	ConfirmationDialog::_post_popup();
-
-	if (!locale_set) {
-		lang_code->set_text("");
-		script_code->set_text("");
-		country_code->set_text("");
-		variant_code->set_text("");
-	}
-	edit_filters->set_pressed(false);
-	_update_tree();
-}
-
-void EditorLocaleDialog::_edit_filters(bool p_checked) { _update_tree(); }
-
-=======
->>>>>>> fix/remove-object
 void EditorLocaleDialog::set_locale(const String& p_locale)
 {
 	const String& locale = TranslationServer::get_singleton()->standardize_locale(p_locale);

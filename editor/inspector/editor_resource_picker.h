@@ -93,28 +93,14 @@ class EditorResourcePicker : public HBoxContainer
 	void _resource_changed();
 	void _file_selected(const String& p_path);
 
-<<<<<<< HEAD
-	void _update_menu();
 	void _update_menu_items();
 	void _edit_menu_cbk(int p_which);
 
-	void _button_draw();
-	void _button_input(const Ref<InputEvent>& p_event);
-=======
-	void _update_menu_items();
-	void _edit_menu_cbk(int p_which);
-
->>>>>>> fix/remove-object
 	void _on_unique_button_pressed();
 
 	String _get_owner_path() const;
 	String _get_resource_type(const Ref<Resource>& p_resource) const;
 	void _ensure_allowed_types() const;
-<<<<<<< HEAD
-	bool _is_type_valid(
-		const String& p_type_name, const HashSet<StringName>& p_allowed_types) const;
-=======
->>>>>>> fix/remove-object
 	bool _is_custom_type_script() const;
 
 	void _ensure_resource_menu();
@@ -129,10 +115,6 @@ protected:
 
 	Button* get_assign_button() { return assign_button; }
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 	void set_assign_button_min_size(const Size2i& p_size);
@@ -171,18 +153,8 @@ class EditorScriptPicker : public EditorResourcePicker
 	};
 
 	Node* script_owner = nullptr;
-<<<<<<< HEAD
-
-protected:
-	static void _bind_methods();
 
 public:
-	virtual bool handle_menu_selected(int p_which) override;
-
-=======
-
-public:
->>>>>>> fix/remove-object
 	void set_script_owner(Node* p_owner);
 	Node* get_script_owner() const;
 };
@@ -198,11 +170,6 @@ class EditorShaderPicker : public EditorResourcePicker
 	int preferred_mode = -1;
 
 public:
-<<<<<<< HEAD
-	virtual bool handle_menu_selected(int p_which) override;
-
-=======
->>>>>>> fix/remove-object
 	void set_edited_material(ShaderMaterial* p_material);
 	ShaderMaterial* get_edited_material() const;
 	void set_preferred_mode(int p_preferred_mode);

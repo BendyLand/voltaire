@@ -68,11 +68,7 @@ private:
 public:
 	virtual String get_plugin_name() const override { return "Debugger"; }
 
-<<<<<<< HEAD
-	DebuggerEditorPlugin(PopupMenu* p_menu);
-=======
 	DebuggerEditorPlugin(PopupMenu* p_menu) : debug_menu(p_menu) {}
->>>>>>> fix/remove-object
 	~DebuggerEditorPlugin();
 };
 

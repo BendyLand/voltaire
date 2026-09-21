@@ -130,105 +130,6 @@ Control::CursorShape AnimationNodeStateMachineEditor::get_cursor_shape(const Poi
 	return cursor_shape;
 }
 
-<<<<<<< HEAD
-void AnimationNodeStateMachineEditor::_open_menu(const Vector2& p_position)
-{
-	AnimationTree* tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
-	if (!tree) {
-		return;
-	}
-
-	menu->clear(false);
-	animations_menu->clear();
-	animations_to_add.clear();
-
-	LocalVector<StringName> animation_names = tree->get_sorted_animation_list();
-	menu->add_submenu_node_item(TTR("Add Animation"), animations_menu);
-	if (animation_names.is_empty()) {
-		menu->set_item_disabled(menu->get_item_idx_from_text(TTR("Add Animation")), true);
-	}
-	else {
-		for (const StringName& name : animation_names) {
-			animations_menu->add_icon_item(theme_cache.animation_icon, name);
-			animations_to_add.push_back(name);
-		}
-	}
-
-	LocalVector<StringName> classes;
-	classes.sort_custom<StringName::AlphCompare>();
-
-	for (const StringName& class_name : classes) {
-		String name = String(class_name).replace_first("AnimationNode", "");
-		if (name == "Animation" || name == "StartState" || name == "EndState") {
-			continue; // nope
-		}
-		int idx = menu->get_item_count();
-		menu->add_item(vformat(TTR("Add %s"), name), idx);
-	}
-	Ref<AnimationNode> clipb = EditorSettings::get_singleton()->get_resource_clipboard();
-
-	if (clipb.is_valid()) {
-		menu->add_separator();
-		menu->add_item(TTR("Paste"), MENU_PASTE);
-	}
-	menu->add_separator();
-	menu->add_item(TTR("Load..."), MENU_LOAD_FILE);
-
-	menu->set_position(state_machine_draw->get_screen_transform().xform(p_position));
-	menu->popup();
-	add_node_pos = p_position / EDSCALE + state_machine->get_graph_offset();
-}
-
-bool AnimationNodeStateMachineEditor::_create_submenu(PopupMenu* p_menu,
-	Ref<AnimationNodeStateMachine> p_nodesm, const StringName& p_name, const StringName& p_path)
-{
-	LocalVector<StringName> nodes = p_nodesm->get_node_list();
-
-	PopupMenu* nodes_menu = memnew(PopupMenu);
-	nodes_menu->set_name(p_name);
-	p_menu->add_child(nodes_menu);
-
-	bool node_added = false;
-	for (const StringName& E : nodes) {
-		if (p_nodesm->can_edit_node(E)) {
-			Ref<AnimationNodeStateMachine> ansm = p_nodesm->get_node(E);
-
-			String path = String(p_path) + "/" + E;
-
-			if (ansm == state_machine) {
-				end_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(SceneStringName(End));
-				continue;
-			}
-
-			if (ansm.is_valid()) {
-				state_machine_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(path);
-
-				if (_create_submenu(nodes_menu, ansm, E, path)) {
-					nodes_menu->add_submenu_item(E, E);
-					node_added = true;
-				}
-			}
-			else {
-				nodes_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(path);
-				node_added = true;
-			}
-		}
-	}
-
-	return node_added;
-}
-
-void AnimationNodeStateMachineEditor::_stop_connecting()
-{
-	connecting = false;
-	state_machine_draw->queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 void AnimationNodeStateMachineEditor::_connection_draw(const Vector2& p_from, const Vector2& p_to,
 	AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
 	bool p_travel, float p_fade_ratio, bool p_auto_advance, bool p_is_across_group, float p_opacity,
@@ -372,68 +273,6 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& 
 	}
 }
 
-<<<<<<< HEAD
-void AnimationNodeStateMachineEditor::_update_graph()
-{
-	if (updating) {
-		return;
-	}
-
-	updating = true;
-
-	state_machine_draw->queue_redraw();
-
-	updating = false;
-}
-
-void AnimationNodeStateMachineEditor::_open_editor(const String& p_name)
-{
-	AnimationTreeEditor::get_singleton()->enter_editor(p_name);
-}
-
-void AnimationNodeStateMachineEditor::_scroll_changed(double)
-{
-	if (updating) {
-		return;
-	}
-
-	state_machine->set_graph_offset(Vector2(h_scroll->get_value(), v_scroll->get_value()));
-	state_machine_draw->queue_redraw();
-}
-
-void AnimationNodeStateMachineEditor::_update_mode()
-{
-	if (tool_select->is_pressed()) {
-		selection_tools_hb->show();
-		bool nothing_selected = selected_nodes.is_empty() &&
-								selected_transition_from == StringName() &&
-								selected_transition_to == StringName();
-		bool start_end_selected =
-			selected_nodes.size() == 1 && (*selected_nodes.begin() == SceneStringName(Start) ||
-											  *selected_nodes.begin() == SceneStringName(End));
-		tool_erase->set_disabled(nothing_selected || start_end_selected || read_only);
-	}
-	else {
-		selection_tools_hb->hide();
-	}
-
-	if (read_only) {
-		tool_create->set_pressed(false);
-		tool_connect->set_pressed(false);
-	}
-
-	if (tool_connect->is_pressed()) {
-		transition_tools_hb->show();
-	}
-	else {
-		transition_tools_hb->hide();
-	}
-}
-
-void AnimationNodeStateMachineEditor::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;
 
 void EditorAnimationMultiTransitionEdit::add_transition(const StringName& p_from,
@@ -446,9 +285,6 @@ void EditorAnimationMultiTransitionEdit::add_transition(const StringName& p_from
 	transitions.push_back(tr);
 }
 
-<<<<<<< HEAD
-=======
 void AnimationNodeStateMachineEditor::edit(const Ref<AnimationNode>& p_node) {}
 
->>>>>>> fix/remove-object
 

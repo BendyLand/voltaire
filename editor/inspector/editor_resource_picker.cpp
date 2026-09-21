@@ -53,60 +53,6 @@
 #include "scene/resources/image_texture.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void EditorResourcePicker::_update_menu()
-{
-	if (edit_menu && edit_menu->is_visible()) {
-		edit_button->set_pressed(false);
-		edit_menu->hide();
-		return;
-	}
-
-	_update_menu_items();
-
-	Rect2 gt = edit_button->get_screen_rect();
-	edit_menu->reset_size();
-	int ms = edit_menu->get_contents_minimum_size().width;
-	Vector2 popup_pos = gt.get_end() - Vector2(ms, 0);
-	edit_menu->set_position(popup_pos);
-	edit_menu->popup();
-}
-
-void EditorResourcePicker::_button_draw()
-{
-	if (dropping) {
-		Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
-		assign_button->draw_rect(Rect2(Point2(), assign_button->get_size()), color, false);
-	}
-}
-
-void EditorResourcePicker::_button_input(const Ref<InputEvent>& p_event)
-{
-	Ref<InputEventMouseButton> mb = p_event;
-
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::RIGHT) {
-		// Only attempt to update and show the menu if we have
-		// a valid resource or the Picker is editable, as
-		// there will otherwise be nothing to display.
-		if (edited_resource.is_valid() || is_editable()) {
-			if (edit_menu && edit_menu->is_visible()) {
-				edit_button->set_pressed(false);
-				edit_menu->hide();
-				return;
-			}
-
-			_update_menu_items();
-
-			Vector2 pos = get_screen_position() + mb->get_position();
-			edit_menu->reset_size();
-			edit_menu->set_position(pos);
-			edit_menu->popup();
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorResourcePicker::_on_unique_button_pressed()
 {
 	if (Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
@@ -127,23 +73,6 @@ static bool _should_hide_type(const StringName& p_type)
 	return false;
 }
 
-<<<<<<< HEAD
-bool EditorResourcePicker::_is_type_valid(
-	const String& p_type_name, const HashSet<StringName>& p_allowed_types) const
-{
-	for (const StringName& E : p_allowed_types) {
-		String at = E;
-		if (p_type_name == at ||
-			EditorNode::get_editor_data().script_class_is_parent(p_type_name, at)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorResourcePicker::set_assign_button_min_size(const Size2i& p_size)
 {
 	assign_button_min_size = p_size;
@@ -182,70 +111,12 @@ bool EditorResourcePicker::is_toggle_mode() const { return assign_button->is_tog
 
 bool EditorResourcePicker::is_toggle_pressed() const { return assign_button->is_pressed(); }
 
-<<<<<<< HEAD
-void EditorResourcePicker::set_editable(bool p_editable)
-{
-	editable = p_editable;
-	assign_button->set_disabled(!editable && edited_resource.is_null());
-	quick_load_button->set_visible(editable && edited_resource.is_null());
-	edit_button->set_visible(editable);
-}
-
 bool EditorResourcePicker::is_editable() const { return editable; }
 
-// EditorScriptPicker
-
-bool EditorScriptPicker::handle_menu_selected(int p_which)
-{
-	switch (p_which) {
-	case OBJ_MENU_NEW_SCRIPT: {
-		if (script_owner) {
-			SceneTreeDock::get_singleton()->open_script_dialog(script_owner, false);
-		}
-		return true;
-	}
-
-	case OBJ_MENU_EXTEND_SCRIPT: {
-		if (script_owner) {
-			SceneTreeDock::get_singleton()->open_script_dialog(script_owner, true);
-		}
-		return true;
-	}
-	}
-
-	return false;
-}
-
-=======
-bool EditorResourcePicker::is_editable() const { return editable; }
-
->>>>>>> fix/remove-object
 void EditorScriptPicker::set_script_owner(Node* p_owner) { script_owner = p_owner; }
 
 Node* EditorScriptPicker::get_script_owner() const { return script_owner; }
 
-<<<<<<< HEAD
-// EditorShaderPicker
-
-bool EditorShaderPicker::handle_menu_selected(int p_which)
-{
-	Ref<ShaderMaterial> ed_material = Ref<ShaderMaterial>(get_edited_material());
-
-	switch (p_which) {
-	case OBJ_MENU_NEW_SHADER: {
-		if (ed_material.is_valid()) {
-			SceneTreeDock::get_singleton()->open_shader_dialog(ed_material, preferred_mode);
-			return true;
-		}
-	} break;
-	default:
-		break;
-	}
-	return false;
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorShaderPicker::set_edited_material(ShaderMaterial* p_material)
 {
 	edited_material = p_material;
@@ -265,26 +136,6 @@ void EditorAudioStreamPicker::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void EditorAudioStreamPicker::_update_resource()
-{
-	EditorResourcePicker::_update_resource();
-
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
-	Ref<AudioStream> audio_stream = get_edited_resource();
-	if (audio_stream.is_valid() && audio_stream->get_length() > 0.0) {
-		set_assign_button_min_size(Size2(1, font->get_height(font_size) * 3));
-	}
-	else {
-		set_assign_button_min_size(Size2(1, font->get_height(font_size) * 1.5));
-	}
-
-	stream_preview_rect->queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 bool EditorResourcePicker::handle_menu_selected(int p_idx) { return true; }
 
 void EditorResourcePicker::_edit_menu_cbk(int) {}

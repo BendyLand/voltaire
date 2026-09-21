@@ -130,17 +130,9 @@ class MeshLibraryEditorPlugin : public EditorPlugin
 
 public:
 	_FORCE_INLINE_ static MeshLibraryEditorPlugin* get_singleton() { return singleton; }
-<<<<<<< HEAD
-
-	void open_editor();
-
-	MeshLibraryEditorPlugin();
-
-=======
 
 	MeshLibraryEditorPlugin() = default;
 
->>>>>>> fix/remove-object
 	~MeshLibraryEditorPlugin() { singleton = nullptr; }
 };
 

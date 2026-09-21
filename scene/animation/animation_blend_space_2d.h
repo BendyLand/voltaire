@@ -118,10 +118,6 @@ protected:
 	LocalVector<double> cached_lengths;
 	bool lengths_dirty = true;
 
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	virtual void _tree_changed() override;
 

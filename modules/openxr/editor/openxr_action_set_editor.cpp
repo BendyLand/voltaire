@@ -49,16 +49,6 @@ void OpenXRActionSetEditor::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void OpenXRActionSetEditor::_on_toggle_expand()
-{
-	is_expanded = !is_expanded;
-	actions_vb->set_visible(is_expanded);
-	_set_fold_icon();
-}
-
-=======
->>>>>>> fix/remove-object
 void OpenXRActionSetEditor::_do_set_localized_name(const String& p_new_text)
 {
 	action_set->set_localized_name(p_new_text);
@@ -95,9 +85,6 @@ void OpenXRActionSetEditor::set_focus_on_entry()
 	action_set_name->grab_focus();
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void OpenXRActionSetEditor::_theme_changed() {}

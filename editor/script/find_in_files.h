@@ -269,11 +269,6 @@ class FindInFiles
 	void _files_modified();
 
 public:
-<<<<<<< HEAD
-	void open_dialog(const String& p_initial_text, bool p_replace = false);
-
-=======
->>>>>>> fix/remove-object
 	FindInFiles();
 };
 

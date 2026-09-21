@@ -2097,11 +2097,8 @@ void WaylandThread::_wl_pointer_on_motion(void* data, struct wl_pointer* wl_poin
 	}
 }
 
-<<<<<<< HEAD
-=======
 void WaylandThread::_wl_pointer_on_frame(void* data, struct wl_pointer* wl_pointer) {}
 
->>>>>>> fix/remove-object
 void WaylandThread::_wl_pointer_on_axis(
 	void* data, struct wl_pointer* wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
 {
@@ -6241,12 +6238,8 @@ bool WaylandThread::is_suspended() const
 	return true;
 }
 
-<<<<<<< HEAD
-bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
-=======
 bool WaylandThread::window_wait_ready
 (DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
->>>>>>> fix/remove-object
 {
 	MutexLock mutex_lock(mutex);
 

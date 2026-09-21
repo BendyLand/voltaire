@@ -280,11 +280,6 @@ String Resource::get_id_for_path(const String& p_referrer_path) const
 	return "";
 }
 
-<<<<<<< HEAD
-void Resource::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 Resource::~Resource()
 {
 	if (unlikely(path_cache.is_empty())) {

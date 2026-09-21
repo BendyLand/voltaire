@@ -292,10 +292,6 @@ public:
 protected:
 	LocalVector<TwoBoneIK3DSetting*> tb_settings;
 
-<<<<<<< HEAD
-	virtual void _validate_bone_names() override;
-=======
->>>>>>> fix/remove-object
 	void _validate_pole_directions(Skeleton3D* p_skeleton) const;
 	void _validate_pole_direction(Skeleton3D* p_skeleton, int p_index) const;
 

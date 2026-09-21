@@ -69,10 +69,6 @@ class ThemeEditorPreview : public VBoxContainer
 		int font_size = 16;
 	} theme_cache;
 
-<<<<<<< HEAD
-	void _picker_button_cbk();
-=======
->>>>>>> fix/remove-object
 	Control* _find_hovered_control(Control* p_parent, Vector2 p_mouse_position);
 
 	void _draw_picker_overlay();
@@ -85,11 +81,6 @@ protected:
 	HBoxContainer* preview_toolbar = nullptr;
 	ScalableContainer* preview_content = nullptr;
 	Button* picker_button = nullptr;
-<<<<<<< HEAD
-
-	void add_preview_overlay(Control* p_overlay);
-=======
->>>>>>> fix/remove-object
 
 	void _notification(int p_what);
 

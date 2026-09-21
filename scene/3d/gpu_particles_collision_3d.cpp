@@ -57,16 +57,6 @@ GPUParticlesCollision3D::~GPUParticlesCollision3D()
 	RS::get_singleton()->free_rid(collision);
 }
 
-<<<<<<< HEAD
-void GPUParticlesCollisionSphere3D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	RS::get_singleton()->particles_collision_set_sphere_radius(_get_collision(), radius);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 real_t GPUParticlesCollisionSphere3D::get_radius() const { return radius; }
 
 AABB GPUParticlesCollisionSphere3D::get_aabb() const
@@ -81,16 +71,6 @@ GPUParticlesCollisionSphere3D::GPUParticlesCollisionSphere3D()
 
 GPUParticlesCollisionSphere3D::~GPUParticlesCollisionSphere3D() {}
 
-<<<<<<< HEAD
-void GPUParticlesCollisionBox3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 GPUParticlesCollisionBox3D::get_size() const { return size; }
 
 AABB GPUParticlesCollisionBox3D::get_aabb() const { return AABB(-size / 2, size); }
@@ -222,17 +202,6 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void GPUParticlesCollisionHeightField3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-	RS::get_singleton()->particles_collision_height_field_update(_get_collision());
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 GPUParticlesCollisionHeightField3D::get_size() const { return size; }
 
 GPUParticlesCollisionHeightField3D::Resolution
@@ -350,16 +319,6 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 	RS::get_singleton()->free_rid(collision);
 }
 
-<<<<<<< HEAD
-void GPUParticlesAttractorSphere3D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	RS::get_singleton()->particles_collision_set_sphere_radius(_get_collision(), radius);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 real_t GPUParticlesAttractorSphere3D::get_radius() const { return radius; }
 
 AABB GPUParticlesAttractorSphere3D::get_aabb() const
@@ -374,16 +333,6 @@ GPUParticlesAttractorSphere3D::GPUParticlesAttractorSphere3D()
 
 GPUParticlesAttractorSphere3D::~GPUParticlesAttractorSphere3D() {}
 
-<<<<<<< HEAD
-void GPUParticlesAttractorBox3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 GPUParticlesAttractorBox3D::get_size() const { return size; }
 
 AABB GPUParticlesAttractorBox3D::get_aabb() const { return AABB(-size / 2, size); }
@@ -395,16 +344,6 @@ GPUParticlesAttractorBox3D::GPUParticlesAttractorBox3D()
 
 GPUParticlesAttractorBox3D::~GPUParticlesAttractorBox3D() {}
 
-<<<<<<< HEAD
-void GPUParticlesAttractorVectorField3D::set_size(const Vector3& p_size)
-{
-	size = p_size;
-	RS::get_singleton()->particles_collision_set_box_extents(_get_collision(), size / 2);
-	update_gizmos();
-}
-
-=======
->>>>>>> fix/remove-object
 Vector3 GPUParticlesAttractorVectorField3D::get_size() const { return size; }
 
 void GPUParticlesAttractorVectorField3D::set_texture(const Ref<Texture3D>& p_texture)

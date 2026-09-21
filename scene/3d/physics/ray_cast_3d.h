@@ -92,10 +92,6 @@ public:
 
 	bool is_enabled() const;
 
-<<<<<<< HEAD
-	void set_target_position(const Vector3& p_point);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_target_position() const;
 
 	void set_collision_mask(uint32_t p_mask);

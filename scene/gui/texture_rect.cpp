@@ -80,16 +80,6 @@ PackedStringArray TextureRect::get_configuration_warnings() const
 	return warnings;
 }
 
-<<<<<<< HEAD
-void TextureRect::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> TextureRect::get_texture() const { return texture; }
 
 TextureRect::ExpandMode TextureRect::get_expand_mode() const { return expand_mode; }

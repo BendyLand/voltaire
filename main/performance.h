@@ -31,10 +31,6 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 
 #define PERF_WARN_OFFLINE_FUNCTION
 #define PERF_WARN_PROCESS_SYNC
@@ -44,10 +40,6 @@ template <typename T> class TypedArray;
 class Performance
 {
 	static Performance* singleton;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 	int _get_node_count() const;
 	int _get_orphan_node_count() const;

@@ -310,9 +310,6 @@ bool JoltArea3D::shape_exited(const JPH::BodyID& p_body_id, const JPH::SubShapeI
 		   area_shape_exited(p_body_id, p_other_shape_id, p_self_shape_id);
 }
 
-<<<<<<< HEAD
-
-=======
 void JoltArea3D::_notify_bodies_updated(bool p_priority_changed) {}
 
 bool JoltArea3D::can_monitor(JoltArea3D const&) const { return true; }
@@ -352,4 +349,3 @@ void JoltArea3D::area_shape_entered(
 void JoltArea3D::_add_to_space() {}
 
 
->>>>>>> fix/remove-object

@@ -57,11 +57,6 @@ bool LookAtModifier3D::is_relative() const { return relative; }
 
 NodePath LookAtModifier3D::get_target_node() const { return target_node; }
 
-<<<<<<< HEAD
-// For origin settings.
-
-=======
->>>>>>> fix/remove-object
 LookAtModifier3D::OriginFrom LookAtModifier3D::get_origin_from() const { return origin_from; }
 
 String LookAtModifier3D::get_origin_bone_name() const { return origin_bone_name; }
@@ -103,11 +98,6 @@ void LookAtModifier3D::set_ease_type(Tween::EaseType p_ease_type) { ease_type = 
 
 Tween::EaseType LookAtModifier3D::get_ease_type() const { return ease_type; }
 
-<<<<<<< HEAD
-// For angle limitation.
-
-=======
->>>>>>> fix/remove-object
 bool LookAtModifier3D::is_using_angle_limitation() const { return use_angle_limitation; }
 
 bool LookAtModifier3D::is_limitation_symmetry() const { return symmetry_limitation; }

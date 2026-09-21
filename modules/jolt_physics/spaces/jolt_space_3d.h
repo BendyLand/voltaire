@@ -34,15 +34,9 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rid.h"
 #include "core/templates/self_list.h"
-<<<<<<< HEAD
-#include "servers/physics_3d/physics_server_3d_enums.h"
-#include "core/types.h"
-
-=======
 #include "core/types.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
 // includes must stay...
->>>>>>> fix/remove-object
 #include <Jolt/Jolt.h>
 // ... in this order
 #include <Jolt/Core/JobSystem.h>

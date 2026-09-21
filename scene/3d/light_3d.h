@@ -126,10 +126,6 @@ public:
 	void set_cull_mask(uint32_t p_cull_mask);
 	uint32_t get_cull_mask() const;
 
-<<<<<<< HEAD
-	void set_color(const Color& p_color);
-=======
->>>>>>> fix/remove-object
 	Color get_color() const;
 
 	void set_shadow_reverse_cull_face(bool p_enable);
@@ -176,12 +172,6 @@ private:
 	ShadowMode shadow_mode;
 	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	void set_shadow_mode(ShadowMode p_mode);
 	ShadowMode get_shadow_mode() const;
@@ -220,12 +210,6 @@ public:
 
 class SpotLight3D : public Light3D
 {
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-=======
->>>>>>> fix/remove-object
 public:
 	PackedStringArray get_configuration_warnings() const override;
 
@@ -240,10 +224,6 @@ private:
 	bool area_normalize_energy = true;
 
 public:
-<<<<<<< HEAD
-	void set_area_size(const Vector2& p_size);
-=======
->>>>>>> fix/remove-object
 	Vector2 get_area_size() const;
 
 	void set_area_texture(const Ref<Texture2D>& p_texture);

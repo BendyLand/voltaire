@@ -286,10 +286,6 @@ public:
 
 	real_t get_param_max(Parameter p_param) const;
 
-<<<<<<< HEAD
-	void set_param_curve(Parameter p_param, const Ref<Curve>& p_curve);
-=======
->>>>>>> fix/remove-object
 	Ref<Curve> get_param_curve(Parameter p_param) const;
 
 	void set_color(const Color& p_color);

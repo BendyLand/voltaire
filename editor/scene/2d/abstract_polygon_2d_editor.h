@@ -115,23 +115,8 @@ protected:
 
 	void _wip_cancel();
 
-<<<<<<< HEAD
-	void _notification(int p_what);
-	void _node_removed(Node* p_node);
-
-	bool _commit_drag();
-
-	void remove_point(const Vertex& p_vertex);
-	Vertex get_active_point() const;
-	PosVertex closest_point(const Vector2& p_pos) const;
-	PosVertex closest_edge_point(const Vector2& p_pos) const;
-
-	bool _is_empty() const;
-
-=======
 	Vertex get_active_point() const;
 
->>>>>>> fix/remove-object
 	virtual Node2D* _get_node() const = 0;
 	virtual void _set_node(Node* p_polygon) = 0;
 
@@ -149,22 +134,11 @@ protected:
 	virtual void _create_resource();
 
 public:
-<<<<<<< HEAD
-	void disable_polygon_editing(bool p_disable, const String& p_reason);
-
-	bool forward_gui_input(const Ref<InputEvent>& p_event);
-	void forward_canvas_draw_over_viewport(Control* p_overlay);
-	void set_edit_origin_and_center(bool p_enabled);
-
-	void edit(Node* p_polygon);
-	AbstractPolygon2DEditor(bool p_wip_destructive = true);
-=======
 	void set_edit_origin_and_center(bool p_enabled);
 
 	void edit(Node* p_polygon);
 
 	AbstractPolygon2DEditor(bool p_wip_destructive = true) : wip_destructive(p_wip_destructive) {}
->>>>>>> fix/remove-object
 };
 
 class AbstractPolygon2DEditorPlugin : public EditorPlugin
@@ -173,28 +147,12 @@ class AbstractPolygon2DEditorPlugin : public EditorPlugin
 	String klass;
 
 public:
-<<<<<<< HEAD
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override
-	{
-		return polygon_editor->forward_gui_input(p_event);
-	}
-
-	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override
-	{
-		polygon_editor->forward_canvas_draw_over_viewport(p_overlay);
-	}
-
-	virtual String get_plugin_name() const override { return klass; }
-
-	AbstractPolygon2DEditorPlugin(AbstractPolygon2DEditor* p_polygon_editor, const String& p_class);
-=======
 	virtual String get_plugin_name() const override { return klass; }
 
 	AbstractPolygon2DEditorPlugin(AbstractPolygon2DEditor* p_polygon_editor, const String& p_class)
 		: polygon_editor(p_polygon_editor), klass(p_class)
 	{
 	}
->>>>>>> fix/remove-object
 };
 
 

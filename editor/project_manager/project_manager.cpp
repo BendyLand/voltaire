@@ -84,13 +84,6 @@ constexpr int GODOT4_CONFIG_VERSION = 5;
 
 ProjectManager* ProjectManager::singleton = nullptr;
 
-<<<<<<< HEAD
-// Notifications.
-
-// Utility data.
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> ProjectManager::_file_dialog_get_icon(const String& p_path)
 {
 	if (p_path.has_extension("godot")) {
@@ -121,13 +114,6 @@ void ProjectManager::_build_icon_type_cache(Ref<Theme> p_theme)
 	}
 }
 
-<<<<<<< HEAD
-// Main layout.
-
-void ProjectManager::_show_about() { about_dialog->popup_centered(Size2(780, 500) * EDSCALE); }
-
-=======
->>>>>>> fix/remove-object
 void ProjectManager::_project_list_menu_option(int p_option)
 {
 	switch (p_option) {
@@ -188,117 +174,8 @@ void ProjectManager::_restart_confirmed()
 	get_tree()->quit();
 }
 
-<<<<<<< HEAD
-// Project list.
-
 void ProjectManager::_scan_projects() { scan_dir->popup_file_dialog(); }
 
-void ProjectManager::_run_project()
-{
-	const HashSet<String>& selected_list = project_list->get_selected_project_keys();
-
-	if (selected_list.size() < 1) {
-		return;
-	}
-
-	if (selected_list.size() > 1) {
-		multi_run_ask->set_text(
-			vformat(TTR("Are you sure to run %d projects at once?"), selected_list.size()));
-		multi_run_ask->popup_centered();
-	}
-	else {
-		_run_project_confirm();
-	}
-}
-
-void ProjectManager::_run_project_confirm()
-{
-	Vector<ProjectList::Item> selected_list = project_list->get_selected_projects();
-
-	for (int i = 0; i < selected_list.size(); ++i) {
-		const String& selected_main = selected_list[i].main_scene;
-		if (selected_main.is_empty()) {
-			_show_error(TTRC("Can't run project: Project has no main scene defined.\nPlease edit "
-							 "the project and set the main scene in the Project Settings under the "
-							 "\"Application\" category."));
-			continue;
-		}
-
-		const String& path = selected_list[i].path;
-
-		// `.substr(6)` on `ProjectSettings::get_singleton()->get_imported_files_path()` strips away
-		// the leading "res://".
-		if (!DirAccess::exists(path.path_join(
-				ProjectSettings::get_singleton()->get_imported_files_path().substr(6)))) {
-			_show_error(TTRC("Can't run project: Assets need to be imported first.\nPlease edit "
-							 "the project to trigger the initial import."));
-			continue;
-		}
-
-		__print_line("Running project: " + path);
-
-		List<String> args;
-
-		for (const String& a : Main::get_forwardable_cli_arguments(Main::CLI_SCOPE_PROJECT)) {
-			args.push_back(a);
-		}
-
-		args.push_back("--path");
-		args.push_back(path);
-
-		Error err = OS::get_singleton()->create_instance(args);
-		ERR_FAIL_COND(err);
-	}
-}
-
-void ProjectManager::_open_selected_projects_check_recovery_mode()
-{
-	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
-
-	if (selected_projects.is_empty()) {
-		return;
-	}
-
-	const ProjectList::Item& project = selected_projects[0];
-	if (project.missing) {
-		return;
-	}
-
-	open_in_verbose_mode = false;
-	open_in_recovery_mode = false;
-	// Check if the project failed to load during last startup.
-	if (project.recovery_mode) {
-		_open_recovery_mode_ask(false);
-		return;
-	}
-
-	_open_selected_projects_check_warnings();
-}
-
-void ProjectManager::_open_selected_projects_with_migration()
-{
-	if (ask_update_backup->is_pressed() && project_list->get_selected_projects().size() == 1) {
-		ask_update_settings->hide();
-		ask_update_backup->set_pressed(false);
-
-		_duplicate_project_with_action(POST_DUPLICATE_ACTION_OPEN);
-		return;
-	}
-
-#ifndef DISABLE_DEPRECATED
-	if (project_list->get_selected_projects().size() == 1) {
-		// Only migrate if a single project is opened.
-		_minor_project_migrate();
-	}
-#endif
-	_open_selected_projects();
-	ask_upgrade_tool->set_pressed(false);
-}
-
-=======
-void ProjectManager::_scan_projects() { scan_dir->popup_file_dialog(); }
-
->>>>>>> fix/remove-object
 void ProjectManager::_install_project(const String& p_zip_path, const String& p_title)
 {
 	project_dialog->set_mode(ProjectDialog::MODE_INSTALL);
@@ -485,53 +362,6 @@ void ProjectManager::_on_search_term_changed(const String& p_term)
 
 LineEdit* ProjectManager::get_search_box() { return search_box; }
 
-<<<<<<< HEAD
-// Project tag management.
-
-void ProjectManager::_set_new_tag_name(const String p_name)
-{
-	create_tag_dialog->get_ok_button()->set_disabled(true);
-	if (p_name.strip_edges().is_empty()) {
-		tag_error->set_text(TTRC("Tag name can't be empty."));
-		return;
-	}
-
-	if (p_name[0] == '_' || p_name[p_name.length() - 1] == '_') {
-		tag_error->set_text(TTRC("Tag name can't begin or end with underscore."));
-		return;
-	}
-
-	bool was_underscore = false;
-	for (const char32_t& c : p_name.span()) {
-		// Treat spaces as underscores, as we convert spaces to underscores automatically in the tag
-		// input field.
-		if (c == '_' || c == ' ') {
-			if (was_underscore) {
-				tag_error->set_text(
-					TTRC("Tag name can't contain consecutive underscores or spaces."));
-				return;
-			}
-			was_underscore = true;
-		}
-		else {
-			was_underscore = false;
-		}
-	}
-
-	for (const String& c : forbidden_tag_characters) {
-		if (p_name.contains(c)) {
-			tag_error->set_text(vformat(TTR("These characters are not allowed in tags: %s."),
-				String(" ").join(forbidden_tag_characters)));
-			return;
-		}
-	}
-
-	tag_error->set_text("");
-	create_tag_dialog->get_ok_button()->set_disabled(false);
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectManager::_create_new_tag()
 {
 	if (!tag_error->get_text().is_empty()) {
@@ -547,35 +377,12 @@ void ProjectManager::_create_new_tag()
 	_add_project_tag(new_tag);
 }
 
-<<<<<<< HEAD
-void ProjectManager::_full_convert_button_pressed()
-{
-	ask_update_settings->hide();
-
-	if (ask_update_backup->is_pressed()) {
-		ask_update_backup->set_pressed(false);
-
-		_duplicate_project_with_action(POST_DUPLICATE_ACTION_FULL_CONVERSION);
-		return;
-	}
-
-	ask_full_convert_dialog->popup_centered(Size2i(600.0 * EDSCALE, 0));
-	ask_full_convert_dialog->get_cancel_button()->grab_focus();
-}
-
-=======
->>>>>>> fix/remove-object
 void ProjectManager::_migration_guide_button_pressed()
 {
 	const String url = vformat("%s/tutorials/migrating/index.html", VLTR_VERSION_DOCS_URL);
 	OS::get_singleton()->shell_open(url);
 }
 
-<<<<<<< HEAD
-// Input and I/O.
-
-=======
->>>>>>> fix/remove-object
 void ProjectManager::_files_dropped(PackedStringArray p_files)
 {
 	// TODO: Support installing multiple ZIPs at the same time?

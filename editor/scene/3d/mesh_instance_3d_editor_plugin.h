@@ -114,11 +114,6 @@ class MeshInstance3DEditor : public Control
 	friend class MeshInstance3DEditorPlugin;
 
 protected:
-<<<<<<< HEAD
-	void _node_removed(Node* p_node);
-
-=======
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

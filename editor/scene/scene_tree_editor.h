@@ -209,10 +209,6 @@ class SceneTreeEditor : public Control
 	void _empty_clicked(const Vector2& p_pos, MouseButton p_button);
 	void _rmb_select(const Vector2& p_pos, MouseButton p_button = MouseButton::RIGHT);
 
-<<<<<<< HEAD
-	void _warning_changed(Node* p_for_node);
-=======
->>>>>>> fix/remove-object
 	void _update_marking_list(const HashSet<Node*>& p_marked);
 
 	Timer* update_timer = nullptr;
@@ -266,11 +262,6 @@ public:
 
 	Tree* get_scene_tree() { return tree; }
 
-<<<<<<< HEAD
-	void update_warning();
-
-=======
->>>>>>> fix/remove-object
 	SceneTreeEditor(
 		bool p_label = true, bool p_can_rename = false, bool p_can_open_instance = false);
 	~SceneTreeEditor();

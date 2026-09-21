@@ -30,10 +30,7 @@
 
 #include "audio_effect.h"
 
-<<<<<<< HEAD
-=======
 AudioEffect::AudioEffect() {}
->>>>>>> fix/remove-object
 
 bool AudioEffectInstance::process_silence() const { return true; }
 

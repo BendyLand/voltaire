@@ -32,21 +32,6 @@
 #include "scene/3d/physics/ray_cast_3d.h"
 #include "scene/main/scene_tree.h"
 
-<<<<<<< HEAD
-RayCast3DGizmoPlugin::RayCast3DGizmoPlugin()
-{
-	const Color gizmo_color = SceneTree::get_singleton()->get_debug_collisions_color();
-	create_material("shape_material", gizmo_color);
-	const float gizmo_value = gizmo_color.get_v();
-	const Color gizmo_color_disabled = Color(gizmo_value, gizmo_value, gizmo_value, 0.65);
-	create_material("shape_material_disabled", gizmo_color_disabled);
-}
-
 String RayCast3DGizmoPlugin::get_gizmo_name() const { return "RayCast3D"; }
 
 
-=======
-String RayCast3DGizmoPlugin::get_gizmo_name() const { return "RayCast3D"; }
-
-
->>>>>>> fix/remove-object

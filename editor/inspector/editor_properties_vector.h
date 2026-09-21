@@ -59,11 +59,6 @@ protected:
 public:
 	virtual void set_deferred_drag_mode_enabled(bool p_enabled = true) override;
 	virtual void update_property() override;
-<<<<<<< HEAD
-	void setup(
-		const EditorPropertyRangeHint& p_range_hint, bool p_link = false, bool p_is_int = false);
-=======
->>>>>>> fix/remove-object
 };
 
 class EditorPropertyVector2 : public EditorPropertyVectorN

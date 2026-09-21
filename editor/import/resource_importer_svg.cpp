@@ -50,12 +50,9 @@ int ResourceImporterSVG::get_preset_count() const { return 0; }
 
 String ResourceImporterSVG::get_preset_name(int p_idx) const { return String(); }
 
-<<<<<<< HEAD
-=======
 void ResourceImporterSVG::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
 }
 
->>>>>>> fix/remove-object
 

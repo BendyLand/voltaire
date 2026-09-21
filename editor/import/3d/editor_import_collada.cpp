@@ -243,22 +243,12 @@ Error ColladaImport::_create_material(const String& p_target)
 			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
 			if (texture.is_valid()) {
 				material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, texture);
-<<<<<<< HEAD
-				material->set_albedo(Color(1, 1, 1, 1));
-=======
->>>>>>> fix/remove-object
 				// material->set_parameter(StandardMaterial3D::PARAM_DIFFUSE,Color(1,1,1,1));
 			}
 			else {
 				missing_textures.push_back(texfile.get_file());
 			}
 		}
-<<<<<<< HEAD
-	}
-	else {
-		material->set_albedo(effect.diffuse.color);
-=======
->>>>>>> fix/remove-object
 	}
 
 	// SPECULAR
@@ -525,21 +515,11 @@ void ColladaImport::create_animations(bool p_import_value_tracks)
 	}
 }
 
-<<<<<<< HEAD
-/*********************************************************************************/
-/*************************************** SCENE ***********************************/
-/*********************************************************************************/
-
-=======
->>>>>>> fix/remove-object
 void EditorSceneFormatImporterCollada::get_extensions(List<String>* r_extensions) const
 {
 	r_extensions->push_back("dae");
 }
 
-<<<<<<< HEAD
-
-=======
 void ColladaImport::create_animation(int p_clip, bool p_bake) {}
 
 Error ColladaImport::_create_scene(Collada::Node* p_node, Node3D* p_parent) { return OK; }
@@ -547,4 +527,3 @@ Error ColladaImport::_create_scene(Collada::Node* p_node, Node3D* p_parent) { re
 Error ColladaImport::_create_resources(Collada::Node* p_node, bool p_is_root) { return OK; }
 
 
->>>>>>> fix/remove-object

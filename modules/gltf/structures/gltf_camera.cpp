@@ -66,20 +66,4 @@ Ref<GLTFCamera> GLTFCamera::from_node(const Camera3D* p_camera)
 	return c;
 }
 
-<<<<<<< HEAD
-Camera3D* GLTFCamera::to_node() const
-{
-	Camera3D* camera = memnew(Camera3D);
-	camera->set_projection(
-		perspective ? Camera3D::PROJECTION_PERSPECTIVE : Camera3D::PROJECTION_ORTHOGONAL);
-	// glTF spec (xmag and ymag) is a radius in meters, Godot's camera (size) is a diameter in
-	// meters.
-	camera->set_size(size_mag * 2.0f);
-	camera->set_near(depth_near);
-	camera->set_far(depth_far);
-	return camera;
-}
-
-=======
->>>>>>> fix/remove-object
 

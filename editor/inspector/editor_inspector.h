@@ -507,10 +507,6 @@ protected:
 	VBoxContainer* vbox = nullptr;
 
 	void _notification(int p_what);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	virtual Size2 get_minimum_size() const override;

@@ -209,10 +209,6 @@ void RayCast3D::_update_debug_shape_material(bool p_check_collision)
 	}
 
 	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
-<<<<<<< HEAD
-	material->set_albedo(color);
-=======
->>>>>>> fix/remove-object
 }
 
 void RayCast3D::_clear_debug_shape()

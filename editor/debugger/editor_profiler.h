@@ -149,14 +149,7 @@ Vector<Metric> frame_metrics;
 
 	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
 
-<<<<<<< HEAD
-	String _get_time_as_text(const Metric& m, float p_time, int p_calls);
-
 	void _make_metric_ptrs(Metric& m);
-	void _item_edited();
-=======
-	void _make_metric_ptrs(Metric& m);
->>>>>>> fix/remove-object
 	void _item_collapsed(TreeItem* p_item);
 
 	void _update_plot();
@@ -166,19 +159,10 @@ Vector<Metric> frame_metrics;
 	void _graph_tex_draw();
 	void _graph_tex_input(const Ref<InputEvent>& p_ev);
 
-<<<<<<< HEAD
-	Color _get_color_from_signature(const StringName& p_signature) const;
-=======
->>>>>>> fix/remove-object
 	int _get_zoom_left_border() const;
 
 	void _cursor_metric_changed(double);
 
-<<<<<<< HEAD
-	void _combo_changed(int);
-
-=======
->>>>>>> fix/remove-object
 	const Metric& _get_frame_metric(int index) const;
 
 protected:
@@ -188,13 +172,6 @@ public:
 	void add_frame_metric(const Metric& p_metric, bool p_final = false);
 	void set_enabled(bool p_enable, bool p_clear = true);
 	bool is_profiling();
-<<<<<<< HEAD
-
-	bool is_seeking() { return seeking; }
-
-	void disable_seeking();
-=======
->>>>>>> fix/remove-object
 
 	bool is_seeking() { return seeking; }
 

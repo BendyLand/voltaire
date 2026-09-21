@@ -159,8 +159,5 @@ GodotArea3D::GodotArea3D()
 GodotArea3D::~GodotArea3D() {}
 
 
-<<<<<<< HEAD
-=======
 
 void GodotArea3D::call_queries() {}
->>>>>>> fix/remove-object

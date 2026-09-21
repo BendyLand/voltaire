@@ -144,10 +144,6 @@ private:
 	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting);
@@ -183,10 +179,6 @@ public:
 	void set_lightmap_texel_scale(float p_scale);
 	float get_lightmap_texel_scale() const;
 
-<<<<<<< HEAD
-	void set_custom_aabb(AABB p_aabb);
-=======
->>>>>>> fix/remove-object
 	AABB get_custom_aabb() const;
 
 	void set_ignore_occlusion_culling(bool p_enabled);

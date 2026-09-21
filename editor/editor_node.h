@@ -530,40 +530,12 @@ private:
 
 	void _build_icon_type_cache();
 
-<<<<<<< HEAD
-	void _dialog_action(String p_file);
-
-	void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false);
-=======
->>>>>>> fix/remove-object
 	void _dialog_display_save_error(String p_file, Error p_error);
 	void _dialog_display_load_error(String p_file, Error p_error);
 
 	void _android_export_preset_selected(int p_index);
 	void _android_explore_build_templates();
 
-<<<<<<< HEAD
-	void _request_screenshot();
-	void _screenshot(bool p_use_utc = false);
-	void _save_screenshot(const String& p_path);
-	void _save_screenshot_with_embedded_process(int64_t p_w, int64_t p_h, const String& p_emb_path,
-		const Rect2i& p_rect, const String& p_path);
-
-	void _check_system_theme_changed();
-
-	void _tool_menu_option(int p_idx);
-	void _export_as_menu_option(int p_idx);
-	void _update_file_menu_opened();
-	void _palette_quick_open_dialog();
-
-	void _remove_plugin_from_enabled(const String& p_name);
-
-	void _fs_changed();
-	void _resources_reimporting(const Vector<String>& p_resources);
-	void _resources_reimported(const Vector<String>& p_resources);
-	void _sources_changed(bool p_exist);
-=======
->>>>>>> fix/remove-object
 	void _remove_lock_file();
 
 	void _node_renamed();
@@ -572,19 +544,7 @@ private:
 	void _show_messages();
 	void _vp_resized();
 
-<<<<<<< HEAD
-	void _update_undo_redo_allowed();
-
-	int _save_external_resources(bool p_also_save_external_data = false);
-
-	void _set_current_scene(int p_idx);
-	void _set_current_scene_nocheck(int p_idx, bool p_ignore_state = false);
-	void _nav_to_selected_scene();
 	bool _validate_scene_recursive(const String& p_filename, Node* p_node);
-	void _save_all_scenes();
-=======
-	bool _validate_scene_recursive(const String& p_filename, Node* p_node);
->>>>>>> fix/remove-object
 	int _next_unsaved_scene(bool p_valid_filename, int p_start = 0);
 	void _cancel_close_scene_tab();
 	void _cancel_confirmation();
@@ -593,30 +553,11 @@ private:
 
 	void _add_dropped_files_recursive(const Vector<String>& p_files, String to_path);
 
-<<<<<<< HEAD
-	void _update_vsync_mode();
 	void _gdextensions_reloaded();
-	void _queue_translation_notification();
-=======
-	void _gdextensions_reloaded();
->>>>>>> fix/remove-object
 	void _propagate_translation_notification();
 
 	String _to_rendering_method_display_name(const String& p_rendering_method) const;
 
-<<<<<<< HEAD
-	void _exit_editor(int p_exit_code);
-
-	virtual void input(const Ref<InputEvent>& p_event) override;
-
-	void _remove_edited_scene(bool p_change_tab = true);
-	void _remove_scene(int p_idx, bool p_change_tab = true);
-	bool _find_and_save_resource(
-		Ref<Resource> p_res, HashMap<Ref<Resource>, bool>& processed, int32_t flags);
-	void _mark_unsaved_scenes();
-
-=======
->>>>>>> fix/remove-object
 	void _close_save_scene_progress();
 
 	bool _find_scene_in_use(Node* p_node, const String& p_path) const;
@@ -658,15 +599,7 @@ private:
 protected:
 	friend class FileSystemDock;
 
-<<<<<<< HEAD
-	static void _bind_methods();
-
 public:
-	void init_plugins();
-
-=======
-public:
->>>>>>> fix/remove-object
 	bool call_build();
 	void call_run_scene(const String& p_scene, Vector<String>& r_args);
 
@@ -699,16 +632,6 @@ public:
 
 	static void disambiguate_filenames(
 		const Vector<String> p_full_paths, Vector<String>& r_filenames);
-<<<<<<< HEAD
-	static void add_io_error(const String& p_error);
-	static void add_io_warning(const String& p_warning);
-	static void progress_add_task(
-		const String& p_task, const String& p_label, int p_steps, bool p_can_cancel = false);
-	static bool progress_task_step(
-		const String& p_task, const String& p_state, int p_step = -1, bool p_force_refresh = true);
-	static void progress_end_task(const String& p_task);
-=======
->>>>>>> fix/remove-object
 
 	static void progress_add_task_bg(const String& p_task, const String& p_label, int p_steps);
 	static void progress_task_step_bg(const String& p_task, int p_step = -1);
@@ -752,28 +675,9 @@ public:
 
 	bool is_addon_plugin_enabled(const String& p_addon) const;
 
-<<<<<<< HEAD
-	void edit_resource(const Ref<Resource>& p_resource);
-
-	bool is_resource_internal_to_scene(Ref<Resource> p_resource);
-	void clear_node_reference(Ref<Resource> p_res);
 	int get_resource_count(Ref<Resource> p_res);
 	List<Node*> get_resource_node_list(Ref<Resource> p_res);
 
-	void show_about() { _menu_option_confirm(HELP_ABOUT, false); }
-
-	void edit_previous_item();
-	void push_node_item(Node* p_node);
-
-	void replace_resources_in_scenes(const Vector<Ref<Resource>>& p_source_resources,
-		const Vector<Ref<Resource>>& p_target_resource);
-	void edit_foreign_resource(Ref<Resource> p_resource);
-
-=======
-	int get_resource_count(Ref<Resource> p_res);
-	List<Node*> get_resource_node_list(Ref<Resource> p_res);
-
->>>>>>> fix/remove-object
 	bool is_resource_read_only(
 		Ref<Resource> p_resource, bool p_foreign_resources_are_writable = false);
 
@@ -785,20 +689,6 @@ public:
 
 	String get_preview_locale() const;
 	bool is_pseudolocalization_enabled() const;
-<<<<<<< HEAD
-	void set_preview_locale(const String& p_locale, bool p_pseudolocalization);
-
-	int new_scene();
-	Error load_scene(const String& p_scene, bool p_ignore_broken_deps = false,
-		bool p_set_inherited = false, bool p_force_open_imported = false,
-		bool p_update_tabs = true);
-	Error open_scene(const String& p_scene, bool p_ignore_broken_deps = false,
-		bool p_set_inherited = false, bool p_force_open_imported = false);
-	Error load_resource(const String& p_resource, bool p_ignore_broken_deps = false);
-	Error load_scene_or_resource(const String& p_file, bool p_ignore_broken_deps = false,
-		bool p_change_scene_tab_if_already_open = true);
-=======
->>>>>>> fix/remove-object
 
 	void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled);
 
@@ -862,15 +752,6 @@ public:
 	ProcessID has_child_process(ProcessID p_pid) const;
 	void stop_child_process(ProcessID p_pid);
 
-<<<<<<< HEAD
-	Ref<Theme> get_editor_theme() const { return theme; }
-
-	void update_preview_themes(int p_mode);
-
-	Ref<Texture2D> get_class_icon(const String& p_class, const String& p_fallback = "");
-
-=======
->>>>>>> fix/remove-object
 	void show_save_accept(const String& p_text, const String& p_ok_text = TTRC("OK"));
 	void show_warning(const String& p_text, const String& p_title = TTRC("Warning!"));
 
@@ -883,11 +764,6 @@ public:
 
 	Control* get_gui_base() { return gui_base; }
 
-<<<<<<< HEAD
-	bool close_scene();
-
-=======
->>>>>>> fix/remove-object
 	bool is_scene_in_use(const String& p_path);
 
 	void find_all_instances_inheriting_path_in_node(
@@ -897,12 +773,6 @@ public:
 
 	EditorQuickOpenDialog* get_quick_open_dialog() { return quick_open_dialog; }
 
-<<<<<<< HEAD
-	void add_tool_submenu_item(const String& p_name, PopupMenu* p_submenu);
-	void remove_tool_menu_item(const String& p_name);
-
-=======
->>>>>>> fix/remove-object
 	PopupMenu* get_export_as_menu();
 
 	void notify_settings_overrides_changed();
@@ -921,11 +791,6 @@ public:
 	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin_for_type_name(
 		const String& p_type);
 
-<<<<<<< HEAD
-	bool ensure_main_scene(bool p_from_native);
-	bool validate_custom_directory();
-=======
->>>>>>> fix/remove-object
 	bool is_scene_unsaved(int p_idx);
 };
 

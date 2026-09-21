@@ -34,11 +34,6 @@
 #include "../spaces/jolt_space_3d.h"
 #include "jolt_joint_3d.h"
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 void JoltJoint3D::_wake_up_bodies()
 {
 	if (body_a != nullptr) {

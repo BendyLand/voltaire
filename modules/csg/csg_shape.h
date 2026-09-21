@@ -205,10 +205,6 @@ protected:
 	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
 		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
 		const Vector<Ref<Material>>& p_materials);
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_flip_faces(bool p_invert);
@@ -269,19 +265,8 @@ class CSGBox3D : public CSGPrimitive3D
 	Ref<Material> material;
 	Vector3 size = Vector3(1, 1, 1);
 
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-
-public:
-	void set_size(const Vector3& p_size);
-	Vector3 get_size() const;
-
-	void set_material(const Ref<Material>& p_material);
-=======
 public:
 	Vector3 get_size() const;
->>>>>>> fix/remove-object
 	Ref<Material> get_material() const;
 
 	CSGBox3D() {}
@@ -401,17 +386,9 @@ private:
 	void _path_exited();
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
 	void _notification(int p_what);
 
 public:
-	void set_polygon(const Vector<Vector2>& p_polygon);
-=======
-	void _notification(int p_what);
-
-public:
->>>>>>> fix/remove-object
 	Vector<Vector2> get_polygon() const;
 
 	Mode get_mode() const;
@@ -422,10 +399,6 @@ public:
 
 	int get_spin_sides() const;
 
-<<<<<<< HEAD
-	void set_path_node(const NodePath& p_path);
-=======
->>>>>>> fix/remove-object
 	NodePath get_path_node() const;
 
 	PathIntervalType get_path_interval_type() const;

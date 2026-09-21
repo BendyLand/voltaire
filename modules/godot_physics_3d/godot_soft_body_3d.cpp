@@ -1183,10 +1183,7 @@ void GodotSoftBody3D::update_face_tree(real_t p_delta)
 
 void GodotSoftBody3D::initialize_shape(bool p_force_move)
 {
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 	if (get_shape_count() == 0) {
 		GodotSoftBodyShape3D* soft_body_shape = memnew(GodotSoftBodyShape3D(this));
 		add_shape(soft_body_shape);
@@ -1297,11 +1294,8 @@ Vector3 GodotSoftBodyShape3D::get_closest_point_to(const Vector3& p_point) const
 	ERR_FAIL_V_MSG(Vector3(), "Get closest point is not supported for soft bodies.");
 }
 
-<<<<<<< HEAD
-=======
 void GodotSoftBody3D::set_mesh(RID) {}
 
 void GodotSoftBody3D::_shapes_changed() {}
 
->>>>>>> fix/remove-object
 

@@ -110,18 +110,6 @@ String EditorQuickOpenDialog::get_dialog_title(const Vector<StringName>& p_base_
 	return vformat(TTR("Select %s"), p_base_types[0]);
 }
 
-<<<<<<< HEAD
-void EditorQuickOpenDialog::_finish_dialog_setup(const Vector<StringName>& p_base_types)
-{
-	set_process_shortcut_input(allow_type_switching);
-	get_ok_button()->set_disabled(container->has_nothing_selected());
-	set_title(get_dialog_title(p_base_types));
-	popup_centered_clamped(Size2(780, 650) * EDSCALE, 0.8f);
-	search_box->grab_focus();
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorQuickOpenDialog::ok_pressed()
 {
 	container->save_selected_item();
@@ -161,42 +149,12 @@ void EditorQuickOpenDialog::item_pressed(bool p_double_click)
 	}
 }
 
-<<<<<<< HEAD
-void EditorQuickOpenDialog::_search_box_text_changed(const String& p_query)
-{
-	container->set_query_and_update(p_query);
-	get_ok_button()->set_disabled(container->has_nothing_selected());
-}
-
-//------------------------- Result Container
-
-=======
->>>>>>> fix/remove-object
 void style_button(Button* p_button)
 {
 	p_button->set_flat(true);
 	p_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 }
 
-<<<<<<< HEAD
-void QuickOpenResultContainer::_menu_option(int p_option)
-{
-	ERR_FAIL_COND(get_selected() == ResourceUID::INVALID_ID);
-	String selected_path = get_selected_path();
-
-	switch (p_option) {
-	case FILE_SHOW_IN_FILESYSTEM: {
-		FileSystemDock::get_singleton()->navigate_to_path(selected_path);
-	} break;
-	case FILE_SHOW_IN_FILE_MANAGER: {
-		String dir = ProjectSettings::get_singleton()->globalize_path(selected_path);
-		OS::get_singleton()->shell_show_in_file_manager(dir, true);
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void QuickOpenResultContainer::_sort_uids(int p_max_results)
 {
 	struct FilepathComparator
@@ -378,43 +336,6 @@ void QuickOpenResultContainer::_score_and_sort_candidates()
 	}
 }
 
-<<<<<<< HEAD
-void QuickOpenResultContainer::_update_result_items(
-	int p_new_visible_results_count, int p_new_selection_index)
-{
-	// Only need to update items that were not hidden in previous update.
-	int num_items_needing_updates = MAX(num_visible_results, p_new_visible_results_count);
-	num_visible_results = p_new_visible_results_count;
-
-	for (int i = 0; i < num_items_needing_updates; i++) {
-		QuickOpenResultItem* item = result_items[i];
-
-		if (i < num_visible_results) {
-			item->set_content(candidates[i]);
-		}
-		else {
-			item->reset();
-		}
-	};
-
-	const bool any_results = num_visible_results > 0;
-	_select_item(any_results ? p_new_selection_index : -1);
-
-	scroll_container->set_visible(any_results);
-	no_results_container->set_visible(!any_results);
-
-	if (!any_results) {
-		if (uids.is_empty()) {
-			no_results_label->set_text(TTR("No files found for this type"));
-		}
-		else {
-			no_results_label->set_text(TTR("No results found"));
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void QuickOpenResultContainer::_move_selection_index(Key p_key)
 {
 	// Don't move selection if there are no results.
@@ -552,14 +473,6 @@ bool QuickOpenResultContainer::is_instant_preview_enabled() const
 		   instant_preview_toggle->is_pressed();
 }
 
-<<<<<<< HEAD
-void QuickOpenResultContainer::set_instant_preview_toggle_visible(bool p_visible)
-{
-	instant_preview_toggle->set_visible(p_visible);
-}
-
-=======
->>>>>>> fix/remove-object
 void QuickOpenResultContainer::cleanup()
 {
 	num_visible_results = 0;

@@ -46,19 +46,11 @@ protected:
 	_FORCE_INLINE_ RID _get_volume() { return volume; }
 
 public:
-<<<<<<< HEAD
-	void set_size(const Vector3& p_size);
-=======
->>>>>>> fix/remove-object
 	Vector3 get_size() const;
 
 	void set_shape(RSE::FogVolumeShape p_type);
 	RSE::FogVolumeShape get_shape() const;
 
-<<<<<<< HEAD
-	void set_material(const Ref<Material>& p_material);
-=======
->>>>>>> fix/remove-object
 	Ref<Material> get_material() const;
 
 	virtual AABB get_aabb() const override;

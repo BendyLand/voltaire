@@ -255,19 +255,6 @@ Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(
 
 Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const { return run_icon; }
 
-<<<<<<< HEAD
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_option_icon(int p_index) const
-{
-	if (p_index == 1) {
-		return stop_icon;
-	}
-	else {
-		return EditorExportPlatform::get_option_icon(p_index);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int EditorExportPlatformLinuxBSD::get_options_count() const { return menu_options; }
 
 String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const
@@ -304,9 +291,6 @@ void EditorExportPlatformLinuxBSD::cleanup()
 	cleanup_commands.clear();
 }
 
-<<<<<<< HEAD
-void EditorExportPlatformLinuxBSD::initialize()
-=======
 Error EditorExportPlatformLinuxBSD::run(
 	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
 {
@@ -318,7 +302,6 @@ bool EditorExportPlatformLinuxBSD::poll_export() { return true; }
 bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(
 	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
 	bool p_debug) const
->>>>>>> fix/remove-object
 {
 	return false;
 }

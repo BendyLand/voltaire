@@ -48,11 +48,6 @@ EditorDebuggerInspector::~EditorDebuggerInspector()
 	memdelete(variables);
 }
 
-<<<<<<< HEAD
-void EditorDebuggerInspector::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 void EditorDebuggerInspector::clear_cache()
 {
 	clear_remote_inspector();
@@ -71,11 +66,8 @@ void EditorDebuggerInspector::clear_stack_variables()
 	variables->update();
 }
 
-<<<<<<< HEAD
-=======
 String EditorDebuggerInspector::get_stack_variable(String const&) { return String(); }
 
 void EditorDebuggerInspector::clear_remote_inspector() {}
 
->>>>>>> fix/remove-object
 

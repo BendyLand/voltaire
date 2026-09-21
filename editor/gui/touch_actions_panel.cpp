@@ -38,14 +38,6 @@
 #include "servers/display/display_server.h"
 #include "touch_actions_panel.h"
 
-<<<<<<< HEAD
-void TouchActionsPanel::_hardware_keyboard_connected(bool p_connected)
-{
-	set_visible(!p_connected);
-}
-
-=======
->>>>>>> fix/remove-object
 void TouchActionsPanel::_simulate_editor_shortcut(const String& p_shortcut_name)
 {
 	Ref<Shortcut> shortcut = ED_GET_SHORTCUT(p_shortcut_name);
@@ -83,16 +75,4 @@ void TouchActionsPanel::_on_modifier_button_toggled(bool p_pressed, int p_modifi
 	}
 }
 
-<<<<<<< HEAD
-void TouchActionsPanel::_lock_panel_toggled(bool p_pressed)
-{
-	locked_panel = p_pressed;
-	layout_toggle_button->set_visible(!p_pressed);
-	drag_handle->set_visible(!p_pressed);
-	reset_size();
-	queue_redraw();
-}
-
-=======
->>>>>>> fix/remove-object
 

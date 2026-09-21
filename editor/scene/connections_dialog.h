@@ -173,11 +173,6 @@ class ConnectionsDock : public VBoxContainer
 	VBoxContainer* holder = nullptr;
 	Label* select_an_object = nullptr;
 
-<<<<<<< HEAD
-	ConnectionsDockTree* tree = nullptr;
-
-=======
->>>>>>> fix/remove-object
 	ConfirmationDialog* disconnect_all_dialog = nullptr;
 	ConnectDialog* connect_dialog = nullptr;
 	Button* connect_button = nullptr;
@@ -197,11 +192,6 @@ class ConnectionsDock : public VBoxContainer
 	void _disconnect_all();
 
 	void _tree_item_selected();
-<<<<<<< HEAD
-	void _tree_item_activated();
-	TreeItemType _get_item_type(const TreeItem& p_item) const;
-=======
->>>>>>> fix/remove-object
 
 	void _open_connection_dialog(TreeItem& p_item);
 	void _open_edit_connection_dialog(TreeItem& p_item);

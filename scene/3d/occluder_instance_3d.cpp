@@ -346,15 +346,6 @@ AABB OccluderInstance3D::get_aabb() const
 	return AABB();
 }
 
-<<<<<<< HEAD
-void OccluderInstance3D::_occluder_changed()
-{
-	update_gizmos();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Occluder3D> OccluderInstance3D::get_occluder() const { return occluder; }
 
 uint32_t OccluderInstance3D::get_bake_mask() const { return bake_mask; }

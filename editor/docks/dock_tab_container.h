@@ -94,21 +94,14 @@ public:
 
 	static String get_config_key(int p_idx) { return "dock_" + itos(p_idx + 1); }
 
-<<<<<<< HEAD
-=======
 	virtual bool can_switch_dock() const;
 
->>>>>>> fix/remove-object
 	virtual void dock_closed(EditorDock* p_dock) {}
 
 	virtual void dock_focused(EditorDock* p_dock, bool p_was_visible) {}
 
 	virtual void update_visibility();
 	virtual TabStyle get_tab_style() const;
-<<<<<<< HEAD
-	virtual bool can_switch_dock() const;
-=======
->>>>>>> fix/remove-object
 
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock)
 	{
@@ -127,16 +120,8 @@ public:
 
 	void set_dock_context_popup(DockContextPopup* p_popup);
 	EditorDock* get_dock(int p_idx) const;
-<<<<<<< HEAD
-	void show_drag_hint();
 
 	EditorDockDragHint* get_drag_hint() const { return drag_hint; }
-
-	static Rect2 get_default_floating_dock_rect(EditorDock* p_dock);
-=======
-
-	EditorDockDragHint* get_drag_hint() const { return drag_hint; }
->>>>>>> fix/remove-object
 
 	static Rect2 get_default_floating_dock_rect(EditorDock* p_dock);
 };
@@ -145,22 +130,12 @@ class SideDockTabContainer : public DockTabContainer
 {
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock) override;
-<<<<<<< HEAD
-
-	SideDockTabContainer(int p_slot, const Rect2i& p_slot_rect);
-=======
->>>>>>> fix/remove-object
 };
 
 class BottomSideDockTabContainer : public DockTabContainer
 {
 public:
 	virtual Rect2 get_floating_dock_rect(EditorDock* p_dock) override;
-<<<<<<< HEAD
-
-	BottomSideDockTabContainer(int p_slot, const Rect2i& p_slot_rect);
-=======
->>>>>>> fix/remove-object
 };
 
 

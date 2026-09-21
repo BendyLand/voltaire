@@ -109,29 +109,6 @@ void GraphFrame::_resort()
 	Point2 offset = Point2(
 		sb_panel->get_margin(SIDE_LEFT), sb_panel->get_margin(SIDE_TOP) + titlebar_min_size.height +
 											 sb_titlebar->get_minimum_size().height);
-<<<<<<< HEAD
-
-	for (int i = 0; i < get_child_count(false); i++) {
-		Control* child = as_sortable_control(get_child(i, false));
-		if (!child) {
-			continue;
-		}
-		fit_child_in_rect(child, Rect2(offset, size));
-	}
-}
-
-void GraphFrame::set_title(const String& p_title)
-{
-	if (title == p_title) {
-		return;
-	}
-	title = p_title;
-	if (title_label) {
-		title_label->set_text(title);
-	}
-	update_minimum_size();
-=======
->>>>>>> fix/remove-object
 }
 
 String GraphFrame::get_title() const { return title; }

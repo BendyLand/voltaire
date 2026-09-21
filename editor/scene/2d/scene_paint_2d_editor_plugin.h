@@ -132,10 +132,6 @@ class ScenePaint2DEditor : public Control
 
 	Vector2 _get_mouse_grid_cell();
 
-<<<<<<< HEAD
-	void _set_pinned(bool p_pinned, Node* p_pinned_node = nullptr);
-=======
->>>>>>> fix/remove-object
 	void _pinned_toggled(bool p_pressed);
 	void _scene_changed();
 

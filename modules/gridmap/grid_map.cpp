@@ -855,8 +855,6 @@ void GridMap::_navigation_map_changed(RID p_map)
 }
 #endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
 
-<<<<<<< HEAD
-=======
 void GridMap::_debug_update() {}
 
 void GridMap::_update_octant_navigation_debug_edge_connections_mesh(GridMap::OctantKey const&) {}
@@ -877,5 +875,4 @@ void GridMap::navmesh_parse_init() {}
 
 void GridMap::_debug_update_octants() {}
 
->>>>>>> fix/remove-object
 

@@ -33,43 +33,14 @@
 #include "openxr_binding_modifier_editor.h"
 #include "scene/gui/option_button.h"
 
-<<<<<<< HEAD
-void EditorPropertyActionSet::_set_read_only(bool p_read_only)
-{
-	options->set_disabled(p_read_only);
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyActionSet::set_option_button_clip(bool p_enable)
 {
 	options->set_clip_text(p_enable);
 }
 
-<<<<<<< HEAD
-void EditorPropertyBindingPath::_set_read_only(bool p_read_only)
-{
-	options->set_disabled(p_read_only);
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorPropertyBindingPath::set_option_button_clip(bool p_enable)
 {
 	options->set_clip_text(p_enable);
 }
 
-<<<<<<< HEAD
-void OpenXRBindingModifierEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		rem_binding_modifier_btn->set_button_icon(
-			get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 

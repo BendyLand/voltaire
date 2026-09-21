@@ -57,18 +57,6 @@ void TileDataEditor::_tile_set_changed_deferred_update()
 	}
 }
 
-<<<<<<< HEAD
-void GenericTilePolygonEditor::_center_view()
-{
-	panning = Vector2();
-	base_control->queue_redraw();
-	button_center_view->set_disabled(true);
-}
-
-void GenericTilePolygonEditor::_zoom_changed() { base_control->queue_redraw(); }
-
-=======
->>>>>>> fix/remove-object
 void GenericTilePolygonEditor::_snap_to_tile_shape(
 	Point2& r_point, float& r_current_snapped_dist, float p_snap_dist)
 {
@@ -126,33 +114,6 @@ void GenericTilePolygonEditor::_snap_point(Point2& r_point)
 	}
 }
 
-<<<<<<< HEAD
-void GenericTilePolygonEditor::_set_snap_option(int p_index)
-{
-	current_snap_option = p_index;
-	button_pixel_snap->set_button_icon(button_pixel_snap->get_popup()->get_item_icon(p_index));
-	snap_subdivision->set_visible(p_index == SNAP_GRID);
-
-	if (initializing) {
-		return;
-	}
-
-	base_control->queue_redraw();
-	_store_snap_options();
-}
-
-void GenericTilePolygonEditor::_toggle_expand(bool p_expand)
-{
-	if (p_expand) {
-		TileSetEditor::get_singleton()->add_expanded_editor(this);
-	}
-	else {
-		TileSetEditor::get_singleton()->remove_expanded_editor();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void GenericTilePolygonEditor::set_use_undo_redo(bool p_use_undo_redo)
 {
 	use_undo_redo = p_use_undo_redo;
@@ -171,44 +132,16 @@ void GenericTilePolygonEditor::set_multiple_polygon_mode(bool p_multiple_polygon
 	multiple_polygon_mode = p_multiple_polygon_mode;
 }
 
-<<<<<<< HEAD
-=======
 void TileDataDefaultEditor::_set_painted_value(
 	TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords, int p_alternative_tile)
 {
 }
 
->>>>>>> fix/remove-object
 void TileDataDefaultEditor::forward_draw_over_alternatives(TileAtlasView* p_tile_atlas_view,
 	TileSetAtlasSource* p_tile_set_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
 {
 }
 
-<<<<<<< HEAD
-void TileDataDefaultEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
-		tile_bool_checked = get_editor_theme_icon(SNAME("TileChecked"));
-		tile_bool_unchecked = get_editor_theme_icon(SNAME("TileUnchecked"));
-	} break;
-	}
-}
-
-TileDataDefaultEditor::TileDataDefaultEditor()
-{
-	label = memnew(Label);
-	label->set_text(TTR("Painting:"));
-	label->set_theme_type_variation("HeaderSmall");
-	add_child(label);
-
-	picker_button = memnew(Button);
-	picker_button->set_theme_type_variation(SceneStringName(FlatButton));
-	picker_button->set_toggle_mode(true);
-	picker_button->set_shortcut(ED_GET_SHORTCUT("tiles_editor/picker"));
-	toolbar->add_child(picker_button);
-=======
 void TileDataDefaultEditor::forward_draw_over_atlas(TileAtlasView* p_tile_atlas_view,
 	TileSetAtlasSource* p_tile_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
 {
@@ -223,7 +156,6 @@ void TileDataDefaultEditor::forward_painting_alternatives_gui_input(
 void TileDataDefaultEditor::forward_painting_atlas_gui_input(TileAtlasView* p_tile_atlas_view,
 	TileSetAtlasSource* p_tile_atlas_source, const Ref<InputEvent>& p_event)
 {
->>>>>>> fix/remove-object
 }
 
 TileDataDefaultEditor::~TileDataDefaultEditor()
@@ -308,18 +240,6 @@ void TileDataTerrainsEditor::draw_over_tile(
 	tile_set->draw_terrains(p_canvas_item, p_transform, tile_data);
 }
 
-<<<<<<< HEAD
-void TileDataTerrainsEditor::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_THEME_CHANGED: {
-		picker_button->set_button_icon(get_editor_theme_icon(SNAME("ColorPick")));
-	} break;
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 TileDataTerrainsEditor::~TileDataTerrainsEditor()
 {
 	toolbar->queue_free();
@@ -363,8 +283,6 @@ TileDataNavigationEditor::TileDataNavigationEditor()
 	add_child(polygon_editor);
 }
 
-<<<<<<< HEAD
-=======
 void TileDataCollisionEditor::_polygons_changed() {}
 
 void GenericTilePolygonEditor::set_tile_set(Ref<TileSet>) {}
@@ -431,5 +349,4 @@ void TileDataCollisionEditor::draw_over_tile(
 {
 }
 
->>>>>>> fix/remove-object
 

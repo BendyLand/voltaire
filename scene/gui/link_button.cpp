@@ -47,19 +47,6 @@ TextServer::StructuredTextParser LinkButton::get_structured_text_bidi_override()
 	return st_parser;
 }
 
-<<<<<<< HEAD
-void LinkButton::set_text_direction(Control::TextDirection p_text_direction)
-{
-	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		_shape();
-		queue_redraw();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 Control::TextDirection LinkButton::get_text_direction() const { return text_direction; }
 
 String LinkButton::get_language() const { return language; }

@@ -393,10 +393,6 @@ private:
 		bool userdatas_used[ParticlesShader::MAX_USERDATAS] = {};
 		uint32_t userdata_count = 0;
 
-<<<<<<< HEAD
-		virtual void set_code(const String& p_Code);
-=======
->>>>>>> fix/remove-object
 		virtual bool is_animated() const;
 		virtual void set_code(const String& p_Code);
 		virtual bool casts_shadows() const;

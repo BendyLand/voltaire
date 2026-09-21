@@ -122,11 +122,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-<<<<<<< HEAD
-	void setup(float p_min, float p_max, float p_step, bool p_allow_less, bool p_allow_greater,
-		bool p_degrees);
-=======
->>>>>>> fix/remove-object
 	virtual void update_property() override;
 
 	ParticleProcessMaterialMinMaxPropertyEditor();

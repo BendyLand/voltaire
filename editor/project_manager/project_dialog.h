@@ -137,12 +137,6 @@ private:
 	void _browse_project_path();
 	void _browse_install_path();
 
-<<<<<<< HEAD
-	void _project_path_selected(const String& p_path);
-	void _install_path_selected(const String& p_path);
-
-=======
->>>>>>> fix/remove-object
 	void _reset_name();
 	void _renderer_selected();
 	void _nonempty_confirmation_ok_pressed();

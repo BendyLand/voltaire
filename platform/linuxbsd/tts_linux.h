@@ -35,10 +35,6 @@
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 
 #ifdef SOWRAP_ENABLED
 #include "speechd-so_wrap.h"

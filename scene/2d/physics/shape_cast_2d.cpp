@@ -79,11 +79,6 @@ int ShapeCast2D::get_collision_count() const { return result.size(); }
 
 bool ShapeCast2D::is_colliding() const { return collided; }
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> fix/remove-object
 RID ShapeCast2D::get_collider_rid(int p_idx) const
 {
 	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), RID(), "No collider RID found.");
@@ -117,27 +112,10 @@ real_t ShapeCast2D::get_closest_collision_unsafe_fraction() const
 
 bool ShapeCast2D::is_enabled() const { return enabled; }
 
-<<<<<<< HEAD
-
-
-Ref<Shape2D> ShapeCast2D::get_shape() const { return shape; }
-
-
-
-bool ShapeCast2D::get_exclude_parent_body() const { return exclude_parent_body; }
-
-void ShapeCast2D::_shape_changed() { queue_redraw(); }
-
-
-
-
-
-=======
 Ref<Shape2D> ShapeCast2D::get_shape() const { return shape; }
 
 bool ShapeCast2D::get_exclude_parent_body() const { return exclude_parent_body; }
 
->>>>>>> fix/remove-object
 void ShapeCast2D::force_shapecast_update() { _update_shapecast_state(); }
 
 void ShapeCast2D::add_exception_rid(const RID& p_rid) { exclude.insert(p_rid); }

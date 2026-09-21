@@ -230,10 +230,7 @@ int MeshLibrary::get_last_unused_item_id() const
 
 void MeshLibrary::reset_state() { clear(); }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void MeshLibrary::create_item(int) {}
 

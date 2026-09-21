@@ -48,10 +48,6 @@ class SceneExporterGLTFPlugin : public EditorPlugin
 	ConfirmationDialog* _config_dialog = nullptr;
 	EditorFileDialog* _file_dialog = nullptr;
 
-<<<<<<< HEAD
-	void _popup_gltf_settings_dialog(const String& p_selected_path);
-=======
->>>>>>> fix/remove-object
 	void _popup_gltf_export_dialog();
 
 public:

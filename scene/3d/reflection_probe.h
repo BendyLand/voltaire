@@ -91,15 +91,8 @@ public:
 	void set_mesh_lod_threshold(float p_pixels);
 	float get_mesh_lod_threshold() const;
 
-<<<<<<< HEAD
-	void set_size(const Vector3& p_size);
 	Vector3 get_size() const;
 
-	void set_origin_offset(const Vector3& p_offset);
-=======
-	Vector3 get_size() const;
-
->>>>>>> fix/remove-object
 	Vector3 get_origin_offset() const;
 
 	void set_as_interior(bool p_enable);

@@ -121,11 +121,6 @@ public:
 
 class EditorFileSystemImportFormatSupportQuery : public RefCounted
 {
-<<<<<<< HEAD
-protected:
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 };
 
 class EditorFileSystem : public Node
@@ -252,16 +247,6 @@ class EditorFileSystem : public Node
 	List<String> sources_changed;
 	List<ItemAction> scan_actions;
 
-<<<<<<< HEAD
-	bool _update_scan_actions();
-
-	void _update_extensions();
-
-	Error _reimport_group(const String& p_group_file, const Vector<String>& p_files);
-
-	bool _test_for_reimport(const String& p_path, const String& p_expected_import_md5);
-=======
->>>>>>> fix/remove-object
 	bool _is_test_for_reimport_needed(const String& p_path, uint64_t p_last_modification_time,
 		uint64_t p_modification_time, uint64_t p_last_import_modification_time,
 		uint64_t p_import_modification_time, const Vector<String>& p_import_dest_paths);
@@ -326,15 +311,6 @@ class EditorFileSystem : public Node
 	HashMap<String, String> file_icon_cache;
 
 	bool refresh_queued = false;
-<<<<<<< HEAD
-
-	Error _copy_file(const String& p_from, const String& p_to);
-	bool _copy_directory(
-		const String& p_from, const String& p_to, HashMap<String, String>* p_files);
-	void _queue_refresh_filesystem();
-	void _refresh_filesystem();
-=======
->>>>>>> fix/remove-object
 
 	struct ImportThreadData
 	{
@@ -372,11 +348,6 @@ public:
 	EditorFileSystemDirectory* find_file(const String& p_file, int* r_index) const;
 	ResourceUID::ID get_file_uid(const String& p_path) const;
 
-<<<<<<< HEAD
-	void reimport_files(const Vector<String>& p_files);
-
-=======
->>>>>>> fix/remove-object
 	bool is_group_file(const String& p_path) const;
 
 	static bool _should_skip_directory(const String& p_path);

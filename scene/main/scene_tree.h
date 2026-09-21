@@ -200,10 +200,6 @@ private:
 
 	_FORCE_INLINE_ void _update_group_order(SceneTreeGroup& g);
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object
 	Node* current_scene = nullptr;
 
 	Color debug_collisions_color;
@@ -345,8 +341,7 @@ public:
 	void set_pause(bool p_enabled);
 	bool is_paused() const;
 	void set_suspend(bool p_enabled);
-	bool is_suspended() const
-;
+	bool is_suspended() const;
 
 #ifdef DEBUG_ENABLED
 	void set_debug_collisions_hint(bool p_enabled);

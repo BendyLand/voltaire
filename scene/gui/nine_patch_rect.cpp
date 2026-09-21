@@ -58,15 +58,6 @@ Size2 NinePatchRect::get_minimum_size() const
 	return Size2(margin[SIDE_LEFT] + margin[SIDE_RIGHT], margin[SIDE_TOP] + margin[SIDE_BOTTOM]);
 }
 
-<<<<<<< HEAD
-void NinePatchRect::_texture_changed()
-{
-	queue_redraw();
-	update_minimum_size();
-}
-
-=======
->>>>>>> fix/remove-object
 Ref<Texture2D> NinePatchRect::get_texture() const { return texture; }
 
 int NinePatchRect::get_patch_margin(Side p_side) const

@@ -71,12 +71,6 @@ class GroupSettingsEditor : public VBoxContainer
 
 	void _add_group();
 	void _add_group(const String& p_name, const String& p_description);
-<<<<<<< HEAD
-
-	void _modify_references(
-		const StringName& p_name, const StringName& p_new_name, bool p_is_rename);
-=======
->>>>>>> fix/remove-object
 
 	void _confirm_rename();
 	void _confirm_delete();
@@ -91,21 +85,10 @@ protected:
 
 public:
 	LineEdit* get_name_box() const;
-<<<<<<< HEAD
-	void show_message(const String& p_message);
-
-	void remove_references(const StringName& p_name);
-	void rename_references(const StringName& p_old_name, const StringName& p_new_name);
 
 	bool remove_node_references(Node* p_node, const StringName& p_name);
 	bool rename_node_references(
 
-=======
-
-	bool remove_node_references(Node* p_node, const StringName& p_name);
-	bool rename_node_references(
-
->>>>>>> fix/remove-object
 		Node* p_node, const StringName& p_old_name, const StringName& p_new_name);
 
 	void update_groups();

@@ -65,10 +65,6 @@ private:
 	void _theme_changed();
 	OpenXRActionEditor* _add_action_editor(const Ref<OpenXRAction>& p_action);
 
-<<<<<<< HEAD
-	void _on_toggle_expand();
-=======
->>>>>>> fix/remove-object
 	void _on_action_set_name_changed(const String& p_new_text);
 	void _on_action_set_localized_name_changed(const String& p_new_text);
 	void _on_action_set_priority_changed(const double p_new_value);

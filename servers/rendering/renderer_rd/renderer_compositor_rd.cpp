@@ -176,11 +176,6 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
-<<<<<<< HEAD
-		blit.index_buffer = RD::get_singleton()->index_buffer_create(
-			6, RenderingDevice::INDEX_BUFFER_FORMAT_UINT16, pv);
-=======
->>>>>>> fix/remove-object
 		blit.array = RD::get_singleton()->index_array_create(blit.index_buffer, 0, 6);
 		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
 	}
@@ -337,8 +332,4 @@ RendererCompositorRD::~RendererCompositorRD()
 	ShaderRD::set_shader_cache_res_dir(String());
 }
 
-<<<<<<< HEAD
-
-=======
 RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long) { return RendererCompositorRD::BlitPipelines(); }
->>>>>>> fix/remove-object

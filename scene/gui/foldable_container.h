@@ -103,15 +103,9 @@ private:
 	void _draw_flippable_stylebox(const Ref<StyleBox> p_stylebox, const Rect2& p_rect);
 
 protected:
-<<<<<<< HEAD
-	virtual void gui_input(const Ref<InputEvent>& p_event);
-	virtual String get_tooltip(const Point2& p_pos) const;
-	virtual bool has_point(const Point2& p_point) const override;
-=======
 	virtual bool has_point(const Point2& p_point) const override;
 	virtual void gui_input(const Ref<InputEvent>& p_event);
 	virtual String get_tooltip(const Point2& p_pos) const;
->>>>>>> fix/remove-object
 	void _notification(int p_what);
 
 public:

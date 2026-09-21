@@ -44,11 +44,6 @@ class EditorFileServer
 		HashMap<String, uint64_t>& files_to_send, HashMap<String, uint64_t>& cached_files);
 
 public:
-<<<<<<< HEAD
-	void poll();
-
-=======
->>>>>>> fix/remove-object
 	void start();
 	void stop();
 

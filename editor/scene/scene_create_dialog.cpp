@@ -68,12 +68,6 @@ void SceneCreateDialog::on_type_picked()
 	if (node_type_other->is_pressed()) {
 		validation_panel->update();
 	}
-<<<<<<< HEAD
-	else {
-		node_type_other->set_pressed(true); // Calls validation_panel->update() via group.
-	}
-=======
->>>>>>> fix/remove-object
 }
 
 String SceneCreateDialog::get_scene_path() const { return scene_name; }

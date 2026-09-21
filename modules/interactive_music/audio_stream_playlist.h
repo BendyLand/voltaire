@@ -71,10 +71,6 @@ public:
 	virtual bool is_meta_stream() const override { return true; }
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 };
 
 ///////////////////////////////////////

@@ -54,52 +54,6 @@ void IKModifier3D::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void IKModifier3D::_set_active(bool p_active)
-{
-	if (p_active) {
-		reset();
-	}
-}
-
-void IKModifier3D::_rest_updated()
-{
-	_make_all_joints_dirty();
-	if (is_inside_tree()) {
-		Skeleton3D* skeleton = get_skeleton();
-		if (skeleton) {
-			for (uint32_t i = 0; i < settings.size(); i++) {
-				_init_joints(skeleton, i);
-			}
-		}
-	}
-#ifdef TOOLS_ENABLED
-	_update_mutable_info();
-	_make_gizmo_dirty();
-#endif // TOOLS_ENABLED
-}
-
-void IKModifier3D::_process_modification(double p_delta)
-{
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	_process_ik(skeleton, p_delta);
-}
-
-#ifdef TOOLS_ENABLED
-
-void IKModifier3D::_redraw_gizmo()
-{
-	update_gizmos();
-	gizmo_dirty = false;
-}
-#endif // TOOLS_ENABLED
-
-=======
->>>>>>> fix/remove-object
 void IKModifier3D::set_mutable_bone_axes(bool p_enabled)
 {
 	mutable_bone_axes = p_enabled;

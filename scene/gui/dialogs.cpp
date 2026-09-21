@@ -34,11 +34,8 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-<<<<<<< HEAD
-=======
 Size2 AcceptDialog::_get_contents_minimum_size() const { return Size2(); }
 
->>>>>>> fix/remove-object
 void AcceptDialog::_input_from_window(const Ref<InputEvent>& p_event)
 {
 	if (close_on_escape && p_event->is_action_pressed(SNAME("ui_close_dialog"), false, true)) {
@@ -133,11 +130,6 @@ void AcceptDialog::_update_ok_text()
 
 void AcceptDialog::set_swap_cancel_ok(bool p_swap) { swap_cancel_ok = p_swap; }
 
-<<<<<<< HEAD
-AcceptDialog::~AcceptDialog() {}
-
-=======
->>>>>>> fix/remove-object
 void ConfirmationDialog::set_cancel_button_text(String p_cancel_button_text)
 {
 	cancel->set_text(p_cancel_button_text);

@@ -39,22 +39,9 @@ class MultiplayerEditorDebugger : public EditorDebuggerPlugin
 {
 private:
 	HashMap<int, EditorNetworkProfiler*> profilers;
-<<<<<<< HEAD
-
-	void _open_request(const String& p_path);
-	void _profiler_activate(bool p_enable, int p_session_id);
-
-protected:
-	static void _bind_methods();
 
 public:
 	virtual bool has_capture(const String& p_capture) const override;
-	virtual void setup_session(int p_session_id) override;
-=======
-
-public:
-	virtual bool has_capture(const String& p_capture) const override;
->>>>>>> fix/remove-object
 };
 
 class ReplicationEditor;
@@ -65,21 +52,8 @@ private:
 	ReplicationEditor* repl_editor = nullptr;
 	Ref<MultiplayerEditorDebugger> debugger;
 
-<<<<<<< HEAD
-	void _open_request(const String& p_path);
-	void _node_removed(Node* p_node);
-
-	void _pinned();
-
-protected:
-	void _notification(int p_what);
-
-public:
-	MultiplayerEditorPlugin();
-=======
 public:
 	MultiplayerEditorPlugin() = default;
->>>>>>> fix/remove-object
 };
 
 

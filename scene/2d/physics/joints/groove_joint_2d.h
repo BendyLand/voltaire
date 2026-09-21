@@ -43,10 +43,6 @@ protected:
 	void _notification(int p_what);
 	virtual void _configure_joint(
 		RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b) override;
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	void set_length(real_t p_length);

@@ -524,8 +524,6 @@ GodotSpace2D::~GodotSpace2D()
 	memdelete(direct_access);
 }
 
-<<<<<<< HEAD
-=======
 bool GodotSpace2D::test_body_motion(GodotBody2D* p_body,
 	const PhysicsServer2DTypes::MotionParameters& p_parameters,
 	PhysicsServer2DTypes::MotionResult* r_result)
@@ -561,5 +559,4 @@ bool GodotPhysicsDirectSpaceState2D::rest_info(
 	return false;
 }
 
->>>>>>> fix/remove-object
 

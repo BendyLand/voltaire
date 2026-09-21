@@ -2236,7 +2236,6 @@ double TextServerAdvanced::_font_get_ascent(const RID& p_font_rid, int64_t p_siz
 			return ffsd->ascent * (double)p_size / (double)fd->fixed_size;
 		}
 		else {
-
 			return ffsd->ascent * Math::round((double)p_size / (double)fd->fixed_size);
 		}
 	}
@@ -4379,11 +4378,8 @@ RID TextServerAdvanced::_shaped_text_get_parent(const RID& p_shaped) const
 	return sd->parent;
 }
 
-<<<<<<< HEAD
-=======
 bool TextServerAdvanced::_shaped_text_shape(const RID& p_shaped) { return true; }
 
->>>>>>> fix/remove-object
 double TextServerAdvanced::_shaped_text_tab_align(
 	const RID& p_shaped, const PackedFloat32Array& p_tab_stops)
 {

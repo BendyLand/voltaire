@@ -90,12 +90,9 @@ String get_default_project_icon()
 	return String();
 }
 
-<<<<<<< HEAD
-=======
 void editor_register_icons(const Ref<Theme>& p_theme, bool p_dark_theme, float p_scale,
 	int p_thumb_size, float p_font_scale)
 {
 }
 
->>>>>>> fix/remove-object
 

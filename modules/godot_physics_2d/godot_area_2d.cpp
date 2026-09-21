@@ -150,8 +150,5 @@ GodotArea2D::GodotArea2D()
 GodotArea2D::~GodotArea2D() {}
 
 
-<<<<<<< HEAD
-=======
 
 void GodotArea2D::call_queries() {}
->>>>>>> fix/remove-object

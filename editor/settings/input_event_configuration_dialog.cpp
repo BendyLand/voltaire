@@ -258,10 +258,7 @@ void InputEventConfigurationDialog::set_allowed_input_types(int p_type_masks)
 	event_listener->set_allowed_input_types(p_type_masks);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void InputEventConfigurationDialog::_set_event(Ref<InputEvent> const&, Ref<InputEvent> const&, bool) {}
 

@@ -599,10 +599,7 @@ void NavMap2D::set_use_async_iterations(bool p_enabled)
 
 bool NavMap2D::get_use_async_iterations() const { return use_async_iterations; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 NavMap2D::~NavMap2D() {}
 

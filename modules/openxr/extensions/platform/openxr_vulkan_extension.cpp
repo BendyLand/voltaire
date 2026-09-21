@@ -472,8 +472,6 @@ String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_form
 	}
 }
 
-<<<<<<< HEAD
-=======
 bool OpenXRVulkanExtension::create_vulkan_instance(
 	const VkInstanceCreateInfo* p_create_info, VkInstance_T** r_instance)
 {
@@ -498,5 +496,4 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain,
 	return true;
 }
 
->>>>>>> fix/remove-object
 

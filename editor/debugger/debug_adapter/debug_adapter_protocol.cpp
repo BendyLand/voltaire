@@ -114,35 +114,6 @@ Error DAPeer::handle_data()
 	return OK;
 }
 
-<<<<<<< HEAD
-Error DebugAdapterProtocol::on_client_connected()
-{
-	ERR_FAIL_COND_V_MSG(clients.size() >= DAP_MAX_CLIENTS, FAILED, "Max client limits reached");
-
-	Ref<StreamPeerTCP> tcp_peer = server->take_connection();
-	ERR_FAIL_COND_V_MSG(tcp_peer.is_null(), FAILED, "Failed to take incoming DAP connection.");
-	tcp_peer->set_no_delay(true);
-	Ref<DAPeer> peer = memnew(DAPeer);
-	peer->connection = tcp_peer;
-	clients.push_back(peer);
-
-	EditorDebuggerNode::get_singleton()->get_default_debugger()->set_move_to_foreground(false);
-	EditorNode::get_log()->add_message("[DAP] Connection Taken", EditorLog::MSG_TYPE_EDITOR);
-	return OK;
-}
-
-void DebugAdapterProtocol::on_client_disconnected(const Ref<DAPeer>& p_peer)
-{
-	clients.erase(p_peer);
-	if (!clients.size()) {
-		reset_ids();
-		EditorDebuggerNode::get_singleton()->get_default_debugger()->set_move_to_foreground(true);
-	}
-	EditorNode::get_log()->add_message("[DAP] Disconnected", EditorLog::MSG_TYPE_EDITOR);
-}
-
-=======
->>>>>>> fix/remove-object
 void DebugAdapterProtocol::reset_current_info()
 {
 	_current_request = "";
@@ -273,40 +244,6 @@ void DebugAdapterProtocol::on_debug_breakpoint_toggled(
 	notify_breakpoint(breakpoint, p_enabled);
 }
 
-<<<<<<< HEAD
-void DebugAdapterProtocol::poll()
-{
-	if (server->is_connection_available()) {
-		on_client_connected();
-	}
-	List<Ref<DAPeer>> to_delete;
-	for (const Ref<DAPeer>& peer : clients) {
-		peer->connection->poll();
-		StreamPeerTCP::Status status = peer->connection->get_status();
-		if (status == StreamPeerTCP::STATUS_NONE || status == StreamPeerTCP::STATUS_ERROR) {
-			to_delete.push_back(peer);
-		}
-		else {
-			_current_peer = peer;
-			Error err = peer->handle_data();
-			if (err != OK && err != ERR_BUSY) {
-				to_delete.push_back(peer);
-			}
-			err = peer->send_data();
-			if (err != OK && err != ERR_BUSY) {
-				to_delete.push_back(peer);
-			}
-		}
-	}
-
-	for (const Ref<DAPeer>& peer : to_delete) {
-		on_client_disconnected(peer);
-	}
-	to_delete.clear();
-}
-
-=======
->>>>>>> fix/remove-object
 void DebugAdapterProtocol::stop()
 {
 	for (const Ref<DAPeer>& peer : clients) {
@@ -318,9 +255,6 @@ void DebugAdapterProtocol::stop()
 	_initialized = false;
 }
 
-<<<<<<< HEAD
-DebugAdapterProtocol::~DebugAdapterProtocol() {}
-=======
 void DebugAdapterProtocol::notify_continued() {}
 
 bool DebugAdapterProtocol::process_message(const String& p_message) {}
@@ -332,7 +266,6 @@ void DebugAdapterProtocol::notify_stopped_step() {}
 void DebugAdapterProtocol::notify_stopped_paused() {}
 
 void DebugAdapterProtocol::notify_stopped_exception(const String& p_error) {}
->>>>>>> fix/remove-object
 
 void DebugAdapterProtocol::notify_exited(const int& p_exit_code) {}
 

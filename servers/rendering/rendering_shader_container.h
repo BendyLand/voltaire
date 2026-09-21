@@ -348,7 +348,3 @@ public:
 	virtual ShaderSpirvVersion get_shader_spirv_version() const = 0;
 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fix/remove-object

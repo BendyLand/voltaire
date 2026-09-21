@@ -342,23 +342,6 @@ void EditorFeatureProfileManager::_export_profile(const String& p_path)
 	}
 }
 
-<<<<<<< HEAD
-void EditorFeatureProfileManager::_save_and_update()
-{
-	String edited_path = _get_selected_profile();
-	ERR_FAIL_COND(edited_path.is_empty());
-	ERR_FAIL_COND(edited.is_null());
-
-	edited->save_to_file(EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(
-		edited_path + ".profile"));
-
-	if (edited == current) {
-		update_timer->start();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void EditorFeatureProfileManager::notify_changed() { _emit_current_profile_changed(); }
 
 Ref<EditorFeatureProfile> EditorFeatureProfileManager::get_current_profile() { return current; }
@@ -367,10 +350,7 @@ String EditorFeatureProfileManager::get_current_profile_name() const { return cu
 
 EditorFeatureProfileManager* EditorFeatureProfileManager::singleton = nullptr;
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 Error EditorFeatureProfile::save_to_file(String const&) {}
 

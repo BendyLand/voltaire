@@ -185,20 +185,6 @@ Ref<SceneReplicationConfig> MultiplayerSynchronizer::get_replication_config()
 	return replication_config;
 }
 
-<<<<<<< HEAD
-void MultiplayerSynchronizer::set_root_path(const NodePath& p_path)
-{
-	if (p_path == root_path) {
-		return;
-	}
-	_stop();
-	root_path = p_path;
-	_start();
-	update_configuration_warnings();
-}
-
-=======
->>>>>>> fix/remove-object
 NodePath MultiplayerSynchronizer::get_root_path() const { return root_path; }
 
 void MultiplayerSynchronizer::set_multiplayer_authority(int p_peer_id, bool p_recursive)

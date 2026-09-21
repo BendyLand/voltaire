@@ -175,11 +175,6 @@ bool Control::_property_can_revert(const StringName& p_name) const
 	return false;
 }
 
-<<<<<<< HEAD
-// Global relations.
-
-=======
->>>>>>> fix/remove-object
 Control* Control::get_parent_control() const
 {
 	ERR_READ_THREAD_GUARD_V(nullptr);
@@ -441,11 +436,6 @@ void Control::_compute_layout_rect(Rect2 p_rect, bool p_keep_offsets)
 	}
 }
 
-<<<<<<< HEAD
-/// Presets and layout modes.
-
-=======
->>>>>>> fix/remove-object
 int Control::_get_anchors_layout_preset() const
 {
 	// If this is a layout mode that doesn't rely on anchors, avoid excessive checks.
@@ -1320,11 +1310,8 @@ uint32_t Control::get_h_size_flags() const
 	return data.h_size_flags;
 }
 
-<<<<<<< HEAD
-=======
 void Control::set_v_size_flags(uint32_t p_flags) {}
 
->>>>>>> fix/remove-object
 uint32_t Control::get_v_size_flags() const
 {
 	ERR_READ_THREAD_GUARD_V(SIZE_EXPAND_FILL);
@@ -1337,11 +1324,6 @@ real_t Control::get_stretch_ratio() const
 	return data.expand;
 }
 
-<<<<<<< HEAD
-// Offset transform.
-
-=======
->>>>>>> fix/remove-object
 bool Control::is_offset_transform_enabled() const
 {
 	return data.offset_transform != nullptr && data.offset_transform->enabled;
@@ -1427,11 +1409,6 @@ Transform2D Control::get_offset_transform() const
 	return offset_xform;
 }
 
-<<<<<<< HEAD
-// Input events.
-
-=======
->>>>>>> fix/remove-object
 void Control::accept_event()
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1446,11 +1423,8 @@ bool Control::has_point(const Point2& p_point) const
 	return Rect2(Point2(), get_size()).has_point(p_point);
 }
 
-<<<<<<< HEAD
-=======
 void Control::set_mouse_filter(MouseFilter p_filter) {}
 
->>>>>>> fix/remove-object
 Control::MouseFilter Control::get_mouse_filter() const
 {
 	ERR_READ_THREAD_GUARD_V(MOUSE_FILTER_IGNORE);
@@ -1554,19 +1528,6 @@ String Control::get_accessibility_container_name(const Node* p_node) const
 	return ret;
 }
 
-<<<<<<< HEAD
-void Control::set_accessibility_name(const String& p_name)
-{
-	ERR_THREAD_GUARD
-	if (data.accessibility_name != p_name) {
-		data.accessibility_name = p_name;
-		queue_accessibility_update();
-		update_configuration_warnings();
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 void Control::set_accessibility_description(const String& p_description)
 {
 	ERR_THREAD_GUARD
@@ -1791,11 +1752,6 @@ Control* Control::find_valid_focus_neighbor(Side p_side) const
 	return const_cast<Control*>(this)->_get_focus_neighbor(p_side);
 }
 
-<<<<<<< HEAD
-// Rendering.
-
-=======
->>>>>>> fix/remove-object
 void Control::set_default_cursor_shape(CursorShape p_shape)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -1893,22 +1849,14 @@ Ref<Theme> Control::get_theme() const
 	return data.theme;
 }
 
-<<<<<<< HEAD
-=======
 void Control::set_theme_type_variation(const StringName& p_theme_type) {}
 
->>>>>>> fix/remove-object
 StringName Control::get_theme_type_variation() const
 {
 	ERR_READ_THREAD_GUARD_V(StringName());
 	return data.theme_type_variation;
 }
 
-<<<<<<< HEAD
-/// Theme property lookup.
-
-=======
->>>>>>> fix/remove-object
 #ifdef TOOLS_ENABLED
 Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 {
@@ -1916,13 +1864,9 @@ Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
 }
 #endif // TOOLS_ENABLED
 
-<<<<<<< HEAD
-/// Local property overrides.
-=======
 void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
 
 void Control::add_theme_font_override(const StringName& p_name, Font* rp_font) {}
->>>>>>> fix/remove-object
 
 void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
 {
@@ -2074,11 +2018,6 @@ void Control::end_bulk_theme_override()
 	_notify_theme_override_changed();
 }
 
-<<<<<<< HEAD
-// Internationalization.
-
-=======
->>>>>>> fix/remove-object
 void Control::set_layout_direction(Control::LayoutDirection p_direction)
 {
 	ERR_MAIN_THREAD_GUARD;
@@ -2191,8 +2130,6 @@ void Control::_ensure_allocated_offset_transform()
 	data.offset_transform = memnew(Data::OffsetTransform);
 }
 
-<<<<<<< HEAD
-=======
 void Control::_size_changed() {}
 
 void Control::_notify_theme_override_changed() {}
@@ -2252,5 +2189,4 @@ Control::LayoutMode Control::_get_layout_mode() const {}
 
 Control* Control::_get_focus_neighbor(Side, int) {}
 
->>>>>>> fix/remove-object
 

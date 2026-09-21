@@ -45,8 +45,6 @@ ToneMapper::~ToneMapper()
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::ToneMapper::tonemapper(
 	RID p_source_color, RID p_dst_framebuffer, const TonemapSettings& p_settings)
 {
@@ -57,5 +55,4 @@ void RendererRD::ToneMapper::tonemapper_subpass(long p_subpass, RID p_framebuffe
 {
 }
 
->>>>>>> fix/remove-object
 

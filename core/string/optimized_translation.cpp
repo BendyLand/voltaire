@@ -323,9 +323,4 @@ int OptimizedTranslation::get_message_count() const
 	return 0;
 }
 
-<<<<<<< HEAD
-void OptimizedTranslation::_bind_methods() {}
-
-=======
->>>>>>> fix/remove-object
 

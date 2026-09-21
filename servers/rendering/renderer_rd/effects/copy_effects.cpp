@@ -40,9 +40,6 @@ using namespace RendererRD;
 CopyEffects* CopyEffects::singleton = nullptr;
 
 CopyEffects* CopyEffects::get_singleton() { return singleton; }
-<<<<<<< HEAD
-
-=======
 
 void CopyEffects::copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
 	bool p_flip_y, bool p_force_luminance, bool p_all_source, bool p_8_bit_dst, bool p_alpha_to_one,
@@ -57,7 +54,6 @@ void CopyEffects::copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffe
 {
 }
 
->>>>>>> fix/remove-object
 static constexpr int _compute_dispatch_size(bool p_use_array)
 {
 	constexpr int SIZE = 320;
@@ -78,9 +74,6 @@ static constexpr int _compute_dispatch_size(bool p_use_array)
 	return (size + GROUP - 1) / GROUP;
 }
 
-<<<<<<< HEAD
-
-=======
 void RendererRD::CopyEffects::make_mipmap(RID p_source, RID p_dest, const Vector2i& p_size) {}
 
 void RendererRD::CopyEffects::gaussian_glow(RID p_source, RID p_dest, const Vector2i& p_size,
@@ -128,4 +121,3 @@ void RendererRD::CopyEffects::copy_depth_to_rect(
 void RendererRD::CopyEffects::copy_cubemap_to_octmap(RID p_source, RID p_dest, float p_lod) {}
 
 
->>>>>>> fix/remove-object

@@ -48,30 +48,8 @@ class NoisePreview : public Control
 	Button* _3d_space_switch = nullptr;
 
 public:
-<<<<<<< HEAD
-	NoisePreview()
-	{
-		set_custom_minimum_size(Size2(0, EDSCALE * PREVIEW_HEIGHT));
-
-		_texture_rect = memnew(TextureRect);
-		_texture_rect->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-		_texture_rect->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_COVERED);
-		add_child(_texture_rect);
-
-		_3d_space_switch = memnew(Button);
-		_3d_space_switch->set_text(TTR("3D"));
-		_3d_space_switch->set_tooltip_text(
-			TTR("Toggles whether the noise preview is computed in 3D space."));
-		_3d_space_switch->set_toggle_mode(true);
-		_3d_space_switch->set_offset(SIDE_LEFT, PADDING_3D_SPACE_SWITCH);
-		_3d_space_switch->set_offset(SIDE_TOP, PADDING_3D_SPACE_SWITCH);
-		add_child(_3d_space_switch);
-	}
-
-=======
 	NoisePreview() = default;
 
->>>>>>> fix/remove-object
 	void set_noise(Ref<Noise> noise)
 	{
 		if (_noise == noise) {
@@ -108,10 +86,6 @@ private:
 	}
 };
 
-<<<<<<< HEAD
-
-=======
 String NoiseEditorPlugin::get_plugin_name() const { return String(); }
 
 NoiseEditorPlugin::NoiseEditorPlugin() {}
->>>>>>> fix/remove-object

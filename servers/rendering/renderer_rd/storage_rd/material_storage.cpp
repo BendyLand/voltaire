@@ -274,14 +274,11 @@ void MaterialStorage::ShaderData::set_default_texture_parameter(
 	}
 }
 
-<<<<<<< HEAD
-=======
 void RendererRD::MaterialStorage::ShaderData::get_instance_param_list(
 	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
 {
 }
 
->>>>>>> fix/remove-object
 bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param) const
 {
 	if (!uniforms.has(p_param)) {
@@ -543,11 +540,6 @@ void MaterialStorage::MaterialData::set_as_used()
 	}
 }
 
-<<<<<<< HEAD
-/* TextureBlit SHADER */
-
-=======
->>>>>>> fix/remove-object
 bool MaterialStorage::TexBlitShaderData::is_animated() const { return false; }
 
 bool MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }

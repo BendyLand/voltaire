@@ -39,63 +39,8 @@
 #include "scene/gui/label.h"
 #include "scene/gui/texture_rect.h"
 
-<<<<<<< HEAD
-VBoxContainer* EditorResourceTooltipPlugin::make_default_tooltip(const String& p_resource_path)
-{
-	VBoxContainer* vb = memnew(VBoxContainer);
-	vb->add_theme_constant_override("separation", -4 * EDSCALE);
-	{
-		Label* label = memnew(Label(p_resource_path.get_file()));
-		vb->add_child(label);
-	}
-
-	ResourceUID::ID id = EditorFileSystem::get_singleton()->get_file_uid(p_resource_path);
-	if (id != ResourceUID::INVALID_ID) {
-		Label* label = memnew(Label(ResourceUID::get_singleton()->id_to_text(id)));
-		vb->add_child(label);
-	}
-
-	{
-		Ref<FileAccess> f = FileAccess::open(p_resource_path, FileAccess::READ);
-		if (f.is_valid()) {
-			Label* label =
-				memnew(Label(vformat(TTR("Size: %s"), String::humanize_size(f->get_length()))));
-			vb->add_child(label);
-		}
-		else {
-			Label* label = memnew(Label(TTR("Invalid file or broken link.")));
-			label->add_theme_color_override(SceneStringName(font_color),
-				EditorNode::get_singleton()->get_gui_base()->get_theme_color(
-					SNAME("error_color"), EditorStringName(Editor)));
-			vb->add_child(label);
-			return vb;
-		}
-	}
-
-	if (ResourceLoader::exists(p_resource_path)) {
-		String type = ResourceLoader::get_resource_type(p_resource_path);
-		Label* label = memnew(Label(vformat(TTR("Type: %s"), type)));
-		vb->add_child(label);
-	}
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	if (da->is_link(p_resource_path)) {
-		Label* link = memnew(Label(vformat(TTR("Link to: %s"), da->read_link(p_resource_path))));
-		vb->add_child(link);
-	}
-	return vb;
-}
-
-// EditorTextureTooltipPlugin
-
 bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const { return true; }
 
-// EditorAudioStreamTooltipPlugin
-
-=======
-bool EditorTextureTooltipPlugin::handles(const String& p_resource_type) const { return true; }
-
->>>>>>> fix/remove-object
 bool EditorAudioStreamTooltipPlugin::handles(const String& p_resource_type) const { return true; }
 
 bool EditorResourceTooltipPlugin::handles(const String& p_type) const { return false; }

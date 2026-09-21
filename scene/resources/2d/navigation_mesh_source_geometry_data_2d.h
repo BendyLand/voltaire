@@ -52,10 +52,6 @@ private:
 	Vector<ProjectedObstruction> _projected_obstructions;
 
 protected:
-<<<<<<< HEAD
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 
 public:
 	struct ProjectedObstruction

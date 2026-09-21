@@ -150,8 +150,6 @@ void JoltJobSystem::_reclaim_jobs()
 void JoltJobSystem::post_step() { _reclaim_jobs(); }
 
 
-<<<<<<< HEAD
-=======
 
 void JoltJobSystem::Job::queue() {}
 
@@ -162,4 +160,3 @@ JoltJobSystem::JoltJobSystem() {}
 JoltJobSystem::Job::~Job() {}
 
 void JoltJobSystem::flush_timings() {}
->>>>>>> fix/remove-object

@@ -31,10 +31,6 @@
 #pragma once
 
 #include "core/io/resource.h"
-<<<<<<< HEAD
-#include "core/templates/mem_unique_ptr.h"
-=======
->>>>>>> fix/remove-object
 
 class Control;
 class CreateDialog;
@@ -72,16 +68,7 @@ class EditorInterface
 	SceneTreeDialog* node_selector = nullptr;
 	CreateDialog* create_dialog = nullptr;
 
-<<<<<<< HEAD
-	// Editor tools.
-
-	AABB _calculate_aabb_for_scene(Node* p_node, AABB& p_scene_aabb);
-
 protected:
-	static void _bind_methods();
-=======
-protected:
->>>>>>> fix/remove-object
 
 public:
 	static EditorInterface* get_singleton() { return singleton; }
@@ -140,14 +127,6 @@ public:
 
 	// Object/Resource/Node editing.
 
-<<<<<<< HEAD
-	void edit_resource(const Ref<Resource>& p_resource);
-	void edit_node(Node* p_node);
-	void open_scene_from_path(const String& scene_path, bool p_set_inherited = false);
-	void reload_scene_from_path(const String& scene_path);
-
-=======
->>>>>>> fix/remove-object
 	PackedStringArray get_open_scenes() const;
 	PackedStringArray get_unsaved_scenes() const;
 

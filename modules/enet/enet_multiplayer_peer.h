@@ -85,15 +85,9 @@ private:
 	void _pop_current_packet();
 	void _disconnect_inactive_peers();
 	void _destroy_unused(ENetPacket* p_packet);
-<<<<<<< HEAD
 
 	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
 
-=======
-
-	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
-
->>>>>>> fix/remove-object
 protected:
 
 public:

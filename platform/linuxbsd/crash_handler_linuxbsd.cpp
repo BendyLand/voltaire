@@ -99,9 +99,6 @@ void CrashHandler::disable()
 	disabled = true;
 }
 
-<<<<<<< HEAD
-=======
 void CrashHandler::initialize() {}
 
->>>>>>> fix/remove-object
 

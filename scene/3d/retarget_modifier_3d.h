@@ -75,26 +75,12 @@ private:
 	void _force_update_child_skeletons();
 #endif // TOOLS_ENABLED
 
-<<<<<<< HEAD
-	void cache_rests_with_reset();
-	void cache_rests();
-	Vector<RetargetBoneInfo> cache_bone_global_rests(Skeleton3D* p_skeleton);
-	Vector<RetargetBoneInfo> cache_bone_rests(Skeleton3D* p_skeleton);
-=======
->>>>>>> fix/remove-object
 	Vector<RetargetBoneInfo> get_humanoid_bone_rests(Skeleton3D* p_skeleton);
 
 	void _retarget_global_pose();
 	void _retarget_pose();
 
 protected:
-<<<<<<< HEAD
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
-	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
-
-	static void _bind_methods();
-=======
->>>>>>> fix/remove-object
 	virtual void _notification(int p_what);
 	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
 

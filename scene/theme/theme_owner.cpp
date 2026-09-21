@@ -33,8 +33,6 @@
 #include "scene/theme/theme_db.h"
 #include "theme_owner.h"
 
-<<<<<<< HEAD
-=======
 Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
 {
 	Node n = Node();
@@ -47,7 +45,6 @@ Ref<Theme> ThemeOwner::_get_owner_node_theme(Node* p_owner_node) const
 	return t;
 }
 
->>>>>>> fix/remove-object
 ThemeContext* ThemeOwner::_get_active_owner_context() const
 {
 	if (owner_context) {
@@ -190,10 +187,7 @@ int ThemeOwner::get_theme_default_font_size()
 	return ThemeDB::get_singleton()->get_fallback_font_size();
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void ThemeOwner::set_owner_node(Node*) {}
 

@@ -216,8 +216,4 @@ void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
 	}
 }
 
-<<<<<<< HEAD
-
-=======
 void OpenXRVisibilityMaskExtension::_update_mesh() {}
->>>>>>> fix/remove-object

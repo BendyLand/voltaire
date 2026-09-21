@@ -54,11 +54,6 @@
 #include "servers/rendering/shader_types.h"
 #include "text_shader_editor.h"
 
-<<<<<<< HEAD
-/*** SHADER SYNTAX HIGHLIGHTER ****/
-
-=======
->>>>>>> fix/remove-object
 void GDShaderSyntaxHighlighter::add_disabled_branch_region(const Point2i& p_region)
 {
 	ERR_FAIL_COND(p_region.x < 0);
@@ -235,26 +230,6 @@ HashMap<String, String> TextShaderPreview::builtin_canvas_types = {
 	{"COLOR", "vec4"},
 };
 
-<<<<<<< HEAD
-void TextShaderPreview::_on_hover_enter()
-{
-	hovered = true;
-	delete_button->show();
-	goto_button->show();
-
-	DisplayServer::get_singleton()->cursor_set_shape(
-		DisplayServerEnums::CURSOR_ARROW); // Since MaterialEditor doesn't set cursor.
-}
-
-void TextShaderPreview::_on_hover_exit()
-{
-	hovered = false;
-	delete_button->hide();
-	goto_button->hide();
-}
-
-=======
->>>>>>> fix/remove-object
 String TextShaderPreview::_get_enclosing_function(
 	const PackedStringArray& p_lines, int p_line) const
 {
@@ -314,27 +289,6 @@ bool TextShaderPreview::_is_inside_loop(const PackedStringArray& p_lines, int p_
 	return false;
 }
 
-<<<<<<< HEAD
-void TextShaderPreview::_show_error(const String& p_error)
-{
-	surface->edit(Ref<Material>(), env);
-	error_label->set_text(p_error);
-	surface_container->hide();
-	error_container->show();
-}
-
-void TextShaderPreview::show_shader_compile_error()
-{
-	_show_error(TTRC("Shader must be compiled correctly."));
-}
-
-void TextShaderPreview::recompile(const String& p_code)
-{
-	set_shader_code(p_code, line, in_comment);
-}
-
-=======
->>>>>>> fix/remove-object
 void TextShaderPreview::sync_shader_parameters()
 {
 	if (shader_material->get_shader().is_null()) {
@@ -581,11 +535,6 @@ static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName
 
 static String complete_from_path;
 
-<<<<<<< HEAD
-/*** SCRIPT EDITOR ******/
-
-=======
->>>>>>> fix/remove-object
 void TextShaderEditor::_prepare_edit_menu()
 {
 	const CodeEdit* tx = code_editor->get_text_editor();
@@ -612,11 +561,6 @@ void TextShaderEditor::_notification(int p_what)
 	}
 }
 
-<<<<<<< HEAD
-void TextShaderEditor::_show_warnings_panel(bool p_show) { warnings_panel->set_visible(p_show); }
-
-=======
->>>>>>> fix/remove-object
 void TextShaderEditor::goto_line_selection(int p_line, int p_begin, int p_end)
 {
 	code_editor->goto_line_selection(p_line, p_begin, p_end);
@@ -624,20 +568,6 @@ void TextShaderEditor::goto_line_selection(int p_line, int p_begin, int p_end)
 
 void TextShaderEditor::_project_settings_changed() { _update_warnings(true); }
 
-<<<<<<< HEAD
-void TextShaderEditor::_focus_preview_line(int p_line)
-{
-	code_editor->goto_line_centered(p_line);
-
-	TextShaderPreview* preview = code_editor->get_preview(p_line);
-	if (preview) {
-		preview_sbox->ensure_control_visible(preview);
-	}
-	preview_timer->start();
-}
-
-=======
->>>>>>> fix/remove-object
 void TextShaderEditor::_reload()
 {
 	if (shader.is_valid()) {
@@ -706,70 +636,6 @@ bool TextShaderEditor::is_unsaved() const
 
 void TextShaderEditor::tag_saved_version() { code_editor->get_text_editor()->tag_saved_version(); }
 
-<<<<<<< HEAD
-void TextShaderEditor::_update_shader_previews()
-{
-	pending_update_shader_previews = false;
-
-	const CodeEdit* ce = code_editor->get_text_editor();
-	code_editor->clear_previews();
-	bool found = false;
-
-	for (int i = 0; i < ce->get_line_count(); i++) {
-		if (ce->is_line_breakpointed(i)) {
-			found = true;
-			code_editor->toggle_shader_preview(i);
-		}
-	}
-
-	if (!found) {
-		preview_box->hide();
-		return;
-	}
-	preview_box->show();
-
-	preview_timer->start();
-}
-
-void TextShaderEditor::_make_context_menu(bool p_selection, Vector2 p_position)
-{
-	context_menu->clear();
-	if (DisplayServer::get_singleton()->has_feature(
-			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
-		context_menu->add_item(TTRC("Emoji & Symbols"), EDIT_EMOJI_AND_SYMBOL);
-		context_menu->add_separator();
-	}
-	if (p_selection) {
-		context_menu->add_shortcut(ED_GET_SHORTCUT("ui_cut"), EDIT_CUT);
-		context_menu->add_shortcut(ED_GET_SHORTCUT("ui_copy"), EDIT_COPY);
-	}
-
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_paste"), EDIT_PASTE);
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_text_select_all"), EDIT_SELECT_ALL);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_undo"), EDIT_UNDO);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_redo"), EDIT_REDO);
-
-	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent"), EDIT_INDENT);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/unindent"), EDIT_UNINDENT);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
-	context_menu->add_shortcut(
-		ED_GET_SHORTCUT("script_text_editor/toggle_bookmark"), BOOKMARK_TOGGLE);
-
-	context_menu->set_item_disabled(
-		context_menu->get_item_index(EDIT_UNDO), !code_editor->get_text_editor()->has_undo());
-	context_menu->set_item_disabled(
-		context_menu->get_item_index(EDIT_REDO), !code_editor->get_text_editor()->has_redo());
-
-	context_menu->set_position(get_screen_position() + p_position);
-	context_menu->reset_size();
-	context_menu->popup();
-}
-
-=======
->>>>>>> fix/remove-object
 void TextShaderEditor::register_editor()
 {
 	ED_SHORTCUT("shader_text_editor/toggle_shader_preview", TTRC("Toggle Shader Preview"), Key::F9);
@@ -786,8 +652,6 @@ void TextShaderEditor::register_editor()
 		TTRC("Go to Previous Shader Preview"), KeyModifierMask::CTRL | Key::COMMA);
 }
 
-<<<<<<< HEAD
-=======
 void TextShaderPreview::_show_error(const String& p_error) {}
 
 void TextShaderPreview::_sync_shader_parameters(Ref<ShaderMaterial> const&, Ref<ShaderMaterial>&) {}
@@ -826,5 +690,4 @@ void TextShaderEditor::apply_shaders() {}
 
 void TextShaderEditor::save_external_data(const String& p_path) {}
 
->>>>>>> fix/remove-object
 

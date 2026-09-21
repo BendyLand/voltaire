@@ -74,10 +74,6 @@ public:
 	void set_outer_cone_angle(float p_outer_cone_angle);
 
 	static Ref<GLTFLight> from_node(const Light3D* p_light);
-<<<<<<< HEAD
-	Light3D* to_node() const;
-=======
->>>>>>> fix/remove-object
 };
 
 

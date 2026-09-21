@@ -152,10 +152,7 @@ bool EditorResourcePreviewGenerator::generate_small_preview_automatically() cons
 
 bool EditorResourcePreviewGenerator::handles(const String& p_type) const { return false; }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void EditorResourcePreview::stop() {}
 

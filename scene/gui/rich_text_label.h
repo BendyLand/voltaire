@@ -153,20 +153,6 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	void _push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size);
-<<<<<<< HEAD
-	void _set_table_column_expand_bind_compat_79053(int p_column, bool p_expand, int p_ratio);
-	void _add_image_bind_compat_80410(const Ref<Texture2D>& p_image, const int p_width,
-		const int p_height, const Color& p_color, InlineAlignment p_alignment,
-		const Rect2& p_region);
-	void _push_table_bind_compat_76829(
-		int p_columns, InlineAlignment p_alignment, int p_align_to_row);
-	bool _remove_paragraph_bind_compat_91098(int p_paragraph);
-	void _set_table_column_expand_bind_compat_101482(int p_column, bool p_expand, int p_ratio);
-	void _push_underline_bind_compat_106300();
-	void _push_strikethrough_bind_compat_106300();
-	static void _bind_compatibility_methods();
-=======
->>>>>>> fix/remove-object
 #endif
 
 private:
@@ -885,45 +871,6 @@ public:
 	void push_bold_italics();
 	void push_italics();
 	void push_mono();
-<<<<<<< HEAD
-	void push_color(const Color& p_color);
-	void push_outline_color(const Color& p_color);
-	void push_underline(const Color& p_color = Color(0, 0, 0, 0));
-	void push_strikethrough(const Color& p_color = Color(0, 0, 0, 0));
-	void push_language(const String& p_language);
-	void push_paragraph(HorizontalAlignment p_alignment,
-		Control::TextDirection p_direction = Control::TEXT_DIRECTION_INHERITED,
-		const String& p_language = "",
-		TextServer::StructuredTextParser p_st_parser = TextServer::STRUCTURED_TEXT_DEFAULT,
-		uint32_t p_jst_flags =
-			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
-			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
-			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE,
-		const PackedFloat32Array& p_tab_stops = PackedFloat32Array());
-	void push_indent(int p_level);
-	void push_list(int p_level, ListType p_list, bool p_capitalize,
-		const String& p_bullet = String::utf8("•"));
-	void push_hint(const String& p_string);
-	void push_table(int p_columns, InlineAlignment p_alignment = INLINE_ALIGNMENT_TOP,
-		int p_align_to_row = -1, const String& p_name = String());
-	void push_fade(int p_start_index, int p_length);
-	void push_shake(int p_strength, float p_rate, bool p_connected);
-	void push_wave(float p_frequency, float p_amplitude, bool p_connected);
-	void push_tornado(float p_frequency, float p_radius, bool p_connected);
-	void push_rainbow(float p_saturation, float p_value, float p_frequency, float p_speed);
-	void push_pulse(const Color& p_color, float p_frequency, float p_ease);
-	void push_bgcolor(const Color& p_color);
-	void push_fgcolor(const Color& p_color);
-	void push_context();
-	void set_table_column_expand(
-		int p_column, bool p_expand, int p_ratio = 1, bool p_shrink = true);
-	void set_table_column_name(int p_column, const String& p_name);
-	void set_cell_row_background_color(const Color& p_odd_row_bg, const Color& p_even_row_bg);
-	void set_cell_border_color(const Color& p_color);
-	void set_cell_size_override(const Size2& p_min_size, const Size2& p_max_size);
-	void set_cell_padding(const Rect2& p_padding);
-=======
->>>>>>> fix/remove-object
 	int get_current_table_column() const;
 
 	void clear();

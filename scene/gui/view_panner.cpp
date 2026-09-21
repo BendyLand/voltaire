@@ -88,12 +88,7 @@ bool ViewPanner::is_panning() const
 }
 
 void ViewPanner::set_force_drag(bool p_force) { force_drag = p_force; }
-<<<<<<< HEAD
-
-
-=======
 
 
 
 bool ViewPanner::gui_input(Ref<InputEvent> const&, Rect2) {}
->>>>>>> fix/remove-object

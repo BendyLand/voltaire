@@ -60,55 +60,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
-<<<<<<< HEAD
-void ExportTemplateManager::_request_mirrors()
-{
-	mirrors_list->clear();
-	mirrors_empty = true;
-	_update_install_button();
-
-	// Downloadable export templates are only available for stable and official alpha/beta/RC builds
-	// (which always have a number following their status, e.g. "alpha1").
-	// Therefore, don't display download-related features when using a development version
-	// (whose builds aren't numbered).
-	if (!strcmp(VLTR_VERSION_STATUS, "dev") || !strcmp(VLTR_VERSION_STATUS, "beta") ||
-		!strcmp(VLTR_VERSION_STATUS, "rc")) {
-		_set_empty_mirror_list();
-		mirrors_list->set_tooltip_text(
-			TTRC("Official export templates aren't available for development builds."));
-#ifdef REAL_T_IS_DOUBLE
-	}
-	else if (true) {
-		_set_empty_mirror_list();
-		mirrors_list->set_tooltip_text(
-			TTRC("Official export templates aren't available for double-precision builds."));
-#endif
-	}
-	else if (!_is_online()) {
-		mirrors_list->set_tooltip_text(TTRC("Template downloading is disabled in offline mode."));
-	}
-	else {
-		mirrors_list->set_tooltip_text(String());
-	}
-
-	if (mirrors_list->get_tooltip_text().is_empty()) {
-		const String mirrors_metadata_url =
-			vformat("https://godotengine.org/mirrorlist/%s.json", VLTR_VERSION_FULL_CONFIG);
-		mirrors_requester->request(mirrors_metadata_url);
-	}
-}
-
-void ExportTemplateManager::_set_empty_mirror_list()
-{
-	mirrors_list->add_item(TTRC("No mirrors"));
-	mirrors_list->set_disabled(true);
-	open_mirror->set_disabled(true);
-	mirrors_empty = true;
-	_update_install_button();
-}
-
-=======
->>>>>>> fix/remove-object
 bool ExportTemplateManager::_is_online() const { return !offline_container->is_visible(); }
 
 void ExportTemplateManager::_open_mirror()
@@ -361,51 +312,6 @@ void ExportTemplateManager::_update_template_tree()
 	_fill_template_tree(installed_templates_tree, installed_template_files, is_current_version);
 }
 
-<<<<<<< HEAD
-void ExportTemplateManager::_update_install_button()
-{
-	if (is_downloading()) {
-		install_button->set_text(TTRC("Downloading templates..."));
-		install_button->set_disabled(true);
-		install_button->set_tooltip_text(String());
-		return;
-	}
-
-	download_all_enabled = true;
-	for (TreeItem* item = available_templates_tree->get_root(); item;
-		 item = item->get_next_in_tree()) {
-		if (item->is_checked(0)) {
-			download_all_enabled = false;
-			break;
-		}
-	}
-	if (download_all_enabled) {
-		install_button->set_text(TTRC("Install All Templates"));
-	}
-	else {
-		install_button->set_text(TTRC("Install Selected Templates"));
-	}
-
-	install_button->set_disabled(!_can_download_templates());
-	if (install_button->is_disabled()) {
-		if (!_is_online()) {
-			install_button->set_tooltip_text(TTRC("Download not available in offline mode."));
-		}
-		else if (mirrors_empty) {
-			install_button->set_tooltip_text(TTRC("No mirrors available for download."));
-		}
-		else {
-			install_button->set_tooltip_text(
-				TTRC("Downloads are only available for the current Godot version."));
-		}
-	}
-	else {
-		install_button->set_tooltip_text(String());
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 bool ExportTemplateManager::_can_download_templates()
 {
 	const String selected_version = version_list->get_item_text(version_list->get_current());
@@ -508,57 +414,6 @@ void ExportTemplateManager::_queue_download_tree_item(TreeItem* p_item)
 	}
 }
 
-<<<<<<< HEAD
-void ExportTemplateManager::_process_download_queue()
-{
-	queue_update_pending = false;
-
-	int downloader_index = 0;
-	bool is_finished = true;
-	for (TreeItem* item : downloading_items) {
-		FileMetadata* meta = _get_file_metadata(item);
-
-		is_finished = is_finished && _status_is_finished(meta->download_status);
-		if (meta->download_status != DownloadStatus::PENDING) {
-			continue;
-		}
-
-		TemplateDownloader* downloader = _get_available_downloader(&downloader_index);
-		if (!downloader) {
-			break;
-		}
-		downloader_index++;
-
-		Error err = downloader->download_template(item->get_text(0), _get_current_mirror_url());
-		if (err == OK) {
-			meta->download_status = DownloadStatus::IN_PROGRESS;
-			meta->downloader = downloader;
-		}
-		else {
-			_item_download_failed(
-				item, vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		}
-	}
-
-	if (is_finished) {
-		// Exit "downloading mode".
-		queued_templates.clear();
-		downloading_items.clear();
-		set_process_internal(false);
-		_update_install_button();
-		EditorNode::get_bottom_panel()->get_progress_indicator()->hide();
-
-		for (int i = 0; i < version_list->get_item_count(); i++) {
-			version_list->set_item_disabled(i, false);
-		}
-	}
-	else {
-		set_process_internal(true);
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 TemplateDownloader* ExportTemplateManager::_get_available_downloader(int* r_from_index)
 {
 	int counter = -1;
@@ -641,40 +496,6 @@ void ExportTemplateManager::_apply_item_folding(TreeItem* p_item, bool p_default
 	}
 }
 
-<<<<<<< HEAD
-void ExportTemplateManager::_cancel_item_download(TreeItem* p_item)
-{
-	_item_download_failed(p_item, TTR("Canceled by the user"));
-	queued_files.erase(p_item->get_text(0));
-
-	FileMetadata* meta = _get_file_metadata(p_item);
-	if (meta->downloader) {
-		meta->downloader->cancel_download();
-		meta->downloader = nullptr;
-	}
-}
-
-void ExportTemplateManager::_item_download_failed(TreeItem* p_item, const String& p_reason)
-{
-	FileMetadata* meta = _get_file_metadata(p_item);
-	meta->fail_reason = p_reason;
-	meta->download_status = DownloadStatus::FAILED;
-
-	p_item->clear_buttons();
-	_add_fail_reason_button(p_item);
-}
-
-void ExportTemplateManager::_add_fail_reason_button(TreeItem* p_item, const String& p_filename)
-{
-	FileMetadata* meta =
-		_get_file_metadata(p_filename.is_empty() ? p_item->get_text(0) : p_filename);
-	p_item->add_button(0, theme_cache.failure_icon, (int)ButtonID::FAIL);
-	p_item->set_button_tooltip_text(
-		0, -1, vformat(TTR("Download failed.\nReason: %s."), meta->fail_reason));
-}
-
-=======
->>>>>>> fix/remove-object
 ExportTemplateManager::FileMetadata* ExportTemplateManager::_get_file_metadata(
 	const String& p_text) const
 {
@@ -795,19 +616,6 @@ bool ExportTemplateManager::can_install_android_template(const Ref<EditorExportP
 
 bool ExportTemplateManager::is_downloading() const { return !queued_files.is_empty(); }
 
-<<<<<<< HEAD
-void ExportTemplateManager::stop_download()
-{
-	for (TreeItem* item : downloading_items) {
-		FileMetadata* meta = _get_file_metadata(item);
-		if (meta && !_status_is_finished(meta->download_status)) {
-			_cancel_item_download(item);
-		}
-	}
-}
-
-=======
->>>>>>> fix/remove-object
 int TemplateDownloader::_find_sequence_backwards(
 	const PackedByteArray& p_source, const PackedByteArray& p_target) const
 {
@@ -923,69 +731,6 @@ void TemplateDownloader::_clear_partial_download()
 	}
 }
 
-<<<<<<< HEAD
-Error TemplateDownloader::_request_file_fragment()
-{
-	const int64_t fragment_size = _get_fragment_download_size();
-	if (fragment_size <= 0) {
-		return ERR_INVALID_DATA;
-	}
-
-	int64_t partial_size = _get_partial_download_size();
-	if (partial_size >= fragment_size) {
-		_download_completed();
-		return OK;
-	}
-
-	request_start_partial_size = partial_size;
-	const int64_t request_start_byte = fragment_start_byte + partial_size;
-	const String data_range = vformat("Range: bytes=%d-%d", request_start_byte, fragment_end_byte);
-
-	set_download_file(partial_download_path);
-	set_keep_partial_download(true);
-	set_append_to_download_file(partial_size > 0);
-	return request(url, PackedStringArray{data_range}, HTTPClient::METHOD_GET);
-}
-
-bool TemplateDownloader::_retry_file_fragment(const String& p_reason)
-{
-	if (retry_count >= MAX_DOWNLOAD_RETRIES) {
-		_download_failed(
-			vformat(TTR("%s. Download failed after %d retries."), p_reason, MAX_DOWNLOAD_RETRIES));
-		return false;
-	}
-
-	retry_count++;
-	Error err = _request_file_fragment();
-	if (err != OK) {
-		_download_failed(vformat(TTR("Download request failed: %s."), TTR(error_names[err])));
-		return false;
-	}
-	return true;
-}
-
-void TemplateDownloader::_bind_methods() {}
-
-Error TemplateDownloader::download_template(const String& p_file_name, const String& p_source)
-{
-	url = p_source;
-	filename = p_file_name;
-	partial_download_path = EditorPaths::get_singleton()->get_temp_dir().path_join(
-		(filename + "-" + url).md5_text() + "-" + filename.validate_filename() + ".part");
-	_clear_partial_download();
-
-	set_download_file(String());
-	set_keep_partial_download(false);
-	set_append_to_download_file(false);
-	request_start_partial_size = 0;
-	retry_count = 0;
-	range_restart_attempted = false;
-	current_step = Step::QUERYING;
-	return request(p_source, PackedStringArray(), HTTPClient::METHOD_HEAD);
-}
-
-=======
->>>>>>> fix/remove-object
 void TemplateDownloader::cancel_download()
 {
 	cancel_request();

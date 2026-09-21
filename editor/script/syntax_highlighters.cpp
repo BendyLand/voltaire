@@ -72,11 +72,6 @@ Ref<EditorSyntaxHighlighter> EditorMarkdownSyntaxHighlighter::_create() const
 	return syntax_highlighter;
 }
 
-<<<<<<< HEAD
-///
-
-=======
->>>>>>> fix/remove-object
 Ref<EditorSyntaxHighlighter> EditorConfigFileSyntaxHighlighter::_create() const
 {
 	Ref<EditorConfigFileSyntaxHighlighter> syntax_highlighter;

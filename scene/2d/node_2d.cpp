@@ -358,10 +358,7 @@ Point2 Node2D::to_global(const Point2& p_local) const
 	return get_global_transform().xform(p_local);
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fix/remove-object
 
 void Node2D::_update_transform() {}
 

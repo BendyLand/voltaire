@@ -91,8 +91,6 @@ void DisplayServer::tts_speak(const String& p_text, const String& p_voice, int p
 	WARN_PRINT("TTS is not supported by this display server.");
 }
 
-<<<<<<< HEAD
-=======
 PackedStringArray DisplayServer::tts_get_voices_for_language(const String& p_language) const
 {
 	return PackedStringArray();
@@ -103,7 +101,6 @@ void DisplayServer::tts_post_utterance_event(
 {
 }
 
->>>>>>> fix/remove-object
 void DisplayServer::tts_stop() { WARN_PRINT("TTS is not supported by this display server."); }
 
 bool DisplayServer::_get_window_early_clear_override(Color& r_color)
