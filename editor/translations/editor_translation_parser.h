@@ -34,8 +34,6 @@
 
 class EditorTranslationParserPlugin : public RefCounted
 {
-protected:
-
 public:
 	virtual Error parse_file(const String& p_path, Vector<Vector<String>>* r_translations);
 	virtual void get_recognized_extensions(List<String>* r_extensions) const;

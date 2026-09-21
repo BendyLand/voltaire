@@ -526,7 +526,6 @@ void AnimationMixer::get_argument_options(
 }
 #endif
 
-
 AnimationMixer::AnimationMixer() { root_node = NodePath(".."); }
 
 AnimationMixer::~AnimationMixer() {}
@@ -612,6 +611,23 @@ AnimationMixer::TrackCache* AnimatedValuesBackup::get_cache_copy(
 	return nullptr;
 }
 
-
-
 void AnimationMixer::_animation_set_cache_update() {}
+
+void AnimationMixer::_remove_animation(const StringName& p_name) {}
+
+void AnimationMixer::_process_animation(double p_delta, bool p_update_only) {}
+
+void AnimationMixer::_animation_renamed(
+	const StringName& p_name, const StringName& p_to_name, const StringName& p_library)
+{
+}
+
+void AnimationMixer::_set_active(bool p_active) {}
+
+uint32_t AnimationMixer::_get_libraries_property_usage() const { return 0; }
+
+void AnimationMixer::_blend_post_process() {}
+
+
+
+

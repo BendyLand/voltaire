@@ -133,4 +133,6 @@ bool TextureLayered::has_mipmaps() const { return false; }
 
 Ref<Image> TextureLayered::get_layer_data(int p_layer) const { return Ref<Image>(); }
 
+Vector<Ref<Image>> Texture3D::get_data() const { return Vector<Ref<Image>>(); }
+
 

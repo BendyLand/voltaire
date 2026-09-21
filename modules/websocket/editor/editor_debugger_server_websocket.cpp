@@ -90,4 +90,6 @@ Ref<EditorDebuggerServer> EditorDebuggerServerWebSocket::create(const String& p_
 	return memnew(EditorDebuggerServerWebSocket);
 }
 
+Error EditorDebuggerServerWebSocket::start(const String& p_uri) { return OK; }
+
 

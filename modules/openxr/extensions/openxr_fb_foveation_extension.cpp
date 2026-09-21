@@ -180,4 +180,10 @@ void OpenXRFBFoveationExtension::get_fragment_density_offsets(
 {
 }
 
+HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(
+	unsigned long p_extension_flags)
+{
+	return HashMap<String, bool*>();
+}
+
 

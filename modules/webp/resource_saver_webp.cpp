@@ -88,4 +88,11 @@ ResourceSaverWebP::ResourceSaverWebP()
 	Image::save_webp_buffer_func = &save_image_to_buffer;
 }
 
+bool ResourceSaverWebP::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceSaverWebP::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
+
 

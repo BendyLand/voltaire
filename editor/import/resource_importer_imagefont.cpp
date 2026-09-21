@@ -49,4 +49,9 @@ String ResourceImporterImageFont::get_save_extension() const { return "fontdata"
 
 String ResourceImporterImageFont::get_resource_type() const { return "FontFile"; }
 
+void ResourceImporterImageFont::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
 

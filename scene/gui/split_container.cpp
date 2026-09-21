@@ -362,8 +362,7 @@ void SplitContainer::set_dragging_enabled(bool p_enabled)
 		}
 	}
 	if (get_viewport()) {
-		get_viewport()->update_mouse_cursor_state()
-;
+		get_viewport()->update_mouse_cursor_state();
 	}
 	_resort();
 }
@@ -476,6 +475,15 @@ void SplitContainer::_add_valid_child(Control*) {}
 Control::CursorShape SplitContainerMultiDragger::get_cursor_shape(const Point2& p_pos) const
 {
 	return Control::CursorShape();
+}
+
+void SplitContainer::remove_child_notify(Node* p_child) {}
+
+void SplitContainer::move_child_notify(Node* p_child) {}
+
+Control::CursorShape SplitContainerDragger::get_cursor_shape(const Vector2& p_pos) const
+{
+	return Control::CURSOR_ARROW;
 }
 
 

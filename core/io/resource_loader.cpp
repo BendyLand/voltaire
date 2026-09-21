@@ -1205,3 +1205,12 @@ void ResourceLoader::_run_load_task(void* p_userdata) {}
 void ResourceLoader::load_translation_remaps() {}
 
 
+Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress,
+	CacheMode p_cache_mode)
+{
+	Ref<Resource> r = memnew(Resource);
+	return r;
+}
+
+

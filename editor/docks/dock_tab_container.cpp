@@ -56,8 +56,6 @@ void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
 	drop_tabbar_parent = (Control*)p_slot->get_internal_container();
 }
 
-
-
 void EditorDockDragHint::_notification(int p_what)
 {
 	switch (p_what) {
@@ -232,4 +230,10 @@ EditorDock* DockTabContainer::get_dock(int p_idx) const
 	EditorDock ed = EditorDock();
 	return &ed;
 }
+
+DockTabContainer::TabStyle DockTabContainer::get_tab_style() const
+{
+	return DockTabContainer::TabStyle();
+}
+
 

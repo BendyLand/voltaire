@@ -90,4 +90,38 @@ int EditorExportPlatformPC::get_chmod_flags() const { return chmod_flags; }
 
 void EditorExportPlatformPC::set_chmod_flags(int p_flags) { chmod_flags = p_flags; }
 
+Error EditorExportPlatformPC::prepare_template(
+	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags)
+{
+	return OK;
+}
+
+void EditorExportPlatformPC::get_preset_features(
+	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
+{
+}
+
+String EditorExportPlatformPC::get_export_option_warning(
+	const EditorExportPreset* p_preset, const StringName& p_name) const
+{
+	return String();
+}
+
+Error EditorExportPlatformPC::export_project_data(
+	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags)
+{
+	return OK;
+}
+
+void EditorExportPlatformPC::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
+}
+
+bool EditorExportPlatformPC::has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+	String& r_error, bool& r_missing_templates, bool p_debug) const
+{
+	return false;
+}
+
 

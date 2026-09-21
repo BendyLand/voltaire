@@ -2373,8 +2373,7 @@ Size2 RichTextLabel::get_minimum_size() const
 
 	if (fit_content) {
 		if (!wrap_with_max_width) {
-			min_size.x = get_content_width()
-;
+			min_size.x = get_content_width();
 		}
 		min_size.y = get_content_height();
 	}
@@ -2476,7 +2475,7 @@ String RichTextLabel::get_selected_text() const { return String(); }
 
 void RichTextLabel::_generate_context_menu() {}
 
-String RichTextLabel::_find_language(RichTextLabel::Item*) {return String();}
+String RichTextLabel::_find_language(RichTextLabel::Item*) { return String(); }
 
 float RichTextLabel::_find_click_in_line(RichTextLabel::ItemFrame*, int, Vector2 const&, int, float,
 	Vector2i const&, RichTextLabel::ItemFrame**, int*, RichTextLabel::Item**, int*, bool, bool)
@@ -2487,5 +2486,10 @@ float RichTextLabel::_find_click_in_line(RichTextLabel::ItemFrame*, int, Vector2
 void RichTextLabel::_apply_translation() {}
 
 void RichTextLabel::append_text(String const&) {}
+
+Control::CursorShape RichTextLabel::get_cursor_shape(const Vector2& p_pos) const
+{
+	return Control::CURSOR_ARROW;
+}
 
 

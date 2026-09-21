@@ -308,4 +308,45 @@ void TileDataCollisionEditor::_set_painted_value(
 {
 }
 
+void TileDataDefaultEditor::draw_over_tile(
+	CanvasItem* p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected)
+{
+}
+
+void TileDataOcclusionShapeEditor::draw_over_tile(
+	CanvasItem* p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected)
+{
+}
+
+void TileDataNavigationEditor::draw_over_tile(
+	CanvasItem* p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected)
+{
+}
+
+void TileDataTerrainsEditor::forward_draw_over_atlas(TileAtlasView* p_tile_atlas_view,
+	TileSetAtlasSource* p_tile_set_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
+{
+}
+
+void TileDataTerrainsEditor::forward_draw_over_alternatives(TileAtlasView* p_tile_atlas_view,
+	TileSetAtlasSource* p_tile_set_atlas_source, CanvasItem* p_canvas_item, Transform2D p_transform)
+{
+}
+
+void TileDataTerrainsEditor::forward_painting_atlas_gui_input(TileAtlasView* p_tile_atlas_view,
+	TileSetAtlasSource* p_tile_set_atlas_source, const Ref<InputEvent>& p_event)
+{
+}
+
+void TileDataTerrainsEditor::forward_painting_alternatives_gui_input(
+	TileAtlasView* p_tile_atlas_view, TileSetAtlasSource* p_tile_set_atlas_source,
+	const Ref<InputEvent>& p_event)
+{
+}
+
+void TileDataCollisionEditor::draw_over_tile(
+	CanvasItem* p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected)
+{
+}
+
 

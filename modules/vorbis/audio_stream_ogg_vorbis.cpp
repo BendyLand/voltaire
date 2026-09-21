@@ -617,6 +617,8 @@ Ref<AudioStreamOggVorbis> AudioStreamOggVorbis::load_from_file(const String& p_p
 	return load_from_buffer(stream_data);
 }
 
-
-
 void AudioStreamOggVorbis::maybe_update_info() {}
+
+Ref<AudioSample> AudioStreamOggVorbis::generate_sample() const { return Ref<AudioSample>(); }
+
+

@@ -373,8 +373,52 @@ Vector3 JoltPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 	}
 }
 
+void JoltPhysicsDirectSpaceState3D::_collide_shape_queries(JPH::Shape const*, JPH::Vec3,
+	JPH::Mat44 const&, JPH::CollideShapeSettings const&, JPH::Vec3,
+	JPH::CollisionCollector<JPH::CollideShapeResult, JPH::CollisionCollectorTraitsCollideShape>&,
+	JPH::BroadPhaseLayerFilter const&, JPH::ObjectLayerFilter const&, JPH::BodyFilter const&,
+	JPH::ShapeFilter const&) const
+{
+}
+
+bool JoltPhysicsDirectSpaceState3D::body_test_motion(JoltBody3D const&,
+	PhysicsServer3DTypes::MotionParameters const&, PhysicsServer3DTypes::MotionResult*) const
+{
+}
+
+bool JoltPhysicsDirectSpaceState3D::intersect_ray(
+	const PhysicsServer3DTypes::RayParameters& p_ray_params,
+	PhysicsServer3DTypes::RayResult& r_result)
+{
+	return false;
+}
+
+int JoltPhysicsDirectSpaceState3D::intersect_point(
+	const PhysicsServer3DTypes::PointParameters& p_point_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int JoltPhysicsDirectSpaceState3D::intersect_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool JoltPhysicsDirectSpaceState3D::cast_motion(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
+	float& r_closest_unsafe, PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+bool JoltPhysicsDirectSpaceState3D::rest_info(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
 
 
-void JoltPhysicsDirectSpaceState3D::_collide_shape_queries(JPH::Shape const*, JPH::Vec3, JPH::Mat44 const&, JPH::CollideShapeSettings const&, JPH::Vec3, JPH::CollisionCollector<JPH::CollideShapeResult, JPH::CollisionCollectorTraitsCollideShape>&, JPH::BroadPhaseLayerFilter const&, JPH::ObjectLayerFilter const&, JPH::BodyFilter const&, JPH::ShapeFilter const&) const {}
-
-bool JoltPhysicsDirectSpaceState3D::body_test_motion(JoltBody3D const&, PhysicsServer3DTypes::MotionParameters const&, PhysicsServer3DTypes::MotionResult*) const {}

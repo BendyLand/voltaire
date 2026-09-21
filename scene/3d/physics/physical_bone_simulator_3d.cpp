@@ -111,4 +111,9 @@ void PhysicalBoneSimulator3D::set_bone_global_pose(int p_bone, const Transform3D
 	bones[p_bone].global_pose = p_pose;
 }
 
+void PhysicalBoneSimulator3D::_skeleton_changed(
+	Skeleton3D* p_old_skeleton, Skeleton3D* p_new_skeleton)
+{
+}
+
 

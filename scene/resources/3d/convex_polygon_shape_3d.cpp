@@ -60,3 +60,12 @@ ConvexPolygonShape3D::ConvexPolygonShape3D()
 
 void ConvexPolygonShape3D::_update_shape() {}
 
+Vector<Vector3> ConvexPolygonShape3D::get_debug_mesh_lines() const { return Vector<Vector3>(); }
+
+Ref<ArrayMesh> ConvexPolygonShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
+
+

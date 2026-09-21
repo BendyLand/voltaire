@@ -748,7 +748,6 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 		state_buffer.shadow_pixel_size = 1.0f / (float)(state.shadow_texture_size);
 
 		state_buffer.flags = use_linear_colors ? CANVAS_FLAGS_CONVERT_ATTRIBUTES_TO_LINEAR : 0;
-
 	}
 
 	{ // default filter/repeat
@@ -1447,7 +1446,9 @@ uint32_t RendererCanvasRenderRD::get_pipeline_compilations(RSE::PipelineSource p
 
 void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target, int p_item_count,
 	const Transform2D& p_canvas_transform_inverse, Light* p_lights, bool& r_sdf_used,
-	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info) {}
+	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info)
+{
+}
 
 void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTarget p_render_target,
 	const Transform2D& p_base_transform, Item*& r_current_clip, Light* p_lights,
@@ -2584,8 +2585,35 @@ RendererCanvasRenderRD::~RendererCanvasRenderRD()
 	memdelete(shader.default_version_data);
 }
 
+RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(
+	RendererCanvasRenderRD::CanvasShaderData*, RendererCanvasRenderRD::PipelineKey&,
+	RendererCanvasRenderRD::PushConstant&, RID, void*, unsigned int, RID*)
+{
+	return RID();
+}
+
+RID RendererCanvasRenderRD::CanvasShaderData::get_shader(
+	RendererCanvasRenderRD::ShaderVariant, bool) const
+{
+	return RID();
+}
+void RendererCanvasRenderRD::light_update_shadow(RID p_light, int p_shadow_index,
+	const Transform2D& p_light_xform, int p_light_mask, float p_near, float p_far,
+	RendererCanvasRender::LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
+{
+}
+
+void RendererCanvasRenderRD::light_update_directional_shadow(RID p_light, int p_shadow_index,
+	const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
+	const Rect2& p_clip_rect, RendererCanvasRender::LightOccluderInstance* p_occluders)
+{
+}
+
+void RendererCanvasRenderRD::render_sdf(
+	RID p_render_target, RendererCanvasRender::LightOccluderInstance* p_occluders)
+{
+}
+
+void RendererCanvasRenderRD::CanvasShaderData::set_code(const String& p_code) {}
 
 
-RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(RendererCanvasRenderRD::CanvasShaderData*, RendererCanvasRenderRD::PipelineKey&, RendererCanvasRenderRD::PushConstant&, RID, void*, unsigned int, RID*) {}
-
-RID RendererCanvasRenderRD::CanvasShaderData::get_shader(RendererCanvasRenderRD::ShaderVariant, bool) const {}

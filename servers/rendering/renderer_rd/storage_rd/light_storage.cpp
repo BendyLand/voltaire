@@ -1922,8 +1922,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 
 					reflection_probe_instance_owner.get_or_null(atlas->reflections[i].owner);
 				if (rpi2->last_pass < pass_min) {
-
-				pass_min = rpi2->last_pass;
+					pass_min = rpi2->last_pass;
 					rpi->atlas_index = i;
 				}
 			}
@@ -3067,6 +3066,7 @@ LightStorage::ShadowCubemap* LightStorage::_get_shadow_cubemap(int p_size)
 			RD::TextureFormat tf;
 			tf.format = get_cubemap_depth_format();
 			tf.width = p_size;
+
 			tf.height = p_size;
 			tf.texture_type = RD::TEXTURE_TYPE_CUBE;
 			tf.array_layers = 6;
@@ -3118,5 +3118,7 @@ uint32_t LightStorage::get_cubemap_depth_usage_bits()
 bool LightStorage::get_shadow_cubemaps_used() const { return shadow_cubemaps_used; }
 
 bool LightStorage::get_shadow_dual_paraboloid_used() const { return shadow_dual_paraboloid_used; }
+
+RID RendererRD::LightStorage::reflection_atlas_create() { return RID(); }
 
 

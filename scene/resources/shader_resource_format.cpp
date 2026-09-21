@@ -101,4 +101,11 @@ Error ResourceFormatSaverShader::save(
 	return OK;
 }
 
+bool ResourceFormatSaverShader::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceFormatSaverShader::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
+
 

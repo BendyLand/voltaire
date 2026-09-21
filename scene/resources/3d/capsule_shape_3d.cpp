@@ -112,6 +112,12 @@ CapsuleShape3D::CapsuleShape3D()
 	_update_shape();
 }
 
-
-
 void CapsuleShape3D::_update_shape() {}
+
+Ref<ArrayMesh> CapsuleShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
+
+

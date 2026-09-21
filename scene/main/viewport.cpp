@@ -1951,26 +1951,19 @@ void Viewport::update_mouse_cursor_state()
 	}
 }
 
-template<>
-Camera3D* Viewport::CameraOverride<Camera3D>::get_overridden_camera() const {}
+template <> Camera3D* Viewport::CameraOverride<Camera3D>::get_overridden_camera() const {}
 
-template<>
-Camera2D* Viewport::CameraOverride<Camera2D>::get_overridden_camera() const {}
+template <> Camera2D* Viewport::CameraOverride<Camera2D>::get_overridden_camera() const {}
 
-template<>
-void Viewport::CameraOverride<Camera3D>::enable(Viewport*, Camera3D const*) {}
+template <> void Viewport::CameraOverride<Camera3D>::enable(Viewport*, Camera3D const*) {}
 
-template<>
-void Viewport::CameraOverride<Camera3D>::disable(Camera3D*) {}
+template <> void Viewport::CameraOverride<Camera3D>::disable(Camera3D*) {}
 
-template<>
-void Viewport::CameraOverride<Camera2D>::set_overridden_camera(Camera2D const*) {}
+template <> void Viewport::CameraOverride<Camera2D>::set_overridden_camera(Camera2D const*) {}
 
-template<>
-void Viewport::CameraOverride<Camera2D>::enable(Viewport*, Camera2D const*) {}
+template <> void Viewport::CameraOverride<Camera2D>::enable(Viewport*, Camera2D const*) {}
 
-template<>
-void Viewport::CameraOverride<Camera2D>::disable(Camera2D*) {}
+template <> void Viewport::CameraOverride<Camera2D>::disable(Camera2D*) {}
 
 void Viewport::set_canvas_cull_mask(uint32_t p_canvas_cull_mask)
 {
@@ -2560,7 +2553,8 @@ template class Viewport::CameraOverride<Camera3D>;
 
 void Viewport::_sub_window_grab_focus(Window* p_window) {}
 
-bool Viewport::_set_size(const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override, bool p_allocated)
+bool Viewport::_set_size(
+	const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override, bool p_allocated)
 {
 	return true;
 }
@@ -2632,4 +2626,18 @@ Control* Viewport::_gui_find_control_at_pos(CanvasItem*, Vector2 const&, Transfo
 }
 
 void Viewport::_gui_control_grab_focus(Control*, bool) {}
+
+void ViewportTexture::setup_local_to_scene() {}
+
+Transform2D SubViewport::get_screen_transform_internal(bool p_include_canvas_transform) const
+{
+	return Transform2D();
+}
+
+Transform2D SubViewport::get_popup_base_transform() const { return Transform2D(); }
+
+Viewport* SubViewport::get_section_root_viewport() const { return nullptr; }
+
+bool SubViewport::is_attached_in_viewport() const { return false; }
+
 

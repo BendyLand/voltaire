@@ -37,6 +37,8 @@
 #include "core/templates/self_list.h"
 #include "core/types.h"
 #include "scene/main/scene_tree_fti.h"
+#include "scene/main/multiplayer_api.h"
+#include "scene/animation/tween.h"
 
 class ArrayMesh;
 class InputEvent;
@@ -449,8 +451,8 @@ public:
 
 	SceneTreeFTI& get_scene_tree_fti() { return scene_tree_fti; }
 
-	SceneTree();
-	~SceneTree();
+	SceneTree() = default;
+	~SceneTree() = default;
 };
 
 

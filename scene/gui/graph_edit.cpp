@@ -636,6 +636,7 @@ Ref<ViewPanner> GraphEdit::get_panner() { return panner; }
 void GraphEdit::set_warped_panning(bool p_warped)
 {
 	warped_panning = p_warped;
+
 	update_warped_panning();
 }
 
@@ -651,11 +652,16 @@ bool GraphEdit::is_node_hover_valid(
 
 void GraphEdit::set_zoom_custom(float p_zoom, const Vector2& p_center) {}
 
-
-bool GraphEdit::is_in_port_hotzone(Vector2 const&, Vector2 const&, Vector2i const&, bool) {}
+bool GraphEdit::is_in_port_hotzone(Vector2 const&, Vector2 const&, Vector2i const&, bool) { return true; }
 
 void GraphEdit::set_scroll_offset(Vector2 const&) {}
 
-bool GraphEdit::_filter_input(Vector2 const&) {}
+bool GraphEdit::_filter_input(Vector2 const&) { return false; }
 
-Error GraphEdit::connect_node(StringName const&, int, StringName const&, int, bool) {}
+Error GraphEdit::connect_node(StringName const&, int, StringName const&, int, bool) { return OK; }
+
+void GraphEdit::add_child_notify(Node* p_child) {}
+
+void GraphEdit::remove_child_notify(Node* p_child) {}
+
+

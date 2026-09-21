@@ -185,7 +185,7 @@ protected:
 	Vector2 snap_point(Vector2 p_target) const;
 
 public:
-	Polygon2DEditor();
+	Polygon2DEditor() = default;
 };
 
 class Polygon2DEditorPlugin : public AbstractPolygon2DEditorPlugin

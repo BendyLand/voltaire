@@ -61,4 +61,15 @@ bool OpenXRHandTrackingExtension::get_active() { return true; }
 
 void OpenXRHandTrackingExtension::cleanup_hand_tracking() {}
 
+void OpenXRHandTrackingExtension::on_instance_destroyed() {}
+
+void* OpenXRHandTrackingExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
+{
+	return p_next_pointer;
+}
+
+void OpenXRHandTrackingExtension::on_state_ready() {}
+
+void OpenXRHandTrackingExtension::on_process() {}
+
 

@@ -1476,6 +1476,21 @@ int GodotNavigationServer3D::get_process_info(ProcessInfo p_info) const
 	return 0;
 }
 
+Vector<Vector3> GodotNavigationServer3D::map_get_path(RID p_map, Vector3 p_origin,
+	Vector3 p_destination, bool p_optimize, unsigned int p_navigation_layers)
+{
+	return Vector<Vector3>();
+}
+
+void GodotNavigationServer3D::region_bake_navigation_mesh(
+	Ref<NavigationMesh> p_navigation_mesh, Node* p_root_node)
+{
+}
+
+RID GodotNavigationServer3D::source_geometry_parser_create() { return RID(); }
+
+void GodotNavigationServer3D::init() {}
+
 #undef COMMAND_1
 #undef COMMAND_2
 

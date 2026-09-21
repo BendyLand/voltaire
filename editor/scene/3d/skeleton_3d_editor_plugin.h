@@ -261,8 +261,7 @@ public:
 	Skeleton3DEditorPlugin() = default;
 };
 
-class Skeleton3DGizmoPlugin
- : public EditorNode3DGizmoPlugin
+class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin
 {
 	struct SelectionMaterials
 	{

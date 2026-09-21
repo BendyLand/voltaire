@@ -54,4 +54,11 @@ int EditorImportPlugin::get_format_version() const { return 0; }
 
 String EditorImportPlugin::get_preset_name(int p_idx) const { return String(); }
 
+void EditorImportPlugin::get_recognized_extensions(List<String>* r_extensions) const {}
+
+void EditorImportPlugin::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
 

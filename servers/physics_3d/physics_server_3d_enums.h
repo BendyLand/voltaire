@@ -30,27 +30,32 @@
 
 #pragma once
 
-namespace PhysicsServer3DEnums {
+namespace PhysicsServer3DEnums
+{
 
 /* SHAPE API */
 
-enum ShapeType {
-	SHAPE_WORLD_BOUNDARY, ///< plane:"plane"
-	SHAPE_SEPARATION_RAY, ///< float:"length"
-	SHAPE_SPHERE, ///< float:"radius"
-	SHAPE_BOX, ///< vec3:"extents"
-	SHAPE_CAPSULE, ///< dict( float:"radius", float:"height"):capsule
-	SHAPE_CYLINDER, ///< dict( float:"radius", float:"height"):cylinder
-	SHAPE_CONVEX_POLYGON, ///< array of planes:"planes"
-	SHAPE_CONCAVE_POLYGON, ///< vector3 array:"triangles" , or Dictionary with "indices" (int array) and "triangles" (Vector3 array)
+enum ShapeType
+{
+	SHAPE_WORLD_BOUNDARY,  ///< plane:"plane"
+	SHAPE_SEPARATION_RAY,  ///< float:"length"
+	SHAPE_SPHERE,		   ///< float:"radius"
+	SHAPE_BOX,			   ///< vec3:"extents"
+	SHAPE_CAPSULE,		   ///< dict( float:"radius", float:"height"):capsule
+	SHAPE_CYLINDER,		   ///< dict( float:"radius", float:"height"):cylinder
+	SHAPE_CONVEX_POLYGON,  ///< array of planes:"planes"
+	SHAPE_CONCAVE_POLYGON, ///< vector3 array:"triangles" , or Dictionary with "indices" (int array)
+						   ///< and "triangles" (Vector3 array)
 	SHAPE_HEIGHTMAP, ///< dict( int:"width", int:"depth",float:"cell_size", float_array:"heights"
 	SHAPE_SOFT_BODY, ///< Used internally, can't be created from the physics server.
-	SHAPE_CUSTOM, ///< Server-Implementation based custom shape, calling shape_create() with this value will result in an error
+	SHAPE_CUSTOM,	 ///< Server-Implementation based custom shape, calling shape_create() with this
+					 ///< value will result in an error
 };
 
 /* SPACE API */
 
-enum SpaceParameter {
+enum SpaceParameter
+{
 	SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
 	SPACE_PARAM_CONTACT_MAX_SEPARATION,
 	SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
@@ -63,7 +68,8 @@ enum SpaceParameter {
 
 /* AREA API */
 
-enum AreaParameter {
+enum AreaParameter
+{
 	AREA_PARAM_GRAVITY_OVERRIDE_MODE,
 	AREA_PARAM_GRAVITY,
 	AREA_PARAM_GRAVITY_VECTOR,
@@ -80,7 +86,8 @@ enum AreaParameter {
 	AREA_PARAM_WIND_ATTENUATION_FACTOR,
 };
 
-enum AreaSpaceOverrideMode {
+enum AreaSpaceOverrideMode
+{
 	AREA_SPACE_OVERRIDE_DISABLED,
 	AREA_SPACE_OVERRIDE_COMBINE,
 	AREA_SPACE_OVERRIDE_COMBINE_REPLACE,
@@ -90,19 +97,22 @@ enum AreaSpaceOverrideMode {
 
 /* BODY API */
 
-enum BodyMode {
+enum BodyMode
+{
 	BODY_MODE_STATIC,
 	BODY_MODE_KINEMATIC,
 	BODY_MODE_RIGID,
 	BODY_MODE_RIGID_LINEAR,
 };
 
-enum BodyDampMode {
+enum BodyDampMode
+{
 	BODY_DAMP_MODE_COMBINE,
 	BODY_DAMP_MODE_REPLACE,
 };
 
-enum BodyParameter {
+enum BodyParameter
+{
 	BODY_PARAM_BOUNCE,
 	BODY_PARAM_FRICTION,
 	BODY_PARAM_MASS, ///< unused for static, always infinite
@@ -116,7 +126,8 @@ enum BodyParameter {
 	BODY_PARAM_MAX,
 };
 
-enum BodyState {
+enum BodyState
+{
 	BODY_STATE_TRANSFORM,
 	BODY_STATE_LINEAR_VELOCITY,
 	BODY_STATE_ANGULAR_VELOCITY,
@@ -124,7 +135,8 @@ enum BodyState {
 	BODY_STATE_CAN_SLEEP
 };
 
-enum BodyAxis {
+enum BodyAxis
+{
 	BODY_AXIS_LINEAR_X = 1 << 0,
 	BODY_AXIS_LINEAR_Y = 1 << 1,
 	BODY_AXIS_LINEAR_Z = 1 << 2,
@@ -135,7 +147,8 @@ enum BodyAxis {
 
 /* JOINT API */
 
-enum JointType {
+enum JointType
+{
 	JOINT_TYPE_PIN,
 	JOINT_TYPE_HINGE,
 	JOINT_TYPE_SLIDER,
@@ -145,13 +158,15 @@ enum JointType {
 
 };
 
-enum PinJointParam {
+enum PinJointParam
+{
 	PIN_JOINT_BIAS,
 	PIN_JOINT_DAMPING,
 	PIN_JOINT_IMPULSE_CLAMP
 };
 
-enum HingeJointParam {
+enum HingeJointParam
+{
 	HINGE_JOINT_BIAS,
 	HINGE_JOINT_LIMIT_UPPER,
 	HINGE_JOINT_LIMIT_LOWER,
@@ -163,13 +178,15 @@ enum HingeJointParam {
 	HINGE_JOINT_MAX
 };
 
-enum HingeJointFlag {
+enum HingeJointFlag
+{
 	HINGE_JOINT_FLAG_USE_LIMIT,
 	HINGE_JOINT_FLAG_ENABLE_MOTOR,
 	HINGE_JOINT_FLAG_MAX
 };
 
-enum SliderJointParam {
+enum SliderJointParam
+{
 	SLIDER_JOINT_LINEAR_LIMIT_UPPER,
 	SLIDER_JOINT_LINEAR_LIMIT_LOWER,
 	SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS,
@@ -196,7 +213,8 @@ enum SliderJointParam {
 	SLIDER_JOINT_MAX
 };
 
-enum ConeTwistJointParam {
+enum ConeTwistJointParam
+{
 	CONE_TWIST_JOINT_SWING_SPAN,
 	CONE_TWIST_JOINT_TWIST_SPAN,
 	CONE_TWIST_JOINT_BIAS,
@@ -205,7 +223,8 @@ enum ConeTwistJointParam {
 	CONE_TWIST_MAX
 };
 
-enum G6DOFJointAxisParam {
+enum G6DOFJointAxisParam
+{
 	G6DOF_JOINT_LINEAR_LOWER_LIMIT,
 	G6DOF_JOINT_LINEAR_UPPER_LIMIT,
 	G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS,
@@ -233,7 +252,8 @@ enum G6DOFJointAxisParam {
 	G6DOF_JOINT_MAX
 };
 
-enum G6DOFJointAxisFlag {
+enum G6DOFJointAxisFlag
+{
 	G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT,
 	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT,
 	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING,
@@ -248,12 +268,14 @@ enum G6DOFJointAxisFlag {
 
 /* QUERY API */
 
-enum AreaBodyStatus {
+enum AreaBodyStatus
+{
 	AREA_BODY_ADDED,
 	AREA_BODY_REMOVED
 };
 
-enum ProcessInfo {
+enum ProcessInfo
+{
 	INFO_ACTIVE_OBJECTS,
 	INFO_COLLISION_PAIRS,
 	INFO_ISLAND_COUNT
@@ -267,3 +289,5 @@ enum ProcessInfo {
 
 // Alias to make it easier to use.
 #define PS3DE PhysicsServer3DEnums
+
+

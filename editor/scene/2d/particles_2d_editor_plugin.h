@@ -105,7 +105,7 @@ protected:
 	void _node_removed(Node* p_node);
 
 public:
-	Particles2DEditorPlugin();
+	Particles2DEditorPlugin() = default;
 };
 
 class GPUParticles2DEditorPlugin : public Particles2DEditorPlugin

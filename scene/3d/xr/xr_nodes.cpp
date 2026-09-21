@@ -30,6 +30,7 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/types.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "servers/xr/xr_interface.h"
@@ -402,7 +403,7 @@ void XROrigin3D::_physics_interpolated_changed()
 	}
 }
 
-
+PackedStringArray XROrigin3D::get_configuration_warnings() const { return PackedStringArray(); }
 
 void XRNode3D::_set_has_tracking_data(bool) {}
 

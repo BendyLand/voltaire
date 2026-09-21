@@ -787,4 +787,8 @@ Ref<SkinReference> Skeleton3D::register_skin(Ref<Skin> const&)
 
 void Skeleton3D::add_child_notify(Node* p_child) {}
 
+void Skeleton3D::remove_child_notify(Node* p_child) {}
+
+void Skeleton3D::move_child_notify(Node* p_child) {}
+
 

@@ -583,4 +583,17 @@ void SpringBoneSimulator3D::set_exclude_collision_count(int, int) {}
 
 void SpringBoneSimulator3D::set_collision_count(int, int) {}
 
+void SpringBoneSimulator3D::add_child_notify(Node* p_child) {}
+
+void SpringBoneSimulator3D::remove_child_notify(Node* p_child) {}
+
+void SpringBoneSimulator3D::move_child_notify(Node* p_child) {}
+
+void SpringBoneSimulator3D::_skeleton_changed(
+	Skeleton3D* p_old_skeleton, Skeleton3D* p_new_skeleton)
+{
+}
+
+void SpringBoneSimulator3D::_process_modification(double p_delta) {}
+
 

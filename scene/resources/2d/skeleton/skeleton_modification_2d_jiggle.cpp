@@ -212,7 +212,8 @@ Vector2 SkeletonModification2DJiggle::get_jiggle_joint_gravity(int p_joint_idx) 
 SkeletonModification2DJiggle::SkeletonModification2DJiggle()
 {
 	stack = nullptr;
-	is_setup = false;
+
+is_setup = false;
 	jiggle_data_chain = Vector<Jiggle_Joint_Data2D>();
 	stiffness = 3;
 	mass = 0.75;
@@ -249,10 +250,12 @@ void SkeletonModification2DJiggle::reset()
 
 SkeletonModification2DJiggle::~SkeletonModification2DJiggle() {}
 
-
+void SkeletonModification2DJiggle::_execute(float p_delta) {}
 
 void SkeletonModification2DJiggle::update_target_cache() {}
 
 void SkeletonModification2DJiggle::set_jiggle_joint_use_gravity(int, bool) {}
 
 void SkeletonModification2DJiggle::jiggle_joint_update_bone2d_cache(int) {}
+
+

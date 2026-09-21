@@ -52,7 +52,7 @@ public:
 	virtual void solve(real_t p_step) override;
 
 	GodotAreaPair3D(GodotBody3D* p_body, int p_body_shape, GodotArea3D* p_area, int p_area_shape);
-	~GodotAreaPair3D();
+	~GodotAreaPair3D() = default;
 };
 
 class GodotArea2Pair3D : public GodotConstraint3D
@@ -74,7 +74,7 @@ public:
 	virtual void solve(real_t p_step) override;
 
 	GodotArea2Pair3D(GodotArea3D* p_area_a, int p_shape_a, GodotArea3D* p_area_b, int p_shape_b);
-	~GodotArea2Pair3D();
+	~GodotArea2Pair3D() = default;
 };
 
 class GodotAreaSoftBodyPair3D : public GodotConstraint3D
@@ -95,7 +95,7 @@ public:
 
 	GodotAreaSoftBodyPair3D(
 		GodotSoftBody3D* p_sof_body, int p_soft_body_shape, GodotArea3D* p_area, int p_area_shape);
-	~GodotAreaSoftBodyPair3D();
+	~GodotAreaSoftBodyPair3D() = default;
 };
 
 

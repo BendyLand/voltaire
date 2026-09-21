@@ -102,8 +102,6 @@ RetargetModifier3D::RetargetModifier3D() {}
 
 RetargetModifier3D::~RetargetModifier3D() {}
 
-
-
 void RetargetModifier3D::_update_child_skeletons() {}
 
 void RetargetModifier3D::_retarget_pose() {}
@@ -111,3 +109,15 @@ void RetargetModifier3D::_retarget_pose() {}
 void RetargetModifier3D::_retarget_global_pose() {}
 
 void RetargetModifier3D::_profile_changed(Ref<SkeletonProfile>, Ref<SkeletonProfile>) {}
+
+void RetargetModifier3D::add_child_notify(Node* p_child) {}
+
+void RetargetModifier3D::remove_child_notify(Node* p_child) {}
+
+void RetargetModifier3D::move_child_notify(Node* p_child) {}
+
+void RetargetModifier3D::_skeleton_changed(Skeleton3D* p_old_skeleton, Skeleton3D* p_new_skeleton)
+{
+}
+
+

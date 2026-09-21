@@ -67,6 +67,10 @@ WorldBoundaryShape3D::WorldBoundaryShape3D()
 	set_plane(Plane(0, 1, 0, 0));
 }
 
-
+Ref<ArrayMesh> WorldBoundaryShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
 
 void WorldBoundaryShape3D::_update_shape() {}

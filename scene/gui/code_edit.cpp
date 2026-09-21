@@ -319,10 +319,7 @@ PackedInt32Array CodeEdit::get_breakpointed_lines() const
 	return ret;
 }
 
-bool CodeEdit::is_line_bookmarked(int p_line) const
-{
-	return true;
-}
+bool CodeEdit::is_line_bookmarked(int p_line) const { return true; }
 
 void CodeEdit::clear_bookmarked_lines()
 {
@@ -1440,6 +1437,7 @@ void CodeEdit::_remove_delimiter(const String& p_start_key, DelimiterType p_type
 		if (p_type == DelimiterType::TYPE_COMMENT) {
 			_update_code_region_tags();
 		}
+
 		break;
 	}
 }
@@ -1509,8 +1507,6 @@ CodeEdit::~CodeEdit() { _clear_line_number_text_cache(); }
 
 void CodeEdit::unfold_line(int p_line) {}
 
-
-
 void CodeEdit::set_line_as_breakpoint(int, bool) {}
 
 void CodeEdit::set_line_as_bookmarked(int, bool) {}
@@ -1532,3 +1528,9 @@ void CodeEdit::_text_changed() {}
 void CodeEdit::request_code_completion(bool) {}
 
 void CodeEdit::cancel_code_completion() {}
+
+RID CodeEdit::get_focused_accessibility_element() const { return RID(); }
+
+void CodeEdit::_draw_guidelines() {}
+
+

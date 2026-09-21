@@ -83,4 +83,10 @@ void ChainIK3DGizmoPlugin::draw_line(Ref<SurfaceTool>& p_surface_tool, const Vec
 	p_surface_tool->add_vertex(p_end_pos);
 }
 
+bool ChainIK3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+int ChainIK3DGizmoPlugin::get_priority() const { return 0; }
+
+void ChainIK3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
 

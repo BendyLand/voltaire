@@ -86,7 +86,7 @@ public:
 #endif // TOOLS_ENABLED
 
 	SkeletonModification2DTwoBoneIK();
-	~SkeletonModification2DTwoBoneIK();
+	~SkeletonModification2DTwoBoneIK() = default;
 };
 
 

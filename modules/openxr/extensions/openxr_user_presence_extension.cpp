@@ -40,8 +40,6 @@ OpenXRUserPresenceExtension::OpenXRUserPresenceExtension() { singleton = this; }
 
 OpenXRUserPresenceExtension::~OpenXRUserPresenceExtension() { singleton = nullptr; }
 
-
-
 void* OpenXRUserPresenceExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
 {
 	if (!available) {
@@ -65,5 +63,16 @@ void OpenXRUserPresenceExtension::on_state_ready() { user_present = true; }
 void OpenXRUserPresenceExtension::on_state_stopping() { user_present = false; }
 
 bool OpenXRUserPresenceExtension::is_user_present() const { return user_present; }
+
+HashMap<String, bool*> OpenXRUserPresenceExtension::get_requested_extensions(
+	unsigned long p_extension_flags)
+{
+	return HashMap<String, bool*>();
+}
+
+bool OpenXRUserPresenceExtension::on_event_polled(const XrEventDataBuffer& p_event)
+{
+	return false;
+}
 
 

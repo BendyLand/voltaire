@@ -1010,6 +1010,7 @@ void EditorExportPlatformAppleEmbedded::_initialize(
 
 	plugins_changed.set();
 
+
 	devices_changed.set();
 #ifdef MACOS_ENABLED
 	_update_preset_status();
@@ -1036,6 +1037,41 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(
 	Ref<EditorExportPreset> const&, bool, String const&, unsigned int, bool, bool)
 {
 	return OK;
+}
+
+bool EditorExportPlatformAppleEmbedded::has_valid_project_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error) const
+{
+	return false;
+}
+
+void EditorExportPlatformAppleEmbedded::get_preset_features(
+	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
+{
+}
+
+String EditorExportPlatformAppleEmbedded::get_export_option_warning(
+	const EditorExportPreset* p_preset, const StringName& p_name) const
+{
+	return String();
+}
+
+bool EditorExportPlatformAppleEmbedded::get_export_option_visibility(
+	const EditorExportPreset* p_preset, const String& p_option) const
+{
+	return false;
+}
+
+bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
+	return false;
+}
+
+void EditorExportPlatformAppleEmbedded::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
 }
 
 

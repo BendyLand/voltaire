@@ -246,7 +246,7 @@ public:
 	bool test_body_motion(GodotBody3D* p_body, const PS3DT::MotionParameters& p_parameters,
 		PS3DT::MotionResult* r_result);
 
-	GodotSpace3D();
+	GodotSpace3D() = default;
 	~GodotSpace3D();
 };
 

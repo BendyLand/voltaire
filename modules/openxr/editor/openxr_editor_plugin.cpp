@@ -118,4 +118,21 @@ void OpenXREditorPlugin::_notification(int p_what)
 
 bool OpenXRExportPlugin::is_openxr_mode() const { return false; }
 
+String OpenXRExportPlugin::_get_export_option_warning(
+	const Ref<EditorExportPlatform>& p_platform, const String& p_option) const
+{
+	return String();
+}
+
+bool OpenXRExportPlugin::supports_platform(const Ref<EditorExportPlatform>& p_platform) const
+{
+	return false;
+}
+
+String OpenXRExportPlugin::get_android_manifest_element_contents(
+	const Ref<EditorExportPlatform>& p_platform, bool p_is_main) const
+{
+	return String();
+}
+
 

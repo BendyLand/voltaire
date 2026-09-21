@@ -961,7 +961,8 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 			const uint16_t* src = (const uint16_t*)old_data.ptr();
 			uint16_t* dst = (uint16_t*)new_data.ptrw();
 			for (uint32_t k = 0; k < count; k += 4) {
-				dst[k + 3] = src[k + 3];
+				dst[k + 3] = src[k +
+3];
 			}
 
 			p_rd->texture_update(p_dest_light_tex, index, new_data);
@@ -1013,6 +1014,19 @@ Vector<Color> LightmapperRD::get_bake_probe_sh(int p_probe) const
 	return ret;
 }
 
-LightmapperRD::LightmapperRD() {}
+Lightmapper::BakeError LightmapperRD::bake(Lightmapper::BakeQuality p_quality, bool p_use_denoiser,
+	float p_denoiser_strength, int p_denoiser_range, int p_bounces, float p_bounce_indirect_energy,
+	float p_bias, int p_max_texture_size, bool p_bake_sh, bool p_texture_based,
+	bool p_generate_atlas, Lightmapper::GenerateProbes p_generate_probes,
+	const Ref<Image>& p_environment_panorama, const Basis& p_environment_transform,
+	BakeStepFunc p_step_function, void* p_step_userdata, float p_exposure_normalization,
+	float p_supersampling_factor)
+{
+	return Lightmapper::BAKE_OK;
+}
+
+int LightmapperRD::get_bake_mesh_texture_slice(int p_slice) const { return 0; }
+
+Vector3 LightmapperRD::get_bake_probe_point(int p_probe) const { return Vector3(); }
 
 

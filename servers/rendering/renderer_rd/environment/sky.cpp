@@ -1196,4 +1196,6 @@ RID RendererRD::SkyRD::SkyShader::get_default_shader_rd(bool p_wireframe) { retu
 
 RendererRD::SkyRD::SkyRD() {}
 
+void RendererRD::SkyRD::SkyShaderData::set_code(const String& p_code) {}
+
 

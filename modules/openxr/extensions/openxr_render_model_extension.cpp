@@ -798,9 +798,11 @@ Node3D* OpenXRRenderModelData::new_scene_instance()
 	return &n;
 }
 
-OpenXRRenderModelData::OpenXRRenderModelData() {}
-
-OpenXRRenderModelData::~OpenXRRenderModelData() {}
+HashMap<String, bool*> OpenXRRenderModelExtension::get_requested_extensions(
+	unsigned long p_extension_flags)
+{
+	return HashMap<String, bool*>();
+}
 #endif // MODULE_GLTF_ENABLED
 
 

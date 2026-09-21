@@ -291,4 +291,39 @@ void EditorExportPlatformLinuxBSD::cleanup()
 	cleanup_commands.clear();
 }
 
+Error EditorExportPlatformLinuxBSD::run(
+	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
+{
+	return OK;
+}
+
+bool EditorExportPlatformLinuxBSD::poll_export() { return true; }
+
+bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
+	return false;
+}
+
+bool EditorExportPlatformLinuxBSD::get_export_option_visibility(
+	const EditorExportPreset* p_preset, const String& p_option) const
+{
+	return false;
+}
+
+void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption>* r_options) const {}
+
+List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(
+	const Ref<EditorExportPreset>& p_preset) const
+{
+	return List<String>();
+}
+
+Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>& p_preset,
+	bool p_debug, const String& p_path, uint32_t p_flags, bool p_notify)
+{
+	return OK;
+}
+
 

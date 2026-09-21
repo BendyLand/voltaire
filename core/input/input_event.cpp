@@ -1407,6 +1407,7 @@ void InputEventMIDI::set_pressure(const int p_pressure) { pressure = p_pressure;
 int InputEventMIDI::get_pressure() const { return pressure; }
 
 void InputEventMIDI::set_controller_number(const int p_controller_number)
+
 {
 	controller_number = p_controller_number;
 }
@@ -1480,5 +1481,7 @@ InputEventShortcut::InputEventShortcut() { pressed = true; }
 uint32_t InputEventMouse::get_button_mask() const { return 0; }
 
 void InputEventMouse::set_button_mask(uint32_t p_mask) {}
+
+String InputEvent::as_text() const { return String(); }
 
 

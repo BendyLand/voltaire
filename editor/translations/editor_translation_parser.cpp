@@ -42,8 +42,6 @@ void EditorTranslationParserPlugin::get_recognized_extensions(List<String>* r_ex
 	}
 }
 
-/////////////////////////
-
 void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensions) const
 {
 	HashSet<String> extensions;
@@ -153,6 +151,12 @@ EditorTranslationParser::~EditorTranslationParser()
 	singleton = nullptr;
 }
 
-
-
 void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>>&) const {}
+
+Error EditorTranslationParserPlugin::parse_file(
+	const String& p_path, Vector<Vector<String>>* r_translations)
+{
+	return OK;
+}
+
+

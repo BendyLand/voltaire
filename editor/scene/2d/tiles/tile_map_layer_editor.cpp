@@ -546,14 +546,16 @@ TileMapLayerEditor::~TileMapLayerEditor()
 
 void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {}
 
-
 TileMapLayer* TileMapLayerSubEditorPlugin::_get_edited_layer() const {}
 
 void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_tiles_selection() {}
 
 void TileMapLayerEditorTilesPlugin::_update_selection_pattern_from_tileset_pattern_selection() {}
 
-void TileMapLayerEditorTilesPlugin::_set_transform_buttons_state(Vector<Button*> const&, Vector<Button*> const&, String const&) {}
+void TileMapLayerEditorTilesPlugin::_set_transform_buttons_state(
+	Vector<Button*> const&, Vector<Button*> const&, String const&)
+{
+}
 
 void TileMapLayerEditorTerrainsPlugin::_update_terrains_tree() {}
 
@@ -571,4 +573,18 @@ void TileMapLayerEditorTerrainsPlugin::_update_tiles_list() {}
 
 void TileMapLayerEditor::forward_canvas_draw_over_viewport(Control*) {}
 
-void TileMapLayerEditor::_find_tile_map_layers_in_scene(Node*, Node const*, Vector<TileMapLayer*>&) const {}
+void TileMapLayerEditor::_find_tile_map_layers_in_scene(
+	Node*, Node const*, Vector<TileMapLayer*>&) const
+{
+}
+
+bool TileMapLayerEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEvent>& p_event)
+{
+	return false;
+}
+
+void TileMapLayerEditorTilesPlugin::forward_canvas_draw_over_viewport(Control* p_overlay) {}
+
+void TileMapLayerEditorTerrainsPlugin::forward_canvas_draw_over_viewport(Control* p_overlay) {}
+
+

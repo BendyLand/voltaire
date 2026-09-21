@@ -195,4 +195,6 @@ String ShaderCreateDialog::_validate_path(const String& p_path)
 	return TTRC("Invalid extension for selected shader type.");
 }
 
+void ShaderCreateDialog::ok_pressed() {}
+
 

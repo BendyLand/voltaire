@@ -377,7 +377,8 @@ void ResourceImporterTexture::_clamp_hdr_exposure(Ref<Image>& r_image)
 				clamped_color = color;
 			}
 			else {
-				clamped_color = (color / luma) * ((linear * linear - compressed * luma) /
+				clamped_color = (color / luma) * ((linear * linear - compressed *
+luma) /
 													 (2 * linear - compressed - luma));
 			}
 
@@ -416,5 +417,12 @@ void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<I
 	Image::BPTCFormat p_bptc_format)
 {
 }
+
+void ResourceImporterTexture::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+String ResourceImporterTexture::get_import_settings_string() const { return String(); }
 
 

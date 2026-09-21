@@ -3562,4 +3562,6 @@ void RendererRD::TextureStorage::_render_target_allocate_sdf(
 {
 }
 
+void RendererRD::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture) {}
+
 

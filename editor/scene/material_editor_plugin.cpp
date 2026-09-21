@@ -176,3 +176,16 @@ void MaterialEditor::edit(Ref<Material>, Ref<Environment> const&) {}
 
 EditorInspectorPluginMaterial::EditorInspectorPluginMaterial() {}
 
+Ref<Resource> CanvasItemMaterialConversionPlugin::convert(const Ref<Resource>& p_resource) const
+{
+	Ref<Resource> r = memnew(Resource);
+	return r;
+}
+
+Ref<Resource> BlitMaterialConversionPlugin::convert(const Ref<Resource>& p_resource) const
+{
+	Ref<Resource> r = memnew(Resource);
+	return r;
+}
+
+

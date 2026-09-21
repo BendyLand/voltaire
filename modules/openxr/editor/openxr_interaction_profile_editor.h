@@ -78,7 +78,7 @@ public:
 	virtual void setup(const Ref<OpenXRActionMap>& p_action_map,
 		const Ref<OpenXRInteractionProfile>& p_interaction_profile);
 
-	OpenXRInteractionProfileEditorBase();
+	OpenXRInteractionProfileEditorBase() = default;
 };
 
 class OpenXRInteractionProfileEditor : public OpenXRInteractionProfileEditorBase

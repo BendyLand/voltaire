@@ -40,10 +40,6 @@
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #endif
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationPlaneTracking
-
-
 bool OpenXRSpatialCapabilityConfigurationPlaneTracking::has_valid_configuration() const
 {
 	OpenXRSpatialPlaneTrackingCapability* capability =
@@ -151,10 +147,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationPlaneTracking::_get_enabled
 	return components;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentPlaneAlignmentList
-
-
 void OpenXRSpatialComponentPlaneAlignmentList::set_capacity(uint32_t p_capacity)
 {
 	plane_alignment_data.resize(p_capacity);
@@ -187,10 +179,6 @@ OpenXRSpatialComponentPlaneAlignmentList::_get_plane_alignment(int64_t p_index) 
 {
 	return (PlaneAlignment)get_plane_alignment(p_index);
 }
-
-////////////////////////////////////////////////////////////////////////////
-// Spatial component polygon2d list
-
 
 void OpenXRSpatialComponentPolygon2DList::set_capacity(uint32_t p_capacity)
 {
@@ -240,10 +228,6 @@ PackedVector2Array OpenXRSpatialComponentPolygon2DList::get_vertices(
 	return se_extension->get_vector2_buffer(p_snapshot, buffer.bufferId);
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentPlaneSemanticLabelList
-
-
 void OpenXRSpatialComponentPlaneSemanticLabelList::set_capacity(uint32_t p_capacity)
 {
 	plane_semantic_label_data.resize(p_capacity);
@@ -277,10 +261,6 @@ OpenXRSpatialComponentPlaneSemanticLabelList::_get_plane_semantic_label(int64_t 
 {
 	return (PlaneSemanticLabel)get_plane_semantic_label(p_index);
 }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRPlaneTracker
-
 
 void OpenXRPlaneTracker::set_bounds_size(const Vector2& p_bounds_size)
 {
@@ -528,9 +508,6 @@ Ref<Shape3D> OpenXRPlaneTracker::get_shape(real_t p_thickness)
 }
 #endif // PHYSICS_3D_DISABLED
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialPlaneTrackingCapability
-
 OpenXRSpatialPlaneTrackingCapability* OpenXRSpatialPlaneTrackingCapability::singleton = nullptr;
 
 OpenXRSpatialPlaneTrackingCapability* OpenXRSpatialPlaneTrackingCapability::get_singleton()
@@ -564,9 +541,6 @@ bool OpenXRSpatialPlaneTrackingCapability::is_supported()
 	return spatial_plane_tracking_supported;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Discovery logic
-
 void OpenXRSpatialPlaneTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
 {
 	spatial_context = p_spatial_context;
@@ -580,5 +554,11 @@ void OpenXRSpatialPlaneTrackingCapability::_on_spatial_discovery_recommended(RID
 		need_discovery = true;
 	}
 }
+
+void OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
+
+void OpenXRSpatialPlaneTrackingCapability::on_process() {}
 
 

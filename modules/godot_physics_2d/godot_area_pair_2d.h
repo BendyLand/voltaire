@@ -51,7 +51,7 @@ public:
 	virtual bool pre_solve(real_t p_step) override;
 
 	GodotAreaPair2D(GodotBody2D* p_body, int p_body_shape, GodotArea2D* p_area, int p_area_shape);
-	~GodotAreaPair2D();
+	~GodotAreaPair2D() = default;
 };
 
 class GodotArea2Pair2D : public GodotConstraint2D
@@ -73,7 +73,7 @@ public:
 	virtual bool pre_solve(real_t p_step) override;
 
 	GodotArea2Pair2D(GodotArea2D* p_area_a, int p_shape_a, GodotArea2D* p_area_b, int p_shape_b);
-	~GodotArea2Pair2D();
+	~GodotArea2Pair2D() = default;
 };
 
 

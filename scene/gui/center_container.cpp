@@ -32,4 +32,12 @@
 
 bool CenterContainer::is_using_top_left() const { return use_top_left; }
 
+Size2 CenterContainer::get_minimum_size() const { return Size2(); }
+
+Size2 CenterContainer::get_desired_size() const { return Size2(); }
+
+Vector<int> CenterContainer::get_allowed_size_flags_horizontal() const { return Vector<int>(); }
+
+Vector<int> CenterContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
+
 

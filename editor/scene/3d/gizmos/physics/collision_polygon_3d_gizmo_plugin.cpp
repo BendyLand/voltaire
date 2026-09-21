@@ -68,4 +68,10 @@ void CollisionPolygon3DGizmoPlugin::create_collision_material(const String& p_na
 
 String CollisionPolygon3DGizmoPlugin::get_gizmo_name() const { return "CollisionPolygon3D"; }
 
+bool CollisionPolygon3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+int CollisionPolygon3DGizmoPlugin::get_priority() const { return 0; }
+
+void CollisionPolygon3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
 

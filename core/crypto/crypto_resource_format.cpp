@@ -103,4 +103,11 @@ Error ResourceFormatSaverCrypto::save(
 	return OK;
 }
 
+bool ResourceFormatSaverCrypto::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceFormatSaverCrypto::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
+
 

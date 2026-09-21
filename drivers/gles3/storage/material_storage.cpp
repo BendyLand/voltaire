@@ -246,7 +246,9 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(
 }
 
 void ShaderData::get_instance_param_list(
-	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const {}
+	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+{
+}
 
 void ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
@@ -277,7 +279,6 @@ bool ShaderData::is_parameter_texture(const StringName& p_param) const
 
 	return uniforms[p_param].is_texture();
 }
-
 
 // Look up table to translate ShaderLanguage::DataType to GL_TEXTURE_*
 static const GLenum target_from_type[ShaderLanguage::TYPE_MAX] = {
@@ -1766,7 +1767,8 @@ void SkyShaderData::set_code(const String& p_code)
 	ShaderCompiler::GeneratedCode gen_code;
 
 	ShaderCompiler::IdentifierActions actions;
-	actions.entry_point_stages["sky"] = ShaderCompiler::STAGE_FRAGMENT;
+	actions.entry_point_stages["sky"
+] = ShaderCompiler::STAGE_FRAGMENT;
 
 	actions.render_mode_flags["use_half_res_pass"] = &uses_half_res;
 	actions.render_mode_flags["use_quarter_res_pass"] = &uses_quarter_res;
@@ -2450,6 +2452,10 @@ GLES3::MaterialData* GLES3::_create_tex_blit_material_func(ShaderData* p_shader)
 	// update will happen later anyway so do nothing.
 	return material_data;
 }
+
+void GLES3::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void GLES3::MaterialStorage::material_free(RID p_rid) {}
 
 #endif // !GLES3_ENABLED
 

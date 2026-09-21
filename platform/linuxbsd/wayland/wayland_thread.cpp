@@ -6238,7 +6238,8 @@ bool WaylandThread::is_suspended() const
 	return true;
 }
 
-bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
+bool WaylandThread::window_wait_ready
+(DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
 {
 	MutexLock mutex_lock(mutex);
 
@@ -6349,6 +6350,35 @@ void WaylandThread::destroy()
 	if (wl_display) {
 		wl_display_disconnect(wl_display);
 	}
+}
+
+void WaylandThread::_wp_tablet_tool_on_frame(
+	void* data, struct zwp_tablet_tool_v2* wp_tablet_tool_v2, uint32_t time)
+{
+}
+
+void WaylandThread::_wp_tablet_tool_on_proximity_out(
+	void* data, struct zwp_tablet_tool_v2* wp_tablet_tool_v2)
+{
+}
+
+void WaylandThread::_wp_tablet_tool_on_up(void* data, struct zwp_tablet_tool_v2* wp_tablet_tool_v2)
+{
+}
+
+void WaylandThread::_wp_tablet_tool_on_down(
+	void* data, struct zwp_tablet_tool_v2* wp_tablet_tool_v2, uint32_t serial)
+{
+}
+
+void WaylandThread::_wp_tablet_tool_on_button(void* data,
+	struct zwp_tablet_tool_v2* wp_tablet_tool_v2, uint32_t serial, uint32_t button, uint32_t state)
+{
+}
+
+void WaylandThread::_wl_pointer_on_button(void* data, struct wl_pointer* wl_pointer,
+	uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
+{
 }
 
 #endif // WAYLAND_ENABLED

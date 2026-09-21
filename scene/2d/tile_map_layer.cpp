@@ -887,6 +887,7 @@ Rect2 TileMapLayer::get_rect(bool& r_changed) const
 #endif
 	return rect_cache;
 }
+
 HashMap<Vector2i, TileSet::TerrainsPattern> TileMapLayer::terrain_fill_constraints(
 	const Vector<Vector2i>& p_to_replace, int p_terrain_set,
 	const RBSet<TerrainConstraint>& p_constraints) const
@@ -1954,8 +1955,6 @@ TerrainConstraint::TerrainConstraint(Ref<TileSet> p_tile_set, const Vector2i& p_
 	terrain = p_terrain;
 }
 
-
-
 void TileMapLayer::_build_runtime_update_tile_data_for_cell(CellData&, bool, bool) {}
 
 void TileMapLayer::_scenes_update_cell(CellData&) {}
@@ -1966,7 +1965,10 @@ void TileMapLayer::notify_runtime_tile_data_update() {}
 
 void TileMapLayer::_navigation_update_cell(CellData&) {}
 
-void TileMapLayer::draw_tile(RID, Vector2 const&, Ref<TileSet>, int, Vector2i const&, int, int, TileData const*, float) {}
+void TileMapLayer::draw_tile(
+	RID, Vector2 const&, Ref<TileSet>, int, Vector2i const&, int, int, TileData const*, float)
+{
+}
 
 void TileMapLayer::_update_cells_callback(bool) {}
 
@@ -1999,3 +2001,17 @@ void TileMapLayer::_physics_draw_quadrant_debug(RID const&, DebugQuadrant&) {}
 void TileMapLayer::_navigation_draw_cell_debug(RID const&, Vector2 const&, CellData const&) {}
 
 void TileMapLayer::fix_invalid_tiles() {}
+
+void TileMapLayer::_update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat) {}
+
+void TileMapLayer::_update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter) {}
+
+void TileMapLayer::set_z_index(int p_z_index) {}
+
+void TileMapLayer::set_y_sort_enabled(bool p_y_sort_enabled) {}
+
+void TileMapLayer::set_self_modulate(const Color& p_self_modulate) {}
+
+void TileMapLayer::set_light_mask(int p_light_mask) {}
+
+

@@ -472,4 +472,28 @@ String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_form
 	}
 }
 
+bool OpenXRVulkanExtension::create_vulkan_instance(
+	const VkInstanceCreateInfo* p_create_info, VkInstance_T** r_instance)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::get_physical_device(VkPhysicalDevice_T** r_physical_device)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::create_vulkan_device(
+	const VkDeviceCreateInfo* p_create_info, VkDevice_T** r_device)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain, long p_index,
+	unsigned int p_width, unsigned int p_height, unsigned int p_layers, unsigned int p_format,
+	void** r_image_data)
+{
+	return true;
+}
+
 

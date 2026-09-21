@@ -253,10 +253,6 @@ void CPUParticles3D::set_emission_colors(const Vector<Color>& p_colors)
 	emission_colors = p_colors;
 }
 
-
-
-
-
 void CPUParticles3D::set_scale_curve_x(Ref<Curve> p_scale_curve) { scale_curve_x = p_scale_curve; }
 
 void CPUParticles3D::set_scale_curve_y(Ref<Curve> p_scale_curve) { scale_curve_y = p_scale_curve; }
@@ -632,5 +628,7 @@ CPUParticles3D::~CPUParticles3D()
 void CPUParticles3D::_set_redraw(bool p_redraw) {}
 
 void CPUParticles3D::_particles_process(double p_delta) {}
+
+PackedStringArray CPUParticles3D::get_configuration_warnings() const { return PackedStringArray(); }
 
 

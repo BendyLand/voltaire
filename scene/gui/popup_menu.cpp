@@ -69,8 +69,7 @@ bool PopupMenu::_set_item_accelerator(int p_index, const Ref<InputEventKey>& p_i
 	return false;
 }
 
-void PopupMenu::_set_item_checkable_type(int p_index, int p_checkable_type)
-{}
+void PopupMenu::_set_item_checkable_type(int p_index, int p_checkable_type) {}
 
 int PopupMenu::_get_item_checkable_type(int p_index) const
 {
@@ -111,7 +110,10 @@ bool PopupMenu::is_system_menu() const
 	return (global_menu == system_menu) && (system_menu_id != NativeMenu::INVALID_MENU_ID);
 }
 
-void PopupMenu::add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id, Key p_accel) {}
+void PopupMenu::add_icon_item(
+	const Ref<Texture2D>& p_icon, const String& p_label, int p_id, Key p_accel)
+{
+}
 
 void PopupMenu::add_item(const String& p_label, int p_id, Key p_accel) {}
 
@@ -1249,10 +1251,6 @@ void PopupMenu::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
 PopupMenu::~PopupMenu() { unbind_global_menu(); }
 
-
-
-PopupMenu::PopupMenu() {}
-
 void PopupMenu::_shape_item(int) const {}
 
 void PopupMenu::_input_from_window_internal(Ref<InputEvent> const&) {}
@@ -1260,3 +1258,17 @@ void PopupMenu::_input_from_window_internal(Ref<InputEvent> const&) {}
 void PopupMenu::_close_or_suspend() {}
 
 void PopupMenu::_activate_submenu(int, bool) {}
+
+void PopupMenu::set_visible(bool p_visible) {}
+
+void PopupMenu::remove_child_notify(Node* p_child) {}
+
+void PopupMenu::_pre_popup(const Size2i& p_size) {}
+
+void PopupMenu::_parent_focused() {}
+
+String PopupMenu::_get_accessibility_name() const { return String(); }
+
+void PopupMenu::add_child_notify(Node* p_child) {}
+
+

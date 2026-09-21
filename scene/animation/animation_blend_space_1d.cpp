@@ -62,7 +62,6 @@ void AnimationNodeBlendSpace1D::validate_node(
 	}
 }
 
-
 void AnimationNodeBlendSpace1D::get_child_nodes(LocalVector<ChildNode>* r_child_nodes)
 {
 	for (int i = 0; i < blend_points_used; i++) {
@@ -250,5 +249,12 @@ void AnimationNodeBlendSpace1D::_check_can_sync()
 }
 
 String AnimationNodeBlendSpace1D::get_caption() const { return "BlendSpace1D"; }
+
+AnimationNode::NodeTimeInfo AnimationNodeBlendSpace1D::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
 
 

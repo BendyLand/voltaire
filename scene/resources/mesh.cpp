@@ -1132,4 +1132,6 @@ Error ArrayMesh::lightmap_unwrap_cached(const Transform3D& p_base_transform, flo
 	return OK;
 }
 
+void ArrayMesh::reload_from_file() {}
+
 

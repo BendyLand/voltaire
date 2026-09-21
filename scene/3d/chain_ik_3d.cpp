@@ -120,9 +120,7 @@ void ChainIK3D::_validate_axes(Skeleton3D* p_skeleton) const
 	}
 }
 
-void ChainIK3D::_validate_axis(Skeleton3D* p_skeleton, int p_index, int p_joint) const
-{
-}
+void ChainIK3D::_validate_axis(Skeleton3D* p_skeleton, int p_index, int p_joint) const {}
 
 void ChainIK3D::_make_all_joints_dirty()
 {
@@ -131,9 +129,7 @@ void ChainIK3D::_make_all_joints_dirty()
 	}
 }
 
-void ChainIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta)
-{
-}
+void ChainIK3D::_process_ik(Skeleton3D* p_skeleton, double p_delta) {}
 
 #ifdef TOOLS_ENABLED
 Transform3D ChainIK3D::get_bone_global_rest_mutable(Skeleton3D* p_skeleton, int p_bone)
@@ -164,5 +160,7 @@ Vector3 ChainIK3D::get_bone_vector(int p_index, int p_joint) const { return Vect
 #endif // TOOLS_ENABLED
 
 ChainIK3D::~ChainIK3D() { clear_settings(); }
+
+void ChainIK3D::_set_joint_count(int p_chain, int p_count) {}
 
 

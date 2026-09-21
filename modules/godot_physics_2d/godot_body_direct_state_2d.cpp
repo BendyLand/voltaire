@@ -265,4 +265,6 @@ real_t GodotPhysicsDirectBodyState2D::get_step() const
 	return body->get_space()->get_last_step();
 }
 
+void GodotPhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform) {}
+
 

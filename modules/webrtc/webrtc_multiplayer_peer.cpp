@@ -115,10 +115,6 @@ int WebRTCMultiplayerPeer::get_unique_id() const
 
 bool WebRTCMultiplayerPeer::has_peer(int p_peer_id) { return peer_map.has(p_peer_id); }
 
-
-
-
-
 void WebRTCMultiplayerPeer::disconnect_peer(int p_peer_id, bool p_force)
 {
 	ERR_FAIL_COND(!peer_map.has(p_peer_id));
@@ -224,10 +220,10 @@ int WebRTCMultiplayerPeer::get_available_packet_count() const
 
 int WebRTCMultiplayerPeer::get_max_packet_size() const { return 1200; }
 
-
-
 WebRTCMultiplayerPeer::~WebRTCMultiplayerPeer() { close(); }
 
-
-
 void WebRTCMultiplayerPeer::close() {}
+
+void WebRTCMultiplayerPeer::poll() {}
+
+

@@ -1285,4 +1285,6 @@ Point2 CanvasItem::_edit_get_position() const { return Point2(); }
 
 void CanvasItem::_edit_set_position(const Point2& p_position) {}
 
+Transform2D CanvasItem::get_transform() const { return Transform2D(); }
+
 

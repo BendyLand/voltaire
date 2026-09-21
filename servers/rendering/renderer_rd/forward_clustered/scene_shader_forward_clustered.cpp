@@ -921,4 +921,9 @@ void RendererSceneRenderImplementation::SceneShaderForwardClustered::set_default
 {
 }
 
+void RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::set_code(
+	const String& p_code)
+{
+}
+
 

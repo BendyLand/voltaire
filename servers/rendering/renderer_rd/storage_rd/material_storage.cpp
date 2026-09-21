@@ -1407,4 +1407,10 @@ MaterialStorage::MaterialDataRequestFunction MaterialStorage::material_get_data_
 
 void RendererRD::MaterialStorage::_update_queued_materials() {}
 
+void RendererRD::MaterialStorage::TexBlitShaderData::set_code(const String& p_code) {}
+
+void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void RendererRD::MaterialStorage::material_free(RID p_rid) {}
+
 

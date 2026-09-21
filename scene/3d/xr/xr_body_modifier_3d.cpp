@@ -32,7 +32,6 @@
 #include "servers/xr/xr_server.h"
 #include "xr_body_modifier_3d.h"
 
-
 void XRBodyModifier3D::set_body_tracker(const StringName& p_tracker_name)
 {
 	tracker_name = p_tracker_name;
@@ -72,6 +71,8 @@ void XRBodyModifier3D::_skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new)
 	_get_joint_data();
 }
 
-
-
 void XRBodyModifier3D::_get_joint_data() {}
+
+void XRBodyModifier3D::_process_modification(double p_delta) {}
+
+

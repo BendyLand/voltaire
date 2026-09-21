@@ -5995,4 +5995,6 @@ Error RenderingDevice::texture_update(
 
 void RenderingDevice::compute_list_add_barrier(ComputeListID p_list) {}
 
+void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array) {}
+
 

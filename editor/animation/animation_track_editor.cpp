@@ -409,6 +409,12 @@ Size2 AnimationTrackEdit::get_minimum_size() const
 
 void AnimationTrackEdit::set_editor(AnimationTrackEditor* p_editor) { editor = p_editor; }
 
+AnimationTrackEdit* AnimationTrackEditPlugin::create_audio_track_edit()
+{
+	AnimationTrackEdit ate = AnimationTrackEdit();
+	return &ate;
+}
+
 void AnimationTrackEdit::set_root(Node* p_root) { root = p_root; }
 
 Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const
@@ -1037,8 +1043,6 @@ float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_ti
 
 void AnimationMarkerKeyEdit::_set_marker_name(const StringName& p_name) { marker_name = p_name; }
 
-
-
 void AnimationTrackKeyEdit::notify_change() {}
 
 void AnimationTrackEditor::_clear_key_edit() {}
@@ -1046,5 +1050,15 @@ void AnimationTrackEditor::_clear_key_edit() {}
 void AnimationMultiTrackKeyEdit::notify_change() {}
 
 void AnimationTrackEditor::_pick_track_select_recursive(TreeItem*, String const&, Vector<Node*>&) {}
+
+void AnimationTrackEdit::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec,
+	int p_x, int p_next_x, int p_clip_left, int p_clip_right)
+{
+}
+
+void AnimationTrackEditVolumeDB::draw_key_link(int p_idx, int p_prev_idx, float p_prev_time,
+	int p_track, int p_type, int p_width, int p_height)
+{
+}
 
 

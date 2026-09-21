@@ -543,8 +543,7 @@ StringName AnimationPlayer::animation_get_next(const StringName& p_animation) co
 	return *next;
 }
 
-void AnimationPlayer::set_default_blend_time(double p_default) { default_blend_time =
- p_default; }
+void AnimationPlayer::set_default_blend_time(double p_default) { default_blend_time = p_default; }
 
 double AnimationPlayer::get_default_blend_time() const { return default_blend_time; }
 
@@ -697,9 +696,10 @@ AnimationPlayer::AnimationPlayer() {}
 
 AnimationPlayer::~AnimationPlayer() {}
 
-
-
-void AnimationPlayer::_capture(StringName const&, bool, double, Tween::TransitionType, Tween::EaseType) {}
+void AnimationPlayer::_capture(
+	StringName const&, bool, double, Tween::TransitionType, Tween::EaseType)
+{
+}
 
 void AnimationPlayer::_stop_internal(bool, bool) {}
 
@@ -708,3 +708,13 @@ void AnimationPlayer::play_section(StringName const&, double, double, double, fl
 void AnimationPlayer::set_current_animation(StringName const&) {}
 
 void AnimationPlayer::set_assigned_animation(StringName const&) {}
+
+bool AnimationPlayer::_blend_pre_process(
+		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map)
+{
+	return false;
+}
+
+void AnimationPlayer::_blend_post_process() {}
+
+

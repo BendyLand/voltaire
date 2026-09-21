@@ -2920,8 +2920,7 @@ void RenderForwardMobile::_geometry_instance_dependency_changed(
 		static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata)->data->dirty_dependencies =
 			true;
 	} break;
-	case
- Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES: {
+	case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES: {
 		GeometryInstanceForwardMobile* ginstance =
 			static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata);
 		if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
@@ -3017,6 +3016,27 @@ void RendererSceneRenderImplementation::RenderForwardMobile::_render_list_with_d
 
 void RendererSceneRenderImplementation::RenderForwardMobile::
 	_update_global_pipeline_data_requirements_from_project()
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::mesh_generate_pipelines(
+	RID p_mesh, bool p_background_compilation)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_scene(
+	RenderDataRD* p_render_data, const Color& p_default_bg_color)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_uv2(
+	const PagedArray<RenderGeometryInstance*>& p_instances, RID p_albedo_array,
+	const Rect2i& p_rect)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::enable_features(
+	unsigned int p_features)
 {
 }
 

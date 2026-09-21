@@ -289,4 +289,11 @@ ResourceImporterLayeredTexture::~ResourceImporterLayeredTexture()
 	}
 }
 
+void ResourceImporterLayeredTexture::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+String ResourceImporterLayeredTexture::get_import_settings_string() const { return String(); }
+
 

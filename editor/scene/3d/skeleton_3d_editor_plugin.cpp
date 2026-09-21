@@ -431,8 +431,29 @@ void Skeleton3DEditor::pose_to_rest(bool) {}
 
 void Skeleton3DEditor::create_physical_skeleton() {}
 
-int Skeleton3DGizmoPlugin::subgizmos_intersect_ray(const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera,
-	const Vector2& p_point) const
+int Skeleton3DGizmoPlugin::subgizmos_intersect_ray(
+	const EditorNode3DGizmo* p_gizmo, Camera3D* p_camera, const Vector2& p_point) const
 {
 	return 0;
 }
+
+void Skeleton3DGizmoPlugin::set_subgizmo_transform(
+	const EditorNode3DGizmo* p_gizmo, int p_id, Transform3D p_transform)
+{
+}
+
+void Skeleton3DGizmoPlugin::redraw(EditorNode3DGizmo* p_gizmo) {}
+
+bool Skeleton3DGizmoPlugin::has_gizmo(Node3D* p_spatial) { return false; }
+
+Transform3D Skeleton3DGizmoPlugin::get_subgizmo_transform(
+	const EditorNode3DGizmo* p_gizmo, int p_id) const
+{
+	return Transform3D();
+}
+
+void Skeleton3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo* p_gizmo,
+	const Vector<int>& p_ids, const Vector<Transform3D>& p_restore, bool p_cancel)
+{
+}
+

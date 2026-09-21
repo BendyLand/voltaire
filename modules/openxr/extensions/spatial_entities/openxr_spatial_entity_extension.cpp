@@ -37,7 +37,6 @@ OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::singleton = nullptr;
 
 OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::get_singleton() { return singleton; }
 
-
 OpenXRSpatialEntityExtension::OpenXRSpatialEntityExtension() { singleton = this; }
 
 OpenXRSpatialEntityExtension::~OpenXRSpatialEntityExtension() { singleton = nullptr; }
@@ -832,7 +831,6 @@ RID OpenXRSpatialEntityExtension::add_spatial_entity(
 	return spatial_entity_owner.make_rid(spatial_entity_data);
 }
 
-
 RID OpenXRSpatialEntityExtension::_add_entity(
 	RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity)
 {
@@ -922,6 +920,13 @@ String OpenXRSpatialEntityExtension::get_spatial_feature_name(
 	XrSpatialCapabilityFeatureEXT p_feature)
 {
 	XR_ENUM_SWITCH(XrSpatialCapabilityFeatureEXT, p_feature)
+}
+
+void OpenXRSpatialEntityExtension::on_session_destroyed() {}
+
+bool OpenXRSpatialEntityExtension::on_event_polled(const XrEventDataBuffer& p_event)
+{
+	return false;
 }
 
 

@@ -285,4 +285,6 @@ void EditorAnimationMultiTransitionEdit::add_transition(const StringName& p_from
 	transitions.push_back(tr);
 }
 
+void AnimationNodeStateMachineEditor::edit(const Ref<AnimationNode>& p_node) {}
+
 

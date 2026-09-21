@@ -531,4 +531,32 @@ bool GodotSpace2D::test_body_motion(GodotBody2D* p_body,
 	return false;
 }
 
+int GodotPhysicsDirectSpaceState2D::intersect_shape(
+	const PhysicsServer2DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer2DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool GodotPhysicsDirectSpaceState2D::cast_motion(
+	const PhysicsServer2DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
+	float& r_closest_unsafe)
+{
+	return false;
+}
+
+bool GodotPhysicsDirectSpaceState2D::collide_shape(
+	const PhysicsServer2DTypes::ShapeParameters& p_shape_params, Vector2* r_results,
+	int p_result_max, int& r_result_count)
+{
+	return false;
+}
+
+bool GodotPhysicsDirectSpaceState2D::rest_info(
+	const PhysicsServer2DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer2DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
 

@@ -97,4 +97,16 @@ void EditorPropertyFontNamesArray::_add_element()
 	menu->popup();
 }
 
+void EditorPropertyArray::update_property() {}
+
+void EditorPropertyArray::_length_changed(double p_page) {}
+
+void EditorPropertyArray::_edit_pressed() {}
+
+void EditorPropertyArray::_change_type_menu(int p_index) {}
+
+void EditorPropertyArray::_remove_pressed(int p_index) {}
+
+void EditorPropertyArray::_add_element() {}
+
 

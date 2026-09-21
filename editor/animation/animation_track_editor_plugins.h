@@ -120,6 +120,7 @@ class AnimationTrackEditDefaultPlugin : public AnimationTrackEditPlugin
 {
 public:
 	virtual AnimationTrackEdit* create_audio_track_edit() override;
+	~AnimationTrackEditDefaultPlugin() = default;
 };
 
 

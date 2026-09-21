@@ -478,5 +478,11 @@ void AnimationNodeBlendSpace2D::validate_node(
 	}
 }
 
+AnimationNode::NodeTimeInfo AnimationNodeBlendSpace2D::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
 
 

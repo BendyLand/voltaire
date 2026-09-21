@@ -57,8 +57,7 @@ void Particles3DEditorPlugin::_menu_callback(int p_idx)
 	}
 }
 
-void Particles3DEditorPlugin::_add_menu_options(PopupMenu* p_menu)
-{}
+void Particles3DEditorPlugin::_add_menu_options(PopupMenu* p_menu) {}
 
 GPUParticles3DEditorPlugin::GPUParticles3DEditorPlugin()
 {
@@ -79,3 +78,19 @@ void GPUParticles3DEditorPlugin::_generate_emission_points() {}
 Particles3DEditorPlugin::Particles3DEditorPlugin() {}
 
 void CPUParticles3DEditorPlugin::_generate_emission_points() {}
+
+Node* GPUParticles3DEditorPlugin::_convert_particles()
+{
+	Node n = Node();
+	return &n;
+}
+
+bool GPUParticles3DEditorPlugin::_can_generate_points() const { return false; }
+
+Node* CPUParticles3DEditorPlugin::_convert_particles()
+{
+	Node n = Node();
+	return &n;
+}
+
+

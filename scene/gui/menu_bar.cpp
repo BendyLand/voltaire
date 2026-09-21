@@ -268,7 +268,8 @@ void MenuBar::set_prefer_global_menu(bool p_enabled)
 	if (prefer_native != p_enabled) {
 		prefer_native = p_enabled;
 		if (prefer_native) {
-			bind_global_menu();
+			bind_global_menu
+();
 		}
 		else {
 			unbind_global_menu();
@@ -370,14 +371,14 @@ MenuBar::MenuBar()
 	set_process_shortcut_input(true);
 }
 
-MenuBar::~MenuBar() {}
-
-
-
 Vector<PopupMenu*> MenuBar::_get_popups() const {}
 
 void MenuBar::bind_global_menu() {}
 
 void MenuBar::add_child_notify(Node* p_child) {}
+
+void MenuBar::remove_child_notify(Node* p_child) {}
+
+void MenuBar::move_child_notify(Node* p_child) {}
 
 

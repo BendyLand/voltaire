@@ -542,6 +542,78 @@ void AnimationNodeBlendTree::_initialize_node_tree()
 
 AnimationNodeBlendTree::AnimationNodeBlendTree() { _initialize_node_tree(); }
 
-AnimationNodeBlendTree::~AnimationNodeBlendTree() {}
+AnimationNode::NodeTimeInfo AnimationNodeAnimation::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeAdd2::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeAdd3::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeBlend2::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeBlend3::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeSub2::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeTimeScale::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeTimeSeek::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeTransition::_process(
+	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
+	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
+{
+	return AnimationNode::NodeTimeInfo();
+}
+
+bool AnimationNodeTransition::set_input_name(int p_input, const String& p_name) { return false; }
+
+void AnimationNodeBlendTree::reset_state() {}
 
 

@@ -49,8 +49,6 @@ class EditorSceneFormatImporter : public RefCounted
 {
 	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
 
-protected:
-
 public:
 	enum ImportFlags
 	{

@@ -104,4 +104,10 @@ void OpenXRHandInteractionExtension::on_register_metadata(
 	}
 }
 
+HashMap<String, bool*> OpenXRHandInteractionExtension::get_requested_extensions(
+	unsigned long p_extension_flags)
+{
+	return HashMap<String, bool*>();
+}
+
 

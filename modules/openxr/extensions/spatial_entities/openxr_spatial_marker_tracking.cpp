@@ -34,10 +34,6 @@
 #include "openxr_spatial_marker_tracking.h"
 #include "servers/xr/xr_server.h"
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationQrCode
-
-
 bool OpenXRSpatialCapabilityConfigurationQrCode::has_valid_configuration() const
 {
 	OpenXRSpatialMarkerTrackingCapability* capability =
@@ -83,10 +79,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationQrCode::_get_enabled_compon
 
 	return components;
 }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationMicroQrCode
-
 
 bool OpenXRSpatialCapabilityConfigurationMicroQrCode::has_valid_configuration() const
 {
@@ -134,9 +126,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationMicroQrCode::_get_enabled_c
 	return components;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationAruco
-
 OpenXRSpatialCapabilityConfigurationAruco::OpenXRSpatialCapabilityConfigurationAruco()
 {
 	int aruco_dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/aruco_dict");
@@ -145,7 +134,6 @@ OpenXRSpatialCapabilityConfigurationAruco::OpenXRSpatialCapabilityConfigurationA
 }
 
 OpenXRSpatialCapabilityConfigurationAruco::~OpenXRSpatialCapabilityConfigurationAruco() {}
-
 
 bool OpenXRSpatialCapabilityConfigurationAruco::has_valid_configuration() const
 {
@@ -214,9 +202,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationAruco::_get_enabled_compone
 	return components;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationAprilTag
-
 OpenXRSpatialCapabilityConfigurationAprilTag::OpenXRSpatialCapabilityConfigurationAprilTag()
 {
 	int april_tag_dict =
@@ -226,7 +211,6 @@ OpenXRSpatialCapabilityConfigurationAprilTag::OpenXRSpatialCapabilityConfigurati
 }
 
 OpenXRSpatialCapabilityConfigurationAprilTag::~OpenXRSpatialCapabilityConfigurationAprilTag() {}
-
 
 bool OpenXRSpatialCapabilityConfigurationAprilTag::has_valid_configuration() const
 {
@@ -296,10 +280,6 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationAprilTag::_get_enabled_comp
 	return components;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentMarkerList
-
-
 void OpenXRSpatialComponentMarkerList::set_capacity(uint32_t p_capacity)
 {
 	marker_data.resize(p_capacity);
@@ -352,9 +332,6 @@ uint32_t OpenXRSpatialComponentMarkerList::get_marker_id(int64_t p_index) const
 	return marker_data[p_index].markerId;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRMarkerTracker
-
 void OpenXRMarkerTracker::set_bounds_size(const Vector2& p_bounds_size)
 {
 	bounds_size = p_bounds_size;
@@ -375,10 +352,8 @@ OpenXRSpatialComponentMarkerList::MarkerType OpenXRMarkerTracker::get_marker_typ
 
 void OpenXRMarkerTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
 
-uint32_t OpenXRMarkerTracker::get_marker_id() const { return marker_id; }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialMarkerTrackingCapability
+uint32_t OpenXRMarkerTracker::get_marker_id() const { return marker_id; }
 
 OpenXRSpatialMarkerTrackingCapability* OpenXRSpatialMarkerTrackingCapability::singleton = nullptr;
 
@@ -446,9 +421,6 @@ bool OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()
 	return se_extension->supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Discovery logic
-
 void OpenXRSpatialMarkerTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
 {
 	spatial_context = p_spatial_context;
@@ -462,5 +434,11 @@ void OpenXRSpatialMarkerTrackingCapability::_on_spatial_discovery_recommended(RI
 		need_discovery = true;
 	}
 }
+
+void OpenXRSpatialMarkerTrackingCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialMarkerTrackingCapability::on_session_destroyed() {}
+
+void OpenXRSpatialMarkerTrackingCapability::on_process() {}
 
 

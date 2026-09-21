@@ -1860,4 +1860,8 @@ GodotPhysicsServer3D::GodotPhysicsServer3D(bool p_using_threads)
 	using_threads = p_using_threads;
 }
 
+void GodotPhysicsServer3D::soft_body_set_transform(RID p_body, const Transform3D& p_transform) {}
+
+void GodotPhysicsServer3D::flush_queries() {}
+
 

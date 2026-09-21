@@ -31,6 +31,7 @@
 #pragma once
 
 #include "core/types.h"
+#include "core/io/image.h"
 
 class Image;
 
@@ -206,5 +207,4 @@ public:
 
 	Lightmapper();
 };
-
 

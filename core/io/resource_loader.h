@@ -55,8 +55,6 @@ public:
 	static constexpr CacheMode CACHE_MODE_REPLACE_DEEP =
 		ResourceLoaderConstants::CACHE_MODE_REPLACE_DEEP;
 
-protected:
-
 public:
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
 		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
@@ -84,7 +82,7 @@ public:
 
 	virtual String get_import_group_file(const String& p_path) const { return ""; } // no group
 
-	virtual ~ResourceFormatLoader() {}
+	virtual ~ResourceFormatLoader() = default;
 };
 
 typedef void (*ResourceLoadErrorNotify)(const String& p_text);

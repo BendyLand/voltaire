@@ -471,10 +471,6 @@ void AudioStreamWAV::set_stereo(bool p_enable) { stereo = p_enable; }
 
 bool AudioStreamWAV::is_stereo() const { return stereo; }
 
-
-
-
-
 double AudioStreamWAV::get_length() const
 {
 	uint64_t len = data.size();
@@ -617,12 +613,10 @@ Ref<AudioStreamPlayback> AudioStreamWAV::instantiate_playback()
 	return sample;
 }
 
-
-
-
-
-
-
-
+Ref<AudioSample> AudioStreamWAV::generate_sample() const
+{
+	Ref<AudioSample> as = memnew(AudioSample);
+	return as;
+}
 
 

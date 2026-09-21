@@ -75,4 +75,8 @@ LightOccluder2DEditorPlugin::LightOccluder2DEditorPlugin()
 {
 }
 
+void LightOccluder2DEditor::_set_node(Node* p_node) {}
+
+void LightOccluder2DEditor::_create_resource() {}
+
 

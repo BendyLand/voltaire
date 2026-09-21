@@ -69,4 +69,9 @@ void ResourceImporterMP3::show_advanced_options(const String& p_path)
 }
 #endif
 
+void ResourceImporterMP3::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
 

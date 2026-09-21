@@ -41,7 +41,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
-
 StringName OpenXRInterface::get_name() const { return StringName("OpenXR"); }
 
 uint32_t OpenXRInterface::get_capabilities() const
@@ -1066,12 +1065,29 @@ OpenXRInterface::~OpenXRInterface()
 	}
 }
 
-
-
 void OpenXRInterface::uninitialize() {}
 
 void OpenXRInterface::on_refresh_rate_changes(float) {}
 
-void OpenXRInterface::on_gpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}
+void OpenXRInterface::on_gpu_level_changed(OpenXRInterface::PerfSettingsSubDomain,
+	OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel)
+{
+}
 
-void OpenXRInterface::on_cpu_level_changed(OpenXRInterface::PerfSettingsSubDomain, OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel) {}
+void OpenXRInterface::on_cpu_level_changed(OpenXRInterface::PerfSettingsSubDomain,
+	OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel)
+{
+}
+
+PackedStringArray OpenXRInterface::get_suggested_tracker_names() const
+{
+	return PackedStringArray();
+}
+
+bool OpenXRInterface::initialize() { return false; }
+
+void OpenXRInterface::process() {}
+
+bool OpenXRInterface::is_passthrough_supported() { return false; }
+
+

@@ -104,6 +104,8 @@ bool AnimationNodeBlendTreeEditor::can_edit(const Ref<AnimationNode>& p_node)
 	return bt.is_valid();
 }
 
-
-
 void AnimationNodeBlendTreeEditor::update_graph() {}
+
+void AnimationNodeBlendTreeEditor::edit(const Ref<AnimationNode>& p_node) {}
+
+

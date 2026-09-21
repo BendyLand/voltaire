@@ -107,4 +107,9 @@ CollisionShape2D::CollisionShape2D()
 	debug_color = _get_default_debug_color();
 }
 
+PackedStringArray CollisionShape2D::get_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
 

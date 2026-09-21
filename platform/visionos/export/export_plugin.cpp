@@ -113,4 +113,9 @@ String EditorExportPlatformVisionOS::_process_config_file_line(
 	return strnew;
 }
 
+void EditorExportPlatformVisionOS::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
+}
+
 

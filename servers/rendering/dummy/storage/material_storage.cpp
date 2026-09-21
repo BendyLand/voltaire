@@ -155,4 +155,17 @@ void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material
 	material->next_pass = p_next_material;
 }
 
+RSE::GlobalShaderParameterType RendererDummy::MaterialStorage::global_shader_parameter_get_type(
+	const StringName& p_name) const
+{
+	return RSE::GLOBAL_VAR_TYPE_MAX;
+}
+
+void RendererDummy::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void RendererDummy::MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters)
+{
+}
+
 

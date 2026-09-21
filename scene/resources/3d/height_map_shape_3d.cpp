@@ -303,6 +303,12 @@ HeightMapShape3D::HeightMapShape3D()
 	_update_shape();
 }
 
-
+Ref<ArrayMesh> HeightMapShape3D::get_debug_arraymesh_faces(const Color& p_modulate) const
+{
+	Ref<ArrayMesh> am = memnew(ArrayMesh);
+	return am;
+}
 
 void HeightMapShape3D::_update_shape() {}
+
+

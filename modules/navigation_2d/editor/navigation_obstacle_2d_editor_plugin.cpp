@@ -38,4 +38,8 @@ NavigationObstacle2DEditorPlugin::NavigationObstacle2DEditorPlugin()
 {
 }
 
+void NavigationObstacle2DEditor::_set_node(Node* p_node) {}
+
+void NavigationObstacle2DEditor::_action_remove_polygon(int p_idx) {}
+
 

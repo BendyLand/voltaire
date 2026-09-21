@@ -31,6 +31,7 @@
 #pragma once
 
 #include "editor/gui/code_editor.h"
+#include "editor/script/syntax_highlighters.h"
 #include "scene/gui/box_container.h"
 
 class EditorSyntaxHighlighter;
@@ -249,7 +250,7 @@ public:
 		code_editor->update_toggle_files_button();
 	}
 
-	TextEditorBase();
+	TextEditorBase() = default;
 	~TextEditorBase();
 };
 

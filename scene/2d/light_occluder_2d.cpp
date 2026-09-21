@@ -190,6 +190,11 @@ LightOccluder2D::~LightOccluder2D()
 	RS::get_singleton()->free_rid(occluder);
 }
 
-
+bool OccluderPolygon2D::_edit_is_selected_on_click(const Vector2& p_point, double p_tolerance) const
+{
+	return false;
+}
 
 void LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&) {}
+
+

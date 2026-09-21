@@ -352,7 +352,7 @@ public:
 		SelfList<ShaderData> shader_list_element;
 
 		ShaderData();
-		virtual ~ShaderData();
+		virtual ~ShaderData() = default;
 	};
 
 	RendererRD::MaterialStorage::ShaderData* _create_shader_func();

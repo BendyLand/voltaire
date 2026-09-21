@@ -2127,4 +2127,10 @@ float JoltPhysicsServer3D::generic_6dof_joint_get_applied_torque(RID p_joint)
 	return g6dof_joint->get_applied_torque();
 }
 
+int JoltPhysicsServer3D::area_get_shape_count(RID p_area) const { return 0; }
+
+int JoltPhysicsServer3D::body_get_shape_count(RID p_body) const { return 0; }
+
+void JoltPhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) {}
+
 

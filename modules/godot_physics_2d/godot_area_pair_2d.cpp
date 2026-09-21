@@ -93,4 +93,10 @@ GodotArea2Pair2D::GodotArea2Pair2D(
 	area_b->add_constraint(this);
 }
 
+bool GodotAreaPair2D::setup(float p_step) { return false; }
+
+bool GodotAreaPair2D::pre_solve(float p_step) { return false; }
+
+bool GodotArea2Pair2D::setup(float p_step) { return false; }
+
 
