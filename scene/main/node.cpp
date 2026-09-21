@@ -688,6 +688,8 @@ void Node::add_child(Node* rp_child, bool p_force_readable_name, InternalMode p_
 	_add_child_nocheck(rp_child, rp_child->data.name, p_internal);
 }
 
+void Node::remove_child(Node* rp_child) {}
+
 void Node::add_sibling(Node* rp_sibling, bool p_force_readable_name)
 {
 	ERR_FAIL_COND_MSG(data.tree && !Thread::is_main_thread(),
@@ -1722,6 +1724,8 @@ PackedStringArray Node::get_configuration_warnings() const
 	return ret;
 }
 
+void Node::update_configuration_warnings() {}
+
 void Node::set_display_folded(bool p_folded)
 {
 	ERR_THREAD_GUARD
@@ -1802,6 +1806,8 @@ RID Node::get_accessibility_element() const
 	}
 	return data.accessibility_element;
 }
+
+void Node::queue_free() {}
 
 Node::~Node()
 {

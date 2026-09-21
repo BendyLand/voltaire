@@ -1142,6 +1142,11 @@ Error RenderingDevice::driver_callback_add(
 	return OK;
 }
 
+RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	return RID();
+}
+
 String RenderingDevice::get_perf_report() const
 {
 	String perf_report_text;
@@ -1261,12 +1266,6 @@ RID RenderingDevice::texture_buffer_create(
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
 	return id;
-}
-
-RID RenderingDevice::storage_buffer_create(
-	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
-{
-	return RID();
 }
 
 RID RenderingDevice::texture_create(

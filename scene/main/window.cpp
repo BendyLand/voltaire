@@ -55,7 +55,7 @@ void Window::set_root_layout_direction(int p_root_dir) { root_layout_direction =
 
 Window* Window::focused_window = nullptr;
 
-void Window::set_title(const String &p_title) {}
+void Window::set_title(const String& p_title) {}
 
 String Window::get_title() const
 {
@@ -1113,6 +1113,12 @@ bool Window::_try_parent_dialog(Node* p_from_node)
 	}
 	return false;
 }
+
+void Window::popup_centered(const Size2i& p_minsize) {}
+
+void Window::popup_centered_ratio(float p_ratio) {}
+
+void Window::popup_centered_clamped(const Size2i& p_size, float p_fallback_ratio) {}
 
 void Window::popup_exclusive(Node* p_from_node, const Rect2i& p_screen_rect)
 {
