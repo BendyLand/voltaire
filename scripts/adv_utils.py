@@ -195,7 +195,7 @@ def generate_comp_file(name, obj_list_name):
         return
     print("Generating compilation file...")
     subprocess.run(shlex.split("scons -c"), check=True)
-    scons_cmd = "scons -n progress=no verbose=yes CPPDEFINES=VOLTAIRE_BUILD"
+    scons_cmd = "scons -n debug_symbols=yes progress=no verbose=yes CPPDEFINES=VOLTAIRE_BUILD"
     comp_file = subprocess.run(
         shlex.split(scons_cmd),
         check=True,
@@ -231,7 +231,7 @@ def generate_comp_file(name, obj_list_name):
 
 
 options = {"gcc", "g++", "wayland-scanner"}
-lines = read_file("comp")
+lines = read_file("compilation_commands")
 
 
 def run_command_serial(line):

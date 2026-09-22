@@ -1212,14 +1212,33 @@ int DisplayServerX11::get_screen_count() const
 	_THREAD_SAFE_METHOD_
 	int count = 0;
 
-	// Using Xinerama Extension
-	int event_base, error_base;
-	if (xinerama_ext_ok && XineramaQueryExtension(x11_display, &event_base, &error_base)) {
-		XineramaScreenInfo* xsi = XineramaQueryScreens(x11_display, &count);
-		XFree(xsi);
+#if defined(XRANDR_ENABLED)
+	if (xrandr_ext_ok && xrr_get_monitors) {
+		int monitors_count = 0;
+		xrr_monitor_info* monitors = xrr_get_monitors(x11_display,
+			RootWindow(x11_display, DefaultScreen(x11_display)), True, &monitors_count);
+		if (monitors) {
+			count = monitors_count;
+			xrr_free_monitors(monitors);
+		}
 	}
-	if (count == 0) {
-		count = XScreenCount(x11_display);
+#endif
+
+#if defined(XINERAMA_ENABLED)
+	if (count == 0 && xinerama_ext_ok && XineramaQueryExtension_dylibloader_wrapper_xinerama) {
+		int event_base = 0;
+		int error_base = 0;
+		if (XineramaQueryExtension(x11_display, &event_base, &error_base)) {
+			XineramaScreenInfo* xsi = XineramaQueryScreens(x11_display, &count);
+			if (xsi) {
+				XFree(xsi);
+			}
+		}
+	}
+#endif
+
+	if (count == 0 && x11_display) {
+		count = ScreenCount(x11_display);
 	}
 
 	return count;
@@ -2149,7 +2168,8 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size = sz;
+			wd.size
+= sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
@@ -4453,7 +4473,6 @@ void DisplayServerX11::_xim_destroy_callback(::XIM im, ::XPointer client_data, :
 	}
 }
 
-
 DisplayServerEnums::WindowID DisplayServerX11::_get_focused_window_or_popup() const
 {
 	const List<DisplayServerEnums::WindowID>::Element* E = popup_list.back();
@@ -4803,7 +4822,7 @@ void DisplayServerX11::set_native_icon(const String& p_filename)
 void DisplayServerX11::set_icon(const Ref<Image>& p_icon)
 {
 	ERR_FAIL_COND(p_icon.is_null());
-
+	icon = p_icon;
 	icon->convert(Image::FORMAT_RGBA8);
 
 	for (KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
@@ -6016,10 +6035,89 @@ void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
 
 void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawCallbackStruct*) {}
 
-DisplayServerX11::DisplayServerX11(String const&, DisplayServerEnums::WindowMode,
-	DisplayServerEnums::VSyncMode, unsigned int, Vector2i const*, Vector2i const&, int,
-	DisplayServerEnums::Context, long, Error&)
+DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
+	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
+	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
+	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
+	rendering_driver = p_rendering_driver;
+	if (initialize_xlib(0) != 0) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
+	x11_display = XOpenDisplay(nullptr);
+	if (!x11_display) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
+#if defined(XRANDR_ENABLED)
+	xrandr_ext_ok = (initialize_xrandr(0) == 0);
+#else
+	xrandr_ext_ok = false;
+#endif
+#if defined(XINERAMA_ENABLED)
+	xinerama_ext_ok = (initialize_xinerama(0) == 0);
+#else
+	xinerama_ext_ok = false;
+#endif
+#if defined(XSHAPE_ENABLED)
+	xshaped_ext_ok = (initialize_xshape(0) == 0);
+#else
+	xshaped_ext_ok = false;
+#endif
+	r_error = OK;
+	int width = p_resolution.x > 0 ? p_resolution.x : 1024;
+	int height = p_resolution.y > 0 ? p_resolution.y : 768;
+	int x = p_position ? p_position->x : 0;
+	int y = p_position ? p_position->y : 0;
+	::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
+	XSetWindowAttributes wa;
+	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
+			PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
+			ExposureMask | FocusChangeMask | EnterWindowMask | LeaveWindowMask;
+	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
+	::Window x11_win = XCreateWindow(
+			x11_display,
+			root,
+			x, y, width, height,
+			0,
+			CopyFromParent,
+			InputOutput,
+			CopyFromParent,
+			CWBackPixel | CWEventMask,
+			&wa);
+	if (!x11_win) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
+	WindowData wd;
+	wd.x11_window = x11_win;
+	wd.x11_xim_window = 0;
+	wd.xic = nullptr;
+	wd.position = Point2i(x, y);
+	wd.size = Size2i(width, height);
+	switch (p_mode) {
+		case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
+			wd.fullscreen = true;
+		} break;
+		case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
+			wd.fullscreen = true;
+			wd.exclusive_fullscreen = true;
+		} break;
+		case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
+			wd.maximized = true;
+		} break;
+		case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
+			wd.minimized = true;
+		} break;
+		case DisplayServerEnums::WINDOW_MODE_WINDOWED:
+		default: {
+			// standard defaults already set
+		} break;
+	}
+	windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
+	XMapWindow(x11_display, x11_win);
+	XFlush(x11_display);
 }
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
