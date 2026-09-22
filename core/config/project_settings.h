@@ -78,7 +78,7 @@ protected:
 	int last_builtin_order = 0;
 	uint64_t last_save_time = 0;
 
-	String resource_path;
+	String resource_path = "";
 	bool using_datapack = false;
 	bool project_loaded = false;
 	List<String> input_presets;

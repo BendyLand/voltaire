@@ -1877,8 +1877,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 				N = N->next();
 			}
-			else
- {
+			else {
 				OS::get_singleton()->print(
 					"Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
@@ -3942,10 +3941,7 @@ int Main::start()
 	}
 #endif
 
-	MainLoop* main_loop = nullptr;
-	if (editor) {
-		main_loop = memnew(SceneTree);
-	}
+	MainLoop* main_loop = memnew(SceneTree);
 
 	if (!script.is_empty()) {
 		return EXIT_FAILURE;

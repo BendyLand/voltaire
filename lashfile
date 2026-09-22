@@ -10,7 +10,6 @@ errs:
 	fi
 	lash build 2> errs
 	lash link 2> errs
-	lash summary
 
 inspect:
 	gdb ./bin/voltaire.linuxbsd.editor.x86_64
@@ -23,13 +22,4 @@ remind:
 
 todo:
 	todo -li
-
-summary:
-	if [[ ! -f errs ]]; then
-		echo "Missing first error file. Try linking first."
-		exit
-	fi
-	awk '{print $2,$6}' errs > errs2
-	awk '{print $2}' errs2 | sort > errs3
-	uniq -c errs3 | sort -nr > errs4
 

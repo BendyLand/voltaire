@@ -55,7 +55,13 @@ String ProjectSettings::get_project_data_path() const
 	return "res://" + get_project_data_dir_name();
 }
 
-String ProjectSettings::get_resource_path() const { return resource_path; }
+String ProjectSettings::get_resource_path() const
+{
+	if (this) {
+		return resource_path;
+	}
+	return "res://";
+}
 
 // This returns paths like "res://.godot/imported".
 String ProjectSettings::get_imported_files_path() const
@@ -927,7 +933,7 @@ bool ProjectSettings::has_editor_setting_override(const String& p_setting) const
 
 bool ProjectSettings::has_setting(const String& p_var) const { return true; }
 
-ProjectSettings::ProjectSettings() {}
+ProjectSettings::ProjectSettings() { singleton = this; }
 
 ProjectSettings::~ProjectSettings() {}
 
