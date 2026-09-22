@@ -28,42 +28,43 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_eye_gaze_interaction.h"
-
 #include "../action_map/openxr_interaction_profile_metadata.h"
 #include "../openxr_api.h"
-
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
+#include "openxr_eye_gaze_interaction.h"
 
-OpenXREyeGazeInteractionExtension *OpenXREyeGazeInteractionExtension::singleton = nullptr;
+OpenXREyeGazeInteractionExtension* OpenXREyeGazeInteractionExtension::singleton = nullptr;
 
-OpenXREyeGazeInteractionExtension *OpenXREyeGazeInteractionExtension::get_singleton() {
+OpenXREyeGazeInteractionExtension* OpenXREyeGazeInteractionExtension::get_singleton()
+{
 	ERR_FAIL_NULL_V(singleton, nullptr);
 	return singleton;
 }
 
-OpenXREyeGazeInteractionExtension::OpenXREyeGazeInteractionExtension() {
-	singleton = this;
-}
+OpenXREyeGazeInteractionExtension::OpenXREyeGazeInteractionExtension() { singleton = this; }
 
-OpenXREyeGazeInteractionExtension::~OpenXREyeGazeInteractionExtension() {
-	singleton = nullptr;
-}
+OpenXREyeGazeInteractionExtension::~OpenXREyeGazeInteractionExtension() { singleton = nullptr; }
 
-HashMap<String, bool *> OpenXREyeGazeInteractionExtension::get_requested_extensions(XrVersion p_version) {
-	HashMap<String, bool *> request_extensions;
+HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
 
 	// Only enable this extension when requested.
 	// We still register our meta data or the action map editor will fail.
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") && (!OS::get_singleton()->has_feature("mobile") || OS::get_singleton()->has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") &&
+		(!OS::get_singleton()->has_feature("mobile") ||
+			OS::get_singleton()->has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
 		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &available;
 	}
 
 	return request_extensions;
 }
 
-void *OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_pointer(void *p_next_pointer) {
+void* OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_pointer(
+	void* p_next_pointer)
+{
 	if (!available) {
 		return p_next_pointer;
 	}
@@ -75,38 +76,31 @@ void *OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_poin
 	return &properties;
 }
 
-PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names() {
-	PackedStringArray arr = { "/user/eyes_ext" };
+PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names()
+{
+	PackedStringArray arr = {"/user/eyes_ext"};
 	return arr;
 }
 
-bool OpenXREyeGazeInteractionExtension::is_available() {
-	return available;
-}
+bool OpenXREyeGazeInteractionExtension::is_available() { return available; }
 
-bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction() {
+bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
+{
 	// The extension being available only means that the OpenXR Runtime supports the extension.
 	// The `supportsEyeGazeInteraction` is set to true if the device also supports this.
 	// Thus both need to be true.
 	// In addition, on mobile runtimes, the proper permission needs to be granted.
 	if (available && properties.supportsEyeGazeInteraction) {
-		return !OS::get_singleton()->has_feature("mobile") || OS::get_singleton()->has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
+		return !OS::get_singleton()->has_feature("mobile") ||
+			   OS::get_singleton()->has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
 	}
 
 	return false;
 }
 
-void OpenXREyeGazeInteractionExtension::on_register_metadata(OpenXRInteractionProfileMetadata *p_interaction_profile_metadata) {
-	// Eyes top path
-	p_interaction_profile_metadata->register_top_level_path("Eye gaze tracker", "/user/eyes_ext", XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME);
-
-	// Eye gaze interaction
-	p_interaction_profile_metadata->register_interaction_profile("Eye gaze", "/interaction_profiles/ext/eye_gaze_interaction", XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME);
-	p_interaction_profile_metadata->register_io_path("/interaction_profiles/ext/eye_gaze_interaction", "Gaze pose", "/user/eyes_ext", "/user/eyes_ext/input/gaze_ext/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
-}
-
-bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3 &r_eye_pose) {
-	OpenXRAPI *openxr_api = OpenXRAPI::get_singleton();
+bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose)
+{
+	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
 	ERR_FAIL_NULL_V(openxr_api, false);
 
 	if (!init_eye_gaze_pose) {
@@ -119,7 +113,8 @@ bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3
 
 		eye_action = openxr_api->find_action("eye_gaze_pose");
 		if (eye_action.is_null()) {
-			WARN_PRINT("Couldn't obtain pose action for `eye_gaze_pose`, make sure to add this to your action map.");
+			WARN_PRINT("Couldn't obtain pose action for `eye_gaze_pose`, make sure to add this to "
+					   "your action map.");
 		}
 	}
 
@@ -130,7 +125,8 @@ bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3
 	Transform3D eye_transform;
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
-	XRPose::TrackingConfidence confidence = openxr_api->get_action_pose(eye_action, eye_tracker, eye_transform, linear_velocity, angular_velocity);
+	XRPose::TrackingConfidence confidence = openxr_api->get_action_pose(
+		eye_action, eye_tracker, eye_transform, linear_velocity, angular_velocity);
 	if (confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
 		return false;
 	}
@@ -139,3 +135,5 @@ bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3
 
 	return true;
 }
+
+

@@ -34,7 +34,6 @@
 #include "../java_godot_wrapper.h"
 #include "../os_android.h"
 
-#include "core/object/callable_mp.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"

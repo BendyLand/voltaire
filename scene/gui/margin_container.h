@@ -32,15 +32,17 @@
 
 #include "scene/gui/container.h"
 
-class MarginContainer : public Container {
-	VLTRCLASS(MarginContainer, Container);
-
-	struct ThemeCache {
+class MarginContainer : public Container
+{
+	struct ThemeCache
+	{
 		int margin_left = 0;
 		int margin_top = 0;
 		int margin_right = 0;
 		int margin_bottom = 0;
-	} theme_cache;
+	};
+
+	ThemeCache theme_cache;
 
 protected:
 	void _notification(int p_what);
@@ -58,3 +60,5 @@ public:
 
 	MarginContainer();
 };
+
+

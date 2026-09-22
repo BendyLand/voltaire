@@ -32,14 +32,10 @@
 
 #include "line_edit.h"
 
-#include "core/object/class_db.h"
+void LineEdit::_edit_bind_compat_111117() { edit(false); }
 
-void LineEdit::_edit_bind_compat_111117() {
-	edit(false);
-}
-
-void LineEdit::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("edit"), &LineEdit::_edit_bind_compat_111117);
-}
+void LineEdit::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

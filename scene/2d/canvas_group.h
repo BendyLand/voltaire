@@ -32,14 +32,13 @@
 
 #include "scene/2d/node_2d.h"
 
-class CanvasGroup : public Node2D {
-	VLTRCLASS(CanvasGroup, Node2D)
+class CanvasGroup : public Node2D
+{
 	real_t fit_margin = 10.0;
 	real_t clear_margin = 10.0;
 	bool use_mipmaps = false;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_fit_margin(real_t p_fit_margin);
@@ -56,3 +55,5 @@ public:
 	CanvasGroup();
 	~CanvasGroup();
 };
+
+

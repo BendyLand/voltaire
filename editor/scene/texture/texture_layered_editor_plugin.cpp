@@ -28,18 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "texture_layered_editor_plugin.h"
-
 #include "core/input/input.h"
-#include "core/object/callable_mp.h"
 #include "editor/editor_string_names.h"
 #include "editor/scene/texture/color_channel_selector.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/label.h"
+#include "texture_layered_editor_plugin.h"
 
 // Shader sources.
 
-constexpr const char *array_2d_shader = R"(
+constexpr const char* array_2d_shader = R"(
 	// TextureLayeredEditor preview shader (2D array).
 
 	shader_type canvas_item;
@@ -72,7 +70,7 @@ constexpr const char *array_2d_shader = R"(
 	}
 )";
 
-constexpr const char *cubemap_shader = R"(
+constexpr const char* cubemap_shader = R"(
 	// TextureLayeredEditor preview shader (cubemap).
 
 	shader_type canvas_item;
@@ -108,7 +106,7 @@ constexpr const char *cubemap_shader = R"(
 	}
 )";
 
-constexpr const char *cubemap_array_shader = R"(
+constexpr const char* cubemap_array_shader = R"(
 	// TextureLayeredEditor preview shader (cubemap array).
 
 	shader_type canvas_item;
@@ -144,7 +142,8 @@ constexpr const char *cubemap_array_shader = R"(
 	}
 )";
 
-void TextureLayeredEditor::gui_input(const Ref<InputEvent> &p_event) {
+void TextureLayeredEditor::gui_input(const Ref<InputEvent>& p_event)
+{
 	ERR_FAIL_COND(p_event.is_null());
 
 	if (!use_rotation) {
@@ -152,7 +151,7 @@ void TextureLayeredEditor::gui_input(const Ref<InputEvent> &p_event) {
 	}
 
 	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid() && mm->get_button_mask().has_flag(MouseButtonMask::RIGHT)) {
+	if (mm.is_valid() && (mm->get_button_mask() & 2) != 0) {
 		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
 			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
 		}
@@ -168,171 +167,53 @@ void TextureLayeredEditor::gui_input(const Ref<InputEvent> &p_event) {
 		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
 			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
 			Input::get_singleton()->warp_mouse(original_mouse_pos);
-		} else if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
+		}
+		else if (Input::get_singleton()->get_mouse_mode() ==
+				   Input::MouseMode::MOUSE_MODE_VISIBLE) {
 			original_mouse_pos = mb->get_global_position();
 		}
 	}
 }
 
-void TextureLayeredEditor::_texture_rect_draw() {
+void TextureLayeredEditor::_texture_rect_draw()
+{
 	texture_rect->draw_rect(Rect2(Point2(), texture_rect->get_size()), Color(1, 1, 1, 1));
 }
 
-void TextureLayeredEditor::_update_gui() {
-	if (texture.is_null()) {
-		return;
-	}
-
-	_texture_rect_update_area();
-
-	const Image::Format format = texture->get_format();
-	const String format_name = Image::get_format_name(format);
-	String texture_info;
-
-	switch (texture->get_layered_type()) {
-		case TextureLayered::LAYERED_TYPE_2D_ARRAY: {
-			layer->set_max(texture->get_layers() - 1);
-
-			texture_info = vformat(String::utf8("%d×%d (×%d) %s\n"),
-					texture->get_width(),
-					texture->get_height(),
-					texture->get_layers(),
-					format_name);
-
-		} break;
-		case TextureLayered::LAYERED_TYPE_CUBEMAP: {
-			layer->hide();
-
-			texture_info = vformat(String::utf8("%d×%d %s\n"),
-					texture->get_width(),
-					texture->get_height(),
-					format_name);
-
-		} break;
-		case TextureLayered::LAYERED_TYPE_CUBEMAP_ARRAY: {
-			layer->set_max(texture->get_layers() / 6 - 1);
-
-			texture_info = vformat(String::utf8("%d×%d (×%d) %s\n"),
-					texture->get_width(),
-					texture->get_height(),
-					texture->get_layers() / 6,
-					format_name);
-
-		} break;
-
-		default: {
-		}
-	}
-
-	if (texture->has_mipmaps()) {
-		const int mip_count = Image::get_image_required_mipmaps(texture->get_width(), texture->get_height(), format);
-		const int memory = Image::get_image_data_size(texture->get_width(), texture->get_height(), format, true) * texture->get_layers();
-
-		texture_info += vformat(TTR("%s Mipmaps") + "\n" + TTR("Memory: %s"),
-				mip_count,
-				String::humanize_size(memory));
-
-	} else {
-		const int memory = Image::get_image_data_size(texture->get_width(), texture->get_height(), format, false) * texture->get_layers();
-
-		texture_info += vformat(TTR("No Mipmaps") + "\n" + TTR("Memory: %s"),
-				String::humanize_size(memory));
-	}
-
-	info->set_text(texture_info);
-
-	const uint32_t components_mask = Image::get_format_component_mask(format);
-	if (Math::is_power_of_2(components_mask)) {
-		// Only one channel available, no point in showing a channel selector.
-		channel_selector->hide();
-	} else {
-		channel_selector->show();
-		channel_selector->set_available_channels_mask(components_mask);
-	}
-}
-
-void TextureLayeredEditor::_notification(int p_what) {
+void TextureLayeredEditor::_notification(int p_what)
+{
 	switch (p_what) {
-		case NOTIFICATION_RESIZED: {
-			_texture_rect_update_area();
-		} break;
+	case NOTIFICATION_RESIZED: {
+		_texture_rect_update_area();
+	} break;
 
-		case NOTIFICATION_DRAW: {
-			Ref<Texture2D> checkerboard = get_editor_theme_icon(SNAME("Checkerboard"));
-			draw_texture_rect(checkerboard, texture_rect->get_rect(), true);
-			_draw_outline();
-		} break;
-
-		case NOTIFICATION_THEME_CHANGED: {
-			if (info) {
-				Ref<Font> metadata_label_font = get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
-				info->add_theme_font_override(SceneStringName(font), metadata_label_font);
-			}
-			theme_cache.outline_color = get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor));
-		} break;
+	case NOTIFICATION_DRAW: {
+		Ref<Texture2D> checkerboard = get_editor_theme_icon(SNAME("Checkerboard"));
+		draw_texture_rect(checkerboard.ptr(), texture_rect->get_rect(), true);
+		_draw_outline();
+	} break;
 	}
 }
 
-void TextureLayeredEditor::_texture_changed() {
-	if (!is_visible()) {
-		return;
-	}
+void TextureLayeredEditor::on_selected_channels_changed() { _update_material(false); }
 
-	setting = true;
-	_update_gui();
-	setting = false;
-
-	_update_material(true);
-	queue_redraw();
-}
-
-void TextureLayeredEditor::_update_material(bool p_texture_changed) {
-	materials[0]->set_shader_parameter("layer", layer->get_value());
-	materials[2]->set_shader_parameter("layer", layer->get_value());
-
-	Vector3 v(-1, -1, -1);
-	v.normalize();
-
-	Basis b;
-	b.rotate(Vector3(1, 0, 0), x_rot);
-	b.rotate(Vector3(0, 1, 0), y_rot);
-
-	materials[1]->set_shader_parameter("normal", v);
-	materials[1]->set_shader_parameter("rot", b);
-	materials[2]->set_shader_parameter("normal", v);
-	materials[2]->set_shader_parameter("rot", b);
-
-	if (p_texture_changed) {
-		const TextureLayered::LayeredType type = texture->get_layered_type();
-		use_rotation = type == TextureLayered::LAYERED_TYPE_CUBEMAP || type == TextureLayered::LAYERED_TYPE_CUBEMAP_ARRAY;
-
-		materials[texture->get_layered_type()]->set_shader_parameter("tex", texture->get_rid());
-	}
-
-	const Vector4 channel_factors = channel_selector->get_selected_channel_factors();
-	for (unsigned int i = 0; i < 3; ++i) {
-		materials[i]->set_shader_parameter("u_channel_factors", channel_factors);
-	}
-}
-
-void TextureLayeredEditor::on_selected_channels_changed() {
-	_update_material(false);
-}
-
-void TextureLayeredEditor::_draw_outline() {
+void TextureLayeredEditor::_draw_outline()
+{
 	const float outline_width = Math::round(EDSCALE);
 	const Rect2 outline_rect = texture_rect->get_rect().grow(outline_width * 0.5);
 	draw_rect(outline_rect, theme_cache.outline_color, false, outline_width);
 }
 
-void TextureLayeredEditor::_make_materials() {
+void TextureLayeredEditor::_make_materials()
+{
 	for (int i = 0; i < 3; i++) {
 		materials[i].instantiate();
 		materials[i]->set_shader(shaders[i]);
 	}
 }
 
-void TextureLayeredEditor::_texture_rect_update_area() {
+void TextureLayeredEditor::_texture_rect_update_area()
+{
 	Size2 size = get_size();
 	int tex_width = texture->get_width() * size.height / texture->get_height();
 	int tex_height = size.height;
@@ -342,7 +223,8 @@ void TextureLayeredEditor::_texture_rect_update_area() {
 		tex_height = texture->get_height() * tex_width / texture->get_width();
 	}
 
-	// Prevent the texture from being unpreviewable after the rescale, so that we can still see something
+	// Prevent the texture from being unpreviewable after the rescale, so that we can still see
+	// something
 	if (tex_height <= 0) {
 		tex_height = 1;
 	}
@@ -357,7 +239,8 @@ void TextureLayeredEditor::_texture_rect_update_area() {
 	texture_rect->set_size(Vector2(tex_width, tex_height));
 }
 
-void TextureLayeredEditor::init_shaders() {
+void TextureLayeredEditor::init_shaders()
+{
 	shaders[0].instantiate();
 	shaders[0]->set_code(array_2d_shader);
 
@@ -368,109 +251,13 @@ void TextureLayeredEditor::init_shaders() {
 	shaders[2]->set_code(cubemap_array_shader);
 }
 
-void TextureLayeredEditor::finish_shaders() {
+void TextureLayeredEditor::finish_shaders()
+{
 	shaders[0].unref();
 	shaders[1].unref();
 	shaders[2].unref();
 }
 
-void TextureLayeredEditor::edit(Ref<TextureLayered> p_texture) {
-	if (texture.is_valid()) {
-		texture->disconnect_changed(callable_mp(this, &TextureLayeredEditor::_texture_changed));
-	}
 
-	texture = p_texture;
 
-	if (texture.is_valid()) {
-		if (materials[0].is_null()) {
-			_make_materials();
-		}
-
-		texture->connect_changed(callable_mp(this, &TextureLayeredEditor::_texture_changed));
-		texture_rect->set_material(materials[texture->get_layered_type()]);
-
-		setting = true;
-		layer->set_value(0);
-		layer->show();
-		_update_gui();
-		setting = false;
-
-		x_rot = 0;
-		y_rot = 0;
-
-		_update_material(true);
-		queue_redraw();
-
-	} else {
-		hide();
-	}
-}
-
-TextureLayeredEditor::TextureLayeredEditor() {
-	set_texture_repeat(TextureRepeat::TEXTURE_REPEAT_ENABLED);
-	set_custom_minimum_size(Size2(0, 256.0) * EDSCALE);
-
-	texture_rect = memnew(Control);
-	texture_rect->set_mouse_filter(MOUSE_FILTER_IGNORE);
-	texture_rect->connect(SceneStringName(draw), callable_mp(this, &TextureLayeredEditor::_texture_rect_draw));
-
-	add_child(texture_rect);
-
-	layer = memnew(SpinBox);
-	layer->set_step(1);
-	layer->set_max(100);
-
-	layer->set_modulate(Color(1, 1, 1, 0.8));
-	layer->set_h_grow_direction(GROW_DIRECTION_BEGIN);
-	layer->set_anchor(SIDE_RIGHT, 1);
-	layer->set_anchor(SIDE_LEFT, 1);
-	layer->connect(SceneStringName(value_changed), callable_mp(this, &TextureLayeredEditor::_layer_changed));
-
-	add_child(layer);
-
-	channel_selector = memnew(ColorChannelSelector);
-	channel_selector->connect("selected_channels_changed", callable_mp(this, &TextureLayeredEditor::on_selected_channels_changed));
-	channel_selector->set_anchors_and_offsets_preset(Control::PRESET_TOP_LEFT);
-	add_child(channel_selector);
-
-	info = memnew(Label);
-	info->set_focus_mode(FOCUS_ACCESSIBILITY);
-	info->add_theme_color_override(SceneStringName(font_color), Color(1, 1, 1));
-	info->add_theme_color_override("font_shadow_color", Color(0, 0, 0));
-	info->add_theme_font_size_override(SceneStringName(font_size), 14 * EDSCALE);
-	info->add_theme_color_override("font_outline_color", Color(0, 0, 0));
-	info->add_theme_constant_override("outline_size", 8 * EDSCALE);
-
-	info->set_h_grow_direction(GROW_DIRECTION_BEGIN);
-	info->set_v_grow_direction(GROW_DIRECTION_BEGIN);
-	info->set_h_size_flags(Control::SIZE_SHRINK_END);
-	info->set_v_size_flags(Control::SIZE_SHRINK_END);
-	info->set_anchor(SIDE_RIGHT, 1);
-	info->set_anchor(SIDE_LEFT, 1);
-	info->set_anchor(SIDE_BOTTOM, 1);
-	info->set_anchor(SIDE_TOP, 1);
-
-	add_child(info);
-}
-
-bool EditorInspectorPluginLayeredTexture::can_handle(Object *p_object) {
-	return Object::cast_to<TextureLayered>(p_object) != nullptr;
-}
-
-void EditorInspectorPluginLayeredTexture::parse_begin(Object *p_object) {
-	TextureLayered *texture = Object::cast_to<TextureLayered>(p_object);
-	if (!texture) {
-		return;
-	}
-	Ref<TextureLayered> m(texture);
-
-	TextureLayeredEditor *editor = memnew(TextureLayeredEditor);
-	editor->edit(m);
-	add_custom_control(editor);
-}
-
-TextureLayeredEditorPlugin::TextureLayeredEditorPlugin() {
-	Ref<EditorInspectorPluginLayeredTexture> plugin;
-	plugin.instantiate();
-	add_inspector_plugin(plugin);
-}
+void TextureLayeredEditor::_update_material(bool) {}

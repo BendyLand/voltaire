@@ -34,12 +34,16 @@
 #include "servers/rendering/renderer_rd/shaders/effects/tonemap.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/tonemap_mobile.glsl.gen.h"
 
-namespace RendererRD {
+namespace RendererRD
+{
 
-class ToneMapper {
+class ToneMapper
+{
 private:
 	bool using_mobile_version = false;
-	enum TonemapMode {
+
+	enum TonemapMode
+	{
 		TONEMAP_MODE_NORMAL,
 		TONEMAP_MODE_BICUBIC_GLOW_FILTER,
 		TONEMAP_MODE_1D_LUT,
@@ -53,7 +57,8 @@ private:
 		TONEMAP_MODE_MAX
 	};
 
-	enum TonemapModeMobile {
+	enum TonemapModeMobile
+	{
 		TONEMAP_MOBILE_MODE_NORMAL,
 		TONEMAP_MOBILE_MODE_1D_LUT,
 		TONEMAP_MOBILE_MODE_SUBPASS,
@@ -67,7 +72,8 @@ private:
 		TONEMAP_MOBILE_MODE_MAX
 	};
 
-	enum Flags {
+	enum Flags
+	{
 		TONEMAP_FLAG_USE_BCS = (1 << 0),
 		TONEMAP_FLAG_USE_GLOW = (1 << 1),
 		TONEMAP_FLAG_USE_AUTO_EXPOSURE = (1 << 2),
@@ -77,7 +83,8 @@ private:
 		TONEMAP_FLAG_CONVERT_TO_SRGB = (1 << 6),
 	};
 
-	enum FlagsMobile {
+	enum FlagsMobile
+	{
 		TONEMAP_MOBILE_FLAG_USE_BCS = (1 << 0),
 		TONEMAP_MOBILE_FLAG_USE_GLOW = (1 << 1),
 		TONEMAP_MOBILE_FLAG_USE_GLOW_MAP = (1 << 2),
@@ -98,61 +105,66 @@ private:
 		TONEMAP_MOBILE_FLAG_GLOW_MODE_SOFTLIGHT = (1 << 15),
 		TONEMAP_MOBILE_FLAG_GLOW_MODE_REPLACE = (1 << 16),
 		TONEMAP_MOBILE_FLAG_GLOW_MODE_MIX = (1 << 17),
-		TONEMAP_MOBILE_ADRENO_BUG = (1 << 18), // Needs to be last so we force the pipeline cache to specify specializations for all variants.
+		TONEMAP_MOBILE_ADRENO_BUG = (1 << 18), // Needs to be last so we force the pipeline cache to
+											   // specify specializations for all variants.
 	};
 
-	struct TonemapPushConstant {
-		float bcs[3]; // 12 - 12
+	struct TonemapPushConstant
+	{
+		float bcs[3];	// 12 - 12
 		uint32_t flags; //  4 - 16
 
-		float pixel_size[2]; //  8 - 24
-		uint32_t tonemapper; //  4 - 28
+		float pixel_size[2];	//  8 - 24
+		uint32_t tonemapper;	//  4 - 28
 		float output_max_value; //  4 - 32
 
 		uint32_t glow_texture_size[2]; //  8 - 40
-		float glow_intensity; //  4 - 44
-		float glow_map_strength; //  4 - 48
+		float glow_intensity;		   //  4 - 44
+		float glow_map_strength;	   //  4 - 48
 
-		uint32_t glow_mode; //  4 - 52
+		uint32_t glow_mode;	  //  4 - 52
 		float glow_levels[7]; // 28 - 80
 
-		float exposure; //  4 - 84
-		float white; //  4 - 88
-		float auto_exposure_scale; //  4 - 92
+		float exposure;				//  4 - 84
+		float white;				//  4 - 88
+		float auto_exposure_scale;	//  4 - 92
 		float luminance_multiplier; //  4 - 96
 
 		float tonemapper_params[4]; //  16 - 112
 	};
 
-	struct TonemapPushConstantMobile {
-		float bcs[3]; // 12 - 12
+	struct TonemapPushConstantMobile
+	{
+		float bcs[3];				// 12 - 12
 		float luminance_multiplier; //  4 - 16
 
-		float src_pixel_size[2]; //  8 - 24
+		float src_pixel_size[2];  //  8 - 24
 		float dest_pixel_size[2]; //  8 - 32
 
-		float glow_intensity; //  4 - 36
+		float glow_intensity;	 //  4 - 36
 		float glow_map_strength; //  4 - 40
-		float exposure; //  4 - 44
-		float white; //  4 - 48
+		float exposure;			 //  4 - 44
+		float white;			 //  4 - 48
 
 		float tonemapper_params[4]; //  16 - 64
-		float output_max_value; //  4 - 68
-		float pad[3]; //  12 - 80
+		float output_max_value;		//  4 - 68
+		float pad[3];				//  12 - 80
 	};
 
 	/* tonemap actually writes to a framebuffer, which is
 	 * better to do using the raster pipeline rather than
 	 * compute, as that framebuffer might be in different formats
 	 */
-	struct Tonemap {
+	struct Tonemap
+	{
 		TonemapPushConstant push_constant;
 		TonemapShaderRD shader;
 		RID shader_version;
 		PipelineCacheRD pipelines[TONEMAP_MODE_MAX];
 	} tonemap;
 
-	struct TonemapMobile {
+	struct TonemapMobile
+	{
 		TonemapPushConstantMobile push_constant;
 		TonemapMobileShaderRD shader;
 		RID shader_version;
@@ -163,19 +175,20 @@ public:
 	ToneMapper(bool p_use_mobile_version);
 	~ToneMapper();
 
-	struct TonemapSettings {
+	struct TonemapSettings
+	{
 		bool use_glow = false;
 		RSE::EnvironmentGlowBlendMode glow_mode = RSE::ENV_GLOW_BLEND_MODE_SCREEN;
 		float glow_intensity = 0.3;
 		float glow_map_strength = 0.0f;
-		float glow_levels[7] = { 1.0, 0.8, 0.4, 0.1, 0.0, 0.0, 0.0 };
+		float glow_levels[7] = {1.0, 0.8, 0.4, 0.1, 0.0, 0.0, 0.0};
 		Vector2i glow_texture_size;
 		bool glow_use_bicubic_upscale = false;
 		RID glow_texture;
 		RID glow_map;
 
 		RSE::EnvironmentToneMapper tonemap_mode = RSE::ENV_TONE_MAPPER_LINEAR;
-		float tonemapper_params[4] = { 0.0, 0.0, 0.0, 0.0 };
+		float tonemapper_params[4] = {0.0, 0.0, 0.0, 0.0};
 		float exposure = 1.0;
 		float white = 1.0;
 		float max_value = 1.0;
@@ -195,11 +208,14 @@ public:
 		RID color_correction_texture;
 
 		bool use_fxaa = false;
-		enum DebandingMode {
+
+		enum DebandingMode
+		{
 			DEBANDING_MODE_DISABLED,
 			DEBANDING_MODE_8_BIT,
 			DEBANDING_MODE_10_BIT,
 		};
+
 		DebandingMode debanding_mode = DEBANDING_MODE_DISABLED;
 		Vector2i texture_size;
 		Vector2i dest_texture_size;
@@ -209,9 +225,13 @@ public:
 		bool convert_to_srgb = false;
 	};
 
-	void tonemapper(RID p_source_color, RID p_dst_framebuffer, const TonemapSettings &p_settings);
-	void tonemapper_mobile(RID p_source_color, RID p_dst_framebuffer, const TonemapSettings &p_settings);
-	void tonemapper_subpass(RD::DrawListID p_subpass_draw_list, RID p_source_color, RD::FramebufferFormatID p_dst_format_id, const TonemapSettings &p_settings);
+	void tonemapper(RID p_source_color, RID p_dst_framebuffer, const TonemapSettings& p_settings);
+	void tonemapper_mobile(
+		RID p_source_color, RID p_dst_framebuffer, const TonemapSettings& p_settings);
+	void tonemapper_subpass(RD::DrawListID p_subpass_draw_list, RID p_source_color,
+		RD::FramebufferFormatID p_dst_format_id, const TonemapSettings& p_settings);
 };
 
 } // namespace RendererRD
+
+

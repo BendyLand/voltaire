@@ -37,20 +37,25 @@
 #define CRASH_HANDLER_EXCEPTION 1
 
 #ifdef _MSC_VER
-extern DWORD CrashHandlerException(EXCEPTION_POINTERS *ep);
+extern DWORD CrashHandlerException(EXCEPTION_POINTERS* ep);
 #endif
 
 #endif
 
-class CrashHandler {
+class CrashHandler
+{
 	bool disabled;
 
 public:
 	void initialize();
 
 	void disable();
+
 	bool is_disabled() const { return disabled; }
 
 	CrashHandler();
 	~CrashHandler();
 };
+
+
+

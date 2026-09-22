@@ -37,45 +37,35 @@ class ScriptLanguage;
 
 void post_process_preview(Ref<Image> p_image);
 
-class EditorTexturePreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorTexturePreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorTexturePreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual bool generate_small_preview_automatically() const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
 };
 
-class EditorImagePreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorImagePreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorImagePreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual bool generate_small_preview_automatically() const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
 };
 
-class EditorBitmapPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorBitmapPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorBitmapPreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual bool generate_small_preview_automatically() const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
 };
 
-class EditorPackedScenePreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorPackedScenePreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorPackedScenePreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
-	virtual Ref<Texture2D> generate_from_path(const String &p_path, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 };
 
-class EditorMaterialPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorMaterialPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorMaterialPreviewPlugin : public EditorResourcePreviewGenerator
+{
 	RID scenario;
 	RID sphere;
 	RID sphere_instance;
@@ -90,37 +80,28 @@ class EditorMaterialPreviewPlugin : public EditorResourcePreviewGenerator {
 	mutable DrawRequester draw_requester;
 
 public:
-	virtual bool handles(const String &p_type) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual bool generate_small_preview_automatically() const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
 	virtual void abort() override;
 
 	EditorMaterialPreviewPlugin();
 	~EditorMaterialPreviewPlugin();
 };
 
-class EditorScriptPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorScriptPreviewPlugin, EditorResourcePreviewGenerator);
-
-	Ref<Texture2D> _generate_from_source_code(const ScriptLanguage *p_language, const String &p_source_code, const Size2 &p_size, Dictionary &p_metadata) const;
-
+class EditorScriptPreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
-	virtual Ref<Texture2D> generate_from_path(const String &p_path, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 };
 
-class EditorAudioStreamPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorAudioStreamPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorAudioStreamPreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 };
 
-class EditorMeshPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorMeshPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorMeshPreviewPlugin : public EditorResourcePreviewGenerator
+{
 	RID scenario;
 	RID mesh_instance;
 	RID viewport;
@@ -134,17 +115,15 @@ class EditorMeshPreviewPlugin : public EditorResourcePreviewGenerator {
 	mutable DrawRequester draw_requester;
 
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual void abort() override;
 
 	EditorMeshPreviewPlugin();
 	~EditorMeshPreviewPlugin();
 };
 
-class EditorFontPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorFontPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorFontPreviewPlugin : public EditorResourcePreviewGenerator
+{
 	RID viewport;
 	RID viewport_texture;
 	RID canvas;
@@ -152,20 +131,18 @@ class EditorFontPreviewPlugin : public EditorResourcePreviewGenerator {
 	mutable DrawRequester draw_requester;
 
 public:
-	virtual bool handles(const String &p_type) const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
-	virtual Ref<Texture2D> generate_from_path(const String &p_path, const Size2 &p_size, Dictionary &p_metadata) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual void abort() override;
 
 	EditorFontPreviewPlugin();
 	~EditorFontPreviewPlugin();
 };
 
-class EditorGradientPreviewPlugin : public EditorResourcePreviewGenerator {
-	VLTRCLASS(EditorGradientPreviewPlugin, EditorResourcePreviewGenerator);
-
+class EditorGradientPreviewPlugin : public EditorResourcePreviewGenerator
+{
 public:
-	virtual bool handles(const String &p_type) const override;
+	virtual bool handles(const String& p_type) const override;
 	virtual bool generate_small_preview_automatically() const override;
-	virtual Ref<Texture2D> generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const override;
 };
+
+

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "thirdparty/jolt_physics/Jolt/Core/Core.h"
+
 JPH_SUPPRESS_WARNINGS_STD_BEGIN
 #include <atomic>
 JPH_SUPPRESS_WARNINGS_STD_END

@@ -30,38 +30,37 @@
 
 #pragma once
 
+#include "scene/main/multiplayer_peer.h"
 #include "webrtc_peer_connection.h"
 
-#include "scene/main/multiplayer_peer.h"
-
-class WebRTCMultiplayerPeer : public MultiplayerPeer {
-	VLTRCLASS(WebRTCMultiplayerPeer, MultiplayerPeer);
-
-protected:
-	static void _bind_methods();
-
+class WebRTCMultiplayerPeer : public MultiplayerPeer
+{
 private:
-	enum {
+	enum
+	{
 		CH_RELIABLE = 0,
 		CH_ORDERED = 1,
 		CH_UNRELIABLE = 2,
 		CH_RESERVED_MAX = 3
 	};
 
-	enum NetworkMode {
+	enum NetworkMode
+	{
 		MODE_NONE,
 		MODE_SERVER,
 		MODE_CLIENT,
 		MODE_MESH,
 	};
 
-	class ConnectedPeer : public RefCounted {
+	class ConnectedPeer : public RefCounted
+	{
 	public:
 		Ref<WebRTCPeerConnection> connection;
 		List<Ref<WebRTCDataChannel>> channels;
 		bool connected;
 
-		ConnectedPeer() {
+		ConnectedPeer()
+		{
 			connected = false;
 			for (int i = 0; i < CH_RESERVED_MAX; i++) {
 				channels.push_front(Ref<WebRTCDataChannel>());
@@ -79,29 +78,24 @@ private:
 
 	HashMap<int, Ref<ConnectedPeer>> peer_map;
 	List<TransferMode> channels_modes;
-	List<Dictionary> channels_config;
 
-	void _peer_to_dict(const Ref<ConnectedPeer> &p_connected_peer, Dictionary &r_dict);
 	void _find_next_peer();
 	Ref<ConnectedPeer> _get_next_peer();
-	Error _initialize(int p_self_id, NetworkMode p_mode, const Array &p_channels_config = Array());
 
 public:
 	WebRTCMultiplayerPeer() {}
+
 	~WebRTCMultiplayerPeer();
 
-	Error create_server(const Array &p_channels_config = Array());
-	Error create_client(int p_self_id, const Array &p_channels_config = Array());
-	Error create_mesh(int p_self_id, const Array &p_channels_config = Array());
-	Error add_peer(const Ref<WebRTCPeerConnection> &p_peer, int p_peer_id, int p_unreliable_lifetime = 1);
+	Error add_peer(
+		const Ref<WebRTCPeerConnection>& p_peer, int p_peer_id, int p_unreliable_lifetime = 1);
 	void remove_peer(int p_peer_id);
 	bool has_peer(int p_peer_id);
-	Dictionary get_peer(int p_peer_id);
-	Dictionary get_peers();
 
 	// PacketPeer
-	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
 	virtual int get_available_packet_count() const override;
 	virtual int get_max_packet_size() const override;
 
@@ -122,3 +116,5 @@ public:
 
 	virtual ConnectionStatus get_connection_status() const override;
 };
+
+

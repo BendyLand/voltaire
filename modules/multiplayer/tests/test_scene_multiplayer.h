@@ -32,7 +32,6 @@
 
 #include "../scene_multiplayer.h"
 
-#include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"

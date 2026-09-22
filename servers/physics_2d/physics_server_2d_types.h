@@ -31,13 +31,14 @@
 #pragma once
 
 #include "core/math/vector2.h"
-#include "core/object/object.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/rid.h"
 
-namespace PhysicsServer2DTypes {
+namespace PhysicsServer2DTypes
+{
 
-struct RayParameters {
+struct RayParameters
+{
 	Vector2 from;
 	Vector2 to;
 	HashSet<RID> exclude;
@@ -49,25 +50,23 @@ struct RayParameters {
 	bool hit_from_inside = false;
 };
 
-struct RayResult {
+struct RayResult
+{
 	Vector2 position;
 	Vector2 normal;
 	RID rid;
-	ObjectID collider_id;
-	Object *collider = nullptr;
 	int shape = 0;
 };
 
-struct ShapeResult {
+struct ShapeResult
+{
 	RID rid;
-	ObjectID collider_id;
-	Object *collider = nullptr;
 	int shape = 0;
 };
 
-struct PointParameters {
+struct PointParameters
+{
 	Vector2 position;
-	ObjectID canvas_instance_id;
 	HashSet<RID> exclude;
 	uint32_t collision_mask = UINT32_MAX;
 
@@ -77,9 +76,9 @@ struct PointParameters {
 	bool pick_point = false;
 };
 
-struct ShapeParameters {
+struct ShapeParameters
+{
 	RID shape_rid;
-	Transform2D transform;
 	Vector2 motion;
 	real_t margin = 0.0;
 	HashSet<RID> exclude;
@@ -89,33 +88,28 @@ struct ShapeParameters {
 	bool collide_with_areas = false;
 };
 
-struct ShapeRestInfo {
+struct ShapeRestInfo
+{
 	Vector2 point;
 	Vector2 normal;
 	RID rid;
-	ObjectID collider_id;
 	int shape = 0;
 	Vector2 linear_velocity; // Velocity at contact point.
 };
 
-struct MotionParameters {
-	Transform2D from;
+struct MotionParameters
+{
 	Vector2 motion;
 	real_t margin = 0.08;
 	bool collide_separation_ray = false;
 	HashSet<RID> exclude_bodies;
-	HashSet<ObjectID> exclude_objects;
 	bool recovery_as_collision = false;
 
 	MotionParameters() {}
-
-	MotionParameters(const Transform2D &p_from, const Vector2 &p_motion, real_t p_margin = 0.08) :
-			from(p_from),
-			motion(p_motion),
-			margin(p_margin) {}
 };
 
-struct MotionResult {
+struct MotionResult
+{
 	Vector2 travel;
 	Vector2 remainder;
 
@@ -126,11 +120,11 @@ struct MotionResult {
 	real_t collision_safe_fraction = 0.0;
 	real_t collision_unsafe_fraction = 0.0;
 	int collision_local_shape = 0;
-	ObjectID collider_id;
 	RID collider;
 	int collider_shape = 0;
 
-	real_t get_angle(Vector2 p_up_direction) const {
+	real_t get_angle(Vector2 p_up_direction) const
+	{
 		return Math::acos(collision_normal.dot(p_up_direction));
 	}
 };
@@ -143,3 +137,5 @@ struct MotionResult {
 
 // Alias to make it easier to use.
 #define PS2DT PhysicsServer2DTypes
+
+

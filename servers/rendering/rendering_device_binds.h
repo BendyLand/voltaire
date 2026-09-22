@@ -31,38 +31,30 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/class_db.h"
 #include "servers/rendering/rendering_device.h"
 
-#define RD_SETGET(m_type, m_member) \
-	void set_##m_member(m_type p_##m_member) { \
-		base.m_member = p_##m_member; \
-	} \
-	m_type get_##m_member() const { \
-		return base.m_member; \
+#define RD_SETGET(m_type, m_member)                                                                \
+	void set_##m_member(m_type p_##m_member)                                                       \
+	{                                                                                              \
+		base.m_member = p_##m_member;                                                              \
+	}                                                                                              \
+	m_type get_##m_member() const                                                                  \
+	{                                                                                              \
+		return base.m_member;                                                                      \
 	}
 
-#define RD_BIND(m_variant_type, m_class, m_member) \
-	ClassDB::bind_method(D_METHOD("set_" _MKSTR(m_member), "p_" _MKSTR(member)), &m_class::set_##m_member); \
-	ClassDB::bind_method(D_METHOD("get_" _MKSTR(m_member)), &m_class::get_##m_member); \
-	ADD_PROPERTY(PropertyInfo(m_variant_type, #m_member), "set_" _MKSTR(m_member), "get_" _MKSTR(m_member))
-
-#define RD_SETGET_SUB(m_type, m_sub, m_member) \
-	void set_##m_sub##_##m_member(m_type p_##m_member) { \
-		base.m_sub.m_member = p_##m_member; \
-	} \
-	m_type get_##m_sub##_##m_member() const { \
-		return base.m_sub.m_member; \
+#define RD_SETGET_SUB(m_type, m_sub, m_member)                                                     \
+	void set_##m_sub##_##m_member(m_type p_##m_member)                                             \
+	{                                                                                              \
+		base.m_sub.m_member = p_##m_member;                                                        \
+	}                                                                                              \
+	m_type get_##m_sub##_##m_member() const                                                        \
+	{                                                                                              \
+		return base.m_sub.m_member;                                                                \
 	}
 
-#define RD_BIND_SUB(m_variant_type, m_class, m_sub, m_member) \
-	ClassDB::bind_method(D_METHOD("set_" _MKSTR(m_sub) "_" _MKSTR(m_member), "p_" _MKSTR(member)), &m_class::set_##m_sub##_##m_member); \
-	ClassDB::bind_method(D_METHOD("get_" _MKSTR(m_sub) "_" _MKSTR(m_member)), &m_class::get_##m_sub##_##m_member); \
-	ADD_PROPERTY(PropertyInfo(m_variant_type, _MKSTR(m_sub) "_" _MKSTR(m_member)), "set_" _MKSTR(m_sub) "_" _MKSTR(m_member), "get_" _MKSTR(m_sub) "_" _MKSTR(m_member))
-
-class RDTextureFormat : public RefCounted {
-	VLTRCLASS(RDTextureFormat, RefCounted)
-
+class RDTextureFormat : public RefCounted
+{
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
 
@@ -77,35 +69,25 @@ public:
 	RD_SETGET(uint32_t, mipmaps)
 	RD_SETGET(RD::TextureType, texture_type)
 	RD_SETGET(RD::TextureSamples, samples)
-	RD_SETGET(BitField<RenderingDevice::TextureUsageBits>, usage_bits)
+	RD_SETGET(uint32_t, usage_bits)
 	RD_SETGET(bool, is_resolve_buffer)
 	RD_SETGET(bool, is_discardable)
 
-	void add_shareable_format(RD::DataFormat p_format) { base.shareable_formats.push_back(p_format); }
-	void remove_shareable_format(RD::DataFormat p_format) { base.shareable_formats.erase(p_format); }
+	void add_shareable_format(RD::DataFormat p_format)
+	{
+		base.shareable_formats.push_back(p_format);
+	}
+
+	void remove_shareable_format(RD::DataFormat p_format)
+	{
+		base.shareable_formats.erase(p_format);
+	}
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDTextureFormat, format);
-		RD_BIND(Variant::INT, RDTextureFormat, width);
-		RD_BIND(Variant::INT, RDTextureFormat, height);
-		RD_BIND(Variant::INT, RDTextureFormat, depth);
-		RD_BIND(Variant::INT, RDTextureFormat, array_layers);
-		RD_BIND(Variant::INT, RDTextureFormat, mipmaps);
-		RD_BIND(Variant::INT, RDTextureFormat, texture_type);
-		RD_BIND(Variant::INT, RDTextureFormat, samples);
-		RD_BIND(Variant::INT, RDTextureFormat, usage_bits);
-		RD_BIND(Variant::BOOL, RDTextureFormat, is_resolve_buffer);
-		RD_BIND(Variant::BOOL, RDTextureFormat, is_discardable);
-
-		ClassDB::bind_method(D_METHOD("add_shareable_format", "format"), &RDTextureFormat::add_shareable_format);
-		ClassDB::bind_method(D_METHOD("remove_shareable_format", "format"), &RDTextureFormat::remove_shareable_format);
-	}
 };
 
-class RDTextureView : public RefCounted {
-	VLTRCLASS(RDTextureView, RefCounted)
-
+class RDTextureView : public RefCounted
+{
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
 
@@ -118,17 +100,10 @@ public:
 	RD_SETGET(RD::TextureSwizzle, swizzle_b)
 	RD_SETGET(RD::TextureSwizzle, swizzle_a)
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDTextureView, format_override);
-		RD_BIND(Variant::INT, RDTextureView, swizzle_r);
-		RD_BIND(Variant::INT, RDTextureView, swizzle_g);
-		RD_BIND(Variant::INT, RDTextureView, swizzle_b);
-		RD_BIND(Variant::INT, RDTextureView, swizzle_a);
-	}
 };
 
-class RDAttachmentFormat : public RefCounted {
-	VLTRCLASS(RDAttachmentFormat, RefCounted)
+class RDAttachmentFormat : public RefCounted
+{
 	friend class RenderingDevice;
 
 	RD::AttachmentFormat base;
@@ -138,15 +113,10 @@ public:
 	RD_SETGET(RD::TextureSamples, samples)
 	RD_SETGET(uint32_t, usage_flags)
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDAttachmentFormat, format);
-		RD_BIND(Variant::INT, RDAttachmentFormat, samples);
-		RD_BIND(Variant::INT, RDAttachmentFormat, usage_flags);
-	}
 };
 
-class RDFramebufferPass : public RefCounted {
-	VLTRCLASS(RDFramebufferPass, RefCounted)
+class RDFramebufferPass : public RefCounted
+{
 	friend class RenderingDevice;
 	friend class FramebufferCacheRD;
 
@@ -159,23 +129,15 @@ public:
 	RD_SETGET(PackedInt32Array, preserve_attachments)
 	RD_SETGET(int32_t, depth_attachment)
 protected:
-	enum {
+	enum
+	{
 		ATTACHMENT_UNUSED = -1
 	};
 
-	static void _bind_methods() {
-		RD_BIND(Variant::PACKED_INT32_ARRAY, RDFramebufferPass, color_attachments);
-		RD_BIND(Variant::PACKED_INT32_ARRAY, RDFramebufferPass, input_attachments);
-		RD_BIND(Variant::PACKED_INT32_ARRAY, RDFramebufferPass, resolve_attachments);
-		RD_BIND(Variant::PACKED_INT32_ARRAY, RDFramebufferPass, preserve_attachments);
-		RD_BIND(Variant::INT, RDFramebufferPass, depth_attachment);
-
-		BIND_CONSTANT(ATTACHMENT_UNUSED);
-	}
 };
 
-class RDSamplerState : public RefCounted {
-	VLTRCLASS(RDSamplerState, RefCounted)
+class RDSamplerState : public RefCounted
+{
 	friend class RenderingDevice;
 
 	RD::SamplerState base;
@@ -198,27 +160,10 @@ public:
 	RD_SETGET(bool, unnormalized_uvw)
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDSamplerState, mag_filter);
-		RD_BIND(Variant::INT, RDSamplerState, min_filter);
-		RD_BIND(Variant::INT, RDSamplerState, mip_filter);
-		RD_BIND(Variant::INT, RDSamplerState, repeat_u);
-		RD_BIND(Variant::INT, RDSamplerState, repeat_v);
-		RD_BIND(Variant::INT, RDSamplerState, repeat_w);
-		RD_BIND(Variant::FLOAT, RDSamplerState, lod_bias);
-		RD_BIND(Variant::BOOL, RDSamplerState, use_anisotropy);
-		RD_BIND(Variant::FLOAT, RDSamplerState, anisotropy_max);
-		RD_BIND(Variant::BOOL, RDSamplerState, enable_compare);
-		RD_BIND(Variant::INT, RDSamplerState, compare_op);
-		RD_BIND(Variant::FLOAT, RDSamplerState, min_lod);
-		RD_BIND(Variant::FLOAT, RDSamplerState, max_lod);
-		RD_BIND(Variant::INT, RDSamplerState, border_color);
-		RD_BIND(Variant::BOOL, RDSamplerState, unnormalized_uvw);
-	}
 };
 
-class RDVertexAttribute : public RefCounted {
-	VLTRCLASS(RDVertexAttribute, RefCounted)
+class RDVertexAttribute : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::VertexAttribute base;
 
@@ -231,81 +176,53 @@ public:
 	RD_SETGET(RD::VertexFrequency, frequency)
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDVertexAttribute, binding);
-		RD_BIND(Variant::INT, RDVertexAttribute, location);
-		RD_BIND(Variant::INT, RDVertexAttribute, offset);
-		RD_BIND(Variant::INT, RDVertexAttribute, format);
-		RD_BIND(Variant::INT, RDVertexAttribute, stride);
-		RD_BIND(Variant::INT, RDVertexAttribute, frequency);
-	}
 };
-class RDShaderSource : public RefCounted {
-	VLTRCLASS(RDShaderSource, RefCounted)
+
+class RDShaderSource : public RefCounted
+{
 	String source[RD::SHADER_STAGE_MAX];
 	RD::ShaderLanguage language = RD::SHADER_LANGUAGE_GLSL;
 
 public:
-	void set_stage_source(RD::ShaderStage p_stage, const String &p_source) {
+	void set_stage_source(RD::ShaderStage p_stage, const String& p_source)
+	{
 		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
 		source[p_stage] = p_source;
 	}
 
-	String get_stage_source(RD::ShaderStage p_stage) const {
+	String get_stage_source(RD::ShaderStage p_stage) const
+	{
 		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, String());
 		return source[p_stage];
 	}
 
-	void set_language(RD::ShaderLanguage p_language) {
-		language = p_language;
-	}
+	void set_language(RD::ShaderLanguage p_language) { language = p_language; }
 
-	RD::ShaderLanguage get_language() const {
-		return language;
-	}
+	RD::ShaderLanguage get_language() const { return language; }
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_stage_source", "stage", "source"), &RDShaderSource::set_stage_source);
-		ClassDB::bind_method(D_METHOD("get_stage_source", "stage"), &RDShaderSource::get_stage_source);
-
-		ClassDB::bind_method(D_METHOD("set_language", "language"), &RDShaderSource::set_language);
-		ClassDB::bind_method(D_METHOD("get_language"), &RDShaderSource::get_language);
-
-		ADD_GROUP("Source", "source_");
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_vertex"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_VERTEX);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_fragment"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_FRAGMENT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_tesselation_control"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_TESSELATION_CONTROL);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_tesselation_evaluation"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_TESSELATION_EVALUATION);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_compute"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_COMPUTE);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_raygen"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_RAYGEN);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_any_hit"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_ANY_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_closest_hit"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_CLOSEST_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_miss"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_MISS);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "source_intersection"), "set_stage_source", "get_stage_source", RD::SHADER_STAGE_INTERSECTION);
-		ADD_GROUP("Syntax", "source_");
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_RANGE, "GLSL,HLSL"), "set_language", "get_language");
-	}
 };
 
-class RDShaderSPIRV : public Resource {
-	VLTRCLASS(RDShaderSPIRV, Resource)
-
+class RDShaderSPIRV : public Resource
+{
 	Vector<uint8_t> bytecode[RD::SHADER_STAGE_MAX];
 	String compile_error[RD::SHADER_STAGE_MAX];
 
 public:
-	void set_stage_bytecode(RD::ShaderStage p_stage, const Vector<uint8_t> &p_bytecode) {
+	void set_stage_bytecode(RD::ShaderStage p_stage, const Vector<uint8_t>& p_bytecode)
+	{
 		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
 		bytecode[p_stage] = p_bytecode;
 	}
 
-	Vector<uint8_t> get_stage_bytecode(RD::ShaderStage p_stage) const {
+	Vector<uint8_t> get_stage_bytecode(RD::ShaderStage p_stage) const
+	{
 		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, Vector<uint8_t>());
 		return bytecode[p_stage];
 	}
 
-	Vector<RD::ShaderStageSPIRVData> get_stages() const {
+	Vector<RD::ShaderStageSPIRVData> get_stages() const
+	{
 		Vector<RD::ShaderStageSPIRVData> stages;
 		for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
 			if (bytecode[i].size()) {
@@ -318,160 +235,84 @@ public:
 		return stages;
 	}
 
-	void set_stage_compile_error(RD::ShaderStage p_stage, const String &p_compile_error) {
+	void set_stage_compile_error(RD::ShaderStage p_stage, const String& p_compile_error)
+	{
 		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
 		compile_error[p_stage] = p_compile_error;
 	}
 
-	String get_stage_compile_error(RD::ShaderStage p_stage) const {
+	String get_stage_compile_error(RD::ShaderStage p_stage) const
+	{
 		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, String());
 		return compile_error[p_stage];
 	}
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_stage_bytecode", "stage", "bytecode"), &RDShaderSPIRV::set_stage_bytecode);
-		ClassDB::bind_method(D_METHOD("get_stage_bytecode", "stage"), &RDShaderSPIRV::get_stage_bytecode);
-
-		ClassDB::bind_method(D_METHOD("set_stage_compile_error", "stage", "compile_error"), &RDShaderSPIRV::set_stage_compile_error);
-		ClassDB::bind_method(D_METHOD("get_stage_compile_error", "stage"), &RDShaderSPIRV::get_stage_compile_error);
-
-		ADD_GROUP("Bytecode", "bytecode_");
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_vertex"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_VERTEX);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_fragment"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_FRAGMENT);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_tesselation_control"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_TESSELATION_CONTROL);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_tesselation_evaluation"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_TESSELATION_EVALUATION);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_compute"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_COMPUTE);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_raygen"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_RAYGEN);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_any_hit"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_ANY_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_closest_hit"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_CLOSEST_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_miss"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_MISS);
-		ADD_PROPERTYI(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytecode_intersection"), "set_stage_bytecode", "get_stage_bytecode", RD::SHADER_STAGE_INTERSECTION);
-		ADD_GROUP("Compile Error", "compile_error_");
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_vertex"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_VERTEX);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_fragment"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_FRAGMENT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_tesselation_control"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_TESSELATION_CONTROL);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_tesselation_evaluation"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_TESSELATION_EVALUATION);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_compute"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_COMPUTE);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_raygen"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_RAYGEN);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_any_hit"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_ANY_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_closest_hit"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_CLOSEST_HIT);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_miss"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_MISS);
-		ADD_PROPERTYI(PropertyInfo(Variant::STRING, "compile_error_intersection"), "set_stage_compile_error", "get_stage_compile_error", RD::SHADER_STAGE_INTERSECTION);
-	}
 };
 
-class RDShaderFile : public Resource {
-	VLTRCLASS(RDShaderFile, Resource)
-
+class RDShaderFile : public Resource
+{
 	HashMap<StringName, Ref<RDShaderSPIRV>> versions;
 	String base_error;
 
 public:
-	void set_bytecode(const Ref<RDShaderSPIRV> &p_bytecode, const StringName &p_version = StringName()) {
+	void set_bytecode(
+		const Ref<RDShaderSPIRV>& p_bytecode, const StringName& p_version = StringName())
+	{
 		ERR_FAIL_COND(p_bytecode.is_null());
 		versions[p_version] = p_bytecode;
 		emit_changed();
 	}
 
-	Ref<RDShaderSPIRV> get_spirv(const StringName &p_version = StringName()) const {
+	Ref<RDShaderSPIRV> get_spirv(const StringName& p_version = StringName()) const
+	{
 		ERR_FAIL_COND_V(!versions.has(p_version), Ref<RDShaderSPIRV>());
 		return versions[p_version];
 	}
 
-	Vector<RD::ShaderStageSPIRVData> get_spirv_stages(const StringName &p_version = StringName()) const {
+	Vector<RD::ShaderStageSPIRVData> get_spirv_stages(
+		const StringName& p_version = StringName()) const
+	{
 		ERR_FAIL_COND_V(!versions.has(p_version), Vector<RD::ShaderStageSPIRVData>());
 		return versions[p_version]->get_stages();
 	}
 
-	TypedArray<StringName> get_version_list() const {
-		Vector<StringName> vnames;
-		for (const KeyValue<StringName, Ref<RDShaderSPIRV>> &E : versions) {
-			vnames.push_back(E.key);
-		}
-		vnames.sort_custom<StringName::AlphCompare>();
-		TypedArray<StringName> ret;
-		ret.resize(vnames.size());
-		for (int i = 0; i < vnames.size(); i++) {
-			ret[i] = vnames[i];
-		}
-		return ret;
-	}
-
-	void set_base_error(const String &p_error) {
+	void set_base_error(const String& p_error)
+	{
 		base_error = p_error;
 		emit_changed();
 	}
 
-	String get_base_error() const {
-		return base_error;
-	}
+	String get_base_error() const { return base_error; }
 
-	void print_errors(const String &p_file) {
+	void print_errors(const String& p_file)
+	{
 		if (!base_error.is_empty()) {
 			ERR_PRINT("Error parsing shader '" + p_file + "':\n\n" + base_error);
-		} else {
-			for (KeyValue<StringName, Ref<RDShaderSPIRV>> &E : versions) {
+		}
+		else {
+			for (KeyValue<StringName, Ref<RDShaderSPIRV>>& E : versions) {
 				for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
 					String error = E.value->get_stage_compile_error(RD::ShaderStage(i));
 					if (!error.is_empty()) {
-						static const char *stage_str[RD::SHADER_STAGE_MAX] = {
-							"vertex",
-							"fragment",
-							"tesselation_control",
-							"tesselation_evaluation",
-							"compute"
-						};
+						static const char* stage_str[RD::SHADER_STAGE_MAX] = {"vertex", "fragment",
+							"tesselation_control", "tesselation_evaluation", "compute"};
 
-						print_error("Error parsing shader '" + p_file + "', version '" + String(E.key) + "', stage '" + stage_str[i] + "':\n\n" + error);
+						print_error("Error parsing shader '" + p_file + "', version '" +
+									String(E.key) + "', stage '" + stage_str[i] + "':\n\n" + error);
 					}
 				}
 			}
 		}
 	}
 
-	typedef String (*OpenIncludeFunction)(const String &, void *userdata);
-	Error parse_versions_from_text(const String &p_text, const String p_defines = String(), OpenIncludeFunction p_include_func = nullptr, void *p_include_func_userdata = nullptr);
-
-protected:
-	Dictionary _get_versions() const {
-		TypedArray<StringName> vnames = get_version_list();
-		Dictionary ret;
-		for (int i = 0; i < vnames.size(); i++) {
-			ret[vnames[i]] = versions[vnames[i]];
-		}
-		return ret;
-	}
-	void _set_versions(const Dictionary &p_versions) {
-		versions.clear();
-		for (const KeyValue<Variant, Variant> &kv : p_versions) {
-			StringName vname = kv.key;
-			Ref<RDShaderSPIRV> bc = kv.value;
-			ERR_CONTINUE(bc.is_null());
-			versions[vname] = bc;
-		}
-
-		emit_changed();
-	}
-
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_bytecode", "bytecode", "version"), &RDShaderFile::set_bytecode, DEFVAL(StringName()));
-		ClassDB::bind_method(D_METHOD("get_spirv", "version"), &RDShaderFile::get_spirv, DEFVAL(StringName()));
-		ClassDB::bind_method(D_METHOD("get_version_list"), &RDShaderFile::get_version_list);
-
-		ClassDB::bind_method(D_METHOD("set_base_error", "error"), &RDShaderFile::set_base_error);
-		ClassDB::bind_method(D_METHOD("get_base_error"), &RDShaderFile::get_base_error);
-
-		ClassDB::bind_method(D_METHOD("_set_versions", "versions"), &RDShaderFile::_set_versions);
-		ClassDB::bind_method(D_METHOD("_get_versions"), &RDShaderFile::_get_versions);
-
-		ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "_versions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_versions", "_get_versions");
-		ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_error"), "set_base_error", "get_base_error");
-	}
+	typedef String (*OpenIncludeFunction)(const String&, void* userdata);
+	Error parse_versions_from_text(const String& p_text, const String p_defines = String(),
+		OpenIncludeFunction p_include_func = nullptr, void* p_include_func_userdata = nullptr);
 };
 
-class RDUniform : public RefCounted {
-	VLTRCLASS(RDUniform, RefCounted)
+class RDUniform : public RefCounted
+{
 	friend class RenderingDevice;
 	friend class UniformSetCacheRD;
 	RD::Uniform base;
@@ -480,72 +321,25 @@ public:
 	RD_SETGET(RD::UniformType, uniform_type)
 	RD_SETGET(int32_t, binding)
 
-	void add_id(const RID &p_id) { base.append_id(p_id); }
-	void clear_ids() { base.clear_ids(); }
-	TypedArray<RID> get_ids() const {
-		TypedArray<RID> ids;
-		for (uint32_t i = 0; i < base.get_id_count(); i++) {
-			ids.push_back(base.get_id(i));
-		}
-		return ids;
-	}
+	void add_id(const RID& p_id) { base.append_id(p_id); }
 
-protected:
-	void _set_ids(const TypedArray<RID> &p_ids) {
-		base.clear_ids();
-		for (int i = 0; i < p_ids.size(); i++) {
-			RID id = p_ids[i];
-			ERR_FAIL_COND(id.is_null());
-			base.append_id(id);
-		}
-	}
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDUniform, uniform_type);
-		RD_BIND(Variant::INT, RDUniform, binding);
-		ClassDB::bind_method(D_METHOD("add_id", "id"), &RDUniform::add_id);
-		ClassDB::bind_method(D_METHOD("clear_ids"), &RDUniform::clear_ids);
-		ClassDB::bind_method(D_METHOD("_set_ids", "ids"), &RDUniform::_set_ids);
-		ClassDB::bind_method(D_METHOD("get_ids"), &RDUniform::get_ids);
-		ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "_ids", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNAL), "_set_ids", "get_ids");
-	}
+	void clear_ids() { base.clear_ids(); }
 };
 
-class RDPipelineSpecializationConstant : public RefCounted {
-	VLTRCLASS(RDPipelineSpecializationConstant, RefCounted)
+class RDPipelineSpecializationConstant : public RefCounted
+{
 	friend class RenderingDevice;
 
-	Variant value = false;
 	uint32_t constant_id = 0;
 
 public:
-	void set_value(const Variant &p_value) {
-		ERR_FAIL_COND(p_value.get_type() != Variant::BOOL && p_value.get_type() != Variant::INT && p_value.get_type() != Variant::FLOAT);
-		value = p_value;
-	}
-	Variant get_value() const { return value; }
+	void set_constant_id(uint32_t p_id) { constant_id = p_id; }
 
-	void set_constant_id(uint32_t p_id) {
-		constant_id = p_id;
-	}
-	uint32_t get_constant_id() const {
-		return constant_id;
-	}
-
-protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_value", "value"), &RDPipelineSpecializationConstant::set_value);
-		ClassDB::bind_method(D_METHOD("get_value"), &RDPipelineSpecializationConstant::get_value);
-
-		ClassDB::bind_method(D_METHOD("set_constant_id", "constant_id"), &RDPipelineSpecializationConstant::set_constant_id);
-		ClassDB::bind_method(D_METHOD("get_constant_id"), &RDPipelineSpecializationConstant::get_constant_id);
-
-		ADD_PROPERTY(PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT), "set_value", "get_value");
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "constant_id", PROPERTY_HINT_RANGE, "0,65535,0"), "set_constant_id", "get_constant_id");
-	}
+	uint32_t get_constant_id() const { return constant_id; }
 };
 
-class RDPipelineRasterizationState : public RefCounted {
-	VLTRCLASS(RDPipelineRasterizationState, RefCounted)
+class RDPipelineRasterizationState : public RefCounted
+{
 	friend class RenderingDevice;
 
 	RD::PipelineRasterizationState base;
@@ -562,29 +356,13 @@ public:
 	RD_SETGET(float, depth_bias_slope_factor)
 	RD_SETGET(float, line_width)
 	RD_SETGET(uint32_t, patch_control_points)
-
-protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::BOOL, RDPipelineRasterizationState, enable_depth_clamp);
-		RD_BIND(Variant::BOOL, RDPipelineRasterizationState, discard_primitives);
-		RD_BIND(Variant::BOOL, RDPipelineRasterizationState, wireframe);
-		RD_BIND(Variant::INT, RDPipelineRasterizationState, cull_mode);
-		RD_BIND(Variant::INT, RDPipelineRasterizationState, front_face);
-		RD_BIND(Variant::BOOL, RDPipelineRasterizationState, depth_bias_enabled);
-		RD_BIND(Variant::FLOAT, RDPipelineRasterizationState, depth_bias_constant_factor);
-		RD_BIND(Variant::FLOAT, RDPipelineRasterizationState, depth_bias_clamp);
-		RD_BIND(Variant::FLOAT, RDPipelineRasterizationState, depth_bias_slope_factor);
-		RD_BIND(Variant::FLOAT, RDPipelineRasterizationState, line_width);
-		RD_BIND(Variant::INT, RDPipelineRasterizationState, patch_control_points);
-	}
 };
 
-class RDPipelineMultisampleState : public RefCounted {
-	VLTRCLASS(RDPipelineMultisampleState, RefCounted)
+class RDPipelineMultisampleState : public RefCounted
+{
 	friend class RenderingDevice;
 
 	RD::PipelineMultisampleState base;
-	TypedArray<int64_t> sample_masks;
 
 public:
 	RD_SETGET(RD::TextureSamples, sample_count)
@@ -593,25 +371,11 @@ public:
 	RD_SETGET(bool, enable_alpha_to_coverage)
 	RD_SETGET(bool, enable_alpha_to_one)
 
-	void set_sample_masks(const TypedArray<int64_t> &p_masks) { sample_masks = p_masks; }
-	TypedArray<int64_t> get_sample_masks() const { return sample_masks; }
-
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDPipelineMultisampleState, sample_count);
-		RD_BIND(Variant::BOOL, RDPipelineMultisampleState, enable_sample_shading);
-		RD_BIND(Variant::FLOAT, RDPipelineMultisampleState, min_sample_shading);
-		RD_BIND(Variant::BOOL, RDPipelineMultisampleState, enable_alpha_to_coverage);
-		RD_BIND(Variant::BOOL, RDPipelineMultisampleState, enable_alpha_to_one);
-
-		ClassDB::bind_method(D_METHOD("set_sample_masks", "masks"), &RDPipelineMultisampleState::set_sample_masks);
-		ClassDB::bind_method(D_METHOD("get_sample_masks"), &RDPipelineMultisampleState::get_sample_masks);
-		ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "sample_masks", PROPERTY_HINT_ARRAY_TYPE, "int"), "set_sample_masks", "get_sample_masks");
-	}
 };
 
-class RDPipelineDepthStencilState : public RefCounted {
-	VLTRCLASS(RDPipelineDepthStencilState, RefCounted)
+class RDPipelineDepthStencilState : public RefCounted
+{
 	friend class RenderingDevice;
 
 	RD::PipelineDepthStencilState base;
@@ -642,35 +406,10 @@ public:
 	RD_SETGET_SUB(uint32_t, back_op, reference)
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::BOOL, RDPipelineDepthStencilState, enable_depth_test);
-		RD_BIND(Variant::BOOL, RDPipelineDepthStencilState, enable_depth_write);
-		RD_BIND(Variant::INT, RDPipelineDepthStencilState, depth_compare_operator);
-		RD_BIND(Variant::BOOL, RDPipelineDepthStencilState, enable_depth_range);
-		RD_BIND(Variant::FLOAT, RDPipelineDepthStencilState, depth_range_min);
-		RD_BIND(Variant::FLOAT, RDPipelineDepthStencilState, depth_range_max);
-		RD_BIND(Variant::BOOL, RDPipelineDepthStencilState, enable_stencil);
-
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, fail);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, pass);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, depth_fail);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, compare);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, compare_mask);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, write_mask);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, front_op, reference);
-
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, fail);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, pass);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, depth_fail);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, compare);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, compare_mask);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, write_mask);
-		RD_BIND_SUB(Variant::INT, RDPipelineDepthStencilState, back_op, reference);
-	}
 };
 
-class RDPipelineColorBlendStateAttachment : public RefCounted {
-	VLTRCLASS(RDPipelineColorBlendStateAttachment, RefCounted)
+class RDPipelineColorBlendStateAttachment : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState::Attachment base;
 
@@ -687,7 +426,8 @@ public:
 	RD_SETGET(bool, write_b)
 	RD_SETGET(bool, write_a)
 
-	void set_as_mix() {
+	void set_as_mix()
+	{
 		base = RD::PipelineColorBlendState::Attachment();
 		base.enable_blend = true;
 		base.src_color_blend_factor = RD::BLEND_FACTOR_SRC_ALPHA;
@@ -697,62 +437,28 @@ public:
 	}
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_as_mix"), &RDPipelineColorBlendStateAttachment::set_as_mix);
-
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendStateAttachment, enable_blend);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, src_color_blend_factor);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, dst_color_blend_factor);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, color_blend_op);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, src_alpha_blend_factor);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, dst_alpha_blend_factor);
-		RD_BIND(Variant::INT, RDPipelineColorBlendStateAttachment, alpha_blend_op);
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendStateAttachment, write_r);
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendStateAttachment, write_g);
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendStateAttachment, write_b);
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendStateAttachment, write_a);
-	}
 };
 
-class RDPipelineColorBlendState : public RefCounted {
-	VLTRCLASS(RDPipelineColorBlendState, RefCounted)
+class RDPipelineColorBlendState : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::PipelineColorBlendState base;
-
-	TypedArray<RDPipelineColorBlendStateAttachment> attachments;
 
 public:
 	RD_SETGET(bool, enable_logic_op)
 	RD_SETGET(RD::LogicOperation, logic_op)
 	RD_SETGET(Color, blend_constant)
 
-	void set_attachments(const TypedArray<RDPipelineColorBlendStateAttachment> &p_attachments) {
-		attachments = p_attachments;
-	}
-
-	TypedArray<RDPipelineColorBlendStateAttachment> get_attachments() const {
-		return attachments;
-	}
-
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::BOOL, RDPipelineColorBlendState, enable_logic_op);
-		RD_BIND(Variant::INT, RDPipelineColorBlendState, logic_op);
-		RD_BIND(Variant::COLOR, RDPipelineColorBlendState, blend_constant);
-
-		ClassDB::bind_method(D_METHOD("set_attachments", "attachments"), &RDPipelineColorBlendState::set_attachments);
-		ClassDB::bind_method(D_METHOD("get_attachments"), &RDPipelineColorBlendState::get_attachments);
-		ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "attachments", PROPERTY_HINT_ARRAY_TYPE, "RDPipelineColorBlendStateAttachment"), "set_attachments", "get_attachments");
-	}
 };
 
-class RDAccelerationStructureGeometry : public RefCounted {
-	VLTRCLASS(RDAccelerationStructureGeometry, RefCounted)
+class RDAccelerationStructureGeometry : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::AccelerationStructureGeometry base;
 
 public:
-	RD_SETGET(BitField<RD::AccelerationStructureGeometryFlagBits>, flags)
+	RD_SETGET(uint32_t, flags)
 	RD_SETGET(RID, vertex_buffer)
 	RD_SETGET(uint32_t, vertex_offset)
 	RD_SETGET(uint32_t, vertex_stride)
@@ -763,21 +469,10 @@ public:
 	RD_SETGET(uint32_t, index_count)
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, flags);
-		RD_BIND(Variant::RID, RDAccelerationStructureGeometry, vertex_buffer);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, vertex_offset);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, vertex_stride);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, vertex_count);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, vertex_format);
-		RD_BIND(Variant::RID, RDAccelerationStructureGeometry, index_buffer);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, index_offset);
-		RD_BIND(Variant::INT, RDAccelerationStructureGeometry, index_count);
-	}
 };
 
-class RDAccelerationStructureInstance : public RefCounted {
-	VLTRCLASS(RDAccelerationStructureInstance, RefCounted)
+class RDAccelerationStructureInstance : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::AccelerationStructureInstance base;
 
@@ -786,50 +481,23 @@ public:
 	RD_SETGET(uint32_t, id)
 	RD_SETGET(uint8_t, mask)
 	RD_SETGET(RD::HitShaderBindingTableRange, hit_sbt_range)
-	RD_SETGET(BitField<RD::AccelerationStructureInstanceFlagBits>, flags)
+	RD_SETGET(uint32_t, flags)
 	RD_SETGET(RID, blas)
 
 protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::TRANSFORM3D, RDAccelerationStructureInstance, transform);
-		RD_BIND(Variant::INT, RDAccelerationStructureInstance, id);
-		RD_BIND(Variant::INT, RDAccelerationStructureInstance, mask);
-		RD_BIND(Variant::INT, RDAccelerationStructureInstance, hit_sbt_range);
-		RD_BIND(Variant::INT, RDAccelerationStructureInstance, flags);
-		RD_BIND(Variant::RID, RDAccelerationStructureInstance, blas);
-	}
 };
 
-class RDPipelineShader : public RefCounted {
-	VLTRCLASS(RDPipelineShader, RefCounted)
+class RDPipelineShader : public RefCounted
+{
 	friend class RenderingDevice;
 	RD::PipelineShader base;
 
-	TypedArray<RDPipelineSpecializationConstant> specialization_constants;
-
 public:
 	RD_SETGET(RID, shader)
-
-	void set_specialization_constants(const TypedArray<RDPipelineSpecializationConstant> &p_specialization_constants) {
-		specialization_constants = p_specialization_constants;
-	}
-
-	TypedArray<RDPipelineSpecializationConstant> get_specialization_constants() const {
-		return specialization_constants;
-	}
-
-protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::RID, RDPipelineShader, shader);
-
-		ClassDB::bind_method(D_METHOD("set_specialization_constants", "specialization_constants"), &RDPipelineShader::set_specialization_constants);
-		ClassDB::bind_method(D_METHOD("get_specialization_constants"), &RDPipelineShader::get_specialization_constants);
-		ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "specialization_constants", PROPERTY_HINT_ARRAY_TYPE, "RDPipelineSpecializationConstant"), "set_specialization_constants", "get_specialization_constants");
-	}
 };
 
-class RDHitGroup : public RefCounted {
-	VLTRCLASS(RDHitGroup, RefCounted)
+class RDHitGroup : public RefCounted
+{
 	friend class RenderingDevice;
 
 	Ref<RDPipelineShader> closest_hit_shader;
@@ -837,34 +505,26 @@ class RDHitGroup : public RefCounted {
 	Ref<RDPipelineShader> intersection_shader;
 
 public:
-	void set_closest_hit_shader(const Ref<RDPipelineShader> &p_closest_hit_shader) {
+	void set_closest_hit_shader(const Ref<RDPipelineShader>& p_closest_hit_shader)
+	{
 		closest_hit_shader = p_closest_hit_shader;
 	}
 
-	Ref<RDPipelineShader> get_closest_hit_shader() const {
-		return closest_hit_shader;
-	}
+	Ref<RDPipelineShader> get_closest_hit_shader() const { return closest_hit_shader; }
 
-	void set_any_hit_shader(const Ref<RDPipelineShader> &p_any_hit_shader) {
+	void set_any_hit_shader(const Ref<RDPipelineShader>& p_any_hit_shader)
+	{
 		any_hit_shader = p_any_hit_shader;
 	}
 
-	Ref<RDPipelineShader> get_any_hit_shader() const {
-		return any_hit_shader;
-	}
+	Ref<RDPipelineShader> get_any_hit_shader() const { return any_hit_shader; }
 
-	void set_intersection_shader(const Ref<RDPipelineShader> &p_intersection_shader) {
+	void set_intersection_shader(const Ref<RDPipelineShader>& p_intersection_shader)
+	{
 		intersection_shader = p_intersection_shader;
 	}
 
-	Ref<RDPipelineShader> get_intersection_shader() const {
-		return intersection_shader;
-	}
-
-protected:
-	static void _bind_methods() {
-		RD_BIND(Variant::OBJECT, RDHitGroup, closest_hit_shader);
-		RD_BIND(Variant::OBJECT, RDHitGroup, any_hit_shader);
-		RD_BIND(Variant::OBJECT, RDHitGroup, intersection_shader);
-	}
+	Ref<RDPipelineShader> get_intersection_shader() const { return intersection_shader; }
 };
+
+

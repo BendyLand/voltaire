@@ -35,13 +35,13 @@
 #include "editor/scene/2d/tiles/tile_map_layer_editor.h"
 #include "editor/scene/2d/tiles/tile_set_editor.h"
 
-class TilesEditorUtils : public Object {
-	VLTRCLASS(TilesEditorUtils, Object);
-
-	static TilesEditorUtils *singleton;
+class TilesEditorUtils
+{
+	static TilesEditorUtils* singleton;
 
 public:
-	enum SourceSortOption {
+	enum SourceSortOption
+	{
 		SOURCE_SORT_ID = 0,
 		SOURCE_SORT_ID_REVERSE,
 		SOURCE_SORT_NAME,
@@ -58,17 +58,19 @@ private:
 	// Source sorting.
 	int source_sort = SOURCE_SORT_ID;
 
-	struct SourceNameComparator {
+	struct SourceNameComparator
+	{
 		static Ref<TileSet> tile_set;
-		bool operator()(const int &p_a, const int &p_b) const;
+		bool operator()(const int& p_a, const int& p_b) const;
 	};
 
 	// Patterns preview generation.
-	struct QueueItem {
+	struct QueueItem
+	{
 		Ref<TileSet> tile_set;
 		Ref<TileMapPattern> pattern;
-		Callable callback;
 	};
+
 	List<QueueItem> pattern_preview_queue;
 	Mutex pattern_preview_mutex;
 	Semaphore pattern_preview_sem;
@@ -78,21 +80,16 @@ private:
 	Semaphore pattern_preview_done;
 	void _preview_frame_started();
 	void _pattern_preview_done();
-	static void _thread_func(void *ud);
+	static void _thread_func(void* ud);
 	void _thread();
 
 public:
-	_FORCE_INLINE_ static TilesEditorUtils *get_singleton() { return singleton; }
-
-	// Pattern preview API.
-	void queue_pattern_preview(Ref<TileSet> p_tile_set, Ref<TileMapPattern> p_pattern, Callable p_callback);
+	_FORCE_INLINE_ static TilesEditorUtils* get_singleton() { return singleton; }
 
 	// To synchronize the atlas sources lists.
 	void set_sources_lists_current(int p_current);
-	void synchronize_sources_list(Object *p_current_list, Object *p_current_sort_button);
 
 	void set_atlas_view_transform(float p_zoom, Vector2 p_scroll);
-	void synchronize_atlas_view(Object *p_current);
 
 	// Sorting.
 	void set_sorting_option(int p_option);
@@ -101,73 +98,52 @@ public:
 	// Misc.
 	void display_tile_set_editor_panel();
 
-	static void draw_selection_rect(CanvasItem *p_ci, const Rect2 &p_rect, const Color &p_color = Color(1.0, 1.0, 1.0));
-
 	TilesEditorUtils();
 	~TilesEditorUtils();
 };
 
-class TileSetSourceItemList : public ItemList {
-	VLTRCLASS(TileSetSourceItemList, ItemList);
-
+class TileSetSourceItemList : public ItemList
+{
 public:
 	Ref<TileSet> tile_set;
-
-	virtual String get_tooltip(const Point2 &p_pos) const override;
 
 	TileSetSourceItemList();
 };
 
-class TileMapEditorPlugin : public EditorPlugin {
-	VLTRCLASS(TileMapEditorPlugin, EditorPlugin);
-
-	TileMapLayerEditor *editor = nullptr;
-	ObjectID tile_map_layer_id;
-	ObjectID tile_map_group_id; // Allow keeping the layer selector up to date.
+class TileMapEditorPlugin : public EditorPlugin
+{
+	TileMapLayerEditor* editor = nullptr;
 
 	bool tile_map_changed_needs_update = false;
-	ObjectID tile_set_id; // The TileSet associated with the TileMap.
 
 	void _tile_map_layer_changed();
 	void _tile_map_layer_removed();
 	void _update_tile_map();
-	void _select_layer(const StringName &p_name);
+	void _select_layer(const StringName& p_name);
 
-	void _edit_tile_map_layer(TileMapLayer *p_tile_map_layer, bool p_show_layer_selector);
-	void _edit_tile_map(TileMap *p_tile_map);
+	void _edit_tile_map_layer(TileMapLayer* p_tile_map_layer, bool p_show_layer_selector);
+	void _edit_tile_map(TileMap* p_tile_map);
 
 protected:
 	void _notification(int p_notification);
 
 public:
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-
-	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event) override;
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override;
+	virtual bool forward_canvas_gui_input(const Ref<InputEvent>& p_event) override;
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
 	bool is_editor_visible() const;
 
-	TileMapEditorPlugin();
+	TileMapEditorPlugin() = default;
 	~TileMapEditorPlugin();
 };
 
-class TileSetEditorPlugin : public EditorPlugin {
-	VLTRCLASS(TileSetEditorPlugin, EditorPlugin);
-
-	TileSetEditor *editor = nullptr;
-
-	ObjectID edited_tileset;
+class TileSetEditorPlugin : public EditorPlugin
+{
+	TileSetEditor* editor = nullptr;
 
 public:
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
-	void open_editor();
-
-	ObjectID get_edited_tileset() const;
-
-	TileSetEditorPlugin();
+	TileSetEditorPlugin() = default;
 	~TileSetEditorPlugin();
 };
+
+

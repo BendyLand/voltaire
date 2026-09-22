@@ -30,13 +30,11 @@
 
 #pragma once
 
-#include "core/object/object.h"
+#include "core/types.h"
 
-class RenderSceneData : public Object {
-	VLTRCLASS(RenderSceneData, Object);
-
+class RenderSceneData
+{
 protected:
-	static void _bind_methods();
 
 public:
 	virtual Transform3D get_cam_transform() const = 0;
@@ -48,3 +46,5 @@ public:
 
 	virtual RID get_uniform_buffer() const = 0;
 };
+
+

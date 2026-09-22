@@ -54,23 +54,24 @@
 #include "servers/rendering/renderer_rd/effects/metal_fx.h"
 #endif
 
-class RendererSceneRenderRD : public RendererSceneRender, public RenderingShaderLibrary {
+class RendererSceneRenderRD : public RendererSceneRender, public RenderingShaderLibrary
+{
 	friend RendererRD::SkyRD;
 	friend RendererRD::GI;
 
 protected:
-	RendererRD::ForwardIDStorage *forward_id_storage = nullptr;
-	RendererRD::BokehDOF *bokeh_dof = nullptr;
-	RendererRD::CopyEffects *copy_effects = nullptr;
-	RendererRD::DebugEffects *debug_effects = nullptr;
-	RendererRD::Luminance *luminance = nullptr;
-	RendererRD::SMAA *smaa = nullptr;
-	RendererRD::ToneMapper *tone_mapper = nullptr;
-	RendererRD::FSR *fsr = nullptr;
-	RendererRD::VRS *vrs = nullptr;
-	RendererRD::Resolve *resolve_effects = nullptr;
+	RendererRD::ForwardIDStorage* forward_id_storage = nullptr;
+	RendererRD::BokehDOF* bokeh_dof = nullptr;
+	RendererRD::CopyEffects* copy_effects = nullptr;
+	RendererRD::DebugEffects* debug_effects = nullptr;
+	RendererRD::Luminance* luminance = nullptr;
+	RendererRD::SMAA* smaa = nullptr;
+	RendererRD::ToneMapper* tone_mapper = nullptr;
+	RendererRD::FSR* fsr = nullptr;
+	RendererRD::VRS* vrs = nullptr;
+	RendererRD::Resolve* resolve_effects = nullptr;
 #ifdef METAL_ENABLED
-	RendererRD::MFXSpatialEffect *mfx_spatial = nullptr;
+	RendererRD::MFXSpatialEffect* mfx_spatial = nullptr;
 #endif
 	double time = 0.0;
 	double time_step = 0.0;
@@ -83,63 +84,88 @@ protected:
 
 	////////////////////////////////
 
-	virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); }
-
 	void _update_vrs(Ref<RenderSceneBuffersRD> p_render_buffers);
 
-	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
+	void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers);
 
-	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_color) = 0;
-	virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data);
+	void _render_scene(RenderDataRD* p_render_data, const Color& p_default_color);
+	void _render_buffers_debug_draw(const RenderDataRD* p_render_data);
 
-	virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) = 0;
-	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) = 0;
-	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) = 0;
-	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
+	void _render_material(const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal,
+		const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+		const Rect2i& p_region, float p_exposure_normalization);
+	void _render_uv2(const PagedArray<RenderGeometryInstance*>& p_instances,
+		RID p_framebuffer, const Rect2i& p_region);
+	void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i& p_from,
+		const Vector3i& p_size, const AABB& p_bounds,
+		const PagedArray<RenderGeometryInstance*>& p_instances, const RID& p_albedo_texture,
+		const RID& p_emission_texture, const RID& p_emission_aniso_texture,
+		const RID& p_geom_facing_texture, float p_exposure_normalization);
+	void _render_particle_collider_heightfield(RID p_fb, const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection,
+		const PagedArray<RenderGeometryInstance*>& p_instances);
 
-	void _debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_framebuffer, uint32_t p_view_count, const Projection *p_camera_with_transforms);
+	void _debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_framebuffer,
+		uint32_t p_view_count, const Projection* p_camera_with_transforms);
 
-	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
-	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
+	RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
+	RID _render_buffers_get_velocity_texture(
+		Ref<RenderSceneBuffersRD> p_render_buffers);
 
-	bool _needs_post_prepass_render(RenderDataRD *p_render_data, bool p_use_gi);
-	void _post_prepass_render(RenderDataRD *p_render_data, bool p_use_gi);
+	RendererRD::ForwardIDStorage* create_forward_id_storage()
+	{
+		return memnew(RendererRD::ForwardIDStorage);
+	}
 
-	bool _compositor_effects_has_flag(const RenderDataRD *p_render_data, RSE::CompositorEffectFlags p_flag, RSE::CompositorEffectCallbackType p_callback_type = RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY);
-	bool _has_compositor_effect(RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD *p_render_data);
-	void _process_compositor_effects(RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD *p_render_data);
-	void _render_buffers_ensure_screen_texture(const RenderDataRD *p_render_data);
-	void _render_buffers_copy_screen_texture(const RenderDataRD *p_render_data);
-	void _render_buffers_ensure_depth_texture(const RenderDataRD *p_render_data);
-	void _render_buffers_copy_depth_texture(const RenderDataRD *p_render_data, bool p_use_msaa = false);
-	void _render_buffers_post_process_and_tonemap(const RenderDataRD *p_render_data, bool p_use_msaa = false);
-	void _post_process_subpass(RID p_source_texture, RID p_framebuffer, const RenderDataRD *p_render_data);
-	void _disable_clear_request(const RenderDataRD *p_render_data);
+	bool _needs_post_prepass_render(RenderDataRD* p_render_data, bool p_use_gi);
+	void _post_prepass_render(RenderDataRD* p_render_data, bool p_use_gi);
+
+	bool _compositor_effects_has_flag(const RenderDataRD* p_render_data,
+		RSE::CompositorEffectFlags p_flag,
+		RSE::CompositorEffectCallbackType p_callback_type =
+			RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY);
+	bool _has_compositor_effect(
+		RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD* p_render_data);
+	void _process_compositor_effects(
+		RSE::CompositorEffectCallbackType p_callback_type, const RenderDataRD* p_render_data);
+	void _render_buffers_ensure_screen_texture(const RenderDataRD* p_render_data);
+	void _render_buffers_copy_screen_texture(const RenderDataRD* p_render_data);
+	void _render_buffers_ensure_depth_texture(const RenderDataRD* p_render_data);
+	void _render_buffers_copy_depth_texture(
+		const RenderDataRD* p_render_data, bool p_use_msaa = false);
+	void _render_buffers_post_process_and_tonemap(
+		const RenderDataRD* p_render_data, bool p_use_msaa = false);
+	void _post_process_subpass(
+		RID p_source_texture, RID p_framebuffer, const RenderDataRD* p_render_data);
+	void _disable_clear_request(const RenderDataRD* p_render_data);
 
 	// needed for a single argument calls (material and uv2)
-	PagedArrayPool<RenderGeometryInstance *> cull_argument_pool;
-	PagedArray<RenderGeometryInstance *> cull_argument; //need this to exist
+	PagedArrayPool<RenderGeometryInstance*> cull_argument_pool;
+	PagedArray<RenderGeometryInstance*> cull_argument; // need this to exist
 
 	RendererRD::SkyRD sky;
 	RendererRD::GI gi;
 
-	virtual void _update_shader_quality_settings() {}
+	void _update_shader_quality_settings() {}
+
 	static bool _debug_draw_can_use_effects(RSE::ViewportDebugDraw p_debug_draw);
 
 private:
 	RSE::ViewportDebugDraw debug_draw = RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
-	static RendererSceneRenderRD *singleton;
+	static RendererSceneRenderRD* singleton;
 
 	/* Shadow atlas */
-	RSE::ShadowQuality shadows_quality = RSE::SHADOW_QUALITY_MAX; //So it always updates when first set
+	RSE::ShadowQuality shadows_quality =
+		RSE::SHADOW_QUALITY_MAX; // So it always updates when first set
 	RSE::ShadowQuality directional_shadow_quality = RSE::SHADOW_QUALITY_MAX;
 	float shadows_quality_radius = 1.0;
 	float directional_shadow_quality_radius = 1.0;
 
-	float *directional_penumbra_shadow_kernel = nullptr;
-	float *directional_soft_shadow_kernel = nullptr;
-	float *penumbra_shadow_kernel = nullptr;
-	float *soft_shadow_kernel = nullptr;
+	float* directional_penumbra_shadow_kernel = nullptr;
+	float* directional_soft_shadow_kernel = nullptr;
+	float* penumbra_shadow_kernel = nullptr;
+	float* soft_shadow_kernel = nullptr;
 	bool lightmap_filter_bicubic = false;
 	int directional_penumbra_shadow_samples = 0;
 	int directional_soft_shadow_samples = 0;
@@ -172,192 +198,224 @@ private:
 	bool volumetric_fog_filter_active = true;
 
 public:
-	static RendererSceneRenderRD *get_singleton() { return singleton; }
+	static RendererSceneRenderRD* get_singleton() { return singleton; }
 
 	/* LIGHTING */
 
-	virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) {}
-	virtual void setup_added_light(const RSE::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture, const Vector2 &p_area_size) {}
-	virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) {}
+	void setup_added_reflection_probe(
+		const Transform3D& p_transform, const Vector3& p_half_size)
+	{
+	}
+
+	void setup_added_light(const RSE::LightType p_type, const Transform3D& p_transform,
+		float p_radius, float p_spot_aperture, const Vector2& p_area_size)
+	{
+	}
+
+	void setup_added_decal(const Transform3D& p_transform, const Vector3& p_half_size) {}
 
 	/* GI */
 
-	RendererRD::GI *get_gi() { return &gi; }
+	RendererRD::GI* get_gi() { return &gi; }
 
 	/* SKY */
 
-	RendererRD::SkyRD *get_sky() { return &sky; }
+	RendererRD::SkyRD* get_sky() { return &sky; }
 
 	/* SKY API */
 
-	virtual RID sky_allocate() override;
-	virtual void sky_initialize(RID p_rid) override;
+	RID sky_allocate() override;
+	void sky_initialize(RID p_rid) override;
 
-	virtual void sky_set_radiance_size(RID p_sky, int p_radiance_size) override;
-	virtual void sky_set_mode(RID p_sky, RSE::SkyMode p_mode) override;
-	virtual void sky_set_material(RID p_sky, RID p_material) override;
-	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override;
+	void sky_set_radiance_size(RID p_sky, int p_radiance_size) override;
+	void sky_set_mode(RID p_sky, RSE::SkyMode p_mode) override;
+	void sky_set_material(RID p_sky, RID p_material) override;
+	Ref<Image> sky_bake_panorama(
+		RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i& p_size) override;
 
 	/* ENVIRONMENT API */
 
-	virtual void environment_glow_set_use_bicubic_upscale(bool p_enable) override;
+	void environment_glow_set_use_bicubic_upscale(bool p_enable) override;
 
-	virtual void environment_set_volumetric_fog_volume_size(int p_size, int p_depth) override;
-	virtual void environment_set_volumetric_fog_filter_active(bool p_enable) override;
+	void environment_set_volumetric_fog_volume_size(int p_size, int p_depth) override;
+	void environment_set_volumetric_fog_filter_active(bool p_enable) override;
 
-	virtual void environment_set_sdfgi_ray_count(RSE::EnvironmentSDFGIRayCount p_ray_count) override;
-	virtual void environment_set_sdfgi_frames_to_converge(RSE::EnvironmentSDFGIFramesToConverge p_frames) override;
-	virtual void environment_set_sdfgi_frames_to_update_light(RSE::EnvironmentSDFGIFramesToUpdateLight p_update) override;
+	void environment_set_sdfgi_ray_count(
+		RSE::EnvironmentSDFGIRayCount p_ray_count) override;
+	void environment_set_sdfgi_frames_to_converge(
+		RSE::EnvironmentSDFGIFramesToConverge p_frames) override;
+	void environment_set_sdfgi_frames_to_update_light(
+		RSE::EnvironmentSDFGIFramesToUpdateLight p_update) override;
 
-	virtual Ref<Image> environment_bake_panorama(RID p_env, bool p_bake_irradiance, const Size2i &p_size) override;
+	Ref<Image> environment_bake_panorama(
+		RID p_env, bool p_bake_irradiance, const Size2i& p_size) override;
 
-	_FORCE_INLINE_ bool is_using_physical_light_units() {
-		return use_physical_light_units;
-	}
+	_FORCE_INLINE_ bool is_using_physical_light_units() { return use_physical_light_units; }
 
 	/* REFLECTION PROBE */
 
-	virtual RID reflection_probe_create_framebuffer(RID p_color, RID p_depth);
+	RID reflection_probe_create_framebuffer(RID p_color, RID p_depth);
 
 	/* FOG VOLUMES */
 
 	uint32_t get_volumetric_fog_size() const { return volumetric_fog_size; }
+
 	uint32_t get_volumetric_fog_depth() const { return volumetric_fog_depth; }
+
 	bool get_volumetric_fog_filter_active() const { return volumetric_fog_filter_active; }
 
-	virtual RID fog_volume_instance_create(RID p_fog_volume) override;
-	virtual void fog_volume_instance_set_transform(RID p_fog_volume_instance, const Transform3D &p_transform) override;
-	virtual void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active) override;
-	virtual RID fog_volume_instance_get_volume(RID p_fog_volume_instance) const override;
-	virtual Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance) const override;
+	RID fog_volume_instance_create(RID p_fog_volume) override;
+	void fog_volume_instance_set_transform(
+		RID p_fog_volume_instance, const Transform3D& p_transform) override;
+	void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active) override;
+	RID fog_volume_instance_get_volume(RID p_fog_volume_instance) const override;
+	Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance) const override;
 
 	/* gi light probes */
 
-	virtual RID voxel_gi_instance_create(RID p_base) override;
-	virtual void voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D &p_xform) override;
-	virtual bool voxel_gi_needs_update(RID p_probe) const override;
-	virtual void voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects) override;
-	virtual void voxel_gi_set_quality(RSE::VoxelGIQuality p_quality) override { gi.voxel_gi_quality = p_quality; }
+	RID voxel_gi_instance_create(RID p_base) override;
+	void voxel_gi_instance_set_transform_to_data(
+		RID p_probe, const Transform3D& p_xform) override;
+	bool voxel_gi_needs_update(RID p_probe) const override;
+	void voxel_gi_update(RID p_probe, bool p_update_light_instances,
+		const Vector<RID>& p_light_instances,
+		const PagedArray<RenderGeometryInstance*>& p_dynamic_objects) override;
+
+	void voxel_gi_set_quality(RSE::VoxelGIQuality p_quality) override
+	{
+		gi.voxel_gi_quality = p_quality;
+	}
 
 	/* render buffers */
-	virtual RD::DataFormat _render_buffers_get_preferred_color_format();
-	virtual bool _render_buffers_can_be_storage();
-	virtual Ref<RenderSceneBuffers> render_buffers_create() override;
-	virtual void gi_set_use_half_resolution(bool p_enable) override;
+	RD::DataFormat _render_buffers_get_preferred_color_format();
+	bool _render_buffers_can_be_storage();
+	Ref<RenderSceneBuffers> render_buffers_create() override;
+	void gi_set_use_half_resolution(bool p_enable) override;
 
 	RID render_buffers_get_default_voxel_gi_buffer();
 
-	virtual void base_uniforms_changed() = 0;
+	void base_uniforms_changed();
 
-	virtual void render_scene(const Ref<RenderSceneBuffers> &p_render_buffers, const CameraData *p_camera_data, const CameraData *p_prev_camera_data, const PagedArray<RenderGeometryInstance *> &p_instances, const PagedArray<RID> &p_lights, const PagedArray<RID> &p_reflection_probes, const PagedArray<RID> &p_voxel_gi_instances, const PagedArray<RID> &p_decals, const PagedArray<RID> &p_lightmaps, const PagedArray<RID> &p_fog_volumes, RID p_environment, RID p_camera_attributes, RID p_compositor, RID p_shadow_atlas, RID p_occluder_debug_tex, RID p_reflection_atlas, RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold, const RenderShadowData *p_render_shadows, int p_render_shadow_count, const RenderSDFGIData *p_render_sdfgi_regions, int p_render_sdfgi_region_count, float p_window_output_max_value, const RenderSDFGIUpdateData *p_sdfgi_update_data = nullptr, RenderingServerTypes::RenderInfo *r_render_info = nullptr) override;
+	void render_scene(const Ref<RenderSceneBuffers>& p_render_buffers,
+		const CameraData* p_camera_data, const CameraData* p_prev_camera_data,
+		const PagedArray<RenderGeometryInstance*>& p_instances, const PagedArray<RID>& p_lights,
+		const PagedArray<RID>& p_reflection_probes, const PagedArray<RID>& p_voxel_gi_instances,
+		const PagedArray<RID>& p_decals, const PagedArray<RID>& p_lightmaps,
+		const PagedArray<RID>& p_fog_volumes, RID p_environment, RID p_camera_attributes,
+		RID p_compositor, RID p_shadow_atlas, RID p_occluder_debug_tex, RID p_reflection_atlas,
+		RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold,
+		const RenderShadowData* p_render_shadows, int p_render_shadow_count,
+		const RenderSDFGIData* p_render_sdfgi_regions, int p_render_sdfgi_region_count,
+		float p_window_output_max_value, const RenderSDFGIUpdateData* p_sdfgi_update_data = nullptr,
+		RenderingServerTypes::RenderInfo* r_render_info = nullptr) override;
 
-	virtual void render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
+	void render_material(const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal,
+		const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+		const Rect2i& p_region) override;
 
-	virtual void render_particle_collider_heightfield(RID p_collider, const Transform3D &p_transform, const PagedArray<RenderGeometryInstance *> &p_instances) override;
+	void render_particle_collider_heightfield(RID p_collider,
+		const Transform3D& p_transform,
+		const PagedArray<RenderGeometryInstance*>& p_instances) override;
 
-	virtual void set_scene_pass(uint64_t p_pass) override {
-		scene_pass = p_pass;
-	}
-	_FORCE_INLINE_ uint64_t get_scene_pass() {
-		return scene_pass;
-	}
+	void set_scene_pass(uint64_t p_pass) override { scene_pass = p_pass; }
 
-	virtual void screen_space_roughness_limiter_set_active(bool p_enable, float p_amount, float p_limit) override;
-	virtual bool screen_space_roughness_limiter_is_active() const override;
-	virtual float screen_space_roughness_limiter_get_amount() const;
-	virtual float screen_space_roughness_limiter_get_limit() const;
+	_FORCE_INLINE_ uint64_t get_scene_pass() { return scene_pass; }
 
-	virtual void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override;
-	virtual void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override;
+	void screen_space_roughness_limiter_set_active(
+		bool p_enable, float p_amount, float p_limit) override;
+	bool screen_space_roughness_limiter_is_active() const override;
+	float screen_space_roughness_limiter_get_amount() const;
+	float screen_space_roughness_limiter_get_limit() const;
 
-	virtual void decals_set_filter(RSE::DecalFilter p_filter) override;
-	virtual void light_projectors_set_filter(RSE::LightProjectorFilter p_filter) override;
-	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
-	virtual void material_set_use_debanding(bool p_enable) override;
+	void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override;
+	void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override;
 
-	_FORCE_INLINE_ RSE::ShadowQuality shadows_quality_get() const {
-		return shadows_quality;
-	}
-	_FORCE_INLINE_ RSE::ShadowQuality directional_shadow_quality_get() const {
+	void decals_set_filter(RSE::DecalFilter p_filter) override;
+	void light_projectors_set_filter(RSE::LightProjectorFilter p_filter) override;
+	void lightmaps_set_bicubic_filter(bool p_enable) override;
+	void material_set_use_debanding(bool p_enable) override;
+
+	_FORCE_INLINE_ RSE::ShadowQuality shadows_quality_get() const { return shadows_quality; }
+
+	_FORCE_INLINE_ RSE::ShadowQuality directional_shadow_quality_get() const
+	{
 		return directional_shadow_quality;
 	}
-	_FORCE_INLINE_ float shadows_quality_radius_get() const {
-		return shadows_quality_radius;
-	}
-	_FORCE_INLINE_ float directional_shadow_quality_radius_get() const {
+
+	_FORCE_INLINE_ float shadows_quality_radius_get() const { return shadows_quality_radius; }
+
+	_FORCE_INLINE_ float directional_shadow_quality_radius_get() const
+	{
 		return directional_shadow_quality_radius;
 	}
 
-	_FORCE_INLINE_ float *directional_penumbra_shadow_kernel_get() {
+	_FORCE_INLINE_ float* directional_penumbra_shadow_kernel_get()
+	{
 		return directional_penumbra_shadow_kernel;
 	}
-	_FORCE_INLINE_ float *directional_soft_shadow_kernel_get() {
+
+	_FORCE_INLINE_ float* directional_soft_shadow_kernel_get()
+	{
 		return directional_soft_shadow_kernel;
 	}
-	_FORCE_INLINE_ float *penumbra_shadow_kernel_get() {
-		return penumbra_shadow_kernel;
-	}
-	_FORCE_INLINE_ float *soft_shadow_kernel_get() {
-		return soft_shadow_kernel;
-	}
 
-	_FORCE_INLINE_ int directional_penumbra_shadow_samples_get() const {
+	_FORCE_INLINE_ float* penumbra_shadow_kernel_get() { return penumbra_shadow_kernel; }
+
+	_FORCE_INLINE_ float* soft_shadow_kernel_get() { return soft_shadow_kernel; }
+
+	_FORCE_INLINE_ int directional_penumbra_shadow_samples_get() const
+	{
 		return directional_penumbra_shadow_samples;
 	}
-	_FORCE_INLINE_ bool lightmap_filter_bicubic_get() const {
-		return lightmap_filter_bicubic;
-	}
-	_FORCE_INLINE_ int directional_soft_shadow_samples_get() const {
+
+	_FORCE_INLINE_ bool lightmap_filter_bicubic_get() const { return lightmap_filter_bicubic; }
+
+	_FORCE_INLINE_ int directional_soft_shadow_samples_get() const
+	{
 		return directional_soft_shadow_samples;
 	}
-	_FORCE_INLINE_ int penumbra_shadow_samples_get() const {
-		return penumbra_shadow_samples;
-	}
-	_FORCE_INLINE_ int soft_shadow_samples_get() const {
-		return soft_shadow_samples;
-	}
 
-	_FORCE_INLINE_ RSE::LightProjectorFilter light_projectors_get_filter() const {
+	_FORCE_INLINE_ int penumbra_shadow_samples_get() const { return penumbra_shadow_samples; }
+
+	_FORCE_INLINE_ int soft_shadow_samples_get() const { return soft_shadow_samples; }
+
+	_FORCE_INLINE_ RSE::LightProjectorFilter light_projectors_get_filter() const
+	{
 		return light_projectors_filter;
 	}
-	_FORCE_INLINE_ RSE::DecalFilter decals_get_filter() const {
-		return decals_filter;
-	}
 
-	_FORCE_INLINE_ bool material_use_debanding_get() const {
-		return material_use_debanding;
-	}
+	_FORCE_INLINE_ RSE::DecalFilter decals_get_filter() const { return decals_filter; }
 
-	_FORCE_INLINE_ bool fog_use_legacy_blending_get() const {
-		return fog_use_legacy_blending;
-	}
+	_FORCE_INLINE_ bool material_use_debanding_get() const { return material_use_debanding; }
+
+	_FORCE_INLINE_ bool fog_use_legacy_blending_get() const { return fog_use_legacy_blending; }
 
 	int get_roughness_layers() const;
 	bool is_using_radiance_octmap_array() const;
 
-	virtual TypedArray<Image> bake_render_uv2(RID p_base, const TypedArray<RID> &p_material_overrides, const Size2i &p_image_size) override;
-	virtual PackedByteArray bake_render_area_light_atlas(const TypedArray<RID> &p_area_light_textures, const TypedArray<Rect2> &p_area_light_atlas_texture_rects, const Size2i &p_size, int p_mipmaps) override;
+	bool free(RID p_rid) override;
 
-	virtual bool free(RID p_rid) override;
+	void update() override;
 
-	virtual void update() override;
+	void set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw) override;
 
-	virtual void set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw) override;
-	_FORCE_INLINE_ RSE::ViewportDebugDraw get_debug_draw_mode() const {
-		return debug_draw;
-	}
+	_FORCE_INLINE_ RSE::ViewportDebugDraw get_debug_draw_mode() const { return debug_draw; }
 
-	virtual void set_time(double p_time, double p_step) override;
+	void set_time(double p_time, double p_step) override;
 
-	virtual void sdfgi_set_debug_probe_select(const Vector3 &p_position, const Vector3 &p_dir) override;
+	void sdfgi_set_debug_probe_select(
+		const Vector3& p_position, const Vector3& p_dir) override;
 
-	virtual bool is_vrs_supported() const;
-	virtual bool is_dynamic_gi_supported() const;
-	virtual bool is_volumetric_supported() const;
-	virtual uint32_t get_max_elements() const;
+	bool is_vrs_supported() const;
+	bool is_dynamic_gi_supported() const;
+	bool is_volumetric_supported() const;
+	uint32_t get_max_elements() const;
 
 	void init();
 
 	RendererSceneRenderRD();
 	~RendererSceneRenderRD();
 };
+
+

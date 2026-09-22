@@ -31,9 +31,10 @@
 
 namespace NS
 {
-class AutoreleasePool : public Object
+class AutoreleasePool
 {
 public:
+	mem_unique_ptr<Object> obj;
     static AutoreleasePool* alloc();
     AutoreleasePool*        init();
 

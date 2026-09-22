@@ -32,5 +32,4 @@
 
 #include "core/math/aabb.h"
 #include "core/math/vector3.h"
-#include "core/object/class_db.h"
 

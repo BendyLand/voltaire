@@ -30,11 +30,11 @@
 
 #pragma once
 
+#include <limits>
 #include "core/typedefs.h"
 
-#include <limits>
-
-namespace Math {
+namespace Math
+{
 inline constexpr double SQRT2 = 1.4142135623730950488016887242;
 inline constexpr double SQRT3 = 1.7320508075688772935274463415059;
 inline constexpr double SQRT12 = 0.7071067811865475244008443621048490;
@@ -57,41 +57,46 @@ inline constexpr double CMP_POINT_IN_PLANE_EPSILON = 0.00001;
 #define MATH_CHECKS
 #endif
 
-//this epsilon is for values related to a unit size (scalar or vector len)
+// this epsilon is for values related to a unit size (scalar or vector len)
 #ifdef PRECISE_MATH_CHECKS
 inline constexpr double UNIT_EPSILON = 0.00001;
 #else
-//tolerate some more floating point error normally
+// tolerate some more floating point error normally
 inline constexpr double UNIT_EPSILON = 0.001;
 #endif
 
 #define USEC_TO_SEC(m_usec) ((m_usec) / 1000000.0)
 
-enum ClockDirection {
+enum ClockDirection
+{
 	CLOCKWISE,
 	COUNTERCLOCKWISE
 };
 
-enum Orientation {
+enum Orientation
+{
 	HORIZONTAL,
 	VERTICAL
 };
 
-enum HorizontalAlignment {
+enum HorizontalAlignment
+{
 	HORIZONTAL_ALIGNMENT_LEFT,
 	HORIZONTAL_ALIGNMENT_CENTER,
 	HORIZONTAL_ALIGNMENT_RIGHT,
 	HORIZONTAL_ALIGNMENT_FILL,
 };
 
-enum VerticalAlignment {
+enum VerticalAlignment
+{
 	VERTICAL_ALIGNMENT_TOP,
 	VERTICAL_ALIGNMENT_CENTER,
 	VERTICAL_ALIGNMENT_BOTTOM,
 	VERTICAL_ALIGNMENT_FILL,
 };
 
-enum InlineAlignment {
+enum InlineAlignment
+{
 	// Image alignment points.
 	INLINE_ALIGNMENT_TOP_TO = 0b0000,
 	INLINE_ALIGNMENT_CENTER_TO = 0b0001,
@@ -112,21 +117,24 @@ enum InlineAlignment {
 	INLINE_ALIGNMENT_BOTTOM = INLINE_ALIGNMENT_BOTTOM_TO | INLINE_ALIGNMENT_TO_BOTTOM
 };
 
-enum Side {
+enum Side
+{
 	SIDE_LEFT,
 	SIDE_TOP,
 	SIDE_RIGHT,
 	SIDE_BOTTOM
 };
 
-enum Corner {
+enum Corner
+{
 	CORNER_TOP_LEFT,
 	CORNER_TOP_RIGHT,
 	CORNER_BOTTOM_RIGHT,
 	CORNER_BOTTOM_LEFT
 };
 
-enum class EulerOrder {
+enum class EulerOrder
+{
 	XYZ,
 	XZY,
 	YXZ,
@@ -154,7 +162,11 @@ typedef float real_t;
  *  which assign to the unused fixed-width slot. As this will only be used rarely, keep the types
  *  scoped to `Math` instead of the global namespace.
  */
-namespace Math {
+namespace Math
+{
 using int_alt_t = std::conditional_t<std::is_same_v<int64_t, long>, long long, long>;
-using uint_alt_t = std::conditional_t<std::is_same_v<uint64_t, unsigned long>, unsigned long long, unsigned long>;
-} //namespace Math
+using uint_alt_t =
+	std::conditional_t<std::is_same_v<uint64_t, unsigned long>, unsigned long long, unsigned long>;
+} // namespace Math
+
+

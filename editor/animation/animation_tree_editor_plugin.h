@@ -41,81 +41,68 @@ class PanelContainer;
 class ScrollContainer;
 class RichTextLabel;
 
-class AnimationTreeNodeEditorPlugin : public VBoxContainer {
-	VLTRCLASS(AnimationTreeNodeEditorPlugin, VBoxContainer);
-
+class AnimationTreeNodeEditorPlugin : public VBoxContainer
+{
 public:
-	virtual bool can_edit(const Ref<AnimationNode> &p_node) = 0;
-	virtual void edit(const Ref<AnimationNode> &p_node) = 0;
+	virtual bool can_edit(const Ref<AnimationNode>& p_node) = 0;
+	virtual void edit(const Ref<AnimationNode>& p_node) = 0;
 
 private:
 	String last_error_key;
 };
 
-class AnimationTreeEditor : public EditorDock {
-	VLTRCLASS(AnimationTreeEditor, EditorDock);
+class AnimationTreeEditor : public EditorDock
+{
+	ScrollContainer* path_edit = nullptr;
+	HBoxContainer* path_hb = nullptr;
+	RichTextLabel* current_scope_error_label = nullptr;
+	Button* error_button = nullptr;
+	ScrollContainer* error_scroll = nullptr;
+	RichTextLabel* error_label = nullptr;
 
-	ScrollContainer *path_edit = nullptr;
-	HBoxContainer *path_hb = nullptr;
-	RichTextLabel *current_scope_error_label = nullptr;
-	Button *error_button = nullptr;
-	ScrollContainer *error_scroll = nullptr;
-	RichTextLabel *error_label = nullptr;
-
-	AnimationTree *tree = nullptr;
-	MarginContainer *editor_base = nullptr;
+	AnimationTree* tree = nullptr;
+	MarginContainer* editor_base = nullptr;
 
 	Vector<String> button_path;
 	Vector<String> edited_path;
-	Vector<AnimationTreeNodeEditorPlugin *> editors;
-
-	void _update_path();
-	void _clear_editors();
-	ObjectID current_root;
+	Vector<AnimationTreeNodeEditorPlugin*> editors;
 
 	void _path_button_pressed(int p_path);
 	void _animation_list_changed();
 
 	void _toggle_error_panel();
-	void _update_error_message();
 
 	static LocalVector<StringName> get_animation_list();
 
 protected:
-	void _meta_clicked(Variant p_meta);
 	void _notification(int p_what);
-	void _node_removed(Node *p_node);
 
-	static AnimationTreeEditor *singleton;
+	static AnimationTreeEditor* singleton;
 
 public:
-	AnimationTree *get_animation_tree() { return tree; }
-	void add_plugin(AnimationTreeNodeEditorPlugin *p_editor);
-	void remove_plugin(AnimationTreeNodeEditorPlugin *p_editor);
+	AnimationTree* get_animation_tree() { return tree; }
+
+	void remove_plugin(AnimationTreeNodeEditorPlugin* p_editor);
 
 	String get_base_path();
 
-	bool can_edit(const Ref<AnimationNode> &p_node) const;
+	bool can_edit(const Ref<AnimationNode>& p_node) const;
 
-	void edit_path(const Vector<String> &p_path);
 	Vector<String> get_edited_path() const;
 
-	void enter_editor(const String &p_path = "");
-	static AnimationTreeEditor *get_singleton() { return singleton; }
-	void edit(AnimationTree *p_tree);
-	AnimationTreeEditor();
+	static AnimationTreeEditor* get_singleton() { return singleton; }
+
+	void edit(AnimationTree* p_tree);
 };
 
-class AnimationTreeEditorPlugin : public EditorPlugin {
-	VLTRCLASS(AnimationTreeEditorPlugin, EditorPlugin);
-
-	AnimationTreeEditor *anim_tree_editor = nullptr;
+class AnimationTreeEditorPlugin : public EditorPlugin
+{
+	AnimationTreeEditor* anim_tree_editor = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "AnimationTree"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
-	AnimationTreeEditorPlugin();
+	AnimationTreeEditorPlugin() = default;
 };
+
+

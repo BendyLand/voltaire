@@ -33,7 +33,6 @@
 #include "editor/export/shader_baker_export_plugin.h"
 
 class ShaderBakerExportPluginPlatformD3D12 : public ShaderBakerExportPluginPlatform {
-	VLTRCLASS(ShaderBakerExportPluginPlatformD3D12, ShaderBakerExportPluginPlatform);
 
 private:
 	void *lib_d3d12 = nullptr;

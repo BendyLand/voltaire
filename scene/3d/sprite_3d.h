@@ -34,13 +34,13 @@
 #include "scene/resources/material.h"
 #include "scene/resources/sprite_frames.h"
 
-class SpriteBase3D : public GeometryInstance3D {
-	VLTRCLASS(SpriteBase3D, GeometryInstance3D);
-
-	mutable Ref<TriangleMesh> triangle_mesh; //cached
+class SpriteBase3D : public GeometryInstance3D
+{
+	mutable Ref<TriangleMesh> triangle_mesh; // cached
 
 public:
-	enum DrawFlags {
+	enum DrawFlags
+	{
 		FLAG_TRANSPARENT,
 		FLAG_SHADED,
 		FLAG_DOUBLE_SIDED,
@@ -50,7 +50,8 @@ public:
 
 	};
 
-	enum AlphaCutMode {
+	enum AlphaCutMode
+	{
 		ALPHA_CUT_DISABLED,
 		ALPHA_CUT_DISCARD,
 		ALPHA_CUT_OPAQUE_PREPASS,
@@ -62,9 +63,9 @@ private:
 	bool color_dirty = true;
 	Color color_accum;
 
-	SpriteBase3D *parent_sprite = nullptr;
-	List<SpriteBase3D *> children;
-	List<SpriteBase3D *>::Element *pI = nullptr;
+	SpriteBase3D* parent_sprite = nullptr;
+	List<SpriteBase3D*> children;
+	List<SpriteBase3D*>::Element* pI = nullptr;
 
 	bool centered = true;
 	Point2 offset;
@@ -89,10 +90,12 @@ private:
 	AlphaCutMode alpha_cut = ALPHA_CUT_DISABLED;
 	float alpha_scissor_threshold = 0.5;
 	float alpha_hash_scale = 1.0;
-	StandardMaterial3D::AlphaAntiAliasing alpha_antialiasing_mode = StandardMaterial3D::ALPHA_ANTIALIASING_OFF;
+	StandardMaterial3D::AlphaAntiAliasing alpha_antialiasing_mode =
+		StandardMaterial3D::ALPHA_ANTIALIASING_OFF;
 	float alpha_antialiasing_edge = 0.0f;
 	StandardMaterial3D::BillboardMode billboard_mode = StandardMaterial3D::BILLBOARD_DISABLED;
-	StandardMaterial3D::TextureFilter texture_filter = StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+	StandardMaterial3D::TextureFilter texture_filter =
+		StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
 	bool redraw_needed = false;
 	bool pending_update = false;
 	void _im_update();
@@ -102,12 +105,14 @@ private:
 protected:
 	Color _get_color_accum();
 	void _notification(int p_what);
-	static void _bind_methods();
 	virtual void _draw() = 0;
 	void draw_texture_rect(Ref<Texture2D> p_texture, Rect2 p_dst_rect, Rect2 p_src_rect);
-	_FORCE_INLINE_ void set_aabb(const AABB &p_aabb) { aabb = p_aabb; }
-	_FORCE_INLINE_ RID &get_mesh() { return mesh; }
-	_FORCE_INLINE_ RID &get_material() { return material; }
+
+	_FORCE_INLINE_ void set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
+
+	_FORCE_INLINE_ RID& get_mesh() { return mesh; }
+
+	_FORCE_INLINE_ RID& get_material() { return material; }
 
 	uint32_t mesh_surface_offsets[RSE::ARRAY_MAX];
 	PackedByteArray vertex_buffer;
@@ -124,7 +129,7 @@ public:
 	void set_centered(bool p_center);
 	bool is_centered() const;
 
-	void set_offset(const Point2 &p_offset);
+	void set_offset(const Point2& p_offset);
 	Point2 get_offset() const;
 
 	void set_flip_h(bool p_flip);
@@ -136,7 +141,7 @@ public:
 	void set_render_priority(int p_priority);
 	int get_render_priority() const;
 
-	void set_modulate(const Color &p_color);
+	void set_modulate(const Color& p_color);
 	Color get_modulate() const;
 
 	void set_pixel_size(real_t p_amount);
@@ -175,12 +180,12 @@ public:
 
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
 
-	SpriteBase3D();
+	SpriteBase3D() = default;
 	~SpriteBase3D();
 };
 
-class Sprite3D : public SpriteBase3D {
-	VLTRCLASS(Sprite3D, SpriteBase3D);
+class Sprite3D : public SpriteBase3D
+{
 	Ref<Texture2D> texture;
 
 	bool region = false;
@@ -193,24 +198,21 @@ class Sprite3D : public SpriteBase3D {
 
 protected:
 	virtual void _draw() override;
-	static void _bind_methods();
-
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
-	void set_texture(const Ref<Texture2D> &p_texture);
+	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_region_enabled(bool p_region);
 	bool is_region_enabled() const;
 
-	void set_region_rect(const Rect2 &p_region_rect);
+	void set_region_rect(const Rect2& p_region_rect);
 	Rect2 get_region_rect() const;
 
 	void set_frame(int p_frame);
 	int get_frame() const;
 
-	void set_frame_coords(const Vector2i &p_coord);
+	void set_frame_coords(const Vector2i& p_coord);
 	Vector2i get_frame_coords() const;
 
 	void set_vframes(int p_amount);
@@ -225,9 +227,8 @@ public:
 	//~Sprite3D();
 };
 
-class AnimatedSprite3D : public SpriteBase3D {
-	VLTRCLASS(AnimatedSprite3D, SpriteBase3D);
-
+class AnimatedSprite3D : public SpriteBase3D
+{
 	Ref<SpriteFrames> frames;
 	String autoplay;
 
@@ -247,29 +248,23 @@ class AnimatedSprite3D : public SpriteBase3D {
 	void _stop_internal(bool p_reset);
 
 protected:
-#ifndef DISABLE_DEPRECATED
-	bool _set(const StringName &p_name, const Variant &p_value);
-#endif
 	virtual void _draw() override;
-	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
-	void set_sprite_frames(const Ref<SpriteFrames> &p_frames);
+	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
-	void play(const StringName &p_name = StringName(), float p_custom_scale = 1.0, bool p_from_end = false);
-	void play_backwards(const StringName &p_name = StringName());
+	void play_backwards(const StringName& p_name = StringName());
 	void pause();
 	void stop();
 
 	bool is_playing() const;
 
-	void set_animation(const StringName &p_name);
+	void set_animation(const StringName& p_name);
 	StringName get_animation() const;
 
-	void set_autoplay(const String &p_name);
+	void set_autoplay(const String& p_name);
 	String get_autoplay() const;
 
 	void set_frame(int p_frame);
@@ -277,8 +272,6 @@ public:
 
 	void set_frame_progress(real_t p_progress);
 	real_t get_frame_progress() const;
-
-	void set_frame_and_progress(int p_frame, real_t p_progress);
 
 	void set_speed_scale(float p_speed_scale);
 	float get_speed_scale() const;
@@ -289,11 +282,11 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+	virtual void get_argument_options(
+		const StringName& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	AnimatedSprite3D();
 };
 
-VARIANT_ENUM_CAST(SpriteBase3D::DrawFlags);
-VARIANT_ENUM_CAST(SpriteBase3D::AlphaCutMode);
+

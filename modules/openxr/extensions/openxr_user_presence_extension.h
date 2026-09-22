@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "openxr_extension_wrapper.h"
+#include "core/types.h"
 
 // When supported, the user presence extension allows an application to detect and respond to change
 // of user presence, such as when the user has taken off or put on an XR headset.
@@ -38,34 +38,32 @@
 // See: https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_EXT_user_presence
 // for more information.
 
-class OpenXRUserPresenceExtension : public OpenXRExtensionWrapper {
-	VLTRCLASS(OpenXRUserPresenceExtension, OpenXRExtensionWrapper);
-
-protected:
-	static void _bind_methods() {}
-
+class OpenXRUserPresenceExtension
+{
 public:
-	static OpenXRUserPresenceExtension *get_singleton();
+	static OpenXRUserPresenceExtension* get_singleton();
 
 	OpenXRUserPresenceExtension();
-	virtual ~OpenXRUserPresenceExtension() override;
+	virtual ~OpenXRUserPresenceExtension();
 
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
-	virtual void *set_system_properties_and_get_next_pointer(void *p_next_pointer) override;
+	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
 
-	virtual void on_state_ready() override;
-	virtual void on_state_stopping() override;
+	virtual void on_state_ready();
+	virtual void on_state_stopping();
 
-	virtual bool on_event_polled(const XrEventDataBuffer &event) override;
+	virtual bool on_event_polled(const XrEventDataBuffer& event);
 
 	bool is_user_present() const;
 	bool is_active() const;
 
 private:
-	static OpenXRUserPresenceExtension *singleton;
+	static OpenXRUserPresenceExtension* singleton;
 
 	bool available = false;
 	XrSystemUserPresencePropertiesEXT properties;
 
 	bool user_present = true;
 };
+
+

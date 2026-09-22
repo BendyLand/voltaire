@@ -32,14 +32,10 @@
 
 #include "skeleton_3d.h"
 
-#include "core/object/class_db.h"
+void Skeleton3D::_add_bone_bind_compat_88791(const String& p_name) { add_bone(p_name); }
 
-void Skeleton3D::_add_bone_bind_compat_88791(const String &p_name) {
-	add_bone(p_name);
-}
-
-void Skeleton3D::_bind_compatibility_methods() {
-	ClassDB::bind_compatibility_method(D_METHOD("add_bone", "name"), &Skeleton3D::_add_bone_bind_compat_88791);
-}
+void Skeleton3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
+
+

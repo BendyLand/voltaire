@@ -31,13 +31,15 @@
 #pragma once
 
 #include "core/math/vector3.h"
-#include "core/object/object.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/rid.h"
+#include "core/types.h"
 
-namespace PhysicsServer3DTypes {
+namespace PhysicsServer3DTypes
+{
 
-struct RayParameters {
+struct RayParameters
+{
 	Vector3 from;
 	Vector3 to;
 	HashSet<RID> exclude;
@@ -52,24 +54,23 @@ struct RayParameters {
 	bool pick_ray = false;
 };
 
-struct RayResult {
+struct RayResult
+{
 	Vector3 position;
 	Vector3 normal;
 	RID rid;
-	ObjectID collider_id;
-	Object *collider = nullptr;
 	int shape = 0;
 	int face_index = -1;
 };
 
-struct ShapeResult {
+struct ShapeResult
+{
 	RID rid;
-	ObjectID collider_id;
-	Object *collider = nullptr;
 	int shape = 0;
 };
 
-struct PointParameters {
+struct PointParameters
+{
 	Vector3 position;
 	HashSet<RID> exclude;
 	uint32_t collision_mask = UINT32_MAX;
@@ -78,7 +79,8 @@ struct PointParameters {
 	bool collide_with_areas = false;
 };
 
-struct ShapeParameters {
+struct ShapeParameters
+{
 	RID shape_rid;
 	Transform3D transform;
 	Vector3 motion;
@@ -90,50 +92,52 @@ struct ShapeParameters {
 	bool collide_with_areas = false;
 };
 
-struct ShapeRestInfo {
+struct ShapeRestInfo
+{
 	Vector3 point;
 	Vector3 normal;
 	RID rid;
-	ObjectID collider_id;
 	int shape = 0;
 	Vector3 linear_velocity; // Velocity at contact point.
 };
 
-struct MotionParameters {
+struct MotionParameters
+{
 	Transform3D from;
 	Vector3 motion;
 	real_t margin = 0.001;
 	int max_collisions = 1;
 	bool collide_separation_ray = false;
 	HashSet<RID> exclude_bodies;
-	HashSet<ObjectID> exclude_objects;
 	bool recovery_as_collision = false;
 
 	MotionParameters() {}
 
-	MotionParameters(const Transform3D &p_from, const Vector3 &p_motion, real_t p_margin = 0.001) :
-			from(p_from),
-			motion(p_motion),
-			margin(p_margin) {}
+	MotionParameters(const Transform3D& p_from, const Vector3& p_motion, real_t p_margin = 0.001)
+		: from(p_from), motion(p_motion), margin(p_margin)
+	{
+	}
 };
 
-struct MotionCollision {
+struct MotionCollision
+{
 	Vector3 position;
 	Vector3 normal;
 	Vector3 collider_velocity;
 	Vector3 collider_angular_velocity;
 	real_t depth = 0.0;
 	int local_shape = 0;
-	ObjectID collider_id;
 	RID collider;
 	int collider_shape = 0;
 
-	real_t get_angle(Vector3 p_up_direction) const {
+	real_t get_angle(Vector3 p_up_direction) const
+	{
 		return Math::acos(normal.dot(p_up_direction));
 	}
 };
 
-struct MotionResult {
+struct MotionResult
+{
 	Vector3 travel;
 	Vector3 remainder;
 	real_t collision_depth = 0.0;
@@ -153,3 +157,5 @@ struct MotionResult {
 
 // Alias to make it easier to use.
 #define PS3DT PhysicsServer3DTypes
+
+

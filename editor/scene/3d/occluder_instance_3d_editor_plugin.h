@@ -35,26 +35,23 @@
 class EditorFileDialog;
 class OccluderInstance3D;
 
-class OccluderInstance3DEditorPlugin : public EditorPlugin {
-	VLTRCLASS(OccluderInstance3DEditorPlugin, EditorPlugin);
+class OccluderInstance3DEditorPlugin : public EditorPlugin
+{
+	OccluderInstance3D* occluder_instance = nullptr;
 
-	OccluderInstance3D *occluder_instance = nullptr;
+	Button* bake = nullptr;
 
-	Button *bake = nullptr;
+	EditorFileDialog* file_dialog = nullptr;
 
-	EditorFileDialog *file_dialog = nullptr;
-
-	void _bake_select_file(const String &p_file);
+	void _bake_select_file(const String& p_file);
 	void _bake();
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual String get_plugin_name() const override { return "OccluderInstance3D"; }
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
-	virtual void make_visible(bool p_visible) override;
 
 	OccluderInstance3DEditorPlugin();
 };
+
+

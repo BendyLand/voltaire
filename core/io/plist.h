@@ -36,13 +36,13 @@
 
 class PListNode;
 
-class PList : public RefCounted {
-	VLTRSOFTCLASS(PList, RefCounted);
-
+class PList : public RefCounted
+{
 	friend class PListNode;
 
 public:
-	enum PLNodeType {
+	enum PLNodeType
+	{
 		PL_NODE_TYPE_NIL,
 		PL_NODE_TYPE_STRING,
 		PL_NODE_TYPE_ARRAY,
@@ -55,7 +55,8 @@ public:
 	};
 
 private:
-	struct PListTrailer {
+	struct PListTrailer
+	{
 		uint8_t offset_size;
 		uint8_t ref_size;
 		uint64_t object_num;
@@ -71,12 +72,12 @@ private:
 
 public:
 	PList();
-	PList(const String &p_string);
+	PList(const String& p_string);
 
-	bool load_file(const String &p_filename);
-	bool load_string(const String &p_string, String &r_err_out);
+	bool load_file(const String& p_filename);
+	bool load_string(const String& p_string, String& r_err_out);
 
-	PackedByteArray save_asn1() const;
+	Vector<uint8_t> save_asn1() const;
 	String save_text() const;
 
 	Ref<PListNode> get_root();
@@ -84,9 +85,8 @@ public:
 
 /*************************************************************************/
 
-class PListNode : public RefCounted {
-	VLTRSOFTCLASS(PListNode, RefCounted);
-
+class PListNode : public RefCounted
+{
 	static int _asn1_size_len(uint8_t p_len_octets);
 
 public:
@@ -95,30 +95,32 @@ public:
 	CharString data_string;
 	Vector<Ref<PListNode>> data_array;
 	HashMap<String, Ref<PListNode>> data_dict;
-	union {
+
+	union
+	{
 		int64_t data_int;
 		bool data_bool;
 		double data_real;
 	};
 
 	PList::PLNodeType get_type() const;
-	Variant get_value() const;
 
-	static Ref<PListNode> new_node(const Variant &p_value);
 	static Ref<PListNode> new_array();
 	static Ref<PListNode> new_dict();
-	static Ref<PListNode> new_string(const String &p_string);
-	static Ref<PListNode> new_data(const String &p_string);
-	static Ref<PListNode> new_date(const String &p_string);
+	static Ref<PListNode> new_string(const String& p_string);
+	static Ref<PListNode> new_data(const String& p_string);
+	static Ref<PListNode> new_date(const String& p_string);
 	static Ref<PListNode> new_bool(bool p_bool);
 	static Ref<PListNode> new_int(int64_t p_int);
 	static Ref<PListNode> new_real(double p_real);
 
-	bool push_subnode(const Ref<PListNode> &p_node, const String &p_key = "");
+	bool push_subnode(const Ref<PListNode>& p_node, const String& p_key = "");
 
 	size_t get_asn1_size(uint8_t p_len_octets) const;
 
-	void store_asn1_size(PackedByteArray &p_stream, uint8_t p_len_octets) const;
-	bool store_asn1(PackedByteArray &p_stream, uint8_t p_len_octets) const;
-	void store_text(String &p_stream, uint8_t p_indent) const;
+	void store_asn1_size(Vector<uint8_t>& p_stream, uint8_t p_len_octets) const;
+	bool store_asn1(Vector<uint8_t>& p_stream, uint8_t p_len_octets) const;
+	void store_text(String& p_stream, uint8_t p_indent) const;
 };
+
+

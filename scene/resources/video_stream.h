@@ -32,18 +32,16 @@
 
 #include "scene/resources/texture.h"
 
-class VideoStreamPlayback : public Resource {
-	VLTRCLASS(VideoStreamPlayback, Resource);
-
+class VideoStreamPlayback : public Resource
+{
 public:
-	typedef int (*AudioMixCallback)(void *p_udata, const float *p_data, int p_frames);
+	typedef int (*AudioMixCallback)(void* p_udata, const float* p_data, int p_frames);
 
 protected:
 	AudioMixCallback mix_callback = nullptr;
-	void *mix_udata = nullptr;
+	void* mix_udata = nullptr;
 	mutable int _channel_count = 0; // Used only to assist with bounds checking in mix_audio.
 
-	static void _bind_methods();
 	int mix_audio(int num_frames, PackedFloat32Array buffer = {}, int offset = 0);
 
 public:
@@ -68,23 +66,19 @@ public:
 	virtual Ref<Texture2D> get_texture() const;
 	virtual void update(double p_delta);
 
-	virtual void set_mix_callback(AudioMixCallback p_callback, void *p_userdata);
+	virtual void set_mix_callback(AudioMixCallback p_callback, void* p_userdata);
 	virtual int get_channels() const;
 	virtual int get_mix_rate() const;
 };
 
-class VideoStream : public Resource {
-	VLTRCLASS(VideoStream, Resource);
-	OBJ_SAVE_TYPE(VideoStream);
-
+class VideoStream : public Resource
+{
 protected:
-	static void _bind_methods();
-
 	String file;
 	int audio_track = 0;
 
 public:
-	void set_file(const String &p_file);
+	void set_file(const String& p_file);
 	String get_file();
 
 	virtual void set_audio_track(int p_track);
@@ -93,3 +87,5 @@ public:
 	VideoStream();
 	~VideoStream();
 };
+
+

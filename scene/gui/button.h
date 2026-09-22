@@ -33,9 +33,8 @@
 #include "scene/gui/base_button.h"
 #include "scene/resources/text_paragraph.h"
 
-class Button : public BaseButton {
-	VLTRCLASS(Button, BaseButton);
-
+class Button : public BaseButton
+{
 private:
 	bool flat = false;
 	String text;
@@ -45,7 +44,8 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-	BitField<TextServer::LineBreakFlag> autowrap_flags_trim = TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	uint32_t autowrap_flags_trim =
+		TextServer::BREAK_TRIM_END_EDGE_SPACES;
 	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
 
 	Ref<Texture2D> icon;
@@ -56,7 +56,8 @@ private:
 	VerticalAlignment vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER;
 	float _internal_margin[4] = {};
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Ref<StyleBox> normal;
 		Ref<StyleBox> normal_mirrored;
 		Ref<StyleBox> pressed;
@@ -105,29 +106,28 @@ private:
 
 	void _shape(Ref<TextParagraph> p_paragraph = Ref<TextParagraph>(), String p_text = "") const;
 	void _texture_changed();
-	void _update_style_margins(const Ref<StyleBox> &p_stylebox);
+	void _update_style_margins(const Ref<StyleBox>& p_stylebox);
 
 protected:
 	virtual void _update_theme_item_cache() override;
 
 	void _set_internal_margin(Side p_side, float p_value);
 	virtual void _queue_update_size_cache();
-	virtual String _get_translated_text(const String &p_text) const;
+	virtual String _get_translated_text(const String& p_text) const;
 
-	Size2 _fit_icon_size(const Size2 &p_size) const;
+	Size2 _fit_icon_size(const Size2& p_size) const;
 	Ref<StyleBox> _get_current_stylebox() const;
 	Size2 _get_largest_stylebox_size() const;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	virtual String _get_accessibility_name() const override;
 
 public:
 	virtual Size2 get_minimum_size() const override;
 
-	Size2 get_minimum_size_for_text_and_icon(const String &p_text, Ref<Texture2D> p_icon) const;
+	Size2 get_minimum_size_for_text_and_icon(const String& p_text, Ref<Texture2D> p_icon) const;
 
-	void set_text(const String &p_text);
+	void set_text(const String& p_text);
 	String get_text() const;
 
 	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
@@ -136,16 +136,15 @@ public:
 	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
 	TextServer::AutowrapMode get_autowrap_mode() const;
 
-	void set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags);
-	BitField<TextServer::LineBreakFlag> get_autowrap_trim_flags() const;
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
 
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
 
-	void set_language(const String &p_language);
+	void set_language(const String& p_language);
 	String get_language() const;
 
-	void set_button_icon(const Ref<Texture2D> &p_icon);
 	Ref<Texture2D> get_button_icon() const;
 
 	void set_expand_icon(bool p_enabled);
@@ -165,6 +164,8 @@ public:
 	HorizontalAlignment get_icon_alignment() const;
 	VerticalAlignment get_vertical_icon_alignment() const;
 
-	Button(const String &p_text = String());
-	~Button();
+	Button(const String& p_text = String());
+	~Button() = default;
 };
+
+

@@ -35,7 +35,6 @@
 class PhysicsBody2D;
 
 class PinJoint2D : public Joint2D {
-	VLTRCLASS(PinJoint2D, Joint2D);
 
 	real_t softness = 0.0;
 	real_t angular_limit_lower = 0.0;
@@ -47,7 +46,6 @@ class PinJoint2D : public Joint2D {
 protected:
 	void _notification(int p_what);
 	virtual void _configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) override;
-	static void _bind_methods();
 
 public:
 	void set_softness(real_t p_softness);

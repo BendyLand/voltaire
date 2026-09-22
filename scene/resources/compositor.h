@@ -31,16 +31,15 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/object/gdvirtual.gen.h"
 #include "servers/rendering/storage/render_data.h"
 
 /* Compositor Effect */
 
-class CompositorEffect : public Resource {
-	VLTRCLASS(CompositorEffect, Resource);
-
+class CompositorEffect : public Resource
+{
 public:
-	enum EffectCallbackType {
+	enum EffectCallbackType
+	{
 		EFFECT_CALLBACK_TYPE_PRE_OPAQUE,
 		EFFECT_CALLBACK_TYPE_POST_OPAQUE,
 		EFFECT_CALLBACK_TYPE_POST_SKY,
@@ -61,10 +60,8 @@ private:
 	bool needs_separate_specular = false;
 
 protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
-	void _call_render_callback(int p_effect_callback_type, const RenderData *p_render_data);
+	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
 
 public:
 	virtual RID get_rid() const override { return rid; }
@@ -94,13 +91,11 @@ public:
 	~CompositorEffect();
 };
 
-VARIANT_ENUM_CAST(CompositorEffect::EffectCallbackType)
 
 /* Compositor */
 
-class Compositor : public Resource {
-	VLTRCLASS(Compositor, Resource);
-
+class Compositor : public Resource
+{
 private:
 	RID compositor;
 
@@ -108,15 +103,12 @@ private:
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:
-	static void _bind_methods();
 
 public:
 	virtual RID get_rid() const override { return compositor; }
 
 	Compositor();
 	~Compositor();
-
-	// Compositor effects
-	void set_compositor_effects(const TypedArray<CompositorEffect> &p_compositor_effects);
-	TypedArray<CompositorEffect> get_compositor_effects() const;
 };
+
+

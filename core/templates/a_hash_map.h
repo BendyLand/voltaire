@@ -30,17 +30,15 @@
 
 #pragma once
 
+#include <initializer_list>
 #include "core/math/math_funcs_binary.h"
 #include "core/os/memory.h"
 #include "core/string/print_string.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/pair.h"
 
-#include <initializer_list>
-
 class String;
 class StringName;
-class Variant;
 
 /**
  * An array-based implementation of a hash map. It is very efficient in terms of performance and
@@ -72,15 +70,16 @@ class Variant;
  * Use RBMap if you need to iterate over sorted elements.
  *
  * Use HashMap if:
- *   - You need to keep an iterator or const pointer to Key and you intend to add/remove elements in the meantime.
+ *   - You need to keep an iterator or const pointer to Key and you intend to add/remove elements in
+ *the meantime.
  *   - You need to preserve the insertion order when using erase.
  *
  * It is recommended to use `HashMap` if `KeyValue` size is very large.
  */
-template <typename TKey, typename TValue,
-		typename Hasher = HashMapHasherDefault,
-		typename Comparator = HashMapComparatorDefault<TKey>>
-class _WARN_UNUSED_ AHashMap {
+template <typename TKey, typename TValue, typename Hasher = HashMapHasherDefault,
+	typename Comparator = HashMapComparatorDefault<TKey>>
+class _WARN_UNUSED_ AHashMap
+{
 public:
 	// Must be a power of two.
 	static constexpr uint32_t INITIAL_CAPACITY = 16;
@@ -88,7 +87,8 @@ public:
 	static_assert(EMPTY_HASH == 0, "EMPTY_HASH must always be 0 for the memcpy() optimization.");
 
 private:
-	struct Metadata {
+	struct Metadata
+	{
 		uint32_t hash;
 		uint32_t element_idx;
 	};
@@ -96,14 +96,15 @@ private:
 	static_assert(sizeof(Metadata) == 8);
 
 	typedef KeyValue<TKey, TValue> MapKeyValue;
-	MapKeyValue *_elements = nullptr;
-	Metadata *_metadata = nullptr;
+	MapKeyValue* _elements = nullptr;
+	Metadata* _metadata = nullptr;
 
 	// Due to optimization, this is `capacity - 1`. Use + 1 to get normal capacity.
 	uint32_t _capacity_mask = 0;
 	uint32_t _size = 0;
 
-	uint32_t _hash(const TKey &p_key) const {
+	uint32_t _hash(const TKey& p_key) const
+	{
 		uint32_t hash = Hasher::hash(p_key);
 
 		if (unlikely(hash == EMPTY_HASH)) {
@@ -113,30 +114,39 @@ private:
 		return hash;
 	}
 
-	static _FORCE_INLINE_ uint32_t _get_resize_count(uint32_t p_capacity_mask) {
-		return p_capacity_mask ^ (p_capacity_mask + 1) >> 2; // = get_capacity() * 0.75 - 1; Works only if p_capacity_mask = 2^n - 1.
+	static _FORCE_INLINE_ uint32_t _get_resize_count(uint32_t p_capacity_mask)
+	{
+		return p_capacity_mask ^
+			   (p_capacity_mask + 1) >>
+				   2; // = get_capacity() * 0.75 - 1; Works only if p_capacity_mask = 2^n - 1.
 	}
 
-	static _FORCE_INLINE_ uint32_t _get_probe_length(uint32_t p_meta_idx, uint32_t p_hash, uint32_t p_capacity) {
+	static _FORCE_INLINE_ uint32_t _get_probe_length(
+		uint32_t p_meta_idx, uint32_t p_hash, uint32_t p_capacity)
+	{
 		const uint32_t original_idx = p_hash & p_capacity;
 		return (p_meta_idx - original_idx + p_capacity + 1) & p_capacity;
 	}
 
-	bool _lookup_idx(const TKey &p_key, uint32_t &r_element_idx, uint32_t &r_meta_idx) const {
+	bool _lookup_idx(const TKey& p_key, uint32_t& r_element_idx, uint32_t& r_meta_idx) const
+	{
 		if (unlikely(_elements == nullptr)) {
 			return false; // Failed lookups, no _elements.
 		}
 		return _lookup_idx_with_hash(p_key, r_element_idx, r_meta_idx, _hash(p_key));
 	}
 
-	bool _lookup_idx_with_hash(const TKey &p_key, uint32_t &r_element_idx, uint32_t &r_meta_idx, uint32_t p_hash) const {
+	bool _lookup_idx_with_hash(
+		const TKey& p_key, uint32_t& r_element_idx, uint32_t& r_meta_idx, uint32_t p_hash) const
+	{
 		if (unlikely(_elements == nullptr)) {
 			return false; // Failed lookups, no _elements.
 		}
 
 		uint32_t meta_idx = p_hash & _capacity_mask;
 		Metadata metadata = _metadata[meta_idx];
-		if (metadata.hash == p_hash && Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
+		if (metadata.hash == p_hash &&
+			Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
 			r_element_idx = metadata.element_idx;
 			r_meta_idx = meta_idx;
 			return true;
@@ -151,7 +161,8 @@ private:
 		uint32_t distance = 1;
 		while (true) {
 			metadata = _metadata[meta_idx];
-			if (metadata.hash == p_hash && Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
+			if (metadata.hash == p_hash &&
+				Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
 				r_element_idx = metadata.element_idx;
 				r_meta_idx = meta_idx;
 				return true;
@@ -170,11 +181,12 @@ private:
 		}
 	}
 
-	uint32_t _insert_metadata(uint32_t p_hash, uint32_t p_element_idx) {
+	uint32_t _insert_metadata(uint32_t p_hash, uint32_t p_element_idx)
+	{
 		uint32_t meta_idx = p_hash & _capacity_mask;
 
 		if (_metadata[meta_idx].hash == EMPTY_HASH) {
-			_metadata[meta_idx] = Metadata{ p_hash, p_element_idx };
+			_metadata[meta_idx] = Metadata{p_hash, p_element_idx};
 			return meta_idx;
 		}
 
@@ -196,7 +208,8 @@ private:
 			}
 
 			// Not an empty slot, let's check the probing length of the existing one.
-			uint32_t existing_probe_len = _get_probe_length(meta_idx, _metadata[meta_idx].hash, _capacity_mask);
+			uint32_t existing_probe_len =
+				_get_probe_length(meta_idx, _metadata[meta_idx].hash, _capacity_mask);
 			if (existing_probe_len < distance) {
 				SWAP(metadata, _metadata[meta_idx]);
 				distance = existing_probe_len;
@@ -207,17 +220,20 @@ private:
 		}
 	}
 
-	void _resize_and_rehash(uint32_t p_new_capacity) {
+	void _resize_and_rehash(uint32_t p_new_capacity)
+	{
 		uint32_t real_old_capacity = _capacity_mask + 1;
 		// Capacity can't be 0 and must be 2^n - 1.
 		_capacity_mask = MAX(4u, p_new_capacity);
 		uint32_t real_capacity = Math::next_power_of_2(_capacity_mask);
 		_capacity_mask = real_capacity - 1;
 
-		Metadata *old_map_data = _metadata;
+		Metadata* old_map_data = _metadata;
 
-		_metadata = reinterpret_cast<Metadata *>(Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
-		_elements = reinterpret_cast<MapKeyValue *>(Memory::realloc_static(_elements, sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+		_metadata = reinterpret_cast<Metadata*>(
+			Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
+		_elements = reinterpret_cast<MapKeyValue*>(Memory::realloc_static(
+			_elements, sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
 
 		if (_size != 0) {
 			for (uint32_t i = 0; i < real_old_capacity; i++) {
@@ -231,13 +247,16 @@ private:
 		Memory::free_static(old_map_data);
 	}
 
-	int32_t _insert_element(const TKey &p_key, const TValue &p_value, uint32_t p_hash) {
+	int32_t _insert_element(const TKey& p_key, const TValue& p_value, uint32_t p_hash)
+	{
 		if (unlikely(_elements == nullptr)) {
 			// Allocate on demand to save memory.
 
 			uint32_t real_capacity = _capacity_mask + 1;
-			_metadata = reinterpret_cast<Metadata *>(Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
-			_elements = reinterpret_cast<MapKeyValue *>(Memory::alloc_static(sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+			_metadata = reinterpret_cast<Metadata*>(
+				Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
+			_elements = reinterpret_cast<MapKeyValue*>(Memory::alloc_static(
+				sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
 		}
 
 		if (unlikely(_size > _get_resize_count(_capacity_mask))) {
@@ -251,7 +270,8 @@ private:
 		return _size - 1;
 	}
 
-	void _init_from(const AHashMap &p_other) {
+	void _init_from(const AHashMap& p_other)
+	{
 		_capacity_mask = p_other._capacity_mask;
 		uint32_t real_capacity = _capacity_mask + 1;
 		_size = p_other._size;
@@ -260,14 +280,17 @@ private:
 			return;
 		}
 
-		_metadata = reinterpret_cast<Metadata *>(Memory::alloc_static(sizeof(Metadata) * real_capacity));
-		_elements = reinterpret_cast<MapKeyValue *>(Memory::alloc_static(sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+		_metadata =
+			reinterpret_cast<Metadata*>(Memory::alloc_static(sizeof(Metadata) * real_capacity));
+		_elements = reinterpret_cast<MapKeyValue*>(
+			Memory::alloc_static(sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
 
 		if constexpr (std::is_trivially_copyable_v<TKey> && std::is_trivially_copyable_v<TValue>) {
-			void *destination = _elements;
-			const void *source = p_other._elements;
+			void* destination = _elements;
+			const void* source = p_other._elements;
 			memcpy(destination, source, sizeof(MapKeyValue) * _size);
-		} else {
+		}
+		else {
 			for (uint32_t i = 0; i < _size; i++) {
 				memnew_placement(&_elements[i], MapKeyValue(p_other._elements[i]));
 			}
@@ -280,19 +303,20 @@ public:
 	/* Standard Godot Container API */
 
 	_FORCE_INLINE_ uint32_t get_capacity() const { return _capacity_mask + 1; }
+
 	_FORCE_INLINE_ uint32_t size() const { return _size; }
 
-	_FORCE_INLINE_ bool is_empty() const {
-		return _size == 0;
-	}
+	_FORCE_INLINE_ bool is_empty() const { return _size == 0; }
 
-	void clear() {
+	void clear()
+	{
 		if (_elements == nullptr || _size == 0) {
 			return;
 		}
 
 		memset(_metadata, EMPTY_HASH, (_capacity_mask + 1) * sizeof(Metadata));
-		if constexpr (!(std::is_trivially_destructible_v<TKey> && std::is_trivially_destructible_v<TValue>)) {
+		if constexpr (!(std::is_trivially_destructible_v<TKey> &&
+						  std::is_trivially_destructible_v<TValue>)) {
 			for (uint32_t i = 0; i < _size; i++) {
 				_elements[i].key.~TKey();
 				_elements[i].value.~TValue();
@@ -302,7 +326,8 @@ public:
 		_size = 0;
 	}
 
-	TValue &get(const TKey &p_key) _LIFETIME_BOUND_ {
+	TValue& get(const TKey& p_key) _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -310,7 +335,8 @@ public:
 		return _elements[element_idx].value;
 	}
 
-	const TValue &get(const TKey &p_key) const _LIFETIME_BOUND_ {
+	const TValue& get(const TKey& p_key) const _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -318,7 +344,8 @@ public:
 		return _elements[element_idx].value;
 	}
 
-	const TValue *getptr(const TKey &p_key) const _LIFETIME_BOUND_ {
+	const TValue* getptr(const TKey& p_key) const _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -329,7 +356,8 @@ public:
 		return nullptr;
 	}
 
-	TValue *getptr(const TKey &p_key) _LIFETIME_BOUND_ {
+	TValue* getptr(const TKey& p_key) _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -340,13 +368,15 @@ public:
 		return nullptr;
 	}
 
-	bool has(const TKey &p_key) const {
+	bool has(const TKey& p_key) const
+	{
 		uint32_t _idx = 0;
 		uint32_t meta_idx = 0;
 		return _lookup_idx(p_key, _idx, meta_idx);
 	}
 
-	bool erase(const TKey &p_key) {
+	bool erase(const TKey& p_key)
+	{
 		uint32_t meta_idx = 0;
 		uint32_t element_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -356,7 +386,9 @@ public:
 		}
 
 		uint32_t next_meta_idx = (meta_idx + 1) & _capacity_mask;
-		while (_metadata[next_meta_idx].hash != EMPTY_HASH && _get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
+		while (
+			_metadata[next_meta_idx].hash != EMPTY_HASH &&
+			_get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
 			SWAP(_metadata[next_meta_idx], _metadata[meta_idx]);
 
 			meta_idx = next_meta_idx;
@@ -369,7 +401,8 @@ public:
 		_size--;
 
 		if (element_idx < _size) {
-			memcpy((void *)&_elements[element_idx], (const void *)&_elements[_size], sizeof(MapKeyValue));
+			memcpy((void*)&_elements[element_idx], (const void*)&_elements[_size],
+				sizeof(MapKeyValue));
 			uint32_t moved_element_idx = 0;
 			uint32_t moved_meta_idx = 0;
 			_lookup_idx(_elements[_size].key, moved_element_idx, moved_meta_idx);
@@ -379,9 +412,11 @@ public:
 		return true;
 	}
 
-	// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
-	// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
-	bool replace_key(const TKey &p_old_key, const TKey &p_new_key) {
+	// Replace the key of an entry in-place, without invalidating iterators or changing the entries
+	// position during iteration. p_old_key must exist in the map and p_new_key must not, unless it
+	// is equal to p_old_key.
+	bool replace_key(const TKey& p_old_key, const TKey& p_new_key)
+	{
 		if (p_old_key == p_new_key) {
 			return true;
 		}
@@ -389,11 +424,13 @@ public:
 		uint32_t element_idx = 0;
 		ERR_FAIL_COND_V(_lookup_idx(p_new_key, element_idx, meta_idx), false);
 		ERR_FAIL_COND_V(!_lookup_idx(p_old_key, element_idx, meta_idx), false);
-		MapKeyValue &element = _elements[element_idx];
-		const_cast<TKey &>(element.key) = p_new_key;
+		MapKeyValue& element = _elements[element_idx];
+		const_cast<TKey&>(element.key) = p_new_key;
 
 		uint32_t next_meta_idx = (meta_idx + 1) & _capacity_mask;
-		while (_metadata[next_meta_idx].hash != EMPTY_HASH && _get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
+		while (
+			_metadata[next_meta_idx].hash != EMPTY_HASH &&
+			_get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
 			SWAP(_metadata[next_meta_idx], _metadata[meta_idx]);
 
 			meta_idx = next_meta_idx;
@@ -409,8 +446,10 @@ public:
 	}
 
 	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
-	// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
-	void reserve(uint32_t p_new_capacity) {
+	// If adding a known (possibly large) number of elements at once, must be larger than old
+	// capacity.
+	void reserve(uint32_t p_new_capacity)
+	{
 		if (_elements == nullptr) {
 			_capacity_mask = MAX(4u, p_new_capacity);
 			_capacity_mask = Math::next_power_of_2(_capacity_mask) - 1;
@@ -418,7 +457,8 @@ public:
 		}
 		if (p_new_capacity <= get_capacity()) {
 			if (p_new_capacity < size()) {
-				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This is likely a mistake.");
+				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This "
+							 "is likely a mistake.");
 			}
 			return;
 		}
@@ -427,19 +467,20 @@ public:
 
 	/** Iterator API **/
 
-	struct ConstIterator {
-		_FORCE_INLINE_ const MapKeyValue &operator*() const {
-			return *pair;
-		}
-		_FORCE_INLINE_ const MapKeyValue *operator->() const {
-			return pair;
-		}
-		_FORCE_INLINE_ ConstIterator &operator++() {
+	struct ConstIterator
+	{
+		_FORCE_INLINE_ const MapKeyValue& operator*() const { return *pair; }
+
+		_FORCE_INLINE_ const MapKeyValue* operator->() const { return pair; }
+
+		_FORCE_INLINE_ ConstIterator& operator++()
+		{
 			pair++;
 			return *this;
 		}
 
-		_FORCE_INLINE_ ConstIterator &operator--() {
+		_FORCE_INLINE_ ConstIterator& operator--()
+		{
 			pair--;
 			if (pair < begin) {
 				pair = end;
@@ -447,48 +488,61 @@ public:
 			return *this;
 		}
 
-		_FORCE_INLINE_ bool operator==(const ConstIterator &p_other) const { return pair == p_other.pair; }
-		_FORCE_INLINE_ bool operator!=(const ConstIterator &p_other) const { return pair != p_other.pair; }
-
-		_FORCE_INLINE_ explicit operator bool() const {
-			return pair != end;
+		_FORCE_INLINE_ bool operator==(const ConstIterator& p_other) const
+		{
+			return pair == p_other.pair;
 		}
 
-		_FORCE_INLINE_ ConstIterator(MapKeyValue *p_key, MapKeyValue *p_begin, MapKeyValue *p_end) {
+		_FORCE_INLINE_ bool operator!=(const ConstIterator& p_other) const
+		{
+			return pair != p_other.pair;
+		}
+
+		_FORCE_INLINE_ explicit operator bool() const { return pair != end; }
+
+		_FORCE_INLINE_ ConstIterator(MapKeyValue* p_key, MapKeyValue* p_begin, MapKeyValue* p_end)
+		{
 			pair = p_key;
 			begin = p_begin;
 			end = p_end;
 		}
+
 		_FORCE_INLINE_ ConstIterator() {}
-		_FORCE_INLINE_ ConstIterator(const ConstIterator &p_it) {
+
+		_FORCE_INLINE_ ConstIterator(const ConstIterator& p_it)
+		{
 			pair = p_it.pair;
 			begin = p_it.begin;
 			end = p_it.end;
 		}
-		_FORCE_INLINE_ void operator=(const ConstIterator &p_it) {
+
+		_FORCE_INLINE_ void operator=(const ConstIterator& p_it)
+		{
 			pair = p_it.pair;
 			begin = p_it.begin;
 			end = p_it.end;
 		}
 
 	private:
-		MapKeyValue *pair = nullptr;
-		MapKeyValue *begin = nullptr;
-		MapKeyValue *end = nullptr;
+		MapKeyValue* pair = nullptr;
+		MapKeyValue* begin = nullptr;
+		MapKeyValue* end = nullptr;
 	};
 
-	struct Iterator {
-		_FORCE_INLINE_ MapKeyValue &operator*() const {
-			return *pair;
-		}
-		_FORCE_INLINE_ MapKeyValue *operator->() const {
-			return pair;
-		}
-		_FORCE_INLINE_ Iterator &operator++() {
+	struct Iterator
+	{
+		_FORCE_INLINE_ MapKeyValue& operator*() const { return *pair; }
+
+		_FORCE_INLINE_ MapKeyValue* operator->() const { return pair; }
+
+		_FORCE_INLINE_ Iterator& operator++()
+		{
 			pair++;
 			return *this;
 		}
-		_FORCE_INLINE_ Iterator &operator--() {
+
+		_FORCE_INLINE_ Iterator& operator--()
+		{
 			pair--;
 			if (pair < begin) {
 				pair = end;
@@ -496,54 +550,69 @@ public:
 			return *this;
 		}
 
-		_FORCE_INLINE_ bool operator==(const Iterator &p_other) const { return pair == p_other.pair; }
-		_FORCE_INLINE_ bool operator!=(const Iterator &p_other) const { return pair != p_other.pair; }
-
-		_FORCE_INLINE_ explicit operator bool() const {
-			return pair != end;
+		_FORCE_INLINE_ bool operator==(const Iterator& p_other) const
+		{
+			return pair == p_other.pair;
 		}
 
-		_FORCE_INLINE_ Iterator(MapKeyValue *p_key, MapKeyValue *p_begin, MapKeyValue *p_end) {
+		_FORCE_INLINE_ bool operator!=(const Iterator& p_other) const
+		{
+			return pair != p_other.pair;
+		}
+
+		_FORCE_INLINE_ explicit operator bool() const { return pair != end; }
+
+		_FORCE_INLINE_ Iterator(MapKeyValue* p_key, MapKeyValue* p_begin, MapKeyValue* p_end)
+		{
 			pair = p_key;
 			begin = p_begin;
 			end = p_end;
 		}
+
 		_FORCE_INLINE_ Iterator() {}
-		_FORCE_INLINE_ Iterator(const Iterator &p_it) {
-			pair = p_it.pair;
-			begin = p_it.begin;
-			end = p_it.end;
-		}
-		_FORCE_INLINE_ void operator=(const Iterator &p_it) {
+
+		_FORCE_INLINE_ Iterator(const Iterator& p_it)
+		{
 			pair = p_it.pair;
 			begin = p_it.begin;
 			end = p_it.end;
 		}
 
-		operator ConstIterator() const {
-			return ConstIterator(pair, begin, end);
+		_FORCE_INLINE_ void operator=(const Iterator& p_it)
+		{
+			pair = p_it.pair;
+			begin = p_it.begin;
+			end = p_it.end;
 		}
+
+		operator ConstIterator() const { return ConstIterator(pair, begin, end); }
 
 	private:
-		MapKeyValue *pair = nullptr;
-		MapKeyValue *begin = nullptr;
-		MapKeyValue *end = nullptr;
+		MapKeyValue* pair = nullptr;
+		MapKeyValue* begin = nullptr;
+		MapKeyValue* end = nullptr;
 	};
 
-	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_ {
+	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_
+	{
 		return Iterator(_elements, _elements, _elements + _size);
 	}
-	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_ {
+
+	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_
+	{
 		return Iterator(_elements + _size, _elements, _elements + _size);
 	}
-	_FORCE_INLINE_ Iterator last() _LIFETIME_BOUND_ {
+
+	_FORCE_INLINE_ Iterator last() _LIFETIME_BOUND_
+	{
 		if (unlikely(_size == 0)) {
 			return Iterator(nullptr, nullptr, nullptr);
 		}
 		return Iterator(_elements + _size - 1, _elements, _elements + _size);
 	}
 
-	Iterator find(const TKey &p_key) _LIFETIME_BOUND_ {
+	Iterator find(const TKey& p_key) _LIFETIME_BOUND_
+	{
 		uint32_t meta_idx = 0;
 		uint32_t element_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -553,26 +622,33 @@ public:
 		return Iterator(_elements + element_idx, _elements, _elements + _size);
 	}
 
-	void remove(const Iterator &p_iter) {
+	void remove(const Iterator& p_iter)
+	{
 		if (p_iter) {
 			erase(p_iter->key);
 		}
 	}
 
-	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_ {
+	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_
+	{
 		return ConstIterator(_elements, _elements, _elements + _size);
 	}
-	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_ {
+
+	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_
+	{
 		return ConstIterator(_elements + _size, _elements, _elements + _size);
 	}
-	_FORCE_INLINE_ ConstIterator last() const _LIFETIME_BOUND_ {
+
+	_FORCE_INLINE_ ConstIterator last() const _LIFETIME_BOUND_
+	{
 		if (unlikely(_size == 0)) {
 			return ConstIterator(nullptr, nullptr, nullptr);
 		}
 		return ConstIterator(_elements + _size - 1, _elements, _elements + _size);
 	}
 
-	ConstIterator find(const TKey &p_key) const _LIFETIME_BOUND_ {
+	ConstIterator find(const TKey& p_key) const _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -584,7 +660,8 @@ public:
 
 	/* Indexing */
 
-	const TValue &operator[](const TKey &p_key) const _LIFETIME_BOUND_ {
+	const TValue& operator[](const TKey& p_key) const _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -592,7 +669,8 @@ public:
 		return _elements[element_idx].value;
 	}
 
-	TValue &operator[](const TKey &p_key) _LIFETIME_BOUND_ {
+	TValue& operator[](const TKey& p_key) _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		uint32_t hash = _hash(p_key);
@@ -600,7 +678,8 @@ public:
 
 		if (exists) {
 			return _elements[element_idx].value;
-		} else {
+		}
+		else {
 			element_idx = _insert_element(p_key, TValue(), hash);
 			return _elements[element_idx].value;
 		}
@@ -608,7 +687,8 @@ public:
 
 	/* Insert */
 
-	Iterator insert(const TKey &p_key, const TValue &p_value) _LIFETIME_BOUND_ {
+	Iterator insert(const TKey& p_key, const TValue& p_value) _LIFETIME_BOUND_
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		uint32_t hash = _hash(p_key);
@@ -616,14 +696,16 @@ public:
 
 		if (!exists) {
 			element_idx = _insert_element(p_key, p_value, hash);
-		} else {
+		}
+		else {
 			_elements[element_idx].value = p_value;
 		}
 		return Iterator(_elements + element_idx, _elements, _elements + _size);
 	}
 
 	// Inserts an element without checking if it already exists.
-	Iterator insert_new(const TKey &p_key, const TValue &p_value) _LIFETIME_BOUND_ {
+	Iterator insert_new(const TKey& p_key, const TValue& p_value) _LIFETIME_BOUND_
+	{
 		DEV_ASSERT(!has(p_key));
 		uint32_t hash = _hash(p_key);
 		uint32_t element_idx = _insert_element(p_key, p_value, hash);
@@ -632,13 +714,13 @@ public:
 
 	/* Array methods. */
 
-	// Unsafe. Changing keys and going outside the bounds of an array can lead to undefined behavior.
-	KeyValue<TKey, TValue> *get_elements_ptr() _LIFETIME_BOUND_ {
-		return _elements;
-	}
+	// Unsafe. Changing keys and going outside the bounds of an array can lead to undefined
+	// behavior.
+	KeyValue<TKey, TValue>* get_elements_ptr() _LIFETIME_BOUND_ { return _elements; }
 
 	// Returns the element index. If not found, returns -1.
-	int get_index(const TKey &p_key) {
+	int get_index(const TKey& p_key)
+	{
 		uint32_t element_idx = 0;
 		uint32_t meta_idx = 0;
 		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
@@ -648,12 +730,14 @@ public:
 		return element_idx;
 	}
 
-	KeyValue<TKey, TValue> &get_by_index(uint32_t p_index) _LIFETIME_BOUND_ {
+	KeyValue<TKey, TValue>& get_by_index(uint32_t p_index) _LIFETIME_BOUND_
+	{
 		CRASH_BAD_UNSIGNED_INDEX(p_index, _size);
 		return _elements[p_index];
 	}
 
-	bool erase_by_index(uint32_t p_index) {
+	bool erase_by_index(uint32_t p_index)
+	{
 		if (p_index >= size()) {
 			return false;
 		}
@@ -662,7 +746,8 @@ public:
 
 	/* Constructors */
 
-	AHashMap(AHashMap &&p_other) {
+	AHashMap(AHashMap&& p_other)
+	{
 		_elements = p_other._elements;
 		_metadata = p_other._metadata;
 		_capacity_mask = p_other._capacity_mask;
@@ -674,11 +759,10 @@ public:
 		p_other._size = 0;
 	}
 
-	explicit AHashMap(const AHashMap &p_other) {
-		_init_from(p_other);
-	}
+	explicit AHashMap(const AHashMap& p_other) { _init_from(p_other); }
 
-	void operator=(const AHashMap &p_other) {
+	void operator=(const AHashMap& p_other)
+	{
 		if (this == &p_other) {
 			return; // Ignore self assignment.
 		}
@@ -688,25 +772,28 @@ public:
 		_init_from(p_other);
 	}
 
-	AHashMap(uint32_t p_initial_capacity) {
+	AHashMap(uint32_t p_initial_capacity)
+	{
 		// Capacity can't be 0 and must be 2^n - 1.
 		_capacity_mask = MAX(4u, p_initial_capacity);
 		_capacity_mask = Math::next_power_of_2(_capacity_mask) - 1;
 	}
-	AHashMap() :
-			_capacity_mask(INITIAL_CAPACITY - 1) {
-	}
 
-	AHashMap(std::initializer_list<KeyValue<TKey, TValue>> p_init) {
+	AHashMap() : _capacity_mask(INITIAL_CAPACITY - 1) {}
+
+	AHashMap(std::initializer_list<KeyValue<TKey, TValue>> p_init)
+	{
 		reserve(p_init.size());
-		for (const KeyValue<TKey, TValue> &E : p_init) {
+		for (const KeyValue<TKey, TValue>& E : p_init) {
 			insert(E.key, E.value);
 		}
 	}
 
-	void reset() {
+	void reset()
+	{
 		if (_elements != nullptr) {
-			if constexpr (!(std::is_trivially_destructible_v<TKey> && std::is_trivially_destructible_v<TValue>)) {
+			if constexpr (!(std::is_trivially_destructible_v<TKey> &&
+							  std::is_trivially_destructible_v<TValue>)) {
 				for (uint32_t i = 0; i < _size; i++) {
 					_elements[i].key.~TKey();
 					_elements[i].value.~TValue();
@@ -720,13 +807,12 @@ public:
 		_size = 0;
 	}
 
-	~AHashMap() {
-		reset();
-	}
+	~AHashMap() { reset(); }
 };
 
 extern template class AHashMap<int, int>;
 extern template class AHashMap<String, int>;
 extern template class AHashMap<StringName, StringName>;
-extern template class AHashMap<StringName, Variant>;
 extern template class AHashMap<StringName, int>;
+
+

@@ -39,8 +39,8 @@ class Image;
 // However, it is still supported for loading old files.
 // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
 
-class GLTFSpecGloss : public Resource {
-	VLTRCLASS(GLTFSpecGloss, Resource);
+class GLTFSpecGloss : public Resource
+{
 	friend class GLTFDocument;
 
 private:
@@ -51,7 +51,6 @@ private:
 	Ref<Image> spec_gloss_img = nullptr;
 
 protected:
-	static void _bind_methods();
 
 public:
 	Ref<Image> get_diffuse_img();
@@ -69,3 +68,5 @@ public:
 	Ref<Image> get_spec_gloss_img();
 	void set_spec_gloss_img(Ref<Image> p_spec_gloss_img);
 };
+
+

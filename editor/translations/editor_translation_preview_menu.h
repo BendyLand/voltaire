@@ -32,10 +32,8 @@
 
 #include "scene/gui/popup_menu.h"
 
-class EditorTranslationPreviewMenu : public PopupMenu {
-	VLTRCLASS(EditorTranslationPreviewMenu, PopupMenu);
-
-	void _prepare();
+class EditorTranslationPreviewMenu : public PopupMenu
+{
 	void _pressed(int p_index);
 
 protected:
@@ -44,3 +42,5 @@ protected:
 public:
 	EditorTranslationPreviewMenu();
 };
+
+

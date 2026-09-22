@@ -35,14 +35,12 @@
 class CanvasItemEditor;
 class VirtualJoystick;
 
-class VirtualJoystickEditorPlugin : public EditorPlugin {
-	VLTRCLASS(VirtualJoystickEditorPlugin, EditorPlugin);
-
-	VirtualJoystick *virtual_joystick = nullptr;
+class VirtualJoystickEditorPlugin : public EditorPlugin
+{
+	VirtualJoystick* virtual_joystick = nullptr;
 
 public:
-	void forward_canvas_draw_over_viewport(Control *p_viewport_control) override;
-
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
+	void forward_canvas_draw_over_viewport(Control* p_viewport_control) override;
 };
+
+

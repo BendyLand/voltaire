@@ -37,22 +37,24 @@
 #include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"
 
-class Camera3D : public Node3D {
-	VLTRCLASS(Camera3D, Node3D);
-
+class Camera3D : public Node3D
+{
 public:
-	enum ProjectionType {
+	enum ProjectionType
+	{
 		PROJECTION_PERSPECTIVE,
 		PROJECTION_ORTHOGONAL,
 		PROJECTION_FRUSTUM
 	};
 
-	enum KeepAspect {
+	enum KeepAspect
+	{
 		KEEP_WIDTH,
 		KEEP_HEIGHT
 	};
 
-	enum DopplerTracking {
+	enum DopplerTracking
+	{
 		DOPPLER_TRACKING_DISABLED,
 		DOPPLER_TRACKING_IDLE_STEP,
 		DOPPLER_TRACKING_PHYSICS_STEP
@@ -61,7 +63,7 @@ public:
 private:
 	bool force_change = false;
 	bool current = false;
-	Viewport *viewport = nullptr;
+	Viewport* viewport = nullptr;
 
 	ProjectionType mode = PROJECTION_PERSPECTIVE;
 
@@ -112,33 +114,28 @@ protected:
 	void set_desired_process_modes(bool p_process_internal, bool p_physics_process_internal);
 
 	virtual void _physics_interpolated_changed() override;
-	virtual Transform3D _get_adjusted_camera_transform(const Transform3D &p_xform) const;
+	virtual Transform3D _get_adjusted_camera_transform(const Transform3D& p_xform) const;
 	///////////////////////////////////////////////////////
 
 	void _update_camera();
 	virtual void _request_camera_update();
-	void _update_camera_mode();
 
 	virtual void fti_pump_property() override;
 	virtual void fti_update_servers_property() override;
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 
-	static void _bind_methods();
 
 	Projection _get_camera_projection(real_t p_near) const;
 
 public:
-	enum {
+	enum
+	{
 		NOTIFICATION_BECAME_CURRENT = 50,
 		NOTIFICATION_LOST_CURRENT = 51
 	};
 
-	void set_perspective(real_t p_fovy_degrees, real_t p_z_near, real_t p_z_far);
-	void set_orthogonal(real_t p_size, real_t p_z_near, real_t p_z_far);
-	void set_frustum(real_t p_size, Vector2 p_offset, real_t p_z_near, real_t p_z_far);
 	void set_projection(Camera3D::ProjectionType p_mode);
 
 	void make_current();
@@ -156,40 +153,30 @@ public:
 
 	ProjectionType get_projection() const;
 
-	void set_fov(real_t p_fov);
-	void set_size(real_t p_size);
-	void set_far(real_t p_far);
-	void set_near(real_t p_near);
-	void set_frustum_offset(Vector2 p_offset);
-
 	virtual Transform3D get_camera_transform() const;
 	virtual Projection get_camera_projection() const;
 
-	virtual Vector3 project_ray_normal(const Point2 &p_pos) const;
-	virtual Vector3 project_ray_origin(const Point2 &p_pos) const;
-	virtual Vector3 project_local_ray_normal(const Point2 &p_pos) const;
-	virtual Point2 unproject_position(const Vector3 &p_pos) const;
-	bool is_position_behind(const Vector3 &p_pos) const;
-	virtual Vector3 project_position(const Point2 &p_point, real_t p_z_depth) const;
+	virtual Vector3 project_ray_normal(const Point2& p_pos) const;
+	virtual Vector3 project_ray_origin(const Point2& p_pos) const;
+	virtual Vector3 project_local_ray_normal(const Point2& p_pos) const;
+	virtual Point2 unproject_position(const Vector3& p_pos) const;
+	bool is_position_behind(const Vector3& p_pos) const;
+	virtual Vector3 project_position(const Point2& p_point, real_t p_z_depth) const;
 
 	Vector<Vector3> get_near_plane_points() const;
 
-	void set_cull_mask(uint32_t p_layers);
 	uint32_t get_cull_mask() const;
 
-	void set_cull_mask_value(int p_layer_number, bool p_enable);
 	bool get_cull_mask_value(int p_layer_number) const;
 
 	virtual Vector<Plane> get_frustum() const;
-	bool is_position_in_frustum(const Vector3 &p_position) const;
+	bool is_position_in_frustum(const Vector3& p_position) const;
 
-	void set_environment(const Ref<Environment> &p_environment);
 	Ref<Environment> get_environment() const;
 
-	void set_attributes(const Ref<CameraAttributes> &p_effects);
+	void set_attributes(const Ref<CameraAttributes>& p_effects);
 	Ref<CameraAttributes> get_attributes() const;
 
-	void set_compositor(const Ref<Compositor> &p_compositor);
 	Ref<Compositor> get_compositor() const;
 
 	void set_keep_aspect_mode(KeepAspect p_aspect);
@@ -201,7 +188,6 @@ public:
 	void set_h_offset(real_t p_offset);
 	real_t get_h_offset() const;
 
-	void set_doppler_tracking(DopplerTracking p_tracking);
 	DopplerTracking get_doppler_tracking() const;
 
 	Vector3 get_doppler_tracked_velocity() const;
@@ -210,10 +196,8 @@ public:
 	RID get_pyramid_shape_rid();
 #endif // PHYSICS_3D_DISABLED
 
-	Camera3D();
+	Camera3D() = default;
 	~Camera3D();
 };
 
-VARIANT_ENUM_CAST(Camera3D::ProjectionType);
-VARIANT_ENUM_CAST(Camera3D::KeepAspect);
-VARIANT_ENUM_CAST(Camera3D::DopplerTracking);
+

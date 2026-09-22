@@ -40,7 +40,6 @@ TEST_FORCE_LINK(test_gltf_document)
 
 #include "tests/test_utils.h"
 
-#include "modules/gltf/extensions/gltf_document_extension_convert_importer_mesh.h"
 #include "modules/gltf/gltf_document.h"
 
 namespace TestGLTFDocument {

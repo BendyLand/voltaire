@@ -30,17 +30,17 @@
 
 #pragma once
 
-#include "core/object/object.h"
+#include "core/types.h"
 
 class ConfirmationDialog;
 class EditorFileSystemDirectory;
 
-class ProjectUpgradeTool : public Object {
-	VLTRCLASS(ProjectUpgradeTool, Object);
+class ProjectUpgradeTool
+{
+	ConfirmationDialog* upgrade_dialog = nullptr;
 
-	ConfirmationDialog *upgrade_dialog = nullptr;
-
-	void _add_files(EditorFileSystemDirectory *p_dir, Vector<String> &r_reimport_paths, Vector<String> &r_resave_scenes, Vector<String> &r_resave_resources);
+	void _add_files(EditorFileSystemDirectory* p_dir, Vector<String>& r_reimport_paths,
+		Vector<String>& r_resave_scenes, Vector<String>& r_resave_resources);
 
 	const String META_REIMPORT_PATHS = "reimport_paths";
 	const String META_RESAVE_SCENES = "resave_scenes";
@@ -52,11 +52,13 @@ public:
 	const StringName UPGRADE_FINISHED = "upgrade_finished";
 
 protected:
-	static void _bind_methods();
 
 public:
+	ProjectUpgradeTool();
 	void popup_dialog();
 	void prepare_upgrade();
 	void begin_upgrade();
 	void finish_upgrade();
 };
+
+

@@ -34,7 +34,6 @@
 #include "servers/camera/camera_server.h"
 
 class CameraTexture : public Texture2D {
-	VLTRCLASS(CameraTexture, Texture2D);
 
 private:
 	mutable RID _texture;
@@ -42,7 +41,6 @@ private:
 	CameraServer::FeedImage which_feed = CameraServer::FEED_RGBA_IMAGE;
 
 protected:
-	static void _bind_methods();
 	void _on_format_changed();
 
 public:

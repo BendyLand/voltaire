@@ -1,26 +1,35 @@
 build:
-	scons linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes
+	scons -j 8 linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes warnings=no
+	if [[ -f errs2 ]]; then
+		rm errs2
+	fi
 
 errs:
-	if [[ -f errs ]]; then
-		rm errs
+	if [[ -f errs2 ]]; then
+		rm errs2
 	fi
 	lash build 2> errs
-	if [[ -f errs ]]; then
-		wc -l errs
-	fi
-
-clean:
-	if [[ -f errs ]]; then
-		rm errs
-	fi
-
-show:
-	batcat errs
+	lash link 2> errs
+	lash summary
 
 inspect:
 	gdb ./bin/voltaire.linuxbsd.editor.x86_64
 
 link:
-	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -s -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
+	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
+
+remind:
+	todo -l show
+
+todo:
+	todo -li
+
+summary:
+	if [[ ! -f errs ]]; then
+		echo "Missing first error file. Try linking first."
+		exit
+	fi
+	awk '{print $2,$6}' errs > errs2
+	awk '{print $2}' errs2 | sort > errs3
+	uniq -c errs3 | sort -nr > errs4
 

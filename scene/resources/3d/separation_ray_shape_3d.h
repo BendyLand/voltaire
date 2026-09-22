@@ -34,13 +34,12 @@
 
 class ArrayMesh;
 
-class SeparationRayShape3D : public Shape3D {
-	VLTRCLASS(SeparationRayShape3D, Shape3D);
+class SeparationRayShape3D : public Shape3D
+{
 	float length = 1.0;
 	bool slide_on_slope = false;
 
 protected:
-	static void _bind_methods();
 	virtual void _update_shape() override;
 
 public:
@@ -51,8 +50,10 @@ public:
 	bool get_slide_on_slope() const;
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
-	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
+	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	SeparationRayShape3D();
 };
+
+

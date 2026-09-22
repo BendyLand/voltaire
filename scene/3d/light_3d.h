@@ -32,11 +32,11 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class Light3D : public VisualInstance3D {
-	VLTRCLASS(Light3D, VisualInstance3D);
-
+class Light3D : public VisualInstance3D
+{
 public:
-	enum Param {
+	enum Param
+	{
 		PARAM_ENERGY = RSE::LIGHT_PARAM_ENERGY,
 		PARAM_INDIRECT_ENERGY = RSE::LIGHT_PARAM_INDIRECT_ENERGY,
 		PARAM_VOLUMETRIC_FOG_ENERGY = RSE::LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY,
@@ -61,7 +61,8 @@ public:
 		PARAM_MAX = RSE::LIGHT_PARAM_MAX
 	};
 
-	enum BakeMode {
+	enum BakeMode
+	{
 		BAKE_DISABLED,
 		BAKE_STATIC,
 		BAKE_DYNAMIC,
@@ -93,11 +94,9 @@ private:
 protected:
 	RID light;
 
-	static void _bind_methods();
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 
-	Light3D(RSE::LightType p_type);
+	Light3D(RSE::LightType p_type) : type(p_type) {}
 
 public:
 	RSE::LightType get_light_type() const { return type; }
@@ -105,10 +104,8 @@ public:
 	void set_editor_only(bool p_editor_only);
 	bool is_editor_only() const;
 
-	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
-	void set_shadow(bool p_enable);
 	bool has_shadow() const;
 
 	void set_negative(bool p_enable);
@@ -129,7 +126,6 @@ public:
 	void set_cull_mask(uint32_t p_cull_mask);
 	uint32_t get_cull_mask() const;
 
-	void set_color(const Color &p_color);
 	Color get_color() const;
 
 	void set_shadow_reverse_cull_face(bool p_enable);
@@ -141,10 +137,9 @@ public:
 	void set_bake_mode(BakeMode p_mode);
 	BakeMode get_bake_mode() const;
 
-	void set_projector(const Ref<Texture2D> &p_texture);
+	void set_projector(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_projector() const;
 
-	void set_temperature(const float p_temperature);
 	float get_temperature() const;
 	Color get_correlated_color() const;
 
@@ -155,20 +150,18 @@ public:
 	~Light3D();
 };
 
-VARIANT_ENUM_CAST(Light3D::Param);
-VARIANT_ENUM_CAST(Light3D::BakeMode);
-
-class DirectionalLight3D : public Light3D {
-	VLTRCLASS(DirectionalLight3D, Light3D);
-
+class DirectionalLight3D : public Light3D
+{
 public:
-	enum ShadowMode {
+	enum ShadowMode
+	{
 		SHADOW_ORTHOGONAL,
 		SHADOW_PARALLEL_2_SPLITS,
 		SHADOW_PARALLEL_4_SPLITS,
 	};
 
-	enum SkyMode {
+	enum SkyMode
+	{
 		SKY_MODE_LIGHT_AND_SKY,
 		SKY_MODE_LIGHT_ONLY,
 		SKY_MODE_SKY_ONLY,
@@ -178,10 +171,6 @@ private:
 	bool blend_splits;
 	ShadowMode shadow_mode;
 	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
 
 public:
 	void set_shadow_mode(ShadowMode p_mode);
@@ -193,27 +182,22 @@ public:
 	void set_sky_mode(SkyMode p_mode);
 	SkyMode get_sky_mode() const;
 
-	DirectionalLight3D();
+	DirectionalLight3D() = default;
 };
 
-VARIANT_ENUM_CAST(DirectionalLight3D::ShadowMode)
-VARIANT_ENUM_CAST(DirectionalLight3D::SkyMode)
 
-class OmniLight3D : public Light3D {
-	VLTRCLASS(OmniLight3D, Light3D);
-
+class OmniLight3D : public Light3D
+{
 public:
 	// omni light
-	enum ShadowMode {
+	enum ShadowMode
+	{
 		SHADOW_DUAL_PARABOLOID,
 		SHADOW_CUBE,
 	};
 
 private:
 	ShadowMode shadow_mode;
-
-protected:
-	static void _bind_methods();
 
 public:
 	void set_shadow_mode(ShadowMode p_mode);
@@ -224,36 +208,25 @@ public:
 	OmniLight3D();
 };
 
-VARIANT_ENUM_CAST(OmniLight3D::ShadowMode)
-
-class SpotLight3D : public Light3D {
-	VLTRCLASS(SpotLight3D, Light3D);
-
-protected:
-	static void _bind_methods();
-
+class SpotLight3D : public Light3D
+{
 public:
 	PackedStringArray get_configuration_warnings() const override;
 
-	SpotLight3D();
+	SpotLight3D() : Light3D(RSE::LIGHT_SPOT) {}
 };
 
-class AreaLight3D : public Light3D {
-	VLTRCLASS(AreaLight3D, Light3D);
-
+class AreaLight3D : public Light3D
+{
 private:
 	Vector2 area_size;
 	Ref<Texture2D> area_texture;
 	bool area_normalize_energy = true;
 
-protected:
-	static void _bind_methods();
-
 public:
-	void set_area_size(const Vector2 &p_size);
 	Vector2 get_area_size() const;
 
-	void set_area_texture(const Ref<Texture2D> &p_texture);
+	void set_area_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_area_texture() const;
 
 	void set_area_normalize_energy(bool p_enable);
@@ -261,6 +234,8 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	AreaLight3D();
+	AreaLight3D() : Light3D(RSE::LIGHT_AREA) {}
 	~AreaLight3D();
 };
+
+

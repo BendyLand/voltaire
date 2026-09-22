@@ -48,53 +48,35 @@ class Separator;
 class TextureRect;
 
 // Inspector controls.
-class ControlPositioningWarning : public MarginContainer {
-	VLTRCLASS(ControlPositioningWarning, MarginContainer);
+class ControlPositioningWarning : public MarginContainer
+{
+	Control* control_node = nullptr;
 
-	Control *control_node = nullptr;
-
-	PanelContainer *bg_panel = nullptr;
-	GridContainer *grid = nullptr;
-	TextureRect *title_icon = nullptr;
-	TextureRect *hint_icon = nullptr;
-	Label *title_label = nullptr;
-	Label *hint_label = nullptr;
-	Control *hint_filler_left = nullptr;
-	Control *hint_filler_right = nullptr;
-
-	void _update_warning();
-	void _update_toggler();
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-
-protected:
-	void _notification(int p_notification);
+	PanelContainer* bg_panel = nullptr;
+	GridContainer* grid = nullptr;
+	TextureRect* title_icon = nullptr;
+	TextureRect* hint_icon = nullptr;
+	Label* title_label = nullptr;
+	Label* hint_label = nullptr;
+	Control* hint_filler_left = nullptr;
+	Control* hint_filler_right = nullptr;
 
 public:
-	void set_control(Control *p_node);
-
-	ControlPositioningWarning();
+	ControlPositioningWarning() = default;
 };
 
-class EditorPropertyAnchorsPreset : public EditorProperty {
-	VLTRCLASS(EditorPropertyAnchorsPreset, EditorProperty);
-	OptionButton *options = nullptr;
-
-	void _option_selected(int p_which);
-
-protected:
-	virtual void _set_read_only(bool p_read_only) override;
-	void _notification(int p_what);
+class EditorPropertyAnchorsPreset : public EditorProperty
+{
+	OptionButton* options = nullptr;
 
 public:
-	void setup(const Vector<String> &p_options);
-	virtual void update_property() override;
-	EditorPropertyAnchorsPreset();
+	EditorPropertyAnchorsPreset() = default;
 };
 
-class EditorPropertySizeFlags : public EditorProperty {
-	VLTRCLASS(EditorPropertySizeFlags, EditorProperty);
-
-	enum FlagPreset {
+class EditorPropertySizeFlags : public EditorProperty
+{
+	enum FlagPreset
+	{
 		SIZE_FLAGS_PRESET_FILL,
 		SIZE_FLAGS_PRESET_SHRINK_BEGIN,
 		SIZE_FLAGS_PRESET_SHRINK_CENTER,
@@ -102,187 +84,121 @@ class EditorPropertySizeFlags : public EditorProperty {
 		SIZE_FLAGS_PRESET_CUSTOM,
 	};
 
-	OptionButton *flag_presets = nullptr;
-	CheckBox *flag_expand = nullptr;
-	VBoxContainer *flag_options = nullptr;
-	Vector<CheckBox *> flag_checks;
+	OptionButton* flag_presets = nullptr;
+	CheckBox* flag_expand = nullptr;
+	VBoxContainer* flag_options = nullptr;
+	Vector<CheckBox*> flag_checks;
 
 	bool vertical = false;
 
 	bool keep_selected_preset = false;
 
-	void _preset_selected(int p_which);
-	void _expand_toggled();
-	void _flag_toggled();
-
-protected:
-	virtual void _set_read_only(bool p_read_only) override;
-
 public:
-	void setup(const Vector<String> &p_options, bool p_vertical);
-	virtual void update_property() override;
-	EditorPropertySizeFlags();
+	EditorPropertySizeFlags() = default;
 };
 
-class EditorInspectorPluginControl : public EditorInspectorPlugin {
-	VLTRCLASS(EditorInspectorPluginControl, EditorInspectorPlugin);
-
+class EditorInspectorPluginControl : public EditorInspectorPlugin
+{
 	bool inside_control_category = false;
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_category(Object *p_object, const String &p_category) override;
-	virtual void parse_group(Object *p_object, const String &p_group) override;
-	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide = false) override;
 };
 
 // Toolbar controls.
-class ControlEditorPopupButton : public Button {
-	VLTRCLASS(ControlEditorPopupButton, Button);
-
+class ControlEditorPopupButton : public Button
+{
 	Ref<Texture2D> arrow_icon;
 
-	PopupPanel *popup_panel = nullptr;
-	VBoxContainer *popup_vbox = nullptr;
-
-	void _popup_visibility_changed(bool p_visible);
+	PopupPanel* popup_panel = nullptr;
+	VBoxContainer* popup_vbox = nullptr;
 
 protected:
 	void _notification(int p_what);
 
 public:
 	virtual Size2 get_minimum_size() const override;
-	virtual void toggled(bool p_pressed) override;
+	virtual void toggled(bool p_pressed);
 
-	VBoxContainer *get_popup_hbox() const { return popup_vbox; }
-
-	ControlEditorPopupButton();
+	ControlEditorPopupButton() = default;
 };
 
-class ControlEditorPresetPicker : public MarginContainer {
-	VLTRCLASS(ControlEditorPresetPicker, MarginContainer);
-
+class ControlEditorPresetPicker : public MarginContainer
+{
 	virtual void _preset_button_pressed(const int p_preset) {}
 
 protected:
 	static constexpr int grid_separation = 0;
-	HashMap<int, Button *> preset_buttons;
+	HashMap<int, Button*> preset_buttons;
 
-	void _add_row_button(HBoxContainer *p_row, const int p_preset, const String &p_name);
-	void _add_separator(BoxContainer *p_box, Separator *p_separator);
-	void _update_preset_button_state(int p_preset);
+	void _add_separator(BoxContainer* p_box, Separator* p_separator);
 };
 
-class AnchorPresetPicker : public ControlEditorPresetPicker {
-	VLTRCLASS(AnchorPresetPicker, ControlEditorPresetPicker);
-
-	virtual void _preset_button_pressed(const int p_preset) override;
-
-protected:
-	void _notification(int p_notification);
-	static void _bind_methods();
-
+class AnchorPresetPicker : public ControlEditorPresetPicker
+{
 public:
-	void set_selected_preset(int p_preset);
-
-	AnchorPresetPicker();
+	AnchorPresetPicker() = default;
 };
 
-class SizeFlagPresetPicker : public ControlEditorPresetPicker {
-	VLTRCLASS(SizeFlagPresetPicker, ControlEditorPresetPicker);
-
-	CheckButton *expand_button = nullptr;
+class SizeFlagPresetPicker : public ControlEditorPresetPicker
+{
+	CheckButton* expand_button = nullptr;
 
 	bool vertical = false;
 
-	virtual void _preset_button_pressed(const int p_preset) override;
-	void _expand_button_pressed();
-
-protected:
-	void _notification(int p_notification);
-	static void _bind_methods();
-
 public:
-	void set_allowed_flags(Vector<SizeFlags> &p_flags);
-	void set_selected_preset(int p_preset);
-	void set_expand_flag(bool p_expand);
-
-	SizeFlagPresetPicker(bool p_vertical);
+	SizeFlagPresetPicker(bool p_vertical) : vertical(p_vertical) {}
 };
 
-class ControlEditorToolbar : public HBoxContainer {
-	VLTRCLASS(ControlEditorToolbar, HBoxContainer);
+class ControlEditorToolbar : public HBoxContainer
+{
+	EditorSelection* editor_selection = nullptr;
 
-	EditorSelection *editor_selection = nullptr;
+	ControlEditorPopupButton* anchors_button = nullptr;
+	ControlEditorPopupButton* containers_button = nullptr;
+	Button* anchor_mode_button = nullptr;
+	CheckBox* reposition_button = nullptr;
 
-	ControlEditorPopupButton *anchors_button = nullptr;
-	ControlEditorPopupButton *containers_button = nullptr;
-	Button *anchor_mode_button = nullptr;
-	CheckBox *reposition_button = nullptr;
+	AnchorPresetPicker* anchors_picker = nullptr;
 
-	AnchorPresetPicker *anchors_picker = nullptr;
-
-	SizeFlagPresetPicker *container_h_picker = nullptr;
-	SizeFlagPresetPicker *container_v_picker = nullptr;
+	SizeFlagPresetPicker* container_h_picker = nullptr;
+	SizeFlagPresetPicker* container_v_picker = nullptr;
 
 	bool anchors_mode = false;
 
-	void _anchors_preset_selected(int p_preset);
-	void _anchors_to_current_ratio();
-	void _anchor_mode_toggled(bool p_status);
-	void _container_flags_selected(int p_flags, bool p_vertical);
-	void _expand_flag_toggled(bool p_expand, bool p_vertical);
-	void _update_anchor_selection_ui(bool p_pressed);
-	void _update_container_sizing_selection_ui(bool p_pressed);
-
-	Vector2 _position_to_anchor(const Control *p_control, Vector2 position);
-	bool _is_node_locked(const Node *p_node);
-	List<Control *> _get_edited_controls();
-	void _selection_changed();
+	Vector2 _position_to_anchor(const Control* p_control, Vector2 position);
 
 protected:
-	void _notification(int p_notification);
-
-	static ControlEditorToolbar *singleton;
+	static ControlEditorToolbar* singleton;
 
 public:
 	bool is_anchors_mode_enabled() { return anchors_mode; }
 
-	static ControlEditorToolbar *get_singleton() { return singleton; }
+	static ControlEditorToolbar* get_singleton() { return singleton; }
 
-	ControlEditorToolbar();
+	ControlEditorToolbar() = default;
 };
 
-class ControlOffsetTransformPreview : public Control {
-	VLTRCLASS(ControlOffsetTransformPreview, Control);
-
-	EditorPlugin *plugin = nullptr;
-	Control *selected_control = nullptr;
-
+class ControlOffsetTransformPreview : public Control
+{
 	friend class ControlEditorPlugin;
 
+	EditorPlugin* plugin = nullptr;
+	Control* selected_control = nullptr;
+
 public:
-	void edit(Control *p_control);
+	void forward_canvas_draw_over_viewport(Control* p_overlay) const;
 
-	void forward_canvas_draw_over_viewport(Control *p_overlay) const;
-
-	ControlOffsetTransformPreview(EditorPlugin *p_plugin);
+	ControlOffsetTransformPreview(EditorPlugin* p_plugin);
 };
 
-// Editor plugin.
-class ControlEditorPlugin : public EditorPlugin {
-	VLTRCLASS(ControlEditorPlugin, EditorPlugin);
-
-	ControlEditorToolbar *toolbar = nullptr;
-	ControlOffsetTransformPreview *offset_transform_preview = nullptr;
+class ControlEditorPlugin : public EditorPlugin
+{
+	ControlEditorToolbar* toolbar = nullptr;
+	ControlOffsetTransformPreview* offset_transform_preview = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "Control"; }
 
-	virtual void edit(Object *p_object) override;
-	virtual bool handles(Object *p_object) const override;
+	virtual void forward_canvas_draw_over_viewport(Control* p_overlay) override;
 
-	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override;
-
-	ControlEditorPlugin();
+	ControlEditorPlugin() = default;
 };
+

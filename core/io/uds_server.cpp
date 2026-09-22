@@ -30,14 +30,8 @@
 
 #include "uds_server.h"
 
-#include "core/object/class_db.h"
-
-void UDSServer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("listen", "path"), &UDSServer::listen);
-	ClassDB::bind_method(D_METHOD("take_connection"), &UDSServer::take_connection);
-}
-
-Error UDSServer::listen(const String &p_path) {
+Error UDSServer::listen(const String& p_path)
+{
 	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
 	ERR_FAIL_COND_V(p_path.is_empty(), ERR_INVALID_PARAMETER);
@@ -49,6 +43,5 @@ Error UDSServer::listen(const String &p_path) {
 	return _listen(p_path);
 }
 
-Ref<StreamPeerUDS> UDSServer::take_connection() {
-	return _take_connection<StreamPeerUDS>();
-}
+Ref<StreamPeerUDS> UDSServer::take_connection() { return _take_connection<StreamPeerUDS>(); }
+

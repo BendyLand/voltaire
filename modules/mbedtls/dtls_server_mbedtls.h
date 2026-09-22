@@ -30,13 +30,13 @@
 
 #pragma once
 
+#include "core/io/dtls_server.h"
 #include "tls_context_mbedtls.h"
 
-#include "core/io/dtls_server.h"
-
-class DTLSServerMbedTLS : public DTLSServer {
+class DTLSServerMbedTLS : public DTLSServer
+{
 private:
-	static DTLSServer *_create_func(bool p_notify_postinitialize);
+	static DTLSServer* _create_func(bool p_notify_postinitialize);
 	Ref<TLSOptions> tls_options;
 	Ref<CookieContextMbedTLS> cookies;
 
@@ -49,5 +49,7 @@ public:
 	Ref<PacketPeerDTLS> take_connection(Ref<PacketPeerUDP> p_peer) override;
 
 	DTLSServerMbedTLS();
-	~DTLSServerMbedTLS() override;
+	~DTLSServerMbedTLS();
 };
+
+

@@ -35,22 +35,20 @@
 class TextureRect;
 class SplitContainer;
 
-class SplitContainerMultiDragger : public Control {
-	VLTRCLASS(SplitContainerMultiDragger, Control);
-
+class SplitContainerMultiDragger : public Control
+{
 	bool dragging = false;
 	int drag_from = 0;
 	int start_drag_split_offset = 0;
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
 
 public:
 	int dragger_index = -1;
-	SplitContainer *split_container = nullptr;
+	SplitContainer* split_container = nullptr;
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
 	void update_position();
 	void stop_dragging();
@@ -58,8 +56,8 @@ public:
 	SplitContainerMultiDragger();
 };
 
-class SplitContainerDragger : public Control {
-	VLTRCLASS(SplitContainerDragger, Control);
+class SplitContainerDragger : public Control
+{
 	friend class SplitContainer;
 
 	bool dragging = false;
@@ -68,25 +66,19 @@ class SplitContainerDragger : public Control {
 	bool mouse_inside = false;
 
 	Rect2 split_bar_rect;
-	TextureRect *touch_dragger = nullptr;
+	TextureRect* touch_dragger = nullptr;
 
 	void _touch_dragger_mouse_exited();
-	void _touch_dragger_gui_input(const Ref<InputEvent> &p_event);
+	void _touch_dragger_gui_input(const Ref<InputEvent>& p_event);
 
 protected:
 	void _notification(int p_what);
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-
-	void _accessibility_action_inc(const Variant &p_data);
-	void _accessibility_action_dec(const Variant &p_data);
-	void _accessibility_action_set_value(const Variant &p_data);
-
 	virtual String _get_accessibility_name() const override;
 
 public:
 	int dragger_index = -1;
 
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
 	void set_touch_dragger_enabled(bool p_enabled);
 	void update_touch_dragger();
@@ -95,13 +87,14 @@ public:
 	SplitContainerDragger();
 };
 
-class SplitContainer : public Container {
-	VLTRCLASS(SplitContainer, Container);
+class SplitContainer : public Container
+{
 	friend class SplitContainerDragger;
 	friend class SplitContainerMultiDragger;
 
 public:
-	enum DraggerVisibility {
+	enum DraggerVisibility
+	{
 		DRAGGER_VISIBLE,
 		DRAGGER_HIDDEN,
 		DRAGGER_HIDDEN_COLLAPSED
@@ -116,8 +109,8 @@ private:
 	PackedInt32Array split_offsets;
 	LocalVector<int> default_dragger_positions;
 	LocalVector<int> dragger_positions;
-	LocalVector<Control *> valid_children;
-	LocalVector<SplitContainerDragger *> dragging_area_controls;
+	LocalVector<Control*> valid_children;
+	LocalVector<SplitContainerDragger*> dragging_area_controls;
 
 	bool vertical = false;
 	bool collapsed = false;
@@ -131,7 +124,8 @@ private:
 	bool drag_nested_intersections = false;
 	int force_show_grabber_icon = -1;
 
-	struct ThemeCache {
+	struct ThemeCache
+	{
 		Color touch_dragger_color;
 		Color touch_dragger_pressed_color;
 		Color touch_dragger_hover_color;
@@ -153,21 +147,21 @@ private:
 	Point2i _get_valid_range(int p_dragger_index) const;
 
 	PackedInt32Array _get_desired_sizes() const;
-	void _set_desired_sizes(const PackedInt32Array &p_desired_sizes, int p_priority_index = -1);
+	void _set_desired_sizes(const PackedInt32Array& p_desired_sizes, int p_priority_index = -1);
 
 	void _update_default_dragger_positions();
 	void _update_dragger_positions(int p_clamp_index = -1);
 	int _get_separation() const;
 	void _resort();
 	void _update_draggers();
-	void _on_child_visibility_changed(Control *p_control);
-	void _add_valid_child(Control *p_control);
-	void _remove_valid_child(Control *p_control);
+	void _on_child_visibility_changed(Control* p_control);
+	void _add_valid_child(Control* p_control);
+	void _remove_valid_child(Control* p_control);
 
-	void _remove_nested_descendent(SplitContainer *p_nested_sc);
-	void _update_nested_descendent(SplitContainer *p_nested_sc, Control *p_direct_child);
+	void _remove_nested_descendent(SplitContainer* p_nested_sc);
+	void _update_nested_descendent(SplitContainer* p_nested_sc, Control* p_direct_child);
 	void _update_nested_ancestors(bool p_remove = false);
-	void _update_all_nested_descendents(Control *p_control, Control *p_first_child = nullptr);
+	void _update_all_nested_descendents(Control* p_control, Control* p_first_child = nullptr);
 
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
@@ -175,12 +169,10 @@ protected:
 	bool is_fixed = false;
 
 	void _notification(int p_what);
-	void _validate_property(PropertyInfo &p_property) const;
 
-	virtual void add_child_notify(Node *p_child) override;
-	virtual void remove_child_notify(Node *p_child) override;
-	virtual void move_child_notify(Node *p_child) override;
-	static void _bind_methods();
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
 
 #ifndef DISABLE_DEPRECATED
 	void _clamp_split_offset_bind_compat_90411();
@@ -191,7 +183,7 @@ public:
 	void set_split_offset(int p_offset, int p_index = 0);
 	int get_split_offset(int p_index = 0) const;
 
-	void set_split_offsets(const PackedInt32Array &p_offsets);
+	void set_split_offsets(const PackedInt32Array& p_offsets);
 	PackedInt32Array get_split_offsets() const;
 
 	void clamp_split_offset(int p_priority_index = 0);
@@ -226,8 +218,6 @@ public:
 	void set_show_drag_area_enabled(bool p_enabled);
 	bool is_show_drag_area_enabled() const;
 
-	TypedArray<Control> get_drag_area_controls();
-
 	void set_touch_dragger_enabled(bool p_enabled);
 	bool is_touch_dragger_enabled() const;
 
@@ -237,28 +227,26 @@ public:
 	bool is_dragging_nested_intersections() const;
 
 #ifndef DISABLE_DEPRECATED
-	Control *get_drag_area_control() { return dragging_area_controls[0]; }
+	Control* get_drag_area_control() { return dragging_area_controls[0]; }
+
 	void _set_split_offset_first(int p_offset) { set_split_offset(p_offset); }
+
 	int _get_split_offset_first() const { return get_split_offset(); }
 #endif
 
 	SplitContainer(bool p_vertical = false);
 };
 
-VARIANT_ENUM_CAST(SplitContainer::DraggerVisibility);
-
-class HSplitContainer : public SplitContainer {
-	VLTRCLASS(HSplitContainer, SplitContainer);
-
+class HSplitContainer : public SplitContainer
+{
 public:
-	HSplitContainer() :
-			SplitContainer(false) { is_fixed = true; }
+	HSplitContainer() : SplitContainer(false) { is_fixed = true; }
 };
 
-class VSplitContainer : public SplitContainer {
-	VLTRCLASS(VSplitContainer, SplitContainer);
-
+class VSplitContainer : public SplitContainer
+{
 public:
-	VSplitContainer() :
-			SplitContainer(true) { is_fixed = true; }
+	VSplitContainer() : SplitContainer(true) { is_fixed = true; }
 };
+
+

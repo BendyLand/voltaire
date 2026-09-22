@@ -859,7 +859,7 @@ void RenderingDeviceDriverD3D12::_resource_transitions_flush(CommandBufferInfo *
 /**** BUFFERS ****/
 /*****************/
 
-RDD::BufferID RenderingDeviceDriverD3D12::buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) {
+RDD::BufferID RenderingDeviceDriverD3D12::buffer_create(uint64_t p_size, uint32_t p_usage, MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) {
 	uint32_t alignment = D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT; // 16 bytes is reasonable.
 	if (p_usage.has_flag(BUFFER_USAGE_UNIFORM_BIT)) {
 		// 256 bytes is absurd. Only use it when required.
@@ -1124,7 +1124,7 @@ UINT RenderingDeviceDriverD3D12::_compute_component_mapping(const RDD::TextureVi
 			p_view.swizzle_a == TEXTURE_SWIZZLE_IDENTITY ? component_swizzles[TEXTURE_SWIZZLE_A] : component_swizzles[p_view.swizzle_a]);
 }
 
-UINT RenderingDeviceDriverD3D12::_compute_plane_slice(DataFormat p_format, BitField<TextureAspectBits> p_aspect_bits) {
+UINT RenderingDeviceDriverD3D12::_compute_plane_slice(DataFormat p_format, uint32_t p_aspect_bits) {
 	TextureAspect aspect = TEXTURE_ASPECT_MAX;
 
 	if (p_aspect_bits.has_flag(TEXTURE_ASPECT_COLOR_BIT)) {
@@ -1783,7 +1783,7 @@ Vector<uint8_t> RenderingDeviceDriverD3D12::texture_get_data(TextureID p_texture
 	ERR_FAIL_V_MSG(Vector<uint8_t>(), "Cannot get texture data. CPU readable textures are unsupported on D3D12.");
 }
 
-BitField<RDD::TextureUsageBits> RenderingDeviceDriverD3D12::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
+uint32_t RenderingDeviceDriverD3D12::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
 	if (p_cpu_readable) {
 		// CPU readable textures are unsupported on D3D12.
 		return 0;
@@ -1806,7 +1806,7 @@ BitField<RDD::TextureUsageBits> RenderingDeviceDriverD3D12::texture_get_usages_s
 	}
 
 	// Everything supported by default makes an all-or-nothing check easier for the caller.
-	BitField<RDD::TextureUsageBits> supported = INT64_MAX;
+	uint32_t supported = INT64_MAX;
 
 	// Per https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_format_support1,
 	// as long as the resource can be used as a texture, Sample() will work with point filter at least.
@@ -2046,7 +2046,7 @@ static D3D12_BARRIER_ACCESS _rd_texture_layout_access_mask(RDD::TextureLayout p_
 	}
 }
 
-static void _rd_access_to_d3d12_and_mask(BitField<RDD::BarrierAccessBits> p_access, RDD::TextureLayout p_texture_layout, D3D12_BARRIER_ACCESS &r_access, D3D12_BARRIER_SYNC &r_sync_mask) {
+static void _rd_access_to_d3d12_and_mask(uint32_t p_access, RDD::TextureLayout p_texture_layout, D3D12_BARRIER_ACCESS &r_access, D3D12_BARRIER_SYNC &r_sync_mask) {
 	r_access = D3D12_BARRIER_ACCESS_COMMON;
 	r_sync_mask = D3D12_BARRIER_SYNC_ALL;
 
@@ -2138,7 +2138,7 @@ static void _rd_access_to_d3d12_and_mask(BitField<RDD::BarrierAccessBits> p_acce
 	}
 }
 
-static void _rd_stages_to_d3d12(BitField<RDD::PipelineStageBits> p_stages, D3D12_BARRIER_SYNC &r_sync) {
+static void _rd_stages_to_d3d12(uint32_t p_stages, D3D12_BARRIER_SYNC &r_sync) {
 	if (p_stages.has_flag(RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT)) {
 		r_sync = D3D12_BARRIER_SYNC_ALL;
 	} else {
@@ -2194,7 +2194,7 @@ static void _rd_stages_to_d3d12(BitField<RDD::PipelineStageBits> p_stages, D3D12
 	}
 }
 
-static void _rd_stages_and_access_to_d3d12(BitField<RDD::PipelineStageBits> p_stages, RDD::TextureLayout p_texture_layout, BitField<RDD::BarrierAccessBits> p_access, D3D12_BARRIER_SYNC &r_sync, D3D12_BARRIER_ACCESS &r_access) {
+static void _rd_stages_and_access_to_d3d12(uint32_t p_access, D3D12_BARRIER_SYNC &r_sync, D3D12_BARRIER_ACCESS &r_access) {
 	D3D12_BARRIER_SYNC sync_mask;
 	r_sync = D3D12_BARRIER_SYNC_NONE;
 
@@ -2266,8 +2266,8 @@ static D3D12_BARRIER_LAYOUT _rd_texture_layout_to_d3d12_barrier_layout(RDD::Text
 }
 
 void RenderingDeviceDriverD3D12::command_pipeline_barrier(CommandBufferID p_cmd_buffer,
-		BitField<PipelineStageBits> p_src_stages,
-		BitField<PipelineStageBits> p_dst_stages,
+		uint32_t p_src_stages,
+		uint32_t p_dst_stages,
 		VectorView<RDD::MemoryAccessBarrier> p_memory_barriers,
 		VectorView<RDD::BufferBarrier> p_buffer_barriers,
 		VectorView<RDD::TextureBarrier> p_texture_barriers,
@@ -2436,7 +2436,7 @@ void RenderingDeviceDriverD3D12::semaphore_free(SemaphoreID p_semaphore) {
 
 // ----- QUEUE FAMILY -----
 
-RDD::CommandQueueFamilyID RenderingDeviceDriverD3D12::command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
+RDD::CommandQueueFamilyID RenderingDeviceDriverD3D12::command_queue_family_get(uint32_t p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
 	// Return the command list type encoded plus one so zero is an invalid value.
 	// The only ones that support presenting to a surface are direct queues.
 	if (p_cmd_queue_family_bits.has_flag(COMMAND_QUEUE_FAMILY_GRAPHICS_BIT) || (p_surface != 0)) {
@@ -4397,7 +4397,7 @@ void RenderingDeviceDriverD3D12::command_begin_render_pass(CommandBufferID p_cmd
 // We can be more lenient by just looking at the texture layout and specifying appropriate access and stage bits.
 
 // We specify full barrier for layouts we don't expect to see as fallback.
-static const BitField<RDD::BarrierAccessBits> RD_RENDER_PASS_LAYOUT_TO_ACCESS_BITS[RDD::TEXTURE_LAYOUT_MAX] = {
+static const uint32_t RD_RENDER_PASS_LAYOUT_TO_ACCESS_BITS[RDD::TEXTURE_LAYOUT_MAX] = {
 	RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT, // TEXTURE_LAYOUT_UNDEFINED
 	RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT, // TEXTURE_LAYOUT_GENERAL
 	RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT, // TEXTURE_LAYOUT_STORAGE_OPTIMAL
@@ -4414,7 +4414,7 @@ static const BitField<RDD::BarrierAccessBits> RD_RENDER_PASS_LAYOUT_TO_ACCESS_BI
 };
 
 // We specify all commands for layouts we don't expect to see as fallback.
-static const BitField<RDD::PipelineStageBits> RD_RENDER_PASS_LAYOUT_TO_STAGE_BITS[RDD::TEXTURE_LAYOUT_MAX] = {
+static const uint32_t RD_RENDER_PASS_LAYOUT_TO_STAGE_BITS[RDD::TEXTURE_LAYOUT_MAX] = {
 	RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT, // TEXTURE_LAYOUT_UNDEFINED
 	RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT, // TEXTURE_LAYOUT_GENERAL
 	RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT, // TEXTURE_LAYOUT_STORAGE_OPTIMAL
@@ -4435,8 +4435,8 @@ void RenderingDeviceDriverD3D12::_render_pass_enhanced_barriers_flush(CommandBuf
 		return;
 	}
 
-	BitField<PipelineStageBits> src_stages = {};
-	BitField<PipelineStageBits> dst_stages = {};
+	uint32_t src_stages = {};
+	uint32_t dst_stages = {};
 
 	thread_local LocalVector<TextureBarrier> texture_barriers;
 	texture_barriers.clear();
@@ -5118,7 +5118,7 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 		PipelineDepthStencilState p_depth_stencil_state,
 		PipelineColorBlendState p_blend_state,
 		VectorView<int32_t> p_color_attachments,
-		BitField<PipelineDynamicStateFlags> p_dynamic_state,
+		uint32_t p_dynamic_state,
 		RenderPassID p_render_pass,
 		uint32_t p_render_subpass,
 		VectorView<PipelineSpecializationConstant> p_specialization_constants) {
@@ -5511,11 +5511,11 @@ RDD::PipelineID RenderingDeviceDriverD3D12::compute_pipeline_create(ShaderID p_s
 
 // ---- ACCELERATION STRUCTURES ----
 
-RDD::AccelerationStructureID RenderingDeviceDriverD3D12::blas_create(VectorView<AccelerationStructureGeometry> p_geometries, BitField<AccelerationStructureFlagBits> p_flags) {
+RDD::AccelerationStructureID RenderingDeviceDriverD3D12::blas_create(VectorView<AccelerationStructureGeometry> p_geometries, uint32_t p_flags) {
 	ERR_FAIL_V_MSG(AccelerationStructureID(), "Ray tracing is not currently supported by the D3D12 driver.");
 }
 
-RDD::AccelerationStructureID RenderingDeviceDriverD3D12::tlas_create(uint32_t p_max_instance_count, BitField<AccelerationStructureFlagBits> p_flags) {
+RDD::AccelerationStructureID RenderingDeviceDriverD3D12::tlas_create(uint32_t p_max_instance_count, uint32_t p_flags) {
 	ERR_FAIL_V_MSG(AccelerationStructureID(), "Ray tracing is not currently supported by the D3D12 driver.");
 }
 

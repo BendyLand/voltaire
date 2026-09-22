@@ -30,81 +30,11 @@
 
 #include "physics_direct_space_state_3d.h"
 
-#include "core/object/class_db.h"
-#include "core/variant/typed_array.h"
-
-Dictionary PhysicsDirectSpaceState3D::_intersect_ray(RequiredParam<PhysicsRayQueryParameters3D> rp_ray_query) {
-	EXTRACT_PARAM_OR_FAIL_V(p_ray_query, rp_ray_query, Dictionary());
-
-	PS3DT::RayResult result;
-	bool res = intersect_ray(p_ray_query->get_parameters(), result);
-
-	if (!res) {
-		return Dictionary();
-	}
-
-	Dictionary d;
-	d["position"] = result.position;
-	d["normal"] = result.normal;
-	d["face_index"] = result.face_index;
-	d["collider_id"] = result.collider_id;
-	d["collider"] = result.collider;
-	d["shape"] = result.shape;
-	d["rid"] = result.rid;
-
-	return d;
-}
-
-TypedArray<Dictionary> PhysicsDirectSpaceState3D::_intersect_point(RequiredParam<PhysicsPointQueryParameters3D> rp_point_query, int p_max_results) {
-	EXTRACT_PARAM_OR_FAIL_V(p_point_query, rp_point_query, TypedArray<Dictionary>());
-
-	Vector<PS3DT::ShapeResult> ret;
-	ret.resize(p_max_results);
-
-	int rc = intersect_point(p_point_query->get_parameters(), ret.ptrw(), ret.size());
-
-	if (rc == 0) {
-		return TypedArray<Dictionary>();
-	}
-
-	TypedArray<Dictionary> r;
-	r.resize(rc);
-	for (int i = 0; i < rc; i++) {
-		Dictionary d;
-		d["rid"] = ret[i].rid;
-		d["collider_id"] = ret[i].collider_id;
-		d["collider"] = ret[i].collider;
-		d["shape"] = ret[i].shape;
-		r[i] = d;
-	}
-	return r;
-}
-
-TypedArray<Dictionary> PhysicsDirectSpaceState3D::_intersect_shape(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query, int p_max_results) {
-	EXTRACT_PARAM_OR_FAIL_V(p_shape_query, rp_shape_query, TypedArray<Dictionary>());
-
-	Vector<PS3DT::ShapeResult> sr;
-	sr.resize(p_max_results);
-	int rc = intersect_shape(p_shape_query->get_parameters(), sr.ptrw(), sr.size());
-	TypedArray<Dictionary> ret;
-	ret.resize(rc);
-	for (int i = 0; i < rc; i++) {
-		Dictionary d;
-		d["rid"] = sr[i].rid;
-		d["collider_id"] = sr[i].collider_id;
-		d["collider"] = sr[i].collider;
-		d["shape"] = sr[i].shape;
-		ret[i] = d;
-	}
-
-	return ret;
-}
-
-Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query) {
-	EXTRACT_PARAM_OR_FAIL_V(p_shape_query, rp_shape_query, Vector<real_t>());
-
+Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
+	PhysicsShapeQueryParameters3D* rp_shape_query)
+{
 	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
-	bool res = cast_motion(p_shape_query->get_parameters(), closest_safe, closest_unsafe);
+	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
 	if (!res) {
 		return Vector<real_t>();
 	}
@@ -115,53 +45,54 @@ Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(RequiredParam<PhysicsShap
 	return ret;
 }
 
-TypedArray<Vector3> PhysicsDirectSpaceState3D::_collide_shape(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query, int p_max_results) {
-	EXTRACT_PARAM_OR_FAIL_V(p_shape_query, rp_shape_query, TypedArray<Vector3>());
+PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D() {}
 
-	Vector<Vector3> ret;
-	ret.resize(p_max_results * 2);
-	int rc = 0;
-	bool res = collide_shape(p_shape_query->get_parameters(), ret.ptrw(), p_max_results, rc);
-	if (!res) {
-		return TypedArray<Vector3>();
-	}
-	TypedArray<Vector3> r;
-	r.resize(rc * 2);
-	for (int i = 0; i < rc * 2; i++) {
-		r[i] = ret[i];
-	}
-	return r;
+bool PhysicsDirectSpaceState3D::intersect_ray(
+	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
+{
+	return true;
 }
 
-Dictionary PhysicsDirectSpaceState3D::_get_rest_info(RequiredParam<PhysicsShapeQueryParameters3D> rp_shape_query) {
-	EXTRACT_PARAM_OR_FAIL_V(p_shape_query, rp_shape_query, Dictionary());
-
-	PS3DT::ShapeRestInfo sri;
-
-	bool res = rest_info(p_shape_query->get_parameters(), &sri);
-	Dictionary r;
-	if (!res) {
-		return r;
-	}
-
-	r["point"] = sri.point;
-	r["normal"] = sri.normal;
-	r["rid"] = sri.rid;
-	r["collider_id"] = sri.collider_id;
-	r["shape"] = sri.shape;
-	r["linear_velocity"] = sri.linear_velocity;
-
-	return r;
+// servers/physics_3d/direct_states/physics_direct_space_state_3d.h / .cpp
+int PhysicsDirectSpaceState3D::intersect_point(
+	const PhysicsServer3DTypes::PointParameters& p_point_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
 }
 
-PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D() {
+int PhysicsDirectSpaceState3D::intersect_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
 }
 
-void PhysicsDirectSpaceState3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("intersect_point", "parameters", "max_results"), &PhysicsDirectSpaceState3D::_intersect_point, DEFVAL(32));
-	ClassDB::bind_method(D_METHOD("intersect_ray", "parameters"), &PhysicsDirectSpaceState3D::_intersect_ray);
-	ClassDB::bind_method(D_METHOD("intersect_shape", "parameters", "max_results"), &PhysicsDirectSpaceState3D::_intersect_shape, DEFVAL(32));
-	ClassDB::bind_method(D_METHOD("cast_motion", "parameters"), &PhysicsDirectSpaceState3D::_cast_motion);
-	ClassDB::bind_method(D_METHOD("collide_shape", "parameters", "max_results"), &PhysicsDirectSpaceState3D::_collide_shape, DEFVAL(32));
-	ClassDB::bind_method(D_METHOD("get_rest_info", "parameters"), &PhysicsDirectSpaceState3D::_get_rest_info);
+bool PhysicsDirectSpaceState3D::cast_motion(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
+	float& r_closest_unsafe, PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
 }
+
+bool PhysicsDirectSpaceState3D::collide_shape(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, Vector3* r_results,
+	int p_result_max, int& r_result_count)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::rest_info(
+	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
+	PhysicsServer3DTypes::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
+	RID p_object, Vector3 p_point) const
+{
+	return Vector3();
+}
+
+

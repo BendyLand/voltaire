@@ -32,11 +32,11 @@
 
 #include "scene/resources/material.h"
 
-class BlitMaterial : public Material {
-	VLTRCLASS(BlitMaterial, Material);
-
+class BlitMaterial : public Material
+{
 public:
-	enum BlendMode {
+	enum BlendMode
+	{
 		BLEND_MODE_MIX,
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
@@ -53,7 +53,6 @@ private:
 	BlendMode blend_mode = BLEND_MODE_MIX;
 
 protected:
-	static void _bind_methods();
 
 public:
 	void set_blend_mode(BlendMode p_blend_mode);
@@ -69,4 +68,4 @@ public:
 	virtual ~BlitMaterial();
 };
 
-VARIANT_ENUM_CAST(BlitMaterial::BlendMode);
+

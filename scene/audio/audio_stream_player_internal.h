@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/templates/safe_refcount.h"
 #include "servers/audio/audio_server.h"
 
@@ -39,20 +38,17 @@ class AudioStreamPlayback;
 class AudioSamplePlayback;
 class Node;
 
-class AudioStreamPlayerInternal : public Object {
-	VLTRCLASS(AudioStreamPlayerInternal, Object);
-
+class AudioStreamPlayerInternal
+{
 private:
-	struct ParameterData {
+	struct ParameterData
+	{
 		StringName path;
-		Variant value;
 	};
 
 	static inline const String PARAM_PREFIX = "parameters/";
 
-	Node *node = nullptr;
-	Callable play_callable;
-	Callable stop_callable;
+	Node* node = nullptr;
 	bool physical = false;
 	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
 
@@ -61,8 +57,12 @@ private:
 	void _set_process(bool p_enabled);
 	void _update_stream_parameters();
 
-	_FORCE_INLINE_ bool _is_sample() {
-		return (AudioServer::get_singleton()->get_default_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE && get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT) || get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE;
+	_FORCE_INLINE_ bool _is_sample()
+	{
+		return (AudioServer::get_singleton()->get_default_playback_type() ==
+					   AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE &&
+				   get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT) ||
+			   get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE;
 	}
 
 public:
@@ -81,10 +81,6 @@ public:
 	void ensure_playback_limit();
 
 	void notification(int p_what);
-	void validate_property(PropertyInfo &p_property) const;
-	bool set(const StringName &p_name, const Variant &p_value);
-	bool get(const StringName &p_name, Variant &r_ret) const;
-	void get_property_list(List<PropertyInfo> *p_list) const;
 
 	void set_stream(Ref<AudioStream> p_stream);
 	void set_pitch_scale(float p_pitch_scale);
@@ -96,6 +92,7 @@ public:
 	void seek(float p_seconds);
 	void stop_basic();
 	bool is_playing() const;
+
 	float get_playback_position();
 
 	void set_playing(bool p_enable);
@@ -109,6 +106,6 @@ public:
 
 	void set_playback_type(AudioServer::PlaybackType p_playback_type);
 	AudioServer::PlaybackType get_playback_type() const;
-
-	AudioStreamPlayerInternal(Node *p_node, const Callable &p_play_callable, const Callable &p_stop_callable, bool p_physical);
 };
+
+

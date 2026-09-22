@@ -28,11 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <turbojpeg.h>
 #include "image_loader_libjpeg_turbo.h"
 
-#include <turbojpeg.h>
-
-Error jpeg_turbo_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len) {
+Error jpeg_turbo_load_image_from_buffer(Image* p_image, const uint8_t* p_buffer, int p_buffer_len)
+{
 	tjhandle tj_instance = tj3Init(TJINIT_DECOMPRESS);
 	if (tj_instance == nullptr) {
 		return FAILED;
@@ -59,11 +59,14 @@ Error jpeg_turbo_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer,
 	if (colorspace == TJCS_GRAY) {
 		tj_pixel_format = TJPF_GRAY;
 		gd_pixel_format = Image::FORMAT_L8;
-	} else if (colorspace == TJCS_CMYK || colorspace == TJCS_YCCK) {
-		ERR_PRINT("JPEGTurbo: JPEG files with CMYK or YCCK colorspaces are not currently supported.");
+	}
+	else if (colorspace == TJCS_CMYK || colorspace == TJCS_YCCK) {
+		ERR_PRINT(
+			"JPEGTurbo: JPEG files with CMYK or YCCK colorspaces are not currently supported.");
 		tj3Destroy(tj_instance);
 		return ERR_UNAVAILABLE;
-	} else {
+	}
+	else {
 		// Other color spaces should be RGB.
 		tj_pixel_format = TJPF_RGB;
 		gd_pixel_format = Image::FORMAT_RGB8;
@@ -76,7 +79,8 @@ Error jpeg_turbo_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer,
 		if (tj3GetErrorCode(tj_instance) == TJERR_FATAL) {
 			tj3Destroy(tj_instance);
 			return ERR_FILE_CORRUPT;
-		} else {
+		}
+		else {
 			WARN_PRINT(String::utf8(tj3GetErrorStr(tj_instance)));
 		}
 	}
@@ -86,13 +90,15 @@ Error jpeg_turbo_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer,
 	return OK;
 }
 
-Error ImageLoaderLibJPEGTurbo::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) {
+Error ImageLoaderLibJPEGTurbo::load_image(
+	Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
+{
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
 	src_image.resize(src_image_len);
 
-	uint8_t *w = src_image.ptrw();
+	uint8_t* w = src_image.ptrw();
 
 	f->get_buffer(&w[0], src_image_len);
 
@@ -101,12 +107,14 @@ Error ImageLoaderLibJPEGTurbo::load_image(Ref<Image> p_image, Ref<FileAccess> f,
 	return err;
 }
 
-void ImageLoaderLibJPEGTurbo::get_recognized_extensions(List<String> *p_extensions) const {
+void ImageLoaderLibJPEGTurbo::get_recognized_extensions(List<String>* p_extensions) const
+{
 	p_extensions->push_back("jpg");
 	p_extensions->push_back("jpeg");
 }
 
-static Ref<Image> _jpeg_turbo_mem_loader_func(const uint8_t *p_data, int p_size) {
+static Ref<Image> _jpeg_turbo_mem_loader_func(const uint8_t* p_data, int p_size)
+{
 	Ref<Image> img;
 	img.instantiate();
 	Error err = jpeg_turbo_load_image_from_buffer(img.ptr(), p_data, p_size);
@@ -114,85 +122,4 @@ static Ref<Image> _jpeg_turbo_mem_loader_func(const uint8_t *p_data, int p_size)
 	return img;
 }
 
-static Vector<uint8_t> _jpeg_turbo_buffer_save_func(const Ref<Image> &p_img, float p_quality) {
-	Vector<uint8_t> output;
 
-	ERR_FAIL_COND_V(p_img.is_null() || p_img->is_empty(), output);
-
-	Ref<Image> image = p_img->duplicate();
-	if (image->is_compressed()) {
-		Error error = image->decompress();
-		ERR_FAIL_COND_V_MSG(error != OK, output, "Couldn't decompress image.");
-	}
-
-	if (image->get_format() != Image::FORMAT_RGB8) {
-		// Allow grayscale L8?
-		image = image->duplicate();
-		image->convert(Image::FORMAT_RGB8);
-	}
-
-	tjhandle tj_instance = tj3Init(TJINIT_COMPRESS);
-	ERR_FAIL_COND_V_MSG(tj_instance == nullptr, output, "Couldn't create tjhandle");
-
-	if (tj3Set(tj_instance, TJPARAM_QUALITY, (int)(p_quality * 100)) < 0) {
-		tj3Destroy(tj_instance);
-		ERR_FAIL_V_MSG(output, "Couldn't set jpg quality");
-	}
-
-	if (tj3Set(tj_instance, TJPARAM_PRECISION, 8) < 0) {
-		tj3Destroy(tj_instance);
-		ERR_FAIL_V_MSG(output, "Couldn't set jpg precision");
-	}
-
-	if (tj3Set(tj_instance, TJPARAM_SUBSAMP, TJSAMP_420) < 0) {
-		tj3Destroy(tj_instance);
-		ERR_FAIL_V_MSG(output, "Couldn't set jpg subsamples");
-	}
-
-	// If the godot image format is `Image::FORMAT_L8` we could set the appropriate
-	// color space here rather than defaulting to RGB.
-
-	unsigned char *jpeg_buff = nullptr;
-	size_t jpeg_size = 0;
-	int code = tj3Compress8(
-			tj_instance,
-			image->get_data().ptr(),
-			image->get_width(),
-			0,
-			image->get_height(),
-			TJPF_RGB,
-			&jpeg_buff,
-			&jpeg_size);
-
-	if (code < 0) {
-		tj3Destroy(tj_instance);
-		tj3Free(jpeg_buff);
-		ERR_FAIL_V_MSG(output, "Couldn't compress jpg");
-	}
-
-	output.resize(jpeg_size);
-	memcpy(output.ptrw(), jpeg_buff, jpeg_size);
-
-	tj3Destroy(tj_instance);
-	tj3Free(jpeg_buff);
-
-	return output;
-}
-
-static Error _jpeg_turbo_save_func(const String &p_path, const Ref<Image> &p_img, float p_quality) {
-	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
-	ERR_FAIL_COND_V_MSG(err, err, vformat("Can't save JPG at path: '%s'.", p_path));
-
-	Vector<uint8_t> data = _jpeg_turbo_buffer_save_func(p_img, p_quality);
-	ERR_FAIL_COND_V(data.size() == 0, FAILED);
-	ERR_FAIL_COND_V_MSG(!file->store_buffer(data.ptr(), data.size()), FAILED, "Failed writing jpg to file");
-
-	return OK;
-}
-
-ImageLoaderLibJPEGTurbo::ImageLoaderLibJPEGTurbo() {
-	Image::_jpg_mem_loader_func = _jpeg_turbo_mem_loader_func;
-	Image::save_jpg_func = _jpeg_turbo_save_func;
-	Image::save_jpg_buffer_func = _jpeg_turbo_buffer_save_func;
-}

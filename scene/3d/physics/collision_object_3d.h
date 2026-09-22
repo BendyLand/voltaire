@@ -35,13 +35,11 @@
 #include "scene/3d/node_3d.h"
 #include "scene/resources/3d/shape_3d.h"
 
-class CollisionObject3D : public Node3D {
-	VLTRCLASS(CollisionObject3D, Node3D);
-
+class CollisionObject3D : public Node3D
+{
 public:
-	static constexpr AncestralClass static_ancestral_class = AncestralClass::COLLISION_OBJECT_3D;
-
-	enum DisableMode {
+	enum DisableMode
+	{
 		DISABLE_MODE_REMOVE,
 		DISABLE_MODE_MAKE_STATIC,
 		DISABLE_MODE_KEEP_ACTIVE,
@@ -61,10 +59,12 @@ private:
 
 	PS3DE::BodyMode body_mode = PS3DE::BODY_MODE_STATIC;
 
-	struct ShapeData {
-		ObjectID owner_id;
+	struct ShapeData
+	{
 		Transform3D xform;
-		struct ShapeBase {
+
+		struct ShapeBase
+		{
 			RID debug_shape;
 			Ref<Shape3D> shape;
 			int index = 0;
@@ -91,7 +91,7 @@ private:
 
 	bool _are_collision_shapes_visible();
 	void _update_shape_data(uint32_t p_owner);
-	void _shape_changed(const Ref<Shape3D> &p_shape);
+	void _shape_changed(const Ref<Shape3D>& p_shape);
 	void _update_debug_shapes();
 	void _clear_debug_shapes();
 
@@ -100,26 +100,28 @@ private:
 
 protected:
 	CollisionObject3D(RID p_rid, bool p_area);
+	CollisionObject3D(PS3DE::BodyMode p_body_mode) : body_mode(p_body_mode) {}
 
 	_FORCE_INLINE_ void lock_callback() { callback_lock++; }
-	_FORCE_INLINE_ void unlock_callback() {
+
+	_FORCE_INLINE_ void unlock_callback()
+	{
 		ERR_FAIL_COND(callback_lock == 0);
 		callback_lock--;
 	}
 
 	void _notification(int p_what);
-	static void _bind_methods();
 
 	void _on_transform_changed();
 
 	friend class Viewport;
-	virtual void _input_event_call(Camera3D *p_camera, const Ref<InputEvent> &p_input_event, const Vector3 &p_pos, const Vector3 &p_normal, int p_shape);
+	virtual void _space_changed(const RID& p_new_space);
+	virtual void _input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
+		const Vector3& p_pos, const Vector3& p_normal, int p_shape);
 	virtual void _mouse_enter();
 	virtual void _mouse_exit();
 
 	void set_body_mode(PS3DE::BodyMode p_mode);
-
-	virtual void _space_changed(const RID &p_new_space);
 
 	void set_only_update_transform_changes(bool p_enable);
 	bool is_only_update_transform_changes_enabled() const;
@@ -143,25 +145,20 @@ public:
 	void set_disable_mode(DisableMode p_mode);
 	DisableMode get_disable_mode() const;
 
-	uint32_t create_shape_owner(Object *p_owner);
-	void remove_shape_owner(uint32_t owner);
-	void get_shape_owners(List<uint32_t> *r_owners);
+	void get_shape_owners(List<uint32_t>* r_owners);
 	PackedInt32Array _get_shape_owners();
 
-	void shape_owner_set_transform(uint32_t p_owner, const Transform3D &p_transform);
+	void shape_owner_set_transform(uint32_t p_owner, const Transform3D& p_transform);
 	Transform3D shape_owner_get_transform(uint32_t p_owner) const;
-	Object *shape_owner_get_owner(uint32_t p_owner) const;
 
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
 
-	void shape_owner_add_shape(uint32_t p_owner, RequiredParam<Shape3D> rp_shape);
 	int shape_owner_get_shape_count(uint32_t p_owner) const;
 	Ref<Shape3D> shape_owner_get_shape(uint32_t p_owner, int p_shape) const;
 	int shape_owner_get_shape_index(uint32_t p_owner, int p_shape) const;
 
 	void shape_owner_remove_shape(uint32_t p_owner, int p_shape);
-	void shape_owner_clear_shapes(uint32_t p_owner);
 
 	uint32_t shape_find_owner(int p_shape_index) const;
 
@@ -175,8 +172,8 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 
-	CollisionObject3D();
+	CollisionObject3D() = default;
 	~CollisionObject3D();
 };
 
-VARIANT_ENUM_CAST(CollisionObject3D::DisableMode);
+

@@ -28,24 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "string_name.h"
-
 #include "core/os/mutex.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/paged_allocator.h"
+#include "string_name.h"
 
-struct StringName::Table {
+struct StringName::Table
+{
 	constexpr static uint32_t TABLE_BITS = 16;
 	constexpr static uint32_t TABLE_LEN = 1 << TABLE_BITS;
 	constexpr static uint32_t TABLE_MASK = TABLE_LEN - 1;
 
-	static inline _Data *table[TABLE_LEN];
+	static inline _Data* table[TABLE_LEN];
 	static inline BinaryMutex mutex;
 	static inline PagedAllocator<_Data> allocator;
 };
 
-void StringName::setup() {
+void StringName::setup()
+{
 	ERR_FAIL_COND(configured);
 	for (uint32_t i = 0; i < Table::TABLE_LEN; i++) {
 		Table::table[i] = nullptr;
@@ -53,50 +54,58 @@ void StringName::setup() {
 	configured = true;
 }
 
-void StringName::cleanup() {
+void StringName::cleanup()
+{
 	MutexLock lock(Table::mutex);
 
 #ifdef DEBUG_ENABLED
 	if (unlikely(debug_stringname)) {
-		Vector<_Data *> data;
+		Vector<_Data*> data;
 		for (uint32_t i = 0; i < Table::TABLE_LEN; i++) {
-			_Data *d = Table::table[i];
+			_Data* d = Table::table[i];
 			while (d) {
 				data.push_back(d);
 				d = d->next;
 			}
 		}
 
-		print_line("\nStringName reference ranking (from most to least referenced):\n");
+		__print_line("\nStringName reference ranking (from most to least referenced):\n");
 
 		data.sort_custom<DebugSortReferences>();
 		int unreferenced_stringnames = 0;
 		int rarely_referenced_stringnames = 0;
 		for (int i = 0; i < data.size(); i++) {
-			print_line(itos(i + 1) + ": " + data[i]->name + " - " + itos(data[i]->debug_references));
+			__print_line(
+				itos(i + 1) + ": " + data[i]->name + " - " + itos(data[i]->debug_references));
 			if (data[i]->debug_references == 0) {
 				unreferenced_stringnames += 1;
-			} else if (data[i]->debug_references < 5) {
+			}
+			else if (data[i]->debug_references < 5) {
 				rarely_referenced_stringnames += 1;
 			}
 		}
 
-		print_line(vformat("\nOut of %d StringNames, %d StringNames were never referenced during this run (0 times) (%.2f%%).", data.size(), unreferenced_stringnames, unreferenced_stringnames / float(data.size()) * 100));
-		print_line(vformat("Out of %d StringNames, %d StringNames were rarely referenced during this run (1-4 times) (%.2f%%).", data.size(), rarely_referenced_stringnames, rarely_referenced_stringnames / float(data.size()) * 100));
+		__print_line(vformat("\nOut of %d StringNames, %d StringNames were never referenced during "
+							 "this run (0 times) (%.2f%%).",
+			data.size(), unreferenced_stringnames,
+			unreferenced_stringnames / float(data.size()) * 100));
+		__print_line(vformat("Out of %d StringNames, %d StringNames were rarely referenced during "
+							 "this run (1-4 times) (%.2f%%).",
+			data.size(), rarely_referenced_stringnames,
+			rarely_referenced_stringnames / float(data.size()) * 100));
 	}
 #endif
 	int lost_strings = 0;
 	for (uint32_t i = 0; i < Table::TABLE_LEN; i++) {
 		while (Table::table[i]) {
-			_Data *d = Table::table[i];
+			_Data* d = Table::table[i];
 			if (d->static_count.get() != d->refcount.get()) {
 				lost_strings++;
-
 				if (OS::get_singleton()->is_stdout_verbose()) {
-					print_line(vformat("Orphan StringName: %s (static: %d, total: %d)", d->name, d->static_count.get(), d->refcount.get()));
+					__print_line(vformat("Orphan StringName: %s (static: %d, total: %d)", d->name,
+						d->static_count.get(), d->refcount.get()));
 				}
 			}
-
 			Table::table[i] = Table::table[i]->next;
 			Table::allocator.free(d);
 		}
@@ -107,7 +116,8 @@ void StringName::cleanup() {
 	configured = false;
 }
 
-void StringName::unref() {
+void StringName::unref()
+{
 	ERR_FAIL_COND(!configured);
 
 	if (_data && _data->refcount.unref()) {
@@ -118,7 +128,8 @@ void StringName::unref() {
 		}
 		if (_data->prev) {
 			_data->prev->next = _data->next;
-		} else {
+		}
+		else {
 			const uint32_t idx = _data->hash & Table::TABLE_MASK;
 			Table::table[idx] = _data->next;
 		}
@@ -132,12 +143,14 @@ void StringName::unref() {
 	_data = nullptr;
 }
 
-uint32_t StringName::get_empty_hash() {
+uint32_t StringName::get_empty_hash()
+{
 	static uint32_t empty_hash = String::hash("");
 	return empty_hash;
 }
 
-bool StringName::operator==(const String &p_name) const {
+bool StringName::operator==(const String& p_name) const
+{
 	if (_data) {
 		return _data->name == p_name;
 	}
@@ -145,7 +158,8 @@ bool StringName::operator==(const String &p_name) const {
 	return p_name.is_empty();
 }
 
-bool StringName::operator==(const char *p_name) const {
+bool StringName::operator==(const char* p_name) const
+{
 	if (_data) {
 		return _data->name == p_name;
 	}
@@ -153,15 +167,12 @@ bool StringName::operator==(const char *p_name) const {
 	return p_name[0] == 0;
 }
 
-bool StringName::operator!=(const String &p_name) const {
-	return !(operator==(p_name));
-}
+bool StringName::operator!=(const String& p_name) const { return !(operator==(p_name)); }
 
-bool StringName::operator!=(const char *p_name) const {
-	return !(operator==(p_name));
-}
+bool StringName::operator!=(const char* p_name) const { return !(operator==(p_name)); }
 
-char32_t StringName::operator[](int p_index) const {
+char32_t StringName::operator[](int p_index) const
+{
 	if (_data) {
 		return _data->name[p_index];
 	}
@@ -170,7 +181,8 @@ char32_t StringName::operator[](int p_index) const {
 	return 0;
 }
 
-int StringName::length() const {
+int StringName::length() const
+{
 	if (_data) {
 		return _data->name.length();
 	}
@@ -178,7 +190,8 @@ int StringName::length() const {
 	return 0;
 }
 
-StringName &StringName::operator=(const StringName &p_name) {
+StringName& StringName::operator=(const StringName& p_name)
+{
 	if (this == &p_name) {
 		return *this;
 	}
@@ -192,7 +205,8 @@ StringName &StringName::operator=(const StringName &p_name) {
 	return *this;
 }
 
-StringName::StringName(const StringName &p_name) {
+StringName::StringName(const StringName& p_name)
+{
 	_data = nullptr;
 
 	ERR_FAIL_COND(!configured);
@@ -202,13 +216,14 @@ StringName::StringName(const StringName &p_name) {
 	}
 }
 
-StringName::StringName(const char *p_name, bool p_static) {
+StringName::StringName(const char* p_name, bool p_static)
+{
 	_data = nullptr;
 
 	ERR_FAIL_COND(!configured);
 
 	if (!p_name || p_name[0] == 0) {
-		return; //empty, ignore
+		return; // empty, ignore
 	}
 
 	const uint32_t hash = String::hash(p_name);
@@ -259,7 +274,8 @@ StringName::StringName(const char *p_name, bool p_static) {
 	Table::table[idx] = _data;
 }
 
-StringName::StringName(const String &p_name, bool p_static) {
+StringName::StringName(const String& p_name, bool p_static)
+{
 	_data = nullptr;
 
 	ERR_FAIL_COND(!configured);
@@ -315,16 +331,24 @@ StringName::StringName(const String &p_name, bool p_static) {
 	Table::table[idx] = _data;
 }
 
-bool operator==(const String &p_name, const StringName &p_string_name) {
+bool operator==(const String& p_name, const StringName& p_string_name)
+{
 	return p_string_name.operator==(p_name);
 }
-bool operator!=(const String &p_name, const StringName &p_string_name) {
+
+bool operator!=(const String& p_name, const StringName& p_string_name)
+{
 	return p_string_name.operator!=(p_name);
 }
 
-bool operator==(const char *p_name, const StringName &p_string_name) {
+bool operator==(const char* p_name, const StringName& p_string_name)
+{
 	return p_string_name.operator==(p_name);
 }
-bool operator!=(const char *p_name, const StringName &p_string_name) {
+
+bool operator!=(const char* p_name, const StringName& p_string_name)
+{
 	return p_string_name.operator!=(p_name);
 }
+
+

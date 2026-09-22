@@ -30,47 +30,36 @@
 
 #include "openxr_structure.h"
 
-#include "core/object/class_db.h"
+void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) { next = p_next; }
 
-void OpenXRStructureBase::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_structure_type"), &OpenXRStructureBase::_get_structure_type);
+Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const { return next; }
 
-	ClassDB::bind_method(D_METHOD("set_next", "entity"), &OpenXRStructureBase::set_next);
-	ClassDB::bind_method(D_METHOD("get_next"), &OpenXRStructureBase::get_next);
-
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "next", PROPERTY_HINT_RESOURCE_TYPE, OpenXRStructureBase::get_class_static()), "set_next", "get_next");
-}
-
-void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) {
-	next = p_next;
-}
-
-Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const {
-	return next;
-}
-
-void *OpenXRStructureBase::get_header(void *p_next) {
-	void *n = p_next;
+void* OpenXRStructureBase::get_header(void* p_next)
+{
+	void* n = p_next;
 	if (get_next().is_valid()) {
 		n = get_next()->get_header(p_next);
 	}
 	return n;
 }
 
-XrStructureType OpenXRStructureBase::get_structure_type() {
-	// By default we call get_header to get the structure type so we have a guaranteed implementation.
+XrStructureType OpenXRStructureBase::get_structure_type()
+{
+	// By default we call get_header to get the structure type so we have a guaranteed
+	// implementation.
 
 	// The first member of our header is always the structure type, so this works:
-	XrStructureType *header = (XrStructureType *)get_header();
+	XrStructureType* header = (XrStructureType*)get_header();
 	if (header == nullptr) {
 		// Header can return nullptr for valid reasons, so we do not error here!
 		return XR_TYPE_UNKNOWN;
-	} else {
+	}
+	else {
 		return *header;
 	}
 }
 
 // Return structure type as uint64_t to GDScript
-uint64_t OpenXRStructureBase::_get_structure_type() {
-	return (uint64_t)get_structure_type();
-}
+uint64_t OpenXRStructureBase::_get_structure_type() { return (uint64_t)get_structure_type(); }
+
+

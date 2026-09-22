@@ -33,18 +33,13 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
-///////////////////////////////////////
-// SkeletonModification2DCCDIK
-///////////////////////////////////////
-
-class SkeletonModification2DCCDIK : public SkeletonModification2D {
-	VLTRCLASS(SkeletonModification2DCCDIK, SkeletonModification2D);
-
+class SkeletonModification2DCCDIK : public SkeletonModification2D
+{
 private:
-	struct CCDIK_Joint_Data2D {
+	struct CCDIK_Joint_Data2D
+	{
 		int bone_idx = -1;
 		NodePath bone2d_node;
-		ObjectID bone2d_node_cache;
 		bool rotate_from_joint = false;
 
 		bool enable_constraint = false;
@@ -59,36 +54,28 @@ private:
 	Vector<CCDIK_Joint_Data2D> ccdik_data_chain;
 
 	NodePath target_node;
-	ObjectID target_node_cache;
 	void update_target_cache();
 
 	NodePath tip_node;
-	ObjectID tip_node_cache;
 	void update_tip_cache();
 
 	void ccdik_joint_update_bone2d_cache(int p_joint_idx);
-	void _execute_ccdik_joint(int p_joint_idx, Node2D *p_target, Node2D *p_tip);
-
-protected:
-	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+	void _execute_ccdik_joint(int p_joint_idx, Node2D* p_target, Node2D* p_tip);
 
 public:
+	void _setup_modification(SkeletonModificationStack2D* p_stack) override;
 	void _execute(float p_delta) override;
-	void _setup_modification(SkeletonModificationStack2D *p_stack) override;
 	void _draw_editor_gizmo() override;
 
-	void set_target_node(const NodePath &p_target_node);
+	void set_target_node(const NodePath& p_target_node);
 	NodePath get_target_node() const;
-	void set_tip_node(const NodePath &p_tip_node);
+	void set_tip_node(const NodePath& p_tip_node);
 	NodePath get_tip_node() const;
 
 	int get_ccdik_data_chain_length();
 	void set_ccdik_data_chain_length(int p_new_length);
 
-	void set_ccdik_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node);
+	void set_ccdik_joint_bone2d_node(int p_joint_idx, const NodePath& p_target_node);
 	NodePath get_ccdik_joint_bone2d_node(int p_joint_idx) const;
 	void set_ccdik_joint_bone_index(int p_joint_idx, int p_bone_idx);
 	int get_ccdik_joint_bone_index(int p_joint_idx) const;
@@ -111,3 +98,5 @@ public:
 	SkeletonModification2DCCDIK();
 	~SkeletonModification2DCCDIK();
 };
+
+

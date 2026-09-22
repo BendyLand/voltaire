@@ -33,12 +33,11 @@
 // Universal / Universal 2 fat binary file creator and extractor.
 
 #include "core/io/file_access.h"
-#include "core/object/ref_counted.h"
 
-class LipO : public RefCounted {
-	VLTRSOFTCLASS(LipO, RefCounted);
-
-	struct FatArch {
+class LipO : public RefCounted
+{
+	struct FatArch
+	{
 		uint32_t cputype;
 		uint32_t cpusubtype;
 		uint64_t offset;
@@ -49,23 +48,24 @@ class LipO : public RefCounted {
 	Ref<FileAccess> fa;
 	Vector<FatArch> archs;
 
-	static inline size_t PAD(size_t s, size_t a) {
-		return (a - s % a);
-	}
+	static inline size_t PAD(size_t s, size_t a) { return (a - s % a); }
 
 public:
-	static bool is_lipo(const String &p_path);
+	static bool is_lipo(const String& p_path);
 
-	bool create_file(const String &p_output_path, const Vector<String> &p_files);
-	bool create_file(const String &p_output_path, const Vector<String> &p_files, const Vector<Vector2i> &p_cputypes);
+	bool create_file(const String& p_output_path, const Vector<String>& p_files);
+	bool create_file(const String& p_output_path, const Vector<String>& p_files,
+		const Vector<Vector2i>& p_cputypes);
 
-	bool open_file(const String &p_path);
+	bool open_file(const String& p_path);
 	int get_arch_count() const;
 	uint32_t get_arch_cputype(int p_index) const;
 	uint32_t get_arch_cpusubtype(int p_index) const;
-	bool extract_arch(int p_index, const String &p_path);
+	bool extract_arch(int p_index, const String& p_path);
 
 	void close();
 
 	~LipO();
 };
+
+

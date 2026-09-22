@@ -15,8 +15,9 @@ def make_translations(target, source):
     target_h, target_cpp = str(target[0]), str(target[1])
 
     category = os.path.basename(target_h).split("_")[0]
+    valid_sources = [src for src in source if os.path.isfile(src)]
     sorted_paths = sorted(
-        [os.path.abspath(src) for src in source],
+        [os.path.abspath(src) for src in valid_sources],
         key=lambda path: os.path.splitext(os.path.basename(path))[0],
     )
 
@@ -82,7 +83,7 @@ const EditorTranslationList _{category}_translations[] = {{
             )
 
         file.write("""\
-    { nullptr, 0, 0, nullptr },
+\t{ nullptr, 0, 0, nullptr },
 };
 """)
 
@@ -93,10 +94,10 @@ const EditorTranslationList _{category}_translations[] = {{
 #define EDITOR_TRANSLATION_LIST
 
 struct EditorTranslationList {{
-    const char* lang;
-    int comp_size;
-    int uncomp_size;
-    const unsigned char* data;
+\tconst char* lang;
+\tint comp_size;
+\tint uncomp_size;
+\tconst unsigned char* data;
 }};
 
 #endif // EDITOR_TRANSLATION_LIST
@@ -120,7 +121,7 @@ match run:
     case 2:
         make_translations(
             ["editor/translations/doc_translations.gen.h", "editor/translations/doc_translations.gen.cpp"],
-            ["doc/translations/ca.po", "doc/translations/es.po", "doc/translations/fr.po", "doc/translations/ga.po", "doc/translations/it.po", "doc/translations/ko.po", "doc/translations/ru.po", "doc/translations/ta.po", "doc/translations/uk.po", "doc/translations/zh_Hans.po", "doc/translations/zh_Hant.po"]
+            []
         )
     case 3:
         make_translations(
