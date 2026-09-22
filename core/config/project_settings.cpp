@@ -46,25 +46,23 @@
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
 #endif									 // TOOLS_ENABLED
 
-ProjectSettings* ProjectSettings::get_singleton() { return singleton; }
+String ProjectSettings::get_project_data_dir_name() { return data->project_data_dir_name; }
 
-String ProjectSettings::get_project_data_dir_name() const { return project_data_dir_name; }
-
-String ProjectSettings::get_project_data_path() const
+String ProjectSettings::get_project_data_path()
 {
 	return "res://" + get_project_data_dir_name();
 }
 
-String ProjectSettings::get_resource_path() const
+String ProjectSettings::get_resource_path()
 {
-	if (this) {
-		return resource_path;
+	if (data) {
+		return data->resource_path;
 	}
 	return "res://";
 }
 
 // This returns paths like "res://.godot/imported".
-String ProjectSettings::get_imported_files_path() const
+String ProjectSettings::get_imported_files_path()
 {
 	return get_project_data_path().path_join("imported");
 }
@@ -116,7 +114,7 @@ const Vector<String> ProjectSettings::get_unsupported_features(
 	const Vector<String>& p_project_features)
 {
 	Vector<String> unsupported_features;
-	Vector<String> supported_features = singleton->_get_supported_features();
+	Vector<String> supported_features = _get_supported_features();
 	for (int i = 0; i < p_project_features.size(); i++) {
 		if (!supported_features.has(p_project_features[i])) {
 			// Temporary compatibility code to ease upgrade to 4.0 beta 2+.
@@ -155,11 +153,11 @@ const Vector<String> ProjectSettings::_trim_to_supported_features(
 }
 #endif // TOOLS_ENABLED
 
-String ProjectSettings::localize_path(const String& p_path) const
+String ProjectSettings::localize_path(const String& p_path)
 {
 	String path = p_path.simplify_path();
 
-	if (resource_path.is_empty() || (path.is_absolute_path() && !path.begins_with(resource_path))) {
+	if (data->resource_path.is_empty() || (path.is_absolute_path() && !path.begins_with(data->resource_path))) {
 		return path;
 	}
 
@@ -191,7 +189,7 @@ String ProjectSettings::localize_path(const String& p_path) const
 		// different folder (e.g. "/my/project" as resource_path would be contained in
 		// "/my/project_data", even though the latter is not part of res://.
 		// `path_join("")` is an easy way to ensure we have a trailing '/'.
-		const String res_path = resource_path.path_join("");
+		const String res_path = data->resource_path.path_join("");
 
 		// DirAccess::get_current_dir() is not guaranteed to return a path that with a trailing '/',
 		// so we must make sure we have it as well in order to compare with 'res_path'.
@@ -225,21 +223,21 @@ String ProjectSettings::localize_path(const String& p_path) const
 
 void ProjectSettings::add_hidden_prefix(const String& p_prefix)
 {
-	hidden_prefixes.push_back(p_prefix);
+	data->hidden_prefixes.push_back(p_prefix);
 }
 
-String ProjectSettings::globalize_path(const String& p_path) const
+String ProjectSettings::globalize_path(const String& p_path)
 {
 	if (p_path.begins_with("res://")) {
-		if (!resource_path.is_empty()) {
-			return p_path.replace("res:/", resource_path);
+		if (!data->resource_path.is_empty()) {
+			return p_path.replace("res:/", data->resource_path);
 		}
 		return p_path.replace("res://", "");
 	}
 	else if (p_path.begins_with("uid://")) {
 		const String path = ResourceUID::uid_to_path(p_path);
-		if (!resource_path.is_empty()) {
-			return path.replace("res:/", resource_path);
+		if (!data->resource_path.is_empty()) {
+			return path.replace("res:/", data->resource_path);
 		}
 		return path.replace("res://", "");
 	}
@@ -266,17 +264,17 @@ struct _VCSort
 	}
 };
 
-void ProjectSettings::_queue_changed(const StringName& p_name) { changed_settings.insert(p_name); }
+void ProjectSettings::_queue_changed(const StringName& p_name) { data->changed_settings.insert(p_name); }
 
 void ProjectSettings::_emit_changed()
 {
-	if (!is_changed) {
+	if (!data->is_changed) {
 		return;
 	}
-	is_changed = false;
+	data->is_changed = false;
 
 	// Clear the changed settings after emitting the signal
-	changed_settings.clear();
+	data->changed_settings.clear();
 }
 
 bool ProjectSettings::load_resource_pack(const String& p_pack, bool p_replace_files, int p_offset)
@@ -296,13 +294,13 @@ bool ProjectSettings::_load_resource_pack(
 		return false;
 	}
 
-	if (!p_main_pack && !using_datapack && !OS::get_singleton()->get_resource_dir().is_empty()) {
+	if (!p_main_pack && !data->using_datapack && !OS::get_singleton()->get_resource_dir().is_empty()) {
 		// Add the project's resource file system to PackedData so directory access keeps working
 		// when the game is running without a main pack, like in the editor or on Android.
 		PackedData::get_singleton()->add_pack_source(memnew(PackedSourceDirectory));
 		PackedData::get_singleton()->add_pack("res://", false, 0);
 		DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
-		using_datapack = true;
+		data->using_datapack = true;
 	}
 
 	bool ok = PackedData::get_singleton()->add_pack(p_pack, p_replace_files, p_offset) == OK;
@@ -310,7 +308,7 @@ bool ProjectSettings::_load_resource_pack(
 		return false;
 	}
 
-	if (project_loaded) {
+	if (data->project_loaded) {
 		// This pack may have declared new global classes (make sure they are picked up).
 		refresh_global_class_list();
 
@@ -319,9 +317,9 @@ bool ProjectSettings::_load_resource_pack(
 	}
 
 	// If the data pack was found, all directory access will be from here.
-	if (!using_datapack) {
+	if (!data->using_datapack) {
 		DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
-		using_datapack = true;
+		data->using_datapack = true;
 	}
 
 	return true;
@@ -359,9 +357,9 @@ Error ProjectSettings::_setup(
 	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
 		// OS will call ProjectSettings->get_resource_path which will be empty if not overridden!
 		// If the OS would rather use a specific location, then it will not be empty.
-		resource_path = OS::get_singleton()->get_resource_dir().replace_char('\\', '/');
-		if (!resource_path.is_empty() && resource_path[resource_path.length() - 1] == '/') {
-			resource_path = resource_path.substr(0, resource_path.length() - 1); // Chop end.
+		data->resource_path = OS::get_singleton()->get_resource_dir().replace_char('\\', '/');
+		if (!data->resource_path.is_empty() && data->resource_path[data->resource_path.length() - 1] == '/') {
+			data->resource_path = data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
 		}
 	}
 
@@ -483,9 +481,9 @@ Error ProjectSettings::_setup(
 
 	while (true) {
 		// Set the resource path early so things can be resolved when loading.
-		resource_path = current_dir;
-		resource_path =
-			resource_path.replace_char('\\', '/'); // Windows path to Unix path just in case.
+		data->resource_path = current_dir;
+		data->resource_path =
+			data->resource_path.replace_char('\\', '/'); // Windows path to Unix path just in case.
 		err = _load_settings_text_or_binary(
 			current_dir.path_join("project.godot"), current_dir.path_join("project.binary"));
 		if (err == OK) {
@@ -514,8 +512,8 @@ Error ProjectSettings::_setup(
 		return err;
 	}
 
-	if (resource_path.length() && resource_path[resource_path.length() - 1] == '/') {
-		resource_path = resource_path.substr(0, resource_path.length() - 1); // Chop end.
+	if (data->resource_path.length() && data->resource_path[data->resource_path.length() - 1] == '/') {
+		data->resource_path = data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
 	}
 
 	return OK;
@@ -527,12 +525,12 @@ Error ProjectSettings::setup(
 	Error err = _setup(p_path, p_main_pack, p_upwards, p_ignore_override);
 
 	// Updating the default value after the project settings have loaded.
-	project_data_dir_name = PROJECT_DATA_DIR_NAME_SUFFIX;
+	data->project_data_dir_name = PROJECT_DATA_DIR_NAME_SUFFIX;
 
 	// Using GLOBAL_GET on every block for compressing can be slow, so assigning here.
 	load_scene_groups_cache();
 
-	project_loaded = err == OK;
+	data->project_loaded = err == OK;
 	return err;
 }
 
@@ -590,7 +588,7 @@ Error ProjectSettings::_load_settings_text(const String& p_path)
 			// If we're loading a project.godot from source code, we can operate some
 			// ProjectSettings conversions if need be.
 			_convert_to_last_version(config_version);
-			last_save_time =
+			data->last_save_time =
 				FileAccess::get_modified_time(get_resource_path().path_join("project.godot"));
 			return OK;
 		}
@@ -626,14 +624,14 @@ Error ProjectSettings::save()
 {
 	Error error = save_custom(get_resource_path().path_join("project.godot"));
 	if (error == OK) {
-		last_save_time =
+		data->last_save_time =
 			FileAccess::get_modified_time(get_resource_path().path_join("project.godot"));
 	}
 	return error;
 }
 
 Error ProjectSettings::_save_settings_binary(const String& p_file,
-	const RBMap<String, List<String>>& p_props, const CustomMap& p_custom,
+	const RBMap<String, List<String>>& p_props, const StringMap& p_custom,
 	const String& p_custom_features)
 {
 	Error err;
@@ -684,7 +682,7 @@ Error ProjectSettings::_save_settings_binary(const String& p_file,
 }
 
 Error ProjectSettings::_save_settings_text(const String& p_file,
-	const RBMap<String, List<String>>& p_props, const CustomMap& p_custom,
+	const RBMap<String, List<String>>& p_props, const StringMap& p_custom,
 	const String& p_custom_features)
 {
 	Error err;
@@ -727,7 +725,7 @@ Error ProjectSettings::_save_settings_text(const String& p_file,
 }
 
 Error ProjectSettings::_save_custom_bnd(const String& p_file)
-{ // add other params as dictionary and array?
+{
 	return save_custom(p_file);
 }
 
@@ -750,7 +748,7 @@ bool _csproj_exists(const String& p_root_dir)
 }
 #endif // TOOLS_ENABLED
 
-Error ProjectSettings::save_custom(const String& p_path, const CustomMap& p_custom,
+Error ProjectSettings::save_custom(const String& p_path, const StringMap& p_custom,
 	const Vector<String>& p_custom_features, bool p_merge_with_current)
 {
 	ERR_FAIL_COND_V_MSG(
@@ -794,22 +792,22 @@ Error ProjectSettings::save_custom(const String& p_path, const CustomMap& p_cust
 	}
 }
 
-bool ProjectSettings::is_using_datapack() const { return using_datapack; }
+bool ProjectSettings::is_using_datapack() { return data->using_datapack; }
 
-bool ProjectSettings::is_project_loaded() const { return project_loaded; }
+bool ProjectSettings::is_project_loaded() { return data->project_loaded; }
 
-Vector<String> ProjectSettings::get_changed_settings() const
+Vector<String> ProjectSettings::get_changed_settings()
 {
 	Vector<String> arr;
-	for (const StringName& setting : changed_settings) {
+	for (const StringName& setting : data->changed_settings) {
 		arr.push_back(setting);
 	}
 	return arr;
 }
 
-bool ProjectSettings::check_changed_settings_in_group(const String& p_setting_prefix) const
+bool ProjectSettings::check_changed_settings_in_group(const String& p_setting_prefix)
 {
-	for (const StringName& setting : changed_settings) {
+	for (const StringName& setting : data->changed_settings) {
 		if (String(setting).begins_with(p_setting_prefix)) {
 			return true;
 		}
@@ -817,98 +815,98 @@ bool ProjectSettings::check_changed_settings_in_group(const String& p_setting_pr
 	return false;
 }
 
-String ProjectSettings::get_global_class_list_path() const
+String ProjectSettings::get_global_class_list_path()
 {
 	return get_project_data_path().path_join("global_script_class_cache.cfg");
 }
 
-bool ProjectSettings::has_custom_feature(const String& p_feature) const
+bool ProjectSettings::has_custom_feature(const String& p_feature)
 {
-	return custom_features.has(p_feature);
+	return data->custom_features.has(p_feature);
 }
 
-const HashMap<StringName, ProjectSettings::AutoloadInfo>& ProjectSettings::get_autoload_list() const
+const HashMap<StringName, ProjectSettings::AutoloadInfo>& ProjectSettings::get_autoload_list()
 {
-	return autoloads;
+	return data->autoloads;
 }
 
 void ProjectSettings::add_autoload(const AutoloadInfo& p_autoload, bool p_front_insert)
 {
 	ERR_FAIL_COND_MSG(p_autoload.name == StringName(), "Trying to add autoload with no name.");
 	if (p_front_insert) {
-		if (autoloads.has(p_autoload.name)) {
-			autoloads.erase(p_autoload.name);
+		if (data->autoloads.has(p_autoload.name)) {
+			data->autoloads.erase(p_autoload.name);
 		}
-		autoloads.insert(p_autoload.name, p_autoload, true);
+		data->autoloads.insert(p_autoload.name, p_autoload, true);
 	}
 	else {
-		autoloads[p_autoload.name] = p_autoload;
+		data->autoloads[p_autoload.name] = p_autoload;
 	}
 }
 
 void ProjectSettings::remove_autoload(const StringName& p_autoload)
 {
-	ERR_FAIL_COND_MSG(!autoloads.has(p_autoload), "Trying to remove non-existent autoload.");
-	autoloads.erase(p_autoload);
+	ERR_FAIL_COND_MSG(!data->autoloads.has(p_autoload), "Trying to remove non-existent autoload.");
+	data->autoloads.erase(p_autoload);
 }
 
-bool ProjectSettings::has_autoload(const StringName& p_autoload) const
+bool ProjectSettings::has_autoload(const StringName& p_autoload)
 {
-	return autoloads.has(p_autoload);
+	return data->autoloads.has(p_autoload);
 }
 
-ProjectSettings::AutoloadInfo ProjectSettings::get_autoload(const StringName& p_name) const
+ProjectSettings::AutoloadInfo ProjectSettings::get_autoload(const StringName& p_name)
 {
 	ERR_FAIL_COND_V_MSG(
-		!autoloads.has(p_name), AutoloadInfo(), "Trying to get non-existent autoload.");
-	return autoloads[p_name];
+		!data->autoloads.has(p_name), AutoloadInfo(), "Trying to get non-existent autoload.");
+	return data->autoloads[p_name];
 }
 
 void ProjectSettings::fix_autoload_paths()
 {
-	for (KeyValue<StringName, AutoloadInfo>& kv : autoloads) {
+	for (KeyValue<StringName, AutoloadInfo>& kv : data->autoloads) {
 		kv.value.path = ResourceUID::ensure_path(kv.value.path);
 	}
 }
 
-const HashMap<StringName, String>& ProjectSettings::get_global_groups_list() const
+const HashMap<StringName, String>& ProjectSettings::get_global_groups_list()
 {
-	return global_groups;
+	return data->global_groups;
 }
 
 void ProjectSettings::add_global_group(const StringName& p_name, const String& p_description)
 {
 	ERR_FAIL_COND_MSG(p_name == StringName(), "Trying to add global group with no name.");
-	global_groups[p_name] = p_description;
+	data->global_groups[p_name] = p_description;
 }
 
 void ProjectSettings::remove_global_group(const StringName& p_name)
 {
-	ERR_FAIL_COND_MSG(!global_groups.has(p_name), "Trying to remove non-existent global group.");
-	global_groups.erase(p_name);
+	ERR_FAIL_COND_MSG(!data->global_groups.has(p_name), "Trying to remove non-existent global group.");
+	data->global_groups.erase(p_name);
 }
 
-bool ProjectSettings::has_global_group(const StringName& p_name) const
+bool ProjectSettings::has_global_group(const StringName& p_name)
 {
-	return global_groups.has(p_name);
+	return data->global_groups.has(p_name);
 }
 
 void ProjectSettings::remove_scene_groups_cache(const StringName& p_path)
 {
-	scene_groups_cache.erase(p_path);
+	data->scene_groups_cache.erase(p_path);
 }
 
 void ProjectSettings::add_scene_groups_cache(
 	const StringName& p_path, const HashSet<StringName>& p_cache)
 {
-	scene_groups_cache[p_path] = p_cache;
+	data->scene_groups_cache[p_path] = p_cache;
 }
 
 void ProjectSettings::save_scene_groups_cache()
 {
 	Ref<ConfigFile> cf;
 	cf.instantiate();
-	for (const KeyValue<StringName, HashSet<StringName>>& E : scene_groups_cache) {
+	for (const KeyValue<StringName, HashSet<StringName>>& E : data->scene_groups_cache) {
 		if (E.value.is_empty()) {
 			continue;
 		}
@@ -916,26 +914,22 @@ void ProjectSettings::save_scene_groups_cache()
 	cf->save(get_scene_groups_cache_path());
 }
 
-String ProjectSettings::get_scene_groups_cache_path() const
+String ProjectSettings::get_scene_groups_cache_path()
 {
 	return get_project_data_path().path_join("scene_groups_cache.cfg");
 }
 
 const HashMap<StringName, HashSet<StringName>>& ProjectSettings::get_scene_groups_cache() const
 {
-	return scene_groups_cache;
+	return data->scene_groups_cache;
 }
 
-bool ProjectSettings::has_editor_setting_override(const String& p_setting) const
+bool ProjectSettings::has_editor_setting_override(const String& p_setting)
 {
 	return has_setting(EDITOR_SETTING_OVERRIDE_PREFIX + p_setting);
 }
 
-bool ProjectSettings::has_setting(const String& p_var) const { return true; }
-
-ProjectSettings::ProjectSettings() { singleton = this; }
-
-ProjectSettings::~ProjectSettings() {}
+bool ProjectSettings::has_setting(const String& p_var) { return true; }
 
 void ProjectSettings::load_scene_groups_cache() {}
 
@@ -944,8 +938,29 @@ void ProjectSettings::_convert_to_last_version(int p_from_version) {}
 void ProjectSettings::refresh_global_class_list() {}
 
 void ProjectSettings::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const StringName& p_function, int p_idx, List<String>* r_options)
 {
 }
+
+bool ProjectSettings::is_initialized()
+{
+	return data != nullptr;
+}
+
+void ProjectSettings::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+		_add_builtin_input_map();
+	}
+}
+
+void ProjectSettings::finalize()
+{
+	memdelete(data);
+	data = nullptr;
+}
+
+void ProjectSettings::_add_builtin_input_map() {}
 
 

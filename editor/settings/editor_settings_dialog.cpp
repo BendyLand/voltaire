@@ -83,7 +83,7 @@ void EditorSettingsDialog::cancel_pressed()
 
 bool EditorSettingsDialog::_is_in_project_manager() const
 {
-	return !ProjectSettings::get_singleton()->is_project_loaded();
+	return !ProjectSettings::is_project_loaded();
 }
 
 void EditorSettingsDialog::_tabs_tab_changed(int p_tab)

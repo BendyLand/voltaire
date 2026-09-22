@@ -511,7 +511,7 @@ Error OS_Windows::open_dynamic_library(const String &p_path, void *&p_library_ha
 	DLL_DIRECTORY_COOKIE cookie = nullptr;
 
 	String dll_path = fix_path(load_path);
-	String dll_dir = fix_path(ProjectSettings::get_singleton()->globalize_path(load_path.get_base_dir()));
+	String dll_dir = fix_path(ProjectSettings::globalize_path(load_path.get_base_dir()));
 	if (p_data != nullptr && p_data->also_set_library_path) {
 		cookie = AddDllDirectory((LPCWSTR)(dll_dir.utf16().get_data()));
 	}

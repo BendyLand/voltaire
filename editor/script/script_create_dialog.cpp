@@ -106,7 +106,7 @@ void ScriptCreateDialog::_path_changed(const String& p_path)
 
 	// Check if file exists.
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	String p = ProjectSettings::get_singleton()->localize_path(p_path.strip_edges());
+	String p = ProjectSettings::localize_path(p_path.strip_edges());
 	if (da->file_exists(p)) {
 		is_new_script_created = false;
 	}

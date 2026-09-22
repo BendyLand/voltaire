@@ -111,7 +111,7 @@ Ref<Resource> ResourceFormatLoaderText::load(const String& p_path, const String&
 		break;
 	}
 	loader.use_sub_threads = p_use_sub_threads;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(path);
+	loader.local_path = ProjectSettings::localize_path(path);
 	loader.progress = r_progress;
 	loader.res_path = loader.local_path;
 	loader.open(f);
@@ -165,7 +165,7 @@ void ResourceFormatLoaderText::get_classes_used(
 	}
 
 	ResourceLoaderText loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	loader.open(f);
 	loader.get_classes_used(r_classes);
@@ -189,7 +189,7 @@ String ResourceFormatLoaderText::get_resource_type(const String& p_path) const
 	}
 
 	ResourceLoaderText loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	String r = loader.recognize(f);
 	return r;
@@ -209,7 +209,7 @@ String ResourceFormatLoaderText::get_resource_script_class(const String& p_path)
 	}
 
 	ResourceLoaderText loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	return loader.recognize_script_class(f);
 }
@@ -227,7 +227,7 @@ ResourceUID::ID ResourceFormatLoaderText::get_resource_uid(const String& p_path)
 	}
 
 	ResourceLoaderText loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	return loader.get_uid(f);
 }
@@ -243,7 +243,7 @@ void ResourceFormatLoaderText::get_dependencies(
 	}
 
 	ResourceLoaderText loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	loader.get_dependencies(f, p_dependencies, p_add_types);
 }
@@ -259,7 +259,7 @@ Error ResourceFormatLoaderText::rename_dependencies(
 		}
 
 		ResourceLoaderText loader;
-		loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+		loader.local_path = ProjectSettings::localize_path(p_path);
 		loader.res_path = loader.local_path;
 		err = loader.rename_dependencies(f, p_path, p_map);
 	}
@@ -338,7 +338,7 @@ Error ResourceFormatSaverText::set_uid(const String& p_path, ResourceUID::ID p_u
 		return ERR_FILE_UNRECOGNIZED;
 	}
 
-	String local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	String local_path = ProjectSettings::localize_path(p_path);
 	Error err = OK;
 	{
 		Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ);

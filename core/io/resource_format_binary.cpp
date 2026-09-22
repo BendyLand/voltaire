@@ -180,7 +180,7 @@ Error ResourceLoaderBinary::load()
 
 		if (!path.contains("://") && path.is_relative_path()) {
 			// path is relative to file being loaded, so convert to a resource path
-			path = ProjectSettings::get_singleton()->localize_path(
+			path = ProjectSettings::localize_path(
 				path.get_base_dir().path_join(external_resources[i].path));
 		}
 
@@ -687,7 +687,7 @@ Ref<Resource> ResourceFormatLoaderBinary::load(const String& p_path, const Strin
 	loader.use_sub_threads = p_use_sub_threads;
 	loader.progress = r_progress;
 	String path = !p_original_path.is_empty() ? p_original_path : p_path;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(path);
+	loader.local_path = ProjectSettings::localize_path(path);
 	loader.res_path = loader.local_path;
 	loader.open(f);
 
@@ -731,7 +731,7 @@ void ResourceFormatLoaderBinary::get_dependencies(
 	ERR_FAIL_COND_MSG(f.is_null(), vformat("Cannot open file '%s'.", p_path));
 
 	ResourceLoaderBinary loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	loader.get_dependencies(f, p_dependencies, p_add_types);
 }
@@ -814,7 +814,7 @@ Error ResourceFormatLoaderBinary::rename_dependencies(
 			err != OK, ERR_FILE_CANT_OPEN, vformat("Cannot open file '%s'.", p_path));
 
 		ResourceLoaderBinary loader;
-		loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+		loader.local_path = ProjectSettings::localize_path(p_path);
 		loader.res_path = loader.local_path;
 		loader.remaps = p_map;
 		loader.open(f);
@@ -964,7 +964,7 @@ void ResourceFormatLoaderBinary::get_classes_used(
 	ERR_FAIL_COND_MSG(f.is_null(), vformat("Cannot open file '%s'.", p_path));
 
 	ResourceLoaderBinary loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	loader.get_classes_used(f, r_classes);
 
@@ -994,7 +994,7 @@ String ResourceFormatLoaderBinary::get_resource_type(const String& p_path) const
 	}
 
 	ResourceLoaderBinary loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	String r = loader.recognize(f);
 	return r;
@@ -1008,7 +1008,7 @@ String ResourceFormatLoaderBinary::get_resource_script_class(const String& p_pat
 	}
 
 	ResourceLoaderBinary loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	return loader.recognize_script_class(f);
 }
@@ -1022,7 +1022,7 @@ ResourceUID::ID ResourceFormatLoaderBinary::get_resource_uid(const String& p_pat
 	}
 
 	ResourceLoaderBinary loader;
-	loader.local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	loader.local_path = ProjectSettings::localize_path(p_path);
 	loader.res_path = loader.local_path;
 	loader.open(f, true);
 	if (loader.error != OK) {
@@ -1032,10 +1032,6 @@ ResourceUID::ID ResourceFormatLoaderBinary::get_resource_uid(const String& p_pat
 }
 
 bool ResourceFormatLoaderBinary::has_custom_uid_support() const { return true; }
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
 
 void ResourceFormatSaverBinaryInstance::_pad_buffer(Ref<FileAccess> r_file, int p_bytes)
 {
@@ -1112,7 +1108,7 @@ Error ResourceFormatSaverBinaryInstance::save(
 	}
 
 	local_path = p_path.get_base_dir();
-	path = ProjectSettings::get_singleton()->localize_path(p_path);
+	path = ProjectSettings::localize_path(p_path);
 
 	if (!(p_flags & ResourceSaver::FLAG_COMPRESS)) {
 		// save header compressed
@@ -1390,14 +1386,14 @@ Error ResourceFormatSaverBinaryInstance::set_uid(const String& p_path, ResourceU
 Error ResourceFormatSaverBinary::save(
 	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
-	String local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	String local_path = ProjectSettings::localize_path(p_path);
 	ResourceFormatSaverBinaryInstance saver;
 	return saver.save(local_path, p_resource, p_flags);
 }
 
 Error ResourceFormatSaverBinary::set_uid(const String& p_path, ResourceUID::ID p_uid)
 {
-	String local_path = ProjectSettings::get_singleton()->localize_path(p_path);
+	String local_path = ProjectSettings::localize_path(p_path);
 	ResourceFormatSaverBinaryInstance saver;
 	return saver.set_uid(local_path, p_uid);
 }

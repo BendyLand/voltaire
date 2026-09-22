@@ -108,7 +108,7 @@ int EditorSceneTabs::get_current_tab() const { return scene_tabs->get_current_ta
 
 void EditorSceneTabs::_project_settings_changed()
 {
-	if (ProjectSettings::get_singleton()->check_changed_settings_in_group(
+	if (ProjectSettings::check_changed_settings_in_group(
 			"application/run/main_scene")) {
 		update_scene_tabs();
 	}

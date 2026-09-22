@@ -150,7 +150,6 @@
 
 // Initialized in setup()
 static Engine* engine = nullptr;
-static ProjectSettings* globals = nullptr;
 static Input* input = nullptr;
 static InputMap* input_map = nullptr;
 static TranslationServer* translation_server = nullptr;
@@ -879,8 +878,6 @@ Error Main::test_setup()
 
 	packed_data = memnew(PackedData);
 
-	globals = memnew(ProjectSettings);
-
 	register_core_settings(); // Here globals are present.
 
 	translation_server = memnew(TranslationServer);
@@ -1078,7 +1075,6 @@ void Main::test_cleanup()
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -1188,7 +1184,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	MAIN_PRINT("Main: Initialize Globals");
 
 	input_map = memnew(InputMap);
-	globals = memnew(ProjectSettings);
+
+	// initialize internal ProjectSettings::Data struct
+	ProjectSettings::initialize();
 
 	register_core_settings(); // here globals are present
 
@@ -2398,7 +2396,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif // defined(DEBUG_ENABLED) || defined (TOOLS_ENABLED)
 
 	OS::get_singleton()->_in_editor = editor;
-	if (globals->setup(project_path, main_pack, false, editor) == OK) {
+	if (ProjectSettings::setup(project_path, main_pack, false, editor) == OK) {
 #ifdef TOOLS_ENABLED
 		found_project = true;
 #endif
@@ -2561,9 +2559,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		ResourceUID::get_singleton()->enable_reverse_cache();
 	}
 	ResourceUID::get_singleton()->load_from_cache(true);	// Load UUIDs from cache.
-	ProjectSettings::get_singleton()->fix_autoload_paths(); // Handles autoloads saved as UID.
+	ProjectSettings::fix_autoload_paths(); // Handles autoloads saved as UID.
 
-	if (ProjectSettings::get_singleton()->has_custom_feature("dedicated_server")) {
+	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
 		display_driver = NULL_DISPLAY_DRIVER;
 	}
@@ -2917,7 +2915,6 @@ error:
 	memdelete(performance);
 	memdelete(input_map);
 	memdelete(translation_server);
-	memdelete(globals);
 	memdelete(packed_data);
 
 	unregister_core_driver_types();
@@ -2926,6 +2923,8 @@ error:
 	memdelete(engine);
 
 	unregister_core_types();
+
+	ProjectSettings::finalize();
 
 	OS::get_singleton()->_cmdline.clear();
 	OS::get_singleton()->_user_args.clear();
@@ -2977,7 +2976,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
-			if (ProjectSettings::get_singleton()->get_resource_path() ==
+			if (ProjectSettings::get_resource_path() ==
 				OS::get_singleton()->get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
 						  "project. This is not allowed, since editor files will mix with project "
@@ -4299,7 +4298,6 @@ void Main::cleanup(bool p_force)
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	if (OS::get_singleton()->is_restart_on_exit_set()) {
 		// attempt to restart with arguments

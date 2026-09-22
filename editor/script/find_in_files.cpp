@@ -232,7 +232,7 @@ void FindInFilesSearch::_scan_dir(
 		// Ignore special directories (such as those beginning with . and the project data
 		// directory).
 		String project_data_dir_name =
-			ProjectSettings::get_singleton()->get_project_data_dir_name();
+			ProjectSettings::get_project_data_dir_name();
 		if (file.begins_with(".") || file == project_data_dir_name) {
 			continue;
 		}

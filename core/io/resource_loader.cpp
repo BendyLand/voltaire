@@ -227,7 +227,7 @@ String ResourceLoader::_validate_local_path(const String& p_path)
 		return ("res://" + p_path).simplify_path();
 	}
 	else {
-		return ProjectSettings::get_singleton()->localize_path(p_path);
+		return ProjectSettings::localize_path(p_path);
 	}
 }
 

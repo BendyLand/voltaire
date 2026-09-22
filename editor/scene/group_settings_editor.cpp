@@ -56,7 +56,7 @@ String GroupSettingsEditor::_check_new_group_name(const String& p_name)
 		return TTR("Invalid group name. It cannot be empty.");
 	}
 
-	if (ProjectSettings::get_singleton()->has_global_group(p_name)) {
+	if (ProjectSettings::has_global_group(p_name)) {
 		return vformat(TTR("A group with the name '%s' already exists."), p_name);
 	}
 

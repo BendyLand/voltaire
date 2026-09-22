@@ -407,7 +407,7 @@ Vector<PluginConfigAndroid> EditorExportPlatformAndroid::get_plugins()
 	Vector<PluginConfigAndroid> loaded_plugins;
 
 	String plugins_dir =
-		ProjectSettings::get_singleton()->get_resource_path().path_join("android/plugins");
+		ProjectSettings::get_resource_path().path_join("android/plugins");
 
 	// Add the prebuilt plugins
 	loaded_plugins.append_array(PluginConfigAndroid::get_prebuilt_plugins(plugins_dir));
@@ -912,7 +912,7 @@ bool _validate_dotnet_tfm(const String& required_tfm, String& r_error)
 {
 	String assembly_name = Path::get_csharp_project_name();
 	String project_path =
-		ProjectSettings::get_singleton()->globalize_path("res://" + assembly_name + ".csproj");
+		ProjectSettings::globalize_path("res://" + assembly_name + ".csproj");
 
 	if (!FileAccess::exists(project_path)) {
 		return true;
@@ -1045,13 +1045,13 @@ String EditorExportPlatformAndroid::_resolve_export_plugin_android_library_path(
 	if (!p_android_library_path.is_empty()) {
 		if (p_android_library_path.is_absolute_path()) {
 			absolute_path =
-				ProjectSettings::get_singleton()->globalize_path(p_android_library_path);
+				ProjectSettings::globalize_path(p_android_library_path);
 		}
 		else {
 			const String export_plugin_absolute_path =
 				String("res://addons/").path_join(p_android_library_path);
 			absolute_path =
-				ProjectSettings::get_singleton()->globalize_path(export_plugin_absolute_path);
+				ProjectSettings::globalize_path(export_plugin_absolute_path);
 		}
 	}
 	return absolute_path;
