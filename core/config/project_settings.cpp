@@ -961,4 +961,6 @@ void ProjectSettings::finalize()
 	data = nullptr;
 }
 
+void ProjectSettings::_add_builtin_input_map() {}
+
 

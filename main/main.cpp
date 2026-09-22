@@ -2924,6 +2924,8 @@ error:
 
 	unregister_core_types();
 
+	ProjectSettings::finalize();
+
 	OS::get_singleton()->_cmdline.clear();
 	OS::get_singleton()->_user_args.clear();
 

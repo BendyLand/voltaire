@@ -389,7 +389,7 @@ bool EditorNode::_is_project_data_missing()
 	}
 
 	const String dirs[] = {EditorPaths::get_singleton()->get_project_settings_dir(),
-		ProjectSettings::get_singleton()->get_imported_files_path()};
+		ProjectSettings::get_imported_files_path()};
 	for (const String& dir : dirs) {
 		if (!da->dir_exists(dir)) {
 			return true;
@@ -402,8 +402,8 @@ void EditorNode::_remove_lock_file() { OS::get_singleton()->remove_lock_file(); 
 
 void EditorNode::_reload_project_settings()
 {
-	ProjectSettings::get_singleton()->setup(
-		ProjectSettings::get_singleton()->get_resource_path(), String(), true, true);
+	ProjectSettings::setup(
+		ProjectSettings::get_resource_path(), String(), true, true);
 }
 
 void EditorNode::_vp_resized() {}
@@ -561,7 +561,7 @@ void EditorNode::_android_export_preset_selected(int p_index)
 void EditorNode::_android_explore_build_templates()
 {
 	OS::get_singleton()->shell_show_in_file_manager(
-		ProjectSettings::get_singleton()->globalize_path(
+		ProjectSettings::globalize_path(
 			export_template_manager->get_android_build_directory(android_export_preset)
 				.get_base_dir()),
 		true);

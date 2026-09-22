@@ -350,9 +350,9 @@ Error EditorExportPlatformAppleEmbedded::_export_additional_assets(
 			ERR_FAIL_COND_V(err != OK, err);
 		}
 		else if (asset.is_absolute_path() &&
-				   ProjectSettings::get_singleton()->localize_path(asset).begins_with("res://")) {
+				   ProjectSettings::localize_path(asset).begins_with("res://")) {
 			Error err = _copy_asset(p_preset, p_out_dir,
-				ProjectSettings::get_singleton()->localize_path(asset), nullptr, p_is_framework,
+				ProjectSettings::localize_path(asset), nullptr, p_is_framework,
 				p_should_embed, r_exported_assets);
 			ERR_FAIL_COND_V(err != OK, err);
 		}

@@ -1267,7 +1267,7 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 			Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 			err = dir_access->rename(renamed_path, path);
 
-	ERR_FAIL_COND_V_MSG(err != OK, err,
+			ERR_FAIL_COND_V_MSG(err != OK, err,
 				"Could not rename \"" + renamed_path + "\" back to its original name: \"" + path +
 					"\"");
 			return FAILED;
@@ -1423,6 +1423,24 @@ bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) 
 	return false;
 }
 
-void OS_LinuxBSD::run() {}
+void OS_LinuxBSD::run()
+{
+	if (!main_loop) {
+		return;
+	}
+
+	main_loop->initialize();
+
+	while (true) {
+		if (DisplayServer::get_singleton()) {
+			DisplayServer::get_singleton()->process_events();
+		}
+		if (Main::iteration()) {
+			break;
+		}
+	}
+
+	main_loop->finalize();
+}
 
 
