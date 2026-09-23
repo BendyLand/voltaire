@@ -31,8 +31,6 @@
 #include "framebuffer_cache_rd.h"
 #include "servers/rendering/rendering_device_binds.h"
 
-FramebufferCacheRD* FramebufferCacheRD::singleton = nullptr;
-
 void FramebufferCacheRD::_invalidate(Cache* p_cache)
 {
 	if (p_cache->prev) {
@@ -41,34 +39,20 @@ void FramebufferCacheRD::_invalidate(Cache* p_cache)
 	else {
 		// At beginning of table
 		uint32_t table_idx = p_cache->hash % HASH_TABLE_SIZE;
-		hash_table[table_idx] = p_cache->next;
+		data->hash_table[table_idx] = p_cache->next;
 	}
 
 	if (p_cache->next) {
 		p_cache->next->prev = p_cache->prev;
 	}
 
-	cache_allocator.free(p_cache);
-	cache_instances_used--;
+	data->cache_allocator.free(p_cache);
+	data->cache_instances_used--;
 }
 
 void FramebufferCacheRD::_framebuffer_invalidation_callback(void* p_userdata)
 {
-	singleton->_invalidate(reinterpret_cast<Cache*>(p_userdata));
-}
-
-FramebufferCacheRD::FramebufferCacheRD()
-{
-	ERR_FAIL_COND(singleton != nullptr);
-	singleton = this;
-}
-
-FramebufferCacheRD::~FramebufferCacheRD()
-{
-	if (cache_instances_used > 0) {
-		ERR_PRINT("At exit: " + itos(cache_instances_used) +
-				  " framebuffer cache instance(s) still in use.");
-	}
+	_invalidate(reinterpret_cast<Cache*>(p_userdata));
 }
 
 

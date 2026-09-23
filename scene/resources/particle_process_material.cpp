@@ -445,7 +445,7 @@ Shader::Mode ParticleProcessMaterial::get_shader_mode() const { return Shader::M
 
 ParticleProcessMaterial::ParticleProcessMaterial() : element(this)
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 
 	set_direction(Vector3(1, 0, 0));
 	set_spread(45);
@@ -530,18 +530,18 @@ ParticleProcessMaterial::ParticleProcessMaterial() : element(this)
 
 ParticleProcessMaterial::~ParticleProcessMaterial()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	MutexLock lock(shader_map_mutex);
 
 	if (shader_map.has(current_key)) {
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::get_singleton()->free_rid(shader_map[current_key].shader);
+			RS::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 
-		RS::get_singleton()->material_set_shader(_get_material(), RID());
+		RS::material_set_shader(_get_material(), RID());
 	}
 }
 

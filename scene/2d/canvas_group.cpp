@@ -38,7 +38,7 @@ real_t CanvasGroup::get_clear_margin() const { return clear_margin; }
 void CanvasGroup::set_use_mipmaps(bool p_use_mipmaps)
 {
 	use_mipmaps = p_use_mipmaps;
-	RS::get_singleton()->canvas_item_set_canvas_group_mode(get_canvas_item(),
+	RS::canvas_item_set_canvas_group_mode(get_canvas_item(),
 		RSE::CANVAS_GROUP_MODE_TRANSPARENT, clear_margin, true, fit_margin, use_mipmaps);
 }
 
@@ -51,7 +51,7 @@ CanvasGroup::CanvasGroup()
 
 CanvasGroup::~CanvasGroup()
 {
-	RS::get_singleton()->canvas_item_set_canvas_group_mode(
+	RS::canvas_item_set_canvas_group_mode(
 		get_canvas_item(), RSE::CANVAS_GROUP_MODE_DISABLED);
 }
 

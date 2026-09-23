@@ -71,11 +71,10 @@ public:
 			// down by tweaking MAX_EXTRA_BUFFERS for this buffer.");
 		}
 
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
 
 		for (RID buffer : buffers) {
 			if (buffer.is_valid()) {
-				rd->free_rid(buffer);
+				RD::free_rid(buffer);
 			}
 		}
 
@@ -86,8 +85,6 @@ public:
 	{
 		DEV_ASSERT(curr_idx == 0u && "This function can only be called after reset and before "
 									 "being upload_and_advance again!");
-
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
 
 		uint32_t elem_count = buffers.size();
 
@@ -109,7 +106,7 @@ public:
 		while (elem_count > max_extra_buffers) {
 			--elem_count;
 			if (buffers[elem_count].is_valid()) {
-				rd->free_rid(buffers[elem_count]);
+				RD::free_rid(buffers[elem_count]);
 			}
 			buffers.remove_at(elem_count);
 		}
@@ -304,17 +301,16 @@ class MultiUmaBuffer : public MultiUmaBufferBase
 
 	void push()
 	{
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
 		for (uint32_t i = 0u; i < NUM_BUFFERS; ++i) {
 			const BufferInfo& info = buffer_info[i];
 			RID buffer;
 			switch (info.type) {
 			case MultiUmaBufferType::STORAGE:
-				buffer = rd->storage_buffer_create(
+				buffer = RD::storage_buffer_create(
 					info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
 				break;
 			case MultiUmaBufferType::VERTEX:
-				buffer = rd->vertex_buffer_create(
+				buffer = RD::vertex_buffer_create(
 					info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
 				break;
 			}
@@ -372,8 +368,7 @@ public:
 	 */
 	bool prepare_for_map(bool p_append)
 	{
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
-		const uint64_t frames_drawn = rd->get_frames_drawn();
+		const uint64_t frames_drawn = RD::get_frames_drawn();
 
 		if (last_frame_mapped == frames_drawn) {
 			if (!p_append) {
@@ -411,8 +406,7 @@ public:
 				   "Forgot to prepare_for_upload first! Or called get_for_upload/upload() twice.");
 		can_upload[p_idx] = false;
 #endif
-		RenderingDevice* rd = RD::RenderingDevice::get_singleton();
-		return rd->buffer_persistent_map_advance(buffers[curr_idx * NUM_BUFFERS + p_idx]);
+		return RD::buffer_persistent_map_advance(buffers[curr_idx * NUM_BUFFERS + p_idx]);
 	}
 
 	RID get_for_upload(uint32_t p_idx)

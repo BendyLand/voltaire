@@ -600,7 +600,7 @@ public:
 		Particles* particles = particles_owner.get_or_null(p_particles);
 		ERR_FAIL_NULL_V(particles, RID());
 		if (particles->particles_transforms_buffer_uniform_set.is_null() ||
-			!RD::get_singleton()->uniform_set_is_valid(
+			!RD::uniform_set_is_valid(
 				particles->particles_transforms_buffer_uniform_set)) {
 			_particles_update_buffers(particles);
 			Vector<RD::Uniform> uniforms;
@@ -614,7 +614,7 @@ public:
 			}
 
 			particles->particles_transforms_buffer_uniform_set =
-				RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+				RD::uniform_set_create(uniforms, p_shader, p_set);
 		}
 
 		return particles->particles_transforms_buffer_uniform_set;

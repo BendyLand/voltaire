@@ -88,7 +88,7 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	}
 
 	if (!points.is_empty()) {
-		RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
+		RS::canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
 	}
 
 	if (beat_size) {

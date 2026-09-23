@@ -89,7 +89,6 @@ float StyleBoxLine::get_grow_begin() const { return grow_begin; }
 
 void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 {
-	RenderingServer* vs = RenderingServer::get_singleton();
 	Rect2i r = p_rect;
 
 	if (vertical) {
@@ -103,7 +102,7 @@ void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 		r.size.y = thickness;
 	}
 
-	vs->canvas_item_add_rect(p_canvas_item, r, color);
+	RS::canvas_item_add_rect(p_canvas_item, r, color);
 }
 
 

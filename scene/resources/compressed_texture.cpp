@@ -96,7 +96,7 @@ Error CompressedTexture2D::_load_data(const String& p_path, int& r_width, int& r
 void CompressedTexture2D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -145,7 +145,7 @@ int CompressedTexture2D::get_height() const { return h; }
 RID CompressedTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_2d_placeholder_create();
+		texture = RS::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -156,7 +156,7 @@ void CompressedTexture2D::draw(
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, Size2(w, h)), texture, false, p_modulate, p_transpose);
 }
 
@@ -166,7 +166,7 @@ void CompressedTexture2D::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -176,7 +176,7 @@ void CompressedTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rec
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -185,7 +185,7 @@ bool CompressedTexture2D::has_alpha() const { return false; }
 Ref<Image> CompressedTexture2D::get_image() const
 {
 	if (texture.is_valid()) {
-		return RS::get_singleton()->texture_2d_get(texture);
+		return RS::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -374,15 +374,15 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 CompressedTexture2D::~CompressedTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 
 void CompressedTexture3D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -448,7 +448,7 @@ bool CompressedTexture3D::has_mipmaps() const { return mipmaps; }
 RID CompressedTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_3d_placeholder_create();
+		texture = RS::texture_3d_placeholder_create();
 	}
 	return texture;
 }
@@ -456,7 +456,7 @@ RID CompressedTexture3D::get_rid() const
 Vector<Ref<Image>> CompressedTexture3D::get_data() const
 {
 	if (texture.is_valid()) {
-		return RS::get_singleton()->texture_3d_get(texture);
+		return RS::texture_3d_get(texture);
 	}
 	else {
 		return Vector<Ref<Image>>();
@@ -483,15 +483,15 @@ void CompressedTexture3D::reload_from_file()
 CompressedTexture3D::~CompressedTexture3D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 
 void CompressedTextureLayered::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -564,7 +564,7 @@ TextureLayered::LayeredType CompressedTextureLayered::get_layered_type() const
 RID CompressedTextureLayered::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_2d_layered_placeholder_create(
+		texture = RS::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return texture;
@@ -574,7 +574,7 @@ Ref<Image> CompressedTextureLayered::get_layer_data(int p_layer) const
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_INDEX_V(p_layer, get_layers(), Ref<Image>());
-		return RS::get_singleton()->texture_2d_layer_get(texture, p_layer);
+		return RS::texture_2d_layer_get(texture, p_layer);
 	}
 	else {
 		return Ref<Image>();
@@ -601,8 +601,8 @@ CompressedTextureLayered::CompressedTextureLayered(LayeredType p_type) { layered
 CompressedTextureLayered::~CompressedTextureLayered()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 

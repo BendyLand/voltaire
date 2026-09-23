@@ -63,7 +63,7 @@ void RenderSceneBuffersRD::update_sizes(NamedTexture& p_named_texture)
 void RenderSceneBuffersRD::free_named_texture(NamedTexture& p_named_texture)
 {
 	if (p_named_texture.texture.is_valid()) {
-		RD::get_singleton()->free_rid(p_named_texture.texture);
+		RD::free_rid(p_named_texture.texture);
 	}
 	p_named_texture.texture = RID();
 	p_named_texture.slices.clear(); // slices should be freed automatically as dependents...
@@ -109,7 +109,7 @@ void RenderSceneBuffersRD::cleanup()
 	// Clear weight_buffer / blur textures.
 	for (WeightBuffers& weight_buffer : weight_buffers) {
 		if (weight_buffer.weight.is_valid()) {
-			RD::get_singleton()->free_rid(weight_buffer.weight);
+			RD::free_rid(weight_buffer.weight);
 			weight_buffer.weight = RID();
 		}
 	}
@@ -253,7 +253,7 @@ void RenderSceneBuffersRD::ensure_mfx(RendererRD::MFXSpatialEffect* p_effect)
 	}
 
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	RenderingDevice* rd = RD::get_singleton();
+	RenderingDevice* rd = RD::data;
 
 	// Determine the output format of the render target.
 	RID dest = texture_storage->render_target_get_rd_texture(render_target);
@@ -491,7 +491,7 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 			}
 
 			// create weight texture
-			weight_buffers[i].weight = RD::get_singleton()->texture_create(tf, RD::TextureView());
+			weight_buffers[i].weight = RD::texture_create(tf, RD::TextureView());
 
 			// create frame buffer
 			Vector<RID> fb;
@@ -499,7 +499,7 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 				fb.push_back(texture);
 			}
 			fb.push_back(weight_buffers[i].weight);
-			weight_buffers[i].fb = RD::get_singleton()->framebuffer_create(fb);
+			weight_buffers[i].fb = RD::framebuffer_create(fb);
 
 			if (i == 1) {
 				// next 2 are half size
@@ -784,7 +784,7 @@ uint32_t RenderSceneBuffersRD::get_color_usage_bits(bool p_resolve, bool p_msaa,
 
 RD::DataFormat RenderSceneBuffersRD::get_depth_format(bool p_resolve, bool p_msaa, bool p_storage)
 {
-	if (p_resolve && (p_storage || !RenderingDevice::get_singleton()->has_feature(
+	if (p_resolve && (p_storage || !RenderingDevice::has_feature(
 									   RD::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE))) {
 		// Use R32 for resolve on Forward+ (p_storage == true), or if we don't support depth
 		// resolve.
@@ -795,7 +795,7 @@ RD::DataFormat RenderSceneBuffersRD::get_depth_format(bool p_resolve, bool p_msa
 			p_storage ? RD::DATA_FORMAT_D32_SFLOAT_S8_UINT : RD::DATA_FORMAT_D24_UNORM_S8_UINT,
 			p_storage ? RD::DATA_FORMAT_D24_UNORM_S8_UINT : RD::DATA_FORMAT_D32_SFLOAT_S8_UINT};
 
-		return RD::get_singleton()->texture_is_format_supported_for_usage(
+		return RD::texture_is_format_supported_for_usage(
 				   preferred_formats[0], get_depth_usage_bits(p_resolve, p_msaa, p_storage))
 				   ? preferred_formats[0]
 				   : preferred_formats[1];
@@ -816,7 +816,7 @@ uint32_t RenderSceneBuffersRD::get_depth_usage_bits(bool p_resolve, bool p_msaa,
 		if (p_storage) {
 			usage_bits |= RD::TEXTURE_USAGE_STORAGE_BIT;
 		}
-		else if (RenderingDevice::get_singleton()->has_feature(
+		else if (RenderingDevice::has_feature(
 					   RD::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE)) {
 			// We're able to resolve depth in (sub)passes and we make use of this in our mobile
 			// renderer.
@@ -839,7 +839,7 @@ uint32_t RenderSceneBuffersRD::get_velocity_usage_bits(bool p_resolve, bool p_ms
 
 RD::DataFormat RenderSceneBuffersRD::get_vrs_format()
 {
-	return RD::get_singleton()->vrs_get_format();
+	return RD::vrs_get_format();
 }
 
 uint32_t RenderSceneBuffersRD::get_vrs_usage_bits()

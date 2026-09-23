@@ -181,8 +181,8 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			}
 
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL &&
-				!RD::get_singleton()->has_feature(RD::SUPPORTS_METALFX_TEMPORAL)) {
-				if (RD::get_singleton()->has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
+				!RD::has_feature(RD::SUPPORTS_METALFX_TEMPORAL)) {
+				if (RD::has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
 					// Prefer MetalFX spatial if it is supported, which will be much more efficient
 					// than FSR2, as the hardware already will struggle with FSR2.
 					scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL;
@@ -199,7 +199,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			}
 
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL &&
-				!RD::get_singleton()->has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
+				!RD::has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_FSR;
 				WARN_PRINT_ONCE("MetalFX spatial upscaling is not supported by the current "
 								"renderer or hardware. Falling back to FSR scaling.");
@@ -209,10 +209,10 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 
 			// If MetalFX Temporal upscaling is supported, verify limits.
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) {
-				double min_scale = (double)RD::get_singleton()->limit_get(
+				double min_scale = (double)RD::limit_get(
 									   RD::LIMIT_METALFX_TEMPORAL_SCALER_MIN_SCALE) /
 								   1000'000.0;
-				double max_scale = (double)RD::get_singleton()->limit_get(
+				double max_scale = (double)RD::limit_get(
 									   RD::LIMIT_METALFX_TEMPORAL_SCALER_MAX_SCALE) /
 								   1000'000.0;
 				if ((double)scaling_3d_scale < min_scale || (double)scaling_3d_scale > max_scale) {
@@ -394,8 +394,8 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 		p_viewport->window_output_max_value = 1.0;
 		DisplayServerEnums::WindowID parent_window = _get_containing_window(p_viewport);
-		if (RD::get_singleton() && parent_window != DisplayServerEnums::INVALID_WINDOW_ID) {
-			RenderingContextDriver* context_driver = RD::get_singleton()->get_context_driver();
+		if (RD::data && parent_window != DisplayServerEnums::INVALID_WINDOW_ID) {
+			RenderingContextDriver* context_driver = RD::get_context_driver();
 			if (context_driver->window_get_hdr_output_enabled(parent_window)) {
 				p_viewport->window_output_max_value =
 					context_driver->window_get_output_max_linear_value(parent_window);

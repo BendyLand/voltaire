@@ -69,7 +69,7 @@ void SSEffects::allocate_last_frame_buffer(
 	if (has_texture) {
 		RID last_frame_texture = p_render_buffers->get_texture(RB_SCOPE_SSLF, RB_LAST_FRAME);
 		RD::TextureFormat texture_format =
-			RD::get_singleton()->texture_get_format(last_frame_texture);
+			RD::texture_get_format(last_frame_texture);
 		should_create = texture_format.width != (uint32_t)last_frame_size.width ||
 						texture_format.height != (uint32_t)last_frame_size.height ||
 						texture_format.mipmaps != mipmaps ||
@@ -86,7 +86,7 @@ void SSEffects::allocate_last_frame_buffer(
 			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
 				RD::TEXTURE_USAGE_CAN_COPY_TO_BIT,
 			RD::TEXTURE_SAMPLES_1, last_frame_size, view_count, mipmaps);
-		RD::get_singleton()->texture_clear(
+		RD::texture_clear(
 			last_frame_texture, Color(0, 0, 0, 0), 0, mipmaps, 0, view_count);
 	}
 }
@@ -108,8 +108,8 @@ void SSEffects::copy_internal_texture_to_last_frame(
 
 			RID dest = p_render_buffers->get_texture_slice(RB_SCOPE_SSLF, RB_LAST_FRAME, v, m);
 
-			Size2i source_size = RD::get_singleton()->texture_size(source);
-			Size2i dest_size = RD::get_singleton()->texture_size(dest);
+			Size2i source_size = RD::texture_size(source);
+			Size2i dest_size = RD::texture_size(dest);
 
 			if (m == 0 && source_size == dest_size) {
 				p_copy_effects.copy_to_rect(source, dest, Rect2i(Vector2i(), source_size), false,
@@ -143,7 +143,7 @@ SSEffects::~SSEffects()
 		ssr.resolve_shader.version_free(ssr.resolve_shader_version);
 
 		if (ssr.ubo.is_valid()) {
-			RD::get_singleton()->free_rid(ssr.ubo);
+			RD::free_rid(ssr.ubo);
 		}
 	}
 
@@ -155,8 +155,8 @@ SSEffects::~SSEffects()
 
 		ss_effects.downsample_shader.version_free(ss_effects.downsample_shader_version);
 
-		RD::get_singleton()->free_rid(ss_effects.mirror_sampler);
-		RD::get_singleton()->free_rid(ss_effects.gather_constants_buffer);
+		RD::free_rid(ss_effects.mirror_sampler);
+		RD::free_rid(ss_effects.gather_constants_buffer);
 	}
 
 	{
@@ -170,8 +170,8 @@ SSEffects::~SSEffects()
 		ssil.interleave_shader.version_free(ssil.interleave_shader_version);
 		ssil.importance_map_shader.version_free(ssil.importance_map_shader_version);
 
-		RD::get_singleton()->free_rid(ssil.importance_map_load_counter);
-		RD::get_singleton()->free_rid(ssil.projection_uniform_buffer);
+		RD::free_rid(ssil.importance_map_load_counter);
+		RD::free_rid(ssil.projection_uniform_buffer);
 	}
 
 	{
@@ -185,7 +185,7 @@ SSEffects::~SSEffects()
 		ssao.interleave_shader.version_free(ssao.interleave_shader_version);
 		ssao.importance_map_shader.version_free(ssao.importance_map_shader_version);
 
-		RD::get_singleton()->free_rid(ssao.importance_map_load_counter);
+		RD::free_rid(ssao.importance_map_load_counter);
 	}
 
 	{
@@ -249,7 +249,7 @@ void SSEffects::ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers
 			RD::DATA_FORMAT_R16G16B16A16_SFLOAT,
 			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
 				RD::TEXTURE_USAGE_CAN_COPY_TO_BIT);
-		RD::get_singleton()->texture_clear(final, Color(0, 0, 0, 0), 0, 1, 0, view_count);
+		RD::texture_clear(final, Color(0, 0, 0, 0), 0, 1, 0, view_count);
 	}
 
 	// As we're not clearing these, and render buffers will return the cached texture if it already

@@ -506,17 +506,17 @@ JNIEXPORT jstring JNICALL Java_org_godotengine_godot_GodotLib_getGlobal(JNIEnv *
 }
 
 JNIEXPORT jobjectArray JNICALL Java_org_godotengine_godot_GodotLib_getRendererInfo(JNIEnv *env, jclass clazz, jboolean p_vulkan_requirements_met) {
-	String rendering_driver_original = RenderingServer::get_singleton()->get_current_rendering_driver_name();
+	String rendering_driver_original = RenderingServer::get_current_rendering_driver_name();
 	String rendering_driver_chosen = rendering_driver_original;
-	String rendering_method = RenderingServer::get_singleton()->get_current_rendering_method();
+	String rendering_method = RenderingServer::get_current_rendering_method();
 
 #ifdef VULKAN_ENABLED
 	if (rendering_driver_original == "vulkan" && !DisplayServerAndroid::check_vulkan_global_context(p_vulkan_requirements_met)) {
 		// The Android display server only gets created after this step, so a static check must be used to check for Vulkan
 		// availability instead. If the check fails, it'll fall back to OpenGL3 accordingly if the relevant project setting
 		// is enabled. The Vulkan context created by this check will be reused by the DisplayServer afterwards.
-		rendering_driver_chosen = RenderingServer::get_singleton()->get_current_rendering_driver_name();
-		rendering_method = RenderingServer::get_singleton()->get_current_rendering_method();
+		rendering_driver_chosen = RenderingServer::get_current_rendering_driver_name();
+		rendering_method = RenderingServer::get_current_rendering_method();
 	}
 #ifndef XR_DISABLED
 	// When running in XR mode, vulkan initialization must be done by the XR module, so we ensure that the vulkan

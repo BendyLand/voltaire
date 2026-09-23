@@ -69,8 +69,8 @@ protected:
 	RendererDummy::Utilities* utilities = nullptr;
 
 public:
-	RendererCanvasRender* get_canvas() override;
-	RendererSceneRender* get_scene() override;
+	RendererCanvasRender* get_canvas();
+	RendererSceneRender* get_scene();
 
 	RendererFog* get_fog() override;
 	RendererGI* get_gi() override;
@@ -100,13 +100,13 @@ public:
 	{
 	}
 
-	bool is_opengl() override { return false; }
+	bool is_opengl() { return false; }
 
-	void gl_end_frame(bool p_swap_buffers) override {}
+	void gl_end_frame(bool p_swap_buffers) {}
 
-	void end_frame(bool p_present) override;
+	void end_frame(bool p_present);
 
-	void finalize() override {}
+	void finalize() {}
 
 	static RendererCompositor* _create_current() { return memnew(RasterizerDummy); }
 
@@ -116,13 +116,13 @@ public:
 		low_end = false;
 	}
 
-	uint64_t get_frame_number() const override { return frame; }
+	uint64_t get_frame_number() const { return frame; }
 
-	double get_frame_delta_time() const override { return delta; }
+	double get_frame_delta_time() const { return delta; }
 
-	double get_total_time() const override { return time; }
+	double get_total_time() const { return time; }
 
-	bool can_create_resources_async() const override { return false; }
+	bool can_create_resources_async() const { return false; }
 
 	RasterizerDummy();
 	~RasterizerDummy();

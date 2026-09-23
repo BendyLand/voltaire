@@ -59,7 +59,7 @@ RID FogMaterial::get_rid() const
 {
 	_update_shader();
 	if (!shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader);
+		RS::material_set_shader(_get_material(), shader);
 		shader_set = true;
 	}
 	return _get_material();
@@ -68,8 +68,8 @@ RID FogMaterial::get_rid() const
 void FogMaterial::cleanup_shader()
 {
 	if (shader.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(shader);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(shader);
 	}
 }
 
@@ -77,10 +77,10 @@ void FogMaterial::_update_shader()
 {
 	MutexLock shader_lock(shader_mutex);
 	if (shader.is_null()) {
-		shader = RS::get_singleton()->shader_create();
+		shader = RS::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		RS::get_singleton()->shader_set_code(shader, R"(
+		RS::shader_set_code(shader, R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
 													 R"('s FogMaterial.
 
@@ -107,7 +107,7 @@ void fog() {
 
 FogMaterial::FogMaterial()
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 
 	set_density(1.0);
 	set_albedo(Color(1, 1, 1, 1));
@@ -117,7 +117,7 @@ FogMaterial::FogMaterial()
 	set_edge_fade(0.1);
 }
 
-FogMaterial::~FogMaterial() { RS::get_singleton()->material_set_shader(_get_material(), RID()); }
+FogMaterial::~FogMaterial() { RS::material_set_shader(_get_material(), RID()); }
 
 
 

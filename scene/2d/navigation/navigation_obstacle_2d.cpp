@@ -61,7 +61,7 @@ void NavigationObstacle2D::_notification(int p_what)
 		_update_transform();
 		set_physics_process_internal(true);
 #ifdef DEBUG_ENABLED
-		RS::get_singleton()->canvas_item_set_parent(
+		RS::canvas_item_set_parent(
 			debug_canvas_item, get_world_2d()->get_canvas());
 #endif // DEBUG_ENABLED
 	} break;
@@ -70,7 +70,7 @@ void NavigationObstacle2D::_notification(int p_what)
 		set_physics_process_internal(false);
 		_update_map(RID());
 #ifdef DEBUG_ENABLED
-		RS::get_singleton()->canvas_item_set_parent(debug_canvas_item, RID());
+		RS::canvas_item_set_parent(debug_canvas_item, RID());
 #endif // DEBUG_ENABLED
 	} break;
 
@@ -108,7 +108,7 @@ void NavigationObstacle2D::_notification(int p_what)
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 #ifdef DEBUG_ENABLED
-		RS::get_singleton()->canvas_item_set_visible(debug_canvas_item, is_visible_in_tree());
+		RS::canvas_item_set_visible(debug_canvas_item, is_visible_in_tree());
 #endif // DEBUG_ENABLED
 	} break;
 
@@ -141,8 +141,8 @@ void NavigationObstacle2D::_notification(int p_what)
 			}
 
 			if (is_debug_enabled) {
-				RS::get_singleton()->canvas_item_clear(debug_canvas_item);
-				RS::get_singleton()->canvas_item_set_transform(debug_canvas_item, Transform2D());
+				RS::canvas_item_clear(debug_canvas_item);
+				RS::canvas_item_set_transform(debug_canvas_item, Transform2D());
 				_update_fake_agent_radius_debug();
 				_update_static_obstacle_debug();
 			}
@@ -163,8 +163,8 @@ NavigationObstacle2D::NavigationObstacle2D()
 		obstacle, avoidance_enabled);
 
 #ifdef DEBUG_ENABLED
-	debug_canvas_item = RenderingServer::get_singleton()->canvas_item_create();
-	debug_mesh_rid = RenderingServer::get_singleton()->mesh_create();
+	debug_canvas_item = RenderingServer::canvas_item_create();
+	debug_mesh_rid = RenderingServer::mesh_create();
 #endif // DEBUG_ENABLED
 }
 
@@ -177,11 +177,11 @@ NavigationObstacle2D::~NavigationObstacle2D()
 
 #ifdef DEBUG_ENABLED
 	if (debug_mesh_rid.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_mesh_rid);
+		RenderingServer::free_rid(debug_mesh_rid);
 		debug_mesh_rid = RID();
 	}
 	if (debug_canvas_item.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_canvas_item);
+		RenderingServer::free_rid(debug_canvas_item);
 		debug_canvas_item = RID();
 	}
 #endif // DEBUG_ENABLED
@@ -304,7 +304,7 @@ void NavigationObstacle2D::_update_fake_agent_radius_debug()
 		// Agent radius is a scalar value and does not support non-uniform scaling, choose the
 		// largest axis.
 		const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
-		RS::get_singleton()->canvas_item_add_circle(debug_canvas_item, get_global_position(),
+		RS::canvas_item_add_circle(debug_canvas_item, get_global_position(),
 			scaling_max_value * radius, debug_radius_color);
 	}
 }

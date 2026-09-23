@@ -82,7 +82,7 @@ void NavigationAgent2D::_notification(int p_what)
 
 #ifdef DEBUG_ENABLED
 		if (debug_path_instance.is_valid()) {
-			RenderingServer::get_singleton()->canvas_item_set_visible(debug_path_instance, false);
+			RenderingServer::canvas_item_set_visible(debug_path_instance, false);
 		}
 #endif // DEBUG_ENABLED
 	} break;
@@ -693,10 +693,10 @@ void NavigationAgent2D::_update_debug_path()
 	debug_path_dirty = false;
 
 	if (!debug_path_instance.is_valid()) {
-		debug_path_instance = RenderingServer::get_singleton()->canvas_item_create();
+		debug_path_instance = RenderingServer::canvas_item_create();
 	}
 
-	RenderingServer::get_singleton()->canvas_item_clear(debug_path_instance);
+	RenderingServer::canvas_item_clear(debug_path_instance);
 
 	if (!(debug_enabled &&
 			NavigationServer2D::get_debug_navigation_enable_agent_paths())) {
@@ -707,11 +707,11 @@ void NavigationAgent2D::_update_debug_path()
 		return;
 	}
 
-	RenderingServer::get_singleton()->canvas_item_set_parent(
+	RenderingServer::canvas_item_set_parent(
 		debug_path_instance, agent_parent->get_canvas());
-	RenderingServer::get_singleton()->canvas_item_set_z_index(
+	RenderingServer::canvas_item_set_z_index(
 		debug_path_instance, RSE::CANVAS_ITEM_Z_MAX - 1);
-	RenderingServer::get_singleton()->canvas_item_set_visible(
+	RenderingServer::canvas_item_set_visible(
 		debug_path_instance, agent_parent->is_visible_in_tree());
 
 	const Vector<Vector2>& navigation_path = navigation_result->get_path();
@@ -730,7 +730,7 @@ void NavigationAgent2D::_update_debug_path()
 	debug_path_colors.resize(navigation_path.size());
 	debug_path_colors.fill(debug_path_color);
 
-	RenderingServer::get_singleton()->canvas_item_add_polyline(debug_path_instance, navigation_path,
+	RenderingServer::canvas_item_add_polyline(debug_path_instance, navigation_path,
 		debug_path_colors, debug_path_custom_line_width, false);
 
 	if (debug_path_custom_point_size <= 0.0) {
@@ -750,7 +750,7 @@ void NavigationAgent2D::_update_debug_path()
 		const Vector2& vert = navigation_path[i];
 		Rect2 path_point_rect =
 			Rect2(vert.x - half_point_size, vert.y - half_point_size, point_size, point_size);
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			debug_path_instance, path_point_rect, debug_path_color);
 	}
 }

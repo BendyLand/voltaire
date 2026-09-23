@@ -1150,25 +1150,13 @@ public:
 	// with RenderingDeviceDriver for convenience.
 	////////////////////////////////////////////
 protected:
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
-
 	static const char* const FORMAT_NAMES[DATA_FORMAT_MAX];
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
-
 	static const char* const TEXTURE_TYPE_NAMES[TEXTURE_TYPE_MAX];
-
 	static const uint32_t MAX_IMAGE_FORMAT_PLANES = 2;
-
 	static const uint32_t TEXTURE_SAMPLES_COUNT[TEXTURE_SAMPLES_MAX];
-
 	static void get_compressed_image_format_block_dimensions(
 		DataFormat p_format, uint32_t& r_w, uint32_t& r_h);
-	uint32_t get_compressed_image_format_block_byte_size(DataFormat p_format) const;
+	static uint32_t get_compressed_image_format_block_byte_size(DataFormat p_format);
 	static uint32_t get_compressed_image_format_pixels_shifted(
 		DataFormat p_format, uint32_t p_pixels);
 	static uint32_t get_image_format_required_size(DataFormat p_format, uint32_t p_width,
@@ -1179,30 +1167,11 @@ protected:
 	static bool format_has_depth(DataFormat p_format);
 	static bool format_has_stencil(DataFormat p_format);
 	static uint32_t format_get_plane_count(DataFormat p_format);
-
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
-
 	static const Color SAMPLER_BORDER_COLOR_VALUE[SAMPLER_BORDER_COLOR_MAX];
-
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
-
 	static uint32_t get_format_vertex_size(DataFormat p_format);
 
 public:
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
-
 	static uint32_t get_image_format_pixel_size(DataFormat p_format);
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
-
 	static const char* SHADER_STAGE_NAMES[SHADER_STAGE_MAX];
 
 	struct ShaderUniform

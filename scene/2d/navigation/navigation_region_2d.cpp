@@ -275,10 +275,9 @@ void NavigationRegion2D::_update_debug_baking_rect()
 #ifdef DEBUG_ENABLED
 void NavigationRegion2D::_set_debug_visible(bool p_visible)
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rs);
+	ERR_FAIL_NULL(RS::data);
 	if (debug_instance_rid.is_valid()) {
-		RS::get_singleton()->canvas_item_set_visible(debug_instance_rid, p_visible);
+		RS::canvas_item_set_visible(debug_instance_rid, p_visible);
 	}
 }
 #endif // DEBUG_ENABLED

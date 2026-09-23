@@ -1128,7 +1128,7 @@ public:
 
 	void screen_space_roughness_limiter_set_active(
 		bool p_enable, float p_amount, float p_curve) override;
-	bool screen_space_roughness_limiter_is_active() const override;
+	bool screen_space_roughness_limiter_is_active() const;
 
 	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override;
 	void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;

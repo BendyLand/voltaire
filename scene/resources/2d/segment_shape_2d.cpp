@@ -63,7 +63,7 @@ Vector2 SegmentShape2D::get_b() const { return b; }
 
 void SegmentShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
-	RenderingServer::get_singleton()->canvas_item_add_line(p_to_rid, a, b, p_color, 3);
+	RenderingServer::canvas_item_add_line(p_to_rid, a, b, p_color, 3);
 }
 
 Rect2 SegmentShape2D::get_rect() const

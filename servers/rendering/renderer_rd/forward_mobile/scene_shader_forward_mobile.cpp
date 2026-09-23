@@ -182,8 +182,8 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	raster_state.wireframe = wireframe || p_pipeline_key.wireframe;
 
 	RD::PipelineMultisampleState multisample_state;
-	multisample_state.sample_count = RD::get_singleton()->framebuffer_format_get_texture_samples(
-		p_pipeline_key.framebuffer_format_id, 0);
+	multisample_state.sample_count =
+		RD::framebuffer_format_get_texture_samples(p_pipeline_key.framebuffer_format_id, 0);
 
 	RD::PipelineColorBlendState blend_state;
 	if (uses_alpha || uses_blend_alpha) {
@@ -270,15 +270,13 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	RID shader_rid = get_shader_variant(p_pipeline_key.version, p_pipeline_key.ubershader);
 	ERR_FAIL_COND(shader_rid.is_null());
 
-	RID pipeline = RD::get_singleton()->render_pipeline_create(shader_rid,
-		p_pipeline_key.framebuffer_format_id, p_pipeline_key.vertex_format_id, primitive_rd,
-		raster_state, multisample_state, depth_stencil_state, blend_state, 0,
-		p_pipeline_key.render_pass, specialization_constants);
+	RID pipeline = RD::render_pipeline_create(shader_rid, p_pipeline_key.framebuffer_format_id,
+		p_pipeline_key.vertex_format_id, primitive_rd, raster_state, multisample_state,
+		depth_stencil_state, blend_state, 0, p_pipeline_key.render_pass, specialization_constants);
 
 	// Don't print error when it's expected.
-	if (unlikely(pipeline.is_null() && RD::get_singleton()
-										   ->get_driver_workarounds()
-										   .dont_print_on_render_pipeline_creation_failure)) {
+	if (unlikely(pipeline.is_null() &&
+				 RD::get_driver_workarounds().dont_print_on_render_pipeline_creation_failure)) {
 		return;
 	}
 
@@ -318,7 +316,7 @@ uint64_t SceneShaderForwardMobile::ShaderData::get_vertex_input_mask(
 		RID shader_rid = get_shader_variant(p_shader_version, p_ubershader);
 		ERR_FAIL_COND_V(shader_rid.is_null(), 0);
 
-		input_mask = RD::get_singleton()->shader_get_vertex_input_attribute_mask(shader_rid);
+		input_mask = RD::shader_get_vertex_input_attribute_mask(shader_rid);
 		vertex_input_masks[input_mask_index].store(input_mask, std::memory_order_relaxed);
 	}
 
@@ -416,7 +414,6 @@ void SceneShaderForwardMobile::enable_multiview_shader_group()
 
 	if (shader.is_group_enabled(SHADER_GROUP_FP16)) {
 		shader.enable_group(SHADER_GROUP_FP16_MULTIVIEW);
-
 	}
 }
 
@@ -430,8 +427,8 @@ SceneShaderForwardMobile::~SceneShaderForwardMobile()
 {
 	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
-	RD::get_singleton()->free_rid(default_vec4_xform_buffer);
-	RD::get_singleton()->free_rid(shadow_sampler);
+	RD::free_rid(default_vec4_xform_buffer);
+	RD::free_rid(shadow_sampler);
 
 	material_storage->shader_free(overdraw_material_shader);
 	material_storage->shader_free(default_shader);

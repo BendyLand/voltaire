@@ -194,7 +194,7 @@ void ColorPickerShape::draw_focus_rect(Control* p_control, const Rect2& p_rect)
 
 	const RID ci = p_control->get_canvas_item();
 	if (!cursor_editing) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			ci, focus_rect, color_picker->theme_cache.focused_not_editing_cursor_color);
 	}
 	color_picker->theme_cache.picker_focus_rectangle->draw(ci, focus_rect);
@@ -209,7 +209,7 @@ void ColorPickerShape::draw_focus_circle(Control* p_control)
 	const Rect2 focus_rect(Vector2(), p_control->get_size());
 	const RID ci = p_control->get_canvas_item();
 	if (!cursor_editing) {
-		RenderingServer::get_singleton()->canvas_item_add_circle(ci, focus_rect.get_center(),
+		RenderingServer::canvas_item_add_circle(ci, focus_rect.get_center(),
 			focus_rect.get_size().y * 0.5,
 			color_picker->theme_cache.focused_not_editing_cursor_color);
 	}

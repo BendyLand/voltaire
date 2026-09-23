@@ -63,12 +63,12 @@ NavigationLink3D::~NavigationLink3D()
 	link = RID();
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	if (debug_instance.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_instance);
+		RenderingServer::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(debug_mesh->get_rid());
+		RenderingServer::free_rid(debug_mesh->get_rid());
 	}
 #endif // DEBUG_ENABLED
 }
@@ -225,7 +225,7 @@ void NavigationLink3D::_link_exit_navigation_map()
 	NavigationServer3D::link_set_map(link, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::get_singleton()->instance_set_visible(debug_instance, false);
+		RS::instance_set_visible(debug_instance, false);
 	}
 #endif // DEBUG_ENABLED
 }

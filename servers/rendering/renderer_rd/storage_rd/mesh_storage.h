@@ -844,7 +844,7 @@ public:
 			u.append_id(multimesh->buffer);
 			uniforms.push_back(u);
 			multimesh->uniform_set_3d =
-				RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+				RD::uniform_set_create(uniforms, p_shader, p_set);
 		}
 
 		return multimesh->uniform_set_3d;
@@ -868,7 +868,7 @@ public:
 			u.append_id(multimesh->buffer);
 			uniforms.push_back(u);
 			multimesh->uniform_set_2d =
-				RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+				RD::uniform_set_create(uniforms, p_shader, p_set);
 		}
 
 		return multimesh->uniform_set_2d;
@@ -925,7 +925,7 @@ public:
 			u.append_id(skeleton->buffer);
 			uniforms.push_back(u);
 			skeleton->uniform_set_3d =
-				RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+				RD::uniform_set_create(uniforms, p_shader, p_set);
 		}
 
 		return skeleton->uniform_set_3d;

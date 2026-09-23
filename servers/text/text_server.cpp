@@ -189,31 +189,31 @@ void TextServer::_draw_hex_code_box_number(const RID& p_canvas, int64_t p_size,
 		0x1F, 0x4E, 0x3D, 0x4F, 0x47, 0x00};
 	uint8_t x = chars[p_index];
 	if (x & (1 << 6)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos, Size2(3, 1) * p_size), p_color);
 	}
 	if (x & (1 << 5)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos + Point2(2, 0) * p_size, Size2(1, 3) * p_size), p_color);
 	}
 	if (x & (1 << 4)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos + Point2(2, 2) * p_size, Size2(1, 3) * p_size), p_color);
 	}
 	if (x & (1 << 3)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos + Point2(0, 4) * p_size, Size2(3, 1) * p_size), p_color);
 	}
 	if (x & (1 << 2)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos + Point2(0, 2) * p_size, Size2(1, 3) * p_size), p_color);
 	}
 	if (x & (1 << 1)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos, Size2(1, 3) * p_size), p_color);
 	}
 	if (x & (1 << 0)) {
-		RenderingServer::get_singleton()->canvas_item_add_rect(
+		RenderingServer::canvas_item_add_rect(
 			p_canvas, Rect2(p_pos + Point2(0, 2) * p_size, Size2(3, 1) * p_size), p_color);
 	}
 }
@@ -233,13 +233,13 @@ void TextServer::draw_hex_code_box(const RID& p_canvas, int64_t p_size, const Ve
 	Point2 pos = p_pos - Point2i(0, size.y * 0.85);
 
 	// Draw frame.
-	RenderingServer::get_singleton()->canvas_item_add_rect(
+	RenderingServer::canvas_item_add_rect(
 		p_canvas, Rect2(pos + Point2(0, 0), Size2(sz, size.y)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(
+	RenderingServer::canvas_item_add_rect(
 		p_canvas, Rect2(pos + Point2(size.x - sz, 0), Size2(sz, size.y)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(
+	RenderingServer::canvas_item_add_rect(
 		p_canvas, Rect2(pos + Point2(0, 0), Size2(size.x, sz)), p_color);
-	RenderingServer::get_singleton()->canvas_item_add_rect(
+	RenderingServer::canvas_item_add_rect(
 		p_canvas, Rect2(pos + Point2(0, size.y - sz), Size2(size.x, sz)), p_color);
 
 	uint8_t a = p_index & 0x0F;

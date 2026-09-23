@@ -30,22 +30,57 @@
 
 #include "renderer_compositor.h"
 
+#if defined(RD_ENABLED)
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#endif
+
+#if defined(GLES3_ENABLED)
+#include "drivers/gles3/rasterizer_gles3.h"
+#endif
+
+#include "servers/rendering/dummy/rasterizer_dummy.h"
+
 #ifndef XR_DISABLED
 #include "core/config/project_settings.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
-RendererCompositor* RendererCompositor::singleton = nullptr;
-
 RendererCompositor* (*RendererCompositor::_create_func)() = nullptr;
 bool RendererCompositor::low_end = false;
 
-RendererCompositor* RendererCompositor::create() { return _create_func(); }
+RendererCompositor* RendererCompositor::create()
+{
+	if (_create_func != nullptr) {
+		return _create_func();
+	}
+#if defined(RD_ENABLED)
+	low_end = false;
+	return memnew(RendererCompositorRD);
+#elif defined(GLES3_ENABLED)
+	low_end = true;
+	return memnew(RasterizerGLES3);
+#else
+	low_end = true;
+	return memnew(RasterizerDummy);
+#endif
+}
 
-bool RendererCompositor::is_xr_enabled() const { return xr_enabled; }
+bool RendererCompositor::is_xr_enabled() { return RendererCompositor::xr_enabled; }
 
-RendererCompositor::~RendererCompositor() { singleton = nullptr; }
+uint64_t RendererCompositor::get_frame_number() const { return 0; }
+
+bool RendererCompositor::is_opengl() { return false; }
+
+void RendererCompositor::gl_end_frame(bool p_swap_buffers) {}
+
+void RendererCompositor::end_frame(bool p_present) {}
+
+void RendererCompositor::finalize() {}
+
+double RendererCompositor::get_frame_delta_time() const { return 0.0; }
+
+double RendererCompositor::get_total_time() const { return 0.0; }
+
+bool RendererCompositor::can_create_resources_async() const { return false; }
 
 
-
-RendererCompositor::RendererCompositor() {}

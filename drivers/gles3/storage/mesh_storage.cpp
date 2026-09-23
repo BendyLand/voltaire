@@ -204,7 +204,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 #else
 
 	if (surface_version != uint64_t(RSE::ARRAY_FLAG_FORMAT_CURRENT_VERSION)) {
-		RS::get_singleton()->fix_surface_compatibility(new_surface);
+		RenderingServer::fix_surface_compatibility(new_surface);
 		surface_version = new_surface.format & (uint64_t(RSE::ARRAY_FLAG_FORMAT_VERSION_MASK) << RSE::ARRAY_FLAG_FORMAT_VERSION_SHIFT);
 		ERR_FAIL_COND_MSG(surface_version != RSE::ARRAY_FLAG_FORMAT_CURRENT_VERSION,
 				vformat("Surface version provided (%d) does not match current version (%d).",

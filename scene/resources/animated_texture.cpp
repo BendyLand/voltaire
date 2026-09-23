@@ -88,7 +88,7 @@ void AnimatedTexture::_update_proxy()
 	}
 
 	if (frames[current_frame].texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_proxy_update(
+		RenderingServer::texture_proxy_update(
 			proxy, frames[current_frame].texture->get_rid());
 	}
 }
@@ -238,9 +238,9 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
 
 AnimatedTexture::~AnimatedTexture()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(proxy);
-	RS::get_singleton()->free_rid(proxy_ph);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(proxy);
+	RS::free_rid(proxy_ph);
 }
 
 

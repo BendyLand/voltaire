@@ -48,7 +48,7 @@ Ref<Image> PlaceholderTexture2D::get_image() const { return Ref<Image>(); }
 RID PlaceholderTexture2D::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		rid = RenderingServer::texture_2d_placeholder_create();
 	}
 	return rid;
 }
@@ -58,9 +58,9 @@ PlaceholderTexture2D::PlaceholderTexture2D() {}
 
 PlaceholderTexture2D::~PlaceholderTexture2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	if (rid.is_valid()) {
-		RS::get_singleton()->free_rid(rid);
+		RS::free_rid(rid);
 	}
 }
 
@@ -89,7 +89,7 @@ Vector<Ref<Image>> PlaceholderTexture3D::get_data() const { return Vector<Ref<Im
 RID PlaceholderTexture3D::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RenderingServer::get_singleton()->texture_3d_placeholder_create();
+		rid = RenderingServer::texture_3d_placeholder_create();
 	}
 	return rid;
 }
@@ -99,9 +99,9 @@ PlaceholderTexture3D::PlaceholderTexture3D() {}
 
 PlaceholderTexture3D::~PlaceholderTexture3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	if (rid.is_valid()) {
-		RS::get_singleton()->free_rid(rid);
+		RS::free_rid(rid);
 	}
 }
 
@@ -137,7 +137,7 @@ Ref<Image> PlaceholderTextureLayered::get_layer_data(int p_layer) const { return
 RID PlaceholderTextureLayered::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RS::get_singleton()->texture_2d_layered_placeholder_create(
+		rid = RS::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return rid;
@@ -148,9 +148,9 @@ PlaceholderTextureLayered::PlaceholderTextureLayered(LayeredType p_type) { layer
 
 PlaceholderTextureLayered::~PlaceholderTextureLayered()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	if (rid.is_valid()) {
-		RS::get_singleton()->free_rid(rid);
+		RS::free_rid(rid);
 	}
 }
 

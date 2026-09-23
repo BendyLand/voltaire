@@ -87,7 +87,7 @@ void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value)
 	ERR_FAIL_COND(mesh.is_null());
 	ERR_FAIL_INDEX(p_blend_shape, (int)blend_shape_tracks.size());
 	blend_shape_tracks[p_blend_shape] = p_value;
-	RenderingServer::get_singleton()->instance_set_blend_shape_weight(
+	RenderingServer::instance_set_blend_shape_weight(
 		get_instance(), p_blend_shape, p_value);
 }
 
@@ -205,11 +205,11 @@ void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Mate
 	surface_override_materials.write[p_surface] = p_material;
 
 	if (surface_override_materials[p_surface].is_valid()) {
-		RS::get_singleton()->instance_set_surface_override_material(
+		RS::instance_set_surface_override_material(
 			get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
 	}
 	else {
-		RS::get_singleton()->instance_set_surface_override_material(
+		RS::instance_set_surface_override_material(
 			get_instance(), p_surface, RID());
 	}
 }

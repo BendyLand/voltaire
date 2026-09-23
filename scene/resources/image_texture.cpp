@@ -55,7 +55,7 @@ void ImageTexture::update(const Ref<Image>& p_image) {}
 Ref<Image> ImageTexture::get_image() const
 {
 	if (image_stored) {
-		return RenderingServer::get_singleton()->texture_2d_get(texture);
+		return RenderingServer::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -70,7 +70,7 @@ RID ImageTexture::get_rid() const
 {
 	if (texture.is_null()) {
 		// We are in trouble, create something temporary.
-		texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture = RenderingServer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -86,7 +86,7 @@ void ImageTexture::draw(
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, Size2(w, h)), texture, false, p_modulate, p_transpose);
 }
 
@@ -96,7 +96,7 @@ void ImageTexture::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -106,7 +106,7 @@ void ImageTexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, cons
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -117,7 +117,7 @@ void ImageTexture::draw_msdf_rect_region(RID p_canvas_item, const Rect2& p_rect,
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_msdf_texture_rect_region(p_canvas_item,
+	RenderingServer::canvas_item_add_msdf_texture_rect_region(p_canvas_item,
 		p_rect, texture, p_src_rect, p_modulate, p_outline_size, p_px_range, p_scale);
 }
 
@@ -127,7 +127,7 @@ void ImageTexture::draw_lcd_rect_region(
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_lcd_texture_rect_region(
+	RenderingServer::canvas_item_add_lcd_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate);
 }
 
@@ -161,13 +161,13 @@ void ImageTexture::set_size_override(const Size2i& p_size)
 	if (s.y != 0) {
 		h = s.y;
 	}
-	RenderingServer::get_singleton()->texture_set_size_override(texture, w, h);
+	RenderingServer::texture_set_size_override(texture, w, h);
 }
 
 void ImageTexture::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -177,8 +177,8 @@ void ImageTexture::set_path(const String& p_path, bool p_take_over)
 ImageTexture::~ImageTexture()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(texture);
 	}
 }
 
@@ -228,13 +228,13 @@ Error ImageTextureLayered::create_from_images(Vector<Ref<Image>> p_images)
 	}
 
 	if (texture.is_valid()) {
-		RID new_texture = RS::get_singleton()->texture_2d_layered_create(
+		RID new_texture = RS::texture_2d_layered_create(
 			p_images, RSE::TextureLayeredType(layered_type));
 		ERR_FAIL_COND_V(!new_texture.is_valid(), ERR_CANT_CREATE);
-		RS::get_singleton()->texture_replace(texture, new_texture);
+		RS::texture_replace(texture, new_texture);
 	}
 	else {
-		texture = RS::get_singleton()->texture_2d_layered_create(
+		texture = RS::texture_2d_layered_create(
 			p_images, RSE::TextureLayeredType(layered_type));
 		ERR_FAIL_COND_V(!texture.is_valid(), ERR_CANT_CREATE);
 	}
@@ -258,19 +258,19 @@ void ImageTextureLayered::update_layer(const Ref<Image>& p_image, int p_layer)
 	ERR_FAIL_COND_MSG(p_image->has_mipmaps() != mipmaps,
 		"Image mipmap configuration must match texture's image mipmap configuration.");
 	ERR_FAIL_INDEX_MSG(p_layer, layers, "Layer index is out of bounds.");
-	RS::get_singleton()->texture_2d_update(texture, p_image, p_layer);
+	RS::texture_2d_update(texture, p_image, p_layer);
 }
 
 Ref<Image> ImageTextureLayered::get_layer_data(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, layers, Ref<Image>());
-	return RS::get_singleton()->texture_2d_layer_get(texture, p_layer);
+	return RS::texture_2d_layer_get(texture, p_layer);
 }
 
 RID ImageTextureLayered::get_rid() const
 {
 	if (texture.is_null()) {
-		texture = RS::get_singleton()->texture_2d_layered_placeholder_create(
+		texture = RS::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return texture;
@@ -279,7 +279,7 @@ RID ImageTextureLayered::get_rid() const
 void ImageTextureLayered::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RS::get_singleton()->texture_set_path(texture, p_path);
+		RS::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -294,8 +294,8 @@ ImageTextureLayered::ImageTextureLayered(LayeredType p_layered_type)
 ImageTextureLayered::~ImageTextureLayered()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 
@@ -312,12 +312,12 @@ bool ImageTexture3D::has_mipmaps() const { return mipmaps; }
 Error ImageTexture3D::create(Image::Format p_format, int p_width, int p_height, int p_depth,
 	bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
-	RID tex = RenderingServer::get_singleton()->texture_3d_create(
+	RID tex = RenderingServer::texture_3d_create(
 		p_format, p_width, p_height, p_depth, p_mipmaps, p_data);
 	ERR_FAIL_COND_V(tex.is_null(), ERR_CANT_CREATE);
 
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_replace(texture, tex);
+		RenderingServer::texture_replace(texture, tex);
 	}
 	else {
 		texture = tex;
@@ -335,19 +335,19 @@ Error ImageTexture3D::create(Image::Format p_format, int p_width, int p_height, 
 void ImageTexture3D::update(const Vector<Ref<Image>>& p_data)
 {
 	ERR_FAIL_COND(!texture.is_valid());
-	RenderingServer::get_singleton()->texture_3d_update(texture, p_data);
+	RenderingServer::texture_3d_update(texture, p_data);
 }
 
 Vector<Ref<Image>> ImageTexture3D::get_data() const
 {
 	ERR_FAIL_COND_V(!texture.is_valid(), Vector<Ref<Image>>());
-	return RS::get_singleton()->texture_3d_get(texture);
+	return RS::texture_3d_get(texture);
 }
 
 RID ImageTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_3d_placeholder_create();
+		texture = RS::texture_3d_placeholder_create();
 	}
 	return texture;
 }
@@ -355,7 +355,7 @@ RID ImageTexture3D::get_rid() const
 void ImageTexture3D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -366,8 +366,8 @@ ImageTexture3D::ImageTexture3D() {}
 ImageTexture3D::~ImageTexture3D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 

@@ -35,14 +35,14 @@
 
 DrawableTexture2D::DrawableTexture2D()
 {
-	default_material = RS::get_singleton()->texture_drawable_get_default_material();
+	default_material = RS::texture_drawable_get_default_material();
 }
 
 DrawableTexture2D::~DrawableTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(texture);
 	}
 }
 
@@ -50,12 +50,12 @@ DrawableTexture2D::~DrawableTexture2D()
 void DrawableTexture2D::_initialize()
 {
 	if (texture.is_valid()) {
-		RID new_texture = RS::get_singleton()->texture_drawable_create(
+		RID new_texture = RS::texture_drawable_create(
 			width, height, (RSE::TextureDrawableFormat)format, base_color, mipmaps);
-		RS::get_singleton()->texture_replace(texture, new_texture);
+		RS::texture_replace(texture, new_texture);
 	}
 	else {
-		texture = RS::get_singleton()->texture_drawable_create(
+		texture = RS::texture_drawable_create(
 			width, height, (RSE::TextureDrawableFormat)format, base_color, mipmaps);
 	}
 }
@@ -95,7 +95,7 @@ RID DrawableTexture2D::get_rid() const
 	if (texture.is_null()) {
 		// We are in trouble, create something temporary.
 		// 4, 4, false, Image::FORMAT_RGBA8
-		texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture = RenderingServer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -106,7 +106,7 @@ void DrawableTexture2D::draw(
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, Size2(width, height)), texture, false, p_modulate, p_transpose);
 }
 
@@ -116,7 +116,7 @@ void DrawableTexture2D::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -126,14 +126,14 @@ void DrawableTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rect,
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
 Ref<Image> DrawableTexture2D::get_image() const
 {
 	if (texture.is_valid()) {
-		return RS::get_singleton()->texture_2d_get(texture);
+		return RS::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -143,7 +143,7 @@ Ref<Image> DrawableTexture2D::get_image() const
 void DrawableTexture2D::generate_mipmaps()
 {
 	if (texture.is_valid()) {
-		RS::get_singleton()->texture_drawable_generate_mipmaps(texture);
+		RS::texture_drawable_generate_mipmaps(texture);
 	}
 }
 

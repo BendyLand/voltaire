@@ -270,11 +270,11 @@ void GridMap::_debug_clear_octants()
 			OctantDebug& octant_debug = *E->value;
 
 			if (octant_debug.debug_line_mesh_rid.is_valid()) {
-				RS::get_singleton()->free_rid(octant_debug.debug_line_mesh_rid);
+				RS::free_rid(octant_debug.debug_line_mesh_rid);
 				octant_debug.debug_line_mesh_rid = RID();
 			}
 			if (octant_debug.debug_line_instance_rid.is_valid()) {
-				RS::get_singleton()->free_rid(octant_debug.debug_line_instance_rid);
+				RS::free_rid(octant_debug.debug_line_instance_rid);
 				octant_debug.debug_line_instance_rid = RID();
 			}
 
@@ -447,7 +447,7 @@ void GridMap::_update_physics_bodies_collision_properties()
 
 void GridMap::_octant_clean_up(const OctantKey& p_key)
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 #ifndef PHYSICS_3D_DISABLED
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 #endif // PHYSICS_3D_DISABLED
@@ -460,10 +460,10 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 
 #ifndef PHYSICS_3D_DISABLED
 	if (g.collision_debug.is_valid()) {
-		RS::get_singleton()->free_rid(g.collision_debug);
+		RS::free_rid(g.collision_debug);
 	}
 	if (g.collision_debug_instance.is_valid()) {
-		RS::get_singleton()->free_rid(g.collision_debug_instance);
+		RS::free_rid(g.collision_debug_instance);
 	}
 
 	PhysicsServer3D::get_singleton()->free_rid(g.static_body);
@@ -476,7 +476,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 			NavigationServer3D::free_rid(E.value.region);
 		}
 		if (E.value.navigation_mesh_debug_instance.is_valid()) {
-			RS::get_singleton()->free_rid(E.value.navigation_mesh_debug_instance);
+			RS::free_rid(E.value.navigation_mesh_debug_instance);
 		}
 	}
 	g.navigation_cell_ids.clear();
@@ -485,7 +485,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 #ifdef DEBUG_ENABLED
 	if (bake_navigation) {
 		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RenderingServer::get_singleton()->free_rid(
+			RenderingServer::free_rid(
 				g.navigation_debug_edge_connections_instance);
 			g.navigation_debug_edge_connections_instance = RID();
 		}
@@ -500,8 +500,8 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 	// Erase multimeshes.
 
 	for (int i = 0; i < g.multimesh_instances.size(); i++) {
-		RS::get_singleton()->free_rid(g.multimesh_instances[i].instance);
-		RS::get_singleton()->free_rid(g.multimesh_instances[i].multimesh);
+		RS::free_rid(g.multimesh_instances[i].instance);
+		RS::free_rid(g.multimesh_instances[i].multimesh);
 	}
 	g.multimesh_instances.clear();
 }
@@ -517,9 +517,9 @@ void GridMap::_notification(int p_what)
 		}
 
 		for (int i = 0; i < baked_meshes.size(); i++) {
-			RS::get_singleton()->instance_set_scenario(
+			RS::instance_set_scenario(
 				baked_meshes[i].instance, get_world_3d()->get_scenario());
-			RS::get_singleton()->instance_set_transform(
+			RS::instance_set_transform(
 				baked_meshes[i].instance, get_global_transform());
 		}
 	} break;
@@ -559,7 +559,7 @@ void GridMap::_notification(int p_what)
 		last_transform = new_xform;
 
 		for (int i = 0; i < baked_meshes.size(); i++) {
-			RS::get_singleton()->instance_set_transform(
+			RS::instance_set_transform(
 				baked_meshes[i].instance, get_global_transform());
 		}
 
@@ -572,7 +572,7 @@ void GridMap::_notification(int p_what)
 					new_xform *
 					(Transform3D(Basis(), Vector3(octant_key.x, octant_key.y, octant_key.z) *
 											  octant_size * cell_size));
-				RS::get_singleton()->instance_set_transform(
+				RS::instance_set_transform(
 					octant_debug.debug_line_instance_rid, octant_transform);
 			}
 		}
@@ -585,7 +585,7 @@ void GridMap::_notification(int p_what)
 		}
 
 		for (int i = 0; i < baked_meshes.size(); i++) {
-			RS::get_singleton()->instance_set_scenario(baked_meshes[i].instance, RID());
+			RS::instance_set_scenario(baked_meshes[i].instance, RID());
 		}
 	} break;
 
@@ -605,19 +605,19 @@ void GridMap::_update_visibility()
 		Octant* octant = e.value;
 		for (int i = 0; i < octant->multimesh_instances.size(); i++) {
 			const Octant::MultimeshInstance& mi = octant->multimesh_instances[i];
-			RS::get_singleton()->instance_set_visible(mi.instance, is_visible_in_tree());
+			RS::instance_set_visible(mi.instance, is_visible_in_tree());
 		}
 	}
 
 	for (int i = 0; i < baked_meshes.size(); i++) {
-		RS::get_singleton()->instance_set_visible(baked_meshes[i].instance, is_visible_in_tree());
+		RS::instance_set_visible(baked_meshes[i].instance, is_visible_in_tree());
 	}
 
 #ifdef DEBUG_ENABLED
 	for (const KeyValue<OctantKey, OctantDebug*>& E : debug_octant_map) {
 		OctantDebug& octant_debug = *E.value;
 		if (octant_debug.debug_line_instance_rid.is_valid()) {
-			RS::get_singleton()->instance_set_visible(
+			RS::instance_set_visible(
 				octant_debug.debug_line_instance_rid, is_visible_in_tree());
 		}
 	}
@@ -808,9 +808,9 @@ Vector3 GridMap::_get_offset() const
 
 void GridMap::clear_baked_meshes()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	for (int i = 0; i < baked_meshes.size(); i++) {
-		RS::get_singleton()->free_rid(baked_meshes[i].instance);
+		RS::free_rid(baked_meshes[i].instance);
 	}
 	baked_meshes.clear();
 

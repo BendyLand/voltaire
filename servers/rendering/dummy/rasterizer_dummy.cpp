@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "rasterizer_dummy.h"
-
 #include "servers/display/display_server.h"
 #include "servers/rendering/dummy/environment/fog.h"
 #include "servers/rendering/dummy/environment/gi.h"
@@ -42,45 +41,35 @@
 #include "servers/rendering/dummy/storage/texture_storage.h"
 #include "servers/rendering/dummy/storage/utilities.h"
 
-void RasterizerDummy::end_frame(bool p_present) {
+void RasterizerDummy::end_frame(bool p_present)
+{
 	if (p_present) {
 		DisplayServer::get_singleton()->swap_buffers();
 	}
 }
 
-RendererCanvasRender *RasterizerDummy::get_canvas() {
-	return canvas;
-}
-RendererSceneRender *RasterizerDummy::get_scene() {
-	return scene;
-}
+RendererCanvasRender* RasterizerDummy::get_canvas() { return canvas; }
 
-RendererFog *RasterizerDummy::get_fog() {
-	return fog;
-}
-RendererGI *RasterizerDummy::get_gi() {
-	return gi;
-}
-RendererLightStorage *RasterizerDummy::get_light_storage() {
-	return light_storage;
-}
-RendererMaterialStorage *RasterizerDummy::get_material_storage() {
-	return material_storage;
-}
-RendererMeshStorage *RasterizerDummy::get_mesh_storage() {
-	return mesh_storage;
-}
-RendererParticlesStorage *RasterizerDummy::get_particles_storage() {
-	return particles_storage;
-}
-RendererTextureStorage *RasterizerDummy::get_texture_storage() {
-	return texture_storage;
-}
-RendererUtilities *RasterizerDummy::get_utilities() {
-	return utilities;
-}
+RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
 
-RasterizerDummy::RasterizerDummy() {
+RendererFog* RasterizerDummy::get_fog() { return fog; }
+
+RendererGI* RasterizerDummy::get_gi() { return gi; }
+
+RendererLightStorage* RasterizerDummy::get_light_storage() { return light_storage; }
+
+RendererMaterialStorage* RasterizerDummy::get_material_storage() { return material_storage; }
+
+RendererMeshStorage* RasterizerDummy::get_mesh_storage() { return mesh_storage; }
+
+RendererParticlesStorage* RasterizerDummy::get_particles_storage() { return particles_storage; }
+
+RendererTextureStorage* RasterizerDummy::get_texture_storage() { return texture_storage; }
+
+RendererUtilities* RasterizerDummy::get_utilities() { return utilities; }
+
+RasterizerDummy::RasterizerDummy()
+{
 	canvas = memnew(RasterizerCanvasDummy);
 	scene = memnew(RasterizerSceneDummy);
 
@@ -94,7 +83,8 @@ RasterizerDummy::RasterizerDummy() {
 	utilities = memnew(RendererDummy::Utilities);
 }
 
-RasterizerDummy::~RasterizerDummy() {
+RasterizerDummy::~RasterizerDummy()
+{
 	memdelete(canvas);
 	memdelete(scene);
 
@@ -107,3 +97,5 @@ RasterizerDummy::~RasterizerDummy() {
 	memdelete(texture_storage);
 	memdelete(utilities);
 }
+
+

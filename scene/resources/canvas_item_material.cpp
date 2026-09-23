@@ -67,7 +67,7 @@ void CanvasItemMaterial::_update_shader()
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::get_singleton()->free_rid(shader_map[current_key].shader);
+			RS::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 	}
@@ -75,7 +75,7 @@ void CanvasItemMaterial::_update_shader()
 	current_key = mk;
 
 	if (shader_map.has(mk)) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_map[mk].shader);
+		RS::material_set_shader(_get_material(), shader_map[mk].shader);
 		shader_map[mk].users++;
 		return;
 	}
@@ -147,14 +147,14 @@ void CanvasItemMaterial::_update_shader()
 	}
 
 	ShaderData shader_data;
-	shader_data.shader = RS::get_singleton()->shader_create();
+	shader_data.shader = RS::shader_create();
 	shader_data.users = 1;
 
-	RS::get_singleton()->shader_set_code(shader_data.shader, code);
+	RS::shader_set_code(shader_data.shader, code);
 
 	shader_map[mk] = shader_data;
 
-	RS::get_singleton()->material_set_shader(_get_material(), shader_data.shader);
+	RS::material_set_shader(_get_material(), shader_data.shader);
 }
 
 void CanvasItemMaterial::flush_changes()
@@ -216,17 +216,17 @@ CanvasItemMaterial::~CanvasItemMaterial()
 {
 	MutexLock lock(material_mutex);
 
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 
 	if (shader_map.has(current_key)) {
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::get_singleton()->free_rid(shader_map[current_key].shader);
+			RS::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 
-		RS::get_singleton()->material_set_shader(_get_material(), RID());
+		RS::material_set_shader(_get_material(), RID());
 	}
 }
 

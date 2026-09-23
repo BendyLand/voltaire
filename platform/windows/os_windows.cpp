@@ -827,7 +827,7 @@ Vector<String> OS_Windows::get_video_adapter_driver_info() const {
 		return info;
 	}
 
-	const String device_name = RenderingServer::get_singleton()->get_video_adapter_name();
+	const String device_name = RenderingServer::get_video_adapter_name();
 	if (device_name.is_empty()) {
 		return Vector<String>();
 	}
