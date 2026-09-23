@@ -865,7 +865,7 @@ TEST_SUITE("[Navigation2D]")
 		source_path.write[5] = Vector2(2.5, 4.0); // This point needs to go.
 		source_path.write[6] = Vector2(3.0, 5.0);
 		Vector<Vector2> simplified_path =
-			NavigationServer2D::get_singleton()->simplify_path(source_path, simplify_epsilon);
+			NavigationServer2D::simplify_path(source_path, simplify_epsilon);
 		CHECK_EQ(simplified_path.size(), 4);
 	}
 }

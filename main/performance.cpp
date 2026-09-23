@@ -229,7 +229,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 		// Deprecated, use the 2D/3D specific ones instead.
 	case NAVIGATION_ACTIVE_MAPS:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_ACTIVE_MAPS);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -240,7 +240,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_REGION_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_REGION_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -251,7 +251,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_AGENT_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_AGENT_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -262,7 +262,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_LINK_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_LINK_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -273,7 +273,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_POLYGON_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_POLYGON_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -284,7 +284,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_EDGE_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -295,7 +295,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_EDGE_MERGE_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_MERGE_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -306,7 +306,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_EDGE_CONNECTION_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -317,7 +317,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_EDGE_FREE_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_FREE_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -328,7 +328,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	case NAVIGATION_OBSTACLE_COUNT:
 #ifndef NAVIGATION_2D_DISABLED
-		info = NavigationServer2D::get_singleton()->get_process_info(
+		info = NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_OBSTACLE_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
@@ -339,34 +339,34 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 #ifndef NAVIGATION_2D_DISABLED
 	case NAVIGATION_2D_ACTIVE_MAPS:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_ACTIVE_MAPS);
 	case NAVIGATION_2D_REGION_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_REGION_COUNT);
 	case NAVIGATION_2D_AGENT_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_AGENT_COUNT);
 	case NAVIGATION_2D_LINK_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_LINK_COUNT);
 	case NAVIGATION_2D_POLYGON_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_POLYGON_COUNT);
 	case NAVIGATION_2D_EDGE_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_COUNT);
 	case NAVIGATION_2D_EDGE_MERGE_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_MERGE_COUNT);
 	case NAVIGATION_2D_EDGE_CONNECTION_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
 	case NAVIGATION_2D_EDGE_FREE_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_EDGE_FREE_COUNT);
 	case NAVIGATION_2D_OBSTACLE_COUNT:
-		return NavigationServer2D::get_singleton()->get_process_info(
+		return NavigationServer2D::get_process_info(
 			NavigationServer2D::INFO_OBSTACLE_COUNT);
 #endif // NAVIGATION_2D_DISABLED
 

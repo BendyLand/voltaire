@@ -270,7 +270,7 @@ void TileDataNavigationEditor::_notification(int p_what)
 	case NOTIFICATION_ENTER_TREE: {
 #ifdef DEBUG_ENABLED
 		polygon_editor->set_polygons_color(
-			NavigationServer2D::get_singleton()->get_debug_navigation_geometry_face_color());
+			NavigationServer2D::get_debug_navigation_geometry_face_color());
 #endif // DEBUG_ENABLED
 	} break;
 	}

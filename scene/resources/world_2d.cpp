@@ -58,9 +58,9 @@ World2D::~World2D()
 	RenderingServer::get_singleton()->free_rid(canvas);
 
 #ifndef NAVIGATION_2D_DISABLED
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer2D::data);
 	if (navigation_map.is_valid()) {
-		NavigationServer2D::get_singleton()->free_rid(navigation_map);
+		NavigationServer2D::free_rid(navigation_map);
 	}
 #endif // NAVIGATION_2D_DISABLED
 

@@ -48,7 +48,7 @@ void NavigationRegion2D::set_use_edge_connections(bool p_enabled)
 
 	use_edge_connections = p_enabled;
 
-	NavigationServer2D::get_singleton()->region_set_use_edge_connections(
+	NavigationServer2D::region_set_use_edge_connections(
 		region, use_edge_connections);
 }
 
@@ -62,7 +62,7 @@ void NavigationRegion2D::set_navigation_layers(uint32_t p_navigation_layers)
 
 	navigation_layers = p_navigation_layers;
 
-	NavigationServer2D::get_singleton()->region_set_navigation_layers(region, navigation_layers);
+	NavigationServer2D::region_set_navigation_layers(region, navigation_layers);
 }
 
 uint32_t NavigationRegion2D::get_navigation_layers() const { return navigation_layers; }
@@ -105,7 +105,7 @@ void NavigationRegion2D::set_enter_cost(real_t p_enter_cost)
 
 	enter_cost = p_enter_cost;
 
-	NavigationServer2D::get_singleton()->region_set_enter_cost(region, enter_cost);
+	NavigationServer2D::region_set_enter_cost(region, enter_cost);
 }
 
 real_t NavigationRegion2D::get_enter_cost() const { return enter_cost; }
@@ -119,7 +119,7 @@ void NavigationRegion2D::set_travel_cost(real_t p_travel_cost)
 
 	travel_cost = p_travel_cost;
 
-	NavigationServer2D::get_singleton()->region_set_travel_cost(region, travel_cost);
+	NavigationServer2D::region_set_travel_cost(region, travel_cost);
 }
 
 real_t NavigationRegion2D::get_travel_cost() const { return travel_cost; }
@@ -168,8 +168,8 @@ void NavigationRegion2D::_notification(int p_what)
 #ifdef DEBUG_ENABLED
 		if (is_inside_tree() &&
 			(Engine::get_singleton()->is_editor_hint() ||
-				(NavigationServer2D::get_singleton()->get_debug_enabled() &&
-					NavigationServer2D::get_singleton()->get_debug_navigation_enabled())) &&
+				(NavigationServer2D::get_debug_enabled() &&
+					NavigationServer2D::get_debug_navigation_enabled())) &&
 			navigation_polygon.is_valid()) {
 			_update_debug_mesh();
 			_update_debug_edge_connections_mesh();
@@ -193,7 +193,7 @@ void NavigationRegion2D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer2D::get_singleton()->region_set_map(region, map_override);
+	NavigationServer2D::region_set_map(region, map_override);
 }
 
 RID NavigationRegion2D::get_navigation_map() const
@@ -223,28 +223,27 @@ PackedStringArray NavigationRegion2D::get_configuration_warnings() const
 
 void NavigationRegion2D::_region_exit_navigation_map()
 {
-	NavigationServer2D::get_singleton()->region_set_map(region, RID());
+	NavigationServer2D::region_set_map(region, RID());
 }
 
 #ifdef DEBUG_ENABLED
 void NavigationRegion2D::_update_debug_edge_connections_mesh()
 {
-	const NavigationServer2D* ns2d = NavigationServer2D::get_singleton();
 	bool enable_edge_connections =
-		use_edge_connections && ns2d->get_debug_navigation_enable_edge_connections() &&
-		ns2d->map_get_use_edge_connections(get_world_2d()->get_navigation_map());
+		use_edge_connections && NavigationServer2D::get_debug_navigation_enable_edge_connections() &&
+		NavigationServer2D::map_get_use_edge_connections(get_world_2d()->get_navigation_map());
 
 	if (enable_edge_connections) {
-		Color debug_edge_connection_color = ns2d->get_debug_navigation_edge_connection_color();
+		Color debug_edge_connection_color = NavigationServer2D::get_debug_navigation_edge_connection_color();
 		// Draw the region edge connections.
 		Transform2D xform = get_global_transform();
 		real_t radius =
-			ns2d->map_get_edge_connection_margin(get_world_2d()->get_navigation_map()) / 2.0;
-		for (int i = 0; i < ns2d->region_get_connections_count(region); i++) {
+			NavigationServer2D::map_get_edge_connection_margin(get_world_2d()->get_navigation_map()) / 2.0;
+		for (int i = 0; i < NavigationServer2D::region_get_connections_count(region); i++) {
 			// Two main points
-			Vector2 a = ns2d->region_get_connection_pathway_start(region, i);
+			Vector2 a = NavigationServer2D::region_get_connection_pathway_start(region, i);
 			a = xform.affine_inverse().xform(a);
-			Vector2 b = ns2d->region_get_connection_pathway_end(region, i);
+			Vector2 b = NavigationServer2D::region_get_connection_pathway_end(region, i);
 			b = xform.affine_inverse().xform(b);
 			draw_line(a, b, debug_edge_connection_color);
 

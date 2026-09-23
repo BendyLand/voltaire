@@ -919,7 +919,7 @@ String ProjectSettings::get_scene_groups_cache_path()
 	return get_project_data_path().path_join("scene_groups_cache.cfg");
 }
 
-const HashMap<StringName, HashSet<StringName>>& ProjectSettings::get_scene_groups_cache() const
+const HashMap<StringName, HashSet<StringName>>& ProjectSettings::get_scene_groups_cache()
 {
 	return data->scene_groups_cache;
 }

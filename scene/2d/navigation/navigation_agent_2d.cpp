@@ -46,12 +46,12 @@ void NavigationAgent2D::_notification(int p_what)
 		set_physics_process_internal(true);
 
 		if (agent_parent && avoidance_enabled) {
-			NavigationServer2D::get_singleton()->agent_set_position(
+			NavigationServer2D::agent_set_position(
 				agent, agent_parent->get_global_position());
 		}
 
 #ifdef DEBUG_ENABLED
-		if (NavigationServer2D::get_singleton()->get_debug_enabled()) {
+		if (NavigationServer2D::get_debug_enabled()) {
 			debug_path_dirty = true;
 		}
 #endif // DEBUG_ENABLED
@@ -90,7 +90,7 @@ void NavigationAgent2D::_notification(int p_what)
 	case NOTIFICATION_SUSPENDED:
 	case NOTIFICATION_PAUSED: {
 		if (agent_parent) {
-			NavigationServer2D::get_singleton()->agent_set_paused(
+			NavigationServer2D::agent_set_paused(
 				get_rid(), !agent_parent->can_process());
 		}
 	} break;
@@ -104,27 +104,27 @@ void NavigationAgent2D::_notification(int p_what)
 
 	case NOTIFICATION_UNPAUSED: {
 		if (agent_parent) {
-			NavigationServer2D::get_singleton()->agent_set_paused(
+			NavigationServer2D::agent_set_paused(
 				get_rid(), !agent_parent->can_process());
 		}
 	} break;
 
 	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 		if (agent_parent && avoidance_enabled) {
-			NavigationServer2D::get_singleton()->agent_set_position(
+			NavigationServer2D::agent_set_position(
 				agent, agent_parent->get_global_position());
 		}
 		if (agent_parent && target_position_submitted) {
 			if (velocity_submitted) {
 				velocity_submitted = false;
 				if (avoidance_enabled) {
-					NavigationServer2D::get_singleton()->agent_set_velocity(agent, velocity);
+					NavigationServer2D::agent_set_velocity(agent, velocity);
 				}
 			}
 			if (velocity_forced_submitted) {
 				velocity_forced_submitted = false;
 				if (avoidance_enabled) {
-					NavigationServer2D::get_singleton()->agent_set_velocity_forced(
+					NavigationServer2D::agent_set_velocity_forced(
 						agent, velocity_forced);
 				}
 			}
@@ -271,7 +271,7 @@ void NavigationAgent2D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer2D::get_singleton()->agent_set_map(agent, map_override);
+	NavigationServer2D::agent_set_map(agent, map_override);
 	if (target_position_submitted) {
 		_request_repath();
 	}
@@ -315,7 +315,7 @@ void NavigationAgent2D::set_radius(real_t p_radius)
 
 	radius = p_radius;
 
-	NavigationServer2D::get_singleton()->agent_set_radius(agent, radius);
+	NavigationServer2D::agent_set_radius(agent, radius);
 }
 
 void NavigationAgent2D::set_neighbor_distance(real_t p_distance)
@@ -326,7 +326,7 @@ void NavigationAgent2D::set_neighbor_distance(real_t p_distance)
 
 	neighbor_distance = p_distance;
 
-	NavigationServer2D::get_singleton()->agent_set_neighbor_distance(agent, neighbor_distance);
+	NavigationServer2D::agent_set_neighbor_distance(agent, neighbor_distance);
 }
 
 void NavigationAgent2D::set_max_neighbors(int p_count)
@@ -337,7 +337,7 @@ void NavigationAgent2D::set_max_neighbors(int p_count)
 
 	max_neighbors = p_count;
 
-	NavigationServer2D::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
+	NavigationServer2D::agent_set_max_neighbors(agent, max_neighbors);
 }
 
 void NavigationAgent2D::set_time_horizon_agents(real_t p_time_horizon)
@@ -347,7 +347,7 @@ void NavigationAgent2D::set_time_horizon_agents(real_t p_time_horizon)
 		return;
 	}
 	time_horizon_agents = p_time_horizon;
-	NavigationServer2D::get_singleton()->agent_set_time_horizon_agents(agent, time_horizon_agents);
+	NavigationServer2D::agent_set_time_horizon_agents(agent, time_horizon_agents);
 }
 
 void NavigationAgent2D::set_time_horizon_obstacles(real_t p_time_horizon)
@@ -357,7 +357,7 @@ void NavigationAgent2D::set_time_horizon_obstacles(real_t p_time_horizon)
 		return;
 	}
 	time_horizon_obstacles = p_time_horizon;
-	NavigationServer2D::get_singleton()->agent_set_time_horizon_obstacles(
+	NavigationServer2D::agent_set_time_horizon_obstacles(
 		agent, time_horizon_obstacles);
 }
 
@@ -369,7 +369,7 @@ void NavigationAgent2D::set_max_speed(real_t p_max_speed)
 	}
 	max_speed = p_max_speed;
 
-	NavigationServer2D::get_singleton()->agent_set_max_speed(agent, max_speed);
+	NavigationServer2D::agent_set_max_speed(agent, max_speed);
 }
 
 void NavigationAgent2D::set_path_max_distance(real_t p_path_max_distance)
@@ -519,17 +519,17 @@ void NavigationAgent2D::_transition_to_navigation_finished()
 	target_position_submitted = false;
 
 	if (avoidance_enabled) {
-		NavigationServer2D::get_singleton()->agent_set_position(
+		NavigationServer2D::agent_set_position(
 			agent, agent_parent->get_global_position());
-		NavigationServer2D::get_singleton()->agent_set_velocity(agent, Vector2(0.0, 0.0));
-		NavigationServer2D::get_singleton()->agent_set_velocity_forced(agent, Vector2(0.0, 0.0));
+		NavigationServer2D::agent_set_velocity(agent, Vector2(0.0, 0.0));
+		NavigationServer2D::agent_set_velocity_forced(agent, Vector2(0.0, 0.0));
 	}
 }
 
 void NavigationAgent2D::set_avoidance_layers(uint32_t p_layers)
 {
 	avoidance_layers = p_layers;
-	NavigationServer2D::get_singleton()->agent_set_avoidance_layers(get_rid(), avoidance_layers);
+	NavigationServer2D::agent_set_avoidance_layers(get_rid(), avoidance_layers);
 }
 
 uint32_t NavigationAgent2D::get_avoidance_layers() const { return avoidance_layers; }
@@ -537,7 +537,7 @@ uint32_t NavigationAgent2D::get_avoidance_layers() const { return avoidance_laye
 void NavigationAgent2D::set_avoidance_mask(uint32_t p_mask)
 {
 	avoidance_mask = p_mask;
-	NavigationServer2D::get_singleton()->agent_set_avoidance_mask(get_rid(), p_mask);
+	NavigationServer2D::agent_set_avoidance_mask(get_rid(), p_mask);
 }
 
 uint32_t NavigationAgent2D::get_avoidance_mask() const { return avoidance_mask; }
@@ -599,7 +599,7 @@ void NavigationAgent2D::set_avoidance_priority(real_t p_priority)
 	ERR_FAIL_COND_MSG(
 		p_priority > 1.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
 	avoidance_priority = p_priority;
-	NavigationServer2D::get_singleton()->agent_set_avoidance_priority(get_rid(), p_priority);
+	NavigationServer2D::agent_set_avoidance_priority(get_rid(), p_priority);
 }
 
 real_t NavigationAgent2D::get_avoidance_priority() const { return avoidance_priority; }
@@ -699,7 +699,7 @@ void NavigationAgent2D::_update_debug_path()
 	RenderingServer::get_singleton()->canvas_item_clear(debug_path_instance);
 
 	if (!(debug_enabled &&
-			NavigationServer2D::get_singleton()->get_debug_navigation_enable_agent_paths())) {
+			NavigationServer2D::get_debug_navigation_enable_agent_paths())) {
 		return;
 	}
 
@@ -721,7 +721,7 @@ void NavigationAgent2D::_update_debug_path()
 	}
 
 	Color debug_path_color =
-		NavigationServer2D::get_singleton()->get_debug_navigation_agent_path_color();
+		NavigationServer2D::get_debug_navigation_agent_path_color();
 	if (debug_use_custom) {
 		debug_path_color = debug_path_custom_color;
 	}
@@ -738,7 +738,7 @@ void NavigationAgent2D::_update_debug_path()
 	}
 
 	float point_size =
-		NavigationServer2D::get_singleton()->get_debug_navigation_agent_path_point_size();
+		NavigationServer2D::get_debug_navigation_agent_path_point_size();
 	float half_point_size = point_size * 0.5;
 
 	if (debug_use_custom) {

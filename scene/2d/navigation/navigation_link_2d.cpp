@@ -63,7 +63,7 @@ Rect2 NavigationLink2D::_edit_get_rect() const
 		return Rect2();
 	}
 
-	real_t radius = NavigationServer2D::get_singleton()->map_get_link_connection_radius(
+	real_t radius = NavigationServer2D::map_get_link_connection_radius(
 		get_world_2d()->get_navigation_map());
 
 	Rect2 rect(get_start_position(), Size2());
@@ -90,7 +90,7 @@ void NavigationLink2D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer2D::get_singleton()->link_set_map(link, map_override);
+	NavigationServer2D::link_set_map(link, map_override);
 }
 
 RID NavigationLink2D::get_navigation_map() const
@@ -112,7 +112,7 @@ void NavigationLink2D::set_navigation_layers(uint32_t p_navigation_layers)
 
 	navigation_layers = p_navigation_layers;
 
-	NavigationServer2D::get_singleton()->link_set_navigation_layers(link, navigation_layers);
+	NavigationServer2D::link_set_navigation_layers(link, navigation_layers);
 }
 
 void NavigationLink2D::set_navigation_layer_value(int p_layer_number, bool p_value)
@@ -193,7 +193,7 @@ void NavigationLink2D::set_enter_cost(real_t p_enter_cost)
 
 	enter_cost = p_enter_cost;
 
-	NavigationServer2D::get_singleton()->link_set_enter_cost(link, enter_cost);
+	NavigationServer2D::link_set_enter_cost(link, enter_cost);
 }
 
 void NavigationLink2D::set_travel_cost(real_t p_travel_cost)
@@ -205,7 +205,7 @@ void NavigationLink2D::set_travel_cost(real_t p_travel_cost)
 
 	travel_cost = p_travel_cost;
 
-	NavigationServer2D::get_singleton()->link_set_travel_cost(link, travel_cost);
+	NavigationServer2D::link_set_travel_cost(link, travel_cost);
 }
 
 PackedStringArray NavigationLink2D::get_configuration_warnings() const
@@ -222,7 +222,7 @@ PackedStringArray NavigationLink2D::get_configuration_warnings() const
 
 void NavigationLink2D::_link_exit_navigation_map()
 {
-	NavigationServer2D::get_singleton()->link_set_map(link, RID());
+	NavigationServer2D::link_set_map(link, RID());
 }
 
 #ifdef DEBUG_ENABLED
@@ -233,20 +233,19 @@ void NavigationLink2D::_update_debug_mesh()
 	}
 
 	if (!Engine::get_singleton()->is_editor_hint() &&
-		!NavigationServer2D::get_singleton()->get_debug_enabled()) {
+		!NavigationServer2D::get_debug_enabled()) {
 		return;
 	}
 
 	Color color;
 	if (enabled) {
-		color = NavigationServer2D::get_singleton()->get_debug_navigation_link_connection_color();
+		color = NavigationServer2D::get_debug_navigation_link_connection_color();
 	}
 	else {
-		color = NavigationServer2D::get_singleton()
-					->get_debug_navigation_link_connection_disabled_color();
+		color = NavigationServer2D::get_debug_navigation_link_connection_disabled_color();
 	}
 
-	real_t radius = NavigationServer2D::get_singleton()->map_get_link_connection_radius(
+	real_t radius = NavigationServer2D::map_get_link_connection_radius(
 		get_world_2d()->get_navigation_map());
 
 	draw_line(get_start_position(), get_end_position(), color);
@@ -280,13 +279,13 @@ void NavigationLink2D::_update_debug_mesh()
 
 NavigationLink2D::NavigationLink2D()
 {
-	link = NavigationServer2D::get_singleton()->link_create();
+	link = NavigationServer2D::link_create();
 
-	NavigationServer2D::get_singleton()->link_set_enter_cost(link, enter_cost);
-	NavigationServer2D::get_singleton()->link_set_travel_cost(link, travel_cost);
-	NavigationServer2D::get_singleton()->link_set_navigation_layers(link, navigation_layers);
-	NavigationServer2D::get_singleton()->link_set_bidirectional(link, bidirectional);
-	NavigationServer2D::get_singleton()->link_set_enabled(link, enabled);
+	NavigationServer2D::link_set_enter_cost(link, enter_cost);
+	NavigationServer2D::link_set_travel_cost(link, travel_cost);
+	NavigationServer2D::link_set_navigation_layers(link, navigation_layers);
+	NavigationServer2D::link_set_bidirectional(link, bidirectional);
+	NavigationServer2D::link_set_enabled(link, enabled);
 
 	set_notify_transform(true);
 	set_hide_clip_children(true);
@@ -294,12 +293,10 @@ NavigationLink2D::NavigationLink2D()
 
 NavigationLink2D::~NavigationLink2D()
 {
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
-	NavigationServer2D::get_singleton()->free_rid(link);
+	ERR_FAIL_NULL(NavigationServer2D::data);
+	NavigationServer2D::free_rid(link);
 	link = RID();
 }
-
-
 
 void NavigationLink2D::set_start_position(Vector2) {}
 

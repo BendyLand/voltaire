@@ -296,8 +296,7 @@ void TileMapLayer::_rendering_occluders_clear_cell(CellData& r_cell_data)
 
 void TileMapLayer::_navigation_update(bool p_force_cleanup)
 {
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
-	NavigationServer2D* ns = NavigationServer2D::get_singleton();
+	ERR_FAIL_NULL(NavigationServer2D::data);
 
 	// Check if we should cleanup everything.
 	bool forced_cleanup = p_force_cleanup || !enabled || !navigation_enabled || !is_inside_tree() ||
@@ -313,7 +312,7 @@ void TileMapLayer::_navigation_update(bool p_force_cleanup)
 	if (tile_map_node) {
 		if (forced_cleanup) {
 			if (navigation_map_override.is_valid()) {
-				ns->free_rid(navigation_map_override);
+				NavigationServer2D::free_rid(navigation_map_override);
 				navigation_map_override = RID();
 			}
 		}
@@ -322,11 +321,11 @@ void TileMapLayer::_navigation_update(bool p_force_cleanup)
 			if (!navigation_map_override.is_valid()) {
 				if (layer_index_in_tile_map_node > 0) {
 					// Create a dedicated map for each layer.
-					RID new_layer_map = ns->map_create();
+					RID new_layer_map = NavigationServer2D::map_create();
 					// Set the default NavigationPolygon cell_size on the new map as a mismatch
 					// causes an error.
-					ns->map_set_cell_size(new_layer_map, NavigationDefaults2D::NAV_MESH_CELL_SIZE);
-					ns->map_set_active(new_layer_map, true);
+					NavigationServer2D::map_set_cell_size(new_layer_map, NavigationDefaults2D::NAV_MESH_CELL_SIZE);
+					NavigationServer2D::map_set_active(new_layer_map, true);
 					navigation_map_override = new_layer_map;
 				}
 			}
@@ -378,7 +377,7 @@ void TileMapLayer::_navigation_notification(int p_what)
 					}
 					Transform2D tile_transform;
 					tile_transform.set_origin(tile_set->map_to_local(kv.key));
-					NavigationServer2D::get_singleton()->region_set_transform(
+					NavigationServer2D::region_set_transform(
 						region, tilemap_xform * tile_transform);
 				}
 			}
@@ -388,13 +387,12 @@ void TileMapLayer::_navigation_notification(int p_what)
 
 void TileMapLayer::_navigation_clear_cell(CellData& r_cell_data)
 {
-	NavigationServer2D* ns = NavigationServer2D::get_singleton();
 	// Clear navigation shapes.
 	for (uint32_t i = 0; i < r_cell_data.navigation_regions.size(); i++) {
 		const RID& region = r_cell_data.navigation_regions[i];
 		if (region.is_valid()) {
-			ns->region_set_map(region, RID());
-			ns->free_rid(region);
+			NavigationServer2D::region_set_map(region, RID());
+			NavigationServer2D::free_rid(region);
 		}
 	}
 	r_cell_data.navigation_regions.clear();

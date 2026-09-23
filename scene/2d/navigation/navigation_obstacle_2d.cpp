@@ -56,7 +56,7 @@ void NavigationObstacle2D::_notification(int p_what)
 		previous_transform = get_global_transform();
 		// need to trigger map controlled agent assignment somehow for the fake_agent since
 		// obstacles use no callback like regular agents
-		NavigationServer2D::get_singleton()->obstacle_set_avoidance_enabled(
+		NavigationServer2D::obstacle_set_avoidance_enabled(
 			obstacle, avoidance_enabled);
 		_update_transform();
 		set_physics_process_internal(true);
@@ -84,7 +84,7 @@ void NavigationObstacle2D::_notification(int p_what)
 			_update_map(map_before_pause);
 			map_before_pause = RID();
 		}
-		NavigationServer2D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
+		NavigationServer2D::obstacle_set_paused(obstacle, !can_process());
 	} break;
 
 	case NOTIFICATION_UNSUSPENDED: {
@@ -103,7 +103,7 @@ void NavigationObstacle2D::_notification(int p_what)
 			_update_map(map_before_pause);
 			map_before_pause = RID();
 		}
-		NavigationServer2D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
+		NavigationServer2D::obstacle_set_paused(obstacle, !can_process());
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
@@ -121,7 +121,7 @@ void NavigationObstacle2D::_notification(int p_what)
 				// only update if there is a noticeable change, else the rvo agent preferred
 				// velocity stays the same
 				if (!previous_velocity.is_equal_approx(velocity)) {
-					NavigationServer2D::get_singleton()->obstacle_set_velocity(obstacle, velocity);
+					NavigationServer2D::obstacle_set_velocity(obstacle, velocity);
 				}
 				previous_velocity = velocity;
 			}
@@ -135,8 +135,8 @@ void NavigationObstacle2D::_notification(int p_what)
 			if (Engine::get_singleton()->is_editor_hint()) {
 				is_debug_enabled = true;
 			}
-			else if (NavigationServer2D::get_singleton()->get_debug_enabled() &&
-					   NavigationServer2D::get_singleton()->get_debug_avoidance_enabled()) {
+			else if (NavigationServer2D::get_debug_enabled() &&
+					   NavigationServer2D::get_debug_avoidance_enabled()) {
 				is_debug_enabled = true;
 			}
 
@@ -154,12 +154,12 @@ void NavigationObstacle2D::_notification(int p_what)
 
 NavigationObstacle2D::NavigationObstacle2D()
 {
-	obstacle = NavigationServer2D::get_singleton()->obstacle_create();
+	obstacle = NavigationServer2D::obstacle_create();
 
-	NavigationServer2D::get_singleton()->obstacle_set_radius(obstacle, radius);
-	NavigationServer2D::get_singleton()->obstacle_set_vertices(obstacle, vertices);
-	NavigationServer2D::get_singleton()->obstacle_set_avoidance_layers(obstacle, avoidance_layers);
-	NavigationServer2D::get_singleton()->obstacle_set_avoidance_enabled(
+	NavigationServer2D::obstacle_set_radius(obstacle, radius);
+	NavigationServer2D::obstacle_set_vertices(obstacle, vertices);
+	NavigationServer2D::obstacle_set_avoidance_layers(obstacle, avoidance_layers);
+	NavigationServer2D::obstacle_set_avoidance_enabled(
 		obstacle, avoidance_enabled);
 
 #ifdef DEBUG_ENABLED
@@ -170,9 +170,9 @@ NavigationObstacle2D::NavigationObstacle2D()
 
 NavigationObstacle2D::~NavigationObstacle2D()
 {
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer2D::data);
 
-	NavigationServer2D::get_singleton()->free_rid(obstacle);
+	NavigationServer2D::free_rid(obstacle);
 	obstacle = RID();
 
 #ifdef DEBUG_ENABLED
@@ -213,7 +213,7 @@ void NavigationObstacle2D::set_avoidance_layers(uint32_t p_layers)
 		return;
 	}
 	avoidance_layers = p_layers;
-	NavigationServer2D::get_singleton()->obstacle_set_avoidance_layers(obstacle, avoidance_layers);
+	NavigationServer2D::obstacle_set_avoidance_layers(obstacle, avoidance_layers);
 }
 
 uint32_t NavigationObstacle2D::get_avoidance_layers() const { return avoidance_layers; }
@@ -291,16 +291,14 @@ PackedStringArray NavigationObstacle2D::get_configuration_warnings() const
 void NavigationObstacle2D::_update_map(RID p_map)
 {
 	map_current = p_map;
-	NavigationServer2D::get_singleton()->obstacle_set_map(obstacle, p_map);
+	NavigationServer2D::obstacle_set_map(obstacle, p_map);
 }
 
 #ifdef DEBUG_ENABLED
 void NavigationObstacle2D::_update_fake_agent_radius_debug()
 {
-	if (radius > 0.0 && NavigationServer2D::get_singleton()
-							->get_debug_navigation_avoidance_enable_obstacles_radius()) {
-		Color debug_radius_color = NavigationServer2D::get_singleton()
-									   ->get_debug_navigation_avoidance_obstacles_radius_color();
+	if (radius > 0.0 && NavigationServer2D::get_debug_navigation_avoidance_enable_obstacles_radius()) {
+		Color debug_radius_color = NavigationServer2D::get_debug_navigation_avoidance_obstacles_radius_color();
 		// Prevent non-positive scaling.
 		const Vector2 safe_scale = get_global_scale().abs().maxf(0.001);
 		// Agent radius is a scalar value and does not support non-uniform scaling, choose the

@@ -95,8 +95,8 @@
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_server.h"
 #include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
 #ifdef TESTS_ENABLED
@@ -2558,8 +2558,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (!editor) {
 		ResourceUID::get_singleton()->enable_reverse_cache();
 	}
-	ResourceUID::get_singleton()->load_from_cache(true);	// Load UUIDs from cache.
-	ProjectSettings::fix_autoload_paths(); // Handles autoloads saved as UID.
+	ResourceUID::get_singleton()->load_from_cache(true); // Load UUIDs from cache.
+	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
 
 	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
@@ -3021,9 +3021,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	physics_server_2d_manager = memnew(PhysicsServer2DManager);
 #endif // PHYSICS_2D_DISABLED
 
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
 	NavigationServer3DManager::initialize_server_manager();
 #endif // NAVIGATION_3D_DISABLED
@@ -3513,9 +3510,6 @@ Error Main::setup2(bool p_show_boot_logo)
 #ifndef NAVIGATION_3D_DISABLED
 	NavigationServer3DManager::initialize_server();
 #endif // NAVIGATION_3D_DISABLED
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server();
-#endif // NAVIGATION_2D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -3950,7 +3944,8 @@ int Main::start()
 		main_loop_type = "SceneTree";
 	}
 
-	if (!main_loop) {
+	if
+(!main_loop) {
 		memdelete(main_loop);
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
@@ -4075,7 +4070,7 @@ bool Main::iteration()
 	}
 
 #ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2D::get_singleton()->process(process_step * time_scale);
+	NavigationServer2D::process(process_step * time_scale);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
 	NavigationServer3D::get_singleton()->process(process_step * time_scale);
@@ -4259,10 +4254,6 @@ void Main::cleanup(bool p_force)
 	finalize_theme_db();
 
 // Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-	NavigationServer2DManager::finalize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
 	NavigationServer3DManager::finalize_server();
 	NavigationServer3DManager::finalize_server_manager();
@@ -4325,6 +4316,6 @@ void Main::cleanup(bool p_force)
 	Thread::release_main_thread();
 }
 
-
-
 void Main::setup_boot_logo() {}
+
+

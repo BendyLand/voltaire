@@ -200,7 +200,7 @@ public:
 	static void remove_global_group(const StringName& p_name);
 	static bool has_global_group(const StringName& p_name);
 
-	const HashMap<StringName, HashSet<StringName>>& get_scene_groups_cache() const;
+	static const HashMap<StringName, HashSet<StringName>>& get_scene_groups_cache();
 	static void add_scene_groups_cache(const StringName& p_path, const HashSet<StringName>& p_cache);
 	static void remove_scene_groups_cache(const StringName& p_path);
 	static void save_scene_groups_cache();
