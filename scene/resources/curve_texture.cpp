@@ -76,7 +76,7 @@ CurveTexture::TextureMode CurveTexture::get_texture_mode() const { return textur
 RID CurveTexture::get_rid() const
 {
 	if (!_texture.is_valid()) {
-		_texture = RS::get_singleton()->texture_2d_placeholder_create();
+		_texture = RS::texture_2d_placeholder_create();
 	}
 	return _texture;
 }
@@ -84,8 +84,8 @@ RID CurveTexture::get_rid() const
 CurveTexture::~CurveTexture()
 {
 	if (_texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(_texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(_texture);
 	}
 }
 
@@ -145,7 +145,7 @@ Ref<Curve> CurveXYZTexture::get_curve_z() const { return _curve_z; }
 RID CurveXYZTexture::get_rid() const
 {
 	if (!_texture.is_valid()) {
-		_texture = RS::get_singleton()->texture_2d_placeholder_create();
+		_texture = RS::texture_2d_placeholder_create();
 	}
 	return _texture;
 }
@@ -153,8 +153,8 @@ RID CurveXYZTexture::get_rid() const
 CurveXYZTexture::~CurveXYZTexture()
 {
 	if (_texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(_texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(_texture);
 	}
 }
 

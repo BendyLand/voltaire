@@ -61,13 +61,10 @@ Vector2i TileMapLayer::_coords_to_quadrant_coords(
 }
 
 #ifdef DEBUG_ENABLED
-/////////////////////////////// Debug //////////////////////////////////////////
 constexpr int TILE_MAP_DEBUG_QUADRANT_SIZE = 16;
 
 void TileMapLayer::_debug_update(bool p_force_cleanup)
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
-
 	// Check if we should cleanup everything.
 	bool forced_cleanup =
 		p_force_cleanup || !enabled || tile_set.is_null() || !is_visible_in_tree();
@@ -80,10 +77,10 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 			// Free the quadrant.
 			Ref<DebugQuadrant>& debug_quadrant = kv.value;
 			if (debug_quadrant->canvas_item.is_valid()) {
-				rs->free_rid(debug_quadrant->canvas_item);
+				RS::free_rid(debug_quadrant->canvas_item);
 			}
 			if (debug_quadrant->physics_mesh.is_valid()) {
-				rs->free_rid(debug_quadrant->physics_mesh);
+				RS::free_rid(debug_quadrant->physics_mesh);
 			}
 		}
 		debug_quadrant_map.clear();
@@ -180,20 +177,20 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 		// Update the quadrant's canvas item.
 		RID& ci = debug_quadrant->canvas_item;
 		if (ci.is_valid()) {
-			rs->canvas_item_clear(ci);
+			RS::canvas_item_clear(ci);
 		}
 		else {
-			ci = rs->canvas_item_create();
+			ci = RS::canvas_item_create();
 			if (needs_set_not_interpolated) {
-				rs->canvas_item_set_interpolated(ci, false);
+				RS::canvas_item_set_interpolated(ci, false);
 			}
-			rs->canvas_item_set_z_index(ci, RSE::CANVAS_ITEM_Z_MAX - 1);
-			rs->canvas_item_set_parent(ci, get_canvas_item());
+			RS::canvas_item_set_z_index(ci, RSE::CANVAS_ITEM_Z_MAX - 1);
+			RS::canvas_item_set_parent(ci, get_canvas_item());
 		}
 		const Vector2 quadrant_pos =
 			tile_set->map_to_local(debug_quadrant->quadrant_coords * TILE_MAP_DEBUG_QUADRANT_SIZE);
 		Transform2D xform(0, quadrant_pos);
-		rs->canvas_item_set_transform(ci, xform);
+		RS::canvas_item_set_transform(ci, xform);
 
 #ifndef PHYSICS_2D_DISABLED
 		// Draw physics.
@@ -218,7 +215,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 		if (!debug_quadrant->drawn_to) {
 			// Free the quadrant.
 			if (ci.is_valid()) {
-				rs->free_rid(ci);
+				RS::free_rid(ci);
 			}
 			debug_quadrant_map.erase(quadrant_coords);
 		}
@@ -242,11 +239,8 @@ Color TileMapLayer::_highlight_color(const Color& p_modulate) const
 	return p_modulate;
 }
 
-/////////////////////////////// Rendering //////////////////////////////////////
-
 void TileMapLayer::_rendering_notification(int p_what)
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
 	if (p_what == NOTIFICATION_TRANSFORM_CHANGED || p_what == NOTIFICATION_ENTER_CANVAS ||
 		p_what == NOTIFICATION_VISIBILITY_CHANGED) {
 		if (tile_set.is_valid()) {
@@ -259,8 +253,8 @@ void TileMapLayer::_rendering_notification(int p_what)
 							continue;
 						}
 						Transform2D xform(0, tile_set->map_to_local(kv.key));
-						rs->canvas_light_occluder_attach_to_canvas(rid, get_canvas());
-						rs->canvas_light_occluder_set_transform(rid, tilemap_xform * xform);
+						RS::canvas_light_occluder_attach_to_canvas(rid, get_canvas());
+						RS::canvas_light_occluder_set_transform(rid, tilemap_xform * xform);
 					}
 				}
 			}
@@ -271,7 +265,7 @@ void TileMapLayer::_rendering_notification(int p_what)
 			for (const KeyValue<Vector2i, Ref<RenderingQuadrant>>& kv : rendering_quadrant_map) {
 				for (const RID& ci : kv.value->canvas_items) {
 					if (ci.is_valid()) {
-						rs->canvas_item_reset_physics_interpolation(ci);
+						RS::canvas_item_reset_physics_interpolation(ci);
 					}
 				}
 			}
@@ -281,12 +275,10 @@ void TileMapLayer::_rendering_notification(int p_what)
 
 void TileMapLayer::_rendering_occluders_clear_cell(CellData& r_cell_data)
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
-
 	// Free the occluders.
 	for (const LocalVector<RID>& polygons : r_cell_data.occluders) {
 		for (const RID& rid : polygons) {
-			rs->free_rid(rid);
+			RS::free_rid(rid);
 		}
 	}
 	r_cell_data.occluders.clear();
@@ -812,17 +804,15 @@ void TileMapLayer::_internal_update(bool p_force_cleanup)
 
 void TileMapLayer::_physics_interpolated_changed()
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
-
 	bool interpolated = is_physics_interpolated();
 	bool needs_reset = interpolated && is_visible_in_tree();
 
 	for (const KeyValue<Vector2i, Ref<RenderingQuadrant>>& kv : rendering_quadrant_map) {
 		for (const RID& ci : kv.value->canvas_items) {
 			if (ci.is_valid()) {
-				rs->canvas_item_set_interpolated(ci, interpolated);
+				RS::canvas_item_set_interpolated(ci, interpolated);
 				if (needs_reset) {
-					rs->canvas_item_reset_physics_interpolation(ci);
+					RS::canvas_item_reset_physics_interpolation(ci);
 				}
 			}
 		}
@@ -832,9 +822,9 @@ void TileMapLayer::_physics_interpolated_changed()
 		for (const LocalVector<RID>& polygons : E.value.occluders) {
 			for (const RID& occluder_id : polygons) {
 				if (occluder_id.is_valid()) {
-					rs->canvas_light_occluder_set_interpolated(occluder_id, interpolated);
+					RS::canvas_light_occluder_set_interpolated(occluder_id, interpolated);
 					if (needs_reset) {
-						rs->canvas_light_occluder_reset_physics_interpolation(occluder_id);
+						RS::canvas_light_occluder_reset_physics_interpolation(occluder_id);
 					}
 				}
 			}

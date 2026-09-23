@@ -103,12 +103,12 @@ Ref<Image> basis_universal_unpacker_ptr(const uint8_t* p_data, int p_size)
 	Image::Format image_format = Image::FORMAT_MAX;
 
 	// Get supported compression formats.
-	bool bptc_supported = RS::get_singleton()->has_os_feature("bptc");
-	bool astc_supported = RS::get_singleton()->has_os_feature("astc");
-	bool rgtc_supported = RS::get_singleton()->has_os_feature("rgtc");
-	bool s3tc_supported = RS::get_singleton()->has_os_feature("s3tc");
-	bool etc2_supported = RS::get_singleton()->has_os_feature("etc2");
-	bool astc_hdr_supported = RS::get_singleton()->has_os_feature("astc_hdr");
+	bool bptc_supported = RS::has_os_feature("bptc");
+	bool astc_supported = RS::has_os_feature("astc");
+	bool rgtc_supported = RS::has_os_feature("rgtc");
+	bool s3tc_supported = RS::has_os_feature("s3tc");
+	bool etc2_supported = RS::has_os_feature("etc2");
+	bool astc_hdr_supported = RS::has_os_feature("astc_hdr");
 
 	bool needs_ra_rg_swap = false;
 	bool needs_rg_trim = false;

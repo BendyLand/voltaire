@@ -228,10 +228,10 @@ void NavigationRegion3D::_region_exit_navigation_map()
 	NavigationServer3D::region_set_map(region, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::get_singleton()->instance_set_visible(debug_instance, false);
+		RS::instance_set_visible(debug_instance, false);
 	}
 	if (debug_edge_connections_instance.is_valid()) {
-		RS::get_singleton()->instance_set_visible(debug_edge_connections_instance, false);
+		RS::instance_set_visible(debug_edge_connections_instance, false);
 	}
 #endif // DEBUG_ENABLED
 }
@@ -245,7 +245,7 @@ void NavigationRegion3D::_region_update_transform()
 	NavigationServer3D::region_set_transform(region, get_global_transform());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::get_singleton()->instance_set_transform(debug_instance, get_global_transform());
+		RS::instance_set_transform(debug_instance, get_global_transform());
 	}
 #endif // DEBUG_ENABLED
 }

@@ -37,7 +37,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_default.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
 #ifndef XR_DISABLED
@@ -1499,7 +1499,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 				lut1_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
 
-				ltc.lut1_texture = RS::get_singleton()->texture_2d_create(lut1_image);
+				ltc.lut1_texture = RS::texture_2d_create(lut1_image);
 
 				int lut2_bytes = 4 * dimensions * dimensions;
 				size_t lut2_size = lut2_bytes * 4;
@@ -1512,7 +1512,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 				lut2_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
 
-				ltc.lut2_texture = RS::get_singleton()->texture_2d_create(lut2_image);
+				ltc.lut2_texture = RS::texture_2d_create(lut2_image);
 			}
 		}
 
@@ -2985,10 +2985,10 @@ RenderForwardMobile::~RenderForwardMobile()
 	RSG::light_storage->directional_shadow_atlas_set_size(0);
 
 	if (ltc.lut1_texture.is_valid()) {
-		RS::get_singleton()->free_rid(ltc.lut1_texture);
+		RS::free_rid(ltc.lut1_texture);
 	}
 	if (ltc.lut2_texture.is_valid()) {
-		RS::get_singleton()->free_rid(ltc.lut2_texture);
+		RS::free_rid(ltc.lut2_texture);
 	}
 
 	{

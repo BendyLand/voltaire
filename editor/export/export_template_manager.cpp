@@ -544,7 +544,7 @@ void ExportTemplateManager::_draw_item_progress(TreeItem* p_item, const Rect2& p
 {
 	Tree* owning_tree = p_item->get_tree();
 	RID ci = owning_tree->get_custom_drawing_canvas_item();
-	RS::get_singleton()->canvas_item_add_rect(ci, p_rect, Color(0, 0, 0, 0.5));
+	RS::canvas_item_add_rect(ci, p_rect, Color(0, 0, 0, 0.5));
 
 	if (!_item_is_file(p_item)) {
 		float progress = 0.0;
@@ -562,7 +562,7 @@ void ExportTemplateManager::_draw_item_progress(TreeItem* p_item, const Rect2& p
 			has_fail = has_fail || meta->download_status == DownloadStatus::FAILED;
 		}
 		progress /= item_count;
-		RS::get_singleton()->canvas_item_add_rect(ci,
+		RS::canvas_item_add_rect(ci,
 			Rect2(p_rect.position, Vector2(p_rect.size.x * progress, p_rect.size.y)),
 			has_fail ? theme_cache.download_failed_color : theme_cache.download_progress_color);
 		return;
@@ -580,23 +580,23 @@ void ExportTemplateManager::_draw_item_progress(TreeItem* p_item, const Rect2& p
 			Vector2(p_rect.get_end().x - progress_texture->get_width(),
 				p_rect.position.y + p_rect.size.y * 0.5 - progress_texture->get_height() * 0.5),
 			progress_texture->get_size());
-		RS::get_singleton()->canvas_item_add_texture_rect(ci, rect, progress_texture->get_rid());
+		RS::canvas_item_add_texture_rect(ci, rect, progress_texture->get_rid());
 	} break;
 
 	case DownloadStatus::IN_PROGRESS: {
 		float progress = _get_download_progress(p_item);
 		meta->progress_cache = progress;
-		RS::get_singleton()->canvas_item_add_rect(ci,
+		RS::canvas_item_add_rect(ci,
 			Rect2(p_rect.position, Vector2(p_rect.size.x * progress, p_rect.size.y)),
 			theme_cache.download_progress_color);
 	} break;
 
 	case DownloadStatus::COMPLETED: {
-		RS::get_singleton()->canvas_item_add_rect(ci, p_rect, theme_cache.download_progress_color);
+		RS::canvas_item_add_rect(ci, p_rect, theme_cache.download_progress_color);
 	} break;
 
 	case DownloadStatus::FAILED: {
-		RS::get_singleton()->canvas_item_add_rect(ci,
+		RS::canvas_item_add_rect(ci,
 			Rect2(p_rect.position,
 				Vector2(p_rect.size.x * _get_download_progress(p_item), p_rect.size.y)),
 			theme_cache.download_failed_color);

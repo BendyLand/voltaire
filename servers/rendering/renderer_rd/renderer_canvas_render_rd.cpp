@@ -36,11 +36,12 @@
 #include "core/math/transform_interpolator.h"
 #include "core/templates/fixed_vector.h"
 #include "renderer_canvas_render_rd.h"
+#include "servers/rendering/renderer_canvas_cull.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_server_default.h"
 
 void RendererCanvasRenderRD::_update_transform_2d_to_mat4(
 	const Transform2D& p_transform, float* p_mat4)
@@ -951,7 +952,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 	}
 
 	if (time_used) {
-		RenderingServerDefault::redraw_request();
+		RenderingServer::redraw_request();
 	}
 
 	texture_info_map.clear();
@@ -2053,7 +2054,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
 
-			RenderingServerDefault::redraw_request(); // animation visible means redraw request
+			RenderingServer::redraw_request(); // animation visible means redraw request
 		} break;
 		}
 
@@ -2140,7 +2141,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 
 		p_item->debug_redraw_time -= RSG::rasterizer->get_frame_delta_time();
 
-		RenderingServerDefault::redraw_request();
+		RenderingServer::redraw_request();
 
 		r_batch_broken = false;
 	}
@@ -2320,7 +2321,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 				break;
 			}
 
-			RenderingServerDefault::redraw_request(); // Active particles means redraw request.
+			RenderingServer::redraw_request(); // Active particles means redraw request.
 
 			int dpc = particles_storage->particles_get_draw_passes(particles);
 			if (dpc == 0) {

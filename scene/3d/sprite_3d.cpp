@@ -379,9 +379,9 @@ StandardMaterial3D::TextureFilter SpriteBase3D::get_texture_filter() const
 
 SpriteBase3D::~SpriteBase3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(mesh);
-	RenderingServer::get_singleton()->free_rid(material);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(mesh);
+	RenderingServer::free_rid(material);
 }
 
 void Sprite3D::_draw()

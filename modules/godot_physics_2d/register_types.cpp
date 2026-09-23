@@ -32,7 +32,6 @@
 #include "godot_physics_server_2d.h"
 #include "register_types.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_wrap_mt.h"
 
 void uninitialize_godot_physics_2d_module(ModuleInitializationLevel p_level)
 {

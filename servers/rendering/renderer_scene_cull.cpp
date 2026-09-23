@@ -34,7 +34,6 @@
 #include "renderer_scene_cull.h"
 #include "servers/rendering/rendering_light_culler.h"
 #include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_default.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"

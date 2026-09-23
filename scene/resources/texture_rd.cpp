@@ -40,7 +40,7 @@ RID Texture2DRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture_rid = RenderingServer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;
@@ -50,9 +50,9 @@ bool Texture2DRD::has_alpha() const { return false; }
 
 Ref<Image> Texture2DRD::get_image() const
 {
-	ERR_FAIL_NULL_V(RS::get_singleton(), Ref<Image>());
+	ERR_FAIL_NULL_V(RS::data, Ref<Image>());
 	if (texture_rid.is_valid()) {
-		return RS::get_singleton()->texture_2d_get(texture_rid);
+		return RS::texture_2d_get(texture_rid);
 	}
 	else {
 		return Ref<Image>();
@@ -66,8 +66,8 @@ Texture2DRD::Texture2DRD() { size = Size2i(); }
 Texture2DRD::~Texture2DRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::get_singleton());
-		RS::get_singleton()->free_rid(texture_rid);
+		ERR_FAIL_NULL(RS::data);
+		RS::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }
@@ -88,7 +88,7 @@ RID TextureLayeredRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture_rid = RenderingServer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;
@@ -97,7 +97,7 @@ RID TextureLayeredRD::get_rid() const
 Ref<Image> TextureLayeredRD::get_layer_data(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, (int)layers, Ref<Image>());
-	return RS::get_singleton()->texture_2d_layer_get(texture_rid, p_layer);
+	return RS::texture_2d_layer_get(texture_rid, p_layer);
 }
 
 RID TextureLayeredRD::get_texture_rd_rid() const { return texture_rd_rid; }
@@ -114,8 +114,8 @@ TextureLayeredRD::TextureLayeredRD(LayeredType p_layer_type)
 TextureLayeredRD::~TextureLayeredRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::get_singleton());
-		RS::get_singleton()->free_rid(texture_rid);
+		ERR_FAIL_NULL(RS::data);
+		RS::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }
@@ -134,7 +134,7 @@ RID Texture3DRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture_rid = RenderingServer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;
@@ -152,8 +152,8 @@ Texture3DRD::Texture3DRD()
 Texture3DRD::~Texture3DRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::get_singleton());
-		RS::get_singleton()->free_rid(texture_rid);
+		ERR_FAIL_NULL(RS::data);
+		RS::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }

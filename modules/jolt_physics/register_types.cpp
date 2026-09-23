@@ -32,7 +32,6 @@
 #include "jolt_globals.h"
 #include "jolt_physics_server_3d.h"
 #include "register_types.h"
-#include "servers/physics_3d/physics_server_3d_wrap_mt.h"
 
 void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 {

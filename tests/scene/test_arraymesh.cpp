@@ -392,12 +392,12 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 
 	SUBCASE("Able to get correct mesh RID.") {
 		RID rid = mesh->get_rid();
-		CHECK(RS::get_singleton()->mesh_get_surface_count(rid) == 2);
+		CHECK(RS::mesh_get_surface_count(rid) == 2);
 	}
 
 	SUBCASE("Create surface from raw SurfaceData data.") {
 		RID mesh_rid = mesh->get_rid();
-		RenderingServerTypes::SurfaceData surface_data = RS::get_singleton()->mesh_get_surface(mesh_rid, 0);
+		RenderingServerTypes::SurfaceData surface_data = RS::mesh_get_surface(mesh_rid, 0);
 		Ref<ArrayMesh> mesh2;
 		mesh2.instantiate();
 		mesh2->add_surface(surface_data.format, Mesh::PRIMITIVE_TRIANGLES, surface_data.vertex_data, surface_data.attribute_data,

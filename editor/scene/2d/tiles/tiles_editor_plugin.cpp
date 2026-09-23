@@ -134,8 +134,7 @@ TilesEditorUtils::~TilesEditorUtils()
 		pattern_preview_sem.post();
 		while (!pattern_thread_exited.is_set()) {
 			OS::get_singleton()->delay_usec(10000);
-			RenderingServer::get_singleton()
-				->sync(); // sync pending stuff, as thread may be blocked on visual server
+			RenderingServer::sync(); // sync pending stuff, as thread may be blocked on visual server
 		}
 		pattern_preview_thread.wait_to_finish();
 	}

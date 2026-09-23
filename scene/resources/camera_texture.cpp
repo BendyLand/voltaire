@@ -64,7 +64,7 @@ RID CameraTexture::get_rid() const
 	}
 	else {
 		if (_texture.is_null()) {
-			_texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+			_texture = RenderingServer::texture_2d_placeholder_create();
 		}
 		return _texture;
 	}
@@ -72,7 +72,7 @@ RID CameraTexture::get_rid() const
 
 Ref<Image> CameraTexture::get_image() const
 {
-	return RenderingServer::get_singleton()->texture_2d_get(get_rid());
+	return RenderingServer::texture_2d_get(get_rid());
 }
 
 int CameraTexture::get_camera_feed_id() const { return camera_feed_id; }
@@ -101,8 +101,8 @@ CameraTexture::CameraTexture()
 CameraTexture::~CameraTexture()
 {
 	if (_texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(_texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(_texture);
 	}
 }
 

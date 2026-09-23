@@ -84,8 +84,8 @@ void CPUParticles3D::set_amount(int p_amount)
 	}
 
 	particle_data.resize((12 + 4 + 4) * p_amount);
-	RS::get_singleton()->multimesh_set_visible_instances(multimesh, -1);
-	RS::get_singleton()->multimesh_allocate_data(
+	RS::multimesh_set_visible_instances(multimesh, -1);
+	RS::multimesh_allocate_data(
 		multimesh, p_amount, RSE::MULTIMESH_TRANSFORM_3D, true, true);
 
 	particle_order.resize(p_amount);
@@ -295,8 +295,8 @@ bool CPUParticles3D::get_split_scale() { return split_scale; }
 
 AABB CPUParticles3D::capture_aabb() const
 {
-	RS::get_singleton()->multimesh_set_custom_aabb(multimesh, AABB());
-	return RS::get_singleton()->multimesh_get_aabb(multimesh);
+	RS::multimesh_set_custom_aabb(multimesh, AABB());
+	return RS::multimesh_get_aabb(multimesh);
 }
 
 bool CPUParticles3D::get_use_fixed_seed() const { return use_fixed_seed; }
@@ -543,7 +543,7 @@ void CPUParticles3D::_update_render_thread()
 	MutexLock lock(update_mutex);
 
 	if (can_update.is_set()) {
-		RS::get_singleton()->multimesh_set_buffer(multimesh, particle_data);
+		RS::multimesh_set_buffer(multimesh, particle_data);
 		can_update.clear(); // wait for next time
 	}
 }
@@ -621,8 +621,8 @@ void CPUParticles3D::_notification(int p_what)
 
 CPUParticles3D::~CPUParticles3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(multimesh);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(multimesh);
 }
 
 void CPUParticles3D::_set_redraw(bool p_redraw) {}

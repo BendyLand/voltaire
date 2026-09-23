@@ -244,10 +244,10 @@ RID TileAtlasView::_get_canvas_item_to_draw(const TileData* p_for_data,
 		return p_material_map[mat];
 	}
 	else {
-		RID ci_rid = RS::get_singleton()->canvas_item_create();
-		RS::get_singleton()->canvas_item_set_parent(ci_rid, p_base_item->get_canvas_item());
-		RS::get_singleton()->canvas_item_set_material(ci_rid, mat->get_rid());
-		RS::get_singleton()->canvas_item_set_default_texture_filter(
+		RID ci_rid = RS::canvas_item_create();
+		RS::canvas_item_set_parent(ci_rid, p_base_item->get_canvas_item());
+		RS::canvas_item_set_material(ci_rid, mat->get_rid());
+		RS::canvas_item_set_default_texture_filter(
 			ci_rid, RSE::CanvasItemTextureFilter(p_base_item->get_texture_filter_in_tree()));
 		p_material_map[mat] = ci_rid;
 		return ci_rid;
@@ -257,12 +257,12 @@ RID TileAtlasView::_get_canvas_item_to_draw(const TileData* p_for_data,
 void TileAtlasView::_clear_material_canvas_items()
 {
 	for (KeyValue<Ref<Material>, RID> kv : material_tiles_draw) {
-		RS::get_singleton()->free_rid(kv.value);
+		RS::free_rid(kv.value);
 	}
 	material_tiles_draw.clear();
 
 	for (KeyValue<Ref<Material>, RID> kv : material_alternatives_draw) {
-		RS::get_singleton()->free_rid(kv.value);
+		RS::free_rid(kv.value);
 	}
 	material_alternatives_draw.clear();
 }

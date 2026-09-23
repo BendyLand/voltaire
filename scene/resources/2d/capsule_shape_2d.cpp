@@ -100,12 +100,12 @@ void CapsuleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
 	Vector<Vector2> points = _get_points();
 	Vector<Color> col = {p_color};
-	RenderingServer::get_singleton()->canvas_item_add_polygon(p_to_rid, points, col);
+	RenderingServer::canvas_item_add_polygon(p_to_rid, points, col);
 
 	if (is_collision_outline_enabled()) {
 		points.push_back(points[0]);
 		col = {Color(p_color, 1.0f)};
-		RenderingServer::get_singleton()->canvas_item_add_polyline(p_to_rid, points, col);
+		RenderingServer::canvas_item_add_polyline(p_to_rid, points, col);
 	}
 }
 

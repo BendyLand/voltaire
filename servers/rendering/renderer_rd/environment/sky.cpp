@@ -39,8 +39,8 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server_default.h"
 #include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/rendering_server.h"
 #include "sky.h"
 
 using namespace RendererRD;
@@ -562,7 +562,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		if (shader_data->uses_time && p_render_data->scene_data->time - sky->prev_time > 0.00001) {
 			sky->prev_time = p_render_data->scene_data->time;
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_aerial_perspective(
@@ -571,7 +571,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_aerial_perspective(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_light_color(
@@ -580,7 +580,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_light_color(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_sun_scatter(
@@ -589,7 +589,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_sun_scatter(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_enabled(
@@ -598,7 +598,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_enabled(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_density(
@@ -607,7 +607,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_density(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_sky_affect(
@@ -616,7 +616,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_sky_affect(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (RendererSceneRenderRD::get_singleton()->environment_get_fog_light_energy(
@@ -625,7 +625,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRenderRD::get_singleton()->environment_get_fog_light_energy(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (material_data != sky->prev_material_data) {

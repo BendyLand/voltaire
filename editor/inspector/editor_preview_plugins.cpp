@@ -79,23 +79,15 @@ bool EditorTexturePreviewPlugin::handles(const String& p_type) const { return tr
 
 bool EditorTexturePreviewPlugin::generate_small_preview_automatically() const { return true; }
 
-////////////////////////////////////////////////////////////////////////////
-
 bool EditorImagePreviewPlugin::handles(const String& p_type) const { return p_type == "Image"; }
 
 bool EditorImagePreviewPlugin::generate_small_preview_automatically() const { return true; }
-
-////////////////////////////////////////////////////////////////////////////
 
 bool EditorBitmapPreviewPlugin::handles(const String& p_type) const {}
 
 bool EditorBitmapPreviewPlugin::generate_small_preview_automatically() const { return true; }
 
-///////////////////////////////////////////////////////////////////////////
-
 bool EditorPackedScenePreviewPlugin::handles(const String& p_type) const { return true; }
-
-//////////////////////////////////////////////////////////////////
 
 void EditorMaterialPreviewPlugin::abort() { draw_requester.abort(); }
 
@@ -105,28 +97,22 @@ bool EditorMaterialPreviewPlugin::generate_small_preview_automatically() const {
 
 EditorMaterialPreviewPlugin::~EditorMaterialPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(sphere);
-	RS::get_singleton()->free_rid(sphere_instance);
-	RS::get_singleton()->free_rid(viewport);
-	RS::get_singleton()->free_rid(light);
-	RS::get_singleton()->free_rid(light_instance);
-	RS::get_singleton()->free_rid(light2);
-	RS::get_singleton()->free_rid(light_instance2);
-	RS::get_singleton()->free_rid(camera);
-	RS::get_singleton()->free_rid(camera_attributes);
-	RS::get_singleton()->free_rid(scenario);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(sphere);
+	RS::free_rid(sphere_instance);
+	RS::free_rid(viewport);
+	RS::free_rid(light);
+	RS::free_rid(light_instance);
+	RS::free_rid(light2);
+	RS::free_rid(light_instance2);
+	RS::free_rid(camera);
+	RS::free_rid(camera_attributes);
+	RS::free_rid(scenario);
 }
-
-///////////////////////////////////////////////////////////////////////////
 
 bool EditorScriptPreviewPlugin::handles(const String& p_type) const { return true; }
 
-///////////////////////////////////////////////////////////////////
-
 bool EditorAudioStreamPreviewPlugin::handles(const String& p_type) const { return true; }
-
-///////////////////////////////////////////////////////////////////////////
 
 void EditorMeshPreviewPlugin::abort() { draw_requester.abort(); }
 
@@ -134,20 +120,18 @@ bool EditorMeshPreviewPlugin::handles(const String& p_type) const { return true;
 
 EditorMeshPreviewPlugin::~EditorMeshPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	// RS::get_singleton()->free(sphere);
-	RS::get_singleton()->free_rid(mesh_instance);
-	RS::get_singleton()->free_rid(viewport);
-	RS::get_singleton()->free_rid(light);
-	RS::get_singleton()->free_rid(light_instance);
-	RS::get_singleton()->free_rid(light2);
-	RS::get_singleton()->free_rid(light_instance2);
-	RS::get_singleton()->free_rid(camera);
-	RS::get_singleton()->free_rid(camera_attributes);
-	RS::get_singleton()->free_rid(scenario);
+	ERR_FAIL_NULL(RenderingServer::data);
+	// RS::free(sphere);
+	RS::free_rid(mesh_instance);
+	RS::free_rid(viewport);
+	RS::free_rid(light);
+	RS::free_rid(light_instance);
+	RS::free_rid(light2);
+	RS::free_rid(light_instance2);
+	RS::free_rid(camera);
+	RS::free_rid(camera_attributes);
+	RS::free_rid(scenario);
 }
-
-///////////////////////////////////////////////////////////////////////////
 
 void EditorFontPreviewPlugin::abort() { draw_requester.abort(); }
 
@@ -155,28 +139,26 @@ bool EditorFontPreviewPlugin::handles(const String& p_type) const { return true;
 
 EditorFontPreviewPlugin::EditorFontPreviewPlugin()
 {
-	viewport = RS::get_singleton()->viewport_create();
-	RS::get_singleton()->viewport_set_update_mode(viewport, RSE::VIEWPORT_UPDATE_DISABLED);
-	RS::get_singleton()->viewport_set_size(viewport, 128, 128);
-	RS::get_singleton()->viewport_set_active(viewport, true);
-	viewport_texture = RS::get_singleton()->viewport_get_texture(viewport);
+	viewport = RS::viewport_create();
+	RS::viewport_set_update_mode(viewport, RSE::VIEWPORT_UPDATE_DISABLED);
+	RS::viewport_set_size(viewport, 128, 128);
+	RS::viewport_set_active(viewport, true);
+	viewport_texture = RS::viewport_get_texture(viewport);
 
-	canvas = RS::get_singleton()->canvas_create();
-	canvas_item = RS::get_singleton()->canvas_item_create();
+	canvas = RS::canvas_create();
+	canvas_item = RS::canvas_item_create();
 
-	RS::get_singleton()->viewport_attach_canvas(viewport, canvas);
-	RS::get_singleton()->canvas_item_set_parent(canvas_item, canvas);
+	RS::viewport_attach_canvas(viewport, canvas);
+	RS::canvas_item_set_parent(canvas_item, canvas);
 }
 
 EditorFontPreviewPlugin::~EditorFontPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(canvas_item);
-	RS::get_singleton()->free_rid(canvas);
-	RS::get_singleton()->free_rid(viewport);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(canvas_item);
+	RS::free_rid(canvas);
+	RS::free_rid(viewport);
 }
-
-////////////////////////////////////////////////////////////////////////////
 
 static const real_t GRADIENT_PREVIEW_TEXTURE_SCALE_FACTOR = 4.0;
 

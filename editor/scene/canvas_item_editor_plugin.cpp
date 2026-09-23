@@ -459,7 +459,7 @@ void CanvasItemEditor::_draw_straight_line(Point2 p_from, Point2 p_to, Color p_c
 		}
 	}
 	if (points.size() >= 2) {
-		RenderingServer::get_singleton()->canvas_item_add_line(ci, points[0], points[1], p_color);
+		RenderingServer::canvas_item_add_line(ci, points[0], points[1], p_color);
 	}
 }
 
@@ -519,7 +519,7 @@ void CanvasItemEditor::_draw_viewport()
 	_draw_selection();
 
 	RID ci = viewport->get_canvas_item();
-	RenderingServer::get_singleton()->canvas_item_add_set_transform(ci, Transform2D());
+	RenderingServer::canvas_item_add_set_transform(ci, Transform2D());
 
 	EditorNode::get_singleton()->get_editor_plugins_over()->forward_canvas_draw_over_viewport(
 		viewport);

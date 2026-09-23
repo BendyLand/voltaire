@@ -109,8 +109,8 @@ bool DisplayServer::_get_window_early_clear_override(Color& r_color)
 		r_color = window_early_clear_override_color;
 		return true;
 	}
-	else if (RenderingServer::get_singleton()) {
-		r_color = RenderingServer::get_singleton()->get_default_clear_color();
+	else if (RenderingServer::data) {
+		r_color = RenderingServer::get_default_clear_color();
 		return true;
 	}
 	else {

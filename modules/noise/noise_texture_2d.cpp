@@ -45,13 +45,13 @@ void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
 	image = p_image;
 	if (image.is_valid()) {
 		if (texture.is_valid()) {
-			RID new_texture = RS::get_singleton()->texture_2d_create(p_image);
-			RS::get_singleton()->texture_replace(texture, new_texture);
+			RID new_texture = RS::texture_2d_create(p_image);
+			RS::texture_replace(texture, new_texture);
 		}
 		else {
-			texture = RS::get_singleton()->texture_2d_create(p_image);
+			texture = RS::texture_2d_create(p_image);
 		}
-		RS::get_singleton()->texture_set_path(texture, get_path());
+		RS::texture_set_path(texture, get_path());
 	}
 	emit_changed();
 }
@@ -228,7 +228,7 @@ int NoiseTexture2D::get_height() const { return size.y; }
 RID NoiseTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_2d_placeholder_create();
+		texture = RS::texture_2d_placeholder_create();
 	}
 
 	return texture;

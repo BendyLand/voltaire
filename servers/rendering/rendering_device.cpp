@@ -35,7 +35,6 @@
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
 #include "modules/modules_enabled.gen.h"
-#include "rendering_device.compat.inc"
 #include "rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/rendering_shader_container.h"
@@ -1936,13 +1935,6 @@ Size2i RenderingDevice::texture_size(RID p_texture)
 	return Size2i(tex->width, tex->height);
 }
 
-#ifndef DISABLE_DEPRECATED
-uint64_t RenderingDevice::texture_get_native_handle(RID p_texture)
-{
-	return get_driver_resource(DRIVER_RESOURCE_TEXTURE, p_texture);
-}
-#endif
-
 Error RenderingDevice::texture_copy(RID p_from_texture, RID p_to_texture, const Vector3& p_from,
 	const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap,
 	uint32_t p_src_layer, uint32_t p_dst_layer)
@@ -3591,18 +3583,6 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
 	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
 }
 
-#ifndef DISABLE_DEPRECATED
-Error RenderingDevice::draw_list_begin_split(RID p_framebuffer, uint32_t p_splits,
-	DrawListID* r_split_ids, InitialAction p_initial_color_action, FinalAction p_final_color_action,
-	InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
-	const Vector<Color>& p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil,
-	const Rect2& p_region, const Vector<RID>& p_storage_textures)
-{
-	ERR_FAIL_V_MSG(
-		ERR_UNAVAILABLE, "Deprecated. Split draw lists are used automatically by RenderingDevice.");
-}
-#endif
-
 void RenderingDevice::draw_list_set_blend_constants(DrawListID p_list, const Color& p_color)
 {
 	ERR_RENDER_THREAD_GUARD();
@@ -4054,15 +4034,6 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
 	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
 }
 
-#ifndef DISABLE_DEPRECATED
-Error RenderingDevice::draw_list_switch_to_next_pass_split(
-	uint32_t p_splits, DrawListID* r_split_ids)
-{
-	ERR_FAIL_V_MSG(
-		ERR_UNAVAILABLE, "Deprecated. Split draw lists are used automatically by RenderingDevice.");
-}
-#endif
-
 void RenderingDevice::_draw_list_start(const Rect2i& p_viewport)
 {
 	draw_list.viewport = p_viewport;
@@ -4501,14 +4472,6 @@ void RenderingDevice::compute_list_end()
 
 	compute_list = ComputeList();
 }
-
-#ifndef DISABLE_DEPRECATED
-
-void RenderingDevice::full_barrier()
-{
-	WARN_PRINT("Deprecated. Barriers are automatically inserted by RenderingDevice.");
-}
-#endif
 
 static uint32_t _get_alignment_offset(uint32_t p_offset, uint32_t p_required_align)
 {
@@ -5347,13 +5310,6 @@ void RenderingDevice::draw_command_begin_label(const Span<char> p_label_name, co
 
 	draw_graph.begin_label(p_label_name, p_color);
 }
-
-#ifndef DISABLE_DEPRECATED
-void RenderingDevice::draw_command_insert_label(String p_label_name, const Color& p_color)
-{
-	WARN_PRINT("Deprecated. Inserting labels no longer applies due to command reordering.");
-}
-#endif
 
 void RenderingDevice::draw_command_end_label()
 {

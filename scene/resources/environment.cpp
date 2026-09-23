@@ -47,7 +47,7 @@ void Environment::set_sky(const Ref<Sky>& p_sky)
 	if (bg_sky.is_valid()) {
 		sb_rid = bg_sky->get_rid();
 	}
-	RS::get_singleton()->environment_set_sky(environment, sb_rid);
+	RS::environment_set_sky(environment, sb_rid);
 }
 
 Ref<Sky> Environment::get_sky() const { return bg_sky; }
@@ -55,7 +55,7 @@ Ref<Sky> Environment::get_sky() const { return bg_sky; }
 void Environment::set_sky_custom_fov(float p_scale)
 {
 	bg_sky_custom_fov = p_scale;
-	RS::get_singleton()->environment_set_sky_custom_fov(environment, p_scale);
+	RS::environment_set_sky_custom_fov(environment, p_scale);
 }
 
 float Environment::get_sky_custom_fov() const { return bg_sky_custom_fov; }
@@ -63,7 +63,7 @@ float Environment::get_sky_custom_fov() const { return bg_sky_custom_fov; }
 void Environment::set_sky_rotation(const Vector3& p_rotation)
 {
 	bg_sky_rotation = p_rotation;
-	RS::get_singleton()->environment_set_sky_orientation(
+	RS::environment_set_sky_orientation(
 		environment, Basis::from_euler(p_rotation));
 }
 
@@ -72,7 +72,7 @@ Vector3 Environment::get_sky_rotation() const { return bg_sky_rotation; }
 void Environment::set_bg_color(const Color& p_color)
 {
 	bg_color = p_color;
-	RS::get_singleton()->environment_set_bg_color(environment, p_color);
+	RS::environment_set_bg_color(environment, p_color);
 }
 
 Color Environment::get_bg_color() const { return bg_color; }
@@ -96,18 +96,18 @@ float Environment::get_bg_intensity() const { return bg_intensity; }
 void Environment::_update_bg_energy()
 {
 	if (GLOBAL_GET_CACHED(bool, "rendering/lights_and_shadows/use_physical_light_units")) {
-		RS::get_singleton()->environment_set_bg_energy(
+		RS::environment_set_bg_energy(
 			environment, bg_energy_multiplier, bg_intensity);
 	}
 	else {
-		RS::get_singleton()->environment_set_bg_energy(environment, bg_energy_multiplier, 1.0);
+		RS::environment_set_bg_energy(environment, bg_energy_multiplier, 1.0);
 	}
 }
 
 void Environment::set_canvas_max_layer(int p_max_layer)
 {
 	bg_canvas_max_layer = p_max_layer;
-	RS::get_singleton()->environment_set_canvas_max_layer(environment, p_max_layer);
+	RS::environment_set_canvas_max_layer(environment, p_max_layer);
 }
 
 int Environment::get_canvas_max_layer() const { return bg_canvas_max_layer; }
@@ -115,7 +115,7 @@ int Environment::get_canvas_max_layer() const { return bg_canvas_max_layer; }
 void Environment::set_camera_feed_id(int p_id)
 {
 	bg_camera_feed_id = p_id;
-	RS::get_singleton()->environment_set_camera_feed_id(environment, bg_camera_feed_id);
+	RS::environment_set_camera_feed_id(environment, bg_camera_feed_id);
 }
 
 int Environment::get_camera_feed_id() const { return bg_camera_feed_id; }
@@ -156,7 +156,7 @@ Environment::ReflectionSource Environment::get_reflection_source() const
 
 void Environment::_update_ambient_light()
 {
-	RS::get_singleton()->environment_set_ambient_light(environment, ambient_color,
+	RS::environment_set_ambient_light(environment, ambient_color,
 		RSE::EnvironmentAmbientSource(ambient_source), ambient_energy, ambient_sky_contribution,
 		RSE::EnvironmentReflectionSource(reflection_source));
 }
@@ -190,14 +190,14 @@ float Environment::get_tonemap_agx_white() const { return tonemap_agx_white; }
 void Environment::set_tonemap_agx_contrast(float p_agx_contrast)
 {
 	tonemap_agx_contrast = p_agx_contrast;
-	RS::get_singleton()->environment_set_tonemap_agx_contrast(environment, p_agx_contrast);
+	RS::environment_set_tonemap_agx_contrast(environment, p_agx_contrast);
 }
 
 float Environment::get_tonemap_agx_contrast() const { return tonemap_agx_contrast; }
 
 void Environment::_update_tonemap()
 {
-	RS::get_singleton()->environment_set_tonemap(environment,
+	RS::environment_set_tonemap(environment,
 		RSE::EnvironmentToneMapper(tone_mapper), tonemap_exposure,
 		tone_mapper == TONE_MAPPER_AGX ? tonemap_agx_white : tonemap_white);
 }
@@ -245,7 +245,7 @@ float Environment::get_ssr_depth_tolerance() const { return ssr_depth_tolerance;
 
 void Environment::_update_ssr()
 {
-	RS::get_singleton()->environment_set_ssr(
+	RS::environment_set_ssr(
 		environment, ssr_enabled, ssr_max_steps, ssr_fade_in, ssr_fade_out, ssr_depth_tolerance);
 }
 
@@ -324,7 +324,7 @@ float Environment::get_ssao_ao_channel_affect() const { return ssao_ao_channel_a
 
 void Environment::_update_ssao()
 {
-	RS::get_singleton()->environment_set_ssao(environment, ssao_enabled, ssao_radius,
+	RS::environment_set_ssao(environment, ssao_enabled, ssao_radius,
 		ssao_intensity, ssao_power, ssao_detail, ssao_horizon, ssao_sharpness,
 		ssao_direct_light_affect, ssao_ao_channel_affect);
 }
@@ -372,7 +372,7 @@ float Environment::get_ssil_normal_rejection() const { return ssil_normal_reject
 
 void Environment::_update_ssil()
 {
-	RS::get_singleton()->environment_set_ssil(environment, ssil_enabled, ssil_radius,
+	RS::environment_set_ssil(environment, ssil_enabled, ssil_radius,
 		ssil_intensity, ssil_sharpness, ssil_normal_rejection);
 }
 
@@ -489,7 +489,7 @@ float Environment::get_sdfgi_probe_bias() const { return sdfgi_probe_bias; }
 
 void Environment::_update_sdfgi()
 {
-	RS::get_singleton()->environment_set_sdfgi(environment, sdfgi_enabled, sdfgi_cascades,
+	RS::environment_set_sdfgi(environment, sdfgi_enabled, sdfgi_cascades,
 		sdfgi_min_cell_size, RSE::EnvironmentSDFGIYScale(sdfgi_y_scale), sdfgi_use_occlusion,
 		sdfgi_bounce_feedback, sdfgi_read_sky_light, sdfgi_energy, sdfgi_normal_bias,
 		sdfgi_probe_bias);
@@ -630,7 +630,7 @@ void Environment::_update_glow()
 		glow_map_rid = RID();
 	}
 
-	RS::get_singleton()->environment_set_glow(environment, glow_enabled, normalized_levels,
+	RS::environment_set_glow(environment, glow_enabled, normalized_levels,
 		glow_intensity, glow_strength, glow_mix, glow_bloom,
 		RSE::EnvironmentGlowBlendMode(glow_blend_mode), glow_hdr_bleed_threshold,
 		glow_hdr_bleed_scale, glow_hdr_luminance_cap, _glow_map_strength, glow_map_rid);
@@ -713,7 +713,7 @@ float Environment::get_fog_sky_affect() const { return fog_sky_affect; }
 
 void Environment::_update_fog()
 {
-	RS::get_singleton()->environment_set_fog(environment, fog_enabled, fog_light_color,
+	RS::environment_set_fog(environment, fog_enabled, fog_light_color,
 		fog_light_energy, fog_sun_scatter, fog_density, fog_height, fog_height_density,
 		fog_aerial_perspective, fog_sky_affect, RSE::EnvironmentFogMode(fog_mode));
 }
@@ -751,14 +751,14 @@ float Environment::get_fog_depth_end() const { return fog_depth_end; }
 
 void Environment::_update_fog_depth()
 {
-	RS::get_singleton()->environment_set_fog_depth(
+	RS::environment_set_fog_depth(
 		environment, fog_depth_curve, fog_depth_begin, fog_depth_end);
 }
 
 
 void Environment::_update_volumetric_fog()
 {
-	RS::get_singleton()->environment_set_volumetric_fog(environment, volumetric_fog_enabled,
+	RS::environment_set_volumetric_fog(environment, volumetric_fog_enabled,
 		volumetric_fog_density, volumetric_fog_albedo, volumetric_fog_emission,
 		volumetric_fog_emission_energy, volumetric_fog_anisotropy, volumetric_fog_length,
 		volumetric_fog_detail_spread, volumetric_fog_gi_inject, volumetric_fog_temporal_reproject,
@@ -926,15 +926,15 @@ void Environment::_update_adjustment()
 	RID color_correction =
 		adjustment_color_correction.is_valid() ? adjustment_color_correction->get_rid() : RID();
 
-	RS::get_singleton()->environment_set_adjustment(environment, adjustment_enabled,
+	RS::environment_set_adjustment(environment, adjustment_enabled,
 		adjustment_brightness, adjustment_contrast, adjustment_saturation, use_1d_color_correction,
 		color_correction);
 }
 
 Environment::~Environment()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(environment);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(environment);
 }
 
 

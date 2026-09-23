@@ -79,19 +79,19 @@ void Camera3D::fti_update_servers_property()
 			break;
 		case PROJECTION_PERSPECTIVE: {
 			if (update_fov || update_near || update_far) {
-				RS::get_singleton()->camera_set_perspective(
+				RS::camera_set_perspective(
 					camera, fov.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
 		case PROJECTION_ORTHOGONAL: {
 			if (update_size || update_near || update_far) {
-				RS::get_singleton()->camera_set_orthogonal(
+				RS::camera_set_orthogonal(
 					camera, size.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
 		case PROJECTION_FRUSTUM: {
 			if (update_size || update_frustum_offset || update_near || update_far) {
-				RS::get_singleton()->camera_set_frustum(camera, size.interpolated(),
+				RS::camera_set_frustum(camera, size.interpolated(),
 					frustum_offset.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
@@ -106,7 +106,7 @@ void Camera3D::fti_update_servers_xform()
 	if (camera.is_valid()) {
 		Transform3D tr =
 			_get_adjusted_camera_transform(_get_cached_global_transform_interpolated());
-		RS::get_singleton()->camera_set_transform(camera, tr);
+		RS::camera_set_transform(camera, tr);
 	}
 	Node3D::fti_update_servers_xform();
 }
@@ -118,7 +118,7 @@ void Camera3D::_update_camera()
 	}
 
 	if (!is_physics_interpolated_and_enabled()) {
-		RenderingServer::get_singleton()->camera_set_transform(camera, get_camera_transform());
+		RenderingServer::camera_set_transform(camera, get_camera_transform());
 	}
 	else {
 		// Force a refresh next frame.
@@ -453,8 +453,8 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 
 Camera3D::~Camera3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(camera);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(camera);
 #ifndef PHYSICS_3D_DISABLED
 	if (pyramid_shape.is_valid()) {
 		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());

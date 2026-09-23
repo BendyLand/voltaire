@@ -148,7 +148,7 @@ void DPITexture::_remove_scale(double p_scale)
 	RID* rid = texture_cache.getptr(p_scale);
 	if (rid) {
 		if (rid->is_valid()) {
-			RenderingServer::get_singleton()->free_rid(*rid);
+			RenderingServer::free_rid(*rid);
 		}
 		texture_cache.erase(p_scale);
 	}
@@ -230,8 +230,8 @@ RID DPITexture::_load_at_scale(double p_scale, bool p_set_size) const
 		current_size.y = img->get_height();
 	}
 
-	RID rid = RenderingServer::get_singleton()->texture_2d_create(img);
-	RenderingServer::get_singleton()->texture_set_size_override(
+	RID rid = RenderingServer::texture_2d_create(img);
+	RenderingServer::texture_set_size_override(
 		rid, current_size.x, current_size.y);
 	return rid;
 }
@@ -240,12 +240,12 @@ void DPITexture::_clear()
 {
 	for (KeyValue<double, RID>& tx : texture_cache) {
 		if (tx.value.is_valid()) {
-			RenderingServer::get_singleton()->free_rid(tx.value);
+			RenderingServer::free_rid(tx.value);
 		}
 	}
 	texture_cache.clear();
 	if (base_texture.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(base_texture);
+		RenderingServer::free_rid(base_texture);
 	}
 	base_texture = RID();
 	alpha_cache.unref();
@@ -261,7 +261,7 @@ Ref<Image> DPITexture::get_image() const
 {
 	RID rid = _ensure_scale(1.0);
 	if (rid.is_valid()) {
-		return RenderingServer::get_singleton()->texture_2d_get(rid);
+		return RenderingServer::texture_2d_get(rid);
 	}
 	else {
 		return Ref<Image>();
@@ -298,21 +298,21 @@ void DPITexture::draw(
 {
 	RID rid =
 		get_scaled_rid(); // Note: call `get_scaled_rid` before using `size` to ensure it is loaded.
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, size), rid, false, p_modulate, p_transpose);
 }
 
 void DPITexture::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile,
 	const Color& p_modulate, bool p_transpose) const
 {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, get_scaled_rid(), p_tile, p_modulate, p_transpose);
 }
 
 void DPITexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
 	const Color& p_modulate, bool p_transpose, bool p_clip_uv) const
 {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, get_scaled_rid(), p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -355,11 +355,11 @@ void DPITexture::set_size_override(const Size2i& p_size)
 	}
 	for (KeyValue<double, RID>& tx : texture_cache) {
 		if (tx.value.is_valid()) {
-			RenderingServer::get_singleton()->texture_set_size_override(tx.value, size.x, size.y);
+			RenderingServer::texture_set_size_override(tx.value, size.x, size.y);
 		}
 	}
 	if (base_texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_size_override(base_texture, size.x, size.y);
+		RenderingServer::texture_set_size_override(base_texture, size.x, size.y);
 	}
 
 	emit_changed();

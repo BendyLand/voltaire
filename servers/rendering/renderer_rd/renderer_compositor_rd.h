@@ -149,29 +149,29 @@ public:
 	virtual RendererSceneRender* get_scene() override { return scene; }
 
 	virtual void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
-		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter) override;
+		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter);
 
-	virtual void initialize() override;
-	virtual void begin_frame(double frame_step) override;
+	virtual void initialize();
+	virtual void begin_frame(double frame_step);
 	virtual void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
-		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount) override;
+		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount);
 
-	virtual bool is_opengl() override { return false; }
+	virtual bool is_opengl() { return false; }
 
-	virtual void gl_end_frame(bool p_swap_buffers) override {}
+	virtual void gl_end_frame(bool p_swap_buffers) {}
 
-	virtual void end_frame(bool p_present) override;
-	virtual void finalize() override;
+	virtual void end_frame(bool p_present);
+	virtual void finalize();
 
-	_ALWAYS_INLINE_ virtual uint64_t get_frame_number() const override { return frame; }
+	_ALWAYS_INLINE_ virtual uint64_t get_frame_number() const { return frame; }
 
-	_ALWAYS_INLINE_ virtual double get_frame_delta_time() const override { return delta; }
+	_ALWAYS_INLINE_ virtual double get_frame_delta_time() const { return delta; }
 
-	_ALWAYS_INLINE_ virtual double get_total_time() const override { return time; }
+	_ALWAYS_INLINE_ virtual double get_total_time() const { return time; }
 
-	_ALWAYS_INLINE_ virtual bool can_create_resources_async() const override { return true; }
+	_ALWAYS_INLINE_ virtual bool can_create_resources_async() const { return true; }
 
-	virtual bool is_xr_enabled() const override { return RendererCompositor::is_xr_enabled(); }
+	virtual bool is_xr_enabled() const { return RendererCompositor::is_xr_enabled(); }
 
 	static Error is_viable() { return OK; }
 
@@ -185,7 +185,7 @@ public:
 
 	static RendererCompositorRD* get_singleton() { return singleton; }
 
-	RendererCompositorRD();
+	RendererCompositorRD() = default;
 	~RendererCompositorRD();
 };
 

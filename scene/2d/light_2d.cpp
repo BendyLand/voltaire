@@ -64,7 +64,7 @@ void Light2D::_update_light_visibility()
 	}
 #endif // TOOLS_ENABLED
 
-	RS::get_singleton()->canvas_light_set_enabled(
+	RS::canvas_light_set_enabled(
 		canvas_light, enabled && is_visible_in_tree() && editor_ok);
 }
 
@@ -87,7 +87,7 @@ bool Light2D::is_editor_only() const { return editor_only; }
 void Light2D::set_color(const Color& p_color)
 {
 	color = p_color;
-	RS::get_singleton()->canvas_light_set_color(canvas_light, color);
+	RS::canvas_light_set_color(canvas_light, color);
 }
 
 Color Light2D::get_color() const { return color; }
@@ -95,7 +95,7 @@ Color Light2D::get_color() const { return color; }
 void Light2D::set_height(real_t p_height)
 {
 	height = p_height;
-	RS::get_singleton()->canvas_light_set_height(canvas_light, height);
+	RS::canvas_light_set_height(canvas_light, height);
 }
 
 real_t Light2D::get_height() const { return height; }
@@ -103,7 +103,7 @@ real_t Light2D::get_height() const { return height; }
 void Light2D::set_energy(real_t p_energy)
 {
 	energy = p_energy;
-	RS::get_singleton()->canvas_light_set_energy(canvas_light, energy);
+	RS::canvas_light_set_energy(canvas_light, energy);
 }
 
 real_t Light2D::get_energy() const { return energy; }
@@ -111,7 +111,7 @@ real_t Light2D::get_energy() const { return energy; }
 void Light2D::set_z_range_min(int p_min_z)
 {
 	z_min = p_min_z;
-	RS::get_singleton()->canvas_light_set_z_range(canvas_light, z_min, z_max);
+	RS::canvas_light_set_z_range(canvas_light, z_min, z_max);
 }
 
 int Light2D::get_z_range_min() const { return z_min; }
@@ -119,7 +119,7 @@ int Light2D::get_z_range_min() const { return z_min; }
 void Light2D::set_z_range_max(int p_max_z)
 {
 	z_max = p_max_z;
-	RS::get_singleton()->canvas_light_set_z_range(canvas_light, z_min, z_max);
+	RS::canvas_light_set_z_range(canvas_light, z_min, z_max);
 }
 
 int Light2D::get_z_range_max() const { return z_max; }
@@ -127,7 +127,7 @@ int Light2D::get_z_range_max() const { return z_max; }
 void Light2D::set_layer_range_min(int p_min_layer)
 {
 	layer_min = p_min_layer;
-	RS::get_singleton()->canvas_light_set_layer_range(canvas_light, layer_min, layer_max);
+	RS::canvas_light_set_layer_range(canvas_light, layer_min, layer_max);
 }
 
 int Light2D::get_layer_range_min() const { return layer_min; }
@@ -135,7 +135,7 @@ int Light2D::get_layer_range_min() const { return layer_min; }
 void Light2D::set_layer_range_max(int p_max_layer)
 {
 	layer_max = p_max_layer;
-	RS::get_singleton()->canvas_light_set_layer_range(canvas_light, layer_min, layer_max);
+	RS::canvas_light_set_layer_range(canvas_light, layer_min, layer_max);
 }
 
 int Light2D::get_layer_range_max() const { return layer_max; }
@@ -143,7 +143,7 @@ int Light2D::get_layer_range_max() const { return layer_max; }
 void Light2D::set_item_cull_mask(int p_mask)
 {
 	item_mask = p_mask;
-	RS::get_singleton()->canvas_light_set_item_cull_mask(canvas_light, item_mask);
+	RS::canvas_light_set_item_cull_mask(canvas_light, item_mask);
 }
 
 int Light2D::get_item_cull_mask() const { return item_mask; }
@@ -151,7 +151,7 @@ int Light2D::get_item_cull_mask() const { return item_mask; }
 void Light2D::set_item_shadow_cull_mask(int p_mask)
 {
 	item_shadow_mask = p_mask;
-	RS::get_singleton()->canvas_light_set_item_shadow_cull_mask(canvas_light, item_shadow_mask);
+	RS::canvas_light_set_item_shadow_cull_mask(canvas_light, item_shadow_mask);
 }
 
 int Light2D::get_item_shadow_cull_mask() const { return item_shadow_mask; }
@@ -159,7 +159,7 @@ int Light2D::get_item_shadow_cull_mask() const { return item_shadow_mask; }
 void Light2D::set_shadow_enabled(bool p_enabled)
 {
 	shadow = p_enabled;
-	RS::get_singleton()->canvas_light_set_shadow_enabled(canvas_light, shadow);
+	RS::canvas_light_set_shadow_enabled(canvas_light, shadow);
 }
 
 bool Light2D::is_shadow_enabled() const { return shadow; }
@@ -168,7 +168,7 @@ void Light2D::set_shadow_filter(ShadowFilter p_filter)
 {
 	ERR_FAIL_INDEX(p_filter, SHADOW_FILTER_MAX);
 	shadow_filter = p_filter;
-	RS::get_singleton()->canvas_light_set_shadow_filter(
+	RS::canvas_light_set_shadow_filter(
 		canvas_light, RSE::CanvasLightShadowFilter(p_filter));
 }
 
@@ -177,7 +177,7 @@ Light2D::ShadowFilter Light2D::get_shadow_filter() const { return shadow_filter;
 void Light2D::set_shadow_color(const Color& p_shadow_color)
 {
 	shadow_color = p_shadow_color;
-	RS::get_singleton()->canvas_light_set_shadow_color(canvas_light, shadow_color);
+	RS::canvas_light_set_shadow_color(canvas_light, shadow_color);
 }
 
 Color Light2D::get_shadow_color() const { return shadow_color; }
@@ -185,7 +185,7 @@ Color Light2D::get_shadow_color() const { return shadow_color; }
 void Light2D::set_blend_mode(BlendMode p_mode)
 {
 	blend_mode = p_mode;
-	RS::get_singleton()->canvas_light_set_blend_mode(
+	RS::canvas_light_set_blend_mode(
 		_get_light(), RSE::CanvasLightBlendMode(p_mode));
 }
 
@@ -193,7 +193,7 @@ Light2D::BlendMode Light2D::get_blend_mode() const { return blend_mode; }
 
 void Light2D::_physics_interpolated_changed()
 {
-	RenderingServer::get_singleton()->canvas_light_set_interpolated(
+	RenderingServer::canvas_light_set_interpolated(
 		canvas_light, is_physics_interpolated());
 }
 
@@ -201,12 +201,12 @@ void Light2D::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_CANVAS: {
-		RS::get_singleton()->canvas_light_attach_to_canvas(canvas_light, get_canvas());
+		RS::canvas_light_attach_to_canvas(canvas_light, get_canvas());
 		_update_light_visibility();
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		RS::get_singleton()->canvas_light_set_transform(canvas_light, get_global_transform());
+		RS::canvas_light_set_transform(canvas_light, get_global_transform());
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
@@ -219,13 +219,13 @@ void Light2D::_notification(int p_what)
 			// resetting. This is necessary because NOTIFICATION_TRANSFORM_CHANGED
 			// is normally deferred, and a client change to transform will not always be sent
 			// before the reset, so we need to guarantee this.
-			RS::get_singleton()->canvas_light_set_transform(canvas_light, get_global_transform());
-			RS::get_singleton()->canvas_light_reset_physics_interpolation(canvas_light);
+			RS::canvas_light_set_transform(canvas_light, get_global_transform());
+			RS::canvas_light_reset_physics_interpolation(canvas_light);
 		}
 	} break;
 
 	case NOTIFICATION_EXIT_CANVAS: {
-		RS::get_singleton()->canvas_light_attach_to_canvas(canvas_light, RID());
+		RS::canvas_light_attach_to_canvas(canvas_light, RID());
 		_update_light_visibility();
 	} break;
 	}
@@ -234,7 +234,7 @@ void Light2D::_notification(int p_what)
 void Light2D::set_shadow_smooth(real_t p_amount)
 {
 	shadow_smooth = p_amount;
-	RS::get_singleton()->canvas_light_set_shadow_smooth(canvas_light, shadow_smooth);
+	RS::canvas_light_set_shadow_smooth(canvas_light, shadow_smooth);
 }
 
 real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
@@ -242,14 +242,14 @@ real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
 Light2D::Light2D()
 {
-	canvas_light = RenderingServer::get_singleton()->canvas_light_create();
+	canvas_light = RenderingServer::canvas_light_create();
 	set_notify_transform(true);
 }
 
 Light2D::~Light2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(canvas_light);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(canvas_light);
 }
 
 //////////////////////////////
@@ -296,7 +296,7 @@ Ref<Texture2D> PointLight2D::get_texture() const { return texture; }
 void PointLight2D::set_texture_offset(const Vector2& p_offset)
 {
 	texture_offset = p_offset;
-	RS::get_singleton()->canvas_light_set_texture_offset(_get_light(), texture_offset);
+	RS::canvas_light_set_texture_offset(_get_light(), texture_offset);
 	item_rect_changed();
 }
 
@@ -321,7 +321,7 @@ void PointLight2D::set_texture_scale(real_t p_scale)
 	if (_scale == 0) {
 		_scale = CMP_EPSILON;
 	}
-	RS::get_singleton()->canvas_light_set_texture_scale(_get_light(), _scale);
+	RS::canvas_light_set_texture_scale(_get_light(), _scale);
 	item_rect_changed();
 }
 
@@ -333,7 +333,7 @@ real_t PointLight2D::get_texture_scale() const { return _scale; }
 
 PointLight2D::PointLight2D()
 {
-	RS::get_singleton()->canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_POINT);
+	RS::canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_POINT);
 	set_hide_clip_children(true);
 }
 
@@ -342,7 +342,7 @@ PointLight2D::PointLight2D()
 void DirectionalLight2D::set_max_distance(real_t p_distance)
 {
 	max_distance = p_distance;
-	RS::get_singleton()->canvas_light_set_directional_distance(_get_light(), max_distance);
+	RS::canvas_light_set_directional_distance(_get_light(), max_distance);
 }
 
 real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
@@ -350,7 +350,7 @@ real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
 
 DirectionalLight2D::DirectionalLight2D()
 {
-	RS::get_singleton()->canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_DIRECTIONAL);
+	RS::canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_DIRECTIONAL);
 	set_max_distance(max_distance); // Update RenderingServer.
 	set_hide_clip_children(true);
 }

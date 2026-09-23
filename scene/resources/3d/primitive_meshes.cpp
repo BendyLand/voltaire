@@ -141,7 +141,7 @@ void PrimitiveMesh::set_custom_aabb(const AABB& p_custom)
 		return;
 	}
 	custom_aabb = p_custom;
-	RS::get_singleton()->mesh_set_custom_aabb(mesh, custom_aabb);
+	RS::mesh_set_custom_aabb(mesh, custom_aabb);
 	emit_changed();
 }
 

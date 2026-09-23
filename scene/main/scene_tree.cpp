@@ -221,7 +221,7 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	}
 
 	_physics_interpolation_enabled = p_enabled;
-	RenderingServer::get_singleton()->set_physics_interpolation_enabled(p_enabled);
+	RenderingServer::set_physics_interpolation_enabled(p_enabled);
 
 	get_scene_tree_fti().set_enabled(get_root(), p_enabled);
 
@@ -252,7 +252,7 @@ void SceneTree::iteration_prepare()
 		// are flushed before pumping the interpolation prev and currents.
 		flush_transform_notifications();
 		get_scene_tree_fti().tick_update();
-		RenderingServer::get_singleton()->tick();
+		RenderingServer::tick();
 	}
 }
 

@@ -77,7 +77,7 @@ void OccluderPolygon2D::set_polygon(const Vector<Vector2>& p_polygon)
 {
 	polygon = p_polygon;
 	rect_cache_dirty = true;
-	RS::get_singleton()->canvas_occluder_polygon_set_shape(occ_polygon, p_polygon, closed);
+	RS::canvas_occluder_polygon_set_shape(occ_polygon, p_polygon, closed);
 	emit_changed();
 	update_configuration_warning();
 }
@@ -91,7 +91,7 @@ void OccluderPolygon2D::set_closed(bool p_closed)
 	}
 	closed = p_closed;
 	if (polygon.size()) {
-		RS::get_singleton()->canvas_occluder_polygon_set_shape(occ_polygon, polygon, closed);
+		RS::canvas_occluder_polygon_set_shape(occ_polygon, polygon, closed);
 	}
 	emit_changed();
 }
@@ -101,7 +101,7 @@ bool OccluderPolygon2D::is_closed() const { return closed; }
 void OccluderPolygon2D::set_cull_mode(CullMode p_mode)
 {
 	cull = p_mode;
-	RS::get_singleton()->canvas_occluder_polygon_set_cull_mode(
+	RS::canvas_occluder_polygon_set_cull_mode(
 		occ_polygon, RSE::CanvasOccluderPolygonCullMode(p_mode));
 }
 
@@ -111,18 +111,18 @@ RID OccluderPolygon2D::get_rid() const { return occ_polygon; }
 
 OccluderPolygon2D::OccluderPolygon2D()
 {
-	occ_polygon = RS::get_singleton()->canvas_occluder_polygon_create();
+	occ_polygon = RS::canvas_occluder_polygon_create();
 }
 
 OccluderPolygon2D::~OccluderPolygon2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(occ_polygon);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(occ_polygon);
 }
 
 void LightOccluder2D::_physics_interpolated_changed()
 {
-	RenderingServer::get_singleton()->canvas_light_occluder_set_interpolated(
+	RenderingServer::canvas_light_occluder_set_interpolated(
 		occluder, is_physics_interpolated());
 }
 
@@ -145,7 +145,7 @@ Ref<OccluderPolygon2D> LightOccluder2D::get_occluder_polygon() const { return oc
 void LightOccluder2D::set_occluder_light_mask(int p_mask)
 {
 	mask = p_mask;
-	RS::get_singleton()->canvas_light_occluder_set_light_mask(occluder, p_mask);
+	RS::canvas_light_occluder_set_light_mask(occluder, p_mask);
 }
 
 int LightOccluder2D::get_occluder_light_mask() const { return mask; }
@@ -170,14 +170,14 @@ PackedStringArray LightOccluder2D::get_configuration_warnings() const
 void LightOccluder2D::set_as_sdf_collision(bool p_enable)
 {
 	sdf_collision = p_enable;
-	RS::get_singleton()->canvas_light_occluder_set_as_sdf_collision(occluder, sdf_collision);
+	RS::canvas_light_occluder_set_as_sdf_collision(occluder, sdf_collision);
 }
 
 bool LightOccluder2D::is_set_as_sdf_collision() const { return sdf_collision; }
 
 LightOccluder2D::LightOccluder2D()
 {
-	occluder = RS::get_singleton()->canvas_light_occluder_create();
+	occluder = RS::canvas_light_occluder_create();
 
 	set_notify_transform(true);
 	set_as_sdf_collision(true);
@@ -185,9 +185,9 @@ LightOccluder2D::LightOccluder2D()
 
 LightOccluder2D::~LightOccluder2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 
-	RS::get_singleton()->free_rid(occluder);
+	RS::free_rid(occluder);
 }
 
 bool OccluderPolygon2D::_edit_is_selected_on_click(const Vector2& p_point, double p_tolerance) const

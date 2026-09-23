@@ -254,7 +254,7 @@ void Control::_update_canvas_item_transform()
 		xform *= get_offset_transform();
 	}
 
-	RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), xform);
+	RenderingServer::canvas_item_set_transform(get_canvas_item(), xform);
 }
 
 Transform2D Control::get_transform() const

@@ -185,9 +185,8 @@ void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 
 	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
 
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
+	ERR_FAIL_NULL(RS::data);
+	RenderingDevice* rendering_device = RS::get_rendering_device();
 	ERR_FAIL_NULL(rendering_device);
 
 	for (const RID& texture_rid : data->texture_rids) {

@@ -43,7 +43,7 @@ void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aab
 	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
 	const Vector<int>& p_level_counts)
 {
-	RS::get_singleton()->voxel_gi_allocate_data(probe, p_to_cell_xform, p_aabb, p_octree_size,
+	RS::voxel_gi_allocate_data(probe, p_to_cell_xform, p_aabb, p_octree_size,
 		p_octree_cells, p_data_cells, p_distance_field, p_level_counts);
 	bounds = p_aabb;
 	to_cell_xform = p_to_cell_xform;
@@ -56,29 +56,29 @@ Vector3 VoxelGIData::get_octree_size() const { return octree_size; }
 
 Vector<uint8_t> VoxelGIData::get_octree_cells() const
 {
-	return RS::get_singleton()->voxel_gi_get_octree_cells(probe);
+	return RS::voxel_gi_get_octree_cells(probe);
 }
 
 Vector<uint8_t> VoxelGIData::get_data_cells() const
 {
-	return RS::get_singleton()->voxel_gi_get_data_cells(probe);
+	return RS::voxel_gi_get_data_cells(probe);
 }
 
 Vector<uint8_t> VoxelGIData::get_distance_field() const
 {
-	return RS::get_singleton()->voxel_gi_get_distance_field(probe);
+	return RS::voxel_gi_get_distance_field(probe);
 }
 
 Vector<int> VoxelGIData::get_level_counts() const
 {
-	return RS::get_singleton()->voxel_gi_get_level_counts(probe);
+	return RS::voxel_gi_get_level_counts(probe);
 }
 
 Transform3D VoxelGIData::get_to_cell_xform() const { return to_cell_xform; }
 
 void VoxelGIData::set_dynamic_range(float p_range)
 {
-	RS::get_singleton()->voxel_gi_set_dynamic_range(probe, p_range);
+	RS::voxel_gi_set_dynamic_range(probe, p_range);
 	dynamic_range = p_range;
 }
 
@@ -86,7 +86,7 @@ float VoxelGIData::get_dynamic_range() const { return dynamic_range; }
 
 void VoxelGIData::set_propagation(float p_propagation)
 {
-	RS::get_singleton()->voxel_gi_set_propagation(probe, p_propagation);
+	RS::voxel_gi_set_propagation(probe, p_propagation);
 	propagation = p_propagation;
 }
 
@@ -94,7 +94,7 @@ float VoxelGIData::get_propagation() const { return propagation; }
 
 void VoxelGIData::set_energy(float p_energy)
 {
-	RS::get_singleton()->voxel_gi_set_energy(probe, p_energy);
+	RS::voxel_gi_set_energy(probe, p_energy);
 	energy = p_energy;
 }
 
@@ -102,7 +102,7 @@ float VoxelGIData::get_energy() const { return energy; }
 
 void VoxelGIData::set_bias(float p_bias)
 {
-	RS::get_singleton()->voxel_gi_set_bias(probe, p_bias);
+	RS::voxel_gi_set_bias(probe, p_bias);
 	bias = p_bias;
 }
 
@@ -110,7 +110,7 @@ float VoxelGIData::get_bias() const { return bias; }
 
 void VoxelGIData::set_normal_bias(float p_normal_bias)
 {
-	RS::get_singleton()->voxel_gi_set_normal_bias(probe, p_normal_bias);
+	RS::voxel_gi_set_normal_bias(probe, p_normal_bias);
 	normal_bias = p_normal_bias;
 }
 
@@ -118,7 +118,7 @@ float VoxelGIData::get_normal_bias() const { return normal_bias; }
 
 void VoxelGIData::set_interior(bool p_enable)
 {
-	RS::get_singleton()->voxel_gi_set_interior(probe, p_enable);
+	RS::voxel_gi_set_interior(probe, p_enable);
 	interior = p_enable;
 }
 
@@ -126,7 +126,7 @@ bool VoxelGIData::is_interior() const { return interior; }
 
 void VoxelGIData::set_use_two_bounces(bool p_enable)
 {
-	RS::get_singleton()->voxel_gi_set_use_two_bounces(probe, p_enable);
+	RS::voxel_gi_set_use_two_bounces(probe, p_enable);
 	use_two_bounces = p_enable;
 }
 
@@ -134,12 +134,12 @@ bool VoxelGIData::is_using_two_bounces() const { return use_two_bounces; }
 
 RID VoxelGIData::get_rid() const { return probe; }
 
-VoxelGIData::VoxelGIData() { probe = RS::get_singleton()->voxel_gi_create(); }
+VoxelGIData::VoxelGIData() { probe = RS::voxel_gi_create(); }
 
 VoxelGIData::~VoxelGIData()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(probe);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(probe);
 }
 
 Ref<VoxelGIData> VoxelGI::get_probe_data() const { return probe_data; }
@@ -153,7 +153,7 @@ void VoxelGI::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 	camera_attributes = p_camera_attributes;
 
 	if (probe_data.is_valid()) {
-		RS::get_singleton()->voxel_gi_set_baked_exposure_normalization(
+		RS::voxel_gi_set_baked_exposure_normalization(
 			probe_data->get_rid(), _get_camera_exposure_normalization());
 	}
 }
@@ -243,14 +243,14 @@ PackedStringArray VoxelGI::get_configuration_warnings() const
 
 VoxelGI::VoxelGI()
 {
-	voxel_gi = RS::get_singleton()->voxel_gi_create();
+	voxel_gi = RS::voxel_gi_create();
 	set_disable_scale(true);
 }
 
 VoxelGI::~VoxelGI()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(voxel_gi);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(voxel_gi);
 }
 
 void VoxelGI::bake(Node*, bool) {}

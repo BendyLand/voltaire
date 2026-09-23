@@ -676,7 +676,7 @@ bool ResourceLoader::_ensure_load_progress()
 	if (OS::get_singleton()->is_separate_thread_rendering_enabled()) {
 		return false; // Not needed.
 	}
-	RenderingServer::get_singleton()->sync();
+	RenderingServer::sync();
 	return true;
 }
 

@@ -38,8 +38,9 @@
 #include "servers/rendering/renderer_rd/shaders/scene_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_server_default.h"
+#include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 
@@ -672,7 +673,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		auto_exposure_scale = RSG::camera_attributes->camera_attributes_get_auto_exposure_scale(
 			p_render_data->camera_attributes);
 
-		RenderingServerDefault::redraw_request(); // Redraw all the time if auto exposure rendering
+		RenderingServer::redraw_request(); // Redraw all the time if auto exposure rendering
 												  // is on.
 		RD::get_singleton()->draw_command_end_label();
 	}

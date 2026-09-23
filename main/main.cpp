@@ -70,7 +70,6 @@
 #include "servers/register_server_types.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_default.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 
@@ -168,7 +167,6 @@ static AudioServer* audio_server = nullptr;
 static CameraServer* camera_server = nullptr;
 static AccessibilityServer* accessibility_server = nullptr;
 static DisplayServer* display_server = nullptr;
-static RenderingServer* rendering_server = nullptr;
 static TextServerManager* tsman = nullptr;
 static ThemeDB* theme_db = nullptr;
 #ifndef PHYSICS_2D_DISABLED
@@ -358,8 +356,7 @@ void finalize_physics()
 
 void finalize_display()
 {
-	rendering_server->finish();
-	memdelete(rendering_server);
+	RenderingServer::finish();
 
 	memdelete(display_server);
 	memdelete(accessibility_server);
@@ -929,7 +926,7 @@ Error Main::test_setup()
 	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
-	rendering_server = memnew(RenderingServerDefault());
+	rendering_server = memnew(RenderingServer());
 	rendering_server->init();
 	rendering_server->set_render_loop_enabled(false);
 
@@ -3312,12 +3309,9 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Rendering");
 
-		rendering_server = memnew(
-			RenderingServerDefault(OS::get_singleton()->is_separate_thread_rendering_enabled()));
-
-		rendering_server->init();
+		RenderingServer::init();
 		// rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);
-		rendering_server->set_render_loop_enabled(!disable_render_loop);
+		RenderingServer::set_render_loop_enabled(!disable_render_loop);
 
 		OS::get_singleton()->benchmark_end_measure("Servers", "Rendering");
 	}
@@ -3580,7 +3574,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// able to load resources, load the global shader variables.
 		// If running on editor, don't load the textures because the editor
 		// may want to import them first. Editor will reload those later.
-		rendering_server->global_shader_parameters_load_settings(!editor);
+		RenderingServer::global_shader_parameters_load_settings(!editor);
 	}
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Finalize Setup");
@@ -3972,7 +3966,7 @@ int Main::start()
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
-
+	RenderingServer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
 	return EXIT_SUCCESS;
 }
 
@@ -4068,7 +4062,7 @@ bool Main::iteration()
 	NavigationServer3D::process(process_step * time_scale);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::get_singleton()->sync(); // sync if still drawing from previous frames.
+	RenderingServer::sync(); // sync if still drawing from previous frames.
 
 	const bool has_pending_resources_for_processing =
 		RD::get_singleton() && RD::get_singleton()->has_pending_resources_for_processing();
@@ -4224,10 +4218,10 @@ void Main::cleanup(bool p_force)
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer
 	// finalization
-	RenderingServer::get_singleton()->sync();
+	RenderingServer::sync();
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
-	rendering_server->global_shader_parameters_clear();
+	RenderingServer::global_shader_parameters_clear();
 
 #ifndef XR_DISABLED
 	if (xr_server) {

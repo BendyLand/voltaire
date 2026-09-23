@@ -4058,7 +4058,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 				}
 
 				if (!fail) {
-					if (RenderingServer::get_singleton()->is_low_end()) {
+					if (RenderingServer::is_low_end()) {
 						if (builtin_func_defs[idx].high_end) {
 							fail = true;
 							unsupported_builtin = true;

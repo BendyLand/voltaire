@@ -47,9 +47,7 @@ XRServer* XRServer::get_singleton() { return singleton; }
 
 double XRServer::get_world_scale() const
 {
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-
-	if (rendering_server && rendering_server->is_on_render_thread()) {
+	if (RS::data && RS::is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
 		return render_state.world_scale;

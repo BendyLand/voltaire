@@ -61,7 +61,7 @@ void Occluder3D::_update()
 	debug_lines.clear();
 	debug_mesh.unref();
 
-	RS::get_singleton()->occluder_set_mesh(occluder, vertices, indices);
+	RS::occluder_set_mesh(occluder, vertices, indices);
 	emit_changed();
 }
 
@@ -100,13 +100,13 @@ Vector<Vector3> Occluder3D::get_debug_lines() const
 
 AABB Occluder3D::get_aabb() const { return aabb; }
 
-Occluder3D::Occluder3D() { occluder = RS::get_singleton()->occluder_create(); }
+Occluder3D::Occluder3D() { occluder = RS::occluder_create(); }
 
 Occluder3D::~Occluder3D()
 {
 	if (occluder.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(occluder);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(occluder);
 	}
 }
 

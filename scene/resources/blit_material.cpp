@@ -37,7 +37,7 @@ void BlitMaterial::_update_shader(BlendMode p_blend)
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_blend);
 	if (shader_cache[p_blend].is_null()) {
-		shader_cache[p_blend] = RS::get_singleton()->shader_create();
+		shader_cache[p_blend] = RS::shader_create();
 		String code = "// NOTE: Shader automatically converted from " VLTR_VERSION_NAME
 					  " " VLTR_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
 
@@ -75,7 +75,7 @@ void BlitMaterial::_update_shader(BlendMode p_blend)
 		code += "	COLOR1 = texture(source_texture1, UV) * MODULATE;\n";
 		code += "	COLOR2 = texture(source_texture2, UV) * MODULATE;\n";
 		code += "	COLOR3 = texture(source_texture3, UV) * MODULATE;\n}";
-		RS::get_singleton()->shader_set_code(shader_cache[index], code);
+		RS::shader_set_code(shader_cache[index], code);
 	}
 }
 
@@ -84,7 +84,7 @@ void BlitMaterial::set_blend_mode(BlendMode p_blend_mode)
 	blend_mode = p_blend_mode;
 	_update_shader(blend_mode);
 	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
+		RS::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
 	}
 }
 
@@ -102,7 +102,7 @@ RID BlitMaterial::get_rid() const
 {
 	_update_shader(blend_mode);
 	if (!shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
+		RS::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
 		shader_set = true;
 	}
 	return _get_material();
@@ -115,7 +115,7 @@ void BlitMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 5; i++) {
 		if (shader_cache[i].is_valid()) {
-			RS::get_singleton()->free_rid(shader_cache[i]);
+			RS::free_rid(shader_cache[i]);
 		}
 	}
 }
@@ -123,7 +123,7 @@ void BlitMaterial::cleanup_shader()
 
 BlitMaterial::BlitMaterial()
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 	set_blend_mode(BLEND_MODE_MIX);
 }
 

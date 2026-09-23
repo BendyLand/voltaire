@@ -107,10 +107,10 @@ void MovieWriter::add_frame()
 			Engine::get_singleton()->get_frames_drawn(), movie_time, project_name));
 	}
 
-	RID main_vp_rid = RenderingServer::get_singleton()->viewport_find_from_screen_attachment(
+	RID main_vp_rid = RenderingServer::viewport_find_from_screen_attachment(
 		DisplayServerEnums::MAIN_WINDOW_ID);
-	RID main_vp_texture = RenderingServer::get_singleton()->viewport_get_texture(main_vp_rid);
-	Ref<Image> vp_tex = RenderingServer::get_singleton()->texture_2d_get(main_vp_texture);
+	RID main_vp_texture = RenderingServer::viewport_get_texture(main_vp_rid);
+	Ref<Image> vp_tex = RenderingServer::texture_2d_get(main_vp_texture);
 
 	if (vp_tex->get_size() != movie_size) {
 		// Resize the texture to the output resolution if it differs from the current viewport size.
@@ -143,17 +143,17 @@ void MovieWriter::add_frame()
 		vp_tex->resize(movie_size.width, movie_size.height, Image::INTERPOLATE_BILINEAR);
 	}
 
-	if (RenderingServer::get_singleton()->viewport_is_using_hdr_2d(main_vp_rid)) {
+	if (RenderingServer::viewport_is_using_hdr_2d(main_vp_rid)) {
 		vp_tex->convert(Image::FORMAT_RGBA8);
 		vp_tex->linear_to_srgb();
 	}
 
-	RenderingServer::get_singleton()->viewport_set_measure_render_time(main_vp_rid, true);
+	RenderingServer::viewport_set_measure_render_time(main_vp_rid, true);
 	cpu_time +=
-		RenderingServer::get_singleton()->viewport_get_measured_render_time_cpu(main_vp_rid);
-	cpu_time += RenderingServer::get_singleton()->get_frame_setup_time_cpu();
+		RenderingServer::viewport_get_measured_render_time_cpu(main_vp_rid);
+	cpu_time += RenderingServer::get_frame_setup_time_cpu();
 	gpu_time +=
-		RenderingServer::get_singleton()->viewport_get_measured_render_time_gpu(main_vp_rid);
+		RenderingServer::viewport_get_measured_render_time_gpu(main_vp_rid);
 
 	AudioDriverDummy::get_dummy_singleton()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
 

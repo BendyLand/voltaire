@@ -53,10 +53,10 @@ void World3D::set_environment(const Ref<Environment>& p_environment)
 
 	environment = p_environment;
 	if (environment.is_valid()) {
-		RS::get_singleton()->scenario_set_environment(scenario, environment->get_rid());
+		RS::scenario_set_environment(scenario, environment->get_rid());
 	}
 	else {
-		RS::get_singleton()->scenario_set_environment(scenario, RID());
+		RS::scenario_set_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -72,10 +72,10 @@ void World3D::set_fallback_environment(const Ref<Environment>& p_environment)
 
 	fallback_environment = p_environment;
 	if (fallback_environment.is_valid()) {
-		RS::get_singleton()->scenario_set_fallback_environment(scenario, p_environment->get_rid());
+		RS::scenario_set_fallback_environment(scenario, p_environment->get_rid());
 	}
 	else {
-		RS::get_singleton()->scenario_set_fallback_environment(scenario, RID());
+		RS::scenario_set_fallback_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -87,10 +87,10 @@ void World3D::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 {
 	camera_attributes = p_camera_attributes;
 	if (camera_attributes.is_valid()) {
-		RS::get_singleton()->scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
+		RS::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
 	}
 	else {
-		RS::get_singleton()->scenario_set_camera_attributes(scenario, RID());
+		RS::scenario_set_camera_attributes(scenario, RID());
 	}
 }
 
@@ -100,10 +100,10 @@ void World3D::set_compositor(const Ref<Compositor>& p_compositor)
 {
 	compositor = p_compositor;
 	if (compositor.is_valid()) {
-		RS::get_singleton()->scenario_set_compositor(scenario, compositor->get_rid());
+		RS::scenario_set_compositor(scenario, compositor->get_rid());
 	}
 	else {
-		RS::get_singleton()->scenario_set_compositor(scenario, RID());
+		RS::scenario_set_compositor(scenario, RID());
 	}
 }
 
@@ -117,11 +117,11 @@ PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
 #endif // PHYSICS_3D_DISABLED
 
 
-World3D::World3D() { scenario = RenderingServer::get_singleton()->scenario_create(); }
+World3D::World3D() { scenario = RenderingServer::scenario_create(); }
 
 World3D::~World3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 
 #ifndef PHYSICS_3D_DISABLED
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
@@ -131,7 +131,7 @@ World3D::~World3D()
 	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::get_singleton()->free_rid(scenario);
+	RenderingServer::free_rid(scenario);
 
 #ifndef PHYSICS_3D_DISABLED
 	if (space.is_valid()) {

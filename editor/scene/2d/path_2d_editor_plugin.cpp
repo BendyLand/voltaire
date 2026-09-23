@@ -129,12 +129,12 @@ void Path2DEditor::_restore_curve_points(Path2D* p_path2d, const PackedVector2Ar
 
 Path2DEditor::~Path2DEditor()
 {
-	ERR_FAIL_NULL(RS::get_singleton());
-	RS::get_singleton()->free_rid(debug_mesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_curve_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_sharp_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_smooth_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_mesh_rid);
+	ERR_FAIL_NULL(RS::data);
+	RS::free_rid(debug_mesh_rid);
+	RS::free_rid(debug_handle_curve_multimesh_rid);
+	RS::free_rid(debug_handle_sharp_multimesh_rid);
+	RS::free_rid(debug_handle_smooth_multimesh_rid);
+	RS::free_rid(debug_handle_mesh_rid);
 }
 
 

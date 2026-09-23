@@ -49,37 +49,40 @@ class RendererUtilities;
 class Image;
 struct Color;
 
-class RendererCompositor {
+class RendererCompositor
+{
 private:
 	bool xr_enabled = false;
-	static RendererCompositor *singleton;
+	static RendererCompositor* singleton;
 
 protected:
-	static RendererCompositor *(*_create_func)();
+	static RendererCompositor* (*_create_func)();
 	bool back_end = false;
 	static bool low_end;
 
 public:
-	static RendererCompositor *create();
+	static RendererCompositor* create();
 
-	virtual RendererCanvasRender *get_canvas() = 0;
-	virtual RendererSceneRender *get_scene() = 0;
+	virtual RendererCanvasRender* get_canvas() = 0;
+	virtual RendererSceneRender* get_scene() = 0;
 
-	virtual RendererFog *get_fog() = 0;
-	virtual RendererGI *get_gi() = 0;
-	virtual RendererLightStorage *get_light_storage() = 0;
-	virtual RendererMaterialStorage *get_material_storage() = 0;
-	virtual RendererMeshStorage *get_mesh_storage() = 0;
-	virtual RendererParticlesStorage *get_particles_storage() = 0;
-	virtual RendererTextureStorage *get_texture_storage() = 0;
-	virtual RendererUtilities *get_utilities() = 0;
+	virtual RendererFog* get_fog() = 0;
+	virtual RendererGI* get_gi() = 0;
+	virtual RendererLightStorage* get_light_storage() = 0;
+	virtual RendererMaterialStorage* get_material_storage() = 0;
+	virtual RendererMeshStorage* get_mesh_storage() = 0;
+	virtual RendererParticlesStorage* get_particles_storage() = 0;
+	virtual RendererTextureStorage* get_texture_storage() = 0;
+	virtual RendererUtilities* get_utilities() = 0;
 
-	virtual void set_boot_image_with_stretch(const Ref<Image> &p_image, const Color &p_color, RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true) = 0;
+	virtual void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true) = 0;
 
 	virtual void initialize() = 0;
 	virtual void begin_frame(double frame_step) = 0;
 
-	virtual void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen, const RenderingServerTypes::BlitToScreen *p_render_targets, int p_amount) = 0;
+	virtual void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount) = 0;
 
 	virtual bool is_opengl() = 0;
 	virtual void gl_end_frame(bool p_swap_buffers) = 0;
@@ -91,9 +94,13 @@ public:
 	virtual bool can_create_resources_async() const = 0;
 
 	static bool is_low_end() { return low_end; }
+
 	virtual bool is_xr_enabled() const;
 
-	static RendererCompositor *get_singleton() { return singleton; }
+	static RendererCompositor* get_singleton() { return singleton; }
+
 	RendererCompositor();
 	virtual ~RendererCompositor();
 };
+
+

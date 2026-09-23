@@ -37,8 +37,8 @@ GradientTexture1D::GradientTexture1D() { _queue_update(); }
 GradientTexture1D::~GradientTexture1D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 
@@ -71,7 +71,7 @@ bool GradientTexture1D::is_using_hdr() const { return use_hdr; }
 RID GradientTexture1D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_2d_placeholder_create();
+		texture = RS::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -82,7 +82,7 @@ Ref<Image> GradientTexture1D::get_image() const
 	if (!texture.is_valid()) {
 		return Ref<Image>();
 	}
-	return RenderingServer::get_singleton()->texture_2d_get(texture);
+	return RenderingServer::texture_2d_get(texture);
 }
 
 void GradientTexture1D::update_now() const
@@ -99,8 +99,8 @@ GradientTexture2D::GradientTexture2D() { _queue_update(); }
 GradientTexture2D::~GradientTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RS::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RS::free_rid(texture);
 	}
 }
 
@@ -231,7 +231,7 @@ GradientTexture2D::Repeat GradientTexture2D::get_repeat() const { return repeat;
 RID GradientTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_2d_placeholder_create();
+		texture = RS::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -242,7 +242,7 @@ Ref<Image> GradientTexture2D::get_image() const
 	if (!texture.is_valid()) {
 		return Ref<Image>();
 	}
-	return RenderingServer::get_singleton()->texture_2d_get(texture);
+	return RenderingServer::texture_2d_get(texture);
 }
 
 void GradientTexture2D::update_now() const

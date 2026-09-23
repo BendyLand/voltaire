@@ -37,21 +37,21 @@ Size2 Texture2D::get_size() const { return Size2(get_width(), get_height()); }
 void Texture2D::draw(
 	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const
 {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, get_size()), get_rid(), false, p_modulate, p_transpose);
 }
 
 void Texture2D::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile,
 	const Color& p_modulate, bool p_transpose) const
 {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, get_rid(), p_tile, p_modulate, p_transpose);
 }
 
 void Texture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
 	const Color& p_modulate, bool p_transpose, bool p_clip_uv) const
 {
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, get_rid(), p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 

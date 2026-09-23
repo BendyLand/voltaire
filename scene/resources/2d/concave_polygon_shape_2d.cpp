@@ -68,7 +68,7 @@ void ConcavePolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 
 	const Vector2* r = s.ptr();
 	for (int i = 0; i < len; i += 2) {
-		RenderingServer::get_singleton()->canvas_item_add_line(
+		RenderingServer::canvas_item_add_line(
 			p_to_rid, r[i], r[i + 1], p_color, 2);
 	}
 }

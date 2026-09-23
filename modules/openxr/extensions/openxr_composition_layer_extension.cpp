@@ -52,7 +52,7 @@
 	}                                                                                              \
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(RID p_layer, m_arg1 p1)       \
 	{                                                                                              \
-		RenderingServer::get_singleton()->call_on_render_thread(                                   \
+		RenderingServer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1));                                                               \
 	}
@@ -68,7 +68,7 @@
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(                              \
 		RID p_layer, m_arg1 p1, m_arg2 p2)                                                         \
 	{                                                                                              \
-		RenderingServer::get_singleton()->call_on_render_thread(                                   \
+		RenderingServer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1, p2));                                                           \
 	}
@@ -239,7 +239,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
 	if (subviewport.viewport != p_viewport) {
 		if (subviewport.viewport.is_valid()) {
 			RID rt =
-				RenderingServer::get_singleton()->viewport_get_render_target(subviewport.viewport);
+				RenderingServer::viewport_get_render_target(subviewport.viewport);
 			RSG::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
 		}
 
@@ -546,17 +546,16 @@ void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
 	}
 #endif
 
-	RenderingServer* rs = RenderingServer::get_singleton();
 	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
 
 	if (subviewport.viewport.is_valid() && openxr_api && openxr_api->is_running()) {
-		RSE::ViewportUpdateMode update_mode = rs->viewport_get_update_mode(subviewport.viewport);
+		RSE::ViewportUpdateMode update_mode = RS::viewport_get_update_mode(subviewport.viewport);
 		if (update_mode == RSE::VIEWPORT_UPDATE_ONCE ||
 			update_mode == RSE::VIEWPORT_UPDATE_ALWAYS) {
 			// Update our XR swapchain
 			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
 				// Render to our XR swapchain image.
-				RID rt = rs->viewport_get_render_target(subviewport.viewport);
+				RID rt = RS::viewport_get_render_target(subviewport.viewport);
 				RSG::texture_storage->render_target_set_override(
 					rt, get_current_swapchain_texture(), RID(), RID(), RID());
 			}

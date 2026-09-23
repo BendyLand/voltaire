@@ -37,8 +37,8 @@
 XRVRS::~XRVRS()
 {
 	if (vrs_texture.is_valid()) {
-		ERR_FAIL_NULL(RS::get_singleton());
-		RS::get_singleton()->free_rid(vrs_texture);
+		ERR_FAIL_NULL(RS::data);
+		RS::free_rid(vrs_texture);
 		vrs_texture = RID();
 	}
 }
@@ -116,7 +116,7 @@ RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p
 	if (target_size != vrs_sizei || eye_foci != p_eye_foci || vrs_dirty) {
 		// Out with the old.
 		if (vrs_texture.is_valid()) {
-			RS::get_singleton()->free_rid(vrs_texture);
+			RS::free_rid(vrs_texture);
 			vrs_texture = RID();
 		}
 
@@ -162,10 +162,10 @@ RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p
 		}
 
 		if (images.size() == 1) {
-			vrs_texture = RS::get_singleton()->texture_2d_create(images[0]);
+			vrs_texture = RS::texture_2d_create(images[0]);
 		}
 		else {
-			vrs_texture = RS::get_singleton()->texture_2d_layered_create(
+			vrs_texture = RS::texture_2d_layered_create(
 				images, RSE::TEXTURE_LAYERED_2D_ARRAY);
 		}
 

@@ -134,7 +134,7 @@ void NavigationObstacle3D::_notification(int p_what)
 				const Transform3D debug_transform =
 					Transform3D(Basis().scaled(uniform_max_scale), get_global_position());
 
-				RS::get_singleton()->instance_set_transform(
+				RS::instance_set_transform(
 					fake_agent_radius_debug_instance_rid, debug_transform);
 			}
 			if (static_obstacle_debug_instance_rid.is_valid() && get_vertices().size() > 0) {
@@ -148,7 +148,7 @@ void NavigationObstacle3D::_notification(int p_what)
 									.rotated(Vector3(0.0, 1.0, 0.0), get_global_rotation().y),
 						get_global_position());
 
-				RS::get_singleton()->instance_set_transform(
+				RS::instance_set_transform(
 					static_obstacle_debug_instance_rid, debug_transform);
 			}
 #endif // DEBUG_ENABLED
@@ -360,26 +360,25 @@ void NavigationObstacle3D::_update_use_3d_avoidance(bool p_use_3d_avoidance)
 #ifdef DEBUG_ENABLED
 void NavigationObstacle3D::_update_debug()
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
 	if (is_inside_tree()) {
-		rs->instance_set_visible(fake_agent_radius_debug_instance_rid, is_visible_in_tree());
-		rs->instance_set_visible(static_obstacle_debug_instance_rid, is_visible_in_tree());
-		rs->instance_set_scenario(
+		RS::instance_set_visible(fake_agent_radius_debug_instance_rid, is_visible_in_tree());
+		RS::instance_set_visible(static_obstacle_debug_instance_rid, is_visible_in_tree());
+		RS::instance_set_scenario(
 			fake_agent_radius_debug_instance_rid, get_world_3d()->get_scenario());
-		rs->instance_set_scenario(
+		RS::instance_set_scenario(
 			static_obstacle_debug_instance_rid, get_world_3d()->get_scenario());
-		rs->instance_set_transform(
+		RS::instance_set_transform(
 			fake_agent_radius_debug_instance_rid, Transform3D(Basis(), get_global_position()));
-		rs->instance_set_transform(
+		RS::instance_set_transform(
 			static_obstacle_debug_instance_rid, Transform3D(Basis(), get_global_position()));
 		_update_fake_agent_radius_debug();
 		_update_static_obstacle_debug();
 	}
 	else {
-		rs->mesh_clear(fake_agent_radius_debug_mesh_rid);
-		rs->mesh_clear(static_obstacle_debug_mesh_rid);
-		rs->instance_set_scenario(fake_agent_radius_debug_instance_rid, RID());
-		rs->instance_set_scenario(static_obstacle_debug_instance_rid, RID());
+		RS::mesh_clear(fake_agent_radius_debug_mesh_rid);
+		RS::mesh_clear(static_obstacle_debug_mesh_rid);
+		RS::instance_set_scenario(fake_agent_radius_debug_instance_rid, RID());
+		RS::instance_set_scenario(static_obstacle_debug_instance_rid, RID());
 	}
 }
 
@@ -388,12 +387,11 @@ void NavigationObstacle3D::_update_debug()
 #ifdef DEBUG_ENABLED
 void NavigationObstacle3D::_clear_debug()
 {
-	RenderingServer* rs = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rs);
-	rs->mesh_clear(fake_agent_radius_debug_mesh_rid);
-	rs->mesh_clear(static_obstacle_debug_mesh_rid);
-	rs->instance_set_scenario(fake_agent_radius_debug_instance_rid, RID());
-	rs->instance_set_scenario(static_obstacle_debug_instance_rid, RID());
+	ERR_FAIL_NULL(RS::data);
+	RS::mesh_clear(fake_agent_radius_debug_mesh_rid);
+	RS::mesh_clear(static_obstacle_debug_mesh_rid);
+	RS::instance_set_scenario(fake_agent_radius_debug_instance_rid, RID());
+	RS::instance_set_scenario(static_obstacle_debug_instance_rid, RID());
 }
 #endif // DEBUG_ENABLED
 

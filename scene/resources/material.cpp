@@ -59,7 +59,7 @@ void Material::set_next_pass(const Ref<Material>& p_pass)
 			next_pass_rid = next_pass->get_rid();
 		}
 
-		RS::get_singleton()->material_set_next_pass(material, next_pass_rid);
+		RS::material_set_next_pass(material, next_pass_rid);
 	}
 }
 
@@ -73,7 +73,7 @@ void Material::set_render_priority(int p_priority)
 	render_priority = p_priority;
 
 	if (material.is_valid()) {
-		RS::get_singleton()->material_set_render_priority(material, p_priority);
+		RS::material_set_render_priority(material, p_priority);
 	}
 }
 
@@ -101,8 +101,8 @@ Material::Material() { render_priority = 0; }
 Material::~Material()
 {
 	if (material.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(material);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(material);
 	}
 }
 
@@ -288,7 +288,7 @@ void BaseMaterial3D::_update_shader()
 			if (v->users == 0) {
 				// Deallocate shader which is no longer in use.
 				shader_rid = RID();
-				RS::get_singleton()->free_rid(v->shader);
+				RS::free_rid(v->shader);
 				shader_map.erase(current_key);
 			}
 		}
@@ -301,7 +301,7 @@ void BaseMaterial3D::_update_shader()
 			v->users++;
 
 			if (_get_material().is_valid()) {
-				RS::get_singleton()->material_set_shader(_get_material(), shader_rid);
+				RS::material_set_shader(_get_material(), shader_rid);
 			}
 
 			return;
@@ -1756,13 +1756,13 @@ void fragment() {)";
 	// We must create the shader outside the shader_map_mutex to avoid potential deadlocks with
 	// other tasks in the WorkerThreadPool simultaneously creating materials, which
 	// may also hold the shared shader_map_mutex lock.
-	RID new_shader = RS::get_singleton()->shader_create_from_code(code);
+	RID new_shader = RS::shader_create_from_code(code);
 	MutexLock lock(shader_map_mutex);
 	ShaderData* v = shader_map.getptr(mk);
 	if (unlikely(v)) {
 		// We raced and managed to create the same key concurrently, so we'll free the shader we
 		// just created, given we know it isn't used, and use the winner.
-		RS::get_singleton()->free_rid(new_shader);
+		RS::free_rid(new_shader);
 	}
 	else {
 		ShaderData shader_data;
@@ -1776,7 +1776,7 @@ void fragment() {)";
 	v->users++;
 
 	if (_get_material().is_valid()) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_rid);
+		RS::material_set_shader(_get_material(), shader_rid);
 	}
 }
 
@@ -2384,7 +2384,7 @@ BaseMaterial3D::BaseMaterial3D(bool p_orm) : element(this)
 
 BaseMaterial3D::~BaseMaterial3D()
 {
-	ERR_FAIL_NULL(RS::get_singleton());
+	ERR_FAIL_NULL(RS::data);
 
 	{
 		MutexLock lock(shader_map_mutex);
@@ -2392,14 +2392,14 @@ BaseMaterial3D::~BaseMaterial3D()
 			shader_map[current_key].users--;
 			if (shader_map[current_key].users == 0) {
 				// Deallocate shader which is no longer in use.
-				RS::get_singleton()->free_rid(shader_map[current_key].shader);
+				RS::free_rid(shader_map[current_key].shader);
 				shader_map.erase(current_key);
 			}
 		}
 	}
 
 	if (_get_material().is_valid()) {
-		RS::get_singleton()->material_set_shader(_get_material(), RID());
+		RS::material_set_shader(_get_material(), RID());
 	}
 }
 

@@ -133,16 +133,16 @@ void PortableCompressedTexture2D::_set_data(const Vector<uint8_t>& p_data)
 	ERR_FAIL_COND(image.is_null());
 
 	if (texture.is_null()) {
-		texture = RenderingServer::get_singleton()->texture_2d_create(image);
+		texture = RenderingServer::texture_2d_create(image);
 	}
 	else {
-		RID new_texture = RenderingServer::get_singleton()->texture_2d_create(image);
-		RenderingServer::get_singleton()->texture_replace(texture, new_texture);
+		RID new_texture = RenderingServer::texture_2d_create(image);
+		RenderingServer::texture_replace(texture, new_texture);
 	}
 
 	image_stored = true;
 	size_override = size;
-	RenderingServer::get_singleton()->texture_set_size_override(
+	RenderingServer::texture_set_size_override(
 		texture, size_override.width, size_override.height);
 	alpha_cache.unref();
 
@@ -250,7 +250,7 @@ Image::Format PortableCompressedTexture2D::get_format() const { return format; }
 Ref<Image> PortableCompressedTexture2D::get_image() const
 {
 	if (image_stored) {
-		return RenderingServer::get_singleton()->texture_2d_get(texture);
+		return RenderingServer::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -265,7 +265,7 @@ RID PortableCompressedTexture2D::get_rid() const
 {
 	if (texture.is_null()) {
 		// We are in trouble, create something temporary.
-		texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture = RenderingServer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -281,7 +281,7 @@ void PortableCompressedTexture2D::draw(
 	if (size.width == 0 || size.height == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, size), texture, false, p_modulate, p_transpose);
 }
 
@@ -291,7 +291,7 @@ void PortableCompressedTexture2D::draw_rect(RID p_canvas_item, const Rect2& p_re
 	if (size.width == 0 || size.height == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect(
+	RenderingServer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -301,7 +301,7 @@ void PortableCompressedTexture2D::draw_rect_region(RID p_canvas_item, const Rect
 	if (size.width == 0 || size.height == 0) {
 		return;
 	}
-	RenderingServer::get_singleton()->canvas_item_add_texture_rect_region(
+	RenderingServer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -329,7 +329,7 @@ bool PortableCompressedTexture2D::is_pixel_opaque(int p_x, int p_y) const
 void PortableCompressedTexture2D::set_size_override(const Size2& p_size)
 {
 	size_override = p_size;
-	RenderingServer::get_singleton()->texture_set_size_override(
+	RenderingServer::texture_set_size_override(
 		texture, size_override.width, size_override.height);
 }
 
@@ -338,7 +338,7 @@ Size2 PortableCompressedTexture2D::get_size_override() const { return size_overr
 void PortableCompressedTexture2D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::get_singleton()->texture_set_path(texture, p_path);
+		RenderingServer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -380,8 +380,8 @@ void PortableCompressedTexture2D::set_basisu_compressor_params(
 PortableCompressedTexture2D::~PortableCompressedTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(texture);
 	}
 }
 

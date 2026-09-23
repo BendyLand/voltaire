@@ -1085,8 +1085,8 @@ void TextureStorage::texture_rd_initialize(
 
 	if (imfmt.rd_format_srgb != RD::DATA_FORMAT_MAX) {
 		// Allow creating a shared sRGB texture even if users didn't explicitly add them.
-		RD::get_singleton()->_texture_ensure_shareable_format(p_rd_texture, texture.rd_format);
-		RD::get_singleton()->_texture_ensure_shareable_format(p_rd_texture, texture.rd_format_srgb);
+		RD::_texture_ensure_shareable_format(p_rd_texture, texture.rd_format);
+		RD::_texture_ensure_shareable_format(p_rd_texture, texture.rd_format_srgb);
 	}
 
 	// We create a shared texture here even if our view matches, so we don't obtain ownership.
