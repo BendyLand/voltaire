@@ -54,7 +54,7 @@ void NavigationObstacle3D::_notification(int p_what)
 		}
 		// need to trigger map controlled agent assignment somehow for the fake_agent since
 		// obstacles use no callback like regular agents
-		NavigationServer3D::get_singleton()->obstacle_set_avoidance_enabled(
+		NavigationServer3D::obstacle_set_avoidance_enabled(
 			obstacle, avoidance_enabled);
 		_update_transform();
 		set_physics_process_internal(true);
@@ -81,7 +81,7 @@ void NavigationObstacle3D::_notification(int p_what)
 			_update_map(map_before_pause);
 			map_before_pause = RID();
 		}
-		NavigationServer3D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
+		NavigationServer3D::obstacle_set_paused(obstacle, !can_process());
 	} break;
 
 	case NOTIFICATION_UNSUSPENDED: {
@@ -100,7 +100,7 @@ void NavigationObstacle3D::_notification(int p_what)
 			_update_map(map_before_pause);
 			map_before_pause = RID();
 		}
-		NavigationServer3D::get_singleton()->obstacle_set_paused(obstacle, !can_process());
+		NavigationServer3D::obstacle_set_paused(obstacle, !can_process());
 	} break;
 
 #ifdef DEBUG_ENABLED
@@ -118,7 +118,7 @@ void NavigationObstacle3D::_notification(int p_what)
 				// only update if there is a noticeable change, else the rvo agent preferred
 				// velocity stays the same
 				if (!previous_velocity.is_equal_approx(velocity)) {
-					NavigationServer3D::get_singleton()->obstacle_set_velocity(obstacle, velocity);
+					NavigationServer3D::obstacle_set_velocity(obstacle, velocity);
 				}
 				previous_velocity = velocity;
 			}
@@ -180,7 +180,7 @@ void NavigationObstacle3D::set_vertices(const Vector<Vector3>& p_vertices)
 	const Vector3 safe_scale = basis.get_scale().abs().maxf(0.001);
 	const Transform3D safe_transform = Transform3D(
 		Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), rotation_y), Vector3());
-	NavigationServer3D::get_singleton()->obstacle_set_vertices(
+	NavigationServer3D::obstacle_set_vertices(
 		obstacle, safe_transform.xform(vertices));
 }
 
@@ -216,7 +216,7 @@ void NavigationObstacle3D::set_radius(real_t p_radius)
 	// Prevent non-positive or non-uniform scaling of dynamic obstacle radius.
 	const Vector3 safe_scale =
 		(is_inside_tree() ? get_global_basis() : get_basis()).get_scale().abs().maxf(0.001);
-	NavigationServer3D::get_singleton()->obstacle_set_radius(
+	NavigationServer3D::obstacle_set_radius(
 		obstacle, safe_scale[safe_scale.max_axis_index()] * radius);
 }
 
@@ -230,13 +230,13 @@ void NavigationObstacle3D::set_height(real_t p_height)
 	height = p_height;
 	const float scale_factor =
 		MAX(Math::abs((is_inside_tree() ? get_global_basis() : get_basis()).get_scale().y), 0.001);
-	NavigationServer3D::get_singleton()->obstacle_set_height(obstacle, scale_factor * height);
+	NavigationServer3D::obstacle_set_height(obstacle, scale_factor * height);
 }
 
 void NavigationObstacle3D::set_avoidance_layers(uint32_t p_layers)
 {
 	avoidance_layers = p_layers;
-	NavigationServer3D::get_singleton()->obstacle_set_avoidance_layers(obstacle, avoidance_layers);
+	NavigationServer3D::obstacle_set_avoidance_layers(obstacle, avoidance_layers);
 }
 
 uint32_t NavigationObstacle3D::get_avoidance_layers() const { return avoidance_layers; }
@@ -273,7 +273,7 @@ void NavigationObstacle3D::set_avoidance_enabled(bool p_enabled)
 	}
 
 	avoidance_enabled = p_enabled;
-	NavigationServer3D::get_singleton()->obstacle_set_avoidance_enabled(
+	NavigationServer3D::obstacle_set_avoidance_enabled(
 		obstacle, avoidance_enabled);
 }
 
@@ -324,13 +324,13 @@ PackedStringArray NavigationObstacle3D::get_configuration_warnings() const
 
 void NavigationObstacle3D::_update_map(RID p_map)
 {
-	NavigationServer3D::get_singleton()->obstacle_set_map(obstacle, p_map);
+	NavigationServer3D::obstacle_set_map(obstacle, p_map);
 	map_current = p_map;
 }
 
 void NavigationObstacle3D::_update_position(const Vector3 p_position)
 {
-	NavigationServer3D::get_singleton()->obstacle_set_position(obstacle, p_position);
+	NavigationServer3D::obstacle_set_position(obstacle, p_position);
 }
 
 void NavigationObstacle3D::_update_transform()
@@ -340,20 +340,20 @@ void NavigationObstacle3D::_update_transform()
 	// Prevent non-positive or non-uniform scaling of dynamic obstacle radius.
 	const Vector3 safe_scale = get_global_basis().get_scale().abs().maxf(0.001);
 	const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
-	NavigationServer3D::get_singleton()->obstacle_set_radius(obstacle, scaling_max_value * radius);
+	NavigationServer3D::obstacle_set_radius(obstacle, scaling_max_value * radius);
 
 	// Apply modified node transform which only takes y-axis rotation into account to vertices.
 	const Transform3D safe_transform = Transform3D(
 		Basis().scaled(safe_scale).rotated(Vector3(0.0, 1.0, 0.0), get_global_rotation().y),
 		Vector3());
-	NavigationServer3D::get_singleton()->obstacle_set_vertices(
+	NavigationServer3D::obstacle_set_vertices(
 		obstacle, safe_transform.xform(vertices));
-	NavigationServer3D::get_singleton()->obstacle_set_height(obstacle, safe_scale.y * height);
+	NavigationServer3D::obstacle_set_height(obstacle, safe_scale.y * height);
 }
 
 void NavigationObstacle3D::_update_use_3d_avoidance(bool p_use_3d_avoidance)
 {
-	NavigationServer3D::get_singleton()->obstacle_set_use_3d_avoidance(obstacle, use_3d_avoidance);
+	NavigationServer3D::obstacle_set_use_3d_avoidance(obstacle, use_3d_avoidance);
 	_update_map(map_current);
 }
 

@@ -46,12 +46,12 @@ void NavigationAgent3D::_notification(int p_what)
 		set_physics_process_internal(true);
 
 		if (agent_parent && avoidance_enabled) {
-			NavigationServer3D::get_singleton()->agent_set_position(
+			NavigationServer3D::agent_set_position(
 				agent, agent_parent->get_global_transform().origin);
 		}
 
 #ifdef DEBUG_ENABLED
-		if (NavigationServer3D::get_singleton()->get_debug_enabled()) {
+		if (NavigationServer3D::get_debug_enabled()) {
 			debug_path_dirty = true;
 		}
 #endif // DEBUG_ENABLED
@@ -90,7 +90,7 @@ void NavigationAgent3D::_notification(int p_what)
 	case NOTIFICATION_SUSPENDED:
 	case NOTIFICATION_PAUSED: {
 		if (agent_parent) {
-			NavigationServer3D::get_singleton()->agent_set_paused(
+			NavigationServer3D::agent_set_paused(
 				get_rid(), !agent_parent->can_process());
 		}
 	} break;
@@ -104,14 +104,14 @@ void NavigationAgent3D::_notification(int p_what)
 
 	case NOTIFICATION_UNPAUSED: {
 		if (agent_parent) {
-			NavigationServer3D::get_singleton()->agent_set_paused(
+			NavigationServer3D::agent_set_paused(
 				get_rid(), !agent_parent->can_process());
 		}
 	} break;
 
 	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 		if (agent_parent && avoidance_enabled) {
-			NavigationServer3D::get_singleton()->agent_set_position(
+			NavigationServer3D::agent_set_position(
 				agent, agent_parent->get_global_position());
 		}
 		if (agent_parent && target_position_submitted) {
@@ -124,13 +124,13 @@ void NavigationAgent3D::_notification(int p_what)
 						}
 						velocity.y = 0.0;
 					}
-					NavigationServer3D::get_singleton()->agent_set_velocity(agent, velocity);
+					NavigationServer3D::agent_set_velocity(agent, velocity);
 				}
 			}
 			if (velocity_forced_submitted) {
 				velocity_forced_submitted = false;
 				if (avoidance_enabled) {
-					NavigationServer3D::get_singleton()->agent_set_velocity_forced(
+					NavigationServer3D::agent_set_velocity_forced(
 						agent, velocity_forced);
 				}
 			}
@@ -288,7 +288,7 @@ void NavigationAgent3D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer3D::get_singleton()->agent_set_map(agent, map_override);
+	NavigationServer3D::agent_set_map(agent, map_override);
 	if (target_position_submitted) {
 		_request_repath();
 	}
@@ -331,7 +331,7 @@ void NavigationAgent3D::set_radius(real_t p_radius)
 	}
 	radius = p_radius;
 
-	NavigationServer3D::get_singleton()->agent_set_radius(agent, radius);
+	NavigationServer3D::agent_set_radius(agent, radius);
 }
 
 void NavigationAgent3D::set_height(real_t p_height)
@@ -341,7 +341,7 @@ void NavigationAgent3D::set_height(real_t p_height)
 		return;
 	}
 	height = p_height;
-	NavigationServer3D::get_singleton()->agent_set_height(agent, height);
+	NavigationServer3D::agent_set_height(agent, height);
 }
 
 void NavigationAgent3D::set_path_height_offset(real_t p_path_height_offset)
@@ -367,7 +367,7 @@ void NavigationAgent3D::set_neighbor_distance(real_t p_distance)
 
 	neighbor_distance = p_distance;
 
-	NavigationServer3D::get_singleton()->agent_set_neighbor_distance(agent, neighbor_distance);
+	NavigationServer3D::agent_set_neighbor_distance(agent, neighbor_distance);
 }
 
 void NavigationAgent3D::set_max_neighbors(int p_count)
@@ -378,7 +378,7 @@ void NavigationAgent3D::set_max_neighbors(int p_count)
 
 	max_neighbors = p_count;
 
-	NavigationServer3D::get_singleton()->agent_set_max_neighbors(agent, max_neighbors);
+	NavigationServer3D::agent_set_max_neighbors(agent, max_neighbors);
 }
 
 void NavigationAgent3D::set_time_horizon_agents(real_t p_time_horizon)
@@ -388,7 +388,7 @@ void NavigationAgent3D::set_time_horizon_agents(real_t p_time_horizon)
 		return;
 	}
 	time_horizon_agents = p_time_horizon;
-	NavigationServer3D::get_singleton()->agent_set_time_horizon_agents(agent, time_horizon_agents);
+	NavigationServer3D::agent_set_time_horizon_agents(agent, time_horizon_agents);
 }
 
 void NavigationAgent3D::set_time_horizon_obstacles(real_t p_time_horizon)
@@ -398,7 +398,7 @@ void NavigationAgent3D::set_time_horizon_obstacles(real_t p_time_horizon)
 		return;
 	}
 	time_horizon_obstacles = p_time_horizon;
-	NavigationServer3D::get_singleton()->agent_set_time_horizon_obstacles(
+	NavigationServer3D::agent_set_time_horizon_obstacles(
 		agent, time_horizon_obstacles);
 }
 
@@ -410,7 +410,7 @@ void NavigationAgent3D::set_max_speed(real_t p_max_speed)
 	}
 	max_speed = p_max_speed;
 
-	NavigationServer3D::get_singleton()->agent_set_max_speed(agent, max_speed);
+	NavigationServer3D::agent_set_max_speed(agent, max_speed);
 }
 
 void NavigationAgent3D::set_path_max_distance(real_t p_path_max_distance)
@@ -570,7 +570,7 @@ bool NavigationAgent3D::_is_within_target_distance(const Vector3& p_origin) cons
 void NavigationAgent3D::set_avoidance_layers(uint32_t p_layers)
 {
 	avoidance_layers = p_layers;
-	NavigationServer3D::get_singleton()->agent_set_avoidance_layers(get_rid(), avoidance_layers);
+	NavigationServer3D::agent_set_avoidance_layers(get_rid(), avoidance_layers);
 }
 
 uint32_t NavigationAgent3D::get_avoidance_layers() const { return avoidance_layers; }
@@ -578,7 +578,7 @@ uint32_t NavigationAgent3D::get_avoidance_layers() const { return avoidance_laye
 void NavigationAgent3D::set_avoidance_mask(uint32_t p_mask)
 {
 	avoidance_mask = p_mask;
-	NavigationServer3D::get_singleton()->agent_set_avoidance_mask(get_rid(), avoidance_mask);
+	NavigationServer3D::agent_set_avoidance_mask(get_rid(), avoidance_mask);
 }
 
 uint32_t NavigationAgent3D::get_avoidance_mask() const { return avoidance_mask; }
@@ -640,7 +640,7 @@ void NavigationAgent3D::set_avoidance_priority(real_t p_priority)
 	ERR_FAIL_COND_MSG(
 		p_priority > 1.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
 	avoidance_priority = p_priority;
-	NavigationServer3D::get_singleton()->agent_set_avoidance_priority(get_rid(), p_priority);
+	NavigationServer3D::agent_set_avoidance_priority(get_rid(), p_priority);
 }
 
 real_t NavigationAgent3D::get_avoidance_priority() const { return avoidance_priority; }

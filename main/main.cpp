@@ -3021,10 +3021,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	physics_server_2d_manager = memnew(PhysicsServer2DManager);
 #endif // PHYSICS_2D_DISABLED
 
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
-
 	register_server_types();
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Modules and Extensions");
@@ -3506,10 +3502,6 @@ Error Main::setup2(bool p_show_boot_logo)
 #if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 	MAIN_PRINT("Main: Load Navigation");
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
-
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server();
-#endif // NAVIGATION_3D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -4073,7 +4065,7 @@ bool Main::iteration()
 	NavigationServer2D::process(process_step * time_scale);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3D::get_singleton()->process(process_step * time_scale);
+	NavigationServer3D::process(process_step * time_scale);
 #endif // NAVIGATION_3D_DISABLED
 
 	RenderingServer::get_singleton()->sync(); // sync if still drawing from previous frames.
@@ -4252,12 +4244,6 @@ void Main::cleanup(bool p_force)
 	unregister_scene_types();
 
 	finalize_theme_db();
-
-// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-	NavigationServer3DManager::finalize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
 	finalize_physics();
 	unregister_server_types();
 

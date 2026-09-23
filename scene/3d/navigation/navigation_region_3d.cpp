@@ -47,7 +47,7 @@ void NavigationRegion3D::set_use_edge_connections(bool p_enabled)
 
 	use_edge_connections = p_enabled;
 
-	NavigationServer3D::get_singleton()->region_set_use_edge_connections(
+	NavigationServer3D::region_set_use_edge_connections(
 		region, use_edge_connections);
 }
 
@@ -61,7 +61,7 @@ void NavigationRegion3D::set_navigation_layers(uint32_t p_navigation_layers)
 
 	navigation_layers = p_navigation_layers;
 
-	NavigationServer3D::get_singleton()->region_set_navigation_layers(region, navigation_layers);
+	NavigationServer3D::region_set_navigation_layers(region, navigation_layers);
 }
 
 uint32_t NavigationRegion3D::get_navigation_layers() const { return navigation_layers; }
@@ -104,7 +104,7 @@ void NavigationRegion3D::set_enter_cost(real_t p_enter_cost)
 
 	enter_cost = p_enter_cost;
 
-	NavigationServer3D::get_singleton()->region_set_enter_cost(region, enter_cost);
+	NavigationServer3D::region_set_enter_cost(region, enter_cost);
 }
 
 real_t NavigationRegion3D::get_enter_cost() const { return enter_cost; }
@@ -118,7 +118,7 @@ void NavigationRegion3D::set_travel_cost(real_t p_travel_cost)
 
 	travel_cost = p_travel_cost;
 
-	NavigationServer3D::get_singleton()->region_set_travel_cost(region, travel_cost);
+	NavigationServer3D::region_set_travel_cost(region, travel_cost);
 }
 
 real_t NavigationRegion3D::get_travel_cost() const { return travel_cost; }
@@ -152,7 +152,7 @@ void NavigationRegion3D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer3D::get_singleton()->region_set_map(region, map_override);
+	NavigationServer3D::region_set_map(region, map_override);
 }
 
 RID NavigationRegion3D::get_navigation_map() const
@@ -206,18 +206,18 @@ void NavigationRegion3D::_region_enter_navigation_map()
 	}
 
 	if (map_override.is_valid()) {
-		NavigationServer3D::get_singleton()->region_set_map(region, map_override);
+		NavigationServer3D::region_set_map(region, map_override);
 	}
 	else {
-		NavigationServer3D::get_singleton()->region_set_map(
+		NavigationServer3D::region_set_map(
 			region, get_world_3d()->get_navigation_map());
 	}
 
-	NavigationServer3D::get_singleton()->region_set_transform(region, get_global_transform());
-	NavigationServer3D::get_singleton()->region_set_enabled(region, enabled);
+	NavigationServer3D::region_set_transform(region, get_global_transform());
+	NavigationServer3D::region_set_enabled(region, enabled);
 
 #ifdef DEBUG_ENABLED
-	if (NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
+	if (NavigationServer3D::get_debug_navigation_enabled()) {
 		_update_debug_mesh();
 	}
 #endif // DEBUG_ENABLED
@@ -225,7 +225,7 @@ void NavigationRegion3D::_region_enter_navigation_map()
 
 void NavigationRegion3D::_region_exit_navigation_map()
 {
-	NavigationServer3D::get_singleton()->region_set_map(region, RID());
+	NavigationServer3D::region_set_map(region, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
 		RS::get_singleton()->instance_set_visible(debug_instance, false);
@@ -242,7 +242,7 @@ void NavigationRegion3D::_region_update_transform()
 		return;
 	}
 
-	NavigationServer3D::get_singleton()->region_set_transform(region, get_global_transform());
+	NavigationServer3D::region_set_transform(region, get_global_transform());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
 		RS::get_singleton()->instance_set_transform(debug_instance, get_global_transform());

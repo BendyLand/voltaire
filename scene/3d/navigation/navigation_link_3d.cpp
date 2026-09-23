@@ -58,8 +58,8 @@ void NavigationLink3D::_notification(int p_what)
 
 NavigationLink3D::~NavigationLink3D()
 {
-	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
-	NavigationServer3D::get_singleton()->free_rid(link);
+	ERR_FAIL_NULL(NavigationServer3D::data);
+	NavigationServer3D::free_rid(link);
 	link = RID();
 
 #ifdef DEBUG_ENABLED
@@ -83,7 +83,7 @@ void NavigationLink3D::set_navigation_map(RID p_navigation_map)
 
 	map_override = p_navigation_map;
 
-	NavigationServer3D::get_singleton()->link_set_map(link, map_override);
+	NavigationServer3D::link_set_map(link, map_override);
 }
 
 RID NavigationLink3D::get_navigation_map() const
@@ -105,7 +105,7 @@ void NavigationLink3D::set_navigation_layers(uint32_t p_navigation_layers)
 
 	navigation_layers = p_navigation_layers;
 
-	NavigationServer3D::get_singleton()->link_set_navigation_layers(link, navigation_layers);
+	NavigationServer3D::link_set_navigation_layers(link, navigation_layers);
 }
 
 void NavigationLink3D::set_navigation_layer_value(int p_layer_number, bool p_value)
@@ -166,7 +166,7 @@ void NavigationLink3D::set_enter_cost(real_t p_enter_cost)
 
 	enter_cost = p_enter_cost;
 
-	NavigationServer3D::get_singleton()->link_set_enter_cost(link, enter_cost);
+	NavigationServer3D::link_set_enter_cost(link, enter_cost);
 }
 
 void NavigationLink3D::set_travel_cost(real_t p_travel_cost)
@@ -178,7 +178,7 @@ void NavigationLink3D::set_travel_cost(real_t p_travel_cost)
 
 	travel_cost = p_travel_cost;
 
-	NavigationServer3D::get_singleton()->link_set_travel_cost(link, travel_cost);
+	NavigationServer3D::link_set_travel_cost(link, travel_cost);
 }
 
 PackedStringArray NavigationLink3D::get_configuration_warnings() const
@@ -200,21 +200,21 @@ void NavigationLink3D::_link_enter_navigation_map()
 	}
 
 	if (map_override.is_valid()) {
-		NavigationServer3D::get_singleton()->link_set_map(link, map_override);
+		NavigationServer3D::link_set_map(link, map_override);
 	}
 	else {
-		NavigationServer3D::get_singleton()->link_set_map(
+		NavigationServer3D::link_set_map(
 			link, get_world_3d()->get_navigation_map());
 	}
 
-	NavigationServer3D::get_singleton()->link_set_start_position(
+	NavigationServer3D::link_set_start_position(
 		link, get_global_transform().xform(start_position));
-	NavigationServer3D::get_singleton()->link_set_end_position(
+	NavigationServer3D::link_set_end_position(
 		link, get_global_transform().xform(end_position));
-	NavigationServer3D::get_singleton()->link_set_enabled(link, enabled);
+	NavigationServer3D::link_set_enabled(link, enabled);
 
 #ifdef DEBUG_ENABLED
-	if (NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
+	if (NavigationServer3D::get_debug_navigation_enabled()) {
 		_update_debug_mesh();
 	}
 #endif // DEBUG_ENABLED
@@ -222,7 +222,7 @@ void NavigationLink3D::_link_enter_navigation_map()
 
 void NavigationLink3D::_link_exit_navigation_map()
 {
-	NavigationServer3D::get_singleton()->link_set_map(link, RID());
+	NavigationServer3D::link_set_map(link, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
 		RS::get_singleton()->instance_set_visible(debug_instance, false);
@@ -236,12 +236,12 @@ void NavigationLink3D::_link_update_transform()
 		return;
 	}
 
-	NavigationServer3D::get_singleton()->link_set_start_position(
+	NavigationServer3D::link_set_start_position(
 		link, get_global_transform().xform(start_position));
-	NavigationServer3D::get_singleton()->link_set_end_position(
+	NavigationServer3D::link_set_end_position(
 		link, get_global_transform().xform(end_position));
 #ifdef DEBUG_ENABLED
-	if (NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
+	if (NavigationServer3D::get_debug_navigation_enabled()) {
 		_update_debug_mesh();
 	}
 #endif // DEBUG_ENABLED

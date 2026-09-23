@@ -128,7 +128,7 @@ World3D::~World3D()
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
 
 	RenderingServer::get_singleton()->free_rid(scenario);
@@ -141,7 +141,7 @@ World3D::~World3D()
 
 #ifndef NAVIGATION_3D_DISABLED
 	if (navigation_map.is_valid()) {
-		NavigationServer3D::get_singleton()->free_rid(navigation_map);
+		NavigationServer3D::free_rid(navigation_map);
 	}
 #endif // NAVIGATION_3D_DISABLED
 }

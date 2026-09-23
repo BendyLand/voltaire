@@ -191,7 +191,7 @@ void GridMap::set_navigation_map(RID p_navigation_map)
 		Octant& g = *octant_map[E.key];
 		for (KeyValue<IndexKey, Octant::NavigationCell>& F : g.navigation_cell_ids) {
 			if (F.value.region.is_valid()) {
-				NavigationServer3D::get_singleton()->region_set_map(F.value.region, map_override);
+				NavigationServer3D::region_set_map(F.value.region, map_override);
 			}
 		}
 	}
@@ -452,7 +452,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 #endif // PHYSICS_3D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
 
 	ERR_FAIL_COND(!octant_map.has(p_key));
@@ -473,7 +473,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 	// Erase navigation
 	for (const KeyValue<IndexKey, Octant::NavigationCell>& E : g.navigation_cell_ids) {
 		if (E.value.region.is_valid()) {
-			NavigationServer3D::get_singleton()->free_rid(E.value.region);
+			NavigationServer3D::free_rid(E.value.region);
 		}
 		if (E.value.navigation_mesh_debug_instance.is_valid()) {
 			RS::get_singleton()->free_rid(E.value.navigation_mesh_debug_instance);
@@ -530,7 +530,7 @@ void GridMap::_notification(int p_what)
 
 #ifndef NAVIGATION_3D_DISABLED
 		if (bake_navigation &&
-			NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
+			NavigationServer3D::get_debug_navigation_enabled()) {
 			_update_navigation_debug_edge_connections();
 		}
 #endif // NAVIGATION_3D_DISABLED
