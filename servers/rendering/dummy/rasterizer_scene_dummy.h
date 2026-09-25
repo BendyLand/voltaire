@@ -324,7 +324,7 @@ public:
 	{
 	}
 
-	bool screen_space_roughness_limiter_is_active() const override { return false; }
+	bool screen_space_roughness_limiter_is_active() const { return false; }
 
 	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override {}
 

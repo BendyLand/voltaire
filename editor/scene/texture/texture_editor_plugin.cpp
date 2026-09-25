@@ -111,8 +111,8 @@ void TexturePreview::_update_texture_display_ratio()
 static Image::Format get_texture_2d_format(const Ref<Texture2D>& p_texture)
 {
 	const Ref<Texture2DRD> rd_texture = p_texture;
-	if (rd_texture.is_valid() && RD::get_singleton() &&
-		RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
+	if (rd_texture.is_valid() && RD::data &&
+		RD::texture_is_valid(rd_texture->get_texture_rd_rid())) {
 		return rd_texture->get_image()->get_format();
 	}
 
@@ -138,8 +138,8 @@ static int get_texture_mipmaps_count(const Ref<Texture2D>& p_texture)
 		}
 	}
 	else if (rd_texture.is_valid()) {
-		if (RD::get_singleton() &&
-			RD::get_singleton()->texture_is_valid(rd_texture->get_texture_rd_rid())) {
+		if (RD::data &&
+			RD::texture_is_valid(rd_texture->get_texture_rd_rid())) {
 			return -1;
 		}
 		image = p_texture->get_image();

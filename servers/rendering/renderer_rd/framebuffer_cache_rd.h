@@ -20,7 +20,7 @@
 /* included in all copies or substantial portions of the Software.        */
 /*                                                                        */
 /* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
 /* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
 /* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
 /* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
@@ -34,284 +34,293 @@
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
 
-class FramebufferCacheRD
+class FramebufferCacheRD final
 {
-	struct Cache
-	{
-		Cache* prev = nullptr;
-		Cache* next = nullptr;
-		uint32_t hash = 0;
-		RID cache;
-		LocalVector<RID> textures;
-		LocalVector<RD::FramebufferPass> passes;
-		uint32_t views = 0;
-	};
+public:
+    struct Cache
+    {
+        Cache* prev = nullptr;
+        Cache* next = nullptr;
+        uint32_t hash = 0;
+        RID cache;
+        LocalVector<RID> textures;
+        LocalVector<RD::FramebufferPass> passes;
+        uint32_t views = 0;
+    };
 
-	PagedAllocator<Cache> cache_allocator;
+    enum
+    {
+        HASH_TABLE_SIZE = 16381 // Prime
+    };
 
-	enum
-	{
-		HASH_TABLE_SIZE = 16381 // Prime
-	};
+    struct Data
+    {
+        PagedAllocator<Cache> cache_allocator;
+        Cache* hash_table[HASH_TABLE_SIZE] = {};
+        uint32_t cache_instances_used = 0;
+    };
 
-	Cache* hash_table[HASH_TABLE_SIZE] = {};
+    static inline Data* data = nullptr;
 
-	static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
-	{
-		h = hash_murmur3_one_32(p.depth_attachment, h);
-		h = hash_murmur3_one_32(p.depth_resolve_attachment, h);
-
-		h = hash_murmur3_one_32(p.color_attachments.size(), h);
-		for (int i = 0; i < p.color_attachments.size(); i++) {
-			h = hash_murmur3_one_32(p.color_attachments[i], h);
-		}
-
-		h = hash_murmur3_one_32(p.resolve_attachments.size(), h);
-		for (int i = 0; i < p.resolve_attachments.size(); i++) {
-			h = hash_murmur3_one_32(p.resolve_attachments[i], h);
-		}
-
-		h = hash_murmur3_one_32(p.preserve_attachments.size(), h);
-		for (int i = 0; i < p.preserve_attachments.size(); i++) {
-			h = hash_murmur3_one_32(p.preserve_attachments[i], h);
-		}
-
-		return h;
-	}
-
-	static _FORCE_INLINE_ bool _compare_pass(
-		const RD::FramebufferPass& a, const RD::FramebufferPass& b)
-	{
-		if (a.depth_attachment != b.depth_attachment) {
-			return false;
-		}
-
-		if (a.depth_resolve_attachment != b.depth_resolve_attachment) {
-			return false;
-		}
-
-		if (a.color_attachments.size() != b.color_attachments.size()) {
-			return false;
-		}
-
-		for (int i = 0; i < a.color_attachments.size(); i++) {
-			if (a.color_attachments[i] != b.color_attachments[i]) {
-				return false;
-			}
-		}
-
-		if (a.resolve_attachments.size() != b.resolve_attachments.size()) {
-			return false;
-		}
-
-		for (int i = 0; i < a.resolve_attachments.size(); i++) {
-			if (a.resolve_attachments[i] != b.resolve_attachments[i]) {
-				return false;
-			}
-		}
-
-		if (a.preserve_attachments.size() != b.preserve_attachments.size()) {
-			return false;
-		}
-
-		for (int i = 0; i < a.preserve_attachments.size(); i++) {
-			if (a.preserve_attachments[i] != b.preserve_attachments[i]) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	_FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
-	{
-		return hash_murmur3_one_64(arg.get_id(), h);
-	}
-
-	template <typename... Args> uint32_t _hash_rids(uint32_t h, const RID& arg, Args... args)
-	{
-		h = hash_murmur3_one_64(arg.get_id(), h);
-		return _hash_rids(h, args...);
-	}
-
-	_FORCE_INLINE_ bool _compare_args(
-		uint32_t idx, const LocalVector<RID>& textures, const RID& arg)
-	{
-		return textures[idx] == arg;
-	}
-
-	template <typename... Args>
-	_FORCE_INLINE_ bool _compare_args(
-		uint32_t idx, const LocalVector<RID>& textures, const RID& arg, Args... args)
-	{
-		if (textures[idx] != arg) {
-			return false;
-		}
-		return _compare_args(idx + 1, textures, args...);
-	}
-
-	static FramebufferCacheRD* singleton;
-
-	uint32_t cache_instances_used = 0;
-
-	void _invalidate(Cache* p_cache);
-	static void _framebuffer_invalidation_callback(void* p_userdata);
-
-	RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
-		const Vector<RID>& p_textures, const Vector<RD::FramebufferPass>& p_passes)
-	{
-		RID rid;
-		if (p_passes.size()) {
-			rid = RD::get_singleton()->framebuffer_create_multipass(
-				p_textures, p_passes, RD::INVALID_ID, p_views);
-		}
-		else {
-			rid = RD::get_singleton()->framebuffer_create(p_textures, RD::INVALID_ID, p_views);
-		}
-
-		ERR_FAIL_COND_V(rid.is_null(), rid);
-
-		Cache* c = cache_allocator.alloc();
-		c->views = p_views;
-		c->cache = rid;
-		c->hash = p_hash;
-		c->textures.resize(p_textures.size());
-		for (uint32_t i = 0; i < c->textures.size(); i++) {
-			c->textures[i] = p_textures[i];
-		}
-		c->passes.resize(p_passes.size());
-		for (uint32_t i = 0; i < c->passes.size(); i++) {
-			c->passes[i] = p_passes[i];
-		}
-		c->prev = nullptr;
-		c->next = hash_table[p_table_idx];
-		if (hash_table[p_table_idx]) {
-			hash_table[p_table_idx]->prev = c;
-		}
-		hash_table[p_table_idx] = c;
-
-		RD::get_singleton()->framebuffer_set_invalidation_callback(
-			rid, _framebuffer_invalidation_callback, c);
-
-		cache_instances_used++;
-
-		return rid;
-	}
+    static void initialize();
+    static void finalize();
+    static bool is_initialized() { return data != nullptr; }
 
 private:
+    static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
+    {
+        h = hash_murmur3_one_32(p.depth_attachment, h);
+        h = hash_murmur3_one_32(p.depth_resolve_attachment, h);
+
+        h = hash_murmur3_one_32(p.color_attachments.size(), h);
+        for (int i = 0; i < p.color_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.color_attachments[i], h);
+        }
+
+        h = hash_murmur3_one_32(p.resolve_attachments.size(), h);
+        for (int i = 0; i < p.resolve_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.resolve_attachments[i], h);
+        }
+
+        h = hash_murmur3_one_32(p.preserve_attachments.size(), h);
+        for (int i = 0; i < p.preserve_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.preserve_attachments[i], h);
+        }
+
+        return h;
+    }
+
+    static _FORCE_INLINE_ bool _compare_pass(
+        const RD::FramebufferPass& a, const RD::FramebufferPass& b)
+    {
+        if (a.depth_attachment != b.depth_attachment) {
+            return false;
+        }
+
+        if (a.depth_resolve_attachment != b.depth_resolve_attachment) {
+            return false;
+        }
+
+        if (a.color_attachments.size() != b.color_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.color_attachments.size(); i++) {
+            if (a.color_attachments[i] != b.color_attachments[i]) {
+                return false;
+            }
+        }
+
+        if (a.resolve_attachments.size() != b.resolve_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.resolve_attachments.size(); i++) {
+            if (a.resolve_attachments[i] != b.resolve_attachments[i]) {
+                return false;
+            }
+        }
+
+        if (a.preserve_attachments.size() != b.preserve_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.preserve_attachments.size(); i++) {
+            if (a.preserve_attachments[i] != b.preserve_attachments[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static _FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
+    {
+        return hash_murmur3_one_64(arg.get_id(), h);
+    }
+
+    template <typename... Args> static uint32_t _hash_rids(uint32_t h, const RID& arg, Args... args)
+    {
+        h = hash_murmur3_one_64(arg.get_id(), h);
+        return _hash_rids(h, args...);
+    }
+
+    static _FORCE_INLINE_ bool _compare_args(
+        uint32_t idx, const LocalVector<RID>& textures, const RID& arg)
+    {
+        return textures[idx] == arg;
+    }
+
+    template <typename... Args>
+    static _FORCE_INLINE_ bool _compare_args(
+        uint32_t idx, const LocalVector<RID>& textures, const RID& arg, Args... args)
+    {
+        if (textures[idx] != arg) {
+            return false;
+        }
+        return _compare_args(idx + 1, textures, args...);
+    }
+
+    static void _invalidate(Cache* p_cache);
+    static void _framebuffer_invalidation_callback(void* p_userdata);
+
+    static RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
+        const Vector<RID>& p_textures, const Vector<RD::FramebufferPass>& p_passes)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
+
+        RID rid;
+        if (p_passes.size()) {
+            rid = RD::framebuffer_create_multipass(
+                p_textures, p_passes, RD::INVALID_ID, p_views);
+        }
+        else {
+            rid = RD::framebuffer_create(p_textures, RD::INVALID_ID, p_views);
+        }
+
+        ERR_FAIL_COND_V(rid.is_null(), rid);
+
+        Cache* c = data->cache_allocator.alloc();
+        c->views = p_views;
+        c->cache = rid;
+        c->hash = p_hash;
+        c->textures.resize(p_textures.size());
+        for (uint32_t i = 0; i < c->textures.size(); i++) {
+            c->textures[i] = p_textures[i];
+        }
+        c->passes.resize(p_passes.size());
+        for (uint32_t i = 0; i < c->passes.size(); i++) {
+            c->passes[i] = p_passes[i];
+        }
+        c->prev = nullptr;
+        c->next = data->hash_table[p_table_idx];
+        if (data->hash_table[p_table_idx]) {
+            data->hash_table[p_table_idx]->prev = c;
+        }
+        data->hash_table[p_table_idx] = c;
+
+        RD::framebuffer_set_invalidation_callback(
+            rid, _framebuffer_invalidation_callback, c);
+
+        data->cache_instances_used++;
+
+        return rid;
+    }
 
 public:
-	template <typename... Args> RID get_cache(Args... args)
-	{
-		uint32_t h = hash_murmur3_one_32(1); // 1 view
-		h = hash_murmur3_one_32(sizeof...(Args), h);
-		h = _hash_rids(h, args...);
-		h = hash_murmur3_one_32(0, h); // 0 passes
-		h = hash_fmix32(h);
+    template <typename... Args> static RID get_cache(Args... args)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
 
-		uint32_t table_idx = h % HASH_TABLE_SIZE;
-		{
-			const Cache* c = hash_table[table_idx];
+        uint32_t h = hash_murmur3_one_32(1); // 1 view
+        h = hash_murmur3_one_32(sizeof...(Args), h);
+        h = _hash_rids(h, args...);
+        h = hash_murmur3_one_32(0, h); // 0 passes
+        h = hash_fmix32(h);
 
-			while (c) {
-				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
-					c->views == 1 && _compare_args(0, c->textures, args...)) {
-					return c->cache;
-				}
-				c = c->next;
-			}
-		}
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
 
-		// Not in cache, create:
+            while (c) {
+                if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+                    c->views == 1 && _compare_args(0, c->textures, args...)) {
+                    return c->cache;
+                }
+                c = c->next;
+            }
+        }
 
-		return _allocate_from_data(
-			1, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
-	}
+        // Not in cache, create:
+        return _allocate_from_data(
+            1, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
+    }
 
-	template <typename... Args> RID get_cache_multiview(uint32_t p_views, Args... args)
-	{
-		uint32_t h = hash_murmur3_one_32(p_views);
-		h = hash_murmur3_one_32(sizeof...(Args), h);
-		h = _hash_rids(h, args...);
-		h = hash_murmur3_one_32(0, h); // 0 passes
-		h = hash_fmix32(h);
+    template <typename... Args> static RID get_cache_multiview(uint32_t p_views, Args... args)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
 
-		uint32_t table_idx = h % HASH_TABLE_SIZE;
-		{
-			const Cache* c = hash_table[table_idx];
+        uint32_t h = hash_murmur3_one_32(p_views);
+        h = hash_murmur3_one_32(sizeof...(Args), h);
+        h = _hash_rids(h, args...);
+        h = hash_murmur3_one_32(0, h); // 0 passes
+        h = hash_fmix32(h);
 
-			while (c) {
-				if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
-					c->views == p_views && _compare_args(0, c->textures, args...)) {
-					return c->cache;
-				}
-				c = c->next;
-			}
-		}
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
 
-		// Not in cache, create:
+            while (c) {
+                if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+                    c->views == p_views && _compare_args(0, c->textures, args...)) {
+                    return c->cache;
+                }
+                c = c->next;
+            }
+        }
 
-		return _allocate_from_data(
-			p_views, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
-	}
+        // Not in cache, create:
+        return _allocate_from_data(
+            p_views, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
+    }
 
-	RID get_cache_multipass(const Vector<RID>& p_textures,
-		const Vector<RD::FramebufferPass>& p_passes, uint32_t p_views = 1)
-	{
-		uint32_t h = hash_murmur3_one_32(p_views);
-		h = hash_murmur3_one_32(p_textures.size(), h);
-		for (int i = 0; i < p_textures.size(); i++) {
-			h = hash_murmur3_one_64(p_textures[i].get_id(), h);
-		}
-		h = hash_murmur3_one_32(p_passes.size(), h);
-		for (int i = 0; i < p_passes.size(); i++) {
-			h = _hash_pass(p_passes[i], h);
-		}
+    static RID get_cache_multipass(const Vector<RID>& p_textures,
+        const Vector<RD::FramebufferPass>& p_passes, uint32_t p_views = 1)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
 
-		h = hash_fmix32(h);
+        uint32_t h = hash_murmur3_one_32(p_views);
+        h = hash_murmur3_one_32(p_textures.size(), h);
+        for (int i = 0; i < p_textures.size(); i++) {
+            h = hash_murmur3_one_64(p_textures[i].get_id(), h);
+        }
+        h = hash_murmur3_one_32(p_passes.size(), h);
+        for (int i = 0; i < p_passes.size(); i++) {
+            h = _hash_pass(p_passes[i], h);
+        }
 
-		uint32_t table_idx = h % HASH_TABLE_SIZE;
-		{
-			const Cache* c = hash_table[table_idx];
+        h = hash_fmix32(h);
 
-			while (c) {
-				if (c->hash == h && c->views == p_views &&
-					c->textures.size() == (uint32_t)p_textures.size() &&
-					c->passes.size() == (uint32_t)p_passes.size()) {
-					bool all_ok = true;
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
 
-					for (int i = 0; i < p_textures.size(); i++) {
-						if (p_textures[i] != c->textures[i]) {
-							all_ok = false;
-							break;
-						}
-					}
+            while (c) {
+                if (c->hash == h && c->views == p_views &&
+                    c->textures.size() == (uint32_t)p_textures.size() &&
+                    c->passes.size() == (uint32_t)p_passes.size()) {
+                    bool all_ok = true;
 
-					if (all_ok) {
-						for (int i = 0; i < p_passes.size(); i++) {
-							if (!_compare_pass(p_passes[i], c->passes[i])) {
-								all_ok = false;
-								break;
-							}
-						}
-					}
+                    for (int i = 0; i < p_textures.size(); i++) {
+                        if (p_textures[i] != c->textures[i]) {
+                            all_ok = false;
+                            break;
+                        }
+                    }
 
-					if (all_ok) {
-						return c->cache;
-					}
-				}
-				c = c->next;
-			}
-		}
+                    if (all_ok) {
+                        for (int i = 0; i < p_passes.size(); i++) {
+                            if (!_compare_pass(p_passes[i], c->passes[i])) {
+                                all_ok = false;
+                                break;
+                            }
+                        }
+                    }
 
-		// Not in cache, create:
-		return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
-	}
+                    if (all_ok) {
+                        return c->cache;
+                    }
+                }
+                c = c->next;
+            }
+        }
 
-	static FramebufferCacheRD* get_singleton() { return singleton; }
+        // Not in cache, create:
+        return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
+    }
 
-	FramebufferCacheRD();
-	~FramebufferCacheRD();
+    FramebufferCacheRD() = delete;
+    FramebufferCacheRD(const FramebufferCacheRD&) = delete;
+    FramebufferCacheRD& operator=(const FramebufferCacheRD&) = delete;
+    ~FramebufferCacheRD() = delete;
 };
-
-

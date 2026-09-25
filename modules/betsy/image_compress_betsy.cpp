@@ -102,23 +102,23 @@ void BetsyCompressor::_thread_exit()
 {
 	exit = true;
 
-	if (compress_rd != nullptr) {
+	if (RD::data != nullptr) {
 		if (dxt1_encoding_table_buffer.is_valid()) {
-			compress_rd->free_rid(dxt1_encoding_table_buffer);
+			RD::free_rid(dxt1_encoding_table_buffer);
 		}
 
-		compress_rd->free_rid(src_sampler);
+		RD::free_rid(src_sampler);
 
 		// Clear the shader cache, pipelines will be unreferenced automatically.
 		for (int i = 0; i < BETSY_SHADER_MAX; i++) {
 			if (cached_shaders[i].compiled.is_valid()) {
-				compress_rd->free_rid(cached_shaders[i].compiled);
+				RD::free_rid(cached_shaders[i].compiled);
 			}
 		}
 
 		// Free the RD (and RCD if necessary).
-		memdelete(compress_rd);
-		compress_rd = nullptr;
+		memdelete(RD::data);
+		RD::data = nullptr;
 		if (compress_rcd != nullptr) {
 			memdelete(compress_rcd);
 			compress_rcd = nullptr;

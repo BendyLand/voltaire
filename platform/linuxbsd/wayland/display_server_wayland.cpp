@@ -1932,7 +1932,7 @@ DisplayServerWayland::~DisplayServerWayland()
 
 	// Destroy all drivers.
 #ifdef RD_ENABLED
-	memdelete(rendering_device);
+	memdelete(RD::data);
 	memdelete(rendering_context);
 #endif
 

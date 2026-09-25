@@ -3244,9 +3244,8 @@ Error Main::setup2(bool p_show_boot_logo)
 	}
 
 	// Max FPS needs to be set after the DisplayServer is created.
-	RenderingDevice* rd = RenderingDevice::get_singleton();
-	if (rd) {
-		rd->_set_max_fps(engine->get_max_fps());
+	if (RD::data) {
+		RD::_set_max_fps(engine->get_max_fps());
 	}
 
 #ifdef TOOLS_ENABLED
@@ -4065,7 +4064,7 @@ bool Main::iteration()
 	RenderingServer::sync(); // sync if still drawing from previous frames.
 
 	const bool has_pending_resources_for_processing =
-		RD::get_singleton() && RD::get_singleton()->has_pending_resources_for_processing();
+		RD::data && RD::has_pending_resources_for_processing();
 
 	process_ticks = OS::get_singleton()->get_ticks_usec() - process_begin;
 	process_max = MAX(process_ticks, process_max);

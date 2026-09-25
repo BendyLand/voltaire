@@ -43,8 +43,8 @@ class ProjectSettings final
 
 public:
 	typedef HashMap<String, String> StringMap;
-	// This constant is used to make the ".godot" folder and paths like "res://.godot/editor".
-	static inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "godot";
+	// This constant is used to make the ".voltaire" folder and paths like "res://.voltaire/editor".
+	static inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "voltaire";
 	static inline const String EDITOR_SETTING_OVERRIDE_PREFIX =
 		PNAME("editor_overrides") + String("/");
 

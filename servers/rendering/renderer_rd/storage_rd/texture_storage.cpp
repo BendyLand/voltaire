@@ -57,12 +57,12 @@ TextureStorage::CanvasTexture::~CanvasTexture()
 
 void TextureStorage::Texture::cleanup()
 {
-	if (RD::get_singleton()->texture_is_valid(rd_texture_srgb)) {
+	if (RD::texture_is_valid(rd_texture_srgb)) {
 		// erase this first, as it's a dependency of the one below
-		RD::get_singleton()->free_rid(rd_texture_srgb);
+		RD::free_rid(rd_texture_srgb);
 	}
-	if (RD::get_singleton()->texture_is_valid(rd_texture)) {
-		RD::get_singleton()->free_rid(rd_texture);
+	if (RD::texture_is_valid(rd_texture)) {
+		RD::free_rid(rd_texture);
 	}
 	memdelete(canvas_texture);
 }
@@ -83,7 +83,7 @@ TextureStorage::~TextureStorage()
 	}
 
 	if (decal_atlas.texture.is_valid()) {
-		RD::get_singleton()->free_rid(decal_atlas.texture);
+		RD::free_rid(decal_atlas.texture);
 	}
 
 	if (area_light_atlas.textures.size()) {
@@ -92,13 +92,13 @@ TextureStorage::~TextureStorage()
 	}
 
 	if (area_light_atlas.texture.is_valid()) {
-		RD::get_singleton()->free_rid(area_light_atlas.texture);
+		RD::free_rid(area_light_atlas.texture);
 	}
 
 	// def textures
 	for (int i = 0; i < DEFAULT_RD_TEXTURE_MAX; i++) {
 		if (default_rd_textures[i].is_valid()) {
-			RD::get_singleton()->free_rid(default_rd_textures[i]);
+			RD::free_rid(default_rd_textures[i]);
 		}
 	}
 
@@ -322,9 +322,9 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	ERR_FAIL_COND_V(repeat == RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, CanvasTextureInfo());
 
 	CanvasTextureCache& ctc = ct->info_cache[int(p_use_srgb)];
-	if (!RD::get_singleton()->texture_is_valid(ctc.diffuse) ||
-		!RD::get_singleton()->texture_is_valid(ctc.normal) ||
-		!RD::get_singleton()->texture_is_valid(ctc.specular)) {
+	if (!RD::texture_is_valid(ctc.diffuse) ||
+		!RD::texture_is_valid(ctc.normal) ||
+		!RD::texture_is_valid(ctc.specular)) {
 		{ // diffuse
 			t = get_texture(ct->diffuse);
 			if (!t) {
@@ -440,11 +440,11 @@ void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
 
 	proxy_tex.rd_view.format_override = tex->rd_format;
 	proxy_tex.rd_texture =
-		RD::get_singleton()->texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
+		RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
 	if (proxy_tex.rd_texture_srgb.is_valid()) {
 		proxy_tex.rd_view.format_override = tex->rd_format_srgb;
 		proxy_tex.rd_texture_srgb =
-			RD::get_singleton()->texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
+			RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
 	}
 	proxy_tex.proxy_to = p_base;
 	proxy_tex.is_render_target = false;
@@ -663,7 +663,7 @@ RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	uint64_t usage_flags = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	RID rd_texture =
-		RD::get_singleton()->texture_create_from_extension(type, format, RD::TEXTURE_SAMPLES_1,
+		RD::texture_create_from_extension(type, format, RD::TEXTURE_SAMPLES_1,
 			usage_flags, p_native_handle, p_width, p_height, p_depth, p_layers, 1);
 
 	RID texture = texture_allocate();
@@ -688,12 +688,12 @@ void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 
 	if (tex->proxy_to.is_valid()) {
 		// unlink proxy
-		if (RD::get_singleton()->texture_is_valid(tex->rd_texture)) {
-			RD::get_singleton()->free_rid(tex->rd_texture);
+		if (RD::texture_is_valid(tex->rd_texture)) {
+			RD::free_rid(tex->rd_texture);
 			tex->rd_texture = RID();
 		}
-		if (RD::get_singleton()->texture_is_valid(tex->rd_texture_srgb)) {
-			RD::get_singleton()->free_rid(tex->rd_texture_srgb);
+		if (RD::texture_is_valid(tex->rd_texture_srgb)) {
+			RD::free_rid(tex->rd_texture_srgb);
 			tex->rd_texture_srgb = RID();
 		}
 		Texture* prev_tex = texture_owner.get_or_null(tex->proxy_to);
@@ -715,11 +715,11 @@ void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 
 	tex->rd_view.format_override = tex->rd_format;
 	tex->rd_texture =
-		RD::get_singleton()->texture_create_shared(tex->rd_view, proxy_to->rd_texture);
+		RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
 	if (tex->rd_texture_srgb.is_valid()) {
 		tex->rd_view.format_override = tex->rd_format_srgb;
 		tex->rd_texture_srgb =
-			RD::get_singleton()->texture_create_shared(tex->rd_view, proxy_to->rd_texture);
+			RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
 	}
 }
 
@@ -755,7 +755,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const
 		return tex->image_cache_2d;
 	}
 #endif
-	Vector<uint8_t> data = RD::get_singleton()->texture_get_data(tex->rd_texture, 0);
+	Vector<uint8_t> data = RD::texture_get_data(tex->rd_texture, 0);
 	ERR_FAIL_COND_V(data.is_empty(), Ref<Image>());
 	Ref<Image> image;
 
@@ -812,7 +812,7 @@ Ref<Image> TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer) cons
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Ref<Image>());
 
-	Vector<uint8_t> data = RD::get_singleton()->texture_get_data(tex->rd_texture, p_layer);
+	Vector<uint8_t> data = RD::texture_get_data(tex->rd_texture, p_layer);
 	ERR_FAIL_COND_V(data.is_empty(), Ref<Image>());
 	Ref<Image> image = Image::create_from_data(
 		tex->width, tex->height, tex->mipmaps > 1, tex->validated_format, data);
@@ -834,7 +834,7 @@ Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture) const
 	ERR_FAIL_NULL_V(tex, Vector<Ref<Image>>());
 	ERR_FAIL_COND_V(tex->type != TextureStorage::TYPE_3D, Vector<Ref<Image>>());
 
-	Vector<uint8_t> all_data = RD::get_singleton()->texture_get_data(tex->rd_texture, 0);
+	Vector<uint8_t> all_data = RD::texture_get_data(tex->rd_texture, 0);
 
 	ERR_FAIL_COND_V(all_data.size() != (int)tex->buffer_size_3d, Vector<Ref<Image>>());
 
@@ -885,9 +885,9 @@ void TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
 	}
 
 	if (tex->rd_texture_srgb.is_valid()) {
-		RD::get_singleton()->free_rid(tex->rd_texture_srgb);
+		RD::free_rid(tex->rd_texture_srgb);
 	}
-	RD::get_singleton()->free_rid(tex->rd_texture);
+	RD::free_rid(tex->rd_texture);
 
 	if (tex->canvas_texture) {
 		memdelete(tex->canvas_texture);
@@ -1024,14 +1024,14 @@ Size2 TextureStorage::texture_size_with_proxy(RID p_proxy) { return texture_2d_g
 void TextureStorage::texture_rd_initialize(
 	RID p_texture, const RID& p_rd_texture, const RSE::TextureLayeredType p_layer_type)
 {
-	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_rd_texture));
+	ERR_FAIL_COND(!RD::texture_is_valid(p_rd_texture));
 
 	// TODO : investigate if we can support this, will need to be able to obtain the order and
 	// obtain the slice info
-	ERR_FAIL_COND_MSG(RD::get_singleton()->texture_is_shared(p_rd_texture),
+	ERR_FAIL_COND_MSG(RD::texture_is_shared(p_rd_texture),
 		"Please create the texture object using the original texture");
 
-	RD::TextureFormat tf = RD::get_singleton()->texture_get_format(p_rd_texture);
+	RD::TextureFormat tf = RD::texture_get_format(p_rd_texture);
 	ERR_FAIL_COND(!(tf.usage_bits & RD::TEXTURE_USAGE_SAMPLING_BIT));
 
 	TextureFromRDFormat imfmt;
@@ -1090,13 +1090,13 @@ void TextureStorage::texture_rd_initialize(
 	}
 
 	// We create a shared texture here even if our view matches, so we don't obtain ownership.
-	texture.rd_texture = RD::get_singleton()->texture_create_shared(rd_view, p_rd_texture);
+	texture.rd_texture = RD::texture_create_shared(rd_view, p_rd_texture);
 	if (imfmt.rd_format_srgb != RD::DATA_FORMAT_MAX) {
 		// The texture supports sRGB override, create it for 3D usage.
 		rd_view.format_override =
 			imfmt.rd_format_srgb == tf.format ? RD::DATA_FORMAT_MAX : imfmt.rd_format_srgb;
 		texture.rd_format_srgb = imfmt.rd_format_srgb;
-		texture.rd_texture_srgb = RD::get_singleton()->texture_create_shared(rd_view, p_rd_texture);
+		texture.rd_texture_srgb = RD::texture_create_shared(rd_view, p_rd_texture);
 	}
 
 	// TODO figure out what to do with slices
@@ -1129,11 +1129,11 @@ uint64_t TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb) c
 	ERR_FAIL_NULL_V(tex, 0);
 
 	if (p_srgb && tex->rd_texture_srgb.is_valid()) {
-		return RD::get_singleton()->get_driver_resource(
+		return RD::get_driver_resource(
 			RD::DRIVER_RESOURCE_TEXTURE, tex->rd_texture_srgb);
 	}
 	else {
-		return RD::get_singleton()->get_driver_resource(
+		return RD::get_driver_resource(
 			RD::DRIVER_RESOURCE_TEXTURE, tex->rd_texture);
 	}
 }
@@ -1659,7 +1659,7 @@ void TextureStorage::update_area_light_atlas()
 	area_light_atlas.dirty = false;
 
 	if (area_light_atlas.texture.is_valid()) {
-		RD::get_singleton()->free_rid(area_light_atlas.texture);
+		RD::free_rid(area_light_atlas.texture);
 		area_light_atlas.texture = RID();
 		area_light_atlas.texture_mipmaps.clear();
 	}
@@ -1791,8 +1791,8 @@ void TextureStorage::update_area_light_atlas()
 	tformat.mipmaps = area_light_atlas.mipmaps;
 	tformat.shareable_formats.push_back(RD::DATA_FORMAT_R8G8B8A8_UNORM);
 
-	area_light_atlas.texture = RD::get_singleton()->texture_create(tformat, RD::TextureView());
-	RD::get_singleton()->texture_clear(
+	area_light_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	RD::texture_clear(
 		area_light_atlas.texture, Color(0, 0, 0, 0), 0, area_light_atlas.mipmaps, 0, 1);
 
 	{
@@ -1802,11 +1802,11 @@ void TextureStorage::update_area_light_atlas()
 
 		for (int i = 0; i < area_light_atlas.mipmaps; i++) {
 			AreaLightAtlas::MipMap mm;
-			mm.texture = RD::get_singleton()->texture_create_shared_from_slice(
+			mm.texture = RD::texture_create_shared_from_slice(
 				RD::TextureView(), area_light_atlas.texture, 0, i);
 			Vector<RID> fb;
 			fb.push_back(mm.texture);
-			mm.fb = RD::get_singleton()->framebuffer_create(fb);
+			mm.fb = RD::framebuffer_create(fb);
 			mm.size = s;
 			area_light_atlas.texture_mipmaps.push_back(mm);
 
@@ -1818,7 +1818,7 @@ void TextureStorage::update_area_light_atlas()
 	if (area_light_atlas.textures.is_empty()) {
 		for (int i = 0; i < area_light_atlas.texture_mipmaps.size(); i++) {
 			const AreaLightAtlas::MipMap& mm = area_light_atlas.texture_mipmaps[i];
-			RD::get_singleton()->texture_clear(mm.texture, clear_color, 0, 1, 0, 1);
+			RD::texture_clear(mm.texture, clear_color, 0, 1, 0, 1);
 		}
 	}
 }
@@ -2008,7 +2008,7 @@ void TextureStorage::update_decal_atlas()
 	decal_atlas.dirty = false;
 
 	if (decal_atlas.texture.is_valid()) {
-		RD::get_singleton()->free_rid(decal_atlas.texture);
+		RD::free_rid(decal_atlas.texture);
 		decal_atlas.texture = RID();
 		decal_atlas.texture_srgb = RID();
 		decal_atlas.texture_mipmaps.clear();
@@ -2135,8 +2135,8 @@ void TextureStorage::update_decal_atlas()
 	tformat.shareable_formats.push_back(RD::DATA_FORMAT_R8G8B8A8_UNORM);
 	tformat.shareable_formats.push_back(RD::DATA_FORMAT_R8G8B8A8_SRGB);
 
-	decal_atlas.texture = RD::get_singleton()->texture_create(tformat, RD::TextureView());
-	RD::get_singleton()->texture_clear(
+	decal_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	RD::texture_clear(
 		decal_atlas.texture, Color(0, 0, 0, 0), 0, decal_atlas.mipmaps, 0, 1);
 
 	{
@@ -2146,11 +2146,11 @@ void TextureStorage::update_decal_atlas()
 
 		for (int i = 0; i < decal_atlas.mipmaps; i++) {
 			DecalAtlas::MipMap mm;
-			mm.texture = RD::get_singleton()->texture_create_shared_from_slice(
+			mm.texture = RD::texture_create_shared_from_slice(
 				RD::TextureView(), decal_atlas.texture, 0, i);
 			Vector<RID> fb;
 			fb.push_back(mm.texture);
-			mm.fb = RD::get_singleton()->framebuffer_create(fb);
+			mm.fb = RD::framebuffer_create(fb);
 			mm.size = s;
 			decal_atlas.texture_mipmaps.push_back(mm);
 
@@ -2161,7 +2161,7 @@ void TextureStorage::update_decal_atlas()
 			RD::TextureView rd_view;
 			rd_view.format_override = RD::DATA_FORMAT_R8G8B8A8_SRGB;
 			decal_atlas.texture_srgb =
-				RD::get_singleton()->texture_create_shared(rd_view, decal_atlas.texture);
+				RD::texture_create_shared(rd_view, decal_atlas.texture);
 		}
 	}
 }
@@ -2232,7 +2232,7 @@ void TextureStorage::decal_instance_set_sorting_offset(RID p_decal_instance, flo
 void TextureStorage::free_decal_data()
 {
 	if (decal_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(decal_buffer);
+		RD::free_rid(decal_buffer);
 		decal_buffer = RID();
 	}
 
@@ -2253,7 +2253,7 @@ void TextureStorage::set_max_decals(const uint32_t p_max_decals)
 	uint32_t decal_buffer_size = max_decals * sizeof(DecalData);
 	decals = memnew_arr(DecalData, max_decals);
 	decal_sort = memnew_arr(DecalInstanceSort, max_decals);
-	decal_buffer = RD::get_singleton()->storage_buffer_create(decal_buffer_size);
+	decal_buffer = RD::storage_buffer_create(decal_buffer_size);
 }
 
 void TextureStorage::update_decal_buffer(
@@ -2435,7 +2435,7 @@ void TextureStorage::update_decal_buffer(
 		dd.lower_fade = decal->lower_fade;
 
 		// hook for subclass to do further processing.
-		RendererSceneRenderRD::get_singleton()->setup_added_decal(xform, decal_extents);
+		RendererSceneRenderRD::setup_added_decal(xform, decal_extents);
 	}
 }
 
@@ -2446,14 +2446,14 @@ RID TextureStorage::RenderTarget::get_framebuffer()
 
 	if (msaa != RSE::VIEWPORT_MSAA_DISABLED && overridden.color.is_null()) {
 		// Render into our MSAA buffer and resolve into our color buffer.
-		return FramebufferCacheRD::get_singleton()->get_cache_multiview(
+		return FramebufferCacheRD::get_cache_multiview(
 			view_count, color_multisample, color);
 	}
 	else {
 		// Note that if we're using an overridden color buffer, we're likely cycling through a
 		// texture chain. this is where our framebuffer cache comes in clutch..
 
-		return FramebufferCacheRD::get_singleton()->get_cache_multiview(
+		return FramebufferCacheRD::get_cache_multiview(
 			view_count, overridden.color.is_valid() ? overridden.color : color);
 	}
 }
@@ -2473,16 +2473,16 @@ void TextureStorage::_clear_render_target(RenderTarget* rt)
 	}
 
 	if (rt->color.is_valid()) {
-		RD::get_singleton()->free_rid(rt->color);
+		RD::free_rid(rt->color);
 	}
 	rt->color_slices.clear(); // these are automatically freed.
 
 	if (rt->color_multisample.is_valid()) {
-		RD::get_singleton()->free_rid(rt->color_multisample);
+		RD::free_rid(rt->color_multisample);
 	}
 
 	if (rt->backbuffer.is_valid()) {
-		RD::get_singleton()->free_rid(rt->backbuffer);
+		RD::free_rid(rt->backbuffer);
 		rt->backbuffer = RID();
 		rt->backbuffer_mipmaps.clear();
 		rt->backbuffer_uniform_set = RID(); // chain deleted
@@ -2558,7 +2558,7 @@ void TextureStorage::_update_render_target(RenderTarget* rt)
 
 	// TODO see if we can lazy create this once we actually use it as we may not need to create this
 	// if we have an overridden color buffer...
-	rt->color = RD::get_singleton()->texture_create(rd_color_attachment_format, rd_view);
+	rt->color = RD::texture_create(rd_color_attachment_format, rd_view);
 	ERR_FAIL_COND(rt->color.is_null());
 
 	if (rt->msaa != RSE::VIEWPORT_MSAA_DISABLED) {
@@ -2576,7 +2576,7 @@ void TextureStorage::_update_render_target(RenderTarget* rt)
 		rd_color_multisample_format.is_resolve_buffer = false;
 		rd_color_multisample_format.is_discardable = true;
 		rt->color_multisample =
-			RD::get_singleton()->texture_create(rd_color_multisample_format, rd_view_multisample);
+			RD::texture_create(rd_color_multisample_format, rd_view_multisample);
 		ERR_FAIL_COND(rt->color_multisample.is_null());
 	}
 
@@ -2585,11 +2585,11 @@ void TextureStorage::_update_render_target(RenderTarget* rt)
 		Texture* tex = get_texture(rt->texture);
 
 		// free existing textures
-		if (RD::get_singleton()->texture_is_valid(tex->rd_texture)) {
-			RD::get_singleton()->free_rid(tex->rd_texture);
+		if (RD::texture_is_valid(tex->rd_texture)) {
+			RD::free_rid(tex->rd_texture);
 		}
-		if (RD::get_singleton()->texture_is_valid(tex->rd_texture_srgb)) {
-			RD::get_singleton()->free_rid(tex->rd_texture_srgb);
+		if (RD::texture_is_valid(tex->rd_texture_srgb)) {
+			RD::free_rid(tex->rd_texture_srgb);
 		}
 
 		tex->rd_texture = RID();
@@ -2603,10 +2603,10 @@ void TextureStorage::_update_render_target(RenderTarget* rt)
 		if (!rt->is_transparent) {
 			view.swizzle_a = RD::TEXTURE_SWIZZLE_ONE;
 		}
-		tex->rd_texture = RD::get_singleton()->texture_create_shared(view, rt->color);
+		tex->rd_texture = RD::texture_create_shared(view, rt->color);
 		if (rt->color_format_srgb != RD::DATA_FORMAT_MAX) {
 			view.format_override = rt->color_format_srgb;
-			tex->rd_texture_srgb = RD::get_singleton()->texture_create_shared(view, rt->color);
+			tex->rd_texture_srgb = RD::texture_create_shared(view, rt->color);
 		}
 		tex->rd_view = view;
 		tex->width = rt->size.width;
@@ -2640,29 +2640,29 @@ void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 					RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	tf.mipmaps = mipmaps_required;
 
-	rt->backbuffer = RD::get_singleton()->texture_create(tf, RD::TextureView());
-	RD::get_singleton()->set_resource_name(rt->backbuffer, "Render Target Back Buffer");
-	rt->backbuffer_mipmap0 = RD::get_singleton()->texture_create_shared_from_slice(
+	rt->backbuffer = RD::texture_create(tf, RD::TextureView());
+	RD::set_resource_name(rt->backbuffer, "Render Target Back Buffer");
+	rt->backbuffer_mipmap0 = RD::texture_create_shared_from_slice(
 		RD::TextureView(), rt->backbuffer, 0, 0);
-	RD::get_singleton()->set_resource_name(rt->backbuffer_mipmap0, "Back Buffer slice mipmap 0");
+	RD::set_resource_name(rt->backbuffer_mipmap0, "Back Buffer slice mipmap 0");
 
 	{
 		Vector<RID> fb_tex;
 		fb_tex.push_back(rt->backbuffer_mipmap0);
-		rt->backbuffer_fb = RD::get_singleton()->framebuffer_create(fb_tex);
+		rt->backbuffer_fb = RD::framebuffer_create(fb_tex);
 	}
 
 	if (rt->framebuffer_uniform_set.is_valid() &&
-		RD::get_singleton()->uniform_set_is_valid(rt->framebuffer_uniform_set)) {
+		RD::uniform_set_is_valid(rt->framebuffer_uniform_set)) {
 		// the new one will require the backbuffer.
-		RD::get_singleton()->free_rid(rt->framebuffer_uniform_set);
+		RD::free_rid(rt->framebuffer_uniform_set);
 		rt->framebuffer_uniform_set = RID();
 	}
 	// create mipmaps
 	for (uint32_t i = 1; i < mipmaps_required; i++) {
-		RID mipmap = RD::get_singleton()->texture_create_shared_from_slice(
+		RID mipmap = RD::texture_create_shared_from_slice(
 			RD::TextureView(), rt->backbuffer, 0, i);
-		RD::get_singleton()->set_resource_name(mipmap, "Back Buffer slice mip: " + itos(i));
+		RD::set_resource_name(mipmap, "Back Buffer slice mip: " + itos(i));
 
 		rt->backbuffer_mipmaps.push_back(mipmap);
 	}
@@ -2779,7 +2779,7 @@ RID TextureStorage::render_target_get_override_depth_slice(
 
 		if (!rt->overridden.cached_slices.has(key)) {
 			rt->overridden.cached_slices[key] =
-				RD::get_singleton()->texture_create_shared_from_slice(
+				RD::texture_create_shared_from_slice(
 					RD::TextureView(), rt->overridden.depth, p_layer, 0);
 		}
 
@@ -2812,7 +2812,7 @@ RID TextureStorage::render_target_get_override_velocity_slice(
 
 		if (!rt->overridden.cached_slices.has(key)) {
 			rt->overridden.cached_slices[key] =
-				RD::get_singleton()->texture_create_shared_from_slice(
+				RD::texture_create_shared_from_slice(
 					RD::TextureView(), rt->overridden.velocity, p_layer, 0);
 		}
 
@@ -2956,7 +2956,7 @@ void TextureStorage::render_target_do_msaa_resolve(RID p_render_target)
 	if (!rt->msaa_needs_resolve) {
 		return;
 	}
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 	rt->msaa_needs_resolve = false;
 }
 
@@ -3030,7 +3030,7 @@ RID TextureStorage::render_target_get_rd_texture_slice(RID p_render_target, uint
 		ERR_FAIL_UNSIGNED_INDEX_V(p_layer, rt->view_count, RID());
 		if (rt->color_slices.is_empty()) {
 			for (uint32_t v = 0; v < rt->view_count; v++) {
-				RID slice = RD::get_singleton()->texture_create_shared_from_slice(
+				RID slice = RD::texture_create_shared_from_slice(
 					RD::TextureView(), rt->color, v, 0);
 				rt->color_slices.push_back(slice);
 			}
@@ -3104,7 +3104,7 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target)
 	}
 	Vector<Color> clear_colors;
 	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;
 }
@@ -3198,7 +3198,7 @@ RID TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 		memset(pv.ptrw(), 0, 16 * 4);
 		Vector<Vector<uint8_t>> vpv;
 		vpv.push_back(pv);
-		rt->sdf_buffer_read = RD::get_singleton()->texture_create(tformat, RD::TextureView(), vpv);
+		rt->sdf_buffer_read = RD::texture_create(tformat, RD::TextureView(), vpv);
 	}
 
 	return rt->sdf_buffer_read;
@@ -3207,13 +3207,13 @@ RID TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 void TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
 {
 	if (rt->sdf_buffer_read.is_valid()) {
-		RD::get_singleton()->free_rid(rt->sdf_buffer_read);
+		RD::free_rid(rt->sdf_buffer_read);
 		rt->sdf_buffer_read = RID();
 	}
 	if (rt->sdf_buffer_write_fb.is_valid()) {
-		RD::get_singleton()->free_rid(rt->sdf_buffer_write);
-		RD::get_singleton()->free_rid(rt->sdf_buffer_process[0]);
-		RD::get_singleton()->free_rid(rt->sdf_buffer_process[1]);
+		RD::free_rid(rt->sdf_buffer_write);
+		RD::free_rid(rt->sdf_buffer_process[0]);
+		RD::free_rid(rt->sdf_buffer_process[1]);
 		rt->sdf_buffer_write = RID();
 		rt->sdf_buffer_write_fb = RID();
 		rt->sdf_buffer_process[0] = RID();
@@ -3271,44 +3271,44 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 	};
 	}
 
-	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
+	RD::ComputeListID compute_list = RD::compute_list_begin();
 
-	RD::get_singleton()->compute_list_bind_uniform_set(
+	RD::compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[1], 0); // fill [0]
-	RD::get_singleton()->compute_list_set_push_constant(
+	RD::compute_list_set_push_constant(
 		compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
 
-	RD::get_singleton()->compute_list_dispatch_threads(
+	RD::compute_list_dispatch_threads(
 		compute_list, push_constant.size[0], push_constant.size[1], 1);
 
 	int stride =
 		Math::nearest_power_of_2_templated(MAX(push_constant.size[0], push_constant.size[1]) / 2);
 
-	RD::get_singleton()->compute_list_add_barrier(compute_list);
+	RD::compute_list_add_barrier(compute_list);
 	bool swap = false;
 
 	// jumpflood
 	while (stride > 0) {
-		RD::get_singleton()->compute_list_bind_uniform_set(
+		RD::compute_list_bind_uniform_set(
 			compute_list, rt->sdf_buffer_process_uniform_sets[swap ? 1 : 0], 0);
 		push_constant.stride = stride;
-		RD::get_singleton()->compute_list_set_push_constant(
+		RD::compute_list_set_push_constant(
 			compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
-		RD::get_singleton()->compute_list_dispatch_threads(
+		RD::compute_list_dispatch_threads(
 			compute_list, push_constant.size[0], push_constant.size[1], 1);
 		stride /= 2;
 		swap = !swap;
-		RD::get_singleton()->compute_list_add_barrier(compute_list);
+		RD::compute_list_add_barrier(compute_list);
 	}
 
-	RD::get_singleton()->compute_list_bind_uniform_set(
+	RD::compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[swap ? 1 : 0], 0);
-	RD::get_singleton()->compute_list_set_push_constant(
+	RD::compute_list_set_push_constant(
 		compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
-	RD::get_singleton()->compute_list_dispatch_threads(
+	RD::compute_list_dispatch_threads(
 		compute_list, push_constant.size[0], push_constant.size[1], 1);
 
-	RD::get_singleton()->compute_list_end();
+	RD::compute_list_end();
 }
 
 void TextureStorage::render_target_copy_to_back_buffer(
@@ -3336,7 +3336,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 
 	// TODO figure out stereo support here
 
-	if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
+	if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
 		copy_effects->copy_to_rect(
 			rt->color, rt->backbuffer_mipmap0, region, false, false, false, !rt->use_hdr, true);
 	}
@@ -3351,7 +3351,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 	if (!p_gen_mipmaps) {
 		return;
 	}
-	RD::get_singleton()->draw_command_begin_label("Gaussian Blur Mipmaps");
+	RD::draw_command_begin_label("Gaussian Blur Mipmaps");
 	// then mipmap blur
 	RID prev_texture = rt->color; // use color, not backbuffer, as bb has mipmaps.
 
@@ -3364,7 +3364,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 		texture_size = Size2i(texture_size.x >> 1, texture_size.y >> 1).maxi(1);
 
 		RID mipmap = rt->backbuffer_mipmaps[i];
-		if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
+		if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
 			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
 		}
 		else {
@@ -3372,7 +3372,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 		}
 		prev_texture = mipmap;
 	}
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 void TextureStorage::render_target_clear_back_buffer(
@@ -3400,7 +3400,7 @@ void TextureStorage::render_target_clear_back_buffer(
 	}
 
 	// Single texture copy for backbuffer.
-	if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
+	if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
 		copy_effects->set_color(rt->backbuffer_mipmap0, p_color, region, !rt->use_hdr);
 	}
 	else {
@@ -3431,7 +3431,7 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 			return; // nothing to do
 		}
 	}
-	RD::get_singleton()->draw_command_begin_label("Gaussian Blur Mipmaps Pass 2");
+	RD::draw_command_begin_label("Gaussian Blur Mipmaps Pass 2");
 	// then mipmap blur
 	RID prev_texture = rt->backbuffer_mipmap0;
 	Size2i texture_size = rt->size;
@@ -3444,7 +3444,7 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 
 		RID mipmap = rt->backbuffer_mipmaps[i];
 
-		if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
+		if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
 			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
 		}
 		else {
@@ -3452,7 +3452,7 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 		}
 		prev_texture = mipmap;
 	}
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 RID TextureStorage::render_target_get_framebuffer_uniform_set(RID p_render_target)

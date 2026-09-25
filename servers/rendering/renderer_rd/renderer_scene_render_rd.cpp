@@ -57,63 +57,63 @@ void get_vogel_disk(float* r_kernel, int p_sample_count)
 	}
 }
 
-RID RendererSceneRenderRD::sky_allocate() { return sky.allocate_sky_rid(); }
+RID RendererSceneRenderRD::sky_allocate() { return data->sky.allocate_sky_rid(); }
 
-void RendererSceneRenderRD::sky_initialize(RID p_rid) { sky.initialize_sky_rid(p_rid); }
+void RendererSceneRenderRD::sky_initialize(RID p_rid) { data->sky.initialize_sky_rid(p_rid); }
 
 void RendererSceneRenderRD::sky_set_radiance_size(RID p_sky, int p_radiance_size)
 {
-	sky.sky_set_radiance_size(p_sky, p_radiance_size);
+	data->sky.sky_set_radiance_size(p_sky, p_radiance_size);
 }
 
 void RendererSceneRenderRD::sky_set_mode(RID p_sky, RSE::SkyMode p_mode)
 {
-	sky.sky_set_mode(p_sky, p_mode);
+	data->sky.sky_set_mode(p_sky, p_mode);
 }
 
 void RendererSceneRenderRD::sky_set_material(RID p_sky, RID p_material)
 {
-	sky.sky_set_material(p_sky, p_material);
+	data->sky.sky_set_material(p_sky, p_material);
 }
 
 Ref<Image> RendererSceneRenderRD::sky_bake_panorama(
 	RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i& p_size)
 {
-	return sky.sky_bake_panorama(p_sky, p_energy, p_bake_irradiance, p_size);
+	return data->sky.sky_bake_panorama(p_sky, p_energy, p_bake_irradiance, p_size);
 }
 
 void RendererSceneRenderRD::environment_glow_set_use_bicubic_upscale(bool p_enable)
 {
-	glow_bicubic_upscale = p_enable;
+	data->glow_bicubic_upscale = p_enable;
 }
 
 void RendererSceneRenderRD::environment_set_volumetric_fog_volume_size(int p_size, int p_depth)
 {
-	volumetric_fog_size = p_size;
-	volumetric_fog_depth = p_depth;
+	data->volumetric_fog_size = p_size;
+	data->volumetric_fog_depth = p_depth;
 }
 
 void RendererSceneRenderRD::environment_set_volumetric_fog_filter_active(bool p_enable)
 {
-	volumetric_fog_filter_active = p_enable;
+	data->volumetric_fog_filter_active = p_enable;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_ray_count(
 	RSE::EnvironmentSDFGIRayCount p_ray_count)
 {
-	gi.sdfgi_ray_count = p_ray_count;
+	data->gi.sdfgi_ray_count = p_ray_count;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_converge(
 	RSE::EnvironmentSDFGIFramesToConverge p_frames)
 {
-	gi.sdfgi_frames_to_converge = p_frames;
+	data->gi.sdfgi_frames_to_converge = p_frames;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_update_light(
 	RSE::EnvironmentSDFGIFramesToUpdateLight p_update)
 {
-	gi.sdfgi_frames_to_update_light = p_update;
+	data->gi.sdfgi_frames_to_update_light = p_update;
 }
 
 Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
@@ -121,7 +121,7 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 {
 	ERR_FAIL_COND_V(p_env.is_null(), Ref<Image>());
 
-	RSE::EnvironmentBG environment_background = environment_get_background(p_env);
+	RSE::EnvironmentBG environment_background = RendererSceneRender::environment_get_background(p_env);
 
 	if (environment_background == RSE::ENV_BG_CAMERA_FEED ||
 		environment_background == RSE::ENV_BG_CANVAS ||
@@ -129,7 +129,7 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 		return Ref<Image>(); // nothing to bake
 	}
 
-	RSE::EnvironmentAmbientSource ambient_source = environment_get_ambient_source(p_env);
+	RSE::EnvironmentAmbientSource ambient_source = RendererSceneRender::RendererSceneRender::environment_get_ambient_source(p_env);
 
 	bool use_ambient_light = false;
 	bool use_octmap = false;
@@ -145,14 +145,14 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 		use_ambient_light = use_octmap || ambient_source == RSE::ENV_AMBIENT_SOURCE_COLOR;
 	}
 	use_octmap = use_octmap || (environment_background == RSE::ENV_BG_SKY &&
-								   environment_get_sky(p_env).is_valid());
+								   RendererSceneRender::RendererSceneRender::environment_get_sky(p_env).is_valid());
 
 	Color ambient_color;
 	float ambient_color_sky_mix = 0.0;
 	if (use_ambient_light) {
-		ambient_color_sky_mix = environment_get_ambient_sky_contribution(p_env);
-		const float ambient_energy = environment_get_ambient_light_energy(p_env);
-		ambient_color = environment_get_ambient_light(p_env);
+		ambient_color_sky_mix = RendererSceneRender::RendererSceneRender::environment_get_ambient_sky_contribution(p_env);
+		const float ambient_energy = RendererSceneRender::RendererSceneRender::environment_get_ambient_light_energy(p_env);
+		ambient_color = RendererSceneRender::RendererSceneRender::environment_get_ambient_light(p_env);
 		ambient_color = ambient_color.srgb_to_linear();
 		ambient_color.r *= ambient_energy;
 		ambient_color.g *= ambient_energy;
@@ -160,8 +160,8 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 	}
 
 	if (use_octmap) {
-		Ref<Image> panorama = sky_bake_panorama(environment_get_sky(p_env),
-			environment_get_bg_energy_multiplier(p_env), p_bake_irradiance, p_size);
+		Ref<Image> panorama = sky_bake_panorama(RendererSceneRender::RendererSceneRender::environment_get_sky(p_env),
+			RendererSceneRender::RendererSceneRender::environment_get_bg_energy_multiplier(p_env), p_bake_irradiance, p_size);
 		if (use_ambient_light && panorama.is_valid()) {
 			for (int x = 0; x < p_size.width; x++) {
 				for (int y = 0; y < p_size.height; y++) {
@@ -173,10 +173,10 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 		return panorama;
 	}
 	else {
-		const float bg_energy_multiplier = environment_get_bg_energy_multiplier(p_env);
+		const float bg_energy_multiplier = RendererSceneRender::RendererSceneRender::environment_get_bg_energy_multiplier(p_env);
 		Color panorama_color = ((environment_background == RSE::ENV_BG_CLEAR_COLOR)
 									? RSG::texture_storage->get_default_clear_color()
-									: environment_get_bg_color(p_env));
+									: RendererSceneRender::RendererSceneRender::environment_get_bg_color(p_env));
 		panorama_color = panorama_color.srgb_to_linear();
 		panorama_color.r *= bg_energy_multiplier;
 		panorama_color.g *= bg_energy_multiplier;
@@ -200,7 +200,7 @@ RID RendererSceneRenderRD::reflection_probe_create_framebuffer(RID p_color, RID 
 	Vector<RID> fb;
 	fb.push_back(p_color);
 	fb.push_back(p_depth);
-	return RD::get_singleton()->framebuffer_create(fb);
+	return RD::framebuffer_create(fb);
 }
 
 /* FOG VOLUME INSTANCE */
@@ -223,22 +223,22 @@ void RendererSceneRenderRD::fog_volume_instance_set_active(RID p_fog_volume_inst
 		p_fog_volume_instance, p_active);
 }
 
-RID RendererSceneRenderRD::fog_volume_instance_get_volume(RID p_fog_volume_instance) const
+RID RendererSceneRenderRD::fog_volume_instance_get_volume(RID p_fog_volume_instance)
 {
 	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_volume(p_fog_volume_instance);
 }
 
-Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume_instance) const
+Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume_instance)
 {
 	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_position(
 		p_fog_volume_instance);
 }
 
-/* VOXEL GI */
+/* VOXEL data->GI */
 
 RID RendererSceneRenderRD::voxel_gi_instance_create(RID p_base)
 {
-	return gi.voxel_gi_instance_create(p_base);
+	return data->gi.voxel_gi_instance_create(p_base);
 }
 
 void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
@@ -248,16 +248,16 @@ void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
 		return;
 	}
 
-	gi.voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
+	data->gi.voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
 }
 
-bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe) const
+bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe)
 {
 	if (!is_dynamic_gi_supported()) {
 		return false;
 	}
 
-	return gi.voxel_gi_needs_update(p_probe);
+	return data->gi.voxel_gi_needs_update(p_probe);
 }
 
 void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_instances,
@@ -268,7 +268,7 @@ void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_ins
 		return;
 	}
 
-	gi.voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
+	data->gi.voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
 }
 
 void RendererSceneRenderRD::_debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_render_buffers,
@@ -292,10 +292,10 @@ Ref<RenderSceneBuffers> RendererSceneRenderRD::render_buffers_create()
 	rb.instantiate();
 
 	rb->set_can_be_storage(_render_buffers_can_be_storage());
-	rb->set_max_cluster_elements(max_cluster_elements);
+	rb->set_max_cluster_elements(data->max_cluster_elements);
 	rb->set_preferred_data_format(_render_buffers_get_preferred_color_format());
-	if (vrs) {
-		rb->set_vrs(vrs);
+	if (data->vrs) {
+		rb->set_vrs(data->vrs);
 	}
 
 	setup_render_buffer_data(rb);
@@ -399,7 +399,7 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 		return;
 	}
 
-	RD::get_singleton()->draw_command_begin_label("Copy Screen Texture");
+	RD::draw_command_begin_label("Copy Screen Texture");
 
 	StringName texture_name;
 	bool can_use_storage = _render_buffers_can_be_storage();
@@ -425,11 +425,11 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 		RID dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, texture_name, v, 0);
 
 		if (can_use_storage) {
-			copy_effects->copy_to_rect(texture, dest, Rect2i(0, 0, size.x, size.y));
+			data->copy_effects->copy_to_rect(texture, dest, Rect2i(0, 0, size.x, size.y));
 		}
 		else {
-			RID fb = FramebufferCacheRD::get_singleton()->get_cache(dest);
-			copy_effects->copy_to_fb_rect(texture, fb, Rect2i(0, 0, size.x, size.y));
+			RID fb = FramebufferCacheRD::get_cache(dest);
+			data->copy_effects->copy_to_fb_rect(texture, fb, Rect2i(0, 0, size.x, size.y));
 		}
 
 		for (int i = 1; i < mipmaps; i++) {
@@ -438,15 +438,15 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 			Size2i msize = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, texture_name, i);
 
 			if (can_use_storage) {
-				copy_effects->make_mipmap(source, dest, msize);
+				data->copy_effects->make_mipmap(source, dest, msize);
 			}
 			else {
-				copy_effects->make_mipmap_raster(source, dest, msize);
+				data->copy_effects->make_mipmap_raster(source, dest, msize);
 			}
 		}
 	}
 
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 void RendererSceneRenderRD::_render_buffers_ensure_depth_texture(const RenderDataRD* p_render_data)
@@ -481,7 +481,7 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
 		return;
 	}
 
-	RD::get_singleton()->draw_command_begin_label("Copy Depth Texture");
+	RD::draw_command_begin_label("Copy Depth Texture");
 
 	bool can_use_storage = _render_buffers_can_be_storage();
 	Size2i size = rb->get_internal_size();
@@ -490,25 +490,25 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
 		RID depth_back_texture = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, v, 0);
 
 		if (can_use_storage) {
-			copy_effects->copy_depth_to_rect(
+			data->copy_effects->copy_depth_to_rect(
 				depth_texture, depth_back_texture, Rect2i(0, 0, size.x, size.y));
 		}
 		else {
-			RID depth_back_fb = FramebufferCacheRD::get_singleton()->get_cache(depth_back_texture);
+			RID depth_back_fb = FramebufferCacheRD::get_cache(depth_back_texture);
 			if (p_use_msaa) {
 				static const int texture_multisamples[RSE::VIEWPORT_MSAA_MAX] = {1, 2, 4, 8};
 
-				resolve_effects->resolve_depth_raster(
+				data->resolve_effects->resolve_depth_raster(
 					rb->get_depth_msaa(v), depth_back_fb, texture_multisamples[rb->get_msaa_3d()]);
 			}
 			else {
-				copy_effects->copy_to_fb_rect(
+				data->copy_effects->copy_to_fb_rect(
 					depth_texture, depth_back_fb, Rect2i(0, 0, size.x, size.y));
 			}
 		}
 	}
 
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
@@ -530,7 +530,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 	bool can_use_effects =
 		target_size.x >= 8 && target_size.y >= 8; // FIXME I think this should check internal size,
 												  // we do all our post processing at this size...
-	can_use_effects &= _debug_draw_can_use_effects(debug_draw);
+	can_use_effects &= _debug_draw_can_use_effects(data->debug_draw);
 	bool can_use_storage = _render_buffers_can_be_storage();
 
 	RSE::ViewportScaling3DMode scale_mode = rb->get_scaling_3d_mode();
@@ -540,7 +540,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 	SpatialUpscaler* spatial_upscaler = nullptr;
 	if (can_use_effects) {
 		if (scale_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR) {
-			spatial_upscaler = fsr;
+			spatial_upscaler = data->fsr;
 		}
 		else if (scale_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL) {
 #if METAL_ENABLED
@@ -550,7 +550,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 	}
 
 	bool use_fxaa = rb->get_screen_space_aa() == RSE::VIEWPORT_SCREEN_SPACE_AA_FXAA;
-	bool use_smaa = smaa && rb->get_screen_space_aa() == RSE::VIEWPORT_SCREEN_SPACE_AA_SMAA;
+	bool use_smaa = data->smaa && rb->get_screen_space_aa() == RSE::VIEWPORT_SCREEN_SPACE_AA_SMAA;
 	// If doing bilinear or nearest scaling + FXAA / SMAA, the framebuffer must be scaled in a
 	// framebuffer copy after AA is applied.
 	bool using_scaling_pass =
@@ -578,7 +578,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 	if (can_use_effects && using_dof) {
 		RENDER_TIMESTAMP("Depth of Field");
-		RD::get_singleton()->draw_command_begin_label("DOF");
+		RD::draw_command_begin_label("DOF");
 
 		rb->allocate_blur_textures();
 
@@ -600,7 +600,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				// combined frustum.
 				float z_near = p_render_data->scene_data->view_projection[i].get_z_near();
 				float z_far = p_render_data->scene_data->view_projection[i].get_z_far();
-				bokeh_dof->bokeh_dof_compute(buffers, p_render_data->camera_attributes, z_near,
+				data->bokeh_dof->bokeh_dof_compute(buffers, p_render_data->camera_attributes, z_near,
 					z_far, p_render_data->scene_data->cam_orthogonal);
 			};
 		}
@@ -623,7 +623,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				buffers.depth_texture =
 					p_use_msaa ? rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, i, 0)
 							   : rb->get_depth_texture(i);
-				buffers.base_fb = FramebufferCacheRD::get_singleton()->get_cache(
+				buffers.base_fb = FramebufferCacheRD::get_cache(
 					buffers.base_texture); // TODO move this into bokeh_dof_raster, we can do this
 										   // internally
 
@@ -631,11 +631,11 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				// combined frustum.
 				float z_near = p_render_data->scene_data->view_projection[i].get_z_near();
 				float z_far = p_render_data->scene_data->view_projection[i].get_z_far();
-				bokeh_dof->bokeh_dof_raster(buffers, p_render_data->camera_attributes, z_near,
+				data->bokeh_dof->bokeh_dof_raster(buffers, p_render_data->camera_attributes, z_near,
 					z_far, p_render_data->scene_data->cam_orthogonal);
 			}
 		}
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 
 	float auto_exposure_scale = 1.0;
@@ -644,10 +644,10 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 							   p_render_data->camera_attributes)) {
 		RENDER_TIMESTAMP("Auto exposure");
 
-		RD::get_singleton()->draw_command_begin_label("Auto Exposure");
+		RD::draw_command_begin_label("Auto Exposure");
 
 		Ref<RendererRD::Luminance::LuminanceBuffers> luminance_buffers =
-			luminance->get_luminance_buffers(rb);
+			data->luminance->get_luminance_buffers(rb);
 
 		uint64_t auto_exposure_version =
 			RSG::camera_attributes->camera_attributes_get_auto_exposure_version(
@@ -657,14 +657,14 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		double step = RSG::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
 						  p_render_data->camera_attributes) *
-					  time_step;
+					  data->time_step;
 		float auto_exposure_min_sensitivity =
 			RSG::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
 				p_render_data->camera_attributes);
 		float auto_exposure_max_sensitivity =
 			RSG::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
 				p_render_data->camera_attributes);
-		luminance->luminance_reduction(rb->get_internal_texture(), rb->get_internal_size(),
+		data->luminance->luminance_reduction(rb->get_internal_texture(), rb->get_internal_size(),
 			luminance_buffers, auto_exposure_min_sensitivity, auto_exposure_max_sensitivity, step,
 			set_immediate);
 
@@ -675,17 +675,17 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		RenderingServer::redraw_request(); // Redraw all the time if auto exposure rendering
 												  // is on.
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 
 	if (can_use_effects && p_render_data->environment.is_valid() &&
-		environment_get_glow_enabled(p_render_data->environment)) {
+		RendererSceneRender::environment_get_glow_enabled(p_render_data->environment)) {
 		RENDER_TIMESTAMP("Glow");
 
 		rb->allocate_blur_textures();
 
 		int mipmaps = int(rb->get_texture_format(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1).mipmaps);
-		Vector<float> glow_levels = environment_get_glow_levels(p_render_data->environment);
+		Vector<float> glow_levels = RendererSceneRender::environment_get_glow_levels(p_render_data->environment);
 		bool use_debanding =
 			rb->get_use_debanding() && !texture_storage->render_target_is_using_hdr(render_target);
 
@@ -702,35 +702,35 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		float luminance_multiplier = rb->get_luminance_multiplier();
 		if (can_use_storage) {
-			RD::get_singleton()->draw_command_begin_label("Gaussian Glow");
+			RD::draw_command_begin_label("Gaussian Glow");
 			RID luminance_texture;
 			if (RSG::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
-				luminance_texture = luminance->get_current_luminance_buffer(
+				luminance_texture = data->luminance->get_current_luminance_buffer(
 					rb); // this will return and empty RID if we don't have an auto exposure buffer
 			}
 			for (uint32_t l = 0; l < rb->get_view_count(); l++) {
 				Size2i vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, 0);
 				RID source = rb->get_internal_texture(l);
 				RID dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 0);
-				copy_effects->gaussian_glow(source, dest, vp_size,
-					environment_get_glow_strength(p_render_data->environment), true,
-					environment_get_glow_hdr_luminance_cap(p_render_data->environment),
-					environment_get_exposure(p_render_data->environment),
-					environment_get_glow_bloom(p_render_data->environment),
-					environment_get_glow_hdr_bleed_threshold(p_render_data->environment),
-					environment_get_glow_hdr_bleed_scale(p_render_data->environment),
+				data->copy_effects->gaussian_glow(source, dest, vp_size,
+					RendererSceneRender::environment_get_glow_strength(p_render_data->environment), true,
+					RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_render_data->environment),
+					RendererSceneRender::environment_get_exposure(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_bloom(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_hdr_bleed_threshold(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_hdr_bleed_scale(p_render_data->environment),
 					luminance_texture, auto_exposure_scale);
 
 				for (int i = 1; i < (max_glow_index + 1); i++) {
 					source = dest;
 					vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, i);
 					dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i);
-					copy_effects->gaussian_glow(source, dest, vp_size,
-						environment_get_glow_strength(p_render_data->environment));
+					data->copy_effects->gaussian_glow(source, dest, vp_size,
+						RendererSceneRender::environment_get_glow_strength(p_render_data->environment));
 				}
 			}
-			RD::get_singleton()->draw_command_end_label();
+			RD::draw_command_end_label();
 		}
 		else {
 			// For the mobile renderer we blur down and up the mip chain. Which works out to
@@ -742,7 +742,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			RID dest;
 
 			for (uint32_t l = 0; l < rb->get_view_count(); l++) {
-				RD::get_singleton()->draw_command_begin_label("Gaussian Glow downsample");
+				RD::draw_command_begin_label("Gaussian Glow downsample");
 
 				Size2i source_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_COLOR, 0);
 
@@ -750,13 +750,13 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				dest = rb->get_texture_slice(
 					RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 1); // Level 1 is quarter res.
 
-				copy_effects->gaussian_glow_downsample_raster(source, dest, luminance_multiplier,
-					source_size, environment_get_glow_strength(p_render_data->environment), true,
-					environment_get_glow_hdr_luminance_cap(p_render_data->environment),
-					environment_get_exposure(p_render_data->environment),
-					environment_get_glow_bloom(p_render_data->environment),
-					environment_get_glow_hdr_bleed_threshold(p_render_data->environment),
-					environment_get_glow_hdr_bleed_scale(p_render_data->environment));
+				data->copy_effects->gaussian_glow_downsample_raster(source, dest, luminance_multiplier,
+					source_size, RendererSceneRender::environment_get_glow_strength(p_render_data->environment), true,
+					RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_render_data->environment),
+					RendererSceneRender::environment_get_exposure(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_bloom(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_hdr_bleed_threshold(p_render_data->environment),
+					RendererSceneRender::environment_get_glow_hdr_bleed_scale(p_render_data->environment));
 
 				Size2i vp_size;
 				for (int i = 1; i < (max_glow_index + 1); i++) {
@@ -764,12 +764,12 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, i);
 					dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i + 1);
 
-					copy_effects->gaussian_glow_downsample_raster(source, dest,
+					data->copy_effects->gaussian_glow_downsample_raster(source, dest,
 						luminance_multiplier, vp_size,
-						environment_get_glow_strength(p_render_data->environment));
+						RendererSceneRender::environment_get_glow_strength(p_render_data->environment));
 				}
-				RD::get_singleton()->draw_command_end_label();
-				RD::get_singleton()->draw_command_begin_label("Gaussian Glow upsample");
+				RD::draw_command_end_label();
+				RD::draw_command_begin_label("Gaussian Glow upsample");
 
 				if (max_glow_index <= 0) {
 					// Only layer 1 is visible, just copy over.
@@ -783,7 +783,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RID blend_tex = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 1);
 					source_size = vp_size;
 
-					copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
+					data->copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
 						luminance_multiplier, source_size, vp_size, glow_levels[0], 0.0,
 						use_debanding);
 				}
@@ -799,24 +799,24 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RID blend_tex =
 						rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i + 1);
 
-					copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
+					data->copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
 						luminance_multiplier, source_size, vp_size, glow_levels[i],
 						i == (max_glow_index - 1) ? glow_levels[i + 1] : 1.0, use_debanding);
 				}
-				RD::get_singleton()->draw_command_end_label();
+				RD::draw_command_end_label();
 			}
 		}
 	}
 
 	{
 		RENDER_TIMESTAMP("Tonemap");
-		RD::get_singleton()->draw_command_begin_label("Tonemap");
+		RD::draw_command_begin_label("Tonemap");
 
 		RendererRD::ToneMapper::TonemapSettings tonemap;
 
 		bool using_hdr = texture_storage->render_target_is_using_hdr(render_target);
 
-		tonemap.exposure_texture = luminance->get_current_luminance_buffer(rb);
+		tonemap.exposure_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (can_use_effects &&
 			RSG::camera_attributes->camera_attributes_uses_auto_exposure(
 				p_render_data->camera_attributes) &&
@@ -830,21 +830,21 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		}
 
 		if (can_use_effects && p_render_data->environment.is_valid() &&
-			environment_get_glow_enabled(p_render_data->environment)) {
+			RendererSceneRender::environment_get_glow_enabled(p_render_data->environment)) {
 			tonemap.use_glow = true;
-			tonemap.glow_mode = environment_get_glow_blend_mode(p_render_data->environment);
+			tonemap.glow_mode = RendererSceneRender::environment_get_glow_blend_mode(p_render_data->environment);
 			tonemap.glow_intensity =
 				tonemap.glow_mode == RSE::ENV_GLOW_BLEND_MODE_MIX
-					? environment_get_glow_mix(p_render_data->environment)
-					: environment_get_glow_intensity(p_render_data->environment);
+					? RendererSceneRender::environment_get_glow_mix(p_render_data->environment)
+					: RendererSceneRender::environment_get_glow_intensity(p_render_data->environment);
 			for (int i = 0; i < RSE::MAX_GLOW_LEVELS; i++) {
-				tonemap.glow_levels[i] = environment_get_glow_levels(p_render_data->environment)[i];
+				tonemap.glow_levels[i] = RendererSceneRender::environment_get_glow_levels(p_render_data->environment)[i];
 			}
 
 			Size2i msize = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, 0);
 			tonemap.glow_texture_size.x = msize.width;
 			tonemap.glow_texture_size.y = msize.height;
-			tonemap.glow_use_bicubic_upscale = glow_bicubic_upscale;
+			tonemap.glow_use_bicubic_upscale = data->glow_bicubic_upscale;
 
 			if (can_use_storage) {
 				tonemap.glow_texture = rb->get_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1);
@@ -854,11 +854,11 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RB_SCOPE_BUFFERS, RB_TEX_BLUR_0, 0, 2, rb->get_view_count());
 			}
 
-			if (environment_get_glow_map(p_render_data->environment).is_valid()) {
+			if (RendererSceneRender::environment_get_glow_map(p_render_data->environment).is_valid()) {
 				tonemap.glow_map_strength =
-					environment_get_glow_map_strength(p_render_data->environment);
+					RendererSceneRender::environment_get_glow_map_strength(p_render_data->environment);
 				tonemap.glow_map = texture_storage->texture_get_rd_texture(
-					environment_get_glow_map(p_render_data->environment));
+					RendererSceneRender::environment_get_glow_map(p_render_data->environment));
 			}
 			else {
 				tonemap.glow_map_strength = 0.0f;
@@ -892,17 +892,17 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			// we need to use SDR range with a max value of 1.0.
 			float max_value = using_hdr ? p_render_data->window_output_max_value : 1.0;
 
-			tonemap.tonemap_mode = environment_get_tone_mapper(p_render_data->environment);
+			tonemap.tonemap_mode = RendererSceneRender::environment_get_tone_mapper(p_render_data->environment);
 			RendererEnvironmentStorage::TonemapParameters params =
-				environment_get_tonemap_parameters(
+				RendererSceneRender::environment_get_tonemap_parameters(
 					p_render_data->environment, limit_agx_white, max_value);
 			tonemap.tonemapper_params[0] = params.tonemapper_params[0];
 			tonemap.tonemapper_params[1] = params.tonemapper_params[1];
 			tonemap.tonemapper_params[2] = params.tonemapper_params[2];
 			tonemap.tonemapper_params[3] = params.tonemapper_params[3];
 			tonemap.white =
-				environment_get_white(p_render_data->environment, limit_agx_white, max_value);
-			tonemap.exposure = environment_get_exposure(p_render_data->environment);
+				RendererSceneRender::environment_get_white(p_render_data->environment, limit_agx_white, max_value);
+			tonemap.exposure = RendererSceneRender::environment_get_exposure(p_render_data->environment);
 			tonemap.max_value = max_value;
 		}
 
@@ -913,17 +913,17 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		tonemap.convert_to_srgb = !using_hdr;
 
 		if (can_use_effects && p_render_data->environment.is_valid()) {
-			tonemap.use_bcs = environment_get_adjustments_enabled(p_render_data->environment);
-			tonemap.brightness = environment_get_adjustments_brightness(p_render_data->environment);
-			tonemap.contrast = environment_get_adjustments_contrast(p_render_data->environment);
-			tonemap.saturation = environment_get_adjustments_saturation(p_render_data->environment);
-			if (environment_get_adjustments_enabled(p_render_data->environment) &&
-				environment_get_color_correction(p_render_data->environment).is_valid()) {
+			tonemap.use_bcs = RendererSceneRender::environment_get_adjustments_enabled(p_render_data->environment);
+			tonemap.brightness = RendererSceneRender::environment_get_adjustments_brightness(p_render_data->environment);
+			tonemap.contrast = RendererSceneRender::environment_get_adjustments_contrast(p_render_data->environment);
+			tonemap.saturation = RendererSceneRender::environment_get_adjustments_saturation(p_render_data->environment);
+			if (RendererSceneRender::environment_get_adjustments_enabled(p_render_data->environment) &&
+				RendererSceneRender::environment_get_color_correction(p_render_data->environment).is_valid()) {
 				tonemap.use_color_correction = true;
 				tonemap.use_1d_color_correction =
-					environment_get_use_1d_color_correction(p_render_data->environment);
+					RendererSceneRender::environment_get_use_1d_color_correction(p_render_data->environment);
 				tonemap.color_correction_texture = texture_storage->texture_get_rd_texture(
-					environment_get_color_correction(p_render_data->environment),
+					RendererSceneRender::environment_get_color_correction(p_render_data->environment),
 					!tonemap.convert_to_srgb);
 			}
 		}
@@ -934,7 +934,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		RID dest_fb;
 		RD::DataFormat dest_fb_format;
 		if (using_scaling_pass || use_smaa) {
-			// If we use a spatial upscaler to upscale or SMAA to antialias we need to write our
+			// If we use a spatial upscaler to upscale or data->SMAA to antialias we need to write our
 			// result into an intermediate buffer. Note that this is cached so we only create the
 			// texture the first time.
 			dest_fb_format = rb->get_base_data_format();
@@ -943,7 +943,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
 						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
 					RD::TEXTURE_SAMPLES_1, color_size, 0, 1, true, true);
-			dest_fb = FramebufferCacheRD::get_singleton()->get_cache(dest_texture);
+			dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 			tonemap.dest_texture_size = color_size;
 		}
 		else {
@@ -952,7 +952,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			// our real target size communicated. Bit nasty but...
 
 			if (dest_is_msaa_2d) {
-				dest_fb = FramebufferCacheRD::get_singleton()->get_cache(
+				dest_fb = FramebufferCacheRD::get_cache(
 					texture_storage->render_target_get_rd_texture_msaa(render_target));
 				texture_storage->render_target_set_msaa_needs_resolve(
 					render_target, true); // Make sure this gets resolved.
@@ -969,7 +969,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			RendererRD::ToneMapper::TonemapSettings::DebandingMode::DEBANDING_MODE_DISABLED;
 		if (rb->get_use_debanding() && !using_hdr) {
 			if (use_smaa) {
-				// SMAA will apply 8-bit debanding.
+				// data->SMAA will apply 8-bit debanding.
 				if (!can_use_storage) {
 					// When can_use_storage is false, the intermediate destination buffer will be 10
 					// bit, so additional tonemap debanding is needed. This stage of debanding is
@@ -987,24 +987,24 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		}
 
 		if (can_use_storage) {
-			tone_mapper->tonemapper(color_texture, dest_fb, tonemap);
+			data->tone_mapper->tonemapper(color_texture, dest_fb, tonemap);
 		}
 		else {
-			tone_mapper->tonemapper_mobile(color_texture, dest_fb, tonemap);
+			data->tone_mapper->tonemapper_mobile(color_texture, dest_fb, tonemap);
 		}
 
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 
 	if (use_smaa) {
-		RENDER_TIMESTAMP("SMAA");
-		RD::get_singleton()->draw_command_begin_label("SMAA");
+		RENDER_TIMESTAMP("data->SMAA");
+		RD::draw_command_begin_label("data->SMAA");
 
 		bool using_hdr = texture_storage->render_target_is_using_hdr(render_target);
 
 		RID dest_fb;
 		if (using_scaling_pass) {
-			rb->create_texture(SNAME("SMAA"), SNAME("destination"), rb->get_base_data_format(),
+			rb->create_texture(SNAME("data->SMAA"), SNAME("destination"), rb->get_base_data_format(),
 				RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
 					RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
 				RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
@@ -1016,31 +1016,31 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 				RID dest_texture;
 				if (using_scaling_pass) {
-					dest_texture = rb->get_texture_slice(SNAME("SMAA"), SNAME("destination"), v, 0);
+					dest_texture = rb->get_texture_slice(SNAME("data->SMAA"), SNAME("destination"), v, 0);
 				}
 				else {
 					dest_texture =
 						texture_storage->render_target_get_rd_texture_slice(render_target, v);
 				}
-				dest_fb = FramebufferCacheRD::get_singleton()->get_cache(dest_texture);
+				dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 
-				smaa->process(rb, source_texture, dest_fb, rb->get_use_debanding() && !using_hdr);
+				data->smaa->process(rb, source_texture, dest_fb, rb->get_use_debanding() && !using_hdr);
 			}
 		}
 		else {
 			RID source_texture = rb->get_texture(SNAME("Tonemapper"), SNAME("destination"));
 
 			if (using_scaling_pass) {
-				RID dest_texture = rb->create_texture(SNAME("SMAA"), SNAME("destination"),
+				RID dest_texture = rb->create_texture(SNAME("data->SMAA"), SNAME("destination"),
 					rb->get_base_data_format(),
 					RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
 						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
 					RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
-				dest_fb = FramebufferCacheRD::get_singleton()->get_cache(dest_texture);
+				dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 			}
 			else {
 				if (dest_is_msaa_2d) {
-					dest_fb = FramebufferCacheRD::get_singleton()->get_cache(
+					dest_fb = FramebufferCacheRD::get_cache(
 						texture_storage->render_target_get_rd_texture_msaa(render_target));
 					texture_storage->render_target_set_msaa_needs_resolve(
 						render_target, true); // Make sure this gets resolved.
@@ -1050,14 +1050,14 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				}
 			}
 
-			smaa->process(rb, source_texture, dest_fb, rb->get_use_debanding() && !using_hdr);
+			data->smaa->process(rb, source_texture, dest_fb, rb->get_use_debanding() && !using_hdr);
 		}
 
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 
 	if (rb.is_valid() && using_scaling_pass) {
-		RD::get_singleton()->draw_command_begin_label(
+		RD::draw_command_begin_label(
 			spatial_upscaler ? spatial_upscaler->get_label() : "3D Viewport Scaling");
 
 		if (spatial_upscaler) {
@@ -1065,7 +1065,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 			for (uint32_t v = 0; v < rb->get_view_count(); v++) {
 				RID source_texture = rb->get_texture_slice(
-					use_smaa ? SNAME("SMAA") : SNAME("Tonemapper"), SNAME("destination"), v, 0);
+					use_smaa ? SNAME("data->SMAA") : SNAME("Tonemapper"), SNAME("destination"), v, 0);
 				RID dest_texture =
 					texture_storage->render_target_get_rd_texture_slice(render_target, v);
 
@@ -1077,10 +1077,10 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			// scaling. This is only necessary if screen-space antialiasing is active, otherwise
 			// this happens automatically during tonemapping.
 			RID source_texture = rb->get_texture(
-				use_smaa ? SNAME("SMAA") : SNAME("Tonemapper"), SNAME("destination"));
+				use_smaa ? SNAME("data->SMAA") : SNAME("Tonemapper"), SNAME("destination"));
 			RID dest_texture = texture_storage->render_target_get_rd_texture(render_target);
-			RID dest_fb = FramebufferCacheRD::get_singleton()->get_cache(dest_texture);
-			copy_effects->copy_to_fb_rect(source_texture, dest_fb,
+			RID dest_fb = FramebufferCacheRD::get_cache(dest_texture);
+			data->copy_effects->copy_to_fb_rect(source_texture, dest_fb,
 				Rect2i(Point2i(), rb->get_target_size()), false, false, false, false, RID(),
 				rb->get_view_count() > 1, false, false, false, Rect2(), 1.0,
 				scale_mode != RSE::VIEWPORT_SCALING_3D_MODE_NEAREST);
@@ -1089,16 +1089,16 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		if (dest_is_msaa_2d) {
 			// We can't upscale directly into our MSAA buffer so we need to do a copy
 			RID source_texture = texture_storage->render_target_get_rd_texture(render_target);
-			RID dest_fb = FramebufferCacheRD::get_singleton()->get_cache(
+			RID dest_fb = FramebufferCacheRD::get_cache(
 				texture_storage->render_target_get_rd_texture_msaa(render_target));
-			copy_effects->copy_to_fb_rect(
+			data->copy_effects->copy_to_fb_rect(
 				source_texture, dest_fb, Rect2i(Point2i(), rb->get_target_size()));
 
 			texture_storage->render_target_set_msaa_needs_resolve(
 				render_target, true); // Make sure this gets resolved.
 		}
 
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 
 	texture_storage->render_target_disable_clear_request(render_target);
@@ -1108,18 +1108,18 @@ void RendererSceneRenderRD::_post_process_subpass(
 	RID p_source_texture, RID p_framebuffer, const RenderDataRD* p_render_data)
 {
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	RD::get_singleton()->draw_command_begin_label("Post Process Subpass");
+	RD::draw_command_begin_label("Post Process Subpass");
 
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
 	ERR_FAIL_COND(rb.is_null());
 
 	// FIXME: Our input it our internal_texture, shouldn't this be using internal_size ??
-	// Seeing we don't support FSR in our mobile renderer right now target_size = internal_size...
+	// Seeing we don't support data->FSR in our mobile renderer right now target_size = internal_size...
 	Size2i target_size = rb->get_target_size();
 	bool can_use_effects =
-		target_size.x >= 8 && target_size.y >= 8 && debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
+		target_size.x >= 8 && target_size.y >= 8 && data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
 
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_switch_to_next_pass();
+	RD::DrawListID draw_list = RD::draw_list_switch_to_next_pass();
 
 	RendererRD::ToneMapper::TonemapSettings tonemap;
 
@@ -1138,16 +1138,16 @@ void RendererSceneRenderRD::_post_process_subpass(
 		// we need to use SDR range with a max value of 1.0.
 		float max_value = using_hdr ? p_render_data->window_output_max_value : 1.0;
 
-		tonemap.tonemap_mode = environment_get_tone_mapper(p_render_data->environment);
-		RendererEnvironmentStorage::TonemapParameters params = environment_get_tonemap_parameters(
+		tonemap.tonemap_mode = RendererSceneRender::environment_get_tone_mapper(p_render_data->environment);
+		RendererEnvironmentStorage::TonemapParameters params = RendererSceneRender::environment_get_tonemap_parameters(
 			p_render_data->environment, limit_agx_white, max_value);
 		tonemap.tonemapper_params[0] = params.tonemapper_params[0];
 		tonemap.tonemapper_params[1] = params.tonemapper_params[1];
 		tonemap.tonemapper_params[2] = params.tonemapper_params[2];
 		tonemap.tonemapper_params[3] = params.tonemapper_params[3];
-		tonemap.exposure = environment_get_exposure(p_render_data->environment);
+		tonemap.exposure = RendererSceneRender::environment_get_exposure(p_render_data->environment);
 		tonemap.white =
-			environment_get_white(p_render_data->environment, limit_agx_white, max_value);
+			RendererSceneRender::environment_get_white(p_render_data->environment, limit_agx_white, max_value);
 		tonemap.max_value = max_value;
 	}
 
@@ -1155,7 +1155,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 	// The problem is that we need to use the result so far and process them before we can
 	// apply this to our results.
 	if (can_use_effects && p_render_data->environment.is_valid() &&
-		environment_get_glow_enabled(p_render_data->environment)) {
+		RendererSceneRender::environment_get_glow_enabled(p_render_data->environment)) {
 		ERR_FAIL_MSG("Glow is not supported when using subpasses.");
 	}
 
@@ -1181,17 +1181,17 @@ void RendererSceneRenderRD::_post_process_subpass(
 	tonemap.convert_to_srgb = !using_hdr;
 
 	if (can_use_effects && p_render_data->environment.is_valid()) {
-		tonemap.use_bcs = environment_get_adjustments_enabled(p_render_data->environment);
-		tonemap.brightness = environment_get_adjustments_brightness(p_render_data->environment);
-		tonemap.contrast = environment_get_adjustments_contrast(p_render_data->environment);
-		tonemap.saturation = environment_get_adjustments_saturation(p_render_data->environment);
-		if (environment_get_adjustments_enabled(p_render_data->environment) &&
-			environment_get_color_correction(p_render_data->environment).is_valid()) {
+		tonemap.use_bcs = RendererSceneRender::environment_get_adjustments_enabled(p_render_data->environment);
+		tonemap.brightness = RendererSceneRender::environment_get_adjustments_brightness(p_render_data->environment);
+		tonemap.contrast = RendererSceneRender::environment_get_adjustments_contrast(p_render_data->environment);
+		tonemap.saturation = RendererSceneRender::environment_get_adjustments_saturation(p_render_data->environment);
+		if (RendererSceneRender::environment_get_adjustments_enabled(p_render_data->environment) &&
+			RendererSceneRender::environment_get_color_correction(p_render_data->environment).is_valid()) {
 			tonemap.use_color_correction = true;
 			tonemap.use_1d_color_correction =
-				environment_get_use_1d_color_correction(p_render_data->environment);
+				RendererSceneRender::environment_get_use_1d_color_correction(p_render_data->environment);
 			tonemap.color_correction_texture = texture_storage->texture_get_rd_texture(
-				environment_get_color_correction(p_render_data->environment),
+				RendererSceneRender::environment_get_color_correction(p_render_data->environment),
 				!tonemap.convert_to_srgb);
 		}
 	}
@@ -1210,10 +1210,10 @@ void RendererSceneRenderRD::_post_process_subpass(
 			RendererRD::ToneMapper::TonemapSettings::DebandingMode::DEBANDING_MODE_DISABLED;
 	}
 
-	tone_mapper->tonemapper_subpass(draw_list, p_source_texture,
-		RD::get_singleton()->framebuffer_get_format(p_framebuffer), tonemap);
+	data->tone_mapper->tonemapper_subpass(draw_list, p_source_texture,
+		RD::framebuffer_get_format(p_framebuffer), tonemap);
 
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 void RendererSceneRenderRD::_disable_clear_request(const RenderDataRD* p_render_data)
@@ -1291,7 +1291,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 	RID render_target = rb->get_render_target();
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SHADOW_ATLAS) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SHADOW_ATLAS) {
 		if (p_render_data->shadow_atlas.is_valid()) {
 			RID shadow_atlas_texture =
 				RendererRD::LightStorage::get_singleton()->shadow_atlas_get_texture(
@@ -1303,13 +1303,13 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 			}
 
 			Size2 rtsize = texture_storage->render_target_get_size(render_target);
-			copy_effects->copy_to_fb_rect(shadow_atlas_texture,
+			data->copy_effects->copy_to_fb_rect(shadow_atlas_texture,
 				texture_storage->render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, true);
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS) {
 		if (RendererRD::LightStorage::get_singleton()
 				->directional_shadow_get_texture()
 				.is_valid()) {
@@ -1327,7 +1327,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 				size.x = size.y;
 			}
 
-			copy_effects->copy_to_fb_rect(
+			data->copy_effects->copy_to_fb_rect(
 				shadow_atlas_texture, dest_fb, Rect2i(Vector2(), size), false, true);
 
 			// Visualize our view frustum to show coverage.
@@ -1336,7 +1336,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 				RID base = light_storage->light_instance_get_base_light(light);
 
 				if (light_storage->light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
-					debug_effects->draw_shadow_frustum(light,
+					data->debug_effects->draw_shadow_frustum(light,
 						p_render_data->scene_data->cam_projection,
 						p_render_data->scene_data->cam_transform, dest_fb, Rect2(Size2(), size));
 				}
@@ -1344,75 +1344,75 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DECAL_ATLAS) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DECAL_ATLAS) {
 		RID decal_atlas = RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture();
 
 		if (decal_atlas.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);
 
-			copy_effects->copy_to_fb_rect(decal_atlas,
+			data->copy_effects->copy_to_fb_rect(decal_atlas,
 				texture_storage->render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_AREA_LIGHT_ATLAS) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_AREA_LIGHT_ATLAS) {
 		RID area_light_atlas =
 			RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
 
 		if (area_light_atlas.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);
 
-			copy_effects->copy_to_fb_rect(area_light_atlas,
+			data->copy_effects->copy_to_fb_rect(area_light_atlas,
 				texture_storage->render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SCENE_LUMINANCE) {
-		RID luminance_texture = luminance->get_current_luminance_buffer(rb);
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SCENE_LUMINANCE) {
+		RID luminance_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (luminance_texture.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);
 
-			copy_effects->copy_to_fb_rect(luminance_texture,
+			data->copy_effects->copy_to_fb_rect(luminance_texture,
 				texture_storage->render_target_get_rd_framebuffer(render_target),
 				Rect2(Vector2(), rtsize / 8), false, true);
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER) {
 		Size2 rtsize = texture_storage->render_target_get_size(render_target);
-		copy_effects->copy_to_fb_rect(rb->get_internal_texture(),
+		data->copy_effects->copy_to_fb_rect(rb->get_internal_texture(),
 			texture_storage->render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false);
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER &&
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER &&
 		_render_buffers_get_normal_texture(rb).is_valid()) {
 		Size2 rtsize = texture_storage->render_target_get_size(render_target);
-		copy_effects->copy_to_fb_rect(_render_buffers_get_normal_texture(rb),
+		data->copy_effects->copy_to_fb_rect(_render_buffers_get_normal_texture(rb),
 			texture_storage->render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false, false, false, RID(), false, false, false, true);
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_OCCLUDERS) {
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_OCCLUDERS) {
 		if (p_render_data->occluder_debug_tex.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);
-			copy_effects->copy_to_fb_rect(
+			data->copy_effects->copy_to_fb_rect(
 				texture_storage->texture_get_rd_texture(p_render_data->occluder_debug_tex),
 				texture_storage->render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize), true, false);
 		}
 	}
 
-	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_MOTION_VECTORS &&
+	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_MOTION_VECTORS &&
 		_render_buffers_get_velocity_texture(rb).is_valid()) {
 		RID velocity = _render_buffers_get_velocity_texture(rb);
 		RID depth = rb->get_depth_texture();
 		RID dest_fb = texture_storage->render_target_get_rd_framebuffer(render_target);
 		Size2i resolution = rb->get_internal_size();
 
-		debug_effects->draw_motion_vectors(velocity, depth, dest_fb,
+		data->debug_effects->draw_motion_vectors(velocity, depth, dest_fb,
 			p_render_data->scene_data->cam_projection, p_render_data->scene_data->cam_transform,
 			p_render_data->scene_data->prev_cam_projection,
 			p_render_data->scene_data->prev_cam_transform, resolution);
@@ -1421,7 +1421,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 RID RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer()
 {
-	return gi.default_voxel_gi_buffer;
+	return data->gi.default_voxel_gi_buffer;
 }
 
 RD::DataFormat RendererSceneRenderRD::_render_buffers_get_preferred_color_format()
@@ -1433,7 +1433,7 @@ bool RendererSceneRenderRD::_render_buffers_can_be_storage() { return true; }
 
 void RendererSceneRenderRD::gi_set_use_half_resolution(bool p_enable)
 {
-	gi.half_resolution = p_enable;
+	data->gi.half_resolution = p_enable;
 }
 
 void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality)
@@ -1441,45 +1441,45 @@ void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::Shado
 	ERR_FAIL_INDEX_MSG(p_quality, RSE::SHADOW_QUALITY_MAX,
 		"Shadow quality too high, please see RenderingServer's ShadowQuality enum");
 
-	if (shadows_quality != p_quality) {
-		shadows_quality = p_quality;
+	if (data->shadows_quality != p_quality) {
+		data->shadows_quality = p_quality;
 
-		switch (shadows_quality) {
+		switch (data->shadows_quality) {
 		case RSE::SHADOW_QUALITY_HARD: {
-			penumbra_shadow_samples = 4;
-			soft_shadow_samples = 0;
-			shadows_quality_radius = 1.0;
+			data->penumbra_shadow_samples = 4;
+			data->soft_shadow_samples = 0;
+			data->shadows_quality_radius = 1.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_VERY_LOW: {
-			penumbra_shadow_samples = 4;
-			soft_shadow_samples = 1;
-			shadows_quality_radius = 1.5;
+			data->penumbra_shadow_samples = 4;
+			data->soft_shadow_samples = 1;
+			data->shadows_quality_radius = 1.5;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_LOW: {
-			penumbra_shadow_samples = 8;
-			soft_shadow_samples = 4;
-			shadows_quality_radius = 2.0;
+			data->penumbra_shadow_samples = 8;
+			data->soft_shadow_samples = 4;
+			data->shadows_quality_radius = 2.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_MEDIUM: {
-			penumbra_shadow_samples = 12;
-			soft_shadow_samples = 8;
-			shadows_quality_radius = 2.0;
+			data->penumbra_shadow_samples = 12;
+			data->soft_shadow_samples = 8;
+			data->shadows_quality_radius = 2.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_HIGH: {
-			penumbra_shadow_samples = 24;
-			soft_shadow_samples = 16;
-			shadows_quality_radius = 3.0;
+			data->penumbra_shadow_samples = 24;
+			data->soft_shadow_samples = 16;
+			data->shadows_quality_radius = 3.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_ULTRA: {
-			penumbra_shadow_samples = 32;
-			soft_shadow_samples = 32;
-			shadows_quality_radius = 4.0;
+			data->penumbra_shadow_samples = 32;
+			data->soft_shadow_samples = 32;
+			data->shadows_quality_radius = 4.0;
 		} break;
 		case RSE::SHADOW_QUALITY_MAX:
 			break;
 		}
-		get_vogel_disk(penumbra_shadow_kernel, penumbra_shadow_samples);
-		get_vogel_disk(soft_shadow_kernel, soft_shadow_samples);
+		get_vogel_disk(data->penumbra_shadow_kernel, data->penumbra_shadow_samples);
+		get_vogel_disk(data->soft_shadow_kernel, data->soft_shadow_samples);
 	}
 
 	_update_shader_quality_settings();
@@ -1490,45 +1490,45 @@ void RendererSceneRenderRD::directional_soft_shadow_filter_set_quality(RSE::Shad
 	ERR_FAIL_INDEX_MSG(p_quality, RSE::SHADOW_QUALITY_MAX,
 		"Shadow quality too high, please see RenderingServer's ShadowQuality enum");
 
-	if (directional_shadow_quality != p_quality) {
-		directional_shadow_quality = p_quality;
+	if (data->directional_shadow_quality != p_quality) {
+		data->directional_shadow_quality = p_quality;
 
-		switch (directional_shadow_quality) {
+		switch (data->directional_shadow_quality) {
 		case RSE::SHADOW_QUALITY_HARD: {
-			directional_penumbra_shadow_samples = 4;
-			directional_soft_shadow_samples = 0;
-			directional_shadow_quality_radius = 1.0;
+			data->directional_penumbra_shadow_samples = 4;
+			data->directional_soft_shadow_samples = 0;
+			data->directional_shadow_quality_radius = 1.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_VERY_LOW: {
-			directional_penumbra_shadow_samples = 4;
-			directional_soft_shadow_samples = 1;
-			directional_shadow_quality_radius = 1.5;
+			data->directional_penumbra_shadow_samples = 4;
+			data->directional_soft_shadow_samples = 1;
+			data->directional_shadow_quality_radius = 1.5;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_LOW: {
-			directional_penumbra_shadow_samples = 8;
-			directional_soft_shadow_samples = 4;
-			directional_shadow_quality_radius = 2.0;
+			data->directional_penumbra_shadow_samples = 8;
+			data->directional_soft_shadow_samples = 4;
+			data->directional_shadow_quality_radius = 2.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_MEDIUM: {
-			directional_penumbra_shadow_samples = 12;
-			directional_soft_shadow_samples = 8;
-			directional_shadow_quality_radius = 2.0;
+			data->directional_penumbra_shadow_samples = 12;
+			data->directional_soft_shadow_samples = 8;
+			data->directional_shadow_quality_radius = 2.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_HIGH: {
-			directional_penumbra_shadow_samples = 24;
-			directional_soft_shadow_samples = 16;
-			directional_shadow_quality_radius = 3.0;
+			data->directional_penumbra_shadow_samples = 24;
+			data->directional_soft_shadow_samples = 16;
+			data->directional_shadow_quality_radius = 3.0;
 		} break;
 		case RSE::SHADOW_QUALITY_SOFT_ULTRA: {
-			directional_penumbra_shadow_samples = 32;
-			directional_soft_shadow_samples = 32;
-			directional_shadow_quality_radius = 4.0;
+			data->directional_penumbra_shadow_samples = 32;
+			data->directional_soft_shadow_samples = 32;
+			data->directional_shadow_quality_radius = 4.0;
 		} break;
 		case RSE::SHADOW_QUALITY_MAX:
 			break;
 		}
-		get_vogel_disk(directional_penumbra_shadow_kernel, directional_penumbra_shadow_samples);
-		get_vogel_disk(directional_soft_shadow_kernel, directional_soft_shadow_samples);
+		get_vogel_disk(data->directional_penumbra_shadow_kernel, data->directional_penumbra_shadow_samples);
+		get_vogel_disk(data->directional_soft_shadow_kernel, data->directional_soft_shadow_samples);
 	}
 
 	_update_shader_quality_settings();
@@ -1536,42 +1536,42 @@ void RendererSceneRenderRD::directional_soft_shadow_filter_set_quality(RSE::Shad
 
 void RendererSceneRenderRD::decals_set_filter(RSE::DecalFilter p_filter)
 {
-	if (decals_filter == p_filter) {
+	if (data->decals_filter == p_filter) {
 		return;
 	}
-	decals_filter = p_filter;
+	data->decals_filter = p_filter;
 	_update_shader_quality_settings();
 }
 
 void RendererSceneRenderRD::light_projectors_set_filter(RSE::LightProjectorFilter p_filter)
 {
-	if (light_projectors_filter == p_filter) {
+	if (data->light_projectors_filter == p_filter) {
 		return;
 	}
-	light_projectors_filter = p_filter;
+	data->light_projectors_filter = p_filter;
 	_update_shader_quality_settings();
 }
 
 void RendererSceneRenderRD::lightmaps_set_bicubic_filter(bool p_enable)
 {
-	if (lightmap_filter_bicubic == p_enable) {
+	if (data->lightmap_filter_bicubic == p_enable) {
 		return;
 	}
-	lightmap_filter_bicubic = p_enable;
+	data->lightmap_filter_bicubic = p_enable;
 	_update_shader_quality_settings();
 }
 
 void RendererSceneRenderRD::material_set_use_debanding(bool p_enable)
 {
-	material_use_debanding = p_enable;
+	data->material_use_debanding = p_enable;
 	_update_shader_quality_settings();
 }
 
-int RendererSceneRenderRD::get_roughness_layers() const { return sky.roughness_layers; }
+int RendererSceneRenderRD::get_roughness_layers() { return data->sky.roughness_layers; }
 
-bool RendererSceneRenderRD::is_using_radiance_octmap_array() const
+bool RendererSceneRenderRD::is_using_radiance_octmap_array()
 {
-	return sky.sky_use_octmap_array;
+	return data->sky.sky_use_octmap_array;
 }
 
 void RendererSceneRenderRD::_update_vrs(Ref<RenderSceneBuffersRD> p_render_buffers)
@@ -1586,7 +1586,7 @@ void RendererSceneRenderRD::_update_vrs(Ref<RenderSceneBuffersRD> p_render_buffe
 		return;
 	}
 
-	if (vrs) {
+	if (data->vrs) {
 		RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 
 		RSE::ViewportVRSMode vrs_mode = texture_storage->render_target_get_vrs_mode(render_target);
@@ -1594,7 +1594,7 @@ void RendererSceneRenderRD::_update_vrs(Ref<RenderSceneBuffersRD> p_render_buffe
 			RID vrs_texture = p_render_buffers->get_texture(RB_SCOPE_VRS, RB_TEXTURE);
 
 			// We use get_cache_multipass instead of get_cache_multiview because the default
-			// behavior is for our vrs_texture to be used as the VRS attachment. In this particular
+			// behavior is for our vrs_texture to be used as the data->VRS attachment. In this particular
 			// case we're writing to it so it needs to be set as our color attachment
 
 			Vector<RID> textures;
@@ -1605,10 +1605,10 @@ void RendererSceneRenderRD::_update_vrs(Ref<RenderSceneBuffersRD> p_render_buffe
 			pass.color_attachments.push_back(0);
 			passes.push_back(pass);
 
-			RID vrs_fb = FramebufferCacheRD::get_singleton()->get_cache_multipass(
+			RID vrs_fb = FramebufferCacheRD::get_cache_multipass(
 				textures, passes, p_render_buffers->get_view_count());
 
-			vrs->update_vrs_texture(vrs_fb, p_render_buffers->get_render_target());
+			data->vrs->update_vrs_texture(vrs_fb, p_render_buffers->get_render_target());
 		}
 	}
 }
@@ -1633,7 +1633,7 @@ void RendererSceneRenderRD::_post_prepass_render(RenderDataRD* p_render_data, bo
 		Ref<RendererRD::GI::SDFGI> sdfgi =
 			p_render_data->render_buffers->get_custom_data(RB_SCOPE_SDFGI);
 		sdfgi->update_probes(p_render_data->environment,
-			sky.sky_owner.get_or_null(environment_get_sky(p_render_data->environment)));
+			data->sky.sky_owner.get_or_null(RendererSceneRender::environment_get_sky(p_render_data->environment)));
 	}
 }
 
@@ -1717,11 +1717,11 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 		}
 
 		if (p_environment.is_valid()) {
-			RID sky_rid = environment_get_sky(p_environment);
+			RID sky_rid = RendererSceneRender::environment_get_sky(p_environment);
 			if (sky_rid.is_valid()) {
-				int radiance_size = sky.sky_get_radiance_size(sky_rid);
+				int radiance_size = data->sky.sky_get_radiance_size(sky_rid);
 				scene_data.radiance_pixel_size = 1.0f / radiance_size;
-				float uv_border_size = sky.sky_get_uv_border_size(sky_rid);
+				float uv_border_size = data->sky.sky_get_uv_border_size(sky_rid);
 				scene_data.radiance_border_size = uv_border_size;
 			}
 		}
@@ -1732,8 +1732,8 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 			scene_data.reflection_atlas_border_size.y = 1.0f - border_size * 2.0;
 		}
 
-		scene_data.time = time;
-		scene_data.time_step = time_step;
+		scene_data.time = data->time;
+		scene_data.time_step = data->time_step;
 	}
 
 	// assign render data
@@ -1839,24 +1839,24 @@ void RendererSceneRenderRD::render_particle_collider_heightfield(RID p_collider,
 
 bool RendererSceneRenderRD::free(RID p_rid)
 {
-	if (is_environment(p_rid)) {
-		environment_free(p_rid);
+	if (RendererSceneRender::is_environment(p_rid)) {
+		RendererSceneRender::environment_free(p_rid);
 	}
-	else if (is_compositor(p_rid)) {
-		compositor_free(p_rid);
+	else if (RendererSceneRender::is_compositor(p_rid)) {
+		RendererSceneRender::compositor_free(p_rid);
 	}
-	else if (is_compositor_effect(p_rid)) {
-		compositor_effect_free(p_rid);
+	else if (RendererSceneRender::is_compositor_effect(p_rid)) {
+		RendererSceneRender::compositor_effect_free(p_rid);
 	}
 	else if (RSG::camera_attributes->owns_camera_attributes(p_rid)) {
 		RSG::camera_attributes->camera_attributes_free(p_rid);
 	}
-	else if (gi.voxel_gi_instance_owns(p_rid)) {
-		gi.voxel_gi_instance_free(p_rid);
+	else if (data->gi.voxel_gi_instance_owns(p_rid)) {
+		data->gi.voxel_gi_instance_free(p_rid);
 	}
-	else if (sky.sky_owner.owns(p_rid)) {
-		sky.update_dirty_skys();
-		sky.free_sky(p_rid);
+	else if (data->sky.sky_owner.owns(p_rid)) {
+		data->sky.update_dirty_skys();
+		data->sky.free_sky(p_rid);
 	}
 	else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
 		RendererRD::Fog::get_singleton()->fog_instance_free(p_rid);
@@ -1870,111 +1870,67 @@ bool RendererSceneRenderRD::free(RID p_rid)
 
 void RendererSceneRenderRD::set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw)
 {
-	debug_draw = p_debug_draw;
+	data->debug_draw = p_debug_draw;
 }
 
-void RendererSceneRenderRD::update() { sky.update_dirty_skys(); }
+void RendererSceneRenderRD::update() { data->sky.update_dirty_skys(); }
 
 void RendererSceneRenderRD::set_time(double p_time, double p_step)
 {
-	time = p_time;
-	time_step = p_step;
+	data->time = p_time;
+	data->time_step = p_step;
 }
 
 void RendererSceneRenderRD::screen_space_roughness_limiter_set_active(
 	bool p_enable, float p_amount, float p_limit)
 {
-	screen_space_roughness_limiter = p_enable;
-	screen_space_roughness_limiter_amount = p_amount;
-	screen_space_roughness_limiter_limit = p_limit;
+	data->screen_space_roughness_limiter = p_enable;
+	data->screen_space_roughness_limiter_amount = p_amount;
+	data->screen_space_roughness_limiter_limit = p_limit;
 }
 
-bool RendererSceneRenderRD::screen_space_roughness_limiter_is_active() const
+bool RendererSceneRenderRD::screen_space_roughness_limiter_is_active()
 {
-	return screen_space_roughness_limiter;
+	return data->screen_space_roughness_limiter;
 }
 
-float RendererSceneRenderRD::screen_space_roughness_limiter_get_amount() const
+float RendererSceneRenderRD::screen_space_roughness_limiter_get_amount()
 {
-	return screen_space_roughness_limiter_amount;
+	return data->screen_space_roughness_limiter_amount;
 }
 
-float RendererSceneRenderRD::screen_space_roughness_limiter_get_limit() const
+float RendererSceneRenderRD::screen_space_roughness_limiter_get_limit()
 {
-	return screen_space_roughness_limiter_limit;
+	return data->screen_space_roughness_limiter_limit;
 }
 
 void RendererSceneRenderRD::sdfgi_set_debug_probe_select(
 	const Vector3& p_position, const Vector3& p_dir)
 {
-	gi.sdfgi_debug_probe_pos = p_position;
-	gi.sdfgi_debug_probe_dir = p_dir;
+	data->gi.sdfgi_debug_probe_pos = p_position;
+	data->gi.sdfgi_debug_probe_dir = p_dir;
 }
 
-RendererSceneRenderRD* RendererSceneRenderRD::singleton = nullptr;
-
-bool RendererSceneRenderRD::is_vrs_supported() const
+bool RendererSceneRenderRD::is_vrs_supported()
 {
-	return RD::get_singleton()->has_feature(RD::SUPPORTS_ATTACHMENT_VRS);
+	return RD::has_feature(RD::SUPPORTS_ATTACHMENT_VRS);
 }
 
-bool RendererSceneRenderRD::is_dynamic_gi_supported() const
+bool RendererSceneRenderRD::is_dynamic_gi_supported()
 {
 	// usable by default (unless low end = true)
 	return true;
 }
 
-bool RendererSceneRenderRD::is_volumetric_supported() const
+bool RendererSceneRenderRD::is_volumetric_supported()
 {
 	// usable by default (unless low end = true)
 	return true;
 }
 
-uint32_t RendererSceneRenderRD::get_max_elements() const
+uint32_t RendererSceneRenderRD::get_max_elements()
 {
 	return GLOBAL_GET_CACHED(uint32_t, "rendering/limits/cluster_builder/max_clustered_elements");
-}
-
-RendererSceneRenderRD::RendererSceneRenderRD() { singleton = this; }
-
-RendererSceneRenderRD::~RendererSceneRenderRD()
-{
-	memdelete(forward_id_storage);
-
-	memdelete(bokeh_dof);
-	memdelete(copy_effects);
-	memdelete(debug_effects);
-	memdelete(luminance);
-	memdelete(smaa);
-	memdelete(tone_mapper);
-	memdelete(vrs);
-	memdelete(fsr);
-#ifdef METAL_ENABLED
-	memdelete(mfx_spatial);
-#endif
-
-	memdelete(resolve_effects);
-
-	if (sky.sky_scene_state.uniform_set.is_valid() &&
-		RD::get_singleton()->uniform_set_is_valid(sky.sky_scene_state.uniform_set)) {
-		RD::get_singleton()->free_rid(sky.sky_scene_state.uniform_set);
-	}
-
-	if (is_dynamic_gi_supported()) {
-		gi.free();
-	}
-
-	if (is_volumetric_supported()) {
-		RendererRD::Fog::get_singleton()->free_fog_shader();
-	}
-
-	memdelete_arr(directional_penumbra_shadow_kernel);
-	memdelete_arr(directional_soft_shadow_kernel);
-	memdelete_arr(penumbra_shadow_kernel);
-	memdelete_arr(soft_shadow_kernel);
-
-	RSG::light_storage->directional_shadow_atlas_set_size(0);
-	cull_argument.reset(); // avoid exit error
 }
 
 void RendererSceneRenderRD::setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) {}

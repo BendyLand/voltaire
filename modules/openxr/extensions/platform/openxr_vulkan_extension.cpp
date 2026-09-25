@@ -186,19 +186,18 @@ void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
 
 	ERR_FAIL_NULL(RS::data);
-	RenderingDevice* rendering_device = RS::get_rendering_device();
-	ERR_FAIL_NULL(rendering_device);
+	ERR_FAIL_NULL(RD::data);
 
 	for (const RID& texture_rid : data->texture_rids) {
 		// This should clean up our RIDs and associated texture objects but shouldn't destroy the
 		// images, they are owned by our XrSwapchain.
-		rendering_device->free_rid(texture_rid);
+		RD::free_rid(texture_rid);
 	}
 	data->texture_rids.clear();
 
 	for (int i = 0; i < data->density_map_rids.size(); i++) {
 		if (data->density_map_rids[i].is_valid()) {
-			rendering_device->free_rid(data->density_map_rids[i]);
+			RD::free_rid(data->density_map_rids[i]);
 		}
 	}
 	data->density_map_rids.clear();

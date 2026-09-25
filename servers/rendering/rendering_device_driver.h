@@ -166,15 +166,7 @@ public:
 	DEFINE_ID(RaytracingPipeline);
 
 public:
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
-
 	virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count) = 0;
-
-	/****************/
-	/**** MEMORY ****/
-	/****************/
 
 	enum MemoryAllocationType
 	{
@@ -182,10 +174,6 @@ public:
 									// optimal.
 		MEMORY_ALLOCATION_TYPE_GPU,
 	};
-
-	/*****************/
-	/**** BUFFERS ****/
-	/*****************/
 
 	enum BufferUsageBits
 	{
@@ -232,10 +220,6 @@ public:
 
 	// Only for a buffer with BUFFER_USAGE_DEVICE_ADDRESS_BIT.
 	virtual uint64_t buffer_get_device_address(BufferID p_buffer) = 0;
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
 
 	struct TextureView
 	{
@@ -340,26 +324,14 @@ public:
 	virtual bool texture_can_make_shared_with_format(
 		TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation) = 0;
 
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
-
 	virtual SamplerID sampler_create(const SamplerState& p_state) = 0;
 	virtual void sampler_free(SamplerID p_sampler) = 0;
 	virtual bool sampler_is_format_supported_for_filter(
 		DataFormat p_format, SamplerFilter p_filter) = 0;
 
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
-
 	virtual VertexFormatID vertex_format_create(Span<VertexAttribute> p_vertex_attribs,
 		const VertexAttributeBindingsMap& p_vertex_bindings) = 0;
 	virtual void vertex_format_free(VertexFormatID p_vertex_format) = 0;
-
-	/******************/
-	/**** BARRIERS ****/
-	/******************/
 
 	enum PipelineStageBits
 	{
@@ -451,32 +423,19 @@ public:
 		uint64_t size = 0;
 	};
 
-	virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer,
-		uint32_t p_src_stages, uint32_t p_dst_stages,
-		VectorView<MemoryAccessBarrier> p_memory_barriers,
+	virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer, uint32_t p_src_stages,
+		uint32_t p_dst_stages, VectorView<MemoryAccessBarrier> p_memory_barriers,
 		VectorView<BufferBarrier> p_buffer_barriers, VectorView<TextureBarrier> p_texture_barriers,
-		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) {}
-
-	/****************/
-	/**** FENCES ****/
-	/****************/
+		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers)
+	{
+	}
 
 	virtual FenceID fence_create() = 0;
 	virtual Error fence_wait(FenceID p_fence) = 0;
 	virtual void fence_free(FenceID p_fence) = 0;
 
-	/********************/
-	/**** SEMAPHORES ****/
-	/********************/
-
 	virtual SemaphoreID semaphore_create() = 0;
 	virtual void semaphore_free(SemaphoreID p_semaphore) = 0;
-
-	/*************************/
-	/**** COMMAND BUFFERS ****/
-	/*************************/
-
-	// ----- QUEUE FAMILY -----
 
 	enum CommandQueueFamilyBits
 	{
@@ -490,10 +449,7 @@ public:
 	// it. It is valid to specify no bits and a valid surface: in this case, the dedicated
 	// presentation queue family will be the preferred option.
 	virtual CommandQueueFamilyID command_queue_family_get(
-		uint32_t p_cmd_queue_family_bits,
-		RenderingContextDriver::SurfaceID p_surface = 0) = 0;
-
-	// ----- QUEUE -----
+		uint32_t p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface = 0) = 0;
 
 	virtual CommandQueueID command_queue_create(
 		CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue = false) = 0;
@@ -502,8 +458,6 @@ public:
 		VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence,
 		VectorView<SwapChainID> p_swap_chains) = 0;
 	virtual void command_queue_free(CommandQueueID p_cmd_queue) = 0;
-
-	// ----- POOL -----
 
 	enum CommandBufferType
 	{
@@ -516,8 +470,6 @@ public:
 	virtual bool command_pool_reset(CommandPoolID p_cmd_pool) = 0;
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) = 0;
 
-	// ----- BUFFER -----
-
 	virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) = 0;
 	virtual bool command_buffer_begin(CommandBufferID p_cmd_buffer) = 0;
 	virtual bool command_buffer_begin_secondary(CommandBufferID p_cmd_buffer,
@@ -525,10 +477,6 @@ public:
 	virtual void command_buffer_end(CommandBufferID p_cmd_buffer) = 0;
 	virtual void command_buffer_execute_secondary(
 		CommandBufferID p_cmd_buffer, VectorView<CommandBufferID> p_secondary_cmd_buffers) = 0;
-
-	/********************/
-	/**** SWAP CHAIN ****/
-	/********************/
 
 	// The swap chain won't be valid for use until it is resized at least once.
 	virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) = 0;
@@ -567,17 +515,9 @@ public:
 	// Wait until all rendering associated to the swap chain is finished before deleting it.
 	virtual void swap_chain_free(SwapChainID p_swap_chain) = 0;
 
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
-
 	virtual FramebufferID framebuffer_create(RenderPassID p_render_pass,
 		VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) = 0;
 	virtual void framebuffer_free(FramebufferID p_framebuffer) = 0;
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
 
 	struct ImmutableSampler
 	{
@@ -602,10 +542,6 @@ public:
 	virtual void shader_destroy_modules(ShaderID p_shader) = 0;
 
 public:
-	/*********************/
-	/**** UNIFORM SET ****/
-	/*********************/
-
 	struct BoundUniform
 	{
 		UniformType type = UNIFORM_TYPE_MAX;
@@ -634,14 +570,8 @@ public:
 	virtual uint32_t uniform_sets_get_dynamic_offsets(VectorView<UniformSetID> p_uniform_sets,
 		ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) const = 0;
 
-	// ----- COMMANDS -----
-
 	virtual void command_uniform_set_prepare_for_use(CommandBufferID p_cmd_buffer,
 		UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
-
-	/******************/
-	/**** TRANSFER ****/
-	/******************/
 
 	struct BufferCopyRegion
 	{
@@ -694,29 +624,15 @@ public:
 		TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer,
 		VectorView<BufferTextureCopyRegion> p_regions) = 0;
 
-	/******************/
-	/**** PIPELINE ****/
-	/******************/
-
 	virtual void pipeline_free(PipelineID p_pipeline) = 0;
-
-	// ----- BINDING -----
 
 	virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader,
 		uint32_t p_first_index, VectorView<uint32_t> p_data) = 0;
-
-	// ----- CACHE -----
 
 	virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) = 0;
 	virtual void pipeline_cache_free() = 0;
 	virtual size_t pipeline_cache_query_size() = 0;
 	virtual Vector<uint8_t> pipeline_cache_serialize() = 0;
-
-	/*******************/
-	/**** RENDERING ****/
-	/*******************/
-
-	// ----- SUBPASS -----
 
 	enum AttachmentLoadOp
 	{
@@ -777,8 +693,6 @@ public:
 		VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies,
 		uint32_t p_view_count, AttachmentReference p_fragment_density_map_attachment) = 0;
 	virtual void render_pass_free(RenderPassID p_render_pass) = 0;
-
-	// ----- COMMANDS -----
 
 	union RenderPassClearValue
 	{
@@ -851,22 +765,13 @@ public:
 		CommandBufferID p_cmd_buffer, const Color& p_constants) = 0;
 	virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
 
-	// ----- PIPELINE -----
-
 	virtual PipelineID render_pipeline_create(ShaderID p_shader, VertexFormatID p_vertex_format,
 		RenderPrimitive p_render_primitive, PipelineRasterizationState p_rasterization_state,
 		PipelineMultisampleState p_multisample_state,
 		PipelineDepthStencilState p_depth_stencil_state, PipelineColorBlendState p_blend_state,
-		VectorView<int32_t> p_color_attachments,
-		uint32_t p_dynamic_state, RenderPassID p_render_pass,
-		uint32_t p_render_subpass,
+		VectorView<int32_t> p_color_attachments, uint32_t p_dynamic_state,
+		RenderPassID p_render_pass, uint32_t p_render_subpass,
 		VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
-
-	/*****************/
-	/**** COMPUTE ****/
-	/*****************/
-
-	// ----- COMMANDS -----
 
 	// Binding.
 	virtual void command_bind_compute_pipeline(
@@ -881,16 +786,8 @@ public:
 	virtual void command_compute_dispatch_indirect(
 		CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) = 0;
 
-	// ----- PIPELINE -----
-
 	virtual PipelineID compute_pipeline_create(ShaderID p_shader,
 		VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
-
-	/********************/
-	/**** RAYTRACING ****/
-	/********************/
-
-	// ----- ACCELERATION STRUCTURE -----
 
 	struct AccelerationStructureGeometry
 	{
@@ -907,8 +804,7 @@ public:
 	};
 
 	virtual AccelerationStructureID blas_create(
-		VectorView<AccelerationStructureGeometry> p_geometries,
-		uint32_t p_flags) = 0;
+		VectorView<AccelerationStructureGeometry> p_geometries, uint32_t p_flags) = 0;
 
 	struct AccelerationStructureInstance
 	{
@@ -928,8 +824,6 @@ public:
 	virtual void acceleration_structure_free(AccelerationStructureID p_acceleration_structure) = 0;
 	virtual uint32_t acceleration_structure_get_scratch_size_bytes(
 		AccelerationStructureID p_acceleration_structure) = 0;
-
-	// ----- PIPELINE -----
 
 	struct PipelineShader
 	{
@@ -955,8 +849,6 @@ public:
 		uint32_t p_group_index_offset, VectorView<uint32_t> p_group_indices, uint8_t* r_data,
 		uint32_t p_data_stride_bytes) = 0;
 
-	// ----- COMMANDS -----
-
 	virtual void command_build_blas(CommandBufferID p_cmd_buffer,
 		AccelerationStructureID p_acceleration_structure, BufferID p_scratch_buffer) = 0;
 	virtual void command_build_tlas(CommandBufferID p_cmd_buffer,
@@ -980,18 +872,8 @@ public:
 		const ShaderBindingTable& p_hit_sbt, uint32_t p_width, uint32_t p_height,
 		uint32_t p_depth) = 0;
 
-	/******************/
-	/**** CALLBACK ****/
-	/******************/
-
 	typedef void (*DriverCallback)(
 		RenderingDeviceDriver* p_driver, CommandBufferID p_command_buffer, void* p_userdata);
-
-	/*****************/
-	/**** QUERIES ****/
-	/*****************/
-
-	// ----- TIMESTAMP -----
 
 	// Basic.
 	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) = 0;
@@ -1006,29 +888,14 @@ public:
 	virtual void command_timestamp_write(
 		CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) = 0;
 
-	/****************/
-	/**** LABELS ****/
-	/****************/
-
 	virtual void command_begin_label(
 		CommandBufferID p_cmd_buffer, const char* p_label_name, const Color& p_color) = 0;
 	virtual void command_end_label(CommandBufferID p_cmd_buffer) = 0;
 
-	/****************/
-	/**** DEBUG *****/
-	/****************/
 	virtual void command_insert_breadcrumb(CommandBufferID p_cmd_buffer, uint32_t p_data) = 0;
-
-	/********************/
-	/**** SUBMISSION ****/
-	/********************/
 
 	virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) = 0;
 	virtual void end_segment() = 0;
-
-	/**************/
-	/**** MISC ****/
-	/**************/
 
 	enum ObjectType
 	{

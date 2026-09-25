@@ -44,7 +44,7 @@ VRS::~VRS() { vrs_shader.shader.version_free(vrs_shader.shader_version); }
 
 Size2i VRS::get_vrs_texture_size(const Size2i p_base_size) const
 {
-	Size2i vrs_texel_size = RD::get_singleton()->vrs_get_texel_size();
+	Size2i vrs_texel_size = RD::vrs_get_texel_size();
 	return Size2i((p_base_size.x + vrs_texel_size.x - 1) / vrs_texel_size.x,
 		(p_base_size.y + vrs_texel_size.y - 1) / vrs_texel_size.y);
 }
@@ -58,7 +58,7 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 
 	if (vrs_mode != RSE::VIEWPORT_VRS_DISABLED &&
 		vrs_update_mode != RSE::VIEWPORT_VRS_UPDATE_DISABLED) {
-		RD::get_singleton()->draw_command_begin_label("VRS Setup");
+		RD::draw_command_begin_label("VRS Setup");
 
 		if (vrs_mode == RSE::VIEWPORT_VRS_TEXTURE) {
 			RID vrs_texture = texture_storage->render_target_get_vrs_texture(p_render_target);
@@ -95,7 +95,7 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 				p_render_target, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
 		}
 
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 }
 

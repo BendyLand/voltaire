@@ -70,8 +70,6 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 	const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
 	float p_luminance_multiplier, bool p_opaque_render_buffers, bool p_apply_alpha_multiplier)
 {
-	RendererSceneRenderRD* render_scene_render = RendererSceneRenderRD::get_singleton();
-
 	UBODATA ubo_data;
 	memset(&ubo_data, 0, sizeof(UBODATA));
 
@@ -126,15 +124,15 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 	ubo.flags |= p_pancake_shadows ? SCENE_DATA_FLAGS_USE_PANCAKE_SHADOWS : 0;
 
 	RendererRD::MaterialStorage::store_soft_shadow_kernel(
-		render_scene_render->directional_penumbra_shadow_kernel_get(),
+		RendererSceneRenderRD::directional_penumbra_shadow_kernel_get(),
 		ubo.directional_penumbra_shadow_kernel);
 	RendererRD::MaterialStorage::store_soft_shadow_kernel(
-		render_scene_render->directional_soft_shadow_kernel_get(),
+		RendererSceneRenderRD::directional_soft_shadow_kernel_get(),
 		ubo.directional_soft_shadow_kernel);
 	RendererRD::MaterialStorage::store_soft_shadow_kernel(
-		render_scene_render->penumbra_shadow_kernel_get(), ubo.penumbra_shadow_kernel);
+		RendererSceneRenderRD::penumbra_shadow_kernel_get(), ubo.penumbra_shadow_kernel);
 	RendererRD::MaterialStorage::store_soft_shadow_kernel(
-		render_scene_render->soft_shadow_kernel_get(), ubo.soft_shadow_kernel);
+		RendererSceneRenderRD::soft_shadow_kernel_get(), ubo.soft_shadow_kernel);
 	ubo.camera_visible_layers = camera_visible_layers;
 	ubo.pass_alpha_multiplier = p_opaque_render_buffers && p_apply_alpha_multiplier ? 0.0f : 1.0f;
 
@@ -173,24 +171,24 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 		ubo.ambient_light_color_energy[3] = 1.0;
 	}
 	else if (p_env.is_valid()) {
-		RSE::EnvironmentBG env_bg = render_scene_render->environment_get_background(p_env);
+		RSE::EnvironmentBG env_bg = RendererSceneRender::environment_get_background(p_env);
 		RSE::EnvironmentAmbientSource ambient_src =
-			render_scene_render->environment_get_ambient_source(p_env);
+			RendererSceneRender::environment_get_ambient_source(p_env);
 
 		float bg_energy_multiplier =
-			render_scene_render->environment_get_bg_energy_multiplier(p_env);
+			RendererSceneRender::environment_get_bg_energy_multiplier(p_env);
 
 		ubo.ambient_light_color_energy[3] = bg_energy_multiplier;
 
 		ubo.ambient_color_sky_mix =
-			render_scene_render->environment_get_ambient_sky_contribution(p_env);
+			RendererSceneRender::environment_get_ambient_sky_contribution(p_env);
 
 		// ambient
 		if (ambient_src == RSE::ENV_AMBIENT_SOURCE_BG &&
 			(env_bg == RSE::ENV_BG_CLEAR_COLOR || env_bg == RSE::ENV_BG_COLOR)) {
 			Color color = env_bg == RSE::ENV_BG_CLEAR_COLOR
 							  ? p_default_bg_color
-							  : render_scene_render->environment_get_bg_color(p_env);
+							  : RendererSceneRender::environment_get_bg_color(p_env);
 			color = color.srgb_to_linear();
 
 			ubo.ambient_light_color_energy[0] = color.r * bg_energy_multiplier;
@@ -199,8 +197,8 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 			ubo.flags |= SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT;
 		}
 		else {
-			float energy = render_scene_render->environment_get_ambient_light_energy(p_env);
-			Color color = render_scene_render->environment_get_ambient_light(p_env);
+			float energy = RendererSceneRender::environment_get_ambient_light_energy(p_env);
+			Color color = RendererSceneRender::environment_get_ambient_light(p_env);
 			color = color.srgb_to_linear();
 			ubo.ambient_light_color_energy[0] = color.r * energy;
 			ubo.ambient_light_color_energy[1] = color.g * energy;
@@ -217,7 +215,7 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 
 		// specular
 		RSE::EnvironmentReflectionSource ref_src =
-			render_scene_render->environment_get_reflection_source(p_env);
+			RendererSceneRender::environment_get_reflection_source(p_env);
 		if ((ref_src == RSE::ENV_REFLECTION_SOURCE_BG && env_bg == RSE::ENV_BG_SKY) ||
 			ref_src == RSE::ENV_REFLECTION_SOURCE_SKY) {
 			ubo.flags |= SCENE_DATA_FLAGS_USE_REFLECTION_CUBEMAP;
@@ -225,36 +223,36 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 
 		if ((ubo.flags & SCENE_DATA_FLAGS_USE_AMBIENT_CUBEMAP) ||
 			(ubo.flags & SCENE_DATA_FLAGS_USE_REFLECTION_CUBEMAP)) {
-			Basis sky_transform = render_scene_render->environment_get_sky_orientation(p_env);
+			Basis sky_transform = RendererSceneRender::environment_get_sky_orientation(p_env);
 			sky_transform = sky_transform.inverse() * cam_transform.basis;
 			RendererRD::MaterialStorage::store_transform_3x3(
 				sky_transform, ubo.radiance_inverse_xform);
 		}
 
 		ubo.flags |=
-			render_scene_render->environment_get_fog_enabled(p_env) ? SCENE_DATA_FLAGS_USE_FOG : 0;
-		ubo.fog_density = render_scene_render->environment_get_fog_density(p_env);
-		ubo.fog_height = render_scene_render->environment_get_fog_height(p_env);
-		ubo.fog_height_density = render_scene_render->environment_get_fog_height_density(p_env);
+			RendererSceneRender::environment_get_fog_enabled(p_env) ? SCENE_DATA_FLAGS_USE_FOG : 0;
+		ubo.fog_density = RendererSceneRender::environment_get_fog_density(p_env);
+		ubo.fog_height = RendererSceneRender::environment_get_fog_height(p_env);
+		ubo.fog_height_density = RendererSceneRender::environment_get_fog_height_density(p_env);
 		ubo.fog_aerial_perspective =
-			render_scene_render->environment_get_fog_aerial_perspective(p_env);
+			RendererSceneRender::environment_get_fog_aerial_perspective(p_env);
 
-		ubo.fog_depth_curve = render_scene_render->environment_get_fog_depth_curve(p_env);
-		ubo.fog_depth_end = render_scene_render->environment_get_fog_depth_end(p_env) > 0.0
-								? render_scene_render->environment_get_fog_depth_end(p_env)
+		ubo.fog_depth_curve = RendererSceneRender::environment_get_fog_depth_curve(p_env);
+		ubo.fog_depth_end = RendererSceneRender::environment_get_fog_depth_end(p_env) > 0.0
+								? RendererSceneRender::environment_get_fog_depth_end(p_env)
 								: ubo.z_far;
 		ubo.fog_depth_begin = MIN(
-			render_scene_render->environment_get_fog_depth_begin(p_env), ubo.fog_depth_end - 0.001);
+			RendererSceneRender::environment_get_fog_depth_begin(p_env), ubo.fog_depth_end - 0.001);
 
 		Color fog_color =
-			render_scene_render->environment_get_fog_light_color(p_env).srgb_to_linear();
-		float fog_energy = render_scene_render->environment_get_fog_light_energy(p_env);
+			RendererSceneRender::environment_get_fog_light_color(p_env).srgb_to_linear();
+		float fog_energy = RendererSceneRender::environment_get_fog_light_energy(p_env);
 
 		ubo.fog_light_color[0] = fog_color.r * fog_energy;
 		ubo.fog_light_color[1] = fog_color.g * fog_energy;
 		ubo.fog_light_color[2] = fog_color.b * fog_energy;
 
-		ubo.fog_sun_scatter = render_scene_render->environment_get_fog_sun_scatter(p_env);
+		ubo.fog_sun_scatter = RendererSceneRender::environment_get_fog_sun_scatter(p_env);
 	}
 	else {
 		if (!(p_reflection_probe_instance.is_valid() &&
@@ -276,16 +274,16 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 				p_camera_attributes);
 		ubo.IBL_exposure_normalization = 1.0;
 		if (p_env.is_valid()) {
-			RID sky_rid = render_scene_render->environment_get_sky(p_env);
+			RID sky_rid = RendererSceneRender::environment_get_sky(p_env);
 			if (sky_rid.is_valid()) {
 				float current_exposure =
 					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_camera_attributes) *
-					render_scene_render->environment_get_bg_intensity(p_env) /
+					RendererSceneRender::environment_get_bg_intensity(p_env) /
 					p_luminance_multiplier;
 				ubo.IBL_exposure_normalization =
 					current_exposure /
-					MAX(0.001, render_scene_render->get_sky()->sky_get_baked_exposure(sky_rid));
+					MAX(0.001, RendererSceneRenderRD::get_sky()->sky_get_baked_exposure(sky_rid));
 			}
 		}
 	}
@@ -301,10 +299,10 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 	}
 
 	bool roughness_limiter_enabled =
-		p_opaque_render_buffers && render_scene_render->screen_space_roughness_limiter_is_active();
+		p_opaque_render_buffers && RendererSceneRender::screen_space_roughness_limiter_is_active();
 	ubo.flags |= roughness_limiter_enabled ? SCENE_DATA_FLAGS_USE_ROUGHNESS_LIMITER : 0;
-	ubo.roughness_limiter_amount = render_scene_render->screen_space_roughness_limiter_get_amount();
-	ubo.roughness_limiter_limit = render_scene_render->screen_space_roughness_limiter_get_limit();
+	ubo.roughness_limiter_amount = RendererSceneRenderRD::screen_space_roughness_limiter_get_amount();
+	ubo.roughness_limiter_limit = RendererSceneRenderRD::screen_space_roughness_limiter_get_limit();
 
 	if (calculate_motion_vectors) {
 		// Q : Should we make a complete copy or should we define a separate UBO with just the

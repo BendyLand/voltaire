@@ -242,7 +242,7 @@ void SceneShaderForwardClustered::ShaderData::_create_pipeline(PipelineKey p_pip
 	raster_state.wireframe = wireframe || p_pipeline_key.wireframe;
 
 	RD::PipelineMultisampleState multisample_state;
-	multisample_state.sample_count = RD::get_singleton()->framebuffer_format_get_texture_samples(
+	multisample_state.sample_count = RD::framebuffer_format_get_texture_samples(
 		p_pipeline_key.framebuffer_format_id, 0);
 
 	RD::PipelineColorBlendState blend_state;
@@ -322,7 +322,7 @@ void SceneShaderForwardClustered::ShaderData::_create_pipeline(PipelineKey p_pip
 		p_pipeline_key.version, p_pipeline_key.color_pass_flags, p_pipeline_key.ubershader);
 	ERR_FAIL_COND(shader_rid.is_null());
 
-	RID pipeline = RD::get_singleton()->render_pipeline_create(shader_rid,
+	RID pipeline = RD::render_pipeline_create(shader_rid,
 		p_pipeline_key.framebuffer_format_id, p_pipeline_key.vertex_format_id, primitive_rd,
 		raster_state, multisample_state, depth_stencil_state, blend_state, 0, 0,
 		specialization_constants);
@@ -368,7 +368,7 @@ uint64_t SceneShaderForwardClustered::ShaderData::get_vertex_input_mask(
 		RID shader_rid = _get_shader_variant(shader_version);
 		ERR_FAIL_COND_V(shader_rid.is_null(), 0);
 
-		input_mask = RD::get_singleton()->shader_get_vertex_input_attribute_mask(shader_rid);
+		input_mask = RD::shader_get_vertex_input_attribute_mask(shader_rid);
 		vertex_input_masks[shader_version].store(input_mask, std::memory_order_relaxed);
 	}
 
@@ -436,8 +436,8 @@ SceneShaderForwardClustered::~SceneShaderForwardClustered()
 {
 	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
-	RD::get_singleton()->free_rid(default_vec4_xform_buffer);
-	RD::get_singleton()->free_rid(shadow_sampler);
+	RD::free_rid(default_vec4_xform_buffer);
+	RD::free_rid(shadow_sampler);
 
 	material_storage->shader_free(overdraw_material_shader);
 	material_storage->shader_free(default_shader);
@@ -452,7 +452,7 @@ void SceneShaderForwardClustered::init(const String p_defines)
 {
 	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
-	emulate_point_size = !RD::get_singleton()->has_feature(RD::SUPPORTS_POINT_SIZE);
+	emulate_point_size = !RD::has_feature(RD::SUPPORTS_POINT_SIZE);
 
 	{
 		Vector<ShaderRD::VariantDefine> shader_versions;
@@ -530,7 +530,7 @@ void SceneShaderForwardClustered::init(const String p_defines)
 		shader.initialize(
 			shader_versions, p_defines, Vector<RD::PipelineImmutableSampler>(), dynamic_buffers);
 
-		if (RendererCompositorRD::get_singleton()->is_xr_enabled()) {
+		if (RendererCompositorRD::is_xr_enabled()) {
 			shader.enable_group(SHADER_GROUP_MULTIVIEW);
 		}
 	}
@@ -831,7 +831,7 @@ void fragment() {
 	}
 
 	{
-		default_vec4_xform_buffer = RD::get_singleton()->storage_buffer_create(256);
+		default_vec4_xform_buffer = RD::storage_buffer_create(256);
 		Vector<RD::Uniform> uniforms;
 		RD::Uniform u;
 		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
@@ -839,7 +839,7 @@ void fragment() {
 		u.binding = 0;
 		uniforms.push_back(u);
 
-		default_vec4_xform_uniform_set = RD::get_singleton()->uniform_set_create(
+		default_vec4_xform_uniform_set = RD::uniform_set_create(
 			uniforms, default_shader_rd, RenderForwardClustered::TRANSFORMS_UNIFORM_SET);
 	}
 	{
@@ -848,7 +848,7 @@ void fragment() {
 		sampler.min_filter = RD::SAMPLER_FILTER_LINEAR;
 		sampler.enable_compare = true;
 		sampler.compare_op = RD::COMPARE_OP_GREATER;
-		shadow_sampler = RD::get_singleton()->sampler_create(sampler);
+		shadow_sampler = RD::sampler_create(sampler);
 	}
 }
 
@@ -859,7 +859,7 @@ void SceneShaderForwardClustered::enable_multiview_shader_group()
 
 void SceneShaderForwardClustered::enable_advanced_shader_group(bool p_needs_multiview)
 {
-	if (p_needs_multiview || RendererCompositorRD::get_singleton()->is_xr_enabled()) {
+	if (p_needs_multiview || RendererCompositorRD::is_xr_enabled()) {
 		shader.enable_group(SHADER_GROUP_ADVANCED_MULTIVIEW);
 	}
 	shader.enable_group(SHADER_GROUP_ADVANCED);

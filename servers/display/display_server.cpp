@@ -1191,8 +1191,7 @@ void DisplayServer::_input_set_custom_mouse_cursor_func(
 bool DisplayServer::is_rendering_device_supported()
 {
 #if defined(RD_ENABLED)
-	RenderingDevice* device = RenderingDevice::get_singleton();
-	if (device) {
+	if (RD::data) {
 		return true;
 	}
 
@@ -1251,8 +1250,7 @@ bool DisplayServer::is_rendering_device_supported()
 	if (rcd != nullptr) {
 		err = rcd->initialize();
 		if (err == OK) {
-			RenderingDevice* rd = memnew(RenderingDevice);
-			err = rd->initialize(rcd);
+			err = RenderingDevice::initialize(rcd, rcd->device_get(0));
 			memdelete(rd);
 			rd = nullptr;
 			if (err == OK) {

@@ -188,7 +188,7 @@ static FfxErrorCode destroy_backend_context_rd(FfxFsr2Interface* p_backend_inter
 		*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
 
 	for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
-		RD::get_singleton()->free_rid(scratch.ubo_ring_buffer[i]);
+		RD::free_rid(scratch.ubo_ring_buffer[i]);
 	}
 
 	return FFX_OK;
@@ -203,7 +203,6 @@ static FfxErrorCode create_resource_rd(FfxFsr2Interface* p_backend_interface,
 	ERR_FAIL_COND_V(p_create_resource_description->heapType != FFX_HEAP_TYPE_DEFAULT,
 		FFX_ERROR_INVALID_ARGUMENT);
 
-	RenderingDevice* rd = RD::get_singleton();
 	FSR2Context::Scratch& scratch =
 		*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
 	FfxResourceDescription res_desc = p_create_resource_description->resourceDescription;
@@ -239,10 +238,10 @@ static FfxErrorCode create_resource_rd(FfxFsr2Interface* p_backend_interface,
 	texture_format.mipmaps = res_desc.mipCount;
 	texture_format.is_discardable = true;
 
-	RID texture = rd->texture_create(texture_format, RD::TextureView(), initial_data);
+	RID texture = RD::texture_create(texture_format, RD::TextureView(), initial_data);
 	ERR_FAIL_COND_V(texture.is_null(), FFX_ERROR_BACKEND_API_ERROR);
 
-	rd->set_resource_name(texture, String(p_create_resource_description->name));
+	RD::set_resource_name(texture, String(p_create_resource_description->name));
 
 	// Add the resource to the storage and use the internal index to reference it.
 	p_out_resource->internalIndex =
@@ -304,7 +303,7 @@ static FfxErrorCode destroy_resource_rd(
 		FSR2Context::Scratch& scratch =
 			*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
 		if (scratch.resources.rids[p_resource.internalIndex].is_valid()) {
-			RD::get_singleton()->free_rid(scratch.resources.rids[p_resource.internalIndex]);
+			RD::free_rid(scratch.resources.rids[p_resource.internalIndex]);
 			scratch.resources.remove(p_resource.internalIndex);
 		}
 	}
@@ -343,7 +342,7 @@ static FfxErrorCode execute_gpu_job_clear_float_rd(
 	ERR_FAIL_COND_V(desc.type == FFX_RESOURCE_TYPE_BUFFER, FFX_ERROR_INVALID_ARGUMENT);
 
 	Color color(p_job.color[0], p_job.color[1], p_job.color[2], p_job.color[3]);
-	RD::get_singleton()->texture_clear(resource, color, 0, desc.mipCount, 0, 1);
+	RD::texture_clear(resource, color, 0, desc.mipCount, 0, 1);
 
 	return FFX_OK;
 }
@@ -360,7 +359,7 @@ static FfxErrorCode execute_gpu_job_copy_rd(
 	ERR_FAIL_COND_V(dst_desc.type == FFX_RESOURCE_TYPE_BUFFER, FFX_ERROR_INVALID_ARGUMENT);
 
 	for (uint32_t mip_level = 0; mip_level < src_desc.mipCount; mip_level++) {
-		RD::get_singleton()->texture_copy(src, dst, Vector3(0, 0, 0), Vector3(0, 0, 0),
+		RD::texture_copy(src, dst, Vector3(0, 0, 0), Vector3(0, 0, 0),
 			Vector3(src_desc.width, src_desc.height, src_desc.depth), mip_level, mip_level, 0, 0);
 	}
 
@@ -405,7 +404,7 @@ static FfxResource get_resource_rd(RID* p_rid, const wchar_t* p_name)
 
 	wcscpy_s(res.name, p_name);
 
-	RD::TextureFormat texture_format = RD::get_singleton()->texture_get_format(*p_rid);
+	RD::TextureFormat texture_format = RD::texture_get_format(*p_rid);
 	res.description.type = rd_texture_type_to_ffx_resource_type(texture_format.texture_type);
 	res.description.format = rd_format_to_ffx_surface_format(texture_format.format);
 	res.description.width = texture_format.width;
@@ -428,7 +427,7 @@ FSR2Effect::FSR2Effect()
 	capabilities.waveLaneCountMin = 32;
 	capabilities.waveLaneCountMax = 32;
 	capabilities.fp16Supported =
-		RD::get_singleton()->has_feature(RD::Features::SUPPORTS_HALF_FLOAT);
+		RD::has_feature(RD::Features::SUPPORTS_HALF_FLOAT);
 	capabilities.raytracingSupported = false;
 
 	String general_defines = "\n#define FFX_GPU\n"
@@ -532,7 +531,7 @@ FSR2Effect::FSR2Effect()
 
 		// Workaround: Disable FP16 path for the accumulate pass on NVIDIA due to reduced occupancy
 		// and high VRAM throughput.
-		const bool fp16_path_supported = RD::get_singleton()->get_device_vendor_name() != "NVIDIA";
+		const bool fp16_path_supported = RD::get_device_vendor_name() != "NVIDIA";
 		Pass& pass = device.passes[FFX_FSR2_PASS_ACCUMULATE];
 		pass.shader = &shaders.accumulate;
 		pass.shader->initialize(accumulate_modes_with_fp16, general_defines);
@@ -647,19 +646,19 @@ FSR2Effect::FSR2Effect()
 	state.min_lod = -1000.0f;
 	state.max_lod = 1000.0f;
 	state.anisotropy_max = 1.0;
-	device.point_clamp_sampler = RD::get_singleton()->sampler_create(state);
+	device.point_clamp_sampler = RD::sampler_create(state);
 	ERR_FAIL_COND(device.point_clamp_sampler.is_null());
 
 	state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
 	state.min_filter = RD::SAMPLER_FILTER_LINEAR;
-	device.linear_clamp_sampler = RD::get_singleton()->sampler_create(state);
+	device.linear_clamp_sampler = RD::sampler_create(state);
 	ERR_FAIL_COND(device.linear_clamp_sampler.is_null());
 }
 
 FSR2Effect::~FSR2Effect()
 {
-	RD::get_singleton()->free_rid(device.point_clamp_sampler);
-	RD::get_singleton()->free_rid(device.linear_clamp_sampler);
+	RD::free_rid(device.point_clamp_sampler);
+	RD::free_rid(device.linear_clamp_sampler);
 
 	for (uint32_t i = 0; i < FFX_FSR2_PASS_COUNT; i++) {
 		device.passes[i].shader->version_free(device.passes[i].shader_version);

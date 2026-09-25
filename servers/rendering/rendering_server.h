@@ -38,6 +38,7 @@
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_device_enums.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -1126,9 +1127,6 @@ public:
 	static void set_print_gpu_profile(bool p_enable);
 
 	static Size2i get_maximum_viewport_size();
-
-	static RenderingDevice* get_rendering_device();
-	static RenderingDevice* create_local_rendering_device();
 
 	static bool is_render_loop_enabled();
 	static void set_render_loop_enabled(bool p_enabled);

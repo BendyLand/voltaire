@@ -109,15 +109,16 @@ protected:
 		RID index_buffer;
 		RID array;
 		RID sampler;
-	} blit;
+	};
+
+	Blit* blit = nullptr;
 
 	HashMap<RID, RID> render_target_descriptors;
 
-	double time = 0.0;
+	static inline double time = 0.0;
 	double delta = 0.0;
 
-	static uint64_t frame;
-	static RendererCompositorRD* singleton;
+	static inline uint64_t frame;
 
 	BlitPipelines _get_blit_pipelines_for_format(RenderingDevice::FramebufferFormatID format);
 	float _compute_reference_multiplier(RD::ColorSpace p_color_space,
@@ -144,9 +145,9 @@ public:
 
 	virtual RendererFog* get_fog() override { return fog; }
 
-	virtual RendererCanvasRender* get_canvas() override { return canvas; }
+	virtual RendererCanvasRender* get_canvas() { return canvas; }
 
-	virtual RendererSceneRender* get_scene() override { return scene; }
+	virtual RendererSceneRenderRD* get_scene() { return scene; }
 
 	virtual void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
 		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter);
@@ -167,11 +168,11 @@ public:
 
 	_ALWAYS_INLINE_ virtual double get_frame_delta_time() const { return delta; }
 
-	_ALWAYS_INLINE_ virtual double get_total_time() const { return time; }
+	static _ALWAYS_INLINE_ double get_total_time() { return time; }
 
 	_ALWAYS_INLINE_ virtual bool can_create_resources_async() const { return true; }
 
-	virtual bool is_xr_enabled() const { return RendererCompositor::is_xr_enabled(); }
+	static bool is_xr_enabled() { return RendererCompositor::is_xr_enabled(); }
 
 	static Error is_viable() { return OK; }
 
@@ -182,8 +183,6 @@ public:
 		_create_func = _create_current;
 		low_end = false;
 	}
-
-	static RendererCompositorRD* get_singleton() { return singleton; }
 
 	RendererCompositorRD() = default;
 	~RendererCompositorRD();

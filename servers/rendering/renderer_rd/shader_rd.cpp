@@ -272,7 +272,7 @@ void ShaderRD::_clear_version(Version* p_version)
 	if (!p_version->variants.is_empty()) {
 		for (int i = 0; i < variant_defines.size(); i++) {
 			if (p_version->variants[i].is_valid()) {
-				RD::get_singleton()->free_rid(p_version->variants[i]);
+				RD::free_rid(p_version->variants[i]);
 			}
 		}
 
@@ -626,7 +626,7 @@ void ShaderRD::_save_to_cache(Version* p_version, int p_group)
 {
 	ERR_FAIL_COND(!shader_cache_user_dir_valid);
 	String api_safe_name =
-		String(RD::get_singleton()->get_device_api_name()).validate_filename().to_lower();
+		String(RD::get_device_api_name()).validate_filename().to_lower();
 	const String& path = _get_cache_file_path(p_version, p_group, api_safe_name, true);
 	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
 	ERR_FAIL_COND(f.is_null());
@@ -642,7 +642,7 @@ void ShaderRD::_allocate_placeholders(Version* p_version, int p_group)
 
 	for (uint32_t i = 0; i < group_to_variant_map[p_group].size(); i++) {
 		int variant_id = group_to_variant_map[p_group][i];
-		RID shader = RD::get_singleton()->shader_create_placeholder();
+		RID shader = RD::shader_create_placeholder();
 		{
 			p_version->variants.write[variant_id] = shader;
 		}
@@ -849,7 +849,7 @@ ShaderRD::ShaderRD()
 {
 	// Do not feel forced to use this, in most cases it makes little to no difference.
 	bool use_32_threads = false;
-	if (RD::get_singleton()->get_device_vendor_name() == "NVIDIA") {
+	if (RD::get_device_vendor_name() == "NVIDIA") {
 		use_32_threads = true;
 	}
 	String base_compute_define_text;
@@ -1048,7 +1048,7 @@ Vector<RD::ShaderStageSPIRVData> ShaderRD::compile_stages(
 			continue;
 		}
 
-		stage.spirv = RD::get_singleton()->shader_compile_spirv_from_source(
+		stage.spirv = RD::shader_compile_spirv_from_source(
 			RD::ShaderStage(i), p_stage_sources[i], RD::SHADER_LANGUAGE_GLSL, &error);
 		stage.dynamic_buffers = p_dynamic_buffers;
 		stage.shader_stage = RD::ShaderStage(i);

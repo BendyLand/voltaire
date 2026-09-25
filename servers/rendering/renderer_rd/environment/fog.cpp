@@ -44,9 +44,8 @@ Fog::~Fog() { singleton = nullptr; }
 
 int Fog::_get_fog_shader_group()
 {
-	RenderingDevice* rd = RD::get_singleton();
-	bool use_32_bit_atomics = rd->has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = rd->has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
 	if (use_vulkan_memory_model) {
 		return use_32_bit_atomics
 				   ? VolumetricFogShader::SHADER_GROUP_VULKAN_MEMORY_MODEL
@@ -60,17 +59,15 @@ int Fog::_get_fog_shader_group()
 
 int Fog::_get_fog_variant()
 {
-	RenderingDevice* rd = RD::get_singleton();
-	bool use_32_bit_atomics = rd->has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = rd->has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
 	return (use_vulkan_memory_model ? 2 : 0) + (use_32_bit_atomics ? 0 : 1);
 }
 
 int Fog::_get_fog_process_variant(int p_idx)
 {
-	RenderingDevice* rd = RD::get_singleton();
-	bool use_32_bit_atomics = rd->has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = rd->has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
 	return (use_vulkan_memory_model ? (VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX * 2)
 									: 0) +
 		   (use_32_bit_atomics ? 0 : VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX) +
@@ -218,10 +215,10 @@ void Fog::free_fog_shader()
 		volumetric_fog.process_shader.version_free(volumetric_fog.process_shader_version);
 	}
 	if (volumetric_fog.volume_ubo.is_valid()) {
-		RD::get_singleton()->free_rid(volumetric_fog.volume_ubo);
+		RD::free_rid(volumetric_fog.volume_ubo);
 	}
 	if (volumetric_fog.params_ubo.is_valid()) {
-		RD::get_singleton()->free_rid(volumetric_fog.params_ubo);
+		RD::free_rid(volumetric_fog.params_ubo);
 	}
 	if (volumetric_fog.default_shader.is_valid()) {
 		material_storage->shader_free(volumetric_fog.default_shader);
@@ -309,7 +306,7 @@ Fog::FogShaderData::~FogShaderData()
 bool Fog::VolumetricFog::sync_gi_dependent_sets_validity(bool p_ensure_freed)
 {
 	bool null = gi_dependent_sets.process_uniform_set_density.is_null();
-	bool valid = !null && RD::get_singleton()->uniform_set_is_valid(
+	bool valid = !null && RD::uniform_set_is_valid(
 							  gi_dependent_sets.process_uniform_set_density);
 
 #ifdef DEV_ENABLED
@@ -317,16 +314,16 @@ bool Fog::VolumetricFog::sync_gi_dependent_sets_validity(bool p_ensure_freed)
 	DEV_ASSERT(null == gi_dependent_sets.process_uniform_set.is_null());
 	DEV_ASSERT(null == gi_dependent_sets.process_uniform_set2.is_null());
 	DEV_ASSERT(
-		valid == RD::get_singleton()->uniform_set_is_valid(gi_dependent_sets.process_uniform_set));
+		valid == RD::uniform_set_is_valid(gi_dependent_sets.process_uniform_set));
 	DEV_ASSERT(
-		valid == RD::get_singleton()->uniform_set_is_valid(gi_dependent_sets.process_uniform_set2));
+		valid == RD::uniform_set_is_valid(gi_dependent_sets.process_uniform_set2));
 #endif
 
 	if (valid) {
 		if (p_ensure_freed) {
-			RD::get_singleton()->free_rid(gi_dependent_sets.process_uniform_set_density);
-			RD::get_singleton()->free_rid(gi_dependent_sets.process_uniform_set);
-			RD::get_singleton()->free_rid(gi_dependent_sets.process_uniform_set2);
+			RD::free_rid(gi_dependent_sets.process_uniform_set_density);
+			RD::free_rid(gi_dependent_sets.process_uniform_set);
+			RD::free_rid(gi_dependent_sets.process_uniform_set2);
 			valid = false;
 		}
 	}
@@ -343,7 +340,7 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 	width = fog_size.x;
 	height = fog_size.y;
 	depth = fog_size.z;
-	atomic_type = RD::get_singleton()->has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT)
+	atomic_type = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT)
 					  ? RD::UNIFORM_TYPE_IMAGE
 					  : RD::UNIFORM_TYPE_STORAGE_BUFFER;
 
@@ -355,46 +352,46 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 	tf.texture_type = RD::TEXTURE_TYPE_3D;
 	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
-	light_density_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-	RD::get_singleton()->set_resource_name(light_density_map, "Fog light-density map");
+	light_density_map = RD::texture_create(tf, RD::TextureView());
+	RD::set_resource_name(light_density_map, "Fog light-density map");
 
 	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT |
 					RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 
-	prev_light_density_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-	RD::get_singleton()->set_resource_name(
+	prev_light_density_map = RD::texture_create(tf, RD::TextureView());
+	RD::set_resource_name(
 		prev_light_density_map, "Fog previous light-density map");
-	RD::get_singleton()->texture_clear(prev_light_density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
+	RD::texture_clear(prev_light_density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
 
 	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
 
-	fog_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-	RD::get_singleton()->set_resource_name(fog_map, "Fog map");
+	fog_map = RD::texture_create(tf, RD::TextureView());
+	RD::set_resource_name(fog_map, "Fog map");
 
 	if (atomic_type == RD::UNIFORM_TYPE_STORAGE_BUFFER) {
 		Vector<uint8_t> dm;
 		dm.resize_initialized(fog_size.x * fog_size.y * fog_size.z * 4);
 
-		density_map = RD::get_singleton()->storage_buffer_create(dm.size(), dm);
-		RD::get_singleton()->set_resource_name(density_map, "Fog density map");
-		light_map = RD::get_singleton()->storage_buffer_create(dm.size(), dm);
-		RD::get_singleton()->set_resource_name(light_map, "Fog light map");
-		emissive_map = RD::get_singleton()->storage_buffer_create(dm.size(), dm);
-		RD::get_singleton()->set_resource_name(emissive_map, "Fog emissive map");
+		density_map = RD::storage_buffer_create(dm.size(), dm);
+		RD::set_resource_name(density_map, "Fog density map");
+		light_map = RD::storage_buffer_create(dm.size(), dm);
+		RD::set_resource_name(light_map, "Fog light map");
+		emissive_map = RD::storage_buffer_create(dm.size(), dm);
+		RD::set_resource_name(emissive_map, "Fog emissive map");
 	}
 	else {
 		tf.format = RD::DATA_FORMAT_R32_UINT;
 		tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT |
 						RD::TEXTURE_USAGE_STORAGE_ATOMIC_BIT;
-		density_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-		RD::get_singleton()->set_resource_name(density_map, "Fog density map");
-		RD::get_singleton()->texture_clear(density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
-		light_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-		RD::get_singleton()->set_resource_name(light_map, "Fog light map");
-		RD::get_singleton()->texture_clear(light_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
-		emissive_map = RD::get_singleton()->texture_create(tf, RD::TextureView());
-		RD::get_singleton()->set_resource_name(emissive_map, "Fog emissive map");
-		RD::get_singleton()->texture_clear(emissive_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
+		density_map = RD::texture_create(tf, RD::TextureView());
+		RD::set_resource_name(density_map, "Fog density map");
+		RD::texture_clear(density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
+		light_map = RD::texture_create(tf, RD::TextureView());
+		RD::set_resource_name(light_map, "Fog light map");
+		RD::texture_clear(light_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
+		emissive_map = RD::texture_create(tf, RD::TextureView());
+		RD::set_resource_name(emissive_map, "Fog emissive map");
+		RD::texture_clear(emissive_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
 	}
 
 	Vector<RD::Uniform> uniforms;
@@ -406,35 +403,35 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 		uniforms.push_back(u);
 	}
 
-	sky_uniform_set = RD::get_singleton()->uniform_set_create(
+	sky_uniform_set = RD::uniform_set_create(
 		uniforms, p_sky_shader, RendererRD::SkyRD::SKY_SET_FOG);
 }
 
 Fog::VolumetricFog::~VolumetricFog()
 {
-	RD::get_singleton()->free_rid(prev_light_density_map);
-	RD::get_singleton()->free_rid(light_density_map);
-	RD::get_singleton()->free_rid(fog_map);
-	RD::get_singleton()->free_rid(density_map);
-	RD::get_singleton()->free_rid(light_map);
-	RD::get_singleton()->free_rid(emissive_map);
+	RD::free_rid(prev_light_density_map);
+	RD::free_rid(light_density_map);
+	RD::free_rid(fog_map);
+	RD::free_rid(density_map);
+	RD::free_rid(light_map);
+	RD::free_rid(emissive_map);
 
-	if (fog_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(fog_uniform_set)) {
-		RD::get_singleton()->free_rid(fog_uniform_set);
+	if (fog_uniform_set.is_valid() && RD::uniform_set_is_valid(fog_uniform_set)) {
+		RD::free_rid(fog_uniform_set);
 	}
 	if (copy_uniform_set.is_valid() &&
-		RD::get_singleton()->uniform_set_is_valid(copy_uniform_set)) {
-		RD::get_singleton()->free_rid(copy_uniform_set);
+		RD::uniform_set_is_valid(copy_uniform_set)) {
+		RD::free_rid(copy_uniform_set);
 	}
 
 	sync_gi_dependent_sets_validity(true);
 
 	if (sdfgi_uniform_set.is_valid() &&
-		RD::get_singleton()->uniform_set_is_valid(sdfgi_uniform_set)) {
-		RD::get_singleton()->free_rid(sdfgi_uniform_set);
+		RD::uniform_set_is_valid(sdfgi_uniform_set)) {
+		RD::free_rid(sdfgi_uniform_set);
 	}
-	if (sky_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(sky_uniform_set)) {
-		RD::get_singleton()->free_rid(sky_uniform_set);
+	if (sky_uniform_set.is_valid() && RD::uniform_set_is_valid(sky_uniform_set)) {
+		RD::free_rid(sky_uniform_set);
 	}
 }
 

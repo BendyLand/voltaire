@@ -472,21 +472,6 @@ int RenderingServer::global_shader_uniform_type_get_shader_datatype(
 	}
 }
 
-RenderingDevice* RenderingServer::get_rendering_device()
-{
-	// Return the rendering device we're using globally.
-	return RenderingDevice::get_singleton();
-}
-
-RenderingDevice* RenderingServer::create_local_rendering_device()
-{
-	RenderingDevice* device = RenderingDevice::get_singleton();
-	if (!device) {
-		return nullptr;
-	}
-	return device->create_local_device();
-}
-
 String RenderingServer::get_current_rendering_driver_name()
 {
 	// Needs to remain in OS, since it's actually OS that interacts with it, but it's better exposed
@@ -633,8 +618,6 @@ void RenderingServer::init()
 	RSG::texture_storage = RSG::rasterizer->get_texture_storage();
 	RSG::gi = RSG::rasterizer->get_gi();
 	RSG::fog = RSG::rasterizer->get_fog();
-	RSG::canvas_render = RSG::rasterizer->get_canvas();
-	sr->set_scene_render(RSG::rasterizer->get_scene());
 }
 
 void RenderingServer::finish()

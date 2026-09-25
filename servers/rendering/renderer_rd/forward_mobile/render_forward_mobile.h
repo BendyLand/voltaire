@@ -40,7 +40,7 @@
 namespace RendererSceneRenderImplementation
 {
 
-class RenderForwardMobile : public RendererSceneRenderRD
+class RenderForwardMobile
 {
 	friend SceneShaderForwardMobile;
 
@@ -518,29 +518,29 @@ protected:
 
 	virtual void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_quality,
 		bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
-		float p_fadeout_to) override
+		float p_fadeout_to)
 	{
 	}
 
 	virtual void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_quality,
 		bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
-		float p_fadeout_to) override
+		float p_fadeout_to)
 	{
 	}
 
-	virtual void environment_set_ssr_half_size(bool p_half_size) override {}
+	virtual void environment_set_ssr_half_size(bool p_half_size) {}
 
 	virtual void environment_set_ssr_roughness_quality(
-		RSE::EnvironmentSSRRoughnessQuality p_quality) override
+		RSE::EnvironmentSSRRoughnessQuality p_quality)
 	{
 	}
 
 	virtual void sub_surface_scattering_set_quality(
-		RSE::SubSurfaceScatteringQuality p_quality) override
+		RSE::SubSurfaceScatteringQuality p_quality)
 	{
 	}
 
-	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override {}
+	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) {}
 
 	/* Geometry instance */
 
@@ -693,32 +693,32 @@ protected:
 
 		GeometryInstanceForwardMobile() : dirty_list_element(this) {}
 
-		virtual void _mark_dirty() override;
+		virtual void _mark_dirty();
 
 		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
-			const AABB& p_transformed_aabb) override;
+			const AABB& p_transformed_aabb);
 		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2& p_lightmap_uv_scale,
-			int p_lightmap_slice_index) override;
-		virtual void set_lightmap_capture(const Color* p_sh9) override;
+			int p_lightmap_slice_index);
+		virtual void set_lightmap_capture(const Color* p_sh9);
 
-		virtual void clear_light_instances() override;
+		virtual void clear_light_instances();
 		virtual void pair_light_instance(
-			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) override;
+			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx);
 		virtual void pair_reflection_probe_instances(const RID* p_reflection_probe_instances,
-			uint32_t p_reflection_probe_instance_count) override;
+			uint32_t p_reflection_probe_instance_count);
 		virtual void pair_decal_instances(
-			const RID* p_decal_instances, uint32_t p_decal_instance_count) override;
+			const RID* p_decal_instances, uint32_t p_decal_instance_count);
 
 		virtual void pair_voxel_gi_instances(
-			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override
+			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count)
 		{
 		}
 
-		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
+		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector);
 	};
 
-	virtual uint32_t get_max_lights_total() override;
-	virtual uint32_t get_max_lights_per_mesh() override;
+	virtual uint32_t get_max_lights_total();
+	virtual uint32_t get_max_lights_per_mesh();
 
 	/* Rendering */
 
@@ -754,13 +754,13 @@ protected:
 
 	public:
 		virtual RendererRD::ForwardID allocate_forward_id(
-			RendererRD::ForwardIDType p_type) override;
+			RendererRD::ForwardIDType p_type);
 		virtual void free_forward_id(
-			RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id) override;
+			RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id);
 		virtual void map_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id,
-			uint32_t p_index, uint64_t p_last_pass) override;
+			uint32_t p_index, uint64_t p_last_pass);
 
-		virtual bool uses_forward_ids() const override { return true; }
+		virtual bool uses_forward_ids() const { return true; }
 	};
 
 	ForwardIDStorageMobile* forward_id_storage_mobile = nullptr;
@@ -790,24 +790,24 @@ public:
 	/* SDFGI UPDATE */
 
 	virtual void sdfgi_update(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
-		const Vector3& p_world_position) override
+		const Vector3& p_world_position)
 	{
 	}
 
 	virtual int sdfgi_get_pending_region_count(
-		const Ref<RenderSceneBuffers>& p_render_buffers) const override
+		const Ref<RenderSceneBuffers>& p_render_buffers) const
 	{
 		return 0;
 	}
 
 	virtual AABB sdfgi_get_pending_region_bounds(
-		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const
 	{
 		return AABB();
 	}
 
 	virtual uint32_t sdfgi_get_pending_region_cascade(
-		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const
 	{
 		return 0;
 	}
@@ -905,24 +905,24 @@ public:
 		bool depth_texture_used = false;
 	} global_surface_data;
 
-	virtual RenderGeometryInstance* geometry_instance_create(RID p_base) override;
-	virtual void geometry_instance_free(RenderGeometryInstance* p_geometry_instance) override;
+	virtual RenderGeometryInstance* geometry_instance_create(RID p_base);
+	virtual void geometry_instance_free(RenderGeometryInstance* p_geometry_instance);
 
-	virtual uint32_t geometry_instance_get_pair_mask() override;
+	virtual uint32_t geometry_instance_get_pair_mask();
 
 	/* PIPELINES */
 
-	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override;
-	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) override;
+	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
+	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
 	/* SHADER LIBRARY */
 
-	virtual void enable_features(uint32_t p_feature_bits) override;
-	virtual String get_name() const override;
+	virtual void enable_features(uint32_t p_feature_bits);
+	virtual String get_name() const;
 
-	virtual bool free(RID p_rid) override;
+	virtual bool free(RID p_rid);
 
-	virtual void update() override;
+	virtual void update();
 
 	virtual void base_uniforms_changed();
 

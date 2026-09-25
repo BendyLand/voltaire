@@ -37,6 +37,7 @@
 #include "modules/modules_enabled.gen.h"
 #include "rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_shader_container.h"
 #include "servers/rendering/shader_include_db.h"
 
@@ -51,10 +52,10 @@
 	String("This function (") + String(__func__) +                                                 \
 		String(") can only be called from the render thread. ")
 #define ERR_RENDER_THREAD_GUARD()                                                                  \
-	ERR_FAIL_COND_MSG(render_thread_id != Thread::get_caller_id(), ERR_RENDER_THREAD_MSG);
+	ERR_FAIL_COND_MSG(data->render_thread_id != Thread::get_caller_id(), ERR_RENDER_THREAD_MSG);
 #define ERR_RENDER_THREAD_GUARD_V(m_ret)                                                           \
 	ERR_FAIL_COND_V_MSG(                                                                           \
-		render_thread_id != Thread::get_caller_id(), (m_ret), ERR_RENDER_THREAD_MSG);
+		data->render_thread_id != Thread::get_caller_id(), (m_ret), ERR_RENDER_THREAD_MSG);
 
 static String _get_device_vendor_name(const RenderingContextDriver::Device& p_device)
 {
@@ -155,37 +156,33 @@ static RD::HitShaderBindingTableRange _encode_hit_sbt_range(uint32_t p_offset, u
 
 #define SECONDARY_COMMAND_BUFFERS_PER_FRAME 0
 
-RenderingDevice* RenderingDevice::singleton = nullptr;
-
-RenderingDevice* RenderingDevice::get_singleton() { return singleton; }
-
 void RenderingDevice::_add_dependency(RID p_id, RID p_depends_on)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	HashSet<RID>* set = dependency_map.getptr(p_depends_on);
+	HashSet<RID>* set = data->dependency_map.getptr(p_depends_on);
 	if (set == nullptr) {
-		set = &dependency_map.insert(p_depends_on, HashSet<RID>())->value;
+		set = &data->dependency_map.insert(p_depends_on, HashSet<RID>())->value;
 	}
 	set->insert(p_id);
 
-	set = reverse_dependency_map.getptr(p_id);
+	set = data->reverse_dependency_map.getptr(p_id);
 	if (set == nullptr) {
-		set = &reverse_dependency_map.insert(p_id, HashSet<RID>())->value;
+		set = &data->reverse_dependency_map.insert(p_id, HashSet<RID>())->value;
 	}
 	set->insert(p_depends_on);
 }
 
 void RenderingDevice::_remove_dependency(RID p_id, RID p_depends_on)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	HashSet<RID>* set = dependency_map.getptr(p_depends_on);
+	HashSet<RID>* set = data->dependency_map.getptr(p_depends_on);
 	if (set != nullptr) {
 		set->erase(p_id);
 	}
 
-	set = reverse_dependency_map.getptr(p_id);
+	set = data->reverse_dependency_map.getptr(p_id);
 	if (set != nullptr) {
 		set->erase(p_depends_on);
 	}
@@ -193,30 +190,30 @@ void RenderingDevice::_remove_dependency(RID p_id, RID p_depends_on)
 
 void RenderingDevice::_free_dependencies(RID p_id)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	// Direct dependencies must be freed.
 
-	HashMap<RID, HashSet<RID>>::Iterator E = dependency_map.find(p_id);
+	HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
 	if (E) {
 		while (E->value.size()) {
 			free_rid(*E->value.begin());
 		}
-		dependency_map.remove(E);
+		data->dependency_map.remove(E);
 	}
 
 	// Reverse dependencies must be unreferenced.
-	E = reverse_dependency_map.find(p_id);
+	E = data->reverse_dependency_map.find(p_id);
 
 	if (E) {
 		for (const RID& F : E->value) {
-			HashMap<RID, HashSet<RID>>::Iterator G = dependency_map.find(F);
+			HashMap<RID, HashSet<RID>>::Iterator G = data->dependency_map.find(F);
 			ERR_CONTINUE(!G);
 			ERR_CONTINUE(!G->value.has(p_id));
 			G->value.erase(p_id);
 		}
 
-		reverse_dependency_map.remove(E);
+		data->reverse_dependency_map.remove(E);
 	}
 }
 
@@ -227,9 +224,9 @@ Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_
 #ifdef MODULE_GLSLANG_ENABLED
 	case ShaderLanguage::SHADER_LANGUAGE_GLSL: {
 		ShaderLanguageVersion language_version =
-			driver->get_shader_container_format().get_shader_language_version();
+			data->driver->get_shader_container_format().get_shader_language_version();
 		ShaderSpirvVersion spirv_version =
-			driver->get_shader_container_format().get_shader_spirv_version();
+			data->driver->get_shader_container_format().get_shader_spirv_version();
 		return compile_glslang_shader(p_stage, ShaderIncludeDB::parse_include_files(p_source_code),
 			language_version, spirv_version, r_error);
 	}
@@ -242,29 +239,29 @@ Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_
 Error RenderingDevice::_acceleration_structure_scratch_buffer_create(
 	AccelerationStructure* p_acceleration_structure)
 {
-	uint64_t scratch_size =
-		driver->acceleration_structure_get_scratch_size_bytes(p_acceleration_structure->driver_id);
+	uint64_t scratch_size = data->driver->acceleration_structure_get_scratch_size_bytes(
+		p_acceleration_structure->driver_id);
 
 	if (p_acceleration_structure->scratch_buffer) {
 		uint64_t scratch_buffer_size =
-			driver->buffer_get_allocation_size(p_acceleration_structure->scratch_buffer);
+			data->driver->buffer_get_allocation_size(p_acceleration_structure->scratch_buffer);
 		if (scratch_buffer_size < scratch_size) {
 			Buffer to_dispose = Buffer();
 			to_dispose.driver_id = p_acceleration_structure->scratch_buffer;
 			DEV_ASSERT(scratch_buffer_size <= UINT32_MAX);
 			to_dispose.size = scratch_buffer_size;
-			frames[frame].buffers_to_dispose_of.push_back(to_dispose);
+			data->frames[data->frame].buffers_to_dispose_of.push_back(to_dispose);
 			p_acceleration_structure->scratch_buffer = RDD::BufferID();
 		}
 	}
 
 	if (!p_acceleration_structure->scratch_buffer) {
-		p_acceleration_structure->scratch_buffer = driver->buffer_create(scratch_size,
+		p_acceleration_structure->scratch_buffer = data->driver->buffer_create(scratch_size,
 			RDD::BUFFER_USAGE_STORAGE_BIT | RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT,
-			RDD::MEMORY_ALLOCATION_TYPE_GPU, frames_drawn);
+			RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 		ERR_FAIL_COND_V(!p_acceleration_structure->scratch_buffer, ERR_CANT_CREATE);
 
-		buffer_memory.add(scratch_size);
+		data->buffer_memory.add(scratch_size);
 	}
 
 	return OK;
@@ -273,7 +270,7 @@ Error RenderingDevice::_acceleration_structure_scratch_buffer_create(
 void RenderingDevice::_blas_remove_tlas_dependencies(AccelerationStructure* p_blas, RID p_blas_id)
 {
 	for (RID id : p_blas->acceleration_structure_dependencies) {
-		AccelerationStructure* tlas = acceleration_structure_owner.get_or_null(id);
+		AccelerationStructure* tlas = data->acceleration_structure_owner.get_or_null(id);
 		ERR_FAIL_NULL(tlas);
 		ERR_FAIL_COND(tlas->type != ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL);
 
@@ -287,7 +284,7 @@ void RenderingDevice::_blas_remove_tlas_dependencies(AccelerationStructure* p_bl
 void RenderingDevice::_tlas_remove_blas_dependencies(AccelerationStructure* p_tlas, RID p_tlas_id)
 {
 	for (RID id : p_tlas->acceleration_structure_dependencies) {
-		AccelerationStructure* blas = acceleration_structure_owner.get_or_null(id);
+		AccelerationStructure* blas = data->acceleration_structure_owner.get_or_null(id);
 		ERR_FAIL_NULL(blas);
 		ERR_FAIL_COND(blas->type != ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL);
 
@@ -324,7 +321,7 @@ RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometrie
 		rdd_geometry = {};
 		rdd_geometry.flags = rd_geometry.flags;
 
-		Buffer* vertex_buffer = vertex_buffer_owner.get_or_null(rd_geometry.vertex_buffer);
+		Buffer* vertex_buffer = data->vertex_buffer_owner.get_or_null(rd_geometry.vertex_buffer);
 		ERR_FAIL_NULL_V(vertex_buffer, RID());
 
 		ERR_FAIL_COND_V_MSG(
@@ -351,7 +348,8 @@ RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometrie
 		_check_transfer_worker_buffer(vertex_buffer);
 
 		if (rd_geometry.index_buffer.is_valid()) {
-			IndexBuffer* index_buffer = index_buffer_owner.get_or_null(rd_geometry.index_buffer);
+			IndexBuffer* index_buffer =
+				data->index_buffer_owner.get_or_null(rd_geometry.index_buffer);
 			ERR_FAIL_NULL_V(index_buffer, RID());
 
 			uint32_t index_stride =
@@ -382,7 +380,7 @@ RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometrie
 
 	AccelerationStructure acceleration_structure;
 	acceleration_structure.type = RDD::ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-	acceleration_structure.driver_id = driver->blas_create(rdd_geometries, p_flags);
+	acceleration_structure.driver_id = data->driver->blas_create(rdd_geometries, p_flags);
 	ERR_FAIL_COND_V_MSG(!acceleration_structure.driver_id, RID(), "Failed to create BLAS.");
 
 	acceleration_structure.draw_tracker = RDG::resource_tracker_create();
@@ -395,7 +393,7 @@ RID RenderingDevice::blas_create(Span<AccelerationStructureGeometry> p_geometrie
 	acceleration_structure.draw_trackers = std::move(draw_trackers);
 	acceleration_structure.untracked_buffers = std::move(untracked_buffers);
 
-	RID id = acceleration_structure_owner.make_rid(acceleration_structure);
+	RID id = data->acceleration_structure_owner.make_rid(acceleration_structure);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -420,7 +418,7 @@ RID RenderingDevice::tlas_create(uint32_t p_max_instance_count, uint32_t p_flags
 
 	AccelerationStructure acceleration_structure;
 	acceleration_structure.type = RDD::ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-	acceleration_structure.driver_id = driver->tlas_create(p_max_instance_count, p_flags);
+	acceleration_structure.driver_id = data->driver->tlas_create(p_max_instance_count, p_flags);
 	ERR_FAIL_COND_V_MSG(!acceleration_structure.driver_id, RID(), "Failed to create TLAS.");
 
 	acceleration_structure.draw_tracker = RDG::resource_tracker_create();
@@ -432,7 +430,7 @@ RID RenderingDevice::tlas_create(uint32_t p_max_instance_count, uint32_t p_flags
 
 	acceleration_structure.max_instance_count = p_max_instance_count;
 
-	RID id = acceleration_structure_owner.make_rid(acceleration_structure);
+	RID id = data->acceleration_structure_owner.make_rid(acceleration_structure);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -443,20 +441,20 @@ Error RenderingDevice::blas_build(RID p_blas)
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	ERR_FAIL_COND_V_MSG(draw_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
 		"Building BLAS is forbidden during creation of a draw list.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
 		"Building BLAS is forbidden during creation of a compute list.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
 		"Building BLAS is forbidden during creation of a raytracing list.");
 
-	AccelerationStructure* blas = acceleration_structure_owner.get_or_null(p_blas);
+	AccelerationStructure* blas = data->acceleration_structure_owner.get_or_null(p_blas);
 	ERR_FAIL_NULL_V_MSG(blas, ERR_INVALID_PARAMETER, "BLAS argument is not valid.");
 
 	Error err = _acceleration_structure_scratch_buffer_create(blas);
 	ERR_FAIL_COND_V(err != OK, err);
 
-	draw_graph.add_blas_build(
+	data->draw_graph.add_blas_build(
 		blas->driver_id, blas->scratch_buffer, blas->draw_tracker, blas->draw_trackers);
 
 	blas->invalidated = false;
@@ -469,14 +467,14 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	ERR_FAIL_COND_V_MSG(draw_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
 		"Building TLAS is forbidden during creation of a draw list.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
 		"Building TLAS is forbidden during creation of a compute list.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
 		"Building TLAS is forbidden during creation of a raytracing list.");
 
-	AccelerationStructure* tlas = acceleration_structure_owner.get_or_null(p_tlas);
+	AccelerationStructure* tlas = data->acceleration_structure_owner.get_or_null(p_tlas);
 	ERR_FAIL_NULL_V_MSG(tlas, ERR_INVALID_PARAMETER, "TLAS argument is not valid.");
 	ERR_FAIL_COND_V_MSG(p_instances.size() > tlas->max_instance_count, ERR_INVALID_PARAMETER,
 		"Exceeded the maximum amount of instances allowed in the TLAS.");
@@ -485,7 +483,7 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 	ERR_FAIL_COND_V(err != OK, err);
 
 	uint32_t instance_size =
-		driver->api_trait_get(RDD::API_TRAIT_ACCELERATION_STRUCTURE_INSTANCE_SIZE);
+		data->driver->api_trait_get(RDD::API_TRAIT_ACCELERATION_STRUCTURE_INSTANCE_SIZE);
 	uint32_t instance_buffer_size = instance_size * tlas->max_instance_count;
 
 	uint32_t instance_buffer_offset = 0;
@@ -495,12 +493,12 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 	for (uint32_t i = 0; i < tlas->instance_buffers.size(); i++) {
 		AccelerationStructure::InstanceBuffer& instance_buffer = tlas->instance_buffers[i];
 
-		if ((frames_drawn - instance_buffer.frame_used) >= frames.size()) {
-			instance_buffer.frame_used = frames_drawn;
+		if ((data->frames_drawn - instance_buffer.frame_used) >= data->frames.size()) {
+			instance_buffer.frame_used = data->frames_drawn;
 			instance_buffer.used_size = 0;
 		}
 
-		if (frames_drawn == instance_buffer.frame_used &&
+		if (data->frames_drawn == instance_buffer.frame_used &&
 			(instance_buffer.used_size + instance_buffer_used_size) <= instance_buffer_size) {
 			instance_buffer_offset = instance_buffer.used_size;
 			instance_buffer.used_size += instance_buffer_used_size;
@@ -510,23 +508,23 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 	}
 
 	if (instance_buffer_index == UINT32_MAX) {
-		RDD::BufferID instance_buffer_driver_id = driver->buffer_create(instance_buffer_size,
+		RDD::BufferID instance_buffer_driver_id = data->driver->buffer_create(instance_buffer_size,
 			RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT |
 				RDD::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT,
-			RDD::MEMORY_ALLOCATION_TYPE_CPU, frames_drawn);
+			RDD::MEMORY_ALLOCATION_TYPE_CPU, data->frames_drawn);
 		ERR_FAIL_COND_V(!instance_buffer_driver_id, ERR_CANT_CREATE);
 
-		uint8_t* data_ptr = driver->buffer_map(instance_buffer_driver_id);
+		uint8_t* data_ptr = data->driver->buffer_map(instance_buffer_driver_id);
 		if (unlikely(!data_ptr)) {
-			driver->buffer_free(instance_buffer_driver_id);
+			data->driver->buffer_free(instance_buffer_driver_id);
 			ERR_FAIL_V(ERR_CANT_CREATE);
 		}
 
-		buffer_memory.add(instance_buffer_size);
+		data->buffer_memory.add(instance_buffer_size);
 
 		AccelerationStructure::InstanceBuffer instance_buffer;
 		instance_buffer.driver_id = instance_buffer_driver_id;
-		instance_buffer.frame_used = frames_drawn;
+		instance_buffer.frame_used = data->frames_drawn;
 		instance_buffer.used_size = 0;
 		instance_buffer.data_ptr = data_ptr;
 
@@ -557,7 +555,7 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 				"Instance " + itos(i) + " has an invalid hit shader binding table range.");
 
 			AccelerationStructure* blas =
-				acceleration_structure_owner.get_or_null(rd_instance.blas);
+				data->acceleration_structure_owner.get_or_null(rd_instance.blas);
 			ERR_FAIL_NULL_V(blas, ERR_INVALID_PARAMETER);
 			ERR_FAIL_COND_V(
 				blas->type != RDD::ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL, ERR_INVALID_PARAMETER);
@@ -576,12 +574,13 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 			}
 		}
 
-		driver->acceleration_structure_instance_write(
+		data->driver->acceleration_structure_instance_write(
 			instance_buffer.data_ptr + instance_buffer_offset + (instance_size * i), rdd_instance);
 	}
 
-	draw_graph.add_tlas_build(tlas->driver_id, tlas->scratch_buffer, instance_buffer.driver_id,
-		instance_buffer_offset, p_instances.size(), tlas->draw_tracker, draw_trackers);
+	data->draw_graph.add_tlas_build(tlas->driver_id, tlas->scratch_buffer,
+		instance_buffer.driver_id, instance_buffer_offset, p_instances.size(), tlas->draw_tracker,
+		draw_trackers);
 
 	tlas->invalidated = false;
 
@@ -590,12 +589,12 @@ Error RenderingDevice::tlas_build(RID p_tlas, Span<AccelerationStructureInstance
 
 RDD::BufferID RenderingDevice::_hit_sbt_buffer_create(uint32_t p_buffer_size)
 {
-	RDD::BufferID buffer = driver->buffer_create(p_buffer_size,
+	RDD::BufferID buffer = data->driver->buffer_create(p_buffer_size,
 		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT |
 			RDD::BUFFER_USAGE_SHADER_BINDING_TABLE_BIT,
-		RDD::MEMORY_ALLOCATION_TYPE_GPU, frames_drawn);
+		RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	if (buffer) {
-		buffer_memory.add(p_buffer_size);
+		data->buffer_memory.add(p_buffer_size);
 	}
 
 	return buffer;
@@ -616,11 +615,12 @@ RID RenderingDevice::hit_sbt_create(
 		"The current rendering device has neither raytracing pipeline nor ray query support.");
 
 	RaytracingPipeline* raytracing_pipeline =
-		raytracing_pipeline_owner.get_or_null(p_raytracing_pipeline);
+		data->raytracing_pipeline_owner.get_or_null(p_raytracing_pipeline);
 	ERR_FAIL_NULL_V(raytracing_pipeline, RID());
 	ERR_FAIL_COND_V(p_initial_hit_group_capacity == 0, RID());
 
-	uint32_t shader_group_size = driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_SIZE);
+	uint32_t shader_group_size =
+		data->driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_SIZE);
 
 	HitShaderBindingTable hit_sbt;
 	hit_sbt.size = p_initial_hit_group_capacity * shader_group_size;
@@ -637,7 +637,7 @@ RID RenderingDevice::hit_sbt_create(
 	hit_sbt.raytracing_pipeline_hit_group_count = raytracing_pipeline->hit_group_count;
 	hit_sbt.hit_group_indices.resize_initialized(p_initial_hit_group_capacity);
 
-	RID id = hit_sbt_owner.make_rid(hit_sbt);
+	RID id = data->hit_sbt_owner.make_rid(hit_sbt);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -650,12 +650,12 @@ Error RenderingDevice::hit_sbt_set_pipeline(RID p_hit_sbt, RID p_raytracing_pipe
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_hit_sbt);
+	HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_hit_sbt);
 	ERR_FAIL_NULL_V(hit_sbt, ERR_INVALID_PARAMETER);
 
 	if (hit_sbt->raytracing_pipeline_id != p_raytracing_pipeline) {
 		RaytracingPipeline* raytracing_pipeline =
-			raytracing_pipeline_owner.get_or_null(p_raytracing_pipeline);
+			data->raytracing_pipeline_owner.get_or_null(p_raytracing_pipeline);
 		ERR_FAIL_NULL_V(raytracing_pipeline, ERR_INVALID_PARAMETER);
 		ERR_FAIL_COND_V_MSG(
 			raytracing_pipeline->hit_group_count < hit_sbt->raytracing_pipeline_hit_group_count,
@@ -682,7 +682,7 @@ RD::HitShaderBindingTableRange RenderingDevice::hit_sbt_range_alloc(
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_hit_sbt);
+	HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_hit_sbt);
 	ERR_FAIL_NULL_V(hit_sbt, RD::HitShaderBindingTableRange());
 	ERR_FAIL_COND_V(p_hit_group_count == 0, RD::HitShaderBindingTableRange());
 
@@ -730,7 +730,7 @@ Error RenderingDevice::hit_sbt_range_free(RID p_hit_sbt, HitShaderBindingTableRa
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_hit_sbt);
+	HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_hit_sbt);
 	ERR_FAIL_NULL_V(hit_sbt, ERR_INVALID_PARAMETER);
 	ERR_FAIL_COND_V(!p_range, ERR_INVALID_PARAMETER);
 
@@ -800,7 +800,7 @@ Error RenderingDevice::hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTable
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_hit_sbt);
+	HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_hit_sbt);
 	ERR_FAIL_NULL_V(hit_sbt, ERR_INVALID_PARAMETER);
 	ERR_FAIL_COND_V(!p_range, ERR_INVALID_PARAMETER);
 
@@ -828,21 +828,21 @@ Error RenderingDevice::hit_sbt_range_update(RID p_hit_sbt, HitShaderBindingTable
 RenderingDevice::Buffer* RenderingDevice::_get_buffer_from_owner(RID p_buffer)
 {
 	Buffer* buffer = nullptr;
-	if (vertex_buffer_owner.owns(p_buffer)) {
-		buffer = vertex_buffer_owner.get_or_null(p_buffer);
+	if (data->vertex_buffer_owner.owns(p_buffer)) {
+		buffer = data->vertex_buffer_owner.get_or_null(p_buffer);
 	}
-	else if (index_buffer_owner.owns(p_buffer)) {
-		buffer = index_buffer_owner.get_or_null(p_buffer);
+	else if (data->index_buffer_owner.owns(p_buffer)) {
+		buffer = data->index_buffer_owner.get_or_null(p_buffer);
 	}
-	else if (uniform_buffer_owner.owns(p_buffer)) {
-		buffer = uniform_buffer_owner.get_or_null(p_buffer);
+	else if (data->uniform_buffer_owner.owns(p_buffer)) {
+		buffer = data->uniform_buffer_owner.get_or_null(p_buffer);
 	}
-	else if (texture_buffer_owner.owns(p_buffer)) {
+	else if (data->texture_buffer_owner.owns(p_buffer)) {
 		DEV_ASSERT(false && "FIXME: Broken.");
 		// buffer = texture_buffer_owner.get_or_null(p_buffer)->buffer;
 	}
-	else if (storage_buffer_owner.owns(p_buffer)) {
-		buffer = storage_buffer_owner.get_or_null(p_buffer);
+	else if (data->storage_buffer_owner.owns(p_buffer)) {
+		buffer = data->storage_buffer_owner.get_or_null(p_buffer);
 	}
 	return buffer;
 }
@@ -861,19 +861,19 @@ Error RenderingDevice::_buffer_initialize(
 	}
 
 	// Copy to the worker's staging buffer.
-	uint8_t* data_ptr = driver->buffer_map(transfer_worker->staging_buffer);
+	uint8_t* data_ptr = data->driver->buffer_map(transfer_worker->staging_buffer);
 	ERR_FAIL_NULL_V(data_ptr, ERR_CANT_CREATE);
 
 	memcpy(data_ptr + transfer_worker_offset, p_data.ptr(), p_data.size());
-	driver->buffer_unmap(transfer_worker->staging_buffer);
+	data->driver->buffer_unmap(transfer_worker->staging_buffer);
 
 	// Copy from the staging buffer to the real buffer.
 	RDD::BufferCopyRegion region;
 	region.src_offset = transfer_worker_offset;
 	region.dst_offset = 0;
 	region.size = p_data.size();
-	driver->command_copy_buffer(transfer_worker->command_buffer, transfer_worker->staging_buffer,
-		p_buffer->driver_id, region);
+	data->driver->command_copy_buffer(transfer_worker->command_buffer,
+		transfer_worker->staging_buffer, p_buffer->driver_id, region);
 
 	_release_transfer_worker(transfer_worker);
 
@@ -884,16 +884,16 @@ Error RenderingDevice::_insert_staging_block(StagingBuffers& p_staging_buffers)
 {
 	StagingBufferBlock block;
 
-	block.driver_id = driver->buffer_create(p_staging_buffers.block_size,
-		p_staging_buffers.usage_bits, RDD::MEMORY_ALLOCATION_TYPE_CPU, frames_drawn);
+	block.driver_id = data->driver->buffer_create(p_staging_buffers.block_size,
+		p_staging_buffers.usage_bits, RDD::MEMORY_ALLOCATION_TYPE_CPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!block.driver_id, ERR_CANT_CREATE);
 
 	block.frame_used = 0;
 	block.fill_amount = 0;
-	block.data_ptr = driver->buffer_map(block.driver_id);
+	block.data_ptr = data->driver->buffer_map(block.driver_id);
 
 	if (block.data_ptr == nullptr) {
-		driver->buffer_free(block.driver_id);
+		data->driver->buffer_free(block.driver_id);
 		return ERR_CANT_CREATE;
 	}
 
@@ -914,7 +914,7 @@ Error RenderingDevice::_staging_buffer_allocate(StagingBuffers& p_staging_buffer
 		r_alloc_offset = 0;
 
 		// See if we can use current block.
-		if (p_staging_buffers.blocks[p_staging_buffers.current].frame_used == frames_drawn) {
+		if (p_staging_buffers.blocks[p_staging_buffers.current].frame_used == data->frames_drawn) {
 			// We used this block this frame, let's see if there is still room.
 
 			uint32_t write_from = p_staging_buffers.blocks[p_staging_buffers.current].fill_amount;
@@ -949,7 +949,7 @@ Error RenderingDevice::_staging_buffer_allocate(StagingBuffers& p_staging_buffer
 				// Before doing anything, though, let's check that we didn't manage to fill all
 				// blocks. Possible in a single frame.
 				if (p_staging_buffers.blocks[p_staging_buffers.current].frame_used ==
-					frames_drawn) {
+					data->frames_drawn) {
 					// Guess we did.. ok, let's see if we can insert a new block.
 					if ((uint64_t)p_staging_buffers.blocks.size() * p_staging_buffers.block_size <
 						p_staging_buffers.max_size) {
@@ -960,7 +960,7 @@ Error RenderingDevice::_staging_buffer_allocate(StagingBuffers& p_staging_buffer
 						}
 						// Claim for this frame.
 						p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used =
-							frames_drawn;
+							data->frames_drawn;
 					}
 					else {
 						// Ok, worst case scenario, all the staging buffers belong to this frame
@@ -980,9 +980,10 @@ Error RenderingDevice::_staging_buffer_allocate(StagingBuffers& p_staging_buffer
 
 		}
 		else if (p_staging_buffers.blocks[p_staging_buffers.current].frame_used <=
-				   frames_drawn - frames.size()) {
+				   data->frames_drawn - data->frames.size()) {
 			// This is an old block, which was already processed, let's reuse.
-			p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used = frames_drawn;
+			p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used =
+				data->frames_drawn;
 			p_staging_buffers.blocks.write[p_staging_buffers.current].fill_amount = 0;
 		}
 		else {
@@ -997,7 +998,8 @@ Error RenderingDevice::_staging_buffer_allocate(StagingBuffers& p_staging_buffer
 					return err;
 				}
 				// Claim for this frame.
-				p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used = frames_drawn;
+				p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used =
+					data->frames_drawn;
 			}
 			else {
 				// Oops, we are out of room and we can't create more.
@@ -1037,11 +1039,11 @@ Error RenderingDevice::buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t 
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	ERR_FAIL_COND_V_MSG(draw_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
 		"Copying buffers is forbidden during creation of a draw list.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
 		"Copying buffers is forbidden during creation of a compute list.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
 		"Copying buffers is forbidden during creation of a raytracing list.");
 
 	Buffer* src_buffer = _get_buffer_from_owner(p_src_buffer);
@@ -1073,10 +1075,10 @@ Error RenderingDevice::buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t 
 
 	if (_buffer_make_mutable(dst_buffer, p_dst_buffer)) {
 		// The destination buffer must be mutable to be used as a copy destination.
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_buffer_copy(src_buffer->driver_id, src_buffer->draw_tracker,
+	data->draw_graph.add_buffer_copy(src_buffer->driver_id, src_buffer->draw_tracker,
 		dst_buffer->driver_id, dst_buffer->draw_tracker, region);
 
 	return OK;
@@ -1087,11 +1089,11 @@ Error RenderingDevice::driver_callback_add(
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	ERR_FAIL_COND_V_MSG(draw_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
 		"Driver callback is forbidden during creation of a draw list.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
 		"Driver callback is forbidden during creation of a compute list.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
 		"Driver callback is forbidden during creation of a raytracing list.");
 
 	thread_local LocalVector<RDG::ResourceTracker*> trackers;
@@ -1112,19 +1114,19 @@ Error RenderingDevice::driver_callback_add(
 						vformat("Argument %d is not a valid buffer of any type.", i));
 				}
 				if (_buffer_make_mutable(buffer, cr.rid)) {
-					draw_graph.add_synchronization();
+					data->draw_graph.add_synchronization();
 				}
 				trackers[i] = buffer->draw_tracker;
 				usages[i] = (RDG::ResourceUsage)cr.usage;
 			} break;
 			case CALLBACK_RESOURCE_TYPE_TEXTURE: {
-				Texture* texture = texture_owner.get_or_null(cr.rid);
+				Texture* texture = data->texture_owner.get_or_null(cr.rid);
 				if (!texture) {
 					ERR_FAIL_V_MSG(
 						ERR_INVALID_PARAMETER, vformat("Argument %d is not a valid texture.", i));
 				}
 				if (_texture_make_mutable(texture, cr.rid)) {
-					draw_graph.add_synchronization();
+					data->draw_graph.add_synchronization();
 				}
 				trackers[i] = texture->draw_tracker;
 				usages[i] = (RDG::ResourceUsage)cr.usage;
@@ -1136,7 +1138,7 @@ Error RenderingDevice::driver_callback_add(
 		}
 	}
 
-	draw_graph.add_driver_callback(p_callback, p_userdata, trackers, usages);
+	data->draw_graph.add_driver_callback(p_callback, p_userdata, trackers, usages);
 
 	return OK;
 }
@@ -1147,24 +1149,25 @@ RID RenderingDevice::storage_buffer_create(
 	return RID();
 }
 
-String RenderingDevice::get_perf_report() const
+String RenderingDevice::get_perf_report()
 {
 	String perf_report_text;
-	perf_report_text += " gpu:" + String::num_int64(gpu_copy_count);
-	perf_report_text += " direct:" + String::num_int64(direct_copy_count);
-	perf_report_text += " bytes:" + String::num_int64(copy_bytes_count);
+	perf_report_text += " gpu:" + String::num_int64(data->gpu_copy_count);
+	perf_report_text += " direct:" + String::num_int64(data->direct_copy_count);
+	perf_report_text += " bytes:" + String::num_int64(data->copy_bytes_count);
 
-	perf_report_text += " lazily alloc:" + String::num_int64(driver->get_lazily_memory_used());
+	perf_report_text +=
+		" lazily alloc:" + String::num_int64(data->driver->get_lazily_memory_used());
 	return perf_report_text;
 }
 
 void RenderingDevice::update_perf_report()
 {
-	prev_gpu_copy_count = gpu_copy_count;
-	prev_copy_bytes_count = copy_bytes_count;
-	gpu_copy_count = 0;
-	direct_copy_count = 0;
-	copy_bytes_count = 0;
+	data->prev_gpu_copy_count = data->gpu_copy_count;
+	data->prev_copy_bytes_count = data->copy_bytes_count;
+	data->gpu_copy_count = 0;
+	data->direct_copy_count = 0;
+	data->copy_bytes_count = 0;
 }
 
 Vector<uint8_t> RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_offset, uint32_t p_size)
@@ -1178,11 +1181,11 @@ Error RenderingDevice::buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_
 
 	ERR_FAIL_COND_V_MSG(
 		(p_size % 4) != 0, ERR_INVALID_PARAMETER, "Size must be a multiple of four.");
-	ERR_FAIL_COND_V_MSG(draw_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
 		"Updating buffers in is forbidden during creation of a draw list.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
 		"Updating buffers is forbidden during creation of a compute list.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, ERR_INVALID_PARAMETER,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
 		"Updating buffers is forbidden during creation of a raytracing list.");
 
 	Buffer* buffer = _get_buffer_from_owner(p_buffer);
@@ -1198,10 +1201,10 @@ Error RenderingDevice::buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_
 
 	if (_buffer_make_mutable(buffer, p_buffer)) {
 		// The destination buffer must be mutable to be used as a clear destination.
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_buffer_clear(buffer->driver_id, buffer->draw_tracker, p_offset, p_size);
+	data->draw_graph.add_buffer_clear(buffer->driver_id, buffer->draw_tracker, p_offset, p_size);
 
 	return OK;
 }
@@ -1212,8 +1215,8 @@ uint8_t* RenderingDevice::buffer_persistent_map_advance(RID p_buffer)
 
 	Buffer* buffer = _get_buffer_from_owner(p_buffer);
 	ERR_FAIL_NULL_V_MSG(buffer, nullptr, "Buffer argument is not a valid buffer of any type.");
-	direct_copy_count++;
-	return driver->buffer_persistent_map_advance(buffer->driver_id, frames_drawn);
+	data->direct_copy_count++;
+	return data->driver->buffer_persistent_map_advance(buffer->driver_id, data->frames_drawn);
 }
 
 void RenderingDevice::buffer_flush(RID p_buffer)
@@ -1222,7 +1225,7 @@ void RenderingDevice::buffer_flush(RID p_buffer)
 
 	Buffer* buffer = _get_buffer_from_owner(p_buffer);
 	ERR_FAIL_NULL_MSG(buffer, "Buffer argument is not a valid buffer of any type.");
-	driver->buffer_flush(buffer->driver_id);
+	data->driver->buffer_flush(buffer->driver_id);
 }
 
 RID RenderingDevice::texture_buffer_create(
@@ -1239,8 +1242,8 @@ RID RenderingDevice::texture_buffer_create(
 	texture_buffer.size = size_bytes;
 	uint32_t usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
 					  RDD::BUFFER_USAGE_TEXEL_BIT);
-	texture_buffer.driver_id =
-		driver->buffer_create(size_bytes, usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, frames_drawn);
+	texture_buffer.driver_id = data->driver->buffer_create(
+		size_bytes, usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!texture_buffer.driver_id, RID());
 
 	// Texture buffers are assumed to be immutable unless they don't have initial data.
@@ -1249,9 +1252,9 @@ RID RenderingDevice::texture_buffer_create(
 		texture_buffer.draw_tracker->buffer_driver_id = texture_buffer.driver_id;
 	}
 
-	bool ok = driver->buffer_set_texel_format(texture_buffer.driver_id, p_format);
+	bool ok = data->driver->buffer_set_texel_format(texture_buffer.driver_id, p_format);
 	if (!ok) {
-		driver->buffer_free(texture_buffer.driver_id);
+		data->driver->buffer_free(texture_buffer.driver_id);
 		ERR_FAIL_V(RID());
 	}
 
@@ -1259,9 +1262,9 @@ RID RenderingDevice::texture_buffer_create(
 		_buffer_initialize(&texture_buffer, p_data);
 	}
 
-	buffer_memory.add(size_bytes);
+	data->buffer_memory.add(size_bytes);
 
-	RID id = texture_buffer_owner.make_rid(texture_buffer);
+	RID id = data->texture_buffer_owner.make_rid(texture_buffer);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -1281,13 +1284,13 @@ Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_laye
 
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
 {
-	Texture* src_texture = texture_owner.get_or_null(p_with_texture);
+	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
 	ERR_FAIL_NULL_V(src_texture, RID());
 
 	if (src_texture->owner
 			.is_valid()) { // Ahh this is a share. The RenderingDeviceDriver needs the actual owner.
 		p_with_texture = src_texture->owner;
-		src_texture = texture_owner.get_or_null(src_texture->owner);
+		src_texture = data->texture_owner.get_or_null(src_texture->owner);
 		ERR_FAIL_NULL_V(src_texture, RID()); // This is a bug.
 	}
 
@@ -1310,7 +1313,7 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 			"Format override is not in the list of allowed shareable formats for original "
 			"texture.");
 		tv.format = p_view.format_override;
-		create_shared = driver->texture_can_make_shared_with_format(
+		create_shared = data->driver->texture_can_make_shared_with_format(
 			texture.driver_id, p_view.format_override, raw_reintepretation);
 	}
 	tv.swizzle_r = p_view.swizzle_r;
@@ -1319,13 +1322,13 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 	tv.swizzle_a = p_view.swizzle_a;
 
 	if (create_shared) {
-		texture.driver_id = driver->texture_create_shared(texture.driver_id, tv);
+		texture.driver_id = data->driver->texture_create_shared(texture.driver_id, tv);
 	}
 	else {
 		// The regular view will use the same format as the main texture.
 		RDD::TextureView regular_view = tv;
 		regular_view.format = src_texture->format;
-		texture.driver_id = driver->texture_create_shared(texture.driver_id, regular_view);
+		texture.driver_id = data->driver->texture_create_shared(texture.driver_id, regular_view);
 
 		// Create the independent texture for the alias.
 		RDD::TextureFormat alias_format = texture.texture_format();
@@ -1335,9 +1338,10 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 		_texture_check_shared_fallback(src_texture);
 		_texture_check_shared_fallback(&texture);
 
-		texture.shared_fallback->texture = driver->texture_create(alias_format, tv);
+		texture.shared_fallback->texture = data->driver->texture_create(alias_format, tv);
 		texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
-		texture_memory.add(driver->texture_get_allocation_size(texture.shared_fallback->texture));
+		data->texture_memory.add(
+			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
 
 		RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
 		tracker->texture_driver_id = texture.shared_fallback->texture;
@@ -1363,7 +1367,7 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 	}
 
 	texture.owner = p_with_texture;
-	RID id = texture_owner.make_rid(texture);
+	RID id = data->texture_owner.make_rid(texture);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -1376,13 +1380,13 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 	uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps, TextureSliceType p_slice_type,
 	uint32_t p_layers)
 {
-	Texture* src_texture = texture_owner.get_or_null(p_with_texture);
+	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
 	ERR_FAIL_NULL_V(src_texture, RID());
 
 	if (src_texture->owner.is_valid()) { // // Ahh this is a share. The RenderingDeviceDriver needs
 										 // the actual owner.
 		p_with_texture = src_texture->owner;
-		src_texture = texture_owner.get_or_null(src_texture->owner);
+		src_texture = data->texture_owner.get_or_null(src_texture->owner);
 		ERR_FAIL_NULL_V(src_texture, RID()); // This is a bug.
 	}
 
@@ -1452,7 +1456,7 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 			"Format override is not in the list of allowed shareable formats for original "
 			"texture.");
 		tv.format = p_view.format_override;
-		create_shared = driver->texture_can_make_shared_with_format(
+		create_shared = data->driver->texture_can_make_shared_with_format(
 			texture.driver_id, p_view.format_override, raw_reintepretation);
 	}
 
@@ -1468,14 +1472,14 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 	}
 
 	if (create_shared) {
-		texture.driver_id = driver->texture_create_shared_from_slice(
+		texture.driver_id = data->driver->texture_create_shared_from_slice(
 			src_texture->driver_id, tv, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
 	}
 	else {
 		// The regular view will use the same format as the main texture.
 		RDD::TextureView regular_view = tv;
 		regular_view.format = src_texture->format;
-		texture.driver_id = driver->texture_create_shared_from_slice(src_texture->driver_id,
+		texture.driver_id = data->driver->texture_create_shared_from_slice(src_texture->driver_id,
 			regular_view, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
 
 		// Create the independent texture for the slice.
@@ -1493,9 +1497,10 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 		_texture_check_shared_fallback(src_texture);
 		_texture_check_shared_fallback(&texture);
 
-		texture.shared_fallback->texture = driver->texture_create(slice_format, tv);
+		texture.shared_fallback->texture = data->driver->texture_create(slice_format, tv);
 		texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
-		texture_memory.add(driver->texture_get_allocation_size(texture.shared_fallback->texture));
+		data->texture_memory.add(
+			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
 
 		RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
 		tracker->texture_driver_id = texture.shared_fallback->texture;
@@ -1527,7 +1532,7 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 		_texture_make_mutable(&texture, RID());
 	}
 
-	RID id = texture_owner.make_rid(texture);
+	RID id = data->texture_owner.make_rid(texture);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -1577,7 +1582,7 @@ static _ALWAYS_INLINE_ void _copy_region_block_or_regular(const uint8_t* p_read_
 	}
 }
 
-uint32_t RenderingDevice::_texture_layer_count(Texture* p_texture) const
+uint32_t RenderingDevice::_texture_layer_count(Texture* p_texture)
 {
 	switch (p_texture->type) {
 	case TEXTURE_TYPE_CUBE:
@@ -1610,7 +1615,7 @@ uint32_t least_common_multiple(uint32_t a, uint32_t b)
 	return (a / greatest_common_denominator(a, b)) * b;
 }
 
-uint32_t RenderingDevice::_texture_alignment(Texture* p_texture) const
+uint32_t RenderingDevice::_texture_alignment(Texture* p_texture)
 {
 	uint32_t alignment = get_compressed_image_format_block_byte_size(p_texture->format);
 	if (alignment == 1) {
@@ -1618,7 +1623,7 @@ uint32_t RenderingDevice::_texture_alignment(Texture* p_texture) const
 	}
 
 	return least_common_multiple(
-		alignment, driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT));
+		alignment, data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT));
 }
 
 void RenderingDevice::_texture_check_shared_fallback(Texture* p_texture)
@@ -1637,7 +1642,7 @@ void RenderingDevice::_texture_update_shared_fallback(
 	}
 
 	if (p_texture->owner.is_valid()) {
-		Texture* owner_texture = texture_owner.get_or_null(p_texture->owner);
+		Texture* owner_texture = data->texture_owner.get_or_null(p_texture->owner);
 		ERR_FAIL_NULL(owner_texture);
 		if (p_for_writing) {
 			// Only the main texture is used for writing when using the shared fallback.
@@ -1669,15 +1674,15 @@ void RenderingDevice::_texture_free_shared_fallback(Texture* p_texture)
 		}
 
 		if (p_texture->shared_fallback->texture.id != 0) {
-			texture_memory.sub(
-				driver->texture_get_allocation_size(p_texture->shared_fallback->texture));
-			driver->texture_free(p_texture->shared_fallback->texture);
+			data->texture_memory.sub(
+				data->driver->texture_get_allocation_size(p_texture->shared_fallback->texture));
+			data->driver->texture_free(p_texture->shared_fallback->texture);
 		}
 
 		if (p_texture->shared_fallback->buffer.id != 0) {
-			buffer_memory.sub(
-				driver->buffer_get_allocation_size(p_texture->shared_fallback->buffer));
-			driver->buffer_free(p_texture->shared_fallback->buffer);
+			data->buffer_memory.sub(
+				data->driver->buffer_get_allocation_size(p_texture->shared_fallback->buffer));
+			data->driver->buffer_free(p_texture->shared_fallback->buffer);
 		}
 
 		memdelete(p_texture->shared_fallback);
@@ -1698,7 +1703,7 @@ void RenderingDevice::_texture_copy_shared(
 	bool src_made_mutable = _texture_make_mutable(p_src_texture, p_src_texture_rid);
 	bool dst_made_mutable = _texture_make_mutable(p_dst_texture, p_dst_texture_rid);
 	if (src_made_mutable || dst_made_mutable) {
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
 	if (p_dst_texture->shared_fallback->raw_reinterpretation) {
@@ -1739,7 +1744,7 @@ void RenderingDevice::_texture_copy_shared(
 
 		uint32_t buffer_size = 0;
 		uint32_t transfer_alignment =
-			driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
+			data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
 
 		for (uint32_t i = 0; i < p_dst_texture->layers; i++) {
 			for (uint32_t j = 0; j < p_dst_texture->mipmaps; j++) {
@@ -1751,7 +1756,7 @@ void RenderingDevice::_texture_copy_shared(
 				texture_subresource.mipmap = j;
 
 				RDD::TextureCopyableLayout copyable_layout;
-				driver->texture_get_copyable_layout(
+				data->driver->texture_get_copyable_layout(
 					p_dst_texture->shared_fallback->texture, texture_subresource, &copyable_layout);
 
 				uint32_t mipmap = p_dst_texture->base_mipmap + j;
@@ -1771,8 +1776,7 @@ void RenderingDevice::_texture_copy_shared(
 				update_copy.from_buffer = shared_buffer;
 				update_copy.region.buffer_offset = get_data_region.buffer_offset;
 				update_copy.region.row_pitch = get_data_region.row_pitch;
-				update_copy.region.texture_subresource.aspect = RDD
-::TEXTURE_ASPECT_COLOR;
+				update_copy.region.texture_subresource.aspect = RDD ::TEXTURE_ASPECT_COLOR;
 				update_copy.region.texture_subresource.layer = texture_subresource.layer;
 				update_copy.region.texture_subresource.mipmap = texture_subresource.mipmap;
 				update_copy.region.texture_region_size.x = get_data_region.texture_region_size.x;
@@ -1786,9 +1790,9 @@ void RenderingDevice::_texture_copy_shared(
 
 		DEV_ASSERT(buffer_size <= driver->buffer_get_allocation_size(shared_buffer));
 
-		draw_graph.add_texture_get_data(p_src_texture->driver_id, p_src_texture->draw_tracker,
+		data->draw_graph.add_texture_get_data(p_src_texture->driver_id, p_src_texture->draw_tracker,
 			shared_buffer, get_data_vector, shared_buffer_tracker);
-		draw_graph.add_texture_update(p_dst_texture->shared_fallback->texture,
+		data->draw_graph.add_texture_update(p_dst_texture->shared_fallback->texture,
 			p_dst_texture->shared_fallback->texture_tracker, update_vector, shared_buffer_tracker);
 	}
 	else {
@@ -1814,7 +1818,7 @@ void RenderingDevice::_texture_copy_shared(
 			region_vector.push_back(copy_region);
 		}
 
-		draw_graph.add_texture_copy(p_src_texture->driver_id, p_src_texture->draw_tracker,
+		data->draw_graph.add_texture_copy(p_src_texture->driver_id, p_src_texture->draw_tracker,
 			p_dst_texture->shared_fallback->texture,
 			p_dst_texture->shared_fallback->texture_tracker, region_vector);
 	}
@@ -1822,25 +1826,28 @@ void RenderingDevice::_texture_copy_shared(
 
 void RenderingDevice::_texture_create_reinterpret_buffer(Texture* p_texture)
 {
-	uint64_t row_pitch_step = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
-	uint64_t transfer_alignment = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
+	uint64_t row_pitch_step =
+		data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
+	uint64_t transfer_alignment =
+		data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
 	uint32_t pixel_bytes = get_image_format_pixel_size(p_texture->format);
 	uint32_t row_pitch = STEPIFY(p_texture->width * pixel_bytes, row_pitch_step);
 	uint64_t buffer_size =
 		STEPIFY(pixel_bytes * row_pitch * p_texture->height * p_texture->depth, transfer_alignment);
-	p_texture->shared_fallback->buffer = driver->buffer_create(buffer_size,
+	p_texture->shared_fallback->buffer = data->driver->buffer_create(buffer_size,
 		RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT,
-		RDD::MEMORY_ALLOCATION_TYPE_GPU, frames_drawn);
-	buffer_memory.add(driver->buffer_get_allocation_size(p_texture->shared_fallback->buffer));
+		RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+	data->buffer_memory.add(
+		data->driver->buffer_get_allocation_size(p_texture->shared_fallback->buffer));
 
 	RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
 	tracker->buffer_driver_id = p_texture->shared_fallback->buffer;
 	p_texture->shared_fallback->buffer_tracker = tracker;
 }
 
-uint32_t RenderingDevice::_texture_vrs_method_to_usage_bits() const
+uint32_t RenderingDevice::_texture_vrs_method_to_usage_bits()
 {
-	switch (vrs_method) {
+	switch (data->vrs_method) {
 	case VRS_METHOD_FRAGMENT_SHADING_RATE:
 		return RDD::TEXTURE_USAGE_VRS_FRAGMENT_SHADING_RATE_BIT;
 	case VRS_METHOD_FRAGMENT_DENSITY_MAP:
@@ -1853,7 +1860,7 @@ uint32_t RenderingDevice::_texture_vrs_method_to_usage_bits() const
 void RenderingDevice::_texture_ensure_shareable_format(
 	RID p_texture, const DataFormat& p_shareable_format)
 {
-	Texture* texture = texture_owner.get_or_null(p_texture);
+	Texture* texture = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(texture);
 	if (!texture->allowed_shared_formats.has(p_shareable_format)) {
 		texture->allowed_shared_formats.push_back(p_shareable_format);
@@ -1878,10 +1885,10 @@ void RenderingDevice::_texture_clear_color(RID p_texture_rid, Texture* p_texture
 
 	if (_texture_make_mutable(p_texture, p_texture_rid)) {
 		// The texture must be mutable to be used as a clear destination.
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_texture_clear_color(
+	data->draw_graph.add_texture_clear_color(
 		p_texture->driver_id, p_texture->draw_tracker, p_color, range);
 }
 
@@ -1889,7 +1896,7 @@ bool RenderingDevice::texture_is_shared(RID p_texture)
 {
 	ERR_RENDER_THREAD_GUARD_V(false);
 
-	Texture* tex = texture_owner.get_or_null(p_texture);
+	Texture* tex = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, false);
 	return tex->owner.is_valid();
 }
@@ -1898,14 +1905,14 @@ bool RenderingDevice::texture_is_valid(RID p_texture)
 {
 	ERR_RENDER_THREAD_GUARD_V(false);
 
-	return texture_owner.owns(p_texture);
+	return data->texture_owner.owns(p_texture);
 }
 
 RD::TextureFormat RenderingDevice::texture_get_format(RID p_texture)
 {
 	ERR_RENDER_THREAD_GUARD_V(TextureFormat());
 
-	Texture* tex = texture_owner.get_or_null(p_texture);
+	Texture* tex = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, TextureFormat());
 
 	TextureFormat tf;
@@ -1930,7 +1937,7 @@ Size2i RenderingDevice::texture_size(RID p_texture)
 {
 	ERR_RENDER_THREAD_GUARD_V(Size2i());
 
-	Texture* tex = texture_owner.get_or_null(p_texture);
+	Texture* tex = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Size2i());
 	return Size2i(tex->width, tex->height);
 }
@@ -1941,7 +1948,7 @@ Error RenderingDevice::texture_copy(RID p_from_texture, RID p_to_texture, const 
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	Texture* src_tex = texture_owner.get_or_null(p_from_texture);
+	Texture* src_tex = data->texture_owner.get_or_null(p_from_texture);
 	ERR_FAIL_NULL_V(src_tex, ERR_INVALID_PARAMETER);
 
 	ERR_FAIL_COND_V_MSG(src_tex->bound, ERR_INVALID_PARAMETER,
@@ -1967,7 +1974,7 @@ Error RenderingDevice::texture_copy(RID p_from_texture, RID p_to_texture, const 
 	ERR_FAIL_COND_V(p_src_mipmap >= src_tex->mipmaps, ERR_INVALID_PARAMETER);
 	ERR_FAIL_COND_V(p_src_layer >= src_tex->layers, ERR_INVALID_PARAMETER);
 
-	Texture* dst_tex = texture_owner.get_or_null(p_to_texture);
+	Texture* dst_tex = data->texture_owner.get_or_null(p_to_texture);
 	ERR_FAIL_NULL_V(dst_tex, ERR_INVALID_PARAMETER);
 
 	ERR_FAIL_COND_V_MSG(dst_tex->bound, ERR_INVALID_PARAMETER,
@@ -2019,10 +2026,10 @@ Error RenderingDevice::texture_copy(RID p_from_texture, RID p_to_texture, const 
 	bool src_made_mutable = _texture_make_mutable(src_tex, p_from_texture);
 	bool dst_made_mutable = _texture_make_mutable(dst_tex, p_to_texture);
 	if (src_made_mutable || dst_made_mutable) {
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_texture_copy(src_tex->driver_id, src_tex->draw_tracker, dst_tex->driver_id,
+	data->draw_graph.add_texture_copy(src_tex->driver_id, src_tex->draw_tracker, dst_tex->driver_id,
 		dst_tex->draw_tracker, copy_region);
 
 	return OK;
@@ -2032,7 +2039,7 @@ Error RenderingDevice::texture_resolve_multisample(RID p_from_texture, RID p_to_
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	Texture* src_tex = texture_owner.get_or_null(p_from_texture);
+	Texture* src_tex = data->texture_owner.get_or_null(p_from_texture);
 	ERR_FAIL_NULL_V(src_tex, ERR_INVALID_PARAMETER);
 
 	ERR_FAIL_COND_V_MSG(src_tex->bound, ERR_INVALID_PARAMETER,
@@ -2049,7 +2056,7 @@ Error RenderingDevice::texture_resolve_multisample(RID p_from_texture, RID p_to_
 	ERR_FAIL_COND_V_MSG(src_tex->samples == TEXTURE_SAMPLES_1, ERR_INVALID_PARAMETER,
 		"Source texture must be multisampled.");
 
-	Texture* dst_tex = texture_owner.get_or_null(p_to_texture);
+	Texture* dst_tex = data->texture_owner.get_or_null(p_to_texture);
 	ERR_FAIL_NULL_V(dst_tex, ERR_INVALID_PARAMETER);
 
 	ERR_FAIL_COND_V_MSG(dst_tex->bound, ERR_INVALID_PARAMETER,
@@ -2087,12 +2094,12 @@ Error RenderingDevice::texture_resolve_multisample(RID p_from_texture, RID p_to_
 	bool src_made_mutable = _texture_make_mutable(src_tex, p_from_texture);
 	bool dst_made_mutable = _texture_make_mutable(dst_tex, p_to_texture);
 	if (src_made_mutable || dst_made_mutable) {
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_texture_resolve(src_tex->driver_id, src_tex->draw_tracker, dst_tex->driver_id,
-		dst_tex->draw_tracker, src_tex->base_layer, src_tex->base_mipmap, dst_tex->base_layer,
-		dst_tex->base_mipmap);
+	data->draw_graph.add_texture_resolve(src_tex->driver_id, src_tex->draw_tracker,
+		dst_tex->driver_id, dst_tex->draw_tracker, src_tex->base_layer, src_tex->base_mipmap,
+		dst_tex->base_layer, dst_tex->base_mipmap);
 
 	return OK;
 }
@@ -2101,7 +2108,7 @@ void RenderingDevice::texture_set_discardable(RID p_texture, bool p_discardable)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	Texture* texture = texture_owner.get_or_null(p_texture);
+	Texture* texture = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(texture);
 
 	texture->is_discardable = p_discardable;
@@ -2120,7 +2127,7 @@ bool RenderingDevice::texture_is_discardable(RID p_texture)
 {
 	ERR_RENDER_THREAD_GUARD_V(false);
 
-	Texture* texture = texture_owner.get_or_null(p_texture);
+	Texture* texture = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, false);
 
 	return texture->is_discardable;
@@ -2131,7 +2138,7 @@ Error RenderingDevice::texture_clear(RID p_texture, const Color& p_color, uint32
 {
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
-	Texture* src_tex = texture_owner.get_or_null(p_texture);
+	Texture* src_tex = data->texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(src_tex, ERR_INVALID_PARAMETER);
 
 	ERR_FAIL_COND_V_MSG(src_tex->bound, ERR_INVALID_PARAMETER,
@@ -2156,13 +2163,13 @@ Error RenderingDevice::texture_clear(RID p_texture, const Color& p_color, uint32
 	return OK;
 }
 
-bool RenderingDevice::texture_is_format_supported_for_usage(
-	DataFormat p_format, uint32_t p_usage) const
+bool RenderingDevice::texture_is_format_supported_for_usage(DataFormat p_format, uint32_t p_usage)
 {
 	ERR_FAIL_INDEX_V(p_format, DATA_FORMAT_MAX, false);
 
 	bool cpu_readable = (p_usage & RDD::TEXTURE_USAGE_CPU_READ_BIT);
-	uint32_t supported = driver->texture_get_usages_supported_by_format(p_format, cpu_readable);
+	uint32_t supported =
+		data->driver->texture_get_usages_supported_by_format(p_format, cpu_readable);
 	bool any_unsupported = (((int64_t)supported) | ((int64_t)p_usage)) != ((int64_t)supported);
 	return !any_unsupported;
 }
@@ -2601,25 +2608,25 @@ RDD::TextureLayout RenderingDevice::_vrs_layout_from_method(VRSMethod p_method)
 void RenderingDevice::_vrs_detect_method()
 {
 	const RDD::FragmentShadingRateCapabilities& fsr_capabilities =
-		driver->get_fragment_shading_rate_capabilities();
+		data->driver->get_fragment_shading_rate_capabilities();
 	const RDD::FragmentDensityMapCapabilities& fdm_capabilities =
-		driver->get_fragment_density_map_capabilities();
+		data->driver->get_fragment_density_map_capabilities();
 	if (fsr_capabilities.attachment_supported) {
-		vrs_method = VRS_METHOD_FRAGMENT_SHADING_RATE;
+		data->vrs_method = VRS_METHOD_FRAGMENT_SHADING_RATE;
 	}
 	else if (fdm_capabilities.attachment_supported) {
-		vrs_method = VRS_METHOD_FRAGMENT_DENSITY_MAP;
+		data->vrs_method = VRS_METHOD_FRAGMENT_DENSITY_MAP;
 	}
 
-	switch (vrs_method) {
+	switch (data->vrs_method) {
 	case VRS_METHOD_FRAGMENT_SHADING_RATE:
-		vrs_format = DATA_FORMAT_R8_UINT;
-		vrs_texel_size = Vector2i(16, 16).clamp(
+		data->vrs_format = DATA_FORMAT_R8_UINT;
+		data->vrs_texel_size = Vector2i(16, 16).clamp(
 			fsr_capabilities.min_texel_size, fsr_capabilities.max_texel_size);
 		break;
 	case VRS_METHOD_FRAGMENT_DENSITY_MAP:
-		vrs_format = DATA_FORMAT_R8G8_UNORM;
-		vrs_texel_size = Vector2i(32, 32).clamp(
+		data->vrs_format = DATA_FORMAT_R8G8_UNORM;
+		data->vrs_texel_size = Vector2i(32, 32).clamp(
 			fdm_capabilities.min_texel_size, fdm_capabilities.max_texel_size);
 		break;
 	default:
@@ -2627,11 +2634,11 @@ void RenderingDevice::_vrs_detect_method()
 	}
 }
 
-RD::VRSMethod RenderingDevice::vrs_get_method() const { return vrs_method; }
+RD::VRSMethod RenderingDevice::vrs_get_method() { return data->vrs_method; }
 
-RD::DataFormat RenderingDevice::vrs_get_format() const { return vrs_format; }
+RD::DataFormat RenderingDevice::vrs_get_format() { return data->vrs_format; }
 
-Size2i RenderingDevice::vrs_get_texel_size() const { return vrs_texel_size; }
+Size2i RenderingDevice::vrs_get_texel_size() { return data->vrs_texel_size; }
 
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create(
 	const Vector<AttachmentFormat>& p_format, uint32_t p_view_count,
@@ -2660,18 +2667,18 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 	const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
 	uint32_t p_view_count, int32_t p_vrs_attachment)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferFormatKey key;
 	key.attachments = p_attachments;
 	key.passes = p_passes;
 	key.view_count = p_view_count;
-	key.vrs_method = vrs_method;
+	key.vrs_method = data->vrs_method;
 	key.vrs_attachment = p_vrs_attachment;
-	key.vrs_texel_size = vrs_texel_size;
+	key.vrs_texel_size = data->vrs_texel_size;
 
 	const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E =
-		framebuffer_format_cache.find(key);
+		data->framebuffer_format_cache.find(key);
 	if (E) {
 		// Exists, return.
 		return E->get();
@@ -2685,24 +2692,24 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 		store_ops.push_back(RDD::ATTACHMENT_STORE_OP_STORE);
 	}
 
-	RDD::RenderPassID render_pass = _render_pass_create(driver, p_attachments, p_passes, load_ops,
-		store_ops, p_view_count, vrs_method, p_vrs_attachment, vrs_texel_size,
+	RDD::RenderPassID render_pass = _render_pass_create(data->driver, p_attachments, p_passes,
+		load_ops, store_ops, p_view_count, data->vrs_method, p_vrs_attachment, data->vrs_texel_size,
 		&samples);		// Actions don't matter for this use case.
 	if (!render_pass) { // Was likely invalid.
 		return INVALID_ID;
 	}
 
 	FramebufferFormatID id =
-		FramebufferFormatID(framebuffer_format_cache.size()) |
+		FramebufferFormatID(data->framebuffer_format_cache.size()) |
 		(FramebufferFormatID(ID_TYPE_FRAMEBUFFER_FORMAT) << FramebufferFormatID(ID_BASE_SHIFT));
-	E = framebuffer_format_cache.insert(key, id);
+	E = data->framebuffer_format_cache.insert(key, id);
 
 	FramebufferFormat fb_format;
 	fb_format.E = E;
 	fb_format.render_pass = render_pass;
 	fb_format.pass_samples = samples;
 	fb_format.view_count = p_view_count;
-	framebuffer_formats[id] = fb_format;
+	data->framebuffer_formats[id] = fb_format;
 
 #if PRINT_FRAMEBUFFER_FORMAT
 	print_line("FRAMEBUFFER FORMAT:", id, "ATTACHMENTS:", p_attachments.size(),
@@ -2719,13 +2726,13 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_empty(
 	TextureSamples p_samples)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferFormatKey key;
 	key.passes.push_back(FramebufferPass());
 
 	const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E =
-		framebuffer_format_cache.find(key);
+		data->framebuffer_format_cache.find(key);
 	if (E) {
 		// Exists, return.
 		return E->get();
@@ -2735,20 +2742,20 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 	subpass.resize(1);
 
 	RDD::RenderPassID render_pass =
-		driver->render_pass_create({}, subpass, {}, 1, RDD::AttachmentReference());
+		data->driver->render_pass_create({}, subpass, {}, 1, RDD::AttachmentReference());
 	ERR_FAIL_COND_V(!render_pass, FramebufferFormatID());
 
 	FramebufferFormatID id =
-		FramebufferFormatID(framebuffer_format_cache.size()) |
+		FramebufferFormatID(data->framebuffer_format_cache.size()) |
 		(FramebufferFormatID(ID_TYPE_FRAMEBUFFER_FORMAT) << FramebufferFormatID(ID_BASE_SHIFT));
 
-	E = framebuffer_format_cache.insert(key, id);
+	E = data->framebuffer_format_cache.insert(key, id);
 
 	FramebufferFormat fb_format;
 	fb_format.E = E;
 	fb_format.render_pass = render_pass;
 	fb_format.pass_samples.push_back(p_samples);
-	framebuffer_formats[id] = fb_format;
+	data->framebuffer_formats[id] = fb_format;
 
 #if PRINT_FRAMEBUFFER_FORMAT
 	print_line("FRAMEBUFFER FORMAT:", id, "ATTACHMENTS: EMPTY");
@@ -2760,10 +2767,10 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 RenderingDevice::TextureSamples RenderingDevice::framebuffer_format_get_texture_samples(
 	FramebufferFormatID p_format, uint32_t p_pass)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<FramebufferFormatID, FramebufferFormat>::Iterator E =
-		framebuffer_formats.find(p_format);
+		data->framebuffer_formats.find(p_format);
 	ERR_FAIL_COND_V(!E, TEXTURE_SAMPLES_1);
 	ERR_FAIL_COND_V(p_pass >= uint32_t(E->value.pass_samples.size()), TEXTURE_SAMPLES_1);
 
@@ -2773,7 +2780,7 @@ RenderingDevice::TextureSamples RenderingDevice::framebuffer_format_get_texture_
 RID RenderingDevice::framebuffer_create_empty(
 	const Size2i& p_size, TextureSamples p_samples, FramebufferFormatID p_format_check)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Framebuffer framebuffer;
 	framebuffer.format_id = framebuffer_format_create_empty(p_samples);
@@ -2787,7 +2794,7 @@ RID RenderingDevice::framebuffer_create_empty(
 	framebuffer_cache->height = p_size.height;
 	framebuffer.framebuffer_cache = framebuffer_cache;
 
-	RID id = framebuffer_owner.make_rid(framebuffer);
+	RID id = data->framebuffer_owner.make_rid(framebuffer);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -2795,7 +2802,7 @@ RID RenderingDevice::framebuffer_create_empty(
 	// This relies on the fact that HashMap will not change the address of an object after it's been
 	// inserted into the container.
 	framebuffer_cache->render_pass_creation_user_data =
-		(void*)(&framebuffer_formats[framebuffer.format_id].E->key());
+		(void*)(&data->framebuffer_formats[framebuffer.format_id].E->key());
 
 	return id;
 }
@@ -2803,12 +2810,12 @@ RID RenderingDevice::framebuffer_create_empty(
 RID RenderingDevice::framebuffer_create(const Vector<RID>& p_texture_attachments,
 	FramebufferFormatID p_format_check, uint32_t p_view_count)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferPass pass;
 
 	for (int i = 0; i < p_texture_attachments.size(); i++) {
-		Texture* texture = texture_owner.get_or_null(p_texture_attachments[i]);
+		Texture* texture = data->texture_owner.get_or_null(p_texture_attachments[i]);
 
 		ERR_FAIL_COND_V_MSG(texture && texture->layers != p_view_count, RID(),
 			"Layers of our texture doesn't match view count for this framebuffer");
@@ -2847,7 +2854,7 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 	const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check,
 	uint32_t p_view_count)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Vector<AttachmentFormat> attachments;
 	LocalVector<RDD::TextureID> textures;
@@ -2858,7 +2865,7 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 	bool size_set = false;
 	for (int i = 0; i < p_texture_attachments.size(); i++) {
 		AttachmentFormat af;
-		Texture* texture = texture_owner.get_or_null(p_texture_attachments[i]);
+		Texture* texture = data->texture_owner.get_or_null(p_texture_attachments[i]);
 		if (!texture) {
 			af.usage_flags = AttachmentFormat::UNUSED_ATTACHMENT;
 			trackers.push_back(nullptr);
@@ -2927,7 +2934,7 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 	framebuffer_cache->trackers = trackers;
 	framebuffer.framebuffer_cache = framebuffer_cache;
 
-	RID id = framebuffer_owner.make_rid(framebuffer);
+	RID id = data->framebuffer_owner.make_rid(framebuffer);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -2941,16 +2948,16 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 	// This relies on the fact that HashMap will not change the address of an object after it's been
 	// inserted into the container.
 	framebuffer_cache->render_pass_creation_user_data =
-		(void*)(&framebuffer_formats[framebuffer.format_id].E->key());
+		(void*)(&data->framebuffer_formats[framebuffer.format_id].E->key());
 
 	return id;
 }
 
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_get_format(RID p_framebuffer)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	Framebuffer* framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL_V(framebuffer, INVALID_ID);
 
 	return framebuffer->format_id;
@@ -2958,27 +2965,27 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_get_format(RID
 
 Size2 RenderingDevice::framebuffer_get_size(RID p_framebuffer)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	Framebuffer* framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL_V(framebuffer, Size2(0, 0));
 
 	return framebuffer->size;
 }
 
-bool RenderingDevice::framebuffer_is_valid(RID p_framebuffer) const
+bool RenderingDevice::framebuffer_is_valid(RID p_framebuffer)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	return framebuffer_owner.owns(p_framebuffer);
+	return data->framebuffer_owner.owns(p_framebuffer);
 }
 
 void RenderingDevice::framebuffer_set_invalidation_callback(
 	RID p_framebuffer, InvalidationCallback p_callback, void* p_userdata)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	Framebuffer* framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL(framebuffer);
 
 	framebuffer->invalidated_callback = p_callback;
@@ -2987,7 +2994,7 @@ void RenderingDevice::framebuffer_set_invalidation_callback(
 
 RID RenderingDevice::sampler_create(const SamplerState& p_state)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_INDEX_V(p_state.repeat_u, SAMPLER_REPEAT_MODE_MAX, RID());
 	ERR_FAIL_INDEX_V(p_state.repeat_v, SAMPLER_REPEAT_MODE_MAX, RID());
@@ -2995,10 +3002,10 @@ RID RenderingDevice::sampler_create(const SamplerState& p_state)
 	ERR_FAIL_INDEX_V(p_state.compare_op, COMPARE_OP_MAX, RID());
 	ERR_FAIL_INDEX_V(p_state.border_color, SAMPLER_BORDER_COLOR_MAX, RID());
 
-	RDD::SamplerID sampler = driver->sampler_create(p_state);
+	RDD::SamplerID sampler = data->driver->sampler_create(p_state);
 	ERR_FAIL_COND_V(!sampler, RID());
 
-	RID id = sampler_owner.make_rid(sampler);
+	RID id = data->sampler_owner.make_rid(sampler);
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -3012,13 +3019,13 @@ RID RenderingDevice::vertex_buffer_create(
 }
 
 bool RenderingDevice::sampler_is_format_supported_for_filter(
-	DataFormat p_format, SamplerFilter p_sampler_filter) const
+	DataFormat p_format, SamplerFilter p_sampler_filter)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_INDEX_V(p_format, DATA_FORMAT_MAX, false);
 
-	return driver->sampler_is_format_supported_for_filter(p_format, p_sampler_filter);
+	return data->driver->sampler_is_format_supported_for_filter(p_format, p_sampler_filter);
 }
 
 // Internally reference counted, this ID is warranted to be unique for the same description, but
@@ -3026,12 +3033,12 @@ bool RenderingDevice::sampler_is_format_supported_for_filter(
 RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(
 	const Vector<VertexAttribute>& p_vertex_descriptions)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	VertexDescriptionKey key;
 	key.vertex_formats = p_vertex_descriptions;
 
-	VertexFormatID* idptr = vertex_format_cache.getptr(key);
+	VertexFormatID* idptr = data->vertex_format_cache.getptr(key);
 	if (idptr) {
 		return *idptr;
 	}
@@ -3076,13 +3083,14 @@ RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(
 		used_locations.insert(attr.location);
 	}
 
-	RDD::VertexFormatID driver_id = driver->vertex_format_create(vertex_descriptions, bindings);
+	RDD::VertexFormatID driver_id =
+		data->driver->vertex_format_create(vertex_descriptions, bindings);
 	ERR_FAIL_COND_V(!driver_id, INVALID_ID);
 
 	VertexFormatID id =
-		(vertex_format_cache.size() | ((int64_t)ID_TYPE_VERTEX_FORMAT << ID_BASE_SHIFT));
-	vertex_format_cache[key] = id;
-	VertexDescriptionCache& ce = vertex_formats.insert(id, VertexDescriptionCache())->value;
+		(data->vertex_format_cache.size() | ((int64_t)ID_TYPE_VERTEX_FORMAT << ID_BASE_SHIFT));
+	data->vertex_format_cache[key] = id;
+	VertexDescriptionCache& ce = data->vertex_formats.insert(id, VertexDescriptionCache())->value;
 	ce.vertex_formats = vertex_descriptions;
 	ce.bindings = std::move(bindings);
 	ce.driver_id = driver_id;
@@ -3092,10 +3100,10 @@ RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(
 RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
 	const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	ERR_FAIL_COND_V(!vertex_formats.has(p_vertex_format), RID());
-	const VertexDescriptionCache& vd = vertex_formats[p_vertex_format];
+	ERR_FAIL_COND_V(!data->vertex_formats.has(p_vertex_format), RID());
+	const VertexDescriptionCache& vd = data->vertex_formats[p_vertex_format];
 
 	VertexArray vertex_array;
 
@@ -3120,9 +3128,9 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 			vformat("Vertex attribute location (%d) is missing a buffer for binding (%d).",
 				atf.location, atf.binding));
 		RID buf = p_src_buffers[atf.binding];
-		ERR_FAIL_COND_V(!vertex_buffer_owner.owns(buf), RID());
+		ERR_FAIL_COND_V(!data->vertex_buffer_owner.owns(buf), RID());
 
-		Buffer* buffer = vertex_buffer_owner.get_or_null(buf);
+		Buffer* buffer = data->vertex_buffer_owner.get_or_null(buf);
 
 		// Validate with buffer.
 		{
@@ -3180,7 +3188,7 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 		}
 	}
 
-	RID id = vertex_array_owner.make_rid(vertex_array);
+	RID id = data->vertex_array_owner.make_rid(vertex_array);
 	for (const RID& buf : unique_buffers) {
 		_add_dependency(id, buf);
 	}
@@ -3191,11 +3199,11 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 RID RenderingDevice::index_array_create(
 	RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	ERR_FAIL_COND_V(!index_buffer_owner.owns(p_index_buffer), RID());
+	ERR_FAIL_COND_V(!data->index_buffer_owner.owns(p_index_buffer), RID());
 
-	IndexBuffer* index_buffer = index_buffer_owner.get_or_null(p_index_buffer);
+	IndexBuffer* index_buffer = data->index_buffer_owner.get_or_null(p_index_buffer);
 
 	ERR_FAIL_COND_V(p_index_count == 0, RID());
 	ERR_FAIL_COND_V(p_index_offset + p_index_count > index_buffer->index_count, RID());
@@ -3211,7 +3219,7 @@ RID RenderingDevice::index_array_create(
 	index_array.transfer_worker_index = index_buffer->transfer_worker_index;
 	index_array.transfer_worker_operation = index_buffer->transfer_worker_operation;
 
-	RID id = index_array_owner.make_rid(index_array);
+	RID id = data->index_array_owner.make_rid(index_array);
 	_add_dependency(id, p_index_buffer);
 	return id;
 }
@@ -3236,7 +3244,7 @@ static const char* SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
 String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set)
 {
 	String ret;
-	const Shader* shader = shader_owner.get_or_null(p_shader);
+	const Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, String());
 	for (int i = 0; i < shader->uniform_sets.size(); i++) {
 		if (p_set >= 0 && i != p_set) {
@@ -3268,7 +3276,8 @@ String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set)
 Vector<uint8_t> RenderingDevice::shader_compile_binary_from_spirv(
 	const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name)
 {
-	const RenderingShaderContainerFormat& container_format = driver->get_shader_container_format();
+	const RenderingShaderContainerFormat& container_format =
+		data->driver->get_shader_container_format();
 	Ref<RenderingShaderContainer> shader_container = container_format.create_container();
 	ERR_FAIL_COND_V(shader_container.is_null(), Vector<uint8_t>());
 
@@ -3282,24 +3291,24 @@ Vector<uint8_t> RenderingDevice::shader_compile_binary_from_spirv(
 
 void RenderingDevice::shader_destroy_modules(RID p_shader)
 {
-	Shader* shader = shader_owner.get_or_null(p_shader);
+	Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
-	driver->shader_destroy_modules(shader->driver_id);
+	data->driver->shader_destroy_modules(shader->driver_id);
 }
 
 RID RenderingDevice::shader_create_placeholder()
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Shader shader;
-	return shader_owner.make_rid(shader);
+	return data->shader_owner.make_rid(shader);
 }
 
 uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	const Shader* shader = shader_owner.get_or_null(p_shader);
+	const Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, 0);
 	return shader->vertex_input_mask;
 }
@@ -3313,7 +3322,7 @@ RID RenderingDevice::uniform_set_create(
 void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 {
 	for (UniformSet::SharedTexture shared : p_uniform_set->shared_textures_to_update) {
-		Texture* texture = texture_owner.get_or_null(shared.texture);
+		Texture* texture = data->texture_owner.get_or_null(shared.texture);
 		ERR_CONTINUE(texture == nullptr);
 		_texture_update_shared_fallback(shared.texture, texture, shared.writing);
 	}
@@ -3321,39 +3330,39 @@ void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 
 bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	return uniform_set_owner.owns(p_uniform_set);
+	return data->uniform_set_owner.owns(p_uniform_set);
 }
 
 void RenderingDevice::uniform_set_set_invalidation_callback(
 	RID p_uniform_set, InvalidationCallback p_callback, void* p_userdata)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	UniformSet* us = uniform_set_owner.get_or_null(p_uniform_set);
+	UniformSet* us = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(us);
 	us->invalidated_callback = p_callback;
 	us->invalidated_callback_userdata = p_userdata;
 }
 
-bool RenderingDevice::uniform_sets_have_linear_pools() const
+bool RenderingDevice::uniform_sets_have_linear_pools()
 {
-	return driver->uniform_sets_have_linear_pools();
+	return data->driver->uniform_sets_have_linear_pools();
 }
 
 bool RenderingDevice::render_pipeline_is_valid(RID p_pipeline)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	return render_pipeline_owner.owns(p_pipeline);
+	return data->render_pipeline_owner.owns(p_pipeline);
 }
 
 bool RenderingDevice::compute_pipeline_is_valid(RID p_pipeline)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	return compute_pipeline_owner.owns(p_pipeline);
+	return data->compute_pipeline_owner.owns(p_pipeline);
 }
 
 Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
@@ -3364,11 +3373,11 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 	// buffer.
 
 	uint32_t shader_group_handle_size =
-		driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_SIZE);
+		data->driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_SIZE);
 	uint32_t shader_group_handle_alignment =
-		driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_ALIGNMENT);
+		data->driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_HANDLE_ALIGNMENT);
 	uint32_t shader_group_base_alignment =
-		driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_BASE_ALIGNMENT);
+		data->driver->api_trait_get(RDD::API_TRAIT_SHADER_GROUP_BASE_ALIGNMENT);
 
 	uint32_t shader_group_stride = STEPIFY(shader_group_handle_size, shader_group_handle_alignment);
 	uint32_t raygen_shader_group_stride = STEPIFY(shader_group_stride, shader_group_base_alignment);
@@ -3380,10 +3389,10 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 	uint32_t miss_sbt_size = p_miss_shader_count * shader_group_stride;
 
 	r_sbt_buffer.size = miss_sbt_offset + miss_sbt_size;
-	r_sbt_buffer.driver_id = driver->buffer_create(r_sbt_buffer.size,
+	r_sbt_buffer.driver_id = data->driver->buffer_create(r_sbt_buffer.size,
 		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_SHADER_BINDING_TABLE_BIT |
 			RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT,
-		RDD::MEMORY_ALLOCATION_TYPE_GPU, frames_drawn);
+		RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!r_sbt_buffer.driver_id, ERR_CANT_CREATE);
 
 	thread_local LocalVector<uint8_t> sbt_data;
@@ -3394,11 +3403,12 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 	for (uint32_t i = 0; i < p_raygen_shader_count; i++) {
 		raygen_shader_group_indices[i] = i;
 	}
-	bool success = driver->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline, 0,
-		VectorView<uint32_t>(raygen_shader_group_indices), sbt_data.ptr(),
+	bool success = data->driver->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline,
+
+0, VectorView<uint32_t>(raygen_shader_group_indices), sbt_data.ptr(),
 		raygen_shader_group_stride);
 	if (unlikely(!success)) {
-		driver->buffer_free(r_sbt_buffer.driver_id);
+		data->driver->buffer_free(r_sbt_buffer.driver_id);
 		ERR_FAIL_V(ERR_CANT_CREATE);
 	}
 
@@ -3407,31 +3417,31 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 	for (uint32_t i = 0; i < p_miss_shader_count; i++) {
 		miss_shader_group_indices[i] = i;
 	}
-	success = driver->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline,
+	success = data->driver->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline,
 		p_raygen_shader_count, VectorView<uint32_t>(miss_shader_group_indices),
 		sbt_data.ptr() + miss_sbt_offset, shader_group_stride);
 	if (unlikely(!success)) {
-		driver->buffer_free(r_sbt_buffer.driver_id);
+		data->driver->buffer_free(r_sbt_buffer.driver_id);
 		ERR_FAIL_V(ERR_CANT_CREATE);
 	}
 
 	Error err = _buffer_initialize(&r_sbt_buffer, sbt_data);
 	if (unlikely(err != OK)) {
-		driver->buffer_free(r_sbt_buffer.driver_id);
+		data->driver->buffer_free(r_sbt_buffer.driver_id);
 		ERR_FAIL_V(err);
 	}
 
-	buffer_memory.add(r_sbt_buffer.size);
+	data->buffer_memory.add(r_sbt_buffer.size);
 
 	return OK;
 }
 
 bool RenderingDevice::raytracing_pipeline_is_valid(RID p_pipeline)
 {
-	return raytracing_pipeline_owner.owns(p_pipeline);
+	return data->raytracing_pipeline_owner.owns(p_pipeline);
 }
 
-uint32_t RenderingDevice::_get_swap_chain_desired_count() const
+uint32_t RenderingDevice::_get_swap_chain_desired_count()
 {
 	return MAX(2U, uint32_t(GLOBAL_GET_CACHED(
 					   uint32_t, "rendering/rendering_device/vsync/swapchain_image_count")));
@@ -3439,66 +3449,67 @@ uint32_t RenderingDevice::_get_swap_chain_desired_count() const
 
 Error RenderingDevice::screen_create(DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, ERR_CANT_CREATE, "A surface was not created for the screen.");
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-		screen_swap_chains.find(p_screen);
-	ERR_FAIL_COND_V_MSG(it != screen_swap_chains.end(), ERR_CANT_CREATE,
+		data->screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it != data->screen_swap_chains.end(), ERR_CANT_CREATE,
 		"A swap chain was already created for the screen.");
 
-	RDD::SwapChainID swap_chain = driver->swap_chain_create(surface);
+	RDD::SwapChainID swap_chain = data->driver->swap_chain_create(surface);
 	ERR_FAIL_COND_V_MSG(swap_chain.id == 0, ERR_CANT_CREATE, "Unable to create swap chain.");
 
-	screen_swap_chains[p_screen] = swap_chain;
+	data->screen_swap_chains[p_screen] = swap_chain;
 
 	return OK;
 }
 
-int RenderingDevice::screen_get_width(DisplayServerEnums::WindowID p_screen) const
+int RenderingDevice::screen_get_width(DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
-	return context->surface_get_width(surface);
+	return data->context->surface_get_width(surface);
 }
 
-int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen) const
+int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
-	return context->surface_get_height(surface);
+	return data->context->surface_get_height(surface);
 }
 
 int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen)
- const
+
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-		screen_swap_chains.find(p_screen);
-	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), ERR_CANT_CREATE,
+		data->screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it == data->screen_swap_chains.end(), ERR_CANT_CREATE,
 		"A swap chain was not created for the screen.");
 
-	return driver->swap_chain_get_pre_rotation_degrees(it->value);
+	return data->driver->swap_chain_get_pre_rotation_degrees(it->value);
 }
 
 RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_format(
-	DisplayServerEnums::WindowID p_screen) const
+	DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 
-		screen_swap_chains.find(p_screen);
-	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
+		data->screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(
+		it == data->screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
 
-	DataFormat format = driver->swap_chain_get_format(it->value);
+	DataFormat format = data->driver->swap_chain_get_format(it->value);
 	ERR_FAIL_COND_V(format == DATA_FORMAT_MAX, INVALID_ID);
 
 	AttachmentFormat attachment;
@@ -3507,33 +3518,33 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
 	attachment.usage_flags = TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 	Vector<AttachmentFormat> screen_attachment;
 	screen_attachment.push_back(attachment);
-	return const_cast<RenderingDevice*>(this)->framebuffer_format_create(screen_attachment);
+	return framebuffer_format_create(screen_attachment);
 }
 
 RenderingDevice::ColorSpace RenderingDevice::screen_get_color_space(
-	DisplayServerEnums::WindowID p_screen) const
+	DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-		screen_swap_chains.find(p_screen);
+		data->screen_swap_chains.find(p_screen);
 	ERR_FAIL_COND_V_MSG(
-		it == screen_swap_chains.end(), COLOR_SPACE_MAX, "Screen was never prepared.");
+		it == data->screen_swap_chains.end(), COLOR_SPACE_MAX, "Screen was never prepared.");
 
-	ColorSpace color_space = driver->swap_chain_get_color_space(it->value);
+	ColorSpace color_space = data->driver->swap_chain_get_color_space(it->value);
 	ERR_FAIL_COND_V_MSG(color_space == COLOR_SPACE_MAX, COLOR_SPACE_MAX, "Unknown color space.");
 	return color_space;
 }
 
-bool RenderingDevice::screen_get_hdr_output_supported(DisplayServerEnums::WindowID p_screen) const
+bool RenderingDevice::screen_get_hdr_output_supported(DisplayServerEnums::WindowID p_screen)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-		screen_swap_chains.find(p_screen);
-	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), false, "Screen was never prepared.");
+		data->screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it == data->screen_swap_chains.end(), false, "Screen was never prepared.");
 
-	return driver->swap_chain_get_hdr_output_supported(it->value);
+	return data->driver->swap_chain_get_hdr_output_supported(it->value);
 }
 
 RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
@@ -3542,43 +3553,43 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
 	ERR_RENDER_THREAD_GUARD_V(INVALID_ID);
 
 	ERR_FAIL_COND_V_MSG(
-		draw_list.active, INVALID_ID, "Only one draw list can be active at the same time.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, INVALID_ID,
+		data->draw_list.active, INVALID_ID, "Only one draw list can be active at the same time.");
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, INVALID_ID,
 		"Only one draw/compute list can be active at the same time.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, INVALID_ID,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, INVALID_ID,
 		"Only one draw/raytracing list can be active at the same time.");
 
-	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator sc_it =
-		screen_swap_chains.find(p_screen);
+		data->screen_swap_chains.find(p_screen);
 	HashMap<DisplayServerEnums::WindowID, RDD::FramebufferID>::ConstIterator fb_it =
-		screen_framebuffers.find(p_screen);
+		data->screen_framebuffers.find(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
 	ERR_FAIL_COND_V_MSG(
-		sc_it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
+		sc_it == data->screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
 	ERR_FAIL_COND_V_MSG(
-		fb_it == screen_framebuffers.end(), INVALID_ID, "Framebuffer was never prepared.");
+		fb_it == data->screen_framebuffers.end(), INVALID_ID, "Framebuffer was never prepared.");
 
-	Rect2i viewport =
-		Rect2i(0, 0, context->surface_get_width(surface), context->surface_get_height(surface));
+	Rect2i viewport = Rect2i(0, 0, data->context->surface_get_width(surface),
+		data->context->surface_get_height(surface));
 
 	_draw_list_start(viewport);
 #ifdef DEBUG_ENABLED
-	draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
+	data->draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
 #endif
-	draw_list_subpass_count = 1;
+	data->draw_list_subpass_count = 1;
 
 	RDD::RenderPassClearValue clear_value;
 	clear_value.color = p_clear_color;
 
-	RDD::RenderPassID render_pass = driver->swap_chain_get_render_pass(sc_it->value);
-	draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport,
+	RDD::RenderPassID render_pass = data->driver->swap_chain_get_render_pass(sc_it->value);
+	data->draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport,
 		RDG::ATTACHMENT_OPERATION_CLEAR, clear_value,
 		RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, RDD::BreadcrumbMarker::BLIT_PASS,
-		split_swapchain_into_its_own_cmd_buffer);
+		data->split_swapchain_into_its_own_cmd_buffer);
 
-	draw_graph.add_draw_list_set_viewport(viewport);
-	draw_graph.add_draw_list_set_scissor(viewport);
+	data->draw_graph.add_draw_list_set_viewport(viewport);
+	data->draw_graph.add_draw_list_set_scissor(viewport);
 
 	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
 }
@@ -3587,61 +3598,62 @@ void RenderingDevice::draw_list_set_blend_constants(DrawListID p_list, const Col
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-	draw_graph.add_draw_list_set_blend_constants(p_color);
+	data->draw_graph.add_draw_list_set_blend_constants(p_color);
 }
 
 void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-	const RenderPipeline* pipeline = render_pipeline_owner.get_or_null(p_render_pipeline);
+	const RenderPipeline* pipeline = data->render_pipeline_owner.get_or_null(p_render_pipeline);
 	ERR_FAIL_NULL(pipeline);
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND(pipeline->validation.framebuffer_format != draw_list_framebuffer_format &&
-				  pipeline->validation.render_pass != draw_list_current_subpass);
+	ERR_FAIL_COND(pipeline->validation.framebuffer_format != data->draw_list_framebuffer_format &&
+				  pipeline->validation.render_pass != data->draw_list_current_subpass);
 #endif
 
-	if (p_render_pipeline == draw_list.state.pipeline) {
+	if (p_render_pipeline == data->draw_list.state.pipeline) {
 		return; // Redundant state, return.
 	}
 
-	draw_list.state.pipeline = p_render_pipeline;
+	data->draw_list.state.pipeline = p_render_pipeline;
 
-	draw_graph.add_draw_list_bind_pipeline(pipeline->driver_id, pipeline->stage_bits);
+	data->draw_graph.add_draw_list_bind_pipeline(pipeline->driver_id, pipeline->stage_bits);
 
-	if (draw_list.state.pipeline_shader != pipeline->shader) {
+	if (data->draw_list.state.pipeline_shader != pipeline->shader) {
 		// Shader changed, so descriptor sets may become incompatible.
 
 		uint32_t pcount = pipeline->set_formats.size(); // Formats count in this pipeline.
-		draw_list.state.set_count = MAX(draw_list.state.set_count, pcount);
+		data->draw_list.state.set_count = MAX(data->draw_list.state.set_count, pcount);
 		const uint32_t* pformats = pipeline->set_formats.ptr(); // Pipeline set formats.
 
 		uint32_t first_invalid_set = UINT32_MAX; // All valid by default.
-		if (pipeline->push_constant_size != draw_list.state.pipeline_push_constant_size) {
+		if (pipeline->push_constant_size != data->draw_list.state.pipeline_push_constant_size) {
 			// All sets must be invalidated as the pipeline layout is not compatible if the push
 			// constant range is different.
-			draw_list.state.pipeline_push_constant_size = pipeline->push_constant_size;
+			data->draw_list.state.pipeline_push_constant_size = pipeline->push_constant_size;
 			first_invalid_set = 0;
 		}
 		else {
-			switch (driver->api_trait_get(RDD::API_TRAIT_SHADER_CHANGE_INVALIDATION)) {
+			switch (data->driver->api_trait_get(RDD::API_TRAIT_SHADER_CHANGE_INVALIDATION)) {
 			case RDD::SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS: {
 				first_invalid_set = 0;
 			} break;
 			case RDD::SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE: {
 				for (uint32_t i = 0; i < pcount; i++) {
-					if (draw_list.state.sets[i].pipeline_expected_format != pformats[i]) {
+					if (data->draw_list.state.sets[i].pipeline_expected_format != pformats[i]) {
 						first_invalid_set = i;
 						break;
 					}
 				}
 			} break;
 			case RDD::SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH: {
-				if (draw_list.state.pipeline_shader_layout_hash != pipeline->shader_layout_hash) {
+				if (data->draw_list.state.pipeline_shader_layout_hash !=
+					pipeline->shader_layout_hash) {
 					first_invalid_set = 0;
 				}
 			} break;
@@ -3650,36 +3662,38 @@ void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_re
 
 		if (pipeline->push_constant_size) {
 #ifdef DEBUG_ENABLED
-			draw_list.validation.pipeline_push_constant_supplied = false;
+			data->draw_list.validation.pipeline_push_constant_supplied = false;
 #endif
 		}
 
 		for (uint32_t i = 0; i < pcount; i++) {
-			draw_list.state.sets[i].bound = draw_list.state.sets[i].bound && i < first_invalid_set;
-			draw_list.state.sets[i].pipeline_expected_format = pformats[i];
+			data->draw_list.state.sets[i].bound =
+				data->draw_list.state.sets[i].bound && i < first_invalid_set;
+			data->draw_list.state.sets[i].pipeline_expected_format = pformats[i];
 		}
 
-		for (uint32_t i = pcount; i < draw_list.state.set_count; i++) {
+		for (uint32_t i = pcount; i < data->draw_list.state.set_count; i++) {
 			// Unbind the ones above (not used) if exist.
-			draw_list.state.sets[i].bound = false;
+			data->draw_list.state.sets[i].bound = false;
 		}
 
-		draw_list.state.set_count = pcount; // Update set count.
+		data->draw_list.state.set_count = pcount; // Update set count.
 
-		draw_list.state.pipeline_shader = pipeline->shader;
-		draw_list.state.pipeline_shader_driver_id = pipeline->shader_driver_id;
-		draw_list.state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
+		data->draw_list.state.pipeline_shader = pipeline->shader;
+		data->draw_list.state.pipeline_shader_driver_id = pipeline->shader_driver_id;
+		data->draw_list.state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
 	}
 
 #ifdef DEBUG_ENABLED
 	// Update render pass pipeline info.
-	draw_list.validation.pipeline_active = true;
-	draw_list.validation.pipeline_dynamic_state = pipeline->validation.dynamic_state;
-	draw_list.validation.pipeline_vertex_format = pipeline->validation.vertex_format;
-	draw_list.validation.pipeline_uses_restart_indices = pipeline->validation.uses_restart_indices;
-	draw_list.validation.pipeline_primitive_divisor = pipeline->validation.primitive_divisor;
-	draw_list.validation.pipeline_primitive_minimum = pipeline->validation.primitive_minimum;
-	draw_list.validation.pipeline_push_constant_size = pipeline->push_constant_size;
+	data->draw_list.validation.pipeline_active = true;
+	data->draw_list.validation.pipeline_dynamic_state = pipeline->validation.dynamic_state;
+	data->draw_list.validation.pipeline_vertex_format = pipeline->validation.vertex_format;
+	data->draw_list.validation.pipeline_uses_restart_indices =
+		pipeline->validation.uses_restart_indices;
+	data->draw_list.validation.pipeline_primitive_divisor = pipeline->validation.primitive_divisor;
+	data->draw_list.validation.pipeline_primitive_minimum = pipeline->validation.primitive_minimum;
+	data->draw_list.validation.pipeline_push_constant_size = pipeline->push_constant_size;
 #endif
 }
 
@@ -3689,35 +3703,35 @@ void RenderingDevice::draw_list_bind_uniform_set(
 	ERR_RENDER_THREAD_GUARD();
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(
-		p_index >= driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) || p_index >= MAX_UNIFORM_SETS,
+	ERR_FAIL_COND_MSG(p_index >= data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) ||
+						  p_index >= MAX_UNIFORM_SETS,
 		"Attempting to bind a descriptor set (" + itos(p_index) +
 			") greater than what the hardware supports (" +
-			itos(driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
+			itos(data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
 #endif
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-	const UniformSet* uniform_set = uniform_set_owner.get_or_null(p_uniform_set);
+	const UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
-	if (p_index > draw_list.state.set_count) {
-		draw_list.state.set_count = p_index;
+	if (p_index > data->draw_list.state.set_count) {
+		data->draw_list.state.set_count = p_index;
 	}
 
-	draw_list.state.sets[p_index].uniform_set_driver_id =
-		uniform_set->driver_id;					 // Update set pointer.
-	draw_list.state.sets[p_index].bound = false; // Needs rebind.
-	draw_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	draw_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->draw_list.state.sets[p_index].uniform_set_driver_id =
+		uniform_set->driver_id;						   // Update set pointer.
+	data->draw_list.state.sets[p_index].bound = false; // Needs rebind.
+	data->draw_list.state.sets[p_index].uniform_set_format = uniform_set->format;
+	data->draw_list.state.sets[p_index].uniform_set = p_uniform_set;
 
 #ifdef DEBUG_ENABLED
 	{ // Validate that textures bound are not attached as framebuffer bindings.
 		uint32_t attachable_count = uniform_set->attachable_textures.size();
 		const UniformSet::AttachableTexture* attachable_ptr =
 			uniform_set->attachable_textures.ptr();
-		uint32_t bound_count = draw_list_bound_textures.size();
-		const RID* bound_ptr = draw_list_bound_textures.ptr();
+		uint32_t bound_count = data->draw_list_bound_textures.size();
+		const RID* bound_ptr = data->draw_list_bound_textures.ptr();
 		for (uint32_t i = 0; i < attachable_count; i++) {
 			for (uint32_t j = 0; j < bound_count; j++) {
 				ERR_FAIL_COND_MSG(attachable_ptr[i].texture == bound_ptr[j],
@@ -3735,9 +3749,9 @@ void RenderingDevice::draw_list_set_line_width(DrawListID p_list, float p_width)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-	draw_graph.add_draw_list_set_line_width(p_width);
+	data->draw_graph.add_draw_list_set_line_width(p_width);
 }
 
 void RenderingDevice::draw_list_set_push_constant(
@@ -3745,19 +3759,20 @@ void RenderingDevice::draw_list_set_push_constant(
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != draw_list.validation.pipeline_push_constant_size,
-		"This render pipeline requires (" + itos(draw_list.validation.pipeline_push_constant_size) +
+	ERR_FAIL_COND_MSG(p_data_size != data->draw_list.validation.pipeline_push_constant_size,
+		"This render pipeline requires (" +
+			itos(data->draw_list.validation.pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
-	draw_graph.add_draw_list_set_push_constant(
-		draw_list.state.pipeline_shader_driver_id, p_data, p_data_size);
+	data->draw_graph.add_draw_list_set_push_constant(
+		data->draw_list.state.pipeline_shader_driver_id, p_data, p_data_size);
 
 #ifdef DEBUG_ENABLED
-	draw_list.validation.pipeline_push_constant_supplied = true;
+	data->draw_list.validation.pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -3766,30 +3781,30 @@ void RenderingDevice::draw_list_draw(
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(!draw_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->draw_list.validation.pipeline_active,
 		"No render pipeline was set before attempting to draw.");
-	if (draw_list.validation.pipeline_vertex_format != INVALID_ID) {
+	if (data->draw_list.validation.pipeline_vertex_format != INVALID_ID) {
 		// Pipeline uses vertices, validate format.
-		ERR_FAIL_COND_MSG(draw_list.validation.vertex_format == INVALID_ID,
+		ERR_FAIL_COND_MSG(data->draw_list.validation.vertex_format == INVALID_ID,
 			"No vertex array was bound, and render pipeline expects vertices.");
 		// Make sure format is right.
-		ERR_FAIL_COND_MSG(
-			draw_list.validation.pipeline_vertex_format != draw_list.validation.vertex_format,
+		ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_vertex_format !=
+							  data->draw_list.validation.vertex_format,
 			"The vertex format used to create the pipeline does not match the vertex format "
 			"bound.");
 		// Make sure number of instances is valid.
-		ERR_FAIL_COND_MSG(p_instances > draw_list.validation.vertex_max_instances_allowed,
+		ERR_FAIL_COND_MSG(p_instances > data->draw_list.validation.vertex_max_instances_allowed,
 			"Number of instances requested (" + itos(p_instances) +
 				" is larger than the maximum number supported by the bound vertex array (" +
-				itos(draw_list.validation.vertex_max_instances_allowed) + ").");
+				itos(data->draw_list.validation.vertex_max_instances_allowed) + ").");
 	}
 
-	if (draw_list.validation.pipeline_push_constant_size > 0) {
+	if (data->draw_list.validation.pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!draw_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->draw_list.validation.pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
@@ -3797,21 +3812,22 @@ void RenderingDevice::draw_list_draw(
 #endif
 
 #ifdef DEBUG_ENABLED
-	for (uint32_t i = 0; i < draw_list.state.set_count; i++) {
-		if (draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->draw_list.state.set_count; i++) {
+		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (draw_list.state.sets[i].pipeline_expected_format !=
-			draw_list.state.sets[i].uniform_set_format) {
-			if (draw_list.state.sets[i].uniform_set_format == 0) {
+		if (data->draw_list.state.sets[i].pipeline_expected_format !=
+			data->draw_list.state.sets[i].uniform_set_format) {
+			if (data->draw_list.state.sets[i].uniform_set_format == 0) {
 				ERR_FAIL_MSG(vformat("Uniforms were never supplied for set (%d) at the time of "
 									 "drawing, which are required by the pipeline.",
 					i));
 			}
-			else if (uniform_set_owner.owns(draw_list.state.sets[i].uniform_set)) {
-				UniformSet* us = uniform_set_owner.get_or_null(draw_list.state.sets[i].uniform_set);
+			else if (data->uniform_set_owner.owns(data->draw_list.state.sets[i].uniform_set)) {
+				UniformSet* us =
+					data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
 				const String us_info =
 					us ? vformat(
 							 "(%d):\n%s\n", i, _shader_uniform_debug(us->shader_id, us->shader_set))
@@ -3819,92 +3835,94 @@ void RenderingDevice::draw_list_draw(
 				ERR_FAIL_MSG(vformat(
 					"Uniforms supplied for set %sare not the same format as required by the "
 					"pipeline shader. Pipeline shader requires the following bindings:\n%s",
-					us_info, _shader_uniform_debug(draw_list.state.pipeline_shader)));
+					us_info, _shader_uniform_debug(data->draw_list.state.pipeline_shader)));
 			}
 			else {
 				ERR_FAIL_MSG(vformat("Uniforms supplied for set (%d, which was just freed) are not "
 									 "the same format as required by the pipeline shader. Pipeline "
 									 "shader requires the following bindings:\n%s",
-					i, _shader_uniform_debug(draw_list.state.pipeline_shader)));
+					i, _shader_uniform_debug(data->draw_list.state.pipeline_shader)));
 			}
 		}
 	}
 #endif
 	thread_local LocalVector<RDD::UniformSetID> valid_descriptor_ids;
 	valid_descriptor_ids.clear();
-	valid_descriptor_ids.resize(draw_list.state.set_count);
+	valid_descriptor_ids.resize(data->draw_list.state.set_count);
 	uint32_t valid_set_count = 0;
 	uint32_t first_set_index = 0;
 	uint32_t last_set_index = 0;
 	bool found_first_set = false;
 
-	for (uint32_t i = 0; i < draw_list.state.set_count; i++) {
-		if (draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->draw_list.state.set_count; i++) {
+		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!draw_list.state.sets[i].bound && !found_first_set) {
+		if (!data->draw_list.state.sets[i].bound && !found_first_set) {
 			first_set_index = i;
 			found_first_set = true;
 		}
 		// Prepare descriptor sets if the API doesn't use pipeline barriers.
-		if (!driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
-			draw_graph.add_draw_list_uniform_set_prepare_for_use(
-				draw_list.state.pipeline_shader_driver_id,
-				draw_list.state.sets[i].uniform_set_driver_id, i);
+		if (!data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+			data->draw_graph.add_draw_list_uniform_set_prepare_for_use(
+				data->draw_list.state.pipeline_shader_driver_id,
+				data->draw_list.state.sets[i].uniform_set_driver_id, i);
 		}
 	}
 
 	// Bind descriptor sets.
-	for (uint32_t i = first_set_index; i < draw_list.state.set_count; i++) {
-		if (draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = first_set_index; i < data->draw_list.state.set_count; i++) {
+		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!draw_list.state.sets[i].bound) {
+		if (!data->draw_list.state.sets[i].bound) {
 			// Batch contiguous descriptor sets in a single call.
-			if (descriptor_set_batching) {
+			if (data->descriptor_set_batching) {
 				// All good, see if this requires re-binding.
 				if (i - last_set_index > 1) {
 					// If the descriptor sets are not contiguous, bind the previous ones and start a
 					// new batch.
-					draw_graph.add_draw_list_bind_uniform_sets(
-						draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+					data->draw_graph.add_draw_list_bind_uniform_sets(
+						data->draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
 						first_set_index, valid_set_count);
 
 					first_set_index = i;
 					valid_set_count = 1;
-					valid_descriptor_ids[0] = draw_list.state.sets[i].uniform_set_driver_id;
+					valid_descriptor_ids[0] = data->draw_list.state.sets[i].uniform_set_driver_id;
 				}
 				else {
 					// Otherwise, keep storing in the current batch.
 					valid_descriptor_ids[valid_set_count] =
-						draw_list.state.sets[i].uniform_set_driver_id;
+						data->draw_list.state.sets[i].uniform_set_driver_id;
 					valid_set_count++;
 				}
 
 				UniformSet* uniform_set =
-					uniform_set_owner.get_or_null(draw_list.state.sets[i].uniform_set);
+					data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
 				ERR_FAIL_NULL(uniform_set);
 				_uniform_set_update_shared(uniform_set);
 
-				draw_graph.add_draw_list_usages(
+				data->draw_graph.add_draw_list_usages(
 					uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
-				draw_list.state.sets[i].bound = true;
+				data->draw_list.state.sets[i].bound = true;
 
 				last_set_index = i;
 			}
 			else {
-				draw_graph.add_draw_list_bind_uniform_set(draw_list.state.pipeline_shader_driver_id,
-					draw_list.state.sets[i].uniform_set_driver_id, i);
+				data->draw_graph.add_draw_list_bind_uniform_set(
+					data->draw_list.state.pipeline_shader_driver_id,
+					data->draw_list.state.sets[i].uniform_set_driver_id, i);
 			}
 		}
 	}
 
 	// Bind the remaining batch.
-	if (descriptor_set_batching && valid_set_count > 0) {
-		draw_graph.add_draw_list_bind_uniform_sets(draw_list.state.pipeline_shader_driver_id,
-			valid_descriptor_ids, first_set_index, valid_set_count);
+	if (data->descriptor_set_batching && valid_set_count > 0) {
+		data->draw_graph.add_draw_list_bind_uniform_sets(
+			data->draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids, first_set_index,
+			valid_set_count);
 	}
 
 	if (p_use_indices) {
@@ -3912,29 +3930,29 @@ void RenderingDevice::draw_list_draw(
 		ERR_FAIL_COND_MSG(
 			p_procedural_vertices > 0, "Procedural vertices can't be used together with indices.");
 
-		ERR_FAIL_COND_MSG(!draw_list.validation.index_array_count,
+		ERR_FAIL_COND_MSG(!data->draw_list.validation.index_array_count,
 			"Draw command requested indices, but no index buffer was set.");
 
-		ERR_FAIL_COND_MSG(draw_list.validation.pipeline_uses_restart_indices !=
-							  draw_list.validation.index_buffer_uses_restart_indices,
+		ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_uses_restart_indices !=
+							  data->draw_list.validation.index_buffer_uses_restart_indices,
 			"The usage of restart indices in index buffer does not match the render primitive in "
 			"the pipeline.");
 #endif
-		uint32_t to_draw = draw_list.validation.index_array_count;
+		uint32_t to_draw = data->draw_list.validation.index_array_count;
 
 #ifdef DEBUG_ENABLED
-		ERR_FAIL_COND_MSG(to_draw < draw_list.validation.pipeline_primitive_minimum,
+		ERR_FAIL_COND_MSG(to_draw < data->draw_list.validation.pipeline_primitive_minimum,
 			"Too few indices (" + itos(to_draw) +
 				") for the render primitive set in the render pipeline (" +
-				itos(draw_list.validation.pipeline_primitive_minimum) + ").");
+				itos(data->draw_list.validation.pipeline_primitive_minimum) + ").");
 
-		ERR_FAIL_COND_MSG((to_draw % draw_list.validation.pipeline_primitive_divisor) != 0,
+		ERR_FAIL_COND_MSG((to_draw % data->draw_list.validation.pipeline_primitive_divisor) != 0,
 			"Index amount (" + itos(to_draw) +
 				") must be a multiple of the amount of indices required by the render primitive (" +
-				itos(draw_list.validation.pipeline_primitive_divisor) + ").");
+				itos(data->draw_list.validation.pipeline_primitive_divisor) + ").");
 #endif
 
-		draw_graph.add_draw_list_draw_indexed(to_draw, p_instances, 0);
+		data->draw_graph.add_draw_list_draw_indexed(to_draw, p_instances, 0);
 	}
 	else {
 		uint32_t to_draw;
@@ -3944,90 +3962,91 @@ void RenderingDevice::draw_list_draw(
 		}
 		else {
 #ifdef DEBUG_ENABLED
-			ERR_FAIL_COND_MSG(draw_list.validation.pipeline_vertex_format == INVALID_ID,
+			ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_vertex_format == INVALID_ID,
 				"Draw command lacks indices, but pipeline format does not use vertices.");
 #endif
-			to_draw = draw_list.validation.vertex_array_size;
+			to_draw = data->draw_list.validation.vertex_array_size;
 		}
 
 #ifdef DEBUG_ENABLED
-		ERR_FAIL_COND_MSG(to_draw < draw_list.validation.pipeline_primitive_minimum,
+		ERR_FAIL_COND_MSG(to_draw < data->draw_list.validation.pipeline_primitive_minimum,
 			"Too few vertices (" + itos(to_draw) +
 				") for the render primitive set in the render pipeline (" +
-				itos(draw_list.validation.pipeline_primitive_minimum) + ").");
+				itos(data->draw_list.validation.pipeline_primitive_minimum) + ").");
 
-		ERR_FAIL_COND_MSG((to_draw % draw_list.validation.pipeline_primitive_divisor) != 0,
+		ERR_FAIL_COND_MSG((to_draw % data->draw_list.validation.pipeline_primitive_divisor) != 0,
 			"Vertex amount (" + itos(to_draw) +
 				") must be a multiple of the amount of vertices required by the render primitive "
 				"(" +
-				itos(draw_list.validation.pipeline_primitive_divisor) + ").");
+				itos(data->draw_list.validation.pipeline_primitive_divisor) + ").");
 #endif
 
-		draw_graph.add_draw_list_draw(to_draw, p_instances);
+		data->draw_graph.add_draw_list_draw(to_draw, p_instances);
 	}
 
-	draw_list.state.draw_count++;
+	data->draw_list.state.draw_count++;
 }
 
 void RenderingDevice::draw_list_set_viewport(DrawListID p_list, const Rect2& p_rect)
 {
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
 	if (p_rect.get_area() == 0) {
 		return;
 	}
 
-	draw_list.viewport = p_rect;
-	draw_graph.add_draw_list_set_viewport(p_rect);
+	data->draw_list.viewport = p_rect;
+	data->draw_graph.add_draw_list_set_viewport(p_rect);
 }
 
 void RenderingDevice::draw_list_enable_scissor(DrawListID p_list, const Rect2& p_rect)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
 	Rect2i rect = p_rect;
-	rect.position += draw_list.viewport.position;
+	rect.position += data->draw_list.viewport.position;
 
-	rect = draw_list.viewport.intersection(rect);
+	rect = data->draw_list.viewport.intersection(rect);
 
 	if (rect.get_area() == 0) {
 		return;
 	}
 
-	draw_graph.add_draw_list_set_scissor(rect);
+	data->draw_graph.add_draw_list_set_scissor(rect);
 }
 
 void RenderingDevice::draw_list_disable_scissor(DrawListID p_list)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-	draw_graph.add_draw_list_set_scissor(draw_list.viewport);
+	data->draw_graph.add_draw_list_set_scissor(data->draw_list.viewport);
 }
 
 uint32_t RenderingDevice::draw_list_get_current_pass()
 {
 	ERR_RENDER_THREAD_GUARD_V(0);
 
-	return draw_list_current_subpass;
+	return data->draw_list_current_subpass;
 }
 
 RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
 {
 	ERR_RENDER_THREAD_GUARD_V(INVALID_ID);
 
-	ERR_FAIL_COND_V(!draw_list.active, INVALID_FORMAT_ID);
-	ERR_FAIL_COND_V(draw_list_current_subpass >= draw_list_subpass_count - 1, INVALID_FORMAT_ID);
+	ERR_FAIL_COND_V(!data->draw_list.active, INVALID_FORMAT_ID);
+	ERR_FAIL_COND_V(
+		data->draw_list_current_subpass >= data->draw_list_subpass_count - 1, INVALID_FORMAT_ID);
 
-	draw_list_current_subpass++;
+	data->draw_list_current_subpass++;
 
 	Rect2i viewport;
 	_draw_list_end(&viewport);
 
-	draw_graph.add_draw_list_next_subpass(RDD::COMMAND_BUFFER_TYPE_PRIMARY);
+	data->draw_graph.add_draw_list_next_subpass(RDD::COMMAND_BUFFER_TYPE_PRIMARY);
 
 	_draw_list_start(viewport);
 
@@ -4036,31 +4055,31 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
 
 void RenderingDevice::_draw_list_start(const Rect2i& p_viewport)
 {
-	draw_list.viewport = p_viewport;
-	draw_list.active = true;
+	data->draw_list.viewport = p_viewport;
+	data->draw_list.active = true;
 }
 
 void RenderingDevice::_draw_list_end(Rect2i* r_last_viewport)
 {
 	if (r_last_viewport) {
-		*r_last_viewport = draw_list.viewport;
+		*r_last_viewport = data->draw_list.viewport;
 	}
 
-	draw_list = DrawList();
+	data->draw_list = DrawList();
 }
 
 void RenderingDevice::draw_list_end()
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND_MSG(!draw_list.active, "Immediate draw list is already inactive.");
+	ERR_FAIL_COND_MSG(!data->draw_list.active, "Immediate draw list is already inactive.");
 
-	draw_graph.add_draw_list_end();
+	data->draw_graph.add_draw_list_end();
 
 	_draw_list_end();
 
-	for (uint32_t i = 0; i < draw_list_bound_textures.size(); i++) {
-		Texture* texture = texture_owner.get_or_null(draw_list_bound_textures[i]);
+	for (uint32_t i = 0; i < data->draw_list_bound_textures.size(); i++) {
+		Texture* texture = data->texture_owner.get_or_null(data->draw_list_bound_textures[i]);
 		ERR_CONTINUE(!texture); // Wtf.
 		if (texture->usage_flags & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
 			texture->bound = false;
@@ -4073,7 +4092,7 @@ void RenderingDevice::draw_list_end()
 		}
 	}
 
-	draw_list_bound_textures.clear();
+	data->draw_list_bound_textures.clear();
 }
 
 RenderingDevice::RaytracingListID RenderingDevice::raytracing_list_begin()
@@ -4083,16 +4102,16 @@ RenderingDevice::RaytracingListID RenderingDevice::raytracing_list_begin()
 	ERR_FAIL_COND_V_MSG(!has_feature(SUPPORTS_RAYTRACING_PIPELINE), INVALID_ID,
 		"The current rendering device has no raytracing pipeline support.");
 
-	ERR_FAIL_COND_V_MSG(draw_list.active, INVALID_ID,
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, INVALID_ID,
 		"Only one draw/raytracing list can be active at the same time.");
-	ERR_FAIL_COND_V_MSG(compute_list.active, INVALID_ID,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, INVALID_ID,
 		"Only one compute/raytracing list can be active at the same time.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, INVALID_ID,
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, INVALID_ID,
 		"Only one raytracing list can be active at the same time.");
 
-	raytracing_list.active = true;
+	data->raytracing_list.active = true;
 
-	draw_graph.add_raytracing_list_begin();
+	data->draw_graph.add_raytracing_list_begin();
 
 	return ID_TYPE_RAYTRACING_LIST;
 }
@@ -4103,24 +4122,24 @@ void RenderingDevice::raytracing_list_bind_uniform_set(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_RAYTRACING_LIST);
-	ERR_FAIL_COND(!raytracing_list.active);
+	ERR_FAIL_COND(!data->raytracing_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(
-		p_index >= driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) || p_index >= MAX_UNIFORM_SETS,
+	ERR_FAIL_COND_MSG(p_index >= data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) ||
+						  p_index >= MAX_UNIFORM_SETS,
 		"Attempting to bind a descriptor set (" + itos(p_index) +
 			") greater than what the hardware supports (" +
-			itos(driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
+			itos(data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
 #endif
 
-	UniformSet* uniform_set = uniform_set_owner.get_or_null(p_uniform_set);
+	UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
 #ifdef DEBUG_ENABLED
 	// Validate the acceleration structures.
 	for (RID acceleration_structure_id : uniform_set->acceleration_structures) {
 		AccelerationStructure* acceleration_structure =
-			acceleration_structure_owner.get_or_null(acceleration_structure_id);
+			data->acceleration_structure_owner.get_or_null(acceleration_structure_id);
 		ERR_FAIL_NULL(acceleration_structure);
 		ERR_FAIL_COND_MSG(acceleration_structure->invalidated,
 			"Acceleration structure either has not been built yet, or has been invalidated by an "
@@ -4128,15 +4147,15 @@ void RenderingDevice::raytracing_list_bind_uniform_set(
 	}
 #endif
 
-	if (p_index > raytracing_list.state.set_count) {
-		raytracing_list.state.set_count = p_index;
+	if (p_index > data->raytracing_list.state.set_count) {
+		data->raytracing_list.state.set_count = p_index;
 	}
 
-	raytracing_list.state.sets[p_index].uniform_set_driver_id =
-		uniform_set->driver_id;						   // Update set pointer.
-	raytracing_list.state.sets[p_index].bound = false; // Needs rebind.
-	raytracing_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	raytracing_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->raytracing_list.state.sets[p_index].uniform_set_driver_id =
+		uniform_set->driver_id;								 // Update set pointer.
+	data->raytracing_list.state.sets[p_index].bound = false; // Needs rebind.
+	data->raytracing_list.state.sets[p_index].uniform_set_format = uniform_set->format;
+	data->raytracing_list.state.sets[p_index].uniform_set = p_uniform_set;
 }
 
 void RenderingDevice::raytracing_list_set_push_constant(
@@ -4145,27 +4164,27 @@ void RenderingDevice::raytracing_list_set_push_constant(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_RAYTRACING_LIST);
-	ERR_FAIL_COND(!raytracing_list.active);
+	ERR_FAIL_COND(!data->raytracing_list.active);
 
 	ERR_FAIL_COND_MSG(p_data_size > MAX_PUSH_CONSTANT_SIZE,
 		"Push constants can't be bigger than 128 bytes to maintain compatibility.");
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != raytracing_list.validation.pipeline_push_constant_size,
+	ERR_FAIL_COND_MSG(p_data_size != data->raytracing_list.validation.pipeline_push_constant_size,
 		"This raytracing pipeline requires (" +
-			itos(raytracing_list.validation.pipeline_push_constant_size) +
+			itos(data->raytracing_list.validation.pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
-	draw_graph.add_raytracing_list_set_push_constant(
-		raytracing_list.state.layout_defining_shader_driver_id, p_data, p_data_size);
+	data->draw_graph.add_raytracing_list_set_push_constant(
+		data->raytracing_list.state.layout_defining_shader_driver_id, p_data, p_data_size);
 
 	// Store it in the state in case we need to restart the raytracing list.
-	memcpy(raytracing_list.state.push_constant_data, p_data, p_data_size);
-	raytracing_list.state.push_constant_size = p_data_size;
+	memcpy(data->raytracing_list.state.push_constant_data, p_data, p_data_size);
+	data->raytracing_list.state.push_constant_size = p_data_size;
 
 #ifdef DEBUG_ENABLED
-	raytracing_list.validation.pipeline_push_constant_supplied = true;
+	data->raytracing_list.validation.pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -4173,25 +4192,25 @@ void RenderingDevice::raytracing_list_end()
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!raytracing_list.active);
+	ERR_FAIL_COND(!data->raytracing_list.active);
 
-	draw_graph.add_raytracing_list_end();
+	data->draw_graph.add_raytracing_list_end();
 
-	raytracing_list = RaytracingList();
+	data->raytracing_list = RaytracingList();
 }
 
 RenderingDevice::ComputeListID RenderingDevice::compute_list_begin()
 {
 	ERR_RENDER_THREAD_GUARD_V(INVALID_ID);
 
-	ERR_FAIL_COND_V_MSG(
-		compute_list.active, INVALID_ID, "Only one compute list can be active at the same time.");
-	ERR_FAIL_COND_V_MSG(raytracing_list.active, INVALID_ID,
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, INVALID_ID,
+		"Only one compute list can be active at the same time.");
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, INVALID_ID,
 		"Only one raytracing list can be active at the same time.");
 
-	compute_list.active = true;
+	data->compute_list.active = true;
 
-	draw_graph.add_compute_list_begin();
+	data->draw_graph.add_compute_list_begin();
 
 	return ID_TYPE_COMPUTE_LIST;
 }
@@ -4202,28 +4221,28 @@ void RenderingDevice::compute_list_bind_uniform_set(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);
-	ERR_FAIL_COND(!compute_list.active);
+	ERR_FAIL_COND(!data->compute_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(
-		p_index >= driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) || p_index >= MAX_UNIFORM_SETS,
+	ERR_FAIL_COND_MSG(p_index >= data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) ||
+						  p_index >= MAX_UNIFORM_SETS,
 		"Attempting to bind a descriptor set (" + itos(p_index) +
 			") greater than what the hardware supports (" +
-			itos(driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
+			itos(data->driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
 #endif
 
-	UniformSet* uniform_set = uniform_set_owner.get_or_null(p_uniform_set);
+	UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
-	if (p_index > compute_list.state.set_count) {
-		compute_list.state.set_count = p_index;
+	if (p_index > data->compute_list.state.set_count) {
+		data->compute_list.state.set_count = p_index;
 	}
 
-	compute_list.state.sets[p_index].uniform_set_driver_id =
-		uniform_set->driver_id;						// Update set pointer.
-	compute_list.state.sets[p_index].bound = false; // Needs rebind.
-	compute_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	compute_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->compute_list.state.sets[p_index].uniform_set_driver_id =
+		uniform_set->driver_id;							  // Update set pointer.
+	data->compute_list.state.sets[p_index].bound = false; // Needs rebind.
+	data->compute_list.state.sets[p_index].uniform_set_format = uniform_set->format;
+	data->compute_list.state.sets[p_index].uniform_set = p_uniform_set;
 
 #if 0
 	{ // Validate that textures bound are not attached as framebuffer bindings.
@@ -4247,26 +4266,26 @@ void RenderingDevice::compute_list_set_push_constant(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);
-	ERR_FAIL_COND(!compute_list.active);
+	ERR_FAIL_COND(!data->compute_list.active);
 	ERR_FAIL_COND_MSG(p_data_size > MAX_PUSH_CONSTANT_SIZE,
 		"Push constants can't be bigger than 128 bytes to maintain compatibility.");
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != compute_list.validation.pipeline_push_constant_size,
+	ERR_FAIL_COND_MSG(p_data_size != data->compute_list.validation.pipeline_push_constant_size,
 		"This compute pipeline requires (" +
-			itos(compute_list.validation.pipeline_push_constant_size) +
+			itos(data->compute_list.validation.pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
-	draw_graph.add_compute_list_set_push_constant(
-		compute_list.state.pipeline_shader_driver_id, p_data, p_data_size);
+	data->draw_graph.add_compute_list_set_push_constant(
+		data->compute_list.state.pipeline_shader_driver_id, p_data, p_data_size);
 
 	// Store it in the state in case we need to restart the compute list.
-	memcpy(compute_list.state.push_constant_data, p_data, p_data_size);
-	compute_list.state.push_constant_size = p_data_size;
+	memcpy(data->compute_list.state.push_constant_data, p_data, p_data_size);
+	data->compute_list.state.push_constant_size = p_data_size;
 
 #ifdef DEBUG_ENABLED
-	compute_list.validation.pipeline_push_constant_supplied = true;
+	data->compute_list.validation.pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -4276,7 +4295,7 @@ void RenderingDevice::compute_list_dispatch(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);
-	ERR_FAIL_COND(!compute_list.active);
+	ERR_FAIL_COND(!data->compute_list.active);
 
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_MSG(
@@ -4285,28 +4304,28 @@ void RenderingDevice::compute_list_dispatch(
 		p_z_groups == 0, "Dispatch amount of Z compute groups (" + itos(p_z_groups) + ") is zero.");
 	ERR_FAIL_COND_MSG(
 		p_y_groups == 0, "Dispatch amount of Y compute groups (" + itos(p_y_groups) + ") is zero.");
-	ERR_FAIL_COND_MSG(p_x_groups > driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X),
+	ERR_FAIL_COND_MSG(p_x_groups > data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X),
 		"Dispatch amount of X compute groups (" + itos(p_x_groups) +
 			") is larger than device limit (" +
-			itos(driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X)) + ")");
-	ERR_FAIL_COND_MSG(p_y_groups > driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y),
+			itos(data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X)) + ")");
+	ERR_FAIL_COND_MSG(p_y_groups > data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y),
 		"Dispatch amount of Y compute groups (" + itos(p_y_groups) +
 			") is larger than device limit (" +
-			itos(driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y)) + ")");
-	ERR_FAIL_COND_MSG(p_z_groups > driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z),
+			itos(data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y)) + ")");
+	ERR_FAIL_COND_MSG(p_z_groups > data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z),
 		"Dispatch amount of Z compute groups (" + itos(p_z_groups) +
 			") is larger than device limit (" +
-			itos(driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z)) + ")");
+			itos(data->driver->limit_get(LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z)) + ")");
 #endif
 
 #ifdef DEBUG_ENABLED
 
-	ERR_FAIL_COND_MSG(!compute_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_active,
 		"No compute pipeline was set before attempting to draw.");
 
-	if (compute_list.validation.pipeline_push_constant_size > 0) {
+	if (data->compute_list.validation.pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!compute_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
@@ -4314,115 +4333,117 @@ void RenderingDevice::compute_list_dispatch(
 #endif
 
 #ifdef DEBUG_ENABLED
-	for (uint32_t i = 0; i < compute_list.state.set_count; i++) {
-		if (compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->compute_list.state.set_count; i++) {
+		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (compute_list.state.sets[i].pipeline_expected_format !=
-			compute_list.state.sets[i].uniform_set_format) {
-			if (compute_list.state.sets[i].uniform_set_format == 0) {
+		if (data->compute_list.state.sets[i].pipeline_expected_format !=
+			data->compute_list.state.sets[i].uniform_set_format) {
+			if (data->compute_list.state.sets[i].uniform_set_format == 0) {
 				ERR_FAIL_MSG("Uniforms were never supplied for set (" + itos(i) +
 							 ") at the time of drawing, which are required by the pipeline.");
 			}
-			else if (uniform_set_owner.owns(compute_list.state.sets[i].uniform_set)) {
-				UniformSet* us =
-					uniform_set_owner.get_or_null(compute_list.state.sets[i].uniform_set);
+			else if (data->uniform_set_owner.owns(data->compute_list.state.sets[i].uniform_set)) {
+				UniformSet* us = data->uniform_set_owner.get_or_null(
+					data->compute_list.state.sets[i].uniform_set);
 				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) + "):\n" +
 							 _shader_uniform_debug(us->shader_id, us->shader_set) +
 							 "\nare not the same format as required by the pipeline shader. "
 							 "Pipeline shader requires the following bindings:\n" +
-							 _shader_uniform_debug(compute_list.state.pipeline_shader));
+							 _shader_uniform_debug(data->compute_list.state.pipeline_shader));
 			}
 			else {
 				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) +
 							 ", which was just freed) are not the same format as required by the "
 							 "pipeline shader. Pipeline shader requires the following bindings:\n" +
-							 _shader_uniform_debug(compute_list.state.pipeline_shader));
+							 _shader_uniform_debug(data->compute_list.state.pipeline_shader));
 			}
 		}
 	}
 #endif
 	thread_local LocalVector<RDD::UniformSetID> valid_descriptor_ids;
 	valid_descriptor_ids.clear();
-	valid_descriptor_ids.resize(compute_list.state.set_count);
+	valid_descriptor_ids.resize(data->compute_list.state.set_count);
 
 	uint32_t valid_set_count = 0;
 	uint32_t first_set_index = 0;
 	uint32_t last_set_index = 0;
 	bool found_first_set = false;
 
-	for (uint32_t i = 0; i < compute_list.state.set_count; i++) {
-		if (compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->compute_list.state.set_count; i++) {
+		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (!compute_list.state.sets[i].bound && !found_first_set) {
+		if (!data->compute_list.state.sets[i].bound && !found_first_set) {
 			first_set_index = i;
 			found_first_set = true;
 		}
 		// Prepare descriptor sets if the API doesn't use pipeline barriers.
-		if (!driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
-			draw_graph.add_compute_list_uniform_set_prepare_for_use(
-				compute_list.state.pipeline_shader_driver_id,
-				compute_list.state.sets[i].uniform_set_driver_id, i);
+		if (!data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+			data->draw_graph.add_compute_list_uniform_set_prepare_for_use(
+				data->compute_list.state.pipeline_shader_driver_id,
+				data->compute_list.state.sets[i].uniform_set_driver_id, i);
 		}
 	}
 
 	// Bind descriptor sets.
-	for (uint32_t i = first_set_index; i < compute_list.state.set_count; i++) {
-		if (compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = first_set_index; i < data->compute_list.state.set_count; i++) {
+		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!compute_list.state.sets[i].bound) {
+		if (!data->compute_list.state.sets[i].bound) {
 			// Descriptor set batching
-			if (descriptor_set_batching) {
+			if (data->descriptor_set_batching) {
 				// All good, see if this requires re-binding.
 				if (i - last_set_index > 1) {
 					// If the descriptor sets are not contiguous, bind the previous ones and start a
 					// new batch.
-					draw_graph.add_compute_list_bind_uniform_sets(
-						compute_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+					data->draw_graph.add_compute_list_bind_uniform_sets(
+						data->compute_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
 						first_set_index, valid_set_count);
 
 					first_set_index = i;
 					valid_set_count = 1;
-					valid_descriptor_ids[0] = compute_list.state.sets[i].uniform_set_driver_id;
+					valid_descriptor_ids[0] =
+						data->compute_list.state.sets[i].uniform_set_driver_id;
 				}
 				else {
 					// Otherwise, keep storing in the current batch.
 					valid_descriptor_ids[valid_set_count] =
-						compute_list.state.sets[i].uniform_set_driver_id;
+						data->compute_list.state.sets[i].uniform_set_driver_id;
 					valid_set_count++;
 				}
 
 				last_set_index = i;
 			}
 			else {
-				draw_graph.add_compute_list_bind_uniform_set(
-					compute_list.state.pipeline_shader_driver_id,
-					compute_list.state.sets[i].uniform_set_driver_id, i);
+				data->draw_graph.add_compute_list_bind_uniform_set(
+					data->compute_list.state.pipeline_shader_driver_id,
+					data->compute_list.state.sets[i].uniform_set_driver_id, i);
 			}
 			UniformSet* uniform_set =
-				uniform_set_owner.get_or_null(compute_list.state.sets[i].uniform_set);
+				data->uniform_set_owner.get_or_null(data->compute_list.state.sets[i].uniform_set);
 			_uniform_set_update_shared(uniform_set);
 
-			draw_graph.add_compute_list_usages(
+			data->draw_graph.add_compute_list_usages(
 				uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
-			compute_list.state.sets[i].bound = true;
+			data->compute_list.state.sets[i].bound = true;
 		}
 	}
 
 	// Bind the remaining batch.
 	if (valid_set_count > 0) {
-		draw_graph.add_compute_list_bind_uniform_sets(compute_list.state.pipeline_shader_driver_id,
-			valid_descriptor_ids, first_set_index, valid_set_count);
+		data->draw_graph.add_compute_list_bind_uniform_sets(
+			data->compute_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+			first_set_index, valid_set_count);
 	}
-	draw_graph.add_compute_list_dispatch(p_x_groups, p_y_groups, p_z_groups);
-	compute_list.state.dispatch_count++;
+	data->draw_graph.add_compute_list_dispatch(p_x_groups, p_y_groups, p_z_groups);
+	data->compute_list.state.dispatch_count++;
 }
 
 void RenderingDevice::compute_list_dispatch_threads(
@@ -4431,7 +4452,7 @@ void RenderingDevice::compute_list_dispatch_threads(
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);
-	ERR_FAIL_COND(!compute_list.active);
+	ERR_FAIL_COND(!data->compute_list.active);
 
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_MSG(p_x_threads == 0,
@@ -4444,12 +4465,12 @@ void RenderingDevice::compute_list_dispatch_threads(
 
 #ifdef DEBUG_ENABLED
 
-	ERR_FAIL_COND_MSG(!compute_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_active,
 		"No compute pipeline was set before attempting to draw.");
 
-	if (compute_list.validation.pipeline_push_constant_size > 0) {
+	if (data->compute_list.validation.pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!compute_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
@@ -4457,20 +4478,20 @@ void RenderingDevice::compute_list_dispatch_threads(
 #endif
 
 	compute_list_dispatch(p_list,
-		Math::division_round_up(p_x_threads, compute_list.state.local_group_size[0]),
-		Math::division_round_up(p_y_threads, compute_list.state.local_group_size[1]),
-		Math::division_round_up(p_z_threads, compute_list.state.local_group_size[2]));
+		Math::division_round_up(p_x_threads, data->compute_list.state.local_group_size[0]),
+		Math::division_round_up(p_y_threads, data->compute_list.state.local_group_size[1]),
+		Math::division_round_up(p_z_threads, data->compute_list.state.local_group_size[2]));
 }
 
 void RenderingDevice::compute_list_end()
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!compute_list.active);
+	ERR_FAIL_COND(!data->compute_list.active);
 
-	draw_graph.add_compute_list_end();
+	data->draw_graph.add_compute_list_end();
 
-	compute_list = ComputeList();
+	data->compute_list = ComputeList();
 }
 
 static uint32_t _get_alignment_offset(uint32_t p_offset, uint32_t p_required_align)
@@ -4495,19 +4516,20 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 	bool transfer_worker_busy = true;
 	bool transfer_worker_full = true;
 	{
-		MutexLock pool_lock(transfer_worker_pool_mutex);
+		MutexLock pool_lock(data->transfer_worker_pool_mutex);
 
 		// If no workers are available and we've reached the max pool capacity, wait until one of
 		// them becomes available.
-		bool transfer_worker_pool_full = transfer_worker_pool_size >= transfer_worker_pool_max_size;
-		while (transfer_worker_pool_available_list.is_empty() && transfer_worker_pool_full) {
-			transfer_worker_pool_condition.wait(pool_lock);
+		bool transfer_worker_pool_full =
+			data->transfer_worker_pool_size >= data->transfer_worker_pool_max_size;
+		while (data->transfer_worker_pool_available_list.is_empty() && transfer_worker_pool_full) {
+			data->transfer_worker_pool_condition.wait(pool_lock);
 		}
 
 		// Look at all available workers first.
-		for (uint32_t i = 0; i < transfer_worker_pool_available_list.size(); i++) {
-			uint32_t worker_index = transfer_worker_pool_available_list[i];
-			TransferWorker* candidate_worker = transfer_worker_pool[worker_index];
+		for (uint32_t i = 0; i < data->transfer_worker_pool_available_list.size(); i++) {
+			uint32_t worker_index = data->transfer_worker_pool_available_list[i];
+			TransferWorker* candidate_worker = data->transfer_worker_pool[worker_index];
 			candidate_worker->thread_mutex.lock();
 
 			// Figure out if the worker can fit the transfer.
@@ -4565,25 +4587,25 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 
 		if (transfer_worker != nullptr) {
 			// A worker was picked, remove it from the available list.
-			transfer_worker_pool_available_list.remove_at(available_list_index);
+			data->transfer_worker_pool_available_list.remove_at(available_list_index);
 		}
 		else {
 			DEV_ASSERT(!transfer_worker_pool_full &&
 					   "A transfer worker should never be created when the pool is full.");
 
 			// No existing worker was picked, we create a new one.
-			uint32_t transfer_worker_index = transfer_worker_pool_size;
-			++transfer_worker_pool_size;
+			uint32_t transfer_worker_index = data->transfer_worker_pool_size;
+			++data->transfer_worker_pool_size;
 
 			transfer_worker = memnew(TransferWorker);
-			transfer_worker->command_fence = driver->fence_create();
-			transfer_worker->command_pool = driver->command_pool_create(
-				transfer_queue_family, RDD::COMMAND_BUFFER_TYPE_PRIMARY);
+			transfer_worker->command_fence = data->driver->fence_create();
+			transfer_worker->command_pool = data->driver->command_pool_create(
+				data->transfer_queue_family, RDD::COMMAND_BUFFER_TYPE_PRIMARY);
 			transfer_worker->command_buffer =
-				driver->command_buffer_create(transfer_worker->command_pool);
+				data->driver->command_buffer_create(transfer_worker->command_pool);
 			transfer_worker->index = transfer_worker_index;
-			transfer_worker_pool[transfer_worker_index] = transfer_worker;
-			transfer_worker_operation_used_by_draw[transfer_worker_index] = 0;
+			data->transfer_worker_pool[transfer_worker_index] = transfer_worker;
+			data->transfer_worker_operation_used_by_draw[transfer_worker_index] = 0;
 			transfer_worker->thread_mutex.lock();
 		}
 	}
@@ -4620,13 +4642,14 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 			MAX(transfer_worker->max_transfer_size, expected_buffer_size_minimum);
 		if (expected_buffer_size > transfer_worker->staging_buffer_size_allocated) {
 			if (transfer_worker->staging_buffer.id != 0) {
-				driver->buffer_free(transfer_worker->staging_buffer);
+				data->driver->buffer_free(transfer_worker->staging_buffer);
 			}
 
 			uint32_t new_staging_buffer_size = Math::next_power_of_2(expected_buffer_size);
 			transfer_worker->staging_buffer_size_allocated = new_staging_buffer_size;
-			transfer_worker->staging_buffer = driver->buffer_create(new_staging_buffer_size,
-				RDD::BUFFER_USAGE_TRANSFER_FROM_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU, frames_drawn);
+			transfer_worker->staging_buffer = data->driver->buffer_create(new_staging_buffer_size,
+				RDD::BUFFER_USAGE_TRANSFER_FROM_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU,
+				data->frames_drawn);
 		}
 	}
 
@@ -4639,7 +4662,7 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 
 	if (!transfer_worker->recording) {
 		// Begin the command buffer if the worker wasn't recording yet.
-		driver->command_buffer_begin(transfer_worker->command_buffer);
+		data->driver->command_buffer_begin(transfer_worker->command_buffer);
 		transfer_worker->recording = true;
 	}
 
@@ -4650,28 +4673,29 @@ void RenderingDevice::_release_transfer_worker(TransferWorker* p_transfer_worker
 {
 	p_transfer_worker->thread_mutex.unlock();
 
-	transfer_worker_pool_mutex.lock();
-	transfer_worker_pool_available_list.push_back(p_transfer_worker->index);
-	transfer_worker_pool_mutex.unlock();
-	transfer_worker_pool_condition.notify_one();
+	data->transfer_worker_pool_mutex.lock();
+	data->transfer_worker_pool_available_list.push_back(p_transfer_worker->index);
+	data->transfer_worker_pool_mutex.unlock();
+	data->transfer_worker_pool_condition.notify_one();
 }
 
 void RenderingDevice::_end_transfer_worker(TransferWorker* p_transfer_worker)
 {
-	driver->command_buffer_end(p_transfer_worker->command_buffer);
+	data->driver->command_buffer_end(p_transfer_worker->command_buffer);
 	p_transfer_worker->recording = false;
 }
 
 void RenderingDevice::_submit_transfer_worker(
 	TransferWorker* p_transfer_worker, VectorView<RDD::SemaphoreID> p_signal_semaphores)
 {
-	driver->command_queue_execute_and_present(transfer_queue, {}, p_transfer_worker->command_buffer,
-		p_signal_semaphores, p_transfer_worker->command_fence, {});
+	data->driver->command_queue_execute_and_present(data->transfer_queue, {},
+		p_transfer_worker->command_buffer, p_signal_semaphores, p_transfer_worker->command_fence,
+		{});
 
 	for (uint32_t i = 0; i < p_signal_semaphores.size(); i++) {
 		// Indicate the frame should wait on these semaphores before executing the main command
 		// buffer.
-		frames[frame].semaphores_to_wait_on.push_back(p_signal_semaphores[i]);
+		data->frames[data->frame].semaphores_to_wait_on.push_back(p_signal_semaphores[i]);
 	}
 
 	p_transfer_worker->submitted = true;
@@ -4684,8 +4708,8 @@ void RenderingDevice::_submit_transfer_worker(
 
 void RenderingDevice::_wait_for_transfer_worker(TransferWorker* p_transfer_worker)
 {
-	driver->fence_wait(p_transfer_worker->command_fence);
-	driver->command_pool_reset(p_transfer_worker->command_pool);
+	data->driver->fence_wait(p_transfer_worker->command_fence);
+	data->driver->command_pool_reset(p_transfer_worker->command_pool);
 	p_transfer_worker->staging_buffer_size_in_use = 0;
 	p_transfer_worker->submitted = false;
 
@@ -4701,9 +4725,10 @@ void RenderingDevice::_flush_barriers_for_transfer_worker(TransferWorker* p_tran
 {
 	// Caller must have already acquired the mutex for the worker.
 	if (!p_transfer_worker->texture_barriers.is_empty()) {
-		MutexLock transfer_worker_lock(transfer_worker_pool_texture_barriers_mutex);
+		MutexLock transfer_worker_lock(data->transfer_worker_pool_texture_barriers_mutex);
 		for (uint32_t i = 0; i < p_transfer_worker->texture_barriers.size(); i++) {
-			transfer_worker_pool_texture_barriers.push_back(p_transfer_worker->texture_barriers[i]);
+			data->transfer_worker_pool_texture_barriers.push_back(
+				p_transfer_worker->texture_barriers[i]);
 		}
 
 		p_transfer_worker->texture_barriers.clear();
@@ -4713,9 +4738,9 @@ void RenderingDevice::_flush_barriers_for_transfer_worker(TransferWorker* p_tran
 void RenderingDevice::_check_transfer_worker_operation(
 	uint32_t p_transfer_worker_index, uint64_t p_transfer_worker_operation)
 {
-	TransferWorker* transfer_worker = transfer_worker_pool[p_transfer_worker_index];
+	TransferWorker* transfer_worker = data->transfer_worker_pool[p_transfer_worker_index];
 	MutexLock lock(transfer_worker->operations_mutex);
-	uint64_t& dst_operation = transfer_worker_operation_used_by_draw[transfer_worker->index];
+	uint64_t& dst_operation = data->transfer_worker_operation_used_by_draw[transfer_worker->index];
 	dst_operation = MAX(dst_operation, p_transfer_worker_operation);
 }
 
@@ -4761,13 +4786,13 @@ void RenderingDevice::_check_transfer_worker_index_array(IndexArray* p_index_arr
 
 void RenderingDevice::_submit_transfer_workers(RDD::CommandBufferID p_draw_command_buffer)
 {
-	MutexLock transfer_worker_lock(transfer_worker_pool_mutex);
-	for (uint32_t i = 0; i < transfer_worker_pool_size; i++) {
-		TransferWorker* worker = transfer_worker_pool[i];
+	MutexLock transfer_worker_lock(data->transfer_worker_pool_mutex);
+	for (uint32_t i = 0; i < data->transfer_worker_pool_size; i++) {
+		TransferWorker* worker = data->transfer_worker_pool[i];
 		if (p_draw_command_buffer) {
 			MutexLock lock(worker->operations_mutex);
 			if (worker->operations_processed >=
-				transfer_worker_operation_used_by_draw[worker->index]) {
+				data->transfer_worker_operation_used_by_draw[worker->index]) {
 				// The operation used by the draw has already been processed, we don't need to wait
 				// on the worker.
 				continue;
@@ -4778,7 +4803,7 @@ void RenderingDevice::_submit_transfer_workers(RDD::CommandBufferID p_draw_comma
 			MutexLock lock(worker->thread_mutex);
 			if (worker->recording) {
 				VectorView<RDD::SemaphoreID> semaphores =
-					p_draw_command_buffer ? frames[frame].transfer_worker_semaphores[i]
+					p_draw_command_buffer ? data->frames[data->frame].transfer_worker_semaphores[i]
 										  : VectorView<RDD::SemaphoreID>();
 				_end_transfer_worker(worker);
 				_submit_transfer_worker(worker, semaphores);
@@ -4793,20 +4818,20 @@ void RenderingDevice::_submit_transfer_workers(RDD::CommandBufferID p_draw_comma
 
 void RenderingDevice::_submit_transfer_barriers(RDD::CommandBufferID p_draw_command_buffer)
 {
-	MutexLock transfer_worker_lock(transfer_worker_pool_texture_barriers_mutex);
-	if (!transfer_worker_pool_texture_barriers.is_empty()) {
-		driver->command_pipeline_barrier(p_draw_command_buffer, RDD::PIPELINE_STAGE_COPY_BIT,
-			RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT, {}, {}, transfer_worker_pool_texture_barriers,
-			{});
-		transfer_worker_pool_texture_barriers.clear();
+	MutexLock transfer_worker_lock(data->transfer_worker_pool_texture_barriers_mutex);
+	if (!data->transfer_worker_pool_texture_barriers.is_empty()) {
+		data->driver->command_pipeline_barrier(p_draw_command_buffer, RDD::PIPELINE_STAGE_COPY_BIT,
+			RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT, {}, {},
+			data->transfer_worker_pool_texture_barriers, {});
+		data->transfer_worker_pool_texture_barriers.clear();
 	}
 }
 
 void RenderingDevice::_wait_for_transfer_workers()
 {
-	MutexLock transfer_worker_lock(transfer_worker_pool_mutex);
-	for (uint32_t i = 0; i < transfer_worker_pool_size; i++) {
-		TransferWorker* worker = transfer_worker_pool[i];
+	MutexLock transfer_worker_lock(data->transfer_worker_pool_mutex);
+	for (uint32_t i = 0; i < data->transfer_worker_pool_size; i++) {
+		TransferWorker* worker = data->transfer_worker_pool[i];
 		MutexLock lock(worker->thread_mutex);
 		if (worker->submitted) {
 			_wait_for_transfer_worker(worker);
@@ -4816,21 +4841,17 @@ void RenderingDevice::_wait_for_transfer_workers()
 
 void RenderingDevice::_free_transfer_workers()
 {
-	MutexLock transfer_worker_lock(transfer_worker_pool_mutex);
-	for (uint32_t i = 0; i < transfer_worker_pool_size; i++) {
-		TransferWorker* worker = transfer_worker_pool[i];
-		driver->fence_free(worker->command_fence);
-		driver->buffer_free(worker->staging_buffer);
-		driver->command_pool_free(worker->command_pool);
+	MutexLock transfer_worker_lock(data->transfer_worker_pool_mutex);
+	for (uint32_t i = 0; i < data->transfer_worker_pool_size; i++) {
+		TransferWorker* worker = data->transfer_worker_pool[i];
+		data->driver->fence_free(worker->command_fence);
+		data->driver->buffer_free(worker->staging_buffer);
+		data->driver->command_pool_free(worker->command_pool);
 		memdelete(worker);
 	}
 
-	transfer_worker_pool_size = 0;
+	data->transfer_worker_pool_size = 0;
 }
-
-/***********************/
-/**** COMMAND GRAPH ****/
-/***********************/
 
 bool RenderingDevice::_texture_make_mutable(Texture* p_texture, RID p_texture_id)
 {
@@ -4841,7 +4862,7 @@ bool RenderingDevice::_texture_make_mutable(Texture* p_texture, RID p_texture_id
 	else {
 		if (p_texture->owner.is_valid()) {
 			// Texture has an owner.
-			Texture* owner_texture = texture_owner.get_or_null(p_texture->owner);
+			Texture* owner_texture = data->texture_owner.get_or_null(p_texture->owner);
 			ERR_FAIL_NULL_V(owner_texture, false);
 
 			if (owner_texture->draw_tracker != nullptr) {
@@ -4998,25 +5019,25 @@ bool RenderingDevice::_acceleration_structure_make_mutable(
 bool RenderingDevice::_dependency_make_mutable(
 	RID p_id, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker)
 {
-	if (texture_owner.owns(p_id)) {
-		Texture* texture = texture_owner.get_or_null(p_id);
+	if (data->texture_owner.owns(p_id)) {
+		Texture* texture = data->texture_owner.get_or_null(p_id);
 		return _texture_make_mutable(texture, p_id);
 	}
-	else if (vertex_array_owner.owns(p_id)) {
-		VertexArray* vertex_array = vertex_array_owner.get_or_null(p_id);
+	else if (data->vertex_array_owner.owns(p_id)) {
+		VertexArray* vertex_array = data->vertex_array_owner.get_or_null(p_id);
 		return _vertex_array_make_mutable(vertex_array, p_resource_id, p_resource_tracker);
 	}
-	else if (index_array_owner.owns(p_id)) {
-		IndexArray* index_array = index_array_owner.get_or_null(p_id);
+	else if (data->index_array_owner.owns(p_id)) {
+		IndexArray* index_array = data->index_array_owner.get_or_null(p_id);
 		return _index_array_make_mutable(index_array, p_resource_tracker);
 	}
-	else if (uniform_set_owner.owns(p_id)) {
-		UniformSet* uniform_set = uniform_set_owner.get_or_null(p_id);
+	else if (data->uniform_set_owner.owns(p_id)) {
+		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_id);
 		return _uniform_set_make_mutable(uniform_set, p_resource_id, p_resource_tracker);
 	}
-	else if (acceleration_structure_owner.owns(p_id)) {
+	else if (data->acceleration_structure_owner.owns(p_id)) {
 		AccelerationStructure* acceleration_structure =
-			acceleration_structure_owner.get_or_null(p_id);
+			data->acceleration_structure_owner.get_or_null(p_id);
 		return _acceleration_structure_make_mutable(
 			acceleration_structure, p_resource_id, p_resource_tracker);
 	}
@@ -5030,7 +5051,7 @@ bool RenderingDevice::_dependencies_make_mutable_recursive(
 	RID p_id, RDG::ResourceTracker* p_resource_tracker)
 {
 	bool made_mutable = false;
-	HashMap<RID, HashSet<RID>>::Iterator E = dependency_map.find(p_id);
+	HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
 	if (E) {
 		for (RID rid : E->value) {
 			made_mutable = _dependency_make_mutable(rid, p_id, p_resource_tracker) || made_mutable;
@@ -5042,7 +5063,7 @@ bool RenderingDevice::_dependencies_make_mutable_recursive(
 
 bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker* p_resource_tracker)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 	return _dependencies_make_mutable_recursive(p_id, p_resource_tracker);
 }
 
@@ -5067,8 +5088,8 @@ void RenderingDevice::_free_internal(RID p_id)
 
 	// Push everything so it's disposed of next time this frame index is processed (means, it's safe
 	// to do it).
-	if (texture_owner.owns(p_id)) {
-		Texture* texture = texture_owner.get_or_null(p_id);
+	if (data->texture_owner.owns(p_id)) {
+		Texture* texture = data->texture_owner.get_or_null(p_id);
 		_check_transfer_worker_texture(texture);
 
 		RDG::ResourceTracker* draw_tracker = texture->draw_tracker;
@@ -5079,7 +5100,7 @@ void RenderingDevice::_free_internal(RID p_id)
 
 				if (texture->owner.is_valid() && (texture->slice_type != TEXTURE_SLICE_MAX)) {
 					// If this was a texture slice, erase the tracker from the map.
-					Texture* owner_texture = texture_owner.get_or_null(texture->owner);
+					Texture* owner_texture = data->texture_owner.get_or_null(texture->owner);
 					if (owner_texture != nullptr && owner_texture->slice_trackers != nullptr) {
 						owner_texture->slice_trackers->erase(texture->slice_rect);
 
@@ -5092,99 +5113,100 @@ void RenderingDevice::_free_internal(RID p_id)
 			}
 		}
 
-		frames[frame].textures_to_dispose_of.push_back(*texture);
-		texture_owner.free(p_id);
+		data->frames[data->frame].textures_to_dispose_of.push_back(*texture);
+		data->texture_owner.free(p_id);
 	}
-	else if (framebuffer_owner.owns(p_id)) {
-		Framebuffer* framebuffer = framebuffer_owner.get_or_null(p_id);
-		frames[frame].framebuffers_to_dispose_of.push_back(*framebuffer);
+	else if (data->framebuffer_owner.owns(p_id)) {
+		Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_id);
+		data->frames[data->frame].framebuffers_to_dispose_of.push_back(*framebuffer);
 
 		if (framebuffer->invalidated_callback != nullptr) {
 			framebuffer->invalidated_callback(framebuffer->invalidated_callback_userdata);
 		}
 
-		framebuffer_owner.free(p_id);
+		data->framebuffer_owner.free(p_id);
 	}
-	else if (sampler_owner.owns(p_id)) {
-		RDD::SamplerID sampler_driver_id = *sampler_owner.get_or_null(p_id);
-		frames[frame].samplers_to_dispose_of.push_back(sampler_driver_id);
-		sampler_owner.free(p_id);
+	else if (data->sampler_owner.owns(p_id)) {
+		RDD::SamplerID sampler_driver_id = *data->sampler_owner.get_or_null(p_id);
+		data->frames[data->frame].samplers_to_dispose_of.push_back(sampler_driver_id);
+		data->sampler_owner.free(p_id);
 	}
-	else if (vertex_buffer_owner.owns(p_id)) {
-		Buffer* vertex_buffer = vertex_buffer_owner.get_or_null(p_id);
+	else if (data->vertex_buffer_owner.owns(p_id)) {
+		Buffer* vertex_buffer = data->vertex_buffer_owner.get_or_null(p_id);
 		_check_transfer_worker_buffer(vertex_buffer);
 
 		RDG::resource_tracker_free(vertex_buffer->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*vertex_buffer);
-		vertex_buffer_owner.free(p_id);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*vertex_buffer);
+		data->vertex_buffer_owner.free(p_id);
 	}
-	else if (vertex_array_owner.owns(p_id)) {
-		vertex_array_owner.free(p_id);
+	else if (data->vertex_array_owner.owns(p_id)) {
+		data->vertex_array_owner.free(p_id);
 	}
-	else if (index_buffer_owner.owns(p_id)) {
-		IndexBuffer* index_buffer = index_buffer_owner.get_or_null(p_id);
+	else if (data->index_buffer_owner.owns(p_id)) {
+		IndexBuffer* index_buffer = data->index_buffer_owner.get_or_null(p_id);
 		_check_transfer_worker_buffer(index_buffer);
 
 		RDG::resource_tracker_free(index_buffer->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*index_buffer);
-		index_buffer_owner.free(p_id);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*index_buffer);
+		data->index_buffer_owner.free(p_id);
 	}
-	else if (index_array_owner.owns(p_id)) {
-		index_array_owner.free(p_id);
+	else if (data->index_array_owner.owns(p_id)) {
+		data->index_array_owner.free(p_id);
 	}
-	else if (shader_owner.owns(p_id)) {
-		Shader* shader = shader_owner.get_or_null(p_id);
+	else if (data->shader_owner.owns(p_id)) {
+		Shader* shader = data->shader_owner.get_or_null(p_id);
 		if (shader->driver_id) { // Not placeholder?
-			frames[frame].shaders_to_dispose_of.push_back(*shader);
+			data->frames[data->frame].shaders_to_dispose_of.push_back(*shader);
 		}
-		shader_owner.free(p_id);
+		data->shader_owner.free(p_id);
 	}
-	else if (uniform_buffer_owner.owns(p_id)) {
-		Buffer* uniform_buffer = uniform_buffer_owner.get_or_null(p_id);
+	else if (data->uniform_buffer_owner.owns(p_id)) {
+		Buffer* uniform_buffer = data->uniform_buffer_owner.get_or_null(p_id);
 		_check_transfer_worker_buffer(uniform_buffer);
 
 		RDG::resource_tracker_free(uniform_buffer->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*uniform_buffer);
-		uniform_buffer_owner.free(p_id);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*uniform_buffer);
+		data->uniform_buffer_owner.free(p_id);
 	}
-	else if (texture_buffer_owner.owns(p_id)) {
-		Buffer* texture_buffer = texture_buffer_owner.get_or_null(p_id);
+	else if (data->texture_buffer_owner.owns(p_id)) {
+		Buffer* texture_buffer = data->texture_buffer_owner.get_or_null(p_id);
 		_check_transfer_worker_buffer(texture_buffer);
 
 		RDG::resource_tracker_free(texture_buffer->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*texture_buffer);
-		texture_buffer_owner.free(p_id);
+		data->frames[data
+->frame].buffers_to_dispose_of.push_back(*texture_buffer);
+		data->texture_buffer_owner.free(p_id);
 	}
-	else if (storage_buffer_owner.owns(p_id)) {
-		Buffer* storage_buffer = storage_buffer_owner.get_or_null(p_id);
+	else if (data->storage_buffer_owner.owns(p_id)) {
+		Buffer* storage_buffer = data->storage_buffer_owner.get_or_null(p_id);
 		_check_transfer_worker_buffer(storage_buffer);
 
 		RDG::resource_tracker_free(storage_buffer->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*storage_buffer);
-		storage_buffer_owner.free(p_id);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*storage_buffer);
+		data->storage_buffer_owner.free(p_id);
 	}
-	else if (uniform_set_owner.owns(p_id)) {
-		UniformSet* uniform_set = uniform_set_owner.get_or_null(p_id);
-		frames[frame].uniform_sets_to_dispose_of.push_back(*uniform_set);
-		uniform_set_owner.free(p_id);
+	else if (data->uniform_set_owner.owns(p_id)) {
+		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_id);
+		data->frames[data->frame].uniform_sets_to_dispose_of.push_back(*uniform_set);
+		data->uniform_set_owner.free(p_id);
 
 		if (uniform_set->invalidated_callback != nullptr) {
 			uniform_set->invalidated_callback(uniform_set->invalidated_callback_userdata);
 		}
 	}
-	else if (render_pipeline_owner.owns(p_id)) {
-		RenderPipeline* pipeline = render_pipeline_owner.get_or_null(p_id);
-		frames[frame].render_pipelines_to_dispose_of.push_back(*pipeline);
-		render_pipeline_owner.free(p_id);
+	else if (data->render_pipeline_owner.owns(p_id)) {
+		RenderPipeline* pipeline = data->render_pipeline_owner.get_or_null(p_id);
+		data->frames[data->frame].render_pipelines_to_dispose_of.push_back(*pipeline);
+		data->render_pipeline_owner.free(p_id);
 	}
-	else if (compute_pipeline_owner.owns(p_id)) {
-		ComputePipeline* pipeline = compute_pipeline_owner.get_or_null(p_id);
-		frames[frame].compute_pipelines_to_dispose_of.push_back(*pipeline);
-		compute_pipeline_owner.free(p_id);
+	else if (data->compute_pipeline_owner.owns(p_id)) {
+		ComputePipeline* pipeline = data->compute_pipeline_owner.get_or_null(p_id);
+		data->frames[data->frame].compute_pipelines_to_dispose_of.push_back(*pipeline);
+		data->compute_pipeline_owner.free(p_id);
 	}
-	else if (acceleration_structure_owner.owns(p_id)) {
+	else if (data->acceleration_structure_owner.owns(p_id)) {
 		AccelerationStructure* acceleration_structure =
-			acceleration_structure_owner.get_or_null(p_id);
+			data->acceleration_structure_owner.get_or_null(p_id);
 		if (acceleration_structure->type == ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
 			_blas_remove_tlas_dependencies(acceleration_structure, p_id);
 		}
@@ -5192,19 +5214,20 @@ void RenderingDevice::_free_internal(RID p_id)
 			_tlas_remove_blas_dependencies(acceleration_structure, p_id);
 		}
 		RDG::resource_tracker_free(acceleration_structure->draw_tracker);
-		frames[frame].acceleration_structures_to_dispose_of.push_back(*acceleration_structure);
-		acceleration_structure_owner.free(p_id);
+		data->frames[data->frame].acceleration_structures_to_dispose_of.push_back(
+			*acceleration_structure);
+		data->acceleration_structure_owner.free(p_id);
 	}
-	else if (raytracing_pipeline_owner.owns(p_id)) {
-		RaytracingPipeline* pipeline = raytracing_pipeline_owner.get_or_null(p_id);
-		frames[frame].raytracing_pipelines_to_dispose_of.push_back(*pipeline);
-		raytracing_pipeline_owner.free(p_id);
+	else if (data->raytracing_pipeline_owner.owns(p_id)) {
+		RaytracingPipeline* pipeline = data->raytracing_pipeline_owner.get_or_null(p_id);
+		data->frames[data->frame].raytracing_pipelines_to_dispose_of.push_back(*pipeline);
+		data->raytracing_pipeline_owner.free(p_id);
 	}
-	else if (hit_sbt_owner.owns(p_id)) {
-		HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_id);
+	else if (data->hit_sbt_owner.owns(p_id)) {
+		HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_id);
 		RDG::resource_tracker_free(hit_sbt->draw_tracker);
-		frames[frame].buffers_to_dispose_of.push_back(*hit_sbt);
-		hit_sbt_owner.free(p_id);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*hit_sbt);
+		data->hit_sbt_owner.free(p_id);
 	}
 	else {
 #ifdef DEV_ENABLED
@@ -5214,77 +5237,78 @@ void RenderingDevice::_free_internal(RID p_id)
 #endif
 	}
 
-	frames_pending_resources_for_processing = uint32_t(frames.size());
+	data->frames_pending_resources_for_processing = uint32_t(data->frames.size());
 }
 
 // The full list of resources that can be named is in the VkObjectType enum.
 // We just expose the resources that are owned and can be accessed easily.
 void RenderingDevice::set_resource_name(RID p_id, const String& p_name)
 {
-	_THREAD_SAFE_METHOD_
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	if (texture_owner.owns(p_id)) {
-		Texture* texture = texture_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_TEXTURE, texture->driver_id, p_name);
+	if (data->texture_owner.owns(p_id)) {
+		Texture* texture = data->texture_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_TEXTURE, texture->driver_id, p_name);
 	}
-	else if (framebuffer_owner.owns(p_id)) {
-		// Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_id);
+	else if (data->framebuffer_owner.owns(p_id)) {
+		// Framebuffer *framebuffer = data->framebuffer_owner.get_or_null(p_id);
 		//  Not implemented for now as the relationship between Framebuffer and RenderPass is very
 		//  complex.
 	}
-	else if (sampler_owner.owns(p_id)) {
-		RDD::SamplerID sampler_driver_id = *sampler_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_SAMPLER, sampler_driver_id, p_name);
+	else if (data->sampler_owner.owns(p_id)) {
+		RDD::SamplerID sampler_driver_id = *data->sampler_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_SAMPLER, sampler_driver_id, p_name);
 	}
-	else if (vertex_buffer_owner.owns(p_id)) {
-		Buffer* vertex_buffer = vertex_buffer_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, vertex_buffer->driver_id, p_name);
+	else if (data->vertex_buffer_owner.owns(p_id)) {
+		Buffer* vertex_buffer = data->vertex_buffer_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, vertex_buffer->driver_id, p_name);
 	}
-	else if (index_buffer_owner.owns(p_id)) {
-		IndexBuffer* index_buffer = index_buffer_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, index_buffer->driver_id, p_name);
+	else if (data->index_buffer_owner.owns(p_id)) {
+		IndexBuffer* index_buffer = data->index_buffer_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, index_buffer->driver_id, p_name);
 	}
-	else if (shader_owner.owns(p_id)) {
-		Shader* shader = shader_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_SHADER, shader->driver_id, p_name);
+	else if (data->shader_owner.owns(p_id)) {
+		Shader* shader = data->shader_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_SHADER, shader->driver_id, p_name);
 	}
-	else if (uniform_buffer_owner.owns(p_id)) {
-		Buffer* uniform_buffer = uniform_buffer_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, uniform_buffer->driver_id, p_name);
+	else if (data->uniform_buffer_owner.owns(p_id)) {
+		Buffer* uniform_buffer = data->uniform_buffer_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, uniform_buffer->driver_id, p_name);
 	}
-	else if (texture_buffer_owner.owns(p_id)) {
-		Buffer* texture_buffer = texture_buffer_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, texture_buffer->driver_id, p_name);
+	else if (data->texture_buffer_owner.owns(p_id)) {
+		Buffer* texture_buffer = data->texture_buffer_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, texture_buffer->driver_id, p_name);
 	}
-	else if (storage_buffer_owner.owns(p_id)) {
-		Buffer* storage_buffer = storage_buffer_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, storage_buffer->driver_id, p_name);
+	else if (data->storage_buffer_owner.owns(p_id)) {
+		Buffer* storage_buffer = data->storage_buffer_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, storage_buffer->driver_id, p_name);
 	}
-	else if (uniform_set_owner.owns(p_id)) {
-		UniformSet* uniform_set = uniform_set_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_UNIFORM_SET, uniform_set->driver_id, p_name);
+	else if (data->uniform_set_owner.owns(p_id)) {
+		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_UNIFORM_SET, uniform_set->driver_id, p_name);
 	}
-	else if (render_pipeline_owner.owns(p_id)) {
-		RenderPipeline* pipeline = render_pipeline_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
+	else if (data->render_pipeline_owner.owns(p_id)) {
+		RenderPipeline* pipeline = data->render_pipeline_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
 	}
-	else if (compute_pipeline_owner.owns(p_id)) {
-		ComputePipeline* pipeline = compute_pipeline_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
+	else if (data->compute_pipeline_owner.owns(p_id)) {
+		ComputePipeline* pipeline = data->compute_pipeline_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
 	}
-	else if (acceleration_structure_owner.owns(p_id)) {
+	else if (data->acceleration_structure_owner.owns(p_id)) {
 		AccelerationStructure* acceleration_structure =
-			acceleration_structure_owner.get_or_null(p_id);
-		driver->set_object_name(
+			data->acceleration_structure_owner.get_or_null(p_id);
+		data->driver->set_object_name(
 			RDD::OBJECT_TYPE_ACCELERATION_STRUCTURE, acceleration_structure->driver_id, p_name);
 	}
-	else if (raytracing_pipeline_owner.owns(p_id)) {
-		RaytracingPipeline* pipeline = raytracing_pipeline_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_RAYTRACING_PIPELINE, pipeline->driver_id, p_name);
+	else if (data->raytracing_pipeline_owner.owns(p_id)) {
+		RaytracingPipeline* pipeline = data->raytracing_pipeline_owner.get_or_null(p_id);
+		data->driver->set_object_name(
+			RDD::OBJECT_TYPE_RAYTRACING_PIPELINE, pipeline->driver_id, p_name);
 	}
-	else if (hit_sbt_owner.owns(p_id)) {
-		HitShaderBindingTable* hit_sbt = hit_sbt_owner.get_or_null(p_id);
-		driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, hit_sbt->driver_id, p_name);
+	else if (data->hit_sbt_owner.owns(p_id)) {
+		HitShaderBindingTable* hit_sbt = data->hit_sbt_owner.get_or_null(p_id);
+		data->driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, hit_sbt->driver_id, p_name);
 	}
 	else {
 		ERR_PRINT("Attempted to name invalid ID: " + itos(p_id.get_id()));
@@ -5304,186 +5328,209 @@ void RenderingDevice::draw_command_begin_label(const Span<char> p_label_name, co
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	if (!context->is_debug_utils_enabled()) {
+	if (!data->context->is_debug_utils_enabled()) {
 		return;
 	}
 
-	draw_graph.begin_label(p_label_name, p_color);
+	data->draw_graph.begin_label(p_label_name, p_color);
 }
 
 void RenderingDevice::draw_command_end_label()
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	draw_graph.end_label();
+	data->draw_graph.end_label();
 }
 
-String RenderingDevice::get_device_vendor_name() const { return _get_device_vendor_name(device); }
-
-String RenderingDevice::get_device_name() const { return device.name; }
-
-RenderingDeviceEnums::DeviceType RenderingDevice::get_device_type() const
+String RenderingDevice::get_device_vendor_name()
 {
-	return RenderingDeviceEnums::DeviceType(device.type);
+	if (!data) {
+		return "Unknown";
+	}
+	return _get_device_vendor_name(data->device);
 }
 
-String RenderingDevice::get_device_api_name() const { return driver->get_api_name(); }
+String RenderingDevice::get_device_name() { return data->device.name; }
 
-bool RenderingDevice::is_composite_alpha_supported() const
+RenderingDeviceEnums::DeviceType RenderingDevice::get_device_type()
 {
-	return driver->is_composite_alpha_supported(main_queue);
+	return RenderingDeviceEnums::DeviceType(data->device.type);
 }
 
-String RenderingDevice::get_device_api_version() const { return driver->get_api_version(); }
-
-String RenderingDevice::get_device_pipeline_cache_uuid() const
+String RenderingDevice::get_device_api_name()
 {
-	return driver->get_pipeline_cache_uuid();
+	if (!data) {
+		return "Unknown";
+	}
+	return data->driver->get_api_name();
 }
 
-RenderingDevice::DriverWorkarounds RenderingDevice::get_driver_workarounds() const
+bool RenderingDevice::is_composite_alpha_supported()
 {
-	return driver->get_driver_workarounds();
+	return data->driver->is_composite_alpha_supported(data->main_queue);
+}
+
+String RenderingDevice::get_device_api_version()
+{
+	if (!data) {
+		return "Unknown";
+	}
+	return data->driver->get_api_version();
+}
+
+String RenderingDevice::get_device_pipeline_cache_uuid()
+{
+	if (!data) {
+		return "Unknown";
+	}
+	return data->driver->get_pipeline_cache_uuid();
+}
+
+RenderingDevice::DriverWorkarounds RenderingDevice::get_driver_workarounds()
+{
+	return data->driver->get_driver_workarounds();
 }
 
 void RenderingDevice::_free_pending_resources(int p_frame)
 {
 	// Free in dependency usage order, so nothing weird happens.
 	// Pipelines.
-	while (frames[p_frame].render_pipelines_to_dispose_of.front()) {
-		RenderPipeline* pipeline = &frames[p_frame].render_pipelines_to_dispose_of.front()->get();
+	while (data->frames[p_frame].render_pipelines_to_dispose_of.front()) {
+		RenderPipeline* pipeline =
+			&data->frames[p_frame].render_pipelines_to_dispose_of.front()->get();
 
-		driver->pipeline_free(pipeline->driver_id);
+		data->driver->pipeline_free(pipeline->driver_id);
 
-		frames[p_frame].render_pipelines_to_dispose_of.pop_front();
+		data->frames[p_frame].render_pipelines_to_dispose_of.pop_front();
 	}
 
-	while (frames[p_frame].compute_pipelines_to_dispose_of.front()) {
-		ComputePipeline* pipeline = &frames[p_frame].compute_pipelines_to_dispose_of.front()->get();
+	while (data->frames[p_frame].compute_pipelines_to_dispose_of.front()) {
+		ComputePipeline* pipeline =
+			&data->frames[p_frame].compute_pipelines_to_dispose_of.front()->get();
 
-		driver->pipeline_free(pipeline->driver_id);
+		data->driver->pipeline_free(pipeline->driver_id);
 
-		frames[p_frame].compute_pipelines_to_dispose_of.pop_front();
+		data->frames[p_frame].compute_pipelines_to_dispose_of.pop_front();
 	}
 
-	while (frames[p_frame].raytracing_pipelines_to_dispose_of.front()) {
+	while (data->frames[p_frame].raytracing_pipelines_to_dispose_of.front()) {
 		RaytracingPipeline* pipeline =
-			&frames[p_frame].raytracing_pipelines_to_dispose_of.front()->get();
+			&data->frames[p_frame].raytracing_pipelines_to_dispose_of.front()->get();
 
-		driver->buffer_free(pipeline->sbt_buffer.driver_id);
-		buffer_memory.sub(pipeline->sbt_buffer.size);
+		data->driver->buffer_free(pipeline->sbt_buffer.driver_id);
+		data->buffer_memory.sub(pipeline->sbt_buffer.size);
 
-		driver->raytracing_pipeline_free(pipeline->driver_id);
+		data->driver->raytracing_pipeline_free(pipeline->driver_id);
 
-		frames[p_frame].raytracing_pipelines_to_dispose_of.pop_front();
+		data->frames[p_frame].raytracing_pipelines_to_dispose_of.pop_front();
 	}
 
 	// Acceleration structures.
-	while (frames[p_frame].acceleration_structures_to_dispose_of.front()) {
+	while (data->frames[p_frame].acceleration_structures_to_dispose_of.front()) {
 		AccelerationStructure& acceleration_structure =
-			frames[p_frame].acceleration_structures_to_dispose_of.front()->get();
+			data->frames[p_frame].acceleration_structures_to_dispose_of.front()->get();
 
-		driver->acceleration_structure_free(acceleration_structure.driver_id);
+		data->driver->acceleration_structure_free(acceleration_structure.driver_id);
 
 		if (acceleration_structure.scratch_buffer) {
-			buffer_memory.sub(
-				driver->buffer_get_allocation_size(acceleration_structure.scratch_buffer));
-			driver->buffer_free(acceleration_structure.scratch_buffer);
+			data->buffer_memory.sub(
+				data->driver->buffer_get_allocation_size(acceleration_structure.scratch_buffer));
+			data->driver->buffer_free(acceleration_structure.scratch_buffer);
 		}
 
 		if (!acceleration_structure.instance_buffers.is_empty()) {
 			uint32_t instance_buffer_size =
-				driver->api_trait_get(RDD::API_TRAIT_ACCELERATION_STRUCTURE_INSTANCE_SIZE) *
+				data->driver->api_trait_get(RDD::API_TRAIT_ACCELERATION_STRUCTURE_INSTANCE_SIZE) *
 				acceleration_structure.max_instance_count;
 			for (AccelerationStructure::InstanceBuffer& instance_buffer :
 				acceleration_structure.instance_buffers) {
-				driver->buffer_unmap(instance_buffer.driver_id);
-				driver->buffer_free(instance_buffer.driver_id);
+				data->driver->buffer_unmap(instance_buffer.driver_id);
+				data->driver->buffer_free(instance_buffer.driver_id);
 			}
 
-			buffer_memory.sub(
+			data->buffer_memory.sub(
 				instance_buffer_size * acceleration_structure.instance_buffers.size());
 		}
 
-		frames[p_frame].acceleration_structures_to_dispose_of.pop_front();
+		data->frames[p_frame].acceleration_structures_to_dispose_of.pop_front();
 	}
 
 	// Uniform sets.
-	while (frames[p_frame].uniform_sets_to_dispose_of.front()) {
-		UniformSet* uniform_set = &frames[p_frame].uniform_sets_to_dispose_of.front()->get();
+	while (data->frames[p_frame].uniform_sets_to_dispose_of.front()) {
+		UniformSet* uniform_set = &data->frames[p_frame].uniform_sets_to_dispose_of.front()->get();
 
-		driver->uniform_set_free(uniform_set->driver_id);
+		data->driver->uniform_set_free(uniform_set->driver_id);
 
-		frames[p_frame].uniform_sets_to_dispose_of.pop_front();
+		data->frames[p_frame].uniform_sets_to_dispose_of.pop_front();
 	}
 
 	// Shaders.
-	while (frames[p_frame].shaders_to_dispose_of.front()) {
-		Shader* shader = &frames[p_frame].shaders_to_dispose_of.front()->get();
+	while (data->frames[p_frame].shaders_to_dispose_of.front()) {
+		Shader* shader = &data->frames[p_frame].shaders_to_dispose_of.front()->get();
 
-		driver->shader_free(shader->driver_id);
+		data->driver->shader_free(shader->driver_id);
 
-		frames[p_frame].shaders_to_dispose_of.pop_front();
+		data->frames[p_frame].shaders_to_dispose_of.pop_front();
 	}
 
 	// Samplers.
-	while (frames[p_frame].samplers_to_dispose_of.front()) {
-		RDD::SamplerID sampler = frames[p_frame].samplers_to_dispose_of.front()->get();
+	while (data->frames[p_frame].samplers_to_dispose_of.front()) {
+		RDD::SamplerID sampler = data->frames[p_frame].samplers_to_dispose_of.front()->get();
 
-		driver->sampler_free(sampler);
+		data->driver->sampler_free(sampler);
 
-		frames[p_frame].samplers_to_dispose_of.pop_front();
+		data->frames[p_frame].samplers_to_dispose_of.pop_front();
 	}
 
 	// Framebuffers.
-	while (frames[p_frame].framebuffers_to_dispose_of.front()) {
-		Framebuffer* framebuffer = &frames[p_frame].framebuffers_to_dispose_of.front()->get();
-		draw_graph.framebuffer_cache_free(driver, framebuffer->framebuffer_cache);
-		frames[p_frame].framebuffers_to_dispose_of.pop_front();
+	while (data->frames[p_frame].framebuffers_to_dispose_of.front()) {
+		Framebuffer* framebuffer = &data->frames[p_frame].framebuffers_to_dispose_of.front()->get();
+		data->draw_graph.framebuffer_cache_free(data->driver, framebuffer->framebuffer_cache);
+		data->frames[p_frame].framebuffers_to_dispose_of.pop_front();
 	}
 
 	// Textures.
-	while (frames[p_frame].textures_to_dispose_of.front()) {
-		Texture* texture = &frames[p_frame].textures_to_dispose_of.front()->get();
+	while (data->frames[p_frame].textures_to_dispose_of.front()) {
+		Texture* texture = &data->frames[p_frame].textures_to_dispose_of.front()->get();
 		if (texture->bound) {
 			WARN_PRINT("Deleted a texture while it was bound.");
 		}
 
 		_texture_free_shared_fallback(texture);
 
-		texture_memory.sub(driver->texture_get_allocation_size(texture->driver_id));
-		driver->texture_free(texture->driver_id);
+		data->texture_memory.sub(data->driver->texture_get_allocation_size(texture->driver_id));
+		data->driver->texture_free(texture->driver_id);
 
-		frames[p_frame].textures_to_dispose_of.pop_front();
+		data->frames[p_frame].textures_to_dispose_of.pop_front();
 	}
 
 	// Buffers.
-	while (frames[p_frame].buffers_to_dispose_of.front()) {
-		Buffer& buffer = frames[p_frame].buffers_to_dispose_of.front()->get();
-		driver->buffer_free(buffer.driver_id);
-		buffer_memory.sub(buffer.size);
+	while (data->frames[p_frame].buffers_to_dispose_of.front()) {
+		Buffer& buffer = data->frames[p_frame].buffers_to_dispose_of.front()->get();
+		data->driver->buffer_free(buffer.driver_id);
+		data->buffer_memory.sub(buffer.size);
 
-		frames[p_frame].buffers_to_dispose_of.pop_front();
+		data->frames[p_frame].buffers_to_dispose_of.pop_front();
 	}
 
-	if (frames_pending_resources_for_processing > 0u) {
-		--frames_pending_resources_for_processing;
+	if (data->frames_pending_resources_for_processing > 0u) {
+		--data->frames_pending_resources_for_processing;
 	}
 }
 
-uint32_t RenderingDevice::get_frame_delay() const { return frames.size(); }
+uint32_t RenderingDevice::get_frame_delay() { return data->frames.size(); }
 
-uint64_t RenderingDevice::get_memory_usage(MemoryType p_type) const
+uint64_t RenderingDevice::get_memory_usage(MemoryType p_type)
 {
 	switch (p_type) {
 	case MEMORY_BUFFERS: {
-		return buffer_memory.get();
+		return data->buffer_memory.get();
 	}
 	case MEMORY_TEXTURES: {
-		return texture_memory.get();
+		return data->texture_memory.get();
 	}
 	case MEMORY_TOTAL: {
-		return driver->get_total_memory_used();
+		return data->driver->get_total_memory_used();
 	}
 	default: {
 		DEV_ASSERT(false);
@@ -5497,10 +5544,10 @@ void RenderingDevice::execute_chained_cmds(bool p_present_swap_chain,
 	RenderingDeviceDriver::SemaphoreID p_dst_draw_semaphore_to_signal)
 {
 	// Execute command buffers and use semaphores to wait on the execution of the previous one.
-	// Normally there's only one command buffer, but driver workarounds can force situations where
-	// there'll be more.
+	// Normally there's only one command buffer, but data->driver workarounds can force situations
+	// where there'll be more.
 	uint32_t command_buffer_count = 1;
-	RDG::CommandBufferPool& buffer_pool = frames[frame].command_buffer_pool;
+	RDG::CommandBufferPool& buffer_pool = data->frames[data->frame].command_buffer_pool;
 	if (buffer_pool.buffers_used > 0) {
 		command_buffer_count += buffer_pool.buffers_used;
 		buffer_pool.buffers_used = 0;
@@ -5513,7 +5560,7 @@ void RenderingDevice::execute_chained_cmds(bool p_present_swap_chain,
 	// Adreno workaround on mobile, only if the workaround is active). Thus we must execute all of
 	// them and chain them together via semaphores as dependent executions.
 	thread_local LocalVector<RDD::SemaphoreID> wait_semaphores;
-	wait_semaphores = frames[frame].semaphores_to_wait_on;
+	wait_semaphores = data->frames[data->frame].semaphores_to_wait_on;
 
 	for (uint32_t i = 0; i < command_buffer_count; i++) {
 		RDD::CommandBufferID command_buffer;
@@ -5523,7 +5570,7 @@ void RenderingDevice::execute_chained_cmds(bool p_present_swap_chain,
 			command_buffer = buffer_pool.buffers[i - 1];
 		}
 		else {
-			command_buffer = frames[frame].command_buffer;
+			command_buffer = data->frames[data->frame].command_buffer;
 		}
 
 		if (i == (command_buffer_count - 1)) {
@@ -5533,7 +5580,7 @@ void RenderingDevice::execute_chained_cmds(bool p_present_swap_chain,
 
 			if (p_present_swap_chain) {
 				// Just present the swap chains as part of the last command execution.
-				swap_chains = frames[frame].swap_chains_to_present;
+				swap_chains = data->frames[data->frame].swap_chains_to_present;
 			}
 		}
 		else {
@@ -5541,45 +5588,47 @@ void RenderingDevice::execute_chained_cmds(bool p_present_swap_chain,
 			// Semaphores always need to be signaled if it's not the last command buffer.
 		}
 
-		driver->command_queue_execute_and_present(main_queue, wait_semaphores, command_buffer,
-			signal_semaphore ? signal_semaphore : VectorView<RDD::SemaphoreID>(), signal_fence,
-			swap_chains);
+		data->driver->command_queue_execute_and_present(data->main_queue, wait_semaphores,
+			command_buffer, signal_semaphore ? signal_semaphore : VectorView<RDD::SemaphoreID>(),
+			signal_fence, swap_chains);
 
 		// Make the next command buffer wait on the semaphore signaled by this one.
 		wait_semaphores.resize(1);
 		wait_semaphores[0] = signal_semaphore;
 	}
 
-	frames[frame].semaphores_to_wait_on.clear();
+	data->frames[data->frame].semaphores_to_wait_on.clear();
 }
 
 void RenderingDevice::_execute_frame(bool p_present)
 {
-	// Check whether this frame should present the swap chains and in which queue.
-	const bool frame_can_present = p_present && !frames[frame].swap_chains_to_present.is_empty();
-	const bool separate_present_queue = main_queue != present_queue;
+	// Check whether this data->frame should present the swap chains and in which queue.
+	const bool frame_can_present =
+		p_present && !data->frames[data->frame].swap_chains_to_present.is_empty();
+	const bool separate_present_queue = data->main_queue != data->present_queue;
 
-	// The semaphore is required if the frame can be presented and a separate present queue is used;
-	// since the separate queue will wait for that semaphore before presenting.
+	// The semaphore is required if the data->frame can be presented and a separate present queue is
+	// used; since the separate queue will wait for that semaphore before presenting.
 	const RDD::SemaphoreID semaphore = (frame_can_present && separate_present_queue)
-										   ? frames[frame].semaphore
+										   ? data->frames[data->frame].semaphore
 										   : RDD::SemaphoreID(nullptr);
 	const bool present_swap_chain = frame_can_present && !separate_present_queue;
 
-	execute_chained_cmds(present_swap_chain, frames[frame].fence, semaphore);
-	// Indicate the fence has been signaled so the next time the frame's contents need to be
+	execute_chained_cmds(present_swap_chain, data->frames[data->frame].fence, semaphore);
+	// Indicate the fence has been signaled so the next time the data->frame's contents need to be
 	// used, the CPU needs to wait on the work to be completed.
-	frames[frame].fence_signaled = true;
+	data->frames[data->frame].fence_signaled = true;
 
 	if (frame_can_present) {
 		if (separate_present_queue) {
 			// Issue the presentation separately if the presentation queue is different from the
 			// main queue.
-			driver->command_queue_execute_and_present(present_queue, frames[frame].semaphore, {},
-				{}, {}, frames[frame].swap_chains_to_present);
+			data->driver->command_queue_execute_and_present(data->present_queue,
+				data->frames[data->frame].semaphore, {}, {}, {},
+				data->frames[data->frame].swap_chains_to_present);
 		}
 
-		frames[frame].swap_chains_to_present.clear();
+		data->frames[data->frame].swap_chains_to_present.clear();
 	}
 }
 
@@ -5587,9 +5636,9 @@ void RenderingDevice::_save_pipeline_cache(void* p_data)
 {
 	RenderingDevice* self = static_cast<RenderingDevice*>(p_data);
 
-	self->_thread_safe_.lock();
-	Vector<uint8_t> cache_blob = self->driver->pipeline_cache_serialize();
-	self->_thread_safe_.unlock();
+	self->_thread_safe_mutex.lock();
+	Vector<uint8_t> cache_blob = self->data->driver->pipeline_cache_serialize();
+	self->_thread_safe_mutex.unlock();
 
 	if (cache_blob.is_empty()) {
 		return;
@@ -5597,7 +5646,7 @@ void RenderingDevice::_save_pipeline_cache(void* p_data)
 	print_verbose(vformat("Updated PSO cache (%.1f MiB)", cache_blob.size() / (1024.0f * 1024.0f)));
 
 	Ref<FileAccess> f =
-		FileAccess::open(self->pipeline_cache_file_path, FileAccess::WRITE, nullptr);
+		FileAccess::open(self->data->pipeline_cache_file_path, FileAccess::WRITE, nullptr);
 	if (f.is_valid()) {
 		f->store_buffer(cache_blob);
 	}
@@ -5628,29 +5677,31 @@ void RenderingDevice::capture_timestamp(const String& p_name)
 {
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND_MSG(draw_list.active && draw_list.state.draw_count > 0,
+	ERR_FAIL_COND_MSG(data->draw_list.active && data->draw_list.state.draw_count > 0,
 		"Capturing timestamps during draw list creation is not allowed. Offending timestamp was: " +
 			p_name);
-	ERR_FAIL_COND_MSG(compute_list.active && compute_list.state.dispatch_count > 0,
+	ERR_FAIL_COND_MSG(data->compute_list.active && data->compute_list.state.dispatch_count > 0,
 		"Capturing timestamps during compute list creation is not allowed. Offending timestamp "
 		"was: " +
 			p_name);
-	ERR_FAIL_COND_MSG(raytracing_list.active && raytracing_list.state.trace_count > 0,
+	ERR_FAIL_COND_MSG(data->raytracing_list.active && data->raytracing_list.state.trace_count > 0,
 		"Capturing timestamps during raytracing list creation is not allowed. Offending timestamp "
 		"was: " +
 			p_name);
-	ERR_FAIL_COND_MSG(frames[frame].timestamp_count >= max_timestamp_query_elements,
+	ERR_FAIL_COND_MSG(
+		data->frames[data->frame].timestamp_count >= data->max_timestamp_query_elements,
 		vformat("Tried capturing more timestamps than the configured maximum (%d). You can "
 				"increase this limit in the project settings under 'Debug/Settings' called 'Max "
 				"Timestamp Query Elements'.",
-			max_timestamp_query_elements));
+			data->max_timestamp_query_elements));
 
-	draw_graph.add_capture_timestamp(frames[frame].timestamp_pool, frames[frame].timestamp_count);
+	data->draw_graph.add_capture_timestamp(
+		data->frames[data->frame].timestamp_pool, data->frames[data->frame].timestamp_count);
 
-	frames[frame].timestamp_names[frames[frame].timestamp_count] = p_name;
-	frames[frame].timestamp_cpu_values[frames[frame].timestamp_count] =
+	data->frames[data->frame].timestamp_names[data->frames[data->frame].timestamp_count] = p_name;
+	data->frames[data->frame].timestamp_cpu_values[data->frames[data->frame].timestamp_count] =
 		OS::get_singleton()->get_ticks_usec();
-	frames[frame].timestamp_count++;
+	data->frames[data->frame].timestamp_count++;
 }
 
 uint64_t RenderingDevice::get_driver_resource(
@@ -5665,60 +5716,60 @@ uint64_t RenderingDevice::get_driver_resource(
 	case DRIVER_RESOURCE_TOPMOST_OBJECT:
 		break;
 	case DRIVER_RESOURCE_COMMAND_QUEUE:
-		driver_id = main_queue.id;
+		driver_id = data->main_queue.id;
 		break;
 	case DRIVER_RESOURCE_QUEUE_FAMILY:
-		driver_id = main_queue_family.id;
+		driver_id = data->main_queue_family.id;
 		break;
 	case DRIVER_RESOURCE_TEXTURE:
 	case DRIVER_RESOURCE_TEXTURE_VIEW:
 	case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
-		Texture* tex = texture_owner.get_or_null(p_rid);
+		Texture* tex = data->texture_owner.get_or_null(p_rid);
 		ERR_FAIL_NULL_V(tex, 0);
 
 		driver_id = tex->driver_id.id;
 	} break;
 	case DRIVER_RESOURCE_SAMPLER: {
-		RDD::SamplerID* sampler_driver_id = sampler_owner.get_or_null(p_rid);
+		RDD::SamplerID* sampler_driver_id = data->sampler_owner.get_or_null(p_rid);
 		ERR_FAIL_NULL_V(sampler_driver_id, 0);
 
 		driver_id = (*sampler_driver_id).id;
 	} break;
 	case DRIVER_RESOURCE_UNIFORM_SET: {
-		UniformSet* uniform_set = uniform_set_owner.get_or_null(p_rid);
+		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_rid);
 		ERR_FAIL_NULL_V(uniform_set, 0);
 
 		driver_id = uniform_set->driver_id.id;
 	} break;
 	case DRIVER_RESOURCE_BUFFER: {
 		Buffer* buffer = nullptr;
-		if (vertex_buffer_owner.owns(p_rid)) {
-			buffer = vertex_buffer_owner.get_or_null(p_rid);
+		if (data->vertex_buffer_owner.owns(p_rid)) {
+			buffer = data->vertex_buffer_owner.get_or_null(p_rid);
 		}
-		else if (index_buffer_owner.owns(p_rid)) {
-			buffer = index_buffer_owner.get_or_null(p_rid);
+		else if (data->index_buffer_owner.owns(p_rid)) {
+			buffer = data->index_buffer_owner.get_or_null(p_rid);
 		}
-		else if (uniform_buffer_owner.owns(p_rid)) {
-			buffer = uniform_buffer_owner.get_or_null(p_rid);
+		else if (data->uniform_buffer_owner.owns(p_rid)) {
+			buffer = data->uniform_buffer_owner.get_or_null(p_rid);
 		}
-		else if (texture_buffer_owner.owns(p_rid)) {
-			buffer = texture_buffer_owner.get_or_null(p_rid);
+		else if (data->texture_buffer_owner.owns(p_rid)) {
+			buffer = data->texture_buffer_owner.get_or_null(p_rid);
 		}
-		else if (storage_buffer_owner.owns(p_rid)) {
-			buffer = storage_buffer_owner.get_or_null(p_rid);
+		else if (data->storage_buffer_owner.owns(p_rid)) {
+			buffer = data->storage_buffer_owner.get_or_null(p_rid);
 		}
 		ERR_FAIL_NULL_V(buffer, 0);
 
 		driver_id = buffer->driver_id.id;
 	} break;
 	case DRIVER_RESOURCE_COMPUTE_PIPELINE: {
-		ComputePipeline* compute_pipeline = compute_pipeline_owner.get_or_null(p_rid);
+		ComputePipeline* compute_pipeline = data->compute_pipeline_owner.get_or_null(p_rid);
 		ERR_FAIL_NULL_V(compute_pipeline, 0);
 
 		driver_id = compute_pipeline->driver_id.id;
 	} break;
 	case DRIVER_RESOURCE_RENDER_PIPELINE: {
-		RenderPipeline* render_pipeline = render_pipeline_owner.get_or_null(p_rid);
+		RenderPipeline* render_pipeline = data->render_pipeline_owner.get_or_null(p_rid);
 		ERR_FAIL_NULL_V(render_pipeline, 0);
 
 		driver_id = render_pipeline->driver_id.id;
@@ -5728,137 +5779,130 @@ uint64_t RenderingDevice::get_driver_resource(
 	} break;
 	}
 
-	return driver->get_resource_native_handle(p_resource, driver_id);
+	return data->driver->get_resource_native_handle(p_resource, driver_id);
 }
 
-String RenderingDevice::get_driver_and_device_memory_report() const
+String RenderingDevice::get_driver_and_device_memory_report()
 {
-	return context->get_driver_and_device_memory_report();
+	return data->context->get_driver_and_device_memory_report();
 }
 
-String RenderingDevice::get_tracked_object_name(uint32_t p_type_index) const
+String RenderingDevice::get_tracked_object_name(uint32_t p_type_index)
 {
-	return context->get_tracked_object_name(p_type_index);
+	return data->context->get_tracked_object_name(p_type_index);
 }
 
-uint64_t RenderingDevice::get_tracked_object_type_count() const
+uint64_t RenderingDevice::get_tracked_object_type_count()
 {
-	return context->get_tracked_object_type_count();
+	return data->context->get_tracked_object_type_count();
 }
 
-uint64_t RenderingDevice::get_driver_total_memory() const
+uint64_t RenderingDevice::get_driver_total_memory()
 {
-	return context->get_driver_total_memory();
+	return data->context->get_driver_total_memory();
 }
 
-uint64_t RenderingDevice::get_driver_allocation_count() const
+uint64_t RenderingDevice::get_driver_allocation_count()
 {
-	return context->get_driver_allocation_count();
+	return data->context->get_driver_allocation_count();
 }
 
-uint64_t RenderingDevice::get_driver_memory_by_object_type(uint32_t p_type) const
+uint64_t RenderingDevice::get_driver_memory_by_object_type(uint32_t p_type)
 {
-	return context->get_driver_memory_by_object_type(p_type);
+	return data->context->get_driver_memory_by_object_type(p_type);
 }
 
-uint64_t RenderingDevice::get_driver_allocs_by_object_type(uint32_t p_type) const
+uint64_t RenderingDevice::get_driver_allocs_by_object_type(uint32_t p_type)
 {
-	return context->get_driver_allocs_by_object_type(p_type);
+	return data->context->get_driver_allocs_by_object_type(p_type);
 }
 
-uint64_t RenderingDevice::get_device_total_memory() const
+uint64_t RenderingDevice::get_device_total_memory()
 {
-	return context->get_device_total_memory();
+	return data->context->get_device_total_memory();
 }
 
-uint64_t RenderingDevice::get_device_allocation_count() const
+uint64_t RenderingDevice::get_device_allocation_count()
 {
-	return context->get_device_allocation_count();
+	return data->context->get_device_allocation_count();
 }
 
-uint64_t RenderingDevice::get_device_memory_by_object_type(uint32_t type) const
+uint64_t RenderingDevice::get_device_memory_by_object_type(uint32_t type)
 {
-	return context->get_device_memory_by_object_type(type);
+	return data->context->get_device_memory_by_object_type(type);
 }
 
-uint64_t RenderingDevice::get_device_allocs_by_object_type(uint32_t type) const
+uint64_t RenderingDevice::get_device_allocs_by_object_type(uint32_t type)
 {
-	return context->get_device_allocs_by_object_type(type);
+	return data->context->get_device_allocs_by_object_type(type);
 }
 
-uint32_t RenderingDevice::get_captured_timestamps_count() const
-{
-	ERR_RENDER_THREAD_GUARD_V(0);
-	return frames[frame].timestamp_result_count;
-}
-
-uint64_t RenderingDevice::get_captured_timestamps_frame() const
+uint32_t RenderingDevice::get_captured_timestamps_count()
 {
 	ERR_RENDER_THREAD_GUARD_V(0);
-	return frames[frame].index;
+	return data->frames[data->frame].timestamp_result_count;
 }
 
-uint64_t RenderingDevice::get_captured_timestamp_gpu_time(uint32_t p_index) const
+uint64_t RenderingDevice::get_captured_timestamps_frame()
 {
 	ERR_RENDER_THREAD_GUARD_V(0);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
-	return driver->timestamp_query_result_to_time(frames[frame].timestamp_result_values[p_index]);
+	return data->frames[data->frame].index;
 }
 
-uint64_t RenderingDevice::get_captured_timestamp_cpu_time(uint32_t p_index) const
+uint64_t RenderingDevice::get_captured_timestamp_gpu_time(uint32_t p_index)
 {
 	ERR_RENDER_THREAD_GUARD_V(0);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
-	return frames[frame].timestamp_cpu_result_values[p_index];
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, data->frames[data->frame].timestamp_result_count, 0);
+	return data->driver->timestamp_query_result_to_time(
+		data->frames[data->frame].timestamp_result_values[p_index]);
 }
 
-String RenderingDevice::get_captured_timestamp_name(uint32_t p_index) const
+uint64_t RenderingDevice::get_captured_timestamp_cpu_time(uint32_t p_index)
 {
-	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, String());
-	return frames[frame].timestamp_result_names[p_index];
+	ERR_RENDER_THREAD_GUARD_V(0);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, data->frames[data->frame].timestamp_result_count, 0);
+	return data->frames[data->frame].timestamp_cpu_result_values[p_index];
 }
 
-uint64_t RenderingDevice::limit_get(Limit p_limit) const { return driver->limit_get(p_limit); }
+String RenderingDevice::get_captured_timestamp_name(uint32_t p_index)
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, data->frames[data->frame].timestamp_result_count, String());
+	return data->frames[data->frame].timestamp_result_names[p_index];
+}
+
+uint64_t RenderingDevice::limit_get(Limit p_limit) { return data->driver->limit_get(p_limit); }
 
 void RenderingDevice::_set_max_fps(int p_max_fps)
 {
-	for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it : screen_swap_chains) {
-		driver->swap_chain_set_max_fps(it.value, p_max_fps);
+	for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
+		data->screen_swap_chains) {
+		data->driver->swap_chain_set_max_fps(it.value, p_max_fps);
 	}
 }
 
-bool RenderingDevice::has_feature(const Features p_feature) const
+bool RenderingDevice::has_feature(const Features p_feature)
 {
-	// Some features can be deduced from the capabilities without querying the driver and looking at
-	// the capabilities.
+	// Some features can be deduced from the capabilities without querying the data->driver and
+	// looking at the capabilities.
 	switch (p_feature) {
 	case SUPPORTS_MULTIVIEW: {
 		const RDD::MultiviewCapabilities& multiview_capabilities =
-			driver->get_multiview_capabilities();
+			data->driver->get_multiview_capabilities();
 		return multiview_capabilities.is_supported && multiview_capabilities.max_view_count > 1;
 	}
 	case SUPPORTS_ATTACHMENT_VRS: {
 		const RDD::FragmentShadingRateCapabilities& fsr_capabilities =
-			driver->get_fragment_shading_rate_capabilities();
+			data->driver->get_fragment_shading_rate_capabilities();
 		const RDD::FragmentDensityMapCapabilities& fdm_capabilities =
-			driver->get_fragment_density_map_capabilities();
+			data->driver->get_fragment_density_map_capabilities();
 		return fsr_capabilities.attachment_supported || fdm_capabilities.attachment_supported;
 	}
 	default:
-		return driver->has_feature(p_feature);
+		return data->driver->has_feature(p_feature);
 	}
 }
 
-void RenderingDevice::make_current() { render_thread_id = Thread::get_caller_id(); }
-
-RenderingDevice::RenderingDevice()
-{
-	if (singleton == nullptr) {
-		singleton = this;
-	}
-
-	render_thread_id = Thread::get_caller_id();
-}
+void RenderingDevice::make_current() { data->render_thread_id = Thread::get_caller_id(); }
 
 static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_NONE, RDG::RESOURCE_USAGE_NONE));
 static_assert(
@@ -5910,8 +5954,6 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 
 void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {}
 
-RenderingDevice::~RenderingDevice() {}
-
 void RenderingDevice::swap_buffers(bool) {}
 
 Error RenderingDevice::screen_prepare_for_drawing(int) { return OK; }
@@ -5937,12 +5979,6 @@ RID RenderingDevice::texture_create_from_extension(TextureType p_type, DataForma
 	return RID();
 }
 
-RenderingDevice* RenderingDevice::create_local_device()
-{
-	RenderingDevice rd = RenderingDevice();
-	return &rd;
-}
-
 Error RenderingDevice::texture_update(
 	RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data)
 {
@@ -5953,4 +5989,48 @@ void RenderingDevice::compute_list_add_barrier(ComputeListID p_list) {}
 
 void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array) {}
 
+Error RenderingDevice::initialize(RenderingContextDriver *p_context, RenderingContextDriver::Device p_device)
+{
+    if (data == nullptr) {
+        data = memnew(Data);
+        data->render_thread_id = Thread::get_caller_id();
+    }
 
+    data->context = p_context;
+    data->driver = data->context->driver_create();
+    ERR_FAIL_NULL_V(data->driver, ERR_CANT_CREATE);
+
+    uint32_t device_count = data->context->device_get_count();
+    uint32_t device_index = 0;
+    uint32_t best_score = 0;
+
+    for (uint32_t i = 0; i < device_count; i++) {
+        RenderingContextDriver::Device dev = data->context->device_get(i);
+        uint32_t score = _get_device_type_score(dev);
+        if (score > best_score) {
+            best_score = score;
+            device_index = i;
+        }
+    }
+
+    data->device = data->context->device_get(device_index);
+
+    const uint32_t frame_count = 3;
+    data->frames.resize(frame_count);
+
+    Error err = data->driver->initialize(device_index, frame_count);
+    ERR_FAIL_COND_V(err != OK, err);
+
+    data->main_queue_family = data->driver->command_queue_family_get(RDD::COMMAND_QUEUE_FAMILY_GRAPHICS_BIT);
+    data->main_queue = data->driver->command_queue_create(data->main_queue_family, true);
+
+    data->transfer_queue_family = data->driver->command_queue_family_get(RDD::COMMAND_QUEUE_FAMILY_TRANSFER_BIT);
+    data->transfer_queue = data->driver->command_queue_create(data->transfer_queue_family, false);
+
+    data->present_queue_family = data->main_queue_family;
+    data->present_queue = data->main_queue;
+
+    return OK;
+
+    return OK;
+}

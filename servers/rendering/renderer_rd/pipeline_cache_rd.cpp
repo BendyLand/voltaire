@@ -34,7 +34,7 @@
 
 RID PipelineCacheRD::_generate_version(RD::VertexFormatID p_vertex_format_id, RD::FramebufferFormatID p_framebuffer_format_id, bool p_wireframe, uint32_t p_render_pass, uint32_t p_bool_specializations) {
 	RD::PipelineMultisampleState multisample_state_version = multisample_state;
-	multisample_state_version.sample_count = RD::get_singleton()->framebuffer_format_get_texture_samples(p_framebuffer_format_id, p_render_pass);
+	multisample_state_version.sample_count = RD::framebuffer_format_get_texture_samples(p_framebuffer_format_id, p_render_pass);
 
 	bool wireframe = p_wireframe;
 
@@ -55,7 +55,7 @@ RID PipelineCacheRD::_generate_version(RD::VertexFormatID p_vertex_format_id, RD
 		bool_index++;
 	}
 
-	RID pipeline = RD::get_singleton()->render_pipeline_create(shader, p_framebuffer_format_id, p_vertex_format_id, render_primitive, raster_state_version, multisample_state_version, depth_stencil_state, blend_state, dynamic_state_flags, p_render_pass, specialization_constants);
+	RID pipeline = RD::render_pipeline_create(shader, p_framebuffer_format_id, p_vertex_format_id, render_primitive, raster_state_version, multisample_state_version, depth_stencil_state, blend_state, dynamic_state_flags, p_render_pass, specialization_constants);
 	ERR_FAIL_COND_V(pipeline.is_null(), RID());
 	versions = static_cast<Version *>(memrealloc(versions, sizeof(Version) * (version_count + 1)));
 	versions[version_count].framebuffer_id = p_framebuffer_format_id;
@@ -73,8 +73,8 @@ void PipelineCacheRD::_clear() {
 	if (versions) {
 		for (uint32_t i = 0; i < version_count; i++) {
 			//shader may be gone, so this may not be valid
-			if (RD::get_singleton()->render_pipeline_is_valid(versions[i].pipeline)) {
-				RD::get_singleton()->free_rid(versions[i].pipeline);
+			if (RD::render_pipeline_is_valid(versions[i].pipeline)) {
+				RD::free_rid(versions[i].pipeline);
 			}
 		}
 		version_count = 0;

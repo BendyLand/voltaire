@@ -34,6 +34,7 @@
 #include "core/os/os.h"
 #include "renderer_compositor_rd.h"
 #include "servers/display/display_server.h"
+#include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -41,7 +42,7 @@
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
 {
-	Error err = RD::get_singleton()->screen_prepare_for_drawing(p_screen);
+	Error err = RD::screen_prepare_for_drawing(p_screen);
 	if (err != OK) {
 		// Window is minimized and does not have valid swapchain, skip drawing without printing
 		// errors.
@@ -49,20 +50,20 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 	}
 
 	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
-		RD::get_singleton()->screen_get_framebuffer_format(p_screen));
+		RD::screen_get_framebuffer_format(p_screen));
 
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin_for_screen(p_screen);
+	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
 	ERR_FAIL_COND(draw_list == RD::INVALID_ID);
 
-	const RD::ColorSpace color_space = RD::get_singleton()->screen_get_color_space(p_screen);
+	const RD::ColorSpace color_space = RD::screen_get_color_space(p_screen);
 	const float reference_luminance =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_reference_luminance(
+		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
 			p_screen);
 	const float linear_luminance_scale =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_linear_luminance_scale(
+		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(
 			p_screen);
 	const float output_max_value =
-		RD::get_singleton()->get_context_driver()->window_get_output_max_linear_value(p_screen);
+		RD::get_context_driver()->window_get_output_max_linear_value(p_screen);
 	const float reference_multiplier =
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
@@ -78,58 +79,58 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 
 		HashMap<RID, RID>::Iterator it = render_target_descriptors.find(rd_texture);
 
-		Size2 screen_size(RD::get_singleton()->screen_get_width(p_screen),
-			RD::get_singleton()->screen_get_height(p_screen));
+		Size2 screen_size(RD::screen_get_width(p_screen),
+			RD::screen_get_height(p_screen));
 
-		RD::get_singleton()->draw_list_bind_render_pipeline(
+		RD::draw_list_bind_render_pipeline(
 			draw_list, blit_pipelines.pipelines[mode]);
-		RD::get_singleton()->draw_list_bind_index_array(draw_list, blit.array);
-		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, it->value, 0);
+		RD::draw_list_bind_index_array(draw_list, blit->array);
+		RD::draw_list_bind_uniform_set(draw_list, it->value, 0);
 
 		// We need to invert the phone rotation.
 		const int screen_rotation_degrees =
-			-RD::get_singleton()->screen_get_pre_rotation_degrees(p_screen);
+			-RD::screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
-		blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-		blit.push_constant.rotation_sin = Math::sin(screen_rotation);
+		blit->push_constant.rotation_cos = Math::cos(screen_rotation);
+		blit->push_constant.rotation_sin = Math::sin(screen_rotation);
 		// Swap width and height when the orientation is not the native one.
 		if (screen_rotation_degrees % 180 != 0) {
 			SWAP(screen_size.width, screen_size.height);
 		}
-		blit.push_constant.src_rect[0] = p_render_targets[i].src_rect.position.x;
-		blit.push_constant.src_rect[1] = p_render_targets[i].src_rect.position.y;
-		blit.push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width;
-		blit.push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height;
-		blit.push_constant.dst_rect[0] =
+		blit->push_constant.src_rect[0] = p_render_targets[i].src_rect.position.x;
+		blit->push_constant.src_rect[1] = p_render_targets[i].src_rect.position.y;
+		blit->push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width;
+		blit->push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height;
+		blit->push_constant.dst_rect[0] =
 			p_render_targets[i].dst_rect.position.x / screen_size.width;
-		blit.push_constant.dst_rect[1] =
+		blit->push_constant.dst_rect[1] =
 			p_render_targets[i].dst_rect.position.y / screen_size.height;
-		blit.push_constant.dst_rect[2] =
+		blit->push_constant.dst_rect[2] =
 			p_render_targets[i].dst_rect.size.width / screen_size.width;
-		blit.push_constant.dst_rect[3] =
+		blit->push_constant.dst_rect[3] =
 			p_render_targets[i].dst_rect.size.height / screen_size.height;
-		blit.push_constant.layer = p_render_targets[i].multi_view.layer;
-		blit.push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
-		blit.push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
-		blit.push_constant.k1 = p_render_targets[i].lens_distortion.k1;
-		blit.push_constant.k2 = p_render_targets[i].lens_distortion.k2;
-		blit.push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
-		blit.push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
-		blit.push_constant.source_is_srgb =
+		blit->push_constant.layer = p_render_targets[i].multi_view.layer;
+		blit->push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
+		blit->push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
+		blit->push_constant.k1 = p_render_targets[i].lens_distortion.k1;
+		blit->push_constant.k2 = p_render_targets[i].lens_distortion.k2;
+		blit->push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
+		blit->push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
+		blit->push_constant.source_is_srgb =
 			!texture_storage->render_target_is_using_hdr(p_render_targets[i].render_target);
-		blit.push_constant.use_debanding =
+		blit->push_constant.use_debanding =
 			texture_storage->render_target_is_using_debanding(p_render_targets[i].render_target);
-		blit.push_constant.target_color_space = color_space;
-		blit.push_constant.reference_multiplier = reference_multiplier;
-		blit.push_constant.output_max_value = output_max_value;
+		blit->push_constant.target_color_space = color_space;
+		blit->push_constant.reference_multiplier = reference_multiplier;
+		blit->push_constant.output_max_value = output_max_value;
 
-		RD::get_singleton()->draw_list_set_push_constant(
-			draw_list, &blit.push_constant, sizeof(BlitPushConstant));
-		RD::get_singleton()->draw_list_draw(draw_list, true);
+		RD::draw_list_set_push_constant(
+			draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+		RD::draw_list_draw(draw_list, true);
 	}
 
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 }
 
 void RendererCompositorRD::begin_frame(double frame_step)
@@ -147,21 +148,21 @@ void RendererCompositorRD::begin_frame(double frame_step)
 
 void RendererCompositorRD::end_frame(bool p_present)
 {
-	RD::get_singleton()->swap_buffers(p_present);
+	RD::swap_buffers(p_present);
 }
 
 void RendererCompositorRD::initialize()
 {
 	{
-		// Initialize blit
+		blit = memnew(Blit);
 		Vector<String> blit_modes;
 		blit_modes.push_back("\n");
 		blit_modes.push_back("\n#define USE_LAYER\n");
 		blit_modes.push_back("\n#define USE_LAYER\n#define APPLY_LENS_DISTORTION\n");
 		blit_modes.push_back("\n");
 
-		blit.shader.initialize(blit_modes);
-		blit.shader_version = blit.shader.version_create();
+		blit->shader.initialize(blit_modes);
+		blit->shader_version = blit->shader.version_create();
 
 		// create index array for copy shader
 		Vector<uint8_t> pv;
@@ -176,17 +177,14 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
-		blit.array = RD::get_singleton()->index_array_create(blit.index_buffer, 0, 6);
-		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
+		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
+		blit->sampler = RD::sampler_create(RD::SamplerState());
 	}
 }
-
-uint64_t RendererCompositorRD::frame = 1;
 
 void RendererCompositorRD::finalize()
 {
 	texture_storage->_tex_blit_shader_free();
-	memdelete(scene);
 	memdelete(canvas);
 	memdelete(fog);
 	memdelete(particles_storage);
@@ -196,10 +194,14 @@ void RendererCompositorRD::finalize()
 	memdelete(texture_storage);
 	memdelete(utilities);
 
+	if (blit) {
+	    memdelete(blit);
+	    blit = nullptr;
+	}
 	// only need to erase these, the rest are erased by cascade
-	blit.shader.version_free(blit.shader_version);
-	RD::get_singleton()->free_rid(blit.index_buffer);
-	RD::get_singleton()->free_rid(blit.sampler);
+	blit->shader.version_free(blit->shader_version);
+	RD::free_rid(blit->index_buffer);
+	RD::free_rid(blit->sampler);
 }
 
 float RendererCompositorRD::_compute_reference_multiplier(RD::ColorSpace p_color_space,
@@ -220,7 +222,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		return;
 	}
 
-	Error err = RD::get_singleton()->screen_prepare_for_drawing(DisplayServerEnums::MAIN_WINDOW_ID);
+	Error err = RD::screen_prepare_for_drawing(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (err != OK) {
 		// Window is minimized and does not have valid swapchain, skip drawing without printing
 		// errors.
@@ -228,7 +230,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	}
 
 	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
-		RD::get_singleton()->screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID));
+		RD::screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID));
 
 	RID texture = texture_storage->texture_allocate();
 	texture_storage->texture_2d_initialize(texture, p_image);
@@ -240,7 +242,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	sampler_state.mag_filter =
 		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
 	sampler_state.max_lod = 0;
-	RID sampler = RD::get_singleton()->sampler_create(sampler_state);
+	RID sampler = RD::sampler_create(sampler_state);
 
 	RID uset;
 
@@ -252,15 +254,15 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	screenrect.size /= window_size;
 
 	const RD::ColorSpace color_space =
-		RD::get_singleton()->screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
+		RD::screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_luminance =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_reference_luminance(
+		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
 			DisplayServerEnums::MAIN_WINDOW_ID);
 	const float linear_luminance_scale =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_linear_luminance_scale(
+		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(
 			DisplayServerEnums::MAIN_WINDOW_ID);
 	const float output_max_value =
-		RD::get_singleton()->get_context_driver()->window_get_output_max_linear_value(
+		RD::get_context_driver()->window_get_output_max_linear_value(
 			DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_multiplier =
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
@@ -275,59 +277,55 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		clear_color.b *= reference_multiplier;
 	}
 
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin_for_screen(
+	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(
 		DisplayServerEnums::MAIN_WINDOW_ID, clear_color);
 
-	RD::get_singleton()->draw_list_bind_render_pipeline(
+	RD::draw_list_bind_render_pipeline(
 		draw_list, blit_pipelines.pipelines[BLIT_MODE_NORMAL_ALPHA]);
-	RD::get_singleton()->draw_list_bind_index_array(draw_list, blit.array);
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uset, 0);
+	RD::draw_list_bind_index_array(draw_list, blit->array);
+	RD::draw_list_bind_uniform_set(draw_list, uset, 0);
 
 	const int screen_rotation_degrees =
-		-RD::get_singleton()->screen_get_pre_rotation_degrees(DisplayServerEnums::MAIN_WINDOW_ID);
+		-RD::screen_get_pre_rotation_degrees(DisplayServerEnums::MAIN_WINDOW_ID);
 	float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
-	blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-	blit.push_constant.rotation_sin = Math::sin(screen_rotation);
-	blit.push_constant.src_rect[0] = 0.0;
-	blit.push_constant.src_rect[1] = 0.0;
-	blit.push_constant.src_rect[2] = 1.0;
-	blit.push_constant.src_rect[3] = 1.0;
-	blit.push_constant.dst_rect[0] = screenrect.position.x;
-	blit.push_constant.dst_rect[1] = screenrect.position.y;
-	blit.push_constant.dst_rect[2] = screenrect.size.width;
-	blit.push_constant.dst_rect[3] = screenrect.size.height;
-	blit.push_constant.layer = 0;
-	blit.push_constant.eye_center[0] = 0;
-	blit.push_constant.eye_center[1] = 0;
-	blit.push_constant.k1 = 0;
-	blit.push_constant.k2 = 0;
-	blit.push_constant.upscale = 1.0;
-	blit.push_constant.aspect_ratio = 1.0;
-	blit.push_constant.source_is_srgb = true;
-	blit.push_constant.use_debanding = false;
-	blit.push_constant.target_color_space = color_space;
-	blit.push_constant.reference_multiplier = reference_multiplier;
-	blit.push_constant.output_max_value = output_max_value;
+	blit->push_constant.rotation_cos = Math::cos(screen_rotation);
+	blit->push_constant.rotation_sin = Math::sin(screen_rotation);
+	blit->push_constant.src_rect[0] = 0.0;
+	blit->push_constant.src_rect[1] = 0.0;
+	blit->push_constant.src_rect[2] = 1.0;
+	blit->push_constant.src_rect[3] = 1.0;
+	blit->push_constant.dst_rect[0] = screenrect.position.x;
+	blit->push_constant.dst_rect[1] = screenrect.position.y;
+	blit->push_constant.dst_rect[2] = screenrect.size.width;
+	blit->push_constant.dst_rect[3] = screenrect.size.height;
+	blit->push_constant.layer = 0;
+	blit->push_constant.eye_center[0] = 0;
+	blit->push_constant.eye_center[1] = 0;
+	blit->push_constant.k1 = 0;
+	blit->push_constant.k2 = 0;
+	blit->push_constant.upscale = 1.0;
+	blit->push_constant.aspect_ratio = 1.0;
+	blit->push_constant.source_is_srgb = true;
+	blit->push_constant.use_debanding = false;
+	blit->push_constant.target_color_space = color_space;
+	blit->push_constant.reference_multiplier = reference_multiplier;
+	blit->push_constant.output_max_value = output_max_value;
 
-	RD::get_singleton()->draw_list_set_push_constant(
-		draw_list, &blit.push_constant, sizeof(BlitPushConstant));
-	RD::get_singleton()->draw_list_draw(draw_list, true);
+	RD::draw_list_set_push_constant(
+		draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+	RD::draw_list_draw(draw_list, true);
 
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 
-	RD::get_singleton()->swap_buffers(true);
+	RD::swap_buffers(true);
 
 	texture_storage->texture_free(texture);
-	RD::get_singleton()->free_rid(sampler);
+	RD::free_rid(sampler);
 }
-
-RendererCompositorRD* RendererCompositorRD::singleton = nullptr;
 
 RendererCompositorRD::~RendererCompositorRD()
 {
-	singleton = nullptr;
 	memdelete(uniform_set_cache);
-	memdelete(framebuffer_cache);
 	ShaderRD::set_shader_cache_user_dir(String());
 	ShaderRD::set_shader_cache_res_dir(String());
 }

@@ -6311,8 +6311,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 															   .type); // this should have been
 																	   // validated previously
 
-											if (RendererCompositor::get_singleton()
-													->is_xr_enabled() &&
+											if (RendererCompositor::is_xr_enabled() &&
 												is_custom_func) {
 												ShaderNode::Uniform::Hint hint = u->hint;
 

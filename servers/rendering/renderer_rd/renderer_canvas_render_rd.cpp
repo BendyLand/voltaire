@@ -319,19 +319,19 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 		ERR_FAIL_COND_V(base_offset != stride, 0); // bug
 	}
 
-	RD::VertexFormatID vertex_id = RD::get_singleton()->vertex_format_create(descriptions);
+	RD::VertexFormatID vertex_id = RD::vertex_format_create(descriptions);
 	ERR_FAIL_COND_V(vertex_id == RD::INVALID_ID, 0);
 
 	PolygonBuffers pb;
 	pb.vertex_buffer =
-		RD::get_singleton()->vertex_buffer_create(polygon_buffer.size(), polygon_buffer);
+		RD::vertex_buffer_create(polygon_buffer.size(), polygon_buffer);
 	for (int i = 0; i < descriptions.size(); i++) {
 		if (buffers[i] == RID()) { // if put in vertex, use as vertex
 			buffers.write[i] = pb.vertex_buffer;
 		}
 	}
 
-	pb.vertex_array = RD::get_singleton()->vertex_array_create(p_points.size(), vertex_id, buffers);
+	pb.vertex_array = RD::vertex_array_create(p_points.size(), vertex_id, buffers);
 	pb.primitive_count = vertex_count;
 
 	if (p_indices.size()) {
@@ -342,7 +342,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			uint8_t* w = index_buffer.ptrw();
 			memcpy(w, p_indices.ptr(), sizeof(int32_t) * p_indices.size());
 		}
-		pb.indices = RD::get_singleton()->index_array_create(pb.index_buffer, 0, p_count);
+		pb.indices = RD::index_array_create(pb.index_buffer, 0, p_count);
 		pb.primitive_count = p_count;
 	}
 
@@ -363,14 +363,14 @@ void RendererCanvasRenderRD::free_polygon(PolygonID p_polygon)
 	PolygonBuffers& pb = *pb_ptr;
 
 	if (pb.indices.is_valid()) {
-		RD::get_singleton()->free_rid(pb.indices);
+		RD::free_rid(pb.indices);
 	}
 	if (pb.index_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(pb.index_buffer);
+		RD::free_rid(pb.index_buffer);
 	}
 
-	RD::get_singleton()->free_rid(pb.vertex_array);
-	RD::get_singleton()->free_rid(pb.vertex_buffer);
+	RD::free_rid(pb.vertex_array);
+	RD::free_rid(pb.vertex_buffer);
 
 	polygon_buffers.polygons.erase(p_polygon);
 }
@@ -492,7 +492,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 	material_storage->samplers_rd_get_default().append_uniforms(
 		uniforms, SAMPLERS_BINDING_FIRST_INDEX);
 
-	RID uniform_set = RD::get_singleton()->uniform_set_create(
+	RID uniform_set = RD::uniform_set_create(
 		uniforms, shader.default_version_rd_shader, BASE_UNIFORM_SET);
 	if (p_backbuffer) {
 		texture_storage->render_target_set_backbuffer_uniform_set(p_to_render_target, uniform_set);
@@ -965,7 +965,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 	if (state.instance_data_index > 0) {
 		// If there was any remaining instance data, it must be flushed.
 		RID buf = state.instance_buffers._get(0);
-		RD::get_singleton()->buffer_flush(buf);
+		RD::buffer_flush(buf);
 		state.instance_data_index = 0;
 	}
 }
@@ -1010,7 +1010,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 {
 	if (state.shadow_fb == RID()) {
 		// ah, we lack the shadow texture..
-		RD::get_singleton()->free_rid(state.shadow_texture); // erase placeholder
+		RD::free_rid(state.shadow_texture); // erase placeholder
 
 		Vector<RID> fb_textures;
 
@@ -1022,7 +1022,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 			tf.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RD::DATA_FORMAT_R32_SFLOAT;
 
-			state.shadow_texture = RD::get_singleton()->texture_create(tf, RD::TextureView());
+			state.shadow_texture = RD::texture_create(tf, RD::TextureView());
 			fb_textures.push_back(state.shadow_texture);
 		}
 		{
@@ -1034,11 +1034,11 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 			tf.format = RD::DATA_FORMAT_D32_SFLOAT;
 			tf.is_discardable = true;
 			// chunks to write
-			state.shadow_depth_texture = RD::get_singleton()->texture_create(tf, RD::TextureView());
+			state.shadow_depth_texture = RD::texture_create(tf, RD::TextureView());
 			fb_textures.push_back(state.shadow_depth_texture);
 		}
 
-		state.shadow_fb = RD::get_singleton()->framebuffer_create(fb_textures);
+		state.shadow_fb = RD::framebuffer_create(fb_textures);
 	}
 }
 
@@ -1082,10 +1082,10 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 	}
 
 	if ((oc->line_point_count != lines.size() || lines.is_empty()) && oc->vertex_array.is_valid()) {
-		RD::get_singleton()->free_rid(oc->vertex_array);
-		RD::get_singleton()->free_rid(oc->vertex_buffer);
-		RD::get_singleton()->free_rid(oc->index_array);
-		RD::get_singleton()->free_rid(oc->index_buffer);
+		RD::free_rid(oc->vertex_array);
+		RD::free_rid(oc->vertex_buffer);
+		RD::free_rid(oc->index_array);
+		RD::free_rid(oc->index_buffer);
 
 		oc->vertex_array = RID();
 		oc->vertex_buffer = RID();
@@ -1147,13 +1147,13 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			// create from scratch
 			// vertices
 			oc->vertex_buffer =
-				RD::get_singleton()->vertex_buffer_create(lc * 6 * sizeof(float), geometry);
+				RD::vertex_buffer_create(lc * 6 * sizeof(float), geometry);
 
 			Vector<RID> buffer;
 			buffer.push_back(oc->vertex_buffer);
-			oc->vertex_array = RD::get_singleton()->vertex_array_create(
+			oc->vertex_array = RD::vertex_array_create(
 				4 * lc / 2, shadow_render.vertex_format, buffer);
-			oc->index_array = RD::get_singleton()->index_array_create(oc->index_buffer, 0, 3 * lc);
+			oc->index_array = RD::index_array_create(oc->index_buffer, 0, 3 * lc);
 		}
 	}
 
@@ -1182,10 +1182,10 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 	if (((oc->sdf_index_count != sdf_indices.size() && oc->sdf_point_count != p_points.size()) ||
 			p_points.is_empty()) &&
 		oc->sdf_vertex_array.is_valid()) {
-		RD::get_singleton()->free_rid(oc->sdf_vertex_array);
-		RD::get_singleton()->free_rid(oc->sdf_vertex_buffer);
-		RD::get_singleton()->free_rid(oc->sdf_index_array);
-		RD::get_singleton()->free_rid(oc->sdf_index_buffer);
+		RD::free_rid(oc->sdf_vertex_array);
+		RD::free_rid(oc->sdf_vertex_buffer);
+		RD::free_rid(oc->sdf_index_array);
+		RD::free_rid(oc->sdf_index_buffer);
 
 		oc->sdf_vertex_array = RID();
 		oc->sdf_vertex_buffer = RID();
@@ -1210,18 +1210,18 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 				float_points_ptr[i * 2] = p_points[i].x;
 				float_points_ptr[i * 2 + 1] = p_points[i].y;
 			}
-			oc->sdf_vertex_buffer = RD::get_singleton()->vertex_buffer_create(
+			oc->sdf_vertex_buffer = RD::vertex_buffer_create(
 				p_points.size() * 2 * sizeof(float), float_points.span().reinterpret<uint8_t>());
 #else
-			oc->sdf_vertex_buffer = RD::get_singleton()->vertex_buffer_create(
+			oc->sdf_vertex_buffer = RD::vertex_buffer_create(
 				p_points.size() * 2 * sizeof(float), p_points.span().reinterpret<uint8_t>());
 #endif
-			oc->sdf_index_array = RD::get_singleton()->index_array_create(
+			oc->sdf_index_array = RD::index_array_create(
 				oc->sdf_index_buffer, 0, sdf_indices.size());
 
 			Vector<RID> buffer;
 			buffer.push_back(oc->sdf_vertex_buffer);
-			oc->sdf_vertex_array = RD::get_singleton()->vertex_array_create(
+			oc->sdf_vertex_array = RD::vertex_array_create(
 				p_points.size(), shadow_render.sdf_vertex_format, buffer);
 		}
 	}
@@ -1275,7 +1275,7 @@ void RendererCanvasRenderRD::CanvasShaderData::_create_pipeline(PipelineKey p_pi
 	blend_state.attachments.push_back(attachment);
 
 	RD::PipelineMultisampleState multisample_state;
-	multisample_state.sample_count = RD::get_singleton()->framebuffer_format_get_texture_samples(
+	multisample_state.sample_count = RD::framebuffer_format_get_texture_samples(
 		p_pipeline_key.framebuffer_format_id, 0);
 
 	// Convert the specialization from the key to pipeline specialization constants.
@@ -1289,7 +1289,7 @@ void RendererCanvasRenderRD::CanvasShaderData::_create_pipeline(PipelineKey p_pi
 	RID shader_rid = get_shader(p_pipeline_key.variant, p_pipeline_key.ubershader);
 	ERR_FAIL_COND(shader_rid.is_null());
 
-	RID pipeline = RD::get_singleton()->render_pipeline_create(shader_rid,
+	RID pipeline = RD::render_pipeline_create(shader_rid,
 		p_pipeline_key.framebuffer_format_id, p_pipeline_key.vertex_format_id,
 		p_pipeline_key.render_primitive, RD::PipelineRasterizationState(), multisample_state,
 		RD::PipelineDepthStencilState(), blend_state, dynamic_state_flags, 0,
@@ -1330,7 +1330,7 @@ uint64_t RendererCanvasRenderRD::CanvasShaderData::get_vertex_input_mask(
 		RID shader_rid = get_shader(p_shader_variant, p_ubershader);
 		ERR_FAIL_COND_V(shader_rid.is_null(), 0);
 
-		input_mask = RD::get_singleton()->shader_get_vertex_input_attribute_mask(shader_rid);
+		input_mask = RD::shader_get_vertex_input_attribute_mask(shader_rid);
 		vertex_input_masks[input_mask_index].store(input_mask, std::memory_order_relaxed);
 	}
 
@@ -1411,8 +1411,8 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 	}
 	state.shadow_texture_size = p_size;
 	if (state.shadow_fb.is_valid()) {
-		RD::get_singleton()->free_rid(state.shadow_texture);
-		RD::get_singleton()->free_rid(state.shadow_depth_texture);
+		RD::free_rid(state.shadow_texture);
+		RD::free_rid(state.shadow_depth_texture);
 		state.shadow_fb = RID();
 
 		{
@@ -1425,7 +1425,7 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 			tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RD::DATA_FORMAT_R32_SFLOAT;
 
-			state.shadow_texture = RD::get_singleton()->texture_create(tf, RD::TextureView());
+			state.shadow_texture = RD::texture_create(tf, RD::TextureView());
 		}
 	}
 }
@@ -2155,8 +2155,8 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 
 void RendererCanvasRenderRD::_before_evict(RendererCanvasRenderRD::RIDSetKey& p_key, RID& p_rid)
 {
-	RD::get_singleton()->uniform_set_set_invalidation_callback(p_rid, nullptr, nullptr);
-	RD::get_singleton()->free_rid(p_rid);
+	RD::uniform_set_set_invalidation_callback(p_rid, nullptr, nullptr);
+	RD::free_rid(p_rid);
 }
 
 void RendererCanvasRenderRD::_uniform_set_invalidation_callback(void* p_userdata)
@@ -2169,10 +2169,9 @@ void RendererCanvasRenderRD::_canvas_texture_invalidation_callback(bool p_delete
 {
 	KeyValue<RID, TightLocalVector<RID>>* kv =
 		static_cast<KeyValue<RID, TightLocalVector<RID>>*>(p_userdata);
-	RD* rd = RD::get_singleton();
 	for (RID rid : kv->value) {
 		// The invalidation callback will also take care of clearing rid_set_to_uniform_set cache.
-		rd->free_rid(rid);
+		RD::free_rid(rid);
 	}
 	kv->value.clear();
 	if (p_deleted) {
@@ -2198,13 +2197,13 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			uniform_ptrw[2] = RD::Uniform(RD::UNIFORM_TYPE_TEXTURE, 2, p_batch->tex_info->specular);
 			uniform_ptrw[3] = RD::Uniform(RD::UNIFORM_TYPE_SAMPLER, 3, p_batch->tex_info->sampler);
 
-			RID rid = RD::get_singleton()->uniform_set_create(
+			RID rid = RD::uniform_set_create(
 				state.batch_texture_uniforms, shader.default_version_rd_shader, BATCH_UNIFORM_SET);
 			ERR_FAIL_COND_MSG(rid.is_null(), "Failed to create uniform set for batch.");
 
 			const RIDCache::Pair* iter = rid_set_to_uniform_set.insert(key, rid);
 			uniform_set = &iter->data;
-			RD::get_singleton()->uniform_set_set_invalidation_callback(
+			RD::uniform_set_set_invalidation_callback(
 				rid, RendererCanvasRenderRD::_uniform_set_invalidation_callback, (void*)&iter->key);
 
 			// If this is a CanvasTexture, it must be tracked so that any changes to the diffuse,
@@ -2228,7 +2227,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 		if (state.current_batch_uniform_set != *uniform_set) {
 			state.current_batch_uniform_set = *uniform_set;
-			RD::get_singleton()->draw_list_bind_uniform_set(
+			RD::draw_list_bind_uniform_set(
 				p_draw_list, *uniform_set, BATCH_UNIFORM_SET);
 		}
 	}
@@ -2257,16 +2256,16 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		pipeline_key.vertex_format_id = pb->vertex_format_id;
 		pipeline =
 			_get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key, push_constant);
-		RD::get_singleton()->draw_list_bind_render_pipeline(p_draw_list, pipeline);
+		RD::draw_list_bind_render_pipeline(p_draw_list, pipeline);
 
-		RD::get_singleton()->draw_list_set_push_constant(
+		RD::draw_list_set_push_constant(
 			p_draw_list, &push_constant, sizeof(push_constant));
-		RD::get_singleton()->draw_list_bind_vertex_array(p_draw_list, pb->vertex_array);
+		RD::draw_list_bind_vertex_array(p_draw_list, pb->vertex_array);
 		if (pb->indices.is_valid()) {
-			RD::get_singleton()->draw_list_bind_index_array(p_draw_list, pb->indices);
+			RD::draw_list_bind_index_array(p_draw_list, pb->indices);
 		}
 
-		RD::get_singleton()->draw_list_draw(p_draw_list, pb->indices.is_valid());
+		RD::draw_list_draw(p_draw_list, pb->indices.is_valid());
 		if (r_render_info) {
 			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 							   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME]++;
@@ -2305,7 +2304,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 			RID uniform_set = mesh_storage->multimesh_get_2d_uniform_set(
 				multimesh, shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
-			RD::get_singleton()->draw_list_bind_uniform_set(
+			RD::draw_list_bind_uniform_set(
 				p_draw_list, uniform_set, TRANSFORMS_UNIFORM_SET);
 		}
 		else if (p_batch->command_type == Item::Command::TYPE_PARTICLES) {
@@ -2330,7 +2329,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 			RID uniform_set = particles_storage->particles_get_instance_buffer_uniform_set(
 				pt->particles, shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
-			RD::get_singleton()->draw_list_bind_uniform_set(
+			RD::draw_list_bind_uniform_set(
 				p_draw_list, uniform_set, TRANSFORMS_UNIFORM_SET);
 		}
 
@@ -2355,19 +2354,19 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 			pipeline = _get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key,
 				push_constant, mesh_instance, surface, j, &vertex_array);
-			RD::get_singleton()->draw_list_bind_render_pipeline(p_draw_list, pipeline);
+			RD::draw_list_bind_render_pipeline(p_draw_list, pipeline);
 
-			RD::get_singleton()->draw_list_set_push_constant(
+			RD::draw_list_set_push_constant(
 				p_draw_list, &push_constant, sizeof(push_constant));
 
 			RID index_array = mesh_storage->mesh_surface_get_index_array(surface, 0);
 
 			if (index_array.is_valid()) {
-				RD::get_singleton()->draw_list_bind_index_array(p_draw_list, index_array);
+				RD::draw_list_bind_index_array(p_draw_list, index_array);
 			}
 
-			RD::get_singleton()->draw_list_bind_vertex_array(p_draw_list, vertex_array);
-			RD::get_singleton()->draw_list_draw(
+			RD::draw_list_bind_vertex_array(p_draw_list, vertex_array);
+			RD::draw_list_draw(
 				p_draw_list, index_array.is_valid(), p_batch->mesh_instance_count);
 
 			if (r_render_info) {
@@ -2471,7 +2470,7 @@ void RendererCanvasRenderRD::_add_to_batch(bool& r_batch_broken, Batch*& r_curre
 		sizeof(InstanceData));
 	state.instance_data_index++;
 	if (state.instance_data_index >= state.max_instances_per_buffer) {
-		RD::get_singleton()->buffer_flush(r_current_batch->instance_buffer);
+		RD::buffer_flush(r_current_batch->instance_buffer);
 		state.instance_data = nullptr;
 		_allocate_instance_buffer();
 		state.instance_data_index = 0;
@@ -2545,34 +2544,34 @@ RendererCanvasRenderRD::~RendererCanvasRenderRD()
 
 	{
 		if (state.canvas_state_buffer.is_valid()) {
-			RD::get_singleton()->free_rid(state.canvas_state_buffer);
+			RD::free_rid(state.canvas_state_buffer);
 		}
 
 		memdelete_arr(state.light_uniforms);
-		RD::get_singleton()->free_rid(state.lights_storage_buffer);
+		RD::free_rid(state.lights_storage_buffer);
 	}
 
 	// shadow rendering
 	{
 		shadow_render.shader.version_free(shadow_render.shader_version);
 		// this will also automatically clear all pipelines
-		RD::get_singleton()->free_rid(state.shadow_sampler);
+		RD::free_rid(state.shadow_sampler);
 	}
 
 	// buffers
 	{
-		RD::get_singleton()->free_rid(shader.quad_index_array);
-		RD::get_singleton()->free_rid(shader.quad_index_buffer);
+		RD::free_rid(shader.quad_index_array);
+		RD::free_rid(shader.quad_index_buffer);
 		// primitives are erase by dependency
 	}
 
 	if (state.shadow_fb.is_valid()) {
-		RD::get_singleton()->free_rid(state.shadow_depth_texture);
+		RD::free_rid(state.shadow_depth_texture);
 	}
-	RD::get_singleton()->free_rid(state.shadow_texture);
+	RD::free_rid(state.shadow_texture);
 
 	if (state.shadow_occluder_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(state.shadow_occluder_buffer);
+		RD::free_rid(state.shadow_occluder_buffer);
 	}
 
 	state.instance_buffers.uninit();

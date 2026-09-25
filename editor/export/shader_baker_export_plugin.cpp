@@ -56,7 +56,7 @@ bool ShaderBakerExportPlugin::_is_active(const Vector<String>& p_features) const
 {
 	// Shader baker should only work when a RendererRD driver is active, as the embedded shaders
 	// won't be found otherwise.
-	return RendererSceneRenderRD::get_singleton() != nullptr &&
+	return RendererSceneRenderRD::data != nullptr &&
 		   RendererRD::MaterialStorage::get_singleton() != nullptr &&
 		   p_features.has("shader_baker");
 }

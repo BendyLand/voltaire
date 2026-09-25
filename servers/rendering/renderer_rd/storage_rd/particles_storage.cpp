@@ -130,36 +130,36 @@ bool ParticlesStorage::particles_get_emitting(RID p_particles)
 void ParticlesStorage::_particles_free_data(Particles* particles)
 {
 	if (particles->particle_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->particle_buffer);
+		RD::free_rid(particles->particle_buffer);
 		particles->particle_buffer = RID();
-		RD::get_singleton()->free_rid(particles->particle_instance_buffer);
+		RD::free_rid(particles->particle_instance_buffer);
 		particles->particle_instance_buffer = RID();
 	}
 
 	particles->userdata_count = 0;
 
 	if (particles->frame_params_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->frame_params_buffer);
+		RD::free_rid(particles->frame_params_buffer);
 		particles->frame_params_buffer = RID();
 	}
 	particles->particles_transforms_buffer_uniform_set = RID();
 
-	if (RD::get_singleton()->uniform_set_is_valid(particles->trail_bind_pose_uniform_set)) {
-		RD::get_singleton()->free_rid(particles->trail_bind_pose_uniform_set);
+	if (RD::uniform_set_is_valid(particles->trail_bind_pose_uniform_set)) {
+		RD::free_rid(particles->trail_bind_pose_uniform_set);
 	}
 	particles->trail_bind_pose_uniform_set = RID();
 
 	if (particles->trail_bind_pose_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->trail_bind_pose_buffer);
+		RD::free_rid(particles->trail_bind_pose_buffer);
 		particles->trail_bind_pose_buffer = RID();
 	}
-	if (RD::get_singleton()->uniform_set_is_valid(particles->collision_textures_uniform_set)) {
-		RD::get_singleton()->free_rid(particles->collision_textures_uniform_set);
+	if (RD::uniform_set_is_valid(particles->collision_textures_uniform_set)) {
+		RD::free_rid(particles->collision_textures_uniform_set);
 	}
 	particles->collision_textures_uniform_set = RID();
 
 	if (particles->particles_sort_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->particles_sort_buffer);
+		RD::free_rid(particles->particles_sort_buffer);
 		particles->particles_sort_buffer = RID();
 		particles->particles_sort_uniform_set = RID();
 	}
@@ -167,23 +167,23 @@ void ParticlesStorage::_particles_free_data(Particles* particles)
 	if (particles->emission_buffer != nullptr) {
 		particles->emission_buffer = nullptr;
 		particles->emission_buffer_data.clear();
-		RD::get_singleton()->free_rid(particles->emission_storage_buffer);
+		RD::free_rid(particles->emission_storage_buffer);
 		particles->emission_storage_buffer = RID();
 	}
 
 	if (particles->unused_emission_storage_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->unused_emission_storage_buffer);
+		RD::free_rid(particles->unused_emission_storage_buffer);
 		particles->unused_emission_storage_buffer = RID();
 	}
 
 	if (particles->unused_trail_storage_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(particles->unused_trail_storage_buffer);
+		RD::free_rid(particles->unused_trail_storage_buffer);
 		particles->unused_trail_storage_buffer = RID();
 	}
 
-	if (RD::get_singleton()->uniform_set_is_valid(particles->particles_material_uniform_set)) {
+	if (RD::uniform_set_is_valid(particles->particles_material_uniform_set)) {
 		// will need to be re-created
-		RD::get_singleton()->free_rid(particles->particles_material_uniform_set);
+		RD::free_rid(particles->particles_material_uniform_set);
 	}
 	particles->particles_material_uniform_set = RID();
 }
@@ -462,12 +462,12 @@ void ParticlesStorage::_particles_allocate_emission_buffer(Particles* particles)
 		reinterpret_cast<ParticleEmissionBuffer*>(particles->emission_buffer_data.ptrw());
 	particles->emission_buffer->particle_max = particles->amount;
 
-	particles->emission_storage_buffer = RD::get_singleton()->storage_buffer_create(
+	particles->emission_storage_buffer = RD::storage_buffer_create(
 		particles->emission_buffer_data.size(), particles->emission_buffer_data);
 
-	if (RD::get_singleton()->uniform_set_is_valid(particles->particles_material_uniform_set)) {
+	if (RD::uniform_set_is_valid(particles->particles_material_uniform_set)) {
 		// will need to be re-created
-		RD::get_singleton()->free_rid(particles->particles_material_uniform_set);
+		RD::free_rid(particles->particles_material_uniform_set);
 		particles->particles_material_uniform_set = RID();
 	}
 }
@@ -478,7 +478,7 @@ void ParticlesStorage::_particles_ensure_unused_emission_buffer(Particles* parti
 		// For rendering devices that do not support empty arrays (like C++),
 		// we need to size the buffer with at least 1 element.
 		particles->unused_emission_storage_buffer =
-			RD::get_singleton()->storage_buffer_create(sizeof(ParticleEmissionBuffer));
+			RD::storage_buffer_create(sizeof(ParticleEmissionBuffer));
 	}
 }
 
@@ -486,7 +486,7 @@ void ParticlesStorage::_particles_ensure_unused_trail_buffer(Particles* particle
 {
 	if (particles->unused_trail_storage_buffer.is_null()) {
 		particles->unused_trail_storage_buffer =
-			RD::get_singleton()->storage_buffer_create(16 * sizeof(float)); // Size of mat4.
+			RD::storage_buffer_create(16 * sizeof(float)); // Size of mat4.
 	}
 }
 
@@ -498,8 +498,8 @@ void ParticlesStorage::particles_set_subemitter(RID p_particles, RID p_subemitte
 
 	particles->sub_emitter = p_subemitter_particles;
 
-	if (RD::get_singleton()->uniform_set_is_valid(particles->particles_material_uniform_set)) {
-		RD::get_singleton()->free_rid(particles->particles_material_uniform_set);
+	if (RD::uniform_set_is_valid(particles->particles_material_uniform_set)) {
+		RD::free_rid(particles->particles_material_uniform_set);
 		particles->particles_material_uniform_set =
 			RID(); // clear and force to re create sub emitting
 	}
@@ -574,7 +574,7 @@ AABB ParticlesStorage::particles_get_current_aabb(RID p_particles)
 
 	uint32_t particle_data_size =
 		sizeof(ParticleData) + sizeof(float) * 4 * particles->userdata_count;
-	Vector<uint8_t> buffer = RD::get_singleton()->buffer_get_data(particles->particle_buffer);
+	Vector<uint8_t> buffer = RD::buffer_get_data(particles->particle_buffer);
 	ERR_FAIL_COND_V(buffer.size() != (int)(total_amount * particle_data_size), AABB());
 
 	Transform3D inv = particles->emission_transform.affine_inverse();
@@ -717,7 +717,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 
 	if (p_particles->particles_material_uniform_set.is_null() ||
-		!RD::get_singleton()->uniform_set_is_valid(p_particles->particles_material_uniform_set)) {
+		!RD::uniform_set_is_valid(p_particles->particles_material_uniform_set)) {
 		thread_local LocalVector<RD::Uniform> uniforms;
 		uniforms.clear();
 
@@ -768,7 +768,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 			uniforms.push_back(u);
 		}
 
-		p_particles->particles_material_uniform_set = RD::get_singleton()->uniform_set_create(
+		p_particles->particles_material_uniform_set = RD::uniform_set_create(
 			uniforms, particles_shader.default_shader_rd, 1);
 	}
 
@@ -798,7 +798,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 	p_particles->phase = new_phase;
 
-	frame_params.time = RendererCompositorRD::get_singleton()->get_total_time();
+	frame_params.time = RendererCompositorRD::get_total_time();
 	frame_params.delta = p_delta;
 	frame_params.random_seed = p_particles->random_seed;
 	frame_params.explosiveness = p_particles->explosiveness;
@@ -838,7 +838,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		}
 
 		if (p_particles->has_sdf_collision &&
-			RD::get_singleton()->texture_is_valid(p_particles->sdf_collision_texture)) {
+			RD::texture_is_valid(p_particles->sdf_collision_texture)) {
 			// 2D collision
 
 			Transform2D xform =
@@ -1040,11 +1040,11 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		}
 
 		bool uniform_set_valid =
-			RD::get_singleton()->uniform_set_is_valid(p_particles->collision_textures_uniform_set);
+			RD::uniform_set_is_valid(p_particles->collision_textures_uniform_set);
 
 		if (different || !uniform_set_valid) {
 			if (uniform_set_valid) {
-				RD::get_singleton()->free_rid(p_particles->collision_textures_uniform_set);
+				RD::free_rid(p_particles->collision_textures_uniform_set);
 			}
 
 			thread_local LocalVector<RD::Uniform> uniforms;
@@ -1085,7 +1085,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 				}
 				uniforms.push_back(u);
 			}
-			p_particles->collision_textures_uniform_set = RD::get_singleton()->uniform_set_create(
+			p_particles->collision_textures_uniform_set = RD::uniform_set_create(
 				uniforms, particles_shader.default_shader_rd, 2);
 			p_particles->collision_heightmap_texture = collision_heightmap_texture;
 		}
@@ -1167,40 +1167,40 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	p_particles->has_collision_cache = m->shader_data->uses_collision;
 
 	// todo should maybe compute all particle systems together?
-	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
-	RD::get_singleton()->compute_list_bind_uniform_set(
+	RD::ComputeListID compute_list = RD::compute_list_begin();
+	RD::compute_list_bind_uniform_set(
 		compute_list, particles_shader.base_uniform_set, BASE_UNIFORM_SET);
-	RD::get_singleton()->compute_list_bind_uniform_set(
+	RD::compute_list_bind_uniform_set(
 		compute_list, p_particles->particles_material_uniform_set, MATERIAL_UNIFORM_SET);
-	RD::get_singleton()->compute_list_bind_uniform_set(
+	RD::compute_list_bind_uniform_set(
 		compute_list, p_particles->collision_textures_uniform_set, COLLISION_TEXTURTES_UNIFORM_SET);
 
-	if (m->uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(m->uniform_set)) {
-		RD::get_singleton()->compute_list_bind_uniform_set(compute_list, m->uniform_set, 3);
+	if (m->uniform_set.is_valid() && RD::uniform_set_is_valid(m->uniform_set)) {
+		RD::compute_list_bind_uniform_set(compute_list, m->uniform_set, 3);
 		m->set_as_used();
 	}
 
-	RD::get_singleton()->compute_list_set_push_constant(
+	RD::compute_list_set_push_constant(
 		compute_list, &push_constant, sizeof(ParticlesShader::PushConstant));
 
 	if (p_particles->trails_enabled && p_particles->trail_bind_poses.size() > 1) {
 		// trails requires two passes in order to catch particle starts
-		RD::get_singleton()->compute_list_dispatch_threads(
+		RD::compute_list_dispatch_threads(
 			compute_list, process_amount / p_particles->trail_bind_poses.size(), 1, 1);
 
-		RD::get_singleton()->compute_list_add_barrier(compute_list);
+		RD::compute_list_add_barrier(compute_list);
 
 		push_constant.trail_pass = true;
-		RD::get_singleton()->compute_list_set_push_constant(
+		RD::compute_list_set_push_constant(
 			compute_list, &push_constant, sizeof(ParticlesShader::PushConstant));
-		RD::get_singleton()->compute_list_dispatch_threads(
+		RD::compute_list_dispatch_threads(
 			compute_list, process_amount - p_particles->amount, 1, 1);
 	}
 	else {
-		RD::get_singleton()->compute_list_dispatch_threads(compute_list, process_amount, 1, 1);
+		RD::compute_list_dispatch_threads(compute_list, process_amount, 1, 1);
 	}
 
-	RD::get_singleton()->compute_list_end();
+	RD::compute_list_end();
 }
 
 Dependency* ParticlesStorage::particles_get_dependency(RID p_particles) const
@@ -1284,7 +1284,7 @@ void ParticlesStorage::particles_collision_free(RID p_rid)
 	ParticlesCollision* particles_collision = particles_collision_owner.get_or_null(p_rid);
 
 	if (particles_collision->heightfield_texture.is_valid()) {
-		RD::get_singleton()->free_rid(particles_collision->heightfield_texture);
+		RD::free_rid(particles_collision->heightfield_texture);
 	}
 	particles_collision->dependency.deleted_notify(p_rid);
 	particles_collision_owner.free(p_rid);
@@ -1324,11 +1324,11 @@ RID ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 		particles_collision->heightfield_texture =
-			RD::get_singleton()->texture_create(tf, RD::TextureView());
+			RD::texture_create(tf, RD::TextureView());
 
 		Vector<RID> fb_tex;
 		fb_tex.push_back(particles_collision->heightfield_texture);
-		particles_collision->heightfield_fb = RD::get_singleton()->framebuffer_create(fb_tex);
+		particles_collision->heightfield_fb = RD::framebuffer_create(fb_tex);
 		particles_collision->heightfield_fb_size = size;
 	}
 
@@ -1347,7 +1347,7 @@ void ParticlesStorage::particles_collision_set_collision_type(
 	}
 
 	if (particles_collision->heightfield_texture.is_valid()) {
-		RD::get_singleton()->free_rid(particles_collision->heightfield_texture);
+		RD::free_rid(particles_collision->heightfield_texture);
 		particles_collision->heightfield_texture = RID();
 	}
 	particles_collision->type = p_type;
@@ -1475,7 +1475,7 @@ void ParticlesStorage::particles_collision_set_height_field_resolution(
 	particles_collision->heightfield_resolution = p_resolution;
 
 	if (particles_collision->heightfield_texture.is_valid()) {
-		RD::get_singleton()->free_rid(particles_collision->heightfield_texture);
+		RD::free_rid(particles_collision->heightfield_texture);
 		particles_collision->heightfield_texture = RID();
 	}
 }

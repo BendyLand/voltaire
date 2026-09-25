@@ -2168,11 +2168,15 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size
-= sz;
+			wd.size = sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
+				Error err = RenderingDevice::initialize(rendering_context, rendering_context->device_get(0));
+			    if (err != OK) {
+			        ERR_PRINT("Failed to initialize RenderingDevice.");
+			        return;
+			    }
 			}
 #endif
 #if defined(GLES3_ENABLED)
@@ -5952,7 +5956,7 @@ DisplayServerX11::~DisplayServerX11()
 	// destroy drivers
 #if defined(RD_ENABLED)
 	if (rendering_device) {
-		memdelete(rendering_device);
+		memdelete(RD::data);
 		rendering_device = nullptr;
 	}
 
