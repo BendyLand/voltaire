@@ -2168,15 +2168,17 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size = sz;
+			wd.size
+= sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
-				Error err = RenderingDevice::initialize(rendering_context, rendering_context->device_get(0));
-			    if (err != OK) {
-			        ERR_PRINT("Failed to initialize RenderingDevice.");
-			        return;
-			    }
+				Error err = RenderingDevice::initialize(
+					rendering_context, rendering_context->device_get(0));
+				if (err != OK) {
+					ERR_PRINT("Failed to initialize RenderingDevice.");
+					return;
+				}
 			}
 #endif
 #if defined(GLES3_ENABLED)
@@ -4451,7 +4453,8 @@ void DisplayServerX11::_xim_preedit_done_callback(
 {
 	DisplayServerX11* ds = reinterpret_cast<DisplayServerX11*>(client_data);
 	DisplayServerEnums::WindowID window_id = ds->_get_focused_window_or_popup();
-	WindowData& wd = ds->windows[window_id];
+	WindowData& wd =
+ds->windows[window_id];
 	if (wd.ime_active) {
 		wd.ime_in_progress = false;
 		wd.ime_suppress_next_keyup = true;
@@ -6039,6 +6042,49 @@ void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
 
 void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawCallbackStruct*) {}
 
+Error DisplayServer::init_rendering_device()
+{
+#if defined(RD_ENABLED)
+	RenderingContextDriver* rcd = nullptr;
+
+#if defined(VULKAN_ENABLED)
+	rcd = memnew(RenderingContextDriverVulkan);
+#endif
+#if defined(D3D12_ENABLED)
+	if (rcd == nullptr) {
+		rcd = memnew(RenderingContextDriverD3D12);
+	}
+#endif
+#if defined(METAL_ENABLED)
+	if (rcd == nullptr) {
+		rcd = memnew(RenderingContextDriverMetal);
+	}
+#endif
+
+	if (rcd == nullptr) {
+		return ERR_UNAVAILABLE;
+	}
+
+	Error err = rcd->initialize();
+	if (err != OK) {
+		memdelete(rcd);
+		return err;
+	}
+
+	RenderingContextDriver::Device device = rcd->device_get(0);
+
+	err = RD::initialize(rcd, device);
+	if (err != OK) {
+		memdelete(rcd);
+		return err;
+	}
+
+	return OK;
+#else
+	return ERR_UNAVAILABLE;
+#endif
+}
+
 DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
@@ -6076,20 +6122,13 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	int y = p_position ? p_position->y : 0;
 	::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
 	XSetWindowAttributes wa;
-	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-			PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
-			ExposureMask | FocusChangeMask | EnterWindowMask | LeaveWindowMask;
+	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
+					ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
+					EnterWindowMask | LeaveWindowMask;
 	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
-	::Window x11_win = XCreateWindow(
-			x11_display,
-			root,
-			x, y, width, height,
-			0,
-			CopyFromParent,
-			InputOutput,
-			CopyFromParent,
-			CWBackPixel | CWEventMask,
-			&wa);
+	::Window x11_win = XCreateWindow(x11_display, root, x, y,
+width, height, 0, CopyFromParent,
+		InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
 	if (!x11_win) {
 		r_error = ERR_CANT_CREATE;
 		return;
@@ -6101,23 +6140,23 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	wd.position = Point2i(x, y);
 	wd.size = Size2i(width, height);
 	switch (p_mode) {
-		case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
-			wd.fullscreen = true;
-		} break;
-		case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
-			wd.fullscreen = true;
-			wd.exclusive_fullscreen = true;
-		} break;
-		case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
-			wd.maximized = true;
-		} break;
-		case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
-			wd.minimized = true;
-		} break;
-		case DisplayServerEnums::WINDOW_MODE_WINDOWED:
-		default: {
-			// standard defaults already set
-		} break;
+	case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
+		wd.fullscreen = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
+		wd.fullscreen = true;
+		wd.exclusive_fullscreen = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
+		wd.maximized = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
+		wd.minimized = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_WINDOWED:
+	default: {
+		// standard defaults already set
+	} break;
 	}
 	windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
 	XMapWindow(x11_display, x11_win);

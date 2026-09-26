@@ -1,0 +1,13 @@
+[Layer 1: Entry / OS Platform]        main() (platform/linuxbsd/godot_linuxbsd.cpp)
+                                             │
+[Layer 2: Engine Orchestrator]        Main::setup() / Main::setup2() (main/main.cpp)
+                                        ├── (Phase A) ──> DisplayServer::create()
+                                        └── (Phase B) ──> RenderingServer::init()
+                                                                 │
+[Layer 3: Windowing & Surface]        DisplayServer / DisplayServerX11
+                                             │
+[Layer 4: Graphics Context Driver]    RenderingContextDriver / VulkanDriver
+                                             │
+[Layer 5: Server / Compositor]        RenderingServer ──> RendererCompositorRD
+                                                                 │
+[Layer 6: Device & Driver Engine]     RenderingDevice ──> RenderingDeviceDriver

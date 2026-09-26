@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "renderer_compositor.h"
+#include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -54,8 +55,13 @@ RendererCompositor* RendererCompositor::create()
 		return _create_func();
 	}
 #if defined(RD_ENABLED)
-	low_end = false;
-	return memnew(RendererCompositorRD);
+low_end = false;
+    DisplayServer* ds = DisplayServer::get_singleton();
+    if (ds != nullptr) {
+        Error err = ds->init_rendering_device();
+        ERR_FAIL_COND_V_MSG(err != OK, nullptr, "Failed to initialize RenderingDevice via DisplayServer.");
+    }
+    return memnew(RendererCompositorRD);
 #elif defined(GLES3_ENABLED)
 	low_end = true;
 	return memnew(RasterizerGLES3);

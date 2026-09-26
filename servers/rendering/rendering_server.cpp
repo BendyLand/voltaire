@@ -603,6 +603,7 @@ void RenderingServer::get_argument_options(
 
 void RenderingServer::init()
 {
+	data = memnew(Data);
 	RSG::canvas = memnew(RendererCanvasCull);
 	RSG::viewport = memnew(RendererViewport);
 	RendererSceneCull* sr = memnew(RendererSceneCull);
@@ -643,6 +644,8 @@ void RenderingServer::finish()
 	if (RSG::camera_attributes) {
 		memdelete(RSG::camera_attributes);
 	}
+	memdelete(data);
+	data = nullptr;
 }
 
 void RenderingServer::sync() {}

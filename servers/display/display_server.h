@@ -67,7 +67,7 @@ class DisplayServer
 public:
 	_FORCE_INLINE_ static DisplayServer* get_singleton() { return singleton; }
 
-	/* CREATE */
+	static Error init_rendering_device();
 
 private:
 	enum
