@@ -84,9 +84,8 @@ void Engine::set_max_fps(int p_fps)
 {
 	_max_fps = p_fps > 0 ? p_fps : 0;
 
-	RenderingDevice* rd = RenderingDevice::get_singleton();
-	if (rd) {
-		rd->_set_max_fps(_max_fps);
+	if (RD::data) {
+		RD::_set_max_fps(_max_fps);
 	}
 }
 

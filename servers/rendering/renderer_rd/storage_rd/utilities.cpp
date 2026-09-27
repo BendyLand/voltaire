@@ -204,37 +204,37 @@ AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const
 
 void Utilities::capture_timestamps_begin()
 {
-	RD::get_singleton()->capture_timestamp("Frame Begin");
+	RD::capture_timestamp("Frame Begin");
 }
 
 void Utilities::capture_timestamp(const String& p_name)
 {
-	RD::get_singleton()->capture_timestamp(p_name);
+	RD::capture_timestamp(p_name);
 }
 
 uint32_t Utilities::get_captured_timestamps_count() const
 {
-	return RD::get_singleton()->get_captured_timestamps_count();
+	return RD::get_captured_timestamps_count();
 }
 
 uint64_t Utilities::get_captured_timestamps_frame() const
 {
-	return RD::get_singleton()->get_captured_timestamps_frame();
+	return RD::get_captured_timestamps_frame();
 }
 
 uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index) const
 {
-	return RD::get_singleton()->get_captured_timestamp_gpu_time(p_index);
+	return RD::get_captured_timestamp_gpu_time(p_index);
 }
 
 uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index) const
 {
-	return RD::get_singleton()->get_captured_timestamp_cpu_time(p_index);
+	return RD::get_captured_timestamp_cpu_time(p_index);
 }
 
 String Utilities::get_captured_timestamp_name(uint32_t p_index) const
 {
-	return RD::get_singleton()->get_captured_timestamp_name(p_index);
+	return RD::get_captured_timestamp_name(p_index);
 }
 
 void Utilities::update_dirty_resources()
@@ -251,12 +251,12 @@ void Utilities::update_dirty_resources()
 
 bool Utilities::has_os_feature(const String& p_feature) const
 {
-	if (!RD::get_singleton()) {
+	if (!RD::data) {
 		return false;
 	}
 
 	if (p_feature == "rgtc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_BC5_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
@@ -266,32 +266,32 @@ bool Utilities::has_os_feature(const String& p_feature) const
 	// textures. This could be fixed but so few devices support it that it doesn't seem useful (and
 	// makes bigger APKs). For good measure we do the same hack for iOS, just in case.
 	if (p_feature == "s3tc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 #endif
 
 	if (p_feature == "bptc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_BC7_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "etc2" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc_hdr" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
+		RD::texture_is_format_supported_for_usage(
 			RD::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
@@ -302,11 +302,11 @@ bool Utilities::has_os_feature(const String& p_feature) const
 void Utilities::update_memory_info()
 {
 	texture_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
 	buffer_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
 	total_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_TOTAL);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TOTAL);
 }
 
 uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
@@ -325,41 +325,39 @@ uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
 
 String Utilities::get_video_adapter_name() const
 {
-	return RenderingDevice::get_singleton()->get_device_name();
+	return RenderingDevice::get_device_name();
 }
 
 String Utilities::get_video_adapter_vendor() const
 {
-	return RenderingDevice::get_singleton()->get_device_vendor_name();
+	return RenderingDevice::get_device_vendor_name();
 }
 
 RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type() const
 {
-	return RenderingDevice::get_singleton()->get_device_type();
+	return RenderingDevice::get_device_type();
 }
 
 String Utilities::get_video_adapter_api_version() const
 {
-	return RenderingDevice::get_singleton()->get_device_api_version();
+	return RenderingDevice::get_device_api_version();
 }
 
 Size2i Utilities::get_maximum_viewport_size() const
 {
-	RenderingDevice* device = RenderingDevice::get_singleton();
-
-	int max_x = device->limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
-	int max_y = device->limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
+	int max_x = RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
+	int max_y = RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
 	return Size2i(max_x, max_y);
 }
 
 uint32_t Utilities::get_maximum_shader_varyings() const
 {
-	return RenderingDevice::get_singleton()->limit_get(RenderingDevice::LIMIT_MAX_SHADER_VARYINGS);
+	return RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_SHADER_VARYINGS);
 }
 
 uint64_t Utilities::get_maximum_uniform_buffer_size() const
 {
-	return RenderingDevice::get_singleton()->limit_get(
+	return RenderingDevice::limit_get(
 		RenderingDevice::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
 }
 

@@ -403,7 +403,7 @@ MaterialStorage::MaterialData::~MaterialData()
 
 	for (int i = 0; i < 2; i++) {
 		if (uniform_buffer[i].is_valid()) {
-			RD::get_singleton()->free_rid(uniform_buffer[i]);
+			RD::free_rid(uniform_buffer[i]);
 		}
 	}
 }
@@ -527,9 +527,9 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 
 void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_set)
 {
-	if (p_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(p_uniform_set)) {
-		RD::get_singleton()->uniform_set_set_invalidation_callback(p_uniform_set, nullptr, nullptr);
-		RD::get_singleton()->free_rid(p_uniform_set);
+	if (p_uniform_set.is_valid() && RD::uniform_set_is_valid(p_uniform_set)) {
+		RD::uniform_set_set_invalidation_callback(p_uniform_set, nullptr, nullptr);
+		RD::free_rid(p_uniform_set);
 	}
 }
 
@@ -642,11 +642,11 @@ MaterialStorage::~MaterialStorage()
 	memdelete_arr(global_shader_uniforms.buffer_values);
 	memdelete_arr(global_shader_uniforms.buffer_usage);
 	memdelete_arr(global_shader_uniforms.buffer_dirty_regions);
-	RD::get_singleton()->free_rid(global_shader_uniforms.buffer);
+	RD::free_rid(global_shader_uniforms.buffer);
 
 	// buffers
 
-	RD::get_singleton()->free_rid(quad_index_buffer); // array gets freed as dependency
+	RD::free_rid(quad_index_buffer); // array gets freed as dependency
 
 	// def samplers
 	samplers_rd_free(default_samplers);
@@ -1372,7 +1372,7 @@ MaterialStorage::Samplers MaterialStorage::samplers_rd_allocate(
 			}
 			}
 
-			samplers.rids[i][j] = RD::get_singleton()->sampler_create(sampler_state);
+			samplers.rids[i][j] = RD::sampler_create(sampler_state);
 		}
 	}
 
@@ -1384,7 +1384,7 @@ void MaterialStorage::samplers_rd_free(Samplers& p_samplers) const
 	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
 		for (int j = 1; j < RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
 			if (p_samplers.rids[i][j].is_valid()) {
-				RD::get_singleton()->free_rid(p_samplers.rids[i][j]);
+				RD::free_rid(p_samplers.rids[i][j]);
 				p_samplers.rids[i][j] = RID();
 			}
 		}

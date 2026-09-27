@@ -42,7 +42,7 @@ void ProjectZIPPacker::pack_project_zip(const String& p_path)
 	Ref<FileAccess> io_fa;
 	zlib_filefunc_def io = zipio_create_io(&io_fa);
 
-	String resource_path = ProjectSettings::get_singleton()->get_resource_path();
+	String resource_path = ProjectSettings::get_resource_path();
 	const String base_path = resource_path.substr(0, resource_path.rfind_char('/')) + "/";
 
 	zipFile zip = zipOpen2(p_path.utf8().get_data(), APPEND_STATUS_CREATE, nullptr, &io);
@@ -60,7 +60,7 @@ void ProjectZIPPacker::_zip_recursive(
 	}
 	dir->list_dir_begin();
 	String cur = dir->get_next();
-	String project_data_dir_name = ProjectSettings::get_singleton()->get_project_data_dir_name();
+	String project_data_dir_name = ProjectSettings::get_project_data_dir_name();
 	while (!cur.is_empty()) {
 		String cs = p_path.path_join(cur);
 		if (cur == "." || cur == ".." || cur == project_data_dir_name) {

@@ -44,7 +44,7 @@ static constexpr uint32_t base = char_count + ('9' - '0');
 
 String ResourceUID::get_cache_file()
 {
-	return ProjectSettings::get_singleton()->get_project_data_path().path_join("uid_cache.bin");
+	return ProjectSettings::get_project_data_path().path_join("uid_cache.bin");
 }
 
 static constexpr uint8_t uuid_characters[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',

@@ -227,7 +227,7 @@ String ResourceLoader::_validate_local_path(const String& p_path)
 		return ("res://" + p_path).simplify_path();
 	}
 	else {
-		return ProjectSettings::get_singleton()->localize_path(p_path);
+		return ProjectSettings::localize_path(p_path);
 	}
 }
 
@@ -676,7 +676,7 @@ bool ResourceLoader::_ensure_load_progress()
 	if (OS::get_singleton()->is_separate_thread_rendering_enabled()) {
 		return false; // Not needed.
 	}
-	RenderingServer::get_singleton()->sync();
+	RenderingServer::sync();
 	return true;
 }
 

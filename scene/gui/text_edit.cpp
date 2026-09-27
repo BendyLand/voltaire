@@ -492,11 +492,11 @@ void TextEdit::_draw_selection_handle(Vector2 p_pos) const
 	int line_height = get_line_height();
 
 	int handle_line_width = theme_cache.caret_width * MAX(1, theme_cache.base_scale);
-	RS::get_singleton()->canvas_item_add_line(
+	RS::canvas_item_add_line(
 		text_ci, p_pos, p_pos + Vector2(0, line_height), handle_color, handle_line_width);
 
 	Vector2 circle_center = p_pos + Vector2(0, line_height + selection_handle_radius);
-	RS::get_singleton()->canvas_item_add_circle(
+	RS::canvas_item_add_circle(
 		text_ci, circle_center, selection_handle_radius, handle_color);
 }
 
@@ -4326,7 +4326,7 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 	Rect2 rect = p_rect.abs();
 
 	if (p_width >= rect.size.width || p_width >= rect.size.height) {
-		RS::get_singleton()->canvas_item_add_rect(
+		RS::canvas_item_add_rect(
 			p_canvas_item, rect.grow(0.5f * p_width), p_color, p_antialiased);
 	}
 	else {
@@ -4340,12 +4340,54 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 
 		Vector<Color> colors = {p_color};
 
-		RS::get_singleton()->canvas_item_add_polyline(
+		RS::canvas_item_add_polyline(
 			p_canvas_item, points, colors, p_width, p_antialiased);
 	}
 }
 
-TextEdit::~TextEdit() { RS::get_singleton()->free_rid(text_ci); }
+TextEdit::~TextEdit() { RS::free_rid(text_ci); }
+
+void TextEdit::_update_scrollbars() {}
+
+void TextEdit::_update_placeholder() {}
+
+void TextEdit::_update_gutter_width() {}
+
+void TextEdit::set_line_background_color(int, Color const&) {}
+
+void TextEdit::_set_line_as_hidden(int, bool) {}
+
+void TextEdit::_adjust_viewport_to_caret_horizontally(int, bool) {}
+
+void TextEdit::_update_ime_text() {}
+
+void TextEdit::_set_text(String const&, bool) {}
+
+void TextEdit::set_tab_size(int) {}
+
+void TextEdit::set_syntax_highlighter(Ref<SyntaxHighlighter>) {}
+
+void TextEdit::_set_symbol_lookup_word(String const&) {}
+
+void TextEdit::_set_hiding_enabled(bool) {}
+
+void TextEdit::set_gutter_clickable(int, bool) {}
+
+void TextEdit::set_draw_control_chars(bool) {}
+
+void TextEdit::_scroll_moved(double) {}
+
+Control::CursorShape TextEdit::get_cursor_shape(Vector2 const&) const { return Control::CursorShape(); }
+
+void TextEdit::_generate_context_menu() {}
+
+void TextEdit::clear() {}
+
+void TextEdit::_base_remove_text(int, int, int, int) {}
+
+void TextEdit::_base_insert_text(int, int, String const&, int&, int&) {}
+
+String TextEdit::_get_accessibility_name() const { return String(); }
 
 void TextEdit::_update_scrollbars() {}
 

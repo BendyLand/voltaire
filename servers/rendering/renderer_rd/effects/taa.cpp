@@ -59,7 +59,7 @@ void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_f
 		just_allocated = true;
 	}
 
-	RD::get_singleton()->draw_command_begin_label("TAA");
+	RD::draw_command_begin_label("TAA");
 
 	for (uint32_t v = 0; v < view_count; v++) {
 		// Get our (cached) slices
@@ -84,7 +84,7 @@ void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_f
 			velocity_buffer, taa_prev_velocity, Rect2(0, 0, target_size.x, target_size.y));
 	}
 
-	RD::get_singleton()->draw_command_end_label();
+	RD::draw_command_end_label();
 }
 
 void RendererRD::TAA::resolve(RID p_dest_framebuffer, RID p_current_color, RID p_previous_color,

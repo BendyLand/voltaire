@@ -75,7 +75,7 @@ RID CameraFeed::get_texture(CameraServer::FeedImage p_which) { return texture[p_
 
 uint64_t CameraFeed::get_texture_tex_id(CameraServer::FeedImage p_which)
 {
-	return RenderingServer::get_singleton()->texture_get_native_handle(texture[p_which]);
+	return RenderingServer::texture_get_native_handle(texture[p_which]);
 }
 
 CameraFeed::CameraFeed()
@@ -90,9 +90,9 @@ CameraFeed::CameraFeed()
 	position = CameraFeed::FEED_UNSPECIFIED;
 	transform = Transform2D(1.0, 0.0, 0.0, -1.0, 0.0, 1.0);
 	texture[CameraServer::FEED_Y_IMAGE] =
-		RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		RenderingServer::texture_2d_placeholder_create();
 	texture[CameraServer::FEED_CBCR_IMAGE] =
-		RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		RenderingServer::texture_2d_placeholder_create();
 }
 
 CameraFeed::CameraFeed(String p_name, FeedPosition p_position)
@@ -107,17 +107,17 @@ CameraFeed::CameraFeed(String p_name, FeedPosition p_position)
 	position = p_position;
 	transform = Transform2D(1.0, 0.0, 0.0, -1.0, 0.0, 1.0);
 	texture[CameraServer::FEED_Y_IMAGE] =
-		RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		RenderingServer::texture_2d_placeholder_create();
 	texture[CameraServer::FEED_CBCR_IMAGE] =
-		RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		RenderingServer::texture_2d_placeholder_create();
 }
 
 CameraFeed::~CameraFeed()
 {
 	// Free our textures
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(texture[CameraServer::FEED_Y_IMAGE]);
-	RenderingServer::get_singleton()->free_rid(texture[CameraServer::FEED_CBCR_IMAGE]);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(texture[CameraServer::FEED_Y_IMAGE]);
+	RenderingServer::free_rid(texture[CameraServer::FEED_CBCR_IMAGE]);
 }
 
 CameraFeed::FeedFormat CameraFeed::get_format() const

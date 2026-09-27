@@ -82,20 +82,20 @@ void MFXSpatialEffect::process(Ref<RenderSceneBuffersRD> p_render_buffers, RID p
 
 	CallbackArgs *userdata = args_allocator.alloc(
 			this,
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_src)),
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_dst)),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_src)),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_dst)),
 			*ctx);
 	RD::CallbackResource res[2] = {
 		{ .rid = p_src, .usage = RD::CALLBACK_RESOURCE_USAGE_TEXTURE_SAMPLE },
 		{ .rid = p_dst, .usage = RD::CALLBACK_RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE }
 	};
-	RD::get_singleton()->driver_callback_add((RDD::DriverCallback)MFXSpatialEffect::callback, userdata, VectorView<RD::CallbackResource>(res, 2));
+	RD::driver_callback_add((RDD::DriverCallback)MFXSpatialEffect::callback, userdata, VectorView<RD::CallbackResource>(res, 2));
 }
 
 MFXSpatialContext *MFXSpatialEffect::create_context(CreateParams p_params) const {
-	DEV_ASSERT(RD::get_singleton()->has_feature(RD::SUPPORTS_METALFX_SPATIAL));
+	DEV_ASSERT(RD::has_feature(RD::SUPPORTS_METALFX_SPATIAL));
 
-	RenderingDeviceDriverMetal *rdd = (RenderingDeviceDriverMetal *)RD::get_singleton()->get_device_driver();
+	RenderingDeviceDriverMetal *rdd = (RenderingDeviceDriverMetal *)RD::get_device_driver();
 	PixelFormats &pf = rdd->get_pixel_formats();
 	MTL::Device *dev = rdd->get_device();
 
@@ -130,9 +130,9 @@ MFXTemporalEffect::MFXTemporalEffect() {}
 MFXTemporalEffect::~MFXTemporalEffect() {}
 
 MFXTemporalContext *MFXTemporalEffect::create_context(CreateParams p_params) const {
-	DEV_ASSERT(RD::get_singleton()->has_feature(RD::SUPPORTS_METALFX_TEMPORAL));
+	DEV_ASSERT(RD::has_feature(RD::SUPPORTS_METALFX_TEMPORAL));
 
-	RenderingDeviceDriverMetal *rdd = (RenderingDeviceDriverMetal *)RD::get_singleton()->get_device_driver();
+	RenderingDeviceDriverMetal *rdd = (RenderingDeviceDriverMetal *)RD::get_device_driver();
 	PixelFormats &pf = rdd->get_pixel_formats();
 	MTL::Device *dev = rdd->get_device();
 
@@ -162,12 +162,12 @@ MFXTemporalContext *MFXTemporalEffect::create_context(CreateParams p_params) con
 void MFXTemporalEffect::process(RendererRD::MFXTemporalContext *p_ctx, RendererRD::MFXTemporalEffect::Params p_params) {
 	CallbackArgs *userdata = args_allocator.alloc(
 			this,
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.src)),
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.depth)),
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.motion)),
-			p_params.exposure.is_valid() ? RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.exposure)) : RDD::TextureID(),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.src)),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.depth)),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.motion)),
+			p_params.exposure.is_valid() ? RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.exposure)) : RDD::TextureID(),
 			p_params.jitter_offset,
-			RDD::TextureID(RD::get_singleton()->get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.dst)),
+			RDD::TextureID(RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, p_params.dst)),
 			*p_ctx,
 			p_params.reset);
 	RD::CallbackResource res[3] = {
@@ -175,7 +175,7 @@ void MFXTemporalEffect::process(RendererRD::MFXTemporalContext *p_ctx, RendererR
 		{ .rid = p_params.depth, .usage = RD::CALLBACK_RESOURCE_USAGE_TEXTURE_SAMPLE },
 		{ .rid = p_params.dst, .usage = RD::CALLBACK_RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE },
 	};
-	RD::get_singleton()->driver_callback_add((RDD::DriverCallback)MFXTemporalEffect::callback, userdata, VectorView<RD::CallbackResource>(res, 3));
+	RD::driver_callback_add((RDD::DriverCallback)MFXTemporalEffect::callback, userdata, VectorView<RD::CallbackResource>(res, 3));
 }
 
 void MFXTemporalEffect::callback(RDD *p_driver, RDD::CommandBufferID p_command_buffer, CallbackArgs *p_userdata) {

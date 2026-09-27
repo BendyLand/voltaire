@@ -698,8 +698,7 @@ void StyleBoxFlat::draw(RID p_canvas_item, const Rect2& p_rect) const
 	}
 
 	// Draw stylebox.
-	RenderingServer* vs = RenderingServer::get_singleton();
-	vs->canvas_item_add_triangle_array(p_canvas_item, indices, verts, colors, uvs);
+	RS::canvas_item_add_triangle_array(p_canvas_item, indices, verts, colors, uvs);
 }
 
 

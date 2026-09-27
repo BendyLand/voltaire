@@ -113,7 +113,7 @@ void ShaderCreateDialog::_built_in_toggled(bool p_enabled)
 
 void ShaderCreateDialog::_file_selected(const String& p_file)
 {
-	String p = ProjectSettings::get_singleton()->localize_path(p_file);
+	String p = ProjectSettings::localize_path(p_file);
 	file_path->set_text(p);
 	_path_changed(p);
 
@@ -140,7 +140,7 @@ void ShaderCreateDialog::_path_changed(const String& p_path)
 	}
 
 	Ref<DirAccess> f = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	String p = ProjectSettings::get_singleton()->localize_path(p_path.strip_edges());
+	String p = ProjectSettings::localize_path(p_path.strip_edges());
 	if (f->file_exists(p)) {
 		is_new_shader_created = false;
 	}
@@ -168,7 +168,7 @@ String ShaderCreateDialog::_validate_path(const String& p_path)
 		return TTRC("Filename is empty.");
 	}
 
-	stripped_file_path = ProjectSettings::get_singleton()->localize_path(stripped_file_path);
+	stripped_file_path = ProjectSettings::localize_path(stripped_file_path);
 	if (!stripped_file_path.begins_with("res://")) {
 		return TTRC("Path is not local.");
 	}

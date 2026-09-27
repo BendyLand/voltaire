@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
 	char* ret = getcwd(cwd, PATH_MAX);
 
 	Error err = Main::setup(argv[0], argc - 1, &argv[1]);
-
 	if (err != OK) {
 		free(cwd);
 		if (err == ERR_HELP) { // Returned by --help and --version, so success.

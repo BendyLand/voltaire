@@ -78,12 +78,12 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 			tf.usage_bits |= RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		}
 
-		RID texture = RD::get_singleton()->texture_create(tf, RD::TextureView());
+		RID texture = RD::texture_create(tf, RD::TextureView());
 		reduce.push_back(texture);
 
 		if (final) {
-			current = RD::get_singleton()->texture_create(tf, RD::TextureView());
-			RD::get_singleton()->texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
+			current = RD::texture_create(tf, RD::TextureView());
+			RD::texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
 			break;
 		}
 	}
@@ -92,12 +92,12 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 void Luminance::LuminanceBuffers::free_data()
 {
 	for (int i = 0; i < reduce.size(); i++) {
-		RD::get_singleton()->free_rid(reduce[i]);
+		RD::free_rid(reduce[i]);
 	}
 	reduce.clear();
 
 	if (current.is_valid()) {
-		RD::get_singleton()->free_rid(current);
+		RD::free_rid(current);
 		current = RID(
 );
 	}

@@ -39,7 +39,7 @@ String DirAccess::_get_root_path() const
 {
 	switch (_access_type) {
 	case ACCESS_RESOURCES:
-		return ProjectSettings::get_singleton()->get_resource_path();
+		return ProjectSettings::get_resource_path();
 	case ACCESS_USERDATA:
 		return OS::get_singleton()->get_user_data_dir();
 	default:
@@ -196,9 +196,9 @@ String DirAccess::fix_path(const String& p_path) const
 {
 	switch (_access_type) {
 	case ACCESS_RESOURCES: {
-		if (ProjectSettings::get_singleton()) {
+		if (ProjectSettings::is_initialized()) {
 			if (p_path.begins_with("res://")) {
-				String resource_path = ProjectSettings::get_singleton()->get_resource_path();
+				String resource_path = ProjectSettings::get_resource_path();
 				if (!resource_path.is_empty()) {
 					return p_path.replace_first("res:/", resource_path);
 				}
@@ -312,16 +312,16 @@ Error DirAccess::copy_absolute(const String& p_from, const String& p_to, int p_c
 {
 	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	// Support copying from res:// to user:// etc.
-	String from = ProjectSettings::get_singleton()->globalize_path(p_from);
-	String to = ProjectSettings::get_singleton()->globalize_path(p_to);
+	String from = ProjectSettings::globalize_path(p_from);
+	String to = ProjectSettings::globalize_path(p_to);
 	return d->copy(from, to, p_chmod_flags);
 }
 
 Error DirAccess::rename_absolute(const String& p_from, const String& p_to)
 {
 	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	String from = ProjectSettings::get_singleton()->globalize_path(p_from);
-	String to = ProjectSettings::get_singleton()->globalize_path(p_to);
+	String from = ProjectSettings::globalize_path(p_from);
+	String to = ProjectSettings::globalize_path(p_to);
 	return d->rename(from, to);
 }
 

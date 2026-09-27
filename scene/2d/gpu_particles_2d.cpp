@@ -71,32 +71,32 @@ void GPUParticles2D::set_emitting(bool p_emitting)
 	}
 
 	emitting = p_emitting;
-	RS::get_singleton()->particles_set_emitting(particles, p_emitting);
+	RS::particles_set_emitting(particles, p_emitting);
 }
 
 void GPUParticles2D::set_amount(int p_amount)
 {
 	ERR_FAIL_COND_MSG(p_amount < 1, "Amount of particles cannot be smaller than 1.");
 	amount = p_amount;
-	RS::get_singleton()->particles_set_amount(particles, amount);
+	RS::particles_set_amount(particles, amount);
 }
 
 void GPUParticles2D::set_lifetime(double p_lifetime)
 {
 	ERR_FAIL_COND_MSG(p_lifetime <= 0, "Particles lifetime must be greater than 0.");
 	lifetime = p_lifetime;
-	RS::get_singleton()->particles_set_lifetime(particles, lifetime);
+	RS::particles_set_lifetime(particles, lifetime);
 }
 
 void GPUParticles2D::set_one_shot(bool p_enable)
 {
 	one_shot = p_enable;
-	RS::get_singleton()->particles_set_one_shot(particles, one_shot);
+	RS::particles_set_one_shot(particles, one_shot);
 
 	if (is_emitting()) {
 		set_process_internal(true);
 		if (!one_shot) {
-			RenderingServer::get_singleton()->particles_restart(particles);
+			RenderingServer::particles_restart(particles);
 		}
 	}
 
@@ -108,25 +108,25 @@ void GPUParticles2D::set_one_shot(bool p_enable)
 void GPUParticles2D::set_pre_process_time(double p_time)
 {
 	pre_process_time = p_time;
-	RS::get_singleton()->particles_set_pre_process_time(particles, pre_process_time);
+	RS::particles_set_pre_process_time(particles, pre_process_time);
 }
 
 void GPUParticles2D::set_explosiveness_ratio(real_t p_ratio)
 {
 	explosiveness_ratio = p_ratio;
-	RS::get_singleton()->particles_set_explosiveness_ratio(particles, explosiveness_ratio);
+	RS::particles_set_explosiveness_ratio(particles, explosiveness_ratio);
 }
 
 void GPUParticles2D::set_randomness_ratio(real_t p_ratio)
 {
 	randomness_ratio = p_ratio;
-	RS::get_singleton()->particles_set_randomness_ratio(particles, randomness_ratio);
+	RS::particles_set_randomness_ratio(particles, randomness_ratio);
 }
 
 void GPUParticles2D::set_use_local_coordinates(bool p_enable)
 {
 	local_coords = p_enable;
-	RS::get_singleton()->particles_set_use_local_coordinates(particles, local_coords);
+	RS::particles_set_use_local_coordinates(particles, local_coords);
 	set_notify_transform(!p_enable);
 	if (!p_enable && is_inside_tree()) {
 		_update_particle_emission_transform();
@@ -141,13 +141,13 @@ void GPUParticles2D::_update_particle_emission_transform()
 	xf.basis.set_column(1, Vector3(xf2d.columns[1].x, xf2d.columns[1].y, 0));
 	xf.set_origin(Vector3(xf2d.get_origin().x, xf2d.get_origin().y, 0));
 
-	RS::get_singleton()->particles_set_emission_transform(particles, xf);
+	RS::particles_set_emission_transform(particles, xf);
 }
 
 void GPUParticles2D::set_interp_to_end(float p_interp)
 {
 	interp_to_end_factor = CLAMP(p_interp, 0.0, 1.0);
-	RS::get_singleton()->particles_set_interp_to_end(particles, interp_to_end_factor);
+	RS::particles_set_interp_to_end(particles, interp_to_end_factor);
 }
 
 bool GPUParticles2D::is_trail_enabled() const { return trail_enabled; }
@@ -163,7 +163,7 @@ void GPUParticles2D::_update_collision_size()
 			(texture->get_width() + texture->get_height()) / 4.0; // half size since its a radius
 	}
 
-	RS::get_singleton()->particles_set_collision_base_size(particles, csize);
+	RS::particles_set_collision_base_size(particles, csize);
 }
 
 void GPUParticles2D::set_collision_base_size(real_t p_size)
@@ -177,7 +177,7 @@ real_t GPUParticles2D::get_collision_base_size() const { return collision_base_s
 void GPUParticles2D::set_speed_scale(double p_scale)
 {
 	speed_scale = p_scale;
-	RS::get_singleton()->particles_set_speed_scale(particles, p_scale);
+	RS::particles_set_speed_scale(particles, p_scale);
 }
 
 bool GPUParticles2D::is_emitting() const { return emitting; }
@@ -209,7 +209,7 @@ double GPUParticles2D::get_speed_scale() const { return speed_scale; }
 void GPUParticles2D::set_draw_order(DrawOrder p_order)
 {
 	draw_order = p_order;
-	RS::get_singleton()->particles_set_draw_order(particles, RSE::ParticlesDrawOrder(p_order));
+	RS::particles_set_draw_order(particles, RSE::ParticlesDrawOrder(p_order));
 }
 
 GPUParticles2D::DrawOrder GPUParticles2D::get_draw_order() const { return draw_order; }
@@ -217,7 +217,7 @@ GPUParticles2D::DrawOrder GPUParticles2D::get_draw_order() const { return draw_o
 void GPUParticles2D::set_fixed_fps(int p_count)
 {
 	fixed_fps = p_count;
-	RS::get_singleton()->particles_set_fixed_fps(particles, p_count);
+	RS::particles_set_fixed_fps(particles, p_count);
 }
 
 int GPUParticles2D::get_fixed_fps() const { return fixed_fps; }
@@ -225,7 +225,7 @@ int GPUParticles2D::get_fixed_fps() const { return fixed_fps; }
 void GPUParticles2D::set_fractional_delta(bool p_enable)
 {
 	fractional_delta = p_enable;
-	RS::get_singleton()->particles_set_fractional_delta(particles, p_enable);
+	RS::particles_set_fractional_delta(particles, p_enable);
 }
 
 bool GPUParticles2D::get_fractional_delta() const { return fractional_delta; }
@@ -233,7 +233,7 @@ bool GPUParticles2D::get_fractional_delta() const { return fractional_delta; }
 void GPUParticles2D::set_interpolate(bool p_enable)
 {
 	interpolate = p_enable;
-	RS::get_singleton()->particles_set_interpolate(particles, p_enable);
+	RS::particles_set_interpolate(particles, p_enable);
 }
 
 bool GPUParticles2D::get_interpolate() const { return interpolate; }
@@ -253,7 +253,7 @@ bool GPUParticles2D::get_use_fixed_seed() const { return use_fixed_seed; }
 void GPUParticles2D::set_seed(uint32_t p_seed)
 {
 	seed = p_seed;
-	RS::get_singleton()->particles_set_seed(particles, p_seed);
+	RS::particles_set_seed(particles, p_seed);
 }
 
 uint32_t GPUParticles2D::get_seed() const { return seed; }
@@ -261,11 +261,11 @@ uint32_t GPUParticles2D::get_seed() const { return seed; }
 void GPUParticles2D::request_particles_process(
 	real_t p_requested_process_time, real_t p_request_process_time_residual)
 {
-	RS::get_singleton()->particles_request_process_time(
+	RS::particles_request_process_time(
 		particles, p_requested_process_time, p_request_process_time_residual);
 	if (p_requested_process_time > 0.0) {
 		emitting = true;
-		RS::get_singleton()->particles_set_emitting(particles, true);
+		RS::particles_set_emitting(particles, true);
 	}
 	if (p_request_process_time_residual > 0.0) {
 		emitting = false;
@@ -274,7 +274,7 @@ void GPUParticles2D::request_particles_process(
 
 Rect2 GPUParticles2D::capture_rect() const
 {
-	AABB aabb = RS::get_singleton()->particles_get_current_aabb(particles);
+	AABB aabb = RS::particles_get_current_aabb(particles);
 	Rect2 r;
 	r.position.x = aabb.position.x;
 	r.position.y = aabb.position.y;
@@ -297,7 +297,7 @@ void GPUParticles2D::emit_particle(const Transform2D& p_transform2d, const Vecto
 		Vector3(p_transform2d.get_origin().x, p_transform2d.get_origin().y, 0));
 	Vector3 velocity = Vector3(p_velocity2d.x, p_velocity2d.y, 0);
 
-	RS::get_singleton()->particles_emit(
+	RS::particles_emit(
 		particles, emit_transform, velocity, p_color, p_custom, p_emit_flags);
 }
 
@@ -306,7 +306,7 @@ NodePath GPUParticles2D::get_sub_emitter() const { return sub_emitter; }
 void GPUParticles2D::set_amount_ratio(float p_ratio)
 {
 	amount_ratio = p_ratio;
-	RenderingServer::get_singleton()->particles_set_amount_ratio(particles, p_ratio);
+	RenderingServer::particles_set_amount_ratio(particles, p_ratio);
 }
 
 float GPUParticles2D::get_amount_ratio() const { return amount_ratio; }
@@ -316,8 +316,8 @@ void GPUParticles2D::restart(bool p_keep_seed)
 	if (!p_keep_seed && !use_fixed_seed) {
 		set_seed(Math::rand());
 	}
-	RS::get_singleton()->particles_restart(particles);
-	RS::get_singleton()->particles_set_emitting(particles, true);
+	RS::particles_restart(particles);
+	RS::particles_set_emitting(particles, true);
 
 	emitting = true;
 	active = true;
@@ -394,12 +394,12 @@ void GPUParticles2D::_draw_emission_gizmo()
 
 GPUParticles2D::GPUParticles2D()
 {
-	particles = RS::get_singleton()->particles_create();
-	RS::get_singleton()->particles_set_mode(particles, RSE::PARTICLES_MODE_2D);
+	particles = RS::particles_create();
+	RS::particles_set_mode(particles, RSE::PARTICLES_MODE_2D);
 
-	mesh = RS::get_singleton()->mesh_create();
-	RS::get_singleton()->particles_set_draw_passes(particles, 1);
-	RS::get_singleton()->particles_set_draw_pass_mesh(particles, 0, mesh);
+	mesh = RS::mesh_create();
+	RS::particles_set_draw_passes(particles, 1);
+	RS::particles_set_draw_pass_mesh(particles, 0, mesh);
 
 	one_shot = false; // Needed so that set_emitting doesn't access uninitialized values
 	set_emitting(true);
@@ -425,9 +425,9 @@ GPUParticles2D::GPUParticles2D()
 
 GPUParticles2D::~GPUParticles2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(particles);
-	RS::get_singleton()->free_rid(mesh);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(particles);
+	RS::free_rid(mesh);
 }
 
 PackedStringArray GPUParticles2D::get_configuration_warnings() const { return PackedStringArray(); }

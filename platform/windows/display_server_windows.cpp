@@ -697,7 +697,7 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 		pfd->SetOptions(flags | FOS_FORCEFILESYSTEM);
 		pfd->SetTitle((LPCWSTR)fd->title.utf16().get_data());
 
-		String dir = ProjectSettings::get_singleton()->globalize_path(fd->current_directory);
+		String dir = ProjectSettings::globalize_path(fd->current_directory);
 		if (dir == ".") {
 			dir = OS::get_singleton()->get_executable_path().get_base_dir();
 		}

@@ -28,7 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "3d/godot_navigation_server_3d.h"
 #include "register_types.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -47,11 +46,6 @@
 #ifndef DISABLE_DEPRECATED
 NavigationMeshGenerator* _nav_mesh_generator = nullptr;
 #endif // DISABLE_DEPRECATED
-
-static NavigationServer3D* _createGodotNavigation3DCallback()
-{
-	return memnew(GodotNavigationServer3D);
-}
 
 void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
 {

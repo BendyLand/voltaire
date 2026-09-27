@@ -35,7 +35,7 @@
 void ReflectionProbe::set_intensity(float p_intensity)
 {
 	intensity = p_intensity;
-	RS::get_singleton()->reflection_probe_set_intensity(probe, p_intensity);
+	RS::reflection_probe_set_intensity(probe, p_intensity);
 }
 
 float ReflectionProbe::get_intensity() const { return intensity; }
@@ -47,13 +47,13 @@ ReflectionProbe::AmbientMode ReflectionProbe::get_ambient_mode() const { return 
 void ReflectionProbe::set_ambient_color(Color p_ambient)
 {
 	ambient_color = p_ambient;
-	RS::get_singleton()->reflection_probe_set_ambient_color(probe, p_ambient);
+	RS::reflection_probe_set_ambient_color(probe, p_ambient);
 }
 
 void ReflectionProbe::set_ambient_color_energy(float p_energy)
 {
 	ambient_color_energy = p_energy;
-	RS::get_singleton()->reflection_probe_set_ambient_energy(probe, p_energy);
+	RS::reflection_probe_set_ambient_energy(probe, p_energy);
 }
 
 float ReflectionProbe::get_ambient_color_energy() const { return ambient_color_energy; }
@@ -65,7 +65,7 @@ void ReflectionProbe::set_max_distance(float p_distance)
 	max_distance = CLAMP(p_distance, 0.0, 262'144.0);
 	// Reflection rendering breaks if distance exceeds 262,144 units (due to floating-point
 	// precision with the near plane being 0.01).
-	RS::get_singleton()->reflection_probe_set_max_distance(probe, max_distance);
+	RS::reflection_probe_set_max_distance(probe, max_distance);
 }
 
 float ReflectionProbe::get_max_distance() const { return max_distance; }
@@ -73,7 +73,7 @@ float ReflectionProbe::get_max_distance() const { return max_distance; }
 void ReflectionProbe::set_mesh_lod_threshold(float p_pixels)
 {
 	mesh_lod_threshold = p_pixels;
-	RS::get_singleton()->reflection_probe_set_mesh_lod_threshold(probe, p_pixels);
+	RS::reflection_probe_set_mesh_lod_threshold(probe, p_pixels);
 }
 
 float ReflectionProbe::get_mesh_lod_threshold() const { return mesh_lod_threshold; }
@@ -85,7 +85,7 @@ Vector3 ReflectionProbe::get_origin_offset() const { return origin_offset; }
 void ReflectionProbe::set_enable_box_projection(bool p_enable)
 {
 	box_projection = p_enable;
-	RS::get_singleton()->reflection_probe_set_enable_box_projection(probe, p_enable);
+	RS::reflection_probe_set_enable_box_projection(probe, p_enable);
 }
 
 bool ReflectionProbe::is_box_projection_enabled() const { return box_projection; }
@@ -93,7 +93,7 @@ bool ReflectionProbe::is_box_projection_enabled() const { return box_projection;
 void ReflectionProbe::set_as_interior(bool p_enable)
 {
 	interior = p_enable;
-	RS::get_singleton()->reflection_probe_set_as_interior(probe, interior);
+	RS::reflection_probe_set_as_interior(probe, interior);
 }
 
 bool ReflectionProbe::is_set_as_interior() const { return interior; }
@@ -101,7 +101,7 @@ bool ReflectionProbe::is_set_as_interior() const { return interior; }
 void ReflectionProbe::set_enable_shadows(bool p_enable)
 {
 	enable_shadows = p_enable;
-	RS::get_singleton()->reflection_probe_set_enable_shadows(probe, p_enable);
+	RS::reflection_probe_set_enable_shadows(probe, p_enable);
 }
 
 bool ReflectionProbe::are_shadows_enabled() const { return enable_shadows; }
@@ -109,7 +109,7 @@ bool ReflectionProbe::are_shadows_enabled() const { return enable_shadows; }
 void ReflectionProbe::set_cull_mask(uint32_t p_layers)
 {
 	cull_mask = p_layers;
-	RS::get_singleton()->reflection_probe_set_cull_mask(probe, p_layers);
+	RS::reflection_probe_set_cull_mask(probe, p_layers);
 }
 
 uint32_t ReflectionProbe::get_cull_mask() const { return cull_mask; }
@@ -117,7 +117,7 @@ uint32_t ReflectionProbe::get_cull_mask() const { return cull_mask; }
 void ReflectionProbe::set_reflection_mask(uint32_t p_layers)
 {
 	reflection_mask = p_layers;
-	RS::get_singleton()->reflection_probe_set_reflection_mask(probe, p_layers);
+	RS::reflection_probe_set_reflection_mask(probe, p_layers);
 }
 
 uint32_t ReflectionProbe::get_reflection_mask() const { return reflection_mask; }
@@ -125,7 +125,7 @@ uint32_t ReflectionProbe::get_reflection_mask() const { return reflection_mask; 
 void ReflectionProbe::set_update_mode(UpdateMode p_mode)
 {
 	update_mode = p_mode;
-	RS::get_singleton()->reflection_probe_set_update_mode(
+	RS::reflection_probe_set_update_mode(
 		probe, RSE::ReflectionProbeUpdateMode(p_mode));
 }
 
@@ -141,15 +141,15 @@ AABB ReflectionProbe::get_aabb() const
 
 ReflectionProbe::ReflectionProbe()
 {
-	probe = RenderingServer::get_singleton()->reflection_probe_create();
-	RS::get_singleton()->instance_set_base(get_instance(), probe);
+	probe = RenderingServer::reflection_probe_create();
+	RS::instance_set_base(get_instance(), probe);
 	set_disable_scale(true);
 }
 
 ReflectionProbe::~ReflectionProbe()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(probe);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(probe);
 }
 
 

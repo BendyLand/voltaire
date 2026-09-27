@@ -121,8 +121,8 @@ static PhysicsServer3D* _create_dummy_physics_server_3d() { return memnew(Physic
 
 static bool has_server_feature_callback(const String& p_feature)
 {
-	if (RenderingServer::get_singleton()) {
-		if (RenderingServer::get_singleton()->has_os_feature(p_feature)) {
+	if (RenderingServer::data) {
+		if (RenderingServer::has_os_feature(p_feature)) {
 			return true;
 		}
 	}

@@ -149,7 +149,7 @@ bool NoiseTexture3D::has_mipmaps() const { return false; }
 RID NoiseTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::get_singleton()->texture_3d_placeholder_create();
+		texture = RS::texture_3d_placeholder_create();
 	}
 
 	return texture;
@@ -158,7 +158,7 @@ RID NoiseTexture3D::get_rid() const
 Vector<Ref<Image>> NoiseTexture3D::get_data() const
 {
 	ERR_FAIL_COND_V(!texture.is_valid(), Vector<Ref<Image>>());
-	return RS::get_singleton()->texture_3d_get(texture);
+	return RS::texture_3d_get(texture);
 }
 
 Image::Format NoiseTexture3D::get_format() const { return format; }

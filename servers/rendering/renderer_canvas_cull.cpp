@@ -34,8 +34,8 @@
 #include "core/math/transform_interpolator.h"
 #include "renderer_canvas_cull.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server_default.h"
 #include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 // Use the same antialiasing feather size as StyleBoxFlat's default
@@ -317,7 +317,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 		// Something to draw?
 
 		if (ci->update_when_visible) {
-			RenderingServerDefault::redraw_request();
+			RenderingServer::redraw_request();
 		}
 
 		if (ci->commands != nullptr || ci->copy_back_buffer) {

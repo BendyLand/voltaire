@@ -285,7 +285,7 @@ String FileAccess::fix_path(const String& p_path) const
 
 	switch (_access_type) {
 	case ACCESS_RESOURCES: {
-		if (ProjectSettings::get_singleton()) {
+		if (ProjectSettings::is_initialized()) {
 			if (r_path.begins_with("uid://")) {
 				ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(r_path);
 				if (ResourceUID::get_singleton()->has_id(uid)) {
@@ -297,7 +297,7 @@ String FileAccess::fix_path(const String& p_path) const
 			}
 
 			if (r_path.begins_with("res://")) {
-				String resource_path = ProjectSettings::get_singleton()->get_resource_path();
+				String resource_path = ProjectSettings::get_resource_path();
 				if (!resource_path.is_empty()) {
 					return r_path.replace("res:/", resource_path);
 				}

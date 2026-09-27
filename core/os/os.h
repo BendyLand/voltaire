@@ -494,6 +494,8 @@ public:
 			return ETR("Open in File Manager");
 		case PlatformString::PLATFORM_STRING_FILE_MANAGER_SHOW:
 			return ETR("Show in File Manager");
+		default:
+			return ETR("You shouldn't be here (os.h)");
 		}
 	}
 

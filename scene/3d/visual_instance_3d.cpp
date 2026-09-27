@@ -52,11 +52,11 @@ void VisualInstance3D::_update_visibility()
 	if (visible && !already_visible) {
 		if (!_is_using_identity_transform()) {
 			Transform3D gt = get_global_transform();
-			RS::get_singleton()->instance_set_transform(instance, gt);
+			RS::instance_set_transform(instance, gt);
 		}
 	}
 
-	RS::get_singleton()->instance_set_visible(instance, visible);
+	RS::instance_set_visible(instance, visible);
 }
 
 void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
@@ -67,11 +67,11 @@ void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
 	if (is_inside_tree()) {
 		if (p_enable) {
 			// Want to make sure instance is using identity transform.
-			RS::get_singleton()->instance_set_transform(instance, Transform3D());
+			RS::instance_set_transform(instance, Transform3D());
 		}
 		else {
 			// Want to make sure instance is up to date.
-			RS::get_singleton()->instance_set_transform(instance, get_global_transform());
+			RS::instance_set_transform(instance, get_global_transform());
 		}
 	}
 }
@@ -79,7 +79,7 @@ void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
 void VisualInstance3D::fti_update_servers_xform()
 {
 	if (!_is_using_identity_transform()) {
-		RS::get_singleton()->instance_set_transform(
+		RS::instance_set_transform(
 			get_instance(), _get_cached_global_transform_interpolated());
 	}
 }
@@ -89,7 +89,7 @@ void VisualInstance3D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
 		ERR_FAIL_COND(get_world_3d().is_null());
-		RenderingServer::get_singleton()->instance_set_scenario(
+		RenderingServer::instance_set_scenario(
 			instance, get_world_3d()->get_scenario());
 		_update_visibility();
 	} break;
@@ -100,7 +100,7 @@ void VisualInstance3D::_notification(int p_what)
 			!(is_inside_tree() && get_tree()->is_physics_interpolation_enabled()) &&
 			!_is_using_identity_transform()) {
 			// Physics interpolation global off, always send.
-			RenderingServer::get_singleton()->instance_set_transform(
+			RenderingServer::instance_set_transform(
 				instance, get_global_transform());
 		}
 	} break;
@@ -110,13 +110,13 @@ void VisualInstance3D::_notification(int p_what)
 			// Allow resetting motion vectors etc
 			// at the same time as resetting physics interpolation,
 			// giving users one common interface.
-			RenderingServer::get_singleton()->instance_teleport(instance);
+			RenderingServer::instance_teleport(instance);
 		}
 	} break;
 
 	case NOTIFICATION_EXIT_WORLD: {
-		RenderingServer::get_singleton()->instance_set_scenario(instance, RID());
-		RenderingServer::get_singleton()->instance_attach_skeleton(instance, RID());
+		RenderingServer::instance_set_scenario(instance, RID());
+		RenderingServer::instance_attach_skeleton(instance, RID());
 		_set_vi_visible(false);
 	} break;
 
@@ -131,7 +131,7 @@ RID VisualInstance3D::get_instance() const { return instance; }
 void VisualInstance3D::set_layer_mask(uint32_t p_mask)
 {
 	layers = p_mask;
-	RenderingServer::get_singleton()->instance_set_layer_mask(instance, p_mask);
+	RenderingServer::instance_set_layer_mask(instance, p_mask);
 }
 
 uint32_t VisualInstance3D::get_layer_mask() const { return layers; }
@@ -164,7 +164,7 @@ bool VisualInstance3D::get_layer_mask_value(int p_layer_number) const
 void VisualInstance3D::set_sorting_offset(float p_offset)
 {
 	sorting_offset = p_offset;
-	RenderingServer::get_singleton()->instance_set_pivot_data(
+	RenderingServer::instance_set_pivot_data(
 		instance, sorting_offset, sorting_use_aabb_center);
 }
 
@@ -173,7 +173,7 @@ float VisualInstance3D::get_sorting_offset() const { return sorting_offset; }
 void VisualInstance3D::set_sorting_use_aabb_center(bool p_enabled)
 {
 	sorting_use_aabb_center = p_enabled;
-	RenderingServer::get_singleton()->instance_set_pivot_data(
+	RenderingServer::instance_set_pivot_data(
 		instance, sorting_offset, sorting_use_aabb_center);
 }
 
@@ -182,7 +182,7 @@ bool VisualInstance3D::is_sorting_use_aabb_center() const { return sorting_use_a
 
 void VisualInstance3D::set_base(const RID& p_base)
 {
-	RenderingServer::get_singleton()->instance_set_base(instance, p_base);
+	RenderingServer::instance_set_base(instance, p_base);
 	base = p_base;
 }
 
@@ -190,8 +190,8 @@ RID VisualInstance3D::get_base() const { return base; }
 
 VisualInstance3D::~VisualInstance3D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(instance);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(instance);
 }
 
 Ref<Material> GeometryInstance3D::get_material_override() const { return material_override; }
@@ -199,7 +199,7 @@ Ref<Material> GeometryInstance3D::get_material_override() const { return materia
 void GeometryInstance3D::set_material_overlay(const Ref<Material>& p_material)
 {
 	material_overlay = p_material;
-	RS::get_singleton()->instance_geometry_set_material_overlay(
+	RS::instance_geometry_set_material_overlay(
 		get_instance(), p_material.is_valid() ? p_material->get_rid() : RID());
 }
 
@@ -253,7 +253,7 @@ void GeometryInstance3D::set_cast_shadows_setting(ShadowCastingSetting p_shadow_
 {
 	shadow_casting_setting = p_shadow_casting_setting;
 
-	RS::get_singleton()->instance_geometry_set_cast_shadows_setting(
+	RS::instance_geometry_set_cast_shadows_setting(
 		get_instance(), (RSE::ShadowCastingSetting)p_shadow_casting_setting);
 }
 
@@ -266,7 +266,7 @@ void GeometryInstance3D::set_extra_cull_margin(float p_margin)
 {
 	ERR_FAIL_COND(p_margin < 0);
 	extra_cull_margin = p_margin;
-	RS::get_singleton()->instance_set_extra_visibility_margin(get_instance(), extra_cull_margin);
+	RS::instance_set_extra_visibility_margin(get_instance(), extra_cull_margin);
 }
 
 float GeometryInstance3D::get_extra_cull_margin() const { return extra_cull_margin; }
@@ -275,7 +275,7 @@ void GeometryInstance3D::set_lod_bias(float p_bias)
 {
 	ERR_FAIL_COND(p_bias < 0.0);
 	lod_bias = p_bias;
-	RS::get_singleton()->instance_geometry_set_lod_bias(get_instance(), lod_bias);
+	RS::instance_geometry_set_lod_bias(get_instance(), lod_bias);
 }
 
 float GeometryInstance3D::get_lod_bias() const { return lod_bias; }
@@ -290,22 +290,22 @@ void GeometryInstance3D::set_gi_mode(GIMode p_mode)
 {
 	switch (p_mode) {
 	case GI_MODE_DISABLED: {
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, false);
 	} break;
 	case GI_MODE_STATIC: {
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, true);
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, false);
 
 	} break;
 	case GI_MODE_DYNAMIC: {
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
-		RS::get_singleton()->instance_geometry_set_flag(
+		RS::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, true);
 	} break;
 	}
@@ -318,7 +318,7 @@ GeometryInstance3D::GIMode GeometryInstance3D::get_gi_mode() const { return gi_m
 void GeometryInstance3D::set_ignore_occlusion_culling(bool p_enabled)
 {
 	ignore_occlusion_culling = p_enabled;
-	RS::get_singleton()->instance_geometry_set_flag(
+	RS::instance_geometry_set_flag(
 		get_instance(), RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, ignore_occlusion_culling);
 }
 

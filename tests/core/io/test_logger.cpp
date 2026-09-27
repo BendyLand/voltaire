@@ -43,12 +43,12 @@ namespace TestLogger {
 constexpr int sleep_duration = 1200000;
 
 void initialize_logs() {
-	ProjectSettings::get_singleton()->set_setting("application/config/name", "godot_tests");
+	ProjectSettings::set_setting("application/config/name", "godot_tests");
 	DirAccess::make_dir_recursive_absolute(OS::get_singleton()->get_user_data_dir().path_join("logs"));
 }
 
 void cleanup_logs() {
-	ProjectSettings::get_singleton()->set_setting("application/config/name", "godot_tests");
+	ProjectSettings::set_setting("application/config/name", "godot_tests");
 	Ref<DirAccess> dir = DirAccess::open("user://logs");
 	dir->list_dir_begin();
 	String file = dir->get_next();

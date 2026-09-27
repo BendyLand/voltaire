@@ -2098,11 +2098,11 @@ void Tree::set_self_modulate(const Color& p_self_modulate)
 	}
 
 	CanvasItem::set_self_modulate(p_self_modulate);
-	RS::get_singleton()->canvas_item_set_self_modulate(header_ci, p_self_modulate);
-	RS::get_singleton()->canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
-	RS::get_singleton()->canvas_item_set_self_modulate(content_ci, p_self_modulate);
-	RS::get_singleton()->canvas_item_set_self_modulate(custom_ci, p_self_modulate);
-	RS::get_singleton()->canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
+	RS::canvas_item_set_self_modulate(header_ci, p_self_modulate);
+	RS::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
+	RS::canvas_item_set_self_modulate(content_ci, p_self_modulate);
+	RS::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
+	RS::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
 }
 
 void Tree::_update_all()
@@ -3335,12 +3335,12 @@ void Tree::item_changed(int p_column, TreeItem* p_item) {}
 Tree::~Tree()
 {
 	memdelete(root);
-	RenderingServer::get_singleton()->free_rid(drop_indicator_ci);
-	RenderingServer::get_singleton()->free_rid(content_ci);
-	RenderingServer::get_singleton()->free_rid(custom_ci);
-	RenderingServer::get_singleton()->free_rid(header_ci);
-	RenderingServer::get_singleton()->free_rid(stylebox_ci);
-	RenderingServer::get_singleton()->free_rid(last_sticky_ci);
+	RenderingServer::free_rid(drop_indicator_ci);
+	RenderingServer::free_rid(content_ci);
+	RenderingServer::free_rid(custom_ci);
+	RenderingServer::free_rid(header_ci);
+	RenderingServer::free_rid(stylebox_ci);
+	RenderingServer::free_rid(last_sticky_ci);
 }
 
 void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}

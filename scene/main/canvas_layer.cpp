@@ -38,7 +38,7 @@ void CanvasLayer::set_layer(int p_xform)
 {
 	layer = p_xform;
 	if (viewport.is_valid()) {
-		RenderingServer::get_singleton()->viewport_set_canvas_stacking(
+		RenderingServer::viewport_set_canvas_stacking(
 			viewport, canvas, layer, get_index());
 		vp->gui_set_root_order_dirty();
 	}
@@ -57,7 +57,7 @@ void CanvasLayer::set_transform(const Transform2D& p_xform)
 	transform = p_xform;
 	locrotscale_dirty = true;
 	if (viewport.is_valid()) {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(
+		RenderingServer::viewport_set_canvas_transform(
 			viewport, canvas, transform);
 	}
 }
@@ -82,7 +82,7 @@ void CanvasLayer::_update_xform()
 	transform.set_rotation_and_scale(rot, scale);
 	transform.set_origin(ofs);
 	if (viewport.is_valid()) {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(
+		RenderingServer::viewport_set_canvas_transform(
 			viewport, canvas, transform);
 	}
 }
@@ -155,7 +155,7 @@ Vector2 CanvasLayer::get_scale() const
 void CanvasLayer::update_draw_order()
 {
 	if (is_inside_tree()) {
-		RenderingServer::get_singleton()->viewport_set_canvas_stacking(
+		RenderingServer::viewport_set_canvas_stacking(
 			viewport, canvas, layer, get_index());
 	}
 }
@@ -208,21 +208,21 @@ void CanvasLayer::_update_follow_viewport(bool p_force_exit)
 		return;
 	}
 	if (p_force_exit || !follow_viewport) {
-		RS::get_singleton()->canvas_set_parent(canvas, RID(), 1.0);
+		RS::canvas_set_parent(canvas, RID(), 1.0);
 	}
 	else {
-		RS::get_singleton()->canvas_set_parent(
+		RS::canvas_set_parent(
 			canvas, vp->get_world_2d()->get_canvas(), follow_viewport_scale);
 	}
 }
 
 
-CanvasLayer::CanvasLayer() { canvas = RS::get_singleton()->canvas_create(); }
+CanvasLayer::CanvasLayer() { canvas = RS::canvas_create(); }
 
 CanvasLayer::~CanvasLayer()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(canvas);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RS::free_rid(canvas);
 }
 
 

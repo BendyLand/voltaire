@@ -71,7 +71,7 @@ void ProceduralSkyMaterial::set_use_debanding(bool p_use_debanding)
 	_update_shader(use_debanding, sky_cover.is_valid());
 	// Only set if shader already compiled
 	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
+		RS::material_set_shader(_get_material(), get_shader_cache());
 	}
 }
 
@@ -92,7 +92,7 @@ RID ProceduralSkyMaterial::get_rid() const
 {
 	_update_shader(use_debanding, sky_cover.is_valid());
 	if (!shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
+		RS::material_set_shader(_get_material(), get_shader_cache());
 		shader_set = true;
 	}
 	return _get_material();
@@ -108,7 +108,7 @@ void ProceduralSkyMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 4; i++) {
 		if (shader_cache[i].is_valid()) {
-			RS::get_singleton()->free_rid(shader_cache[i]);
+			RS::free_rid(shader_cache[i]);
 		}
 	}
 }
@@ -118,10 +118,10 @@ void ProceduralSkyMaterial::_update_shader(bool p_use_debanding, bool p_use_sky_
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_use_debanding) + int(p_use_sky_cover) * 2;
 	if (shader_cache[index].is_null()) {
-		shader_cache[index] = RS::get_singleton()->shader_create();
+		shader_cache[index] = RS::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		RS::get_singleton()->shader_set_code(shader_cache[index],
+		RS::shader_set_code(shader_cache[index],
 			vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
 					R"('s ProceduralSkyMaterial.
@@ -211,7 +211,7 @@ void sky() {
 
 ProceduralSkyMaterial::ProceduralSkyMaterial()
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 	set_sky_top_color(Color(0.385, 0.454, 0.55));
 	set_sky_horizon_color(Color(0.6463, 0.6558, 0.6708));
 	set_sky_curve(0.15);
@@ -243,7 +243,7 @@ RID PanoramaSkyMaterial::get_rid() const
 {
 	_update_shader(filter);
 	if (!shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), shader_cache[int(filter)]);
+		RS::material_set_shader(_get_material(), shader_cache[int(filter)]);
 		shader_set = true;
 	}
 	return _get_material();
@@ -262,7 +262,7 @@ void PanoramaSkyMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 2; i++) {
 		if (shader_cache[i].is_valid()) {
-			RS::get_singleton()->free_rid(shader_cache[i]);
+			RS::free_rid(shader_cache[i]);
 		}
 	}
 }
@@ -272,10 +272,10 @@ void PanoramaSkyMaterial::_update_shader(bool p_filter)
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_filter);
 	if (shader_cache[index].is_null()) {
-		shader_cache[index] = RS::get_singleton()->shader_create();
+		shader_cache[index] = RS::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		RS::get_singleton()->shader_set_code(
+		RS::shader_set_code(
 			shader_cache[index], vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
 										 R"('s PanoramaSkyMaterial.
@@ -295,7 +295,7 @@ void sky() {
 
 PanoramaSkyMaterial::PanoramaSkyMaterial()
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 	set_energy_multiplier(1.0);
 }
 
@@ -325,7 +325,7 @@ void PhysicalSkyMaterial::set_use_debanding(bool p_use_debanding)
 	_update_shader(use_debanding, night_sky.is_valid());
 	// Only set if shader already compiled
 	if (shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
+		RS::material_set_shader(_get_material(), get_shader_cache());
 	}
 }
 
@@ -346,7 +346,7 @@ RID PhysicalSkyMaterial::get_rid() const
 {
 	_update_shader(use_debanding, night_sky.is_valid());
 	if (!shader_set) {
-		RS::get_singleton()->material_set_shader(_get_material(), get_shader_cache());
+		RS::material_set_shader(_get_material(), get_shader_cache());
 		shader_set = true;
 	}
 	return _get_material();
@@ -365,7 +365,7 @@ void PhysicalSkyMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 4; i++) {
 		if (shader_cache[i].is_valid()) {
-			RS::get_singleton()->free_rid(shader_cache[i]);
+			RS::free_rid(shader_cache[i]);
 		}
 	}
 }
@@ -375,10 +375,10 @@ void PhysicalSkyMaterial::_update_shader(bool p_use_debanding, bool p_use_night_
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_use_debanding) + int(p_use_night_sky) * 2;
 	if (shader_cache[index].is_null()) {
-		shader_cache[index] = RS::get_singleton()->shader_create();
+		shader_cache[index] = RS::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		RS::get_singleton()->shader_set_code(shader_cache[index],
+		RS::shader_set_code(shader_cache[index],
 			vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
 					R"('s PhysicalSkyMaterial.
@@ -473,7 +473,7 @@ void sky() {
 
 PhysicalSkyMaterial::PhysicalSkyMaterial()
 {
-	_set_material(RS::get_singleton()->material_create());
+	_set_material(RS::material_create());
 	set_rayleigh_coefficient(2.0);
 	set_rayleigh_color(Color(0.3, 0.405, 0.6));
 	set_mie_coefficient(0.005);

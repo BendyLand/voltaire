@@ -303,7 +303,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error* r_error)
 					KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
 					ktxfmt = KTX_TTF_RGBA32;
 				}
-				else if (RS::get_singleton()->has_os_feature("rgtc")) {
+				else if (RS::has_os_feature("rgtc")) {
 					ktxfmt = KTX_TTF_BC4_R;
 				}
 				else {
@@ -316,7 +316,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error* r_error)
 					KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
 					ktxfmt = KTX_TTF_RGBA32;
 				}
-				else if (RS::get_singleton()->has_os_feature("rgtc")) {
+				else if (RS::has_os_feature("rgtc")) {
 					ktxfmt = KTX_TTF_BC5_RG;
 				}
 				else {
@@ -329,13 +329,13 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error* r_error)
 					KHR_DF_TRANSFER_SRGB) { // TODO: srgb native support
 					ktxfmt = KTX_TTF_RGBA32;
 				}
-				else if (RS::get_singleton()->has_os_feature("bptc")) {
+				else if (RS::has_os_feature("bptc")) {
 					ktxfmt = KTX_TTF_BC7_RGBA;
 				}
-				else if (RS::get_singleton()->has_os_feature("s3tc")) {
+				else if (RS::has_os_feature("s3tc")) {
 					ktxfmt = KTX_TTF_BC1_RGB;
 				}
-				else if (RS::get_singleton()->has_os_feature("etc2")) {
+				else if (RS::has_os_feature("etc2")) {
 					ktxfmt = KTX_TTF_ETC1_RGB;
 				}
 				else {
@@ -348,16 +348,16 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error* r_error)
 					KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
 					ktxfmt = KTX_TTF_RGBA32;
 				}
-				else if (RS::get_singleton()->has_os_feature("astc")) {
+				else if (RS::has_os_feature("astc")) {
 					ktxfmt = KTX_TTF_ASTC_4x4_RGBA;
 				}
-				else if (RS::get_singleton()->has_os_feature("bptc")) {
+				else if (RS::has_os_feature("bptc")) {
 					ktxfmt = KTX_TTF_BC7_RGBA;
 				}
-				else if (RS::get_singleton()->has_os_feature("s3tc")) {
+				else if (RS::has_os_feature("s3tc")) {
 					ktxfmt = KTX_TTF_BC3_RGBA;
 				}
-				else if (RS::get_singleton()->has_os_feature("etc2")) {
+				else if (RS::has_os_feature("etc2")) {
 					ktxfmt = KTX_TTF_ETC2_RGBA;
 				}
 				else {

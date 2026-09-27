@@ -35,7 +35,7 @@
 uint64_t ExternalTexture::get_external_texture_id() const
 {
 	_ensure_created();
-	return RenderingServer::get_singleton()->texture_get_native_handle(texture);
+	return RenderingServer::texture_get_native_handle(texture);
 }
 
 void ExternalTexture::set_size(const Size2& p_size)
@@ -43,7 +43,7 @@ void ExternalTexture::set_size(const Size2& p_size)
 	if (p_size.width > 0 && p_size.height > 0 && p_size != size) {
 		size = p_size;
 		_ensure_created();
-		RenderingServer::get_singleton()->texture_external_update(
+		RenderingServer::texture_external_update(
 			texture, size.width, size.height, external_buffer);
 		emit_changed();
 	}
@@ -56,7 +56,7 @@ void ExternalTexture::set_external_buffer_id(uint64_t p_external_buffer)
 	if (p_external_buffer != external_buffer) {
 		external_buffer = p_external_buffer;
 		_ensure_created();
-		RenderingServer::get_singleton()->texture_external_update(
+		RenderingServer::texture_external_update(
 			texture, size.width, size.height, external_buffer);
 	}
 }
@@ -70,7 +70,7 @@ bool ExternalTexture::has_alpha() const { return false; }
 RID ExternalTexture::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RenderingServer::get_singleton()->texture_2d_placeholder_create();
+		texture = RenderingServer::texture_2d_placeholder_create();
 		using_placeholder = true;
 	}
 	return texture;
@@ -83,10 +83,10 @@ void ExternalTexture::_ensure_created() const
 	}
 
 	RID new_texture =
-		RenderingServer::get_singleton()->texture_external_create(size.width, size.height);
+		RenderingServer::texture_external_create(size.width, size.height);
 	if (using_placeholder) {
 		DEV_ASSERT(texture.is_valid());
-		RenderingServer::get_singleton()->texture_replace(texture, new_texture);
+		RenderingServer::texture_replace(texture, new_texture);
 		using_placeholder = false;
 	}
 	else {
@@ -99,8 +99,8 @@ ExternalTexture::ExternalTexture() {}
 ExternalTexture::~ExternalTexture()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(texture);
+		ERR_FAIL_NULL(RenderingServer::data);
+		RenderingServer::free_rid(texture);
 	}
 }
 

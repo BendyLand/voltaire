@@ -67,11 +67,11 @@ void TextureRegionEditor::_texture_preview_draw()
 
 	Transform2D mtx = _get_offset_transform();
 
-	RS::get_singleton()->canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
+	RS::canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
 	texture_preview->draw_rect(
 		Rect2(Point2(), object_texture->get_size()), Color(0.5, 0.5, 0.5, 0.5), false);
 	texture_preview->draw_texture(object_texture.ptr(), Point2());
-	RS::get_singleton()->canvas_item_add_set_transform(
+	RS::canvas_item_add_set_transform(
 		texture_preview->get_canvas_item(), Transform2D());
 }
 

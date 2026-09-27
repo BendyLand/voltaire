@@ -982,7 +982,7 @@ TEST_SUITE("[Navigation3D]")
 		source_path.write[5] = Vector3(2.0, 1.5, 4.0); // This point needs to go.
 		source_path.write[6] = Vector3(2.0, 2.0, 5.0);
 		Vector<Vector3> simplified_path =
-			NavigationServer3D::get_singleton()->simplify_path(source_path, simplify_epsilon);
+			NavigationServer3D::simplify_path(source_path, simplify_epsilon);
 		CHECK_EQ(simplified_path.size(), 4);
 	}
 }

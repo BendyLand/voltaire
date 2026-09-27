@@ -345,7 +345,7 @@ String OS_LinuxBSD::get_version() const
 
 Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
 {
-	if (RenderingServer::get_singleton() == nullptr) {
+	if (RenderingServer::data == nullptr) {
 		return Vector<String>();
 	}
 
@@ -355,9 +355,9 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
 	}
 
 	const String rendering_device_name =
-		RenderingServer::get_singleton()->get_video_adapter_name(); // e.g. `NVIDIA GeForce GTX 970`
+		RenderingServer::get_video_adapter_name(); // e.g. `NVIDIA GeForce GTX 970`
 	const String rendering_device_vendor =
-		RenderingServer::get_singleton()->get_video_adapter_vendor(); // e.g. `NVIDIA`
+		RenderingServer::get_video_adapter_vendor(); // e.g. `NVIDIA`
 	const String card_name = rendering_device_name.trim_prefix(rendering_device_vendor)
 								 .strip_edges(); // -> `GeForce GTX 970`
 
@@ -1267,7 +1267,7 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 			Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 			err = dir_access->rename(renamed_path, path);
 
-	ERR_FAIL_COND_V_MSG(err != OK, err,
+			ERR_FAIL_COND_V_MSG(err != OK, err,
 				"Could not rename \"" + renamed_path + "\" back to its original name: \"" + path +
 					"\"");
 			return FAILED;
@@ -1423,6 +1423,24 @@ bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) 
 	return false;
 }
 
-void OS_LinuxBSD::run() {}
+void OS_LinuxBSD::run()
+{
+	if (!main_loop) {
+		return;
+	}
+
+	main_loop->initialize();
+
+	while (true) {
+		if (DisplayServer::get_singleton()) {
+			DisplayServer::get_singleton()->process_events();
+		}
+		if (Main::iteration()) {
+			break;
+		}
+	}
+
+	main_loop->finalize();
+}
 
 

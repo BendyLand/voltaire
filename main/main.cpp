@@ -70,7 +70,6 @@
 #include "servers/register_server_types.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_default.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 
@@ -95,6 +94,7 @@
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
+#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #include "servers/xr/xr_interface.h"
 #endif // XR_DISABLED
@@ -150,7 +150,6 @@
 
 // Initialized in setup()
 static Engine* engine = nullptr;
-static ProjectSettings* globals = nullptr;
 static Input* input = nullptr;
 static InputMap* input_map = nullptr;
 static TranslationServer* translation_server = nullptr;
@@ -169,7 +168,6 @@ static AudioServer* audio_server = nullptr;
 static CameraServer* camera_server = nullptr;
 static AccessibilityServer* accessibility_server = nullptr;
 static DisplayServer* display_server = nullptr;
-static RenderingServer* rendering_server = nullptr;
 static TextServerManager* tsman = nullptr;
 static ThemeDB* theme_db = nullptr;
 #ifndef PHYSICS_2D_DISABLED
@@ -359,8 +357,7 @@ void finalize_physics()
 
 void finalize_display()
 {
-	rendering_server->finish();
-	memdelete(rendering_server);
+	RenderingServer::finish();
 
 	memdelete(display_server);
 	memdelete(accessibility_server);
@@ -879,8 +876,6 @@ Error Main::test_setup()
 
 	packed_data = memnew(PackedData);
 
-	globals = memnew(ProjectSettings);
-
 	register_core_settings(); // Here globals are present.
 
 	translation_server = memnew(TranslationServer);
@@ -932,7 +927,7 @@ Error Main::test_setup()
 	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
-	rendering_server = memnew(RenderingServerDefault());
+	rendering_server = memnew(RenderingServer());
 	rendering_server->init();
 	rendering_server->set_render_loop_enabled(false);
 
@@ -1078,7 +1073,6 @@ void Main::test_cleanup()
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -1188,7 +1182,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	MAIN_PRINT("Main: Initialize Globals");
 
 	input_map = memnew(InputMap);
-	globals = memnew(ProjectSettings);
+
+	// initialize internal ProjectSettings::Data struct
+	ProjectSettings::initialize();
 
 	register_core_settings(); // here globals are present
 
@@ -2399,7 +2395,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif // defined(DEBUG_ENABLED) || defined (TOOLS_ENABLED)
 
 	OS::get_singleton()->_in_editor = editor;
-	if (globals->setup(project_path, main_pack, false, editor) == OK) {
+	if (ProjectSettings::setup(project_path, main_pack, false, editor) == OK) {
 #ifdef TOOLS_ENABLED
 		found_project = true;
 #endif
@@ -2561,10 +2557,10 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (!editor) {
 		ResourceUID::get_singleton()->enable_reverse_cache();
 	}
-	ResourceUID::get_singleton()->load_from_cache(true);	// Load UUIDs from cache.
-	ProjectSettings::get_singleton()->fix_autoload_paths(); // Handles autoloads saved as UID.
+	ResourceUID::get_singleton()->load_from_cache(true); // Load UUIDs from cache.
+	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
 
-	if (ProjectSettings::get_singleton()->has_custom_feature("dedicated_server")) {
+	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
 		display_driver = NULL_DISPLAY_DRIVER;
 	}
@@ -2918,7 +2914,6 @@ error:
 	memdelete(performance);
 	memdelete(input_map);
 	memdelete(translation_server);
-	memdelete(globals);
 	memdelete(packed_data);
 
 	unregister_core_driver_types();
@@ -2927,6 +2922,8 @@ error:
 	memdelete(engine);
 
 	unregister_core_types();
+
+	ProjectSettings::finalize();
 
 	OS::get_singleton()->_cmdline.clear();
 	OS::get_singleton()->_user_args.clear();
@@ -2978,7 +2975,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
-			if (ProjectSettings::get_singleton()->get_resource_path() ==
+			if (ProjectSettings::get_resource_path() ==
 				OS::get_singleton()->get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
 						  "project. This is not allowed, since editor files will mix with project "
@@ -3022,13 +3019,6 @@ Error Main::setup2(bool p_show_boot_logo)
 #ifndef PHYSICS_2D_DISABLED
 	physics_server_2d_manager = memnew(PhysicsServer2DManager);
 #endif // PHYSICS_2D_DISABLED
-
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
 
 	register_server_types();
 	{
@@ -3256,9 +3246,8 @@ Error Main::setup2(bool p_show_boot_logo)
 	}
 
 	// Max FPS needs to be set after the DisplayServer is created.
-	RenderingDevice* rd = RenderingDevice::get_singleton();
-	if (rd) {
-		rd->_set_max_fps(engine->get_max_fps());
+	if (RD::data) {
+		RD::_set_max_fps(engine->get_max_fps());
 	}
 
 #ifdef TOOLS_ENABLED
@@ -3321,12 +3310,9 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Rendering");
 
-		rendering_server = memnew(
-			RenderingServerDefault(OS::get_singleton()->is_separate_thread_rendering_enabled()));
-
-		rendering_server->init();
+		RenderingServer::init();
 		// rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);
-		rendering_server->set_render_loop_enabled(!disable_render_loop);
+		RenderingServer::set_render_loop_enabled(!disable_render_loop);
 
 		OS::get_singleton()->benchmark_end_measure("Servers", "Rendering");
 	}
@@ -3512,13 +3498,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	MAIN_PRINT("Main: Load Navigation");
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server();
-#endif // NAVIGATION_3D_DISABLED
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server();
-#endif // NAVIGATION_2D_DISABLED
-
 	register_scene_types();
 	register_driver_types();
 
@@ -3596,7 +3575,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// able to load resources, load the global shader variables.
 		// If running on editor, don't load the textures because the editor
 		// may want to import them first. Editor will reload those later.
-		rendering_server->global_shader_parameters_load_settings(!editor);
+		RenderingServer::global_shader_parameters_load_settings(!editor);
 	}
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Finalize Setup");
@@ -3942,10 +3921,7 @@ int Main::start()
 	}
 #endif
 
-	MainLoop* main_loop = nullptr;
-	if (editor) {
-		main_loop = memnew(SceneTree);
-	}
+	MainLoop* main_loop = memnew(SceneTree);
 
 	if (!script.is_empty()) {
 		return EXIT_FAILURE;
@@ -3955,7 +3931,8 @@ int Main::start()
 		main_loop_type = "SceneTree";
 	}
 
-	if (!main_loop) {
+	if
+(!main_loop) {
 		memdelete(main_loop);
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
@@ -3990,7 +3967,7 @@ int Main::start()
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
-
+	RenderingServer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
 	return EXIT_SUCCESS;
 }
 
@@ -4080,16 +4057,16 @@ bool Main::iteration()
 	}
 
 #ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2D::get_singleton()->process(process_step * time_scale);
+	NavigationServer2D::process(process_step * time_scale);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3D::get_singleton()->process(process_step * time_scale);
+	NavigationServer3D::process(process_step * time_scale);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::get_singleton()->sync(); // sync if still drawing from previous frames.
+	RenderingServer::sync(); // sync if still drawing from previous frames.
 
 	const bool has_pending_resources_for_processing =
-		RD::get_singleton() && RD::get_singleton()->has_pending_resources_for_processing();
+		RD::data && RD::has_pending_resources_for_processing();
 
 	process_ticks = OS::get_singleton()->get_ticks_usec() - process_begin;
 	process_max = MAX(process_ticks, process_max);
@@ -4242,10 +4219,10 @@ void Main::cleanup(bool p_force)
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer
 	// finalization
-	RenderingServer::get_singleton()->sync();
+	RenderingServer::sync();
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
-	rendering_server->global_shader_parameters_clear();
+	RenderingServer::global_shader_parameters_clear();
 
 #ifndef XR_DISABLED
 	if (xr_server) {
@@ -4262,16 +4239,6 @@ void Main::cleanup(bool p_force)
 	unregister_scene_types();
 
 	finalize_theme_db();
-
-// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-	NavigationServer2DManager::finalize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-	NavigationServer3DManager::finalize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
 	finalize_physics();
 	unregister_server_types();
 
@@ -4303,7 +4270,6 @@ void Main::cleanup(bool p_force)
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	if (OS::get_singleton()->is_restart_on_exit_set()) {
 		// attempt to restart with arguments
@@ -4330,6 +4296,8 @@ void Main::cleanup(bool p_force)
 
 	Thread::release_main_thread();
 }
+
+void Main::setup_boot_logo() {}
 
 
 

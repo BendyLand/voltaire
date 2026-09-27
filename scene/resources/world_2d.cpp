@@ -50,17 +50,17 @@ void World2D::register_viewport(Viewport* p_viewport) { viewports.insert(p_viewp
 
 void World2D::remove_viewport(Viewport* p_viewport) { viewports.erase(p_viewport); }
 
-World2D::World2D() { canvas = RenderingServer::get_singleton()->canvas_create(); }
+World2D::World2D() { canvas = RenderingServer::canvas_create(); }
 
 World2D::~World2D()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free_rid(canvas);
+	ERR_FAIL_NULL(RenderingServer::data);
+	RenderingServer::free_rid(canvas);
 
 #ifndef NAVIGATION_2D_DISABLED
-	ERR_FAIL_NULL(NavigationServer2D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer2D::data);
 	if (navigation_map.is_valid()) {
-		NavigationServer2D::get_singleton()->free_rid(navigation_map);
+		NavigationServer2D::free_rid(navigation_map);
 	}
 #endif // NAVIGATION_2D_DISABLED
 

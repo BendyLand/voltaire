@@ -154,7 +154,7 @@ bool DebugAdapterProtocol::request_remote_evaluate(const String& p_eval, int p_s
 
 const DAP::Source& DebugAdapterProtocol::fetch_source(const String& p_path)
 {
-	const String& global_path = ProjectSettings::get_singleton()->globalize_path(p_path);
+	const String& global_path = ProjectSettings::globalize_path(p_path);
 
 	HashMap<String, DAP::Source>::Iterator E = breakpoint_source_list.find(global_path);
 	if (E != breakpoint_source_list.end()) {
@@ -170,7 +170,7 @@ const DAP::Source& DebugAdapterProtocol::fetch_source(const String& p_path)
 
 void DebugAdapterProtocol::update_source(const String& p_path)
 {
-	const String& global_path = ProjectSettings::get_singleton()->globalize_path(p_path);
+	const String& global_path = ProjectSettings::globalize_path(p_path);
 
 	HashMap<String, DAP::Source>::Iterator E = breakpoint_source_list.find(global_path);
 	if (E != breakpoint_source_list.end()) {

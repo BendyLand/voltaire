@@ -158,7 +158,7 @@ void GroupsEditor::_update_groups()
 
 	updating_groups = true;
 
-	global_groups = ProjectSettings::get_singleton()->get_global_groups_list();
+	global_groups = ProjectSettings::get_global_groups_list();
 
 	_load_scene_groups(scene_root_node);
 

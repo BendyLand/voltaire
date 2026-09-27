@@ -682,7 +682,7 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 
 	p_domain->clear();
 	const String prop = "internationalization/locale/translations";
-	if (!ProjectSettings::get_singleton()->has_setting(prop)) {
+	if (!ProjectSettings::has_setting(prop)) {
 		return;
 	}
 }

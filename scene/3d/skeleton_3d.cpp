@@ -52,11 +52,11 @@ Ref<Skin> SkinReference::get_skin() const { return skin; }
 
 SkinReference::~SkinReference()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(RenderingServer::data);
 	if (skeleton_node) {
 		skeleton_node->skin_bindings.erase(this);
 	}
-	RS::get_singleton()->free_rid(skeleton);
+	RS::free_rid(skeleton);
 }
 
 void Skeleton3D::_update_bone_names() const

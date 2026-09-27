@@ -61,10 +61,10 @@ protected:
 	{
 		if (c.is_compute) {
 			pipeline =
-				RD::get_singleton()->compute_pipeline_create(c.shader, c.specialization_constants);
+				RD::compute_pipeline_create(c.shader, c.specialization_constants);
 		}
 		else {
-			pipeline = RD::get_singleton()->render_pipeline_create(c.shader, c.framebuffer_format,
+			pipeline = RD::render_pipeline_create(c.shader, c.framebuffer_format,
 				c.vertex_format, c.render_primitive, c.rasterization_state, c.multisample_state,
 				c.depth_stencil_state, c.blend_state, c.dynamic_state_flags, c.for_render_pass,
 				c.specialization_constants);
@@ -125,11 +125,11 @@ public:
 	{
 		if (pipeline.is_valid()) {
 #ifdef DEV_ENABLED
-			ERR_FAIL_COND_MSG(!(RD::get_singleton()->render_pipeline_is_valid(pipeline) ||
-								  RD::get_singleton()->compute_pipeline_is_valid(pipeline)),
+			ERR_FAIL_COND_MSG(!(RD::render_pipeline_is_valid(pipeline) ||
+								  RD::compute_pipeline_is_valid(pipeline)),
 				"`free()` must be called  manually before the dependent shader is freed.");
 #endif
-			RD::get_singleton()->free_rid(pipeline);
+			RD::free_rid(pipeline);
 			pipeline = RID();
 		}
 	}

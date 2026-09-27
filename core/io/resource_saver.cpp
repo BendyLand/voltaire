@@ -104,7 +104,7 @@ Error ResourceSaver::save(Resource* rp_resource, const String& p_path, uint32_t 
 
 		String old_path = rp_resource->get_path();
 
-		String local_path = ProjectSettings::get_singleton()->localize_path(path);
+		String local_path = ProjectSettings::localize_path(path);
 
 		if (p_flags & FLAG_CHANGE_PATH) {
 			rp_resource->set_path(local_path);
