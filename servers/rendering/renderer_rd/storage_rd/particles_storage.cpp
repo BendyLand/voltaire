@@ -723,14 +723,14 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 0;
 			u.append_id(p_particles->frame_params_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 1;
 			u.append_id(p_particles->particle_buffer);
 			uniforms.push_back(u);
@@ -738,7 +738,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 2;
 			if (p_particles->emission_storage_buffer.is_valid()) {
 				u.append_id(p_particles->emission_storage_buffer);
@@ -751,7 +751,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 3;
 			Particles* sub_emitter = particles_owner.get_or_null(p_particles->sub_emitter);
 			if (sub_emitter) {
@@ -768,8 +768,8 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 			uniforms.push_back(u);
 		}
 
-		p_particles->particles_material_uniform_set = RD::uniform_set_create(
-			uniforms, particles_shader.default_shader_rd, 1);
+		p_particles->particles_material_uniform_set =
+			RD::uniform_set_create(uniforms, particles_shader.default_shader_rd, 1);
 	}
 
 	double new_phase =
@@ -1052,7 +1052,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 			{
 				RD::Uniform u;
-				u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+				u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 				u.binding = 0;
 				for (uint32_t i = 0; i < ParticlesFrameParams::MAX_3D_TEXTURES; i++) {
 					RID rd_tex;
@@ -1074,7 +1074,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 			}
 			{
 				RD::Uniform u;
-				u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+				u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 				u.binding = 1;
 				if (collision_heightmap_texture.is_valid()) {
 					u.append_id(collision_heightmap_texture);
@@ -1085,8 +1085,8 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 				}
 				uniforms.push_back(u);
 			}
-			p_particles->collision_textures_uniform_set = RD::uniform_set_create(
-				uniforms, particles_shader.default_shader_rd, 2);
+			p_particles->collision_textures_uniform_set =
+				RD::uniform_set_create(uniforms, particles_shader.default_shader_rd, 2);
 			p_particles->collision_heightmap_texture = collision_heightmap_texture;
 		}
 	}
@@ -1193,8 +1193,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		push_constant.trail_pass = true;
 		RD::compute_list_set_push_constant(
 			compute_list, &push_constant, sizeof(ParticlesShader::PushConstant));
-		RD::compute_list_dispatch_threads(
-			compute_list, process_amount - p_particles->amount, 1, 1);
+		RD::compute_list_dispatch_threads(compute_list, process_amount - p_particles->amount, 1, 1);
 	}
 	else {
 		RD::compute_list_dispatch_threads(compute_list, process_amount, 1, 1);
@@ -1315,16 +1314,15 @@ RID ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 				int32_t(particles_collision->extents.x / particles_collision->extents.z * size.y);
 		}
 
-		RD::TextureFormat tf;
-		tf.format = RD::DATA_FORMAT_D32_SFLOAT;
+		RDC::TextureFormat tf;
+		tf.format = RDC::DATA_FORMAT_D32_SFLOAT;
 		tf.width = size.x;
 		tf.height = size.y;
-		tf.texture_type = RD::TEXTURE_TYPE_2D;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D;
 		tf.usage_bits =
-			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-		particles_collision->heightfield_texture =
-			RD::texture_create(tf, RD::TextureView());
+		particles_collision->heightfield_texture = RD::texture_create(tf, RD::TextureView());
 
 		Vector<RID> fb_tex;
 		fb_tex.push_back(particles_collision->heightfield_texture);

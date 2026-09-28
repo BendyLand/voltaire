@@ -168,7 +168,7 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration* p_co
 
 	// Create our MSAA buffers.
 	if (msaa_3d == RSE::VIEWPORT_MSAA_DISABLED) {
-		texture_samples = RD::TEXTURE_SAMPLES_1;
+		texture_samples = RDC::TEXTURE_SAMPLES_1;
 	}
 	else {
 		texture_samples = msaa_to_samples(msaa_3d);
@@ -185,7 +185,7 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration* p_co
 	RID vrs_texture;
 	if (vrs && vrs_mode != RSE::VIEWPORT_VRS_DISABLED) {
 		vrs_texture = create_texture(RB_SCOPE_VRS, RB_TEXTURE, get_vrs_format(),
-			get_vrs_usage_bits(), RD::TEXTURE_SAMPLES_1, vrs->get_vrs_texture_size(internal_size));
+			get_vrs_usage_bits(), RDC::TEXTURE_SAMPLES_1, vrs->get_vrs_texture_size(internal_size));
 	}
 
 	// (re-)configure any named buffers
@@ -271,8 +271,6 @@ void RenderSceneBuffersRD::ensure_mfx(RendererRD::MFXSpatialEffect* p_effect)
 }
 #endif
 
-// Named textures
-
 bool RenderSceneBuffersRD::has_texture(
 	const StringName& p_context, const StringName& p_texture_name) const
 {
@@ -282,8 +280,8 @@ bool RenderSceneBuffersRD::has_texture(
 }
 
 RID RenderSceneBuffersRD::create_texture(const StringName& p_context,
-	const StringName& p_texture_name, const RD::DataFormat p_data_format,
-	const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples, const Size2i p_size,
+	const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+	const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples, const Size2i p_size,
 	const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique, bool p_discardable)
 {
 	// Keep some useful data, we use default values when these are 0.
@@ -292,10 +290,10 @@ RID RenderSceneBuffersRD::create_texture(const StringName& p_context,
 	uint32_t mipmaps = p_mipmaps == 0 ? 1 : p_mipmaps;
 
 	// Create our texture
-	RD::TextureFormat tf;
+	RDC::TextureFormat tf;
 	tf.format = p_data_format;
 	if (layers > 1) {
-		tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 	}
 
 	tf.width = size.x;
@@ -371,19 +369,19 @@ RID RenderSceneBuffersRD::_get_texture_slice_view(const StringName& p_context,
 		p_context, p_texture_name, p_layer, p_mipmap, p_layers, p_mipmaps, texture_view);
 }
 
-const RD::TextureFormat RenderSceneBuffersRD::get_texture_format(
+const RDC::TextureFormat RenderSceneBuffersRD::get_texture_format(
 	const StringName& p_context, const StringName& p_texture_name) const
 {
 	NTKey key(p_context, p_texture_name);
 
-	ERR_FAIL_COND_V(!named_textures.has(key), RD::TextureFormat());
+	ERR_FAIL_COND_V(!named_textures.has(key), RDC::TextureFormat());
 
 	return named_textures[key].format;
 }
 
-RID RenderSceneBuffersRD::get_texture_slice_view(const StringName& p_context, const StringName& p_texture_name,
-	const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers,
-	const uint32_t p_mipmaps, RD::TextureView p_view)
+RID RenderSceneBuffersRD::get_texture_slice_view(const StringName& p_context,
+	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
+	const uint32_t p_layers, const uint32_t p_mipmaps, RD::TextureView p_view)
 {
 	return RID();
 }
@@ -431,7 +429,6 @@ void RenderSceneBuffersRD::clear_context(const StringName& p_context)
 	}
 }
 
-// Allocate shared buffers
 void RenderSceneBuffersRD::allocate_blur_textures()
 {
 	if (has_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0)) {
@@ -448,34 +445,34 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 	uint32_t mipmaps_required =
 		Image::get_image_required_mipmaps(blur_size.x, blur_size.y, Image::FORMAT_RGBAH);
 
-	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+	uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	if (can_be_storage) {
-		usage_bits += RD::TEXTURE_USAGE_STORAGE_BIT;
+		usage_bits += RDC::TEXTURE_USAGE_STORAGE_BIT;
 	}
 	else {
-		usage_bits += RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		usage_bits += RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
 
 	create_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0, get_base_data_format(), usage_bits,
-		RD::TEXTURE_SAMPLES_1, blur_size, view_count, mipmaps_required);
+		RDC::TEXTURE_SAMPLES_1, blur_size, view_count, mipmaps_required);
 	create_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, get_base_data_format(), usage_bits,
-		RD::TEXTURE_SAMPLES_1, Size2i(blur_size.x >> 1, blur_size.y >> 1), view_count,
+		RDC::TEXTURE_SAMPLES_1, Size2i(blur_size.x >> 1, blur_size.y >> 1), view_count,
 		mipmaps_required - 1);
 
 	// TODO redo this:
 	if (!can_be_storage) {
 		// create 4 weight textures, 2 full size, 2 half size
 
-		RD::TextureFormat tf;
-		tf.format = RD::DATA_FORMAT_R16_SFLOAT; // We could probably use DATA_FORMAT_R8_SNORM if we
-												// don't pre-multiply by blur_size but that depends
-												// on whether we can remove DEPTH_GAP
+		RDC::TextureFormat tf;
+		tf.format = RDC::DATA_FORMAT_R16_SFLOAT; // We could probably use DATA_FORMAT_R8_SNORM if we
+												 // don't pre-multiply by blur_size but that depends
+												 // on whether we can remove DEPTH_GAP
 		tf.width = blur_size.x;
 		tf.height = blur_size.y;
-		tf.texture_type = RD::TEXTURE_TYPE_2D;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D;
 		tf.array_layers = 1; // Our DOF effect handles one eye per turn
-		tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT |
-						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT |
+						RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 		tf.mipmaps = 1;
 		for (uint32_t i = 0; i < 4; i++) {
 			// associated blur texture
@@ -510,8 +507,6 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 	}
 }
 
-// Data buffers
-
 bool RenderSceneBuffersRD::has_custom_data(const StringName& p_name)
 {
 	return data_buffers.has(p_name);
@@ -536,8 +531,6 @@ Ref<RenderBufferCustomDataRD> RenderSceneBuffersRD::get_custom_data(const String
 
 	return ret;
 }
-
-// Depth texture
 
 bool RenderSceneBuffersRD::has_depth_texture()
 {
@@ -586,16 +579,14 @@ RID RenderSceneBuffersRD::get_depth_texture(const uint32_t p_layer)
 	}
 }
 
-// Subsampled textures.
-
 RID RenderSceneBuffersRD::get_color_subsampled()
 {
 	const bool use_msaa = (msaa_3d != RSE::VIEWPORT_MSAA_DISABLED);
 
-	RD::TextureFormat tf;
+	RDC::TextureFormat tf;
 	tf.format = get_base_data_format();
 	if (view_count > 1) {
-		tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 	}
 	tf.width = internal_size.x;
 	tf.height = internal_size.y;
@@ -610,10 +601,10 @@ RID RenderSceneBuffersRD::get_color_msaa_subsampled()
 {
 	ERR_FAIL_COND_V(msaa_3d == RSE::VIEWPORT_MSAA_DISABLED, RID());
 
-	RD::TextureFormat tf;
+	RDC::TextureFormat tf;
 	tf.format = get_base_data_format();
 	if (view_count > 1) {
-		tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 	}
 	tf.width = internal_size.x;
 	tf.height = internal_size.y;
@@ -630,10 +621,10 @@ RID RenderSceneBuffersRD::get_depth_subsampled()
 {
 	const bool use_msaa = (msaa_3d != RSE::VIEWPORT_MSAA_DISABLED);
 
-	RD::TextureFormat tf;
+	RDC::TextureFormat tf;
 	tf.format = get_depth_format(use_msaa, false, can_be_storage);
 	if (view_count > 1) {
-		tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 	}
 	tf.width = internal_size.x;
 	tf.height = internal_size.y;
@@ -648,10 +639,10 @@ RID RenderSceneBuffersRD::get_depth_msaa_subsampled()
 {
 	ERR_FAIL_COND_V(msaa_3d == RSE::VIEWPORT_MSAA_DISABLED, RID());
 
-	RD::TextureFormat tf;
+	RDC::TextureFormat tf;
 	tf.format = get_depth_format(false, true, can_be_storage);
 	if (view_count > 1) {
-		tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 	}
 	tf.width = internal_size.x;
 	tf.height = internal_size.y;
@@ -664,21 +655,17 @@ RID RenderSceneBuffersRD::get_depth_msaa_subsampled()
 	return create_texture_from_format(RB_SCOPE_BUFFERS, RB_TEX_DEPTH_MSAA_SUBSAMPLED, tf);
 }
 
-// Upscaled texture.
-
 void RenderSceneBuffersRD::ensure_upscaled()
 {
 	if (!has_upscaled_texture()) {
-		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT |
-							  (can_be_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0) |
-							  RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
-		usage_bits |= RD::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT;
+		uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT |
+							  (can_be_storage ? RDC::TEXTURE_USAGE_STORAGE_BIT : 0) |
+							  RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		usage_bits |= RDC::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT;
 		create_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_UPSCALED, get_base_data_format(), usage_bits,
-			RD::TEXTURE_SAMPLES_1, target_size);
+			RDC::TEXTURE_SAMPLES_1, target_size);
 	}
 }
-
-// Velocity texture.
 
 void RenderSceneBuffersRD::ensure_velocity()
 {
@@ -766,34 +753,35 @@ uint32_t RenderSceneBuffersRD::get_color_usage_bits(bool p_resolve, bool p_msaa,
 {
 	DEV_ASSERT((!p_resolve && !p_msaa) || (p_resolve != p_msaa));
 
-	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
-						  RD::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT;
+	uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT |
+						  RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
+						  RDC::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT;
 	if (p_msaa) {
-		usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+		usage_bits |= RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 	}
 	else if (p_resolve) {
 		usage_bits |=
-			RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | (p_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0);
+			RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT | (p_storage ? RDC::TEXTURE_USAGE_STORAGE_BIT : 0);
 	}
 	else {
-		usage_bits |= (p_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0);
+		usage_bits |= (p_storage ? RDC::TEXTURE_USAGE_STORAGE_BIT : 0);
 	}
 
 	return usage_bits;
 }
 
-RD::DataFormat RenderSceneBuffersRD::get_depth_format(bool p_resolve, bool p_msaa, bool p_storage)
+RDC::DataFormat RenderSceneBuffersRD::get_depth_format(bool p_resolve, bool p_msaa, bool p_storage)
 {
-	if (p_resolve && (p_storage || !RenderingDevice::has_feature(
-									   RD::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE))) {
+	if (p_resolve &&
+		(p_storage || !RenderingDevice::has_feature(RDC::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE))) {
 		// Use R32 for resolve on Forward+ (p_storage == true), or if we don't support depth
 		// resolve.
-		return RD::DATA_FORMAT_R32_SFLOAT;
+		return RDC::DATA_FORMAT_R32_SFLOAT;
 	}
 	else {
 		const RenderingDeviceCommons::DataFormat preferred_formats[2] = {
-			p_storage ? RD::DATA_FORMAT_D32_SFLOAT_S8_UINT : RD::DATA_FORMAT_D24_UNORM_S8_UINT,
-			p_storage ? RD::DATA_FORMAT_D24_UNORM_S8_UINT : RD::DATA_FORMAT_D32_SFLOAT_S8_UINT};
+			p_storage ? RDC::DATA_FORMAT_D32_SFLOAT_S8_UINT : RDC::DATA_FORMAT_D24_UNORM_S8_UINT,
+			p_storage ? RDC::DATA_FORMAT_D24_UNORM_S8_UINT : RDC::DATA_FORMAT_D32_SFLOAT_S8_UINT};
 
 		return RD::texture_is_format_supported_for_usage(
 				   preferred_formats[0], get_depth_usage_bits(p_resolve, p_msaa, p_storage))
@@ -806,46 +794,45 @@ uint32_t RenderSceneBuffersRD::get_depth_usage_bits(bool p_resolve, bool p_msaa,
 {
 	DEV_ASSERT((!p_resolve && !p_msaa) || (p_resolve != p_msaa));
 
-	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
+	uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
 	if (p_msaa) {
 		usage_bits |=
-			RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+			RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 	}
 	else if (p_resolve) {
-		usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+		usage_bits |= RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		if (p_storage) {
-			usage_bits |= RD::TEXTURE_USAGE_STORAGE_BIT;
+			usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 		}
-		else if (RenderingDevice::has_feature(
-					   RD::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE)) {
+		else if (RenderingDevice::has_feature(RDC::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE)) {
 			// We're able to resolve depth in (sub)passes and we make use of this in our mobile
 			// renderer.
-			usage_bits |= RD::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT;
+			usage_bits |= RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT;
 		}
 	}
 	else {
-		usage_bits |= RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		usage_bits |= RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	}
 
 	return usage_bits;
 }
 
-RD::DataFormat RenderSceneBuffersRD::get_velocity_format() { return RD::DATA_FORMAT_R16G16_SFLOAT; }
+RDC::DataFormat RenderSceneBuffersRD::get_velocity_format()
+{
+	return RDC::DATA_FORMAT_R16G16_SFLOAT;
+}
 
 uint32_t RenderSceneBuffersRD::get_velocity_usage_bits(bool p_resolve, bool p_msaa, bool p_storage)
 {
 	return get_color_usage_bits(p_resolve, p_msaa, p_storage);
 }
 
-RD::DataFormat RenderSceneBuffersRD::get_vrs_format()
-{
-	return RD::vrs_get_format();
-}
+RDC::DataFormat RenderSceneBuffersRD::get_vrs_format() { return RD::vrs_get_format(); }
 
 uint32_t RenderSceneBuffersRD::get_vrs_usage_bits()
 {
-	return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT |
-		   RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_VRS_ATTACHMENT_BIT;
+	return RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT |
+		   RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT;
 }
 
 float RenderSceneBuffersRD::get_luminance_multiplier() const
@@ -855,12 +842,16 @@ float RenderSceneBuffersRD::get_luminance_multiplier() const
 	return (force_hdr || can_be_storage) ? 1.0 : 2.0;
 }
 
-RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
-	const RD::TextureFormat& p_texture_format, RD::TextureView p_view,
-	bool p_unique)
+RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context,
+	const StringName& p_texture_name, const RDC::TextureFormat& p_texture_format,
+	RD::TextureView p_view, bool p_unique)
 {
 	return RID();
 }
 
+RID RenderSceneBuffersRD::create_texture_view(
+	StringName const&, StringName const&, StringName const&, RenderingDevice::TextureView)
+{
+}
 
-RID RenderSceneBuffersRD::create_texture_view(StringName const&, StringName const&, StringName const&, RenderingDevice::TextureView) {}
+

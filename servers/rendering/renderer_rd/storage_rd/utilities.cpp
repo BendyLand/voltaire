@@ -257,7 +257,7 @@ bool Utilities::has_os_feature(const String& p_feature) const
 
 	if (p_feature == "rgtc" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC5_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_BC5_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
@@ -267,32 +267,32 @@ bool Utilities::has_os_feature(const String& p_feature) const
 	// makes bigger APKs). For good measure we do the same hack for iOS, just in case.
 	if (p_feature == "s3tc" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 #endif
 
 	if (p_feature == "bptc" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC7_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_BC7_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "etc2" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc_hdr" &&
 		RD::texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+			RDC::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
@@ -345,20 +345,20 @@ String Utilities::get_video_adapter_api_version() const
 
 Size2i Utilities::get_maximum_viewport_size() const
 {
-	int max_x = RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
-	int max_y = RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
+	int max_x = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
+	int max_y = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
 	return Size2i(max_x, max_y);
 }
 
 uint32_t Utilities::get_maximum_shader_varyings() const
 {
-	return RenderingDevice::limit_get(RenderingDevice::LIMIT_MAX_SHADER_VARYINGS);
+	return RenderingDevice::limit_get(RDC::LIMIT_MAX_SHADER_VARYINGS);
 }
 
 uint64_t Utilities::get_maximum_uniform_buffer_size() const
 {
 	return RenderingDevice::limit_get(
-		RenderingDevice::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
+		RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
 }
 
 void RendererRD::Utilities::visibility_notifier_call(
