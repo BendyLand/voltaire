@@ -76,17 +76,13 @@
 #define RECORD_PIPELINE_STATISTICS_PATH "./pipelines.csv"
 #endif
 
-/*****************/
-/**** GENERIC ****/
-/*****************/
-
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 static const uint32_t BREADCRUMB_BUFFER_ENTRIES = 512u;
 #endif
 
 static const uint32_t MAX_DYNAMIC_BUFFERS = 8u; // Minimum guaranteed by Vulkan.
 
-static const VkFormat RD_TO_VK_FORMAT[RDD::DATA_FORMAT_MAX] = {
+static const VkFormat RD_TO_VK_FORMAT[RDC::DATA_FORMAT_MAX] = {
 	VK_FORMAT_R4G4_UNORM_PACK8,
 	VK_FORMAT_R4G4B4A4_UNORM_PACK16,
 	VK_FORMAT_B4G4R4A4_UNORM_PACK16,
@@ -387,14 +383,14 @@ static VkAccessFlags _rd_to_vk_access_flags(uint32_t p_access)
 }
 
 // RDD::CompareOperator == VkCompareOp.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_NEVER, VK_COMPARE_OP_NEVER));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_LESS, VK_COMPARE_OP_LESS));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_EQUAL, VK_COMPARE_OP_EQUAL));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_LESS_OR_EQUAL, VK_COMPARE_OP_LESS_OR_EQUAL));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_GREATER, VK_COMPARE_OP_GREATER));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_NOT_EQUAL, VK_COMPARE_OP_NOT_EQUAL));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_GREATER_OR_EQUAL, VK_COMPARE_OP_GREATER_OR_EQUAL));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::COMPARE_OP_ALWAYS, VK_COMPARE_OP_ALWAYS));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_NEVER, VK_COMPARE_OP_NEVER));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_LESS, VK_COMPARE_OP_LESS));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_EQUAL, VK_COMPARE_OP_EQUAL));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_LESS_OR_EQUAL, VK_COMPARE_OP_LESS_OR_EQUAL));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_GREATER, VK_COMPARE_OP_GREATER));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_NOT_EQUAL, VK_COMPARE_OP_NOT_EQUAL));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_GREATER_OR_EQUAL, VK_COMPARE_OP_GREATER_OR_EQUAL));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_ALWAYS, VK_COMPARE_OP_ALWAYS));
 
 static_assert(ARRAYS_COMPATIBLE_FIELDWISE(Rect2i, VkRect2D));
 
@@ -403,37 +399,37 @@ uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_fla
 	uint32_t flags = 0;
 
 	if (supported_stages & VK_SHADER_STAGE_VERTEX_BIT) {
-		flags += SHADER_STAGE_VERTEX_BIT;
+		flags += RDC::SHADER_STAGE_VERTEX_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-		flags += SHADER_STAGE_TESSELATION_CONTROL_BIT;
+		flags += RDC::SHADER_STAGE_TESSELATION_CONTROL_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-		flags += SHADER_STAGE_TESSELATION_EVALUATION_BIT;
+		flags += RDC::SHADER_STAGE_TESSELATION_EVALUATION_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
 		// FIXME: Add shader stage geometry bit.
 	}
 	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
-		flags += SHADER_STAGE_FRAGMENT_BIT;
+		flags += RDC::SHADER_STAGE_FRAGMENT_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
-		flags += SHADER_STAGE_COMPUTE_BIT;
+		flags += RDC::SHADER_STAGE_COMPUTE_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_RAYGEN_BIT_KHR) {
-		flags += SHADER_STAGE_RAYGEN_BIT;
+		flags += RDC::SHADER_STAGE_RAYGEN_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_ANY_HIT_BIT_KHR) {
-		flags += SHADER_STAGE_ANY_HIT_BIT;
+		flags += RDC::SHADER_STAGE_ANY_HIT_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) {
-		flags += SHADER_STAGE_CLOSEST_HIT_BIT;
+		flags += RDC::SHADER_STAGE_CLOSEST_HIT_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_MISS_BIT_KHR) {
-		flags += SHADER_STAGE_MISS_BIT;
+		flags += RDC::SHADER_STAGE_MISS_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_INTERSECTION_BIT_KHR) {
-		flags += SHADER_STAGE_INTERSECTION_BIT;
+		flags += RDC::SHADER_STAGE_INTERSECTION_BIT;
 	}
 
 	return flags;
@@ -496,28 +492,28 @@ uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_operations
 	uint32_t flags = 0;
 
 	if (supported_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) {
-		flags += SUBGROUP_BASIC_BIT;
+		flags += RDC::SUBGROUP_BASIC_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) {
-		flags += SUBGROUP_VOTE_BIT;
+		flags += RDC::SUBGROUP_VOTE_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) {
-		flags += SUBGROUP_ARITHMETIC_BIT;
+		flags += RDC::SUBGROUP_ARITHMETIC_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) {
-		flags += SUBGROUP_BALLOT_BIT;
+		flags += RDC::SUBGROUP_BALLOT_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) {
-		flags += SUBGROUP_SHUFFLE_BIT;
+		flags += RDC::SUBGROUP_SHUFFLE_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) {
-		flags += SUBGROUP_SHUFFLE_RELATIVE_BIT;
+		flags += RDC::SUBGROUP_SHUFFLE_RELATIVE_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) {
-		flags += SUBGROUP_CLUSTERED_BIT;
+		flags += RDC::SUBGROUP_CLUSTERED_BIT;
 	}
 	if (supported_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) {
-		flags += SUBGROUP_QUAD_BIT;
+		flags += RDC::SUBGROUP_QUAD_BIT;
 	}
 
 	return flags;
@@ -557,10 +553,6 @@ String RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_operations_d
 
 	return res.substr(2); // Remove first ", ".
 }
-
-/*****************/
-/**** GENERIC ****/
-/*****************/
 
 void RenderingDeviceDriverVulkan::_register_requested_device_extension(
 	const CharString& p_extension_name, bool p_required)
@@ -2164,10 +2156,6 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 	return OK;
 }
 
-/****************/
-/**** MEMORY ****/
-/****************/
-
 static const uint32_t SMALL_ALLOCATION_MAX_SIZE = 4096;
 
 VmaPool RenderingDeviceDriverVulkan::_find_or_create_small_allocs_pool(uint32_t p_mem_type_index)
@@ -2197,10 +2185,6 @@ VmaPool RenderingDeviceDriverVulkan::_find_or_create_small_allocs_pool(uint32_t 
 
 	return pool;
 }
-
-/*****************/
-/**** BUFFERS ****/
-/*****************/
 
 // RDD::BufferUsageBits == VkBufferUsageFlagBits.
 static_assert(
@@ -2357,7 +2341,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	return BufferID(buf_info);
 }
 
-bool RenderingDeviceDriverVulkan::buffer_set_texel_format(BufferID p_buffer, DataFormat p_format)
+bool RenderingDeviceDriverVulkan::buffer_set_texel_format(BufferID p_buffer, RDC::DataFormat p_format)
 {
 	BufferInfo* buf_info = (BufferInfo*)p_buffer.id;
 
@@ -2499,11 +2483,7 @@ uint64_t RenderingDeviceDriverVulkan::buffer_get_device_address(BufferID p_buffe
 	return vkGetBufferDeviceAddress(vk_device, &address_info);
 }
 
-/*****************/
-/**** TEXTURE ****/
-/*****************/
-
-static const VkImageType RD_TEX_TYPE_TO_VK_IMG_TYPE[RDD::TEXTURE_TYPE_MAX] = {
+static const VkImageType RD_TEX_TYPE_TO_VK_IMG_TYPE[RDC::TEXTURE_TYPE_MAX] = {
 	VK_IMAGE_TYPE_1D,
 	VK_IMAGE_TYPE_2D,
 	VK_IMAGE_TYPE_3D,
@@ -2513,7 +2493,7 @@ static const VkImageType RD_TEX_TYPE_TO_VK_IMG_TYPE[RDD::TEXTURE_TYPE_MAX] = {
 	VK_IMAGE_TYPE_2D,
 };
 
-static const VkSampleCountFlagBits RD_TO_VK_SAMPLE_COUNT[RDD::TEXTURE_SAMPLES_MAX] = {
+static const VkSampleCountFlagBits RD_TO_VK_SAMPLE_COUNT[RDC::TEXTURE_SAMPLES_MAX] = {
 	VK_SAMPLE_COUNT_1_BIT,
 	VK_SAMPLE_COUNT_2_BIT,
 	VK_SAMPLE_COUNT_4_BIT,
@@ -2524,30 +2504,30 @@ static const VkSampleCountFlagBits RD_TO_VK_SAMPLE_COUNT[RDD::TEXTURE_SAMPLES_MA
 };
 
 // RDD::TextureType == VkImageViewType.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_1D, VK_IMAGE_VIEW_TYPE_1D));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_2D, VK_IMAGE_VIEW_TYPE_2D));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_3D, VK_IMAGE_VIEW_TYPE_3D));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_CUBE, VK_IMAGE_VIEW_TYPE_CUBE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_1D_ARRAY, VK_IMAGE_VIEW_TYPE_1D_ARRAY));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_2D_ARRAY, VK_IMAGE_VIEW_TYPE_2D_ARRAY));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_CUBE_ARRAY, VK_IMAGE_VIEW_TYPE_CUBE_ARRAY));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_1D, VK_IMAGE_VIEW_TYPE_1D));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_2D, VK_IMAGE_VIEW_TYPE_2D));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_3D, VK_IMAGE_VIEW_TYPE_3D));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_CUBE, VK_IMAGE_VIEW_TYPE_CUBE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_1D_ARRAY, VK_IMAGE_VIEW_TYPE_1D_ARRAY));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_2D_ARRAY, VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_TYPE_CUBE_ARRAY, VK_IMAGE_VIEW_TYPE_CUBE_ARRAY));
 
-// RDD::TextureSwizzle == VkComponentSwizzle.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_ONE, VK_COMPONENT_SWIZZLE_ONE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_G, VK_COMPONENT_SWIZZLE_G));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_B, VK_COMPONENT_SWIZZLE_B));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_A, VK_COMPONENT_SWIZZLE_A));
+// RDC::TextureSwizzle == VkComponentSwizzle.
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_ONE, VK_COMPONENT_SWIZZLE_ONE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_G, VK_COMPONENT_SWIZZLE_G));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_B, VK_COMPONENT_SWIZZLE_B));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::TEXTURE_SWIZZLE_A, VK_COMPONENT_SWIZZLE_A));
 
-// RDD::TextureAspectBits == VkImageAspectFlagBits.
+// RDC::TextureAspectBits == VkImageAspectFlagBits.
 static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_COLOR_BIT));
 static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_DEPTH_BIT));
 static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_STENCIL_BIT, VK_IMAGE_ASPECT_STENCIL_BIT));
 
 VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_count(
-	TextureSamples p_requested_sample_count)
+	RDC::TextureSamples p_requested_sample_count)
 {
 	VkSampleCountFlags sample_count_flags =
 		(physical_device_properties.limits.framebufferColorSampleCounts &
@@ -2571,7 +2551,7 @@ VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_coun
 }
 
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
-	const TextureFormat& p_format, const TextureView& p_view)
+	const RDC::TextureFormat& p_format, const TextureView& p_view)
 {
 	VkImageCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -2597,8 +2577,8 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 		}
 	}
 
-	if (p_format.texture_type == TEXTURE_TYPE_CUBE ||
-		p_format.texture_type == TEXTURE_TYPE_CUBE_ARRAY) {
+	if (p_format.texture_type == RDC::TEXTURE_TYPE_CUBE ||
+		p_format.texture_type == RDC::TEXTURE_TYPE_CUBE_ARRAY) {
 		create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
 	/*if (p_format.texture_type == TEXTURE_TYPE_2D || p_format.texture_type ==
@@ -2609,16 +2589,16 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 		VulkanHooks::get_singleton() && VulkanHooks::get_singleton()->use_subsampled_images();
 	if (fdm_capabilities.attachment_supported && use_subsampled_images && p_format.is_subsampled &&
 		(p_format.usage_bits &
-			(TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-				TEXTURE_USAGE_INPUT_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
+			(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+				RDC::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
 		create_info.flags |= VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
 	}
 
 	if (fdm_capabilities.offset_supported &&
 		(p_format.usage_bits &
-			(TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-				TEXTURE_USAGE_INPUT_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT |
-				TEXTURE_USAGE_VRS_ATTACHMENT_BIT))) {
+			(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+				RDC::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT |
+				RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT))) {
 		create_info.flags |= VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
 	}
 
@@ -2634,42 +2614,42 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	create_info.arrayLayers = p_format.array_layers;
 
 	create_info.samples = _ensure_supported_sample_count(p_format.samples);
-	create_info.tiling = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT)
+	create_info.tiling = (p_format.usage_bits & RDC::TEXTURE_USAGE_CPU_READ_BIT)
 							 ? VK_IMAGE_TILING_LINEAR
 							 : VK_IMAGE_TILING_OPTIMAL;
 
 	// Usage.
-	if ((p_format.usage_bits & TEXTURE_USAGE_SAMPLING_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_STORAGE_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_STORAGE_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
-	if ((p_format.usage_bits & (TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-								   TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
+	if ((p_format.usage_bits & (RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+								   RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
 		create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT) &&
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT) &&
 		(p_format.usage_bits & TEXTURE_USAGE_VRS_FRAGMENT_SHADING_RATE_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT) &&
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT) &&
 		(p_format.usage_bits & TEXTURE_USAGE_VRS_FRAGMENT_DENSITY_MAP_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_UPDATE_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
+	if ((p_format.usage_bits & RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
 		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	}
 
@@ -2679,15 +2659,15 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	// Allocate memory.
 
 	uint32_t width = 0, height = 0;
-	uint32_t image_size = get_image_format_required_size(p_format.format, p_format.width,
+	uint32_t image_size = RDC::get_image_format_required_size(p_format.format, p_format.width,
 		p_format.height, p_format.depth, p_format.mipmaps, &width, &height);
 
 	VmaAllocationCreateInfo alloc_create_info = {};
-	alloc_create_info.flags = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT)
+	alloc_create_info.flags = (p_format.usage_bits & RDC::TEXTURE_USAGE_CPU_READ_BIT)
 								  ? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
 								  : 0;
 
-	if (p_format.usage_bits & TEXTURE_USAGE_TRANSIENT_BIT) {
+	if (p_format.usage_bits & RDC::TEXTURE_USAGE_TRANSIENT_BIT) {
 		uint32_t memory_type_index = 0;
 		VmaAllocationCreateInfo lazy_memory_requirements = alloc_create_info;
 		lazy_memory_requirements.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
@@ -2710,7 +2690,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 			alloc_create_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		}
 	}
-	else if (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) {
+	else if (p_format.usage_bits & RDC::TEXTURE_USAGE_CPU_READ_BIT) {
 		alloc_create_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	}
 	else {
@@ -2766,8 +2746,8 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	image_view_create_info.components.a = (VkComponentSwizzle)p_view.swizzle_a;
 	image_view_create_info.subresourceRange.levelCount = create_info.mipLevels;
 	image_view_create_info.subresourceRange.layerCount = create_info.arrayLayers;
-	if ((p_format.usage_bits & (TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-								   TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
+	if ((p_format.usage_bits & (RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+								   RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
 		image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 	}
 	else {
@@ -2813,7 +2793,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	tex_info->allocation.handle = allocation;
 	tex_info->is_subsampled = (create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0;
 #ifdef DEBUG_ENABLED
-	tex_info->transient = (p_format.usage_bits & TEXTURE_USAGE_TRANSIENT_BIT) != 0;
+	tex_info->transient = (p_format.usage_bits & RDC::TEXTURE_USAGE_TRANSIENT_BIT) != 0;
 #endif
 	vmaGetAllocationInfo(allocator, tex_info->allocation.handle, &tex_info->allocation.info);
 
@@ -2826,7 +2806,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 }
 
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create_from_extension(uint64_t p_native_texture,
-	TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil,
+	RDC::TextureType p_type, RDC::DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil,
 	uint32_t p_mipmaps)
 {
 	VkImage vk_image = (VkImage)p_native_texture;
@@ -2939,7 +2919,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(
 }
 
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(
-	TextureID p_original_texture, const TextureView& p_view, TextureSliceType p_slice_type,
+	TextureID p_original_texture, const TextureView& p_view, RDC::TextureSliceType p_slice_type,
 	uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps)
 {
 	const TextureInfo* owner_tex_info = (const TextureInfo*)p_original_texture.id;
@@ -2950,16 +2930,16 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(
 
 	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
 	switch (p_slice_type) {
-	case TEXTURE_SLICE_2D: {
+	case RDC::TEXTURE_SLICE_2D: {
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	} break;
-	case TEXTURE_SLICE_3D: {
+	case RDC::TEXTURE_SLICE_3D: {
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
 	} break;
-	case TEXTURE_SLICE_CUBEMAP: {
+	case RDC::TEXTURE_SLICE_CUBEMAP: {
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	} break;
-	case TEXTURE_SLICE_2D_ARRAY: {
+	case RDC::TEXTURE_SLICE_2D_ARRAY: {
 		image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	} break;
 	default: {
@@ -3036,11 +3016,11 @@ void RenderingDeviceDriverVulkan::texture_get_copyable_layout(
 	uint32_t d = MAX(1u, tex_info->vk_create_info.extent.depth >> p_subresource.mipmap);
 
 	uint32_t bw = 0, bh = 0;
-	get_compressed_image_format_block_dimensions(tex_info->rd_format, bw, bh);
+	RDC::get_compressed_image_format_block_dimensions(tex_info->rd_format, bw, bh);
 
 	uint32_t sbw = 0, sbh = 0;
 	*r_layout = {};
-	r_layout->size = get_image_format_required_size(tex_info->rd_format, w, h, d, 1, &sbw, &sbh);
+	r_layout->size = RDC::get_image_format_required_size(tex_info->rd_format, w, h, d, 1, &sbw, &sbh);
 	r_layout->row_pitch = r_layout->size / ((sbh / bh) * d);
 }
 
@@ -3048,14 +3028,14 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 {
 	const TextureInfo* tex = (const TextureInfo*)p_texture.id;
 
-	DataFormat tex_format = tex->rd_format;
+	RDC::DataFormat tex_format = tex->rd_format;
 	uint32_t tex_width = tex->vk_create_info.extent.width;
 	uint32_t tex_height = tex->vk_create_info.extent.height;
 	uint32_t tex_depth = tex->vk_create_info.extent.depth;
 	uint32_t tex_mipmaps = tex->vk_create_info.mipLevels;
 
 	uint32_t width, height, depth;
-	uint32_t tight_mip_size = get_image_format_required_size(
+	uint32_t tight_mip_size = RDC::get_image_format_required_size(
 		tex_format, tex_width, tex_height, tex_depth, tex_mipmaps, &width, &height, &depth);
 
 	Vector<uint8_t> image_data;
@@ -3063,9 +3043,9 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 
 
 	uint32_t blockw, blockh;
-	get_compressed_image_format_block_dimensions(tex_format, blockw, blockh);
-	uint32_t block_size = get_compressed_image_format_block_byte_size(tex_format);
-	uint32_t pixel_size = get_image_format_pixel_size(tex_format);
+	RDC::get_compressed_image_format_block_dimensions(tex_format, blockw, blockh);
+	uint32_t block_size = RDC::get_compressed_image_format_block_byte_size(tex_format);
+	uint32_t pixel_size = RDC::get_image_format_pixel_size(tex_format);
 
 	void* data_ptr = nullptr;
 	VkResult err = vmaMapMemory(allocator, tex->allocation.handle, &data_ptr);
@@ -3077,7 +3057,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 
 		uint32_t mipmap_offset = 0;
 		for (uint32_t mm_i = 0; mm_i < tex_mipmaps; mm_i++) {
-			uint32_t image_total = get_image_format_required_size(
+			uint32_t image_total = RDC::get_image_format_required_size(
 				tex_format, tex_width, tex_height, tex_depth, mm_i + 1, &width, &height, &depth);
 
 			uint8_t* write_ptr_mipmap = w + mipmap_offset;
@@ -3127,10 +3107,10 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 }
 
 uint32_t RenderingDeviceDriverVulkan::texture_get_usages_supported_by_format(
-	DataFormat p_format, bool p_cpu_readable)
+	RDC::DataFormat p_format, bool p_cpu_readable)
 {
-	if (p_format >= DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK &&
-		p_format <= DATA_FORMAT_ASTC_12x12_SFLOAT_BLOCK &&
+	if (p_format >= RDC::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK &&
+		p_format <= RDC::DATA_FORMAT_ASTC_12x12_SFLOAT_BLOCK &&
 		!enabled_device_extension_names.has(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)) {
 		// Formats that were introduced later with extensions must not reach
 		// vkGetPhysicalDeviceFormatProperties if the extension isn't available. This means it's not
@@ -3147,75 +3127,71 @@ uint32_t RenderingDeviceDriverVulkan::texture_get_usages_supported_by_format(
 	uint32_t supported = INT64_MAX;
 
 	if (!(flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-		supported &= ~(TEXTURE_USAGE_SAMPLING_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_SAMPLING_BIT);
 	}
 	if (!(flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-		supported &= ~(TEXTURE_USAGE_COLOR_ATTACHMENT_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
 	if (!(flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-		supported &= ~(TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-		supported &= ~(TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT);
 	}
 	if (!(flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-		supported &= ~(TEXTURE_USAGE_STORAGE_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_STORAGE_BIT);
 	}
 	if (!(flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
-		supported &= ~(TEXTURE_USAGE_STORAGE_ATOMIC_BIT);
+		supported &= ~(RDC::TEXTURE_USAGE_STORAGE_ATOMIC_BIT);
 	}
-	if (p_format != DATA_FORMAT_R8_UINT && p_format != DATA_FORMAT_R8G8_UNORM) {
-		supported &= ~(TEXTURE_USAGE_VRS_ATTACHMENT_BIT);
+	if (p_format != RDC::DATA_FORMAT_R8_UINT && p_format != RDC::DATA_FORMAT_R8G8_UNORM) {
+		supported &= ~(RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT);
 	}
 
 	return supported;
 }
 
 bool RenderingDeviceDriverVulkan::texture_can_make_shared_with_format(
-	TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation)
+	TextureID p_texture, RDC::DataFormat p_format, bool& r_raw_reinterpretation)
 {
 	r_raw_reinterpretation = false;
 	return true;
 }
 
-/*****************/
-/**** SAMPLER ****/
-/*****************/
-
 // RDD::SamplerRepeatMode == VkSamplerAddressMode.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::SAMPLER_REPEAT_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT));
+	RDC::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE));
+	RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_REPEAT_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER));
+	RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_REPEAT_MODE_MIRROR_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE));
+	RDC::SAMPLER_REPEAT_MODE_MIRROR_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE));
 
-// RDD::SamplerBorderColor == VkBorderColor.
+// RDC::SamplerBorderColor == VkBorderColor.
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK));
+	RDC::SAMPLER_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_INT_TRANSPARENT_BLACK, VK_BORDER_COLOR_INT_TRANSPARENT_BLACK));
+	RDC::SAMPLER_BORDER_COLOR_INT_TRANSPARENT_BLACK, VK_BORDER_COLOR_INT_TRANSPARENT_BLACK));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK, VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK));
+	RDC::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK, VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_INT_OPAQUE_BLACK, VK_BORDER_COLOR_INT_OPAQUE_BLACK));
+	RDC::SAMPLER_BORDER_COLOR_INT_OPAQUE_BLACK, VK_BORDER_COLOR_INT_OPAQUE_BLACK));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE));
+	RDC::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::SAMPLER_BORDER_COLOR_INT_OPAQUE_WHITE, VK_BORDER_COLOR_INT_OPAQUE_WHITE));
+	RDC::SAMPLER_BORDER_COLOR_INT_OPAQUE_WHITE, VK_BORDER_COLOR_INT_OPAQUE_WHITE));
 
-RDD::SamplerID RenderingDeviceDriverVulkan::sampler_create(const SamplerState& p_state)
+RDD::SamplerID RenderingDeviceDriverVulkan::sampler_create(const RDC::SamplerState& p_state)
 {
 	VkSamplerCreateInfo sampler_create_info = {};
 	sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	sampler_create_info.pNext = nullptr;
 	sampler_create_info.flags = 0;
 	sampler_create_info.magFilter =
-		p_state.mag_filter == SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+		p_state.mag_filter == RDC::SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
 	sampler_create_info.minFilter =
-		p_state.min_filter == SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-	sampler_create_info.mipmapMode = p_state.mip_filter == SAMPLER_FILTER_LINEAR
+		p_state.min_filter == RDC::SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	sampler_create_info.mipmapMode = p_state.mip_filter == RDC::SAMPLER_FILTER_LINEAR
 										 ? VK_SAMPLER_MIPMAP_MODE_LINEAR
 										 : VK_SAMPLER_MIPMAP_MODE_NEAREST;
 	sampler_create_info.addressModeU = (VkSamplerAddressMode)p_state.repeat_u;
@@ -3248,13 +3224,13 @@ void RenderingDeviceDriverVulkan::sampler_free(SamplerID p_sampler)
 }
 
 bool RenderingDeviceDriverVulkan::sampler_is_format_supported_for_filter(
-	DataFormat p_format, SamplerFilter p_filter)
+	RDC::DataFormat p_format, RDC::SamplerFilter p_filter)
 {
 	switch (p_filter) {
-	case SAMPLER_FILTER_NEAREST: {
+	case RDC::SAMPLER_FILTER_NEAREST: {
 		return true;
 	}
-	case SAMPLER_FILTER_LINEAR: {
+	case RDC::SAMPLER_FILTER_LINEAR: {
 		VkFormatProperties properties = {};
 		vkGetPhysicalDeviceFormatProperties(
 			physical_device, RD_TO_VK_FORMAT[p_format], &properties);
@@ -3265,23 +3241,19 @@ bool RenderingDeviceDriverVulkan::sampler_is_format_supported_for_filter(
 	return false;
 }
 
-/**********************/
-/**** VERTEX ARRAY ****/
-/**********************/
-
 RDD::VertexFormatID RenderingDeviceDriverVulkan::vertex_format_create(
-	Span<VertexAttribute> p_vertex_attribs, const VertexAttributeBindingsMap& p_vertex_bindings)
+	Span<RDC::VertexAttribute> p_vertex_attribs, const RDC::VertexAttributeBindingsMap& p_vertex_bindings)
 {
 	// Pre-bookkeep.
 	VertexFormatInfo* vf_info = VersatileResource::allocate<VertexFormatInfo>(resources_allocator);
 
 	vf_info->vk_bindings.reserve(p_vertex_bindings.size());
-	for (const VertexAttributeBindingsMap::KV& E : p_vertex_bindings) {
-		const VertexAttributeBinding& binding = E.value;
+	for (const RDC::VertexAttributeBindingsMap::KV& E : p_vertex_bindings) {
+		const RDC::VertexAttributeBinding& binding = E.value;
 		VkVertexInputBindingDescription vk_binding = {};
 		vk_binding.binding = E.key;
 		vk_binding.stride = binding.stride;
-		vk_binding.inputRate = binding.frequency == VERTEX_FREQUENCY_INSTANCE
+		vk_binding.inputRate = binding.frequency == RDC::VERTEX_FREQUENCY_INSTANCE
 								   ? VK_VERTEX_INPUT_RATE_INSTANCE
 								   : VK_VERTEX_INPUT_RATE_VERTEX;
 		vf_info->vk_bindings.push_back(vk_binding);
@@ -3310,10 +3282,6 @@ void RenderingDeviceDriverVulkan::vertex_format_free(VertexFormatID p_vertex_for
 	VertexFormatInfo* vf_info = (VertexFormatInfo*)p_vertex_format.id;
 	VersatileResource::free(resources_allocator, vf_info);
 }
-
-/******************/
-/**** BARRIERS ****/
-/******************/
 
 // RDD::PipelineStageBits == VkPipelineStageFlagBits.
 static_assert(
@@ -3552,10 +3520,6 @@ void RenderingDeviceDriverVulkan::command_pipeline_barrier(CommandBufferID p_cmd
 	}
 }
 
-/****************/
-/**** FENCES ****/
-/****************/
-
 RDD::FenceID RenderingDeviceDriverVulkan::fence_create()
 {
 	VkFence vk_fence = VK_NULL_HANDLE;
@@ -3616,10 +3580,6 @@ void RenderingDeviceDriverVulkan::fence_free(FenceID p_fence)
 	memdelete(fence);
 }
 
-/********************/
-/**** SEMAPHORES ****/
-/********************/
-
 RDD::SemaphoreID RenderingDeviceDriverVulkan::semaphore_create()
 {
 	VkSemaphore semaphore = VK_NULL_HANDLE;
@@ -3638,12 +3598,6 @@ void RenderingDeviceDriverVulkan::semaphore_free(SemaphoreID p_semaphore)
 	vkDestroySemaphore(vk_device, VkSemaphore(p_semaphore.id),
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SEMAPHORE));
 }
-
-/******************/
-/**** COMMANDS ****/
-/******************/
-
-// ----- QUEUE FAMILY -----
 
 RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
 	uint32_t p_cmd_queue_family_bits,
@@ -3683,8 +3637,6 @@ RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
 	// instead.
 	return CommandQueueFamilyID(picked_family_index + 1);
 }
-
-// ----- QUEUE -----
 
 RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(
 	CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue)
@@ -3951,8 +3903,6 @@ void RenderingDeviceDriverVulkan::command_queue_free(CommandQueueID p_cmd_queue)
 	memdelete(command_queue);
 }
 
-// ----- POOL -----
-
 RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(
 	CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type)
 {
@@ -3963,7 +3913,7 @@ RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(
 	cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmd_pool_info.queueFamilyIndex = family_index;
 
-	if (!command_pool_reset_enabled) {
+	if (!RDC::command_pool_reset_enabled) {
 		cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	}
 
@@ -4004,8 +3954,6 @@ void RenderingDeviceDriverVulkan::command_pool_free(CommandPoolID p_cmd_pool)
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_COMMAND_POOL));
 	memdelete(command_pool);
 }
-
-// ----- BUFFER -----
 
 RDD::CommandBufferID RenderingDeviceDriverVulkan::command_buffer_create(CommandPoolID p_cmd_pool)
 {
@@ -4099,20 +4047,16 @@ void RenderingDeviceDriverVulkan::command_buffer_execute_secondary(
 		secondary_command_buffers.ptr());
 }
 
-/********************/
-/**** SWAP CHAIN ****/
-/********************/
-
 struct FormatCandidate
 {
 	VkFormat format;
 	VkColorSpaceKHR colorspace;
-	RDD::ColorSpace rdd_colorspace;
+	RDC::ColorSpace rdd_colorspace;
 };
 
 bool RenderingDeviceDriverVulkan::_determine_swap_chain_format(
 	RenderingContextDriver::SurfaceID p_surface, VkFormat& r_format, VkColorSpaceKHR& r_color_space,
-	RDD::ColorSpace& r_rdd_color_space)
+	RDC::ColorSpace& r_rdd_color_space)
 {
 	DEV_ASSERT(p_surface != 0);
 
@@ -4163,16 +4107,16 @@ bool RenderingDeviceDriverVulkan::_determine_swap_chain_format(
 			// management. The colorspace which disables color management is
 			// VK_COLOR_SPACE_PASS_THROUGH_EXT.
 			preferred_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT,
-				VK_COLOR_SPACE_PASS_THROUGH_EXT, COLOR_SPACE_REC709_LINEAR});
+				VK_COLOR_SPACE_PASS_THROUGH_EXT, RDC::COLOR_SPACE_REC709_LINEAR});
 
 			// SRGB_NONLINEAR_KHR is required for some NVIDIA drivers that support HDR output but do
 			// not support PASS_THROUGH_EXT.
 			preferred_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT,
-				VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, COLOR_SPACE_REC709_LINEAR});
+				VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, RDC::COLOR_SPACE_REC709_LINEAR});
 		}
 		else if (colorspace_supported) {
 			preferred_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT,
-				VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT, COLOR_SPACE_REC709_LINEAR});
+				VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT, RDC::COLOR_SPACE_REC709_LINEAR});
 		}
 	}
 
@@ -4180,16 +4124,16 @@ bool RenderingDeviceDriverVulkan::_determine_swap_chain_format(
 	// https://github.com/godotengine/godot/pull/102987#discussion_r2913373482
 	if (context_driver->is_colorspace_externally_managed()) {
 		preferred_formats.push_back({VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_PASS_THROUGH_EXT,
-			COLOR_SPACE_REC709_NONLINEAR_SRGB});
+			RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB});
 		preferred_formats.push_back({VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_PASS_THROUGH_EXT,
-			COLOR_SPACE_REC709_NONLINEAR_SRGB});
+			RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB});
 	}
 
 	// These formats are always considered for SDR.
 	preferred_formats.push_back({VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
-		COLOR_SPACE_REC709_NONLINEAR_SRGB});
+		RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB});
 	preferred_formats.push_back({VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
-		COLOR_SPACE_REC709_NONLINEAR_SRGB});
+		RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB});
 
 	bool found = false;
 	for (const FormatCandidate& candidate : preferred_formats) {
@@ -4216,7 +4160,7 @@ bool RenderingDeviceDriverVulkan::_determine_swap_chain_format(
 					   "VK_EXT_swapchain_colorspace, falling back to SDR.");
 		}
 
-		if (r_rdd_color_space == COLOR_SPACE_REC709_NONLINEAR_SRGB) {
+		if (r_rdd_color_space == RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
 			WARN_PRINT("HDR output requested but no HDR compatible format was found, falling back "
 					   "to SDR.");
 		}
@@ -4447,14 +4391,14 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 	// Determine the format and color space for the swap chain.
 	VkFormat format = VK_FORMAT_UNDEFINED;
 	VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	RDD::ColorSpace rdd_color_space = COLOR_SPACE_REC709_NONLINEAR_SRGB;
-	if (!_determine_swap_chain_format(swap_chain->surface, format, color_space, rdd_color_space)) {
+	RDC::ColorSpace rdc_color_space = RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB;
+	if (!_determine_swap_chain_format(swap_chain->surface, format, color_space, rdc_color_space)) {
 		ERR_FAIL_V_MSG(ERR_CANT_CREATE, "Vulkan surface did not return any valid formats.");
 	}
 	else {
 		swap_chain->format = format;
 		swap_chain->color_space = color_space;
-		swap_chain->rdd_color_space = rdd_color_space;
+		swap_chain->rdd_color_space = rdc_color_space;
 	}
 
 	VkSwapchainCreateInfoKHR swap_create_info = {};
@@ -4749,25 +4693,25 @@ int RenderingDeviceDriverVulkan::swap_chain_get_pre_rotation_degrees(SwapChainID
 	return swap_chain->pre_transform_rotation_degrees;
 }
 
-RDD::DataFormat RenderingDeviceDriverVulkan::swap_chain_get_format(SwapChainID p_swap_chain)
+RDC::DataFormat RenderingDeviceDriverVulkan::swap_chain_get_format(SwapChainID p_swap_chain)
 {
 	DEV_ASSERT(p_swap_chain.id != 0);
 
 	SwapChain* swap_chain = (SwapChain*)(p_swap_chain.id);
 	switch (swap_chain->format) {
 	case VK_FORMAT_B8G8R8A8_UNORM:
-		return DATA_FORMAT_B8G8R8A8_UNORM;
+		return RDC::DATA_FORMAT_B8G8R8A8_UNORM;
 	case VK_FORMAT_R8G8B8A8_UNORM:
-		return DATA_FORMAT_R8G8B8A8_UNORM;
+		return RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 	case VK_FORMAT_R16G16B16A16_SFLOAT:
-		return DATA_FORMAT_R16G16B16A16_SFLOAT;
+		return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 	default:
 		DEV_ASSERT(false && "Unknown swap chain format.");
-		return DATA_FORMAT_MAX;
+		return RDC::DATA_FORMAT_MAX;
 	}
 }
 
-RDD::ColorSpace RenderingDeviceDriverVulkan::swap_chain_get_color_space(SwapChainID p_swap_chain)
+RDC::ColorSpace RenderingDeviceDriverVulkan::swap_chain_get_color_space(SwapChainID p_swap_chain)
 {
 	DEV_ASSERT(p_swap_chain.id != 0);
 
@@ -4821,16 +4765,16 @@ bool RenderingDeviceDriverVulkan::swap_chain_get_hdr_output_supported(SwapChainI
 		// management. The colorspace which disables color management is
 		// VK_COLOR_SPACE_PASS_THROUGH_EXT.
 		hdr_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_PASS_THROUGH_EXT,
-			COLOR_SPACE_REC709_LINEAR});
+			RDC::COLOR_SPACE_REC709_LINEAR});
 
 		// SRGB_NONLINEAR_KHR is required for some NVIDIA drivers that support HDR output but do not
 		// support PASS_THROUGH_EXT.
 		hdr_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
-			COLOR_SPACE_REC709_LINEAR});
+			RDC::COLOR_SPACE_REC709_LINEAR});
 	}
 	else if (colorspace_supported) {
 		hdr_formats.push_back({VK_FORMAT_R16G16B16A16_SFLOAT,
-			VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT, COLOR_SPACE_REC709_LINEAR});
+			VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT, RDC::COLOR_SPACE_REC709_LINEAR});
 	}
 	else {
 		return false;
@@ -4876,10 +4820,6 @@ void RenderingDeviceDriverVulkan::swap_chain_free(SwapChainID p_swap_chain)
 
 	memdelete(swap_chain);
 }
-
-/*********************/
-/**** FRAMEBUFFER ****/
-/*********************/
 
 RDD::FramebufferID RenderingDeviceDriverVulkan::framebuffer_create(RenderPassID p_render_pass,
 	VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height)
@@ -4933,11 +4873,7 @@ void RenderingDeviceDriverVulkan::framebuffer_free(FramebufferID p_framebuffer)
 	memdelete(framebuffer);
 }
 
-/****************/
-/**** SHADER ****/
-/****************/
-
-static VkShaderStageFlagBits RD_STAGE_TO_VK_SHADER_STAGE_BITS[RDD::SHADER_STAGE_MAX] = {
+static VkShaderStageFlagBits RD_STAGE_TO_VK_SHADER_STAGE_BITS[RDC::SHADER_STAGE_MAX] = {
 	VK_SHADER_STAGE_VERTEX_BIT,
 	VK_SHADER_STAGE_FRAGMENT_BIT,
 	VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
@@ -4954,12 +4890,12 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 	const Ref<RenderingShaderContainer>& p_shader_container,
 	const Vector<ImmutableSampler>& p_immutable_samplers)
 {
-	ShaderReflection shader_refl = p_shader_container->get_shader_reflection();
+	RDC::ShaderReflection shader_refl = p_shader_container->get_shader_reflection();
 	ShaderInfo shader_info;
 	shader_info.name = p_shader_container->shader_name.get_data();
 
-	for (uint32_t i = 0; i < SHADER_STAGE_MAX; i++) {
-		if ((shader_refl.push_constant_stages & ((ShaderStage)(1 << i))) != 0) {
+	for (uint32_t i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
+		if ((shader_refl.push_constant_stages & ((RDC::ShaderStage)(1 << i))) != 0) {
 			shader_info.vk_push_constant_stages |= RD_STAGE_TO_VK_SHADER_STAGE_BITS[i];
 		}
 	}
@@ -4969,18 +4905,18 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 	vk_set_bindings.resize(shader_refl.uniform_sets.size());
 	for (uint32_t i = 0; i < shader_refl.uniform_sets.size(); i++) {
 		for (uint32_t j = 0; j < shader_refl.uniform_sets[i].size(); j++) {
-			const ShaderUniform& uniform = shader_refl.uniform_sets[i][j];
+			const RDC::ShaderUniform& uniform = shader_refl.uniform_sets[i][j];
 			VkDescriptorSetLayoutBinding layout_binding = {};
 			layout_binding.binding = uniform.binding;
 			layout_binding.descriptorCount = 1;
-			for (uint32_t k = 0; k < SHADER_STAGE_MAX; k++) {
-				if ((uniform.stages & (ShaderStage(1U << k))) != 0) {
+			for (uint32_t k = 0; k < RDC::SHADER_STAGE_MAX; k++) {
+				if ((uniform.stages & (RDC::ShaderStage(1U << k))) != 0) {
 					layout_binding.stageFlags |= RD_STAGE_TO_VK_SHADER_STAGE_BITS[k];
 				}
 			}
 
 			switch (uniform.type) {
-			case UNIFORM_TYPE_SAMPLER: {
+			case RDC::UNIFORM_TYPE_SAMPLER: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 				layout_binding.descriptorCount = uniform.length;
 				// Immutable samplers: here they get set in the layoutbinding, given that they will
@@ -4999,41 +4935,41 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 					}
 				}
 			} break;
-			case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
+			case RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				layout_binding.descriptorCount = uniform.length;
 			} break;
-			case UNIFORM_TYPE_TEXTURE: {
+			case RDC::UNIFORM_TYPE_TEXTURE: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				layout_binding.descriptorCount = uniform.length;
 			} break;
-			case UNIFORM_TYPE_IMAGE: {
+			case RDC::UNIFORM_TYPE_IMAGE: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 				layout_binding.descriptorCount = uniform.length;
 			} break;
-			case UNIFORM_TYPE_TEXTURE_BUFFER: {
+			case RDC::UNIFORM_TYPE_TEXTURE_BUFFER: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
 				layout_binding.descriptorCount = uniform.length;
 			} break;
-			case UNIFORM_TYPE_IMAGE_BUFFER: {
+			case RDC::UNIFORM_TYPE_IMAGE_BUFFER: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
 			} break;
-			case UNIFORM_TYPE_UNIFORM_BUFFER: {
+			case RDC::UNIFORM_TYPE_UNIFORM_BUFFER: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			} break;
-			case UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC: {
+			case RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			} break;
-			case UNIFORM_TYPE_STORAGE_BUFFER: {
+			case RDC::UNIFORM_TYPE_STORAGE_BUFFER: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			} break;
-			case UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
+			case RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 			} break;
-			case UNIFORM_TYPE_INPUT_ATTACHMENT: {
+			case RDC::UNIFORM_TYPE_INPUT_ATTACHMENT: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 			} break;
-			case UNIFORM_TYPE_ACCELERATION_STRUCTURE: {
+			case RDC::UNIFORM_TYPE_ACCELERATION_STRUCTURE: {
 				layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			} break;
 			default: {
@@ -5076,7 +5012,7 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 				shader.code_compression_flags, decompressed_code.ptrw(), decompressed_code.size());
 			if (!decompressed) {
 				error_text = vformat("Failed to decompress code on shader stage %s.",
-					String(SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
+					String(RDC::SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
 				break;
 			}
 		}
@@ -5090,14 +5026,14 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 			decoded_spirv.resize(smolv::GetDecodedBufferSize(smolv_input, smolv_input_size));
 			if (decoded_spirv.is_empty()) {
 				error_text = vformat("Malformed smolv input on shader stage %s.",
-					String(SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
+					String(RDC::SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
 				break;
 			}
 
 			if (!smolv::Decode(
 					smolv_input, smolv_input_size, decoded_spirv.ptrw(), decoded_spirv.size())) {
 				error_text = vformat("Malformed smolv input on shader stage %s.",
-					String(SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
+					String(RDC::SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
 				break;
 			}
 		}
@@ -5155,7 +5091,7 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 			VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SHADER_MODULE), &vk_module);
 		if (res != VK_SUCCESS) {
 			error_text = vformat("Error (%d) creating module for shader stage %s.", res,
-				String(SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
+				String(RDC::SHADER_STAGE_NAMES[shader_refl.stages_vector[i]]));
 			break;
 		}
 
@@ -5280,115 +5216,112 @@ void RenderingDeviceDriverVulkan::shader_destroy_modules(ShaderID p_shader)
 	si->vk_stages_create_info.clear();
 }
 
-/*********************/
-/**** UNIFORM SET ****/
-/*********************/
 VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(
 	const DescriptorSetPoolKey& p_key, bool p_linear_pool)
 {
 	// Here comes more vulkan API strangeness.
-	VkDescriptorPoolSize* vk_sizes = ALLOCA_ARRAY(VkDescriptorPoolSize, UNIFORM_TYPE_MAX);
+	VkDescriptorPoolSize* vk_sizes = ALLOCA_ARRAY(VkDescriptorPoolSize, RDC::UNIFORM_TYPE_MAX);
 	uint32_t vk_sizes_count = 0;
 	{
 		VkDescriptorPoolSize* curr_vk_size = vk_sizes;
-		if (p_key.uniform_type[UNIFORM_TYPE_SAMPLER]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_SAMPLER;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_SAMPLER] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_SAMPLER_WITH_TEXTURE]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			curr_vk_size->descriptorCount = p_key.uniform_type[UNIFORM_TYPE_SAMPLER_WITH_TEXTURE] *
+			curr_vk_size->descriptorCount = p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE] *
 											max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_TEXTURE]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_TEXTURE]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_TEXTURE] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_TEXTURE] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_IMAGE]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_IMAGE]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_IMAGE] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_IMAGE] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_TEXTURE_BUFFER] ||
-			p_key.uniform_type[UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_TEXTURE_BUFFER] ||
+			p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
 			curr_vk_size->descriptorCount =
-				(p_key.uniform_type[UNIFORM_TYPE_TEXTURE_BUFFER] +
-					p_key.uniform_type[UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER]) *
+				(p_key.uniform_type[RDC::UNIFORM_TYPE_TEXTURE_BUFFER] +
+					p_key.uniform_type[RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER]) *
 				max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_IMAGE_BUFFER]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_IMAGE_BUFFER]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_IMAGE_BUFFER] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_IMAGE_BUFFER] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_UNIFORM_BUFFER]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_UNIFORM_BUFFER]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_UNIFORM_BUFFER] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_UNIFORM_BUFFER] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC] *
+				p_key.uniform_type[RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC] *
 				max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_STORAGE_BUFFER]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_STORAGE_BUFFER]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_STORAGE_BUFFER] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_STORAGE_BUFFER] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC] *
+				p_key.uniform_type[RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC] *
 				max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_INPUT_ATTACHMENT]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_INPUT_ATTACHMENT]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_INPUT_ATTACHMENT] * max_descriptor_sets_per_pool;
+				p_key.uniform_type[RDC::UNIFORM_TYPE_INPUT_ATTACHMENT] * max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
 		}
-		if (p_key.uniform_type[UNIFORM_TYPE_ACCELERATION_STRUCTURE]) {
+		if (p_key.uniform_type[RDC::UNIFORM_TYPE_ACCELERATION_STRUCTURE]) {
 			*curr_vk_size = {};
 			curr_vk_size->type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			curr_vk_size->descriptorCount =
-				p_key.uniform_type[UNIFORM_TYPE_ACCELERATION_STRUCTURE] *
+				p_key.uniform_type[RDC::UNIFORM_TYPE_ACCELERATION_STRUCTURE] *
 				max_descriptor_sets_per_pool;
 			curr_vk_size++;
 			vk_sizes_count++;
@@ -5470,7 +5403,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 		uint32_t num_descriptors = 1;
 
 		switch (uniform.type) {
-		case UNIFORM_TYPE_SAMPLER: {
+		case RDC::UNIFORM_TYPE_SAMPLER: {
 			num_descriptors = uniform.ids.size();
 
 			if (uniform.immutable_sampler && immutable_samplers_enabled) {
@@ -5491,7 +5424,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 				vk_writes[writes_amount].pImageInfo = vk_img_infos;
 			}
 		} break;
-		case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
+		case RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
 			num_descriptors = uniform.ids.size() / 2;
 			VkDescriptorImageInfo* vk_img_infos =
 				ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
@@ -5513,7 +5446,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			vk_writes[writes_amount].pImageInfo = vk_img_infos;
 		} break;
-		case UNIFORM_TYPE_TEXTURE: {
+		case RDC::UNIFORM_TYPE_TEXTURE: {
 			num_descriptors = uniform.ids.size();
 			VkDescriptorImageInfo* vk_img_infos =
 				ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
@@ -5533,7 +5466,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			vk_writes[writes_amount].pImageInfo = vk_img_infos;
 		} break;
-		case UNIFORM_TYPE_IMAGE: {
+		case RDC::UNIFORM_TYPE_IMAGE: {
 			num_descriptors = uniform.ids.size();
 			VkDescriptorImageInfo* vk_img_infos =
 				ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
@@ -5553,7 +5486,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 			vk_writes[writes_amount].pImageInfo = vk_img_infos;
 		} break;
-		case UNIFORM_TYPE_TEXTURE_BUFFER: {
+		case RDC::UNIFORM_TYPE_TEXTURE_BUFFER: {
 			num_descriptors = uniform.ids.size();
 			VkDescriptorBufferInfo* vk_buf_infos =
 				ALLOCA_ARRAY(VkDescriptorBufferInfo, num_descriptors);
@@ -5572,7 +5505,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].pBufferInfo = vk_buf_infos;
 			vk_writes[writes_amount].pTexelBufferView = vk_buf_views;
 		} break;
-		case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER: {
+		case RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER: {
 			num_descriptors = uniform.ids.size() / 2;
 			VkDescriptorImageInfo* vk_img_infos =
 				ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
@@ -5597,10 +5530,10 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].pBufferInfo = vk_buf_infos;
 			vk_writes[writes_amount].pTexelBufferView = vk_buf_views;
 		} break;
-		case UNIFORM_TYPE_IMAGE_BUFFER: {
+		case RDC::UNIFORM_TYPE_IMAGE_BUFFER: {
 			CRASH_NOW_MSG("Unimplemented!"); // TODO.
 		} break;
-		case UNIFORM_TYPE_UNIFORM_BUFFER: {
+		case RDC::UNIFORM_TYPE_UNIFORM_BUFFER: {
 			const BufferInfo* buf_info = (const BufferInfo*)uniform.ids[0].id;
 			VkDescriptorBufferInfo* vk_buf_info = ALLOCA_SINGLE(VkDescriptorBufferInfo);
 			*vk_buf_info = {};
@@ -5616,7 +5549,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			vk_writes[writes_amount].pBufferInfo = vk_buf_info;
 		} break;
-		case UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC: {
+		case RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC: {
 			const BufferInfo* buf_info = (const BufferInfo*)uniform.ids[0].id;
 			VkDescriptorBufferInfo* vk_buf_info = ALLOCA_SINGLE(VkDescriptorBufferInfo);
 			*vk_buf_info = {};
@@ -5636,7 +5569,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			vk_writes[writes_amount].pBufferInfo = vk_buf_info;
 		} break;
-		case UNIFORM_TYPE_STORAGE_BUFFER: {
+		case RDC::UNIFORM_TYPE_STORAGE_BUFFER: {
 			const BufferInfo* buf_info = (const BufferInfo*)uniform.ids[0].id;
 			VkDescriptorBufferInfo* vk_buf_info = ALLOCA_SINGLE(VkDescriptorBufferInfo);
 			*vk_buf_info = {};
@@ -5652,7 +5585,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			vk_writes[writes_amount].pBufferInfo = vk_buf_info;
 		} break;
-		case UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
+		case RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
 			const BufferInfo* buf_info = (const BufferInfo*)uniform.ids[0].id;
 			VkDescriptorBufferInfo* vk_buf_info = ALLOCA_SINGLE(VkDescriptorBufferInfo);
 			*vk_buf_info = {};
@@ -5672,7 +5605,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 			vk_writes[writes_amount].pBufferInfo = vk_buf_info;
 		} break;
-		case UNIFORM_TYPE_INPUT_ATTACHMENT: {
+		case RDC::UNIFORM_TYPE_INPUT_ATTACHMENT: {
 			num_descriptors = uniform.ids.size();
 			VkDescriptorImageInfo* vk_img_infos =
 				ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
@@ -5686,7 +5619,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(
 			vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 			vk_writes[writes_amount].pImageInfo = vk_img_infos;
 		} break;
-		case UNIFORM_TYPE_ACCELERATION_STRUCTURE: {
+		case RDC::UNIFORM_TYPE_ACCELERATION_STRUCTURE: {
 			const AccelerationStructureInfo* accel_info =
 				(const AccelerationStructureInfo*)uniform.ids[0].id;
 			VkWriteDescriptorSetAccelerationStructureKHR* acceleration_structure_write =
@@ -5873,16 +5806,10 @@ void RenderingDeviceDriverVulkan::linear_uniform_set_pools_reset(int p_linear_po
 	}
 }
 
-// ----- COMMANDS -----
-
 void RenderingDeviceDriverVulkan::command_uniform_set_prepare_for_use(CommandBufferID p_cmd_buffer,
 	UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index)
 {
 }
-
-/******************/
-/**** TRANSFER ****/
-/******************/
 
 static_assert(ARRAYS_COMPATIBLE_FIELDWISE(RDD::BufferCopyRegion, VkBufferCopy));
 
@@ -6087,10 +6014,10 @@ void RenderingDeviceDriverVulkan::command_copy_buffer_to_texture(CommandBufferID
 		return;
 	}
 
-	uint32_t pixel_size = get_image_format_pixel_size(tex_info->rd_format);
-	uint32_t block_size = get_compressed_image_format_block_byte_size(tex_info->rd_format);
+	uint32_t pixel_size = RDC::get_image_format_pixel_size(tex_info->rd_format);
+	uint32_t block_size = RDC::get_compressed_image_format_block_byte_size(tex_info->rd_format);
 	uint32_t block_w, block_h;
-	get_compressed_image_format_block_dimensions(tex_info->rd_format, block_w, block_h);
+	RDC::get_compressed_image_format_block_dimensions(tex_info->rd_format, block_w, block_h);
 
 	VkBufferImageCopy* vk_copy_regions = ALLOCA_ARRAY(VkBufferImageCopy, p_regions.size());
 	for (uint32_t i = 0; i < p_regions.size(); i++) {
@@ -6117,10 +6044,10 @@ void RenderingDeviceDriverVulkan::command_copy_texture_to_buffer(CommandBufferID
 {
 	const TextureInfo* tex_info = (const TextureInfo*)p_src_texture.id;
 
-	uint32_t pixel_size = get_image_format_pixel_size(tex_info->rd_format);
-	uint32_t block_size = get_compressed_image_format_block_byte_size(tex_info->rd_format);
+	uint32_t pixel_size = RDC::get_image_format_pixel_size(tex_info->rd_format);
+	uint32_t block_size = RDC::get_compressed_image_format_block_byte_size(tex_info->rd_format);
 	uint32_t block_w, block_h;
-	get_compressed_image_format_block_dimensions(tex_info->rd_format, block_w, block_h);
+	RDC::get_compressed_image_format_block_dimensions(tex_info->rd_format, block_w, block_h);
 
 	VkBufferImageCopy* vk_copy_regions = ALLOCA_ARRAY(VkBufferImageCopy, p_regions.size());
 	for (uint32_t i = 0; i < p_regions.size(); i++) {
@@ -6141,17 +6068,11 @@ void RenderingDeviceDriverVulkan::command_copy_texture_to_buffer(CommandBufferID
 		vk_copy_regions);
 }
 
-/******************/
-/**** PIPELINE ****/
-/******************/
-
 void RenderingDeviceDriverVulkan::pipeline_free(PipelineID p_pipeline)
 {
 	vkDestroyPipeline(vk_device, (VkPipeline)p_pipeline.id,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_PIPELINE));
 }
-
-// ----- BINDING -----
 
 void RenderingDeviceDriverVulkan::command_bind_push_constants(CommandBufferID p_cmd_buffer,
 	ShaderID p_shader, uint32_t p_dst_first_index, VectorView<uint32_t> p_data)
@@ -6162,8 +6083,6 @@ void RenderingDeviceDriverVulkan::command_bind_push_constants(CommandBufferID p_
 		shader_info->vk_push_constant_stages, p_dst_first_index * sizeof(uint32_t),
 		p_data.size() * sizeof(uint32_t), p_data.ptr());
 }
-
-// ----- CACHE -----
 
 int RenderingDeviceDriverVulkan::caching_instance_count = 0;
 
@@ -6292,12 +6211,6 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::pipeline_cache_serialize()
 
 	return pipelines_cache.buffer;
 }
-
-/*******************/
-/**** RENDERING ****/
-/*******************/
-
-// ----- SUBPASS -----
 
 // RDD::AttachmentLoadOp == VkAttachmentLoadOp.
 static_assert(ENUM_MEMBERS_EQUAL(RDD::ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_LOAD_OP_LOAD));
@@ -6534,8 +6447,6 @@ void RenderingDeviceDriverVulkan::render_pass_free(RenderPassID p_render_pass)
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_RENDER_PASS));
 	VersatileResource::free<RenderPassInfo>(resources_allocator, render_pass);
 }
-
-// ----- COMMANDS -----
 
 static_assert(ARRAYS_COMPATIBLE_FIELDWISE(RDD::RenderPassClearValue, VkClearValue));
 
@@ -6828,12 +6739,12 @@ void RenderingDeviceDriverVulkan::command_render_bind_vertex_buffers(CommandBuff
 }
 
 void RenderingDeviceDriverVulkan::command_render_bind_index_buffer(
-	CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset)
+	CommandBufferID p_cmd_buffer, BufferID p_buffer, RDC::IndexBufferFormat p_format, uint64_t p_offset)
 {
 	const CommandBufferInfo* command_buffer = (const CommandBufferInfo*)p_cmd_buffer.id;
 	const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
 	vkCmdBindIndexBuffer(command_buffer->vk_command_buffer, buf_info->vk_buffer, p_offset,
-		p_format == INDEX_BUFFER_FORMAT_UINT16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+		p_format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
 }
 
 void RenderingDeviceDriverVulkan::command_render_set_blend_constants(
@@ -6850,9 +6761,7 @@ void RenderingDeviceDriverVulkan::command_render_set_line_width(
 	vkCmdSetLineWidth(command_buffer->vk_command_buffer, p_width);
 }
 
-// ----- PIPELINE -----
-
-static const VkPrimitiveTopology RD_TO_VK_PRIMITIVE[RDD::RENDER_PRIMITIVE_MAX] = {
+static const VkPrimitiveTopology RD_TO_VK_PRIMITIVE[RDC::RENDER_PRIMITIVE_MAX] = {
 	VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
 	VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 	VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
@@ -6867,86 +6776,86 @@ static const VkPrimitiveTopology RD_TO_VK_PRIMITIVE[RDD::RENDER_PRIMITIVE_MAX] =
 };
 
 // RDD::PolygonCullMode == VkCullModeFlagBits.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::POLYGON_CULL_DISABLED, VK_CULL_MODE_NONE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::POLYGON_CULL_FRONT, VK_CULL_MODE_FRONT_BIT));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::POLYGON_CULL_BACK, VK_CULL_MODE_BACK_BIT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::POLYGON_CULL_DISABLED, VK_CULL_MODE_NONE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::POLYGON_CULL_FRONT, VK_CULL_MODE_FRONT_BIT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::POLYGON_CULL_BACK, VK_CULL_MODE_BACK_BIT));
 
-// RDD::StencilOperation == VkStencilOp.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_REPLACE, VK_STENCIL_OP_REPLACE));
+// RDC::StencilOperation == VkStencilOp.
+static_assert(ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_REPLACE, VK_STENCIL_OP_REPLACE));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_INCREMENT_AND_CLAMP, VK_STENCIL_OP_INCREMENT_AND_CLAMP));
+	ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_INCREMENT_AND_CLAMP, VK_STENCIL_OP_INCREMENT_AND_CLAMP));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_DECREMENT_AND_CLAMP, VK_STENCIL_OP_DECREMENT_AND_CLAMP));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_INVERT, VK_STENCIL_OP_INVERT));
+	ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_DECREMENT_AND_CLAMP, VK_STENCIL_OP_DECREMENT_AND_CLAMP));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_INVERT, VK_STENCIL_OP_INVERT));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_INCREMENT_AND_WRAP, VK_STENCIL_OP_INCREMENT_AND_WRAP));
+	ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_INCREMENT_AND_WRAP, VK_STENCIL_OP_INCREMENT_AND_WRAP));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::STENCIL_OP_DECREMENT_AND_WRAP, VK_STENCIL_OP_DECREMENT_AND_WRAP));
+	ENUM_MEMBERS_EQUAL(RDC::STENCIL_OP_DECREMENT_AND_WRAP, VK_STENCIL_OP_DECREMENT_AND_WRAP));
 
-// RDD::LogicOperation == VkLogicOp.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_CLEAR, VK_LOGIC_OP_CLEAR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_AND, VK_LOGIC_OP_AND));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_AND_REVERSE, VK_LOGIC_OP_AND_REVERSE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_COPY, VK_LOGIC_OP_COPY));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_AND_INVERTED, VK_LOGIC_OP_AND_INVERTED));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_NO_OP, VK_LOGIC_OP_NO_OP));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_XOR, VK_LOGIC_OP_XOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_OR, VK_LOGIC_OP_OR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_NOR, VK_LOGIC_OP_NOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_EQUIVALENT, VK_LOGIC_OP_EQUIVALENT));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_INVERT, VK_LOGIC_OP_INVERT));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_OR_REVERSE, VK_LOGIC_OP_OR_REVERSE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_COPY_INVERTED, VK_LOGIC_OP_COPY_INVERTED));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_OR_INVERTED, VK_LOGIC_OP_OR_INVERTED));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_NAND, VK_LOGIC_OP_NAND));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::LOGIC_OP_SET, VK_LOGIC_OP_SET));
+// RDC::LogicOperation == VkLogicOp.
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_CLEAR, VK_LOGIC_OP_CLEAR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_AND, VK_LOGIC_OP_AND));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_AND_REVERSE, VK_LOGIC_OP_AND_REVERSE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_COPY, VK_LOGIC_OP_COPY));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_AND_INVERTED, VK_LOGIC_OP_AND_INVERTED));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_NO_OP, VK_LOGIC_OP_NO_OP));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_XOR, VK_LOGIC_OP_XOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_OR, VK_LOGIC_OP_OR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_NOR, VK_LOGIC_OP_NOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_EQUIVALENT, VK_LOGIC_OP_EQUIVALENT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_INVERT, VK_LOGIC_OP_INVERT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_OR_REVERSE, VK_LOGIC_OP_OR_REVERSE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_COPY_INVERTED, VK_LOGIC_OP_COPY_INVERTED));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_OR_INVERTED, VK_LOGIC_OP_OR_INVERTED));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_NAND, VK_LOGIC_OP_NAND));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::LOGIC_OP_SET, VK_LOGIC_OP_SET));
 
-// RDD::BlendFactor == VkBlendFactor.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_SRC_COLOR));
+// RDC::BlendFactor == VkBlendFactor.
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_SRC_COLOR));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_DST_COLOR, VK_BLEND_FACTOR_DST_COLOR));
+	ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_DST_COLOR, VK_BLEND_FACTOR_DST_COLOR));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ONE_MINUS_DST_COLOR, VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_SRC_ALPHA));
+	ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ONE_MINUS_DST_COLOR, VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_SRC_ALPHA));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_DST_ALPHA, VK_BLEND_FACTOR_DST_ALPHA));
+	ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_DST_ALPHA, VK_BLEND_FACTOR_DST_ALPHA));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_ONE_MINUS_DST_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_COLOR));
+	ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_ONE_MINUS_DST_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_COLOR));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_CONSTANT_ALPHA, VK_BLEND_FACTOR_CONSTANT_ALPHA));
+	RDC::BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_CONSTANT_ALPHA, VK_BLEND_FACTOR_CONSTANT_ALPHA));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA));
+	RDC::BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_SRC_ALPHA_SATURATE, VK_BLEND_FACTOR_SRC_ALPHA_SATURATE));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR));
+	ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_SRC_ALPHA_SATURATE, VK_BLEND_FACTOR_SRC_ALPHA_SATURATE));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::BLEND_FACTOR_ONE_MINUS_SRC1_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_FACTOR_SRC1_ALPHA, VK_BLEND_FACTOR_SRC1_ALPHA));
+	RDC::BLEND_FACTOR_ONE_MINUS_SRC1_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_FACTOR_SRC1_ALPHA, VK_BLEND_FACTOR_SRC1_ALPHA));
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA));
+	RDC::BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA));
 
-// RDD::BlendOperation == VkBlendOp.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_OP_ADD, VK_BLEND_OP_ADD));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_OP_SUBTRACT, VK_BLEND_OP_SUBTRACT));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_OP_REVERSE_SUBTRACT, VK_BLEND_OP_REVERSE_SUBTRACT));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_OP_MINIMUM, VK_BLEND_OP_MIN));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::BLEND_OP_MAXIMUM, VK_BLEND_OP_MAX));
+// RDC::BlendOperation == VkBlendOp.
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_OP_ADD, VK_BLEND_OP_ADD));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_OP_SUBTRACT, VK_BLEND_OP_SUBTRACT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_OP_REVERSE_SUBTRACT, VK_BLEND_OP_REVERSE_SUBTRACT));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_OP_MINIMUM, VK_BLEND_OP_MIN));
+static_assert(ENUM_MEMBERS_EQUAL(RDC::BLEND_OP_MAXIMUM, VK_BLEND_OP_MAX));
 
 RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_shader,
-	VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
-	PipelineRasterizationState p_rasterization_state, PipelineMultisampleState p_multisample_state,
-	PipelineDepthStencilState p_depth_stencil_state, PipelineColorBlendState p_blend_state,
+	VertexFormatID p_vertex_format, RDC::RenderPrimitive p_render_primitive,
+	RDC::PipelineRasterizationState p_rasterization_state, RDC::PipelineMultisampleState p_multisample_state,
+	RDC::PipelineDepthStencilState p_depth_stencil_state, RDC::PipelineColorBlendState p_blend_state,
 	VectorView<int32_t> p_color_attachments, uint32_t p_dynamic_state,
 	RenderPassID p_render_pass, uint32_t p_render_subpass,
-	VectorView<PipelineSpecializationConstant> p_specialization_constants)
+	VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants)
 {
 	// Vertex.
 	const VkPipelineVertexInputStateCreateInfo* vertex_input_state_create_info = nullptr;
@@ -6967,7 +6876,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	input_assembly_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	input_assembly_create_info.topology = RD_TO_VK_PRIMITIVE[p_render_primitive];
 	input_assembly_create_info.primitiveRestartEnable =
-		(p_render_primitive == RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX);
+		(p_render_primitive == RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX);
 
 	// Tessellation.
 	VkPipelineTessellationStateCreateInfo tessellation_create_info = {};
@@ -7000,9 +6909,9 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 		p_rasterization_state.discard_primitives;
 	rasterization_state_create_info.polygonMode =
 		p_rasterization_state.wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
-	rasterization_state_create_info.cullMode = (PolygonCullMode)p_rasterization_state.cull_mode;
+	rasterization_state_create_info.cullMode = (RDC::PolygonCullMode)p_rasterization_state.cull_mode;
 	rasterization_state_create_info.frontFace =
-		(p_rasterization_state.front_face == POLYGON_FRONT_FACE_CLOCKWISE
+		(p_rasterization_state.front_face == RDC::POLYGON_FRONT_FACE_CLOCKWISE
 				? VK_FRONT_FACE_CLOCKWISE
 				: VK_FRONT_FACE_COUNTER_CLOCKWISE);
 	rasterization_state_create_info.depthBiasEnable = p_rasterization_state.depth_bias_enabled;
@@ -7079,7 +6988,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	{
 		for (uint32_t i = 0; i < p_color_attachments.size(); i++) {
 			vk_attachment_states[i] = {};
-			if (p_color_attachments[i] != ATTACHMENT_UNUSED) {
+			if (p_color_attachments[i] != RDC::ATTACHMENT_UNUSED) {
 				vk_attachment_states[i].blendEnable = p_blend_state.attachments[i].enable_blend;
 
 				vk_attachment_states[i].srcColorBlendFactor =
@@ -7133,31 +7042,31 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	vk_dynamic_states_count++;
 	vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_SCISSOR;
 	vk_dynamic_states_count++;
-	if ((p_dynamic_state & (DYNAMIC_STATE_LINE_WIDTH) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_LINE_WIDTH) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_LINE_WIDTH;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_DEPTH_BIAS) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_DEPTH_BIAS) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_DEPTH_BIAS;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_BLEND_CONSTANTS) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_BLEND_CONSTANTS) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_BLEND_CONSTANTS;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_DEPTH_BOUNDS) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_DEPTH_BOUNDS) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_DEPTH_BOUNDS;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_STENCIL_COMPARE_MASK) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_STENCIL_COMPARE_MASK) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_STENCIL_WRITE_MASK) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_STENCIL_WRITE_MASK) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_STENCIL_WRITE_MASK;
 		vk_dynamic_states_count++;
 	}
-	if ((p_dynamic_state & (DYNAMIC_STATE_STENCIL_REFERENCE) != 0)) {
+	if ((p_dynamic_state & (RDC::DYNAMIC_STATE_STENCIL_REFERENCE) != 0)) {
 		vk_dynamic_states[vk_dynamic_states_count] = VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 		vk_dynamic_states_count++;
 	}
@@ -7314,7 +7223,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 				VkSpecializationInfo* specialization_info = ALLOCA_SINGLE(VkSpecializationInfo);
 				*specialization_info = {};
 				specialization_info->dataSize =
-					p_specialization_constants.size() * sizeof(PipelineSpecializationConstant);
+					p_specialization_constants.size() * sizeof(RDC::PipelineSpecializationConstant);
 				specialization_info->pData = p_specialization_constants.ptr();
 				specialization_info->mapEntryCount = specialization_entries.size();
 				specialization_info->pMapEntries = specialization_entries.ptr();
@@ -7388,27 +7297,23 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	return PipelineID(vk_pipeline);
 }
 
-/********************/
-/**** RAYTRACING ****/
-/********************/
-
 // RDD::AccelerationStructureFlagBits == VkBuildAccelerationStructureFlagBitsKHR.
-static_assert(ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT,
+static_assert(ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT,
 	VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT,
+static_assert(ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT,
 	VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT,
+static_assert(ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT,
 	VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT,
+static_assert(ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT,
 	VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR));
-static_assert(ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_LOW_MEMORY_BIT,
+static_assert(ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_LOW_MEMORY_BIT,
 	VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR));
 
-// RDD::AccelerationStructureGeometryBits == VkGeometryFlagsKHR.
+// RDC::AccelerationStructureGeometryBits == VkGeometryFlagsKHR.
 static_assert(ENUM_MEMBERS_EQUAL(
-	RDD::ACCELERATION_STRUCTURE_GEOMETRY_OPAQUE_BIT, VK_GEOMETRY_OPAQUE_BIT_KHR));
+	RDC::ACCELERATION_STRUCTURE_GEOMETRY_OPAQUE_BIT, VK_GEOMETRY_OPAQUE_BIT_KHR));
 static_assert(
-	ENUM_MEMBERS_EQUAL(RDD::ACCELERATION_STRUCTURE_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT,
+	ENUM_MEMBERS_EQUAL(RDC::ACCELERATION_STRUCTURE_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT,
 		VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR));
 
 RDD::AccelerationStructureID RenderingDeviceDriverVulkan::blas_create(
@@ -7448,7 +7353,7 @@ RDD::AccelerationStructureID RenderingDeviceDriverVulkan::blas_create(
 		uint32_t primitive_count;
 		if (geometry.index_buffer != BufferID()) {
 			vk_geometry.geometry.triangles.indexType =
-				(geometry.index_format == INDEX_BUFFER_FORMAT_UINT16 ? VK_INDEX_TYPE_UINT16
+				(geometry.index_format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? VK_INDEX_TYPE_UINT16
 																	 : VK_INDEX_TYPE_UINT32);
 			vk_geometry.geometry.triangles.indexData.deviceAddress =
 				buffer_get_device_address(geometry.index_buffer) + geometry.index_offset;
@@ -7655,8 +7560,6 @@ RenderingDeviceDriverVulkan::_sbt_to_vk_strided_device_address_region(
 	return vk_strided_device_address_region;
 }
 
-// ----- COMMANDS -----
-
 void RenderingDeviceDriverVulkan::command_build_blas(CommandBufferID p_cmd_buffer,
 	AccelerationStructureID p_acceleration_structure, BufferID p_scratch_buffer)
 {
@@ -7735,8 +7638,6 @@ void RenderingDeviceDriverVulkan::command_trace_rays(CommandBufferID p_cmd_buffe
 #endif
 }
 
-// --- PIPELINE ---
-
 RDD::RaytracingPipelineID RenderingDeviceDriverVulkan::raytracing_pipeline_create(
 	VectorView<PipelineShader> p_shaders, VectorView<uint32_t> p_raygen_shader_indices,
 	VectorView<uint32_t> p_miss_shader_indices, VectorView<HitGroup> p_hit_groups,
@@ -7772,7 +7673,7 @@ RDD::RaytracingPipelineID RenderingDeviceDriverVulkan::raytracing_pipeline_creat
 
 					VkSpecializationInfo* specialization_info = ALLOCA_SINGLE(VkSpecializationInfo);
 					specialization_info->dataSize = shader.specialization_constants.size() *
-													sizeof(PipelineSpecializationConstant);
+													sizeof(RDC::PipelineSpecializationConstant);
 					specialization_info->pData = shader.specialization_constants.ptr();
 					specialization_info->mapEntryCount = shader.specialization_constants.size();
 					specialization_info->pMapEntries = specialization_map_entries;
@@ -7891,12 +7792,6 @@ bool RenderingDeviceDriverVulkan::raytracing_pipeline_get_shader_group_handles(
 #endif
 }
 
-/*****************/
-/**** COMPUTE ****/
-/*****************/
-
-// ----- COMMANDS -----
-
 void RenderingDeviceDriverVulkan::command_bind_compute_pipeline(
 	CommandBufferID p_cmd_buffer, PipelineID p_pipeline)
 {
@@ -7960,10 +7855,8 @@ void RenderingDeviceDriverVulkan::command_compute_dispatch_indirect(
 	vkCmdDispatchIndirect(command_buffer->vk_command_buffer, buf_info->vk_buffer, p_offset);
 }
 
-// ----- PIPELINE -----
-
 RDD::PipelineID RenderingDeviceDriverVulkan::compute_pipeline_create(
-	ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants)
+	ShaderID p_shader, VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants)
 {
 	const ShaderInfo* shader_info = (const ShaderInfo*)p_shader.id;
 
@@ -7987,7 +7880,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::compute_pipeline_create(
 		VkSpecializationInfo* specialization_info = ALLOCA_SINGLE(VkSpecializationInfo);
 		*specialization_info = {};
 		specialization_info->dataSize =
-			p_specialization_constants.size() * sizeof(PipelineSpecializationConstant);
+			p_specialization_constants.size() * sizeof(RDC::PipelineSpecializationConstant);
 		specialization_info->pData = p_specialization_constants.ptr();
 		specialization_info->mapEntryCount = p_specialization_constants.size();
 		specialization_info->pMapEntries = specialization_map_entries;
@@ -8004,12 +7897,6 @@ RDD::PipelineID RenderingDeviceDriverVulkan::compute_pipeline_create(
 
 	return PipelineID(vk_pipeline);
 }
-
-/*****************/
-/**** QUERIES ****/
-/*****************/
-
-// ----- TIMESTAMP -----
 
 RDD::QueryPoolID RenderingDeviceDriverVulkan::timestamp_query_pool_create(uint32_t p_query_count)
 {
@@ -8092,10 +7979,6 @@ void RenderingDeviceDriverVulkan::command_timestamp_write(
 		(VkQueryPool)p_pool_id.id, p_index);
 }
 
-/****************/
-/**** LABELS ****/
-/****************/
-
 void RenderingDeviceDriverVulkan::command_begin_label(
 	CommandBufferID p_cmd_buffer, const char* p_label_name, const Color& p_color)
 {
@@ -8141,14 +8024,11 @@ void RenderingDeviceDriverVulkan::command_end_label(CommandBufferID p_cmd_buffer
 	functions.CmdEndDebugUtilsLabelEXT(command_buffer->vk_command_buffer);
 }
 
-/****************/
-/**** DEBUG *****/
-/****************/
 void RenderingDeviceDriverVulkan::command_insert_breadcrumb(
 	CommandBufferID p_cmd_buffer, uint32_t p_data)
 {
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-	if (p_data == BreadcrumbMarker::NONE) {
+	if (p_data == RDC::BreadcrumbMarker::NONE) {
 		return;
 	}
 
@@ -8353,40 +8233,40 @@ void RenderingDeviceDriverVulkan::print_lost_device_info()
 			String error_msg = "Last known breadcrumb: ";
 
 			switch (phase) {
-			case BreadcrumbMarker::ALPHA_PASS:
+			case RDC::BreadcrumbMarker::ALPHA_PASS:
 				error_msg += "ALPHA_PASS";
 				break;
-			case BreadcrumbMarker::BLIT_PASS:
+			case RDC::BreadcrumbMarker::BLIT_PASS:
 				error_msg += "BLIT_PASS";
 				break;
-			case BreadcrumbMarker::DEBUG_PASS:
+			case RDC::BreadcrumbMarker::DEBUG_PASS:
 				error_msg += "DEBUG_PASS";
 				break;
-			case BreadcrumbMarker::LIGHTMAPPER_PASS:
+			case RDC::BreadcrumbMarker::LIGHTMAPPER_PASS:
 				error_msg += "LIGHTMAPPER_PASS";
 				break;
-			case BreadcrumbMarker::OPAQUE_PASS:
+			case RDC::BreadcrumbMarker::OPAQUE_PASS:
 				error_msg += "OPAQUE_PASS";
 				break;
-			case BreadcrumbMarker::POST_PROCESSING_PASS:
+			case RDC::BreadcrumbMarker::POST_PROCESSING_PASS:
 				error_msg += "POST_PROCESSING_PASS";
 				break;
-			case BreadcrumbMarker::REFLECTION_PROBES:
+			case RDC::BreadcrumbMarker::REFLECTION_PROBES:
 				error_msg += "REFLECTION_PROBES";
 				break;
-			case BreadcrumbMarker::SHADOW_PASS_CUBE:
+			case RDC::BreadcrumbMarker::SHADOW_PASS_CUBE:
 				error_msg += "SHADOW_PASS_CUBE";
 				break;
-			case BreadcrumbMarker::SHADOW_PASS_DIRECTIONAL:
+			case RDC::BreadcrumbMarker::SHADOW_PASS_DIRECTIONAL:
 				error_msg += "SHADOW_PASS_DIRECTIONAL";
 				break;
-			case BreadcrumbMarker::SKY_PASS:
+			case RDC::BreadcrumbMarker::SKY_PASS:
 				error_msg += "SKY_PASS";
 				break;
-			case BreadcrumbMarker::TRANSPARENT_PASS:
+			case RDC::BreadcrumbMarker::TRANSPARENT_PASS:
 				error_msg += "TRANSPARENT_PASS";
 				break;
-			case BreadcrumbMarker::UI_PASS:
+			case RDC::BreadcrumbMarker::UI_PASS:
 				error_msg += "UI_PASS";
 				break;
 			default:
@@ -8440,10 +8320,6 @@ inline String RenderingDeviceDriverVulkan::get_vulkan_result(VkResult err)
 	return itos(err);
 }
 
-/********************/
-/**** SUBMISSION ****/
-/********************/
-
 void RenderingDeviceDriverVulkan::begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn)
 {
 	// Per-frame segments are not required in Vulkan.
@@ -8453,10 +8329,6 @@ void RenderingDeviceDriverVulkan::end_segment()
 {
 	// Per-frame segments are not required in Vulkan.
 }
-
-/**************/
-/**** MISC ****/
-/**************/
 
 void RenderingDeviceDriverVulkan::set_object_name(
 	ObjectType p_type, ID p_driver_id, const String& p_name)
@@ -8512,42 +8384,42 @@ void RenderingDeviceDriverVulkan::set_object_name(
 }
 
 uint64_t RenderingDeviceDriverVulkan::get_resource_native_handle(
-	DriverResource p_type, ID p_driver_id)
+	RDC::DriverResource p_type, ID p_driver_id)
 {
 	switch (p_type) {
-	case DRIVER_RESOURCE_LOGICAL_DEVICE: {
+	case RDC::DRIVER_RESOURCE_LOGICAL_DEVICE: {
 		return (uint64_t)vk_device;
 	}
-	case DRIVER_RESOURCE_PHYSICAL_DEVICE: {
+	case RDC::DRIVER_RESOURCE_PHYSICAL_DEVICE: {
 		return (uint64_t)physical_device;
 	}
-	case DRIVER_RESOURCE_TOPMOST_OBJECT: {
+	case RDC::DRIVER_RESOURCE_TOPMOST_OBJECT: {
 		return (uint64_t)context_driver->instance_get();
 	}
-	case DRIVER_RESOURCE_COMMAND_QUEUE: {
+	case RDC::DRIVER_RESOURCE_COMMAND_QUEUE: {
 		const CommandQueue* queue_info = (const CommandQueue*)p_driver_id.id;
 		return (uint64_t)queue_families[queue_info->queue_family][queue_info->queue_index].queue;
 	}
-	case DRIVER_RESOURCE_QUEUE_FAMILY: {
+	case RDC::DRIVER_RESOURCE_QUEUE_FAMILY: {
 		return uint32_t(p_driver_id.id) - 1;
 	}
-	case DRIVER_RESOURCE_TEXTURE: {
+	case RDC::DRIVER_RESOURCE_TEXTURE: {
 		const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
 		return (uint64_t)tex_info->vk_view_create_info.image;
 	}
-	case DRIVER_RESOURCE_TEXTURE_VIEW: {
+	case RDC::DRIVER_RESOURCE_TEXTURE_VIEW: {
 		const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
 		return (uint64_t)tex_info->vk_view;
 	}
-	case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
+	case RDC::DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
 		const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
 		return (uint64_t)tex_info->vk_view_create_info.format;
 	}
-	case DRIVER_RESOURCE_SAMPLER:
-	case DRIVER_RESOURCE_UNIFORM_SET:
-	case DRIVER_RESOURCE_BUFFER:
-	case DRIVER_RESOURCE_COMPUTE_PIPELINE:
-	case DRIVER_RESOURCE_RENDER_PIPELINE: {
+	case RDC::DRIVER_RESOURCE_SAMPLER:
+	case RDC::DRIVER_RESOURCE_UNIFORM_SET:
+	case RDC::DRIVER_RESOURCE_BUFFER:
+	case RDC::DRIVER_RESOURCE_COMPUTE_PIPELINE:
+	case RDC::DRIVER_RESOURCE_RENDER_PIPELINE: {
 		return p_driver_id.id;
 	}
 	default: {
@@ -8577,96 +8449,96 @@ uint64_t RenderingDeviceDriverVulkan::get_lazily_memory_used()
 	return vmaCalculateLazilyAllocatedBytes(allocator);
 }
 
-uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit)
+uint64_t RenderingDeviceDriverVulkan::limit_get(RDC::Limit p_limit)
 {
 	const VkPhysicalDeviceLimits& limits = physical_device_properties.limits;
 	uint64_t safe_unbounded = ((uint64_t)1 << 30);
 	switch (p_limit) {
-	case LIMIT_MAX_BOUND_UNIFORM_SETS:
+	case RDC::LIMIT_MAX_BOUND_UNIFORM_SETS:
 		return limits.maxBoundDescriptorSets;
-	case LIMIT_MAX_FRAMEBUFFER_COLOR_ATTACHMENTS:
+	case RDC::LIMIT_MAX_FRAMEBUFFER_COLOR_ATTACHMENTS:
 		return limits.maxColorAttachments;
-	case LIMIT_MAX_TEXTURES_PER_UNIFORM_SET:
+	case RDC::LIMIT_MAX_TEXTURES_PER_UNIFORM_SET:
 		return limits.maxDescriptorSetSampledImages;
-	case LIMIT_MAX_SAMPLERS_PER_UNIFORM_SET:
+	case RDC::LIMIT_MAX_SAMPLERS_PER_UNIFORM_SET:
 		return limits.maxDescriptorSetSamplers;
-	case LIMIT_MAX_STORAGE_BUFFERS_PER_UNIFORM_SET:
+	case RDC::LIMIT_MAX_STORAGE_BUFFERS_PER_UNIFORM_SET:
 		return limits.maxDescriptorSetStorageBuffers;
-	case LIMIT_MAX_STORAGE_IMAGES_PER_UNIFORM_SET:
+	case RDC::LIMIT_MAX_STORAGE_IMAGES_PER_UNIFORM_SET:
 		return limits.maxDescriptorSetStorageImages;
-	case LIMIT_MAX_UNIFORM_BUFFERS_PER_UNIFORM_SET:
+	case RDC::LIMIT_MAX_UNIFORM_BUFFERS_PER_UNIFORM_SET:
 		return limits.maxDescriptorSetUniformBuffers;
-	case LIMIT_MAX_DRAW_INDEXED_INDEX:
+	case RDC::LIMIT_MAX_DRAW_INDEXED_INDEX:
 		return limits.maxDrawIndexedIndexValue;
-	case LIMIT_MAX_FRAMEBUFFER_HEIGHT:
+	case RDC::LIMIT_MAX_FRAMEBUFFER_HEIGHT:
 		return limits.maxFramebufferHeight;
-	case LIMIT_MAX_FRAMEBUFFER_WIDTH:
+	case RDC::LIMIT_MAX_FRAMEBUFFER_WIDTH:
 		return limits.maxFramebufferWidth;
-	case LIMIT_MAX_TEXTURE_ARRAY_LAYERS:
+	case RDC::LIMIT_MAX_TEXTURE_ARRAY_LAYERS:
 		return limits.maxImageArrayLayers;
-	case LIMIT_MAX_TEXTURE_SIZE_1D:
+	case RDC::LIMIT_MAX_TEXTURE_SIZE_1D:
 		return limits.maxImageDimension1D;
-	case LIMIT_MAX_TEXTURE_SIZE_2D:
+	case RDC::LIMIT_MAX_TEXTURE_SIZE_2D:
 		return limits.maxImageDimension2D;
-	case LIMIT_MAX_TEXTURE_SIZE_3D:
+	case RDC::LIMIT_MAX_TEXTURE_SIZE_3D:
 		return limits.maxImageDimension3D;
-	case LIMIT_MAX_TEXTURE_SIZE_CUBE:
+	case RDC::LIMIT_MAX_TEXTURE_SIZE_CUBE:
 		return limits.maxImageDimensionCube;
-	case LIMIT_MAX_TEXTURES_PER_SHADER_STAGE:
+	case RDC::LIMIT_MAX_TEXTURES_PER_SHADER_STAGE:
 		return limits.maxPerStageDescriptorSampledImages;
-	case LIMIT_MAX_SAMPLERS_PER_SHADER_STAGE:
+	case RDC::LIMIT_MAX_SAMPLERS_PER_SHADER_STAGE:
 		return limits.maxPerStageDescriptorSamplers;
-	case LIMIT_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE:
+	case RDC::LIMIT_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE:
 		return limits.maxPerStageDescriptorStorageBuffers;
-	case LIMIT_MAX_STORAGE_IMAGES_PER_SHADER_STAGE:
+	case RDC::LIMIT_MAX_STORAGE_IMAGES_PER_SHADER_STAGE:
 		return limits.maxPerStageDescriptorStorageImages;
-	case LIMIT_MAX_UNIFORM_BUFFERS_PER_SHADER_STAGE:
+	case RDC::LIMIT_MAX_UNIFORM_BUFFERS_PER_SHADER_STAGE:
 		return limits.maxPerStageDescriptorUniformBuffers;
-	case LIMIT_MAX_PUSH_CONSTANT_SIZE:
+	case RDC::LIMIT_MAX_PUSH_CONSTANT_SIZE:
 		return limits.maxPushConstantsSize;
-	case LIMIT_MAX_UNIFORM_BUFFER_SIZE:
+	case RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE:
 		return limits.maxUniformBufferRange;
-	case LIMIT_MAX_VERTEX_INPUT_ATTRIBUTE_OFFSET:
+	case RDC::LIMIT_MAX_VERTEX_INPUT_ATTRIBUTE_OFFSET:
 		return limits.maxVertexInputAttributeOffset;
-	case LIMIT_MAX_VERTEX_INPUT_ATTRIBUTES:
+	case RDC::LIMIT_MAX_VERTEX_INPUT_ATTRIBUTES:
 		return limits.maxVertexInputAttributes;
-	case LIMIT_MAX_VERTEX_INPUT_BINDINGS:
+	case RDC::LIMIT_MAX_VERTEX_INPUT_BINDINGS:
 		return limits.maxVertexInputBindings;
-	case LIMIT_MAX_VERTEX_INPUT_BINDING_STRIDE:
+	case RDC::LIMIT_MAX_VERTEX_INPUT_BINDING_STRIDE:
 		return limits.maxVertexInputBindingStride;
-	case LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
+	case RDC::LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
 		return limits.minUniformBufferOffsetAlignment;
-	case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X:
 		return limits.maxComputeWorkGroupCount[0];
-	case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y:
 		return limits.maxComputeWorkGroupCount[1];
-	case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z:
 		return limits.maxComputeWorkGroupCount[2];
-	case LIMIT_MAX_COMPUTE_WORKGROUP_INVOCATIONS:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_INVOCATIONS:
 		return limits.maxComputeWorkGroupInvocations;
-	case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_X:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_X:
 		return limits.maxComputeWorkGroupSize[0];
-	case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Y:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Y:
 		return limits.maxComputeWorkGroupSize[1];
-	case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Z:
+	case RDC::LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Z:
 		return limits.maxComputeWorkGroupSize[2];
-	case LIMIT_MAX_COMPUTE_SHARED_MEMORY_SIZE:
+	case RDC::LIMIT_MAX_COMPUTE_SHARED_MEMORY_SIZE:
 		return limits.maxComputeSharedMemorySize;
-	case LIMIT_MAX_VIEWPORT_DIMENSIONS_X:
+	case RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_X:
 		return limits.maxViewportDimensions[0];
-	case LIMIT_MAX_VIEWPORT_DIMENSIONS_Y:
+	case RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y:
 		return limits.maxViewportDimensions[1];
-	case LIMIT_SUBGROUP_SIZE:
+	case RDC::LIMIT_SUBGROUP_SIZE:
 		return subgroup_capabilities.size;
-	case LIMIT_SUBGROUP_MIN_SIZE:
+	case RDC::LIMIT_SUBGROUP_MIN_SIZE:
 		return subgroup_capabilities.min_size;
-	case LIMIT_SUBGROUP_MAX_SIZE:
+	case RDC::LIMIT_SUBGROUP_MAX_SIZE:
 		return subgroup_capabilities.max_size;
-	case LIMIT_SUBGROUP_IN_SHADERS:
+	case RDC::LIMIT_SUBGROUP_IN_SHADERS:
 		return subgroup_capabilities.supported_stages_flags_rd();
-	case LIMIT_SUBGROUP_OPERATIONS:
+	case RDC::LIMIT_SUBGROUP_OPERATIONS:
 		return subgroup_capabilities.supported_operations_flags_rd();
-	case LIMIT_MAX_SHADER_VARYINGS:
+	case RDC::LIMIT_MAX_SHADER_VARYINGS:
 		// The Vulkan spec states that built in varyings like gl_FragCoord should count against
 		// this, but in practice, that doesn't seem to be the case. The validation layers don't even
 		// complain.
@@ -8701,37 +8573,37 @@ uint64_t RenderingDeviceDriverVulkan::api_trait_get(ApiTrait p_trait)
 	}
 }
 
-bool RenderingDeviceDriverVulkan::has_feature(Features p_feature)
+bool RenderingDeviceDriverVulkan::has_feature(RDC::Features p_feature)
 {
 	switch (p_feature) {
-	case SUPPORTS_HALF_FLOAT:
+	case RDC::SUPPORTS_HALF_FLOAT:
 		return shader_capabilities.shader_float16_is_supported &&
 			   physical_device_features.shaderInt16 &&
 			   storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported;
-	case SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
+	case RDC::SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
 		return true;
-	case SUPPORTS_BUFFER_DEVICE_ADDRESS:
+	case RDC::SUPPORTS_BUFFER_DEVICE_ADDRESS:
 		return buffer_device_address_support;
-	case SUPPORTS_IMAGE_ATOMIC_32_BIT:
+	case RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT:
 #if (defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED))
 		// MoltenVK has previously had issues with 32-bit atomics on images.
 		return false;
 #else
 		return true;
 #endif
-	case SUPPORTS_VULKAN_MEMORY_MODEL:
+	case RDC::SUPPORTS_VULKAN_MEMORY_MODEL:
 		return vulkan_memory_model_support && vulkan_memory_model_device_scope_support;
-	case SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE:
+	case RDC::SUPPORTS_FRAMEBUFFER_DEPTH_RESOLVE:
 		return framebuffer_depth_resolve;
-	case SUPPORTS_POINT_SIZE:
+	case RDC::SUPPORTS_POINT_SIZE:
 		return true;
-	case SUPPORTS_RAY_QUERY:
+	case RDC::SUPPORTS_RAY_QUERY:
 		return acceleration_structure_capabilities.acceleration_structure_support &&
 			   ray_query_support;
-	case SUPPORTS_RAYTRACING_PIPELINE:
+	case RDC::SUPPORTS_RAYTRACING_PIPELINE:
 		return acceleration_structure_capabilities.acceleration_structure_support &&
 			   raytracing_capabilities.raytracing_pipeline_support;
-	case SUPPORTS_HDR_OUTPUT:
+	case RDC::SUPPORTS_HDR_OUTPUT:
 #if defined(WINDOWS_ENABLED)
 		// When using a Vulkan swapchain on Windows, some configurations
 		// involving integrated GPU hardware do not function correctly
@@ -8796,12 +8668,10 @@ bool RenderingDeviceDriverVulkan::is_composite_alpha_supported(CommandQueueID p_
 	return false;
 }
 
-RenderingDeviceDriver::DriverWorkarounds RenderingDeviceDriverVulkan::get_driver_workarounds() const
+RDC::DriverWorkarounds RenderingDeviceDriverVulkan::get_driver_workarounds() const
 {
 	return driver_workarounds;
 }
-
-/******************/
 
 RenderingDeviceDriverVulkan::RenderingDeviceDriverVulkan(
 	RenderingContextDriverVulkan* p_context_driver)

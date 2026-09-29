@@ -810,17 +810,17 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 
 	{ // grid
 
-		RD::TextureFormat tf;
+		RDC::TextureFormat tf;
 		tf.width = grid_size;
 		tf.height = grid_size;
 		tf.depth = grid_size;
-		tf.texture_type = RD::TEXTURE_TYPE_3D;
-		tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tf.texture_type = RDC::TEXTURE_TYPE_3D;
+		tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
 
 		Vector<Vector<uint8_t>> texdata;
 		texdata.resize(1);
 		// grid and indices
-		tf.format = RD::DATA_FORMAT_R32G32_UINT;
+		tf.format = RDC::DATA_FORMAT_R32G32_UINT;
 		texdata.write[0] = grid_indices.to_byte_array();
 		grid_texture = rd->texture_create(tf, RD::TextureView(), texdata);
 	}
@@ -832,14 +832,15 @@ static Vector<RD::Uniform> dilate_or_denoise_common_uniforms(
 	Vector<RD::Uniform> uniforms;
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 0;
 		u.append_id(p_dest_light_tex);
 		uniforms.push_back(u);
 	}
+
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 1;
 		u.append_id(p_source_light_tex);
 		uniforms.push_back(u);

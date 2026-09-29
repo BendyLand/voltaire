@@ -73,7 +73,7 @@ public:
 	};
 
 private:
-	RD::DataFormat texture_format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+	RDC::DataFormat texture_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 
 	enum SkyTextureSetVersion
 	{
@@ -245,7 +245,7 @@ public:
 		void clear_reflection_data();
 		void update_reflection_data(int p_size, int p_mipmaps, bool p_use_array, RID p_base_oct,
 			int p_base_layer, bool p_low_quality, int p_roughness_layers,
-			RD::DataFormat p_texture_format, float p_border_size);
+			RDC::DataFormat p_texture_format, float p_border_size);
 		void create_reflection_fast_filter(bool p_use_arrays);
 		void create_reflection_importance_sample(
 			bool p_use_arrays, int p_base_layer, uint32_t p_sky_ggx_samples_quality);
@@ -357,7 +357,7 @@ public:
 
 	SkyRD();
 	void init();
-	void set_texture_format(RD::DataFormat p_texture_format);
+	void set_texture_format(RDC::DataFormat p_texture_format);
 	~SkyRD();
 
 	void setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_size);

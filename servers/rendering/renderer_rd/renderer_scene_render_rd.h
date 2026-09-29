@@ -290,7 +290,7 @@ public:
 	}
 
 	/* RENDER BUFFERS */
-	static RD::DataFormat _render_buffers_get_preferred_color_format();
+	static RDC::DataFormat _render_buffers_get_preferred_color_format();
 	static bool _render_buffers_can_be_storage();
 	static Ref<RenderSceneBuffers> render_buffers_create();
 	static void gi_set_use_half_resolution(bool p_enable);

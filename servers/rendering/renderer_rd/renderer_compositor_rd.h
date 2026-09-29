@@ -121,7 +121,7 @@ protected:
 	static inline uint64_t frame;
 
 	BlitPipelines _get_blit_pipelines_for_format(RenderingDevice::FramebufferFormatID format);
-	float _compute_reference_multiplier(RD::ColorSpace p_color_space,
+	float _compute_reference_multiplier(RDC::ColorSpace p_color_space,
 		const float p_reference_luminance, const float p_linear_luminance_scale);
 
 public:

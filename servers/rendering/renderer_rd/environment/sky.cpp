@@ -122,7 +122,7 @@ void SkyRD::_render_sky(RD::DrawListID p_list, float p_time, RID p_fb, PipelineC
 
 	RD::draw_list_bind_render_pipeline(
 		draw_list, p_pipeline->get_render_pipeline(
-					   RD::INVALID_ID, fb_format, false, RD::draw_list_get_current_pass()));
+					   RDC::INVALID_ID, fb_format, false, RD::draw_list_get_current_pass()));
 
 	// Update uniform sets.
 	{
@@ -199,7 +199,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 0;
 		if (radiance.is_valid() && p_version <= SKY_TEXTURE_SET_QUARTER_RES) {
 			u.append_id(
@@ -213,7 +213,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 1; // half res
 		if (p_version >= SKY_TEXTURE_SET_OCTMAP) {
 			if (reflection.layers.size() && reflection.layers[0].mipmaps.size() >= 2 &&
@@ -243,7 +243,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 2; // quarter res
 		if (p_version >= SKY_TEXTURE_SET_OCTMAP) {
 			if (reflection.layers.size() && reflection.layers[0].mipmaps.size() >= 3 &&
@@ -335,11 +335,11 @@ Ref<Image> SkyRD::Sky::bake_panorama(float p_energy, int p_roughness_layers, con
 	if (radiance.is_valid()) {
 		RendererRD::CopyEffects* copy_effects = RendererRD::CopyEffects::get_singleton();
 
-		RD::TextureFormat tf;
-		tf.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT; // Could be RGBA16
+		RDC::TextureFormat tf;
+		tf.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT; // Could be RGBA16
 		tf.width = p_size.width;
 		tf.height = p_size.height;
-		tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+		tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
 		RID rad_tex = RD::texture_create(tf, RD::TextureView());
 		copy_effects->copy_octmap_to_panorama(radiance, rad_tex, p_size, p_roughness_layers,
@@ -402,7 +402,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 		Vector<RD::Uniform> uniforms;
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 0;
 			u.append_id(texture_storage->texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
@@ -410,7 +410,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 1;
 			u.append_id(texture_storage->texture_rd_get_default(
 				p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
@@ -419,7 +419,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 2;
 			u.append_id(texture_storage->texture_rd_get_default(
 				p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
@@ -433,7 +433,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 	return uniform_set_rid;
 }
 
-void SkyRD::set_texture_format(RD::DataFormat p_texture_format)
+void SkyRD::set_texture_format(RDC::DataFormat p_texture_format)
 {
 	texture_format = p_texture_format;
 }
@@ -932,24 +932,24 @@ void SkyRD::update_dirty_skys()
 				sky->uv_border_size = float(padding_pixels) / float(w);
 
 				// Array (higher quality, more memory).
-				RD::TextureFormat tf;
+				RDC::TextureFormat tf;
 				tf.array_layers = layers;
 				tf.format = texture_format;
-				tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+				tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 				tf.mipmaps = mipmaps;
 				tf.width = w;
 				tf.height = h;
 				tf.usage_bits =
-					RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+					RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 				if (!use_raster_effect) {
-					tf.usage_bits |= RD::TEXTURE_USAGE_STORAGE_BIT;
+					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
 				sky->radiance = RD::texture_create(tf, RD::TextureView());
 
 				// Create view into the first layer slice for user shaders.
 				sky->radiance_first_layer_slice = RD::texture_create_shared_from_slice(
-					RD::TextureView(), sky->radiance, 0, 0, mipmaps, RD::TEXTURE_SLICE_2D, 1);
+					RD::TextureView(), sky->radiance, 0, 0, mipmaps, RDC::TEXTURE_SLICE_2D, 1);
 
 				sky->reflection.update_reflection_data(w, mipmaps, true, sky->radiance, 0,
 					use_realtime, roughness_layers, texture_format, sky->uv_border_size);
@@ -963,15 +963,15 @@ void SkyRD::update_dirty_skys()
 				sky->uv_border_size = float(padding_pixels) / float(w);
 
 				// Single texture (lower quality, less memory).
-				RD::TextureFormat tf;
+				RDC::TextureFormat tf;
 				tf.format = texture_format;
 				tf.mipmaps = MIN(mipmaps, layers);
 				tf.width = w;
 				tf.height = h;
 				tf.usage_bits =
-					RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+					RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 				if (!use_raster_effect) {
-					tf.usage_bits |= RD::TEXTURE_USAGE_STORAGE_BIT;
+					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
 				sky->radiance = RD::texture_create(tf, RD::TextureView());

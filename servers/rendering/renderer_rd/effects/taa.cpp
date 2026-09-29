@@ -37,7 +37,7 @@ using namespace RendererRD;
 
 TAA::~TAA() { taa_shader.version_free(shader_version); }
 
-void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_format,
+void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RDC::DataFormat p_format,
 	float p_z_near, float p_z_far)
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
@@ -48,13 +48,13 @@ void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_f
 
 	bool just_allocated = false;
 	if (!p_render_buffers->has_texture(SNAME("taa"), SNAME("history"))) {
-		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+		uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT;
 
 		p_render_buffers->create_texture(SNAME("taa"), SNAME("history"), p_format, usage_bits);
 		p_render_buffers->create_texture(SNAME("taa"), SNAME("temp"), p_format, usage_bits);
 
 		p_render_buffers->create_texture(
-			SNAME("taa"), SNAME("prev_velocity"), RD::DATA_FORMAT_R16G16_SFLOAT, usage_bits);
+			SNAME("taa"), SNAME("prev_velocity"), RDC::DATA_FORMAT_R16G16_SFLOAT, usage_bits);
 
 		just_allocated = true;
 	}

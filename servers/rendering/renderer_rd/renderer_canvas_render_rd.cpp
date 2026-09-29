@@ -142,7 +142,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 
 	Vector<uint8_t> polygon_buffer;
 	polygon_buffer.resize(buffer_size * sizeof(float));
-	Vector<RD::VertexAttribute> descriptions;
+	Vector<RDC::VertexAttribute> descriptions;
 	descriptions.resize(5);
 	Vector<RID> buffers;
 	buffers.resize(5);
@@ -153,8 +153,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 		uint32_t* uptr = reinterpret_cast<uint32_t*>(r);
 		uint32_t base_offset = 0;
 		{ // vertices
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 			vd.offset = base_offset * sizeof(float);
 			vd.location = RSE::ARRAY_VERTEX;
 			vd.stride = stride * sizeof(float);
@@ -173,8 +173,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 
 		// colors
 		if ((uint32_t)p_colors.size() == vertex_count || p_colors.size() == 1) {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 			vd.offset = base_offset * sizeof(float);
 			vd.location = RSE::ARRAY_COLOR;
 			vd.stride = stride * sizeof(float);
@@ -203,8 +203,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			base_offset += 4;
 		}
 		else {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 			vd.offset = 0;
 			vd.location = RSE::ARRAY_COLOR;
 			vd.stride = 0;
@@ -216,8 +216,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 
 		// uvs
 		if ((uint32_t)p_uvs.size() == vertex_count) {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 			vd.offset = base_offset * sizeof(float);
 			vd.location = RSE::ARRAY_TEX_UV;
 			vd.stride = stride * sizeof(float);
@@ -233,8 +233,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			base_offset += 2;
 		}
 		else {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 			vd.offset = 0;
 			vd.location = RSE::ARRAY_TEX_UV;
 			vd.stride = 0;
@@ -247,8 +247,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 		// bones
 		if ((uint32_t)p_indices.size() == vertex_count * 4 &&
 			(uint32_t)p_weights.size() == vertex_count * 4) {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R16G16B16A16_UINT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R16G16B16A16_UINT;
 			vd.offset = base_offset * sizeof(float);
 			vd.location = RSE::ARRAY_BONES;
 			vd.stride = stride * sizeof(float);
@@ -269,8 +269,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			base_offset += 2;
 		}
 		else {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32B32A32_UINT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32B32A32_UINT;
 			vd.offset = 0;
 			vd.location = RSE::ARRAY_BONES;
 			vd.stride = 0;
@@ -282,8 +282,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 
 		// weights
 		if ((uint32_t)p_weights.size() == vertex_count * 4) {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 			vd.offset = base_offset * sizeof(float);
 			vd.location = RSE::ARRAY_WEIGHTS;
 			vd.stride = stride * sizeof(float);
@@ -304,8 +304,8 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			base_offset += 2;
 		}
 		else {
-			RD::VertexAttribute vd;
-			vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+			RDC::VertexAttribute vd;
+			vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 			vd.offset = 0;
 			vd.location = RSE::ARRAY_WEIGHTS;
 			vd.stride = 0;
@@ -320,7 +320,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 	}
 
 	RD::VertexFormatID vertex_id = RD::vertex_format_create(descriptions);
-	ERR_FAIL_COND_V(vertex_id == RD::INVALID_ID, 0);
+	ERR_FAIL_COND_V(vertex_id == RDC::INVALID_ID, 0);
 
 	PolygonBuffers pb;
 	pb.vertex_buffer =
@@ -375,23 +375,21 @@ void RendererCanvasRenderRD::free_polygon(PolygonID p_polygon)
 	polygon_buffers.polygons.erase(p_polygon);
 }
 
-////////////////////
-
-static RD::RenderPrimitive _primitive_type_to_render_primitive(RSE::PrimitiveType p_primitive)
+static RDC::RenderPrimitive _primitive_type_to_render_primitive(RSE::PrimitiveType p_primitive)
 {
 	switch (p_primitive) {
 	case RSE::PRIMITIVE_POINTS:
-		return RD::RENDER_PRIMITIVE_POINTS;
+		return RDC::RENDER_PRIMITIVE_POINTS;
 	case RSE::PRIMITIVE_LINES:
-		return RD::RENDER_PRIMITIVE_LINES;
+		return RDC::RENDER_PRIMITIVE_LINES;
 	case RSE::PRIMITIVE_LINE_STRIP:
-		return RD::RENDER_PRIMITIVE_LINESTRIPS;
+		return RDC::RENDER_PRIMITIVE_LINESTRIPS;
 	case RSE::PRIMITIVE_TRIANGLES:
-		return RD::RENDER_PRIMITIVE_TRIANGLES;
+		return RDC::RENDER_PRIMITIVE_TRIANGLES;
 	case RSE::PRIMITIVE_TRIANGLE_STRIP:
-		return RD::RENDER_PRIMITIVE_TRIANGLE_STRIPS;
+		return RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS;
 	default:
-		return RD::RENDER_PRIMITIVE_MAX;
+		return RDC::RENDER_PRIMITIVE_MAX;
 	}
 }
 
@@ -414,7 +412,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		u.binding = 1;
 		u.append_id(state.canvas_state_buffer);
 		uniforms.push_back(u);
@@ -422,7 +420,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 2;
 		u.append_id(state.lights_storage_buffer);
 		uniforms.push_back(u);
@@ -430,7 +428,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 3;
 		u.append_id(RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture());
 		uniforms.push_back(u);
@@ -438,7 +436,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 4;
 		u.append_id(state.shadow_texture);
 		uniforms.push_back(u);
@@ -446,7 +444,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		u.binding = 5;
 		u.append_id(state.shadow_sampler);
 		uniforms.push_back(u);
@@ -454,7 +452,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 6;
 		RID screen;
 		if (p_backbuffer) {
@@ -473,7 +471,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 7;
 		RID sdf = texture_storage->render_target_get_sdf_texture(p_to_render_target);
 		u.append_id(sdf);
@@ -482,7 +480,7 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 9;
 		u.append_id(RendererRD::MaterialStorage::get_singleton()
 						->global_shader_uniforms_get_storage_buffer());
@@ -1015,23 +1013,23 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 		Vector<RID> fb_textures;
 
 		{ // texture
-			RD::TextureFormat tf;
-			tf.texture_type = RD::TEXTURE_TYPE_2D;
+			RDC::TextureFormat tf;
+			tf.texture_type = RDC::TEXTURE_TYPE_2D;
 			tf.width = state.shadow_texture_size;
 			tf.height = MAX_LIGHTS_PER_RENDER * 2;
-			tf.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
-			tf.format = RD::DATA_FORMAT_R32_SFLOAT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
+			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
 			state.shadow_texture = RD::texture_create(tf, RD::TextureView());
 			fb_textures.push_back(state.shadow_texture);
 		}
 		{
-			RD::TextureFormat tf;
-			tf.texture_type = RD::TEXTURE_TYPE_2D;
+			RDC::TextureFormat tf;
+			tf.texture_type = RDC::TEXTURE_TYPE_2D;
 			tf.width = state.shadow_texture_size;
 			tf.height = MAX_LIGHTS_PER_RENDER * 2;
-			tf.usage_bits = RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-			tf.format = RD::DATA_FORMAT_D32_SFLOAT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			tf.format = RDC::DATA_FORMAT_D32_SFLOAT;
 			tf.is_discardable = true;
 			// chunks to write
 			state.shadow_depth_texture = RD::texture_create(tf, RD::TextureView());
@@ -1254,18 +1252,18 @@ void RendererCanvasRenderRD::CanvasShaderData::_create_pipeline(PipelineKey p_pi
 
 	RendererRD::MaterialStorage::ShaderData::BlendMode blend_mode_rd =
 		RendererRD::MaterialStorage::ShaderData::BlendMode(blend_mode);
-	RD::PipelineColorBlendState blend_state;
-	RD::PipelineColorBlendState::Attachment attachment;
+	RDC::PipelineColorBlendState blend_state;
+	RDC::PipelineColorBlendState::Attachment attachment;
 	uint32_t dynamic_state_flags = 0;
 	if (p_pipeline_key.lcd_blend) {
 		attachment.enable_blend = true;
-		attachment.alpha_blend_op = RD::BLEND_OP_ADD;
-		attachment.color_blend_op = RD::BLEND_OP_ADD;
-		attachment.src_color_blend_factor = RD::BLEND_FACTOR_CONSTANT_COLOR;
-		attachment.dst_color_blend_factor = RD::BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-		attachment.src_alpha_blend_factor = RD::BLEND_FACTOR_ONE;
-		attachment.dst_alpha_blend_factor = RD::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		dynamic_state_flags = RD::DYNAMIC_STATE_BLEND_CONSTANTS;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_CONSTANT_COLOR;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		dynamic_state_flags = RDC::DYNAMIC_STATE_BLEND_CONSTANTS;
 	}
 	else {
 		attachment =
@@ -1274,16 +1272,16 @@ void RendererCanvasRenderRD::CanvasShaderData::_create_pipeline(PipelineKey p_pi
 
 	blend_state.attachments.push_back(attachment);
 
-	RD::PipelineMultisampleState multisample_state;
+	RDC::PipelineMultisampleState multisample_state;
 	multisample_state.sample_count = RD::framebuffer_format_get_texture_samples(
 		p_pipeline_key.framebuffer_format_id, 0);
 
 	// Convert the specialization from the key to pipeline specialization constants.
-	Vector<RD::PipelineSpecializationConstant> specialization_constants;
-	RD::PipelineSpecializationConstant sc;
+	Vector<RDC::PipelineSpecializationConstant> specialization_constants;
+	RDC::PipelineSpecializationConstant sc;
 	sc.constant_id = 0;
 	sc.int_value = p_pipeline_key.shader_specialization.packed_0;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
 	specialization_constants.push_back(sc);
 
 	RID shader_rid = get_shader(p_pipeline_key.variant, p_pipeline_key.ubershader);
@@ -1291,8 +1289,8 @@ void RendererCanvasRenderRD::CanvasShaderData::_create_pipeline(PipelineKey p_pi
 
 	RID pipeline = RD::render_pipeline_create(shader_rid,
 		p_pipeline_key.framebuffer_format_id, p_pipeline_key.vertex_format_id,
-		p_pipeline_key.render_primitive, RD::PipelineRasterizationState(), multisample_state,
-		RD::PipelineDepthStencilState(), blend_state, dynamic_state_flags, 0,
+		p_pipeline_key.render_primitive, RDC::PipelineRasterizationState(), multisample_state,
+		RDC::PipelineDepthStencilState(), blend_state, dynamic_state_flags, 0,
 		specialization_constants);
 	ERR_FAIL_COND(pipeline.is_null());
 
@@ -1418,12 +1416,12 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 		{
 			// create a default shadow texture to keep uniform set happy (and that it gets erased
 			// when a new one is created)
-			RD::TextureFormat tf;
-			tf.texture_type = RD::TEXTURE_TYPE_2D;
+			RDC::TextureFormat tf;
+			tf.texture_type = RDC::TEXTURE_TYPE_2D;
 			tf.width = 4;
 			tf.height = 4;
-			tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
-			tf.format = RD::DATA_FORMAT_R32_SFLOAT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
+			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
 			state.shadow_texture = RD::texture_create(tf, RD::TextureView());
 		}
@@ -1537,7 +1535,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				r_current_batch->command = c;
 				// default variant
 				r_current_batch->shader_variant = SHADER_VARIANT_QUAD;
-				r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+				r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 				r_current_batch->flags = 0;
 			}
 
@@ -1560,7 +1558,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				r_current_batch->has_blend = has_blend;
 				r_current_batch->modulate = modulated;
 				r_current_batch->shader_variant = SHADER_VARIANT_QUAD;
-				r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+				r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 			}
 
 			bool has_msdf = bool(rect->flags & CANVAS_RECT_MSDF);
@@ -1671,7 +1669,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				r_current_batch->command = c;
 				r_current_batch->has_blend = false;
 				r_current_batch->shader_variant = SHADER_VARIANT_NINEPATCH;
-				r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+				r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 				r_current_batch->flags = 0;
 				r_current_batch->use_msdf = false;
 				r_current_batch->use_lcd = false;
@@ -1813,16 +1811,16 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				switch (primitive->point_count) {
 				case 1:
 					r_current_batch->shader_variant = SHADER_VARIANT_PRIMITIVE_POINTS;
-					r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_POINTS;
+					r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_POINTS;
 					break;
 				case 2:
 					r_current_batch->shader_variant = SHADER_VARIANT_PRIMITIVE;
-					r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_LINES;
+					r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_LINES;
 					break;
 				case 3:
 				case 4:
 					r_current_batch->shader_variant = SHADER_VARIANT_PRIMITIVE;
-					r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+					r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 					break;
 				default:
 					// Unknown point count.
@@ -2075,7 +2073,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 			r_current_batch->command = nullptr;
 			// default variant
 			r_current_batch->shader_variant = SHADER_VARIANT_QUAD;
-			r_current_batch->render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+			r_current_batch->render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 			r_current_batch->flags = 0;
 		}
 
@@ -2192,10 +2190,10 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		const RID* uniform_set = rid_set_to_uniform_set.getptr(key);
 		if (uniform_set == nullptr) {
 			RD::Uniform* uniform_ptrw = state.batch_texture_uniforms.ptrw();
-			uniform_ptrw[0] = RD::Uniform(RD::UNIFORM_TYPE_TEXTURE, 0, p_batch->tex_info->diffuse);
-			uniform_ptrw[1] = RD::Uniform(RD::UNIFORM_TYPE_TEXTURE, 1, p_batch->tex_info->normal);
-			uniform_ptrw[2] = RD::Uniform(RD::UNIFORM_TYPE_TEXTURE, 2, p_batch->tex_info->specular);
-			uniform_ptrw[3] = RD::Uniform(RD::UNIFORM_TYPE_SAMPLER, 3, p_batch->tex_info->sampler);
+			uniform_ptrw[0] = RD::Uniform(RDC::UNIFORM_TYPE_TEXTURE, 0, p_batch->tex_info->diffuse);
+			uniform_ptrw[1] = RD::Uniform(RDC::UNIFORM_TYPE_TEXTURE, 1, p_batch->tex_info->normal);
+			uniform_ptrw[2] = RD::Uniform(RDC::UNIFORM_TYPE_TEXTURE, 2, p_batch->tex_info->specular);
+			uniform_ptrw[3] = RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, 3, p_batch->tex_info->sampler);
 
 			RID rid = RD::uniform_set_create(
 				state.batch_texture_uniforms, shader.default_version_rd_shader, BATCH_UNIFORM_SET);

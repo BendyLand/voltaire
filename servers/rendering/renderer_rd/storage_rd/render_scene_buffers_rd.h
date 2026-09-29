@@ -70,7 +70,7 @@ private:
 	bool can_be_storage = true;
 	bool force_hdr = false;
 	uint32_t max_cluster_elements = 512;
-	RD::DataFormat preferred_data_format = RD::DATA_FORMAT_MAX;
+	RDC::DataFormat preferred_data_format = RDC::DATA_FORMAT_MAX;
 	RendererRD::VRS* vrs = nullptr;
 	uint64_t auto_exposure_version = 1;
 	RSE::ViewportVRSMode vrs_mode = RSE::VIEWPORT_VRS_DISABLED;
@@ -97,7 +97,7 @@ private:
 	RSE::ViewportScreenSpaceAA screen_space_aa = RSE::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
 	bool use_taa = false;
 	bool use_debanding = false;
-	RD::TextureSamples texture_samples = RD::TEXTURE_SAMPLES_1;
+	RDC::TextureSamples texture_samples = RDC::TEXTURE_SAMPLES_1;
 
 	// Named Textures
 
@@ -171,7 +171,7 @@ private:
 	struct NamedTexture
 	{
 		// Cache the data used to create our texture
-		RD::TextureFormat format;
+		RDC::TextureFormat format;
 		bool is_unique; // If marked as unique, we return it into our pool
 
 		// Our texture objects, slices are lazy (i.e. only created when requested).
@@ -210,16 +210,16 @@ public:
 
 	uint32_t get_max_cluster_elements() { return max_cluster_elements; }
 
-	void set_preferred_data_format(const RD::DataFormat p_preferred_data_format)
+	void set_preferred_data_format(const RDC::DataFormat p_preferred_data_format)
 	{
 		preferred_data_format = p_preferred_data_format;
 	}
 
-	RD::DataFormat get_preferred_data_format() const { return preferred_data_format; }
+	RDC::DataFormat get_preferred_data_format() const { return preferred_data_format; }
 
-	RD::DataFormat get_base_data_format() const
+	RDC::DataFormat get_base_data_format() const
 	{
-		return force_hdr ? RD::DATA_FORMAT_R16G16B16A16_SFLOAT : preferred_data_format;
+		return force_hdr ? RDC::DATA_FORMAT_R16G16B16A16_SFLOAT : preferred_data_format;
 	}
 
 	float get_luminance_multiplier() const;
@@ -250,17 +250,17 @@ public:
 
 	bool has_texture(const StringName& p_context, const StringName& p_texture_name) const;
 	RID create_texture(const StringName& p_context, const StringName& p_texture_name,
-		const RD::DataFormat p_data_format, const uint32_t p_usage_bits,
-		const RD::TextureSamples p_texture_samples = RD::TEXTURE_SAMPLES_1,
+		const RDC::DataFormat p_data_format, const uint32_t p_usage_bits,
+		const RDC::TextureSamples p_texture_samples = RDC::TEXTURE_SAMPLES_1,
 		const Size2i p_size = Size2i(0, 0), const uint32_t p_layers = 0,
 		const uint32_t p_mipmaps = 1, bool p_unique = true, bool p_discardable = false);
 	RID create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
-		const RD::TextureFormat& p_texture_format, RD::TextureView p_view = RD::TextureView(),
+		const RDC::TextureFormat& p_texture_format, RD::TextureView p_view = RD::TextureView(),
 		bool p_unique = true);
 	RID create_texture_view(const StringName& p_context, const StringName& p_texture_name,
 		const StringName& p_view_name, RD::TextureView p_view = RD::TextureView());
 	RID get_texture(const StringName& p_context, const StringName& p_texture_name) const;
-	const RD::TextureFormat get_texture_format(
+	const RDC::TextureFormat get_texture_format(
 		const StringName& p_context, const StringName& p_texture_name) const;
 	RID get_texture_slice(const StringName& p_context, const StringName& p_texture_name,
 		const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
@@ -300,7 +300,7 @@ public:
 
 	_FORCE_INLINE_ RSE::ViewportMSAA get_msaa_3d() const { return msaa_3d; }
 
-	_FORCE_INLINE_ RD::TextureSamples get_texture_samples() const { return texture_samples; }
+	_FORCE_INLINE_ RDC::TextureSamples get_texture_samples() const { return texture_samples; }
 
 	_FORCE_INLINE_ RSE::ViewportScreenSpaceAA get_screen_space_aa() const
 	{
@@ -338,10 +338,10 @@ public:
 	_FORCE_INLINE_ RID get_internal_texture_reactive(const uint32_t p_layer)
 	{
 		RD::TextureView alpha_only_view;
-		alpha_only_view.swizzle_r = RD::TEXTURE_SWIZZLE_A;
-		alpha_only_view.swizzle_g = RD::TEXTURE_SWIZZLE_A;
-		alpha_only_view.swizzle_b = RD::TEXTURE_SWIZZLE_A;
-		alpha_only_view.swizzle_a = RD::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_r = RDC::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_g = RDC::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_b = RDC::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_a = RDC::TEXTURE_SWIZZLE_A;
 		return get_texture_slice_view(
 			RB_SCOPE_BUFFERS, RB_TEX_COLOR, p_layer, 0, 1, 1, alpha_only_view);
 	}
@@ -421,35 +421,32 @@ public:
 
 	_FORCE_INLINE_ RendererRD::MaterialStorage::Samplers get_samplers() const { return samplers; }
 
-	_FORCE_INLINE_ static RD::TextureSamples msaa_to_samples(RSE::ViewportMSAA p_msaa)
+	_FORCE_INLINE_ static RDC::TextureSamples msaa_to_samples(RSE::ViewportMSAA p_msaa)
 	{
 		switch (p_msaa) {
 		case RSE::VIEWPORT_MSAA_DISABLED:
-			return RD::TEXTURE_SAMPLES_1;
+			return RDC::TEXTURE_SAMPLES_1;
 		case RSE::VIEWPORT_MSAA_2X:
-			return RD::TEXTURE_SAMPLES_2;
+			return RDC::TEXTURE_SAMPLES_2;
 		case RSE::VIEWPORT_MSAA_4X:
-			return RD::TEXTURE_SAMPLES_4;
+			return RDC::TEXTURE_SAMPLES_4;
 		case RSE::VIEWPORT_MSAA_8X:
-			return RD::TEXTURE_SAMPLES_8;
+			return RDC::TEXTURE_SAMPLES_8;
 		default:
 			DEV_ASSERT(false && "Unknown MSAA option.");
-			return RD::TEXTURE_SAMPLES_1;
+			return RDC::TEXTURE_SAMPLES_1;
 		}
 	}
 
 	static uint32_t get_color_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
-	static RD::DataFormat get_depth_format(bool p_resolve, bool p_msaa, bool p_storage);
+	static RDC::DataFormat get_depth_format(bool p_resolve, bool p_msaa, bool p_storage);
 	static uint32_t get_depth_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
-	static RD::DataFormat get_velocity_format();
+	static RDC::DataFormat get_velocity_format();
 	static uint32_t get_velocity_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
-	static RD::DataFormat get_vrs_format();
+	static RDC::DataFormat get_vrs_format();
 	static uint32_t get_vrs_usage_bits();
 
 private:
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Our classDB doesn't support calling our normal exposed functions
-
 	RID _create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
 		const Ref<RDTextureFormat>& p_texture_format,
 		const Ref<RDTextureView>& p_view = Ref<RDTextureView>(), bool p_unique = true);
@@ -566,16 +563,13 @@ private:
 	RID _get_velocity_layer_bind_compat_80214(const uint32_t p_layer);
 
 	RID _create_texture_bind_compat_98670(const StringName& p_context,
-		const StringName& p_texture_name, const RD::DataFormat p_data_format,
-		const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples,
+		const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+		const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples,
 		const Size2i p_size, const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique);
 
 	static void _bind_compatibility_methods();
 
 #endif // DISABLE_DEPRECATED
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Everything after this needs to be re-evaluated, this is all old implementation
 public:
 	struct WeightBuffers
 	{

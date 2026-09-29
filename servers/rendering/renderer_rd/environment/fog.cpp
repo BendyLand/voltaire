@@ -44,8 +44,8 @@ Fog::~Fog() { singleton = nullptr; }
 
 int Fog::_get_fog_shader_group()
 {
-	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RDC::SUPPORTS_VULKAN_MEMORY_MODEL);
 	if (use_vulkan_memory_model) {
 		return use_32_bit_atomics
 				   ? VolumetricFogShader::SHADER_GROUP_VULKAN_MEMORY_MODEL
@@ -59,15 +59,15 @@ int Fog::_get_fog_shader_group()
 
 int Fog::_get_fog_variant()
 {
-	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RDC::SUPPORTS_VULKAN_MEMORY_MODEL);
 	return (use_vulkan_memory_model ? 2 : 0) + (use_32_bit_atomics ? 0 : 1);
 }
 
 int Fog::_get_fog_process_variant(int p_idx)
 {
-	bool use_32_bit_atomics = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT);
-	bool use_vulkan_memory_model = RD::has_feature(RD::SUPPORTS_VULKAN_MEMORY_MODEL);
+	bool use_32_bit_atomics = RD::has_feature(RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT);
+	bool use_vulkan_memory_model = RD::has_feature(RDC::SUPPORTS_VULKAN_MEMORY_MODEL);
 	return (use_vulkan_memory_model ? (VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX * 2)
 									: 0) +
 		   (use_32_bit_atomics ? 0 : VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX) +
@@ -340,35 +340,35 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 	width = fog_size.x;
 	height = fog_size.y;
 	depth = fog_size.z;
-	atomic_type = RD::has_feature(RD::SUPPORTS_IMAGE_ATOMIC_32_BIT)
-					  ? RD::UNIFORM_TYPE_IMAGE
-					  : RD::UNIFORM_TYPE_STORAGE_BUFFER;
+	atomic_type = RD::has_feature(RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT)
+					  ? RDC::UNIFORM_TYPE_IMAGE
+					  : RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 
-	RD::TextureFormat tf;
-	tf.format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+	RDC::TextureFormat tf;
+	tf.format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 	tf.width = fog_size.x;
 	tf.height = fog_size.y;
 	tf.depth = fog_size.z;
-	tf.texture_type = RD::TEXTURE_TYPE_3D;
-	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+	tf.texture_type = RDC::TEXTURE_TYPE_3D;
+	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
 	light_density_map = RD::texture_create(tf, RD::TextureView());
 	RD::set_resource_name(light_density_map, "Fog light-density map");
 
-	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT |
-					RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT |
+					RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 
 	prev_light_density_map = RD::texture_create(tf, RD::TextureView());
 	RD::set_resource_name(
 		prev_light_density_map, "Fog previous light-density map");
 	RD::texture_clear(prev_light_density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
 
-	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 
 	fog_map = RD::texture_create(tf, RD::TextureView());
 	RD::set_resource_name(fog_map, "Fog map");
 
-	if (atomic_type == RD::UNIFORM_TYPE_STORAGE_BUFFER) {
+	if (atomic_type == RDC::UNIFORM_TYPE_STORAGE_BUFFER) {
 		Vector<uint8_t> dm;
 		dm.resize_initialized(fog_size.x * fog_size.y * fog_size.z * 4);
 
@@ -380,9 +380,9 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 		RD::set_resource_name(emissive_map, "Fog emissive map");
 	}
 	else {
-		tf.format = RD::DATA_FORMAT_R32_UINT;
-		tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT |
-						RD::TEXTURE_USAGE_STORAGE_ATOMIC_BIT;
+		tf.format = RDC::DATA_FORMAT_R32_UINT;
+		tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT |
+						RDC::TEXTURE_USAGE_STORAGE_ATOMIC_BIT;
 		density_map = RD::texture_create(tf, RD::TextureView());
 		RD::set_resource_name(density_map, "Fog density map");
 		RD::texture_clear(density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
@@ -398,7 +398,7 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 	{
 		RD::Uniform u;
 		u.binding = 0;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.append_id(fog_map);
 		uniforms.push_back(u);
 	}

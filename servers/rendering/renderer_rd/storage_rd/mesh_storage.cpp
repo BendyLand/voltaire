@@ -347,7 +347,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 		{
 			RD::Uniform u;
 			u.binding = 0;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			if (s->vertex_buffer.is_valid()) {
 				u.append_id(s->vertex_buffer);
 			}
@@ -359,7 +359,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 		{
 			RD::Uniform u;
 			u.binding = 1;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			if (s->skin_buffer.is_valid()) {
 				u.append_id(s->skin_buffer);
 			}
@@ -371,7 +371,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 		{
 			RD::Uniform u;
 			u.binding = 2;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			if (s->blend_shape_buffer.is_valid()) {
 				u.append_id(s->blend_shape_buffer);
 			}
@@ -995,14 +995,14 @@ void MeshStorage::_mesh_instance_add_surface_buffer(MeshInstance* mi, Mesh* mesh
 	{
 		RD::Uniform u;
 		u.binding = 1;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.append_id(s->vertex_buffer[p_buffer_index]);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 2;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		if (mi->blend_weights_buffer.is_valid()) {
 			u.append_id(mi->blend_weights_buffer);
 		}
@@ -1084,7 +1084,7 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 	uint64_t p_input_mask, bool p_instanced_surface, bool p_input_motion_vectors,
 	bool p_point_size_emulated, uint32_t& r_position_stride)
 {
-	Vector<RD::VertexAttribute> attributes;
+	Vector<RDC::VertexAttribute> attributes;
 	uint32_t normal_tangent_stride = 0;
 	uint32_t attribute_stride = 0;
 	uint32_t skin_stride = 0;
@@ -1092,7 +1092,7 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 	r_position_stride = 0;
 
 	for (int i = 0; i < RSE::ARRAY_INDEX; i++) {
-		RD::VertexAttribute vd;
+		RDC::VertexAttribute vd;
 		vd.location = i;
 
 		if (!(p_surface_format & (1ULL << i))) {
@@ -1100,14 +1100,14 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 			switch (i) {
 			case RSE::ARRAY_VERTEX:
 			case RSE::ARRAY_NORMAL:
-				vd.format = RD::DATA_FORMAT_R32G32B32_SFLOAT;
+				vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
 				break;
 			case RSE::ARRAY_TEX_UV:
 			case RSE::ARRAY_TEX_UV2:
-				vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+				vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 				break;
 			case RSE::ARRAY_BONES:
-				vd.format = RD::DATA_FORMAT_R32G32B32A32_UINT;
+				vd.format = RDC::DATA_FORMAT_R32G32B32A32_UINT;
 				break;
 			case RSE::ARRAY_TANGENT:
 			case RSE::ARRAY_COLOR:
@@ -1116,7 +1116,7 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 			case RSE::ARRAY_CUSTOM2:
 			case RSE::ARRAY_CUSTOM3:
 			case RSE::ARRAY_WEIGHTS:
-				vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+				vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 				break;
 			default:
 				DEV_ASSERT(false && "Unknown vertex format element.");
@@ -1132,17 +1132,17 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 				vd.offset = r_position_stride;
 
 				if (p_surface_format & RSE::ARRAY_FLAG_USE_2D_VERTICES) {
-					vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+					vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 					r_position_stride = sizeof(float) * 2;
 				}
 				else {
 					if (!p_instanced_surface &&
 						(p_surface_format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES)) {
-						vd.format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+						vd.format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 						r_position_stride = sizeof(uint16_t) * 4;
 					}
 					else {
-						vd.format = RD::DATA_FORMAT_R32G32B32_SFLOAT;
+						vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
 						r_position_stride = sizeof(float) * 3;
 					}
 				}
@@ -1153,11 +1153,11 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 
 				if (!p_instanced_surface &&
 					(p_surface_format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES)) {
-					vd.format = RD::DATA_FORMAT_R16G16_UNORM;
+					vd.format = RDC::DATA_FORMAT_R16G16_UNORM;
 					normal_tangent_stride += sizeof(uint16_t) * 2;
 				}
 				else {
-					vd.format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+					vd.format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 					// A small trick here: if we are uncompressed and we have normals, but no
 					// tangents. We need the shader to think there are 4 components to
 					// "axis_tangent_attrib". So we give a size of 4, but a stride based on only
@@ -1172,22 +1172,22 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 			} break;
 			case RSE::ARRAY_TANGENT: {
 				vd.stride = 0;
-				vd.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+				vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 			} break;
 			case RSE::ARRAY_COLOR: {
 				vd.offset = attribute_stride;
 
-				vd.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+				vd.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 				attribute_stride += sizeof(int8_t) * 4;
 			} break;
 			case RSE::ARRAY_TEX_UV: {
 				vd.offset = attribute_stride;
 				if (p_surface_format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
-					vd.format = RD::DATA_FORMAT_R16G16_UNORM;
+					vd.format = RDC::DATA_FORMAT_R16G16_UNORM;
 					attribute_stride += sizeof(uint16_t) * 2;
 				}
 				else {
-					vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+					vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 					attribute_stride += sizeof(float) * 2;
 				}
 
@@ -1195,11 +1195,11 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 			case RSE::ARRAY_TEX_UV2: {
 				vd.offset = attribute_stride;
 				if (p_surface_format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
-					vd.format = RD::DATA_FORMAT_R16G16_UNORM;
+					vd.format = RDC::DATA_FORMAT_R16G16_UNORM;
 					attribute_stride += sizeof(uint16_t) * 2;
 				}
 				else {
-					vd.format = RD::DATA_FORMAT_R32G32_SFLOAT;
+					vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 					attribute_stride += sizeof(float) * 2;
 				}
 			} break;
@@ -1215,30 +1215,30 @@ RD::VertexFormatID MeshStorage::_mesh_surface_generate_vertex_format(uint64_t p_
 					RSE::ARRAY_FORMAT_CUSTOM2_SHIFT, RSE::ARRAY_FORMAT_CUSTOM3_SHIFT};
 				uint32_t fmt = (p_surface_format >> fmt_shift[idx]) & RSE::ARRAY_FORMAT_CUSTOM_MASK;
 				const uint32_t fmtsize[RSE::ARRAY_CUSTOM_MAX] = {4, 4, 4, 8, 4, 8, 12, 16};
-				const RD::DataFormat fmtrd[RSE::ARRAY_CUSTOM_MAX] = {RD::DATA_FORMAT_R8G8B8A8_UNORM,
-					RD::DATA_FORMAT_R8G8B8A8_SNORM, RD::DATA_FORMAT_R16G16_SFLOAT,
-					RD::DATA_FORMAT_R16G16B16A16_SFLOAT, RD::DATA_FORMAT_R32_SFLOAT,
-					RD::DATA_FORMAT_R32G32_SFLOAT, RD::DATA_FORMAT_R32G32B32_SFLOAT,
-					RD::DATA_FORMAT_R32G32B32A32_SFLOAT};
+				const RDC::DataFormat fmtrd[RSE::ARRAY_CUSTOM_MAX] = {RDC::DATA_FORMAT_R8G8B8A8_UNORM,
+					RDC::DATA_FORMAT_R8G8B8A8_SNORM, RDC::DATA_FORMAT_R16G16_SFLOAT,
+					RDC::DATA_FORMAT_R16G16B16A16_SFLOAT, RDC::DATA_FORMAT_R32_SFLOAT,
+					RDC::DATA_FORMAT_R32G32_SFLOAT, RDC::DATA_FORMAT_R32G32B32_SFLOAT,
+					RDC::DATA_FORMAT_R32G32B32A32_SFLOAT};
 				vd.format = fmtrd[fmt];
 				attribute_stride += fmtsize[fmt];
 			} break;
 			case RSE::ARRAY_BONES: {
 				vd.offset = skin_stride;
 
-				vd.format = RD::DATA_FORMAT_R16G16B16A16_UINT;
+				vd.format = RDC::DATA_FORMAT_R16G16B16A16_UINT;
 				skin_stride += sizeof(int16_t) * 4;
 			} break;
 			case RSE::ARRAY_WEIGHTS: {
 				vd.offset = skin_stride;
 
-				vd.format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+				vd.format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 				skin_stride += sizeof(int16_t) * 4;
 			} break;
 			}
 
 			if (p_point_size_emulated) {
-				vd.frequency = RD::VERTEX_FREQUENCY_INSTANCE;
+				vd.frequency = RDC::VERTEX_FREQUENCY_INSTANCE;
 			}
 		}
 
@@ -2132,7 +2132,7 @@ void MeshStorage::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_
 			{
 				RD::Uniform u;
 				u.binding = 0;
-				u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+				u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 				u.append_id(skeleton->buffer);
 				uniforms.push_back(u);
 			}

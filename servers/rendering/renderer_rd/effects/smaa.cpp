@@ -61,14 +61,14 @@ void SMAA::allocate_render_targets(Ref<RenderSceneBuffersRD> p_render_buffers)
 	// As we're not clearing these, and render buffers will return the cached texture if it already
 	// exists, we don't first check has_texture here.
 
-	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_EDGES, RD::DATA_FORMAT_R8G8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
-		RD::TEXTURE_SAMPLES_1, full_size, 1, 1, true, true);
-	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_BLEND, RD::DATA_FORMAT_R8G8B8A8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
-		RD::TEXTURE_SAMPLES_1, full_size, 1, 1, true, true);
+	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_EDGES, RDC::DATA_FORMAT_R8G8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+		RDC::TEXTURE_SAMPLES_1, full_size, 1, 1, true, true);
+	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_BLEND, RDC::DATA_FORMAT_R8G8B8A8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+		RDC::TEXTURE_SAMPLES_1, full_size, 1, 1, true, true);
 	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_STENCIL, smaa.stencil_format,
-		RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, RD::TEXTURE_SAMPLES_1, full_size, 1, 1,
+		RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, RDC::TEXTURE_SAMPLES_1, full_size, 1, 1,
 		true, true);
 }
 

@@ -53,9 +53,9 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		RD::screen_get_framebuffer_format(p_screen));
 
 	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
-	ERR_FAIL_COND(draw_list == RD::INVALID_ID);
+	ERR_FAIL_COND(draw_list == RDC::INVALID_ID);
 
-	const RD::ColorSpace color_space = RD::screen_get_color_space(p_screen);
+	const RDC::ColorSpace color_space = RD::screen_get_color_space(p_screen);
 	const float reference_luminance =
 		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
 			p_screen);
@@ -178,7 +178,7 @@ void RendererCompositorRD::initialize()
 			p16[5] = 3;
 		}
 		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
-		blit->sampler = RD::sampler_create(RD::SamplerState());
+		blit->sampler = RD::sampler_create(RDC::SamplerState());
 	}
 }
 
@@ -204,11 +204,11 @@ void RendererCompositorRD::finalize()
 	RD::free_rid(blit->sampler);
 }
 
-float RendererCompositorRD::_compute_reference_multiplier(RD::ColorSpace p_color_space,
+float RendererCompositorRD::_compute_reference_multiplier(RDC::ColorSpace p_color_space,
 	const float p_reference_luminance, const float p_linear_luminance_scale)
 {
 	switch (p_color_space) {
-	case RD::COLOR_SPACE_REC709_LINEAR:
+	case RDC::COLOR_SPACE_REC709_LINEAR:
 		return p_reference_luminance / p_linear_luminance_scale;
 	default:
 		return 1.0f;
@@ -236,11 +236,11 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	texture_storage->texture_2d_initialize(texture, p_image);
 	RID rd_texture = texture_storage->texture_get_rd_texture(texture, false);
 
-	RD::SamplerState sampler_state;
+	RDC::SamplerState sampler_state;
 	sampler_state.min_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.mag_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.max_lod = 0;
 	RID sampler = RD::sampler_create(sampler_state);
 
@@ -253,7 +253,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	screenrect.position /= window_size;
 	screenrect.size /= window_size;
 
-	const RD::ColorSpace color_space =
+	const RDC::ColorSpace color_space =
 		RD::screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_luminance =
 		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
@@ -268,7 +268,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
 	Color clear_color = p_color;
-	if (color_space != RD::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
+	if (color_space != RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
 		// draw_list_begin_for_screen requires linear-encoded Color when using an HDR buffer.
 		clear_color = p_color.srgb_to_linear();
 

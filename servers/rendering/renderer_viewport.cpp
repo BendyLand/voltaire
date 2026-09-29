@@ -181,8 +181,8 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			}
 
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL &&
-				!RD::has_feature(RD::SUPPORTS_METALFX_TEMPORAL)) {
-				if (RD::has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
+				!RD::has_feature(RDC::SUPPORTS_METALFX_TEMPORAL)) {
+				if (RD::has_feature(RDC::SUPPORTS_METALFX_SPATIAL)) {
 					// Prefer MetalFX spatial if it is supported, which will be much more efficient
 					// than FSR2, as the hardware already will struggle with FSR2.
 					scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL;
@@ -199,7 +199,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			}
 
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL &&
-				!RD::has_feature(RD::SUPPORTS_METALFX_SPATIAL)) {
+				!RD::has_feature(RDC::SUPPORTS_METALFX_SPATIAL)) {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_FSR;
 				WARN_PRINT_ONCE("MetalFX spatial upscaling is not supported by the current "
 								"renderer or hardware. Falling back to FSR scaling.");
@@ -209,12 +209,12 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 
 			// If MetalFX Temporal upscaling is supported, verify limits.
 			if (scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) {
-				double min_scale = (double)RD::limit_get(
-									   RD::LIMIT_METALFX_TEMPORAL_SCALER_MIN_SCALE) /
-								   1000'000.0;
-				double max_scale = (double)RD::limit_get(
-									   RD::LIMIT_METALFX_TEMPORAL_SCALER_MAX_SCALE) /
-								   1000'000.0;
+				double min_scale =
+					(double)RD::limit_get(RDC::LIMIT_METALFX_TEMPORAL_SCALER_MIN_SCALE) /
+					1'000'000.0;
+				double max_scale =
+					(double)RD::limit_get(RDC::LIMIT_METALFX_TEMPORAL_SCALER_MAX_SCALE) /
+					1'000'000.0;
 				if ((double)scaling_3d_scale < min_scale || (double)scaling_3d_scale > max_scale) {
 					scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_FSR2;
 					WARN_PRINT_ONCE(

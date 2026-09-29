@@ -376,9 +376,9 @@ void RendererSceneRenderRD::_render_buffers_ensure_screen_texture(const RenderDa
 	else {
 		if (!rb->has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR)) {
 			uint32_t usage_bits =
-				RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
-			usage_bits |= can_use_storage ? RD::TEXTURE_USAGE_STORAGE_BIT
-										  : RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+				RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+			usage_bits |= can_use_storage ? RDC::TEXTURE_USAGE_STORAGE_BIT
+										  : RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 			// This needs to have mipmaps if any shader needs textureLod to work on screen_texture
 			uint32_t mipmaps_required =
 				Image::get_image_required_mipmaps(size.x, size.y, Image::FORMAT_RGBAH);
@@ -460,14 +460,14 @@ void RendererSceneRenderRD::_render_buffers_ensure_depth_texture(const RenderDat
 	}
 
 	// Note, this only creates our back depth texture if we haven't already created it.
-	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
-	usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
-	usage_bits |= RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT; // Set this as color attachment because
+	uint32_t usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
+	usage_bits |= RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT;
+	usage_bits |= RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT; // Set this as color attachment because
 														  // we're copying data into it, it's not
 														  // actually used as a depth buffer
 
-	rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, RD::DATA_FORMAT_R32_SFLOAT, usage_bits,
-		RD::TEXTURE_SAMPLES_1);
+	rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, RDC::DATA_FORMAT_R32_SFLOAT, usage_bits,
+		RDC::TEXTURE_SAMPLES_1);
 }
 
 void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
@@ -885,7 +885,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			// the max white of tonemappers, specifically AgX which defaults
 			// to a high white value.
 			bool limit_agx_white =
-				rb->get_base_data_format() == RD::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
+				rb->get_base_data_format() == RDC::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
 
 			// When using HDR 2D, we use the parent window's output max value.
 			// Otherwise, we're tonemapping to an SDR low bit depth buffer, so
@@ -932,7 +932,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		tonemap.view_count = rb->get_view_count();
 
 		RID dest_fb;
-		RD::DataFormat dest_fb_format;
+		RDC::DataFormat dest_fb_format;
 		if (using_scaling_pass || use_smaa) {
 			// If we use a spatial upscaler to upscale or data->SMAA to antialias we need to write our
 			// result into an intermediate buffer. Note that this is cached so we only create the
@@ -940,9 +940,9 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			dest_fb_format = rb->get_base_data_format();
 			RID dest_texture =
 				rb->create_texture(SNAME("Tonemapper"), SNAME("destination"), dest_fb_format,
-					RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
-					RD::TEXTURE_SAMPLES_1, color_size, 0, 1, true, true);
+					RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+						RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+					RDC::TEXTURE_SAMPLES_1, color_size, 0, 1, true, true);
 			dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 			tonemap.dest_texture_size = color_size;
 		}
@@ -1005,9 +1005,9 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		RID dest_fb;
 		if (using_scaling_pass) {
 			rb->create_texture(SNAME("data->SMAA"), SNAME("destination"), rb->get_base_data_format(),
-				RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-					RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
-				RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
+				RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+					RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+				RDC::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
 		}
 		if (rb->get_view_count() > 1) {
 			for (uint32_t v = 0; v < rb->get_view_count(); v++) {
@@ -1033,9 +1033,9 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			if (using_scaling_pass) {
 				RID dest_texture = rb->create_texture(SNAME("data->SMAA"), SNAME("destination"),
 					rb->get_base_data_format(),
-					RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-						RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
-					RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
+					RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+						RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+					RDC::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
 				dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 			}
 			else {
@@ -1131,7 +1131,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 		// the max white of tonemappers, specifically AgX which defaults
 		// to a high white value.
 		bool limit_agx_white =
-			rb->get_base_data_format() == RD::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
+			rb->get_base_data_format() == RDC::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
 
 		// When using HDR 2D, we use the parent window's output max value.
 		// Otherwise, we're tonemapping to an SDR low bit depth buffer, so
@@ -1424,9 +1424,9 @@ RID RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer()
 	return data->gi.default_voxel_gi_buffer;
 }
 
-RD::DataFormat RendererSceneRenderRD::_render_buffers_get_preferred_color_format()
+RDC::DataFormat RendererSceneRenderRD::_render_buffers_get_preferred_color_format()
 {
-	return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+	return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 }
 
 bool RendererSceneRenderRD::_render_buffers_can_be_storage() { return true; }
@@ -1913,7 +1913,7 @@ void RendererSceneRenderRD::sdfgi_set_debug_probe_select(
 
 bool RendererSceneRenderRD::is_vrs_supported()
 {
-	return RD::has_feature(RD::SUPPORTS_ATTACHMENT_VRS);
+	return RD::has_feature(RDC::SUPPORTS_ATTACHMENT_VRS);
 }
 
 bool RendererSceneRenderRD::is_dynamic_gi_supported()

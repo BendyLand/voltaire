@@ -105,14 +105,14 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 		voxel_gi->data_buffer_size = p_data_cells.size();
 
 		if (p_distance_field.size()) {
-			RD::TextureFormat tf;
-			tf.format = RD::DATA_FORMAT_R8_UNORM;
+			RDC::TextureFormat tf;
+			tf.format = RDC::DATA_FORMAT_R8_UNORM;
 			tf.width = voxel_gi->octree_size.x;
 			tf.height = voxel_gi->octree_size.y;
 			tf.depth = voxel_gi->octree_size.z;
-			tf.texture_type = RD::TEXTURE_TYPE_3D;
-			tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT |
-							RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+			tf.texture_type = RDC::TEXTURE_TYPE_3D;
+			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT |
+							RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 			Vector<Vector<uint8_t>> s;
 			s.push_back(p_distance_field);
 			voxel_gi->sdf_texture = RD::texture_create(tf, RD::TextureView(), s);
@@ -429,7 +429,7 @@ Dependency* GI::voxel_gi_get_dependency(RID p_voxel_gi) const
 
 void GI::sdfgi_reset() { sdfgi_current_version++; }
 
-static RID create_clear_texture(const RD::TextureFormat& p_format, const String& p_name)
+static RID create_clear_texture(const RDC::TextureFormat& p_format, const String& p_name)
 {
 	RID texture = RD::texture_create(p_format, RD::TextureView());
 	ERR_FAIL_COND_V_MSG(texture.is_null(), RID(), String("Cannot create texture: ") + p_name);
@@ -996,21 +996,21 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	Vector<RD::Uniform> uniforms;
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 1;
 		u.append_id(gi->voxel_gi_get_data_buffer(probe));
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 2;
 		u.append_id(texture);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		u.binding = 3;
 		u.append_id(material_storage->sampler_rd_get_default(
 			RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
@@ -1038,7 +1038,7 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	}
 	RD::draw_list_bind_render_pipeline(p_draw_list,
 		gi->voxel_gi_debug_shader_version_pipelines[voxel_gi_debug_pipeline].get_render_pipeline(
-			RD::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
+			RDC::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
 	RD::draw_list_bind_uniform_set(p_draw_list, gi->voxel_gi_debug_uniform_set, 0);
 	RD::draw_list_set_push_constant(
 		p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));

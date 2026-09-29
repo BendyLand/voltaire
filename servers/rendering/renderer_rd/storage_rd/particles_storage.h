@@ -607,7 +607,7 @@ public:
 
 			{
 				RD::Uniform u;
-				u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+				u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 				u.binding = 0;
 				u.append_id(particles->particle_instance_buffer);
 				uniforms.push_back(u);

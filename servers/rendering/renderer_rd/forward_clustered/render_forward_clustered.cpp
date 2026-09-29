@@ -312,9 +312,9 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_velocity_only_
 	return FramebufferCacheRD::get_cache_multiview(render_buffers->get_view_count(), velocity);
 }
 
-RD::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_format()
+RDC::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_format()
 {
-	return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+	return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 }
 
 uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_usage_bits(
@@ -323,10 +323,10 @@ uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_
 	return RenderSceneBuffersRD::get_color_usage_bits(p_resolve, p_msaa, p_storage);
 }
 
-RD::DataFormat
+RDC::DataFormat
 RenderForwardClustered::RenderBufferDataForwardClustered::get_normal_roughness_format()
 {
-	return RD::DATA_FORMAT_R8G8B8A8_UNORM;
+	return RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 }
 
 uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_normal_roughness_usage_bits(
@@ -335,9 +335,9 @@ uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_normal_ro
 	return RenderSceneBuffersRD::get_color_usage_bits(p_resolve, p_msaa, p_storage);
 }
 
-RD::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_voxelgi_format()
+RDC::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_voxelgi_format()
 {
-	return RD::DATA_FORMAT_R8G8_UINT;
+	return RDC::DATA_FORMAT_R8G8_UINT;
 }
 
 uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_voxelgi_usage_bits(
@@ -613,7 +613,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 
 		bool emulate_point_size = shader->uses_point_size && scene_shader.emulate_point_size;
 
-		const RD::PolygonCullMode cull_mode = shader->get_cull_mode_from_cull_variant(cull_variant);
+		const RDC::PolygonCullMode cull_mode = shader->get_cull_mode_from_cull_variant(cull_variant);
 		RID vertex_array_rd;
 		RID index_array_rd;
 		RID pipeline_rd;
@@ -641,7 +641,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 
 			if (pipeline_key.ubershader) {
 				pipeline_key.shader_specialization = {};
-				pipeline_key.cull_mode = RD::POLYGON_CULL_DISABLED;
+				pipeline_key.cull_mode = RDC::POLYGON_CULL_DISABLED;
 			}
 			else {
 				pipeline_key.shader_specialization = pipeline_specialization;
@@ -3671,7 +3671,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 2;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 			u.append_id(scene_shader.shadow_sampler);
 			uniforms.push_back(u);
 		}
@@ -3679,21 +3679,21 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 3;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(RendererRD::LightStorage::get_singleton()->get_omni_light_buffer());
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 4;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(RendererRD::LightStorage::get_singleton()->get_spot_light_buffer());
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 5;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(RendererRD::LightStorage::get_singleton()->get_area_light_buffer());
 			uniforms.push_back(u);
 		}
@@ -3701,35 +3701,35 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 6;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(RendererRD::LightStorage::get_singleton()->get_reflection_probe_buffer());
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 7;
-			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 			u.append_id(RendererRD::LightStorage::get_singleton()->get_directional_light_buffer());
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 8;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(scene_state.lightmap_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 9;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(scene_state.lightmap_capture_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
 			u.binding = 10;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
 				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture();
 			u.append_id(decal_atlas);
@@ -3738,7 +3738,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 11;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
 				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture_srgb();
 			u.append_id(decal_atlas);
@@ -3747,14 +3747,14 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 12;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.append_id(RendererRD::TextureStorage::get_singleton()->get_decal_buffer());
 			uniforms.push_back(u);
 		}
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 13;
 			u.append_id(RendererRD::MaterialStorage::get_singleton()
 							->global_shader_uniforms_get_storage_buffer());
@@ -3763,7 +3763,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 			u.binding = 14;
 			u.append_id(sdfgi_get_ubo());
 			uniforms.push_back(u);
@@ -3772,7 +3772,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 15;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
 				RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
 				RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
@@ -3782,7 +3782,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 16;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.append_id(best_fit_normal.texture);
 			uniforms.push_back(u);
 		}
@@ -3790,7 +3790,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 17;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.append_id(dfg_lut.texture);
 			uniforms.push_back(u);
 		}
@@ -3829,7 +3829,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 18;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
@@ -3840,7 +3840,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 19;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
@@ -3850,7 +3850,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 		{
 			RD::Uniform u;
 			u.binding = 20;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID area_light_atlas =
 				RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
 			u.append_id(area_light_atlas);
@@ -3892,21 +3892,21 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 0;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		u.append_id(scene_state.uniform_buffers[p_uniform_buffer_index]);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 1;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		u.append_id(scene_state.implementation_uniform_buffers[p_uniform_buffer_index]);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 2;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC;
 		if (scene_state.instance_buffer[p_render_list].get_size(0u) == 0u) {
 			// Any buffer will do since it's not used, so just create one.
 			// We can't use scene_shader.default_vec4_xform_buffer because it's not dynamic.
@@ -3931,7 +3931,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 		}
 		RD::Uniform u;
 		u.binding = 3;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.append_id(radiance_texture);
 		uniforms.push_back(u);
 	}
@@ -3942,7 +3942,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 				: RID();
 		RD::Uniform u;
 		u.binding = 4;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		if (ref_texture.is_valid()) {
 			u.append_id(ref_texture);
 		}
@@ -3955,7 +3955,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 5;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture;
 		if (p_render_data && p_render_data->shadow_atlas.is_valid()) {
 			texture = RendererRD::LightStorage::get_singleton()->shadow_atlas_get_texture(
@@ -3971,7 +3971,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 6;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		if (p_use_directional_shadow_atlas && RendererRD::LightStorage::get_singleton()
 												  ->directional_shadow_get_texture()
 												  .is_valid()) {
@@ -4017,13 +4017,13 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 
 			textures.write[i] = default_tex;
 		}
-		RD::Uniform u(RD::UNIFORM_TYPE_TEXTURE, 7, textures);
+		RD::Uniform u(RDC::UNIFORM_TYPE_TEXTURE, 7, textures);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 8;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID default_tex = texture_storage->texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 		for (int i = 0; i < MAX_VOXEL_GI_INSTANCESS; i++) {
@@ -4045,7 +4045,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 9;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		RID cb = (p_render_data && p_render_data->cluster_buffer.is_valid())
 					 ? p_render_data->cluster_buffer
 					 : scene_shader.default_vec4_xform_buffer;
@@ -4056,7 +4056,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 10;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		RID sampler;
 		switch (RendererSceneRenderRD::decals_get_filter()) {
 		case RSE::DECAL_FILTER_NEAREST: {
@@ -4094,7 +4094,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 11;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		RID sampler;
 		switch (RendererSceneRenderRD::light_projectors_get_filter()) {
 		case RSE::LIGHT_PROJECTOR_FILTER_NEAREST: {
@@ -4134,7 +4134,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 24;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture;
 		if (rb.is_valid() && rb->has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH)) {
 			texture = rb->get_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH);
@@ -4150,7 +4150,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 25;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID bbt = rb_data.is_valid() ? rb->get_back_buffer_texture() : RID();
 		RID texture =
 			bbt.is_valid()
@@ -4165,7 +4165,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 26;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture =
 			rb_data.is_valid() && rb_data->has_normal_roughness()
 				? rb_data->get_normal_roughness()
@@ -4179,7 +4179,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 27;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID aot = rb.is_valid() && rb->has_texture(RB_SCOPE_SSAO, RB_FINAL)
 					  ? rb->get_texture(RB_SCOPE_SSAO, RB_FINAL)
 					  : RID();
@@ -4196,7 +4196,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 28;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture =
 			rb_data.is_valid() && rb->has_texture(RB_SCOPE_GI, RB_TEX_AMBIENT)
 				? rb->get_texture(RB_SCOPE_GI, RB_TEX_AMBIENT)
@@ -4210,7 +4210,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 29;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture =
 			rb_data.is_valid() && rb->has_texture(RB_SCOPE_GI, RB_TEX_REFLECTION)
 				? rb->get_texture(RB_SCOPE_GI, RB_TEX_REFLECTION)
@@ -4223,7 +4223,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 30;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID t;
 		if (rb.is_valid() && rb->has_custom_data(RB_SCOPE_SDFGI)) {
 			Ref<RendererRD::GI::SDFGI> sdfgi = rb->get_custom_data(RB_SCOPE_SDFGI);
@@ -4239,7 +4239,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 31;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID t;
 		if (rb.is_valid() && rb->has_custom_data(RB_SCOPE_SDFGI)) {
 			Ref<RendererRD::GI::SDFGI> sdfgi = rb->get_custom_data(RB_SCOPE_SDFGI);
@@ -4255,7 +4255,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 32;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		RID voxel_gi;
 		if (rb.is_valid() && rb->has_custom_data(RB_SCOPE_GI)) {
 			Ref<RendererRD::GI::RenderBuffersGI> rbgi = rb->get_custom_data(RB_SCOPE_GI);
@@ -4267,7 +4267,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 33;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID vfog;
 		if (rb_data.is_valid() && rb->has_custom_data(RB_SCOPE_FOG)) {
 			Ref<RendererRD::Fog::VolumetricFog> fog = rb->get_custom_data(RB_SCOPE_FOG);
@@ -4287,7 +4287,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 34;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID ssil = rb.is_valid() && rb->has_texture(RB_SCOPE_SSIL, RB_FINAL)
 					   ? rb->get_texture(RB_SCOPE_SSIL, RB_FINAL)
 					   : RID();
@@ -4303,7 +4303,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 35;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 
 		RID ssr;
 		if (rb_data.is_valid()) {
@@ -4331,7 +4331,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 	{
 		RD::Uniform u;
 		u.binding = 36;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 
 		RID ssr_mip_level = (rb_data.is_valid() && !rb_data->ss_effects_data.ssr.half_size &&
 								rb->has_texture(RB_SCOPE_SSR, RB_MIP_LEVEL))
@@ -4362,21 +4362,21 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 	{
 		RD::Uniform u;
 		u.binding = 0;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		u.append_id(scene_state.uniform_buffers[p_uniform_buffer_index]);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 1;
-		u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 		u.append_id(scene_state.implementation_uniform_buffers[p_uniform_buffer_index]);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
 		u.binding = 2;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC;
 		if (scene_state.instance_buffer[RENDER_LIST_SECONDARY].get_size(0u) == 0u) {
 			// Any buffer will do since it's not used, so just create one.
 			// We can't use scene_shader.default_vec4_xform_buffer because it's not dynamic.
@@ -4396,7 +4396,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 				: RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
 		RD::Uniform u;
 		u.binding = 3;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.append_id(radiance_texture);
 		uniforms.push_back(u);
 	}
@@ -4407,7 +4407,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK);
 		RD::Uniform u;
 		u.binding = 4;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.append_id(ref_texture);
 		uniforms.push_back(u);
 	}
@@ -4416,7 +4416,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 		// No shadow atlas.
 		RD::Uniform u;
 		u.binding = 5;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture = texture_storage->texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
 		u.append_id(texture);
@@ -4427,7 +4427,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 		// No directional shadow atlas.
 		RD::Uniform u;
 		u.binding = 6;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		RID texture = texture_storage->texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
 		u.append_id(texture);
@@ -4438,7 +4438,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 		// No Lightmaps
 		RD::Uniform u;
 		u.binding = 7;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 
 		RID default_tex = texture_storage->texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
@@ -4453,7 +4453,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 		// No VoxelGIs
 		RD::Uniform u;
 		u.binding = 8;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 
 		RID default_tex = texture_storage->texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
@@ -4467,7 +4467,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 	{
 		RD::Uniform u;
 		u.binding = 9;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		RID cb = scene_shader.default_vec4_xform_buffer;
 		u.append_id(cb);
 		uniforms.push_back(u);
@@ -4476,7 +4476,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 	{
 		RD::Uniform u;
 		u.binding = 10;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		RID sampler;
 		switch (RendererSceneRenderRD::decals_get_filter()) {
 		case RSE::DECAL_FILTER_NEAREST: {
@@ -4514,7 +4514,7 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 	{
 		RD::Uniform u;
 		u.binding = 11;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		RID sampler;
 		switch (RendererSceneRenderRD::light_projectors_get_filter()) {
 		case RSE::LIGHT_PROJECTOR_FILTER_NEAREST: {
@@ -4555,28 +4555,28 @@ RID RenderForwardClustered::_setup_sdfgi_render_pass_uniform_set(RID p_albedo_te
 
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 24;
 		u.append_id(p_albedo_texture);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 25;
 		u.append_id(p_emission_texture);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 26;
 		u.append_id(p_emission_aniso_texture);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 27;
 		u.append_id(p_geom_facing_texture);
 		uniforms.push_back(u);
@@ -5249,10 +5249,10 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 }
 
 static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(
-	RD::DataFormat p_color_format, bool p_can_be_storage, RD::TextureSamples p_samples,
+	RDC::DataFormat p_color_format, bool p_can_be_storage, RDC::TextureSamples p_samples,
 	bool p_specular, bool p_velocity, uint32_t p_view_count)
 {
-	const bool multisampling = p_samples > RD::TEXTURE_SAMPLES_1;
+	const bool multisampling = p_samples > RDC::TEXTURE_SAMPLES_1;
 	RD::AttachmentFormat attachment;
 	attachment.samples = p_samples;
 
@@ -5305,7 +5305,7 @@ static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(
 	for (int64_t i = 0; i < attachments.size() - 1; i++) {
 		color_attachments[i] =
 			(attachments[i].usage_flags == RD::AttachmentFormat::UNUSED_ATTACHMENT)
-				? RD::ATTACHMENT_UNUSED
+				? RDC::ATTACHMENT_UNUSED
 				: i;
 	}
 
@@ -5334,9 +5334,9 @@ static RD::FramebufferFormatID _get_reflection_probe_color_framebuffer_format_fo
 }
 
 static RD::FramebufferFormatID _get_depth_framebuffer_format_for_pipeline(
-	bool p_can_be_storage, RD::TextureSamples p_samples, bool p_normal_roughness, bool p_voxelgi)
+	bool p_can_be_storage, RDC::TextureSamples p_samples, bool p_normal_roughness, bool p_voxelgi)
 {
-	const bool multisampling = p_samples > RD::TEXTURE_SAMPLES_1;
+	const bool multisampling = p_samples > RDC::TEXTURE_SAMPLES_1;
 	RD::AttachmentFormat attachment;
 	attachment.samples = p_samples;
 
@@ -5374,7 +5374,7 @@ static RD::FramebufferFormatID _get_depth_framebuffer_format_for_pipeline(
 	for (int64_t i = 1; i < attachments.size(); i++) {
 		color_attachments[i - 1] =
 			(attachments[i].usage_flags == RD::AttachmentFormat::UNUSED_ATTACHMENT)
-				? RD::ATTACHMENT_UNUSED
+				? RDC::ATTACHMENT_UNUSED
 				: i;
 	}
 
@@ -5458,12 +5458,12 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 	// Retrieve from the scene shader which groups are currently enabled.
 	const bool multiview_enabled =
 		p_global.use_multiview && scene_shader.is_multiview_shader_group_enabled();
-	const RD::DataFormat buffers_color_format = RendererSceneRenderRD::_render_buffers_get_preferred_color_format();
+	const RDC::DataFormat buffers_color_format = RendererSceneRenderRD::_render_buffers_get_preferred_color_format();
 	const bool buffers_can_be_storage = RendererSceneRenderRD::_render_buffers_can_be_storage();
 
 	// Set the attributes common to all pipelines.
 	SceneShaderForwardClustered::ShaderData::PipelineKey pipeline_key;
-	pipeline_key.cull_mode = RD::POLYGON_CULL_DISABLED;
+	pipeline_key.cull_mode = RDC::POLYGON_CULL_DISABLED;
 	pipeline_key.primitive_type = mesh_storage->mesh_surface_get_primitive(p_surface.mesh_surface);
 	pipeline_key.wireframe = false;
 
@@ -5508,7 +5508,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 				uint32_t view_count = multiview ? 2 : 1;
 				pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(
 					buffers_color_format, buffers_can_be_storage,
-					RD::TextureSamples(p_global.texture_samples), false, false, view_count);
+					RDC::TextureSamples(p_global.texture_samples), false, false, view_count);
 				_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true,
 					p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 
@@ -5541,7 +5541,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 						pipeline_key.framebuffer_format_id =
 							_get_color_framebuffer_format_for_pipeline(buffers_color_format,
 								buffers_can_be_storage,
-								RD::TextureSamples(p_global.texture_samples), separate_specular,
+								RDC::TextureSamples(p_global.texture_samples), separate_specular,
 								motion_vectors, view_count);
 						_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
 							true, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
@@ -5565,7 +5565,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 		pipeline_key.version =
 			SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS;
 		pipeline_key.framebuffer_format_id = _get_depth_framebuffer_format_for_pipeline(
-			buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), true, false);
+			buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples), true, false);
 		_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true,
 			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 	}
@@ -5575,7 +5575,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 		pipeline_key.version = SceneShaderForwardClustered::
 			PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI;
 		pipeline_key.framebuffer_format_id = _get_depth_framebuffer_format_for_pipeline(
-			buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), true, true);
+			buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples), true, true);
 		_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true,
 			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 	}
@@ -5584,7 +5584,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 		// Depth pass with SDFGI support.
 		pipeline_key.version = SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_SDF;
 		pipeline_key.framebuffer_format_id = _get_depth_framebuffer_format_for_pipeline(
-			buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), false, false);
+			buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples), false, false);
 		_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true,
 			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 
@@ -5599,7 +5599,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(
 		mesh_storage->mesh_surface_get_primitive(p_surface.mesh_surface_shadow);
 	pipeline_key.version = SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS;
 	pipeline_key.framebuffer_format_id = _get_depth_framebuffer_format_for_pipeline(
-		buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), false, false);
+		buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples), false, false);
 	_mesh_compile_pipeline_for_surface(p_surface.shader_shadow, p_surface.mesh_surface_shadow, true,
 		p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 

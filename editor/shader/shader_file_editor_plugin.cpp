@@ -39,10 +39,8 @@
 #include "servers/rendering/rendering_device_binds.h"
 #include "shader_file_editor_plugin.h"
 
-/*** SHADER SCRIPT EDITOR ****/
-
 void ShaderFileEditor::_update_version(
-	const StringName& p_version_txt, const RD::ShaderStage p_stage)
+	const StringName& p_version_txt, const RDC::ShaderStage p_stage)
 {
 }
 

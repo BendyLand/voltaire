@@ -44,14 +44,14 @@ protected:
 		RID shader;
 		RD::FramebufferFormatID framebuffer_format;
 		RD::VertexFormatID vertex_format;
-		RD::RenderPrimitive render_primitive;
-		RD::PipelineRasterizationState rasterization_state;
-		RD::PipelineMultisampleState multisample_state;
-		RD::PipelineDepthStencilState depth_stencil_state;
-		RD::PipelineColorBlendState blend_state;
+		RDC::RenderPrimitive render_primitive;
+		RDC::PipelineRasterizationState rasterization_state;
+		RDC::PipelineMultisampleState multisample_state;
+		RDC::PipelineDepthStencilState depth_stencil_state;
+		RDC::PipelineColorBlendState blend_state;
 		uint32_t dynamic_state_flags;
 		uint32_t for_render_pass;
-		Vector<RD::PipelineSpecializationConstant> specialization_constants;
+		Vector<RDC::PipelineSpecializationConstant> specialization_constants;
 		bool is_compute;
 	};
 
@@ -89,11 +89,11 @@ public:
 	}
 
 	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format,
-		RD::VertexFormatID p_vertex_format, RD::RenderPrimitive p_render_primitive,
-		const RD::PipelineRasterizationState& p_rasterization_state,
-		const RD::PipelineMultisampleState& p_multisample_state,
-		const RD::PipelineDepthStencilState& p_depth_stencil_state,
-		const RD::PipelineColorBlendState& p_blend_state, uint32_t())
+		RD::VertexFormatID p_vertex_format, RDC::RenderPrimitive p_render_primitive,
+		const RDC::PipelineRasterizationState& p_rasterization_state,
+		const RDC::PipelineMultisampleState& p_multisample_state,
+		const RDC::PipelineDepthStencilState& p_depth_stencil_state,
+		const RDC::PipelineColorBlendState& p_blend_state, uint32_t())
 	{
 		CreationParameters c;
 		c.shader = p_shader;
@@ -109,8 +109,8 @@ public:
 	}
 
 	void create_compute_pipeline(
-		RID p_shader, const Vector<RD::PipelineSpecializationConstant>& p_specialization_constants =
-						  Vector<RD::PipelineSpecializationConstant>())
+		RID p_shader, const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants =
+						  Vector<RDC::PipelineSpecializationConstant>())
 	{
 		CreationParameters c = {};
 		c.shader = p_shader;

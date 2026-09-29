@@ -58,27 +58,27 @@ class RDTextureFormat : public RefCounted
 	friend class RenderingDevice;
 	friend class RenderSceneBuffersRD;
 
-	RD::TextureFormat base;
+	RDC::TextureFormat base;
 
 public:
-	RD_SETGET(RD::DataFormat, format)
+	RD_SETGET(RDC::DataFormat, format)
 	RD_SETGET(uint32_t, width)
 	RD_SETGET(uint32_t, height)
 	RD_SETGET(uint32_t, depth)
 	RD_SETGET(uint32_t, array_layers)
 	RD_SETGET(uint32_t, mipmaps)
-	RD_SETGET(RD::TextureType, texture_type)
-	RD_SETGET(RD::TextureSamples, samples)
+	RD_SETGET(RDC::TextureType, texture_type)
+	RD_SETGET(RDC::TextureSamples, samples)
 	RD_SETGET(uint32_t, usage_bits)
 	RD_SETGET(bool, is_resolve_buffer)
 	RD_SETGET(bool, is_discardable)
 
-	void add_shareable_format(RD::DataFormat p_format)
+	void add_shareable_format(RDC::DataFormat p_format)
 	{
 		base.shareable_formats.push_back(p_format);
 	}
 
-	void remove_shareable_format(RD::DataFormat p_format)
+	void remove_shareable_format(RDC::DataFormat p_format)
 	{
 		base.shareable_formats.erase(p_format);
 	}
@@ -94,11 +94,11 @@ class RDTextureView : public RefCounted
 	RD::TextureView base;
 
 public:
-	RD_SETGET(RD::DataFormat, format_override)
-	RD_SETGET(RD::TextureSwizzle, swizzle_r)
-	RD_SETGET(RD::TextureSwizzle, swizzle_g)
-	RD_SETGET(RD::TextureSwizzle, swizzle_b)
-	RD_SETGET(RD::TextureSwizzle, swizzle_a)
+	RD_SETGET(RDC::DataFormat, format_override)
+	RD_SETGET(RDC::TextureSwizzle, swizzle_r)
+	RD_SETGET(RDC::TextureSwizzle, swizzle_g)
+	RD_SETGET(RDC::TextureSwizzle, swizzle_b)
+	RD_SETGET(RDC::TextureSwizzle, swizzle_a)
 protected:
 };
 
@@ -109,8 +109,8 @@ class RDAttachmentFormat : public RefCounted
 	RD::AttachmentFormat base;
 
 public:
-	RD_SETGET(RD::DataFormat, format)
-	RD_SETGET(RD::TextureSamples, samples)
+	RD_SETGET(RDC::DataFormat, format)
+	RD_SETGET(RDC::TextureSamples, samples)
 	RD_SETGET(uint32_t, usage_flags)
 protected:
 };
@@ -140,23 +140,23 @@ class RDSamplerState : public RefCounted
 {
 	friend class RenderingDevice;
 
-	RD::SamplerState base;
+	RDC::SamplerState base;
 
 public:
-	RD_SETGET(RD::SamplerFilter, mag_filter)
-	RD_SETGET(RD::SamplerFilter, min_filter)
-	RD_SETGET(RD::SamplerFilter, mip_filter)
-	RD_SETGET(RD::SamplerRepeatMode, repeat_u)
-	RD_SETGET(RD::SamplerRepeatMode, repeat_v)
-	RD_SETGET(RD::SamplerRepeatMode, repeat_w)
+	RD_SETGET(RDC::SamplerFilter, mag_filter)
+	RD_SETGET(RDC::SamplerFilter, min_filter)
+	RD_SETGET(RDC::SamplerFilter, mip_filter)
+	RD_SETGET(RDC::SamplerRepeatMode, repeat_u)
+	RD_SETGET(RDC::SamplerRepeatMode, repeat_v)
+	RD_SETGET(RDC::SamplerRepeatMode, repeat_w)
 	RD_SETGET(float, lod_bias)
 	RD_SETGET(bool, use_anisotropy)
 	RD_SETGET(float, anisotropy_max)
 	RD_SETGET(bool, enable_compare)
-	RD_SETGET(RD::CompareOperator, compare_op)
+	RD_SETGET(RDC::CompareOperator, compare_op)
 	RD_SETGET(float, min_lod)
 	RD_SETGET(float, max_lod)
-	RD_SETGET(RD::SamplerBorderColor, border_color)
+	RD_SETGET(RDC::SamplerBorderColor, border_color)
 	RD_SETGET(bool, unnormalized_uvw)
 
 protected:
@@ -165,69 +165,69 @@ protected:
 class RDVertexAttribute : public RefCounted
 {
 	friend class RenderingDevice;
-	RD::VertexAttribute base;
+	RDC::VertexAttribute base;
 
 public:
 	RD_SETGET(uint32_t, binding)
 	RD_SETGET(uint32_t, location)
 	RD_SETGET(uint32_t, offset)
-	RD_SETGET(RD::DataFormat, format)
+	RD_SETGET(RDC::DataFormat, format)
 	RD_SETGET(uint32_t, stride)
-	RD_SETGET(RD::VertexFrequency, frequency)
+	RD_SETGET(RDC::VertexFrequency, frequency)
 
 protected:
 };
 
 class RDShaderSource : public RefCounted
 {
-	String source[RD::SHADER_STAGE_MAX];
-	RD::ShaderLanguage language = RD::SHADER_LANGUAGE_GLSL;
+	String source[RDC::SHADER_STAGE_MAX];
+	RDC::ShaderLanguage language = RDC::SHADER_LANGUAGE_GLSL;
 
 public:
-	void set_stage_source(RD::ShaderStage p_stage, const String& p_source)
+	void set_stage_source(RDC::ShaderStage p_stage, const String& p_source)
 	{
-		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
+		ERR_FAIL_INDEX(p_stage, RDC::SHADER_STAGE_MAX);
 		source[p_stage] = p_source;
 	}
 
-	String get_stage_source(RD::ShaderStage p_stage) const
+	String get_stage_source(RDC::ShaderStage p_stage) const
 	{
-		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, String());
+		ERR_FAIL_INDEX_V(p_stage, RDC::SHADER_STAGE_MAX, String());
 		return source[p_stage];
 	}
 
-	void set_language(RD::ShaderLanguage p_language) { language = p_language; }
+	void set_language(RDC::ShaderLanguage p_language) { language = p_language; }
 
-	RD::ShaderLanguage get_language() const { return language; }
+	RDC::ShaderLanguage get_language() const { return language; }
 
 protected:
 };
 
 class RDShaderSPIRV : public Resource
 {
-	Vector<uint8_t> bytecode[RD::SHADER_STAGE_MAX];
-	String compile_error[RD::SHADER_STAGE_MAX];
+	Vector<uint8_t> bytecode[RDC::SHADER_STAGE_MAX];
+	String compile_error[RDC::SHADER_STAGE_MAX];
 
 public:
-	void set_stage_bytecode(RD::ShaderStage p_stage, const Vector<uint8_t>& p_bytecode)
+	void set_stage_bytecode(RDC::ShaderStage p_stage, const Vector<uint8_t>& p_bytecode)
 	{
-		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
+		ERR_FAIL_INDEX(p_stage, RDC::SHADER_STAGE_MAX);
 		bytecode[p_stage] = p_bytecode;
 	}
 
-	Vector<uint8_t> get_stage_bytecode(RD::ShaderStage p_stage) const
+	Vector<uint8_t> get_stage_bytecode(RDC::ShaderStage p_stage) const
 	{
-		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, Vector<uint8_t>());
+		ERR_FAIL_INDEX_V(p_stage, RDC::SHADER_STAGE_MAX, Vector<uint8_t>());
 		return bytecode[p_stage];
 	}
 
-	Vector<RD::ShaderStageSPIRVData> get_stages() const
+	Vector<RDC::ShaderStageSPIRVData> get_stages() const
 	{
-		Vector<RD::ShaderStageSPIRVData> stages;
-		for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
+		Vector<RDC::ShaderStageSPIRVData> stages;
+		for (int i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
 			if (bytecode[i].size()) {
-				RD::ShaderStageSPIRVData stage;
-				stage.shader_stage = RD::ShaderStage(i);
+				RDC::ShaderStageSPIRVData stage;
+				stage.shader_stage = RDC::ShaderStage(i);
 				stage.spirv = bytecode[i];
 				stages.push_back(stage);
 			}
@@ -235,15 +235,15 @@ public:
 		return stages;
 	}
 
-	void set_stage_compile_error(RD::ShaderStage p_stage, const String& p_compile_error)
+	void set_stage_compile_error(RDC::ShaderStage p_stage, const String& p_compile_error)
 	{
-		ERR_FAIL_INDEX(p_stage, RD::SHADER_STAGE_MAX);
+		ERR_FAIL_INDEX(p_stage, RDC::SHADER_STAGE_MAX);
 		compile_error[p_stage] = p_compile_error;
 	}
 
-	String get_stage_compile_error(RD::ShaderStage p_stage) const
+	String get_stage_compile_error(RDC::ShaderStage p_stage) const
 	{
-		ERR_FAIL_INDEX_V(p_stage, RD::SHADER_STAGE_MAX, String());
+		ERR_FAIL_INDEX_V(p_stage, RDC::SHADER_STAGE_MAX, String());
 		return compile_error[p_stage];
 	}
 
@@ -270,10 +270,10 @@ public:
 		return versions[p_version];
 	}
 
-	Vector<RD::ShaderStageSPIRVData> get_spirv_stages(
+	Vector<RDC::ShaderStageSPIRVData> get_spirv_stages(
 		const StringName& p_version = StringName()) const
 	{
-		ERR_FAIL_COND_V(!versions.has(p_version), Vector<RD::ShaderStageSPIRVData>());
+		ERR_FAIL_COND_V(!versions.has(p_version), Vector<RDC::ShaderStageSPIRVData>());
 		return versions[p_version]->get_stages();
 	}
 
@@ -292,10 +292,10 @@ public:
 		}
 		else {
 			for (KeyValue<StringName, Ref<RDShaderSPIRV>>& E : versions) {
-				for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
-					String error = E.value->get_stage_compile_error(RD::ShaderStage(i));
+				for (int i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
+					String error = E.value->get_stage_compile_error(RDC::ShaderStage(i));
 					if (!error.is_empty()) {
-						static const char* stage_str[RD::SHADER_STAGE_MAX] = {"vertex", "fragment",
+						static const char* stage_str[RDC::SHADER_STAGE_MAX] = {"vertex", "fragment",
 							"tesselation_control", "tesselation_evaluation", "compute"};
 
 						print_error("Error parsing shader '" + p_file + "', version '" +
@@ -318,7 +318,7 @@ class RDUniform : public RefCounted
 	RD::Uniform base;
 
 public:
-	RD_SETGET(RD::UniformType, uniform_type)
+	RD_SETGET(RDC::UniformType, uniform_type)
 	RD_SETGET(int32_t, binding)
 
 	void add_id(const RID& p_id) { base.append_id(p_id); }
@@ -342,14 +342,14 @@ class RDPipelineRasterizationState : public RefCounted
 {
 	friend class RenderingDevice;
 
-	RD::PipelineRasterizationState base;
+	RDC::PipelineRasterizationState base;
 
 public:
 	RD_SETGET(bool, enable_depth_clamp)
 	RD_SETGET(bool, discard_primitives)
 	RD_SETGET(bool, wireframe)
-	RD_SETGET(RD::PolygonCullMode, cull_mode)
-	RD_SETGET(RD::PolygonFrontFace, front_face)
+	RD_SETGET(RDC::PolygonCullMode, cull_mode)
+	RD_SETGET(RDC::PolygonFrontFace, front_face)
 	RD_SETGET(bool, depth_bias_enabled)
 	RD_SETGET(float, depth_bias_constant_factor)
 	RD_SETGET(float, depth_bias_clamp)
@@ -362,10 +362,10 @@ class RDPipelineMultisampleState : public RefCounted
 {
 	friend class RenderingDevice;
 
-	RD::PipelineMultisampleState base;
+	RDC::PipelineMultisampleState base;
 
 public:
-	RD_SETGET(RD::TextureSamples, sample_count)
+	RD_SETGET(RDC::TextureSamples, sample_count)
 	RD_SETGET(bool, enable_sample_shading)
 	RD_SETGET(float, min_sample_shading)
 	RD_SETGET(bool, enable_alpha_to_coverage)
@@ -378,29 +378,29 @@ class RDPipelineDepthStencilState : public RefCounted
 {
 	friend class RenderingDevice;
 
-	RD::PipelineDepthStencilState base;
+	RDC::PipelineDepthStencilState base;
 
 public:
 	RD_SETGET(bool, enable_depth_test)
 	RD_SETGET(bool, enable_depth_write)
-	RD_SETGET(RD::CompareOperator, depth_compare_operator)
+	RD_SETGET(RDC::CompareOperator, depth_compare_operator)
 	RD_SETGET(bool, enable_depth_range)
 	RD_SETGET(float, depth_range_min)
 	RD_SETGET(float, depth_range_max)
 	RD_SETGET(bool, enable_stencil)
 
-	RD_SETGET_SUB(RD::StencilOperation, front_op, fail)
-	RD_SETGET_SUB(RD::StencilOperation, front_op, pass)
-	RD_SETGET_SUB(RD::StencilOperation, front_op, depth_fail)
-	RD_SETGET_SUB(RD::CompareOperator, front_op, compare)
+	RD_SETGET_SUB(RDC::StencilOperation, front_op, fail)
+	RD_SETGET_SUB(RDC::StencilOperation, front_op, pass)
+	RD_SETGET_SUB(RDC::StencilOperation, front_op, depth_fail)
+	RD_SETGET_SUB(RDC::CompareOperator, front_op, compare)
 	RD_SETGET_SUB(uint32_t, front_op, compare_mask)
 	RD_SETGET_SUB(uint32_t, front_op, write_mask)
 	RD_SETGET_SUB(uint32_t, front_op, reference)
 
-	RD_SETGET_SUB(RD::StencilOperation, back_op, fail)
-	RD_SETGET_SUB(RD::StencilOperation, back_op, pass)
-	RD_SETGET_SUB(RD::StencilOperation, back_op, depth_fail)
-	RD_SETGET_SUB(RD::CompareOperator, back_op, compare)
+	RD_SETGET_SUB(RDC::StencilOperation, back_op, fail)
+	RD_SETGET_SUB(RDC::StencilOperation, back_op, pass)
+	RD_SETGET_SUB(RDC::StencilOperation, back_op, depth_fail)
+	RD_SETGET_SUB(RDC::CompareOperator, back_op, compare)
 	RD_SETGET_SUB(uint32_t, back_op, compare_mask)
 	RD_SETGET_SUB(uint32_t, back_op, write_mask)
 	RD_SETGET_SUB(uint32_t, back_op, reference)
@@ -411,16 +411,16 @@ protected:
 class RDPipelineColorBlendStateAttachment : public RefCounted
 {
 	friend class RenderingDevice;
-	RD::PipelineColorBlendState::Attachment base;
+	RDC::PipelineColorBlendState::Attachment base;
 
 public:
 	RD_SETGET(bool, enable_blend)
-	RD_SETGET(RD::BlendFactor, src_color_blend_factor)
-	RD_SETGET(RD::BlendFactor, dst_color_blend_factor)
-	RD_SETGET(RD::BlendOperation, color_blend_op)
-	RD_SETGET(RD::BlendFactor, src_alpha_blend_factor)
-	RD_SETGET(RD::BlendFactor, dst_alpha_blend_factor)
-	RD_SETGET(RD::BlendOperation, alpha_blend_op)
+	RD_SETGET(RDC::BlendFactor, src_color_blend_factor)
+	RD_SETGET(RDC::BlendFactor, dst_color_blend_factor)
+	RD_SETGET(RDC::BlendOperation, color_blend_op)
+	RD_SETGET(RDC::BlendFactor, src_alpha_blend_factor)
+	RD_SETGET(RDC::BlendFactor, dst_alpha_blend_factor)
+	RD_SETGET(RDC::BlendOperation, alpha_blend_op)
 	RD_SETGET(bool, write_r)
 	RD_SETGET(bool, write_g)
 	RD_SETGET(bool, write_b)
@@ -428,12 +428,12 @@ public:
 
 	void set_as_mix()
 	{
-		base = RD::PipelineColorBlendState::Attachment();
+		base = RDC::PipelineColorBlendState::Attachment();
 		base.enable_blend = true;
-		base.src_color_blend_factor = RD::BLEND_FACTOR_SRC_ALPHA;
-		base.dst_color_blend_factor = RD::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		base.src_alpha_blend_factor = RD::BLEND_FACTOR_SRC_ALPHA;
-		base.dst_alpha_blend_factor = RD::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		base.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		base.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		base.src_alpha_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		base.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	}
 
 protected:
@@ -442,11 +442,11 @@ protected:
 class RDPipelineColorBlendState : public RefCounted
 {
 	friend class RenderingDevice;
-	RD::PipelineColorBlendState base;
+	RDC::PipelineColorBlendState base;
 
 public:
 	RD_SETGET(bool, enable_logic_op)
-	RD_SETGET(RD::LogicOperation, logic_op)
+	RD_SETGET(RDC::LogicOperation, logic_op)
 	RD_SETGET(Color, blend_constant)
 
 protected:
@@ -463,7 +463,7 @@ public:
 	RD_SETGET(uint32_t, vertex_offset)
 	RD_SETGET(uint32_t, vertex_stride)
 	RD_SETGET(uint32_t, vertex_count)
-	RD_SETGET(RD::DataFormat, vertex_format)
+	RD_SETGET(RDC::DataFormat, vertex_format)
 	RD_SETGET(RID, index_buffer)
 	RD_SETGET(uint32_t, index_offset)
 	RD_SETGET(uint32_t, index_count)

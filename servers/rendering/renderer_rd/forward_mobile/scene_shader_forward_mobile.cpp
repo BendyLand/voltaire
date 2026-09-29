@@ -89,59 +89,59 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 		"RENDER PASS:", p_pipeline_key.render_pass, "WIREFRAME:", p_pipeline_key.wireframe);
 #endif
 
-	RD::PipelineColorBlendState::Attachment blend_attachment =
+	RDC::PipelineColorBlendState::Attachment blend_attachment =
 		blend_mode_to_blend_attachment(BlendMode(blend_mode));
-	RD::PipelineColorBlendState blend_state_blend;
+	RDC::PipelineColorBlendState blend_state_blend;
 	blend_state_blend.attachments.push_back(blend_attachment);
-	RD::PipelineColorBlendState blend_state_opaque =
-		RD::PipelineColorBlendState::create_disabled(1);
-	RD::PipelineColorBlendState blend_state_opaque_specular =
-		RD::PipelineColorBlendState::create_disabled(2);
-	RD::PipelineColorBlendState blend_state_depth_normal_roughness =
-		RD::PipelineColorBlendState::create_disabled(1);
-	RD::PipelineColorBlendState blend_state_depth_normal_roughness_giprobe =
-		RD::PipelineColorBlendState::create_disabled(2);
+	RDC::PipelineColorBlendState blend_state_opaque =
+		RDC::PipelineColorBlendState::create_disabled(1);
+	RDC::PipelineColorBlendState blend_state_opaque_specular =
+		RDC::PipelineColorBlendState::create_disabled(2);
+	RDC::PipelineColorBlendState blend_state_depth_normal_roughness =
+		RDC::PipelineColorBlendState::create_disabled(1);
+	RDC::PipelineColorBlendState blend_state_depth_normal_roughness_giprobe =
+		RDC::PipelineColorBlendState::create_disabled(2);
 
 	// update pipelines
 
-	RD::PipelineDepthStencilState depth_stencil_state;
+	RDC::PipelineDepthStencilState depth_stencil_state;
 
 	if (depth_test != DEPTH_TEST_DISABLED) {
 		depth_stencil_state.enable_depth_test = true;
 		depth_stencil_state.enable_depth_write = depth_draw != DEPTH_DRAW_DISABLED ? true : false;
-		depth_stencil_state.depth_compare_operator = RD::COMPARE_OP_GREATER_OR_EQUAL;
+		depth_stencil_state.depth_compare_operator = RDC::COMPARE_OP_GREATER_OR_EQUAL;
 
 		if (depth_test == DEPTH_TEST_ENABLED_INVERTED) {
-			depth_stencil_state.depth_compare_operator = RD::COMPARE_OP_LESS;
+			depth_stencil_state.depth_compare_operator = RDC::COMPARE_OP_LESS;
 		}
 	}
 
-	RD::RenderPrimitive primitive_rd_table[RSE::PRIMITIVE_MAX] = {
-		RD::RENDER_PRIMITIVE_POINTS,
-		RD::RENDER_PRIMITIVE_LINES,
-		RD::RENDER_PRIMITIVE_LINESTRIPS,
-		RD::RENDER_PRIMITIVE_TRIANGLES,
-		RD::RENDER_PRIMITIVE_TRIANGLE_STRIPS,
+	RDC::RenderPrimitive primitive_rd_table[RSE::PRIMITIVE_MAX] = {
+		RDC::RENDER_PRIMITIVE_POINTS,
+		RDC::RENDER_PRIMITIVE_LINES,
+		RDC::RENDER_PRIMITIVE_LINESTRIPS,
+		RDC::RENDER_PRIMITIVE_TRIANGLES,
+		RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS,
 	};
 
 	depth_stencil_state.enable_stencil = stencil_enabled;
 	if (stencil_enabled) {
-		static const RD::CompareOperator stencil_compare_rd_table[STENCIL_COMPARE_MAX] = {
-			RD::COMPARE_OP_LESS,
-			RD::COMPARE_OP_EQUAL,
-			RD::COMPARE_OP_LESS_OR_EQUAL,
-			RD::COMPARE_OP_GREATER,
-			RD::COMPARE_OP_NOT_EQUAL,
-			RD::COMPARE_OP_GREATER_OR_EQUAL,
-			RD::COMPARE_OP_ALWAYS,
+		static const RDC::CompareOperator stencil_compare_rd_table[STENCIL_COMPARE_MAX] = {
+			RDC::COMPARE_OP_LESS,
+			RDC::COMPARE_OP_EQUAL,
+			RDC::COMPARE_OP_LESS_OR_EQUAL,
+			RDC::COMPARE_OP_GREATER,
+			RDC::COMPARE_OP_NOT_EQUAL,
+			RDC::COMPARE_OP_GREATER_OR_EQUAL,
+			RDC::COMPARE_OP_ALWAYS,
 		};
 
 		uint32_t stencil_mask = 255;
 
-		RD::PipelineDepthStencilState::StencilOperationState op;
-		op.fail = RD::STENCIL_OP_KEEP;
-		op.pass = RD::STENCIL_OP_KEEP;
-		op.depth_fail = RD::STENCIL_OP_KEEP;
+		RDC::PipelineDepthStencilState::StencilOperationState op;
+		op.fail = RDC::STENCIL_OP_KEEP;
+		op.pass = RDC::STENCIL_OP_KEEP;
+		op.depth_fail = RDC::STENCIL_OP_KEEP;
 		op.compare = stencil_compare_rd_table[stencil_compare];
 		op.compare_mask = 0;
 		op.write_mask = 0;
@@ -152,12 +152,12 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 		}
 
 		if (stencil_flags & STENCIL_FLAG_WRITE) {
-			op.pass = RD::STENCIL_OP_REPLACE;
+			op.pass = RDC::STENCIL_OP_REPLACE;
 			op.write_mask = stencil_mask;
 		}
 
 		if (stencil_flags & STENCIL_FLAG_WRITE_DEPTH_FAIL) {
-			op.depth_fail = RD::STENCIL_OP_REPLACE;
+			op.depth_fail = RDC::STENCIL_OP_REPLACE;
 			op.write_mask = stencil_mask;
 		}
 
@@ -168,24 +168,24 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	bool emulate_point_size_flag =
 		uses_point_size && SceneShaderForwardMobile::singleton->emulate_point_size;
 
-	RD::RenderPrimitive primitive_rd;
+	RDC::RenderPrimitive primitive_rd;
 	if (uses_point_size) {
 		primitive_rd =
-			emulate_point_size_flag ? RD::RENDER_PRIMITIVE_TRIANGLES : RD::RENDER_PRIMITIVE_POINTS;
+			emulate_point_size_flag ? RDC::RENDER_PRIMITIVE_TRIANGLES : RDC::RENDER_PRIMITIVE_POINTS;
 	}
 	else {
 		primitive_rd = primitive_rd_table[p_pipeline_key.primitive_type];
 	}
 
-	RD::PipelineRasterizationState raster_state;
+	RDC::PipelineRasterizationState raster_state;
 	raster_state.cull_mode = p_pipeline_key.cull_mode;
 	raster_state.wireframe = wireframe || p_pipeline_key.wireframe;
 
-	RD::PipelineMultisampleState multisample_state;
+	RDC::PipelineMultisampleState multisample_state;
 	multisample_state.sample_count =
 		RD::framebuffer_format_get_texture_samples(p_pipeline_key.framebuffer_format_id, 0);
 
-	RD::PipelineColorBlendState blend_state;
+	RDC::PipelineColorBlendState blend_state;
 	if (uses_alpha || uses_blend_alpha) {
 		// These flags should only go through if we have some form of MSAA.
 		if (alpha_antialiasing_mode == ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE) {
@@ -214,7 +214,7 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 		}
 		else if (p_pipeline_key.version == SHADER_VERSION_DEPTH_PASS_WITH_MATERIAL) {
 			// Writes to normal and roughness in opaque way.
-			blend_state = RD::PipelineColorBlendState::create_disabled(5);
+			blend_state = RDC::PipelineColorBlendState::create_disabled(5);
 		}
 		else {
 			// Do not use this version (error case).
@@ -235,7 +235,7 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 		}
 		else if (p_pipeline_key.version == SHADER_VERSION_DEPTH_PASS_WITH_MATERIAL) {
 			// Writes to normal and roughness in opaque way.
-			blend_state = RD::PipelineColorBlendState::create_disabled(5);
+			blend_state = RDC::PipelineColorBlendState::create_disabled(5);
 		}
 		else {
 			// Unknown pipeline version.
@@ -243,28 +243,28 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	}
 
 	// Convert the specialization from the key to pipeline specialization constants.
-	Vector<RD::PipelineSpecializationConstant> specialization_constants;
-	RD::PipelineSpecializationConstant sc;
+	Vector<RDC::PipelineSpecializationConstant> specialization_constants;
+	RDC::PipelineSpecializationConstant sc;
 	sc.constant_id = 0;
 	sc.int_value = p_pipeline_key.shader_specialization.packed_0;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
 	specialization_constants.push_back(sc);
 
 	sc.constant_id = 1;
 	sc.int_value = p_pipeline_key.shader_specialization.packed_1;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
 	specialization_constants.push_back(sc);
 
 	sc.constant_id = 2;
 	sc.float_value = p_pipeline_key.shader_specialization.packed_2;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_FLOAT;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_FLOAT;
 	specialization_constants.push_back(sc);
 
 	sc = {}; // Sanitize value bits. "bool_value" only assigns 8 bits and keeps the remaining bits
 			 // intact.
 	sc.constant_id = 3;
 	sc.bool_value = emulate_point_size_flag;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL;
 	specialization_constants.push_back(sc);
 
 	RID shader_rid = get_shader_variant(p_pipeline_key.version, p_pipeline_key.ubershader);
@@ -285,13 +285,13 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	pipeline_hash_map.add_compiled_pipeline(p_pipeline_key.hash(), pipeline);
 }
 
-RD::PolygonCullMode SceneShaderForwardMobile::ShaderData::get_cull_mode_from_cull_variant(
+RDC::PolygonCullMode SceneShaderForwardMobile::ShaderData::get_cull_mode_from_cull_variant(
 	CullVariant p_cull_variant)
 {
-	const RD::PolygonCullMode cull_mode_rd_table[CULL_VARIANT_MAX][3] = {
-		{RD::POLYGON_CULL_DISABLED, RD::POLYGON_CULL_FRONT, RD::POLYGON_CULL_BACK},
-		{RD::POLYGON_CULL_DISABLED, RD::POLYGON_CULL_BACK, RD::POLYGON_CULL_FRONT},
-		{RD::POLYGON_CULL_DISABLED, RD::POLYGON_CULL_DISABLED, RD::POLYGON_CULL_DISABLED}};
+	const RDC::PolygonCullMode cull_mode_rd_table[CULL_VARIANT_MAX][3] = {
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_FRONT, RDC::POLYGON_CULL_BACK},
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_BACK, RDC::POLYGON_CULL_FRONT},
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_DISABLED}};
 
 	return cull_mode_rd_table[p_cull_variant][cull_mode];
 }

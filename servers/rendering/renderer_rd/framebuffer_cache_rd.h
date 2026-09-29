@@ -172,10 +172,10 @@ private:
         RID rid;
         if (p_passes.size()) {
             rid = RD::framebuffer_create_multipass(
-                p_textures, p_passes, RD::INVALID_ID, p_views);
+                p_textures, p_passes, RDC::INVALID_ID, p_views);
         }
         else {
-            rid = RD::framebuffer_create(p_textures, RD::INVALID_ID, p_views);
+            rid = RD::framebuffer_create(p_textures, RDC::INVALID_ID, p_views);
         }
 
         ERR_FAIL_COND_V(rid.is_null(), rid);

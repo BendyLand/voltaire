@@ -53,10 +53,6 @@ class FileAccess;
 // (except in cases where expresivity reasons apply).
 class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 {
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
-
 	struct CommandQueue;
 	struct SwapChain;
 	struct CommandBufferInfo;
@@ -204,7 +200,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 	};
 
 	PipelineStatistics pipeline_statistics;
-	DriverWorkarounds driver_workarounds;
+	RDC::DriverWorkarounds driver_workarounds;
 
 	void _register_requested_device_extension(const CharString& p_extension_name, bool p_required);
 	Error _initialize_device_extensions();
@@ -231,10 +227,6 @@ public:
 	Error initialize(uint32_t p_device_index, uint32_t p_frame_count) override final;
 
 private:
-	/****************/
-	/**** MEMORY ****/
-	/****************/
-
 	VmaAllocator allocator = nullptr;
 	HashMap<uint32_t, VmaPool> small_allocs_pools;
 
@@ -249,9 +241,6 @@ private:
 #endif
 
 public:
-	/*****************/
-	/**** BUFFERS ****/
-	/*****************/
 	struct BufferInfo
 	{
 		VkBuffer vk_buffer = VK_NULL_HANDLE;
@@ -282,7 +271,7 @@ public:
 
 	virtual BufferID buffer_create(uint64_t p_size, uint32_t p_usage,
 		MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) override final;
-	virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) override final;
+	virtual bool buffer_set_texel_format(BufferID p_buffer, RDC::DataFormat p_format) override final;
 	virtual void buffer_free(BufferID p_buffer) override final;
 	virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) override final;
 	virtual uint8_t* buffer_map(BufferID p_buffer) override final;
@@ -293,15 +282,11 @@ public:
 	virtual void buffer_flush(BufferID p_buffer) override final;
 	virtual uint64_t buffer_get_device_address(BufferID p_buffer) override final;
 
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
-
 	struct TextureInfo
 	{
 		VkImage vk_image = VK_NULL_HANDLE;
 		VkImageView vk_view = VK_NULL_HANDLE;
-		DataFormat rd_format = DATA_FORMAT_MAX;
+		RDC::DataFormat rd_format = RDC::DATA_FORMAT_MAX;
 		VkImageCreateInfo vk_create_info = {};
 		VkImageViewCreateInfo vk_view_create_info = {};
 
@@ -318,18 +303,18 @@ public:
 #endif
 	};
 
-	VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
+	VkSampleCountFlagBits _ensure_supported_sample_count(RDC::TextureSamples p_requested_sample_count);
 
 public:
 	virtual TextureID texture_create(
-		const TextureFormat& p_format, const TextureView& p_view) override final;
-	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type,
-		DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil,
+		const RDC::TextureFormat& p_format, const TextureView& p_view) override final;
+	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, RDC::TextureType p_type,
+		RDC::DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil,
 		uint32_t p_mipmaps) override final;
 	virtual TextureID texture_create_shared(
 		TextureID p_original_texture, const TextureView& p_view) override final;
 	virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture,
-		const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer,
+		const TextureView& p_view, RDC::TextureSliceType p_slice_type, uint32_t p_layer,
 		uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) override final;
 	virtual void texture_free(TextureID p_texture) override final;
 	virtual uint64_t texture_get_allocation_size(TextureID p_texture) override final;
@@ -337,22 +322,16 @@ public:
 		const TextureSubresource& p_subresource, TextureCopyableLayout* r_layout) override final;
 	virtual Vector<uint8_t> texture_get_data(TextureID p_texture, uint32_t p_layer) override final;
 	virtual uint32_t texture_get_usages_supported_by_format(
-		DataFormat p_format, bool p_cpu_readable) override final;
+		RDC::DataFormat p_format, bool p_cpu_readable) override final;
 	virtual bool texture_can_make_shared_with_format(
-		TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation) override final;
+		TextureID p_texture, RDC::DataFormat p_format, bool& r_raw_reinterpretation) override final;
 
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
 public:
-	virtual SamplerID sampler_create(const SamplerState& p_state) final override;
+	virtual SamplerID sampler_create(const RDC::SamplerState& p_state) final override;
 	virtual void sampler_free(SamplerID p_sampler) final override;
 	virtual bool sampler_is_format_supported_for_filter(
-		DataFormat p_format, SamplerFilter p_filter) override final;
+		RDC::DataFormat p_format, RDC::SamplerFilter p_filter) override final;
 
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
 private:
 	struct VertexFormatInfo
 	{
@@ -362,23 +341,15 @@ private:
 	};
 
 public:
-	virtual VertexFormatID vertex_format_create(Span<VertexAttribute> p_vertex_attribs,
-		const VertexAttributeBindingsMap& p_vertex_bindings) override final;
+	virtual VertexFormatID vertex_format_create(Span<RDC::VertexAttribute> p_vertex_attribs,
+		const RDC::VertexAttributeBindingsMap& p_vertex_bindings) override final;
 	virtual void vertex_format_free(VertexFormatID p_vertex_format) override final;
-
-	/******************/
-	/**** BARRIERS ****/
-	/******************/
 
 	virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer,
 		uint32_t p_dst_stages,
 		VectorView<MemoryAccessBarrier> p_memory_barriers,
 		VectorView<BufferBarrier> p_buffer_barriers, VectorView<TextureBarrier> p_texture_barriers,
 		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) final;
-
-	/****************/
-	/**** FENCES ****/
-	/****************/
 
 private:
 	struct Fence
@@ -392,24 +363,12 @@ public:
 	virtual Error fence_wait(FenceID p_fence) override final;
 	virtual void fence_free(FenceID p_fence) override final;
 
-	/********************/
-	/**** SEMAPHORES ****/
-	/********************/
-
 	virtual SemaphoreID semaphore_create() override final;
 	virtual void semaphore_free(SemaphoreID p_semaphore) override final;
-
-	/******************/
-	/**** COMMANDS ****/
-	/******************/
-
-	// ----- QUEUE FAMILY -----
 
 	virtual CommandQueueFamilyID command_queue_family_get(
 		uint32_t p_cmd_queue_family_bits,
 		RenderingContextDriver::SurfaceID p_surface = 0) override final;
-
-	// ----- QUEUE -----
 private:
 	struct CommandQueue
 	{
@@ -433,8 +392,6 @@ public:
 	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
 
 private:
-	// ----- POOL -----
-
 	struct CommandPool
 	{
 		VkCommandPool vk_command_pool = VK_NULL_HANDLE;
@@ -449,8 +406,6 @@ public:
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
 
 private:
-	// ----- BUFFER -----
-
 	struct CommandBufferInfo
 	{
 		VkCommandBuffer vk_command_buffer = VK_NULL_HANDLE;
@@ -467,10 +422,6 @@ public:
 	virtual void command_buffer_execute_secondary(CommandBufferID p_cmd_buffer,
 		VectorView<CommandBufferID> p_secondary_cmd_buffers) override final;
 
-	/********************/
-	/**** SWAP CHAIN ****/
-	/********************/
-
 private:
 	struct SwapChain
 	{
@@ -478,7 +429,7 @@ private:
 		RenderingContextDriver::SurfaceID surface = RenderingContextDriver::SurfaceID();
 		VkFormat format = VK_FORMAT_UNDEFINED;
 		VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-		RDD::ColorSpace rdd_color_space = RDD::COLOR_SPACE_REC709_NONLINEAR_SRGB;
+		RDC::ColorSpace rdd_color_space = RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB;
 		TightLocalVector<VkImage> images;
 		TightLocalVector<VkImageView> image_views;
 		TightLocalVector<VkSemaphore> present_semaphores;
@@ -494,7 +445,7 @@ private:
 	};
 
 	bool _determine_swap_chain_format(RenderingContextDriver::SurfaceID p_surface,
-		VkFormat& r_format, VkColorSpaceKHR& r_color_space, RDD::ColorSpace& r_rdd_color_space);
+		VkFormat& r_format, VkColorSpaceKHR& r_color_space, RDC::ColorSpace& r_rdd_color_space);
 	void _swap_chain_release(SwapChain* p_swap_chain);
 
 public:
@@ -506,17 +457,13 @@ public:
 		SwapChainID p_swap_chain, bool& r_resize_required) override final;
 	virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
 	virtual int swap_chain_get_pre_rotation_degrees(SwapChainID p_swap_chain) override final;
-	virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) override final;
-	virtual ColorSpace swap_chain_get_color_space(SwapChainID p_swap_chain) override final;
+	virtual RDC::DataFormat swap_chain_get_format(SwapChainID p_swap_chain) override final;
+	virtual RDC::ColorSpace swap_chain_get_color_space(SwapChainID p_swap_chain) override final;
 	virtual bool swap_chain_get_hdr_output_supported(SwapChainID p_swap_chain) override final;
 	virtual void swap_chain_set_max_fps(SwapChainID p_swap_chain, int p_max_fps) override final;
 	virtual void swap_chain_free(SwapChainID p_swap_chain) override final;
 
 private:
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
-
 	struct Framebuffer
 	{
 		VkFramebuffer vk_framebuffer = VK_NULL_HANDLE;
@@ -536,9 +483,6 @@ public:
 		VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) override final;
 	virtual void framebuffer_free(FramebufferID p_framebuffer) override final;
 
-	/****************/
-	/**** SHADER ****/
-	/****************/
 private:
 	struct ShaderInfo
 	{
@@ -559,9 +503,6 @@ public:
 	virtual void shader_free(ShaderID p_shader) override final;
 
 	virtual void shader_destroy_modules(ShaderID p_shader) override final;
-	/*********************/
-	/**** UNIFORM SET ****/
-	/*********************/
 
 	// Descriptor sets require allocation from a pool.
 	// The documentation on how to use pools properly
@@ -583,7 +524,7 @@ private:
 
 	struct DescriptorSetPoolKey
 	{
-		uint16_t uniform_type[UNIFORM_TYPE_MAX] = {};
+		uint16_t uniform_type[RDC::UNIFORM_TYPE_MAX] = {};
 
 		bool operator<(const DescriptorSetPoolKey& p_other) const
 		{
@@ -775,7 +716,7 @@ public:
 		uint32_t p_binding_count, const BufferID* p_buffers, const uint64_t* p_offsets,
 		uint64_t p_dynamic_offsets) override final;
 	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer,
-		IndexBufferFormat p_format, uint64_t p_offset) override final;
+		RDC::IndexBufferFormat p_format, uint64_t p_offset) override final;
 
 	// Dynamic state.
 	virtual void command_render_set_blend_constants(
@@ -786,43 +727,25 @@ public:
 	// ----- PIPELINE -----
 
 	virtual PipelineID render_pipeline_create(ShaderID p_shader, VertexFormatID p_vertex_format,
-		RenderPrimitive p_render_primitive, PipelineRasterizationState p_rasterization_state,
-		PipelineMultisampleState p_multisample_state,
-		PipelineDepthStencilState p_depth_stencil_state, PipelineColorBlendState p_blend_state,
+		RDC::RenderPrimitive p_render_primitive, RDC::PipelineRasterizationState p_rasterization_state,
+		RDC::PipelineMultisampleState p_multisample_state,
+		RDC::PipelineDepthStencilState p_depth_stencil_state, RDC::PipelineColorBlendState p_blend_state,
 		VectorView<int32_t> p_color_attachments,
 		uint32_t p_dynamic_state, RenderPassID p_render_pass,
 		uint32_t p_render_subpass,
-		VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) override final;
 
-	/*****************/
-	/**** COMPUTE ****/
-	/*****************/
-
-	// ----- COMMANDS -----
-
-	// Binding.
 	virtual void command_bind_compute_pipeline(
 		CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
 	virtual void command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer,
 		VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index,
 		uint32_t p_set_count, uint32_t p_dynamic_offsets) override final;
-
-	// Dispatching.
 	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups,
 		uint32_t p_y_groups, uint32_t p_z_groups) override final;
 	virtual void command_compute_dispatch_indirect(
 		CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) override final;
-
-	// ----- PIPELINE -----
-
 	virtual PipelineID compute_pipeline_create(ShaderID p_shader,
-		VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
-
-	/********************/
-	/**** RAYTRACING ****/
-	/********************/
-
-	// ----- ACCELERATION STRUCTURE -----
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) override final;
 
 	struct AccelerationStructureInfo
 	{
@@ -928,26 +851,17 @@ public:
 	void on_device_lost() const;
 	static String get_vulkan_result(VkResult err);
 
-	/********************/
-	/**** SUBMISSION ****/
-	/********************/
-
 	virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) override final;
 	virtual void end_segment() override final;
-
-	/**************/
-	/**** MISC ****/
-	/**************/
-
 	virtual void set_object_name(
 		ObjectType p_type, ID p_driver_id, const String& p_name) override final;
 	virtual uint64_t get_resource_native_handle(
-		DriverResource p_type, ID p_driver_id) override final;
+		RDC::DriverResource p_type, ID p_driver_id) override final;
 	virtual uint64_t get_total_memory_used() override final;
 	virtual uint64_t get_lazily_memory_used() override final;
-	virtual uint64_t limit_get(Limit p_limit) override final;
+	virtual uint64_t limit_get(RDC::Limit p_limit) override final;
 	virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
-	virtual bool has_feature(Features p_feature) override final;
+	virtual bool has_feature(RDC::Features p_feature) override final;
 	virtual const MultiviewCapabilities& get_multiview_capabilities() override final;
 	virtual const FragmentShadingRateCapabilities&
 	get_fragment_shading_rate_capabilities() override final;
@@ -962,18 +876,12 @@ public:
 
 	virtual bool is_composite_alpha_supported(CommandQueueID p_queue) const override final;
 
-	virtual DriverWorkarounds get_driver_workarounds() const override final;
+	virtual RDC::DriverWorkarounds get_driver_workarounds() const override final;
 
 private:
-	/*********************/
-	/**** BOOKKEEPING ****/
-	/*********************/
-
 	using VersatileResource = VersatileResourceTemplate<BufferInfo, TextureInfo, VertexFormatInfo,
 		ShaderInfo, UniformSetInfo, RenderPassInfo, CommandBufferInfo>;
 	PagedAllocator<VersatileResource, true> resources_allocator;
-
-	/******************/
 
 public:
 	RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);

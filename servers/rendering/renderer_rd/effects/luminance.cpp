@@ -60,22 +60,22 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 		w = MAX(w / 8, 1);
 		h = MAX(h / 8, 1);
 
-		RD::TextureFormat tf;
-		tf.format = RD::DATA_FORMAT_R32_SFLOAT;
+		RDC::TextureFormat tf;
+		tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 		tf.width = w;
 		tf.height = h;
 
 		bool final = w == 1 && h == 1;
 
 		if (prefer_raster_effects) {
-			tf.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 		}
 		else {
-			tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT;
 		}
 
 		if (final) {
-			tf.usage_bits |= RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+			tf.usage_bits |= RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		}
 
 		RID texture = RD::texture_create(tf, RD::TextureView());
@@ -98,8 +98,7 @@ void Luminance::LuminanceBuffers::free_data()
 
 	if (current.is_valid()) {
 		RD::free_rid(current);
-		current = RID(
-);
+		current = RID();
 	}
 }
 

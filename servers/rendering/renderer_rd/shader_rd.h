@@ -135,7 +135,7 @@ private:
 		LocalVector<Chunk> chunks;
 	};
 
-	RD::PipelineType pipeline_type = RD::PIPELINE_TYPE_RASTERIZATION;
+	RDC::PipelineType pipeline_type = RDC::PIPELINE_TYPE_RASTERIZATION;
 
 	String name;
 
@@ -228,7 +228,7 @@ public:
 	static void set_shader_cache_save_compressed_zstd(bool p_enable);
 	static void set_shader_cache_save_debug(bool p_enable);
 
-	static Vector<RD::ShaderStageSPIRVData> compile_stages(const Vector<String> &p_stage_sources, const Vector<uint64_t> &p_dynamic_buffers);
+	static Vector<RDC::ShaderStageSPIRVData> compile_stages(const Vector<String> &p_stage_sources, const Vector<uint64_t> &p_dynamic_buffers);
 	static PackedByteArray save_shader_cache_bytes(const LocalVector<int> &p_variants, const Vector<Vector<uint8_t>> &p_variant_data);
 
 	Vector<String> version_build_variant_stage_sources(RID p_version, int p_variant);
