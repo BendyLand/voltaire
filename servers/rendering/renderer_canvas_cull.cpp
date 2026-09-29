@@ -351,7 +351,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 				ci->visibility_notifier->just_visible = true;
 			}
 
-			ci->visibility_notifier->visible_in_frame = RSG::rasterizer->get_frame_number();
+			ci->visibility_notifier->visible_in_frame = RendererCompositor::get_frame_number();
 		}
 	}
 	else if (ci->repeat_source) {

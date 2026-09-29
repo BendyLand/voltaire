@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "core/io/image.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -46,55 +47,84 @@ class RendererParticlesStorage;
 class RendererTextureStorage;
 class RendererUtilities;
 
-class Image;
-struct Color;
-
-class RendererCompositor
+class RendererCompositor final
 {
 private:
-	static inline bool xr_enabled;
-
-protected:
-	static RendererCompositor* (*_create_func)();
-	bool back_end = false;
-	static bool low_end;
+	static inline bool xr_enabled = false;
 
 public:
-	static RendererCompositor* create();
+	static inline Error (*_create_func)() = nullptr;
+	static inline bool back_end = false;
+	static inline bool low_end = false;
 
-	virtual RendererFog* get_fog() = 0;
-	virtual RendererGI* get_gi() = 0;
-	virtual RendererLightStorage* get_light_storage() = 0;
-	virtual RendererMaterialStorage* get_material_storage() = 0;
-	virtual RendererMeshStorage* get_mesh_storage() = 0;
-	virtual RendererParticlesStorage* get_particles_storage() = 0;
-	virtual RendererTextureStorage* get_texture_storage() = 0;
-	virtual RendererUtilities* get_utilities() = 0;
-
-	virtual void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
-		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true) = 0;
-
-	virtual void initialize() = 0;
-	virtual void begin_frame(double frame_step) = 0;
-
-	virtual void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
-		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount) = 0;
-
-	bool is_opengl();
-	void gl_end_frame(bool p_swap_buffers);
-	void end_frame(bool p_present);
-	void finalize();
-	uint64_t get_frame_number() const;
-	double get_frame_delta_time() const;
-	double get_total_time() const;
-	bool can_create_resources_async() const;
-
-	static bool is_low_end() { return low_end; }
-
+	static Error create();
 	static bool is_xr_enabled();
 
-	RendererCompositor() = default;
-	virtual ~RendererCompositor() = default;
+	_ALWAYS_INLINE_ static bool is_low_end() { return low_end; }
+
+	/* Static Function Pointer Dispatch Interface */
+
+	static inline RendererUtilities* (*get_utilities)() = nullptr;
+	static inline RendererLightStorage* (*get_light_storage)() = nullptr;
+	static inline RendererMaterialStorage* (*get_material_storage)() = nullptr;
+	static inline RendererMeshStorage* (*get_mesh_storage)() = nullptr;
+	static inline RendererParticlesStorage* (*get_particles_storage)() = nullptr;
+	static inline RendererTextureStorage* (*get_texture_storage)() = nullptr;
+	static inline RendererGI* (*get_gi)() = nullptr;
+	static inline RendererFog* (*get_fog)() = nullptr;
+	static inline RendererCanvasRender* (*get_canvas)() = nullptr;
+
+	static inline void (*set_boot_image_with_stretch)(
+		const Ref<Image>&, const Color&, RSE::SplashStretchMode, bool) = nullptr;
+	static inline void (*initialize)() = nullptr;
+	static inline bool (*is_initialized)() = nullptr;
+	static inline void (*begin_frame)(double) = nullptr;
+	static inline void (*blit_render_targets_to_screen)(
+		DisplayServerEnums::WindowID, const RenderingServerTypes::BlitToScreen*, int) = nullptr;
+
+	static inline bool (*is_opengl)() = nullptr;
+	static inline void (*gl_end_frame)(bool) = nullptr;
+	static inline void (*end_frame)(bool) = nullptr;
+	static inline void (*finalize)() = nullptr;
+
+	static inline uint64_t (*get_frame_number)() = nullptr;
+	static inline double (*get_frame_delta_time)() = nullptr;
+	static inline double (*get_total_time)() = nullptr;
+	static inline bool (*can_create_resources_async)() = nullptr;
+
+	template <typename Backend> static void bind_compositor()
+	{
+		get_utilities = &Backend::get_utilities;
+		get_light_storage = &Backend::get_light_storage;
+		get_material_storage = &Backend::get_material_storage;
+		get_mesh_storage = &Backend::get_mesh_storage;
+		get_particles_storage = &Backend::get_particles_storage;
+		get_texture_storage = &Backend::get_texture_storage;
+		get_gi = &Backend::get_gi;
+		get_fog = &Backend::get_fog;
+		get_canvas = &Backend::get_canvas;
+
+		set_boot_image_with_stretch = &Backend::set_boot_image_with_stretch;
+		initialize = &Backend::initialize;
+		begin_frame = &Backend::begin_frame;
+		blit_render_targets_to_screen = &Backend::blit_render_targets_to_screen;
+
+		is_opengl = &Backend::is_opengl;
+		gl_end_frame = &Backend::gl_end_frame;
+		end_frame = &Backend::end_frame;
+		finalize = &Backend::finalize;
+
+		get_frame_number = &Backend::get_frame_number;
+		get_frame_delta_time = &Backend::get_frame_delta_time;
+		get_total_time = &Backend::get_total_time;
+		can_create_resources_async = &Backend::can_create_resources_async;
+	}
+
+	RendererCompositor() = delete;
+	RendererCompositor(const RendererCompositor&) = delete;
+	~RendererCompositor() = delete;
 };
+
+using RC = RendererCompositor;
 
 

@@ -90,7 +90,7 @@ void RenderForwardMobile::ForwardIDStorageMobile::map_forward_id(RendererRD::For
 void RenderForwardMobile::fill_push_constant_instance_indices(
 	SceneState::InstanceData* p_instance_data, const GeometryInstanceForwardMobile* p_instance)
 {
-	uint64_t current_frame = RSG::rasterizer->get_frame_number();
+	uint64_t current_frame = RendererCompositor::get_frame_number();
 
 	p_instance_data->omni_lights[0] = 0xFFFFFFFF;
 	p_instance_data->omni_lights[1] = 0xFFFFFFFF;
@@ -1580,7 +1580,7 @@ void RenderForwardMobile::_fill_instance_data(
 
 	rl->element_info.resize(p_offset + element_total);
 
-	uint64_t frame = RSG::rasterizer->get_frame_number();
+	uint64_t frame = RendererCompositor::get_frame_number();
 
 	scene_state.grow_instance_buffer(p_render_list, p_offset + element_total, p_offset != 0u);
 	if (!scene_state.curr_gpu_ptr[p_render_list] && element_total > 0u) {
@@ -1968,7 +1968,7 @@ void RendererSceneRenderImplementation::RenderForwardMobile::GeometryInstanceFor
 	set_transform(
 		const Transform3D& p_transform, const AABB& p_aabb, const AABB& p_transformed_aabb)
 {
-	uint64_t frame = RSG::rasterizer->get_frame_number();
+	uint64_t frame = RendererCompositor::get_frame_number();
 	if (frame != prev_transform_change_frame) {
 		prev_transform = transform;
 		prev_transform_change_frame = frame;

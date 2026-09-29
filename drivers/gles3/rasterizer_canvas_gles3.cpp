@@ -42,10 +42,10 @@
 #include "drivers/gles3/storage/particles_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
+#include "servers/rendering/renderer_canvas_cull.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/renderer_canvas_cull.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
 	const Transform2D& p_transform, float* p_mat4)
@@ -136,7 +136,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			// If older than 2 frames, wait for sync OpenGL can have up to 3 frames in flight, any
 			// more and we need to sync anyway.
 			if (state.canvas_instance_data_buffers[state.current_data_buffer_index]
-					.last_frame_used < RSG::rasterizer->get_frame_number() - 2) {
+					.last_frame_used < RendererCompositor::get_frame_number() - 2) {
 #ifndef WEB_ENABLED
 				// On web, we do nothing as the glSubBufferData will force a sync anyway and WebGL
 				// does not like waiting.
@@ -145,7 +145,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 					100000000); // wait for up to 100ms
 #endif
 				state.canvas_instance_data_buffers[state.current_data_buffer_index]
-					.last_frame_used = RSG::rasterizer->get_frame_number();
+					.last_frame_used = RendererCompositor::get_frame_number();
 				glDeleteSync(
 					state.canvas_instance_data_buffers[state.current_data_buffer_index].fence);
 				state.canvas_instance_data_buffers[state.current_data_buffer_index].fence =
@@ -160,7 +160,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		else {
 			// Already finished all rendering commands, we can use it.
 			state.canvas_instance_data_buffers[state.current_data_buffer_index].last_frame_used =
-				RSG::rasterizer->get_frame_number();
+				RendererCompositor::get_frame_number();
 			glDeleteSync(state.canvas_instance_data_buffers[state.current_data_buffer_index].fence);
 			state.canvas_instance_data_buffers[state.current_data_buffer_index].fence = GLsync();
 		}
@@ -1502,7 +1502,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 		case Item::Command::TYPE_ANIMATION_SLICE: {
 			const Item::CommandAnimationSlice* as =
 				static_cast<const Item::CommandAnimationSlice*>(c);
-			double current_time = RSG::rasterizer->get_total_time();
+			double current_time = RendererCompositor::get_total_time();
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
 
@@ -3072,7 +3072,7 @@ void RasterizerCanvasGLES3::_allocate_instance_data_buffer()
 	db.instance_buffers.push_back(new_buffers[0]);
 	db.light_ubo = new_buffers[1];
 	db.state_ubo = new_buffers[2];
-	db.last_frame_used = RSG::rasterizer->get_frame_number();
+	db.last_frame_used = RendererCompositor::get_frame_number();
 	state.canvas_instance_data_buffers.insert(state.current_data_buffer_index, db);
 	state.current_data_buffer_index =
 		state.current_data_buffer_index % state.canvas_instance_data_buffers.size();

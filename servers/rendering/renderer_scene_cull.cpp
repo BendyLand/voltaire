@@ -3465,7 +3465,7 @@ void RendererSceneCull::update_visibility_notifiers()
 				visibility_notifier->base, true, RSG::threaded);
 		}
 		else {
-			if (visibility_notifier->visible_in_frame != RSG::rasterizer->get_frame_number()) {
+			if (visibility_notifier->visible_in_frame != RendererCompositor::get_frame_number()) {
 				visible_notifier_list.remove(E);
 
 				RSG::utilities->visibility_notifier_call(

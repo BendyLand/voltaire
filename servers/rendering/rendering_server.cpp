@@ -609,16 +609,16 @@ void RenderingServer::init()
 	RendererSceneCull* sr = memnew(RendererSceneCull);
 	RSG::camera_attributes = memnew(RendererCameraAttributes);
 	RSG::scene = sr;
-	RSG::rasterizer = RendererCompositor::create();
-	RSG::utilities = RSG::rasterizer->get_utilities();
-	RSG::rasterizer->initialize();
-	RSG::light_storage = RSG::rasterizer->get_light_storage();
-	RSG::material_storage = RSG::rasterizer->get_material_storage();
-	RSG::mesh_storage = RSG::rasterizer->get_mesh_storage();
-	RSG::particles_storage = RSG::rasterizer->get_particles_storage();
-	RSG::texture_storage = RSG::rasterizer->get_texture_storage();
-	RSG::gi = RSG::rasterizer->get_gi();
-	RSG::fog = RSG::rasterizer->get_fog();
+	RendererCompositor::create();
+	RSG::utilities = RendererCompositor::get_utilities();
+	RendererCompositor::initialize();
+	RSG::light_storage = RendererCompositor::get_light_storage();
+	RSG::material_storage = RendererCompositor::get_material_storage();
+	RSG::mesh_storage = RendererCompositor::get_mesh_storage();
+	RSG::particles_storage = RendererCompositor::get_particles_storage();
+	RSG::texture_storage = RendererCompositor::get_texture_storage();
+	RSG::gi = RendererCompositor::get_gi();
+	RSG::fog = RendererCompositor::get_fog();
 }
 
 void RenderingServer::finish()
@@ -631,9 +631,8 @@ void RenderingServer::finish()
 		RSG::canvas->finalize();
 		memdelete(RSG::canvas);
 	}
-	if (RSG::rasterizer) {
-		RSG::rasterizer->finalize();
-		memdelete(RSG::rasterizer);
+	if (RendererCompositor::is_initialized()) {
+		RendererCompositor::finalize();
 	}
 	if (RSG::viewport) {
 		memdelete(RSG::viewport);
@@ -1816,8 +1815,8 @@ String RenderingServer::get_video_adapter_api_version()
 void RenderingServer::set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
 	RSE::SplashStretchMode p_mode, bool p_use_filter)
 {
-	if (RSG::rasterizer) {
-		RSG::rasterizer->set_boot_image_with_stretch(p_image, p_color, p_mode, p_use_filter);
+	if (RendererCompositor::is_initialized()) {
+		RendererCompositor::set_boot_image_with_stretch(p_image, p_color, p_mode, p_use_filter);
 	}
 }
 

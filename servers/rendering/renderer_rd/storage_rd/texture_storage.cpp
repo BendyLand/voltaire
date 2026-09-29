@@ -2313,7 +2313,7 @@ void TextureStorage::update_decal_buffer(
 
 		if (using_forward_ids) {
 			forward_id_storage->map_forward_id(FORWARD_ID_TYPE_DECAL, decal_instance->forward_id, i,
-				RSG::rasterizer->get_frame_number());
+				RendererCompositor::get_frame_number());
 		}
 
 		decal_instance->cull_mask = decal->cull_mask;

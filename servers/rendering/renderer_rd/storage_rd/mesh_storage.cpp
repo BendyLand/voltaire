@@ -1598,7 +1598,7 @@ void MeshStorage::_multimesh_update_motion_vectors_data_cache(MultiMesh* multime
 		return;
 	}
 
-	uint32_t frame = RSG::rasterizer->get_frame_number();
+	uint32_t frame = RendererCompositor::get_frame_number();
 	if (multimesh->motion_vectors_last_change != frame) {
 		multimesh->motion_vectors_previous_offset = multimesh->motion_vectors_current_offset;
 		multimesh->motion_vectors_current_offset =
@@ -1635,7 +1635,7 @@ void MeshStorage::_multimesh_update_motion_vectors_data_cache(MultiMesh* multime
 
 bool MeshStorage::_multimesh_uses_motion_vectors(MultiMesh* multimesh)
 {
-	return (RSG::rasterizer->get_frame_number() - multimesh->motion_vectors_last_change) < 2;
+	return (RendererCompositor::get_frame_number() - multimesh->motion_vectors_last_change) < 2;
 }
 
 void MeshStorage::_multimesh_mark_dirty(MultiMesh* multimesh, int p_index, bool p_aabb)

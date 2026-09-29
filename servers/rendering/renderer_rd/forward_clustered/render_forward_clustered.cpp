@@ -1000,7 +1000,7 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list,
 	bool p_using_opaque_gi, bool p_using_motion_pass, bool p_append)
 {
 	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
-	uint64_t frame = RSG::rasterizer->get_frame_number();
+	uint64_t frame = RendererCompositor::get_frame_number();
 
 	if (p_render_list == RENDER_LIST_OPAQUE) {
 		scene_state.used_sss = false;
@@ -5778,7 +5778,7 @@ RenderGeometryInstance* RenderForwardClustered::geometry_instance_create(RID p_b
 void RenderForwardClustered::GeometryInstanceForwardClustered::set_transform(
 	const Transform3D& p_transform, const AABB& p_aabb, const AABB& p_transformed_aabb)
 {
-	uint64_t frame = RSG::rasterizer->get_frame_number();
+	uint64_t frame = RendererCompositor::get_frame_number();
 	if (frame != prev_transform_change_frame) {
 		prev_transform = transform;
 		prev_transform_change_frame = frame;

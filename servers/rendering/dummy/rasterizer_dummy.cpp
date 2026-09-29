@@ -68,34 +68,4 @@ RendererTextureStorage* RasterizerDummy::get_texture_storage() { return texture_
 
 RendererUtilities* RasterizerDummy::get_utilities() { return utilities; }
 
-RasterizerDummy::RasterizerDummy()
-{
-	canvas = memnew(RasterizerCanvasDummy);
-	scene = memnew(RasterizerSceneDummy);
-
-	fog = memnew(RendererDummy::Fog);
-	gi = memnew(RendererDummy::GI);
-	light_storage = memnew(RendererDummy::LightStorage);
-	material_storage = memnew(RendererDummy::MaterialStorage);
-	mesh_storage = memnew(RendererDummy::MeshStorage);
-	particles_storage = memnew(RendererDummy::ParticlesStorage);
-	texture_storage = memnew(RendererDummy::TextureStorage);
-	utilities = memnew(RendererDummy::Utilities);
-}
-
-RasterizerDummy::~RasterizerDummy()
-{
-	memdelete(canvas);
-	memdelete(scene);
-
-	memdelete(fog);
-	memdelete(gi);
-	memdelete(light_storage);
-	memdelete(material_storage);
-	memdelete(mesh_storage);
-	memdelete(particles_storage);
-	memdelete(texture_storage);
-	memdelete(utilities);
-}
-
 

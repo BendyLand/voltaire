@@ -868,7 +868,7 @@ void RendererViewport::viewport_initialize(RID p_rid)
 	viewport->shadow_atlas = RSG::light_storage->shadow_atlas_create();
 	viewport->viewport_render_direct_to_screen = false;
 
-	viewport->fsr_enabled = !RSG::rasterizer->is_low_end() && !viewport->disable_3d;
+	viewport->fsr_enabled = RendererCompositor::is_low_end() && !viewport->disable_3d;
 }
 
 #ifndef XR_DISABLED
@@ -1060,7 +1060,7 @@ void RendererViewport::viewport_attach_to_screen(
 	if (p_screen != DisplayServerEnums::INVALID_WINDOW_ID) {
 		// If using OpenGL we can optimize this operation by rendering directly to system_fbo
 		// instead of rendering to fbo and copying to system_fbo after
-		if (RSG::rasterizer->is_low_end() && viewport->viewport_render_direct_to_screen) {
+		if (RendererCompositor::is_low_end() && viewport->viewport_render_direct_to_screen) {
 			RSG::texture_storage->render_target_set_size(
 				viewport->render_target, p_rect.size.x, p_rect.size.y, viewport->view_count);
 			RSG::texture_storage->render_target_set_position(
@@ -1072,7 +1072,7 @@ void RendererViewport::viewport_attach_to_screen(
 	}
 	else {
 		// if render_direct_to_screen was used, reset size and position
-		if (RSG::rasterizer->is_low_end() && viewport->viewport_render_direct_to_screen) {
+		if (RendererCompositor::is_low_end() && viewport->viewport_render_direct_to_screen) {
 			RSG::texture_storage->render_target_set_position(viewport->render_target, 0, 0);
 			RSG::texture_storage->render_target_set_size(
 				viewport->render_target, viewport->size.x, viewport->size.y, viewport->view_count);
@@ -1104,7 +1104,7 @@ void RendererViewport::viewport_set_render_direct_to_screen(RID p_viewport, bool
 
 	// if attached to screen already, setup screen size and position, this needs to happen after
 	// setting flag to avoid an unnecessary buffer allocation
-	if (RSG::rasterizer->is_low_end() && viewport->viewport_to_screen_rect != Rect2() && p_enable) {
+	if (RendererCompositor::is_low_end() && viewport->viewport_to_screen_rect != Rect2() && p_enable) {
 		RSG::texture_storage->render_target_set_size(viewport->render_target,
 			viewport->viewport_to_screen_rect.size.x, viewport->viewport_to_screen_rect.size.y,
 			viewport->view_count);
@@ -1163,7 +1163,7 @@ void RendererViewport::viewport_set_prev_camera_data(
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	uint64_t frame = RSG::rasterizer->get_frame_number();
+	uint64_t frame = RendererCompositor::get_frame_number();
 	if (viewport->prev_camera_data_frame != frame) {
 		viewport->prev_camera_data = *p_camera_data;
 		viewport->prev_camera_data_frame = frame;

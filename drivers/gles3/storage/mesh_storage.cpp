@@ -1360,7 +1360,7 @@ void MeshStorage::update_mesh_instances() {
 		MeshInstance *mi = dirty_mesh_instance_arrays.first()->self();
 
 		bool uses_motion_vectors = RSG::viewport->get_num_viewports_with_motion_vectors() > 0;
-		int frame = RSG::rasterizer->get_frame_number();
+		int frame = RendererCompositor::get_frame_number();
 		if (uses_motion_vectors) {
 			for (uint32_t i = 0; i < mi->surfaces.size(); i++) {
 				mi->surfaces[i].prev_vertex_buffer = mi->surfaces[i].current_vertex_buffer;
@@ -2256,7 +2256,7 @@ void MeshStorage::_update_dirty_multimeshes() {
 			}
 
 			multimesh->current_buffer = new_buffer_index;
-			multimesh->last_change = RSG::rasterizer->get_frame_number();
+			multimesh->last_change = RendererCompositor::get_frame_number();
 		}
 
 		_update_dirty_multimesh(multimesh, uses_motion_vectors);

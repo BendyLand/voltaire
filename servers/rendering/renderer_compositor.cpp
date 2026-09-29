@@ -11,7 +11,7 @@
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -46,47 +46,39 @@
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
-RendererCompositor* (*RendererCompositor::_create_func)() = nullptr;
-bool RendererCompositor::low_end = false;
-
-RendererCompositor* RendererCompositor::create()
+Error RendererCompositor::create()
 {
-	if (_create_func != nullptr) {
-		return _create_func();
-	}
+    if (_create_func != nullptr) {
+        return _create_func();
+    }
 #if defined(RD_ENABLED)
-low_end = false;
+    low_end = false;
+    bind_compositor<RendererCompositorRD>();
     DisplayServer* ds = DisplayServer::get_singleton();
     if (ds != nullptr) {
         Error err = ds->init_rendering_device();
-        ERR_FAIL_COND_V_MSG(err != OK, nullptr, "Failed to initialize RenderingDevice via DisplayServer.");
+        ERR_FAIL_COND_V_MSG(err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
     }
-    return memnew(RendererCompositorRD);
+    RendererCompositorRD::initialize();
+    return OK;
 #elif defined(GLES3_ENABLED)
-	low_end = true;
-	return memnew(RasterizerGLES3);
+    low_end = true;
+    bind_compositor<RasterizerGLES3>();
+    RasterizerGLES3::initialize();
+    return OK;
 #else
-	low_end = true;
-	return memnew(RasterizerDummy);
+    low_end = true;
+    bind_compositor<RasterizerDummy>();
+    RasterizerDummy::initialize();
+    return OK;
 #endif
 }
 
-bool RendererCompositor::is_xr_enabled() { return RendererCompositor::xr_enabled; }
-
-uint64_t RendererCompositor::get_frame_number() const { return 0; }
-
-bool RendererCompositor::is_opengl() { return false; }
-
-void RendererCompositor::gl_end_frame(bool p_swap_buffers) {}
-
-void RendererCompositor::end_frame(bool p_present) {}
-
-void RendererCompositor::finalize() {}
-
-double RendererCompositor::get_frame_delta_time() const { return 0.0; }
-
-double RendererCompositor::get_total_time() const { return 0.0; }
-
-bool RendererCompositor::can_create_resources_async() const { return false; }
-
-
+bool RendererCompositor::is_xr_enabled()
+{
+#ifndef XR_DISABLED
+    return xr_enabled;
+#else
+    return false;
+#endif
+}

@@ -61,7 +61,6 @@ public:
 	static inline RendererFog* fog = nullptr;
 	static inline RendererCameraAttributes* camera_attributes = nullptr;
 	static inline RendererCanvasRender* canvas_render = nullptr;
-	static inline RendererCompositor* rasterizer = nullptr;
 
 	static inline RendererCanvasCull* canvas = nullptr;
 	static inline RendererViewport* viewport = nullptr;

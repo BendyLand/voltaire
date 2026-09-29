@@ -615,7 +615,7 @@ public:
 		// Using the previous buffer is only allowed if the surface was updated this frame and
 		// motion vectors are required.
 		uint32_t previous_buffer =
-			p_input_motion_vectors && (RSG::rasterizer->get_frame_number() == mis->last_change)
+			p_input_motion_vectors && (RendererCompositor::get_frame_number() == mis->last_change)
 				? mis->previous_buffer
 				: current_buffer;
 

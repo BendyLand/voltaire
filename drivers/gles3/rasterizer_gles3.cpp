@@ -37,8 +37,8 @@
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
 #include "core/os/os.h"
-#include "drivers/gles3/rasterizer_util_gles3.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
+#include "drivers/gles3/rasterizer_util_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -208,60 +208,21 @@ typedef void(GLAPIENTRY* DEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GL
 
 typedef void(GLAPIENTRY* DebugMessageCallbackARB)(DEBUGPROCARB callback, const void* userParam);
 
+#if defined(GLAD_ENABLED) && defined(EGL_ENABLED)
+void* _egl_load_function_wrapper(const char* p_name) { return (void*)eglGetProcAddress(p_name); }
+#endif
+
 void RasterizerGLES3::initialize()
 {
 	Engine::get_singleton()->print_header(
 		vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
-			RS::get_video_adapter_api_version(),
-			RS::get_video_adapter_vendor(),
+			RS::get_video_adapter_api_version(), RS::get_video_adapter_vendor(),
 			RS::get_video_adapter_name()));
 	if (Engine::get_singleton()->get_gpu_index() >= 0) {
 		WARN_PRINT(
 			"The Compatibility renderer does not support overriding the GPU with the --gpu-index "
 			"command line argument. Falling back to the default GPU for OpenGL applications.");
 	}
-}
-
-void RasterizerGLES3::finalize()
-{
-	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
-	// TexBlit Shaders
-	texture_storage->_tex_blit_shader_free();
-	memdelete(scene);
-	memdelete(canvas);
-	memdelete(gi);
-	memdelete(fog);
-	memdelete(post_effects);
-	memdelete(glow);
-	memdelete(cubemap_filter);
-	memdelete(copy_effects);
-	memdelete(feed_effects);
-	memdelete(light_storage);
-	memdelete(particles_storage);
-	memdelete(mesh_storage);
-	memdelete(material_storage);
-	memdelete(texture_storage);
-	memdelete(utilities);
-	memdelete(config);
-}
-
-void RasterizerGLES3::make_current(bool p_gles_over_gl)
-{
-	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
-	OS::get_singleton()->set_gles_over_gl(p_gles_over_gl);
-	_create_func = _create_current;
-	low_end = true;
-}
-
-RasterizerGLES3* RasterizerGLES3::singleton = nullptr;
-
-#if defined(GLAD_ENABLED) && defined(EGL_ENABLED)
-void* _egl_load_function_wrapper(const char* p_name) { return (void*)eglGetProcAddress(p_name); }
-#endif
-
-RasterizerGLES3::RasterizerGLES3()
-{
-	singleton = this;
 
 #ifdef GLAD_ENABLED
 	bool glad_loaded = false;
@@ -432,7 +393,38 @@ RasterizerGLES3::RasterizerGLES3()
 	}
 }
 
-RasterizerGLES3::~RasterizerGLES3() {}
+void RasterizerGLES3::finalize()
+{
+	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
+	// TexBlit Shaders
+	texture_storage->_tex_blit_shader_free();
+	memdelete(scene);
+	memdelete(canvas);
+	memdelete(gi);
+	memdelete(fog);
+	memdelete(post_effects);
+	memdelete(glow);
+	memdelete(cubemap_filter);
+	memdelete(copy_effects);
+	memdelete(feed_effects);
+	memdelete(light_storage);
+	memdelete(particles_storage);
+	memdelete(mesh_storage);
+	memdelete(material_storage);
+	memdelete(texture_storage);
+	memdelete(utilities);
+	memdelete(config);
+}
+
+void RasterizerGLES3::make_current(bool p_gles_over_gl)
+{
+	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
+	OS::get_singleton()->set_gles_over_gl(p_gles_over_gl);
+
+	RendererCompositor::_create_func = _create_current;
+	RendererCompositor::low_end = true;
+	RendererCompositor::bind_compositor<RasterizerGLES3>();
+}
 
 void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen& p_blit, bool p_first)

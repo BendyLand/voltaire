@@ -2048,7 +2048,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 		case Item::Command::TYPE_ANIMATION_SLICE: {
 			const Item::CommandAnimationSlice* as =
 				static_cast<const Item::CommandAnimationSlice*>(c);
-			double current_time = RSG::rasterizer->get_total_time();
+			double current_time = RendererCompositor::get_total_time();
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
 
@@ -2137,7 +2137,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 
 		_add_to_batch(r_batch_broken, r_current_batch);
 
-		p_item->debug_redraw_time -= RSG::rasterizer->get_frame_delta_time();
+		p_item->debug_redraw_time -= RendererCompositor::get_frame_delta_time();
 
 		RenderingServer::redraw_request();
 

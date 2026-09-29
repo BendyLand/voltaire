@@ -967,7 +967,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 		}
 
-		light_instance->last_pass = RSG::rasterizer->get_frame_number();
+		light_instance->last_pass = RendererCompositor::get_frame_number();
 	}
 
 	if (omni_light_count) {
@@ -2127,7 +2127,7 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 	for (uint32_t i = 0; i < reflection_count; i++) {
 		ReflectionProbeInstance* rpi = reflection_sort[i].probe_instance;
 
-		rpi->last_pass = RSG::rasterizer->get_frame_number();
+		rpi->last_pass = RendererCompositor::get_frame_number();
 
 		if (using_forward_ids) {
 			forward_id_storage->map_forward_id(

@@ -1595,7 +1595,7 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 			inst->area_light_gl_cache.clear();
 			inst->reflection_probes_local_transform_cache.clear();
 			inst->reflection_probe_rid_cache.clear();
-			uint64_t current_frame = RSG::rasterizer->get_frame_number();
+			uint64_t current_frame = RendererCompositor::get_frame_number();
 
 			if (inst->paired_omni_light_count) {
 				for (uint32_t j = 0; j < inst->paired_omni_light_count; j++) {
@@ -2281,7 +2281,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		} break;
 		}
 
-		li->last_pass = RSG::rasterizer->get_frame_number();
+		li->last_pass = RendererCompositor::get_frame_number();
 	}
 
 	if (r_omni_light_count) {
@@ -4814,7 +4814,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					GLuint secondary_instance_buffer = 0;
 					if (inst->flags_cache & INSTANCE_DATA_FLAG_PARTICLES) {
 						if (particles_storage->particles_get_last_change(inst->data->base) ==
-							RSG::rasterizer->get_frame_number()) {
+							RendererCompositor::get_frame_number()) {
 							secondary_instance_buffer = prev_instance_buffer;
 						}
 						else {
@@ -4823,7 +4823,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					}
 					else {
 						if (mesh_storage->multimesh_get_last_change(inst->data->base) ==
-							RSG::rasterizer->get_frame_number()) {
+							RendererCompositor::get_frame_number()) {
 							secondary_instance_buffer = prev_instance_buffer;
 						}
 						else {

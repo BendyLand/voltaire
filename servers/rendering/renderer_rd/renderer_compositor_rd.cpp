@@ -323,11 +323,6 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	RD::free_rid(sampler);
 }
 
-RendererCompositorRD::~RendererCompositorRD()
-{
-	memdelete(uniform_set_cache);
-	ShaderRD::set_shader_cache_user_dir(String());
-	ShaderRD::set_shader_cache_res_dir(String());
-}
-
 RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long) { return RendererCompositorRD::BlitPipelines(); }
+
+
