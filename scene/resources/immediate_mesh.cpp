@@ -430,7 +430,7 @@ ImmediateMesh::ImmediateMesh() { mesh = RS::mesh_create(); }
 
 ImmediateMesh::~ImmediateMesh()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(mesh);
 }
 

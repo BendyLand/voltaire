@@ -530,7 +530,7 @@ ParticleProcessMaterial::ParticleProcessMaterial() : element(this)
 
 ParticleProcessMaterial::~ParticleProcessMaterial()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	MutexLock lock(shader_map_mutex);
 
 	if (shader_map.has(current_key)) {

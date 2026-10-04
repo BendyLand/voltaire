@@ -170,7 +170,7 @@ void RayCast3D::_create_debug_shape()
 	_update_debug_shape_material();
 
 	if (!debug_instance.is_valid()) {
-		debug_instance = RenderingServer::instance_create();
+		debug_instance = Renderer::instance_create();
 	}
 
 	if (debug_mesh.is_null()) {
@@ -213,13 +213,13 @@ void RayCast3D::_update_debug_shape_material(bool p_check_collision)
 
 void RayCast3D::_clear_debug_shape()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (debug_instance.is_valid()) {
-		RenderingServer::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 		debug_instance = RID();
 	}
 	if (debug_mesh.is_valid()) {
-		RenderingServer::free_rid(debug_mesh->get_rid());
+		Renderer::free_rid(debug_mesh->get_rid());
 		debug_mesh = Ref<ArrayMesh>();
 	}
 }

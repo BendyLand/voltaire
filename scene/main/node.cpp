@@ -33,7 +33,7 @@
 #include "scene/resources/environment.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Mesh);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, DisplayServer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, OS);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Engine);

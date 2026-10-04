@@ -34,7 +34,7 @@
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Input);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, NativeMenu);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Texture2D);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/input/input.h"
 #include "core/os/os.h"
@@ -109,8 +109,8 @@ bool DisplayServer::_get_window_early_clear_override(Color& r_color)
 		r_color = window_early_clear_override_color;
 		return true;
 	}
-	else if (RenderingServer::data) {
-		r_color = RenderingServer::get_default_clear_color();
+	else if (Renderer::data) {
+		r_color = Renderer::get_default_clear_color();
 		return true;
 	}
 	else {

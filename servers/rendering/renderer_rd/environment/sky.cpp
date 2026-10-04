@@ -539,7 +539,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		if (shader_data->uses_time && p_render_data->scene_data->time - sky->prev_time > 0.00001) {
 			sky->prev_time = p_render_data->scene_data->time;
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_aerial_perspective(
@@ -548,7 +548,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererSceneRender::environment_get_fog_aerial_perspective(
 					p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_light_color(p_render_data->environment) !=
@@ -556,7 +556,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_light_color =
 				RendererSceneRender::environment_get_fog_light_color(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_sun_scatter(p_render_data->environment) !=
@@ -564,7 +564,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_sun_scatter =
 				RendererSceneRender::environment_get_fog_sun_scatter(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_enabled(p_render_data->environment) !=
@@ -572,7 +572,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_enabled =
 				RendererSceneRender::environment_get_fog_enabled(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_density(p_render_data->environment) !=
@@ -580,7 +580,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_density =
 				RendererSceneRender::environment_get_fog_density(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_sky_affect(p_render_data->environment) !=
@@ -588,7 +588,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_sky_affect =
 				RendererSceneRender::environment_get_fog_sky_affect(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (RendererSceneRender::environment_get_fog_light_energy(p_render_data->environment) !=
@@ -596,7 +596,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 			sky->prev_fog_light_energy =
 				RendererSceneRender::environment_get_fog_light_energy(p_render_data->environment);
 			sky->reflection.dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (material_data != sky->prev_material_data) {

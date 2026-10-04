@@ -97,7 +97,7 @@ bool EditorMaterialPreviewPlugin::generate_small_preview_automatically() const {
 
 EditorMaterialPreviewPlugin::~EditorMaterialPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(sphere);
 	RS::free_rid(sphere_instance);
 	RS::free_rid(viewport);
@@ -120,7 +120,7 @@ bool EditorMeshPreviewPlugin::handles(const String& p_type) const { return true;
 
 EditorMeshPreviewPlugin::~EditorMeshPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	// RS::free(sphere);
 	RS::free_rid(mesh_instance);
 	RS::free_rid(viewport);
@@ -154,7 +154,7 @@ EditorFontPreviewPlugin::EditorFontPreviewPlugin()
 
 EditorFontPreviewPlugin::~EditorFontPreviewPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(canvas_item);
 	RS::free_rid(canvas);
 	RS::free_rid(viewport);

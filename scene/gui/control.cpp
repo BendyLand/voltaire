@@ -31,7 +31,7 @@
 #include "control.compat.inc"
 #include "control.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -254,7 +254,7 @@ void Control::_update_canvas_item_transform()
 		xform *= get_offset_transform();
 	}
 
-	RenderingServer::canvas_item_set_transform(get_canvas_item(), xform);
+	Renderer::canvas_item_set_transform(get_canvas_item(), xform);
 }
 
 Transform2D Control::get_transform() const

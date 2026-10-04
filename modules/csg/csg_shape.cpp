@@ -648,7 +648,7 @@ void CSGShape3D::_update_debug_collision_shape()
 		return;
 	}
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (root_collision_debug_instance.is_null()) {
 		root_collision_debug_instance = RS::instance_create();

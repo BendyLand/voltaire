@@ -101,8 +101,8 @@ Material::Material() { render_priority = 0; }
 Material::~Material()
 {
 	if (material.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(material);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(material);
 	}
 }
 

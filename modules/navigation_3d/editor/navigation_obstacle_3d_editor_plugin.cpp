@@ -55,23 +55,23 @@ NavigationObstacle3DEditorPlugin* NavigationObstacle3DEditorPlugin::singleton = 
 
 NavigationObstacle3DEditorPlugin::~NavigationObstacle3DEditorPlugin()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (point_lines_instance_rid.is_valid()) {
-		RenderingServer::free_rid(point_lines_instance_rid);
+		Renderer::free_rid(point_lines_instance_rid);
 		point_lines_instance_rid = RID();
 	}
 	if (point_lines_mesh_rid.is_valid()) {
-		RenderingServer::free_rid(point_lines_mesh_rid);
+		Renderer::free_rid(point_lines_mesh_rid);
 		point_lines_mesh_rid = RID();
 	}
 
 	if (point_handles_instance_rid.is_valid()) {
-		RenderingServer::free_rid(point_handles_instance_rid);
+		Renderer::free_rid(point_handles_instance_rid);
 		point_handles_instance_rid = RID();
 	}
 	if (point_handle_mesh_rid.is_valid()) {
-		RenderingServer::free_rid(point_handle_mesh_rid);
+		Renderer::free_rid(point_handle_mesh_rid);
 		point_handle_mesh_rid = RID();
 	}
 }

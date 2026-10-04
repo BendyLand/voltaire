@@ -818,7 +818,7 @@ Vector<String> OS_Windows::_get_video_adapter_driver_info_wmi(const String &p_na
 }
 
 Vector<String> OS_Windows::get_video_adapter_driver_info() const {
-	if (RenderingServer::get_singleton() == nullptr) {
+	if (Renderer::get_singleton() == nullptr) {
 		return Vector<String>();
 	}
 
@@ -827,7 +827,7 @@ Vector<String> OS_Windows::get_video_adapter_driver_info() const {
 		return info;
 	}
 
-	const String device_name = RenderingServer::get_video_adapter_name();
+	const String device_name = Renderer::get_video_adapter_name();
 	if (device_name.is_empty()) {
 		return Vector<String>();
 	}

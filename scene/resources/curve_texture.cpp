@@ -84,7 +84,7 @@ RID CurveTexture::get_rid() const
 CurveTexture::~CurveTexture()
 {
 	if (_texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(_texture);
 	}
 }
@@ -153,7 +153,7 @@ RID CurveXYZTexture::get_rid() const
 CurveXYZTexture::~CurveXYZTexture()
 {
 	if (_texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(_texture);
 	}
 }

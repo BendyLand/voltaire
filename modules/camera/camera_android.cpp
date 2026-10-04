@@ -582,7 +582,7 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 				}
 			}
 
-			// Defer to main thread to avoid race conditions with RenderingServer.
+			// Defer to main thread to avoid race conditions with Renderer.
 			feed->image_y.instantiate();
 			feed->image_y->initialize_data(width, height, false, Image::FORMAT_R8, data_y);
 

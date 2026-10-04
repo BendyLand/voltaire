@@ -63,12 +63,12 @@ NavigationLink3D::~NavigationLink3D()
 	link = RID();
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (debug_instance.is_valid()) {
-		RenderingServer::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
-		RenderingServer::free_rid(debug_mesh->get_rid());
+		Renderer::free_rid(debug_mesh->get_rid());
 	}
 #endif // DEBUG_ENABLED
 }

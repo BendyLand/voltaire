@@ -216,7 +216,7 @@ CanvasItemMaterial::~CanvasItemMaterial()
 {
 	MutexLock lock(material_mutex);
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (shader_map.has(current_key)) {
 		shader_map[current_key].users--;

@@ -31,7 +31,7 @@
 #include "viewport.compat.inc"
 #include "viewport.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -191,7 +191,7 @@ ViewportTexture::~ViewportTexture()
 		vp->viewport_textures.erase(this);
 	}
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (proxy_ph.is_valid()) {
 		RS::free_rid(proxy_ph);
@@ -277,7 +277,7 @@ void Viewport::_sub_window_register(Window* p_window)
 		_sub_window_update_order();
 	}
 
-	RenderingServer::viewport_set_parent_viewport(p_window->viewport, viewport);
+	Renderer::viewport_set_parent_viewport(p_window->viewport, viewport);
 }
 
 void Viewport::_sub_window_update(Window* p_window)
@@ -475,7 +475,7 @@ void Viewport::set_canvas_transform(const Transform2D& p_transform)
 	ERR_MAIN_THREAD_GUARD;
 	canvas_transform = p_transform;
 
-	RenderingServer::viewport_set_canvas_transform(
+	Renderer::viewport_set_canvas_transform(
 		viewport, find_world_2d()->get_canvas(), canvas_transform);
 }
 
@@ -489,7 +489,7 @@ void Viewport::_update_global_transform()
 {
 	Transform2D sxform = stretch_transform * global_canvas_transform;
 
-	RenderingServer::viewport_set_global_canvas_transform(viewport, sxform);
+	Renderer::viewport_set_global_canvas_transform(viewport, sxform);
 }
 
 void Viewport::set_global_canvas_transform(const Transform2D& p_transform)
@@ -550,7 +550,7 @@ void Viewport::set_world_2d(const Ref<World2D>& p_world_2d)
 	}
 
 	if (is_inside_tree()) {
-		RenderingServer::viewport_remove_canvas(viewport, current_canvas);
+		Renderer::viewport_remove_canvas(viewport, current_canvas);
 	}
 
 	if (world_2d.is_valid()) {
@@ -574,7 +574,7 @@ void Viewport::set_world_2d(const Ref<World2D>& p_world_2d)
 
 	if (is_inside_tree()) {
 		current_canvas = find_world_2d()->get_canvas();
-		RenderingServer::viewport_attach_canvas(viewport, current_canvas);
+		Renderer::viewport_attach_canvas(viewport, current_canvas);
 	}
 }
 
@@ -1969,7 +1969,7 @@ void Viewport::set_canvas_cull_mask(uint32_t p_canvas_cull_mask)
 {
 	ERR_MAIN_THREAD_GUARD;
 	canvas_cull_mask = p_canvas_cull_mask;
-	RenderingServer::viewport_set_canvas_cull_mask(viewport, canvas_cull_mask);
+	Renderer::viewport_set_canvas_cull_mask(viewport, canvas_cull_mask);
 }
 
 uint32_t Viewport::get_canvas_cull_mask() const
@@ -2259,7 +2259,7 @@ void Viewport::set_disable_3d(bool p_disable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	disable_3d = p_disable;
-	RenderingServer::viewport_set_disable_3d(viewport, disable_3d);
+	Renderer::viewport_set_disable_3d(viewport, disable_3d);
 }
 
 bool Viewport::is_3d_disabled() const
@@ -2305,7 +2305,7 @@ void Viewport::_own_world_3d_changed()
 	}
 
 	if (is_inside_tree()) {
-		RenderingServer::viewport_set_scenario(
+		Renderer::viewport_set_scenario(
 			viewport, find_world_3d()->get_scenario());
 	}
 
@@ -2429,8 +2429,8 @@ Viewport::~Viewport()
 	if (world_2d.is_valid()) {
 		world_2d->remove_viewport(this);
 	}
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(viewport);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(viewport);
 }
 
 void SubViewport::set_size(const Size2i& p_size)

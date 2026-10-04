@@ -44,7 +44,7 @@
 
 void ThemeDB::initialize_theme_noproject()
 {
-	if (RenderingServer::data) {
+	if (Renderer::data) {
 		make_default_theme(1.0, Ref<Font>());
 	}
 	_init_default_theme_context();
@@ -52,8 +52,8 @@ void ThemeDB::initialize_theme_noproject()
 
 void ThemeDB::finalize_theme()
 {
-	if (!RenderingServer::data) {
-		WARN_PRINT("Finalizing theme when there is no RenderingServer is an error; check the order "
+	if (!Renderer::data) {
+		WARN_PRINT("Finalizing theme when there is no Renderer is an error; check the order "
 				   "of operations.");
 	}
 	_finalize_theme_contexts();

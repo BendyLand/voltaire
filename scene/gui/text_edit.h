@@ -725,7 +725,7 @@ private:
 	bool draw_tabs = false;
 	bool draw_spaces = false;
 
-	// FIXME: Helper method to draw unfilled rects, should be moved to RenderingServer.
+	// FIXME: Helper method to draw unfilled rects, should be moved to Renderer.
 	void _draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const Color& p_color,
 		real_t p_width = -1.0, bool p_antialiased = false) const;
 

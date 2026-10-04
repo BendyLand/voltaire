@@ -138,7 +138,7 @@ public:
 
 	// This extension provides access to composition layers for displaying 2D content through the XR
 	// compositor. Declarations are made here, and implementations in the .cpp, to avoid having to
-	// include RenderingServer in a header.
+	// include Renderer in a header.
 
 #define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1)                                                    \
 	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                                 \

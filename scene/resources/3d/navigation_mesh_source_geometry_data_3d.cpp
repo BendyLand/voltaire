@@ -131,7 +131,7 @@ void NavigationMeshSourceGeometryData3D::add_mesh(
 #ifdef DEBUG_ENABLED
 	if (!Engine::get_singleton()->is_editor_hint()) {
 		WARN_PRINT_ONCE(
-			"Source geometry parsing for navigation mesh baking had to parse RenderingServer meshes at runtime.\n\
+			"Source geometry parsing for navigation mesh baking had to parse Renderer meshes at runtime.\n\
 		This poses a significant performance issues as visual meshes store geometry data on the GPU and transferring this data back to the CPU blocks the rendering.\n\
 		For runtime (re)baking navigation meshes use and parse collision shapes as source geometry or create geometry data procedurally in scripts.");
 	}

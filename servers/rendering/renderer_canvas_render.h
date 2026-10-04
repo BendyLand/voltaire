@@ -33,7 +33,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 
-class RenderingServer;
+class Renderer;
 
 class RendererCanvasRender
 {
@@ -341,7 +341,7 @@ public:
 
 		struct ViewportRender
 		{
-			RenderingServer* owner = nullptr;
+			Renderer* owner = nullptr;
 			void* udata = nullptr;
 			Rect2 rect;
 		};

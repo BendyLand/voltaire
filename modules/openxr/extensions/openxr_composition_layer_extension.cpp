@@ -52,7 +52,7 @@
 	}                                                                                              \
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(RID p_layer, m_arg1 p1)       \
 	{                                                                                              \
-		RenderingServer::call_on_render_thread(                                   \
+		Renderer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1));                                                               \
 	}
@@ -68,7 +68,7 @@
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(                              \
 		RID p_layer, m_arg1 p1, m_arg2 p2)                                                         \
 	{                                                                                              \
-		RenderingServer::call_on_render_thread(                                   \
+		Renderer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1, p2));                                                           \
 	}
@@ -239,7 +239,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
 	if (subviewport.viewport != p_viewport) {
 		if (subviewport.viewport.is_valid()) {
 			RID rt =
-				RenderingServer::viewport_get_render_target(subviewport.viewport);
+				Renderer::viewport_get_render_target(subviewport.viewport);
 			RSG::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
 		}
 

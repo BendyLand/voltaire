@@ -40,7 +40,7 @@ RID Texture2DRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::texture_2d_placeholder_create();
+		texture_rid = Renderer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;
@@ -88,7 +88,7 @@ RID TextureLayeredRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::texture_2d_placeholder_create();
+		texture_rid = Renderer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;
@@ -134,7 +134,7 @@ RID Texture3DRD::get_rid() const
 {
 	if (texture_rid.is_null()) {
 		// We are in trouble, create something temporary.
-		texture_rid = RenderingServer::texture_2d_placeholder_create();
+		texture_rid = Renderer::texture_2d_placeholder_create();
 	}
 
 	return texture_rid;

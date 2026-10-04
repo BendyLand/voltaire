@@ -53,7 +53,7 @@ GPUParticlesCollision3D::GPUParticlesCollision3D(RSE::ParticlesCollisionType p_t
 
 GPUParticlesCollision3D::~GPUParticlesCollision3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(collision);
 }
 
@@ -315,7 +315,7 @@ GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_t
 
 GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(collision);
 }
 

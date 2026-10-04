@@ -48,9 +48,9 @@ struct MeshData;
 }
 
 #ifdef DEBUG_ENABLED
-#define ERR_NOT_ON_RENDER_THREAD ERR_FAIL_COND(!RenderingServer::is_on_render_thread());
+#define ERR_NOT_ON_RENDER_THREAD ERR_FAIL_COND(!Renderer::is_on_render_thread());
 #define ERR_NOT_ON_RENDER_THREAD_V(m_ret)                                                          \
-	ERR_FAIL_COND_V(!RenderingServer::is_on_render_thread(), m_ret);
+	ERR_FAIL_COND_V(!Renderer::is_on_render_thread(), m_ret);
 #else
 #define ERR_NOT_ON_RENDER_THREAD
 #define ERR_NOT_ON_RENDER_THREAD_V(m_ret)
@@ -58,7 +58,7 @@ struct MeshData;
 
 class RenderingDevice;
 
-class RenderingServer final
+class Renderer final
 {
 	static inline BinaryMutex _thread_safe_mutex;
 
@@ -1154,12 +1154,12 @@ public:
 
 	/* LIFECYCLE DISALLOWANCE */
 
-	RenderingServer() = delete;
-	RenderingServer(const RenderingServer&) = delete;
-	RenderingServer& operator=(const RenderingServer&) = delete;
-	~RenderingServer() = delete;
+	Renderer() = delete;
+	Renderer(const Renderer&) = delete;
+	Renderer& operator=(const Renderer&) = delete;
+	~Renderer() = delete;
 };
 
-#define RS RenderingServer
+#define RS Renderer
 
 

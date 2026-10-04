@@ -193,7 +193,7 @@ Light2D::BlendMode Light2D::get_blend_mode() const { return blend_mode; }
 
 void Light2D::_physics_interpolated_changed()
 {
-	RenderingServer::canvas_light_set_interpolated(
+	Renderer::canvas_light_set_interpolated(
 		canvas_light, is_physics_interpolated());
 }
 
@@ -215,7 +215,7 @@ void Light2D::_notification(int p_what)
 
 	case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
 		if (is_visible_in_tree() && is_physics_interpolated_and_enabled()) {
-			// Explicitly make sure the transform is up to date in RenderingServer before
+			// Explicitly make sure the transform is up to date in Renderer before
 			// resetting. This is necessary because NOTIFICATION_TRANSFORM_CHANGED
 			// is normally deferred, and a client change to transform will not always be sent
 			// before the reset, so we need to guarantee this.
@@ -242,14 +242,14 @@ real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
 Light2D::Light2D()
 {
-	canvas_light = RenderingServer::canvas_light_create();
+	canvas_light = Renderer::canvas_light_create();
 	set_notify_transform(true);
 }
 
 Light2D::~Light2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(canvas_light);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(canvas_light);
 }
 
 //////////////////////////////
@@ -351,7 +351,7 @@ real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
 DirectionalLight2D::DirectionalLight2D()
 {
 	RS::canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_DIRECTIONAL);
-	set_max_distance(max_distance); // Update RenderingServer.
+	set_max_distance(max_distance); // Update Renderer.
 	set_hide_clip_children(true);
 }
 

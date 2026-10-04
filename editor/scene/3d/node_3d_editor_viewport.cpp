@@ -76,18 +76,18 @@ using namespace Node3DEditorConstants;
 
 Node3DEditorSelectedItem::~Node3DEditorSelectedItem()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (sbox_instance.is_valid()) {
-		RenderingServer::free_rid(sbox_instance);
+		Renderer::free_rid(sbox_instance);
 	}
 	if (sbox_instance_offset.is_valid()) {
-		RenderingServer::free_rid(sbox_instance_offset);
+		Renderer::free_rid(sbox_instance_offset);
 	}
 	if (sbox_instance_xray.is_valid()) {
-		RenderingServer::free_rid(sbox_instance_xray);
+		Renderer::free_rid(sbox_instance_xray);
 	}
 	if (sbox_instance_xray_offset.is_valid()) {
-		RenderingServer::free_rid(sbox_instance_xray_offset);
+		Renderer::free_rid(sbox_instance_xray_offset);
 	}
 }
 
@@ -1038,7 +1038,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 
 void Node3DEditorViewport::_finish_gizmo_instances()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < 3; i++) {
 		RS::free_rid(move_gizmo_instance[i]);
 		RS::free_rid(move_plane_gizmo_instance[i]);

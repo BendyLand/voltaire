@@ -52,7 +52,7 @@ Ref<Skin> SkinReference::get_skin() const { return skin; }
 
 SkinReference::~SkinReference()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (skeleton_node) {
 		skeleton_node->skin_bindings.erase(this);
 	}

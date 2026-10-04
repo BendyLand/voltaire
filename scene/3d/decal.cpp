@@ -155,13 +155,13 @@ PackedStringArray Decal::get_configuration_warnings() const
 
 Decal::Decal()
 {
-	decal = RenderingServer::decal_create();
+	decal = Renderer::decal_create();
 	RS::instance_set_base(get_instance(), decal);
 }
 
 Decal::~Decal()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(decal);
 }
 

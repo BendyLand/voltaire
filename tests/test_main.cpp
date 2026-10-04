@@ -193,7 +193,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 				}
 			}
 
-			// ThemeDB requires RenderingServer to initialize the default theme.
+			// ThemeDB requires Renderer to initialize the default theme.
 			// So we have to do this for each test case. Also make sure there is
 			// no residual theme from something else.
 			ThemeDB::get_singleton()->finalize_theme();
@@ -329,7 +329,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 		memdelete(Input::get_singleton());
 
-		if (RenderingServer::get_singleton()) {
+		if (Renderer::get_singleton()) {
 			ThemeDB::get_singleton()->finalize_theme();
 		}
 

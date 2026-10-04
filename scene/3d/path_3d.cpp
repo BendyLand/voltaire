@@ -47,11 +47,11 @@ Path3D::Path3D()
 Path3D::~Path3D()
 {
 	if (debug_instance.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(debug_mesh->get_rid());
 	}
 }

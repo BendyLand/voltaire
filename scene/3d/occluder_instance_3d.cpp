@@ -105,7 +105,7 @@ Occluder3D::Occluder3D() { occluder = RS::occluder_create(); }
 Occluder3D::~Occluder3D()
 {
 	if (occluder.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(occluder);
 	}
 }

@@ -41,8 +41,8 @@ DrawableTexture2D::DrawableTexture2D()
 DrawableTexture2D::~DrawableTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(texture);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -95,7 +95,7 @@ RID DrawableTexture2D::get_rid() const
 	if (texture.is_null()) {
 		// We are in trouble, create something temporary.
 		// 4, 4, false, Image::FORMAT_RGBA8
-		texture = RenderingServer::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -106,7 +106,7 @@ void DrawableTexture2D::draw(
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect(
+	Renderer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, Size2(width, height)), texture, false, p_modulate, p_transpose);
 }
 
@@ -116,7 +116,7 @@ void DrawableTexture2D::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect(
+	Renderer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -126,7 +126,7 @@ void DrawableTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rect,
 	if ((width | height) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect_region(
+	Renderer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 

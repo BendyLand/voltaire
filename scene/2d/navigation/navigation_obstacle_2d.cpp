@@ -163,8 +163,8 @@ NavigationObstacle2D::NavigationObstacle2D()
 		obstacle, avoidance_enabled);
 
 #ifdef DEBUG_ENABLED
-	debug_canvas_item = RenderingServer::canvas_item_create();
-	debug_mesh_rid = RenderingServer::mesh_create();
+	debug_canvas_item = Renderer::canvas_item_create();
+	debug_mesh_rid = Renderer::mesh_create();
 #endif // DEBUG_ENABLED
 }
 
@@ -177,11 +177,11 @@ NavigationObstacle2D::~NavigationObstacle2D()
 
 #ifdef DEBUG_ENABLED
 	if (debug_mesh_rid.is_valid()) {
-		RenderingServer::free_rid(debug_mesh_rid);
+		Renderer::free_rid(debug_mesh_rid);
 		debug_mesh_rid = RID();
 	}
 	if (debug_canvas_item.is_valid()) {
-		RenderingServer::free_rid(debug_canvas_item);
+		Renderer::free_rid(debug_canvas_item);
 		debug_canvas_item = RID();
 	}
 #endif // DEBUG_ENABLED

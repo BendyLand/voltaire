@@ -950,7 +950,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 	}
 
 	if (time_used) {
-		RenderingServer::redraw_request();
+		Renderer::redraw_request();
 	}
 
 	texture_info_map.clear();
@@ -2052,7 +2052,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
 
-			RenderingServer::redraw_request(); // animation visible means redraw request
+			Renderer::redraw_request(); // animation visible means redraw request
 		} break;
 		}
 
@@ -2139,7 +2139,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 
 		p_item->debug_redraw_time -= RendererCompositor::get_frame_delta_time();
 
-		RenderingServer::redraw_request();
+		Renderer::redraw_request();
 
 		r_batch_broken = false;
 	}
@@ -2318,7 +2318,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 				break;
 			}
 
-			RenderingServer::redraw_request(); // Active particles means redraw request.
+			Renderer::redraw_request(); // Active particles means redraw request.
 
 			int dpc = particles_storage->particles_get_draw_passes(particles);
 			if (dpc == 0) {

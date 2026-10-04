@@ -30,7 +30,7 @@
 
 #include "scene_tree.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -221,7 +221,7 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	}
 
 	_physics_interpolation_enabled = p_enabled;
-	RenderingServer::set_physics_interpolation_enabled(p_enabled);
+	Renderer::set_physics_interpolation_enabled(p_enabled);
 
 	get_scene_tree_fti().set_enabled(get_root(), p_enabled);
 
@@ -252,14 +252,14 @@ void SceneTree::iteration_prepare()
 		// are flushed before pumping the interpolation prev and currents.
 		flush_transform_notifications();
 		get_scene_tree_fti().tick_update();
-		RenderingServer::tick();
+		Renderer::tick();
 	}
 }
 
 void SceneTree::iteration_end()
 {
 	// When physics interpolation is active, we want all pending transforms
-	// to be flushed to the RenderingServer before finishing a physics tick.
+	// to be flushed to the Renderer before finishing a physics tick.
 	if (_physics_interpolation_enabled) {
 		flush_transform_notifications();
 

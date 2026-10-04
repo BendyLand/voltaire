@@ -48,7 +48,7 @@ Ref<Image> PlaceholderTexture2D::get_image() const { return Ref<Image>(); }
 RID PlaceholderTexture2D::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RenderingServer::texture_2d_placeholder_create();
+		rid = Renderer::texture_2d_placeholder_create();
 	}
 	return rid;
 }
@@ -58,7 +58,7 @@ PlaceholderTexture2D::PlaceholderTexture2D() {}
 
 PlaceholderTexture2D::~PlaceholderTexture2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
 		RS::free_rid(rid);
 	}
@@ -89,7 +89,7 @@ Vector<Ref<Image>> PlaceholderTexture3D::get_data() const { return Vector<Ref<Im
 RID PlaceholderTexture3D::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RenderingServer::texture_3d_placeholder_create();
+		rid = Renderer::texture_3d_placeholder_create();
 	}
 	return rid;
 }
@@ -99,7 +99,7 @@ PlaceholderTexture3D::PlaceholderTexture3D() {}
 
 PlaceholderTexture3D::~PlaceholderTexture3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
 		RS::free_rid(rid);
 	}
@@ -148,7 +148,7 @@ PlaceholderTextureLayered::PlaceholderTextureLayered(LayeredType p_type) { layer
 
 PlaceholderTextureLayered::~PlaceholderTextureLayered()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
 		RS::free_rid(rid);
 	}

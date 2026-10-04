@@ -673,7 +673,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		auto_exposure_scale = RSG::camera_attributes->camera_attributes_get_auto_exposure_scale(
 			p_render_data->camera_attributes);
 
-		RenderingServer::redraw_request(); // Redraw all the time if auto exposure rendering
+		Renderer::redraw_request(); // Redraw all the time if auto exposure rendering
 												  // is on.
 		RD::draw_command_end_label();
 	}
@@ -1439,7 +1439,7 @@ void RendererSceneRenderRD::gi_set_use_half_resolution(bool p_enable)
 void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality)
 {
 	ERR_FAIL_INDEX_MSG(p_quality, RSE::SHADOW_QUALITY_MAX,
-		"Shadow quality too high, please see RenderingServer's ShadowQuality enum");
+		"Shadow quality too high, please see Renderer's ShadowQuality enum");
 
 	if (data->shadows_quality != p_quality) {
 		data->shadows_quality = p_quality;
@@ -1488,7 +1488,7 @@ void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::Shado
 void RendererSceneRenderRD::directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality)
 {
 	ERR_FAIL_INDEX_MSG(p_quality, RSE::SHADOW_QUALITY_MAX,
-		"Shadow quality too high, please see RenderingServer's ShadowQuality enum");
+		"Shadow quality too high, please see Renderer's ShadowQuality enum");
 
 	if (data->directional_shadow_quality != p_quality) {
 		data->directional_shadow_quality = p_quality;

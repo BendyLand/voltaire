@@ -118,7 +118,7 @@ void Camera3D::_update_camera()
 	}
 
 	if (!is_physics_interpolated_and_enabled()) {
-		RenderingServer::camera_set_transform(camera, get_camera_transform());
+		Renderer::camera_set_transform(camera, get_camera_transform());
 	}
 	else {
 		// Force a refresh next frame.
@@ -453,8 +453,8 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 
 Camera3D::~Camera3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(camera);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(camera);
 #ifndef PHYSICS_3D_DISABLED
 	if (pyramid_shape.is_valid()) {
 		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());

@@ -933,7 +933,7 @@ void Environment::_update_adjustment()
 
 Environment::~Environment()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(environment);
 }
 

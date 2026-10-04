@@ -30,7 +30,7 @@
 
 #include "visual_instance_3d.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/math/triangle_mesh.h"
 #include "core/os/os.h"
@@ -89,7 +89,7 @@ void VisualInstance3D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
 		ERR_FAIL_COND(get_world_3d().is_null());
-		RenderingServer::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			instance, get_world_3d()->get_scenario());
 		_update_visibility();
 	} break;
@@ -100,7 +100,7 @@ void VisualInstance3D::_notification(int p_what)
 			!(is_inside_tree() && get_tree()->is_physics_interpolation_enabled()) &&
 			!_is_using_identity_transform()) {
 			// Physics interpolation global off, always send.
-			RenderingServer::instance_set_transform(
+			Renderer::instance_set_transform(
 				instance, get_global_transform());
 		}
 	} break;
@@ -110,13 +110,13 @@ void VisualInstance3D::_notification(int p_what)
 			// Allow resetting motion vectors etc
 			// at the same time as resetting physics interpolation,
 			// giving users one common interface.
-			RenderingServer::instance_teleport(instance);
+			Renderer::instance_teleport(instance);
 		}
 	} break;
 
 	case NOTIFICATION_EXIT_WORLD: {
-		RenderingServer::instance_set_scenario(instance, RID());
-		RenderingServer::instance_attach_skeleton(instance, RID());
+		Renderer::instance_set_scenario(instance, RID());
+		Renderer::instance_attach_skeleton(instance, RID());
 		_set_vi_visible(false);
 	} break;
 
@@ -131,7 +131,7 @@ RID VisualInstance3D::get_instance() const { return instance; }
 void VisualInstance3D::set_layer_mask(uint32_t p_mask)
 {
 	layers = p_mask;
-	RenderingServer::instance_set_layer_mask(instance, p_mask);
+	Renderer::instance_set_layer_mask(instance, p_mask);
 }
 
 uint32_t VisualInstance3D::get_layer_mask() const { return layers; }
@@ -164,7 +164,7 @@ bool VisualInstance3D::get_layer_mask_value(int p_layer_number) const
 void VisualInstance3D::set_sorting_offset(float p_offset)
 {
 	sorting_offset = p_offset;
-	RenderingServer::instance_set_pivot_data(
+	Renderer::instance_set_pivot_data(
 		instance, sorting_offset, sorting_use_aabb_center);
 }
 
@@ -173,7 +173,7 @@ float VisualInstance3D::get_sorting_offset() const { return sorting_offset; }
 void VisualInstance3D::set_sorting_use_aabb_center(bool p_enabled)
 {
 	sorting_use_aabb_center = p_enabled;
-	RenderingServer::instance_set_pivot_data(
+	Renderer::instance_set_pivot_data(
 		instance, sorting_offset, sorting_use_aabb_center);
 }
 
@@ -182,7 +182,7 @@ bool VisualInstance3D::is_sorting_use_aabb_center() const { return sorting_use_a
 
 void VisualInstance3D::set_base(const RID& p_base)
 {
-	RenderingServer::instance_set_base(instance, p_base);
+	Renderer::instance_set_base(instance, p_base);
 	base = p_base;
 }
 
@@ -190,8 +190,8 @@ RID VisualInstance3D::get_base() const { return base; }
 
 VisualInstance3D::~VisualInstance3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(instance);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(instance);
 }
 
 Ref<Material> GeometryInstance3D::get_material_override() const { return material_override; }

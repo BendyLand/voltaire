@@ -397,7 +397,7 @@ void _fix_array_compatibility(const Vector<uint8_t>& p_src, uint64_t p_old_forma
 	uint32_t dst_attribute_stride;
 	uint32_t dst_skin_stride;
 	uint32_t dst_offsets[Mesh::ARRAY_MAX];
-	RenderingServer::mesh_surface_make_offsets_from_format(
+	Renderer::mesh_surface_make_offsets_from_format(
 		p_new_format & (~RSE::ARRAY_FORMAT_INDEX), p_elements, 0, dst_offsets, dst_vertex_stride,
 		dst_normal_tangent_stride, dst_attribute_stride, dst_skin_stride);
 
@@ -908,7 +908,7 @@ void ArrayMesh::surface_set_material(int p_idx, const Ref<Material>& p_material)
 		return;
 	}
 	surfaces.write[p_idx].material = p_material;
-	RenderingServer::mesh_surface_set_material(
+	Renderer::mesh_surface_set_material(
 		mesh, p_idx, p_material.is_null() ? RID() : p_material->get_rid());
 
 	emit_changed();
@@ -1064,14 +1064,14 @@ Ref<ArrayMesh> ArrayMesh::get_shadow_mesh() const { return shadow_mesh; }
 ArrayMesh::ArrayMesh()
 {
 	// mesh is now created on demand
-	// mesh = RenderingServer::mesh_create();
+	// mesh = Renderer::mesh_create();
 }
 
 ArrayMesh::~ArrayMesh()
 {
 	if (mesh.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(mesh);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(mesh);
 	}
 }
 
@@ -1079,7 +1079,7 @@ PlaceholderMesh::PlaceholderMesh() { rid = RS::mesh_create(); }
 
 PlaceholderMesh::~PlaceholderMesh()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(rid);
 }
 

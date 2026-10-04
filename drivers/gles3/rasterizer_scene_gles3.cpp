@@ -826,7 +826,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 		if (shader_data->uses_time && time - sky->prev_time > 0.00001) {
 			sky->prev_time = time;
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_aerial_perspective(p_render_data->environment) !=
@@ -834,40 +834,40 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 			sky->prev_fog_aerial_perspective =
 				environment_get_fog_aerial_perspective(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_light_color(p_render_data->environment) !=
 			sky->prev_fog_light_color) {
 			sky->prev_fog_light_color = environment_get_fog_light_color(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_sun_scatter(p_render_data->environment) !=
 			sky->prev_fog_sun_scatter) {
 			sky->prev_fog_sun_scatter = environment_get_fog_sun_scatter(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_enabled(p_render_data->environment) != sky->prev_fog_enabled) {
 			sky->prev_fog_enabled = environment_get_fog_enabled(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_density(p_render_data->environment) != sky->prev_fog_density) {
 			sky->prev_fog_density = environment_get_fog_density(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_sky_affect(p_render_data->environment) !=
 			sky->prev_fog_sky_affect) {
 			sky->prev_fog_sky_affect = environment_get_fog_sky_affect(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (environment_get_fog_light_energy(p_render_data->environment) !=
@@ -875,7 +875,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 			sky->prev_fog_light_energy =
 				environment_get_fog_light_energy(p_render_data->environment);
 			sky->reflection_dirty = true;
-			RenderingServer::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (material_data != sky->prev_material) {
@@ -3795,7 +3795,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				lut1_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
 
-				ltc.lut1_texture = RenderingServer::texture_2d_create(lut1_image);
+				ltc.lut1_texture = Renderer::texture_2d_create(lut1_image);
 
 				int lut2_bytes = 4 * dimensions * dimensions;
 				size_t lut2_size = lut2_bytes * 4;
@@ -3808,7 +3808,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				lut2_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
 
-				ltc.lut2_texture = RenderingServer::texture_2d_create(lut2_image);
+				ltc.lut2_texture = Renderer::texture_2d_create(lut2_image);
 			}
 		}
 
@@ -4884,7 +4884,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 	// Make the actual redraw request
 	if (should_request_redraw) {
-		RenderingServer::redraw_request();
+		Renderer::redraw_request();
 	}
 }
 
@@ -5529,10 +5529,10 @@ void sky() {
 RasterizerSceneGLES3::~RasterizerSceneGLES3()
 {
 	if (ltc.lut1_texture.is_valid()) {
-		RenderingServer::free_rid(ltc.lut1_texture);
+		Renderer::free_rid(ltc.lut1_texture);
 	}
 	if (ltc.lut2_texture.is_valid()) {
-		RenderingServer::free_rid(ltc.lut2_texture);
+		Renderer::free_rid(ltc.lut2_texture);
 	}
 
 	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.directional_light_buffer);

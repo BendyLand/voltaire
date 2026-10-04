@@ -51,7 +51,7 @@ void RendererSceneOcclusionCull::HZBuffer::clear() {
 		debug_image.unref();
 	}
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(debug_texture);
 }
 
@@ -182,7 +182,7 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 	if (debug_texture.is_null()) {
 		debug_texture = RS::texture_2d_create(debug_image);
 	} else {
-		RenderingServer::texture_2d_update(debug_texture, debug_image);
+		Renderer::texture_2d_update(debug_texture, debug_image);
 	}
 
 	return debug_texture;

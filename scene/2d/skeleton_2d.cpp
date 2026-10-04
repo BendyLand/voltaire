@@ -112,8 +112,8 @@ Bone2D::~Bone2D()
 {
 #ifdef TOOLS_ENABLED
 	if (!editor_gizmo_rid.is_null()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(editor_gizmo_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(editor_gizmo_rid);
 	}
 #endif // TOOLS_ENABLED
 }
@@ -327,7 +327,7 @@ Skeleton2D::Skeleton2D()
 
 Skeleton2D::~Skeleton2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(skeleton);
 }
 

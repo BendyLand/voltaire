@@ -621,7 +621,7 @@ void CPUParticles3D::_notification(int p_what)
 
 CPUParticles3D::~CPUParticles3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(multimesh);
 }
 

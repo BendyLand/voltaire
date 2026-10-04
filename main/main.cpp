@@ -356,7 +356,7 @@ void finalize_physics()
 
 void finalize_display()
 {
-	RenderingServer::finish();
+	Renderer::finish();
 
 	memdelete(display_server);
 	memdelete(accessibility_server);
@@ -926,7 +926,7 @@ Error Main::test_setup()
 	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
-	rendering_server = memnew(RenderingServer());
+	rendering_server = memnew(Renderer());
 	rendering_server->init();
 	rendering_server->set_render_loop_enabled(false);
 
@@ -3308,9 +3308,9 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Rendering");
 
-		RenderingServer::init();
+		Renderer::init();
 		// rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);
-		RenderingServer::set_render_loop_enabled(!disable_render_loop);
+		Renderer::set_render_loop_enabled(!disable_render_loop);
 
 		OS::get_singleton()->benchmark_end_measure("Servers", "Rendering");
 	}
@@ -3573,7 +3573,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// able to load resources, load the global shader variables.
 		// If running on editor, don't load the textures because the editor
 		// may want to import them first. Editor will reload those later.
-		RenderingServer::global_shader_parameters_load_settings(!editor);
+		Renderer::global_shader_parameters_load_settings(!editor);
 	}
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Finalize Setup");
@@ -3965,7 +3965,7 @@ int Main::start()
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
-	RenderingServer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
 	return EXIT_SUCCESS;
 }
 
@@ -4061,7 +4061,7 @@ bool Main::iteration()
 	NavigationServer3D::process(process_step * time_scale);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::sync(); // sync if still drawing from previous frames.
+	Renderer::sync(); // sync if still drawing from previous frames.
 
 	const bool has_pending_resources_for_processing =
 		RD::data && RD::has_pending_resources_for_processing();
@@ -4217,10 +4217,10 @@ void Main::cleanup(bool p_force)
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer
 	// finalization
-	RenderingServer::sync();
+	Renderer::sync();
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
-	RenderingServer::global_shader_parameters_clear();
+	Renderer::global_shader_parameters_clear();
 
 #ifndef XR_DISABLED
 	if (xr_server) {

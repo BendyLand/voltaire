@@ -69,7 +69,7 @@ Sky::Sky() { sky = RS::sky_create(); }
 
 Sky::~Sky()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(sky);
 }
 

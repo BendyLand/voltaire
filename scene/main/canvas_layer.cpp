@@ -38,7 +38,7 @@ void CanvasLayer::set_layer(int p_xform)
 {
 	layer = p_xform;
 	if (viewport.is_valid()) {
-		RenderingServer::viewport_set_canvas_stacking(
+		Renderer::viewport_set_canvas_stacking(
 			viewport, canvas, layer, get_index());
 		vp->gui_set_root_order_dirty();
 	}
@@ -57,7 +57,7 @@ void CanvasLayer::set_transform(const Transform2D& p_xform)
 	transform = p_xform;
 	locrotscale_dirty = true;
 	if (viewport.is_valid()) {
-		RenderingServer::viewport_set_canvas_transform(
+		Renderer::viewport_set_canvas_transform(
 			viewport, canvas, transform);
 	}
 }
@@ -82,7 +82,7 @@ void CanvasLayer::_update_xform()
 	transform.set_rotation_and_scale(rot, scale);
 	transform.set_origin(ofs);
 	if (viewport.is_valid()) {
-		RenderingServer::viewport_set_canvas_transform(
+		Renderer::viewport_set_canvas_transform(
 			viewport, canvas, transform);
 	}
 }
@@ -155,7 +155,7 @@ Vector2 CanvasLayer::get_scale() const
 void CanvasLayer::update_draw_order()
 {
 	if (is_inside_tree()) {
-		RenderingServer::viewport_set_canvas_stacking(
+		Renderer::viewport_set_canvas_stacking(
 			viewport, canvas, layer, get_index());
 	}
 }
@@ -221,7 +221,7 @@ CanvasLayer::CanvasLayer() { canvas = RS::canvas_create(); }
 
 CanvasLayer::~CanvasLayer()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(canvas);
 }
 

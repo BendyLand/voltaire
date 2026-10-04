@@ -432,7 +432,7 @@ Label3D::Label3D()
 
 	text_rid = TS->create_shaped_text();
 
-	mesh = RenderingServer::mesh_create();
+	mesh = Renderer::mesh_create();
 
 	// Disable shadow casting by default to improve performance and avoid unintended visual
 	// artifacts.
@@ -453,10 +453,10 @@ Label3D::~Label3D()
 
 	TS->free_rid(text_rid);
 
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(mesh);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(mesh);
 	for (KeyValue<SurfaceKey, SurfaceData> E : surfaces) {
-		RenderingServer::free_rid(E.value.material);
+		Renderer::free_rid(E.value.material);
 	}
 	surfaces.clear();
 }

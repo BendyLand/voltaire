@@ -37,7 +37,7 @@ GradientTexture1D::GradientTexture1D() { _queue_update(); }
 GradientTexture1D::~GradientTexture1D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(texture);
 	}
 }
@@ -82,7 +82,7 @@ Ref<Image> GradientTexture1D::get_image() const
 	if (!texture.is_valid()) {
 		return Ref<Image>();
 	}
-	return RenderingServer::texture_2d_get(texture);
+	return Renderer::texture_2d_get(texture);
 }
 
 void GradientTexture1D::update_now() const
@@ -99,7 +99,7 @@ GradientTexture2D::GradientTexture2D() { _queue_update(); }
 GradientTexture2D::~GradientTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(texture);
 	}
 }
@@ -242,7 +242,7 @@ Ref<Image> GradientTexture2D::get_image() const
 	if (!texture.is_valid()) {
 		return Ref<Image>();
 	}
-	return RenderingServer::texture_2d_get(texture);
+	return Renderer::texture_2d_get(texture);
 }
 
 void GradientTexture2D::update_now() const

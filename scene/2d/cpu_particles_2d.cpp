@@ -1002,7 +1002,7 @@ void CPUParticles2D::_draw_emission_gizmo()
 
 CPUParticles2D::~CPUParticles2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(multimesh);
 	RS::free_rid(mesh);
 }

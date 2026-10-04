@@ -68,7 +68,7 @@ RID FogMaterial::get_rid() const
 void FogMaterial::cleanup_shader()
 {
 	if (shader.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(shader);
 	}
 }

@@ -103,7 +103,7 @@ void GPUParticles3D::set_one_shot(bool p_one_shot)
 
 	if (is_emitting()) {
 		if (!one_shot) {
-			RenderingServer::particles_restart(particles);
+			Renderer::particles_restart(particles);
 		}
 	}
 }
@@ -237,8 +237,8 @@ void GPUParticles3D::restart(bool p_keep_seed)
 	if (!p_keep_seed && !use_fixed_seed) {
 		set_seed(Math::rand());
 	}
-	RenderingServer::particles_restart(particles);
-	RenderingServer::particles_set_emitting(particles, true);
+	Renderer::particles_restart(particles);
+	Renderer::particles_set_emitting(particles, true);
 
 	emitting = true;
 	active = true;
@@ -356,7 +356,7 @@ GPUParticles3D::GPUParticles3D()
 
 GPUParticles3D::~GPUParticles3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(particles);
 }
 
