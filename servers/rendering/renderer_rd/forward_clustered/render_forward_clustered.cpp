@@ -38,7 +38,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
 using namespace RendererSceneRenderImplementation;
@@ -1386,7 +1386,7 @@ void RenderForwardClustered::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				light_storage->lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}
@@ -1418,7 +1418,7 @@ void RenderForwardClustered::_update_sdfgi(RenderDataRD* p_render_data)
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			exposure_normalization =
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 		for (int i = 0; i < p_render_data->render_sdfgi_region_count; i++) {
@@ -1919,7 +1919,7 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
 	bool using_shadows = true;
 
 	if (p_render_data->reflection_probe.is_valid()) {
-		if (!RSG::light_storage->reflection_probe_renders_shadows(
+		if (!RS::light_storage->reflection_probe_renders_shadows(
 				light_storage->reflection_probe_instance_get_probe(
 					p_render_data->reflection_probe))) {
 			using_shadows = false;
@@ -2035,7 +2035,7 @@ void RenderForwardClustered::_render_scene(
 		if (p_render_data->camera_attributes.is_valid()) {
 			light_storage->reflection_probe_set_baked_exposure(
 				light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe),
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes));
 		}
 	}
@@ -2356,7 +2356,7 @@ void RenderForwardClustered::_render_scene(
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			bg_energy_multiplier *=
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 
@@ -2866,7 +2866,7 @@ void RenderForwardClustered::_render_scene(
 			rb_data->ensure_fsr2(fsr2_effect);
 
 			RID exposure;
-			if (RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = RendererSceneRenderRD::data->luminance->get_current_luminance_buffer(rb);
 			}
@@ -2918,7 +2918,7 @@ void RenderForwardClustered::_render_scene(
 			bool reset = rb_data->ensure_mfx_temporal(mfx_temporal_effect);
 
 			RID exposure;
-			if (RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = luminance->get_current_luminance_buffer(rb);
 			}
@@ -3112,7 +3112,7 @@ void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas
 		light_storage->light_instance_set_directional_shadow_atlas_rect(
 			p_light, p_pass, atlas_rect_norm);
 
-		zfar = RSG::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+		zfar = RS::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
 
 		render_fb = light_storage->direction_shadow_get_fb();
 		render_texture = RID();
@@ -3125,7 +3125,7 @@ void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas
 		ERR_FAIL_COND(!light_storage->owns_shadow_atlas(p_shadow_atlas));
 		ERR_FAIL_COND(!light_storage->shadow_atlas_owns_light_instance(p_shadow_atlas, p_light));
 
-		RSG::light_storage->shadow_atlas_update(p_shadow_atlas);
+		RS::light_storage->shadow_atlas_update(p_shadow_atlas);
 
 		uint32_t key = light_storage->shadow_atlas_get_light_instance_key(p_shadow_atlas, p_light);
 
@@ -4926,7 +4926,7 @@ void RenderForwardClustered::_geometry_instance_add_surface_with_material(
 	sdcache->surface_index = p_surface;
 
 	if (ginstance->data->dirty_dependencies) {
-		RSG::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+		RS::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
 	}
 
 	// shadow
@@ -5758,7 +5758,7 @@ void RenderForwardClustered::_geometry_instance_dependency_deleted(
 
 RenderGeometryInstance* RenderForwardClustered::geometry_instance_create(RID p_base)
 {
-	RSE::InstanceType type = RSG::utilities->get_base_type(p_base);
+	RSE::InstanceType type = RS::utilities->get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceForwardClustered* ginstance = geometry_instance_alloc.alloc();
@@ -6015,7 +6015,7 @@ RenderForwardClustered::~RenderForwardClustered()
 #endif
 
 	RD::free_rid(shadow_sampler);
-	RSG::light_storage->directional_shadow_atlas_set_size(0);
+	RS::light_storage->directional_shadow_atlas_set_size(0);
 
 	RD::free_rid(best_fit_normal.pipeline);
 	RD::free_rid(best_fit_normal.texture);

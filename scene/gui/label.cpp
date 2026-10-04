@@ -32,7 +32,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }

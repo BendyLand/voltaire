@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "core/version.h"
 #include "particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Mutex ParticleProcessMaterial::dirty_materials_mutex;
 SelfList<ParticleProcessMaterial>::List ParticleProcessMaterial::dirty_materials;

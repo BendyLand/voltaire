@@ -35,8 +35,8 @@
 #include "../../openxr_util.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 
 HashMap<String, bool *> OpenXRD3D12Extension::get_requested_extensions(XrVersion p_version) {
 	HashMap<String, bool *> request_extensions;

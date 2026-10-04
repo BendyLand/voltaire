@@ -38,7 +38,7 @@
 #include "node_3d_editor_gizmos.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/primitive_meshes.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define HANDLE_HALF_SIZE 9.5
 

@@ -43,8 +43,8 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer_canvas_cull.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
@@ -258,7 +258,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			}
 
 			Transform2D final_xform;
-			if (!RSG::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
+			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
 				final_xform = l->xform_curr;
 			}
 			else {

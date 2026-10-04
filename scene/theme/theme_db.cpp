@@ -38,7 +38,7 @@
 #include "scene/resources/style_box.h"
 #include "scene/resources/texture.h"
 #include "scene/theme/default_theme.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #include "theme_db.h"
 

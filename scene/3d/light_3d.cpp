@@ -33,7 +33,7 @@
 #include "core/os/os.h"
 #include "light_3d.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 real_t Light3D::get_param(Param p_param) const
 {

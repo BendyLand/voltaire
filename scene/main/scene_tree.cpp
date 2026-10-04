@@ -52,7 +52,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/resources/world_2d.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef _3D_DISABLED
 #include "scene/3d/node_3d.h"

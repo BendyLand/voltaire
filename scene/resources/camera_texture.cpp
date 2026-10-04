@@ -30,7 +30,7 @@
 
 #include "camera_texture.h"
 #include "servers/camera/camera_feed.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 int CameraTexture::get_width() const
 {

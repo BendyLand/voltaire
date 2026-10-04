@@ -70,7 +70,7 @@
 #include "scene/resources/immediate_mesh.h"
 #include "scene/resources/packed_scene.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 using namespace Node3DEditorConstants;
 

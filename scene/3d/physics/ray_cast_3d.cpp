@@ -33,7 +33,7 @@
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Vector3 RayCast3D::get_target_position() const { return target_position; }
 

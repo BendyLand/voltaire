@@ -33,7 +33,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CollisionObject3D::set_collision_layer(uint32_t p_layer)
 {

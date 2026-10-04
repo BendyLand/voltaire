@@ -35,7 +35,7 @@
 #include "scene/gui/label.h"
 #include "scene/gui/panel.h"
 #include "scene/gui/view_panner.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "tile_atlas_view.h"
 

@@ -33,7 +33,7 @@
 #include "core/io/file_access.h"
 #include "core/io/file_access_memory.h"
 #include "scene/resources/image_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture_loader_ktx.h"
 
 KTX_error_code ktx_read(ktxStream* stream, void* dst, const ktx_size_t count)

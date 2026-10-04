@@ -32,7 +32,7 @@
 #include "core/io/marshalls.h"
 #include "portable_compressed_texture.h"
 #include "scene/resources/bit_map.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 static const char* compression_mode_names[7] = {
 	"Lossless", "Lossy", "Basis Universal", "S3TC", "ETC2", "BPTC", "ASTC"};

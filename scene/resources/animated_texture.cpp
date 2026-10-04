@@ -30,7 +30,7 @@
 
 #include "animated_texture.h"
 #include "core/os/os.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void AnimatedTexture::_update_proxy()
 {

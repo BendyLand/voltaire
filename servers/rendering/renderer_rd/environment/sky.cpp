@@ -39,8 +39,8 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "sky.h"
 
 using namespace RendererRD;
@@ -659,7 +659,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 

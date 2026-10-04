@@ -36,7 +36,7 @@
 #include "main/main.h"
 #include "os_linuxbsd.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef SDL_ENABLED
 #include "drivers/sdl/joypad_sdl.h"

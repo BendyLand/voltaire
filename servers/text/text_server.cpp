@@ -31,7 +31,7 @@
 #include "core/config/project_settings.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "text_server.compat.inc"
 #include "text_server.h"
 

@@ -33,7 +33,7 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "image_compress_basisu.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 VLTR_GCC_WARNING_PUSH
 VLTR_GCC_WARNING_IGNORE("-Wenum-conversion")

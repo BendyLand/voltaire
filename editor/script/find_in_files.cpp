@@ -52,7 +52,7 @@
 #include "scene/gui/tab_container.h"
 #include "scene/gui/tree.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 // TODO: Would be nice in Vector and Vectors.
 template <typename T> inline void pop_back(T& r_container)

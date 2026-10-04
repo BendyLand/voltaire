@@ -42,7 +42,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 // Editor integration.

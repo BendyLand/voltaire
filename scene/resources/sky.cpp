@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "sky.h"
 
 void Sky::set_radiance_size(RadianceSize p_size)

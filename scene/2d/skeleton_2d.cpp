@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "core/math/transform_interpolator.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "skeleton_2d.h"
 
 #ifdef TOOLS_ENABLED

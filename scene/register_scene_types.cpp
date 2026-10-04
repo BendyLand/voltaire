@@ -164,7 +164,7 @@
 #include "scene/resources/video_stream.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "scene/resources/animated_texture.h"

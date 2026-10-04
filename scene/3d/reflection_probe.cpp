@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "reflection_probe.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void ReflectionProbe::set_intensity(float p_intensity)
 {

@@ -32,7 +32,7 @@
 #include "path_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Path3D::Path3D()
 {

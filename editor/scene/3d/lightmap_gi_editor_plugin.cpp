@@ -38,7 +38,7 @@
 #include "scene/3d/lightmap_gi.h"
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 EditorProgress* LightmapGIEditorPlugin::tmp_progress = nullptr;
 

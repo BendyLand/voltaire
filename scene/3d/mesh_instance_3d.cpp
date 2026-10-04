@@ -31,7 +31,7 @@
 #include "mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/3d/physics/collision_shape_3d.h"

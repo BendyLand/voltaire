@@ -49,7 +49,7 @@
 #include "scene/resources/sky.h"
 #include "scene/resources/style_box_flat.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "servers/rendering/shader_types.h"
 #include "text_shader_editor.h"

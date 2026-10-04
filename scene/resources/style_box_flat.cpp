@@ -30,7 +30,7 @@
 
 #include <cfloat> // FLT_EPSILON
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #include "style_box_flat.h"
 

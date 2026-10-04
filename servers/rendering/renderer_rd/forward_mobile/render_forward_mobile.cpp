@@ -37,7 +37,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
 #ifndef XR_DISABLED
@@ -789,7 +789,7 @@ void RenderForwardMobile::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				light_storage->lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}
@@ -965,7 +965,7 @@ void RenderForwardMobile::_render_shadow_pass(RID p_light, RID p_shadow_atlas, i
 		light_storage->light_instance_set_directional_shadow_atlas_rect(
 			p_light, p_pass, atlas_rect_norm);
 
-		zfar = RSG::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+		zfar = RS::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
 
 		render_fb = light_storage->direction_shadow_get_fb();
 		render_texture = RID();
@@ -978,7 +978,7 @@ void RenderForwardMobile::_render_shadow_pass(RID p_light, RID p_shadow_atlas, i
 		ERR_FAIL_COND(!light_storage->owns_shadow_atlas(p_shadow_atlas));
 		ERR_FAIL_COND(!light_storage->shadow_atlas_owns_light_instance(p_shadow_atlas, p_light));
 
-		RSG::light_storage->shadow_atlas_update(p_shadow_atlas);
+		RS::light_storage->shadow_atlas_update(p_shadow_atlas);
 
 		uint32_t key = light_storage->shadow_atlas_get_light_instance_key(p_shadow_atlas, p_light);
 
@@ -1947,7 +1947,7 @@ void RenderForwardMobile::_setup_environment(const RenderDataRD* p_render_data, 
 
 RenderGeometryInstance* RenderForwardMobile::geometry_instance_create(RID p_base)
 {
-	RSE::InstanceType type = RSG::utilities->get_base_type(p_base);
+	RSE::InstanceType type = RS::utilities->get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceForwardMobile* ginstance = geometry_instance_alloc.alloc();
@@ -2235,7 +2235,7 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 	sdcache->surface_index = p_surface;
 
 	if (ginstance->data->dirty_dependencies) {
-		RSG::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+		RS::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
 	}
 
 	// shadow
@@ -2973,7 +2973,7 @@ void RenderForwardMobile::_update_shader_quality_settings()
 
 RenderForwardMobile::~RenderForwardMobile()
 {
-	RSG::light_storage->directional_shadow_atlas_set_size(0);
+	RS::light_storage->directional_shadow_atlas_set_size(0);
 
 	if (ltc.lut1_texture.is_valid()) {
 		RS::free_rid(ltc.lut1_texture);

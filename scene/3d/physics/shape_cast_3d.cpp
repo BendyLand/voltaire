@@ -33,7 +33,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "shape_cast_3d.h"
 
 bool ShapeCast3D::is_enabled() const { return enabled; }

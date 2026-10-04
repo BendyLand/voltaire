@@ -32,7 +32,7 @@
 #include "scene/main/window.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void MenuButton::pressed()
 {

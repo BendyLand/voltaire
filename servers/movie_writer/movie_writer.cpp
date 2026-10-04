@@ -37,7 +37,7 @@
 #include "scene/main/window.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/display/display_server_enums.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 MovieWriter* MovieWriter::writers[MovieWriter::MAX_WRITERS];
 uint32_t MovieWriter::writer_count = 0;

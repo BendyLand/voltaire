@@ -40,7 +40,7 @@
 #include "drivers/gles3/rasterizer_scene_gles3.h"
 #include "drivers/gles3/rasterizer_util_gles3.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242

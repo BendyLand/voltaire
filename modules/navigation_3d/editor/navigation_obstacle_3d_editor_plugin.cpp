@@ -41,7 +41,7 @@
 #include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 String NavigationObstacle3DGizmoPlugin::get_gizmo_name() const { return "NavigationObstacle3D"; }
 

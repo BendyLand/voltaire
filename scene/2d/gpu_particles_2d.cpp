@@ -38,7 +38,7 @@
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void GPUParticles2D::set_emitting(bool p_emitting)
 {

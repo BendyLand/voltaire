@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_arraymesh)
 
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestArrayMesh {
 

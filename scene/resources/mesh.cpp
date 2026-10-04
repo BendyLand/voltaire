@@ -32,7 +32,7 @@
 #include "core/templates/pair.h"
 #include "mesh.h"
 #include "scene/resources/surface_tool.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/concave_polygon_shape_3d.h"

@@ -33,7 +33,7 @@
 #include "image_texture.h"
 #include "scene/resources/bit_map.h"
 #include "scene/resources/placeholder_textures.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void ImageTexture::reload_from_file() {}
 

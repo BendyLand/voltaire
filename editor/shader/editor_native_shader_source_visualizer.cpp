@@ -35,7 +35,7 @@
 #include "scene/gui/code_edit.h"
 #include "scene/gui/tab_container.h"
 #include "scene/resources/syntax_highlighter.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
 
 EditorNativeShaderSourceVisualizer::EditorNativeShaderSourceVisualizer()

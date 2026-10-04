@@ -38,9 +38,9 @@
 #include "servers/rendering/renderer_rd/shaders/scene_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 
@@ -175,7 +175,7 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 	else {
 		const float bg_energy_multiplier = RendererSceneRender::RendererSceneRender::environment_get_bg_energy_multiplier(p_env);
 		Color panorama_color = ((environment_background == RSE::ENV_BG_CLEAR_COLOR)
-									? RSG::texture_storage->get_default_clear_color()
+									? RS::texture_storage->get_default_clear_color()
 									: RendererSceneRender::RendererSceneRender::environment_get_bg_color(p_env));
 		panorama_color = panorama_color.srgb_to_linear();
 		panorama_color.r *= bg_energy_multiplier;
@@ -568,7 +568,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		texture_storage->render_target_get_msaa(render_target) != RSE::VIEWPORT_MSAA_DISABLED;
 
 	bool using_dof =
-		RSG::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
+		RS::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
 
 	if (using_dof && p_render_data->transparent_bg) {
 		WARN_PRINT_ONCE("Depth of field is not supported in viewports with a transparent "
@@ -640,7 +640,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 	float auto_exposure_scale = 1.0;
 
-	if (can_use_effects && RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		RENDER_TIMESTAMP("Auto exposure");
 
@@ -650,19 +650,19 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			data->luminance->get_luminance_buffers(rb);
 
 		uint64_t auto_exposure_version =
-			RSG::camera_attributes->camera_attributes_get_auto_exposure_version(
+			RS::camera_attributes->camera_attributes_get_auto_exposure_version(
 				p_render_data->camera_attributes);
 		bool set_immediate = auto_exposure_version != rb->get_auto_exposure_version();
 		rb->set_auto_exposure_version(auto_exposure_version);
 
-		double step = RSG::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
+		double step = RS::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
 						  p_render_data->camera_attributes) *
 					  data->time_step;
 		float auto_exposure_min_sensitivity =
-			RSG::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
+			RS::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
 				p_render_data->camera_attributes);
 		float auto_exposure_max_sensitivity =
-			RSG::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
+			RS::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
 				p_render_data->camera_attributes);
 		data->luminance->luminance_reduction(rb->get_internal_texture(), rb->get_internal_size(),
 			luminance_buffers, auto_exposure_min_sensitivity, auto_exposure_max_sensitivity, step,
@@ -670,7 +670,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		// Swap final reduce with prev luminance.
 
-		auto_exposure_scale = RSG::camera_attributes->camera_attributes_get_auto_exposure_scale(
+		auto_exposure_scale = RS::camera_attributes->camera_attributes_get_auto_exposure_scale(
 			p_render_data->camera_attributes);
 
 		Renderer::redraw_request(); // Redraw all the time if auto exposure rendering
@@ -704,7 +704,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		if (can_use_storage) {
 			RD::draw_command_begin_label("Gaussian Glow");
 			RID luminance_texture;
-			if (RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				luminance_texture = data->luminance->get_current_luminance_buffer(
 					rb); // this will return and empty RID if we don't have an auto exposure buffer
@@ -818,7 +818,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		tonemap.exposure_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (can_use_effects &&
-			RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+			RS::camera_attributes->camera_attributes_uses_auto_exposure(
 				p_render_data->camera_attributes) &&
 			tonemap.exposure_texture.is_valid()) {
 			tonemap.use_auto_exposure = true;
@@ -1159,7 +1159,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 		ERR_FAIL_MSG("Glow is not supported when using subpasses.");
 	}
 
-	if (can_use_effects && RSG::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		ERR_FAIL_MSG("Auto Exposure is not supported when using subpasses.");
 	}
@@ -1798,7 +1798,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 			texture_storage->render_target_get_clear_request_color(rb->get_render_target());
 	}
 	else {
-		clear_color = RSG::texture_storage->get_default_clear_color();
+		clear_color = RS::texture_storage->get_default_clear_color();
 	}
 
 	// calls _pre_opaque_render between depth pre-pass and opaque pass
@@ -1848,8 +1848,8 @@ bool RendererSceneRenderRD::free(RID p_rid)
 	else if (RendererSceneRender::is_compositor_effect(p_rid)) {
 		RendererSceneRender::compositor_effect_free(p_rid);
 	}
-	else if (RSG::camera_attributes->owns_camera_attributes(p_rid)) {
-		RSG::camera_attributes->camera_attributes_free(p_rid);
+	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
+		RS::camera_attributes->camera_attributes_free(p_rid);
 	}
 	else if (data->gi.voxel_gi_instance_owns(p_rid)) {
 		data->gi.voxel_gi_instance_free(p_rid);

@@ -34,7 +34,7 @@
 #include "light_storage.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -769,7 +769,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1083,7 +1083,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -2164,7 +2164,7 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure =
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			reflection_ubo.exposure_normalization = exposure / probe->baked_exposure;
 		}

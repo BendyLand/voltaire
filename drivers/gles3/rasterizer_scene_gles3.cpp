@@ -48,8 +48,8 @@
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/camera/camera_feed.h"
 #include "servers/camera/camera_server.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
@@ -57,7 +57,7 @@ RasterizerSceneGLES3* RasterizerSceneGLES3::singleton = nullptr;
 
 RenderGeometryInstance* RasterizerSceneGLES3::geometry_instance_create(RID p_base)
 {
-	RSE::InstanceType type = RSG::utilities->get_base_type(p_base);
+	RSE::InstanceType type = RS::utilities->get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceGLES3* ginstance = geometry_instance_alloc.alloc();
@@ -356,7 +356,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 	sdcache->surface_index = p_surface;
 
 	if (ginstance->data->dirty_dependencies) {
-		RSG::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+		RS::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
 	}
 
 	// shadow
@@ -935,7 +935,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 
@@ -1449,7 +1449,7 @@ Ref<Image> RasterizerSceneGLES3::environment_bake_panorama(
 	else {
 		const float bg_energy_multiplier = environment_get_bg_energy_multiplier(p_env);
 		Color panorama_color = ((environment_background == RSE::ENV_BG_CLEAR_COLOR)
-									? RSG::texture_storage->get_default_clear_color()
+									? RS::texture_storage->get_default_clear_color()
 									: environment_get_bg_color(p_env));
 		panorama_color = panorama_color.srgb_to_linear();
 		panorama_color.r *= bg_energy_multiplier;
@@ -2002,14 +2002,14 @@ void RasterizerSceneGLES3::_setup_environment(const RenderDataGLES3* p_render_da
 
 	if (p_render_data->camera_attributes.is_valid()) {
 		scene_state.data.emissive_exposure_normalization =
-			RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		scene_state.data.IBL_exposure_normalization = 1.0;
 		if (is_environment(p_render_data->environment)) {
 			RID sky_rid = environment_get_sky(p_render_data->environment);
 			if (sky_rid.is_valid()) {
 				float current_exposure =
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes) *
 					environment_get_bg_intensity(p_render_data->environment);
 				scene_state.data.IBL_exposure_normalization =
@@ -2129,7 +2129,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -2413,7 +2413,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -2712,7 +2712,7 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 		light_storage->light_instance_set_directional_shadow_atlas_rect(
 			p_light, p_pass, atlas_rect_norm);
 
-		zfar = RSG::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+		zfar = RS::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
 		shadow_fb = light_storage->direction_shadow_get_fb();
 		reverse_cull = !light_storage->light_get_reverse_cull_face_mode(base);
 
@@ -3097,7 +3097,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 		if (render_data.camera_attributes.is_valid()) {
 			bg_energy_multiplier *=
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					render_data.camera_attributes);
 		}
 
@@ -4537,7 +4537,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 						float exposure_normalization = 1.0;
 						if (p_render_data->camera_attributes.is_valid()) {
-							float enf = RSG::camera_attributes
+							float enf = RS::camera_attributes
 											->camera_attributes_get_exposure_normalization_factor(
 												p_render_data->camera_attributes);
 							exposure_normalization = enf / lm->baked_exposure;
@@ -5232,9 +5232,9 @@ bool RasterizerSceneGLES3::free(RID p_rid)
 	else if (GLES3::LightStorage::get_singleton()->owns_light_instance(p_rid)) {
 		GLES3::LightStorage::get_singleton()->light_instance_free(p_rid);
 	}
-	else if (RSG::camera_attributes->owns_camera_attributes(p_rid)) {
+	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
 		// not much to delete, just free it
-		RSG::camera_attributes->camera_attributes_free(p_rid);
+		RS::camera_attributes->camera_attributes_free(p_rid);
 	}
 	else if (is_compositor(p_rid)) {
 		compositor_free(p_rid);
@@ -5554,20 +5554,20 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 	// Scene Shader
 	GLES3::MaterialStorage::get_singleton()->shaders.scene_shader.version_free(
 		scene_globals.shader_default_version);
-	RSG::material_storage->material_free(scene_globals.default_material);
-	RSG::material_storage->shader_free(scene_globals.default_shader);
+	RS::material_storage->material_free(scene_globals.default_material);
+	RS::material_storage->shader_free(scene_globals.default_shader);
 
 	// Overdraw Shader
-	RSG::material_storage->material_free(scene_globals.overdraw_material);
-	RSG::material_storage->shader_free(scene_globals.overdraw_shader);
+	RS::material_storage->material_free(scene_globals.overdraw_material);
+	RS::material_storage->shader_free(scene_globals.overdraw_shader);
 
 	// Sky Shader
 	GLES3::MaterialStorage::get_singleton()->shaders.sky_shader.version_free(
 		sky_globals.shader_default_version);
-	RSG::material_storage->material_free(sky_globals.default_material);
-	RSG::material_storage->shader_free(sky_globals.default_shader);
-	RSG::material_storage->material_free(sky_globals.fog_material);
-	RSG::material_storage->shader_free(sky_globals.fog_shader);
+	RS::material_storage->material_free(sky_globals.default_material);
+	RS::material_storage->shader_free(sky_globals.default_shader);
+	RS::material_storage->material_free(sky_globals.fog_material);
+	RS::material_storage->shader_free(sky_globals.fog_shader);
 	GLES3::Utilities::get_singleton()->buffer_free_data(sky_globals.screen_triangle);
 	glDeleteVertexArrays(1, &sky_globals.screen_triangle_array);
 	GLES3::Utilities::get_singleton()->buffer_free_data(sky_globals.directional_light_buffer);

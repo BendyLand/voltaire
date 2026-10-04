@@ -33,8 +33,8 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_set.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_types.h"
 #include "shader_language.h"
 
@@ -11372,8 +11372,8 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 	uint32_t varying_index = base_varying_index;
 	uint32_t max_varyings = 31;
 	// Can be false for internal shaders created in the process of initializing the engine.
-	if (RSG::utilities) {
-		max_varyings = RSG::utilities->get_maximum_shader_varyings();
+	if (RS::utilities) {
+		max_varyings = RS::utilities->get_maximum_shader_varyings();
 	}
 
 	for (const KeyValue<StringName, ShaderNode::Varying>& kv : shader->varyings) {

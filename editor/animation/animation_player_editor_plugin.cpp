@@ -54,7 +54,7 @@
 #include "scene/resources/animation.h"
 #include "scene/resources/image_texture.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 String AnimationPlayerEditor::_get_current() const
 {

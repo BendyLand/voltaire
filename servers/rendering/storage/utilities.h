@@ -166,14 +166,14 @@ public:
 
 #define TIMESTAMP_BEGIN()                                                                          \
 	{                                                                                              \
-		if (RSG::utilities->capturing_timestamps)                                                  \
-			RSG::utilities->capture_timestamps_begin();                                            \
+		if (RS::utilities->capturing_timestamps)                                                  \
+			RS::utilities->capture_timestamps_begin();                                            \
 	}
 
 #define RENDER_TIMESTAMP(m_text)                                                                   \
 	{                                                                                              \
-		if (RSG::utilities->capturing_timestamps)                                                  \
-			RSG::utilities->capture_timestamp(m_text);                                             \
+		if (RS::utilities->capturing_timestamps)                                                  \
+			RS::utilities->capture_timestamp(m_text);                                             \
 	}
 
 	virtual void capture_timestamps_begin() = 0;

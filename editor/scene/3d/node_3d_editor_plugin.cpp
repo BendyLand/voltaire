@@ -103,7 +103,7 @@
 #include "scene/resources/sky.h"
 #include "scene/resources/surface_tool.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 using namespace Node3DEditorConstants;
 

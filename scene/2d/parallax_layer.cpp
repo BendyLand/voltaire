@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "parallax_layer.h"
 #include "scene/2d/parallax_background.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Size2 ParallaxLayer::get_motion_scale() const { return motion_scale; }
 

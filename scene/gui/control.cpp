@@ -47,7 +47,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/theme/theme_db.h"
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 #ifdef TOOLS_ENABLED

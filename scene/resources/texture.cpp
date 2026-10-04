@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "scene/resources/placeholder_textures.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture.h"
 
 Size2 Texture2D::get_size() const { return Size2(get_width(), get_height()); }

@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
 #include "light_occluder_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define LINE_GRAB_WIDTH 8
 

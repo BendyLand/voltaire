@@ -29,14 +29,14 @@
 /**************************************************************************/
 
 #include "instance_uniforms.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 void InstanceUniforms::free(RID p_self)
 {
 	ERR_FAIL_COND(p_self.is_null());
 
 	if (is_allocated()) {
-		RSG::material_storage->global_shader_parameters_instance_free(p_self);
+		RS::material_storage->global_shader_parameters_instance_free(p_self);
 		_location = -1;
 	}
 

@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "multimesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef DISABLE_DEPRECATED
 // Kept for compatibility from 3.x to 4.0.

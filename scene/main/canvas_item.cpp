@@ -46,7 +46,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/resources/style_box.h"
 #include "scene/resources/world_2d.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define ERR_DRAW_GUARD                                                                             \
 	ERR_FAIL_COND_MSG(!drawing,                                                                    \

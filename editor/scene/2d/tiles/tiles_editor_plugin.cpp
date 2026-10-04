@@ -45,7 +45,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/2d/tile_set.h"
 #include "scene/resources/image_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tiles_editor_plugin.h"
 
 TilesEditorUtils* TilesEditorUtils::singleton = nullptr;

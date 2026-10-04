@@ -38,7 +38,7 @@
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 using namespace GLES3;
 

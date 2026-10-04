@@ -30,7 +30,7 @@
 
 #include "separation_ray_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void SeparationRayShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {

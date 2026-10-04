@@ -32,7 +32,7 @@
 #include "core/config/project_settings.h"
 #include "openxr_eye_gaze_interaction.h"
 #include "openxr_fb_foveation_extension.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 OpenXRFBFoveationExtension* OpenXRFBFoveationExtension::singleton = nullptr;
 

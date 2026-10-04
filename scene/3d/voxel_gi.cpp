@@ -35,7 +35,7 @@
 #include "scene/3d/voxelizer.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/camera_attributes.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "voxel_gi.h"
 
 void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,

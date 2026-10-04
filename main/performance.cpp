@@ -34,7 +34,7 @@
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "servers/audio/audio_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "servers/navigation_2d/navigation_server_2d.h"

@@ -34,7 +34,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/timer.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef DEBUG_ENABLED
 Rect2 Path2D::_edit_get_rect() const

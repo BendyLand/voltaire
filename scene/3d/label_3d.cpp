@@ -34,7 +34,7 @@
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "scene/theme/theme_db.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 AABB Label3D::get_aabb() const { return aabb; }
 

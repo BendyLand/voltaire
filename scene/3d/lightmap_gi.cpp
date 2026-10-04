@@ -44,7 +44,7 @@
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/sky.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
 #include "servers/display/display_server.h"

@@ -32,7 +32,7 @@
 #include "core/math/geometry_2d.h"
 #include "polygon_2d.h"
 #include "scene/2d/skeleton_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"

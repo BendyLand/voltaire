@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "curve_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 
 void CurveTexture::set_width(int p_width)

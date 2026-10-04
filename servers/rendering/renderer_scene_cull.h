@@ -43,7 +43,7 @@
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_method.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -599,9 +599,9 @@ public:
 				}
 				if (instance->base_type == RSE::INSTANCE_PARTICLES) {
 					RID particle_material =
-						RSG::particles_storage->particles_get_process_material(instance->base);
+						RS::particles_storage->particles_get_process_material(instance->base);
 					if (p_dependency == particle_material) {
-						RSG::particles_storage->particles_set_process_material(
+						RS::particles_storage->particles_set_process_material(
 							instance->base, RID());
 					}
 				}

@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "style_box_texture.h"
 
 float StyleBoxTexture::get_style_margin(Side p_side) const

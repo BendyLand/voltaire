@@ -58,7 +58,7 @@
 #include "scene/gui/tree.h"
 #include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 bool ExportTemplateManager::_is_online() const { return !offline_container->is_visible(); }
 

@@ -30,7 +30,7 @@
 
 #include "renderer_canvas_render.h"
 
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 RendererCanvasRender *RendererCanvasRender::singleton = nullptr;
 
@@ -83,14 +83,14 @@ const Rect2 &RendererCanvasRender::Item::get_rect() const {
 			} break;
 			case Item::Command::TYPE_MESH: {
 				const Item::CommandMesh *mesh = static_cast<const Item::CommandMesh *>(c);
-				AABB aabb = RSG::mesh_storage->mesh_get_aabb(mesh->mesh, skeleton);
+				AABB aabb = RS::mesh_storage->mesh_get_aabb(mesh->mesh, skeleton);
 
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
 			} break;
 			case Item::Command::TYPE_MULTIMESH: {
 				const Item::CommandMultiMesh *multimesh = static_cast<const Item::CommandMultiMesh *>(c);
-				AABB aabb = RSG::mesh_storage->multimesh_get_aabb(multimesh->multimesh);
+				AABB aabb = RS::mesh_storage->multimesh_get_aabb(multimesh->multimesh);
 
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
@@ -98,7 +98,7 @@ const Rect2 &RendererCanvasRender::Item::get_rect() const {
 			case Item::Command::TYPE_PARTICLES: {
 				const Item::CommandParticles *particles_cmd = static_cast<const Item::CommandParticles *>(c);
 				if (particles_cmd->particles.is_valid()) {
-					AABB aabb = RSG::particles_storage->particles_get_aabb(particles_cmd->particles);
+					AABB aabb = RS::particles_storage->particles_get_aabb(particles_cmd->particles);
 					r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 				}
 
@@ -134,6 +134,6 @@ const Rect2 &RendererCanvasRender::Item::get_rect() const {
 
 RendererCanvasRender::Item::CommandMesh::~CommandMesh() {
 	if (mesh_instance.is_valid()) {
-		RSG::mesh_storage->mesh_instance_free(mesh_instance);
+		RS::mesh_storage->mesh_instance_free(mesh_instance);
 	}
 }

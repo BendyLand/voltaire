@@ -37,8 +37,8 @@
 #include "openxr_api.h"
 #include "openxr_interface.h"
 #include "openxr_util.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_hand_tracker.h"
 
 #ifdef ANDROID_ENABLED

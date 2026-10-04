@@ -44,8 +44,8 @@
 #include "scene/resources/image_texture.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 
 void EditorResourcePreviewGenerator::DrawRequester::abort()
 {

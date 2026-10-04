@@ -37,7 +37,7 @@
 #include "scene/resources/surface_tool.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/rendering/rendering_server.h" // Only used for debug collision shapes.
+#include "servers/rendering/renderer.h" // Only used for debug collision shapes.
 #endif											// PHYSICS_3D_DISABLED
 
 #ifdef DEV_ENABLED

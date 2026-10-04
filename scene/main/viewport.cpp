@@ -50,9 +50,9 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/resources/text_line.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 // 2D.
 #include "scene/2d/audio_listener_2d.h"
@@ -76,7 +76,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED

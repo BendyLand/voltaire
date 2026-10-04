@@ -30,7 +30,7 @@
 
 #include "rectangle_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void RectangleShape2D::set_size(const Size2& p_size)
 {

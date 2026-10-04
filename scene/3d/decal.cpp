@@ -30,7 +30,7 @@
 
 #include "core/os/os.h"
 #include "decal.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Vector3 Decal::get_size() const { return size; }
 

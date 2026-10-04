@@ -54,7 +54,7 @@
 #include "core/os/thread_safe.h"
 #include "main/main.h"
 #include "servers/camera/camera_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_server.h"

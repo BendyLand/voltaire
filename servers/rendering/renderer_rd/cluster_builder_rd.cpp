@@ -30,7 +30,7 @@
 
 #include "cluster_builder_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_globals.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
+#include "servers/rendering/renderer.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
 
 ClusterBuilderSharedDataRD::~ClusterBuilderSharedDataRD()
 {

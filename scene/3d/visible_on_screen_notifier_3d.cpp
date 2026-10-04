@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "visible_on_screen_notifier_3d.h"
 
 AABB VisibleOnScreenNotifier3D::get_aabb() const { return aabb; }

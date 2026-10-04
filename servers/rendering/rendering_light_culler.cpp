@@ -32,7 +32,7 @@
 
 #include "core/math/plane.h"
 #include "core/math/projection.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef LIGHT_CULLER_DEBUG_FLASH
 #include "core/config/engine.h"
@@ -92,27 +92,27 @@ bool RenderingLightCuller::_prepare_light(const RendererSceneCull::Instance &p_i
 	}
 
 	LightSource lsource;
-	switch (RSG::light_storage->light_get_type(p_instance.base)) {
+	switch (RS::light_storage->light_get_type(p_instance.base)) {
 		case RSE::LIGHT_SPOT:
 			lsource.type = LightSource::ST_SPOTLIGHT;
-			lsource.angle = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SPOT_ANGLE);
-			lsource.range = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE);
+			lsource.angle = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SPOT_ANGLE);
+			lsource.range = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE);
 			break;
 		case RSE::LIGHT_OMNI:
 			lsource.type = LightSource::ST_OMNI;
-			lsource.range = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE);
+			lsource.range = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE);
 			break;
 		case RSE::LIGHT_AREA: {
 			lsource.type = LightSource::ST_AREA;
-			lsource.area_size = RSG::light_storage->light_area_get_size(p_instance.base);
+			lsource.area_size = RS::light_storage->light_area_get_size(p_instance.base);
 			float half_diagonal = lsource.area_size.length() / 2.0;
-			lsource.range = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE) + half_diagonal;
+			lsource.range = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_RANGE) + half_diagonal;
 		} break;
 		case RSE::LIGHT_DIRECTIONAL:
 			lsource.type = LightSource::ST_DIRECTIONAL;
 
-			lsource.range = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_MAX_DISTANCE);
-			switch (RSG::light_storage->light_directional_get_shadow_mode(p_instance.base)) {
+			lsource.range = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_MAX_DISTANCE);
+			switch (RS::light_storage->light_directional_get_shadow_mode(p_instance.base)) {
 				case RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL:
 					lsource.cascade_count = 1;
 					break;
@@ -126,10 +126,10 @@ bool RenderingLightCuller::_prepare_light(const RendererSceneCull::Instance &p_i
 					ERR_FAIL_V_MSG(false, "Only directional lights with 1, 2, or 4 shadow cascades are supported.");
 					break;
 			}
-			lsource.cascade_splits[0] = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET);
-			lsource.cascade_splits[1] = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_2_OFFSET);
-			lsource.cascade_splits[2] = RSG::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_3_OFFSET);
-			lsource.blend_splits = RSG::light_storage->light_directional_get_blend_splits(p_instance.base);
+			lsource.cascade_splits[0] = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET);
+			lsource.cascade_splits[1] = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_2_OFFSET);
+			lsource.cascade_splits[2] = RS::light_storage->light_get_param(p_instance.base, RSE::LIGHT_PARAM_SHADOW_SPLIT_3_OFFSET);
+			lsource.blend_splits = RS::light_storage->light_directional_get_blend_splits(p_instance.base);
 			break;
 	}
 

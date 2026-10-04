@@ -30,7 +30,7 @@
 
 #include "canvas_modulate.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CanvasModulate::_notification(int p_what)
 {

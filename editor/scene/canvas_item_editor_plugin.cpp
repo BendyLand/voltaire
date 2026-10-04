@@ -76,7 +76,7 @@
 #include "scene/main/window.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/style_box_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define DRAG_THRESHOLD (8 * EDSCALE)
 constexpr real_t SCALE_HANDLE_DISTANCE = 25;

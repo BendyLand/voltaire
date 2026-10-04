@@ -37,7 +37,7 @@
 #include "scene/property_utils.h"
 #include "scene/resources/environment.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 /*
 

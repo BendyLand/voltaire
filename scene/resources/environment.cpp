@@ -34,7 +34,7 @@
 #include "environment.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/sky.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RID Environment::get_rid() const { return environment; }
 

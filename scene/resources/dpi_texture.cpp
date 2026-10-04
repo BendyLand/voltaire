@@ -31,7 +31,7 @@
 #include "dpi_texture.h"
 #include "modules/modules_enabled.gen.h" // For svg.
 #include "scene/resources/bit_map.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #ifdef MODULE_SVG_ENABLED
 #include "modules/svg/image_loader_svg.h"

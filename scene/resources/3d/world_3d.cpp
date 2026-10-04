@@ -32,7 +32,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/environment.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_3d.h"
 
 #ifndef NAVIGATION_3D_DISABLED

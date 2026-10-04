@@ -30,7 +30,7 @@
 
 #include "mesh_library.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h" // IWYU pragma: keep // Needed to bind RSE enums.
+#include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/box_shape_3d.h"

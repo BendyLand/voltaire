@@ -42,8 +42,8 @@
 #include "lm_raster.glsl.gen.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(VULKAN_ENABLED)
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
@@ -616,7 +616,7 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 
 			RID material = mi.data.material[i];
 			if (material.is_valid()) {
-				t.cull_mode = RSG::material_storage->material_get_cull_mode(material);
+				t.cull_mode = RS::material_storage->material_get_cull_mode(material);
 			}
 			t.pad1 = 0; // make valgrind not complain
 			triangles.push_back(t);

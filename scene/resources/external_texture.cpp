@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "external_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 
 uint64_t ExternalTexture::get_external_texture_id() const

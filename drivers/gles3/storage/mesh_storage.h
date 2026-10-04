@@ -39,7 +39,7 @@
 #include "drivers/gles3/shaders/skeleton.glsl.gen.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/mesh_storage.h"
 #include "servers/rendering/storage/utilities.h"
 

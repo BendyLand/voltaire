@@ -32,7 +32,7 @@
 #include "core/config/project_settings.h"
 #include "core/version.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "sky_material.h"
 
 Mutex ProceduralSkyMaterial::shader_mutex;

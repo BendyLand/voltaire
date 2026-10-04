@@ -36,7 +36,7 @@
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 AABB GPUParticles3D::get_aabb() const { return AABB(); }
 

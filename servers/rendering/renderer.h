@@ -36,11 +36,19 @@
 #include "core/templates/rid.h"
 #include "core/templates/rid_owner.h"
 #include "servers/display/display_server_enums.h"
+#include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/storage/camera_attributes_storage.h"
+#include "servers/rendering/storage/light_storage.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/mesh_storage.h"
+#include "servers/rendering/storage/particles_storage.h"
+#include "servers/rendering/storage/texture_storage.h"
 
 namespace Geometry3D
 {
@@ -49,14 +57,18 @@ struct MeshData;
 
 #ifdef DEBUG_ENABLED
 #define ERR_NOT_ON_RENDER_THREAD ERR_FAIL_COND(!Renderer::is_on_render_thread());
-#define ERR_NOT_ON_RENDER_THREAD_V(m_ret)                                                          \
-	ERR_FAIL_COND_V(!Renderer::is_on_render_thread(), m_ret);
+#define ERR_NOT_ON_RENDER_THREAD_V(m_ret) ERR_FAIL_COND_V(!Renderer::is_on_render_thread(), m_ret);
 #else
 #define ERR_NOT_ON_RENDER_THREAD
 #define ERR_NOT_ON_RENDER_THREAD_V(m_ret)
 #endif
 
 class RenderingDevice;
+class RendererCameraAttributes;
+class RendererCanvasRender;
+class RendererCanvasCull;
+class RendererViewport;
+class RenderingMethod;
 
 class Renderer final
 {
@@ -114,6 +126,24 @@ private:
 
 public:
 	static inline Data* data = nullptr;
+
+	/* SUBSYSTEM & STORAGE POINTERS */
+	static inline bool threaded = false;
+
+	static inline RendererUtilities* utilities = nullptr;
+	static inline RendererLightStorage* light_storage = nullptr;
+	static inline RendererMaterialStorage* material_storage = nullptr;
+	static inline RendererMeshStorage* mesh_storage = nullptr;
+	static inline RendererParticlesStorage* particles_storage = nullptr;
+	static inline RendererTextureStorage* texture_storage = nullptr;
+	static inline RendererGI* gi = nullptr;
+	static inline RendererFog* fog = nullptr;
+	static inline RendererCameraAttributes* camera_attributes = nullptr;
+	static inline RendererCanvasRender* canvas_render = nullptr;
+
+	static inline RendererCanvasCull* canvas = nullptr;
+	static inline RendererViewport* viewport = nullptr;
+	static inline RenderingMethod* scene = nullptr;
 
 	static void fix_surface_compatibility(
 		RenderingServerTypes::SurfaceData& p_surface, const String& p_path = String());
@@ -1071,7 +1101,6 @@ public:
 	static void sync();
 	static bool has_changed();
 	static void init();
-	static void finish();
 	static void tick();
 	static void pre_draw(bool p_will_draw);
 

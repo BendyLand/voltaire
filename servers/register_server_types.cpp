@@ -66,7 +66,7 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/shader_types.h"
 #include "servers/rendering/storage/render_data.h"

@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "shader.compat.inc"

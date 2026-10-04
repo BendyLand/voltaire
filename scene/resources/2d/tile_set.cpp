@@ -36,7 +36,7 @@
 #include "scene/gui/control.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tile_set.compat.inc"
 #include "tile_set.h"
 

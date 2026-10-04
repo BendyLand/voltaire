@@ -34,7 +34,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/world_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RID NavigationRegion2D::get_rid() const { return region; }
 

@@ -36,7 +36,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void VisualInstance3D::_update_visibility()
 {

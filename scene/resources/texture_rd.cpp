@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture_rd.h"
 
 int Texture2DRD::get_width() const { return size.width; }

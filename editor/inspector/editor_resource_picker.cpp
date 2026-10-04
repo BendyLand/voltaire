@@ -51,7 +51,7 @@
 #include "scene/property_utils.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void EditorResourcePicker::_on_unique_button_pressed()
 {

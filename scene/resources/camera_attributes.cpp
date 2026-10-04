@@ -32,7 +32,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CameraAttributes::set_exposure_multiplier(float p_multiplier)
 {

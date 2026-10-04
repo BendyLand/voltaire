@@ -41,7 +41,7 @@
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tests/display_server_mock.h"
 #include "tests/force_link.gen.h"
 #include "tests/signal_watcher.h"

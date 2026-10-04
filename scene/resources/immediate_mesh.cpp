@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "immediate_mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void ImmediateMesh::surface_begin(PrimitiveType p_primitive, const Ref<Material>& p_material)
 {

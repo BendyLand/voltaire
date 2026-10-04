@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "camera_feed.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 int CameraFeed::get_id() const { return id; }
 

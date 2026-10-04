@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "compositor.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CompositorEffect::set_enabled(bool p_enabled)
 {

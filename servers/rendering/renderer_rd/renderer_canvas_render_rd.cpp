@@ -37,7 +37,7 @@
 #include "core/templates/fixed_vector.h"
 #include "renderer_canvas_render_rd.h"
 #include "servers/rendering/renderer_canvas_cull.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
@@ -610,7 +610,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 			}
 
 			Transform2D final_xform;
-			if (!RSG::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
+			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
 				!l->on_interpolate_transform_list) {
 				final_xform = l->xform_curr;
 			}

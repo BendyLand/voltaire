@@ -51,7 +51,7 @@
 #include "drivers/unix/file_access_unix.h"
 #include "main/main.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/editor_node.h"

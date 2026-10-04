@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "visible_on_screen_notifier_2d.h"
 
 #ifdef TOOLS_ENABLED

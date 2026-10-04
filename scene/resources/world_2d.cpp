@@ -30,7 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "scene/2d/visible_on_screen_notifier_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_2d.h"
 
 #ifndef NAVIGATION_2D_DISABLED

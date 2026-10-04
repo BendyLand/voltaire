@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture_progress_bar.h"
 
 void TextureProgressBar::set_under_texture(const Ref<Texture2D>& p_texture)

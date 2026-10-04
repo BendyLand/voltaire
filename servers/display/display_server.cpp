@@ -42,7 +42,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server_headless.h"
 #include "servers/display/native_menu.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/rendering_device.h"

@@ -47,7 +47,7 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/native_menu.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef RD_ENABLED
 #ifdef VULKAN_ENABLED

@@ -40,7 +40,7 @@
 #include "core/string/translation_server.h"
 #include "core/templates/rb_set.h"
 #include "resource_loader.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef DEBUG_LOAD_THREADED
 #define print_lt(m_text) print_line(m_text)

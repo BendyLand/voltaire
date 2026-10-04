@@ -36,7 +36,7 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 using namespace GLES3;
 
@@ -1359,7 +1359,7 @@ void MeshStorage::update_mesh_instances() {
 	while (dirty_mesh_instance_arrays.first()) {
 		MeshInstance *mi = dirty_mesh_instance_arrays.first()->self();
 
-		bool uses_motion_vectors = RSG::viewport->get_num_viewports_with_motion_vectors() > 0;
+		bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
 		int frame = RendererCompositor::get_frame_number();
 		if (uses_motion_vectors) {
 			for (uint32_t i = 0; i < mi->surfaces.size(); i++) {
@@ -2033,7 +2033,7 @@ void MeshStorage::_multimesh_set_buffer(RID p_multimesh, const Vector<float> &p_
 	ERR_FAIL_NULL(multimesh);
 
 	// Assign data to previous buffer if motion vectors are used, that data will be made current in _update_dirty_multimeshes().
-	bool uses_motion_vectors = RSG::viewport->get_num_viewports_with_motion_vectors() > 0;
+	bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
 	int buffer_index = uses_motion_vectors ? multimesh->prev_buffer : multimesh->current_buffer;
 
 	if (multimesh->uses_colors || multimesh->uses_custom_data) {
@@ -2240,7 +2240,7 @@ void MeshStorage::_update_dirty_multimeshes() {
 	while (multimesh_dirty_list) {
 		MultiMesh *multimesh = multimesh_dirty_list;
 
-		bool uses_motion_vectors = RSG::viewport->get_num_viewports_with_motion_vectors() > 0;
+		bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
 		if (uses_motion_vectors) {
 			multimesh->prev_buffer = multimesh->current_buffer;
 			uint32_t new_buffer_index = multimesh->current_buffer ^ 1;

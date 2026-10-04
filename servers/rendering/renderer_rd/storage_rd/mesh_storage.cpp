@@ -30,7 +30,7 @@
 
 #include "mesh_storage.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 
 using namespace RendererRD;
@@ -1746,7 +1746,7 @@ void MeshStorage::_multimesh_instance_set_transform(
 
 	_multimesh_make_local(multimesh);
 
-	bool uses_motion_vectors = (RSG::viewport->get_num_viewports_with_motion_vectors() > 0) ||
+	bool uses_motion_vectors = (RS::viewport->get_num_viewports_with_motion_vectors() > 0) ||
 							   (RendererCompositorStorage::get_singleton()
 									   ->get_num_compositor_effects_with_motion_vectors() > 0);
 

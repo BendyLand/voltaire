@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "scene/3d/physics/physics_body_3d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "soft_body_3d.h"
 
 SoftBodyRenderingServerHandler::SoftBodyRenderingServerHandler() {}
