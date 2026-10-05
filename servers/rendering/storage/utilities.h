@@ -135,73 +135,56 @@ private:
 	HashSet<Dependency*> dependencies;
 };
 
+class DependencyTracker;
+
 class RendererUtilities
 {
 public:
-	virtual ~RendererUtilities() {}
+	inline static bool capturing_timestamps = false;
 
-	/* INSTANCES */
+	inline static RID (*visibility_notifier_allocate)() = nullptr;
+	inline static void (*visibility_notifier_initialize)(RID) = nullptr;
+	inline static void (*visibility_notifier_free)(RID) = nullptr;
+	inline static void (*visibility_notifier_set_aabb)(RID, const AABB&) = nullptr;
+	inline static AABB (*visibility_notifier_get_aabb)(RID) = nullptr;
+	inline static void (*visibility_notifier_call)(RID, bool, bool) = nullptr;
 
-	virtual RSE::InstanceType get_base_type(RID p_rid) const = 0;
-	virtual bool free(RID p_rid) = 0;
+	inline static bool (*free)(RID) = nullptr;
+	inline static RSE::InstanceType (*get_base_type)(RID) = nullptr;
+	inline static void (*base_update_dependency)(RID, DependencyTracker*) = nullptr;
 
-	/* DEPENDENCIES */
+	inline static void (*capture_timestamps_begin)() = nullptr;
+	inline static void (*capture_timestamp)(const String&) = nullptr;
+	inline static uint32_t (*get_captured_timestamps_count)() = nullptr;
+	inline static uint64_t (*get_captured_timestamps_frame)() = nullptr;
+	inline static uint64_t (*get_captured_timestamp_gpu_time)(uint32_t) = nullptr;
+	inline static uint64_t (*get_captured_timestamp_cpu_time)(uint32_t) = nullptr;
+	inline static String (*get_captured_timestamp_name)(uint32_t) = nullptr;
 
-	virtual void base_update_dependency(RID p_base, DependencyTracker* p_instance) = 0;
+	inline static void (*update_dirty_resources)() = nullptr;
+	inline static void (*set_debug_generate_wireframes)(bool) = nullptr;
+	inline static bool (*has_os_feature)(const String&) = nullptr;
+	inline static void (*update_memory_info)() = nullptr;
 
-	/* VISIBILITY NOTIFIER */
+	inline static uint64_t (*get_rendering_info)(RSE::RenderingInfo) = nullptr;
+	inline static String (*get_video_adapter_name)() = nullptr;
+	inline static String (*get_video_adapter_vendor)() = nullptr;
+	inline static RenderingDeviceEnums::DeviceType (*get_video_adapter_type)() = nullptr;
+	inline static String (*get_video_adapter_api_version)() = nullptr;
 
-	virtual RID visibility_notifier_allocate() = 0;
-	virtual void visibility_notifier_initialize(RID p_notifier) = 0;
-	virtual void visibility_notifier_free(RID p_notifier) = 0;
+	inline static Size2i (*get_maximum_viewport_size)() = nullptr;
+	inline static uint32_t (*get_maximum_shader_varyings)() = nullptr;
+	inline static uint64_t (*get_maximum_uniform_buffer_size)() = nullptr;
 
-	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) = 0;
-
-	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const = 0;
-	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) = 0;
-
-	/* TIMING */
-
-	bool capturing_timestamps = false;
-
-#define TIMESTAMP_BEGIN()                                                                          \
-	{                                                                                              \
-		if (RS::utilities->capturing_timestamps)                                                  \
-			RS::utilities->capture_timestamps_begin();                                            \
-	}
+	RendererUtilities() = delete;
+	RendererUtilities(const RendererUtilities&) = delete;
+	RendererUtilities& operator=(const RendererUtilities&) = delete;
+	~RendererUtilities() = delete;
+};
 
 #define RENDER_TIMESTAMP(m_text)                                                                   \
-	{                                                                                              \
-		if (RS::utilities->capturing_timestamps)                                                  \
-			RS::utilities->capture_timestamp(m_text);                                             \
+	if (RendererUtilities::capture_timestamp) {                                                    \
+		RendererUtilities::capture_timestamp(m_text);                                              \
 	}
-
-	virtual void capture_timestamps_begin() = 0;
-	virtual void capture_timestamp(const String& p_name) = 0;
-	virtual uint32_t get_captured_timestamps_count() const = 0;
-	virtual uint64_t get_captured_timestamps_frame() const = 0;
-	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const = 0;
-	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const = 0;
-	virtual String get_captured_timestamp_name(uint32_t p_index) const = 0;
-
-	/* MISC */
-
-	virtual void update_dirty_resources() = 0;
-	virtual void set_debug_generate_wireframes(bool p_generate) = 0;
-
-	virtual bool has_os_feature(const String& p_feature) const = 0;
-
-	virtual void update_memory_info() = 0;
-
-	virtual uint64_t get_rendering_info(RSE::RenderingInfo p_info) = 0;
-	virtual String get_video_adapter_name() const = 0;
-	virtual String get_video_adapter_vendor() const = 0;
-	virtual RenderingDeviceEnums::DeviceType get_video_adapter_type() const = 0;
-	virtual String get_video_adapter_api_version() const = 0;
-
-	virtual Size2i get_maximum_viewport_size() const = 0;
-	virtual uint32_t get_maximum_shader_varyings() const = 0;
-	virtual uint64_t get_maximum_uniform_buffer_size() const = 0;
-};
 
 

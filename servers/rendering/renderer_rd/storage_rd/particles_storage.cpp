@@ -609,7 +609,7 @@ AABB ParticlesStorage::particles_get_current_aabb(RID p_particles)
 	for (int i = 0; i < particles->draw_passes.size(); i++) {
 		if (particles->draw_passes[i].is_valid()) {
 			AABB maabb =
-				MeshStorage::get_singleton()->mesh_get_aabb(particles->draw_passes[i], RID());
+				MeshStorage::mesh_get_aabb(particles->draw_passes[i], RID());
 			longest_axis_size = MAX(maabb.get_longest_axis_size(), longest_axis_size);
 		}
 	}

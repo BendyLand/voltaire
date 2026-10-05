@@ -34,6 +34,7 @@
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/storage/utilities.h"
 
 class RendererCanvasRender;
 class RendererSceneRender;
@@ -64,7 +65,6 @@ public:
 
 	/* Static Function Pointer Dispatch Interface */
 
-	static inline RendererUtilities* (*get_utilities)() = nullptr;
 	static inline RendererLightStorage* (*get_light_storage)() = nullptr;
 	static inline RendererMaterialStorage* (*get_material_storage)() = nullptr;
 	static inline RendererMeshStorage* (*get_mesh_storage)() = nullptr;
@@ -94,10 +94,12 @@ public:
 
 	template <typename Backend> static void bind_compositor()
 	{
-		get_utilities = &Backend::get_utilities;
+		Backend::bind_utilities();
+
 		get_light_storage = &Backend::get_light_storage;
 		get_material_storage = &Backend::get_material_storage;
-		get_mesh_storage = &Backend::get_mesh_storage;
+		// get_mesh_storage = &Backend::get_mesh_storage;
+		Backend::bind_mesh_storage();
 		get_particles_storage = &Backend::get_particles_storage;
 		get_texture_storage = &Backend::get_texture_storage;
 		get_gi = &Backend::get_gi;

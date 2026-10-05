@@ -34,6 +34,7 @@
 #include "renderer_scene_cull.h"
 #include "servers/rendering/rendering_light_culler.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/utilities.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"
@@ -701,7 +702,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 		case RSE::INSTANCE_PARTICLES_COLLISION: {
 			InstanceParticlesCollisionData* collision =
 				static_cast<InstanceParticlesCollisionData*>(instance->base_data);
-			RS::utilities->free(collision->instance);
+			RendererUtilities::free(collision->instance);
 		} break;
 		case RSE::INSTANCE_FOG_VOLUME: {
 			InstanceFogVolumeData* volume =
@@ -775,7 +776,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 	instance->base = RID();
 
 	if (p_base.is_valid()) {
-		instance->base_type = RS::utilities->get_base_type(p_base);
+		instance->base_type = RendererUtilities::get_base_type(p_base);
 
 		// fix up a specific malfunctioning case before the switch, so it can be handled
 		if (instance->base_type == RSE::INSTANCE_NONE &&
@@ -911,7 +912,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 
 		// forcefully update the dependency now, so if for some reason it gets removed, we can
 		// immediately clear it
-		RS::utilities->base_update_dependency(p_base, &instance->dependency_tracker);
+		RendererUtilities::base_update_dependency(p_base, &instance->dependency_tracker);
 	}
 
 	_instance_queue_update(instance, true, true);
@@ -2158,7 +2159,7 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 		new_aabb = RS::fog->fog_volume_get_aabb(p_instance->base);
 	} break;
 	case RSE::INSTANCE_VISIBLITY_NOTIFIER: {
-		new_aabb = RS::utilities->visibility_notifier_get_aabb(p_instance->base);
+		new_aabb = RendererUtilities::visibility_notifier_get_aabb(p_instance->base);
 	} break;
 	case RSE::INSTANCE_LIGHT: {
 		new_aabb = RS::light_storage->light_get_aabb(p_instance->base);
@@ -3461,18 +3462,17 @@ void RendererSceneCull::update_visibility_notifiers()
 		if (visibility_notifier->just_visible) {
 			visibility_notifier->just_visible = false;
 
-			RS::utilities->visibility_notifier_call(
+			RendererUtilities::visibility_notifier_call(
 				visibility_notifier->base, true, RS::threaded);
 		}
 		else {
 			if (visibility_notifier->visible_in_frame != RendererCompositor::get_frame_number()) {
 				visible_notifier_list.remove(E);
 
-				RS::utilities->visibility_notifier_call(
+				RendererUtilities::visibility_notifier_call(
 					visibility_notifier->base, false, RS::threaded);
 			}
 		}
-
 		E = N;
 	}
 }

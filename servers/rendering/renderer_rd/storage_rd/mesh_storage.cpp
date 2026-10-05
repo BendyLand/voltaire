@@ -32,12 +32,9 @@
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/storage/mesh_storage.h"
 
 using namespace RendererRD;
-
-MeshStorage* MeshStorage::singleton = nullptr;
-
-MeshStorage* MeshStorage::get_singleton() { return singleton; }
 
 MeshStorage::~MeshStorage()
 {
@@ -49,8 +46,6 @@ MeshStorage::~MeshStorage()
 	skeleton_shader.shader.version_free(skeleton_shader.version);
 
 	RD::free_rid(default_rd_storage_buffer);
-
-	singleton = nullptr;
 }
 
 bool MeshStorage::free(RID p_rid)
@@ -64,7 +59,7 @@ bool MeshStorage::free(RID p_rid)
 		return true;
 	}
 	else if (owns_multimesh(p_rid)) {
-		multimesh_free(p_rid);
+		_multimesh_free(p_rid);
 		return true;
 	}
 	else if (owns_skeleton(p_rid)) {
@@ -578,7 +573,7 @@ RenderingServerTypes::SurfaceData MeshStorage::mesh_get_surface(RID p_mesh, int 
 	return sd;
 }
 
-int MeshStorage::mesh_get_surface_count(RID p_mesh) const
+int MeshStorage::mesh_get_surface_count(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, 0);
@@ -739,7 +734,7 @@ void MeshStorage::mesh_set_path(RID p_mesh, const String& p_path)
 	mesh->path = p_path;
 }
 
-String MeshStorage::mesh_get_path(RID p_mesh) const
+String MeshStorage::mesh_get_path(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, String());
@@ -891,7 +886,7 @@ bool MeshStorage::mesh_needs_instance(RID p_mesh, bool p_has_skeleton)
 	return mesh->blend_shape_count > 0 || (mesh->has_bone_weights && p_has_skeleton);
 }
 
-Dependency* MeshStorage::mesh_get_dependency(RID p_mesh) const
+Dependency* MeshStorage::mesh_get_dependency(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, nullptr);
@@ -1386,9 +1381,9 @@ void MeshStorage::_multimesh_initialize(RID p_rid)
 void MeshStorage::_multimesh_free(RID p_rid)
 {
 	// Remove from interpolator.
-	_interpolation_data.notify_free_multimesh(p_rid);
+	RendererMeshStorage::_interpolation_data.notify_free_multimesh(p_rid);
 	_update_dirty_multimeshes();
-	multimesh_allocate_data(p_rid, 0, RSE::MULTIMESH_TRANSFORM_2D);
+	_multimesh_allocate_data(p_rid, 0, RSE::MULTIMESH_TRANSFORM_2D);
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_rid);
 	multimesh->dependency.deleted_notify(p_rid);
 	multimesh_owner.free(p_rid);
@@ -1858,7 +1853,7 @@ void MeshStorage::_multimesh_instance_set_custom_data(
 	_multimesh_mark_dirty(multimesh, p_index, false);
 }
 
-RID MeshStorage::_multimesh_get_mesh(RID p_multimesh) const
+RID MeshStorage::_multimesh_get_mesh(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, RID());
@@ -1866,7 +1861,7 @@ RID MeshStorage::_multimesh_get_mesh(RID p_multimesh) const
 	return multimesh->mesh;
 }
 
-Dependency* MeshStorage::multimesh_get_dependency(RID p_multimesh) const
+Dependency* MeshStorage::multimesh_get_dependency(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, nullptr);
@@ -1986,7 +1981,7 @@ Color MeshStorage::_multimesh_instance_get_custom_data(RID p_multimesh, int p_in
 	return c;
 }
 
-RID MeshStorage::_multimesh_get_command_buffer_rd_rid(RID p_multimesh) const
+RID MeshStorage::_multimesh_get_command_buffer_rd_rid(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, RID());
@@ -2064,7 +2059,7 @@ AABB MeshStorage::_multimesh_get_aabb(RID p_multimesh)
 	return multimesh->aabb;
 }
 
-MeshStorage::MultiMeshInterpolator* MeshStorage::_multimesh_get_interpolator(RID p_multimesh) const
+RendererMeshStorage::MultiMeshInterpolator* MeshStorage::_multimesh_get_interpolator(RID p_multimesh) const
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V_MSG(multimesh, nullptr, "Multimesh not found: " + itos(p_multimesh.get_id()));
@@ -2083,8 +2078,7 @@ void MeshStorage::skeleton_free(RID p_rid)
 {
 	_update_dirty_skeletons();
 	skeleton_allocate_data(p_rid, 0);
-	Skeleton* skeleton = skeleton_owner.
-get_or_null(p_rid);
+	Skeleton* skeleton = skeleton_owner.get_or_null(p_rid);
 	skeleton->dependency.deleted_notify(p_rid);
 	skeleton_owner.free(p_rid);
 }

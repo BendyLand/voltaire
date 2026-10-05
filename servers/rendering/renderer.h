@@ -67,6 +67,7 @@ class RenderingDevice;
 class RendererCameraAttributes;
 class RendererCanvasRender;
 class RendererCanvasCull;
+class RendererSceneCull;
 class RendererViewport;
 class RenderingMethod;
 
@@ -130,7 +131,6 @@ public:
 	/* SUBSYSTEM & STORAGE POINTERS */
 	static inline bool threaded = false;
 
-	static inline RendererUtilities* utilities = nullptr;
 	static inline RendererLightStorage* light_storage = nullptr;
 	static inline RendererMaterialStorage* material_storage = nullptr;
 	static inline RendererMeshStorage* mesh_storage = nullptr;
@@ -143,7 +143,7 @@ public:
 
 	static inline RendererCanvasCull* canvas = nullptr;
 	static inline RendererViewport* viewport = nullptr;
-	static inline RenderingMethod* scene = nullptr;
+	static inline RendererSceneCull* scene = nullptr;
 
 	static void fix_surface_compatibility(
 		RenderingServerTypes::SurfaceData& p_surface, const String& p_path = String());

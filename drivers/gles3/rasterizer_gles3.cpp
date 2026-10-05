@@ -29,6 +29,8 @@
 /**************************************************************************/
 
 #include "rasterizer_gles3.h"
+#include "drivers/gles3/storage/utilities.h"
+#include "servers/rendering/storage/utilities.h"
 
 #ifdef GLES3_ENABLED
 
@@ -109,16 +111,97 @@ void RasterizerGLES3::begin_frame(double frame_step)
 	canvas->set_time(time_total);
 	scene->set_time(time_total, frame_step);
 
-	GLES3::Utilities* utils = GLES3::Utilities::get_singleton();
-	utils->_capture_timestamps_begin();
+	GLES3::Utilities::_capture_timestamps_begin();
 
 	// scene->iteration();
 }
 
+void RasterizerGLES3::bind_mesh_storage()
+{
+    RendererMeshStorage::mesh_allocate = []() { return mesh_storage->mesh_allocate(); };
+    RendererMeshStorage::mesh_initialize = [](RID p_rid) { mesh_storage->mesh_initialize(p_rid); };
+    RendererMeshStorage::mesh_set_blend_shape_count = [](RID p_mesh, int p_count) { mesh_storage->mesh_set_blend_shape_count(p_mesh, p_count); };
+    RendererMeshStorage::mesh_needs_instance = [](RID p_mesh, bool p_has_skeleton) { return mesh_storage->mesh_needs_instance(p_mesh, p_has_skeleton); };
+    RendererMeshStorage::mesh_add_surface = [](RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface) { mesh_storage->mesh_add_surface(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_get_blend_shape_count = [](RID p_mesh) { return mesh_storage->mesh_get_blend_shape_count(p_mesh); };
+    RendererMeshStorage::mesh_set_blend_shape_mode = [](RID p_mesh, RSE::BlendShapeMode p_mode) { mesh_storage->mesh_set_blend_shape_mode(p_mesh, p_mode); };
+    RendererMeshStorage::mesh_get_blend_shape_mode = [](RID p_mesh) { return mesh_storage->mesh_get_blend_shape_mode(p_mesh); };
+    RendererMeshStorage::mesh_surface_update_vertex_region = [](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) { mesh_storage->mesh_surface_update_vertex_region(p_mesh, p_surface, p_offset, p_data); };
+    RendererMeshStorage::mesh_surface_update_attribute_region = [](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) { mesh_storage->mesh_surface_update_attribute_region(p_mesh, p_surface, p_offset, p_data); };
+    RendererMeshStorage::mesh_surface_update_skin_region = [](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) { mesh_storage->mesh_surface_update_skin_region(p_mesh, p_surface, p_offset, p_data); };
+    RendererMeshStorage::mesh_surface_update_index_region = [](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) { mesh_storage->mesh_surface_update_index_region(p_mesh, p_surface, p_offset, p_data); };
+    RendererMeshStorage::mesh_surface_set_material = [](RID p_mesh, int p_surface, RID p_material) { mesh_storage->mesh_surface_set_material(p_mesh, p_surface, p_material); };
+    RendererMeshStorage::mesh_surface_get_material = [](RID p_mesh, int p_surface) { return mesh_storage->mesh_surface_get_material(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
+	    return static_cast<const GLES3::MeshStorage*>(mesh_storage)->mesh_get_surface(p_mesh, p_surface);
+	};
+    RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid = [](RID p_mesh, int p_surface) { return mesh_storage->mesh_surface_get_vertex_buffer_rd_rid(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid = [](RID p_mesh, int p_surface) { return mesh_storage->mesh_surface_get_attribute_buffer_rd_rid(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid = [](RID p_mesh, int p_surface) { return mesh_storage->mesh_surface_get_skin_buffer_rd_rid(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid = [](RID p_mesh, int p_surface) { return mesh_storage->mesh_surface_get_index_buffer_rd_rid(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_get_surface_count = [](RID p_mesh) { return mesh_storage->mesh_get_surface_count(p_mesh); };
+    RendererMeshStorage::mesh_set_custom_aabb = [](RID p_mesh, const AABB& p_aabb) { mesh_storage->mesh_set_custom_aabb(p_mesh, p_aabb); };
+    RendererMeshStorage::mesh_get_custom_aabb = [](RID p_mesh) { return mesh_storage->mesh_get_custom_aabb(p_mesh); };
+    RendererMeshStorage::mesh_get_aabb = [](RID p_mesh, RID p_skeleton) { return mesh_storage->mesh_get_aabb(p_mesh, p_skeleton); };
+    RendererMeshStorage::mesh_set_path = [](RID p_mesh, const String& p_path) { mesh_storage->mesh_set_path(p_mesh, p_path); };
+    RendererMeshStorage::mesh_get_path = [](RID p_mesh) { return mesh_storage->mesh_get_path(p_mesh); };
+    RendererMeshStorage::mesh_set_shadow_mesh = [](RID p_mesh, RID p_shadow_mesh) { mesh_storage->mesh_set_shadow_mesh(p_mesh, p_shadow_mesh); };
+    RendererMeshStorage::mesh_clear = [](RID p_mesh) { mesh_storage->mesh_clear(p_mesh); };
+    RendererMeshStorage::mesh_surface_remove = [](RID p_mesh, int p_surface) { mesh_storage->mesh_surface_remove(p_mesh, p_surface); };
+    RendererMeshStorage::mesh_debug_usage = [](List<RenderingServerTypes::MeshInfo>* r_info) { mesh_storage->mesh_debug_usage(r_info); };
+
+    RendererMeshStorage::mesh_instance_create = [](RID p_base) { return mesh_storage->mesh_instance_create(p_base); };
+    RendererMeshStorage::mesh_instance_free = [](RID p_mi) { mesh_storage->mesh_instance_free(p_mi); };
+    RendererMeshStorage::mesh_instance_set_skeleton = [](RID p_mi, RID p_sk) { mesh_storage->mesh_instance_set_skeleton(p_mi, p_sk); };
+    RendererMeshStorage::mesh_instance_set_blend_shape_weight = [](RID p_mi, int p_shape, float p_w) { mesh_storage->mesh_instance_set_blend_shape_weight(p_mi, p_shape, p_w); };
+    RendererMeshStorage::mesh_instance_check_for_update = [](RID p_mi) { mesh_storage->mesh_instance_check_for_update(p_mi); };
+    RendererMeshStorage::mesh_instance_set_canvas_item_transform = [](RID p_mi, const Transform2D& p_t) { mesh_storage->mesh_instance_set_canvas_item_transform(p_mi, p_t); };
+    RendererMeshStorage::update_mesh_instances = []() { mesh_storage->update_mesh_instances(); };
+
+    RendererMeshStorage::_multimesh_allocate = []() { return mesh_storage->_multimesh_allocate(); };
+    RendererMeshStorage::_multimesh_initialize = [](RID p_rid) { mesh_storage->_multimesh_initialize(p_rid); };
+    RendererMeshStorage::_multimesh_free = [](RID p_rid) { mesh_storage->_multimesh_free(p_rid); };
+    RendererMeshStorage::_multimesh_allocate_data = [](RID p_mm, int p_instances, RSE::MultimeshTransformFormat p_format, bool p_colors, bool p_custom_data, bool p_indirect) {
+        mesh_storage->_multimesh_allocate_data(p_mm, p_instances, p_format, p_colors, p_custom_data, p_indirect);
+    };
+    RendererMeshStorage::_multimesh_get_instance_count = [](RID p_mm) { return mesh_storage->_multimesh_get_instance_count(p_mm); };
+    RendererMeshStorage::_multimesh_set_mesh = [](RID p_mm, RID p_mesh) { mesh_storage->_multimesh_set_mesh(p_mm, p_mesh); };
+    RendererMeshStorage::_multimesh_instance_set_transform = [](RID p_mm, int p_idx, const Transform3D& p_t) { mesh_storage->_multimesh_instance_set_transform(p_mm, p_idx, p_t); };
+    RendererMeshStorage::_multimesh_instance_set_transform_2d = [](RID p_mm, int p_idx, const Transform2D& p_t) { mesh_storage->_multimesh_instance_set_transform_2d(p_mm, p_idx, p_t); };
+    RendererMeshStorage::_multimesh_instance_set_color = [](RID p_mm, int p_idx, const Color& p_c) { mesh_storage->_multimesh_instance_set_color(p_mm, p_idx, p_c); };
+    RendererMeshStorage::_multimesh_instance_set_custom_data = [](RID p_mm, int p_idx, const Color& p_c) { mesh_storage->_multimesh_instance_set_custom_data(p_mm, p_idx, p_c); };
+    RendererMeshStorage::_multimesh_set_custom_aabb = [](RID p_mm, const AABB& p_aabb) { mesh_storage->_multimesh_set_custom_aabb(p_mm, p_aabb); };
+    RendererMeshStorage::_multimesh_get_custom_aabb = [](RID p_mm) { return mesh_storage->_multimesh_get_custom_aabb(p_mm); };
+    RendererMeshStorage::_multimesh_get_mesh = [](RID p_mm) { return mesh_storage->_multimesh_get_mesh(p_mm); };
+    RendererMeshStorage::_multimesh_instance_get_transform = [](RID p_mm, int p_idx) { return mesh_storage->_multimesh_instance_get_transform(p_mm, p_idx); };
+    RendererMeshStorage::_multimesh_instance_get_transform_2d = [](RID p_mm, int p_idx) { return mesh_storage->_multimesh_instance_get_transform_2d(p_mm, p_idx); };
+    RendererMeshStorage::_multimesh_instance_get_color = [](RID p_mm, int p_idx) { return mesh_storage->_multimesh_instance_get_color(p_mm, p_idx); };
+    RendererMeshStorage::_multimesh_instance_get_custom_data = [](RID p_mm, int p_idx) { return mesh_storage->_multimesh_instance_get_custom_data(p_mm, p_idx); };
+    RendererMeshStorage::_multimesh_set_buffer = [](RID p_mm, const Vector<float>& p_buf) { mesh_storage->_multimesh_set_buffer(p_mm, p_buf); };
+    RendererMeshStorage::_multimesh_get_command_buffer_rd_rid = [](RID p_mm) { return mesh_storage->_multimesh_get_command_buffer_rd_rid(p_mm); };
+    RendererMeshStorage::_multimesh_get_buffer_rd_rid = [](RID p_mm) { return mesh_storage->_multimesh_get_buffer_rd_rid(p_mm); };
+    RendererMeshStorage::_multimesh_get_buffer = [](RID p_mm) { return mesh_storage->_multimesh_get_buffer(p_mm); };
+    RendererMeshStorage::_multimesh_set_visible_instances = [](RID p_mm, int p_v) { mesh_storage->_multimesh_set_visible_instances(p_mm, p_v); };
+    RendererMeshStorage::_multimesh_get_visible_instances = [](RID p_mm) { return mesh_storage->_multimesh_get_visible_instances(p_mm); };
+    RendererMeshStorage::_multimesh_get_aabb = [](RID p_mm) { return mesh_storage->_multimesh_get_aabb(p_mm); };
+    RendererMeshStorage::_multimesh_get_interpolator = [](RID p_mm) { return mesh_storage->_multimesh_get_interpolator(p_mm); };
+
+    RendererMeshStorage::skeleton_allocate = []() { return mesh_storage->skeleton_allocate(); };
+    RendererMeshStorage::skeleton_initialize = [](RID p_rid) { mesh_storage->skeleton_initialize(p_rid); };
+    RendererMeshStorage::skeleton_free = [](RID p_rid) { mesh_storage->skeleton_free(p_rid); };
+    RendererMeshStorage::skeleton_allocate_data = [](RID p_sk, int p_bones, bool p_2d) { mesh_storage->skeleton_allocate_data(p_sk, p_bones, p_2d); };
+    RendererMeshStorage::skeleton_set_base_transform_2d = [](RID p_sk, const Transform2D& p_t) { mesh_storage->skeleton_set_base_transform_2d(p_sk, p_t); };
+    RendererMeshStorage::skeleton_get_bone_count = [](RID p_sk) { return mesh_storage->skeleton_get_bone_count(p_sk); };
+    RendererMeshStorage::skeleton_bone_set_transform = [](RID p_sk, int p_b, const Transform3D& p_t) { mesh_storage->skeleton_bone_set_transform(p_sk, p_b, p_t); };
+    RendererMeshStorage::skeleton_bone_get_transform = [](RID p_sk, int p_b) { return mesh_storage->skeleton_bone_get_transform(p_sk, p_b); };
+    RendererMeshStorage::skeleton_bone_set_transform_2d = [](RID p_sk, int p_b, const Transform2D& p_t) { mesh_storage->skeleton_bone_set_transform_2d(p_sk, p_b, p_t); };
+    RendererMeshStorage::skeleton_bone_get_transform_2d = [](RID p_sk, int p_b) { return mesh_storage->skeleton_bone_get_transform_2d(p_sk, p_b); };
+    RendererMeshStorage::skeleton_update_dependency = [](RID p_sk, DependencyTracker* p_dep) { mesh_storage->skeleton_update_dependency(p_sk, p_dep); };
+}
+
 void RasterizerGLES3::end_frame(bool p_swap_buffers)
 {
-	GLES3::Utilities* utils = GLES3::Utilities::get_singleton();
-	utils->capture_timestamps_end();
+	GLES3::Utilities::capture_timestamps_end();
 }
 
 void RasterizerGLES3::gl_end_frame(bool p_swap_buffers)
@@ -367,7 +450,7 @@ void RasterizerGLES3::initialize()
 
 	// OpenGL needs to be initialized before initializing the Rasterizers
 	config = memnew(GLES3::Config);
-	utilities = memnew(GLES3::Utilities);
+	GLES3::Utilities::initialize();
 	texture_storage = memnew(GLES3::TextureStorage);
 	material_storage = memnew(GLES3::MaterialStorage);
 	mesh_storage = memnew(GLES3::MeshStorage);
@@ -380,8 +463,9 @@ void RasterizerGLES3::initialize()
 	feed_effects = memnew(GLES3::FeedEffects);
 	gi = memnew(GLES3::GI);
 	fog = memnew(GLES3::Fog);
-	canvas = memnew(RasterizerCanvasGLES3());
-	scene = memnew(RasterizerSceneGLES3());
+
+    canvas = memnew(RasterizerCanvasGLES3(mesh_storage, texture_storage, material_storage));
+    scene = memnew(RasterizerSceneGLES3(mesh_storage, texture_storage, material_storage, light_storage));
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
 	texture_storage->_tex_blit_shader_initialize();
@@ -412,7 +496,6 @@ void RasterizerGLES3::finalize()
 	memdelete(mesh_storage);
 	memdelete(material_storage);
 	memdelete(texture_storage);
-	memdelete(utilities);
 	memdelete(config);
 }
 
@@ -465,7 +548,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 			// Querying the actual window size from the DisplayServer would deadlock in separate
 			// render thread mode, so let's set the biggest viewport the implementation supports, to
 			// be sure the window is fully covered.
-			Size2i max_vp = GLES3::Utilities::get_singleton()->get_maximum_viewport_size();
+			Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
 			glViewport(0, 0, max_vp[0], max_vp[1]);
 			glClearColor(0.0, 0.0, 0.0, 1.0);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -571,6 +654,43 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 	gl_end_frame(true);
 
 	texture_storage->texture_free(texture);
+}
+
+void RasterizerGLES3::bind_utilities()
+{
+    RendererUtilities::visibility_notifier_allocate = &GLES3::Utilities::visibility_notifier_allocate;
+    RendererUtilities::visibility_notifier_initialize = &GLES3::Utilities::visibility_notifier_initialize;
+    RendererUtilities::visibility_notifier_free = &GLES3::Utilities::visibility_notifier_free;
+    RendererUtilities::visibility_notifier_set_aabb = &GLES3::Utilities::visibility_notifier_set_aabb;
+    RendererUtilities::visibility_notifier_get_aabb = &GLES3::Utilities::visibility_notifier_get_aabb;
+    RendererUtilities::visibility_notifier_call = &GLES3::Utilities::visibility_notifier_call;
+
+    RendererUtilities::free = &GLES3::Utilities::free;
+    RendererUtilities::get_base_type = &GLES3::Utilities::get_base_type;
+    RendererUtilities::base_update_dependency = &GLES3::Utilities::base_update_dependency;
+
+    RendererUtilities::capture_timestamps_begin = &GLES3::Utilities::capture_timestamps_begin;
+    RendererUtilities::capture_timestamp = &GLES3::Utilities::capture_timestamp;
+    RendererUtilities::get_captured_timestamps_count = &GLES3::Utilities::get_captured_timestamps_count;
+    RendererUtilities::get_captured_timestamps_frame = &GLES3::Utilities::get_captured_timestamps_frame;
+    RendererUtilities::get_captured_timestamp_gpu_time = &GLES3::Utilities::get_captured_timestamp_gpu_time;
+    RendererUtilities::get_captured_timestamp_cpu_time = &GLES3::Utilities::get_captured_timestamp_cpu_time;
+    RendererUtilities::get_captured_timestamp_name = &GLES3::Utilities::get_captured_timestamp_name;
+
+    RendererUtilities::update_dirty_resources = &GLES3::Utilities::update_dirty_resources;
+    RendererUtilities::set_debug_generate_wireframes = &GLES3::Utilities::set_debug_generate_wireframes;
+    RendererUtilities::has_os_feature = &GLES3::Utilities::has_os_feature;
+    RendererUtilities::update_memory_info = &GLES3::Utilities::update_memory_info;
+
+    RendererUtilities::get_rendering_info = &GLES3::Utilities::get_rendering_info;
+    RendererUtilities::get_video_adapter_name = &GLES3::Utilities::get_video_adapter_name;
+    RendererUtilities::get_video_adapter_vendor = &GLES3::Utilities::get_video_adapter_vendor;
+    RendererUtilities::get_video_adapter_type = &GLES3::Utilities::get_video_adapter_type;
+    RendererUtilities::get_video_adapter_api_version = &GLES3::Utilities::get_video_adapter_api_version;
+
+    RendererUtilities::get_maximum_viewport_size = &GLES3::Utilities::get_maximum_viewport_size;
+    RendererUtilities::get_maximum_shader_varyings = &GLES3::Utilities::get_maximum_shader_varyings;
+    RendererUtilities::get_maximum_uniform_buffer_size = &GLES3::Utilities::get_maximum_uniform_buffer_size;
 }
 
 #endif // GLES3_ENABLED

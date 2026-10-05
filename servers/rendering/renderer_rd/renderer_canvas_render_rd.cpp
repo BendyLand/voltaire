@@ -123,8 +123,6 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 	// This dramatically reduces the amount of pipeline objects
 	// that need to be created for these formats.
 
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
-
 	uint32_t vertex_count = p_points.size();
 	uint32_t stride = 2; // vertices always repeat
 	if ((uint32_t)p_colors.size() == vertex_count || p_colors.size() == 1) {
@@ -210,7 +208,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			vd.stride = 0;
 
 			descriptions.write[1] = vd;
-			buffers.write[1] = mesh_storage->mesh_get_default_rd_buffer(
+			buffers.write[1] = RendererRD::MeshStorage::mesh_get_default_rd_buffer(
 				RendererRD::MeshStorage::DEFAULT_RD_BUFFER_COLOR);
 		}
 
@@ -240,7 +238,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			vd.stride = 0;
 
 			descriptions.write[2] = vd;
-			buffers.write[2] = mesh_storage->mesh_get_default_rd_buffer(
+			buffers.write[2] = RendererRD::MeshStorage::mesh_get_default_rd_buffer(
 				RendererRD::MeshStorage::DEFAULT_RD_BUFFER_TEX_UV);
 		}
 
@@ -276,7 +274,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			vd.stride = 0;
 
 			descriptions.write[3] = vd;
-			buffers.write[3] = mesh_storage->mesh_get_default_rd_buffer(
+			buffers.write[3] = RendererRD::MeshStorage::mesh_get_default_rd_buffer(
 				RendererRD::MeshStorage::DEFAULT_RD_BUFFER_BONES);
 		}
 
@@ -311,7 +309,7 @@ RendererCanvasRender::PolygonID RendererCanvasRenderRD::request_polygon(
 			vd.stride = 0;
 
 			descriptions.write[4] = vd;
-			buffers.write[4] = mesh_storage->mesh_get_default_rd_buffer(
+			buffers.write[4] = RendererRD::MeshStorage::mesh_get_default_rd_buffer(
 				RendererRD::MeshStorage::DEFAULT_RD_BUFFER_WEIGHTS);
 		}
 
@@ -510,7 +508,6 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 {
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 
 	r_sdf_used = false;
 	int item_count = 0;
@@ -822,8 +819,8 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 				if (c->type == Item::Command::TYPE_MESH) {
 					const Item::CommandMesh* cm = static_cast<const Item::CommandMesh*>(c);
 					if (cm->mesh_instance.is_valid()) {
-						mesh_storage->mesh_instance_check_for_update(cm->mesh_instance);
-						mesh_storage->mesh_instance_set_canvas_item_transform(
+						RendererRD::MeshStorage::mesh_instance_check_for_update(cm->mesh_instance);
+						RendererRD::MeshStorage::mesh_instance_set_canvas_item_transform(
 							cm->mesh_instance, canvas_transform_inverse * ci->final_transform);
 						update_skeletons = true;
 					}
@@ -836,7 +833,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 			if (canvas_group_owner == nullptr) {
 				// Canvas group begins here, render until before this item
 				if (update_skeletons) {
-					mesh_storage->update_mesh_instances();
+					RendererRD::MeshStorage::update_mesh_instances();
 					update_skeletons = false;
 				}
 				_render_batch_items(to_render_target, item_count, canvas_transform_inverse,
@@ -874,7 +871,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 
 		if (ci == canvas_group_owner) {
 			if (update_skeletons) {
-				mesh_storage->update_mesh_instances();
+				RendererRD::MeshStorage::update_mesh_instances();
 				update_skeletons = false;
 			}
 
@@ -901,7 +898,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 		if (backbuffer_copy) {
 			// render anything pending, including clearing if no items
 			if (update_skeletons) {
-				mesh_storage->update_mesh_instances();
+				RendererRD::MeshStorage::update_mesh_instances();
 				update_skeletons = false;
 			}
 
@@ -936,7 +933,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 
 		if (!ci->next || item_count == MAX_RENDER_ITEMS - 1) {
 			if (update_skeletons) {
-				mesh_storage->update_mesh_instances();
+				RendererRD::MeshStorage::update_mesh_instances();
 				update_skeletons = false;
 			}
 
@@ -1919,18 +1916,16 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				modulate = m->modulate;
 			}
 			else if (c->type == Item::Command::TYPE_MULTIMESH) {
-				RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
-
 				const Item::CommandMultiMesh* mm = static_cast<const Item::CommandMultiMesh*>(c);
 				RID multimesh = mm->multimesh;
 
-				if (mesh_storage->multimesh_get_transform_format(multimesh) !=
+				if (RendererRD::MeshStorage::multimesh_get_transform_format(multimesh) !=
 					RSE::MULTIMESH_TRANSFORM_2D) {
 					break;
 				}
 
 				r_current_batch->mesh_instance_count =
-					mesh_storage->multimesh_get_instances_to_draw(multimesh);
+					RendererRD::MeshStorage::multimesh_get_instances_to_draw(multimesh);
 				if (r_current_batch->mesh_instance_count == 0) {
 					break;
 				}
@@ -1947,10 +1942,10 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 
 				r_current_batch->flags |= 1; // multimesh, trails disabled
 
-				if (mesh_storage->multimesh_uses_colors(mm->multimesh)) {
+				if (RendererRD::MeshStorage::multimesh_uses_colors(mm->multimesh)) {
 					r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_COLORS;
 				}
-				if (mesh_storage->multimesh_uses_custom_data(mm->multimesh)) {
+				if (RendererRD::MeshStorage::multimesh_uses_custom_data(mm->multimesh)) {
 					r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 				}
 			}
@@ -2282,7 +2277,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 		PushConstantAttributes push_constant = p_batch->push_constant_attributes();
 
-		RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 		RendererRD::ParticlesStorage* particles_storage =
 			RendererRD::ParticlesStorage::get_singleton();
 
@@ -2298,9 +2292,9 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			const Item::CommandMultiMesh* mm =
 				static_cast<const Item::CommandMultiMesh*>(p_batch->command);
 			RID multimesh = mm->multimesh;
-			mesh = mesh_storage->multimesh_get_mesh(multimesh);
+			mesh = RendererRD::MeshStorage::_multimesh_get_mesh(multimesh);
 
-			RID uniform_set = mesh_storage->multimesh_get_2d_uniform_set(
+			RID uniform_set = RendererRD::MeshStorage::multimesh_get_2d_uniform_set(
 				multimesh, shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
 			RD::draw_list_bind_uniform_set(
 				p_draw_list, uniform_set, TRANSFORMS_UNIFORM_SET);
@@ -2335,12 +2329,12 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			break;
 		}
 
-		uint32_t surf_count = mesh_storage->mesh_get_surface_count(mesh);
+		uint32_t surf_count = RendererRD::MeshStorage::mesh_get_surface_count(mesh);
 
 		for (uint32_t j = 0; j < surf_count; j++) {
-			void* surface = mesh_storage->mesh_get_surface(mesh, j);
+			void* surface = RendererRD::MeshStorage::mesh_get_surface(mesh, j);
 
-			RSE::PrimitiveType primitive = mesh_storage->mesh_surface_get_primitive(surface);
+			RSE::PrimitiveType primitive = RendererRD::MeshStorage::mesh_surface_get_primitive(surface);
 			ERR_CONTINUE(primitive < 0 || primitive >= RSE::PRIMITIVE_MAX);
 
 			RID vertex_array;
@@ -2357,7 +2351,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			RD::draw_list_set_push_constant(
 				p_draw_list, &push_constant, sizeof(push_constant));
 
-			RID index_array = mesh_storage->mesh_surface_get_index_array(surface, 0);
+			RID index_array = RendererRD::MeshStorage::mesh_surface_get_index_array(surface, 0);
 
 			if (index_array.is_valid()) {
 				RD::draw_list_bind_index_array(p_draw_list, index_array);
@@ -2373,7 +2367,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 				r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 								   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
 					_indices_to_primitives(
-						primitive, mesh_storage->mesh_surface_get_vertices_drawn_count(surface)) *
+						primitive, RendererRD::MeshStorage::mesh_surface_get_vertices_drawn_count(surface)) *
 					p_batch->mesh_instance_count;
 				r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 								   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;

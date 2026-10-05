@@ -35,86 +35,68 @@
 namespace RendererDummy
 {
 
-class Utilities : public RendererUtilities
+class Utilities final
 {
-private:
-	static Utilities* singleton;
-
 public:
-	static Utilities* get_singleton() { return singleton; }
+    Utilities() = delete;
+    Utilities(const Utilities&) = delete;
+    Utilities& operator=(const Utilities&) = delete;
+    ~Utilities() = delete;
 
-	Utilities();
-	~Utilities();
+    static void initialize() {}
+    static void finalize() {}
 
-	virtual RSE::InstanceType get_base_type(RID p_rid) const override;
-	virtual bool free(RID p_rid) override;
+    static RSE::InstanceType get_base_type(RID p_rid);
+    static bool free(RID p_rid);
 
-	virtual void base_update_dependency(RID p_base, DependencyTracker* p_instance) override;
+    static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
 
-	virtual RID visibility_notifier_allocate() override { return RID(); }
+    static RID visibility_notifier_allocate() { return RID(); }
+    static void visibility_notifier_initialize(RID p_notifier) {}
+    static void visibility_notifier_free(RID p_notifier) {}
+    static void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) {}
+    static AABB visibility_notifier_get_aabb(RID p_notifier) { return AABB(); }
+    static void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) {}
 
-	virtual void visibility_notifier_initialize(RID p_notifier) override {}
+    static void capture_timestamps_begin() {}
+    static void capture_timestamp(const String& p_name) {}
+    static uint32_t get_captured_timestamps_count() { return 0; }
+    static uint64_t get_captured_timestamps_frame() { return 0; }
+    static uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) { return 0; }
+    static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) { return 0; }
+    static String get_captured_timestamp_name(uint32_t p_index) { return String(); }
 
-	virtual void visibility_notifier_free(RID p_notifier) override {}
+    static void update_dirty_resources() {}
+    static void set_debug_generate_wireframes(bool p_generate) {}
 
-	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) override {}
+    static bool has_os_feature(const String& p_feature)
+    {
+        return p_feature == "rgtc" || p_feature == "bptc" || p_feature == "s3tc" || p_feature == "etc2";
+    }
 
-	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override { return AABB(); }
+    static void update_memory_info() {}
 
-	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override {}
+    static uint64_t get_rendering_info(RSE::RenderingInfo p_info) { return 0; }
 
-	virtual void capture_timestamps_begin() override {}
+    static String get_video_adapter_name() { return String(); }
+    static String get_video_adapter_vendor() { return String(); }
+    static RenderingDeviceEnums::DeviceType get_video_adapter_type()
+    {
+        return RenderingDeviceEnums::DeviceType::DEVICE_TYPE_OTHER;
+    }
+    static String get_video_adapter_api_version() { return String(); }
 
-	virtual void capture_timestamp(const String& p_name) override {}
+    static Size2i get_maximum_viewport_size() { return Size2i(); }
 
-	virtual uint32_t get_captured_timestamps_count() const override { return 0; }
+    static uint32_t get_maximum_shader_varyings()
+    {
+        return 31;
+    }
 
-	virtual uint64_t get_captured_timestamps_frame() const override { return 0; }
-
-	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const override { return 0; }
-
-	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const override { return 0; }
-
-	virtual String get_captured_timestamp_name(uint32_t p_index) const override { return String(); }
-
-	virtual void update_dirty_resources() override {}
-
-	virtual void set_debug_generate_wireframes(bool p_generate) override {}
-
-	virtual bool has_os_feature(const String& p_feature) const override
-	{
-		return p_feature == "rgtc" || p_feature == "bptc" || p_feature == "s3tc" ||
-			   p_feature == "etc2";
-	}
-
-	virtual void update_memory_info() override {}
-
-	virtual uint64_t get_rendering_info(RSE::RenderingInfo p_info) override { return 0; }
-
-	virtual String get_video_adapter_name() const override { return String(); }
-
-	virtual String get_video_adapter_vendor() const override { return String(); }
-
-	virtual RenderingDeviceEnums::DeviceType get_video_adapter_type() const override
-	{
-		return RenderingDeviceEnums::DeviceType::DEVICE_TYPE_OTHER;
-	}
-
-	virtual String get_video_adapter_api_version() const override { return String(); }
-
-	virtual Size2i get_maximum_viewport_size() const override { return Size2i(); }
-
-	virtual uint32_t get_maximum_shader_varyings() const override
-	{
-		return 31;
-	} // Fair assumption for everything except old OpenGL-only phones.
-
-	virtual uint64_t get_maximum_uniform_buffer_size() const override
-	{
-		return 65536;
-	} // Fair assumption for all devices.
+    static uint64_t get_maximum_uniform_buffer_size()
+    {
+        return 65536;
+    }
 };
 
 } // namespace RendererDummy
-
-

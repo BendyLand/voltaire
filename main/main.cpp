@@ -356,8 +356,7 @@ void finalize_physics()
 
 void finalize_display()
 {
-	Renderer::finish();
-
+	Renderer::finalize();
 	memdelete(display_server);
 	memdelete(accessibility_server);
 }

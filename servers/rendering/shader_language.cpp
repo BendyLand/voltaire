@@ -36,6 +36,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_types.h"
+#include "servers/rendering/storage/utilities.h"
 #include "shader_language.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
@@ -11371,10 +11372,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 	}
 	uint32_t varying_index = base_varying_index;
 	uint32_t max_varyings = 31;
-	// Can be false for internal shaders created in the process of initializing the engine.
-	if (RS::utilities) {
-		max_varyings = RS::utilities->get_maximum_shader_varyings();
-	}
+	max_varyings = RendererUtilities::get_maximum_shader_varyings();
 
 	for (const KeyValue<StringName, ShaderNode::Varying>& kv : shader->varyings) {
 		if (kv.value.stage != ShaderNode::Varying::STAGE_FRAGMENT &&

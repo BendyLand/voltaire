@@ -155,23 +155,23 @@ void ParticlesStorage::_particles_free_data(Particles* particles)
 
 	if (particles->front_process_buffer != 0) {
 		glDeleteVertexArrays(1, &particles->front_vertex_array);
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->front_process_buffer);
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->front_instance_buffer);
+		GLES3::Utilities::buffer_free_data(particles->front_process_buffer);
+		GLES3::Utilities::buffer_free_data(particles->front_instance_buffer);
 		particles->front_vertex_array = 0;
 		particles->front_process_buffer = 0;
 		particles->front_instance_buffer = 0;
 
 		glDeleteVertexArrays(1, &particles->back_vertex_array);
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->back_process_buffer);
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->back_instance_buffer);
+		GLES3::Utilities::buffer_free_data(particles->back_process_buffer);
+		GLES3::Utilities::buffer_free_data(particles->back_instance_buffer);
 		particles->back_vertex_array = 0;
 		particles->back_process_buffer = 0;
 		particles->back_instance_buffer = 0;
 	}
 
 	if (particles->sort_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->last_frame_buffer);
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->sort_buffer);
+		GLES3::Utilities::buffer_free_data(particles->last_frame_buffer);
+		GLES3::Utilities::buffer_free_data(particles->sort_buffer);
 		particles->last_frame_buffer = 0;
 		particles->sort_buffer = 0;
 		particles->sort_buffer_filled = false;
@@ -179,7 +179,7 @@ void ParticlesStorage::_particles_free_data(Particles* particles)
 	}
 
 	if (particles->frame_params_ubo != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(particles->frame_params_ubo);
+		GLES3::Utilities::buffer_free_data(particles->frame_params_ubo);
 		particles->frame_params_ubo = 0;
 	}
 }
@@ -500,7 +500,7 @@ AABB ParticlesStorage::particles_get_current_aabb(RID p_particles)
 	for (int i = 0; i < particles->draw_passes.size(); i++) {
 		if (particles->draw_passes[i].is_valid()) {
 			AABB maabb =
-				MeshStorage::get_singleton()->mesh_get_aabb(particles->draw_passes[i], RID());
+				MeshStorage::mesh_get_aabb(particles->draw_passes[i], RID());
 			longest_axis_size = MAX(maabb.get_longest_axis_size(), longest_axis_size);
 		}
 	}
@@ -820,7 +820,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		glGenBuffers(1, &p_particles->frame_params_ubo);
 		glBindBufferBase(
 			GL_UNIFORM_BUFFER, PARTICLES_FRAME_UNIFORM_LOCATION, p_particles->frame_params_ubo);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			p_particles->frame_params_ubo, sizeof(ParticlesFrameParams), &frame_params,
 			GL_STREAM_DRAW, "Particle Frame UBO");
 	}
@@ -1006,7 +1006,7 @@ void ParticlesStorage::_particles_update_buffers(Particles* particles)
 			glGenBuffers(1, &particles->front_instance_buffer);
 
 			glBindBuffer(GL_ARRAY_BUFFER, particles->front_process_buffer);
-			GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+			GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 				particles->front_process_buffer,
 				particles->process_buffer_stride_cache * total_amount, data.ptr(), GL_DYNAMIC_COPY,
 				"Particles front process buffer");
@@ -1020,7 +1020,7 @@ void ParticlesStorage::_particles_update_buffers(Particles* particles)
 			glBindVertexArray(0);
 
 			glBindBuffer(GL_ARRAY_BUFFER, particles->front_instance_buffer);
-			GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+			GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 				particles->front_instance_buffer, particles->instance_buffer_size_cache,
 				instance_data.ptr(), GL_DYNAMIC_COPY, "Particles front instance buffer");
 		}
@@ -1032,7 +1032,7 @@ void ParticlesStorage::_particles_update_buffers(Particles* particles)
 			glGenBuffers(1, &particles->back_instance_buffer);
 
 			glBindBuffer(GL_ARRAY_BUFFER, particles->back_process_buffer);
-			GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+			GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 				particles->back_process_buffer,
 				particles->process_buffer_stride_cache * total_amount, data.ptr(), GL_DYNAMIC_COPY,
 				"Particles back process buffer");
@@ -1046,7 +1046,7 @@ void ParticlesStorage::_particles_update_buffers(Particles* particles)
 			glBindVertexArray(0);
 
 			glBindBuffer(GL_ARRAY_BUFFER, particles->back_instance_buffer);
-			GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+			GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 				particles->back_instance_buffer, particles->instance_buffer_size_cache,
 				instance_data.ptr(), GL_DYNAMIC_COPY, "Particles back instance buffer");
 		}
@@ -1059,13 +1059,13 @@ void ParticlesStorage::_particles_allocate_history_buffers(Particles* particles)
 	if (particles->sort_buffer == 0) {
 		glGenBuffers(1, &particles->last_frame_buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, particles->last_frame_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 			particles->last_frame_buffer, particles->instance_buffer_size_cache, nullptr,
 			GL_DYNAMIC_READ, "Particles last frame buffer");
 
 		glGenBuffers(1, &particles->sort_buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, particles->sort_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 			particles->sort_buffer, particles->instance_buffer_size_cache, nullptr, GL_DYNAMIC_READ,
 			"Particles sort buffer");
 
@@ -1481,7 +1481,7 @@ void ParticlesStorage::particles_collision_free(RID p_rid)
 	ParticlesCollision* particles_collision = particles_collision_owner.get_or_null(p_rid);
 
 	if (particles_collision->heightfield_texture != 0) {
-		GLES3::Utilities::get_singleton()->texture_free_data(
+		GLES3::Utilities::texture_free_data(
 			particles_collision->heightfield_texture);
 		particles_collision->heightfield_texture = 0;
 		glDeleteFramebuffers(1, &particles_collision->heightfield_fb);
@@ -1540,7 +1540,7 @@ GLuint ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 					   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
 		}
 #endif
-		GLES3::Utilities::get_singleton()->texture_allocated_data(
+		GLES3::Utilities::texture_allocated_data(
 			particles_collision->heightfield_texture, size.x * size.y * 4,
 			"Particles collision heightfield texture");
 
@@ -1565,7 +1565,7 @@ void ParticlesStorage::particles_collision_set_collision_type(
 	}
 
 	if (particles_collision->heightfield_texture != 0) {
-		GLES3::Utilities::get_singleton()->texture_free_data(
+		GLES3::Utilities::texture_free_data(
 			particles_collision->heightfield_texture);
 		particles_collision->heightfield_texture = 0;
 		glDeleteFramebuffers(1, &particles_collision->heightfield_fb);
@@ -1676,7 +1676,7 @@ void ParticlesStorage::particles_collision_set_height_field_resolution(
 	particles_collision->heightfield_resolution = p_resolution;
 
 	if (particles_collision->heightfield_texture != 0) {
-		GLES3::Utilities::get_singleton()->texture_free_data(
+		GLES3::Utilities::texture_free_data(
 			particles_collision->heightfield_texture);
 		particles_collision->heightfield_texture = 0;
 		glDeleteFramebuffers(1, &particles_collision->heightfield_fb);

@@ -38,8 +38,8 @@
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_method.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 #ifndef XR_DISABLED
@@ -351,7 +351,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 {
 	if (p_viewport->measure_render_time) {
 		String rt_id = "vp_begin_" + itos(p_viewport->self.get_id());
-		RS::utilities->capture_timestamp(rt_id);
+		RendererUtilities::capture_timestamp(rt_id);
 		timestamp_vp_map[rt_id] = p_viewport->self;
 	}
 
@@ -836,7 +836,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 	if (p_viewport->measure_render_time) {
 		String rt_id = "vp_end_" + itos(p_viewport->self.get_id());
-		RS::utilities->capture_timestamp(rt_id);
+		RendererUtilities::capture_timestamp(rt_id);
 		timestamp_vp_map[rt_id] = p_viewport->self;
 	}
 }

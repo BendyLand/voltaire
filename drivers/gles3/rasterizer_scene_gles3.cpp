@@ -30,6 +30,7 @@
 
 #include "rasterizer_scene_gles3.h"
 #include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/storage/utilities.h"
 
 #ifdef GLES3_ENABLED
 
@@ -57,7 +58,7 @@ RasterizerSceneGLES3* RasterizerSceneGLES3::singleton = nullptr;
 
 RenderGeometryInstance* RasterizerSceneGLES3::geometry_instance_create(RID p_base)
 {
-	RSE::InstanceType type = RS::utilities->get_base_type(p_base);
+	RSE::InstanceType type = RendererUtilities::get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceGLES3* ginstance = geometry_instance_alloc.alloc();
@@ -232,7 +233,7 @@ void RasterizerSceneGLES3::_geometry_instance_dependency_changed(
 		GeometryInstanceGLES3* ginstance = static_cast<GeometryInstanceGLES3*>(p_tracker->userdata);
 		if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
 			ginstance->instance_count =
-				GLES3::MeshStorage::get_singleton()->multimesh_get_instances_to_draw(
+				GLES3::MeshStorage::multimesh_get_instances_to_draw(
 					ginstance->data->base);
 		}
 	} break;
@@ -253,7 +254,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 	GeometryInstanceGLES3* ginstance, uint32_t p_surface, GLES3::SceneMaterialData* p_material,
 	uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh)
 {
-	GLES3::MeshStorage* mesh_storage = GLES3::MeshStorage::get_singleton();
+	GLES3::MeshStorage* mesh_storage = memnew(GLES3::MeshStorage);
 
 	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture ||
 								 p_material->shader_data->uses_depth_texture ||
@@ -356,7 +357,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 	sdcache->surface_index = p_surface;
 
 	if (ginstance->data->dirty_dependencies) {
-		RS::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+		RendererUtilities::base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
 	}
 
 	// shadow
@@ -482,7 +483,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 
 void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	GLES3::MeshStorage* mesh_storage = GLES3::MeshStorage::get_singleton();
+	GLES3::MeshStorage* mesh_storage = memnew(GLES3::MeshStorage);
 	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
 
 	GeometryInstanceGLES3* ginstance = static_cast<GeometryInstanceGLES3*>(p_geometry_instance);
@@ -614,9 +615,9 @@ void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_g
 void RasterizerSceneGLES3::_free_sky_data(Sky* p_sky)
 {
 	if (p_sky->radiance != 0) {
-		GLES3::Utilities::get_singleton()->texture_free_data(p_sky->radiance);
+		GLES3::Utilities::texture_free_data(p_sky->radiance);
 		p_sky->radiance = 0;
-		GLES3::Utilities::get_singleton()->texture_free_data(p_sky->raw_radiance);
+		GLES3::Utilities::texture_free_data(p_sky->raw_radiance);
 		p_sky->raw_radiance = 0;
 		glDeleteFramebuffers(1, &p_sky->radiance_framebuffer);
 		p_sky->radiance_framebuffer = 0;
@@ -717,7 +718,7 @@ GLuint _init_radiance_texture(int p_size, int p_mipmaps, String p_name)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, p_mipmaps - 1);
 
-	GLES3::Utilities::get_singleton()->texture_allocated_data(
+	GLES3::Utilities::texture_allocated_data(
 		radiance_id, Image::get_image_data_size(p_size, p_size, Image::FORMAT_RGBA8, true), p_name);
 	return radiance_id;
 }
@@ -1274,7 +1275,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 	if (config->float_texture_supported) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, p_size.width, p_size.height, 0, GL_RGBA,
 			GL_FLOAT, nullptr);
-		GLES3::Utilities::get_singleton()->texture_allocated_data(
+		GLES3::Utilities::texture_allocated_data(
 			rad_tex, p_size.width * p_size.height * 16, "Temp sky panorama");
 	}
 	else {
@@ -1282,7 +1283,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 		// This will look bad, but we have no choice.
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, p_size.width, p_size.height, 0, GL_RGBA,
 			GL_UNSIGNED_BYTE, nullptr);
-		GLES3::Utilities::get_singleton()->texture_allocated_data(
+		GLES3::Utilities::texture_allocated_data(
 			rad_tex, p_size.width * p_size.height * 4, "Temp sky panorama");
 	}
 
@@ -1324,7 +1325,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 	}
 
 	Ref<Image> img = GLES3::TextureStorage::get_singleton()->texture_2d_get(tex_rid);
-	GLES3::Utilities::get_singleton()->texture_free_data(rad_tex);
+	GLES3::Utilities::texture_free_data(rad_tex);
 
 	GLES3::Texture& texture = *GLES3::TextureStorage::get_singleton()->get_texture(tex_rid);
 	texture.is_render_target = false; // HACK: Avoid an error when freeing the texture.
@@ -1526,7 +1527,7 @@ uint32_t RasterizerSceneGLES3::_indices_to_primitives(
 void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 	const RenderDataGLES3* p_render_data, PassMode p_pass_mode, bool p_append)
 {
-	GLES3::MeshStorage* mesh_storage = GLES3::MeshStorage::get_singleton();
+	GLES3::MeshStorage* mesh_storage = memnew(GLES3::MeshStorage);
 	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
 
 	if (p_render_list == RENDER_LIST_OPAQUE) {
@@ -1830,7 +1831,7 @@ void RasterizerSceneGLES3::_update_scene_ubo(
 	if (p_ubo_buffer == 0) {
 		glGenBuffers(1, &p_ubo_buffer);
 		glBindBufferBase(GL_UNIFORM_BUFFER, p_index, p_ubo_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(
+		GLES3::Utilities::buffer_allocate_data(
 			GL_UNIFORM_BUFFER, p_ubo_buffer, p_size, p_source_data, GL_STREAM_DRAW, p_name);
 	}
 	else {
@@ -3024,7 +3025,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 		glGenBuffers(1, &scene_state.tonemap_buffer);
 		glBindBufferBase(
 			GL_UNIFORM_BUFFER, SCENE_TONEMAP_UNIFORM_LOCATION, scene_state.tonemap_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.tonemap_buffer, sizeof(SceneState::TonemapUBO), &tonemap_ubo,
 			GL_STREAM_DRAW, "Tonemap UBO");
 	}
@@ -3745,7 +3746,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 	const RenderDataGLES3* p_render_data, uint32_t p_from_element, uint32_t p_to_element,
 	bool p_alpha_pass)
 {
-	GLES3::MeshStorage* mesh_storage = GLES3::MeshStorage::get_singleton();
+	GLES3::MeshStorage* mesh_storage = memnew(GLES3::MeshStorage);
 	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
 	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 
@@ -5269,18 +5270,16 @@ void RasterizerSceneGLES3::material_set_use_debanding(bool p_enable)
 	// Material debanding not yet implemented.
 }
 
-RasterizerSceneGLES3::RasterizerSceneGLES3()
+RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::MeshStorage* p_mesh_storage, GLES3::TextureStorage* p_texture_storage,
+	GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage)
 {
-	singleton = this;
-
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
+	GLES3::MaterialStorage* material_storage = p_material_storage;
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	cull_argument.set_page_pool(&cull_argument_pool);
 
 	{
 		// Setup Lights
-
 		config->max_renderable_lights = MIN(config->max_renderable_lights,
 			config->max_uniform_buffer_size / (int)sizeof(RasterizerSceneGLES3::LightData));
 		config->max_lights_per_object =
@@ -5292,7 +5291,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 			memnew_arr(InstanceSort<GLES3::LightInstance>, config->max_renderable_lights);
 		glGenBuffers(1, &scene_state.omni_light_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.omni_light_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.omni_light_buffer, light_buffer_size, nullptr, GL_STREAM_DRAW,
 			"OmniLight UBO");
 
@@ -5301,7 +5300,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 			memnew_arr(InstanceSort<GLES3::LightInstance>, config->max_renderable_lights);
 		glGenBuffers(1, &scene_state.spot_light_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.spot_light_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.spot_light_buffer, light_buffer_size, nullptr, GL_STREAM_DRAW,
 			"SpotLight UBO");
 
@@ -5310,7 +5309,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 			memnew_arr(InstanceSort<GLES3::LightInstance>, config->max_renderable_lights);
 		glGenBuffers(1, &scene_state.area_light_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.area_light_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.area_light_buffer, light_buffer_size, nullptr, GL_STREAM_DRAW,
 			"AreaLight UBO");
 
@@ -5319,7 +5318,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 		scene_state.directional_lights = memnew_arr(DirectionalLightData, MAX_DIRECTIONAL_LIGHTS);
 		glGenBuffers(1, &scene_state.directional_light_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.directional_light_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.directional_light_buffer, directional_light_buffer_size, nullptr,
 			GL_STREAM_DRAW, "DirectionalLight UBO");
 
@@ -5327,7 +5326,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 		scene_state.positional_shadows = memnew_arr(ShadowData, config->max_renderable_lights * 2);
 		glGenBuffers(1, &scene_state.positional_shadow_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.positional_shadow_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.positional_shadow_buffer, shadow_buffer_size, nullptr, GL_STREAM_DRAW,
 			"Positional Shadow UBO");
 
@@ -5336,7 +5335,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 		scene_state.directional_shadows = memnew_arr(DirectionalShadowData, MAX_DIRECTIONAL_LIGHTS);
 		glGenBuffers(1, &scene_state.directional_shadow_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, scene_state.directional_shadow_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			scene_state.directional_shadow_buffer, directional_shadow_buffer_size, nullptr,
 			GL_STREAM_DRAW, "Directional Shadow UBO");
 
@@ -5354,7 +5353,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3()
 		sky_globals.last_frame_directional_light_count = sky_globals.max_directional_lights + 1;
 		glGenBuffers(1, &sky_globals.directional_light_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, sky_globals.directional_light_buffer);
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_UNIFORM_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
 			sky_globals.directional_light_buffer, directional_light_buffer_size, nullptr,
 			GL_STREAM_DRAW, "Sky DirectionalLight UBO");
 
@@ -5410,7 +5409,7 @@ void fragment() {
 		material_storage->material_set_shader(
 			scene_globals.default_material, scene_globals.default_shader);
 		default_material_data_ptr = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::get_singleton()->material_get_data(
+			material_storage->material_get_data(
 				scene_globals.default_material, RSE::SHADER_SPATIAL));
 	}
 
@@ -5435,7 +5434,7 @@ void fragment() {
 		material_storage->material_set_shader(
 			scene_globals.overdraw_material, scene_globals.overdraw_shader);
 		overdraw_material_data_ptr = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::get_singleton()->material_get_data(
+			material_storage->material_get_data(
 				scene_globals.overdraw_material, RSE::SHADER_SPATIAL));
 	}
 
@@ -5505,7 +5504,7 @@ void sky() {
 			3.0f,
 		};
 
-		GLES3::Utilities::get_singleton()->buffer_allocate_data(GL_ARRAY_BUFFER,
+		GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER,
 			sky_globals.screen_triangle, sizeof(float) * 6, qv, GL_STATIC_DRAW,
 			"Screen triangle vertex buffer");
 
@@ -5535,12 +5534,12 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 		Renderer::free_rid(ltc.lut2_texture);
 	}
 
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.directional_light_buffer);
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.omni_light_buffer);
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.spot_light_buffer);
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.area_light_buffer);
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.positional_shadow_buffer);
-	GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.directional_shadow_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.directional_light_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.omni_light_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.spot_light_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.area_light_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.positional_shadow_buffer);
+	GLES3::Utilities::buffer_free_data(scene_state.directional_shadow_buffer);
 	memdelete_arr(scene_state.directional_lights);
 	memdelete_arr(scene_state.omni_lights);
 	memdelete_arr(scene_state.spot_lights);
@@ -5568,31 +5567,31 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 	RS::material_storage->shader_free(sky_globals.default_shader);
 	RS::material_storage->material_free(sky_globals.fog_material);
 	RS::material_storage->shader_free(sky_globals.fog_shader);
-	GLES3::Utilities::get_singleton()->buffer_free_data(sky_globals.screen_triangle);
+	GLES3::Utilities::buffer_free_data(sky_globals.screen_triangle);
 	glDeleteVertexArrays(1, &sky_globals.screen_triangle_array);
-	GLES3::Utilities::get_singleton()->buffer_free_data(sky_globals.directional_light_buffer);
+	GLES3::Utilities::buffer_free_data(sky_globals.directional_light_buffer);
 	memdelete_arr(sky_globals.directional_lights);
 	memdelete_arr(sky_globals.last_frame_directional_lights);
 
 	// UBOs
 	if (scene_state.ubo_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.ubo_buffer);
+		GLES3::Utilities::buffer_free_data(scene_state.ubo_buffer);
 	}
 
 	if (scene_state.prev_ubo_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.prev_ubo_buffer);
+		GLES3::Utilities::buffer_free_data(scene_state.prev_ubo_buffer);
 	}
 
 	if (scene_state.multiview_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.multiview_buffer);
+		GLES3::Utilities::buffer_free_data(scene_state.multiview_buffer);
 	}
 
 	if (scene_state.prev_multiview_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.prev_multiview_buffer);
+		GLES3::Utilities::buffer_free_data(scene_state.prev_multiview_buffer);
 	}
 
 	if (scene_state.tonemap_buffer != 0) {
-		GLES3::Utilities::get_singleton()->buffer_free_data(scene_state.tonemap_buffer);
+		GLES3::Utilities::buffer_free_data(scene_state.tonemap_buffer);
 	}
 
 	singleton = nullptr;

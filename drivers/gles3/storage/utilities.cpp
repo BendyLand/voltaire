@@ -47,11 +47,8 @@
 
 using namespace GLES3;
 
-Utilities* Utilities::singleton = nullptr;
-
-Utilities::Utilities()
+void Utilities::initialize()
 {
-	singleton = this;
 	frame = 0;
 	for (int i = 0; i < FRAME_COUNT; i++) {
 		frames[i].index = 0;
@@ -68,9 +65,8 @@ Utilities::Utilities()
 	}
 }
 
-Utilities::~Utilities()
+void Utilities::finalize()
 {
-	singleton = nullptr;
 	for (int i = 0; i < FRAME_COUNT; i++) {
 		glDeleteQueries(max_timestamp_query_elements, frames[i].queries);
 	}
@@ -160,12 +156,12 @@ Vector<uint8_t> Utilities::buffer_get_data(GLenum p_target, GLuint p_buffer, uin
 
 /* INSTANCES */
 
-RSE::InstanceType Utilities::get_base_type(RID p_rid) const
+RSE::InstanceType Utilities::get_base_type(RID p_rid)
 {
-	if (GLES3::MeshStorage::get_singleton()->owns_mesh(p_rid)) {
+	if (GLES3::MeshStorage::owns_mesh(p_rid)) {
 		return RSE::INSTANCE_MESH;
 	}
-	else if (GLES3::MeshStorage::get_singleton()->owns_multimesh(p_rid)) {
+	else if (GLES3::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
 	else if (GLES3::LightStorage::get_singleton()->owns_light(p_rid)) {
@@ -211,16 +207,16 @@ bool Utilities::free(RID p_rid)
 		GLES3::MaterialStorage::get_singleton()->material_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MeshStorage::get_singleton()->owns_mesh(p_rid)) {
-		GLES3::MeshStorage::get_singleton()->mesh_free(p_rid);
+	else if (GLES3::MeshStorage::owns_mesh(p_rid)) {
+		GLES3::MeshStorage::mesh_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MeshStorage::get_singleton()->owns_multimesh(p_rid)) {
-		GLES3::MeshStorage::get_singleton()->multimesh_free(p_rid);
+	else if (GLES3::MeshStorage::owns_multimesh(p_rid)) {
+		GLES3::MeshStorage::multimesh_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MeshStorage::get_singleton()->owns_mesh_instance(p_rid)) {
-		GLES3::MeshStorage::get_singleton()->mesh_instance_free(p_rid);
+	else if (GLES3::MeshStorage::owns_mesh_instance(p_rid)) {
+		GLES3::MeshStorage::mesh_instance_free(p_rid);
 		return true;
 	}
 	else if (GLES3::LightStorage::get_singleton()->owns_light(p_rid)) {
@@ -255,8 +251,8 @@ bool Utilities::free(RID p_rid)
 		GLES3::ParticlesStorage::get_singleton()->particles_collision_instance_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MeshStorage::get_singleton()->owns_skeleton(p_rid)) {
-		GLES3::MeshStorage::get_singleton()->skeleton_free(p_rid);
+	else if (GLES3::MeshStorage::owns_skeleton(p_rid)) {
+		GLES3::MeshStorage::skeleton_free(p_rid);
 		return true;
 	}
 	else if (owns_visibility_notifier(p_rid)) {
@@ -272,12 +268,12 @@ bool Utilities::free(RID p_rid)
 
 void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
 {
-	if (MeshStorage::get_singleton()->owns_mesh(p_base)) {
-		Mesh* mesh = MeshStorage::get_singleton()->get_mesh(p_base);
+	if (MeshStorage::owns_mesh(p_base)) {
+		Mesh* mesh = MeshStorage::get_mesh(p_base);
 		p_instance->update_dependency(&mesh->dependency);
 	}
-	else if (MeshStorage::get_singleton()->owns_multimesh(p_base)) {
-		MultiMesh* multimesh = MeshStorage::get_singleton()->get_multimesh(p_base);
+	else if (MeshStorage::owns_multimesh(p_base)) {
+		MultiMesh* multimesh = MeshStorage::get_multimesh(p_base);
 		p_instance->update_dependency(&multimesh->dependency);
 		if (multimesh->mesh.is_valid()) {
 			base_update_dependency(multimesh->mesh, p_instance);
@@ -332,7 +328,7 @@ void Utilities::visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb)
 	vn->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const
+AABB Utilities::visibility_notifier_get_aabb(RID p_notifier)
 {
 	const VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
 	ERR_FAIL_NULL_V(vn, AABB());
@@ -395,26 +391,23 @@ void Utilities::capture_timestamps_end()
 	frame = (frame + 1) % FRAME_COUNT;
 }
 
-uint32_t Utilities::get_captured_timestamps_count() const
-{
-	return frames[frame].timestamp_result_count;
-}
+uint32_t Utilities::get_captured_timestamps_count() { return frames[frame].timestamp_result_count; }
 
-uint64_t Utilities::get_captured_timestamps_frame() const { return frames[frame].index; }
+uint64_t Utilities::get_captured_timestamps_frame() { return frames[frame].index; }
 
-uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
 	return frames[frame].timestamp_result_values[p_index];
 }
 
-uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
 	return frames[frame].timestamp_cpu_result_values[p_index];
 }
 
-String Utilities::get_captured_timestamp_name(uint32_t p_index) const
+String Utilities::get_captured_timestamp_name(uint32_t p_index)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, String());
 	return frames[frame].timestamp_result_names[p_index];
@@ -426,8 +419,8 @@ void Utilities::update_dirty_resources()
 {
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms();
 	MaterialStorage::get_singleton()->_update_queued_materials();
-	MeshStorage::get_singleton()->_update_dirty_skeletons();
-	MeshStorage::get_singleton()->_update_dirty_multimeshes();
+	MeshStorage::_update_dirty_skeletons();
+	MeshStorage::_update_dirty_multimeshes();
 	TextureStorage::get_singleton()->update_texture_atlas();
 }
 
@@ -437,7 +430,7 @@ void Utilities::set_debug_generate_wireframes(bool p_generate)
 	config->generate_wireframes = p_generate;
 }
 
-bool Utilities::has_os_feature(const String& p_feature) const
+bool Utilities::has_os_feature(const String& p_feature)
 {
 	Config* config = Config::get_singleton();
 	if (!config) {
@@ -483,7 +476,7 @@ uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
 	return 0;
 }
 
-String Utilities::get_video_adapter_name() const
+String Utilities::get_video_adapter_name()
 {
 	const String rendering_device_name = String::utf8((const char*)glGetString(GL_RENDERER));
 	// NVIDIA suffixes all GPU model names with "/PCIe/SSE2" in OpenGL (but not Vulkan). This isn't
@@ -491,7 +484,7 @@ String Utilities::get_video_adapter_name() const
 	return rendering_device_name.trim_suffix("/PCIe/SSE2");
 }
 
-String Utilities::get_video_adapter_vendor() const
+String Utilities::get_video_adapter_vendor()
 {
 	const String rendering_device_vendor = String::utf8((const char*)glGetString(GL_VENDOR));
 	// NVIDIA suffixes its vendor name with " Corporation". This is neither necessary to process nor
@@ -499,31 +492,31 @@ String Utilities::get_video_adapter_vendor() const
 	return rendering_device_vendor.trim_suffix(" Corporation");
 }
 
-RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type() const
+RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type()
 {
 	return RenderingDeviceEnums::DeviceType::DEVICE_TYPE_OTHER;
 }
 
-String Utilities::get_video_adapter_api_version() const
+String Utilities::get_video_adapter_api_version()
 {
 	return String::utf8((const char*)glGetString(GL_VERSION));
 }
 
-Size2i Utilities::get_maximum_viewport_size() const
+Size2i Utilities::get_maximum_viewport_size()
 {
 	Config* config = Config::get_singleton();
 	ERR_FAIL_NULL_V(config, Size2i());
 	return Size2i(config->max_viewport_size[0], config->max_viewport_size[1]);
 }
 
-uint32_t Utilities::get_maximum_shader_varyings() const
+uint32_t Utilities::get_maximum_shader_varyings()
 {
 	Config* config = Config::get_singleton();
 	ERR_FAIL_NULL_V(config, 31);
 	return config->max_shader_varyings;
 }
 
-uint64_t Utilities::get_maximum_uniform_buffer_size() const
+uint64_t Utilities::get_maximum_uniform_buffer_size()
 {
 	Config* config = Config::get_singleton();
 	ERR_FAIL_NULL_V(config, 65536);

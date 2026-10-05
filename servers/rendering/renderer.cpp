@@ -42,6 +42,7 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_warnings.h"
+#include "servers/rendering/storage/utilities.h"
 
 RID Renderer::get_test_texture()
 {
@@ -605,7 +606,6 @@ void Renderer::init()
 {
 	data = memnew(Data);
 	RendererCompositor::create();
-    utilities = RendererCompositor::get_utilities();
     light_storage = RendererCompositor::get_light_storage();
     material_storage = RendererCompositor::get_material_storage();
     mesh_storage = RendererCompositor::get_mesh_storage();
@@ -619,7 +619,6 @@ void Renderer::init()
 	RendererSceneCull* sr = memnew(RendererSceneCull);
 	RS::camera_attributes = memnew(RendererCameraAttributes);
 	RS::scene = sr;
-	RS::utilities = RendererCompositor::get_utilities();
 	RendererCompositor::initialize();
 }
 
@@ -629,7 +628,6 @@ void Renderer::finalize()
     canvas = nullptr;
     memdelete(viewport);
     viewport = nullptr;
-    utilities = nullptr;
     light_storage = nullptr;
     material_storage = nullptr;
     mesh_storage = nullptr;
@@ -687,7 +685,7 @@ void Renderer::set_default_clear_color(const Color& p_color)
 
 uint64_t Renderer::get_rendering_info(RSE::RenderingInfo p_info)
 {
-	if (!RS::viewport || !RS::canvas_render || !RS::scene || !RS::utilities) {
+	if (!RS::viewport || !RS::canvas_render || !RS::scene) {
 		return 0;
 	}
 
@@ -718,20 +716,17 @@ uint64_t Renderer::get_rendering_info(RSE::RenderingInfo p_info)
 		return RS::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION) +
 			   RS::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION);
 	}
-	return RS::utilities->get_rendering_info(p_info);
+	return RendererUtilities::get_rendering_info(p_info);
 }
 
 RenderingDeviceEnums::DeviceType Renderer::get_video_adapter_type()
 {
-	return RS::utilities ? RS::utilities->get_video_adapter_type()
-						  : RenderingDeviceEnums::DEVICE_TYPE_OTHER;
+	return RendererUtilities::get_video_adapter_type();
 }
 
 void Renderer::set_frame_profiling_enabled(bool p_enable)
 {
-	if (RS::utilities) {
-		RS::utilities->capturing_timestamps = p_enable;
-	}
+	RendererUtilities::capturing_timestamps = p_enable;
 }
 
 uint64_t Renderer::get_frame_profile_frame()
@@ -753,9 +748,7 @@ void Renderer::sdfgi_set_debug_probe_select(const Vector3& p_position, const Vec
 
 void Renderer::set_print_gpu_profile(bool p_enable)
 {
-	if (RS::utilities) {
-		RS::utilities->capturing_timestamps = p_enable;
-	}
+	RendererUtilities::capturing_timestamps = p_enable;
 	if (data) {
 		data->backend.print_gpu_profile = p_enable;
 	}
@@ -774,21 +767,19 @@ RID Renderer::get_test_cube()
 
 bool Renderer::has_os_feature(const String& p_feature)
 {
-	return RS::utilities ? RS::utilities->has_os_feature(p_feature) : false;
+	return RendererUtilities::has_os_feature(p_feature);
 }
 
 void Renderer::set_debug_generate_wireframes(bool p_generate)
 {
-	if (RS::utilities) {
-		RS::utilities->set_debug_generate_wireframes(p_generate);
-	}
+	RendererUtilities::set_debug_generate_wireframes(p_generate);
 }
 
 bool Renderer::is_low_end() { return RendererCompositor::is_low_end(); }
 
 Size2i Renderer::get_maximum_viewport_size()
 {
-	return RS::utilities ? RS::utilities->get_maximum_viewport_size() : Size2i();
+	return RendererUtilities::get_maximum_viewport_size();
 }
 
 void Renderer::set_physics_interpolation_enabled(bool p_enabled)
@@ -1720,7 +1711,7 @@ void Renderer::free_rid(RID p_rid)
 	if (RS::scene && RS::scene->free(p_rid)) {
 		return;
 	}
-	if (RS::utilities && RS::utilities->free(p_rid)) {
+	if (RendererUtilities::free(p_rid)) {
 		return;
 	}
 }
@@ -1797,17 +1788,17 @@ RID Renderer::camera_create()
 
 String Renderer::get_video_adapter_name()
 {
-	return RS::utilities ? RS::utilities->get_video_adapter_name() : String();
+	return RendererUtilities::get_video_adapter_name();
 }
 
 String Renderer::get_video_adapter_vendor()
 {
-	return RS::utilities ? RS::utilities->get_video_adapter_vendor() : String();
+	return RendererUtilities::get_video_adapter_vendor();
 }
 
 String Renderer::get_video_adapter_api_version()
 {
-	return RS::utilities ? RS::utilities->get_video_adapter_api_version() : String();
+	return RendererUtilities::get_video_adapter_api_version();
 }
 
 void Renderer::set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,

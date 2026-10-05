@@ -30,6 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "render_forward_mobile.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
@@ -37,8 +38,8 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
+#include "servers/rendering/storage/utilities.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"
@@ -1645,15 +1646,12 @@ void RenderForwardMobile::_fill_instance_data(
 		instance_data.set_lightmap_uv_scale(inst->lightmap_uv_scale);
 
 		AABB surface_aabb = AABB(Vector3(0.0, 0.0, 0.0), Vector3(1.0, 1.0, 1.0));
-		uint64_t format =
-			RendererRD::MeshStorage::get_singleton()->mesh_surface_get_format(surface->surface);
+		uint64_t format = RendererRD::MeshStorage::mesh_surface_get_format(surface->surface);
 		Vector4 uv_scale = Vector4(0.0, 0.0, 0.0, 0.0);
 
 		if (format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
-			surface_aabb =
-				RendererRD::MeshStorage::get_singleton()->mesh_surface_get_aabb(surface->surface);
-			uv_scale = RendererRD::MeshStorage::get_singleton()->mesh_surface_get_uv_scale(
-				surface->surface);
+			surface_aabb = RendererRD::MeshStorage::mesh_surface_get_aabb(surface->surface);
+			uv_scale = RendererRD::MeshStorage::mesh_surface_get_uv_scale(surface->surface);
 		}
 
 		fill_push_constant_instance_indices(&instance_data, inst);
@@ -1685,8 +1683,6 @@ _FORCE_INLINE_ static uint32_t _indices_to_primitives(
 void RenderForwardMobile::_fill_render_list(RenderListType p_render_list,
 	const RenderDataRD* p_render_data, PassMode p_pass_mode, bool p_append)
 {
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
-
 	if (p_render_list == RENDER_LIST_OPAQUE) {
 		scene_state.used_screen_texture = false;
 		scene_state.used_depth_texture = false;
@@ -1810,12 +1806,13 @@ void RenderForwardMobile::_fill_render_list(RenderListType p_render_list,
 			// LOD
 
 			if (p_render_data->scene_data->screen_mesh_lod_threshold > 0.0 &&
-				mesh_storage->mesh_surface_has_lod(surf->surface)) {
+				RendererRD::MeshStorage::mesh_surface_has_lod(surf->surface)) {
 				uint32_t indices = 0;
-				surf->sort.lod_index = mesh_storage->mesh_surface_get_lod(surf->surface,
+				surf->sort.lod_index = RendererRD::MeshStorage::mesh_surface_get_lod(surf->surface,
 					inst->lod_model_scale * inst->lod_bias,
 					lod_distance * p_render_data->scene_data->lod_distance_multiplier,
-					p_render_data->scene_data->screen_mesh_lod_threshold, indices);
+					p_render_data->
+scene_data->screen_mesh_lod_threshold, indices);
 				if (p_render_data->render_info) {
 					indices = _indices_to_primitives(surf->primitive, indices);
 					if (p_render_list == RENDER_LIST_OPAQUE) { // opaque
@@ -1834,7 +1831,8 @@ void RenderForwardMobile::_fill_render_list(RenderListType p_render_list,
 				surf->sort.lod_index = 0;
 				if (p_render_data->render_info) {
 					uint32_t to_draw =
-						mesh_storage->mesh_surface_get_vertices_drawn_count(surf->surface);
+						RendererRD::MeshStorage::mesh_surface_get_vertices_drawn_count(
+							surf->surface);
 					to_draw = _indices_to_primitives(surf->primitive, to_draw);
 					to_draw *= inst->instance_count;
 					if (p_render_list == RENDER_LIST_OPAQUE) { // opaque
@@ -1947,7 +1945,7 @@ void RenderForwardMobile::_setup_environment(const RenderDataRD* p_render_data, 
 
 RenderGeometryInstance* RenderForwardMobile::geometry_instance_create(RID p_base)
 {
-	RSE::InstanceType type = RS::utilities->get_base_type(p_base);
+	RSE::InstanceType type = RendererUtilities::get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceForwardMobile* ginstance = geometry_instance_alloc.alloc();
@@ -2141,7 +2139,6 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 	SceneShaderForwardMobile::MaterialData* p_material, uint32_t p_material_id,
 	uint32_t p_shader_id, RID p_mesh)
 {
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 	uint32_t flags = 0;
 
 	if (p_material->shader_data->uses_sss) {
@@ -2212,10 +2209,10 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 			RendererRD::MaterialStorage::get_singleton()->material_get_data(
 				scene_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 
-		RID shadow_mesh = mesh_storage->mesh_get_shadow_mesh(p_mesh);
+		RID shadow_mesh = RendererRD::MeshStorage::mesh_get_shadow_mesh(p_mesh);
 
 		if (shadow_mesh.is_valid()) {
-			surface_shadow = mesh_storage->mesh_get_surface(shadow_mesh, p_surface);
+			surface_shadow = RendererRD::MeshStorage::mesh_get_surface(shadow_mesh, p_surface);
 		}
 
 	}
@@ -2230,12 +2227,12 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 	sdcache->shader = p_material->shader_data;
 	sdcache->material = p_material;
 	sdcache->material_uniform_set = p_material->uniform_set;
-	sdcache->surface = mesh_storage->mesh_get_surface(p_mesh, p_surface);
-	sdcache->primitive = mesh_storage->mesh_surface_get_primitive(sdcache->surface);
+	sdcache->surface = RendererRD::MeshStorage::mesh_get_surface(p_mesh, p_surface);
+	sdcache->primitive = RendererRD::MeshStorage::mesh_surface_get_primitive(sdcache->surface);
 	sdcache->surface_index = p_surface;
 
 	if (ginstance->data->dirty_dependencies) {
-		RS::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+		RendererUtilities::base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
 	}
 
 	// shadow
@@ -2261,16 +2258,15 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 	sdcache->sort.geometry_id = p_mesh.get_local_index();
 	sdcache->sort.priority = p_material->priority;
 
-	uint64_t format =
-		RendererRD::MeshStorage::get_singleton()->mesh_surface_get_format(sdcache->surface);
+	uint64_t format = RendererRD::MeshStorage::mesh_surface_get_format(sdcache->surface);
 	if (p_material->shader_data->uses_tangent && !p_material->shader_data->writes_tangent &&
 		!(format & RSE::ARRAY_FORMAT_TANGENT)) {
 		String shader_path = p_material->shader_data->path.is_empty()
 								 ? ""
 								 : "(" + p_material->shader_data->path + ")";
-		String mesh_path = mesh_storage->mesh_get_path(p_mesh).is_empty()
+		String mesh_path = RendererRD::MeshStorage::mesh_get_path(p_mesh).is_empty()
 							   ? ""
-							   : "(" + mesh_storage->mesh_get_path(p_mesh) + ")";
+							   : "(" + RendererRD::MeshStorage::mesh_get_path(p_mesh) + ")";
 		WARN_PRINT_ED(vformat(
 			"Attempting to use a shader %s that requires tangents with a mesh %s that doesn't "
 			"contain tangents. Ensure that meshes are imported with the 'ensure_tangents' option. "
@@ -2376,7 +2372,6 @@ void RenderForwardMobile::_geometry_instance_add_surface(
 
 void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	GeometryInstanceForwardMobile* ginstance =
 		static_cast<GeometryInstanceForwardMobile*>(p_geometry_instance);
@@ -2392,7 +2387,8 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 		uint32_t surface_count;
 		RID mesh = ginstance->data->base;
 
-		materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+		materials =
+			RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
 		if (materials) {
 			// if no materials, no surfaces.
 			const RID* inst_materials = ginstance->data->surface_materials.ptr();
@@ -2411,12 +2407,13 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 	} break;
 
 	case RSE::INSTANCE_MULTIMESH: {
-		RID mesh = mesh_storage->multimesh_get_mesh(ginstance->data->base);
+		RID mesh = RendererRD::MeshStorage::_multimesh_get_mesh(ginstance->data->base);
 		if (mesh.is_valid()) {
 			const RID* materials = nullptr;
 			uint32_t surface_count;
 
-			materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+			materials =
+				RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
 			if (materials) {
 				for (uint32_t j = 0; j < surface_count; j++) {
 					_geometry_instance_add_surface(ginstance, j, materials[j], mesh);
@@ -2424,7 +2421,7 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 			}
 
 			ginstance->instance_count =
-				mesh_storage->multimesh_get_instances_to_draw(ginstance->data->base);
+				RendererRD::MeshStorage::multimesh_get_instances_to_draw(ginstance->data->base);
 		}
 
 	} break;
@@ -2449,7 +2446,8 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 			const RID* materials = nullptr;
 			uint32_t surface_count;
 
-			materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+			materials =
+				RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
 			if (materials) {
 				for (uint32_t k = 0; k < surface_count; k++) {
 					_geometry_instance_add_surface(ginstance, k, materials[k], mesh);
@@ -2474,21 +2472,21 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 	if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
 		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH;
 
-		if (mesh_storage->multimesh_get_transform_format(ginstance->data->base) ==
+		if (RendererRD::MeshStorage::multimesh_get_transform_format(ginstance->data->base) ==
 			RSE::MULTIMESH_TRANSFORM_2D) {
 			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D;
 		}
-		if (mesh_storage->multimesh_uses_colors(ginstance->data->base)) {
+		if (RendererRD::MeshStorage::multimesh_uses_colors(ginstance->data->base)) {
 			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
 		}
-		if (mesh_storage->multimesh_uses_custom_data(ginstance->data->base)) {
+		if (RendererRD::MeshStorage::multimesh_uses_custom_data(ginstance->data->base)) {
 			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
 		}
-		if (mesh_storage->multimesh_uses_indirect(ginstance->data->base)) {
+		if (RendererRD::MeshStorage::multimesh_uses_indirect(ginstance->data->base)) {
 			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT;
 		}
 
-		ginstance->transforms_uniform_set = mesh_storage->multimesh_get_3d_uniform_set(
+		ginstance->transforms_uniform_set = RendererRD::MeshStorage::multimesh_get_3d_uniform_set(
 			ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 
 	}
@@ -2525,11 +2523,12 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 		}
 	}
 	else if (ginstance->data->base_type == RSE::INSTANCE_MESH) {
-		if (mesh_storage->skeleton_is_valid(ginstance->data->skeleton)) {
-			ginstance->transforms_uniform_set = mesh_storage->skeleton_get_3d_uniform_set(
-				ginstance->data->skeleton, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
+		if (RendererRD::MeshStorage::skeleton_is_valid(ginstance->data->skeleton)) {
+			ginstance->transforms_uniform_set =
+				RendererRD::MeshStorage::skeleton_get_3d_uniform_set(ginstance->data->skeleton,
+					scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 			if (ginstance->data->dirty_dependencies) {
-				mesh_storage->skeleton_update_dependency(
+				RendererRD::MeshStorage::skeleton_update_dependency(
 					ginstance->data->skeleton, &ginstance->data->dependency_tracker);
 			}
 		}
@@ -2689,10 +2688,9 @@ void RenderForwardMobile::_mesh_compile_pipeline_for_surface(
 		return;
 	}
 
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 	uint64_t input_mask = p_shader->get_vertex_input_mask(r_pipeline_key.version, true);
 	bool emulate_point_size = p_shader->uses_point_size && scene_shader.emulate_point_size;
-	r_pipeline_key.vertex_format_id = mesh_storage->mesh_surface_get_vertex_format(
+	r_pipeline_key.vertex_format_id = RendererRD::MeshStorage::mesh_surface_get_vertex_format(
 		p_mesh_surface, input_mask, p_instanced_surface, false, emulate_point_size);
 	r_pipeline_key.ubershader = true;
 	p_shader->pipeline_hash_map.compile_pipeline(
@@ -2707,14 +2705,14 @@ void RenderForwardMobile::_mesh_compile_pipelines_for_surface(const SurfacePipel
 	const GlobalPipelineData& p_global, RSE::PipelineSource p_source,
 	Vector<ShaderPipelinePair>* r_pipeline_pairs)
 {
-	RendererRD::MeshStorage* mesh_storage = RendererRD::MeshStorage::get_singleton();
 	bool octmap_use_storage = !((RendererSceneRenderRD::data->copy_effects->get_raster_effects() &
 									RendererRD::CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
 
 	// Set the attributes common to all pipelines.
 	SceneShaderForwardMobile::ShaderData::PipelineKey pipeline_key;
 	pipeline_key.cull_mode = RDC::POLYGON_CULL_DISABLED;
-	pipeline_key.primitive_type = mesh_storage->mesh_surface_get_primitive(p_surface.mesh_surface);
+	pipeline_key.primitive_type =
+		RendererRD::MeshStorage::mesh_surface_get_primitive(p_surface.mesh_surface);
 	pipeline_key.wireframe = false;
 
 	const bool multiview_enabled =
@@ -2910,8 +2908,7 @@ void RenderForwardMobile::_geometry_instance_dependency_changed(
 			static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata);
 		if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
 			ginstance->instance_count =
-				RendererRD::MeshStorage::get_singleton()->multimesh_get_instances_to_draw(
-					ginstance->data->base);
+				RendererRD::MeshStorage::multimesh_get_instances_to_draw(ginstance->data->base);
 		}
 	} break;
 	default: {

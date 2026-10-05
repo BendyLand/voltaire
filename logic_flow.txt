@@ -3,12 +3,11 @@
 ====================================================================================================
 
 [ High-Level Server & Storage ]
-  • RenderingServerDefault ------------------------+
   # • RendererCompositor ----------------------------+
   # • RendererCompositorRD --------------------------+
-  • RenderingServerGlobals ------------------------+---> Renderer
-  • RendererViewport ------------------------------+     (High-level API, storages,
-  • RenderingMethod -------------------------------+      presentation, & viewport dispatch)
+  # • RenderingServerGlobals ------------------------+---> Renderer
+  # • RendererViewport ------------------------------+     (High-level API, storages,
+  # • RenderingMethod -------------------------------+      presentation, & viewport dispatch)
   • Storage Facades:                               |
     - RendererMeshStorage                          |
     - RendererTextureStorage                       |

@@ -60,12 +60,12 @@ RendererLightStorage* RasterizerDummy::get_light_storage() { return light_storag
 
 RendererMaterialStorage* RasterizerDummy::get_material_storage() { return material_storage; }
 
-RendererMeshStorage* RasterizerDummy::get_mesh_storage() { return mesh_storage; }
+RendererDummy::MeshStorage* RasterizerDummy::get_mesh_storage() { return mesh_storage; }
 
 RendererParticlesStorage* RasterizerDummy::get_particles_storage() { return particles_storage; }
 
 RendererTextureStorage* RasterizerDummy::get_texture_storage() { return texture_storage; }
 
-RendererUtilities* RasterizerDummy::get_utilities() { return utilities; }
+RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
 
 

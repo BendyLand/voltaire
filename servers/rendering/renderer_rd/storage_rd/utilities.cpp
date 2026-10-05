@@ -38,18 +38,16 @@
 
 using namespace RendererRD;
 
-Utilities* Utilities::singleton = nullptr;
+void Utilities::initialize() {}
 
-Utilities::Utilities() { singleton = this; }
+void Utilities::finalize() {}
 
-Utilities::~Utilities() { singleton = nullptr; }
-
-RSE::InstanceType Utilities::get_base_type(RID p_rid) const
+RSE::InstanceType Utilities::get_base_type(RID p_rid)
 {
-	if (RendererRD::MeshStorage::get_singleton()->owns_mesh(p_rid)) {
+	if (RendererRD::MeshStorage::owns_mesh(p_rid)) {
 		return RSE::INSTANCE_MESH;
 	}
-	if (RendererRD::MeshStorage::get_singleton()->owns_multimesh(p_rid)) {
+	if (RendererRD::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
 	if (RendererRD::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
@@ -91,7 +89,7 @@ bool Utilities::free(RID p_rid)
 	else if (RendererRD::MaterialStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::MeshStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::MeshStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::ParticlesStorage::get_singleton()->free(p_rid)) {
@@ -119,15 +117,15 @@ bool Utilities::free(RID p_rid)
 
 void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
 {
-	if (MeshStorage::get_singleton()->owns_mesh(p_base)) {
-		Dependency* dependency = MeshStorage::get_singleton()->mesh_get_dependency(p_base);
+	if (MeshStorage::owns_mesh(p_base)) {
+		Dependency* dependency = MeshStorage::mesh_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (MeshStorage::get_singleton()->owns_multimesh(p_base)) {
-		Dependency* dependency = MeshStorage::get_singleton()->multimesh_get_dependency(p_base);
+	else if (MeshStorage::owns_multimesh(p_base)) {
+		Dependency* dependency = MeshStorage::multimesh_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 
-		RID mesh = MeshStorage::get_singleton()->multimesh_get_mesh(p_base);
+		RID mesh = MeshStorage::_multimesh_get_mesh(p_base);
 		if (mesh.is_valid()) {
 			base_update_dependency(mesh, p_instance);
 		}
@@ -195,7 +193,7 @@ void Utilities::visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb)
 	vn->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const
+AABB Utilities::visibility_notifier_get_aabb(RID p_notifier)
 {
 	const VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
 	ERR_FAIL_NULL_V(vn, AABB());
@@ -212,27 +210,27 @@ void Utilities::capture_timestamp(const String& p_name)
 	RD::capture_timestamp(p_name);
 }
 
-uint32_t Utilities::get_captured_timestamps_count() const
+uint32_t Utilities::get_captured_timestamps_count()
 {
 	return RD::get_captured_timestamps_count();
 }
 
-uint64_t Utilities::get_captured_timestamps_frame() const
+uint64_t Utilities::get_captured_timestamps_frame()
 {
 	return RD::get_captured_timestamps_frame();
 }
 
-uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index)
 {
 	return RD::get_captured_timestamp_gpu_time(p_index);
 }
 
-uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index)
 {
 	return RD::get_captured_timestamp_cpu_time(p_index);
 }
 
-String Utilities::get_captured_timestamp_name(uint32_t p_index) const
+String Utilities::get_captured_timestamp_name(uint32_t p_index)
 {
 	return RD::get_captured_timestamp_name(p_index);
 }
@@ -243,13 +241,13 @@ void Utilities::update_dirty_resources()
 		->_update_global_shader_uniforms(); // must do before materials, so it can queue them for
 											// update
 	MaterialStorage::get_singleton()->_update_queued_materials();
-	MeshStorage::get_singleton()->_update_dirty_multimeshes();
-	MeshStorage::get_singleton()->_update_dirty_skeletons();
+	MeshStorage::_update_dirty_multimeshes();
+	MeshStorage::_update_dirty_skeletons();
 	TextureStorage::get_singleton()->update_decal_atlas();
 	TextureStorage::get_singleton()->update_area_light_atlas();
 }
 
-bool Utilities::has_os_feature(const String& p_feature) const
+bool Utilities::has_os_feature(const String& p_feature)
 {
 	if (!RD::data) {
 		return false;
@@ -323,39 +321,39 @@ uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
 	return 0;
 }
 
-String Utilities::get_video_adapter_name() const
+String Utilities::get_video_adapter_name()
 {
 	return RenderingDevice::get_device_name();
 }
 
-String Utilities::get_video_adapter_vendor() const
+String Utilities::get_video_adapter_vendor()
 {
 	return RenderingDevice::get_device_vendor_name();
 }
 
-RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type() const
+RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type()
 {
 	return RenderingDevice::get_device_type();
 }
 
-String Utilities::get_video_adapter_api_version() const
+String Utilities::get_video_adapter_api_version()
 {
 	return RenderingDevice::get_device_api_version();
 }
 
-Size2i Utilities::get_maximum_viewport_size() const
+Size2i Utilities::get_maximum_viewport_size()
 {
 	int max_x = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
 	int max_y = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
 	return Size2i(max_x, max_y);
 }
 
-uint32_t Utilities::get_maximum_shader_varyings() const
+uint32_t Utilities::get_maximum_shader_varyings()
 {
 	return RenderingDevice::limit_get(RDC::LIMIT_MAX_SHADER_VARYINGS);
 }
 
-uint64_t Utilities::get_maximum_uniform_buffer_size() const
+uint64_t Utilities::get_maximum_uniform_buffer_size()
 {
 	return RenderingDevice::limit_get(
 		RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);

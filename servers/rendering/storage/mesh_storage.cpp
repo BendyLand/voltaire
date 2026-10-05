@@ -32,12 +32,6 @@
 #include "core/math/transform_interpolator.h"
 #include "mesh_storage.h"
 
-RID RendererMeshStorage::multimesh_allocate() { return _multimesh_allocate(); }
-
-void RendererMeshStorage::multimesh_initialize(RID p_rid) { _multimesh_initialize(p_rid); }
-
-void RendererMeshStorage::multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
-
 void RendererMeshStorage::multimesh_allocate_data(RID p_multimesh, int p_instances,
 	RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data,
 	bool p_use_indirect)
@@ -65,7 +59,7 @@ void RendererMeshStorage::multimesh_allocate_data(RID p_multimesh, int p_instanc
 		p_use_custom_data, p_use_indirect);
 }
 
-int RendererMeshStorage::multimesh_get_instance_count(RID p_multimesh) const
+int RendererMeshStorage::multimesh_get_instance_count(RID p_multimesh)
 {
 	return _multimesh_get_instance_count(p_multimesh);
 }
@@ -205,34 +199,34 @@ void RendererMeshStorage::multimesh_set_custom_aabb(RID p_multimesh, const AABB&
 	_multimesh_set_custom_aabb(p_multimesh, p_aabb);
 }
 
-AABB RendererMeshStorage::multimesh_get_custom_aabb(RID p_multimesh) const
+AABB RendererMeshStorage::multimesh_get_custom_aabb(RID p_multimesh)
 {
 	return _multimesh_get_custom_aabb(p_multimesh);
 }
 
-RID RendererMeshStorage::multimesh_get_mesh(RID p_multimesh) const
+RID RendererMeshStorage::multimesh_get_mesh(RID p_multimesh)
 {
 	return _multimesh_get_mesh(p_multimesh);
 }
 
 Transform3D RendererMeshStorage::multimesh_instance_get_transform(
-	RID p_multimesh, int p_index) const
+	RID p_multimesh, int p_index)
 {
 	return _multimesh_instance_get_transform(p_multimesh, p_index);
 }
 
 Transform2D RendererMeshStorage::multimesh_instance_get_transform_2d(
-	RID p_multimesh, int p_index) const
+	RID p_multimesh, int p_index)
 {
 	return _multimesh_instance_get_transform_2d(p_multimesh, p_index);
 }
 
-Color RendererMeshStorage::multimesh_instance_get_color(RID p_multimesh, int p_index) const
+Color RendererMeshStorage::multimesh_instance_get_color(RID p_multimesh, int p_index)
 {
 	return _multimesh_instance_get_color(p_multimesh, p_index);
 }
 
-Color RendererMeshStorage::multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const
+Color RendererMeshStorage::multimesh_instance_get_custom_data(RID p_multimesh, int p_index)
 {
 	return _multimesh_instance_get_custom_data(p_multimesh, p_index);
 }
@@ -254,17 +248,17 @@ void RendererMeshStorage::multimesh_set_buffer(RID p_multimesh, const Vector<flo
 	_multimesh_set_buffer(p_multimesh, p_buffer);
 }
 
-RID RendererMeshStorage::multimesh_get_command_buffer_rd_rid(RID p_multimesh) const
+RID RendererMeshStorage::multimesh_get_command_buffer_rd_rid(RID p_multimesh)
 {
 	return _multimesh_get_command_buffer_rd_rid(p_multimesh);
 }
 
-RID RendererMeshStorage::multimesh_get_buffer_rd_rid(RID p_multimesh) const
+RID RendererMeshStorage::multimesh_get_buffer_rd_rid(RID p_multimesh)
 {
 	return _multimesh_get_buffer_rd_rid(p_multimesh);
 }
 
-Vector<float> RendererMeshStorage::multimesh_get_buffer(RID p_multimesh) const
+Vector<float> RendererMeshStorage::multimesh_get_buffer(RID p_multimesh)
 {
 	return _multimesh_get_buffer(p_multimesh);
 }
@@ -355,7 +349,7 @@ void RendererMeshStorage::multimesh_set_visible_instances(RID p_multimesh, int p
 	return _multimesh_set_visible_instances(p_multimesh, p_visible);
 }
 
-int RendererMeshStorage::multimesh_get_visible_instances(RID p_multimesh) const
+int RendererMeshStorage::multimesh_get_visible_instances(RID p_multimesh)
 {
 	return _multimesh_get_visible_instances(p_multimesh);
 }
@@ -379,7 +373,7 @@ void RendererMeshStorage::_multimesh_add_to_interpolation_lists(
 	}
 }
 
-void RendererMeshStorage::InterpolationData::notify_free_multimesh(RID p_rid)
+void InterpolationData::notify_free_multimesh(RID p_rid)
 {
 	// If the instance was on any of the lists, remove.
 	multimesh_interpolate_update_list.erase_multiple_unordered(p_rid);
