@@ -3012,32 +3012,6 @@ RID RenderingDevice::sampler_create(const RDC::SamplerState& p_state)
 	return id;
 }
 
-RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format, Span<uint8_t> p_data, bool p_use_restart_indices)
-{
-    MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
-
-    IndexBuffer ib;
-    uint32_t index_size = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 2 : 4;
-    ib.size = p_index_count * index_size;
-    ib.format = p_format;
-    ib.index_count = p_index_count;
-    ib.supports_restart_indices = p_use_restart_indices;
-    ib.max_index = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 0xFFFF : 0xFFFFFFFF;
-    ib.usage = RDD::BUFFER_USAGE_INDEX_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
-
-    Error err = _buffer_initialize(&ib, p_data);
-    ERR_FAIL_COND_V(err != OK, RID());
-
-    RID id = data->index_buffer_owner.make_rid(ib);
-    return id;
-}
-
-RID RenderingDevice::vertex_buffer_create(
-	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
-{
-	return RID();
-}
-
 bool RenderingDevice::sampler_is_format_supported_for_filter(
 	RDC::DataFormat p_format, RDC::SamplerFilter p_sampler_filter)
 {
@@ -6059,3 +6033,68 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, RenderingCo
 
     return OK;
 }
+
+RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format, Span<uint8_t> p_data, bool p_use_restart_indices)
+{
+    MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
+    IndexBuffer ib;
+    uint32_t index_size = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 2 : 4;
+    ib.size = p_index_count * index_size;
+    ib.format = p_format;
+    ib.index_count = p_index_count;
+    ib.supports_restart_indices = p_use_restart_indices;
+    ib.max_index = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 0xFFFF : 0xFFFFFFFF;
+    ib.usage = RDD::BUFFER_USAGE_INDEX_BIT;
+
+    if (!p_data.is_empty()) {
+        ib.usage |= RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
+    }
+    // Allocate the underlying GPU buffer in VRAM
+    ib.driver_id = data->driver->buffer_create(
+        ib.size, ib.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+    ERR_FAIL_COND_V(!ib.driver_id, RID());
+    data->buffer_memory.add(ib.size);
+    // If initial index data was provided, copy it through the staging transfer worker
+    if (!p_data.is_empty()) {
+        Error err = _buffer_initialize(&ib, p_data);
+        if (err != OK) {
+            data->driver->buffer_free(ib.driver_id);
+            ERR_FAIL_V(RID());
+        }
+    }
+    RID id = data->index_buffer_owner.make_rid(ib);
+#ifdef DEV_ENABLED
+    set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+    return id;
+}
+
+RID RenderingDevice::vertex_buffer_create(
+    uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+    MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
+    Buffer vb;
+    vb.size = p_size_bytes;
+    vb.usage = RDD::BUFFER_USAGE_VERTEX_BIT;
+    if (!p_data.is_empty()) {
+        vb.usage |= RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
+    }
+    vb.driver_id = data->driver->buffer_create(
+        vb.size, vb.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+    ERR_FAIL_COND_V(!vb.driver_id, RID());
+    data->buffer_memory.add(vb.size);
+    if (!p_data.is_empty()) {
+        Error err = _buffer_initialize(&vb, p_data);
+        if (err != OK) {
+            data->driver->buffer_free(vb.driver_id);
+            ERR_FAIL_V(RID());
+        }
+    }
+    RID id = data->vertex_buffer_owner.make_rid(vb);
+#ifdef DEV_ENABLED
+    set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+    return id;
+}
+
+
