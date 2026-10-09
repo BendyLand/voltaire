@@ -337,7 +337,7 @@ private:
 		RID default_skeleton_uniform_set;
 	};
 
-	static inline SkeletonShader skeleton_shader;
+	static inline SkeletonShader* skeleton_shader = nullptr;
 
 	struct Skeleton
 	{
@@ -377,9 +377,11 @@ public:
 	MeshStorage(const MeshStorage&) = delete;
 	MeshStorage& operator=(const MeshStorage&) = delete;
 
+	static void initialize();
+	static void finalize();
 	static bool free(RID p_rid);
 
-	RID get_default_rd_storage_buffer() const { return default_rd_storage_buffer; }
+	static RID get_default_rd_storage_buffer() { return default_rd_storage_buffer; }
 
 	/* MESH API */
 

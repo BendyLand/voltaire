@@ -258,11 +258,13 @@ struct Skeleton
 class MeshStorage final
 {
 private:
-	static inline struct
+	struct SkeletonShader
 	{
 		SkeletonShaderGLES3 shader;
 		RID shader_version;
-	} skeleton_shader;
+	};
+
+	static inline SkeletonShader* skeleton_shader = nullptr;
 
 	/* Mesh */
 
@@ -752,6 +754,19 @@ public:
 	static _FORCE_INLINE_ bool skeleton_is_valid(RID p_skeleton)
 	{
 		return skeleton_owner.get_or_null(p_skeleton) != nullptr;
+	}
+
+	static inline void initialize()
+	{
+	    skeleton_shader = memnew(SkeletonShader);
+	}
+
+	static inline void finalize()
+	{
+	    if (skeleton_shader) {
+	        memdelete(skeleton_shader);
+	        skeleton_shader = nullptr;
+	    }
 	}
 };
 

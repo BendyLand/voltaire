@@ -1606,16 +1606,16 @@ void MeshStorage::update_mesh_instances()
 					}
 				}
 
-				bool success = skeleton_shader.shader.version_bind_shader(
-					skeleton_shader.shader_version, variant, specialization);
+				bool success = skeleton_shader->shader.version_bind_shader(
+					skeleton_shader->shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-					base_weight, skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
-					float(mi->mesh->blend_shape_count), skeleton_shader.shader_version, variant,
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+					base_weight, skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
+					float(mi->mesh->blend_shape_count), skeleton_shader->shader_version, variant,
 					specialization);
 
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1635,8 +1635,8 @@ void MeshStorage::update_mesh_instances()
 				glEndTransformFeedback();
 
 				variant = SkeletonShaderGLES3::MODE_BLEND_PASS;
-				success = skeleton_shader.shader.version_bind_shader(
-					skeleton_shader.shader_version, variant, specialization);
+				success = skeleton_shader->shader.version_bind_shader(
+					skeleton_shader->shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
@@ -1649,11 +1649,11 @@ void MeshStorage::update_mesh_instances()
 						// not bother with this one
 						continue;
 					}
-					skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-						weight, skeleton_shader.shader_version, variant, specialization);
-					skeleton_shader.shader.version_set_uniform(
+					skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+						weight, skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::BLEND_SHAPE_COUNT, float(mi->mesh->blend_shape_count),
-						skeleton_shader.shader_version, variant, specialization);
+						skeleton_shader->shader_version, variant, specialization);
 
 					// Ensure the skeleton shader outputs to the correct (current) VBO.
 
@@ -1681,41 +1681,41 @@ void MeshStorage::update_mesh_instances()
 									  ? SkeletonShaderGLES3::USE_EIGHT_WEIGHTS
 									  : 0;
 				specialization |= SkeletonShaderGLES3::FINAL_PASS;
-				success = skeleton_shader.shader.version_bind_shader(
-					skeleton_shader.shader_version, variant, specialization);
+				success = skeleton_shader->shader.version_bind_shader(
+					skeleton_shader->shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-					weight, skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
-					float(mi->mesh->blend_shape_count), skeleton_shader.shader_version, variant,
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+					weight, skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
+					float(mi->mesh->blend_shape_count), skeleton_shader->shader_version, variant,
 					specialization);
 
 				if (can_use_skeleton) {
 					Transform2D transform =
 						mi->canvas_item_transform_2d.affine_inverse() * sk->base_transform_2d;
-					skeleton_shader.shader.version_set_uniform(
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_X, transform[0],
-						skeleton_shader.shader_version, variant, specialization);
-					skeleton_shader.shader.version_set_uniform(
+						skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_Y, transform[1],
-						skeleton_shader.shader_version, variant, specialization);
-					skeleton_shader.shader.version_set_uniform(
+						skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_OFFSET, transform[2],
-						skeleton_shader.shader_version, variant, specialization);
+						skeleton_shader->shader_version, variant, specialization);
 
 					Transform2D inverse_transform = transform.affine_inverse();
-					skeleton_shader.shader.version_set_uniform(
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_X, inverse_transform[0],
-						skeleton_shader.shader_version, variant, specialization);
-					skeleton_shader.shader.version_set_uniform(
+						skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_Y, inverse_transform[1],
-						skeleton_shader.shader_version, variant, specialization);
-					skeleton_shader.shader.version_set_uniform(
+						skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader->shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_OFFSET, inverse_transform[2],
-						skeleton_shader.shader_version, variant, specialization);
+						skeleton_shader->shader_version, variant, specialization);
 
 					// Do last blendshape in the same pass as the Skeleton.
 					_compute_skeleton(mi, sk, i);
@@ -1752,32 +1752,32 @@ void MeshStorage::update_mesh_instances()
 					}
 				}
 
-				bool success = skeleton_shader.shader.version_bind_shader(
-					skeleton_shader.shader_version, variant, specialization);
+				bool success = skeleton_shader->shader.version_bind_shader(
+					skeleton_shader->shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
 				Transform2D transform =
 					mi->canvas_item_transform_2d.affine_inverse() * sk->base_transform_2d;
-				skeleton_shader.shader.version_set_uniform(
+				skeleton_shader->shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_X, transform[0],
-					skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(
+					skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_Y, transform[1],
-					skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(
+					skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_OFFSET, transform[2],
-					skeleton_shader.shader_version, variant, specialization);
+					skeleton_shader->shader_version, variant, specialization);
 
 				Transform2D inverse_transform = transform.affine_inverse();
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_X,
-					inverse_transform[0], skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_Y,
-					inverse_transform[1], skeleton_shader.shader_version, variant, specialization);
-				skeleton_shader.shader.version_set_uniform(
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_X,
+					inverse_transform[0], skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_Y,
+					inverse_transform[1], skeleton_shader->shader_version, variant, specialization);
+				skeleton_shader->shader.version_set_uniform(
 					SkeletonShaderGLES3::INVERSE_TRANSFORM_OFFSET, inverse_transform[2],
-					skeleton_shader.shader_version, variant, specialization);
+					skeleton_shader->shader_version, variant, specialization);
 
 				GLuint vertex_array_gl = 0;
 				uint64_t mask =

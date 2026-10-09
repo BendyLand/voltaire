@@ -365,7 +365,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 		}
 
 		s->uniform_set = RD::uniform_set_create(
-			uniforms, skeleton_shader.version_shader[0], SkeletonShader::UNIFORM_SET_SURFACE);
+			uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SURFACE);
 	}
 
 	if (mesh->surface_count == 0) {
@@ -995,7 +995,7 @@ void MeshStorage::_mesh_instance_add_surface_buffer(MeshInstance* mi, Mesh* mesh
 		uniforms.push_back(u);
 	}
 	s->uniform_set[p_buffer_index] = RD::uniform_set_create(
-		uniforms, skeleton_shader.version_shader[0], SkeletonShader::UNIFORM_SET_INSTANCE);
+		uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_INSTANCE);
 }
 
 void MeshStorage::_mesh_instance_remove_surface(MeshInstance* mi, int p_surface)
@@ -2119,7 +2119,7 @@ void MeshStorage::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_
 				uniforms.push_back(u);
 			}
 			skeleton->uniform_set_mi = RD::uniform_set_create(
-				uniforms, skeleton_shader.version_shader[0], SkeletonShader::UNIFORM_SET_SKELETON);
+				uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SKELETON);
 		}
 	}
 
@@ -2284,4 +2284,15 @@ void RendererRD::MeshStorage::mesh_surface_update_attribute_region(
 {
 }
 
+void RendererRD::MeshStorage::initialize()
+{
+    skeleton_shader = memnew(SkeletonShader);
+}
 
+void RendererRD::MeshStorage::finalize()
+{
+    if (skeleton_shader) {
+        memdelete(skeleton_shader);
+        skeleton_shader = nullptr;
+    }
+}
