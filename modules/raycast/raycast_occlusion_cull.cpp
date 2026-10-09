@@ -411,7 +411,7 @@ Vector2 RaycastOcclusionCull::_get_jitter(const Rect2& p_viewport_rect, const Si
 		return Vector2();
 	}
 
-	int32_t frame = Engine::get_singleton()->get_frames_drawn();
+	int32_t frame = Engine::get_frames_drawn();
 	frame %= 9;
 
 	Vector2 jitter;

@@ -379,7 +379,7 @@ void Viewport::_update_viewport_path()
 
 bool Viewport::_can_hide_focus_state()
 {
-	return Engine::get_singleton()->is_editor_hint() ||
+	return Engine::is_editor_hint() ||
 		   GLOBAL_GET_CACHED(int, "gui/common/show_focus_state_on_pointer_event") < 2;
 }
 
@@ -435,7 +435,7 @@ void Viewport::_check_xr_size()
 		}
 		else {
 			// Set to default and prevent rendering for now (unless in editor, so we get a preview).
-			bool is_editor = Engine::get_singleton()->is_editor_hint();
+			bool is_editor = Engine::is_editor_hint();
 			_set_size(is_editor ? Size2i(512, 512) : Size2i(0, 0), is_editor ? 1 : 0, Size2i(0, 0),
 				false);
 		}
@@ -1313,7 +1313,7 @@ void Viewport::push_unhandled_input(InputEvent* rp_event, bool p_local_coords)
 		return;
 	}
 
-	if (Engine::get_singleton()->is_editor_hint() && get_tree()->get_edited_scene_root() &&
+	if (Engine::is_editor_hint() && get_tree()->get_edited_scene_root() &&
 		get_tree()->get_edited_scene_root()->is_ancestor_of(this)) {
 		return;
 	}

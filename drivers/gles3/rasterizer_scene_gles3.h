@@ -1146,7 +1146,7 @@ public:
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
 	virtual void material_set_use_debanding(bool p_enable) override;
 
-	RasterizerSceneGLES3(GLES3::MeshStorage* p_mesh_storage, GLES3::TextureStorage* p_texture_storage,
+	RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_storage,
 		GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage);
 	~RasterizerSceneGLES3();
 };

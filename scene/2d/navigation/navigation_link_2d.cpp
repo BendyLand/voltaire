@@ -232,7 +232,7 @@ void NavigationLink2D::_update_debug_mesh()
 		return;
 	}
 
-	if (!Engine::get_singleton()->is_editor_hint() &&
+	if (!Engine::is_editor_hint() &&
 		!NavigationServer2D::get_debug_enabled()) {
 		return;
 	}

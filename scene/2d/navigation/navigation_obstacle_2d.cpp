@@ -132,7 +132,7 @@ void NavigationObstacle2D::_notification(int p_what)
 #ifdef DEBUG_ENABLED
 		if (is_inside_tree()) {
 			bool is_debug_enabled = false;
-			if (Engine::get_singleton()->is_editor_hint()) {
+			if (Engine::is_editor_hint()) {
 				is_debug_enabled = true;
 			}
 			else if (NavigationServer2D::get_debug_enabled() &&

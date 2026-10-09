@@ -257,7 +257,7 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 	// via the error metric and switch off.
 	// Also only try smoothing if vsync is enabled (classical vsync, not new types) ..
 	// This condition is currently checked before calling smooth_delta().
-	if (!OS::get_singleton()->is_delta_smoothing_enabled() || Engine::get_singleton()->is_editor_hint()) {
+	if (!OS::get_singleton()->is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
 		return p_delta;
 	}
 
@@ -317,7 +317,7 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 // before advance_core considers changing the physics_steps return from
 // the typical values as defined by typical_physics_steps
 double MainTimerSync::get_physics_jitter_fix() {
-	return Engine::get_singleton()->get_physics_jitter_fix();
+	return Engine::get_physics_jitter_fix();
 }
 
 // gets our best bet for the average number of physics steps per render frame

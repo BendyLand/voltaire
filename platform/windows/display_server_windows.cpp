@@ -845,7 +845,7 @@ Error DisplayServerWindows::_file_dialog_with_options_show(const String &p_title
 	ERR_FAIL_INDEX_V(int(p_mode), DisplayServerEnums::FILE_DIALOG_MODE_SAVE_MAX, FAILED);
 
 	String appname;
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		appname = "Godot.GodotEditor." + String(GODOT_VERSION_BRANCH);
 	} else {
 		String name = GLOBAL_GET("application/config/name");
@@ -7213,7 +7213,7 @@ Error DisplayServerWindows::_create_window(DisplayServerEnums::WindowID p_window
 		if (hr == S_OK) {
 			PROPVARIANT val;
 			String appname;
-			if (Engine::get_singleton()->is_editor_hint()) {
+			if (Engine::is_editor_hint()) {
 				appname = "Godot.GodotEditor." + String(VLTR_VERSION_FULL_CONFIG);
 			} else {
 				String name = GLOBAL_GET("application/config/name");
@@ -7805,7 +7805,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	_register_raw_input_devices(DisplayServerEnums::INVALID_WINDOW_ID);
 
 	String appname;
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		appname = "Godot.GodotEditor." + String(VLTR_VERSION_FULL_CONFIG);
 	} else {
 		String name = GLOBAL_GET("application/config/name");
@@ -8198,7 +8198,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	}
 #endif
 
-	if (!Engine::get_singleton()->is_editor_hint() && !OS::get_singleton()->is_in_low_processor_usage_mode()) {
+	if (!Engine::is_editor_hint() && !OS::get_singleton()->is_in_low_processor_usage_mode()) {
 		// Increase priority for projects that are not in low-processor mode (typically games)
 		// to reduce the risk of frame stuttering.
 		// This is not done for the editor to prevent importers or resource bakers

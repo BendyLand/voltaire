@@ -608,7 +608,6 @@ void Renderer::init()
 	RendererCompositor::create();
     light_storage = RendererCompositor::get_light_storage();
     material_storage = RendererCompositor::get_material_storage();
-    mesh_storage = RendererCompositor::get_mesh_storage();
     particles_storage = RendererCompositor::get_particles_storage();
     texture_storage = RendererCompositor::get_texture_storage();
     gi = RendererCompositor::get_gi();
@@ -630,7 +629,6 @@ void Renderer::finalize()
     viewport = nullptr;
     light_storage = nullptr;
     material_storage = nullptr;
-    mesh_storage = nullptr;
     particles_storage = nullptr;
     texture_storage = nullptr;
     gi = nullptr;
@@ -1574,67 +1572,67 @@ void Renderer::camera_set_transform(RID p_camera, const Transform3D& p_transform
 	RS::scene->camera_set_transform(p_camera, p_transform);
 }
 
-RID Renderer::mesh_create() { return RS::mesh_storage->mesh_allocate(); }
+RID Renderer::mesh_create() { return RendererMeshStorage::mesh_allocate(); }
 
 void Renderer::mesh_add_surface(
 	RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface)
 {
-	RS::mesh_storage->mesh_add_surface(p_mesh, p_surface);
+	RendererMeshStorage::mesh_add_surface(p_mesh, p_surface);
 }
 
 void Renderer::mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)
 {
-	RS::mesh_storage->mesh_set_blend_shape_count(p_mesh, p_blend_shape_count);
+	RendererMeshStorage::mesh_set_blend_shape_count(p_mesh, p_blend_shape_count);
 }
 
 void Renderer::mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode)
 {
-	RS::mesh_storage->mesh_set_blend_shape_mode(p_mesh, p_mode);
+	RendererMeshStorage::mesh_set_blend_shape_mode(p_mesh, p_mode);
 }
 
 void Renderer::mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb)
 {
-	RS::mesh_storage->mesh_set_custom_aabb(p_mesh, p_aabb);
+	RendererMeshStorage::mesh_set_custom_aabb(p_mesh, p_aabb);
 }
 
 void Renderer::mesh_set_path(RID p_mesh, const String& p_path)
 {
-	RS::mesh_storage->mesh_set_path(p_mesh, p_path);
+	RendererMeshStorage::mesh_set_path(p_mesh, p_path);
 }
 
 void Renderer::mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh)
 {
-	RS::mesh_storage->mesh_set_shadow_mesh(p_mesh, p_shadow_mesh);
+	RendererMeshStorage::mesh_set_shadow_mesh(p_mesh, p_shadow_mesh);
 }
 
-void Renderer::mesh_clear(RID p_mesh) { RS::mesh_storage->mesh_clear(p_mesh); }
+void Renderer::mesh_clear(RID p_mesh) { RendererMeshStorage::mesh_clear(p_mesh); }
 
 void Renderer::mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material)
 {
-	RS::mesh_storage->mesh_surface_set_material(p_mesh, p_surface, p_material);
+	RendererMeshStorage::mesh_surface_set_material(p_mesh, p_surface, p_material);
 }
 
 void Renderer::mesh_surface_update_vertex_region(
 	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
-	RS::mesh_storage->mesh_surface_update_vertex_region(p_mesh, p_surface, p_offset, p_data);
+	RendererMeshStorage::mesh_surface_update_vertex_region(p_mesh, p_surface, p_offset, p_data);
 }
 
 void Renderer::mesh_surface_update_attribute_region(
 	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
-	RS::mesh_storage->mesh_surface_update_attribute_region(p_mesh, p_surface, p_offset, p_data);
+	RendererMeshStorage::mesh_surface_update_attribute_region(p_mesh, p_surface, p_offset, p_data);
 }
 
 void Renderer::mesh_surface_update_skin_region(
 	RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
-	RS::mesh_storage->mesh_surface_update_skin_region(p_mesh, p_surface, p_offset, p_data);
+	RendererMeshStorage::mesh_surface_update_skin_region(p_mesh, p_surface, p_offset, p_data);
 }
 
 RenderingServerTypes::SurfaceData Renderer::mesh_get_surface(RID p_mesh, int p_surface)
 {
-	return RS::mesh_storage->mesh_get_surface(p_mesh, p_surface);
+	return RendererMeshStorage::mesh_get_surface(p_mesh, p_surface);
 }
 
 RID Renderer::shader_create()
@@ -2299,8 +2297,8 @@ void Renderer::occluder_set_mesh(
 
 RID Renderer::multimesh_create()
 {
-	RID ret = RS::mesh_storage->multimesh_allocate();
-	RS::mesh_storage->multimesh_initialize(ret);
+	RID ret = RendererMeshStorage::multimesh_allocate();
+	RendererMeshStorage::multimesh_initialize(ret);
 	return ret;
 }
 
@@ -2308,128 +2306,128 @@ void Renderer::multimesh_allocate_data(RID p_multimesh, int p_instances,
 	RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data,
 	bool p_use_indirect)
 {
-	RS::mesh_storage->multimesh_allocate_data(p_multimesh, p_instances, p_transform_format,
+	RendererMeshStorage::multimesh_allocate_data(p_multimesh, p_instances, p_transform_format,
 		p_use_colors, p_use_custom_data, p_use_indirect);
 }
 
 AABB Renderer::multimesh_get_aabb(RID p_multimesh)
 {
-	return RS::mesh_storage->multimesh_get_aabb(p_multimesh);
+	return RendererMeshStorage::multimesh_get_aabb(p_multimesh);
 }
 
 void Renderer::multimesh_instance_set_color(
 	RID p_multimesh, int p_index, const Color& p_color)
 {
-	RS::mesh_storage->multimesh_instance_set_color(p_multimesh, p_index, p_color);
+	RendererMeshStorage::multimesh_instance_set_color(p_multimesh, p_index, p_color);
 }
 
 void Renderer::multimesh_instance_set_custom_data(
 	RID p_multimesh, int p_index, const Color& p_color)
 {
-	RS::mesh_storage->multimesh_instance_set_custom_data(p_multimesh, p_index, p_color);
+	RendererMeshStorage::multimesh_instance_set_custom_data(p_multimesh, p_index, p_color);
 }
 
 Vector<float> Renderer::multimesh_get_buffer(RID p_multimesh)
 {
-	return RS::mesh_storage->multimesh_get_buffer(p_multimesh);
+	return RendererMeshStorage::multimesh_get_buffer(p_multimesh);
 }
 
 void Renderer::multimesh_set_visible_instances(RID p_multimesh, int p_visible)
 {
-	RS::mesh_storage->multimesh_set_visible_instances(p_multimesh, p_visible);
+	RendererMeshStorage::multimesh_set_visible_instances(p_multimesh, p_visible);
 }
 
 void Renderer::multimesh_instance_set_transform_2d(
 	RID p_multimesh, int p_index, const Transform2D& p_transform)
 {
-	RS::mesh_storage->multimesh_instance_set_transform_2d(p_multimesh, p_index, p_transform);
+	RendererMeshStorage::multimesh_instance_set_transform_2d(p_multimesh, p_index, p_transform);
 }
 
 Transform3D Renderer::multimesh_instance_get_transform(RID p_multimesh, int p_index)
 {
-	return RS::mesh_storage->multimesh_instance_get_transform(p_multimesh, p_index);
+	return RendererMeshStorage::multimesh_instance_get_transform(p_multimesh, p_index);
 }
 
 Transform2D Renderer::multimesh_instance_get_transform_2d(RID p_multimesh, int p_index)
 {
-	return RS::mesh_storage->multimesh_instance_get_transform_2d(p_multimesh, p_index);
+	return RendererMeshStorage::multimesh_instance_get_transform_2d(p_multimesh, p_index);
 }
 
 void Renderer::multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb)
 {
-	RS::mesh_storage->multimesh_set_custom_aabb(p_multimesh, p_aabb);
+	RendererMeshStorage::multimesh_set_custom_aabb(p_multimesh, p_aabb);
 }
 
 void Renderer::multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer)
 {
-	RS::mesh_storage->multimesh_set_buffer(p_multimesh, p_buffer);
+	RendererMeshStorage::multimesh_set_buffer(p_multimesh, p_buffer);
 }
 
 void Renderer::multimesh_set_buffer_interpolated(
 	RID p_multimesh, const Vector<float>& p_buffer, const Vector<float>& p_buffer_prev)
 {
-	RS::mesh_storage->multimesh_set_buffer_interpolated(p_multimesh, p_buffer, p_buffer_prev);
+	RendererMeshStorage::multimesh_set_buffer_interpolated(p_multimesh, p_buffer, p_buffer_prev);
 }
 
 void Renderer::multimesh_set_mesh(RID p_multimesh, RID p_mesh)
 {
-	RS::mesh_storage->multimesh_set_mesh(p_multimesh, p_mesh);
+	RendererMeshStorage::multimesh_set_mesh(p_multimesh, p_mesh);
 }
 
 void Renderer::multimesh_set_physics_interpolation_quality(
 	RID p_multimesh, RSE::MultimeshPhysicsInterpolationQuality p_quality)
 {
-	RS::mesh_storage->multimesh_set_physics_interpolation_quality(p_multimesh, p_quality);
+	RendererMeshStorage::multimesh_set_physics_interpolation_quality(p_multimesh, p_quality);
 }
 
 void Renderer::multimesh_instance_set_transform(
 	RID p_multimesh, int p_index, const Transform3D& p_transform)
 {
-	RS::mesh_storage->multimesh_instance_set_transform(p_multimesh, p_index, p_transform);
+	RendererMeshStorage::multimesh_instance_set_transform(p_multimesh, p_index, p_transform);
 }
 
 Color Renderer::multimesh_instance_get_color(RID p_multimesh, int p_index)
 {
-	return RS::mesh_storage->multimesh_instance_get_color(p_multimesh, p_index);
+	return RendererMeshStorage::multimesh_instance_get_color(p_multimesh, p_index);
 }
 
 Color Renderer::multimesh_instance_get_custom_data(RID p_multimesh, int p_index)
 {
-	return RS::mesh_storage->multimesh_instance_get_custom_data(p_multimesh, p_index);
+	return RendererMeshStorage::multimesh_instance_get_custom_data(p_multimesh, p_index);
 }
 
 void Renderer::multimesh_instance_reset_physics_interpolation(RID p_multimesh, int p_index)
 {
-	RS::mesh_storage->multimesh_instance_reset_physics_interpolation(p_multimesh, p_index);
+	RendererMeshStorage::multimesh_instance_reset_physics_interpolation(p_multimesh, p_index);
 }
 
 void Renderer::multimesh_instances_reset_physics_interpolation(RID p_multimesh)
 {
-	RS::mesh_storage->multimesh_instances_reset_physics_interpolation(p_multimesh);
+	RendererMeshStorage::multimesh_instances_reset_physics_interpolation(p_multimesh);
 }
 
 void Renderer::multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated)
 {
-	RS::mesh_storage->multimesh_set_physics_interpolated(p_multimesh, p_interpolated);
+	RendererMeshStorage::multimesh_set_physics_interpolated(p_multimesh, p_interpolated);
 }
 
 RID Renderer::skeleton_create()
 {
-	RID ret = RS::mesh_storage->skeleton_allocate();
-	RS::mesh_storage->skeleton_initialize(ret);
+	RID ret = RendererMeshStorage::skeleton_allocate();
+	RendererMeshStorage::skeleton_initialize(ret);
 	return ret;
 }
 
 void Renderer::skeleton_bone_set_transform_2d(
 	RID p_skeleton, int p_bone, const Transform2D& p_transform)
 {
-	RS::mesh_storage->skeleton_bone_set_transform_2d(p_skeleton, p_bone, p_transform);
+	RendererMeshStorage::skeleton_bone_set_transform_2d(p_skeleton, p_bone, p_transform);
 }
 
 void Renderer::skeleton_set_base_transform_2d(
 	RID p_skeleton, const Transform2D& p_base_transform)
 {
-	RS::mesh_storage->skeleton_set_base_transform_2d(p_skeleton, p_base_transform);
+	RendererMeshStorage::skeleton_set_base_transform_2d(p_skeleton, p_base_transform);
 }
 
 RID Renderer::texture_external_create(int p_width, int p_height, uint64_t p_external_buffer)

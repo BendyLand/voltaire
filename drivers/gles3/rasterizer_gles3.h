@@ -64,7 +64,6 @@ private:
 	static inline GLES3::Config* config = nullptr;
 	static inline GLES3::TextureStorage* texture_storage = nullptr;
 	static inline GLES3::MaterialStorage* material_storage = nullptr;
-	static inline GLES3::MeshStorage* mesh_storage = nullptr;
 	static inline GLES3::ParticlesStorage* particles_storage = nullptr;
 	static inline GLES3::LightStorage* light_storage = nullptr;
 	static inline GLES3::GI* gi = nullptr;

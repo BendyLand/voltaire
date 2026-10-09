@@ -93,8 +93,8 @@ void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
 
 void MovieWriter::add_frame()
 {
-	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
-	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
+	const int movie_time_seconds = Engine::get_frames_drawn() / fps;
+	const int frame_remainder = Engine::get_frames_drawn() % fps;
 	const String movie_time =
 		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
@@ -104,7 +104,7 @@ void MovieWriter::add_frame()
 	Window* main_window = Window::get_from_id(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (main_window) {
 		main_window->set_title(vformat("MovieWriter: Frame %d (time: %s) - %s",
-			Engine::get_singleton()->get_frames_drawn(), movie_time, project_name));
+			Engine::get_frames_drawn(), movie_time, project_name));
 	}
 
 	RID main_vp_rid = Renderer::viewport_find_from_screen_attachment(

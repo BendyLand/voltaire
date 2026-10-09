@@ -574,7 +574,7 @@ void ExportTemplateManager::_draw_item_progress(TreeItem* p_item, const Rect2& p
 	} break;
 
 	case DownloadStatus::PENDING: {
-		uint64_t frame = Engine::get_singleton()->get_frames_drawn();
+		uint64_t frame = Engine::get_frames_drawn();
 		const Ref<Texture2D> progress_texture = theme_cache.progress_icons[frame / 4 % 8];
 		const Rect2 rect = Rect2(
 			Vector2(p_rect.get_end().x - progress_texture->get_width(),

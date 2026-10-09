@@ -448,7 +448,7 @@ void RendererMeshStorage::update_interpolation_frame(bool p_process)
 {
 	if (p_process) {
 		// Only need 32 bits for interpolation, don't use real_t.
-		float f = Engine::get_singleton()->get_physics_interpolation_fraction();
+		float f = Engine::get_physics_interpolation_fraction();
 
 		for (unsigned int c = 0; c < _interpolation_data.multimesh_interpolate_update_list.size();
 			 c++) {

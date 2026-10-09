@@ -362,7 +362,7 @@ void OS_Android::main_loop_begin() {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		GameViewPlugin *game_view_plugin = _get_game_view_plugin();
 		if (game_view_plugin != nullptr) {
 			game_view_plugin->connect("main_screen_changed", callable_mp_static(&OS_Android::_on_main_screen_changed));
@@ -383,14 +383,14 @@ bool OS_Android::main_loop_iterate(bool *r_should_swap_buffers) {
 	}
 	DisplayServerAndroid::get_singleton()->reset_swap_buffers_flag();
 	DisplayServerAndroid::get_singleton()->process_events();
-	uint64_t current_frames_drawn = Engine::get_singleton()->get_frames_drawn();
+	uint64_t current_frames_drawn = Engine::get_frames_drawn();
 	bool exit = Main::iteration();
 
 	if (r_should_swap_buffers) {
 		*r_should_swap_buffers = !is_in_low_processor_usage_mode() ||
 				DisplayServerAndroid::get_singleton()->should_swap_buffers() ||
 				Renderer::has_changed() ||
-				current_frames_drawn != Engine::get_singleton()->get_frames_drawn();
+				current_frames_drawn != Engine::get_frames_drawn();
 	}
 
 	return exit;
@@ -398,7 +398,7 @@ bool OS_Android::main_loop_iterate(bool *r_should_swap_buffers) {
 
 void OS_Android::main_loop_end() {
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		GameViewPlugin *game_view_plugin = _get_game_view_plugin();
 		if (game_view_plugin != nullptr) {
 			game_view_plugin->disconnect("main_screen_changed", callable_mp_static(&OS_Android::_on_main_screen_changed));

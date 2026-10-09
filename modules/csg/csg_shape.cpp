@@ -637,7 +637,7 @@ Ref<ConcavePolygonShape3D> CSGShape3D::bake_collision_shape()
 
 bool CSGShape3D::_is_debug_collision_shape_visible()
 {
-	return !Engine::get_singleton()->is_editor_hint() && is_inside_tree() &&
+	return !Engine::is_editor_hint() && is_inside_tree() &&
 		   get_tree()->is_debugging_collisions_hint();
 }
 

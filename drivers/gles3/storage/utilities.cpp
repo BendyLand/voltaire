@@ -381,7 +381,7 @@ void Utilities::_capture_timestamps_begin()
 
 	frames[frame].timestamp_result_count = frames[frame].timestamp_count;
 	frames[frame].timestamp_count = 0;
-	frames[frame].index = Engine::get_singleton()->get_frames_drawn();
+	frames[frame].index = Engine::get_frames_drawn();
 	capture_timestamp("Internal Begin");
 }
 

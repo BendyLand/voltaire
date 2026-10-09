@@ -228,7 +228,7 @@ bool Node3D::update_client_physics_interpolation_data()
 	ERR_FAIL_NULL_V(data.client_physics_interpolation_data, false);
 	ClientPhysicsInterpolationData& pid = *data.client_physics_interpolation_data;
 
-	uint64_t tick = Engine::get_singleton()->get_physics_frames();
+	uint64_t tick = Engine::get_physics_frames();
 
 	// Has this update been done already this tick?
 	// (For instance, get_global_transform_interpolated() could be called multiple times.)
@@ -286,7 +286,7 @@ Transform3D Node3D::_get_global_transform_interpolated(real_t p_interpolation_fr
 		data.client_physics_interpolation_data->global_xform_prev =
 			data.client_physics_interpolation_data->global_xform_curr;
 		data.client_physics_interpolation_data->current_physics_tick =
-			Engine::get_singleton()->get_physics_frames();
+			Engine::get_physics_frames();
 	}
 
 	// Storing the last tick we requested client interpolation allows us to timeout
@@ -298,7 +298,7 @@ Transform3D Node3D::_get_global_transform_interpolated(real_t p_interpolation_fr
 	// relevant at high tick rates. We could alternatively do this by frames rather than ticks and
 	// avoid this problem, but then the behavior would be machine dependent.
 	data.client_physics_interpolation_data->timeout_physics_tick =
-		Engine::get_singleton()->get_physics_frames() + 256;
+		Engine::get_physics_frames() + 256;
 
 	// Make sure data is up to date.
 	update_client_physics_interpolation_data();

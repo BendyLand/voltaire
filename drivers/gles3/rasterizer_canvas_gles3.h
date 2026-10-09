@@ -42,8 +42,6 @@
 
 class RasterizerCanvasGLES3 : public RendererCanvasRender
 {
-	static RasterizerCanvasGLES3* singleton;
-
 	_FORCE_INLINE_ void _update_transform_2d_to_mat2x4(
 		const Transform2D& p_transform, float* p_mat2x4);
 	_FORCE_INLINE_ void _update_transform_2d_to_mat2x3(
@@ -440,7 +438,7 @@ public:
 
 	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) override { return 0; }
 
-	RasterizerCanvasGLES3(GLES3::MeshStorage* p_mesh_storage, GLES3::TextureStorage* p_texture_storage,
+	RasterizerCanvasGLES3(GLES3::TextureStorage* p_texture_storage,
 		GLES3::MaterialStorage* p_material_storage);
 	~RasterizerCanvasGLES3();
 };

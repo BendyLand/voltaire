@@ -595,12 +595,12 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions()
 	// can and will fill the validation layers with useless info otherwise if not enabled.
 	_register_requested_device_extension(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, false);
 
-	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
+	if (Engine::is_generate_spirv_debug_info_enabled()) {
 		_register_requested_device_extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, true);
 	}
 
 #if defined(VK_TRACK_DEVICE_MEMORY)
-	if (Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+	if (Engine::is_extra_gpu_memory_tracking_enabled()) {
 		_register_requested_device_extension(VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME, false);
 	}
 #endif
@@ -2140,7 +2140,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 #endif
 
 	shader_container_format.set_debug_info_enabled(
-		Engine::get_singleton()->is_generate_spirv_debug_info_enabled());
+		Engine::is_generate_spirv_debug_info_enabled());
 
 #if RECORD_PIPELINE_STATISTICS
 	pipeline_statistics.file_access =
@@ -2268,7 +2268,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	} break;
 	case MEMORY_ALLOCATION_TYPE_GPU: {
 		vma_usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-		if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+		if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 			// We must set it right now or else vmaFindMemoryTypeIndexForBufferInfo will use wrong
 			// parameters.
 			alloc_create_info.usage = vma_usage;
@@ -2290,7 +2290,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	VmaAllocation allocation = nullptr;
 	VmaAllocationInfo alloc_info = {};
 
-	if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 		alloc_create_info.preferredFlags &= ~vma_flags_to_remove;
 		alloc_create_info.usage = vma_usage;
 		VkResult err = vmaCreateBuffer(
@@ -2373,7 +2373,7 @@ void RenderingDeviceDriverVulkan::buffer_free(BufferID p_buffer)
 		vmaUnmapMemory(allocator, buf_info->allocation.handle);
 	}
 
-	if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 		vmaDestroyBuffer(allocator, buf_info->vk_buffer, buf_info->allocation.handle);
 	}
 	else {
@@ -2710,7 +2710,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	VmaAllocation allocation = nullptr;
 	VmaAllocationInfo alloc_info = {};
 
-	if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 		alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 		VkResult err = vmaCreateImage(
 			allocator, &create_info, &alloc_create_info, &vk_image, &allocation, &alloc_info);
@@ -2769,7 +2769,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	VkResult err = vkCreateImageView(vk_device, &image_view_create_info,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_IMAGE_VIEW), &vk_image_view);
 	if (err) {
-		if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+		if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 			vmaDestroyImage(allocator, vk_image, allocation);
 		}
 		else {
@@ -2987,7 +2987,7 @@ void RenderingDeviceDriverVulkan::texture_free(TextureID p_texture)
 	vkDestroyImageView(
 		vk_device, tex_info->vk_view, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_IMAGE_VIEW));
 	if (tex_info->allocation.handle) {
-		if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+		if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 			vmaDestroyImage(
 				allocator, tex_info->vk_view_create_info.image, tex_info->allocation.handle);
 		}
@@ -8033,7 +8033,7 @@ void RenderingDeviceDriverVulkan::command_insert_breadcrumb(
 	}
 
 	const CommandBufferInfo* command_buffer = (const CommandBufferInfo*)p_cmd_buffer.id;
-	if (Engine::get_singleton()->is_accurate_breadcrumbs_enabled()) {
+	if (Engine::is_accurate_breadcrumbs_enabled()) {
 		// Force a full barrier so commands are not executed in parallel.
 		// This will mean that the last breadcrumb to see was actually the
 		// last (group of) command to be executed (hence, the one causing the crash).
@@ -8172,7 +8172,7 @@ void RenderingDeviceDriverVulkan::print_lost_device_info()
 	{
 		String error_msg =
 			"Printing last known breadcrumbs in reverse order (last executed first).";
-		if (!Engine::get_singleton()->is_accurate_breadcrumbs_enabled()) {
+		if (!Engine::is_accurate_breadcrumbs_enabled()) {
 			error_msg += "\nSome of them might be inaccurate. Try running with "
 						 "--accurate-breadcrumbs for precise information.";
 		}

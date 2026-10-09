@@ -262,7 +262,7 @@ void CollisionObject3D::_update_pickable()
 bool CollisionObject3D::_are_collision_shapes_visible()
 {
 	return is_inside_tree() && get_tree()->is_debugging_collisions_hint() &&
-		   !Engine::get_singleton()->is_editor_hint();
+		   !Engine::is_editor_hint();
 }
 
 void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)

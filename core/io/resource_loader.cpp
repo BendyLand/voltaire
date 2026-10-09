@@ -180,7 +180,7 @@ Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_origin
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		if (ResourceFormatImporter::get_singleton()->get_importer_by_file(p_path).is_valid()) {
 			// The format is known to the editor, but the file hasn't been imported
 			// (otherwise, ResourceFormatImporter would have been found as a suitable loader).
@@ -462,7 +462,7 @@ ResourceLoader::ThreadLoadStatus ResourceLoader::load_threaded_get_status(
 
 		// Support userland polling in a loop on the main thread.
 		if (Thread::is_main_thread() && status == THREAD_LOAD_IN_PROGRESS) {
-			uint64_t frame = Engine::get_singleton()->get_process_frames();
+			uint64_t frame = Engine::get_process_frames();
 			if (frame == load_task_ptr->last_progress_check_main_thread_frame) {
 				ensure_progress = true;
 			}
@@ -894,7 +894,7 @@ String ResourceLoader::get_resource_script_class(const String& p_path)
 ResourceUID::ID ResourceLoader::get_resource_uid(const String& p_path)
 {
 	const String local_path = _validate_local_path(p_path);
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		return ResourceUID::get_singleton()->get_path_id(local_path);
 	}
 

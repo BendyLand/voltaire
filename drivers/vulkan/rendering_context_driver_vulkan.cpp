@@ -238,7 +238,7 @@ VkAllocationCallbacks* RenderingContextDriverVulkan::get_allocation_callbacks(Vk
 #if !defined(VK_TRACK_DRIVER_MEMORY)
 	return nullptr;
 #else
-	if (!Engine::get_singleton()->is_extra_gpu_memory_tracking_enabled()) {
+	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 		return nullptr;
 	}
 
@@ -687,7 +687,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_messenger_ca
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		ERR_PRINT(error_message);
-		CRASH_COND_MSG(Engine::get_singleton()->is_abort_on_gpu_errors_enabled(),
+		CRASH_COND_MSG(Engine::is_abort_on_gpu_errors_enabled(),
 			"Crashing, because abort on GPU errors is enabled.");
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
@@ -974,7 +974,7 @@ Error RenderingContextDriverVulkan::_initialize_devices()
 
 bool RenderingContextDriverVulkan::_use_validation_layers() const
 {
-	return Engine::get_singleton()->is_validation_layers_enabled();
+	return Engine::is_validation_layers_enabled();
 }
 
 Error RenderingContextDriverVulkan::_create_vulkan_instance(

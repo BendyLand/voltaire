@@ -609,8 +609,8 @@ bool RenderingLightCuller::prepare_camera(const Transform3D &p_cam_transform, co
 
 	// For debug flash off and on.
 #ifdef LIGHT_CULLER_DEBUG_FLASH
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		int dc = Engine::get_singleton()->get_process_frames() / LIGHT_CULLER_DEBUG_FLASH_FREQUENCY;
+	if (!Engine::is_editor_hint()) {
+		int dc = Engine::get_process_frames() / LIGHT_CULLER_DEBUG_FLASH_FREQUENCY;
 		bool bnew_active;
 		bnew_active = (dc % 2) == 0;
 
@@ -695,7 +695,7 @@ RenderingLightCuller::RenderingLightCuller() {
 	data.debug_count = -1;
 
 	// Uncomment below to switch off light culler in the editor.
-	// data.caster_culling_active = Engine::get_singleton()->is_editor_hint() == false;
+	// data.caster_culling_active = Engine::is_editor_hint() == false;
 
 #ifdef RENDERING_LIGHT_CULLER_CALCULATE_LUT
 	create_LUT();

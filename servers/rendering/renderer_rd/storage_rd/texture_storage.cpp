@@ -799,7 +799,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() && !tex->is_render_target) {
+	if (Engine::is_editor_hint() && !tex->is_render_target) {
 		tex->image_cache_2d = image;
 	}
 #endif

@@ -49,7 +49,7 @@ void Light2D::_update_light_visibility()
 
 #ifdef TOOLS_ENABLED
 	if (editor_only) {
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_editor_hint()) {
 			editor_ok = false;
 		}
 		else {

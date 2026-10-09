@@ -68,7 +68,7 @@ public:
 	};
 
 private:
-	RID default_rd_storage_buffer;
+	static inline RID default_rd_storage_buffer;
 
 	/* Mesh */
 
@@ -221,8 +221,8 @@ private:
 	static void _mesh_surface_clear(Mesh* p_mesh, int p_surface);
 
 	static void _mesh_instance_clear(MeshInstance* mi);
-	void _mesh_instance_add_surface(MeshInstance* mi, Mesh* mesh, uint32_t p_surface);
-	void _mesh_instance_add_surface_buffer(MeshInstance* mi, Mesh* mesh, MeshInstance::Surface* s,
+	static void _mesh_instance_add_surface(MeshInstance* mi, Mesh* mesh, uint32_t p_surface);
+	static void _mesh_instance_add_surface_buffer(MeshInstance* mi, Mesh* mesh, MeshInstance::Surface* s,
 		uint32_t p_surface, uint32_t p_buffer_index);
 	static void _mesh_instance_remove_surface(MeshInstance* mi, int p_surface);
 
@@ -275,14 +275,14 @@ private:
 
 	static inline RID_Owner<MultiMesh, true> multimesh_owner;
 
-	MultiMesh* multimesh_dirty_list = nullptr;
+	static inline MultiMesh* multimesh_dirty_list = nullptr;
 
-	_FORCE_INLINE_ void _multimesh_make_local(MultiMesh* multimesh) const;
-	_FORCE_INLINE_ void _multimesh_update_motion_vectors_data_cache(MultiMesh* multimesh);
+	static _FORCE_INLINE_ void _multimesh_make_local(MultiMesh* multimesh);
+	static _FORCE_INLINE_ void _multimesh_update_motion_vectors_data_cache(MultiMesh* multimesh);
 	static _FORCE_INLINE_ bool _multimesh_uses_motion_vectors(MultiMesh* multimesh);
-	_FORCE_INLINE_ void _multimesh_mark_dirty(MultiMesh* multimesh, int p_index, bool p_aabb);
-	_FORCE_INLINE_ void _multimesh_mark_all_dirty(MultiMesh* multimesh, bool p_data, bool p_aabb);
-	_FORCE_INLINE_ void _multimesh_re_create_aabb(
+	static _FORCE_INLINE_ void _multimesh_mark_dirty(MultiMesh* multimesh, int p_index, bool p_aabb);
+	static _FORCE_INLINE_ void _multimesh_mark_all_dirty(MultiMesh* multimesh, bool p_data, bool p_aabb);
+	static _FORCE_INLINE_ void _multimesh_re_create_aabb(
 		MultiMesh* multimesh, const float* p_data, int p_instances);
 
 	/* Skeleton */
@@ -372,9 +372,8 @@ private:
 	};
 
 public:
-	MeshStorage();
-	~MeshStorage();
-
+	MeshStorage() = delete;
+	~MeshStorage() = delete;
 	MeshStorage(const MeshStorage&) = delete;
 	MeshStorage& operator=(const MeshStorage&) = delete;
 
@@ -386,53 +385,53 @@ public:
 
 	static bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
 
-	RID mesh_allocate();
-	void mesh_initialize(RID p_mesh);
+	static RID mesh_allocate();
+	static void mesh_initialize(RID p_mesh);
 	static void mesh_free(RID p_rid);
 
-	void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count);
+	static void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count);
 
-	void mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface);
+	static void mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface);
 
-	int mesh_get_blend_shape_count(RID p_mesh) const;
+	static int mesh_get_blend_shape_count(RID p_mesh);
 
-	void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode);
-	RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh) const;
+	static void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode);
+	static RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh);
 
-	void mesh_surface_update_vertex_region(
+	static void mesh_surface_update_vertex_region(
 		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
-	void mesh_surface_update_attribute_region(
+	static void mesh_surface_update_attribute_region(
 		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
-	void mesh_surface_update_skin_region(
+	static void mesh_surface_update_skin_region(
 		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
-	void mesh_surface_update_index_region(
+	static void mesh_surface_update_index_region(
 		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
 
-	void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material);
-	RID mesh_surface_get_material(RID p_mesh, int p_surface) const;
+	static void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material);
+	static RID mesh_surface_get_material(RID p_mesh, int p_surface);
 
-	RenderingServerTypes::SurfaceData mesh_get_surface(RID p_mesh, int p_surface) const;
+	static RenderingServerTypes::SurfaceData mesh_get_surface(RID p_mesh, int p_surface);
 
-	RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface) const;
-	RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface) const;
-	RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface) const;
-	RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface) const;
+	static RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface);
+	static RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface);
+	static RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface);
+	static RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface);
 
 	static int mesh_get_surface_count(RID p_mesh);
 
-	void mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb);
-	AABB mesh_get_custom_aabb(RID p_mesh) const;
+	static void mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb);
+	static AABB mesh_get_custom_aabb(RID p_mesh);
 
 	static AABB mesh_get_aabb(RID p_mesh, RID p_skeleton = RID());
 	static void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh);
 
-	void mesh_set_path(RID p_mesh, const String& p_path);
+	static void mesh_set_path(RID p_mesh, const String& p_path);
 	static String mesh_get_path(RID p_mesh);
 
 	static void mesh_clear(RID p_mesh);
-	void mesh_surface_remove(RID p_mesh, int p_surface);
+	static void mesh_surface_remove(RID p_mesh, int p_surface);
 
-	void mesh_debug_usage(List<RenderingServerTypes::MeshInfo>* r_info);
+	static void mesh_debug_usage(List<RenderingServerTypes::MeshInfo>* r_info);
 
 	static bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton);
 
@@ -702,10 +701,10 @@ public:
 
 	static bool owns_mesh_instance(RID p_rid) { return mesh_instance_owner.owns(p_rid); }
 
-	RID mesh_instance_create(RID p_base);
+	static RID mesh_instance_create(RID p_base);
 	static void mesh_instance_free(RID p_rid);
-	void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton);
-	void mesh_instance_set_blend_shape_weight(RID p_mesh_instance, int p_shape, float p_weight);
+	static void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton);
+	static void mesh_instance_set_blend_shape_weight(RID p_mesh_instance, int p_shape, float p_weight);
 	static void mesh_instance_check_for_update(RID p_mesh_instance);
 	static void mesh_instance_set_canvas_item_transform(
 		RID p_mesh_instance, const Transform2D& p_transform);
@@ -715,50 +714,50 @@ public:
 
 	static bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
 
-	RID _multimesh_allocate();
-	void _multimesh_initialize(RID p_multimesh);
+	static RID _multimesh_allocate();
+	static void _multimesh_initialize(RID p_multimesh);
 	static void _multimesh_free(RID p_rid);
 
 	static void _multimesh_allocate_data(RID p_multimesh, int p_instances,
 		RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
 		bool p_use_custom_data = false, bool p_use_indirect = false);
-	int _multimesh_get_instance_count(RID p_multimesh) const;
+	static int _multimesh_get_instance_count(RID p_multimesh);
 
-	void _multimesh_set_mesh(RID p_multimesh, RID p_mesh);
-	void _multimesh_instance_set_transform(
+	static void _multimesh_set_mesh(RID p_multimesh, RID p_mesh);
+	static void _multimesh_instance_set_transform(
 		RID p_multimesh, int p_index, const Transform3D& p_transform);
-	void _multimesh_instance_set_transform_2d(
+	static void _multimesh_instance_set_transform_2d(
 		RID p_multimesh, int p_index, const Transform2D& p_transform);
-	void _multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color);
-	void _multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color& p_color);
+	static void _multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color);
+	static void _multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color& p_color);
 
 	static RID _multimesh_get_mesh(RID p_multimesh);
 
-	Transform3D _multimesh_instance_get_transform(RID p_multimesh, int p_index) const;
-	Transform2D _multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) const;
-	Color _multimesh_instance_get_color(RID p_multimesh, int p_index) const;
-	Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const;
+	static Transform3D _multimesh_instance_get_transform(RID p_multimesh, int p_index);
+	static Transform2D _multimesh_instance_get_transform_2d(RID p_multimesh, int p_index);
+	static Color _multimesh_instance_get_color(RID p_multimesh, int p_index);
+	static Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index);
 
-	void _multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
+	static void _multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
 	static RID _multimesh_get_command_buffer_rd_rid(RID p_multimesh);
-	RID _multimesh_get_buffer_rd_rid(RID p_multimesh) const;
-	Vector<float> _multimesh_get_buffer(RID p_multimesh) const;
+	static RID _multimesh_get_buffer_rd_rid(RID p_multimesh);
+	static Vector<float> _multimesh_get_buffer(RID p_multimesh);
 
-	void _multimesh_set_visible_instances(RID p_multimesh, int p_visible);
-	int _multimesh_get_visible_instances(RID p_multimesh) const;
+	static void _multimesh_set_visible_instances(RID p_multimesh, int p_visible);
+	static int _multimesh_get_visible_instances(RID p_multimesh);
 
-	void _multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
-	AABB _multimesh_get_custom_aabb(RID p_multimesh) const;
+	static void _multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
+	static AABB _multimesh_get_custom_aabb(RID p_multimesh);
 
-	AABB _multimesh_get_aabb(RID p_multimesh);
+	static AABB _multimesh_get_aabb(RID p_multimesh);
 
-	RendererMeshStorage::MultiMeshInterpolator* _multimesh_get_interpolator(RID p_multimesh) const;
+	static RendererMeshStorage::MultiMeshInterpolator* _multimesh_get_interpolator(RID p_multimesh);
 
 	static void _update_dirty_multimeshes();
 	static void _multimesh_get_motion_vectors_offsets(
 		RID p_multimesh, uint32_t& r_current_offset, uint32_t& r_prev_offset);
 	static bool _multimesh_uses_motion_vectors_offsets(RID p_multimesh);
-	bool _multimesh_uses_motion_vectors(RID p_multimesh);
+	static bool _multimesh_uses_motion_vectors(RID p_multimesh);
 
 	static _FORCE_INLINE_ bool multimesh_uses_indirect(RID p_multimesh)
 	{
@@ -851,17 +850,17 @@ public:
 
 	static bool owns_skeleton(RID p_rid) { return skeleton_owner.owns(p_rid); }
 
-	RID skeleton_allocate();
-	void skeleton_initialize(RID p_skeleton);
+	static RID skeleton_allocate();
+	static void skeleton_initialize(RID p_skeleton);
 	static void skeleton_free(RID p_rid);
 
 	static void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false);
-	void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D& p_base_transform);
-	int skeleton_get_bone_count(RID p_skeleton) const;
-	void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D& p_transform);
-	Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const;
-	void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D& p_transform);
-	Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const;
+	static void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D& p_base_transform);
+	static int skeleton_get_bone_count(RID p_skeleton);
+	static void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D& p_transform);
+	static Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone);
+	static void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D& p_transform);
+	static Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone);
 
 	static void skeleton_update_dependency(RID p_skeleton, DependencyTracker* p_instance);
 

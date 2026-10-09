@@ -235,7 +235,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 #ifdef TOOLS_ENABLED
 			if (name.contains("[Editor]")) {
-				Engine::get_singleton()->set_editor_hint(true);
+				Engine::set_editor_hint(true);
 				EditorPaths::create();
 				EditorSettings::create();
 			}
@@ -285,7 +285,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		}
 #endif // TOOLS_ENABLED
 
-		Engine::get_singleton()->set_editor_hint(false);
+		Engine::set_editor_hint(false);
 
 		if (SceneTree::get_singleton()) {
 			SceneTree::get_singleton()->finalize();

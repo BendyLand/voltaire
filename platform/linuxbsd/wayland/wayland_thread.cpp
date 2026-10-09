@@ -5125,8 +5125,8 @@ void WaylandThread::set_default_icon(const Ref<Image>& p_icon)
 	xdg_icon = xdg_toplevel_icon_manager_v1_create_icon(registry.xdg_toplevel_icon_manager);
 	xdg_toplevel_icon_v1_add_buffer(xdg_icon, icon_buffer, icon_size.width);
 
-	if (Engine::get_singleton()->is_editor_hint() ||
-		Engine::get_singleton()->is_project_manager_hint()) {
+	if (Engine::is_editor_hint() ||
+		Engine::is_project_manager_hint()) {
 		// Setting a name allows the godot icon to be overridden by a system theme.
 		// We only want the project manager and editor to get themed,
 		// Games will get icons with the protocol and themed icons with .desktop entries.
@@ -5512,8 +5512,8 @@ Error WaylandThread::init()
 		embedder_enabled = false;
 	}
 
-	if (embedder_enabled && Engine::get_singleton()->is_editor_hint() &&
-		!Engine::get_singleton()->is_project_manager_hint()) {
+	if (embedder_enabled && Engine::is_editor_hint() &&
+		!Engine::is_project_manager_hint()) {
 		print_verbose("Initializing Wayland embedder.");
 		bool embedder_debug =
 			OS::get_singleton()->get_environment("GODOT_WAYLAND_EMBEDDER_DEBUG") == "1";
@@ -5529,7 +5529,7 @@ Error WaylandThread::init()
 	}
 #endif // TOOLS_ENABLED
 
-	if (Engine::get_singleton()->is_embedded_in_editor()) {
+	if (Engine::is_embedded_in_editor()) {
 		embedder_socket_path = OS::get_singleton()->get_environment("GODOT_WAYLAND_DISPLAY");
 #if 0
 		// Debug
@@ -5600,7 +5600,7 @@ Error WaylandThread::init()
 		registry.xdg_wm_base, ERR_UNAVAILABLE, "Can't obtain the Wayland XDG shell global.");
 
 	// Embedded games can't access the decoration and icon protocol.
-	if (!Engine::get_singleton()->is_embedded_in_editor()) {
+	if (!Engine::is_embedded_in_editor()) {
 		if (!registry.xdg_decoration_manager) {
 #ifdef LIBDECOR_ENABLED
 			WARN_PRINT("Can't obtain the XDG decoration manager. Libdecor will be used for drawing "

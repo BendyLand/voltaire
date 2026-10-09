@@ -129,7 +129,7 @@ void NavigationMeshSourceGeometryData3D::add_mesh(
 	ERR_FAIL_COND(p_mesh.is_null());
 
 #ifdef DEBUG_ENABLED
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		WARN_PRINT_ONCE(
 			"Source geometry parsing for navigation mesh baking had to parse Renderer meshes at runtime.\n\
 		This poses a significant performance issues as visual meshes store geometry data on the GPU and transferring this data back to the CPU blocks the rendering.\n\

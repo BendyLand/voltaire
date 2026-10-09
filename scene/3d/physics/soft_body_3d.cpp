@@ -138,7 +138,7 @@ void SoftBody3D::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			// I have no idea what this is supposed to do, it's really weird
 			// leaving for upcoming PK work on physics
 			// add_change_receptor(this);
@@ -156,7 +156,7 @@ void SoftBody3D::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			_reset_points_offsets();
 			return;
 		}

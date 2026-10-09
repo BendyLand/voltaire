@@ -182,7 +182,6 @@ void RendererCompositorRD::finalize()
 	memdelete(fog);
 	memdelete(particles_storage);
 	memdelete(light_storage);
-	memdelete(mesh_storage);
 	memdelete(material_storage);
 	memdelete(texture_storage);
 	RendererRD::Utilities::finalize();
@@ -320,227 +319,126 @@ RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_fo
 
 void RendererCompositorRD::bind_mesh_storage()
 {
-	RendererMeshStorage::mesh_allocate = []() { return mesh_storage->mesh_allocate(); };
-	RendererMeshStorage::mesh_initialize = [](RID p_rid) { mesh_storage->mesh_initialize(p_rid); };
-	RendererMeshStorage::mesh_free = [](RID p_rid) { mesh_storage->mesh_free(p_rid); };
-	RendererMeshStorage::mesh_set_blend_shape_count = [](RID p_mesh, int p_count) {
-		mesh_storage->mesh_set_blend_shape_count(p_mesh, p_count);
-	};
-	RendererMeshStorage::mesh_needs_instance = [](RID p_mesh, bool p_has_skeleton) {
-		return mesh_storage->mesh_needs_instance(p_mesh, p_has_skeleton);
-	};
-	RendererMeshStorage::mesh_add_surface =
-		[](RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface) {
-			mesh_storage->mesh_add_surface(p_mesh, p_surface);
-		};
-	RendererMeshStorage::mesh_get_blend_shape_count = [](RID p_mesh) {
-		return mesh_storage->mesh_get_blend_shape_count(p_mesh);
-	};
-	RendererMeshStorage::mesh_set_blend_shape_mode = [](RID p_mesh, RSE::BlendShapeMode p_mode) {
-		mesh_storage->mesh_set_blend_shape_mode(p_mesh, p_mode);
-	};
-	RendererMeshStorage::mesh_get_blend_shape_mode = [](RID p_mesh) {
-		return mesh_storage->mesh_get_blend_shape_mode(p_mesh);
-	};
+	RendererMeshStorage::mesh_allocate = &RendererRD::MeshStorage::mesh_allocate;
+	RendererMeshStorage::mesh_initialize = &RendererRD::MeshStorage::mesh_initialize;
+	RendererMeshStorage::mesh_free = &RendererRD::MeshStorage::mesh_free;
+	RendererMeshStorage::mesh_set_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_count;
+	RendererMeshStorage::mesh_needs_instance = &RendererRD::MeshStorage::mesh_needs_instance;
+	RendererMeshStorage::mesh_add_surface = &RendererRD::MeshStorage::mesh_add_surface;
+	RendererMeshStorage::mesh_get_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_count;
+	RendererMeshStorage::mesh_set_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_mode;
+	RendererMeshStorage::mesh_get_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_mode;
 	RendererMeshStorage::mesh_surface_update_vertex_region =
-		[](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {
-			mesh_storage->mesh_surface_update_vertex_region(p_mesh, p_surface, p_offset, p_data);
-		};
+		&RendererRD::MeshStorage::mesh_surface_update_vertex_region;
 	RendererMeshStorage::mesh_surface_update_attribute_region =
-		[](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {
-			mesh_storage->mesh_surface_update_attribute_region(p_mesh, p_surface, p_offset, p_data);
-		};
+		&RendererRD::MeshStorage::mesh_surface_update_attribute_region;
 	RendererMeshStorage::mesh_surface_update_skin_region =
-		[](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {
-			mesh_storage->mesh_surface_update_skin_region(p_mesh, p_surface, p_offset, p_data);
-		};
+		&RendererRD::MeshStorage::mesh_surface_update_skin_region;
 	RendererMeshStorage::mesh_surface_update_index_region =
-		[](RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {
-			mesh_storage->mesh_surface_update_index_region(p_mesh, p_surface, p_offset, p_data);
-		};
-	RendererMeshStorage::mesh_surface_set_material = [](RID p_mesh, int p_surface, RID p_material) {
-		mesh_storage->mesh_surface_set_material(p_mesh, p_surface, p_material);
-	};
-	RendererMeshStorage::mesh_surface_get_material = [](RID p_mesh, int p_surface) {
-		return mesh_storage->mesh_surface_get_material(p_mesh, p_surface);
-	};
+		&RendererRD::MeshStorage::mesh_surface_update_index_region;
+	RendererMeshStorage::mesh_surface_set_material =
+		&RendererRD::MeshStorage::mesh_surface_set_material;
+	RendererMeshStorage::mesh_surface_get_material =
+		&RendererRD::MeshStorage::mesh_surface_get_material;
 	RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
-		return static_cast<const RendererRD::MeshStorage*>(mesh_storage)
-			->mesh_get_surface(p_mesh, p_surface);
+		return RendererRD::MeshStorage::mesh_get_surface(p_mesh, p_surface);
 	};
-	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid = [](RID p_mesh, int p_surface) {
-		return mesh_storage->mesh_surface_get_vertex_buffer_rd_rid(p_mesh, p_surface);
-	};
-	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid = [](RID p_mesh, int p_surface) {
-		return mesh_storage->mesh_surface_get_attribute_buffer_rd_rid(p_mesh, p_surface);
-	};
-	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid = [](RID p_mesh, int p_surface) {
-		return mesh_storage->mesh_surface_get_skin_buffer_rd_rid(p_mesh, p_surface);
-	};
-	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid = [](RID p_mesh, int p_surface) {
-		return mesh_storage->mesh_surface_get_index_buffer_rd_rid(p_mesh, p_surface);
-	};
-	RendererMeshStorage::mesh_get_surface_count = [](RID p_mesh) {
-		return mesh_storage->mesh_get_surface_count(p_mesh);
-	};
-	RendererMeshStorage::mesh_set_custom_aabb = [](RID p_mesh, const AABB& p_aabb) {
-		mesh_storage->mesh_set_custom_aabb(p_mesh, p_aabb);
-	};
-	RendererMeshStorage::mesh_get_custom_aabb = [](RID p_mesh) {
-		return mesh_storage->mesh_get_custom_aabb(p_mesh);
-	};
-	RendererMeshStorage::mesh_get_aabb = [](RID p_mesh, RID p_skeleton) {
-		return mesh_storage->mesh_get_aabb(p_mesh, p_skeleton);
-	};
-	RendererMeshStorage::mesh_set_path = [](RID p_mesh, const String& p_path) {
-		mesh_storage->mesh_set_path(p_mesh, p_path);
-	};
-	RendererMeshStorage::mesh_get_path = [](RID p_mesh) {
-		return mesh_storage->mesh_get_path(p_mesh);
-	};
-	RendererMeshStorage::mesh_set_shadow_mesh = [](RID p_mesh, RID p_shadow_mesh) {
-		mesh_storage->mesh_set_shadow_mesh(p_mesh, p_shadow_mesh);
-	};
-	RendererMeshStorage::mesh_clear = [](RID p_mesh) { mesh_storage->mesh_clear(p_mesh); };
-	RendererMeshStorage::mesh_surface_remove = [](RID p_mesh, int p_surface) {
-		mesh_storage->mesh_surface_remove(p_mesh, p_surface);
-	};
-	RendererMeshStorage::mesh_debug_usage = [](List<RenderingServerTypes::MeshInfo>* r_info) {
-		mesh_storage->mesh_debug_usage(r_info);
-	};
+	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+	RendererMeshStorage::mesh_get_surface_count = &RendererRD::MeshStorage::mesh_get_surface_count;
+	RendererMeshStorage::mesh_set_custom_aabb = &RendererRD::MeshStorage::mesh_set_custom_aabb;
+	RendererMeshStorage::mesh_get_custom_aabb = &RendererRD::MeshStorage::mesh_get_custom_aabb;
+	RendererMeshStorage::mesh_get_aabb = &RendererRD::MeshStorage::mesh_get_aabb;
+	RendererMeshStorage::mesh_set_path = &RendererRD::MeshStorage::mesh_set_path;
+	RendererMeshStorage::mesh_get_path = &RendererRD::MeshStorage::mesh_get_path;
+	RendererMeshStorage::mesh_set_shadow_mesh = &RendererRD::MeshStorage::mesh_set_shadow_mesh;
+	RendererMeshStorage::mesh_clear = &RendererRD::MeshStorage::mesh_clear;
+	RendererMeshStorage::mesh_surface_remove = &RendererRD::MeshStorage::mesh_surface_remove;
+	RendererMeshStorage::mesh_debug_usage = &RendererRD::MeshStorage::mesh_debug_usage;
 
-	RendererMeshStorage::mesh_instance_create = [](RID p_base) {
-		return mesh_storage->mesh_instance_create(p_base);
-	};
-	RendererMeshStorage::mesh_instance_free = [](RID p_mi) {
-		mesh_storage->mesh_instance_free(p_mi);
-	};
-	RendererMeshStorage::mesh_instance_set_skeleton = [](RID p_mi, RID p_sk) {
-		mesh_storage->mesh_instance_set_skeleton(p_mi, p_sk);
-	};
-	RendererMeshStorage::mesh_instance_set_blend_shape_weight = [](RID p_mi, int p_shape,
-																	float p_w) {
-		mesh_storage->mesh_instance_set_blend_shape_weight(p_mi, p_shape, p_w);
-	};
-	RendererMeshStorage::mesh_instance_check_for_update = [](RID p_mi) {
-		mesh_storage->mesh_instance_check_for_update(p_mi);
-	};
-	RendererMeshStorage::mesh_instance_set_canvas_item_transform = [](RID p_mi,
-																	   const Transform2D& p_t) {
-		mesh_storage->mesh_instance_set_canvas_item_transform(p_mi, p_t);
-	};
-	RendererMeshStorage::update_mesh_instances = []() { mesh_storage->update_mesh_instances(); };
+	RendererMeshStorage::mesh_instance_create = &RendererRD::MeshStorage::mesh_instance_create;
+	RendererMeshStorage::mesh_instance_free = &RendererRD::MeshStorage::mesh_instance_free;
+	RendererMeshStorage::mesh_instance_set_skeleton =
+		&RendererRD::MeshStorage::mesh_instance_set_skeleton;
+	RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+		&RendererRD::MeshStorage::mesh_instance_set_blend_shape_weight;
+	RendererMeshStorage::mesh_instance_check_for_update =
+		&RendererRD::MeshStorage::mesh_instance_check_for_update;
+	RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+		&RendererRD::MeshStorage::mesh_instance_set_canvas_item_transform;
+	RendererMeshStorage::update_mesh_instances = &RendererRD::MeshStorage::update_mesh_instances;
 
-	RendererMeshStorage::_multimesh_allocate = []() { return mesh_storage->_multimesh_allocate(); };
-	RendererMeshStorage::_multimesh_initialize = [](RID p_rid) {
-		mesh_storage->_multimesh_initialize(p_rid);
-	};
-	RendererMeshStorage::_multimesh_free = [](RID p_rid) { mesh_storage->_multimesh_free(p_rid); };
+	RendererMeshStorage::_multimesh_allocate = &RendererRD::MeshStorage::_multimesh_allocate;
+	RendererMeshStorage::_multimesh_initialize = &RendererRD::MeshStorage::_multimesh_initialize;
+	RendererMeshStorage::_multimesh_free = &RendererRD::MeshStorage::_multimesh_free;
 	RendererMeshStorage::_multimesh_allocate_data =
-		[](RID p_mm, int p_instances, RSE::MultimeshTransformFormat p_format, bool p_colors,
-			bool p_custom_data, bool p_indirect) {
-			mesh_storage->_multimesh_allocate_data(
-				p_mm, p_instances, p_format, p_colors, p_custom_data, p_indirect);
-		};
-	RendererMeshStorage::_multimesh_get_instance_count = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_instance_count(p_mm);
-	};
-	RendererMeshStorage::_multimesh_set_mesh = [](RID p_mm, RID p_mesh) {
-		mesh_storage->_multimesh_set_mesh(p_mm, p_mesh);
-	};
-	RendererMeshStorage::_multimesh_instance_set_transform = [](RID p_mm, int p_idx,
-																 const Transform3D& p_t) {
-		mesh_storage->_multimesh_instance_set_transform(p_mm, p_idx, p_t);
-	};
-	RendererMeshStorage::_multimesh_instance_set_transform_2d = [](RID p_mm, int p_idx,
-																	const Transform2D& p_t) {
-		mesh_storage->_multimesh_instance_set_transform_2d(p_mm, p_idx, p_t);
-	};
-	RendererMeshStorage::_multimesh_instance_set_color = [](RID p_mm, int p_idx, const Color& p_c) {
-		mesh_storage->_multimesh_instance_set_color(p_mm, p_idx, p_c);
-	};
-	RendererMeshStorage::_multimesh_instance_set_custom_data = [](RID p_mm, int p_idx,
-																   const Color& p_c) {
-		mesh_storage->_multimesh_instance_set_custom_data(p_mm,
-p_idx, p_c);
-	};
-	RendererMeshStorage::_multimesh_set_custom_aabb = [](RID p_mm, const AABB& p_aabb) {
-		mesh_storage->_multimesh_set_custom_aabb(p_mm, p_aabb);
-	};
-	RendererMeshStorage::_multimesh_get_custom_aabb = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_custom_aabb(p_mm);
-	};
-	RendererMeshStorage::_multimesh_get_mesh = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_mesh(p_mm);
-	};
-	RendererMeshStorage::_multimesh_instance_get_transform = [](RID p_mm, int p_idx) {
-		return mesh_storage->_multimesh_instance_get_transform(p_mm, p_idx);
-	};
-	RendererMeshStorage::_multimesh_instance_get_transform_2d = [](RID p_mm, int p_idx) {
-		return mesh_storage->_multimesh_instance_get_transform_2d(p_mm, p_idx);
-	};
-	RendererMeshStorage::_multimesh_instance_get_color = [](RID p_mm, int p_idx) {
-		return mesh_storage->_multimesh_instance_get_color(p_mm, p_idx);
-	};
-	RendererMeshStorage::_multimesh_instance_get_custom_data = [](RID p_mm, int p_idx) {
-		return mesh_storage->_multimesh_instance_get_custom_data(p_mm, p_idx);
-	};
-	RendererMeshStorage::_multimesh_set_buffer = [](RID p_mm, const Vector<float>& p_buf) {
-		mesh_storage->_multimesh_set_buffer(p_mm, p_buf);
-	};
-	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_command_buffer_rd_rid(p_mm);
-	};
-	RendererMeshStorage::_multimesh_get_buffer_rd_rid = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_buffer_rd_rid(p_mm);
-	};
-	RendererMeshStorage::_multimesh_get_buffer = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_buffer(p_mm);
-	};
-	RendererMeshStorage::_multimesh_set_visible_instances = [](RID p_mm, int p_v) {
-		mesh_storage->_multimesh_set_visible_instances(p_mm, p_v);
-	};
-	RendererMeshStorage::_multimesh_get_visible_instances = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_visible_instances(p_mm);
-	};
-	RendererMeshStorage::_multimesh_get_aabb = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_aabb(p_mm);
-	};
-	RendererMeshStorage::_multimesh_get_interpolator = [](RID p_mm) {
-		return mesh_storage->_multimesh_get_interpolator(p_mm);
-	};
+		&RendererRD::MeshStorage::_multimesh_allocate_data;
+	RendererMeshStorage::_multimesh_get_instance_count =
+		&RendererRD::MeshStorage::_multimesh_get_instance_count;
+	RendererMeshStorage::_multimesh_set_mesh = &RendererRD::MeshStorage::_multimesh_set_mesh;
+	RendererMeshStorage::_multimesh_instance_set_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform;
+	RendererMeshStorage::_multimesh_instance_set_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform_2d;
+	RendererMeshStorage::_multimesh_instance_set_color =
+		&RendererRD::MeshStorage::_multimesh_instance_set_color;
+	RendererMeshStorage::_multimesh_instance_set_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_set_custom_data;
+	RendererMeshStorage::_multimesh_set_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_set_custom_aabb;
+	RendererMeshStorage::_multimesh_get_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_get_custom_aabb;
+	RendererMeshStorage::_multimesh_get_mesh = &RendererRD::MeshStorage::_multimesh_get_mesh;
+	RendererMeshStorage::_multimesh_instance_get_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform;
+	RendererMeshStorage::_multimesh_instance_get_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform_2d;
+	RendererMeshStorage::_multimesh_instance_get_color =
+		&RendererRD::MeshStorage::_multimesh_instance_get_color;
+	RendererMeshStorage::_multimesh_instance_get_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_get_custom_data;
+	RendererMeshStorage::_multimesh_set_buffer = &RendererRD::MeshStorage::_multimesh_set_buffer;
+	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer = &RendererRD::MeshStorage::_multimesh_get_buffer;
+	RendererMeshStorage::_multimesh_set_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_set_visible_instances;
+	RendererMeshStorage::_multimesh_get_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_get_visible_instances;
+	RendererMeshStorage::_multimesh_get_aabb = &RendererRD::MeshStorage::_multimesh_get_aabb;
+	RendererMeshStorage::_multimesh_get_interpolator =
+		&RendererRD::MeshStorage::_multimesh_get_interpolator;
 
-	RendererMeshStorage::skeleton_allocate = []() { return mesh_storage->skeleton_allocate(); };
-	RendererMeshStorage::skeleton_initialize = [](RID p_rid) {
-		mesh_storage->skeleton_initialize(p_rid);
-	};
-	RendererMeshStorage::skeleton_free = [](RID p_rid) { mesh_storage->skeleton_free(p_rid); };
-	RendererMeshStorage::skeleton_allocate_data = [](RID p_sk, int p_bones, bool p_2d) {
-		mesh_storage->skeleton_allocate_data(p_sk, p_bones, p_2d);
-	};
-	RendererMeshStorage::skeleton_set_base_transform_2d = [](RID p_sk, const Transform2D& p_t) {
-		mesh_storage->skeleton_set_base_transform_2d(p_sk, p_t);
-	};
-	RendererMeshStorage::skeleton_get_bone_count = [](RID p_sk) {
-		return mesh_storage->skeleton_get_bone_count(p_sk);
-	};
-	RendererMeshStorage::skeleton_bone_set_transform = [](RID p_sk, int p_b,
-														   const Transform3D& p_t) {
-		mesh_storage->skeleton_bone_set_transform(p_sk, p_b, p_t);
-	};
-	RendererMeshStorage::skeleton_bone_get_transform = [](RID p_sk, int p_b) {
-		return mesh_storage->skeleton_bone_get_transform(p_sk, p_b);
-	};
-	RendererMeshStorage::skeleton_bone_set_transform_2d = [](RID p_sk, int p_b,
-															  const Transform2D& p_t) {
-		mesh_storage->skeleton_bone_set_transform_2d(p_sk, p_b, p_t);
-	};
-	RendererMeshStorage::skeleton_bone_get_transform_2d = [](RID p_sk, int p_b) {
-		return mesh_storage->skeleton_bone_get_transform_2d(p_sk, p_b);
-	};
-	RendererMeshStorage::skeleton_update_dependency = [](RID p_sk, DependencyTracker* p_dep) {
-		mesh_storage->skeleton_update_dependency(p_sk, p_dep);
-	};
+	RendererMeshStorage::skeleton_allocate = &RendererRD::MeshStorage::skeleton_allocate;
+	RendererMeshStorage::skeleton_initialize = &RendererRD::MeshStorage::skeleton_initialize;
+	RendererMeshStorage::skeleton_free = &RendererRD::MeshStorage::skeleton_free;
+	RendererMeshStorage::skeleton_allocate_data = &RendererRD::MeshStorage::skeleton_allocate_data;
+	RendererMeshStorage::skeleton_set_base_transform_2d =
+		&RendererRD::MeshStorage::skeleton_set_base_transform_2d;
+	RendererMeshStorage::skeleton_get_bone_count =
+		&RendererRD::MeshStorage::skeleton_get_bone_count;
+	RendererMeshStorage::skeleton_bone_set_transform =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform;
+	RendererMeshStorage::skeleton_bone_get_transform =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform;
+	RendererMeshStorage::skeleton_bone_set_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform_2d;
+	RendererMeshStorage::skeleton_bone_get_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform_2d;
+	RendererMeshStorage::skeleton_update_dependency =
+		&RendererRD::MeshStorage::skeleton_update_dependency;
 }
 
 

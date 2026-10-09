@@ -481,7 +481,7 @@ void CPUParticles2D::_particles_process(double p_delta)
 		else {
 			TransformInterpolator::interpolate_transform_2d(_interpolation_data.global_xform_prev,
 				_interpolation_data.global_xform_curr, emission_xform,
-				Engine::get_singleton()->get_physics_interpolation_fraction());
+				Engine::get_physics_interpolation_fraction());
 		}
 		velocity_xform = emission_xform;
 		velocity_xform[2] = Vector2();

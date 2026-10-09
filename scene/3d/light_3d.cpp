@@ -179,7 +179,7 @@ void Light3D::_update_visibility()
 
 #ifdef TOOLS_ENABLED
 	if (editor_only) {
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_editor_hint()) {
 			editor_ok = false;
 		}
 		else {

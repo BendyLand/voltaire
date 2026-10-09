@@ -139,7 +139,7 @@ void RendererCanvasCull::_collect_ysort_children(RendererCanvasCull::Item* p_can
 					child_xform = child_items[i]->xform_curr;
 				}
 				else {
-					real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
+					real_t f = Engine::get_physics_interpolation_fraction();
 					TransformInterpolator::interpolate_transform_2d(
 						child_items[i]->xform_prev, child_items[i]->xform_curr, child_xform, f);
 				}
@@ -422,7 +422,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 			self_xform = ci->xform_curr;
 		}
 		else {
-			real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
+			real_t f = Engine::get_physics_interpolation_fraction();
 			TransformInterpolator::interpolate_transform_2d(
 				ci->xform_prev, ci->xform_curr, self_xform, f);
 		}
@@ -2025,8 +2025,8 @@ void RendererCanvasCull::canvas_item_add_mesh(RID p_item, const RID& p_mesh,
 	ERR_FAIL_NULL(m);
 	m->mesh = p_mesh;
 	if (canvas_item->skeleton.is_valid()) {
-		m->mesh_instance = RS::mesh_storage->mesh_instance_create(p_mesh);
-		RS::mesh_storage->mesh_instance_set_skeleton(m->mesh_instance, canvas_item->skeleton);
+		m->mesh_instance = RendererMeshStorage::mesh_instance_create(p_mesh);
+		RendererMeshStorage::mesh_instance_set_skeleton(m->mesh_instance, canvas_item->skeleton);
 	}
 
 	m->texture = p_texture;
@@ -2131,14 +2131,14 @@ void RendererCanvasCull::canvas_item_attach_skeleton(RID p_item, RID p_skeleton)
 			Item::CommandMesh* cm = static_cast<Item::CommandMesh*>(c);
 			if (canvas_item->skeleton.is_valid()) {
 				if (cm->mesh_instance.is_null()) {
-					cm->mesh_instance = RS::mesh_storage->mesh_instance_create(cm->mesh);
+					cm->mesh_instance = RendererMeshStorage::mesh_instance_create(cm->mesh);
 				}
-				RS::mesh_storage->mesh_instance_set_skeleton(
+				RendererMeshStorage::mesh_instance_set_skeleton(
 					cm->mesh_instance, canvas_item->skeleton);
 			}
 			else {
 				if (cm->mesh_instance.is_valid()) {
-					RS::mesh_storage->mesh_instance_free(cm->mesh_instance);
+					RendererMeshStorage::mesh_instance_free(cm->mesh_instance);
 					cm->mesh_instance = RID();
 				}
 			}

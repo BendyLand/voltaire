@@ -97,7 +97,7 @@ void Parallax2D::_camera_moved(
 
 void Parallax2D::_update_process()
 {
-	set_process_internal(!Engine::get_singleton()->is_editor_hint() &&
+	set_process_internal(!Engine::is_editor_hint() &&
 						 (repeat_size.x || repeat_size.y) && (autoscroll.x || autoscroll.y));
 }
 
@@ -109,7 +109,7 @@ void Parallax2D::_update_scroll()
 
 	Point2 scroll_ofs = screen_offset;
 
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		Size2 vps = get_viewport_rect().size;
 
 		if (limit_begin.x <= limit_end.x - vps.x) {

@@ -148,7 +148,6 @@
 // Singletons
 
 // Initialized in setup()
-static Engine* engine = nullptr;
 static Input* input = nullptr;
 static InputMap* input_map = nullptr;
 static TranslationServer* translation_server = nullptr;
@@ -381,7 +380,7 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::get_singleton()->print_header_rich(
+			Engine::print_header_rich(
 				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
 				get_full_version_string() + " (" +
 				Time::get_singleton()->get_datetime_string_from_unix_time(
@@ -389,7 +388,7 @@ void Main::print_header(bool p_rich)
 				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::get_singleton()->print_header(
+			Engine::print_header(
 				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
 				Time::get_singleton()->get_datetime_string_from_unix_time(
 					VLTR_VERSION_TIMESTAMP, true) +
@@ -398,12 +397,12 @@ void Main::print_header(bool p_rich)
 	}
 	else {
 		if (p_rich) {
-			Engine::get_singleton()->print_header_rich(
+			Engine::print_header_rich(
 				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
 				get_full_version_string() + " - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::get_singleton()->print_header(String(VLTR_VERSION_NAME) + " v" +
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" +
 												  get_full_version_string() + " - " +
 												  String(VLTR_VERSION_WEBSITE));
 		}
@@ -1170,8 +1169,6 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	// platforms, it's used to set up the time utilities.
 	OS::get_singleton()->benchmark_begin_measure("Startup", "Main::Setup");
 
-	engine = memnew(Engine);
-
 	MAIN_PRINT("Main: Initialize CORE");
 
 	register_core_types();
@@ -1335,7 +1332,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 		}
 		else if (arg == "--no-header") {
-			Engine::get_singleton()->_print_header = false;
+			Engine::_print_header = false;
 
 		}
 		else if (arg == "--audio-driver") { // audio driver
@@ -1476,7 +1473,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--gpu-index") {
 			if (N) {
-				Engine::singleton->gpu_idx = N->get().to_int();
+				Engine::gpu_idx = N->get().to_int();
 				N = N->next();
 			}
 			else {
@@ -1485,22 +1482,22 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			}
 		}
 		else if (arg == "--gpu-validation") {
-			Engine::singleton->use_validation_layers = true;
+			Engine::use_validation_layers = true;
 #ifdef DEBUG_ENABLED
 		}
 		else if (arg == "--gpu-abort") {
-			Engine::singleton->abort_on_gpu_errors = true;
+			Engine::abort_on_gpu_errors = true;
 #endif
 		}
 		else if (arg == "--generate-spirv-debug-info") {
-			Engine::singleton->generate_spirv_debug_info = true;
+			Engine::generate_spirv_debug_info = true;
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 		}
 		else if (arg == "--extra-gpu-memory-tracking") {
-			Engine::singleton->extra_gpu_memory_tracking = true;
+			Engine::extra_gpu_memory_tracking = true;
 		}
 		else if (arg == "--accurate-breadcrumbs") {
-			Engine::singleton->accurate_breadcrumbs = true;
+			Engine::accurate_breadcrumbs = true;
 #endif
 		}
 		else if (arg == "--tablet-driver") {
@@ -2084,7 +2081,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		else if (arg == "--time-scale") { // force time scale
 
 			if (N) {
-				Engine::get_singleton()->set_time_scale(N->get().to_float());
+				Engine::set_time_scale(N->get().to_float());
 				N = N->next();
 			}
 			else {
@@ -2216,7 +2213,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--write-movie") {
 			if (N) {
-				Engine::get_singleton()->set_write_movie_path(N->get());
+				Engine::set_write_movie_path(N->get());
 				N = N->next();
 				if (fixed_fps == -1) {
 					fixed_fps = 60;
@@ -2340,7 +2337,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				}
 
 				OS::get_singleton()->_embedded_in_editor = true;
-				Engine::get_singleton()->set_embedded_in_editor(true);
+				Engine::set_embedded_in_editor(true);
 
 				N = N->next();
 			}
@@ -2510,8 +2507,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #ifdef TOOLS_ENABLED
 	if (editor) {
-		Engine::get_singleton()->set_editor_hint(true);
-		Engine::get_singleton()->set_extension_reloading_enabled(true);
+		Engine::set_editor_hint(true);
+		Engine::set_extension_reloading_enabled(true);
 
 		// Create initialization lock file to detect crashes during startup.
 		OS::get_singleton()->create_lock_file();
@@ -2524,7 +2521,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	}
 
 	if (project_manager) {
-		Engine::get_singleton()->set_project_manager_hint(true);
+		Engine::set_project_manager_hint(true);
 	}
 
 	if (recovery_mode) {
@@ -2534,14 +2531,14 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			goto error;
 		}
 
-		Engine::get_singleton()->set_recovery_mode_hint(true);
+		Engine::set_recovery_mode_hint(true);
 	}
 #endif
 
 	OS::get_singleton()->set_cmdline(execpath, main_args, user_args);
 
 	if (max_fps >= 0) {
-		Engine::get_singleton()->set_max_fps(max_fps);
+		Engine::set_max_fps(max_fps);
 	}
 
 	// Initialize user data dir.
@@ -2602,7 +2599,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	}
 
 	if (editor || project_manager) {
-		Engine::get_singleton()->set_editor_hint(true);
+		Engine::set_editor_hint(true);
 		use_custom_res = false;
 		input_map->load_default(); // keys for editor
 	}
@@ -2859,7 +2856,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		audio_driver_idx = 0;
 	}
 
-	if (Engine::get_singleton()->get_write_movie_path() != String()) {
+	if (Engine::get_write_movie_path() != String()) {
 		// Always use dummy driver for audio driver (which is last), also in no threaded mode.
 		audio_driver_idx = AudioDriverManager::get_driver_count() - 1;
 		AudioDriverDummy::get_dummy_singleton()->set_use_threads(false);
@@ -2871,9 +2868,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif
 
 	if (audio_output_latency >= 1) {
-		Engine::get_singleton()->set_audio_output_latency(audio_output_latency);
+		Engine::set_audio_output_latency(audio_output_latency);
 	}
-	Engine::get_singleton()->set_frame_delay(frame_delay);
+	Engine::set_frame_delay(frame_delay);
 
 #if defined(STEAMAPI_ENABLED)
 	if (editor || project_manager) {
@@ -2895,7 +2892,7 @@ error:
 	display_driver = "";
 	audio_driver = "";
 	tablet_driver = "";
-	Engine::get_singleton()->set_write_movie_path(String());
+	Engine::set_write_movie_path(String());
 	project_path = "";
 	args.clear();
 	main_args.clear();
@@ -2915,8 +2912,6 @@ error:
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
-
-	memdelete(engine);
 
 	unregister_core_types();
 
@@ -3244,7 +3239,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	// Max FPS needs to be set after the DisplayServer is created.
 	if (RD::data) {
-		RD::_set_max_fps(engine->get_max_fps());
+		RD::_set_max_fps(Engine::get_max_fps());
 	}
 
 #ifdef TOOLS_ENABLED
@@ -3354,7 +3349,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 #ifndef WEB_ENABLED
 	// Add a blank line for readability.
-	Engine::get_singleton()->print_header("");
+	Engine::print_header("");
 #endif // WEB_ENABLED
 
 	register_core_singletons();
@@ -3506,13 +3501,13 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		// We need to initialize the movie writer here in case
 		// one of the user-provided GDExtensions subclasses MovieWriter.
-		if (Engine::get_singleton()->get_write_movie_path() != String()) {
+		if (Engine::get_write_movie_path() != String()) {
 			movie_writer =
-				MovieWriter::find_writer_for_file(Engine::get_singleton()->get_write_movie_path());
+				MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
 			if (movie_writer == nullptr) {
 				ERR_PRINT("Can't find movie writer for file type, aborting: " +
-						  Engine::get_singleton()->get_write_movie_path());
-				Engine::get_singleton()->set_write_movie_path(String());
+						  Engine::get_write_movie_path());
+				Engine::set_write_movie_path(String());
 			}
 		}
 	}
@@ -3791,7 +3786,7 @@ int Main::start()
 	if (!doc_tool_path.is_empty()) {
 #endif
 		// Needed to instance editor-only classes for their default values
-		Engine::get_singleton()->set_editor_hint(true);
+		Engine::set_editor_hint(true);
 
 		// Translate the class reference only when `-l LOCALE` parameter is given.
 		if (!locale.is_empty() && locale != "en") {
@@ -4000,24 +3995,24 @@ bool Main::iteration()
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();
-	Engine::get_singleton()->_frame_ticks = ticks;
+	Engine::_frame_ticks = ticks;
 	main_timer_sync.set_cpu_ticks_usec(ticks);
 	main_timer_sync.set_fixed_fps(fixed_fps);
 
 	const uint64_t ticks_elapsed = ticks - last_ticks;
 
 	const int physics_ticks_per_second =
-		Engine::get_singleton()->get_user_physics_ticks_per_second();
+		Engine::get_user_physics_ticks_per_second();
 	const double physics_step = 1.0 / physics_ticks_per_second;
 
-	const double time_scale = Engine::get_singleton()->get_effective_time_scale();
+	const double time_scale = Engine::get_effective_time_scale();
 
 	MainFrameTime advance = main_timer_sync.advance(physics_step, physics_ticks_per_second);
 	double process_step = advance.process_step;
 	double scaled_step = process_step * time_scale;
 
-	Engine::get_singleton()->_process_step = process_step;
-	Engine::get_singleton()->_physics_interpolation_fraction = advance.interpolation_fraction;
+	Engine::_process_step = process_step;
+	Engine::_physics_interpolation_fraction = advance.interpolation_fraction;
 
 	uint64_t physics_process_ticks = 0;
 	uint64_t process_ticks = 0;
@@ -4029,7 +4024,7 @@ bool Main::iteration()
 
 	last_ticks = ticks;
 
-	const int max_physics_steps = Engine::get_singleton()->get_user_max_physics_steps_per_frame();
+	const int max_physics_steps = Engine::get_user_max_physics_steps_per_frame();
 	if (fixed_fps == -1 && advance.physics_steps > max_physics_steps) {
 		process_step -= (advance.physics_steps - max_physics_steps) * physics_step;
 		advance.physics_steps = max_physics_steps;
@@ -4072,7 +4067,7 @@ bool Main::iteration()
 	AudioServer::get_singleton()->update();
 
 	frames++;
-	Engine::get_singleton()->_process_frames++;
+	Engine::_process_frames++;
 
 	if (frame > 1000000) {
 		// Wait a few seconds before printing FPS, as FPS reporting just after the engine has
@@ -4093,7 +4088,7 @@ bool Main::iteration()
 			hide_print_fps_attempts--;
 		}
 
-		Engine::get_singleton()->_fps = frames;
+		Engine::_fps = frames;
 		performance->set_process_time(USEC_TO_SEC(process_max));
 		performance->set_physics_process_time(USEC_TO_SEC(physics_process_max));
 		performance->set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
@@ -4114,7 +4109,7 @@ bool Main::iteration()
 #ifdef TOOLS_ENABLED
 	bool quit_after_timeout = false;
 #endif
-	if ((quit_after > 0) && (Engine::get_singleton()->_process_frames >= quit_after)) {
+	if ((quit_after > 0) && (Engine::_process_frames >= quit_after)) {
 #ifdef TOOLS_ENABLED
 		quit_after_timeout = true;
 #endif
@@ -4281,8 +4276,6 @@ void Main::cleanup(bool p_force)
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
-
-	memdelete(engine);
 
 	unregister_core_types();
 

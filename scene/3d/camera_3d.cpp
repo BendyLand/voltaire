@@ -64,7 +64,7 @@ void Camera3D::fti_pump_property()
 void Camera3D::fti_update_servers_property()
 {
 	if (camera.is_valid()) {
-		float f = Engine::get_singleton()->get_physics_interpolation_fraction();
+		float f = Engine::get_physics_interpolation_fraction();
 
 		bool update_fov = fov.interpolate(f);
 		bool update_near = _near.interpolate(f);
@@ -157,7 +157,7 @@ Transform3D Camera3D::_get_adjusted_camera_transform(const Transform3D& p_xform)
 
 Transform3D Camera3D::get_camera_transform() const
 {
-	if (is_physics_interpolated_and_enabled() && !Engine::get_singleton()->is_in_physics_frame()) {
+	if (is_physics_interpolated_and_enabled() && !Engine::is_in_physics_frame()) {
 		return _get_adjusted_camera_transform(_get_cached_global_transform_interpolated());
 	}
 
@@ -213,7 +213,7 @@ void Camera3D::clear_current(bool p_enable_next)
 	if (get_viewport()->get_camera_3d() == this) {
 		get_viewport()->_camera_3d_set(nullptr);
 
-		if (p_enable_next && !Engine::get_singleton()->is_editor_hint()) {
+		if (p_enable_next && !Engine::is_editor_hint()) {
 			get_viewport()->_camera_3d_make_next_current(this);
 		}
 	}

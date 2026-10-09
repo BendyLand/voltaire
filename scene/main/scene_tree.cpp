@@ -212,7 +212,7 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	_physics_interpolation_enabled_in_project = p_enabled;
 
 	// We never want interpolation in the editor.
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		p_enabled = false;
 	}
 
@@ -277,7 +277,7 @@ void SceneTree::process_tweens(double p_delta, bool p_physics)
 	_THREAD_SAFE_METHOD_
 	// This methods works similarly to how SceneTreeTimers are handled.
 	const List<Ref<Tween>>::Element* L = tweens.back();
-	const double unscaled_delta = Engine::get_singleton()->get_process_step();
+	const double unscaled_delta = Engine::get_process_step();
 
 	for (List<Ref<Tween>>::Element* E = tweens.front(); E;) {
 		List<Ref<Tween>>::Element* N = E->next();
@@ -521,7 +521,7 @@ void SceneTree::set_suspend(bool p_enabled)
 
 	suspended = p_enabled;
 
-	Engine::get_singleton()->set_freeze_time_scale(p_enabled);
+	Engine::set_freeze_time_scale(p_enabled);
 
 #ifndef PHYSICS_3D_DISABLED
 	PhysicsServer3D::get_singleton()->set_active(!p_enabled && !paused);

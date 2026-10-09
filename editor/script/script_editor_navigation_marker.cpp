@@ -62,8 +62,8 @@ void ScriptEditorNavigationMarker::locate_begin() {
 
 void ScriptEditorNavigationMarker::locate_end() {
 	locate_in_progress = false;
-	locate_end_physics_frame = Engine::get_singleton()->get_physics_frames();
-	locate_end_process_frame = Engine::get_singleton()->get_process_frames();
+	locate_end_physics_frame = Engine::get_physics_frames();
+	locate_end_process_frame = Engine::get_process_frames();
 }
 
 void ScriptEditorNavigationMarker::traverse_begin() {
@@ -72,8 +72,8 @@ void ScriptEditorNavigationMarker::traverse_begin() {
 
 void ScriptEditorNavigationMarker::traverse_end() {
 	traverse_in_progress = false;
-	traverse_end_physics_frame = Engine::get_singleton()->get_physics_frames();
-	traverse_end_process_frame = Engine::get_singleton()->get_process_frames();
+	traverse_end_physics_frame = Engine::get_physics_frames();
+	traverse_end_process_frame = Engine::get_process_frames();
 }
 
 bool ScriptEditorNavigationMarker::is_initializing() const {
@@ -89,17 +89,17 @@ bool ScriptEditorNavigationMarker::is_traversing() const {
 }
 
 bool ScriptEditorNavigationMarker::is_locate_just_occured() const {
-	if (Engine::get_singleton()->is_in_physics_frame()) {
-		return locate_end_physics_frame == Engine::get_singleton()->get_physics_frames() || locate_end_physics_frame == Engine::get_singleton()->get_physics_frames() - 1;
+	if (Engine::is_in_physics_frame()) {
+		return locate_end_physics_frame == Engine::get_physics_frames() || locate_end_physics_frame == Engine::get_physics_frames() - 1;
 	} else {
-		return locate_end_process_frame == Engine::get_singleton()->get_process_frames();
+		return locate_end_process_frame == Engine::get_process_frames();
 	}
 }
 
 bool ScriptEditorNavigationMarker::is_traverse_just_occured() const {
-	if (Engine::get_singleton()->is_in_physics_frame()) {
-		return traverse_end_physics_frame == Engine::get_singleton()->get_physics_frames() || traverse_end_physics_frame == Engine::get_singleton()->get_physics_frames() - 1;
+	if (Engine::is_in_physics_frame()) {
+		return traverse_end_physics_frame == Engine::get_physics_frames() || traverse_end_physics_frame == Engine::get_physics_frames() - 1;
 	} else {
-		return traverse_end_process_frame == Engine::get_singleton()->get_process_frames();
+		return traverse_end_process_frame == Engine::get_process_frames();
 	}
 }

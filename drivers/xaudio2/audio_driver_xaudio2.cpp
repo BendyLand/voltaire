@@ -45,7 +45,7 @@ Error AudioDriverXAudio2::init() {
 	speaker_mode = SPEAKER_MODE_STEREO;
 	channels = 2;
 
-	int latency = Engine::get_singleton()->get_audio_output_latency();
+	int latency = Engine::get_audio_output_latency();
 	buffer_size = Math::closest_power_of_2(latency * mix_rate / 1000);
 
 	samples_in = memnew_arr(int32_t, size_t(buffer_size) * channels);

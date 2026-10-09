@@ -36,201 +36,183 @@
 
 class Engine
 {
-public:
-	struct Singleton
-	{
-		StringName name;
-		StringName class_name; // Used for binding generation hinting.
-		// Singleton scope flags.
-		bool user_created = false;
-		bool editor_only = false;
-	};
-
 private:
 	friend class Main;
 
-	uint64_t frames_drawn = 0;
-	uint32_t _frame_delay = 0;
-	uint64_t _frame_ticks = 0;
-	double _process_step = 0;
+	static inline uint64_t frames_drawn = 0;
+	static inline uint32_t _frame_delay = 0;
+	static inline uint64_t _frame_ticks = 0;
+	static inline double _process_step = 0;
 
-	int ips = 60;
-	int user_ips = 60;
-	double physics_jitter_fix = 0.5;
-	double _fps = 1;
-	int _max_fps = 0;
-	int _audio_output_latency = 0;
-	double _time_scale = 1.0;
-	double _game_time_scale = 1.0;
-	double _user_time_scale = 1.0;
-	uint64_t _physics_frames = 0;
-	int max_physics_steps_per_frame = 8;
-	int max_user_physics_steps_per_frame = 8;
-	double _physics_interpolation_fraction = 0.0f;
-	bool abort_on_gpu_errors = false;
-	bool use_validation_layers = false;
-	bool generate_spirv_debug_info = false;
-	bool extra_gpu_memory_tracking = false;
+	static inline int ips = 60;
+	static inline int user_ips = 60;
+	static inline double physics_jitter_fix = 0.5;
+	static inline double _fps = 1;
+	static inline int _max_fps = 0;
+	static inline int _audio_output_latency = 0;
+	static inline double _time_scale = 1.0;
+	static inline double _game_time_scale = 1.0;
+	static inline double _user_time_scale = 1.0;
+	static inline uint64_t _physics_frames = 0;
+	static inline int max_physics_steps_per_frame = 8;
+	static inline int max_user_physics_steps_per_frame = 8;
+	static inline double _physics_interpolation_fraction = 0.0f;
+	static inline bool abort_on_gpu_errors = false;
+	static inline bool use_validation_layers = false;
+	static inline bool generate_spirv_debug_info = false;
+	static inline bool extra_gpu_memory_tracking = false;
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-	bool accurate_breadcrumbs = false;
+	static inline bool accurate_breadcrumbs = false;
 #endif
-	int32_t gpu_idx = -1;
+	static inline int32_t gpu_idx = -1;
 
-	uint64_t _process_frames = 0;
-	bool _in_physics = false;
+	static inline uint64_t _process_frames = 0;
+	static inline bool _in_physics = false;
 
-	List<Singleton> singletons;
+	static inline bool editor_hint = false;
+	static inline bool project_manager_hint = false;
+	static inline bool extension_reloading = false;
+	static inline bool embedded_in_editor = false;
+	static inline bool recovery_mode_hint = false;
 
-	bool editor_hint = false;
-	bool project_manager_hint = false;
-	bool extension_reloading = false;
-	bool embedded_in_editor = false;
-	bool recovery_mode_hint = false;
+	static inline bool _print_header = true;
 
-	bool _print_header = true;
-
-	static inline Engine* singleton = nullptr;
-
-	String write_movie_path;
-	String shader_cache_path;
+	static inline String write_movie_path;
+	static inline String shader_cache_path;
 
 	static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
-	int server_syncs = 0;
-	bool frame_server_synced = false;
+	static inline int server_syncs = 0;
+	static inline bool frame_server_synced = false;
 
-	bool freeze_time_scale = false;
+	static inline bool freeze_time_scale = false;
 
 protected:
-	void _update_time_scale();
+	static void _update_time_scale();
 
 public:
-	static Engine* get_singleton();
+	static void set_physics_ticks_per_second(int p_ips);
+	static int get_physics_ticks_per_second();
+	static int get_user_physics_ticks_per_second();
 
-	virtual void set_physics_ticks_per_second(int p_ips);
-	virtual int get_physics_ticks_per_second() const;
-	virtual int get_user_physics_ticks_per_second() const;
+	static void set_max_physics_steps_per_frame(int p_max_physics_steps);
+	static int get_max_physics_steps_per_frame();
+	static int get_user_max_physics_steps_per_frame();
 
-	virtual void set_max_physics_steps_per_frame(int p_max_physics_steps);
-	virtual int get_max_physics_steps_per_frame() const;
-	virtual int get_user_max_physics_steps_per_frame() const;
+	static void set_physics_jitter_fix(double p_threshold);
+	static double get_physics_jitter_fix();
 
-	void set_physics_jitter_fix(double p_threshold);
-	double get_physics_jitter_fix() const;
+	static void set_max_fps(int p_fps);
+	static int get_max_fps();
 
-	virtual void set_max_fps(int p_fps);
-	virtual int get_max_fps() const;
+	static void set_audio_output_latency(int p_msec);
+	static int get_audio_output_latency();
 
-	virtual void set_audio_output_latency(int p_msec);
-	virtual int get_audio_output_latency() const;
+	static double get_frames_per_second() { return _fps; }
 
-	virtual double get_frames_per_second() const { return _fps; }
+	static uint64_t get_frames_drawn();
 
-	uint64_t get_frames_drawn();
+	static uint64_t get_physics_frames() { return _physics_frames; }
 
-	uint64_t get_physics_frames() const { return _physics_frames; }
+	static uint64_t get_process_frames() { return _process_frames; }
 
-	uint64_t get_process_frames() const { return _process_frames; }
+	static bool is_in_physics_frame() { return _in_physics; }
 
-	bool is_in_physics_frame() const { return _in_physics; }
+	static uint64_t get_frame_ticks() { return _frame_ticks; }
 
-	uint64_t get_frame_ticks() const { return _frame_ticks; }
+	static double get_process_step() { return _process_step; }
 
-	double get_process_step() const { return _process_step; }
+	static double get_physics_interpolation_fraction() { return _physics_interpolation_fraction; }
 
-	double get_physics_interpolation_fraction() const { return _physics_interpolation_fraction; }
+	static void set_time_scale(double p_scale);
+	static double get_time_scale();
+	static void set_user_time_scale(double p_scale);
+	static double get_effective_time_scale();
+	static double get_unfrozen_time_scale();
 
-	void set_time_scale(double p_scale);
-	double get_time_scale() const;
-	void set_user_time_scale(double p_scale);
-	double get_effective_time_scale() const;
-	double get_unfrozen_time_scale() const;
+	static void set_print_to_stdout(bool p_enabled);
+	static bool is_printing_to_stdout();
 
-	void set_print_to_stdout(bool p_enabled);
-	bool is_printing_to_stdout() const;
+	static void set_print_error_messages(bool p_enabled);
+	static bool is_printing_error_messages();
+	static void print_header(const String& p_string);
+	static void print_header_rich(const String& p_string);
 
-	void set_print_error_messages(bool p_enabled);
-	bool is_printing_error_messages() const;
-	void print_header(const String& p_string) const;
-	void print_header_rich(const String& p_string) const;
-
-	void set_frame_delay(uint32_t p_msec);
-	uint32_t get_frame_delay() const;
-
-	void add_singleton(const Singleton& p_singleton);
-	void get_singletons(List<Singleton>* p_singletons);
-	bool has_singleton(const StringName& p_name) const;
-	void remove_singleton(const StringName& p_name);
-	bool is_singleton_user_created(const StringName& p_name) const;
-	bool is_singleton_editor_only(const StringName& p_name) const;
+	static void set_frame_delay(uint32_t p_msec);
+	static uint32_t get_frame_delay();
 
 #ifdef TOOLS_ENABLED
-	_FORCE_INLINE_ void set_editor_hint(bool p_enabled) { editor_hint = p_enabled; }
+	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) { editor_hint = p_enabled; }
 
-	_FORCE_INLINE_ bool is_editor_hint() const { return editor_hint; }
+	_FORCE_INLINE_ static bool is_editor_hint() { return editor_hint; }
 
-	_FORCE_INLINE_ void set_project_manager_hint(bool p_enabled)
+	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled)
 	{
 		project_manager_hint = p_enabled;
 	}
 
-	_FORCE_INLINE_ bool is_project_manager_hint() const { return project_manager_hint; }
+	_FORCE_INLINE_ static bool is_project_manager_hint() { return project_manager_hint; }
 
-	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled)
+	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled)
 	{
 		extension_reloading = p_enabled;
 	}
 
-	_FORCE_INLINE_ bool is_extension_reloading_enabled() const { return extension_reloading; }
+	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return extension_reloading; }
 
-	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled) { recovery_mode_hint = p_enabled; }
+	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled)
+	{
+		recovery_mode_hint = p_enabled;
+	}
 
-	_FORCE_INLINE_ bool is_recovery_mode_hint() const { return recovery_mode_hint; }
+	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return recovery_mode_hint; }
 #else
-	_FORCE_INLINE_ void set_editor_hint(bool p_enabled) {}
+	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ bool is_editor_hint() const { return false; }
+	_FORCE_INLINE_ static bool is_editor_hint() { return false; }
 
-	_FORCE_INLINE_ void set_project_manager_hint(bool p_enabled) {}
+	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ bool is_project_manager_hint() const { return false; }
+	_FORCE_INLINE_ static bool is_project_manager_hint() { return false; }
 
-	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled) {}
+	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled) {}
 
-	_FORCE_INLINE_ bool is_extension_reloading_enabled() const { return false; }
+	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return false; }
 
-	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled) {}
+	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ bool is_recovery_mode_hint() const { return false; }
+	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return false; }
 #endif
 
-	String get_license_text() const;
+	static String get_license_text();
 
-	void set_write_movie_path(const String& p_path);
-	String get_write_movie_path() const;
+	static void set_write_movie_path(const String& p_path);
+	static String get_write_movie_path();
 
-	String get_architecture_name() const;
+	static String get_architecture_name();
 
-	void set_shader_cache_path(const String& p_path);
-	String get_shader_cache_path() const;
+	static void set_shader_cache_path(const String& p_path);
+	static String get_shader_cache_path();
 
-	bool is_abort_on_gpu_errors_enabled() const;
-	bool is_validation_layers_enabled() const;
-	bool is_generate_spirv_debug_info_enabled() const;
-	bool is_extra_gpu_memory_tracking_enabled() const;
+	static bool is_abort_on_gpu_errors_enabled();
+	static bool is_validation_layers_enabled();
+	static bool is_generate_spirv_debug_info_enabled();
+	static bool is_extra_gpu_memory_tracking_enabled();
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-	bool is_accurate_breadcrumbs_enabled() const;
+	static bool is_accurate_breadcrumbs_enabled();
 #endif
-	int32_t get_gpu_index() const;
+	static int32_t get_gpu_index();
 
-	void increment_frames_drawn();
-	bool notify_frame_server_synced();
+	static void increment_frames_drawn();
+	static bool notify_frame_server_synced();
 
-	void set_freeze_time_scale(bool p_frozen);
-	void set_embedded_in_editor(bool p_enabled);
-	bool is_embedded_in_editor() const;
+	static void set_freeze_time_scale(bool p_frozen);
+	static void set_embedded_in_editor(bool p_enabled);
+	static bool is_embedded_in_editor();
 
-	Engine();
-	virtual ~Engine();
+	Engine() = delete;
+	~Engine() = delete;
+	Engine(const Engine&) = delete;
+	Engine& operator=(const Engine&) = delete;
 };
 
 

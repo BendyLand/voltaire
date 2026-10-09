@@ -38,7 +38,7 @@ void AnimationPlayer::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_READY: {
-		if (!Engine::get_singleton()->is_editor_hint() && animation_set.has(autoplay)) {
+		if (!Engine::is_editor_hint() && animation_set.has(autoplay)) {
 			set_active(active);
 			play(autoplay);
 			_check_immediately_after_start();
@@ -495,7 +495,7 @@ bool AnimationPlayer::has_section() const
 
 void AnimationPlayer::set_autoplay(const StringName& p_name)
 {
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
+	if (is_inside_tree() && !Engine::is_editor_hint()) {
 		WARN_PRINT("Setting autoplay after the node has been added to the scene has no effect.");
 	}
 

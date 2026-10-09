@@ -621,14 +621,14 @@ void RendererSceneCull::instance_initialize(RID p_rid)
 void RendererSceneCull::_instance_update_mesh_instance(Instance* p_instance) const
 {
 	bool needs_instance =
-		RS::mesh_storage->mesh_needs_instance(p_instance->base, p_instance->skeleton.is_valid());
+		RendererMeshStorage::mesh_needs_instance(p_instance->base, p_instance->skeleton.is_valid());
 	if (needs_instance != p_instance->mesh_instance.is_valid()) {
 		if (needs_instance) {
-			p_instance->mesh_instance = RS::mesh_storage->mesh_instance_create(p_instance->base);
+			p_instance->mesh_instance = RendererMeshStorage::mesh_instance_create(p_instance->base);
 
 		}
 		else {
-			RS::mesh_storage->mesh_instance_free(p_instance->mesh_instance);
+			RendererMeshStorage::mesh_instance_free(p_instance->mesh_instance);
 			p_instance->mesh_instance = RID();
 		}
 
@@ -647,7 +647,7 @@ void RendererSceneCull::_instance_update_mesh_instance(Instance* p_instance) con
 	}
 
 	if (p_instance->mesh_instance.is_valid()) {
-		RS::mesh_storage->mesh_instance_set_skeleton(
+		RendererMeshStorage::mesh_instance_set_skeleton(
 			p_instance->mesh_instance, p_instance->skeleton);
 	}
 }
@@ -667,7 +667,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 		}
 
 		if (instance->mesh_instance.is_valid()) {
-			RS::mesh_storage->mesh_instance_free(instance->mesh_instance);
+			RendererMeshStorage::mesh_instance_free(instance->mesh_instance);
 			instance->mesh_instance = RID();
 			// no need to set instance data flag here, as it was freed above
 		}
@@ -1133,7 +1133,7 @@ void RendererSceneCull::instance_set_surface_override_material(
 		// may not have been updated yet, may also have not been set yet. When updated will be
 		// correcte, worst case
 		instance->materials.resize(
-			MAX(p_surface + 1, RS::mesh_storage->mesh_get_surface_count(instance->base)));
+			MAX(p_surface + 1, RendererMeshStorage::mesh_get_surface_count(instance->base)));
 	}
 
 	ERR_FAIL_INDEX(p_surface, instance->materials.size());
@@ -1244,7 +1244,7 @@ void RendererSceneCull::instance_attach_skeleton(RID p_instance, RID p_skeleton)
 
 	if (p_skeleton.is_valid()) {
 		// update the dependency now, so if cleared, we remove it
-		RS::mesh_storage->skeleton_update_dependency(p_skeleton, &instance->dependency_tracker);
+		RendererMeshStorage::skeleton_update_dependency(p_skeleton, &instance->dependency_tracker);
 	}
 
 	_instance_queue_update(instance, true, true);
@@ -2128,7 +2128,7 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 			new_aabb = *p_instance->custom_aabb;
 		}
 		else {
-			new_aabb = RS::mesh_storage->mesh_get_aabb(p_instance->base, p_instance->skeleton);
+			new_aabb = RendererMeshStorage::mesh_get_aabb(p_instance->base, p_instance->skeleton);
 		}
 
 	} break;
@@ -2138,7 +2138,7 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 			new_aabb = *p_instance->custom_aabb;
 		}
 		else {
-			new_aabb = RS::mesh_storage->multimesh_get_aabb(p_instance->base);
+			new_aabb = RendererMeshStorage::multimesh_get_aabb(p_instance->base);
 		}
 
 	} break;
@@ -2622,7 +2622,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 						}
 
 						if (instance->mesh_instance.is_valid()) {
-							RS::mesh_storage->mesh_instance_check_for_update(
+							RendererMeshStorage::mesh_instance_check_for_update(
 								instance->mesh_instance);
 						}
 					}
@@ -2631,7 +2631,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 						static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
 				}
 
-				RS::mesh_storage->update_mesh_instances();
+				RendererMeshStorage::update_mesh_instances();
 
 				RS::light_storage->light_instance_set_shadow_transform(
 					light->instance, Projection(), light_transform, radius, 0, i, 0);
@@ -2715,7 +2715,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 							animated_material_found = true;
 						}
 						if (instance->mesh_instance.is_valid()) {
-							RS::mesh_storage->mesh_instance_check_for_update(
+							RendererMeshStorage::mesh_instance_check_for_update(
 								instance->mesh_instance);
 						}
 					}
@@ -2724,7 +2724,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 						static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
 				}
 
-				RS::mesh_storage->update_mesh_instances();
+				RendererMeshStorage::update_mesh_instances();
 				RS::light_storage->light_instance_set_shadow_transform(
 					light->instance, cm, xform, radius, 0, i, 0);
 
@@ -2802,14 +2802,14 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 				}
 
 				if (instance->mesh_instance.is_valid()) {
-					RS::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
+					RendererMeshStorage::mesh_instance_check_for_update(instance->mesh_instance);
 				}
 			}
 			shadow_data.instances.push_back(
 				static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
 		}
 
-		RS::mesh_storage->update_mesh_instances();
+		RendererMeshStorage::update_mesh_instances();
 
 		RS::light_storage->light_instance_set_shadow_transform(
 			light->instance, cm, light_transform, radius, 0, 0, 0);
@@ -2887,7 +2887,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 				}
 
 				if (instance->mesh_instance.is_valid()) {
-					RS::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
+					RendererMeshStorage::mesh_instance_check_for_update(instance->mesh_instance);
 				}
 			}
 
@@ -2895,7 +2895,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 				static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
 		}
 
-		RS::mesh_storage->update_mesh_instances();
+		RendererMeshStorage::update_mesh_instances();
 
 		RS::light_storage->light_instance_set_shadow_transform(
 			light->instance, Projection(), light_transform, radius, 0, 0, 0);
@@ -3490,13 +3490,13 @@ void RendererSceneCull::set_scene_render(RendererSceneRender* p_scene_render)
 void RendererSceneCull::update_interpolation_tick(bool p_process)
 {
 	// MultiMesh: Update interpolation in storage.
-	RS::mesh_storage->update_interpolation_tick(p_process);
+	RendererMeshStorage::update_interpolation_tick(p_process);
 }
 
 void RendererSceneCull::update_interpolation_frame(bool p_process)
 {
 	// MultiMesh: Update interpolation in storage.
-	RS::mesh_storage->update_interpolation_frame(p_process);
+	RendererMeshStorage::update_interpolation_frame(p_process);
 }
 
 void RendererSceneCull::set_physics_interpolation_enabled(bool p_enabled)

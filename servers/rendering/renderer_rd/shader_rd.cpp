@@ -187,7 +187,7 @@ void ShaderRD::setup(const char* p_vertex_code, const char* p_fragment_code,
 	tohash.append("[Compute]");
 	tohash.append(p_compute_code ? p_compute_code : "");
 	tohash.append("[DebugInfo]");
-	tohash.append(Engine::get_singleton()->is_generate_spirv_debug_info_enabled() ? "1" : "0");
+	tohash.append(Engine::is_generate_spirv_debug_info_enabled() ? "1" : "0");
 
 	base_sha256 = tohash.as_string().sha256_text();
 }
@@ -231,7 +231,7 @@ void ShaderRD::setup_raytracing(const char* p_raygen_code, const char* p_any_hit
 	tohash.append("[Intersection]");
 	tohash.append(p_intersection_code ? p_intersection_code : "");
 	tohash.append("[DebugInfo]");
-	tohash.append(Engine::get_singleton()->is_generate_spirv_debug_info_enabled() ? "1" : "0");
+	tohash.append(Engine::is_generate_spirv_debug_info_enabled() ? "1" : "0");
 
 	base_sha256 = tohash.as_string().sha256_text();
 }

@@ -117,7 +117,7 @@ void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
 
 void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 	// Keep this up to date as a local to be used for occlusion timers.
-	occlusion_frame = Engine::get_singleton()->get_frames_drawn();
+	occlusion_frame = Engine::get_frames_drawn();
 
 	if (sizes.is_empty()) {
 		return;

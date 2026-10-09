@@ -56,7 +56,7 @@ void ParallaxLayer::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			break;
 		}
 
@@ -71,7 +71,7 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 	if (!is_inside_tree()) {
 		return;
 	}
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 

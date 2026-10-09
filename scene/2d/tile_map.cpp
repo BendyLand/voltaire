@@ -97,7 +97,7 @@ void TileMap::_notification(int p_what)
 
 		bool in_editor = false;
 #ifdef TOOLS_ENABLED
-		in_editor = Engine::get_singleton()->is_editor_hint();
+		in_editor = Engine::is_editor_hint();
 #endif // TOOLS_ENABLED
 		if (is_inside_tree() && collision_animatable && !in_editor) {
 			// Update transform on the physics tick when in animatable mode.
@@ -113,7 +113,7 @@ void TileMap::_notification(int p_what)
 
 		bool in_editor = false;
 #ifdef TOOLS_ENABLED
-		in_editor = Engine::get_singleton()->is_editor_hint();
+		in_editor = Engine::is_editor_hint();
 #endif // TOOLS_ENABLED
 
 		if (is_inside_tree() && collision_animatable && !in_editor) {

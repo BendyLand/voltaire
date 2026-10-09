@@ -102,7 +102,7 @@ void ThemeDB::_init_default_theme_context()
 	// Only add the project theme to the default context when running projects.
 
 #ifdef TOOLS_ENABLED
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		themes.push_back(project_theme);
 	}
 #else

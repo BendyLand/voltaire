@@ -40,16 +40,6 @@
 
 using namespace GLES3;
 
-MeshStorage::MeshStorage()
-{
-	{
-		skeleton_shader.shader.initialize();
-		skeleton_shader.shader_version = skeleton_shader.shader.version_create();
-	}
-}
-
-MeshStorage::~MeshStorage() { skeleton_shader.shader.version_free(skeleton_shader.shader_version); }
-
 /* MESH API */
 
 RID MeshStorage::mesh_allocate() { return mesh_owner.allocate_rid(); }
@@ -598,7 +588,7 @@ void MeshStorage::_mesh_surface_clear(Mesh* mesh, int p_surface)
 	memdelete(mesh->surfaces[p_surface]);
 }
 
-int MeshStorage::mesh_get_blend_shape_count(RID p_mesh) const
+int MeshStorage::mesh_get_blend_shape_count(RID p_mesh)
 {
 	const Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, -1);
@@ -614,7 +604,7 @@ void MeshStorage::mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mo
 	mesh->blend_shape_mode = p_mode;
 }
 
-RSE::BlendShapeMode MeshStorage::mesh_get_blend_shape_mode(RID p_mesh) const
+RSE::BlendShapeMode MeshStorage::mesh_get_blend_shape_mode(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, RSE::BLEND_SHAPE_MODE_NORMALIZED);
@@ -700,7 +690,7 @@ void MeshStorage::mesh_surface_set_material(RID p_mesh, int p_surface, RID p_mat
 	mesh->material_cache.clear();
 }
 
-RID MeshStorage::mesh_surface_get_material(RID p_mesh, int p_surface) const
+RID MeshStorage::mesh_surface_get_material(RID p_mesh, int p_surface)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, RID());
@@ -709,7 +699,7 @@ RID MeshStorage::mesh_surface_get_material(RID p_mesh, int p_surface) const
 	return mesh->surfaces[p_surface]->material;
 }
 
-RenderingServerTypes::SurfaceData MeshStorage::mesh_get_surface(RID p_mesh, int p_surface) const
+RenderingServerTypes::SurfaceData MeshStorage::mesh_get_surface(RID p_mesh, int p_surface)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, RenderingServerTypes::SurfaceData());
@@ -776,7 +766,7 @@ RenderingServerTypes::SurfaceData MeshStorage::mesh_get_surface(RID p_mesh, int 
 	return sd;
 }
 
-int MeshStorage::mesh_get_surface_count(RID p_mesh) const
+int MeshStorage::mesh_get_surface_count(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, 0);
@@ -792,7 +782,7 @@ void MeshStorage::mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb)
 	mesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB MeshStorage::mesh_get_custom_aabb(RID p_mesh) const
+AABB MeshStorage::mesh_get_custom_aabb(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, AABB());
@@ -933,7 +923,7 @@ void MeshStorage::mesh_set_path(RID p_mesh, const String& p_path)
 	mesh->path = p_path;
 }
 
-String MeshStorage::mesh_get_path(RID p_mesh) const
+String MeshStorage::mesh_get_path(RID p_mesh)
 {
 	Mesh* mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL_V(mesh, String());
@@ -1898,7 +1888,7 @@ void MeshStorage::_multimesh_allocate_data(RID p_multimesh, int p_instances,
 	multimesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MULTIMESH);
 }
 
-int MeshStorage::_multimesh_get_instance_count(RID p_multimesh) const
+int MeshStorage::_multimesh_get_instance_count(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, 0);
@@ -1939,7 +1929,7 @@ void MeshStorage::_multimesh_set_mesh(RID p_multimesh, RID p_mesh)
 
 #define MULTIMESH_DIRTY_REGION_SIZE 512
 
-void MeshStorage::_multimesh_make_local(MultiMesh* multimesh) const
+void MeshStorage::_multimesh_make_local(MultiMesh* multimesh)
 {
 	if (multimesh->data_cache.size() > 0 || multimesh->instances == 0) {
 		return; // already local
@@ -2177,7 +2167,7 @@ void MeshStorage::_multimesh_instance_set_custom_data(
 	_multimesh_mark_dirty(multimesh, p_index, false);
 }
 
-RID MeshStorage::_multimesh_get_mesh(RID p_multimesh) const
+RID MeshStorage::_multimesh_get_mesh(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, RID());
@@ -2193,7 +2183,7 @@ void MeshStorage::_multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb
 	multimesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB MeshStorage::_multimesh_get_custom_aabb(RID p_multimesh) const
+AABB MeshStorage::_multimesh_get_custom_aabb(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, AABB());
@@ -2213,7 +2203,7 @@ AABB MeshStorage::_multimesh_get_aabb(RID p_multimesh)
 	return multimesh->aabb;
 }
 
-Transform3D MeshStorage::_multimesh_instance_get_transform(RID p_multimesh, int p_index) const
+Transform3D MeshStorage::_multimesh_instance_get_transform(RID p_multimesh, int p_index)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, Transform3D());
@@ -2245,7 +2235,7 @@ Transform3D MeshStorage::_multimesh_instance_get_transform(RID p_multimesh, int 
 	return t;
 }
 
-Transform2D MeshStorage::_multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) const
+Transform2D MeshStorage::_multimesh_instance_get_transform_2d(RID p_multimesh, int p_index)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, Transform2D());
@@ -2271,7 +2261,7 @@ Transform2D MeshStorage::_multimesh_instance_get_transform_2d(RID p_multimesh, i
 	return t;
 }
 
-Color MeshStorage::_multimesh_instance_get_color(RID p_multimesh, int p_index) const
+Color MeshStorage::_multimesh_instance_get_color(RID p_multimesh, int p_index)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, Color());
@@ -2297,7 +2287,7 @@ Color MeshStorage::_multimesh_instance_get_color(RID p_multimesh, int p_index) c
 	return c;
 }
 
-Color MeshStorage::_multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const
+Color MeshStorage::_multimesh_instance_get_custom_data(RID p_multimesh, int p_index)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, Color());
@@ -2431,17 +2421,17 @@ void MeshStorage::_multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_
 	}
 }
 
-RID MeshStorage::_multimesh_get_command_buffer_rd_rid(RID p_multimesh) const
+RID MeshStorage::_multimesh_get_command_buffer_rd_rid(RID p_multimesh)
 {
 	ERR_FAIL_V_MSG(RID(), "GLES3 does not implement indirect multimeshes.");
 }
 
-RID MeshStorage::_multimesh_get_buffer_rd_rid(RID p_multimesh) const
+RID MeshStorage::_multimesh_get_buffer_rd_rid(RID p_multimesh)
 {
 	ERR_FAIL_V_MSG(RID(), "GLES3 does not contain a Rid for the multimesh buffer.");
 }
 
-Vector<float> MeshStorage::_multimesh_get_buffer(RID p_multimesh) const
+Vector<float> MeshStorage::_multimesh_get_buffer(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, Vector<float>());
@@ -2551,14 +2541,14 @@ void MeshStorage::_multimesh_set_visible_instances(RID p_multimesh, int p_visibl
 		Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES);
 }
 
-int MeshStorage::_multimesh_get_visible_instances(RID p_multimesh) const
+int MeshStorage::_multimesh_get_visible_instances(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V(multimesh, 0);
 	return multimesh->visible_instances;
 }
 
-RendererMeshStorage::MultiMeshInterpolator* MeshStorage::_multimesh_get_interpolator(RID p_multimesh) const
+RendererMeshStorage::MultiMeshInterpolator* MeshStorage::_multimesh_get_interpolator(RID p_multimesh)
 {
 	MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
 	ERR_FAIL_NULL_V_MSG(multimesh, nullptr, "Multimesh not found: " + itos(p_multimesh.get_id()));
@@ -2793,7 +2783,7 @@ void MeshStorage::skeleton_set_base_transform_2d(
 	skeleton->base_transform_2d = p_base_transform;
 }
 
-int MeshStorage::skeleton_get_bone_count(RID p_skeleton) const
+int MeshStorage::skeleton_get_bone_count(RID p_skeleton)
 {
 	Skeleton* skeleton = skeleton_owner.get_or_null(p_skeleton);
 	ERR_FAIL_NULL_V(skeleton, 0);
@@ -2828,7 +2818,7 @@ void MeshStorage::skeleton_bone_set_transform(
 	_skeleton_make_dirty(skeleton);
 }
 
-Transform3D MeshStorage::skeleton_bone_get_transform(RID p_skeleton, int p_bone) const
+Transform3D MeshStorage::skeleton_bone_get_transform(RID p_skeleton, int p_bone)
 {
 	Skeleton* skeleton = skeleton_owner.get_or_null(p_skeleton);
 
@@ -2879,7 +2869,7 @@ void MeshStorage::skeleton_bone_set_transform_2d(
 	_skeleton_make_dirty(skeleton);
 }
 
-Transform2D MeshStorage::skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const
+Transform2D MeshStorage::skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone)
 {
 	Skeleton* skeleton = skeleton_owner.get_or_null(p_skeleton);
 

@@ -1377,7 +1377,7 @@ void CodeEdit::_add_delimiter(
 {
 	// If we are the editor allow "null" as a valid start key, otherwise users cannot add delimiters
 	// via the inspector.
-	if (!(Engine::get_singleton()->is_editor_hint() && p_start_key == "null")) {
+	if (!(Engine::is_editor_hint() && p_start_key == "null")) {
 		ERR_FAIL_COND_MSG(p_start_key.is_empty(), "delimiter start key cannot be empty");
 
 		for (int i = 0; i < p_start_key.length(); i++) {

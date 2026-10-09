@@ -133,7 +133,6 @@ public:
 
 	static inline RendererLightStorage* light_storage = nullptr;
 	static inline RendererMaterialStorage* material_storage = nullptr;
-	static inline RendererMeshStorage* mesh_storage = nullptr;
 	static inline RendererParticlesStorage* particles_storage = nullptr;
 	static inline RendererTextureStorage* texture_storage = nullptr;
 	static inline RendererGI* gi = nullptr;

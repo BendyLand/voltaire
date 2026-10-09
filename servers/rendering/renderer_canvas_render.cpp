@@ -83,14 +83,14 @@ const Rect2 &RendererCanvasRender::Item::get_rect() const {
 			} break;
 			case Item::Command::TYPE_MESH: {
 				const Item::CommandMesh *mesh = static_cast<const Item::CommandMesh *>(c);
-				AABB aabb = RS::mesh_storage->mesh_get_aabb(mesh->mesh, skeleton);
+				AABB aabb = RendererMeshStorage::mesh_get_aabb(mesh->mesh, skeleton);
 
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
 			} break;
 			case Item::Command::TYPE_MULTIMESH: {
 				const Item::CommandMultiMesh *multimesh = static_cast<const Item::CommandMultiMesh *>(c);
-				AABB aabb = RS::mesh_storage->multimesh_get_aabb(multimesh->multimesh);
+				AABB aabb = RendererMeshStorage::multimesh_get_aabb(multimesh->multimesh);
 
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
@@ -134,6 +134,6 @@ const Rect2 &RendererCanvasRender::Item::get_rect() const {
 
 RendererCanvasRender::Item::CommandMesh::~CommandMesh() {
 	if (mesh_instance.is_valid()) {
-		RS::mesh_storage->mesh_instance_free(mesh_instance);
+		RendererMeshStorage::mesh_instance_free(mesh_instance);
 	}
 }

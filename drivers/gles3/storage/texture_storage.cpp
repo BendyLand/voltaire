@@ -1654,7 +1654,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const
 #endif // GLES_API_ENABLED
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() && !texture->is_render_target) {
+	if (Engine::is_editor_hint() && !texture->is_render_target) {
 		texture->image_cache_2d = image;
 	}
 #endif
@@ -1832,7 +1832,7 @@ Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture) const
 	glDeleteFramebuffers(1, &temp_framebuffer);
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() && !texture->is_render_target) {
+	if (Engine::is_editor_hint() && !texture->is_render_target) {
 		texture->image_cache_3d = ret;
 	}
 #endif
@@ -2243,7 +2243,7 @@ void TextureStorage::_texture_set_3d_data(
 	texture->mipmaps = mipmap_level + 1;
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() && !texture->is_render_target) {
+	if (Engine::is_editor_hint() && !texture->is_render_target) {
 		texture->image_cache_3d = images;
 	}
 #endif

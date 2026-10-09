@@ -9827,8 +9827,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 			if (is_uniform) {
 				if (uniform_scope == ShaderNode::Uniform::SCOPE_GLOBAL &&
-					Engine::get_singleton()
-						->is_editor_hint()) { // Type checking for global uniforms is not allowed
+					Engine::is_editor_hint()) { // Type checking for global uniforms is not allowed
 											  // outside the editor.
 					// validate global uniform
 					DataType gvtype = global_shader_uniform_get_type_func(name);

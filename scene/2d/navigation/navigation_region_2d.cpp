@@ -167,7 +167,7 @@ void NavigationRegion2D::_notification(int p_what)
 	case NOTIFICATION_DRAW: {
 #ifdef DEBUG_ENABLED
 		if (is_inside_tree() &&
-			(Engine::get_singleton()->is_editor_hint() ||
+			(Engine::is_editor_hint() ||
 				(NavigationServer2D::get_debug_enabled() &&
 					NavigationServer2D::get_debug_navigation_enabled())) &&
 			navigation_polygon.is_valid()) {
