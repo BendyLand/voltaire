@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "nine_patch_rect.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void NinePatchRect::_notification(int p_what)
 {

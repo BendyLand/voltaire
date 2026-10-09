@@ -39,7 +39,7 @@
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/surface_tool.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/editor_node.h"
@@ -105,7 +105,7 @@ Occluder3D::Occluder3D() { occluder = RS::occluder_create(); }
 Occluder3D::~Occluder3D()
 {
 	if (occluder.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(occluder);
 	}
 }

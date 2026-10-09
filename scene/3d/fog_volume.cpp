@@ -32,7 +32,7 @@
 #include "fog_volume.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Vector3 FogVolume::get_size() const { return size; }
 
@@ -76,7 +76,7 @@ FogVolume::FogVolume()
 
 FogVolume::~FogVolume()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(volume);
 }
 

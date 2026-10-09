@@ -28,22 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_device_binds.h"
-
 #include "modules/modules_enabled.gen.h" // For glslang.
+#include "rendering_device_binds.h"
 #ifdef MODULE_GLSLANG_ENABLED
 #include "modules/glslang/shader_compile.h"
 #endif
 
 #include "servers/rendering/shader_include_db.h"
 
-Error RDShaderFile::parse_versions_from_text(const String &p_text, const String p_defines, OpenIncludeFunction p_include_func, void *p_include_func_userdata) {
+Error RDShaderFile::parse_versions_from_text(const String& p_text, const String p_defines,
+	OpenIncludeFunction p_include_func, void* p_include_func_userdata)
+{
 	Vector<String> lines = p_text.split("\n");
 
 	bool reading_versions = false;
-	bool stage_found[RD::SHADER_STAGE_MAX] = {};
-	RD::ShaderStage stage = RD::SHADER_STAGE_MAX;
-	static const char *stage_str[RD::SHADER_STAGE_MAX] = {
+	bool stage_found[RDC::SHADER_STAGE_MAX] = {};
+	RDC::ShaderStage stage = RDC::SHADER_STAGE_MAX;
+	static const char* stage_str[RDC::SHADER_STAGE_MAX] = {
 		"vertex",
 		"fragment",
 		"tesselation_control",
@@ -55,7 +56,7 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 		"miss",
 		"intersection",
 	};
-	String stage_code[RD::SHADER_STAGE_MAX];
+	String stage_code[RDC::SHADER_STAGE_MAX];
 	int stages_found = 0;
 	HashMap<StringName, String> version_texts;
 
@@ -71,12 +72,14 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 				String section = ls.substr(2, ls.length() - 3).strip_edges();
 				if (section == "versions") {
 					if (stages_found) {
-						base_error = "Invalid shader file, #[versions] must be the first section found.";
+						base_error =
+							"Invalid shader file, #[versions] must be the first section found.";
 						break;
 					}
 					reading_versions = true;
-				} else {
-					for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
+				}
+				else {
+					for (int i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
 						if (section == stage_str[i]) {
 							if (stage_found[i]) {
 								base_error = "Invalid shader file, stage appears twice: " + section;
@@ -86,7 +89,7 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 							stage_found[i] = true;
 							stages_found++;
 
-							stage = RD::ShaderStage(i);
+							stage = RDC::ShaderStage(i);
 							reading_versions = false;
 							break;
 						}
@@ -101,10 +104,10 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 			}
 		}
 
-		if (stage == RD::SHADER_STAGE_MAX && !line.strip_edges().is_empty()) {
+		if (stage == RDC::SHADER_STAGE_MAX && !line.strip_edges().is_empty()) {
 			line = line.strip_edges();
 			if (line.begins_with("//") || line.begins_with("/*")) {
-				continue; //assuming comment (single line)
+				continue; // assuming comment (single line)
 			}
 		}
 
@@ -112,42 +115,51 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 			String l = line.strip_edges();
 			if (!l.is_empty()) {
 				if (!l.contains_char('=')) {
-					base_error = "Missing `=` in '" + l + "'. Version syntax is `version = \"<defines with C escaping>\";`.";
+					base_error = "Missing `=` in '" + l +
+								 "'. Version syntax is `version = \"<defines with C escaping>\";`.";
 					break;
 				}
 				if (!l.contains_char(';')) {
-					// We don't require a semicolon per se, but it's needed for clang-format to handle things properly.
-					base_error = "Missing `;` in '" + l + "'. Version syntax is `version = \"<defines with C escaping>\";`.";
+					// We don't require a semicolon per se, but it's needed for clang-format to
+					// handle things properly.
+					base_error = "Missing `;` in '" + l +
+								 "'. Version syntax is `version = \"<defines with C escaping>\";`.";
 					break;
 				}
 				Vector<String> slices = l.get_slicec(';', 0).split("=");
 				String version = slices[0].strip_edges();
 				if (!version.is_valid_ascii_identifier()) {
-					base_error = "Version names must be valid identifiers, found '" + version + "' instead.";
+					base_error =
+						"Version names must be valid identifiers, found '" + version + "' instead.";
 					break;
 				}
 				String define = slices[1].strip_edges();
 				if (!define.begins_with("\"") || !define.ends_with("\"")) {
-					base_error = "Version text must be quoted using \"\", instead found '" + define + "'.";
+					base_error =
+						"Version text must be quoted using \"\", instead found '" + define + "'.";
 					break;
 				}
-				define = "\n" + define.substr(1, define.length() - 2).c_unescape() + "\n"; // Add newline before and after just in case.
+				define = "\n" + define.substr(1, define.length() - 2).c_unescape() +
+						 "\n"; // Add newline before and after just in case.
 
 				version_texts[version] = define + "\n" + p_defines;
 			}
-		} else {
-			if (stage == RD::SHADER_STAGE_MAX && !line.strip_edges().is_empty()) {
+		}
+		else {
+			if (stage == RDC::SHADER_STAGE_MAX && !line.strip_edges().is_empty()) {
 				base_error = "Text was found that does not belong to a valid section: " + line;
 				break;
 			}
 
-			if (stage != RD::SHADER_STAGE_MAX) {
+			if (stage != RDC::SHADER_STAGE_MAX) {
 				if (line.strip_edges().begins_with("#include")) {
 					if (p_include_func) {
-						//process include
+						// process include
 						String include = line.replace("#include", "").strip_edges();
 						if (!include.begins_with("\"") || !include.ends_with("\"")) {
-							base_error = "Malformed #include syntax, expected #include \"<path>\", found instead: " + include;
+							base_error = "Malformed #include syntax, expected #include \"<path>\", "
+										 "found instead: " +
+										 include;
 							break;
 						}
 						include = include.substr(1, include.length() - 2).strip_edges();
@@ -155,18 +167,22 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 						String include_code = ShaderIncludeDB::get_built_in_include_file(include);
 						if (!include_code.is_empty()) {
 							stage_code[stage] += "\n" + include_code + "\n";
-						} else {
+						}
+						else {
 							String include_text = p_include_func(include, p_include_func_userdata);
 							if (!include_text.is_empty()) {
 								stage_code[stage] += "\n" + include_text + "\n";
-							} else {
+							}
+							else {
 								base_error = "#include failed for file '" + include + "'.";
 							}
 						}
-					} else {
+					}
+					else {
 						base_error = "#include used, but no include function provided.";
 					}
-				} else {
+				}
+				else {
 					stage_code[stage] += line + "\n";
 				}
 			}
@@ -174,23 +190,24 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 	}
 
 	if (base_error.is_empty()) {
-		if (stage_found[RD::SHADER_STAGE_COMPUTE] && stages_found > 1) {
-			ERR_FAIL_V_MSG(ERR_PARSE_ERROR, "When writing compute shaders, [compute] mustbe the only stage present.");
+		if (stage_found[RDC::SHADER_STAGE_COMPUTE] && stages_found > 1) {
+			ERR_FAIL_V_MSG(ERR_PARSE_ERROR,
+				"When writing compute shaders, [compute] mustbe the only stage present.");
 		}
 
 		if (version_texts.is_empty()) {
-			version_texts[""] = ""; //make sure a default version exists
+			version_texts[""] = ""; // make sure a default version exists
 		}
 
 		bool errors_found = false;
 
 		/* STEP 2, Compile the versions, add to shader file */
 
-		for (const KeyValue<StringName, String> &E : version_texts) {
+		for (const KeyValue<StringName, String>& E : version_texts) {
 			Ref<RDShaderSPIRV> bytecode;
 			bytecode.instantiate();
 
-			for (int i = 0; i < RD::SHADER_STAGE_MAX; i++) {
+			for (int i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
 				String code = stage_code[i];
 				if (code.is_empty()) {
 					continue;
@@ -198,27 +215,33 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 				code = code.replace("VERSION_DEFINES", E.value);
 				String error;
 #ifdef MODULE_GLSLANG_ENABLED
-				Vector<uint8_t> spirv = compile_glslang_shader(RD::ShaderStage(i), ShaderIncludeDB::parse_include_files(code), RD::SHADER_LANGUAGE_VULKAN_VERSION_1_1, RD::SHADER_SPIRV_VERSION_1_4, &error);
-				bytecode->set_stage_bytecode(RD::ShaderStage(i), spirv);
+				Vector<uint8_t> spirv = compile_glslang_shader(RDC::ShaderStage(i),
+					ShaderIncludeDB::parse_include_files(code),
+					RDC::SHADER_LANGUAGE_VULKAN_VERSION_1_1, RDC::SHADER_SPIRV_VERSION_1_4, &error);
+				bytecode->set_stage_bytecode(RDC::ShaderStage(i), spirv);
 #else
 				error = "Shader compilation is not supported because glslang was not enabled.";
 #endif
 				if (!error.is_empty()) {
 					error += String() + "\n\nStage '" + stage_str[i] + "' source code: \n\n";
 					Vector<String> sclines = code.split("\n");
-					for (int j = 0; j < sclines.size(); j++) {
+					for (int j = 0; j < sclines.size(); j++)
+ {
 						error += itos(j + 1) + "\t\t" + sclines[j] + "\n";
 					}
 					errors_found = true;
 				}
-				bytecode->set_stage_compile_error(RD::ShaderStage(i), error);
+				bytecode->set_stage_compile_error(RDC::ShaderStage(i), error);
 			}
 
 			set_bytecode(bytecode, E.key);
 		}
 
 		return errors_found ? ERR_PARSE_ERROR : OK;
-	} else {
+	}
+	else {
 		return ERR_PARSE_ERROR;
 	}
 }
+
+

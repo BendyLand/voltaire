@@ -31,7 +31,7 @@
 #include "mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/3d/physics/collision_shape_3d.h"
@@ -87,7 +87,7 @@ void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value)
 	ERR_FAIL_COND(mesh.is_null());
 	ERR_FAIL_INDEX(p_blend_shape, (int)blend_shape_tracks.size());
 	blend_shape_tracks[p_blend_shape] = p_value;
-	RenderingServer::instance_set_blend_shape_weight(
+	Renderer::instance_set_blend_shape_weight(
 		get_instance(), p_blend_shape, p_value);
 }
 

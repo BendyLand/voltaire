@@ -45,7 +45,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/2d/tile_set.h"
 #include "scene/resources/image_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tiles_editor_plugin.h"
 
 TilesEditorUtils* TilesEditorUtils::singleton = nullptr;
@@ -134,7 +134,7 @@ TilesEditorUtils::~TilesEditorUtils()
 		pattern_preview_sem.post();
 		while (!pattern_thread_exited.is_set()) {
 			OS::get_singleton()->delay_usec(10000);
-			RenderingServer::sync(); // sync pending stuff, as thread may be blocked on visual server
+			Renderer::sync(); // sync pending stuff, as thread may be blocked on visual server
 		}
 		pattern_preview_thread.wait_to_finish();
 	}

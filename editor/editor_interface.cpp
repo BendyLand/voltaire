@@ -64,7 +64,7 @@
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 EditorInterface* EditorInterface::singleton = nullptr;
 

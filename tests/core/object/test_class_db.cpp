@@ -539,7 +539,7 @@ void add_exposed_classes(Context &r_context) {
 		ExposedClass exposed_class;
 		exposed_class.name = class_name;
 		exposed_class.api_type = api_type;
-		exposed_class.is_singleton = Engine::get_singleton()->has_singleton(class_name);
+		exposed_class.is_singleton = Engine::has_singleton(class_name);
 		exposed_class.is_instantiable = class_info->creation_func && !exposed_class.is_singleton;
 		exposed_class.is_ref_counted = ClassDB::is_parent_class(class_name, "RefCounted");
 		exposed_class.base = ClassDB::get_parent_class(class_name);

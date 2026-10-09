@@ -30,7 +30,7 @@
 
 #include "core/math/geometry_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_boundary_shape_2d.h"
 
 bool WorldBoundaryShape2D::_edit_is_selected_on_click(

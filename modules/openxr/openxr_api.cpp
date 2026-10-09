@@ -37,8 +37,8 @@
 #include "openxr_api.h"
 #include "openxr_interface.h"
 #include "openxr_util.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_hand_tracker.h"
 
 #ifdef ANDROID_ENABLED
@@ -189,7 +189,7 @@ OpenXRAPI* OpenXRAPI::singleton = nullptr;
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 {
 	if (XRServer::get_xr_mode() == XRServer::XRMODE_DEFAULT) {
-		if (Engine::get_singleton()->is_editor_hint() && p_check_run_in_editor) {
+		if (Engine::is_editor_hint() && p_check_run_in_editor) {
 			// For now, don't start OpenXR when the editor starts up. In the future, this may change
 			// if we want to integrate more XR features into the editor experience.
 			return false;

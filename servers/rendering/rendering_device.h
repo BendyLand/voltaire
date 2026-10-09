@@ -61,7 +61,7 @@ class RDAccelerationStructureInstance;
 class RDPipelineShader;
 class RDHitGroup;
 
-class RenderingDevice final : public RenderingDeviceCommons
+class RenderingDevice final
 {
 	static inline BinaryMutex _thread_safe_mutex;
 
@@ -192,11 +192,11 @@ public:
 
 	struct TextureView
 	{
-		DataFormat format_override = DATA_FORMAT_MAX;
-		TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
-		TextureSwizzle swizzle_g = TEXTURE_SWIZZLE_G;
-		TextureSwizzle swizzle_b = TEXTURE_SWIZZLE_B;
-		TextureSwizzle swizzle_a = TEXTURE_SWIZZLE_A;
+		RDC::DataFormat format_override = RDC::DATA_FORMAT_MAX;
+		RDC::TextureSwizzle swizzle_r = RDC::TEXTURE_SWIZZLE_R;
+		RDC::TextureSwizzle swizzle_g = RDC::TEXTURE_SWIZZLE_G;
+		RDC::TextureSwizzle swizzle_b = RDC::TEXTURE_SWIZZLE_B;
+		RDC::TextureSwizzle swizzle_a = RDC::TEXTURE_SWIZZLE_A;
 
 		bool operator==(const TextureView& p_other) const
 		{
@@ -228,14 +228,14 @@ public:
 			UNUSED_ATTACHMENT = 0xFFFFFFFF
 		};
 
-		DataFormat format;
-		TextureSamples samples;
+		RDC::DataFormat format;
+		RDC::TextureSamples samples;
 		uint32_t usage_flags;
 
 		AttachmentFormat()
 		{
-			format = DATA_FORMAT_R8G8B8A8_UNORM;
-			samples = TEXTURE_SAMPLES_1;
+			format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+			samples = RDC::TEXTURE_SAMPLES_1;
 			usage_flags = 0;
 		}
 	};
@@ -246,13 +246,13 @@ public:
 		Vector<int32_t> input_attachments;
 		Vector<int32_t> resolve_attachments;
 		Vector<int32_t> preserve_attachments;
-		int32_t depth_attachment = ATTACHMENT_UNUSED;
-		int32_t depth_resolve_attachment = ATTACHMENT_UNUSED;
+		int32_t depth_attachment = RDC::ATTACHMENT_UNUSED;
+		int32_t depth_resolve_attachment = RDC::ATTACHMENT_UNUSED;
 	};
 
 	struct Uniform
 	{
-		UniformType uniform_type = UNIFORM_TYPE_IMAGE;
+		RDC::UniformType uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		uint32_t binding = 0;
 		bool immutable_sampler = false;
 
@@ -308,14 +308,14 @@ public:
 			ids.clear();
 		}
 
-		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, RID p_id)
+		_FORCE_INLINE_ Uniform(RDC::UniformType p_type, int p_binding, RID p_id)
 		{
 			uniform_type = p_type;
 			binding = p_binding;
 			id = p_id;
 		}
 
-		_FORCE_INLINE_ Uniform(UniformType p_type, int p_binding, const Vector<RID>& p_ids)
+		_FORCE_INLINE_ Uniform(RDC::UniformType p_type, int p_binding, const Vector<RID>& p_ids)
 		{
 			uniform_type = p_type;
 			binding = p_binding;
@@ -326,14 +326,14 @@ public:
 	};
 
 	static void _texture_ensure_shareable_format(
-		RID p_texture, const DataFormat& p_shareable_format);
+		RID p_texture, const RDC::DataFormat& p_shareable_format);
 
 	using PipelineImmutableSampler = Uniform;
 
 	struct PipelineShader
 	{
 		RID shader;
-		Vector<PipelineSpecializationConstant> specialization_constants;
+		Vector<RDC::PipelineSpecializationConstant> specialization_constants;
 
 		bool is_valid() const { return shader.is_valid(); }
 	};
@@ -352,7 +352,7 @@ public:
 		uint32_t vertex_offset = 0;
 		uint32_t vertex_stride = 0;
 		uint32_t vertex_count = 0;
-		DataFormat vertex_format = DATA_FORMAT_MAX;
+		RDC::DataFormat vertex_format = RDC::DATA_FORMAT_MAX;
 		RID index_buffer;
 		uint32_t index_offset = 0;
 		uint32_t index_count = 0;
@@ -398,13 +398,15 @@ public:
 		return data->frames_pending_resources_for_processing != 0u;
 	}
 
-	static bool has_feature(const Features p_feature);
+	static bool has_feature(const RDC::Features p_feature);
 
 	// --- Buffer Operations ---
+	static RID index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format,
+        Span<uint8_t> p_data = {}, bool p_use_restart_indices = false);
 	static RID vertex_buffer_create(
 		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 	static VertexFormatID vertex_format_create(
-		const Vector<VertexAttribute>& p_vertex_descriptions);
+		const Vector<RDC::VertexAttribute>& p_vertex_descriptions);
 	static RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
 		const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
 	static RID index_array_create(
@@ -413,7 +415,7 @@ public:
 	static RID storage_buffer_create(
 		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 	static RID texture_buffer_create(
-		uint32_t p_size_elements, DataFormat p_format, Span<uint8_t> p_data = {});
+		uint32_t p_size_elements, RDC::DataFormat p_format, Span<uint8_t> p_data = {});
 
 	static Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
 		uint32_t p_dst_offset, uint32_t p_size);
@@ -426,23 +428,23 @@ public:
 	static void buffer_flush(RID p_buffer);
 
 	// --- Texture Operations ---
-	static RID texture_create(const TextureFormat& p_format, const TextureView& p_view,
+	static RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
 		const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
 	static RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
-	static RID texture_create_from_extension(TextureType p_type, DataFormat p_format,
-		TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
+	static RID texture_create_from_extension(RDC::TextureType p_type, RDC::DataFormat p_format,
+		RDC::TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
 		uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps = 1);
 	static RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
 		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
-		TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
+		RDC::TextureSliceType p_slice_type = RDC::TEXTURE_SLICE_2D, uint32_t p_layers = 0);
 	static Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data);
 	static Vector<uint8_t> texture_get_data(RID p_texture, uint32_t p_layer);
 	static Error texture_get_data_async(RID p_texture, uint32_t p_layer);
 
-	static bool texture_is_format_supported_for_usage(DataFormat p_format, uint32_t p_usage);
+	static bool texture_is_format_supported_for_usage(RDC::DataFormat p_format, uint32_t p_usage);
 	static bool texture_is_shared(RID p_texture);
 	static bool texture_is_valid(RID p_texture);
-	static TextureFormat texture_get_format(RID p_texture);
+	static RDC::TextureFormat texture_get_format(RID p_texture);
 	static Size2i texture_size(RID p_texture);
 
 	static Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3& p_from,
@@ -457,7 +459,7 @@ public:
 
 	// --- VRS & Framebuffers ---
 	static VRSMethod vrs_get_method();
-	static DataFormat vrs_get_format();
+	static RDC::DataFormat vrs_get_format();
 	static Size2i vrs_get_texel_size();
 
 	static FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format,
@@ -466,18 +468,18 @@ public:
 		const Vector<AttachmentFormat>& p_format, const Vector<FramebufferPass>& p_passes,
 		uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
 	static FramebufferFormatID framebuffer_format_create_empty(
-		TextureSamples p_samples = TEXTURE_SAMPLES_1);
-	static TextureSamples framebuffer_format_get_texture_samples(
+		RDC::TextureSamples p_samples = RDC::TEXTURE_SAMPLES_1);
+	static RDC::TextureSamples framebuffer_format_get_texture_samples(
 		FramebufferFormatID p_format, uint32_t p_pass = 0);
 
 	static RID framebuffer_create(const Vector<RID>& p_texture_attachments,
-		FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
+		FramebufferFormatID p_format_check = RDC::INVALID_ID, uint32_t p_view_count = 1);
 	static RID framebuffer_create_multipass(const Vector<RID>& p_texture_attachments,
-		const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check = INVALID_ID,
+		const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check = RDC::INVALID_ID,
 		uint32_t p_view_count = 1);
 	static RID framebuffer_create_empty(const Size2i& p_size,
-		TextureSamples p_samples = TEXTURE_SAMPLES_1,
-		FramebufferFormatID p_format_check = INVALID_ID);
+		RDC::TextureSamples p_samples = RDC::TEXTURE_SAMPLES_1,
+		FramebufferFormatID p_format_check = RDC::INVALID_ID);
 	static bool framebuffer_is_valid(RID p_framebuffer);
 	static void framebuffer_set_invalidation_callback(
 		RID p_framebuffer, InvalidationCallback p_callback, void* p_userdata);
@@ -485,15 +487,15 @@ public:
 	static Size2 framebuffer_get_size(RID p_framebuffer);
 
 	// --- Samplers & Shaders ---
-	static RID sampler_create(const SamplerState& p_state);
+	static RID sampler_create(const RDC::SamplerState& p_state);
 	static bool sampler_is_format_supported_for_filter(
-		DataFormat p_format, SamplerFilter p_sampler_filter);
+		RDC::DataFormat p_format, RDC::SamplerFilter p_sampler_filter);
 
-	static Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage,
-		const String& p_source_code, ShaderLanguage p_language = SHADER_LANGUAGE_GLSL,
+	static Vector<uint8_t> shader_compile_spirv_from_source(RDC::ShaderStage p_stage,
+		const String& p_source_code, RDC::ShaderLanguage p_language = RDC::SHADER_LANGUAGE_GLSL,
 		String* r_error = nullptr, bool p_allow_cache = true);
 	static Vector<uint8_t> shader_compile_binary_from_spirv(
-		const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
+		const Vector<RDC::ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
 	static RID shader_create_from_bytecode(
 		const Vector<uint8_t>& p_shader_binary, RID p_placeholder = RID());
 	static RID shader_create_placeholder();
@@ -509,19 +511,19 @@ public:
 
 	// --- Pipelines ---
 	static RID render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
-		VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
-		const PipelineRasterizationState& p_rasterization_state,
-		const PipelineMultisampleState& p_multisample_state,
-		const PipelineDepthStencilState& p_depth_stencil_state,
-		const PipelineColorBlendState& p_blend_state, uint32_t p_dynamic_state_flags = 0,
+		VertexFormatID p_vertex_format, RDC::RenderPrimitive p_render_primitive,
+		const RDC::PipelineRasterizationState& p_rasterization_state,
+		const RDC::PipelineMultisampleState& p_multisample_state,
+		const RDC::PipelineDepthStencilState& p_depth_stencil_state,
+		const RDC::PipelineColorBlendState& p_blend_state, uint32_t p_dynamic_state_flags = 0,
 		uint32_t p_for_render_pass = 0,
-		const Vector<PipelineSpecializationConstant>& p_specialization_constants =
-			Vector<PipelineSpecializationConstant>());
+		const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants =
+			Vector<RDC::PipelineSpecializationConstant>());
 	static bool render_pipeline_is_valid(RID p_pipeline);
 
 	static RID compute_pipeline_create(
-		RID p_shader, const Vector<PipelineSpecializationConstant>& p_specialization_constants =
-						  Vector<PipelineSpecializationConstant>());
+		RID p_shader, const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants =
+						  Vector<RDC::PipelineSpecializationConstant>());
 	static bool compute_pipeline_is_valid(RID p_pipeline);
 
 	static RID raytracing_pipeline_create(Span<PipelineShader> p_raygen_shaders,
@@ -607,7 +609,7 @@ public:
 		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
 	static FramebufferFormatID screen_get_framebuffer_format(
 		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
-	static ColorSpace screen_get_color_space(
+	static RDC::ColorSpace screen_get_color_space(
 		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
 	static bool screen_get_hdr_output_supported(
 		DisplayServerEnums::WindowID p_screen = DisplayServerEnums::MAIN_WINDOW_ID);
@@ -632,7 +634,7 @@ public:
 	static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index);
 	static String get_captured_timestamp_name(uint32_t p_index);
 
-	static uint64_t limit_get(Limit p_limit);
+	static uint64_t limit_get(RDC::Limit p_limit);
 	static uint64_t get_memory_usage(MemoryType p_type);
 	static String get_perf_report();
 	static String get_device_vendor_name();
@@ -641,9 +643,9 @@ public:
 	static String get_device_api_name();
 	static String get_device_api_version();
 	static String get_device_pipeline_cache_uuid();
-	static DriverWorkarounds get_driver_workarounds();
+	static RDC::DriverWorkarounds get_driver_workarounds();
 	static uint64_t get_driver_resource(
-		DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
+		RDC::DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
 	static String get_driver_and_device_memory_report();
 	static String get_tracked_object_name(uint32_t p_type_index);
 	static uint64_t get_tracked_object_type_count();
@@ -729,10 +731,10 @@ private:
 		};
 
 		RDD::TextureID driver_id;
-		TextureType type = TEXTURE_TYPE_MAX;
-		DataFormat format = DATA_FORMAT_MAX;
-		TextureSamples samples = TEXTURE_SAMPLES_MAX;
-		TextureSliceType slice_type = TEXTURE_SLICE_MAX;
+		RDC::TextureType type = RDC::TEXTURE_TYPE_MAX;
+		RDC::DataFormat format = RDC::DATA_FORMAT_MAX;
+		RDC::TextureSamples samples = RDC::TEXTURE_SAMPLES_MAX;
+		RDC::TextureSliceType slice_type = RDC::TEXTURE_SLICE_MAX;
 		Rect2i slice_rect;
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -743,7 +745,7 @@ private:
 		uint32_t base_mipmap = 0;
 		uint32_t base_layer = 0;
 
-		Vector<DataFormat> allowed_shared_formats;
+		Vector<RDC::DataFormat> allowed_shared_formats;
 		bool is_resolve_buffer = false;
 		bool is_discardable = false;
 		bool is_subsampled = false;
@@ -772,9 +774,9 @@ private:
 			return r;
 		}
 
-		TextureFormat texture_format() const
+		RDC::TextureFormat texture_format() const
 		{
-			TextureFormat tf;
+			RDC::TextureFormat tf;
 			tf.format = format;
 			tf.width = width;
 			tf.height = height;
@@ -814,7 +816,7 @@ private:
 		uint32_t height = 0;
 		uint32_t depth = 0;
 		uint32_t mipmaps = 0;
-		RDD::DataFormat format = RDD::DATA_FORMAT_MAX;
+		RDC::DataFormat format = RDC::DATA_FORMAT_MAX;
 	};
 
 	static RDG::ResourceUsage _vrs_usage_from_method(VRSMethod p_method);
@@ -828,7 +830,7 @@ private:
 		Vector<FramebufferPass> passes;
 		uint32_t view_count = 1;
 		VRSMethod vrs_method = VRS_METHOD_NONE;
-		int32_t vrs_attachment = ATTACHMENT_UNUSED;
+		int32_t vrs_attachment = RDC::ATTACHMENT_UNUSED;
 		Size2i vrs_texel_size;
 
 		bool operator<(const FramebufferFormatKey& p_key) const
@@ -942,7 +944,7 @@ private:
 		VectorView<RDD::AttachmentLoadOp> p_load_ops,
 		VectorView<RDD::AttachmentStoreOp> p_store_ops, uint32_t p_view_count = 1,
 		VRSMethod p_vrs_method = VRS_METHOD_NONE, int32_t p_vrs_attachment = -1,
-		Size2i p_vrs_texel_size = Size2i(), Vector<TextureSamples>* r_samples = nullptr);
+		Size2i p_vrs_texel_size = Size2i(), Vector<RDC::TextureSamples>* r_samples = nullptr);
 	static RDD::RenderPassID _render_pass_create_from_graph(RenderingDeviceDriver* p_driver,
 		VectorView<RDD::AttachmentLoadOp> p_load_ops,
 		VectorView<RDD::AttachmentStoreOp> p_store_ops, void* p_user_data);
@@ -951,7 +953,7 @@ private:
 	{
 		const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E;
 		RDD::RenderPassID render_pass;
-		Vector<TextureSamples> pass_samples;
+		Vector<RDC::TextureSamples> pass_samples;
 		uint32_t view_count = 1;
 	};
 
@@ -969,7 +971,7 @@ private:
 
 	struct VertexDescriptionKey
 	{
-		Vector<VertexAttribute> vertex_formats;
+		Vector<RDC::VertexAttribute> vertex_formats;
 
 		bool operator==(const VertexDescriptionKey& p_key) const
 		{
@@ -978,11 +980,11 @@ private:
 			if (vdc != vdck) {
 				return false;
 			}
-			const VertexAttribute* a_ptr = vertex_formats.ptr();
-			const VertexAttribute* b_ptr = p_key.vertex_formats.ptr();
+			const RDC::VertexAttribute* a_ptr = vertex_formats.ptr();
+			const RDC::VertexAttribute* b_ptr = p_key.vertex_formats.ptr();
 			for (int i = 0; i < vdc; i++) {
-				const VertexAttribute& a = a_ptr[i];
-				const VertexAttribute& b = b_ptr[i];
+				const RDC::VertexAttribute& a = a_ptr[i];
+				const RDC::VertexAttribute& b = b_ptr[i];
 				if (a.location != b.location || a.offset != b.offset || a.format != b.format ||
 					a.stride != b.stride || a.frequency != b.frequency) {
 					return false;
@@ -995,9 +997,9 @@ private:
 		{
 			int vdc = vertex_formats.size();
 			uint32_t h = hash_murmur3_one_32(vdc);
-			const VertexAttribute* ptr = vertex_formats.ptr();
+			const RDC::VertexAttribute* ptr = vertex_formats.ptr();
 			for (int i = 0; i < vdc; i++) {
-				const VertexAttribute& vd = ptr[i];
+				const RDC::VertexAttribute& vd = ptr[i];
 				h = hash_murmur3_one_32(vd.location, h);
 				h = hash_murmur3_one_32(vd.offset, h);
 				h = hash_murmur3_one_32(vd.format, h);
@@ -1018,8 +1020,8 @@ private:
 
 	struct VertexDescriptionCache
 	{
-		Vector<VertexAttribute> vertex_formats;
-		VertexAttributeBindingsMap bindings;
+		Vector<RDC::VertexAttribute> vertex_formats;
+		RDC::VertexAttributeBindingsMap bindings;
 		RDD::VertexFormatID driver_id;
 	};
 
@@ -1041,7 +1043,7 @@ private:
 	{
 		uint32_t max_index = 0;
 		uint32_t index_count = 0;
-		IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
+		RDC::IndexBufferFormat format = RDC::INDEX_BUFFER_FORMAT_UINT16;
 		bool supports_restart_indices = false;
 	};
 
@@ -1052,7 +1054,7 @@ private:
 		RDG::ResourceTracker* draw_tracker = nullptr;
 		uint32_t offset = 0;
 		uint32_t indices = 0;
-		IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
+		RDC::IndexBufferFormat format = RDC::INDEX_BUFFER_FORMAT_UINT16;
 		bool supports_restart_indices = false;
 		int32_t transfer_worker_index = -1;
 		uint64_t transfer_worker_operation = 0;
@@ -1062,7 +1064,7 @@ private:
 
 	struct UniformSetFormat
 	{
-		Vector<ShaderUniform> uniforms;
+		Vector<RDC::ShaderUniform> uniforms;
 
 		_FORCE_INLINE_ bool operator<(const UniformSetFormat& p_other) const
 		{
@@ -1081,7 +1083,7 @@ private:
 		}
 	};
 
-	struct Shader : public ShaderReflection
+	struct Shader : public RDC::ShaderReflection
 	{
 		String name;
 		RDD::ShaderID driver_id;
@@ -1187,7 +1189,7 @@ private:
 	struct AccelerationStructure
 	{
 		RDD::AccelerationStructureID driver_id;
-		RDD::AccelerationStructureType type = {};
+		RDC::AccelerationStructureType type = {};
 		RDG::ResourceTracker* draw_tracker = nullptr;
 		HashSet<RID> acceleration_structure_dependencies;
 		bool invalidated = true;
@@ -1267,7 +1269,7 @@ private:
 		struct Validation
 		{
 			uint32_t dynamic_state = 0;
-			VertexFormatID vertex_format = INVALID_ID;
+			VertexFormatID vertex_format = RDC::INVALID_ID;
 			uint32_t vertex_array_size = 0;
 			uint32_t vertex_max_instances_allowed = 0xFFFFFFFF;
 			bool index_buffer_uses_restart_indices = false;
@@ -1278,7 +1280,7 @@ private:
 			Vector<RID> set_rids;
 			bool pipeline_active = false;
 			uint32_t pipeline_dynamic_state = 0;
-			VertexFormatID pipeline_vertex_format = INVALID_ID;
+			VertexFormatID pipeline_vertex_format = RDC::INVALID_ID;
 			RID pipeline_shader;
 			bool pipeline_uses_restart_indices = false;
 			uint32_t pipeline_primitive_divisor = 0;
@@ -1534,7 +1536,7 @@ private:
 		uint32_t texture_download_region_size_px = 0;
 
 		VRSMethod vrs_method = VRS_METHOD_NONE;
-		DataFormat vrs_format = DATA_FORMAT_MAX;
+		RDC::DataFormat vrs_format = RDC::DATA_FORMAT_MAX;
 		Size2i vrs_texel_size;
 
 		RBMap<FramebufferFormatKey, FramebufferFormatID> framebuffer_format_cache;
@@ -1573,7 +1575,7 @@ private:
 		DrawList draw_list;
 		uint32_t draw_list_subpass_count = 0;
 #ifdef DEBUG_ENABLED
-		FramebufferFormatID draw_list_framebuffer_format = INVALID_ID;
+		FramebufferFormatID draw_list_framebuffer_format = RDC::INVALID_ID;
 #endif
 		uint32_t draw_list_current_subpass = 0;
 		LocalVector<RID> draw_list_bound_textures;

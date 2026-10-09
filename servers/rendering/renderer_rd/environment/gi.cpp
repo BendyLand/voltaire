@@ -37,7 +37,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -105,14 +105,14 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 		voxel_gi->data_buffer_size = p_data_cells.size();
 
 		if (p_distance_field.size()) {
-			RD::TextureFormat tf;
-			tf.format = RD::DATA_FORMAT_R8_UNORM;
+			RDC::TextureFormat tf;
+			tf.format = RDC::DATA_FORMAT_R8_UNORM;
 			tf.width = voxel_gi->octree_size.x;
 			tf.height = voxel_gi->octree_size.y;
 			tf.depth = voxel_gi->octree_size.z;
-			tf.texture_type = RD::TEXTURE_TYPE_3D;
-			tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT |
-							RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+			tf.texture_type = RDC::TEXTURE_TYPE_3D;
+			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT |
+							RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 			Vector<Vector<uint8_t>> s;
 			s.push_back(p_distance_field);
 			voxel_gi->sdf_texture = RD::texture_create(tf, RD::TextureView(), s);
@@ -429,7 +429,7 @@ Dependency* GI::voxel_gi_get_dependency(RID p_voxel_gi) const
 
 void GI::sdfgi_reset() { sdfgi_current_version++; }
 
-static RID create_clear_texture(const RD::TextureFormat& p_format, const String& p_name)
+static RID create_clear_texture(const RDC::TextureFormat& p_format, const String& p_name)
 {
 	RID texture = RD::texture_create(p_format, RD::TextureView());
 	ERR_FAIL_COND_V_MSG(texture.is_null(), RID(), String("Cannot create texture: ") + p_name);
@@ -742,7 +742,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 		c.exposure_normalization = 1.0;
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure_normalization =
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			c.exposure_normalization =
 				exposure_normalization / cascades[i].baked_exposure_normalization;
@@ -769,7 +769,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			Transform3D light_transform =
 				light_storage->light_instance_get_base_transform(light_instance);
 
-			if (RSG::light_storage->light_directional_get_sky_mode(light) ==
+			if (RS::light_storage->light_directional_get_sky_mode(light) ==
 				RSE::LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY) {
 				continue;
 			}
@@ -780,27 +780,27 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].direction[0] = dir.x;
 			lights[idx].direction[1] = dir.y;
 			lights[idx].direction[2] = dir.z;
-			Color color = RSG::light_storage->light_get_color(light);
+			Color color = RS::light_storage->light_get_color(light);
 			color = color.srgb_to_linear();
 			lights[idx].color[0] = color.r;
 			lights[idx].color[1] = color.g;
 			lights[idx].color[2] = color.b;
 			lights[idx].type = RSE::LIGHT_DIRECTIONAL;
 			lights[idx].energy =
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
 			if (RendererSceneRenderRD::is_using_physical_light_units()) {
 				lights[idx].energy *=
-					RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
+					RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
 			}
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
-			lights[idx].has_shadow = RSG::light_storage->light_has_shadow(light);
+			lights[idx].has_shadow = RS::light_storage->light_has_shadow(light);
 
 			idx++;
 		}
@@ -824,7 +824,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			Transform3D light_transform =
 				light_storage->light_instance_get_base_transform(light_instance);
 
-			uint32_t max_sdfgi_cascade = RSG::light_storage->light_get_max_sdfgi_cascade(light);
+			uint32_t max_sdfgi_cascade = RS::light_storage->light_get_max_sdfgi_cascade(light);
 			if (i > max_sdfgi_cascade) {
 				continue;
 			}
@@ -834,7 +834,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			}
 
 			Vector3 dir = -light_transform.basis.get_column(Vector3::AXIS_Z);
-			Vector2 area_size = RSG::light_storage->light_area_get_size(light);
+			Vector2 area_size = RS::light_storage->light_area_get_size(light);
 			// faster to not do this here
 			// dir.y *= y_mult;
 			// dir.normalize();
@@ -846,19 +846,19 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].position[0] = pos.x;
 			lights[idx].position[1] = pos.y;
 			lights[idx].position[2] = pos.z;
-			Color color = RSG::light_storage->light_get_color(light);
+			Color color = RS::light_storage->light_get_color(light);
 			color = color.srgb_to_linear();
 			lights[idx].color[0] = color.r;
 			lights[idx].color[1] = color.g;
 			lights[idx].color[2] = color.b;
-			lights[idx].type = RSG::light_storage->light_get_type(light);
+			lights[idx].type = RS::light_storage->light_get_type(light);
 
 			lights[idx].energy =
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
 			if (RendererSceneRenderRD::is_using_physical_light_units()) {
 				lights[idx].energy *=
-					RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
+					RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
 
 				// Convert from Luminous Power to Luminous Intensity
 				if (lights[idx].type == RSE::LIGHT_OMNI) {
@@ -874,24 +874,24 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
-			lights[idx].has_shadow = RSG::light_storage->light_has_shadow(light);
+			lights[idx].has_shadow = RS::light_storage->light_has_shadow(light);
 			lights[idx].attenuation =
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
-			lights[idx].radius = RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_RANGE);
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
+			lights[idx].radius = RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_RANGE);
 			lights[idx].cos_spot_angle = Math::cos(Math::deg_to_rad(
-				RSG::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
-			lights[idx].inv_spot_attenuation = 1.0f / RSG::light_storage->light_get_param(
+				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
+			lights[idx].inv_spot_attenuation = 1.0f / RS::light_storage->light_get_param(
 														  light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
 				Vector3 area_vec_b = light_transform.basis.get_column(1).normalized() * area_size.y;
 				Rect2 proj_rect = texture_storage->area_light_atlas_get_texture_rect(
-					RSG::light_storage->light_area_get_texture(light));
+					RS::light_storage->light_area_get_texture(light));
 				lights[idx].area_width[0] = area_vec_a.x;
 				lights[idx].area_width[1] = area_vec_a.y;
 				lights[idx].area_width[2] = area_vec_a.z;
@@ -911,7 +911,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				lights[idx].inv_spot_attenuation =
 					1.0f / (lights[idx].radius + area_size.length() / 2.0f); // center range
 
-				if (RSG::light_storage->light_area_get_normalize_energy(light)) {
+				if (RS::light_storage->light_area_get_normalize_energy(light)) {
 					// normalization to make larger lights output same amount of light as smaller
 					// lights with same energy
 					float surface_area = area_size.x * area_size.y;
@@ -996,21 +996,21 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	Vector<RD::Uniform> uniforms;
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 1;
 		u.append_id(gi->voxel_gi_get_data_buffer(probe));
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 2;
 		u.append_id(texture);
 		uniforms.push_back(u);
 	}
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		u.binding = 3;
 		u.append_id(material_storage->sampler_rd_get_default(
 			RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
@@ -1038,7 +1038,7 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	}
 	RD::draw_list_bind_render_pipeline(p_draw_list,
 		gi->voxel_gi_debug_shader_version_pipelines[voxel_gi_debug_pipeline].get_render_pipeline(
-			RD::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
+			RDC::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
 	RD::draw_list_bind_uniform_set(p_draw_list, gi->voxel_gi_debug_uniform_set, 0);
 	RD::draw_list_set_push_constant(
 		p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));
@@ -1195,7 +1195,7 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 				gipd.exposure_normalization = 1.0;
 				if (p_render_data->camera_attributes.is_valid()) {
 					float exposure_normalization =
-						RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 					gipd.exposure_normalization =
 						exposure_normalization /

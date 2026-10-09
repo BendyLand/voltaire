@@ -37,7 +37,7 @@
 #include "scene/gui/foldable_container.h"
 #include "scene/gui/subviewport_container.h"
 #include "scene/main/viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Camera3DEditor::Camera3DEditor()
 {

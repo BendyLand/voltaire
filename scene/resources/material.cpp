@@ -37,7 +37,7 @@
 #include "material.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void Material::set_next_pass(const Ref<Material>& p_pass)
 {
@@ -101,8 +101,8 @@ Material::Material() { render_priority = 0; }
 Material::~Material()
 {
 	if (material.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(material);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(material);
 	}
 }
 

@@ -39,116 +39,116 @@ using namespace RendererRD;
 #define wcscpy_s wcscpy
 #endif
 
-static RD::TextureType ffx_resource_type_to_rd_texture_type(FfxResourceType p_type)
+static RDC::TextureType ffx_resource_type_to_rd_texture_type(FfxResourceType p_type)
 {
 	switch (p_type) {
 	case FFX_RESOURCE_TYPE_TEXTURE1D:
-		return RD::TEXTURE_TYPE_1D;
+		return RDC::TEXTURE_TYPE_1D;
 	case FFX_RESOURCE_TYPE_TEXTURE2D:
-		return RD::TEXTURE_TYPE_2D;
+		return RDC::TEXTURE_TYPE_2D;
 	case FFX_RESOURCE_TYPE_TEXTURE3D:
-		return RD::TEXTURE_TYPE_3D;
+		return RDC::TEXTURE_TYPE_3D;
 	default:
-		return RD::TEXTURE_TYPE_MAX;
+		return RDC::TEXTURE_TYPE_MAX;
 	}
 }
 
-static FfxResourceType rd_texture_type_to_ffx_resource_type(RD::TextureType p_type)
+static FfxResourceType rd_texture_type_to_ffx_resource_type(RDC::TextureType p_type)
 {
 	switch (p_type) {
-	case RD::TEXTURE_TYPE_1D:
+	case RDC::TEXTURE_TYPE_1D:
 		return FFX_RESOURCE_TYPE_TEXTURE1D;
-	case RD::TEXTURE_TYPE_2D:
+	case RDC::TEXTURE_TYPE_2D:
 		return FFX_RESOURCE_TYPE_TEXTURE2D;
-	case RD::TEXTURE_TYPE_3D:
+	case RDC::TEXTURE_TYPE_3D:
 		return FFX_RESOURCE_TYPE_TEXTURE3D;
 	default:
 		return FFX_RESOURCE_TYPE_BUFFER;
 	}
 }
 
-static RD::DataFormat ffx_surface_format_to_rd_format(FfxSurfaceFormat p_format)
+static RDC::DataFormat ffx_surface_format_to_rd_format(FfxSurfaceFormat p_format)
 {
 	switch (p_format) {
 	case FFX_SURFACE_FORMAT_R32G32B32A32_TYPELESS:
-		return RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		return RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 	case FFX_SURFACE_FORMAT_R32G32B32A32_FLOAT:
-		return RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		return RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 	case FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT:
-		return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 	case FFX_SURFACE_FORMAT_R16G16B16A16_UNORM:
-		return RD::DATA_FORMAT_R16G16B16A16_UNORM;
+		return RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 	case FFX_SURFACE_FORMAT_R32G32_FLOAT:
-		return RD::DATA_FORMAT_R32G32_SFLOAT;
+		return RDC::DATA_FORMAT_R32G32_SFLOAT;
 	case FFX_SURFACE_FORMAT_R32_UINT:
-		return RD::DATA_FORMAT_R32_UINT;
+		return RDC::DATA_FORMAT_R32_UINT;
 	case FFX_SURFACE_FORMAT_R8G8B8A8_TYPELESS:
-		return RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		return RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 	case FFX_SURFACE_FORMAT_R8G8B8A8_UNORM:
-		return RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		return RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 	case FFX_SURFACE_FORMAT_R11G11B10_FLOAT:
-		return RD::DATA_FORMAT_B10G11R11_UFLOAT_PACK32;
+		return RDC::DATA_FORMAT_B10G11R11_UFLOAT_PACK32;
 	case FFX_SURFACE_FORMAT_R16G16_FLOAT:
-		return RD::DATA_FORMAT_R16G16_SFLOAT;
+		return RDC::DATA_FORMAT_R16G16_SFLOAT;
 	case FFX_SURFACE_FORMAT_R16G16_UINT:
-		return RD::DATA_FORMAT_R16G16_UINT;
+		return RDC::DATA_FORMAT_R16G16_UINT;
 	case FFX_SURFACE_FORMAT_R16_FLOAT:
-		return RD::DATA_FORMAT_R16_SFLOAT;
+		return RDC::DATA_FORMAT_R16_SFLOAT;
 	case FFX_SURFACE_FORMAT_R16_UINT:
-		return RD::DATA_FORMAT_R16_UINT;
+		return RDC::DATA_FORMAT_R16_UINT;
 	case FFX_SURFACE_FORMAT_R16_UNORM:
-		return RD::DATA_FORMAT_R16_UNORM;
+		return RDC::DATA_FORMAT_R16_UNORM;
 	case FFX_SURFACE_FORMAT_R16_SNORM:
-		return RD::DATA_FORMAT_R16_SNORM;
+		return RDC::DATA_FORMAT_R16_SNORM;
 	case FFX_SURFACE_FORMAT_R8_UNORM:
-		return RD::DATA_FORMAT_R8_UNORM;
+		return RDC::DATA_FORMAT_R8_UNORM;
 	case FFX_SURFACE_FORMAT_R8_UINT:
-		return RD::DATA_FORMAT_R8_UINT;
+		return RDC::DATA_FORMAT_R8_UINT;
 	case FFX_SURFACE_FORMAT_R8G8_UNORM:
-		return RD::DATA_FORMAT_R8G8_UNORM;
+		return RDC::DATA_FORMAT_R8G8_UNORM;
 	case FFX_SURFACE_FORMAT_R32_FLOAT:
-		return RD::DATA_FORMAT_R32_SFLOAT;
+		return RDC::DATA_FORMAT_R32_SFLOAT;
 	default:
-		return RD::DATA_FORMAT_MAX;
+		return RDC::DATA_FORMAT_MAX;
 	}
 }
 
-static FfxSurfaceFormat rd_format_to_ffx_surface_format(RD::DataFormat p_format)
+static FfxSurfaceFormat rd_format_to_ffx_surface_format(RDC::DataFormat p_format)
 {
 	switch (p_format) {
-	case RD::DATA_FORMAT_R32G32B32A32_SFLOAT:
+	case RDC::DATA_FORMAT_R32G32B32A32_SFLOAT:
 		return FFX_SURFACE_FORMAT_R32G32B32A32_FLOAT;
-	case RD::DATA_FORMAT_R16G16B16A16_SFLOAT:
+	case RDC::DATA_FORMAT_R16G16B16A16_SFLOAT:
 		return FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT;
-	case RD::DATA_FORMAT_R16G16B16A16_UNORM:
+	case RDC::DATA_FORMAT_R16G16B16A16_UNORM:
 		return FFX_SURFACE_FORMAT_R16G16B16A16_UNORM;
-	case RD::DATA_FORMAT_R32G32_SFLOAT:
+	case RDC::DATA_FORMAT_R32G32_SFLOAT:
 		return FFX_SURFACE_FORMAT_R32G32_FLOAT;
-	case RD::DATA_FORMAT_R32_UINT:
+	case RDC::DATA_FORMAT_R32_UINT:
 		return FFX_SURFACE_FORMAT_R32_UINT;
-	case RD::DATA_FORMAT_R8G8B8A8_UNORM:
+	case RDC::DATA_FORMAT_R8G8B8A8_UNORM:
 		return FFX_SURFACE_FORMAT_R8G8B8A8_UNORM;
-	case RD::DATA_FORMAT_B10G11R11_UFLOAT_PACK32:
+	case RDC::DATA_FORMAT_B10G11R11_UFLOAT_PACK32:
 		return FFX_SURFACE_FORMAT_R11G11B10_FLOAT;
-	case RD::DATA_FORMAT_R16G16_SFLOAT:
+	case RDC::DATA_FORMAT_R16G16_SFLOAT:
 		return FFX_SURFACE_FORMAT_R16G16_FLOAT;
-	case RD::DATA_FORMAT_R16G16_UINT:
+	case RDC::DATA_FORMAT_R16G16_UINT:
 		return FFX_SURFACE_FORMAT_R16G16_UINT;
-	case RD::DATA_FORMAT_R16_SFLOAT:
+	case RDC::DATA_FORMAT_R16_SFLOAT:
 		return FFX_SURFACE_FORMAT_R16_FLOAT;
-	case RD::DATA_FORMAT_R16_UINT:
+	case RDC::DATA_FORMAT_R16_UINT:
 		return FFX_SURFACE_FORMAT_R16_UINT;
-	case RD::DATA_FORMAT_R16_UNORM:
+	case RDC::DATA_FORMAT_R16_UNORM:
 		return FFX_SURFACE_FORMAT_R16_UNORM;
-	case RD::DATA_FORMAT_R16_SNORM:
+	case RDC::DATA_FORMAT_R16_SNORM:
 		return FFX_SURFACE_FORMAT_R16_SNORM;
-	case RD::DATA_FORMAT_R8_UNORM:
+	case RDC::DATA_FORMAT_R8_UNORM:
 		return FFX_SURFACE_FORMAT_R8_UNORM;
-	case RD::DATA_FORMAT_R8_UINT:
+	case RDC::DATA_FORMAT_R8_UINT:
 		return FFX_SURFACE_FORMAT_R8_UINT;
-	case RD::DATA_FORMAT_R8G8_UNORM:
+	case RDC::DATA_FORMAT_R8G8_UNORM:
 		return FFX_SURFACE_FORMAT_R8G8_UNORM;
-	case RD::DATA_FORMAT_R32_SFLOAT:
+	case RDC::DATA_FORMAT_R32_SFLOAT:
 		return FFX_SURFACE_FORMAT_R32_FLOAT;
 	default:
 		return FFX_SURFACE_FORMAT_UNKNOWN;
@@ -157,16 +157,16 @@ static FfxSurfaceFormat rd_format_to_ffx_surface_format(RD::DataFormat p_format)
 
 static uint32_t ffx_usage_to_rd_usage_flags(uint32_t p_flags)
 {
-	uint32_t ret = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
+	uint32_t ret = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
 
 	if (p_flags & FFX_RESOURCE_USAGE_RENDERTARGET) {
-		ret |= RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		ret |= RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
 
 	if (p_flags & FFX_RESOURCE_USAGE_UAV) {
-		ret |= RD::TEXTURE_USAGE_STORAGE_BIT;
-		ret |= RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
-		ret |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+		ret |= RDC::TEXTURE_USAGE_STORAGE_BIT;
+		ret |= RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+		ret |= RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	}
 
 	return ret;
@@ -228,7 +228,7 @@ static FfxErrorCode create_resource_rd(FfxFsr2Interface* p_backend_interface,
 		initial_data.push_back(byte_array);
 	}
 
-	RD::TextureFormat texture_format;
+	RDC::TextureFormat texture_format;
 	texture_format.texture_type = ffx_resource_type_to_rd_texture_type(res_desc.type);
 	texture_format.format = ffx_surface_format_to_rd_format(res_desc.format);
 	texture_format.usage_bits = ffx_usage_to_rd_usage_flags(p_create_resource_description->usage);
@@ -404,7 +404,7 @@ static FfxResource get_resource_rd(RID* p_rid, const wchar_t* p_name)
 
 	wcscpy_s(res.name, p_name);
 
-	RD::TextureFormat texture_format = RD::texture_get_format(*p_rid);
+	RDC::TextureFormat texture_format = RD::texture_get_format(*p_rid);
 	res.description.type = rd_texture_type_to_ffx_resource_type(texture_format.texture_type);
 	res.description.format = rd_format_to_ffx_surface_format(texture_format.format);
 	res.description.width = texture_format.width;
@@ -413,7 +413,7 @@ static FfxResource get_resource_rd(RID* p_rid, const wchar_t* p_name)
 	res.description.mipCount = texture_format.mipmaps;
 	res.description.flags = FFX_RESOURCE_FLAGS_NONE;
 	res.resource = reinterpret_cast<void*>(p_rid);
-	res.isDepth = texture_format.usage_bits & RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	res.isDepth = texture_format.usage_bits & RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	return res;
 }
@@ -427,7 +427,7 @@ FSR2Effect::FSR2Effect()
 	capabilities.waveLaneCountMin = 32;
 	capabilities.waveLaneCountMax = 32;
 	capabilities.fp16Supported =
-		RD::has_feature(RD::Features::SUPPORTS_HALF_FLOAT);
+		RD::has_feature(RDC::Features::SUPPORTS_HALF_FLOAT);
 	capabilities.raytracingSupported = false;
 
 	String general_defines = "\n#define FFX_GPU\n"
@@ -637,20 +637,20 @@ FSR2Effect::FSR2Effect()
 			FfxResourceBinding{11, 0, L"cbFSR2"}, FfxResourceBinding{12, 0, L"cbGenerateReactive"}};
 	}
 
-	RD::SamplerState state;
-	state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
-	state.min_filter = RD::SAMPLER_FILTER_NEAREST;
-	state.repeat_u = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
-	state.repeat_v = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
-	state.repeat_w = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+	RDC::SamplerState state;
+	state.mag_filter = RDC::SAMPLER_FILTER_NEAREST;
+	state.min_filter = RDC::SAMPLER_FILTER_NEAREST;
+	state.repeat_u = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+	state.repeat_v = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+	state.repeat_w = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
 	state.min_lod = -1000.0f;
 	state.max_lod = 1000.0f;
 	state.anisotropy_max = 1.0;
 	device.point_clamp_sampler = RD::sampler_create(state);
 	ERR_FAIL_COND(device.point_clamp_sampler.is_null());
 
-	state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
-	state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+	state.mag_filter = RDC::SAMPLER_FILTER_LINEAR;
+	state.min_filter = RDC::SAMPLER_FILTER_LINEAR;
 	device.linear_clamp_sampler = RD::sampler_create(state);
 	ERR_FAIL_COND(device.linear_clamp_sampler.is_null());
 }

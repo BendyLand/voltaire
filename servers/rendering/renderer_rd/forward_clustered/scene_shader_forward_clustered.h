@@ -216,7 +216,7 @@ public:
 		{
 			RD::VertexFormatID vertex_format_id;
 			RD::FramebufferFormatID framebuffer_format_id;
-			RD::PolygonCullMode cull_mode = RD::POLYGON_CULL_MAX;
+			RDC::PolygonCullMode cull_mode = RDC::POLYGON_CULL_MAX;
 			RSE::PrimitiveType primitive_type = RSE::PRIMITIVE_MAX;
 			PipelineVersion version = PipelineVersion::PIPELINE_VERSION_MAX;
 			uint32_t color_pass_flags = 0;
@@ -351,7 +351,7 @@ public:
 			bool p_ubershader) const;
 		uint64_t get_vertex_input_mask(
 			PipelineVersion p_pipeline_version, uint32_t p_color_pass_flags, bool p_ubershader);
-		RD::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
+		RDC::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
 		bool is_valid() const;
 
 		SelfList<ShaderData> shader_list_element;

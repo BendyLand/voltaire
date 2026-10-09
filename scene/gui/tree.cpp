@@ -45,7 +45,7 @@
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tree.compat.inc"
 #include "tree.h"
 
@@ -3335,12 +3335,12 @@ void Tree::item_changed(int p_column, TreeItem* p_item) {}
 Tree::~Tree()
 {
 	memdelete(root);
-	RenderingServer::free_rid(drop_indicator_ci);
-	RenderingServer::free_rid(content_ci);
-	RenderingServer::free_rid(custom_ci);
-	RenderingServer::free_rid(header_ci);
-	RenderingServer::free_rid(stylebox_ci);
-	RenderingServer::free_rid(last_sticky_ci);
+	Renderer::free_rid(drop_indicator_ci);
+	Renderer::free_rid(content_ci);
+	Renderer::free_rid(custom_ci);
+	Renderer::free_rid(header_ci);
+	Renderer::free_rid(stylebox_ci);
+	Renderer::free_rid(last_sticky_ci);
 }
 
 void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}

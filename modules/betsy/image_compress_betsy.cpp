@@ -41,7 +41,7 @@
 #include "servers/rendering/rendering_context_driver.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(VULKAN_ENABLED)
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
@@ -65,16 +65,16 @@ static const BetsyShaderType FORMAT_TO_TYPE[BETSY_FORMAT_MAX] = {
 	BETSY_SHADER_BC6_UNSIGNED,
 };
 
-static const RD::DataFormat BETSY_TO_RD_FORMAT[BETSY_FORMAT_MAX] = {
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32_UINT,
-	RD::DATA_FORMAT_R32G32B32A32_UINT,
-	RD::DATA_FORMAT_R32G32B32A32_UINT,
+static const RDC::DataFormat BETSY_TO_RD_FORMAT[BETSY_FORMAT_MAX] = {
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32B32A32_UINT,
+	RDC::DATA_FORMAT_R32G32B32A32_UINT,
 };
 
 static const Image::Format BETSY_TO_IMAGE_FORMAT[BETSY_FORMAT_MAX] = {
@@ -93,10 +93,7 @@ void BetsyCompressor::init() {}
 
 void BetsyCompressor::finish() {}
 
-Error BetsyCompressor::_compress(BetsyFormat p_format, Image* r_img)
-{
-	return OK;
-}
+Error BetsyCompressor::_compress(BetsyFormat p_format, Image* r_img) { return OK; }
 
 void BetsyCompressor::_thread_exit()
 {
@@ -130,93 +127,74 @@ void BetsyCompressor::_thread_exit()
 
 static int get_next_multiple(int n, int m) { return n + (m - (n % m)); }
 
-static Error get_src_texture_format(Image* r_img, RD::DataFormat& r_format, bool& r_is_rgb)
+static Error get_src_texture_format(Image* r_img, RDC::DataFormat& r_format, bool& r_is_rgb)
 {
 	r_is_rgb = false;
 
 	switch (r_img->get_format()) {
 	case Image::FORMAT_L8:
 		r_img->convert(Image::FORMAT_RGBA8);
-		r_format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 		break;
-
 	case Image::FORMAT_LA8:
 		r_img->convert(Image::FORMAT_RGBA8);
-		r_format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 		break;
-
 	case Image::FORMAT_R8:
-		r_format = RD::DATA_FORMAT_R8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8_UNORM;
 		break;
-
 	case Image::FORMAT_RG8:
-		r_format = RD::DATA_FORMAT_R8G8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8G8_UNORM;
 		break;
-
 	case Image::FORMAT_RGB8:
 		r_is_rgb = true;
-		r_format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 		break;
-
 	case Image::FORMAT_RGBA8:
-		r_format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
 		break;
-
 	case Image::FORMAT_RH:
-		r_format = RD::DATA_FORMAT_R16_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R16_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGH:
-		r_format = RD::DATA_FORMAT_R16G16_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R16G16_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGBH:
 		r_is_rgb = true;
-		r_format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGBAH:
-		r_format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
 		break;
-
 	case Image::FORMAT_RF:
-		r_format = RD::DATA_FORMAT_R32_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R32_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGF:
-		r_format = RD::DATA_FORMAT_R32G32_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGBF:
 		r_is_rgb = true;
-		r_format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGBAF:
-		r_format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
 		break;
-
 	case Image::FORMAT_RGBE9995:
-		r_format = RD::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
+		r_format = RDC::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
 		break;
-
 	case Image::FORMAT_R16:
-		r_format = RD::DATA_FORMAT_R16_UNORM;
+		r_format = RDC::DATA_FORMAT_R16_UNORM;
 		break;
-
 	case Image::FORMAT_RG16:
-		r_format = RD::DATA_FORMAT_R16G16_UNORM;
+		r_format = RDC::DATA_FORMAT_R16G16_UNORM;
 		break;
-
 	case Image::FORMAT_RGB16:
 		r_is_rgb = true;
-		r_format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 		break;
-
 	case Image::FORMAT_RGBA16:
-		r_format = RD::DATA_FORMAT_R16G16B16A16_UNORM;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
 		break;
-
 	default: {
 		return ERR_UNAVAILABLE;
 	}
@@ -265,20 +243,16 @@ Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels)
 	case Image::USED_CHANNELS_L:
 		result = betsy->compress(BETSY_FORMAT_BC1, r_img);
 		break;
-
 	case Image::USED_CHANNELS_RGBA:
 	case Image::USED_CHANNELS_LA:
 		result = betsy->compress(BETSY_FORMAT_BC3, r_img);
 		break;
-
 	case Image::USED_CHANNELS_R:
 		result = betsy->compress(BETSY_FORMAT_BC4_UNSIGNED, r_img);
 		break;
-
 	case Image::USED_CHANNELS_RG:
 		result = betsy->compress(BETSY_FORMAT_BC5_UNSIGNED, r_img);
 		break;
-
 	default:
 		break;
 	}

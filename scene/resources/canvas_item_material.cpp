@@ -30,7 +30,7 @@
 
 #include "canvas_item_material.h"
 #include "core/version.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Mutex CanvasItemMaterial::material_mutex;
 SelfList<CanvasItemMaterial>::List CanvasItemMaterial::dirty_materials;
@@ -216,7 +216,7 @@ CanvasItemMaterial::~CanvasItemMaterial()
 {
 	MutexLock lock(material_mutex);
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (shader_map.has(current_key)) {
 		shader_map[current_key].users--;

@@ -31,7 +31,7 @@
 #include "renderer_scene_occlusion_cull.h"
 
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RendererSceneOcclusionCull *RendererSceneOcclusionCull::singleton = nullptr;
 
@@ -51,7 +51,7 @@ void RendererSceneOcclusionCull::HZBuffer::clear() {
 		debug_image.unref();
 	}
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(debug_texture);
 }
 
@@ -117,7 +117,7 @@ void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
 
 void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 	// Keep this up to date as a local to be used for occlusion timers.
-	occlusion_frame = Engine::get_singleton()->get_frames_drawn();
+	occlusion_frame = Engine::get_frames_drawn();
 
 	if (sizes.is_empty()) {
 		return;
@@ -182,7 +182,7 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 	if (debug_texture.is_null()) {
 		debug_texture = RS::texture_2d_create(debug_image);
 	} else {
-		RenderingServer::texture_2d_update(debug_texture, debug_image);
+		Renderer::texture_2d_update(debug_texture, debug_image);
 	}
 
 	return debug_texture;

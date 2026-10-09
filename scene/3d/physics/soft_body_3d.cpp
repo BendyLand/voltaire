@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "scene/3d/physics/physics_body_3d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "soft_body_3d.h"
 
 SoftBodyRenderingServerHandler::SoftBodyRenderingServerHandler() {}
@@ -138,7 +138,7 @@ void SoftBody3D::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			// I have no idea what this is supposed to do, it's really weird
 			// leaving for upcoming PK work on physics
 			// add_change_receptor(this);
@@ -156,7 +156,7 @@ void SoftBody3D::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			_reset_points_offsets();
 			return;
 		}
@@ -166,7 +166,7 @@ void SoftBody3D::_notification(int p_what)
 
 		set_notify_transform(false);
 		// Required to be top level with Transform at center of world in order to modify
-		// RenderingServer only to support custom Transform
+		// Renderer only to support custom Transform
 		set_as_top_level(true);
 		set_transform(Transform3D());
 		set_notify_transform(true);

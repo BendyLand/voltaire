@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_positional_tracker.h"
 #include "xr_server.compat.inc"

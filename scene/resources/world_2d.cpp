@@ -30,7 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "scene/2d/visible_on_screen_notifier_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_2d.h"
 
 #ifndef NAVIGATION_2D_DISABLED
@@ -50,12 +50,12 @@ void World2D::register_viewport(Viewport* p_viewport) { viewports.insert(p_viewp
 
 void World2D::remove_viewport(Viewport* p_viewport) { viewports.erase(p_viewport); }
 
-World2D::World2D() { canvas = RenderingServer::canvas_create(); }
+World2D::World2D() { canvas = Renderer::canvas_create(); }
 
 World2D::~World2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(canvas);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(canvas);
 
 #ifndef NAVIGATION_2D_DISABLED
 	ERR_FAIL_NULL(NavigationServer2D::data);

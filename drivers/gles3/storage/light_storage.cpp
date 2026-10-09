@@ -811,10 +811,10 @@ void LightStorage::reflection_atlas_set_size(
 				}
 			}
 
-			GLES3::Utilities::get_singleton()->texture_free_data(ra->reflections[i].color);
+			GLES3::Utilities::texture_free_data(ra->reflections[i].color);
 			ra->reflections.write[i].color = 0;
 
-			GLES3::Utilities::get_singleton()->texture_free_data(ra->reflections[i].radiance);
+			GLES3::Utilities::texture_free_data(ra->reflections[i].radiance);
 			ra->reflections.write[i].radiance = 0;
 
 			if (ra->reflections[i].owner.is_null()) {
@@ -826,7 +826,7 @@ void LightStorage::reflection_atlas_set_size(
 
 		ra->reflections.clear();
 
-		GLES3::Utilities::get_singleton()->texture_free_data(ra->depth);
+		GLES3::Utilities::texture_free_data(ra->depth);
 		ra->depth = 0;
 	}
 
@@ -967,7 +967,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, atlas->size, atlas->size, 6,
 				0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
 
-			GLES3::Utilities::get_singleton()->texture_allocated_data(
+			GLES3::Utilities::texture_allocated_data(
 				atlas->depth, atlas->size * atlas->size * 6 * 3, "Reflection probe atlas (depth)");
 		}
 
@@ -1013,7 +1013,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 				mipmap_size = MAX(mipmap_size >> 1, 1);
 			}
 
-			GLES3::Utilities::get_singleton()->texture_allocated_data(color, data_size,
+			GLES3::Utilities::texture_allocated_data(color, data_size,
 				String("Reflection probe atlas (") + String::num_int64(i) + String(", color)"));
 
 			// Create a radiance map for this atlas entry
@@ -1046,7 +1046,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, atlas->mipmap_count - 1);
 
 			// Same data size as our color buffer
-			GLES3::Utilities::get_singleton()->texture_allocated_data(radiance, data_size,
+			GLES3::Utilities::texture_allocated_data(radiance, data_size,
 				String("Reflection probe atlas (") + String::num_int64(i) + String(", radiance)"));
 
 			// Create our framebuffers so we can draw to all sides

@@ -81,7 +81,7 @@ void Marker2D::_notification(int p_what)
 		if (!is_inside_tree()) {
 			break;
 		}
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			_draw_cross();
 		}
 	} break;

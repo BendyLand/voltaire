@@ -38,7 +38,7 @@
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 AABB CPUParticles3D::get_aabb() const { return AABB(); }
 
@@ -621,7 +621,7 @@ void CPUParticles3D::_notification(int p_what)
 
 CPUParticles3D::~CPUParticles3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(multimesh);
 }
 

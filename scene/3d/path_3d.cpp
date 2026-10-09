@@ -32,7 +32,7 @@
 #include "path_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Path3D::Path3D()
 {
@@ -47,11 +47,11 @@ Path3D::Path3D()
 Path3D::~Path3D()
 {
 	if (debug_instance.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(debug_mesh->get_rid());
 	}
 }

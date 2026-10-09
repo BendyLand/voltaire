@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "core/math/transform_interpolator.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "skeleton_2d.h"
 
 #ifdef TOOLS_ENABLED
@@ -112,8 +112,8 @@ Bone2D::~Bone2D()
 {
 #ifdef TOOLS_ENABLED
 	if (!editor_gizmo_rid.is_null()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(editor_gizmo_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(editor_gizmo_rid);
 	}
 #endif // TOOLS_ENABLED
 }
@@ -183,7 +183,7 @@ void Skeleton2D::_update_process_mode()
 
 void Skeleton2D::_ensure_update_interpolation_data()
 {
-	uint64_t tick = Engine::get_singleton()->get_physics_frames();
+	uint64_t tick = Engine::get_physics_frames();
 
 	if (_interpolation_data.last_update_physics_tick != tick) {
 		_interpolation_data.xform_prev = _interpolation_data.xform_curr;
@@ -218,7 +218,7 @@ void Skeleton2D::_notification(int p_what)
 	case NOTIFICATION_TRANSFORM_CHANGED: {
 		if (is_physics_interpolated_and_enabled()) {
 			_ensure_update_interpolation_data();
-			if (Engine::get_singleton()->is_in_physics_frame()) {
+			if (Engine::is_in_physics_frame()) {
 				_interpolation_data.xform_curr = get_global_transform();
 			}
 		}
@@ -237,7 +237,7 @@ void Skeleton2D::_notification(int p_what)
 			Transform2D res;
 			TransformInterpolator::interpolate_transform_2d(_interpolation_data.xform_prev,
 				_interpolation_data.xform_curr, res,
-				Engine::get_singleton()->get_physics_interpolation_fraction());
+				Engine::get_physics_interpolation_fraction());
 			RS::skeleton_set_base_transform_2d(skeleton, res);
 		}
 		if (modification_stack.is_valid()) {
@@ -267,7 +267,7 @@ void Skeleton2D::_notification(int p_what)
 
 #ifdef TOOLS_ENABLED
 	case NOTIFICATION_DRAW: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			if (modification_stack.is_valid()) {
 				modification_stack->draw_editor_gizmos();
 			}
@@ -327,7 +327,7 @@ Skeleton2D::Skeleton2D()
 
 Skeleton2D::~Skeleton2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(skeleton);
 }
 

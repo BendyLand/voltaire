@@ -11,7 +11,7 @@
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -46,47 +46,95 @@
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
-RendererCompositor* (*RendererCompositor::_create_func)() = nullptr;
-bool RendererCompositor::low_end = false;
-
-RendererCompositor* RendererCompositor::create()
+Error RendererCompositor::create()
 {
 	if (_create_func != nullptr) {
 		return _create_func();
 	}
 #if defined(RD_ENABLED)
-low_end = false;
-    DisplayServer* ds = DisplayServer::get_singleton();
-    if (ds != nullptr) {
-        Error err = ds->init_rendering_device();
-        ERR_FAIL_COND_V_MSG(err != OK, nullptr, "Failed to initialize RenderingDevice via DisplayServer.");
-    }
-    return memnew(RendererCompositorRD);
+	low_end = false;
+	bind_compositor<RendererCompositorRD>();
+	DisplayServer* ds = DisplayServer::get_singleton();
+	if (ds != nullptr) {
+		Error err = ds->init_rendering_device();
+		ERR_FAIL_COND_V_MSG(
+			err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
+	}
+	RendererRD::MeshStorage::initialize();
+	RendererCompositorRD::initialize();
+	return OK;
 #elif defined(GLES3_ENABLED)
 	low_end = true;
-	return memnew(RasterizerGLES3);
+	bind_compositor<RasterizerGLES3>();
+	GLES3::MeshStorage::initialize();
+	RasterizerGLES3::initialize();
+	return OK;
 #else
 	low_end = true;
-	return memnew(RasterizerDummy);
+	bind_compositor<RasterizerDummy>();
+	RasterizerDummy::initialize();
+	return OK;
 #endif
 }
 
-bool RendererCompositor::is_xr_enabled() { return RendererCompositor::xr_enabled; }
+bool RendererCompositor::is_xr_enabled()
+{
+#ifndef XR_DISABLED
+	return xr_enabled;
+#else
+	return false;
+#endif
+}
 
-uint64_t RendererCompositor::get_frame_number() const { return 0; }
+void RendererCompositorRD::bind_utilities()
+{
+	RendererUtilities::visibility_notifier_allocate =
+		&RendererRD::Utilities::visibility_notifier_allocate;
+	RendererUtilities::visibility_notifier_initialize =
+		&RendererRD::Utilities::visibility_notifier_initialize;
+	RendererUtilities::visibility_notifier_free = &RendererRD::Utilities::visibility_notifier_free;
+	RendererUtilities::visibility_notifier_set_aabb =
+		&RendererRD::Utilities::visibility_notifier_set_aabb;
+	RendererUtilities::visibility_notifier_get_aabb =
+		&RendererRD::Utilities::visibility_notifier_get_aabb;
+	RendererUtilities::visibility_notifier_call = &RendererRD::Utilities::visibility_notifier_call;
 
-bool RendererCompositor::is_opengl() { return false; }
+	RendererUtilities::free = &RendererRD::Utilities::free;
+	RendererUtilities::get_base_type = &RendererRD::Utilities::get_base_type;
+	RendererUtilities::base_update_dependency = &RendererRD::Utilities::base_update_dependency;
 
-void RendererCompositor::gl_end_frame(bool p_swap_buffers) {}
+	RendererUtilities::capture_timestamps_begin = &RendererRD::Utilities::capture_timestamps_begin;
+	RendererUtilities::capture_timestamp = &RendererRD::Utilities::capture_timestamp;
+	RendererUtilities::get_captured_timestamps_count =
+		&RendererRD::Utilities::get_captured_timestamps_count;
+	RendererUtilities::get_captured_timestamps_frame =
+		&RendererRD::Utilities::get_captured_timestamps_frame;
+	RendererUtilities::get_captured_timestamp_gpu_time =
+		&RendererRD::Utilities::get_captured_timestamp_gpu_time;
+	RendererUtilities::get_captured_timestamp_cpu_time =
+		&RendererRD::Utilities::get_captured_timestamp_cpu_time;
+	RendererUtilities::get_captured_timestamp_name =
+		&RendererRD::Utilities::get_captured_timestamp_name;
 
-void RendererCompositor::end_frame(bool p_present) {}
+	RendererUtilities::update_dirty_resources = &RendererRD::Utilities::update_dirty_resources;
+	RendererUtilities::set_debug_generate_wireframes =
+		&RendererRD::Utilities::set_debug_generate_wireframes;
+	RendererUtilities::has_os_feature = &RendererRD::Utilities::has_os_feature;
+	RendererUtilities::update_memory_info = &RendererRD::Utilities::update_memory_info;
 
-void RendererCompositor::finalize() {}
+	RendererUtilities::get_rendering_info = &RendererRD::Utilities::get_rendering_info;
+	RendererUtilities::get_video_adapter_name = &RendererRD::Utilities::get_video_adapter_name;
+	RendererUtilities::get_video_adapter_vendor = &RendererRD::Utilities::get_video_adapter_vendor;
+	RendererUtilities::get_video_adapter_type = &RendererRD::Utilities::get_video_adapter_type;
+	RendererUtilities::get_video_adapter_api_version =
+		&RendererRD::Utilities::get_video_adapter_api_version;
 
-double RendererCompositor::get_frame_delta_time() const { return 0.0; }
-
-double RendererCompositor::get_total_time() const { return 0.0; }
-
-bool RendererCompositor::can_create_resources_async() const { return false; }
+	RendererUtilities::get_maximum_viewport_size =
+		&RendererRD::Utilities::get_maximum_viewport_size;
+	RendererUtilities::get_maximum_shader_varyings =
+		&RendererRD::Utilities::get_maximum_shader_varyings;
+	RendererUtilities::get_maximum_uniform_buffer_size =
+		&RendererRD::Utilities::get_maximum_uniform_buffer_size;
+}
 
 

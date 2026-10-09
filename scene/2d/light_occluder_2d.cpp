@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "core/math/geometry_2d.h"
 #include "light_occluder_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define LINE_GRAB_WIDTH 8
 
@@ -116,13 +116,13 @@ OccluderPolygon2D::OccluderPolygon2D()
 
 OccluderPolygon2D::~OccluderPolygon2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(occ_polygon);
 }
 
 void LightOccluder2D::_physics_interpolated_changed()
 {
-	RenderingServer::canvas_light_occluder_set_interpolated(
+	Renderer::canvas_light_occluder_set_interpolated(
 		occluder, is_physics_interpolated());
 }
 
@@ -185,7 +185,7 @@ LightOccluder2D::LightOccluder2D()
 
 LightOccluder2D::~LightOccluder2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	RS::free_rid(occluder);
 }

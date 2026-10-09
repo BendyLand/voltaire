@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "multimesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef DISABLE_DEPRECATED
 // Kept for compatibility from 3.x to 4.0.
@@ -232,10 +232,10 @@ void MultiMesh::set_mesh(const Ref<Mesh>& p_mesh)
 {
 	mesh = p_mesh;
 	if (mesh.is_valid()) {
-		RenderingServer::multimesh_set_mesh(multimesh, mesh->get_rid());
+		Renderer::multimesh_set_mesh(multimesh, mesh->get_rid());
 	}
 	else {
-		RenderingServer::multimesh_set_mesh(multimesh, RID());
+		Renderer::multimesh_set_mesh(multimesh, RID());
 	}
 }
 
@@ -244,7 +244,7 @@ Ref<Mesh> MultiMesh::get_mesh() const { return mesh; }
 void MultiMesh::set_instance_count(int p_count)
 {
 	ERR_FAIL_COND(p_count < 0);
-	RenderingServer::multimesh_allocate_data(multimesh, p_count,
+	Renderer::multimesh_allocate_data(multimesh, p_count,
 		RSE::MultimeshTransformFormat(transform_format), use_colors, use_custom_data);
 	instance_count = p_count;
 }
@@ -255,7 +255,7 @@ void MultiMesh::set_visible_instance_count(int p_count)
 {
 	ERR_FAIL_COND(p_count < -1);
 	ERR_FAIL_COND(p_count > instance_count);
-	RenderingServer::multimesh_set_visible_instances(multimesh, p_count);
+	Renderer::multimesh_set_visible_instances(multimesh, p_count);
 	visible_instance_count = p_count;
 }
 
@@ -264,7 +264,7 @@ int MultiMesh::get_visible_instance_count() const { return visible_instance_coun
 void MultiMesh::set_physics_interpolation_quality(PhysicsInterpolationQuality p_quality)
 {
 	_physics_interpolation_quality = p_quality;
-	RenderingServer::multimesh_set_physics_interpolation_quality(
+	Renderer::multimesh_set_physics_interpolation_quality(
 		multimesh, (RSE::MultimeshPhysicsInterpolationQuality)p_quality);
 }
 
@@ -276,7 +276,7 @@ void MultiMesh::set_instance_transform(int p_instance, const Transform3D& p_tran
 	ERR_FAIL_COND_MSG(transform_format == TRANSFORM_2D,
 		"Can't set Transform3D on a Multimesh configured to use Transform2D. Ensure that you have "
 		"set the `transform_format` to `TRANSFORM_3D`.");
-	RenderingServer::multimesh_instance_set_transform(
+	Renderer::multimesh_instance_set_transform(
 		multimesh, p_instance, p_transform);
 }
 
@@ -288,7 +288,7 @@ void MultiMesh::set_instance_transform_2d(int p_instance, const Transform2D& p_t
 	ERR_FAIL_COND_MSG(transform_format == TRANSFORM_3D,
 		"Can't set Transform2D on a Multimesh configured to use Transform3D. Ensure that you have "
 		"set the `transform_format` to `TRANSFORM_2D`.");
-	RenderingServer::multimesh_instance_set_transform_2d(
+	Renderer::multimesh_instance_set_transform_2d(
 		multimesh, p_instance, p_transform);
 	emit_changed();
 }
@@ -301,7 +301,7 @@ Transform3D MultiMesh::get_instance_transform(int p_instance) const
 	ERR_FAIL_COND_V_MSG(transform_format == TRANSFORM_2D, Transform3D(),
 		"Can't get Transform3D on a Multimesh configured to use Transform2D. Ensure that you have "
 		"set the `transform_format` to `TRANSFORM_3D`.");
-	return RenderingServer::multimesh_instance_get_transform(
+	return Renderer::multimesh_instance_get_transform(
 		multimesh, p_instance);
 }
 
@@ -313,7 +313,7 @@ Transform2D MultiMesh::get_instance_transform_2d(int p_instance) const
 	ERR_FAIL_COND_V_MSG(transform_format == TRANSFORM_3D, Transform2D(),
 		"Can't get Transform2D on a Multimesh configured to use Transform3D. Ensure that you have "
 		"set the `transform_format` to `TRANSFORM_2D`.");
-	return RenderingServer::multimesh_instance_get_transform_2d(
+	return Renderer::multimesh_instance_get_transform_2d(
 		multimesh, p_instance);
 }
 
@@ -325,7 +325,7 @@ void MultiMesh::set_instance_color(int p_instance, const Color& p_color)
 	ERR_FAIL_COND_MSG(
 		!use_colors, "Can't set instance color on a Multimesh that isn't using colors. Ensure that "
 					 "you have `use_colors` property of this Multimesh set to `true`.");
-	RenderingServer::multimesh_instance_set_color(multimesh, p_instance, p_color);
+	Renderer::multimesh_instance_set_color(multimesh, p_instance, p_color);
 }
 
 Color MultiMesh::get_instance_color(int p_instance) const
@@ -336,7 +336,7 @@ Color MultiMesh::get_instance_color(int p_instance) const
 	ERR_FAIL_COND_V_MSG(!use_colors, Color(),
 		"Can't get instance color on a Multimesh that isn't using colors. Ensure that you have "
 		"`use_colors` property of this Multimesh set to `true`.");
-	return RenderingServer::multimesh_instance_get_color(multimesh, p_instance);
+	return Renderer::multimesh_instance_get_color(multimesh, p_instance);
 }
 
 void MultiMesh::set_instance_custom_data(int p_instance, const Color& p_custom_data)
@@ -347,7 +347,7 @@ void MultiMesh::set_instance_custom_data(int p_instance, const Color& p_custom_d
 	ERR_FAIL_COND_MSG(!use_custom_data,
 		"Can't get instance custom data on a Multimesh that isn't using custom data. Ensure that "
 		"you have `use_custom_data` property of this Multimesh set to `true`.");
-	RenderingServer::multimesh_instance_set_custom_data(
+	Renderer::multimesh_instance_set_custom_data(
 		multimesh, p_instance, p_custom_data);
 }
 
@@ -359,7 +359,7 @@ Color MultiMesh::get_instance_custom_data(int p_instance) const
 	ERR_FAIL_COND_V_MSG(!use_custom_data, Color(),
 		"Can't get instance custom data on a Multimesh that isn't using custom data. Ensure that "
 		"you have `use_custom_data` property of this Multimesh set to `true`.");
-	return RenderingServer::multimesh_instance_get_custom_data(
+	return Renderer::multimesh_instance_get_custom_data(
 		multimesh, p_instance);
 }
 
@@ -368,18 +368,18 @@ void MultiMesh::reset_instance_physics_interpolation(int p_instance)
 	ERR_FAIL_INDEX_MSG(p_instance, instance_count,
 		"Instance index out of bounds. Instance index must be less than `instance_count` and "
 		"greater than or equal to zero.");
-	RenderingServer::multimesh_instance_reset_physics_interpolation(
+	Renderer::multimesh_instance_reset_physics_interpolation(
 		multimesh, p_instance);
 }
 
 void MultiMesh::reset_instances_physics_interpolation()
 {
-	RenderingServer::multimesh_instances_reset_physics_interpolation(multimesh);
+	Renderer::multimesh_instances_reset_physics_interpolation(multimesh);
 }
 
 void MultiMesh::set_physics_interpolated(bool p_interpolated)
 {
-	RenderingServer::multimesh_set_physics_interpolated(multimesh, p_interpolated);
+	Renderer::multimesh_set_physics_interpolated(multimesh, p_interpolated);
 }
 
 void MultiMesh::set_custom_aabb(const AABB& p_custom)
@@ -393,7 +393,7 @@ AABB MultiMesh::get_custom_aabb() const { return custom_aabb; }
 
 AABB MultiMesh::get_aabb() const
 {
-	return RenderingServer::multimesh_get_aabb(multimesh);
+	return Renderer::multimesh_get_aabb(multimesh);
 }
 
 RID MultiMesh::get_rid() const { return multimesh; }
@@ -426,12 +426,12 @@ void MultiMesh::set_transform_format(TransformFormat p_transform_format)
 MultiMesh::TransformFormat MultiMesh::get_transform_format() const { return transform_format; }
 
 
-MultiMesh::MultiMesh() { multimesh = RenderingServer::multimesh_create(); }
+MultiMesh::MultiMesh() { multimesh = Renderer::multimesh_create(); }
 
 MultiMesh::~MultiMesh()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(multimesh);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(multimesh);
 }
 
 

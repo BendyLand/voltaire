@@ -36,7 +36,7 @@
 #include "scene/resources/3d/mesh_library.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/surface_tool.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "core/math/convex_hull.h"
@@ -447,7 +447,7 @@ void GridMap::_update_physics_bodies_collision_properties()
 
 void GridMap::_octant_clean_up(const OctantKey& p_key)
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 #ifndef PHYSICS_3D_DISABLED
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 #endif // PHYSICS_3D_DISABLED
@@ -485,7 +485,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 #ifdef DEBUG_ENABLED
 	if (bake_navigation) {
 		if (g.navigation_debug_edge_connections_instance.is_valid()) {
-			RenderingServer::free_rid(
+			Renderer::free_rid(
 				g.navigation_debug_edge_connections_instance);
 			g.navigation_debug_edge_connections_instance = RID();
 		}
@@ -808,7 +808,7 @@ Vector3 GridMap::_get_offset() const
 
 void GridMap::clear_baked_meshes()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < baked_meshes.size(); i++) {
 		RS::free_rid(baked_meshes[i].instance);
 	}

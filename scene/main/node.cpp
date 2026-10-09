@@ -33,7 +33,7 @@
 #include "scene/resources/environment.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Mesh);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, DisplayServer);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, OS);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Engine);
@@ -1551,7 +1551,7 @@ StringName Node::get_property_store_alias(const StringName& p_property) const { 
 
 bool Node::is_part_of_edited_scene() const
 {
-	return Engine::get_singleton()->is_editor_hint() && is_inside_tree() &&
+	return Engine::is_editor_hint() && is_inside_tree() &&
 		   data.tree->get_edited_scene_root() &&
 		   data.tree->get_edited_scene_root()
 			   ->get_parent() && // Defend against edge cases when creating new scenes and they are

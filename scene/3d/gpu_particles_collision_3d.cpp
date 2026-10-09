@@ -34,7 +34,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/main/viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
 {
@@ -53,7 +53,7 @@ GPUParticlesCollision3D::GPUParticlesCollision3D(RSE::ParticlesCollisionType p_t
 
 GPUParticlesCollision3D::~GPUParticlesCollision3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(collision);
 }
 
@@ -315,7 +315,7 @@ GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_t
 
 GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(collision);
 }
 

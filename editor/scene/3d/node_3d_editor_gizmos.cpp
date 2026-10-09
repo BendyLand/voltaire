@@ -38,7 +38,7 @@
 #include "node_3d_editor_gizmos.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/primitive_meshes.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define HANDLE_HALF_SIZE 9.5
 
@@ -62,7 +62,7 @@ bool EditorNode3DGizmo::is_editable() const
 
 void EditorNode3DGizmo::clear()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
 			RS::free_rid(instances[i].instance);
@@ -516,7 +516,7 @@ void EditorNode3DGizmo::transform()
 
 void EditorNode3DGizmo::free()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	ERR_FAIL_NULL(spatial_node);
 	ERR_FAIL_COND(!valid);
 

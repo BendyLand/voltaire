@@ -38,13 +38,13 @@
 #include "scene/resources/style_box.h"
 #include "scene/resources/texture.h"
 #include "scene/theme/default_theme.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #include "theme_db.h"
 
 void ThemeDB::initialize_theme_noproject()
 {
-	if (RenderingServer::data) {
+	if (Renderer::data) {
 		make_default_theme(1.0, Ref<Font>());
 	}
 	_init_default_theme_context();
@@ -52,8 +52,8 @@ void ThemeDB::initialize_theme_noproject()
 
 void ThemeDB::finalize_theme()
 {
-	if (!RenderingServer::data) {
-		WARN_PRINT("Finalizing theme when there is no RenderingServer is an error; check the order "
+	if (!Renderer::data) {
+		WARN_PRINT("Finalizing theme when there is no Renderer is an error; check the order "
 				   "of operations.");
 	}
 	_finalize_theme_contexts();
@@ -102,7 +102,7 @@ void ThemeDB::_init_default_theme_context()
 	// Only add the project theme to the default context when running projects.
 
 #ifdef TOOLS_ENABLED
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		themes.push_back(project_theme);
 	}
 #else

@@ -44,7 +44,7 @@
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/sky.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
 #include "servers/display/display_server.h"
@@ -195,7 +195,7 @@ LightmapGIData::LightmapGIData() { lightmap = RS::lightmap_create(); }
 
 LightmapGIData::~LightmapGIData()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(lightmap);
 }
 
@@ -744,7 +744,7 @@ PackedStringArray LightmapGI::get_configuration_warnings() const
 				"backends.\nYour GPU (%s) does not support RenderingDevice, as it does not support "
 				"Vulkan, Direct3D 12, or Metal.\nLightmap baking will not be available on this "
 				"device, although rendering existing baked lightmaps will work."),
-			RenderingServer::get_video_adapter_name()));
+			Renderer::get_video_adapter_name()));
 		return warnings;
 	}
 

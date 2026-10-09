@@ -31,7 +31,7 @@
 #include "../openxr_api.h"
 #include "core/string/print_string.h"
 #include "openxr_visibility_mask_extension.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 static const char* VISIBILITY_MASK_SHADER_CODE =
 	"shader_type spatial;\n"

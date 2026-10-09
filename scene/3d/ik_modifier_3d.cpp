@@ -38,7 +38,7 @@ void IKModifier3D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 #ifdef TOOLS_ENABLED
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			set_notify_local_transform(true); // Used for updating gizmo in editor.
 		}
 		_update_mutable_info();

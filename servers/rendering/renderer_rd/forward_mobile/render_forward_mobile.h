@@ -510,7 +510,7 @@ protected:
 	/* setup */
 	virtual void _update_shader_quality_settings();
 
-	virtual RD::DataFormat _render_buffers_get_preferred_color_format();
+	virtual RDC::DataFormat _render_buffers_get_preferred_color_format();
 	virtual bool _render_buffers_can_be_storage();
 
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers);

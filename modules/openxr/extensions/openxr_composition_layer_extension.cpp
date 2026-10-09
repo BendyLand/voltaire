@@ -31,8 +31,8 @@
 #include "openxr_composition_layer_extension.h"
 #include "openxr_fb_update_swapchain_extension.h"
 #include "platform/android/api/java_class_wrapper.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_server.h"
 
 #ifdef ANDROID_ENABLED
@@ -52,7 +52,7 @@
 	}                                                                                              \
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(RID p_layer, m_arg1 p1)       \
 	{                                                                                              \
-		RenderingServer::call_on_render_thread(                                   \
+		Renderer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1));                                                               \
 	}
@@ -68,7 +68,7 @@
 	void OpenXRCompositionLayerExtension::composition_layer_##m_name(                              \
 		RID p_layer, m_arg1 p1, m_arg2 p2)                                                         \
 	{                                                                                              \
-		RenderingServer::call_on_render_thread(                                   \
+		Renderer::call_on_render_thread(                                   \
 			callable_mp(this, &OpenXRCompositionLayerExtension::_composition_layer_##m_name##_rt)  \
 				.bind(p_layer, p1, p2));                                                           \
 	}
@@ -239,8 +239,8 @@ void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
 	if (subviewport.viewport != p_viewport) {
 		if (subviewport.viewport.is_valid()) {
 			RID rt =
-				RenderingServer::viewport_get_render_target(subviewport.viewport);
-			RSG::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
+				Renderer::viewport_get_render_target(subviewport.viewport);
+			RS::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
 		}
 
 		subviewport.viewport = p_viewport;
@@ -556,7 +556,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
 			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
 				// Render to our XR swapchain image.
 				RID rt = RS::viewport_get_render_target(subviewport.viewport);
-				RSG::texture_storage->render_target_set_override(
+				RS::texture_storage->render_target_set_override(
 					rt, get_current_swapchain_texture(), RID(), RID(), RID());
 			}
 		}

@@ -33,7 +33,7 @@
 #include "core/math/projection.h"
 #include "core/math/transform_interpolator.h"
 #include "scene/main/viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void Camera3D::_update_audio_listener_state() {}
 
@@ -64,7 +64,7 @@ void Camera3D::fti_pump_property()
 void Camera3D::fti_update_servers_property()
 {
 	if (camera.is_valid()) {
-		float f = Engine::get_singleton()->get_physics_interpolation_fraction();
+		float f = Engine::get_physics_interpolation_fraction();
 
 		bool update_fov = fov.interpolate(f);
 		bool update_near = _near.interpolate(f);
@@ -118,7 +118,7 @@ void Camera3D::_update_camera()
 	}
 
 	if (!is_physics_interpolated_and_enabled()) {
-		RenderingServer::camera_set_transform(camera, get_camera_transform());
+		Renderer::camera_set_transform(camera, get_camera_transform());
 	}
 	else {
 		// Force a refresh next frame.
@@ -157,7 +157,7 @@ Transform3D Camera3D::_get_adjusted_camera_transform(const Transform3D& p_xform)
 
 Transform3D Camera3D::get_camera_transform() const
 {
-	if (is_physics_interpolated_and_enabled() && !Engine::get_singleton()->is_in_physics_frame()) {
+	if (is_physics_interpolated_and_enabled() && !Engine::is_in_physics_frame()) {
 		return _get_adjusted_camera_transform(_get_cached_global_transform_interpolated());
 	}
 
@@ -213,7 +213,7 @@ void Camera3D::clear_current(bool p_enable_next)
 	if (get_viewport()->get_camera_3d() == this) {
 		get_viewport()->_camera_3d_set(nullptr);
 
-		if (p_enable_next && !Engine::get_singleton()->is_editor_hint()) {
+		if (p_enable_next && !Engine::is_editor_hint()) {
 			get_viewport()->_camera_3d_make_next_current(this);
 		}
 	}
@@ -453,8 +453,8 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 
 Camera3D::~Camera3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(camera);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(camera);
 #ifndef PHYSICS_3D_DISABLED
 	if (pyramid_shape.is_valid()) {
 		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());

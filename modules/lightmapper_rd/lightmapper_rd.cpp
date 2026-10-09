@@ -42,8 +42,8 @@
 #include "lm_raster.glsl.gen.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(VULKAN_ENABLED)
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
@@ -182,7 +182,7 @@ void LightmapperRD::add_area_light(const String& p_name, bool p_static, const Ve
 	l.size = p_size;
 	l.shadow_blur = p_shadow_blur;
 
-	if (RenderingServer::get_current_rendering_method() == "gl_compatibility") {
+	if (Renderer::get_current_rendering_method() == "gl_compatibility") {
 		// area light textures unsupported in compat
 		l.area_texture_rect[0] = 0.0;
 		l.area_texture_rect[1] = 0.0;
@@ -616,7 +616,7 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 
 			RID material = mi.data.material[i];
 			if (material.is_valid()) {
-				t.cull_mode = RSG::material_storage->material_get_cull_mode(material);
+				t.cull_mode = RS::material_storage->material_get_cull_mode(material);
 			}
 			t.pad1 = 0; // make valgrind not complain
 			triangles.push_back(t);
@@ -810,17 +810,17 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 
 	{ // grid
 
-		RD::TextureFormat tf;
+		RDC::TextureFormat tf;
 		tf.width = grid_size;
 		tf.height = grid_size;
 		tf.depth = grid_size;
-		tf.texture_type = RD::TEXTURE_TYPE_3D;
-		tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tf.texture_type = RDC::TEXTURE_TYPE_3D;
+		tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
 
 		Vector<Vector<uint8_t>> texdata;
 		texdata.resize(1);
 		// grid and indices
-		tf.format = RD::DATA_FORMAT_R32G32_UINT;
+		tf.format = RDC::DATA_FORMAT_R32G32_UINT;
 		texdata.write[0] = grid_indices.to_byte_array();
 		grid_texture = rd->texture_create(tf, RD::TextureView(), texdata);
 	}
@@ -832,14 +832,15 @@ static Vector<RD::Uniform> dilate_or_denoise_common_uniforms(
 	Vector<RD::Uniform> uniforms;
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+		u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 		u.binding = 0;
 		u.append_id(p_dest_light_tex);
 		uniforms.push_back(u);
 	}
+
 	{
 		RD::Uniform u;
-		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 		u.binding = 1;
 		u.append_id(p_source_light_tex);
 		uniforms.push_back(u);

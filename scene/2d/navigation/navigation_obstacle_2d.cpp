@@ -36,7 +36,7 @@
 #include "scene/resources/2d/navigation_polygon.h"
 #include "scene/resources/world_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RID NavigationObstacle2D::_navmesh_source_geometry_parser;
 
@@ -132,7 +132,7 @@ void NavigationObstacle2D::_notification(int p_what)
 #ifdef DEBUG_ENABLED
 		if (is_inside_tree()) {
 			bool is_debug_enabled = false;
-			if (Engine::get_singleton()->is_editor_hint()) {
+			if (Engine::is_editor_hint()) {
 				is_debug_enabled = true;
 			}
 			else if (NavigationServer2D::get_debug_enabled() &&
@@ -163,8 +163,8 @@ NavigationObstacle2D::NavigationObstacle2D()
 		obstacle, avoidance_enabled);
 
 #ifdef DEBUG_ENABLED
-	debug_canvas_item = RenderingServer::canvas_item_create();
-	debug_mesh_rid = RenderingServer::mesh_create();
+	debug_canvas_item = Renderer::canvas_item_create();
+	debug_mesh_rid = Renderer::mesh_create();
 #endif // DEBUG_ENABLED
 }
 
@@ -177,11 +177,11 @@ NavigationObstacle2D::~NavigationObstacle2D()
 
 #ifdef DEBUG_ENABLED
 	if (debug_mesh_rid.is_valid()) {
-		RenderingServer::free_rid(debug_mesh_rid);
+		Renderer::free_rid(debug_mesh_rid);
 		debug_mesh_rid = RID();
 	}
 	if (debug_canvas_item.is_valid()) {
-		RenderingServer::free_rid(debug_canvas_item);
+		Renderer::free_rid(debug_canvas_item);
 		debug_canvas_item = RID();
 	}
 #endif // DEBUG_ENABLED

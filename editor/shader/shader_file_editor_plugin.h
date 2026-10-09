@@ -45,11 +45,11 @@ class ShaderFileEditor : public EditorDock
 
 	HFlowContainer* stage_hb = nullptr;
 	ItemList* versions = nullptr;
-	Button* stages[RD::SHADER_STAGE_MAX];
+	Button* stages[RDC::SHADER_STAGE_MAX];
 	RichTextLabel* error_text = nullptr;
 
 	void _update_version(
-		const StringName& p_version_txt, const RenderingDevice::ShaderStage p_stage);
+		const StringName& p_version_txt, const RDC::ShaderStage p_stage);
 	void _version_selected(int p_stage);
 	void _editor_settings_changed();
 

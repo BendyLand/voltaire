@@ -30,7 +30,7 @@
 
 #include "mesh_texture.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 int MeshTexture::get_width() const { return size.width; }
 
@@ -64,7 +64,7 @@ void MeshTexture::draw(
 		SWAP(xform.columns[0][1], xform.columns[1][0]);
 		SWAP(xform.columns[0][0], xform.columns[1][1]);
 	}
-	RenderingServer::canvas_item_add_mesh(
+	Renderer::canvas_item_add_mesh(
 		p_canvas_item, mesh->get_rid(), xform, p_modulate, base_texture->get_rid());
 }
 
@@ -89,7 +89,7 @@ void MeshTexture::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile,
 		SWAP(xform.columns[0][1], xform.columns[1][0]);
 		SWAP(xform.columns[0][0], xform.columns[1][1]);
 	}
-	RenderingServer::canvas_item_add_mesh(
+	Renderer::canvas_item_add_mesh(
 		p_canvas_item, mesh->get_rid(), xform, p_modulate, base_texture->get_rid());
 }
 
@@ -114,7 +114,7 @@ void MeshTexture::draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const
 		SWAP(xform.columns[0][1], xform.columns[1][0]);
 		SWAP(xform.columns[0][0], xform.columns[1][1]);
 	}
-	RenderingServer::canvas_item_add_mesh(
+	Renderer::canvas_item_add_mesh(
 		p_canvas_item, mesh->get_rid(), xform, p_modulate, base_texture->get_rid());
 }
 

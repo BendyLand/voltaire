@@ -49,7 +49,7 @@ static const char* HOLE_PUNCH_SHADER_CODE =
 
 bool OpenXRCompositionLayer::_should_use_fallback_node()
 {
-	if (Engine::get_singleton()->is_editor_hint() || openxr_api == nullptr) {
+	if (Engine::is_editor_hint() || openxr_api == nullptr) {
 		return true;
 	}
 	else if (openxr_session_running) {
@@ -461,7 +461,7 @@ void OpenXRCompositionLayer::_reset_fallback_material()
 		return;
 	}
 
-	if (enable_hole_punch && !Engine::get_singleton()->is_editor_hint() &&
+	if (enable_hole_punch && !Engine::is_editor_hint() &&
 		is_natively_supported()) {
 		Ref<ShaderMaterial> material = fallback->get_surface_override_material(0);
 		if (material.is_null()) {

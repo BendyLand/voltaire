@@ -30,7 +30,7 @@
 
 #include "animated_texture.h"
 #include "core/os/os.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void AnimatedTexture::_update_proxy()
 {
@@ -88,7 +88,7 @@ void AnimatedTexture::_update_proxy()
 	}
 
 	if (frames[current_frame].texture.is_valid()) {
-		RenderingServer::texture_proxy_update(
+		Renderer::texture_proxy_update(
 			proxy, frames[current_frame].texture->get_rid());
 	}
 }
@@ -238,7 +238,7 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
 
 AnimatedTexture::~AnimatedTexture()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(proxy);
 	RS::free_rid(proxy_ph);
 }

@@ -33,7 +33,7 @@
 #include "core/string/print_string.h"
 #include "openxr_vulkan_extension.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 HashMap<String, bool*> OpenXRVulkanExtension::get_requested_extensions(XrVersion p_version)
 {

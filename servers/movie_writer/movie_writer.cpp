@@ -37,7 +37,7 @@
 #include "scene/main/window.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/display/display_server_enums.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 MovieWriter* MovieWriter::writers[MovieWriter::MAX_WRITERS];
 uint32_t MovieWriter::writer_count = 0;
@@ -93,8 +93,8 @@ void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
 
 void MovieWriter::add_frame()
 {
-	const int movie_time_seconds = Engine::get_singleton()->get_frames_drawn() / fps;
-	const int frame_remainder = Engine::get_singleton()->get_frames_drawn() % fps;
+	const int movie_time_seconds = Engine::get_frames_drawn() / fps;
+	const int frame_remainder = Engine::get_frames_drawn() % fps;
 	const String movie_time =
 		vformat("%s:%s:%s:%s", String::num(movie_time_seconds / 3600, 0).pad_zeros(2),
 			String::num((movie_time_seconds % 3600) / 60, 0).pad_zeros(2),
@@ -104,13 +104,13 @@ void MovieWriter::add_frame()
 	Window* main_window = Window::get_from_id(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (main_window) {
 		main_window->set_title(vformat("MovieWriter: Frame %d (time: %s) - %s",
-			Engine::get_singleton()->get_frames_drawn(), movie_time, project_name));
+			Engine::get_frames_drawn(), movie_time, project_name));
 	}
 
-	RID main_vp_rid = RenderingServer::viewport_find_from_screen_attachment(
+	RID main_vp_rid = Renderer::viewport_find_from_screen_attachment(
 		DisplayServerEnums::MAIN_WINDOW_ID);
-	RID main_vp_texture = RenderingServer::viewport_get_texture(main_vp_rid);
-	Ref<Image> vp_tex = RenderingServer::texture_2d_get(main_vp_texture);
+	RID main_vp_texture = Renderer::viewport_get_texture(main_vp_rid);
+	Ref<Image> vp_tex = Renderer::texture_2d_get(main_vp_texture);
 
 	if (vp_tex->get_size() != movie_size) {
 		// Resize the texture to the output resolution if it differs from the current viewport size.
@@ -143,17 +143,17 @@ void MovieWriter::add_frame()
 		vp_tex->resize(movie_size.width, movie_size.height, Image::INTERPOLATE_BILINEAR);
 	}
 
-	if (RenderingServer::viewport_is_using_hdr_2d(main_vp_rid)) {
+	if (Renderer::viewport_is_using_hdr_2d(main_vp_rid)) {
 		vp_tex->convert(Image::FORMAT_RGBA8);
 		vp_tex->linear_to_srgb();
 	}
 
-	RenderingServer::viewport_set_measure_render_time(main_vp_rid, true);
+	Renderer::viewport_set_measure_render_time(main_vp_rid, true);
 	cpu_time +=
-		RenderingServer::viewport_get_measured_render_time_cpu(main_vp_rid);
-	cpu_time += RenderingServer::get_frame_setup_time_cpu();
+		Renderer::viewport_get_measured_render_time_cpu(main_vp_rid);
+	cpu_time += Renderer::get_frame_setup_time_cpu();
 	gpu_time +=
-		RenderingServer::viewport_get_measured_render_time_gpu(main_vp_rid);
+		Renderer::viewport_get_measured_render_time_gpu(main_vp_rid);
 
 	AudioDriverDummy::get_dummy_singleton()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
 

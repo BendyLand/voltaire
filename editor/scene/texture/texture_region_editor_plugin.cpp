@@ -46,7 +46,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/atlas_texture.h"
 #include "scene/resources/style_box_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture_region_editor_plugin.h"
 
 Transform2D TextureRegionEditor::_get_offset_transform() const

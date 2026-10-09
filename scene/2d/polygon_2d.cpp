@@ -32,7 +32,7 @@
 #include "core/math/geometry_2d.h"
 #include "polygon_2d.h"
 #include "scene/2d/skeleton_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"
@@ -147,7 +147,7 @@ Polygon2D::Polygon2D() { mesh = RS::mesh_create(); }
 Polygon2D::~Polygon2D()
 {
 	// This will free the internally-allocated mesh instance, if allocated.
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::canvas_item_attach_skeleton(get_canvas_item(), RID());
 	RS::free_rid(mesh);
 }

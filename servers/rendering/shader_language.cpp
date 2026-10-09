@@ -33,9 +33,10 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_set.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_types.h"
+#include "servers/rendering/storage/utilities.h"
 #include "shader_language.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
@@ -4058,7 +4059,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 				}
 
 				if (!fail) {
-					if (RenderingServer::is_low_end()) {
+					if (Renderer::is_low_end()) {
 						if (builtin_func_defs[idx].high_end) {
 							fail = true;
 							unsupported_builtin = true;
@@ -9826,8 +9827,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 			if (is_uniform) {
 				if (uniform_scope == ShaderNode::Uniform::SCOPE_GLOBAL &&
-					Engine::get_singleton()
-						->is_editor_hint()) { // Type checking for global uniforms is not allowed
+					Engine::is_editor_hint()) { // Type checking for global uniforms is not allowed
 											  // outside the editor.
 					// validate global uniform
 					DataType gvtype = global_shader_uniform_get_type_func(name);
@@ -11371,10 +11371,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 	}
 	uint32_t varying_index = base_varying_index;
 	uint32_t max_varyings = 31;
-	// Can be false for internal shaders created in the process of initializing the engine.
-	if (RSG::utilities) {
-		max_varyings = RSG::utilities->get_maximum_shader_varyings();
-	}
+	max_varyings = RendererUtilities::get_maximum_shader_varyings();
 
 	for (const KeyValue<StringName, ShaderNode::Varying>& kv : shader->varyings) {
 		if (kv.value.stage != ShaderNode::Varying::STAGE_FRAGMENT &&

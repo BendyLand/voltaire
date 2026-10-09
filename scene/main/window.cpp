@@ -30,7 +30,7 @@
 
 #include "window.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -42,7 +42,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 // Editor integration.
@@ -765,7 +765,7 @@ void Window::_update_window_size()
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		// When main window embedded in the editor, we can't resize the main window.
 		if (window_id != DisplayServerEnums::MAIN_WINDOW_ID ||
-			!Engine::get_singleton()->is_embedded_in_editor()) {
+			!Engine::is_embedded_in_editor()) {
 			if (reset_min_first && wrap_controls) {
 				// Avoid an error if setting max_size to a value between min_size and the previous
 				// size_limit.
@@ -776,7 +776,7 @@ void Window::_update_window_size()
 			DisplayServer::get_singleton()->window_set_min_size(size_limit, window_id);
 			DisplayServer::get_singleton()->window_set_size(size, window_id);
 		}
-		else if (Engine::get_singleton()->is_embedded_in_editor()) {
+		else if (Engine::is_embedded_in_editor()) {
 			size = DisplayServer::get_singleton()->window_get_size(window_id); // Reset size.
 		}
 	}

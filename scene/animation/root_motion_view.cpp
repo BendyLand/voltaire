@@ -79,7 +79,7 @@ AABB RootMotionView::get_aabb() const
 
 RootMotionView::RootMotionView()
 {
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		set_process_internal(true);
 	}
 	immediate.instantiate();

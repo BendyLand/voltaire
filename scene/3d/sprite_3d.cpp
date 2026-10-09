@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "core/math/triangle_mesh.h"
 #include "scene/resources/atlas_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "sprite_3d.h"
 
 Color SpriteBase3D::_get_color_accum()
@@ -379,9 +379,9 @@ StandardMaterial3D::TextureFilter SpriteBase3D::get_texture_filter() const
 
 SpriteBase3D::~SpriteBase3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
-	RenderingServer::free_rid(mesh);
-	RenderingServer::free_rid(material);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(mesh);
+	Renderer::free_rid(material);
 }
 
 void Sprite3D::_draw()
@@ -571,7 +571,7 @@ bool AnimatedSprite3D::is_playing() const { return playing; }
 
 void AnimatedSprite3D::set_autoplay(const String& p_name)
 {
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
+	if (is_inside_tree() && !Engine::is_editor_hint()) {
 		WARN_PRINT("Setting autoplay after the node has been added to the scene has no effect.");
 	}
 

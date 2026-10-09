@@ -57,7 +57,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/style_box_flat.h"
 #include "script_text_editor.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 ConnectionInfoDialog::ConnectionInfoDialog()
 {

@@ -34,7 +34,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/world_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RID NavigationRegion2D::get_rid() const { return region; }
 
@@ -167,7 +167,7 @@ void NavigationRegion2D::_notification(int p_what)
 	case NOTIFICATION_DRAW: {
 #ifdef DEBUG_ENABLED
 		if (is_inside_tree() &&
-			(Engine::get_singleton()->is_editor_hint() ||
+			(Engine::is_editor_hint() ||
 				(NavigationServer2D::get_debug_enabled() &&
 					NavigationServer2D::get_debug_navigation_enabled())) &&
 			navigation_polygon.is_valid()) {

@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "shader.compat.inc"
@@ -51,7 +51,7 @@ void Shader::_check_shader_rid() const
 {
 	MutexLock lock(shader_rid_mutex);
 	if (shader_rid.is_null() && !preprocessed_code.is_empty()) {
-		shader_rid = RenderingServer::shader_create_from_code(
+		shader_rid = Renderer::shader_create_from_code(
 			preprocessed_code, get_path());
 		preprocessed_code = String();
 	}
@@ -160,8 +160,8 @@ Shader::Shader()
 Shader::~Shader()
 {
 	if (shader_rid.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
-		RenderingServer::free_rid(shader_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(shader_rid);
 	}
 }
 

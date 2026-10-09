@@ -40,7 +40,7 @@
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CPUParticles2D::set_emitting(bool p_emitting)
 {
@@ -481,7 +481,7 @@ void CPUParticles2D::_particles_process(double p_delta)
 		else {
 			TransformInterpolator::interpolate_transform_2d(_interpolation_data.global_xform_prev,
 				_interpolation_data.global_xform_curr, emission_xform,
-				Engine::get_singleton()->get_physics_interpolation_fraction());
+				Engine::get_physics_interpolation_fraction());
 		}
 		velocity_xform = emission_xform;
 		velocity_xform[2] = Vector2();
@@ -1002,7 +1002,7 @@ void CPUParticles2D::_draw_emission_gizmo()
 
 CPUParticles2D::~CPUParticles2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(multimesh);
 	RS::free_rid(mesh);
 }

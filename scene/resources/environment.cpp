@@ -34,7 +34,7 @@
 #include "environment.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/sky.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 RID Environment::get_rid() const { return environment; }
 
@@ -933,7 +933,7 @@ void Environment::_update_adjustment()
 
 Environment::~Environment()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(environment);
 }
 

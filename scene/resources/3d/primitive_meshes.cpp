@@ -36,7 +36,7 @@
 #include "primitive_meshes.h"
 #include "scene/resources/theme.h"
 #include "scene/theme/theme_db.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 #define PADDING_REF_SIZE 1024.0

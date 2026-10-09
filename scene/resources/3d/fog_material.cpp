@@ -30,7 +30,7 @@
 
 #include "core/version.h"
 #include "fog_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Mutex FogMaterial::shader_mutex;
 RID FogMaterial::shader;
@@ -68,7 +68,7 @@ RID FogMaterial::get_rid() const
 void FogMaterial::cleanup_shader()
 {
 	if (shader.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(shader);
 	}
 }

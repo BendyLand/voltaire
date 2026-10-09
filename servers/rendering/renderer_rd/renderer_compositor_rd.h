@@ -11,7 +11,7 @@
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -45,23 +45,9 @@
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 
-class RendererCompositorRD : public RendererCompositor
+class RendererCompositorRD final
 {
-protected:
-	UniformSetCacheRD* uniform_set_cache = nullptr;
-	FramebufferCacheRD* framebuffer_cache = nullptr;
-
-	RendererCanvasRenderRD* canvas = nullptr;
-	RendererSceneRenderRD* scene = nullptr;
-
-	RendererRD::Fog* fog = nullptr;
-	RendererRD::LightStorage* light_storage = nullptr;
-	RendererRD::MaterialStorage* material_storage = nullptr;
-	RendererRD::MeshStorage* mesh_storage = nullptr;
-	RendererRD::ParticlesStorage* particles_storage = nullptr;
-	RendererRD::TextureStorage* texture_storage = nullptr;
-	RendererRD::Utilities* utilities = nullptr;
-
+public:
 	enum BlitMode
 	{
 		BLIT_MODE_NORMAL,
@@ -73,26 +59,26 @@ protected:
 
 	struct BlitPushConstant
 	{
-		float src_rect[4]; // 16 - 16
-		float dst_rect[4]; // 16 - 32
+		float src_rect[4];
+		float dst_rect[4];
 
-		float rotation_sin;	 // 4 - 36
-		float rotation_cos;	 // 4 - 40
-		float eye_center[2]; // 8 - 48
+		float rotation_sin;
+		float rotation_cos;
+		float eye_center[2];
 
-		float k1;			// 4 - 52
-		float k2;			// 4 - 56
-		float upscale;		// 4 - 60
-		float aspect_ratio; // 4 - 64
+		float k1;
+		float k2;
+		float upscale;
+		float aspect_ratio;
 
-		uint32_t layer;				 // 4 - 68
-		uint32_t source_is_srgb;	 // 4 - 72
-		uint32_t use_debanding;		 // 4 - 76
-		uint32_t target_color_space; // 4 - 80
+		uint32_t layer;
+		uint32_t source_is_srgb;
+		uint32_t use_debanding;
+		uint32_t target_color_space;
 
-		float reference_multiplier; // 4 - 84
-		float output_max_value;		// 4 - 88
-		uint32_t pad[2];			// 8 - 96 (padding to reach 16-byte boundary)
+		float reference_multiplier;
+		float output_max_value;
+		uint32_t pad[2];
 	};
 
 	struct BlitPipelines
@@ -111,81 +97,111 @@ protected:
 		RID sampler;
 	};
 
-	Blit* blit = nullptr;
+private:
+	static inline UniformSetCacheRD* uniform_set_cache = nullptr;
+	static inline FramebufferCacheRD* framebuffer_cache = nullptr;
 
-	HashMap<RID, RID> render_target_descriptors;
+	static inline RendererCanvasRenderRD* canvas = nullptr;
+	static inline RendererSceneRenderRD* scene = nullptr;
+
+	static inline RendererRD::Fog* fog = nullptr;
+	static inline RendererRD::LightStorage* light_storage = nullptr;
+	static inline RendererRD::MaterialStorage* material_storage = nullptr;
+	static inline RendererRD::MeshStorage* mesh_storage = nullptr;
+	static inline RendererRD::ParticlesStorage* particles_storage = nullptr;
+	static inline RendererRD::TextureStorage* texture_storage = nullptr;
+
+	static inline Blit* blit = nullptr;
+
+	static inline HashMap<RID, RID> render_target_descriptors;
 
 	static inline double time = 0.0;
-	double delta = 0.0;
+	static inline double delta = 0.0;
+	static inline uint64_t frame = 0;
 
-	static inline uint64_t frame;
-
-	BlitPipelines _get_blit_pipelines_for_format(RenderingDevice::FramebufferFormatID format);
-	float _compute_reference_multiplier(RD::ColorSpace p_color_space,
+	static BlitPipelines _get_blit_pipelines_for_format(
+		RenderingDevice::FramebufferFormatID format);
+	static float _compute_reference_multiplier(RDC::ColorSpace p_color_space,
 		const float p_reference_luminance, const float p_linear_luminance_scale);
 
 public:
-	virtual RendererUtilities* get_utilities() override { return utilities; }
+	static void bind_mesh_storage();
 
-	virtual RendererLightStorage* get_light_storage() override { return light_storage; }
+	static void bind_utilities();
 
-	virtual RendererMaterialStorage* get_material_storage() override { return material_storage; }
+	_ALWAYS_INLINE_ static RendererLightStorage* get_light_storage() { return light_storage; }
 
-	virtual RendererMeshStorage* get_mesh_storage() override { return mesh_storage; }
+	_ALWAYS_INLINE_ static RendererMaterialStorage* get_material_storage()
+	{
+		return material_storage;
+	}
 
-	virtual RendererParticlesStorage* get_particles_storage() override { return particles_storage; }
+	_ALWAYS_INLINE_ static RendererRD::MeshStorage* get_mesh_storage() { return mesh_storage; }
 
-	virtual RendererTextureStorage* get_texture_storage() override { return texture_storage; }
+	_ALWAYS_INLINE_ static RendererParticlesStorage* get_particles_storage()
+	{
+		return particles_storage;
+	}
 
-	virtual RendererGI* get_gi() override
+	_ALWAYS_INLINE_ static RendererTextureStorage* get_texture_storage() { return texture_storage; }
+
+	static RendererGI* get_gi()
 	{
 		ERR_FAIL_NULL_V(scene, nullptr);
 		return scene->get_gi();
 	}
 
-	virtual RendererFog* get_fog() override { return fog; }
+	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }
 
-	virtual RendererCanvasRender* get_canvas() { return canvas; }
+	_ALWAYS_INLINE_ static RendererCanvasRender* get_canvas() { return canvas; }
 
-	virtual RendererSceneRenderRD* get_scene() { return scene; }
+	_ALWAYS_INLINE_ static RendererSceneRenderRD* get_scene() { return scene; }
 
-	virtual void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
 		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter);
 
-	virtual void initialize();
-	virtual void begin_frame(double frame_step);
-	virtual void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+	static void initialize();
+	static void begin_frame(double frame_step);
+	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount);
 
-	virtual bool is_opengl() { return false; }
+	_ALWAYS_INLINE_ static bool is_opengl() { return false; }
 
-	virtual void gl_end_frame(bool p_swap_buffers) {}
+	_ALWAYS_INLINE_ static void gl_end_frame(bool p_swap_buffers) {}
 
-	virtual void end_frame(bool p_present);
-	virtual void finalize();
+	static void end_frame(bool p_present);
+	static void finalize();
 
-	_ALWAYS_INLINE_ virtual uint64_t get_frame_number() const { return frame; }
+	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
 
-	_ALWAYS_INLINE_ virtual double get_frame_delta_time() const { return delta; }
+	_ALWAYS_INLINE_ static double get_frame_delta_time() { return delta; }
 
-	static _ALWAYS_INLINE_ double get_total_time() { return time; }
+	_ALWAYS_INLINE_ static double get_total_time() { return time; }
 
-	_ALWAYS_INLINE_ virtual bool can_create_resources_async() const { return true; }
+	_ALWAYS_INLINE_ static bool can_create_resources_async() { return true; }
 
 	static bool is_xr_enabled() { return RendererCompositor::is_xr_enabled(); }
 
-	static Error is_viable() { return OK; }
+	_ALWAYS_INLINE_ static Error is_viable() { return OK; }
 
-	static RendererCompositor* _create_current() { return memnew(RendererCompositorRD); }
+	static Error _create_current()
+	{
+		RendererCompositorRD::initialize();
+		return OK;
+	}
 
 	static void make_current()
 	{
-		_create_func = _create_current;
-		low_end = false;
+		RendererCompositor::_create_func = _create_current;
+		RendererCompositor::low_end = false;
+		RendererCompositor::bind_compositor<RendererCompositorRD>();
 	}
 
-	RendererCompositorRD() = default;
-	~RendererCompositorRD();
+	RendererCompositorRD() = delete;
+	RendererCompositorRD(const RendererCompositorRD&) = delete;
+	~RendererCompositorRD() = delete;
 };
+
+using RCRD = RendererCompositorRD;
 
 

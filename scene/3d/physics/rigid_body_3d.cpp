@@ -45,7 +45,7 @@ void RigidBody3D::_notification(int p_what)
 #ifdef TOOLS_ENABLED
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			set_notify_local_transform(true); // Used for warnings and only in editor.
 		}
 	} break;

@@ -31,7 +31,7 @@
 #include "concave_polygon_shape_2d.h"
 #include "core/math/geometry_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 bool ConcavePolygonShape2D::_edit_is_selected_on_click(
 	const Point2& p_point, double p_tolerance) const
@@ -68,7 +68,7 @@ void ConcavePolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 
 	const Vector2* r = s.ptr();
 	for (int i = 0; i < len; i += 2) {
-		RenderingServer::canvas_item_add_line(
+		Renderer::canvas_item_add_line(
 			p_to_rid, r[i], r[i + 1], p_color, 2);
 	}
 }

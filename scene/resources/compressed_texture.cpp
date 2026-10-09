@@ -32,7 +32,7 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/bit_map.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Error CompressedTexture2D::_load_data(const String& p_path, int& r_width, int& r_height,
 	Ref<Image>& image, bool& r_request_3d, bool& r_request_normal, bool& r_request_roughness,
@@ -96,7 +96,7 @@ Error CompressedTexture2D::_load_data(const String& p_path, int& r_width, int& r
 void CompressedTexture2D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::texture_set_path(texture, p_path);
+		Renderer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -156,7 +156,7 @@ void CompressedTexture2D::draw(
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect(
+	Renderer::canvas_item_add_texture_rect(
 		p_canvas_item, Rect2(p_pos, Size2(w, h)), texture, false, p_modulate, p_transpose);
 }
 
@@ -166,7 +166,7 @@ void CompressedTexture2D::draw_rect(RID p_canvas_item, const Rect2& p_rect, bool
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect(
+	Renderer::canvas_item_add_texture_rect(
 		p_canvas_item, p_rect, texture, p_tile, p_modulate, p_transpose);
 }
 
@@ -176,7 +176,7 @@ void CompressedTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rec
 	if ((w | h) == 0) {
 		return;
 	}
-	RenderingServer::canvas_item_add_texture_rect_region(
+	Renderer::canvas_item_add_texture_rect_region(
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
@@ -374,7 +374,7 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 CompressedTexture2D::~CompressedTexture2D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(texture);
 	}
 }
@@ -382,7 +382,7 @@ CompressedTexture2D::~CompressedTexture2D()
 void CompressedTexture3D::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::texture_set_path(texture, p_path);
+		Renderer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -483,7 +483,7 @@ void CompressedTexture3D::reload_from_file()
 CompressedTexture3D::~CompressedTexture3D()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(texture);
 	}
 }
@@ -491,7 +491,7 @@ CompressedTexture3D::~CompressedTexture3D()
 void CompressedTextureLayered::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RenderingServer::texture_set_path(texture, p_path);
+		Renderer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -601,7 +601,7 @@ CompressedTextureLayered::CompressedTextureLayered(LayeredType p_type) { layered
 CompressedTextureLayered::~CompressedTextureLayered()
 {
 	if (texture.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::data);
+		ERR_FAIL_NULL(Renderer::data);
 		RS::free_rid(texture);
 	}
 }

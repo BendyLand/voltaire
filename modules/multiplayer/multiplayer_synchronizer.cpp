@@ -127,7 +127,7 @@ MultiplayerSynchronizer::get_visibility_update_mode() const
 void MultiplayerSynchronizer::_notification(int p_what)
 {
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 #endif

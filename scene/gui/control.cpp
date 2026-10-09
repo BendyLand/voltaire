@@ -31,7 +31,7 @@
 #include "control.compat.inc"
 #include "control.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -47,7 +47,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/theme/theme_db.h"
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 #ifdef TOOLS_ENABLED
@@ -57,7 +57,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #ifdef TOOLS_ENABLED
 void Control::_edit_set_position(const Point2& p_position)
 {
-	ERR_FAIL_COND_MSG(!Engine::get_singleton()->is_editor_hint(),
+	ERR_FAIL_COND_MSG(!Engine::is_editor_hint(),
 		"This function can only be used from editor plugins.");
 	set_position(p_position,
 		ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled() && get_parent_control());
@@ -71,7 +71,7 @@ Size2 Control::_edit_get_scale() const { return data.scale; }
 
 void Control::_edit_set_rect(const Rect2& p_edit_rect)
 {
-	ERR_FAIL_COND_MSG(!Engine::get_singleton()->is_editor_hint(),
+	ERR_FAIL_COND_MSG(!Engine::is_editor_hint(),
 		"This function can only be used from editor plugins.");
 	// Changing the size might change the internal transform (in case of non-zero
 	// `pivot_offset_ratio`), hence `position` (which is in the parent space, and is not always
@@ -254,7 +254,7 @@ void Control::_update_canvas_item_transform()
 		xform *= get_offset_transform();
 	}
 
-	RenderingServer::canvas_item_set_transform(get_canvas_item(), xform);
+	Renderer::canvas_item_set_transform(get_canvas_item(), xform);
 }
 
 Transform2D Control::get_transform() const

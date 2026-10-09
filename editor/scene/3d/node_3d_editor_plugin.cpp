@@ -103,7 +103,7 @@
 #include "scene/resources/sky.h"
 #include "scene/resources/surface_tool.h"
 #include "servers/physics_3d/physics_server_3d_types.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 using namespace Node3DEditorConstants;
 
@@ -147,9 +147,9 @@ void Node3DEditor::_snap_update()
 
 void Node3DEditor::_finish_indicators()
 {
-	RenderingServer::free_rid(origin_instance);
-	RenderingServer::free_rid(origin_multimesh);
-	RenderingServer::free_rid(origin_mesh);
+	Renderer::free_rid(origin_instance);
+	Renderer::free_rid(origin_multimesh);
+	Renderer::free_rid(origin_mesh);
 
 	_finish_grid();
 }
@@ -157,8 +157,8 @@ void Node3DEditor::_finish_indicators()
 void Node3DEditor::_finish_grid()
 {
 	for (int i = 0; i < 3; i++) {
-		RenderingServer::free_rid(grid_instance[i]);
-		RenderingServer::free_rid(grid[i]);
+		Renderer::free_rid(grid_instance[i]);
+		Renderer::free_rid(grid[i]);
 	}
 }
 

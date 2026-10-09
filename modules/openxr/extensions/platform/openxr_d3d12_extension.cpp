@@ -35,8 +35,8 @@
 #include "../../openxr_util.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 
 HashMap<String, bool *> OpenXRD3D12Extension::get_requested_extensions(XrVersion p_version) {
 	HashMap<String, bool *> request_extensions;
@@ -135,7 +135,7 @@ void OpenXRD3D12Extension::get_usable_depth_formats(Vector<int64_t> &p_usable_de
 }
 
 bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) {
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+	Renderer *rendering_server = Renderer::get_singleton();
 	ERR_FAIL_NULL_V(rendering_server, false);
 	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_V(rendering_device, false);
@@ -298,7 +298,7 @@ void OpenXRD3D12Extension::cleanup_swapchain_graphics_data(void **p_swapchain_gr
 		return;
 	}
 
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
+	Renderer *rendering_server = Renderer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL(rendering_device);

@@ -32,7 +32,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -43,13 +43,13 @@ void DebugEffects::_create_frustum_arrays()
 		frustum.vertex_buffer =
 			RD::vertex_buffer_create(8 * sizeof(float) * 3, Vector<uint8_t>());
 
-		Vector<RD::VertexAttribute> attributes;
+		Vector<RDC::VertexAttribute> attributes;
 		Vector<RID> buffers;
-		RD::VertexAttribute vd;
+		RDC::VertexAttribute vd;
 
 		vd.location = 0;
 		vd.stride = sizeof(float) * 3;
-		vd.format = RD::DATA_FORMAT_R32G32B32_SFLOAT;
+		vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
 
 		attributes.push_back(vd);
 		buffers.push_back(frustum.vertex_buffer);

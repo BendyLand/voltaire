@@ -1,3 +1,43 @@
+====================================================================================================
+                                FRONTEND FLATTENING TARGETS
+====================================================================================================
+
+[ High-Level Server & Storage ]
+  # • RendererCompositor ----------------------------+
+  # • RendererCompositorRD --------------------------+
+  # • RenderingServerGlobals ------------------------+---> Renderer
+  # • RendererViewport ------------------------------+     (High-level API, storages,
+  # • RenderingMethod -------------------------------+      presentation, & viewport dispatch)
+  • Storage Facades:                               |
+    - RendererMeshStorage                          |
+    - RendererTextureStorage                       |
+    - RendererMaterialStorage                      |
+    - RendererLightStorage                         |
+    - RendererParticlesStorage                     |
+    - RendererEnvironmentStorage                   |
+    - RendererCameraAttributes                     |
+    - RendererGI / RendererFog / RendererUtilities-+
+
+[ 3D Rendering, Buffers & Passes ]
+  • RendererSceneRender ---------------------------+
+  • RendererSceneRenderRD -------------------------+
+  • RenderForwardClustered ------------------------+
+  • RenderForwardMobile (if not stripped outright)-+---> SceneRenderer
+  • RenderData / RenderDataRD ---------------------+     (3D cluster management, draw passes,
+  • RenderSceneBuffers / RenderSceneBuffersRD -----+      render scene buffers, & scene cull)
+  • RenderSceneData / RenderSceneDataRD -----------+
+  • RenderBufferCustomDataRD / ForwardClustered ---+
+  • RendererSceneCull / RenderingLightCuller ------+
+  • RendererSceneOcclusionCull --------------------+
+  • RenderGeometryInstance / Base -----------------+
+
+[ 2D Pipeline ]
+  • RendererCanvasRender --------------------------+---> CanvasRenderer
+  • RendererCanvasRenderRD ------------------------+     (2D draw command dispatch, canvas culling,
+  • RendererCanvasCull ----------------------------+      & batch execution)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 [Layer 1: Entry / OS Platform]        main() (platform/linuxbsd/godot_linuxbsd.cpp)
                                              │
 [Layer 2: Engine Orchestrator]        Main::setup() / Main::setup2() (main/main.cpp)
@@ -11,3 +51,5 @@
 [Layer 5: Server / Compositor]        RenderingServer ──> RendererCompositorRD
                                                                  │
 [Layer 6: Device & Driver Engine]     RenderingDevice ──> RenderingDeviceDriver
+
+

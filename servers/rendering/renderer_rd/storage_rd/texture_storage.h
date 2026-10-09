@@ -159,11 +159,11 @@ private:
 		RSE::TextureLayeredType layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY;
 		RSE::TextureDrawableFormat drawable_type = RSE::TEXTURE_DRAWABLE_FORMAT_RGBA8;
 
-		RenderingDevice::TextureType rd_type;
+		RDC::TextureType rd_type;
 		RID rd_texture;
 		RID rd_texture_srgb;
-		RenderingDevice::DataFormat rd_format;
-		RenderingDevice::DataFormat rd_format_srgb;
+		RDC::DataFormat rd_format;
+		RDC::DataFormat rd_format_srgb;
 		Vector<RID> cached_rd_slices;
 
 		RD::TextureView rd_view;
@@ -223,47 +223,47 @@ private:
 
 	struct TextureToRDFormat
 	{
-		RD::DataFormat format;
-		RD::DataFormat format_srgb;
-		RD::TextureSwizzle swizzle_r;
-		RD::TextureSwizzle swizzle_g;
-		RD::TextureSwizzle swizzle_b;
-		RD::TextureSwizzle swizzle_a;
+		RDC::DataFormat format;
+		RDC::DataFormat format_srgb;
+		RDC::TextureSwizzle swizzle_r;
+		RDC::TextureSwizzle swizzle_g;
+		RDC::TextureSwizzle swizzle_b;
+		RDC::TextureSwizzle swizzle_a;
 
 		TextureToRDFormat()
 		{
-			format = RD::DATA_FORMAT_MAX;
-			format_srgb = RD::DATA_FORMAT_MAX;
-			swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			swizzle_a = RD::TEXTURE_SWIZZLE_A;
+			format = RDC::DATA_FORMAT_MAX;
+			format_srgb = RDC::DATA_FORMAT_MAX;
+			swizzle_r = RDC::TEXTURE_SWIZZLE_R;
+			swizzle_g = RDC::TEXTURE_SWIZZLE_G;
+			swizzle_b = RDC::TEXTURE_SWIZZLE_B;
+			swizzle_a = RDC::TEXTURE_SWIZZLE_A;
 		}
 	};
 
 	struct TextureFromRDFormat
 	{
 		Image::Format image_format;
-		RD::DataFormat rd_format;
-		RD::DataFormat rd_format_srgb;
-		RD::TextureSwizzle swizzle_r;
-		RD::TextureSwizzle swizzle_g;
-		RD::TextureSwizzle swizzle_b;
-		RD::TextureSwizzle swizzle_a;
+		RDC::DataFormat rd_format;
+		RDC::DataFormat rd_format_srgb;
+		RDC::TextureSwizzle swizzle_r;
+		RDC::TextureSwizzle swizzle_g;
+		RDC::TextureSwizzle swizzle_b;
+		RDC::TextureSwizzle swizzle_a;
 
 		TextureFromRDFormat()
 		{
 			image_format = Image::FORMAT_MAX;
-			rd_format = RD::DATA_FORMAT_MAX;
-			rd_format_srgb = RD::DATA_FORMAT_MAX;
-			swizzle_r = RD::TEXTURE_SWIZZLE_R;
-			swizzle_g = RD::TEXTURE_SWIZZLE_G;
-			swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			swizzle_a = RD::TEXTURE_SWIZZLE_A;
+			rd_format = RDC::DATA_FORMAT_MAX;
+			rd_format_srgb = RDC::DATA_FORMAT_MAX;
+			swizzle_r = RDC::TEXTURE_SWIZZLE_R;
+			swizzle_g = RDC::TEXTURE_SWIZZLE_G;
+			swizzle_b = RDC::TEXTURE_SWIZZLE_B;
+			swizzle_a = RDC::TEXTURE_SWIZZLE_A;
 		}
 	};
 
-	void _texture_format_from_rd(RD::DataFormat p_rd_format, TextureFromRDFormat& r_format);
+	void _texture_format_from_rd(RDC::DataFormat p_rd_format, TextureFromRDFormat& r_format);
 
 	/* AREA LIGHT ATLAS API */
 
@@ -444,8 +444,8 @@ private:
 		bool msaa_needs_resolve = false;					  // 2D MSAA needs resolved
 
 		// used for retrieving from CPU
-		RD::DataFormat color_format = RD::DATA_FORMAT_R4G4_UNORM_PACK8;
-		RD::DataFormat color_format_srgb = RD::DATA_FORMAT_R4G4_UNORM_PACK8;
+		RDC::DataFormat color_format = RDC::DATA_FORMAT_R4G4_UNORM_PACK8;
+		RDC::DataFormat color_format_srgb = RDC::DATA_FORMAT_R4G4_UNORM_PACK8;
 		Image::Format image_format = Image::FORMAT_L8;
 
 		bool is_transparent = false;
@@ -1039,7 +1039,7 @@ public:
 	void render_target_set_framebuffer_uniform_set(RID p_render_target, RID p_uniform_set);
 	void render_target_set_backbuffer_uniform_set(RID p_render_target, RID p_uniform_set);
 
-	static RD::DataFormat render_target_get_color_format(bool p_use_hdr, bool p_srgb);
+	static RDC::DataFormat render_target_get_color_format(bool p_use_hdr, bool p_srgb);
 	static uint32_t render_target_get_color_usage_bits(bool p_msaa);
 };
 

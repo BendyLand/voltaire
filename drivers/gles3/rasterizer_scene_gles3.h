@@ -38,6 +38,7 @@
 #include "core/templates/self_list.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -1145,7 +1146,8 @@ public:
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
 	virtual void material_set_use_debanding(bool p_enable) override;
 
-	RasterizerSceneGLES3();
+	RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_storage,
+		GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage);
 	~RasterizerSceneGLES3();
 };
 

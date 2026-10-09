@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "navigation_link_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void NavigationLink3D::_notification(int p_what)
 {
@@ -63,12 +63,12 @@ NavigationLink3D::~NavigationLink3D()
 	link = RID();
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (debug_instance.is_valid()) {
-		RenderingServer::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
-		RenderingServer::free_rid(debug_mesh->get_rid());
+		Renderer::free_rid(debug_mesh->get_rid());
 	}
 #endif // DEBUG_ENABLED
 }

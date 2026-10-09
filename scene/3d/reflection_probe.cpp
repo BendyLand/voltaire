@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "reflection_probe.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void ReflectionProbe::set_intensity(float p_intensity)
 {
@@ -141,14 +141,14 @@ AABB ReflectionProbe::get_aabb() const
 
 ReflectionProbe::ReflectionProbe()
 {
-	probe = RenderingServer::reflection_probe_create();
+	probe = Renderer::reflection_probe_create();
 	RS::instance_set_base(get_instance(), probe);
 	set_disable_scale(true);
 }
 
 ReflectionProbe::~ReflectionProbe()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(probe);
 }
 

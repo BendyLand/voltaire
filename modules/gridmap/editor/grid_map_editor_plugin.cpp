@@ -58,7 +58,7 @@
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void GridMapEditor::_update_selection_transform()
 {
@@ -66,9 +66,9 @@ void GridMapEditor::_update_selection_transform()
 	xf_zero.basis.set_zero();
 
 	if (!selection.active) {
-		RenderingServer::instance_set_transform(selection_instance, xf_zero);
+		Renderer::instance_set_transform(selection_instance, xf_zero);
 		for (int i = 0; i < 3; i++) {
-			RenderingServer::instance_set_transform(
+			Renderer::instance_set_transform(
 				selection_level_instance[i], xf_zero);
 		}
 		return;
@@ -78,14 +78,14 @@ void GridMapEditor::_update_selection_transform()
 	xf.scale((Vector3(1, 1, 1) + (selection.end - selection.begin)) * node->get_cell_size());
 	xf.origin = selection.begin * node->get_cell_size();
 
-	RenderingServer::instance_set_transform(
+	Renderer::instance_set_transform(
 		selection_instance, node->get_global_transform() * xf);
 
 	Vector3::Axis edit_axis = _get_edit_axis();
 	for (int i = 0; i < 3; i++) {
 		if (i != edit_axis || (edit_floor[edit_axis] < selection.begin[edit_axis]) ||
 			(edit_floor[edit_axis] > selection.end[edit_axis] + 1)) {
-			RenderingServer::instance_set_transform(
+			Renderer::instance_set_transform(
 				selection_level_instance[i], xf_zero);
 		}
 		else {
@@ -101,7 +101,7 @@ void GridMapEditor::_update_selection_transform()
 			xf2.basis.scale(scale);
 			xf2.origin = position;
 
-			RenderingServer::instance_set_transform(
+			Renderer::instance_set_transform(
 				selection_level_instance[i], node->get_global_transform() * xf2);
 		}
 	}
@@ -220,7 +220,7 @@ void GridMapEditor::_clear_clipboard_data()
 		if (E.instance.is_null()) {
 			continue;
 		}
-		RenderingServer::free_rid(E.instance);
+		Renderer::free_rid(E.instance);
 	}
 
 	clipboard_items.clear();
@@ -252,7 +252,7 @@ void GridMapEditor::_set_clipboard_data()
 				item.orientation = node->get_cell_item_orientation(selected);
 
 				if (mesh.is_valid()) {
-					item.instance = RenderingServer::instance_create2(
+					item.instance = Renderer::instance_create2(
 						mesh->get_rid(), scenario);
 				}
 
@@ -267,7 +267,7 @@ void GridMapEditor::_update_paste_indicator()
 	if (input_action != INPUT_PASTE) {
 		Transform3D xf;
 		xf.basis.set_zero();
-		RenderingServer::instance_set_transform(paste_instance, xf);
+		Renderer::instance_set_transform(paste_instance, xf);
 		return;
 	}
 
@@ -284,7 +284,7 @@ void GridMapEditor::_update_paste_indicator()
 	xf.basis = rot * xf.basis;
 	xf.translate_local((-center * node->get_cell_size()) / scale);
 
-	RenderingServer::instance_set_transform(
+	Renderer::instance_set_transform(
 		paste_instance, node->get_global_transform() * xf);
 
 	for (const ClipboardItem& item : clipboard_items) {
@@ -301,7 +301,7 @@ void GridMapEditor::_update_paste_indicator()
 		item_rot = node->get_basis_with_orthogonal_index(item.orientation);
 		xf.basis *= item_rot * node->get_cell_scale();
 
-		RenderingServer::instance_set_transform(
+		Renderer::instance_set_transform(
 			item.instance, node->get_global_transform() * xf);
 	}
 }
@@ -374,7 +374,7 @@ void GridMapEditor::update_grid()
 	edit_grid_xform.basis = Basis();
 
 	for (int i = 0; i < 3; i++) {
-		RenderingServer::instance_set_visible(grid_instance[i], i == edit_axis);
+		Renderer::instance_set_visible(grid_instance[i], i == edit_axis);
 	}
 
 	updating = true;
@@ -386,37 +386,37 @@ void GridMapEditor::_floor_mouse_exited() { floor->get_line_edit()->release_focu
 
 GridMapEditor::~GridMapEditor()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	_clear_clipboard_data();
 
 	for (int i = 0; i < 3; i++) {
 		if (grid[i].is_valid()) {
-			RenderingServer::free_rid(grid[i]);
+			Renderer::free_rid(grid[i]);
 		}
 		if (grid_instance[i].is_valid()) {
-			RenderingServer::free_rid(grid_instance[i]);
+			Renderer::free_rid(grid_instance[i]);
 		}
 		if (selection_level_instance[i].is_valid()) {
-			RenderingServer::free_rid(selection_level_instance[i]);
+			Renderer::free_rid(selection_level_instance[i]);
 		}
 		if (selection_level_mesh[i].is_valid()) {
-			RenderingServer::free_rid(selection_level_mesh[i]);
+			Renderer::free_rid(selection_level_mesh[i]);
 		}
 	}
 
-	RenderingServer::free_rid(cursor_mesh);
+	Renderer::free_rid(cursor_mesh);
 	if (cursor_instance.is_valid()) {
-		RenderingServer::free_rid(cursor_instance);
+		Renderer::free_rid(cursor_instance);
 	}
 
-	RenderingServer::free_rid(selection_mesh);
+	Renderer::free_rid(selection_mesh);
 	if (selection_instance.is_valid()) {
-		RenderingServer::free_rid(selection_instance);
+		Renderer::free_rid(selection_instance);
 	}
 
-	RenderingServer::free_rid(paste_mesh);
+	Renderer::free_rid(paste_mesh);
 	if (paste_instance.is_valid()) {
-		RenderingServer::free_rid(paste_instance);
+		Renderer::free_rid(paste_instance);
 	}
 }
 

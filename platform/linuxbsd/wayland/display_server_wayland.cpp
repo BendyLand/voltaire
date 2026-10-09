@@ -47,7 +47,7 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/native_menu.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef RD_ENABLED
 #ifdef VULKAN_ENABLED
@@ -1412,7 +1412,7 @@ bool DisplayServerWayland::window_is_hdr_output_supported(
 	bool surface_supports_hdr_output = false;
 #if defined(RD_ENABLED)
 	if (rendering_device &&
-		rendering_device->has_feature(RenderingDevice::Features::SUPPORTS_HDR_OUTPUT)) {
+		rendering_device->has_feature(RDC::Features::SUPPORTS_HDR_OUTPUT)) {
 		renderer_supports_hdr_output = true;
 		surface_supports_hdr_output =
 			rendering_device->screen_get_hdr_output_supported(p_window_id);
@@ -1439,7 +1439,7 @@ void DisplayServerWayland::window_request_hdr_output(
 		bool surface_supports_hdr_output = false;
 #if defined(RD_ENABLED)
 		if (rendering_device &&
-			rendering_device->has_feature(RenderingDevice::Features::SUPPORTS_HDR_OUTPUT)) {
+			rendering_device->has_feature(RDC::Features::SUPPORTS_HDR_OUTPUT)) {
 			renderer_supports_hdr_output = true;
 			surface_supports_hdr_output =
 				rendering_device->screen_get_hdr_output_supported(p_window_id);

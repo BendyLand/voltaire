@@ -66,7 +66,7 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/shader_types.h"
 #include "servers/rendering/storage/render_data.h"
@@ -121,8 +121,8 @@ static PhysicsServer3D* _create_dummy_physics_server_3d() { return memnew(Physic
 
 static bool has_server_feature_callback(const String& p_feature)
 {
-	if (RenderingServer::data) {
-		if (RenderingServer::has_os_feature(p_feature)) {
+	if (Renderer::data) {
+		if (Renderer::has_os_feature(p_feature)) {
 			return true;
 		}
 	}

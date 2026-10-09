@@ -38,7 +38,7 @@
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void GPUParticles2D::set_emitting(bool p_emitting)
 {
@@ -96,7 +96,7 @@ void GPUParticles2D::set_one_shot(bool p_enable)
 	if (is_emitting()) {
 		set_process_internal(true);
 		if (!one_shot) {
-			RenderingServer::particles_restart(particles);
+			Renderer::particles_restart(particles);
 		}
 	}
 
@@ -306,7 +306,7 @@ NodePath GPUParticles2D::get_sub_emitter() const { return sub_emitter; }
 void GPUParticles2D::set_amount_ratio(float p_ratio)
 {
 	amount_ratio = p_ratio;
-	RenderingServer::particles_set_amount_ratio(particles, p_ratio);
+	Renderer::particles_set_amount_ratio(particles, p_ratio);
 }
 
 float GPUParticles2D::get_amount_ratio() const { return amount_ratio; }
@@ -425,7 +425,7 @@ GPUParticles2D::GPUParticles2D()
 
 GPUParticles2D::~GPUParticles2D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::free_rid(particles);
 	RS::free_rid(mesh);
 }

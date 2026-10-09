@@ -32,7 +32,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/environment.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_3d.h"
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -117,11 +117,11 @@ PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
 #endif // PHYSICS_3D_DISABLED
 
 
-World3D::World3D() { scenario = RenderingServer::scenario_create(); }
+World3D::World3D() { scenario = Renderer::scenario_create(); }
 
 World3D::~World3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 #ifndef PHYSICS_3D_DISABLED
 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
@@ -131,7 +131,7 @@ World3D::~World3D()
 	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::free_rid(scenario);
+	Renderer::free_rid(scenario);
 
 #ifndef PHYSICS_3D_DISABLED
 	if (space.is_valid()) {

@@ -30,7 +30,7 @@
 
 #include "rectangle_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void RectangleShape2D::set_size(const Size2& p_size)
 {
@@ -46,7 +46,7 @@ Size2 RectangleShape2D::get_size() const { return size; }
 
 void RectangleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
-	RenderingServer::canvas_item_add_rect(
+	Renderer::canvas_item_add_rect(
 		p_to_rid, Rect2(-size * 0.5, size), p_color);
 	if (is_collision_outline_enabled()) {
 		// Draw an outlined rectangle to make individual shapes easier to distinguish.
@@ -60,7 +60,7 @@ void RectangleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 
 		Vector<Color> stroke_colors = {Color(p_color, 1.0)};
 
-		RenderingServer::canvas_item_add_polyline(
+		Renderer::canvas_item_add_polyline(
 			p_to_rid, stroke_points, stroke_colors);
 	}
 }

@@ -30,7 +30,7 @@
 
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "xr_vrs.h"
 
 

@@ -33,7 +33,7 @@
 #include "core/os/os.h"
 #include "light_3d.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 real_t Light3D::get_param(Param p_param) const
 {
@@ -179,7 +179,7 @@ void Light3D::_update_visibility()
 
 #ifdef TOOLS_ENABLED
 	if (editor_only) {
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_editor_hint()) {
 			editor_ok = false;
 		}
 		else {
@@ -223,11 +223,11 @@ Light3D::Light3D()
 
 Light3D::~Light3D()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	RS::instance_set_base(get_instance(), RID());
 
 	if (light.is_valid()) {
-		RenderingServer::free_rid(light);
+		Renderer::free_rid(light);
 	}
 }
 
@@ -342,9 +342,9 @@ AreaLight3D::~AreaLight3D()
 	// has to run, because light RID needs to be freed before area_texture RID.
 	// Since area_texture is a member of AreaLight3D, it would be destructed before the
 	// deconstructor of Light3D would be called, leading to errors.
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (light.is_valid()) {
-		RenderingServer::free_rid(light);
+		Renderer::free_rid(light);
 	}
 }
 

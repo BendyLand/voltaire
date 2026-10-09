@@ -31,7 +31,7 @@
 #include "core/math/geometry_2d.h"
 #include "segment_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 bool SegmentShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
 {
@@ -63,7 +63,7 @@ Vector2 SegmentShape2D::get_b() const { return b; }
 
 void SegmentShape2D::draw(const RID& p_to_rid, const Color& p_color)
 {
-	RenderingServer::canvas_item_add_line(p_to_rid, a, b, p_color, 3);
+	Renderer::canvas_item_add_line(p_to_rid, a, b, p_color, 3);
 }
 
 Rect2 SegmentShape2D::get_rect() const

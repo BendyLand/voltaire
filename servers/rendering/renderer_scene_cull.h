@@ -40,16 +40,16 @@
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "servers/rendering/instance_uniforms.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/rendering_method.h"
-#include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/utilities.h"
+#include "servers/xr/xr_interface.h"
 
 class RenderingLightCuller;
 
-class RendererSceneCull : public RenderingMethod
+class RendererSceneCull
 {
 public:
 	RendererSceneRender* scene_render = nullptr;
@@ -110,27 +110,26 @@ public:
 
 	mutable RID_Owner<Camera, true> camera_owner;
 
-	virtual RID camera_allocate();
-	virtual void camera_initialize(RID p_rid);
+	RID camera_allocate();
+	void camera_initialize(RID p_rid);
 
-	virtual void camera_set_perspective(
-		RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
-	virtual void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
-	virtual void camera_set_frustum(
+	void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
+	void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
+	void camera_set_frustum(
 		RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far);
-	virtual void camera_set_transform(RID p_camera, const Transform3D& p_transform);
-	virtual void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
-	virtual void camera_set_environment(RID p_camera, RID p_env);
-	virtual void camera_set_camera_attributes(RID p_camera, RID p_attributes);
-	virtual void camera_set_compositor(RID p_camera, RID p_compositor);
-	virtual void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
-	virtual bool is_camera(RID p_camera) const;
+	void camera_set_transform(RID p_camera, const Transform3D& p_transform);
+	void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
+	void camera_set_environment(RID p_camera, RID p_env);
+	void camera_set_camera_attributes(RID p_camera, RID p_attributes);
+	void camera_set_compositor(RID p_camera, RID p_compositor);
+	void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
+	bool is_camera(RID p_camera) const;
 
 	/* OCCLUDER API */
 
-	virtual RID occluder_allocate();
-	virtual void occluder_initialize(RID p_occluder);
-	virtual void occluder_set_mesh(
+	RID occluder_allocate();
+	void occluder_initialize(RID p_occluder);
+	void occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
 
 	/* VISIBILITY NOTIFIER API */
@@ -348,7 +347,7 @@ public:
 
 	class VisibilityArray : public BinSortedArray<InstanceVisibilityData>
 	{
-		_FORCE_INLINE_ virtual void _update_idx(InstanceVisibilityData& r_element, uint64_t p_idx)
+		_FORCE_INLINE_ void _update_idx(InstanceVisibilityData& r_element, uint64_t p_idx)
 		{
 			r_element.instance->visibility_index = p_idx;
 			if (r_element.instance->scenario && r_element.instance->array_index != -1) {
@@ -410,19 +409,19 @@ public:
 
 	void _instance_update_mesh_instance(Instance* p_instance) const;
 
-	virtual RID scenario_allocate();
-	virtual void scenario_initialize(RID p_rid);
+	RID scenario_allocate();
+	void scenario_initialize(RID p_rid);
 
-	virtual void scenario_set_environment(RID p_scenario, RID p_environment);
-	virtual void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
-	virtual void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
-	virtual void scenario_set_compositor(RID p_scenario, RID p_compositor);
-	virtual void scenario_set_reflection_atlas_size(
+	void scenario_set_environment(RID p_scenario, RID p_environment);
+	void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
+	void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
+	void scenario_set_compositor(RID p_scenario, RID p_compositor);
+	void scenario_set_reflection_atlas_size(
 		RID p_scenario, int p_reflection_size, int p_reflection_count);
-	virtual bool is_scenario(RID p_scenario) const;
-	virtual RID scenario_get_environment(RID p_scenario);
-	virtual void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
-	virtual void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	bool is_scenario(RID p_scenario) const;
+	RID scenario_get_environment(RID p_scenario);
+	void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
 
 	/* INSTANCING API */
 
@@ -440,7 +439,7 @@ public:
 
 	struct InstanceBaseData
 	{
-		virtual ~InstanceBaseData() = default;
+		~InstanceBaseData() = default;
 	};
 
 	struct Instance
@@ -599,9 +598,9 @@ public:
 				}
 				if (instance->base_type == RSE::INSTANCE_PARTICLES) {
 					RID particle_material =
-						RSG::particles_storage->particles_get_process_material(instance->base);
+						RS::particles_storage->particles_get_process_material(instance->base);
 					if (p_dependency == particle_material) {
-						RSG::particles_storage->particles_set_process_material(
+						RS::particles_storage->particles_set_process_material(
 							instance->base, RID());
 					}
 				}
@@ -1107,52 +1106,49 @@ public:
 	LocalVector<Vector2> camera_jitter_array;
 	RenderingLightCuller* light_culler = nullptr;
 
-	virtual RID instance_allocate();
-	virtual void instance_initialize(RID p_rid);
+	RID instance_allocate();
+	void instance_initialize(RID p_rid);
 
-	virtual void instance_set_base(RID p_instance, RID p_base);
-	virtual void instance_set_scenario(RID p_instance, RID p_scenario);
-	virtual void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
-	virtual void instance_set_pivot_data(
-		RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
-	virtual void instance_set_transform(RID p_instance, const Transform3D& p_transform);
-	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
-	virtual void instance_set_surface_override_material(
-		RID p_instance, int p_surface, RID p_material);
-	virtual void instance_set_visible(RID p_instance, bool p_visible);
-	virtual void instance_geometry_set_transparency(RID p_instance, float p_transparency);
+	void instance_set_base(RID p_instance, RID p_base);
+	void instance_set_scenario(RID p_instance, RID p_scenario);
+	void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
+	void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
+	void instance_set_transform(RID p_instance, const Transform3D& p_transform);
+	void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
+	void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
+	void instance_set_visible(RID p_instance, bool p_visible);
+	void instance_geometry_set_transparency(RID p_instance, float p_transparency);
 
-	virtual void instance_teleport(RID p_instance);
+	void instance_teleport(RID p_instance);
 
-	virtual void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
+	void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
 
-	virtual void instance_attach_skeleton(RID p_instance, RID p_skeleton);
+	void instance_attach_skeleton(RID p_instance, RID p_skeleton);
 
-	virtual void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
+	void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
 
-	virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
+	void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
 
-	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled);
+	void instance_set_ignore_culling(RID p_instance, bool p_enabled);
 
 	bool _update_instance_visibility_depth(Instance* p_instance);
 	void _update_instance_visibility_dependencies(Instance* p_instance) const;
 
-	virtual void instance_geometry_set_flag(
-		RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
-	virtual void instance_geometry_set_cast_shadows_setting(
+	void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
+	void instance_geometry_set_cast_shadows_setting(
 		RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting);
-	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material);
-	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+	void instance_geometry_set_material_override(RID p_instance, RID p_material);
+	void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
 
-	virtual void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
+	void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
 		float p_min_margin, float p_max_margin, RSE::VisibilityRangeFadeMode p_fade_mode);
 
-	virtual void instance_geometry_set_lightmap(
+	void instance_geometry_set_lightmap(
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
-	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
+	void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
-	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
-	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
+	void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
+	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
 	_FORCE_INLINE_ void _update_instance(Instance* p_instance) const;
 	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance) const;
@@ -1265,7 +1261,7 @@ public:
 		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 
 	void render_particle_colliders();
-	virtual void render_probes();
+	void render_probes();
 
 #ifdef PASSBASE
 #undef PASSBASE
@@ -1496,19 +1492,19 @@ public:
 	PASS1(lightmaps_set_bicubic_filter, bool)
 	PASS1(material_set_use_debanding, bool)
 
-	virtual void update();
+	void update();
 
 	bool free(RID p_rid);
 
 	void set_scene_render(RendererSceneRender* p_scene_render);
 
-	virtual void update_visibility_notifiers();
+	void update_visibility_notifiers();
 
 	/* INTERPOLATION */
 
 	void update_interpolation_tick(bool p_process = true);
 	void update_interpolation_frame(bool p_process = true);
-	virtual void set_physics_interpolation_enabled(bool p_enabled);
+	void set_physics_interpolation_enabled(bool p_enabled);
 
 	struct InterpolationData
 	{
@@ -1516,7 +1512,7 @@ public:
 	} _interpolation_data;
 
 	RendererSceneCull() = default;
-	virtual ~RendererSceneCull();
+	~RendererSceneCull();
 };
 
 

@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "parallax_2d.h"
 #include "scene/main/viewport.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void Parallax2D::_notification(int p_what)
 {
@@ -97,7 +97,7 @@ void Parallax2D::_camera_moved(
 
 void Parallax2D::_update_process()
 {
-	set_process_internal(!Engine::get_singleton()->is_editor_hint() &&
+	set_process_internal(!Engine::is_editor_hint() &&
 						 (repeat_size.x || repeat_size.y) && (autoscroll.x || autoscroll.y));
 }
 
@@ -109,7 +109,7 @@ void Parallax2D::_update_scroll()
 
 	Point2 scroll_ofs = screen_offset;
 
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		Size2 vps = get_viewport_rect().size;
 
 		if (limit_begin.x <= limit_end.x - vps.x) {
@@ -151,9 +151,9 @@ void Parallax2D::_update_repeat()
 		return;
 	}
 
-	RenderingServer::canvas_set_item_repeat(
+	Renderer::canvas_set_item_repeat(
 		get_canvas_item(), repeat_size, repeat_times);
-	RenderingServer::canvas_item_set_interpolated(get_canvas_item(), false);
+	Renderer::canvas_item_set_interpolated(get_canvas_item(), false);
 }
 
 void Parallax2D::set_scroll_scale(const Size2& p_scale) { scroll_scale = p_scale; }

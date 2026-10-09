@@ -96,7 +96,7 @@ template <typename... RESOURCE_TYPES> struct VersatileResourceTemplate
 	}
 };
 
-class RenderingDeviceDriver : public RenderingDeviceCommons
+class RenderingDeviceDriver
 {
 public:
 	struct ID
@@ -208,7 +208,7 @@ public:
 	virtual BufferID buffer_create(uint64_t p_size, uint32_t p_usage,
 		MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) = 0;
 	// Only for a buffer with BUFFER_USAGE_TEXEL_BIT.
-	virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
+	virtual bool buffer_set_texel_format(BufferID p_buffer, RDC::DataFormat p_format) = 0;
 	virtual void buffer_free(BufferID p_buffer) = 0;
 	virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) = 0;
 	virtual uint8_t* buffer_map(BufferID p_buffer) = 0;
@@ -223,11 +223,11 @@ public:
 
 	struct TextureView
 	{
-		DataFormat format = DATA_FORMAT_MAX;
-		TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
-		TextureSwizzle swizzle_g = TEXTURE_SWIZZLE_G;
-		TextureSwizzle swizzle_b = TEXTURE_SWIZZLE_B;
-		TextureSwizzle swizzle_a = TEXTURE_SWIZZLE_A;
+		RDC::DataFormat format = RDC::DATA_FORMAT_MAX;
+		RDC::TextureSwizzle swizzle_r = RDC::TEXTURE_SWIZZLE_R;
+		RDC::TextureSwizzle swizzle_g = RDC::TEXTURE_SWIZZLE_G;
+		RDC::TextureSwizzle swizzle_b = RDC::TEXTURE_SWIZZLE_B;
+		RDC::TextureSwizzle swizzle_a = RDC::TEXTURE_SWIZZLE_A;
 	};
 
 	enum TextureLayout
@@ -258,8 +258,8 @@ public:
 
 	enum TextureUsageMethod
 	{
-		TEXTURE_USAGE_VRS_FRAGMENT_SHADING_RATE_BIT = TEXTURE_USAGE_MAX_BIT << 1,
-		TEXTURE_USAGE_VRS_FRAGMENT_DENSITY_MAP_BIT = TEXTURE_USAGE_MAX_BIT << 2,
+		TEXTURE_USAGE_VRS_FRAGMENT_SHADING_RATE_BIT = RDC::TEXTURE_USAGE_MAX_BIT << 1,
+		TEXTURE_USAGE_VRS_FRAGMENT_DENSITY_MAP_BIT = RDC::TEXTURE_USAGE_MAX_BIT << 2,
 	};
 
 	enum TextureAspectBits
@@ -299,15 +299,15 @@ public:
 		uint64_t row_pitch = 0;
 	};
 
-	virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) = 0;
-	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type,
-		DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil, uint32_t p_mipmaps) = 0;
+	virtual TextureID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view) = 0;
+	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, RDC::TextureType p_type,
+		RDC::DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil, uint32_t p_mipmaps) = 0;
 	// texture_create_shared_*() can only use original, non-view textures as original.
 	// RenderingDevice is responsible for ensuring that.
 	virtual TextureID texture_create_shared(
 		TextureID p_original_texture, const TextureView& p_view) = 0;
 	virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture,
-		const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer,
+		const TextureView& p_view, RDC::TextureSliceType p_slice_type, uint32_t p_layer,
 		uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
 	virtual void texture_free(TextureID p_texture) = 0;
 	virtual uint64_t texture_get_allocation_size(TextureID p_texture) = 0;
@@ -320,17 +320,17 @@ public:
 	// TEXTURE_USAGE_CPU_READ_BIT.
 	virtual Vector<uint8_t> texture_get_data(TextureID p_texture, uint32_t p_layer) = 0;
 	virtual uint32_t texture_get_usages_supported_by_format(
-		DataFormat p_format, bool p_cpu_readable) = 0;
+		RDC::DataFormat p_format, bool p_cpu_readable) = 0;
 	virtual bool texture_can_make_shared_with_format(
-		TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation) = 0;
+		TextureID p_texture, RDC::DataFormat p_format, bool& r_raw_reinterpretation) = 0;
 
-	virtual SamplerID sampler_create(const SamplerState& p_state) = 0;
+	virtual SamplerID sampler_create(const RDC::SamplerState& p_state) = 0;
 	virtual void sampler_free(SamplerID p_sampler) = 0;
 	virtual bool sampler_is_format_supported_for_filter(
-		DataFormat p_format, SamplerFilter p_filter) = 0;
+		RDC::DataFormat p_format, RDC::SamplerFilter p_filter) = 0;
 
-	virtual VertexFormatID vertex_format_create(Span<VertexAttribute> p_vertex_attribs,
-		const VertexAttributeBindingsMap& p_vertex_bindings) = 0;
+	virtual VertexFormatID vertex_format_create(Span<RDC::VertexAttribute> p_vertex_attribs,
+		const RDC::VertexAttributeBindingsMap& p_vertex_bindings) = 0;
 	virtual void vertex_format_free(VertexFormatID p_vertex_format) = 0;
 
 	enum PipelineStageBits
@@ -499,10 +499,10 @@ public:
 	virtual int swap_chain_get_pre_rotation_degrees(SwapChainID p_swap_chain) { return 0; }
 
 	// Retrieve the format used by the swap chain's framebuffers.
-	virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
+	virtual RDC::DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
 
 	// Retrieve the color space used by the swap chain's framebuffers.
-	virtual ColorSpace swap_chain_get_color_space(SwapChainID p_swap_chain) = 0;
+	virtual RDC::ColorSpace swap_chain_get_color_space(SwapChainID p_swap_chain) = 0;
 
 	// Retrieve whether the swapchain supports our preferred HDR formats.
 	virtual bool swap_chain_get_hdr_output_supported(SwapChainID p_swap_chain) = 0;
@@ -521,7 +521,7 @@ public:
 
 	struct ImmutableSampler
 	{
-		UniformType type = UNIFORM_TYPE_MAX;
+		RDC::UniformType type = RDC::UNIFORM_TYPE_MAX;
 		uint32_t binding = 0xffffffff; // Binding index as specified in shader.
 		LocalVector<ID> ids;
 	};
@@ -544,7 +544,7 @@ public:
 public:
 	struct BoundUniform
 	{
-		UniformType type = UNIFORM_TYPE_MAX;
+		RDC::UniformType type = RDC::UNIFORM_TYPE_MAX;
 		uint32_t binding = 0xffffffff; // Binding index as specified in shader.
 		LocalVector<ID> ids;
 		// Flag to indicate  that this is an immutable sampler so it is skipped when creating
@@ -553,8 +553,8 @@ public:
 
 		_FORCE_INLINE_ bool is_dynamic() const
 		{
-			return type == UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC ||
-				   type == UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			return type == RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC ||
+				   type == RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		}
 	};
 
@@ -649,8 +649,8 @@ public:
 
 	struct Attachment
 	{
-		DataFormat format = DATA_FORMAT_MAX;
-		TextureSamples samples = TEXTURE_SAMPLES_MAX;
+		RDC::DataFormat format = RDC::DATA_FORMAT_MAX;
+		RDC::TextureSamples samples = RDC::TEXTURE_SAMPLES_MAX;
 		AttachmentLoadOp load_op = ATTACHMENT_LOAD_OP_DONT_CARE;
 		AttachmentStoreOp store_op = ATTACHMENT_STORE_OP_DONT_CARE;
 		AttachmentLoadOp stencil_load_op = ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -758,7 +758,7 @@ public:
 		uint32_t p_binding_count, const BufferID* p_buffers, const uint64_t* p_offsets,
 		uint64_t p_dynamic_offsets) = 0;
 	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer,
-		IndexBufferFormat p_format, uint64_t p_offset) = 0;
+		RDC::IndexBufferFormat p_format, uint64_t p_offset) = 0;
 
 	// Dynamic state.
 	virtual void command_render_set_blend_constants(
@@ -766,12 +766,12 @@ public:
 	virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
 
 	virtual PipelineID render_pipeline_create(ShaderID p_shader, VertexFormatID p_vertex_format,
-		RenderPrimitive p_render_primitive, PipelineRasterizationState p_rasterization_state,
-		PipelineMultisampleState p_multisample_state,
-		PipelineDepthStencilState p_depth_stencil_state, PipelineColorBlendState p_blend_state,
+		RDC::RenderPrimitive p_render_primitive, RDC::PipelineRasterizationState p_rasterization_state,
+		RDC::PipelineMultisampleState p_multisample_state,
+		RDC::PipelineDepthStencilState p_depth_stencil_state, RDC::PipelineColorBlendState p_blend_state,
 		VectorView<int32_t> p_color_attachments, uint32_t p_dynamic_state,
 		RenderPassID p_render_pass, uint32_t p_render_subpass,
-		VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) = 0;
 
 	// Binding.
 	virtual void command_bind_compute_pipeline(
@@ -787,7 +787,7 @@ public:
 		CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) = 0;
 
 	virtual PipelineID compute_pipeline_create(ShaderID p_shader,
-		VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) = 0;
 
 	struct AccelerationStructureGeometry
 	{
@@ -796,11 +796,11 @@ public:
 		uint32_t vertex_offset = 0;
 		uint32_t vertex_stride = 0;
 		uint32_t vertex_count = 0;
-		DataFormat vertex_format = DATA_FORMAT_MAX;
+		RDC::DataFormat vertex_format = RDC::DATA_FORMAT_MAX;
 		BufferID index_buffer;
 		uint32_t index_offset = 0;
 		uint32_t index_count = 0;
-		IndexBufferFormat index_format = {};
+		RDC::IndexBufferFormat index_format = {};
 	};
 
 	virtual AccelerationStructureID blas_create(
@@ -828,8 +828,8 @@ public:
 	struct PipelineShader
 	{
 		ShaderID shader;
-		VectorView<PipelineSpecializationConstant> specialization_constants;
-		ShaderStage shader_stage = {};
+		VectorView<RDC::PipelineSpecializationConstant> specialization_constants;
+		RDC::ShaderStage shader_stage = {};
 	};
 
 	struct HitGroup
@@ -983,12 +983,12 @@ public:
 	};
 
 	virtual void set_object_name(ObjectType p_type, ID p_driver_id, const String& p_name) = 0;
-	virtual uint64_t get_resource_native_handle(DriverResource p_type, ID p_driver_id) = 0;
+	virtual uint64_t get_resource_native_handle(RDC::DriverResource p_type, ID p_driver_id) = 0;
 	virtual uint64_t get_total_memory_used() = 0;
 	virtual uint64_t get_lazily_memory_used() = 0;
-	virtual uint64_t limit_get(Limit p_limit) = 0;
+	virtual uint64_t limit_get(RDC::Limit p_limit) = 0;
 	virtual uint64_t api_trait_get(ApiTrait p_trait);
-	virtual bool has_feature(Features p_feature) = 0;
+	virtual bool has_feature(RDC::Features p_feature) = 0;
 	virtual const MultiviewCapabilities& get_multiview_capabilities() = 0;
 	virtual const FragmentShadingRateCapabilities& get_fragment_shading_rate_capabilities() = 0;
 	virtual const FragmentDensityMapCapabilities& get_fragment_density_map_capabilities() = 0;
@@ -1000,7 +1000,7 @@ public:
 
 	virtual bool is_composite_alpha_supported(CommandQueueID p_queue) const { return false; }
 
-	virtual DriverWorkarounds get_driver_workarounds() const { return DriverWorkarounds(); }
+	virtual RDC::DriverWorkarounds get_driver_workarounds() const { return RDC::DriverWorkarounds(); }
 
 	virtual ~RenderingDeviceDriver();
 };

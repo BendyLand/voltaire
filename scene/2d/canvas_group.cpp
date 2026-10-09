@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "canvas_group.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 real_t CanvasGroup::get_fit_margin() const { return fit_margin; }
 

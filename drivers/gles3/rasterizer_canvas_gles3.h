@@ -30,18 +30,18 @@
 
 #pragma once
 
+#include "drivers/gles3/storage/texture_storage.h"
 #ifdef GLES3_ENABLED
 
 #include "drivers/gles3/shaders/canvas.glsl.gen.h"
 #include "drivers/gles3/shaders/canvas_occlusion.glsl.gen.h"
 #include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class RasterizerCanvasGLES3 : public RendererCanvasRender
 {
-	static RasterizerCanvasGLES3* singleton;
-
 	_FORCE_INLINE_ void _update_transform_2d_to_mat2x4(
 		const Transform2D& p_transform, float* p_mat2x4);
 	_FORCE_INLINE_ void _update_transform_2d_to_mat2x3(
@@ -438,8 +438,8 @@ public:
 
 	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) override { return 0; }
 
-	static RasterizerCanvasGLES3* get_singleton();
-	RasterizerCanvasGLES3();
+	RasterizerCanvasGLES3(GLES3::TextureStorage* p_texture_storage,
+		GLES3::MaterialStorage* p_material_storage);
 	~RasterizerCanvasGLES3();
 };
 

@@ -37,6 +37,7 @@
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/rendering_server_types.h"
 
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
@@ -49,19 +50,17 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		return;
 	}
 
-	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
-		RD::screen_get_framebuffer_format(p_screen));
+	BlitPipelines blit_pipelines =
+		_get_blit_pipelines_for_format(RD::screen_get_framebuffer_format(p_screen));
 
 	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
-	ERR_FAIL_COND(draw_list == RD::INVALID_ID);
+	ERR_FAIL_COND(draw_list == RDC::INVALID_ID);
 
-	const RD::ColorSpace color_space = RD::screen_get_color_space(p_screen);
+	const RDC::ColorSpace color_space = RD::screen_get_color_space(p_screen);
 	const float reference_luminance =
-		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
-			p_screen);
+		RD::get_context_driver()->window_get_hdr_output_reference_luminance(p_screen);
 	const float linear_luminance_scale =
-		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(
-			p_screen);
+		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(p_screen);
 	const float output_max_value =
 		RD::get_context_driver()->window_get_output_max_linear_value(p_screen);
 	const float reference_multiplier =
@@ -79,17 +78,14 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 
 		HashMap<RID, RID>::Iterator it = render_target_descriptors.find(rd_texture);
 
-		Size2 screen_size(RD::screen_get_width(p_screen),
-			RD::screen_get_height(p_screen));
+		Size2 screen_size(RD::screen_get_width(p_screen), RD::screen_get_height(p_screen));
 
-		RD::draw_list_bind_render_pipeline(
-			draw_list, blit_pipelines.pipelines[mode]);
+		RD::draw_list_bind_render_pipeline(draw_list, blit_pipelines.pipelines[mode]);
 		RD::draw_list_bind_index_array(draw_list, blit->array);
 		RD::draw_list_bind_uniform_set(draw_list, it->value, 0);
 
 		// We need to invert the phone rotation.
-		const int screen_rotation_degrees =
-			-RD::screen_get_pre_rotation_degrees(p_screen);
+		const int screen_rotation_degrees = -RD::screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
 		blit->push_constant.rotation_cos = Math::cos(screen_rotation);
@@ -125,8 +121,7 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		blit->push_constant.reference_multiplier = reference_multiplier;
 		blit->push_constant.output_max_value = output_max_value;
 
-		RD::draw_list_set_push_constant(
-			draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+		RD::draw_list_set_push_constant(draw_list, &blit->push_constant, sizeof(BlitPushConstant));
 		RD::draw_list_draw(draw_list, true);
 	}
 
@@ -146,13 +141,11 @@ void RendererCompositorRD::begin_frame(double frame_step)
 	scene->set_time(time, frame_step);
 }
 
-void RendererCompositorRD::end_frame(bool p_present)
-{
-	RD::swap_buffers(p_present);
-}
+void RendererCompositorRD::end_frame(bool p_present) { RD::swap_buffers(p_present); }
 
 void RendererCompositorRD::initialize()
 {
+	RendererRD::Utilities::initialize();
 	{
 		blit = memnew(Blit);
 		Vector<String> blit_modes;
@@ -177,8 +170,9 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
+		blit->index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
 		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
-		blit->sampler = RD::sampler_create(RD::SamplerState());
+		blit->sampler = RD::sampler_create(RDC::SamplerState());
 	}
 }
 
@@ -189,14 +183,13 @@ void RendererCompositorRD::finalize()
 	memdelete(fog);
 	memdelete(particles_storage);
 	memdelete(light_storage);
-	memdelete(mesh_storage);
 	memdelete(material_storage);
 	memdelete(texture_storage);
-	memdelete(utilities);
+	RendererRD::Utilities::finalize();
 
 	if (blit) {
-	    memdelete(blit);
-	    blit = nullptr;
+		memdelete(blit);
+		blit = nullptr;
 	}
 	// only need to erase these, the rest are erased by cascade
 	blit->shader.version_free(blit->shader_version);
@@ -204,11 +197,11 @@ void RendererCompositorRD::finalize()
 	RD::free_rid(blit->sampler);
 }
 
-float RendererCompositorRD::_compute_reference_multiplier(RD::ColorSpace p_color_space,
+float RendererCompositorRD::_compute_reference_multiplier(RDC::ColorSpace p_color_space,
 	const float p_reference_luminance, const float p_linear_luminance_scale)
 {
 	switch (p_color_space) {
-	case RD::COLOR_SPACE_REC709_LINEAR:
+	case RDC::COLOR_SPACE_REC709_LINEAR:
 		return p_reference_luminance / p_linear_luminance_scale;
 	default:
 		return 1.0f;
@@ -236,11 +229,11 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	texture_storage->texture_2d_initialize(texture, p_image);
 	RID rd_texture = texture_storage->texture_get_rd_texture(texture, false);
 
-	RD::SamplerState sampler_state;
+	RDC::SamplerState sampler_state;
 	sampler_state.min_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.mag_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.max_lod = 0;
 	RID sampler = RD::sampler_create(sampler_state);
 
@@ -253,7 +246,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	screenrect.position /= window_size;
 	screenrect.size /= window_size;
 
-	const RD::ColorSpace color_space =
+	const RDC::ColorSpace color_space =
 		RD::screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_luminance =
 		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
@@ -261,14 +254,13 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	const float linear_luminance_scale =
 		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(
 			DisplayServerEnums::MAIN_WINDOW_ID);
-	const float output_max_value =
-		RD::get_context_driver()->window_get_output_max_linear_value(
-			DisplayServerEnums::MAIN_WINDOW_ID);
+	const float output_max_value = RD::get_context_driver()->window_get_output_max_linear_value(
+		DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_multiplier =
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
 	Color clear_color = p_color;
-	if (color_space != RD::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
+	if (color_space != RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
 		// draw_list_begin_for_screen requires linear-encoded Color when using an HDR buffer.
 		clear_color = p_color.srgb_to_linear();
 
@@ -277,11 +269,10 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		clear_color.b *= reference_multiplier;
 	}
 
-	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(
-		DisplayServerEnums::MAIN_WINDOW_ID, clear_color);
+	RD::DrawListID draw_list =
+		RD::draw_list_begin_for_screen(DisplayServerEnums::MAIN_WINDOW_ID, clear_color);
 
-	RD::draw_list_bind_render_pipeline(
-		draw_list, blit_pipelines.pipelines[BLIT_MODE_NORMAL_ALPHA]);
+	RD::draw_list_bind_render_pipeline(draw_list, blit_pipelines.pipelines[BLIT_MODE_NORMAL_ALPHA]);
 	RD::draw_list_bind_index_array(draw_list, blit->array);
 	RD::draw_list_bind_uniform_set(draw_list, uset, 0);
 
@@ -311,8 +302,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	blit->push_constant.reference_multiplier = reference_multiplier;
 	blit->push_constant.output_max_value = output_max_value;
 
-	RD::draw_list_set_push_constant(
-		draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+	RD::draw_list_set_push_constant(draw_list, &blit->push_constant, sizeof(BlitPushConstant));
 	RD::draw_list_draw(draw_list, true);
 
 	RD::draw_list_end();
@@ -323,11 +313,133 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	RD::free_rid(sampler);
 }
 
-RendererCompositorRD::~RendererCompositorRD()
+RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long)
 {
-	memdelete(uniform_set_cache);
-	ShaderRD::set_shader_cache_user_dir(String());
-	ShaderRD::set_shader_cache_res_dir(String());
+	return RendererCompositorRD::BlitPipelines();
 }
 
-RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long) { return RendererCompositorRD::BlitPipelines(); }
+void RendererCompositorRD::bind_mesh_storage()
+{
+	RendererMeshStorage::mesh_allocate = &RendererRD::MeshStorage::mesh_allocate;
+	RendererMeshStorage::mesh_initialize = &RendererRD::MeshStorage::mesh_initialize;
+	RendererMeshStorage::mesh_free = &RendererRD::MeshStorage::mesh_free;
+	RendererMeshStorage::mesh_set_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_count;
+	RendererMeshStorage::mesh_needs_instance = &RendererRD::MeshStorage::mesh_needs_instance;
+	RendererMeshStorage::mesh_add_surface = &RendererRD::MeshStorage::mesh_add_surface;
+	RendererMeshStorage::mesh_get_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_count;
+	RendererMeshStorage::mesh_set_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_mode;
+	RendererMeshStorage::mesh_get_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_mode;
+	RendererMeshStorage::mesh_surface_update_vertex_region =
+		&RendererRD::MeshStorage::mesh_surface_update_vertex_region;
+	RendererMeshStorage::mesh_surface_update_attribute_region =
+		&RendererRD::MeshStorage::mesh_surface_update_attribute_region;
+	RendererMeshStorage::mesh_surface_update_skin_region =
+		&RendererRD::MeshStorage::mesh_surface_update_skin_region;
+	RendererMeshStorage::mesh_surface_update_index_region =
+		&RendererRD::MeshStorage::mesh_surface_update_index_region;
+	RendererMeshStorage::mesh_surface_set_material =
+		&RendererRD::MeshStorage::mesh_surface_set_material;
+	RendererMeshStorage::mesh_surface_get_material =
+		&RendererRD::MeshStorage::mesh_surface_get_material;
+	RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
+		return RendererRD::MeshStorage::mesh_get_surface(p_mesh, p_surface);
+	};
+	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+	RendererMeshStorage::mesh_get_surface_count = &RendererRD::MeshStorage::mesh_get_surface_count;
+	RendererMeshStorage::mesh_set_custom_aabb = &RendererRD::MeshStorage::mesh_set_custom_aabb;
+	RendererMeshStorage::mesh_get_custom_aabb = &RendererRD::MeshStorage::mesh_get_custom_aabb;
+	RendererMeshStorage::mesh_get_aabb = &RendererRD::MeshStorage::mesh_get_aabb;
+	RendererMeshStorage::mesh_set_path = &RendererRD::MeshStorage::mesh_set_path;
+	RendererMeshStorage::mesh_get_path = &RendererRD::MeshStorage::mesh_get_path;
+	RendererMeshStorage::mesh_set_shadow_mesh = &RendererRD::MeshStorage::mesh_set_shadow_mesh;
+	RendererMeshStorage::mesh_clear = &RendererRD::MeshStorage::mesh_clear;
+	RendererMeshStorage::mesh_surface_remove = &RendererRD::MeshStorage::mesh_surface_remove;
+	RendererMeshStorage::mesh_debug_usage = &RendererRD::MeshStorage::mesh_debug_usage;
+
+	RendererMeshStorage::mesh_instance_create = &RendererRD::MeshStorage::mesh_instance_create;
+	RendererMeshStorage::mesh_instance_free = &RendererRD::MeshStorage::mesh_instance_free;
+	RendererMeshStorage::mesh_instance_set_skeleton =
+		&RendererRD::MeshStorage::mesh_instance_set_skeleton;
+	RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+		&RendererRD::MeshStorage::mesh_instance_set_blend_shape_weight;
+	RendererMeshStorage::mesh_instance_check_for_update =
+		&RendererRD::MeshStorage::mesh_instance_check_for_update;
+	RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+		&RendererRD::MeshStorage::mesh_instance_set_canvas_item_transform;
+	RendererMeshStorage::update_mesh_instances = &RendererRD::MeshStorage::update_mesh_instances;
+
+	RendererMeshStorage::_multimesh_allocate = &RendererRD::MeshStorage::_multimesh_allocate;
+	RendererMeshStorage::_multimesh_initialize = &RendererRD::MeshStorage::_multimesh_initialize;
+	RendererMeshStorage::_multimesh_free = &RendererRD::MeshStorage::_multimesh_free;
+	RendererMeshStorage::_multimesh_allocate_data =
+		&RendererRD::MeshStorage::_multimesh_allocate_data;
+	RendererMeshStorage::_multimesh_get_instance_count =
+		&RendererRD::MeshStorage::_multimesh_get_instance_count;
+	RendererMeshStorage::_multimesh_set_mesh = &RendererRD::MeshStorage::_multimesh_set_mesh;
+	RendererMeshStorage::_multimesh_instance_set_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform;
+	RendererMeshStorage::_multimesh_instance_set_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform_2d;
+	RendererMeshStorage::_multimesh_instance_set_color =
+		&RendererRD::MeshStorage::_multimesh_instance_set_color;
+	RendererMeshStorage::_multimesh_instance_set_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_set_custom_data;
+	RendererMeshStorage::_multimesh_set_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_set_custom_aabb;
+	RendererMeshStorage::_multimesh_get_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_get_custom_aabb;
+	RendererMeshStorage::_multimesh_get_mesh = &RendererRD::MeshStorage::_multimesh_get_mesh;
+	RendererMeshStorage::_multimesh_instance_get_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform;
+	RendererMeshStorage::_multimesh_instance_get_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform_2d;
+	RendererMeshStorage::_multimesh_instance_get_color =
+		&RendererRD::MeshStorage::_multimesh_instance_get_color;
+	RendererMeshStorage::_multimesh_instance_get_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_get_custom_data;
+	RendererMeshStorage::_multimesh_set_buffer = &RendererRD::MeshStorage::_multimesh_set_buffer;
+	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer = &RendererRD::MeshStorage::_multimesh_get_buffer;
+	RendererMeshStorage::_multimesh_set_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_set_visible_instances;
+	RendererMeshStorage::_multimesh_get_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_get_visible_instances;
+	RendererMeshStorage::_multimesh_get_aabb = &RendererRD::MeshStorage::_multimesh_get_aabb;
+	RendererMeshStorage::_multimesh_get_interpolator =
+		&RendererRD::MeshStorage::_multimesh_get_interpolator;
+
+	RendererMeshStorage::skeleton_allocate = &RendererRD::MeshStorage::skeleton_allocate;
+	RendererMeshStorage::skeleton_initialize = &RendererRD::MeshStorage::skeleton_initialize;
+	RendererMeshStorage::skeleton_free = &RendererRD::MeshStorage::skeleton_free;
+	RendererMeshStorage::skeleton_allocate_data = &RendererRD::MeshStorage::skeleton_allocate_data;
+	RendererMeshStorage::skeleton_set_base_transform_2d =
+		&RendererRD::MeshStorage::skeleton_set_base_transform_2d;
+	RendererMeshStorage::skeleton_get_bone_count =
+		&RendererRD::MeshStorage::skeleton_get_bone_count;
+	RendererMeshStorage::skeleton_bone_set_transform =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform;
+	RendererMeshStorage::skeleton_bone_get_transform =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform;
+	RendererMeshStorage::skeleton_bone_set_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform_2d;
+	RendererMeshStorage::skeleton_bone_get_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform_2d;
+	RendererMeshStorage::skeleton_update_dependency =
+		&RendererRD::MeshStorage::skeleton_update_dependency;
+}
+
+

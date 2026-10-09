@@ -48,7 +48,7 @@
 #include "drivers/windows/thread_windows.h"
 #include "main/main.h"
 #include "servers/audio/audio_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 #include <avrt.h>
@@ -818,7 +818,7 @@ Vector<String> OS_Windows::_get_video_adapter_driver_info_wmi(const String &p_na
 }
 
 Vector<String> OS_Windows::get_video_adapter_driver_info() const {
-	if (RenderingServer::get_singleton() == nullptr) {
+	if (Renderer::get_singleton() == nullptr) {
 		return Vector<String>();
 	}
 
@@ -827,7 +827,7 @@ Vector<String> OS_Windows::get_video_adapter_driver_info() const {
 		return info;
 	}
 
-	const String device_name = RenderingServer::get_video_adapter_name();
+	const String device_name = Renderer::get_video_adapter_name();
 	if (device_name.is_empty()) {
 		return Vector<String>();
 	}
@@ -2628,7 +2628,7 @@ void OS_Windows::add_frame_delay(bool p_can_draw, bool p_wake_for_events) {
 		}
 	}
 
-	const uint32_t frame_delay = Engine::get_singleton()->get_frame_delay();
+	const uint32_t frame_delay = Engine::get_frame_delay();
 	if (frame_delay) {
 		// Add fixed frame delay to decrease CPU/GPU usage. This doesn't take
 		// the actual frame time into account.
@@ -2643,8 +2643,8 @@ void OS_Windows::add_frame_delay(bool p_can_draw, bool p_wake_for_events) {
 	if (is_in_low_processor_usage_mode() || !p_can_draw) {
 		dynamic_delay = get_low_processor_usage_mode_sleep_usec();
 	}
-	const int max_fps = Engine::get_singleton()->get_max_fps();
-	if (max_fps > 0 && !Engine::get_singleton()->is_editor_hint()) {
+	const int max_fps = Engine::get_max_fps();
+	if (max_fps > 0 && !Engine::is_editor_hint()) {
 		// Override the low processor usage mode sleep delay if the target FPS is lower.
 		dynamic_delay = MAX(dynamic_delay, (uint64_t)(1000000 / max_fps));
 	}

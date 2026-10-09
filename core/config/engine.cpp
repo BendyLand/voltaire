@@ -51,9 +51,9 @@ void Engine::set_physics_ticks_per_second(int p_ips)
 	_update_time_scale();
 }
 
-int Engine::get_physics_ticks_per_second() const { return ips; }
+int Engine::get_physics_ticks_per_second() { return ips; }
 
-int Engine::get_user_physics_ticks_per_second() const { return user_ips; }
+int Engine::get_user_physics_ticks_per_second() { return user_ips; }
 
 void Engine::set_max_physics_steps_per_frame(int p_max_physics_steps)
 {
@@ -63,9 +63,9 @@ void Engine::set_max_physics_steps_per_frame(int p_max_physics_steps)
 	_update_time_scale();
 }
 
-int Engine::get_max_physics_steps_per_frame() const { return max_physics_steps_per_frame; }
+int Engine::get_max_physics_steps_per_frame() { return max_physics_steps_per_frame; }
 
-int Engine::get_user_max_physics_steps_per_frame() const
+int Engine::get_user_max_physics_steps_per_frame()
 {
 	return max_user_physics_steps_per_frame;
 }
@@ -78,7 +78,7 @@ void Engine::set_physics_jitter_fix(double p_threshold)
 	physics_jitter_fix = p_threshold;
 }
 
-double Engine::get_physics_jitter_fix() const { return physics_jitter_fix; }
+double Engine::get_physics_jitter_fix() { return physics_jitter_fix; }
 
 void Engine::set_max_fps(int p_fps)
 {
@@ -89,14 +89,14 @@ void Engine::set_max_fps(int p_fps)
 	}
 }
 
-int Engine::get_max_fps() const { return _max_fps; }
+int Engine::get_max_fps() { return _max_fps; }
 
 void Engine::set_audio_output_latency(int p_msec)
 {
 	_audio_output_latency = p_msec > 1 ? p_msec : 1;
 }
 
-int Engine::get_audio_output_latency() const { return _audio_output_latency; }
+int Engine::get_audio_output_latency() { return _audio_output_latency; }
 
 void Engine::increment_frames_drawn()
 {
@@ -115,7 +115,7 @@ uint64_t Engine::get_frames_drawn() { return frames_drawn; }
 
 void Engine::set_frame_delay(uint32_t p_msec) { _frame_delay = p_msec; }
 
-uint32_t Engine::get_frame_delay() const { return _frame_delay; }
+uint32_t Engine::get_frame_delay() { return _frame_delay; }
 
 void Engine::set_time_scale(double p_scale)
 {
@@ -123,7 +123,7 @@ void Engine::set_time_scale(double p_scale)
 	_update_time_scale();
 }
 
-double Engine::get_time_scale() const { return freeze_time_scale ? 0.0 : _game_time_scale; }
+double Engine::get_time_scale() { return freeze_time_scale ? 0.0 : _game_time_scale; }
 
 void Engine::set_user_time_scale(double p_scale)
 {
@@ -131,13 +131,13 @@ void Engine::set_user_time_scale(double p_scale)
 	_update_time_scale();
 }
 
-double Engine::get_effective_time_scale() const { return freeze_time_scale ? 0.0 : _time_scale; }
+double Engine::get_effective_time_scale() { return freeze_time_scale ? 0.0 : _time_scale; }
 
-double Engine::get_unfrozen_time_scale() const { return _time_scale; }
+double Engine::get_unfrozen_time_scale() { return _time_scale; }
 
-String Engine::get_license_text() const { return String(GODOT_LICENSE_TEXT); }
+String Engine::get_license_text() { return String(GODOT_LICENSE_TEXT); }
 
-String Engine::get_architecture_name() const
+String Engine::get_architecture_name()
 {
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
 	return "x86_64";
@@ -160,67 +160,52 @@ String Engine::get_architecture_name() const
 #endif
 }
 
-bool Engine::is_abort_on_gpu_errors_enabled() const { return abort_on_gpu_errors; }
+bool Engine::is_abort_on_gpu_errors_enabled() { return abort_on_gpu_errors; }
 
-int32_t Engine::get_gpu_index() const { return gpu_idx; }
+int32_t Engine::get_gpu_index() { return gpu_idx; }
 
-bool Engine::is_validation_layers_enabled() const { return use_validation_layers; }
+bool Engine::is_validation_layers_enabled() { return use_validation_layers; }
 
-bool Engine::is_generate_spirv_debug_info_enabled() const { return generate_spirv_debug_info; }
+bool Engine::is_generate_spirv_debug_info_enabled() { return generate_spirv_debug_info; }
 
-bool Engine::is_extra_gpu_memory_tracking_enabled() const { return extra_gpu_memory_tracking; }
+bool Engine::is_extra_gpu_memory_tracking_enabled() { return extra_gpu_memory_tracking; }
 
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-bool Engine::is_accurate_breadcrumbs_enabled() const { return accurate_breadcrumbs; }
+bool Engine::is_accurate_breadcrumbs_enabled() { return accurate_breadcrumbs; }
 #endif
 
 void Engine::set_print_to_stdout(bool p_enabled) { CoreGlobals::print_line_enabled = p_enabled; }
 
-bool Engine::is_printing_to_stdout() const { return CoreGlobals::print_line_enabled; }
+bool Engine::is_printing_to_stdout() { return CoreGlobals::print_line_enabled; }
 
 void Engine::set_print_error_messages(bool p_enabled)
 {
 	CoreGlobals::print_error_enabled = p_enabled;
 }
 
-bool Engine::is_printing_error_messages() const { return CoreGlobals::print_error_enabled; }
+bool Engine::is_printing_error_messages() { return CoreGlobals::print_error_enabled; }
 
-void Engine::print_header(const String& p_string) const
+void Engine::print_header(const String& p_string)
 {
 	if (_print_header) {
 		__print_line(p_string);
 	}
 }
 
-void Engine::print_header_rich(const String& p_string) const
+void Engine::print_header_rich(const String& p_string)
 {
 	if (_print_header) {
 		__print_line_rich(p_string);
 	}
 }
 
-void Engine::get_singletons(List<Singleton>* p_singletons)
-{
-	for (const Singleton& E : singletons) {
-#ifdef TOOLS_ENABLED
-		if (!is_editor_hint() && E.editor_only) {
-			continue;
-		}
-#endif
-
-		p_singletons->push_back(E);
-	}
-}
-
-String Engine::get_write_movie_path() const { return write_movie_path; }
+String Engine::get_write_movie_path() { return write_movie_path; }
 
 void Engine::set_write_movie_path(const String& p_path) { write_movie_path = p_path; }
 
 void Engine::set_shader_cache_path(const String& p_path) { shader_cache_path = p_path; }
 
-String Engine::get_shader_cache_path() const { return shader_cache_path; }
-
-Engine* Engine::get_singleton() { return singleton; }
+String Engine::get_shader_cache_path() { return shader_cache_path; }
 
 bool Engine::notify_frame_server_synced()
 {
@@ -232,15 +217,6 @@ void Engine::set_freeze_time_scale(bool p_frozen) { freeze_time_scale = p_frozen
 
 void Engine::set_embedded_in_editor(bool p_enabled) { embedded_in_editor = p_enabled; }
 
-bool Engine::is_embedded_in_editor() const { return embedded_in_editor; }
-
-Engine::Engine() { singleton = this; }
-
-Engine::~Engine()
-{
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
+bool Engine::is_embedded_in_editor() { return embedded_in_editor; }
 
 

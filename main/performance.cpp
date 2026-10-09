@@ -34,7 +34,7 @@
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "servers/audio/audio_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "servers/navigation_2d/navigation_server_2d.h"
@@ -146,7 +146,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 
 	switch (p_monitor) {
 	case TIME_FPS:
-		return Engine::get_singleton()->get_frames_per_second();
+		return Engine::get_frames_per_second();
 	case TIME_PROCESS:
 		return _process_time;
 	case TIME_PHYSICS_PROCESS:

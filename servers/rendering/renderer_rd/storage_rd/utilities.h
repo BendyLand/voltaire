@@ -31,6 +31,8 @@
 #pragma once
 
 #include "core/templates/rid_owner.h"
+#include "servers/rendering/rendering_device_enums.h"
+#include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/storage/utilities.h"
 
 namespace RendererRD
@@ -40,91 +42,93 @@ namespace RendererRD
 
 struct VisibilityNotifier
 {
-	AABB aabb;
-	Dependency dependency;
+    AABB aabb;
+    Dependency dependency;
 };
 
-class Utilities : public RendererUtilities
+class Utilities final
 {
 private:
-	static Utilities* singleton;
+    /* VISIBILITY NOTIFIER */
 
-	/* VISIBILITY NOTIFIER */
+    static inline RID_Owner<VisibilityNotifier> visibility_notifier_owner;
 
-	mutable RID_Owner<VisibilityNotifier> visibility_notifier_owner;
+    /* MISC */
 
-	/* MISC */
-
-	// keep cached since it can be called form any thread
-	uint64_t texture_mem_cache = 0;
-	uint64_t buffer_mem_cache = 0;
-	uint64_t total_mem_cache = 0;
+    // keep cached since it can be called from any thread
+    static inline uint64_t texture_mem_cache = 0;
+    static inline uint64_t buffer_mem_cache = 0;
+    static inline uint64_t total_mem_cache = 0;
 
 public:
-	static Utilities* get_singleton() { return singleton; }
+    Utilities() = delete;
+    Utilities(const Utilities&) = delete;
+    Utilities& operator=(const Utilities&) = delete;
+    ~Utilities() = delete;
 
-	Utilities();
-	virtual ~Utilities() override;
+    static void initialize();
+    static void finalize();
 
-	/* INSTANCES */
+    /* INSTANCES */
 
-	virtual RSE::InstanceType get_base_type(RID p_rid) const override;
-	virtual bool free(RID p_rid) override;
+    static RSE::InstanceType get_base_type(RID p_rid);
+    static bool free(RID p_rid);
 
-	/* DEPENDENCIES */
+    /* DEPENDENCIES */
 
-	virtual void base_update_dependency(RID p_base, DependencyTracker* p_instance) override;
+    static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
 
-	/* VISIBILITY NOTIFIER */
+    /* VISIBILITY NOTIFIER */
 
-	VisibilityNotifier* get_visibility_notifier(RID p_rid)
-	{
-		return visibility_notifier_owner.get_or_null(p_rid);
-	}
+    _FORCE_INLINE_ static VisibilityNotifier* get_visibility_notifier(RID p_rid)
+    {
+        return visibility_notifier_owner.get_or_null(p_rid);
+    }
 
-	bool owns_visibility_notifier(RID p_rid) const { return visibility_notifier_owner.owns(p_rid); }
+    _FORCE_INLINE_ static bool owns_visibility_notifier(RID p_rid)
+    {
+        return visibility_notifier_owner.owns(p_rid);
+    }
 
-	virtual RID visibility_notifier_allocate() override;
-	virtual void visibility_notifier_initialize(RID p_notifier) override;
-	virtual void visibility_notifier_free(RID p_notifier) override;
+    static RID visibility_notifier_allocate();
+    static void visibility_notifier_initialize(RID p_notifier);
+    static void visibility_notifier_free(RID p_notifier);
 
-	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) override;
+    static void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb);
 
-	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override;
-	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override;
+    static AABB visibility_notifier_get_aabb(RID p_notifier);
+    static void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred);
 
-	/* TIMING */
+    /* TIMING */
 
-	virtual void capture_timestamps_begin() override;
-	virtual void capture_timestamp(const String& p_name) override;
-	virtual uint32_t get_captured_timestamps_count() const override;
-	virtual uint64_t get_captured_timestamps_frame() const override;
-	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const override;
-	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const override;
-	virtual String get_captured_timestamp_name(uint32_t p_index) const override;
+    static void capture_timestamps_begin();
+    static void capture_timestamp(const String& p_name);
+    static uint32_t get_captured_timestamps_count();
+    static uint64_t get_captured_timestamps_frame();
+    static uint64_t get_captured_timestamp_gpu_time(uint32_t p_index);
+    static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index);
+    static String get_captured_timestamp_name(uint32_t p_index);
 
-	/* MISC */
+    /* MISC */
 
-	virtual void update_dirty_resources() override;
+    static void update_dirty_resources();
 
-	virtual void set_debug_generate_wireframes(bool p_generate) override {}
+    _FORCE_INLINE_ static void set_debug_generate_wireframes(bool p_generate) {}
 
-	virtual bool has_os_feature(const String& p_feature) const override;
+    static bool has_os_feature(const String& p_feature);
 
-	virtual void update_memory_info() override;
+    static void update_memory_info();
 
-	virtual uint64_t get_rendering_info(RSE::RenderingInfo p_info) override;
+    static uint64_t get_rendering_info(RSE::RenderingInfo p_info);
 
-	virtual String get_video_adapter_name() const override;
-	virtual String get_video_adapter_vendor() const override;
-	virtual RenderingDeviceEnums::DeviceType get_video_adapter_type() const override;
-	virtual String get_video_adapter_api_version() const override;
+    static String get_video_adapter_name();
+    static String get_video_adapter_vendor();
+    static RenderingDeviceEnums::DeviceType get_video_adapter_type();
+    static String get_video_adapter_api_version();
 
-	virtual Size2i get_maximum_viewport_size() const override;
-	virtual uint32_t get_maximum_shader_varyings() const override;
-	virtual uint64_t get_maximum_uniform_buffer_size() const override;
+    static Size2i get_maximum_viewport_size();
+    static uint32_t get_maximum_shader_varyings();
+    static uint64_t get_maximum_uniform_buffer_size();
 };
 
 } // namespace RendererRD
-
-

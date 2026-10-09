@@ -141,8 +141,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 	{
 		ShaderVariant variant = SHADER_VARIANT_MAX;
 		RD::FramebufferFormatID framebuffer_format_id = RD::INVALID_FORMAT_ID;
-		RD::VertexFormatID vertex_format_id = RD::INVALID_ID;
-		RD::RenderPrimitive render_primitive = RD::RENDER_PRIMITIVE_MAX;
+		RD::VertexFormatID vertex_format_id = RDC::INVALID_ID;
+		RDC::RenderPrimitive render_primitive = RDC::RENDER_PRIMITIVE_MAX;
 		ShaderSpecialization shader_specialization = {};
 		uint32_t lcd_blend = 0;
 		uint32_t ubershader = 0;
@@ -599,7 +599,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 			Item::Command::TYPE_ANIMATION_SLICE; // Can default to any type that doesn't form a
 												 // batch.
 		ShaderVariant shader_variant = SHADER_VARIANT_QUAD;
-		RD::RenderPrimitive render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+		RDC::RenderPrimitive render_primitive = RDC::RENDER_PRIMITIVE_TRIANGLES;
 		bool use_lighting = false;
 		bool use_msdf = false;
 		bool use_lcd = false;

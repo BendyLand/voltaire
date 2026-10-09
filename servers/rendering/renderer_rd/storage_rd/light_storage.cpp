@@ -34,7 +34,7 @@
 #include "light_storage.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -769,7 +769,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -967,7 +967,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 		}
 
-		light_instance->last_pass = RSG::rasterizer->get_frame_number();
+		light_instance->last_pass = RendererCompositor::get_frame_number();
 	}
 
 	if (omni_light_count) {
@@ -1083,7 +1083,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -1847,10 +1847,10 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 		bool use_storage =
 			!((copy_effects->get_raster_effects() & CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
 		{
-			RD::TextureFormat tf;
+			RDC::TextureFormat tf;
 			tf.array_layers = atlas->count;
 			tf.format = get_reflection_probe_color_format();
-			tf.texture_type = RD::TEXTURE_TYPE_2D_ARRAY;
+			tf.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
 			tf.mipmaps = mipmaps;
 			tf.width = atlas->reflection_texture_size;
 			tf.height = atlas->reflection_texture_size;
@@ -1858,17 +1858,17 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 			atlas->reflection = RD::texture_create(tf, RD::TextureView());
 		}
 		{
-			RD::TextureFormat tf;
+			RDC::TextureFormat tf;
 			tf.array_layers = 6;
 			tf.format = get_reflection_probe_color_format();
-			tf.texture_type = RD::TEXTURE_TYPE_CUBE;
+			tf.texture_type = RDC::TEXTURE_TYPE_CUBE;
 			tf.width = atlas->size;
 			tf.height = atlas->size;
 			tf.usage_bits = get_reflection_probe_color_usage_bits(use_storage);
 			atlas->color_buffer = RD::texture_create(tf, RD::TextureView());
 		}
 		{
-			RD::TextureFormat tf;
+			RDC::TextureFormat tf;
 			tf.format = get_reflection_probe_depth_format();
 			tf.width = atlas->size;
 			tf.height = atlas->size;
@@ -2127,7 +2127,7 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 	for (uint32_t i = 0; i < reflection_count; i++) {
 		ReflectionProbeInstance* rpi = reflection_sort[i].probe_instance;
 
-		rpi->last_pass = RSG::rasterizer->get_frame_number();
+		rpi->last_pass = RendererCompositor::get_frame_number();
 
 		if (using_forward_ids) {
 			forward_id_storage->map_forward_id(
@@ -2164,7 +2164,7 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure =
-				RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			reflection_ubo.exposure_normalization = exposure / probe->baked_exposure;
 		}
@@ -2184,28 +2184,28 @@ void LightStorage::update_reflection_probe_buffer(RenderDataRD* p_render_data,
 	}
 }
 
-RD::DataFormat LightStorage::get_reflection_probe_color_format()
+RDC::DataFormat LightStorage::get_reflection_probe_color_format()
 {
 	return RendererSceneRenderRD::_render_buffers_get_preferred_color_format();
 }
 
 uint32_t LightStorage::get_reflection_probe_color_usage_bits(bool p_storage)
 {
-	return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT |
-		   (p_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0);
+	return RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT |
+		   (p_storage ? RDC::TEXTURE_USAGE_STORAGE_BIT : 0);
 }
 
-RD::DataFormat LightStorage::get_reflection_probe_depth_format()
+RDC::DataFormat LightStorage::get_reflection_probe_depth_format()
 {
 	return RD::texture_is_format_supported_for_usage(
-			   RD::DATA_FORMAT_D32_SFLOAT, RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-			   ? RD::DATA_FORMAT_D32_SFLOAT
-			   : RD::DATA_FORMAT_X8_D24_UNORM_PACK32;
+			   RDC::DATA_FORMAT_D32_SFLOAT, RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			   ? RDC::DATA_FORMAT_D32_SFLOAT
+			   : RDC::DATA_FORMAT_X8_D24_UNORM_PACK32;
 }
 
 uint32_t LightStorage::get_reflection_probe_depth_usage_bits()
 {
-	return RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+	return RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 }
 
 RID LightStorage::lightmap_allocate() { return lightmap_owner.allocate_rid(); }
@@ -2527,7 +2527,7 @@ void LightStorage::shadow_atlas_free(RID p_atlas)
 void LightStorage::_update_shadow_atlas(ShadowAtlas* shadow_atlas)
 {
 	if (shadow_atlas->size > 0 && shadow_atlas->depth.is_null()) {
-		RD::TextureFormat tf;
+		RDC::TextureFormat tf;
 		tf.format = get_shadow_atlas_depth_format(shadow_atlas->use_16_bits);
 		tf.width = shadow_atlas->size;
 		tf.height = shadow_atlas->size;
@@ -2949,20 +2949,20 @@ void LightStorage::shadow_atlas_update(RID p_atlas)
 	_update_shadow_atlas(shadow_atlas);
 }
 
-RD::DataFormat LightStorage::get_shadow_atlas_depth_format(bool p_16_bits)
+RDC::DataFormat LightStorage::get_shadow_atlas_depth_format(bool p_16_bits)
 {
-	return p_16_bits ? RD::DATA_FORMAT_D16_UNORM : RD::DATA_FORMAT_D32_SFLOAT;
+	return p_16_bits ? RDC::DATA_FORMAT_D16_UNORM : RDC::DATA_FORMAT_D32_SFLOAT;
 }
 
 uint32_t LightStorage::get_shadow_atlas_depth_usage_bits()
 {
-	return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	return RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 }
 
 void LightStorage::update_directional_shadow_atlas()
 {
 	if (directional_shadow.depth.is_null() && directional_shadow.size > 0) {
-		RD::TextureFormat tf;
+		RDC::TextureFormat tf;
 		tf.format = get_shadow_atlas_depth_format(directional_shadow.use_16_bits);
 		tf.width = directional_shadow.size;
 		tf.height = directional_shadow.size;
@@ -3058,12 +3058,12 @@ LightStorage::ShadowCubemap* LightStorage::_get_shadow_cubemap(int p_size)
 	if (!shadow_cubemaps.has(p_size)) {
 		ShadowCubemap sc;
 		{
-			RD::TextureFormat tf;
+			RDC::TextureFormat tf;
 			tf.format = get_cubemap_depth_format();
 			tf.width = p_size;
 
 			tf.height = p_size;
-			tf.texture_type = RD::TEXTURE_TYPE_CUBE;
+			tf.texture_type = RDC::TEXTURE_TYPE_CUBE;
 			tf.array_layers = 6;
 			tf.usage_bits = get_cubemap_depth_usage_bits();
 			sc.cubemap = RD::texture_create(tf, RD::TextureView());
@@ -3097,17 +3097,17 @@ RID LightStorage::get_cubemap_fb(int p_size, int p_pass)
 	return cubemap->side_fb[p_pass];
 }
 
-RD::DataFormat LightStorage::get_cubemap_depth_format()
+RDC::DataFormat LightStorage::get_cubemap_depth_format()
 {
 	return RD::texture_is_format_supported_for_usage(
-			   RD::DATA_FORMAT_D32_SFLOAT, RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-			   ? RD::DATA_FORMAT_D32_SFLOAT
-			   : RD::DATA_FORMAT_X8_D24_UNORM_PACK32;
+			   RDC::DATA_FORMAT_D32_SFLOAT, RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			   ? RDC::DATA_FORMAT_D32_SFLOAT
+			   : RDC::DATA_FORMAT_X8_D24_UNORM_PACK32;
 }
 
 uint32_t LightStorage::get_cubemap_depth_usage_bits()
 {
-	return RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+	return RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 }
 
 bool LightStorage::get_shadow_cubemaps_used() const { return shadow_cubemaps_used; }

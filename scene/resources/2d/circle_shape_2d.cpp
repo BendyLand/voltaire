@@ -30,7 +30,7 @@
 
 #include "circle_shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 bool CircleShape2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
 {
@@ -71,12 +71,12 @@ void CircleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 	}
 
 	Vector<Color> col = {p_color};
-	RenderingServer::canvas_item_add_polygon(p_to_rid, points, col);
+	Renderer::canvas_item_add_polygon(p_to_rid, points, col);
 
 	if (is_collision_outline_enabled()) {
 		points.push_back(points[0]);
 		col = {Color(p_color, 1.0)};
-		RenderingServer::canvas_item_add_polyline(p_to_rid, points, col);
+		Renderer::canvas_item_add_polyline(p_to_rid, points, col);
 	}
 }
 

@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_types.h"
 #include "shader_compiler.h"
 
@@ -1773,7 +1773,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const StringName& p_name)
 {
 	RSE::GlobalShaderParameterType gvt =
-		RSG::material_storage->global_shader_parameter_get_type(p_name);
+		RS::material_storage->global_shader_parameter_get_type(p_name);
 	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 

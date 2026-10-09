@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "scene/resources/atlas_texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "texture_rect.h"
 
 Size2 TextureRect::get_minimum_size() const

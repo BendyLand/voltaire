@@ -239,12 +239,12 @@ Error HTTPClientWeb::poll() {
 		case STATUS_REQUESTING: {
 #ifdef DEBUG_ENABLED
 			// forcing synchronous requests is not possible on the web
-			if (last_polling_frame == Engine::get_singleton()->get_process_frames()) {
+			if (last_polling_frame == Engine::get_process_frames()) {
 				WARN_PRINT("HTTPClientWeb polled multiple times in one frame, "
 						   "but request cannot progress more than once per "
 						   "frame on the Web platform.");
 			}
-			last_polling_frame = Engine::get_singleton()->get_process_frames();
+			last_polling_frame = Engine::get_process_frames();
 #endif
 
 			polled_response_code = godot_js_fetch_http_status_get(js_id);

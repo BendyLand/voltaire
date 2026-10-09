@@ -37,7 +37,7 @@
 #include "scene/resources/surface_tool.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/rendering/rendering_server.h" // Only used for debug collision shapes.
+#include "servers/rendering/renderer.h" // Only used for debug collision shapes.
 #endif											// PHYSICS_3D_DISABLED
 
 #ifdef DEV_ENABLED
@@ -637,7 +637,7 @@ Ref<ConcavePolygonShape3D> CSGShape3D::bake_collision_shape()
 
 bool CSGShape3D::_is_debug_collision_shape_visible()
 {
-	return !Engine::get_singleton()->is_editor_hint() && is_inside_tree() &&
+	return !Engine::is_editor_hint() && is_inside_tree() &&
 		   get_tree()->is_debugging_collisions_hint();
 }
 
@@ -648,7 +648,7 @@ void CSGShape3D::_update_debug_collision_shape()
 		return;
 	}
 
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (root_collision_debug_instance.is_null()) {
 		root_collision_debug_instance = RS::instance_create();

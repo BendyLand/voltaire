@@ -31,7 +31,7 @@
 #include "convex_polygon_shape_2d.h"
 #include "core/math/geometry_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 bool ConvexPolygonShape2D::_edit_is_selected_on_click(
 	const Point2& p_point, double p_tolerance) const
@@ -90,13 +90,13 @@ void ConvexPolygonShape2D::draw(const RID& p_to_rid, const Color& p_color)
 	}
 
 	Vector<Color> col = {p_color};
-	RenderingServer::canvas_item_add_polygon(p_to_rid, points, col);
+	Renderer::canvas_item_add_polygon(p_to_rid, points, col);
 
 	if (is_collision_outline_enabled()) {
 		col = {Color(p_color, 1.0)};
-		RenderingServer::canvas_item_add_polyline(p_to_rid, points, col);
+		Renderer::canvas_item_add_polyline(p_to_rid, points, col);
 		// Draw the last segment.
-		RenderingServer::canvas_item_add_line(
+		Renderer::canvas_item_add_line(
 			p_to_rid, points[points.size() - 1], points[0], Color(p_color, 1.0));
 	}
 }

@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "core/version.h"
 #include "particle_process_material.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Mutex ParticleProcessMaterial::dirty_materials_mutex;
 SelfList<ParticleProcessMaterial>::List ParticleProcessMaterial::dirty_materials;
@@ -530,7 +530,7 @@ ParticleProcessMaterial::ParticleProcessMaterial() : element(this)
 
 ParticleProcessMaterial::~ParticleProcessMaterial()
 {
-	ERR_FAIL_NULL(RenderingServer::data);
+	ERR_FAIL_NULL(Renderer::data);
 	MutexLock lock(shader_map_mutex);
 
 	if (shader_map.has(current_key)) {
