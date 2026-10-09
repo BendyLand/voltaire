@@ -2215,12 +2215,12 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	uint64_t p_frames_drawn)
 {
 	uint32_t alignment = 16u; // 16 bytes is reasonable.
-	if ((p_usage & (BUFFER_USAGE_UNIFORM_BIT) != 0)) {
+	if (((p_usage & BUFFER_USAGE_UNIFORM_BIT) != 0)) {
 		// Some GPUs (e.g. NVIDIA) have absurdly high alignments, like 256 bytes.
 		alignment =
 			MAX(alignment, physical_device_properties.limits.minUniformBufferOffsetAlignment);
 	}
-	if ((p_usage & (BUFFER_USAGE_STORAGE_BIT) != 0)) {
+	if (((p_usage & BUFFER_USAGE_STORAGE_BIT) != 0)) {
 		// This shouldn't be a problem since it's often <= 16 bytes. But do it just in case.
 		alignment =
 			MAX(alignment, physical_device_properties.limits.minStorageBufferOffsetAlignment);
@@ -2231,7 +2231,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	p_size = STEPIFY(p_size, alignment);
 
 	const size_t original_size = p_size;
-	if ((p_usage & (BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
+	if (((p_usage & BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
 		p_size = p_size * frame_count;
 	}
 	VkBufferCreateInfo create_info = {};
@@ -2248,8 +2248,8 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 	VmaAllocationCreateInfo alloc_create_info = {};
 	switch (p_allocation_type) {
 	case MEMORY_ALLOCATION_TYPE_CPU: {
-		bool is_src = (p_usage & (BUFFER_USAGE_TRANSFER_FROM_BIT) != 0);
-		bool is_dst = (p_usage & (BUFFER_USAGE_TRANSFER_TO_BIT) != 0);
+		bool is_src = ((p_usage & BUFFER_USAGE_TRANSFER_FROM_BIT) != 0);
+		bool is_dst = ((p_usage & BUFFER_USAGE_TRANSFER_TO_BIT) != 0);
 		if (is_src && !is_dst) {
 			// Looks like a staging buffer: CPU maps, writes sequentially, then GPU copies to VRAM.
 			alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
@@ -2273,7 +2273,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 			// parameters.
 			alloc_create_info.usage = vma_usage;
 		}
-		if ((p_usage & (BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
+		if (((p_usage & BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
 			alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		}
 		alloc_create_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -2315,7 +2315,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 
 	// Bookkeep.
 	BufferInfo* buf_info;
-	if ((p_usage & (BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
+	if (((p_usage & BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) != 0)) {
 		void* persistent_ptr = nullptr;
 		VkResult err = vmaMapMemory(allocator, allocation, &persistent_ptr);
 		ERR_FAIL_COND_V_MSG(err, BufferID(),

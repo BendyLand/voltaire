@@ -401,6 +401,8 @@ public:
 	static bool has_feature(const RDC::Features p_feature);
 
 	// --- Buffer Operations ---
+	static RID index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format,
+        Span<uint8_t> p_data = {}, bool p_use_restart_indices = false);
 	static RID vertex_buffer_create(
 		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 	static VertexFormatID vertex_format_create(

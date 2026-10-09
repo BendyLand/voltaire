@@ -170,6 +170,7 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
+		blit->index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
 		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
 		blit->sampler = RD::sampler_create(RDC::SamplerState());
 	}

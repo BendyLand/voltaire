@@ -3012,6 +3012,26 @@ RID RenderingDevice::sampler_create(const RDC::SamplerState& p_state)
 	return id;
 }
 
+RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format, Span<uint8_t> p_data, bool p_use_restart_indices)
+{
+    MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
+
+    IndexBuffer ib;
+    uint32_t index_size = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 2 : 4;
+    ib.size = p_index_count * index_size;
+    ib.format = p_format;
+    ib.index_count = p_index_count;
+    ib.supports_restart_indices = p_use_restart_indices;
+    ib.max_index = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 0xFFFF : 0xFFFFFFFF;
+    ib.usage = RDD::BUFFER_USAGE_INDEX_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
+
+    Error err = _buffer_initialize(&ib, p_data);
+    ERR_FAIL_COND_V(err != OK, RID());
+
+    RID id = data->index_buffer_owner.make_rid(ib);
+    return id;
+}
+
 RID RenderingDevice::vertex_buffer_create(
 	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
@@ -4592,7 +4612,6 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 		else {
 			DEV_ASSERT(!transfer_worker_pool_full &&
 					   "A transfer worker should never be created when the pool is full.");
-
 			// No existing worker was picked, we create a new one.
 			uint32_t transfer_worker_index = data->transfer_worker_pool_size;
 			++data->transfer_worker_pool_size;
@@ -4604,6 +4623,12 @@ RenderingDevice::TransferWorker* RenderingDevice::_acquire_transfer_worker(
 			transfer_worker->command_buffer =
 				data->driver->command_buffer_create(transfer_worker->command_pool);
 			transfer_worker->index = transfer_worker_index;
+			if (data->transfer_worker_pool.size() <= transfer_worker_index) {
+			    data->transfer_worker_pool.resize(transfer_worker_index + 1);
+			}
+			if (data->transfer_worker_operation_used_by_draw.size() <= transfer_worker_index) {
+			    data->transfer_worker_operation_used_by_draw.resize(transfer_worker_index + 1);
+			}
 			data->transfer_worker_pool[transfer_worker_index] = transfer_worker;
 			data->transfer_worker_operation_used_by_draw[transfer_worker_index] = 0;
 			transfer_worker->thread_mutex.lock();

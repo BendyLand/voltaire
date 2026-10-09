@@ -60,11 +60,13 @@ Error RendererCompositor::create()
 		ERR_FAIL_COND_V_MSG(
 			err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
 	}
+	RendererRD::MeshStorage::initialize();
 	RendererCompositorRD::initialize();
 	return OK;
 #elif defined(GLES3_ENABLED)
 	low_end = true;
 	bind_compositor<RasterizerGLES3>();
+	GLES3::MeshStorage::initialize();
 	RasterizerGLES3::initialize();
 	return OK;
 #else

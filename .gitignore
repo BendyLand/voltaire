@@ -401,3 +401,7 @@ $RECYCLE.BIN/
 errs
 *summary*
 .todo.csv
+out
+leaks
+diff
+
