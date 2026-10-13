@@ -31,6 +31,7 @@
 #include "fsr.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
 
@@ -43,6 +44,16 @@ FSR::~FSR()
 void RendererRD::FSR::process(
 	Ref<RenderSceneBuffersRD> p_buffers, RID p_color_image, RID p_dst_image)
 {
+}
+
+FSR::FSR()
+{
+	Vector<String> modes;
+	modes.push_back("\n");
+	modes.push_back("\n#define SAMPLE_SLOW_FALLBACK\n");
+
+	fsr_shader.initialize(modes);
+	shader_version = fsr_shader.version_create();
 }
 
 

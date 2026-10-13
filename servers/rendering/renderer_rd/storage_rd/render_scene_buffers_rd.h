@@ -188,7 +188,7 @@ private:
 	mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;
 
 	// Samplers.
-	RendererRD::MaterialStorage::Samplers samplers;
+	RendererRD::Samplers samplers;
 
 	void update_samplers();
 
@@ -419,7 +419,7 @@ public:
 	// Samplers adjusted with the mipmap bias that is best fit for the configuration of these render
 	// buffers.
 
-	_FORCE_INLINE_ RendererRD::MaterialStorage::Samplers get_samplers() const { return samplers; }
+	_FORCE_INLINE_ RendererRD::Samplers get_samplers() const { return samplers; }
 
 	_FORCE_INLINE_ static RDC::TextureSamples msaa_to_samples(RSE::ViewportMSAA p_msaa)
 	{

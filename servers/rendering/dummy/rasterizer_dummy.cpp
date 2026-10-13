@@ -58,8 +58,6 @@ RendererGI* RasterizerDummy::get_gi() { return gi; }
 
 RendererLightStorage* RasterizerDummy::get_light_storage() { return light_storage; }
 
-RendererMaterialStorage* RasterizerDummy::get_material_storage() { return material_storage; }
-
 RendererDummy::MeshStorage* RasterizerDummy::get_mesh_storage() { return mesh_storage; }
 
 RendererParticlesStorage* RasterizerDummy::get_particles_storage() { return particles_storage; }
@@ -67,5 +65,15 @@ RendererParticlesStorage* RasterizerDummy::get_particles_storage() { return part
 RendererTextureStorage* RasterizerDummy::get_texture_storage() { return texture_storage; }
 
 RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
+
+RendererMaterialStorage* RasterizerDummy::get_material_storage()
+{
+	static RendererMaterialStorage rms = []() {
+		RendererMaterialStorage s;
+		s.bind<RendererDummy::MaterialStorage>();
+		return s;
+	}();
+	return &rms;
+}
 
 

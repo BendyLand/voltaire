@@ -628,6 +628,7 @@ void Renderer::finalize()
     memdelete(viewport);
     viewport = nullptr;
     light_storage = nullptr;
+    material_storage->finalize();
     material_storage = nullptr;
     particles_storage = nullptr;
     texture_storage = nullptr;

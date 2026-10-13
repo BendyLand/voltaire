@@ -38,10 +38,6 @@
 
 using namespace RendererRD;
 
-void Utilities::initialize() {}
-
-void Utilities::finalize() {}
-
 RSE::InstanceType Utilities::get_base_type(RID p_rid)
 {
 	if (RendererRD::MeshStorage::owns_mesh(p_rid)) {
@@ -86,7 +82,7 @@ bool Utilities::free(RID p_rid)
 	if (RendererRD::LightStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::MaterialStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::MaterialStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::MeshStorage::free(p_rid)) {
@@ -237,10 +233,9 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index)
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::get_singleton()
-		->_update_global_shader_uniforms(); // must do before materials, so it can queue them for
+	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue them for
 											// update
-	MaterialStorage::get_singleton()->_update_queued_materials();
+	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_multimeshes();
 	MeshStorage::_update_dirty_skeletons();
 	TextureStorage::get_singleton()->update_decal_atlas();

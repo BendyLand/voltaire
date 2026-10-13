@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "rasterizer_canvas_gles3.h"
+#include "drivers/gles3/storage/material_storage.h"
 
 #ifdef GLES3_ENABLED
 
@@ -119,7 +120,6 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 	bool& r_sdf_used, RenderingServerTypes::RenderInfo* r_render_info)
 {
 	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 
 	Transform2D canvas_transform_inverse = p_canvas_transform.affine_inverse();
 
@@ -428,7 +428,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			state.canvas_instance_data_buffers[state.current_data_buffer_index].state_ubo);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(StateBuffer), &state_buffer, GL_STREAM_DRAW);
 
-		GLuint global_buffer = material_storage->global_shader_parameters_get_uniform_buffer();
+		GLuint global_buffer = GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 		glBindBufferBase(GL_UNIFORM_BUFFER, GLOBAL_UNIFORM_LOCATION, global_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -479,7 +479,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		RID material = ci->material_owner == nullptr ? ci->material : ci->material_owner->material;
 		if (material.is_valid()) {
 			GLES3::CanvasMaterialData* md = static_cast<GLES3::CanvasMaterialData*>(
-				material_storage->material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+				GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
 			if (md && md->shader_data->valid) {
 				if (md->shader_data->uses_screen_texture && canvas_group_owner == nullptr) {
 					if (!material_screen_texture_cached) {
@@ -655,8 +655,6 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info,
 	bool p_backbuffer_has_mipmaps)
 {
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	canvas_begin(p_to_render_target, p_to_backbuffer, p_backbuffer_has_mipmaps);
 
 	if (p_item_count <= 0) {
@@ -710,7 +708,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			GLES3::CanvasMaterialData* material_data = nullptr;
 			if (material.is_valid()) {
 				material_data = static_cast<GLES3::CanvasMaterialData*>(
-					material_storage->material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+					GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
 			}
 			shader_data_cache = nullptr;
 			if (material_data) {
@@ -821,16 +819,16 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			}
 		}
 
-		bool success = material_storage->shaders.canvas_shader.version_bind_shader(
+		bool success = GLES3::MaterialStorage::shaders->canvas_shader.version_bind_shader(
 			shader_version, variant, specialization);
 		if (!success) {
 			continue;
 		}
 
 		// Bind per-batch uniforms.
-		material_storage->shaders.canvas_shader.version_set_uniform(CanvasShaderGLES3::BATCH_FLAGS,
+		GLES3::MaterialStorage::shaders->canvas_shader.version_set_uniform(CanvasShaderGLES3::BATCH_FLAGS,
 			state.canvas_instance_batches[i].flags, shader_version, variant, specialization);
-		material_storage->shaders.canvas_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->canvas_shader.version_set_uniform(
 			CanvasShaderGLES3::SPECULAR_SHININESS_IN,
 			state.canvas_instance_batches[i].specular_shininess, shader_version, variant,
 			specialization);
@@ -3274,9 +3272,9 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3(
 	global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
 	global_defines += "#define MAX_LIGHTS " + itos(data.max_lights_per_render) + "\n";
 
-	GLES3::MaterialStorage::get_singleton()->shaders.canvas_shader.initialize(global_defines, 1);
+	GLES3::MaterialStorage::shaders->canvas_shader.initialize(global_defines, 1);
 	data.canvas_shader_default_version =
-		GLES3::MaterialStorage::get_singleton()->shaders.canvas_shader.version_create();
+		GLES3::MaterialStorage::shaders->canvas_shader.version_create();
 
 	shadow_render.shader.initialize();
 	shadow_render.shader_version = shadow_render.shader.version_create();
@@ -3344,13 +3342,12 @@ RasterizerCanvasGLES3::~RasterizerCanvasGLES3()
 {
 	singleton = nullptr;
 
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-	material_storage->shaders.canvas_shader.version_free(data.canvas_shader_default_version);
+	GLES3::MaterialStorage::shaders->canvas_shader.version_free(data.canvas_shader_default_version);
 	shadow_render.shader.version_free(shadow_render.shader_version);
-	material_storage->material_free(default_canvas_group_material);
-	material_storage->shader_free(default_canvas_group_shader);
-	material_storage->material_free(default_clip_children_material);
-	material_storage->shader_free(default_clip_children_shader);
+	GLES3::MaterialStorage::material_free(default_canvas_group_material);
+	GLES3::MaterialStorage::shader_free(default_canvas_group_shader);
+	GLES3::MaterialStorage::material_free(default_clip_children_material);
+	GLES3::MaterialStorage::shader_free(default_clip_children_shader);
 	singleton = nullptr;
 
 	glDeleteBuffers(1, &data.canvas_quad_vertices);

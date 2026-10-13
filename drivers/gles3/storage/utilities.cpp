@@ -199,12 +199,12 @@ bool Utilities::free(RID p_rid)
 		GLES3::TextureStorage::get_singleton()->canvas_texture_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MaterialStorage::get_singleton()->owns_shader(p_rid)) {
-		GLES3::MaterialStorage::get_singleton()->shader_free(p_rid);
+	else if (GLES3::MaterialStorage::owns_shader(p_rid)) {
+		GLES3::MaterialStorage::shader_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MaterialStorage::get_singleton()->owns_material(p_rid)) {
-		GLES3::MaterialStorage::get_singleton()->material_free(p_rid);
+	else if (GLES3::MaterialStorage::owns_material(p_rid)) {
+		GLES3::MaterialStorage::material_free(p_rid);
 		return true;
 	}
 	else if (GLES3::MeshStorage::owns_mesh(p_rid)) {
@@ -417,8 +417,8 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index)
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::get_singleton()->_update_global_shader_uniforms();
-	MaterialStorage::get_singleton()->_update_queued_materials();
+	MaterialStorage::_update_global_shader_uniforms();
+	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_skeletons();
 	MeshStorage::_update_dirty_multimeshes();
 	TextureStorage::get_singleton()->update_texture_atlas();

@@ -248,8 +248,8 @@ private:
 
 	static constexpr int z_range = RSE::CANVAS_ITEM_Z_MAX - RSE::CANVAS_ITEM_Z_MIN + 1;
 
-	RendererCanvasRender::Item** z_list;
-	RendererCanvasRender::Item** z_last_list;
+	RendererCanvasRender::Item** z_list = nullptr;
+	RendererCanvasRender::Item** z_last_list = nullptr;
 
 	Transform2D _current_camera_transform;
 
@@ -485,7 +485,7 @@ public:
 		bool interpolation_enabled = false;
 	} _interpolation_data;
 
-	RendererCanvasCull() = default;
+	RendererCanvasCull();
 	~RendererCanvasCull();
 };
 

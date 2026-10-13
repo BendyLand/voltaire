@@ -33,11 +33,14 @@
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/vrs.glsl.gen.h"
 
-namespace RendererRD {
+namespace RendererRD
+{
 
-class VRS {
+class VRS
+{
 private:
-	enum VRSMode {
+	enum VRSMode
+	{
 		VRS_DEFAULT,
 		VRS_MULTIVIEW,
 		VRS_RG,
@@ -45,14 +48,16 @@ private:
 		VRS_MAX,
 	};
 
-	struct VRSPushConstant {
+	struct VRSPushConstant
+	{
 		float max_texel_factor; // 4x8, 8x4 and 8x8 are only available on some GPUs.
 		float res1;
 		float res2;
 		float res3;
 	};
 
-	struct VRSShader {
+	struct VRSShader
+	{
 		// VRSPushConstant push_constant;
 		VrsShaderRD shader;
 		RID shader_version;
@@ -70,3 +75,5 @@ public:
 };
 
 } // namespace RendererRD
+
+

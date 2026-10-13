@@ -207,7 +207,6 @@ void Fog::fog_instance_free(RID p_rid) { fog_volume_instance_owner.free(p_rid); 
 
 void Fog::free_fog_shader()
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 	for (int i = 0; i < VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX; i++) {
 		volumetric_fog.process_pipelines[i].free();
 	}
@@ -221,10 +220,10 @@ void Fog::free_fog_shader()
 		RD::free_rid(volumetric_fog.params_ubo);
 	}
 	if (volumetric_fog.default_shader.is_valid()) {
-		material_storage->shader_free(volumetric_fog.default_shader);
+		MaterialStorage::shader_free(volumetric_fog.default_shader);
 	}
 	if (volumetric_fog.default_material.is_valid()) {
-		material_storage->material_free(volumetric_fog.default_material);
+		MaterialStorage::material_free(volumetric_fog.default_material);
 	}
 }
 

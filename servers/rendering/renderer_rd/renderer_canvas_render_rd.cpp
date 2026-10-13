@@ -402,7 +402,6 @@ _FORCE_INLINE_ static uint32_t _indices_to_primitives(
 RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, bool p_backbuffer)
 {
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
 	// re create canvas state
 	thread_local LocalVector<RD::Uniform> uniforms;
@@ -480,12 +479,11 @@ RID RendererCanvasRenderRD::_create_base_uniform_set(RID p_to_render_target, boo
 		RD::Uniform u;
 		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 9;
-		u.append_id(RendererRD::MaterialStorage::get_singleton()
-						->global_shader_uniforms_get_storage_buffer());
+		u.append_id(RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer());
 		uniforms.push_back(u);
 	}
 
-	material_storage->samplers_rd_get_default().append_uniforms(
+	RendererRD::MaterialStorage::samplers_rd_get_default().append_uniforms(
 		uniforms, SAMPLERS_BINDING_FIRST_INDEX);
 
 	RID uniform_set = RD::uniform_set_create(
@@ -507,7 +505,6 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 	bool& r_sdf_used, RenderingServerTypes::RenderInfo* r_render_info)
 {
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
 	r_sdf_used = false;
 	int item_count = 0;
@@ -789,7 +786,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item* p
 
 		if (material.is_valid()) {
 			CanvasMaterialData* md =
-				static_cast<CanvasMaterialData*>(material_storage->material_get_data(
+				static_cast<CanvasMaterialData*>(RendererRD::MaterialStorage::material_get_data(
 					material, RendererRD::MaterialStorage::SHADER_TYPE_2D));
 			if (md && md->shader_data->is_valid()) {
 				if (md->shader_data->uses_screen_texture && canvas_group_owner == nullptr) {
@@ -2523,16 +2520,15 @@ void RendererCanvasRenderRD::_prepare_batch_texture_info(
 
 RendererCanvasRenderRD::~RendererCanvasRenderRD()
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 
 	// canvas state
 
-	material_storage->material_free(default_canvas_group_material);
-	material_storage->shader_free(default_canvas_group_shader);
+	RendererRD::MaterialStorage::material_free(default_canvas_group_material);
+	RendererRD::MaterialStorage::shader_free(default_canvas_group_shader);
 
-	material_storage->material_free(default_clip_children_material);
-	material_storage->shader_free(default_clip_children_shader);
+	RendererRD::MaterialStorage::material_free(default_clip_children_material);
+	RendererRD::MaterialStorage::shader_free(default_clip_children_shader);
 
 	{
 		if (state.canvas_state_buffer.is_valid()) {

@@ -2882,10 +2882,23 @@ void RendererCanvasCull::InterpolationData::notify_free_canvas_light_occluder(
 	canvas_light_occluder_transform_update_list_prev->erase_multiple_unordered(p_rid);
 }
 
+RendererCanvasCull::RendererCanvasCull()
+{
+	z_list = (RendererCanvasRender::Item **)memalloc(z_range * sizeof(RendererCanvasRender::Item *));
+	z_last_list = (RendererCanvasRender::Item **)memalloc(z_range * sizeof(RendererCanvasRender::Item *));
+	_canvas_cull_singleton = this;
+}
+
 RendererCanvasCull::~RendererCanvasCull()
 {
-	memfree(z_list);
-	memfree(z_last_list);
+	if (z_list) {
+		memfree(z_list);
+		z_list = nullptr;
+	}
+	if (z_last_list) {
+		memfree(z_last_list);
+		z_last_list = nullptr;
+	}
 	_canvas_cull_singleton = nullptr;
 }
 

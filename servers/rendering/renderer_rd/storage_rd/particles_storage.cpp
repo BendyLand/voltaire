@@ -51,9 +51,8 @@ ParticlesStorage::~ParticlesStorage()
 
 	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
 
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-	material_storage->material_free(particles_shader.default_material);
-	material_storage->shader_free(particles_shader.default_shader);
+	MaterialStorage::material_free(particles_shader.default_material);
+	MaterialStorage::shader_free(particles_shader.default_shader);
 
 	if (sort_effects) {
 		memdelete(sort_effects);
@@ -714,7 +713,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta)
 {
 	TextureStorage* texture_storage = TextureStorage::get_singleton();
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 
 	if (p_particles->particles_material_uniform_set.is_null() ||
 		!RD::uniform_set_is_valid(p_particles->particles_material_uniform_set)) {
@@ -1155,10 +1153,10 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	}
 
 	ParticleProcessMaterialData* m =
-		static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
+		static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 			p_particles->process_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	if (!m) {
-		m = static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
+		m = static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 			particles_shader.default_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	}
 

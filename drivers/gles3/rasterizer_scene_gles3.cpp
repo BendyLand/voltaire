@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "rasterizer_scene_gles3.h"
+#include "drivers/gles3/storage/material_storage.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -256,7 +257,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 								 p_material->shader_data->uses_depth_texture ||
 								 p_material->shader_data->uses_normal_texture;
 	bool has_base_alpha =
-		((p_material->shader_data->uses_alpha && !p_material->shader_data->uses_alpha_clip) ||
+		((p_material->shader_data->uses_alpha && !p_material->shader_data->uses_alpha) ||
 			has_read_screen_alpha);
 	bool has_blend_alpha = p_material->shader_data->uses_blend_alpha;
 	bool has_alpha = has_base_alpha || has_blend_alpha;
@@ -324,11 +325,11 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 		!p_material->shader_data->writes_modelview_or_projection &&
 		!p_material->shader_data->uses_vertex && !p_material->shader_data->uses_discard &&
 		!p_material->shader_data->uses_depth_prepass_alpha &&
-		!p_material->shader_data->uses_alpha_clip &&
+		!p_material->shader_data->uses_alpha &&
 		!p_material->shader_data->uses_world_coordinates && !p_material->shader_data->wireframe) {
 		flags |= GeometryInstanceSurface::FLAG_USES_SHARED_SHADOW_MATERIAL;
 		material_shadow = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::get_singleton()->material_get_data(
+			GLES3::MaterialStorage::material_get_data(
 				scene_globals.default_material, RSE::SHADER_SPATIAL));
 
 		RID shadow_mesh = GLES3::MeshStorage::mesh_get_shadow_mesh(p_mesh);
@@ -402,24 +403,23 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material_chain(
 	RID p_mat_src, RID p_mesh)
 {
 	GLES3::SceneMaterialData* material_data = p_material_data;
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 
 	_geometry_instance_add_surface_with_material(ginstance, p_surface, material_data,
-		p_mat_src.get_local_index(), material_storage->material_get_shader_id(p_mat_src), p_mesh);
+		p_mat_src.get_local_index(), GLES3::MaterialStorage::material_get_shader_id(p_mat_src), p_mesh);
 
 	while (material_data->next_pass.is_valid()) {
 		RID next_pass = material_data->next_pass;
 		material_data = static_cast<GLES3::SceneMaterialData*>(
-			material_storage->material_get_data(next_pass, RSE::SHADER_SPATIAL));
+			GLES3::MaterialStorage::material_get_data(next_pass, RSE::SHADER_SPATIAL));
 		if (!material_data || !material_data->shader_data->valid) {
 			break;
 		}
 		if (ginstance->data->dirty_dependencies) {
-			material_storage->material_update_dependency(
+			GLES3::MaterialStorage::material_update_dependency(
 				next_pass, &ginstance->data->dependency_tracker);
 		}
 		_geometry_instance_add_surface_with_material(ginstance, p_surface, material_data,
-			next_pass.get_local_index(), material_storage->material_get_shader_id(next_pass),
+			next_pass.get_local_index(), GLES3::MaterialStorage::material_get_shader_id(next_pass),
 			p_mesh);
 	}
 }
@@ -427,7 +427,6 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material_chain(
 void RasterizerSceneGLES3::_geometry_instance_add_surface(
 	GeometryInstanceGLES3* ginstance, uint32_t p_surface, RID p_material, RID p_mesh)
 {
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 	RID m_src;
 
 	m_src = ginstance->data->material_override.is_valid() ? ginstance->data->material_override
@@ -437,7 +436,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 
 	if (m_src.is_valid()) {
 		material_data = static_cast<GLES3::SceneMaterialData*>(
-			material_storage->material_get_data(m_src, RSE::SHADER_SPATIAL));
+			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL));
 		if (!material_data || !material_data->shader_data->valid) {
 			material_data = nullptr;
 		}
@@ -445,12 +444,12 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 
 	if (material_data) {
 		if (ginstance->data->dirty_dependencies) {
-			material_storage->material_update_dependency(
+			GLES3::MaterialStorage::material_update_dependency(
 				m_src, &ginstance->data->dependency_tracker);
 		}
 	}
 	else {
-		material_data = static_cast<GLES3::SceneMaterialData*>(material_storage->material_get_data(
+		material_data = static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
 			scene_globals.default_material, RSE::SHADER_SPATIAL));
 		m_src = scene_globals.default_material;
 	}
@@ -464,10 +463,10 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 		m_src = ginstance->data->material_overlay;
 
 		material_data = static_cast<GLES3::SceneMaterialData*>(
-			material_storage->material_get_data(m_src, RSE::SHADER_SPATIAL));
+			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL));
 		if (material_data && material_data->shader_data->valid) {
 			if (ginstance->data->dirty_dependencies) {
-				material_storage->material_update_dependency(
+				GLES3::MaterialStorage::material_update_dependency(
 					m_src, &ginstance->data->dependency_tracker);
 			}
 
@@ -753,7 +752,6 @@ GLES3::SkyMaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 {
 	ERR_FAIL_COND_V(p_env.is_null(), nullptr);
 
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 	Sky* sky = sky_owner.get_or_null(environment_get_sky(p_env));
 	RSE::EnvironmentBG background = environment_get_background(p_env);
 
@@ -763,14 +761,14 @@ GLES3::SkyMaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 	if (background == RSE::ENV_BG_CLEAR_COLOR || background == RSE::ENV_BG_COLOR) {
 		sky_material = sky_globals.fog_material;
 		material_data = static_cast<GLES3::SkyMaterialData*>(
-			material_storage->material_get_data(sky_material, RSE::SHADER_SKY));
+			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
 	}
 	else if (sky) {
 		sky_material = sky->material;
 
 		if (sky_material.is_valid()) {
 			material_data = static_cast<GLES3::SkyMaterialData*>(
-				material_storage->material_get_data(sky_material, RSE::SHADER_SKY));
+				GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
 			if (!material_data || !material_data->shader_data->valid) {
 				material_data = nullptr;
 			}
@@ -780,7 +778,7 @@ GLES3::SkyMaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 	if (!material_data) {
 		sky_material = sky_globals.default_material;
 		material_data = static_cast<GLES3::SkyMaterialData*>(
-			material_storage->material_get_data(sky_material, RSE::SHADER_SKY));
+			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
 	}
 
 	return material_data;
@@ -1065,49 +1063,48 @@ void RasterizerSceneGLES3::_draw_sky(RID p_env, const Projection& p_projection,
 	sky_transform.invert();
 	sky_transform = sky_transform * p_transform.basis;
 
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-	bool success = material_storage->shaders.sky_shader.version_bind_shader(
+	bool success = GLES3::MaterialStorage::shaders->sky_shader.version_bind_shader(
 		shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
 	if (!success) {
 		return;
 	}
 
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::ORIENTATION,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::ORIENTATION,
 		sky_transform, shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::PROJECTION,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::PROJECTION,
 		camera.columns[2][0], camera.columns[0][0], camera.columns[2][1], camera.columns[1][1],
 		shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::POSITION,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::POSITION,
 		p_transform.origin, shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::TIME, time,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::TIME, time,
 		shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::SKY_ENERGY_MULTIPLIER,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::SKY_ENERGY_MULTIPLIER,
 		p_sky_energy_multiplier, shader_data->version, SkyShaderGLES3::MODE_BACKGROUND,
 		spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::LUMINANCE_MULTIPLIER,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::LUMINANCE_MULTIPLIER,
 		p_luminance_multiplier, shader_data->version, SkyShaderGLES3::MODE_BACKGROUND,
 		spec_constants);
 
 	Color fog_color = environment_get_fog_light_color(p_env).srgb_to_linear() *
 					  environment_get_fog_light_energy(p_env);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_ENABLED,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_ENABLED,
 		environment_get_fog_enabled(p_env), shader_data->version, SkyShaderGLES3::MODE_BACKGROUND,
 		spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_AERIAL_PERSPECTIVE,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_AERIAL_PERSPECTIVE,
 		environment_get_fog_aerial_perspective(p_env), shader_data->version,
 		SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_LIGHT_COLOR,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_LIGHT_COLOR,
 		fog_color, shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SUN_SCATTER,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SUN_SCATTER,
 		environment_get_fog_sun_scatter(p_env), shader_data->version,
 		SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_DENSITY,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_DENSITY,
 		environment_get_fog_density(p_env), shader_data->version, SkyShaderGLES3::MODE_BACKGROUND,
 		spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SKY_AFFECT,
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SKY_AFFECT,
 		environment_get_fog_sky_affect(p_env), shader_data->version,
 		SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
-	material_storage->shaders.sky_shader.version_set_uniform(
+	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 		SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals.directional_light_count,
 		shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
 
@@ -1161,45 +1158,44 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 		correction.set_depth_correction(false, true, false);
 		cm = correction * cm;
 
-		GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-		bool success = material_storage->shaders.sky_shader.version_bind_shader(
+		bool success = GLES3::MaterialStorage::shaders->sky_shader.version_bind_shader(
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
 		if (!success) {
 			return;
 		}
 
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::POSITION,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::POSITION,
 			p_transform.origin, shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 			SkyShaderGLES3::TIME, time, shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::PROJECTION,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::PROJECTION,
 			cm.columns[2][0], cm.columns[0][0], cm.columns[2][1], cm.columns[1][1],
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 			SkyShaderGLES3::SKY_ENERGY_MULTIPLIER, p_sky_energy_multiplier, shader_data->version,
 			SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 			SkyShaderGLES3::LUMINANCE_MULTIPLIER, 1.0, shader_data->version,
 			SkyShaderGLES3::MODE_CUBEMAP);
 
 		Color fog_color = environment_get_fog_light_color(p_env).srgb_to_linear() *
 						  environment_get_fog_light_energy(p_env);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_ENABLED,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_ENABLED,
 			environment_get_fog_enabled(p_env), shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 			SkyShaderGLES3::FOG_AERIAL_PERSPECTIVE, environment_get_fog_aerial_perspective(p_env),
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_LIGHT_COLOR,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_LIGHT_COLOR,
 			fog_color, shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SUN_SCATTER,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SUN_SCATTER,
 			environment_get_fog_sun_scatter(p_env), shader_data->version,
 			SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_DENSITY,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_DENSITY,
 			environment_get_fog_density(p_env), shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SKY_AFFECT,
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::FOG_SKY_AFFECT,
 			environment_get_fog_sky_affect(p_env), shader_data->version,
 			SkyShaderGLES3::MODE_CUBEMAP);
-		material_storage->shaders.sky_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
 			SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals.directional_light_count,
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
 
@@ -1214,7 +1210,7 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 
 		for (int i = 0; i < 6; i++) {
 			Basis local_view = Basis::looking_at(view_normals[i], view_up[i]);
-			material_storage->shaders.sky_shader.version_set_uniform(SkyShaderGLES3::ORIENTATION,
+			GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(SkyShaderGLES3::ORIENTATION,
 				local_view, shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, sky->raw_radiance, 0);
@@ -2817,7 +2813,7 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 	glViewport(atlas_rect.position.x, atlas_rect.position.y, atlas_rect.size.x, atlas_rect.size.y);
 
 	GLuint global_buffer =
-		GLES3::MaterialStorage::get_singleton()->global_shader_parameters_get_uniform_buffer();
+		GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_GLOBALS_UNIFORM_LOCATION, global_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -2984,7 +2980,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 	//////////
 
 	GLuint global_buffer =
-		GLES3::MaterialStorage::get_singleton()->global_shader_parameters_get_uniform_buffer();
+		GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_GLOBALS_UNIFORM_LOCATION, global_buffer);
 
 	Color clear_color;
@@ -3742,7 +3738,6 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 	bool p_alpha_pass)
 {
 	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 
 	GLuint prev_vertex_array_gl = 0;
 	GLuint prev_index_array_gl = 0;
@@ -4347,7 +4342,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 			if (prev_shader != shader || prev_variant != instance_variant ||
 				spec_constants != prev_spec_constants) {
-				bool success = material_storage->shaders.scene_shader.version_bind_shader(
+				bool success = GLES3::MaterialStorage::shaders->scene_shader.version_bind_shader(
 					shader->version, instance_variant, spec_constants);
 				if (!success) {
 					break;
@@ -4362,7 +4357,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					opaque_prepass_threshold = 0.1;
 				}
 
-				material_storage->shaders.scene_shader.version_set_uniform(
+				GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 					SceneShaderGLES3::OPAQUE_PREPASS_THRESHOLD, opaque_prepass_threshold,
 					shader->version, instance_variant, spec_constants);
 			}
@@ -4381,10 +4376,10 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 							SceneShaderGLES3::Uniforms uniform_name =
 								is_omni ? SceneShaderGLES3::OMNI_LIGHT_INDEX
 										: SceneShaderGLES3::SPOT_LIGHT_INDEX;
-							material_storage->shaders.scene_shader.version_set_uniform(uniform_name,
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(uniform_name,
 								uint32_t(light_id), shader->version, instance_variant,
 								spec_constants);
-							material_storage->shaders.scene_shader.version_set_uniform(
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::POSITIONAL_SHADOW_INDEX, uint32_t(shadow_id),
 								shader->version, instance_variant, spec_constants);
 
@@ -4405,7 +4400,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					else {
 						uint32_t shadow_id = MAX_DIRECTIONAL_LIGHTS - 1 -
 											 (pass - int32_t(inst->light_passes.size()));
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::DIRECTIONAL_SHADOW_INDEX, shadow_id, shader->version,
 							instance_variant, spec_constants);
 
@@ -4422,26 +4417,26 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 							GLES3::Lightmap* lm =
 								GLES3::LightStorage::get_singleton()->get_lightmap(li->lightmap);
 
-							material_storage->shaders.scene_shader.version_set_uniform(
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::LIGHTMAP_SLICE, inst->lightmap_slice_index,
 								shader->version, instance_variant, spec_constants);
 
 							Vector4 uv_scale(inst->lightmap_uv_scale.position.x,
 								inst->lightmap_uv_scale.position.y, inst->lightmap_uv_scale.size.x,
 								inst->lightmap_uv_scale.size.y);
-							material_storage->shaders.scene_shader.version_set_uniform(
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::LIGHTMAP_UV_SCALE, uv_scale, shader->version,
 								instance_variant, spec_constants);
 
 							if (lightmap_bicubic_upscale) {
 								Vector2 light_texture_size(
 									lm->light_texture_size.x, lm->light_texture_size.y);
-								material_storage->shaders.scene_shader.version_set_uniform(
+								GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 									SceneShaderGLES3::LIGHTMAP_TEXTURE_SIZE, light_texture_size,
 									shader->version, instance_variant, spec_constants);
 							}
 
-							material_storage->shaders.scene_shader.version_set_uniform(
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::LIGHTMAP_SHADOWMASK_MODE,
 								(uint32_t)lm->shadowmask_mode, shader->version, instance_variant,
 								spec_constants);
@@ -4468,32 +4463,32 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						prev_spec_constants != spec_constants) &&
 					pass == 0) {
 					// Rebind the light indices.
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::OMNI_LIGHT_COUNT, inst->omni_light_gl_cache.size(),
 						shader->version, instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::SPOT_LIGHT_COUNT, inst->spot_light_gl_cache.size(),
 						shader->version, instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::AREA_LIGHT_COUNT, inst->area_light_gl_cache.size(),
 						shader->version, instance_variant, spec_constants);
 
 					if (inst->omni_light_gl_cache.size()) {
-						glUniform1uiv(material_storage->shaders.scene_shader.version_get_uniform(
+						glUniform1uiv(GLES3::MaterialStorage::shaders->scene_shader.version_get_uniform(
 										  SceneShaderGLES3::OMNI_LIGHT_INDICES, shader->version,
 										  instance_variant, spec_constants),
 							inst->omni_light_gl_cache.size(), inst->omni_light_gl_cache.ptr());
 					}
 
 					if (inst->spot_light_gl_cache.size()) {
-						glUniform1uiv(material_storage->shaders.scene_shader.version_get_uniform(
+						glUniform1uiv(GLES3::MaterialStorage::shaders->scene_shader.version_get_uniform(
 										  SceneShaderGLES3::SPOT_LIGHT_INDICES, shader->version,
 										  instance_variant, spec_constants),
 							inst->spot_light_gl_cache.size(), inst->spot_light_gl_cache.ptr());
 					}
 
 					if (inst->area_light_gl_cache.size()) {
-						glUniform1uiv(material_storage->shaders.scene_shader.version_get_uniform(
+						glUniform1uiv(GLES3::MaterialStorage::shaders->scene_shader.version_get_uniform(
 										  SceneShaderGLES3::AREA_LIGHT_INDICES, shader->version,
 										  instance_variant, spec_constants),
 							inst->area_light_gl_cache.size(), inst->area_light_gl_cache.ptr());
@@ -4511,21 +4506,21 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 4);
 						glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
 
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::LIGHTMAP_SLICE, inst->lightmap_slice_index,
 							shader->version, instance_variant, spec_constants);
 
 						Vector4 uv_scale(inst->lightmap_uv_scale.position.x,
 							inst->lightmap_uv_scale.position.y, inst->lightmap_uv_scale.size.x,
 							inst->lightmap_uv_scale.size.y);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::LIGHTMAP_UV_SCALE, uv_scale, shader->version,
 							instance_variant, spec_constants);
 
 						if (lightmap_bicubic_upscale) {
 							Vector2 light_texture_size(
 								lm->light_texture_size.x, lm->light_texture_size.y);
-							material_storage->shaders.scene_shader.version_set_uniform(
+							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::LIGHTMAP_TEXTURE_SIZE, light_texture_size,
 								shader->version, instance_variant, spec_constants);
 						}
@@ -4537,7 +4532,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 												p_render_data->camera_attributes);
 							exposure_normalization = enf / lm->baked_exposure;
 						}
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::LIGHTMAP_EXPOSURE_NORMALIZATION,
 							exposure_normalization, shader->version, instance_variant,
 							spec_constants);
@@ -4558,7 +4553,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 								(GLfloat)to_lm.rows[2][2],
 							};
 							glUniformMatrix3fv(
-								material_storage->shaders.scene_shader.version_get_uniform(
+								GLES3::MaterialStorage::shaders->scene_shader.version_get_uniform(
 									SceneShaderGLES3::LIGHTMAP_NORMAL_XFORM, shader->version,
 									instance_variant, spec_constants),
 								1, GL_FALSE, matrix);
@@ -4566,7 +4561,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 					}
 					else if (inst->lightmap_sh) {
-						glUniform4fv(material_storage->shaders.scene_shader.version_get_uniform(
+						glUniform4fv(GLES3::MaterialStorage::shaders->scene_shader.version_get_uniform(
 										 SceneShaderGLES3::LIGHTMAP_CAPTURES, shader->version,
 										 instance_variant, spec_constants),
 							9, reinterpret_cast<const GLfloat*>(inst->lightmap_sh->sh));
@@ -4593,33 +4588,33 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						GLES3::ReflectionProbe* probe =
 							light_storage->get_reflection_probe(probe_rid);
 
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_USE_BOX_PROJECT, probe->box_projection,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_BOX_EXTENTS, probe->size * 0.5,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_BOX_OFFSET, probe->origin_offset,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_EXTERIOR, !probe->interior, shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_INTENSITY, probe->intensity,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_AMBIENT_MODE, int(probe->ambient_mode),
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_AMBIENT_COLOR,
 							probe->ambient_color * probe->ambient_color_energy, shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_LOCAL_MATRIX,
 							inst->reflection_probes_local_transform_cache[0], shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_BLEND_DISTANCE, probe->blend_distance,
 							shader->version, instance_variant, spec_constants);
 
@@ -4636,33 +4631,33 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						GLES3::ReflectionProbe* probe =
 							light_storage->get_reflection_probe(probe_rid);
 
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_USE_BOX_PROJECT, probe->box_projection,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_BOX_EXTENTS, probe->size * 0.5,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_BOX_OFFSET, probe->origin_offset,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_EXTERIOR, !probe->interior, shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_INTENSITY, probe->intensity,
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_AMBIENT_MODE, int(probe->ambient_mode),
 							shader->version, instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_AMBIENT_COLOR,
 							probe->ambient_color * probe->ambient_color_energy, shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_LOCAL_MATRIX,
 							inst->reflection_probes_local_transform_cache[1], shader->version,
 							instance_variant, spec_constants);
-						material_storage->shaders.scene_shader.version_set_uniform(
+						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_BLEND_DISTANCE, probe->blend_distance,
 							shader->version, instance_variant, spec_constants);
 
@@ -4682,56 +4677,56 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					inst->is_prev_transform_stored = true;
 				}
 
-				material_storage->shaders.scene_shader.version_set_uniform(
+				GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 					SceneShaderGLES3::PREV_WORLD_TRANSFORM, inst->prev_transform, shader->version,
 					instance_variant, spec_constants);
 				inst->prev_transform = world_transform;
 			}
 
-			material_storage->shaders.scene_shader.version_set_uniform(
+			GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 				SceneShaderGLES3::WORLD_TRANSFORM, world_transform, shader->version,
 				instance_variant, spec_constants);
 			{
 				GLES3::Mesh::Surface* s = reinterpret_cast<GLES3::Mesh::Surface*>(surf->surface);
 				if (s->format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::COMPRESSED_AABB_POSITION, s->aabb.position,
 						shader->version, instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::COMPRESSED_AABB_SIZE, s->aabb.size, shader->version,
 						instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::UV_SCALE, s->uv_scale, shader->version, instance_variant,
 						spec_constants);
 				}
 				else {
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::COMPRESSED_AABB_POSITION, Vector3(0.0, 0.0, 0.0),
 						shader->version, instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::COMPRESSED_AABB_SIZE, Vector3(1.0, 1.0, 1.0),
 						shader->version, instance_variant, spec_constants);
-					material_storage->shaders.scene_shader.version_set_uniform(
+					GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 						SceneShaderGLES3::UV_SCALE, Vector4(0.0, 0.0, 0.0, 0.0), shader->version,
 						instance_variant, spec_constants);
 				}
 			}
 
-			material_storage->shaders.scene_shader.version_set_uniform(
+			GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 				SceneShaderGLES3::MODEL_FLAGS, inst->flags_cache, shader->version, instance_variant,
 				spec_constants);
-			material_storage->shaders.scene_shader.version_set_uniform(
+			GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 				SceneShaderGLES3::INSTANCE_OFFSET, uint32_t(inst->shader_uniforms_offset),
 				shader->version, instance_variant, spec_constants);
 
 			if (p_pass_mode == PASS_MODE_MATERIAL) {
-				material_storage->shaders.scene_shader.version_set_uniform(
+				GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 					SceneShaderGLES3::UV_OFFSET, p_params->uv_offset, shader->version,
 					instance_variant, spec_constants);
 			}
 			else if (p_pass_mode == PASS_MODE_COLOR ||
 					   p_pass_mode == PASS_MODE_COLOR_TRANSPARENT) {
-				material_storage->shaders.scene_shader.version_set_uniform(
+				GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 					SceneShaderGLES3::LAYER_MASK, inst->layer_mask, shader->version,
 					instance_variant, spec_constants);
 			}
@@ -4939,7 +4934,7 @@ void RasterizerSceneGLES3::render_particle_collider_heightfield(RID p_collider,
 	glViewport(0, 0, fb_size.width, fb_size.height);
 
 	GLuint global_buffer =
-		GLES3::MaterialStorage::get_singleton()->global_shader_parameters_get_uniform_buffer();
+		GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_GLOBALS_UNIFORM_LOCATION, global_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -4990,7 +4985,7 @@ void RasterizerSceneGLES3::_render_uv2(const PagedArray<RenderGeometryInstance*>
 		glViewport(p_region.position.x, p_region.position.y, p_region.size.x, p_region.size.y);
 
 		GLuint global_buffer =
-			GLES3::MaterialStorage::get_singleton()->global_shader_parameters_get_uniform_buffer();
+			GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 		glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_GLOBALS_UNIFORM_LOCATION, global_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -5369,10 +5364,10 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
 		if (!config->specular_occlusion) {
 			global_defines += "\n#define SPECULAR_OCCLUSION_DISABLED\n";
 		}
-		material_storage->shaders.scene_shader.initialize(global_defines);
+		material_storage->shaders->scene_shader.initialize(global_defines);
 		scene_globals.shader_default_version =
-			material_storage->shaders.scene_shader.version_create();
-		material_storage->shaders.scene_shader.version_bind_shader(
+			material_storage->shaders->scene_shader.version_create();
+		material_storage->shaders->scene_shader.version_bind_shader(
 			scene_globals.shader_default_version, SceneShaderGLES3::MODE_COLOR);
 	}
 
@@ -5435,8 +5430,8 @@ void fragment() {
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
 		global_defines += "\n#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS " +
 						  itos(sky_globals.max_directional_lights) + "\n";
-		material_storage->shaders.sky_shader.initialize(global_defines);
-		sky_globals.shader_default_version = material_storage->shaders.sky_shader.version_create();
+		material_storage->shaders->sky_shader.initialize(global_defines);
+		sky_globals.shader_default_version = material_storage->shaders->sky_shader.version_create();
 	}
 
 	{
@@ -5541,7 +5536,7 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 	memdelete_arr(scene_state.directional_shadows);
 
 	// Scene Shader
-	GLES3::MaterialStorage::get_singleton()->shaders.scene_shader.version_free(
+	GLES3::MaterialStorage::shaders->scene_shader.version_free(
 		scene_globals.shader_default_version);
 	RS::material_storage->material_free(scene_globals.default_material);
 	RS::material_storage->shader_free(scene_globals.default_shader);
@@ -5551,7 +5546,7 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 	RS::material_storage->shader_free(scene_globals.overdraw_shader);
 
 	// Sky Shader
-	GLES3::MaterialStorage::get_singleton()->shaders.sky_shader.version_free(
+	GLES3::MaterialStorage::shaders->sky_shader.version_free(
 		sky_globals.shader_default_version);
 	RS::material_storage->material_free(sky_globals.default_material);
 	RS::material_storage->shader_free(sky_globals.default_shader);

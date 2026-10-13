@@ -454,7 +454,7 @@ bool RenderForwardMobile::_render_buffers_can_be_storage()
 
 RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_list,
 	const RenderDataRD* p_render_data, bool p_is_multiview, RID p_radiance_texture,
-	const RendererRD::MaterialStorage::Samplers& p_samplers, bool p_use_directional_shadow_atlas,
+	const RendererRD::Samplers& p_samplers, bool p_use_directional_shadow_atlas,
 	uint32_t p_pass_offset)
 {
 	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
@@ -1209,7 +1209,7 @@ void RenderForwardMobile::_render_shadow_process()
 		// latest version
 		SceneState::ShadowPass& shadow_pass = scene_state.shadow_passes[i];
 		shadow_pass.rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr,
-			false, RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default(),
+			false, RID(), RendererRD::MaterialStorage::samplers_rd_get_default(),
 			false, scene_state.shadow_passes.size() - 1u - i);
 	}
 
@@ -1276,7 +1276,7 @@ void RenderForwardMobile::_render_material(const Transform3D& p_cam_transform,
 	_fill_instance_data(RENDER_LIST_SECONDARY);
 
 	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, false,
-		RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default());
+		RID(), RendererRD::MaterialStorage::samplers_rd_get_default());
 
 	RENDER_TIMESTAMP("Render 3D Material");
 
@@ -1329,7 +1329,7 @@ void RenderForwardMobile::_render_particle_collider_heightfield(RID p_fb,
 	_fill_instance_data(RENDER_LIST_SECONDARY);
 
 	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, false,
-		RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default());
+		RID(), RendererRD::MaterialStorage::samplers_rd_get_default());
 
 	RENDER_TIMESTAMP("Render Collider Heightfield");
 
@@ -1457,8 +1457,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 13;
-			u.append_id(RendererRD::MaterialStorage::get_singleton()
-							->global_shader_uniforms_get_storage_buffer());
+			u.append_id(RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer());
 			uniforms.push_back(u);
 		}
 
@@ -1466,7 +1465,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 14;
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
-			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
 				RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 			uniforms.push_back(u);
@@ -1507,7 +1506,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 15;
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
-			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
 				ltc.lut1_texture));
@@ -1518,7 +1517,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 16;
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
-			u.append_id(RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
 				ltc.lut2_texture));
@@ -2206,7 +2205,7 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 	if (p_material->shader_data->uses_shared_shadow_material()) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SHARED_SHADOW_MATERIAL;
 		material_shadow = static_cast<SceneShaderForwardMobile::MaterialData*>(
-			RendererRD::MaterialStorage::get_singleton()->material_get_data(
+			RendererRD::MaterialStorage::material_get_data(
 				scene_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 
 		RID shadow_mesh = RendererRD::MeshStorage::mesh_get_shadow_mesh(p_mesh);
@@ -2291,25 +2290,24 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material_chain(
 	SceneShaderForwardMobile::MaterialData* p_material, RID p_mat_src, RID p_mesh)
 {
 	SceneShaderForwardMobile::MaterialData* material = p_material;
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 
 	_geometry_instance_add_surface_with_material(ginstance, p_surface, material,
-		p_mat_src.get_local_index(), material_storage->material_get_shader_id(p_mat_src), p_mesh);
+		p_mat_src.get_local_index(), RendererRD::MaterialStorage::material_get_shader_id(p_mat_src), p_mesh);
 
 	while (material->next_pass.is_valid()) {
 		RID next_pass = material->next_pass;
 		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
-			material_storage->material_get_data(
+			RendererRD::MaterialStorage::material_get_data(
 				next_pass, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		if (!material || !material->shader_data->is_valid()) {
 			break;
 		}
 		if (ginstance->data->dirty_dependencies) {
-			material_storage->material_update_dependency(
+			RendererRD::MaterialStorage::material_update_dependency(
 				next_pass, &ginstance->data->dependency_tracker);
 		}
 		_geometry_instance_add_surface_with_material(ginstance, p_surface, material,
-			next_pass.get_local_index(), material_storage->material_get_shader_id(next_pass),
+			next_pass.get_local_index(), RendererRD::MaterialStorage::material_get_shader_id(next_pass),
 			p_mesh);
 	}
 }
@@ -2317,7 +2315,6 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material_chain(
 void RenderForwardMobile::_geometry_instance_add_surface(
 	GeometryInstanceForwardMobile* ginstance, uint32_t p_surface, RID p_material, RID p_mesh)
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
 	RID m_src;
 
 	m_src = ginstance->data->material_override.is_valid() ? ginstance->data->material_override
@@ -2327,7 +2324,7 @@ void RenderForwardMobile::_geometry_instance_add_surface(
 
 	if (m_src.is_valid()) {
 		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
-			material_storage->material_get_data(
+			RendererRD::MaterialStorage::material_get_data(
 				m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		if (!material || !material->shader_data->is_valid()) {
 			material = nullptr;
@@ -2336,13 +2333,13 @@ void RenderForwardMobile::_geometry_instance_add_surface(
 
 	if (material) {
 		if (ginstance->data->dirty_dependencies) {
-			material_storage->material_update_dependency(
+			RendererRD::MaterialStorage::material_update_dependency(
 				m_src, &ginstance->data->dependency_tracker);
 		}
 	}
 	else {
 		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
-			material_storage->material_get_data(
+			RendererRD::MaterialStorage::material_get_data(
 				scene_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		m_src = scene_shader.default_material;
 	}
@@ -2356,11 +2353,11 @@ void RenderForwardMobile::_geometry_instance_add_surface(
 		m_src = ginstance->data->material_overlay;
 
 		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
-			material_storage->material_get_data(
+			RendererRD::MaterialStorage::material_get_data(
 				m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		if (material && material->shader_data->is_valid()) {
 			if (ginstance->data->dirty_dependencies) {
-				material_storage->material_update_dependency(
+				RendererRD::MaterialStorage::material_update_dependency(
 					m_src, &ginstance->data->dependency_tracker);
 			}
 

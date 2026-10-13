@@ -146,9 +146,6 @@ struct CanvasShaderData : public ShaderData
 		BLEND_MODE_LCD,
 	};
 
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
-
 	bool valid;
 	RID version;
 
@@ -197,9 +194,6 @@ MaterialData* _create_canvas_material_func(ShaderData* p_shader);
 
 struct SkyShaderData : public ShaderData
 {
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
-
 	bool valid;
 	RID version;
 
@@ -276,7 +270,7 @@ struct SceneShaderData : public ShaderData
 		STENCIL_COMPARE_NOT_EQUAL,
 		STENCIL_COMPARE_GREATER_OR_EQUAL,
 		STENCIL_COMPARE_ALWAYS,
-		STENCIL_COMPARE_MAX // not an actual operator, just the amount of operators
+		STENCIL_COMPARE_MAX
 	};
 
 	enum StencilFlags
@@ -292,9 +286,6 @@ struct SceneShaderData : public ShaderData
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE,
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
 	};
-
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
 
 	bool valid;
 	RID version;
@@ -319,7 +310,7 @@ struct SceneShaderData : public ShaderData
 
 	bool uses_point_size;
 	bool uses_alpha;
-	bool uses_alpha_clip;
+	bool compiler_alpha_clip;
 	bool uses_blend_alpha;
 	bool uses_depth_prepass_alpha;
 	bool uses_discard;
@@ -390,9 +381,6 @@ enum
 
 struct ParticlesShaderData : public ShaderData
 {
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
-
 	bool valid;
 	RID version;
 
@@ -493,11 +481,11 @@ struct GlobalShaderUniforms
 
 	struct Variable
 	{
-		HashSet<RID> texture_materials; // materials using this
+		HashSet<RID> texture_materials;
 
 		RSE::GlobalShaderParameterType type;
-		int32_t buffer_index;	 // for vectors
-		int32_t buffer_elements; // for vectors
+		int32_t buffer_index;
+		int32_t buffer_elements;
 	};
 
 	HashMap<StringName, Variable> variables;
@@ -540,7 +528,7 @@ struct GlobalShaderUniforms
 	bool* buffer_dirty_regions = nullptr;
 	uint32_t buffer_dirty_region_count = 0;
 
-	uint32_t buffer_size;
+	uint32_t buffer_size = 0;
 
 	bool must_update_texture_materials = false;
 	bool must_update_buffer_materials = false;
@@ -548,36 +536,55 @@ struct GlobalShaderUniforms
 	HashMap<RID, int32_t> instance_buffer_pos;
 };
 
-class MaterialStorage : public RendererMaterialStorage
+class MaterialStorage final
 {
 private:
 	friend struct MaterialData;
-	static MaterialStorage* singleton;
 
 	/* GLOBAL SHADER UNIFORM API */
 
-	GlobalShaderUniforms global_shader_uniforms;
+	static inline GlobalShaderUniforms global_shader_uniforms;
 
-	int32_t _global_shader_uniform_allocate(uint32_t p_elements);
-	void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
+	static int32_t _global_shader_uniform_allocate(uint32_t p_elements);
+	static void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
 
 	/* SHADER API */
 
-	ShaderDataRequestFunction shader_data_request_func[RSE::SHADER_MAX];
-	mutable RID_Owner<Shader, true> shader_owner;
+	static inline ShaderDataRequestFunction shader_data_request_func[RSE::SHADER_MAX] = {};
+	static inline RID_Owner<Shader, true> shader_owner;
 
 	/* MATERIAL API */
-	MaterialDataRequestFunction material_data_request_func[RSE::SHADER_MAX];
-	mutable RID_Owner<Material, true> material_owner;
+	static inline MaterialDataRequestFunction material_data_request_func[RSE::SHADER_MAX] = {};
+	static inline RID_Owner<Material, true> material_owner;
 
-	SelfList<Material>::List material_update_list;
-	HashSet<RID> dummy_embedded_set;
+	static inline SelfList<Material>::List material_update_list;
+	static inline HashSet<RID> dummy_embedded_set;
 
 public:
-	static MaterialStorage* get_singleton();
+	struct Shaders
+	{
+		CanvasShaderGLES3 canvas_shader;
+		SkyShaderGLES3 sky_shader;
+		SceneShaderGLES3 scene_shader;
+		ParticlesShaderGLES3 particles_process_shader;
+		TexBlitShaderGLES3 tex_blit_shader;
 
-	MaterialStorage();
-	virtual ~MaterialStorage();
+		ShaderCompiler compiler_canvas;
+		ShaderCompiler compiler_scene;
+		ShaderCompiler compiler_particles;
+		ShaderCompiler compiler_sky;
+		ShaderCompiler compiler_tex_blit;
+	};
+
+	static inline Shaders* shaders = nullptr;
+
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
+
+	static void initialize();
+	static void finalize();
 
 	static _FORCE_INLINE_ void store_transform(const Transform3D& p_mtx, float* p_array)
 	{
@@ -624,108 +631,93 @@ public:
 		}
 	}
 
-	struct Shaders
-	{
-		CanvasShaderGLES3 canvas_shader;
-		SkyShaderGLES3 sky_shader;
-		SceneShaderGLES3 scene_shader;
-		ParticlesShaderGLES3 particles_process_shader;
-		TexBlitShaderGLES3 tex_blit_shader;
-
-		ShaderCompiler compiler_canvas;
-		ShaderCompiler compiler_scene;
-		ShaderCompiler compiler_particles;
-		ShaderCompiler compiler_sky;
-		ShaderCompiler compiler_tex_blit;
-	} shaders;
-
 	/* GLOBAL SHADER UNIFORM API */
 
-	void _update_global_shader_uniforms();
+	static void _update_global_shader_uniforms();
 
-	virtual void global_shader_parameter_remove(const StringName& p_name) override;
-	virtual Vector<StringName> global_shader_parameter_get_list() const override;
+	static void global_shader_parameter_remove(const StringName& p_name);
+	static Vector<StringName> global_shader_parameter_get_list();
 
-	virtual RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name) const override;
-	RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
-		const StringName& p_name) const;
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+		const StringName& p_name);
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
+		const StringName& p_name);
 
-	virtual void global_shader_parameters_load_settings(bool p_load_textures = true) override;
-	virtual void global_shader_parameters_clear() override;
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
+	static void global_shader_parameters_clear();
 
-	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) override;
-	virtual void global_shader_parameters_instance_free(RID p_instance) override;
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance);
+	static void global_shader_parameters_instance_free(RID p_instance);
 
-	GLuint global_shader_parameters_get_uniform_buffer() const;
+	static GLuint global_shader_parameters_get_uniform_buffer();
 
 	/* SHADER API */
 
-	Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
+	static Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
 
-	bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
 
-	void _shader_make_dirty(Shader* p_shader);
+	static void _shader_make_dirty(Shader* p_shader);
 
-	virtual RID shader_allocate() override;
-	virtual void shader_initialize(RID p_rid, bool p_embedded = true) override;
-	virtual void shader_free(RID p_rid) override;
+	static RID shader_allocate();
+	static void shader_initialize(RID p_rid, bool p_embedded = true);
+	static void shader_free(RID p_rid);
 
-	virtual void shader_set_code(RID p_shader, const String& p_code) override;
-	virtual void shader_set_path_hint(RID p_shader, const String& p_path) override;
-	virtual String shader_get_code(RID p_shader) const override;
+	static void shader_set_code(RID p_shader, const String& p_code);
+	static void shader_set_path_hint(RID p_shader, const String& p_path);
+	static String shader_get_code(RID p_shader);
 
-	virtual void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index) override;
-	virtual RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index) const override;
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const StringName& p_name, RID p_texture, int p_index);
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const StringName& p_name, int p_index);
 
-	virtual RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
-		RID p_shader) const override;
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
+		RID p_shader);
 
-	virtual void shader_embedded_set_lock() override {}
+	static void shader_embedded_set_lock() {}
 
-	virtual const HashSet<RID>& shader_embedded_set_get() const override
+	static const HashSet<RID>& shader_embedded_set_get()
 	{
 		return dummy_embedded_set;
 	}
 
-	virtual void shader_embedded_set_unlock() override {}
+	static void shader_embedded_set_unlock() {}
 
 	/* MATERIAL API */
 
-	Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
+	static Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
 
-	bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
 
-	void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
-	void _update_queued_materials();
+	static void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
+	static void _update_queued_materials();
 
-	virtual RID material_allocate() override;
-	virtual void material_initialize(RID p_rid) override;
-	virtual void material_free(RID p_rid) override;
+	static RID material_allocate();
+	static void material_initialize(RID p_rid);
+	static void material_free(RID p_rid);
 
-	virtual void material_set_shader(RID p_material, RID p_shader) override;
+	static void material_set_shader(RID p_material, RID p_shader);
 
-	virtual void material_set_next_pass(RID p_material, RID p_next_material) override;
-	virtual void material_set_render_priority(RID p_material, int priority) override;
+	static void material_set_next_pass(RID p_material, RID p_next_material);
+	static void material_set_render_priority(RID p_material, int priority);
 
-	virtual bool material_is_animated(RID p_material) override;
-	virtual bool material_casts_shadows(RID p_material) override;
-	virtual RSE::CullMode material_get_cull_mode(RID p_material) const override;
+	static bool material_is_animated(RID p_material);
+	static bool material_casts_shadows(RID p_material);
+	static RSE::CullMode material_get_cull_mode(RID p_material);
 
-	virtual void material_get_instance_shader_parameters(
-		RID p_material, List<InstanceShaderParam>* r_parameters) override;
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters);
 
-	virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance);
 
-	_FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
+	static _FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
 	{
 		Material* material = material_owner.get_or_null(p_material);
 		return material->shader_id;
 	}
 
-	_FORCE_INLINE_ MaterialData* material_get_data(RID p_material, RSE::ShaderMode p_shader_mode)
+	static _FORCE_INLINE_ MaterialData* material_get_data(RID p_material, RSE::ShaderMode p_shader_mode)
 	{
 		Material* material = material_owner.get_or_null(p_material);
 		if (!material || material->shader_mode != p_shader_mode) {
@@ -740,5 +732,3 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-

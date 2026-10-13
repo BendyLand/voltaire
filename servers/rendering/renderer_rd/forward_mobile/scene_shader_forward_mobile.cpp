@@ -425,18 +425,16 @@ bool SceneShaderForwardMobile::is_multiview_shader_group_enabled() const
 
 SceneShaderForwardMobile::~SceneShaderForwardMobile()
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-
 	RD::free_rid(default_vec4_xform_buffer);
 	RD::free_rid(shadow_sampler);
 
-	material_storage->shader_free(overdraw_material_shader);
-	material_storage->shader_free(default_shader);
-	material_storage->shader_free(debug_shadow_splits_material_shader);
+	RendererRD::MaterialStorage::shader_free(overdraw_material_shader);
+	RendererRD::MaterialStorage::shader_free(default_shader);
+	RendererRD::MaterialStorage::shader_free(debug_shadow_splits_material_shader);
 
-	material_storage->material_free(overdraw_material);
-	material_storage->material_free(default_material);
-	material_storage->material_free(debug_shadow_splits_material);
+	RendererRD::MaterialStorage::material_free(overdraw_material);
+	RendererRD::MaterialStorage::material_free(default_material);
+	RendererRD::MaterialStorage::material_free(debug_shadow_splits_material);
 }
 
 RID RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(

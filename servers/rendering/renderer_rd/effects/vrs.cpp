@@ -31,6 +31,7 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 #include "vrs.h"
 
 #ifndef XR_DISABLED
@@ -100,5 +101,13 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 }
 
 void RendererRD::VRS::copy_vrs(RID p_source, RID p_dest, bool p_is_mobile) {}
+
+VRS::VRS()
+{
+	Vector<String> modes;
+	modes.push_back("\n");
+	vrs_shader.shader.initialize(modes);
+	vrs_shader.shader_version = vrs_shader.shader.version_create();
+}
 
 

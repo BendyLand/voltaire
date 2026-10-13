@@ -31,13 +31,13 @@
 #include "core/config/project_settings.h"
 #include "core/math/geometry_3d.h"
 #include "gi.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -97,11 +97,9 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 		ERR_FAIL_COND(p_data_cells.size() != (int)cell_count * 16); // see that data size matches
 
 		voxel_gi->cell_count = cell_count;
-		voxel_gi->octree_buffer =
-			RD::storage_buffer_create(p_octree_cells.size(), p_octree_cells);
+		voxel_gi->octree_buffer = RD::storage_buffer_create(p_octree_cells.size(), p_octree_cells);
 		voxel_gi->octree_buffer_size = p_octree_cells.size();
-		voxel_gi->data_buffer =
-			RD::storage_buffer_create(p_data_cells.size(), p_data_cells);
+		voxel_gi->data_buffer = RD::storage_buffer_create(p_data_cells.size(), p_data_cells);
 		voxel_gi->data_buffer_size = p_data_cells.size();
 
 		if (p_distance_field.size()) {
@@ -435,8 +433,7 @@ static RID create_clear_texture(const RDC::TextureFormat& p_format, const String
 	ERR_FAIL_COND_V_MSG(texture.is_null(), RID(), String("Cannot create texture: ") + p_name);
 
 	RD::set_resource_name(texture, p_name);
-	RD::texture_clear(
-		texture, Color(0, 0, 0, 0), 0, p_format.mipmaps, 0, p_format.array_layers);
+	RD::texture_clear(texture, Color(0, 0, 0, 0), 0, p_format.mipmaps, 0, p_format.array_layers);
 
 	return texture;
 }
@@ -506,8 +503,7 @@ GI::SDFGI::~SDFGI()
 
 void GI::SDFGI::update(RID p_env, const Vector3& p_world_position)
 {
-	bounce_feedback =
-		RendererSceneRender::environment_get_sdfgi_bounce_feedback(p_env);
+	bounce_feedback = RendererSceneRender::environment_get_sdfgi_bounce_feedback(p_env);
 	energy = RendererSceneRender::environment_get_sdfgi_energy(p_env);
 	normal_bias = RendererSceneRender::environment_get_sdfgi_normal_bias(p_env);
 	probe_bias = RendererSceneRender::environment_get_sdfgi_probe_bias(p_env);
@@ -884,8 +880,8 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].radius = RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_RANGE);
 			lights[idx].cos_spot_angle = Math::cos(Math::deg_to_rad(
 				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
-			lights[idx].inv_spot_attenuation = 1.0f / RS::light_storage->light_get_param(
-														  light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
+			lights[idx].inv_spot_attenuation =
+				1.0f / RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
@@ -961,8 +957,6 @@ void GI::VoxelGIInstance::free_resources()
 void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	const Projection& p_camera_with_transform, bool p_lighting, bool p_emission, float p_alpha)
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-
 	if (mipmaps.is_empty()) {
 		return;
 	}
@@ -1012,7 +1006,7 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 		RD::Uniform u;
 		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 		u.binding = 3;
-		u.append_id(material_storage->sampler_rd_get_default(
+		u.append_id(MaterialStorage::sampler_rd_get_default(
 			RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
 		uniforms.push_back(u);
 	}
@@ -1025,8 +1019,8 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 		cell_count = mipmaps[level].cell_count;
 	}
 
-	gi->voxel_gi_debug_uniform_set = RD::uniform_set_create(
-		uniforms, gi->voxel_gi_debug_shader_version_shaders[0], 0);
+	gi->voxel_gi_debug_uniform_set =
+		RD::uniform_set_create(uniforms, gi->voxel_gi_debug_shader_version_shaders[0], 0);
 
 	int voxel_gi_debug_pipeline = VOXEL_GI_DEBUG_COLOR;
 	if (p_emission) {
@@ -1040,8 +1034,7 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 		gi->voxel_gi_debug_shader_version_pipelines[voxel_gi_debug_pipeline].get_render_pipeline(
 			RDC::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
 	RD::draw_list_bind_uniform_set(p_draw_list, gi->voxel_gi_debug_uniform_set, 0);
-	RD::draw_list_set_push_constant(
-		p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));
+	RD::draw_list_set_push_constant(p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));
 	RD::draw_list_draw(p_draw_list, false, cell_count, 36);
 }
 
@@ -1329,5 +1322,93 @@ void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
 }
 
 RendererRD::GI::GI() {}
+
+void GI::init(RendererRD::SkyRD *p_sky) {
+	// 1. Main GI gather shader
+	{
+		Vector<String> modes;
+		modes.push_back("\n#define MODE_VOXEL_GI\n");
+		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n");
+		modes.push_back("\n#define MODE_SDFGI\n");
+		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_SDFGI\n");
+		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n#define MODE_SDFGI\n");
+
+		shader.initialize(modes);
+		shader_version = shader.version_create();
+	}
+
+	// 2. Voxel GI lighting & debug shaders
+	{
+		Vector<String> modes;
+		modes.push_back("\n#define MODE_COMPUTE_LIGHT\n");
+		modes.push_back("\n#define MODE_COMPUTE_SECOND_BOUNCE\n");
+		modes.push_back("\n#define MODE_COMPUTE_MIPMAP\n");
+		modes.push_back("\n#define MODE_WRITE_TEXTURE\n");
+		modes.push_back("\n#define MODE_DYNAMIC_OBJECT_LIGHTING\n");
+		modes.push_back("\n#define MODE_DYNAMIC_SHRINK_WRITE\n");
+		modes.push_back("\n#define MODE_DYNAMIC_SHRINK_PLOT\n");
+		modes.push_back("\n#define MODE_DYNAMIC_SHRINK_WRITE_PLOT\n");
+
+		voxel_gi_shader.initialize(modes);
+		voxel_gi_lighting_shader_version = voxel_gi_shader.version_create();
+
+		Vector<String> debug_modes;
+		debug_modes.push_back("\n#define MODE_DEBUG_COLOR\n");
+		debug_modes.push_back("\n#define MODE_DEBUG_LIGHT\n");
+		debug_modes.push_back("\n#define MODE_DEBUG_EMISSION\n");
+		debug_modes.push_back("\n#define MODE_DEBUG_LIGHT_FULL\n");
+
+		voxel_gi_debug_shader.initialize(debug_modes);
+		voxel_gi_debug_shader_version = voxel_gi_debug_shader.version_create();
+	}
+
+	// 3. SDFGI compute pipeline stages
+	{
+		Vector<String> preprocess_modes;
+		preprocess_modes.push_back("\n#define MODE_SCROLL\n");
+		preprocess_modes.push_back("\n#define MODE_SCROLL_OCCLUSION\n");
+		preprocess_modes.push_back("\n#define MODE_JUMP_FLOOD_INITIALIZE\n");
+		preprocess_modes.push_back("\n#define MODE_JUMP_FLOOD_INITIALIZE_HALF\n");
+		preprocess_modes.push_back("\n#define MODE_JUMP_FLOOD\n");
+		preprocess_modes.push_back("\n#define MODE_JUMP_FLOOD_OPTIMIZED\n");
+		preprocess_modes.push_back("\n#define MODE_JUMP_FLOOD_UPSCALE\n");
+		preprocess_modes.push_back("\n#define MODE_OCCLUSION\n");
+		preprocess_modes.push_back("\n#define MODE_STORE\n");
+
+		sdfgi_shader.preprocess.initialize(preprocess_modes);
+		sdfgi_shader.preprocess_shader = sdfgi_shader.preprocess.version_create();
+
+		Vector<String> direct_light_modes;
+		direct_light_modes.push_back("\n#define MODE_STATIC\n");
+		direct_light_modes.push_back("\n#define MODE_DYNAMIC\n");
+
+		sdfgi_shader.direct_light.initialize(direct_light_modes);
+		sdfgi_shader.direct_light_shader = sdfgi_shader.direct_light.version_create();
+
+		Vector<String> integrate_modes;
+		integrate_modes.push_back("\n#define MODE_PROCESS\n");
+		integrate_modes.push_back("\n#define MODE_STORE\n");
+		integrate_modes.push_back("\n#define MODE_SCROLL\n");
+		integrate_modes.push_back("\n#define MODE_SCROLL_STORE\n");
+
+		sdfgi_shader.integrate.initialize(integrate_modes);
+		sdfgi_shader.integrate_shader = sdfgi_shader.integrate.version_create();
+
+		Vector<String> debug_modes;
+		debug_modes.push_back("\n");
+
+		sdfgi_shader.debug.initialize(debug_modes);
+		sdfgi_shader.debug_shader_version = sdfgi_shader.debug.version_create();
+
+		Vector<String> debug_probes_modes;
+		debug_probes_modes.push_back("\n#define MODE_PROBES\n");
+		debug_probes_modes.push_back("\n#define MODE_PROBES\n#define MODE_MULTIVIEW\n");
+		debug_probes_modes.push_back("\n#define MODE_VISIBILITY\n");
+		debug_probes_modes.push_back("\n#define MODE_VISIBILITY\n#define MODE_MULTIVIEW\n");
+
+		sdfgi_shader.debug_probes.initialize(debug_probes_modes);
+		sdfgi_shader.debug_probes_shader_version = sdfgi_shader.debug_probes.version_create();
+	}
+}
 
 

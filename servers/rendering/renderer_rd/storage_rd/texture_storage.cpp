@@ -107,8 +107,6 @@ TextureStorage::~TextureStorage()
 
 void TextureStorage::_tex_blit_shader_initialize()
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	{
 		Vector<String> tex_blit_modes;
 		tex_blit_modes.push_back("");											  // Only 1 Output
@@ -123,9 +121,9 @@ void TextureStorage::_tex_blit_shader_initialize()
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
 		tex_blit_shader.shader.initialize(tex_blit_modes, global_defines);
 	}
-	material_storage->shader_set_data_request_function(
+	MaterialStorage::shader_set_data_request_function(
 		MaterialStorage::SHADER_TYPE_TEXTURE_BLIT, MaterialStorage::_create_tex_blit_shader_funcs);
-	material_storage->material_set_data_request_function(MaterialStorage::SHADER_TYPE_TEXTURE_BLIT,
+	MaterialStorage::material_set_data_request_function(MaterialStorage::SHADER_TYPE_TEXTURE_BLIT,
 		MaterialStorage::_create_tex_blit_material_funcs);
 
 	{
@@ -156,9 +154,9 @@ void TextureStorage::_tex_blit_shader_initialize()
 
 	{
 		// default material and shader for Texture Blit shader
-		tex_blit_shader.default_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(tex_blit_shader.default_shader);
-		material_storage->shader_set_code(tex_blit_shader.default_shader, R"(
+		tex_blit_shader.default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(tex_blit_shader.default_shader);
+		MaterialStorage::shader_set_code(tex_blit_shader.default_shader, R"(
 // Default Texture Blit shader.
 
 shader_type texture_blit;
@@ -177,9 +175,9 @@ void blit() {
 	COLOR3 = texture(source_texture3, UV) * MODULATE;
 }
 )");
-		tex_blit_shader.default_material = material_storage->material_allocate();
-		material_storage->material_initialize(tex_blit_shader.default_material);
-		material_storage->material_set_shader(
+		tex_blit_shader.default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(tex_blit_shader.default_material);
+		MaterialStorage::material_set_shader(
 			tex_blit_shader.default_material, tex_blit_shader.default_shader);
 	}
 
@@ -189,11 +187,9 @@ void blit() {
 void TextureStorage::_tex_blit_shader_free()
 {
 	if (tex_blit_shader.initialized) {
-		MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 		print_verbose("Freeing Default Tex_Blit Shader");
-		material_storage->material_free(tex_blit_shader.default_material);
-		material_storage->shader_free(tex_blit_shader.default_shader);
+		MaterialStorage::material_free(tex_blit_shader.default_material);
+		MaterialStorage::shader_free(tex_blit_shader.default_shader);
 	}
 }
 
@@ -286,8 +282,6 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat,
 	bool p_use_srgb, bool p_texture_is_data)
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	CanvasTexture* ct = nullptr;
 	Texture* t = get_texture(p_texture);
 
@@ -375,7 +369,7 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	res.diffuse = ctc.diffuse;
 	res.normal = ctc.normal;
 	res.specular = ctc.specular;
-	res.sampler = material_storage->sampler_rd_get_default(filter, repeat);
+	res.sampler = MaterialStorage::sampler_rd_get_default(filter, repeat);
 	res.size = ct->size_cache;
 	res.specular_color = ct->specular_color;
 	res.use_normal = ct->use_normal_cache;

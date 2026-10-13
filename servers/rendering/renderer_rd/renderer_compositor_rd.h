@@ -44,6 +44,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/storage/material_storage.h"
 
 class RendererCompositorRD final
 {
@@ -133,7 +134,13 @@ public:
 
 	_ALWAYS_INLINE_ static RendererMaterialStorage* get_material_storage()
 	{
-		return material_storage;
+		static RendererMaterialStorage rms;
+		static bool initialized = false;
+		if (!initialized) {
+			rms.bind<RendererRD::MaterialStorage>();
+			initialized = true;
+		}
+		return &rms;
 	}
 
 	_ALWAYS_INLINE_ static RendererRD::MeshStorage* get_mesh_storage() { return mesh_storage; }
@@ -147,8 +154,8 @@ public:
 
 	static RendererGI* get_gi()
 	{
-		ERR_FAIL_NULL_V(scene, nullptr);
-		return scene->get_gi();
+		ERR_FAIL_NULL_V(RendererSceneRenderRD::data, nullptr);
+		return RendererSceneRenderRD::get_gi();
 	}
 
 	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }

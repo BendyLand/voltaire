@@ -37,6 +37,7 @@
 #include "servers/rendering/renderer_rd/forward_clustered/scene_shader_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/scene_shader_forward_mobile.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+#include "servers/rendering/storage/material_storage.h"
 #include "servers/rendering/storage/variant_converters.h"
 
 using namespace RendererRD;
@@ -288,8 +289,8 @@ bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param
 	return uniforms[p_param].is_texture();
 }
 
-RDC::PipelineColorBlendState::Attachment MaterialStorage::ShaderData::blend_mode_to_blend_attachment(
-	BlendMode p_mode)
+RDC::PipelineColorBlendState::Attachment
+MaterialStorage::ShaderData::blend_mode_to_blend_attachment(BlendMode p_mode)
 {
 	RDC::PipelineColorBlendState::Attachment attachment;
 
@@ -380,11 +381,9 @@ bool MaterialStorage::ShaderData::blend_mode_uses_blend_alpha(BlendMode p_mode)
 
 MaterialStorage::MaterialData::~MaterialData()
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	if (global_buffer_E) {
 		// unregister global buffers
-		material_storage->global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
+		MaterialStorage::global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
 	}
 
 	if (global_texture_E) {
@@ -392,13 +391,13 @@ MaterialStorage::MaterialData::~MaterialData()
 
 		for (const KeyValue<StringName, uint64_t>& E : used_global_textures) {
 			GlobalShaderUniforms::Variable* v =
-				material_storage->global_shader_uniforms.variables.getptr(E.key);
+				MaterialStorage::global_shader_uniforms.variables.getptr(E.key);
 			if (v) {
 				v->texture_materials.erase(self);
 			}
 		}
 		// unregister material from those using global textures
-		material_storage->global_shader_uniforms.materials_using_texture.erase(global_texture_E);
+		MaterialStorage::global_shader_uniforms.materials_using_texture.erase(global_texture_E);
 	}
 
 	for (int i = 0; i < 2; i++) {
@@ -585,14 +584,13 @@ MaterialStorage::MaterialData* MaterialStorage::_create_tex_blit_material_func(
 	return material_data;
 }
 
-template void MaterialStorage::Samplers::append_uniforms(
+template void Samplers::append_uniforms(
 	LocalVector<RD::Uniform>& p_uniforms, int p_first_index) const;
 
-template void MaterialStorage::Samplers::append_uniforms(
-	Vector<RD::Uniform>& p_uniforms, int p_first_index) const;
+template void Samplers::append_uniforms(Vector<RD::Uniform>& p_uniforms, int p_first_index) const;
 
 template <typename Collection>
-void MaterialStorage::Samplers::append_uniforms(Collection& p_uniforms, int p_first_index) const
+void Samplers::append_uniforms(Collection& p_uniforms, int p_first_index) const
 {
 	// Binding ids are aligned with samplers_inc.glsl.
 	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 0,
@@ -629,30 +627,9 @@ void MaterialStorage::Samplers::append_uniforms(Collection& p_uniforms, int p_fi
 			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
 }
 
-bool MaterialStorage::Samplers::is_valid() const { return rids[1][1].is_valid(); }
+bool Samplers::is_valid() const { return rids[1][1].is_valid(); }
 
-bool MaterialStorage::Samplers::is_null() const { return rids[1][1].is_null(); }
-
-MaterialStorage* MaterialStorage::singleton = nullptr;
-
-MaterialStorage* MaterialStorage::get_singleton() { return singleton; }
-
-MaterialStorage::~MaterialStorage()
-{
-	memdelete_arr(global_shader_uniforms.buffer_values);
-	memdelete_arr(global_shader_uniforms.buffer_usage);
-	memdelete_arr(global_shader_uniforms.buffer_dirty_regions);
-	RD::free_rid(global_shader_uniforms.buffer);
-
-	// buffers
-
-	RD::free_rid(quad_index_buffer); // array gets freed as dependency
-
-	// def samplers
-	samplers_rd_free(default_samplers);
-
-	singleton = nullptr;
-}
+bool Samplers::is_null() const { return rids[1][1].is_null(); }
 
 bool MaterialStorage::free(RID p_rid)
 {
@@ -731,7 +708,7 @@ void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
 	global_shader_uniforms.variables.erase(p_name);
 }
 
-Vector<StringName> MaterialStorage::global_shader_parameter_get_list() const
+Vector<StringName> MaterialStorage::global_shader_parameter_get_list()
 {
 	if (!Engine::is_editor_hint()) {
 		ERR_FAIL_V_MSG(Vector<StringName>(), "This function should never be used outside the "
@@ -748,7 +725,7 @@ Vector<StringName> MaterialStorage::global_shader_parameter_get_list() const
 }
 
 RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type_internal(
-	const StringName& p_name) const
+	const StringName& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return RSE::GLOBAL_VAR_TYPE_MAX;
@@ -758,7 +735,7 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 }
 
 RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type(
-	const StringName& p_name) const
+	const StringName& p_name)
 {
 	if (!Engine::is_editor_hint()) {
 		ERR_FAIL_V_MSG(RSE::GLOBAL_VAR_TYPE_MAX, "This function should never be used outside the "
@@ -773,7 +750,7 @@ void MaterialStorage::global_shader_parameters_clear()
 	global_shader_uniforms.variables.clear(); // not right but for now enough
 }
 
-RID MaterialStorage::global_shader_uniforms_get_storage_buffer() const
+RID MaterialStorage::global_shader_uniforms_get_storage_buffer()
 {
 	return global_shader_uniforms.buffer;
 }
@@ -803,7 +780,6 @@ void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
 
 void MaterialStorage::_update_global_shader_uniforms()
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
 	if (global_shader_uniforms.buffer_dirty_region_count > 0) {
 		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size /
 										 GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE);
@@ -829,10 +805,10 @@ void MaterialStorage::_update_global_shader_uniforms()
 		// only happens in the case of a buffer variable added or removed,
 		// so not often.
 		for (const RID& E : global_shader_uniforms.materials_using_buffer) {
-			Material* material = material_storage->get_material(E);
+			Material* material = MaterialStorage::get_material(E);
 			ERR_CONTINUE(!material); // wtf
 
-			material_storage->_material_queue_update(material, true, false);
+			MaterialStorage::_material_queue_update(material, true, false);
 		}
 
 		global_shader_uniforms.must_update_buffer_materials = false;
@@ -842,10 +818,10 @@ void MaterialStorage::_update_global_shader_uniforms()
 		// only happens in the case of a buffer variable added or removed,
 		// so not often.
 		for (const RID& E : global_shader_uniforms.materials_using_texture) {
-			Material* material = material_storage->get_material(E);
+			Material* material = MaterialStorage::get_material(E);
 			ERR_CONTINUE(!material); // wtf
 
-			material_storage->_material_queue_update(material, false, true);
+			MaterialStorage::_material_queue_update(material, false, true);
 		}
 
 		global_shader_uniforms.must_update_texture_materials = false;
@@ -1000,7 +976,7 @@ void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
 	}
 }
 
-String MaterialStorage::shader_get_code(RID p_shader) const
+String MaterialStorage::shader_get_code(RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, String());
@@ -1044,7 +1020,7 @@ void MaterialStorage::shader_set_default_texture_parameter(
 }
 
 RID MaterialStorage::shader_get_default_texture_parameter(
-	RID p_shader, const StringName& p_name, int p_index) const
+	RID p_shader, const StringName& p_name, int p_index)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RID());
@@ -1063,7 +1039,7 @@ void MaterialStorage::shader_set_data_request_function(
 	shader_data_request_func[p_shader_type] = p_function;
 }
 
-MaterialStorage::ShaderData* MaterialStorage::shader_get_data(RID p_shader) const
+MaterialStorage::ShaderData* MaterialStorage::shader_get_data(RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, nullptr);
@@ -1071,7 +1047,7 @@ MaterialStorage::ShaderData* MaterialStorage::shader_get_data(RID p_shader) cons
 }
 
 RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_source_code(
-	RID p_shader) const
+	RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RenderingServerTypes::ShaderNativeSourceCode());
@@ -1083,19 +1059,19 @@ RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_
 
 void MaterialStorage::shader_embedded_set_lock() { embedded_set_mutex.lock(); }
 
-const HashSet<RID>& MaterialStorage::shader_embedded_set_get() const { return embedded_set; }
+const HashSet<RID>& MaterialStorage::shader_embedded_set_get() { return embedded_set; }
 
 void MaterialStorage::shader_embedded_set_unlock() { embedded_set_mutex.unlock(); }
 
 void MaterialStorage::_material_uniform_set_erased(void* p_material)
 {
 	RID rid = *(RID*)p_material;
-	Material* material = MaterialStorage::get_singleton()->get_material(rid);
+	Material* material = MaterialStorage::get_material(rid);
 	if (material) {
 		if (material->data) {
 			// Uniform set may be gone because a dependency was erased. This happens
 			// if a texture is deleted, so re-create it.
-			MaterialStorage::get_singleton()->_material_queue_update(material, false, true);
+			MaterialStorage::_material_queue_update(material, false, true);
 		}
 		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 	}
@@ -1176,8 +1152,7 @@ void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 
 MaterialStorage::ShaderData* MaterialStorage::material_get_shader_data(RID p_material)
 {
-	const MaterialStorage::Material* material =
-		MaterialStorage::get_singleton()->get_material(p_material);
+	const MaterialStorage::Material* material = MaterialStorage::get_material(p_material);
 	if (material && material->shader && material->shader->data) {
 		return material->shader->data;
 	}
@@ -1243,7 +1218,7 @@ bool MaterialStorage::material_casts_shadows(RID p_material)
 	return true; // by default everything casts shadows
 }
 
-RSE::CullMode RendererRD::MaterialStorage::material_get_cull_mode(RID p_material) const
+RSE::CullMode RendererRD::MaterialStorage::material_get_cull_mode(RID p_material)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, RSE::CULL_MODE_DISABLED);
@@ -1268,7 +1243,7 @@ RSE::CullMode RendererRD::MaterialStorage::material_get_cull_mode(RID p_material
 }
 
 void MaterialStorage::material_get_instance_shader_parameters(
-	RID p_material, List<InstanceShaderParam>* r_parameters)
+	RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1291,8 +1266,8 @@ void MaterialStorage::material_update_dependency(RID p_material, DependencyTrack
 	}
 }
 
-MaterialStorage::Samplers MaterialStorage::samplers_rd_allocate(
-	float p_mipmap_bias, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level) const
+Samplers MaterialStorage::samplers_rd_allocate(
+	float p_mipmap_bias, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level)
 {
 	Samplers samplers;
 	samplers.mipmap_bias = p_mipmap_bias;
@@ -1300,8 +1275,8 @@ MaterialStorage::Samplers MaterialStorage::samplers_rd_allocate(
 	samplers.use_nearest_mipmap_filter =
 		GLOBAL_GET_CACHED(bool, "rendering/textures/default_filters/use_nearest_mipmap_filter");
 
-	RDC::SamplerFilter mip_filter =
-		samplers.use_nearest_mipmap_filter ? RDC::SAMPLER_FILTER_NEAREST : RDC::SAMPLER_FILTER_LINEAR;
+	RDC::SamplerFilter mip_filter = samplers.use_nearest_mipmap_filter ? RDC::SAMPLER_FILTER_NEAREST
+																	   : RDC::SAMPLER_FILTER_LINEAR;
 	float anisotropy_max = float(1 << samplers.anisotropic_filtering_level);
 
 	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
@@ -1379,7 +1354,7 @@ MaterialStorage::Samplers MaterialStorage::samplers_rd_allocate(
 	return samplers;
 }
 
-void MaterialStorage::samplers_rd_free(Samplers& p_samplers) const
+void MaterialStorage::samplers_rd_free(Samplers& p_samplers)
 {
 	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
 		for (int j = 1; j < RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
@@ -1411,6 +1386,62 @@ void RendererRD::MaterialStorage::TexBlitShaderData::set_code(const String& p_co
 
 void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
 
-void RendererRD::MaterialStorage::material_free(RID p_rid) {}
+void MaterialStorage::finalize()
+{
+	LocalVector<RID> owned_materials = material_owner.get_owned_list();
+	for (const RID& E : owned_materials) {
+		material_free(E);
+	}
+	LocalVector<RID> owned_shaders = shader_owner.get_owned_list();
+	for (const RID& E : owned_shaders) {
+		shader_free(E);
+	}
+	global_shader_uniforms.variables.clear();
+	global_shader_uniforms.materials_using_buffer.clear();
+	global_shader_uniforms.materials_using_texture.clear();
+	global_shader_uniforms.instance_buffer_pos.clear();
+	if (global_shader_uniforms.buffer.is_valid()) {
+		RD::free_rid(global_shader_uniforms.buffer);
+		global_shader_uniforms.buffer = RID();
+	}
+	if (global_shader_uniforms.buffer_values) {
+		memfree(global_shader_uniforms.buffer_values);
+		global_shader_uniforms.buffer_values = nullptr;
+	}
+	if (global_shader_uniforms.buffer_usage) {
+		memfree(global_shader_uniforms.buffer_usage);
+		global_shader_uniforms.buffer_usage = nullptr;
+	}
+	if (global_shader_uniforms.buffer_dirty_regions) {
+		memfree(global_shader_uniforms.buffer_dirty_regions);
+		global_shader_uniforms.buffer_dirty_regions = nullptr;
+	}
+	if (default_samplers.is_valid()) {
+		samplers_rd_free(default_samplers);
+	}
+	if (quad_index_array.is_valid()) {
+		RD::free_rid(quad_index_array);
+		quad_index_array = RID();
+	}
+	if (quad_index_buffer.is_valid()) {
+		RD::free_rid(quad_index_buffer);
+		quad_index_buffer = RID();
+	}
+}
+
+void MaterialStorage::material_free(RID p_rid)
+{
+	Material* material = material_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(material);
+
+	material_set_shader(p_rid, RID());
+
+	if (material->data) {
+		memdelete(material->data);
+		material->data = nullptr;
+	}
+
+	material_owner.free(p_rid);
+}
 
 

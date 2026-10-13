@@ -56,9 +56,7 @@ bool ShaderBakerExportPlugin::_is_active(const Vector<String>& p_features) const
 {
 	// Shader baker should only work when a RendererRD driver is active, as the embedded shaders
 	// won't be found otherwise.
-	return RendererSceneRenderRD::data != nullptr &&
-		   RendererRD::MaterialStorage::get_singleton() != nullptr &&
-		   p_features.has("shader_baker");
+	return RendererSceneRenderRD::data != nullptr && p_features.has("shader_baker");
 }
 
 void ShaderBakerExportPlugin::_cleanup_container_format()
@@ -102,15 +100,16 @@ bool ShaderBakerExportPlugin::_begin_customize_scenes(
 Ref<Resource> ShaderBakerExportPlugin::_customize_resource(
 	const Ref<Resource>& p_resource, const String& p_path)
 {
-	RendererRD::MaterialStorage* singleton = RendererRD::MaterialStorage::get_singleton();
 	DEV_ASSERT(singleton != nullptr);
 
 	Ref<Material> material = p_resource;
 	if (material.is_valid()) {
 		RID material_rid = material->get_rid();
 		if (material_rid.is_valid()) {
+			// FIX: Check if RendererRD can be used here or if it has to be
+			//      one layer higher (RendererMaterialStorage)
 			RendererRD::MaterialStorage::ShaderData* shader_data =
-				singleton->material_get_shader_data(material_rid);
+				RendererRD::MaterialStorage::material_get_shader_data(material_rid);
 			if (shader_data != nullptr) {
 				Pair<ShaderRD*, RID> shader_version_pair =
 					shader_data->get_native_shader_and_version();

@@ -41,22 +41,20 @@ class DependencyTracker;
 namespace RendererDummy
 {
 
-class MaterialStorage : public RendererMaterialStorage
+class MaterialStorage final
 {
 private:
-	static MaterialStorage* singleton;
-
-	HashMap<StringName, RSE::GlobalShaderParameterType> global_shader_variables;
+	static inline HashMap<StringName, RSE::GlobalShaderParameterType> global_shader_variables;
 
 	struct DummyShader
 	{
 		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> uniforms;
 	};
 
-	mutable RID_Owner<DummyShader> shader_owner;
+	static inline RID_Owner<DummyShader> shader_owner;
 
-	ShaderCompiler dummy_compiler;
-	HashSet<RID> dummy_embedded_set;
+	static inline ShaderCompiler* dummy_compiler = nullptr;
+	static inline HashSet<RID> dummy_embedded_set;
 
 	struct DummyMaterial
 	{
@@ -64,98 +62,102 @@ private:
 		RID next_pass;
 	};
 
-	mutable RID_Owner<DummyMaterial> material_owner;
+	static inline RID_Owner<DummyMaterial> material_owner;
 
 public:
-	static MaterialStorage* get_singleton() { return singleton; }
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
 
-	MaterialStorage();
-	~MaterialStorage();
+	static void initialize();
+	static void finalize();
 
-	virtual void global_shader_parameter_remove(const StringName& p_name) override;
-	virtual Vector<StringName> global_shader_parameter_get_list() const override;
+	/* GLOBAL SHADER UNIFORM API */
+	static void global_shader_parameter_remove(const StringName& p_name);
+	static Vector<StringName> global_shader_parameter_get_list();
 
-	virtual RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name) const override;
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+		const StringName& p_name);
 
-	virtual void global_shader_parameters_load_settings(bool p_load_textures = true) override;
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
 
-	virtual void global_shader_parameters_clear() override {}
+	static void global_shader_parameters_clear() {}
 
-	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) override
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance)
 	{
 		return 0;
 	}
 
-	virtual void global_shader_parameters_instance_free(RID p_instance) override {}
+	static void global_shader_parameters_instance_free(RID p_instance) {}
 
-	bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+	/* SHADER API */
+	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
 
-	virtual RID shader_allocate() override;
-	virtual void shader_initialize(RID p_rid, bool p_embedded) override;
-	virtual void shader_free(RID p_rid) override;
+	static RID shader_allocate();
+	static void shader_initialize(RID p_rid, bool p_embedded = true);
+	static void shader_free(RID p_rid);
 
-	virtual void shader_set_code(RID p_shader, const String& p_code) override;
+	static void shader_set_code(RID p_shader, const String& p_code);
 
-	virtual void shader_set_path_hint(RID p_shader, const String& p_code) override {}
+	static void shader_set_path_hint(RID p_shader, const String& p_code) {}
 
-	virtual String shader_get_code(RID p_shader) const override { return ""; }
+	static String shader_get_code(RID p_shader) { return ""; }
 
-	virtual void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index) override
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const StringName& p_name, RID p_texture, int p_index)
 	{
 	}
 
-	virtual RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index) const override
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const StringName& p_name, int p_index)
 	{
 		return RID();
 	}
 
-	virtual RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
-		RID p_shader) const override
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
+		RID p_shader)
 	{
 		return RenderingServerTypes::ShaderNativeSourceCode();
 	}
 
-	virtual void shader_embedded_set_lock() override {}
+	static void shader_embedded_set_lock() {}
 
-	virtual const HashSet<RID>& shader_embedded_set_get() const override
+	static const HashSet<RID>& shader_embedded_set_get()
 	{
 		return dummy_embedded_set;
 	}
 
-	virtual void shader_embedded_set_unlock() override {}
+	static void shader_embedded_set_unlock() {}
 
-	bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+	/* MATERIAL API */
+	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
 
-	virtual RID material_allocate() override;
-	virtual void material_initialize(RID p_rid) override;
-	virtual void material_free(RID p_rid) override;
+	static RID material_allocate();
+	static void material_initialize(RID p_rid);
+	static void material_free(RID p_rid);
 
-	virtual void material_set_render_priority(RID p_material, int priority) override {}
+	static void material_set_render_priority(RID p_material, int priority) {}
 
-	virtual void material_set_shader(RID p_shader_material, RID p_shader) override;
+	static void material_set_shader(RID p_shader_material, RID p_shader);
 
-	virtual void material_set_next_pass(RID p_material, RID p_next_material) override;
+	static void material_set_next_pass(RID p_material, RID p_next_material);
 
-	virtual bool material_is_animated(RID p_material) override { return false; }
+	static bool material_is_animated(RID p_material) { return false; }
 
-	virtual bool material_casts_shadows(RID p_material) override { return false; }
+	static bool material_casts_shadows(RID p_material) { return false; }
 
-	virtual RSE::CullMode material_get_cull_mode(RID p_material) const override
+	static RSE::CullMode material_get_cull_mode(RID p_material)
 	{
 		return RSE::CULL_MODE_DISABLED;
 	}
 
-	virtual void material_get_instance_shader_parameters(
-		RID p_material, List<InstanceShaderParam>* r_parameters) override;
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters);
 
-	virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance)
 	{
 	}
 };
 
 } // namespace RendererDummy
-
-

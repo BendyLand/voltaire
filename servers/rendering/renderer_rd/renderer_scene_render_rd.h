@@ -435,8 +435,6 @@ public:
 	static bool is_volumetric_supported();
 	static uint32_t get_max_elements();
 
-	static void init();
-
 	RendererSceneRenderRD() = delete;
 	RendererSceneRenderRD(const RendererSceneRenderRD&) = delete;
 	RendererSceneRenderRD& operator=(const RendererSceneRenderRD&) = delete;

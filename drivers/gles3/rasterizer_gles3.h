@@ -87,7 +87,13 @@ public:
 
 	static _ALWAYS_INLINE_ RendererMaterialStorage* get_material_storage()
 	{
-		return material_storage;
+	static RendererMaterialStorage rms;
+	    static bool initialized = false;
+	    if (!initialized) {
+	        rms.bind<GLES3::MaterialStorage>();
+	        initialized = true;
+	    }
+	    return &rms;
 	}
 
 	// static _ALWAYS_INLINE_ GLES3::MeshStorage* get_mesh_storage() { return mesh_storage; }

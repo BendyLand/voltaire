@@ -29,6 +29,8 @@
 /**************************************************************************/
 
 #include "rasterizer_gles3.h"
+#include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -450,7 +452,7 @@ void RasterizerGLES3::initialize()
 	config = memnew(GLES3::Config);
 	GLES3::Utilities::initialize();
 	texture_storage = memnew(GLES3::TextureStorage);
-	material_storage = memnew(GLES3::MaterialStorage);
+	GLES3::MaterialStorage::initialize();
 	particles_storage = memnew(GLES3::ParticlesStorage);
 	light_storage = memnew(GLES3::LightStorage);
 	copy_effects = memnew(GLES3::CopyEffects);
@@ -490,7 +492,7 @@ void RasterizerGLES3::finalize()
 	memdelete(feed_effects);
 	memdelete(light_storage);
 	memdelete(particles_storage);
-	memdelete(material_storage);
+	GLES3::MeshStorage::finalize();
 	memdelete(texture_storage);
 	memdelete(config);
 }

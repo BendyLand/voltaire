@@ -328,20 +328,18 @@ TextureStorage::~TextureStorage()
 // MaterialStorage
 void TextureStorage::_tex_blit_shader_initialize()
 {
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	{
 		String global_defines;
 		global_defines +=
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
-		material_storage->shaders.tex_blit_shader.initialize(global_defines, 1);
+		MaterialStorage::shaders->tex_blit_shader.initialize(global_defines, 1);
 	}
 
 	{
 		// default material and shader for Texture Blit shader
-		tex_blit_shader.default_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(tex_blit_shader.default_shader);
-		material_storage->shader_set_code(tex_blit_shader.default_shader, R"(
+		tex_blit_shader.default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(tex_blit_shader.default_shader);
+		MaterialStorage::shader_set_code(tex_blit_shader.default_shader, R"(
 // Default Texture Blit shader.
 
 shader_type texture_blit;
@@ -360,9 +358,9 @@ void blit() {
 	COLOR3 = texture(source_texture3, UV) * MODULATE;
 }
 )");
-		tex_blit_shader.default_material = material_storage->material_allocate();
-		material_storage->material_initialize(tex_blit_shader.default_material);
-		material_storage->material_set_shader(
+		tex_blit_shader.default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(tex_blit_shader.default_material);
+		MaterialStorage::material_set_shader(
 			tex_blit_shader.default_material, tex_blit_shader.default_shader);
 	}
 
@@ -409,12 +407,11 @@ void blit() {
 void TextureStorage::_tex_blit_shader_free()
 {
 	if (tex_blit_shader.initialized) {
-		GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 		glDeleteFramebuffers(1, &tex_blit_fbo);
 		glDeleteBuffers(1, &tex_blit_quad);
 		glDeleteVertexArrays(1, &tex_blit_quad_array);
-		material_storage->material_free(tex_blit_shader.default_material);
-		material_storage->shader_free(tex_blit_shader.default_shader);
+		MaterialStorage::material_free(tex_blit_shader.default_material);
+		MaterialStorage::shader_free(tex_blit_shader.default_shader);
 	}
 }
 

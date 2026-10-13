@@ -43,7 +43,7 @@ RenderSceneBuffersRD::~RenderSceneBuffersRD()
 
 	data_buffers.clear();
 
-	RendererRD::MaterialStorage::get_singleton()->samplers_rd_free(samplers);
+	RendererRD::MaterialStorage::samplers_rd_free(samplers);
 }
 
 void RenderSceneBuffersRD::update_sizes(NamedTexture& p_named_texture)
@@ -87,10 +87,9 @@ void RenderSceneBuffersRD::update_samplers()
 		computed_mipmap_bias -= 0.25;
 	}
 
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-	material_storage->samplers_rd_free(samplers);
+	RendererRD::MaterialStorage::samplers_rd_free(samplers);
 	samplers =
-		material_storage->samplers_rd_allocate(computed_mipmap_bias, anisotropic_filtering_level);
+		RendererRD::MaterialStorage::samplers_rd_allocate(computed_mipmap_bias, anisotropic_filtering_level);
 }
 
 void RenderSceneBuffersRD::cleanup()

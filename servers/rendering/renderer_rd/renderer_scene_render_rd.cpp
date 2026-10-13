@@ -30,6 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
+#include "core/os/memory.h"
 #include "renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
@@ -1926,6 +1927,86 @@ bool RendererSceneRenderRD::is_volumetric_supported()
 {
 	// usable by default (unless low end = true)
 	return true;
+}
+
+void RendererSceneRenderRD::initialize()
+{
+    data = memnew(RendererSceneRenderRD::Data);
+
+    data->forward_id_storage = create_forward_id_storage();
+    data->bokeh_dof = memnew(RendererRD::BokehDOF(false));
+    data->copy_effects = memnew(RendererRD::CopyEffects(0));
+    data->debug_effects = memnew(RendererRD::DebugEffects);
+    data->luminance = memnew(RendererRD::Luminance(data->copy_effects));
+    data->smaa = memnew(RendererRD::SMAA);
+    data->tone_mapper = memnew(RendererRD::ToneMapper(data->copy_effects));
+    data->fsr = memnew(RendererRD::FSR);
+    data->vrs = memnew(RendererRD::VRS);
+    data->resolve_effects = memnew(RendererRD::Resolve(data->copy_effects));
+#ifdef METAL_ENABLED
+    data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
+#endif
+    data->sky.init();
+    data->gi.init(&data->sky);
+
+    _update_shader_quality_settings();
+}
+
+void RendererSceneRenderRD::finalize()
+{
+    if (!data) {
+        return;
+    }
+    data->gi.free();
+    if (data->directional_penumbra_shadow_kernel) {
+        memdelete_arr(data->directional_penumbra_shadow_kernel);
+    }
+    if (data->directional_soft_shadow_kernel) {
+        memdelete_arr(data->directional_soft_shadow_kernel);
+    }
+    if (data->penumbra_shadow_kernel) {
+        memdelete_arr(data->penumbra_shadow_kernel);
+    }
+    if (data->soft_shadow_kernel) {
+        memdelete_arr(data->soft_shadow_kernel);
+    }
+#ifdef METAL_ENABLED
+    if (data->mfx_spatial) {
+        memdelete(data->mfx_spatial);
+    }
+#endif
+    if (data->resolve_effects) {
+        memdelete(data->resolve_effects);
+    }
+    if (data->vrs) {
+        memdelete(data->vrs);
+    }
+    if (data->fsr) {
+        memdelete(data->fsr);
+    }
+    if (data->tone_mapper) {
+        memdelete(data->tone_mapper);
+    }
+    if (data->smaa) {
+        memdelete(data->smaa);
+    }
+    if (data->luminance) {
+        memdelete(data->luminance);
+    }
+    if (data->debug_effects) {
+        memdelete(data->debug_effects);
+    }
+    if (data->copy_effects) {
+        memdelete(data->copy_effects);
+    }
+    if (data->bokeh_dof) {
+        memdelete(data->bokeh_dof);
+    }
+    if (data->forward_id_storage) {
+        memdelete(data->forward_id_storage);
+    }
+    memdelete(data);
+    data = nullptr;
 }
 
 uint32_t RendererSceneRenderRD::get_max_elements()

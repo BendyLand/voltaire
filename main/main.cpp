@@ -343,13 +343,19 @@ static Vector<String> get_files_with_extension(const String& p_root, const Strin
 void finalize_physics()
 {
 #ifndef PHYSICS_3D_DISABLED
-	physics_server_3d->finish();
-	memdelete(physics_server_3d);
+	if (physics_server_3d) {
+		physics_server_3d->finish();
+		memdelete(physics_server_3d);
+		physics_server_3d = nullptr;
+	}
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	physics_server_2d->finish();
-	memdelete(physics_server_2d);
+	if (physics_server_2d) {
+		physics_server_2d->finish();
+		memdelete(physics_server_2d);
+		physics_server_2d = nullptr;
+	}
 #endif // PHYSICS_2D_DISABLED
 }
 
@@ -1078,6 +1084,8 @@ void Main::test_cleanup()
 	memdelete(engine);
 
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->finalize_core();
 
@@ -4278,6 +4286,8 @@ void Main::cleanup(bool p_force)
 	unregister_core_extensions();
 
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->benchmark_end_measure("Shutdown", "Main::Cleanup");
 	OS::get_singleton()->benchmark_dump();

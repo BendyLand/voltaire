@@ -66,9 +66,6 @@ public:
     Utilities& operator=(const Utilities&) = delete;
     ~Utilities() = delete;
 
-    static void initialize();
-    static void finalize();
-
     /* INSTANCES */
 
     static RSE::InstanceType get_base_type(RID p_rid);
