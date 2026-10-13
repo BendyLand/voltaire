@@ -158,8 +158,6 @@ static RD::HitShaderBindingTableRange _encode_hit_sbt_range(uint32_t p_offset, u
 
 void RenderingDevice::_add_dependency(RID p_id, RID p_depends_on)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
-
 	HashSet<RID>* set = data->dependency_map.getptr(p_depends_on);
 	if (set == nullptr) {
 		set = &data->dependency_map.insert(p_depends_on, HashSet<RID>())->value;
@@ -175,8 +173,6 @@ void RenderingDevice::_add_dependency(RID p_id, RID p_depends_on)
 
 void RenderingDevice::_remove_dependency(RID p_id, RID p_depends_on)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
-
 	HashSet<RID>* set = data->dependency_map.getptr(p_depends_on);
 	if (set != nullptr) {
 		set->erase(p_id);
