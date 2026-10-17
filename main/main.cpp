@@ -57,6 +57,7 @@
 #include "platform/register_platform_apis.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
+#include "scene/gui/color_rect.h"
 #include "scene/property_list_helper.h"
 #include "scene/register_scene_types.h"
 #include "scene/resources/packed_scene.h"
@@ -68,8 +69,9 @@
 #include "servers/display/display_server.h"
 #include "servers/movie_writer/movie_writer.h"
 #include "servers/register_server_types.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/shader_language.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 
@@ -361,6 +363,7 @@ void finalize_physics()
 
 void finalize_display()
 {
+	ShaderLanguage::finish();
 	Renderer::finalize();
 	memdelete(display_server);
 	memdelete(accessibility_server);
@@ -386,31 +389,29 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " (" +
+									  Time::get_singleton()->get_datetime_string_from_unix_time(
+										  VLTR_VERSION_TIMESTAMP, true) +
+									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(
-				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - " + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " (" +
+								 Time::get_singleton()->get_datetime_string_from_unix_time(
+									 VLTR_VERSION_TIMESTAMP, true) +
+								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 	else {
 		if (p_rich) {
-			Engine::print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " - \u001b[4m" +
+									  String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(String(VLTR_VERSION_NAME) + " v" +
-												  get_full_version_string() + " - " +
-												  String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 }
@@ -1880,7 +1881,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				OS::get_singleton()->print(
 					"Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
-			}
+
+		}
 		}
 		else if (arg == "--import") {
 			editor = true;
@@ -3510,8 +3512,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// We need to initialize the movie writer here in case
 		// one of the user-provided GDExtensions subclasses MovieWriter.
 		if (Engine::get_write_movie_path() != String()) {
-			movie_writer =
-				MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
+			movie_writer = MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
 			if (movie_writer == nullptr) {
 				ERR_PRINT("Can't find movie writer for file type, aborting: " +
 						  Engine::get_write_movie_path());
@@ -3546,8 +3547,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	camera_server = CameraServer::create();
 
 	MAIN_PRINT("Main: Load Physics");
-
-	register_server_singletons();
 
 #if TOOLS_ENABLED
 
@@ -3931,8 +3930,7 @@ int Main::start()
 		main_loop_type = "SceneTree";
 	}
 
-	if
-(!main_loop) {
+	if (!main_loop) {
 		memdelete(main_loop);
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
@@ -3968,6 +3966,34 @@ int Main::start()
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
 	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	SceneTree* scene_tree = memnew(SceneTree);
+
+	if (!script.is_empty()) {
+		memdelete(scene_tree);
+		return EXIT_FAILURE;
+	}
+
+	if (!scene_tree) {
+		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+	}
+
+	OS::get_singleton()->set_main_loop(scene_tree);
+	scene_tree->initialize();
+
+	Window* root = scene_tree->get_root();
+	if (root) {
+		root->show();
+		ColorRect* rect = memnew(ColorRect);
+		rect->set_color(Color(1.0f, 0.5f, 0.0f, 1.0f));
+		rect->set_position(Point2(100, 100));
+		rect->set_size(Size2(300, 200));
+		rect->set_visible(true);
+
+		root->add_child(rect);
+	}
+	else {
+		__print_line("Window root failed to be created");
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -4009,8 +4035,7 @@ bool Main::iteration()
 
 	const uint64_t ticks_elapsed = ticks - last_ticks;
 
-	const int physics_ticks_per_second =
-		Engine::get_user_physics_ticks_per_second();
+	const int physics_ticks_per_second = Engine::get_user_physics_ticks_per_second();
 	const double physics_step = 1.0 / physics_ticks_per_second;
 
 	const double time_scale = Engine::get_effective_time_scale();
@@ -4064,6 +4089,10 @@ bool Main::iteration()
 #endif // NAVIGATION_3D_DISABLED
 
 	Renderer::sync(); // sync if still drawing from previous frames.
+
+	if (DisplayServer::get_singleton()->window_can_draw()) {
+        Renderer::draw(true, scaled_step);
+    }
 
 	const bool has_pending_resources_for_processing =
 		RD::data && RD::has_pending_resources_for_processing();

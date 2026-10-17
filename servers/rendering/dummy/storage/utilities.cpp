@@ -55,8 +55,8 @@ bool Utilities::free(RID p_rid)
 	if (RendererDummy::LightStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererDummy::TextureStorage::get_singleton()->owns_texture(p_rid)) {
-		RendererDummy::TextureStorage::get_singleton()->texture_free(p_rid);
+	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {
+		RendererDummy::TextureStorage::texture_free(p_rid);
 		return true;
 	}
 	else if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {

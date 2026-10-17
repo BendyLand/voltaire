@@ -187,16 +187,16 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (GLES3::TextureStorage::get_singleton()->owns_render_target(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->render_target_free(p_rid);
+	if (GLES3::TextureStorage::owns_render_target(p_rid)) {
+		GLES3::TextureStorage::render_target_free(p_rid);
 		return true;
 	}
-	else if (GLES3::TextureStorage::get_singleton()->owns_texture(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->texture_free(p_rid);
+	else if (GLES3::TextureStorage::owns_texture(p_rid)) {
+		GLES3::TextureStorage::texture_free(p_rid);
 		return true;
 	}
-	else if (GLES3::TextureStorage::get_singleton()->owns_canvas_texture(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->canvas_texture_free(p_rid);
+	else if (GLES3::TextureStorage::owns_canvas_texture(p_rid)) {
+		GLES3::TextureStorage::canvas_texture_free(p_rid);
 		return true;
 	}
 	else if (GLES3::MaterialStorage::owns_shader(p_rid)) {
@@ -421,7 +421,7 @@ void Utilities::update_dirty_resources()
 	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_skeletons();
 	MeshStorage::_update_dirty_multimeshes();
-	TextureStorage::get_singleton()->update_texture_atlas();
+	TextureStorage::update_texture_atlas();
 }
 
 void Utilities::set_debug_generate_wireframes(bool p_generate)

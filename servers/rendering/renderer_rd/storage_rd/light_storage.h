@@ -591,7 +591,7 @@ public:
 		const Light *light = light_owner.get_or_null(p_light);
 		ERR_FAIL_NULL_V(light, RSE::LIGHT_DIRECTIONAL);
 
-		return TextureStorage::get_singleton()->owns_texture(light->projector);
+		return TextureStorage::owns_texture(light->projector);
 	}
 
 	_FORCE_INLINE_ bool light_is_negative(RID p_light) const {

@@ -586,8 +586,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 // front_process_buffer.
 void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-
 	double new_phase = Math::fmod(p_particles->phase + (p_delta / p_particles->lifetime), 1.0);
 
 	// update current frame
@@ -803,8 +801,8 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		// Bind heightmap or SDF texture.
 		GLuint heightmap = collision_heightmap_texture;
 		if (heightmap == 0) {
-			GLES3::Texture* tex = texture_storage->get_texture(
-				texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_BLACK));
+			GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_BLACK));
 			heightmap = tex->tex_id;
 		}
 		glActiveTexture(GL_TEXTURE0);
@@ -1531,7 +1529,7 @@ GLuint ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			WARN_PRINT("Could not create heightmap texture, status: " +
-					   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
+					   GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 #endif
 		GLES3::Utilities::texture_allocated_data(

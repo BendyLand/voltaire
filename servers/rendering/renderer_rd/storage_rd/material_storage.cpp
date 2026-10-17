@@ -546,13 +546,13 @@ bool MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }
 RenderingServerTypes::ShaderNativeSourceCode
 MaterialStorage::TexBlitShaderData::get_native_source_code() const
 {
-	return TextureStorage::get_singleton()->tex_blit_shader.shader.version_get_native_source_code(
+	return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
 		version);
 }
 
 Pair<ShaderRD*, RID> MaterialStorage::TexBlitShaderData::get_native_shader_and_version() const
 {
-	return {&TextureStorage::get_singleton()->tex_blit_shader.shader, version};
+	return {&TextureStorage::tex_blit_shader.shader, version};
 }
 
 MaterialStorage::TexBlitShaderData::TexBlitShaderData() { valid = false; }
@@ -560,7 +560,7 @@ MaterialStorage::TexBlitShaderData::TexBlitShaderData() { valid = false; }
 MaterialStorage::TexBlitShaderData::~TexBlitShaderData()
 {
 	if (version.is_valid()) {
-		TextureStorage::get_singleton()->tex_blit_shader.shader.version_free(version);
+		TextureStorage::tex_blit_shader.shader.version_free(version);
 	}
 }
 
@@ -989,7 +989,7 @@ void MaterialStorage::shader_set_default_texture_parameter(
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 
-	if (p_texture.is_valid() && TextureStorage::get_singleton()->owns_texture(p_texture)) {
+	if (p_texture.is_valid() && TextureStorage::owns_texture(p_texture)) {
 		if (!shader->default_texture_parameter.has(p_name)) {
 			shader->default_texture_parameter[p_name] = HashMap<int, RID>();
 		}
@@ -1427,6 +1427,8 @@ void MaterialStorage::finalize()
 		RD::free_rid(quad_index_buffer);
 		quad_index_buffer = RID();
 	}
+    // Clear global uniform tables and cache maps
+    global_shader_parameters_clear();
 }
 
 void MaterialStorage::material_free(RID p_rid)

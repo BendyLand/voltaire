@@ -100,6 +100,7 @@ public:
 		api.global_shader_parameters_clear = &StorageImpl::global_shader_parameters_clear;
 		api.global_shader_parameters_instance_allocate = &StorageImpl::global_shader_parameters_instance_allocate;
 		api.global_shader_parameters_instance_free = &StorageImpl::global_shader_parameters_instance_free;
+		api.finalize = &StorageImpl::finalize;
 
 		/* SHADER API */
 		api.shader_allocate = &StorageImpl::shader_allocate;

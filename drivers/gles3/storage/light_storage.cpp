@@ -174,7 +174,6 @@ void LightStorage::light_set_shadow(RID p_light, bool p_enabled)
 
 void LightStorage::light_set_projector(RID p_light, RID p_texture)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
 
@@ -183,7 +182,7 @@ void LightStorage::light_set_projector(RID p_light, RID p_texture)
 	}
 
 	if (light->type != RSE::LIGHT_DIRECTIONAL && light->projector.is_valid()) {
-		texture_storage->texture_remove_from_decal_atlas(
+		GLES3::TextureStorage::texture_remove_from_decal_atlas(
 			light->projector, light->type == RSE::LIGHT_OMNI);
 	}
 
@@ -191,7 +190,7 @@ void LightStorage::light_set_projector(RID p_light, RID p_texture)
 
 	if (light->type != RSE::LIGHT_DIRECTIONAL) {
 		if (light->projector.is_valid()) {
-			texture_storage->texture_add_to_decal_atlas(
+			GLES3::TextureStorage::texture_add_to_decal_atlas(
 				light->projector, light->type == RSE::LIGHT_OMNI);
 		}
 		light->dependency.changed_notify(
@@ -928,7 +927,6 @@ bool LightStorage::reflection_probe_instance_has_reflection(RID p_instance)
 
 bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	ReflectionAtlas* atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 
 	ERR_FAIL_NULL_V(atlas, false);
@@ -1066,7 +1064,7 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 				GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 				if (status != GL_FRAMEBUFFER_COMPLETE) {
 					WARN_PRINT("Could not create reflections framebuffer, status: " +
-							   texture_storage->get_framebuffer_error(status));
+							   GLES3::TextureStorage::get_framebuffer_error(status));
 				}
 
 				atlas->reflections.write[i].fbos[side] = fbo;
@@ -1236,10 +1234,10 @@ void LightStorage::lightmap_set_textures(
 	lightmap->uses_spherical_harmonics = p_uses_spherical_haromics;
 
 	Vector3i light_texture_size =
-		GLES3::TextureStorage::get_singleton()->texture_get_size(lightmap->light_texture);
+		GLES3::TextureStorage::texture_get_size(lightmap->light_texture);
 	lightmap->light_texture_size = Vector2i(light_texture_size.x, light_texture_size.y);
 
-	GLuint tex = GLES3::TextureStorage::get_singleton()->texture_get_texid(lightmap->light_texture);
+	GLuint tex = GLES3::TextureStorage::texture_get_texid(lightmap->light_texture);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1404,7 +1402,7 @@ void LightStorage::lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow
 	lightmap->shadow_texture = p_shadow;
 
 	GLuint tex =
-		GLES3::TextureStorage::get_singleton()->texture_get_texid(lightmap->shadow_texture);
+		GLES3::TextureStorage::texture_get_texid(lightmap->shadow_texture);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1753,7 +1751,7 @@ bool LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas, int* p_i
 				if (status != GL_FRAMEBUFFER_COMPLETE) {
 					ERR_PRINT(
 						"Could not create omni light shadow framebuffer, status: " +
-						GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
+						GLES3::TextureStorage::get_framebuffer_error(status));
 				}
 #endif
 				glBindTexture(GL_TEXTURE_CUBE_MAP, 0);

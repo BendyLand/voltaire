@@ -1346,7 +1346,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	}
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DECAL_ATLAS) {
-		RID decal_atlas = RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture();
+		RID decal_atlas = RendererRD::TextureStorage::decal_atlas_get_texture();
 
 		if (decal_atlas.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);
@@ -1359,7 +1359,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_AREA_LIGHT_ATLAS) {
 		RID area_light_atlas =
-			RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
+			RendererRD::TextureStorage::area_light_atlas_get_texture();
 
 		if (area_light_atlas.is_valid()) {
 			Size2i rtsize = texture_storage->render_target_get_size(render_target);

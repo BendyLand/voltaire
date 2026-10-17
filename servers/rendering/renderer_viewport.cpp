@@ -34,12 +34,12 @@
 #include "core/os/os.h"
 #include "renderer_viewport.h"
 #include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 #ifndef XR_DISABLED
@@ -705,8 +705,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 							F->xform_cache = xf * F->xform_curr;
 						}
 						else {
-							real_t f =
-								Engine::get_physics_interpolation_fraction();
+							real_t f = Engine::get_physics_interpolation_fraction();
 							TransformInterpolator::interpolate_transform_2d(
 								F->xform_prev, F->xform_curr, F->xform_cache, f);
 							F->xform_cache = xf * F->xform_cache;
@@ -864,7 +863,7 @@ void RendererViewport::viewport_initialize(RID p_rid)
 	viewport_owner.initialize_rid(p_rid);
 	Viewport* viewport = viewport_owner.get_or_null(p_rid);
 	viewport->self = p_rid;
-	viewport->render_target = RS::texture_storage->render_target_create();
+	viewport->render_target = RendererTextureStorage::render_target_create();
 	viewport->shadow_atlas = RS::light_storage->shadow_atlas_create();
 	viewport->viewport_render_direct_to_screen = false;
 
@@ -1104,7 +1103,8 @@ void RendererViewport::viewport_set_render_direct_to_screen(RID p_viewport, bool
 
 	// if attached to screen already, setup screen size and position, this needs to happen after
 	// setting flag to avoid an unnecessary buffer allocation
-	if (RendererCompositor::is_low_end() && viewport->viewport_to_screen_rect != Rect2() && p_enable) {
+	if (RendererCompositor::is_low_end() && viewport->viewport_to_screen_rect != Rect2() &&
+		p_enable) {
 		RS::texture_storage->render_target_set_size(viewport->render_target,
 			viewport->viewport_to_screen_rect.size.x, viewport->viewport_to_screen_rect.size.y,
 			viewport->view_count);
@@ -1731,6 +1731,70 @@ int RendererViewport::get_total_draw_calls_used() const { return total_draw_call
 int RendererViewport::get_num_viewports_with_motion_vectors() const
 {
 	return num_viewports_with_motion_vectors;
+}
+
+void RendererViewport::draw_viewports(bool p_swap_buffers)
+{
+	draw_viewports_pass++;
+
+
+	total_objects_drawn = 0;
+	total_vertices_drawn = 0;
+	total_draw_calls_used = 0;
+
+	uint32_t rid_count = viewport_owner.get_rid_count();
+
+    static bool printed = false;
+    if (!printed) {
+        __print_line(vformat("draw_viewports: total viewports allocated = %d", rid_count));
+        printed = true;
+    }
+
+	if (rid_count == 0) {
+		if (p_swap_buffers) {
+			DisplayServer::get_singleton()->swap_buffers();
+		}
+		return;
+	}
+
+	LocalVector<RID> rids;
+	rids.resize(rid_count);
+	viewport_owner.fill_owned_buffer(rids.ptr());
+
+	LocalVector<Viewport*> active_viewports;
+
+	for (uint32_t i = 0; i < rid_count; i++) {
+		Viewport* v = viewport_owner.get_or_null(rids[i]);
+		if (!v) {
+			continue;
+		}
+
+		if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_DISABLED) {
+			continue;
+		}
+
+		if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_ONCE) {
+			v->update_mode = RenderingServerEnums::VIEWPORT_UPDATE_DISABLED;
+		}
+
+		active_viewports.push_back(v);
+	}
+
+	active_viewports.sort_custom<ViewportSort>();
+
+	for (uint32_t i = 0; i < active_viewports.size(); i++) {
+		Viewport* v = active_viewports[i];
+		static bool printed_draw = false;
+        if (!printed_draw) {
+            __print_line("Calling _draw_viewport on active viewport!");
+            printed_draw = true;
+        }
+		_draw_viewport(v);
+	}
+
+	if (p_swap_buffers) {
+		DisplayServer::get_singleton()->swap_buffers();
+	}
 }
 
 

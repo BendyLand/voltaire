@@ -1558,7 +1558,7 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 		settings.area_light_buffer =
 			RendererRD::LightStorage::get_singleton()->get_area_light_buffer();
 		settings.area_light_atlas =
-			RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
+			RendererRD::TextureStorage::area_light_atlas_get_texture();
 		settings.directional_shadow_depth =
 			RendererRD::LightStorage::get_singleton()->directional_shadow_get_texture();
 		settings.directional_light_buffer =
@@ -2366,10 +2366,10 @@ void RenderForwardClustered::_render_scene(
 		case RSE::ENV_BG_CANVAS: {
 			if (!is_reflection_probe) {
 				RID texture =
-					RendererRD::TextureStorage::get_singleton()->render_target_get_rd_texture(
+					RendererRD::TextureStorage::render_target_get_rd_texture(
 						rb->get_render_target());
 				bool convert_to_linear =
-					!RendererRD::TextureStorage::get_singleton()->render_target_is_using_hdr(
+					!RendererRD::TextureStorage::render_target_is_using_hdr(
 						rb->get_render_target());
 				RendererSceneRenderRD::data->copy_effects->copy_to_fb_rect(texture, color_only_framebuffer, Rect2i(), false,
 					false, false, false, RID(), false, false, convert_to_linear);
@@ -3730,7 +3730,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			u.binding = 10;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
-				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture();
+				RendererRD::TextureStorage::decal_atlas_get_texture();
 			u.append_id(decal_atlas);
 			uniforms.push_back(u);
 		}
@@ -3739,7 +3739,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			u.binding = 11;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
-				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture_srgb();
+				RendererRD::TextureStorage::decal_atlas_get_texture_srgb();
 			u.append_id(decal_atlas);
 			uniforms.push_back(u);
 		}
@@ -3747,7 +3747,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 12;
 			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.append_id(RendererRD::TextureStorage::get_singleton()->get_decal_buffer());
+			u.append_id(RendererRD::TextureStorage::get_decal_buffer());
 			uniforms.push_back(u);
 		}
 
@@ -3830,7 +3830,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
-			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
 				ltc.lut1_texture));
 			uniforms.push_back(u);
 		}
@@ -3841,7 +3841,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
-			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
 				ltc.lut2_texture));
 			uniforms.push_back(u);
 		}
@@ -3850,7 +3850,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			u.binding = 20;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID area_light_atlas =
-				RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
+				RendererRD::TextureStorage::area_light_atlas_get_texture();
 			u.append_id(area_light_atlas);
 			uniforms.push_back(u);
 		}

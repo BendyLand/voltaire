@@ -45,6 +45,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_data_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -144,6 +145,54 @@ public:
 	static bool is_initialized() { return data != nullptr; }
 
 public:
+	/* CANVAS TEXTURE CALLBACK & INFO */
+	typedef void (*CanvasTextureInvalidationCallback)(void* p_userdata);
+	static void canvas_texture_set_invalidation_callback(RID p_texture,
+		CanvasTextureInvalidationCallback p_callback = nullptr, void* p_userdata = nullptr);
+
+	struct CanvasTextureInfo
+	{
+		RID diffuse;
+		RID normal;
+		RID specular;
+		Color specular_color;
+		float shininess = 0.0;
+		bool use_normal = false;
+		bool use_specular = false;
+
+		_FORCE_INLINE_ bool is_null() const { return diffuse.is_null(); }
+	};
+
+	static CanvasTextureInfo canvas_texture_get_info(RID p_texture,
+		RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat);
+
+	/* DEFAULT TEXTURES */
+	static RID texture_rd_get_default(RendererRD::TextureStorage::DefaultRDTexture p_texture);
+
+	/* ATLAS HELPERS */
+	static RID decal_atlas_get_texture();
+	static Rect2 decal_atlas_get_texture_rect(RID p_texture);
+	static RID area_light_atlas_get_texture();
+
+	/* RENDER TARGET HELPERS */
+	static RID render_target_get_rd_texture(RID p_render_target);
+	static RID render_target_get_rd_texture_msaa(RID p_render_target);
+	static RID render_target_get_rd_texture_slice(RID p_render_target, uint32_t p_layer);
+	static RID render_target_get_rd_backbuffer(RID p_render_target);
+	static RID render_target_get_rd_framebuffer(RID p_render_target);
+	static RID render_target_get_sdf_texture(RID p_render_target);
+	static bool render_target_is_sdf_enabled(RID p_render_target);
+
+	static void render_target_set_backbuffer_uniform_set(RID p_render_target, RID p_uniform_set);
+	static void render_target_set_framebuffer_uniform_set(RID p_render_target, RID p_uniform_set);
+
+	static void render_target_copy_to_back_buffer(
+		RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps = false);
+	static void render_target_clear_back_buffer(
+		RID p_render_target, const Rect2i& p_region, const Color& p_color);
+	static void render_target_gen_back_buffer_mipmaps(RID p_render_target, const Rect2i& p_region);
+
+	static void _tex_blit_shader_free();
 	static void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers);
 
 	static void _render_scene(RenderDataRD* p_render_data, const Color& p_default_color);
@@ -162,7 +211,6 @@ public:
 		const RID& p_geom_facing_texture, float p_exposure_normalization);
 	static void _render_particle_collider_heightfield(RID p_fb, const Transform3D& p_cam_transform,
 		const Projection& p_cam_projection, const PagedArray<RenderGeometryInstance*>& p_instances);
-
 
 	static RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
 	static RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
@@ -383,8 +431,7 @@ public:
 		return data->directional_penumbra_shadow_samples;
 	}
 
-	_FORCE_INLINE_ static bool
- lightmap_filter_bicubic_get()
+	_FORCE_INLINE_ static bool lightmap_filter_bicubic_get()
 	{
 		return data->lightmap_filter_bicubic;
 	}

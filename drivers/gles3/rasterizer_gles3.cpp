@@ -31,6 +31,7 @@
 #include "rasterizer_gles3.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
+#include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -451,7 +452,7 @@ void RasterizerGLES3::initialize()
 	// OpenGL needs to be initialized before initializing the Rasterizers
 	config = memnew(GLES3::Config);
 	GLES3::Utilities::initialize();
-	texture_storage = memnew(GLES3::TextureStorage);
+	GLES3::TextureStorage::initialize();
 	GLES3::MaterialStorage::initialize();
 	particles_storage = memnew(GLES3::ParticlesStorage);
 	light_storage = memnew(GLES3::LightStorage);
@@ -465,9 +466,35 @@ void RasterizerGLES3::initialize()
 
     canvas = memnew(RasterizerCanvasGLES3(texture_storage, material_storage));
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+    RendererTextureStorage::render_target_create = &GLES3::TextureStorage::render_target_create;
+    RendererTextureStorage::render_target_free = &GLES3::TextureStorage::render_target_free;
+    RendererTextureStorage::render_target_set_size = &GLES3::TextureStorage::render_target_set_size;
+    RendererTextureStorage::render_target_set_transparent = &GLES3::TextureStorage::render_target_set_transparent;
+    RendererTextureStorage::render_target_set_direct_to_screen = &GLES3::TextureStorage::render_target_set_direct_to_screen;
+    RendererTextureStorage::render_target_get_texture = &GLES3::TextureStorage::render_target_get_texture;
+    RendererTextureStorage::render_target_request_clear = &GLES3::TextureStorage::render_target_request_clear;
+    RendererTextureStorage::render_target_is_clear_requested = &GLES3::TextureStorage::render_target_is_clear_requested;
+    RendererTextureStorage::render_target_get_clear_request_color = &GLES3::TextureStorage::render_target_get_clear_request_color;
+    RendererTextureStorage::render_target_do_clear_request = &GLES3::TextureStorage::render_target_do_clear_request;
+    RendererTextureStorage::render_target_was_used = &GLES3::TextureStorage::render_target_was_used;
+    RendererTextureStorage::render_target_set_as_unused = &GLES3::TextureStorage::render_target_set_as_unused;
+    RendererTextureStorage::render_target_set_msaa = &GLES3::TextureStorage::render_target_set_msaa;
+    RendererTextureStorage::render_target_set_use_hdr = &GLES3::TextureStorage::render_target_set_use_hdr;
+
+    RendererTextureStorage::texture_allocate = &GLES3::TextureStorage::texture_allocate;
+    RendererTextureStorage::texture_initialize = &GLES3::TextureStorage::texture_initialize;
+    RendererTextureStorage::texture_free = &GLES3::TextureStorage::texture_free;
+    RendererTextureStorage::texture_2d_create = &GLES3::TextureStorage::texture_2d_create;
+    RendererTextureStorage::texture_2d_initialize = &GLES3::TextureStorage::texture_2d_initialize;
+    RendererTextureStorage::texture_2d_update = &GLES3::TextureStorage::texture_2d_update;
+    RendererTextureStorage::texture_2d_get = &GLES3::TextureStorage::texture_2d_get;
+
+    RendererTextureStorage::canvas_texture_allocate = &GLES3::TextureStorage::canvas_texture_allocate;
+    RendererTextureStorage::canvas_texture_initialize = &GLES3::TextureStorage::canvas_texture_initialize;
+    RendererTextureStorage::canvas_texture_free = &GLES3::TextureStorage::canvas_texture_free;
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
-	texture_storage->_tex_blit_shader_initialize();
+	GLES3::TextureStorage::_tex_blit_shader_initialize();
 
 	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
 	// itself.
@@ -480,7 +507,7 @@ void RasterizerGLES3::finalize()
 {
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
-	texture_storage->_tex_blit_shader_free();
+	GLES3::TextureStorage::_tex_blit_shader_free();
 	memdelete(scene);
 	memdelete(canvas);
 	memdelete(gi);
@@ -493,7 +520,7 @@ void RasterizerGLES3::finalize()
 	memdelete(light_storage);
 	memdelete(particles_storage);
 	GLES3::MeshStorage::finalize();
-	memdelete(texture_storage);
+	GLES3::TextureStorage::finalize();
 	memdelete(config);
 }
 
@@ -511,7 +538,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	const RenderingServerTypes::BlitToScreen& p_blit, bool p_first)
 {
 	GLES3::RenderTarget* rt =
-		GLES3::TextureStorage::get_singleton()->get_render_target(p_blit.render_target);
+		GLES3::TextureStorage::get_render_target(p_blit.render_target);
 
 	ERR_FAIL_NULL(rt);
 

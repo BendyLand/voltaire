@@ -404,7 +404,6 @@ MaterialData::~MaterialData()
 RID MaterialData::get_default_texture_id(
 	ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	RID gl_texture;
 
 	switch (p_type) {
@@ -413,22 +412,22 @@ RID MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLER2D: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_BLACK);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_TRANSPARENT);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_TRANSPARENT);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_ANISO);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_ANISO);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_NORMAL);
 		} break;
 		default: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_WHITE);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_WHITE);
 		} break;
 		}
 	} break;
@@ -436,14 +435,14 @@ RID MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLERCUBE: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_BLACK);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
 			gl_texture =
-				texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_TRANSPARENT);
+				GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_TRANSPARENT);
 		} break;
 		default: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_WHITE);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_CUBEMAP_WHITE);
 		} break;
 		}
 	} break;
@@ -452,7 +451,7 @@ RID MaterialData::get_default_texture_id(
 					   "please use another type.");
 	} break;
 	case ShaderLanguage::TYPE_SAMPLEREXT: {
-		gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_EXT);
+		gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_EXT);
 	} break;
 
 	case ShaderLanguage::TYPE_ISAMPLER3D:
@@ -460,13 +459,13 @@ RID MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLER3D: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_BLACK);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_TRANSPARENT);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_TRANSPARENT);
 		} break;
 		default: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_WHITE);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_3D_WHITE);
 		} break;
 		}
 	} break;
@@ -476,14 +475,14 @@ RID MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_BLACK);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
 			gl_texture =
-				texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_TRANSPARENT);
+				GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_TRANSPARENT);
 		} break;
 		default: {
-			gl_texture = texture_storage->texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_WHITE);
+			gl_texture = GLES3::TextureStorage::texture_gl_get_default(DEFAULT_GL_TEXTURE_2D_ARRAY_WHITE);
 		} break;
 		}
 	} break;
@@ -830,7 +829,7 @@ void MaterialStorage::shader_set_default_texture_parameter(
 	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 
-	if (p_texture.is_valid() && TextureStorage::get_singleton()->owns_texture(p_texture)) {
+	if (p_texture.is_valid() && TextureStorage::owns_texture(p_texture)) {
 		if (!shader->default_texture_parameter.has(p_name)) {
 			shader->default_texture_parameter[p_name] = HashMap<int, RID>();
 		}
@@ -1210,7 +1209,7 @@ static void bind_uniforms_generic(const Vector<RID>& p_textures,
 	for (int ti = 0; ti < p_textures.size(); ti++) {
 		ERR_FAIL_COND_MSG(texture_uniform_index >= p_texture_uniforms.size(),
 			"texture_uniform_index out of bounds");
-		GLES3::Texture* texture = TextureStorage::get_singleton()->get_texture(textures[ti]);
+		GLES3::Texture* texture = TextureStorage::get_texture(textures[ti]);
 		const ShaderCompiler::GeneratedCode::Texture& texture_uniform =
 			texture_uniforms[texture_uniform_index];
 		if (texture) {

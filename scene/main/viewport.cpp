@@ -2573,7 +2573,17 @@ Window* Viewport::get_base_window() {}
 
 void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
 
-Viewport::Viewport() {}
+Viewport::Viewport()
+{
+    __print_line("Viewport constructor called!");
+    viewport = Renderer::viewport_create();
+    __print_line(vformat("Created viewport RID: %d", viewport.get_id()));
+
+    world_2d.instantiate();
+    world_2d->register_viewport(this);
+    current_canvas = world_2d->get_canvas();
+    Renderer::viewport_attach_canvas(viewport, current_canvas);
+}
 
 void Viewport::_push_text_input(String const&, bool) {}
 

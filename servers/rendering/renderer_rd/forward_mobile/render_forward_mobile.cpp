@@ -1432,7 +1432,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			u.binding = 10;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
-				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture();
+				RendererRD::TextureStorage::decal_atlas_get_texture();
 			u.append_id(decal_atlas);
 			uniforms.push_back(u);
 		}
@@ -1441,7 +1441,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			u.binding = 11;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
-				RendererRD::TextureStorage::get_singleton()->decal_atlas_get_texture_srgb();
+				RendererRD::TextureStorage::decal_atlas_get_texture_srgb();
 			u.append_id(decal_atlas);
 			uniforms.push_back(u);
 		}
@@ -1449,7 +1449,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 12;
 			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.append_id(RendererRD::TextureStorage::get_singleton()->get_decal_buffer());
+			u.append_id(RendererRD::TextureStorage::get_decal_buffer());
 			uniforms.push_back(u);
 		}
 
@@ -1508,7 +1508,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
-			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
 				ltc.lut1_texture));
 			uniforms.push_back(u);
 		}
@@ -1519,7 +1519,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
 			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
 				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
-			u.append_id(RendererRD::TextureStorage::get_singleton()->texture_get_rd_texture(
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
 				ltc.lut2_texture));
 			uniforms.push_back(u);
 		}
@@ -1529,7 +1529,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 			u.binding = 17;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			RID decal_atlas =
-				RendererRD::TextureStorage::get_singleton()->area_light_atlas_get_texture();
+				RendererRD::TextureStorage::area_light_atlas_get_texture();
 			u.append_id(decal_atlas);
 			uniforms.push_back(u);
 		}
@@ -2093,7 +2093,7 @@ void RenderForwardMobile::GeometryInstanceForwardMobile::pair_decal_instances(
 	decals_count = p_decal_instance_count < (uint32_t)MAX_RDL_CULL ? p_decal_instance_count
 																   : (uint32_t)MAX_RDL_CULL;
 	for (uint32_t i = 0; i < decals_count; i++) {
-		decals[i] = RendererRD::TextureStorage::get_singleton()->decal_instance_get_forward_id(
+		decals[i] = RendererRD::TextureStorage::decal_instance_get_forward_id(
 			p_decal_instances[i]);
 	}
 }

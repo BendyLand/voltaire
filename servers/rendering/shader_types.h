@@ -33,28 +33,31 @@
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/shader_language.h"
 
-class ShaderTypes {
-	struct Type {
-		HashMap<StringName, ShaderLanguage::FunctionInfo> functions;
-		Vector<ShaderLanguage::ModeInfo> modes;
-		Vector<ShaderLanguage::ModeInfo> stencil_modes;
-	};
-
-	HashMap<RSE::ShaderMode, Type> shader_modes;
-
-	static ShaderTypes *singleton;
-
-	HashSet<String> shader_types;
-	List<String> shader_types_list;
-
+class ShaderTypes
+{
 public:
-	static ShaderTypes *get_singleton() { return singleton; }
+    ShaderTypes() = delete;
+    ~ShaderTypes() = delete;
 
-	const HashMap<StringName, ShaderLanguage::FunctionInfo> &get_functions(RSE::ShaderMode p_mode) const;
-	const Vector<ShaderLanguage::ModeInfo> &get_modes(RSE::ShaderMode p_mode) const;
-	const Vector<ShaderLanguage::ModeInfo> &get_stencil_modes(RSE::ShaderMode p_mode) const;
-	const HashSet<String> &get_types() const;
-	const List<String> &get_types_list() const;
+    struct Type
+    {
+        HashMap<StringName, ShaderLanguage::FunctionInfo> functions;
+        Vector<ShaderLanguage::ModeInfo> modes;
+        Vector<ShaderLanguage::ModeInfo> stencil_modes;
+    };
 
-	ShaderTypes();
+    static inline HashMap<RSE::ShaderMode, Type> shader_modes;
+    static inline HashSet<String> shader_types;
+    static inline List<String> shader_types_list;
+
+    static const HashMap<StringName, ShaderLanguage::FunctionInfo>& get_functions(
+        RSE::ShaderMode p_mode);
+    static const Vector<ShaderLanguage::ModeInfo>& get_modes(RSE::ShaderMode p_mode);
+    static const Vector<ShaderLanguage::ModeInfo>& get_stencil_modes(RSE::ShaderMode p_mode);
+    static const HashSet<String>& get_types();
+    static const List<String>& get_types_list();
+
+    static void initialize();
+    static void finalize();
 };
+

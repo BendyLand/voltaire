@@ -1055,9 +1055,9 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 				for (uint32_t i = 0; i < ParticlesFrameParams::MAX_3D_TEXTURES; i++) {
 					RID rd_tex;
 					if (i < collision_3d_textures_used) {
-						if (TextureStorage::get_singleton()->texture_get_type(
+						if (TextureStorage::texture_get_type(
 								collision_3d_textures[i]) == TextureStorage::TYPE_3D) {
-							rd_tex = TextureStorage::get_singleton()->texture_get_rd_texture(
+							rd_tex = TextureStorage::texture_get_rd_texture(
 								collision_3d_textures[i]);
 						}
 					}

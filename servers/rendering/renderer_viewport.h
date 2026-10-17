@@ -156,6 +156,7 @@ public:
 			int get_layer() const { return stacking >> 32; }
 		};
 
+
 		struct CanvasData
 		{
 			CanvasBase* canvas = nullptr;
@@ -169,6 +170,23 @@ public:
 		RenderingServerTypes::RenderInfo render_info;
 
 		Viewport() = default;
+	};
+
+	struct ViewportSort
+	{
+		_FORCE_INLINE_ bool operator()(const RendererViewport::Viewport* p_left,
+			const RendererViewport::Viewport* p_right) const
+		{
+			bool left_is_parent_of_right = p_right->parent == p_left->self;
+			if (left_is_parent_of_right) {
+				return true;
+			}
+			bool right_is_parent_of_left = p_left->parent == p_right->self;
+			if (right_is_parent_of_left) {
+				return false;
+			}
+			return p_left->parent < p_right->parent;
+		}
 	};
 
 private:
@@ -291,6 +309,7 @@ public:
 	float viewport_get_measured_render_time_gpu(RID p_viewport) const;
 
 	void viewport_set_snap_2d_transforms_to_pixel(RID p_viewport, bool p_enabled);
+
 	void viewport_set_snap_2d_vertices_to_pixel(RID p_viewport, bool p_enabled);
 
 	void viewport_set_default_canvas_item_texture_filter(

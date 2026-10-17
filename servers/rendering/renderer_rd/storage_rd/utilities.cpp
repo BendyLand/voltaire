@@ -49,7 +49,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
-	if (RendererRD::TextureStorage::get_singleton()->owns_decal(p_rid)) {
+	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
 		return RSE::INSTANCE_DECAL;
 	}
 	if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
@@ -91,7 +91,7 @@ bool Utilities::free(RID p_rid)
 	else if (RendererRD::ParticlesStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::TextureStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::TextureStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
@@ -131,8 +131,8 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 			LightStorage::get_singleton()->reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (TextureStorage::get_singleton()->owns_decal(p_base)) {
-		Dependency* dependency = TextureStorage::get_singleton()->decal_get_dependency(p_base);
+	else if (TextureStorage::owns_decal(p_base)) {
+		Dependency* dependency = TextureStorage::decal_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (GI::get_singleton()->owns_voxel_gi(p_base)) {
@@ -238,8 +238,8 @@ void Utilities::update_dirty_resources()
 	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_multimeshes();
 	MeshStorage::_update_dirty_skeletons();
-	TextureStorage::get_singleton()->update_decal_atlas();
-	TextureStorage::get_singleton()->update_area_light_atlas();
+	TextureStorage::update_decal_atlas();
+	TextureStorage::update_area_light_atlas();
 }
 
 bool Utilities::has_os_feature(const String& p_feature)

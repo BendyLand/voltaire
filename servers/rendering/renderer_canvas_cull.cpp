@@ -33,9 +33,8 @@
 #include "core/math/geometry_2d.h"
 #include "core/math/transform_interpolator.h"
 #include "renderer_canvas_cull.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 // Use the same antialiasing feather size as StyleBoxFlat's default
@@ -2283,6 +2282,8 @@ void RendererCanvasCull::canvas_light_initialize(RID p_rid)
 	clight->light_internal = RS::canvas_render->light_create();
 }
 
+void RendererCanvasCull::update() {}
+
 void RendererCanvasCull::canvas_light_set_mode(RID p_light, RSE::CanvasLightMode p_mode)
 {
 	RendererCanvasRender::Light* clight = canvas_light_owner.get_or_null(p_light);
@@ -2813,8 +2814,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 			item->xform_prev = item->xform_curr;                                                   \
 		}                                                                                          \
 	}                                                                                              \
-	/* and now
-for any in the transform list (being actively interpolated), */                     \
+	/* and now                                                                                     \
+for any in the transform list (being actively interpolated), */                                    \
 	/* keep the previous transform value up to date and ready for next tick */                     \
 	if (p_process) {                                                                               \
 		for (unsigned int n = 0; n < _interpolation_data.m_list_curr->size(); n++) {               \
@@ -2884,8 +2885,9 @@ void RendererCanvasCull::InterpolationData::notify_free_canvas_light_occluder(
 
 RendererCanvasCull::RendererCanvasCull()
 {
-	z_list = (RendererCanvasRender::Item **)memalloc(z_range * sizeof(RendererCanvasRender::Item *));
-	z_last_list = (RendererCanvasRender::Item **)memalloc(z_range * sizeof(RendererCanvasRender::Item *));
+	z_list = (RendererCanvasRender::Item**)memalloc(z_range * sizeof(RendererCanvasRender::Item*));
+	z_last_list =
+		(RendererCanvasRender::Item**)memalloc(z_range * sizeof(RendererCanvasRender::Item*));
 	_canvas_cull_singleton = this;
 }
 
@@ -2897,7 +2899,8 @@ RendererCanvasCull::~RendererCanvasCull()
 	}
 	if (z_last_list) {
 		memfree(z_last_list);
-		z_last_list = nullptr;
+
+z_last_list = nullptr;
 	}
 	_canvas_cull_singleton = nullptr;
 }

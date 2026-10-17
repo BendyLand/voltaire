@@ -860,7 +860,7 @@ void SceneTree::flush_transform_notifications() {}
 
 void SceneTree::_flush_delete_queue() {}
 
-Error SceneTree::change_scene_to_node(Node*) {}
+Error SceneTree::change_scene_to_node(Node*) { return OK; }
 
 void SceneTree::_process_group(SceneTree::ProcessGroup*, bool) {}
 
@@ -870,7 +870,17 @@ void SceneTree::_flush_ugc() {}
 
 void SceneTree::_accessibility_notify_change(Node const*, bool) {}
 
-void SceneTree::initialize() {}
+void SceneTree::initialize()
+{
+	root = memnew(Window);
+	root->set_name("root");
+
+	root->set_position(Point2i());
+	Size2i window_size = DisplayServer::get_singleton()->window_get_size();
+	root->set_size(window_size);
+
+	root->_set_tree(this);
+}
 
 bool SceneTree::physics_process(double p_time) { return false; }
 

@@ -339,7 +339,7 @@ void CopyEffects::gaussian_blur(
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			WARN_PRINT("Could not bind Gaussian blur framebuffer, status: " +
-					   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
+					   GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 #endif
 

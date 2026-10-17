@@ -102,7 +102,7 @@ public:
 		return particles_storage;
 	}
 
-	static _ALWAYS_INLINE_ RendererTextureStorage* get_texture_storage() { return texture_storage; }
+	static _ALWAYS_INLINE_ RendererTextureStorage* get_texture_storage() { return nullptr; }
 
 	static _ALWAYS_INLINE_ RendererGI* get_gi() { return gi; }
 
