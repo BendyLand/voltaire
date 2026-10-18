@@ -234,7 +234,6 @@ void LightStorage::light_set_shadow(RID p_light, bool p_enabled)
 
 void LightStorage::light_set_projector(RID p_light, RID p_texture)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
 
@@ -242,10 +241,10 @@ void LightStorage::light_set_projector(RID p_light, RID p_texture)
 		return;
 	}
 
-	ERR_FAIL_COND(p_texture.is_valid() && !texture_storage->owns_texture(p_texture));
+	ERR_FAIL_COND(p_texture.is_valid() && !RendererRD::TextureStorage::owns_texture(p_texture));
 
 	if (light->type != RSE::LIGHT_DIRECTIONAL && light->projector.is_valid()) {
-		texture_storage->texture_remove_from_decal_atlas(
+		RendererRD::TextureStorage::texture_remove_from_decal_atlas(
 			light->projector, light->type == RSE::LIGHT_OMNI);
 	}
 
@@ -253,7 +252,7 @@ void LightStorage::light_set_projector(RID p_light, RID p_texture)
 
 	if (light->type != RSE::LIGHT_DIRECTIONAL) {
 		if (light->projector.is_valid()) {
-			texture_storage->texture_add_to_decal_atlas(
+			RendererRD::TextureStorage::texture_add_to_decal_atlas(
 				light->projector, light->type == RSE::LIGHT_OMNI);
 		}
 		light->dependency.changed_notify(
@@ -453,7 +452,6 @@ bool LightStorage::light_area_get_normalize_energy(RID p_light) const
 
 void LightStorage::light_area_set_texture(RID p_light, RID p_texture)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
 
@@ -461,16 +459,16 @@ void LightStorage::light_area_set_texture(RID p_light, RID p_texture)
 		return;
 	}
 
-	ERR_FAIL_COND(p_texture.is_valid() && !texture_storage->owns_texture(p_texture));
+	ERR_FAIL_COND(p_texture.is_valid() && !RendererRD::TextureStorage::owns_texture(p_texture));
 
 	if (light->area_texture.is_valid()) {
-		texture_storage->texture_remove_from_area_light_atlas(light->area_texture);
+		RendererRD::TextureStorage::texture_remove_from_area_light_atlas(light->area_texture);
 	}
 
 	light->area_texture = p_texture;
 
 	if (light->area_texture.is_valid()) {
-		texture_storage->texture_add_to_area_light_atlas(light->area_texture);
+		RendererRD::TextureStorage::texture_add_to_area_light_atlas(light->area_texture);
 	}
 	light->dependency.changed_notify(
 		Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR);
@@ -715,7 +713,6 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 	bool& r_directional_light_soft_shadows)
 {
 	ForwardIDStorage* forward_id_storage = ForwardIDStorage::get_singleton();
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 
 	Transform3D inverse_transform = p_camera_transform.affine_inverse();
 
@@ -1156,7 +1153,7 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		RID projector = light->projector;
 
 		if (projector.is_valid() && type != RSE::LIGHT_AREA) {
-			Rect2 rect = texture_storage->decal_atlas_get_texture_rect(projector);
+			Rect2 rect = RendererRD::TextureStorage::decal_atlas_get_texture_rect(projector);
 
 			if (type == RSE::LIGHT_SPOT) {
 				light_data.projector_rect[0] = rect.position.x;
@@ -1182,15 +1179,15 @@ void LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 		RID area_texture = light->area_texture;
 		if (area_texture.is_valid() && type == RSE::LIGHT_AREA) {
-			Rect2 rect = texture_storage->area_light_atlas_get_texture_rect(area_texture);
+			Rect2 rect = RendererRD::TextureStorage::area_light_atlas_get_texture_rect(area_texture);
 			light_data.projector_rect[0] = rect.position.x;
 			light_data.projector_rect[1] = rect.position.y;
 			light_data.projector_rect[2] = rect.size.width;
 			light_data.projector_rect[3] = rect.size.height;
-			Size2i texture_size = (rect.size * texture_storage->area_light_atlas_get_size()).ceil();
+			Size2i texture_size = (rect.size * RendererRD::TextureStorage::area_light_atlas_get_size()).ceil();
 			light_data.cos_spot_angle =
 				MIN(Math::floor(Math::log2(MAX(MIN(texture_size.x, texture_size.y), 1.0f))),
-					texture_storage->area_light_atlas_get_mipmaps()) -
+					RendererRD::TextureStorage::area_light_atlas_get_mipmaps()) -
 				1.0f; // max mipmaps
 		}
 
@@ -2226,8 +2223,6 @@ void LightStorage::lightmap_free(RID p_rid)
 void LightStorage::lightmap_set_textures(
 	RID p_lightmap, RID p_light, bool p_uses_spherical_haromics)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
-
 	Lightmap* lm = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lm);
 
@@ -2235,18 +2230,18 @@ void LightStorage::lightmap_set_textures(
 
 	// erase lightmap users
 	if (lm->light_texture.is_valid()) {
-		TextureStorage::Texture* t = texture_storage->get_texture(lm->light_texture);
+		TextureStorage::Texture* t = RendererRD::TextureStorage::get_texture(lm->light_texture);
 		if (t) {
 			t->lightmap_users.erase(p_lightmap);
 		}
 	}
 
-	TextureStorage::Texture* t = texture_storage->get_texture(p_light);
+	TextureStorage::Texture* t = RendererRD::TextureStorage::get_texture(p_light);
 	lm->light_texture = p_light;
 	lm->uses_spherical_harmonics = p_uses_spherical_haromics;
 
 	RID default_2d_array =
-		texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+		RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
 	if (!t) {
 		if (using_lightmap_array) {
 			if (lm->array_index >= 0) {
@@ -2434,24 +2429,22 @@ AABB LightStorage::lightmap_get_aabb(RID p_lightmap) const
 
 void LightStorage::lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
-
 	Lightmap* lm = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lm);
 
 	// Erase lightmap users from shadow texture.
 	if (lm->shadow_texture.is_valid()) {
-		TextureStorage::Texture* t = texture_storage->get_texture(lm->shadow_texture);
+		TextureStorage::Texture* t = RendererRD::TextureStorage::get_texture(lm->shadow_texture);
 		if (t) {
 			t->lightmap_users.erase(p_lightmap);
 		}
 	}
 
-	TextureStorage::Texture* t = texture_storage->get_texture(p_shadow);
+	TextureStorage::Texture* t = RendererRD::TextureStorage::get_texture(p_shadow);
 	lm->shadow_texture = p_shadow;
 
 	RID default_2d_array =
-		texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+		RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
 	if (!t) {
 		if (lm->array_index >= 0) {
 			shadowmask_textures.write[lm->array_index] = default_2d_array;

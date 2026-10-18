@@ -410,7 +410,6 @@ MaterialStorage::MaterialData::~MaterialData()
 RID MaterialStorage::MaterialData::get_default_texture_id(
 	ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
 	RID rd_texture;
 
 	switch (p_type) {
@@ -420,27 +419,27 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
 			rd_texture =
-				texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_TRANSPARENT);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
 			rd_texture =
-				texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_ANISO);
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_ANISO);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
 			rd_texture =
-				texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
 			rd_texture =
-				texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
 		} break;
 		default: {
 			rd_texture =
-				texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 		} break;
 		}
 	} break;
@@ -448,15 +447,15 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLERCUBE: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_TRANSPARENT);
 		} break;
 		default: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_WHITE);
 		} break;
 		}
@@ -464,16 +463,16 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_WHITE: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_TRANSPARENT);
 		} break;
 		default: { // previously this only had the black texture available. Keeping black as the
 				   // default to minimize breaking anything.
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK);
 		} break;
 		}
@@ -484,15 +483,15 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLER3D: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_3D_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_3D_TRANSPARENT);
 		} break;
 		default: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 		} break;
 		}
@@ -503,15 +502,15 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 	case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
 		switch (p_hint) {
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK);
 		} break;
 		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_TRANSPARENT);
 		} break;
 		default: {
-			rd_texture = texture_storage->texture_rd_get_default(
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
 		} break;
 		}

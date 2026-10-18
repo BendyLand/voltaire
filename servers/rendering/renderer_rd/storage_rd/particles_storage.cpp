@@ -712,8 +712,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 
 void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
-
 	if (p_particles->particles_material_uniform_set.is_null() ||
 		!RD::uniform_set_is_valid(p_particles->particles_material_uniform_set)) {
 		thread_local LocalVector<RD::Uniform> uniforms;
@@ -1063,7 +1061,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 					}
 
 					if (rd_tex == RID()) {
-						rd_tex = texture_storage->texture_rd_get_default(
+						rd_tex = RendererRD::TextureStorage::texture_rd_get_default(
 							TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 					}
 					u.append_id(rd_tex);
@@ -1078,7 +1076,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 					u.append_id(collision_heightmap_texture);
 				}
 				else {
-					u.append_id(texture_storage->texture_rd_get_default(
+					u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 						TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 				}
 				uniforms.push_back(u);

@@ -191,8 +191,6 @@ void SkyRD::Sky::free()
 RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shader_rd,
 	bool p_is_multiview, Ref<RenderSceneBuffersRD> p_render_buffers)
 {
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 	thread_local LocalVector<RD::Uniform> uniforms;
 	uniforms.clear();
 
@@ -205,7 +203,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 				radiance_first_layer_slice.is_valid() ? radiance_first_layer_slice : radiance);
 		}
 		else {
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 		}
 		uniforms.push_back(u);
@@ -221,7 +219,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 				u.append_id(reflection.layers[0].mipmaps[1].view);
 			}
 			else {
-				u.append_id(texture_storage->texture_rd_get_default(
+				u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 			}
 		}
@@ -233,7 +231,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 				u.append_id(half_texture);
 			}
 			else {
-				u.append_id(texture_storage->texture_rd_get_default(
+				u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 					p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
 								   : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE));
 			}
@@ -251,7 +249,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 				u.append_id(reflection.layers[0].mipmaps[2].view);
 			}
 			else {
-				u.append_id(texture_storage->texture_rd_get_default(
+				u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 			}
 		}
@@ -264,7 +262,7 @@ RID SkyRD::Sky::get_textures(SkyTextureSetVersion p_version, RID p_default_shade
 				u.append_id(quarter_texture);
 			}
 			else {
-				u.append_id(texture_storage->texture_rd_get_default(
+				u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 					p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
 								   : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE));
 			}
@@ -396,14 +394,12 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 		p_is_multiview ? fog_only_texture_multiview_uniform_set : fog_only_texture_uniform_set;
 
 	if (uniform_set_rid.is_null()) {
-		RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 		Vector<RD::Uniform> uniforms;
 		{
 			RD::Uniform u;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 0;
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 			uniforms.push_back(u);
 		}
@@ -411,7 +407,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 			RD::Uniform u;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 1;
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
 							   : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE));
 			uniforms.push_back(u);
@@ -420,7 +416,7 @@ RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
 			RD::Uniform u;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 2;
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				p_is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE
 							   : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE));
 			uniforms.push_back(u);

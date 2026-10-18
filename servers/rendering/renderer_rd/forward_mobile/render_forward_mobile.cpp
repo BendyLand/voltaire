@@ -31,6 +31,7 @@
 #include "core/config/project_settings.h"
 #include "render_forward_mobile.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
@@ -233,8 +234,7 @@ RID RendererSceneRenderImplementation::RenderForwardMobile::RenderBufferDataForw
 {
 	ERR_FAIL_NULL_V(render_buffers, RID());
 
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	ERR_FAIL_NULL_V(texture_storage, RID());
+	ERR_FAIL_NULL_V(RendererCompositor::get_texture_storage, RID());
 
 	RID velocity = render_buffers->get_velocity_buffer(false);
 	RID velocity_depth = render_buffers->get_velocity_depth_buffer();
@@ -263,8 +263,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(
 {
 	ERR_FAIL_NULL_V(render_buffers, RID());
 
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	ERR_FAIL_NULL_V(texture_storage, RID());
+	ERR_FAIL_NULL_V(RendererCompositor::get_texture_storage, RID());
 
 	// We use our framebuffer cache here instead of building these in
 	// RenderBufferDataForwardMobile::configure This approach ensures we only build the framebuffers
@@ -295,7 +294,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(
 	int color_buffer_id = 0;
 	int depth_buffer_id = 1;
 	if (p_config_type == FB_CONFIG_RENDER_AND_POST_PASS && vrs_texture.is_valid() &&
-		texture_storage->render_target_is_subsampled_enabled(render_buffers->get_render_target())) {
+		RendererRD::TextureStorage::render_target_is_subsampled_enabled(render_buffers->get_render_target())) {
 		textures.push_back(use_msaa ? render_buffers->get_color_msaa_subsampled()
 									: render_buffers->get_color_subsampled()); // 0 - color buffer.
 		textures.push_back(use_msaa ? render_buffers->get_depth_msaa_subsampled()
@@ -370,12 +369,12 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(
 		ERR_FAIL_COND_V(render_target.is_null(), RID());
 		RID target_buffer;
 		if (view_count > 1 ||
-			texture_storage->render_target_get_msaa(render_target) == RSE::VIEWPORT_MSAA_DISABLED) {
-			target_buffer = texture_storage->render_target_get_rd_texture(render_target);
+			RendererRD::TextureStorage::render_target_get_msaa(render_target) == RSE::VIEWPORT_MSAA_DISABLED) {
+			target_buffer = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
 		}
 		else {
-			target_buffer = texture_storage->render_target_get_rd_texture_msaa(render_target);
-			texture_storage->render_target_set_msaa_needs_resolve(
+			target_buffer = RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target);
+			RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
 				render_target, true); // Make sure this gets resolved.
 		}
 		ERR_FAIL_COND_V(target_buffer.is_null(), RID());
@@ -458,7 +457,6 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 	uint32_t p_pass_offset)
 {
 	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 
 	bool is_multiview = p_is_multiview;
 
@@ -513,7 +511,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 			radiance_texture = p_radiance_texture;
 		}
 		else {
-			radiance_texture = texture_storage->texture_rd_get_default(
+			radiance_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererSceneRenderRD::is_using_radiance_octmap_array()
 					? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK
 					: RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
@@ -537,7 +535,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 			u.append_id(ref_texture);
 		}
 		else {
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK));
 		}
 		uniforms.push_back(u);
@@ -552,7 +550,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 			texture = light_storage->shadow_atlas_get_texture(p_render_data->shadow_atlas);
 		}
 		if (!texture.is_valid()) {
-			texture = texture_storage->texture_rd_get_default(
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
 		}
 		u.append_id(texture);
@@ -567,7 +565,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 			u.append_id(light_storage->directional_shadow_get_texture());
 		}
 		else {
-			u.append_id(texture_storage->texture_rd_get_default(
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH));
 		}
 		uniforms.push_back(u);
@@ -579,7 +577,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 		Vector<RID> textures;
 		textures.resize(scene_state.max_lightmaps * 2);
 
-		RID default_tex = texture_storage->texture_rd_get_default(
+		RID default_tex = RendererRD::TextureStorage::texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
 		for (uint32_t i = 0; i < scene_state.max_lightmaps * 2; i++) {
 			uint32_t current_lightmap_index =
@@ -600,7 +598,7 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 				}
 
 				if (texture.is_valid()) {
-					RID rd_texture = texture_storage->texture_get_rd_texture(texture);
+					RID rd_texture = RendererRD::TextureStorage::texture_get_rd_texture(texture);
 					textures.write[i] = rd_texture;
 					continue;
 				}
@@ -646,11 +644,11 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 			texture = rb->get_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH);
 		}
 		else if (is_multiview) {
-			texture = texture_storage->texture_rd_get_default(
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH);
 		}
 		else {
-			texture = texture_storage->texture_rd_get_default(
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
 		}
 		u.append_id(texture);
@@ -663,11 +661,11 @@ RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_
 		RID texture = rb_data.is_valid() ? rb->get_back_buffer_texture() : RID();
 		if (texture.is_null()) {
 			if (is_multiview) {
-				texture = texture_storage->texture_rd_get_default(
+				texture = RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH);
 			}
 			else {
-				texture = texture_storage->texture_rd_get_default(
+				texture = RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
 			}
 		}

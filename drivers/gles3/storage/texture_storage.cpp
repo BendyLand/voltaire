@@ -50,10 +50,6 @@ static const GLenum _cube_side_enum[6] = {
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
 };
 
-
-
-
-
 // Has to be a separate call from TextureStorage initialization due to interacting with
 // MaterialStorage
 void TextureStorage::_tex_blit_shader_initialize()
@@ -495,8 +491,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 
 Ref<Image> TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_image,
 	Image::Format p_format, Image::Format& r_real_format, GLenum& r_gl_format,
-	GLenum& r_gl_internal_format, GLenum& r_gl_type, bool& r_compressed,
-	bool p_force_decompress)
+	GLenum& r_gl_internal_format, GLenum& r_gl_type, bool& r_compressed, bool p_force_decompress)
 {
 	Config* config = Config::get_singleton();
 	r_gl_format = 0;
@@ -860,8 +855,7 @@ void TextureStorage::texture_2d_initialize(RID p_texture, const Ref<Image>& p_im
 		texture.width, texture.height, texture.format, texture.mipmaps);
 	texture.active = true;
 	glGenTextures(1, &texture.tex_id);
-	GLES3::Utilities::texture_allocated_data(
-		texture.tex_id, texture.total_data_size, "Texture 2D");
+	GLES3::Utilities::texture_allocated_data(texture.tex_id, texture.total_data_size, "Texture 2D");
 	texture_owner.initialize_rid(p_texture, texture);
 	texture_set_data(p_texture, p_image);
 }
@@ -1017,8 +1011,7 @@ void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format
 							  texture.depth;
 	texture.active = true;
 	glGenTextures(1, &texture.tex_id);
-	GLES3::Utilities::texture_allocated_data(
-		texture.tex_id, texture.total_data_size, "Texture 3D");
+	GLES3::Utilities::texture_allocated_data(texture.tex_id, texture.total_data_size, "Texture 3D");
 	texture_owner.initialize_rid(p_texture, texture);
 	_texture_set_3d_data(p_texture, p_data, true);
 }
@@ -1087,8 +1080,7 @@ void TextureStorage::texture_drawable_initialize(RID p_texture, int p_width, int
 		image->get_image_data_size(texture.width, texture.height, texture.format, texture.mipmaps);
 	texture.active = true;
 	glGenTextures(1, &texture.tex_id);
-	GLES3::Utilities::texture_allocated_data(
-		texture.tex_id, texture.total_data_size, "Texture 2D");
+	GLES3::Utilities::texture_allocated_data(texture.tex_id, texture.total_data_size, "Texture 2D");
 	texture_owner.initialize_rid(p_texture, texture);
 	texture_set_data(p_texture, image);
 }
@@ -2214,7 +2206,8 @@ void TextureStorage::update_texture_atlas()
 				int best_idx = -1;
 				int best_height = 0x7FFFFFFF;
 				for (uint32_t j = 0; j <= base_size - si.size.width; j++) {
-					int height = 0;
+
+	int height = 0;
 					for (int k = 0; k < si.size.width; k++) {
 						int h = v_offsets[k + j];
 						if (h > height) {
@@ -3597,7 +3590,7 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(
 
-GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->sdf_texture_read, 0);
+		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->sdf_texture_read, 0);
 	glBindTexture(GL_TEXTURE_2D, rt->sdf_texture_process[swap ? 1 : 0]);
 
 	copy_effects->draw_screen_triangle();
@@ -3703,6 +3696,89 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 	glEnable(GL_BLEND); // 2D starts with blend enabled.
 
 	glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
+}
+
+String TextureStorage::get_framebuffer_error(GLenum p_status)
+{
+	switch (p_status) {
+	case GL_FRAMEBUFFER_COMPLETE:
+		return "GL_FRAMEBUFFER_COMPLETE";
+	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+		return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+	case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+		return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+	case GL_FRAMEBUFFER_UNSUPPORTED:
+		return "GL_FRAMEBUFFER_UNSUPPORTED";
+	case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+		return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+	default:
+		return "Unknown Framebuffer Error: " + String::num_int64(p_status);
+	}
+}
+
+/* Lifecycle & Defaults */
+
+void TextureStorage::initialize()
+{
+	// Initialize default OpenGL textures / white / black fallback textures
+}
+
+void TextureStorage::finalize()
+{
+	// Free default GL textures and owners
+}
+
+Color TextureStorage::get_default_clear_color() { return Color(0, 0, 0, 1); }
+
+RID TextureStorage::texture_gl_get_default(DefaultGLTexture p_texture)
+{
+	ERR_FAIL_INDEX_V(p_texture, DEFAULT_GL_TEXTURE_MAX, RID());
+	return default_gl_textures[p_texture];
+}
+
+void TextureStorage::render_target_set_as_unused(RID p_render_target)
+{
+	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+	rt->was_used = false;
+}
+
+void TextureStorage::texture_initialize(RID p_texture)
+{
+	texture_owner.initialize_rid(p_texture, Texture());
+}
+
+RID TextureStorage::texture_2d_create(const Ref<Image>& p_image)
+{
+	RID rid = texture_allocate();
+	texture_2d_initialize(rid, p_image);
+	return rid;
+}
+
+void TextureStorage::texture_2d_initialize_from_texture(
+	RID p_texture, const Texture& p_from_texture)
+{
+	Texture texture = p_from_texture;
+	texture_owner.initialize_rid(p_texture, texture);
+}
+
+/* Texture & Decal Atlas Helpers */
+
+Rect2 TextureStorage::texture_atlas_get_texture_rect(RID p_texture)
+{
+	Texture* tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, Rect2());
+	return Rect2(0, 0, 1, 1);
+}
+
+void TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+{
+	// Stub for GLES3 decal atlas tracking
+}
+
+void TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+{
+	// Stub for GLES3 decal atlas tracking
 }
 
 #endif // GLES3_ENABLED

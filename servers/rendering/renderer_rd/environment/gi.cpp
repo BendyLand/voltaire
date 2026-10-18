@@ -659,7 +659,6 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 	}
 
 	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 	/* Update general SDFGI Buffer */
 
 	SDFGIData sdfgi_data;
@@ -886,7 +885,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
 				Vector3 area_vec_b = light_transform.basis.get_column(1).normalized() * area_size.y;
-				Rect2 proj_rect = texture_storage->area_light_atlas_get_texture_rect(
+				Rect2 proj_rect = RendererRD::TextureStorage::area_light_atlas_get_texture_rect(
 					RS::light_storage->light_area_get_texture(light));
 				lights[idx].area_width[0] = area_vec_a.x;
 				lights[idx].area_width[1] = area_vec_a.y;
@@ -899,10 +898,10 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				lights[idx].area_projector_rect[2] = proj_rect.size.x;
 				lights[idx].area_projector_rect[3] = proj_rect.size.y;
 
-				Size2i texture_size = proj_rect.size * texture_storage->area_light_atlas_get_size();
+				Size2i texture_size = proj_rect.size * RendererRD::TextureStorage::area_light_atlas_get_size();
 				lights[idx].cos_spot_angle =
 					MIN(Math::floor(Math::log2(MAX(MIN(texture_size.x, texture_size.y), 1.0f))),
-						texture_storage->area_light_atlas_get_mipmaps()) -
+						RendererRD::TextureStorage::area_light_atlas_get_mipmaps()) -
 					1.0f; // max mipmaps
 				lights[idx].inv_spot_attenuation =
 					1.0f / (lights[idx].radius + area_size.length() / 2.0f); // center range
@@ -1126,9 +1125,6 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 {
 	ERR_FAIL_COND(p_render_buffers.is_null());
 
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	ERR_FAIL_NULL(texture_storage);
-
 	r_voxel_gi_instances_used = 0;
 
 	Ref<RenderBuffersGI> rbgi = p_render_buffers->get_custom_data(RB_SCOPE_GI);
@@ -1200,7 +1196,7 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 		}
 
 		if (texture == RID()) {
-			texture = texture_storage->texture_rd_get_default(
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 		}
 

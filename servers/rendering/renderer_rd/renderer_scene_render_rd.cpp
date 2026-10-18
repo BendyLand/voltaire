@@ -515,8 +515,6 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
 void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 	const RenderDataRD* p_render_data, bool p_use_msaa)
 {
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 	ERR_FAIL_NULL(p_render_data);
 
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
@@ -566,7 +564,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 	bool dest_is_msaa_2d =
 		rb->get_view_count() == 1 &&
-		texture_storage->render_target_get_msaa(render_target) != RSE::VIEWPORT_MSAA_DISABLED;
+		RendererRD::TextureStorage::render_target_get_msaa(render_target) != RSE::VIEWPORT_MSAA_DISABLED;
 
 	bool using_dof =
 		RS::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
@@ -688,7 +686,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		int mipmaps = int(rb->get_texture_format(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1).mipmaps);
 		Vector<float> glow_levels = RendererSceneRender::environment_get_glow_levels(p_render_data->environment);
 		bool use_debanding =
-			rb->get_use_debanding() && !texture_storage->render_target_is_using_hdr(render_target);
+			rb->get_use_debanding() && !RendererRD::TextureStorage::render_target_is_using_hdr(render_target);
 
 		int max_glow_index = -1;
 		int min_glow_level = RSE::MAX_GLOW_LEVELS;
@@ -774,7 +772,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 				if (max_glow_index <= 0) {
 					// Only layer 1 is visible, just copy over.
-					source = texture_storage->texture_rd_get_default(RendererRD::TextureStorage::
+					source = RendererRD::TextureStorage::texture_rd_get_default(RendererRD::TextureStorage::
 							DEFAULT_RD_TEXTURE_BLACK); // Technically a waste, but oh well. I'm not
 													   // optimizing for the case of only level 1.
 					vp_size = rb->get_texture_slice_size(
@@ -815,7 +813,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		RendererRD::ToneMapper::TonemapSettings tonemap;
 
-		bool using_hdr = texture_storage->render_target_is_using_hdr(render_target);
+		bool using_hdr = RendererRD::TextureStorage::render_target_is_using_hdr(render_target);
 
 		tonemap.exposure_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (can_use_effects &&
@@ -826,7 +824,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			tonemap.auto_exposure_scale = auto_exposure_scale;
 		}
 		else {
-			tonemap.exposure_texture = texture_storage->texture_rd_get_default(
+			tonemap.exposure_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 		}
 
@@ -858,22 +856,22 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			if (RendererSceneRender::environment_get_glow_map(p_render_data->environment).is_valid()) {
 				tonemap.glow_map_strength =
 					RendererSceneRender::environment_get_glow_map_strength(p_render_data->environment);
-				tonemap.glow_map = texture_storage->texture_get_rd_texture(
+				tonemap.glow_map = RendererRD::TextureStorage::texture_get_rd_texture(
 					RendererSceneRender::environment_get_glow_map(p_render_data->environment));
 			}
 			else {
 				tonemap.glow_map_strength = 0.0f;
-				tonemap.glow_map = texture_storage->texture_rd_get_default(
+				tonemap.glow_map = RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 			}
 
 		}
 		else {
-			tonemap.glow_texture = texture_storage->texture_rd_get_default(
+			tonemap.glow_texture = RendererRD::TextureStorage::texture_rd_get_default(
 				rb->get_view_count() > 1
 					? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK
 					: RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
-			tonemap.glow_map = texture_storage->texture_rd_get_default(
+			tonemap.glow_map = RendererRD::TextureStorage::texture_rd_get_default(
 				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 		}
 
@@ -909,7 +907,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		tonemap.use_color_correction = false;
 		tonemap.use_1d_color_correction = false;
-		tonemap.color_correction_texture = texture_storage->texture_rd_get_default(
+		tonemap.color_correction_texture = RendererRD::TextureStorage::texture_rd_get_default(
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 		tonemap.convert_to_srgb = !using_hdr;
 
@@ -923,7 +921,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				tonemap.use_color_correction = true;
 				tonemap.use_1d_color_correction =
 					RendererSceneRender::environment_get_use_1d_color_correction(p_render_data->environment);
-				tonemap.color_correction_texture = texture_storage->texture_get_rd_texture(
+				tonemap.color_correction_texture = RendererRD::TextureStorage::texture_get_rd_texture(
 					RendererSceneRender::environment_get_color_correction(p_render_data->environment),
 					!tonemap.convert_to_srgb);
 			}
@@ -954,15 +952,15 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 			if (dest_is_msaa_2d) {
 				dest_fb = FramebufferCacheRD::get_cache(
-					texture_storage->render_target_get_rd_texture_msaa(render_target));
-				texture_storage->render_target_set_msaa_needs_resolve(
+					RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target));
+				RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
 					render_target, true); // Make sure this gets resolved.
 			}
 			else {
-				dest_fb = texture_storage->render_target_get_rd_framebuffer(render_target);
+				dest_fb = RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target);
 			}
 
-			tonemap.dest_texture_size = texture_storage->render_target_get_size(render_target);
+			tonemap.dest_texture_size = RendererRD::TextureStorage::render_target_get_size(render_target);
 			tonemap.bilinear_filtering = scale_mode != RSE::VIEWPORT_SCALING_3D_MODE_NEAREST;
 		}
 
@@ -1001,7 +999,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		RENDER_TIMESTAMP("data->SMAA");
 		RD::draw_command_begin_label("data->SMAA");
 
-		bool using_hdr = texture_storage->render_target_is_using_hdr(render_target);
+		bool using_hdr = RendererRD::TextureStorage::render_target_is_using_hdr(render_target);
 
 		RID dest_fb;
 		if (using_scaling_pass) {
@@ -1021,7 +1019,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				}
 				else {
 					dest_texture =
-						texture_storage->render_target_get_rd_texture_slice(render_target, v);
+						RendererRD::TextureStorage::render_target_get_rd_texture_slice(render_target, v);
 				}
 				dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 
@@ -1042,12 +1040,12 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			else {
 				if (dest_is_msaa_2d) {
 					dest_fb = FramebufferCacheRD::get_cache(
-						texture_storage->render_target_get_rd_texture_msaa(render_target));
-					texture_storage->render_target_set_msaa_needs_resolve(
+						RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target));
+					RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
 						render_target, true); // Make sure this gets resolved.
 				}
 				else {
-					dest_fb = texture_storage->render_target_get_rd_framebuffer(render_target);
+					dest_fb = RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target);
 				}
 			}
 
@@ -1068,7 +1066,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				RID source_texture = rb->get_texture_slice(
 					use_smaa ? SNAME("data->SMAA") : SNAME("Tonemapper"), SNAME("destination"), v, 0);
 				RID dest_texture =
-					texture_storage->render_target_get_rd_texture_slice(render_target, v);
+					RendererRD::TextureStorage::render_target_get_rd_texture_slice(render_target, v);
 
 				spatial_upscaler->process(rb, source_texture, dest_texture);
 			}
@@ -1079,7 +1077,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			// this happens automatically during tonemapping.
 			RID source_texture = rb->get_texture(
 				use_smaa ? SNAME("data->SMAA") : SNAME("Tonemapper"), SNAME("destination"));
-			RID dest_texture = texture_storage->render_target_get_rd_texture(render_target);
+			RID dest_texture = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
 			RID dest_fb = FramebufferCacheRD::get_cache(dest_texture);
 			data->copy_effects->copy_to_fb_rect(source_texture, dest_fb,
 				Rect2i(Point2i(), rb->get_target_size()), false, false, false, false, RID(),
@@ -1089,26 +1087,25 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		if (dest_is_msaa_2d) {
 			// We can't upscale directly into our MSAA buffer so we need to do a copy
-			RID source_texture = texture_storage->render_target_get_rd_texture(render_target);
+			RID source_texture = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
 			RID dest_fb = FramebufferCacheRD::get_cache(
-				texture_storage->render_target_get_rd_texture_msaa(render_target));
+				RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target));
 			data->copy_effects->copy_to_fb_rect(
 				source_texture, dest_fb, Rect2i(Point2i(), rb->get_target_size()));
 
-			texture_storage->render_target_set_msaa_needs_resolve(
+			RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
 				render_target, true); // Make sure this gets resolved.
 		}
 
 		RD::draw_command_end_label();
 	}
 
-	texture_storage->render_target_disable_clear_request(render_target);
+	RendererRD::TextureStorage::render_target_disable_clear_request(render_target);
 }
 
 void RendererSceneRenderRD::_post_process_subpass(
 	RID p_source_texture, RID p_framebuffer, const RenderDataRD* p_render_data)
 {
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 	RD::draw_command_begin_label("Post Process Subpass");
 
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
@@ -1124,7 +1121,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 
 	RendererRD::ToneMapper::TonemapSettings tonemap;
 
-	bool using_hdr = texture_storage->render_target_is_using_hdr(rb->get_render_target());
+	bool using_hdr = RendererRD::TextureStorage::render_target_is_using_hdr(rb->get_render_target());
 
 	if (p_render_data->environment.is_valid()) {
 		// When we are using RGB10A2 render buffer format, our scene
@@ -1166,18 +1163,18 @@ void RendererSceneRenderRD::_post_process_subpass(
 	}
 
 	tonemap.use_glow = false;
-	tonemap.glow_texture = texture_storage->texture_rd_get_default(
+	tonemap.glow_texture = RendererRD::TextureStorage::texture_rd_get_default(
 		rb->get_view_count() > 1 ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK
 								 : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
-	tonemap.glow_map = texture_storage->texture_rd_get_default(
+	tonemap.glow_map = RendererRD::TextureStorage::texture_rd_get_default(
 		RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 	tonemap.use_auto_exposure = false;
-	tonemap.exposure_texture = texture_storage->texture_rd_get_default(
+	tonemap.exposure_texture = RendererRD::TextureStorage::texture_rd_get_default(
 		RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
 
 	tonemap.use_color_correction = false;
 	tonemap.use_1d_color_correction = false;
-	tonemap.color_correction_texture = texture_storage->texture_rd_get_default(
+	tonemap.color_correction_texture = RendererRD::TextureStorage::texture_rd_get_default(
 		RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 	tonemap.convert_to_srgb = !using_hdr;
 
@@ -1191,7 +1188,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 			tonemap.use_color_correction = true;
 			tonemap.use_1d_color_correction =
 				RendererSceneRender::environment_get_use_1d_color_correction(p_render_data->environment);
-			tonemap.color_correction_texture = texture_storage->texture_get_rd_texture(
+			tonemap.color_correction_texture = RendererRD::TextureStorage::texture_get_rd_texture(
 				RendererSceneRender::environment_get_color_correction(p_render_data->environment),
 				!tonemap.convert_to_srgb);
 		}
@@ -1221,8 +1218,7 @@ void RendererSceneRenderRD::_disable_clear_request(const RenderDataRD* p_render_
 {
 	ERR_FAIL_COND(p_render_data->render_buffers.is_null());
 
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	texture_storage->render_target_disable_clear_request(
+	RendererRD::TextureStorage::render_target_disable_clear_request(
 		p_render_data->render_buffers->get_render_target());
 }
 
@@ -1285,7 +1281,6 @@ bool RendererSceneRenderRD::_debug_draw_can_use_effects(RSE::ViewportDebugDraw p
 void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_render_data)
 {
 	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
 
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
 	ERR_FAIL_COND(rb.is_null());
@@ -1299,13 +1294,13 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 					p_render_data->shadow_atlas);
 
 			if (shadow_atlas_texture.is_null()) {
-				shadow_atlas_texture = texture_storage->texture_rd_get_default(
+				shadow_atlas_texture = RendererRD::TextureStorage::texture_rd_get_default(
 					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
 			}
 
-			Size2 rtsize = texture_storage->render_target_get_size(render_target);
+			Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 			data->copy_effects->copy_to_fb_rect(shadow_atlas_texture,
-				texture_storage->render_target_get_rd_framebuffer(render_target),
+				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, true);
 		}
 	}
@@ -1316,8 +1311,8 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 				.is_valid()) {
 			RID shadow_atlas_texture =
 				RendererRD::LightStorage::get_singleton()->directional_shadow_get_texture();
-			Size2i rtsize = texture_storage->render_target_get_size(render_target);
-			RID dest_fb = texture_storage->render_target_get_rd_framebuffer(render_target);
+			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
+			RID dest_fb = RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target);
 
 			// Determine our display size, try and keep square by using the smallest edge.
 			Size2i size = 2 * rtsize / 3;
@@ -1349,10 +1344,10 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		RID decal_atlas = RendererRD::TextureStorage::decal_atlas_get_texture();
 
 		if (decal_atlas.is_valid()) {
-			Size2i rtsize = texture_storage->render_target_get_size(render_target);
+			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
 			data->copy_effects->copy_to_fb_rect(decal_atlas,
-				texture_storage->render_target_get_rd_framebuffer(render_target),
+				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
 	}
@@ -1362,10 +1357,10 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 			RendererRD::TextureStorage::area_light_atlas_get_texture();
 
 		if (area_light_atlas.is_valid()) {
-			Size2i rtsize = texture_storage->render_target_get_size(render_target);
+			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
 			data->copy_effects->copy_to_fb_rect(area_light_atlas,
-				texture_storage->render_target_get_rd_framebuffer(render_target),
+				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
 	}
@@ -1373,35 +1368,35 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SCENE_LUMINANCE) {
 		RID luminance_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (luminance_texture.is_valid()) {
-			Size2i rtsize = texture_storage->render_target_get_size(render_target);
+			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
 			data->copy_effects->copy_to_fb_rect(luminance_texture,
-				texture_storage->render_target_get_rd_framebuffer(render_target),
+				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2(Vector2(), rtsize / 8), false, true);
 		}
 	}
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER) {
-		Size2 rtsize = texture_storage->render_target_get_size(render_target);
+		Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 		data->copy_effects->copy_to_fb_rect(rb->get_internal_texture(),
-			texture_storage->render_target_get_rd_framebuffer(render_target),
+			RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false);
 	}
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER &&
 		_render_buffers_get_normal_texture(rb).is_valid()) {
-		Size2 rtsize = texture_storage->render_target_get_size(render_target);
+		Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 		data->copy_effects->copy_to_fb_rect(_render_buffers_get_normal_texture(rb),
-			texture_storage->render_target_get_rd_framebuffer(render_target),
+			RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false, false, false, RID(), false, false, false, true);
 	}
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_OCCLUDERS) {
 		if (p_render_data->occluder_debug_tex.is_valid()) {
-			Size2i rtsize = texture_storage->render_target_get_size(render_target);
+			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 			data->copy_effects->copy_to_fb_rect(
-				texture_storage->texture_get_rd_texture(p_render_data->occluder_debug_tex),
-				texture_storage->render_target_get_rd_framebuffer(render_target),
+				RendererRD::TextureStorage::texture_get_rd_texture(p_render_data->occluder_debug_tex),
+				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize), true, false);
 		}
 	}
@@ -1410,7 +1405,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		_render_buffers_get_velocity_texture(rb).is_valid()) {
 		RID velocity = _render_buffers_get_velocity_texture(rb);
 		RID depth = rb->get_depth_texture();
-		RID dest_fb = texture_storage->render_target_get_rd_framebuffer(render_target);
+		RID dest_fb = RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target);
 		Size2i resolution = rb->get_internal_size();
 
 		data->debug_effects->draw_motion_vectors(velocity, depth, dest_fb,
@@ -1588,9 +1583,7 @@ void RendererSceneRenderRD::_update_vrs(Ref<RenderSceneBuffersRD> p_render_buffe
 	}
 
 	if (data->vrs) {
-		RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
-		RSE::ViewportVRSMode vrs_mode = texture_storage->render_target_get_vrs_mode(render_target);
+		RSE::ViewportVRSMode vrs_mode = RendererRD::TextureStorage::render_target_get_vrs_mode(render_target);
 		if (vrs_mode != RSE::VIEWPORT_VRS_DISABLED) {
 			RID vrs_texture = p_render_buffers->get_texture(RB_SCOPE_VRS, RB_TEXTURE);
 
@@ -1652,8 +1645,6 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 	RenderingServerTypes::RenderInfo* r_render_info)
 {
 	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 	// getting this here now so we can direct call a bunch of things more easily
 	ERR_FAIL_COND(p_render_buffers.is_null());
 	Ref<RenderSceneBuffersRD> rb = p_render_buffers;
@@ -1770,9 +1761,9 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 
 		if (p_render_buffers.is_valid() && p_reflection_probe.is_null()) {
 			render_data.transparent_bg =
-				texture_storage->render_target_get_transparent(rb->get_render_target());
+				RendererRD::TextureStorage::render_target_get_transparent(rb->get_render_target());
 			render_data.render_region =
-				texture_storage->render_target_get_render_region(rb->get_render_target());
+				RendererRD::TextureStorage::render_target_get_render_region(rb->get_render_target());
 		}
 	}
 
@@ -1796,7 +1787,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 	Color clear_color;
 	if (p_render_buffers.is_valid() && p_reflection_probe.is_null()) {
 		clear_color =
-			texture_storage->render_target_get_clear_request_color(rb->get_render_target());
+			RendererRD::TextureStorage::render_target_get_clear_request_color(rb->get_render_target());
 	}
 	else {
 		clear_color = RS::texture_storage->get_default_clear_color();

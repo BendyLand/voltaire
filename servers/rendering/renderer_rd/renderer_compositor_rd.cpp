@@ -39,6 +39,7 @@
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -70,7 +71,7 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 
 	for (int i = 0; i < p_amount; i++) {
 		RID rd_texture =
-			texture_storage->render_target_get_rd_texture(p_render_targets[i].render_target);
+			RendererRD::TextureStorage::render_target_get_rd_texture(p_render_targets[i].render_target);
 		ERR_CONTINUE(rd_texture.is_null());
 
 		BlitMode mode = p_render_targets[i].lens_distortion.apply
@@ -181,12 +182,12 @@ void RendererCompositorRD::initialize()
 
 void RendererCompositorRD::finalize()
 {
-	texture_storage->_tex_blit_shader_free();
+	RendererRD::TextureStorage::_tex_blit_shader_free();
 	memdelete(canvas);
 	memdelete(fog);
 	memdelete(particles_storage);
 	memdelete(light_storage);
-	memdelete(texture_storage);
+	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
 
 	if (blit) {

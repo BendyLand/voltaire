@@ -966,8 +966,6 @@ RID RendererCanvasRenderRD::light_create()
 
 void RendererCanvasRenderRD::light_set_texture(RID p_rid, RID p_texture)
 {
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(cl);
 	if (cl->texture == p_texture) {
@@ -1943,8 +1941,6 @@ void RendererCanvasRenderRD::_record_item_commands(const Item* p_item, RenderTar
 				}
 			}
 			else if (c->type == Item::Command::TYPE_PARTICLES) {
-				RendererRD::TextureStorage* texture_storage =
-					RendererRD::TextureStorage::get_singleton();
 				RendererRD::ParticlesStorage* particles_storage =
 					RendererRD::ParticlesStorage::get_singleton();
 
@@ -2171,8 +2167,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 	Light* p_lights, const Batch* p_batch, RenderingServerTypes::RenderInfo* r_render_info)
 {
 	{
-		RendererRD::TextureStorage* ts = RendererRD::TextureStorage::get_singleton();
-
 		RIDSetKey key(p_batch->tex_info->state);
 
 		const RID* uniform_set = rid_set_to_uniform_set.getptr(key);
@@ -2194,7 +2188,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 			// If this is a CanvasTexture, it must be tracked so that any changes to the diffuse,
 			// normal, or specular channels invalidate all associated uniform sets.
-			if (ts->owns_canvas_texture(p_batch->tex_info->state.texture)) {
+			if (RendererRD::TextureStorage::owns_canvas_texture(p_batch->tex_info->state.texture)) {
 				KeyValue<RID, TightLocalVector<RID>>* kv = nullptr;
 				if (HashMap<RID, TightLocalVector<RID>>::Iterator i =
 						canvas_texture_to_uniform_set.find(p_batch->tex_info->state.texture);
@@ -2206,7 +2200,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 					i->value.push_back(rid);
 					kv = &*i;
 				}
-				ts->canvas_texture_set_invalidation_callback(p_batch->tex_info->state.texture,
+				RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(p_batch->tex_info->state.texture,
 					RendererCanvasRenderRD::_canvas_texture_invalidation_callback, kv);
 			}
 		}
@@ -2516,8 +2510,6 @@ void RendererCanvasRenderRD::_prepare_batch_texture_info(
 
 RendererCanvasRenderRD::~RendererCanvasRenderRD()
 {
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-
 	// canvas state
 
 	RendererRD::MaterialStorage::material_free(default_canvas_group_material);
