@@ -30,10 +30,13 @@
 
 #pragma once
 
+#include "servers/rendering/dummy/storage/light_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
-#include "servers/rendering/storage/material_storage.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/storage/light_storage.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/texture_storage.h"
 
 class RasterizerCanvasDummy;
 class RasterizerSceneDummy;
@@ -77,13 +80,7 @@ public:
 
 	static RendererFog* get_fog();
 	static RendererGI* get_gi();
-	static RendererLightStorage* get_light_storage();
 
-	static RendererMaterialStorage* get_material_storage();
-
-	static RendererDummy::MeshStorage* get_mesh_storage();
-	static RendererParticlesStorage* get_particles_storage();
-	static RendererTextureStorage* get_texture_storage();
 	static RendererDummy::Utilities* get_utilities();
 
 	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
@@ -265,6 +262,24 @@ public:
 			&RendererDummy::MeshStorage::skeleton_bone_get_transform_2d;
 		RendererMeshStorage::skeleton_update_dependency =
 			&RendererDummy::MeshStorage::skeleton_update_dependency;
+	}
+
+	static void bind_texture_storage()
+	{
+		// Dummy texture storage binding (or
+		// RendererTextureStorage::bind<RendererDummy::TextureStorage>() if implemented)
+	}
+
+	static void bind_material_storage()
+	{
+		// Dummy material storage binding
+	}
+
+	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
+
+	static void bind_particles_storage()
+	{
+		// Dummy particles storage stub
 	}
 
 	RasterizerDummy() = delete;

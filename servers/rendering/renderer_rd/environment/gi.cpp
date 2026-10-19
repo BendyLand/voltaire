@@ -658,7 +658,6 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 		return;
 	}
 
-	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
 	/* Update general SDFGI Buffer */
 
 	SDFGIData sdfgi_data;
@@ -758,13 +757,13 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			}
 
 			RID light_instance = p_render_data->sdfgi_update_data->directional_lights->get(j);
-			ERR_CONTINUE(!light_storage->owns_light_instance(light_instance));
+			ERR_CONTINUE(!RendererRD::LightStorage::owns_light_instance(light_instance));
 
-			RID light = light_storage->light_instance_get_base_light(light_instance);
+			RID light = RendererRD::LightStorage::light_instance_get_base_light(light_instance);
 			Transform3D light_transform =
-				light_storage->light_instance_get_base_transform(light_instance);
+				RendererRD::LightStorage::light_instance_get_base_transform(light_instance);
 
-			if (RS::light_storage->light_directional_get_sky_mode(light) ==
+			if (RendererLightStorage::light_directional_get_sky_mode(light) ==
 				RSE::LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY) {
 				continue;
 			}
@@ -775,18 +774,18 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].direction[0] = dir.x;
 			lights[idx].direction[1] = dir.y;
 			lights[idx].direction[2] = dir.z;
-			Color color = RS::light_storage->light_get_color(light);
+			Color color = RendererLightStorage::light_get_color(light);
 			color = color.srgb_to_linear();
 			lights[idx].color[0] = color.r;
 			lights[idx].color[1] = color.g;
 			lights[idx].color[2] = color.b;
 			lights[idx].type = RSE::LIGHT_DIRECTIONAL;
 			lights[idx].energy =
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
 			if (RendererSceneRenderRD::is_using_physical_light_units()) {
 				lights[idx].energy *=
-					RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
+					RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
 			}
 
 			if (p_render_data->camera_attributes.is_valid()) {
@@ -795,7 +794,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 						p_render_data->camera_attributes);
 			}
 
-			lights[idx].has_shadow = RS::light_storage->light_has_shadow(light);
+			lights[idx].has_shadow = RendererLightStorage::light_has_shadow(light);
 
 			idx++;
 		}
@@ -812,14 +811,14 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			}
 
 			RID light_instance = p_render_data->sdfgi_update_data->positional_light_instances[j];
-			ERR_CONTINUE(!light_storage->owns_light_instance(light_instance));
+			ERR_CONTINUE(!RendererRD::LightStorage::owns_light_instance(light_instance));
 
-			RID light = light_storage->light_instance_get_base_light(light_instance);
-			AABB light_aabb = light_storage->light_instance_get_base_aabb(light_instance);
+			RID light = RendererRD::LightStorage::light_instance_get_base_light(light_instance);
+			AABB light_aabb = RendererRD::LightStorage::light_instance_get_base_aabb(light_instance);
 			Transform3D light_transform =
-				light_storage->light_instance_get_base_transform(light_instance);
+				RendererRD::LightStorage::light_instance_get_base_transform(light_instance);
 
-			uint32_t max_sdfgi_cascade = RS::light_storage->light_get_max_sdfgi_cascade(light);
+			uint32_t max_sdfgi_cascade = RendererLightStorage::light_get_max_sdfgi_cascade(light);
 			if (i > max_sdfgi_cascade) {
 				continue;
 			}
@@ -829,7 +828,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			}
 
 			Vector3 dir = -light_transform.basis.get_column(Vector3::AXIS_Z);
-			Vector2 area_size = RS::light_storage->light_area_get_size(light);
+			Vector2 area_size = RendererLightStorage::light_area_get_size(light);
 			// faster to not do this here
 			// dir.y *= y_mult;
 			// dir.normalize();
@@ -841,19 +840,19 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].position[0] = pos.x;
 			lights[idx].position[1] = pos.y;
 			lights[idx].position[2] = pos.z;
-			Color color = RS::light_storage->light_get_color(light);
+			Color color = RendererLightStorage::light_get_color(light);
 			color = color.srgb_to_linear();
 			lights[idx].color[0] = color.r;
 			lights[idx].color[1] = color.g;
 			lights[idx].color[2] = color.b;
-			lights[idx].type = RS::light_storage->light_get_type(light);
+			lights[idx].type = RendererLightStorage::light_get_type(light);
 
 			lights[idx].energy =
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_ENERGY) *
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_INDIRECT_ENERGY);
 			if (RendererSceneRenderRD::is_using_physical_light_units()) {
 				lights[idx].energy *=
-					RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
+					RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_INTENSITY);
 
 				// Convert from Luminous Power to Luminous Intensity
 				if (lights[idx].type == RSE::LIGHT_OMNI) {
@@ -873,20 +872,20 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 						p_render_data->camera_attributes);
 			}
 
-			lights[idx].has_shadow = RS::light_storage->light_has_shadow(light);
+			lights[idx].has_shadow = RendererLightStorage::light_has_shadow(light);
 			lights[idx].attenuation =
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
-			lights[idx].radius = RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_RANGE);
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
+			lights[idx].radius = RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_RANGE);
 			lights[idx].cos_spot_angle = Math::cos(Math::deg_to_rad(
-				RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
 			lights[idx].inv_spot_attenuation =
-				1.0f / RS::light_storage->light_get_param(light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
+				1.0f / RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
 				Vector3 area_vec_b = light_transform.basis.get_column(1).normalized() * area_size.y;
 				Rect2 proj_rect = RendererRD::TextureStorage::area_light_atlas_get_texture_rect(
-					RS::light_storage->light_area_get_texture(light));
+					RendererLightStorage::light_area_get_texture(light));
 				lights[idx].area_width[0] = area_vec_a.x;
 				lights[idx].area_width[1] = area_vec_a.y;
 				lights[idx].area_width[2] = area_vec_a.z;
@@ -906,7 +905,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				lights[idx].inv_spot_attenuation =
 					1.0f / (lights[idx].radius + area_size.length() / 2.0f); // center range
 
-				if (RS::light_storage->light_area_get_normalize_energy(light)) {
+				if (RendererLightStorage::light_area_get_normalize_energy(light)) {
 					// normalization to make larger lights output same amount of light as smaller
 					// lights with same energy
 					float surface_area = area_size.x * area_size.y;

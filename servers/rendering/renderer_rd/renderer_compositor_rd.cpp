@@ -38,6 +38,7 @@
 #include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
@@ -186,7 +187,7 @@ void RendererCompositorRD::finalize()
 	memdelete(canvas);
 	memdelete(fog);
 	memdelete(particles_storage);
-	memdelete(light_storage);
+	RendererRD::LightStorage::finalize();
 	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
 

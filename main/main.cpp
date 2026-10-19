@@ -72,6 +72,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 

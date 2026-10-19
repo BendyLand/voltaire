@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "servers/rendering/storage/material_storage.h"
 #ifdef GLES3_ENABLED
 
 #include "drivers/gles3/effects/copy_effects.h"
@@ -40,6 +41,7 @@
 #include "drivers/gles3/environment/fog.h"
 #include "drivers/gles3/environment/gi.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
+#include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
 #include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/light_storage.h"
@@ -83,26 +85,10 @@ public:
 	static inline void bind_utilities();
 	static inline void bind_mesh_storage();
 
-	static _ALWAYS_INLINE_ RendererLightStorage* get_light_storage() { return light_storage; }
-
-	static _ALWAYS_INLINE_ RendererMaterialStorage* get_material_storage()
-	{
-	static RendererMaterialStorage rms;
-	    static bool initialized = false;
-	    if (!initialized) {
-	        rms.bind<GLES3::MaterialStorage>();
-	        initialized = true;
-	    }
-	    return &rms;
-	}
-
-	// static _ALWAYS_INLINE_ GLES3::MeshStorage* get_mesh_storage() { return mesh_storage; }
 	static _ALWAYS_INLINE_ RendererParticlesStorage* get_particles_storage()
 	{
 		return particles_storage;
 	}
-
-	static _ALWAYS_INLINE_ RendererTextureStorage* get_texture_storage() { return nullptr; }
 
 	static _ALWAYS_INLINE_ RendererGI* get_gi() { return gi; }
 
@@ -150,6 +136,17 @@ public:
 	static _ALWAYS_INLINE_ double get_total_time() { return time_total; }
 
 	static _ALWAYS_INLINE_ bool can_create_resources_async() { return false; }
+
+	static void bind_texture_storage() { RendererTextureStorage::bind<GLES3::TextureStorage>(); }
+
+	static void bind_material_storage() { RendererMaterialStorage::bind<GLES3::MaterialStorage>(); }
+
+	static void bind_light_storage() { RendererLightStorage::bind<GLES3::LightStorage>(); }
+
+	static void bind_particles_storage()
+	{
+		// GLES3 does not implement GPU particles storage; leave empty or stub if unused
+	}
 
 	RasterizerGLES3() = delete;
 	RasterizerGLES3(const RasterizerGLES3&) = delete;

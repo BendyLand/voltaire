@@ -44,7 +44,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	else if (RendererDummy::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	else if (RendererDummy::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	return RSE::INSTANCE_NONE;
@@ -52,7 +52,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (RendererDummy::LightStorage::get_singleton()->free(p_rid)) {
+	if (RendererDummy::LightStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {

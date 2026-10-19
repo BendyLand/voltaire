@@ -246,7 +246,7 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(
 }
 
 void ShaderData::get_instance_param_list(
-	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+	List<InstanceShaderParam>* p_param_list) const
 {
 }
 
@@ -494,7 +494,7 @@ RID MaterialData::get_default_texture_id(
 	return gl_texture;
 }
 
-int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
+int32_t GLES3::MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 {
 	int32_t idx = 0;
 	while (idx + p_elements <= global_shader_uniforms.buffer_size) {
@@ -522,7 +522,7 @@ int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 	return -1;
 }
 
-void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
+void GLES3::MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
 {
 	int32_t prev_chunk = -1;
 
@@ -539,7 +539,7 @@ void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, 
 	}
 }
 
-void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
+void GLES3::MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return;
@@ -557,7 +557,7 @@ void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
 	global_shader_uniforms.variables.erase(p_name);
 }
 
-Vector<StringName> MaterialStorage::global_shader_parameter_get_list()
+Vector<StringName> GLES3::MaterialStorage::global_shader_parameter_get_list()
 {
 	if (!Engine::is_editor_hint() &&
 		!Engine::is_project_manager_hint()) {
@@ -574,7 +574,7 @@ Vector<StringName> MaterialStorage::global_shader_parameter_get_list()
 	return names;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type_internal(
+RSE::GlobalShaderParameterType GLES3::MaterialStorage::global_shader_parameter_get_type_internal(
 	const StringName& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
@@ -584,7 +584,7 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 	return global_shader_uniforms.variables[p_name].type;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type(
+RSE::GlobalShaderParameterType GLES3::MaterialStorage::global_shader_parameter_get_type(
 	const StringName& p_name)
 {
 	if (!Engine::is_editor_hint()) {
@@ -595,14 +595,14 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 	return global_shader_parameter_get_type_internal(p_name);
 }
 
-void MaterialStorage::global_shader_parameters_clear() { global_shader_uniforms.variables.clear(); }
+void GLES3::MaterialStorage::global_shader_parameters_clear() { global_shader_uniforms.variables.clear(); }
 
-GLuint MaterialStorage::global_shader_parameters_get_uniform_buffer()
+GLuint GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer()
 {
 	return global_shader_uniforms.buffer;
 }
 
-int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
+int32_t GLES3::MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
 {
 	ERR_FAIL_COND_V(global_shader_uniforms.instance_buffer_pos.has(p_instance), -1);
 	int32_t pos = _global_shader_uniform_allocate(ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES);
@@ -618,7 +618,7 @@ int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instan
 	return pos;
 }
 
-void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
+void GLES3::MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
 {
 	ERR_FAIL_COND(!global_shader_uniforms.instance_buffer_pos.has(p_instance));
 	int32_t pos = global_shader_uniforms.instance_buffer_pos[p_instance];
@@ -628,7 +628,7 @@ void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
 	global_shader_uniforms.instance_buffer_pos.erase(p_instance);
 }
 
-void MaterialStorage::_update_global_shader_uniforms()
+void GLES3::MaterialStorage::_update_global_shader_uniforms()
 {
 	if (global_shader_uniforms.buffer_dirty_region_count > 0) {
 		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size /
@@ -687,9 +687,9 @@ void MaterialStorage::_update_global_shader_uniforms()
 	}
 }
 
-RID MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
+RID GLES3::MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
 
-void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
+void GLES3::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
 {
 	Shader shader;
 	shader.data = nullptr;
@@ -698,7 +698,7 @@ void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
 	shader_owner.initialize_rid(p_rid, shader);
 }
 
-void MaterialStorage::shader_free(RID p_rid)
+void GLES3::MaterialStorage::shader_free(RID p_rid)
 {
 	GLES3::Shader* shader = shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
@@ -713,7 +713,7 @@ void MaterialStorage::shader_free(RID p_rid)
 	shader_owner.free(p_rid);
 }
 
-void MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+void GLES3::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 {
 	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
@@ -805,7 +805,7 @@ void MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 	}
 }
 
-void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
+void GLES3::MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
 {
 	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
@@ -816,14 +816,14 @@ void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
 	}
 }
 
-String MaterialStorage::shader_get_code(RID p_shader)
+String GLES3::MaterialStorage::shader_get_code(RID p_shader)
 {
 	const GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, String());
 	return shader->code;
 }
 
-void MaterialStorage::shader_set_default_texture_parameter(
+void GLES3::MaterialStorage::shader_set_default_texture_parameter(
 	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
 {
 	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
@@ -854,7 +854,7 @@ void MaterialStorage::shader_set_default_texture_parameter(
 	}
 }
 
-RID MaterialStorage::shader_get_default_texture_parameter(
+RID GLES3::MaterialStorage::shader_get_default_texture_parameter(
 	RID p_shader, const StringName& p_name, int p_index)
 {
 	const GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
@@ -867,7 +867,7 @@ RID MaterialStorage::shader_get_default_texture_parameter(
 	return RID();
 }
 
-RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_source_code(
+RenderingServerTypes::ShaderNativeSourceCode GLES3::MaterialStorage::shader_get_native_source_code(
 	RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
@@ -878,7 +878,7 @@ RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_
 	return RenderingServerTypes::ShaderNativeSourceCode();
 }
 
-void MaterialStorage::_material_queue_update(
+void GLES3::MaterialStorage::_material_queue_update(
 	GLES3::Material* material, bool p_uniform, bool p_texture)
 {
 	material->uniform_dirty = material->uniform_dirty || p_uniform;
@@ -891,7 +891,7 @@ void MaterialStorage::_material_queue_update(
 	material_update_list.add(&material->update_element);
 }
 
-void MaterialStorage::_update_queued_materials()
+void GLES3::MaterialStorage::_update_queued_materials()
 {
 	while (material_update_list.first()) {
 		Material* material = material_update_list.first()->self();
@@ -902,16 +902,16 @@ void MaterialStorage::_update_queued_materials()
 	}
 }
 
-RID MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
+RID GLES3::MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
 
-void MaterialStorage::material_initialize(RID p_rid)
+void GLES3::MaterialStorage::material_initialize(RID p_rid)
 {
 	material_owner.initialize_rid(p_rid);
 	Material* material = material_owner.get_or_null(p_rid);
 	material->self = p_rid;
 }
 
-void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+void GLES3::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 {
 	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -955,7 +955,7 @@ void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 	_material_queue_update(material, true, true);
 }
 
-void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+void GLES3::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
 {
 	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -972,7 +972,7 @@ void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-void MaterialStorage::material_set_render_priority(RID p_material, int priority)
+void GLES3::MaterialStorage::material_set_render_priority(RID p_material, int priority)
 {
 	ERR_FAIL_COND(priority < RSE::MATERIAL_RENDER_PRIORITY_MIN);
 	ERR_FAIL_COND(priority > RSE::MATERIAL_RENDER_PRIORITY_MAX);
@@ -986,7 +986,7 @@ void MaterialStorage::material_set_render_priority(RID p_material, int priority)
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-bool MaterialStorage::material_is_animated(RID p_material)
+bool GLES3::MaterialStorage::material_is_animated(RID p_material)
 {
 	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, false);
@@ -1001,7 +1001,7 @@ bool MaterialStorage::material_is_animated(RID p_material)
 	return false; // by default nothing is animated
 }
 
-bool MaterialStorage::material_casts_shadows(RID p_material)
+bool GLES3::MaterialStorage::material_casts_shadows(RID p_material)
 {
 	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, true);
@@ -1016,7 +1016,7 @@ bool MaterialStorage::material_casts_shadows(RID p_material)
 	return true; // by default everything casts shadows
 }
 
-RSE::CullMode MaterialStorage::material_get_cull_mode(RID p_material)
+RSE::CullMode GLES3::MaterialStorage::material_get_cull_mode(RID p_material)
 {
 	const GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, RSE::CULL_MODE_DISABLED);
@@ -1030,8 +1030,8 @@ RSE::CullMode MaterialStorage::material_get_cull_mode(RID p_material)
 	return RSE::CULL_MODE_DISABLED;
 }
 
-void MaterialStorage::material_get_instance_shader_parameters(
-	RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters)
+void GLES3::MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<InstanceShaderParam>* r_parameters)
 {
 	GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1044,7 +1044,7 @@ void MaterialStorage::material_get_instance_shader_parameters(
 	}
 }
 
-void MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
+void GLES3::MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1209,7 +1209,7 @@ static void bind_uniforms_generic(const Vector<RID>& p_textures,
 	for (int ti = 0; ti < p_textures.size(); ti++) {
 		ERR_FAIL_COND_MSG(texture_uniform_index >= p_texture_uniforms.size(),
 			"texture_uniform_index out of bounds");
-		GLES3::Texture* texture = TextureStorage::get_texture(textures[ti]);
+		GLES3::Texture* texture = GLES3::TextureStorage::get_texture(textures[ti]);
 		const ShaderCompiler::GeneratedCode::Texture& texture_uniform =
 			texture_uniforms[texture_uniform_index];
 		if (texture) {
@@ -1968,7 +1968,7 @@ void GLES3::MaterialStorage::global_shader_parameters_load_settings(bool p_load_
 
 void GLES3::MaterialStorage::material_free(RID p_rid) {}
 
-void MaterialStorage::initialize()
+void GLES3::MaterialStorage::initialize()
 {
 	shaders = memnew(Shaders);
 	shader_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_shader_func;
@@ -2035,7 +2035,7 @@ void MaterialStorage::initialize()
 	shaders->compiler_tex_blit.initialize(actions_tex_blit);
 }
 
-void MaterialStorage::finalize()
+void GLES3::MaterialStorage::finalize()
 {
 	if (global_shader_uniforms.buffer != 0) {
 		glDeleteBuffers(1, &global_shader_uniforms.buffer);

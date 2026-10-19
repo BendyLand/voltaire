@@ -2728,37 +2728,37 @@ void RendererCanvasCull::canvas_set_shadow_texture_size(int p_size)
 
 RID RendererCanvasCull::canvas_texture_allocate()
 {
-	return RS::texture_storage->canvas_texture_allocate();
+	return RendererTextureStorage::canvas_texture_allocate();
 }
 
 void RendererCanvasCull::canvas_texture_initialize(RID p_rid)
 {
-	RS::texture_storage->canvas_texture_initialize(p_rid);
+	RendererTextureStorage::canvas_texture_initialize(p_rid);
 }
 
 void RendererCanvasCull::canvas_texture_set_channel(
 	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 {
-	RS::texture_storage->canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
+	RendererTextureStorage::canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
 }
 
 void RendererCanvasCull::canvas_texture_set_shading_parameters(
 	RID p_canvas_texture, const Color& p_base_color, float p_shininess)
 {
-	RS::texture_storage->canvas_texture_set_shading_parameters(
+	RendererTextureStorage::canvas_texture_set_shading_parameters(
 		p_canvas_texture, p_base_color, p_shininess);
 }
 
 void RendererCanvasCull::canvas_texture_set_texture_filter(
 	RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 {
-	RS::texture_storage->canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
+	RendererTextureStorage::canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
 }
 
 void RendererCanvasCull::canvas_texture_set_texture_repeat(
 	RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 {
-	RS::texture_storage->canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
+	RendererTextureStorage::canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
 }
 
 void RendererCanvasCull::canvas_item_set_default_texture_filter(

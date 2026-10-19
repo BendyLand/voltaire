@@ -58,7 +58,7 @@ struct ShaderData
 	virtual void set_default_texture_parameter(
 		const StringName& p_name, RID p_texture, int p_index);
 	virtual void get_instance_param_list(
-		List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const;
+		List<InstanceShaderParam>* p_param_list) const;
 	virtual bool is_parameter_texture(const StringName& p_param) const;
 
 	virtual void set_code(const String& p_Code) = 0;
@@ -707,7 +707,7 @@ public:
 	static RSE::CullMode material_get_cull_mode(RID p_material);
 
 	static void material_get_instance_shader_parameters(
-		RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters);
+		RID p_material, List<InstanceShaderParam>* r_parameters);
 
 	static void material_update_dependency(RID p_material, DependencyTracker* p_instance);
 

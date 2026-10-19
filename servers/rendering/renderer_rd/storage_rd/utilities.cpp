@@ -46,7 +46,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
+	if (RendererRD::LightStorage::owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
 	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
@@ -55,10 +55,10 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
 		return RSE::INSTANCE_VOXEL_GI;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_light(p_rid)) {
+	if (RendererRD::LightStorage::owns_light(p_rid)) {
 		return RSE::INSTANCE_LIGHT;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	if (RendererRD::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	if (RendererRD::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
@@ -79,7 +79,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (RendererRD::LightStorage::get_singleton()->free(p_rid)) {
+	if (RendererRD::LightStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::MaterialStorage::free(p_rid)) {
@@ -126,9 +126,9 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 			base_update_dependency(mesh, p_instance);
 		}
 	}
-	else if (LightStorage::get_singleton()->owns_reflection_probe(p_base)) {
+	else if (LightStorage::owns_reflection_probe(p_base)) {
 		Dependency* dependency =
-			LightStorage::get_singleton()->reflection_probe_get_dependency(p_base);
+			LightStorage::reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (TextureStorage::owns_decal(p_base)) {
@@ -139,12 +139,12 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 		Dependency* dependency = GI::get_singleton()->voxel_gi_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_lightmap(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->lightmap_get_dependency(p_base);
+	else if (LightStorage::owns_lightmap(p_base)) {
+		Dependency* dependency = LightStorage::lightmap_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_light(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->light_get_dependency(p_base);
+	else if (LightStorage::owns_light(p_base)) {
+		Dependency* dependency = LightStorage::light_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {

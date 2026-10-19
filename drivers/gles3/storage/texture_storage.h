@@ -42,7 +42,6 @@
 #include "drivers/gles3/storage/config.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/storage/texture_storage.h"
 
 #ifndef _GL_TEXTURE_EXTERNAL_OES
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
@@ -621,11 +620,11 @@ public:
 	static void texture_set_format(RID p_texture, Image::Format p_format);
 	static Image::Format texture_get_format(RID p_texture);
 	static void texture_set_width(RID p_texture, int p_width);
-	static uint32_t texture_get_width(RID p_texture);
+	static int texture_get_width(RID p_texture);
 	static void texture_set_height(RID p_texture, int p_height);
-	static uint32_t texture_get_height(RID p_texture);
+	static int texture_get_height(RID p_texture);
 	static void texture_set_depth(RID p_texture, int p_depth);
-	static uint32_t texture_get_depth(RID p_texture);
+	static int texture_get_depth(RID p_texture);
 	static void texture_set_layers(RID p_texture, int p_layers);
 	static int texture_get_layers(RID p_texture);
 	static Vector3i texture_get_size(RID p_texture);
@@ -670,6 +669,23 @@ public:
 
 	static void texture_add_to_decal_atlas(RID p_texture, bool p_is_normal = false);
 	static void texture_remove_from_decal_atlas(RID p_texture, bool p_is_normal = false);
+	static void bind_dispatch();
+
+	static void render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode) {}
+
+	static void render_target_set_vrs_update_mode(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
+	{
+	}
+
+	static void render_target_set_vrs_texture(RID p_render_target, RID p_texture) {}
+
+	static void render_target_set_use_debanding(RID p_render_target, bool p_use_debanding) {}
+
+	static
+ bool render_target_get_msaa_needs_resolve(RID p_render_target) { return false; }
+
+	static void render_target_do_msaa_resolve(RID p_render_target) {}
 
 	/* DECAL API */
 
@@ -724,11 +740,32 @@ public:
 	static bool owns_canvas_texture(RID p_rid) { return canvas_texture_owner.owns(p_rid); }
 
 	static String get_framebuffer_error(GLenum p_status);
-	static Color get_default_clear_color();
 
 	static void bind_texture(RID p_texture, uint32_t p_index);
 	static void bind_texture_ext(RID p_texture, uint32_t p_index,
 		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat);
+
+	/* Decal Stubs for GLES3 */
+	static void decal_free(RID p_rid) {}
+
+	static uint32_t decal_get_cull_mask(RID p_decal) { return 0; }
+
+	static RID decal_instance_create(RID p_decal) { return RID(); }
+
+	static void decal_instance_free(RID p_decal_instance) {}
+
+	static void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform)
+	{
+	}
+
+	static void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) {}
+
+	/* Clear Color Stub */
+	static void set_default_clear_color(const Color& p_color) {}
+
+	static Color get_default_clear_color() { return Color(); }
+
+	static inline Color default_clear_color = Color(0, 0, 0, 1);
 };
 
 } // namespace GLES3

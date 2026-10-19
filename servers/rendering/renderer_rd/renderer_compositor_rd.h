@@ -44,7 +44,9 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/storage/light_storage.h"
 #include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/texture_storage.h"
 
 class RendererCompositorRD final
 {
@@ -128,29 +130,24 @@ private:
 public:
 	static void bind_mesh_storage();
 
+	static void bind_texture_storage()
+	{
+		RendererTextureStorage::bind<RendererRD::TextureStorage>();
+	}
+
+	static void bind_material_storage()
+	{
+		RendererMaterialStorage::bind<RendererRD::MaterialStorage>();
+	}
+
+	static void bind_light_storage() { RendererLightStorage::bind<RendererRD::LightStorage>(); }
+
+	static void bind_particles_storage()
+	{
+		// Particles storage binding if converted, or stub
+	}
+
 	static void bind_utilities();
-
-	_ALWAYS_INLINE_ static RendererLightStorage* get_light_storage() { return light_storage; }
-
-	_ALWAYS_INLINE_ static RendererMaterialStorage* get_material_storage()
-	{
-		static RendererMaterialStorage rms;
-		static bool initialized = false;
-		if (!initialized) {
-			rms.bind<RendererRD::MaterialStorage>();
-			initialized = true;
-		}
-		return &rms;
-	}
-
-	_ALWAYS_INLINE_ static RendererRD::MeshStorage* get_mesh_storage() { return mesh_storage; }
-
-	_ALWAYS_INLINE_ static RendererParticlesStorage* get_particles_storage()
-	{
-		return particles_storage;
-	}
-
-	_ALWAYS_INLINE_ static RendererTextureStorage* get_texture_storage() { return nullptr; }
 
 	static RendererGI* get_gi()
 	{

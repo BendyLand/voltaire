@@ -790,7 +790,6 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 	const PagedArray<RID>& p_lights, const Projection& p_projection, const Transform3D& p_transform,
 	const Size2i p_screen_size)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
 	ERR_FAIL_COND(p_render_data->environment.is_null());
 
 	GLES3::SkyMaterialData* material_data = _get_sky_material_data(p_render_data->environment);
@@ -900,7 +899,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 		sky_globals.directional_light_count = 0;
 		for (int i = 0; i < (int)p_lights.size(); i++) {
 			GLES3::LightInstance* li =
-				GLES3::LightStorage::get_singleton()->get_light_instance(p_lights[i]);
+				GLES3::LightStorage::get_light_instance(p_lights[i]);
 			if (!li) {
 				continue;
 			}
@@ -908,9 +907,9 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 
 			ERR_CONTINUE(base.is_null());
 
-			RSE::LightType type = light_storage->light_get_type(base);
+			RSE::LightType type = GLES3::LightStorage::light_get_type(base);
 			if (type == RSE::LIGHT_DIRECTIONAL &&
-				light_storage->light_directional_get_sky_mode(base) !=
+				GLES3::LightStorage::light_directional_get_sky_mode(base) !=
 					RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY) {
 				DirectionalLightData& sky_light_data =
 					sky_globals.directional_lights[sky_globals.directional_light_count];
@@ -922,13 +921,13 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 				sky_light_data.direction[1] = world_direction.y;
 				sky_light_data.direction[2] = world_direction.z;
 
-				float sign = light_storage->light_is_negative(base) ? -1 : 1;
+				float sign = GLES3::LightStorage::light_is_negative(base) ? -1 : 1;
 				sky_light_data.energy =
-					sign * light_storage->light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
+					sign * GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
 
 				if (is_using_physical_light_units()) {
 					sky_light_data.energy *=
-						light_storage->light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
+						GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
 				}
 
 				if (p_render_data->camera_attributes.is_valid()) {
@@ -937,7 +936,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 							p_render_data->camera_attributes);
 				}
 
-				Color srgb_col = light_storage->light_get_color(base);
+				Color srgb_col = GLES3::LightStorage::light_get_color(base);
 				sky_light_data.color[0] = srgb_col.r;
 				sky_light_data.color[1] = srgb_col.g;
 				sky_light_data.color[2] = srgb_col.b;
@@ -945,7 +944,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 				sky_light_data.enabled = true;
 
 				float angular_diameter =
-					light_storage->light_get_param(base, RSE::LIGHT_PARAM_SIZE);
+					GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 				sky_light_data.size = Math::deg_to_rad(angular_diameter);
 				sky_globals.directional_light_count++;
 				if (sky_globals.directional_light_count >= sky_globals.max_directional_lights) {
@@ -1300,7 +1299,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	glDeleteFramebuffers(1, &rad_fbo);
 	// Create a dummy texture so we can use texture_2d_get.
-	RID tex_rid = Renderer::texture_storage->texture_allocate();
+	RID tex_rid = GLES3::TextureStorage::texture_allocate();
 	{
 		GLES3::Texture texture;
 		texture.width = p_size.width;
@@ -1446,7 +1445,7 @@ Ref<Image> RasterizerSceneGLES3::environment_bake_panorama(
 	else {
 		const float bg_energy_multiplier = environment_get_bg_energy_multiplier(p_env);
 		Color panorama_color = ((environment_background == RSE::ENV_BG_CLEAR_COLOR)
-									? RS::texture_storage->get_default_clear_color()
+									? GLES3::TextureStorage::get_default_clear_color()
 									: environment_get_bg_color(p_env));
 		panorama_color = panorama_color.srgb_to_linear();
 		panorama_color.r *= bg_energy_multiplier;
@@ -1523,8 +1522,6 @@ uint32_t RasterizerSceneGLES3::_indices_to_primitives(
 void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 	const RenderDataGLES3* p_render_data, PassMode p_pass_mode, bool p_append)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
-
 	if (p_render_list == RENDER_LIST_OPAQUE) {
 		scene_state.used_screen_texture = false;
 		scene_state.used_normal_texture = false;
@@ -1596,16 +1593,16 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 			if (inst->paired_omni_light_count) {
 				for (uint32_t j = 0; j < inst->paired_omni_light_count; j++) {
 					RID light_instance = inst->paired_omni_lights[j];
-					if (light_storage->light_instance_get_render_pass(light_instance) !=
+					if (GLES3::LightStorage::light_instance_get_render_pass(light_instance) !=
 						current_frame) {
 						continue;
 					}
-					RID light = light_storage->light_instance_get_base_light(light_instance);
-					int32_t shadow_id = light_storage->light_instance_get_shadow_id(light_instance);
+					RID light = GLES3::LightStorage::light_instance_get_base_light(light_instance);
+					int32_t shadow_id = GLES3::LightStorage::light_instance_get_shadow_id(light_instance);
 
-					if (light_storage->light_has_shadow(light) && shadow_id >= 0) {
+					if (GLES3::LightStorage::light_has_shadow(light) && shadow_id >= 0) {
 						GeometryInstanceGLES3::LightPass pass;
-						pass.light_id = light_storage->light_instance_get_gl_id(light_instance);
+						pass.light_id = GLES3::LightStorage::light_instance_get_gl_id(light_instance);
 						pass.shadow_id = shadow_id;
 						pass.light_instance_rid = light_instance;
 						pass.is_omni = true;
@@ -1614,7 +1611,7 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 					else {
 						// Lights without shadow can all go in base pass.
 						inst->omni_light_gl_cache.push_back(
-							(uint32_t)light_storage->light_instance_get_gl_id(light_instance));
+							(uint32_t)GLES3::LightStorage::light_instance_get_gl_id(light_instance));
 					}
 				}
 			}
@@ -1622,16 +1619,16 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 			if (inst->paired_spot_light_count) {
 				for (uint32_t j = 0; j < inst->paired_spot_light_count; j++) {
 					RID light_instance = inst->paired_spot_lights[j];
-					if (light_storage->light_instance_get_render_pass(light_instance) !=
+					if (GLES3::LightStorage::light_instance_get_render_pass(light_instance) !=
 						current_frame) {
 						continue;
 					}
-					RID light = light_storage->light_instance_get_base_light(light_instance);
-					int32_t shadow_id = light_storage->light_instance_get_shadow_id(light_instance);
+					RID light = GLES3::LightStorage::light_instance_get_base_light(light_instance);
+					int32_t shadow_id = GLES3::LightStorage::light_instance_get_shadow_id(light_instance);
 
-					if (light_storage->light_has_shadow(light) && shadow_id >= 0) {
+					if (GLES3::LightStorage::light_has_shadow(light) && shadow_id >= 0) {
 						GeometryInstanceGLES3::LightPass pass;
-						pass.light_id = light_storage->light_instance_get_gl_id(light_instance);
+						pass.light_id = GLES3::LightStorage::light_instance_get_gl_id(light_instance);
 						pass.shadow_id = shadow_id;
 						pass.light_instance_rid = light_instance;
 						inst->light_passes.push_back(pass);
@@ -1639,7 +1636,7 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 					else {
 						// Lights without shadow can all go in base pass.
 						inst->spot_light_gl_cache.push_back(
-							(uint32_t)light_storage->light_instance_get_gl_id(light_instance));
+							(uint32_t)GLES3::LightStorage::light_instance_get_gl_id(light_instance));
 					}
 				}
 			}
@@ -1647,20 +1644,20 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 			if (inst->paired_area_light_count) {
 				for (uint32_t j = 0; j < inst->paired_area_light_count; j++) {
 					RID light_instance = inst->paired_area_lights[j];
-					if (light_storage->light_instance_get_render_pass(light_instance) !=
+					if (GLES3::LightStorage::light_instance_get_render_pass(light_instance) !=
 						current_frame) {
 						continue;
 					}
-					RID light = light_storage->light_instance_get_base_light(light_instance);
+					RID light = GLES3::LightStorage::light_instance_get_base_light(light_instance);
 
-					if (light_storage->light_has_shadow(light)) {
+					if (GLES3::LightStorage::light_has_shadow(light)) {
 						ERR_FAIL_MSG(
 							"AreaLights don't support shadows in the Compatibility renderer.");
 					}
 					else {
 						// Lights without shadow can all go in base pass.
 						inst->area_light_gl_cache.push_back(
-							(uint32_t)light_storage->light_instance_get_gl_id(light_instance));
+							(uint32_t)GLES3::LightStorage::light_instance_get_gl_id(light_instance));
 					}
 				}
 			}
@@ -1674,14 +1671,14 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list,
 
 				for (uint32_t pi = 0; pi < inst->paired_reflection_probes.size(); pi++) {
 					RID probe_instance = inst->paired_reflection_probes[pi];
-					RID atlas = light_storage->reflection_probe_instance_get_atlas(probe_instance);
-					RID probe = light_storage->reflection_probe_instance_get_probe(probe_instance);
+					RID atlas = GLES3::LightStorage::reflection_probe_instance_get_atlas(probe_instance);
+					RID probe = GLES3::LightStorage::reflection_probe_instance_get_probe(probe_instance);
 					uint32_t reflection_mask =
-						light_storage->reflection_probe_get_reflection_mask(probe);
+						GLES3::LightStorage::reflection_probe_get_reflection_mask(probe);
 					if (atlas.is_valid() && (inst->layer_mask & reflection_mask)) {
 						Transform3D local_matrix =
 							p_render_data->inv_cam_transform *
-							light_storage->reflection_probe_instance_get_transform(probe_instance);
+							GLES3::LightStorage::reflection_probe_instance_get_transform(probe_instance);
 						inst->reflection_probes_local_transform_cache.push_back(
 							local_matrix.affine_inverse());
 						inst->reflection_probe_rid_cache.push_back(probe_instance);
@@ -2051,7 +2048,6 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 	uint32_t& r_directional_light_count, uint32_t& r_omni_light_count, uint32_t& r_spot_light_count,
 	uint32_t& r_area_light_count, uint32_t& r_directional_shadow_count)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	const Transform3D inverse_transform = p_render_data->inv_cam_transform;
@@ -2068,7 +2064,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 
 	for (int i = 0; i < num_lights; i++) {
 		GLES3::LightInstance* li =
-			GLES3::LightStorage::get_singleton()->get_light_instance(lights[i]);
+			GLES3::LightStorage::get_light_instance(lights[i]);
 		if (!li) {
 			continue;
 		}
@@ -2076,18 +2072,18 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 
 		ERR_CONTINUE(base.is_null());
 
-		RSE::LightType type = light_storage->light_get_type(base);
+		RSE::LightType type = GLES3::LightStorage::light_get_type(base);
 		switch (type) {
 		case RSE::LIGHT_DIRECTIONAL: {
 			if (r_directional_light_count >= RendererSceneRender::MAX_DIRECTIONAL_LIGHTS ||
-				light_storage->light_directional_get_sky_mode(base) ==
+				GLES3::LightStorage::light_directional_get_sky_mode(base) ==
 					RSE::LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY) {
 				continue;
 			}
 
 			// If a DirectionalLight has shadows, we will add it to the end of the array and work
 			// in.
-			bool has_shadow = light_storage->light_has_shadow(base);
+			bool has_shadow = GLES3::LightStorage::light_has_shadow(base);
 
 			int index = r_directional_light_count - r_directional_shadow_count;
 
@@ -2107,16 +2103,16 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			light_data.direction[1] = direction.y;
 			light_data.direction[2] = direction.z;
 
-			light_data.bake_mode = light_storage->light_get_bake_mode(base);
+			light_data.bake_mode = GLES3::LightStorage::light_get_bake_mode(base);
 
-			float sign = light_storage->light_is_negative(base) ? -1 : 1;
+			float sign = GLES3::LightStorage::light_is_negative(base) ? -1 : 1;
 
 			light_data.energy =
-				sign * light_storage->light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
+				sign * GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
 
 			if (is_using_physical_light_units()) {
 				light_data.energy *=
-					light_storage->light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
+					GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
 			}
 			else {
 				light_data.energy *= Math::PI;
@@ -2128,21 +2124,21 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 						p_render_data->camera_attributes);
 			}
 
-			Color linear_col = light_storage->light_get_color(base).srgb_to_linear();
+			Color linear_col = GLES3::LightStorage::light_get_color(base).srgb_to_linear();
 			light_data.color[0] = linear_col.r;
 			light_data.color[1] = linear_col.g;
 			light_data.color[2] = linear_col.b;
 
-			float size = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SIZE);
+			float size = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 			light_data.size = 1.0 - Math::cos(Math::deg_to_rad(size)); // angle to cosine offset
 
-			light_data.specular = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SPECULAR);
+			light_data.specular = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SPECULAR);
 
-			light_data.mask = light_storage->light_get_cull_mask(base);
+			light_data.mask = GLES3::LightStorage::light_get_cull_mask(base);
 
 			light_data.shadow_opacity =
-				(p_using_shadows && light_storage->light_has_shadow(base))
-					? light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_OPACITY)
+				(p_using_shadows && GLES3::LightStorage::light_has_shadow(base))
+					? GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_OPACITY)
 					: 0.0;
 
 			if (has_shadow) {
@@ -2151,7 +2147,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 													r_directional_shadow_count];
 
 				RSE::LightDirectionalShadowMode shadow_mode =
-					light_storage->light_directional_get_shadow_mode(base);
+					GLES3::LightStorage::light_directional_get_shadow_mode(base);
 
 				int limit =
 					shadow_mode == RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL
@@ -2159,11 +2155,11 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 						: (shadow_mode == RSE::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS ? 1 : 3);
 
 				shadow_data.shadow_atlas_pixel_size =
-					1.0 / light_storage->directional_shadow_get_size();
+					1.0 / GLES3::LightStorage::directional_shadow_get_size();
 
 				shadow_data.blend_splits =
 					uint32_t((shadow_mode != RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL) &&
-							 light_storage->light_directional_get_blend_splits(base));
+							 GLES3::LightStorage::light_directional_get_blend_splits(base));
 				for (int j = 0; j < 4; j++) {
 					Rect2 atlas_rect = li->shadow_transform[j].atlas_rect;
 					Projection correction;
@@ -2186,13 +2182,13 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 					Projection shadow_mtx = rectm * bias * matrix * modelview;
 					shadow_data.shadow_split_offsets[j] = split;
 					shadow_data.shadow_normal_bias[j] =
-						light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_NORMAL_BIAS) *
+						GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_NORMAL_BIAS) *
 						li->shadow_transform[j].shadow_texel_size;
 					GLES3::MaterialStorage::store_camera(
 						shadow_mtx, shadow_data.shadow_matrices[j]);
 				}
 				float fade_start =
-					light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_FADE_START);
+					GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_FADE_START);
 				shadow_data.fade_from =
 					-shadow_data.shadow_split_offsets[3] * MIN(fade_start, 0.999);
 				shadow_data.fade_to = -shadow_data.shadow_split_offsets[3];
@@ -2210,9 +2206,9 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			const real_t distance =
 				p_render_data->cam_transform.origin.distance_to(li->transform.origin);
 
-			if (light_storage->light_is_distance_fade_enabled(li->light)) {
-				const float fade_begin = light_storage->light_get_distance_fade_begin(li->light);
-				const float fade_length = light_storage->light_get_distance_fade_length(li->light);
+			if (GLES3::LightStorage::light_is_distance_fade_enabled(li->light)) {
+				const float fade_begin = GLES3::LightStorage::light_get_distance_fade_begin(li->light);
+				const float fade_length = GLES3::LightStorage::light_get_distance_fade_length(li->light);
 
 				if (distance > fade_begin) {
 					if (distance > fade_begin + fade_length) {
@@ -2234,9 +2230,9 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			const real_t distance =
 				p_render_data->cam_transform.origin.distance_to(li->transform.origin);
 
-			if (light_storage->light_is_distance_fade_enabled(li->light)) {
-				const float fade_begin = light_storage->light_get_distance_fade_begin(li->light);
-				const float fade_length = light_storage->light_get_distance_fade_length(li->light);
+			if (GLES3::LightStorage::light_is_distance_fade_enabled(li->light)) {
+				const float fade_begin = GLES3::LightStorage::light_get_distance_fade_begin(li->light);
+				const float fade_length = GLES3::LightStorage::light_get_distance_fade_length(li->light);
 
 				if (distance > fade_begin) {
 					if (distance > fade_begin + fade_length) {
@@ -2258,9 +2254,9 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			const real_t distance =
 				p_render_data->cam_transform.origin.distance_to(li->transform.origin);
 
-			if (light_storage->light_is_distance_fade_enabled(li->light)) {
-				const float fade_begin = light_storage->light_get_distance_fade_begin(li->light);
-				const float fade_length = light_storage->light_get_distance_fade_length(li->light);
+			if (GLES3::LightStorage::light_is_distance_fade_enabled(li->light)) {
+				const float fade_begin = GLES3::LightStorage::light_get_distance_fade_begin(li->light);
+				const float fade_length = GLES3::LightStorage::light_get_distance_fade_length(li->light);
 
 				if (distance > fade_begin) {
 					if (distance > fade_begin + fade_length) {
@@ -2325,7 +2321,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			distance = scene_state.area_light_sort[index].depth;
 		}
 		LightData& light_data = *light_data_ptr;
-		GLES3::Light* light = light_storage->get_light(li->light);
+		GLES3::Light* light = GLES3::LightStorage::get_light(li->light);
 		ERR_FAIL_NULL(light);
 
 		RID base = li->light;
@@ -2340,9 +2336,9 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		light_data.position[1] = pos.y;
 		light_data.position[2] = pos.z;
 
-		light_data.bake_mode = light_storage->light_get_bake_mode(base);
+		light_data.bake_mode = GLES3::LightStorage::light_get_bake_mode(base);
 
-		float radius = MAX(0.001, light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE));
+		float radius = MAX(0.001, GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE));
 		light_data.inv_radius = 1.0 / radius;
 
 		Vector3 direction =
@@ -2353,12 +2349,12 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		light_data.direction[1] = direction.y;
 		light_data.direction[2] = direction.z;
 
-		float size = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SIZE);
+		float size = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 
 		light_data.size = size;
 
-		float sign = light_storage->light_is_negative(base) ? -1 : 1;
-		Color linear_col = light_storage->light_get_color(base).srgb_to_linear();
+		float sign = GLES3::LightStorage::light_is_negative(base) ? -1 : 1;
+		Color linear_col = GLES3::LightStorage::light_get_color(base).srgb_to_linear();
 
 		// Reuse fade begin, fade length and distance for shadow LOD determination later.
 		float fade_begin = 0.0;
@@ -2368,10 +2364,10 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		float fade = 1.0;
 		float shadow_opacity_fade = 1.0;
 
-		if (light_storage->light_is_distance_fade_enabled(base)) {
-			fade_begin = light_storage->light_get_distance_fade_begin(base);
-			fade_shadow = light_storage->light_get_distance_fade_shadow(base);
-			fade_length = light_storage->light_get_distance_fade_length(base);
+		if (GLES3::LightStorage::light_is_distance_fade_enabled(base)) {
+			fade_begin = GLES3::LightStorage::light_get_distance_fade_begin(base);
+			fade_shadow = GLES3::LightStorage::light_get_distance_fade_shadow(base);
+			fade_length = GLES3::LightStorage::light_get_distance_fade_length(base);
 
 			if (distance > fade_begin) {
 				// Use `smoothstep()` to make opacity changes more gradual and less noticeable to
@@ -2385,10 +2381,10 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			}
 		}
 
-		float energy = sign * light_storage->light_get_param(base, RSE::LIGHT_PARAM_ENERGY) * fade;
+		float energy = sign * GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_ENERGY) * fade;
 
 		if (is_using_physical_light_units()) {
-			energy *= light_storage->light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
+			energy *= GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
 
 			// Convert from Luminous Power to Luminous Intensity
 			if (type == RSE::LIGHT_OMNI) {
@@ -2416,16 +2412,16 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		light_data.color[1] = linear_col.g * energy;
 		light_data.color[2] = linear_col.b * energy;
 
-		light_data.attenuation = light_storage->light_get_param(base, RSE::LIGHT_PARAM_ATTENUATION);
+		light_data.attenuation = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_ATTENUATION);
 
 		light_data.inv_spot_attenuation =
-			1.0f / light_storage->light_get_param(base, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
+			1.0f / GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
-		float spot_angle = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SPOT_ANGLE);
+		float spot_angle = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SPOT_ANGLE);
 		light_data.cos_spot_angle = Math::cos(Math::deg_to_rad(spot_angle));
 
 		light_data.specular_amount =
-			light_storage->light_get_param(base, RSE::LIGHT_PARAM_SPECULAR) * 2.0;
+			GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SPECULAR) * 2.0;
 
 		if (type == RSE::LIGHT_AREA) {
 			Vector3 area_vec_a =
@@ -2459,13 +2455,13 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 
 		// Setup shadows
 		const bool needs_shadow = p_using_shadows &&
-								  light_storage->owns_shadow_atlas(p_render_data->shadow_atlas) &&
-								  light_storage->shadow_atlas_owns_light_instance(
+								  GLES3::LightStorage::owns_shadow_atlas(p_render_data->shadow_atlas) &&
+								  GLES3::LightStorage::shadow_atlas_owns_light_instance(
 									  p_render_data->shadow_atlas, li->self) &&
-								  light_storage->light_has_shadow(base);
+								  GLES3::LightStorage::light_has_shadow(base);
 
 		bool in_shadow_range = true;
-		if (needs_shadow && light_storage->light_is_distance_fade_enabled(base)) {
+		if (needs_shadow && GLES3::LightStorage::light_is_distance_fade_enabled(base)) {
 			if (distance > fade_shadow + fade_length) {
 				// Out of range, don't draw shadows to improve performance.
 				in_shadow_range = false;
@@ -2482,14 +2478,14 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 			num_positional_shadows++;
 
 			light_data.shadow_opacity =
-				light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_OPACITY) *
+				GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_OPACITY) *
 				shadow_opacity_fade;
 
-			float shadow_texel_size = light_storage->light_instance_get_shadow_texel_size(
+			float shadow_texel_size = GLES3::LightStorage::light_instance_get_shadow_texel_size(
 				li->self, p_render_data->shadow_atlas);
 			shadow_data.shadow_atlas_pixel_size = shadow_texel_size;
 			shadow_data.shadow_normal_bias =
-				light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_NORMAL_BIAS) *
+				GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_NORMAL_BIAS) *
 				shadow_texel_size * 10.0;
 
 			shadow_data.light_position[0] = light_data.position[0];
@@ -2571,8 +2567,6 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 void RasterizerSceneGLES3::_render_shadows(
 	const RenderDataGLES3* p_render_data, const Size2i& p_viewport_size)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
-
 	LocalVector<int> cube_shadows;
 	LocalVector<int> shadows;
 	LocalVector<int> directional_shadows;
@@ -2583,13 +2577,13 @@ void RasterizerSceneGLES3::_render_shadows(
 	{
 		for (int i = 0; i < p_render_data->render_shadow_count; i++) {
 			RID li = p_render_data->render_shadows[i].light;
-			RID base = light_storage->light_instance_get_base_light(li);
+			RID base = GLES3::LightStorage::light_instance_get_base_light(li);
 
-			if (light_storage->light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
+			if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
 				directional_shadows.push_back(i);
 			}
-			else if (light_storage->light_get_type(base) == RSE::LIGHT_OMNI &&
-					   light_storage->light_omni_get_shadow_mode(base) ==
+			else if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_OMNI &&
+					   GLES3::LightStorage::light_omni_get_shadow_mode(base) ==
 						   RSE::LIGHT_OMNI_SHADOW_CUBE) {
 				cube_shadows.push_back(i);
 			}
@@ -2598,7 +2592,7 @@ void RasterizerSceneGLES3::_render_shadows(
 			}
 		}
 		if (directional_shadows.size()) {
-			light_storage->update_directional_shadow_atlas();
+			GLES3::LightStorage::update_directional_shadow_atlas();
 		}
 	}
 
@@ -2640,11 +2634,9 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 	float p_screen_mesh_lod_threshold, RenderingServerTypes::RenderInfo* p_render_info,
 	const Size2i& p_viewport_size, const Transform3D& p_main_cam_transform)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
+	ERR_FAIL_COND(!GLES3::LightStorage::owns_light_instance(p_light));
 
-	ERR_FAIL_COND(!light_storage->owns_light_instance(p_light));
-
-	RID base = light_storage->light_instance_get_base_light(p_light);
+	RID base = GLES3::LightStorage::light_instance_get_base_light(p_light);
 
 	float zfar = 0.0;
 	bool use_pancake = false;
@@ -2657,19 +2649,19 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 	GLuint shadow_fb = 0;
 	Rect2i atlas_rect;
 
-	if (light_storage->light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
+	if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
 		// Set pssm stuff.
-		uint64_t last_scene_shadow_pass = light_storage->light_instance_get_shadow_pass(p_light);
+		uint64_t last_scene_shadow_pass = GLES3::LightStorage::light_instance_get_shadow_pass(p_light);
 		if (last_scene_shadow_pass != get_scene_pass()) {
-			light_storage->light_instance_set_directional_rect(
-				p_light, light_storage->get_directional_shadow_rect());
-			light_storage->directional_shadow_increase_current_light();
-			light_storage->light_instance_set_shadow_pass(p_light, get_scene_pass());
+			GLES3::LightStorage::light_instance_set_directional_rect(
+				p_light, GLES3::LightStorage::get_directional_shadow_rect());
+			GLES3::LightStorage::directional_shadow_increase_current_light();
+			GLES3::LightStorage::light_instance_set_shadow_pass(p_light, get_scene_pass());
 		}
 
-		atlas_rect = light_storage->light_instance_get_directional_rect(p_light);
+		atlas_rect = GLES3::LightStorage::light_instance_get_directional_rect(p_light);
 
-		if (light_storage->light_directional_get_shadow_mode(base) ==
+		if (GLES3::LightStorage::light_directional_get_shadow_mode(base) ==
 			RSE::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS) {
 			atlas_rect.size.width /= 2;
 			atlas_rect.size.height /= 2;
@@ -2684,7 +2676,7 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 				atlas_rect.position += atlas_rect.size;
 			}
 		}
-		else if (light_storage->light_directional_get_shadow_mode(base) ==
+		else if (GLES3::LightStorage::light_directional_get_shadow_mode(base) ==
 				   RSE::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS) {
 			atlas_rect.size.height /= 2;
 
@@ -2696,52 +2688,52 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 		}
 
 		use_pancake =
-			light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_PANCAKE_SIZE) > 0;
-		light_projection = light_storage->light_instance_get_shadow_camera(p_light, p_pass);
-		light_transform = light_storage->light_instance_get_shadow_transform(p_light, p_pass);
+			GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_PANCAKE_SIZE) > 0;
+		light_projection = GLES3::LightStorage::light_instance_get_shadow_camera(p_light, p_pass);
+		light_transform = GLES3::LightStorage::light_instance_get_shadow_transform(p_light, p_pass);
 
-		float directional_shadow_size = light_storage->directional_shadow_get_size();
+		float directional_shadow_size = GLES3::LightStorage::directional_shadow_get_size();
 		Rect2 atlas_rect_norm = atlas_rect;
 		atlas_rect_norm.position /= directional_shadow_size;
 		atlas_rect_norm.size /= directional_shadow_size;
-		light_storage->light_instance_set_directional_shadow_atlas_rect(
+		GLES3::LightStorage::light_instance_set_directional_shadow_atlas_rect(
 			p_light, p_pass, atlas_rect_norm);
 
-		zfar = RS::light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
-		shadow_fb = light_storage->direction_shadow_get_fb();
-		reverse_cull = !light_storage->light_get_reverse_cull_face_mode(base);
+		zfar = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+		shadow_fb = GLES3::LightStorage::direction_shadow_get_fb();
+		reverse_cull = !GLES3::LightStorage::light_get_reverse_cull_face_mode(base);
 
-		float bias_scale = light_storage->light_instance_get_shadow_bias_scale(p_light, p_pass);
+		float bias_scale = GLES3::LightStorage::light_instance_get_shadow_bias_scale(p_light, p_pass);
 		shadow_bias =
-			light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS) / 100.0 * bias_scale;
+			GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS) / 100.0 * bias_scale;
 
 	}
 	else {
 		// Set from shadow atlas.
 
-		ERR_FAIL_COND(!light_storage->owns_shadow_atlas(p_shadow_atlas));
-		ERR_FAIL_COND(!light_storage->shadow_atlas_owns_light_instance(p_shadow_atlas, p_light));
+		ERR_FAIL_COND(!GLES3::LightStorage::owns_shadow_atlas(p_shadow_atlas));
+		ERR_FAIL_COND(!GLES3::LightStorage::shadow_atlas_owns_light_instance(p_shadow_atlas, p_light));
 
-		uint32_t key = light_storage->shadow_atlas_get_light_instance_key(p_shadow_atlas, p_light);
+		uint32_t key = GLES3::LightStorage::shadow_atlas_get_light_instance_key(p_shadow_atlas, p_light);
 
 		uint32_t quadrant = (key >> GLES3::LightStorage::QUADRANT_SHIFT) & 0x3;
 		uint32_t shadow = key & GLES3::LightStorage::SHADOW_INDEX_MASK;
 
 		ERR_FAIL_INDEX((int)shadow,
-			light_storage->shadow_atlas_get_quadrant_shadows_length(p_shadow_atlas, quadrant));
+			GLES3::LightStorage::shadow_atlas_get_quadrant_shadows_length(p_shadow_atlas, quadrant));
 
 		int shadow_size =
-			light_storage->shadow_atlas_get_quadrant_shadow_size(p_shadow_atlas, quadrant);
+			GLES3::LightStorage::shadow_atlas_get_quadrant_shadow_size(p_shadow_atlas, quadrant);
 
 		shadow_fb =
-			light_storage->shadow_atlas_get_quadrant_shadow_fb(p_shadow_atlas, quadrant, shadow);
+			GLES3::LightStorage::shadow_atlas_get_quadrant_shadow_fb(p_shadow_atlas, quadrant, shadow);
 
-		zfar = light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
-		reverse_cull = !light_storage->light_get_reverse_cull_face_mode(base);
+		zfar = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+		reverse_cull = !GLES3::LightStorage::light_get_reverse_cull_face_mode(base);
 
-		if (light_storage->light_get_type(base) == RSE::LIGHT_OMNI) {
-			if (light_storage->light_omni_get_shadow_mode(base) == RSE::LIGHT_OMNI_SHADOW_CUBE) {
-				GLuint shadow_texture = light_storage->shadow_atlas_get_quadrant_shadow_texture(
+		if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_OMNI) {
+			if (GLES3::LightStorage::light_omni_get_shadow_mode(base) == RSE::LIGHT_OMNI_SHADOW_CUBE) {
+				GLuint shadow_texture = GLES3::LightStorage::shadow_atlas_get_quadrant_shadow_texture(
 					p_shadow_atlas, quadrant, shadow);
 				glBindFramebuffer(GL_FRAMEBUFFER, shadow_fb);
 
@@ -2755,9 +2747,9 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 				glFramebufferTexture2D(
 					GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, cube_map_faces[p_pass], shadow_texture, 0);
 
-				light_projection = light_storage->light_instance_get_shadow_camera(p_light, p_pass);
+				light_projection = GLES3::LightStorage::light_instance_get_shadow_camera(p_light, p_pass);
 				light_transform =
-					light_storage->light_instance_get_shadow_transform(p_light, p_pass);
+					GLES3::LightStorage::light_instance_get_shadow_transform(p_light, p_pass);
 				shadow_size = shadow_size / 2;
 			}
 			else {
@@ -2765,20 +2757,20 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 							 "renderer. Please use CubeMap shadow mode instead.");
 			}
 
-			shadow_bias = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS);
+			shadow_bias = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS);
 
 		}
-		else if (light_storage->light_get_type(base) == RSE::LIGHT_AREA) {
+		else if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_AREA) {
 			// TODO: area light shadows also depend on dual paraboloid shadows at the moment, which
 			// are not available in the compatibility renderer
 		}
-		else if (light_storage->light_get_type(base) == RSE::LIGHT_SPOT) {
-			light_projection = light_storage->light_instance_get_shadow_camera(p_light, 0);
-			light_transform = light_storage->light_instance_get_shadow_transform(p_light, 0);
+		else if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_SPOT) {
+			light_projection = GLES3::LightStorage::light_instance_get_shadow_camera(p_light, 0);
+			light_transform = GLES3::LightStorage::light_instance_get_shadow_transform(p_light, 0);
 
-			shadow_bias = light_storage->light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS) / 10.0;
+			shadow_bias = GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_BIAS) / 10.0;
 			// Prebake range into bias so we can scale based on distance easily.
-			shadow_bias *= light_storage->light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+			shadow_bias *= GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE);
 		}
 		atlas_rect.size.x = shadow_size;
 		atlas_rect.size.y = shadow_size;
@@ -2837,7 +2829,7 @@ void RasterizerSceneGLES3::_render_shadow_pass(RID p_light, RID p_shadow_atlas, 
 		SceneShaderGLES3::DISABLE_LIGHT_SPOT | SceneShaderGLES3::DISABLE_FOG |
 		SceneShaderGLES3::RENDER_SHADOWS;
 
-	if (light_storage->light_get_type(base) == RSE::LIGHT_OMNI) {
+	if (GLES3::LightStorage::light_get_type(base) == RSE::LIGHT_OMNI) {
 		spec_constant_base_flags |= SceneShaderGLES3::RENDER_SHADOWS_LINEAR;
 	}
 
@@ -3201,9 +3193,9 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 	GLuint fbo = 0;
 	if (is_reflection_probe &&
-		GLES3::LightStorage::get_singleton()->reflection_probe_has_atlas_index(
+		GLES3::LightStorage::reflection_probe_has_atlas_index(
 			render_data.reflection_probe)) {
-		fbo = GLES3::LightStorage::get_singleton()->reflection_probe_instance_get_framebuffer(
+		fbo = GLES3::LightStorage::reflection_probe_instance_get_framebuffer(
 			render_data.reflection_probe, render_data.reflection_probe_pass);
 	}
 	else {
@@ -3984,7 +3976,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				}
 				if (pass < int32_t(inst->light_passes.size())) {
 					RID light_instance_rid = inst->light_passes[pass].light_instance_rid;
-					if (!GLES3::LightStorage::get_singleton()->light_instance_has_shadow_atlas(
+					if (!GLES3::LightStorage::light_instance_has_shadow_atlas(
 							light_instance_rid, p_render_data->shadow_atlas)) {
 						// Shadow wasn't able to get a spot on the atlas. So skip it.
 						continue;
@@ -4208,10 +4200,10 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 							spec_constants |= SceneShaderGLES3::USE_LIGHTMAP;
 
 							GLES3::LightmapInstance* li =
-								GLES3::LightStorage::get_singleton()->get_lightmap_instance(
+								GLES3::LightStorage::get_lightmap_instance(
 									inst->lightmap_instance);
 							GLES3::Lightmap* lm =
-								GLES3::LightStorage::get_singleton()->get_lightmap(li->lightmap);
+								GLES3::LightStorage::get_lightmap(li->lightmap);
 
 							if (lm->uses_spherical_harmonics) {
 								spec_constants |= SceneShaderGLES3::USE_SH_LIGHTMAP;
@@ -4251,10 +4243,10 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					if (pass >= int32_t(inst->light_passes.size()) &&
 						inst->lightmap_instance.is_valid()) {
 						GLES3::LightmapInstance* li =
-							GLES3::LightStorage::get_singleton()->get_lightmap_instance(
+							GLES3::LightStorage::get_lightmap_instance(
 								inst->lightmap_instance);
 						GLES3::Lightmap* lm =
-							GLES3::LightStorage::get_singleton()->get_lightmap(li->lightmap);
+							GLES3::LightStorage::get_lightmap(li->lightmap);
 
 						if (lm->shadowmask_mode != RSE::SHADOWMASK_MODE_NONE) {
 							spec_constants |= SceneShaderGLES3::USE_LIGHTMAP;
@@ -4383,8 +4375,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 							glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 3);
 							RID light_instance_rid = inst->light_passes[pass].light_instance_rid;
 
-							GLuint tex = GLES3::LightStorage::get_singleton()
-											 ->light_instance_get_shadow_texture(
+							GLuint tex = GLES3::LightStorage::light_instance_get_shadow_texture(
 												 light_instance_rid, p_render_data->shadow_atlas);
 							if (is_omni) {
 								glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
@@ -4402,17 +4393,17 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 							instance_variant, spec_constants);
 
 						GLuint tex =
-							GLES3::LightStorage::get_singleton()->directional_shadow_get_texture();
+							GLES3::LightStorage::directional_shadow_get_texture();
 						glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 3);
 						glBindTexture(GL_TEXTURE_2D, tex);
 
 						if (inst->lightmap_instance.is_valid()) {
 							// Use shadowmasks for directional light passes.
 							GLES3::LightmapInstance* li =
-								GLES3::LightStorage::get_singleton()->get_lightmap_instance(
+								GLES3::LightStorage::get_lightmap_instance(
 									inst->lightmap_instance);
 							GLES3::Lightmap* lm =
-								GLES3::LightStorage::get_singleton()->get_lightmap(li->lightmap);
+								GLES3::LightStorage::get_lightmap(li->lightmap);
 
 							GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 								SceneShaderGLES3::LIGHTMAP_SLICE, inst->lightmap_slice_index,
@@ -4495,10 +4486,10 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 					if (inst->lightmap_instance.is_valid()) {
 						GLES3::LightmapInstance* li =
-							GLES3::LightStorage::get_singleton()->get_lightmap_instance(
+							GLES3::LightStorage::get_lightmap_instance(
 								inst->lightmap_instance);
 						GLES3::Lightmap* lm =
-							GLES3::LightStorage::get_singleton()->get_lightmap(li->lightmap);
+							GLES3::LightStorage::get_lightmap(li->lightmap);
 
 						GLuint tex = GLES3::TextureStorage::texture_get_texid(lm->light_texture);
 						glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 4);
@@ -4578,14 +4569,13 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						  p_pass_mode == PASS_MODE_COLOR_TRANSPARENT) {
 				if (pass == 0 && inst->reflection_probe_rid_cache.size() > 0) {
 					GLES3::Config* config = GLES3::Config::get_singleton();
-					GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
 
 					// Setup first probe.
 					{
-						RID probe_rid = light_storage->reflection_probe_instance_get_probe(
+						RID probe_rid = GLES3::LightStorage::reflection_probe_instance_get_probe(
 							inst->reflection_probe_rid_cache[0]);
 						GLES3::ReflectionProbe* probe =
-							light_storage->get_reflection_probe(probe_rid);
+							GLES3::LightStorage::get_reflection_probe(probe_rid);
 
 						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE1_USE_BOX_PROJECT, probe->box_projection,
@@ -4619,16 +4609,16 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 						glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 8);
 						glBindTexture(GL_TEXTURE_CUBE_MAP,
-							light_storage->reflection_probe_instance_get_texture(
+							GLES3::LightStorage::reflection_probe_instance_get_texture(
 								inst->reflection_probe_rid_cache[0]));
 					}
 
 					if (inst->reflection_probe_rid_cache.size() > 1) {
 						// Setup second probe.
-						RID probe_rid = light_storage->reflection_probe_instance_get_probe(
+						RID probe_rid = GLES3::LightStorage::reflection_probe_instance_get_probe(
 							inst->reflection_probe_rid_cache[1]);
 						GLES3::ReflectionProbe* probe =
-							light_storage->get_reflection_probe(probe_rid);
+							GLES3::LightStorage::get_reflection_probe(probe_rid);
 
 						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
 							SceneShaderGLES3::REFPROBE2_USE_BOX_PROJECT, probe->box_projection,
@@ -4662,7 +4652,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 						glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 9);
 						glBindTexture(GL_TEXTURE_CUBE_MAP,
-							light_storage->reflection_probe_instance_get_texture(
+							GLES3::LightStorage::reflection_probe_instance_get_texture(
 								inst->reflection_probe_rid_cache[1]));
 
 						spec_constants |= SceneShaderGLES3::SECOND_REFLECTION_PROBE;
@@ -5068,7 +5058,6 @@ Ref<RenderSceneBuffers> RasterizerSceneGLES3::render_buffers_create()
 void RasterizerSceneGLES3::_render_buffers_debug_draw(
 	Ref<RenderSceneBuffersGLES3> p_render_buffers, RID p_shadow_atlas, GLuint p_fbo)
 {
-	GLES3::LightStorage* light_storage = GLES3::LightStorage::get_singleton();
 	GLES3::CopyEffects* copy_effects = GLES3::CopyEffects::get_singleton();
 
 	ERR_FAIL_COND(p_render_buffers.is_null());
@@ -5081,10 +5070,10 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 		if (p_shadow_atlas.is_valid()) {
 			// Get or create debug textures to display shadow maps as an atlas.
 			GLuint shadow_atlas_texture =
-				light_storage->shadow_atlas_get_debug_texture(p_shadow_atlas);
-			GLuint shadow_atlas_fb = light_storage->shadow_atlas_get_debug_fb(p_shadow_atlas);
+				GLES3::LightStorage::shadow_atlas_get_debug_texture(p_shadow_atlas);
+			GLuint shadow_atlas_fb = GLES3::LightStorage::shadow_atlas_get_debug_fb(p_shadow_atlas);
 
-			uint32_t shadow_atlas_size = light_storage->shadow_atlas_get_size(p_shadow_atlas);
+			uint32_t shadow_atlas_size = GLES3::LightStorage::shadow_atlas_get_size(p_shadow_atlas);
 			uint32_t quadrant_size = shadow_atlas_size >> 1;
 
 			glBindFramebuffer(GL_FRAMEBUFFER, shadow_atlas_fb);
@@ -5097,7 +5086,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 			// Loop through quadrants and copy shadows over.
 			for (int quadrant = 0; quadrant < 4; quadrant++) {
 				uint32_t subdivision =
-					light_storage->shadow_atlas_get_quadrant_subdivision(p_shadow_atlas, quadrant);
+					GLES3::LightStorage::shadow_atlas_get_quadrant_subdivision(p_shadow_atlas, quadrant);
 				if (subdivision == 0) {
 					continue;
 				}
@@ -5108,10 +5097,10 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 				uint32_t shadow_size = (quadrant_size / subdivision);
 				float size = float(shadow_size) / float(shadow_atlas_size);
 
-				uint32_t length = light_storage->shadow_atlas_get_quadrant_shadows_allocated(
+				uint32_t length = GLES3::LightStorage::shadow_atlas_get_quadrant_shadows_allocated(
 					p_shadow_atlas, quadrant);
 				for (uint32_t shadow_idx = 0; shadow_idx < length; shadow_idx++) {
-					bool is_omni = light_storage->shadow_atlas_get_quadrant_shadow_is_omni(
+					bool is_omni = GLES3::LightStorage::shadow_atlas_get_quadrant_shadow_is_omni(
 						p_shadow_atlas, quadrant, shadow_idx);
 
 					// Calculate shadow's position in the debug atlas.
@@ -5126,7 +5115,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 
 					atlas_uv_rect.size = Vector2(size, size);
 
-					GLuint shadow_tex = light_storage->shadow_atlas_get_quadrant_shadow_texture(
+					GLuint shadow_tex = GLES3::LightStorage::shadow_atlas_get_quadrant_shadow_texture(
 						p_shadow_atlas, quadrant, shadow_idx);
 					// Copy from shadowmap to debug atlas.
 					if (is_omni) {
@@ -5164,8 +5153,8 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 		}
 	}
 	if (debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS) {
-		if (light_storage->directional_shadow_get_texture() != 0) {
-			GLuint shadow_atlas_texture = light_storage->directional_shadow_get_texture();
+		if (GLES3::LightStorage::directional_shadow_get_texture() != 0) {
+			GLuint shadow_atlas_texture = GLES3::LightStorage::directional_shadow_get_texture();
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, shadow_atlas_texture);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
@@ -5216,8 +5205,8 @@ bool RasterizerSceneGLES3::free(RID p_rid)
 		_free_sky_data(sky);
 		sky_owner.free(p_rid);
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_light_instance(p_rid)) {
-		GLES3::LightStorage::get_singleton()->light_instance_free(p_rid);
+	else if (GLES3::LightStorage::owns_light_instance(p_rid)) {
+		GLES3::LightStorage::light_instance_free(p_rid);
 	}
 	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
 		// not much to delete, just free it
@@ -5535,19 +5524,19 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 	// Scene Shader
 	GLES3::MaterialStorage::shaders->scene_shader.version_free(
 		scene_globals.shader_default_version);
-	RS::material_storage->material_free(scene_globals.default_material);
-	RS::material_storage->shader_free(scene_globals.default_shader);
+	GLES3::MaterialStorage::material_free(scene_globals.default_material);
+	GLES3::MaterialStorage::shader_free(scene_globals.default_shader);
 
 	// Overdraw Shader
-	RS::material_storage->material_free(scene_globals.overdraw_material);
-	RS::material_storage->shader_free(scene_globals.overdraw_shader);
+	GLES3::MaterialStorage::material_free(scene_globals.overdraw_material);
+	GLES3::MaterialStorage::shader_free(scene_globals.overdraw_shader);
 
 	// Sky Shader
 	GLES3::MaterialStorage::shaders->sky_shader.version_free(sky_globals.shader_default_version);
-	RS::material_storage->material_free(sky_globals.default_material);
-	RS::material_storage->shader_free(sky_globals.default_shader);
-	RS::material_storage->material_free(sky_globals.fog_material);
-	RS::material_storage->shader_free(sky_globals.fog_shader);
+	GLES3::MaterialStorage::material_free(sky_globals.default_material);
+	GLES3::MaterialStorage::shader_free(sky_globals.default_shader);
+	GLES3::MaterialStorage::material_free(sky_globals.fog_material);
+	GLES3::MaterialStorage::shader_free(sky_globals.fog_shader);
 	GLES3::Utilities::buffer_free_data(sky_globals.screen_triangle);
 	glDeleteVertexArrays(1, &sky_globals.screen_triangle_array);
 	GLES3::Utilities::buffer_free_data(sky_globals.directional_light_buffer);

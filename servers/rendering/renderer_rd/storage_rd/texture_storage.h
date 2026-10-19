@@ -43,7 +43,6 @@
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
-#include "servers/rendering/storage/texture_storage.h"
 #include "servers/rendering/storage/utilities.h"
 
 namespace RendererRD
@@ -324,7 +323,7 @@ public:
 		Overridden overridden;
 
 		uint32_t view_count = 1;
-		Size2i velocity_target_size;
+		static inline Size2i velocity_target_size;
 
 		RSE::ViewportVRSMode vrs_mode = RSE::VIEWPORT_VRS_DISABLED;
 		RSE::ViewportVRSUpdateMode vrs_update_mode = RSE::VIEWPORT_VRS_UPDATE_ONCE;
@@ -494,6 +493,9 @@ public:
 	static inline RID_Owner<DecalInstance> decal_instance_owner;
 
 	static inline RID default_rd_textures[DEFAULT_RD_TEXTURE_MAX];
+	static inline Color default_clear_color = Color(0, 0, 0, 1);
+	static inline void set_default_clear_color(const Color &p_color) { default_clear_color = p_color; }
+	static inline Color get_default_clear_color() { return default_clear_color; }
 
 	TextureStorage() = delete;
 	TextureStorage(const TextureStorage&) = delete;
@@ -795,8 +797,13 @@ public:
 	static RID render_target_get_texture(RID p_render_target);
 
 	static void render_target_set_velocity_target_size(
-		RID p_render_target, const Size2i& p_target_size);
-	static Size2i render_target_get_velocity_target_size(RID p_render_target);
+		RID p_render_target, const Size2i& p_target_size)
+	{}
+
+	static Size2i render_target_get_velocity_target_size(RID p_render_target)
+	{
+		return RenderTarget::velocity_target_size;
+	}
 
 	static RenderTarget* get_render_target(RID p_rid)
 	{

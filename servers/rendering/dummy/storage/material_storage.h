@@ -153,7 +153,7 @@ public:
 	}
 
 	static void material_get_instance_shader_parameters(
-		RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters);
+		RID p_material, List<InstanceShaderParam>* r_parameters);
 
 	static void material_update_dependency(RID p_material, DependencyTracker* p_instance)
 	{

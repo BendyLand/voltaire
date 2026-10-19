@@ -1773,7 +1773,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const StringName& p_name)
 {
 	RSE::GlobalShaderParameterType gvt =
-		RS::material_storage->global_shader_parameter_get_type(p_name);
+		RendererMaterialStorage::global_shader_parameter_get_type(p_name);
 	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 

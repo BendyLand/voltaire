@@ -1240,7 +1240,7 @@ ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
 	}
 }
 
-MaterialStorage::ShaderData* ParticlesStorage::_create_particles_shader_func()
+RendererRD::MaterialStorage::ShaderData* ParticlesStorage::_create_particles_shader_func()
 {
 	ParticlesShaderData* shader_data = memnew(ParticlesShaderData);
 	return shader_data;
@@ -1251,7 +1251,7 @@ ParticlesStorage::ParticleProcessMaterialData::~ParticleProcessMaterialData()
 	free_parameters_uniform_set(uniform_set);
 }
 
-MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func(
+RendererRD::MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func(
 	ParticlesShaderData* p_shader)
 {
 	ParticleProcessMaterialData* material_data = memnew(ParticleProcessMaterialData);
@@ -1259,8 +1259,6 @@ MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func
 	// update will happen later anyway so do nothing.
 	return material_data;
 }
-
-////////
 
 /* PARTICLES COLLISION API */
 

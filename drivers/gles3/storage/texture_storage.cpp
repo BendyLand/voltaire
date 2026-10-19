@@ -52,7 +52,7 @@ static const GLenum _cube_side_enum[6] = {
 
 // Has to be a separate call from TextureStorage initialization due to interacting with
 // MaterialStorage
-void TextureStorage::_tex_blit_shader_initialize()
+void GLES3::TextureStorage::_tex_blit_shader_initialize()
 {
 	{
 		String global_defines;
@@ -128,9 +128,9 @@ void blit() {
 	tex_blit_shader.initialized = true;
 }
 
-// Has to be a separate call from TextureStorage destruction due to interacting with Material
+// Has to be a separate call from GLES3::TextureStorage destruction due to interacting with Material
 // Storage
-void TextureStorage::_tex_blit_shader_free()
+void GLES3::TextureStorage::_tex_blit_shader_free()
 {
 	if (tex_blit_shader.initialized) {
 		glDeleteFramebuffers(1, &tex_blit_fbo);
@@ -143,16 +143,16 @@ void TextureStorage::_tex_blit_shader_free()
 
 /* Canvas Texture API */
 
-RID TextureStorage::canvas_texture_allocate() { return canvas_texture_owner.allocate_rid(); }
+RID GLES3::TextureStorage::canvas_texture_allocate() { return canvas_texture_owner.allocate_rid(); }
 
-void TextureStorage::canvas_texture_initialize(RID p_rid)
+void GLES3::TextureStorage::canvas_texture_initialize(RID p_rid)
 {
 	canvas_texture_owner.initialize_rid(p_rid);
 }
 
-void TextureStorage::canvas_texture_free(RID p_rid) { canvas_texture_owner.free(p_rid); }
+void GLES3::TextureStorage::canvas_texture_free(RID p_rid) { canvas_texture_owner.free(p_rid); }
 
-void TextureStorage::canvas_texture_set_channel(
+void GLES3::TextureStorage::canvas_texture_set_channel(
 	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -171,7 +171,7 @@ void TextureStorage::canvas_texture_set_channel(
 	}
 }
 
-void TextureStorage::canvas_texture_set_shading_parameters(
+void GLES3::TextureStorage::canvas_texture_set_shading_parameters(
 	RID p_canvas_texture, const Color& p_specular_color, float p_shininess)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -183,7 +183,7 @@ void TextureStorage::canvas_texture_set_shading_parameters(
 	ct->specular_color.a = p_shininess;
 }
 
-void TextureStorage::canvas_texture_set_texture_filter(
+void GLES3::TextureStorage::canvas_texture_set_texture_filter(
 	RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -192,7 +192,7 @@ void TextureStorage::canvas_texture_set_texture_filter(
 	ct->texture_filter = p_filter;
 }
 
-void TextureStorage::canvas_texture_set_texture_repeat(
+void GLES3::TextureStorage::canvas_texture_set_texture_repeat(
 	RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -489,7 +489,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 	return OK;
 }
 
-Ref<Image> TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_image,
+Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_image,
 	Image::Format p_format, Image::Format& r_real_format, GLenum& r_gl_format,
 	GLenum& r_gl_internal_format, GLenum& r_gl_type, bool& r_compressed, bool p_force_decompress)
 {
@@ -796,9 +796,9 @@ Ref<Image> TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_image,
 	return p_image;
 }
 
-RID TextureStorage::texture_allocate() { return texture_owner.allocate_rid(); }
+RID GLES3::TextureStorage::texture_allocate() { return texture_owner.allocate_rid(); }
 
-void TextureStorage::texture_free(RID p_texture)
+void GLES3::TextureStorage::texture_free(RID p_texture)
 {
 	Texture* t = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(t);
@@ -835,7 +835,7 @@ void TextureStorage::texture_free(RID p_texture)
 	texture_owner.free(p_texture);
 }
 
-void TextureStorage::texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+void GLES3::TextureStorage::texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
 {
 	ERR_FAIL_COND(p_image.is_null());
 
@@ -860,7 +860,7 @@ void TextureStorage::texture_2d_initialize(RID p_texture, const Ref<Image>& p_im
 	texture_set_data(p_texture, p_image);
 }
 
-void TextureStorage::texture_external_initialize(
+void GLES3::TextureStorage::texture_external_initialize(
 	RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 {
 	Texture texture;
@@ -908,7 +908,7 @@ void TextureStorage::texture_external_initialize(
 	glBindTexture(texture.target, 0);
 }
 
-void TextureStorage::texture_2d_layered_initialize(
+void GLES3::TextureStorage::texture_2d_layered_initialize(
 	RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
 {
 	ERR_FAIL_COND(p_layers.is_empty());
@@ -970,7 +970,7 @@ void TextureStorage::texture_2d_layered_initialize(
 	}
 }
 
-void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
+void GLES3::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
 	int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
 	ERR_FAIL_COND(p_data.is_empty());
@@ -1018,7 +1018,7 @@ void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format
 
 // Called internally when texture_proxy_create(p_base) is called.
 // Note: p_base is the root and p_texture is the proxy.
-void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
+void GLES3::TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
 {
 	Texture* texture = texture_owner.get_or_null(p_base);
 	ERR_FAIL_NULL(texture);
@@ -1032,7 +1032,7 @@ void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
 	texture_owner.initialize_rid(p_texture, proxy_tex);
 }
 
-void TextureStorage::texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+void GLES3::TextureStorage::texture_drawable_initialize(RID p_texture, int p_width, int p_height,
 	RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_with_mipmaps)
 {
 	// Behaves identically to Texture_2D_Initialize by generating a white image based on parameters.
@@ -1085,7 +1085,7 @@ void TextureStorage::texture_drawable_initialize(RID p_texture, int p_width, int
 	texture_set_data(p_texture, image);
 }
 
-RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
+RID GLES3::TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth,
 	int p_layers, RSE::TextureLayeredType p_layered_type)
 {
@@ -1119,7 +1119,7 @@ RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	return texture_owner.make_rid(texture);
 }
 
-void TextureStorage::texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer)
+void GLES3::TextureStorage::texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer)
 {
 	texture_set_data(p_texture, p_image, p_layer);
 
@@ -1132,7 +1132,7 @@ void TextureStorage::texture_2d_update(RID p_texture, const Ref<Image>& p_image,
 #endif
 }
 
-void TextureStorage::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
+void GLES3::TextureStorage::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -1148,7 +1148,7 @@ void TextureStorage::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& 
 	GLES3::Utilities::texture_resize_data(tex->tex_id, tex->total_data_size);
 }
 
-void TextureStorage::texture_external_update(
+void GLES3::TextureStorage::texture_external_update(
 	RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
@@ -1167,7 +1167,7 @@ void TextureStorage::texture_external_update(
 #endif
 }
 
-void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
+void GLES3::TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -1193,7 +1193,7 @@ void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 	proxy_to->proxies.push_back(p_texture);
 }
 
-void TextureStorage::texture_remap_proxies(RID p_from_texture, RID p_to_texture)
+void GLES3::TextureStorage::texture_remap_proxies(RID p_from_texture, RID p_to_texture)
 {
 	Texture* from_tex = texture_owner.get_or_null(p_from_texture);
 	ERR_FAIL_NULL(from_tex);
@@ -1219,12 +1219,12 @@ void TextureStorage::texture_remap_proxies(RID p_from_texture, RID p_to_texture)
 	}
 }
 
-void TextureStorage::texture_2d_placeholder_initialize(RID p_texture)
+void GLES3::TextureStorage::texture_2d_placeholder_initialize(RID p_texture)
 {
 	texture_2d_initialize(p_texture, texture_2d_placeholder);
 }
 
-void TextureStorage::texture_2d_layered_placeholder_initialize(
+void GLES3::TextureStorage::texture_2d_layered_placeholder_initialize(
 	RID p_texture, RSE::TextureLayeredType p_layered_type)
 {
 	if (p_layered_type == RSE::TEXTURE_LAYERED_2D_ARRAY) {
@@ -1235,12 +1235,12 @@ void TextureStorage::texture_2d_layered_placeholder_initialize(
 	}
 }
 
-void TextureStorage::texture_3d_placeholder_initialize(RID p_texture)
+void GLES3::TextureStorage::texture_3d_placeholder_initialize(RID p_texture)
 {
 	texture_3d_initialize(p_texture, Image::FORMAT_RGBA8, 4, 4, 4, false, texture_3d_placeholder);
 }
 
-Ref<Image> TextureStorage::texture_2d_get(RID p_texture)
+Ref<Image> GLES3::TextureStorage::texture_2d_get(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, Ref<Image>());
@@ -1385,7 +1385,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture)
 	return image;
 }
 
-Ref<Image> TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer)
+Ref<Image> GLES3::TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, Ref<Image>());
@@ -1460,7 +1460,7 @@ Ref<Image> TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer)
 	return image;
 }
 
-Vector<Ref<Image>> TextureStorage::_texture_3d_read_framebuffer(GLES3::Texture* p_texture)
+Vector<Ref<Image>> GLES3::TextureStorage::_texture_3d_read_framebuffer(GLES3::Texture* p_texture)
 {
 	ERR_FAIL_NULL_V(p_texture, Vector<Ref<Image>>());
 
@@ -1510,7 +1510,7 @@ Vector<Ref<Image>> TextureStorage::_texture_3d_read_framebuffer(GLES3::Texture* 
 	return ret;
 }
 
-Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture)
+Vector<Ref<Image>> GLES3::TextureStorage::texture_3d_get(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, Vector<Ref<Image>>());
@@ -1563,7 +1563,7 @@ Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture)
 	return ret;
 }
 
-void TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
+void GLES3::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
 {
 	Texture* texture = get_texture(p_texture);
 	Vector3i size = texture_get_size(p_texture);
@@ -1571,13 +1571,13 @@ void TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
 		texture->tex_id, texture->mipmaps, Rect2i(0, 0, size.x, size.y));
 }
 
-RID TextureStorage::texture_drawable_get_default_material()
+RID GLES3::TextureStorage::texture_drawable_get_default_material()
 {
 	// This should never be called before DrawableTexture stuff is initialized.
 	return tex_blit_shader.default_material;
 }
 
-void TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
+void GLES3::TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
 {
 	Texture* tex_to = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex_to);
@@ -1623,7 +1623,7 @@ void TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
 	texture_atlas_mark_dirty_on_texture(p_texture);
 }
 
-void TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p_height)
+void GLES3::TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p_height)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -1637,7 +1637,7 @@ void TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p
 	texture->height = p_height;
 }
 
-void TextureStorage::texture_set_path(RID p_texture, const String& p_path)
+void GLES3::TextureStorage::texture_set_path(RID p_texture, const String& p_path)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(texture);
@@ -1645,7 +1645,7 @@ void TextureStorage::texture_set_path(RID p_texture, const String& p_path)
 	texture->path = p_path;
 }
 
-String TextureStorage::texture_get_path(RID p_texture)
+String GLES3::TextureStorage::texture_get_path(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, "");
@@ -1653,7 +1653,7 @@ String TextureStorage::texture_get_path(RID p_texture)
 	return texture->path;
 }
 
-void TextureStorage::texture_set_detect_3d_callback(
+void GLES3::TextureStorage::texture_set_detect_3d_callback(
 	RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
@@ -1663,12 +1663,12 @@ void TextureStorage::texture_set_detect_3d_callback(
 	texture->detect_3d_callback_ud = p_userdata;
 }
 
-void TextureStorage::texture_set_detect_srgb_callback(
+void GLES3::TextureStorage::texture_set_detect_srgb_callback(
 	RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata)
 {
 }
 
-void TextureStorage::texture_set_detect_normal_callback(
+void GLES3::TextureStorage::texture_set_detect_normal_callback(
 	RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
@@ -1678,7 +1678,7 @@ void TextureStorage::texture_set_detect_normal_callback(
 	texture->detect_normal_callback_ud = p_userdata;
 }
 
-void TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
+void GLES3::TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
 	RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
@@ -1688,7 +1688,7 @@ void TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
 	texture->detect_roughness_callback_ud = p_userdata;
 }
 
-void TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info)
+void GLES3::TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info)
 {
 	for (const RID& rid : texture_owner.get_owned_list()) {
 		Texture* t = texture_owner.get_or_null(rid);
@@ -1721,7 +1721,7 @@ void TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>
 	}
 }
 
-void TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
+void GLES3::TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(texture);
@@ -1729,7 +1729,7 @@ void TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_e
 	texture->redraw_if_visible = p_enable;
 }
 
-Size2 TextureStorage::texture_size_with_proxy(RID p_texture)
+Size2 GLES3::TextureStorage::texture_size_with_proxy(RID p_texture)
 {
 	const Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, Size2());
@@ -1742,14 +1742,14 @@ Size2 TextureStorage::texture_size_with_proxy(RID p_texture)
 	}
 }
 
-void TextureStorage::texture_rd_initialize(
+void GLES3::TextureStorage::texture_rd_initialize(
 	RID p_texture, const RID& p_rd_texture, const RSE::TextureLayeredType p_layer_type)
 {
 }
 
-RID TextureStorage::texture_get_rd_texture(RID p_texture, bool p_srgb) { return RID(); }
+RID GLES3::TextureStorage::texture_get_rd_texture(RID p_texture, bool p_srgb) { return RID(); }
 
-uint64_t TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb)
+uint64_t GLES3::TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb)
 {
 	const Texture* texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, 0);
@@ -1757,12 +1757,12 @@ uint64_t TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb)
 	return texture->tex_id;
 }
 
-void TextureStorage::texture_set_data(RID p_texture, const Ref<Image>& p_image, int p_layer)
+void GLES3::TextureStorage::texture_set_data(RID p_texture, const Ref<Image>& p_image, int p_layer)
 {
 	_texture_set_data(p_texture, p_image, p_layer, false);
 }
 
-void TextureStorage::_texture_set_data(
+void GLES3::TextureStorage::_texture_set_data(
 	RID p_texture, const Ref<Image>& p_image, int p_layer, bool p_initialize)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
@@ -1884,7 +1884,7 @@ void TextureStorage::_texture_set_data(
 	texture->mipmaps = mipmaps;
 }
 
-void TextureStorage::_texture_set_3d_data(
+void GLES3::TextureStorage::_texture_set_3d_data(
 	RID p_texture, const Vector<Ref<Image>>& p_data, bool p_initialize)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
@@ -1972,7 +1972,7 @@ void TextureStorage::_texture_set_3d_data(
 #endif
 }
 
-void TextureStorage::_texture_set_swizzle(GLES3::Texture* p_texture, Image::Format p_real_format)
+void GLES3::TextureStorage::_texture_set_swizzle(GLES3::Texture* p_texture, Image::Format p_real_format)
 {
 #ifndef WEB_ENABLED
 	switch (p_texture->format) {
@@ -2028,7 +2028,7 @@ void TextureStorage::_texture_set_swizzle(GLES3::Texture* p_texture, Image::Form
 #endif // WEB_ENABLED
 }
 
-Image::Format TextureStorage::texture_get_format(RID p_texture)
+Image::Format GLES3::TextureStorage::texture_get_format(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2037,7 +2037,7 @@ Image::Format TextureStorage::texture_get_format(RID p_texture)
 	return texture->format;
 }
 
-uint32_t TextureStorage::texture_get_texid(RID p_texture)
+uint32_t GLES3::TextureStorage::texture_get_texid(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2046,7 +2046,7 @@ uint32_t TextureStorage::texture_get_texid(RID p_texture)
 	return texture->tex_id;
 }
 
-Vector3i TextureStorage::texture_get_size(RID p_texture)
+Vector3i GLES3::TextureStorage::texture_get_size(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2055,7 +2055,7 @@ Vector3i TextureStorage::texture_get_size(RID p_texture)
 	return Vector3i(texture->width, texture->height, texture->depth);
 }
 
-uint32_t TextureStorage::texture_get_width(RID p_texture)
+int GLES3::TextureStorage::texture_get_width(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2064,7 +2064,7 @@ uint32_t TextureStorage::texture_get_width(RID p_texture)
 	return texture->width;
 }
 
-uint32_t TextureStorage::texture_get_height(RID p_texture)
+int GLES3::TextureStorage::texture_get_height(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2073,7 +2073,7 @@ uint32_t TextureStorage::texture_get_height(RID p_texture)
 	return texture->height;
 }
 
-uint32_t TextureStorage::texture_get_depth(RID p_texture)
+int GLES3::TextureStorage::texture_get_depth(RID p_texture)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2082,7 +2082,7 @@ uint32_t TextureStorage::texture_get_depth(RID p_texture)
 	return texture->depth;
 }
 
-void TextureStorage::texture_bind(RID p_texture, uint32_t p_texture_no)
+void GLES3::TextureStorage::texture_bind(RID p_texture, uint32_t p_texture_no)
 {
 	Texture* texture = texture_owner.get_or_null(p_texture);
 
@@ -2094,7 +2094,7 @@ void TextureStorage::texture_bind(RID p_texture, uint32_t p_texture_no)
 
 /* TEXTURE ATLAS API */
 
-void TextureStorage::texture_add_to_texture_atlas(RID p_texture)
+void GLES3::TextureStorage::texture_add_to_texture_atlas(RID p_texture)
 {
 	if (!texture_atlas.textures.has(p_texture)) {
 		TextureAtlas::Texture t;
@@ -2108,7 +2108,7 @@ void TextureStorage::texture_add_to_texture_atlas(RID p_texture)
 	}
 }
 
-void TextureStorage::texture_remove_from_texture_atlas(RID p_texture)
+void GLES3::TextureStorage::texture_remove_from_texture_atlas(RID p_texture)
 {
 	TextureAtlas::Texture* t = texture_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
@@ -2119,14 +2119,14 @@ void TextureStorage::texture_remove_from_texture_atlas(RID p_texture)
 	}
 }
 
-void TextureStorage::texture_atlas_mark_dirty_on_texture(RID p_texture)
+void GLES3::TextureStorage::texture_atlas_mark_dirty_on_texture(RID p_texture)
 {
 	if (texture_atlas.textures.has(p_texture)) {
 		texture_atlas.dirty = true; // Mark it dirty since it was most likely modified.
 	}
 }
 
-void TextureStorage::texture_atlas_remove_texture(RID p_texture)
+void GLES3::TextureStorage::texture_atlas_remove_texture(RID p_texture)
 {
 	if (texture_atlas.textures.has(p_texture)) {
 		texture_atlas.textures.erase(p_texture);
@@ -2135,9 +2135,9 @@ void TextureStorage::texture_atlas_remove_texture(RID p_texture)
 	}
 }
 
-GLuint TextureStorage::texture_atlas_get_texture() { return texture_atlas.texture; }
+GLuint GLES3::TextureStorage::texture_atlas_get_texture() { return texture_atlas.texture; }
 
-void TextureStorage::update_texture_atlas()
+void GLES3::TextureStorage::update_texture_atlas()
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
 	ERR_FAIL_NULL(copy_effects);
@@ -2316,36 +2316,36 @@ void TextureStorage::update_texture_atlas()
 
 /* DECAL API */
 
-RID TextureStorage::decal_allocate() { return RID(); }
+RID GLES3::TextureStorage::decal_allocate() { return RID(); }
 
-void TextureStorage::decal_initialize(RID p_rid) {}
+void GLES3::TextureStorage::decal_initialize(RID p_rid) {}
 
-void TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size) {}
+void GLES3::TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size) {}
 
-void TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture) {}
+void GLES3::TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture) {}
 
-void TextureStorage::decal_set_emission_energy(RID p_decal, float p_energy) {}
+void GLES3::TextureStorage::decal_set_emission_energy(RID p_decal, float p_energy) {}
 
-void TextureStorage::decal_set_albedo_mix(RID p_decal, float p_mix) {}
+void GLES3::TextureStorage::decal_set_albedo_mix(RID p_decal, float p_mix) {}
 
-void TextureStorage::decal_set_modulate(RID p_decal, const Color& p_modulate) {}
+void GLES3::TextureStorage::decal_set_modulate(RID p_decal, const Color& p_modulate) {}
 
-void TextureStorage::decal_set_cull_mask(RID p_decal, uint32_t p_layers) {}
+void GLES3::TextureStorage::decal_set_cull_mask(RID p_decal, uint32_t p_layers) {}
 
-void TextureStorage::decal_set_distance_fade(
+void GLES3::TextureStorage::decal_set_distance_fade(
 	RID p_decal, bool p_enabled, float p_begin, float p_length)
 {
 }
 
-void TextureStorage::decal_set_fade(RID p_decal, float p_above, float p_below) {}
+void GLES3::TextureStorage::decal_set_fade(RID p_decal, float p_above, float p_below) {}
 
-void TextureStorage::decal_set_normal_fade(RID p_decal, float p_fade) {}
+void GLES3::TextureStorage::decal_set_normal_fade(RID p_decal, float p_fade) {}
 
-AABB TextureStorage::decal_get_aabb(RID p_decal) { return AABB(); }
+AABB GLES3::TextureStorage::decal_get_aabb(RID p_decal) { return AABB(); }
 
 /* RENDER TARGET API */
 
-void TextureStorage::_update_render_target_color(RenderTarget* rt)
+void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 {
 	// do not allocate a render target with no size
 	if (rt->size.x <= 0 || rt->size.y <= 0) {
@@ -2542,7 +2542,7 @@ void TextureStorage::_update_render_target_color(RenderTarget* rt)
 	glBindFramebuffer(GL_FRAMEBUFFER, system_fbo);
 }
 
-void TextureStorage::_update_render_target_velocity(RenderTarget* rt)
+void GLES3::TextureStorage::_update_render_target_velocity(RenderTarget* rt)
 {
 	GLuint new_velocity_fbo;
 	glGenFramebuffers(1, &new_velocity_fbo);
@@ -2605,7 +2605,7 @@ void TextureStorage::_update_render_target_velocity(RenderTarget* rt)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
+void GLES3::TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 {
 	ERR_FAIL_COND_MSG(
 		rt->backbuffer_fbo != 0, "Cannot allocate RenderTarget backbuffer: already initialized.");
@@ -2668,7 +2668,7 @@ void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-void TextureStorage::_clear_render_target(RenderTarget* rt)
+void GLES3::TextureStorage::_clear_render_target(RenderTarget* rt)
 {
 	// there is nothing else to clear when DIRECT_TO_SCREEN is used
 	if (rt->direct_to_screen) {
@@ -2754,7 +2754,7 @@ void TextureStorage::_clear_render_target(RenderTarget* rt)
 	_render_target_clear_sdf(rt);
 }
 
-RID TextureStorage::render_target_create()
+RID GLES3::TextureStorage::render_target_create()
 {
 	RenderTarget render_target;
 	render_target.used_in_frame = false;
@@ -2770,7 +2770,7 @@ RID TextureStorage::render_target_create()
 	return render_target_owner.make_rid(render_target);
 }
 
-void TextureStorage::render_target_free(RID p_rid)
+void GLES3::TextureStorage::render_target_free(RID p_rid)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_rid);
 	_clear_render_target(rt);
@@ -2786,7 +2786,7 @@ void TextureStorage::render_target_free(RID p_rid)
 	render_target_owner.free(p_rid);
 }
 
-void TextureStorage::render_target_set_position(RID p_render_target, int p_x, int p_y)
+void GLES3::TextureStorage::render_target_set_position(RID p_render_target, int p_x, int p_y)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2794,7 +2794,7 @@ void TextureStorage::render_target_set_position(RID p_render_target, int p_x, in
 	rt->position = Point2i(p_x, p_y);
 }
 
-Point2i TextureStorage::render_target_get_position(RID p_render_target)
+Point2i GLES3::TextureStorage::render_target_get_position(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Point2i());
@@ -2802,7 +2802,7 @@ Point2i TextureStorage::render_target_get_position(RID p_render_target)
 	return rt->position;
 }
 
-void TextureStorage::render_target_set_size(
+void GLES3::TextureStorage::render_target_set_size(
 	RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -2824,7 +2824,7 @@ void TextureStorage::render_target_set_size(
 }
 
 // TODO: convert to Size2i internally
-Size2i TextureStorage::render_target_get_size(RID p_render_target)
+Size2i GLES3::TextureStorage::render_target_get_size(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Size2i());
@@ -2832,7 +2832,7 @@ Size2i TextureStorage::render_target_get_size(RID p_render_target)
 	return rt->size;
 }
 
-void TextureStorage::render_target_set_override(RID p_render_target, RID p_color_texture,
+void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID p_color_texture,
 	RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -2939,7 +2939,7 @@ void TextureStorage::render_target_set_override(RID p_render_target, RID p_color
 	}
 }
 
-RID TextureStorage::render_target_get_override_color(RID p_render_target)
+RID GLES3::TextureStorage::render_target_get_override_color(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2947,7 +2947,7 @@ RID TextureStorage::render_target_get_override_color(RID p_render_target)
 	return rt->overridden.color;
 }
 
-RID TextureStorage::render_target_get_override_depth(RID p_render_target)
+RID GLES3::TextureStorage::render_target_get_override_depth(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2955,7 +2955,7 @@ RID TextureStorage::render_target_get_override_depth(RID p_render_target)
 	return rt->overridden.depth;
 }
 
-RID TextureStorage::render_target_get_override_velocity(RID p_render_target)
+RID GLES3::TextureStorage::render_target_get_override_velocity(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2963,7 +2963,7 @@ RID TextureStorage::render_target_get_override_velocity(RID p_render_target)
 	return rt->overridden.velocity;
 }
 
-RID TextureStorage::render_target_get_override_velocity_depth(RID p_render_target)
+RID GLES3::TextureStorage::render_target_get_override_velocity_depth(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2971,7 +2971,7 @@ RID TextureStorage::render_target_get_override_velocity_depth(RID p_render_targe
 	return rt->overridden.velocity_depth;
 }
 
-void TextureStorage::render_target_set_render_region(
+void GLES3::TextureStorage::render_target_set_render_region(
 	RID p_render_target, const Rect2i& p_render_region)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -2980,7 +2980,7 @@ void TextureStorage::render_target_set_render_region(
 	rt->render_region = p_render_region;
 }
 
-Rect2i TextureStorage::render_target_get_render_region(RID p_render_target)
+Rect2i GLES3::TextureStorage::render_target_get_render_region(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Rect2i());
@@ -2988,7 +2988,7 @@ Rect2i TextureStorage::render_target_get_render_region(RID p_render_target)
 	return rt->render_region;
 }
 
-RID TextureStorage::render_target_get_texture(RID p_render_target)
+RID GLES3::TextureStorage::render_target_get_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3000,7 +3000,7 @@ RID TextureStorage::render_target_get_texture(RID p_render_target)
 	return rt->texture;
 }
 
-void TextureStorage::render_target_set_velocity_target_size(
+void GLES3::TextureStorage::render_target_set_velocity_target_size(
 	RID p_render_target, const Size2i& p_target_size)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3009,7 +3009,7 @@ void TextureStorage::render_target_set_velocity_target_size(
 	rt->velocity_target_size = p_target_size;
 }
 
-Size2i TextureStorage::render_target_get_velocity_target_size(RID p_render_target)
+Size2i GLES3::TextureStorage::render_target_get_velocity_target_size(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Size2i(0, 0));
@@ -3017,7 +3017,7 @@ Size2i TextureStorage::render_target_get_velocity_target_size(RID p_render_targe
 	return rt->velocity_target_size;
 }
 
-void TextureStorage::render_target_set_transparent(RID p_render_target, bool p_transparent)
+void GLES3::TextureStorage::render_target_set_transparent(RID p_render_target, bool p_transparent)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3030,7 +3030,7 @@ void TextureStorage::render_target_set_transparent(RID p_render_target, bool p_t
 	}
 }
 
-bool TextureStorage::render_target_get_transparent(RID p_render_target)
+bool GLES3::TextureStorage::render_target_get_transparent(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3038,7 +3038,7 @@ bool TextureStorage::render_target_get_transparent(RID p_render_target)
 	return rt->is_transparent;
 }
 
-void TextureStorage::render_target_set_direct_to_screen(
+void GLES3::TextureStorage::render_target_set_direct_to_screen(
 	RID p_render_target, bool p_direct_to_screen)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3060,7 +3060,7 @@ void TextureStorage::render_target_set_direct_to_screen(
 	_update_render_target_color(rt);
 }
 
-bool TextureStorage::render_target_get_direct_to_screen(RID p_render_target)
+bool GLES3::TextureStorage::render_target_get_direct_to_screen(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3068,7 +3068,7 @@ bool TextureStorage::render_target_get_direct_to_screen(RID p_render_target)
 	return rt->direct_to_screen;
 }
 
-bool TextureStorage::render_target_was_used(RID p_render_target)
+bool GLES3::TextureStorage::render_target_was_used(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3076,7 +3076,7 @@ bool TextureStorage::render_target_was_used(RID p_render_target)
 	return rt->used_in_frame;
 }
 
-void TextureStorage::render_target_clear_used(RID p_render_target)
+void GLES3::TextureStorage::render_target_clear_used(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3084,7 +3084,7 @@ void TextureStorage::render_target_clear_used(RID p_render_target)
 	rt->used_in_frame = false;
 }
 
-void TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+void GLES3::TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3102,7 +3102,7 @@ void TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMS
 	}
 }
 
-RSE::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target)
+RSE::ViewportMSAA GLES3::TextureStorage::render_target_get_msaa(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_MSAA_DISABLED);
@@ -3110,7 +3110,7 @@ RSE::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target)
 	return rt->msaa;
 }
 
-void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d)
+void GLES3::TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3126,7 +3126,7 @@ void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_h
 	}
 }
 
-bool TextureStorage::render_target_is_using_hdr(RID p_render_target)
+bool GLES3::TextureStorage::render_target_is_using_hdr(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3134,7 +3134,7 @@ bool TextureStorage::render_target_is_using_hdr(RID p_render_target)
 	return rt->hdr;
 }
 
-GLuint TextureStorage::render_target_get_color_internal_format(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_color_internal_format(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, GL_RGBA8);
@@ -3142,7 +3142,7 @@ GLuint TextureStorage::render_target_get_color_internal_format(RID p_render_targ
 	return rt->color_internal_format;
 }
 
-GLuint TextureStorage::render_target_get_color_format(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_color_format(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, GL_RGBA);
@@ -3150,7 +3150,7 @@ GLuint TextureStorage::render_target_get_color_format(RID p_render_target)
 	return rt->color_format;
 }
 
-GLuint TextureStorage::render_target_get_color_type(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_color_type(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, GL_UNSIGNED_BYTE);
@@ -3158,7 +3158,7 @@ GLuint TextureStorage::render_target_get_color_type(RID p_render_target)
 	return rt->color_type;
 }
 
-uint32_t TextureStorage::render_target_get_color_format_size(RID p_render_target)
+uint32_t GLES3::TextureStorage::render_target_get_color_format_size(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 4);
@@ -3166,7 +3166,7 @@ uint32_t TextureStorage::render_target_get_color_format_size(RID p_render_target
 	return rt->color_format_size;
 }
 
-void TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color)
+void GLES3::TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3174,28 +3174,28 @@ void TextureStorage::render_target_request_clear(RID p_render_target, const Colo
 	rt->clear_color = p_clear_color;
 }
 
-bool TextureStorage::render_target_is_clear_requested(RID p_render_target)
+bool GLES3::TextureStorage::render_target_is_clear_requested(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
 	return rt->clear_requested;
 }
 
-Color TextureStorage::render_target_get_clear_request_color(RID p_render_target)
+Color GLES3::TextureStorage::render_target_get_clear_request_color(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Color());
 	return rt->clear_color;
 }
 
-void TextureStorage::render_target_disable_clear_request(RID p_render_target)
+void GLES3::TextureStorage::render_target_disable_clear_request(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 	rt->clear_requested = false;
 }
 
-void TextureStorage::render_target_do_clear_request(RID p_render_target)
+void GLES3::TextureStorage::render_target_do_clear_request(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3209,7 +3209,7 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target)
 	glBindFramebuffer(GL_FRAMEBUFFER, system_fbo);
 }
 
-GLuint TextureStorage::render_target_get_fbo(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_fbo(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
@@ -3217,7 +3217,7 @@ GLuint TextureStorage::render_target_get_fbo(RID p_render_target)
 	return rt->fbo;
 }
 
-GLuint TextureStorage::render_target_get_color(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_color(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
@@ -3233,7 +3233,7 @@ GLuint TextureStorage::render_target_get_color(RID p_render_target)
 	}
 }
 
-GLuint TextureStorage::render_target_get_depth(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_depth(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
@@ -3249,7 +3249,7 @@ GLuint TextureStorage::render_target_get_depth(RID p_render_target)
 	}
 }
 
-bool TextureStorage::render_target_get_depth_has_stencil(RID p_render_target)
+bool GLES3::TextureStorage::render_target_get_depth_has_stencil(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3257,7 +3257,7 @@ bool TextureStorage::render_target_get_depth_has_stencil(RID p_render_target)
 	return rt->depth_has_stencil;
 }
 
-void TextureStorage::render_target_set_reattach_textures(
+void GLES3::TextureStorage::render_target_set_reattach_textures(
 	RID p_render_target, bool p_reattach_textures)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3266,7 +3266,7 @@ void TextureStorage::render_target_set_reattach_textures(
 	rt->reattach_textures = p_reattach_textures;
 }
 
-bool TextureStorage::render_target_is_reattach_textures(RID p_render_target)
+bool GLES3::TextureStorage::render_target_is_reattach_textures(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3274,7 +3274,7 @@ bool TextureStorage::render_target_is_reattach_textures(RID p_render_target)
 	return rt->reattach_textures;
 }
 
-void TextureStorage::render_target_set_sdf_size_and_scale(
+void GLES3::TextureStorage::render_target_set_sdf_size_and_scale(
 	RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3289,7 +3289,7 @@ void TextureStorage::render_target_set_sdf_size_and_scale(
 	_render_target_clear_sdf(rt);
 }
 
-Rect2i TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt)
+Rect2i GLES3::TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt)
 {
 	Size2i margin;
 	int scale;
@@ -3321,7 +3321,7 @@ Rect2i TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt)
 	return r;
 }
 
-Rect2i TextureStorage::render_target_get_sdf_rect(RID p_render_target)
+Rect2i GLES3::TextureStorage::render_target_get_sdf_rect(RID p_render_target)
 {
 	const RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Rect2i());
@@ -3329,7 +3329,7 @@ Rect2i TextureStorage::render_target_get_sdf_rect(RID p_render_target)
 	return _render_target_get_sdf_rect(rt);
 }
 
-void TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
+void GLES3::TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3337,7 +3337,7 @@ void TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_
 	rt->sdf_enabled = p_enabled;
 }
 
-bool TextureStorage::render_target_is_sdf_enabled(RID p_render_target)
+bool GLES3::TextureStorage::render_target_is_sdf_enabled(RID p_render_target)
 {
 	const RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3345,7 +3345,7 @@ bool TextureStorage::render_target_is_sdf_enabled(RID p_render_target)
 	return rt->sdf_enabled;
 }
 
-GLuint TextureStorage::render_target_get_sdf_texture(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
@@ -3357,7 +3357,7 @@ GLuint TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 	return rt->sdf_texture_read;
 }
 
-void TextureStorage::_render_target_allocate_sdf(RenderTarget* rt)
+void GLES3::TextureStorage::_render_target_allocate_sdf(RenderTarget* rt)
 {
 	ERR_FAIL_COND(rt->sdf_texture_write_fb != 0);
 
@@ -3441,7 +3441,7 @@ void TextureStorage::_render_target_allocate_sdf(RenderTarget* rt)
 		rt->process_size.width * rt->process_size.height * 4, "SDF texture (read)");
 }
 
-void TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
+void GLES3::TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
 {
 	if (rt->sdf_texture_write_fb != 0) {
 		GLES3::Utilities::texture_free_data(rt->sdf_texture_read);
@@ -3458,7 +3458,7 @@ void TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
 	}
 }
 
-GLuint TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
+GLuint GLES3::TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
@@ -3470,7 +3470,7 @@ GLuint TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
 	return rt->sdf_texture_write_fb;
 }
 
-void TextureStorage::render_target_sdf_process(RID p_render_target)
+void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
 
@@ -3601,7 +3601,7 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 	glDisable(GL_SCISSOR_TEST);
 }
 
-void TextureStorage::render_target_copy_to_back_buffer(
+void GLES3::TextureStorage::render_target_copy_to_back_buffer(
 	RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3642,7 +3642,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 	glEnable(GL_BLEND); // 2D starts with blend enabled.
 }
 
-void TextureStorage::render_target_clear_back_buffer(
+void GLES3::TextureStorage::render_target_clear_back_buffer(
 	RID p_render_target, const Rect2i& p_region, const Color& p_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3670,7 +3670,7 @@ void TextureStorage::render_target_clear_back_buffer(
 	}
 }
 
-void TextureStorage::render_target_gen_back_buffer_mipmaps(
+void GLES3::TextureStorage::render_target_gen_back_buffer_mipmaps(
 	RID p_render_target, const Rect2i& p_region)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3698,7 +3698,7 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 	glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
 }
 
-String TextureStorage::get_framebuffer_error(GLenum p_status)
+String GLES3::TextureStorage::get_framebuffer_error(GLenum p_status)
 {
 	switch (p_status) {
 	case GL_FRAMEBUFFER_COMPLETE:
@@ -3718,44 +3718,42 @@ String TextureStorage::get_framebuffer_error(GLenum p_status)
 
 /* Lifecycle & Defaults */
 
-void TextureStorage::initialize()
+void GLES3::TextureStorage::initialize()
 {
 	// Initialize default OpenGL textures / white / black fallback textures
 }
 
-void TextureStorage::finalize()
+void GLES3::TextureStorage::finalize()
 {
 	// Free default GL textures and owners
 }
 
-Color TextureStorage::get_default_clear_color() { return Color(0, 0, 0, 1); }
-
-RID TextureStorage::texture_gl_get_default(DefaultGLTexture p_texture)
+RID GLES3::TextureStorage::texture_gl_get_default(DefaultGLTexture p_texture)
 {
 	ERR_FAIL_INDEX_V(p_texture, DEFAULT_GL_TEXTURE_MAX, RID());
 	return default_gl_textures[p_texture];
 }
 
-void TextureStorage::render_target_set_as_unused(RID p_render_target)
+void GLES3::TextureStorage::render_target_set_as_unused(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 	rt->was_used = false;
 }
 
-void TextureStorage::texture_initialize(RID p_texture)
+void GLES3::TextureStorage::texture_initialize(RID p_texture)
 {
 	texture_owner.initialize_rid(p_texture, Texture());
 }
 
-RID TextureStorage::texture_2d_create(const Ref<Image>& p_image)
+RID GLES3::TextureStorage::texture_2d_create(const Ref<Image>& p_image)
 {
 	RID rid = texture_allocate();
 	texture_2d_initialize(rid, p_image);
 	return rid;
 }
 
-void TextureStorage::texture_2d_initialize_from_texture(
+void GLES3::TextureStorage::texture_2d_initialize_from_texture(
 	RID p_texture, const Texture& p_from_texture)
 {
 	Texture texture = p_from_texture;
@@ -3764,21 +3762,26 @@ void TextureStorage::texture_2d_initialize_from_texture(
 
 /* Texture & Decal Atlas Helpers */
 
-Rect2 TextureStorage::texture_atlas_get_texture_rect(RID p_texture)
+Rect2 GLES3::TextureStorage::texture_atlas_get_texture_rect(RID p_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Rect2());
 	return Rect2(0, 0, 1, 1);
 }
 
-void TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+void GLES3::TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
 {
 	// Stub for GLES3 decal atlas tracking
 }
 
-void TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+void GLES3::TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp)
 {
 	// Stub for GLES3 decal atlas tracking
+}
+
+void GLES3::TextureStorage::bind_dispatch()
+{
+	RendererTextureStorage::bind<GLES3::TextureStorage>();
 }
 
 #endif // GLES3_ENABLED

@@ -37,6 +37,7 @@
 #include "servers/rendering/renderer_rd/shaders/decal_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/light_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/scene_data_inc.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
@@ -44,6 +45,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
+#include "servers/rendering/storage/light_storage.h"
 
 void get_vogel_disk(float* r_kernel, int p_sample_count)
 {
@@ -176,7 +178,7 @@ Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
 	else {
 		const float bg_energy_multiplier = RendererSceneRender::RendererSceneRender::environment_get_bg_energy_multiplier(p_env);
 		Color panorama_color = ((environment_background == RSE::ENV_BG_CLEAR_COLOR)
-									? RS::texture_storage->get_default_clear_color()
+									? RendererTextureStorage::get_default_clear_color()
 									: RendererSceneRender::RendererSceneRender::environment_get_bg_color(p_env));
 		panorama_color = panorama_color.srgb_to_linear();
 		panorama_color.r *= bg_energy_multiplier;
@@ -1280,8 +1282,6 @@ bool RendererSceneRenderRD::_debug_draw_can_use_effects(RSE::ViewportDebugDraw p
 
 void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_render_data)
 {
-	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
-
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
 	ERR_FAIL_COND(rb.is_null());
 
@@ -1290,7 +1290,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_SHADOW_ATLAS) {
 		if (p_render_data->shadow_atlas.is_valid()) {
 			RID shadow_atlas_texture =
-				RendererRD::LightStorage::get_singleton()->shadow_atlas_get_texture(
+				RendererRD::LightStorage::shadow_atlas_get_texture(
 					p_render_data->shadow_atlas);
 
 			if (shadow_atlas_texture.is_null()) {
@@ -1306,11 +1306,10 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	}
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS) {
-		if (RendererRD::LightStorage::get_singleton()
-				->directional_shadow_get_texture()
+		if (RendererRD::LightStorage::directional_shadow_get_texture()
 				.is_valid()) {
 			RID shadow_atlas_texture =
-				RendererRD::LightStorage::get_singleton()->directional_shadow_get_texture();
+				RendererRD::LightStorage::directional_shadow_get_texture();
 			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 			RID dest_fb = RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target);
 
@@ -1329,9 +1328,9 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 			// Visualize our view frustum to show coverage.
 			for (int i = 0; i < p_render_data->render_shadow_count; i++) {
 				RID light = p_render_data->render_shadows[i].light;
-				RID base = light_storage->light_instance_get_base_light(light);
+				RID base = RendererRD::LightStorage::light_instance_get_base_light(light);
 
-				if (light_storage->light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
+				if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
 					data->debug_effects->draw_shadow_frustum(light,
 						p_render_data->scene_data->cam_projection,
 						p_render_data->scene_data->cam_transform, dest_fb, Rect2(Size2(), size));
@@ -1644,7 +1643,6 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 	float p_window_output_max_value, const RenderSDFGIUpdateData* p_sdfgi_update_data,
 	RenderingServerTypes::RenderInfo* r_render_info)
 {
-	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
 	// getting this here now so we can direct call a bunch of things more easily
 	ERR_FAIL_COND(p_render_buffers.is_null());
 	Ref<RenderSceneBuffersRD> rb = p_render_buffers;
@@ -1698,12 +1696,12 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 		}
 
 		if (p_shadow_atlas.is_valid()) {
-			int shadow_atlas_size = light_storage->shadow_atlas_get_size(p_shadow_atlas);
+			int shadow_atlas_size = RendererRD::LightStorage::shadow_atlas_get_size(p_shadow_atlas);
 			scene_data.shadow_atlas_pixel_size.x = 1.0 / shadow_atlas_size;
 			scene_data.shadow_atlas_pixel_size.y = 1.0 / shadow_atlas_size;
 		}
 		{
-			int directional_shadow_size = light_storage->directional_shadow_get_size();
+			int directional_shadow_size = RendererRD::LightStorage::directional_shadow_get_size();
 			scene_data.directional_shadow_pixel_size.x = 1.0 / directional_shadow_size;
 			scene_data.directional_shadow_pixel_size.y = 1.0 / directional_shadow_size;
 		}
@@ -1719,7 +1717,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 		}
 
 		if (p_reflection_atlas.is_valid()) {
-			float border_size = light_storage->reflection_atlas_get_border_size(p_reflection_atlas);
+			float border_size = RendererRD::LightStorage::reflection_atlas_get_border_size(p_reflection_atlas);
 			scene_data.reflection_atlas_border_size.x = border_size;
 			scene_data.reflection_atlas_border_size.y = 1.0f - border_size * 2.0;
 		}
@@ -1790,7 +1788,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 			RendererRD::TextureStorage::render_target_get_clear_request_color(rb->get_render_target());
 	}
 	else {
-		clear_color = RS::texture_storage->get_default_clear_color();
+		clear_color = RendererTextureStorage::get_default_clear_color();
 	}
 
 	// calls _pre_opaque_render between depth pre-pass and opaque pass

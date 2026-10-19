@@ -253,9 +253,9 @@ _FORCE_INLINE_ static void _fill_std140_ubo_empty(
 	}
 }
 
-void MaterialStorage::ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
+void RendererRD::MaterialStorage::ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
-void MaterialStorage::ShaderData::set_default_texture_parameter(
+void RendererRD::MaterialStorage::ShaderData::set_default_texture_parameter(
 	const StringName& p_name, RID p_texture, int p_index)
 {
 	if (!p_texture.is_valid()) {
@@ -276,11 +276,11 @@ void MaterialStorage::ShaderData::set_default_texture_parameter(
 }
 
 void RendererRD::MaterialStorage::ShaderData::get_instance_param_list(
-	List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const
+	List<InstanceShaderParam>* p_param_list) const
 {
 }
 
-bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param) const
+bool RendererRD::MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param) const
 {
 	if (!uniforms.has(p_param)) {
 		return false;
@@ -290,7 +290,7 @@ bool MaterialStorage::ShaderData::is_parameter_texture(const StringName& p_param
 }
 
 RDC::PipelineColorBlendState::Attachment
-MaterialStorage::ShaderData::blend_mode_to_blend_attachment(BlendMode p_mode)
+RendererRD::MaterialStorage::ShaderData::blend_mode_to_blend_attachment(BlendMode p_mode)
 {
 	RDC::PipelineColorBlendState::Attachment attachment;
 
@@ -358,7 +358,7 @@ MaterialStorage::ShaderData::blend_mode_to_blend_attachment(BlendMode p_mode)
 	return attachment;
 }
 
-bool MaterialStorage::ShaderData::blend_mode_uses_blend_alpha(BlendMode p_mode)
+bool RendererRD::MaterialStorage::ShaderData::blend_mode_uses_blend_alpha(BlendMode p_mode)
 {
 	switch (p_mode) {
 	case BLEND_MODE_MIX:
@@ -379,7 +379,7 @@ bool MaterialStorage::ShaderData::blend_mode_uses_blend_alpha(BlendMode p_mode)
 	}
 }
 
-MaterialStorage::MaterialData::~MaterialData()
+RendererRD::MaterialStorage::MaterialData::~MaterialData()
 {
 	if (global_buffer_E) {
 		// unregister global buffers
@@ -407,7 +407,7 @@ MaterialStorage::MaterialData::~MaterialData()
 	}
 }
 
-RID MaterialStorage::MaterialData::get_default_texture_id(
+RID RendererRD::MaterialStorage::MaterialData::get_default_texture_id(
 	ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint)
 {
 	RID rd_texture;
@@ -523,7 +523,7 @@ RID MaterialStorage::MaterialData::get_default_texture_id(
 	return rd_texture;
 }
 
-void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_set)
+void RendererRD::MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_set)
 {
 	if (p_uniform_set.is_valid() && RD::uniform_set_is_valid(p_uniform_set)) {
 		RD::uniform_set_set_invalidation_callback(p_uniform_set, nullptr, nullptr);
@@ -531,50 +531,50 @@ void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_se
 	}
 }
 
-void MaterialStorage::MaterialData::set_as_used()
+void RendererRD::MaterialStorage::MaterialData::set_as_used()
 {
 	for (int i = 0; i < render_target_cache.size(); i++) {
 		render_target_cache[i]->was_used = true;
 	}
 }
 
-bool MaterialStorage::TexBlitShaderData::is_animated() const { return false; }
+bool RendererRD::MaterialStorage::TexBlitShaderData::is_animated() const { return false; }
 
-bool MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }
+bool RendererRD::MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }
 
 RenderingServerTypes::ShaderNativeSourceCode
-MaterialStorage::TexBlitShaderData::get_native_source_code() const
+RendererRD::MaterialStorage::TexBlitShaderData::get_native_source_code() const
 {
 	return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
 		version);
 }
 
-Pair<ShaderRD*, RID> MaterialStorage::TexBlitShaderData::get_native_shader_and_version() const
+Pair<ShaderRD*, RID> RendererRD::MaterialStorage::TexBlitShaderData::get_native_shader_and_version() const
 {
 	return {&TextureStorage::tex_blit_shader.shader, version};
 }
 
-MaterialStorage::TexBlitShaderData::TexBlitShaderData() { valid = false; }
+RendererRD::MaterialStorage::TexBlitShaderData::TexBlitShaderData() { valid = false; }
 
-MaterialStorage::TexBlitShaderData::~TexBlitShaderData()
+RendererRD::MaterialStorage::TexBlitShaderData::~TexBlitShaderData()
 {
 	if (version.is_valid()) {
 		TextureStorage::tex_blit_shader.shader.version_free(version);
 	}
 }
 
-MaterialStorage::ShaderData* MaterialStorage::_create_tex_blit_shader_func()
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::_create_tex_blit_shader_func()
 {
 	MaterialStorage::TexBlitShaderData* shader_data = memnew(MaterialStorage::TexBlitShaderData);
 	return shader_data;
 }
 
-MaterialStorage::TexBlitMaterialData::~TexBlitMaterialData()
+RendererRD::MaterialStorage::TexBlitMaterialData::~TexBlitMaterialData()
 {
 	free_parameters_uniform_set(uniform_set);
 }
 
-MaterialStorage::MaterialData* MaterialStorage::_create_tex_blit_material_func(
+RendererRD::MaterialStorage::MaterialData* RendererRD::MaterialStorage::_create_tex_blit_material_func(
 	MaterialStorage::ShaderData* p_shader)
 {
 	MaterialStorage::TexBlitMaterialData* material_data = memnew(TexBlitMaterialData);
@@ -630,7 +630,7 @@ bool Samplers::is_valid() const { return rids[1][1].is_valid(); }
 
 bool Samplers::is_null() const { return rids[1][1].is_null(); }
 
-bool MaterialStorage::free(RID p_rid)
+bool RendererRD::MaterialStorage::free(RID p_rid)
 {
 	if (owns_shader(p_rid)) {
 		shader_free(p_rid);
@@ -644,7 +644,7 @@ bool MaterialStorage::free(RID p_rid)
 	return false;
 }
 
-int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
+int32_t RendererRD::MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 {
 	int32_t idx = 0;
 	while (idx + p_elements <= global_shader_uniforms.buffer_size) {
@@ -672,7 +672,7 @@ int32_t MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
 	return -1;
 }
 
-void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
+void RendererRD::MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
 {
 	int32_t prev_chunk = -1;
 
@@ -689,7 +689,7 @@ void MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, 
 	}
 }
 
-void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
+void RendererRD::MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return;
@@ -707,7 +707,7 @@ void MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
 	global_shader_uniforms.variables.erase(p_name);
 }
 
-Vector<StringName> MaterialStorage::global_shader_parameter_get_list()
+Vector<StringName> RendererRD::MaterialStorage::global_shader_parameter_get_list()
 {
 	if (!Engine::is_editor_hint()) {
 		ERR_FAIL_V_MSG(Vector<StringName>(), "This function should never be used outside the "
@@ -723,7 +723,7 @@ Vector<StringName> MaterialStorage::global_shader_parameter_get_list()
 	return names;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type_internal(
+RSE::GlobalShaderParameterType RendererRD::MaterialStorage::global_shader_parameter_get_type_internal(
 	const StringName& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
@@ -733,7 +733,7 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 	return global_shader_uniforms.variables[p_name].type;
 }
 
-RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type(
+RSE::GlobalShaderParameterType RendererRD::MaterialStorage::global_shader_parameter_get_type(
 	const StringName& p_name)
 {
 	if (!Engine::is_editor_hint()) {
@@ -744,17 +744,17 @@ RSE::GlobalShaderParameterType MaterialStorage::global_shader_parameter_get_type
 	return global_shader_parameter_get_type_internal(p_name);
 }
 
-void MaterialStorage::global_shader_parameters_clear()
+void RendererRD::MaterialStorage::global_shader_parameters_clear()
 {
 	global_shader_uniforms.variables.clear(); // not right but for now enough
 }
 
-RID MaterialStorage::global_shader_uniforms_get_storage_buffer()
+RID RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer()
 {
 	return global_shader_uniforms.buffer;
 }
 
-int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
+int32_t RendererRD::MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
 {
 	ERR_FAIL_COND_V(global_shader_uniforms.instance_buffer_pos.has(p_instance), -1);
 	int32_t pos = _global_shader_uniform_allocate(ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES);
@@ -767,7 +767,7 @@ int32_t MaterialStorage::global_shader_parameters_instance_allocate(RID p_instan
 	return pos;
 }
 
-void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
+void RendererRD::MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
 {
 	ERR_FAIL_COND(!global_shader_uniforms.instance_buffer_pos.has(p_instance));
 	int32_t pos = global_shader_uniforms.instance_buffer_pos[p_instance];
@@ -777,7 +777,7 @@ void MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
 	global_shader_uniforms.instance_buffer_pos.erase(p_instance);
 }
 
-void MaterialStorage::_update_global_shader_uniforms()
+void RendererRD::MaterialStorage::_update_global_shader_uniforms()
 {
 	if (global_shader_uniforms.buffer_dirty_region_count > 0) {
 		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size /
@@ -827,9 +827,9 @@ void MaterialStorage::_update_global_shader_uniforms()
 	}
 }
 
-RID MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
+RID RendererRD::MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
 
-void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
+void RendererRD::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
 {
 	Shader shader;
 	shader.mutex = memnew(Mutex);
@@ -846,7 +846,7 @@ void MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
 	}
 }
 
-void MaterialStorage::shader_free(RID p_rid)
+void RendererRD::MaterialStorage::shader_free(RID p_rid)
 {
 	Shader* shader = shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
@@ -874,7 +874,7 @@ void MaterialStorage::shader_free(RID p_rid)
 	shader_owner.free(p_rid);
 }
 
-void MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+void RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
@@ -964,7 +964,7 @@ void MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 	}
 }
 
-void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
+void RendererRD::MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
@@ -975,14 +975,14 @@ void MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
 	}
 }
 
-String MaterialStorage::shader_get_code(RID p_shader)
+String RendererRD::MaterialStorage::shader_get_code(RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, String());
 	return shader->code;
 }
 
-void MaterialStorage::shader_set_default_texture_parameter(
+void RendererRD::MaterialStorage::shader_set_default_texture_parameter(
 	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
@@ -1018,7 +1018,7 @@ void MaterialStorage::shader_set_default_texture_parameter(
 	}
 }
 
-RID MaterialStorage::shader_get_default_texture_parameter(
+RID RendererRD::MaterialStorage::shader_get_default_texture_parameter(
 	RID p_shader, const StringName& p_name, int p_index)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
@@ -1031,21 +1031,21 @@ RID MaterialStorage::shader_get_default_texture_parameter(
 	return RID();
 }
 
-void MaterialStorage::shader_set_data_request_function(
+void RendererRD::MaterialStorage::shader_set_data_request_function(
 	ShaderType p_shader_type, ShaderDataRequestFunction p_function)
 {
 	ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
 	shader_data_request_func[p_shader_type] = p_function;
 }
 
-MaterialStorage::ShaderData* MaterialStorage::shader_get_data(RID p_shader)
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::shader_get_data(RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, nullptr);
 	return shader->data;
 }
 
-RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_source_code(
+RenderingServerTypes::ShaderNativeSourceCode RendererRD::MaterialStorage::shader_get_native_source_code(
 	RID p_shader)
 {
 	Shader* shader = shader_owner.get_or_null(p_shader);
@@ -1056,13 +1056,13 @@ RenderingServerTypes::ShaderNativeSourceCode MaterialStorage::shader_get_native_
 	return RenderingServerTypes::ShaderNativeSourceCode();
 }
 
-void MaterialStorage::shader_embedded_set_lock() { embedded_set_mutex.lock(); }
+void RendererRD::MaterialStorage::shader_embedded_set_lock() { embedded_set_mutex.lock(); }
 
-const HashSet<RID>& MaterialStorage::shader_embedded_set_get() { return embedded_set; }
+const HashSet<RID>& RendererRD::MaterialStorage::shader_embedded_set_get() { return embedded_set; }
 
-void MaterialStorage::shader_embedded_set_unlock() { embedded_set_mutex.unlock(); }
+void RendererRD::MaterialStorage::shader_embedded_set_unlock() { embedded_set_mutex.unlock(); }
 
-void MaterialStorage::_material_uniform_set_erased(void* p_material)
+void RendererRD::MaterialStorage::_material_uniform_set_erased(void* p_material)
 {
 	RID rid = *(RID*)p_material;
 	Material* material = MaterialStorage::get_material(rid);
@@ -1076,7 +1076,7 @@ void MaterialStorage::_material_uniform_set_erased(void* p_material)
 	}
 }
 
-void MaterialStorage::_material_queue_update(Material* material, bool p_uniform, bool p_texture)
+void RendererRD::MaterialStorage::_material_queue_update(Material* material, bool p_uniform, bool p_texture)
 {
 	MutexLock lock(material_update_list_mutex);
 	material->uniform_dirty = material->uniform_dirty || p_uniform;
@@ -1089,16 +1089,16 @@ void MaterialStorage::_material_queue_update(Material* material, bool p_uniform,
 	material_update_list.add(&material->update_element);
 }
 
-RID MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
+RID RendererRD::MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
 
-void MaterialStorage::material_initialize(RID p_rid)
+void RendererRD::MaterialStorage::material_initialize(RID p_rid)
 {
 	material_owner.initialize_rid(p_rid);
 	Material* material = material_owner.get_or_null(p_rid);
 	material->self = p_rid;
 }
 
-void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+void RendererRD::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1149,7 +1149,7 @@ void MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 	_material_queue_update(material, true, true);
 }
 
-MaterialStorage::ShaderData* MaterialStorage::material_get_shader_data(RID p_material)
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::material_get_shader_data(RID p_material)
 {
 	const MaterialStorage::Material* material = MaterialStorage::get_material(p_material);
 	if (material && material->shader && material->shader->data) {
@@ -1159,7 +1159,7 @@ MaterialStorage::ShaderData* MaterialStorage::material_get_shader_data(RID p_mat
 	return nullptr;
 }
 
-void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+void RendererRD::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1176,7 +1176,7 @@ void MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-void MaterialStorage::material_set_render_priority(RID p_material, int priority)
+void RendererRD::MaterialStorage::material_set_render_priority(RID p_material, int priority)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1187,7 +1187,7 @@ void MaterialStorage::material_set_render_priority(RID p_material, int priority)
 	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
 }
 
-bool MaterialStorage::material_is_animated(RID p_material)
+bool RendererRD::MaterialStorage::material_is_animated(RID p_material)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, false);
@@ -1202,7 +1202,7 @@ bool MaterialStorage::material_is_animated(RID p_material)
 	return false; // by default nothing is animated
 }
 
-bool MaterialStorage::material_casts_shadows(RID p_material)
+bool RendererRD::MaterialStorage::material_casts_shadows(RID p_material)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, true);
@@ -1241,8 +1241,8 @@ RSE::CullMode RendererRD::MaterialStorage::material_get_cull_mode(RID p_material
 	return RSE::CULL_MODE_DISABLED;
 }
 
-void MaterialStorage::material_get_instance_shader_parameters(
-	RID p_material, List<RendererMaterialStorage::InstanceShaderParam>* r_parameters)
+void RendererRD::MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<InstanceShaderParam>* r_parameters)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1255,7 +1255,7 @@ void MaterialStorage::material_get_instance_shader_parameters(
 	}
 }
 
-void MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
+void RendererRD::MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
 {
 	Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
@@ -1265,7 +1265,7 @@ void MaterialStorage::material_update_dependency(RID p_material, DependencyTrack
 	}
 }
 
-Samplers MaterialStorage::samplers_rd_allocate(
+Samplers RendererRD::MaterialStorage::samplers_rd_allocate(
 	float p_mipmap_bias, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level)
 {
 	Samplers samplers;
@@ -1353,7 +1353,7 @@ Samplers MaterialStorage::samplers_rd_allocate(
 	return samplers;
 }
 
-void MaterialStorage::samplers_rd_free(Samplers& p_samplers)
+void RendererRD::MaterialStorage::samplers_rd_free(Samplers& p_samplers)
 {
 	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
 		for (int j = 1; j < RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
@@ -1365,14 +1365,14 @@ void MaterialStorage::samplers_rd_free(Samplers& p_samplers)
 	}
 }
 
-void MaterialStorage::material_set_data_request_function(
+void RendererRD::MaterialStorage::material_set_data_request_function(
 	ShaderType p_shader_type, MaterialStorage::MaterialDataRequestFunction p_function)
 {
 	ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
 	material_data_request_func[p_shader_type] = p_function;
 }
 
-MaterialStorage::MaterialDataRequestFunction MaterialStorage::material_get_data_request_function(
+RendererRD::MaterialStorage::MaterialDataRequestFunction RendererRD::MaterialStorage::material_get_data_request_function(
 	ShaderType p_shader_type)
 {
 	ERR_FAIL_INDEX_V(p_shader_type, SHADER_TYPE_MAX, nullptr);
@@ -1385,7 +1385,7 @@ void RendererRD::MaterialStorage::TexBlitShaderData::set_code(const String& p_co
 
 void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
 
-void MaterialStorage::finalize()
+void RendererRD::MaterialStorage::finalize()
 {
 	LocalVector<RID> owned_materials = material_owner.get_owned_list();
 	for (const RID& E : owned_materials) {
@@ -1430,7 +1430,7 @@ void MaterialStorage::finalize()
     global_shader_parameters_clear();
 }
 
-void MaterialStorage::material_free(RID p_rid)
+void RendererRD::MaterialStorage::material_free(RID p_rid)
 {
 	Material* material = material_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(material);

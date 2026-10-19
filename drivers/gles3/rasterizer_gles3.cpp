@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "rasterizer_gles3.h"
+#include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
@@ -454,8 +455,8 @@ void RasterizerGLES3::initialize()
 	GLES3::Utilities::initialize();
 	GLES3::TextureStorage::initialize();
 	GLES3::MaterialStorage::initialize();
+	GLES3::LightStorage::initialize();
 	particles_storage = memnew(GLES3::ParticlesStorage);
-	light_storage = memnew(GLES3::LightStorage);
 	copy_effects = memnew(GLES3::CopyEffects);
 	cubemap_filter = memnew(GLES3::CubemapFilter);
 	glow = memnew(GLES3::Glow);
@@ -466,32 +467,7 @@ void RasterizerGLES3::initialize()
 
     canvas = memnew(RasterizerCanvasGLES3(texture_storage, material_storage));
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
-    RendererTextureStorage::render_target_create = &GLES3::TextureStorage::render_target_create;
-    RendererTextureStorage::render_target_free = &GLES3::TextureStorage::render_target_free;
-    RendererTextureStorage::render_target_set_size = &GLES3::TextureStorage::render_target_set_size;
-    RendererTextureStorage::render_target_set_transparent = &GLES3::TextureStorage::render_target_set_transparent;
-    RendererTextureStorage::render_target_set_direct_to_screen = &GLES3::TextureStorage::render_target_set_direct_to_screen;
-    RendererTextureStorage::render_target_get_texture = &GLES3::TextureStorage::render_target_get_texture;
-    RendererTextureStorage::render_target_request_clear = &GLES3::TextureStorage::render_target_request_clear;
-    RendererTextureStorage::render_target_is_clear_requested = &GLES3::TextureStorage::render_target_is_clear_requested;
-    RendererTextureStorage::render_target_get_clear_request_color = &GLES3::TextureStorage::render_target_get_clear_request_color;
-    RendererTextureStorage::render_target_do_clear_request = &GLES3::TextureStorage::render_target_do_clear_request;
-    RendererTextureStorage::render_target_was_used = &GLES3::TextureStorage::render_target_was_used;
-    RendererTextureStorage::render_target_set_as_unused = &GLES3::TextureStorage::render_target_set_as_unused;
-    RendererTextureStorage::render_target_set_msaa = &GLES3::TextureStorage::render_target_set_msaa;
-    RendererTextureStorage::render_target_set_use_hdr = &GLES3::TextureStorage::render_target_set_use_hdr;
-
-    RendererTextureStorage::texture_allocate = &GLES3::TextureStorage::texture_allocate;
-    RendererTextureStorage::texture_initialize = &GLES3::TextureStorage::texture_initialize;
-    RendererTextureStorage::texture_free = &GLES3::TextureStorage::texture_free;
-    RendererTextureStorage::texture_2d_create = &GLES3::TextureStorage::texture_2d_create;
-    RendererTextureStorage::texture_2d_initialize = &GLES3::TextureStorage::texture_2d_initialize;
-    RendererTextureStorage::texture_2d_update = &GLES3::TextureStorage::texture_2d_update;
-    RendererTextureStorage::texture_2d_get = &GLES3::TextureStorage::texture_2d_get;
-
-    RendererTextureStorage::canvas_texture_allocate = &GLES3::TextureStorage::canvas_texture_allocate;
-    RendererTextureStorage::canvas_texture_initialize = &GLES3::TextureStorage::canvas_texture_initialize;
-    RendererTextureStorage::canvas_texture_free = &GLES3::TextureStorage::canvas_texture_free;
+    RendererTextureStorage::bind<GLES3::TextureStorage>();
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
 	GLES3::TextureStorage::_tex_blit_shader_initialize();
@@ -517,7 +493,6 @@ void RasterizerGLES3::finalize()
 	memdelete(cubemap_filter);
 	memdelete(copy_effects);
 	memdelete(feed_effects);
-	memdelete(light_storage);
 	memdelete(particles_storage);
 	GLES3::MeshStorage::finalize();
 	GLES3::TextureStorage::finalize();

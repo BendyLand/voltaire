@@ -469,7 +469,6 @@ SkyRD::~SkyRD()
 
 void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_size)
 {
-	RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
 	ERR_FAIL_COND(p_render_data->environment.is_null());
 
 	ERR_FAIL_COND(p_render_data->render_buffers.is_null());
@@ -619,21 +618,21 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		// This can't be done in RenderSceneRenderRD::_setup lights because that needs to be called
 		// after the depth prepass, but this runs before the depth prepass.
 		for (int i = 0; i < (int)lights.size(); i++) {
-			if (!light_storage->owns_light_instance(lights[i])) {
+			if (!RendererRD::LightStorage::owns_light_instance(lights[i])) {
 				continue;
 			}
-			RID base = light_storage->light_instance_get_base_light(lights[i]);
+			RID base = RendererRD::LightStorage::light_instance_get_base_light(lights[i]);
 
 			ERR_CONTINUE(base.is_null());
 
-			RSE::LightType type = light_storage->light_get_type(base);
+			RSE::LightType type = RendererRD::LightStorage::light_get_type(base);
 			if (type == RSE::LIGHT_DIRECTIONAL &&
-				light_storage->light_directional_get_sky_mode(base) !=
+				RendererRD::LightStorage::light_directional_get_sky_mode(base) !=
 					RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY) {
 				SkyDirectionalLightData& sky_light_data =
 					sky_scene_state.directional_lights[sky_scene_state.ubo.directional_light_count];
 				Transform3D light_transform =
-					light_storage->light_instance_get_base_transform(lights[i]);
+					RendererRD::LightStorage::light_instance_get_base_transform(lights[i]);
 				Vector3 world_direction =
 					light_transform.basis.xform(Vector3(0, 0, 1)).normalized();
 
@@ -641,13 +640,13 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				sky_light_data.direction[1] = world_direction.y;
 				sky_light_data.direction[2] = world_direction.z;
 
-				float sign = light_storage->light_is_negative(base) ? -1 : 1;
+				float sign = RendererRD::LightStorage::light_is_negative(base) ? -1 : 1;
 				sky_light_data.energy =
-					sign * light_storage->light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
+					sign * RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_ENERGY);
 
 				if (RendererSceneRenderRD::is_using_physical_light_units()) {
 					sky_light_data.energy *=
-						light_storage->light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
+						RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_INTENSITY);
 				}
 
 				if (p_render_data->camera_attributes.is_valid()) {
@@ -656,7 +655,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 							p_render_data->camera_attributes);
 				}
 
-				Color linear_col = light_storage->light_get_color(base).srgb_to_linear();
+				Color linear_col = RendererRD::LightStorage::light_get_color(base).srgb_to_linear();
 				sky_light_data.color[0] = linear_col.r;
 				sky_light_data.color[1] = linear_col.g;
 				sky_light_data.color[2] = linear_col.b;
@@ -664,7 +663,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				sky_light_data.enabled = true;
 
 				float angular_diameter =
-					light_storage->light_get_param(base, RSE::LIGHT_PARAM_SIZE);
+					RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 				sky_light_data.size = Math::deg_to_rad(angular_diameter);
 				sky_scene_state.ubo.directional_light_count++;
 				if (sky_scene_state.ubo.directional_light_count >=
