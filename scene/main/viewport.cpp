@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/string/print_string.h"
 #include "viewport.compat.inc"
 #include "viewport.h"
 
@@ -466,7 +467,6 @@ Rect2 Viewport::get_visible_rect() const
 	if (size_2d_override != Size2()) {
 		r.size = size_2d_override;
 	}
-
 	return r;
 }
 

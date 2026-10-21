@@ -84,15 +84,24 @@ void GLES3::LightStorage::directional_light_initialize(RID p_rid)
 
 RID GLES3::LightStorage::omni_light_allocate() { return light_owner.allocate_rid(); }
 
-void GLES3::LightStorage::omni_light_initialize(RID p_rid) { _light_initialize(p_rid, RSE::LIGHT_OMNI); }
+void GLES3::LightStorage::omni_light_initialize(RID p_rid)
+{
+	_light_initialize(p_rid, RSE::LIGHT_OMNI);
+}
 
 RID GLES3::LightStorage::spot_light_allocate() { return light_owner.allocate_rid(); }
 
-void GLES3::LightStorage::spot_light_initialize(RID p_rid) { _light_initialize(p_rid, RSE::LIGHT_SPOT); }
+void GLES3::LightStorage::spot_light_initialize(RID p_rid)
+{
+	_light_initialize(p_rid, RSE::LIGHT_SPOT);
+}
 
 RID GLES3::LightStorage::area_light_allocate() { return light_owner.allocate_rid(); }
 
-void GLES3::LightStorage::area_light_initialize(RID p_rid) { _light_initialize(p_rid, RSE::LIGHT_AREA); }
+void GLES3::LightStorage::area_light_initialize(RID p_rid)
+{
+	_light_initialize(p_rid, RSE::LIGHT_AREA);
+}
 
 void GLES3::LightStorage::light_free(RID p_rid)
 {
@@ -310,7 +319,8 @@ bool GLES3::LightStorage::light_directional_get_blend_splits(RID p_light)
 	return light->directional_blend_splits;
 }
 
-void GLES3::LightStorage::light_directional_set_sky_mode(RID p_light, RSE::LightDirectionalSkyMode p_mode)
+void GLES3::LightStorage::light_directional_set_sky_mode(
+	RID p_light, RSE::LightDirectionalSkyMode p_mode)
 {
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
@@ -517,7 +527,10 @@ void GLES3::LightStorage::light_instance_mark_visible(RID p_light_instance)
 
 /* PROBE API */
 
-RID GLES3::LightStorage::reflection_probe_allocate() { return reflection_probe_owner.allocate_rid(); }
+RID GLES3::LightStorage::reflection_probe_allocate()
+{
+	return reflection_probe_owner.allocate_rid();
+}
 
 void GLES3::LightStorage::reflection_probe_initialize(RID p_rid)
 {
@@ -917,7 +930,8 @@ bool GLES3::LightStorage::reflection_probe_instance_has_reflection(RID p_instanc
 	return rpi->atlas.is_valid();
 }
 
-bool GLES3::LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas)
+bool GLES3::LightStorage::reflection_probe_instance_begin_render(
+	RID p_instance, RID p_reflection_atlas)
 {
 	ReflectionAtlas* atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 
@@ -1114,7 +1128,8 @@ bool GLES3::LightStorage::reflection_probe_instance_begin_render(RID p_instance,
 	return true;
 }
 
-bool GLES3::LightStorage::reflection_probe_instance_end_render(RID p_instance, RID p_reflection_atlas)
+bool GLES3::LightStorage::reflection_probe_instance_end_render(
+	RID p_instance, RID p_reflection_atlas)
 {
 	return true;
 }
@@ -1225,8 +1240,7 @@ void GLES3::LightStorage::lightmap_set_textures(
 	lightmap->light_texture = p_light;
 	lightmap->uses_spherical_harmonics = p_uses_spherical_haromics;
 
-	Vector3i light_texture_size =
-		GLES3::TextureStorage::texture_get_size(lightmap->light_texture);
+	Vector3i light_texture_size = GLES3::TextureStorage::texture_get_size(lightmap->light_texture);
 	lightmap->light_texture_size = Vector2i(light_texture_size.x, light_texture_size.y);
 
 	GLuint tex = GLES3::TextureStorage::texture_get_texid(lightmap->light_texture);
@@ -1271,7 +1285,8 @@ void GLES3::LightStorage::lightmap_set_probe_capture_data(RID p_lightmap,
 	lightmap->bsp_tree = p_bsp_tree;
 }
 
-void GLES3::LightStorage::lightmap_set_baked_exposure_normalization(RID p_lightmap, float p_exposure)
+void GLES3::LightStorage::lightmap_set_baked_exposure_normalization(
+	RID p_lightmap, float p_exposure)
 {
 	Lightmap* lightmap = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lightmap);
@@ -1393,8 +1408,7 @@ void GLES3::LightStorage::lightmap_set_shadowmask_textures(RID p_lightmap, RID p
 	ERR_FAIL_NULL(lightmap);
 	lightmap->shadow_texture = p_shadow;
 
-	GLuint tex =
-		GLES3::TextureStorage::texture_get_texid(lightmap->shadow_texture);
+	GLuint tex = GLES3::TextureStorage::texture_get_texid(lightmap->shadow_texture);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1432,7 +1446,8 @@ void GLES3::LightStorage::lightmap_instance_free(RID p_lightmap)
 	lightmap_instance_owner.free(p_lightmap);
 }
 
-void GLES3::LightStorage::lightmap_instance_set_transform(RID p_lightmap, const Transform3D& p_transform)
+void GLES3::LightStorage::lightmap_instance_set_transform(
+	RID p_lightmap, const Transform3D& p_transform)
 {
 	LightmapInstance* li = lightmap_instance_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(li);
@@ -1441,7 +1456,10 @@ void GLES3::LightStorage::lightmap_instance_set_transform(RID p_lightmap, const 
 
 /* SHADOW ATLAS API */
 
-RID GLES3::LightStorage::shadow_atlas_create() { return shadow_atlas_owner.make_rid(ShadowAtlas()); }
+RID GLES3::LightStorage::shadow_atlas_create()
+{
+	return shadow_atlas_owner.make_rid(ShadowAtlas());
+}
 
 void GLES3::LightStorage::shadow_atlas_free(RID p_atlas)
 {
@@ -1741,9 +1759,8 @@ bool GLES3::LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas, i
 #ifdef DEBUG_ENABLED
 				GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 				if (status != GL_FRAMEBUFFER_COMPLETE) {
-					ERR_PRINT(
-						"Could not create omni light shadow framebuffer, status: " +
-						GLES3::TextureStorage::get_framebuffer_error(status));
+					ERR_PRINT("Could not create omni light shadow framebuffer, status: " +
+							  GLES3::TextureStorage::get_framebuffer_error(status));
 				}
 #endif
 				glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -1956,6 +1973,8 @@ int GLES3::LightStorage::get_directional_light_shadow_size(RID p_light_instance)
 
 	return MAX(r.size.width, r.size.height);
 }
+
+void GLES3::LightStorage::initialize() {}
 
 #endif // !GLES3_ENABLED
 

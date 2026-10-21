@@ -894,7 +894,7 @@ public:
 
 	virtual bool has_connections(const StringName& p_signal) const;
 #endif
-	Node() = default;
+	Node();
 	~Node();
 };
 

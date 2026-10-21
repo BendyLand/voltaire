@@ -55,9 +55,9 @@
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
+#include "scene/gui/color_rect.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/gui/color_rect.h"
 #include "scene/property_list_helper.h"
 #include "scene/register_scene_types.h"
 #include "scene/resources/packed_scene.h"
@@ -1882,8 +1882,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				OS::get_singleton()->print(
 					"Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
-
-		}
+			}
 		}
 		else if (arg == "--import") {
 			editor = true;
@@ -3952,7 +3951,8 @@ int Main::start()
 		uint64_t prev_time = OS::get_singleton()->get_ticks_usec();
 		while (minimum_time > 0) {
 			DisplayServer::get_singleton()->process_events();
-			OS::get_singleton()->delay_usec(100);
+			O
+S::get_singleton()->delay_usec(100);
 
 			uint64_t next_time = OS::get_singleton()->get_ticks_usec();
 			minimum_time -= (next_time - prev_time);
@@ -3984,16 +3984,24 @@ int Main::start()
 	Window* root = scene_tree->get_root();
 	if (root) {
 		root->show();
+
+		// Intermediary canvas covering the window client area
+		Control* canvas = memnew(Control);
+		root->add_child(canvas);
+		canvas->set_size(root->get_size());
+
+		// Leaf primitive attached to canvas
 		ColorRect* rect = memnew(ColorRect);
+		canvas->add_child(rect);
+
 		rect->set_color(Color(1.0f, 0.5f, 0.0f, 1.0f));
 		rect->set_position(Point2(100, 100));
 		rect->set_size(Size2(300, 200));
 		rect->set_visible(true);
-
-		root->add_child(rect);
 	}
 	else {
 		__print_line("Window root failed to be created");
+		return EXIT_SUCCESS;
 	}
 	return EXIT_SUCCESS;
 }
@@ -4092,8 +4100,8 @@ bool Main::iteration()
 	Renderer::sync(); // sync if still drawing from previous frames.
 
 	if (DisplayServer::get_singleton()->window_can_draw()) {
-        Renderer::draw(true, scaled_step);
-    }
+		Renderer::draw(true, scaled_step);
+	}
 
 	const bool has_pending_resources_for_processing =
 		RD::data && RD::has_pending_resources_for_processing();

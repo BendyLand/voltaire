@@ -245,6 +245,23 @@ void SceneTree::client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_
 }
 #endif
 
+SceneTree::SceneTree()
+{
+	ERR_FAIL_COND(singleton != nullptr);
+	singleton = this;
+}
+
+SceneTree::~SceneTree()
+{
+	if (root) {
+		memdelete(root);
+		root = nullptr;
+	}
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}
+
 void SceneTree::iteration_prepare()
 {
 	if (_physics_interpolation_enabled) {
@@ -831,7 +848,8 @@ bool SceneTree::is_multiplayer_poll_enabled() const { return multiplayer_poll; }
 SceneTree* SceneTree::singleton = nullptr;
 
 SceneTree::IdleCallback SceneTree::idle_callbacks[SceneTree::MAX_IDLE_CALLBACKS];
-int SceneTree::idle_callback_count = 0;
+int SceneTree::idle_callback_count = 0
+;
 
 void SceneTree::_call_idle_callbacks()
 {
@@ -873,13 +891,17 @@ void SceneTree::_accessibility_notify_change(Node const*, bool) {}
 void SceneTree::initialize()
 {
 	root = memnew(Window);
-	root->set_name("root");
-
-	root->set_position(Point2i());
-	Size2i window_size = DisplayServer::get_singleton()->window_get_size();
-	root->set_size(window_size);
-
 	root->_set_tree(this);
+
+	root->set_name("root");
+	root->set_position(Point2i());
+
+	Size2i window_size = DisplayServer::get_singleton()->window_get_size();
+	if (window_size.width <= 0 || window_size.height <= 0) {
+		window_size = Size2i(1152, 648);
+	}
+	root->set_size(window_size);
+	MainLoop::initialize();
 }
 
 bool SceneTree::physics_process(double p_time) { return false; }

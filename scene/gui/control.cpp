@@ -57,8 +57,8 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #ifdef TOOLS_ENABLED
 void Control::_edit_set_position(const Point2& p_position)
 {
-	ERR_FAIL_COND_MSG(!Engine::is_editor_hint(),
-		"This function can only be used from editor plugins.");
+	ERR_FAIL_COND_MSG(
+		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
 	set_position(p_position,
 		ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled() && get_parent_control());
 }
@@ -71,8 +71,8 @@ Size2 Control::_edit_get_scale() const { return data.scale; }
 
 void Control::_edit_set_rect(const Rect2& p_edit_rect)
 {
-	ERR_FAIL_COND_MSG(!Engine::is_editor_hint(),
-		"This function can only be used from editor plugins.");
+	ERR_FAIL_COND_MSG(
+		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
 	// Changing the size might change the internal transform (in case of non-zero
 	// `pivot_offset_ratio`), hence `position` (which is in the parent space, and is not always
 	// equivalent to the Control's rect top-left corner) needs to be changed after `size` (which is
@@ -202,21 +202,28 @@ Rect2 Control::get_parent_anchorable_rect() const
 #ifdef TOOLS_ENABLED
 		Node* edited_scene_root = get_tree()->get_edited_scene_root();
 		Node* scene_root_parent = edited_scene_root ? edited_scene_root->get_parent() : nullptr;
-
 		if (scene_root_parent && get_viewport() == scene_root_parent->get_viewport()) {
 			parent_rect.size =
 				Size2(GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_width"),
 					GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_height"));
 		}
 		else {
-			parent_rect = get_viewport()->get_visible_rect();
-		}
+			Viewport* vp = get_viewport();
+			if (!vp && get_tree()) {
+				vp = get_tree()->get_root();
+			}
 
+			if (vp) {
+				parent_rect = vp->get_visible_rect();
+			}
+			else {
+				return Rect2();
+			}
+		}
 #else
 		parent_rect = get_viewport()->get_visible_rect();
 #endif // TOOLS_ENABLED
 	}
-
 	return parent_rect;
 }
 
@@ -393,7 +400,6 @@ Control::GrowDirection Control::get_v_grow_direction() const
 void Control::_compute_layout_rect(Rect2 p_rect, bool p_keep_offsets)
 {
 	Size2 parent_rect_size = get_parent_anchorable_rect().size;
-
 	if (p_keep_offsets) {
 		// If computing anchors, we need to ensure the parent rect size is valid to avoid division
 		// by zero.

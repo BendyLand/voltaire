@@ -148,7 +148,10 @@ void RendererRD::LightStorage::spot_light_initialize(RID p_light)
 
 RID RendererRD::LightStorage::area_light_allocate() { return light_owner.allocate_rid(); }
 
-void RendererRD::LightStorage::area_light_initialize(RID p_rid) { _light_initialize(p_rid, RSE::LIGHT_AREA); }
+void RendererRD::LightStorage::area_light_initialize(RID p_rid)
+{
+	_light_initialize(p_rid, RSE::LIGHT_AREA);
+}
 
 void RendererRD::LightStorage::light_free(RID p_rid)
 {
@@ -327,7 +330,8 @@ void RendererRD::LightStorage::light_set_max_sdfgi_cascade(RID p_light, uint32_t
 	light->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_LIGHT);
 }
 
-void RendererRD::LightStorage::light_omni_set_shadow_mode(RID p_light, RSE::LightOmniShadowMode p_mode)
+void RendererRD::LightStorage::light_omni_set_shadow_mode(
+	RID p_light, RSE::LightOmniShadowMode p_mode)
 {
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
@@ -382,7 +386,8 @@ bool RendererRD::LightStorage::light_directional_get_blend_splits(RID p_light)
 	return light->directional_blend_splits;
 }
 
-void RendererRD::LightStorage::light_directional_set_sky_mode(RID p_light, RSE::LightDirectionalSkyMode p_mode)
+void RendererRD::LightStorage::light_directional_set_sky_mode(
+	RID p_light, RSE::LightDirectionalSkyMode p_mode)
 {
 	Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
@@ -398,7 +403,8 @@ RSE::LightDirectionalSkyMode RendererRD::LightStorage::light_directional_get_sky
 	return light->directional_sky_mode;
 }
 
-RSE::LightDirectionalShadowMode RendererRD::LightStorage::light_directional_get_shadow_mode(RID p_light)
+RSE::LightDirectionalShadowMode RendererRD::LightStorage::light_directional_get_shadow_mode(
+	RID p_light)
 {
 	const Light* light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL_V(light, RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL);
@@ -1298,7 +1304,10 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 	}
 }
 
-RID RendererRD::LightStorage::reflection_probe_allocate() { return reflection_probe_owner.allocate_rid(); }
+RID RendererRD::LightStorage::reflection_probe_allocate()
+{
+	return reflection_probe_owner.allocate_rid();
+}
 
 void RendererRD::LightStorage::reflection_probe_initialize(RID p_reflection_probe)
 {
@@ -1330,7 +1339,8 @@ void RendererRD::LightStorage::reflection_probe_set_intensity(RID p_probe, float
 	reflection_probe->intensity = p_intensity;
 }
 
-void RendererRD::LightStorage::reflection_probe_set_blend_distance(RID p_probe, float p_blend_distance)
+void RendererRD::LightStorage::reflection_probe_set_blend_distance(
+	RID p_probe, float p_blend_distance)
 {
 	ReflectionProbe* reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL(reflection_probe);
@@ -1385,7 +1395,8 @@ void RendererRD::LightStorage::reflection_probe_set_size(RID p_probe, const Vect
 	reflection_probe->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE);
 }
 
-void RendererRD::LightStorage::reflection_probe_set_origin_offset(RID p_probe, const Vector3& p_offset)
+void RendererRD::LightStorage::reflection_probe_set_origin_offset(
+	RID p_probe, const Vector3& p_offset)
 {
 	ReflectionProbe* reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL(reflection_probe);
@@ -1403,7 +1414,8 @@ void RendererRD::LightStorage::reflection_probe_set_as_interior(RID p_probe, boo
 	reflection_probe->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE);
 }
 
-void RendererRD::LightStorage::reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable)
+void RendererRD::LightStorage::reflection_probe_set_enable_box_projection(
+	RID p_probe, bool p_enable)
 {
 	ReflectionProbe* reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL(reflection_probe);
@@ -1475,7 +1487,8 @@ AABB RendererRD::LightStorage::reflection_probe_get_aabb(RID p_probe)
 	return aabb;
 }
 
-RSE::ReflectionProbeUpdateMode RendererRD::LightStorage::reflection_probe_get_update_mode(RID p_probe)
+RSE::ReflectionProbeUpdateMode RendererRD::LightStorage::reflection_probe_get_update_mode(
+	RID p_probe)
 {
 	const ReflectionProbe* reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL_V(reflection_probe, RSE::REFLECTION_PROBE_UPDATE_ALWAYS);
@@ -1579,7 +1592,8 @@ bool RendererRD::LightStorage::reflection_probe_is_box_projection(RID p_probe)
 	return reflection_probe->box_projection;
 }
 
-RSE::ReflectionProbeAmbientMode RendererRD::LightStorage::reflection_probe_get_ambient_mode(RID p_probe)
+RSE::ReflectionProbeAmbientMode RendererRD::LightStorage::reflection_probe_get_ambient_mode(
+	RID p_probe)
 {
 	const ReflectionProbe* reflection_probe = reflection_probe_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL_V(reflection_probe, RSE::REFLECTION_PROBE_AMBIENT_DISABLED);
@@ -1773,7 +1787,8 @@ bool RendererRD::LightStorage::reflection_probe_instance_has_reflection(RID p_in
 	return rpi->atlas.is_valid();
 }
 
-bool RendererRD::LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas)
+bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
+	RID p_instance, RID p_reflection_atlas)
 {
 	ReflectionAtlas* atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 
@@ -1923,7 +1938,8 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(RID p_inst
 	return true;
 }
 
-bool RendererRD::LightStorage::reflection_probe_instance_end_render(RID p_instance, RID p_reflection_atlas)
+bool RendererRD::LightStorage::reflection_probe_instance_end_render(
+	RID p_instance, RID p_reflection_atlas)
 {
 	RendererRD::CopyEffects* copy_effects = RendererRD::CopyEffects::get_singleton();
 	ERR_FAIL_NULL_V_MSG(copy_effects, false, "Effects haven't been initialized");
@@ -2017,7 +2033,8 @@ RID RendererRD::LightStorage::reflection_probe_instance_get_framebuffer(RID p_in
 	return atlas->color_fbs[p_index];
 }
 
-RID RendererRD::LightStorage::reflection_probe_instance_get_depth_framebuffer(RID p_instance, int p_index)
+RID RendererRD::LightStorage::reflection_probe_instance_get_depth_framebuffer(
+	RID p_instance, int p_index)
 {
 	ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
 	ERR_FAIL_NULL_V(rpi, RID());
@@ -2293,7 +2310,8 @@ void RendererRD::LightStorage::lightmap_set_probe_capture_data(RID p_lightmap,
 	lm->tetrahedra = p_tetrahedra;
 }
 
-void RendererRD::LightStorage::lightmap_set_baked_exposure_normalization(RID p_lightmap, float p_exposure)
+void RendererRD::LightStorage::lightmap_set_baked_exposure_normalization(
+	RID p_lightmap, float p_exposure)
 {
 	Lightmap* lm = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lm);
@@ -2343,7 +2361,8 @@ Dependency* RendererRD::LightStorage::lightmap_get_dependency(RID p_lightmap)
 	return &lm->dependency;
 }
 
-void RendererRD::LightStorage::lightmap_tap_sh_light(RID p_lightmap, const Vector3& p_point, Color* r_sh)
+void RendererRD::LightStorage::lightmap_tap_sh_light(
+	RID p_lightmap, const Vector3& p_point, Color* r_sh)
 {
 	Lightmap* lm = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lm);
@@ -2468,7 +2487,8 @@ RSE::ShadowmaskMode RendererRD::LightStorage::lightmap_get_shadowmask_mode(RID p
 	return lm->shadowmask_mode;
 }
 
-void RendererRD::LightStorage::lightmap_set_shadowmask_mode(RID p_lightmap, RSE::ShadowmaskMode p_mode)
+void RendererRD::LightStorage::lightmap_set_shadowmask_mode(
+	RID p_lightmap, RSE::ShadowmaskMode p_mode)
 {
 	Lightmap* lm = lightmap_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(lm);
@@ -2488,14 +2508,18 @@ void RendererRD::LightStorage::lightmap_instance_free(RID p_lightmap)
 	lightmap_instance_owner.free(p_lightmap);
 }
 
-void RendererRD::LightStorage::lightmap_instance_set_transform(RID p_lightmap, const Transform3D& p_transform)
+void RendererRD::LightStorage::lightmap_instance_set_transform(
+	RID p_lightmap, const Transform3D& p_transform)
 {
 	LightmapInstance* li = lightmap_instance_owner.get_or_null(p_lightmap);
 	ERR_FAIL_NULL(li);
 	li->transform = p_transform;
 }
 
-RID RendererRD::LightStorage::shadow_atlas_create() { return shadow_atlas_owner.make_rid(ShadowAtlas()); }
+RID RendererRD::LightStorage::shadow_atlas_create()
+{
+	return shadow_atlas_owner.make_rid(ShadowAtlas());
+}
 
 void RendererRD::LightStorage::shadow_atlas_free(RID p_atlas)
 {
@@ -2623,8 +2647,9 @@ void RendererRD::LightStorage::shadow_atlas_set_quadrant_subdivision(
 	} while (swaps > 0);
 }
 
-bool RendererRD::LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas, int* p_in_quadrants,
-	int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, int& r_quadrant, int& r_shadow)
+bool RendererRD::LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas,
+	int* p_in_quadrants, int p_quadrant_count, int p_current_subdiv, uint64_t p_tick,
+	int& r_quadrant, int& r_shadow)
 {
 	for (int i = p_quadrant_count - 1; i >= 0; i--) {
 		int qidx = p_in_quadrants[i];
@@ -2681,8 +2706,9 @@ bool RendererRD::LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atl
 	return false;
 }
 
-bool RendererRD::LightStorage::_shadow_atlas_find_omni_shadows(ShadowAtlas* shadow_atlas, int* p_in_quadrants,
-	int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, int& r_quadrant, int& r_shadow)
+bool RendererRD::LightStorage::_shadow_atlas_find_omni_shadows(ShadowAtlas* shadow_atlas,
+	int* p_in_quadrants, int p_quadrant_count, int p_current_subdiv, uint64_t p_tick,
+	int& r_quadrant, int& r_shadow)
 {
 	for (int i = p_quadrant_count - 1; i >= 0; i--) {
 		int qidx = p_in_quadrants[i];
@@ -2895,8 +2921,9 @@ bool RendererRD::LightStorage::shadow_atlas_update_light(
 	return should_redraw;
 }
 
-void RendererRD::LightStorage::_shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow* p_shadow,
-	RID p_atlas, ShadowAtlas* p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx)
+void RendererRD::LightStorage::_shadow_atlas_invalidate_shadow(
+	ShadowAtlas::Quadrant::Shadow* p_shadow, RID p_atlas, ShadowAtlas* p_shadow_atlas,
+	uint32_t p_quadrant, uint32_t p_shadow_idx)
 {
 	if (p_shadow->owner.is_valid()) {
 		LightInstance* sli = light_instance_owner.get_or_null(p_shadow->owner);
@@ -3089,7 +3116,10 @@ uint32_t RendererRD::LightStorage::get_cubemap_depth_usage_bits()
 
 bool RendererRD::LightStorage::get_shadow_cubemaps_used() { return shadow_cubemaps_used; }
 
-bool RendererRD::LightStorage::get_shadow_dual_paraboloid_used() { return shadow_dual_paraboloid_used; }
+bool RendererRD::LightStorage::get_shadow_dual_paraboloid_used()
+{
+	return shadow_dual_paraboloid_used;
+}
 
 RID RendererRD::LightStorage::reflection_atlas_create() { return RID(); }
 
@@ -3110,5 +3140,7 @@ void RendererRD::LightStorage::finalize()
 	}
 	shadow_cubemaps.clear();
 }
+
+bool RendererRD::LightStorage::has_directional_shadows(unsigned int p_index) { return false; }
 
 

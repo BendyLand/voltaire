@@ -214,14 +214,20 @@ bool RendererRD::TextureStorage::free(RID p_rid)
 	return false;
 }
 
-RID RendererRD::TextureStorage::canvas_texture_allocate() { return canvas_texture_owner.allocate_rid(); }
+RID RendererRD::TextureStorage::canvas_texture_allocate()
+{
+	return canvas_texture_owner.allocate_rid();
+}
 
 void RendererRD::TextureStorage::canvas_texture_initialize(RID p_rid)
 {
 	canvas_texture_owner.initialize_rid(p_rid);
 }
 
-void RendererRD::TextureStorage::canvas_texture_free(RID p_rid) { canvas_texture_owner.free(p_rid); }
+void RendererRD::TextureStorage::canvas_texture_free(RID p_rid)
+{
+	canvas_texture_owner.free(p_rid);
+}
 
 void RendererRD::TextureStorage::canvas_texture_set_channel(
 	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
@@ -273,9 +279,9 @@ void RendererRD::TextureStorage::canvas_texture_set_texture_repeat(
 	ct->texture_repeat = p_repeat;
 }
 
-RendererRD::TextureStorage::CanvasTextureInfo RendererRD::TextureStorage::canvas_texture_get_info(RID p_texture,
-	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat,
-	bool p_use_srgb, bool p_texture_is_data)
+RendererRD::TextureStorage::CanvasTextureInfo RendererRD::TextureStorage::canvas_texture_get_info(
+	RID p_texture, RSE::CanvasItemTextureFilter p_base_filter,
+	RSE::CanvasItemTextureRepeat p_base_repeat, bool p_use_srgb, bool p_texture_is_data)
 {
 	CanvasTexture* ct = nullptr;
 	Texture* t = get_texture(p_texture);
@@ -966,7 +972,8 @@ void RendererRD::TextureStorage::texture_set_detect_roughness_callback(RID p_tex
 	tex->detect_roughness_callback = p_callback;
 }
 
-void RendererRD::TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info)
+void RendererRD::TextureStorage::texture_debug_usage(
+	List<RenderingServerTypes::TextureInfo>* r_info)
 {
 	for (const RID& rid : texture_owner.get_owned_list()) {
 		Texture* t = texture_owner.get_or_null(rid);
@@ -1001,9 +1008,14 @@ void RendererRD::TextureStorage::texture_debug_usage(List<RenderingServerTypes::
 	}
 }
 
-void RendererRD::TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) {}
+void RendererRD::TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
+{
+}
 
-Size2 RendererRD::TextureStorage::texture_size_with_proxy(RID p_proxy) { return texture_2d_get_size(p_proxy); }
+Size2 RendererRD::TextureStorage::texture_size_with_proxy(RID p_proxy)
+{
+	return texture_2d_get_size(p_proxy);
+}
 
 void RendererRD::TextureStorage::texture_rd_initialize(
 	RID p_texture, const RID& p_rd_texture, const RSE::TextureLayeredType p_layer_type)
@@ -1835,7 +1847,10 @@ RID RendererRD::TextureStorage::decal_atlas_get_texture_srgb() { return decal_at
 
 RID RendererRD::TextureStorage::decal_allocate() { return decal_owner.allocate_rid(); }
 
-void RendererRD::TextureStorage::decal_initialize(RID p_decal) { decal_owner.initialize_rid(p_decal, Decal()); }
+void RendererRD::TextureStorage::decal_initialize(RID p_decal)
+{
+	decal_owner.initialize_rid(p_decal, Decal());
+}
 
 void RendererRD::TextureStorage::decal_free(RID p_rid)
 {
@@ -1857,7 +1872,8 @@ void RendererRD::TextureStorage::decal_set_size(RID p_decal, const Vector3& p_si
 	decal->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-void RendererRD::TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture)
+void RendererRD::TextureStorage::decal_set_texture(
+	RID p_decal, RSE::DecalTexture p_type, RID p_texture)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
@@ -2163,7 +2179,8 @@ void RendererRD::TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool 
 	}
 }
 
-void RendererRD::TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+void RendererRD::TextureStorage::texture_remove_from_decal_atlas(
+	RID p_texture, bool p_panorama_to_dp)
 {
 	DecalAtlas::Texture* t = decal_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
@@ -2201,7 +2218,8 @@ void RendererRD::TextureStorage::decal_instance_set_transform(
 	di->transform = p_transform;
 }
 
-void RendererRD::TextureStorage::decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset)
+void RendererRD::TextureStorage::decal_instance_set_sorting_offset(
+	RID p_decal_instance, float p_sorting_offset)
 {
 	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
 	ERR_FAIL_NULL(di);
@@ -2714,8 +2732,8 @@ RID RendererRD::TextureStorage::render_target_get_texture(RID p_render_target)
 	return rt->texture;
 }
 
-void RendererRD::TextureStorage::render_target_set_override(RID p_render_target, RID p_color_texture,
-	RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture)
+void RendererRD::TextureStorage::render_target_set_override(RID p_render_target,
+	RID p_color_texture, RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2857,7 +2875,8 @@ bool RendererRD::TextureStorage::render_target_is_subsampled_allowed(RID p_rende
 	return rt->subsampled_allowed;
 }
 
-void RendererRD::TextureStorage::render_target_set_transparent(RID p_render_target, bool p_is_transparent)
+void RendererRD::TextureStorage::render_target_set_transparent(
+	RID p_render_target, bool p_is_transparent)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2873,9 +2892,15 @@ bool RendererRD::TextureStorage::render_target_get_transparent(RID p_render_targ
 	return rt->is_transparent;
 }
 
-void RendererRD::TextureStorage::render_target_set_direct_to_screen(RID p_render_target, bool p_value) {}
+void RendererRD::TextureStorage::render_target_set_direct_to_screen(
+	RID p_render_target, bool p_value)
+{
+}
 
-bool RendererRD::TextureStorage::render_target_get_direct_to_screen(RID p_render_target) { return false; }
+bool RendererRD::TextureStorage::render_target_get_direct_to_screen(RID p_render_target)
+{
+	return false;
+}
 
 bool RendererRD::TextureStorage::render_target_was_used(RID p_render_target)
 {
@@ -2891,7 +2916,8 @@ void RendererRD::TextureStorage::render_target_set_as_unused(RID p_render_target
 	rt->was_used = false;
 }
 
-void RendererRD::TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+void RendererRD::TextureStorage::render_target_set_msaa(
+	RID p_render_target, RSE::ViewportMSAA p_msaa)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2911,7 +2937,8 @@ RSE::ViewportMSAA RendererRD::TextureStorage::render_target_get_msaa(RID p_rende
 	return rt->msaa;
 }
 
-void RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve)
+void RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
+	RID p_render_target, bool p_needs_resolve)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2959,7 +2986,8 @@ bool RendererRD::TextureStorage::render_target_is_using_hdr(RID p_render_target)
 	return rt->use_hdr;
 }
 
-void RendererRD::TextureStorage::render_target_set_use_debanding(RID p_render_target, bool p_use_debanding)
+void RendererRD::TextureStorage::render_target_set_use_debanding(
+	RID p_render_target, bool p_use_debanding)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2996,7 +3024,8 @@ RID RendererRD::TextureStorage::render_target_get_rd_texture(RID p_render_target
 	}
 }
 
-RID RendererRD::TextureStorage::render_target_get_rd_texture_slice(RID p_render_target, uint32_t p_layer)
+RID RendererRD::TextureStorage::render_target_get_rd_texture_slice(
+	RID p_render_target, uint32_t p_layer)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3044,7 +3073,8 @@ RID RendererRD::TextureStorage::render_target_get_rd_backbuffer_framebuffer(RID 
 	return rt->backbuffer_fb;
 }
 
-void RendererRD::TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color)
+void RendererRD::TextureStorage::render_target_request_clear(
+	RID p_render_target, const Color& p_clear_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3463,7 +3493,8 @@ void RendererRD::TextureStorage::render_target_set_backbuffer_uniform_set(
 	rt->backbuffer_uniform_set = p_uniform_set;
 }
 
-void RendererRD::TextureStorage::render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode)
+void RendererRD::TextureStorage::render_target_set_vrs_mode(
+	RID p_render_target, RSE::ViewportVRSMode p_mode)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3488,7 +3519,8 @@ void RendererRD::TextureStorage::render_target_set_vrs_update_mode(
 	rt->vrs_update_mode = p_mode;
 }
 
-RSE::ViewportVRSUpdateMode RendererRD::TextureStorage::render_target_get_vrs_update_mode(RID p_render_target)
+RSE::ViewportVRSUpdateMode RendererRD::TextureStorage::render_target_get_vrs_update_mode(
+	RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
@@ -3512,7 +3544,8 @@ RID RendererRD::TextureStorage::render_target_get_vrs_texture(RID p_render_targe
 	return rt->vrs_texture;
 }
 
-RDC::DataFormat RendererRD::TextureStorage::render_target_get_color_format(bool p_use_hdr, bool p_srgb)
+RDC::DataFormat RendererRD::TextureStorage::render_target_get_color_format(
+	bool p_use_hdr, bool p_srgb)
 {
 	if (p_use_hdr) {
 		return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
@@ -3611,6 +3644,7 @@ void RendererRD::TextureStorage::texture_2d_initialize(RID p_texture, const Ref<
 	}
 
 	texture.rd_texture = RD::texture_create(tf, RD::TextureView(), data);
+
 	texture_owner.initialize_rid(p_texture, texture);
 }
 
@@ -3627,8 +3661,8 @@ void RendererRD::TextureStorage::texture_2d_layered_initialize(
 	texture_owner.initialize_rid(p_texture, texture);
 }
 
-void RendererRD::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
-	int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+void RendererRD::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format,
+	int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
 	Texture texture;
 	texture.type = TYPE_3D;
@@ -3643,5 +3677,106 @@ void RendererRD::TextureStorage::initialize()
 {
 	texture_2d_placeholder = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
 }
+
+void RendererRD::TextureStorage::texture_2d_update(
+	RID p_texture, const Ref<Image>& p_image, int p_layer)
+{
+}
+
+void RendererRD::TextureStorage::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
+{
+}
+
+void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int p_width,
+	int p_height, RenderingServerEnums::TextureDrawableFormat p_format, const Color& p_color,
+	bool p_depth)
+{
+	Texture* texture = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL(texture);
+
+	if (texture->rd_texture.is_valid()) {
+		free(texture->rd_texture);
+		texture->rd_texture = RID();
+	}
+
+	RDC::TextureFormat rd_format;
+	rd_format.width = p_width;
+	rd_format.height = p_height;
+	rd_format.depth = 1;
+	rd_format.array_layers = 1;
+	rd_format.mipmaps = 1;
+	rd_format.texture_type = RDC::TEXTURE_TYPE_2D;
+	rd_format.samples = RDC::TEXTURE_SAMPLES_1;
+
+	RD::TextureView rd_view;
+
+	if (p_depth) {
+		rd_format.format = RDC::DATA_FORMAT_D32_SFLOAT;
+		rd_format.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT |
+							   RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+							   RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+	}
+	else {
+		switch (p_format) {
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBA8: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBA8_SRGB: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_SRGB;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBAH: {
+			rd_format.format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBAF: {
+			rd_format.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		} break;
+		default: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		} break;
+		}
+
+		rd_format.usage_bits =
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
+			RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT |
+			RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+	}
+
+	Vector<Vector<uint8_t>> initial_data;
+
+	if (!p_depth &&
+		(p_color.r != 0.0f || p_color.g != 0.0f || p_color.b != 0.0f || p_color.a != 0.0f)) {
+		Vector<uint8_t> buffer;
+		buffer.resize(p_width * p_height * 4);
+		uint8_t* w = buffer.ptrw();
+		uint8_t r = uint8_t(CLAMP(p_color.r * 255.0f, 0.0f, 255.0f));
+		uint8_t g = uint8_t(CLAMP(p_color.g * 255.0f, 0.0f, 255.0f));
+		uint8_t b = uint8_t(CLAMP(p_color.b * 255.0f, 0.0f, 255.0f));
+		uint8_t a = uint8_t(CLAMP(p_color.a * 255.0f, 0.0f, 255.0f));
+
+		for (int i = 0; i < p_width * p_height; i++) {
+			w[i * 4 + 0] = r;
+			w[i * 4 + 1] = g;
+			w[i * 4 + 2] = b;
+			w[i * 4 + 3] = a;
+		}
+		initial_data.push_back(buffer);
+	}
+
+	texture->rd_texture = RD::texture_create(rd_format, rd_view, initial_data);
+	ERR_FAIL_COND(texture->rd_texture.is_null());
+
+	texture->width = p_width;
+	texture->height = p_height;
+	texture->depth = 1;
+	texture->layers = 1;
+	texture->mipmaps = 1;
+	texture->type = TextureType::TYPE_2D;
+	texture->rd_type = rd_format.texture_type;
+	texture->rd_format = rd_format.
+format;
+	texture->is_render_target = true;
+}
+
+void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
 
 

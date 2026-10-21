@@ -970,8 +970,8 @@ void GLES3::TextureStorage::texture_2d_layered_initialize(
 	}
 }
 
-void GLES3::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
-	int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+void GLES3::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format,
+	int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
 	ERR_FAIL_COND(p_data.is_empty());
 
@@ -1972,7 +1972,8 @@ void GLES3::TextureStorage::_texture_set_3d_data(
 #endif
 }
 
-void GLES3::TextureStorage::_texture_set_swizzle(GLES3::Texture* p_texture, Image::Format p_real_format)
+void GLES3::TextureStorage::_texture_set_swizzle(
+	GLES3::Texture* p_texture, Image::Format p_real_format)
 {
 #ifndef WEB_ENABLED
 	switch (p_texture->format) {
@@ -2189,7 +2190,8 @@ void GLES3::TextureStorage::update_texture_atlas()
 		int item_count = itemsv.size();
 		TextureAtlas::SortItem* items = itemsv.ptrw();
 
-		int atlas_height = 0;
+
+	int atlas_height = 0;
 
 		while (true) {
 			Vector<int> v_offsetsv;
@@ -2206,8 +2208,7 @@ void GLES3::TextureStorage::update_texture_atlas()
 				int best_idx = -1;
 				int best_height = 0x7FFFFFFF;
 				for (uint32_t j = 0; j <= base_size - si.size.width; j++) {
-
-	int height = 0;
+					int height = 0;
 					for (int k = 0; k < si.size.width; k++) {
 						int h = v_offsets[k + j];
 						if (h > height) {
@@ -2322,7 +2323,9 @@ void GLES3::TextureStorage::decal_initialize(RID p_rid) {}
 
 void GLES3::TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size) {}
 
-void GLES3::TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture) {}
+void GLES3::TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture)
+{
+}
 
 void GLES3::TextureStorage::decal_set_emission_energy(RID p_decal, float p_energy) {}
 
@@ -3166,7 +3169,8 @@ uint32_t GLES3::TextureStorage::render_target_get_color_format_size(RID p_render
 	return rt->color_format_size;
 }
 
-void GLES3::TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color)
+void GLES3::TextureStorage::render_target_request_clear(
+	RID p_render_target, const Color& p_clear_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3655,6 +3659,7 @@ void GLES3::TextureStorage::render_target_clear_back_buffer(
 
 	Rect2i region;
 	if (p_region == Rect2i()) {
+
 		// Just do a full screen clear;
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
 		glClearColor(p_color.r, p_color.g, p_color.b, p_color.a);
@@ -3783,6 +3788,8 @@ void GLES3::TextureStorage::bind_dispatch()
 {
 	RendererTextureStorage::bind<GLES3::TextureStorage>();
 }
+
+void GLES3::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
 
 #endif // GLES3_ENABLED
 
