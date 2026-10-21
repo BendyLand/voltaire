@@ -28,6 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <execinfo.h>
+#include <unistd.h>
 #include "core/string/print_string.h"
 #include "viewport.compat.inc"
 #include "viewport.h"
@@ -53,7 +55,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer.h"
 
 // 2D.
 #include "scene/2d/audio_listener_2d.h"
@@ -253,8 +254,7 @@ void Viewport::_sub_window_register(Window* p_window)
 	if (gui.sub_windows.is_empty()) {
 		subwindow_canvas = RS::canvas_create();
 		RS::viewport_attach_canvas(viewport, subwindow_canvas);
-		RS::viewport_set_canvas_stacking(
-			viewport, subwindow_canvas, SUBWINDOW_CANVAS_LAYER, 0);
+		RS::viewport_set_canvas_stacking(viewport, subwindow_canvas, SUBWINDOW_CANVAS_LAYER, 0);
 	}
 	SubWindow sw;
 	sw.canvas_item = RS::canvas_item_create();
@@ -349,8 +349,7 @@ void Viewport::_sub_window_update(Window* p_window)
 	if (vr != r) {
 		RS::canvas_item_add_rect(sw.canvas_item, r, Color());
 	}
-	RS::canvas_item_add_texture_rect(
-		sw.canvas_item, vr, sw.window->get_texture()->get_rid());
+	RS::canvas_item_add_texture_rect(sw.canvas_item, vr, sw.window->get_texture()->get_rid());
 }
 
 int Viewport::_sub_window_find(Window* p_window) const
@@ -1517,8 +1516,7 @@ void Viewport::set_screen_space_aa(ScreenSpaceAA p_screen_space_aa)
 		return;
 	}
 	screen_space_aa = p_screen_space_aa;
-	RS::viewport_set_screen_space_aa(
-		viewport, RSE::ViewportScreenSpaceAA(p_screen_space_aa));
+	RS::viewport_set_screen_space_aa(viewport, RSE::ViewportScreenSpaceAA(p_screen_space_aa));
 }
 
 Viewport::ScreenSpaceAA Viewport::get_screen_space_aa() const
@@ -1614,8 +1612,7 @@ void Viewport::set_snap_2d_transforms_to_pixel(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	snap_2d_transforms_to_pixel = p_enable;
-	RS::viewport_set_snap_2d_transforms_to_pixel(
-		viewport, snap_2d_transforms_to_pixel);
+	RS::viewport_set_snap_2d_transforms_to_pixel(viewport, snap_2d_transforms_to_pixel);
 }
 
 bool Viewport::is_snap_2d_transforms_to_pixel_enabled() const
@@ -1628,8 +1625,7 @@ void Viewport::set_snap_2d_vertices_to_pixel(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	snap_2d_vertices_to_pixel = p_enable;
-	RS::viewport_set_snap_2d_vertices_to_pixel(
-		viewport, snap_2d_vertices_to_pixel);
+	RS::viewport_set_snap_2d_vertices_to_pixel(viewport, snap_2d_vertices_to_pixel);
 }
 
 bool Viewport::is_snap_2d_vertices_to_pixel_enabled() const
@@ -1749,12 +1745,10 @@ void Viewport::set_vrs_update_mode(VRSUpdateMode p_vrs_update_mode)
 		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ONCE);
 	} break;
 	case VRS_UPDATE_ALWAYS: {
-		RS::viewport_set_vrs_update_mode(
-			viewport, RSE::VIEWPORT_VRS_UPDATE_ALWAYS);
+		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ALWAYS);
 	} break;
 	default: {
-		RS::viewport_set_vrs_update_mode(
-			viewport, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
+		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
 	} break;
 	}
 }
@@ -2305,8 +2299,7 @@ void Viewport::_own_world_3d_changed()
 	}
 
 	if (is_inside_tree()) {
-		Renderer::viewport_set_scenario(
-			viewport, find_world_3d()->get_scenario());
+		Renderer::viewport_set_scenario(viewport, find_world_3d()->get_scenario());
 	}
 
 	_update_audio_listener_3d();
@@ -2335,8 +2328,7 @@ void Viewport::set_scaling_3d_mode(Scaling3DMode p_scaling_3d_mode)
 	}
 
 	scaling_3d_mode = p_scaling_3d_mode;
-	RS::viewport_set_scaling_3d_mode(
-		viewport, (RSE::ViewportScaling3DMode)(int)p_scaling_3d_mode);
+	RS::viewport_set_scaling_3d_mode(viewport, (RSE::ViewportScaling3DMode)(int)p_scaling_3d_mode);
 }
 
 Viewport::Scaling3DMode Viewport::get_scaling_3d_mode() const
@@ -2504,8 +2496,7 @@ void SubViewport::set_update_mode(UpdateMode p_mode)
 {
 	ERR_MAIN_THREAD_GUARD;
 	update_mode = p_mode;
-	RS::viewport_set_update_mode(
-		get_viewport_rid(), RSE::ViewportUpdateMode(p_mode));
+	RS::viewport_set_update_mode(get_viewport_rid(), RSE::ViewportUpdateMode(p_mode));
 }
 
 SubViewport::UpdateMode SubViewport::get_update_mode() const
@@ -2518,8 +2509,7 @@ void SubViewport::set_clear_mode(ClearMode p_mode)
 {
 	ERR_MAIN_THREAD_GUARD;
 	clear_mode = p_mode;
-	RS::viewport_set_clear_mode(
-		get_viewport_rid(), RSE::ViewportClearMode(p_mode));
+	RS::viewport_set_clear_mode(get_viewport_rid(), RSE::ViewportClearMode(p_mode));
 }
 
 SubViewport::ClearMode SubViewport::get_clear_mode() const
@@ -2556,16 +2546,18 @@ void Viewport::_sub_window_grab_focus(Window* p_window) {}
 bool Viewport::_set_size(
 	const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override, bool p_allocated)
 {
+	size = p_size;
+	Renderer::viewport_set_size(viewport, p_size.width, p_size.height, p_view_count);
 	return true;
 }
 
 void Viewport::set_input_as_handled() {}
 
-bool Viewport::is_input_handled() const {}
+bool Viewport::is_input_handled() const { return false; }
 
 void Viewport::_camera_3d_set(Camera3D* p_camera) {}
 
-bool Viewport::is_visible_subviewport() const {}
+bool Viewport::is_visible_subviewport() const { return false; }
 
 void Viewport::gui_perform_drop_at(Vector2 const&, Control*) {}
 
@@ -2575,14 +2567,19 @@ void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
 
 Viewport::Viewport()
 {
-    __print_line("Viewport constructor called!");
-    viewport = Renderer::viewport_create();
-    __print_line(vformat("Created viewport RID: %d", viewport.get_id()));
+	void* callers[4];
+	int frames = backtrace(callers, 4);
+	backtrace_symbols_fd(callers, frames, STDERR_FILENO);
 
-    world_2d.instantiate();
-    world_2d->register_viewport(this);
-    current_canvas = world_2d->get_canvas();
-    Renderer::viewport_attach_canvas(viewport, current_canvas);
+	__print_line("Viewport constructor called!");
+	__print_line("Viewport constructor called!");
+	viewport = Renderer::viewport_create();
+	__print_line(vformat("Created viewport RID: %d", viewport.get_id()));
+
+	world_2d.instantiate();
+	world_2d->register_viewport(this);
+	current_canvas = world_2d->get_canvas();
+	Renderer::viewport_attach_canvas(viewport, current_canvas);
 }
 
 void Viewport::_push_text_input(String const&, bool) {}

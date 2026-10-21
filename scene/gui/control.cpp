@@ -403,8 +403,8 @@ void Control::_compute_layout_rect(Rect2 p_rect, bool p_keep_offsets)
 	if (p_keep_offsets) {
 		// If computing anchors, we need to ensure the parent rect size is valid to avoid division
 		// by zero.
-		ERR_FAIL_COND(parent_rect_size.x == 0.0);
-		ERR_FAIL_COND(parent_rect_size.y == 0.0);
+		ERR_FAIL_COND(parent_rect_size.x == 0.0f);
+		ERR_FAIL_COND(parent_rect_size.y == 0.0f);
 	}
 
 	real_t x = p_rect.position.x;
@@ -955,6 +955,7 @@ void Control::set_size(const Size2& p_size, bool p_keep_offsets)
 	}
 #endif // TOOLS_ENABLED
 
+	data.size_cache = new_size;
 	data.expanded_by_desired_size = false;
 
 	_compute_layout_rect(Rect2(data.pos_cache, new_size), p_keep_offsets);
@@ -2046,8 +2047,8 @@ void Control::get_argument_options(
 
 Control* Control::make_custom_tooltip(const String& p_text) const
 {
-	Control c = Control();
-	return &c;
+	Control* c = memnew(Control);
+	return c;
 }
 
 Control::LayoutDirection Control::get_layout_direction() const
@@ -2159,7 +2160,7 @@ void Control::_propagate_mouse_behavior_recursive_recursively(bool, bool) {}
 
 void Control::_propagate_focus_behavior_recursive_recursively(bool, bool) {}
 
-String Control::get_accessibility_name() const {}
+String Control::get_accessibility_name() const { return String(); }
 
 void Control::update_maximum_size() {}
 
@@ -2170,10 +2171,6 @@ void Control::set_clip_contents(bool) {}
 void Control::remove_theme_style_override(StringName const&) {}
 
 void Control::_notification(int) {}
-
-bool Control::has_theme_color(StringName const&, StringName const&) const {}
-
-PackedStringArray Control::get_accessibility_configuration_warnings() const {}
 
 void Control::set_theme(Ref<Theme> const&) {}
 
@@ -2191,8 +2188,28 @@ void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
 
 void Control::set_offset_transform_enabled(bool) {}
 
-Control::LayoutMode Control::_get_layout_mode() const {}
+bool Control::has_theme_color(StringName const&, StringName const&) const { return false; }
 
-Control* Control::_get_focus_neighbor(Side, int) {}
+PackedStringArray Control::get_accessibility_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
+Control::LayoutMode Control::_get_layout_mode() const
+{
+	if (data.stored_layout_mode != LAYOUT_MODE_UNCONTROLLED) {
+		return data.stored_layout_mode;
+	}
+	if (!is_inside_tree()) {
+		return LAYOUT_MODE_POSITION;
+	}
+	if (data.anchor[SIDE_LEFT] != 0.0 || data.anchor[SIDE_TOP] != 0.0 ||
+		data.anchor[SIDE_RIGHT] != 0.0 || data.anchor[SIDE_BOTTOM] != 0.0) {
+		return LAYOUT_MODE_ANCHORS;
+	}
+	return LAYOUT_MODE_POSITION;
+}
+
+Control* Control::_get_focus_neighbor(Side, int) { return nullptr; }
 
 

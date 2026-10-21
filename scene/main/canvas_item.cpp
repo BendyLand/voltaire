@@ -199,8 +199,7 @@ void CanvasItem::_top_level_raise_self()
 	}
 
 	if (canvas_layer) {
-		Renderer::canvas_item_set_draw_index(
-			canvas_item, canvas_layer->get_sort_index());
+		Renderer::canvas_item_set_draw_index(canvas_item, canvas_layer->get_sort_index());
 	}
 	else {
 		Renderer::canvas_item_set_draw_index(
@@ -371,8 +370,7 @@ void CanvasItem::draw_dashed_line(const Point2& p_from, const Point2& p_to, cons
 	Vector2 step = p_dash * (p_to - p_from).normalized();
 
 	if (length < p_dash || step == Vector2()) {
-		Renderer::canvas_item_add_line(
-			canvas_item, p_from, p_to, p_color, p_width, p_antialiased);
+		Renderer::canvas_item_add_line(canvas_item, p_from, p_to, p_color, p_width, p_antialiased);
 		return;
 	}
 
@@ -396,8 +394,7 @@ void CanvasItem::draw_dashed_line(const Point2& p_from, const Point2& p_to, cons
 
 	Vector<Color> colors = {p_color};
 
-	Renderer::canvas_item_add_multiline(
-		canvas_item, points, colors, p_width, p_antialiased);
+	Renderer::canvas_item_add_multiline(canvas_item, points, colors, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_line(const Point2& p_from, const Point2& p_to, const Color& p_color,
@@ -406,8 +403,7 @@ void CanvasItem::draw_line(const Point2& p_from, const Point2& p_to, const Color
 	ERR_THREAD_GUARD;
 	ERR_DRAW_GUARD;
 
-	Renderer::canvas_item_add_line(
-		canvas_item, p_from, p_to, p_color, p_width, p_antialiased);
+	Renderer::canvas_item_add_line(canvas_item, p_from, p_to, p_color, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_polyline(
@@ -417,8 +413,7 @@ void CanvasItem::draw_polyline(
 	ERR_DRAW_GUARD;
 
 	Vector<Color> colors = {p_color};
-	Renderer::canvas_item_add_polyline(
-		canvas_item, p_points, colors, p_width, p_antialiased);
+	Renderer::canvas_item_add_polyline(canvas_item, p_points, colors, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_polyline_colors(const Vector<Point2>& p_points, const Vector<Color>& p_colors,
@@ -427,8 +422,7 @@ void CanvasItem::draw_polyline_colors(const Vector<Point2>& p_points, const Vect
 	ERR_THREAD_GUARD;
 	ERR_DRAW_GUARD;
 
-	Renderer::canvas_item_add_polyline(
-		canvas_item, p_points, p_colors, p_width, p_antialiased);
+	Renderer::canvas_item_add_polyline(canvas_item, p_points, p_colors, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_ellipse_arc(const Vector2& p_center, real_t p_major, real_t p_minor,
@@ -469,8 +463,7 @@ void CanvasItem::draw_multiline(
 	ERR_DRAW_GUARD;
 
 	Vector<Color> colors = {p_color};
-	Renderer::canvas_item_add_multiline(
-		canvas_item, p_points, colors, p_width, p_antialiased);
+	Renderer::canvas_item_add_multiline(canvas_item, p_points, colors, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_multiline_colors(const Vector<Point2>& p_points,
@@ -479,8 +472,7 @@ void CanvasItem::draw_multiline_colors(const Vector<Point2>& p_points,
 	ERR_THREAD_GUARD;
 	ERR_DRAW_GUARD;
 
-	Renderer::canvas_item_add_multiline(
-		canvas_item, p_points, p_colors, p_width, p_antialiased);
+	Renderer::canvas_item_add_multiline(canvas_item, p_points, p_colors, p_width, p_antialiased);
 }
 
 void CanvasItem::draw_rect(
@@ -497,8 +489,7 @@ void CanvasItem::draw_rect(
 				"The draw_rect() \"width\" argument has no effect when \"filled\" is \"true\".");
 		}
 
-		Renderer::canvas_item_add_rect(
-			canvas_item, rect, p_color, p_antialiased);
+		Renderer::canvas_item_add_rect(canvas_item, rect, p_color, p_antialiased);
 	}
 	else if (p_width >= rect.size.width || p_width >= rect.size.height) {
 		Renderer::canvas_item_add_rect(
@@ -515,8 +506,7 @@ void CanvasItem::draw_rect(
 
 		Vector<Color> colors = {p_color};
 
-		Renderer::canvas_item_add_polyline(
-			canvas_item, points, colors, p_width, p_antialiased);
+		Renderer::canvas_item_add_polyline(canvas_item, points, colors, p_width, p_antialiased);
 	}
 }
 
@@ -535,8 +525,8 @@ void CanvasItem::draw_ellipse(const Point2& p_pos, real_t p_major, real_t p_mino
 			canvas_item, p_pos, p_major, p_minor, p_color, p_antialiased);
 	}
 	else if (p_width >= 2.0 * MAX(p_major, p_minor)) {
-		Renderer::canvas_item_add_ellipse(canvas_item, p_pos,
-			p_major + 0.5 * p_width, p_minor + 0.5 * p_width, p_color, p_antialiased);
+		Renderer::canvas_item_add_ellipse(canvas_item, p_pos, p_major + 0.5 * p_width,
+			p_minor + 0.5 * p_width, p_color, p_antialiased);
 	}
 	else {
 		// Tessellation count is hardcoded. Keep in sync with the same variable in
@@ -559,8 +549,7 @@ void CanvasItem::draw_ellipse(const Point2& p_pos, real_t p_major, real_t p_mino
 
 		Vector<Color> colors = {p_color};
 
-		Renderer::canvas_item_add_polyline(
-			canvas_item, points, colors, p_width, p_antialiased);
+		Renderer::canvas_item_add_polyline(canvas_item, points, colors, p_width, p_antialiased);
 	}
 }
 
@@ -605,8 +594,8 @@ void CanvasItem::draw_msdf_texture_rect_region(Texture2D* rp_texture, const Rect
 {
 	ERR_THREAD_GUARD;
 	ERR_DRAW_GUARD;
-	Renderer::canvas_item_add_msdf_texture_rect_region(canvas_item, p_rect,
-		rp_texture->get_rid(), p_src_rect, p_modulate, p_outline, p_pixel_range, p_scale);
+	Renderer::canvas_item_add_msdf_texture_rect_region(canvas_item, p_rect, rp_texture->get_rid(),
+		p_src_rect, p_modulate, p_outline, p_pixel_range, p_scale);
 }
 
 void CanvasItem::draw_lcd_texture_rect_region(
@@ -633,8 +622,7 @@ void CanvasItem::draw_primitive(const Vector<Point2>& p_points, const Vector<Col
 	ERR_DRAW_GUARD;
 
 	RID rid = p_texture.is_valid() ? p_texture->get_rid() : RID();
-	Renderer::canvas_item_add_primitive(
-		canvas_item, p_points, p_colors, p_uvs, rid);
+	Renderer::canvas_item_add_primitive(canvas_item, p_points, p_colors, p_uvs, rid);
 }
 
 void CanvasItem::draw_set_transform(const Point2& p_offset, real_t p_rot, const Size2& p_scale)
@@ -691,13 +679,11 @@ void CanvasItem::draw_polygon(const Vector<Point2>& p_points, const Vector<Color
 			p.x = Math::remap(p.x, 0, 1, remap_min.x, remap_max.x);
 			p.y = Math::remap(p.y, 0, 1, remap_min.y, remap_max.y);
 		}
-		Renderer::canvas_item_add_polygon(
-			canvas_item, p_points, p_colors, uvs, texture->get_rid());
+		Renderer::canvas_item_add_polygon(canvas_item, p_points, p_colors, uvs, texture->get_rid());
 	}
 	else {
 		RID texture_rid = p_texture.is_valid() ? p_texture->get_rid() : RID();
-		Renderer::canvas_item_add_polygon(
-			canvas_item, p_points, p_colors, p_uvs, texture_rid);
+		Renderer::canvas_item_add_polygon(canvas_item, p_points, p_colors, p_uvs, texture_rid);
 	}
 }
 
@@ -721,8 +707,7 @@ void CanvasItem::draw_multimesh(MultiMesh* rp_multimesh, const Ref<Texture2D>& p
 {
 	ERR_THREAD_GUARD;
 	RID texture_rid = p_texture.is_valid() ? p_texture->get_rid() : RID();
-	Renderer::canvas_item_add_multimesh(
-		canvas_item, rp_multimesh->get_rid(), texture_rid);
+	Renderer::canvas_item_add_multimesh(canvas_item, rp_multimesh->get_rid(), texture_rid);
 }
 
 void CanvasItem::draw_string(Font* rp_font, const Point2& p_pos, const String& p_text,
@@ -804,8 +789,7 @@ void CanvasItem::_notify_transform_deferred()
 
 void CanvasItem::_physics_interpolated_changed()
 {
-	Renderer::canvas_item_set_interpolated(
-		canvas_item, is_physics_interpolated());
+	Renderer::canvas_item_set_interpolated(canvas_item, is_physics_interpolated());
 }
 
 void CanvasItem::set_canvas_item_use_identity_transform(bool p_enable)
@@ -814,19 +798,16 @@ void CanvasItem::set_canvas_item_use_identity_transform(bool p_enable)
 	_set_use_identity_transform(p_enable);
 
 	// Let Renderer know not to concatenate the parent transform during the render.
-	Renderer::canvas_item_set_use_identity_transform(
-		get_canvas_item(), p_enable);
+	Renderer::canvas_item_set_use_identity_transform(get_canvas_item(), p_enable);
 
 	if (is_inside_tree()) {
 		if (p_enable) {
 			// Make sure item is using identity transform in server.
-			Renderer::canvas_item_set_transform(
-				get_canvas_item(), Transform2D());
+			Renderer::canvas_item_set_transform(get_canvas_item(), Transform2D());
 		}
 		else {
 			// Make sure item transform is up to date in server if switching identity transform off.
-			Renderer::canvas_item_set_transform(
-				get_canvas_item(), get_transform());
+			Renderer::canvas_item_set_transform(get_canvas_item(), get_transform());
 		}
 	}
 }
@@ -1026,8 +1007,7 @@ void CanvasItem::set_visibility_layer(uint32_t p_visibility_layer)
 {
 	ERR_THREAD_GUARD;
 	visibility_layer = p_visibility_layer;
-	Renderer::canvas_item_set_visibility_layer(
-		canvas_item, p_visibility_layer);
+	Renderer::canvas_item_set_visibility_layer(canvas_item, p_visibility_layer);
 }
 
 uint32_t CanvasItem::get_visibility_layer() const
@@ -1129,6 +1109,8 @@ CanvasItem::TextureRepeat CanvasItem::get_texture_repeat_in_tree() const
 
 PackedStringArray CanvasItem::get_configuration_warnings() const { return PackedStringArray(); }
 
+CanvasItem::CanvasItem() { canvas_item = Renderer::canvas_item_create(); }
+
 CanvasItem::~CanvasItem()
 {
 	ERR_FAIL_NULL(Renderer::data);
@@ -1171,8 +1153,7 @@ void CanvasTexture::set_texture_filter(CanvasItem::TextureFilter p_filter)
 		return;
 	}
 	texture_filter = p_filter;
-	RS::canvas_texture_set_texture_filter(
-		canvas_texture, RSE::CanvasItemTextureFilter(p_filter));
+	RS::canvas_texture_set_texture_filter(canvas_texture, RSE::CanvasItemTextureFilter(p_filter));
 	emit_changed();
 }
 
@@ -1184,9 +1165,21 @@ void CanvasTexture::set_texture_repeat(CanvasItem::TextureRepeat p_repeat)
 		return;
 	}
 	texture_repeat = p_repeat;
-	RS::canvas_texture_set_texture_repeat(
-		canvas_texture, RSE::CanvasItemTextureRepeat(p_repeat));
+	RS::canvas_texture_set_texture_repeat(canvas_texture, RSE::CanvasItemTextureRepeat(p_repeat));
 	emit_changed();
+}
+
+void CanvasItem::queue_redraw()
+{
+	if (!canvas_item.is_valid()) {
+		return;
+	}
+	Renderer::canvas_item_clear(canvas_item);
+	drawing = true;
+	if (draw_callback) {
+		draw_callback(this);
+	}
+	drawing = false;
 }
 
 CanvasItem::TextureRepeat CanvasTexture::get_texture_repeat() const { return texture_repeat; }
@@ -1286,5 +1279,7 @@ Point2 CanvasItem::_edit_get_position() const { return Point2(); }
 void CanvasItem::_edit_set_position(const Point2& p_position) {}
 
 Transform2D CanvasItem::get_transform() const { return Transform2D(); }
+
+void CanvasItem::_notification(int p_what) {}
 
 

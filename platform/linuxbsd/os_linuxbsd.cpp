@@ -1429,8 +1429,6 @@ void OS_LinuxBSD::run()
 		return;
 	}
 
-	main_loop->initialize();
-
 	while (true) {
 		if (DisplayServer::get_singleton()) {
 			DisplayServer::get_singleton()->process_events();

@@ -203,6 +203,7 @@ void AnimationPlayerEditor::_allocate_onion_layers()
 		// Each capture is a viewport with a canvas item attached that renders a full-size rect with
 		// the contents of the main viewport.
 		onion.captures[i] = Renderer::viewport_create();
+		puts("BAD1");
 
 		Renderer::viewport_set_size(
 			onion.captures[i], capture_size.width, capture_size.height);

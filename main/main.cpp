@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cstdlib>
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/core_globals.h"
@@ -61,6 +62,7 @@
 #include "scene/property_list_helper.h"
 #include "scene/register_scene_types.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/resources/world_2d.h"
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_server.h"
@@ -1876,7 +1878,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			if (N) {
 				validate_extension_api_file = N->get();
 
-				N = N->next();
+				N = N->next
+();
 			}
 			else {
 				OS::get_singleton()->print(
@@ -3950,9 +3953,9 @@ int Main::start()
 		int64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t prev_time = OS::get_singleton()->get_ticks_usec();
 		while (minimum_time > 0) {
+
 			DisplayServer::get_singleton()->process_events();
-			O
-S::get_singleton()->delay_usec(100);
+			O S::get_singleton()->delay_usec(100);
 
 			uint64_t next_time = OS::get_singleton()->get_ticks_usec();
 			minimum_time -= (next_time - prev_time);
@@ -3985,23 +3988,37 @@ S::get_singleton()->delay_usec(100);
 	if (root) {
 		root->show();
 
-		// Intermediary canvas covering the window client area
-		Control* canvas = memnew(Control);
-		root->add_child(canvas);
-		canvas->set_size(root->get_size());
+		// Determine window dimensions
+		Size2i win_size = root->get_size();
+		if (win_size.x <= 0 || win_size.y <= 0) {
+			win_size = Size2i(1024, 600);
+		}
 
-		// Leaf primitive attached to canvas
+		RID viewport_rid = root->get_viewport_rid();
+		RID root_canvas = root->find_world_2d()->get_canvas();
+
+		// Configure the server viewport to render and present to the OS window
+		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
+		Renderer::viewport_set_active(viewport_rid, true);
+		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
+		Renderer::viewport_attach_to_screen(viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
+
+		// Instantiate and attach ColorRect directly to root canvas
 		ColorRect* rect = memnew(ColorRect);
-		canvas->add_child(rect);
-
-		rect->set_color(Color(1.0f, 0.5f, 0.0f, 1.0f));
-		rect->set_position(Point2(100, 100));
+		root->add_child(rect);
 		rect->set_size(Size2(300, 200));
-		rect->set_visible(true);
+		rect->set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
+
+		// Link canvas item to canvas and mark visible
+		Renderer::canvas_item_set_parent(rect->get_canvas_item(), root_canvas);
+		Renderer::canvas_item_set_visible(rect->get_canvas_item(), true);
+
+		// Statically trigger draw
+		rect->notification(CanvasItem::NOTIFICATION_DRAW);
 	}
 	else {
 		__print_line("Window root failed to be created");
-		return EXIT_SUCCESS;
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }

@@ -139,6 +139,7 @@ bool EditorFontPreviewPlugin::handles(const String& p_type) const { return true;
 
 EditorFontPreviewPlugin::EditorFontPreviewPlugin()
 {
+	puts("BAD2");
 	viewport = RS::viewport_create();
 	RS::viewport_set_update_mode(viewport, RSE::VIEWPORT_UPDATE_DISABLED);
 	RS::viewport_set_size(viewport, 128, 128);

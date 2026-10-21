@@ -247,7 +247,6 @@ void SceneTree::client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_
 
 SceneTree::SceneTree()
 {
-	ERR_FAIL_COND(singleton != nullptr);
 	singleton = this;
 }
 
