@@ -38,6 +38,11 @@ class Node;
 class NavigationPolygon;
 class NavigationMeshSourceGeometryData2D;
 
+struct NavMeshGeometryParser2D
+{
+	RID self;
+};
+
 class NavMeshGenerator2D
 {
 	static NavMeshGenerator2D* singleton;

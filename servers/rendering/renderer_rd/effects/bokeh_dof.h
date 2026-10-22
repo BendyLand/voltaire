@@ -35,13 +35,16 @@
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof_raster.glsl.gen.h"
 
-namespace RendererRD {
+namespace RendererRD
+{
 
-class BokehDOF {
+class BokehDOF
+{
 private:
 	bool prefer_raster_effects;
 
-	struct BokehPushConstant {
+	struct BokehPushConstant
+	{
 		uint32_t size[2];
 		float z_far;
 		float z_near;
@@ -71,7 +74,8 @@ private:
 		uint32_t pad[2];
 	};
 
-	enum BokehMode {
+	enum BokehMode
+	{
 		BOKEH_GEN_BLUR_SIZE,
 		BOKEH_GEN_BOKEH_BOX,
 		BOKEH_GEN_BOKEH_BOX_NOWEIGHT,
@@ -82,7 +86,8 @@ private:
 		BOKEH_MAX
 	};
 
-	struct Bokeh {
+	struct Bokeh
+	{
 		BokehPushConstant push_constant;
 		BokehDofShaderRD compute_shader;
 		BokehDofRasterShaderRD raster_shader;
@@ -92,7 +97,8 @@ private:
 	} bokeh;
 
 public:
-	struct BokehBuffers {
+	struct BokehBuffers
+	{
 		// bokeh buffers
 
 		// textures
@@ -105,7 +111,7 @@ public:
 		// raster only
 		RID base_fb;
 		RID secondary_fb; // with weights
-		RID half_fb[2]; // with weights
+		RID half_fb[2];	  // with weights
 		RID base_weight_fb;
 		RID weight_texture[4];
 	};
@@ -113,8 +119,12 @@ public:
 	BokehDOF(bool p_prefer_raster_effects);
 	~BokehDOF();
 
-	void bokeh_dof_compute(const BokehBuffers &p_buffers, RID p_camera_attributes, float p_cam_znear, float p_cam_zfar, bool p_cam_orthogonal);
-	void bokeh_dof_raster(const BokehBuffers &p_buffers, RID p_camera_attributes, float p_cam_znear, float p_cam_zfar, bool p_cam_orthogonal);
+	void bokeh_dof_compute(const BokehBuffers& p_buffers, RID p_camera_attributes,
+		float p_cam_znear, float p_cam_zfar, bool p_cam_orthogonal);
+	void bokeh_dof_raster(const BokehBuffers& p_buffers, RID p_camera_attributes, float p_cam_znear,
+		float p_cam_zfar, bool p_cam_orthogonal);
 };
 
 } // namespace RendererRD
+
+

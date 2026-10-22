@@ -29,10 +29,11 @@
 /**************************************************************************/
 
 #include "debug_effects.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
 
@@ -40,23 +41,21 @@ void DebugEffects::_create_frustum_arrays()
 {
 	if (frustum.vertex_buffer.is_null()) {
 		// Create vertex buffer, but don't put data in it yet
-		frustum.vertex_buffer =
-			RD::get_singleton()->vertex_buffer_create(8 * sizeof(float) * 3, Vector<uint8_t>());
+		frustum.vertex_buffer = RD::vertex_buffer_create(8 * sizeof(float) * 3, Vector<uint8_t>());
 
-		Vector<RD::VertexAttribute> attributes;
+		Vector<RDC::VertexAttribute> attributes;
 		Vector<RID> buffers;
-		RD::VertexAttribute vd;
+		RDC::VertexAttribute vd;
 
 		vd.location = 0;
 		vd.stride = sizeof(float) * 3;
-		vd.format = RD::DATA_FORMAT_R32G32B32_SFLOAT;
+		vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
 
 		attributes.push_back(vd);
 		buffers.push_back(frustum.vertex_buffer);
 
-		frustum.vertex_format = RD::get_singleton()->vertex_format_create(attributes);
-		frustum.vertex_array =
-			RD::get_singleton()->vertex_array_create(8, frustum.vertex_format, buffers);
+		frustum.vertex_format = RD::vertex_format_create(attributes);
+		frustum.vertex_array = RD::vertex_array_create(8, frustum.vertex_format, buffers);
 	}
 
 	if (frustum.index_buffer.is_null()) {
@@ -92,8 +91,9 @@ void DebugEffects::_create_frustum_arrays()
 				p16++;
 			}
 		}
-		frustum.index_array =
-			RD::get_singleton()->index_array_create(frustum.index_buffer, 0, 6 * 2 * 3);
+		frustum.index_buffer =
+			RD::index_buffer_create(6 * 2 * 3, RDC::INDEX_BUFFER_FORMAT_UINT16, data);
+		frustum.index_array = RD::index_array_create(frustum.index_buffer, 0, 6 * 2 * 3);
 	}
 
 	if (frustum.lines_buffer.is_null()) {
@@ -125,10 +125,31 @@ void DebugEffects::_create_frustum_arrays()
 				p16++;
 			}
 		}
-
-		frustum.lines_array =
-			RD::get_singleton()->index_array_create(frustum.lines_buffer, 0, 12 * 2);
+		frustum.lines_buffer =
+						RD::index_buffer_create(12 * 2, RDC::INDEX_BUFFER_FORMAT_UINT16, data);
+		frustum.lines_array = RD::index_array_create(frustum.lines_buffer, 0, 12 * 2);
 	}
+}
+
+DebugEffects::DebugEffects()
+{
+	// 1. Initialize frustum geometry buffers
+	_create_frustum_arrays();
+
+	// 2. Shadow frustum shader & version
+	Vector<String> shadow_frustum_modes;
+	shadow_frustum_modes.push_back("\n#define MODE_TRANSPARENT\n");
+	shadow_frustum_modes.push_back("\n#define MODE_WIREFRAME\n");
+
+	shadow_frustum.shader.initialize(shadow_frustum_modes);
+	shadow_frustum.shader_version = shadow_frustum.shader.version_create();
+
+	// 3. Motion vectors shader & version
+	Vector<String> motion_vectors_modes;
+	motion_vectors_modes.push_back("\n");
+
+	motion_vectors.shader.initialize(motion_vectors_modes);
+	motion_vectors.shader_version = motion_vectors.shader.version_create();
 }
 
 DebugEffects::~DebugEffects()
@@ -137,17 +158,17 @@ DebugEffects::~DebugEffects()
 
 	// Destroy vertex buffer and array.
 	if (frustum.vertex_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(frustum.vertex_buffer); // Array gets freed as dependency.
+		RD::free_rid(frustum.vertex_buffer); // Array gets freed as dependency.
 	}
 
 	// Destroy index buffer and array,
 	if (frustum.index_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(frustum.index_buffer); // Array gets freed as dependency.
+		RD::free_rid(frustum.index_buffer); // Array gets freed as dependency.
 	}
 
 	// Destroy lines buffer and array.
 	if (frustum.lines_buffer.is_valid()) {
-		RD::get_singleton()->free_rid(frustum.lines_buffer); // Array gets freed as dependency.
+		RD::free_rid(frustum.lines_buffer); // Array gets freed as dependency.
 	}
 
 	motion_vectors.shader.version_free(motion_vectors.shader_version);

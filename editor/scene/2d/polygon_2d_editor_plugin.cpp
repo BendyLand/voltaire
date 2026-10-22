@@ -53,7 +53,7 @@
 #include "scene/gui/split_container.h"
 #include "scene/gui/view_panner.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Node2D* Polygon2DEditor::_get_node() const { return node; }
 

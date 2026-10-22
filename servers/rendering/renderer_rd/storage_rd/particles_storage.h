@@ -600,21 +600,21 @@ public:
 		Particles* particles = particles_owner.get_or_null(p_particles);
 		ERR_FAIL_NULL_V(particles, RID());
 		if (particles->particles_transforms_buffer_uniform_set.is_null() ||
-			!RD::get_singleton()->uniform_set_is_valid(
+			!RD::uniform_set_is_valid(
 				particles->particles_transforms_buffer_uniform_set)) {
 			_particles_update_buffers(particles);
 			Vector<RD::Uniform> uniforms;
 
 			{
 				RD::Uniform u;
-				u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+				u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 				u.binding = 0;
 				u.append_id(particles->particle_instance_buffer);
 				uniforms.push_back(u);
 			}
 
 			particles->particles_transforms_buffer_uniform_set =
-				RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+				RD::uniform_set_create(uniforms, p_shader, p_set);
 		}
 
 		return particles->particles_transforms_buffer_uniform_set;

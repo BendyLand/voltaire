@@ -46,7 +46,7 @@
 #include "scene/gui/spin_box.h"
 #include "scene/main/scene_tree.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tile_data_editors.h"
 
 void TileDataEditor::_tile_set_changed_deferred_update()
@@ -270,7 +270,7 @@ void TileDataNavigationEditor::_notification(int p_what)
 	case NOTIFICATION_ENTER_TREE: {
 #ifdef DEBUG_ENABLED
 		polygon_editor->set_polygons_color(
-			NavigationServer2D::get_singleton()->get_debug_navigation_geometry_face_color());
+			NavigationServer2D::get_debug_navigation_geometry_face_color());
 #endif // DEBUG_ENABLED
 	} break;
 	}

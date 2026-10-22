@@ -55,7 +55,7 @@ private:
 	HashMap<StringName, Item> _parameters;
 
 	void _init_param(
-		Item& r_item, const RendererMaterialStorage::InstanceShaderParam& p_param) const;
+		Item& r_item, const InstanceShaderParam& p_param) const;
 	void _invalidate_items();
 };
 

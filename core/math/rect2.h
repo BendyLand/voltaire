@@ -38,23 +38,29 @@ class String;
 struct Rect2i;
 struct Transform2D;
 
-struct [[nodiscard]] Rect2 {
+struct [[nodiscard]] Rect2
+{
 	Point2 position;
 	Size2 size;
 
-	const Vector2 &get_position() const { return position; }
-	void set_position(const Vector2 &p_pos) { position = p_pos; }
-	const Vector2 &get_size() const { return size; }
-	void set_size(const Vector2 &p_size) { size = p_size; }
+	const Vector2& get_position() const { return position; }
+
+	void set_position(const Vector2& p_pos) { position = p_pos; }
+
+	const Vector2& get_size() const { return size; }
+
+	void set_size(const Vector2& p_size) { size = p_size; }
 
 	real_t get_area() const { return size.width * size.height; }
 
 	_FORCE_INLINE_ Vector2 get_center() const { return position + (size * 0.5f); }
 
-	inline bool intersects(const Rect2 &p_rect, bool p_include_borders = false) const {
+	inline bool intersects(const Rect2& p_rect, bool p_include_borders = false) const
+	{
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		if (p_include_borders) {
@@ -70,7 +76,8 @@ struct [[nodiscard]] Rect2 {
 			if ((position.y + size.height) < p_rect.position.y) {
 				return false;
 			}
-		} else {
+		}
+		else {
 			if (position.x >= (p_rect.position.x + p_rect.size.width)) {
 				return false;
 			}
@@ -88,10 +95,12 @@ struct [[nodiscard]] Rect2 {
 		return true;
 	}
 
-	inline real_t distance_to(const Vector2 &p_point) const {
+	inline real_t distance_to(const Vector2& p_point) const
+	{
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		real_t dist = 0.0;
@@ -120,34 +129,37 @@ struct [[nodiscard]] Rect2 {
 
 		if (inside) {
 			return 0;
-		} else {
+		}
+		else {
 			return dist;
 		}
 	}
 
-	bool intersects_transformed(const Transform2D &p_xform, const Rect2 &p_rect) const;
+	bool intersects_transformed(const Transform2D& p_xform, const Rect2& p_rect) const;
 
-	bool intersects_segment(const Point2 &p_from, const Point2 &p_to, Point2 *r_pos = nullptr, Point2 *r_normal = nullptr) const;
+	bool intersects_segment(const Point2& p_from, const Point2& p_to, Point2* r_pos = nullptr,
+		Point2* r_normal = nullptr) const;
 
-	inline bool encloses(const Rect2 &p_rect) const {
+	inline bool encloses(const Rect2& p_rect) const
+	{
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		return (p_rect.position.x >= position.x) && (p_rect.position.y >= position.y) &&
-				((p_rect.position.x + p_rect.size.x) <= (position.x + size.x)) &&
-				((p_rect.position.y + p_rect.size.y) <= (position.y + size.y));
+			   ((p_rect.position.x + p_rect.size.x) <= (position.x + size.x)) &&
+			   ((p_rect.position.y + p_rect.size.y) <= (position.y + size.y));
 	}
 
-	_FORCE_INLINE_ bool has_area() const {
-		return size.x > 0.0f && size.y > 0.0f;
-	}
+	_FORCE_INLINE_ bool has_area() const { return size.x > 0.0f && size.y > 0.0f; }
 
-	Rect2 intersection_transformed(const Transform2D &p_xform, const Rect2 &p_rect) const;
+	Rect2 intersection_transformed(const Transform2D& p_xform, const Rect2& p_rect) const;
 
 	// Returns the intersection between two Rect2s or an empty Rect2 if there is no intersection.
-	inline Rect2 intersection(const Rect2 &p_rect) const {
+	inline Rect2 intersection(const Rect2& p_rect) const
+	{
 		Rect2 new_rect = p_rect;
 
 		if (!intersects(new_rect)) {
@@ -164,10 +176,12 @@ struct [[nodiscard]] Rect2 {
 		return new_rect;
 	}
 
-	inline Rect2 merge(const Rect2 &p_rect) const { ///< return a merged rect
+	inline Rect2 merge(const Rect2& p_rect) const
+	{ ///< return a merged rect
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		Rect2 new_rect;
@@ -181,10 +195,12 @@ struct [[nodiscard]] Rect2 {
 		return new_rect;
 	}
 
-	inline bool has_point(const Point2 &p_point) const {
+	inline bool has_point(const Point2& p_point) const
+	{
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		if (p_point.x < position.x) {
@@ -204,40 +220,51 @@ struct [[nodiscard]] Rect2 {
 		return true;
 	}
 
-	bool is_equal_approx(const Rect2 &p_rect) const;
-	bool is_same(const Rect2 &p_rect) const;
+	bool is_equal_approx(const Rect2& p_rect) const;
+	bool is_same(const Rect2& p_rect) const;
 	bool is_finite() const;
 
-	constexpr bool operator==(const Rect2 &p_rect) const { return position == p_rect.position && size == p_rect.size; }
-	constexpr bool operator!=(const Rect2 &p_rect) const { return position != p_rect.position || size != p_rect.size; }
+	constexpr bool operator==(const Rect2& p_rect) const
+	{
+		return position == p_rect.position && size == p_rect.size;
+	}
 
-	inline Rect2 grow(real_t p_amount) const {
+	constexpr bool operator!=(const Rect2& p_rect) const
+	{
+		return position != p_rect.position || size != p_rect.size;
+	}
+
+	inline Rect2 grow(real_t p_amount) const
+	{
 		Rect2 g = *this;
 		g.grow_by(p_amount);
 		return g;
 	}
 
-	inline void grow_by(real_t p_amount) {
+	inline void grow_by(real_t p_amount)
+	{
 		position.x -= p_amount;
 		position.y -= p_amount;
 		size.width += p_amount * 2;
 		size.height += p_amount * 2;
 	}
 
-	inline Rect2 grow_side(Side p_side, real_t p_amount) const {
+	inline Rect2 grow_side(Side p_side, real_t p_amount) const
+	{
 		Rect2 g = *this;
 		g = g.grow_individual((SIDE_LEFT == p_side) ? p_amount : 0,
-				(SIDE_TOP == p_side) ? p_amount : 0,
-				(SIDE_RIGHT == p_side) ? p_amount : 0,
-				(SIDE_BOTTOM == p_side) ? p_amount : 0);
+			(SIDE_TOP == p_side) ? p_amount : 0, (SIDE_RIGHT == p_side) ? p_amount : 0,
+			(SIDE_BOTTOM == p_side) ? p_amount : 0);
 		return g;
 	}
 
-	inline Rect2 grow_side_bind(uint32_t p_side, real_t p_amount) const {
+	inline Rect2 grow_side_bind(uint32_t p_side, real_t p_amount) const
+	{
 		return grow_side(Side(p_side), p_amount);
 	}
 
-	inline Rect2 grow_individual(real_t p_left, real_t p_top, real_t p_right, real_t p_bottom) const {
+	inline Rect2 grow_individual(real_t p_left, real_t p_top, real_t p_right, real_t p_bottom) const
+	{
 		Rect2 g = *this;
 		g.position.x -= p_left;
 		g.position.y -= p_top;
@@ -247,16 +274,19 @@ struct [[nodiscard]] Rect2 {
 		return g;
 	}
 
-	_FORCE_INLINE_ Rect2 expand(const Vector2 &p_vector) const {
+	_FORCE_INLINE_ Rect2 expand(const Vector2& p_vector) const
+	{
 		Rect2 r = *this;
 		r.expand_to(p_vector);
 		return r;
 	}
 
-	inline void expand_to(const Vector2 &p_vector) { // In place function for speed.
+	inline void expand_to(const Vector2& p_vector)
+	{ // In place function for speed.
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0)) {
-			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
 		}
 #endif
 		Vector2 begin = position;
@@ -280,15 +310,12 @@ struct [[nodiscard]] Rect2 {
 		size = end - begin;
 	}
 
-	_FORCE_INLINE_ Rect2 abs() const {
-		return Rect2(position + size.minf(0), size.abs());
-	}
+	_FORCE_INLINE_ Rect2 abs() const { return Rect2(position + size.minf(0), size.abs()); }
 
-	_FORCE_INLINE_ Rect2 round() const {
-		return Rect2(position.round(), size.round());
-	}
+	_FORCE_INLINE_ Rect2 round() const { return Rect2(position.round(), size.round()); }
 
-	Vector2 get_support(const Vector2 &p_direction) const {
+	Vector2 get_support(const Vector2& p_direction) const
+	{
 		Vector2 support = position;
 		if (p_direction.x > 0.0f) {
 			support.x += size.x;
@@ -299,7 +326,8 @@ struct [[nodiscard]] Rect2 {
 		return support;
 	}
 
-	_FORCE_INLINE_ bool intersects_filled_polygon(const Vector2 *p_points, int p_point_count) const {
+	_FORCE_INLINE_ bool intersects_filled_polygon(const Vector2* p_points, int p_point_count) const
+	{
 		Vector2 center = get_center();
 		int side_plus = 0;
 		int side_minus = 0;
@@ -307,8 +335,8 @@ struct [[nodiscard]] Rect2 {
 
 		int i_f = p_point_count - 1;
 		for (int i = 0; i < p_point_count; i++) {
-			const Vector2 &a = p_points[i_f];
-			const Vector2 &b = p_points[i];
+			const Vector2& a = p_points[i_f];
+			const Vector2& b = p_points[i];
 			i_f = i;
 
 			Vector2 r = (b - a);
@@ -322,7 +350,8 @@ struct [[nodiscard]] Rect2 {
 			const real_t s = tg.dot(center) - tg.dot(a);
 			if (s < 0.0f) {
 				side_plus++;
-			} else {
+			}
+			else {
 				side_minus++;
 			}
 
@@ -348,23 +377,21 @@ struct [[nodiscard]] Rect2 {
 
 		if (side_plus * side_minus == 0) {
 			return true; // All inside.
-		} else {
+		}
+		else {
 			return false;
 		}
 	}
 
-	_FORCE_INLINE_ void set_end(const Vector2 &p_end) {
-		size = p_end - position;
-	}
+	_FORCE_INLINE_ void set_end(const Vector2& p_end) { size = p_end - position; }
 
-	_FORCE_INLINE_ Vector2 get_end() const {
-		return position + size;
-	}
+	_FORCE_INLINE_ Vector2 get_end() const { return position + size; }
 
 	explicit operator String() const;
 	operator Rect2i() const;
 
-	uint32_t hash() const {
+	uint32_t hash() const
+	{
 		uint32_t h = hash_murmur3_one_real(position.x);
 		h = hash_murmur3_one_real(position.y, h);
 		h = hash_murmur3_one_real(size.x, h);
@@ -372,23 +399,27 @@ struct [[nodiscard]] Rect2 {
 		return hash_fmix32(h);
 	}
 
-	static Rect2 from_points(const Vector2 *p_points, int p_point_count) {
+	static Rect2 from_points(const Vector2* p_points, int p_point_count)
+	{
 		Rect2 result;
 		ERR_FAIL_NULL_V_MSG(p_points, result, "The pointer of points passed in is invalid.");
-		ERR_FAIL_COND_V_MSG(p_point_count <= 0, result, "The number of points passed in is invalid.");
+		ERR_FAIL_COND_V_MSG(
+			p_point_count <= 0, result, "The number of points passed in is invalid.");
 		result.position = p_points[0];
 		Vector2 end = result.position;
 		for (int i = 1; i < p_point_count; i++) {
-			const Vector2 &p = p_points[i];
+			const Vector2& p = p_points[i];
 
 			if (p.x < result.position.x) {
 				result.position.x = p.x;
-			} else if (p.x > end.x) {
+			}
+			else if (p.x > end.x) {
 				end.x = p.x;
 			}
 			if (p.y < result.position.y) {
 				result.position.y = p.y;
-			} else if (p.y > end.y) {
+			}
+			else if (p.y > end.y) {
 				end.y = p.y;
 			}
 		}
@@ -397,15 +428,17 @@ struct [[nodiscard]] Rect2 {
 	}
 
 	Rect2() = default;
-	constexpr Rect2(real_t p_x, real_t p_y, real_t p_width, real_t p_height) :
-			position(Point2(p_x, p_y)),
-			size(Size2(p_width, p_height)) {
+
+	constexpr Rect2(real_t p_x, real_t p_y, real_t p_width, real_t p_height)
+		: position(Point2(p_x, p_y)), size(Size2(p_width, p_height))
+	{
 	}
-	constexpr Rect2(const Point2 &p_pos, const Size2 &p_size) :
-			position(p_pos),
-			size(p_size) {
-	}
+
+	constexpr Rect2(const Point2& p_pos, const Size2& p_size) : position(p_pos), size(p_size) {}
 };
 
-template <>
-struct is_zero_constructible<Rect2> : std::true_type {};
+template <> struct is_zero_constructible<Rect2> : std::true_type
+{
+};
+
+

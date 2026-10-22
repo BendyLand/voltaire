@@ -30,7 +30,7 @@
 
 #include "core/math/geometry_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "world_boundary_shape_2d.h"
 
 bool WorldBoundaryShape2D::_edit_is_selected_on_click(
@@ -93,7 +93,7 @@ void WorldBoundaryShape2D::draw(const RID& p_to_rid, const Color& p_color)
 	Color transparent_color = Color(p_color, 0);
 	PackedColorArray line_colors = {transparent_color, p_color, p_color, transparent_color};
 
-	RS::get_singleton()->canvas_item_add_polyline(p_to_rid, line_points, line_colors, line_width);
+	RS::canvas_item_add_polyline(p_to_rid, line_points, line_colors, line_width);
 
 	// Draw arrow.
 	Color arrow_color = p_color.inverted();
@@ -111,7 +111,7 @@ void WorldBoundaryShape2D::draw(const RID& p_to_rid, const Color& p_color)
 		xf.xform(Vector2(distance + line_width / 2, 2.5)),
 	};
 
-	RS::get_singleton()->canvas_item_add_polyline(
+	RS::canvas_item_add_polyline(
 		p_to_rid, arrow_points, {arrow_color}, line_width / 2);
 }
 

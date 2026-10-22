@@ -633,8 +633,8 @@ void TranslationServer::remove_domain(const StringName& p_domain)
 String TranslationServer::get_tool_locale()
 {
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() ||
-		Engine::get_singleton()->is_project_manager_hint()) {
+	if (Engine::is_editor_hint() ||
+		Engine::is_project_manager_hint()) {
 		if (editor_domain->has_translation_for_locale(locale, true)) {
 			return locale;
 		}
@@ -682,7 +682,7 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 
 	p_domain->clear();
 	const String prop = "internationalization/locale/translations";
-	if (!ProjectSettings::get_singleton()->has_setting(prop)) {
+	if (!ProjectSettings::has_setting(prop)) {
 		return;
 	}
 }

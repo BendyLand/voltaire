@@ -64,7 +64,7 @@
 #include "scene/scene_string_names.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 EditorInspectorActionButton::EditorInspectorActionButton(
 	const String& p_text, const StringName& p_icon_name)

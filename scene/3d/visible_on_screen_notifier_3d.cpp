@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "visible_on_screen_notifier_3d.h"
 
 AABB VisibleOnScreenNotifier3D::get_aabb() const { return aabb; }
@@ -50,8 +50,8 @@ VisibleOnScreenNotifier3D::~VisibleOnScreenNotifier3D()
 {
 	RID base_old = get_base();
 	set_base(RID());
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(base_old);
+	ERR_FAIL_NULL(Renderer::data);
+	RS::free_rid(base_old);
 }
 
 void VisibleOnScreenEnabler3D::_screen_enter() { _update_enable_mode(true); }

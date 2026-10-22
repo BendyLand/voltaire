@@ -30,7 +30,7 @@
 
 #include "core/config/engine.h"
 #include "scene/3d/physics/physics_body_3d.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "soft_body_3d.h"
 
 SoftBodyRenderingServerHandler::SoftBodyRenderingServerHandler() {}
@@ -45,14 +45,14 @@ void SoftBodyRenderingServerHandler::prepare(RID p_mesh, int p_surface)
 	surface = p_surface;
 
 	RenderingServerTypes::SurfaceData surface_data =
-		RS::get_singleton()->mesh_get_surface(mesh, surface);
+		RS::mesh_get_surface(mesh, surface);
 
 	uint32_t surface_offsets[RSE::ARRAY_MAX];
 	uint32_t vertex_stride;
 	uint32_t normal_tangent_stride;
 	uint32_t attrib_stride;
 	uint32_t skin_stride;
-	RS::get_singleton()->mesh_surface_make_offsets_from_format(surface_data.format,
+	RS::mesh_surface_make_offsets_from_format(surface_data.format,
 		surface_data.vertex_count, surface_data.index_count, surface_offsets, vertex_stride,
 		normal_tangent_stride, attrib_stride, skin_stride);
 
@@ -81,7 +81,7 @@ void SoftBodyRenderingServerHandler::close() { write_buffer = nullptr; }
 
 void SoftBodyRenderingServerHandler::commit_changes()
 {
-	RS::get_singleton()->mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
+	RS::mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
 }
 
 void SoftBodyRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3& p_vertex)
@@ -104,7 +104,7 @@ void SoftBodyRenderingServerHandler::set_normal(int p_vertex_id, const Vector3& 
 
 void SoftBodyRenderingServerHandler::set_aabb(const AABB& p_aabb)
 {
-	RS::get_singleton()->mesh_set_custom_aabb(mesh, p_aabb);
+	RS::mesh_set_custom_aabb(mesh, p_aabb);
 }
 
 SoftBody3D::PinnedPoint::PinnedPoint() {}
@@ -138,7 +138,7 @@ void SoftBody3D::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			// I have no idea what this is supposed to do, it's really weird
 			// leaving for upcoming PK work on physics
 			// add_change_receptor(this);
@@ -156,7 +156,7 @@ void SoftBody3D::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			_reset_points_offsets();
 			return;
 		}
@@ -166,7 +166,7 @@ void SoftBody3D::_notification(int p_what)
 
 		set_notify_transform(false);
 		// Required to be top level with Transform at center of world in order to modify
-		// RenderingServer only to support custom Transform
+		// Renderer only to support custom Transform
 		set_as_top_level(true);
 		set_transform(Transform3D());
 		set_notify_transform(true);

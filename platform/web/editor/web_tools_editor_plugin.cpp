@@ -56,7 +56,7 @@ WebToolsEditorPlugin::WebToolsEditorPlugin() {
 }
 
 void WebToolsEditorPlugin::_download_zip() {
-	if (!Engine::get_singleton() || !Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::get_singleton() || !Engine::is_editor_hint()) {
 		ERR_PRINT("Downloading the project as a ZIP archive is only available in Editor mode.");
 		return;
 	}

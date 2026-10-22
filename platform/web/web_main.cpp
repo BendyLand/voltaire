@@ -92,7 +92,7 @@ void main_loop_callback() {
 	}
 
 #ifndef PROXY_TO_PTHREAD_ENABLED
-	int max_fps = Engine::get_singleton()->get_max_fps();
+	int max_fps = Engine::get_max_fps();
 	if (max_fps > 0) {
 		if (current_ticks - target_ticks > 1000000) {
 			// When the window loses focus, we stop getting updates and accumulate delay.
@@ -166,7 +166,7 @@ extern EMSCRIPTEN_KEEPALIVE int godot_web_main(int argc, char *argv[]) {
 	os->set_exit_code(ret);
 	os->get_main_loop()->initialize();
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_project_manager_hint() && FileAccess::exists("/tmp/preload.zip")) {
+	if (Engine::is_project_manager_hint() && FileAccess::exists("/tmp/preload.zip")) {
 		PackedStringArray ps;
 		ps.push_back("/tmp/preload.zip");
 		SceneTree::get_singleton()->get_root()->emit_signal(SNAME("files_dropped"), ps);

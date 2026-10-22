@@ -32,6 +32,7 @@
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
 
@@ -60,30 +61,31 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 		w = MAX(w / 8, 1);
 		h = MAX(h / 8, 1);
 
-		RD::TextureFormat tf;
-		tf.format = RD::DATA_FORMAT_R32_SFLOAT;
+		RDC::TextureFormat tf;
+		tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 		tf.width = w;
 		tf.height = h;
 
 		bool final = w == 1 && h == 1;
 
 		if (prefer_raster_effects) {
-			tf.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT;
+			tf.usage_bits =
+				RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 		}
 		else {
-			tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT;
+			tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT;
 		}
 
 		if (final) {
-			tf.usage_bits |= RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+			tf.usage_bits |= RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		}
 
-		RID texture = RD::get_singleton()->texture_create(tf, RD::TextureView());
+		RID texture = RD::texture_create(tf, RD::TextureView());
 		reduce.push_back(texture);
 
 		if (final) {
-			current = RD::get_singleton()->texture_create(tf, RD::TextureView());
-			RD::get_singleton()->texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
+			current = RD::texture_create(tf, RD::TextureView());
+			RD::texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
 			break;
 		}
 	}
@@ -92,14 +94,13 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 void Luminance::LuminanceBuffers::free_data()
 {
 	for (int i = 0; i < reduce.size(); i++) {
-		RD::get_singleton()->free_rid(reduce[i]);
+		RD::free_rid(reduce[i]);
 	}
 	reduce.clear();
 
 	if (current.is_valid()) {
-		RD::get_singleton()->free_rid(current);
-		current = RID(
-);
+		RD::free_rid(current);
+		current = RID();
 	}
 }
 
@@ -134,6 +135,34 @@ void RendererRD::Luminance::luminance_reduction(RID p_source_texture, Vector2i p
 	Ref<RendererRD::Luminance::LuminanceBuffers> p_buffers, float p_min_luminance,
 	float p_max_luminance, float p_frame_time, bool p_immediate)
 {
+}
+
+Luminance::Luminance(bool p_prefer_raster_effects)
+{
+	prefer_raster_effects = p_prefer_raster_effects;
+	if (prefer_raster_effects) {
+		Vector<String> modes;
+		modes.push_back("\n#define READ_FIRST\n");
+		modes.push_back("\n");
+		modes.push_back("\n#define WRITE_FINAL\n");
+
+		luminance_reduce_raster.shader.initialize(modes);
+		luminance_reduce_raster.shader_version = luminance_reduce_raster.shader.version_create();
+	}
+	else {
+		Vector<String> modes;
+		modes.push_back("\n#define READ_FIRST\n");
+		modes.push_back("\n");
+		modes.push_back("\n#define WRITE_FINAL\n");
+
+		luminance_reduce.shader.initialize(modes);
+		luminance_reduce.shader_version = luminance_reduce.shader.version_create();
+
+		for (int i = 0; i < LUMINANCE_REDUCE_MAX; i++) {
+			luminance_reduce.pipelines[i] = RD::compute_pipeline_create(
+				luminance_reduce.shader.version_get_shader(luminance_reduce.shader_version, i));
+		}
+	}
 }
 
 

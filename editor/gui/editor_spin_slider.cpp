@@ -110,7 +110,7 @@ String EditorSpinSlider::get_suffix() const { return suffix; }
 void EditorSpinSlider::_value_input_hidden()
 {
 	_evaluate_input_text();
-	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
+	value_input_closed_frame = Engine::get_frames_drawn();
 }
 
 bool EditorSpinSlider::is_read_only() const { return read_only; }

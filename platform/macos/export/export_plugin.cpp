@@ -171,7 +171,7 @@ Error EditorExportPlatformMacOS::_export_macos_plugins_for(
 	Error error{OK};
 	const Vector<String>& macos_plugins{p_editor_export_plugin->get_macos_plugin_files()};
 	for (int i = 0; i < macos_plugins.size(); ++i) {
-		String src_path{ProjectSettings::get_singleton()->globalize_path(macos_plugins[i])};
+		String src_path{ProjectSettings::globalize_path(macos_plugins[i])};
 		String path_in_app{p_app_path_name + "/Contents/PlugIns/" + src_path.get_file()};
 		error = _copy_and_sign_files(dir_access, src_path, path_in_app, p_sign_enabled, p_preset,
 			p_ent_path, p_helper_ent_path, false, p_sandbox);

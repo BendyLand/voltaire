@@ -30,19 +30,19 @@
 
 #include "back_buffer_copy.h"
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void BackBufferCopy::_update_copy_mode()
 {
 	switch (copy_mode) {
 	case COPY_MODE_DISABLED: {
-		RS::get_singleton()->canvas_item_set_copy_to_backbuffer(get_canvas_item(), false, Rect2());
+		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), false, Rect2());
 	} break;
 	case COPY_MODE_RECT: {
-		RS::get_singleton()->canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, rect);
+		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, rect);
 	} break;
 	case COPY_MODE_VIEWPORT: {
-		RS::get_singleton()->canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, Rect2());
+		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, Rect2());
 
 	} break;
 	}

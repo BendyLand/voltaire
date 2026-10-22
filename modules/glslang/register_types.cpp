@@ -81,7 +81,7 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 		shader.setPreamble(preamble.c_str());
 	}
 
-	bool generate_spirv_debug_info = Engine::get_singleton()->is_generate_spirv_debug_info_enabled();
+	bool generate_spirv_debug_info = Engine::is_generate_spirv_debug_info_enabled();
 #ifdef D3D12_ENABLED
 	if (OS::get_singleton()->get_current_rendering_driver_name() == "d3d12") {
 		// SPIRV to DXIL conversion does not support debug info.

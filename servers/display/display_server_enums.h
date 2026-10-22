@@ -30,17 +30,20 @@
 
 #pragma once
 
-namespace DisplayServerEnums {
+namespace DisplayServerEnums
+{
 
 /* MAIN */
 
-enum Context {
+enum Context
+{
 	CONTEXT_EDITOR,
 	CONTEXT_PROJECTMAN,
 	CONTEXT_ENGINE,
 };
 
-enum Feature {
+enum Feature
+{
 #ifndef DISABLE_DEPRECATED
 	FEATURE_GLOBAL_MENU,
 #endif
@@ -84,7 +87,8 @@ enum Feature {
 
 /* RENDERING DEVICE */
 
-enum RenderingDeviceCreationStatus {
+enum RenderingDeviceCreationStatus
+{
 	UNKNOWN,
 	SUCCESS,
 	FAILURE,
@@ -92,7 +96,8 @@ enum RenderingDeviceCreationStatus {
 
 /* TTS */
 
-enum TTSUtteranceEvent {
+enum TTSUtteranceEvent
+{
 	TTS_UTTERANCE_STARTED,
 	TTS_UTTERANCE_ENDED,
 	TTS_UTTERANCE_CANCELED,
@@ -103,18 +108,21 @@ enum TTSUtteranceEvent {
 /* MOUSE */
 
 // Keep synced with InputClassEnums::MouseMode enum.
-enum MouseMode {
-	MOUSE_MODE_VISIBLE, // Input::MouseMode::MOUSE_MODE_VISIBLE
-	MOUSE_MODE_HIDDEN, // Input::MouseMode::MOUSE_MODE_HIDDEN
-	MOUSE_MODE_CAPTURED, // Input::MouseMode::MOUSE_MODE_CAPTURED
-	MOUSE_MODE_CONFINED, // Input::MouseMode::MOUSE_MODE_CONFINED
+enum MouseMode
+{
+	MOUSE_MODE_VISIBLE,			// Input::MouseMode::MOUSE_MODE_VISIBLE
+	MOUSE_MODE_HIDDEN,			// Input::MouseMode::MOUSE_MODE_HIDDEN
+	MOUSE_MODE_CAPTURED,		// Input::MouseMode::MOUSE_MODE_CAPTURED
+	MOUSE_MODE_CONFINED,		// Input::MouseMode::MOUSE_MODE_CONFINED
 	MOUSE_MODE_CONFINED_HIDDEN, // Input::MouseMode::MOUSE_MODE_CONFINED_HIDDEN
-	MOUSE_MODE_MAX, // Input::MouseMode::MOUSE_MODE_MAX
+	MOUSE_MODE_MAX,				// Input::MouseMode::MOUSE_MODE_MAX
 };
 
 // Keep synced with InputClassEnums and Control enums.
 #undef CursorShape
-enum CursorShape {
+
+enum CursorShape
+{
 	CURSOR_ARROW,
 	CURSOR_IBEAM,
 	CURSOR_POINTING_HAND,
@@ -138,7 +146,8 @@ enum CursorShape {
 /* KEYBOARD */
 
 // Keep synced with LineEdit::VirtualKeyboardType enum.
-enum VirtualKeyboardType {
+enum VirtualKeyboardType
+{
 	KEYBOARD_TYPE_DEFAULT,
 	KEYBOARD_TYPE_MULTILINE,
 	KEYBOARD_TYPE_NUMBER,
@@ -152,7 +161,8 @@ enum VirtualKeyboardType {
 /* SCREEN */
 
 // Keep synced with EditorSettings::InitialScreen enum.
-enum {
+enum
+{
 	INVALID_SCREEN = -1,
 	SCREEN_WITH_MOUSE_FOCUS = -4,
 	SCREEN_WITH_KEYBOARD_FOCUS = -3,
@@ -162,7 +172,8 @@ enum {
 
 // Keep the ScreenOrientation enum values in sync with the `display/window/handheld/orientation`
 // project setting hint.
-enum ScreenOrientation {
+enum ScreenOrientation
+{
 	SCREEN_LANDSCAPE,
 	SCREEN_PORTRAIT,
 	SCREEN_REVERSE_LANDSCAPE,
@@ -176,13 +187,15 @@ enum ScreenOrientation {
 
 typedef int WindowID;
 
-enum {
+enum
+{
 	MAIN_WINDOW_ID = 0,
 	INVALID_WINDOW_ID = -1,
 	INVALID_INDICATOR_ID = -1
 };
 
-enum HandleType {
+enum HandleType
+{
 	DISPLAY_HANDLE,
 	WINDOW_HANDLE,
 	WINDOW_VIEW,
@@ -193,7 +206,8 @@ enum HandleType {
 	GLX_FBCONFIG,
 };
 
-enum WindowMode {
+enum WindowMode
+{
 	WINDOW_MODE_WINDOWED,
 	WINDOW_MODE_MINIMIZED,
 	WINDOW_MODE_MAXIMIZED,
@@ -201,7 +215,8 @@ enum WindowMode {
 	WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
 };
 
-enum WindowFlags {
+enum WindowFlags
+{
 	WINDOW_FLAG_RESIZE_DISABLED,
 	WINDOW_FLAG_BORDERLESS,
 	WINDOW_FLAG_ALWAYS_ON_TOP,
@@ -219,7 +234,8 @@ enum WindowFlags {
 };
 
 // Separate enum otherwise we get warnings in switches not handling all values.
-enum WindowFlagsBit {
+enum WindowFlagsBit
+{
 	WINDOW_FLAG_RESIZE_DISABLED_BIT = (1 << WINDOW_FLAG_RESIZE_DISABLED),
 	WINDOW_FLAG_BORDERLESS_BIT = (1 << WINDOW_FLAG_BORDERLESS),
 	WINDOW_FLAG_ALWAYS_ON_TOP_BIT = (1 << WINDOW_FLAG_ALWAYS_ON_TOP),
@@ -235,7 +251,8 @@ enum WindowFlagsBit {
 	WINDOW_FLAG_MAXIMIZE_DISABLED_BIT = (1 << WINDOW_FLAG_MAXIMIZE_DISABLED),
 };
 
-enum WindowEvent {
+enum WindowEvent
+{
 	WINDOW_EVENT_MOUSE_ENTER,
 	WINDOW_EVENT_MOUSE_EXIT,
 	WINDOW_EVENT_FOCUS_IN,
@@ -248,7 +265,8 @@ enum WindowEvent {
 	WINDOW_EVENT_OUTPUT_MAX_LINEAR_VALUE_CHANGED,
 };
 
-enum WindowResizeEdge {
+enum WindowResizeEdge
+{
 	WINDOW_EDGE_TOP_LEFT,
 	WINDOW_EDGE_TOP,
 	WINDOW_EDGE_TOP_RIGHT,
@@ -262,14 +280,16 @@ enum WindowResizeEdge {
 
 // Keep the VSyncMode enum values in sync with the `display/window/vsync/vsync_mode`
 // project setting hint.
-enum VSyncMode {
+enum VSyncMode
+{
 	VSYNC_DISABLED,
 	VSYNC_ENABLED,
 	VSYNC_ADAPTIVE,
 	VSYNC_MAILBOX
 };
 
-enum ProgressState {
+enum ProgressState
+{
 	PROGRESS_STATE_NOPROGRESS,
 	PROGRESS_STATE_INDETERMINATE,
 	PROGRESS_STATE_NORMAL,
@@ -279,7 +299,8 @@ enum ProgressState {
 
 /* DIALOGS */
 
-enum FileDialogMode {
+enum FileDialogMode
+{
 	FILE_DIALOG_MODE_OPEN_FILE,
 	FILE_DIALOG_MODE_OPEN_FILES,
 	FILE_DIALOG_MODE_OPEN_DIR,
@@ -296,7 +317,8 @@ typedef int IndicatorID;
 
 /* ACCESSIBILITY */
 
-enum AccessibilityRole {
+enum AccessibilityRole
+{
 	ROLE_UNKNOWN,
 	ROLE_DEFAULT_BUTTON,
 	ROLE_AUDIO,
@@ -347,14 +369,16 @@ enum AccessibilityRole {
 	ROLE_TEXT_RUN,
 };
 
-enum AccessibilityPopupType {
+enum AccessibilityPopupType
+{
 	POPUP_MENU,
 	POPUP_LIST,
 	POPUP_TREE,
 	POPUP_DIALOG,
 };
 
-enum AccessibilityFlags {
+enum AccessibilityFlags
+{
 	FLAG_HIDDEN,
 	FLAG_MULTISELECTABLE,
 	FLAG_REQUIRED,
@@ -367,7 +391,8 @@ enum AccessibilityFlags {
 	FLAG_CLIPS_CHILDREN,
 };
 
-enum AccessibilityAction {
+enum AccessibilityAction
+{
 	ACTION_CLICK,
 	ACTION_FOCUS,
 	ACTION_BLUR,
@@ -393,18 +418,21 @@ enum AccessibilityAction {
 	ACTION_CUSTOM,
 };
 
-enum AccessibilityLiveMode {
+enum AccessibilityLiveMode
+{
 	LIVE_OFF,
 	LIVE_POLITE,
 	LIVE_ASSERTIVE,
 };
 
-enum AccessibilityScrollUnit {
+enum AccessibilityScrollUnit
+{
 	SCROLL_UNIT_ITEM,
 	SCROLL_UNIT_PAGE,
 };
 
-enum AccessibilityScrollHint {
+enum AccessibilityScrollHint
+{
 	SCROLL_HINT_TOP_LEFT,
 	SCROLL_HINT_BOTTOM_RIGHT,
 	SCROLL_HINT_TOP_EDGE,
@@ -416,3 +444,5 @@ enum AccessibilityScrollHint {
 #endif // DISABLE_DEPRECATED
 
 } // namespace DisplayServerEnums
+
+

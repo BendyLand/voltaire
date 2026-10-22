@@ -148,7 +148,7 @@ Error FileAccessWindows::open_internal(const String &p_path, int p_mode_flags) {
 
 		if (get_access_type() == ACCESS_RESOURCES) {
 			if (ProjectSettings::get_singleton()) {
-				working_path = ProjectSettings::get_singleton()->get_resource_path();
+				working_path = ProjectSettings::get_resource_path();
 				if (!working_path.is_empty()) {
 					base_path = working_path.path_to_file(base_path);
 				}

@@ -54,7 +54,7 @@
 #include "scene/resources/animation.h"
 #include "scene/resources/image_texture.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 String AnimationPlayerEditor::_get_current() const
 {
@@ -136,8 +136,8 @@ void AnimationPlayerEditor::forward_force_draw_over_viewport(Control* p_overlay)
 			alpha += alpha_step;
 
 			if (onion.captures_valid[capture_idx]) {
-				RS::get_singleton()->canvas_item_add_texture_rect_region(ci, dst_rect,
-					RS::get_singleton()->viewport_get_texture(onion.captures[capture_idx]),
+				Renderer::canvas_item_add_texture_rect_region(ci, dst_rect,
+					Renderer::viewport_get_texture(onion.captures[capture_idx]),
 					src_rect, Color(1, 1, 1, alpha));
 			}
 
@@ -151,8 +151,8 @@ void AnimationPlayerEditor::forward_force_draw_over_viewport(Control* p_overlay)
 			alpha -= alpha_step;
 
 			if (onion.captures_valid[capture_idx]) {
-				RS::get_singleton()->canvas_item_add_texture_rect_region(ci, dst_rect,
-					RS::get_singleton()->viewport_get_texture(onion.captures[capture_idx]),
+				Renderer::canvas_item_add_texture_rect_region(ci, dst_rect,
+					Renderer::viewport_get_texture(onion.captures[capture_idx]),
 					src_rect, Color(1, 1, 1, alpha));
 			}
 
@@ -202,19 +202,20 @@ void AnimationPlayerEditor::_allocate_onion_layers()
 
 		// Each capture is a viewport with a canvas item attached that renders a full-size rect with
 		// the contents of the main viewport.
-		onion.captures[i] = RS::get_singleton()->viewport_create();
+		onion.captures[i] = Renderer::viewport_create();
+		puts("BAD1");
 
-		RS::get_singleton()->viewport_set_size(
+		Renderer::viewport_set_size(
 			onion.captures[i], capture_size.width, capture_size.height);
-		RS::get_singleton()->viewport_set_update_mode(
+		Renderer::viewport_set_update_mode(
 			onion.captures[i], RSE::VIEWPORT_UPDATE_ALWAYS);
-		RS::get_singleton()->viewport_set_transparent_background(onion.captures[i], !is_present);
-		RS::get_singleton()->viewport_attach_canvas(onion.captures[i], onion.capture.canvas);
+		Renderer::viewport_set_transparent_background(onion.captures[i], !is_present);
+		Renderer::viewport_attach_canvas(onion.captures[i], onion.capture.canvas);
 	}
 
 	// Reset the capture canvas item to the current root viewport texture (defensive).
-	RS::get_singleton()->canvas_item_clear(onion.capture.canvas_item);
-	RS::get_singleton()->canvas_item_add_texture_rect(onion.capture.canvas_item,
+	Renderer::canvas_item_clear(onion.capture.canvas_item);
+	Renderer::canvas_item_add_texture_rect(onion.capture.canvas_item,
 		Rect2(Point2(), Point2(capture_size.x, -capture_size.y)),
 		get_tree()->get_root()->get_texture()->get_rid());
 
@@ -225,7 +226,7 @@ void AnimationPlayerEditor::_free_onion_layers()
 {
 	for (uint32_t i = 0; i < onion.captures.size(); i++) {
 		if (onion.captures[i].is_valid()) {
-			RS::get_singleton()->free_rid(onion.captures[i]);
+			Renderer::free_rid(onion.captures[i]);
 		}
 	}
 	onion.captures.clear();
@@ -278,8 +279,8 @@ AnimationMixer* AnimationPlayerEditor::get_editing_node() const { return origina
 AnimationPlayerEditor::~AnimationPlayerEditor()
 {
 	_free_onion_layers();
-	RS::get_singleton()->free_rid(onion.capture.canvas);
-	RS::get_singleton()->free_rid(onion.capture.canvas_item);
+	Renderer::free_rid(onion.capture.canvas);
+	Renderer::free_rid(onion.capture.canvas_item);
 	onion.capture = {};
 }
 

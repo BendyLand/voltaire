@@ -340,11 +340,11 @@ public:
 	virtual ~RenderingShaderContainer();
 };
 
-class RenderingShaderContainerFormat : public RenderingDeviceCommons
+class RenderingShaderContainerFormat
 {
 public:
 	virtual Ref<RenderingShaderContainer> create_container() const = 0;
-	virtual ShaderLanguageVersion get_shader_language_version() const = 0;
-	virtual ShaderSpirvVersion get_shader_spirv_version() const = 0;
+	virtual RDC::ShaderLanguageVersion get_shader_language_version() const = 0;
+	virtual RDC::ShaderSpirvVersion get_shader_spirv_version() const = 0;
 };
 

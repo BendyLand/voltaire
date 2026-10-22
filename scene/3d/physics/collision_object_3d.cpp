@@ -33,7 +33,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CollisionObject3D::set_collision_layer(uint32_t p_layer)
 {
@@ -262,7 +262,7 @@ void CollisionObject3D::_update_pickable()
 bool CollisionObject3D::_are_collision_shapes_visible()
 {
 	return is_inside_tree() && get_tree()->is_debugging_collisions_hint() &&
-		   !Engine::get_singleton()->is_editor_hint();
+		   !Engine::is_editor_hint();
 }
 
 void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)
@@ -274,7 +274,7 @@ void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)
 			ShapeData::ShapeBase& s = shape_bases[i];
 			if (s.shape == p_shape && s.debug_shape.is_valid()) {
 				Ref<Mesh> mesh = s.shape->get_debug_mesh();
-				RS::get_singleton()->instance_set_base(s.debug_shape, mesh->get_rid());
+				RS::instance_set_base(s.debug_shape, mesh->get_rid());
 			}
 		}
 	}
@@ -295,7 +295,7 @@ void CollisionObject3D::_on_transform_changed()
 				if (shape_bases[i].debug_shape.is_null()) {
 					continue;
 				}
-				RS::get_singleton()->instance_set_transform(
+				RS::instance_set_transform(
 					shape_bases[i].debug_shape, debug_shape_old_transform * shapedata.xform);
 			}
 		}

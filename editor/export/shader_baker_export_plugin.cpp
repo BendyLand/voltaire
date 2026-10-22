@@ -56,9 +56,7 @@ bool ShaderBakerExportPlugin::_is_active(const Vector<String>& p_features) const
 {
 	// Shader baker should only work when a RendererRD driver is active, as the embedded shaders
 	// won't be found otherwise.
-	return RendererSceneRenderRD::get_singleton() != nullptr &&
-		   RendererRD::MaterialStorage::get_singleton() != nullptr &&
-		   p_features.has("shader_baker");
+	return RendererSceneRenderRD::data != nullptr && p_features.has("shader_baker");
 }
 
 void ShaderBakerExportPlugin::_cleanup_container_format()
@@ -102,15 +100,16 @@ bool ShaderBakerExportPlugin::_begin_customize_scenes(
 Ref<Resource> ShaderBakerExportPlugin::_customize_resource(
 	const Ref<Resource>& p_resource, const String& p_path)
 {
-	RendererRD::MaterialStorage* singleton = RendererRD::MaterialStorage::get_singleton();
 	DEV_ASSERT(singleton != nullptr);
 
 	Ref<Material> material = p_resource;
 	if (material.is_valid()) {
 		RID material_rid = material->get_rid();
 		if (material_rid.is_valid()) {
+			// FIX: Check if RendererRD can be used here or if it has to be
+			//      one layer higher (RendererMaterialStorage)
 			RendererRD::MaterialStorage::ShaderData* shader_data =
-				singleton->material_get_shader_data(material_rid);
+				RendererRD::MaterialStorage::material_get_shader_data(material_rid);
 			if (shader_data != nullptr) {
 				Pair<ShaderRD*, RID> shader_version_pair =
 					shader_data->get_native_shader_and_version();
@@ -134,7 +133,7 @@ void ShaderBakerExportPlugin::_process_work_item(WorkItem p_work_item)
 {
 	if (!tasks_cancelled) {
 		// Only process the item if the tasks haven't been cancelled by the user yet.
-		Vector<RD::ShaderStageSPIRVData> spirv_data =
+		Vector<RDC::ShaderStageSPIRVData> spirv_data =
 			ShaderRD::compile_stages(p_work_item.stage_sources, p_work_item.dynamic_buffers);
 		if (unlikely(spirv_data.is_empty())) {
 			ERR_PRINT("Unable to retrieve SPIR-V data for shader.");

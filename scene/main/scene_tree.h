@@ -451,8 +451,8 @@ public:
 
 	SceneTreeFTI& get_scene_tree_fti() { return scene_tree_fti; }
 
-	SceneTree() = default;
-	~SceneTree() = default;
+	SceneTree();
+	~SceneTree();
 };
 
 

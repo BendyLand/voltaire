@@ -88,12 +88,12 @@ const char *RenamesMap3To4::enum_renames[][2] = {
 	{ "COMPRESS_PVRTC4", "COMPRESS_PVRTC1_4" }, // Image
 	{ "CONNECT_ONESHOT", "CONNECT_ONE_SHOT" }, // Object
 	{ "CONTAINER_PROPERTY_EDITOR_BOTTOM", "CONTAINER_INSPECTOR_BOTTOM" }, // EditorPlugin
-	{ "CUBEMAP_BACK", "CUBEMAP_LAYER_BACK" }, // RenderingServer
-	{ "CUBEMAP_BOTTOM", "CUBEMAP_LAYER_BOTTOM" }, // RenderingServer
-	{ "CUBEMAP_FRONT", "CUBEMAP_LAYER_FRONT" }, // RenderingServer
-	{ "CUBEMAP_LEFT", "CUBEMAP_LAYER_LEFT" }, // RenderingServer
-	{ "CUBEMAP_RIGHT", "CUBEMAP_LAYER_RIGHT" }, // RenderingServer
-	{ "CUBEMAP_TOP", "CUBEMAP_LAYER_TOP" }, // RenderingServer
+	{ "CUBEMAP_BACK", "CUBEMAP_LAYER_BACK" }, // Renderer
+	{ "CUBEMAP_BOTTOM", "CUBEMAP_LAYER_BOTTOM" }, // Renderer
+	{ "CUBEMAP_FRONT", "CUBEMAP_LAYER_FRONT" }, // Renderer
+	{ "CUBEMAP_LEFT", "CUBEMAP_LAYER_LEFT" }, // Renderer
+	{ "CUBEMAP_RIGHT", "CUBEMAP_LAYER_RIGHT" }, // Renderer
+	{ "CUBEMAP_TOP", "CUBEMAP_LAYER_TOP" }, // Renderer
 	{ "DAMPED_STRING_DAMPING", "DAMPED_SPRING_DAMPING" }, // PhysicsServer2D
 	{ "DAMPED_STRING_REST_LENGTH", "DAMPED_SPRING_REST_LENGTH" }, // PhysicsServer2D
 	{ "DAMPED_STRING_STIFFNESS", "DAMPED_SPRING_STIFFNESS" }, // PhysicsServer2D
@@ -106,7 +106,7 @@ const char *RenamesMap3To4::enum_renames[][2] = {
 	{ "FORMAT_PVRTC4", "FORMAT_PVRTC1_4" }, // Image
 	{ "FORMAT_PVRTC4A", "FORMAT_PVRTC1_4A" }, // Image
 	{ "FUNC_FRAC", "FUNC_FRACT" }, // VisualShaderNodeVectorFunc
-	{ "INSTANCE_LIGHTMAP_CAPTURE", "INSTANCE_LIGHTMAP" }, // RenderingServer
+	{ "INSTANCE_LIGHTMAP_CAPTURE", "INSTANCE_LIGHTMAP" }, // Renderer
 	{ "JOINT_6DOF", "JOINT_TYPE_6DOF" }, // PhysicsServer3D
 	{ "JOINT_CONE_TWIST", "JOINT_TYPE_CONE_TWIST" }, // PhysicsServer3D
 	{ "JOINT_DAMPED_SPRING", "JOINT_TYPE_DAMPED_SPRING" }, // PhysicsServer2D
@@ -135,8 +135,8 @@ const char *RenamesMap3To4::enum_renames[][2] = {
 	{ "RENDER_DRAW_CALLS_IN_FRAME", "RENDER_TOTAL_DRAW_CALLS_IN_FRAME" }, // Performance
 	{ "RENDER_OBJECTS_IN_FRAME", "RENDER_TOTAL_OBJECTS_IN_FRAME" }, // Performance
 	{ "SOURCE_GEOMETRY_NAVMESH_CHILDREN", "SOURCE_GEOMETRY_ROOT_NODE_CHILDREN" }, // NavigationMesh
-	{ "TEXTURE_TYPE_2D_ARRAY", "TEXTURE_LAYERED_2D_ARRAY" }, // RenderingServer
-	{ "TEXTURE_TYPE_CUBEMAP", "TEXTURE_LAYERED_CUBEMAP_ARRAY" }, // RenderingServer
+	{ "TEXTURE_TYPE_2D_ARRAY", "TEXTURE_LAYERED_2D_ARRAY" }, // Renderer
+	{ "TEXTURE_TYPE_CUBEMAP", "TEXTURE_LAYERED_CUBEMAP_ARRAY" }, // Renderer
 	{ "TRACKER_LEFT_HAND", "TRACKER_HAND_LEFT" }, // XRPositionalTracker
 	{ "TRACKER_RIGHT_HAND", "TRACKER_HAND_RIGHT" }, // XRPositionalTracker
 	{ "TYPE_NORMALMAP", "TYPE_NORMAL_MAP" }, // VisualShaderNodeCubemap
@@ -145,7 +145,7 @@ const char *RenamesMap3To4::enum_renames[][2] = {
 	{ "AlignMode", "AlignmentMode" }, // AspectRatioContainer
 	{ "AnimationProcessMode", "AnimationProcessCallback" }, // AnimationTree, AnimationPlayer
 	{ "Camera2DProcessMode", "Camera2DProcessCallback" }, // Camera2D
-	{ "CubeMapSide", "CubeMapLayer" }, // RenderingServer
+	{ "CubeMapSide", "CubeMapLayer" }, // Renderer
 	{ "DampedStringParam", "DampedSpringParam" }, // PhysicsServer2D
 	{ "FFT_Size", "FFTSize" }, // AudioEffectPitchShift, AudioEffectSpectrumAnalyzer
 	{ "PauseMode", "ProcessMode" }, // Node
@@ -178,7 +178,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	// { "get_peer_port", "get_peer" }, // ENetMultiplayerPeer -- Breaks WebSocketServer.
 	// { "get_points", "get_points_id" }, // AStar -- Breaks Line2D, ConvexPolygonShape.
 	// { "get_process_mode", "get_process_callback" }, // ClippedCamera3D -- Breaks Node, Sky.
-	// { "get_render_info", "get_rendering_info" }, // RenderingServer -- Breaks Viewport.
+	// { "get_render_info", "get_rendering_info" }, // Renderer -- Breaks Viewport.
 	// { "get_stylebox", "get_theme_stylebox" }, // Control -- Would rename the method in Theme as well, skipping.
 	// { "get_type", "get_tracker_type" }, // XRPositionalTracker -- Breaks GLTFAccessor, GLTFLight.
 	// { "get_v_offset", "get_drag_vertical_offset" }, // Camera2D -- Breaks PathFollow, Camera.
@@ -236,7 +236,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "can_drop_data", "_can_drop_data" }, // Control
 	{ "can_generate_small_preview", "_can_generate_small_preview" }, // EditorResourcePreviewGenerator
 	{ "can_instance", "can_instantiate" }, // PackedScene, Script
-	{ "canvas_light_set_scale", "canvas_light_set_texture_scale" }, // RenderingServer
+	{ "canvas_light_set_scale", "canvas_light_set_texture_scale" }, // Renderer
 	{ "capture_get_device", "get_input_device" }, // AudioServer
 	{ "capture_get_device_list", "get_input_device_list" }, // AudioServer
 	{ "capture_set_device", "set_input_device" }, // AudioServer
@@ -361,7 +361,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "get_preset_count", "_get_preset_count" }, // EditorImportPlugin
 	{ "get_preset_name", "_get_preset_name" }, // EditorImportPlugin
 	{ "get_recognized_extensions", "_get_recognized_extensions" }, // ResourceFormatLoader, EditorImportPlugin -- Breaks ResourceSaver.
-	{ "get_render_info", "get_rendering_info" }, // RenderingServer
+	{ "get_render_info", "get_rendering_info" }, // Renderer
 	{ "get_render_targetsize", "get_render_target_size" }, // XRInterface
 	{ "get_resource_type", "_get_resource_type" }, // ResourceFormatLoader
 	{ "get_result", "get_data" }, // JSON
@@ -421,7 +421,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "http_escape", "uri_encode" }, // String
 	{ "http_unescape", "uri_decode" }, // String
 	{ "import_scene_from_other_importer", "_import_scene" }, // EditorSceneFormatImporter
-	{ "instance_set_surface_material", "instance_set_surface_override_material" }, // RenderingServer
+	{ "instance_set_surface_material", "instance_set_surface_override_material" }, // Renderer
 	{ "interpolate", "sample" }, // Curve, Curve2D, Curve3D, Gradient
 	{ "intersect_polygons_2d", "intersect_polygons" }, // Geometry2D
 	{ "intersect_polyline_with_polygon_2d", "intersect_polyline_with_polygon" }, // Geometry2D
@@ -458,11 +458,11 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "make_convex_from_brothers", "make_convex_from_siblings" }, // CollisionShape3D
 	{ "make_visible", "_make_visible" }, // EditorPlugin
 	{ "merge_polygons_2d", "merge_polygons" }, // Geometry2D
-	{ "mesh_surface_get_format", "mesh_surface_get_format_attribute_stride" }, // RenderingServer
-	{ "mesh_surface_update_region", "mesh_surface_update_attribute_region" }, // RenderingServer
+	{ "mesh_surface_get_format", "mesh_surface_get_format_attribute_stride" }, // Renderer
+	{ "mesh_surface_update_region", "mesh_surface_update_attribute_region" }, // Renderer
 	{ "move_to_bottom", "move_after" }, // Skeleton3D
 	{ "move_to_top", "move_before" }, // Skeleton3D
-	{ "multimesh_allocate", "multimesh_allocate_data" }, // RenderingServer
+	{ "multimesh_allocate", "multimesh_allocate_data" }, // Renderer
 	{ "normalmap_to_xy", "normal_map_to_xy" }, // Image
 	{ "offset_polygon_2d", "offset_polygon" }, // Geometry2D
 	{ "offset_polyline_2d", "offset_polyline" }, // Geometry2D
@@ -583,7 +583,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "set_zfar", "set_far" }, // Camera3D -- Breaks GLTFCamera.
 	{ "set_znear", "set_near" }, // Camera3D -- Breaks GLTFCamera.
 	{ "shortcut_match", "is_match" }, // InputEvent
-	{ "skeleton_allocate", "skeleton_allocate_data" }, // RenderingServer
+	{ "skeleton_allocate", "skeleton_allocate_data" }, // Renderer
 	{ "surface_update_region", "surface_update_attribute_region" }, // ArrayMesh
 	{ "track_remove_key_at_position", "track_remove_key_at_time" }, // Animation
 	{ "triangulate_delaunay_2d", "triangulate_delaunay" }, // Geometry2D
@@ -591,7 +591,7 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ "unselect_all", "deselect_all" }, // ItemList
 	{ "update_configuration_warning", "update_configuration_warnings" }, // Node
 	{ "update_gizmo", "update_gizmos" }, // Node3D
-	{ "viewport_set_use_arvr", "viewport_set_use_xr" }, // RenderingServer
+	{ "viewport_set_use_arvr", "viewport_set_use_xr" }, // Renderer
 	{ "warp_mouse_position", "warp_mouse" }, // Input
 	{ "world_to_map", "local_to_map" }, // TileMap, GridMap
 
@@ -663,7 +663,7 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "CanDropDataFw", "_CanDropDataFw" }, // ScriptEditor
 	{ "CanGenerateSmallPreview", "_CanGenerateSmallPreview" }, // EditorResourcePreviewGenerator
 	{ "CanInstance", "CanInstantiate" }, // PackedScene, Script
-	{ "CanvasLightSetScale", "CanvasLightSetTextureScale" }, // RenderingServer
+	{ "CanvasLightSetScale", "CanvasLightSetTextureScale" }, // Renderer
 	{ "CaptureGetDevice", "GetInputDevice" }, // AudioServer
 	{ "CaptureGetDeviceList", "GetInputDeviceList" }, // AudioServer
 	{ "CaptureSetDevice", "SetInputDevice" }, // AudioServer
@@ -783,7 +783,7 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "GetPresetCount", "_GetPresetCount" }, // EditorImportPlugin
 	{ "GetPresetName", "_GetPresetName" }, // EditorImportPlugin
 	{ "GetRecognizedExtensions", "_GetRecognizedExtensions" }, // ResourceFormatLoader, EditorImportPlugin -- Breaks ResourceSaver.
-	{ "GetRenderInfo", "GetRenderingInfo" }, // RenderingServer
+	{ "GetRenderInfo", "GetRenderingInfo" }, // Renderer
 	{ "GetRenderTargetsize", "GetRenderTargetSize" }, // XRInterface
 	{ "GetResourceType", "_GetResourceType" }, // ResourceFormatLoader
 	{ "GetResult", "GetData" }, // JSON
@@ -842,7 +842,7 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "HttpUnescape", "UriDecode" }, // String
 	{ "ImportAnimationFromOtherImporter", "_ImportAnimation" }, // EditorSceneFormatImporter
 	{ "ImportSceneFromOtherImporter", "_ImportScene" }, // EditorSceneFormatImporter
-	{ "InstanceSetSurfaceMaterial", "InstanceSetSurfaceOverrideMaterial" }, // RenderingServer
+	{ "InstanceSetSurfaceMaterial", "InstanceSetSurfaceOverrideMaterial" }, // Renderer
 	{ "IntersectPolygons2d", "IntersectPolygons" }, // Geometry2D
 	{ "IntersectPolylineWithPolygon2d", "IntersectPolylineWithPolygon" }, // Geometry2D
 	{ "IsAParentOf", "IsAncestorOf" }, // Node
@@ -874,11 +874,11 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "LoadFromGlobals", "LoadFromProjectSettings" }, // InputMap
 	{ "MakeConvexFromBrothers", "MakeConvexFromSiblings" }, // CollisionShape3D
 	{ "MergePolygons2d", "MergePolygons" }, // Geometry2D
-	{ "MeshSurfaceGetFormat", "MeshSurfaceGetFormatAttributeStride" }, // RenderingServer
-	{ "MeshSurfaceUpdateRegion", "MeshSurfaceUpdateAttributeRegion" }, // RenderingServer
+	{ "MeshSurfaceGetFormat", "MeshSurfaceGetFormatAttributeStride" }, // Renderer
+	{ "MeshSurfaceUpdateRegion", "MeshSurfaceUpdateAttributeRegion" }, // Renderer
 	{ "MoveToBottom", "MoveAfter" }, // Skeleton3D
 	{ "MoveToTop", "MoveBefore" }, // Skeleton3D
-	{ "MultimeshAllocate", "MultimeshAllocateData" }, // RenderingServer
+	{ "MultimeshAllocate", "MultimeshAllocateData" }, // Renderer
 	{ "NormalmapToXy", "NormalMapToXy" }, // Image
 	{ "OffsetPolygon2d", "OffsetPolygon" }, // Geometry2D
 	{ "OffsetPolyline2d", "OffsetPolyline" }, // Geometry2D
@@ -994,7 +994,7 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "SetZfar", "SetFar" }, // Camera3D -- Breaks GLTFCamera.
 	{ "SetZnear", "SetNear" }, // Camera3D -- Breaks GLTFCamera.
 	{ "ShortcutMatch", "IsMatch" }, // InputEvent
-	{ "SkeletonAllocate", "SkeletonAllocateData" }, // RenderingServer
+	{ "SkeletonAllocate", "SkeletonAllocateData" }, // Renderer
 	{ "SurfaceUpdateRegion", "SurfaceUpdateAttributeRegion" }, // ArrayMesh
 	{ "TrackRemoveKeyAtPosition", "TrackRemoveKeyAtTime" }, // Animation
 	{ "TriangulateDelaunay2d", "TriangulateDelaunay" }, // Geometry2D
@@ -1003,7 +1003,7 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "UnselectAll", "DeselectAll" }, // ItemList
 	{ "UpdateConfigurationWarning", "UpdateConfigurationWarnings" }, // Node
 	{ "UpdateGizmo", "UpdateGizmos" }, // Node3D
-	{ "ViewportSetUseArvr", "ViewportSetUseXr" }, // RenderingServer
+	{ "ViewportSetUseArvr", "ViewportSetUseXr" }, // Renderer
 	{ "WarpMousePosition", "WarpMouse" }, // Input
 	{ "WorldToMap", "LocalToMap" }, // TileMap, GridMap
 
@@ -1625,7 +1625,7 @@ const char *RenamesMap3To4::class_renames[][2] = {
 	{ "VisibilityNotifier2D", "VisibleOnScreenNotifier2D" },
 	{ "VisibilityNotifier3D", "VisibleOnScreenNotifier3D" },
 	{ "VisualInstance", "VisualInstance3D" },
-	{ "VisualServer", "RenderingServer" },
+	{ "VisualServer", "Renderer" },
 	{ "VisualShaderNodeCubeMap", "VisualShaderNodeCubemap" },
 	{ "VisualShaderNodeScalarClamp", "VisualShaderNodeClamp" },
 	{ "VisualShaderNodeScalarConstant", "VisualShaderNodeFloatConstant" },

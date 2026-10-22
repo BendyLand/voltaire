@@ -41,7 +41,7 @@ static HashMap<String, JNISingleton *> jni_singletons;
 
 void unregister_plugins_singletons() {
 	for (const KeyValue<String, JNISingleton *> &E : jni_singletons) {
-		Engine::get_singleton()->remove_singleton(E.key);
+		Engine::remove_singleton(E.key);
 
 		memdelete(E.value);
 	}
@@ -63,7 +63,7 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeR
 	JNISingleton *plugin_singleton = memnew(JNISingleton(plugin_object));
 	jni_singletons[singname] = plugin_singleton;
 
-	Engine::get_singleton()->add_singleton(Engine::Singleton(singname, plugin_singleton));
+	Engine::add_singleton(Engine::Singleton(singname, plugin_singleton));
 	return true;
 }
 

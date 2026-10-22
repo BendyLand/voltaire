@@ -30,7 +30,7 @@
 
 #include "window.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -42,7 +42,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 // Editor integration.
@@ -209,7 +209,7 @@ Size2i Window::get_size_with_decorations() const
 Size2i Window::_clamp_limit_size(const Size2i& p_limit_size)
 {
 	// Force window limits to respect size limitations of rendering server.
-	Size2i max_window_size = RS::get_singleton()->get_maximum_viewport_size();
+	Size2i max_window_size = RS::get_maximum_viewport_size();
 	if (max_window_size != Size2i()) {
 		return p_limit_size.clamp(Vector2i(), max_window_size);
 	}
@@ -224,7 +224,7 @@ void Window::_validate_limit_size()
 	// server.
 	bool max_size_valid =
 		(max_size.x > 0 || max_size.y > 0) && max_size.x >= min_size.x && max_size.y >= min_size.y;
-	max_size_used = max_size_valid ? max_size : RS::get_singleton()->get_maximum_viewport_size();
+	max_size_used = max_size_valid ? max_size : RS::get_maximum_viewport_size();
 }
 
 void Window::set_max_size(const Size2i& p_max_size)
@@ -520,7 +520,7 @@ void Window::_clear_window()
 	}
 
 	_update_viewport_size();
-	RS::get_singleton()->viewport_set_update_mode(
+	RS::viewport_set_update_mode(
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 
 	if (transient && transient_to_focused) {
@@ -765,7 +765,7 @@ void Window::_update_window_size()
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		// When main window embedded in the editor, we can't resize the main window.
 		if (window_id != DisplayServerEnums::MAIN_WINDOW_ID ||
-			!Engine::get_singleton()->is_embedded_in_editor()) {
+			!Engine::is_embedded_in_editor()) {
 			if (reset_min_first && wrap_controls) {
 				// Avoid an error if setting max_size to a value between min_size and the previous
 				// size_limit.
@@ -776,7 +776,7 @@ void Window::_update_window_size()
 			DisplayServer::get_singleton()->window_set_min_size(size_limit, window_id);
 			DisplayServer::get_singleton()->window_set_size(size, window_id);
 		}
-		else if (Engine::get_singleton()->is_embedded_in_editor()) {
+		else if (Engine::is_embedded_in_editor()) {
 			size = DisplayServer::get_singleton()->window_get_size(window_id); // Reset size.
 		}
 	}
@@ -1036,7 +1036,7 @@ void Window::_update_viewport_for_hdr_output()
 	// We only need to do this if the viewport is not already set up for HDR 2D rendering.
 
 	if (!is_using_hdr_2d()) {
-		RS::get_singleton()->viewport_set_use_hdr_2d(viewport, hdr_output_requested);
+		RS::viewport_set_use_hdr_2d(viewport, hdr_output_requested);
 	}
 }
 
@@ -1700,14 +1700,13 @@ void Window::_mouse_leave_viewport()
 
 Window::Window()
 {
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	if (rendering_server) {
-		max_size = rendering_server->get_maximum_viewport_size();
+	if (RS::data) {
+		max_size = RS::get_maximum_viewport_size();
 		max_size_used = max_size; // Update max_size_used.
 	}
 
 	theme_owner = memnew(ThemeOwner(this));
-	RS::get_singleton()->viewport_set_update_mode(
+	RS::viewport_set_update_mode(
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 }
 

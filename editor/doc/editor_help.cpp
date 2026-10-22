@@ -479,7 +479,7 @@ static void _load_script_doc_cache(bool p_changes) { EditorHelp::load_script_doc
 
 void EditorHelp::load_script_doc_cache()
 {
-	if (!ProjectSettings::get_singleton()->is_project_loaded()) {
+	if (!ProjectSettings::is_project_loaded()) {
 		print_verbose("Skipping loading script doc cache since no project is open.");
 		return;
 	}
@@ -520,7 +520,7 @@ void EditorHelp::_process_postponed_docs()
 
 void EditorHelp::_load_script_doc_cache_thread(void* p_udata)
 {
-	ERR_FAIL_COND_MSG(!ProjectSettings::get_singleton()->is_project_loaded(),
+	ERR_FAIL_COND_MSG(!ProjectSettings::is_project_loaded(),
 		"Error: cannot load script doc cache without a project.");
 	ERR_FAIL_COND_MSG(!ResourceLoader::exists(get_script_doc_cache_full_path()),
 		"Error: cannot load script doc cache from inexistent file.");
@@ -608,7 +608,7 @@ void EditorHelp::_delete_script_doc_cache()
 {
 	if (FileAccess::exists(get_script_doc_cache_full_path())) {
 		DirAccess::remove_file_or_error(
-			ProjectSettings::get_singleton()->globalize_path(get_script_doc_cache_full_path()));
+			ProjectSettings::globalize_path(get_script_doc_cache_full_path()));
 	}
 }
 
@@ -899,7 +899,7 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 	}
 	else if (p_select.begins_with("open-file:")) {
 		String path =
-			ProjectSettings::get_singleton()->globalize_path(p_select.trim_prefix("open-file:"));
+			ProjectSettings::globalize_path(p_select.trim_prefix("open-file:"));
 		OS::get_singleton()->shell_show_in_file_manager(path, true);
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {

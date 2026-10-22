@@ -33,9 +33,8 @@
 #include "core/math/geometry_2d.h"
 #include "core/math/transform_interpolator.h"
 #include "renderer_canvas_cull.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server_default.h"
-#include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 // Use the same antialiasing feather size as StyleBoxFlat's default
@@ -85,16 +84,16 @@ void RendererCanvasCull::_render_canvas_item_tree(RID p_to_render_target,
 	// transform is normally concatenated with the item global transform.
 	_current_camera_transform = p_transform;
 
-	memset(z_list, 0, z_range * sizeof(RendererCanvasRender::Item*));
-	memset(z_last_list, 0, z_range * sizeof(RendererCanvasRender::Item*));
+	memset(z_list, 0, z_range * sizeof(RCR::Item*));
+	memset(z_last_list, 0, z_range * sizeof(RCR::Item*));
 
 	for (int i = 0; i < p_child_item_count; i++) {
 		_cull_canvas_item(p_child_items[i].item, p_transform, p_clip_rect, Color(1, 1, 1, 1), 0,
 			z_list, z_last_list, nullptr, nullptr, false, p_canvas_cull_mask, Point2(), 1, nullptr);
 	}
 
-	RendererCanvasRender::Item* list = nullptr;
-	RendererCanvasRender::Item* list_end = nullptr;
+	RCR::Item* list = nullptr;
+	RCR::Item* list_end = nullptr;
 
 	for (int i = 0; i < z_range; i++) {
 		if (!z_list[i]) {
@@ -113,7 +112,7 @@ void RendererCanvasCull::_render_canvas_item_tree(RID p_to_render_target,
 	RENDER_TIMESTAMP("Render CanvasItems");
 
 	bool sdf_flag;
-	RSG::canvas_render->canvas_render_items(p_to_render_target, list, p_modulate, p_lights,
+	RS::canvas_render->canvas_render_items(p_to_render_target, list, p_modulate, p_lights,
 		p_directional_lights, p_transform, p_default_filter, p_default_repeat,
 		p_snap_2d_vertices_to_pixel, sdf_flag, r_render_info);
 	if (sdf_flag) {
@@ -139,7 +138,7 @@ void RendererCanvasCull::_collect_ysort_children(RendererCanvasCull::Item* p_can
 					child_xform = child_items[i]->xform_curr;
 				}
 				else {
-					real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
+					real_t f = Engine::get_physics_interpolation_fraction();
 					TransformInterpolator::interpolate_transform_2d(
 						child_items[i]->xform_prev, child_items[i]->xform_curr, child_xform, f);
 				}
@@ -222,11 +221,11 @@ void RendererCanvasCull::_mark_ysort_dirty(RendererCanvasCull::Item* ysort_owner
 }
 
 void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* ci,
-	RendererCanvasCull::Item* p_canvas_clip, RendererCanvasRender::Item** r_z_list,
-	RendererCanvasRender::Item** r_z_last_list, const Transform2D& p_transform,
+	RendererCanvasCull::Item* p_canvas_clip, RCR::Item** r_z_list,
+	RCR::Item** r_z_last_list, const Transform2D& p_transform,
 	const Rect2& p_clip_rect, Rect2 p_global_rect, const Color& p_modulate, int p_z,
 	RendererCanvasCull::Item* p_material_owner, bool p_use_canvas_group,
-	RendererCanvasRender::Item* r_canvas_group_from)
+	RCR::Item* r_canvas_group_from)
 {
 	if (ci->copy_back_buffer) {
 		ci->copy_back_buffer->screen_rect =
@@ -250,7 +249,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 			// compute a global rect (in global coords) for children in the same z layer
 			Rect2 rect_accum;
-			RendererCanvasRender::Item* c = r_canvas_group_from;
+			RCR::Item* c = r_canvas_group_from;
 			while (c) {
 				if (c == r_canvas_group_from) {
 					rect_accum = c->global_rect_cache;
@@ -282,8 +281,8 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 				rect_accum = rect_accum.grow(ci->canvas_group->fit_margin);
 
 				// draw it?
-				RendererCanvasRender::Item::CommandRect* crect =
-					ci->alloc_command<RendererCanvasRender::Item::CommandRect>();
+				RCR::Item::CommandRect* crect =
+					ci->alloc_command<RCR::Item::CommandRect>();
 
 				crect->flags =
 					RendererCanvasRender::CANVAS_RECT_IS_GROUP; // so we can recognize it later
@@ -317,7 +316,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 		// Something to draw?
 
 		if (ci->update_when_visible) {
-			RenderingServerDefault::redraw_request();
+			Renderer::redraw_request();
 		}
 
 		if (ci->commands != nullptr || ci->copy_back_buffer) {
@@ -351,7 +350,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 				ci->visibility_notifier->just_visible = true;
 			}
 
-			ci->visibility_notifier->visible_in_frame = RSG::rasterizer->get_frame_number();
+			ci->visibility_notifier->visible_in_frame = RendererCompositor::get_frame_number();
 		}
 	}
 	else if (ci->repeat_source) {
@@ -363,10 +362,10 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2D& p_parent_xform,
 	const Rect2& p_clip_rect, const Color& p_modulate, int p_z,
-	RendererCanvasRender::Item** r_z_list, RendererCanvasRender::Item** r_z_last_list,
+	RCR::Item** r_z_list, RCR::Item** r_z_last_list,
 	Item* p_canvas_clip, Item* p_material_owner, bool p_is_already_y_sorted,
 	uint32_t p_canvas_cull_mask, const Point2& p_repeat_size, int p_repeat_times,
-	RendererCanvasRender::Item* p_repeat_source_item)
+	RCR::Item* p_repeat_source_item)
 {
 	Item* ci = p_canvas_item;
 
@@ -422,7 +421,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 			self_xform = ci->xform_curr;
 		}
 		else {
-			real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
+			real_t f = Engine::get_physics_interpolation_fraction();
 			TransformInterpolator::interpolate_transform_2d(
 				ci->xform_prev, ci->xform_curr, self_xform, f);
 		}
@@ -439,7 +438,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 
 	Point2 repeat_size = p_repeat_size;
 	int repeat_times = p_repeat_times;
-	RendererCanvasRender::Item* repeat_source_item = p_repeat_source_item;
+	RCR::Item* repeat_source_item = p_repeat_source_item;
 
 	if (ci->repeat_source) {
 		repeat_size = ci->repeat_size;
@@ -548,7 +547,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 			}
 		}
 		else {
-			RendererCanvasRender::Item* canvas_group_from = nullptr;
+			RCR::Item* canvas_group_from = nullptr;
 			bool use_canvas_group = ci->canvas_group != nullptr &&
 									(ci->canvas_group->fit_empty || ci->commands != nullptr);
 			if (use_canvas_group) {
@@ -562,7 +561,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 		}
 	}
 	else {
-		RendererCanvasRender::Item* canvas_group_from = nullptr;
+		RCR::Item* canvas_group_from = nullptr;
 		bool use_canvas_group =
 			ci->canvas_group != nullptr && (ci->canvas_group->fit_empty || ci->commands != nullptr);
 		if (use_canvas_group) {
@@ -2025,8 +2024,8 @@ void RendererCanvasCull::canvas_item_add_mesh(RID p_item, const RID& p_mesh,
 	ERR_FAIL_NULL(m);
 	m->mesh = p_mesh;
 	if (canvas_item->skeleton.is_valid()) {
-		m->mesh_instance = RSG::mesh_storage->mesh_instance_create(p_mesh);
-		RSG::mesh_storage->mesh_instance_set_skeleton(m->mesh_instance, canvas_item->skeleton);
+		m->mesh_instance = RendererMeshStorage::mesh_instance_create(p_mesh);
+		RendererMeshStorage::mesh_instance_set_skeleton(m->mesh_instance, canvas_item->skeleton);
 	}
 
 	m->texture = p_texture;
@@ -2048,7 +2047,7 @@ void RendererCanvasCull::canvas_item_add_particles(RID p_item, RID p_particles, 
 
 	// take the chance and request processing for them, at least once until they become visible
 	// again
-	RSG::particles_storage->particles_request_process(p_particles);
+	RS::particles_storage->particles_request_process(p_particles);
 }
 
 void RendererCanvasCull::canvas_item_add_multimesh(RID p_item, RID p_mesh, RID p_texture)
@@ -2131,14 +2130,14 @@ void RendererCanvasCull::canvas_item_attach_skeleton(RID p_item, RID p_skeleton)
 			Item::CommandMesh* cm = static_cast<Item::CommandMesh*>(c);
 			if (canvas_item->skeleton.is_valid()) {
 				if (cm->mesh_instance.is_null()) {
-					cm->mesh_instance = RSG::mesh_storage->mesh_instance_create(cm->mesh);
+					cm->mesh_instance = RendererMeshStorage::mesh_instance_create(cm->mesh);
 				}
-				RSG::mesh_storage->mesh_instance_set_skeleton(
+				RendererMeshStorage::mesh_instance_set_skeleton(
 					cm->mesh_instance, canvas_item->skeleton);
 			}
 			else {
 				if (cm->mesh_instance.is_valid()) {
-					RSG::mesh_storage->mesh_instance_free(cm->mesh_instance);
+					RendererMeshStorage::mesh_instance_free(cm->mesh_instance);
 					cm->mesh_instance = RID();
 				}
 			}
@@ -2153,7 +2152,7 @@ void RendererCanvasCull::canvas_item_set_copy_to_backbuffer(
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 	if (p_enable && (canvas_item->copy_back_buffer == nullptr)) {
-		canvas_item->copy_back_buffer = memnew(RendererCanvasRender::Item::CopyBackBuffer);
+		canvas_item->copy_back_buffer = memnew(RCR::Item::CopyBackBuffer);
 	}
 	if (!p_enable && (canvas_item->copy_back_buffer != nullptr)) {
 		memdelete(canvas_item->copy_back_buffer);
@@ -2221,7 +2220,7 @@ void RendererCanvasCull::canvas_item_set_use_parent_material(RID p_item, bool p_
 void RendererCanvasCull::canvas_item_set_debug_redraw(bool p_enabled)
 {
 	debug_redraw = p_enabled;
-	RSG::canvas_render->set_debug_redraw(p_enabled, debug_redraw_time, debug_redraw_color);
+	RS::canvas_render->set_debug_redraw(p_enabled, debug_redraw_time, debug_redraw_color);
 }
 
 bool RendererCanvasCull::canvas_item_get_debug_redraw() const { return debug_redraw; }
@@ -2264,7 +2263,7 @@ void RendererCanvasCull::canvas_item_set_canvas_group_mode(RID p_item, RSE::Canv
 	}
 	else {
 		if (canvas_item->canvas_group == nullptr) {
-			canvas_item->canvas_group = memnew(RendererCanvasRender::Item::CanvasGroup);
+			canvas_item->canvas_group = memnew(RCR::Item::CanvasGroup);
 		}
 		canvas_item->canvas_group->mode = p_mode;
 		canvas_item->canvas_group->fit_empty = p_fit_empty;
@@ -2280,8 +2279,10 @@ void RendererCanvasCull::canvas_light_initialize(RID p_rid)
 {
 	canvas_light_owner.initialize_rid(p_rid);
 	RendererCanvasRender::Light* clight = canvas_light_owner.get_or_null(p_rid);
-	clight->light_internal = RSG::canvas_render->light_create();
+	clight->light_internal = RS::canvas_render->light_create();
 }
+
+void RendererCanvasCull::update() {}
 
 void RendererCanvasCull::canvas_light_set_mode(RID p_light, RSE::CanvasLightMode p_mode)
 {
@@ -2381,7 +2382,7 @@ void RendererCanvasCull::canvas_light_set_texture(RID p_light, RID p_texture)
 	}
 	clight->texture = p_texture;
 	clight->version++;
-	RSG::canvas_render->light_set_texture(clight->light_internal, p_texture);
+	RS::canvas_render->light_set_texture(clight->light_internal, p_texture);
 }
 
 void RendererCanvasCull::canvas_light_set_texture_offset(RID p_light, const Vector2& p_offset)
@@ -2476,7 +2477,7 @@ void RendererCanvasCull::canvas_light_set_shadow_enabled(RID p_light, bool p_ena
 	}
 	clight->use_shadow = p_enabled;
 	clight->version++;
-	RSG::canvas_render->light_set_use_shadow(clight->light_internal, clight->use_shadow);
+	RS::canvas_render->light_set_use_shadow(clight->light_internal, clight->use_shadow);
 }
 
 void RendererCanvasCull::canvas_light_set_shadow_filter(
@@ -2676,7 +2677,7 @@ void RendererCanvasCull::canvas_occluder_polygon_initialize(RID p_rid)
 {
 	canvas_light_occluder_polygon_owner.initialize_rid(p_rid);
 	LightOccluderPolygon* occluder_poly = canvas_light_occluder_polygon_owner.get_or_null(p_rid);
-	occluder_poly->occluder = RSG::canvas_render->occluder_polygon_create();
+	occluder_poly->occluder = RS::canvas_render->occluder_polygon_create();
 }
 
 void RendererCanvasCull::canvas_occluder_polygon_set_shape(
@@ -2700,7 +2701,7 @@ void RendererCanvasCull::canvas_occluder_polygon_set_shape(
 		}
 	}
 
-	RSG::canvas_render->occluder_polygon_set_shape(occluder_poly->occluder, p_shape, p_closed);
+	RS::canvas_render->occluder_polygon_set_shape(occluder_poly->occluder, p_shape, p_closed);
 
 	for (RendererCanvasRender::LightOccluderInstance* E : occluder_poly->owners) {
 		E->aabb_cache = occluder_poly->aabb;
@@ -2714,7 +2715,7 @@ void RendererCanvasCull::canvas_occluder_polygon_set_cull_mode(
 		canvas_light_occluder_polygon_owner.get_or_null(p_occluder_polygon);
 	ERR_FAIL_NULL(occluder_poly);
 	occluder_poly->cull_mode = p_mode;
-	RSG::canvas_render->occluder_polygon_set_cull_mode(occluder_poly->occluder, p_mode);
+	RS::canvas_render->occluder_polygon_set_cull_mode(occluder_poly->occluder, p_mode);
 	for (RendererCanvasRender::LightOccluderInstance* E : occluder_poly->owners) {
 		E->cull_cache = p_mode;
 	}
@@ -2722,42 +2723,42 @@ void RendererCanvasCull::canvas_occluder_polygon_set_cull_mode(
 
 void RendererCanvasCull::canvas_set_shadow_texture_size(int p_size)
 {
-	RSG::canvas_render->set_shadow_texture_size(p_size);
+	RS::canvas_render->set_shadow_texture_size(p_size);
 }
 
 RID RendererCanvasCull::canvas_texture_allocate()
 {
-	return RSG::texture_storage->canvas_texture_allocate();
+	return RendererTextureStorage::canvas_texture_allocate();
 }
 
 void RendererCanvasCull::canvas_texture_initialize(RID p_rid)
 {
-	RSG::texture_storage->canvas_texture_initialize(p_rid);
+	RendererTextureStorage::canvas_texture_initialize(p_rid);
 }
 
 void RendererCanvasCull::canvas_texture_set_channel(
 	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 {
-	RSG::texture_storage->canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
+	RendererTextureStorage::canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
 }
 
 void RendererCanvasCull::canvas_texture_set_shading_parameters(
 	RID p_canvas_texture, const Color& p_base_color, float p_shininess)
 {
-	RSG::texture_storage->canvas_texture_set_shading_parameters(
+	RendererTextureStorage::canvas_texture_set_shading_parameters(
 		p_canvas_texture, p_base_color, p_shininess);
 }
 
 void RendererCanvasCull::canvas_texture_set_texture_filter(
 	RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 {
-	RSG::texture_storage->canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
+	RendererTextureStorage::canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
 }
 
 void RendererCanvasCull::canvas_texture_set_texture_repeat(
 	RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 {
-	RSG::texture_storage->canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
+	RendererTextureStorage::canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
 }
 
 void RendererCanvasCull::canvas_item_set_default_texture_filter(
@@ -2813,8 +2814,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 			item->xform_prev = item->xform_curr;                                                   \
 		}                                                                                          \
 	}                                                                                              \
-	/* and now
-for any in the transform list (being actively interpolated), */                     \
+	/* and now                                                                                     \
+for any in the transform list (being actively interpolated), */                                    \
 	/* keep the previous transform value up to date and ready for next tick */                     \
 	if (p_process) {                                                                               \
 		for (unsigned int n = 0; n < _interpolation_data.m_list_curr->size(); n++) {               \
@@ -2882,10 +2883,25 @@ void RendererCanvasCull::InterpolationData::notify_free_canvas_light_occluder(
 	canvas_light_occluder_transform_update_list_prev->erase_multiple_unordered(p_rid);
 }
 
+RendererCanvasCull::RendererCanvasCull()
+{
+	z_list = (RCR::Item**)memalloc(z_range * sizeof(RCR::Item*));
+	z_last_list =
+		(RCR::Item**)memalloc(z_range * sizeof(RCR::Item*));
+	_canvas_cull_singleton = this;
+}
+
 RendererCanvasCull::~RendererCanvasCull()
 {
-	memfree(z_list);
-	memfree(z_last_list);
+	if (z_list) {
+		memfree(z_list);
+		z_list = nullptr;
+	}
+	if (z_last_list) {
+		memfree(z_last_list);
+
+z_last_list = nullptr;
+	}
 	_canvas_cull_singleton = nullptr;
 }
 

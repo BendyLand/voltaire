@@ -51,7 +51,7 @@ bool AnimatableBody3D::is_sync_to_physics_enabled() const { return sync_to_physi
 void AnimatableBody3D::_update_kinematic_motion()
 {
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 #endif

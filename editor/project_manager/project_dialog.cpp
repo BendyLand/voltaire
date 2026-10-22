@@ -49,7 +49,7 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 static bool is_zip_file(Ref<DirAccess> p_d, const String& p_path)
 {

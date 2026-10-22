@@ -37,7 +37,7 @@ void VirtualJoystick::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_DRAW: {
-		if (!Engine::get_singleton()->is_editor_hint() && visibility == VISIBILITY_WHEN_TOUCHED &&
+		if (!Engine::is_editor_hint() && visibility == VISIBILITY_WHEN_TOUCHED &&
 			!is_pressed) {
 			return;
 		}

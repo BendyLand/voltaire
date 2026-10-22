@@ -332,7 +332,7 @@ void EditorSettings::set_favorites_bind(const Vector<String>& p_favorites)
 {
 	favorites = p_favorites;
 	String favorites_file;
-	if (Engine::get_singleton()->is_project_manager_hint()) {
+	if (Engine::is_project_manager_hint()) {
 		favorites_file = EditorPaths::get_singleton()->get_config_dir().path_join("favorite_dirs");
 	}
 	else {
@@ -383,7 +383,7 @@ void EditorSettings::set_recent_dirs_bind(const Vector<String>& p_recent_dirs)
 {
 	recent_dirs = p_recent_dirs;
 	String recent_dirs_file;
-	if (Engine::get_singleton()->is_project_manager_hint()) {
+	if (Engine::is_project_manager_hint()) {
 		recent_dirs_file = EditorPaths::get_singleton()->get_config_dir().path_join("recent_dirs");
 	}
 	else {

@@ -83,7 +83,7 @@ void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
 		if (tracker == RENDER_MODEL_TRACKER_ANY || tracker == RENDER_MODEL_TRACKER_NONE_SET) {
 			xr_path = XR_NULL_PATH;
 		}
-		else if (!Engine::get_singleton()->is_editor_hint()) {
+		else if (!Engine::is_editor_hint()) {
 			XRServer* xr_server = XRServer::get_singleton();
 			OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
 			if (openxr_api && xr_server) {

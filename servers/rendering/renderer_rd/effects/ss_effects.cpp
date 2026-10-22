@@ -68,8 +68,8 @@ void SSEffects::allocate_last_frame_buffer(
 
 	if (has_texture) {
 		RID last_frame_texture = p_render_buffers->get_texture(RB_SCOPE_SSLF, RB_LAST_FRAME);
-		RD::TextureFormat texture_format =
-			RD::get_singleton()->texture_get_format(last_frame_texture);
+		RDC::TextureFormat texture_format =
+			RD::texture_get_format(last_frame_texture);
 		should_create = texture_format.width != (uint32_t)last_frame_size.width ||
 						texture_format.height != (uint32_t)last_frame_size.height ||
 						texture_format.mipmaps != mipmaps ||
@@ -82,11 +82,11 @@ void SSEffects::allocate_last_frame_buffer(
 		}
 
 		RID last_frame_texture = p_render_buffers->create_texture(RB_SCOPE_SSLF, RB_LAST_FRAME,
-			RD::DATA_FORMAT_R16G16B16A16_SFLOAT,
-			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-				RD::TEXTURE_USAGE_CAN_COPY_TO_BIT,
-			RD::TEXTURE_SAMPLES_1, last_frame_size, view_count, mipmaps);
-		RD::get_singleton()->texture_clear(
+			RDC::DATA_FORMAT_R16G16B16A16_SFLOAT,
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+				RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT,
+			RDC::TEXTURE_SAMPLES_1, last_frame_size, view_count, mipmaps);
+		RD::texture_clear(
 			last_frame_texture, Color(0, 0, 0, 0), 0, mipmaps, 0, view_count);
 	}
 }
@@ -108,8 +108,8 @@ void SSEffects::copy_internal_texture_to_last_frame(
 
 			RID dest = p_render_buffers->get_texture_slice(RB_SCOPE_SSLF, RB_LAST_FRAME, v, m);
 
-			Size2i source_size = RD::get_singleton()->texture_size(source);
-			Size2i dest_size = RD::get_singleton()->texture_size(dest);
+			Size2i source_size = RD::texture_size(source);
+			Size2i dest_size = RD::texture_size(dest);
 
 			if (m == 0 && source_size == dest_size) {
 				p_copy_effects.copy_to_rect(source, dest, Rect2i(Vector2i(), source_size), false,
@@ -143,7 +143,7 @@ SSEffects::~SSEffects()
 		ssr.resolve_shader.version_free(ssr.resolve_shader_version);
 
 		if (ssr.ubo.is_valid()) {
-			RD::get_singleton()->free_rid(ssr.ubo);
+			RD::free_rid(ssr.ubo);
 		}
 	}
 
@@ -155,8 +155,8 @@ SSEffects::~SSEffects()
 
 		ss_effects.downsample_shader.version_free(ss_effects.downsample_shader_version);
 
-		RD::get_singleton()->free_rid(ss_effects.mirror_sampler);
-		RD::get_singleton()->free_rid(ss_effects.gather_constants_buffer);
+		RD::free_rid(ss_effects.mirror_sampler);
+		RD::free_rid(ss_effects.gather_constants_buffer);
 	}
 
 	{
@@ -170,8 +170,8 @@ SSEffects::~SSEffects()
 		ssil.interleave_shader.version_free(ssil.interleave_shader_version);
 		ssil.importance_map_shader.version_free(ssil.importance_map_shader_version);
 
-		RD::get_singleton()->free_rid(ssil.importance_map_load_counter);
-		RD::get_singleton()->free_rid(ssil.projection_uniform_buffer);
+		RD::free_rid(ssil.importance_map_load_counter);
+		RD::free_rid(ssil.projection_uniform_buffer);
 	}
 
 	{
@@ -185,7 +185,7 @@ SSEffects::~SSEffects()
 		ssao.interleave_shader.version_free(ssao.interleave_shader_version);
 		ssao.importance_map_shader.version_free(ssao.importance_map_shader_version);
 
-		RD::get_singleton()->free_rid(ssao.importance_map_load_counter);
+		RD::free_rid(ssao.importance_map_load_counter);
 	}
 
 	{
@@ -246,31 +246,31 @@ void SSEffects::ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers
 			RB_SCOPE_SSIL, RB_FINAL)) { // We don't strictly have to check if it exists but we only
 										// want to clear it when we create it...
 		RID final = p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_FINAL,
-			RD::DATA_FORMAT_R16G16B16A16_SFLOAT,
-			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT |
-				RD::TEXTURE_USAGE_CAN_COPY_TO_BIT);
-		RD::get_singleton()->texture_clear(final, Color(0, 0, 0, 0), 0, 1, 0, view_count);
+			RDC::DATA_FORMAT_R16G16B16A16_SFLOAT,
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+				RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT);
+		RD::texture_clear(final, Color(0, 0, 0, 0), 0, 1, 0, view_count);
 	}
 
 	// As we're not clearing these, and render buffers will return the cached texture if it already
 	// exists, we don't first check has_texture here
 
 	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_DEINTERLEAVED,
-		RD::DATA_FORMAT_R16G16B16A16_SFLOAT,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+		RDC::DATA_FORMAT_R16G16B16A16_SFLOAT,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		full_size, 4 * view_count);
 	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_DEINTERLEAVED_PONG,
-		RD::DATA_FORMAT_R16G16B16A16_SFLOAT,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+		RDC::DATA_FORMAT_R16G16B16A16_SFLOAT,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		full_size, 4 * view_count);
-	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_EDGES, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_EDGES, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		full_size, 4 * view_count);
-	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_IMPORTANCE_MAP, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_IMPORTANCE_MAP, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		half_size);
-	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_IMPORTANCE_PONG, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSIL, RB_IMPORTANCE_PONG, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		half_size);
 }
 
@@ -313,26 +313,26 @@ void SSEffects::ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers
 	// As we're not clearing these, and render buffers will return the cached texture if it already
 	// exists, we don't first check has_texture here
 
-	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_DEINTERLEAVED, RD::DATA_FORMAT_R8G8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_DEINTERLEAVED, RDC::DATA_FORMAT_R8G8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		full_size, 4 * view_count);
 	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_DEINTERLEAVED_PONG,
-		RD::DATA_FORMAT_R8G8_UNORM, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT,
-		RD::TEXTURE_SAMPLES_1, full_size, 4 * view_count);
-	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_IMPORTANCE_MAP, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+		RDC::DATA_FORMAT_R8G8_UNORM, RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT,
+		RDC::TEXTURE_SAMPLES_1, full_size, 4 * view_count);
+	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_IMPORTANCE_MAP, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		half_size);
-	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_IMPORTANCE_PONG, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_IMPORTANCE_PONG, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		half_size);
-	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_FINAL, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1);
+	p_render_buffers->create_texture(RB_SCOPE_SSAO, RB_FINAL, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1);
 }
 
 void SSEffects::ssr_set_half_size(bool p_half_size) { ssr_half_size = p_half_size; }
 
 void SSEffects::ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
-	SSRRenderBuffers& p_ssr_buffers, const RD::DataFormat p_color_format)
+	SSRRenderBuffers& p_ssr_buffers, const RDC::DataFormat p_color_format)
 {
 	if (p_ssr_buffers.half_size != ssr_half_size) {
 		p_render_buffers->clear_context(RB_SCOPE_SSR);
@@ -361,24 +361,24 @@ void SSEffects::ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
 
 	if (ssr_half_size) {
 		p_render_buffers->create_texture(RB_SCOPE_SSR, RB_NORMAL_ROUGHNESS,
-			RD::DATA_FORMAT_R8G8B8A8_UNORM,
-			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+			RDC::DATA_FORMAT_R8G8B8A8_UNORM,
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 			p_ssr_buffers.size, view_count);
 	}
 
-	p_render_buffers->create_texture(RB_SCOPE_SSR, RB_HIZ, RD::DATA_FORMAT_R32_SFLOAT,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSR, RB_HIZ, RDC::DATA_FORMAT_R32_SFLOAT,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		p_ssr_buffers.size, view_count, p_ssr_buffers.mipmaps);
 	p_render_buffers->create_texture(RB_SCOPE_SSR, RB_SSR, p_color_format,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		p_ssr_buffers.size, view_count, p_ssr_buffers.mipmaps);
-	p_render_buffers->create_texture(RB_SCOPE_SSR, RB_MIP_LEVEL, RD::DATA_FORMAT_R8_UNORM,
-		RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+	p_render_buffers->create_texture(RB_SCOPE_SSR, RB_MIP_LEVEL, RDC::DATA_FORMAT_R8_UNORM,
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 		p_ssr_buffers.size, view_count);
 
 	if (ssr_half_size) {
 		p_render_buffers->create_texture(RB_SCOPE_SSR, RB_FINAL, p_color_format,
-			RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT, RD::TEXTURE_SAMPLES_1,
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT, RDC::TEXTURE_SAMPLES_1,
 			internal_size, view_count);
 	}
 }

@@ -192,13 +192,13 @@ TEST_CASE("[TCPServer] When stopped shouldn't accept new connections") {
 	CHECK_FALSE(server->is_listening());
 
 	// Make sure the client times out in less than the wait time.
-	int timeout = ProjectSettings::get_singleton()->get_setting("network/limits/tcp/connect_timeout_seconds");
-	ProjectSettings::get_singleton()->set_setting("network/limits/tcp/connect_timeout_seconds", 1);
+	int timeout = ProjectSettings::get_setting("network/limits/tcp/connect_timeout_seconds");
+	ProjectSettings::set_setting("network/limits/tcp/connect_timeout_seconds", 1);
 
 	Ref<StreamPeerTCP> new_client = create_client(LOCALHOST, PORT);
 
 	// Reset the timeout setting.
-	ProjectSettings::get_singleton()->set_setting("network/limits/tcp/connect_timeout_seconds", timeout);
+	ProjectSettings::set_setting("network/limits/tcp/connect_timeout_seconds", timeout);
 
 	CHECK_FALSE(server->is_connection_available());
 

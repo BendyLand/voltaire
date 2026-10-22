@@ -32,7 +32,7 @@
 #include "godot_soft_body_3d.h"
 #include "godot_space_3d.h"
 #include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 // Based on Bullet soft body.
 

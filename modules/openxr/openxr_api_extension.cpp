@@ -30,7 +30,7 @@
 
 #include "openxr_api.h"
 #include "openxr_api_extension.h"
-#include "servers/rendering/rendering_server.h" // ERR_NOT_ON_RENDER_THREAD_V
+#include "servers/rendering/renderer.h" // ERR_NOT_ON_RENDER_THREAD_V
 
 uint64_t OpenXRAPIExtension::get_openxr_version()
 {

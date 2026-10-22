@@ -30,7 +30,7 @@
 
 #include "core/io/image.h"
 #include "rasterizer_scene_dummy.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
 
 bool RasterizerSceneDummy::free(RID p_rid)
 {
@@ -46,8 +46,8 @@ bool RasterizerSceneDummy::free(RID p_rid)
 		compositor_effect_free(p_rid);
 		return true;
 	}
-	else if (RSG::camera_attributes->owns_camera_attributes(p_rid)) {
-		RSG::camera_attributes->camera_attributes_free(p_rid);
+	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
+		RS::camera_attributes->camera_attributes_free(p_rid);
 		return true;
 	}
 	else {

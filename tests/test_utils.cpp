@@ -50,5 +50,5 @@ String TestUtils::get_temp_path(const String &p_suffix) {
 }
 
 String &TestProjectSettingsInternalsAccessor::resource_path() {
-	return ProjectSettings::get_singleton()->resource_path;
+	return ProjectSettings::resource_path;
 }

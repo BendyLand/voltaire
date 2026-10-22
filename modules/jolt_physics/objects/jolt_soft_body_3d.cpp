@@ -39,7 +39,7 @@
 #include "jolt_group_filter.h"
 #include "jolt_soft_body_3d.h"
 #include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 namespace
 {

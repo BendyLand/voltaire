@@ -451,7 +451,7 @@ String EditorBuildProfile::get_build_option_description(BuildOption p_build_opti
 	ERR_FAIL_INDEX_V(p_build_option, BUILD_OPTION_MAX, String());
 
 	const char* build_option_descriptions[BUILD_OPTION_MAX] = {
-		TTRC("3D Nodes as well as RenderingServer access to 3D features.\nNote that the Geometry3D "
+		TTRC("3D Nodes as well as Renderer access to 3D features.\nNote that the Geometry3D "
 			 "singleton remains available even with this item disabled."),
 		TTRC("NavigationServer and capabilities for 2D."),
 		TTRC("NavigationServer and capabilities for 3D."),

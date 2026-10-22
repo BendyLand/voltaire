@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "shader_globals_override.h"
 
 StringName* ShaderGlobalsOverride::_remap(const StringName& p_name) const

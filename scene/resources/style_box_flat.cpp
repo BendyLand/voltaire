@@ -30,7 +30,7 @@
 
 #include <cfloat> // FLT_EPSILON
 #include "core/config/engine.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #include "style_box_flat.h"
 
@@ -698,8 +698,7 @@ void StyleBoxFlat::draw(RID p_canvas_item, const Rect2& p_rect) const
 	}
 
 	// Draw stylebox.
-	RenderingServer* vs = RenderingServer::get_singleton();
-	vs->canvas_item_add_triangle_array(p_canvas_item, indices, verts, colors, uvs);
+	RS::canvas_item_add_triangle_array(p_canvas_item, indices, verts, colors, uvs);
 }
 
 

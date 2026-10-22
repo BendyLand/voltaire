@@ -40,7 +40,7 @@ void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D* p_skeleton, int p_b
 
 void PhysicalBoneSimulator3D::_set_active(bool p_active)
 {
-	if (!Engine::get_singleton()->is_editor_hint()) {
+	if (!Engine::is_editor_hint()) {
 		_reset_physical_bones_state();
 	}
 }

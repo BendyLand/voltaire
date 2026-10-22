@@ -31,7 +31,7 @@
 #include "core/math/geometry_2d.h"
 #include "line_2d.h"
 #include "scene/2d/line_builder.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Line2D::Line2D() {}
 

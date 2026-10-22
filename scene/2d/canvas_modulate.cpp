@@ -30,7 +30,7 @@
 
 #include "canvas_modulate.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CanvasModulate::_notification(int p_what)
 {
@@ -73,7 +73,7 @@ void CanvasModulate::set_color(const Color& p_color)
 {
 	color = p_color;
 	if (is_active) {
-		RS::get_singleton()->canvas_set_modulate(get_canvas(), color);
+		RS::canvas_set_modulate(get_canvas(), color);
 	}
 }
 

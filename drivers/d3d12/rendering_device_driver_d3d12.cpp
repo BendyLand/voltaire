@@ -532,7 +532,7 @@ void RenderingDeviceDriverD3D12::_debug_message_func(D3D12_MESSAGE_CATEGORY p_ca
 		case D3D12_MESSAGE_SEVERITY_ERROR:
 		case D3D12_MESSAGE_SEVERITY_CORRUPTION:
 			ERR_PRINT(error_message);
-			CRASH_COND_MSG(Engine::get_singleton()->is_abort_on_gpu_errors_enabled(),
+			CRASH_COND_MSG(Engine::is_abort_on_gpu_errors_enabled(),
 					"Crashing, because abort on GPU errors is enabled.");
 			break;
 	}
@@ -6045,7 +6045,7 @@ Error RenderingDeviceDriverD3D12::_initialize_device() {
 #endif
 		{
 			// Rely on D3D12's own debug printing.
-			if (Engine::get_singleton()->is_abort_on_gpu_errors_enabled()) {
+			if (Engine::is_abort_on_gpu_errors_enabled()) {
 				res = info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 				ERR_FAIL_COND_V(!SUCCEEDED(res), ERR_CANT_CREATE);
 				res = info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);

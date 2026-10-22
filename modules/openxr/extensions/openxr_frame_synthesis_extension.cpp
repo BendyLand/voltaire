@@ -30,7 +30,7 @@
 
 #include "core/config/project_settings.h"
 #include "openxr_frame_synthesis_extension.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_server.h"
 
 #define GL_RGBA16F 0x881A

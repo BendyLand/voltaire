@@ -241,7 +241,7 @@ Error AudioDriverPulseAudio::init_output_device()
 		break;
 	}
 
-	int tmp_latency = Engine::get_singleton()->get_audio_output_latency();
+	int tmp_latency = Engine::get_audio_output_latency();
 	buffer_frames = Math::closest_power_of_2(tmp_latency * mix_rate / 1000);
 	pa_buffer_size = buffer_frames * pa_map.channels;
 
@@ -337,7 +337,7 @@ Error AudioDriverPulseAudio::init()
 	ERR_FAIL_NULL_V(pa_ml, ERR_CANT_OPEN);
 
 	String context_name;
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		context_name = VLTR_VERSION_NAME " Editor";
 	}
 	else {

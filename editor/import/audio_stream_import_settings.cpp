@@ -34,7 +34,7 @@
 #include "editor/file_system/editor_file_system.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/check_box.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 AudioStreamImportSettingsDialog* AudioStreamImportSettingsDialog::singleton = nullptr;
 
@@ -88,7 +88,7 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	}
 
 	if (!points.is_empty()) {
-		RS::get_singleton()->canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
+		RS::canvas_item_add_multiline(_preview->get_canvas_item(), points, colors);
 	}
 
 	if (beat_size) {

@@ -568,7 +568,7 @@ bool EditorFileSystem::_find_file(
 		return false;
 	}
 
-	String f = ProjectSettings::get_singleton()->localize_path(p_file);
+	String f = ProjectSettings::localize_path(p_file);
 	if (!f.begins_with("res://")) {
 		return false;
 	}
@@ -710,7 +710,7 @@ EditorFileSystemDirectory* EditorFileSystem::get_filesystem_path(const String& p
 		return nullptr;
 	}
 
-	String f = ProjectSettings::get_singleton()->localize_path(p_path);
+	String f = ProjectSettings::localize_path(p_path);
 
 	if (!f.begins_with("res://")) {
 		return nullptr;
@@ -848,7 +848,7 @@ void EditorFileSystem::_find_group_files(EditorFileSystemDirectory* efd,
 
 bool EditorFileSystem::_should_skip_directory(const String& p_path)
 {
-	String project_data_path = ProjectSettings::get_singleton()->get_project_data_path();
+	String project_data_path = ProjectSettings::get_project_data_path();
 	if (p_path == project_data_path || p_path.begins_with(project_data_path + "/")) {
 		return true;
 	}
@@ -880,7 +880,7 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
 	const String& p_path, bool p_generate)
 {
 	if (!p_path.is_resource_file() ||
-		p_path.begins_with(ProjectSettings::get_singleton()->get_project_data_path())) {
+		p_path.begins_with(ProjectSettings::get_project_data_path())) {
 		// Saved externally (configuration file) or internal file, do not assign an ID.
 		return ResourceUID::INVALID_ID;
 	}

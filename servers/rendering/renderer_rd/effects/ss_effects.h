@@ -149,7 +149,7 @@ public:
 		bool half_size = false;
 	};
 
-	void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, SSRRenderBuffers &p_ssr_buffers, const RD::DataFormat p_color_format);
+	void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, SSRRenderBuffers &p_ssr_buffers, const RDC::DataFormat p_color_format);
 	void screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers, SSRRenderBuffers &p_ssr_buffers, const RID *p_normal_roughness_slices, int p_max_steps, float p_fade_in, float p_fade_out, float p_tolerance, const Projection *p_projections, const Projection *p_reprojections, const Vector3 *p_eye_offsets, RendererRD::CopyEffects &p_copy_effects);
 
 	/* subsurface scattering */

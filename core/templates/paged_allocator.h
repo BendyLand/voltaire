@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <type_traits>
+#include <typeinfo> // IWYU pragma: keep // Used in macro.
 #include "core/core_globals.h"
 #include "core/math/math_funcs_binary.h"
 #include "core/os/memory.h"
@@ -37,13 +39,11 @@
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 
-#include <type_traits>
-#include <typeinfo> // IWYU pragma: keep // Used in macro.
-
 template <typename T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
-class PagedAllocator {
-	T **page_pool = nullptr;
-	T ***available_pool = nullptr;
+class PagedAllocator
+{
+	T** page_pool = nullptr;
+	T*** available_pool = nullptr;
 	uint32_t pages_allocated = 0;
 	uint32_t allocs_available = 0;
 
@@ -53,8 +53,8 @@ class PagedAllocator {
 	SpinLock spin_lock;
 
 public:
-	template <typename... Args>
-	T *alloc(Args &&...p_args) {
+	template <typename... Args> T* alloc(Args&&... p_args)
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
@@ -62,11 +62,11 @@ public:
 			uint32_t pages_used = pages_allocated;
 
 			pages_allocated++;
-			page_pool = (T **)memrealloc(page_pool, sizeof(T *) * pages_allocated);
-			available_pool = (T ***)memrealloc(available_pool, sizeof(T **) * pages_allocated);
+			page_pool = (T**)memrealloc(page_pool, sizeof(T*) * pages_allocated);
+			available_pool = (T***)memrealloc(available_pool, sizeof(T**) * pages_allocated);
 
-			page_pool[pages_used] = (T *)memalloc(sizeof(T) * page_size);
-			available_pool[pages_used] = (T **)memalloc(sizeof(T *) * page_size);
+			page_pool[pages_used] = (T*)memalloc(sizeof(T) * page_size);
+			available_pool[pages_used] = (T**)memalloc(sizeof(T*) * page_size);
 
 			for (uint32_t i = 0; i < page_size; i++) {
 				available_pool[0][i] = &page_pool[pages_used][i];
@@ -75,7 +75,7 @@ public:
 		}
 
 		allocs_available--;
-		T *alloc = available_pool[allocs_available >> page_shift][allocs_available & page_mask];
+		T* alloc = available_pool[allocs_available >> page_shift][allocs_available & page_mask];
 		if constexpr (thread_safe) {
 			spin_lock.unlock();
 		}
@@ -83,7 +83,8 @@ public:
 		return alloc;
 	}
 
-	void free(T *p_mem) {
+	void free(T* p_mem)
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
@@ -95,12 +96,13 @@ public:
 		}
 	}
 
-	template <typename... Args>
-	T *new_allocation(Args &&...p_args) { return alloc(p_args...); }
-	void delete_allocation(T *p_mem) { free(p_mem); }
+	template <typename... Args> T* new_allocation(Args&&... p_args) { return alloc(p_args...); }
+
+	void delete_allocation(T* p_mem) { free(p_mem); }
 
 private:
-	void _reset(bool p_allow_unfreed) {
+	void _reset(bool p_allow_unfreed)
+	{
 		if (!p_allow_unfreed || !std::is_trivially_destructible_v<T>) {
 			ERR_FAIL_COND(allocs_available < pages_allocated * page_size);
 		}
@@ -119,7 +121,8 @@ private:
 	}
 
 public:
-	void reset(bool p_allow_unfreed = false) {
+	void reset(bool p_allow_unfreed = false)
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
@@ -129,7 +132,8 @@ public:
 		}
 	}
 
-	bool is_configured() const {
+	bool is_configured() const
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
@@ -140,7 +144,8 @@ public:
 		return result;
 	}
 
-	void configure(uint32_t p_page_size) {
+	void configure(uint32_t p_page_size)
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
@@ -156,20 +161,21 @@ public:
 
 	// Power of 2 recommended because of alignment with OS page sizes.
 	// Even if element is bigger, it's still a multiple and gets rounded to amount of pages.
-	PagedAllocator(uint32_t p_page_size = DEFAULT_PAGE_SIZE) {
-		configure(p_page_size);
-	}
+	PagedAllocator(uint32_t p_page_size = DEFAULT_PAGE_SIZE) { configure(p_page_size); }
 
-	~PagedAllocator() {
+	~PagedAllocator()
+	{
 		if constexpr (thread_safe) {
 			spin_lock.lock();
 		}
 		bool leaked = allocs_available < pages_allocated * page_size;
 		if (leaked) {
 			if (CoreGlobals::leak_reporting_enabled) {
-				ERR_PRINT(String("Pages in use exist at exit in PagedAllocator: ") + String(typeid(T).name()));
+				ERR_PRINT(String("Pages in use exist at exit in PagedAllocator: ") +
+						  String(typeid(T).name()));
 			}
-		} else {
+		}
+		else {
 			_reset(false);
 		}
 		if constexpr (thread_safe) {
@@ -177,3 +183,5 @@ public:
 		}
 	}
 };
+
+

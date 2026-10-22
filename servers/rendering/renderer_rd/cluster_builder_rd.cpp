@@ -30,16 +30,16 @@
 
 #include "cluster_builder_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_globals.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
+#include "servers/rendering/renderer.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
 
 ClusterBuilderSharedDataRD::~ClusterBuilderSharedDataRD()
 {
-	RD::get_singleton()->free_rid(sphere_vertex_buffer);
-	RD::get_singleton()->free_rid(sphere_index_buffer);
-	RD::get_singleton()->free_rid(cone_vertex_buffer);
-	RD::get_singleton()->free_rid(cone_index_buffer);
-	RD::get_singleton()->free_rid(box_vertex_buffer);
-	RD::get_singleton()->free_rid(box_index_buffer);
+	RD::free_rid(sphere_vertex_buffer);
+	RD::free_rid(sphere_index_buffer);
+	RD::free_rid(cone_vertex_buffer);
+	RD::free_rid(cone_index_buffer);
+	RD::free_rid(box_vertex_buffer);
+	RD::free_rid(box_index_buffer);
 
 	cluster_render.cluster_render_shader.version_free(cluster_render.shader_version);
 	cluster_store.cluster_store_shader.version_free(cluster_store.shader_version);
@@ -54,9 +54,9 @@ void ClusterBuilderRD::_clear()
 		return;
 	}
 
-	RD::get_singleton()->free_rid(cluster_buffer);
-	RD::get_singleton()->free_rid(cluster_render_buffer);
-	RD::get_singleton()->free_rid(element_buffer);
+	RD::free_rid(cluster_buffer);
+	RD::free_rid(cluster_render_buffer);
+	RD::free_rid(element_buffer);
 	cluster_buffer = RID();
 	cluster_render_buffer = RID();
 	element_buffer = RID();
@@ -67,7 +67,7 @@ void ClusterBuilderRD::_clear()
 	render_element_max = 0;
 	render_element_count = 0;
 
-	RD::get_singleton()->free_rid(framebuffer);
+	RD::free_rid(framebuffer);
 	framebuffer = RID();
 
 	cluster_render_uniform_set = RID();
@@ -108,65 +108,65 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 		(element_tag_bits_size + element_tag_depth_bits_size) *
 		4; // Tag bits (element was used) and tag depth (depth range in which it was used).
 
-	cluster_render_buffer = RD::get_singleton()->storage_buffer_create(cluster_render_buffer_size);
-	cluster_buffer = RD::get_singleton()->storage_buffer_create(cluster_buffer_size);
+	cluster_render_buffer = RD::storage_buffer_create(cluster_render_buffer_size);
+	cluster_buffer = RD::storage_buffer_create(cluster_buffer_size);
 
 	render_elements =
 		static_cast<RenderElementData*>(memalloc(sizeof(RenderElementData) * render_element_max));
 	render_element_count = 0;
 
 	element_buffer =
-		RD::get_singleton()->storage_buffer_create(sizeof(RenderElementData) * render_element_max);
+		RD::storage_buffer_create(sizeof(RenderElementData) * render_element_max);
 
 	uint32_t div_value = 1 << divisor;
 	if (use_msaa) {
-		framebuffer = RD::get_singleton()->framebuffer_create_empty(
-			p_screen_size / div_value, RD::TEXTURE_SAMPLES_4);
+		framebuffer = RD::framebuffer_create_empty(
+			p_screen_size / div_value, RDC::TEXTURE_SAMPLES_4);
 	}
 	else {
-		framebuffer = RD::get_singleton()->framebuffer_create_empty(p_screen_size / div_value);
+		framebuffer = RD::framebuffer_create_empty(p_screen_size / div_value);
 	}
 
 	{
 		Vector<RD::Uniform> uniforms;
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
 			u.binding = 1;
 			u.append_id(state_uniform);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 2;
 			u.append_id(element_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 3;
 			u.append_id(cluster_render_buffer);
 			uniforms.push_back(u);
 		}
 
 		cluster_render_uniform_set =
-			RD::get_singleton()->uniform_set_create(uniforms, shared->cluster_render.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_render.shader, 0);
 	}
 
 	{
 		Vector<RD::Uniform> uniforms;
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 1;
 			u.append_id(cluster_render_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 2;
 			u.append_id(cluster_buffer);
 			uniforms.push_back(u);
@@ -174,28 +174,28 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 3;
 			u.append_id(element_buffer);
 			uniforms.push_back(u);
 		}
 
 		cluster_store_uniform_set =
-			RD::get_singleton()->uniform_set_create(uniforms, shared->cluster_store.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_store.shader, 0);
 	}
 
 	if (p_color_buffer.is_valid()) {
 		Vector<RD::Uniform> uniforms;
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 			u.binding = 1;
 			u.append_id(cluster_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+			u.uniform_type = RDC::UNIFORM_TYPE_IMAGE;
 			u.binding = 2;
 			u.append_id(p_color_buffer);
 			uniforms.push_back(u);
@@ -203,21 +203,21 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 			u.binding = 3;
 			u.append_id(p_depth_buffer);
 			uniforms.push_back(u);
 		}
 		{
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
 			u.binding = 4;
 			u.append_id(p_depth_buffer_sampler);
 			uniforms.push_back(u);
 		}
 
 		debug_uniform_set =
-			RD::get_singleton()->uniform_set_create(uniforms, shared->cluster_debug.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_debug.shader, 0);
 	}
 	else {
 		debug_uniform_set = RID();
@@ -260,7 +260,7 @@ void ClusterBuilderRD::set_shared(ClusterBuilderSharedDataRD* p_shared) { shared
 ClusterBuilderRD::~ClusterBuilderRD()
 {
 	_clear();
-	RD::get_singleton()->free_rid(state_uniform);
+	RD::free_rid(state_uniform);
 }
 
 

@@ -37,7 +37,7 @@
 #include "scene/resources/surface_tool.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/rendering/rendering_server.h" // Only used for debug collision shapes.
+#include "servers/rendering/renderer.h" // Only used for debug collision shapes.
 #endif											// PHYSICS_3D_DISABLED
 
 #ifdef DEV_ENABLED
@@ -637,7 +637,7 @@ Ref<ConcavePolygonShape3D> CSGShape3D::bake_collision_shape()
 
 bool CSGShape3D::_is_debug_collision_shape_visible()
 {
-	return !Engine::get_singleton()->is_editor_hint() && is_inside_tree() &&
+	return !Engine::is_editor_hint() && is_inside_tree() &&
 		   get_tree()->is_debugging_collisions_hint();
 }
 
@@ -648,24 +648,24 @@ void CSGShape3D::_update_debug_collision_shape()
 		return;
 	}
 
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (root_collision_debug_instance.is_null()) {
-		root_collision_debug_instance = RS::get_singleton()->instance_create();
+		root_collision_debug_instance = RS::instance_create();
 	}
 
 	Ref<Mesh> debug_mesh = root_collision_shape->get_debug_mesh();
-	RS::get_singleton()->instance_set_scenario(
+	RS::instance_set_scenario(
 		root_collision_debug_instance, get_world_3d()->get_scenario());
-	RS::get_singleton()->instance_set_base(root_collision_debug_instance, debug_mesh->get_rid());
-	RS::get_singleton()->instance_set_transform(
+	RS::instance_set_base(root_collision_debug_instance, debug_mesh->get_rid());
+	RS::instance_set_transform(
 		root_collision_debug_instance, get_global_transform());
 }
 
 void CSGShape3D::_clear_debug_collision_shape()
 {
 	if (root_collision_debug_instance.is_valid()) {
-		RS::get_singleton()->free_rid(root_collision_debug_instance);
+		RS::free_rid(root_collision_debug_instance);
 		root_collision_debug_instance = RID();
 	}
 }
@@ -675,7 +675,7 @@ void CSGShape3D::_on_transform_changed()
 	if (root_collision_debug_instance.is_valid() &&
 		!debug_shape_old_transform.is_equal_approx(get_global_transform())) {
 		debug_shape_old_transform = get_global_transform();
-		RS::get_singleton()->instance_set_transform(
+		RS::instance_set_transform(
 			root_collision_debug_instance, debug_shape_old_transform);
 	}
 }

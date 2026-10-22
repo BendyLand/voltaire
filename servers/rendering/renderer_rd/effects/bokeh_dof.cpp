@@ -29,10 +29,11 @@
 /**************************************************************************/
 
 #include "bokeh_dof.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 
 using namespace RendererRD;
@@ -54,6 +55,29 @@ BokehDOF::~BokehDOF()
 void RendererRD::BokehDOF::bokeh_dof_compute(const RendererRD::BokehDOF::BokehBuffers& p_buffers,
 	RID p_dest_framebuffer, float p_bokeh_size, float p_blur_size, bool p_use_jitter)
 {
+}
+
+BokehDOF::BokehDOF(bool p_prefer_raster_effects)
+{
+	prefer_raster_effects = p_prefer_raster_effects;
+
+	Vector<String> modes;
+	modes.push_back("\n#define MODE_GEN_BLUR_SIZE\n");
+	modes.push_back("\n#define MODE_BOKEH_BOX\n");
+	modes.push_back("\n#define MODE_BOKEH_BOX\n#define MODE_NO_WEIGHTS\n");
+	modes.push_back("\n#define MODE_BOKEH_HEXAGONAL\n");
+	modes.push_back("\n#define MODE_BOKEH_HEXAGONAL\n#define MODE_NO_WEIGHTS\n");
+	modes.push_back("\n#define MODE_BOKEH_CIRCULAR\n");
+	modes.push_back("\n#define MODE_COMPOSITE\n");
+
+	if (prefer_raster_effects) {
+		bokeh.raster_shader.initialize(modes);
+		bokeh.shader_version = bokeh.raster_shader.version_create();
+	}
+	else {
+		bokeh.compute_shader.initialize(modes);
+		bokeh.shader_version = bokeh.compute_shader.version_create();
+	}
 }
 
 

@@ -38,6 +38,7 @@
 #include "core/templates/self_list.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -1128,7 +1129,7 @@ public:
 
 	void screen_space_roughness_limiter_set_active(
 		bool p_enable, float p_amount, float p_curve) override;
-	bool screen_space_roughness_limiter_is_active() const override;
+	bool screen_space_roughness_limiter_is_active() const;
 
 	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override;
 	void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
@@ -1145,7 +1146,8 @@ public:
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
 	virtual void material_set_use_debanding(bool p_enable) override;
 
-	RasterizerSceneGLES3();
+	RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_storage,
+		GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage);
 	~RasterizerSceneGLES3();
 };
 

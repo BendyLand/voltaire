@@ -32,10 +32,10 @@
 #include "core/os/os.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_set.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering/shader_types.h"
+#include "servers/rendering/storage/utilities.h"
 #include "shader_language.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
@@ -1390,7 +1390,7 @@ bool ShaderLanguage::_find_identifier(const BlockNode* p_block, bool p_allow_rea
 	if (is_shader_inc) {
 		for (int i = 0; i < RSE::SHADER_MAX; i++) {
 			for (const KeyValue<StringName, FunctionInfo>& E :
-				ShaderTypes::get_singleton()->get_functions(RSE::ShaderMode(i))) {
+				ShaderTypes::get_functions(RSE::ShaderMode(i))) {
 				if ((current_function == E.key || E.key == "global" || E.key == "constants") &&
 					E.value.built_ins.has(p_identifier)) {
 					if (r_data_type) {
@@ -2452,7 +2452,8 @@ ShaderLanguage::Scalar ShaderLanguage::_eval_scalar(
 }
 
 Vector<ShaderLanguage::Scalar> ShaderLanguage::_eval_unary_vector(
-	const Vector<Scalar>& p_va, DataType p_ret_type, Operator p_op)
+	const Vector<Scalar>&
+p_va, DataType p_ret_type, Operator p_op)
 {
 	uint32_t size = get_datatype_component_count(p_ret_type);
 	if (p_va.size() != p_ret_type) {
@@ -3697,6 +3698,7 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 	{"dFdxFine", TYPE_FLOAT, {TYPE_FLOAT, TYPE_VOID}, {"p"}, TAG_GLOBAL, true},
 	{"dFdxFine", TYPE_VEC2, {TYPE_VEC2, TYPE_VOID}, {"p"}, TAG_GLOBAL, true},
 	{"dFdxFine", TYPE_VEC3, {TYPE_VEC3, TYPE_VOID}, {"p"}, TAG_GLOBAL, true},
+
 	{"dFdxFine", TYPE_VEC4, {TYPE_VEC4, TYPE_VOID}, {"p"}, TAG_GLOBAL, true},
 
 	// dFdy
@@ -3920,7 +3922,7 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 
 	{nullptr, TYPE_VOID, {TYPE_VOID}, {""}, TAG_GLOBAL, false}};
 
-HashSet<StringName> global_func_set;
+static HashSet<StringName> global_func_set;
 
 const ShaderLanguage::BuiltinFuncOutArgs ShaderLanguage::builtin_func_out_args[] = {
 	{"modf", {1, -1}}, {"umulExtended", {2, 3}}, {"imulExtended", {2, 3}}, {"uaddCarry", {2, -1}},
@@ -4058,7 +4060,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 				}
 
 				if (!fail) {
-					if (RenderingServer::get_singleton()->is_low_end()) {
+					if (Renderer::is_low_end()) {
 						if (builtin_func_defs[idx].high_end) {
 							fail = true;
 							unsupported_builtin = true;
@@ -6014,7 +6016,8 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 								if (a.type == TYPE_STRUCT) {
 									if (a.struct_name != b->get_datatype_name()) {
 										found = false;
-										break;
+
+									break;
 									}
 									else {
 										valid_args++;
@@ -6311,8 +6314,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 															   .type); // this should have been
 																	   // validated previously
 
-											if (RendererCompositor::get_singleton()
-													->is_xr_enabled() &&
+											if (RendererCompositor::is_xr_enabled() &&
 												is_custom_func) {
 												ShaderNode::Uniform::Hint hint = u->hint;
 
@@ -9827,9 +9829,8 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 			if (is_uniform) {
 				if (uniform_scope == ShaderNode::Uniform::SCOPE_GLOBAL &&
-					Engine::get_singleton()
-						->is_editor_hint()) { // Type checking for global uniforms is not allowed
-											  // outside the editor.
+					Engine::is_editor_hint()) { // Type checking for global uniforms is not allowed
+												// outside the editor.
 					// validate global uniform
 					DataType gvtype = global_shader_uniform_get_type_func(name);
 					if (gvtype == TYPE_MAX) {
@@ -10812,6 +10813,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 									else if (curly && tk.type == TK_CURLY_BRACKET_CLOSE) {
 										decl.initializer.push_back(n);
 										break;
+
 									}
 									else {
 										if (curly) {
@@ -11372,10 +11374,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 	}
 	uint32_t varying_index = base_varying_index;
 	uint32_t max_varyings = 31;
-	// Can be false for internal shaders created in the process of initializing the engine.
-	if (RSG::utilities) {
-		max_varyings = RSG::utilities->get_maximum_shader_varyings();
-	}
+	max_varyings = RendererUtilities::get_maximum_shader_varyings();
 
 	for (const KeyValue<StringName, ShaderNode::Varying>& kv : shader->varyings) {
 		if (kv.value.stage != ShaderNode::Varying::STAGE_FRAGMENT &&
@@ -11506,8 +11505,8 @@ Error ShaderLanguage::_parse_shader_mode(
 	if (is_shader_inc) {
 		for (int i = 0; i < RSE::SHADER_MAX; i++) {
 			const Vector<ModeInfo> modes =
-				p_is_stencil ? ShaderTypes::get_singleton()->get_stencil_modes(RSE::ShaderMode(i))
-							 : ShaderTypes::get_singleton()->get_modes(RSE::ShaderMode(i));
+				p_is_stencil ? ShaderTypes::get_stencil_modes(RSE::ShaderMode(i))
+							 : ShaderTypes::get_modes(RSE::ShaderMode(i));
 
 			for (const ModeInfo& info : modes) {
 				const String name = String(info.name);
@@ -11795,6 +11794,7 @@ ShaderLanguage::~ShaderLanguage()
 	}
 }
 
-
-
 void ShaderLanguage::_check_warning_accums() {}
+
+void ShaderLanguage::finish() { global_func_set.clear(); }
+

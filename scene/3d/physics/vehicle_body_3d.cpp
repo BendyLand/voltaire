@@ -654,7 +654,7 @@ void VehicleBody3D::_notification(int p_what)
 							"OFF. (benign)");
 		}
 #endif
-		real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
+		real_t f = Engine::get_physics_interpolation_fraction();
 
 		Transform3D xform;
 		Transform3D inv_vehicle_xform = get_global_transform_interpolated().affine_inverse();

@@ -34,9 +34,11 @@
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/shader_language.h"
 
-class ShaderCompiler {
+class ShaderCompiler
+{
 public:
-	enum Stage {
+	enum Stage
+	{
 		STAGE_VERTEX,
 		STAGE_FRAGMENT,
 		STAGE_COMPUTE,
@@ -48,25 +50,30 @@ public:
 		STAGE_MAX
 	};
 
-	struct IdentifierActions {
+	struct IdentifierActions
+	{
 		HashMap<StringName, Stage> entry_point_stages;
 
-		HashMap<StringName, Pair<int *, int>> render_mode_values;
-		HashMap<StringName, bool *> render_mode_flags;
-		HashMap<StringName, bool *> usage_flag_pointers;
-		HashMap<StringName, bool *> write_flag_pointers;
-		HashMap<StringName, Pair<int *, int>> stencil_mode_values;
-		int *stencil_reference = nullptr;
+		HashMap<StringName, Pair<int*, int>> render_mode_values;
+		HashMap<StringName, bool*> render_mode_flags;
+		HashMap<StringName, bool*> usage_flag_pointers;
+		HashMap<StringName, bool*> write_flag_pointers;
+		HashMap<StringName, Pair<int*, int>> stencil_mode_values;
+		int* stencil_reference = nullptr;
 
-		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> *uniforms = nullptr;
+		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform>* uniforms = nullptr;
 	};
 
-	struct GeneratedCode {
+	struct GeneratedCode
+	{
 		Vector<String> defines;
-		struct Texture {
+
+		struct Texture
+		{
 			StringName name;
 			ShaderLanguage::DataType type = ShaderLanguage::DataType::TYPE_VOID;
-			ShaderLanguage::ShaderNode::Uniform::Hint hint = ShaderLanguage::ShaderNode::Uniform::Hint::HINT_NONE;
+			ShaderLanguage::ShaderNode::Uniform::Hint hint =
+				ShaderLanguage::ShaderNode::Uniform::Hint::HINT_NONE;
 			bool use_color = false;
 			ShaderLanguage::TextureFilter filter = ShaderLanguage::TextureFilter::FILTER_DEFAULT;
 			ShaderLanguage::TextureRepeat repeat = ShaderLanguage::TextureRepeat::REPEAT_DEFAULT;
@@ -92,13 +99,16 @@ public:
 		bool uses_normal_roughness_texture = false;
 	};
 
-	struct DefaultIdentifierActions {
+	struct DefaultIdentifierActions
+	{
 		HashMap<StringName, String> renames;
 		HashMap<StringName, String> render_mode_defines;
 		HashMap<StringName, String> usage_defines;
 		HashMap<StringName, String> custom_samplers;
-		ShaderLanguage::TextureFilter default_filter = ShaderLanguage::TextureFilter::FILTER_NEAREST;
-		ShaderLanguage::TextureRepeat default_repeat = ShaderLanguage::TextureRepeat::REPEAT_DISABLE;
+		ShaderLanguage::TextureFilter default_filter =
+			ShaderLanguage::TextureFilter::FILTER_NEAREST;
+		ShaderLanguage::TextureRepeat default_repeat =
+			ShaderLanguage::TextureRepeat::REPEAT_DISABLE;
 		int base_texture_binding_index = 0;
 		int texture_layout_set = 0;
 		String base_uniform_string;
@@ -112,13 +122,18 @@ public:
 private:
 	ShaderLanguage parser;
 
-	String _get_sampler_name(ShaderLanguage::TextureFilter p_filter, ShaderLanguage::TextureRepeat p_repeat);
+	String _get_sampler_name(
+		ShaderLanguage::TextureFilter p_filter, ShaderLanguage::TextureRepeat p_repeat);
 
-	void _dump_function_deps(const ShaderLanguage::ShaderNode *p_node, const StringName &p_for_func, const HashMap<StringName, String> &p_func_code, String &r_to_add, HashSet<StringName> &added);
-	String _dump_node_code(const ShaderLanguage::Node *p_node, int p_level, GeneratedCode &r_gen_code, IdentifierActions &p_actions, const DefaultIdentifierActions &p_default_actions, bool p_assigning, bool p_scope = true);
+	void _dump_function_deps(const ShaderLanguage::ShaderNode* p_node, const StringName& p_for_func,
+		const HashMap<StringName, String>& p_func_code, String& r_to_add,
+		HashSet<StringName>& added);
+	String _dump_node_code(const ShaderLanguage::Node* p_node, int p_level,
+		GeneratedCode& r_gen_code, IdentifierActions& p_actions,
+		const DefaultIdentifierActions& p_default_actions, bool p_assigning, bool p_scope = true);
 
-	const ShaderLanguage::ShaderNode *shader = nullptr;
-	const ShaderLanguage::FunctionNode *function = nullptr;
+	const ShaderLanguage::ShaderNode* shader = nullptr;
+	const ShaderLanguage::FunctionNode* function = nullptr;
 	StringName current_func_name;
 	StringName time_name;
 	HashSet<StringName> texture_functions;
@@ -131,11 +146,14 @@ private:
 
 	DefaultIdentifierActions actions;
 
-	static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName &p_name);
+	static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName& p_name);
 
 public:
-	Error compile(RSE::ShaderMode p_mode, const String &p_code, IdentifierActions *p_actions, const String &p_path, GeneratedCode &r_gen_code);
+	Error compile(RSE::ShaderMode p_mode, const String& p_code, IdentifierActions* p_actions,
+		const String& p_path, GeneratedCode& r_gen_code);
 
 	void initialize(DefaultIdentifierActions p_actions);
 	ShaderCompiler();
 };
+
+

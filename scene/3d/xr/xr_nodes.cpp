@@ -339,7 +339,7 @@ void XROrigin3D::_set_current(bool p_enabled, bool p_update_others)
 	// where we actually process activating this origin node.
 	current = p_enabled;
 
-	if (!is_inside_tree() || Engine::get_singleton()->is_editor_hint()) {
+	if (!is_inside_tree() || Engine::is_editor_hint()) {
 		return;
 	}
 
@@ -387,7 +387,7 @@ void XROrigin3D::set_current(bool p_enabled) { _set_current(p_enabled, true); }
 
 bool XROrigin3D::is_current() const
 {
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		// return as is
 		return current;
 	}
@@ -398,7 +398,7 @@ bool XROrigin3D::is_current() const
 
 void XROrigin3D::_physics_interpolated_changed()
 {
-	if (current && !Engine::get_singleton()->is_editor_hint()) {
+	if (current && !Engine::is_editor_hint()) {
 		set_process_internal(is_physics_interpolated());
 	}
 }

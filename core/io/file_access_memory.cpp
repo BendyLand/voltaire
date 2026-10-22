@@ -28,29 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/config/project_settings.h"
 #include "file_access_memory.h"
 
-#include "core/config/project_settings.h"
+static HashMap<String, Vector<uint8_t>>* files = nullptr;
 
-static HashMap<String, Vector<uint8_t>> *files = nullptr;
-
-void FileAccessMemory::register_file(const String &p_name, const Vector<uint8_t> &p_data) {
+void FileAccessMemory::register_file(const String& p_name, const Vector<uint8_t>& p_data)
+{
 	if (!files) {
 		files = memnew((HashMap<String, Vector<uint8_t>>));
 	}
 
 	String name;
-	if (ProjectSettings::get_singleton()) {
-		name = ProjectSettings::get_singleton()->globalize_path(p_name);
-	} else {
+	if (ProjectSettings::is_initialized()) {
+		name = ProjectSettings::globalize_path(p_name);
+	}
+	else {
 		name = p_name;
 	}
-	//name = DirAccess::normalize_path(name);
+	// name = DirAccess::normalize_path(name);
 
 	(*files)[name] = p_data;
 }
 
-void FileAccessMemory::cleanup() {
+void FileAccessMemory::cleanup()
+{
 	if (!files) {
 		return;
 	}
@@ -58,29 +60,30 @@ void FileAccessMemory::cleanup() {
 	memdelete(files);
 }
 
-Ref<FileAccess> FileAccessMemory::create() {
-	return memnew(FileAccessMemory);
-}
+Ref<FileAccess> FileAccessMemory::create() { return memnew(FileAccessMemory); }
 
-bool FileAccessMemory::file_exists(const String &p_name) {
+bool FileAccessMemory::file_exists(const String& p_name)
+{
 	String name = fix_path(p_name);
-	//name = DirAccess::normalize_path(name);
+	// name = DirAccess::normalize_path(name);
 
 	return files && (files->find(name) != nullptr);
 }
 
-Error FileAccessMemory::open_custom(const uint8_t *p_data, uint64_t p_len) {
-	data = (uint8_t *)p_data;
+Error FileAccessMemory::open_custom(const uint8_t* p_data, uint64_t p_len)
+{
+	data = (uint8_t*)p_data;
 	length = p_len;
 	pos = 0;
 	return OK;
 }
 
-Error FileAccessMemory::open_internal(const String &p_path, int p_mode_flags) {
+Error FileAccessMemory::open_internal(const String& p_path, int p_mode_flags)
+{
 	ERR_FAIL_NULL_V(files, ERR_FILE_NOT_FOUND);
 
 	String name = fix_path(p_path);
-	//name = DirAccess::normalize_path(name);
+	// name = DirAccess::normalize_path(name);
 
 	HashMap<String, Vector<uint8_t>>::Iterator E = files->find(name);
 	ERR_FAIL_COND_V_MSG(!E, ERR_FILE_NOT_FOUND, vformat("Can't find file '%s'.", p_path));
@@ -92,37 +95,38 @@ Error FileAccessMemory::open_internal(const String &p_path, int p_mode_flags) {
 	return OK;
 }
 
-bool FileAccessMemory::is_open() const {
-	return data != nullptr;
-}
+bool FileAccessMemory::is_open() const { return data != nullptr; }
 
-void FileAccessMemory::seek(uint64_t p_position) {
+void FileAccessMemory::seek(uint64_t p_position)
+{
 	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(p_position > length);
 	pos = p_position;
 }
 
-void FileAccessMemory::seek_end(int64_t p_position) {
+void FileAccessMemory::seek_end(int64_t p_position)
+{
 	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND((int64_t)length + p_position < 0);
 	seek(length + p_position);
 }
 
-uint64_t FileAccessMemory::get_position() const {
+uint64_t FileAccessMemory::get_position() const
+{
 	ERR_FAIL_NULL_V(data, 0);
 	return pos;
 }
 
-uint64_t FileAccessMemory::get_length() const {
+uint64_t FileAccessMemory::get_length() const
+{
 	ERR_FAIL_NULL_V(data, 0);
 	return length;
 }
 
-bool FileAccessMemory::eof_reached() const {
-	return pos >= length;
-}
+bool FileAccessMemory::eof_reached() const { return pos >= length; }
 
-uint64_t FileAccessMemory::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+uint64_t FileAccessMemory::get_buffer(uint8_t* p_dst, uint64_t p_length) const
+{
 	if (!p_length) {
 		return 0;
 	}
@@ -143,15 +147,12 @@ uint64_t FileAccessMemory::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
 	return read;
 }
 
-Error FileAccessMemory::get_error() const {
-	return pos >= length ? ERR_FILE_EOF : OK;
-}
+Error FileAccessMemory::get_error() const { return pos >= length ? ERR_FILE_EOF : OK; }
 
-void FileAccessMemory::flush() {
-	ERR_FAIL_NULL(data);
-}
+void FileAccessMemory::flush() { ERR_FAIL_NULL(data); }
 
-bool FileAccessMemory::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+bool FileAccessMemory::store_buffer(const uint8_t* p_src, uint64_t p_length)
+{
 	if (!p_length) {
 		return true;
 	}
@@ -168,3 +169,5 @@ bool FileAccessMemory::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 
 	return true;
 }
+
+

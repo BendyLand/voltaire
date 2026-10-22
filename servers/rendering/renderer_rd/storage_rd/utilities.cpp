@@ -38,33 +38,27 @@
 
 using namespace RendererRD;
 
-Utilities* Utilities::singleton = nullptr;
-
-Utilities::Utilities() { singleton = this; }
-
-Utilities::~Utilities() { singleton = nullptr; }
-
-RSE::InstanceType Utilities::get_base_type(RID p_rid) const
+RSE::InstanceType Utilities::get_base_type(RID p_rid)
 {
-	if (RendererRD::MeshStorage::get_singleton()->owns_mesh(p_rid)) {
+	if (RendererRD::MeshStorage::owns_mesh(p_rid)) {
 		return RSE::INSTANCE_MESH;
 	}
-	if (RendererRD::MeshStorage::get_singleton()->owns_multimesh(p_rid)) {
+	if (RendererRD::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
+	if (RendererRD::LightStorage::owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
-	if (RendererRD::TextureStorage::get_singleton()->owns_decal(p_rid)) {
+	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
 		return RSE::INSTANCE_DECAL;
 	}
 	if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
 		return RSE::INSTANCE_VOXEL_GI;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_light(p_rid)) {
+	if (RendererRD::LightStorage::owns_light(p_rid)) {
 		return RSE::INSTANCE_LIGHT;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	if (RendererRD::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	if (RendererRD::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
@@ -85,19 +79,19 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid) const
 
 bool Utilities::free(RID p_rid)
 {
-	if (RendererRD::LightStorage::get_singleton()->free(p_rid)) {
+	if (RendererRD::LightStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::MaterialStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::MaterialStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::MeshStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::MeshStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::ParticlesStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::TextureStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::TextureStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
@@ -119,38 +113,38 @@ bool Utilities::free(RID p_rid)
 
 void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
 {
-	if (MeshStorage::get_singleton()->owns_mesh(p_base)) {
-		Dependency* dependency = MeshStorage::get_singleton()->mesh_get_dependency(p_base);
+	if (MeshStorage::owns_mesh(p_base)) {
+		Dependency* dependency = MeshStorage::mesh_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (MeshStorage::get_singleton()->owns_multimesh(p_base)) {
-		Dependency* dependency = MeshStorage::get_singleton()->multimesh_get_dependency(p_base);
+	else if (MeshStorage::owns_multimesh(p_base)) {
+		Dependency* dependency = MeshStorage::multimesh_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 
-		RID mesh = MeshStorage::get_singleton()->multimesh_get_mesh(p_base);
+		RID mesh = MeshStorage::_multimesh_get_mesh(p_base);
 		if (mesh.is_valid()) {
 			base_update_dependency(mesh, p_instance);
 		}
 	}
-	else if (LightStorage::get_singleton()->owns_reflection_probe(p_base)) {
+	else if (LightStorage::owns_reflection_probe(p_base)) {
 		Dependency* dependency =
-			LightStorage::get_singleton()->reflection_probe_get_dependency(p_base);
+			LightStorage::reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (TextureStorage::get_singleton()->owns_decal(p_base)) {
-		Dependency* dependency = TextureStorage::get_singleton()->decal_get_dependency(p_base);
+	else if (TextureStorage::owns_decal(p_base)) {
+		Dependency* dependency = TextureStorage::decal_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (GI::get_singleton()->owns_voxel_gi(p_base)) {
 		Dependency* dependency = GI::get_singleton()->voxel_gi_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_lightmap(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->lightmap_get_dependency(p_base);
+	else if (LightStorage::owns_lightmap(p_base)) {
+		Dependency* dependency = LightStorage::lightmap_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_light(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->light_get_dependency(p_base);
+	else if (LightStorage::owns_light(p_base)) {
+		Dependency* dependency = LightStorage::light_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {
@@ -195,7 +189,7 @@ void Utilities::visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb)
 	vn->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const
+AABB Utilities::visibility_notifier_get_aabb(RID p_notifier)
 {
 	const VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
 	ERR_FAIL_NULL_V(vn, AABB());
@@ -204,60 +198,59 @@ AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const
 
 void Utilities::capture_timestamps_begin()
 {
-	RD::get_singleton()->capture_timestamp("Frame Begin");
+	RD::capture_timestamp("Frame Begin");
 }
 
 void Utilities::capture_timestamp(const String& p_name)
 {
-	RD::get_singleton()->capture_timestamp(p_name);
+	RD::capture_timestamp(p_name);
 }
 
-uint32_t Utilities::get_captured_timestamps_count() const
+uint32_t Utilities::get_captured_timestamps_count()
 {
-	return RD::get_singleton()->get_captured_timestamps_count();
+	return RD::get_captured_timestamps_count();
 }
 
-uint64_t Utilities::get_captured_timestamps_frame() const
+uint64_t Utilities::get_captured_timestamps_frame()
 {
-	return RD::get_singleton()->get_captured_timestamps_frame();
+	return RD::get_captured_timestamps_frame();
 }
 
-uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index)
 {
-	return RD::get_singleton()->get_captured_timestamp_gpu_time(p_index);
+	return RD::get_captured_timestamp_gpu_time(p_index);
 }
 
-uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index) const
+uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index)
 {
-	return RD::get_singleton()->get_captured_timestamp_cpu_time(p_index);
+	return RD::get_captured_timestamp_cpu_time(p_index);
 }
 
-String Utilities::get_captured_timestamp_name(uint32_t p_index) const
+String Utilities::get_captured_timestamp_name(uint32_t p_index)
 {
-	return RD::get_singleton()->get_captured_timestamp_name(p_index);
+	return RD::get_captured_timestamp_name(p_index);
 }
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::get_singleton()
-		->_update_global_shader_uniforms(); // must do before materials, so it can queue them for
+	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue them for
 											// update
-	MaterialStorage::get_singleton()->_update_queued_materials();
-	MeshStorage::get_singleton()->_update_dirty_multimeshes();
-	MeshStorage::get_singleton()->_update_dirty_skeletons();
-	TextureStorage::get_singleton()->update_decal_atlas();
-	TextureStorage::get_singleton()->update_area_light_atlas();
+	MaterialStorage::_update_queued_materials();
+	MeshStorage::_update_dirty_multimeshes();
+	MeshStorage::_update_dirty_skeletons();
+	TextureStorage::update_decal_atlas();
+	TextureStorage::update_area_light_atlas();
 }
 
-bool Utilities::has_os_feature(const String& p_feature) const
+bool Utilities::has_os_feature(const String& p_feature)
 {
-	if (!RD::get_singleton()) {
+	if (!RD::data) {
 		return false;
 	}
 
 	if (p_feature == "rgtc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC5_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC5_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
@@ -266,33 +259,33 @@ bool Utilities::has_os_feature(const String& p_feature) const
 	// textures. This could be fixed but so few devices support it that it doesn't seem useful (and
 	// makes bigger APKs). For good measure we do the same hack for iOS, just in case.
 	if (p_feature == "s3tc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 #endif
 
 	if (p_feature == "bptc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_BC7_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC7_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "etc2" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
 	if (p_feature == "astc_hdr" &&
-		RD::get_singleton()->texture_is_format_supported_for_usage(
-			RD::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT)) {
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
 		return true;
 	}
 
@@ -302,11 +295,11 @@ bool Utilities::has_os_feature(const String& p_feature) const
 void Utilities::update_memory_info()
 {
 	texture_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
 	buffer_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
 	total_mem_cache =
-		RenderingDevice::get_singleton()->get_memory_usage(RenderingDevice::MEMORY_TOTAL);
+		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TOTAL);
 }
 
 uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
@@ -323,44 +316,42 @@ uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
 	return 0;
 }
 
-String Utilities::get_video_adapter_name() const
+String Utilities::get_video_adapter_name()
 {
-	return RenderingDevice::get_singleton()->get_device_name();
+	return RenderingDevice::get_device_name();
 }
 
-String Utilities::get_video_adapter_vendor() const
+String Utilities::get_video_adapter_vendor()
 {
-	return RenderingDevice::get_singleton()->get_device_vendor_name();
+	return RenderingDevice::get_device_vendor_name();
 }
 
-RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type() const
+RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type()
 {
-	return RenderingDevice::get_singleton()->get_device_type();
+	return RenderingDevice::get_device_type();
 }
 
-String Utilities::get_video_adapter_api_version() const
+String Utilities::get_video_adapter_api_version()
 {
-	return RenderingDevice::get_singleton()->get_device_api_version();
+	return RenderingDevice::get_device_api_version();
 }
 
-Size2i Utilities::get_maximum_viewport_size() const
+Size2i Utilities::get_maximum_viewport_size()
 {
-	RenderingDevice* device = RenderingDevice::get_singleton();
-
-	int max_x = device->limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
-	int max_y = device->limit_get(RenderingDevice::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
+	int max_x = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
+	int max_y = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
 	return Size2i(max_x, max_y);
 }
 
-uint32_t Utilities::get_maximum_shader_varyings() const
+uint32_t Utilities::get_maximum_shader_varyings()
 {
-	return RenderingDevice::get_singleton()->limit_get(RenderingDevice::LIMIT_MAX_SHADER_VARYINGS);
+	return RenderingDevice::limit_get(RDC::LIMIT_MAX_SHADER_VARYINGS);
 }
 
-uint64_t Utilities::get_maximum_uniform_buffer_size() const
+uint64_t Utilities::get_maximum_uniform_buffer_size()
 {
-	return RenderingDevice::get_singleton()->limit_get(
-		RenderingDevice::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
+	return RenderingDevice::limit_get(
+		RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
 }
 
 void RendererRD::Utilities::visibility_notifier_call(

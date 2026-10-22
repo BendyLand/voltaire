@@ -42,7 +42,7 @@ void GrooveJoint2D::_notification(int p_what)
 			break;
 		}
 
-		if (!Engine::get_singleton()->is_editor_hint() &&
+		if (!Engine::is_editor_hint() &&
 			!get_tree()->is_debugging_collisions_hint()) {
 			break;
 		}

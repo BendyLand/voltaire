@@ -63,7 +63,7 @@ void EditorFileDialog::_dir_contents_changed()
 	case FileDialog::ACCESS_FILESYSTEM: {
 		// Directories within the project dir may still be accessed.
 		const String localized_path =
-			ProjectSettings::get_singleton()->localize_path(get_current_dir());
+			ProjectSettings::localize_path(get_current_dir());
 		scan_required = localized_path.is_resource_file();
 	} break;
 	}

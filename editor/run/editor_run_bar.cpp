@@ -99,7 +99,7 @@ void EditorRunBar::_quick_run_selected(const String& p_file_path, int p_menu_ite
 
 void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_play_args)
 {
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
+	if (Engine::is_recovery_mode_hint()) {
 		EditorToaster::get_singleton()->popup_str(
 			TTR("Recovery Mode is enabled. Disable it to run the project."),
 			EditorToaster::SEVERITY_WARNING);
@@ -119,7 +119,7 @@ void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_p
 
 void EditorRunBar::play_custom_scene(const String& p_custom, const Vector<String>& p_play_args)
 {
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
+	if (Engine::is_recovery_mode_hint()) {
 		EditorToaster::get_singleton()->popup_str(
 			TTR("Recovery Mode is enabled. Disable it to run the project."),
 			EditorToaster::SEVERITY_WARNING);

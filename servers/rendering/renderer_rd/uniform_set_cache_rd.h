@@ -47,14 +47,14 @@ class UniformSetCacheRD
 		LocalVector<RD::Uniform> uniforms;
 	};
 
-	PagedAllocator<Cache> cache_allocator;
+	static inline PagedAllocator<Cache> cache_allocator = {};
 
 	enum
 	{
 		HASH_TABLE_SIZE = 16381 // Prime
 	};
 
-	Cache* hash_table[HASH_TABLE_SIZE] = {};
+	static inline Cache* hash_table[HASH_TABLE_SIZE] = {};
 
 	static _FORCE_INLINE_ uint32_t _hash_uniform(const RD::Uniform& u, uint32_t h)
 	{
@@ -117,16 +117,17 @@ class UniformSetCacheRD
 
 	static UniformSetCacheRD* singleton;
 
-	uint32_t cache_instances_used = 0;
+	static inline uint32_t cache_instances_used = 0;
 
 	void _invalidate(Cache* p_cache);
 	static void _uniform_set_invalidation_callback(void* p_userdata);
 
 	template <typename Collection>
-	RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash, uint32_t p_table_idx,
+	static RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash, uint32_t p_table_idx,
 		const Collection& p_uniforms)
 	{
-		RID rid = RD::get_singleton()->uniform_set_create(p_uniforms, p_shader, p_set);
+		if (!cache_instances_used) cache_instances_used = 0;
+		RID rid = RD::uniform_set_create(p_uniforms, p_shader, p_set);
 		ERR_FAIL_COND_V(rid.is_null(), rid);
 
 		Cache* c = cache_allocator.alloc();
@@ -145,7 +146,7 @@ class UniformSetCacheRD
 		}
 		hash_table[p_table_idx] = c;
 
-		RD::get_singleton()->uniform_set_set_invalidation_callback(
+		RD::uniform_set_set_invalidation_callback(
 			rid, _uniform_set_invalidation_callback, c);
 
 		cache_instances_used++;
@@ -182,7 +183,7 @@ public:
 	}
 
 	template <typename... Args>
-	RID get_cache_vec(RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
+	static RID get_cache_vec(RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
 	{
 		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
 		h = hash_murmur3_one_32(p_set, h);

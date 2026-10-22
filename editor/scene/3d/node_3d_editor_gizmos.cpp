@@ -38,7 +38,7 @@
 #include "node_3d_editor_gizmos.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/primitive_meshes.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #define HANDLE_HALF_SIZE 9.5
 
@@ -62,10 +62,10 @@ bool EditorNode3DGizmo::is_editable() const
 
 void EditorNode3DGizmo::clear()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
-			RS::get_singleton()->free_rid(instances[i].instance);
+			RS::free_rid(instances[i].instance);
 		}
 	}
 
@@ -144,10 +144,10 @@ void EditorNode3DGizmo::add_mesh(const Ref<Mesh>& p_mesh, const Ref<Material>& p
 	ins.xform = p_xform;
 	if (valid) {
 		ins.create_instance(spatial_node, hidden);
-		RS::get_singleton()->instance_set_transform(
+		RS::instance_set_transform(
 			ins.instance, spatial_node->get_global_transform() * ins.xform);
 		if (ins.material.is_valid()) {
-			RS::get_singleton()->instance_geometry_set_material_override(
+			RS::instance_geometry_set_material_override(
 				ins.instance, p_material->get_rid());
 		}
 	}
@@ -507,7 +507,7 @@ void EditorNode3DGizmo::transform()
 	ERR_FAIL_NULL(spatial_node);
 	ERR_FAIL_COND(!valid);
 	for (int i = 0; i < instances.size(); i++) {
-		RS::get_singleton()->instance_set_transform(
+		RS::instance_set_transform(
 			instances[i].instance, spatial_node->get_global_transform() * instances[i].xform);
 	}
 
@@ -516,13 +516,13 @@ void EditorNode3DGizmo::transform()
 
 void EditorNode3DGizmo::free()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(Renderer::data);
 	ERR_FAIL_NULL(spatial_node);
 	ERR_FAIL_COND(!valid);
 
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
-			RS::get_singleton()->free_rid(instances[i].instance);
+			RS::free_rid(instances[i].instance);
 		}
 		instances.write[i].instance = RID();
 	}
@@ -540,7 +540,7 @@ void EditorNode3DGizmo::set_hidden(bool p_hidden)
 	hidden = p_hidden;
 	int layer = hidden ? 0 : 1 << Node3DEditorViewport::GIZMO_EDIT_LAYER;
 	for (int i = 0; i < instances.size(); ++i) {
-		RS::get_singleton()->instance_set_layer_mask(instances[i].instance, layer);
+		RS::instance_set_layer_mask(instances[i].instance, layer);
 	}
 }
 

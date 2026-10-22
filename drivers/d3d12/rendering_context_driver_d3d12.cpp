@@ -90,7 +90,7 @@ RenderingContextDriverD3D12::~RenderingContextDriverD3D12() {
 
 Error RenderingContextDriverD3D12::_init_device_factory() {
 	uint32_t agility_sdk_version = GLOBAL_GET("rendering/rendering_device/d3d12/agility_sdk_version");
-	String agility_sdk_path = String(".\\") + Engine::get_singleton()->get_architecture_name();
+	String agility_sdk_path = String(".\\") + Engine::get_architecture_name();
 
 	lib_d3d12 = LoadLibraryW(L"D3D12.dll");
 	ERR_FAIL_NULL_V(lib_d3d12, ERR_CANT_CREATE);
@@ -211,7 +211,7 @@ Error RenderingContextDriverD3D12::_initialize_devices() {
 }
 
 bool RenderingContextDriverD3D12::use_validation_layers() const {
-	return Engine::get_singleton()->is_validation_layers_enabled();
+	return Engine::is_validation_layers_enabled();
 }
 
 Error RenderingContextDriverD3D12::initialize() {

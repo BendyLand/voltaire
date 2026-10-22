@@ -30,7 +30,7 @@
 
 #include "core/string/print_string.h"
 #include "openxr_android_thread_settings_extension.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef XR_USE_PLATFORM_ANDROID
 #include <unistd.h>

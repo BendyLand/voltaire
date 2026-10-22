@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "parallax_layer.h"
 #include "scene/2d/parallax_background.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Size2 ParallaxLayer::get_motion_scale() const { return motion_scale; }
 
@@ -56,7 +56,7 @@ void ParallaxLayer::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			break;
 		}
 
@@ -71,7 +71,7 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 	if (!is_inside_tree()) {
 		return;
 	}
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 

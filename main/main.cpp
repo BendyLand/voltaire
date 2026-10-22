@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cstdlib>
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/core_globals.h"
@@ -55,11 +56,13 @@
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
+#include "scene/gui/color_rect.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/property_list_helper.h"
 #include "scene/register_scene_types.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/resources/world_2d.h"
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_server.h"
@@ -68,9 +71,10 @@
 #include "servers/display/display_server.h"
 #include "servers/movie_writer/movie_writer.h"
 #include "servers/register_server_types.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_default.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 
@@ -95,6 +99,7 @@
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
+#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #include "servers/xr/xr_interface.h"
 #endif // XR_DISABLED
@@ -149,8 +154,6 @@
 // Singletons
 
 // Initialized in setup()
-static Engine* engine = nullptr;
-static ProjectSettings* globals = nullptr;
 static Input* input = nullptr;
 static InputMap* input_map = nullptr;
 static TranslationServer* translation_server = nullptr;
@@ -169,7 +172,6 @@ static AudioServer* audio_server = nullptr;
 static CameraServer* camera_server = nullptr;
 static AccessibilityServer* accessibility_server = nullptr;
 static DisplayServer* display_server = nullptr;
-static RenderingServer* rendering_server = nullptr;
 static TextServerManager* tsman = nullptr;
 static ThemeDB* theme_db = nullptr;
 #ifndef PHYSICS_2D_DISABLED
@@ -347,21 +349,26 @@ static Vector<String> get_files_with_extension(const String& p_root, const Strin
 void finalize_physics()
 {
 #ifndef PHYSICS_3D_DISABLED
-	physics_server_3d->finish();
-	memdelete(physics_server_3d);
+	if (physics_server_3d) {
+		physics_server_3d->finish();
+		memdelete(physics_server_3d);
+		physics_server_3d = nullptr;
+	}
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	physics_server_2d->finish();
-	memdelete(physics_server_2d);
+	if (physics_server_2d) {
+		physics_server_2d->finish();
+		memdelete(physics_server_2d);
+		physics_server_2d = nullptr;
+	}
 #endif // PHYSICS_2D_DISABLED
 }
 
 void finalize_display()
 {
-	rendering_server->finish();
-	memdelete(rendering_server);
-
+	ShaderLanguage::finish();
+	Renderer::finalize();
 	memdelete(display_server);
 	memdelete(accessibility_server);
 }
@@ -386,31 +393,29 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::get_singleton()->print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " (" +
+									  Time::get_singleton()->get_datetime_string_from_unix_time(
+										  VLTR_VERSION_TIMESTAMP, true) +
+									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::get_singleton()->print_header(
-				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - " + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " (" +
+								 Time::get_singleton()->get_datetime_string_from_unix_time(
+									 VLTR_VERSION_TIMESTAMP, true) +
+								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 	else {
 		if (p_rich) {
-			Engine::get_singleton()->print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " - \u001b[4m" +
+									  String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::get_singleton()->print_header(String(VLTR_VERSION_NAME) + " v" +
-												  get_full_version_string() + " - " +
-												  String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 }
@@ -879,8 +884,6 @@ Error Main::test_setup()
 
 	packed_data = memnew(PackedData);
 
-	globals = memnew(ProjectSettings);
-
 	register_core_settings(); // Here globals are present.
 
 	translation_server = memnew(TranslationServer);
@@ -932,7 +935,7 @@ Error Main::test_setup()
 	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
-	rendering_server = memnew(RenderingServerDefault());
+	rendering_server = memnew(Renderer());
 	rendering_server->init();
 	rendering_server->set_render_loop_enabled(false);
 
@@ -1078,7 +1081,6 @@ void Main::test_cleanup()
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -1087,6 +1089,8 @@ void Main::test_cleanup()
 	memdelete(engine);
 
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->finalize_core();
 
@@ -1178,8 +1182,6 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	// platforms, it's used to set up the time utilities.
 	OS::get_singleton()->benchmark_begin_measure("Startup", "Main::Setup");
 
-	engine = memnew(Engine);
-
 	MAIN_PRINT("Main: Initialize CORE");
 
 	register_core_types();
@@ -1188,7 +1190,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	MAIN_PRINT("Main: Initialize Globals");
 
 	input_map = memnew(InputMap);
-	globals = memnew(ProjectSettings);
+
+	// initialize internal ProjectSettings::Data struct
+	ProjectSettings::initialize();
 
 	register_core_settings(); // here globals are present
 
@@ -1341,7 +1345,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 		}
 		else if (arg == "--no-header") {
-			Engine::get_singleton()->_print_header = false;
+			Engine::_print_header = false;
 
 		}
 		else if (arg == "--audio-driver") { // audio driver
@@ -1482,7 +1486,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--gpu-index") {
 			if (N) {
-				Engine::singleton->gpu_idx = N->get().to_int();
+				Engine::gpu_idx = N->get().to_int();
 				N = N->next();
 			}
 			else {
@@ -1491,22 +1495,22 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			}
 		}
 		else if (arg == "--gpu-validation") {
-			Engine::singleton->use_validation_layers = true;
+			Engine::use_validation_layers = true;
 #ifdef DEBUG_ENABLED
 		}
 		else if (arg == "--gpu-abort") {
-			Engine::singleton->abort_on_gpu_errors = true;
+			Engine::abort_on_gpu_errors = true;
 #endif
 		}
 		else if (arg == "--generate-spirv-debug-info") {
-			Engine::singleton->generate_spirv_debug_info = true;
+			Engine::generate_spirv_debug_info = true;
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 		}
 		else if (arg == "--extra-gpu-memory-tracking") {
-			Engine::singleton->extra_gpu_memory_tracking = true;
+			Engine::extra_gpu_memory_tracking = true;
 		}
 		else if (arg == "--accurate-breadcrumbs") {
-			Engine::singleton->accurate_breadcrumbs = true;
+			Engine::accurate_breadcrumbs = true;
 #endif
 		}
 		else if (arg == "--tablet-driver") {
@@ -1875,7 +1879,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			if (N) {
 				validate_extension_api_file = N->get();
 
-				N = N->next();
+				N = N->next
+();
 			}
 			else
  {
@@ -2091,7 +2096,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		else if (arg == "--time-scale") { // force time scale
 
 			if (N) {
-				Engine::get_singleton()->set_time_scale(N->get().to_float());
+				Engine::set_time_scale(N->get().to_float());
 				N = N->next();
 			}
 			else {
@@ -2223,7 +2228,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--write-movie") {
 			if (N) {
-				Engine::get_singleton()->set_write_movie_path(N->get());
+				Engine::set_write_movie_path(N->get());
 				N = N->next();
 				if (fixed_fps == -1) {
 					fixed_fps = 60;
@@ -2347,7 +2352,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				}
 
 				OS::get_singleton()->_embedded_in_editor = true;
-				Engine::get_singleton()->set_embedded_in_editor(true);
+				Engine::set_embedded_in_editor(true);
 
 				N = N->next();
 			}
@@ -2399,7 +2404,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif // defined(DEBUG_ENABLED) || defined (TOOLS_ENABLED)
 
 	OS::get_singleton()->_in_editor = editor;
-	if (globals->setup(project_path, main_pack, false, editor) == OK) {
+	if (ProjectSettings::setup(project_path, main_pack, false, editor) == OK) {
 #ifdef TOOLS_ENABLED
 		found_project = true;
 #endif
@@ -2517,8 +2522,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #ifdef TOOLS_ENABLED
 	if (editor) {
-		Engine::get_singleton()->set_editor_hint(true);
-		Engine::get_singleton()->set_extension_reloading_enabled(true);
+		Engine::set_editor_hint(true);
+		Engine::set_extension_reloading_enabled(true);
 
 		// Create initialization lock file to detect crashes during startup.
 		OS::get_singleton()->create_lock_file();
@@ -2531,7 +2536,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	}
 
 	if (project_manager) {
-		Engine::get_singleton()->set_project_manager_hint(true);
+		Engine::set_project_manager_hint(true);
 	}
 
 	if (recovery_mode) {
@@ -2541,14 +2546,14 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			goto error;
 		}
 
-		Engine::get_singleton()->set_recovery_mode_hint(true);
+		Engine::set_recovery_mode_hint(true);
 	}
 #endif
 
 	OS::get_singleton()->set_cmdline(execpath, main_args, user_args);
 
 	if (max_fps >= 0) {
-		Engine::get_singleton()->set_max_fps(max_fps);
+		Engine::set_max_fps(max_fps);
 	}
 
 	// Initialize user data dir.
@@ -2561,10 +2566,10 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (!editor) {
 		ResourceUID::get_singleton()->enable_reverse_cache();
 	}
-	ResourceUID::get_singleton()->load_from_cache(true);	// Load UUIDs from cache.
-	ProjectSettings::get_singleton()->fix_autoload_paths(); // Handles autoloads saved as UID.
+	ResourceUID::get_singleton()->load_from_cache(true); // Load UUIDs from cache.
+	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
 
-	if (ProjectSettings::get_singleton()->has_custom_feature("dedicated_server")) {
+	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
 		display_driver = NULL_DISPLAY_DRIVER;
 	}
@@ -2609,7 +2614,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	}
 
 	if (editor || project_manager) {
-		Engine::get_singleton()->set_editor_hint(true);
+		Engine::set_editor_hint(true);
 		use_custom_res = false;
 		input_map->load_default(); // keys for editor
 	}
@@ -2866,7 +2871,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		audio_driver_idx = 0;
 	}
 
-	if (Engine::get_singleton()->get_write_movie_path() != String()) {
+	if (Engine::get_write_movie_path() != String()) {
 		// Always use dummy driver for audio driver (which is last), also in no threaded mode.
 		audio_driver_idx = AudioDriverManager::get_driver_count() - 1;
 		AudioDriverDummy::get_dummy_singleton()->set_use_threads(false);
@@ -2878,9 +2883,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif
 
 	if (audio_output_latency >= 1) {
-		Engine::get_singleton()->set_audio_output_latency(audio_output_latency);
+		Engine::set_audio_output_latency(audio_output_latency);
 	}
-	Engine::get_singleton()->set_frame_delay(frame_delay);
+	Engine::set_frame_delay(frame_delay);
 
 #if defined(STEAMAPI_ENABLED)
 	if (editor || project_manager) {
@@ -2902,7 +2907,7 @@ error:
 	display_driver = "";
 	audio_driver = "";
 	tablet_driver = "";
-	Engine::get_singleton()->set_write_movie_path(String());
+	Engine::set_write_movie_path(String());
 	project_path = "";
 	args.clear();
 	main_args.clear();
@@ -2918,15 +2923,14 @@ error:
 	memdelete(performance);
 	memdelete(input_map);
 	memdelete(translation_server);
-	memdelete(globals);
 	memdelete(packed_data);
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
 
-	memdelete(engine);
-
 	unregister_core_types();
+
+	ProjectSettings::finalize();
 
 	OS::get_singleton()->_cmdline.clear();
 	OS::get_singleton()->_user_args.clear();
@@ -2978,7 +2982,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
-			if (ProjectSettings::get_singleton()->get_resource_path() ==
+			if (ProjectSettings::get_resource_path() ==
 				OS::get_singleton()->get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
 						  "project. This is not allowed, since editor files will mix with project "
@@ -3022,13 +3026,6 @@ Error Main::setup2(bool p_show_boot_logo)
 #ifndef PHYSICS_2D_DISABLED
 	physics_server_2d_manager = memnew(PhysicsServer2DManager);
 #endif // PHYSICS_2D_DISABLED
-
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
 
 	register_server_types();
 	{
@@ -3256,9 +3253,8 @@ Error Main::setup2(bool p_show_boot_logo)
 	}
 
 	// Max FPS needs to be set after the DisplayServer is created.
-	RenderingDevice* rd = RenderingDevice::get_singleton();
-	if (rd) {
-		rd->_set_max_fps(engine->get_max_fps());
+	if (RD::data) {
+		RD::_set_max_fps(Engine::get_max_fps());
 	}
 
 #ifdef TOOLS_ENABLED
@@ -3321,12 +3317,9 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Rendering");
 
-		rendering_server = memnew(
-			RenderingServerDefault(OS::get_singleton()->is_separate_thread_rendering_enabled()));
-
-		rendering_server->init();
+		Renderer::init();
 		// rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);
-		rendering_server->set_render_loop_enabled(!disable_render_loop);
+		Renderer::set_render_loop_enabled(!disable_render_loop);
 
 		OS::get_singleton()->benchmark_end_measure("Servers", "Rendering");
 	}
@@ -3371,7 +3364,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 #ifndef WEB_ENABLED
 	// Add a blank line for readability.
-	Engine::get_singleton()->print_header("");
+	Engine::print_header("");
 #endif // WEB_ENABLED
 
 	register_core_singletons();
@@ -3512,13 +3505,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	MAIN_PRINT("Main: Load Navigation");
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server();
-#endif // NAVIGATION_3D_DISABLED
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server();
-#endif // NAVIGATION_2D_DISABLED
-
 	register_scene_types();
 	register_driver_types();
 
@@ -3530,13 +3516,12 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		// We need to initialize the movie writer here in case
 		// one of the user-provided GDExtensions subclasses MovieWriter.
-		if (Engine::get_singleton()->get_write_movie_path() != String()) {
-			movie_writer =
-				MovieWriter::find_writer_for_file(Engine::get_singleton()->get_write_movie_path());
+		if (Engine::get_write_movie_path() != String()) {
+			movie_writer = MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
 			if (movie_writer == nullptr) {
 				ERR_PRINT("Can't find movie writer for file type, aborting: " +
-						  Engine::get_singleton()->get_write_movie_path());
-				Engine::get_singleton()->set_write_movie_path(String());
+						  Engine::get_write_movie_path());
+				Engine::set_write_movie_path(String());
 			}
 		}
 	}
@@ -3568,8 +3553,6 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	MAIN_PRINT("Main: Load Physics");
 
-	register_server_singletons();
-
 #if TOOLS_ENABLED
 
 	// Setting up the callback to execute a scan for UIDs on disk when a UID
@@ -3596,7 +3579,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// able to load resources, load the global shader variables.
 		// If running on editor, don't load the textures because the editor
 		// may want to import them first. Editor will reload those later.
-		rendering_server->global_shader_parameters_load_settings(!editor);
+		Renderer::global_shader_parameters_load_settings(!editor);
 	}
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Finalize Setup");
@@ -3815,7 +3798,7 @@ int Main::start()
 	if (!doc_tool_path.is_empty()) {
 #endif
 		// Needed to instance editor-only classes for their default values
-		Engine::get_singleton()->set_editor_hint(true);
+		Engine::set_editor_hint(true);
 
 		// Translate the class reference only when `-l LOCALE` parameter is given.
 		if (!locale.is_empty() && locale != "en") {
@@ -3942,10 +3925,7 @@ int Main::start()
 	}
 #endif
 
-	MainLoop* main_loop = nullptr;
-	if (editor) {
-		main_loop = memnew(SceneTree);
-	}
+	MainLoop* main_loop = memnew(SceneTree);
 
 	if (!script.is_empty()) {
 		return EXIT_FAILURE;
@@ -3975,8 +3955,9 @@ int Main::start()
 		int64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t prev_time = OS::get_singleton()->get_ticks_usec();
 		while (minimum_time > 0) {
+
 			DisplayServer::get_singleton()->process_events();
-			OS::get_singleton()->delay_usec(100);
+			O S::get_singleton()->delay_usec(100);
 
 			uint64_t next_time = OS::get_singleton()->get_ticks_usec();
 			minimum_time -= (next_time - prev_time);
@@ -3990,7 +3971,57 @@ int Main::start()
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
+	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	SceneTree* scene_tree = memnew(SceneTree);
 
+	if (!script.is_empty()) {
+		memdelete(scene_tree);
+		return EXIT_FAILURE;
+	}
+
+	if (!scene_tree) {
+		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+	}
+
+	OS::get_singleton()->set_main_loop(scene_tree);
+	scene_tree->initialize();
+
+	Window* root = scene_tree->get_root();
+	if (root) {
+		root->show();
+
+		// Determine window dimensions
+		Size2i win_size = root->get_size();
+		if (win_size.x <= 0 || win_size.y <= 0) {
+			win_size = Size2i(1024, 600);
+		}
+
+		RID viewport_rid = root->get_viewport_rid();
+		RID root_canvas = root->find_world_2d()->get_canvas();
+
+		// Configure the server viewport to render and present to the OS window
+		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
+		Renderer::viewport_set_active(viewport_rid, true);
+		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
+		Renderer::viewport_attach_to_screen(viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
+
+		// Instantiate and attach ColorRect directly to root canvas
+		ColorRect* rect = memnew(ColorRect);
+		root->add_child(rect);
+		rect->set_size(Size2(300, 200));
+		rect->set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
+
+		// Link canvas item to canvas and mark visible
+		Renderer::canvas_item_set_parent(rect->get_canvas_item(), root_canvas);
+		Renderer::canvas_item_set_visible(rect->get_canvas_item(), true);
+
+		// Statically trigger draw
+		rect->notification(CanvasItem::NOTIFICATION_DRAW);
+	}
+	else {
+		__print_line("Window root failed to be created");
+		return EXIT_FAILURE;
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -4026,24 +4057,23 @@ bool Main::iteration()
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();
-	Engine::get_singleton()->_frame_ticks = ticks;
+	Engine::_frame_ticks = ticks;
 	main_timer_sync.set_cpu_ticks_usec(ticks);
 	main_timer_sync.set_fixed_fps(fixed_fps);
 
 	const uint64_t ticks_elapsed = ticks - last_ticks;
 
-	const int physics_ticks_per_second =
-		Engine::get_singleton()->get_user_physics_ticks_per_second();
+	const int physics_ticks_per_second = Engine::get_user_physics_ticks_per_second();
 	const double physics_step = 1.0 / physics_ticks_per_second;
 
-	const double time_scale = Engine::get_singleton()->get_effective_time_scale();
+	const double time_scale = Engine::get_effective_time_scale();
 
 	MainFrameTime advance = main_timer_sync.advance(physics_step, physics_ticks_per_second);
 	double process_step = advance.process_step;
 	double scaled_step = process_step * time_scale;
 
-	Engine::get_singleton()->_process_step = process_step;
-	Engine::get_singleton()->_physics_interpolation_fraction = advance.interpolation_fraction;
+	Engine::_process_step = process_step;
+	Engine::_physics_interpolation_fraction = advance.interpolation_fraction;
 
 	uint64_t physics_process_ticks = 0;
 	uint64_t process_ticks = 0;
@@ -4055,7 +4085,7 @@ bool Main::iteration()
 
 	last_ticks = ticks;
 
-	const int max_physics_steps = Engine::get_singleton()->get_user_max_physics_steps_per_frame();
+	const int max_physics_steps = Engine::get_user_max_physics_steps_per_frame();
 	if (fixed_fps == -1 && advance.physics_steps > max_physics_steps) {
 		process_step -= (advance.physics_steps - max_physics_steps) * physics_step;
 		advance.physics_steps = max_physics_steps;
@@ -4080,16 +4110,20 @@ bool Main::iteration()
 	}
 
 #ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2D::get_singleton()->process(process_step * time_scale);
+	NavigationServer2D::process(process_step * time_scale);
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3D::get_singleton()->process(process_step * time_scale);
+	NavigationServer3D::process(process_step * time_scale);
 #endif // NAVIGATION_3D_DISABLED
 
-	RenderingServer::get_singleton()->sync(); // sync if still drawing from previous frames.
+	Renderer::sync(); // sync if still drawing from previous frames.
+
+	if (DisplayServer::get_singleton()->window_can_draw()) {
+		Renderer::draw(true, scaled_step);
+	}
 
 	const bool has_pending_resources_for_processing =
-		RD::get_singleton() && RD::get_singleton()->has_pending_resources_for_processing();
+		RD::data && RD::has_pending_resources_for_processing();
 
 	process_ticks = OS::get_singleton()->get_ticks_usec() - process_begin;
 	process_max = MAX(process_ticks, process_max);
@@ -4098,7 +4132,7 @@ bool Main::iteration()
 	AudioServer::get_singleton()->update();
 
 	frames++;
-	Engine::get_singleton()->_process_frames++;
+	Engine::_process_frames++;
 
 	if (frame > 1000000) {
 		// Wait a few seconds before printing FPS, as FPS reporting just after the engine has
@@ -4119,7 +4153,7 @@ bool Main::iteration()
 			hide_print_fps_attempts--;
 		}
 
-		Engine::get_singleton()->_fps = frames;
+		Engine::_fps = frames;
 		performance->set_process_time(USEC_TO_SEC(process_max));
 		performance->set_physics_process_time(USEC_TO_SEC(physics_process_max));
 		performance->set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
@@ -4140,7 +4174,7 @@ bool Main::iteration()
 #ifdef TOOLS_ENABLED
 	bool quit_after_timeout = false;
 #endif
-	if ((quit_after > 0) && (Engine::get_singleton()->_process_frames >= quit_after)) {
+	if ((quit_after > 0) && (Engine::_process_frames >= quit_after)) {
 #ifdef TOOLS_ENABLED
 		quit_after_timeout = true;
 #endif
@@ -4242,10 +4276,10 @@ void Main::cleanup(bool p_force)
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer
 	// finalization
-	RenderingServer::get_singleton()->sync();
+	Renderer::sync();
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
-	rendering_server->global_shader_parameters_clear();
+	Renderer::global_shader_parameters_clear();
 
 #ifndef XR_DISABLED
 	if (xr_server) {
@@ -4262,16 +4296,6 @@ void Main::cleanup(bool p_force)
 	unregister_scene_types();
 
 	finalize_theme_db();
-
-// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-	NavigationServer2DManager::finalize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-	NavigationServer3DManager::finalize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
 	finalize_physics();
 	unregister_server_types();
 
@@ -4303,7 +4327,6 @@ void Main::cleanup(bool p_force)
 #ifndef PHYSICS_2D_DISABLED
 	memdelete(physics_server_2d_manager);
 #endif // PHYSICS_2D_DISABLED
-	memdelete(globals);
 
 	if (OS::get_singleton()->is_restart_on_exit_set()) {
 		// attempt to restart with arguments
@@ -4319,9 +4342,9 @@ void Main::cleanup(bool p_force)
 	unregister_core_driver_types();
 	unregister_core_extensions();
 
-	memdelete(engine);
-
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->benchmark_end_measure("Shutdown", "Main::Cleanup");
 	OS::get_singleton()->benchmark_dump();
@@ -4330,6 +4353,8 @@ void Main::cleanup(bool p_force)
 
 	Thread::release_main_thread();
 }
+
+void Main::setup_boot_logo() {}
 
 
 

@@ -198,9 +198,6 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count,
 	uint32_t p_array_size, void** r_swapchain_graphics_data)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-	ERR_FAIL_NULL_V(texture_storage, false);
-
 	uint32_t swapchain_length;
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
@@ -248,7 +245,7 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	Vector<RID> texture_rids;
 
 	for (uint64_t i = 0; i < swapchain_length; i++) {
-		RID texture_rid = texture_storage->texture_create_from_native_handle(
+		RID texture_rid = GLES3::TextureStorage::texture_create_from_native_handle(
 			p_array_size == 1 ? RSE::TEXTURE_TYPE_2D : RSE::TEXTURE_TYPE_LAYERED, format,
 			images[i].image, p_width, p_height, 1, p_array_size);
 
@@ -290,13 +287,10 @@ void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 		return;
 	}
 
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-	ERR_FAIL_NULL(texture_storage);
-
 	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
 
 	for (const RID& texture_rid : data->texture_rids) {
-		texture_storage->texture_free(texture_rid);
+		GLES3::TextureStorage::texture_free(texture_rid);
 	}
 	data->texture_rids.clear();
 

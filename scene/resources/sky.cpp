@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "sky.h"
 
 void Sky::set_radiance_size(RadianceSize p_size)
@@ -37,7 +37,7 @@ void Sky::set_radiance_size(RadianceSize p_size)
 
 	radiance_size = p_size;
 	static const int size[RADIANCE_SIZE_MAX] = {32, 64, 128, 256, 512, 1024, 2048};
-	RS::get_singleton()->sky_set_radiance_size(sky, size[radiance_size]);
+	RS::sky_set_radiance_size(sky, size[radiance_size]);
 }
 
 Sky::RadianceSize Sky::get_radiance_size() const { return radiance_size; }
@@ -45,7 +45,7 @@ Sky::RadianceSize Sky::get_radiance_size() const { return radiance_size; }
 void Sky::set_process_mode(ProcessMode p_mode)
 {
 	mode = p_mode;
-	RS::get_singleton()->sky_set_mode(sky, RSE::SkyMode(mode));
+	RS::sky_set_mode(sky, RSE::SkyMode(mode));
 }
 
 Sky::ProcessMode Sky::get_process_mode() const { return mode; }
@@ -57,7 +57,7 @@ void Sky::set_material(const Ref<Material>& p_material)
 	if (sky_material.is_valid()) {
 		material_rid = sky_material->get_rid();
 	}
-	RS::get_singleton()->sky_set_material(sky, material_rid);
+	RS::sky_set_material(sky, material_rid);
 }
 
 Ref<Material> Sky::get_material() const { return sky_material; }
@@ -65,12 +65,12 @@ Ref<Material> Sky::get_material() const { return sky_material; }
 RID Sky::get_rid() const { return sky; }
 
 
-Sky::Sky() { sky = RS::get_singleton()->sky_create(); }
+Sky::Sky() { sky = RS::sky_create(); }
 
 Sky::~Sky()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(sky);
+	ERR_FAIL_NULL(Renderer::data);
+	RS::free_rid(sky);
 }
 
 

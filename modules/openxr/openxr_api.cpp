@@ -37,8 +37,8 @@
 #include "openxr_api.h"
 #include "openxr_interface.h"
 #include "openxr_util.h"
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_hand_tracker.h"
 
 #ifdef ANDROID_ENABLED
@@ -189,7 +189,7 @@ OpenXRAPI* OpenXRAPI::singleton = nullptr;
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 {
 	if (XRServer::get_xr_mode() == XRServer::XRMODE_DEFAULT) {
-		if (Engine::get_singleton()->is_editor_hint() && p_check_run_in_editor) {
+		if (Engine::is_editor_hint() && p_check_run_in_editor) {
 			// For now, don't start OpenXR when the editor starts up. In the future, this may change
 			// if we want to integrate more XR features into the editor experience.
 			return false;
@@ -732,12 +732,11 @@ void OpenXRAPI::set_xr_interface(OpenXRInterface* p_xr_interface) { xr_interface
 
 Size2 OpenXRAPI::get_recommended_target_size()
 {
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_COND_V(view_configuration_views.is_empty(), Size2());
 
 	Size2 target_size;
 
-	if (rendering_server && rendering_server->is_on_render_thread()) {
+	if (RS::data && RS::is_on_render_thread()) {
 		target_size.width = view_configuration_views[0].recommendedImageRectWidth *
 							render_state.render_target_size_multiplier;
 		target_size.height = view_configuration_views[0].recommendedImageRectHeight *

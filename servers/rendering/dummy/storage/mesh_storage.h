@@ -33,209 +33,221 @@
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/storage/mesh_storage.h"
 
-namespace RendererDummy {
+namespace RendererDummy
+{
 
-struct DummyMesh {
-	Vector<RenderingServerTypes::SurfaceData> surfaces;
-	int blend_shape_count;
-	RSE::BlendShapeMode blend_shape_mode;
-	PackedFloat32Array blend_shape_values;
-	Dependency dependency;
+struct DummyMesh
+{
+    Vector<RenderingServerTypes::SurfaceData> surfaces;
+    int blend_shape_count = 0;
+    RSE::BlendShapeMode blend_shape_mode = RSE::BLEND_SHAPE_MODE_NORMALIZED;
+    PackedFloat32Array blend_shape_values;
+    Dependency dependency;
 };
 
-class MeshStorage : public RendererMeshStorage {
+class MeshStorage final
+{
 private:
-	static MeshStorage *singleton;
+    static inline RID_Owner<DummyMesh> mesh_owner;
 
-	mutable RID_Owner<DummyMesh> mesh_owner;
+    struct DummyMultiMesh
+    {
+        PackedFloat32Array buffer;
+    };
 
-	struct DummyMultiMesh {
-		PackedFloat32Array buffer;
-	};
-
-	mutable RID_Owner<DummyMultiMesh> multimesh_owner;
+    static inline RID_Owner<DummyMultiMesh> multimesh_owner;
 
 public:
-	static MeshStorage *get_singleton() { return singleton; }
+    MeshStorage() = delete;
+    MeshStorage(const MeshStorage&) = delete;
+    MeshStorage& operator=(const MeshStorage&) = delete;
+    ~MeshStorage() = delete;
 
-	MeshStorage();
-	~MeshStorage();
+    /* MESH API */
+    static _FORCE_INLINE_ DummyMesh* get_mesh(RID p_rid) { return mesh_owner.get_or_null(p_rid); }
+    static bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
 
-	/* MESH API */
-	DummyMesh *get_mesh(RID p_rid) { return mesh_owner.get_or_null(p_rid); }
-	bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
+    static RID mesh_allocate() { return mesh_owner.allocate_rid(); }
+    static void mesh_initialize(RID p_rid) { mesh_owner.initialize_rid(p_rid, DummyMesh()); }
+    static void mesh_free(RID p_rid) { mesh_owner.free(p_rid); }
 
-	virtual RID mesh_allocate() override;
-	virtual void mesh_initialize(RID p_rid) override;
-	virtual void mesh_free(RID p_rid) override;
+    static void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        m->blend_shape_count = p_blend_shape_count;
+    }
 
-	virtual void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count) override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL(m);
-		m->blend_shape_count = p_blend_shape_count;
-	}
-	virtual bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton) override { return false; }
+    static bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton) { return false; }
 
-	virtual void mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData &p_surface) override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL(m);
-		m->surfaces.push_back(RenderingServerTypes::SurfaceData());
-		RenderingServerTypes::SurfaceData *s = &m->surfaces.write[m->surfaces.size() - 1];
-		s->format = p_surface.format;
-		s->primitive = p_surface.primitive;
-		s->vertex_data = p_surface.vertex_data;
-		s->attribute_data = p_surface.attribute_data;
-		s->vertex_count = p_surface.vertex_count;
-		s->index_data = p_surface.index_data;
-		s->index_count = p_surface.index_count;
-		s->aabb = p_surface.aabb;
-		s->skin_data = p_surface.skin_data;
-		s->lods = p_surface.lods;
-		s->bone_aabbs = p_surface.bone_aabbs;
-		s->mesh_to_skeleton_xform = p_surface.mesh_to_skeleton_xform;
-		s->blend_shape_data = p_surface.blend_shape_data;
-		s->uv_scale = p_surface.uv_scale;
-		s->material = p_surface.material;
-		m->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MESH);
-	}
+    static void mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        m->surfaces.push_back(p_surface);
+    }
 
-	virtual int mesh_get_blend_shape_count(RID p_mesh) const override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL_V(m, 0);
-		return m->blend_shape_count;
-	}
+    static int mesh_get_blend_shape_count(RID p_mesh)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL_V(m, 0);
+        return m->blend_shape_count;
+    }
 
-	virtual void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode) override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL(m);
-		m->blend_shape_mode = p_mode;
-	}
+    static void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        m->blend_shape_mode = p_mode;
+    }
 
-	virtual RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh) const override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL_V(m, RSE::BLEND_SHAPE_MODE_NORMALIZED);
-		return m->blend_shape_mode;
-	}
+    static RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL_V(m, RSE::BLEND_SHAPE_MODE_NORMALIZED);
+        return m->blend_shape_mode;
+    }
 
-	virtual void mesh_surface_update_vertex_region(RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t> &p_data) override {}
-	virtual void mesh_surface_update_attribute_region(RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t> &p_data) override {}
-	virtual void mesh_surface_update_skin_region(RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t> &p_data) override {}
-	virtual void mesh_surface_update_index_region(RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t> &p_data) override {}
+    static void mesh_surface_update_vertex_region(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {}
+    static void mesh_surface_update_attribute_region(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {}
+    static void mesh_surface_update_skin_region(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {}
+    static void mesh_surface_update_index_region(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) {}
 
-	virtual void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material) override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL(m);
-		ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_surface, m->surfaces.size());
-		RenderingServerTypes::SurfaceData s = m->surfaces.get(p_surface);
-		s.material = p_material;
-		m->surfaces.set(p_surface, s);
-		m->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
-	}
-	virtual RID mesh_surface_get_material(RID p_mesh, int p_surface) const override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL_V(m, RID());
-		ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_surface, m->surfaces.size(), RID());
-		return m->surfaces[p_surface].material;
-	}
+    static void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        ERR_FAIL_INDEX(p_surface, m->surfaces.size());
+        m->surfaces.write[p_surface].material = p_material;
+    }
 
-	virtual RenderingServerTypes::SurfaceData mesh_get_surface(RID p_mesh, int p_surface) const override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL_V(m, RenderingServerTypes::SurfaceData());
-		ERR_FAIL_INDEX_V(p_surface, m->surfaces.size(), RenderingServerTypes::SurfaceData());
-		RenderingServerTypes::SurfaceData s = m->surfaces[p_surface];
-		return s;
-	}
+    static RID mesh_surface_get_material(RID p_mesh, int p_surface)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL_V(m, RID());
+        ERR_FAIL_INDEX_V(p_surface, m->surfaces.size(), RID());
+        return m->surfaces[p_surface].material;
+    }
 
-	virtual RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface) const override { return RID(); }
-	virtual RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface) const override { return RID(); }
-	virtual RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface) const override { return RID(); }
-	virtual RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface) const override { return RID(); }
+    static RenderingServerTypes::SurfaceData mesh_get_surface(RID p_mesh, int p_surface)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL_V(m, RenderingServerTypes::SurfaceData());
+        ERR_FAIL_INDEX_V(p_surface, m->surfaces.size(), RenderingServerTypes::SurfaceData());
+        return m->surfaces[p_surface];
+    }
 
-	virtual int mesh_get_surface_count(RID p_mesh) const override {
-		DummyMesh *m = mesh_owner.get_or_null(p_mesh);
-		ERR_FAIL_NULL_V(m, 0);
-		return m->surfaces.size();
-	}
+    static RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+    static RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+    static RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+    static RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
 
-	virtual void mesh_set_custom_aabb(RID p_mesh, const AABB &p_aabb) override {}
-	virtual AABB mesh_get_custom_aabb(RID p_mesh) const override { return AABB(); }
-	virtual AABB mesh_get_aabb(RID p_mesh, RID p_skeleton = RID()) override { return AABB(); }
+    static int mesh_get_surface_count(RID p_mesh)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL_V(m, 0);
+        return m->surfaces.size();
+    }
 
-	virtual void mesh_set_path(RID p_mesh, const String &p_path) override {}
-	virtual String mesh_get_path(RID p_mesh) const override { return String(); }
+    static void mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb) {}
+    static AABB mesh_get_custom_aabb(RID p_mesh) { return AABB(); }
+    static AABB mesh_get_aabb(RID p_mesh, RID p_skeleton) { return AABB(); }
 
-	virtual void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh) override {}
+    static void mesh_set_path(RID p_mesh, const String& p_path) {}
+    static String mesh_get_path(RID p_mesh) { return String(); }
+    static void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh) {}
 
-	virtual void mesh_surface_remove(RID p_mesh, int p_surface) override;
-	virtual void mesh_clear(RID p_mesh) override;
-	virtual void mesh_debug_usage(List<RenderingServerTypes::MeshInfo> *r_info) override {}
+    static void mesh_clear(RID p_mesh)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        m->surfaces.clear();
+    }
 
-	/* MESH INSTANCE */
+    static void mesh_surface_remove(RID p_mesh, int p_surface)
+    {
+        DummyMesh* m = mesh_owner.get_or_null(p_mesh);
+        ERR_FAIL_NULL(m);
+        ERR_FAIL_INDEX(p_surface, m->surfaces.size());
+        m->surfaces.remove_at(p_surface);
+    }
 
-	virtual RID mesh_instance_create(RID p_base) override { return RID(); }
-	virtual void mesh_instance_free(RID p_rid) override {}
+    static void mesh_debug_usage(List<RenderingServerTypes::MeshInfo>* r_info) {}
 
-	virtual void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton) override {}
-	virtual void mesh_instance_set_blend_shape_weight(RID p_mesh_instance, int p_shape, float p_weight) override {}
-	virtual void mesh_instance_check_for_update(RID p_mesh_instance) override {}
-	virtual void mesh_instance_set_canvas_item_transform(RID p_mesh_instance, const Transform2D &p_transform) override {}
-	virtual void update_mesh_instances() override {}
+    /* MESH INSTANCE API */
 
-	/* MULTIMESH API */
+    static RID mesh_instance_create(RID p_base) { return RID(); }
+    static void mesh_instance_free(RID p_rid) {}
+    static void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton) {}
+    static void mesh_instance_set_blend_shape_weight(RID p_mesh_instance, int p_shape, float p_weight) {}
+    static void mesh_instance_check_for_update(RID p_mesh_instance) {}
+    static void mesh_instance_set_canvas_item_transform(
+        RID p_mesh_instance, const Transform2D& p_transform) {}
+    static void update_mesh_instances() {}
 
-	bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
+    /* MULTIMESH API */
+    static _FORCE_INLINE_ void multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
+    static bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
 
-	virtual RID _multimesh_allocate() override;
-	virtual void _multimesh_initialize(RID p_rid) override;
-	virtual void _multimesh_free(RID p_rid) override;
+    static RID _multimesh_allocate() { return multimesh_owner.allocate_rid(); }
+    static void _multimesh_initialize(RID p_rid) { multimesh_owner.initialize_rid(p_rid, DummyMultiMesh()); }
+    static void _multimesh_free(RID p_rid) { multimesh_owner.free(p_rid); }
 
-	virtual void _multimesh_allocate_data(RID p_multimesh, int p_instances, RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false, bool p_use_custom_data = false, bool p_use_indirect = false) override {}
-	virtual int _multimesh_get_instance_count(RID p_multimesh) const override { return 0; }
+    static void _multimesh_allocate_data(RID p_multimesh, int p_instances,
+        RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
+        bool p_use_custom_data = false, bool p_use_indirect = false) {}
+    static int _multimesh_get_instance_count(RID p_multimesh) { return 0; }
 
-	virtual void _multimesh_set_mesh(RID p_multimesh, RID p_mesh) override {}
-	virtual void _multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) override {}
-	virtual void _multimesh_instance_set_transform_2d(RID p_multimesh, int p_index, const Transform2D &p_transform) override {}
-	virtual void _multimesh_instance_set_color(RID p_multimesh, int p_index, const Color &p_color) override {}
-	virtual void _multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) override {}
+    static void _multimesh_set_mesh(RID p_multimesh, RID p_mesh) {}
+    static void _multimesh_instance_set_transform(
+        RID p_multimesh, int p_index, const Transform3D& p_transform) {}
+    static void _multimesh_instance_set_transform_2d(
+        RID p_multimesh, int p_index, const Transform2D& p_transform) {}
+    static void _multimesh_instance_set_color(
+        RID p_multimesh, int p_index, const Color& p_color) {}
+    static void _multimesh_instance_set_custom_data(
+        RID p_multimesh, int p_index, const Color& p_color) {}
 
-	virtual void _multimesh_set_custom_aabb(RID p_multimesh, const AABB &p_aabb) override {}
-	virtual AABB _multimesh_get_custom_aabb(RID p_multimesh) const override { return AABB(); }
+    static void _multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb) {}
+    static AABB _multimesh_get_custom_aabb(RID p_multimesh) { return AABB(); }
+    static RID _multimesh_get_mesh(RID p_multimesh) { return RID(); }
 
-	virtual RID _multimesh_get_mesh(RID p_multimesh) const override { return RID(); }
-	virtual AABB _multimesh_get_aabb(RID p_multimesh) override { return AABB(); }
+    static Transform3D _multimesh_instance_get_transform(RID p_multimesh, int p_index) { return Transform3D(); }
+    static Transform2D _multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) { return Transform2D(); }
+    static Color _multimesh_instance_get_color(RID p_multimesh, int p_index) { return Color(); }
+    static Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index) { return Color(); }
 
-	virtual Transform3D _multimesh_instance_get_transform(RID p_multimesh, int p_index) const override { return Transform3D(); }
-	virtual Transform2D _multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) const override { return Transform2D(); }
-	virtual Color _multimesh_instance_get_color(RID p_multimesh, int p_index) const override { return Color(); }
-	virtual Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const override { return Color(); }
-	virtual void _multimesh_set_buffer(RID p_multimesh, const Vector<float> &p_buffer) override;
-	virtual RID _multimesh_get_command_buffer_rd_rid(RID p_multimesh) const override { return RID(); }
-	virtual RID _multimesh_get_buffer_rd_rid(RID p_multimesh) const override { return RID(); }
-	virtual Vector<float> _multimesh_get_buffer(RID p_multimesh) const override;
+    static void _multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer) {}
+    static RID _multimesh_get_command_buffer_rd_rid(RID p_multimesh) { return RID(); }
+    static RID _multimesh_get_buffer_rd_rid(RID p_multimesh) { return RID(); }
+    static Vector<float> _multimesh_get_buffer(RID p_multimesh) { return Vector<float>(); }
 
-	virtual void _multimesh_set_visible_instances(RID p_multimesh, int p_visible) override {}
-	virtual int _multimesh_get_visible_instances(RID p_multimesh) const override { return 0; }
+    static void _multimesh_set_visible_instances(RID p_multimesh, int p_visible) {}
+    static int _multimesh_get_visible_instances(RID p_multimesh) { return 0; }
 
-	MultiMeshInterpolator *_multimesh_get_interpolator(RID p_multimesh) const override { return nullptr; }
+    static AABB _multimesh_get_aabb(RID p_multimesh) { return AABB(); }
 
-	/* SKELETON API */
+    static RendererMeshStorage::MultiMeshInterpolator* _multimesh_get_interpolator(RID p_multimesh) { return nullptr; }
 
-	virtual RID skeleton_allocate() override { return RID(); }
-	virtual void skeleton_initialize(RID p_rid) override {}
-	virtual void skeleton_free(RID p_rid) override {}
-	virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) override {}
-	virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) override {}
-	virtual int skeleton_get_bone_count(RID p_skeleton) const override { return 0; }
-	virtual void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D &p_transform) override {}
-	virtual Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const override { return Transform3D(); }
-	virtual void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D &p_transform) override {}
-	virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const override { return Transform2D(); }
+    /* SKELETON API */
 
-	virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) override {}
+    static RID skeleton_allocate() { return RID(); }
+    static void skeleton_initialize(RID p_rid) {}
+    static void skeleton_free(RID p_rid) {}
 
-	/* OCCLUDER */
+    static void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) {}
+    static void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D& p_base_transform) {}
+    static int skeleton_get_bone_count(RID p_skeleton) { return 0; }
+    static void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D& p_transform) {}
+    static Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) { return Transform3D(); }
+    static void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D& p_transform) {}
+    static Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) { return Transform2D(); }
 
-	void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) {}
+    static void skeleton_update_dependency(RID p_base, DependencyTracker* p_instance) {}
 };
 
 } // namespace RendererDummy

@@ -89,7 +89,7 @@ void Camera2D::_ensure_update_interpolation_data()
 	// doesn't overwrite before prev has been set.
 
 	// Keep the data flowing.
-	uint64_t tick = Engine::get_singleton()->get_physics_frames();
+	uint64_t tick = Engine::get_physics_frames();
 	if (_interpolation_data.last_update_physics_tick != tick) {
 		_interpolation_data.xform_prev = _interpolation_data.xform_curr;
 		_interpolation_data.last_update_physics_tick = tick;

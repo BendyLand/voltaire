@@ -31,7 +31,7 @@
 #include "core/config/engine.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/texture.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "shader.compat.inc"
@@ -51,7 +51,7 @@ void Shader::_check_shader_rid() const
 {
 	MutexLock lock(shader_rid_mutex);
 	if (shader_rid.is_null() && !preprocessed_code.is_empty()) {
-		shader_rid = RenderingServer::get_singleton()->shader_create_from_code(
+		shader_rid = Renderer::shader_create_from_code(
 			preprocessed_code, get_path());
 		preprocessed_code = String();
 	}
@@ -71,7 +71,7 @@ void Shader::set_path(const String& p_path, bool p_take_over)
 	Resource::set_path(p_path, p_take_over);
 
 	if (shader_rid.is_valid()) {
-		RS::get_singleton()->shader_set_path_hint(shader_rid, p_path);
+		RS::shader_set_path_hint(shader_rid, p_path);
 	}
 }
 
@@ -112,7 +112,7 @@ void Shader::set_default_texture_parameter(
 			default_textures[p_name] = HashMap<int, Ref<Texture>>();
 		}
 		default_textures[p_name][p_index] = p_texture;
-		RS::get_singleton()->shader_set_default_texture_parameter(
+		RS::shader_set_default_texture_parameter(
 			shader_rid, p_name, p_texture->get_rid(), p_index);
 	}
 	else {
@@ -123,7 +123,7 @@ void Shader::set_default_texture_parameter(
 				default_textures.erase(p_name);
 			}
 		}
-		RS::get_singleton()->shader_set_default_texture_parameter(
+		RS::shader_set_default_texture_parameter(
 			shader_rid, p_name, RID(), p_index);
 	}
 
@@ -160,8 +160,8 @@ Shader::Shader()
 Shader::~Shader()
 {
 	if (shader_rid.is_valid()) {
-		ERR_FAIL_NULL(RenderingServer::get_singleton());
-		RenderingServer::get_singleton()->free_rid(shader_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(shader_rid);
 	}
 }
 

@@ -334,7 +334,7 @@ bool AssetLibraryEditorPlugin::is_available()
 	// directly from GitHub which does not set CORS.
 	return false;
 #else
-	return StreamPeerTLS::is_available() && !Engine::get_singleton()->is_recovery_mode_hint();
+	return StreamPeerTLS::is_available() && !Engine::is_recovery_mode_hint();
 #endif
 }
 

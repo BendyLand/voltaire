@@ -307,13 +307,13 @@ bool Input::is_action_just_pressed(const StringName& p_action, bool p_exact) con
 	// Backward compatibility for legacy behavior, only return true if currently pressed.
 	bool pressed_requirement = legacy_just_pressed_behavior ? E->value.cache.pressed : true;
 
-	if (Engine::get_singleton()->is_in_physics_frame()) {
+	if (Engine::is_in_physics_frame()) {
 		return pressed_requirement &&
-			   E->value.pressed_physics_frame == Engine::get_singleton()->get_physics_frames();
+			   E->value.pressed_physics_frame == Engine::get_physics_frames();
 	}
 	else {
 		return pressed_requirement &&
-			   E->value.pressed_process_frame == Engine::get_singleton()->get_process_frames();
+			   E->value.pressed_process_frame == Engine::get_process_frames();
 	}
 }
 
@@ -338,13 +338,13 @@ bool Input::is_action_just_pressed_by_event(
 	// Backward compatibility for legacy behavior, only return true if currently pressed.
 	bool pressed_requirement = legacy_just_pressed_behavior ? E->value.cache.pressed : true;
 
-	if (Engine::get_singleton()->is_in_physics_frame()) {
+	if (Engine::is_in_physics_frame()) {
 		return pressed_requirement &&
-			   E->value.pressed_physics_frame == Engine::get_singleton()->get_physics_frames();
+			   E->value.pressed_physics_frame == Engine::get_physics_frames();
 	}
 	else {
 		return pressed_requirement &&
-			   E->value.pressed_process_frame == Engine::get_singleton()->get_process_frames();
+			   E->value.pressed_process_frame == Engine::get_process_frames();
 	}
 }
 
@@ -369,13 +369,13 @@ bool Input::is_action_just_released(const StringName& p_action, bool p_exact) co
 	// Backward compatibility for legacy behavior, only return true if currently released.
 	bool released_requirement = legacy_just_pressed_behavior ? !E->value.cache.pressed : true;
 
-	if (Engine::get_singleton()->is_in_physics_frame()) {
+	if (Engine::is_in_physics_frame()) {
 		return released_requirement &&
-			   E->value.released_physics_frame == Engine::get_singleton()->get_physics_frames();
+			   E->value.released_physics_frame == Engine::get_physics_frames();
 	}
 	else {
 		return released_requirement &&
-			   E->value.released_process_frame == Engine::get_singleton()->get_process_frames();
+			   E->value.released_process_frame == Engine::get_process_frames();
 	}
 }
 
@@ -400,13 +400,13 @@ bool Input::is_action_just_released_by_event(
 	// Backward compatibility for legacy behavior, only return true if currently released.
 	bool released_requirement = legacy_just_pressed_behavior ? !E->value.cache.pressed : true;
 
-	if (Engine::get_singleton()->is_in_physics_frame()) {
+	if (Engine::is_in_physics_frame()) {
 		return released_requirement &&
-			   E->value.released_physics_frame == Engine::get_singleton()->get_physics_frames();
+			   E->value.released_physics_frame == Engine::get_physics_frames();
 	}
 	else {
 		return released_requirement &&
-			   E->value.released_process_frame == Engine::get_singleton()->get_process_frames();
+			   E->value.released_process_frame == Engine::get_process_frames();
 	}
 }
 
@@ -956,12 +956,12 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 		// As input may come in part way through a physics tick, the earliest we can react to it is
 		// the next physics tick.
 		if (action_state.cache.pressed && !was_pressed) {
-			action_state.pressed_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
-			action_state.pressed_process_frame = Engine::get_singleton()->get_process_frames();
+			action_state.pressed_physics_frame = Engine::get_physics_frames() + 1;
+			action_state.pressed_process_frame = Engine::get_process_frames();
 		}
 		if (!action_state.cache.pressed && was_pressed) {
-			action_state.released_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
-			action_state.released_process_frame = Engine::get_singleton()->get_process_frames();
+			action_state.released_physics_frame = Engine::get_physics_frames() + 1;
+			action_state.released_process_frame = Engine::get_process_frames();
 		}
 	}
 
@@ -1340,8 +1340,8 @@ void Input::action_press(const StringName& p_action, float p_strength)
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
 	if (!action_state.cache.pressed) {
-		action_state.pressed_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
-		action_state.pressed_process_frame = Engine::get_singleton()->get_process_frames();
+		action_state.pressed_physics_frame = Engine::get_physics_frames() + 1;
+		action_state.pressed_process_frame = Engine::get_process_frames();
 	}
 	action_state.exact = true;
 	action_state.api_pressed = true;
@@ -1361,8 +1361,8 @@ void Input::action_release(const StringName& p_action)
 	action_state.cache.raw_strength = 0.0;
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
-	action_state.released_physics_frame = Engine::get_singleton()->get_physics_frames() + 1;
-	action_state.released_process_frame = Engine::get_singleton()->get_process_frames();
+	action_state.released_physics_frame = Engine::get_physics_frames() + 1;
+	action_state.released_process_frame = Engine::get_process_frames();
 	action_state.device_states.clear();
 	action_state.exact = true;
 	action_state.api_pressed = false;
@@ -1428,7 +1428,7 @@ Input::CursorShape Input::get_current_cursor_shape() const
 void Input::set_custom_mouse_cursor(
 	const Ref<Resource>& p_cursor, CursorShape p_shape, const Vector2& p_hotspot)
 {
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 
@@ -1441,7 +1441,7 @@ void Input::parse_input_event(InputEvent* rp_event)
 {
 	_THREAD_SAFE_METHOD_
 #ifdef DEBUG_ENABLED
-	uint64_t curr_frame = Engine::get_singleton()->get_process_frames();
+	uint64_t curr_frame = Engine::get_process_frames();
 	if (curr_frame != last_parsed_frame) {
 		frame_parsed_events.clear();
 		last_parsed_frame = curr_frame;
@@ -2338,7 +2338,7 @@ Input::Input()
 		}
 	}
 
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		// Always use standard behavior in the editor.
 		legacy_just_pressed_behavior = false;
 	}

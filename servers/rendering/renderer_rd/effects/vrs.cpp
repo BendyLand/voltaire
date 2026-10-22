@@ -31,6 +31,7 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 #include "vrs.h"
 
 #ifndef XR_DISABLED
@@ -44,27 +45,26 @@ VRS::~VRS() { vrs_shader.shader.version_free(vrs_shader.shader_version); }
 
 Size2i VRS::get_vrs_texture_size(const Size2i p_base_size) const
 {
-	Size2i vrs_texel_size = RD::get_singleton()->vrs_get_texel_size();
+	Size2i vrs_texel_size = RD::vrs_get_texel_size();
 	return Size2i((p_base_size.x + vrs_texel_size.x - 1) / vrs_texel_size.x,
 		(p_base_size.y + vrs_texel_size.y - 1) / vrs_texel_size.y);
 }
 
 void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
-	RSE::ViewportVRSMode vrs_mode = texture_storage->render_target_get_vrs_mode(p_render_target);
+	RSE::ViewportVRSMode vrs_mode = RendererRD::TextureStorage::render_target_get_vrs_mode(p_render_target);
 	RSE::ViewportVRSUpdateMode vrs_update_mode =
-		texture_storage->render_target_get_vrs_update_mode(p_render_target);
+		RendererRD::TextureStorage::render_target_get_vrs_update_mode(p_render_target);
 
 	if (vrs_mode != RSE::VIEWPORT_VRS_DISABLED &&
 		vrs_update_mode != RSE::VIEWPORT_VRS_UPDATE_DISABLED) {
-		RD::get_singleton()->draw_command_begin_label("VRS Setup");
+		RD::draw_command_begin_label("VRS Setup");
 
 		if (vrs_mode == RSE::VIEWPORT_VRS_TEXTURE) {
-			RID vrs_texture = texture_storage->render_target_get_vrs_texture(p_render_target);
+			RID vrs_texture = RendererRD::TextureStorage::render_target_get_vrs_texture(p_render_target);
 			if (vrs_texture.is_valid()) {
-				RID rd_texture = texture_storage->texture_get_rd_texture(vrs_texture);
-				int layers = texture_storage->texture_get_layers(vrs_texture);
+				RID rd_texture = RendererRD::TextureStorage::texture_get_rd_texture(vrs_texture);
+				int layers = RendererRD::TextureStorage::texture_get_layers(vrs_texture);
 				if (rd_texture.is_valid()) {
 					// Copy into our density buffer
 					copy_vrs(rd_texture, p_vrs_fb, layers > 1);
@@ -78,8 +78,8 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 				interface->get_vrs_texture_format() == XRInterface::XR_VRS_TEXTURE_FORMAT_UNIFIED) {
 				RID vrs_texture = interface->get_vrs_texture();
 				if (vrs_texture.is_valid()) {
-					RID rd_texture = texture_storage->texture_get_rd_texture(vrs_texture);
-					int layers = texture_storage->texture_get_layers(vrs_texture);
+					RID rd_texture = RendererRD::TextureStorage::texture_get_rd_texture(vrs_texture);
+					int layers = RendererRD::TextureStorage::texture_get_layers(vrs_texture);
 
 					if (rd_texture.is_valid()) {
 						// Copy into our density buffer
@@ -91,14 +91,22 @@ void VRS::update_vrs_texture(RID p_vrs_fb, RID p_render_target)
 		}
 
 		if (vrs_update_mode == RSE::VIEWPORT_VRS_UPDATE_ONCE) {
-			texture_storage->render_target_set_vrs_update_mode(
+			RendererRD::TextureStorage::render_target_set_vrs_update_mode(
 				p_render_target, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
 		}
 
-		RD::get_singleton()->draw_command_end_label();
+		RD::draw_command_end_label();
 	}
 }
 
 void RendererRD::VRS::copy_vrs(RID p_source, RID p_dest, bool p_is_mobile) {}
+
+VRS::VRS()
+{
+	Vector<String> modes;
+	modes.push_back("\n");
+	vrs_shader.shader.initialize(modes);
+	vrs_shader.shader_version = vrs_shader.shader.version_create();
+}
 
 

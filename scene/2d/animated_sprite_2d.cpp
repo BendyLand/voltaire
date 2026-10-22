@@ -117,7 +117,7 @@ bool AnimatedSprite2D::is_playing() const { return playing; }
 
 void AnimatedSprite2D::set_autoplay(const String& p_name)
 {
-	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
+	if (is_inside_tree() && !Engine::is_editor_hint()) {
 		WARN_PRINT("Setting autoplay after the node has been added to the scene has no effect.");
 	}
 

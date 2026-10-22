@@ -34,7 +34,7 @@
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Input);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, NativeMenu);
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Texture2D);
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/input/input.h"
 #include "core/os/os.h"
@@ -42,7 +42,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server_headless.h"
 #include "servers/display/native_menu.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/rendering_device.h"
@@ -109,8 +109,8 @@ bool DisplayServer::_get_window_early_clear_override(Color& r_color)
 		r_color = window_early_clear_override_color;
 		return true;
 	}
-	else if (RenderingServer::get_singleton()) {
-		r_color = RenderingServer::get_singleton()->get_default_clear_color();
+	else if (Renderer::data) {
+		r_color = Renderer::get_default_clear_color();
 		return true;
 	}
 	else {
@@ -1191,8 +1191,7 @@ void DisplayServer::_input_set_custom_mouse_cursor_func(
 bool DisplayServer::is_rendering_device_supported()
 {
 #if defined(RD_ENABLED)
-	RenderingDevice* device = RenderingDevice::get_singleton();
-	if (device) {
+	if (RD::data) {
 		return true;
 	}
 
@@ -1251,8 +1250,7 @@ bool DisplayServer::is_rendering_device_supported()
 	if (rcd != nullptr) {
 		err = rcd->initialize();
 		if (err == OK) {
-			RenderingDevice* rd = memnew(RenderingDevice);
-			err = rd->initialize(rcd);
+			err = RenderingDevice::initialize(rcd, rcd->device_get(0));
 			memdelete(rd);
 			rd = nullptr;
 			if (err == OK) {

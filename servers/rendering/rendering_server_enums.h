@@ -32,9 +32,11 @@
 
 #include <cstdint>
 
-namespace RenderingServerEnums {
+namespace RenderingServerEnums
+{
 
-enum {
+enum
+{
 	NO_INDEX_ARRAY = -1,
 	ARRAY_WEIGHTS_SIZE = 4,
 	CANVAS_ITEM_Z_MIN = -4096,
@@ -49,19 +51,22 @@ enum {
 
 /* TEXTURE API */
 
-enum TextureType {
+enum TextureType
+{
 	TEXTURE_TYPE_2D,
 	TEXTURE_TYPE_LAYERED,
 	TEXTURE_TYPE_3D,
 };
 
-enum TextureLayeredType {
+enum TextureLayeredType
+{
 	TEXTURE_LAYERED_2D_ARRAY,
 	TEXTURE_LAYERED_CUBEMAP,
 	TEXTURE_LAYERED_CUBEMAP_ARRAY,
 };
 
-enum CubeMapLayer {
+enum CubeMapLayer
+{
 	CUBEMAP_LAYER_LEFT,
 	CUBEMAP_LAYER_RIGHT,
 	CUBEMAP_LAYER_BOTTOM,
@@ -70,14 +75,17 @@ enum CubeMapLayer {
 	CUBEMAP_LAYER_BACK,
 };
 
-enum TextureDrawableFormat {
+enum TextureDrawableFormat
+{
 	TEXTURE_DRAWABLE_FORMAT_RGBA8,
-	TEXTURE_DRAWABLE_FORMAT_RGBA8_SRGB, // Use this if you want to read the result from both 2D (non-hdr) and 3D.
+	TEXTURE_DRAWABLE_FORMAT_RGBA8_SRGB, // Use this if you want to read the result from both 2D
+										// (non-hdr) and 3D.
 	TEXTURE_DRAWABLE_FORMAT_RGBAH,
 	TEXTURE_DRAWABLE_FORMAT_RGBAF,
 };
 
-enum TextureDetectRoughnessChannel {
+enum TextureDetectRoughnessChannel
+{
 	TEXTURE_DETECT_ROUGHNESS_R,
 	TEXTURE_DETECT_ROUGHNESS_G,
 	TEXTURE_DETECT_ROUGHNESS_B,
@@ -87,7 +95,8 @@ enum TextureDetectRoughnessChannel {
 
 /* PIPELINES API */
 
-enum PipelineSource {
+enum PipelineSource
+{
 	PIPELINE_SOURCE_CANVAS,
 	PIPELINE_SOURCE_MESH,
 	PIPELINE_SOURCE_SURFACE,
@@ -98,7 +107,8 @@ enum PipelineSource {
 
 /* SHADER API */
 
-enum ShaderMode {
+enum ShaderMode
+{
 	SHADER_SPATIAL,
 	SHADER_CANVAS_ITEM,
 	SHADER_PARTICLES,
@@ -108,7 +118,8 @@ enum ShaderMode {
 	SHADER_MAX,
 };
 
-enum CullMode {
+enum CullMode
+{
 	CULL_MODE_DISABLED,
 	CULL_MODE_FRONT,
 	CULL_MODE_BACK,
@@ -116,35 +127,39 @@ enum CullMode {
 
 /* COMMON MATERIAL API */
 
-enum {
+enum
+{
 	MATERIAL_RENDER_PRIORITY_MIN = -128,
 	MATERIAL_RENDER_PRIORITY_MAX = 127,
 };
 
 /* MESH API */
 
-enum ArrayType {
-	ARRAY_VERTEX = 0, // RG32F (2D), RGB32F, RGBA16 (compressed)
-	ARRAY_NORMAL = 1, // RG16
+enum ArrayType
+{
+	ARRAY_VERTEX = 0,  // RG32F (2D), RGB32F, RGBA16 (compressed)
+	ARRAY_NORMAL = 1,  // RG16
 	ARRAY_TANGENT = 2, // BA16 (with normal) or A16 (with vertex, when compressed)
-	ARRAY_COLOR = 3, // RGBA8
-	ARRAY_TEX_UV = 4, // RG32F or RG16
+	ARRAY_COLOR = 3,   // RGBA8
+	ARRAY_TEX_UV = 4,  // RG32F or RG16
 	ARRAY_TEX_UV2 = 5, // RG32F or RG16
 	ARRAY_CUSTOM0 = 6, // Depends on ArrayCustomFormat.
 	ARRAY_CUSTOM1 = 7,
 	ARRAY_CUSTOM2 = 8,
 	ARRAY_CUSTOM3 = 9,
-	ARRAY_BONES = 10, // RGBA16UI (x2 if 8 weights)
+	ARRAY_BONES = 10,	// RGBA16UI (x2 if 8 weights)
 	ARRAY_WEIGHTS = 11, // RGBA16UNORM (x2 if 8 weights)
-	ARRAY_INDEX = 12, // 16 or 32 bits depending on length > 0xFFFF.
+	ARRAY_INDEX = 12,	// 16 or 32 bits depending on length > 0xFFFF.
 	ARRAY_MAX = 13,
 };
 
-enum {
+enum
+{
 	ARRAY_CUSTOM_COUNT = ARRAY_BONES - ARRAY_CUSTOM0
 };
 
-enum ArrayCustomFormat {
+enum ArrayCustomFormat
+{
 	ARRAY_CUSTOM_RGBA8_UNORM,
 	ARRAY_CUSTOM_RGBA8_SNORM,
 	ARRAY_CUSTOM_RG_HALF,
@@ -156,7 +171,8 @@ enum ArrayCustomFormat {
 	ARRAY_CUSTOM_MAX,
 };
 
-enum ArrayFormat : uint64_t {
+enum ArrayFormat : uint64_t
+{
 	/* ARRAY FORMAT FLAGS */
 	ARRAY_FORMAT_VERTEX = 1 << ARRAY_VERTEX,
 	ARRAY_FORMAT_NORMAL = 1 << ARRAY_NORMAL,
@@ -172,7 +188,8 @@ enum ArrayFormat : uint64_t {
 	ARRAY_FORMAT_WEIGHTS = 1 << ARRAY_WEIGHTS,
 	ARRAY_FORMAT_INDEX = 1 << ARRAY_INDEX,
 
-	ARRAY_FORMAT_BLEND_SHAPE_MASK = ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL | ARRAY_FORMAT_TANGENT,
+	ARRAY_FORMAT_BLEND_SHAPE_MASK =
+		ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL | ARRAY_FORMAT_TANGENT,
 
 	ARRAY_FORMAT_CUSTOM_BASE = (ARRAY_INDEX + 1),
 	ARRAY_FORMAT_CUSTOM_BITS = 3,
@@ -201,7 +218,8 @@ enum ArrayFormat : uint64_t {
 
 	ARRAY_FLAG_FORMAT_VERSION_BASE = ARRAY_COMPRESS_FLAGS_BASE + 10,
 	ARRAY_FLAG_FORMAT_VERSION_SHIFT = ARRAY_FLAG_FORMAT_VERSION_BASE,
-	// When changes are made to the mesh format, add a new version and use it for the CURRENT_VERSION.
+	// When changes are made to the mesh format, add a new version and use it for the
+	// CURRENT_VERSION.
 	ARRAY_FLAG_FORMAT_VERSION_1 = 0,
 	ARRAY_FLAG_FORMAT_VERSION_2 = 1ULL << ARRAY_FLAG_FORMAT_VERSION_SHIFT,
 	ARRAY_FLAG_FORMAT_CURRENT_VERSION = ARRAY_FLAG_FORMAT_VERSION_2,
@@ -210,7 +228,8 @@ enum ArrayFormat : uint64_t {
 
 static_assert(sizeof(ArrayFormat) == 8, "ArrayFormat should be 64 bits long.");
 
-enum PrimitiveType {
+enum PrimitiveType
+{
 	PRIMITIVE_POINTS,
 	PRIMITIVE_LINES,
 	PRIMITIVE_LINE_STRIP,
@@ -219,33 +238,38 @@ enum PrimitiveType {
 	PRIMITIVE_MAX,
 };
 
-enum BlendShapeMode {
+enum BlendShapeMode
+{
 	BLEND_SHAPE_MODE_NORMALIZED,
 	BLEND_SHAPE_MODE_RELATIVE,
 };
 
 /* MULTIMESH API */
 
-enum MultimeshTransformFormat {
+enum MultimeshTransformFormat
+{
 	MULTIMESH_TRANSFORM_2D,
 	MULTIMESH_TRANSFORM_3D,
 };
 
-enum MultimeshPhysicsInterpolationQuality {
+enum MultimeshPhysicsInterpolationQuality
+{
 	MULTIMESH_INTERP_QUALITY_FAST,
 	MULTIMESH_INTERP_QUALITY_HIGH,
 };
 
 /* LIGHT API */
 
-enum LightType {
+enum LightType
+{
 	LIGHT_DIRECTIONAL,
 	LIGHT_OMNI,
 	LIGHT_SPOT,
 	LIGHT_AREA,
 };
 
-enum LightParam {
+enum LightParam
+{
 	LIGHT_PARAM_ENERGY,
 	LIGHT_PARAM_INDIRECT_ENERGY,
 	LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY,
@@ -270,30 +294,35 @@ enum LightParam {
 	LIGHT_PARAM_MAX,
 };
 
-enum LightBakeMode {
+enum LightBakeMode
+{
 	LIGHT_BAKE_DISABLED,
 	LIGHT_BAKE_STATIC,
 	LIGHT_BAKE_DYNAMIC,
 };
 
-enum LightOmniShadowMode {
+enum LightOmniShadowMode
+{
 	LIGHT_OMNI_SHADOW_DUAL_PARABOLOID,
 	LIGHT_OMNI_SHADOW_CUBE,
 };
 
-enum LightDirectionalShadowMode {
+enum LightDirectionalShadowMode
+{
 	LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL,
 	LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
 	LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS,
 };
 
-enum LightDirectionalSkyMode {
+enum LightDirectionalSkyMode
+{
 	LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY,
 	LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY,
 	LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY,
 };
 
-enum ShadowQuality {
+enum ShadowQuality
+{
 	SHADOW_QUALITY_HARD,
 	SHADOW_QUALITY_SOFT_VERY_LOW,
 	SHADOW_QUALITY_SOFT_LOW,
@@ -303,7 +332,8 @@ enum ShadowQuality {
 	SHADOW_QUALITY_MAX,
 };
 
-enum LightProjectorFilter {
+enum LightProjectorFilter
+{
 	LIGHT_PROJECTOR_FILTER_NEAREST,
 	LIGHT_PROJECTOR_FILTER_LINEAR,
 	LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS,
@@ -314,12 +344,14 @@ enum LightProjectorFilter {
 
 /* REFLECTION PROBE API */
 
-enum ReflectionProbeUpdateMode {
+enum ReflectionProbeUpdateMode
+{
 	REFLECTION_PROBE_UPDATE_ONCE,
 	REFLECTION_PROBE_UPDATE_ALWAYS,
 };
 
-enum ReflectionProbeAmbientMode {
+enum ReflectionProbeAmbientMode
+{
 	REFLECTION_PROBE_AMBIENT_DISABLED,
 	REFLECTION_PROBE_AMBIENT_ENVIRONMENT,
 	REFLECTION_PROBE_AMBIENT_COLOR,
@@ -327,7 +359,8 @@ enum ReflectionProbeAmbientMode {
 
 /* DECAL API */
 
-enum DecalTexture {
+enum DecalTexture
+{
 	DECAL_TEXTURE_ALBEDO,
 	DECAL_TEXTURE_NORMAL,
 	DECAL_TEXTURE_ORM,
@@ -335,7 +368,8 @@ enum DecalTexture {
 	DECAL_TEXTURE_MAX,
 };
 
-enum DecalFilter {
+enum DecalFilter
+{
 	DECAL_FILTER_NEAREST,
 	DECAL_FILTER_LINEAR,
 	DECAL_FILTER_NEAREST_MIPMAPS,
@@ -346,14 +380,16 @@ enum DecalFilter {
 
 /* VOXEL GI API */
 
-enum VoxelGIQuality {
+enum VoxelGIQuality
+{
 	VOXEL_GI_QUALITY_LOW,
 	VOXEL_GI_QUALITY_HIGH,
 };
 
 /* LIGHTMAP API */
 
-enum ShadowmaskMode {
+enum ShadowmaskMode
+{
 	SHADOWMASK_MODE_NONE,
 	SHADOWMASK_MODE_REPLACE,
 	SHADOWMASK_MODE_OVERLAY,
@@ -362,12 +398,14 @@ enum ShadowmaskMode {
 
 /* PARTICLES API */
 
-enum ParticlesMode {
+enum ParticlesMode
+{
 	PARTICLES_MODE_2D,
 	PARTICLES_MODE_3D,
 };
 
-enum ParticlesTransformAlign {
+enum ParticlesTransformAlign
+{
 	PARTICLES_TRANSFORM_ALIGN_DISABLED,
 	PARTICLES_TRANSFORM_ALIGN_Z_BILLBOARD,
 	PARTICLES_TRANSFORM_ALIGN_Y_TO_VELOCITY,
@@ -375,7 +413,8 @@ enum ParticlesTransformAlign {
 	PARTICLES_TRANSFORM_ALIGN_LOCAL_BILLBOARD,
 };
 
-enum ParticlesEmitFlags {
+enum ParticlesEmitFlags
+{
 	PARTICLES_EMIT_FLAG_POSITION = 1,
 	PARTICLES_EMIT_FLAG_ROTATION_SCALE = 2,
 	PARTICLES_EMIT_FLAG_VELOCITY = 4,
@@ -383,14 +422,16 @@ enum ParticlesEmitFlags {
 	PARTICLES_EMIT_FLAG_CUSTOM = 16,
 };
 
-enum ParticlesDrawOrder {
+enum ParticlesDrawOrder
+{
 	PARTICLES_DRAW_ORDER_INDEX,
 	PARTICLES_DRAW_ORDER_LIFETIME,
 	PARTICLES_DRAW_ORDER_REVERSE_LIFETIME,
 	PARTICLES_DRAW_ORDER_VIEW_DEPTH,
 };
 
-enum ParticlesTransformAlignCustomSrc {
+enum ParticlesTransformAlignCustomSrc
+{
 	PARTICLES_ALIGN_CHANNEL_FILTER_DISABLED,
 	PARTICLES_ALIGN_CHANNEL_FILTER_X,
 	PARTICLES_ALIGN_CHANNEL_FILTER_Y,
@@ -399,7 +440,8 @@ enum ParticlesTransformAlignCustomSrc {
 	PARTICLES_ALIGN_CHANNEL_FILTER_MAX,
 };
 
-enum ParticlesTransformAlignAxis {
+enum ParticlesTransformAlignAxis
+{
 	PARTICLES_ALIGN_AXIS_X,
 	PARTICLES_ALIGN_AXIS_Y,
 	PARTICLES_ALIGN_AXIS_MAX,
@@ -407,7 +449,8 @@ enum ParticlesTransformAlignAxis {
 
 /* PARTICLES COLLISION API */
 
-enum ParticlesCollisionType {
+enum ParticlesCollisionType
+{
 	PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT,
 	PARTICLES_COLLISION_TYPE_BOX_ATTRACT,
 	PARTICLES_COLLISION_TYPE_VECTOR_FIELD_ATTRACT,
@@ -417,7 +460,8 @@ enum ParticlesCollisionType {
 	PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE,
 };
 
-enum ParticlesCollisionHeightfieldResolution { // Longest axis resolution.
+enum ParticlesCollisionHeightfieldResolution
+{ // Longest axis resolution.
 	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_256,
 	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_512,
 	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_1024,
@@ -429,7 +473,8 @@ enum ParticlesCollisionHeightfieldResolution { // Longest axis resolution.
 
 /* FOG VOLUME API */
 
-enum FogVolumeShape {
+enum FogVolumeShape
+{
 	FOG_VOLUME_SHAPE_ELLIPSOID,
 	FOG_VOLUME_SHAPE_CONE,
 	FOG_VOLUME_SHAPE_CYLINDER,
@@ -440,8 +485,10 @@ enum FogVolumeShape {
 
 /* VIEWPORT API */
 
-enum CanvasItemTextureFilter {
-	CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+enum CanvasItemTextureFilter
+{
+	CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, // Uses canvas item setting for draw command, uses global
+										// setting for canvas item.
 	CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
 	CANVAS_ITEM_TEXTURE_FILTER_LINEAR,
 	CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
@@ -451,15 +498,18 @@ enum CanvasItemTextureFilter {
 	CANVAS_ITEM_TEXTURE_FILTER_MAX,
 };
 
-enum CanvasItemTextureRepeat {
-	CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+enum CanvasItemTextureRepeat
+{
+	CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, // Uses canvas item setting for draw command, uses global
+										// setting for canvas item.
 	CANVAS_ITEM_TEXTURE_REPEAT_DISABLED,
 	CANVAS_ITEM_TEXTURE_REPEAT_ENABLED,
 	CANVAS_ITEM_TEXTURE_REPEAT_MIRROR,
 	CANVAS_ITEM_TEXTURE_REPEAT_MAX,
 };
 
-enum ViewportScaling3DMode {
+enum ViewportScaling3DMode
+{
 	VIEWPORT_SCALING_3D_MODE_BILINEAR,
 	VIEWPORT_SCALING_3D_MODE_FSR,
 	VIEWPORT_SCALING_3D_MODE_FSR2,
@@ -470,23 +520,30 @@ enum ViewportScaling3DMode {
 	VIEWPORT_SCALING_3D_MODE_OFF = 255, // for internal use only
 };
 
-enum ViewportScaling3DType {
+enum ViewportScaling3DType
+{
 	VIEWPORT_SCALING_3D_TYPE_NONE,
 	VIEWPORT_SCALING_3D_TYPE_TEMPORAL,
 	VIEWPORT_SCALING_3D_TYPE_SPATIAL,
 	VIEWPORT_SCALING_3D_TYPE_MAX,
 };
 
-inline ViewportScaling3DType scaling_3d_mode_type(ViewportScaling3DMode p_mode) {
-	if (p_mode == VIEWPORT_SCALING_3D_MODE_NEAREST || p_mode == VIEWPORT_SCALING_3D_MODE_BILINEAR || p_mode == VIEWPORT_SCALING_3D_MODE_FSR || p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL) {
+inline ViewportScaling3DType scaling_3d_mode_type(ViewportScaling3DMode p_mode)
+{
+	if (p_mode == VIEWPORT_SCALING_3D_MODE_NEAREST || p_mode == VIEWPORT_SCALING_3D_MODE_BILINEAR ||
+		p_mode == VIEWPORT_SCALING_3D_MODE_FSR ||
+		p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL) {
 		return VIEWPORT_SCALING_3D_TYPE_SPATIAL;
-	} else if (p_mode == VIEWPORT_SCALING_3D_MODE_FSR2 || p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) {
+	}
+	else if (p_mode == VIEWPORT_SCALING_3D_MODE_FSR2 ||
+			   p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) {
 		return VIEWPORT_SCALING_3D_TYPE_TEMPORAL;
 	}
 	return VIEWPORT_SCALING_3D_TYPE_NONE;
 }
 
-enum ViewportAnisotropicFiltering {
+enum ViewportAnisotropicFiltering
+{
 	VIEWPORT_ANISOTROPY_DISABLED,
 	VIEWPORT_ANISOTROPY_2X,
 	VIEWPORT_ANISOTROPY_4X,
@@ -495,28 +552,32 @@ enum ViewportAnisotropicFiltering {
 	VIEWPORT_ANISOTROPY_MAX,
 };
 
-enum ViewportUpdateMode {
+enum ViewportUpdateMode
+{
 	VIEWPORT_UPDATE_DISABLED,
-	VIEWPORT_UPDATE_ONCE, // Then goes to disabled, must be manually updated.
+	VIEWPORT_UPDATE_ONCE,		  // Then goes to disabled, must be manually updated.
 	VIEWPORT_UPDATE_WHEN_VISIBLE, // Default
 	VIEWPORT_UPDATE_WHEN_PARENT_VISIBLE,
 	VIEWPORT_UPDATE_ALWAYS,
 };
 
-enum ViewportClearMode {
+enum ViewportClearMode
+{
 	VIEWPORT_CLEAR_ALWAYS,
 	VIEWPORT_CLEAR_NEVER,
 	VIEWPORT_CLEAR_ONLY_NEXT_FRAME,
 };
 
-enum ViewportEnvironmentMode {
+enum ViewportEnvironmentMode
+{
 	VIEWPORT_ENVIRONMENT_DISABLED,
 	VIEWPORT_ENVIRONMENT_ENABLED,
 	VIEWPORT_ENVIRONMENT_INHERIT,
 	VIEWPORT_ENVIRONMENT_MAX,
 };
 
-enum ViewportSDFOversize {
+enum ViewportSDFOversize
+{
 	VIEWPORT_SDF_OVERSIZE_100_PERCENT,
 	VIEWPORT_SDF_OVERSIZE_120_PERCENT,
 	VIEWPORT_SDF_OVERSIZE_150_PERCENT,
@@ -524,14 +585,16 @@ enum ViewportSDFOversize {
 	VIEWPORT_SDF_OVERSIZE_MAX,
 };
 
-enum ViewportSDFScale {
+enum ViewportSDFScale
+{
 	VIEWPORT_SDF_SCALE_100_PERCENT,
 	VIEWPORT_SDF_SCALE_50_PERCENT,
 	VIEWPORT_SDF_SCALE_25_PERCENT,
 	VIEWPORT_SDF_SCALE_MAX,
 };
 
-enum ViewportMSAA {
+enum ViewportMSAA
+{
 	VIEWPORT_MSAA_DISABLED,
 	VIEWPORT_MSAA_2X,
 	VIEWPORT_MSAA_4X,
@@ -539,34 +602,39 @@ enum ViewportMSAA {
 	VIEWPORT_MSAA_MAX,
 };
 
-enum ViewportScreenSpaceAA {
+enum ViewportScreenSpaceAA
+{
 	VIEWPORT_SCREEN_SPACE_AA_DISABLED,
 	VIEWPORT_SCREEN_SPACE_AA_FXAA,
 	VIEWPORT_SCREEN_SPACE_AA_SMAA,
 	VIEWPORT_SCREEN_SPACE_AA_MAX,
 };
 
-enum ViewportOcclusionCullingBuildQuality {
+enum ViewportOcclusionCullingBuildQuality
+{
 	VIEWPORT_OCCLUSION_BUILD_QUALITY_LOW = 0,
 	VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM = 1,
 	VIEWPORT_OCCLUSION_BUILD_QUALITY_HIGH = 2,
 };
 
-enum ViewportRenderInfo {
+enum ViewportRenderInfo
+{
 	VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME,
 	VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME,
 	VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME,
 	VIEWPORT_RENDER_INFO_MAX,
 };
 
-enum ViewportRenderInfoType {
+enum ViewportRenderInfoType
+{
 	VIEWPORT_RENDER_INFO_TYPE_VISIBLE,
 	VIEWPORT_RENDER_INFO_TYPE_SHADOW,
 	VIEWPORT_RENDER_INFO_TYPE_CANVAS,
 	VIEWPORT_RENDER_INFO_TYPE_MAX,
 };
 
-enum ViewportDebugDraw {
+enum ViewportDebugDraw
+{
 	VIEWPORT_DEBUG_DRAW_DISABLED,
 	VIEWPORT_DEBUG_DRAW_UNSHADED,
 	VIEWPORT_DEBUG_DRAW_LIGHTING,
@@ -598,14 +666,16 @@ enum ViewportDebugDraw {
 	VIEWPORT_DEBUG_DRAW_AREA_LIGHT_ATLAS,
 };
 
-enum ViewportVRSMode {
+enum ViewportVRSMode
+{
 	VIEWPORT_VRS_DISABLED,
 	VIEWPORT_VRS_TEXTURE,
 	VIEWPORT_VRS_XR,
 	VIEWPORT_VRS_MAX,
 };
 
-enum ViewportVRSUpdateMode {
+enum ViewportVRSUpdateMode
+{
 	VIEWPORT_VRS_UPDATE_DISABLED,
 	VIEWPORT_VRS_UPDATE_ONCE,
 	VIEWPORT_VRS_UPDATE_ALWAYS,
@@ -614,7 +684,8 @@ enum ViewportVRSUpdateMode {
 
 /* SKY API */
 
-enum SkyMode {
+enum SkyMode
+{
 	SKY_MODE_AUTOMATIC,
 	SKY_MODE_QUALITY,
 	SKY_MODE_INCREMENTAL,
@@ -623,7 +694,8 @@ enum SkyMode {
 
 /* COMPOSITOR EFFECTS API */
 
-enum CompositorEffectFlags {
+enum CompositorEffectFlags
+{
 	COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_COLOR = 1,
 	COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_DEPTH = 2,
 	COMPOSITOR_EFFECT_FLAG_NEEDS_MOTION_VECTORS = 4,
@@ -631,7 +703,8 @@ enum CompositorEffectFlags {
 	COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR = 16,
 };
 
-enum CompositorEffectCallbackType {
+enum CompositorEffectCallbackType
+{
 	COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_OPAQUE,
 	COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE,
 	COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_SKY,
@@ -643,7 +716,8 @@ enum CompositorEffectCallbackType {
 
 /* ENVIRONMENT API */
 
-enum EnvironmentBG {
+enum EnvironmentBG
+{
 	ENV_BG_CLEAR_COLOR,
 	ENV_BG_COLOR,
 	ENV_BG_SKY,
@@ -653,20 +727,23 @@ enum EnvironmentBG {
 	ENV_BG_MAX,
 };
 
-enum EnvironmentAmbientSource {
+enum EnvironmentAmbientSource
+{
 	ENV_AMBIENT_SOURCE_BG,
 	ENV_AMBIENT_SOURCE_DISABLED,
 	ENV_AMBIENT_SOURCE_COLOR,
 	ENV_AMBIENT_SOURCE_SKY,
 };
 
-enum EnvironmentReflectionSource {
+enum EnvironmentReflectionSource
+{
 	ENV_REFLECTION_SOURCE_BG,
 	ENV_REFLECTION_SOURCE_DISABLED,
 	ENV_REFLECTION_SOURCE_SKY,
 };
 
-enum EnvironmentGlowBlendMode {
+enum EnvironmentGlowBlendMode
+{
 	ENV_GLOW_BLEND_MODE_ADDITIVE,
 	ENV_GLOW_BLEND_MODE_SCREEN,
 	ENV_GLOW_BLEND_MODE_SOFTLIGHT,
@@ -674,7 +751,8 @@ enum EnvironmentGlowBlendMode {
 	ENV_GLOW_BLEND_MODE_MIX,
 };
 
-enum EnvironmentToneMapper {
+enum EnvironmentToneMapper
+{
 	ENV_TONE_MAPPER_LINEAR,
 	ENV_TONE_MAPPER_REINHARD,
 	ENV_TONE_MAPPER_FILMIC,
@@ -682,14 +760,16 @@ enum EnvironmentToneMapper {
 	ENV_TONE_MAPPER_AGX,
 };
 
-enum EnvironmentSSRRoughnessQuality {
+enum EnvironmentSSRRoughnessQuality
+{
 	ENV_SSR_ROUGHNESS_QUALITY_DISABLED,
 	ENV_SSR_ROUGHNESS_QUALITY_LOW,
 	ENV_SSR_ROUGHNESS_QUALITY_MEDIUM,
 	ENV_SSR_ROUGHNESS_QUALITY_HIGH,
 };
 
-enum EnvironmentSSAOQuality {
+enum EnvironmentSSAOQuality
+{
 	ENV_SSAO_QUALITY_VERY_LOW,
 	ENV_SSAO_QUALITY_LOW,
 	ENV_SSAO_QUALITY_MEDIUM,
@@ -697,7 +777,8 @@ enum EnvironmentSSAOQuality {
 	ENV_SSAO_QUALITY_ULTRA,
 };
 
-enum EnvironmentSSILQuality {
+enum EnvironmentSSILQuality
+{
 	ENV_SSIL_QUALITY_VERY_LOW,
 	ENV_SSIL_QUALITY_LOW,
 	ENV_SSIL_QUALITY_MEDIUM,
@@ -705,13 +786,15 @@ enum EnvironmentSSILQuality {
 	ENV_SSIL_QUALITY_ULTRA,
 };
 
-enum EnvironmentSDFGIYScale {
+enum EnvironmentSDFGIYScale
+{
 	ENV_SDFGI_Y_SCALE_50_PERCENT,
 	ENV_SDFGI_Y_SCALE_75_PERCENT,
 	ENV_SDFGI_Y_SCALE_100_PERCENT,
 };
 
-enum EnvironmentSDFGIRayCount {
+enum EnvironmentSDFGIRayCount
+{
 	ENV_SDFGI_RAY_COUNT_4,
 	ENV_SDFGI_RAY_COUNT_8,
 	ENV_SDFGI_RAY_COUNT_16,
@@ -722,7 +805,8 @@ enum EnvironmentSDFGIRayCount {
 	ENV_SDFGI_RAY_COUNT_MAX,
 };
 
-enum EnvironmentSDFGIFramesToConverge {
+enum EnvironmentSDFGIFramesToConverge
+{
 	ENV_SDFGI_CONVERGE_IN_5_FRAMES,
 	ENV_SDFGI_CONVERGE_IN_10_FRAMES,
 	ENV_SDFGI_CONVERGE_IN_15_FRAMES,
@@ -732,7 +816,8 @@ enum EnvironmentSDFGIFramesToConverge {
 	ENV_SDFGI_CONVERGE_MAX
 };
 
-enum EnvironmentSDFGIFramesToUpdateLight {
+enum EnvironmentSDFGIFramesToUpdateLight
+{
 	ENV_SDFGI_UPDATE_LIGHT_IN_1_FRAME,
 	ENV_SDFGI_UPDATE_LIGHT_IN_2_FRAMES,
 	ENV_SDFGI_UPDATE_LIGHT_IN_4_FRAMES,
@@ -741,12 +826,14 @@ enum EnvironmentSDFGIFramesToUpdateLight {
 	ENV_SDFGI_UPDATE_LIGHT_MAX,
 };
 
-enum EnvironmentFogMode {
+enum EnvironmentFogMode
+{
 	ENV_FOG_MODE_EXPONENTIAL,
 	ENV_FOG_MODE_DEPTH,
 };
 
-enum SubSurfaceScatteringQuality {
+enum SubSurfaceScatteringQuality
+{
 	SUB_SURFACE_SCATTERING_QUALITY_DISABLED,
 	SUB_SURFACE_SCATTERING_QUALITY_LOW,
 	SUB_SURFACE_SCATTERING_QUALITY_MEDIUM,
@@ -755,14 +842,16 @@ enum SubSurfaceScatteringQuality {
 
 /* CAMERA ATTRIBUTES API */
 
-enum DOFBlurQuality {
+enum DOFBlurQuality
+{
 	DOF_BLUR_QUALITY_VERY_LOW,
 	DOF_BLUR_QUALITY_LOW,
 	DOF_BLUR_QUALITY_MEDIUM,
 	DOF_BLUR_QUALITY_HIGH,
 };
 
-enum DOFBokehShape {
+enum DOFBokehShape
+{
 	DOF_BOKEH_BOX,
 	DOF_BOKEH_HEXAGON,
 	DOF_BOKEH_CIRCLE,
@@ -770,7 +859,8 @@ enum DOFBokehShape {
 
 /* INSTANCING API */
 
-enum InstanceType {
+enum InstanceType
+{
 	INSTANCE_NONE,
 	INSTANCE_MESH,
 	INSTANCE_MULTIMESH,
@@ -786,10 +876,12 @@ enum InstanceType {
 	INSTANCE_FOG_VOLUME,
 	INSTANCE_MAX,
 
-	INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
+	INSTANCE_GEOMETRY_MASK =
+		(1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
 };
 
-enum InstanceFlags {
+enum InstanceFlags
+{
 	INSTANCE_FLAG_USE_BAKED_LIGHT,
 	INSTANCE_FLAG_USE_DYNAMIC_GI,
 	INSTANCE_FLAG_DRAW_NEXT_FRAME_IF_VISIBLE,
@@ -797,14 +889,16 @@ enum InstanceFlags {
 	INSTANCE_FLAG_MAX,
 };
 
-enum ShadowCastingSetting {
+enum ShadowCastingSetting
+{
 	SHADOW_CASTING_SETTING_OFF,
 	SHADOW_CASTING_SETTING_ON,
 	SHADOW_CASTING_SETTING_DOUBLE_SIDED,
 	SHADOW_CASTING_SETTING_SHADOWS_ONLY,
 };
 
-enum VisibilityRangeFadeMode {
+enum VisibilityRangeFadeMode
+{
 	VISIBILITY_RANGE_FADE_DISABLED,
 	VISIBILITY_RANGE_FADE_SELF,
 	VISIBILITY_RANGE_FADE_DEPENDENCIES,
@@ -812,7 +906,8 @@ enum VisibilityRangeFadeMode {
 
 /* BAKE API */
 
-enum BakeChannels {
+enum BakeChannels
+{
 	BAKE_CHANNEL_ALBEDO_ALPHA,
 	BAKE_CHANNEL_NORMAL,
 	BAKE_CHANNEL_ORM,
@@ -821,7 +916,8 @@ enum BakeChannels {
 
 /* CANVAS TEXTURE API */
 
-enum CanvasTextureChannel {
+enum CanvasTextureChannel
+{
 	CANVAS_TEXTURE_CHANNEL_DIFFUSE,
 	CANVAS_TEXTURE_CHANNEL_NORMAL,
 	CANVAS_TEXTURE_CHANNEL_SPECULAR,
@@ -829,13 +925,15 @@ enum CanvasTextureChannel {
 
 /* CANVAS ITEM API */
 
-enum NinePatchAxisMode {
+enum NinePatchAxisMode
+{
 	NINE_PATCH_STRETCH,
 	NINE_PATCH_TILE,
 	NINE_PATCH_TILE_FIT,
 };
 
-enum CanvasGroupMode {
+enum CanvasGroupMode
+{
 	CANVAS_GROUP_MODE_DISABLED,
 	CANVAS_GROUP_MODE_CLIP_ONLY,
 	CANVAS_GROUP_MODE_CLIP_AND_DRAW,
@@ -844,18 +942,21 @@ enum CanvasGroupMode {
 
 /* CANVAS LIGHT API */
 
-enum CanvasLightMode {
+enum CanvasLightMode
+{
 	CANVAS_LIGHT_MODE_POINT,
 	CANVAS_LIGHT_MODE_DIRECTIONAL,
 };
 
-enum CanvasLightBlendMode {
+enum CanvasLightBlendMode
+{
 	CANVAS_LIGHT_BLEND_MODE_ADD,
 	CANVAS_LIGHT_BLEND_MODE_SUB,
 	CANVAS_LIGHT_BLEND_MODE_MIX,
 };
 
-enum CanvasLightShadowFilter {
+enum CanvasLightShadowFilter
+{
 	CANVAS_LIGHT_FILTER_NONE,
 	CANVAS_LIGHT_FILTER_PCF5,
 	CANVAS_LIGHT_FILTER_PCF13,
@@ -864,7 +965,8 @@ enum CanvasLightShadowFilter {
 
 /* CANVAS OCCLUDER POLYGON API */
 
-enum CanvasOccluderPolygonCullMode {
+enum CanvasOccluderPolygonCullMode
+{
 	CANVAS_OCCLUDER_POLYGON_CULL_DISABLED,
 	CANVAS_OCCLUDER_POLYGON_CULL_CLOCKWISE,
 	CANVAS_OCCLUDER_POLYGON_CULL_COUNTER_CLOCKWISE,
@@ -872,7 +974,8 @@ enum CanvasOccluderPolygonCullMode {
 
 /* GLOBAL SHADER PARAMETERS API */
 
-enum GlobalShaderParameterType {
+enum GlobalShaderParameterType
+{
 	GLOBAL_VAR_TYPE_BOOL,
 	GLOBAL_VAR_TYPE_BVEC2,
 	GLOBAL_VAR_TYPE_BVEC3,
@@ -907,7 +1010,8 @@ enum GlobalShaderParameterType {
 
 /* STATUS INFORMATION */
 
-enum RenderingInfo {
+enum RenderingInfo
+{
 	RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
 	RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME,
 	RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME,
@@ -926,7 +1030,8 @@ enum RenderingInfo {
 
 // If this is modified, review the conversion code in `project_settings.cpp`
 // which is hardcoded to avoid coupling `core` with `servers`.
-enum SplashStretchMode {
+enum SplashStretchMode
+{
 	SPLASH_STRETCH_MODE_DISABLED,
 	SPLASH_STRETCH_MODE_KEEP,
 	SPLASH_STRETCH_MODE_KEEP_WIDTH,
@@ -939,7 +1044,8 @@ enum SplashStretchMode {
 
 #ifndef DISABLE_DEPRECATED
 // Never actually used, should be removed when we can break compatibility.
-enum Features {
+enum Features
+{
 	FEATURE_SHADERS,
 	FEATURE_MULTITHREADED,
 };
@@ -949,3 +1055,5 @@ enum Features {
 
 // Alias to make it easier to use.
 #define RSE RenderingServerEnums
+
+

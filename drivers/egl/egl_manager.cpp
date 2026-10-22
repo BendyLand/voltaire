@@ -496,7 +496,7 @@ Error EGLManager::initialize(void *p_native_display) {
 #endif
 
 #ifdef EGL_ANDROID_blob_cache
-	shader_cache_dir = Engine::get_singleton()->get_shader_cache_path();
+	shader_cache_dir = Engine::get_shader_cache_path();
 	if (shader_cache_dir.is_empty()) {
 		shader_cache_dir = "user://";
 	}

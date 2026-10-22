@@ -31,7 +31,7 @@
 #include "control.compat.inc"
 #include "control.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -47,7 +47,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/theme/theme_db.h"
 #include "scene/theme/theme_owner.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 #ifdef TOOLS_ENABLED
@@ -57,8 +57,8 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #ifdef TOOLS_ENABLED
 void Control::_edit_set_position(const Point2& p_position)
 {
-	ERR_FAIL_COND_MSG(!Engine::get_singleton()->is_editor_hint(),
-		"This function can only be used from editor plugins.");
+	ERR_FAIL_COND_MSG(
+		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
 	set_position(p_position,
 		ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled() && get_parent_control());
 }
@@ -71,8 +71,8 @@ Size2 Control::_edit_get_scale() const { return data.scale; }
 
 void Control::_edit_set_rect(const Rect2& p_edit_rect)
 {
-	ERR_FAIL_COND_MSG(!Engine::get_singleton()->is_editor_hint(),
-		"This function can only be used from editor plugins.");
+	ERR_FAIL_COND_MSG(
+		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
 	// Changing the size might change the internal transform (in case of non-zero
 	// `pivot_offset_ratio`), hence `position` (which is in the parent space, and is not always
 	// equivalent to the Control's rect top-left corner) needs to be changed after `size` (which is
@@ -202,21 +202,28 @@ Rect2 Control::get_parent_anchorable_rect() const
 #ifdef TOOLS_ENABLED
 		Node* edited_scene_root = get_tree()->get_edited_scene_root();
 		Node* scene_root_parent = edited_scene_root ? edited_scene_root->get_parent() : nullptr;
-
 		if (scene_root_parent && get_viewport() == scene_root_parent->get_viewport()) {
 			parent_rect.size =
 				Size2(GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_width"),
 					GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_height"));
 		}
 		else {
-			parent_rect = get_viewport()->get_visible_rect();
-		}
+			Viewport* vp = get_viewport();
+			if (!vp && get_tree()) {
+				vp = get_tree()->get_root();
+			}
 
+			if (vp) {
+				parent_rect = vp->get_visible_rect();
+			}
+			else {
+				return Rect2();
+			}
+		}
 #else
 		parent_rect = get_viewport()->get_visible_rect();
 #endif // TOOLS_ENABLED
 	}
-
 	return parent_rect;
 }
 
@@ -254,7 +261,7 @@ void Control::_update_canvas_item_transform()
 		xform *= get_offset_transform();
 	}
 
-	RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), xform);
+	Renderer::canvas_item_set_transform(get_canvas_item(), xform);
 }
 
 Transform2D Control::get_transform() const
@@ -393,12 +400,11 @@ Control::GrowDirection Control::get_v_grow_direction() const
 void Control::_compute_layout_rect(Rect2 p_rect, bool p_keep_offsets)
 {
 	Size2 parent_rect_size = get_parent_anchorable_rect().size;
-
 	if (p_keep_offsets) {
 		// If computing anchors, we need to ensure the parent rect size is valid to avoid division
 		// by zero.
-		ERR_FAIL_COND(parent_rect_size.x == 0.0);
-		ERR_FAIL_COND(parent_rect_size.y == 0.0);
+		ERR_FAIL_COND(parent_rect_size.x == 0.0f);
+		ERR_FAIL_COND(parent_rect_size.y == 0.0f);
 	}
 
 	real_t x = p_rect.position.x;
@@ -949,6 +955,7 @@ void Control::set_size(const Size2& p_size, bool p_keep_offsets)
 	}
 #endif // TOOLS_ENABLED
 
+	data.size_cache = new_size;
 	data.expanded_by_desired_size = false;
 
 	_compute_layout_rect(Rect2(data.pos_cache, new_size), p_keep_offsets);
@@ -2040,8 +2047,8 @@ void Control::get_argument_options(
 
 Control* Control::make_custom_tooltip(const String& p_text) const
 {
-	Control c = Control();
-	return &c;
+	Control* c = memnew(Control);
+	return c;
 }
 
 Control::LayoutDirection Control::get_layout_direction() const
@@ -2153,7 +2160,7 @@ void Control::_propagate_mouse_behavior_recursive_recursively(bool, bool) {}
 
 void Control::_propagate_focus_behavior_recursive_recursively(bool, bool) {}
 
-String Control::get_accessibility_name() const {}
+String Control::get_accessibility_name() const { return String(); }
 
 void Control::update_maximum_size() {}
 
@@ -2164,10 +2171,6 @@ void Control::set_clip_contents(bool) {}
 void Control::remove_theme_style_override(StringName const&) {}
 
 void Control::_notification(int) {}
-
-bool Control::has_theme_color(StringName const&, StringName const&) const {}
-
-PackedStringArray Control::get_accessibility_configuration_warnings() const {}
 
 void Control::set_theme(Ref<Theme> const&) {}
 
@@ -2185,8 +2188,28 @@ void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
 
 void Control::set_offset_transform_enabled(bool) {}
 
-Control::LayoutMode Control::_get_layout_mode() const {}
+bool Control::has_theme_color(StringName const&, StringName const&) const { return false; }
 
-Control* Control::_get_focus_neighbor(Side, int) {}
+PackedStringArray Control::get_accessibility_configuration_warnings() const
+{
+	return PackedStringArray();
+}
+
+Control::LayoutMode Control::_get_layout_mode() const
+{
+	if (data.stored_layout_mode != LAYOUT_MODE_UNCONTROLLED) {
+		return data.stored_layout_mode;
+	}
+	if (!is_inside_tree()) {
+		return LAYOUT_MODE_POSITION;
+	}
+	if (data.anchor[SIDE_LEFT] != 0.0 || data.anchor[SIDE_TOP] != 0.0 ||
+		data.anchor[SIDE_RIGHT] != 0.0 || data.anchor[SIDE_BOTTOM] != 0.0) {
+		return LAYOUT_MODE_ANCHORS;
+	}
+	return LAYOUT_MODE_POSITION;
+}
+
+Control* Control::_get_focus_neighbor(Side, int) { return nullptr; }
 
 

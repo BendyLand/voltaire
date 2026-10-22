@@ -41,7 +41,7 @@
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "tests/display_server_mock.h"
 #include "tests/force_link.gen.h"
 #include "tests/signal_watcher.h"
@@ -193,7 +193,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 				}
 			}
 
-			// ThemeDB requires RenderingServer to initialize the default theme.
+			// ThemeDB requires Renderer to initialize the default theme.
 			// So we have to do this for each test case. Also make sure there is
 			// no residual theme from something else.
 			ThemeDB::get_singleton()->finalize_theme();
@@ -235,7 +235,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 #ifdef TOOLS_ENABLED
 			if (name.contains("[Editor]")) {
-				Engine::get_singleton()->set_editor_hint(true);
+				Engine::set_editor_hint(true);
 				EditorPaths::create();
 				EditorSettings::create();
 			}
@@ -285,7 +285,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		}
 #endif // TOOLS_ENABLED
 
-		Engine::get_singleton()->set_editor_hint(false);
+		Engine::set_editor_hint(false);
 
 		if (SceneTree::get_singleton()) {
 			SceneTree::get_singleton()->finalize();
@@ -329,7 +329,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 		memdelete(Input::get_singleton());
 
-		if (RenderingServer::get_singleton()) {
+		if (Renderer::get_singleton()) {
 			ThemeDB::get_singleton()->finalize_theme();
 		}
 

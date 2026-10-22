@@ -221,7 +221,7 @@ public:
 		{
 			RD::VertexFormatID vertex_format_id;
 			RD::FramebufferFormatID framebuffer_format_id;
-			RD::PolygonCullMode cull_mode = RD::POLYGON_CULL_MAX;
+			RDC::PolygonCullMode cull_mode = RDC::POLYGON_CULL_MAX;
 			RSE::PrimitiveType primitive_type = RSE::PRIMITIVE_MAX;
 			ShaderSpecialization shader_specialization = {};
 			ShaderVersion version = SHADER_VERSION_MAX;
@@ -343,7 +343,7 @@ public:
 		virtual bool casts_shadows() const;
 		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
 		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
-		RD::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
+		RDC::PolygonCullMode get_cull_mode_from_cull_variant(CullVariant p_cull_variant);
 		void _clear_vertex_input_mask_cache();
 		RID get_shader_variant(ShaderVersion p_shader_version, bool p_ubershader) const;
 		uint64_t get_vertex_input_mask(ShaderVersion p_shader_version, bool p_ubershader);

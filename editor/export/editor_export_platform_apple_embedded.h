@@ -357,7 +357,7 @@ public:
 	{
 		Vector<PluginConfigAppleEmbedded> loaded_plugins;
 
-		String plugins_dir = ProjectSettings::get_singleton()->get_resource_path().path_join(
+		String plugins_dir = ProjectSettings::get_resource_path().path_join(
 			p_platform_name + "/plugins");
 
 		if (DirAccess::exists(plugins_dir)) {

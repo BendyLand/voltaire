@@ -33,7 +33,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include "camera_feed_linux.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void CameraFeedLinux::update_buffer_thread_func(void* p_func)
 {

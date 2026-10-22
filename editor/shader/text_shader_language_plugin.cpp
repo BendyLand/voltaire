@@ -54,7 +54,7 @@ Ref<Shader> TextShaderLanguagePlugin::create_new_shader(
 	shader.instantiate();
 
 	StringBuilder code;
-	const String& shader_type = ShaderTypes::get_singleton()->get_types_list().get(p_shader_mode);
+	const String& shader_type = ShaderTypes::get_types_list().get(p_shader_mode);
 	code += vformat("shader_type %s;\n", shader_type);
 
 	if (p_template_index == 0) { // Default template.

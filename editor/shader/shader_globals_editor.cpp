@@ -35,7 +35,7 @@
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/margin_container.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
 #include "shader_globals_editor.h"
 

@@ -51,12 +51,12 @@ Ref<Resource> ResourceFormatLoaderJSON::load(const String& p_path, const String&
 	json.instantiate();
 
 	Error err = json->parse(
-		FileAccess::get_file_as_string(p_path), Engine::get_singleton()->is_editor_hint());
+		FileAccess::get_file_as_string(p_path), Engine::is_editor_hint());
 	if (err != OK) {
 		String err_text = "Error parsing JSON file at '" + p_path + "', on line " +
 						  itos(json->get_error_line()) + ": " + json->get_error_message();
 
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::is_editor_hint()) {
 			// If running on editor, still allow opening the JSON so the code editor can edit it.
 			WARN_PRINT(err_text);
 		}

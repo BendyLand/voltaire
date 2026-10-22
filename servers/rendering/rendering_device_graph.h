@@ -778,7 +778,7 @@ private:
 	struct RaytracingListBuildAccelerationStructureInstruction : RaytracingListInstruction
 	{
 		RDD::AccelerationStructureID acceleration_structure;
-		RDD::AccelerationStructureType acceleration_structure_type;
+		RDC::AccelerationStructureType acceleration_structure_type;
 	};
 
 	struct RaytracingListBindPipelineInstruction : RaytracingListInstruction
@@ -922,7 +922,7 @@ private:
 	};
 
 	RDD* driver = nullptr;
-	RDD::DriverWorkarounds driver_workarounds;
+	RDC::DriverWorkarounds driver_workarounds;
 	RenderPassCreationFunction render_pass_creation_function = nullptr;
 	int64_t tracking_frame = 0;
 	LocalVector<uint8_t> command_data;
@@ -1073,7 +1073,7 @@ public:
 	void add_raytracing_list_usages(
 		VectorView<ResourceTracker*> p_trackers, VectorView<ResourceUsage> p_usages);
 	void add_raytracing_list_end();
-	void add_compute_list_begin(RDD::BreadcrumbMarker p_phase = RDD::BreadcrumbMarker::NONE,
+	void add_compute_list_begin(RDC::BreadcrumbMarker p_phase = RDC::BreadcrumbMarker::NONE,
 		uint32_t p_breadcrumb_data = 0);
 	void add_compute_list_bind_uniform_set(
 		RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);

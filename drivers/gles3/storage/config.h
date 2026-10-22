@@ -32,26 +32,31 @@
 
 #ifdef GLES3_ENABLED
 
-#include "core/templates/hash_set.h"
-
 #include <platform_gl.h>
+#include "core/templates/hash_set.h"
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 
 #ifdef ANDROID_ENABLED
-typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)(GLenum, GLenum, GLuint, GLint, GLint, GLsizei);
-typedef void (*PFNGLTEXSTORAGE3DMULTISAMPLEPROC)(GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean);
-typedef void (*PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)(GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
-typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)(GLenum, GLenum, GLuint, GLint, GLsizei, GLint, GLsizei);
-typedef void (*PFNEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, void *);
+typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)(
+	GLenum, GLenum, GLuint, GLint, GLint, GLsizei);
+typedef void (*PFNGLTEXSTORAGE3DMULTISAMPLEPROC)(
+	GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean);
+typedef void (*PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)(
+	GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
+typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)(
+	GLenum, GLenum, GLuint, GLint, GLsizei, GLint, GLsizei);
+typedef void (*PFNEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, void*);
 #endif
 
 class String;
 
-namespace GLES3 {
+namespace GLES3
+{
 
-class Config {
+class Config
+{
 private:
-	static Config *singleton;
+	static Config* singleton;
 
 public:
 	bool use_nearest_mip_filter = false;
@@ -60,7 +65,7 @@ public:
 	GLint max_vertex_texture_image_units = 0;
 	GLint max_texture_image_units = 0;
 	GLint max_texture_size = 0;
-	GLint max_viewport_size[2] = { 0, 0 };
+	GLint max_viewport_size[2] = {0, 0};
 	GLint max_vertex_attribs = 0;
 	GLint64 max_uniform_buffer_size = 0;
 	uint32_t max_shader_varyings = 0;
@@ -113,17 +118,21 @@ public:
 	PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR = nullptr;
 	PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
 	PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC eglFramebufferTexture2DMultisampleEXT = nullptr;
-	PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC eglFramebufferTextureMultisampleMultiviewOVR = nullptr;
+	PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
+		eglFramebufferTextureMultisampleMultiviewOVR = nullptr;
 	PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
 
-#define glFramebufferTextureMultiviewOVR GLES3::Config::get_singleton()->eglFramebufferTextureMultiviewOVR
+#define glFramebufferTextureMultiviewOVR                                                           \
+	GLES3::Config::get_singleton()->eglFramebufferTextureMultiviewOVR
 #define glTexStorage3DMultisample GLES3::Config::get_singleton()->eglTexStorage3DMultisample
-#define glFramebufferTexture2DMultisampleEXT GLES3::Config::get_singleton()->eglFramebufferTexture2DMultisampleEXT
-#define glFramebufferTextureMultisampleMultiviewOVR GLES3::Config::get_singleton()->eglFramebufferTextureMultisampleMultiviewOVR
+#define glFramebufferTexture2DMultisampleEXT                                                       \
+	GLES3::Config::get_singleton()->eglFramebufferTexture2DMultisampleEXT
+#define glFramebufferTextureMultisampleMultiviewOVR                                                \
+	GLES3::Config::get_singleton()->eglFramebufferTextureMultisampleMultiviewOVR
 #define glEGLImageTargetTexture2DOES GLES3::Config::get_singleton()->eglEGLImageTargetTexture2DOES
 #endif // ANDROID_ENABLED
 
-	static Config *get_singleton() { return singleton; }
+	static Config* get_singleton() { return singleton; }
 
 	Config();
 	~Config();
@@ -132,3 +141,5 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
+
+

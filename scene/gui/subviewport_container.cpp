@@ -60,7 +60,7 @@ void SubViewportContainer::_propagate_nonpositional_event(const Ref<InputEvent>&
 {
 	ERR_FAIL_COND(p_event.is_null());
 
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 
@@ -75,7 +75,7 @@ void SubViewportContainer::gui_input(const Ref<InputEvent>& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		return;
 	}
 

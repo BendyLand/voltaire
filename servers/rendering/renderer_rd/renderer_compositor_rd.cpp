@@ -34,41 +34,45 @@
 #include "core/os/os.h"
 #include "renderer_compositor_rd.h"
 #include "servers/display/display_server.h"
+#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/renderer_canvas_render_rd.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/rendering_server_types.h"
 
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
 {
-	Error err = RD::get_singleton()->screen_prepare_for_drawing(p_screen);
+	Error err = RD::screen_prepare_for_drawing(p_screen);
 	if (err != OK) {
-		// Window is minimized and does not have valid swapchain, skip drawing without printing
-		// errors.
 		return;
 	}
 
-	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
-		RD::get_singleton()->screen_get_framebuffer_format(p_screen));
+	BlitPipelines blit_pipelines =
+		_get_blit_pipelines_for_format(RD::screen_get_framebuffer_format(p_screen));
 
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin_for_screen(p_screen);
-	ERR_FAIL_COND(draw_list == RD::INVALID_ID);
+	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
+	ERR_FAIL_COND(draw_list == RDC::INVALID_ID);
 
-	const RD::ColorSpace color_space = RD::get_singleton()->screen_get_color_space(p_screen);
+	const RDC::ColorSpace color_space = RD::screen_get_color_space(p_screen);
 	const float reference_luminance =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_reference_luminance(
-			p_screen);
+		RD::get_context_driver()->window_get_hdr_output_reference_luminance(p_screen);
 	const float linear_luminance_scale =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_linear_luminance_scale(
-			p_screen);
+		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(p_screen);
 	const float output_max_value =
-		RD::get_singleton()->get_context_driver()->window_get_output_max_linear_value(p_screen);
+		RD::get_context_driver()->window_get_output_max_linear_value(p_screen);
 	const float reference_multiplier =
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
 	for (int i = 0; i < p_amount; i++) {
 		RID rd_texture =
-			texture_storage->render_target_get_rd_texture(p_render_targets[i].render_target);
+			RendererRD::TextureStorage::render_target_get_rd_texture(p_render_targets[i].render_target);
 		ERR_CONTINUE(rd_texture.is_null());
 
 		BlitMode mode = p_render_targets[i].lens_distortion.apply
@@ -78,58 +82,52 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 
 		HashMap<RID, RID>::Iterator it = render_target_descriptors.find(rd_texture);
 
-		Size2 screen_size(RD::get_singleton()->screen_get_width(p_screen),
-			RD::get_singleton()->screen_get_height(p_screen));
+		Size2 screen_size(RD::screen_get_width(p_screen), RD::screen_get_height(p_screen));
 
-		RD::get_singleton()->draw_list_bind_render_pipeline(
-			draw_list, blit_pipelines.pipelines[mode]);
-		RD::get_singleton()->draw_list_bind_index_array(draw_list, blit.array);
-		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, it->value, 0);
+		RD::draw_list_bind_render_pipeline(draw_list, blit_pipelines.pipelines[mode]);
+		RD::draw_list_bind_index_array(draw_list, blit->array);
+		RD::draw_list_bind_uniform_set(draw_list, it->value, 0);
 
-		// We need to invert the phone rotation.
-		const int screen_rotation_degrees =
-			-RD::get_singleton()->screen_get_pre_rotation_degrees(p_screen);
+		const int screen_rotation_degrees = -RD::screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
-		blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-		blit.push_constant.rotation_sin = Math::sin(screen_rotation);
-		// Swap width and height when the orientation is not the native one.
+		blit->push_constant.rotation_cos = Math::cos(screen_rotation);
+		blit->push_constant.rotation_sin = Math::sin(screen_rotation);
 		if (screen_rotation_degrees % 180 != 0) {
 			SWAP(screen_size.width, screen_size.height);
 		}
-		blit.push_constant.src_rect[0] = p_render_targets[i].src_rect.position.x;
-		blit.push_constant.src_rect[1] = p_render_targets[i].src_rect.position.y;
-		blit.push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width;
-		blit.push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height;
-		blit.push_constant.dst_rect[0] =
+		blit->push_constant.src_rect[0] = p_render_targets[i].src_rect.position.x;
+		blit->push_constant.src_rect[1] = p_render_targets[i].src_rect.position.y;
+		blit->push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width;
+		blit->push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height;
+		blit->push_constant.dst_rect[0] =
 			p_render_targets[i].dst_rect.position.x / screen_size.width;
-		blit.push_constant.dst_rect[1] =
+		blit->push_constant.dst_rect[1] =
 			p_render_targets[i].dst_rect.position.y / screen_size.height;
-		blit.push_constant.dst_rect[2] =
+		blit->push_constant.dst_rect[2] =
 			p_render_targets[i].dst_rect.size.width / screen_size.width;
-		blit.push_constant.dst_rect[3] =
+		blit->push_constant.dst_rect[3] =
 			p_render_targets[i].dst_rect.size.height / screen_size.height;
-		blit.push_constant.layer = p_render_targets[i].multi_view.layer;
-		blit.push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
-		blit.push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
-		blit.push_constant.k1 = p_render_targets[i].lens_distortion.k1;
-		blit.push_constant.k2 = p_render_targets[i].lens_distortion.k2;
-		blit.push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
-		blit.push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
-		blit.push_constant.source_is_srgb =
+		blit->push_constant.layer = p_render_targets[i].multi_view.layer;
+		blit->push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
+		blit->push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
+		blit->push_constant.k1 = p_render_targets[i].lens_distortion.k1;
+		blit->push_constant.k2 = p_render_targets[i].lens_distortion.k2;
+		blit->push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
+		blit->push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
+		blit->push_constant.source_is_srgb =
 			!texture_storage->render_target_is_using_hdr(p_render_targets[i].render_target);
-		blit.push_constant.use_debanding =
+		blit->push_constant.use_debanding =
 			texture_storage->render_target_is_using_debanding(p_render_targets[i].render_target);
-		blit.push_constant.target_color_space = color_space;
-		blit.push_constant.reference_multiplier = reference_multiplier;
-		blit.push_constant.output_max_value = output_max_value;
+		blit->push_constant.target_color_space = color_space;
+		blit->push_constant.reference_multiplier = reference_multiplier;
+		blit->push_constant.output_max_value = output_max_value;
 
-		RD::get_singleton()->draw_list_set_push_constant(
-			draw_list, &blit.push_constant, sizeof(BlitPushConstant));
-		RD::get_singleton()->draw_list_draw(draw_list, true);
+		RD::draw_list_set_push_constant(draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+		RD::draw_list_draw(draw_list, true);
 	}
 
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 }
 
 void RendererCompositorRD::begin_frame(double frame_step)
@@ -141,29 +139,32 @@ void RendererCompositorRD::begin_frame(double frame_step)
 	double time_roll_over = GLOBAL_GET_CACHED(double, "rendering/limits/time/time_rollover_secs");
 	time = Math::fmod(time, time_roll_over);
 
-	canvas->set_time(time);
+	if (RendererCanvasRender::set_time) {
+		RendererCanvasRender::set_time(time);
+	}
 	scene->set_time(time, frame_step);
 }
 
-void RendererCompositorRD::end_frame(bool p_present)
-{
-	RD::get_singleton()->swap_buffers(p_present);
-}
+void RendererCompositorRD::end_frame(bool p_present) { RD::swap_buffers(p_present); }
 
 void RendererCompositorRD::initialize()
 {
+	RendererSceneRenderRD::initialize();
+	RendererCanvasRenderRD::initialize();
+	bind_canvas_render();
+	bind_mesh_storage();
+
 	{
-		// Initialize blit
+		blit = memnew(Blit);
 		Vector<String> blit_modes;
 		blit_modes.push_back("\n");
 		blit_modes.push_back("\n#define USE_LAYER\n");
 		blit_modes.push_back("\n#define USE_LAYER\n#define APPLY_LENS_DISTORTION\n");
 		blit_modes.push_back("\n");
 
-		blit.shader.initialize(blit_modes);
-		blit.shader_version = blit.shader.version_create();
+		blit->shader.initialize(blit_modes);
+		blit->shader_version = blit->shader.version_create();
 
-		// create index array for copy shader
 		Vector<uint8_t> pv;
 		pv.resize(6 * 2);
 		{
@@ -176,37 +177,36 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
-		blit.array = RD::get_singleton()->index_array_create(blit.index_buffer, 0, 6);
-		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
+		blit->index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
+		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
+		blit->sampler = RD::sampler_create(RDC::SamplerState());
 	}
 }
 
-uint64_t RendererCompositorRD::frame = 1;
-
 void RendererCompositorRD::finalize()
 {
-	texture_storage->_tex_blit_shader_free();
-	memdelete(scene);
-	memdelete(canvas);
+	RendererRD::TextureStorage::_tex_blit_shader_free();
+	RendererCanvasRenderRD::finalize();
 	memdelete(fog);
 	memdelete(particles_storage);
-	memdelete(light_storage);
-	memdelete(mesh_storage);
-	memdelete(material_storage);
-	memdelete(texture_storage);
-	memdelete(utilities);
+	RendererRD::LightStorage::finalize();
+	RendererRD::TextureStorage::finalize();
+	RendererRD::MeshStorage::finalize();
 
-	// only need to erase these, the rest are erased by cascade
-	blit.shader.version_free(blit.shader_version);
-	RD::get_singleton()->free_rid(blit.index_buffer);
-	RD::get_singleton()->free_rid(blit.sampler);
+	if (blit) {
+		memdelete(blit);
+		blit = nullptr;
+	}
+	blit->shader.version_free(blit->shader_version);
+	RD::free_rid(blit->index_buffer);
+	RD::free_rid(blit->sampler);
 }
 
-float RendererCompositorRD::_compute_reference_multiplier(RD::ColorSpace p_color_space,
+float RendererCompositorRD::_compute_reference_multiplier(RDC::ColorSpace p_color_space,
 	const float p_reference_luminance, const float p_linear_luminance_scale)
 {
 	switch (p_color_space) {
-	case RD::COLOR_SPACE_REC709_LINEAR:
+	case RDC::COLOR_SPACE_REC709_LINEAR:
 		return p_reference_luminance / p_linear_luminance_scale;
 	default:
 		return 1.0f;
@@ -220,27 +220,25 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		return;
 	}
 
-	Error err = RD::get_singleton()->screen_prepare_for_drawing(DisplayServerEnums::MAIN_WINDOW_ID);
+	Error err = RD::screen_prepare_for_drawing(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (err != OK) {
-		// Window is minimized and does not have valid swapchain, skip drawing without printing
-		// errors.
 		return;
 	}
 
 	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
-		RD::get_singleton()->screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID));
+		RD::screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID));
 
 	RID texture = texture_storage->texture_allocate();
 	texture_storage->texture_2d_initialize(texture, p_image);
 	RID rd_texture = texture_storage->texture_get_rd_texture(texture, false);
 
-	RD::SamplerState sampler_state;
+	RDC::SamplerState sampler_state;
 	sampler_state.min_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.mag_filter =
-		p_use_filter ? RD::SAMPLER_FILTER_LINEAR : RD::SAMPLER_FILTER_NEAREST;
+		p_use_filter ? RDC::SAMPLER_FILTER_LINEAR : RDC::SAMPLER_FILTER_NEAREST;
 	sampler_state.max_lod = 0;
-	RID sampler = RD::get_singleton()->sampler_create(sampler_state);
+	RID sampler = RD::sampler_create(sampler_state);
 
 	RID uset;
 
@@ -251,23 +249,21 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	screenrect.position /= window_size;
 	screenrect.size /= window_size;
 
-	const RD::ColorSpace color_space =
-		RD::get_singleton()->screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
+	const RDC::ColorSpace color_space =
+		RD::screen_get_color_space(DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_luminance =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_reference_luminance(
+		RD::get_context_driver()->window_get_hdr_output_reference_luminance(
 			DisplayServerEnums::MAIN_WINDOW_ID);
 	const float linear_luminance_scale =
-		RD::get_singleton()->get_context_driver()->window_get_hdr_output_linear_luminance_scale(
+		RD::get_context_driver()->window_get_hdr_output_linear_luminance_scale(
 			DisplayServerEnums::MAIN_WINDOW_ID);
-	const float output_max_value =
-		RD::get_singleton()->get_context_driver()->window_get_output_max_linear_value(
-			DisplayServerEnums::MAIN_WINDOW_ID);
+	const float output_max_value = RD::get_context_driver()->window_get_output_max_linear_value(
+		DisplayServerEnums::MAIN_WINDOW_ID);
 	const float reference_multiplier =
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
 	Color clear_color = p_color;
-	if (color_space != RD::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
-		// draw_list_begin_for_screen requires linear-encoded Color when using an HDR buffer.
+	if (color_space != RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
 		clear_color = p_color.srgb_to_linear();
 
 		clear_color.r *= reference_multiplier;
@@ -275,61 +271,197 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 		clear_color.b *= reference_multiplier;
 	}
 
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin_for_screen(
-		DisplayServerEnums::MAIN_WINDOW_ID, clear_color);
+	RD::DrawListID draw_list =
+		RD::draw_list_begin_for_screen(DisplayServerEnums::MAIN_WINDOW_ID, clear_color);
 
-	RD::get_singleton()->draw_list_bind_render_pipeline(
-		draw_list, blit_pipelines.pipelines[BLIT_MODE_NORMAL_ALPHA]);
-	RD::get_singleton()->draw_list_bind_index_array(draw_list, blit.array);
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uset, 0);
+	RD::draw_list_bind_render_pipeline(draw_list, blit_pipelines.pipelines[BLIT_MODE_NORMAL_ALPHA]);
+	RD::draw_list_bind_index_array(draw_list, blit->array);
+	RD::draw_list_bind_uniform_set(draw_list, uset, 0);
 
 	const int screen_rotation_degrees =
-		-RD::get_singleton()->screen_get_pre_rotation_degrees(DisplayServerEnums::MAIN_WINDOW_ID);
+		-RD::screen_get_pre_rotation_degrees(DisplayServerEnums::MAIN_WINDOW_ID);
 	float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
-	blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-	blit.push_constant.rotation_sin = Math::sin(screen_rotation);
-	blit.push_constant.src_rect[0] = 0.0;
-	blit.push_constant.src_rect[1] = 0.0;
-	blit.push_constant.src_rect[2] = 1.0;
-	blit.push_constant.src_rect[3] = 1.0;
-	blit.push_constant.dst_rect[0] = screenrect.position.x;
-	blit.push_constant.dst_rect[1] = screenrect.position.y;
-	blit.push_constant.dst_rect[2] = screenrect.size.width;
-	blit.push_constant.dst_rect[3] = screenrect.size.height;
-	blit.push_constant.layer = 0;
-	blit.push_constant.eye_center[0] = 0;
-	blit.push_constant.eye_center[1] = 0;
-	blit.push_constant.k1 = 0;
-	blit.push_constant.k2 = 0;
-	blit.push_constant.upscale = 1.0;
-	blit.push_constant.aspect_ratio = 1.0;
-	blit.push_constant.source_is_srgb = true;
-	blit.push_constant.use_debanding = false;
-	blit.push_constant.target_color_space = color_space;
-	blit.push_constant.reference_multiplier = reference_multiplier;
-	blit.push_constant.output_max_value = output_max_value;
+	blit->push_constant.rotation_cos = Math::cos(screen_rotation);
+	blit->push_constant.rotation_sin = Math::sin(screen_rotation);
+	blit->push_constant.src_rect[0] = 0.0;
+	blit->push_constant.src_rect[1] = 0.0;
+	blit->push_constant.src_rect[2] = 1.0;
+	blit->push_constant.src_rect[3] = 1.0;
+	blit->push_constant.dst_rect[0] = screenrect.position.x;
+	blit->push_constant.dst_rect[1] = screenrect.position.y;
+	blit->push_constant.dst_rect[2] = screenrect.size.width;
+	blit->push_constant.dst_rect[3] = screenrect.size.height;
+	blit->push_constant.layer = 0;
+	blit->push_constant.eye_center[0] = 0;
+	blit->push_constant.eye_center[1] = 0;
+	blit->push_constant.k1 = 0;
+	blit->push_constant.k2 = 0;
+	blit->push_constant.upscale = 1.0;
+	blit->push_constant.aspect_ratio = 1.0;
+	blit->push_constant.source_is_srgb = true;
+	blit->push_constant.use_debanding = false;
+	blit->push_constant.target_color_space = color_space;
+	blit->push_constant.reference_multiplier = reference_multiplier;
+	blit->push_constant.output_max_value = output_max_value;
 
-	RD::get_singleton()->draw_list_set_push_constant(
-		draw_list, &blit.push_constant, sizeof(BlitPushConstant));
-	RD::get_singleton()->draw_list_draw(draw_list, true);
+	RD::draw_list_set_push_constant(draw_list, &blit->push_constant, sizeof(BlitPushConstant));
+	RD::draw_list_draw(draw_list, true);
 
-	RD::get_singleton()->draw_list_end();
+	RD::draw_list_end();
 
-	RD::get_singleton()->swap_buffers(true);
+	RD::swap_buffers(true);
 
 	texture_storage->texture_free(texture);
-	RD::get_singleton()->free_rid(sampler);
+	RD::free_rid(sampler);
 }
 
-RendererCompositorRD* RendererCompositorRD::singleton = nullptr;
-
-RendererCompositorRD::~RendererCompositorRD()
+RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long)
 {
-	singleton = nullptr;
-	memdelete(uniform_set_cache);
-	memdelete(framebuffer_cache);
-	ShaderRD::set_shader_cache_user_dir(String());
-	ShaderRD::set_shader_cache_res_dir(String());
+	return RendererCompositorRD::BlitPipelines();
 }
 
-RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long) { return RendererCompositorRD::BlitPipelines(); }
+void RendererCompositorRD::bind_canvas_render()
+{
+	RendererCanvasRender::canvas_render_items = &RendererCanvasRenderRD::canvas_render_items;
+	RendererCanvasRender::set_time = &RendererCanvasRenderRD::set_time;
+	RendererCanvasRender::request_polygon = &RendererCanvasRenderRD::request_polygon;
+	RendererCanvasRender::free_polygon = &RendererCanvasRenderRD::free_polygon;
+	RendererCanvasRender::light_create = &RendererCanvasRenderRD::light_create;
+	RendererCanvasRender::light_set_texture = &RendererCanvasRenderRD::light_set_texture;
+	RendererCanvasRender::light_set_use_shadow = &RendererCanvasRenderRD::light_set_use_shadow;
+	RendererCanvasRender::light_update_shadow = &RendererCanvasRenderRD::light_update_shadow;
+	RendererCanvasRender::light_update_directional_shadow = &RendererCanvasRenderRD::light_update_directional_shadow;
+	RendererCanvasRender::render_sdf = &RendererCanvasRenderRD::render_sdf;
+	RendererCanvasRender::occluder_polygon_create = &RendererCanvasRenderRD::occluder_polygon_create;
+	RendererCanvasRender::occluder_polygon_set_shape = &RendererCanvasRenderRD::occluder_polygon_set_shape;
+	RendererCanvasRender::occluder_polygon_set_cull_mode = &RendererCanvasRenderRD::occluder_polygon_set_cull_mode;
+	RendererCanvasRender::set_shadow_texture_size = &RendererCanvasRenderRD::set_shadow_texture_size;
+	RendererCanvasRender::free = &RendererCanvasRenderRD::free;
+	RendererCanvasRender::update = &RendererCanvasRenderRD::update;
+	RendererCanvasRender::set_debug_redraw = &RendererCanvasRenderRD::set_debug_redraw;
+	RendererCanvasRender::get_pipeline_compilations = &RendererCanvasRenderRD::get_pipeline_compilations;
+}
+
+void RendererCompositorRD::bind_mesh_storage()
+{
+	RendererMeshStorage::mesh_allocate = &RendererRD::MeshStorage::mesh_allocate;
+	RendererMeshStorage::mesh_initialize = &RendererRD::MeshStorage::mesh_initialize;
+	RendererMeshStorage::mesh_free = &RendererRD::MeshStorage::mesh_free;
+	RendererMeshStorage::mesh_set_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_count;
+	RendererMeshStorage::mesh_needs_instance = &RendererRD::MeshStorage::mesh_needs_instance;
+	RendererMeshStorage::mesh_add_surface = &RendererRD::MeshStorage::mesh_add_surface;
+	RendererMeshStorage::mesh_get_blend_shape_count =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_count;
+	RendererMeshStorage::mesh_set_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_set_blend_shape_mode;
+	RendererMeshStorage::mesh_get_blend_shape_mode =
+		&RendererRD::MeshStorage::mesh_get_blend_shape_mode;
+	RendererMeshStorage::mesh_surface_update_vertex_region =
+		&RendererRD::MeshStorage::mesh_surface_update_vertex_region;
+	RendererMeshStorage::mesh_surface_update_attribute_region =
+		&RendererRD::MeshStorage::mesh_surface_update_attribute_region;
+	RendererMeshStorage::mesh_surface_update_skin_region =
+		&RendererRD::MeshStorage::mesh_surface_update_skin_region;
+	RendererMeshStorage::mesh_surface_update_index_region =
+		&RendererRD::MeshStorage::mesh_surface_update_index_region;
+	RendererMeshStorage::mesh_surface_set_material =
+		&RendererRD::MeshStorage::mesh_surface_set_material;
+	RendererMeshStorage::mesh_surface_get_material =
+		&RendererRD::MeshStorage::mesh_surface_get_material;
+	RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
+		return RendererRD::MeshStorage::mesh_get_surface(p_mesh, p_surface);
+	};
+	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+		&RendererRD::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+	RendererMeshStorage::mesh_get_surface_count = &RendererRD::MeshStorage::mesh_get_surface_count;
+	RendererMeshStorage::mesh_set_custom_aabb = &RendererRD::MeshStorage::mesh_set_custom_aabb;
+	RendererMeshStorage::mesh_get_custom_aabb = &RendererRD::MeshStorage::mesh_get_custom_aabb;
+	RendererMeshStorage::mesh_get_aabb = &RendererRD::MeshStorage::mesh_get_aabb;
+	RendererMeshStorage::mesh_set_path = &RendererRD::MeshStorage::mesh_set_path;
+	RendererMeshStorage::mesh_get_path = &RendererRD::MeshStorage::mesh_get_path;
+	RendererMeshStorage::mesh_set_shadow_mesh = &RendererRD::MeshStorage::mesh_set_shadow_mesh;
+	RendererMeshStorage::mesh_clear = &RendererRD::MeshStorage::mesh_clear;
+	RendererMeshStorage::mesh_surface_remove = &RendererRD::MeshStorage::mesh_surface_remove;
+	RendererMeshStorage::mesh_debug_usage = &RendererRD::MeshStorage::mesh_debug_usage;
+
+	RendererMeshStorage::mesh_instance_create = &RendererRD::MeshStorage::mesh_instance_create;
+	RendererMeshStorage::mesh_instance_free = &RendererRD::MeshStorage::mesh_instance_free;
+	RendererMeshStorage::mesh_instance_set_skeleton =
+		&RendererRD::MeshStorage::mesh_instance_set_skeleton;
+	RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+		&RendererRD::MeshStorage::mesh_instance_set_blend_shape_weight;
+	RendererMeshStorage::mesh_instance_check_for_update =
+		&RendererRD::MeshStorage::mesh_instance_check_for_update;
+	RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+		&RendererRD::MeshStorage::mesh_instance_set_canvas_item_transform;
+	RendererMeshStorage::update_mesh_instances = &RendererRD::MeshStorage::update_mesh_instances;
+
+	RendererMeshStorage::_multimesh_allocate = &RendererRD::MeshStorage::_multimesh_allocate;
+	RendererMeshStorage::_multimesh_initialize = &RendererRD::MeshStorage::_multimesh_initialize;
+	RendererMeshStorage::_multimesh_free = &RendererRD::MeshStorage::_multimesh_free;
+	RendererMeshStorage::_multimesh_allocate_data =
+		&RendererRD::MeshStorage::_multimesh_allocate_data;
+	RendererMeshStorage::_multimesh_get_instance_count =
+		&RendererRD::MeshStorage::_multimesh_get_instance_count;
+	RendererMeshStorage::_multimesh_set_mesh = &RendererRD::MeshStorage::_multimesh_set_mesh;
+	RendererMeshStorage::_multimesh_instance_set_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform;
+	RendererMeshStorage::_multimesh_instance_set_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_set_transform_2d;
+	RendererMeshStorage::_multimesh_instance_set_color =
+		&RendererRD::MeshStorage::_multimesh_instance_set_color;
+	RendererMeshStorage::_multimesh_instance_set_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_set_custom_data;
+	RendererMeshStorage::_multimesh_set_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_set_custom_aabb;
+	RendererMeshStorage::_multimesh_get_custom_aabb =
+		&RendererRD::MeshStorage::_multimesh_get_custom_aabb;
+	RendererMeshStorage::_multimesh_get_mesh = &RendererRD::MeshStorage::_multimesh_get_mesh;
+	RendererMeshStorage::_multimesh_instance_get_transform =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform;
+	RendererMeshStorage::_multimesh_instance_get_transform_2d =
+		&RendererRD::MeshStorage::_multimesh_instance_get_transform_2d;
+	RendererMeshStorage::_multimesh_instance_get_color =
+		&RendererRD::MeshStorage::_multimesh_instance_get_color;
+	RendererMeshStorage::_multimesh_instance_get_custom_data =
+		&RendererRD::MeshStorage::_multimesh_instance_get_custom_data;
+	RendererMeshStorage::_multimesh_set_buffer = &RendererRD::MeshStorage::_multimesh_set_buffer;
+	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+		&RendererRD::MeshStorage::_multimesh_get_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer = &RendererRD::MeshStorage::_multimesh_get_buffer;
+	RendererMeshStorage::_multimesh_set_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_set_visible_instances;
+	RendererMeshStorage::_multimesh_get_visible_instances =
+		&RendererRD::MeshStorage::_multimesh_get_visible_instances;
+	RendererMeshStorage::_multimesh_get_aabb = &RendererRD::MeshStorage::_multimesh_get_aabb;
+	RendererMeshStorage::_multimesh_get_interpolator =
+		&RendererRD::MeshStorage::_multimesh_get_interpolator;
+
+	RendererMeshStorage::skeleton_allocate = &RendererRD::MeshStorage::skeleton_allocate;
+	RendererMeshStorage::skeleton_initialize = &RendererRD::MeshStorage::skeleton_initialize;
+	RendererMeshStorage::skeleton_free = &RendererRD::MeshStorage::skeleton_free;
+	RendererMeshStorage::skeleton_allocate_data = &RendererRD::MeshStorage::skeleton_allocate_data;
+	RendererMeshStorage::skeleton_set_base_transform_2d =
+		&RendererRD::MeshStorage::skeleton_set_base_transform_2d;
+	RendererMeshStorage::skeleton_get_bone_count =
+		&RendererRD::MeshStorage::skeleton_get_bone_count;
+	RendererMeshStorage::skeleton_bone_set_transform =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform;
+	RendererMeshStorage::skeleton_bone_get_transform =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform;
+	RendererMeshStorage::skeleton_bone_set_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_set_transform_2d;
+	RendererMeshStorage::skeleton_bone_get_transform_2d =
+		&RendererRD::MeshStorage::skeleton_bone_get_transform_2d;
+	RendererMeshStorage::skeleton_update_dependency =
+		&RendererRD::MeshStorage::skeleton_update_dependency;
+}

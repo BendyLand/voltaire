@@ -30,7 +30,7 @@
 
 #include "scene_tree.h"
 
-STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
+STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -52,7 +52,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, RenderingServer);
 #include "scene/resources/world_2d.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef _3D_DISABLED
 #include "scene/3d/node_3d.h"
@@ -212,7 +212,7 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	_physics_interpolation_enabled_in_project = p_enabled;
 
 	// We never want interpolation in the editor.
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (Engine::is_editor_hint()) {
 		p_enabled = false;
 	}
 
@@ -221,7 +221,7 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	}
 
 	_physics_interpolation_enabled = p_enabled;
-	RenderingServer::get_singleton()->set_physics_interpolation_enabled(p_enabled);
+	Renderer::set_physics_interpolation_enabled(p_enabled);
 
 	get_scene_tree_fti().set_enabled(get_root(), p_enabled);
 
@@ -245,6 +245,22 @@ void SceneTree::client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_
 }
 #endif
 
+SceneTree::SceneTree()
+{
+	singleton = this;
+}
+
+SceneTree::~SceneTree()
+{
+	if (root) {
+		memdelete(root);
+		root = nullptr;
+	}
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}
+
 void SceneTree::iteration_prepare()
 {
 	if (_physics_interpolation_enabled) {
@@ -252,14 +268,14 @@ void SceneTree::iteration_prepare()
 		// are flushed before pumping the interpolation prev and currents.
 		flush_transform_notifications();
 		get_scene_tree_fti().tick_update();
-		RenderingServer::get_singleton()->tick();
+		Renderer::tick();
 	}
 }
 
 void SceneTree::iteration_end()
 {
 	// When physics interpolation is active, we want all pending transforms
-	// to be flushed to the RenderingServer before finishing a physics tick.
+	// to be flushed to the Renderer before finishing a physics tick.
 	if (_physics_interpolation_enabled) {
 		flush_transform_notifications();
 
@@ -277,7 +293,7 @@ void SceneTree::process_tweens(double p_delta, bool p_physics)
 	_THREAD_SAFE_METHOD_
 	// This methods works similarly to how SceneTreeTimers are handled.
 	const List<Ref<Tween>>::Element* L = tweens.back();
-	const double unscaled_delta = Engine::get_singleton()->get_process_step();
+	const double unscaled_delta = Engine::get_process_step();
 
 	for (List<Ref<Tween>>::Element* E = tweens.front(); E;) {
 		List<Ref<Tween>>::Element* N = E->next();
@@ -521,7 +537,7 @@ void SceneTree::set_suspend(bool p_enabled)
 
 	suspended = p_enabled;
 
-	Engine::get_singleton()->set_freeze_time_scale(p_enabled);
+	Engine::set_freeze_time_scale(p_enabled);
 
 #ifndef PHYSICS_3D_DISABLED
 	PhysicsServer3D::get_singleton()->set_active(!p_enabled && !paused);
@@ -831,7 +847,8 @@ bool SceneTree::is_multiplayer_poll_enabled() const { return multiplayer_poll; }
 SceneTree* SceneTree::singleton = nullptr;
 
 SceneTree::IdleCallback SceneTree::idle_callbacks[SceneTree::MAX_IDLE_CALLBACKS];
-int SceneTree::idle_callback_count = 0;
+int SceneTree::idle_callback_count = 0
+;
 
 void SceneTree::_call_idle_callbacks()
 {
@@ -860,7 +877,7 @@ void SceneTree::flush_transform_notifications() {}
 
 void SceneTree::_flush_delete_queue() {}
 
-Error SceneTree::change_scene_to_node(Node*) {}
+Error SceneTree::change_scene_to_node(Node*) { return OK; }
 
 void SceneTree::_process_group(SceneTree::ProcessGroup*, bool) {}
 
@@ -870,7 +887,21 @@ void SceneTree::_flush_ugc() {}
 
 void SceneTree::_accessibility_notify_change(Node const*, bool) {}
 
-void SceneTree::initialize() {}
+void SceneTree::initialize()
+{
+	root = memnew(Window);
+	root->_set_tree(this);
+
+	root->set_name("root");
+	root->set_position(Point2i());
+
+	Size2i window_size = DisplayServer::get_singleton()->window_get_size();
+	if (window_size.width <= 0 || window_size.height <= 0) {
+		window_size = Size2i(1152, 648);
+	}
+	root->set_size(window_size);
+	MainLoop::initialize();
+}
 
 bool SceneTree::physics_process(double p_time) { return false; }
 

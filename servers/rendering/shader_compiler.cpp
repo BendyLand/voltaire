@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_server.h"
-#include "servers/rendering/rendering_server_globals.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_types.h"
 #include "shader_compiler.h"
 
@@ -40,7 +40,7 @@ static String _mktab(int p_level) { return String("\t").repeat(p_level); }
 static String _typestr(SL::DataType p_type)
 {
 	String type = ShaderLanguage::get_datatype_name(p_type);
-	if (!RS::get_singleton()->is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
+	if (!RS::is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
 		type = type.replace(
 			"sampler", "texture"); // we use textures instead of samplers in Vulkan GLSL
 	}
@@ -612,7 +612,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			if (SL::is_sampler_type(uniform.type)) {
 				// Texture layouts are different for OpenGL GLSL and Vulkan GLSL
-				if (!RS::get_singleton()->is_low_end()) {
+				if (!RS::is_low_end()) {
 					ucode = "layout(set = " + itos(actions.texture_layout_set) + ", binding = " +
 							itos(actions.base_texture_binding_index + uniform.texture_binding) +
 							") ";
@@ -761,7 +761,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			vcode += ";\n";
 			// GLSL ES 3.0 does not allow layout qualifiers for varyings
-			if (!RS::get_singleton()->is_low_end()) {
+			if (!RS::is_low_end()) {
 				r_gen_code.stage_globals[STAGE_VERTEX] += "layout(location=" + itos(index) + ") ";
 				r_gen_code.stage_globals[STAGE_FRAGMENT] += "layout(location=" + itos(index) + ") ";
 			}
@@ -1432,7 +1432,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 						break;
 					}
 
-					if (correct_texture_uniform && !RS::get_singleton()->is_low_end()) {
+					if (correct_texture_uniform && !RS::is_low_end()) {
 						// Need to map from texture to sampler in order to sample when using Vulkan
 						// GLSL.
 						String sampler_name;
@@ -1532,7 +1532,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 						code += data_type_name + "(" + node_code + ", " + sampler_name + ")";
 					}
-					else if (correct_texture_uniform && RS::get_singleton()->is_low_end()) {
+					else if (correct_texture_uniform && RS::is_low_end()) {
 						// Texture function on low end hardware (i.e. OpenGL).
 
 						if (shader->uniforms.has(texture_uniform)) {
@@ -1587,7 +1587,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 			code += ")";
 			if (is_screen_texture && !texture_func_returns_data &&
 				actions.apply_luminance_multiplier) {
-				if (RS::get_singleton()->is_low_end()) {
+				if (RS::is_low_end()) {
 					code = "(" + code +
 						   " / vec4(vec3(scene_data_block.data.luminance_multiplier), 1.0))";
 				}
@@ -1773,7 +1773,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const StringName& p_name)
 {
 	RSE::GlobalShaderParameterType gvt =
-		RSG::material_storage->global_shader_parameter_get_type(p_name);
+		RendererMaterialStorage::global_shader_parameter_get_type(p_name);
 	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 
@@ -1781,10 +1781,10 @@ Error ShaderCompiler::compile(RSE::ShaderMode p_mode, const String& p_code,
 	IdentifierActions* p_actions, const String& p_path, GeneratedCode& r_gen_code)
 {
 	SL::ShaderCompileInfo info;
-	info.functions = ShaderTypes::get_singleton()->get_functions(p_mode);
-	info.render_modes = ShaderTypes::get_singleton()->get_modes(p_mode);
-	info.stencil_modes = ShaderTypes::get_singleton()->get_stencil_modes(p_mode);
-	info.shader_types = ShaderTypes::get_singleton()->get_types();
+	info.functions = ShaderTypes::get_functions(p_mode);
+	info.render_modes = ShaderTypes::get_modes(p_mode);
+	info.stencil_modes = ShaderTypes::get_stencil_modes(p_mode);
+	info.shader_types = ShaderTypes::get_types();
 	info.global_shader_uniform_type_func = _get_global_shader_uniform_type;
 	info.base_varying_index = actions.base_varying_index;
 

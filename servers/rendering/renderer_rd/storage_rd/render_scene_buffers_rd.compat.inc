@@ -63,8 +63,8 @@ RID RenderSceneBuffersRD::_get_velocity_layer_bind_compat_80214(const uint32_t p
 }
 
 RID RenderSceneBuffersRD::_create_texture_bind_compat_98670(const StringName& p_context,
-	const StringName& p_texture_name, const RD::DataFormat p_data_format,
-	const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples, const Size2i p_size,
+	const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+	const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples, const Size2i p_size,
 	const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique)
 {
 	return create_texture(p_context, p_texture_name, p_data_format, p_usage_bits, p_texture_samples,

@@ -30,237 +30,24 @@
 
 #pragma once
 
+#include "core/math/rect2.h"
+#include "core/math/transform_2d.h"
+#include "core/math/vector2.h"
+#include "core/os/thread_safe.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/rid.h"
 #include "core/templates/rid_owner.h"
+#include "core/templates/vector.h"
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"
 #include "scene/resources/2d/navigation_polygon.h"
 #include "servers/navigation_2d/navigation_path_query_parameters_2d.h"
 #include "servers/navigation_2d/navigation_path_query_result_2d.h"
 
-class Node;
-
-#ifdef CLIPPER2_ENABLED
-class NavMeshGenerator2D;
-#endif // CLIPPER2_ENABLED
-
-struct NavMeshGeometryParser2D
+class NavigationServer2D final
 {
-	RID self;
-};
-
-class NavigationServer2D
-{
-	static NavigationServer2D* singleton;
+	static inline BinaryMutex _thread_safe_mutex;
 
 public:
-	static NavigationServer2D* get_singleton();
-	~NavigationServer2D();
-
-	/* MAP API */
-
-	virtual RID map_create() = 0;
-
-	virtual void map_set_active(RID p_map, bool p_active) = 0;
-	virtual bool map_is_active(RID p_map) const = 0;
-
-	virtual void map_set_cell_size(RID p_map, real_t p_cell_size) = 0;
-	virtual real_t map_get_cell_size(RID p_map) const = 0;
-
-	virtual void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value) = 0;
-	virtual float map_get_merge_rasterizer_cell_scale(RID p_map) const = 0;
-
-	virtual void map_set_use_edge_connections(RID p_map, bool p_enabled) = 0;
-	virtual bool map_get_use_edge_connections(RID p_map) const = 0;
-
-	virtual void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin) = 0;
-	virtual real_t map_get_edge_connection_margin(RID p_map) const = 0;
-
-	virtual void map_set_link_connection_radius(RID p_map, real_t p_connection_radius) = 0;
-	virtual real_t map_get_link_connection_radius(RID p_map) const = 0;
-
-	virtual Vector<Vector2> map_get_path(RID p_map, Vector2 p_origin, Vector2 p_destination,
-		bool p_optimize, uint32_t p_navigation_layers = 1) = 0;
-
-	virtual Vector2 map_get_closest_point(RID p_map, const Vector2& p_point) const = 0;
-	virtual RID map_get_closest_point_owner(RID p_map, const Vector2& p_point) const = 0;
-
-	virtual void map_force_update(RID p_map) = 0;
-	virtual uint32_t map_get_iteration_id(RID p_map) const = 0;
-
-	virtual void map_set_use_async_iterations(RID p_map, bool p_enabled) = 0;
-	virtual bool map_get_use_async_iterations(RID p_map) const = 0;
-
-	virtual Vector2 map_get_random_point(
-		RID p_map, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
-
-	/* REGION API */
-
-	virtual RID region_create() = 0;
-	virtual uint32_t region_get_iteration_id(RID p_region) const = 0;
-
-	virtual void region_set_use_async_iterations(RID p_region, bool p_enabled) = 0;
-	virtual bool region_get_use_async_iterations(RID p_region) const = 0;
-
-	virtual void region_set_enabled(RID p_region, bool p_enabled) = 0;
-	virtual bool region_get_enabled(RID p_region) const = 0;
-
-	virtual void region_set_use_edge_connections(RID p_region, bool p_enabled) = 0;
-	virtual bool region_get_use_edge_connections(RID p_region) const = 0;
-
-	virtual void region_set_enter_cost(RID p_region, real_t p_enter_cost) = 0;
-	virtual real_t region_get_enter_cost(RID p_region) const = 0;
-
-	virtual void region_set_travel_cost(RID p_region, real_t p_travel_cost) = 0;
-	virtual real_t region_get_travel_cost(RID p_region) const = 0;
-
-	virtual bool region_owns_point(RID p_region, const Vector2& p_point) const = 0;
-
-	virtual void region_set_map(RID p_region, RID p_map) = 0;
-	virtual RID region_get_map(RID p_region) const = 0;
-
-	virtual void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers) = 0;
-	virtual uint32_t region_get_navigation_layers(RID p_region) const = 0;
-
-	virtual void region_set_transform(RID p_region, Transform2D p_transform) = 0;
-	virtual Transform2D region_get_transform(RID p_region) const = 0;
-
-	virtual void region_set_navigation_polygon(
-		RID p_region, Ref<NavigationPolygon> p_navigation_polygon) = 0;
-
-	virtual int region_get_connections_count(RID p_region) const = 0;
-	virtual Vector2 region_get_connection_pathway_start(
-		RID p_region, int p_connection_id) const = 0;
-	virtual Vector2 region_get_connection_pathway_end(RID p_region, int p_connection_id) const = 0;
-
-	virtual Vector2 region_get_closest_point(RID p_region, const Vector2& p_point) const = 0;
-	virtual Vector2 region_get_random_point(
-		RID p_region, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
-	virtual Rect2 region_get_bounds(RID p_region) const = 0;
-
-	/* LINK API */
-
-	virtual RID link_create() = 0;
-	virtual uint32_t link_get_iteration_id(RID p_link) const = 0;
-
-	virtual void link_set_map(RID p_link, RID p_map) = 0;
-	virtual RID link_get_map(RID p_link) const = 0;
-
-	virtual void link_set_enabled(RID p_link, bool p_enabled) = 0;
-	virtual bool link_get_enabled(RID p_link) const = 0;
-
-	virtual void link_set_bidirectional(RID p_link, bool p_bidirectional) = 0;
-	virtual bool link_is_bidirectional(RID p_link) const = 0;
-
-	virtual void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers) = 0;
-	virtual uint32_t link_get_navigation_layers(RID p_link) const = 0;
-
-	virtual void link_set_start_position(RID p_link, Vector2 p_position) = 0;
-	virtual Vector2 link_get_start_position(RID p_link) const = 0;
-
-	virtual void link_set_end_position(RID p_link, Vector2 p_position) = 0;
-	virtual Vector2 link_get_end_position(RID p_link) const = 0;
-
-	virtual void link_set_enter_cost(RID p_link, real_t p_enter_cost) = 0;
-	virtual real_t link_get_enter_cost(RID p_link) const = 0;
-
-	virtual void link_set_travel_cost(RID p_link, real_t p_travel_cost) = 0;
-	virtual real_t link_get_travel_cost(RID p_link) const = 0;
-
-	/* AGENT API */
-
-	virtual RID agent_create() = 0;
-
-	virtual void agent_set_map(RID p_agent, RID p_map) = 0;
-	virtual RID agent_get_map(RID p_agent) const = 0;
-
-	virtual void agent_set_paused(RID p_agent, bool p_paused) = 0;
-	virtual bool agent_get_paused(RID p_agent) const = 0;
-
-	virtual void agent_set_avoidance_enabled(RID p_agent, bool p_enabled) = 0;
-	virtual bool agent_get_avoidance_enabled(RID p_agent) const = 0;
-
-	virtual void agent_set_neighbor_distance(RID p_agent, real_t p_distance) = 0;
-	virtual real_t agent_get_neighbor_distance(RID p_agent) const = 0;
-
-	virtual void agent_set_max_neighbors(RID p_agent, int p_count) = 0;
-	virtual int agent_get_max_neighbors(RID p_agent) const = 0;
-
-	virtual void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon) = 0;
-	virtual real_t agent_get_time_horizon_agents(RID p_agent) const = 0;
-	virtual void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon) = 0;
-	virtual real_t agent_get_time_horizon_obstacles(RID p_agent) const = 0;
-
-	virtual void agent_set_radius(RID p_agent, real_t p_radius) = 0;
-	virtual real_t agent_get_radius(RID p_agent) const = 0;
-
-	virtual void agent_set_max_speed(RID p_agent, real_t p_max_speed) = 0;
-	virtual real_t agent_get_max_speed(RID p_agent) const = 0;
-
-	virtual void agent_set_velocity_forced(RID p_agent, Vector2 p_velocity) = 0;
-
-	virtual void agent_set_velocity(RID p_agent, Vector2 p_velocity) = 0;
-	virtual Vector2 agent_get_velocity(RID p_agent) const = 0;
-
-	virtual void agent_set_position(RID p_agent, Vector2 p_position) = 0;
-	virtual Vector2 agent_get_position(RID p_agent) const = 0;
-
-	virtual bool agent_is_map_changed(RID p_agent) const = 0;
-
-	virtual bool agent_has_avoidance_callback(RID p_agent) const = 0;
-
-	virtual void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers) = 0;
-	virtual uint32_t agent_get_avoidance_layers(RID p_agent) const = 0;
-
-	virtual void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask) = 0;
-	virtual uint32_t agent_get_avoidance_mask(RID p_agent) const = 0;
-
-	virtual void agent_set_avoidance_priority(RID p_agent, real_t p_priority) = 0;
-	virtual real_t agent_get_avoidance_priority(RID p_agent) const = 0;
-
-	/* OBSTACLE API */
-
-	virtual RID obstacle_create() = 0;
-	virtual void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled) = 0;
-	virtual bool obstacle_get_avoidance_enabled(RID p_obstacle) const = 0;
-	virtual void obstacle_set_map(RID p_obstacle, RID p_map) = 0;
-	virtual RID obstacle_get_map(RID p_obstacle) const = 0;
-	virtual void obstacle_set_paused(RID p_obstacle, bool p_paused) = 0;
-	virtual bool obstacle_get_paused(RID p_obstacle) const = 0;
-	virtual void obstacle_set_radius(RID p_obstacle, real_t p_radius) = 0;
-	virtual real_t obstacle_get_radius(RID p_obstacle) const = 0;
-	virtual void obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity) = 0;
-	virtual Vector2 obstacle_get_velocity(RID p_obstacle) const = 0;
-	virtual void obstacle_set_position(RID p_obstacle, Vector2 p_position) = 0;
-	virtual Vector2 obstacle_get_position(RID p_obstacle) const = 0;
-	virtual void obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices) = 0;
-	virtual Vector<Vector2> obstacle_get_vertices(RID p_obstacle) const = 0;
-	virtual void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) = 0;
-	virtual uint32_t obstacle_get_avoidance_layers(RID p_obstacle) const = 0;
-
-protected:
-	static RWLock geometry_parser_rwlock;
-	static RID_Owner<NavMeshGeometryParser2D> geometry_parser_owner;
-	static LocalVector<NavMeshGeometryParser2D*> generator_parsers;
-
-public:
-	virtual RID source_geometry_parser_create() = 0;
-
-	virtual Vector<Vector2> simplify_path(const Vector<Vector2>& p_path, real_t p_epsilon) = 0;
-
-	/* SERVER API */
-
-	virtual void set_active(bool p_active) = 0;
-	virtual void process(double p_delta_time) = 0;
-	virtual void physics_process(double p_delta_time) = 0;
-	virtual void init() = 0;
-	virtual void sync() = 0;
-	virtual void finish() = 0;
-	virtual void free_rid(RID p_rid) = 0;
-#ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
-#endif // DISABLE_DEPRECATED
-
-	/* DEBUG API */
-
 	enum ProcessInfo
 	{
 		INFO_ACTIVE_MAPS,
@@ -275,171 +62,377 @@ public:
 		INFO_OBSTACLE_COUNT,
 	};
 
-	virtual int get_process_info(ProcessInfo p_info) const = 0;
-
-	void set_debug_enabled(bool p_enabled);
-	bool get_debug_enabled() const;
-
-protected:
-#ifndef DISABLE_DEPRECATED
-	Vector<Vector2> _map_get_path_bind_compat_100129(RID p_map, Vector2 p_origin,
-		Vector2 p_destination, bool p_optimize, uint32_t p_navigation_layers = 1) const;
-	void _query_path_bind_compat_100129(
-		const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
-		Ref<NavigationPathQueryResult2D> p_query_result) const;
-	static void _bind_compatibility_methods();
-#endif
-
 private:
-	bool debug_enabled = false;
+	struct NavMap;
+	struct NavRegion;
+	struct NavLink;
+	struct NavAgent;
+	struct NavObstacle;
+
+	struct Data
+	{
+		bool active = true;
+		bool debug_enabled = false;
+
+		LocalVector<NavMap*> active_maps;
+		LocalVector<NavMap*> iteration_maps;
+
+		RID_Owner<NavMap> map_owner;
+		RID_Owner<NavRegion> region_owner;
+		RID_Owner<NavLink> link_owner;
+		RID_Owner<NavAgent> agent_owner;
+		RID_Owner<NavObstacle> obstacle_owner;
 
 #ifdef DEBUG_ENABLED
-	bool debug_dirty = true;
+		bool debug_navigation_enable_agent_radius;
+		bool debug_navigation_enable_obstacles;
+		bool debug_dirty = true;
+		bool debug_navigation_enabled = false;
+		bool navigation_debug_dirty = true;
+		bool debug_avoidance_enabled = false;
+		bool avoidance_debug_dirty = true;
 
-	bool debug_navigation_enabled = false;
-	bool navigation_debug_dirty = true;
-	void _emit_navigation_debug_changed_signal();
+		Color debug_navigation_edge_connection_color = Color(1.0, 0.0, 1.0, 1.0);
+		Color debug_navigation_geometry_edge_color = Color(0.5, 1.0, 1.0, 1.0);
+		Color debug_navigation_geometry_face_color = Color(0.5, 1.0, 1.0, 0.4);
+		Color debug_navigation_geometry_edge_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_geometry_face_disabled_color = Color(0.5, 0.5, 0.5, 0.4);
+		Color debug_navigation_link_connection_color = Color(1.0, 0.5, 1.0, 1.0);
+		Color debug_navigation_link_connection_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_agent_path_color = Color(1.0, 0.0, 0.0, 1.0);
 
-	bool debug_avoidance_enabled = false;
-	bool avoidance_debug_dirty = true;
-	void _emit_avoidance_debug_changed_signal();
+		real_t debug_navigation_agent_path_point_size = 4.0;
 
-	Color debug_navigation_edge_connection_color = Color(1.0, 0.0, 1.0, 1.0);
-	Color debug_navigation_geometry_edge_color = Color(0.5, 1.0, 1.0, 1.0);
-	Color debug_navigation_geometry_face_color = Color(0.5, 1.0, 1.0, 0.4);
-	Color debug_navigation_geometry_edge_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
-	Color debug_navigation_geometry_face_disabled_color = Color(0.5, 0.5, 0.5, 0.4);
-	Color debug_navigation_link_connection_color = Color(1.0, 0.5, 1.0, 1.0);
-	Color debug_navigation_link_connection_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
-	Color debug_navigation_agent_path_color = Color(1.0, 0.0, 0.0, 1.0);
+		Color debug_navigation_avoidance_agents_radius_color = Color(1.0, 1.0, 0.0, 0.25);
+		Color debug_navigation_avoidance_obstacles_radius_color = Color(1.0, 0.5, 0.0, 0.25);
 
-	real_t debug_navigation_agent_path_point_size = 4.0;
+		Color debug_navigation_avoidance_static_obstacle_pushin_face_color =
+			Color(1.0, 0.0, 0.0, 0.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_face_color =
+			Color(1.0, 1.0, 0.0, 0.5);
+		Color debug_navigation_avoidance_static_obstacle_pushin_edge_color =
+			Color(1.0, 0.0, 0.0, 1.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_edge_color =
+			Color(1.0, 1.0, 0.0, 1.0);
 
-	Color debug_navigation_avoidance_agents_radius_color = Color(1.0, 1.0, 0.0, 0.25);
-	Color debug_navigation_avoidance_obstacles_radius_color = Color(1.0, 0.5, 0.0, 0.25);
+		bool debug_navigation_enable_edge_connections = true;
+		bool debug_navigation_enable_edge_lines = true;
+		bool debug_navigation_enable_geometry_face_random_color = true;
+		bool debug_navigation_enable_link_connections = true;
+		bool debug_navigation_enable_agent_paths = true;
 
-	Color debug_navigation_avoidance_static_obstacle_pushin_face_color = Color(1.0, 0.0, 0.0, 0.0);
-	Color debug_navigation_avoidance_static_obstacle_pushout_face_color = Color(1.0, 1.0, 0.0, 0.5);
-	Color debug_navigation_avoidance_static_obstacle_pushin_edge_color = Color(1.0, 0.0, 0.0, 1.0);
-	Color debug_navigation_avoidance_static_obstacle_pushout_edge_color = Color(1.0, 1.0, 0.0, 1.0);
-
-	bool debug_navigation_enable_edge_connections = true;
-	bool debug_navigation_enable_edge_lines = true;
-	bool debug_navigation_enable_geometry_face_random_color = true;
-	bool debug_navigation_enable_link_connections = true;
-	bool debug_navigation_enable_agent_paths = true;
-
-	bool debug_navigation_avoidance_enable_agents_radius = true;
-	bool debug_navigation_avoidance_enable_obstacles_radius = true;
-	bool debug_navigation_avoidance_enable_obstacles_static = true;
-
-public:
-	void set_debug_navigation_enabled(bool p_enabled);
-	bool get_debug_navigation_enabled() const;
-
-	void set_debug_avoidance_enabled(bool p_enabled);
-	bool get_debug_avoidance_enabled() const;
-
-	void set_debug_navigation_edge_connection_color(const Color& p_color);
-	Color get_debug_navigation_edge_connection_color() const;
-
-	void set_debug_navigation_geometry_face_color(const Color& p_color);
-	Color get_debug_navigation_geometry_face_color() const;
-
-	void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
-	Color get_debug_navigation_geometry_face_disabled_color() const;
-
-	void set_debug_navigation_geometry_edge_color(const Color& p_color);
-	Color get_debug_navigation_geometry_edge_color() const;
-
-	void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
-	Color get_debug_navigation_geometry_edge_disabled_color() const;
-
-	void set_debug_navigation_link_connection_color(const Color& p_color);
-	Color get_debug_navigation_link_connection_color() const;
-
-	void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
-	Color get_debug_navigation_link_connection_disabled_color() const;
-
-	void set_debug_navigation_enable_edge_connections(const bool p_value);
-	bool get_debug_navigation_enable_edge_connections() const;
-
-	void set_debug_navigation_enable_geometry_face_random_color(const bool p_value);
-	bool get_debug_navigation_enable_geometry_face_random_color() const;
-
-	void set_debug_navigation_enable_edge_lines(const bool p_value);
-	bool get_debug_navigation_enable_edge_lines() const;
-
-	void set_debug_navigation_agent_path_color(const Color& p_color);
-	Color get_debug_navigation_agent_path_color() const;
-
-	void set_debug_navigation_enable_agent_paths(const bool p_value);
-	bool get_debug_navigation_enable_agent_paths() const;
-
-	void set_debug_navigation_agent_path_point_size(real_t p_point_size);
-	real_t get_debug_navigation_agent_path_point_size() const;
-
-	void set_debug_navigation_avoidance_enable_agents_radius(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_agents_radius() const;
-
-	void set_debug_navigation_avoidance_enable_obstacles_radius(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_obstacles_radius() const;
-
-	void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_agents_radius_color() const;
-
-	void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_obstacles_radius_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color() const;
-
-	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(const Color& p_color);
-	Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color() const;
-
-	void set_debug_navigation_avoidance_enable_obstacles_static(const bool p_value);
-	bool get_debug_navigation_avoidance_enable_obstacles_static() const;
+		bool debug_navigation_avoidance_enable_agents_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_static = true;
 #endif // DEBUG_ENABLED
-};
-
-/// Manager used for the server singleton registration
-class NavigationServer2DManager
-{
-	static inline NavigationServer2DManager* singleton = nullptr;
-
-	int default_server_id = -1;
-	int default_server_priority = -1;
-
-	void on_servers_changed();
-
-protected:
+	};
 
 public:
-	static const String setting_property_name;
+	static inline Data* data = nullptr;
 
-	static NavigationServer2DManager* get_singleton();
+	/* SERVER LIFECYCLE */
 
-	void set_default_server(const String& p_name, int p_priority = 0);
-	int get_servers_count();
-	String get_server_name(int p_id);
-	NavigationServer2D* new_default_server();
-	NavigationServer2D* new_server(const String& p_name);
+	static void initialize();
+	static void finalize();
 
-	NavigationServer2DManager();
-	~NavigationServer2DManager();
+	static bool is_initialized() { return data != nullptr; }
 
-	static void initialize_server();
-	static void finalize_server();
+	static void set_active(bool p_active);
+	static void sync();
+	static void process(double p_delta_time);
+	static void physics_process(double p_delta_time);
+	static void free_rid(RID p_rid);
 
-	static void initialize_server_manager();
-	static void finalize_server_manager();
-	static NavigationServer2D* create_dummy_server_callback();
+	static int get_process_info(ProcessInfo p_info);
+
+	/* MAP API */
+
+	static RID map_create();
+	static void map_set_active(RID p_map, bool p_active);
+	static bool map_is_active(RID p_map);
+
+	static void map_set_cell_size(RID p_map, real_t p_cell_size);
+	static real_t map_get_cell_size(RID p_map);
+
+	static void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
+	static float map_get_merge_rasterizer_cell_scale(RID p_map);
+
+	static void map_set_use_edge_connections(RID p_map, bool p_enabled);
+	static bool map_get_use_edge_connections(RID p_map);
+
+	static void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+	static real_t map_get_edge_connection_margin(RID p_map);
+
+	static void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
+	static real_t map_get_link_connection_radius(RID p_map);
+
+	static Vector<Vector2> map_get_path(RID p_map, Vector2 p_origin, Vector2 p_destination,
+		bool p_optimize, uint32_t p_navigation_layers = 1);
+	static Vector2 map_get_closest_point(RID p_map, const Vector2& p_point);
+	static RID map_get_closest_point_owner(RID p_map, const Vector2& p_point);
+
+	static void map_force_update(RID p_map);
+	static uint32_t map_get_iteration_id(RID p_map);
+
+	static void map_set_use_async_iterations(RID p_map, bool p_enabled);
+	static bool map_get_use_async_iterations(RID p_map);
+
+	static Vector2 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
+
+	/* REGION API */
+
+	static RID region_create();
+	static uint32_t region_get_iteration_id(RID p_region);
+
+	static void region_set_use_async_iterations(RID p_region, bool p_enabled);
+	static bool region_get_use_async_iterations(RID p_region);
+
+	static void region_set_enabled(RID p_region, bool p_enabled);
+	static bool region_get_enabled(RID p_region);
+
+	static void region_set_use_edge_connections(RID p_region, bool p_enabled);
+	static bool region_get_use_edge_connections(RID p_region);
+
+	static void region_set_enter_cost(RID p_region, real_t p_enter_cost);
+	static real_t region_get_enter_cost(RID p_region);
+
+	static void region_set_travel_cost(RID p_region, real_t p_travel_cost);
+	static real_t region_get_travel_cost(RID p_region);
+
+	static bool region_owns_point(RID p_region, const Vector2& p_point);
+
+	static void region_set_map(RID p_region, RID p_map);
+	static RID region_get_map(RID p_region);
+
+	static void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
+	static uint32_t region_get_navigation_layers(RID p_region);
+
+	static void region_set_transform(RID p_region, Transform2D p_transform);
+	static Transform2D region_get_transform(RID p_region);
+
+	static void region_set_navigation_polygon(
+		RID p_region, Ref<NavigationPolygon> p_navigation_polygon);
+
+	static int region_get_connections_count(RID p_region);
+	static Vector2 region_get_connection_pathway_start(RID p_region, int p_connection_id);
+	static Vector2 region_get_connection_pathway_end(RID p_region, int p_connection_id);
+
+	static Vector2 region_get_closest_point(RID p_region, const Vector2& p_point);
+	static Vector2 region_get_random_point(
+		RID p_region, uint32_t p_navigation_layers, bool p_uniformly);
+	static Rect2 region_get_bounds(RID p_region);
+
+	/* LINK API */
+
+	static RID link_create();
+	static uint32_t link_get_iteration_id(RID p_link);
+
+	static void link_set_map(RID p_link, RID p_map);
+	static RID link_get_map(RID p_link);
+
+	static void link_set_enabled(RID p_link, bool p_enabled);
+	static bool link_get_enabled(RID p_link);
+
+	static void link_set_bidirectional(RID p_link, bool p_bidirectional);
+	static bool link_is_bidirectional(RID p_link);
+
+	static void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
+	static uint32_t link_get_navigation_layers(RID p_link);
+
+	static void link_set_start_position(RID p_link, Vector2 p_position);
+	static Vector2 link_get_start_position(RID p_link);
+
+	static void link_set_end_position(RID p_link, Vector2 p_position);
+	static Vector2 link_get_end_position(RID p_link);
+
+	static void link_set_enter_cost(RID p_link, real_t p_enter_cost);
+	static real_t link_get_enter_cost(RID p_link);
+
+	static void link_set_travel_cost(RID p_link, real_t p_travel_cost);
+	static real_t link_get_travel_cost(RID p_link);
+
+	/* AGENT API */
+
+	static RID agent_create();
+
+	static void agent_set_map(RID p_agent, RID p_map);
+	static RID agent_get_map(RID p_agent);
+
+	static void agent_set_paused(RID p_agent, bool p_paused);
+	static bool agent_get_paused(RID p_agent);
+
+	static void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
+	static bool agent_get_avoidance_enabled(RID p_agent);
+
+	static void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
+	static real_t agent_get_neighbor_distance(RID p_agent);
+
+	static void agent_set_max_neighbors(RID p_agent, int p_count);
+	static int agent_get_max_neighbors(RID p_agent);
+
+	static void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_agents(RID p_agent);
+
+	static void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_obstacles(RID p_agent);
+
+	static void agent_set_radius(RID p_agent, real_t p_radius);
+	static real_t agent_get_radius(RID p_agent);
+
+	static void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+	static real_t agent_get_max_speed(RID p_agent);
+
+	static void agent_set_velocity_forced(RID p_agent, Vector2 p_velocity);
+	static void agent_set_velocity(RID p_agent, Vector2 p_velocity);
+	static Vector2 agent_get_velocity(RID p_agent);
+
+	static void agent_set_position(RID p_agent, Vector2 p_position);
+	static Vector2 agent_get_position(RID p_agent);
+
+	static bool agent_is_map_changed(RID p_agent);
+	static bool agent_has_avoidance_callback(RID p_agent);
+
+	static void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
+	static uint32_t agent_get_avoidance_layers(RID p_agent);
+
+	static void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
+	static uint32_t agent_get_avoidance_mask(RID p_agent);
+
+	static void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
+	static real_t agent_get_avoidance_priority(RID p_agent);
+
+	/* OBSTACLE API */
+
+	static RID obstacle_create();
+
+	static void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
+	static bool obstacle_get_avoidance_enabled(RID p_obstacle);
+
+	static void obstacle_set_map(RID p_obstacle, RID p_map);
+	static RID obstacle_get_map(RID p_obstacle);
+
+	static void obstacle_set_paused(RID p_obstacle, bool p_paused);
+	static bool obstacle_get_paused(RID p_obstacle);
+
+	static void obstacle_set_radius(RID p_obstacle, real_t p_radius);
+	static real_t obstacle_get_radius(RID p_obstacle);
+
+	static void obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity);
+	static Vector2 obstacle_get_velocity(RID p_obstacle);
+
+	static void obstacle_set_position(RID p_obstacle, Vector2 p_position);
+	static Vector2 obstacle_get_position(RID p_obstacle);
+
+	static void obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices);
+	static Vector<Vector2> obstacle_get_vertices(RID p_obstacle);
+
+	static void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
+	static uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
+
+	/* PATH QUERY & UTILITIES */
+
+	static void query_path(const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
+		Ref<NavigationPathQueryResult2D> p_query_result);
+	static Vector<Vector2> simplify_path(const Vector<Vector2>& p_path, real_t p_epsilon);
+
+	/* DEBUG API */
+
+	static void set_debug_enabled(bool p_enabled);
+	static bool get_debug_enabled();
+
+#ifdef DEBUG_ENABLED
+	static void set_debug_navigation_enabled(bool p_enabled);
+	static bool get_debug_navigation_enabled();
+
+	static void set_debug_avoidance_enabled(bool p_enabled);
+	static bool get_debug_avoidance_enabled();
+
+	static void set_debug_navigation_edge_connection_color(const Color& p_color);
+	static Color get_debug_navigation_edge_connection_color();
+
+	static void set_debug_navigation_geometry_face_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_color();
+
+	static void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_disabled_color();
+
+	static void set_debug_navigation_geometry_edge_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_color();
+
+	static void set_debug_navigation_enable_obstacles(bool p_enable);
+	static bool get_debug_navigation_enable_obstacles();
+
+	static void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_disabled_color();
+
+	static void set_debug_navigation_link_connection_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_color();
+
+	static void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_disabled_color();
+
+	static void set_debug_navigation_enable_edge_connections(bool p_value);
+	static bool get_debug_navigation_enable_edge_connections();
+
+	static void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
+	static bool get_debug_navigation_enable_geometry_face_random_color();
+
+	static void set_debug_navigation_enable_link_connections(bool p_enable);
+	static bool get_debug_navigation_enable_link_connections();
+
+	static void set_debug_navigation_enable_edge_lines(bool p_value);
+	static bool get_debug_navigation_enable_edge_lines();
+
+	static void set_debug_navigation_agent_path_color(const Color& p_color);
+	static Color get_debug_navigation_agent_path_color();
+
+	static void set_debug_navigation_enable_agent_radius(bool p_enable);
+	static bool get_debug_navigation_enable_agent_radius();
+
+	static void set_debug_navigation_enable_agent_paths(bool p_value);
+	static bool get_debug_navigation_enable_agent_paths();
+
+	static void set_debug_navigation_agent_path_point_size(real_t p_point_size);
+	static real_t get_debug_navigation_agent_path_point_size();
+
+	static void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_agents_radius();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_radius();
+
+	static void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_agents_radius_color();
+
+	static void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_obstacles_radius_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_static();
+#endif // DEBUG_ENABLED
+
+	/* LIFECYCLE DISALLOWANCE */
+
+	NavigationServer2D() = delete;
+	NavigationServer2D(const NavigationServer2D&) = delete;
+	NavigationServer2D& operator=(const NavigationServer2D&) = delete;
+	~NavigationServer2D() = delete;
 };
 
 

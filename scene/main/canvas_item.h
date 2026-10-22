@@ -51,6 +51,11 @@ class CanvasItem : public Node
 	friend class CanvasLayer;
 
 public:
+	using DrawCallback = void (*)(CanvasItem*);
+    DrawCallback draw_callback = nullptr;
+
+	RID canvas_item;
+
 	enum TextureFilter
 	{
 		TEXTURE_FILTER_PARENT_NODE,
@@ -91,7 +96,6 @@ public:
 private:
 	mutable SelfList<Node> xform_change;
 
-	RID canvas_item;
 	StringName canvas_group;
 
 	CanvasLayer* canvas_layer = nullptr;
@@ -125,7 +129,6 @@ private:
 	bool pending_update = false;
 	bool draw_commands_dirty = false;
 	bool top_level = false;
-	bool drawing = false;
 	bool block_transform_notify = false;
 	bool behind = false;
 	bool use_parent_material = false;
@@ -263,6 +266,7 @@ protected:
 	_FORCE_INLINE_ void set_hide_clip_children(bool p_value) { hide_clip_children = p_value; }
 
 public:
+	bool drawing = false;
 	enum
 	{
 		NOTIFICATION_TRANSFORM_CHANGED = 2000, // Keep in sync with SceneTree.
@@ -547,7 +551,7 @@ public:
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	CanvasItem() = default;
+	CanvasItem();
 	~CanvasItem();
 };
 

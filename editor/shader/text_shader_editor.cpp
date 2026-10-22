@@ -49,7 +49,7 @@
 #include "scene/resources/sky.h"
 #include "scene/resources/style_box_flat.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "servers/rendering/shader_types.h"
 #include "text_shader_editor.h"
@@ -96,10 +96,10 @@ void TextShaderPreviewLineLayer::_notification(int p_what)
 		}
 
 		const Rect2i visible_rect = scroll_container->get_global_rect();
-		RenderingServer::get_singleton()->canvas_item_set_custom_rect(get_canvas_item(), true,
+		Renderer::canvas_item_set_custom_rect(get_canvas_item(), true,
 			Rect2(get_global_transform().affine_inverse().xform(Vector2(visible_rect.position)),
 				visible_rect.size + Vector2(code_editor->get_total_gutter_width(), 0)));
-		RenderingServer::get_singleton()->canvas_item_set_clip(get_canvas_item(), true);
+		Renderer::canvas_item_set_clip(get_canvas_item(), true);
 
 		int current_caret_line = code_editor->get_caret_line();
 		int idx = 0;
@@ -529,7 +529,7 @@ void ShaderTextEditor::_check_shader_mode()
 static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName& p_variable)
 {
 	RSE::GlobalShaderParameterType gvt =
-		RS::get_singleton()->global_shader_parameter_get_type(p_variable);
+		RS::global_shader_parameter_get_type(p_variable);
 	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 

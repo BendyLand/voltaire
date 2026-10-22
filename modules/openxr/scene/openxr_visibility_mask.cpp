@@ -32,7 +32,7 @@
 #include "../openxr_interface.h"
 #include "openxr_visibility_mask.h"
 #include "scene/3d/xr/xr_nodes.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void OpenXRVisibilityMask::_notification(int p_what)
 {

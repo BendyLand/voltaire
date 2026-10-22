@@ -37,7 +37,7 @@
 #include "scene/gui/dialogs.h"
 #include "scene/gui/menu_button.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 void Path2DEditor::_node_visibility_changed()
 {
@@ -129,12 +129,12 @@ void Path2DEditor::_restore_curve_points(Path2D* p_path2d, const PackedVector2Ar
 
 Path2DEditor::~Path2DEditor()
 {
-	ERR_FAIL_NULL(RS::get_singleton());
-	RS::get_singleton()->free_rid(debug_mesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_curve_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_sharp_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_smooth_multimesh_rid);
-	RS::get_singleton()->free_rid(debug_handle_mesh_rid);
+	ERR_FAIL_NULL(RS::data);
+	RS::free_rid(debug_mesh_rid);
+	RS::free_rid(debug_handle_curve_multimesh_rid);
+	RS::free_rid(debug_handle_sharp_multimesh_rid);
+	RS::free_rid(debug_handle_smooth_multimesh_rid);
+	RS::free_rid(debug_handle_mesh_rid);
 }
 
 

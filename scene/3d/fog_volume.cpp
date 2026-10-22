@@ -32,7 +32,7 @@
 #include "fog_volume.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 Vector3 FogVolume::get_size() const { return size; }
 
@@ -69,15 +69,15 @@ PackedStringArray FogVolume::get_configuration_warnings() const
 
 FogVolume::FogVolume()
 {
-	volume = RS::get_singleton()->fog_volume_create();
-	RS::get_singleton()->fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
+	volume = RS::fog_volume_create();
+	RS::fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
 	set_base(volume);
 }
 
 FogVolume::~FogVolume()
 {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RS::get_singleton()->free_rid(volume);
+	ERR_FAIL_NULL(Renderer::data);
+	RS::free_rid(volume);
 }
 
 

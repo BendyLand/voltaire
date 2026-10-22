@@ -34,6 +34,8 @@
 
 #include <platform_gl.h>
 #include "core/templates/rid_owner.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/storage/utilities.h"
 
 namespace GLES3
@@ -43,218 +45,221 @@ namespace GLES3
 
 struct VisibilityNotifier
 {
-	AABB aabb;
-	Dependency dependency;
+    AABB aabb;
+    Dependency dependency;
 };
 
-class Utilities : public RendererUtilities
+#define MAX_QUERIES 256
+
+struct Frame
+{
+    GLuint queries[MAX_QUERIES];
+    TightLocalVector<String> timestamp_names;
+    TightLocalVector<uint64_t> timestamp_cpu_values;
+    uint32_t timestamp_count = 0;
+    TightLocalVector<String> timestamp_result_names;
+    TightLocalVector<uint64_t> timestamp_cpu_result_values;
+    TightLocalVector<uint64_t> timestamp_result_values;
+    uint32_t timestamp_result_count = 0;
+    uint64_t index = 0;
+};
+
+
+class Utilities final
 {
 private:
-	static Utilities* singleton;
+    /* VISIBILITY NOTIFIER */
 
-	/* VISIBILITY NOTIFIER */
+    static inline RID_Owner<VisibilityNotifier> visibility_notifier_owner;
 
-	mutable RID_Owner<VisibilityNotifier> visibility_notifier_owner;
+    /* MISC */
 
-	/* MISC */
-
-	struct ResourceAllocation
-	{
+    struct ResourceAllocation
+    {
 #ifdef DEV_ENABLED
-		String name;
+        String name;
 #endif
-		uint32_t size = 0;
-	};
+        uint32_t size = 0;
+    };
 
-	HashMap<GLuint, ResourceAllocation> buffer_allocs_cache;
-	HashMap<GLuint, ResourceAllocation> render_buffer_allocs_cache;
-	HashMap<GLuint, ResourceAllocation> texture_allocs_cache;
+    static inline HashMap<GLuint, ResourceAllocation> buffer_allocs_cache;
+    static inline HashMap<GLuint, ResourceAllocation> render_buffer_allocs_cache;
+    static inline HashMap<GLuint, ResourceAllocation> texture_allocs_cache;
 
-	uint64_t buffer_mem_cache = 0;
-	uint64_t render_buffer_mem_cache = 0;
-	uint64_t texture_mem_cache = 0;
+    static inline uint64_t buffer_mem_cache = 0;
+    static inline uint64_t render_buffer_mem_cache = 0;
+    static inline uint64_t texture_mem_cache = 0;
 
 public:
-	static Utilities* get_singleton() { return singleton; }
+    Utilities() = delete;
+    Utilities(const Utilities&) = delete;
+    Utilities& operator=(const Utilities&) = delete;
+    ~Utilities() = delete;
 
-	Utilities();
-	~Utilities();
+    static void initialize();
+    static void finalize();
 
-	// Buffer size is specified in bytes
-	static Vector<uint8_t> buffer_get_data(
-		GLenum p_target, GLuint p_buffer, uint32_t p_buffer_size);
+    // Buffer size is specified in bytes
+    static Vector<uint8_t> buffer_get_data(
+        GLenum p_target, GLuint p_buffer, uint32_t p_buffer_size);
 
-	// Allocate memory with glBufferData. Does not handle resizing.
-	_FORCE_INLINE_ void buffer_allocate_data(GLenum p_target, GLuint p_id, uint32_t p_size,
-		const void* p_data, GLenum p_usage, String p_name = "")
-	{
-		glBufferData(p_target, p_size, p_data, p_usage);
-		buffer_mem_cache += p_size;
+    // Allocate memory with glBufferData. Does not handle resizing.
+    _FORCE_INLINE_ static void buffer_allocate_data(GLenum p_target, GLuint p_id, uint32_t p_size,
+        const void* p_data, GLenum p_usage, String p_name = "")
+    {
+        glBufferData(p_target, p_size, p_data, p_usage);
+        buffer_mem_cache += p_size;
 
 #ifdef DEV_ENABLED
-		ERR_FAIL_COND_MSG(buffer_allocs_cache.has(p_id), "trying to allocate buffer with name " +
-															 p_name + " but ID already used by " +
-															 buffer_allocs_cache[p_id].name);
+        ERR_FAIL_COND_MSG(buffer_allocs_cache.has(p_id), "trying to allocate buffer with name " +
+                                                             p_name + " but ID already used by " +
+                                                             buffer_allocs_cache[p_id].name);
 #endif
 
-		ResourceAllocation resource_allocation;
-		resource_allocation.size = p_size;
+        ResourceAllocation resource_allocation;
+        resource_allocation.size = p_size;
 #ifdef DEV_ENABLED
-		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+        resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
 #endif
-		buffer_allocs_cache[p_id] = resource_allocation;
-	}
+        buffer_allocs_cache[p_id] = resource_allocation;
+    }
 
-	_FORCE_INLINE_ void buffer_free_data(GLuint p_id)
-	{
-		ERR_FAIL_COND(!buffer_allocs_cache.has(p_id));
-		glDeleteBuffers(1, &p_id);
-		buffer_mem_cache -= buffer_allocs_cache[p_id].size;
-		buffer_allocs_cache.erase(p_id);
-	}
+    _FORCE_INLINE_ static void buffer_free_data(GLuint p_id)
+    {
+        ERR_FAIL_COND(!buffer_allocs_cache.has(p_id));
+        glDeleteBuffers(1, &p_id);
+        buffer_mem_cache -= buffer_allocs_cache[p_id].size;
+        buffer_allocs_cache.erase(p_id);
+    }
 
-	_FORCE_INLINE_ void render_buffer_allocated_data(
-		GLuint p_id, uint32_t p_size, String p_name = "")
-	{
-		render_buffer_mem_cache += p_size;
+    _FORCE_INLINE_ static void render_buffer_allocated_data(
+        GLuint p_id, uint32_t p_size, String p_name = "")
+    {
+        render_buffer_mem_cache += p_size;
 #ifdef DEV_ENABLED
-		ERR_FAIL_COND_MSG(render_buffer_allocs_cache.has(p_id),
-			"trying to allocate render buffer with name " + p_name + " but ID already used by " +
-				render_buffer_allocs_cache[p_id].name);
+        ERR_FAIL_COND_MSG(render_buffer_allocs_cache.has(p_id),
+            "trying to allocate render buffer with name " + p_name + " but ID already used by " +
+                render_buffer_allocs_cache[p_id].name);
 #endif
-		ResourceAllocation resource_allocation;
-		resource_allocation.size = p_size;
+        ResourceAllocation resource_allocation;
+        resource_allocation.size = p_size;
 #ifdef DEV_ENABLED
-		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+        resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
 #endif
-		render_buffer_allocs_cache[p_id] = resource_allocation;
-	}
+        render_buffer_allocs_cache[p_id] = resource_allocation;
+    }
 
-	_FORCE_INLINE_ void render_buffer_free_data(GLuint p_id)
-	{
-		ERR_FAIL_COND(!render_buffer_allocs_cache.has(p_id));
-		glDeleteRenderbuffers(1, &p_id);
-		render_buffer_mem_cache -= render_buffer_allocs_cache[p_id].size;
-		render_buffer_allocs_cache.erase(p_id);
-	}
+    _FORCE_INLINE_ static void render_buffer_free_data(GLuint p_id)
+    {
+        ERR_FAIL_COND(!render_buffer_allocs_cache.has(p_id));
+        glDeleteRenderbuffers(1, &p_id);
+        render_buffer_mem_cache -= render_buffer_allocs_cache[p_id].size;
+        render_buffer_allocs_cache.erase(p_id);
+    }
 
-	// Records that data was allocated for state tracking purposes.
-	// Size is measured in bytes.
-	_FORCE_INLINE_ void texture_allocated_data(GLuint p_id, uint32_t p_size, String p_name = "")
-	{
-		texture_mem_cache += p_size;
+    // Records that data was allocated for state tracking purposes.
+    // Size is measured in bytes.
+    _FORCE_INLINE_ static void texture_allocated_data(GLuint p_id, uint32_t p_size, String p_name = "")
+    {
+        texture_mem_cache += p_size;
 #ifdef DEV_ENABLED
-		ERR_FAIL_COND_MSG(texture_allocs_cache.has(p_id), "trying to allocate texture with name " +
-															  p_name + " but ID already used by " +
-															  texture_allocs_cache[p_id].name);
+        ERR_FAIL_COND_MSG(texture_allocs_cache.has(p_id), "trying to allocate texture with name " +
+                                                              p_name + " but ID already used by " +
+                                                              texture_allocs_cache[p_id].name);
 #endif
-		ResourceAllocation resource_allocation;
-		resource_allocation.size = p_size;
+        ResourceAllocation resource_allocation;
+        resource_allocation.size = p_size;
 #ifdef DEV_ENABLED
-		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+        resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
 #endif
-		texture_allocs_cache[p_id] = resource_allocation;
-	}
+        texture_allocs_cache[p_id] = resource_allocation;
+    }
 
-	_FORCE_INLINE_ void texture_free_data(GLuint p_id)
-	{
-		ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
-		glDeleteTextures(1, &p_id);
-		texture_mem_cache -= texture_allocs_cache[p_id].size;
-		texture_allocs_cache.erase(p_id);
-	}
+    _FORCE_INLINE_ static void texture_free_data(GLuint p_id)
+    {
+        ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
+        glDeleteTextures(1, &p_id);
+        texture_mem_cache -= texture_allocs_cache[p_id].size;
+        texture_allocs_cache.erase(p_id);
+    }
 
-	_FORCE_INLINE_ void texture_resize_data(GLuint p_id, uint32_t p_size)
-	{
-		ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
-		texture_mem_cache -= texture_allocs_cache[p_id].size;
-		texture_mem_cache += p_size;
-		texture_allocs_cache[p_id].size = p_size;
-	}
+    _FORCE_INLINE_ static void texture_resize_data(GLuint p_id, uint32_t p_size)
+    {
+        ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
+        texture_mem_cache -= texture_allocs_cache[p_id].size;
+        texture_mem_cache += p_size;
+        texture_allocs_cache[p_id].size = p_size;
+    }
 
-	/* INSTANCES */
+    /* INSTANCES */
 
-	virtual RSE::InstanceType get_base_type(RID p_rid) const override;
-	virtual bool free(RID p_rid) override;
+    static RSE::InstanceType get_base_type(RID p_rid);
+    static bool free(RID p_rid);
 
-	/* DEPENDENCIES */
+    /* DEPENDENCIES */
 
-	virtual void base_update_dependency(RID p_base, DependencyTracker* p_instance) override;
+    static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
 
-	/* VISIBILITY NOTIFIER */
+    /* VISIBILITY NOTIFIER */
 
-	VisibilityNotifier* get_visibility_notifier(RID p_rid)
-	{
-		return visibility_notifier_owner.get_or_null(p_rid);
-	}
+    _FORCE_INLINE_ static VisibilityNotifier* get_visibility_notifier(RID p_rid)
+    {
+        return visibility_notifier_owner.get_or_null(p_rid);
+    }
 
-	bool owns_visibility_notifier(RID p_rid) const { return visibility_notifier_owner.owns(p_rid); }
+    _FORCE_INLINE_ static bool owns_visibility_notifier(RID p_rid)
+    {
+        return visibility_notifier_owner.owns(p_rid);
+    }
 
-	virtual RID visibility_notifier_allocate() override;
-	virtual void visibility_notifier_initialize(RID p_notifier) override;
-	virtual void visibility_notifier_free(RID p_notifier) override;
+    static RID visibility_notifier_allocate();
+    static void visibility_notifier_initialize(RID p_notifier);
+    static void visibility_notifier_free(RID p_notifier);
 
-	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) override;
+    static void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb);
 
-	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override;
-	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override;
+    static AABB visibility_notifier_get_aabb(RID p_notifier);
+    static void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred);
 
-	/* TIMING */
+    /* TIMING */
 
-#define MAX_QUERIES 256
 #define FRAME_COUNT 3
 
-	struct Frame
-	{
-		GLuint queries[MAX_QUERIES];
-		TightLocalVector<String> timestamp_names;
-		TightLocalVector<uint64_t> timestamp_cpu_values;
-		uint32_t timestamp_count = 0;
-		TightLocalVector<String> timestamp_result_names;
-		TightLocalVector<uint64_t> timestamp_cpu_result_values;
-		TightLocalVector<uint64_t> timestamp_result_values;
-		uint32_t timestamp_result_count = 0;
-		uint64_t index = 0;
-	};
+    static inline const uint32_t max_timestamp_query_elements = MAX_QUERIES;
 
-	const uint32_t max_timestamp_query_elements = MAX_QUERIES;
+    static inline Frame frames[FRAME_COUNT];
+    static inline uint32_t frame = 0;
 
-	Frame frames[FRAME_COUNT]; // Frames for capturing timestamps. We use 3 so we don't need to wait
-							   // for commands to complete
-	uint32_t frame = 0;
+    static void capture_timestamps_begin();
+    static void capture_timestamp(const String& p_name);
+    static uint32_t get_captured_timestamps_count();
+    static uint64_t get_captured_timestamps_frame();
+    static uint64_t get_captured_timestamp_gpu_time(uint32_t p_index);
+    static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index);
+    static String get_captured_timestamp_name(uint32_t p_index);
+    static void _capture_timestamps_begin();
+    static void capture_timestamps_end();
 
-	virtual void capture_timestamps_begin() override;
-	virtual void capture_timestamp(const String& p_name) override;
-	virtual uint32_t get_captured_timestamps_count() const override;
-	virtual uint64_t get_captured_timestamps_frame() const override;
-	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const override;
-	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const override;
-	virtual String get_captured_timestamp_name(uint32_t p_index) const override;
-	void _capture_timestamps_begin();
-	void capture_timestamps_end();
+    /* MISC */
 
-	/* MISC */
+    static void update_dirty_resources();
+    static void set_debug_generate_wireframes(bool p_generate);
 
-	virtual void update_dirty_resources() override;
-	virtual void set_debug_generate_wireframes(bool p_generate) override;
+    static bool has_os_feature(const String& p_feature);
 
-	virtual bool has_os_feature(const String& p_feature) const override;
+    static void update_memory_info();
 
-	virtual void update_memory_info() override;
+    static uint64_t get_rendering_info(RSE::RenderingInfo p_info);
+    static String get_video_adapter_name();
+    static String get_video_adapter_vendor();
+    static RenderingDeviceEnums::DeviceType get_video_adapter_type();
+    static String get_video_adapter_api_version();
 
-	virtual uint64_t get_rendering_info(RSE::RenderingInfo p_info) override;
-	virtual String get_video_adapter_name() const override;
-	virtual String get_video_adapter_vendor() const override;
-	virtual RenderingDeviceEnums::DeviceType get_video_adapter_type() const override;
-	virtual String get_video_adapter_api_version() const override;
-
-	virtual Size2i get_maximum_viewport_size() const override;
-	virtual uint32_t get_maximum_shader_varyings() const override;
-	virtual uint64_t get_maximum_uniform_buffer_size() const override;
+    static Size2i get_maximum_viewport_size();
+    static uint32_t get_maximum_shader_varyings();
+    static uint64_t get_maximum_uniform_buffer_size();
 };
 
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-

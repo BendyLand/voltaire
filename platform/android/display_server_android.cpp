@@ -976,7 +976,7 @@ void DisplayServerAndroid::cursor_set_custom_image(const Ref<Resource> &p_cursor
 	ERR_FAIL_INDEX(p_shape, DisplayServerEnums::CURSOR_MAX);
 	String cursor_path = p_cursor.is_valid() ? p_cursor->get_path() : "";
 	if (!cursor_path.is_empty()) {
-		cursor_path = ProjectSettings::get_singleton()->globalize_path(cursor_path);
+		cursor_path = ProjectSettings::globalize_path(cursor_path);
 	}
 	OS_Android::get_singleton()->get_godot_java()->get_godot_view()->configure_pointer_icon(android_cursors[cursor_shape], cursor_path, p_hotspot);
 	_cursor_set_shape_helper(p_shape, true);

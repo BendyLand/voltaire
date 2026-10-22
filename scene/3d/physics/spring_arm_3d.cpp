@@ -38,13 +38,13 @@ void SpringArm3D::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_editor_hint()) {
 			set_physics_process_internal(true);
 		}
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_editor_hint()) {
 			set_physics_process_internal(false);
 		}
 	} break;

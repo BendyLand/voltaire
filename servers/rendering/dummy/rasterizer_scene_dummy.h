@@ -131,7 +131,7 @@ public:
 public:
 	RenderGeometryInstance* geometry_instance_create(RID p_base) override
 	{
-		RSE::InstanceType type = RendererDummy::Utilities::get_singleton()->get_base_type(p_base);
+		RSE::InstanceType type = RendererDummy::Utilities::get_base_type(p_base);
 		ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 		GeometryInstanceDummy* ginstance = geometry_instance_alloc.alloc();
@@ -324,7 +324,7 @@ public:
 	{
 	}
 
-	bool screen_space_roughness_limiter_is_active() const override { return false; }
+	bool screen_space_roughness_limiter_is_active() const { return false; }
 
 	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override {}
 

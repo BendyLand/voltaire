@@ -33,7 +33,7 @@
 #include "item_list.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 String ItemList::get_item_text(int p_idx) const
 {

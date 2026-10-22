@@ -31,7 +31,7 @@
 #include "node_2d.h"
 #include "scene/main/viewport.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef TOOLS_ENABLED
 
