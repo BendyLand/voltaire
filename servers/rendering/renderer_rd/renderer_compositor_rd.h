@@ -128,6 +128,8 @@ private:
 		const float p_reference_luminance, const float p_linear_luminance_scale);
 
 public:
+	static void bind_canvas_render();
+
 	static void bind_mesh_storage();
 
 	static void bind_texture_storage()

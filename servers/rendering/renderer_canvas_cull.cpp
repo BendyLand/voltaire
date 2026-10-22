@@ -84,16 +84,16 @@ void RendererCanvasCull::_render_canvas_item_tree(RID p_to_render_target,
 	// transform is normally concatenated with the item global transform.
 	_current_camera_transform = p_transform;
 
-	memset(z_list, 0, z_range * sizeof(RendererCanvasRender::Item*));
-	memset(z_last_list, 0, z_range * sizeof(RendererCanvasRender::Item*));
+	memset(z_list, 0, z_range * sizeof(RCR::Item*));
+	memset(z_last_list, 0, z_range * sizeof(RCR::Item*));
 
 	for (int i = 0; i < p_child_item_count; i++) {
 		_cull_canvas_item(p_child_items[i].item, p_transform, p_clip_rect, Color(1, 1, 1, 1), 0,
 			z_list, z_last_list, nullptr, nullptr, false, p_canvas_cull_mask, Point2(), 1, nullptr);
 	}
 
-	RendererCanvasRender::Item* list = nullptr;
-	RendererCanvasRender::Item* list_end = nullptr;
+	RCR::Item* list = nullptr;
+	RCR::Item* list_end = nullptr;
 
 	for (int i = 0; i < z_range; i++) {
 		if (!z_list[i]) {
@@ -221,11 +221,11 @@ void RendererCanvasCull::_mark_ysort_dirty(RendererCanvasCull::Item* ysort_owner
 }
 
 void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* ci,
-	RendererCanvasCull::Item* p_canvas_clip, RendererCanvasRender::Item** r_z_list,
-	RendererCanvasRender::Item** r_z_last_list, const Transform2D& p_transform,
+	RendererCanvasCull::Item* p_canvas_clip, RCR::Item** r_z_list,
+	RCR::Item** r_z_last_list, const Transform2D& p_transform,
 	const Rect2& p_clip_rect, Rect2 p_global_rect, const Color& p_modulate, int p_z,
 	RendererCanvasCull::Item* p_material_owner, bool p_use_canvas_group,
-	RendererCanvasRender::Item* r_canvas_group_from)
+	RCR::Item* r_canvas_group_from)
 {
 	if (ci->copy_back_buffer) {
 		ci->copy_back_buffer->screen_rect =
@@ -249,7 +249,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 			// compute a global rect (in global coords) for children in the same z layer
 			Rect2 rect_accum;
-			RendererCanvasRender::Item* c = r_canvas_group_from;
+			RCR::Item* c = r_canvas_group_from;
 			while (c) {
 				if (c == r_canvas_group_from) {
 					rect_accum = c->global_rect_cache;
@@ -281,8 +281,8 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 				rect_accum = rect_accum.grow(ci->canvas_group->fit_margin);
 
 				// draw it?
-				RendererCanvasRender::Item::CommandRect* crect =
-					ci->alloc_command<RendererCanvasRender::Item::CommandRect>();
+				RCR::Item::CommandRect* crect =
+					ci->alloc_command<RCR::Item::CommandRect>();
 
 				crect->flags =
 					RendererCanvasRender::CANVAS_RECT_IS_GROUP; // so we can recognize it later
@@ -362,10 +362,10 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2D& p_parent_xform,
 	const Rect2& p_clip_rect, const Color& p_modulate, int p_z,
-	RendererCanvasRender::Item** r_z_list, RendererCanvasRender::Item** r_z_last_list,
+	RCR::Item** r_z_list, RCR::Item** r_z_last_list,
 	Item* p_canvas_clip, Item* p_material_owner, bool p_is_already_y_sorted,
 	uint32_t p_canvas_cull_mask, const Point2& p_repeat_size, int p_repeat_times,
-	RendererCanvasRender::Item* p_repeat_source_item)
+	RCR::Item* p_repeat_source_item)
 {
 	Item* ci = p_canvas_item;
 
@@ -438,7 +438,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 
 	Point2 repeat_size = p_repeat_size;
 	int repeat_times = p_repeat_times;
-	RendererCanvasRender::Item* repeat_source_item = p_repeat_source_item;
+	RCR::Item* repeat_source_item = p_repeat_source_item;
 
 	if (ci->repeat_source) {
 		repeat_size = ci->repeat_size;
@@ -547,7 +547,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 			}
 		}
 		else {
-			RendererCanvasRender::Item* canvas_group_from = nullptr;
+			RCR::Item* canvas_group_from = nullptr;
 			bool use_canvas_group = ci->canvas_group != nullptr &&
 									(ci->canvas_group->fit_empty || ci->commands != nullptr);
 			if (use_canvas_group) {
@@ -561,7 +561,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 		}
 	}
 	else {
-		RendererCanvasRender::Item* canvas_group_from = nullptr;
+		RCR::Item* canvas_group_from = nullptr;
 		bool use_canvas_group =
 			ci->canvas_group != nullptr && (ci->canvas_group->fit_empty || ci->commands != nullptr);
 		if (use_canvas_group) {
@@ -2152,7 +2152,7 @@ void RendererCanvasCull::canvas_item_set_copy_to_backbuffer(
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 	if (p_enable && (canvas_item->copy_back_buffer == nullptr)) {
-		canvas_item->copy_back_buffer = memnew(RendererCanvasRender::Item::CopyBackBuffer);
+		canvas_item->copy_back_buffer = memnew(RCR::Item::CopyBackBuffer);
 	}
 	if (!p_enable && (canvas_item->copy_back_buffer != nullptr)) {
 		memdelete(canvas_item->copy_back_buffer);
@@ -2263,7 +2263,7 @@ void RendererCanvasCull::canvas_item_set_canvas_group_mode(RID p_item, RSE::Canv
 	}
 	else {
 		if (canvas_item->canvas_group == nullptr) {
-			canvas_item->canvas_group = memnew(RendererCanvasRender::Item::CanvasGroup);
+			canvas_item->canvas_group = memnew(RCR::Item::CanvasGroup);
 		}
 		canvas_item->canvas_group->mode = p_mode;
 		canvas_item->canvas_group->fit_empty = p_fit_empty;
@@ -2885,9 +2885,9 @@ void RendererCanvasCull::InterpolationData::notify_free_canvas_light_occluder(
 
 RendererCanvasCull::RendererCanvasCull()
 {
-	z_list = (RendererCanvasRender::Item**)memalloc(z_range * sizeof(RendererCanvasRender::Item*));
+	z_list = (RCR::Item**)memalloc(z_range * sizeof(RCR::Item*));
 	z_last_list =
-		(RendererCanvasRender::Item**)memalloc(z_range * sizeof(RendererCanvasRender::Item*));
+		(RCR::Item**)memalloc(z_range * sizeof(RCR::Item*));
 	_canvas_cull_singleton = this;
 }
 

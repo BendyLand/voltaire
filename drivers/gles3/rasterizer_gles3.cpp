@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "rasterizer_gles3.h"
+#include "drivers/gles3/rasterizer_canvas_gles3.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
@@ -465,7 +466,7 @@ void RasterizerGLES3::initialize()
 	gi = memnew(GLES3::GI);
 	fog = memnew(GLES3::Fog);
 
-    canvas = memnew(RasterizerCanvasGLES3(texture_storage, material_storage));
+    RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
     RendererTextureStorage::bind<GLES3::TextureStorage>();
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
@@ -485,7 +486,7 @@ void RasterizerGLES3::finalize()
 	// TexBlit Shaders
 	GLES3::TextureStorage::_tex_blit_shader_free();
 	memdelete(scene);
-	memdelete(canvas);
+	RasterizerCanvasGLES3::finalize();
 	memdelete(gi);
 	memdelete(fog);
 	memdelete(post_effects);
