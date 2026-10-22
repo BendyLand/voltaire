@@ -40,6 +40,7 @@
 #include "lm_blendseams.glsl.gen.h"
 #include "lm_compute.glsl.gen.h"
 #include "lm_raster.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/renderer.h"
@@ -616,7 +617,7 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 
 			RID material = mi.data.material[i];
 			if (material.is_valid()) {
-				t.cull_mode = RS::material_storage->material_get_cull_mode(material);
+				t.cull_mode = RendererRD::MaterialStorage::material_get_cull_mode(material);
 			}
 			t.pad1 = 0; // make valgrind not complain
 			triangles.push_back(t);

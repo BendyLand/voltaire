@@ -34,9 +34,15 @@
 #include "core/os/os.h"
 #include "renderer_compositor_rd.h"
 #include "servers/display/display_server.h"
+#include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/renderer_canvas_render_rd.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -45,8 +51,6 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 {
 	Error err = RD::screen_prepare_for_drawing(p_screen);
 	if (err != OK) {
-		// Window is minimized and does not have valid swapchain, skip drawing without printing
-		// errors.
 		return;
 	}
 
@@ -68,7 +72,7 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 
 	for (int i = 0; i < p_amount; i++) {
 		RID rd_texture =
-			texture_storage->render_target_get_rd_texture(p_render_targets[i].render_target);
+			RendererRD::TextureStorage::render_target_get_rd_texture(p_render_targets[i].render_target);
 		ERR_CONTINUE(rd_texture.is_null());
 
 		BlitMode mode = p_render_targets[i].lens_distortion.apply
@@ -84,13 +88,11 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		RD::draw_list_bind_index_array(draw_list, blit->array);
 		RD::draw_list_bind_uniform_set(draw_list, it->value, 0);
 
-		// We need to invert the phone rotation.
 		const int screen_rotation_degrees = -RD::screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
 		blit->push_constant.rotation_cos = Math::cos(screen_rotation);
 		blit->push_constant.rotation_sin = Math::sin(screen_rotation);
-		// Swap width and height when the orientation is not the native one.
 		if (screen_rotation_degrees % 180 != 0) {
 			SWAP(screen_size.width, screen_size.height);
 		}
@@ -137,7 +139,9 @@ void RendererCompositorRD::begin_frame(double frame_step)
 	double time_roll_over = GLOBAL_GET_CACHED(double, "rendering/limits/time/time_rollover_secs");
 	time = Math::fmod(time, time_roll_over);
 
-	canvas->set_time(time);
+	if (RendererCanvasRender::set_time) {
+		RendererCanvasRender::set_time(time);
+	}
 	scene->set_time(time, frame_step);
 }
 
@@ -145,7 +149,11 @@ void RendererCompositorRD::end_frame(bool p_present) { RD::swap_buffers(p_presen
 
 void RendererCompositorRD::initialize()
 {
-	RendererRD::Utilities::initialize();
+	RendererSceneRenderRD::initialize();
+	RendererCanvasRenderRD::initialize();
+	bind_canvas_render();
+	bind_mesh_storage();
+
 	{
 		blit = memnew(Blit);
 		Vector<String> blit_modes;
@@ -157,7 +165,6 @@ void RendererCompositorRD::initialize()
 		blit->shader.initialize(blit_modes);
 		blit->shader_version = blit->shader.version_create();
 
-		// create index array for copy shader
 		Vector<uint8_t> pv;
 		pv.resize(6 * 2);
 		{
@@ -178,20 +185,18 @@ void RendererCompositorRD::initialize()
 
 void RendererCompositorRD::finalize()
 {
-	texture_storage->_tex_blit_shader_free();
-	memdelete(canvas);
+	RendererRD::TextureStorage::_tex_blit_shader_free();
+	RendererCanvasRenderRD::finalize();
 	memdelete(fog);
 	memdelete(particles_storage);
-	memdelete(light_storage);
-	memdelete(material_storage);
-	memdelete(texture_storage);
-	RendererRD::Utilities::finalize();
+	RendererRD::LightStorage::finalize();
+	RendererRD::TextureStorage::finalize();
+	RendererRD::MeshStorage::finalize();
 
 	if (blit) {
 		memdelete(blit);
 		blit = nullptr;
 	}
-	// only need to erase these, the rest are erased by cascade
 	blit->shader.version_free(blit->shader_version);
 	RD::free_rid(blit->index_buffer);
 	RD::free_rid(blit->sampler);
@@ -217,8 +222,6 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 
 	Error err = RD::screen_prepare_for_drawing(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (err != OK) {
-		// Window is minimized and does not have valid swapchain, skip drawing without printing
-		// errors.
 		return;
 	}
 
@@ -261,7 +264,6 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 
 	Color clear_color = p_color;
 	if (color_space != RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB) {
-		// draw_list_begin_for_screen requires linear-encoded Color when using an HDR buffer.
 		clear_color = p_color.srgb_to_linear();
 
 		clear_color.r *= reference_multiplier;
@@ -316,6 +318,28 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(long)
 {
 	return RendererCompositorRD::BlitPipelines();
+}
+
+void RendererCompositorRD::bind_canvas_render()
+{
+	RendererCanvasRender::canvas_render_items = &RendererCanvasRenderRD::canvas_render_items;
+	RendererCanvasRender::set_time = &RendererCanvasRenderRD::set_time;
+	RendererCanvasRender::request_polygon = &RendererCanvasRenderRD::request_polygon;
+	RendererCanvasRender::free_polygon = &RendererCanvasRenderRD::free_polygon;
+	RendererCanvasRender::light_create = &RendererCanvasRenderRD::light_create;
+	RendererCanvasRender::light_set_texture = &RendererCanvasRenderRD::light_set_texture;
+	RendererCanvasRender::light_set_use_shadow = &RendererCanvasRenderRD::light_set_use_shadow;
+	RendererCanvasRender::light_update_shadow = &RendererCanvasRenderRD::light_update_shadow;
+	RendererCanvasRender::light_update_directional_shadow = &RendererCanvasRenderRD::light_update_directional_shadow;
+	RendererCanvasRender::render_sdf = &RendererCanvasRenderRD::render_sdf;
+	RendererCanvasRender::occluder_polygon_create = &RendererCanvasRenderRD::occluder_polygon_create;
+	RendererCanvasRender::occluder_polygon_set_shape = &RendererCanvasRenderRD::occluder_polygon_set_shape;
+	RendererCanvasRender::occluder_polygon_set_cull_mode = &RendererCanvasRenderRD::occluder_polygon_set_cull_mode;
+	RendererCanvasRender::set_shadow_texture_size = &RendererCanvasRenderRD::set_shadow_texture_size;
+	RendererCanvasRender::free = &RendererCanvasRenderRD::free;
+	RendererCanvasRender::update = &RendererCanvasRenderRD::update;
+	RendererCanvasRender::set_debug_redraw = &RendererCanvasRenderRD::set_debug_redraw;
+	RendererCanvasRender::get_pipeline_compilations = &RendererCanvasRenderRD::get_pipeline_compilations;
 }
 
 void RendererCompositorRD::bind_mesh_storage()
@@ -441,5 +465,3 @@ void RendererCompositorRD::bind_mesh_storage()
 	RendererMeshStorage::skeleton_update_dependency =
 		&RendererRD::MeshStorage::skeleton_update_dependency;
 }
-
-

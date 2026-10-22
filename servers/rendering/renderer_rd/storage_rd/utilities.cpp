@@ -38,10 +38,6 @@
 
 using namespace RendererRD;
 
-void Utilities::initialize() {}
-
-void Utilities::finalize() {}
-
 RSE::InstanceType Utilities::get_base_type(RID p_rid)
 {
 	if (RendererRD::MeshStorage::owns_mesh(p_rid)) {
@@ -50,19 +46,19 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
+	if (RendererRD::LightStorage::owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
-	if (RendererRD::TextureStorage::get_singleton()->owns_decal(p_rid)) {
+	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
 		return RSE::INSTANCE_DECAL;
 	}
 	if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
 		return RSE::INSTANCE_VOXEL_GI;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_light(p_rid)) {
+	if (RendererRD::LightStorage::owns_light(p_rid)) {
 		return RSE::INSTANCE_LIGHT;
 	}
-	if (RendererRD::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	if (RendererRD::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	if (RendererRD::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
@@ -83,10 +79,10 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (RendererRD::LightStorage::get_singleton()->free(p_rid)) {
+	if (RendererRD::LightStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::MaterialStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::MaterialStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::MeshStorage::free(p_rid)) {
@@ -95,7 +91,7 @@ bool Utilities::free(RID p_rid)
 	else if (RendererRD::ParticlesStorage::get_singleton()->free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::TextureStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::TextureStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
@@ -130,25 +126,25 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 			base_update_dependency(mesh, p_instance);
 		}
 	}
-	else if (LightStorage::get_singleton()->owns_reflection_probe(p_base)) {
+	else if (LightStorage::owns_reflection_probe(p_base)) {
 		Dependency* dependency =
-			LightStorage::get_singleton()->reflection_probe_get_dependency(p_base);
+			LightStorage::reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (TextureStorage::get_singleton()->owns_decal(p_base)) {
-		Dependency* dependency = TextureStorage::get_singleton()->decal_get_dependency(p_base);
+	else if (TextureStorage::owns_decal(p_base)) {
+		Dependency* dependency = TextureStorage::decal_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (GI::get_singleton()->owns_voxel_gi(p_base)) {
 		Dependency* dependency = GI::get_singleton()->voxel_gi_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_lightmap(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->lightmap_get_dependency(p_base);
+	else if (LightStorage::owns_lightmap(p_base)) {
+		Dependency* dependency = LightStorage::lightmap_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_light(p_base)) {
-		Dependency* dependency = LightStorage::get_singleton()->light_get_dependency(p_base);
+	else if (LightStorage::owns_light(p_base)) {
+		Dependency* dependency = LightStorage::light_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {
@@ -237,14 +233,13 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index)
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::get_singleton()
-		->_update_global_shader_uniforms(); // must do before materials, so it can queue them for
+	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue them for
 											// update
-	MaterialStorage::get_singleton()->_update_queued_materials();
+	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_multimeshes();
 	MeshStorage::_update_dirty_skeletons();
-	TextureStorage::get_singleton()->update_decal_atlas();
-	TextureStorage::get_singleton()->update_area_light_atlas();
+	TextureStorage::update_decal_atlas();
+	TextureStorage::update_area_light_atlas();
 }
 
 bool Utilities::has_os_feature(const String& p_feature)

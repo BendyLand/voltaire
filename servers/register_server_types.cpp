@@ -109,8 +109,6 @@
 #include "servers/xr/xr_vrs.h"
 #endif // XR_DISABLED
 
-ShaderTypes* shader_types = nullptr;
-
 #ifndef PHYSICS_2D_DISABLED
 static PhysicsServer2D* _create_dummy_physics_server_2d() { return memnew(PhysicsServer2DDummy); }
 #endif // PHYSICS_2D_DISABLED
@@ -132,10 +130,14 @@ static bool has_server_feature_callback(const String& p_feature)
 
 static MovieWriterPNGWAV* writer_pngwav = nullptr;
 
-void register_server_singletons() {}
+void unregister_server_types()
+{
+	ShaderTypes::finalize();
+}
 
-void unregister_server_types() {}
-
-void register_server_types() {}
+void register_server_types()
+{
+	ShaderTypes::initialize();
+}
 
 

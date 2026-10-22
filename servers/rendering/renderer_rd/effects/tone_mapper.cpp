@@ -31,6 +31,7 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 #include "tone_mapper.h"
 
 using namespace RendererRD;
@@ -53,6 +54,41 @@ void RendererRD::ToneMapper::tonemapper(
 void RendererRD::ToneMapper::tonemapper_subpass(long p_subpass, RID p_framebuffer,
 	long p_render_pass, const RendererRD::ToneMapper::TonemapSettings& p_settings)
 {
+}
+
+ToneMapper::ToneMapper(bool p_use_mobile_version)
+{
+	using_mobile_version = p_use_mobile_version;
+
+	if (using_mobile_version) {
+		Vector<String> modes;
+		modes.push_back("\n");
+		modes.push_back("\n#define USE_1D_LUT\n");
+		modes.push_back("\n#define SUBPASS\n");
+		modes.push_back("\n#define SUBPASS\n#define USE_1D_LUT\n");
+		modes.push_back("\n#define USE_MULTIVIEW\n");
+		modes.push_back("\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
+		modes.push_back("\n#define SUBPASS\n#define USE_MULTIVIEW\n");
+		modes.push_back("\n#define SUBPASS\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
+
+		tonemap_mobile.shader.initialize(modes);
+		tonemap_mobile.shader_version = tonemap_mobile.shader.version_create();
+	}
+	else {
+		Vector<String> modes;
+		modes.push_back("\n");
+		modes.push_back("\n#define GLOW_BICUBIC_FILTER\n");
+		modes.push_back("\n#define USE_1D_LUT\n");
+		modes.push_back("\n#define GLOW_BICUBIC_FILTER\n#define USE_1D_LUT\n");
+		modes.push_back("\n#define USE_MULTIVIEW\n");
+		modes.push_back("\n#define GLOW_BICUBIC_FILTER\n#define USE_MULTIVIEW\n");
+		modes.push_back("\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
+		modes.push_back(
+			"\n#define GLOW_BICUBIC_FILTER\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
+
+		tonemap.shader.initialize(modes);
+		tonemap.shader_version = tonemap.shader.version_create();
+	}
 }
 
 

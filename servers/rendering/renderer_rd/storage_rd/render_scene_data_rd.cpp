@@ -256,7 +256,7 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 	}
 	else {
 		if (!(p_reflection_probe_instance.is_valid() &&
-				RendererRD::LightStorage::get_singleton()->reflection_probe_is_interior(
+				RendererRD::LightStorage::reflection_probe_is_interior(
 					p_reflection_probe_instance))) {
 			ubo.flags |= SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT;
 			Color clear_color = p_default_bg_color;

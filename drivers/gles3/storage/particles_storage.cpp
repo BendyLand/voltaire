@@ -48,20 +48,17 @@ ParticlesStorage* ParticlesStorage::get_singleton() { return singleton; }
 
 ParticlesStorage::ParticlesStorage()
 {
-	singleton = this;
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	{
 		String global_defines;
 		global_defines +=
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
-		material_storage->shaders.particles_process_shader.initialize(global_defines, 1);
+		MaterialStorage::shaders->particles_process_shader.initialize(global_defines, 1);
 	}
 	{
 		// default material and shader for particles shader
-		particles_shader.default_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(particles_shader.default_shader);
-		material_storage->shader_set_code(particles_shader.default_shader, R"(
+		particles_shader.default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(particles_shader.default_shader);
+		MaterialStorage::shader_set_code(particles_shader.default_shader, R"(
 // Default particles shader.
 
 shader_type particles;
@@ -70,9 +67,9 @@ void process() {
 	COLOR = vec4(1.0);
 }
 )");
-		particles_shader.default_material = material_storage->material_allocate();
-		material_storage->material_initialize(particles_shader.default_material);
-		material_storage->material_set_shader(
+		particles_shader.default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(particles_shader.default_material);
+		MaterialStorage::material_set_shader(
 			particles_shader.default_material, particles_shader.default_shader);
 	}
 	{
@@ -84,10 +81,9 @@ void process() {
 ParticlesStorage::~ParticlesStorage()
 {
 	singleton = nullptr;
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 
-	material_storage->material_free(particles_shader.default_material);
-	material_storage->shader_free(particles_shader.default_shader);
+	MaterialStorage::material_free(particles_shader.default_material);
+	MaterialStorage::shader_free(particles_shader.default_shader);
 	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
 }
 
@@ -590,9 +586,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 // front_process_buffer.
 void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	double new_phase = Math::fmod(p_particles->phase + (p_delta / p_particles->lifetime), 1.0);
 
 	// update current frame
@@ -808,8 +801,8 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		// Bind heightmap or SDF texture.
 		GLuint heightmap = collision_heightmap_texture;
 		if (heightmap == 0) {
-			GLES3::Texture* tex = texture_storage->get_texture(
-				texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_BLACK));
+			GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_BLACK));
 			heightmap = tex->tex_id;
 		}
 		glActiveTexture(GL_TEXTURE0);
@@ -834,9 +827,9 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 	// Get shader and set shader uniforms;
 	ParticleProcessMaterialData* m = static_cast<ParticleProcessMaterialData*>(
-		material_storage->material_get_data(p_particles->process_material, RSE::SHADER_PARTICLES));
+		MaterialStorage::material_get_data(p_particles->process_material, RSE::SHADER_PARTICLES));
 	if (!m) {
-		m = static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
+		m = static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 			particles_shader.default_material, RSE::SHADER_PARTICLES));
 	}
 
@@ -862,20 +855,20 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		version = m->shader_data->version;
 	}
 
-	bool success = material_storage->shaders.particles_process_shader.version_bind_shader(
+	bool success = MaterialStorage::shaders->particles_process_shader.version_bind_shader(
 		version, variant, specialization);
 	if (!success) {
 		return;
 	}
 
-	material_storage->shaders.particles_process_shader.version_set_uniform(
+	MaterialStorage::shaders->particles_process_shader.version_set_uniform(
 		ParticlesShaderGLES3::LIFETIME, p_particles->lifetime, version, variant, specialization);
-	material_storage->shaders.particles_process_shader.version_set_uniform(
+	MaterialStorage::shaders->particles_process_shader.version_set_uniform(
 		ParticlesShaderGLES3::CLEAR, p_particles->clear, version, variant, specialization);
-	material_storage->shaders.particles_process_shader.version_set_uniform(
+	MaterialStorage::shaders->particles_process_shader.version_set_uniform(
 		ParticlesShaderGLES3::TOTAL_PARTICLES, uint32_t(p_particles->amount), version, variant,
 		specialization);
-	material_storage->shaders.particles_process_shader.version_set_uniform(
+	MaterialStorage::shaders->particles_process_shader.version_set_uniform(
 		ParticlesShaderGLES3::USE_FRACTIONAL_DELTA, p_particles->fractional_delta, version, variant,
 		specialization);
 
@@ -961,12 +954,11 @@ void ParticlesStorage::particles_set_view_axis(
 
 void ParticlesStorage::_particles_update_buffers(Particles* particles)
 {
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
 	uint32_t userdata_count = 0;
 
 	if (particles->process_material.is_valid()) {
 		GLES3::ParticleProcessMaterialData* material_data =
-			static_cast<GLES3::ParticleProcessMaterialData*>(material_storage->material_get_data(
+			static_cast<GLES3::ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 				particles->process_material, RSE::SHADER_PARTICLES));
 		if (material_data && material_data->shader_data->version.is_valid() &&
 			material_data->shader_data->valid) {
@@ -1207,7 +1199,7 @@ void ParticlesStorage::update_particles()
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 
 	GLuint global_buffer =
-		GLES3::MaterialStorage::get_singleton()->global_shader_parameters_get_uniform_buffer();
+		GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, PARTICLES_GLOBALS_UNIFORM_LOCATION, global_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -1537,7 +1529,7 @@ GLuint ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			WARN_PRINT("Could not create heightmap texture, status: " +
-					   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
+					   GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 #endif
 		GLES3::Utilities::texture_allocated_data(

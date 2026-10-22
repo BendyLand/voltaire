@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "rasterizer_canvas_gles3.h"
+#include "drivers/gles3/storage/material_storage.h"
 
 #ifdef GLES3_ENABLED
 
@@ -112,15 +113,12 @@ void RasterizerCanvasGLES3::_update_transform_to_mat4(const Transform3D& p_trans
 	p_mat4[15] = 1;
 }
 
-void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_item_list,
+void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Item* p_item_list,
 	const Color& p_modulate, Light* p_light_list, Light* p_directional_light_list,
 	const Transform2D& p_canvas_transform, RSE::CanvasItemTextureFilter p_default_filter,
 	RSE::CanvasItemTextureRepeat p_default_repeat, bool p_snap_2d_vertices_to_pixel,
 	bool& r_sdf_used, RenderingServerTypes::RenderInfo* r_render_info)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	Transform2D canvas_transform_inverse = p_canvas_transform.affine_inverse();
 
 	// Clear out any state that may have been left from the 3D pass.
@@ -310,7 +308,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 
 			if (clight->texture.is_valid()) {
 				Rect2 atlas_rect =
-					GLES3::TextureStorage::get_singleton()->texture_atlas_get_texture_rect(
+					GLES3::TextureStorage::texture_atlas_get_texture_rect(
 						clight->texture);
 				state.light_uniforms[index].atlas_rect[0] = atlas_rect.position.x;
 				state.light_uniforms[index].atlas_rect[1] = atlas_rect.position.y;
@@ -343,24 +341,24 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			GL_UNIFORM_BUFFER, 0, sizeof(LightUniform) * light_count, state.light_uniforms);
 #else
 		// On Desktop and mobile we map the memory without synchronizing for maximum speed.
-		void* ubo = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(LightUniform) * light_count,
+		void* ubo = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(GLES3::LightUniform) * light_count,
 			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-		memcpy(ubo, state.light_uniforms, sizeof(LightUniform) * light_count);
+		memcpy(ubo, state.light_uniforms, sizeof(GLES3::LightUniform) * light_count);
 		glUnmapBuffer(GL_UNIFORM_BUFFER);
 #endif
 
-		GLuint texture_atlas = texture_storage->texture_atlas_get_texture();
+		GLuint texture_atlas = GLES3::TextureStorage::texture_atlas_get_texture();
 		if (texture_atlas == 0) {
-			GLES3::Texture* tex = texture_storage->get_texture(
-				texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+			GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 			texture_atlas = tex->tex_id;
 		}
 		glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 2);
 		glBindTexture(GL_TEXTURE_2D, texture_atlas);
 		GLuint shadow_tex = state.shadow_texture;
 		if (shadow_tex == 0) {
-			GLES3::Texture* tex = texture_storage->get_texture(
-				texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+			GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 			shadow_tex = tex->tex_id;
 		}
 		glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 3);
@@ -371,13 +369,13 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		// update canvas state uniform buffer
 		StateBuffer state_buffer;
 
-		Size2i ssize = texture_storage->render_target_get_size(p_to_render_target);
+		Size2i ssize = GLES3::TextureStorage::render_target_get_size(p_to_render_target);
 
 		// If we've overridden the render target's color texture, then we need
 		// to invert the Y axis, so 2D texture appear right side up.
 		// We're probably rendering directly to an XR device.
 		float y_scale =
-			texture_storage->render_target_get_override_color(p_to_render_target).is_valid() ? -2.0f
+			GLES3::TextureStorage::render_target_get_override_color(p_to_render_target).is_valid() ? -2.0f
 																							 : 2.0f;
 
 		Transform3D screen_transform;
@@ -397,7 +395,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		state_buffer.canvas_modulate[2] = p_modulate.b;
 		state_buffer.canvas_modulate[3] = p_modulate.a;
 
-		Size2 render_target_size = texture_storage->render_target_get_size(p_to_render_target);
+		Size2 render_target_size = GLES3::TextureStorage::render_target_get_size(p_to_render_target);
 		state_buffer.screen_pixel_size[0] = 1.0 / render_target_size.x;
 		state_buffer.screen_pixel_size[1] = 1.0 / render_target_size.y;
 
@@ -414,7 +412,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		state_buffer.screen_to_sdf[0] = 1.0 / state_buffer.sdf_to_screen[0];
 		state_buffer.screen_to_sdf[1] = 1.0 / state_buffer.sdf_to_screen[1];
 
-		Rect2 sdf_rect = texture_storage->render_target_get_sdf_rect(p_to_render_target);
+		Rect2 sdf_rect = GLES3::TextureStorage::render_target_get_sdf_rect(p_to_render_target);
 		Rect2 sdf_tex_rect(sdf_rect.position / canvas_scale, sdf_rect.size / canvas_scale);
 
 		state_buffer.sdf_to_tex[0] = 1.0 / sdf_tex_rect.size.width;
@@ -428,7 +426,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			state.canvas_instance_data_buffers[state.current_data_buffer_index].state_ubo);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(StateBuffer), &state_buffer, GL_STREAM_DRAW);
 
-		GLuint global_buffer = material_storage->global_shader_parameters_get_uniform_buffer();
+		GLuint global_buffer = GLES3::MaterialStorage::global_shader_parameters_get_uniform_buffer();
 
 		glBindBufferBase(GL_UNIFORM_BUFFER, GLOBAL_UNIFORM_LOCATION, global_buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -436,14 +434,14 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 
 	glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 5);
 	glBindTexture(
-		GL_TEXTURE_2D, texture_storage->render_target_get_sdf_texture(p_to_render_target));
+		GL_TEXTURE_2D, GLES3::TextureStorage::render_target_get_sdf_texture(p_to_render_target));
 
 	{
 		state.default_filter = p_default_filter;
 		state.default_repeat = p_default_repeat;
 	}
 
-	Size2 render_target_size = texture_storage->render_target_get_size(p_to_render_target);
+	Size2 render_target_size = GLES3::TextureStorage::render_target_get_size(p_to_render_target);
 	glViewport(0, 0, render_target_size.x, render_target_size.y);
 
 	r_sdf_used = false;
@@ -457,8 +455,8 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 	bool backbuffer_gen_mipmaps = false;
 	bool update_skeletons = false;
 
-	Item* ci = p_item_list;
-	Item* canvas_group_owner = nullptr;
+	RCR::Item* ci = p_item_list;
+	RCR::Item* canvas_group_owner = nullptr;
 	bool skip_item = false;
 
 	state.last_item_index = 0;
@@ -479,7 +477,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		RID material = ci->material_owner == nullptr ? ci->material : ci->material_owner->material;
 		if (material.is_valid()) {
 			GLES3::CanvasMaterialData* md = static_cast<GLES3::CanvasMaterialData*>(
-				material_storage->material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+				GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
 			if (md && md->shader_data->valid) {
 				if (md->shader_data->uses_screen_texture && canvas_group_owner == nullptr) {
 					if (!material_screen_texture_cached) {
@@ -502,11 +500,11 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		}
 
 		if (ci->skeleton.is_valid()) {
-			const Item::Command* c = ci->commands;
+			const RCR::Item::Command* c = ci->commands;
 
 			while (c) {
-				if (c->type == Item::Command::TYPE_MESH) {
-					const Item::CommandMesh* cm = static_cast<const Item::CommandMesh*>(c);
+				if (c->type == RCR::Item::Command::TYPE_MESH) {
+					const RCR::Item::CommandMesh* cm = static_cast<const RCR::Item::CommandMesh*>(c);
 					if (cm->mesh_instance.is_valid()) {
 						GLES3::MeshStorage::mesh_instance_check_for_update(cm->mesh_instance);
 						GLES3::MeshStorage::mesh_instance_set_canvas_item_transform(
@@ -533,7 +531,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 				if (ci->canvas_group_owner->canvas_group->mode !=
 					RSE::CANVAS_GROUP_MODE_TRANSPARENT) {
 					Rect2i group_rect = ci->canvas_group_owner->global_rect_cache;
-					texture_storage->render_target_copy_to_back_buffer(
+					GLES3::TextureStorage::render_target_copy_to_back_buffer(
 						p_to_render_target, group_rect, false);
 					if (ci->canvas_group_owner->canvas_group->mode ==
 						RSE::CANVAS_GROUP_MODE_CLIP_AND_DRAW) {
@@ -542,7 +540,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 					}
 				}
 				else if (!backbuffer_cleared) {
-					texture_storage->render_target_clear_back_buffer(
+					GLES3::TextureStorage::render_target_clear_back_buffer(
 						p_to_render_target, Rect2i(), Color(0, 0, 0, 0));
 					backbuffer_cleared = true;
 				}
@@ -569,7 +567,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 			item_count = 0;
 
 			if (ci->canvas_group->blur_mipmaps) {
-				texture_storage->render_target_gen_back_buffer_mipmaps(
+				GLES3::TextureStorage::render_target_gen_back_buffer_mipmaps(
 					p_to_render_target, ci->global_rect_cache);
 			}
 
@@ -595,7 +593,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 				r_sdf_used, false, r_render_info, material_screen_texture_mipmaps_cached);
 			item_count = 0;
 
-			texture_storage->render_target_copy_to_back_buffer(
+			GLES3::TextureStorage::render_target_copy_to_back_buffer(
 				p_to_render_target, back_buffer_rect, backbuffer_gen_mipmaps);
 
 			backbuffer_copy = false;
@@ -606,7 +604,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, Item* p_
 		}
 
 		if (backbuffer_gen_mipmaps) {
-			texture_storage->render_target_gen_back_buffer_mipmaps(
+			GLES3::TextureStorage::render_target_gen_back_buffer_mipmaps(
 				p_to_render_target, back_buffer_rect);
 
 			backbuffer_gen_mipmaps = false;
@@ -655,8 +653,6 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info,
 	bool p_backbuffer_has_mipmaps)
 {
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-
 	canvas_begin(p_to_render_target, p_to_backbuffer, p_backbuffer_has_mipmaps);
 
 	if (p_item_count <= 0) {
@@ -665,7 +661,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	}
 
 	uint32_t index = 0;
-	Item* current_clip = nullptr;
+	RCR::Item* current_clip = nullptr;
 	GLES3::CanvasShaderData* shader_data_cache = nullptr;
 
 	// Record Batches.
@@ -679,7 +675,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	index = 0;
 
 	for (int i = 0; i < p_item_count; i++) {
-		Item* ci = items[i];
+		RCR::Item* ci = items[i];
 
 		if (ci->final_clip_owner != state.canvas_instance_batches[state.current_batch_index].clip) {
 			_new_batch(batch_broken);
@@ -710,7 +706,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			GLES3::CanvasMaterialData* material_data = nullptr;
 			if (material.is_valid()) {
 				material_data = static_cast<GLES3::CanvasMaterialData*>(
-					material_storage->material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+					GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
 			}
 			shader_data_cache = nullptr;
 			if (material_data) {
@@ -768,9 +764,9 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 		sizeof(InstanceData) * index, state.instance_data_array);
 #else
 	// On Desktop and mobile we map the memory without synchronizing for maximum speed.
-	void* buffer = glMapBufferRange(GL_ARRAY_BUFFER, state.last_item_index * sizeof(InstanceData),
-		index * sizeof(InstanceData), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-	memcpy(buffer, state.instance_data_array, index * sizeof(InstanceData));
+	void* buffer = glMapBufferRange(GL_ARRAY_BUFFER, state.last_item_index * sizeof(GLES3::InstanceData),
+		index * sizeof(GLES3::InstanceData), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	memcpy(buffer, state.instance_data_array, index * sizeof(GLES3::InstanceData));
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 #endif
 
@@ -821,16 +817,16 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			}
 		}
 
-		bool success = material_storage->shaders.canvas_shader.version_bind_shader(
+		bool success = GLES3::MaterialStorage::shaders->canvas_shader.version_bind_shader(
 			shader_version, variant, specialization);
 		if (!success) {
 			continue;
 		}
 
 		// Bind per-batch uniforms.
-		material_storage->shaders.canvas_shader.version_set_uniform(CanvasShaderGLES3::BATCH_FLAGS,
+		GLES3::MaterialStorage::shaders->canvas_shader.version_set_uniform(CanvasShaderGLES3::BATCH_FLAGS,
 			state.canvas_instance_batches[i].flags, shader_version, variant, specialization);
-		material_storage->shaders.canvas_shader.version_set_uniform(
+		GLES3::MaterialStorage::shaders->canvas_shader.version_set_uniform(
 			CanvasShaderGLES3::SPECULAR_SHININESS_IN,
 			state.canvas_instance_batches[i].specular_shininess, shader_version, variant,
 			specialization);
@@ -929,8 +925,8 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	state.last_item_index += index;
 }
 
-void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_render_target,
-	const Transform2D& p_canvas_transform_inverse, Item*& current_clip,
+void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p_render_target,
+	const Transform2D& p_canvas_transform_inverse, RCR::Item*& current_clip,
 	GLES3::CanvasShaderData::BlendMode p_blend_mode, Light* p_lights, uint32_t& r_index,
 	bool& r_batch_broken, bool& r_sdf_used, const Point2& p_repeat_offset)
 {
@@ -1011,14 +1007,14 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 	const RSE::CanvasItemTextureRepeat base_texture_repeat =
 		p_item->texture_repeat == RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT ? state.default_repeat
 																		  : p_item->texture_repeat;
-	const Item::Command* c = p_item->commands;
+	const RCR::Item::Command* c = p_item->commands;
 	while (c) {
-		if (skipping && c->type != Item::Command::TYPE_ANIMATION_SLICE) {
+		if (skipping && c->type != RCR::Item::Command::TYPE_ANIMATION_SLICE) {
 			c = c->next;
 			continue;
 		}
 
-		if (c->type != Item::Command::TYPE_MESH) {
+		if (c->type != RCR::Item::Command::TYPE_MESH) {
 			// For Meshes, this gets updated below.
 			_update_transform_2d_to_mat2x3(
 				base_transform * draw_transform, state.instance_data_array[r_index].world);
@@ -1047,8 +1043,8 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 		Color blend_color = base_color;
 		GLES3::CanvasShaderData::BlendMode blend_mode = p_blend_mode;
 		RSE::CanvasItemTextureRepeat texture_repeat = base_texture_repeat;
-		if (c->type == Item::Command::TYPE_RECT) {
-			const Item::CommandRect* rect = static_cast<const Item::CommandRect*>(c);
+		if (c->type == RCR::Item::Command::TYPE_RECT) {
+			const RCR::Item::CommandRect* rect = static_cast<const RCR::Item::CommandRect*>(c);
 			if (rect->flags & CANVAS_RECT_LCD) {
 				blend_mode = GLES3::CanvasShaderData::BLEND_MODE_LCD;
 				blend_color = rect->modulate * base_color;
@@ -1071,15 +1067,15 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 		}
 
 		switch (c->type) {
-		case Item::Command::TYPE_RECT: {
-			const Item::CommandRect* rect = static_cast<const Item::CommandRect*>(c);
+		case RCR::Item::Command::TYPE_RECT: {
+			const RCR::Item::CommandRect* rect = static_cast<const RCR::Item::CommandRect*>(c);
 			if (rect->texture != state.canvas_instance_batches[state.current_batch_index].tex ||
 				state.canvas_instance_batches[state.current_batch_index].command_type !=
-					Item::Command::TYPE_RECT) {
+					RCR::Item::Command::TYPE_RECT) {
 				_new_batch(r_batch_broken);
 				state.canvas_instance_batches[state.current_batch_index].tex = rect->texture;
 				state.canvas_instance_batches[state.current_batch_index].command_type =
-					Item::Command::TYPE_RECT;
+					RCR::Item::Command::TYPE_RECT;
 				state.canvas_instance_batches[state.current_batch_index].command = c;
 				state.canvas_instance_batches[state.current_batch_index].specialization &=
 					specialization_command_mask;
@@ -1171,16 +1167,16 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			_add_to_batch(r_index, r_batch_broken);
 		} break;
 
-		case Item::Command::TYPE_NINEPATCH: {
-			const Item::CommandNinePatch* np = static_cast<const Item::CommandNinePatch*>(c);
+		case RCR::Item::Command::TYPE_NINEPATCH: {
+			const RCR::Item::CommandNinePatch* np = static_cast<const RCR::Item::CommandNinePatch*>(c);
 
 			if (np->texture != state.canvas_instance_batches[state.current_batch_index].tex ||
 				state.canvas_instance_batches[state.current_batch_index].command_type !=
-					Item::Command::TYPE_NINEPATCH) {
+					RCR::Item::Command::TYPE_NINEPATCH) {
 				_new_batch(r_batch_broken);
 				state.canvas_instance_batches[state.current_batch_index].tex = np->texture;
 				state.canvas_instance_batches[state.current_batch_index].command_type =
-					Item::Command::TYPE_NINEPATCH;
+					RCR::Item::Command::TYPE_NINEPATCH;
 				state.canvas_instance_batches[state.current_batch_index].command = c;
 				state.canvas_instance_batches[state.current_batch_index].specialization &=
 					specialization_command_mask;
@@ -1256,15 +1252,15 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			state.instance_data_array[r_index].color_texture_pixel_size[1] = texpixel_size.y;
 		} break;
 
-		case Item::Command::TYPE_POLYGON: {
-			const Item::CommandPolygon* polygon = static_cast<const Item::CommandPolygon*>(c);
+		case RCR::Item::Command::TYPE_POLYGON: {
+			const RCR::Item::CommandPolygon* polygon = static_cast<const RCR::Item::CommandPolygon*>(c);
 
 			// Polygon's can't be batched, so always create a new batch
 			_new_batch(r_batch_broken);
 
 			state.canvas_instance_batches[state.current_batch_index].tex = polygon->texture;
 			state.canvas_instance_batches[state.current_batch_index].command_type =
-				Item::Command::TYPE_POLYGON;
+				RCR::Item::Command::TYPE_POLYGON;
 			state.canvas_instance_batches[state.current_batch_index].command = c;
 			state.canvas_instance_batches[state.current_batch_index].specialization &=
 				specialization_command_mask;
@@ -1291,13 +1287,13 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			_add_to_batch(r_index, r_batch_broken);
 		} break;
 
-		case Item::Command::TYPE_PRIMITIVE: {
-			const Item::CommandPrimitive* primitive = static_cast<const Item::CommandPrimitive*>(c);
+		case RCR::Item::Command::TYPE_PRIMITIVE: {
+			const RCR::Item::CommandPrimitive* primitive = static_cast<const RCR::Item::CommandPrimitive*>(c);
 
 			if (primitive->point_count !=
 					state.canvas_instance_batches[state.current_batch_index].primitive_points ||
 				state.canvas_instance_batches[state.current_batch_index].command_type !=
-					Item::Command::TYPE_PRIMITIVE ||
+					RCR::Item::Command::TYPE_PRIMITIVE ||
 				primitive->texture !=
 					state.canvas_instance_batches[state.current_batch_index].tex) {
 				_new_batch(r_batch_broken);
@@ -1305,7 +1301,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 				state.canvas_instance_batches[state.current_batch_index].primitive_points =
 					primitive->point_count;
 				state.canvas_instance_batches[state.current_batch_index].command_type =
-					Item::Command::TYPE_PRIMITIVE;
+					RCR::Item::Command::TYPE_PRIMITIVE;
 				state.canvas_instance_batches[state.current_batch_index].command = c;
 				state.canvas_instance_batches[state.current_batch_index].specialization &=
 					specialization_command_mask;
@@ -1374,9 +1370,9 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			}
 		} break;
 
-		case Item::Command::TYPE_MESH:
-		case Item::Command::TYPE_MULTIMESH:
-		case Item::Command::TYPE_PARTICLES: {
+		case RCR::Item::Command::TYPE_MESH:
+		case RCR::Item::Command::TYPE_MULTIMESH:
+		case RCR::Item::Command::TYPE_PARTICLES: {
 			// Meshes can't be batched, so always create a new batch.
 			_new_batch(r_batch_broken);
 
@@ -1386,16 +1382,16 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			state.canvas_instance_batches[state.current_batch_index].specialization |=
 				CanvasShaderGLES3::USE_ATTRIBUTES;
 			state.canvas_instance_batches[state.current_batch_index].flags = 0;
-			if (c->type == Item::Command::TYPE_MESH) {
-				const Item::CommandMesh* m = static_cast<const Item::CommandMesh*>(c);
+			if (c->type == RCR::Item::Command::TYPE_MESH) {
+				const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(c);
 				state.canvas_instance_batches[state.current_batch_index].tex = m->texture;
 				_update_transform_2d_to_mat2x3(base_transform * draw_transform * m->transform,
 					state.instance_data_array[r_index].world);
 				modulate = m->modulate;
 
 			}
-			else if (c->type == Item::Command::TYPE_MULTIMESH) {
-				const Item::CommandMultiMesh* mm = static_cast<const Item::CommandMultiMesh*>(c);
+			else if (c->type == RCR::Item::Command::TYPE_MULTIMESH) {
+				const RCR::Item::CommandMultiMesh* mm = static_cast<const RCR::Item::CommandMultiMesh*>(c);
 				state.canvas_instance_batches[state.current_batch_index].tex = mm->texture;
 				state.canvas_instance_batches[state.current_batch_index].specialization |=
 					CanvasShaderGLES3::USE_INSTANCING;
@@ -1409,12 +1405,11 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 						BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 				}
 			}
-			else if (c->type == Item::Command::TYPE_PARTICLES) {
+			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
 				GLES3::ParticlesStorage* particles_storage =
 					GLES3::ParticlesStorage::get_singleton();
-				GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
 
-				const Item::CommandParticles* pt = static_cast<const Item::CommandParticles*>(c);
+				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
 				RID particles = pt->particles;
 				state.canvas_instance_batches[state.current_batch_index].tex = pt->texture;
 				state.canvas_instance_batches[state.current_batch_index].specialization |=
@@ -1425,17 +1420,17 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 					BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 
 				if (particles_storage->particles_has_collision(particles) &&
-					texture_storage->render_target_is_sdf_enabled(p_render_target)) {
+					GLES3::TextureStorage::render_target_is_sdf_enabled(p_render_target)) {
 					// Pass collision information.
 					Transform2D xform = p_item->final_transform;
 
 					GLuint sdf_texture =
-						texture_storage->render_target_get_sdf_texture(p_render_target);
+						GLES3::TextureStorage::render_target_get_sdf_texture(p_render_target);
 
 					Rect2 to_screen;
 					{
 						Rect2 sdf_rect =
-							texture_storage->render_target_get_sdf_rect(p_render_target);
+							GLES3::TextureStorage::render_target_get_sdf_rect(p_render_target);
 
 						to_screen.size =
 							Vector2(1.0 / sdf_rect.size.width, 1.0 / sdf_rect.size.height);
@@ -1473,13 +1468,13 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			_add_to_batch(r_index, r_batch_broken);
 		} break;
 
-		case Item::Command::TYPE_TRANSFORM: {
-			const Item::CommandTransform* transform = static_cast<const Item::CommandTransform*>(c);
+		case RCR::Item::Command::TYPE_TRANSFORM: {
+			const RCR::Item::CommandTransform* transform = static_cast<const RCR::Item::CommandTransform*>(c);
 			draw_transform = transform->xform;
 		} break;
 
-		case Item::Command::TYPE_CLIP_IGNORE: {
-			const Item::CommandClipIgnore* ci = static_cast<const Item::CommandClipIgnore*>(c);
+		case RCR::Item::Command::TYPE_CLIP_IGNORE: {
+			const RCR::Item::CommandClipIgnore* ci = static_cast<const RCR::Item::CommandClipIgnore*>(c);
 			if (current_clip) {
 				if (ci->ignore != reclip) {
 					_new_batch(r_batch_broken);
@@ -1496,9 +1491,9 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item* p_item, RID p_rend
 			}
 		} break;
 
-		case Item::Command::TYPE_ANIMATION_SLICE: {
-			const Item::CommandAnimationSlice* as =
-				static_cast<const Item::CommandAnimationSlice*>(c);
+		case RCR::Item::Command::TYPE_ANIMATION_SLICE: {
+			const RCR::Item::CommandAnimationSlice* as =
+				static_cast<const RCR::Item::CommandAnimationSlice*>(c);
 			double current_time = RendererCompositor::get_total_time();
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
@@ -1539,13 +1534,13 @@ void RasterizerCanvasGLES3::_render_batch(
 		state.canvas_instance_batches[p_index].repeat);
 
 	switch (state.canvas_instance_batches[p_index].command_type) {
-	case Item::Command::TYPE_RECT:
-	case Item::Command::TYPE_NINEPATCH: {
+	case RCR::Item::Command::TYPE_RECT:
+	case RCR::Item::Command::TYPE_NINEPATCH: {
 		glBindVertexArray(data.indexed_quad_array);
 		glBindBuffer(GL_ARRAY_BUFFER,
 			state.canvas_instance_data_buffers[state.current_data_buffer_index]
 				.instance_buffers[state.canvas_instance_batches[p_index].instance_buffer_index]);
-		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(InstanceData);
+		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(GLES3::InstanceData);
 		_enable_attributes(range_start, false);
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr,
@@ -1565,11 +1560,11 @@ void RasterizerCanvasGLES3::_render_batch(
 
 	} break;
 
-	case Item::Command::TYPE_POLYGON: {
-		const Item::CommandPolygon* polygon = static_cast<const Item::CommandPolygon*>(
+	case RCR::Item::Command::TYPE_POLYGON: {
+		const RCR::Item::CommandPolygon* polygon = static_cast<const RCR::Item::CommandPolygon*>(
 			state.canvas_instance_batches[p_index].command);
 
-		PolygonBuffers* pb = polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
+		GLES3::PolygonBuffers* pb = polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
 		ERR_FAIL_NULL(pb);
 
 		glBindVertexArray(pb->vertex_array);
@@ -1577,7 +1572,7 @@ void RasterizerCanvasGLES3::_render_batch(
 			state.canvas_instance_data_buffers[state.current_data_buffer_index]
 				.instance_buffers[state.canvas_instance_batches[p_index].instance_buffer_index]);
 
-		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(InstanceData);
+		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(GLES3::InstanceData);
 		_enable_attributes(range_start, false);
 
 		if (pb->color_disabled && pb->color != Color(1.0, 1.0, 1.0, 1.0)) {
@@ -1609,12 +1604,12 @@ void RasterizerCanvasGLES3::_render_batch(
 		}
 	} break;
 
-	case Item::Command::TYPE_PRIMITIVE: {
+	case RCR::Item::Command::TYPE_PRIMITIVE: {
 		glBindVertexArray(data.canvas_quad_array);
 		glBindBuffer(GL_ARRAY_BUFFER,
 			state.canvas_instance_data_buffers[state.current_data_buffer_index]
 				.instance_buffers[state.canvas_instance_batches[p_index].instance_buffer_index]);
-		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(InstanceData);
+		uint32_t range_start = state.canvas_instance_batches[p_index].start * sizeof(GLES3::InstanceData);
 		_enable_attributes(range_start, true);
 
 		const GLenum primitive[5] = {GL_POINTS, GL_POINTS, GL_LINES, GL_TRIANGLES, GL_TRIANGLES};
@@ -1643,9 +1638,9 @@ void RasterizerCanvasGLES3::_render_batch(
 
 	} break;
 
-	case Item::Command::TYPE_MESH:
-	case Item::Command::TYPE_MULTIMESH:
-	case Item::Command::TYPE_PARTICLES: {
+	case RCR::Item::Command::TYPE_MESH:
+	case RCR::Item::Command::TYPE_MULTIMESH:
+	case RCR::Item::Command::TYPE_PARTICLES: {
 		GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
 		RID mesh;
 		RID mesh_instance;
@@ -1657,16 +1652,16 @@ void RasterizerCanvasGLES3::_render_batch(
 		bool instance_uses_custom_data = false;
 		bool use_instancing = false;
 
-		if (state.canvas_instance_batches[p_index].command_type == Item::Command::TYPE_MESH) {
-			const Item::CommandMesh* m = static_cast<const Item::CommandMesh*>(
+		if (state.canvas_instance_batches[p_index].command_type == RCR::Item::Command::TYPE_MESH) {
+			const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(
 				state.canvas_instance_batches[p_index].command);
 			mesh = m->mesh;
 			mesh_instance = m->mesh_instance;
 
 		}
 		else if (state.canvas_instance_batches[p_index].command_type ==
-				   Item::Command::TYPE_MULTIMESH) {
-			const Item::CommandMultiMesh* mm = static_cast<const Item::CommandMultiMesh*>(
+				   RCR::Item::Command::TYPE_MULTIMESH) {
+			const RCR::Item::CommandMultiMesh* mm = static_cast<const RCR::Item::CommandMultiMesh*>(
 				state.canvas_instance_batches[p_index].command);
 			RID multimesh = mm->multimesh;
 			mesh = GLES3::MeshStorage::multimesh_get_mesh(multimesh);
@@ -1691,8 +1686,8 @@ void RasterizerCanvasGLES3::_render_batch(
 
 		}
 		else if (state.canvas_instance_batches[p_index].command_type ==
-				   Item::Command::TYPE_PARTICLES) {
-			const Item::CommandParticles* pt = static_cast<const Item::CommandParticles*>(
+				   RCR::Item::Command::TYPE_PARTICLES) {
+			const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(
 				state.canvas_instance_batches[p_index].command);
 			RID particles = pt->particles;
 			mesh = particles_storage->particles_get_draw_pass_mesh(particles, 0);
@@ -1753,7 +1748,7 @@ void RasterizerCanvasGLES3::_render_batch(
 					[state.canvas_instance_batches[p_index].instance_buffer_index]);
 
 			uint32_t range_start =
-				state.canvas_instance_batches[p_index].start * sizeof(InstanceData);
+				state.canvas_instance_batches[p_index].start * sizeof(GLES3::InstanceData);
 			_enable_attributes(range_start, false, instance_count);
 
 			if (index_array_gl != 0) {
@@ -1828,9 +1823,9 @@ void RasterizerCanvasGLES3::_render_batch(
 		}
 
 	} break;
-	case Item::Command::TYPE_TRANSFORM:
-	case Item::Command::TYPE_CLIP_IGNORE:
-	case Item::Command::TYPE_ANIMATION_SLICE: {
+	case RCR::Item::Command::TYPE_TRANSFORM:
+	case RCR::Item::Command::TYPE_CLIP_IGNORE:
+	case RCR::Item::Command::TYPE_ANIMATION_SLICE: {
 		// Can ignore these as they only impact batch creation.
 	} break;
 	}
@@ -1852,9 +1847,9 @@ void RasterizerCanvasGLES3::_add_to_batch(uint32_t& r_index, bool& r_batch_broke
 #else
 		// On Desktop and mobile we map the memory without synchronizing for maximum speed.
 		void* buffer =
-			glMapBufferRange(GL_ARRAY_BUFFER, state.last_item_index * sizeof(InstanceData),
-				r_index * sizeof(InstanceData), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-		memcpy(buffer, state.instance_data_array, r_index * sizeof(InstanceData));
+			glMapBufferRange(GL_ARRAY_BUFFER, state.last_item_index * sizeof(GLES3::InstanceData),
+				r_index * sizeof(GLES3::InstanceData), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+		memcpy(buffer, state.instance_data_array, r_index * sizeof(GLES3::InstanceData));
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 #endif
 		_allocate_instance_buffer();
@@ -1869,7 +1864,7 @@ void RasterizerCanvasGLES3::_add_to_batch(uint32_t& r_index, bool& r_batch_broke
 void RasterizerCanvasGLES3::_new_batch(bool& r_batch_broken)
 {
 	if (state.canvas_instance_batches.is_empty()) {
-		Batch new_batch;
+		GLES3::Batch new_batch;
 		new_batch.instance_buffer_index = state.current_instance_buffer_index;
 		state.canvas_instance_batches.push_back(new_batch);
 		return;
@@ -1883,7 +1878,7 @@ void RasterizerCanvasGLES3::_new_batch(bool& r_batch_broken)
 	r_batch_broken = true;
 
 	// Copy the properties of the current batch, we will manually update the things that changed.
-	Batch new_batch = state.canvas_instance_batches[state.current_batch_index];
+	GLES3::Batch new_batch = state.canvas_instance_batches[state.current_batch_index];
 	new_batch.instance_count = 0;
 	new_batch.start = state.canvas_instance_batches[state.current_batch_index].start +
 					  state.canvas_instance_batches[state.current_batch_index].instance_count;
@@ -1897,13 +1892,13 @@ void RasterizerCanvasGLES3::_enable_attributes(uint32_t p_start, bool p_primitiv
 	uint32_t split = p_primitive ? 13 : 14;
 	for (uint32_t i = 8; i < split; i++) {
 		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData),
+		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(GLES3::InstanceData),
 			CAST_INT_TO_UCHAR_PTR(p_start + (i - 8) * 4 * sizeof(float)));
 		glVertexAttribDivisor(i, p_rate);
 	}
 	for (uint32_t i = split; i <= 15; i++) {
 		glEnableVertexAttribArray(i);
-		glVertexAttribIPointer(i, 4, GL_UNSIGNED_INT, sizeof(InstanceData),
+		glVertexAttribIPointer(i, 4, GL_UNSIGNED_INT, sizeof(GLES3::InstanceData),
 			CAST_INT_TO_UCHAR_PTR(p_start + (i - 8) * 4 * sizeof(float)));
 		glVertexAttribDivisor(i, p_rate);
 	}
@@ -1917,23 +1912,21 @@ RID RasterizerCanvasGLES3::light_create()
 
 void RasterizerCanvasGLES3::light_set_texture(RID p_rid, RID p_texture)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(cl);
 	if (cl->texture == p_texture) {
 		return;
 	}
 
-	ERR_FAIL_COND(p_texture.is_valid() && !texture_storage->owns_texture(p_texture));
+	ERR_FAIL_COND(p_texture.is_valid() && !GLES3::TextureStorage::owns_texture(p_texture));
 
 	if (cl->texture.is_valid()) {
-		texture_storage->texture_remove_from_texture_atlas(cl->texture);
+		GLES3::TextureStorage::texture_remove_from_texture_atlas(cl->texture);
 	}
 	cl->texture = p_texture;
 
 	if (cl->texture.is_valid()) {
-		texture_storage->texture_add_to_texture_atlas(cl->texture);
+		GLES3::TextureStorage::texture_add_to_texture_atlas(cl->texture);
 	}
 }
 
@@ -2254,8 +2247,8 @@ void RasterizerCanvasGLES3::_update_shadow_atlas()
 			state.shadow_fb = 0;
 			state.shadow_texture = 0;
 			state.shadow_depth_buffer = 0;
-			WARN_PRINT("Could not create CanvasItem shadow atlas, status: " +
-					   GLES3::TextureStorage::get_singleton()->get_framebuffer_error(status));
+			WARN_PRINT("Could not create RCR::CanvasItem shadow atlas, status: " +
+					   GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 		GLES3::Utilities::texture_allocated_data(state.shadow_texture,
 			state.shadow_texture_size * data.max_lights_per_render * 2 * 4,
@@ -2266,10 +2259,8 @@ void RasterizerCanvasGLES3::_update_shadow_atlas()
 
 void RasterizerCanvasGLES3::render_sdf(RID p_render_target, LightOccluderInstance* p_occluders)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-
-	GLuint fb = texture_storage->render_target_get_sdf_framebuffer(p_render_target);
-	Rect2i rect = texture_storage->render_target_get_sdf_rect(p_render_target);
+	GLuint fb = GLES3::TextureStorage::render_target_get_sdf_framebuffer(p_render_target);
+	Rect2i rect = GLES3::TextureStorage::render_target_get_sdf_rect(p_render_target);
 
 	Transform2D to_sdf;
 	to_sdf.columns[0] *= rect.size.width;
@@ -2333,7 +2324,7 @@ void RasterizerCanvasGLES3::render_sdf(RID p_render_target, LightOccluderInstanc
 		instance = instance->next;
 	}
 
-	texture_storage->render_target_sdf_process(p_render_target); // done rendering, process it
+	GLES3::TextureStorage::render_target_sdf_process(p_render_target); // done rendering, process it
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 }
@@ -2552,7 +2543,7 @@ void RasterizerCanvasGLES3::set_shadow_texture_size(int p_size)
 
 	if (p_size > config->max_texture_size) {
 		p_size = config->max_texture_size;
-		WARN_PRINT("Attempting to set CanvasItem shadow atlas size to " + itos(p_size) +
+		WARN_PRINT("Attempting to set RCR::CanvasItem shadow atlas size to " + itos(p_size) +
 				   " which is beyond limit of " + itos(config->max_texture_size) +
 				   "supported by hardware.");
 	}
@@ -2596,16 +2587,15 @@ void RasterizerCanvasGLES3::update() {}
 void RasterizerCanvasGLES3::canvas_begin(
 	RID p_to_render_target, bool p_to_backbuffer, bool p_backbuffer_has_mipmaps)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
-	GLES3::RenderTarget* render_target = texture_storage->get_render_target(p_to_render_target);
+	GLES3::RenderTarget* render_target = GLES3::TextureStorage::get_render_target(p_to_render_target);
 
 	if (p_to_backbuffer) {
 		glBindFramebuffer(GL_FRAMEBUFFER, render_target->backbuffer_fbo);
 		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 4);
-		GLES3::Texture* tex = texture_storage->get_texture(
-			texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
@@ -2636,15 +2626,14 @@ void RasterizerCanvasGLES3::canvas_begin(
 	}
 
 	glActiveTexture(GL_TEXTURE0);
-	GLES3::Texture* tex = texture_storage->get_texture(
-		texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+	GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+		GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 	glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 }
 
 void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	if (p_texture == RID()) {
@@ -2662,7 +2651,7 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 
 	GLES3::CanvasTexture* ct = nullptr;
 
-	GLES3::Texture* t = texture_storage->get_texture(p_texture);
+	GLES3::Texture* t = GLES3::TextureStorage::get_texture(p_texture);
 
 	if (t) {
 		ERR_FAIL_NULL(t->canvas_texture);
@@ -2672,7 +2661,7 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 		}
 	}
 	else {
-		ct = texture_storage->get_canvas_texture(p_texture);
+		ct = GLES3::TextureStorage::get_canvas_texture(p_texture);
 	}
 
 	if (!ct) {
@@ -2691,11 +2680,11 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 																	  : p_base_repeat;
 	ERR_FAIL_COND(repeat == RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT);
 
-	GLES3::Texture* texture = texture_storage->get_texture(ct->diffuse);
+	GLES3::Texture* texture = GLES3::TextureStorage::get_texture(ct->diffuse);
 
 	if (!texture) {
-		GLES3::Texture* tex = texture_storage->get_texture(
-			texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
@@ -2709,12 +2698,12 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 		}
 	}
 
-	GLES3::Texture* normal_map = texture_storage->get_texture(ct->normal_map);
+	GLES3::Texture* normal_map = GLES3::TextureStorage::get_texture(ct->normal_map);
 
 	if (!normal_map) {
 		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 6);
-		GLES3::Texture* tex = texture_storage->get_texture(
-			texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_NORMAL));
+		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_NORMAL));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
@@ -2727,12 +2716,12 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 		}
 	}
 
-	GLES3::Texture* specular_map = texture_storage->get_texture(ct->specular);
+	GLES3::Texture* specular_map = GLES3::TextureStorage::get_texture(ct->specular);
 
 	if (!specular_map) {
 		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 7);
-		GLES3::Texture* tex = texture_storage->get_texture(
-			texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
+		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
+			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
@@ -2750,15 +2739,13 @@ void RasterizerCanvasGLES3::_prepare_canvas_texture(RID p_texture,
 	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat,
 	uint32_t& r_index, Size2& r_texpixel_size)
 {
-	GLES3::TextureStorage* texture_storage = GLES3::TextureStorage::get_singleton();
-
 	if (p_texture == RID()) {
 		p_texture = default_canvas_texture;
 	}
 
 	GLES3::CanvasTexture* ct = nullptr;
 
-	GLES3::Texture* t = texture_storage->get_texture(p_texture);
+	GLES3::Texture* t = GLES3::TextureStorage::get_texture(p_texture);
 
 	if (t) {
 		// regular texture
@@ -2770,7 +2757,7 @@ void RasterizerCanvasGLES3::_prepare_canvas_texture(RID p_texture,
 		ct = t->canvas_texture;
 	}
 	else {
-		ct = texture_storage->get_canvas_texture(p_texture);
+		ct = GLES3::TextureStorage::get_canvas_texture(p_texture);
 	}
 
 	if (!ct) {
@@ -2780,12 +2767,12 @@ void RasterizerCanvasGLES3::_prepare_canvas_texture(RID p_texture,
 		return;
 	}
 
-	GLES3::Texture* texture = texture_storage->get_texture(ct->diffuse);
+	GLES3::Texture* texture = GLES3::TextureStorage::get_texture(ct->diffuse);
 	Size2i size_cache;
 
 	// Cache default white resource ID.
 	const RID default_texture_id =
-		texture_storage->texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE);
+		GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE);
 
 	// If no texture is assigned, assign default white.
 	if (!texture) {
@@ -2796,7 +2783,7 @@ void RasterizerCanvasGLES3::_prepare_canvas_texture(RID p_texture,
 	size_cache =
 		ct->diffuse == default_texture_id ? Size2i(1, 1) : Size2i(texture->width, texture->height);
 
-	GLES3::Texture* normal_map = texture_storage->get_texture(ct->normal_map);
+	GLES3::Texture* normal_map = GLES3::TextureStorage::get_texture(ct->normal_map);
 
 	if (ct->specular_color.a < 0.999) {
 		state.canvas_instance_batches[state.current_batch_index].flags |=
@@ -2856,7 +2843,7 @@ void RasterizerCanvasGLES3::draw_lens_distortion_rect(
 {
 }
 
-RendererCanvasRender::PolygonID RasterizerCanvasGLES3::request_polygon(const Vector<int>& p_indices,
+PolygonID RasterizerCanvasGLES3::request_polygon(const Vector<int>& p_indices,
 	const Vector<Point2>& p_points, const Vector<Color>& p_colors, const Vector<Point2>& p_uvs,
 	const Vector<int>& p_bones, const Vector<float>& p_weights, int p_count)
 {
@@ -2874,7 +2861,7 @@ RendererCanvasRender::PolygonID RasterizerCanvasGLES3::request_polygon(const Vec
 		stride += 4;
 	}
 
-	PolygonBuffers pb;
+	GLES3::PolygonBuffers pb;
 	glGenBuffers(1, &pb.vertex_buffer);
 	glGenVertexArrays(1, &pb.vertex_array);
 	glBindVertexArray(pb.vertex_array);
@@ -3025,10 +3012,10 @@ RendererCanvasRender::PolygonID RasterizerCanvasGLES3::request_polygon(const Vec
 
 void RasterizerCanvasGLES3::free_polygon(PolygonID p_polygon)
 {
-	PolygonBuffers* pb_ptr = polygon_buffers.polygons.getptr(p_polygon);
+	GLES3::PolygonBuffers* pb_ptr = polygon_buffers.polygons.getptr(p_polygon);
 	ERR_FAIL_NULL(pb_ptr);
 
-	PolygonBuffers& pb = *pb_ptr;
+	GLES3::PolygonBuffers& pb = *pb_ptr;
 
 	if (pb.index_buffer != 0) {
 		GLES3::Utilities::buffer_free_data(pb.index_buffer);
@@ -3056,7 +3043,7 @@ void RasterizerCanvasGLES3::_allocate_instance_data_buffer()
 	// Light uniform buffer.
 	glBindBuffer(GL_UNIFORM_BUFFER, new_buffers[1]);
 	GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER, new_buffers[1],
-		sizeof(LightUniform) * data.max_lights_per_render, nullptr, GL_STREAM_DRAW,
+		sizeof(GLES3::LightUniform) * data.max_lights_per_render, nullptr, GL_STREAM_DRAW,
 		"2D Lights UBO[" + itos(state.current_data_buffer_index) + "]");
 	// State buffer.
 	glBindBuffer(GL_UNIFORM_BUFFER, new_buffers[2]);
@@ -3064,7 +3051,7 @@ void RasterizerCanvasGLES3::_allocate_instance_data_buffer()
 		nullptr, GL_STREAM_DRAW, "2D State UBO[" + itos(state.current_data_buffer_index) + "]");
 
 	state.current_data_buffer_index = (state.current_data_buffer_index + 1);
-	DataBuffer db;
+	GLES3::DataBuffer db;
 	db.instance_buffers.push_back(new_buffers[0]);
 	db.light_ubo = new_buffers[1];
 	db.state_ubo = new_buffers[2];
@@ -3106,9 +3093,11 @@ void RasterizerCanvasGLES3::_allocate_instance_buffer()
 
 void RasterizerCanvasGLES3::set_time(double p_time) { state.time = p_time; }
 
-RasterizerCanvasGLES3::RasterizerCanvasGLES3(
+void RasterizerCanvasGLES3::initialize(
 	GLES3::TextureStorage* p_texture_storage, GLES3::MaterialStorage* p_material_storage)
 {
+	texture_storage = p_texture_storage;
+	material_storage = p_material_storage;
 	GLES3::TextureStorage* texture_storage = texture_storage;
 	GLES3::MaterialStorage* material_storage = p_material_storage;
 	GLES3::Config* config = GLES3::Config::get_singleton();
@@ -3225,7 +3214,7 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3(
 	// Reserve 3 Uniform Buffers for instance data Frame N, N+1 and N+2
 	data.max_instance_buffer_size =
 		data.max_instances_per_buffer *
-		sizeof(InstanceData); // 16,384 instances * 128 bytes = 2,097,152 bytes = 2,048 kb
+		sizeof(GLES3::InstanceData); // 16,384 instances * 128 bytes = 2,097,152 bytes = 2,048 kb
 	state.canvas_instance_data_buffers.resize(3);
 	state.canvas_instance_batches.reserve(200);
 
@@ -3239,13 +3228,13 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3(
 		// Light uniform buffer.
 		glBindBuffer(GL_UNIFORM_BUFFER, new_buffers[1]);
 		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER, new_buffers[1],
-			sizeof(LightUniform) * data.max_lights_per_render, nullptr, GL_STREAM_DRAW,
+			sizeof(GLES3::LightUniform) * data.max_lights_per_render, nullptr, GL_STREAM_DRAW,
 			"2D lights UBO[0]");
 		// State buffer.
 		glBindBuffer(GL_UNIFORM_BUFFER, new_buffers[2]);
 		GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER, new_buffers[2],
 			sizeof(StateBuffer), nullptr, GL_STREAM_DRAW, "2D state UBO[0]");
-		DataBuffer db;
+		GLES3::DataBuffer db;
 		db.instance_buffers.push_back(new_buffers[0]);
 		db.light_ubo = new_buffers[1];
 		db.state_ubo = new_buffers[2];
@@ -3256,8 +3245,8 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3(
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	state.instance_data_array = memnew_arr(InstanceData, data.max_instances_per_buffer);
-	state.light_uniforms = memnew_arr(LightUniform, data.max_lights_per_render);
+	state.instance_data_array = memnew_arr(GLES3::InstanceData, data.max_instances_per_buffer);
+	state.light_uniforms = memnew_arr(GLES3::LightUniform, data.max_lights_per_render);
 
 	{
 		const uint32_t indices[6] = {0, 2, 1, 3, 2, 0};
@@ -3274,9 +3263,9 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3(
 	global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
 	global_defines += "#define MAX_LIGHTS " + itos(data.max_lights_per_render) + "\n";
 
-	GLES3::MaterialStorage::get_singleton()->shaders.canvas_shader.initialize(global_defines, 1);
+	GLES3::MaterialStorage::shaders->canvas_shader.initialize(global_defines, 1);
 	data.canvas_shader_default_version =
-		GLES3::MaterialStorage::get_singleton()->shaders.canvas_shader.version_create();
+		GLES3::MaterialStorage::shaders->canvas_shader.version_create();
 
 	shadow_render.shader.initialize();
 	shadow_render.shader_version = shadow_render.shader.version_create();
@@ -3334,24 +3323,22 @@ void fragment() {
 			default_clip_children_material, default_clip_children_shader);
 	}
 
-	default_canvas_texture = texture_storage->canvas_texture_allocate();
-	texture_storage->canvas_texture_initialize(default_canvas_texture);
+	default_canvas_texture = GLES3::TextureStorage::canvas_texture_allocate();
+	GLES3::TextureStorage::canvas_texture_initialize(default_canvas_texture);
 
 	state.time = 0.0;
 }
 
-RasterizerCanvasGLES3::~RasterizerCanvasGLES3()
+void RasterizerCanvasGLES3::finalize()
 {
-	singleton = nullptr;
-
-	GLES3::MaterialStorage* material_storage = GLES3::MaterialStorage::get_singleton();
-	material_storage->shaders.canvas_shader.version_free(data.canvas_shader_default_version);
+	texture_storage = nullptr;
+	material_storage = nullptr;
+	GLES3::MaterialStorage::shaders->canvas_shader.version_free(data.canvas_shader_default_version);
 	shadow_render.shader.version_free(shadow_render.shader_version);
-	material_storage->material_free(default_canvas_group_material);
-	material_storage->shader_free(default_canvas_group_shader);
-	material_storage->material_free(default_clip_children_material);
-	material_storage->shader_free(default_clip_children_shader);
-	singleton = nullptr;
+	GLES3::MaterialStorage::material_free(default_canvas_group_material);
+	GLES3::MaterialStorage::shader_free(default_canvas_group_shader);
+	GLES3::MaterialStorage::material_free(default_clip_children_material);
+	GLES3::MaterialStorage::shader_free(default_clip_children_shader);
 
 	glDeleteBuffers(1, &data.canvas_quad_vertices);
 	glDeleteVertexArrays(1, &data.canvas_quad_array);
@@ -3359,7 +3346,7 @@ RasterizerCanvasGLES3::~RasterizerCanvasGLES3()
 	glDeleteBuffers(1, &data.canvas_quad_vertices);
 	glDeleteVertexArrays(1, &data.canvas_quad_array);
 
-	GLES3::TextureStorage::get_singleton()->canvas_texture_free(default_canvas_texture);
+	GLES3::TextureStorage::canvas_texture_free(default_canvas_texture);
 	memdelete_arr(state.instance_data_array);
 	memdelete_arr(state.light_uniforms);
 

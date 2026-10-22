@@ -1551,8 +1551,7 @@ StringName Node::get_property_store_alias(const StringName& p_property) const { 
 
 bool Node::is_part_of_edited_scene() const
 {
-	return Engine::is_editor_hint() && is_inside_tree() &&
-		   data.tree->get_edited_scene_root() &&
+	return Engine::is_editor_hint() && is_inside_tree() && data.tree->get_edited_scene_root() &&
 		   data.tree->get_edited_scene_root()
 			   ->get_parent() && // Defend against edge cases when creating new scenes and they are
 								 // not fully added to the tree yet.
@@ -1821,6 +1820,38 @@ Node::~Node()
 #endif
 }
 
+Node::Node() {
+	// Initialize scalar and pointer fields
+	data.name = StringName();
+	data.parent = nullptr;
+	data.owner = nullptr;
+	data.tree = SceneTree::get_singleton(); // Fallback so standalone nodes have tree context
+	data.viewport = nullptr;
+	data.depth = -1;
+	data.index = -1;
+	data.blocked = 0;
+	data.internal_mode = INTERNAL_MODE_DISABLED;
+	data.unique_name_in_owner = false;
+	data.instance_state = Ref<SceneState>();
+	data.inherited_state = Ref<SceneState>();
+
+	data.children_cache_dirty = true;
+	data.internal_children_front_count_cache = 0;
+	data.internal_children_back_count_cache = 0;
+	data.external_children_count_cache = 0;
+
+	data.process_owner = nullptr;
+	data.process_group = nullptr;
+	data.process_thread_group_order = 0;
+	data.process_thread_messages = 0;
+	data.process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
+	data.multiplayer_authority = 1;
+
+#ifdef DEBUG_ENABLED
+	total_node_count.increment();
+#endif
+}
+
 String Node::get_description(bool p_show_not_in_tree) const { return String(); }
 
 void Node::set_name(const StringName& p_name) { data.name = p_name; }
@@ -1886,7 +1917,20 @@ Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<String
 	return &n;
 }
 
-void Node::_add_child_nocheck(Node*, StringName const&, Node::InternalMode) {}
+void Node::_add_child_nocheck(Node* p_child, const StringName& p_name, InternalMode p_internal)
+{
+	p_child->data.parent = this;
+	p_child->data.name = p_name;
+	p_child->data.internal_mode = p_internal;
+
+	// Add to children collection
+	data.children.insert(p_name, p_child);
+
+	// THIS IS WHAT POPULATES data.tree ON THE CHILD:
+	if (data.tree) {
+		p_child->_set_tree(data.tree);
+	}
+}
 
 void Node::set_translation_domain(const StringName& p_domain) {}
 

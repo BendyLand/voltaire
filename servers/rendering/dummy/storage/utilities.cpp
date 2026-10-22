@@ -44,7 +44,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	else if (RendererDummy::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	else if (RendererDummy::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	return RSE::INSTANCE_NONE;
@@ -52,11 +52,11 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (RendererDummy::LightStorage::get_singleton()->free(p_rid)) {
+	if (RendererDummy::LightStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererDummy::TextureStorage::get_singleton()->owns_texture(p_rid)) {
-		RendererDummy::TextureStorage::get_singleton()->texture_free(p_rid);
+	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {
+		RendererDummy::TextureStorage::texture_free(p_rid);
 		return true;
 	}
 	else if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {
@@ -67,12 +67,12 @@ bool Utilities::free(RID p_rid)
 		RendererDummy::MeshStorage::multimesh_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MaterialStorage::get_singleton()->owns_shader(p_rid)) {
-		RendererDummy::MaterialStorage::get_singleton()->shader_free(p_rid);
+	else if (RendererDummy::MaterialStorage::owns_shader(p_rid)) {
+		RendererDummy::MaterialStorage::shader_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MaterialStorage::get_singleton()->owns_material(p_rid)) {
-		RendererDummy::MaterialStorage::get_singleton()->material_free(p_rid);
+	else if (RendererDummy::MaterialStorage::owns_material(p_rid)) {
+		RendererDummy::MaterialStorage::material_free(p_rid);
 		return true;
 	}
 	return false;

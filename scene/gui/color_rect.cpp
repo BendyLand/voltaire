@@ -30,6 +30,7 @@
 
 #include "color_rect.h"
 #include "servers/display/accessibility_server.h"
+#include "servers/rendering/renderer.h"
 
 Color ColorRect::get_color() const { return color; }
 
@@ -44,11 +45,32 @@ void ColorRect::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_DRAW: {
+		drawing = true;
+		printf(">>> ColorRect NOTIFICATION_DRAW running! size = (%f, %f)\n", get_size().x,
+			get_size().y);
 		draw_rect(Rect2(Point2(), get_size()), color);
+		drawing = false;
 	} break;
 	}
 }
 
+void ColorRect::notification(int p_what) { _notification(p_what); }
+
+void ColorRect::queue_redraw()
+{
+	if (!canvas_item.is_valid()) {
+		return;
+	}
+	Renderer::canvas_item_clear(canvas_item);
+	drawing = true;
+	_notification(NOTIFICATION_DRAW);
+	drawing = false;
+}
+
+void ColorRect::set_color(const Color& p_color)
+{
+	color = p_color;
+	queue_redraw(); // Statically calls ColorRect::queue_redraw()
+}
 
 
-void ColorRect::set_color(Color const&) {}

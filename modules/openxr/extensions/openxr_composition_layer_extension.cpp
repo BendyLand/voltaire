@@ -33,6 +33,7 @@
 #include "platform/android/api/java_class_wrapper.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "servers/xr/xr_server.h"
 
 #ifdef ANDROID_ENABLED
@@ -240,7 +241,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
 		if (subviewport.viewport.is_valid()) {
 			RID rt =
 				Renderer::viewport_get_render_target(subviewport.viewport);
-			RS::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
+			RendererTextureStorage::render_target_set_override(rt, RID(), RID(), RID(), RID());
 		}
 
 		subviewport.viewport = p_viewport;
@@ -556,7 +557,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
 			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
 				// Render to our XR swapchain image.
 				RID rt = RS::viewport_get_render_target(subviewport.viewport);
-				RS::texture_storage->render_target_set_override(
+				RendererTextureStorage::render_target_set_override(
 					rt, get_current_swapchain_texture(), RID(), RID(), RID());
 			}
 		}

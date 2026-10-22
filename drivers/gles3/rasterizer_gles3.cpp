@@ -29,6 +29,11 @@
 /**************************************************************************/
 
 #include "rasterizer_gles3.h"
+#include "drivers/gles3/rasterizer_canvas_gles3.h"
+#include "drivers/gles3/storage/light_storage.h"
+#include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
+#include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -449,10 +454,10 @@ void RasterizerGLES3::initialize()
 	// OpenGL needs to be initialized before initializing the Rasterizers
 	config = memnew(GLES3::Config);
 	GLES3::Utilities::initialize();
-	texture_storage = memnew(GLES3::TextureStorage);
-	material_storage = memnew(GLES3::MaterialStorage);
+	GLES3::TextureStorage::initialize();
+	GLES3::MaterialStorage::initialize();
+	GLES3::LightStorage::initialize();
 	particles_storage = memnew(GLES3::ParticlesStorage);
-	light_storage = memnew(GLES3::LightStorage);
 	copy_effects = memnew(GLES3::CopyEffects);
 	cubemap_filter = memnew(GLES3::CubemapFilter);
 	glow = memnew(GLES3::Glow);
@@ -461,11 +466,12 @@ void RasterizerGLES3::initialize()
 	gi = memnew(GLES3::GI);
 	fog = memnew(GLES3::Fog);
 
-    canvas = memnew(RasterizerCanvasGLES3(texture_storage, material_storage));
+    RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+    RendererTextureStorage::bind<GLES3::TextureStorage>();
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
-	texture_storage->_tex_blit_shader_initialize();
+	GLES3::TextureStorage::_tex_blit_shader_initialize();
 
 	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
 	// itself.
@@ -478,9 +484,9 @@ void RasterizerGLES3::finalize()
 {
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
-	texture_storage->_tex_blit_shader_free();
+	GLES3::TextureStorage::_tex_blit_shader_free();
 	memdelete(scene);
-	memdelete(canvas);
+	RasterizerCanvasGLES3::finalize();
 	memdelete(gi);
 	memdelete(fog);
 	memdelete(post_effects);
@@ -488,10 +494,9 @@ void RasterizerGLES3::finalize()
 	memdelete(cubemap_filter);
 	memdelete(copy_effects);
 	memdelete(feed_effects);
-	memdelete(light_storage);
 	memdelete(particles_storage);
-	memdelete(material_storage);
-	memdelete(texture_storage);
+	GLES3::MeshStorage::finalize();
+	GLES3::TextureStorage::finalize();
 	memdelete(config);
 }
 
@@ -509,7 +514,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	const RenderingServerTypes::BlitToScreen& p_blit, bool p_first)
 {
 	GLES3::RenderTarget* rt =
-		GLES3::TextureStorage::get_singleton()->get_render_target(p_blit.render_target);
+		GLES3::TextureStorage::get_render_target(p_blit.render_target);
 
 	ERR_FAIL_NULL(rt);
 

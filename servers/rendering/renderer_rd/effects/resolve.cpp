@@ -31,6 +31,7 @@
 #include "resolve.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
 
@@ -52,6 +53,28 @@ void Resolve::resolve_depth(
 void RendererRD::Resolve::resolve_gi(RID p_source_color, RID p_source_depth, RID p_dest_color,
 	RID p_dest_depth, RID p_velocity, RID p_normal, Vector2i p_size, int p_samples)
 {
+}
+
+Resolve::Resolve(bool p_prefer_raster_effects)
+{
+	prefer_raster_effects = p_prefer_raster_effects;
+
+	if (prefer_raster_effects) {
+		Vector<String> modes;
+		modes.push_back("\n");
+
+		resolve_raster.shader.initialize(modes);
+		resolve_raster.shader_version = resolve_raster.shader.version_create();
+	}
+	else {
+		Vector<String> modes;
+		modes.push_back("\n#define MODE_GI\n");
+		modes.push_back("\n#define MODE_GI\n#define MODE_VOXEL_GI\n");
+		modes.push_back("\n#define MODE_DEPTH\n");
+
+		resolve.shader.initialize(modes);
+		resolve.shader_version = resolve.shader.version_create();
+	}
 }
 
 

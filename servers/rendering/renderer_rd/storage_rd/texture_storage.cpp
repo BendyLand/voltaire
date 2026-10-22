@@ -29,17 +29,18 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
-#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "texture_storage.h"
 
 using namespace RendererRD;
 
-void TextureStorage::CanvasTexture::clear_cache()
+void RendererRD::TextureStorage::CanvasTexture::clear_cache()
 {
 	info_cache[0] = CanvasTextureCache();
 	info_cache[1] = CanvasTextureCache();
@@ -48,14 +49,14 @@ void TextureStorage::CanvasTexture::clear_cache()
 	}
 }
 
-TextureStorage::CanvasTexture::~CanvasTexture()
+RendererRD::TextureStorage::CanvasTexture::~CanvasTexture()
 {
 	if (invalidated_callback != nullptr) {
 		invalidated_callback(true, invalidated_callback_userdata);
 	}
 }
 
-void TextureStorage::Texture::cleanup()
+void RendererRD::TextureStorage::Texture::cleanup()
 {
 	if (RD::texture_is_valid(rd_texture_srgb)) {
 		// erase this first, as it's a dependency of the one below
@@ -67,11 +68,7 @@ void TextureStorage::Texture::cleanup()
 	memdelete(canvas_texture);
 }
 
-TextureStorage* TextureStorage::singleton = nullptr;
-
-TextureStorage* TextureStorage::get_singleton() { return singleton; }
-
-TextureStorage::~TextureStorage()
+void RendererRD::TextureStorage::finalize()
 {
 	rt_sdf.shader.version_free(rt_sdf.shader_version);
 
@@ -101,14 +98,10 @@ TextureStorage::~TextureStorage()
 			RD::free_rid(default_rd_textures[i]);
 		}
 	}
-
-	singleton = nullptr;
 }
 
-void TextureStorage::_tex_blit_shader_initialize()
+void RendererRD::TextureStorage::_tex_blit_shader_initialize()
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	{
 		Vector<String> tex_blit_modes;
 		tex_blit_modes.push_back("");											  // Only 1 Output
@@ -123,9 +116,9 @@ void TextureStorage::_tex_blit_shader_initialize()
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
 		tex_blit_shader.shader.initialize(tex_blit_modes, global_defines);
 	}
-	material_storage->shader_set_data_request_function(
+	MaterialStorage::shader_set_data_request_function(
 		MaterialStorage::SHADER_TYPE_TEXTURE_BLIT, MaterialStorage::_create_tex_blit_shader_funcs);
-	material_storage->material_set_data_request_function(MaterialStorage::SHADER_TYPE_TEXTURE_BLIT,
+	MaterialStorage::material_set_data_request_function(MaterialStorage::SHADER_TYPE_TEXTURE_BLIT,
 		MaterialStorage::_create_tex_blit_material_funcs);
 
 	{
@@ -156,9 +149,9 @@ void TextureStorage::_tex_blit_shader_initialize()
 
 	{
 		// default material and shader for Texture Blit shader
-		tex_blit_shader.default_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(tex_blit_shader.default_shader);
-		material_storage->shader_set_code(tex_blit_shader.default_shader, R"(
+		tex_blit_shader.default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(tex_blit_shader.default_shader);
+		MaterialStorage::shader_set_code(tex_blit_shader.default_shader, R"(
 // Default Texture Blit shader.
 
 shader_type texture_blit;
@@ -177,27 +170,25 @@ void blit() {
 	COLOR3 = texture(source_texture3, UV) * MODULATE;
 }
 )");
-		tex_blit_shader.default_material = material_storage->material_allocate();
-		material_storage->material_initialize(tex_blit_shader.default_material);
-		material_storage->material_set_shader(
+		tex_blit_shader.default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(tex_blit_shader.default_material);
+		MaterialStorage::material_set_shader(
 			tex_blit_shader.default_material, tex_blit_shader.default_shader);
 	}
 
 	tex_blit_shader.initialized = true;
 }
 
-void TextureStorage::_tex_blit_shader_free()
+void RendererRD::TextureStorage::_tex_blit_shader_free()
 {
 	if (tex_blit_shader.initialized) {
-		MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 		print_verbose("Freeing Default Tex_Blit Shader");
-		material_storage->material_free(tex_blit_shader.default_material);
-		material_storage->shader_free(tex_blit_shader.default_shader);
+		MaterialStorage::material_free(tex_blit_shader.default_material);
+		MaterialStorage::shader_free(tex_blit_shader.default_shader);
 	}
 }
 
-bool TextureStorage::free(RID p_rid)
+bool RendererRD::TextureStorage::free(RID p_rid)
 {
 	if (owns_texture(p_rid)) {
 		texture_free(p_rid);
@@ -223,16 +214,22 @@ bool TextureStorage::free(RID p_rid)
 	return false;
 }
 
-RID TextureStorage::canvas_texture_allocate() { return canvas_texture_owner.allocate_rid(); }
+RID RendererRD::TextureStorage::canvas_texture_allocate()
+{
+	return canvas_texture_owner.allocate_rid();
+}
 
-void TextureStorage::canvas_texture_initialize(RID p_rid)
+void RendererRD::TextureStorage::canvas_texture_initialize(RID p_rid)
 {
 	canvas_texture_owner.initialize_rid(p_rid);
 }
 
-void TextureStorage::canvas_texture_free(RID p_rid) { canvas_texture_owner.free(p_rid); }
+void RendererRD::TextureStorage::canvas_texture_free(RID p_rid)
+{
+	canvas_texture_owner.free(p_rid);
+}
 
-void TextureStorage::canvas_texture_set_channel(
+void RendererRD::TextureStorage::canvas_texture_set_channel(
 	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -252,7 +249,7 @@ void TextureStorage::canvas_texture_set_channel(
 	ct->clear_cache();
 }
 
-void TextureStorage::canvas_texture_set_shading_parameters(
+void RendererRD::TextureStorage::canvas_texture_set_shading_parameters(
 	RID p_canvas_texture, const Color& p_specular_color, float p_shininess)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -264,7 +261,7 @@ void TextureStorage::canvas_texture_set_shading_parameters(
 	ct->specular_color.a = p_shininess;
 }
 
-void TextureStorage::canvas_texture_set_texture_filter(
+void RendererRD::TextureStorage::canvas_texture_set_texture_filter(
 	RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -273,7 +270,7 @@ void TextureStorage::canvas_texture_set_texture_filter(
 	ct->texture_filter = p_filter;
 }
 
-void TextureStorage::canvas_texture_set_texture_repeat(
+void RendererRD::TextureStorage::canvas_texture_set_texture_repeat(
 	RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -282,12 +279,10 @@ void TextureStorage::canvas_texture_set_texture_repeat(
 	ct->texture_repeat = p_repeat;
 }
 
-TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_texture,
-	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat,
-	bool p_use_srgb, bool p_texture_is_data)
+RendererRD::TextureStorage::CanvasTextureInfo RendererRD::TextureStorage::canvas_texture_get_info(
+	RID p_texture, RSE::CanvasItemTextureFilter p_base_filter,
+	RSE::CanvasItemTextureRepeat p_base_repeat, bool p_use_srgb, bool p_texture_is_data)
 {
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	CanvasTexture* ct = nullptr;
 	Texture* t = get_texture(p_texture);
 
@@ -322,8 +317,7 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	ERR_FAIL_COND_V(repeat == RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, CanvasTextureInfo());
 
 	CanvasTextureCache& ctc = ct->info_cache[int(p_use_srgb)];
-	if (!RD::texture_is_valid(ctc.diffuse) ||
-		!RD::texture_is_valid(ctc.normal) ||
+	if (!RD::texture_is_valid(ctc.diffuse) || !RD::texture_is_valid(ctc.normal) ||
 		!RD::texture_is_valid(ctc.specular)) {
 		{ // diffuse
 			t = get_texture(ct->diffuse);
@@ -375,7 +369,7 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	res.diffuse = ctc.diffuse;
 	res.normal = ctc.normal;
 	res.specular = ctc.specular;
-	res.sampler = material_storage->sampler_rd_get_default(filter, repeat);
+	res.sampler = MaterialStorage::sampler_rd_get_default(filter, repeat);
 	res.size = ct->size_cache;
 	res.specular_color = ct->specular_color;
 	res.use_normal = ct->use_normal_cache;
@@ -384,7 +378,7 @@ TextureStorage::CanvasTextureInfo TextureStorage::canvas_texture_get_info(RID p_
 	return res;
 }
 
-void TextureStorage::canvas_texture_set_invalidation_callback(
+void RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(
 	RID p_canvas_texture, InvalidationCallback p_callback, void* p_userdata)
 {
 	CanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
@@ -396,9 +390,9 @@ void TextureStorage::canvas_texture_set_invalidation_callback(
 	ct->invalidated_callback_userdata = p_userdata;
 }
 
-RID TextureStorage::texture_allocate() { return texture_owner.allocate_rid(); }
+RID RendererRD::TextureStorage::texture_allocate() { return texture_owner.allocate_rid(); }
 
-void TextureStorage::texture_free(RID p_texture)
+void RendererRD::TextureStorage::texture_free(RID p_texture)
 {
 	Texture* t = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(t);
@@ -427,24 +421,22 @@ void TextureStorage::texture_free(RID p_texture)
 	texture_owner.free(p_texture);
 }
 
-void TextureStorage::texture_external_initialize(
+void RendererRD::TextureStorage::texture_external_initialize(
 	RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 {
 }
 
-void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
+void RendererRD::TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
 {
 	Texture* tex = texture_owner.get_or_null(p_base);
 	ERR_FAIL_NULL(tex);
 	Texture proxy_tex = *tex;
 
 	proxy_tex.rd_view.format_override = tex->rd_format;
-	proxy_tex.rd_texture =
-		RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
+	proxy_tex.rd_texture = RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
 	if (proxy_tex.rd_texture_srgb.is_valid()) {
 		proxy_tex.rd_view.format_override = tex->rd_format_srgb;
-		proxy_tex.rd_texture_srgb =
-			RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
+		proxy_tex.rd_texture_srgb = RD::texture_create_shared(proxy_tex.rd_view, tex->rd_texture);
 	}
 	proxy_tex.proxy_to = p_base;
 	proxy_tex.is_render_target = false;
@@ -458,7 +450,7 @@ void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base)
 
 // Note: We make some big assumptions about format and usage. If developers need more control,
 // they should use RD::texture_create_from_extension() instead.
-RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
+RID RendererRD::TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth,
 	int p_layers, RSE::TextureLayeredType p_layered_type)
 {
@@ -660,11 +652,11 @@ RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	}
 
 	// Assumed to be a color attachment - see note above.
-	uint64_t usage_flags = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+	uint64_t usage_flags =
+		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	RID rd_texture =
-		RD::texture_create_from_extension(type, format, RDC::TEXTURE_SAMPLES_1,
-			usage_flags, p_native_handle, p_width, p_height, p_depth, p_layers, 1);
+	RID rd_texture = RD::texture_create_from_extension(type, format, RDC::TEXTURE_SAMPLES_1,
+		usage_flags, p_native_handle, p_width, p_height, p_depth, p_layers, 1);
 
 	RID texture = texture_allocate();
 	texture_rd_initialize(texture, rd_texture, p_layered_type);
@@ -672,12 +664,12 @@ RID TextureStorage::texture_create_from_native_handle(RSE::TextureType p_type,
 	return texture;
 }
 
-void TextureStorage::texture_external_update(
+void RendererRD::TextureStorage::texture_external_update(
 	RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 {
 }
 
-void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
+void RendererRD::TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -714,22 +706,20 @@ void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to)
 	tex->canvas_texture = canvas_texture;
 
 	tex->rd_view.format_override = tex->rd_format;
-	tex->rd_texture =
-		RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
+	tex->rd_texture = RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
 	if (tex->rd_texture_srgb.is_valid()) {
 		tex->rd_view.format_override = tex->rd_format_srgb;
-		tex->rd_texture_srgb =
-			RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
+		tex->rd_texture_srgb = RD::texture_create_shared(tex->rd_view, proxy_to->rd_texture);
 	}
 }
 
 // these two APIs can be used together or in combination with the others.
-void TextureStorage::texture_2d_placeholder_initialize(RID p_texture)
+void RendererRD::TextureStorage::texture_2d_placeholder_initialize(RID p_texture)
 {
 	texture_2d_initialize(p_texture, texture_2d_placeholder);
 }
 
-void TextureStorage::texture_2d_layered_placeholder_initialize(
+void RendererRD::TextureStorage::texture_2d_layered_placeholder_initialize(
 	RID p_texture, RSE::TextureLayeredType p_layered_type)
 {
 	if (p_layered_type == RSE::TEXTURE_LAYERED_2D_ARRAY) {
@@ -740,12 +730,12 @@ void TextureStorage::texture_2d_layered_placeholder_initialize(
 	}
 }
 
-void TextureStorage::texture_3d_placeholder_initialize(RID p_texture)
+void RendererRD::TextureStorage::texture_3d_placeholder_initialize(RID p_texture)
 {
 	texture_3d_initialize(p_texture, Image::FORMAT_RGBA8, 4, 4, 4, false, texture_3d_placeholder);
 }
 
-Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const
+Ref<Image> RendererRD::TextureStorage::texture_2d_get(RID p_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Ref<Image>());
@@ -807,7 +797,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const
 	return image;
 }
 
-Ref<Image> TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer) const
+Ref<Image> RendererRD::TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Ref<Image>());
@@ -828,7 +818,7 @@ Ref<Image> TextureStorage::texture_2d_layer_get(RID p_texture, int p_layer) cons
 	return image;
 }
 
-Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture) const
+Vector<Ref<Image>> RendererRD::TextureStorage::texture_3d_get(RID p_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Vector<Ref<Image>>());
@@ -865,13 +855,13 @@ Vector<Ref<Image>> TextureStorage::texture_3d_get(RID p_texture) const
 	return ret;
 }
 
-RID TextureStorage::texture_drawable_get_default_material() const
+RID RendererRD::TextureStorage::texture_drawable_get_default_material()
 {
 	// Return a material with a default Texture_Blit shader for DrawableTexture2D to use
 	return tex_blit_shader.default_material;
 }
 
-void TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
+void RendererRD::TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -918,7 +908,7 @@ void TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
 	area_light_atlas_mark_dirty_on_texture(p_texture);
 }
 
-void TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p_height)
+void RendererRD::TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p_height)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -928,7 +918,7 @@ void TextureStorage::texture_set_size_override(RID p_texture, int p_width, int p
 	tex->height_2d = p_height;
 }
 
-void TextureStorage::texture_set_path(RID p_texture, const String& p_path)
+void RendererRD::TextureStorage::texture_set_path(RID p_texture, const String& p_path)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL(tex);
@@ -936,7 +926,7 @@ void TextureStorage::texture_set_path(RID p_texture, const String& p_path)
 	tex->path = p_path;
 }
 
-String TextureStorage::texture_get_path(RID p_texture) const
+String RendererRD::TextureStorage::texture_get_path(RID p_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, String());
@@ -944,7 +934,7 @@ String TextureStorage::texture_get_path(RID p_texture) const
 	return tex->path;
 }
 
-Image::Format TextureStorage::texture_get_format(RID p_texture) const
+Image::Format RendererRD::TextureStorage::texture_get_format(RID p_texture)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, Image::FORMAT_MAX);
@@ -952,7 +942,7 @@ Image::Format TextureStorage::texture_get_format(RID p_texture) const
 	return tex->format;
 }
 
-void TextureStorage::texture_set_detect_3d_callback(
+void RendererRD::TextureStorage::texture_set_detect_3d_callback(
 	RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
@@ -962,7 +952,7 @@ void TextureStorage::texture_set_detect_3d_callback(
 	tex->detect_3d_callback = p_callback;
 }
 
-void TextureStorage::texture_set_detect_normal_callback(
+void RendererRD::TextureStorage::texture_set_detect_normal_callback(
 	RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
@@ -972,7 +962,7 @@ void TextureStorage::texture_set_detect_normal_callback(
 	tex->detect_normal_callback = p_callback;
 }
 
-void TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
+void RendererRD::TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
 	RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
@@ -982,7 +972,8 @@ void TextureStorage::texture_set_detect_roughness_callback(RID p_texture,
 	tex->detect_roughness_callback = p_callback;
 }
 
-void TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info)
+void RendererRD::TextureStorage::texture_debug_usage(
+	List<RenderingServerTypes::TextureInfo>* r_info)
 {
 	for (const RID& rid : texture_owner.get_owned_list()) {
 		Texture* t = texture_owner.get_or_null(rid);
@@ -1017,11 +1008,16 @@ void TextureStorage::texture_debug_usage(List<RenderingServerTypes::TextureInfo>
 	}
 }
 
-void TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) {}
+void RendererRD::TextureStorage::texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
+{
+}
 
-Size2 TextureStorage::texture_size_with_proxy(RID p_proxy) { return texture_2d_get_size(p_proxy); }
+Size2 RendererRD::TextureStorage::texture_size_with_proxy(RID p_proxy)
+{
+	return texture_2d_get_size(p_proxy);
+}
 
-void TextureStorage::texture_rd_initialize(
+void RendererRD::TextureStorage::texture_rd_initialize(
 	RID p_texture, const RID& p_rd_texture, const RSE::TextureLayeredType p_layer_type)
 {
 	ERR_FAIL_COND(!RD::texture_is_valid(p_rd_texture));
@@ -1043,7 +1039,7 @@ void TextureStorage::texture_rd_initialize(
 	switch (tf.texture_type) {
 	case RDC::TEXTURE_TYPE_2D: {
 		ERR_FAIL_COND(tf.array_layers != 1);
-		texture.type = TextureStorage::TYPE_2D;
+		texture.type = RendererRD::TextureStorage::TYPE_2D;
 	} break;
 	case RDC::TEXTURE_TYPE_2D_ARRAY:
 	case RDC::TEXTURE_TYPE_CUBE:
@@ -1051,12 +1047,12 @@ void TextureStorage::texture_rd_initialize(
 		// RenderingDevice doesn't distinguish between Array textures and Cube textures
 		// this condition covers TextureArrays, TextureCube, and TextureCubeArray.
 		ERR_FAIL_COND(tf.array_layers == 1);
-		texture.type = TextureStorage::TYPE_LAYERED;
+		texture.type = RendererRD::TextureStorage::TYPE_LAYERED;
 		texture.layered_type = p_layer_type;
 	} break;
 	case RDC::TEXTURE_TYPE_3D: {
 		ERR_FAIL_COND(tf.array_layers != 1);
-		texture.type = TextureStorage::TYPE_3D;
+		texture.type = RendererRD::TextureStorage::TYPE_3D;
 	} break;
 	default: {
 		ERR_FAIL_MSG("This RD texture can't be used as a render texture");
@@ -1109,7 +1105,7 @@ void TextureStorage::texture_rd_initialize(
 	texture_owner.initialize_rid(p_texture, texture);
 }
 
-RID TextureStorage::texture_get_rd_texture(RID p_texture, bool p_srgb) const
+RID RendererRD::TextureStorage::texture_get_rd_texture(RID p_texture, bool p_srgb)
 {
 	if (p_texture.is_null()) {
 		return RID();
@@ -1123,22 +1119,20 @@ RID TextureStorage::texture_get_rd_texture(RID p_texture, bool p_srgb) const
 	return (p_srgb && tex->rd_texture_srgb.is_valid()) ? tex->rd_texture_srgb : tex->rd_texture;
 }
 
-uint64_t TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb) const
+uint64_t RendererRD::TextureStorage::texture_get_native_handle(RID p_texture, bool p_srgb)
 {
 	Texture* tex = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(tex, 0);
 
 	if (p_srgb && tex->rd_texture_srgb.is_valid()) {
-		return RD::get_driver_resource(
-			RDC::DRIVER_RESOURCE_TEXTURE, tex->rd_texture_srgb);
+		return RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, tex->rd_texture_srgb);
 	}
 	else {
-		return RD::get_driver_resource(
-			RDC::DRIVER_RESOURCE_TEXTURE, tex->rd_texture);
+		return RD::get_driver_resource(RDC::DRIVER_RESOURCE_TEXTURE, tex->rd_texture);
 	}
 }
 
-void TextureStorage::_texture_format_from_rd(
+void RendererRD::TextureStorage::_texture_format_from_rd(
 	RDC::DataFormat p_rd_format, TextureFromRDFormat& r_format)
 {
 	switch (p_rd_format) {
@@ -1629,9 +1623,9 @@ void TextureStorage::_texture_format_from_rd(
 	}
 }
 
-RID TextureStorage::area_light_atlas_get_texture() const { return area_light_atlas.texture; }
+RID RendererRD::TextureStorage::area_light_atlas_get_texture() { return area_light_atlas.texture; }
 
-void TextureStorage::area_light_atlas_mark_dirty_on_texture(RID p_texture)
+void RendererRD::TextureStorage::area_light_atlas_mark_dirty_on_texture(RID p_texture)
 {
 	if (area_light_atlas.textures.has(p_texture)) {
 		// belongs to area light atlas..
@@ -1640,14 +1634,14 @@ void TextureStorage::area_light_atlas_mark_dirty_on_texture(RID p_texture)
 	}
 }
 
-void TextureStorage::area_light_atlas_remove_texture(RID p_texture)
+void RendererRD::TextureStorage::area_light_atlas_remove_texture(RID p_texture)
 {
 	if (area_light_atlas.textures.has(p_texture)) {
 		area_light_atlas.textures.erase(p_texture);
 	}
 }
 
-void TextureStorage::update_area_light_atlas()
+void RendererRD::TextureStorage::update_area_light_atlas()
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
 	ERR_FAIL_NULL(copy_effects);
@@ -1823,7 +1817,7 @@ void TextureStorage::update_area_light_atlas()
 	}
 }
 
-void TextureStorage::texture_add_to_area_light_atlas(RID p_texture)
+void RendererRD::TextureStorage::texture_add_to_area_light_atlas(RID p_texture)
 {
 	if (!area_light_atlas.textures.has(p_texture)) {
 		AreaLightAtlas::Texture t;
@@ -1837,7 +1831,7 @@ void TextureStorage::texture_add_to_area_light_atlas(RID p_texture)
 	}
 }
 
-void TextureStorage::texture_remove_from_area_light_atlas(RID p_texture)
+void RendererRD::TextureStorage::texture_remove_from_area_light_atlas(RID p_texture)
 {
 	AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
@@ -1847,15 +1841,18 @@ void TextureStorage::texture_remove_from_area_light_atlas(RID p_texture)
 	}
 }
 
-RID TextureStorage::decal_atlas_get_texture() const { return decal_atlas.texture; }
+RID RendererRD::TextureStorage::decal_atlas_get_texture() { return decal_atlas.texture; }
 
-RID TextureStorage::decal_atlas_get_texture_srgb() const { return decal_atlas.texture_srgb; }
+RID RendererRD::TextureStorage::decal_atlas_get_texture_srgb() { return decal_atlas.texture_srgb; }
 
-RID TextureStorage::decal_allocate() { return decal_owner.allocate_rid(); }
+RID RendererRD::TextureStorage::decal_allocate() { return decal_owner.allocate_rid(); }
 
-void TextureStorage::decal_initialize(RID p_decal) { decal_owner.initialize_rid(p_decal, Decal()); }
+void RendererRD::TextureStorage::decal_initialize(RID p_decal)
+{
+	decal_owner.initialize_rid(p_decal, Decal());
+}
 
-void TextureStorage::decal_free(RID p_rid)
+void RendererRD::TextureStorage::decal_free(RID p_rid)
 {
 	Decal* decal = decal_owner.get_or_null(p_rid);
 	for (int i = 0; i < RSE::DECAL_TEXTURE_MAX; i++) {
@@ -1867,7 +1864,7 @@ void TextureStorage::decal_free(RID p_rid)
 	decal_owner.free(p_rid);
 }
 
-void TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size)
+void RendererRD::TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
@@ -1875,7 +1872,8 @@ void TextureStorage::decal_set_size(RID p_decal, const Vector3& p_size)
 	decal->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-void TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture)
+void RendererRD::TextureStorage::decal_set_texture(
+	RID p_decal, RSE::DecalTexture p_type, RID p_texture)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
@@ -1900,28 +1898,28 @@ void TextureStorage::decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RI
 	decal->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_DECAL);
 }
 
-void TextureStorage::decal_set_emission_energy(RID p_decal, float p_energy)
+void RendererRD::TextureStorage::decal_set_emission_energy(RID p_decal, float p_energy)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
 	decal->emission_energy = p_energy;
 }
 
-void TextureStorage::decal_set_albedo_mix(RID p_decal, float p_mix)
+void RendererRD::TextureStorage::decal_set_albedo_mix(RID p_decal, float p_mix)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
 	decal->albedo_mix = p_mix;
 }
 
-void TextureStorage::decal_set_modulate(RID p_decal, const Color& p_modulate)
+void RendererRD::TextureStorage::decal_set_modulate(RID p_decal, const Color& p_modulate)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
 	decal->modulate = p_modulate;
 }
 
-void TextureStorage::decal_set_cull_mask(RID p_decal, uint32_t p_layers)
+void RendererRD::TextureStorage::decal_set_cull_mask(RID p_decal, uint32_t p_layers)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
@@ -1929,7 +1927,7 @@ void TextureStorage::decal_set_cull_mask(RID p_decal, uint32_t p_layers)
 	decal->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_CULL_MASK);
 }
 
-void TextureStorage::decal_set_distance_fade(
+void RendererRD::TextureStorage::decal_set_distance_fade(
 	RID p_decal, bool p_enabled, float p_begin, float p_length)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
@@ -1939,7 +1937,7 @@ void TextureStorage::decal_set_distance_fade(
 	decal->distance_fade_length = p_length;
 }
 
-void TextureStorage::decal_set_fade(RID p_decal, float p_above, float p_below)
+void RendererRD::TextureStorage::decal_set_fade(RID p_decal, float p_above, float p_below)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
@@ -1947,14 +1945,14 @@ void TextureStorage::decal_set_fade(RID p_decal, float p_above, float p_below)
 	decal->lower_fade = p_below;
 }
 
-void TextureStorage::decal_set_normal_fade(RID p_decal, float p_fade)
+void RendererRD::TextureStorage::decal_set_normal_fade(RID p_decal, float p_fade)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL(decal);
 	decal->normal_fade = p_fade;
 }
 
-void TextureStorage::decal_atlas_mark_dirty_on_texture(RID p_texture)
+void RendererRD::TextureStorage::decal_atlas_mark_dirty_on_texture(RID p_texture)
 {
 	if (decal_atlas.textures.has(p_texture)) {
 		// belongs to decal atlas..
@@ -1963,7 +1961,7 @@ void TextureStorage::decal_atlas_mark_dirty_on_texture(RID p_texture)
 	}
 }
 
-void TextureStorage::decal_atlas_remove_texture(RID p_texture)
+void RendererRD::TextureStorage::decal_atlas_remove_texture(RID p_texture)
 {
 	if (decal_atlas.textures.has(p_texture)) {
 		decal_atlas.textures.erase(p_texture);
@@ -1971,16 +1969,15 @@ void TextureStorage::decal_atlas_remove_texture(RID p_texture)
 	}
 }
 
-AABB TextureStorage::decal_get_aabb(RID p_decal) const
+AABB RendererRD::TextureStorage::decal_get_aabb(RID p_decal)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL_V(decal, AABB());
 
-
 	return AABB(-decal->size / 2, decal->size);
 }
 
-uint32_t TextureStorage::decal_get_cull_mask(RID p_decal) const
+uint32_t RendererRD::TextureStorage::decal_get_cull_mask(RID p_decal)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL_V(decal, 0);
@@ -1988,7 +1985,7 @@ uint32_t TextureStorage::decal_get_cull_mask(RID p_decal) const
 	return decal->cull_mask;
 }
 
-Dependency* TextureStorage::decal_get_dependency(RID p_decal)
+Dependency* RendererRD::TextureStorage::decal_get_dependency(RID p_decal)
 {
 	Decal* decal = decal_owner.get_or_null(p_decal);
 	ERR_FAIL_NULL_V(decal, nullptr);
@@ -1996,7 +1993,7 @@ Dependency* TextureStorage::decal_get_dependency(RID p_decal)
 	return &decal->dependency;
 }
 
-void TextureStorage::update_decal_atlas()
+void RendererRD::TextureStorage::update_decal_atlas()
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
 	ERR_FAIL_NULL(copy_effects);
@@ -2136,8 +2133,7 @@ void TextureStorage::update_decal_atlas()
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_SRGB);
 
 	decal_atlas.texture = RD::texture_create(tformat, RD::TextureView());
-	RD::texture_clear(
-		decal_atlas.texture, Color(0, 0, 0, 0), 0, decal_atlas.mipmaps, 0, 1);
+	RD::texture_clear(decal_atlas.texture, Color(0, 0, 0, 0), 0, decal_atlas.mipmaps, 0, 1);
 
 	{
 		// create the framebuffer
@@ -2146,8 +2142,8 @@ void TextureStorage::update_decal_atlas()
 
 		for (int i = 0; i < decal_atlas.mipmaps; i++) {
 			DecalAtlas::MipMap mm;
-			mm.texture = RD::texture_create_shared_from_slice(
-				RD::TextureView(), decal_atlas.texture, 0, i);
+			mm.texture =
+				RD::texture_create_shared_from_slice(RD::TextureView(), decal_atlas.texture, 0, i);
 			Vector<RID> fb;
 			fb.push_back(mm.texture);
 			mm.fb = RD::framebuffer_create(fb);
@@ -2160,13 +2156,12 @@ void TextureStorage::update_decal_atlas()
 			// create the SRGB variant
 			RD::TextureView rd_view;
 			rd_view.format_override = RDC::DATA_FORMAT_R8G8B8A8_SRGB;
-			decal_atlas.texture_srgb =
-				RD::texture_create_shared(rd_view, decal_atlas.texture);
+			decal_atlas.texture_srgb = RD::texture_create_shared(rd_view, decal_atlas.texture);
 		}
 	}
 }
 
-void TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+void RendererRD::TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
 {
 	if (!decal_atlas.textures.has(p_texture)) {
 		DecalAtlas::Texture t;
@@ -2184,7 +2179,8 @@ void TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_t
 	}
 }
 
-void TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp)
+void RendererRD::TextureStorage::texture_remove_from_decal_atlas(
+	RID p_texture, bool p_panorama_to_dp)
 {
 	DecalAtlas::Texture* t = decal_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
@@ -2199,7 +2195,7 @@ void TextureStorage::texture_remove_from_decal_atlas(RID p_texture, bool p_panor
 	}
 }
 
-RID TextureStorage::decal_instance_create(RID p_decal)
+RID RendererRD::TextureStorage::decal_instance_create(RID p_decal)
 {
 	DecalInstance di;
 	di.decal = p_decal;
@@ -2207,14 +2203,14 @@ RID TextureStorage::decal_instance_create(RID p_decal)
 	return decal_instance_owner.make_rid(di);
 }
 
-void TextureStorage::decal_instance_free(RID p_decal_instance)
+void RendererRD::TextureStorage::decal_instance_free(RID p_decal_instance)
 {
 	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
 	ForwardIDStorage::get_singleton()->free_forward_id(FORWARD_ID_TYPE_DECAL, di->forward_id);
 	decal_instance_owner.free(p_decal_instance);
 }
 
-void TextureStorage::decal_instance_set_transform(
+void RendererRD::TextureStorage::decal_instance_set_transform(
 	RID p_decal_instance, const Transform3D& p_transform)
 {
 	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
@@ -2222,14 +2218,15 @@ void TextureStorage::decal_instance_set_transform(
 	di->transform = p_transform;
 }
 
-void TextureStorage::decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset)
+void RendererRD::TextureStorage::decal_instance_set_sorting_offset(
+	RID p_decal_instance, float p_sorting_offset)
 {
 	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
 	ERR_FAIL_NULL(di);
 	di->sorting_offset = p_sorting_offset;
 }
 
-void TextureStorage::free_decal_data()
+void RendererRD::TextureStorage::free_decal_data()
 {
 	if (decal_buffer.is_valid()) {
 		RD::free_rid(decal_buffer);
@@ -2247,7 +2244,7 @@ void TextureStorage::free_decal_data()
 	}
 }
 
-void TextureStorage::set_max_decals(const uint32_t p_max_decals)
+void RendererRD::TextureStorage::set_max_decals(const uint32_t p_max_decals)
 {
 	max_decals = p_max_decals;
 	uint32_t decal_buffer_size = max_decals * sizeof(DecalData);
@@ -2256,7 +2253,7 @@ void TextureStorage::set_max_decals(const uint32_t p_max_decals)
 	decal_buffer = RD::storage_buffer_create(decal_buffer_size);
 }
 
-void TextureStorage::update_decal_buffer(
+void RendererRD::TextureStorage::update_decal_buffer(
 	const PagedArray<RID>& p_decals, const Transform3D& p_camera_xform)
 {
 	ForwardIDStorage* forward_id_storage = ForwardIDStorage::get_singleton();
@@ -2439,15 +2436,14 @@ void TextureStorage::update_decal_buffer(
 	}
 }
 
-RID TextureStorage::RenderTarget::get_framebuffer()
+RID RendererRD::TextureStorage::RenderTarget::get_framebuffer()
 {
 	// We can't resolve into our overridden buffer as it won't be marked as a resolve buffer.
 	// This is only applicable when OpenXR is used and 2D rendering is skipped.
 
 	if (msaa != RSE::VIEWPORT_MSAA_DISABLED && overridden.color.is_null()) {
 		// Render into our MSAA buffer and resolve into our color buffer.
-		return FramebufferCacheRD::get_cache_multiview(
-			view_count, color_multisample, color);
+		return FramebufferCacheRD::get_cache_multiview(view_count, color_multisample, color);
 	}
 	else {
 		// Note that if we're using an overridden color buffer, we're likely cycling through a
@@ -2458,7 +2454,7 @@ RID TextureStorage::RenderTarget::get_framebuffer()
 	}
 }
 
-void TextureStorage::_clear_render_target(RenderTarget* rt)
+void RendererRD::TextureStorage::_clear_render_target(RenderTarget* rt)
 {
 	// clear overrides, we assume these are freed by the object that created them
 	rt->overridden.color = RID();
@@ -2498,19 +2494,22 @@ void TextureStorage::_clear_render_target(RenderTarget* rt)
 	}
 }
 
-void TextureStorage::_update_render_target(RenderTarget* rt)
+void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 {
 	if (rt->overridden.color.is_valid()) {
 		return;
 	}
 
 	if (rt->texture.is_null()) {
-		// create a placeholder until updated
 		rt->texture = texture_allocate();
-		texture_2d_placeholder_initialize(rt->texture);
-		Texture* tex = get_texture(rt->texture);
-		tex->is_render_target = true;
-		tex->path = "Render Target (Internal)";
+
+		Texture tex;
+		tex.type = TYPE_2D;
+		tex.is_render_target = true;
+		tex.render_target = rt;
+		tex.path = "Render Target (Internal)";
+
+		texture_owner.initialize_rid(rt->texture, tex);
 	}
 
 	_clear_render_target(rt);
@@ -2625,7 +2624,7 @@ void TextureStorage::_update_render_target(RenderTarget* rt)
 	}
 }
 
-void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
+void RendererRD::TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 {
 	ERR_FAIL_COND(rt->backbuffer.is_valid());
 
@@ -2642,8 +2641,8 @@ void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 
 	rt->backbuffer = RD::texture_create(tf, RD::TextureView());
 	RD::set_resource_name(rt->backbuffer, "Render Target Back Buffer");
-	rt->backbuffer_mipmap0 = RD::texture_create_shared_from_slice(
-		RD::TextureView(), rt->backbuffer, 0, 0);
+	rt->backbuffer_mipmap0 =
+		RD::texture_create_shared_from_slice(RD::TextureView(), rt->backbuffer, 0, 0);
 	RD::set_resource_name(rt->backbuffer_mipmap0, "Back Buffer slice mipmap 0");
 
 	{
@@ -2660,15 +2659,14 @@ void TextureStorage::_create_render_target_backbuffer(RenderTarget* rt)
 	}
 	// create mipmaps
 	for (uint32_t i = 1; i < mipmaps_required; i++) {
-		RID mipmap = RD::texture_create_shared_from_slice(
-			RD::TextureView(), rt->backbuffer, 0, i);
+		RID mipmap = RD::texture_create_shared_from_slice(RD::TextureView(), rt->backbuffer, 0, i);
 		RD::set_resource_name(mipmap, "Back Buffer slice mip: " + itos(i));
 
 		rt->backbuffer_mipmaps.push_back(mipmap);
 	}
 }
 
-RID TextureStorage::render_target_create()
+RID RendererRD::TextureStorage::render_target_create()
 {
 	RenderTarget render_target;
 
@@ -2679,7 +2677,7 @@ RID TextureStorage::render_target_create()
 	return render_target_owner.make_rid(render_target);
 }
 
-void TextureStorage::render_target_free(RID p_rid)
+void RendererRD::TextureStorage::render_target_free(RID p_rid)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_rid);
 
@@ -2694,18 +2692,18 @@ void TextureStorage::render_target_free(RID p_rid)
 	render_target_owner.free(p_rid);
 }
 
-void TextureStorage::render_target_set_position(RID p_render_target, int p_x, int p_y)
+void RendererRD::TextureStorage::render_target_set_position(RID p_render_target, int p_x, int p_y)
 {
 	// unused for this render target
 }
 
-Point2i TextureStorage::render_target_get_position(RID p_render_target) const
+Point2i RendererRD::TextureStorage::render_target_get_position(RID p_render_target)
 {
 	// unused for this render target
 	return Point2i();
 }
 
-void TextureStorage::render_target_set_size(
+void RendererRD::TextureStorage::render_target_set_size(
 	RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -2718,7 +2716,7 @@ void TextureStorage::render_target_set_size(
 	}
 }
 
-Size2i TextureStorage::render_target_get_size(RID p_render_target) const
+Size2i RendererRD::TextureStorage::render_target_get_size(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Size2i());
@@ -2726,7 +2724,7 @@ Size2i TextureStorage::render_target_get_size(RID p_render_target) const
 	return rt->size;
 }
 
-RID TextureStorage::render_target_get_texture(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2734,8 +2732,8 @@ RID TextureStorage::render_target_get_texture(RID p_render_target)
 	return rt->texture;
 }
 
-void TextureStorage::render_target_set_override(RID p_render_target, RID p_color_texture,
-	RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture)
+void RendererRD::TextureStorage::render_target_set_override(RID p_render_target,
+	RID p_color_texture, RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2746,7 +2744,7 @@ void TextureStorage::render_target_set_override(RID p_render_target, RID p_color
 	rt->overridden.velocity_depth = p_velocity_depth_texture;
 }
 
-RID TextureStorage::render_target_get_override_color(RID p_render_target) const
+RID RendererRD::TextureStorage::render_target_get_override_color(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2754,7 +2752,7 @@ RID TextureStorage::render_target_get_override_color(RID p_render_target) const
 	return rt->overridden.color;
 }
 
-RID TextureStorage::render_target_get_override_depth(RID p_render_target) const
+RID RendererRD::TextureStorage::render_target_get_override_depth(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2762,8 +2760,8 @@ RID TextureStorage::render_target_get_override_depth(RID p_render_target) const
 	return rt->overridden.depth;
 }
 
-RID TextureStorage::render_target_get_override_depth_slice(
-	RID p_render_target, const uint32_t p_layer) const
+RID RendererRD::TextureStorage::render_target_get_override_depth_slice(
+	RID p_render_target, const uint32_t p_layer)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2778,16 +2776,15 @@ RID TextureStorage::render_target_get_override_depth_slice(
 		RenderTarget::RTOverridden::SliceKey key(rt->overridden.depth, p_layer);
 
 		if (!rt->overridden.cached_slices.has(key)) {
-			rt->overridden.cached_slices[key] =
-				RD::texture_create_shared_from_slice(
-					RD::TextureView(), rt->overridden.depth, p_layer, 0);
+			rt->overridden.cached_slices[key] = RD::texture_create_shared_from_slice(
+				RD::TextureView(), rt->overridden.depth, p_layer, 0);
 		}
 
 		return rt->overridden.cached_slices[key];
 	}
 }
 
-RID TextureStorage::render_target_get_override_velocity(RID p_render_target) const
+RID RendererRD::TextureStorage::render_target_get_override_velocity(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2795,8 +2792,8 @@ RID TextureStorage::render_target_get_override_velocity(RID p_render_target) con
 	return rt->overridden.velocity;
 }
 
-RID TextureStorage::render_target_get_override_velocity_slice(
-	RID p_render_target, const uint32_t p_layer) const
+RID RendererRD::TextureStorage::render_target_get_override_velocity_slice(
+	RID p_render_target, const uint32_t p_layer)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2811,16 +2808,15 @@ RID TextureStorage::render_target_get_override_velocity_slice(
 		RenderTarget::RTOverridden::SliceKey key(rt->overridden.velocity, p_layer);
 
 		if (!rt->overridden.cached_slices.has(key)) {
-			rt->overridden.cached_slices[key] =
-				RD::texture_create_shared_from_slice(
-					RD::TextureView(), rt->overridden.velocity, p_layer, 0);
+			rt->overridden.cached_slices[key] = RD::texture_create_shared_from_slice(
+				RD::TextureView(), rt->overridden.velocity, p_layer, 0);
 		}
 
 		return rt->overridden.cached_slices[key];
 	}
 }
 
-RID TextureStorage::render_target_get_override_velocity_depth(RID p_render_target) const
+RID RendererRD::TextureStorage::render_target_get_override_velocity_depth(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -2837,7 +2833,7 @@ void RendererRD::TextureStorage::render_target_set_render_region(
 	rt->render_region = p_render_region;
 }
 
-Rect2i RendererRD::TextureStorage::render_target_get_render_region(RID p_render_target) const
+Rect2i RendererRD::TextureStorage::render_target_get_render_region(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Rect2i());
@@ -2854,7 +2850,7 @@ void RendererRD::TextureStorage::render_target_set_subsampled_enabled(
 	rt->subsampled_enabled = p_enabled;
 }
 
-bool RendererRD::TextureStorage::render_target_is_subsampled_enabled(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_is_subsampled_enabled(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2871,7 +2867,7 @@ void RendererRD::TextureStorage::render_target_set_subsampled_allowed(
 	rt->subsampled_allowed = p_allowed;
 }
 
-bool RendererRD::TextureStorage::render_target_is_subsampled_allowed(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_is_subsampled_allowed(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2879,7 +2875,8 @@ bool RendererRD::TextureStorage::render_target_is_subsampled_allowed(RID p_rende
 	return rt->subsampled_allowed;
 }
 
-void TextureStorage::render_target_set_transparent(RID p_render_target, bool p_is_transparent)
+void RendererRD::TextureStorage::render_target_set_transparent(
+	RID p_render_target, bool p_is_transparent)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2887,7 +2884,7 @@ void TextureStorage::render_target_set_transparent(RID p_render_target, bool p_i
 	_update_render_target(rt);
 }
 
-bool TextureStorage::render_target_get_transparent(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_get_transparent(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2895,25 +2892,32 @@ bool TextureStorage::render_target_get_transparent(RID p_render_target) const
 	return rt->is_transparent;
 }
 
-void TextureStorage::render_target_set_direct_to_screen(RID p_render_target, bool p_value) {}
+void RendererRD::TextureStorage::render_target_set_direct_to_screen(
+	RID p_render_target, bool p_value)
+{
+}
 
-bool TextureStorage::render_target_get_direct_to_screen(RID p_render_target) const { return false; }
+bool RendererRD::TextureStorage::render_target_get_direct_to_screen(RID p_render_target)
+{
+	return false;
+}
 
-bool TextureStorage::render_target_was_used(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_was_used(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
 	return rt->was_used;
 }
 
-void TextureStorage::render_target_set_as_unused(RID p_render_target)
+void RendererRD::TextureStorage::render_target_set_as_unused(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 	rt->was_used = false;
 }
 
-void TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+void RendererRD::TextureStorage::render_target_set_msaa(
+	RID p_render_target, RSE::ViewportMSAA p_msaa)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2925,7 +2929,7 @@ void TextureStorage::render_target_set_msaa(RID p_render_target, RSE::ViewportMS
 	_update_render_target(rt);
 }
 
-RSE::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target) const
+RSE::ViewportMSAA RendererRD::TextureStorage::render_target_get_msaa(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_MSAA_DISABLED);
@@ -2933,7 +2937,8 @@ RSE::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target) co
 	return rt->msaa;
 }
 
-void TextureStorage::render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve)
+void RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
+	RID p_render_target, bool p_needs_resolve)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2941,7 +2946,7 @@ void TextureStorage::render_target_set_msaa_needs_resolve(RID p_render_target, b
 	rt->msaa_needs_resolve = p_needs_resolve;
 }
 
-bool TextureStorage::render_target_get_msaa_needs_resolve(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_get_msaa_needs_resolve(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2949,7 +2954,7 @@ bool TextureStorage::render_target_get_msaa_needs_resolve(RID p_render_target) c
 	return rt->msaa_needs_resolve;
 }
 
-void TextureStorage::render_target_do_msaa_resolve(RID p_render_target)
+void RendererRD::TextureStorage::render_target_do_msaa_resolve(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2960,7 +2965,7 @@ void TextureStorage::render_target_do_msaa_resolve(RID p_render_target)
 	rt->msaa_needs_resolve = false;
 }
 
-void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
+void RendererRD::TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2973,7 +2978,7 @@ void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_h
 	_update_render_target(rt);
 }
 
-bool TextureStorage::render_target_is_using_hdr(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_is_using_hdr(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2981,7 +2986,8 @@ bool TextureStorage::render_target_is_using_hdr(RID p_render_target) const
 	return rt->use_hdr;
 }
 
-void TextureStorage::render_target_set_use_debanding(RID p_render_target, bool p_use_debanding)
+void RendererRD::TextureStorage::render_target_set_use_debanding(
+	RID p_render_target, bool p_use_debanding)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -2989,7 +2995,7 @@ void TextureStorage::render_target_set_use_debanding(RID p_render_target, bool p
 	rt->use_debanding = p_use_debanding;
 }
 
-bool TextureStorage::render_target_is_using_debanding(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_is_using_debanding(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -2997,7 +3003,7 @@ bool TextureStorage::render_target_is_using_debanding(RID p_render_target) const
 	return rt->use_debanding;
 }
 
-RID TextureStorage::render_target_get_rd_framebuffer(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_rd_framebuffer(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3005,7 +3011,7 @@ RID TextureStorage::render_target_get_rd_framebuffer(RID p_render_target)
 	return rt->get_framebuffer();
 }
 
-RID TextureStorage::render_target_get_rd_texture(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_rd_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3018,7 +3024,8 @@ RID TextureStorage::render_target_get_rd_texture(RID p_render_target)
 	}
 }
 
-RID TextureStorage::render_target_get_rd_texture_slice(RID p_render_target, uint32_t p_layer)
+RID RendererRD::TextureStorage::render_target_get_rd_texture_slice(
+	RID p_render_target, uint32_t p_layer)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3030,8 +3037,8 @@ RID TextureStorage::render_target_get_rd_texture_slice(RID p_render_target, uint
 		ERR_FAIL_UNSIGNED_INDEX_V(p_layer, rt->view_count, RID());
 		if (rt->color_slices.is_empty()) {
 			for (uint32_t v = 0; v < rt->view_count; v++) {
-				RID slice = RD::texture_create_shared_from_slice(
-					RD::TextureView(), rt->color, v, 0);
+				RID slice =
+					RD::texture_create_shared_from_slice(RD::TextureView(), rt->color, v, 0);
 				rt->color_slices.push_back(slice);
 			}
 		}
@@ -3039,7 +3046,7 @@ RID TextureStorage::render_target_get_rd_texture_slice(RID p_render_target, uint
 	}
 }
 
-RID TextureStorage::render_target_get_rd_texture_msaa(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_rd_texture_msaa(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3047,14 +3054,14 @@ RID TextureStorage::render_target_get_rd_texture_msaa(RID p_render_target)
 	return rt->color_multisample;
 }
 
-RID TextureStorage::render_target_get_rd_backbuffer(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_rd_backbuffer(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 	return rt->backbuffer;
 }
 
-RID TextureStorage::render_target_get_rd_backbuffer_framebuffer(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_rd_backbuffer_framebuffer(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3066,7 +3073,8 @@ RID TextureStorage::render_target_get_rd_backbuffer_framebuffer(RID p_render_tar
 	return rt->backbuffer_fb;
 }
 
-void TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color)
+void RendererRD::TextureStorage::render_target_request_clear(
+	RID p_render_target, const Color& p_clear_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3074,28 +3082,28 @@ void TextureStorage::render_target_request_clear(RID p_render_target, const Colo
 	rt->clear_color = p_clear_color;
 }
 
-bool TextureStorage::render_target_is_clear_requested(RID p_render_target)
+bool RendererRD::TextureStorage::render_target_is_clear_requested(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
 	return rt->clear_requested;
 }
 
-Color TextureStorage::render_target_get_clear_request_color(RID p_render_target)
+Color RendererRD::TextureStorage::render_target_get_clear_request_color(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Color());
 	return rt->clear_color;
 }
 
-void TextureStorage::render_target_disable_clear_request(RID p_render_target)
+void RendererRD::TextureStorage::render_target_disable_clear_request(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 	rt->clear_requested = false;
 }
 
-void TextureStorage::render_target_do_clear_request(RID p_render_target)
+void RendererRD::TextureStorage::render_target_do_clear_request(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3109,7 +3117,7 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target)
 	rt->msaa_needs_resolve = false;
 }
 
-void TextureStorage::render_target_set_sdf_size_and_scale(
+void RendererRD::TextureStorage::render_target_set_sdf_size_and_scale(
 	RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3124,7 +3132,7 @@ void TextureStorage::render_target_set_sdf_size_and_scale(
 	_render_target_clear_sdf(rt);
 }
 
-Rect2i TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt) const
+Rect2i RendererRD::TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt)
 {
 	Size2i margin;
 	int scale;
@@ -3156,7 +3164,7 @@ Rect2i TextureStorage::_render_target_get_sdf_rect(const RenderTarget* rt) const
 	return r;
 }
 
-Rect2i TextureStorage::render_target_get_sdf_rect(RID p_render_target) const
+Rect2i RendererRD::TextureStorage::render_target_get_sdf_rect(RID p_render_target)
 {
 	const RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Rect2i());
@@ -3164,7 +3172,7 @@ Rect2i TextureStorage::render_target_get_sdf_rect(RID p_render_target) const
 	return _render_target_get_sdf_rect(rt);
 }
 
-void TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
+void RendererRD::TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3172,7 +3180,7 @@ void TextureStorage::render_target_mark_sdf_enabled(RID p_render_target, bool p_
 	rt->sdf_enabled = p_enabled;
 }
 
-bool TextureStorage::render_target_is_sdf_enabled(RID p_render_target) const
+bool RendererRD::TextureStorage::render_target_is_sdf_enabled(RID p_render_target)
 {
 	const RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, false);
@@ -3180,7 +3188,7 @@ bool TextureStorage::render_target_is_sdf_enabled(RID p_render_target) const
 	return rt->sdf_enabled;
 }
 
-RID TextureStorage::render_target_get_sdf_texture(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3204,7 +3212,7 @@ RID TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 	return rt->sdf_buffer_read;
 }
 
-void TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
+void RendererRD::TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
 {
 	if (rt->sdf_buffer_read.is_valid()) {
 		RD::free_rid(rt->sdf_buffer_read);
@@ -3223,7 +3231,7 @@ void TextureStorage::_render_target_clear_sdf(RenderTarget* rt)
 	}
 }
 
-RID TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3235,7 +3243,7 @@ RID TextureStorage::render_target_get_sdf_framebuffer(RID p_render_target)
 	return rt->sdf_buffer_write_fb;
 }
 
-void TextureStorage::render_target_sdf_process(RID p_render_target)
+void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3311,7 +3319,7 @@ void TextureStorage::render_target_sdf_process(RID p_render_target)
 	RD::compute_list_end();
 }
 
-void TextureStorage::render_target_copy_to_back_buffer(
+void RendererRD::TextureStorage::render_target_copy_to_back_buffer(
 	RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps)
 {
 	CopyEffects* copy_effects = CopyEffects::get_singleton();
@@ -3375,7 +3383,7 @@ void TextureStorage::render_target_copy_to_back_buffer(
 	RD::draw_command_end_label();
 }
 
-void TextureStorage::render_target_clear_back_buffer(
+void RendererRD::TextureStorage::render_target_clear_back_buffer(
 	RID p_render_target, const Rect2i& p_region, const Color& p_color)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3408,7 +3416,7 @@ void TextureStorage::render_target_clear_back_buffer(
 	}
 }
 
-void TextureStorage::render_target_gen_back_buffer_mipmaps(
+void RendererRD::TextureStorage::render_target_gen_back_buffer_mipmaps(
 	RID p_render_target, const Rect2i& p_region)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3455,21 +3463,21 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(
 	RD::draw_command_end_label();
 }
 
-RID TextureStorage::render_target_get_framebuffer_uniform_set(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_framebuffer_uniform_set(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 	return rt->framebuffer_uniform_set;
 }
 
-RID TextureStorage::render_target_get_backbuffer_uniform_set(RID p_render_target)
+RID RendererRD::TextureStorage::render_target_get_backbuffer_uniform_set(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 	return rt->backbuffer_uniform_set;
 }
 
-void TextureStorage::render_target_set_framebuffer_uniform_set(
+void RendererRD::TextureStorage::render_target_set_framebuffer_uniform_set(
 	RID p_render_target, RID p_uniform_set)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3477,7 +3485,7 @@ void TextureStorage::render_target_set_framebuffer_uniform_set(
 	rt->framebuffer_uniform_set = p_uniform_set;
 }
 
-void TextureStorage::render_target_set_backbuffer_uniform_set(
+void RendererRD::TextureStorage::render_target_set_backbuffer_uniform_set(
 	RID p_render_target, RID p_uniform_set)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3485,7 +3493,8 @@ void TextureStorage::render_target_set_backbuffer_uniform_set(
 	rt->backbuffer_uniform_set = p_uniform_set;
 }
 
-void TextureStorage::render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode)
+void RendererRD::TextureStorage::render_target_set_vrs_mode(
+	RID p_render_target, RSE::ViewportVRSMode p_mode)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3493,7 +3502,7 @@ void TextureStorage::render_target_set_vrs_mode(RID p_render_target, RSE::Viewpo
 	rt->vrs_mode = p_mode;
 }
 
-RSE::ViewportVRSMode TextureStorage::render_target_get_vrs_mode(RID p_render_target) const
+RSE::ViewportVRSMode RendererRD::TextureStorage::render_target_get_vrs_mode(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_VRS_DISABLED);
@@ -3501,7 +3510,7 @@ RSE::ViewportVRSMode TextureStorage::render_target_get_vrs_mode(RID p_render_tar
 	return rt->vrs_mode;
 }
 
-void TextureStorage::render_target_set_vrs_update_mode(
+void RendererRD::TextureStorage::render_target_set_vrs_update_mode(
 	RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
@@ -3510,8 +3519,8 @@ void TextureStorage::render_target_set_vrs_update_mode(
 	rt->vrs_update_mode = p_mode;
 }
 
-RSE::ViewportVRSUpdateMode TextureStorage::render_target_get_vrs_update_mode(
-	RID p_render_target) const
+RSE::ViewportVRSUpdateMode RendererRD::TextureStorage::render_target_get_vrs_update_mode(
+	RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
@@ -3519,7 +3528,7 @@ RSE::ViewportVRSUpdateMode TextureStorage::render_target_get_vrs_update_mode(
 	return rt->vrs_update_mode;
 }
 
-void TextureStorage::render_target_set_vrs_texture(RID p_render_target, RID p_texture)
+void RendererRD::TextureStorage::render_target_set_vrs_texture(RID p_render_target, RID p_texture)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3527,7 +3536,7 @@ void TextureStorage::render_target_set_vrs_texture(RID p_render_target, RID p_te
 	rt->vrs_texture = p_texture;
 }
 
-RID TextureStorage::render_target_get_vrs_texture(RID p_render_target) const
+RID RendererRD::TextureStorage::render_target_get_vrs_texture(RID p_render_target)
 {
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
@@ -3535,7 +3544,8 @@ RID TextureStorage::render_target_get_vrs_texture(RID p_render_target) const
 	return rt->vrs_texture;
 }
 
-RDC::DataFormat TextureStorage::render_target_get_color_format(bool p_use_hdr, bool p_srgb)
+RDC::DataFormat RendererRD::TextureStorage::render_target_get_color_format(
+	bool p_use_hdr, bool p_srgb)
 {
 	if (p_use_hdr) {
 		return RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
@@ -3545,7 +3555,7 @@ RDC::DataFormat TextureStorage::render_target_get_color_format(bool p_use_hdr, b
 	}
 }
 
-uint32_t TextureStorage::render_target_get_color_usage_bits(bool p_msaa)
+uint32_t RendererRD::TextureStorage::render_target_get_color_usage_bits(bool p_msaa)
 {
 	if (p_msaa) {
 		return RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -3563,5 +3573,210 @@ void RendererRD::TextureStorage::_render_target_allocate_sdf(
 }
 
 void RendererRD::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture) {}
+
+RendererRD::TextureStorage::TextureType RendererRD::TextureStorage::texture_get_type(RID p_texture)
+{
+	Texture* tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, TYPE_2D);
+	return tex->type;
+}
+
+int RendererRD::TextureStorage::texture_get_layers(RID p_texture)
+{
+	Texture* tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, 0);
+	return tex->layers;
+}
+
+Size2i RendererRD::TextureStorage::texture_2d_get_size(RID p_texture)
+{
+	Texture* tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, Size2i());
+	return Size2i(tex->width, tex->height);
+}
+
+uint32_t RendererRD::TextureStorage::decal_instance_get_forward_id(RID p_decal_instance)
+{
+	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
+	ERR_FAIL_NULL_V(di, 0);
+	return di->forward_id;
+}
+
+void RendererRD::TextureStorage::texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+{
+	ERR_FAIL_COND(p_image.is_null() || p_image->is_empty());
+
+	Texture texture;
+	texture.type = TYPE_2D;
+	texture.width = p_image->get_width();
+	texture.height = p_image->get_height();
+	texture.width_2d = texture.width;
+	texture.height_2d = texture.height;
+	texture.depth = 1;
+	texture.layers = 1;
+	texture.mipmaps = p_image->has_mipmaps() ? p_image->get_mipmap_count() + 1 : 1;
+	texture.format = p_image->get_format();
+	texture.validated_format = texture.format;
+	texture.image = p_image;
+
+	RDC::TextureFormat tf;
+	tf.width = texture.width;
+	tf.height = texture.height;
+	tf.depth = 1;
+	tf.array_layers = 1;
+	tf.mipmaps = texture.mipmaps;
+	tf.texture_type = RDC::TEXTURE_TYPE_2D;
+
+	TextureFromRDFormat imfmt;
+	_texture_format_from_rd(tf.format, imfmt);
+	tf.format = imfmt.rd_format;
+	tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT |
+					RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+
+	Vector<Vector<uint8_t>> data;
+	Vector<uint8_t> img_data = p_image->get_data();
+
+	for (int i = 0; i < texture.mipmaps; i++) {
+		int64_t ofs = p_image->get_mipmap_offset(i);
+		int64_t size = Image::get_image_data_size(
+			MAX(1, texture.width >> i), MAX(1, texture.height >> i), texture.format, false);
+		data.push_back(img_data.slice(ofs, ofs + size));
+	}
+
+	texture.rd_texture = RD::texture_create(tf, RD::TextureView(), data);
+
+	texture_owner.initialize_rid(p_texture, texture);
+}
+
+void RendererRD::TextureStorage::texture_2d_layered_initialize(
+	RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
+{
+	ERR_FAIL_COND(p_layers.is_empty());
+	Texture texture;
+	texture.type = TYPE_LAYERED;
+	texture.layered_type = p_layered_type;
+	texture.width = p_layers[0]->get_width();
+	texture.height = p_layers[0]->get_height();
+	texture.layers = p_layers.size();
+	texture_owner.initialize_rid(p_texture, texture);
+}
+
+void RendererRD::TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format,
+	int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+{
+	Texture texture;
+	texture.type = TYPE_3D;
+	texture.width = p_width;
+	texture.height = p_height;
+	texture.depth = p_depth;
+	texture.format = p_format;
+	texture_owner.initialize_rid(p_texture, texture);
+}
+
+void RendererRD::TextureStorage::initialize()
+{
+	texture_2d_placeholder = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+}
+
+void RendererRD::TextureStorage::texture_2d_update(
+	RID p_texture, const Ref<Image>& p_image, int p_layer)
+{
+}
+
+void RendererRD::TextureStorage::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
+{
+}
+
+void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int p_width,
+	int p_height, RenderingServerEnums::TextureDrawableFormat p_format, const Color& p_color,
+	bool p_depth)
+{
+	Texture* texture = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL(texture);
+
+	if (texture->rd_texture.is_valid()) {
+		free(texture->rd_texture);
+		texture->rd_texture = RID();
+	}
+
+	RDC::TextureFormat rd_format;
+	rd_format.width = p_width;
+	rd_format.height = p_height;
+	rd_format.depth = 1;
+	rd_format.array_layers = 1;
+	rd_format.mipmaps = 1;
+	rd_format.texture_type = RDC::TEXTURE_TYPE_2D;
+	rd_format.samples = RDC::TEXTURE_SAMPLES_1;
+
+	RD::TextureView rd_view;
+
+	if (p_depth) {
+		rd_format.format = RDC::DATA_FORMAT_D32_SFLOAT;
+		rd_format.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT |
+							   RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+							   RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+	}
+	else {
+		switch (p_format) {
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBA8: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBA8_SRGB: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_SRGB;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBAH: {
+			rd_format.format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		} break;
+		case RenderingServerEnums::TEXTURE_DRAWABLE_FORMAT_RGBAF: {
+			rd_format.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		} break;
+		default: {
+			rd_format.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		} break;
+		}
+
+		rd_format.usage_bits =
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
+			RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT |
+			RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+	}
+
+	Vector<Vector<uint8_t>> initial_data;
+
+	if (!p_depth &&
+		(p_color.r != 0.0f || p_color.g != 0.0f || p_color.b != 0.0f || p_color.a != 0.0f)) {
+		Vector<uint8_t> buffer;
+		buffer.resize(p_width * p_height * 4);
+		uint8_t* w = buffer.ptrw();
+		uint8_t r = uint8_t(CLAMP(p_color.r * 255.0f, 0.0f, 255.0f));
+		uint8_t g = uint8_t(CLAMP(p_color.g * 255.0f, 0.0f, 255.0f));
+		uint8_t b = uint8_t(CLAMP(p_color.b * 255.0f, 0.0f, 255.0f));
+		uint8_t a = uint8_t(CLAMP(p_color.a * 255.0f, 0.0f, 255.0f));
+
+		for (int i = 0; i < p_width * p_height; i++) {
+			w[i * 4 + 0] = r;
+			w[i * 4 + 1] = g;
+			w[i * 4 + 2] = b;
+			w[i * 4 + 3] = a;
+		}
+		initial_data.push_back(buffer);
+	}
+
+	texture->rd_texture = RD::texture_create(rd_format, rd_view, initial_data);
+	ERR_FAIL_COND(texture->rd_texture.is_null());
+
+	texture->width = p_width;
+	texture->height = p_height;
+	texture->depth = 1;
+	texture->layers = 1;
+	texture->mipmaps = 1;
+	texture->type = TextureType::TYPE_2D;
+	texture->rd_type = rd_format.texture_type;
+	texture->rd_format = rd_format.
+format;
+	texture->is_render_target = true;
+}
+
+void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
 
 

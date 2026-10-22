@@ -32,6 +32,7 @@
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
 
@@ -68,7 +69,8 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 		bool final = w == 1 && h == 1;
 
 		if (prefer_raster_effects) {
-			tf.usage_bits = RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
+			tf.usage_bits =
+				RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 		}
 		else {
 			tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT;
@@ -133,6 +135,34 @@ void RendererRD::Luminance::luminance_reduction(RID p_source_texture, Vector2i p
 	Ref<RendererRD::Luminance::LuminanceBuffers> p_buffers, float p_min_luminance,
 	float p_max_luminance, float p_frame_time, bool p_immediate)
 {
+}
+
+Luminance::Luminance(bool p_prefer_raster_effects)
+{
+	prefer_raster_effects = p_prefer_raster_effects;
+	if (prefer_raster_effects) {
+		Vector<String> modes;
+		modes.push_back("\n#define READ_FIRST\n");
+		modes.push_back("\n");
+		modes.push_back("\n#define WRITE_FINAL\n");
+
+		luminance_reduce_raster.shader.initialize(modes);
+		luminance_reduce_raster.shader_version = luminance_reduce_raster.shader.version_create();
+	}
+	else {
+		Vector<String> modes;
+		modes.push_back("\n#define READ_FIRST\n");
+		modes.push_back("\n");
+		modes.push_back("\n#define WRITE_FINAL\n");
+
+		luminance_reduce.shader.initialize(modes);
+		luminance_reduce.shader_version = luminance_reduce.shader.version_create();
+
+		for (int i = 0; i < LUMINANCE_REDUCE_MAX; i++) {
+			luminance_reduce.pipelines[i] = RD::compute_pipeline_create(
+				luminance_reduce.shader.version_get_shader(luminance_reduce.shader_version, i));
+		}
+	}
 }
 
 

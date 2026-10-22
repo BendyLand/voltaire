@@ -32,16 +32,18 @@
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
 #include "renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_warnings.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "servers/rendering/storage/utilities.h"
 
 RID Renderer::get_test_texture()
@@ -219,8 +221,7 @@ uint32_t Renderer::mesh_surface_get_format_normal_tangent_stride(
 	return ntstr;
 }
 
-uint32_t Renderer::mesh_surface_get_format_attribute_stride(
-	uint32_t p_format, int p_vertex_len)
+uint32_t Renderer::mesh_surface_get_format_attribute_stride(uint32_t p_format, int p_vertex_len)
 {
 	p_format = uint64_t(p_format) & ~RSE::ARRAY_FORMAT_INDEX;
 	uint32_t offsets[RSE::ARRAY_MAX];
@@ -406,8 +407,7 @@ Rect2 Renderer::debug_canvas_item_get_rect(RID p_item)
 #endif
 }
 
-int Renderer::global_shader_uniform_type_get_shader_datatype(
-	RSE::GlobalShaderParameterType p_type)
+int Renderer::global_shader_uniform_type_get_shader_datatype(RSE::GlobalShaderParameterType p_type)
 {
 	switch (p_type) {
 	case RSE::GLOBAL_VAR_TYPE_BOOL:
@@ -578,10 +578,7 @@ RID Renderer::instance_create2(RID p_base, RID p_scenario)
 
 bool Renderer::is_render_loop_enabled() { return data->render_loop_enabled; }
 
-void Renderer::set_render_loop_enabled(bool p_enabled)
-{
-	data->render_loop_enabled = p_enabled;
-}
+void Renderer::set_render_loop_enabled(bool p_enabled) { data->render_loop_enabled = p_enabled; }
 
 void Renderer::fix_surface_compatibility(
 	RenderingServerTypes::SurfaceData& p_surface, const String& p_path)
@@ -590,8 +587,7 @@ void Renderer::fix_surface_compatibility(
 
 RID Renderer::_make_test_cube() { return RID(); }
 
-void Renderer::mesh_add_surface_from_mesh_data(
-	RID p_mesh, const Geometry3D::MeshData& p_mesh_data)
+void Renderer::mesh_add_surface_from_mesh_data(RID p_mesh, const Geometry3D::MeshData& p_mesh_data)
 {
 }
 
@@ -606,15 +602,11 @@ void Renderer::init()
 {
 	data = memnew(Data);
 	RendererCompositor::create();
-    light_storage = RendererCompositor::get_light_storage();
-    material_storage = RendererCompositor::get_material_storage();
-    particles_storage = RendererCompositor::get_particles_storage();
-    texture_storage = RendererCompositor::get_texture_storage();
-    gi = RendererCompositor::get_gi();
-    fog = RendererCompositor::get_fog();
-    canvas_render = RendererCompositor::get_canvas();
-    viewport = memnew(RendererViewport);
-    canvas = memnew(RendererCanvasCull);
+	gi = RendererCompositor::get_gi();
+	fog = RendererCompositor::get_fog();
+	canvas_render = RendererCompositor::get_canvas();
+	viewport = memnew(RendererViewport);
+	canvas = memnew(RendererCanvasCull);
 	RendererSceneCull* sr = memnew(RendererSceneCull);
 	RS::camera_attributes = memnew(RendererCameraAttributes);
 	RS::scene = sr;
@@ -624,21 +616,34 @@ void Renderer::init()
 void Renderer::finalize()
 {
 	memdelete(canvas);
-    canvas = nullptr;
-    memdelete(viewport);
-    viewport = nullptr;
-    light_storage = nullptr;
-    material_storage = nullptr;
-    particles_storage = nullptr;
-    texture_storage = nullptr;
-    gi = nullptr;
-    fog = nullptr;
-    canvas_render = nullptr;
-    scene = nullptr;
-    if (data) {
-        memdelete(data);
-        data = nullptr;
-    }
+	canvas = nullptr;
+	memdelete(viewport);
+	viewport = nullptr;
+	particles_storage = nullptr;
+	gi = nullptr;
+	fog = nullptr;
+	canvas_render = nullptr;
+	scene = nullptr;
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+void Renderer::draw(bool p_swap_buffers, double frame_step)
+{
+	static bool printed = false;
+	if (!printed) {
+		__print_line("Renderer::draw called!");
+		printed = true;
+	}
+	if (viewport) {
+		viewport->draw_viewports(p_swap_buffers);
+	}
+
+	if (canvas) {
+		canvas->update();
+	}
 }
 
 void Renderer::sync() {}
@@ -662,23 +667,18 @@ void Renderer::pre_draw(bool p_will_draw)
 
 /* STATE & QUERIES */
 
-double Renderer::get_frame_setup_time_cpu()
-{
-	return data ? data->backend.frame_setup_time : 0.0;
-}
+double Renderer::get_frame_setup_time_cpu() { return data ? data->backend.frame_setup_time : 0.0; }
 
 bool Renderer::has_changed() { return data && data->backend.changes > 0; }
 
 Color Renderer::get_default_clear_color()
 {
-	return RS::texture_storage ? RS::texture_storage->get_default_clear_color() : Color();
+	return RendererTextureStorage::get_default_clear_color();
 }
 
 void Renderer::set_default_clear_color(const Color& p_color)
 {
-	if (RS::texture_storage) {
-		RS::texture_storage->set_default_clear_color(p_color);
-	}
+	RendererTextureStorage::set_default_clear_color(p_color);
 }
 
 uint64_t Renderer::get_rendering_info(RSE::RenderingInfo p_info)
@@ -794,137 +794,133 @@ bool Renderer::is_on_render_thread() { return true; }
 
 void Renderer::global_shader_parameters_clear()
 {
-	if (RS::material_storage) {
-		RS::material_storage->global_shader_parameters_clear();
-	}
+	RendererMaterialStorage::global_shader_parameters_clear();
 }
 
 void Renderer::global_shader_parameters_load_settings(bool p_load_textures)
 {
-	if (RS::material_storage) {
-		RS::material_storage->global_shader_parameters_load_settings(p_load_textures);
-	}
+	RendererMaterialStorage::global_shader_parameters_load_settings(p_load_textures);
 }
 
 RID Renderer::texture_2d_create(const Ref<Image>& p_image)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_2d_initialize(ret, p_image);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_2d_initialize(ret, p_image);
 	return ret;
 }
 
 RID Renderer::texture_2d_layered_create(
 	const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_2d_layered_initialize(ret, p_layers, p_layered_type);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_2d_layered_initialize(ret, p_layers, p_layered_type);
 	return ret;
 }
 
-RID Renderer::texture_3d_create(Image::Format p_format, int p_width, int p_height,
-	int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+RID Renderer::texture_3d_create(Image::Format p_format, int p_width, int p_height, int p_depth,
+	bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_3d_initialize(
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_3d_initialize(
 		ret, p_format, p_width, p_height, p_depth, p_mipmaps, p_data);
 	return ret;
 }
 
 RID Renderer::texture_2d_placeholder_create()
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_2d_placeholder_initialize(ret);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_2d_placeholder_initialize(ret);
 	return ret;
 }
 
 RID Renderer::texture_2d_layered_placeholder_create(RSE::TextureLayeredType p_layered_type)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_2d_layered_placeholder_initialize(ret, p_layered_type);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_2d_layered_placeholder_initialize(ret, p_layered_type);
 	return ret;
 }
 
 RID Renderer::texture_3d_placeholder_create()
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_3d_placeholder_initialize(ret);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_3d_placeholder_initialize(ret);
 	return ret;
 }
 
 RID Renderer::texture_proxy_create(RID p_base)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_proxy_initialize(ret, p_base);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_proxy_initialize(ret, p_base);
 	return ret;
 }
 
 RID Renderer::texture_drawable_create(int p_width, int p_height,
 	RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_with_mipmaps)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_drawable_initialize(
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_drawable_initialize(
 		ret, p_width, p_height, p_format, p_color, p_with_mipmaps);
 	return ret;
 }
 
 void Renderer::texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer)
 {
-	RS::texture_storage->texture_2d_update(p_texture, p_image, p_layer);
+	RendererTextureStorage::texture_2d_update(p_texture, p_image, p_layer);
 }
 
 void Renderer::texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
 {
-	RS::texture_storage->texture_3d_update(p_texture, p_data);
+	RendererTextureStorage::texture_3d_update(p_texture, p_data);
 }
 
 void Renderer::texture_proxy_update(RID p_proxy, RID p_base)
 {
-	RS::texture_storage->texture_proxy_update(p_proxy, p_base);
+	RendererTextureStorage::texture_proxy_update(p_proxy, p_base);
 }
 
 Ref<Image> Renderer::texture_2d_get(RID p_texture)
 {
-	return RS::texture_storage->texture_2d_get(p_texture);
+	return RendererTextureStorage::texture_2d_get(p_texture);
 }
 
 Ref<Image> Renderer::texture_2d_layer_get(RID p_texture, int p_layer)
 {
-	return RS::texture_storage->texture_2d_layer_get(p_texture, p_layer);
+	return RendererTextureStorage::texture_2d_layer_get(p_texture, p_layer);
 }
 
 Vector<Ref<Image>> Renderer::texture_3d_get(RID p_texture)
 {
-	return RS::texture_storage->texture_3d_get(p_texture);
+	return RendererTextureStorage::texture_3d_get(p_texture);
 }
 
 void Renderer::texture_replace(RID p_texture, RID p_by_texture)
 {
-	RS::texture_storage->texture_replace(p_texture, p_by_texture);
+	RendererTextureStorage::texture_replace(p_texture, p_by_texture);
 }
 
 void Renderer::texture_set_size_override(RID p_texture, int p_width, int p_height)
 {
-	RS::texture_storage->texture_set_size_override(p_texture, p_width, p_height);
+	RendererTextureStorage::texture_set_size_override(p_texture, p_width, p_height);
 }
 
 void Renderer::texture_set_path(RID p_texture, const String& p_path)
 {
-	RS::texture_storage->texture_set_path(p_texture, p_path);
+	RendererTextureStorage::texture_set_path(p_texture, p_path);
 }
 
 RID Renderer::texture_drawable_get_default_material()
 {
-	return RS::texture_storage->texture_drawable_get_default_material();
+	return RendererTextureStorage::texture_drawable_get_default_material();
 }
 
 void Renderer::texture_drawable_generate_mipmaps(RID p_texture)
 {
-	RS::texture_storage->texture_drawable_generate_mipmaps(p_texture);
+	RendererTextureStorage::texture_drawable_generate_mipmaps(p_texture);
 }
 
 uint64_t Renderer::texture_get_native_handle(RID p_texture, bool p_srgb)
 {
-	return RS::texture_storage->texture_get_native_handle(p_texture, p_srgb);
+	return RendererTextureStorage::texture_get_native_handle(p_texture, p_srgb);
 }
 
 void Renderer::canvas_set_modulate(RID p_canvas, const Color& p_color)
@@ -937,8 +933,7 @@ void Renderer::canvas_set_parent(RID p_canvas, RID p_parent, float p_scale)
 	RS::canvas->canvas_set_parent(p_canvas, p_parent, p_scale);
 }
 
-void Renderer::canvas_set_item_repeat(
-	RID p_item, const Point2& p_repeat_size, int p_repeat_times)
+void Renderer::canvas_set_item_repeat(RID p_item, const Point2& p_repeat_size, int p_repeat_times)
 {
 	RS::canvas->canvas_set_item_repeat(p_item, p_repeat_size, p_repeat_times);
 }
@@ -981,8 +976,7 @@ void Renderer::canvas_item_set_clip(RID p_item, bool p_clip)
 	RS::canvas->canvas_item_set_clip(p_item, p_clip);
 }
 
-void Renderer::canvas_item_set_custom_rect(
-	RID p_item, bool p_custom_rect, const Rect2& p_rect)
+void Renderer::canvas_item_set_custom_rect(RID p_item, bool p_custom_rect, const Rect2& p_rect)
 {
 	RS::canvas->canvas_item_set_custom_rect(p_item, p_custom_rect, p_rect);
 }
@@ -1022,8 +1016,7 @@ void Renderer::canvas_item_set_z_as_relative_to_parent(RID p_item, bool p_enable
 	RS::canvas->canvas_item_set_z_as_relative_to_parent(p_item, p_enable);
 }
 
-void Renderer::canvas_item_set_copy_to_backbuffer(
-	RID p_item, bool p_enable, const Rect2& p_rect)
+void Renderer::canvas_item_set_copy_to_backbuffer(RID p_item, bool p_enable, const Rect2& p_rect)
 {
 	RS::canvas->canvas_item_set_copy_to_backbuffer(p_item, p_enable, p_rect);
 }
@@ -1121,9 +1114,8 @@ void Renderer::canvas_item_add_texture_rect(RID p_item, const Rect2& p_rect, RID
 		p_item, p_rect, p_texture, p_tile, p_modulate, p_transpose);
 }
 
-void Renderer::canvas_item_add_texture_rect_region(RID p_item, const Rect2& p_rect,
-	RID p_texture, const Rect2& p_src_rect, const Color& p_modulate, bool p_transpose,
-	bool p_clip_uv)
+void Renderer::canvas_item_add_texture_rect_region(RID p_item, const Rect2& p_rect, RID p_texture,
+	const Rect2& p_src_rect, const Color& p_modulate, bool p_transpose, bool p_clip_uv)
 {
 	RS::canvas->canvas_item_add_texture_rect_region(
 		p_item, p_rect, p_texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
@@ -1144,8 +1136,8 @@ void Renderer::canvas_item_add_lcd_texture_rect_region(RID p_item, const Rect2& 
 		p_item, p_rect, p_texture, p_src_rect, p_modulate);
 }
 
-void Renderer::canvas_item_add_nine_patch(RID p_item, const Rect2& p_rect,
-	const Rect2& p_source, RID p_texture, const Vector2& p_topleft, const Vector2& p_bottomright,
+void Renderer::canvas_item_add_nine_patch(RID p_item, const Rect2& p_rect, const Rect2& p_source,
+	RID p_texture, const Vector2& p_topleft, const Vector2& p_bottomright,
 	RSE::NinePatchAxisMode p_x_axis_mode, RSE::NinePatchAxisMode p_y_axis_mode, bool p_draw_center,
 	const Color& p_modulate)
 {
@@ -1173,8 +1165,8 @@ void Renderer::canvas_item_add_triangle_array(RID p_item, const Vector<int>& p_i
 		p_item, p_indices, p_points, p_colors, p_uvs, p_bones, p_weights, p_texture, p_count);
 }
 
-void Renderer::canvas_item_add_mesh(RID p_item, const RID& p_mesh,
-	const Transform2D& p_transform, const Color& p_modulate, RID p_texture)
+void Renderer::canvas_item_add_mesh(RID p_item, const RID& p_mesh, const Transform2D& p_transform,
+	const Color& p_modulate, RID p_texture)
 {
 	RS::canvas->canvas_item_add_mesh(p_item, p_mesh, p_transform, p_modulate, p_texture);
 }
@@ -1308,8 +1300,7 @@ void Renderer::viewport_set_snap_2d_vertices_to_pixel(RID p_viewport, bool p_ena
 	RS::viewport->viewport_set_snap_2d_vertices_to_pixel(p_viewport, p_enabled);
 }
 
-void Renderer::viewport_set_global_canvas_transform(
-	RID p_viewport, const Transform2D& p_transform)
+void Renderer::viewport_set_global_canvas_transform(RID p_viewport, const Transform2D& p_transform)
 {
 	RS::viewport->viewport_set_global_canvas_transform(p_viewport, p_transform);
 }
@@ -1326,8 +1317,7 @@ void Renderer::viewport_set_sdf_oversize_and_scale(
 	RS::viewport->viewport_set_sdf_oversize_and_scale(p_viewport, p_oversize, p_scale);
 }
 
-void Renderer::viewport_set_positional_shadow_atlas_size(
-	RID p_viewport, int p_size, bool p_16_bits)
+void Renderer::viewport_set_positional_shadow_atlas_size(RID p_viewport, int p_size, bool p_16_bits)
 {
 	RS::viewport->viewport_set_positional_shadow_atlas_size(p_viewport, p_size, p_16_bits);
 }
@@ -1349,8 +1339,7 @@ void Renderer::viewport_set_msaa_2d(RID p_viewport, RSE::ViewportMSAA p_msaa)
 	RS::viewport->viewport_set_msaa_2d(p_viewport, p_msaa);
 }
 
-void Renderer::viewport_set_screen_space_aa(
-	RID p_viewport, RSE::ViewportScreenSpaceAA p_mode)
+void Renderer::viewport_set_screen_space_aa(RID p_viewport, RSE::ViewportScreenSpaceAA p_mode)
 {
 	RS::viewport->viewport_set_screen_space_aa(p_viewport, p_mode);
 }
@@ -1434,8 +1423,7 @@ void Renderer::viewport_set_canvas_cull_mask(RID p_viewport, uint32_t p_canvas_c
 	RS::viewport->viewport_set_canvas_cull_mask(p_viewport, p_canvas_cull_mask);
 }
 
-void Renderer::viewport_set_vrs_update_mode(
-	RID p_viewport, RSE::ViewportVRSUpdateMode p_mode)
+void Renderer::viewport_set_vrs_update_mode(RID p_viewport, RSE::ViewportVRSUpdateMode p_mode)
 {
 	RS::viewport->viewport_set_vrs_update_mode(p_viewport, p_mode);
 }
@@ -1496,8 +1484,7 @@ void Renderer::instance_set_blend_shape_weight(RID p_instance, int p_shape, floa
 	RS::scene->instance_set_blend_shape_weight(p_instance, p_shape, p_weight);
 }
 
-void Renderer::instance_set_surface_override_material(
-	RID p_instance, int p_surface, RID p_material)
+void Renderer::instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material)
 {
 	RS::scene->instance_set_surface_override_material(p_instance, p_surface, p_material);
 }
@@ -1507,10 +1494,7 @@ void Renderer::instance_set_visible(RID p_instance, bool p_visible)
 	RS::scene->instance_set_visible(p_instance, p_visible);
 }
 
-void Renderer::instance_teleport(RID p_instance)
-{
-	RS::scene->instance_teleport(p_instance);
-}
+void Renderer::instance_teleport(RID p_instance) { RS::scene->instance_teleport(p_instance); }
 
 void Renderer::instance_attach_skeleton(RID p_instance, RID p_skeleton)
 {
@@ -1555,8 +1539,7 @@ void Renderer::camera_set_perspective(
 	RS::scene->camera_set_perspective(p_camera, p_fovy_degrees, p_z_near, p_z_far);
 }
 
-void Renderer::camera_set_orthogonal(
-	RID p_camera, float p_size, float p_z_near, float p_z_far)
+void Renderer::camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far)
 {
 	RS::scene->camera_set_orthogonal(p_camera, p_size, p_z_near, p_z_far);
 }
@@ -1574,8 +1557,7 @@ void Renderer::camera_set_transform(RID p_camera, const Transform3D& p_transform
 
 RID Renderer::mesh_create() { return RendererMeshStorage::mesh_allocate(); }
 
-void Renderer::mesh_add_surface(
-	RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface)
+void Renderer::mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface)
 {
 	RendererMeshStorage::mesh_add_surface(p_mesh, p_surface);
 }
@@ -1637,57 +1619,57 @@ RenderingServerTypes::SurfaceData Renderer::mesh_get_surface(RID p_mesh, int p_s
 
 RID Renderer::shader_create()
 {
-	RID ret = RS::material_storage->shader_allocate();
-	RS::material_storage->shader_initialize(ret, false);
+	RID ret = RendererMaterialStorage::shader_allocate();
+	RendererMaterialStorage::shader_initialize(ret, false);
 	return ret;
 }
 
 RID Renderer::shader_create_from_code(const String& p_code, const String& p_path_hint)
 {
-	RID shader = RS::material_storage->shader_allocate();
-	RS::material_storage->shader_initialize(shader, false);
-	RS::material_storage->shader_set_path_hint(shader, p_path_hint);
-	RS::material_storage->shader_set_code(shader, p_code);
+	RID shader = RendererMaterialStorage::shader_allocate();
+	RendererMaterialStorage::shader_initialize(shader, false);
+	RendererMaterialStorage::shader_set_path_hint(shader, p_path_hint);
+	RendererMaterialStorage::shader_set_code(shader, p_code);
 	return shader;
 }
 
 void Renderer::shader_set_code(RID p_shader, const String& p_code)
 {
-	RS::material_storage->shader_set_code(p_shader, p_code);
+	RendererMaterialStorage::shader_set_code(p_shader, p_code);
 }
 
 void Renderer::shader_set_path_hint(RID p_shader, const String& p_path)
 {
-	RS::material_storage->shader_set_path_hint(p_shader, p_path);
+	RendererMaterialStorage::shader_set_path_hint(p_shader, p_path);
 }
 
 void Renderer::shader_set_default_texture_parameter(
 	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
 {
-	RS::material_storage->shader_set_default_texture_parameter(
+	RendererMaterialStorage::shader_set_default_texture_parameter(
 		p_shader, p_name, p_texture, p_index);
 }
 
 RID Renderer::material_create()
 {
-	RID ret = RS::material_storage->material_allocate();
-	RS::material_storage->material_initialize(ret);
+	RID ret = RendererMaterialStorage::material_allocate();
+	RendererMaterialStorage::material_initialize(ret);
 	return ret;
 }
 
 void Renderer::material_set_shader(RID p_shader_material, RID p_shader)
 {
-	RS::material_storage->material_set_shader(p_shader_material, p_shader);
+	RendererMaterialStorage::material_set_shader(p_shader_material, p_shader);
 }
 
 void Renderer::material_set_render_priority(RID p_material, int priority)
 {
-	RS::material_storage->material_set_render_priority(p_material, priority);
+	RendererMaterialStorage::material_set_render_priority(p_material, priority);
 }
 
 void Renderer::material_set_next_pass(RID p_material, RID p_next_material)
 {
-	RS::material_storage->material_set_next_pass(p_material, p_next_material);
+	RendererMaterialStorage::material_set_next_pass(p_material, p_next_material);
 }
 
 void Renderer::material_set_use_debanding(bool p_enable)
@@ -1784,10 +1766,7 @@ RID Renderer::camera_create()
 	return ret;
 }
 
-String Renderer::get_video_adapter_name()
-{
-	return RendererUtilities::get_video_adapter_name();
-}
+String Renderer::get_video_adapter_name() { return RendererUtilities::get_video_adapter_name(); }
 
 String Renderer::get_video_adapter_vendor()
 {
@@ -1822,8 +1801,7 @@ void Renderer::canvas_light_occluder_attach_to_canvas(RID p_occluder, RID p_canv
 	RS::canvas->canvas_light_occluder_attach_to_canvas(p_occluder, p_canvas);
 }
 
-void Renderer::canvas_light_occluder_set_transform(
-	RID p_occluder, const Transform2D& p_xform)
+void Renderer::canvas_light_occluder_set_transform(RID p_occluder, const Transform2D& p_xform)
 {
 	RS::canvas->canvas_light_occluder_set_transform(p_occluder, p_xform);
 }
@@ -1935,8 +1913,7 @@ void Renderer::canvas_light_set_shadow_enabled(RID p_light, bool p_enabled)
 	RS::canvas->canvas_light_set_shadow_enabled(p_light, p_enabled);
 }
 
-void Renderer::canvas_light_set_shadow_filter(
-	RID p_light, RSE::CanvasLightShadowFilter p_filter)
+void Renderer::canvas_light_set_shadow_filter(RID p_light, RSE::CanvasLightShadowFilter p_filter)
 {
 	RS::canvas->canvas_light_set_shadow_filter(p_light, p_filter);
 }
@@ -1963,126 +1940,123 @@ void Renderer::canvas_light_set_shadow_smooth(RID p_light, float p_smooth)
 
 RID Renderer::lightmap_create()
 {
-	RID ret = RS::light_storage->lightmap_allocate();
-	RS::light_storage->lightmap_initialize(ret);
+	RID ret = RendererLightStorage::lightmap_allocate();
+	RendererLightStorage::lightmap_initialize(ret);
 	return ret;
 }
 
 PackedVector3Array Renderer::lightmap_get_probe_capture_points(RID p_lightmap)
 {
-	return RS::light_storage->lightmap_get_probe_capture_points(p_lightmap);
+	return RendererLightStorage::lightmap_get_probe_capture_points(p_lightmap);
 }
 
 PackedColorArray Renderer::lightmap_get_probe_capture_sh(RID p_lightmap)
 {
-	return RS::light_storage->lightmap_get_probe_capture_sh(p_lightmap);
+	return RendererLightStorage::lightmap_get_probe_capture_sh(p_lightmap);
 }
 
 PackedInt32Array Renderer::lightmap_get_probe_capture_tetrahedra(RID p_lightmap)
 {
-	return RS::light_storage->lightmap_get_probe_capture_tetrahedra(p_lightmap);
+	return RendererLightStorage::lightmap_get_probe_capture_tetrahedra(p_lightmap);
 }
 
 PackedInt32Array Renderer::lightmap_get_probe_capture_bsp_tree(RID p_lightmap)
 {
-	return RS::light_storage->lightmap_get_probe_capture_bsp_tree(p_lightmap);
+	return RendererLightStorage::lightmap_get_probe_capture_bsp_tree(p_lightmap);
 }
 
-void Renderer::lightmap_set_probe_capture_data(RID p_lightmap,
-	const PackedVector3Array& p_points, const PackedColorArray& p_sh,
-	const PackedInt32Array& p_tetrahedra, const PackedInt32Array& p_bsp_tree)
+void Renderer::lightmap_set_probe_capture_data(RID p_lightmap, const PackedVector3Array& p_points,
+	const PackedColorArray& p_sh, const PackedInt32Array& p_tetrahedra,
+	const PackedInt32Array& p_bsp_tree)
 {
-	RS::light_storage->lightmap_set_probe_capture_data(
+	RendererLightStorage::lightmap_set_probe_capture_data(
 		p_lightmap, p_points, p_sh, p_tetrahedra, p_bsp_tree);
 }
 
 void Renderer::lightmap_set_probe_bounds(RID p_lightmap, const AABB& p_bounds)
 {
-	RS::light_storage->lightmap_set_probe_bounds(p_lightmap, p_bounds);
+	RendererLightStorage::lightmap_set_probe_bounds(p_lightmap, p_bounds);
 }
 
 void Renderer::lightmap_set_probe_interior(RID p_lightmap, bool p_interior)
 {
-	RS::light_storage->lightmap_set_probe_interior(p_lightmap, p_interior);
+	RendererLightStorage::lightmap_set_probe_interior(p_lightmap, p_interior);
 }
 
-void Renderer::lightmap_set_baked_exposure_normalization(
-	RID p_lightmap, float p_normalization)
+void Renderer::lightmap_set_baked_exposure_normalization(RID p_lightmap, float p_normalization)
 {
-	RS::light_storage->lightmap_set_baked_exposure_normalization(p_lightmap, p_normalization);
+	RendererLightStorage::lightmap_set_baked_exposure_normalization(p_lightmap, p_normalization);
 }
 
-void Renderer::lightmap_set_textures(
-	RID p_lightmap, RID p_light, bool p_uses_spherical_harmonics)
+void Renderer::lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_harmonics)
 {
-	RS::light_storage->lightmap_set_textures(p_lightmap, p_light, p_uses_spherical_harmonics);
+	RendererLightStorage::lightmap_set_textures(p_lightmap, p_light, p_uses_spherical_harmonics);
 }
 
 void Renderer::lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow)
 {
-	RS::light_storage->lightmap_set_shadowmask_textures(p_lightmap, p_shadow);
+	RendererLightStorage::lightmap_set_shadowmask_textures(p_lightmap, p_shadow);
 }
 
 void Renderer::lightmap_set_shadowmask_mode(RID p_lightmap, RSE::ShadowmaskMode p_mode)
 {
-	RS::light_storage->lightmap_set_shadowmask_mode(p_lightmap, p_mode);
+	RendererLightStorage::lightmap_set_shadowmask_mode(p_lightmap, p_mode);
 }
 
 RSE::ShadowmaskMode Renderer::lightmap_get_shadowmask_mode(RID p_lightmap)
 {
-	return RS::light_storage->lightmap_get_shadowmask_mode(p_lightmap);
+	return RendererLightStorage::lightmap_get_shadowmask_mode(p_lightmap);
 }
 
 void Renderer::light_set_negative(RID p_light, bool p_enable)
 {
-	RS::light_storage->light_set_negative(p_light, p_enable);
+	RendererLightStorage::light_set_negative(p_light, p_enable);
 }
 
 void Renderer::light_set_distance_fade(
 	RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length)
 {
-	RS::light_storage->light_set_distance_fade(p_light, p_enabled, p_begin, p_shadow, p_length);
+	RendererLightStorage::light_set_distance_fade(p_light, p_enabled, p_begin, p_shadow, p_length);
 }
 
 void Renderer::light_set_cull_mask(RID p_light, uint32_t p_mask)
 {
-	RS::light_storage->light_set_cull_mask(p_light, p_mask);
+	RendererLightStorage::light_set_cull_mask(p_light, p_mask);
 }
 
 void Renderer::light_set_reverse_cull_face_mode(RID p_light, bool p_enabled)
 {
-	RS::light_storage->light_set_reverse_cull_face_mode(p_light, p_enabled);
+	RendererLightStorage::light_set_reverse_cull_face_mode(p_light, p_enabled);
 }
 
 void Renderer::light_set_shadow_caster_mask(RID p_light, uint32_t p_caster_mask)
 {
-	RS::light_storage->light_set_shadow_caster_mask(p_light, p_caster_mask);
+	RendererLightStorage::light_set_shadow_caster_mask(p_light, p_caster_mask);
 }
 
 void Renderer::light_set_bake_mode(RID p_light, RSE::LightBakeMode p_bake_mode)
 {
-	RS::light_storage->light_set_bake_mode(p_light, p_bake_mode);
+	RendererLightStorage::light_set_bake_mode(p_light, p_bake_mode);
 }
 
 void Renderer::light_directional_set_blend_splits(RID p_light, bool p_enable)
 {
-	RS::light_storage->light_directional_set_blend_splits(p_light, p_enable);
+	RendererLightStorage::light_directional_set_blend_splits(p_light, p_enable);
 }
 
-void Renderer::light_directional_set_sky_mode(
-	RID p_light, RSE::LightDirectionalSkyMode p_mode)
+void Renderer::light_directional_set_sky_mode(RID p_light, RSE::LightDirectionalSkyMode p_mode)
 {
-	RS::light_storage->light_directional_set_sky_mode(p_light, p_mode);
+	RendererLightStorage::light_directional_set_sky_mode(p_light, p_mode);
 }
 
 void Renderer::light_omni_set_shadow_mode(RID p_light, RSE::LightOmniShadowMode p_mode)
 {
-	RS::light_storage->light_omni_set_shadow_mode(p_light, p_mode);
+	RendererLightStorage::light_omni_set_shadow_mode(p_light, p_mode);
 }
 
 void Renderer::light_area_set_normalize_energy(RID p_light, bool p_enable)
 {
-	RS::light_storage->light_area_set_normalize_energy(p_light, p_enable);
+	RendererLightStorage::light_area_set_normalize_energy(p_light, p_enable);
 }
 
 RID Renderer::camera_attributes_create()
@@ -2120,8 +2094,7 @@ void Renderer::environment_set_sky_orientation(RID p_env, const Basis& p_orienta
 	RS::scene->environment_set_sky_orientation(p_env, p_orientation);
 }
 
-void Renderer::environment_set_fog_depth(
-	RID p_env, float p_curve, float p_begin, float p_end)
+void Renderer::environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end)
 {
 	RS::scene->environment_set_fog_depth(p_env, p_curve, p_begin, p_end);
 }
@@ -2195,23 +2168,23 @@ void Renderer::environment_set_tonemap_agx_contrast(RID p_env, float p_contrast)
 	RS::scene->environment_set_tonemap_agx_contrast(p_env, p_contrast);
 }
 
-void Renderer::environment_set_ssr(RID p_env, bool p_enable, int p_max_steps,
-	float p_fade_in, float p_fade_out, float p_depth_tolerance)
+void Renderer::environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_in,
+	float p_fade_out, float p_depth_tolerance)
 {
 	RS::scene->environment_set_ssr(
 		p_env, p_enable, p_max_steps, p_fade_in, p_fade_out, p_depth_tolerance);
 }
 
-void Renderer::environment_set_ssao(RID p_env, bool p_enable, float p_radius,
-	float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness,
-	float p_light_affect, float p_ao_channel_affect)
+void Renderer::environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity,
+	float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect,
+	float p_ao_channel_affect)
 {
 	RS::scene->environment_set_ssao(p_env, p_enable, p_radius, p_intensity, p_power, p_detail,
 		p_horizon, p_sharpness, p_light_affect, p_ao_channel_affect);
 }
 
-void Renderer::environment_set_ssil(RID p_env, bool p_enable, float p_radius,
-	float p_intensity, float p_sharpness, float p_normal_rejection)
+void Renderer::environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity,
+	float p_sharpness, float p_normal_rejection)
 {
 	RS::scene->environment_set_ssil(
 		p_env, p_enable, p_radius, p_intensity, p_sharpness, p_normal_rejection);
@@ -2315,8 +2288,7 @@ AABB Renderer::multimesh_get_aabb(RID p_multimesh)
 	return RendererMeshStorage::multimesh_get_aabb(p_multimesh);
 }
 
-void Renderer::multimesh_instance_set_color(
-	RID p_multimesh, int p_index, const Color& p_color)
+void Renderer::multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color)
 {
 	RendererMeshStorage::multimesh_instance_set_color(p_multimesh, p_index, p_color);
 }
@@ -2424,61 +2396,60 @@ void Renderer::skeleton_bone_set_transform_2d(
 	RendererMeshStorage::skeleton_bone_set_transform_2d(p_skeleton, p_bone, p_transform);
 }
 
-void Renderer::skeleton_set_base_transform_2d(
-	RID p_skeleton, const Transform2D& p_base_transform)
+void Renderer::skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D& p_base_transform)
 {
 	RendererMeshStorage::skeleton_set_base_transform_2d(p_skeleton, p_base_transform);
 }
 
 RID Renderer::texture_external_create(int p_width, int p_height, uint64_t p_external_buffer)
 {
-	RID ret = RS::texture_storage->texture_allocate();
-	RS::texture_storage->texture_external_initialize(ret, p_width, p_height, p_external_buffer);
+	RID ret = RendererTextureStorage::texture_allocate();
+	RendererTextureStorage::texture_external_initialize(ret, p_width, p_height, p_external_buffer);
 	return ret;
 }
 
 void Renderer::texture_external_update(
 	RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 {
-	RS::texture_storage->texture_external_update(p_texture, p_width, p_height, p_external_buffer);
+	RendererTextureStorage::texture_external_update(
+		p_texture, p_width, p_height, p_external_buffer);
 }
 
 RID Renderer::decal_create()
 {
-	RID ret = RS::texture_storage->decal_allocate();
-	RS::texture_storage->decal_initialize(ret);
+	RID ret = RendererTextureStorage::decal_allocate();
+	RendererTextureStorage::decal_initialize(ret);
 	return ret;
 }
 
 void Renderer::decal_set_modulate(RID p_decal, const Color& p_modulate)
 {
-	RS::texture_storage->decal_set_modulate(p_decal, p_modulate);
+	RendererTextureStorage::decal_set_modulate(p_decal, p_modulate);
 }
 
 void Renderer::decal_set_emission_energy(RID p_decal, float p_energy)
 {
-	RS::texture_storage->decal_set_emission_energy(p_decal, p_energy);
+	RendererTextureStorage::decal_set_emission_energy(p_decal, p_energy);
 }
 
 void Renderer::decal_set_albedo_mix(RID p_decal, float p_mix)
 {
-	RS::texture_storage->decal_set_albedo_mix(p_decal, p_mix);
+	RendererTextureStorage::decal_set_albedo_mix(p_decal, p_mix);
 }
 
 void Renderer::decal_set_fade(RID p_decal, float p_above, float p_below)
 {
-	RS::texture_storage->decal_set_fade(p_decal, p_above, p_below);
+	RendererTextureStorage::decal_set_fade(p_decal, p_above, p_below);
 }
 
 void Renderer::decal_set_normal_fade(RID p_decal, float p_fade)
 {
-	RS::texture_storage->decal_set_normal_fade(p_decal, p_fade);
+	RendererTextureStorage::decal_set_normal_fade(p_decal, p_fade);
 }
 
-void Renderer::decal_set_distance_fade(
-	RID p_decal, bool p_enabled, float p_begin, float p_length)
+void Renderer::decal_set_distance_fade(RID p_decal, bool p_enabled, float p_begin, float p_length)
 {
-	RS::texture_storage->decal_set_distance_fade(p_decal, p_enabled, p_begin, p_length);
+	RendererTextureStorage::decal_set_distance_fade(p_decal, p_enabled, p_begin, p_length);
 }
 
 RID Renderer::particles_create()
@@ -2529,8 +2500,7 @@ void Renderer::particles_set_one_shot(RID p_particles, bool p_one_shot)
 	RS::particles_storage->particles_set_one_shot(p_particles, p_one_shot);
 }
 
-void Renderer::particles_set_emission_transform(
-	RID p_particles, const Transform3D& p_transform)
+void Renderer::particles_set_emission_transform(RID p_particles, const Transform3D& p_transform)
 {
 	RS::particles_storage->particles_set_emission_transform(p_particles, p_transform);
 }
@@ -2652,23 +2622,19 @@ void Renderer::particles_collision_height_field_update(RID p_particles_collision
 	RS::particles_storage->particles_collision_height_field_update(p_particles_collision);
 }
 
-void Renderer::particles_collision_set_cull_mask(
-	RID p_particles_collision, uint32_t p_cull_mask)
+void Renderer::particles_collision_set_cull_mask(RID p_particles_collision, uint32_t p_cull_mask)
 {
 	RS::particles_storage->particles_collision_set_cull_mask(p_particles_collision, p_cull_mask);
 }
 
-void Renderer::particles_collision_set_field_texture(
-	RID p_particles_collision, RID p_texture)
+void Renderer::particles_collision_set_field_texture(RID p_particles_collision, RID p_texture)
 {
 	RS::particles_storage->particles_collision_set_field_texture(p_particles_collision, p_texture);
 }
 
-void Renderer::particles_collision_set_height_field_mask(
-	RID p_particles_collision, uint32_t p_mask)
+void Renderer::particles_collision_set_height_field_mask(RID p_particles_collision, uint32_t p_mask)
 {
-	RS::particles_storage->particles_collision_set_height_field_mask(
-		p_particles_collision, p_mask);
+	RS::particles_storage->particles_collision_set_height_field_mask(p_particles_collision, p_mask);
 }
 
 void Renderer::particles_collision_set_attractor_strength(
@@ -2768,73 +2734,72 @@ void Renderer::voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_use_two_bounc
 	RS::gi->voxel_gi_set_use_two_bounces(p_voxel_gi, p_use_two_bounces);
 }
 
-void Renderer::voxel_gi_set_baked_exposure_normalization(
-	RID p_voxel_gi, float p_normalization)
+void Renderer::voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_normalization)
 {
 	RS::gi->voxel_gi_set_baked_exposure_normalization(p_voxel_gi, p_normalization);
 }
 
 RID Renderer::reflection_probe_create()
 {
-	RID ret = RS::light_storage->reflection_probe_allocate();
-	RS::light_storage->reflection_probe_initialize(ret);
+	RID ret = RendererLightStorage::reflection_probe_allocate();
+	RendererLightStorage::reflection_probe_initialize(ret);
 	return ret;
 }
 
 void Renderer::reflection_probe_set_ambient_color(RID p_probe, const Color& p_color)
 {
-	RS::light_storage->reflection_probe_set_ambient_color(p_probe, p_color);
+	RendererLightStorage::reflection_probe_set_ambient_color(p_probe, p_color);
 }
 
 void Renderer::reflection_probe_set_intensity(RID p_probe, float p_intensity)
 {
-	RS::light_storage->reflection_probe_set_intensity(p_probe, p_intensity);
+	RendererLightStorage::reflection_probe_set_intensity(p_probe, p_intensity);
 }
 
 void Renderer::reflection_probe_set_ambient_energy(RID p_probe, float p_energy)
 {
-	RS::light_storage->reflection_probe_set_ambient_energy(p_probe, p_energy);
+	RendererLightStorage::reflection_probe_set_ambient_energy(p_probe, p_energy);
 }
 
 void Renderer::reflection_probe_set_max_distance(RID p_probe, float p_distance)
 {
-	RS::light_storage->reflection_probe_set_max_distance(p_probe, p_distance);
+	RendererLightStorage::reflection_probe_set_max_distance(p_probe, p_distance);
 }
 
 void Renderer::reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio)
 {
-	RS::light_storage->reflection_probe_set_mesh_lod_threshold(p_probe, p_ratio);
+	RendererLightStorage::reflection_probe_set_mesh_lod_threshold(p_probe, p_ratio);
 }
 
 void Renderer::reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable)
+
 {
-	RS::light_storage->reflection_probe_set_enable_box_projection(p_probe, p_enable);
+	RendererLightStorage::reflection_probe_set_enable_box_projection(p_probe, p_enable);
 }
 
 void Renderer::reflection_probe_set_as_interior(RID p_probe, bool p_enable)
 {
-	RS::light_storage->reflection_probe_set_as_interior(p_probe, p_enable);
+	RendererLightStorage::reflection_probe_set_as_interior(p_probe, p_enable);
 }
 
 void Renderer::reflection_probe_set_enable_shadows(RID p_probe, bool p_enable)
 {
-	RS::light_storage->reflection_probe_set_enable_shadows(p_probe, p_enable);
+	RendererLightStorage::reflection_probe_set_enable_shadows(p_probe, p_enable);
 }
 
 void Renderer::reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers)
 {
-	RS::light_storage->reflection_probe_set_cull_mask(p_probe, p_layers);
+	RendererLightStorage::reflection_probe_set_cull_mask(p_probe, p_layers);
 }
 
 void Renderer::reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers)
 {
-	RS::light_storage->reflection_probe_set_reflection_mask(p_probe, p_layers);
+	RendererLightStorage::reflection_probe_set_reflection_mask(p_probe, p_layers);
 }
 
-void Renderer::reflection_probe_set_update_mode(
-	RID p_probe, RSE::ReflectionProbeUpdateMode p_mode)
+void Renderer::reflection_probe_set_update_mode(RID p_probe, RSE::ReflectionProbeUpdateMode p_mode)
 {
-	RS::light_storage->reflection_probe_set_update_mode(p_probe, p_mode);
+	RendererLightStorage::reflection_probe_set_update_mode(p_probe, p_mode);
 }
 
 

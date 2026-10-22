@@ -131,10 +131,7 @@ public:
 	/* SUBSYSTEM & STORAGE POINTERS */
 	static inline bool threaded = false;
 
-	static inline RendererLightStorage* light_storage = nullptr;
-	static inline RendererMaterialStorage* material_storage = nullptr;
 	static inline RendererParticlesStorage* particles_storage = nullptr;
-	static inline RendererTextureStorage* texture_storage = nullptr;
 	static inline RendererGI* gi = nullptr;
 	static inline RendererFog* fog = nullptr;
 	static inline RendererCameraAttributes* camera_attributes = nullptr;

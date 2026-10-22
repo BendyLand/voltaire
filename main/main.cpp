@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cstdlib>
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/core_globals.h"
@@ -55,11 +56,13 @@
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
+#include "scene/gui/color_rect.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/property_list_helper.h"
 #include "scene/register_scene_types.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/resources/world_2d.h"
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_server.h"
@@ -68,8 +71,10 @@
 #include "servers/display/display_server.h"
 #include "servers/movie_writer/movie_writer.h"
 #include "servers/register_server_types.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/storage/texture_storage.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
 
@@ -344,18 +349,25 @@ static Vector<String> get_files_with_extension(const String& p_root, const Strin
 void finalize_physics()
 {
 #ifndef PHYSICS_3D_DISABLED
-	physics_server_3d->finish();
-	memdelete(physics_server_3d);
+	if (physics_server_3d) {
+		physics_server_3d->finish();
+		memdelete(physics_server_3d);
+		physics_server_3d = nullptr;
+	}
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	physics_server_2d->finish();
-	memdelete(physics_server_2d);
+	if (physics_server_2d) {
+		physics_server_2d->finish();
+		memdelete(physics_server_2d);
+		physics_server_2d = nullptr;
+	}
 #endif // PHYSICS_2D_DISABLED
 }
 
 void finalize_display()
 {
+	ShaderLanguage::finish();
 	Renderer::finalize();
 	memdelete(display_server);
 	memdelete(accessibility_server);
@@ -381,31 +393,29 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " (" +
+									  Time::get_singleton()->get_datetime_string_from_unix_time(
+										  VLTR_VERSION_TIMESTAMP, true) +
+									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(
-				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
-				Time::get_singleton()->get_datetime_string_from_unix_time(
-					VLTR_VERSION_TIMESTAMP, true) +
-				" UTC) - " + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " (" +
+								 Time::get_singleton()->get_datetime_string_from_unix_time(
+									 VLTR_VERSION_TIMESTAMP, true) +
+								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 	else {
 		if (p_rich) {
-			Engine::print_header_rich(
-				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
-				get_full_version_string() + " - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
+									  "\u001b[0m v" + get_full_version_string() + " - \u001b[4m" +
+									  String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(String(VLTR_VERSION_NAME) + " v" +
-												  get_full_version_string() + " - " +
-												  String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
+								 " - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 }
@@ -1079,6 +1089,8 @@ void Main::test_cleanup()
 	memdelete(engine);
 
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->finalize_core();
 
@@ -1867,7 +1879,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			if (N) {
 				validate_extension_api_file = N->get();
 
-				N = N->next();
+				N = N->next
+();
 			}
 			else
  {
@@ -3504,8 +3517,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// We need to initialize the movie writer here in case
 		// one of the user-provided GDExtensions subclasses MovieWriter.
 		if (Engine::get_write_movie_path() != String()) {
-			movie_writer =
-				MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
+			movie_writer = MovieWriter::find_writer_for_file(Engine::get_write_movie_path());
 			if (movie_writer == nullptr) {
 				ERR_PRINT("Can't find movie writer for file type, aborting: " +
 						  Engine::get_write_movie_path());
@@ -3540,8 +3552,6 @@ Error Main::setup2(bool p_show_boot_logo)
 	camera_server = CameraServer::create();
 
 	MAIN_PRINT("Main: Load Physics");
-
-	register_server_singletons();
 
 #if TOOLS_ENABLED
 
@@ -3925,8 +3935,7 @@ int Main::start()
 		main_loop_type = "SceneTree";
 	}
 
-	if
-(!main_loop) {
+	if (!main_loop) {
 		memdelete(main_loop);
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
@@ -3946,8 +3955,9 @@ int Main::start()
 		int64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t prev_time = OS::get_singleton()->get_ticks_usec();
 		while (minimum_time > 0) {
+
 			DisplayServer::get_singleton()->process_events();
-			OS::get_singleton()->delay_usec(100);
+			O S::get_singleton()->delay_usec(100);
 
 			uint64_t next_time = OS::get_singleton()->get_ticks_usec();
 			minimum_time -= (next_time - prev_time);
@@ -3962,6 +3972,56 @@ int Main::start()
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
 	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	SceneTree* scene_tree = memnew(SceneTree);
+
+	if (!script.is_empty()) {
+		memdelete(scene_tree);
+		return EXIT_FAILURE;
+	}
+
+	if (!scene_tree) {
+		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+	}
+
+	OS::get_singleton()->set_main_loop(scene_tree);
+	scene_tree->initialize();
+
+	Window* root = scene_tree->get_root();
+	if (root) {
+		root->show();
+
+		// Determine window dimensions
+		Size2i win_size = root->get_size();
+		if (win_size.x <= 0 || win_size.y <= 0) {
+			win_size = Size2i(1024, 600);
+		}
+
+		RID viewport_rid = root->get_viewport_rid();
+		RID root_canvas = root->find_world_2d()->get_canvas();
+
+		// Configure the server viewport to render and present to the OS window
+		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
+		Renderer::viewport_set_active(viewport_rid, true);
+		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
+		Renderer::viewport_attach_to_screen(viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
+
+		// Instantiate and attach ColorRect directly to root canvas
+		ColorRect* rect = memnew(ColorRect);
+		root->add_child(rect);
+		rect->set_size(Size2(300, 200));
+		rect->set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
+
+		// Link canvas item to canvas and mark visible
+		Renderer::canvas_item_set_parent(rect->get_canvas_item(), root_canvas);
+		Renderer::canvas_item_set_visible(rect->get_canvas_item(), true);
+
+		// Statically trigger draw
+		rect->notification(CanvasItem::NOTIFICATION_DRAW);
+	}
+	else {
+		__print_line("Window root failed to be created");
+		return EXIT_FAILURE;
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -4003,8 +4063,7 @@ bool Main::iteration()
 
 	const uint64_t ticks_elapsed = ticks - last_ticks;
 
-	const int physics_ticks_per_second =
-		Engine::get_user_physics_ticks_per_second();
+	const int physics_ticks_per_second = Engine::get_user_physics_ticks_per_second();
 	const double physics_step = 1.0 / physics_ticks_per_second;
 
 	const double time_scale = Engine::get_effective_time_scale();
@@ -4058,6 +4117,10 @@ bool Main::iteration()
 #endif // NAVIGATION_3D_DISABLED
 
 	Renderer::sync(); // sync if still drawing from previous frames.
+
+	if (DisplayServer::get_singleton()->window_can_draw()) {
+		Renderer::draw(true, scaled_step);
+	}
 
 	const bool has_pending_resources_for_processing =
 		RD::data && RD::has_pending_resources_for_processing();
@@ -4280,6 +4343,8 @@ void Main::cleanup(bool p_force)
 	unregister_core_extensions();
 
 	unregister_core_types();
+
+	StringName::cleanup();
 
 	OS::get_singleton()->benchmark_end_measure("Shutdown", "Main::Cleanup");
 	OS::get_singleton()->benchmark_dump();

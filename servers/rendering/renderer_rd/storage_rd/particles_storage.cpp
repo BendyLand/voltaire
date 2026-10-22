@@ -51,9 +51,8 @@ ParticlesStorage::~ParticlesStorage()
 
 	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
 
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-	material_storage->material_free(particles_shader.default_material);
-	material_storage->shader_free(particles_shader.default_shader);
+	MaterialStorage::material_free(particles_shader.default_material);
+	MaterialStorage::shader_free(particles_shader.default_shader);
 
 	if (sort_effects) {
 		memdelete(sort_effects);
@@ -713,9 +712,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 
 void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta)
 {
-	TextureStorage* texture_storage = TextureStorage::get_singleton();
-	MaterialStorage* material_storage = MaterialStorage::get_singleton();
-
 	if (p_particles->particles_material_uniform_set.is_null() ||
 		!RD::uniform_set_is_valid(p_particles->particles_material_uniform_set)) {
 		thread_local LocalVector<RD::Uniform> uniforms;
@@ -1057,15 +1053,15 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 				for (uint32_t i = 0; i < ParticlesFrameParams::MAX_3D_TEXTURES; i++) {
 					RID rd_tex;
 					if (i < collision_3d_textures_used) {
-						if (TextureStorage::get_singleton()->texture_get_type(
+						if (TextureStorage::texture_get_type(
 								collision_3d_textures[i]) == TextureStorage::TYPE_3D) {
-							rd_tex = TextureStorage::get_singleton()->texture_get_rd_texture(
+							rd_tex = TextureStorage::texture_get_rd_texture(
 								collision_3d_textures[i]);
 						}
 					}
 
 					if (rd_tex == RID()) {
-						rd_tex = texture_storage->texture_rd_get_default(
+						rd_tex = RendererRD::TextureStorage::texture_rd_get_default(
 							TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 					}
 					u.append_id(rd_tex);
@@ -1080,7 +1076,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 					u.append_id(collision_heightmap_texture);
 				}
 				else {
-					u.append_id(texture_storage->texture_rd_get_default(
+					u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
 						TextureStorage::DEFAULT_RD_TEXTURE_BLACK));
 				}
 				uniforms.push_back(u);
@@ -1155,10 +1151,10 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	}
 
 	ParticleProcessMaterialData* m =
-		static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
+		static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 			p_particles->process_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	if (!m) {
-		m = static_cast<ParticleProcessMaterialData*>(material_storage->material_get_data(
+		m = static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
 			particles_shader.default_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	}
 
@@ -1244,7 +1240,7 @@ ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
 	}
 }
 
-MaterialStorage::ShaderData* ParticlesStorage::_create_particles_shader_func()
+RendererRD::MaterialStorage::ShaderData* ParticlesStorage::_create_particles_shader_func()
 {
 	ParticlesShaderData* shader_data = memnew(ParticlesShaderData);
 	return shader_data;
@@ -1255,7 +1251,7 @@ ParticlesStorage::ParticleProcessMaterialData::~ParticleProcessMaterialData()
 	free_parameters_uniform_set(uniform_set);
 }
 
-MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func(
+RendererRD::MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func(
 	ParticlesShaderData* p_shader)
 {
 	ParticleProcessMaterialData* material_data = memnew(ParticleProcessMaterialData);
@@ -1263,8 +1259,6 @@ MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func
 	// update will happen later anyway so do nothing.
 	return material_data;
 }
-
-////////
 
 /* PARTICLES COLLISION API */
 

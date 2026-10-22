@@ -44,6 +44,9 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/storage/light_storage.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/texture_storage.h"
 
 class RendererCompositorRD final
 {
@@ -125,30 +128,33 @@ private:
 		const float p_reference_luminance, const float p_linear_luminance_scale);
 
 public:
+	static void bind_canvas_render();
+
 	static void bind_mesh_storage();
+
+	static void bind_texture_storage()
+	{
+		RendererTextureStorage::bind<RendererRD::TextureStorage>();
+	}
+
+	static void bind_material_storage()
+	{
+		RendererMaterialStorage::bind<RendererRD::MaterialStorage>();
+	}
+
+	static void bind_light_storage() { RendererLightStorage::bind<RendererRD::LightStorage>(); }
+
+	static void bind_particles_storage()
+	{
+		// Particles storage binding if converted, or stub
+	}
 
 	static void bind_utilities();
 
-	_ALWAYS_INLINE_ static RendererLightStorage* get_light_storage() { return light_storage; }
-
-	_ALWAYS_INLINE_ static RendererMaterialStorage* get_material_storage()
-	{
-		return material_storage;
-	}
-
-	_ALWAYS_INLINE_ static RendererRD::MeshStorage* get_mesh_storage() { return mesh_storage; }
-
-	_ALWAYS_INLINE_ static RendererParticlesStorage* get_particles_storage()
-	{
-		return particles_storage;
-	}
-
-	_ALWAYS_INLINE_ static RendererTextureStorage* get_texture_storage() { return texture_storage; }
-
 	static RendererGI* get_gi()
 	{
-		ERR_FAIL_NULL_V(scene, nullptr);
-		return scene->get_gi();
+		ERR_FAIL_NULL_V(RendererSceneRenderRD::data, nullptr);
+		return RendererSceneRenderRD::get_gi();
 	}
 
 	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }

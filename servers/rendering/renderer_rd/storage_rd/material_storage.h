@@ -33,6 +33,7 @@
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
+#include "servers/rendering/renderer_rd/shader_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
@@ -45,7 +46,90 @@ struct Projection;
 namespace RendererRD
 {
 
-class MaterialStorage : public RendererMaterialStorage
+struct GlobalShaderUniforms
+{
+	enum
+	{
+		BUFFER_DIRTY_REGION_SIZE = 1024
+	};
+
+	struct Variable
+	{
+		HashSet<RID> texture_materials;
+
+		RSE::GlobalShaderParameterType type;
+		int32_t buffer_index;
+		int32_t buffer_elements;
+	};
+
+	HashMap<StringName, Variable> variables;
+
+	struct Value
+	{
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct ValueInt
+	{
+		int32_t x;
+		int32_t y;
+		int32_t z;
+		int32_t w;
+	};
+
+	struct ValueUInt
+	{
+		uint32_t x;
+		uint32_t y;
+		uint32_t z;
+		uint32_t w;
+	};
+
+	struct ValueUsage
+	{
+		uint32_t elements = 0;
+	};
+
+	List<RID> materials_using_buffer;
+	List<RID> materials_using_texture;
+
+	RID buffer;
+	Value* buffer_values = nullptr;
+	ValueUsage* buffer_usage = nullptr;
+	bool* buffer_dirty_regions = nullptr;
+	uint32_t buffer_dirty_region_count = 0;
+
+	uint32_t buffer_size = 0;
+
+	bool must_update_texture_materials = false;
+	bool must_update_buffer_materials = false;
+
+	HashMap<RID, int32_t> instance_buffer_pos;
+};
+
+struct Samplers
+{
+	RID rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX][RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
+	float mipmap_bias = 0.0f;
+	bool use_nearest_mipmap_filter = false;
+	int anisotropic_filtering_level = 2;
+
+	_FORCE_INLINE_ RID get_sampler(
+		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat) const
+	{
+		return rids[p_filter][p_repeat];
+	}
+
+	template <typename Collection>
+	void append_uniforms(Collection& p_uniforms, int p_first_index) const;
+	bool is_valid() const;
+	bool is_null() const;
+};
+
+class MaterialStorage final
 {
 public:
 	enum ShaderType
@@ -80,7 +164,7 @@ public:
 		virtual void set_default_texture_parameter(
 			const StringName& p_name, RID p_texture, int p_index);
 		virtual void get_instance_param_list(
-			List<RendererMaterialStorage::InstanceShaderParam>* p_param_list) const;
+			List<InstanceShaderParam>* p_param_list) const;
 		virtual bool is_parameter_texture(const StringName& p_param) const;
 
 		virtual void set_code(const String& p_Code) = 0;
@@ -107,8 +191,6 @@ public:
 		virtual void set_next_pass(RID p_pass) = 0;
 		virtual ~MaterialData();
 
-		// to be used internally by update_parameters, in the most common configuration of material
-		// parameters
 		void free_parameters_uniform_set(RID p_uniform_set);
 
 	private:
@@ -120,29 +202,9 @@ public:
 		uint64_t global_textures_pass = 0;
 		HashMap<StringName, uint64_t> used_global_textures;
 
-		// internally by update_parameters_uniform_set
-		Vector<uint8_t> ubo_data[2]; // 0: linear buffer; 1: sRGB buffer.
-		RID uniform_buffer[2];		 // 0: linear buffer; 1: sRGB buffer.
+		Vector<uint8_t> ubo_data[2];
+		RID uniform_buffer[2];
 		Vector<RID> texture_cache;
-	};
-
-	struct Samplers
-	{
-		RID rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX][RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
-		float mipmap_bias = 0.0f;
-		bool use_nearest_mipmap_filter = false;
-		int anisotropic_filtering_level = 2;
-
-		_FORCE_INLINE_ RID get_sampler(
-			RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat) const
-		{
-			return rids[p_filter][p_repeat];
-		}
-
-		template <typename Collection>
-		void append_uniforms(Collection& p_uniforms, int p_first_index) const;
-		bool is_valid() const;
-		bool is_null() const;
 	};
 
 	/* Texture Blit Shader */
@@ -172,11 +234,11 @@ public:
 		virtual ~TexBlitShaderData();
 	};
 
-	ShaderData* _create_tex_blit_shader_func();
+	static ShaderData* _create_tex_blit_shader_func();
 
 	static MaterialStorage::ShaderData* _create_tex_blit_shader_funcs()
 	{
-		return get_singleton()->_create_tex_blit_shader_func();
+		return _create_tex_blit_shader_func();
 	}
 
 	struct TexBlitMaterialData : public MaterialData
@@ -192,95 +254,30 @@ public:
 		virtual ~TexBlitMaterialData();
 	};
 
-	MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
+	static MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
 
 	static MaterialStorage::MaterialData* _create_tex_blit_material_funcs(
 		MaterialStorage::ShaderData* p_shader)
 	{
-		return get_singleton()->_create_tex_blit_material_func(
-			static_cast<TexBlitShaderData*>(p_shader));
+		return _create_tex_blit_material_func(static_cast<TexBlitShaderData*>(p_shader));
 	}
 
 private:
-	static MaterialStorage* singleton;
-
 	/* Samplers */
 
-	Samplers default_samplers;
+	static inline Samplers default_samplers;
 
 	/* Buffers */
 
-	RID quad_index_buffer;
-	RID quad_index_array;
+	static inline RID quad_index_buffer;
+	static inline RID quad_index_array;
 
 	/* GLOBAL SHADER UNIFORM API */
 
-	struct GlobalShaderUniforms
-	{
-		enum
-		{
-			BUFFER_DIRTY_REGION_SIZE = 1024
-		};
+	static inline GlobalShaderUniforms global_shader_uniforms;
 
-		struct Variable
-		{
-			HashSet<RID> texture_materials; // materials using this
-
-			RSE::GlobalShaderParameterType type;
-			int32_t buffer_index;	 // for vectors
-			int32_t buffer_elements; // for vectors
-		};
-
-		HashMap<StringName, Variable> variables;
-
-		struct Value
-		{
-			float x;
-			float y;
-			float z;
-			float w;
-		};
-
-		struct ValueInt
-		{
-			int32_t x;
-			int32_t y;
-			int32_t z;
-			int32_t w;
-		};
-
-		struct ValueUInt
-		{
-			uint32_t x;
-			uint32_t y;
-			uint32_t z;
-			uint32_t w;
-		};
-
-		struct ValueUsage
-		{
-			uint32_t elements = 0;
-		};
-
-		List<RID> materials_using_buffer;
-		List<RID> materials_using_texture;
-
-		RID buffer;
-		Value* buffer_values = nullptr;
-		ValueUsage* buffer_usage = nullptr;
-		bool* buffer_dirty_regions = nullptr;
-		uint32_t buffer_dirty_region_count = 0;
-
-		uint32_t buffer_size;
-
-		bool must_update_texture_materials = false;
-		bool must_update_buffer_materials = false;
-
-		HashMap<RID, int32_t> instance_buffer_pos;
-	} global_shader_uniforms;
-
-	int32_t _global_shader_uniform_allocate(uint32_t p_elements);
-	void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
+	static int32_t _global_shader_uniform_allocate(uint32_t p_elements);
+	static void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
 
 	/* SHADER API */
 
@@ -299,13 +296,13 @@ private:
 	};
 
 	typedef ShaderData* (*ShaderDataRequestFunction)();
-	ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX];
+	static inline ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX] = {};
 
-	mutable RID_Owner<Shader, true> shader_owner;
-	HashSet<RID> embedded_set;
-	Mutex embedded_set_mutex;
+	static inline RID_Owner<Shader, true> shader_owner;
+	static inline HashSet<RID> embedded_set;
+	static inline Mutex embedded_set_mutex;
 
-	Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
+	static Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
 
 	/* MATERIAL API */
 
@@ -316,7 +313,6 @@ private:
 		RID self;
 		MaterialData* data = nullptr;
 		Shader* shader = nullptr;
-		// shortcut to shader data and type
 		ShaderType shader_type = SHADER_TYPE_MAX;
 		uint32_t shader_id = 0;
 		bool uniform_dirty = false;
@@ -330,23 +326,27 @@ private:
 		Material() : update_element(this) {}
 	};
 
-	MaterialDataRequestFunction material_data_request_func[SHADER_TYPE_MAX];
-	mutable RID_Owner<Material, true> material_owner;
+	static inline MaterialDataRequestFunction material_data_request_func[SHADER_TYPE_MAX] = {};
+	static inline RID_Owner<Material, true> material_owner;
 
-	Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
+	static Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
 
-	SelfList<Material>::List material_update_list;
-	Mutex material_update_list_mutex;
+	static inline SelfList<Material>::List material_update_list;
+	static inline Mutex material_update_list_mutex;
 
 	static void _material_uniform_set_erased(void* p_material);
 
 public:
-	static MaterialStorage* get_singleton();
+	// Lifecycle
+	static void initialize();
+	static void finalize();
 
-	MaterialStorage();
-	virtual ~MaterialStorage();
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
 
-	bool free(RID p_rid);
+	static bool free(RID p_rid);
 
 	/* Helpers */
 
@@ -435,7 +435,6 @@ public:
 		}
 	}
 
-	// http://andrewthall.org/papers/df64_qf128.pdf
 #ifdef REAL_T_IS_DOUBLE
 	static _FORCE_INLINE_ void split_double(double a, float* a_hi, float* a_lo)
 	{
@@ -450,106 +449,105 @@ public:
 
 	/* Samplers */
 
-	Samplers samplers_rd_allocate(float p_mipmap_bias = 0.0f,
-		RSE::ViewportAnisotropicFiltering anisotropic_filtering_level =
-			RSE::ViewportAnisotropicFiltering::VIEWPORT_ANISOTROPY_4X) const;
-	void samplers_rd_free(Samplers& p_samplers) const;
+	static Samplers samplers_rd_allocate(
+		float p_mipmap_bias = 0.0f, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level =
+										RSE::ViewportAnisotropicFiltering::VIEWPORT_ANISOTROPY_4X);
+	static void samplers_rd_free(Samplers& p_samplers);
 
-	_FORCE_INLINE_ RID sampler_rd_get_default(
+	static _FORCE_INLINE_ RID sampler_rd_get_default(
 		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat)
 	{
 		return default_samplers.get_sampler(p_filter, p_repeat);
 	}
 
-	_FORCE_INLINE_ const Samplers& samplers_rd_get_default() const { return default_samplers; }
+	static _FORCE_INLINE_ const Samplers& samplers_rd_get_default() { return default_samplers; }
 
 	/* Buffers */
 
-	RID get_quad_index_array() { return quad_index_array; }
+	static RID get_quad_index_array() { return quad_index_array; }
 
 	/* GLOBAL SHADER UNIFORM API */
 
-	void _update_global_shader_uniforms();
+	static void _update_global_shader_uniforms();
 
-	virtual void global_shader_parameter_remove(const StringName& p_name) override;
-	virtual Vector<StringName> global_shader_parameter_get_list() const override;
+	static void global_shader_parameter_remove(const StringName& p_name);
+	static Vector<StringName> global_shader_parameter_get_list();
 
-	virtual RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name) const override;
-	RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
-		const StringName& p_name) const;
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+		const StringName& p_name);
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
+		const StringName& p_name);
 
-	virtual void global_shader_parameters_load_settings(bool p_load_textures = true) override;
-	virtual void global_shader_parameters_clear() override;
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
+	static void global_shader_parameters_clear();
 
-	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) override;
-	virtual void global_shader_parameters_instance_free(RID p_instance) override;
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance);
+	static void global_shader_parameters_instance_free(RID p_instance);
 
-	RID global_shader_uniforms_get_storage_buffer() const;
+	static RID global_shader_uniforms_get_storage_buffer();
 
 	/* SHADER API */
 
-	bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
 
-	virtual RID shader_allocate() override;
-	virtual void shader_initialize(RID p_shader, bool p_embedded = true) override;
-	virtual void shader_free(RID p_rid) override;
+	static RID shader_allocate();
+	static void shader_initialize(RID p_shader, bool p_embedded = true);
+	static void shader_free(RID p_rid);
 
-	virtual void shader_set_code(RID p_shader, const String& p_code) override;
-	virtual void shader_set_path_hint(RID p_shader, const String& p_path) override;
-	virtual String shader_get_code(RID p_shader) const override;
+	static void shader_set_code(RID p_shader, const String& p_code);
+	static void shader_set_path_hint(RID p_shader, const String& p_path);
+	static String shader_get_code(RID p_shader);
 
-	virtual void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index) override;
-	virtual RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index) const override;
-	void shader_set_data_request_function(
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const StringName& p_name, RID p_texture, int p_index);
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const StringName& p_name, int p_index);
+	static void shader_set_data_request_function(
 		ShaderType p_shader_type, ShaderDataRequestFunction p_function);
-	ShaderData* shader_get_data(RID p_shader) const;
+	static ShaderData* shader_get_data(RID p_shader);
 
-	virtual RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
-		RID p_shader) const override;
-	virtual void shader_embedded_set_lock() override;
-	virtual const HashSet<RID>& shader_embedded_set_get() const override;
-	virtual void shader_embedded_set_unlock() override;
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader);
+	static void shader_embedded_set_lock();
+	static const HashSet<RID>& shader_embedded_set_get();
+	static void shader_embedded_set_unlock();
 
 	/* MATERIAL API */
 
-	bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
 
-	void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
-	void _update_queued_materials();
+	static void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
+	static void _update_queued_materials();
 
-	virtual RID material_allocate() override;
-	virtual void material_initialize(RID p_material) override;
-	virtual void material_free(RID p_rid) override;
+	static RID material_allocate();
+	static void material_initialize(RID p_material);
+	static void material_free(RID p_rid);
 
-	virtual void material_set_shader(RID p_material, RID p_shader) override;
-	ShaderData* material_get_shader_data(RID p_material);
+	static void material_set_shader(RID p_material, RID p_shader);
+	static ShaderData* material_get_shader_data(RID p_material);
 
-	virtual void material_set_next_pass(RID p_material, RID p_next_material) override;
-	virtual void material_set_render_priority(RID p_material, int priority) override;
+	static void material_set_next_pass(RID p_material, RID p_next_material);
+	static void material_set_render_priority(RID p_material, int priority);
 
-	virtual bool material_is_animated(RID p_material) override;
-	virtual bool material_casts_shadows(RID p_material) override;
-	virtual RSE::CullMode material_get_cull_mode(RID p_material) const override;
+	static bool material_is_animated(RID p_material);
+	static bool material_casts_shadows(RID p_material);
+	static RSE::CullMode material_get_cull_mode(RID p_material);
 
-	virtual void material_get_instance_shader_parameters(
-		RID p_material, List<InstanceShaderParam>* r_parameters) override;
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<InstanceShaderParam>* r_parameters);
 
-	virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance);
 
-	void material_set_data_request_function(
+	static void material_set_data_request_function(
 		ShaderType p_shader_type, MaterialDataRequestFunction p_function);
-	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+	static MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
 
-	_FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
+	static _FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
 	{
 		Material* material = material_owner.get_or_null(p_material);
 		return material->shader_id;
 	}
 
-	_FORCE_INLINE_ MaterialData* material_get_data(RID p_material, ShaderType p_shader_type)
+	static _FORCE_INLINE_ MaterialData* material_get_data(RID p_material, ShaderType p_shader_type)
 	{
 		Material* material = material_owner.get_or_null(p_material);
 		if (!material || material->shader_type != p_shader_type) {

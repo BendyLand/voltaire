@@ -164,16 +164,16 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	else if (GLES3::MeshStorage::owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_light(p_rid)) {
+	else if (GLES3::LightStorage::owns_light(p_rid)) {
 		return RSE::INSTANCE_LIGHT;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+	else if (GLES3::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
 		return RSE::INSTANCE_PARTICLES;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
+	else if (GLES3::LightStorage::owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
 	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles_collision(p_rid)) {
@@ -187,24 +187,24 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
-	if (GLES3::TextureStorage::get_singleton()->owns_render_target(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->render_target_free(p_rid);
+	if (GLES3::TextureStorage::owns_render_target(p_rid)) {
+		GLES3::TextureStorage::render_target_free(p_rid);
 		return true;
 	}
-	else if (GLES3::TextureStorage::get_singleton()->owns_texture(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->texture_free(p_rid);
+	else if (GLES3::TextureStorage::owns_texture(p_rid)) {
+		GLES3::TextureStorage::texture_free(p_rid);
 		return true;
 	}
-	else if (GLES3::TextureStorage::get_singleton()->owns_canvas_texture(p_rid)) {
-		GLES3::TextureStorage::get_singleton()->canvas_texture_free(p_rid);
+	else if (GLES3::TextureStorage::owns_canvas_texture(p_rid)) {
+		GLES3::TextureStorage::canvas_texture_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MaterialStorage::get_singleton()->owns_shader(p_rid)) {
-		GLES3::MaterialStorage::get_singleton()->shader_free(p_rid);
+	else if (GLES3::MaterialStorage::owns_shader(p_rid)) {
+		GLES3::MaterialStorage::shader_free(p_rid);
 		return true;
 	}
-	else if (GLES3::MaterialStorage::get_singleton()->owns_material(p_rid)) {
-		GLES3::MaterialStorage::get_singleton()->material_free(p_rid);
+	else if (GLES3::MaterialStorage::owns_material(p_rid)) {
+		GLES3::MaterialStorage::material_free(p_rid);
 		return true;
 	}
 	else if (GLES3::MeshStorage::owns_mesh(p_rid)) {
@@ -219,24 +219,24 @@ bool Utilities::free(RID p_rid)
 		GLES3::MeshStorage::mesh_instance_free(p_rid);
 		return true;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_light(p_rid)) {
-		GLES3::LightStorage::get_singleton()->light_free(p_rid);
+	else if (GLES3::LightStorage::owns_light(p_rid)) {
+		GLES3::LightStorage::light_free(p_rid);
 		return true;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
-		GLES3::LightStorage::get_singleton()->lightmap_free(p_rid);
+	else if (GLES3::LightStorage::owns_lightmap(p_rid)) {
+		GLES3::LightStorage::lightmap_free(p_rid);
 		return true;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_reflection_probe(p_rid)) {
-		GLES3::LightStorage::get_singleton()->reflection_probe_free(p_rid);
+	else if (GLES3::LightStorage::owns_reflection_probe(p_rid)) {
+		GLES3::LightStorage::reflection_probe_free(p_rid);
 		return true;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_reflection_atlas(p_rid)) {
-		GLES3::LightStorage::get_singleton()->reflection_atlas_free(p_rid);
+	else if (GLES3::LightStorage::owns_reflection_atlas(p_rid)) {
+		GLES3::LightStorage::reflection_atlas_free(p_rid);
 		return true;
 	}
-	else if (GLES3::LightStorage::get_singleton()->owns_reflection_probe_instance(p_rid)) {
-		GLES3::LightStorage::get_singleton()->reflection_probe_instance_free(p_rid);
+	else if (GLES3::LightStorage::owns_reflection_probe_instance(p_rid)) {
+		GLES3::LightStorage::reflection_probe_instance_free(p_rid);
 		return true;
 	}
 	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
@@ -279,13 +279,13 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 			base_update_dependency(multimesh->mesh, p_instance);
 		}
 	}
-	else if (LightStorage::get_singleton()->owns_reflection_probe(p_base)) {
+	else if (LightStorage::owns_reflection_probe(p_base)) {
 		Dependency* dependency =
-			LightStorage::get_singleton()->reflection_probe_get_dependency(p_base);
+			LightStorage::reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (LightStorage::get_singleton()->owns_light(p_base)) {
-		Light* l = LightStorage::get_singleton()->get_light(p_base);
+	else if (LightStorage::owns_light(p_base)) {
+		Light* l = LightStorage::get_light(p_base);
 		p_instance->update_dependency(&l->dependency);
 	}
 	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {
@@ -417,11 +417,11 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index)
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::get_singleton()->_update_global_shader_uniforms();
-	MaterialStorage::get_singleton()->_update_queued_materials();
+	MaterialStorage::_update_global_shader_uniforms();
+	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_skeletons();
 	MeshStorage::_update_dirty_multimeshes();
-	TextureStorage::get_singleton()->update_texture_atlas();
+	TextureStorage::update_texture_atlas();
 }
 
 void Utilities::set_debug_generate_wireframes(bool p_generate)

@@ -40,8 +40,18 @@ protected:
 	void _notification(int p_what);
 
 public:
+	static void _color_rect_draw_static(CanvasItem* p_item)
+	{
+		ColorRect* rect = static_cast<ColorRect*>(p_item);
+		rect->_notification(CanvasItem::NOTIFICATION_DRAW);
+	}
+
+	ColorRect() { draw_callback = &_color_rect_draw_static; }
+
+	void notification(int p_what);
 	void set_color(const Color& p_color);
 	Color get_color() const;
+	void queue_redraw();
 };
 
 

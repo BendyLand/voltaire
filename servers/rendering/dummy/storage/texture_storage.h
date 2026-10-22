@@ -11,7 +11,7 @@
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -36,456 +36,435 @@
 namespace RendererDummy
 {
 
-class TextureStorage : public RendererTextureStorage
+struct DummyTexture
+{
+	String path;
+	int width = 0;
+	int height = 0;
+	int depth = 0;
+	int layers = 0;
+	Image::Format format = Image::FORMAT_L8;
+	Ref<Image> image;
+};
+
+struct DummyRenderTarget
+{
+	Point2i position;
+	Size2i size;
+	RID texture;
+	bool direct_to_screen = false;
+	bool is_transparent = false;
+	bool was_used = false;
+	bool clear_requested = false;
+	Color clear_color;
+	RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
+	bool use_hdr = false;
+};
+
+struct DummyCanvasTexture
+{
+	RID diffuse;
+	RID normal_map;
+	RID specular;
+	Color specular_color = Color(1, 1, 1, 1);
+	real_t shininess = 1.0;
+	RSE::CanvasItemTextureFilter filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
+	RSE::CanvasItemTextureRepeat repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+};
+
+class TextureStorage final
 {
 private:
-	static inline TextureStorage* singleton = nullptr;
-
-	struct DummyTexture
-	{
-		Ref<Image> image;
-	};
-
-	mutable RID_PtrOwner<DummyTexture> texture_owner;
+	static inline RID_Owner<DummyTexture> texture_owner;
+	static inline RID_Owner<DummyRenderTarget> render_target_owner;
+	static inline RID_Owner<DummyCanvasTexture> canvas_texture_owner;
 
 public:
-	static TextureStorage* get_singleton() { return singleton; }
+	TextureStorage() = delete;
+	TextureStorage(const TextureStorage&) = delete;
+	TextureStorage& operator=(const TextureStorage&) = delete;
+	~TextureStorage() = delete;
 
-	TextureStorage() { singleton = this; }
+	static void initialize() {}
 
-	~TextureStorage() { singleton = nullptr; }
+	static void finalize() {}
 
-	/* Canvas Texture API */
+	static bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); }
+	static bool owns_render_target(RID p_rid) { return render_target_owner.owns(p_rid); }
+	static bool owns_canvas_texture(RID p_rid) { return canvas_texture_owner.owns(p_rid); }
 
-	virtual RID canvas_texture_allocate() override { return RID(); }
+	/* CANVAS TEXTURE API */
 
-	virtual void canvas_texture_initialize(RID p_rid) override {}
+	static RID canvas_texture_allocate() { return canvas_texture_owner.allocate_rid(); }
 
-	virtual void canvas_texture_free(RID p_rid) override {}
-
-	virtual void canvas_texture_set_channel(
-		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture) override
+	static void canvas_texture_initialize(RID p_rid)
 	{
+		canvas_texture_owner.initialize_rid(p_rid, DummyCanvasTexture());
 	}
 
-	virtual void canvas_texture_set_shading_parameters(
-		RID p_canvas_texture, const Color& p_base_color, float p_shininess) override
+	static void canvas_texture_free(RID p_rid) { canvas_texture_owner.free(p_rid); }
+
+	static void canvas_texture_set_channel(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 	{
+		DummyCanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		switch (p_channel) {
+		case RSE::CANVAS_TEXTURE_CHANNEL_DIFFUSE:
+			ct->diffuse = p_texture;
+			break;
+		case RSE::CANVAS_TEXTURE_CHANNEL_NORMAL:
+			ct->normal_map = p_texture;
+			break;
+		case RSE::CANVAS_TEXTURE_CHANNEL_SPECULAR:
+			ct->specular = p_texture;
+			break;
+		}
 	}
 
-	virtual void canvas_texture_set_texture_filter(
-		RID p_item, RSE::CanvasItemTextureFilter p_filter) override
+	static void canvas_texture_set_shading_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 	{
+		DummyCanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->filter = p_filter;
 	}
 
-	virtual void canvas_texture_set_texture_repeat(
-		RID p_item, RSE::CanvasItemTextureRepeat p_repeat) override
+	static void canvas_texture_set_shading_parameters(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess)
 	{
+		DummyCanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->specular_color = p_base_color;
+		ct->shininess = p_shininess;
 	}
 
-	/* Texture API */
-
-	bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); }
-
-	virtual RID texture_allocate() override
+	static void canvas_texture_set_texture_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 	{
-		DummyTexture* texture = memnew(DummyTexture);
-		ERR_FAIL_NULL_V(texture, RID());
-		return texture_owner.make_rid(texture);
+		DummyCanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->filter = p_filter;
 	}
 
-	virtual void texture_free(RID p_rid) override
+	static void canvas_texture_set_texture_repeat(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 	{
-		// delete the texture
-		DummyTexture* texture = texture_owner.get_or_null(p_rid);
-		ERR_FAIL_NULL(texture);
-		texture_owner.free(p_rid);
-		memdelete(texture);
+		DummyCanvasTexture* ct = canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->repeat = p_repeat;
 	}
 
-	virtual void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image) override
+	/* TEXTURE 2D / GENERAL API */
+
+	static RID texture_allocate() { return texture_owner.allocate_rid(); }
+
+	static void texture_initialize(RID p_rid)
+	{
+		texture_owner.initialize_rid(p_rid, DummyTexture());
+	}
+
+	static void texture_free(RID p_rid) { texture_owner.free(p_rid); }
+
+	static RID texture_2d_create(const Ref<Image>& p_image)
+	{
+		RID rid = texture_owner.allocate_rid();
+		texture_2d_initialize(rid, p_image);
+		return rid;
+	}
+
+	static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+	{
+		DummyTexture t;
+		if (p_image.is_valid()) {
+			t.image = p_image;
+			t.width = p_image->get_width();
+			t.height = p_image->get_height();
+			t.format = p_image->get_format();
+		}
+		texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer)
 	{
 		DummyTexture* t = texture_owner.get_or_null(p_texture);
 		ERR_FAIL_NULL(t);
+		t->image = p_image;
 	}
 
-	virtual void texture_2d_layered_initialize(RID p_texture, const Vector<Ref<Image>>& p_layers,
-		RSE::TextureLayeredType p_layered_type) override
-	{
-	}
-
-	virtual void texture_3d_initialize(RID p_texture, Image::Format, int p_width, int p_height,
-		int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data) override
-	{
-	}
-
-	virtual void texture_external_initialize(
-		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) override
-	{
-	}
-
-	virtual void texture_proxy_initialize(RID p_texture, RID p_base) override {
-	} // all slices, then all the mipmaps, must be coherent
-
-	virtual void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
-		RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_with_mipmaps) override
-	{
-	}
-
-	virtual RID texture_create_from_native_handle(RSE::TextureType p_type, Image::Format p_format,
-		uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1,
-		RSE::TextureLayeredType p_layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY) override
-	{
-		return RID();
-	}
-
-	virtual void texture_2d_update(
-		RID p_texture, const Ref<Image>& p_image, int p_layer = 0) override
-	{
-	}
-
-	virtual void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data) override {}
-
-	virtual void texture_external_update(
-		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) override
-	{
-	}
-
-	virtual void texture_proxy_update(RID p_proxy, RID p_base) override {}
-
-	// these two APIs can be used together or in combination with the others.
-	virtual void texture_2d_placeholder_initialize(RID p_texture) override {}
-
-	virtual void texture_2d_layered_placeholder_initialize(
-		RID p_texture, RSE::TextureLayeredType p_layered_type) override
-	{
-	}
-
-	virtual void texture_3d_placeholder_initialize(RID p_texture) override {}
-
-	virtual Ref<Image> texture_2d_get(RID p_texture) const override
+	static Ref<Image> texture_2d_get(RID p_texture)
 	{
 		DummyTexture* t = texture_owner.get_or_null(p_texture);
 		ERR_FAIL_NULL_V(t, Ref<Image>());
 		return t->image;
 	}
 
-	virtual Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer) const override
+	static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer)
 	{
-		return Ref<Image>();
+		return texture_2d_get(p_texture);
 	}
 
-	virtual Vector<Ref<Image>> texture_3d_get(RID p_texture) const override
+	static void texture_2d_placeholder_initialize(RID p_texture) { texture_initialize(p_texture); }
+
+	static void texture_set_format(RID p_texture, Image::Format p_format)
 	{
-		return Vector<Ref<Image>>();
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->format = p_format;
 	}
 
-	virtual void texture_drawable_generate_mipmaps(RID p_texture) override {}
-
-	virtual RID texture_drawable_get_default_material() const override { return RID(); }
-
-	virtual void texture_replace(RID p_texture, RID p_by_texture) override
+	static Image::Format texture_get_format(RID p_texture)
 	{
-		texture_free(p_by_texture);
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, Image::FORMAT_L8);
+		return t->format;
 	}
 
-	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height) override {}
-
-	virtual void texture_set_path(RID p_texture, const String& p_path) override {}
-
-	virtual String texture_get_path(RID p_texture) const override { return String(); }
-
-	virtual Image::Format texture_get_format(RID p_texture) const override
+	static void texture_set_width(RID p_texture, int p_width)
 	{
-		return Image::FORMAT_MAX;
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->width = p_width;
 	}
 
-	virtual void texture_set_detect_3d_callback(RID p_texture,
-		RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata) override
+	static int texture_get_width(RID p_texture)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->width;
 	}
 
-	virtual void texture_set_detect_normal_callback(RID p_texture,
-		RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata) override
+	static void texture_set_height(RID p_texture, int p_height)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->height = p_height;
 	}
 
-	virtual void texture_set_detect_roughness_callback(RID p_texture,
-		RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata) override
+	static int texture_get_height(RID p_texture)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->height;
 	}
 
-	virtual void texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info) override {}
-
-	virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) override {}
-
-	virtual Size2 texture_size_with_proxy(RID p_proxy) override { return Size2(); }
-
-	virtual void texture_rd_initialize(RID p_texture, const RID& p_rd_texture,
-		const RSE::TextureLayeredType p_layer_type = RSE::TEXTURE_LAYERED_2D_ARRAY) override
+	static void texture_set_depth(RID p_texture, int p_depth)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->depth = p_depth;
 	}
 
-	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override
+	static int texture_get_depth(RID p_texture)
 	{
-		return RID();
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->depth;
 	}
 
-	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override
+	static void texture_set_layers(RID p_texture, int p_layers)
 	{
-		return 0;
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->layers = p_layers;
 	}
 
-	/* AREA LIGHT ATLAS API */
-	virtual void texture_add_to_area_light_atlas(RID p_texture) override {}
-
-	virtual void texture_remove_from_area_light_atlas(RID p_texture) override {}
-
-	/* DECAL API */
-	virtual RID decal_allocate() override { return RID(); }
-
-	virtual void decal_initialize(RID p_rid) override {}
-
-	virtual void decal_free(RID p_rid) override {}
-
-	virtual void decal_set_size(RID p_decal, const Vector3& p_size) override {}
-
-	virtual void decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture) override {}
-
-	virtual void decal_set_emission_energy(RID p_decal, float p_energy) override {}
-
-	virtual void decal_set_albedo_mix(RID p_decal, float p_mix) override {}
-
-	virtual void decal_set_modulate(RID p_decal, const Color& p_modulate) override {}
-
-	virtual void decal_set_cull_mask(RID p_decal, uint32_t p_layers) override {}
-
-	virtual void decal_set_distance_fade(
-		RID p_decal, bool p_enabled, float p_begin, float p_length) override
+	static int texture_get_layers(RID p_texture)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->layers;
 	}
 
-	virtual void decal_set_fade(RID p_decal, float p_above, float p_below) override {}
-
-	virtual void decal_set_normal_fade(RID p_decal, float p_fade) override {}
-
-	virtual AABB decal_get_aabb(RID p_decal) const override { return AABB(); }
-
-	virtual uint32_t decal_get_cull_mask(RID p_decal) const override { return 0; }
-
-	virtual void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override
+	static void texture_set_path(RID p_texture, const String& p_path)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->path = p_path;
 	}
 
-	virtual void texture_remove_from_decal_atlas(
-		RID p_texture, bool p_panorama_to_dp = false) override
+	static String texture_get_path(RID p_texture)
 	{
+		DummyTexture* t = texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, String());
+		return t->path;
 	}
 
-	/* DECAL INSTANCE */
+	static void texture_set_size_override(RID p_texture, int p_width, int p_height) {}
 
-	virtual RID decal_instance_create(RID p_decal) override { return RID(); }
+	static void texture_replace(RID p_texture, RID p_by_texture) {}
 
-	virtual void decal_instance_free(RID p_decal_instance) override {}
+	/* RENDER TARGET API */
 
-	virtual void decal_instance_set_transform(RID p_decal, const Transform3D& p_transform) override
+	static RID render_target_create()
 	{
+		RID rid = render_target_owner.allocate_rid();
+		DummyRenderTarget rt;
+		rt.texture = texture_allocate();
+		texture_initialize(rt.texture);
+		render_target_owner.initialize_rid(rid, rt);
+		return rid;
 	}
 
-	virtual void decal_instance_set_sorting_offset(
-		RID p_decal_instance, float p_sorting_offset) override
+	static void render_target_free(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		if (rt) {
+			if (rt->texture.is_valid()) {
+				texture_free(rt->texture);
+			}
+			render_target_owner.free(p_render_target);
+		}
 	}
 
-	/* RENDER TARGET */
-
-	virtual RID render_target_create() override { return RID(); }
-
-	virtual void render_target_free(RID p_rid) override {}
-
-	virtual void render_target_set_position(RID p_render_target, int p_x, int p_y) override {}
-
-	virtual Point2i render_target_get_position(RID p_render_target) const override
+	static void render_target_set_position(RID p_render_target, int p_x, int p_y)
 	{
-		return Point2i();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->position = Point2i(p_x, p_y);
 	}
 
-	virtual void render_target_set_size(
-		RID p_render_target, int p_width, int p_height, uint32_t p_view_count) override
+	static Point2i render_target_get_position(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Point2i());
+		return rt->position;
 	}
 
-	virtual Size2i render_target_get_size(RID p_render_target) const override { return Size2i(); }
-
-	virtual void render_target_set_transparent(RID p_render_target, bool p_is_transparent) override
+	static void render_target_set_size(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->size = Size2i(p_width, p_height);
 	}
 
-	virtual bool render_target_get_transparent(RID p_render_target) const override { return false; }
-
-	virtual void render_target_set_direct_to_screen(
-		RID p_render_target, bool p_direct_to_screen) override
+	static Size2i render_target_get_size(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Size2i());
+		return rt->size;
 	}
 
-	virtual bool render_target_get_direct_to_screen(RID p_render_target) const override
+	static void render_target_set_transparent(RID p_render_target, bool p_is_transparent)
 	{
-		return false;
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->is_transparent = p_is_transparent;
 	}
 
-	virtual bool render_target_was_used(RID p_render_target) const override { return false; }
-
-	virtual void render_target_set_as_unused(RID p_render_target) override {}
-
-	virtual void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa) override {}
-
-	virtual RSE::ViewportMSAA render_target_get_msaa(RID p_render_target) const override
+	static bool render_target_is_transparent(RID p_render_target)
 	{
-		return RSE::VIEWPORT_MSAA_DISABLED;
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->is_transparent;
 	}
 
-	virtual void render_target_set_msaa_needs_resolve(
-		RID p_render_target, bool p_needs_resolve) override
+	static void render_target_set_direct_to_screen(RID p_render_target, bool p_direct_to_screen)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->direct_to_screen = p_direct_to_screen;
 	}
 
-	virtual bool render_target_get_msaa_needs_resolve(RID p_render_target) const override
+	static bool render_target_is_direct_to_screen(RID p_render_target)
 	{
-		return false;
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->direct_to_screen;
 	}
 
-	virtual void render_target_do_msaa_resolve(RID p_render_target) override {}
-
-	virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d) override {}
-
-	virtual bool render_target_is_using_hdr(RID p_render_target) const override { return false; }
-
-	virtual void render_target_set_use_debanding(RID p_render_target, bool p_use_debanding) override
+	static RID render_target_get_texture(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, RID());
+		return rt->texture;
 	}
 
-	virtual bool render_target_is_using_debanding(RID p_render_target) const override
+	static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
 	{
-		return false;
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->msaa = p_msaa;
 	}
 
-	virtual void render_target_request_clear(
-		RID p_render_target, const Color& p_clear_color) override
+	static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_MSAA_DISABLED);
+		return rt->msaa;
 	}
 
-	virtual bool render_target_is_clear_requested(RID p_render_target) override { return false; }
-
-	virtual Color render_target_get_clear_request_color(RID p_render_target) override
+	static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
 	{
-		return Color();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->use_hdr = p_use_hdr;
 	}
 
-	virtual void render_target_disable_clear_request(RID p_render_target) override {}
-
-	virtual void render_target_do_clear_request(RID p_render_target) override {}
-
-	virtual void render_target_set_sdf_size_and_scale(RID p_render_target,
-		RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale) override
+	static bool render_target_is_using_hdr(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->use_hdr;
 	}
 
-	virtual Rect2i render_target_get_sdf_rect(RID p_render_target) const override
+	static void render_target_request_clear(RID p_render_target, const Color& p_clear_color)
 	{
-		return Rect2i();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->clear_requested = true;
+		rt->clear_color = p_clear_color;
 	}
 
-	virtual void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled) override {}
-
-	virtual void render_target_set_vrs_mode(
-		RID p_render_target, RSE::ViewportVRSMode p_mode) override
+	static bool render_target_is_clear_requested(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->clear_requested;
 	}
 
-	virtual RSE::ViewportVRSMode render_target_get_vrs_mode(RID p_render_target) const override
+	static Color render_target_get_clear_request_color(RID p_render_target)
 	{
-		return RSE::VIEWPORT_VRS_DISABLED;
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Color());
+		return rt->clear_color;
 	}
 
-	virtual void render_target_set_vrs_update_mode(
-		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode) override
+	static void render_target_do_clear_request(RID p_render_target)
 	{
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->clear_requested = false;
 	}
 
-	virtual RSE::ViewportVRSUpdateMode render_target_get_vrs_update_mode(
-		RID p_render_target) const override
-	{
-		return RSE::VIEWPORT_VRS_UPDATE_DISABLED;
-	}
-
-	virtual void render_target_set_vrs_texture(RID p_render_target, RID p_texture) override {}
-
-	virtual RID render_target_get_vrs_texture(RID p_render_target) const override { return RID(); }
-
-	virtual void render_target_set_override(RID p_render_target, RID p_color_texture,
-		RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture) override
+	static void render_target_set_sdf_size_and_scale(
+		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
 	{
 	}
 
-	virtual RID render_target_get_override_color(RID p_render_target) const override
+	static bool render_target_was_used(RID p_render_target)
 	{
-		return RID();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->was_used;
 	}
 
-	virtual RID render_target_get_override_depth(RID p_render_target) const override
+	static void render_target_set_as_unused(RID p_render_target)
 	{
-		return RID();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->was_used = false;
 	}
 
-	virtual RID render_target_get_override_velocity(RID p_render_target) const override
+	static void render_target_set_as_current(RID p_render_target)
 	{
-		return RID();
+		DummyRenderTarget* rt = render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->was_used = true;
 	}
 
-	virtual RID render_target_get_override_velocity_depth(RID p_render_target) const override
-	{
-		return RID();
-	}
-
-	virtual void render_target_set_render_region(
-		RID p_render_target, const Rect2i& p_render_region) override
-	{
-	}
-
-	virtual Rect2i render_target_get_render_region(RID p_render_target) const override
-	{
-		return Rect2i();
-	}
-
-	virtual void render_target_set_subsampled_enabled(RID p_render_target, bool p_enabled) override
-	{
-	}
-
-	virtual bool render_target_is_subsampled_enabled(RID p_render_target) const override
-	{
-		return false;
-	}
-
-	virtual void render_target_set_subsampled_allowed(RID p_render_target, bool p_allowed) override
-	{
-	}
-
-	virtual bool render_target_is_subsampled_allowed(RID p_render_target) const override
-	{
-		return false;
-	}
-
-	virtual RID render_target_get_texture(RID p_render_target) override { return RID(); }
-
-	virtual void render_target_set_velocity_target_size(
-		RID p_render_target, const Size2i& p_target_size) override
-	{
-	}
-
-	virtual Size2i render_target_get_velocity_target_size(RID p_render_target) const override
-	{
-		return Size2i(0, 0);
-	}
+	static Color get_default_clear_color() { return Color(0, 0, 0, 1); }
 };
 
 } // namespace RendererDummy

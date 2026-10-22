@@ -434,24 +434,20 @@ SceneShaderForwardClustered::SceneShaderForwardClustered()
 
 SceneShaderForwardClustered::~SceneShaderForwardClustered()
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-
 	RD::free_rid(default_vec4_xform_buffer);
 	RD::free_rid(shadow_sampler);
 
-	material_storage->shader_free(overdraw_material_shader);
-	material_storage->shader_free(default_shader);
-	material_storage->shader_free(debug_shadow_splits_material_shader);
+	RendererRD::MaterialStorage::shader_free(overdraw_material_shader);
+	RendererRD::MaterialStorage::shader_free(default_shader);
+	RendererRD::MaterialStorage::shader_free(debug_shadow_splits_material_shader);
 
-	material_storage->material_free(overdraw_material);
-	material_storage->material_free(default_material);
-	material_storage->material_free(debug_shadow_splits_material);
+	RendererRD::MaterialStorage::material_free(overdraw_material);
+	RendererRD::MaterialStorage::material_free(default_material);
+	RendererRD::MaterialStorage::material_free(debug_shadow_splits_material);
 }
 
 void SceneShaderForwardClustered::init(const String p_defines)
 {
-	RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
-
 	emulate_point_size = !RD::has_feature(RDC::SUPPORTS_POINT_SIZE);
 
 	{
@@ -535,9 +531,9 @@ void SceneShaderForwardClustered::init(const String p_defines)
 		}
 	}
 
-	material_storage->shader_set_data_request_function(
+	RendererRD::MaterialStorage::shader_set_data_request_function(
 		RendererRD::MaterialStorage::SHADER_TYPE_3D, _create_shader_funcs);
-	material_storage->material_set_data_request_function(
+	RendererRD::MaterialStorage::material_set_data_request_function(
 		RendererRD::MaterialStorage::SHADER_TYPE_3D, _create_material_funcs);
 
 	{
@@ -748,9 +744,9 @@ void SceneShaderForwardClustered::init(const String p_defines)
 
 	{
 		// default material and shader
-		default_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(default_shader);
-		material_storage->shader_set_code(default_shader, R"(
+		default_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(default_shader);
+		RendererRD::MaterialStorage::shader_set_code(default_shader, R"(
 // Default 3D material shader (Forward+).
 
 shader_type spatial;
@@ -765,11 +761,11 @@ void fragment() {
 	METALLIC = 0.2;
 }
 )");
-		default_material = material_storage->material_allocate();
-		material_storage->material_initialize(default_material);
-		material_storage->material_set_shader(default_material, default_shader);
+		default_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(default_material);
+		RendererRD::MaterialStorage::material_set_shader(default_material, default_shader);
 
-		MaterialData* md = static_cast<MaterialData*>(material_storage->material_get_data(
+		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
 			default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		default_shader_rd =
 			md->shader_data->get_shader_variant(PIPELINE_VERSION_COLOR_PASS, 0, false);
@@ -779,11 +775,11 @@ void fragment() {
 	}
 
 	{
-		overdraw_material_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(overdraw_material_shader);
+		overdraw_material_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(overdraw_material_shader);
 		// Use relatively low opacity so that more "layers" of overlapping objects can be
 		// distinguished.
-		material_storage->shader_set_code(overdraw_material_shader, R"(
+		RendererRD::MaterialStorage::shader_set_code(overdraw_material_shader, R"(
 // 3D editor Overdraw debug draw mode shader (Forward+).
 
 shader_type spatial;
@@ -795,20 +791,20 @@ void fragment() {
 	ALPHA = 0.1;
 }
 )");
-		overdraw_material = material_storage->material_allocate();
-		material_storage->material_initialize(overdraw_material);
-		material_storage->material_set_shader(overdraw_material, overdraw_material_shader);
+		overdraw_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(overdraw_material);
+		RendererRD::MaterialStorage::material_set_shader(overdraw_material, overdraw_material_shader);
 
-		MaterialData* md = static_cast<MaterialData*>(material_storage->material_get_data(
+		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
 			overdraw_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		overdraw_material_shader_ptr = md->shader_data;
 		overdraw_material_uniform_set = md->uniform_set;
 	}
 
 	{
-		debug_shadow_splits_material_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(debug_shadow_splits_material_shader);
-		material_storage->shader_set_code(debug_shadow_splits_material_shader, R"(
+		debug_shadow_splits_material_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(debug_shadow_splits_material_shader);
+		RendererRD::MaterialStorage::shader_set_code(debug_shadow_splits_material_shader, R"(
 // 3D debug shadow splits mode shader (Forward+).
 
 shader_type spatial;
@@ -819,12 +815,12 @@ void fragment() {
 	ALBEDO = vec3(1.0, 1.0, 1.0);
 }
 )");
-		debug_shadow_splits_material = material_storage->material_allocate();
-		material_storage->material_initialize(debug_shadow_splits_material);
-		material_storage->material_set_shader(
+		debug_shadow_splits_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(debug_shadow_splits_material);
+		RendererRD::MaterialStorage::material_set_shader(
 			debug_shadow_splits_material, debug_shadow_splits_material_shader);
 
-		MaterialData* md = static_cast<MaterialData*>(material_storage->material_get_data(
+		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
 			debug_shadow_splits_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		debug_shadow_splits_material_shader_ptr = md->shader_data;
 		debug_shadow_splits_material_uniform_set = md->uniform_set;
@@ -892,9 +888,6 @@ RID SceneShaderForwardClustered::get_default_shader_rd(bool p_is_multiview)
 	RID& shader_rd = p_is_multiview ? default_multiview_shader_rd : default_shader_rd;
 
 	if (shader_rd.is_null()) {
-		RendererRD::MaterialStorage* material_storage =
-			RendererRD::MaterialStorage::get_singleton();
-		ERR_FAIL_NULL_V(material_storage, RID());
 		ERR_FAIL_COND_V(!default_material.is_valid(), RID());
 
 		uint32_t flags = 0;
@@ -902,7 +895,7 @@ RID SceneShaderForwardClustered::get_default_shader_rd(bool p_is_multiview)
 			flags |= SHADER_COLOR_PASS_FLAG_MULTIVIEW;
 		}
 
-		MaterialData* md = static_cast<MaterialData*>(material_storage->material_get_data(
+		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
 			default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		shader_rd = md->shader_data->get_shader_variant(PIPELINE_VERSION_COLOR_PASS, flags, false);
 	}

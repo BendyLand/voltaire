@@ -44,7 +44,7 @@ class RendererCanvasCull
 	static void _dependency_deleted(const RID& p_dependency, DependencyTracker* p_tracker);
 
 public:
-	struct Item : public RendererCanvasRender::Item
+	struct Item : public RCR::Item
 	{
 		RID parent; // canvas it belongs to
 		RID self;
@@ -219,10 +219,10 @@ public:
 	SelfList<Item::VisibilityNotifierData>::List visibility_notifier_list;
 
 	_FORCE_INLINE_ void _attach_canvas_item_for_draw(Item* ci, Item* p_canvas_clip,
-		RendererCanvasRender::Item** r_z_list, RendererCanvasRender::Item** r_z_last_list,
+		RCR::Item** r_z_list, RCR::Item** r_z_last_list,
 		const Transform2D& p_transform, const Rect2& p_clip_rect, Rect2 p_global_rect,
 		const Color& modulate, int p_z, RendererCanvasCull::Item* p_material_owner,
-		bool p_use_canvas_group, RendererCanvasRender::Item* r_canvas_group_from);
+		bool p_use_canvas_group, RCR::Item* r_canvas_group_from);
 
 private:
 	void _render_canvas_item_tree(RID p_to_render_target, Canvas::ChildItem* p_child_items,
@@ -234,10 +234,10 @@ private:
 		uint32_t p_canvas_cull_mask, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 	void _cull_canvas_item(Item* p_canvas_item, const Transform2D& p_parent_xform,
 		const Rect2& p_clip_rect, const Color& p_modulate, int p_z,
-		RendererCanvasRender::Item** r_z_list, RendererCanvasRender::Item** r_z_last_list,
+		RCR::Item** r_z_list, RCR::Item** r_z_last_list,
 		Item* p_canvas_clip, Item* p_material_owner, bool p_is_already_y_sorted,
 		uint32_t p_canvas_cull_mask, const Point2& p_repeat_size, int p_repeat_times,
-		RendererCanvasRender::Item* p_repeat_source_item);
+		RCR::Item* p_repeat_source_item);
 
 	void _collect_ysort_children(RendererCanvasCull::Item* p_canvas_item,
 		RendererCanvasCull::Item* p_material_owner, const Color& p_modulate,
@@ -248,8 +248,8 @@ private:
 
 	static constexpr int z_range = RSE::CANVAS_ITEM_Z_MAX - RSE::CANVAS_ITEM_Z_MIN + 1;
 
-	RendererCanvasRender::Item** z_list;
-	RendererCanvasRender::Item** z_last_list;
+	RCR::Item** z_list = nullptr;
+	RCR::Item** z_last_list = nullptr;
 
 	Transform2D _current_camera_transform;
 
@@ -485,7 +485,7 @@ public:
 		bool interpolation_enabled = false;
 	} _interpolation_data;
 
-	RendererCanvasCull() = default;
+	RendererCanvasCull();
 	~RendererCanvasCull();
 };
 
