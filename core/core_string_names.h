@@ -32,57 +32,48 @@
 
 #include "core/string/string_name.h"
 
-class CoreStringNames {
-	inline static CoreStringNames *singleton = nullptr;
-
+class CoreStringNames final
+{
 public:
-	static void create() { singleton = memnew(CoreStringNames); }
-	static void free() {
-		memdelete(singleton);
-		singleton = nullptr;
-	}
+	static inline const StringName free_ = "free"; // free would conflict with C++ keyword.
+	static inline const StringName changed = "changed";
+	static inline const StringName script = "script";
+	static inline const StringName script_changed = "script_changed";
+	static inline const StringName _iter_init = "_iter_init";
+	static inline const StringName _iter_next = "_iter_next";
+	static inline const StringName _iter_get = "_iter_get";
+	static inline const StringName get_rid = "get_rid";
+	static inline const StringName _to_string = "_to_string";
+	static inline const StringName _custom_features = "_custom_features";
 
-	_FORCE_INLINE_ static CoreStringNames *get_singleton() { return singleton; }
+	static inline const StringName x = "x";
+	static inline const StringName y = "y";
+	static inline const StringName z = "z";
+	static inline const StringName w = "w";
+	static inline const StringName r = "r";
+	static inline const StringName g = "g";
+	static inline const StringName b = "b";
+	static inline const StringName a = "a";
+	static inline const StringName position = "position";
+	static inline const StringName size = "size";
+	static inline const StringName end = "end";
+	static inline const StringName basis = "basis";
+	static inline const StringName origin = "origin";
+	static inline const StringName normal = "normal";
+	static inline const StringName d = "d";
+	static inline const StringName h = "h";
+	static inline const StringName s = "s";
+	static inline const StringName v = "v";
+	static inline const StringName r8 = "r8";
+	static inline const StringName g8 = "g8";
+	static inline const StringName b8 = "b8";
+	static inline const StringName a8 = "a8";
 
-	const StringName free_ = "free"; // free would conflict with C++ keyword.
-	const StringName changed = "changed";
-	const StringName script = "script";
-	const StringName script_changed = "script_changed";
-	const StringName _iter_init = "_iter_init";
-	const StringName _iter_next = "_iter_next";
-	const StringName _iter_get = "_iter_get";
-	const StringName get_rid = "get_rid";
-	const StringName _to_string = "_to_string";
-	const StringName _custom_features = "_custom_features";
-
-	const StringName x = "x";
-	const StringName y = "y";
-	const StringName z = "z";
-	const StringName w = "w";
-	const StringName r = "r";
-	const StringName g = "g";
-	const StringName b = "b";
-	const StringName a = "a";
-	const StringName position = "position";
-	const StringName size = "size";
-	const StringName end = "end";
-	const StringName basis = "basis";
-	const StringName origin = "origin";
-	const StringName normal = "normal";
-	const StringName d = "d";
-	const StringName h = "h";
-	const StringName s = "s";
-	const StringName v = "v";
-	const StringName r8 = "r8";
-	const StringName g8 = "g8";
-	const StringName b8 = "b8";
-	const StringName a8 = "a8";
-
-	const StringName call = "call";
-	const StringName call_deferred = "call_deferred";
-	const StringName bind = "bind";
-	const StringName notification = "notification";
-	const StringName property_list_changed = "property_list_changed";
+	static inline const StringName call = "call";
+	static inline const StringName call_deferred = "call_deferred";
+	static inline const StringName bind = "bind";
+	static inline const StringName notification = "notification";
+	static inline const StringName property_list_changed = "property_list_changed";
 };
 
-#define CoreStringName(m_name) CoreStringNames::get_singleton()->m_name
+

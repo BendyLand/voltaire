@@ -3315,7 +3315,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::get_singleton()->benchmark_begin_measure("Servers", "Rendering");
 
-		Renderer::init();
+		Renderer::initialize();
 		// rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);
 		Renderer::set_render_loop_enabled(!disable_render_loop);
 

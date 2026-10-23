@@ -1096,7 +1096,6 @@ public:
 	static void draw(bool p_swap_buffers = true, double p_frame_step = 0.0);
 	static void sync();
 	static bool has_changed();
-	static void init();
 	static void tick();
 	static void pre_draw(bool p_will_draw);
 

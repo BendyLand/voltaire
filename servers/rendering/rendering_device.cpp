@@ -1761,8 +1761,8 @@ void RenderingDevice::_texture_copy_shared(
 				texture_subresource.mipmap = j;
 
 				RDD::TextureCopyableLayout copyable_layout;
-				data->driver->texture_get_copyable_layout(
-					p_dst_texture->shared_fallback->texture, texture_subresource, &copyable_layout);
+				data->driver->texture_get_copyable_layout(p_dst_texture->shared_fallback->texture,
+					texture_subresource, &copyable_layout);
 
 				uint32_t mipmap = p_dst_texture->base_mipmap + j;
 
@@ -5159,8 +5159,8 @@ void RenderingDevice::_free_internal(RID p_id)
 		_check_transfer_worker_buffer(index_buffer);
 
 		RDG::resource_tracker_free(index_buffer->draw_tracker);
-		data->frames[data->frame].
-buffers_to_dispose_of.push_back(*index_buffer);
+		data->frames[data->frame]
+.buffers_to_dispose_of.push_back(*index_buffer);
 		data->index_buffer_owner.free(p_id);
 	}
 	else if (data->index_array_owner.owns(p_id)) {
@@ -5687,6 +5687,9 @@ template <typename T> void RenderingDevice::_free_rids(T& p_owner, const char* p
 
 void RenderingDevice::capture_timestamp(const String& p_name)
 {
+	if (data->max_timestamp_query_elements == 0) {
+		return;
+	}
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND_MSG(data->draw_list.active && data->draw_list.state.draw_count > 0,
@@ -6046,8 +6049,6 @@ Error RenderingDevice::initialize(
 	data->present_queue = data->main_queue;
 
 	return OK;
-
-	return OK;
 }
 
 RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format,
@@ -6115,17 +6116,19 @@ RID RenderingDevice::vertex_buffer_create(
 }
 
 RID RenderingDevice::compute_pipeline_create(
-		RID p_shader, const Vector<RDC::PipelineSpecializationConstant> &p_specialization_constants) {
+	RID p_shader, const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants)
+{
 	ERR_FAIL_NULL_V(data, RID());
 	ERR_FAIL_COND_V(!data->shader_owner.owns(p_shader), RID());
 
-	Shader *shader = data->shader_owner.get_or_null(p_shader);
+	Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RID());
 
-	RDD::PipelineID pipeline_id = data->driver->compute_pipeline_create(shader->driver_id, p_specialization_constants);
+	RDD::PipelineID pipeline_id =
+		data->driver->compute_pipeline_create(shader->driver_id, p_specialization_constants);
 	ERR_FAIL_COND_V(!pipeline_id, RID());
 
-	ComputePipeline *pipeline = memnew(ComputePipeline);
+	ComputePipeline* pipeline = memnew(ComputePipeline);
 	pipeline->driver_id = pipeline_id;
 	pipeline->shader = p_shader;
 	pipeline->shader_driver_id = shader->driver_id;

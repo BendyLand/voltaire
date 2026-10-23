@@ -598,7 +598,7 @@ void Renderer::get_argument_options(
 {
 }
 
-void Renderer::init()
+void Renderer::initialize()
 {
 	data = memnew(Data);
 	RendererCompositor::create();
