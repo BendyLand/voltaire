@@ -1856,7 +1856,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->reflection_texture_size;
 			tf.height = atlas->reflection_texture_size;
 			tf.usage_bits = get_reflection_probe_color_usage_bits(use_storage);
-			atlas->reflection = RD::texture_create(tf, RD::TextureView());
+			atlas->reflection = RD::texture_create(tf, RDD::TextureView());
 		}
 		{
 			RDC::TextureFormat tf;
@@ -1866,7 +1866,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->size;
 			tf.height = atlas->size;
 			tf.usage_bits = get_reflection_probe_color_usage_bits(use_storage);
-			atlas->color_buffer = RD::texture_create(tf, RD::TextureView());
+			atlas->color_buffer = RD::texture_create(tf, RDD::TextureView());
 		}
 		{
 			RDC::TextureFormat tf;
@@ -1874,7 +1874,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->size;
 			tf.height = atlas->size;
 			tf.usage_bits = get_reflection_probe_depth_usage_bits();
-			atlas->depth_buffer = RD::texture_create(tf, RD::TextureView());
+			atlas->depth_buffer = RD::texture_create(tf, RDD::TextureView());
 		}
 		atlas->reflections.resize(atlas->count);
 		for (int i = 0; i < atlas->count; i++) {
@@ -2536,7 +2536,7 @@ void RendererRD::LightStorage::_update_shadow_atlas(ShadowAtlas* shadow_atlas)
 		tf.height = shadow_atlas->size;
 		tf.usage_bits = get_shadow_atlas_depth_usage_bits();
 
-		shadow_atlas->depth = RD::texture_create(tf, RD::TextureView());
+		shadow_atlas->depth = RD::texture_create(tf, RDD::TextureView());
 		Vector<RID> fb_tex;
 		fb_tex.push_back(shadow_atlas->depth);
 		shadow_atlas->fb = RD::framebuffer_create(fb_tex);
@@ -2972,7 +2972,7 @@ void RendererRD::LightStorage::update_directional_shadow_atlas()
 		tf.height = directional_shadow.size;
 		tf.usage_bits = get_shadow_atlas_depth_usage_bits();
 
-		directional_shadow.depth = RD::texture_create(tf, RD::TextureView());
+		directional_shadow.depth = RD::texture_create(tf, RDD::TextureView());
 		Vector<RID> fb_tex;
 		fb_tex.push_back(directional_shadow.depth);
 		directional_shadow.fb = RD::framebuffer_create(fb_tex);
@@ -3070,7 +3070,7 @@ RendererRD::LightStorage::ShadowCubemap* RendererRD::LightStorage::_get_shadow_c
 			tf.texture_type = RDC::TEXTURE_TYPE_CUBE;
 			tf.array_layers = 6;
 			tf.usage_bits = get_cubemap_depth_usage_bits();
-			sc.cubemap = RD::texture_create(tf, RD::TextureView());
+			sc.cubemap = RD::texture_create(tf, RDD::TextureView());
 		}
 
 		for (int i = 0; i < 6; i++) {

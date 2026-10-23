@@ -122,7 +122,7 @@ SMAA::SMAA() {
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.search_tex = RD::texture_create(tf, RD::TextureView(), data_slices);
+		smaa.search_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 
 	// 3. Load precomputed area texture from embedded PNG
@@ -143,7 +143,7 @@ SMAA::SMAA() {
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.area_tex = RD::texture_create(tf, RD::TextureView(), data_slices);
+		smaa.area_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 }
 

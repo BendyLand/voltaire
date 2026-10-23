@@ -1271,10 +1271,58 @@ RID RenderingDevice::texture_buffer_create(
 	return id;
 }
 
-RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
-	const Vector<Vector<uint8_t>>& p_data)
+RID RenderingDevice::texture_create(
+	const RDC::TextureFormat& p_format, const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
 {
-	return RID();
+	ERR_FAIL_COND_V_MSG(p_format.width == 0, RID(), "Texture width must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(p_format.height == 0, RID(), "Texture height must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(p_format.depth == 0, RID(), "Texture depth must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(
+		p_format.array_layers == 0, RID(), "Texture array layers must be greater than 0.");
+	ERR_FAIL_COND_V_MSG(p_format.mipmaps == 0, RID(), "Texture mipmaps must be greater than 0.");
+
+	Texture texture;
+	texture.type = p_format.texture_type;
+	texture.format = p_format.format;
+	texture.width = p_format.width;
+	texture.height = p_format.height;
+	texture.depth = p_format.depth;
+	texture.layers = p_format.array_layers;
+	texture.mipmaps = p_format.mipmaps;
+	texture.usage_flags = p_format.usage_bits;
+	texture.samples = p_format.samples;
+
+	// Validate mipmap limits
+	int max_dimension = MAX(texture.width, MAX(texture.height, texture.depth));
+	int max_possible_mips = 0;
+	while (max_dimension) {
+		max_possible_mips++;
+		max_dimension >>= 1;
+	}
+	ERR_FAIL_COND_V_MSG((int)texture.mipmaps > max_possible_mips, RID(),
+		vformat("Too many mipmaps requested for texture format and dimensions (%d), maximum "
+				"allowed: (%d).",
+			(int)texture.mipmaps, max_possible_mips));
+
+	// Create hardware texture on the driver
+	RDD::TextureID driver_id = data->driver->texture_create(p_format, p_view);
+	ERR_FAIL_COND_V_MSG(!driver_id, RID(), "Failed to allocate driver texture resource.");
+	texture.driver_id = driver_id;
+	texture.owner = RID();
+
+	// Allocate RID from internal resource pool
+	RID id = data->texture_owner.make_rid(texture);
+
+	// Upload initial data slices if supplied
+	if (!p_data.is_empty()) {
+		for (int i = 0; i < p_data.size(); i++) {
+			if (!p_data[i].is_empty()) {
+				texture_update(id, i, p_data[i]);
+			}
+		}
+	}
+
+	return id;
 }
 
 Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_layer)
@@ -1761,8 +1809,8 @@ void RenderingDevice::_texture_copy_shared(
 				texture_subresource.mipmap = j;
 
 				RDD::TextureCopyableLayout copyable_layout;
-				data->driver->texture_get_copyable_layout(p_dst_texture->shared_fallback->texture,
-					texture_subresource, &copyable_layout);
+				data->driver->texture_get_copyable_layout(
+					p_dst_texture->shared_fallback->texture, texture_subresource, &copyable_layout);
 
 				uint32_t mipmap = p_dst_texture->base_mipmap + j;
 
@@ -5159,8 +5207,7 @@ void RenderingDevice::_free_internal(RID p_id)
 		_check_transfer_worker_buffer(index_buffer);
 
 		RDG::resource_tracker_free(index_buffer->draw_tracker);
-		data->frames[data->frame]
-.buffers_to_dispose_of.push_back(*index_buffer);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*index_buffer);
 		data->index_buffer_owner.free(p_id);
 	}
 	else if (data->index_array_owner.owns(p_id)) {

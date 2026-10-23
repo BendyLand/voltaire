@@ -1012,7 +1012,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 				RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_texture);
 		}
 		{
@@ -1024,7 +1024,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 			tf.format = RDC::DATA_FORMAT_D32_SFLOAT;
 			tf.is_discardable = true;
 			// chunks to write
-			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_depth_texture);
 		}
 
@@ -1404,7 +1404,7 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 		}
 	}
 }

@@ -113,7 +113,7 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 							RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 			Vector<Vector<uint8_t>> s;
 			s.push_back(p_distance_field);
-			voxel_gi->sdf_texture = RD::texture_create(tf, RD::TextureView(), s);
+			voxel_gi->sdf_texture = RD::texture_create(tf, RDD::TextureView(), s);
 			RD::set_resource_name(voxel_gi->sdf_texture, "VoxelGI SDF Texture");
 		}
 #if 0
@@ -429,7 +429,7 @@ void GI::sdfgi_reset() { sdfgi_current_version++; }
 
 static RID create_clear_texture(const RDC::TextureFormat& p_format, const String& p_name)
 {
-	RID texture = RD::texture_create(p_format, RD::TextureView());
+	RID texture = RD::texture_create(p_format, RDD::TextureView());
 	ERR_FAIL_COND_V_MSG(texture.is_null(), RID(), String("Cannot create texture: ") + p_name);
 
 	RD::set_resource_name(texture, p_name);

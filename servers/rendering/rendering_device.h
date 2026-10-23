@@ -428,8 +428,8 @@ public:
 	static void buffer_flush(RID p_buffer);
 
 	// --- Texture Operations ---
-	static RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
-		const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
+	static RID texture_create(
+		const RDC::TextureFormat& p_format, const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data = {});
 	static RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
 	static RID texture_create_from_extension(RDC::TextureType p_type, RDC::DataFormat p_format,
 		RDC::TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,

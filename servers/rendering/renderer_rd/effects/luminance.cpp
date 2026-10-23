@@ -80,11 +80,11 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 			tf.usage_bits |= RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		}
 
-		RID texture = RD::texture_create(tf, RD::TextureView());
+		RID texture = RD::texture_create(tf, RDD::TextureView());
 		reduce.push_back(texture);
 
 		if (final) {
-			current = RD::texture_create(tf, RD::TextureView());
+			current = RD::texture_create(tf, RDD::TextureView());
 			RD::texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
 			break;
 		}

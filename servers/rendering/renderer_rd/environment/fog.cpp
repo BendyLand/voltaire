@@ -351,20 +351,20 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 	tf.texture_type = RDC::TEXTURE_TYPE_3D;
 	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
-	light_density_map = RD::texture_create(tf, RD::TextureView());
+	light_density_map = RD::texture_create(tf, RDD::TextureView());
 	RD::set_resource_name(light_density_map, "Fog light-density map");
 
 	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT |
 					RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 
-	prev_light_density_map = RD::texture_create(tf, RD::TextureView());
+	prev_light_density_map = RD::texture_create(tf, RDD::TextureView());
 	RD::set_resource_name(
 		prev_light_density_map, "Fog previous light-density map");
 	RD::texture_clear(prev_light_density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
 
 	tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 
-	fog_map = RD::texture_create(tf, RD::TextureView());
+	fog_map = RD::texture_create(tf, RDD::TextureView());
 	RD::set_resource_name(fog_map, "Fog map");
 
 	if (atomic_type == RDC::UNIFORM_TYPE_STORAGE_BUFFER) {
@@ -382,13 +382,13 @@ void Fog::VolumetricFog::init(const Vector3i& fog_size, RID p_sky_shader)
 		tf.format = RDC::DATA_FORMAT_R32_UINT;
 		tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT |
 						RDC::TEXTURE_USAGE_STORAGE_ATOMIC_BIT;
-		density_map = RD::texture_create(tf, RD::TextureView());
+		density_map = RD::texture_create(tf, RDD::TextureView());
 		RD::set_resource_name(density_map, "Fog density map");
 		RD::texture_clear(density_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
-		light_map = RD::texture_create(tf, RD::TextureView());
+		light_map = RD::texture_create(tf, RDD::TextureView());
 		RD::set_resource_name(light_map, "Fog light map");
 		RD::texture_clear(light_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
-		emissive_map = RD::texture_create(tf, RD::TextureView());
+		emissive_map = RD::texture_create(tf, RDD::TextureView());
 		RD::set_resource_name(emissive_map, "Fog emissive map");
 		RD::texture_clear(emissive_map, Color(0, 0, 0, 0), 0, 1, 0, 1);
 	}

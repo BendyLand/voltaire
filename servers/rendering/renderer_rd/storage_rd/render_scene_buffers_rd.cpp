@@ -485,7 +485,7 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 			}
 
 			// create weight texture
-			weight_buffers[i].weight = RD::texture_create(tf, RD::TextureView());
+			weight_buffers[i].weight = RD::texture_create(tf, RDD::TextureView());
 
 			// create frame buffer
 			Vector<RID> fb;

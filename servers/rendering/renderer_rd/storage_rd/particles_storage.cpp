@@ -1316,7 +1316,7 @@ RID ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 		tf.usage_bits =
 			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-		particles_collision->heightfield_texture = RD::texture_create(tf, RD::TextureView());
+		particles_collision->heightfield_texture = RD::texture_create(tf, RDD::TextureView());
 
 		Vector<RID> fb_tex;
 		fb_tex.push_back(particles_collision->heightfield_texture);

@@ -823,7 +823,7 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 		// grid and indices
 		tf.format = RDC::DATA_FORMAT_R32G32_UINT;
 		texdata.write[0] = grid_indices.to_byte_array();
-		grid_texture = rd->texture_create(tf, RD::TextureView(), texdata);
+		grid_texture = rd->texture_create(tf, RDD::TextureView(), texdata);
 	}
 }
 

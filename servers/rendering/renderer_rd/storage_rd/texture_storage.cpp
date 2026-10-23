@@ -1785,7 +1785,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 	tformat.mipmaps = area_light_atlas.mipmaps;
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_UNORM);
 
-	area_light_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	area_light_atlas.texture = RD::texture_create(tformat, RDD::TextureView());
 	RD::texture_clear(
 		area_light_atlas.texture, Color(0, 0, 0, 0), 0, area_light_atlas.mipmaps, 0, 1);
 
@@ -2132,7 +2132,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_UNORM);
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_SRGB);
 
-	decal_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	decal_atlas.texture = RD::texture_create(tformat, RDD::TextureView());
 	RD::texture_clear(decal_atlas.texture, Color(0, 0, 0, 0), 0, decal_atlas.mipmaps, 0, 1);
 
 	{
@@ -2529,7 +2529,7 @@ void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 	}
 
 	RDC::TextureFormat rd_color_attachment_format;
-	RD::TextureView rd_view;
+	RDD::TextureView rd_view;
 	{ // attempt register
 		rd_color_attachment_format.format = rt->color_format;
 		rd_color_attachment_format.width = rt->size.width;
@@ -2571,7 +2571,7 @@ void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 		};
 		rd_color_multisample_format.samples = texture_samples[rt->msaa];
 		rd_color_multisample_format.usage_bits = render_target_get_color_usage_bits(true);
-		RD::TextureView rd_view_multisample;
+		RDD::TextureView rd_view_multisample;
 		rd_color_multisample_format.is_resolve_buffer = false;
 		rd_color_multisample_format.is_discardable = true;
 		rt->color_multisample =
@@ -2639,7 +2639,7 @@ void RendererRD::TextureStorage::_create_render_target_backbuffer(RenderTarget* 
 					RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	tf.mipmaps = mipmaps_required;
 
-	rt->backbuffer = RD::texture_create(tf, RD::TextureView());
+	rt->backbuffer = RD::texture_create(tf, RDD::TextureView());
 	RD::set_resource_name(rt->backbuffer, "Render Target Back Buffer");
 	rt->backbuffer_mipmap0 =
 		RD::texture_create_shared_from_slice(RD::TextureView(), rt->backbuffer, 0, 0);
@@ -3206,7 +3206,7 @@ RID RendererRD::TextureStorage::render_target_get_sdf_texture(RID p_render_targe
 		memset(pv.ptrw(), 0, 16 * 4);
 		Vector<Vector<uint8_t>> vpv;
 		vpv.push_back(pv);
-		rt->sdf_buffer_read = RD::texture_create(tformat, RD::TextureView(), vpv);
+		rt->sdf_buffer_read = RD::texture_create(tformat, RDD::TextureView(), vpv);
 	}
 
 	return rt->sdf_buffer_read;
@@ -3643,7 +3643,7 @@ void RendererRD::TextureStorage::texture_2d_initialize(RID p_texture, const Ref<
 		data.push_back(img_data.slice(ofs, ofs + size));
 	}
 
-	texture.rd_texture = RD::texture_create(tf, RD::TextureView(), data);
+	texture.rd_texture = RD::texture_create(tf, RDD::TextureView(), data);
 
 	texture_owner.initialize_rid(p_texture, texture);
 }
@@ -3708,7 +3708,7 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 	rd_format.texture_type = RDC::TEXTURE_TYPE_2D;
 	rd_format.samples = RDC::TEXTURE_SAMPLES_1;
 
-	RD::TextureView rd_view;
+	RDD::TextureView rd_view;
 
 	if (p_depth) {
 		rd_format.format = RDC::DATA_FORMAT_D32_SFLOAT;
