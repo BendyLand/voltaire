@@ -808,12 +808,12 @@ void ArrayMesh::_recompute_aabb()
 
 int ArrayMesh::get_surface_count() const { return surfaces.size(); }
 
-void ArrayMesh::add_blend_shape(const StringName& p_name)
+void ArrayMesh::add_blend_shape(const String& p_name)
 {
 	ERR_FAIL_COND_MSG(
 		surfaces.size(), "Can't add a shape key count if surfaces are already created.");
 
-	StringName shape_name = p_name;
+	String shape_name = p_name;
 
 	if (blend_shapes.has(shape_name)) {
 		int count = 2;
@@ -832,17 +832,17 @@ void ArrayMesh::add_blend_shape(const StringName& p_name)
 
 int ArrayMesh::get_blend_shape_count() const { return blend_shapes.size(); }
 
-StringName ArrayMesh::get_blend_shape_name(int p_index) const
+String ArrayMesh::get_blend_shape_name(int p_index) const
 {
-	ERR_FAIL_INDEX_V(p_index, blend_shapes.size(), StringName());
+	ERR_FAIL_INDEX_V(p_index, blend_shapes.size(), String());
 	return blend_shapes[p_index];
 }
 
-void ArrayMesh::set_blend_shape_name(int p_index, const StringName& p_name)
+void ArrayMesh::set_blend_shape_name(int p_index, const String& p_name)
 {
 	ERR_FAIL_INDEX(p_index, blend_shapes.size());
 
-	StringName shape_name = p_name;
+	String shape_name = p_name;
 	int found = blend_shapes.find(shape_name);
 	if (found != -1 && found != p_index) {
 		int count = 2;
@@ -1102,9 +1102,9 @@ Ref<Material> Mesh::surface_get_material(int p_idx) const { return Ref<Material>
 
 int Mesh::get_blend_shape_count() const { return 0; }
 
-StringName Mesh::get_blend_shape_name(int p_idx) const { return StringName(); }
+String Mesh::get_blend_shape_name(int p_idx) const { return String(); }
 
-void Mesh::set_blend_shape_name(int p_idx, const StringName& p_name) {}
+void Mesh::set_blend_shape_name(int p_idx, const String& p_name) {}
 
 AABB Mesh::get_aabb() const { return AABB(); }
 

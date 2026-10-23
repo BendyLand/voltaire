@@ -50,7 +50,7 @@ float get_gizmo_handle_scale(const String& p_gizmo_handle_name, float p_gizmo_ha
 {
 	if (p_gizmo_handle_scale > 1.0f) {
 		// The names of the icons that require additional scaling.
-		static HashSet<StringName> gizmo_to_scale;
+		static HashSet<String> gizmo_to_scale;
 		if (gizmo_to_scale.is_empty()) {
 			gizmo_to_scale.insert("EditorHandle");
 			gizmo_to_scale.insert("EditorHandleAdd");
@@ -72,8 +72,8 @@ float get_gizmo_handle_scale(const String& p_gizmo_handle_name, float p_gizmo_ha
 void editor_copy_icons(const Ref<Theme>& p_theme, const Ref<Theme>& p_old_theme)
 {
 	for (int i = 0; i < editor_icons_count; i++) {
-		p_theme->set_icon(editor_icons_names[i], EditorStringName(EditorIcons),
-			p_old_theme->get_icon(editor_icons_names[i], EditorStringName(EditorIcons)));
+		p_theme->set_icon(editor_icons_names[i], EditorString(EditorIcons),
+			p_old_theme->get_icon(editor_icons_names[i], EditorString(EditorIcons)));
 	}
 }
 

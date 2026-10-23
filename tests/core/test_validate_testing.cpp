@@ -101,7 +101,7 @@ TEST_SUITE("Validate tests") {
 		Color color(1, 0.5, 0.2, 0.3);
 		INFO(color);
 
-		StringName string_name("has_method");
+		String string_name("has_method");
 		INFO(string_name);
 
 		NodePath node_path("godot/sprite");

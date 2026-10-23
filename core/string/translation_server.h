@@ -45,7 +45,7 @@ class TranslationServer
 	Ref<TranslationDomain> property_domain;
 	Ref<TranslationDomain> doc_domain;
 #endif // TOOLS_ENABLED
-	HashMap<StringName, Ref<TranslationDomain>> custom_domains;
+	HashMap<String, Ref<TranslationDomain>> custom_domains;
 
 	mutable HashMap<String, int> locale_compare_cache;
 
@@ -144,11 +144,11 @@ public:
 	void add_translation(const Ref<Translation>& p_translation);
 	void remove_translation(const Ref<Translation>& p_translation);
 
-	StringName translate(const StringName& p_message, const StringName& p_context = "") const;
-	StringName translate_plural(const StringName& p_message, const StringName& p_message_plural,
-		int p_n, const StringName& p_context = "") const;
+	String translate(const String& p_message, const String& p_context = "") const;
+	String translate_plural(const String& p_message, const String& p_message_plural,
+		int p_n, const String& p_context = "") const;
 
-	StringName pseudolocalize(const StringName& p_message) const;
+	String pseudolocalize(const String& p_message) const;
 
 	bool is_pseudolocalization_enabled() const;
 	void set_pseudolocalization_enabled(bool p_enabled);
@@ -164,9 +164,9 @@ public:
 
 	String get_tool_locale();
 
-	bool has_domain(const StringName& p_domain) const;
-	Ref<TranslationDomain> get_or_add_domain(const StringName& p_domain);
-	void remove_domain(const StringName& p_domain);
+	bool has_domain(const String& p_domain) const;
+	Ref<TranslationDomain> get_or_add_domain(const String& p_domain);
+	void remove_domain(const String& p_domain);
 
 	void setup();
 
@@ -176,7 +176,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif // TOOLS_ENABLED
 
 	TranslationServer();

@@ -141,7 +141,7 @@ void ScriptEditorDebugger::update_tabs()
 
 void ScriptEditorDebugger::clear_style()
 {
-	tabs->remove_theme_style_override(SceneStringName(panel));
+	tabs->remove_theme_style_override(SceneString(panel));
 }
 
 void ScriptEditorDebugger::_file_selected(const String& p_file)

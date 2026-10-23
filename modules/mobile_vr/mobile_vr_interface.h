@@ -152,7 +152,7 @@ public:
 	float get_vrs_strength() const;
 	void set_vrs_strength(float p_vrs_strength);
 
-	virtual StringName get_name() const override;
+	virtual String get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
 	virtual TrackingStatus get_tracking_status() const override;

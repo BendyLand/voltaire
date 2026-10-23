@@ -66,7 +66,7 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	Button* filter_invert_selection = nullptr;
 	Button* filter_clear_selection = nullptr;
 
-	HashMap<StringName, ProgressBar*> animations;
+	HashMap<String, ProgressBar*> animations;
 	Vector<EditorProperty*> visible_properties;
 
 	String to_node = "";
@@ -88,11 +88,11 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 
 	Vector<AddOption> add_options;
 
-	StringName animation_node_name_meta = StringName("_animation_node_name");
+	String animation_node_name_meta = String("_animation_node_name");
 	static AnimationNodeBlendTreeEditor* singleton;
 
 	void _node_rename_lineedit_changed(const String& p_text);
-	void _node_changed(const StringName& p_node_name);
+	void _node_changed(const String& p_node_name);
 
 	String current_node_rename_text;
 	bool graph_update_queued = false;

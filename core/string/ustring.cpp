@@ -36,7 +36,7 @@
 #include "core/math/math_funcs.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/string/translation_server.h"
 #include "core/string/ucaps.h"
 #include "core/version_generated.gen.h"

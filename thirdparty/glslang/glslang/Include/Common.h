@@ -239,10 +239,10 @@ struct TSourceLoc {
     }
     void init(int stringNum) { init(); string = stringNum; }
     // Returns the name if it exists. Otherwise, returns the string number.
-    std::string getStringNameOrNum(bool quoteStringName = true) const
+    std::string getStringOrNum(bool quoteString = true) const
     {
         if (name != nullptr) {
-            TString qstr = quoteStringName ? ("\"" + *name + "\"") : *name;
+            TString qstr = quoteString ? ("\"" + *name + "\"") : *name;
             std::string ret_str(qstr.c_str());
             return ret_str;
         }

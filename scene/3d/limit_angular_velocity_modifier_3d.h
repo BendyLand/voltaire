@@ -36,7 +36,7 @@ class LimitAngularVelocityModifier3D : public SkeletonModifier3D {
 
 public:
 	struct BoneJoint {
-		StringName name;
+		String name;
 		int bone = -1;
 	};
 

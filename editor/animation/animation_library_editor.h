@@ -80,15 +80,15 @@ class AnimationLibraryEditor : public AcceptDialog
 
 	FileDialogAction file_dialog_action = FILE_DIALOG_ACTION_OPEN_ANIMATION;
 
-	StringName file_dialog_animation;
-	StringName file_dialog_library;
+	String file_dialog_animation;
+	String file_dialog_library;
 
 	Button* new_library_button = nullptr;
 	Button* load_library_button = nullptr;
 
 	AcceptDialog* error_dialog = nullptr;
 	bool adding_animation = false;
-	StringName adding_animation_to_library;
+	String adding_animation_to_library;
 	EditorFileDialog* file_dialog = nullptr;
 	ConfirmationDialog* add_library_dialog = nullptr;
 	LineEdit* add_library_name = nullptr;

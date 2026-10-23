@@ -34,7 +34,7 @@
 
 class PropertyListHelper
 {
-	static HashMap<StringName, Vector<PropertyListHelper*>> base_helpers;
+	static HashMap<String, Vector<PropertyListHelper*>> base_helpers;
 
 	String prefix;
 
@@ -44,9 +44,9 @@ class PropertyListHelper
 
 public:
 	static void clear_base_helpers();
-	static void register_base_helper(const StringName& p_class_name, PropertyListHelper* p_helper);
+	static void register_base_helper(const String& p_class_name, PropertyListHelper* p_helper);
 
-	static Vector<PropertyListHelper*> get_helpers_for_class(const StringName& p_class_name);
+	static Vector<PropertyListHelper*> get_helpers_for_class(const String& p_class_name);
 
 	void set_prefix(const String& p_prefix);
 

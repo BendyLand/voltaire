@@ -34,7 +34,7 @@
 #include "core/io/resource_loader.h"
 #include "core/math/audio_frame.h"
 #include "core/os/os.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/pair.h"
 #include "scene/scene_string_names.h"
 #include "servers/audio/audio_driver_dummy.h"
@@ -420,7 +420,7 @@ void AudioServer::_mix_step()
 				if (!playback->prev_bus_details->bus_active[search_idx]) {
 					continue;
 				}
-				// If the StringNames of the buses match, we've found the previous bus index. This
+				// If the Strings of the buses match, we've found the previous bus index. This
 				// indicates that this playback mixed to `prev_bus_details->bus[prev_bus_index]` in
 				// the previous mix step, which gives us a way to look up the playback's previous
 				// volume.
@@ -773,7 +773,7 @@ AudioFrame* AudioServer::thread_get_channel_mix_buffer(int p_bus, int p_buffer)
 
 int AudioServer::thread_get_mix_buffer_size() const { return buffer_size; }
 
-int AudioServer::thread_find_bus_index(const StringName& p_name)
+int AudioServer::thread_find_bus_index(const String& p_name)
 {
 	if (bus_map.has(p_name)) {
 		return bus_map[p_name]->index_cache;
@@ -797,7 +797,7 @@ String AudioServer::get_bus_name(int p_bus) const
 	return buses[p_bus]->name;
 }
 
-int AudioServer::get_bus_index(const StringName& p_bus_name) const
+int AudioServer::get_bus_index(const String& p_bus_name) const
 {
 	for (int i = 0; i < buses.size(); ++i) {
 		if (buses[i]->name == p_bus_name) {
@@ -829,9 +829,9 @@ int AudioServer::get_bus_channels(int p_bus) const
 	return buses[p_bus]->channels.size();
 }
 
-StringName AudioServer::get_bus_send(int p_bus) const
+String AudioServer::get_bus_send(int p_bus) const
 {
-	ERR_FAIL_INDEX_V(p_bus, buses.size(), StringName());
+	ERR_FAIL_INDEX_V(p_bus, buses.size(), String());
 	return buses[p_bus]->send;
 }
 
@@ -922,19 +922,19 @@ void AudioServer::set_playback_speed_scale(float p_scale)
 float AudioServer::get_playback_speed_scale() const { return playback_speed_scale; }
 
 void AudioServer::start_playback_stream(Ref<AudioStreamPlayback> p_playback,
-	const StringName& p_bus, Vector<AudioFrame> p_volume_db_vector, float p_start_time,
+	const String& p_bus, Vector<AudioFrame> p_volume_db_vector, float p_start_time,
 	float p_pitch_scale)
 {
 	ERR_FAIL_COND(p_playback.is_null());
 
-	HashMap<StringName, Vector<AudioFrame>> map;
+	HashMap<String, Vector<AudioFrame>> map;
 	map[p_bus] = p_volume_db_vector;
 
 	start_playback_stream(p_playback, map, p_start_time, p_pitch_scale);
 }
 
 void AudioServer::start_playback_stream(Ref<AudioStreamPlayback> p_playback,
-	const HashMap<StringName, Vector<AudioFrame>>& p_bus_volumes, float p_start_time,
+	const HashMap<String, Vector<AudioFrame>>& p_bus_volumes, float p_start_time,
 	float p_pitch_scale, float p_highshelf_gain, float p_attenuation_cutoff_hz)
 {
 	ERR_FAIL_COND(p_playback.is_null());
@@ -945,7 +945,7 @@ void AudioServer::start_playback_stream(Ref<AudioStreamPlayback> p_playback,
 
 	AudioStreamPlaybackBusDetails* new_bus_details = new AudioStreamPlaybackBusDetails();
 	int idx = 0;
-	for (KeyValue<StringName, Vector<AudioFrame>> pair : p_bus_volumes) {
+	for (KeyValue<String, Vector<AudioFrame>> pair : p_bus_volumes) {
 		if (pair.value.size() < channel_count || pair.value.size() != MAX_CHANNELS_PER_BUS) {
 			delete playback_node;
 			delete new_bus_details;
@@ -1014,18 +1014,18 @@ void AudioServer::stop_playback_stream(Ref<AudioStreamPlayback> p_playback)
 }
 
 void AudioServer::set_playback_bus_exclusive(
-	Ref<AudioStreamPlayback> p_playback, const StringName& p_bus, Vector<AudioFrame> p_volumes)
+	Ref<AudioStreamPlayback> p_playback, const String& p_bus, Vector<AudioFrame> p_volumes)
 {
 	ERR_FAIL_COND(p_volumes.size() != MAX_CHANNELS_PER_BUS);
 
-	HashMap<StringName, Vector<AudioFrame>> map;
+	HashMap<String, Vector<AudioFrame>> map;
 	map[p_bus] = p_volumes;
 
 	set_playback_bus_volumes_linear(p_playback, map);
 }
 
 void AudioServer::set_playback_bus_volumes_linear(Ref<AudioStreamPlayback> p_playback,
-	const HashMap<StringName, Vector<AudioFrame>>& p_bus_volumes)
+	const HashMap<String, Vector<AudioFrame>>& p_bus_volumes)
 {
 	ERR_FAIL_COND(p_bus_volumes.size() > MAX_BUSES_PER_PLAYBACK);
 
@@ -1045,7 +1045,7 @@ void AudioServer::set_playback_bus_volumes_linear(Ref<AudioStreamPlayback> p_pla
 		*new_bus_details = new AudioStreamPlaybackBusDetails();
 
 	int idx = 0;
-	for (KeyValue<StringName, Vector<AudioFrame>> pair : p_bus_volumes) {
+	for (KeyValue<String, Vector<AudioFrame>> pair : p_bus_volumes) {
 		if (idx >= MAX_BUSES_PER_PLAYBACK) {
 			break;
 		}
@@ -1075,7 +1075,7 @@ void AudioServer::set_playback_all_bus_volumes_linear(
 	ERR_FAIL_COND(p_playback.is_null());
 	ERR_FAIL_COND(p_volumes.size() != MAX_CHANNELS_PER_BUS);
 
-	HashMap<StringName, Vector<AudioFrame>> map;
+	HashMap<String, Vector<AudioFrame>> map;
 
 	AudioStreamPlaybackListNode* playback_node = _find_playback_list_node(p_playback);
 	if (!playback_node) {
@@ -1579,7 +1579,7 @@ AudioServer::~AudioServer()
 AudioBusLayout::AudioBusLayout()
 {
 	buses.resize(1);
-	buses.write[0].name = SceneStringName(Master);
+	buses.write[0].name = SceneString(Master);
 }
 
 void AudioServer::_update_bus_effects(int) {}
@@ -1595,7 +1595,7 @@ void AudioServer::update() {}
 void AudioServer::load_default_bus_layout() {}
 
 void AudioServer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 }
 

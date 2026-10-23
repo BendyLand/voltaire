@@ -36,7 +36,7 @@ ShaderWarning::Code ShaderWarning::get_code() const { return code; }
 
 int ShaderWarning::get_line() const { return line; }
 
-const StringName& ShaderWarning::get_subject() const { return subject; }
+const String& ShaderWarning::get_subject() const { return subject; }
 
 String ShaderWarning::get_message() const
 {

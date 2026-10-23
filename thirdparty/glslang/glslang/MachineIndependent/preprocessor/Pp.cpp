@@ -728,7 +728,7 @@ int TPpContext::CPPinclude(TPpToken* ppToken)
             std::ostringstream epilogue;
             prologue << "#line " << forNextLine << " " << "\"" << res->headerName << "\"\n";
             epilogue << (res->headerData[res->headerLength - 1] == '\n'? "" : "\n") <<
-                "#line " << directiveLoc.line + forNextLine << " " << directiveLoc.getStringNameOrNum() << "\n";
+                "#line " << directiveLoc.line + forNextLine << " " << directiveLoc.getStringOrNum() << "\n";
             pushInput(new TokenizableIncludeFile(directiveLoc, prologue.str(), res, epilogue.str(), this));
             parseContext.intermediate.addIncludeText(res->headerName.c_str(), res->headerData, res->headerLength);
             // There's no "current" location anymore.
@@ -1242,7 +1242,7 @@ MacroExpandResult TPpContext::MacroExpand(TPpToken* ppToken, bool expandUndef, b
         if (parseContext.getCurrentLoc().name)
             parseContext.ppRequireExtensions(ppToken->loc, 1, &E_GL_GOOGLE_cpp_style_line_directive, "filename-based __FILE__");
         ppToken->ival = parseContext.getCurrentLoc().string;
-        snprintf(ppToken->name, sizeof(ppToken->name), "%s", ppToken->loc.getStringNameOrNum().c_str());
+        snprintf(ppToken->name, sizeof(ppToken->name), "%s", ppToken->loc.getStringOrNum().c_str());
         UngetToken(PpAtomConstInt, ppToken);
         return MacroExpandStarted;
     }

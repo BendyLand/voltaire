@@ -63,12 +63,12 @@ public:
 	};
 
 private:
-	static StringName default_extension;
+	static String default_extension;
 
 protected:
 
 public:
-	static void set_default_extension(const StringName& p_name);
+	static void set_default_extension(const String& p_name);
 
 	virtual ConnectionState get_connection_state() const;
 	virtual GatheringState get_gathering_state() const;

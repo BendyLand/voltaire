@@ -95,7 +95,7 @@ void RenderSceneBuffersRD::update_samplers()
 void RenderSceneBuffersRD::cleanup()
 {
 	// Free our data buffers (but don't destroy them)
-	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
+	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
 		E.value->free_data();
 	}
 
@@ -186,7 +186,7 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration* p_co
 	}
 
 	// (re-)configure any named buffers
-	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
+	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
 		E.value->configure(this);
 	}
 }
@@ -212,7 +212,7 @@ void RenderSceneBuffersRD::configure_for_reflections(const Size2i p_reflection_s
 	cleanup();
 
 	// (re-)configure any named buffers
-	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
+	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
 		E.value->configure(this);
 	}
 }
@@ -269,15 +269,15 @@ void RenderSceneBuffersRD::ensure_mfx(RendererRD::MFXSpatialEffect* p_effect)
 #endif
 
 bool RenderSceneBuffersRD::has_texture(
-	const StringName& p_context, const StringName& p_texture_name) const
+	const String& p_context, const String& p_texture_name) const
 {
 	NTKey key(p_context, p_texture_name);
 
 	return named_textures.has(key);
 }
 
-RID RenderSceneBuffersRD::create_texture(const StringName& p_context,
-	const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+RID RenderSceneBuffersRD::create_texture(const String& p_context,
+	const String& p_texture_name, const RDC::DataFormat p_data_format,
 	const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples, const Size2i p_size,
 	const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique, bool p_discardable)
 {
@@ -305,8 +305,8 @@ RID RenderSceneBuffersRD::create_texture(const StringName& p_context,
 	return create_texture_from_format(p_context, p_texture_name, tf, RD::TextureView(), p_unique);
 }
 
-RID RenderSceneBuffersRD::_create_texture_from_format(const StringName& p_context,
-	const StringName& p_texture_name, const Ref<RDTextureFormat>& p_texture_format,
+RID RenderSceneBuffersRD::_create_texture_from_format(const String& p_context,
+	const String& p_texture_name, const Ref<RDTextureFormat>& p_texture_format,
 	const Ref<RDTextureView>& p_view, bool p_unique)
 {
 	ERR_FAIL_COND_V(p_texture_format.is_null(), RID());
@@ -320,8 +320,8 @@ RID RenderSceneBuffersRD::_create_texture_from_format(const StringName& p_contex
 		p_context, p_texture_name, p_texture_format->base, texture_view, p_unique);
 }
 
-RID RenderSceneBuffersRD::_create_texture_view(const StringName& p_context,
-	const StringName& p_texture_name, const StringName& p_view_name,
+RID RenderSceneBuffersRD::_create_texture_view(const String& p_context,
+	const String& p_texture_name, const String& p_view_name,
 	const Ref<RDTextureView> p_view)
 {
 	RD::TextureView texture_view;
@@ -333,7 +333,7 @@ RID RenderSceneBuffersRD::_create_texture_view(const StringName& p_context,
 }
 
 RID RenderSceneBuffersRD::get_texture(
-	const StringName& p_context, const StringName& p_texture_name) const
+	const String& p_context, const String& p_texture_name) const
 {
 	NTKey key(p_context, p_texture_name);
 
@@ -343,7 +343,7 @@ RID RenderSceneBuffersRD::get_texture(
 }
 
 Ref<RDTextureFormat> RenderSceneBuffersRD::_get_texture_format(
-	const StringName& p_context, const StringName& p_texture_name) const
+	const String& p_context, const String& p_texture_name) const
 {
 	Ref<RDTextureFormat> tf;
 	tf.instantiate();
@@ -353,8 +353,8 @@ Ref<RDTextureFormat> RenderSceneBuffersRD::_get_texture_format(
 	return tf;
 }
 
-RID RenderSceneBuffersRD::_get_texture_slice_view(const StringName& p_context,
-	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
+RID RenderSceneBuffersRD::_get_texture_slice_view(const String& p_context,
+	const String& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
 	const uint32_t p_layers, const uint32_t p_mipmaps, const Ref<RDTextureView> p_view)
 {
 	RD::TextureView texture_view;
@@ -367,7 +367,7 @@ RID RenderSceneBuffersRD::_get_texture_slice_view(const StringName& p_context,
 }
 
 const RDC::TextureFormat RenderSceneBuffersRD::get_texture_format(
-	const StringName& p_context, const StringName& p_texture_name) const
+	const String& p_context, const String& p_texture_name) const
 {
 	NTKey key(p_context, p_texture_name);
 
@@ -376,15 +376,15 @@ const RDC::TextureFormat RenderSceneBuffersRD::get_texture_format(
 	return named_textures[key].format;
 }
 
-RID RenderSceneBuffersRD::get_texture_slice_view(const StringName& p_context,
-	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
+RID RenderSceneBuffersRD::get_texture_slice_view(const String& p_context,
+	const String& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
 	const uint32_t p_layers, const uint32_t p_mipmaps, RD::TextureView p_view)
 {
 	return RID();
 }
 
-RID RenderSceneBuffersRD::get_texture_slice(const StringName& p_context,
-	const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
+RID RenderSceneBuffersRD::get_texture_slice(const String& p_context,
+	const String& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap,
 	const uint32_t p_layers, const uint32_t p_mipmaps)
 {
 	return get_texture_slice_view(
@@ -392,7 +392,7 @@ RID RenderSceneBuffersRD::get_texture_slice(const StringName& p_context,
 }
 
 Size2i RenderSceneBuffersRD::get_texture_slice_size(
-	const StringName& p_context, const StringName& p_texture_name, const uint32_t p_mipmap)
+	const String& p_context, const String& p_texture_name, const uint32_t p_mipmap)
 {
 	NTKey key(p_context, p_texture_name);
 
@@ -408,7 +408,7 @@ Size2i RenderSceneBuffersRD::get_texture_slice_size(
 	return named_texture.sizes[p_mipmap];
 }
 
-void RenderSceneBuffersRD::clear_context(const StringName& p_context)
+void RenderSceneBuffersRD::clear_context(const String& p_context)
 {
 	Vector<NTKey> to_free; // free these
 
@@ -504,13 +504,13 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 	}
 }
 
-bool RenderSceneBuffersRD::has_custom_data(const StringName& p_name)
+bool RenderSceneBuffersRD::has_custom_data(const String& p_name)
 {
 	return data_buffers.has(p_name);
 }
 
 void RenderSceneBuffersRD::set_custom_data(
-	const StringName& p_name, Ref<RenderBufferCustomDataRD> p_data)
+	const String& p_name, Ref<RenderBufferCustomDataRD> p_data)
 {
 	if (p_data.is_valid()) {
 		data_buffers[p_name] = p_data;
@@ -520,7 +520,7 @@ void RenderSceneBuffersRD::set_custom_data(
 	}
 }
 
-Ref<RenderBufferCustomDataRD> RenderSceneBuffersRD::get_custom_data(const StringName& p_name) const
+Ref<RenderBufferCustomDataRD> RenderSceneBuffersRD::get_custom_data(const String& p_name) const
 {
 	ERR_FAIL_COND_V(!data_buffers.has(p_name), Ref<RenderBufferCustomDataRD>());
 
@@ -832,15 +832,15 @@ float RenderSceneBuffersRD::get_luminance_multiplier() const
 	return (force_hdr || can_be_storage) ? 1.0 : 2.0;
 }
 
-RID RenderSceneBuffersRD::create_texture_from_format(const StringName& p_context,
-	const StringName& p_texture_name, const RDC::TextureFormat& p_texture_format,
+RID RenderSceneBuffersRD::create_texture_from_format(const String& p_context,
+	const String& p_texture_name, const RDC::TextureFormat& p_texture_format,
 	RD::TextureView p_view, bool p_unique)
 {
 	return RID();
 }
 
 RID RenderSceneBuffersRD::create_texture_view(
-	StringName const&, StringName const&, StringName const&, RenderingDevice::TextureView)
+	String const&, String const&, String const&, RenderingDevice::TextureView)
 {
 }
 

@@ -68,10 +68,10 @@ protected:
 
 public:
 	// Methods in this section are not intended for scripting.
-	StringName get_message_from_translations(
-		const String& p_locale, const StringName& p_message, const StringName& p_context) const;
-	StringName get_message_from_translations(const String& p_locale, const StringName& p_message,
-		const StringName& p_message_plural, int p_n, const StringName& p_context) const;
+	String get_message_from_translations(
+		const String& p_locale, const String& p_message, const String& p_context) const;
+	String get_message_from_translations(const String& p_locale, const String& p_message,
+		const String& p_message_plural, int p_n, const String& p_context) const;
 	PackedStringArray get_loaded_locales() const;
 
 public:
@@ -88,9 +88,9 @@ public:
 	HashSet<Ref<Translation>> find_translations(const String& p_locale, bool p_exact) const;
 	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
 
-	StringName translate(const StringName& p_message, const StringName& p_context) const;
-	StringName translate_plural(const StringName& p_message, const StringName& p_message_plural,
-		int p_n, const StringName& p_context) const;
+	String translate(const String& p_message, const String& p_context) const;
+	String translate_plural(const String& p_message, const String& p_message_plural,
+		int p_n, const String& p_context) const;
 
 	String get_locale_override() const;
 	void set_locale_override(const String& p_locale);
@@ -117,7 +117,7 @@ public:
 	String get_pseudolocalization_suffix() const;
 	void set_pseudolocalization_suffix(const String& p_suffix);
 
-	StringName pseudolocalize(const StringName& p_message) const;
+	String pseudolocalize(const String& p_message) const;
 };
 
 

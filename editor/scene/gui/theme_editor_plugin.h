@@ -319,7 +319,7 @@ class ThemeTypeEditor : public MarginContainer
 	struct LeadingStylebox
 	{
 		bool pinned = false;
-		StringName item_name;
+		String item_name;
 		Ref<StyleBox> stylebox;
 		Ref<StyleBox> ref_stylebox;
 	};
@@ -361,7 +361,7 @@ class ThemeTypeEditor : public MarginContainer
 
 	VBoxContainer* _create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
-	HashMap<StringName, bool> _get_type_items(
+	HashMap<String, bool> _get_type_items(
 		String p_type_name, Theme::DataType p_type, bool p_include_default);
 	HBoxContainer* _create_property_control(
 		Theme::DataType p_data_type, String p_item_name, bool p_editable);

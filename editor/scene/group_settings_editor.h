@@ -42,9 +42,9 @@ class Tree;
 class GroupSettingsEditor : public VBoxContainer
 {
 	const String GLOBAL_GROUP_PREFIX = "global_group/";
-	const StringName group_changed = "group_changed";
+	const String group_changed = "group_changed";
 
-	HashMap<StringName, String> groups_cache;
+	HashMap<String, String> groups_cache;
 
 	bool updating_groups = false;
 
@@ -86,10 +86,10 @@ protected:
 public:
 	LineEdit* get_name_box() const;
 
-	bool remove_node_references(Node* p_node, const StringName& p_name);
+	bool remove_node_references(Node* p_node, const String& p_name);
 	bool rename_node_references(
 
-		Node* p_node, const StringName& p_old_name, const StringName& p_new_name);
+		Node* p_node, const String& p_old_name, const String& p_new_name);
 
 	void update_groups();
 	void connect_filesystem_dock_signals(FileSystemDock* p_fs_dock);

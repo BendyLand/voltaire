@@ -43,8 +43,8 @@ namespace TestArrayMesh {
 TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
-	StringName name_a{ "ShapeA" };
-	StringName name_b{ "ShapeB" };
+	String name_a{ "ShapeA" };
+	String name_b{ "ShapeB" };
 
 	SUBCASE("Adding a blend shape to the mesh before a surface is added.") {
 		mesh->add_blend_shape(name_a);

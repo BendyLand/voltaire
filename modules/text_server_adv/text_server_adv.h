@@ -104,11 +104,11 @@ class TextServerAdvanced : public TextServer
 
 	struct FeatureInfo
 	{
-		StringName name;
+		String name;
 		bool hidden = false;
 	};
 
-	HashMap<StringName, int32_t> feature_sets;
+	HashMap<String, int32_t> feature_sets;
 	HashMap<int32_t, FeatureInfo> feature_sets_inv;
 
 	enum LineBreakStrictness

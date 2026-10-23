@@ -264,14 +264,14 @@ class EditorHelpBit : public VBoxContainer
 		String resource_path;
 	};
 
-	inline static HashMap<StringName, HelpData> doc_class_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_enum_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_constant_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_property_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_theme_item_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_method_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_signal_cache;
-	inline static HashMap<StringName, HashMap<StringName, HelpData>> doc_annotation_cache;
+	inline static HashMap<String, HelpData> doc_class_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_enum_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_constant_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_property_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_theme_item_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_method_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_signal_cache;
+	inline static HashMap<String, HashMap<String, HelpData>> doc_annotation_cache;
 
 	RichTextLabel* title = nullptr;
 	RichTextLabel* content = nullptr;
@@ -289,21 +289,21 @@ class EditorHelpBit : public VBoxContainer
 	float content_min_height = 0.0;
 	float content_max_height = 0.0;
 
-	static HelpData _get_class_help_data(const StringName& p_class_name);
+	static HelpData _get_class_help_data(const String& p_class_name);
 	static HelpData _get_enum_help_data(
-		const StringName& p_class_name, const StringName& p_enum_name);
+		const String& p_class_name, const String& p_enum_name);
 	static HelpData _get_constant_help_data(
-		const StringName& p_class_name, const StringName& p_constant_name);
+		const String& p_class_name, const String& p_constant_name);
 	static HelpData _get_property_help_data(
-		const StringName& p_class_name, const StringName& p_property_name);
+		const String& p_class_name, const String& p_property_name);
 	static HelpData _get_theme_item_help_data(
-		const StringName& p_class_name, const StringName& p_theme_item_name);
+		const String& p_class_name, const String& p_theme_item_name);
 	static HelpData _get_method_help_data(
-		const StringName& p_class_name, const StringName& p_method_name);
+		const String& p_class_name, const String& p_method_name);
 	static HelpData _get_signal_help_data(
-		const StringName& p_class_name, const StringName& p_signal_name);
+		const String& p_class_name, const String& p_signal_name);
 	static HelpData _get_annotation_help_data(
-		const StringName& p_class_name, const StringName& p_annotation_name);
+		const String& p_class_name, const String& p_annotation_name);
 
 	void _go_to_help(const String& p_what);
 	void _go_to_url(const String& p_what);

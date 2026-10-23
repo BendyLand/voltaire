@@ -47,7 +47,7 @@ void InstanceUniforms::materials_start() { _invalidate_items(); }
 
 void InstanceUniforms::_invalidate_items()
 {
-	for (KeyValue<StringName, Item>& kv : _parameters) {
+	for (KeyValue<String, Item>& kv : _parameters) {
 		kv.value.index = -1;
 	}
 }

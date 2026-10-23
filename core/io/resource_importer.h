@@ -89,7 +89,7 @@ public:
 	virtual bool is_imported(const String& p_path) const override { return recognize_path(p_path); }
 
 	virtual String get_import_group_file(const String& p_path) const override;
-	virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes) override;
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override;
 	virtual bool exists(const String& p_path) const override;
 
 	void get_build_dependencies(const String& p_path, HashSet<String>* r_dependencies);
@@ -115,7 +115,7 @@ public:
 	String get_import_settings_hash() const;
 
 	String get_import_base_path(const String& p_for_file) const;
-	Error get_resource_import_info(const String& p_path, StringName& r_type, ResourceUID::ID& r_uid,
+	Error get_resource_import_info(const String& p_path, String& r_type, ResourceUID::ID& r_uid,
 		String& r_import_group_file) const;
 
 	ResourceFormatImporter();

@@ -58,7 +58,7 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 	};
 	String stage_code[RDC::SHADER_STAGE_MAX];
 	int stages_found = 0;
-	HashMap<StringName, String> version_texts;
+	HashMap<String, String> version_texts;
 
 	versions.clear();
 	base_error = "";
@@ -203,7 +203,7 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 
 		/* STEP 2, Compile the versions, add to shader file */
 
-		for (const KeyValue<StringName, String>& E : version_texts) {
+		for (const KeyValue<String, String>& E : version_texts) {
 			Ref<RDShaderSPIRV> bytecode;
 			bytecode.instantiate();
 

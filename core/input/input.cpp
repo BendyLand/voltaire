@@ -180,7 +180,7 @@ bool Input::is_anything_pressed() const
 		return true;
 	}
 
-	for (const KeyValue<StringName, Input::ActionState>& E : action_states) {
+	for (const KeyValue<String, Input::ActionState>& E : action_states) {
 		if (E.value.cache.pressed) {
 			return true;
 		}
@@ -269,7 +269,7 @@ bool Input::is_joy_button_pressed(int p_device, JoyButton p_button) const
 	return joy_buttons_pressed.has(_combine_device(p_button, p_device));
 }
 
-bool Input::is_action_pressed(const StringName& p_action, bool p_exact) const
+bool Input::is_action_pressed(const String& p_action, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -278,7 +278,7 @@ bool Input::is_action_pressed(const StringName& p_action, bool p_exact) const
 		return false;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return false;
 	}
@@ -286,7 +286,7 @@ bool Input::is_action_pressed(const StringName& p_action, bool p_exact) const
 	return E->value.cache.pressed && (p_exact ? E->value.exact : true);
 }
 
-bool Input::is_action_just_pressed(const StringName& p_action, bool p_exact) const
+bool Input::is_action_just_pressed(const String& p_action, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -295,7 +295,7 @@ bool Input::is_action_just_pressed(const StringName& p_action, bool p_exact) con
 		return false;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return false;
 	}
@@ -318,7 +318,7 @@ bool Input::is_action_just_pressed(const StringName& p_action, bool p_exact) con
 }
 
 bool Input::is_action_just_pressed_by_event(
-	const StringName& p_action, InputEvent* rp_event, bool p_exact) const
+	const String& p_action, InputEvent* rp_event, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -326,7 +326,7 @@ bool Input::is_action_just_pressed_by_event(
 		return false;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return false;
 	}
@@ -348,7 +348,7 @@ bool Input::is_action_just_pressed_by_event(
 	}
 }
 
-bool Input::is_action_just_released(const StringName& p_action, bool p_exact) const
+bool Input::is_action_just_released(const String& p_action, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -357,7 +357,7 @@ bool Input::is_action_just_released(const StringName& p_action, bool p_exact) co
 		return false;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return false;
 	}
@@ -380,7 +380,7 @@ bool Input::is_action_just_released(const StringName& p_action, bool p_exact) co
 }
 
 bool Input::is_action_just_released_by_event(
-	const StringName& p_action, InputEvent* rp_event, bool p_exact) const
+	const String& p_action, InputEvent* rp_event, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -388,7 +388,7 @@ bool Input::is_action_just_released_by_event(
 		return false;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return false;
 	}
@@ -410,7 +410,7 @@ bool Input::is_action_just_released_by_event(
 	}
 }
 
-float Input::get_action_strength(const StringName& p_action, bool p_exact) const
+float Input::get_action_strength(const String& p_action, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), 0.0,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -419,7 +419,7 @@ float Input::get_action_strength(const StringName& p_action, bool p_exact) const
 		return 0.0f;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return 0.0f;
 	}
@@ -431,7 +431,7 @@ float Input::get_action_strength(const StringName& p_action, bool p_exact) const
 	return E->value.cache.strength;
 }
 
-float Input::get_action_raw_strength(const StringName& p_action, bool p_exact) const
+float Input::get_action_raw_strength(const String& p_action, bool p_exact) const
 {
 	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), 0.0,
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -440,7 +440,7 @@ float Input::get_action_raw_strength(const StringName& p_action, bool p_exact) c
 		return 0.0f;
 	}
 
-	HashMap<StringName, ActionState>::ConstIterator E = action_states.find(p_action);
+	HashMap<String, ActionState>::ConstIterator E = action_states.find(p_action);
 	if (!E) {
 		return 0.0f;
 	}
@@ -453,13 +453,13 @@ float Input::get_action_raw_strength(const StringName& p_action, bool p_exact) c
 }
 
 float Input::get_axis(
-	const StringName& p_negative_action, const StringName& p_positive_action) const
+	const String& p_negative_action, const String& p_positive_action) const
 {
 	return get_action_strength(p_positive_action) - get_action_strength(p_negative_action);
 }
 
-Vector2 Input::get_vector(const StringName& p_negative_x, const StringName& p_positive_x,
-	const StringName& p_negative_y, const StringName& p_positive_y, float p_deadzone) const
+Vector2 Input::get_vector(const String& p_negative_x, const String& p_positive_x,
+	const String& p_negative_y, const String& p_positive_y, float p_deadzone) const
 {
 	Vector2 vector =
 		Vector2(get_action_raw_strength(p_positive_x) - get_action_raw_strength(p_negative_x),
@@ -922,7 +922,7 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 		}
 	}
 
-	for (const KeyValue<StringName, InputMap::Action>& E :
+	for (const KeyValue<String, InputMap::Action>& E :
 		InputMap::get_singleton()->get_action_map()) {
 		const int event_index = InputMap::get_singleton()->event_get_index(p_event, E.key);
 		if (event_index == -1) {
@@ -1329,7 +1329,7 @@ Point2 Input::warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, cons
 	return rel_warped;
 }
 
-void Input::action_press(const StringName& p_action, float p_strength)
+void Input::action_press(const String& p_action, float p_strength)
 {
 	ERR_FAIL_COND_MSG(!InputMap::get_singleton()->has_action(p_action),
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -1349,7 +1349,7 @@ void Input::action_press(const StringName& p_action, float p_strength)
 	_update_action_cache(p_action, action_state);
 }
 
-void Input::action_release(const StringName& p_action)
+void Input::action_release(const String& p_action)
 {
 	ERR_FAIL_COND_MSG(!InputMap::get_singleton()->has_action(p_action),
 		InputMap::get_singleton()->suggest_actions(p_action));
@@ -1535,14 +1535,14 @@ void Input::release_pressed_events()
 		joy_buttons_pressed.clear();
 		_joy_axis.clear();
 
-		for (KeyValue<StringName, Input::ActionState>& E : action_states) {
+		for (KeyValue<String, Input::ActionState>& E : action_states) {
 			if (E.value.cache.pressed) {
 				action_release(E.key);
 			}
 		}
 	}
 	else {
-		for (KeyValue<StringName, Input::ActionState>& E : action_states) {
+		for (KeyValue<String, Input::ActionState>& E : action_states) {
 			if (E.value.cache.pressed) {
 				bool is_only_joypad_pressed = true;
 				int max_event = InputMap::get_singleton()->action_get_events(E.key)->size() +
@@ -1797,7 +1797,7 @@ void Input::_axis_event(int p_device, JoyAxis p_axis, float p_value)
 	parse_input_event(ievent.ptr());
 }
 
-void Input::_update_action_cache(const StringName& p_action_name, ActionState& r_action_state)
+void Input::_update_action_cache(const String& p_action_name, ActionState& r_action_state)
 {
 	// Update the action cache, computed from the per-device and per-event states.
 	r_action_state.cache.pressed = false;

@@ -49,7 +49,7 @@ public:
 		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
 	virtual void get_export_options(List<ExportOption>* r_options) const override;
 	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const StringName& p_name) const override;
+		const EditorExportPreset* p_preset, const String& p_name) const override;
 
 	virtual String get_os_name() const override;
 	virtual Ref<Texture2D> get_logo() const override;

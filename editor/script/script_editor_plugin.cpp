@@ -485,14 +485,14 @@ void ScriptEditorPlugin::_window_visibility_changed(bool p_visible)
 {
 	_focus_another_editor();
 	if (p_visible) {
-		script_editor->add_theme_style_override(SceneStringName(panel),
+		script_editor->add_theme_style_override(SceneString(panel),
 			script_editor
-				->get_theme_stylebox("ScriptEditorPanelFloating", EditorStringName(EditorStyles))
+				->get_theme_stylebox("ScriptEditorPanelFloating", EditorString(EditorStyles))
 				.ptr());
 	}
 	else {
-		script_editor->add_theme_style_override(SceneStringName(panel),
-			script_editor->get_theme_stylebox("ScriptEditorPanel", EditorStringName(EditorStyles))
+		script_editor->add_theme_style_override(SceneString(panel),
+			script_editor->get_theme_stylebox("ScriptEditorPanel", EditorString(EditorStyles))
 				.ptr());
 	}
 }

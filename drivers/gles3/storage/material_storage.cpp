@@ -252,7 +252,7 @@ void ShaderData::get_instance_param_list(
 
 void ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
 
-void ShaderData::set_default_texture_parameter(const StringName& p_name, RID p_texture, int p_index)
+void ShaderData::set_default_texture_parameter(const String& p_name, RID p_texture, int p_index)
 {
 	if (!p_texture.is_valid()) {
 		if (default_texture_params.has(p_name) && default_texture_params[p_name].has(p_index)) {
@@ -271,7 +271,7 @@ void ShaderData::set_default_texture_parameter(const StringName& p_name, RID p_t
 	}
 }
 
-bool ShaderData::is_parameter_texture(const StringName& p_param) const
+bool ShaderData::is_parameter_texture(const String& p_param) const
 {
 	if (!uniforms.has(p_param)) {
 		return false;
@@ -384,7 +384,7 @@ MaterialData::~MaterialData()
 	if (global_texture_E) {
 		// unregister global textures
 
-		for (const KeyValue<StringName, uint64_t>& E : used_global_textures) {
+		for (const KeyValue<String, uint64_t>& E : used_global_textures) {
 			GlobalShaderUniforms::Variable* v =
 				MaterialStorage::global_shader_uniforms.variables.getptr(E.key);
 			if (v) {
@@ -539,7 +539,7 @@ void GLES3::MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_
 	}
 }
 
-void GLES3::MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
+void GLES3::MaterialStorage::global_shader_parameter_remove(const String& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return;
@@ -557,25 +557,25 @@ void GLES3::MaterialStorage::global_shader_parameter_remove(const StringName& p_
 	global_shader_uniforms.variables.erase(p_name);
 }
 
-Vector<StringName> GLES3::MaterialStorage::global_shader_parameter_get_list()
+Vector<String> GLES3::MaterialStorage::global_shader_parameter_get_list()
 {
 	if (!Engine::is_editor_hint() &&
 		!Engine::is_project_manager_hint()) {
-		ERR_FAIL_V_MSG(Vector<StringName>(), "This function should never be used outside the "
+		ERR_FAIL_V_MSG(Vector<String>(), "This function should never be used outside the "
 											 "editor, it can severely damage performance.");
 	}
 
-	Vector<StringName> names;
-	for (const KeyValue<StringName, GlobalShaderUniforms::Variable>& E :
+	Vector<String> names;
+	for (const KeyValue<String, GlobalShaderUniforms::Variable>& E :
 		global_shader_uniforms.variables) {
 		names.push_back(E.key);
 	}
-	names.sort_custom<StringName::AlphCompare>();
+	names.sort();
 	return names;
 }
 
 RSE::GlobalShaderParameterType GLES3::MaterialStorage::global_shader_parameter_get_type_internal(
-	const StringName& p_name)
+	const String& p_name)
 {
 	if (!global_shader_uniforms.variables.has(p_name)) {
 		return RSE::GLOBAL_VAR_TYPE_MAX;
@@ -585,7 +585,7 @@ RSE::GlobalShaderParameterType GLES3::MaterialStorage::global_shader_parameter_g
 }
 
 RSE::GlobalShaderParameterType GLES3::MaterialStorage::global_shader_parameter_get_type(
-	const StringName& p_name)
+	const String& p_name)
 {
 	if (!Engine::is_editor_hint()) {
 		ERR_FAIL_V_MSG(RSE::GLOBAL_VAR_TYPE_MAX, "This function should never be used outside the "
@@ -784,7 +784,7 @@ void GLES3::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 		}
 
 		if (shader->data) {
-			for (const KeyValue<StringName, HashMap<int, RID>>& E :
+			for (const KeyValue<String, HashMap<int, RID>>& E :
 				shader->default_texture_parameter) {
 				for (const KeyValue<int, RID>& E2 : E.value) {
 					shader->data->set_default_texture_parameter(E.key, E2.value, E2.key);
@@ -824,7 +824,7 @@ String GLES3::MaterialStorage::shader_get_code(RID p_shader)
 }
 
 void GLES3::MaterialStorage::shader_set_default_texture_parameter(
-	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+	RID p_shader, const String& p_name, RID p_texture, int p_index)
 {
 	GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
@@ -855,7 +855,7 @@ void GLES3::MaterialStorage::shader_set_default_texture_parameter(
 }
 
 RID GLES3::MaterialStorage::shader_get_default_texture_parameter(
-	RID p_shader, const StringName& p_name, int p_index)
+	RID p_shader, const String& p_name, int p_index)
 {
 	const GLES3::Shader* shader = shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RID());

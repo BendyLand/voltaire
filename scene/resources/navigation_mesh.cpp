@@ -84,12 +84,12 @@ NavigationMesh::SourceGeometryMode NavigationMesh::get_source_geometry_mode() co
 	return source_geometry_mode;
 }
 
-void NavigationMesh::set_source_group_name(const StringName& p_group_name)
+void NavigationMesh::set_source_group_name(const String& p_group_name)
 {
 	source_group_name = p_group_name;
 }
 
-StringName NavigationMesh::get_source_group_name() const { return source_group_name; }
+String NavigationMesh::get_source_group_name() const { return source_group_name; }
 
 void NavigationMesh::set_cell_size(float p_value)
 {

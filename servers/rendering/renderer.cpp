@@ -594,7 +594,7 @@ void Renderer::mesh_add_surface_from_mesh_data(RID p_mesh, const Geometry3D::Mes
 RID Renderer::make_sphere_mesh(int p_lats, int p_lons, real_t p_radius) { return RID(); }
 
 void Renderer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options)
+	const String& p_function, int p_idx, List<String>* r_options)
 {
 }
 
@@ -1644,7 +1644,7 @@ void Renderer::shader_set_path_hint(RID p_shader, const String& p_path)
 }
 
 void Renderer::shader_set_default_texture_parameter(
-	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+	RID p_shader, const String& p_name, RID p_texture, int p_index)
 {
 	RendererMaterialStorage::shader_set_default_texture_parameter(
 		p_shader, p_name, p_texture, p_index);

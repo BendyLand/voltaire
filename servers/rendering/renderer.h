@@ -221,9 +221,9 @@ public:
 	static String shader_get_code(RID p_shader);
 
 	static void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index = 0);
+		RID p_shader, const String& p_name, RID p_texture, int p_index = 0);
 	static RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index = 0);
+		RID p_shader, const String& p_name, int p_index = 0);
 
 	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader);
 
@@ -1071,11 +1071,11 @@ public:
 
 	/* GLOBAL SHADER PARAMETERS API */
 
-	static void global_shader_parameter_remove(const StringName& p_name);
-	static Vector<StringName> global_shader_parameter_get_list();
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
 
 	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name);
+		const String& p_name);
 
 	static void global_shader_parameters_load_settings(bool p_load_textures);
 	static void global_shader_parameters_clear();
@@ -1162,7 +1162,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	static void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options);
+		const String& p_function, int p_idx, List<String>* r_options);
 
 	typedef void (*SurfaceUpgradeCallback)();
 	static void set_surface_upgrade_callback(SurfaceUpgradeCallback p_callback);

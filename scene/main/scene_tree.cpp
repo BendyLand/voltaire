@@ -116,11 +116,11 @@ void SceneTree::ClientPhysicsInterpolation::physics_process()
 bool SceneTree::_physics_interpolation_enabled = false;
 bool SceneTree::_physics_interpolation_enabled_in_project = false;
 
-SceneTreeGroup* SceneTree::add_to_group(const StringName& p_group, Node* p_node)
+SceneTreeGroup* SceneTree::add_to_group(const String& p_group, Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
 
-	HashMap<StringName, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
 	if (!E) {
 		E = group_map.insert(p_group, SceneTreeGroup());
 	}
@@ -132,11 +132,11 @@ SceneTreeGroup* SceneTree::add_to_group(const StringName& p_group, Node* p_node)
 	return &E->value;
 }
 
-void SceneTree::remove_from_group(const StringName& p_group, Node* p_node)
+void SceneTree::remove_from_group(const String& p_group, Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
 
-	HashMap<StringName, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
 	ERR_FAIL_COND(!E);
 
 	E->value.nodes.erase(p_node);
@@ -201,7 +201,7 @@ void SceneTree::_update_group_order(SceneTreeGroup& g)
 
 Window* SceneTree::get_root() const { return root; }
 
-void SceneTree::notify_group(const StringName& p_group, int p_notification)
+void SceneTree::notify_group(const String& p_group, int p_notification)
 {
 	notify_group_flags(GROUP_CALL_DEFAULT, p_group, p_notification);
 }
@@ -645,16 +645,16 @@ void SceneTree::_add_node_to_process_group(Node* p_node, Node* p_owner)
 
 int64_t SceneTree::get_frame() const { return current_frame; }
 
-bool SceneTree::has_group(const StringName& p_identifier) const
+bool SceneTree::has_group(const String& p_identifier) const
 {
 	_THREAD_SAFE_METHOD_
 	return group_map.has(p_identifier);
 }
 
-int SceneTree::get_node_count_in_group(const StringName& p_group) const
+int SceneTree::get_node_count_in_group(const String& p_group) const
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<StringName, SceneTreeGroup>::ConstIterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::ConstIterator E = group_map.find(p_group);
 	if (!E) {
 		return 0;
 	}
@@ -662,10 +662,10 @@ int SceneTree::get_node_count_in_group(const StringName& p_group) const
 	return E->value.nodes.size();
 }
 
-Node* SceneTree::get_first_node_in_group(const StringName& p_group)
+Node* SceneTree::get_first_node_in_group(const String& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<StringName, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
 	if (!E) {
 		return nullptr; // No group.
 	}
@@ -679,10 +679,10 @@ Node* SceneTree::get_first_node_in_group(const StringName& p_group)
 	return E->value.nodes[0];
 }
 
-Vector<Node*> SceneTree::get_nodes_in_group(const StringName& p_group)
+Vector<Node*> SceneTree::get_nodes_in_group(const String& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<StringName, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
 	if (!E) {
 		return {};
 	}
@@ -812,14 +812,14 @@ MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path) const
 		return multiplayer.ptr();
 	}
 
-	const Vector<StringName> tnames = p_for_path.get_names();
-	const StringName* nptr = tnames.ptr();
+	const Vector<String> tnames = p_for_path.get_names();
+	const String* nptr = tnames.ptr();
 	for (const KeyValue<NodePath, Ref<MultiplayerAPI>>& E : custom_multiplayers) {
-		const Vector<StringName> snames = E.key.get_names();
+		const Vector<String> snames = E.key.get_names();
 		if (tnames.size() < snames.size()) {
 			continue;
 		}
-		const StringName* sptr = snames.ptr();
+		const String* sptr = snames.ptr();
 		bool valid = true;
 		for (int i = 0; i < snames.size(); i++) {
 			if (sptr[i] != nptr[i]) {
@@ -881,7 +881,7 @@ Error SceneTree::change_scene_to_node(Node*) { return OK; }
 
 void SceneTree::_process_group(SceneTree::ProcessGroup*, bool) {}
 
-void SceneTree::notify_group_flags(unsigned int, StringName const&, int) {}
+void SceneTree::notify_group_flags(unsigned int, String const&, int) {}
 
 void SceneTree::_flush_ugc() {}
 

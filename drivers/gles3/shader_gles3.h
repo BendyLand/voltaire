@@ -46,7 +46,7 @@ class ShaderGLES3
 public:
 	struct TextureUniformData
 	{
-		StringName name;
+		String name;
 		int array_size;
 	};
 
@@ -93,7 +93,7 @@ private:
 		CharString uniforms;
 		CharString vertex_globals;
 		CharString fragment_globals;
-		HashMap<StringName, CharString> code_sections;
+		HashMap<String, CharString> code_sections;
 		Vector<CharString> custom_defines;
 
 		struct Specialization
@@ -140,7 +140,7 @@ private:
 			};
 
 			Type type;
-			StringName code;
+			String code;
 			CharString text;
 		};
 

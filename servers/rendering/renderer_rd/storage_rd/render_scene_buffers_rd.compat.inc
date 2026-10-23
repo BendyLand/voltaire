@@ -62,8 +62,8 @@ RID RenderSceneBuffersRD::_get_velocity_layer_bind_compat_80214(const uint32_t p
 	return _get_velocity_layer(p_layer, msaa_3d != RSE::VIEWPORT_MSAA_DISABLED);
 }
 
-RID RenderSceneBuffersRD::_create_texture_bind_compat_98670(const StringName& p_context,
-	const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+RID RenderSceneBuffersRD::_create_texture_bind_compat_98670(const String& p_context,
+	const String& p_texture_name, const RDC::DataFormat p_data_format,
 	const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples, const Size2i p_size,
 	const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique)
 {

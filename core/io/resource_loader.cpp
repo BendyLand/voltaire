@@ -72,7 +72,7 @@ bool ResourceFormatLoader::recognize_path(const String& p_path, const String& p_
 	return false;
 }
 
-void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<StringName>* r_classes)
+void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
 	Vector<String> ret;
 	for (int i = 0; i < ret.size(); i++) {
@@ -850,7 +850,7 @@ Error ResourceLoader::rename_dependencies(
 	return OK; // ??
 }
 
-void ResourceLoader::get_classes_used(const String& p_path, HashSet<StringName>* r_classes)
+void ResourceLoader::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
 	String local_path = _validate_local_path(p_path);
 

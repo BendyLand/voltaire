@@ -59,7 +59,7 @@ String EditorPerformanceProfiler::_format_label(
 	}
 }
 
-List<float>* EditorPerformanceProfiler::get_monitor_data(const StringName& p_name)
+List<float>* EditorPerformanceProfiler::get_monitor_data(const String& p_name)
 {
 	if (monitors.has(p_name)) {
 		return &monitors[p_name].history;

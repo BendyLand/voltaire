@@ -45,7 +45,7 @@ public:
 	float offset = 0.0f;
 	float pitch_scale = 1.0;
 	Vector<AudioFrame> volume_vector;
-	StringName bus;
+	String bus;
 };
 
 class AudioSample : public RefCounted
@@ -261,7 +261,7 @@ private:
 
 protected:
 
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}

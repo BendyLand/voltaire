@@ -34,7 +34,7 @@
 #include "scene/resources/shader.h"
 #endif
 
-const HashMap<StringName, ShaderLanguage::FunctionInfo>& ShaderTypes::get_functions(
+const HashMap<String, ShaderLanguage::FunctionInfo>& ShaderTypes::get_functions(
 	RSE::ShaderMode p_mode)
 {
 	return shader_modes[p_mode].functions;

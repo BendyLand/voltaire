@@ -255,19 +255,19 @@ void AnimationNodeStateMachineEditor::_clip_dst_line_to_rect(
 	}
 }
 
-void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& p_node)
+void AnimationNodeStateMachineEditor::_update_connected_nodes(const String& p_node)
 {
 	connected_nodes.clear();
-	if (p_node != StringName()) {
+	if (p_node != String()) {
 		connected_nodes.insert(p_node);
 
-		Vector<StringName> nodes_to = state_machine->get_nodes_with_transitions_to(p_node);
-		for (const StringName& node_to : nodes_to) {
+		Vector<String> nodes_to = state_machine->get_nodes_with_transitions_to(p_node);
+		for (const String& node_to : nodes_to) {
 			connected_nodes.insert(node_to);
 		}
 
-		Vector<StringName> nodes_from = state_machine->get_nodes_with_transitions_from(p_node);
-		for (const StringName& node_from : nodes_from) {
+		Vector<String> nodes_from = state_machine->get_nodes_with_transitions_from(p_node);
+		for (const String& node_from : nodes_from) {
 			connected_nodes.insert(node_from);
 		}
 	}
@@ -275,8 +275,8 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const StringName& 
 
 AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;
 
-void EditorAnimationMultiTransitionEdit::add_transition(const StringName& p_from,
-	const StringName& p_to, Ref<AnimationNodeStateMachineTransition> p_transition)
+void EditorAnimationMultiTransitionEdit::add_transition(const String& p_from,
+	const String& p_to, Ref<AnimationNodeStateMachineTransition> p_transition)
 {
 	Transition tr;
 	tr.from = p_from;

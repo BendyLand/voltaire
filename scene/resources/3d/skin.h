@@ -37,7 +37,7 @@ class Skin : public Resource
 	struct Bind
 	{
 		int bone = -1;
-		StringName name;
+		String name;
 		Transform3D pose;
 	};
 
@@ -59,7 +59,7 @@ public:
 
 	void set_bind_bone(int p_index, int p_bone);
 	void set_bind_pose(int p_index, const Transform3D& p_pose);
-	void set_bind_name(int p_index, const StringName& p_name);
+	void set_bind_name(int p_index, const String& p_name);
 
 	inline int get_bind_bone(int p_index) const
 	{
@@ -67,9 +67,9 @@ public:
 		return binds_ptr[p_index].bone;
 	}
 
-	inline StringName get_bind_name(int p_index) const
+	inline String get_bind_name(int p_index) const
 	{
-		ERR_FAIL_INDEX_V(p_index, bind_count, StringName());
+		ERR_FAIL_INDEX_V(p_index, bind_count, String());
 		return binds_ptr[p_index].name;
 	}
 

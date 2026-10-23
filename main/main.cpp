@@ -716,7 +716,7 @@ void Main::print_help(const char* p_binary)
 		"Show navigation avoidance debug visuals when running the scene.\n",
 		CLI_OPTION_AVAILABILITY_TEMPLATE_DEBUG);
 	print_help_option("--debug-stringnames",
-		"Print all StringName allocations to stdout when the engine quits.\n",
+		"Print all String allocations to stdout when the engine quits.\n",
 		CLI_OPTION_AVAILABILITY_TEMPLATE_DEBUG);
 	print_help_option("--debug-canvas-item-redraw",
 		"Display a rectangle each time a canvas item requests a redraw (useful to troubleshoot low "
@@ -1089,7 +1089,7 @@ void Main::test_cleanup()
 
 	unregister_core_types();
 
-	StringName::cleanup();
+	String::cleanup();
 
 	OS::get_singleton()->finalize_core();
 
@@ -2162,9 +2162,6 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--debug-canvas-item-redraw") {
 			debug_canvas_item_redraw = true;
-		}
-		else if (arg == "--debug-stringnames") {
-			StringName::set_debug_stringnames(true);
 		}
 		else if (arg == "--debug-mute-audio") {
 			debug_mute_audio = true;
@@ -4341,8 +4338,6 @@ void Main::cleanup(bool p_force)
 	unregister_core_extensions();
 
 	unregister_core_types();
-
-	StringName::cleanup();
 
 	OS::get_singleton()->benchmark_end_measure("Shutdown", "Main::Cleanup");
 	OS::get_singleton()->benchmark_dump();

@@ -68,7 +68,7 @@ OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_prof
 	new_profile_editor->setup(action_map, p_interaction_profile);
 	tabs->add_child(new_profile_editor);
 	new_profile_editor->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
+		SceneString(panel), get_theme_stylebox(SceneString(panel), SNAME("Tree")).ptr());
 	tabs->set_tab_button_icon(
 		tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
 

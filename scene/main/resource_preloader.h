@@ -34,20 +34,20 @@
 
 class ResourcePreloader : public Node
 {
-	HashMap<StringName, Ref<Resource>> resources;
+	HashMap<String, Ref<Resource>> resources;
 
 	Vector<String> _get_resource_list() const;
 
 protected:
 
 public:
-	void add_resource(const StringName& p_name, const Ref<Resource>& p_resource);
-	void remove_resource(const StringName& p_name);
-	void rename_resource(const StringName& p_from_name, const StringName& p_to_name);
-	bool has_resource(const StringName& p_name) const;
-	Ref<Resource> get_resource(const StringName& p_name) const;
+	void add_resource(const String& p_name, const Ref<Resource>& p_resource);
+	void remove_resource(const String& p_name);
+	void rename_resource(const String& p_from_name, const String& p_to_name);
+	bool has_resource(const String& p_name) const;
+	Ref<Resource> get_resource(const String& p_name) const;
 
-	void get_resource_list(List<StringName>* p_list);
+	void get_resource_list(List<String>* p_list);
 
 	ResourcePreloader();
 };

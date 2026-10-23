@@ -149,7 +149,7 @@ void EditorAssetLibrary::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_READY: {
 		add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
+			SceneString(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
 		error_label->move_to_front();
 	} break;
 

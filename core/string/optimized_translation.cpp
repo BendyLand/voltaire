@@ -51,13 +51,13 @@ bool OptimizedTranslation::generate(const Ref<Translation>& p_from)
 #ifdef TOOLS_ENABLED
 	ERR_FAIL_COND_V(p_from.is_null(), false);
 
-	List<StringName> keys;
+	List<String> keys;
 	{
-		List<StringName> raw_keys;
+		List<String> raw_keys;
 		p_from->get_message_list(&raw_keys);
 
-		for (const StringName& key : raw_keys) {
-			const String key_str = key.string();
+		for (const String& key : raw_keys) {
+			const String key_str = key;
 			int p = key_str.find_char(0x04);
 			if (p == -1) {
 				keys.push_back(key);
@@ -87,9 +87,9 @@ bool OptimizedTranslation::generate(const Ref<Translation>& p_from)
 	int idx = 0;
 	int total_compression_size = 0;
 
-	for (const StringName& E : keys) {
+	for (const String& E : keys) {
 		// hash string
-		CharString cs = E.string().utf8();
+		CharString cs = E.utf8();
 		uint32_t h = hash(0, cs.get_data());
 		Pair<int, CharString> p;
 		p.first = idx;
@@ -97,7 +97,7 @@ bool OptimizedTranslation::generate(const Ref<Translation>& p_from)
 		buckets.write[h % size].push_back(p);
 
 		// compress string
-		CharString src_s = p_from->get_message(E).string().utf8();
+		CharString src_s = p_from->get_message(E).utf8();
 		CompressedString ps;
 		ps.orig_len = src_s.size();
 		ps.offset = total_compression_size;
@@ -207,8 +207,8 @@ bool OptimizedTranslation::generate(const Ref<Translation>& p_from)
 #endif
 }
 
-StringName OptimizedTranslation::get_message(
-	const StringName& p_src_text, const StringName& p_context) const
+String OptimizedTranslation::get_message(
+	const String& p_src_text, const String& p_context) const
 {
 	// p_context passed in is ignore. The use of context is not yet supported in
 	// OptimizedTranslation.
@@ -216,10 +216,10 @@ StringName OptimizedTranslation::get_message(
 	int htsize = hash_table.size();
 
 	if (htsize == 0) {
-		return StringName();
+		return String();
 	}
 
-	CharString str = p_src_text.string().utf8();
+	CharString str = p_src_text.utf8();
 	uint32_t h = hash(0, str.get_data());
 
 	const int* htr = hash_table.ptr();
@@ -232,7 +232,7 @@ StringName OptimizedTranslation::get_message(
 	uint32_t p = htptr[h % htsize];
 
 	if (p == 0xFFFFFFFF) {
-		return StringName(); // nothing
+		return String(); // nothing
 	}
 
 	const Bucket& bucket = *(const Bucket*)&btptr[p];
@@ -249,7 +249,7 @@ StringName OptimizedTranslation::get_message(
 	}
 
 	if (idx == -1) {
-		return StringName();
+		return String();
 	}
 
 	if (bucket.elem[idx].comp_size == bucket.elem[idx].uncomp_size) {
@@ -299,8 +299,8 @@ Vector<String> OptimizedTranslation::get_translated_message_list() const
 	return msgs;
 }
 
-StringName OptimizedTranslation::get_plural_message(const StringName& p_src_text,
-	const StringName& p_plural_text, int p_n, const StringName& p_context) const
+String OptimizedTranslation::get_plural_message(const String& p_src_text,
+	const String& p_plural_text, int p_n, const String& p_context) const
 {
 	// The use of plurals translation is not yet supported in OptimizedTranslation.
 	return get_message(p_src_text, p_context);
@@ -312,7 +312,7 @@ Vector<String> OptimizedTranslation::_get_message_list() const
 	return {};
 }
 
-void OptimizedTranslation::get_message_list(List<StringName>* r_messages) const
+void OptimizedTranslation::get_message_list(List<String>* r_messages) const
 {
 	WARN_PRINT_ONCE("OptimizedTranslation does not store the message texts to be translated.");
 }

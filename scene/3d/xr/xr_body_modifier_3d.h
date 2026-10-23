@@ -57,8 +57,8 @@ public:
 		BONE_UPDATE_MAX
 	};
 
-	void set_body_tracker(const StringName& p_tracker_name);
-	StringName get_body_tracker() const;
+	void set_body_tracker(const String& p_tracker_name);
+	String get_body_tracker() const;
 
 	void set_body_update(uint32_t p_body_update);
 	uint32_t get_body_update() const;
@@ -80,13 +80,13 @@ private:
 		int parent_joint = -1;
 	};
 
-	StringName tracker_name = "/user/body_tracker";
+	String tracker_name = "/user/body_tracker";
 	uint32_t body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
 	BoneUpdate bone_update = BONE_UPDATE_FULL;
 	JointData joints[XRBodyTracker::JOINT_MAX];
 
 	void _get_joint_data();
-	void _tracker_changed(const StringName& p_tracker_name, XRServer::TrackerType p_tracker_type);
+	void _tracker_changed(const String& p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
 
 

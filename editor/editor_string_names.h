@@ -30,24 +30,24 @@
 
 #pragma once
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 
-class EditorStringNames {
-	inline static EditorStringNames *singleton = nullptr;
+class EditorStrings {
+	inline static EditorStrings *singleton = nullptr;
 
 public:
-	static void create() { singleton = memnew(EditorStringNames); }
+	static void create() { singleton = memnew(EditorStrings); }
 	static void free() {
 		memdelete(singleton);
 		singleton = nullptr;
 	}
 
-	_FORCE_INLINE_ static EditorStringNames *get_singleton() { return singleton; }
+	_FORCE_INLINE_ static EditorStrings *get_singleton() { return singleton; }
 
-	const StringName Editor = StringName("Editor");
-	const StringName EditorFonts = StringName("EditorFonts");
-	const StringName EditorIcons = StringName("EditorIcons");
-	const StringName EditorStyles = StringName("EditorStyles");
+	const String Editor = String("Editor");
+	const String EditorFonts = String("EditorFonts");
+	const String EditorIcons = String("EditorIcons");
+	const String EditorStyles = String("EditorStyles");
 };
 
-#define EditorStringName(m_name) EditorStringNames::get_singleton()->m_name
+#define EditorString(m_name) EditorStrings::get_singleton()->m_name

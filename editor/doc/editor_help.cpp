@@ -330,7 +330,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 // Macros for assigning the deprecated/experimental marks to class members in overview.
 #define DEPRECATED_DOC_TAG                                                                         \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
-	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));       \
+	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorString(Editor)));       \
 	Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));                       \
 	class_desc->add_image(error_icon, error_icon->get_width(), error_icon->get_height());          \
 	class_desc->add_text(String::chr(160) + TTR("Deprecated"));                                    \
@@ -339,7 +339,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 
 #define EXPERIMENTAL_DOC_TAG                                                                       \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
-	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));     \
+	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorString(Editor)));     \
 	Ref<Texture2D> warning_icon = get_editor_theme_icon(SNAME("NodeWarning"));                     \
 	class_desc->add_image(warning_icon, warning_icon->get_width(), warning_icon->get_height());    \
 	class_desc->add_text(String::chr(160) + TTR("Experimental"));                                  \
@@ -351,7 +351,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 	Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));                       \
 	class_desc->add_image(error_icon, error_icon->get_width(), error_icon->get_height());          \
 	class_desc->add_text(nbsp);                                                                    \
-	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));       \
+	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorString(Editor)));       \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
 	class_desc->add_text(TTR("Deprecated:"));                                                      \
 	class_desc->pop();                                                                             \
@@ -368,7 +368,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 	Ref<Texture2D> warning_icon = get_editor_theme_icon(SNAME("NodeWarning"));                     \
 	class_desc->add_image(warning_icon, warning_icon->get_width(), warning_icon->get_height());    \
 	class_desc->add_text(nbsp);                                                                    \
-	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));     \
+	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorString(Editor)));     \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
 	class_desc->add_text(TTR("Experimental:"));                                                    \
 	class_desc->pop();                                                                             \
@@ -1263,12 +1263,12 @@ void EditorHelpHighlighter::reset_cache()
 #ifdef MODULE_GDSCRIPT_ENABLED
 	highlight_data_caches[LANGUAGE_GDSCRIPT].clear();
 	text_edits[LANGUAGE_GDSCRIPT]->add_theme_color_override(
-		SceneStringName(font_color), text_color);
+		SceneString(font_color), text_color);
 #endif
 
 #ifdef MODULE_MONO_ENABLED
 	highlight_data_caches[LANGUAGE_CSHARP].clear();
-	text_edits[LANGUAGE_CSHARP]->add_theme_color_override(SceneStringName(font_color), text_color);
+	text_edits[LANGUAGE_CSHARP]->add_theme_color_override(SceneString(font_color), text_color);
 #endif
 }
 
@@ -1277,7 +1277,7 @@ EditorHelpHighlighter::EditorHelpHighlighter()
 #ifdef MODULE_MONO_E
 	NABLED
 	TextEdit* csharp_text_edit = memnew(TextEdit);
-	csharp_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
+	csharp_text_edit->add_theme_color_override(SceneString(font_color), text_color);
 
 	// See G
 	H - 89610.
@@ -1413,43 +1413,43 @@ void EditorHelp::_gen_doc_thread(void*) {}
 void EditorHelp::_compute_doc_version_hash() {}
 
 EditorHelpBit::HelpData EditorHelpBit::_get_theme_item_help_data(
-	StringName const&, StringName const&)
+	String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_enum_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_enum_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_constant_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_constant_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_class_help_data(StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_class_help_data(String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
 EditorHelpBit::HelpData EditorHelpBit::_get_annotation_help_data(
-	StringName const&, StringName const&)
+	String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }

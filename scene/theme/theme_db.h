@@ -68,14 +68,14 @@ class ThemeDB
 	// Binding of theme items to Node classes.
 
 public:
-	typedef std::function<void(Node*, const StringName&, const StringName&)> ThemeItemSetter;
+	typedef std::function<void(Node*, const String&, const String&)> ThemeItemSetter;
 
 	struct ThemeItemBind
 	{
 		Theme::DataType data_type;
-		StringName class_name;
-		StringName item_name;
-		StringName type_name;
+		String class_name;
+		String item_name;
+		String type_name;
 		bool external = false;
 
 		ThemeItemSetter setter;
@@ -90,8 +90,8 @@ public:
 	};
 
 private:
-	HashMap<StringName, HashMap<StringName, ThemeItemBind>> theme_item_binds;
-	HashMap<StringName, List<ThemeItemBind>> theme_item_binds_list; // Used for listing purposes.
+	HashMap<String, HashMap<String, ThemeItemBind>> theme_item_binds;
+	HashMap<String, List<ThemeItemBind>> theme_item_binds_list; // Used for listing purposes.
 
 	void _sort_theme_items();
 
@@ -125,7 +125,7 @@ public:
 	void set_fallback_stylebox(const Ref<StyleBox>& p_stylebox);
 	Ref<StyleBox> get_fallback_stylebox();
 
-	void get_native_type_dependencies(const StringName& p_base_type, Vector<StringName>& r_result);
+	void get_native_type_dependencies(const String& p_base_type, Vector<String>& r_result);
 
 	// Global theme contexts.
 
@@ -138,14 +138,14 @@ public:
 
 	// Theme item binding.
 
-	void bind_class_item(Theme::DataType p_data_type, const StringName& p_class_name,
-		const StringName& p_prop_name, const StringName& p_item_name, ThemeItemSetter p_setter);
-	void bind_class_external_item(Theme::DataType p_data_type, const StringName& p_class_name,
-		const StringName& p_prop_name, const StringName& p_item_name, const StringName& p_type_name,
+	void bind_class_item(Theme::DataType p_data_type, const String& p_class_name,
+		const String& p_prop_name, const String& p_item_name, ThemeItemSetter p_setter);
+	void bind_class_external_item(Theme::DataType p_data_type, const String& p_class_name,
+		const String& p_prop_name, const String& p_item_name, const String& p_type_name,
 		ThemeItemSetter p_setter);
 	void update_class_instance_items(Node* p_instance);
 
-	void get_class_items(const StringName& p_class_name, List<ThemeItemBind>* r_list,
+	void get_class_items(const String& p_class_name, List<ThemeItemBind>* r_list,
 		bool p_include_inherited = false, Theme::DataType p_filter_type = Theme::DATA_TYPE_MAX);
 
 	// Memory management, reference, and initialization.

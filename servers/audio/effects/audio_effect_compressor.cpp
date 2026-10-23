@@ -52,7 +52,7 @@ void AudioEffectCompressorInstance::process(
 
 	const AudioFrame* src = p_src_frames;
 
-	if (base->sidechain != StringName() && current_channel != -1) {
+	if (base->sidechain != String() && current_channel != -1) {
 		int bus = AudioServer::get_singleton()->thread_find_bus_index(base->sidechain);
 		if (bus >= 0) {
 			src = AudioServer::get_singleton()->thread_get_channel_mix_buffer(bus, current_channel);
@@ -158,14 +158,14 @@ void AudioEffectCompressor::set_mix(float p_mix) { mix = p_mix; }
 
 float AudioEffectCompressor::get_mix() const { return mix; }
 
-void AudioEffectCompressor::set_sidechain(const StringName& p_sidechain)
+void AudioEffectCompressor::set_sidechain(const String& p_sidechain)
 {
 	AudioServer::get_singleton()->lock();
 	sidechain = p_sidechain;
 	AudioServer::get_singleton()->unlock();
 }
 
-StringName AudioEffectCompressor::get_sidechain() const { return sidechain; }
+String AudioEffectCompressor::get_sidechain() const { return sidechain; }
 
 AudioEffectCompressor::AudioEffectCompressor()
 {

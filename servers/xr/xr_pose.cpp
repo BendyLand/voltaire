@@ -39,9 +39,9 @@ void XRPose::set_has_tracking_data(const bool p_has_tracking_data)
 
 bool XRPose::get_has_tracking_data() const { return has_tracking_data; }
 
-void XRPose::set_name(const StringName& p_name) { name = p_name; }
+void XRPose::set_name(const String& p_name) { name = p_name; }
 
-StringName XRPose::get_name() const { return name; }
+String XRPose::get_name() const { return name; }
 
 void XRPose::set_transform(const Transform3D p_transform) { transform = p_transform; }
 

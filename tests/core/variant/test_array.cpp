@@ -766,7 +766,7 @@ TEST_CASE("[Array] Test typed arrays") {
 	Array arr1;
 	CHECK_FALSE(arr1.is_typed());
 
-	arr1.set_typed(Variant::FLOAT, StringName(), Variant());
+	arr1.set_typed(Variant::FLOAT, String(), Variant());
 	CHECK(arr1.is_typed());
 	CHECK_EQ(arr1.get_typed_builtin(), Variant::FLOAT);
 
@@ -779,7 +779,7 @@ TEST_CASE("[Array] Test typed arrays") {
 	ERR_PRINT_ON;
 
 	Array arr2;
-	arr2.set_typed(Variant::INT, StringName(), Variant());
+	arr2.set_typed(Variant::INT, String(), Variant());
 	CHECK_FALSE(arr1.is_same_typed(arr2));
 
 	Array arr3;

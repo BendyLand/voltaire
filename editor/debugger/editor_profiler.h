@@ -56,13 +56,13 @@ public:
 
 		struct Category
 		{
-			StringName signature;
+			String signature;
 			String name;
 			float total_time = 0; // total for category
 
 			struct Item
 			{
-				StringName signature;
+				String signature;
 				String name;
 				String script;
 				int line = 0;
@@ -77,8 +77,8 @@ public:
 
 		Vector<Category> categories;
 
-		HashMap<StringName, Category*> category_ptrs;
-		HashMap<StringName, Category::Item*> item_ptrs;
+		HashMap<String, Category*> category_ptrs;
+		HashMap<String, Category::Item*> item_ptrs;
 	};
 
 	enum DisplayMode
@@ -115,8 +115,8 @@ private:
 	Tree* variables = nullptr;
 	HSplitContainer* h_split = nullptr;
 
-	HashSet<StringName> plot_sigs;
-	HashSet<StringName> collapsed_categories;
+	HashSet<String> plot_sigs;
+	HashSet<String> collapsed_categories;
 
 	OptionButton* display_mode = nullptr;
 	OptionButton* display_time = nullptr;

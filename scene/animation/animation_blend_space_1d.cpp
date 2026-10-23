@@ -32,7 +32,7 @@
 #include "animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_tree.h"
 
-Ref<AnimationNode> AnimationNodeBlendSpace1D::get_child_by_name(const StringName& p_name) const
+Ref<AnimationNode> AnimationNodeBlendSpace1D::get_child_by_name(const String& p_name) const
 {
 	int point_index = find_blend_point_by_name(p_name);
 	if (point_index != -1) {
@@ -48,7 +48,7 @@ void AnimationNodeBlendSpace1D::_tree_changed()
 }
 
 void AnimationNodeBlendSpace1D::validate_node(
-	const AnimationTree* p_tree, const StringName& p_path) const
+	const AnimationTree* p_tree, const String& p_path) const
 {
 	AnimationRootNode::validate_node(p_tree, p_path);
 
@@ -73,13 +73,13 @@ void AnimationNodeBlendSpace1D::get_child_nodes(LocalVector<ChildNode>* r_child_
 }
 
 void AnimationNodeBlendSpace1D::add_blend_point(const Ref<AnimationRootNode>& p_node,
-	float p_position, int p_at_index, const StringName& p_name)
+	float p_position, int p_at_index, const String& p_name)
 {
 	ERR_FAIL_COND(blend_points_used >= MAX_BLEND_POINTS);
 	ERR_FAIL_COND(p_node.is_null());
 	ERR_FAIL_COND(p_at_index < -1 || p_at_index > blend_points_used);
 #ifndef DISABLE_DEPRECATED
-	if (p_name == StringName()) {
+	if (p_name == String()) {
 		_add_blend_point_bind_compat_110369(p_node, p_position, p_at_index);
 		WARN_PRINT_ED("AnimationNodeBlendSpace1D::add_blend_point: No name provided, using safe "
 					  "index as reference. In the future, empty names will be deprecated, so "
@@ -87,7 +87,7 @@ void AnimationNodeBlendSpace1D::add_blend_point(const Ref<AnimationRootNode>& p_
 		return;
 	}
 #else
-	ERR_FAIL_COND(p_name == StringName());
+	ERR_FAIL_COND(p_name == String());
 #endif
 	if (p_at_index == -1 || p_at_index == blend_points_used) {
 		p_at_index = blend_points_used;
@@ -145,14 +145,14 @@ Ref<AnimationRootNode> AnimationNodeBlendSpace1D::get_blend_point_node(int p_poi
 	return blend_points[p_point].node;
 }
 
-const StringName& AnimationNodeBlendSpace1D::get_blend_point_name(int p_point) const
+const String& AnimationNodeBlendSpace1D::get_blend_point_name(int p_point) const
 {
-	const static StringName empty = StringName();
+	const static String empty = String();
 	ERR_FAIL_INDEX_V(p_point, blend_points_used, empty);
 	return blend_points[p_point].name;
 }
 
-int AnimationNodeBlendSpace1D::find_blend_point_by_name(const StringName& p_name) const
+int AnimationNodeBlendSpace1D::find_blend_point_by_name(const String& p_name) const
 {
 	for (int i = 0; i < blend_points_used; i++) {
 		if (blend_points[i].name == p_name) {

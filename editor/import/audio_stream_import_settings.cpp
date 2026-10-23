@@ -49,11 +49,11 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	float preview_offset = zoom_bar->get_value();
 	float preview_len = zoom_bar->get_page();
 
-	Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorStringName(EditorFonts));
-	int main_size = get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts));
+	Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorString(EditorFonts));
+	int main_size = get_theme_font_size(SNAME("main_size"), EditorString(EditorFonts));
 	Vector<Vector2> points;
 	points.resize(width * 2);
-	Color color_active = get_theme_color(SNAME("contrast_color_2"), EditorStringName(Editor));
+	Color color_active = get_theme_color(SNAME("contrast_color_2"), EditorString(Editor));
 	Color color_inactive = color_active;
 	color_inactive.a *= 0.5;
 	Vector<Color> colors;
@@ -145,8 +145,8 @@ void AudioStreamImportSettingsDialog::_draw_indicator()
 
 	Rect2 rect = _preview->get_rect();
 
-	Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorStringName(EditorFonts));
-	int main_size = get_theme_font_size(SNAME("main_size"), EditorStringName(EditorFonts));
+	Ref<Font> beat_font = get_theme_font(SNAME("main"), EditorString(EditorFonts));
+	int main_size = get_theme_font_size(SNAME("main_size"), EditorString(EditorFonts));
 
 	if (stream->get_bpm() > 0) {
 		int y_ofs = beat_font->get_height(main_size) + 4 * EDSCALE;
@@ -161,7 +161,7 @@ void AudioStreamImportSettingsDialog::_draw_indicator()
 		return;
 	}
 
-	const Color color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
+	const Color color = get_theme_color(SNAME("accent_color"), EditorString(Editor));
 	_indicator->draw_line(Point2(ofs_x, rect.position.y),
 		Point2(ofs_x, rect.position.y + rect.size.height), color, Math::round(2 * EDSCALE));
 	_indicator->draw_texture(get_editor_theme_icon(SNAME("TimelineIndicator")).ptr(),

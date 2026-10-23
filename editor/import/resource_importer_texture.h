@@ -81,7 +81,7 @@ protected:
 		RSE::TextureDetectRoughnessChannel channel_for_roughness = RSE::TEXTURE_DETECT_ROUGHNESS_R;
 	};
 
-	HashMap<StringName, MakeInfo> make_flags;
+	HashMap<String, MakeInfo> make_flags;
 
 	static void _texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
 		const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel);

@@ -662,7 +662,7 @@ class EditorPropertyNodePath : public EditorProperty
 	bool editing_node = false;
 	bool dropping = false;
 
-	Vector<StringName> valid_types;
+	Vector<String> valid_types;
 	void _node_selected(const NodePath& p_path, bool p_absolute = true);
 	void _node_assign();
 	Node* get_base_node();
@@ -676,7 +676,7 @@ protected:
 
 public:
 	virtual void update_property() override;
-	void setup(const Vector<StringName>& p_valid_types, bool p_use_path_from_scene_root = true,
+	void setup(const Vector<String>& p_valid_types, bool p_use_path_from_scene_root = true,
 		bool p_editing_node = false);
 	EditorPropertyNodePath();
 };

@@ -69,13 +69,13 @@ void QuickSettingsDialog::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		settings_list_panel->add_theme_style_override(SceneStringName(panel),
+		settings_list_panel->add_theme_style_override(SceneString(panel),
 			get_theme_stylebox(SNAME("quick_settings_panel"), SNAME("ProjectManager")).ptr());
 
-		restart_required_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));
-		custom_theme_label->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("font_placeholder_color"), EditorStringName(Editor)));
+		restart_required_label->add_theme_color_override(SceneString(font_color),
+			get_theme_color(SNAME("warning_color"), EditorString(Editor)));
+		custom_theme_label->add_theme_color_override(SceneString(font_color),
+			get_theme_color(SNAME("font_placeholder_color"), EditorString(Editor)));
 	} break;
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {

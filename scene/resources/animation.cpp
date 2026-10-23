@@ -179,7 +179,7 @@ void Animation::track_set_path(int p_track, const NodePath& p_path)
 {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_track, tracks.size());
 	tracks[p_track]->path = p_path;
-	tracks[p_track]->concatenated_path = StringName(String(tracks[p_track]->path));
+	tracks[p_track]->concatenated_path = String(String(tracks[p_track]->path));
 	emit_changed();
 }
 
@@ -1025,7 +1025,7 @@ void Animation::_track_get_key_indices_in_range(const LocalVector<T>& p_array, d
 	}
 }
 
-void Animation::add_marker(const StringName& p_name, double p_time)
+void Animation::add_marker(const String& p_name, double p_time)
 {
 	int idx = _find(marker_names, p_time);
 
@@ -1044,9 +1044,9 @@ void Animation::add_marker(const StringName& p_name, double p_time)
 	}
 }
 
-void Animation::remove_marker(const StringName& p_name)
+void Animation::remove_marker(const String& p_name)
 {
-	HashMap<StringName, double>::Iterator E = marker_times.find(p_name);
+	HashMap<String, double>::Iterator E = marker_times.find(p_name);
 	ERR_FAIL_COND(!E);
 	int idx = _find(marker_names, E->value);
 	bool success = (uint32_t)idx < marker_names.size() &&
@@ -1057,9 +1057,9 @@ void Animation::remove_marker(const StringName& p_name)
 	marker_colors.erase(p_name);
 }
 
-bool Animation::has_marker(const StringName& p_name) const { return marker_times.has(p_name); }
+bool Animation::has_marker(const String& p_name) const { return marker_times.has(p_name); }
 
-StringName Animation::get_marker_at_time(double p_time) const
+String Animation::get_marker_at_time(double p_time) const
 {
 	int idx = _find(marker_names, p_time);
 
@@ -1068,10 +1068,10 @@ StringName Animation::get_marker_at_time(double p_time) const
 		return marker_names[idx].name;
 	}
 
-	return StringName();
+	return String();
 }
 
-StringName Animation::get_next_marker(double p_time) const
+String Animation::get_next_marker(double p_time) const
 {
 	int idx = _find(marker_names, p_time);
 
@@ -1080,26 +1080,26 @@ StringName Animation::get_next_marker(double p_time) const
 		// smaller to it. So we add 1 to get the next marker.
 		return marker_names[idx + 1].name;
 	}
-	return StringName();
+	return String();
 }
 
-StringName Animation::get_prev_marker(double p_time) const
+String Animation::get_prev_marker(double p_time) const
 {
 	int idx = _find(marker_names, p_time);
 
 	if ((uint32_t)idx < marker_names.size()) {
 		return marker_names[idx].name;
 	}
-	return StringName();
+	return String();
 }
 
-double Animation::get_marker_time(const StringName& p_name) const
+double Animation::get_marker_time(const String& p_name) const
 {
 	ERR_FAIL_COND_V(!marker_times.has(p_name), -1);
 	return marker_times.get(p_name);
 }
 
-// TODO: This needs to be a TypedArray<StringName> see this PR for rationale
+// TODO: This needs to be a TypedArray<String> see this PR for rationale
 // https://github.com/godotengine/godot/pull/110767/
 PackedStringArray Animation::get_marker_names() const
 {
@@ -1111,26 +1111,26 @@ PackedStringArray Animation::get_marker_names() const
 	return names;
 }
 
-Color Animation::get_marker_color(const StringName& p_name) const
+Color Animation::get_marker_color(const String& p_name) const
 {
 	ERR_FAIL_COND_V(!marker_colors.has(p_name), Color());
 	return marker_colors[p_name];
 }
 
-void Animation::set_marker_color(const StringName& p_name, const Color& p_color)
+void Animation::set_marker_color(const String& p_name, const Color& p_color)
 {
 	marker_colors[p_name] = p_color;
 }
 
-StringName Animation::method_track_get_name(int p_track, int p_key_idx) const
+String Animation::method_track_get_name(int p_track, int p_key_idx) const
 {
-	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), StringName());
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), String());
 	Track* t = tracks[p_track];
-	ERR_FAIL_COND_V(t->type != TYPE_METHOD, StringName());
+	ERR_FAIL_COND_V(t->type != TYPE_METHOD, String());
 
 	MethodTrack* pm = static_cast<MethodTrack*>(t);
 
-	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_key_idx, pm->methods.size(), StringName());
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_key_idx, pm->methods.size(), String());
 
 	return pm->methods[p_key_idx].method;
 }
@@ -1646,7 +1646,7 @@ bool Animation::audio_track_is_use_blend(int p_track) const
 	return at->use_blend;
 }
 
-int Animation::animation_track_insert_key(int p_track, double p_time, const StringName& p_animation)
+int Animation::animation_track_insert_key(int p_track, double p_time, const String& p_animation)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), -1);
 	Track* t = tracks[p_track];
@@ -1654,7 +1654,7 @@ int Animation::animation_track_insert_key(int p_track, double p_time, const Stri
 
 	AnimationTrack* at = static_cast<AnimationTrack*>(t);
 
-	TKey<StringName> k;
+	TKey<String> k;
 	k.time = p_time;
 	k.value = p_animation;
 
@@ -1666,7 +1666,7 @@ int Animation::animation_track_insert_key(int p_track, double p_time, const Stri
 }
 
 void Animation::animation_track_set_key_animation(
-	int p_track, int p_key, const StringName& p_animation)
+	int p_track, int p_key, const String& p_animation)
 {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_track, tracks.size());
 	Track* t = tracks[p_track];
@@ -1681,15 +1681,15 @@ void Animation::animation_track_set_key_animation(
 	emit_changed();
 }
 
-StringName Animation::animation_track_get_key_animation(int p_track, int p_key) const
+String Animation::animation_track_get_key_animation(int p_track, int p_key) const
 {
-	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), StringName());
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_track, tracks.size(), String());
 	const Track* t = tracks[p_track];
-	ERR_FAIL_COND_V(t->type != TYPE_ANIMATION, StringName());
+	ERR_FAIL_COND_V(t->type != TYPE_ANIMATION, String());
 
 	const AnimationTrack* at = static_cast<const AnimationTrack*>(t);
 
-	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_key, at->values.size(), StringName());
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)p_key, at->values.size(), String());
 
 	return at->values[p_key].value;
 }

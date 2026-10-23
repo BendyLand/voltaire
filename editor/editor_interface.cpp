@@ -304,7 +304,7 @@ bool EditorInterface::is_movie_maker_enabled() const
 }
 
 void EditorInterface::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	if (p_idx == 0) {

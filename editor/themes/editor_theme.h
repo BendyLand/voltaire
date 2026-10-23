@@ -34,7 +34,7 @@
 
 class EditorTheme : public Theme
 {
-	static Vector<StringName> editor_theme_types;
+	static Vector<String> editor_theme_types;
 
 	uint32_t generated_hash = 0;
 	uint32_t generated_fonts_hash = 0;
@@ -42,17 +42,17 @@ class EditorTheme : public Theme
 
 public:
 	virtual Color get_color(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 	virtual int get_constant(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 	virtual Ref<Font> get_font(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 	virtual int get_font_size(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 	virtual Ref<Texture2D> get_icon(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 	virtual Ref<StyleBox> get_stylebox(
-		const StringName& p_name, const StringName& p_theme_type) const override;
+		const String& p_name, const String& p_theme_type) const override;
 
 	void set_generated_hash(uint32_t p_hash) { generated_hash = p_hash; }
 

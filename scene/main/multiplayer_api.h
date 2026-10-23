@@ -35,7 +35,7 @@
 class MultiplayerAPI : public RefCounted
 {
 private:
-	static StringName default_interface;
+	static String default_interface;
 
 public:
 	enum RPCMode
@@ -47,8 +47,8 @@ public:
 	};
 
 	static Ref<MultiplayerAPI> create_default_interface();
-	static void set_default_interface(const StringName& p_interface);
-	static StringName get_default_interface();
+	static void set_default_interface(const String& p_interface);
+	static String get_default_interface();
 
 	virtual Error poll();
 	virtual void set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer);

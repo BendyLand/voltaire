@@ -132,32 +132,32 @@ void Area3D::set_audio_bus_override(bool p_override) { audio_bus_override = p_ov
 
 bool Area3D::is_overriding_audio_bus() const { return audio_bus_override; }
 
-void Area3D::set_audio_bus_name(const StringName& p_audio_bus) { audio_bus = p_audio_bus; }
+void Area3D::set_audio_bus_name(const String& p_audio_bus) { audio_bus = p_audio_bus; }
 
-StringName Area3D::get_audio_bus_name() const
+String Area3D::get_audio_bus_name() const
 {
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
 		if (AudioServer::get_singleton()->get_bus_name(i) == audio_bus) {
 			return audio_bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 void Area3D::set_use_reverb_bus(bool p_enable) { use_reverb_bus = p_enable; }
 
 bool Area3D::is_using_reverb_bus() const { return use_reverb_bus; }
 
-void Area3D::set_reverb_bus_name(const StringName& p_audio_bus) { reverb_bus = p_audio_bus; }
+void Area3D::set_reverb_bus_name(const String& p_audio_bus) { reverb_bus = p_audio_bus; }
 
-StringName Area3D::get_reverb_bus_name() const
+String Area3D::get_reverb_bus_name() const
 {
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
 		if (AudioServer::get_singleton()->get_bus_name(i) == reverb_bus) {
 			return reverb_bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 void Area3D::set_reverb_amount(float p_amount) { reverb_amount = p_amount; }

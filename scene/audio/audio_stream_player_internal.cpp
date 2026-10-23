@@ -144,7 +144,7 @@ AudioServer::PlaybackType AudioStreamPlayerInternal::get_playback_type() const
 	return playback_type;
 }
 
-StringName AudioStreamPlayerInternal::get_bus() const
+String AudioStreamPlayerInternal::get_bus() const
 {
 	const String bus_name = bus;
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
@@ -152,7 +152,7 @@ StringName AudioStreamPlayerInternal::get_bus() const
 			return bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 

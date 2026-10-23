@@ -103,10 +103,10 @@ void EditorExpressionEvaluator::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		expression_input->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("expression"), EditorStringName(EditorFonts)).ptr());
-		expression_input->add_theme_font_size_override(SceneStringName(font_size),
-			get_theme_font_size(SNAME("expression_size"), EditorStringName(EditorFonts)));
+		expression_input->add_theme_font_override(SceneString(font),
+			get_theme_font(SNAME("expression"), EditorString(EditorFonts)).ptr());
+		expression_input->add_theme_font_size_override(SceneString(font_size),
+			get_theme_font_size(SNAME("expression_size"), EditorString(EditorFonts)));
 	} break;
 	}
 }

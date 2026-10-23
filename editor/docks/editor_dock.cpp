@@ -50,7 +50,7 @@ void EditorDock::set_global(bool p_global)
 	}
 }
 
-void EditorDock::set_icon_name(const StringName& p_name)
+void EditorDock::set_icon_name(const String& p_name)
 {
 	if (icon_name == p_name) {
 		return;

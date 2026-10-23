@@ -102,7 +102,7 @@ void EditorExportPlatformPC::get_preset_features(
 }
 
 String EditorExportPlatformPC::get_export_option_warning(
-	const EditorExportPreset* p_preset, const StringName& p_name) const
+	const EditorExportPreset* p_preset, const String& p_name) const
 {
 	return String();
 }

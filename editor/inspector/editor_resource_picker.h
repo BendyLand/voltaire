@@ -51,8 +51,8 @@ class EditorResourcePicker : public HBoxContainer
 	bool force_allow_unique = false;
 
 	Vector<String> inheritors_array;
-	mutable HashSet<StringName> allowed_types_without_convert;
-	mutable HashSet<StringName> allowed_types_with_convert;
+	mutable HashSet<String> allowed_types_without_convert;
+	mutable HashSet<String> allowed_types_with_convert;
 
 	Button* assign_button = nullptr;
 	Button* make_unique_button = nullptr;
@@ -85,7 +85,7 @@ class EditorResourcePicker : public HBoxContainer
 		CONVERT_BASE_ID = 1000,
 	};
 
-	StringName property_path;
+	String property_path;
 
 	PopupMenu* edit_menu = nullptr;
 
@@ -134,7 +134,7 @@ public:
 	bool is_toggle_mode() const;
 	bool is_toggle_pressed() const;
 
-	void set_property_path(const StringName& p_path) { property_path = p_path; }
+	void set_property_path(const String& p_path) { property_path = p_path; }
 
 	void set_editable(bool p_editable);
 	bool is_editable() const;

@@ -83,7 +83,7 @@ class BonePropertiesEditor : public VBoxContainer
 	void _show_add_meta_dialog();
 	void _add_meta_confirm();
 
-	HashMap<StringName, EditorProperty*> meta_editors;
+	HashMap<String, EditorProperty*> meta_editors;
 
 public:
 	BonePropertiesEditor(Skeleton3D* p_skeleton);

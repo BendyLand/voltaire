@@ -412,7 +412,7 @@ void CanvasItemEditor::_draw_focus()
 {
 	// Draw the focus around the base viewport
 	if (viewport->has_focus()) {
-		get_theme_stylebox(SNAME("FocusViewport"), EditorStringName(EditorStyles))
+		get_theme_stylebox(SNAME("FocusViewport"), EditorString(EditorStyles))
 			->draw(viewport->get_canvas_item(), Rect2(Point2(), viewport->get_size()));
 	}
 }
@@ -467,14 +467,14 @@ void CanvasItemEditor::_draw_hover()
 {
 	List<Rect2> previous_rects;
 	Vector2 icon_size =
-		Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+		Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorString(Editor));
 
 	for (int i = 0; i < hovering_results.size(); i++) {
 		Ref<Texture2D> node_icon = hovering_results[i].icon;
 		String node_name = hovering_results[i].name;
 
-		Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-		int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+		Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+		int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 		Size2 node_name_size =
 			font->get_string_size(node_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size);
 		Size2 item_size =

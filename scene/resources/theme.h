@@ -44,12 +44,12 @@ class Theme : public Resource
 #endif
 
 public:
-	using ThemeIconMap = HashMap<StringName, Ref<Texture2D>>;
-	using ThemeStyleMap = HashMap<StringName, Ref<StyleBox>>;
-	using ThemeFontMap = HashMap<StringName, Ref<Font>>;
-	using ThemeFontSizeMap = HashMap<StringName, int>;
-	using ThemeColorMap = HashMap<StringName, Color>;
-	using ThemeConstantMap = HashMap<StringName, int>;
+	using ThemeIconMap = HashMap<String, Ref<Texture2D>>;
+	using ThemeStyleMap = HashMap<String, Ref<StyleBox>>;
+	using ThemeFontMap = HashMap<String, Ref<Font>>;
+	using ThemeFontSizeMap = HashMap<String, int>;
+	using ThemeColorMap = HashMap<String, Color>;
+	using ThemeConstantMap = HashMap<String, int>;
 
 	enum DataType
 	{
@@ -83,7 +83,7 @@ private:
 	Vector<String> _get_theme_item_list(DataType p_data_type, const String& p_theme_type) const;
 	Vector<String> _get_theme_item_type_list(DataType p_data_type) const;
 
-	Vector<String> _get_type_variation_list(const StringName& p_theme_type) const;
+	Vector<String> _get_type_variation_list(const String& p_theme_type) const;
 	Vector<String> _get_type_list() const;
 
 protected:
@@ -92,14 +92,14 @@ protected:
 	Ref<Font> default_font;
 	int default_font_size = -1;
 
-	HashMap<StringName, ThemeIconMap> icon_map;
-	HashMap<StringName, ThemeStyleMap> style_map;
-	HashMap<StringName, ThemeFontMap> font_map;
-	HashMap<StringName, ThemeFontSizeMap> font_size_map;
-	HashMap<StringName, ThemeColorMap> color_map;
-	HashMap<StringName, ThemeConstantMap> constant_map;
-	HashMap<StringName, StringName> variation_map;
-	HashMap<StringName, List<StringName>> variation_base_map;
+	HashMap<String, ThemeIconMap> icon_map;
+	HashMap<String, ThemeStyleMap> style_map;
+	HashMap<String, ThemeFontMap> font_map;
+	HashMap<String, ThemeFontSizeMap> font_size_map;
+	HashMap<String, ThemeColorMap> color_map;
+	HashMap<String, ThemeConstantMap> constant_map;
+	HashMap<String, String> variation_map;
+	HashMap<String, List<String>> variation_base_map;
 
 
 	void _freeze_change_propagation();
@@ -125,116 +125,116 @@ public:
 	bool has_default_font_size() const;
 
 	void set_icon(
-		const StringName& p_name, const StringName& p_theme_type, const Ref<Texture2D>& p_icon);
-	virtual Ref<Texture2D> get_icon(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_icon(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_icon_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+		const String& p_name, const String& p_theme_type, const Ref<Texture2D>& p_icon);
+	virtual Ref<Texture2D> get_icon(const String& p_name, const String& p_theme_type) const;
+	bool has_icon(const String& p_name, const String& p_theme_type) const;
+	bool has_icon_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_icon(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_icon(const StringName& p_name, const StringName& p_theme_type);
-	void get_icon_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_icon_type(const StringName& p_theme_type);
-	void remove_icon_type(const StringName& p_theme_type);
-	void rename_icon_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_icon_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_icon(const String& p_name, const String& p_theme_type);
+	void get_icon_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_icon_type(const String& p_theme_type);
+	void remove_icon_type(const String& p_theme_type);
+	void rename_icon_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_icon_type_list(List<String>* p_list) const;
 
 	virtual Ref<StyleBox> get_stylebox(
-		const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_stylebox(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_stylebox_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+		const String& p_name, const String& p_theme_type) const;
+	bool has_stylebox(const String& p_name, const String& p_theme_type) const;
+	bool has_stylebox_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_stylebox(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_stylebox(const StringName& p_name, const StringName& p_theme_type);
-	void get_stylebox_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_stylebox_type(const StringName& p_theme_type);
-	void remove_stylebox_type(const StringName& p_theme_type);
-	void rename_stylebox_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_stylebox_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_stylebox(const String& p_name, const String& p_theme_type);
+	void get_stylebox_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_stylebox_type(const String& p_theme_type);
+	void remove_stylebox_type(const String& p_theme_type);
+	void rename_stylebox_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_stylebox_type_list(List<String>* p_list) const;
 
 	void set_font(
-		const StringName& p_name, const StringName& p_theme_type, const Ref<Font>& p_font);
-	virtual Ref<Font> get_font(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font_no_default(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+		const String& p_name, const String& p_theme_type, const Ref<Font>& p_font);
+	virtual Ref<Font> get_font(const String& p_name, const String& p_theme_type) const;
+	bool has_font(const String& p_name, const String& p_theme_type) const;
+	bool has_font_no_default(const String& p_name, const String& p_theme_type) const;
+	bool has_font_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_font(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_font(const StringName& p_name, const StringName& p_theme_type);
-	void get_font_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_font_type(const StringName& p_theme_type);
-	void remove_font_type(const StringName& p_theme_type);
-	void rename_font_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_font_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_font(const String& p_name, const String& p_theme_type);
+	void get_font_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_font_type(const String& p_theme_type);
+	void remove_font_type(const String& p_theme_type);
+	void rename_font_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_font_type_list(List<String>* p_list) const;
 
-	void set_font_size(const StringName& p_name, const StringName& p_theme_type, int p_font_size);
-	virtual int get_font_size(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font_size(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font_size_no_default(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_font_size_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+	void set_font_size(const String& p_name, const String& p_theme_type, int p_font_size);
+	virtual int get_font_size(const String& p_name, const String& p_theme_type) const;
+	bool has_font_size(const String& p_name, const String& p_theme_type) const;
+	bool has_font_size_no_default(const String& p_name, const String& p_theme_type) const;
+	bool has_font_size_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_font_size(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_font_size(const StringName& p_name, const StringName& p_theme_type);
-	void get_font_size_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_font_size_type(const StringName& p_theme_type);
-	void remove_font_size_type(const StringName& p_theme_type);
-	void rename_font_size_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_font_size_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_font_size(const String& p_name, const String& p_theme_type);
+	void get_font_size_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_font_size_type(const String& p_theme_type);
+	void remove_font_size_type(const String& p_theme_type);
+	void rename_font_size_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_font_size_type_list(List<String>* p_list) const;
 
-	void set_color(const StringName& p_name, const StringName& p_theme_type, const Color& p_color);
-	virtual Color get_color(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_color(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_color_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+	void set_color(const String& p_name, const String& p_theme_type, const Color& p_color);
+	virtual Color get_color(const String& p_name, const String& p_theme_type) const;
+	bool has_color(const String& p_name, const String& p_theme_type) const;
+	bool has_color_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_color(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_color(const StringName& p_name, const StringName& p_theme_type);
-	void get_color_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_color_type(const StringName& p_theme_type);
-	void remove_color_type(const StringName& p_theme_type);
-	void rename_color_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_color_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_color(const String& p_name, const String& p_theme_type);
+	void get_color_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_color_type(const String& p_theme_type);
+	void remove_color_type(const String& p_theme_type);
+	void rename_color_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_color_type_list(List<String>* p_list) const;
 
-	void set_constant(const StringName& p_name, const StringName& p_theme_type, int p_constant);
-	virtual int get_constant(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_constant(const StringName& p_name, const StringName& p_theme_type) const;
-	bool has_constant_nocheck(const StringName& p_name, const StringName& p_theme_type) const;
+	void set_constant(const String& p_name, const String& p_theme_type, int p_constant);
+	virtual int get_constant(const String& p_name, const String& p_theme_type) const;
+	bool has_constant(const String& p_name, const String& p_theme_type) const;
+	bool has_constant_nocheck(const String& p_name, const String& p_theme_type) const;
 	void rename_constant(
-		const StringName& p_old_name, const StringName& p_name, const StringName& p_theme_type);
-	void clear_constant(const StringName& p_name, const StringName& p_theme_type);
-	void get_constant_list(const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_constant_type(const StringName& p_theme_type);
-	void remove_constant_type(const StringName& p_theme_type);
-	void rename_constant_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_constant_type_list(List<StringName>* p_list) const;
+		const String& p_old_name, const String& p_name, const String& p_theme_type);
+	void clear_constant(const String& p_name, const String& p_theme_type);
+	void get_constant_list(const String& p_theme_type, List<String>* p_list) const;
+	void add_constant_type(const String& p_theme_type);
+	void remove_constant_type(const String& p_theme_type);
+	void rename_constant_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_constant_type_list(List<String>* p_list) const;
 
 	bool has_theme_item(
-		DataType p_data_type, const StringName& p_name, const StringName& p_theme_type) const;
+		DataType p_data_type, const String& p_name, const String& p_theme_type) const;
 	bool has_theme_item_nocheck(
-		DataType p_data_type, const StringName& p_name, const StringName& p_theme_type) const;
-	void rename_theme_item(DataType p_data_type, const StringName& p_old_name,
-		const StringName& p_name, const StringName& p_theme_type);
+		DataType p_data_type, const String& p_name, const String& p_theme_type) const;
+	void rename_theme_item(DataType p_data_type, const String& p_old_name,
+		const String& p_name, const String& p_theme_type);
 	void clear_theme_item(
-		DataType p_data_type, const StringName& p_name, const StringName& p_theme_type);
+		DataType p_data_type, const String& p_name, const String& p_theme_type);
 	void get_theme_item_list(
-		DataType p_data_type, const StringName& p_theme_type, List<StringName>* p_list) const;
-	void add_theme_item_type(DataType p_data_type, const StringName& p_theme_type);
+		DataType p_data_type, const String& p_theme_type, List<String>* p_list) const;
+	void add_theme_item_type(DataType p_data_type, const String& p_theme_type);
 	void remove_theme_item_type(DataType p_data_type,
-const StringName& p_theme_type);
+const String& p_theme_type);
 	void rename_theme_item_type(
-		DataType p_data_type, const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_theme_item_type_list(DataType p_data_type, List<StringName>* p_list) const;
+		DataType p_data_type, const String& p_old_theme_type, const String& p_theme_type);
+	void get_theme_item_type_list(DataType p_data_type, List<String>* p_list) const;
 
-	void set_type_variation(const StringName& p_theme_type, const StringName& p_base_type);
-	bool is_type_variation(const StringName& p_theme_type, const StringName& p_base_type) const;
-	void clear_type_variation(const StringName& p_theme_type);
-	StringName get_type_variation_base(const StringName& p_theme_type) const;
-	void get_type_variation_list(const StringName& p_base_type, List<StringName>* p_list) const;
+	void set_type_variation(const String& p_theme_type, const String& p_base_type);
+	bool is_type_variation(const String& p_theme_type, const String& p_base_type) const;
+	void clear_type_variation(const String& p_theme_type);
+	String get_type_variation_base(const String& p_theme_type) const;
+	void get_type_variation_list(const String& p_base_type, List<String>* p_list) const;
 
-	void add_type(const StringName& p_theme_type);
-	void remove_type(const StringName& p_theme_type);
-	void rename_type(const StringName& p_old_theme_type, const StringName& p_theme_type);
-	void get_type_list(List<StringName>* p_list) const;
-	void get_type_dependencies(const StringName& p_base_type, const StringName& p_type_variant,
-		Vector<StringName>& r_result);
+	void add_type(const String& p_theme_type);
+	void remove_type(const String& p_theme_type);
+	void rename_type(const String& p_old_theme_type, const String& p_theme_type);
+	void get_type_list(List<String>* p_list) const;
+	void get_type_dependencies(const String& p_base_type, const String& p_type_variant,
+		Vector<String>& r_result);
 
 	void merge_with(const Ref<Theme>& p_other);
 	void clear();

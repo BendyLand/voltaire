@@ -177,7 +177,7 @@ private:
 	mutable Vector<int> parentless_bones;
 	AHashMap<String, int> name_to_bone_index;
 
-	mutable StringName concatenated_bone_names;
+	mutable String concatenated_bone_names;
 	void _update_bone_names() const;
 
 	void _make_dirty();
@@ -219,7 +219,7 @@ private:
 
 protected:
 	void _notification(int p_what);
-	TypedArray<StringName> _get_bone_meta_list_bind(int p_bone) const;
+	TypedArray<String> _get_bone_meta_list_bind(int p_bone) const;
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void move_child_notify(Node* p_child) override;
@@ -237,7 +237,7 @@ public:
 	int find_bone(const String& p_name) const;
 	String get_bone_name(int p_bone) const;
 	void set_bone_name(int p_bone, const String& p_name);
-	StringName get_concatenated_bone_names() const;
+	String get_concatenated_bone_names() const;
 
 	bool is_bone_parent_of(int p_bone_id, int p_parent_bone_id) const;
 
@@ -266,8 +266,8 @@ public:
 	float get_motion_scale() const;
 
 	// bone metadata
-	void get_bone_meta_list(int p_bone, List<StringName>* p_list) const;
-	bool has_bone_meta(int p_bone, const StringName& p_key) const;
+	void get_bone_meta_list(int p_bone, List<String>* p_list) const;
+	bool has_bone_meta(int p_bone, const String& p_key) const;
 
 	// Posing API
 	Transform3D get_bone_pose(int p_bone) const;
@@ -316,7 +316,7 @@ public:
 	void set_animate_physical_bones(bool p_enabled);
 	bool get_animate_physical_bones() const;
 	void physical_bones_stop_simulation();
-	void physical_bones_start_simulation_on(const TypedArray<StringName>& p_bones);
+	void physical_bones_start_simulation_on(const TypedArray<String>& p_bones);
 	void physical_bones_add_collision_exception(RID p_exception);
 	void physical_bones_remove_collision_exception(RID p_exception);
 #endif // PHYSICS_3D_DISABLED

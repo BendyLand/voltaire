@@ -85,7 +85,7 @@ private:
 		CharString closest_hit_globals;
 		CharString miss_globals;
 		CharString intersection_globals;
-		HashMap<StringName, CharString> code_sections;
+		HashMap<String, CharString> code_sections;
 		Vector<CharString> custom_defines;
 		Vector<bool> group_loaded_from_cache;
 
@@ -139,7 +139,7 @@ private:
 			};
 
 			Type type;
-			StringName code;
+			String code;
 			CharString text;
 		};
 

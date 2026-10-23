@@ -82,14 +82,14 @@ private:
 	static void _callback(const JavaScriptObjectImpl *obj, Variant arg);
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value) override;
-	bool _get(const StringName &p_name, Variant &r_ret) const override;
+	bool _set(const String &p_name, const Variant &p_value) override;
+	bool _get(const String &p_name, Variant &r_ret) const override;
 	void _get_property_list(List<PropertyInfo> *p_list) const override;
 
 public:
 	Variant getvar(const Variant &p_key, bool *r_valid = nullptr) const override;
 	void setvar(const Variant &p_key, const Variant &p_value, bool *r_valid = nullptr) override;
-	Variant callp(const StringName &p_method, const Variant **p_args, int p_argc, Callable::CallError &r_error) override;
+	Variant callp(const String &p_method, const Variant **p_args, int p_argc, Callable::CallError &r_error) override;
 	JavaScriptObjectImpl() {}
 	JavaScriptObjectImpl(int p_id) { _js_id = p_id; }
 	~JavaScriptObjectImpl() {
@@ -99,7 +99,7 @@ public:
 	}
 };
 
-bool JavaScriptObjectImpl::_set(const StringName &p_name, const Variant &p_value) {
+bool JavaScriptObjectImpl::_set(const String &p_name, const Variant &p_value) {
 	ERR_FAIL_COND_V_MSG(!_js_id, false, "Invalid JS instance");
 	const String name = p_name;
 	godot_js_wrapper_ex exchange;
@@ -113,7 +113,7 @@ bool JavaScriptObjectImpl::_set(const StringName &p_name, const Variant &p_value
 	return true;
 }
 
-bool JavaScriptObjectImpl::_get(const StringName &p_name, Variant &r_ret) const {
+bool JavaScriptObjectImpl::_get(const String &p_name, Variant &r_ret) const {
 	ERR_FAIL_COND_V_MSG(!_js_id, false, "Invalid JS instance");
 	const String name = p_name;
 	godot_js_wrapper_ex exchange;
@@ -239,7 +239,7 @@ int JavaScriptObjectImpl::_variant2js(const void **p_args, int p_pos, godot_js_w
 	return type;
 }
 
-Variant JavaScriptObjectImpl::callp(const StringName &p_method, const Variant **p_args, int p_argc, Callable::CallError &r_error) {
+Variant JavaScriptObjectImpl::callp(const String &p_method, const Variant **p_args, int p_argc, Callable::CallError &r_error) {
 	godot_js_wrapper_ex exchange;
 	const String method = p_method;
 	void *lock = nullptr;

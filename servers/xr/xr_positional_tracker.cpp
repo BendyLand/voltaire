@@ -46,12 +46,12 @@ void XRPositionalTracker::set_tracker_hand(const XRPositionalTracker::TrackerHan
 	tracker_hand = p_hand;
 }
 
-bool XRPositionalTracker::has_pose(const StringName& p_action_name) const
+bool XRPositionalTracker::has_pose(const String& p_action_name) const
 {
 	return poses.has(p_action_name);
 }
 
-Ref<XRPose> XRPositionalTracker::get_pose(const StringName& p_action_name) const
+Ref<XRPose> XRPositionalTracker::get_pose(const String& p_action_name) const
 {
 	Ref<XRPose> pose;
 
@@ -64,4 +64,4 @@ Ref<XRPose> XRPositionalTracker::get_pose(const StringName& p_action_name) const
 
 
 
-void XRPositionalTracker::set_pose(StringName const&, Transform3D const&, Vector3 const&, Vector3 const&, XRPose::TrackingConfidence) {}
+void XRPositionalTracker::set_pose(String const&, Transform3D const&, Vector3 const&, Vector3 const&, XRPose::TrackingConfidence) {}

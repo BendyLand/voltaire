@@ -227,9 +227,9 @@ GeometryInstance3D::get_visibility_range_fade_mode() const
 	return visibility_range_fade_mode;
 }
 
-const StringName* GeometryInstance3D::_instance_uniform_get_remap(const StringName& p_name) const
+const String* GeometryInstance3D::_instance_uniform_get_remap(const String& p_name) const
 {
-	StringName* r = instance_shader_parameter_property_remap.getptr(p_name);
+	String* r = instance_shader_parameter_property_remap.getptr(p_name);
 	if (!r) {
 		String s = p_name;
 #ifndef DISABLE_DEPRECATED
@@ -238,8 +238,8 @@ const StringName* GeometryInstance3D::_instance_uniform_get_remap(const StringNa
 		}
 #endif // DISABLE_DEPRECATED
 		if (s.begins_with("instance_shader_parameters/")) {
-			StringName pname = StringName(s);
-			StringName name = s.replace("instance_shader_parameters/", "");
+			String pname = String(s);
+			String name = s.replace("instance_shader_parameters/", "");
 			instance_shader_parameter_property_remap[pname] = name;
 			return instance_shader_parameter_property_remap.getptr(pname);
 		}

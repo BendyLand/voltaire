@@ -171,7 +171,7 @@ bool TextServerFallback::_is_locale_right_to_left(const String &p_locale) const 
 	return false; // No RTL support.
 }
 
-_FORCE_INLINE_ void TextServerFallback::_insert_feature(const StringName &p_name, int32_t p_tag) {
+_FORCE_INLINE_ void TextServerFallback::_insert_feature(const String &p_name, int32_t p_tag) {
 	feature_sets.insert(p_name, p_tag);
 	feature_sets_inv.insert(p_tag, p_name);
 }

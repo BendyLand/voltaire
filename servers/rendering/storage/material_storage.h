@@ -45,10 +45,10 @@ namespace MaterialStorage
 struct API
 {
 	/* GLOBAL SHADER UNIFORM API */
-	void (*global_shader_parameter_remove)(const StringName& p_name) = nullptr;
-	Vector<StringName> (*global_shader_parameter_get_list)() = nullptr;
+	void (*global_shader_parameter_remove)(const String& p_name) = nullptr;
+	Vector<String> (*global_shader_parameter_get_list)() = nullptr;
 	RSE::GlobalShaderParameterType (*global_shader_parameter_get_type)(
-		const StringName& p_name) = nullptr;
+		const String& p_name) = nullptr;
 	void (*global_shader_parameters_load_settings)(bool p_load_textures) = nullptr;
 	void (*global_shader_parameters_clear)() = nullptr;
 	int32_t (*global_shader_parameters_instance_allocate)(RID p_instance) = nullptr;
@@ -63,9 +63,9 @@ struct API
 	void (*shader_set_path_hint)(RID p_shader, const String& p_path) = nullptr;
 	String (*shader_get_code)(RID p_shader) = nullptr;
 	void (*shader_set_default_texture_parameter)(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index) = nullptr;
+		RID p_shader, const String& p_name, RID p_texture, int p_index) = nullptr;
 	RID(*shader_get_default_texture_parameter)
-	(RID p_shader, const StringName& p_name, int p_index) = nullptr;
+	(RID p_shader, const String& p_name, int p_index) = nullptr;
 	RenderingServerTypes::ShaderNativeSourceCode (*shader_get_native_source_code)(
 		RID p_shader) = nullptr;
 	void (*shader_embedded_set_lock)() = nullptr;
@@ -142,18 +142,18 @@ public:
     }
 
     /* GLOBAL SHADER UNIFORM API */
-    _FORCE_INLINE_ static void global_shader_parameter_remove(const StringName& p_name)
+    _FORCE_INLINE_ static void global_shader_parameter_remove(const String& p_name)
     {
         api.global_shader_parameter_remove(p_name);
     }
 
-    _FORCE_INLINE_ static Vector<StringName> global_shader_parameter_get_list()
+    _FORCE_INLINE_ static Vector<String> global_shader_parameter_get_list()
     {
         return api.global_shader_parameter_get_list();
     }
 
     _FORCE_INLINE_ static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-        const StringName& p_name)
+        const String& p_name)
     {
         return api.global_shader_parameter_get_type(p_name);
     }
@@ -210,13 +210,13 @@ public:
     }
 
     _FORCE_INLINE_ static void shader_set_default_texture_parameter(
-        RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+        RID p_shader, const String& p_name, RID p_texture, int p_index)
     {
         api.shader_set_default_texture_parameter(p_shader, p_name, p_texture, p_index);
     }
 
     _FORCE_INLINE_ static RID shader_get_default_texture_parameter(
-        RID p_shader, const StringName& p_name, int p_index)
+        RID p_shader, const String& p_name, int p_index)
     {
         return api.shader_get_default_texture_parameter(p_shader, p_name, p_index);
     }

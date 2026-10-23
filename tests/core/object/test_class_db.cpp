@@ -38,7 +38,7 @@ TEST_FORCE_LINK(test_class_db)
 namespace TestClassDB {
 
 struct TypeReference {
-	StringName name;
+	String name;
 	bool is_enum = false;
 };
 
@@ -48,7 +48,7 @@ struct ConstantData {
 };
 
 struct EnumData {
-	StringName name;
+	String name;
 	List<ConstantData> constants;
 
 	_FORCE_INLINE_ bool operator==(const EnumData &p_enum) const {
@@ -57,11 +57,11 @@ struct EnumData {
 };
 
 struct PropertyData {
-	StringName name;
+	String name;
 	int index = 0;
 
-	StringName getter;
-	StringName setter;
+	String getter;
+	String setter;
 };
 
 struct ArgumentData {
@@ -73,7 +73,7 @@ struct ArgumentData {
 };
 
 struct MethodData {
-	StringName name;
+	String name;
 	TypeReference return_type;
 	List<ArgumentData> arguments;
 	bool is_virtual = false;
@@ -81,13 +81,13 @@ struct MethodData {
 };
 
 struct SignalData {
-	StringName name;
+	String name;
 	List<ArgumentData> arguments;
 };
 
 struct ExposedClass {
-	StringName name;
-	StringName base;
+	String name;
+	String base;
 
 	bool is_singleton = false;
 	bool is_instantiable = false;
@@ -101,7 +101,7 @@ struct ExposedClass {
 	List<MethodData> methods;
 	List<SignalData> signals_;
 
-	const PropertyData *find_property_by_name(const StringName &p_name) const {
+	const PropertyData *find_property_by_name(const String &p_name) const {
 		for (const PropertyData &E : properties) {
 			if (E.name == p_name) {
 				return &E;
@@ -111,7 +111,7 @@ struct ExposedClass {
 		return nullptr;
 	}
 
-	const MethodData *find_method_by_name(const StringName &p_name) const {
+	const MethodData *find_method_by_name(const String &p_name) const {
 		for (const MethodData &E : methods) {
 			if (E.name == p_name) {
 				return &E;
@@ -123,47 +123,47 @@ struct ExposedClass {
 };
 
 struct NamesCache {
-	StringName variant_type = StringName("Variant");
-	StringName object_class = StringName("Object");
-	StringName ref_counted_class = StringName("RefCounted");
-	StringName string_type = StringName("String");
-	StringName string_name_type = StringName("StringName");
-	StringName node_path_type = StringName("NodePath");
-	StringName bool_type = StringName("bool");
-	StringName int_type = StringName("int");
-	StringName float_type = StringName("float");
-	StringName void_type = StringName("void");
-	StringName vararg_stub_type = StringName("@VarArg@");
-	StringName vector2_type = StringName("Vector2");
-	StringName rect2_type = StringName("Rect2");
-	StringName vector3_type = StringName("Vector3");
-	StringName vector4_type = StringName("Vector4");
+	String variant_type = String("Variant");
+	String object_class = String("Object");
+	String ref_counted_class = String("RefCounted");
+	String string_type = String("String");
+	String string_name_type = String("String");
+	String node_path_type = String("NodePath");
+	String bool_type = String("bool");
+	String int_type = String("int");
+	String float_type = String("float");
+	String void_type = String("void");
+	String vararg_stub_type = String("@VarArg@");
+	String vector2_type = String("Vector2");
+	String rect2_type = String("Rect2");
+	String vector3_type = String("Vector3");
+	String vector4_type = String("Vector4");
 
 	// Object not included as it must be checked for all derived classes
 	static constexpr int nullable_types_count = 18;
-	StringName nullable_types[nullable_types_count] = {
+	String nullable_types[nullable_types_count] = {
 		string_type,
 		string_name_type,
 		node_path_type,
 
-		StringName(_STR(Array)),
-		StringName(_STR(Dictionary)),
-		StringName(_STR(Callable)),
-		StringName(_STR(Signal)),
+		String(_STR(Array)),
+		String(_STR(Dictionary)),
+		String(_STR(Callable)),
+		String(_STR(Signal)),
 
-		StringName(_STR(PackedByteArray)),
-		StringName(_STR(PackedInt32Array)),
-		StringName(_STR(PackedInt64rray)),
-		StringName(_STR(PackedFloat32Array)),
-		StringName(_STR(PackedFloat64Array)),
-		StringName(_STR(PackedStringArray)),
-		StringName(_STR(PackedVector2Array)),
-		StringName(_STR(PackedVector3Array)),
-		StringName(_STR(PackedColorArray)),
-		StringName(_STR(PackedVector4Array)),
+		String(_STR(PackedByteArray)),
+		String(_STR(PackedInt32Array)),
+		String(_STR(PackedInt64rray)),
+		String(_STR(PackedFloat32Array)),
+		String(_STR(PackedFloat64Array)),
+		String(_STR(PackedStringArray)),
+		String(_STR(PackedVector2Array)),
+		String(_STR(PackedVector3Array)),
+		String(_STR(PackedColorArray)),
+		String(_STR(PackedVector4Array)),
 	};
 
-	bool is_nullable_type(const StringName &p_type) const {
+	bool is_nullable_type(const String &p_type) const {
 		for (int i = 0; i < nullable_types_count; i++) {
 			if (p_type == nullable_types[i]) {
 				return true;
@@ -174,16 +174,16 @@ struct NamesCache {
 	}
 };
 
-typedef HashMap<StringName, ExposedClass> ExposedClasses;
+typedef HashMap<String, ExposedClass> ExposedClasses;
 
 struct Context {
-	Vector<StringName> enum_types;
-	Vector<StringName> builtin_types;
+	Vector<String> enum_types;
+	Vector<String> builtin_types;
 	ExposedClasses exposed_classes;
 	List<EnumData> global_enums;
 	NamesCache names_cache;
 
-	const ExposedClass *find_exposed_class(const StringName &p_name) const {
+	const ExposedClass *find_exposed_class(const String &p_name) const {
 		ExposedClasses::ConstIterator elem = exposed_classes.find(p_name);
 		return elem ? &elem->value : nullptr;
 	}
@@ -324,7 +324,7 @@ void validate_property(const Context &p_context, const ExposedClass &p_class, co
 
 	// Search it in base classes too
 	const ExposedClass *top = &p_class;
-	while (!setter && top->base != StringName()) {
+	while (!setter && top->base != String()) {
 		top = p_context.find_exposed_class(top->base);
 		TEST_FAIL_COND(!top, "Class not found '", top->base, "'. Inherited by '", top->name, "'.");
 		setter = top->find_method_by_name(p_prop.setter);
@@ -334,7 +334,7 @@ void validate_property(const Context &p_context, const ExposedClass &p_class, co
 
 	// Search it in base classes too
 	top = &p_class;
-	while (!getter && top->base != StringName()) {
+	while (!getter && top->base != String()) {
 		top = p_context.find_exposed_class(top->base);
 		TEST_FAIL_COND(!top, "Class not found '", top->base, "'. Inherited by '", top->name, "'.");
 		getter = top->find_method_by_name(p_prop.getter);
@@ -452,7 +452,7 @@ void validate_argument(const Context &p_context, const ExposedClass &p_class, co
 }
 
 void validate_method(const Context &p_context, const ExposedClass &p_class, const MethodData &p_method) {
-	if (p_method.return_type.name != StringName()) {
+	if (p_method.return_type.name != String()) {
 		const ExposedClass *return_class = p_context.find_exposed_class(p_method.return_type);
 		if (return_class) {
 			if (p_class.api_type == ClassDB::API_CORE) {
@@ -481,7 +481,7 @@ void validate_signal(const Context &p_context, const ExposedClass &p_class, cons
 }
 
 void validate_class(const Context &p_context, const ExposedClass &p_exposed_class) {
-	bool is_derived_type = p_exposed_class.base != StringName();
+	bool is_derived_type = p_exposed_class.base != String();
 
 	if (!is_derived_type) {
 		// Asserts about the base Object class
@@ -512,11 +512,11 @@ void validate_class(const Context &p_context, const ExposedClass &p_exposed_clas
 }
 
 void add_exposed_classes(Context &r_context) {
-	LocalVector<StringName> class_list;
+	LocalVector<String> class_list;
 	ClassDB::get_class_list(class_list);
 
 	for (uint32_t class_list_idx = 0; class_list_idx < class_list.size(); class_list_idx++) {
-		StringName class_name = class_list[class_list_idx];
+		String class_name = class_list[class_list_idx];
 
 		ClassDB::APIType api_type = ClassDB::get_api_type(class_name);
 
@@ -549,7 +549,7 @@ void add_exposed_classes(Context &r_context) {
 		List<PropertyInfo> property_list;
 		ClassDB::get_property_list(class_name, &property_list, true);
 
-		HashMap<StringName, StringName> accessor_methods;
+		HashMap<String, String> accessor_methods;
 
 		for (const PropertyInfo &property : property_list) {
 			if (property.usage & PROPERTY_USAGE_GROUP || property.usage & PROPERTY_USAGE_SUBGROUP || property.usage & PROPERTY_USAGE_CATEGORY || (property.type == Variant::NIL && property.usage & PROPERTY_USAGE_ARRAY)) {
@@ -561,10 +561,10 @@ void add_exposed_classes(Context &r_context) {
 			prop.setter = ClassDB::get_property_setter(class_name, prop.name);
 			prop.getter = ClassDB::get_property_getter(class_name, prop.name);
 
-			if (prop.setter != StringName()) {
+			if (prop.setter != String()) {
 				accessor_methods[prop.setter] = prop.name;
 			}
-			if (prop.getter != StringName()) {
+			if (prop.getter != String()) {
 				accessor_methods[prop.getter] = prop.name;
 			}
 
@@ -630,7 +630,7 @@ void add_exposed_classes(Context &r_context) {
 			} else if (return_info.type == Variant::INT && return_info.usage & (PROPERTY_USAGE_CLASS_IS_ENUM | PROPERTY_USAGE_CLASS_IS_BITFIELD)) {
 				method.return_type.name = return_info.class_name;
 				method.return_type.is_enum = true;
-			} else if (return_info.class_name != StringName()) {
+			} else if (return_info.class_name != String()) {
 				method.return_type.name = return_info.class_name;
 
 				bool bad_reference_hint = !method.is_virtual && return_info.hint != PROPERTY_HINT_RESOURCE_TYPE &&
@@ -660,7 +660,7 @@ void add_exposed_classes(Context &r_context) {
 				if (arg_info.type == Variant::INT && arg_info.usage & (PROPERTY_USAGE_CLASS_IS_ENUM | PROPERTY_USAGE_CLASS_IS_BITFIELD)) {
 					arg.type.name = arg_info.class_name;
 					arg.type.is_enum = true;
-				} else if (arg_info.class_name != StringName()) {
+				} else if (arg_info.class_name != String()) {
 					arg.type.name = arg_info.class_name;
 				} else if (arg_info.hint == PROPERTY_HINT_RESOURCE_TYPE) {
 					arg.type.name = arg_info.hint_string;
@@ -710,9 +710,9 @@ void add_exposed_classes(Context &r_context) {
 
 		// Add signals
 
-		const AHashMap<StringName, const MethodInfo *> &signal_map = class_info->vltrtype->get_signal_map(true);
+		const AHashMap<String, const MethodInfo *> &signal_map = class_info->vltrtype->get_signal_map(true);
 
-		for (const KeyValue<StringName, const MethodInfo *> &K : signal_map) {
+		for (const KeyValue<String, const MethodInfo *> &K : signal_map) {
 			SignalData signal;
 
 			const MethodInfo &method_info = *signal_map.get(K.key);
@@ -733,7 +733,7 @@ void add_exposed_classes(Context &r_context) {
 				if (arg_info.type == Variant::INT && arg_info.usage & (PROPERTY_USAGE_CLASS_IS_ENUM | PROPERTY_USAGE_CLASS_IS_BITFIELD)) {
 					arg.type.name = arg_info.class_name;
 					arg.type.is_enum = true;
-				} else if (arg_info.class_name != StringName()) {
+				} else if (arg_info.class_name != String()) {
 					arg.type.name = arg_info.class_name;
 				} else if (arg_info.hint == PROPERTY_HINT_RESOURCE_TYPE) {
 					arg.type.name = arg_info.hint_string;
@@ -763,14 +763,14 @@ void add_exposed_classes(Context &r_context) {
 		List<String> constants;
 		ClassDB::get_integer_constant_list(class_name, &constants, true);
 
-		const AHashMap<StringName, const GDType::EnumInfo *> &enum_map = class_info->vltrtype->get_enum_map(true);
+		const AHashMap<String, const GDType::EnumInfo *> &enum_map = class_info->vltrtype->get_enum_map(true);
 
-		for (const KeyValue<StringName, const GDType::EnumInfo *> &kv_enum : enum_map) {
+		for (const KeyValue<String, const GDType::EnumInfo *> &kv_enum : enum_map) {
 			EnumData enum_;
 			enum_.name = kv_enum.key;
 
-			for (const KeyValue<StringName, int64_t> &kv_case : kv_enum.value->values) {
-				const StringName &constant_name = kv_case.key;
+			for (const KeyValue<String, int64_t> &kv_case : kv_enum.value->values) {
+				const String &constant_name = kv_case.key;
 				TEST_FAIL_COND(String(constant_name).contains("::"),
 						"Enum constant contains '::', check bindings to remove the scope: '",
 						String(class_name), ".", String(enum_.name), ".", String(constant_name), "'.");
@@ -796,7 +796,7 @@ void add_exposed_classes(Context &r_context) {
 			TEST_FAIL_COND(constant_name.contains("::"),
 					"Constant contains '::', check bindings to remove the scope: '",
 					String(class_name), ".", constant_name, "'.");
-			const int64_t *value = class_info->vltrtype->get_integer_constant_map(false).getptr(StringName(E));
+			const int64_t *value = class_info->vltrtype->get_integer_constant_map(false).getptr(String(E));
 			TEST_FAIL_COND(!value, "Missing constant value: '", String(class_name), ".", String(constant_name), "'.");
 
 			ConstantData constant;
@@ -826,9 +826,9 @@ void add_global_enums(Context &r_context) {
 
 	if (global_constants_count > 0) {
 		for (int i = 0; i < global_constants_count; i++) {
-			StringName enum_name = CoreConstants::get_global_constant_enum(i);
+			String enum_name = CoreConstants::get_global_constant_enum(i);
 
-			if (enum_name != StringName()) {
+			if (enum_name != String()) {
 				ConstantData constant;
 				constant.name = CoreConstants::get_global_constant_name(i);
 				constant.value = CoreConstants::get_global_constant_value(i);
@@ -857,10 +857,10 @@ void add_global_enums(Context &r_context) {
 
 		const Variant::Type type = Variant::Type(i);
 
-		List<StringName> enum_names;
+		List<String> enum_names;
 		Variant::get_enums_for_type(type, &enum_names);
 
-		for (const StringName &enum_name : enum_names) {
+		for (const String &enum_name : enum_names) {
 			r_context.enum_types.push_back(Variant::get_type_name(type) + "." + enum_name);
 		}
 	}
@@ -877,10 +877,10 @@ TEST_SUITE("[ClassDB]") {
 		SUBCASE("[ClassDB] Validate exposed classes") {
 			const ExposedClass *object_class = context.find_exposed_class(context.names_cache.object_class);
 			TEST_FAIL_COND(!object_class, "Object class not found.");
-			TEST_FAIL_COND(object_class->base != StringName(),
+			TEST_FAIL_COND(object_class->base != String(),
 					"Object class derives from another class: '", object_class->base, "'.");
 
-			for (const KeyValue<StringName, ExposedClass> &E : context.exposed_classes) {
+			for (const KeyValue<String, ExposedClass> &E : context.exposed_classes) {
 				validate_class(context, E.value);
 			}
 		}

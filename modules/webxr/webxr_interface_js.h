@@ -119,7 +119,7 @@ public:
 	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const override;
 	virtual bool set_environment_blend_mode(EnvironmentBlendMode p_new_environment_blend_mode) override;
 
-	virtual StringName get_name() const override;
+	virtual String get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
 	virtual bool is_initialized() const override;
@@ -151,114 +151,114 @@ public:
 	~WebXRInterfaceJS();
 
 private:
-	StringName tracker_names[16] = {
-		StringName("left_hand"),
-		StringName("right_hand"),
-		StringName("tracker_2"),
-		StringName("tracker_3"),
-		StringName("tracker_4"),
-		StringName("tracker_5"),
-		StringName("tracker_6"),
-		StringName("tracker_7"),
-		StringName("tracker_8"),
-		StringName("tracker_9"),
-		StringName("tracker_10"),
-		StringName("tracker_11"),
-		StringName("tracker_12"),
-		StringName("tracker_13"),
-		StringName("tracker_14"),
-		StringName("tracker_15"),
+	String tracker_names[16] = {
+		String("left_hand"),
+		String("right_hand"),
+		String("tracker_2"),
+		String("tracker_3"),
+		String("tracker_4"),
+		String("tracker_5"),
+		String("tracker_6"),
+		String("tracker_7"),
+		String("tracker_8"),
+		String("tracker_9"),
+		String("tracker_10"),
+		String("tracker_11"),
+		String("tracker_12"),
+		String("tracker_13"),
+		String("tracker_14"),
+		String("tracker_15"),
 	};
 
-	StringName touch_names[5] = {
-		StringName("touch_0"),
-		StringName("touch_1"),
-		StringName("touch_2"),
-		StringName("touch_3"),
-		StringName("touch_4"),
+	String touch_names[5] = {
+		String("touch_0"),
+		String("touch_1"),
+		String("touch_2"),
+		String("touch_3"),
+		String("touch_4"),
 	};
 
-	StringName standard_axis_names[10] = {
-		StringName("touchpad_x"),
-		StringName("touchpad_y"),
-		StringName("thumbstick_x"),
-		StringName("thumbstick_y"),
-		StringName("axis_4"),
-		StringName("axis_5"),
-		StringName("axis_6"),
-		StringName("axis_7"),
-		StringName("axis_8"),
-		StringName("axis_9"),
+	String standard_axis_names[10] = {
+		String("touchpad_x"),
+		String("touchpad_y"),
+		String("thumbstick_x"),
+		String("thumbstick_y"),
+		String("axis_4"),
+		String("axis_5"),
+		String("axis_6"),
+		String("axis_7"),
+		String("axis_8"),
+		String("axis_9"),
 	};
 
-	StringName standard_vector_names[2] = {
-		StringName("touchpad"),
-		StringName("thumbstick"),
+	String standard_vector_names[2] = {
+		String("touchpad"),
+		String("thumbstick"),
 	};
 
-	StringName standard_button_names[10] = {
-		StringName("trigger_click"),
-		StringName("grip_click"),
-		StringName("touchpad_click"),
-		StringName("thumbstick_click"),
-		StringName("ax_button"),
-		StringName("by_button"),
-		StringName("button_6"),
-		StringName("button_7"),
-		StringName("button_8"),
-		StringName("button_9"),
+	String standard_button_names[10] = {
+		String("trigger_click"),
+		String("grip_click"),
+		String("touchpad_click"),
+		String("thumbstick_click"),
+		String("ax_button"),
+		String("by_button"),
+		String("button_6"),
+		String("button_7"),
+		String("button_8"),
+		String("button_9"),
 	};
 
-	StringName standard_button_pressure_names[10] = {
-		StringName("trigger"),
-		StringName("grip"),
-		StringName("touchpad_click_pressure"),
-		StringName("thumbstick_click_pressure"),
-		StringName("ax_button_pressure"),
-		StringName("by_button_pressure"),
-		StringName("button_pressure_6"),
-		StringName("button_pressure_7"),
-		StringName("button_pressure_8"),
-		StringName("button_pressure_9"),
+	String standard_button_pressure_names[10] = {
+		String("trigger"),
+		String("grip"),
+		String("touchpad_click_pressure"),
+		String("thumbstick_click_pressure"),
+		String("ax_button_pressure"),
+		String("by_button_pressure"),
+		String("button_pressure_6"),
+		String("button_pressure_7"),
+		String("button_pressure_8"),
+		String("button_pressure_9"),
 	};
 
-	StringName unknown_button_names[10] = {
-		StringName("button_0"),
-		StringName("button_1"),
-		StringName("button_2"),
-		StringName("button_3"),
-		StringName("button_4"),
-		StringName("button_5"),
-		StringName("button_6"),
-		StringName("button_7"),
-		StringName("button_8"),
-		StringName("button_9"),
+	String unknown_button_names[10] = {
+		String("button_0"),
+		String("button_1"),
+		String("button_2"),
+		String("button_3"),
+		String("button_4"),
+		String("button_5"),
+		String("button_6"),
+		String("button_7"),
+		String("button_8"),
+		String("button_9"),
 	};
 
-	StringName unknown_axis_names[10] = {
-		StringName("axis_0"),
-		StringName("axis_1"),
-		StringName("axis_2"),
-		StringName("axis_3"),
-		StringName("axis_4"),
-		StringName("axis_5"),
-		StringName("axis_6"),
-		StringName("axis_7"),
-		StringName("axis_8"),
-		StringName("axis_9"),
+	String unknown_axis_names[10] = {
+		String("axis_0"),
+		String("axis_1"),
+		String("axis_2"),
+		String("axis_3"),
+		String("axis_4"),
+		String("axis_5"),
+		String("axis_6"),
+		String("axis_7"),
+		String("axis_8"),
+		String("axis_9"),
 	};
 
-	StringName unknown_button_pressure_names[10] = {
-		StringName("button_pressure_0"),
-		StringName("button_pressure_1"),
-		StringName("button_pressure_2"),
-		StringName("button_pressure_3"),
-		StringName("button_pressure_4"),
-		StringName("button_pressure_5"),
-		StringName("button_pressure_6"),
-		StringName("button_pressure_7"),
-		StringName("button_pressure_8"),
-		StringName("button_pressure_9"),
+	String unknown_button_pressure_names[10] = {
+		String("button_pressure_0"),
+		String("button_pressure_1"),
+		String("button_pressure_2"),
+		String("button_pressure_3"),
+		String("button_pressure_4"),
+		String("button_pressure_5"),
+		String("button_pressure_6"),
+		String("button_pressure_7"),
+		String("button_pressure_8"),
+		String("button_pressure_9"),
 	};
 };
 

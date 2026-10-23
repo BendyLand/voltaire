@@ -140,7 +140,7 @@ class EditorHelpSearch::Runner : public RefCounted
 	TreeItem* matched_item = nullptr;
 	float match_highest_score = 0;
 
-	bool _is_class_disabled_by_feature_profile(const StringName& p_class);
+	bool _is_class_disabled_by_feature_profile(const String& p_class);
 
 	void _populate_cache();
 	bool _find_or_create_item(TreeItem* p_parent, const String& p_item_meta, TreeItem*& r_item);

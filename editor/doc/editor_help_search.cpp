@@ -102,7 +102,7 @@ void EditorHelpSearch::TreeCache::clear()
 	item_cache.clear();
 }
 
-bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const StringName& p_class)
+bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
@@ -110,8 +110,8 @@ bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const Strin
 		return false;
 	}
 
-	StringName class_name = p_class;
-	while (class_name != StringName()) {
+	String class_name = p_class;
+	while (class_name != String()) {
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}

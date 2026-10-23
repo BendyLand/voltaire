@@ -102,7 +102,7 @@ private:
 
 	void _set_playing(bool p_enable);
 	bool _is_active() const;
-	StringName _get_actual_bus();
+	String _get_actual_bus();
 #ifndef PHYSICS_3D_DISABLED
 	Area3D* _get_overriding_area();
 #endif // PHYSICS_3D_DISABLED
@@ -134,7 +134,7 @@ private:
 
 	/// Hash map storing the bus volumes during the panning update.
 	/// This hash map is stored as member for efficiency reasons.
-	HashMap<StringName, Vector<AudioFrame>> bus_volumes;
+	HashMap<String, Vector<AudioFrame>> bus_volumes;
 
 protected:
 	void _notification(int p_what);
@@ -168,8 +168,8 @@ public:
 	bool is_playing() const;
 	float get_playback_position();
 
-	void set_bus(const StringName& p_bus);
-	StringName get_bus() const;
+	void set_bus(const String& p_bus);
+	String get_bus() const;
 
 	void set_max_polyphony(int p_max_polyphony);
 	int get_max_polyphony() const;

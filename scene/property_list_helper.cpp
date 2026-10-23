@@ -30,11 +30,11 @@
 
 #include "property_list_helper.h"
 
-HashMap<StringName, Vector<PropertyListHelper*>> PropertyListHelper::base_helpers; // static
+HashMap<String, Vector<PropertyListHelper*>> PropertyListHelper::base_helpers; // static
 
 void PropertyListHelper::clear_base_helpers()
 { // static
-	for (KeyValue<StringName, Vector<PropertyListHelper*>>& E : base_helpers) {
+	for (KeyValue<String, Vector<PropertyListHelper*>>& E : base_helpers) {
 		for (PropertyListHelper* helper : E.value) {
 			helper->clear();
 		}
@@ -43,13 +43,13 @@ void PropertyListHelper::clear_base_helpers()
 }
 
 void PropertyListHelper::register_base_helper(
-	const StringName& p_class_name, PropertyListHelper* p_helper)
+	const String& p_class_name, PropertyListHelper* p_helper)
 { // static
 	base_helpers[p_class_name].push_back(p_helper);
 }
 
 Vector<PropertyListHelper*> PropertyListHelper::get_helpers_for_class(
-	const StringName& p_class_name)
+	const String& p_class_name)
 {
 	if (base_helpers.has(p_class_name)) {
 		return base_helpers[p_class_name];

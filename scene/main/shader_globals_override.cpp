@@ -32,9 +32,9 @@
 #include "servers/rendering/renderer.h"
 #include "shader_globals_override.h"
 
-StringName* ShaderGlobalsOverride::_remap(const StringName& p_name) const
+String* ShaderGlobalsOverride::_remap(const String& p_name) const
 {
-	StringName* r = param_remaps.getptr(p_name);
+	String* r = param_remaps.getptr(p_name);
 	if (!r) {
 		// not cached, do caching
 		String p = p_name;

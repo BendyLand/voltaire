@@ -48,12 +48,12 @@ String AnimationLibrary::validate_library_name(const String& p_name)
 	return p_name.replace_chars("/:,[", '_');
 }
 
-bool AnimationLibrary::has_animation(const StringName& p_name) const
+bool AnimationLibrary::has_animation(const String& p_name) const
 {
 	return animations.has(p_name);
 }
 
-Ref<Animation> AnimationLibrary::get_animation(const StringName& p_name) const
+Ref<Animation> AnimationLibrary::get_animation(const String& p_name) const
 {
 	ERR_FAIL_COND_V_MSG(
 		!animations.has(p_name), Ref<Animation>(), vformat("Animation not found: \"%s\".", p_name));
@@ -61,17 +61,17 @@ Ref<Animation> AnimationLibrary::get_animation(const StringName& p_name) const
 	return animations[p_name];
 }
 
-void AnimationLibrary::get_animation_list(LocalVector<StringName>* p_animations) const
+void AnimationLibrary::get_animation_list(LocalVector<String>* p_animations) const
 {
-	LocalVector<StringName> anims;
+	LocalVector<String> anims;
 
-	for (const KeyValue<StringName, Ref<Animation>>& E : animations) {
+	for (const KeyValue<String, Ref<Animation>>& E : animations) {
 		anims.push_back(E.key);
 	}
 
-	anims.sort_custom<StringName::AlphCompare>();
+	anims.sort();
 
-	for (const StringName& E : anims) {
+	for (const String& E : anims) {
 		p_animations->push_back(E);
 	}
 }
@@ -81,7 +81,7 @@ int AnimationLibrary::get_animation_list_size() const { return animations.size()
 AnimationLibrary::AnimationLibrary() {}
 
 void AnimationLibrary::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 }
 

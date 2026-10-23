@@ -36,14 +36,14 @@
 #include "servers/xr/xr_interface.h"
 #include "xr_nodes.h"
 
-void XRCamera3D::_changed_tracker(const StringName& p_tracker_name, int p_tracker_type)
+void XRCamera3D::_changed_tracker(const String& p_tracker_name, int p_tracker_type)
 {
 	if (p_tracker_name == tracker_name) {
 		_bind_tracker();
 	}
 }
 
-void XRCamera3D::_removed_tracker(const StringName& p_tracker_name, int p_tracker_type)
+void XRCamera3D::_removed_tracker(const String& p_tracker_name, int p_tracker_type)
 {
 	if (p_tracker_name == tracker_name) {
 		_unbind_tracker();
@@ -176,9 +176,9 @@ Vector<Plane> XRCamera3D::get_frustum() const
 // Note that trackers are only available in runtime and only after an XRInterface registers one.
 // So we bind by name and as long as a tracker isn't available, our node remains inactive.
 
-StringName XRNode3D::get_tracker() const { return tracker_name; }
+String XRNode3D::get_tracker() const { return tracker_name; }
 
-void XRNode3D::set_pose_name(const StringName& p_pose_name)
+void XRNode3D::set_pose_name(const String& p_pose_name)
 {
 	pose_name = p_pose_name;
 
@@ -189,7 +189,7 @@ void XRNode3D::set_pose_name(const StringName& p_pose_name)
 	}
 }
 
-StringName XRNode3D::get_pose_name() const { return pose_name; }
+String XRNode3D::get_pose_name() const { return pose_name; }
 
 void XRNode3D::set_show_when_tracked(bool p_show)
 {
@@ -241,7 +241,7 @@ Ref<XRPose> XRNode3D::get_pose()
 	}
 }
 
-void XRNode3D::_changed_tracker(const StringName& p_tracker_name, int p_tracker_type)
+void XRNode3D::_changed_tracker(const String& p_tracker_name, int p_tracker_type)
 {
 	if (tracker_name == p_tracker_name) {
 		// just in case unref our current tracker
@@ -252,7 +252,7 @@ void XRNode3D::_changed_tracker(const StringName& p_tracker_name, int p_tracker_
 	}
 }
 
-void XRNode3D::_removed_tracker(const StringName& p_tracker_name, int p_tracker_type)
+void XRNode3D::_removed_tracker(const String& p_tracker_name, int p_tracker_type)
 {
 	if (tracker_name == p_tracker_name) {
 		// unref our tracker, it's no longer available

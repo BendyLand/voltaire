@@ -225,9 +225,9 @@ void _rescale_skin(Vector3 p_scale, Ref<Skin> p_skin)
 void ResourceImporterScene::_optimize_animations(
 	AnimationPlayer* anim, float p_max_vel_error, float p_max_ang_error, int p_prc_error)
 {
-	LocalVector<StringName> anim_names;
+	LocalVector<String> anim_names;
 	anim->get_animation_list(&anim_names);
-	for (const StringName& E : anim_names) {
+	for (const String& E : anim_names) {
 		Ref<Animation> a = anim->get_animation(E);
 		a->optimize(p_max_vel_error, p_max_ang_error, p_prc_error);
 	}
@@ -235,9 +235,9 @@ void ResourceImporterScene::_optimize_animations(
 
 void ResourceImporterScene::_compress_animations(AnimationPlayer* anim, int p_page_size_kb)
 {
-	LocalVector<StringName> anim_names;
+	LocalVector<String> anim_names;
 	anim->get_animation_list(&anim_names);
-	for (const StringName& E : anim_names) {
+	for (const String& E : anim_names) {
 		Ref<Animation> a = anim->get_animation(E);
 		a->compress(p_page_size_kb * 1024);
 	}

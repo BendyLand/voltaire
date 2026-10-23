@@ -64,13 +64,13 @@ void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
 
 Vector<String> Translation::_get_message_list() const
 {
-	List<StringName> msgstrs;
+	List<String> msgstrs;
 	get_message_list(&msgstrs);
 
 	Vector<String> keys;
 	keys.resize(msgstrs.size());
 	int idx = 0;
-	for (const StringName& msgstr : msgstrs) {
+	for (const String& msgstr : msgstrs) {
 		keys.write[idx++] = msgstr;
 	}
 	return keys;
@@ -79,8 +79,8 @@ Vector<String> Translation::_get_message_list() const
 Vector<String> Translation::get_translated_message_list() const
 {
 	Vector<String> msgstrs;
-	for (const KeyValue<MessageKey, Vector<StringName>>& E : translation_map) {
-		for (const StringName& msgstr : E.value) {
+	for (const KeyValue<MessageKey, Vector<String>>& E : translation_map) {
+		for (const String& msgstr : E.value) {
 			msgstrs.push_back(msgstr);
 		}
 	}
@@ -98,19 +98,19 @@ void Translation::set_locale(const String& p_locale)
 }
 
 void Translation::add_message(
-	const StringName& p_src_text, const StringName& p_xlated_text, const StringName& p_context)
+	const String& p_src_text, const String& p_xlated_text, const String& p_context)
 {
 	_check_for_incompatibility(p_context, p_src_text);
 	translation_map[{p_context, p_src_text}] = {p_xlated_text};
 }
 
-void Translation::add_plural_message(const StringName& p_src_text,
-	const Vector<String>& p_plural_xlated_texts, const StringName& p_context)
+void Translation::add_plural_message(const String& p_src_text,
+	const Vector<String>& p_plural_xlated_texts, const String& p_context)
 {
 	ERR_FAIL_COND_MSG(p_plural_xlated_texts.is_empty(),
 		"Parameter vector p_plural_xlated_texts passed in is empty.");
 
-	Vector<StringName> msgstrs;
+	Vector<String> msgstrs;
 	msgstrs.resize(p_plural_xlated_texts.size());
 	for (int i = 0; i < p_plural_xlated_texts.size(); i++) {
 		msgstrs.write[i] = p_plural_xlated_texts[i];
@@ -120,44 +120,44 @@ void Translation::add_plural_message(const StringName& p_src_text,
 	translation_map[{p_context, p_src_text}] = msgstrs;
 }
 
-StringName Translation::get_message(const StringName& p_src_text, const StringName& p_context) const
+String Translation::get_message(const String& p_src_text, const String& p_context) const
 {
-	const Vector<StringName>* msgstrs = translation_map.getptr({p_context, p_src_text});
+	const Vector<String>* msgstrs = translation_map.getptr({p_context, p_src_text});
 	if (msgstrs == nullptr) {
-		return StringName();
+		return String();
 	}
 
 	DEV_ASSERT(!msgstrs->is_empty()); // Should be prevented when adding messages.
 	return msgstrs->get(0);
 }
 
-StringName Translation::get_plural_message(const StringName& p_src_text,
-	const StringName& p_plural_text, int p_n, const StringName& p_context) const
+String Translation::get_plural_message(const String& p_src_text,
+	const String& p_plural_text, int p_n, const String& p_context) const
 {
-	ERR_FAIL_COND_V_MSG(p_n < 0, StringName(),
+	ERR_FAIL_COND_V_MSG(p_n < 0, String(),
 		"N passed into translation to get a plural message should not be negative. For negative "
 		"numbers, use singular translation please. Search \"gettext PO Plural Forms\" online for "
 		"details on translating negative numbers.");
 
-	const Vector<StringName>* msgstrs = translation_map.getptr({p_context, p_src_text});
+	const Vector<String>* msgstrs = translation_map.getptr({p_context, p_src_text});
 	if (msgstrs == nullptr) {
-		return StringName();
+		return String();
 	}
 
 	const int index = _get_plural_rules()->evaluate(p_n);
-	ERR_FAIL_INDEX_V_MSG(index, msgstrs->size(), StringName(),
+	ERR_FAIL_INDEX_V_MSG(index, msgstrs->size(), String(),
 		"Plural index returned or number of plural translations is not valid.");
 	return msgstrs->get(index);
 }
 
-void Translation::erase_message(const StringName& p_src_text, const StringName& p_context)
+void Translation::erase_message(const String& p_src_text, const String& p_context)
 {
 	translation_map.erase({p_context, p_src_text});
 }
 
-void Translation::get_message_list(List<StringName>* r_messages) const
+void Translation::get_message_list(List<String>* r_messages) const
 {
-	for (const KeyValue<MessageKey, Vector<StringName>>& E : translation_map) {
+	for (const KeyValue<MessageKey, Vector<String>>& E : translation_map) {
 		if (E.key.msgctxt.is_empty()) {
 			r_messages->push_back(E.key.msgid);
 		}

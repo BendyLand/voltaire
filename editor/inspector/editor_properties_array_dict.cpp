@@ -161,7 +161,7 @@ void EditorPropertyDictionary::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		if (button_add_item) {
 			add_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
+				SceneString(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
 		}
 	} break;
 	}

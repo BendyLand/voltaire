@@ -54,7 +54,7 @@ private:
 
 	Ref<RectangleShape2D> unit_rect;
 
-	StringName action;
+	String action;
 	bool passby_press = false;
 	int finger_pressed = -1;
 

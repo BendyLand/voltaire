@@ -103,7 +103,7 @@ RID Shader::get_rid() const
 }
 
 void Shader::set_default_texture_parameter(
-	const StringName& p_name, const Ref<Texture>& p_texture, int p_index)
+	const String& p_name, const Ref<Texture>& p_texture, int p_index)
 {
 	_check_shader_rid();
 
@@ -130,7 +130,7 @@ void Shader::set_default_texture_parameter(
 	emit_changed();
 }
 
-Ref<Texture> Shader::get_default_texture_parameter(const StringName& p_name, int p_index) const
+Ref<Texture> Shader::get_default_texture_parameter(const String& p_name, int p_index) const
 {
 	if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
 		return default_textures[p_name][p_index];
@@ -138,9 +138,9 @@ Ref<Texture> Shader::get_default_texture_parameter(const StringName& p_name, int
 	return Ref<Texture2D>();
 }
 
-void Shader::get_default_texture_parameter_list(List<StringName>* r_textures) const
+void Shader::get_default_texture_parameter_list(List<String>* r_textures) const
 {
-	for (const KeyValue<StringName, HashMap<int, Ref<Texture>>>& E : default_textures) {
+	for (const KeyValue<String, HashMap<int, Ref<Texture>>>& E : default_textures) {
 		r_textures->push_back(E.key);
 	}
 }

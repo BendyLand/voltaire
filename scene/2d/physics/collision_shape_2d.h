@@ -58,7 +58,7 @@ protected:
 	void _notification(int p_what);
 
 #ifdef DEBUG_ENABLED
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 #endif // DEBUG_ENABLED
 
 

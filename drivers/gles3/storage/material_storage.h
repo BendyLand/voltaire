@@ -51,15 +51,15 @@ namespace GLES3
 struct ShaderData
 {
 	String path;
-	HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> uniforms;
-	HashMap<StringName, HashMap<int, RID>> default_texture_params;
+	HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
+	HashMap<String, HashMap<int, RID>> default_texture_params;
 
 	virtual void set_path_hint(const String& p_hint);
 	virtual void set_default_texture_parameter(
-		const StringName& p_name, RID p_texture, int p_index);
+		const String& p_name, RID p_texture, int p_index);
 	virtual void get_instance_param_list(
 		List<InstanceShaderParam>* p_param_list) const;
-	virtual bool is_parameter_texture(const StringName& p_param) const;
+	virtual bool is_parameter_texture(const String& p_param) const;
 
 	virtual void set_code(const String& p_Code) = 0;
 	virtual bool is_animated() const = 0;
@@ -83,7 +83,7 @@ struct Shader
 	String code;
 	String path_hint;
 	RSE::ShaderMode mode;
-	HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
+	HashMap<String, HashMap<int, RID>> default_texture_parameter;
 	HashSet<Material*> owners;
 };
 
@@ -109,7 +109,7 @@ private:
 	List<RID>::Element* global_buffer_E = nullptr;
 	List<RID>::Element* global_texture_E = nullptr;
 	uint64_t global_textures_pass = 0;
-	HashMap<StringName, uint64_t> used_global_textures;
+	HashMap<String, uint64_t> used_global_textures;
 };
 
 typedef MaterialData* (*MaterialDataRequestFunction)(ShaderData*);
@@ -488,7 +488,7 @@ struct GlobalShaderUniforms
 		int32_t buffer_elements;
 	};
 
-	HashMap<StringName, Variable> variables;
+	HashMap<String, Variable> variables;
 
 	struct Value
 	{
@@ -635,13 +635,13 @@ public:
 
 	static void _update_global_shader_uniforms();
 
-	static void global_shader_parameter_remove(const StringName& p_name);
-	static Vector<StringName> global_shader_parameter_get_list();
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
 
 	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name);
+		const String& p_name);
 	static RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
-		const StringName& p_name);
+		const String& p_name);
 
 	static void global_shader_parameters_load_settings(bool p_load_textures = true);
 	static void global_shader_parameters_clear();
@@ -668,9 +668,9 @@ public:
 	static String shader_get_code(RID p_shader);
 
 	static void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index);
+		RID p_shader, const String& p_name, RID p_texture, int p_index);
 	static RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index);
+		RID p_shader, const String& p_name, int p_index);
 
 	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
 		RID p_shader);

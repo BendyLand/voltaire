@@ -100,8 +100,8 @@ public:
 	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
 	virtual Ref<Material> surface_get_material(int p_idx) const override;
 	virtual int get_blend_shape_count() const override;
-	virtual StringName get_blend_shape_name(int p_index) const override;
-	virtual void set_blend_shape_name(int p_index, const StringName& p_name) override;
+	virtual String get_blend_shape_name(int p_index) const override;
+	virtual void set_blend_shape_name(int p_index, const String& p_name) override;
 
 	virtual AABB get_aabb() const override;
 

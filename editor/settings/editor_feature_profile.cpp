@@ -90,7 +90,7 @@ const char* EditorFeatureProfile::feature_identifiers[FEATURE_MAX] = {
 	"groups_dock",
 };
 
-void EditorFeatureProfile::set_disable_class(const StringName& p_class, bool p_disabled)
+void EditorFeatureProfile::set_disable_class(const String& p_class, bool p_disabled)
 {
 	if (p_disabled) {
 		disabled_classes.insert(p_class);
@@ -100,15 +100,15 @@ void EditorFeatureProfile::set_disable_class(const StringName& p_class, bool p_d
 	}
 }
 
-bool EditorFeatureProfile::is_class_disabled(const StringName& p_class) const
+bool EditorFeatureProfile::is_class_disabled(const String& p_class) const
 {
-	if (p_class == StringName()) {
+	if (p_class == String()) {
 		return false;
 	}
 	return disabled_classes.has(p_class);
 }
 
-void EditorFeatureProfile::set_disable_class_editor(const StringName& p_class, bool p_disabled)
+void EditorFeatureProfile::set_disable_class_editor(const String& p_class, bool p_disabled)
 {
 	if (p_disabled) {
 		disabled_editors.insert(p_class);
@@ -118,20 +118,20 @@ void EditorFeatureProfile::set_disable_class_editor(const StringName& p_class, b
 	}
 }
 
-bool EditorFeatureProfile::is_class_editor_disabled(const StringName& p_class) const
+bool EditorFeatureProfile::is_class_editor_disabled(const String& p_class) const
 {
-	if (p_class == StringName()) {
+	if (p_class == String()) {
 		return false;
 	}
 	return disabled_editors.has(p_class);
 }
 
 void EditorFeatureProfile::set_disable_class_property(
-	const StringName& p_class, const StringName& p_property, bool p_disabled)
+	const String& p_class, const String& p_property, bool p_disabled)
 {
 	if (p_disabled) {
 		if (!disabled_properties.has(p_class)) {
-			disabled_properties[p_class] = HashSet<StringName>();
+			disabled_properties[p_class] = HashSet<String>();
 		}
 
 		disabled_properties[p_class].insert(p_property);
@@ -146,7 +146,7 @@ void EditorFeatureProfile::set_disable_class_property(
 }
 
 bool EditorFeatureProfile::is_class_property_disabled(
-	const StringName& p_class, const StringName& p_property) const
+	const String& p_class, const String& p_property) const
 {
 	if (!disabled_properties.has(p_class)) {
 		return false;
@@ -159,12 +159,12 @@ bool EditorFeatureProfile::is_class_property_disabled(
 	return true;
 }
 
-bool EditorFeatureProfile::has_class_properties_disabled(const StringName& p_class) const
+bool EditorFeatureProfile::has_class_properties_disabled(const String& p_class) const
 {
 	return disabled_properties.has(p_class);
 }
 
-void EditorFeatureProfile::set_item_collapsed(const StringName& p_class, bool p_collapsed)
+void EditorFeatureProfile::set_item_collapsed(const String& p_class, bool p_collapsed)
 {
 	if (p_collapsed) {
 		collapsed_classes.insert(p_class);
@@ -174,7 +174,7 @@ void EditorFeatureProfile::set_item_collapsed(const StringName& p_class, bool p_
 	}
 }
 
-bool EditorFeatureProfile::is_item_collapsed(const StringName& p_class) const
+bool EditorFeatureProfile::is_item_collapsed(const String& p_class) const
 {
 	return collapsed_classes.has(p_class);
 }

@@ -68,7 +68,7 @@ void VersionControlEditorPlugin::_create_vcs_metadata_files()
 void VersionControlEditorPlugin::_populate_available_vcs_names()
 {
 	set_up_choice->clear();
-	for (const StringName& available_plugin : available_plugins) {
+	for (const String& available_plugin : available_plugins) {
 		set_up_choice->add_item(available_plugin);
 	}
 }

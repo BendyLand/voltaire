@@ -58,15 +58,15 @@ bool AnimationTrackEditBool::is_key_selectable_by_distance() const { return fals
 
 int AnimationTrackEditColor::get_key_height() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	return font->get_height(font_size) * 0.8;
 }
 
 Rect2 AnimationTrackEditColor::get_key_rect(int p_index, float p_pixels_sec)
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	int fh = font->get_height(font_size) * 0.8;
 	return Rect2(-fh / 2, 0, fh, get_size().height);
 }
@@ -76,8 +76,8 @@ bool AnimationTrackEditColor::is_key_selectable_by_distance() const { return fal
 void AnimationTrackEditColor::draw_key_link(int p_index_from, int p_index_to, float p_pixels_sec,
 	int p_x, int p_next_x, int p_clip_left, int p_clip_right)
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	int fh = (font->get_height(font_size) * 0.8);
 
 	fh /= 3;
@@ -166,8 +166,8 @@ void AnimationTrackEditVolumeDB::draw_fg(int p_clip_left, int p_clip_right)
 
 int AnimationTrackEditTypeAudio::get_key_height() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	return int(font->get_height(font_size) * 1.5);
 }
 

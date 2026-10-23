@@ -109,7 +109,7 @@ PackedStringArray XRInterface::get_suggested_tracker_names() const
 	return arr;
 }
 
-PackedStringArray XRInterface::get_suggested_pose_names(const StringName& p_tracker_name) const
+PackedStringArray XRInterface::get_suggested_pose_names(const String& p_tracker_name) const
 {
 	PackedStringArray arr;
 
@@ -119,12 +119,12 @@ PackedStringArray XRInterface::get_suggested_pose_names(const StringName& p_trac
 XRInterface::TrackingStatus XRInterface::get_tracking_status() const { return XR_UNKNOWN_TRACKING; }
 
 void XRInterface::trigger_haptic_pulse(const String& p_action_name,
-	const StringName& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
+	const String& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
 	double p_delay_sec)
 {
 }
 
-StringName XRInterface::get_name() const { return StringName(); }
+String XRInterface::get_name() const { return String(); }
 
 uint32_t XRInterface::get_capabilities() const { return 0; }
 

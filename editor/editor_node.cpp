@@ -523,7 +523,7 @@ bool EditorNode::is_scene_unsaved(int p_idx)
 	return false;
 }
 
-bool EditorNode::_is_class_editor_disabled_by_feature_profile(const StringName& p_class)
+bool EditorNode::_is_class_editor_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
@@ -531,9 +531,9 @@ bool EditorNode::_is_class_editor_disabled_by_feature_profile(const StringName& 
 		return false;
 	}
 
-	StringName class_name = p_class;
+	String class_name = p_class;
 
-	while (class_name != StringName()) {
+	while (class_name != String()) {
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}
@@ -638,7 +638,7 @@ int EditorNode::_next_unsaved_scene(bool p_valid_filename, int p_start)
 	return -1;
 }
 
-void EditorNode::add_extension_editor_plugin(const StringName& p_class_name) {}
+void EditorNode::add_extension_editor_plugin(const String& p_class_name) {}
 
 bool EditorNode::is_addon_plugin_enabled(const String& p_addon) const
 {
@@ -918,10 +918,10 @@ void EditorNode::_file_dialog_thumbnail_callback(const String& p_path,
 
 void EditorNode::_build_icon_type_cache()
 {
-	List<StringName> tl;
-	theme->get_icon_list(EditorStringName(EditorIcons), &tl);
-	for (const StringName& E : tl) {
-		icon_type_cache[E] = theme->get_icon(E, EditorStringName(EditorIcons));
+	List<String> tl;
+	theme->get_icon_list(EditorString(EditorIcons), &tl);
+	for (const String& E : tl) {
+		icon_type_cache[E] = theme->get_icon(E, EditorString(EditorIcons));
 	}
 }
 

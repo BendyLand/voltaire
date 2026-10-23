@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <memory>
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
 
@@ -117,18 +118,14 @@ public:
 		InterpolationType interpolation = INTERPOLATION_LINEAR;
 		bool loop_wrap = true;
 		NodePath path; // Path to something.
-		StringName concatenated_path;
+		String concatenated_path;
 		bool imported = false;
 		bool enabled = true;
 
 		TrackCacheID get_unique_id() const
 		{
-			// HACK. StringName pointer allocates 40 bytes (sizeof(StringName::_Data)), so any
-			// StringName pointer we allocate is guaranteed to not have another StringName pointer
-			// within 40 bytes address range. get_cache_type() returns a value in range (0, 8) so
-			// this can be used as an offset while keeping the uniqueness property. This will break
-			// if sizeof(StringName::_Data) is less than max(CACHE_TYPE).
-			return (TrackCacheID)(concatenated_path.data_unique_pointer()) + get_cache_type(type);
+			uint64_t h = concatenated_path.hash();
+			return (TrackCacheID)((h << 8) | (uint8_t)type);
 		}
 
 		virtual ~Track() {}
@@ -205,7 +202,7 @@ private:
 
 	struct MethodKey : public Key
 	{
-		StringName method;
+		String method;
 	};
 
 	struct MethodTrack : public Track
@@ -257,7 +254,7 @@ private:
 
 	struct AnimationTrack : public Track
 	{
-		LocalVector<TKey<StringName>> values;
+		LocalVector<TKey<String>> values;
 
 		AnimationTrack() { type = TYPE_ANIMATION; }
 	};
@@ -267,20 +264,20 @@ private:
 	struct MarkerKey
 	{
 		double time;
-		StringName name;
+		String name;
 
-		MarkerKey(double p_time, const StringName& p_name) : time(p_time), name(p_name) {}
+		MarkerKey(double p_time, const String& p_name) : time(p_time), name(p_name) {}
 
 		MarkerKey() = default;
 	};
 
-	LocalVector<MarkerKey> marker_names;	  // time -> name
-	HashMap<StringName, double> marker_times; // name -> time
-	HashMap<StringName, Color> marker_colors; // name -> color
+	LocalVector<MarkerKey> marker_names;  // time -> name
+	HashMap<String, double> marker_times; // name -> time
+	HashMap<String, Color> marker_colors; // name -> color
 
 	LocalVector<Track*> tracks;
 #ifdef TOOLS_ENABLED
-	HashSet<StringName> folded_groups;
+	HashSet<String> folded_groups;
 	bool folded_groups_dirty =
 		false; // Set when changing folding state to access .cfg to store the state.
 #endif		   // TOOLS_ENABLED
@@ -451,7 +448,6 @@ private:
 protected:
 	virtual void reset_state() override;
 
-
 	static bool inform_variant_array(
 		int& r_min, int& r_max); // Returns true if max and min are swapped.
 
@@ -566,9 +562,9 @@ public:
 	void audio_track_set_use_blend(int p_track, bool p_enable);
 	bool audio_track_is_use_blend(int p_track) const;
 
-	int animation_track_insert_key(int p_track, double p_time, const StringName& p_animation);
-	void animation_track_set_key_animation(int p_track, int p_key, const StringName& p_animation);
-	StringName animation_track_get_key_animation(int p_track, int p_key) const;
+	int animation_track_insert_key(int p_track, double p_time, const String& p_animation);
+	void animation_track_set_key_animation(int p_track, int p_key, const String& p_animation);
+	String animation_track_get_key_animation(int p_track, int p_key) const;
 
 	void track_set_interpolation_loop_wrap(int p_track, bool p_enable);
 	bool track_get_interpolation_loop_wrap(int p_track) const;
@@ -576,22 +572,22 @@ public:
 	void value_track_set_update_mode(int p_track, UpdateMode p_mode);
 	UpdateMode value_track_get_update_mode(int p_track) const;
 
-	StringName method_track_get_name(int p_track, int p_key_idx) const;
+	String method_track_get_name(int p_track, int p_key_idx) const;
 
 	void track_get_key_indices_in_range(int p_track, double p_time, double p_delta, double p_start,
 		double p_end, LocalVector<int>* r_indices,
 		Animation::LoopedFlag p_looped_flag = Animation::LOOPED_FLAG_NONE) const;
 
-	void add_marker(const StringName& p_name, double p_time);
-	void remove_marker(const StringName& p_name);
-	bool has_marker(const StringName& p_name) const;
-	StringName get_marker_at_time(double p_time) const;
-	StringName get_next_marker(double p_time) const;
-	StringName get_prev_marker(double p_time) const;
-	double get_marker_time(const StringName& p_time) const;
+	void add_marker(const String& p_name, double p_time);
+	void remove_marker(const String& p_name);
+	bool has_marker(const String& p_name) const;
+	String get_marker_at_time(double p_time) const;
+	String get_next_marker(double p_time) const;
+	String get_prev_marker(double p_time) const;
+	double get_marker_time(const String& p_time) const;
 	PackedStringArray get_marker_names() const;
-	Color get_marker_color(const StringName& p_name) const;
-	void set_marker_color(const StringName& p_name, const Color& p_color);
+	Color get_marker_color(const String& p_name) const;
+	void set_marker_color(const String& p_name, const Color& p_color);
 
 	void set_length(double p_length);
 
@@ -613,26 +609,23 @@ public:
 			4.0); // 4.0 seems to be the split tolerance sweet spot from many tests.
 
 #ifdef TOOLS_ENABLED
-	const HashSet<StringName>& editor_get_folded_groups() const { return folded_groups; }
+	const HashSet<String>& editor_get_folded_groups() const { return folded_groups; }
 
 	void editor_clear_folded_groups() { folded_groups.clear(); }
 
-	void editor_add_folded_group(const StringName& p_group_name)
-	{
-		folded_groups.insert(p_group_name);
-	}
+	void editor_add_folded_group(const String& p_group_name) { folded_groups.insert(p_group_name); }
 
-	void editor_remove_folded_group(const StringName& p_group_name)
+	void editor_remove_folded_group(const String& p_group_name)
 	{
 		folded_groups.erase(p_group_name);
 	}
 
-	bool editor_is_group_folded(const StringName& p_group_name) const
+	bool editor_is_group_folded(const String& p_group_name) const
 	{
 		return folded_groups.has(p_group_name);
 	}
 
-	void editor_set_group_folded(const StringName& p_group_name, bool p_folded)
+	void editor_set_group_folded(const String& p_group_name, bool p_folded)
 	{
 		if (editor_is_group_folded(p_group_name) == p_folded) {
 			return; // Do nothing.

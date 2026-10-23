@@ -38,7 +38,7 @@ public:
 	typedef Ref<EditorDebuggerServer> (*CreateServerFunc)(const String& p_uri);
 
 private:
-	static HashMap<StringName, CreateServerFunc> protocols;
+	static HashMap<String, CreateServerFunc> protocols;
 
 public:
 	static void initialize();

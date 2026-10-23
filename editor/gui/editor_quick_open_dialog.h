@@ -46,7 +46,7 @@ class MarginContainer;
 class PanelContainer;
 class PopupMenu;
 class ScrollContainer;
-class StringName;
+class String;
 class Texture2D;
 class TextureRect;
 class VBoxContainer;
@@ -94,7 +94,7 @@ class QuickOpenResultContainer : public VBoxContainer
 	};
 
 public:
-	void init(const Vector<StringName>& p_base_types);
+	void init(const Vector<String>& p_base_types);
 	void handle_search_box_input(const Ref<InputEvent>& p_ie);
 	void set_query_and_update(const String& p_query);
 	void update_results();
@@ -102,7 +102,7 @@ public:
 	bool has_nothing_selected() const;
 	ResourceUID::ID get_selected() const;
 	String get_selected_path() const;
-	const Vector<StringName>& get_base_types() const;
+	const Vector<String>& get_base_types() const;
 
 	bool is_instant_preview_enabled() const;
 	void set_instant_preview_toggle_visible(bool p_visible);
@@ -118,13 +118,13 @@ protected:
 private:
 	static constexpr int MAX_HISTORY_SIZE = 20;
 
-	Vector<StringName> base_types;
+	Vector<String> base_types;
 	LocalVector<ResourceUID::ID> uids;
-	AHashMap<ResourceUID::ID, StringName> filetypes;
+	AHashMap<ResourceUID::ID, String> filetypes;
 	Vector<QuickOpenResultCandidate> candidates;
 	HashSet<ResourceUID::ID> candidates_uids;
 
-	AHashMap<StringName, Vector<ResourceUID::ID>> selected_history;
+	AHashMap<String, Vector<ResourceUID::ID>> selected_history;
 	HashSet<ResourceUID::ID> history_set;
 
 	String query;
@@ -153,9 +153,9 @@ private:
 	CheckButton* include_addons_toggle = nullptr;
 	CheckButton* fuzzy_search_toggle = nullptr;
 
-	AHashMap<StringName, Ref<Texture2D>> file_type_icons;
+	AHashMap<String, Ref<Texture2D>> file_type_icons;
 
-	static QuickOpenDisplayMode get_adaptive_display_mode(const Vector<StringName>& p_base_types);
+	static QuickOpenDisplayMode get_adaptive_display_mode(const Vector<String>& p_base_types);
 
 	void _ensure_result_vector_capacity();
 	void _sort_uids(int p_max_results);
@@ -259,18 +259,18 @@ protected:
 	void selection_changed();
 
 private:
-	static String get_dialog_title(const Vector<StringName>& p_base_types);
+	static String get_dialog_title(const Vector<String>& p_base_types);
 
 	LineEdit* search_box = nullptr;
 	QuickOpenResultContainer* container = nullptr;
 
-	StringName property_path;
+	String property_path;
 	bool initial_selection_performed = false;
 	bool allow_type_switching = false;
 	bool is_cycling_items = false;
 	bool _is_instant_preview_active() const;
 	void _search_box_text_changed(const String& p_query);
-	void _finish_dialog_setup(const Vector<StringName>& p_base_types);
+	void _finish_dialog_setup(const Vector<String>& p_base_types);
 
 	void preview_property();
 	void update_property();

@@ -218,7 +218,7 @@ String ShaderLanguage::get_token_text(Token p_token)
 	return name;
 }
 
-ShaderLanguage::Token ShaderLanguage::_make_token(TokenType p_type, const StringName& p_text)
+ShaderLanguage::Token ShaderLanguage::_make_token(TokenType p_type, const String& p_text)
 {
 	Token tk;
 	tk.type = p_type;
@@ -1295,8 +1295,8 @@ bool ShaderLanguage::is_token_nonvoid_datatype(TokenType p_type)
 
 void ShaderLanguage::clear()
 {
-	current_function = StringName();
-	last_name = StringName();
+	current_function = String();
+	last_name = String();
 	last_type = IDENTIFIER_MAX;
 	current_uniform_group_name = "";
 	current_uniform_hint = ShaderNode::Uniform::HINT_NONE;
@@ -1306,9 +1306,9 @@ void ShaderLanguage::clear()
 
 	completion_type = COMPLETION_NONE;
 	completion_block = nullptr;
-	completion_function = StringName();
+	completion_function = String();
 	completion_class = TAG_GLOBAL;
-	completion_struct = StringName();
+	completion_struct = String();
 	completion_base = TYPE_VOID;
 	completion_base_array = false;
 
@@ -1345,7 +1345,7 @@ void ShaderLanguage::clear()
 
 #ifdef DEBUG_ENABLED
 void ShaderLanguage::_parse_used_identifier(
-	const StringName& p_identifier, IdentifierType p_type, const StringName& p_function)
+	const String& p_identifier, IdentifierType p_type, const String& p_function)
 {
 	switch (p_type) {
 	case IdentifierType::IDENTIFIER_CONSTANT:
@@ -1383,13 +1383,13 @@ void ShaderLanguage::_parse_used_identifier(
 #endif // DEBUG_ENABLED
 
 bool ShaderLanguage::_find_identifier(const BlockNode* p_block, bool p_allow_reassign,
-	const FunctionInfo& p_function_info, const StringName& p_identifier, DataType* r_data_type,
-	IdentifierType* r_type, bool* r_is_const, int* r_array_size, StringName* r_struct_name,
+	const FunctionInfo& p_function_info, const String& p_identifier, DataType* r_data_type,
+	IdentifierType* r_type, bool* r_is_const, int* r_array_size, String* r_struct_name,
 	Vector<Scalar>* r_constant_values)
 {
 	if (is_shader_inc) {
 		for (int i = 0; i < RSE::SHADER_MAX; i++) {
-			for (const KeyValue<StringName, FunctionInfo>& E :
+			for (const KeyValue<String, FunctionInfo>& E :
 				ShaderTypes::get_functions(RSE::ShaderMode(i))) {
 				if ((current_function == E.key || E.key == "global" || E.key == "constants") &&
 					E.value.built_ins.has(p_identifier)) {
@@ -1575,7 +1575,7 @@ bool ShaderLanguage::_find_identifier(const BlockNode* p_block, bool p_allow_rea
 
 bool ShaderLanguage::_validate_operator(const BlockNode* p_block,
 	const FunctionInfo& p_function_info, OperatorNode* p_op, DataType* r_ret_type, int* r_ret_size,
-	StringName* r_ret_struct_name)
+	String* r_ret_struct_name)
 {
 	bool valid = false;
 	DataType ret_type = TYPE_VOID;
@@ -3922,7 +3922,7 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 
 	{nullptr, TYPE_VOID, {TYPE_VOID}, {""}, TAG_GLOBAL, false}};
 
-static HashSet<StringName> global_func_set;
+static HashSet<String> global_func_set;
 
 const ShaderLanguage::BuiltinFuncOutArgs ShaderLanguage::builtin_func_out_args[] = {
 	{"modf", {1, -1}}, {"umulExtended", {2, 3}}, {"imulExtended", {2, 3}}, {"uaddCarry", {2, -1}},
@@ -3939,18 +3939,18 @@ bool ShaderLanguage::is_const_suffix_lut_initialized = false;
 
 bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 	const FunctionInfo& p_function_info, OperatorNode* p_func, DataType* r_ret_type,
-	StringName* r_ret_type_str, bool* r_is_custom_function)
+	String* r_ret_type_str, bool* r_is_custom_function)
 {
 	ERR_FAIL_COND_V(p_func->op != OP_CALL && p_func->op != OP_CONSTRUCT, false);
 
 	Vector<DataType> args;
-	Vector<StringName> args2;
+	Vector<String> args2;
 	Vector<int> args3;
 
 	ERR_FAIL_COND_V(p_func->arguments[0]->type != Node::NODE_TYPE_VARIABLE, false);
 
-	StringName name = static_cast<VariableNode*>(p_func->arguments[0])->name.string();
-	StringName rname = static_cast<VariableNode*>(p_func->arguments[0])->rname.string();
+	String name = static_cast<VariableNode*>(p_func->arguments[0])->name;
+	String rname = static_cast<VariableNode*>(p_func->arguments[0])->rname;
 
 	for (int i = 1; i < p_func->arguments.size(); i++) {
 		args.push_back(p_func->arguments[i]->get_datatype());
@@ -3962,7 +3962,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 
 	if (stages) {
 		// Stage functions can be used in custom functions as well, that why need to check them all.
-		for (const KeyValue<StringName, FunctionInfo>& E : *stages) {
+		for (const KeyValue<String, FunctionInfo>& E : *stages) {
 			if (E.value.stage_functions.has(name)) {
 				// Stage-based function.
 				const StageFunctionInfo& sf = E.value.stage_functions[name];
@@ -4155,7 +4155,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 											fail = true;
 										}
 										else {
-											StringName varname = vn->name;
+											String varname = vn->name;
 											if (shader->uniforms.has(varname)) {
 												fail = true;
 											}
@@ -4184,7 +4184,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 										return false;
 									}
 
-									StringName var_name;
+									String var_name;
 									if (p_func->arguments[arg_idx + 1]->type ==
 										Node::NODE_TYPE_ARRAY) {
 										var_name = static_cast<const ArrayNode*>(
@@ -4329,7 +4329,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 
 	// try existing functions..
 
-	StringName exclude_function;
+	String exclude_function;
 	BlockNode* block = p_block;
 
 	while (block) {
@@ -5017,9 +5017,9 @@ int ShaderLanguage::get_cardinality(DataType p_type)
 }
 
 bool ShaderLanguage::_get_completable_identifier(
-	BlockNode* p_block, CompletionType p_type, StringName& identifier)
+	BlockNode* p_block, CompletionType p_type, String& identifier)
 {
-	identifier = StringName();
+	identifier = String();
 
 	TkPos pos = {0, 0};
 
@@ -5040,14 +5040,14 @@ bool ShaderLanguage::_get_completable_identifier(
 		tk = _get_token();
 
 		if (tk.type == TK_IDENTIFIER) {
-			identifier = identifier.string() + tk.text.string();
+			identifier = identifier + tk.text;
 		}
 		else {
 			_set_tkpos(pos);
 		}
 		return true;
 	}
-	else if (identifier != StringName()) {
+	else if (identifier != String()) {
 		_set_tkpos(pos);
 	}
 
@@ -5150,12 +5150,12 @@ bool ShaderLanguage::_check_node_constness(const Node* p_node) const
 }
 
 bool ShaderLanguage::_check_restricted_func(
-	const StringName& p_name, const StringName& p_current_function) const
+	const String& p_name, const String& p_current_function) const
 {
 	int idx = 0;
 
 	while (frag_only_func_defs[idx].name) {
-		if (StringName(frag_only_func_defs[idx].name) == p_name) {
+		if (String(frag_only_func_defs[idx].name) == p_name) {
 			if (is_supported_frag_only_funcs) {
 				if (p_current_function == "vertex" && stages->has(p_current_function)) {
 					return true;
@@ -5173,7 +5173,7 @@ bool ShaderLanguage::_check_restricted_func(
 }
 
 bool ShaderLanguage::_validate_restricted_func(
-	const StringName& p_name, const CallInfo* p_func_info, bool p_is_builtin_hint)
+	const String& p_name, const CallInfo* p_func_info, bool p_is_builtin_hint)
 {
 	const bool is_in_restricted_function = p_func_info->name == "vertex";
 
@@ -5192,7 +5192,7 @@ bool ShaderLanguage::_validate_restricted_func(
 	}
 
 	if (!p_func_info->uses_restricted_items.is_empty()) {
-		const Pair<StringName, CallInfo::Item>& first_element =
+		const Pair<String, CallInfo::Item>& first_element =
 			p_func_info->uses_restricted_items.get(0);
 
 		if (first_element.second.type == CallInfo::Item::ITEM_TYPE_VARYING) {
@@ -5312,7 +5312,7 @@ ShaderLanguage::ShaderNode::Uniform::Hint ShaderLanguage::_sanitize_hint(
 	return ShaderNode::Uniform::HINT_NONE;
 }
 
-bool ShaderLanguage::_propagate_function_call_sampler_uniform_settings(const StringName& p_name,
+bool ShaderLanguage::_propagate_function_call_sampler_uniform_settings(const String& p_name,
 	int p_argument, TextureFilter p_filter, TextureRepeat p_repeat,
 	ShaderNode::Uniform::Hint p_hint)
 {
@@ -5347,7 +5347,7 @@ bool ShaderLanguage::_propagate_function_call_sampler_uniform_settings(const Str
 				arg->tex_argument_filter = p_filter;
 				arg->tex_argument_repeat = p_repeat;
 				arg->tex_hint = _sanitize_hint(p_hint);
-				for (KeyValue<StringName, HashSet<int>>& E : arg->tex_argument_connect) {
+				for (KeyValue<String, HashSet<int>>& E : arg->tex_argument_connect) {
 					for (const int& F : E.value) {
 						if (!_propagate_function_call_sampler_uniform_settings(
 								E.key, F, p_filter, p_repeat, p_hint)) {
@@ -5363,7 +5363,7 @@ bool ShaderLanguage::_propagate_function_call_sampler_uniform_settings(const Str
 }
 
 bool ShaderLanguage::_propagate_function_call_sampler_builtin_reference(
-	const StringName& p_name, int p_argument, const StringName& p_builtin)
+	const String& p_name, int p_argument, const String& p_builtin)
 {
 	for (int i = 0; i < shader->vfunctions.size(); i++) {
 		if (shader->vfunctions[i].name == p_name) {
@@ -5394,7 +5394,7 @@ bool ShaderLanguage::_propagate_function_call_sampler_builtin_reference(
 				arg->tex_builtin_check = true;
 				arg->tex_builtin = p_builtin;
 
-				for (KeyValue<StringName, HashSet<int>>& E : arg->tex_argument_connect) {
+				for (KeyValue<String, HashSet<int>>& E : arg->tex_argument_connect) {
 					for (const int& F : E.value) {
 						if (!_propagate_function_call_sampler_builtin_reference(
 								E.key, F, p_builtin)) {
@@ -5585,7 +5585,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_array_constructor(
 }
 
 ShaderLanguage::Node* ShaderLanguage::_parse_array_constructor(BlockNode* p_block,
-	const FunctionInfo& p_function_info, DataType p_type, const StringName& p_struct_name,
+	const FunctionInfo& p_function_info, DataType p_type, const String& p_struct_name,
 	int p_array_size)
 {
 	DataType type = TYPE_VOID;
@@ -5887,7 +5887,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 		else if (tk.type == TK_IDENTIFIER) {
 			_set_tkpos(prepos);
 
-			StringName identifier;
+			String identifier;
 
 			StructNode* pstruct = nullptr;
 			bool struct_init = false;
@@ -5903,7 +5903,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 			if (tk.type == TK_PARENTHESIS_OPEN) {
 				if (struct_init) { // a struct constructor
 
-					const StringName& name = identifier;
+					const String& name = identifier;
 
 					OperatorNode* func = alloc_node<OperatorNode>();
 					func->op = OP_STRUCT;
@@ -5963,8 +5963,8 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 						}
 					}
 
-					const StringName& rname = identifier;
-					StringName name = identifier;
+					const String& rname = identifier;
+					String name = identifier;
 
 					OperatorNode* func = alloc_node<OperatorNode>();
 					func->op = OP_CALL;
@@ -6088,11 +6088,11 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 						bool is_builtin = false;
 
 						if (is_supported_frag_only_funcs && stages) {
-							for (const KeyValue<StringName, FunctionInfo>& E : *stages) {
+							for (const KeyValue<String, FunctionInfo>& E : *stages) {
 								if (E.value.stage_functions.has(name)) {
 									// Register usage of the restricted stage function.
 									calls_info[current_function].uses_restricted_items.push_back(
-										Pair<StringName, CallInfo::Item>(
+										Pair<String, CallInfo::Item>(
 											name, CallInfo::Item(CallInfo::Item::ITEM_TYPE_BUILTIN,
 													  _get_tkpos())));
 									is_builtin = true;
@@ -6116,7 +6116,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 									}
 									// Register usage of the restricted function.
 									calls_info[current_function].uses_restricted_items.push_back(
-										Pair<StringName, CallInfo::Item>(
+										Pair<String, CallInfo::Item>(
 											name, CallInfo::Item(CallInfo::Item::ITEM_TYPE_BUILTIN,
 													  _get_tkpos())));
 									is_builtin = true;
@@ -6183,7 +6183,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 									if (n->type == Node::NODE_TYPE_VARIABLE ||
 										n->type == Node::NODE_TYPE_ARRAY) {
-										StringName varname;
+										String varname;
 
 										if (n->type == Node::NODE_TYPE_VARIABLE) {
 											VariableNode* vn = static_cast<VariableNode*>(n);
@@ -6240,7 +6240,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 									bool is_const_arg = call_function->arguments[i].is_const;
 
 									if (is_const_arg || is_out_arg) {
-										StringName varname;
+										String varname;
 
 										if (n->type == Node::NODE_TYPE_CONSTANT ||
 											n->type == Node::NODE_TYPE_OPERATOR ||
@@ -6270,7 +6270,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 												error = true;
 											}
 										}
-										if (!error && varname != StringName()) {
+										if (!error && varname != String()) {
 											if (shader->constants.has(varname)) {
 												error = true;
 											}
@@ -6296,7 +6296,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 									}
 									if (is_sampler_type(call_function->arguments[i].type)) {
 										// Let's see where our argument comes from.
-										StringName varname;
+										String varname;
 										if (n->type == Node::NODE_TYPE_VARIABLE) {
 											VariableNode* vn = static_cast<VariableNode*>(n);
 											varname = vn->name;
@@ -6394,7 +6394,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					expr = func;
 #ifdef DEBUG_ENABLED
 					if (check_warnings && is_custom_func) {
-						StringName func_name;
+						String func_name;
 
 						if (p_block && p_block->parent_function) {
 							func_name = p_block->parent_function->name;
@@ -6416,7 +6416,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				DataType data_type = TYPE_MAX;
 				IdentifierType ident_type = IDENTIFIER_MAX;
 				int array_size = 0;
-				StringName struct_name;
+				String struct_name;
 				bool is_local = false;
 
 				if (p_block && p_block->block_tag != SubClassTag::TAG_GLOBAL) {
@@ -6467,7 +6467,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					}
 #ifdef DEBUG_ENABLED
 					if (check_warnings) {
-						StringName func_name;
+						String func_name;
 						BlockNode* b = p_block;
 
 						while (b) {
@@ -6497,7 +6497,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 						ShaderNode::Varying& var = shader->varyings[identifier];
 						calls_info[current_function].uses_restricted_items.push_back(
-							Pair<StringName, CallInfo::Item>(identifier,
+							Pair<String, CallInfo::Item>(identifier,
 								CallInfo::Item(CallInfo::Item::ITEM_TYPE_VARYING, prev_pos)));
 
 						String error;
@@ -6732,7 +6732,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					break;
 				}
 
-				StringName identifier;
+				String identifier;
 				if (_get_completable_identifier(p_block,
 						dt == TYPE_STRUCT ? COMPLETION_STRUCT : COMPLETION_INDEX, identifier)) {
 					if (dt == TYPE_STRUCT) {
@@ -6743,7 +6743,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					}
 				}
 
-				if (identifier == StringName()) {
+				if (identifier == String()) {
 					_set_error(RTR("Expected an identifier as a member."));
 					return nullptr;
 				}
@@ -6752,7 +6752,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				bool ok = true;
 				bool repeated = false;
 				DataType member_type = TYPE_VOID;
-				StringName member_struct_name = "";
+				String member_struct_name = "";
 				int array_size = 0;
 
 				RBSet<char> position_symbols;
@@ -8105,7 +8105,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 					return ERR_PARSE_ERROR;
 				}
 
-				StringName name = tk.text;
+				String name = tk.text;
 				ShaderLanguage::IdentifierType itype;
 				if (_find_identifier(p_block, true, p_function_info, name,
 						(ShaderLanguage::DataType*)nullptr, &itype)) {
@@ -8128,10 +8128,10 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 						parent_function = block->parent_function;
 					}
 					if (parent_function) {
-						StringName func_name = parent_function->name;
+						String func_name = parent_function->name;
 
 						if (!used_local_vars.has(func_name)) {
-							used_local_vars.insert(func_name, HashMap<StringName, Usage>());
+							used_local_vars.insert(func_name, HashMap<String, Usage>());
 						}
 
 						used_local_vars[func_name].insert(name, Usage(tk_line));
@@ -8221,7 +8221,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 								}
 
 								DataType type2;
-								StringName struct_name2 = "";
+								String struct_name2 = "";
 
 								if (shader->structs.has(tk.text)) {
 									type2 = TYPE_STRUCT;
@@ -9027,7 +9027,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			tk = _get_token();
 
 			calls_info[b->parent_function->name].uses_restricted_items.push_back(
-				Pair<StringName, CallInfo::Item>(
+				Pair<String, CallInfo::Item>(
 					"discard", CallInfo::Item(CallInfo::Item::ITEM_TYPE_BUILTIN, pos)));
 
 			if (tk.type != TK_SEMICOLON) {
@@ -9252,7 +9252,7 @@ bool ShaderLanguage::_parse_numeric_constant_expression(
 	return true;
 }
 
-Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_functions,
+Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_functions,
 	const Vector<ModeInfo>& p_render_modes, const Vector<ModeInfo>& p_stencil_modes,
 	const HashSet<String>& p_shader_types)
 {
@@ -9277,7 +9277,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 #endif // DEBUG_ENABLED
 
 		_get_completable_identifier(nullptr, COMPLETION_SHADER_TYPE, shader_type_identifier);
-		if (shader_type_identifier == StringName()) {
+		if (shader_type_identifier == String()) {
 			_set_error(vformat(RTR("Expected an identifier after '%s', indicating the type of "
 								   "shader. Valid types are: %s."),
 				"shader_type", _get_shader_type_list(p_shader_types)));
@@ -9321,9 +9321,9 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 	is_discard_supported = shader_type_identifier == "canvas_item" ||
 						   shader_type_identifier == "spatial" ||
-						   shader_type_identifier == StringName();
+						   shader_type_identifier == String();
 	is_supported_frag_only_funcs = is_discard_supported || shader_type_identifier == "sky" ||
-								   shader_type_identifier == StringName();
+								   shader_type_identifier == String();
 
 	const FunctionInfo& constants =
 		p_functions.has("constants") ? p_functions["constants"] : FunctionInfo();
@@ -9458,7 +9458,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 				if (tk.type == TK_CURLY_BRACKET_CLOSE) {
 					break;
 				}
-				StringName struct_name = "";
+				String struct_name = "";
 				bool struct_dt = false;
 				DataPrecision precision = PRECISION_DEFAULT;
 
@@ -9627,7 +9627,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 					}
 				}
 #endif // DEBUG_ENABLED
-				if (shader_type_identifier != StringName() &&
+				if (shader_type_identifier != String() &&
 					String(shader_type_identifier) != "spatial" &&
 					String(shader_type_identifier) != "canvas_item") {
 					_set_error(
@@ -9663,7 +9663,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 			DataPrecision precision = PRECISION_DEFAULT;
 			DataInterpolation interpolation = INTERPOLATION_DEFAULT;
 			DataType type;
-			StringName name;
+			String name;
 			int array_size = 0;
 
 			tk = _get_token();
@@ -10174,7 +10174,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_SCREEN_TEXTURE;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								!(String(shader_type_identifier) == "spatial" ||
 									String(shader_type_identifier) == "canvas_item")) {
 								_set_error(vformat(
@@ -10193,7 +10193,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 											   "when using the Forward+ renderer."));
 								return ERR_PARSE_ERROR;
 							}
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "spatial") {
 								_set_error(vformat(RTR("'hint_normal_roughness_texture' is not "
 													   "supported in '%s' shaders."),
@@ -10205,7 +10205,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_DEPTH_TEXTURE;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "spatial") {
 								_set_error(vformat(
 									RTR("'hint_depth_texture' is not supported in '%s' shaders."),
@@ -10217,7 +10217,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_BLIT_SOURCE0;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "texture_blit") {
 								_set_error(vformat(
 									RTR("'hint_blit_source' is not supported in '%s' shaders."),
@@ -10229,7 +10229,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_BLIT_SOURCE1;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "texture_blit") {
 								_set_error(vformat(
 									RTR("'hint_blit_source' is not supported in '%s' shaders."),
@@ -10241,7 +10241,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_BLIT_SOURCE2;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "texture_blit") {
 								_set_error(vformat(
 									RTR("'hint_blit_source' is not supported in '%s' shaders."),
@@ -10253,7 +10253,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_BLIT_SOURCE3;
 							--texture_uniforms;
 							--texture_binding;
-							if (shader_type_identifier != StringName() &&
+							if (shader_type_identifier != String() &&
 								String(shader_type_identifier) != "texture_blit") {
 								_set_error(vformat(
 									RTR("'hint_blit_source' is not supported in '%s' shaders."),
@@ -10530,10 +10530,10 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 			bool is_constant = false;
 			bool is_struct = false;
-			StringName struct_name;
+			String struct_name;
 			DataPrecision precision = PRECISION_DEFAULT;
 			DataType type;
-			StringName name;
+			String name;
 			int array_size = 0;
 
 			if (tk.type == TK_CONST) {
@@ -10609,7 +10609,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 
 			_get_completable_identifier(nullptr, COMPLETION_MAIN_FUNCTION, name);
 
-			if (name == StringName()) {
+			if (name == String()) {
 				if (is_constant) {
 					_set_error(RTR("Expected an identifier or '[' after type."));
 				}
@@ -10692,7 +10692,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 									}
 								}
 
-								StringName struct_name2;
+								String struct_name2;
 								DataType type2;
 
 								if (shader->structs.has(tk.text)) {
@@ -10965,13 +10965,13 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 			}
 
 			if (p_functions.has("global")) { // Adds global variables: 'TIME'
-				for (const KeyValue<StringName, BuiltInInfo>& E : p_functions["global"].built_ins) {
+				for (const KeyValue<String, BuiltInInfo>& E : p_functions["global"].built_ins) {
 					builtins.built_ins.insert(E.key, E.value);
 				}
 			}
 
 			if (p_functions.has("constants")) { // Adds global constants: 'PI', 'TAU', 'E'
-				for (const KeyValue<StringName, BuiltInInfo>& E :
+				for (const KeyValue<String, BuiltInInfo>& E :
 					p_functions["constants"].built_ins) {
 					builtins.built_ins.insert(E.key, E.value);
 				}
@@ -11125,8 +11125,8 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 				}
 
 				DataType param_type;
-				StringName param_name;
-				StringName param_struct_name;
+				String param_name;
+				String param_struct_name;
 				DataPrecision param_precision = PRECISION_DEFAULT;
 				int arg_array_size = 0;
 
@@ -11366,7 +11366,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 					return ERR_PARSE_ERROR;
 				}
 			}
-			current_function = StringName();
+			current_function = String();
 		}
 		}
 
@@ -11376,7 +11376,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 	uint32_t max_varyings = 31;
 	max_varyings = RendererUtilities::get_maximum_shader_varyings();
 
-	for (const KeyValue<StringName, ShaderNode::Varying>& kv : shader->varyings) {
+	for (const KeyValue<String, ShaderNode::Varying>& kv : shader->varyings) {
 		if (kv.value.stage != ShaderNode::Varying::STAGE_FRAGMENT &&
 			(kv.value.type > TYPE_BVEC4 && kv.value.type < TYPE_FLOAT) &&
 			kv.value.interpolation != INTERPOLATION_FLAT) {
@@ -11401,14 +11401,14 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 }
 
 bool ShaderLanguage::has_builtin(
-	const HashMap<StringName, ShaderLanguage::FunctionInfo>& p_functions, const StringName& p_name,
+	const HashMap<String, ShaderLanguage::FunctionInfo>& p_functions, const String& p_name,
 	bool p_check_global_funcs)
 {
 	if (p_check_global_funcs && global_func_set.has(p_name)) {
 		return true;
 	}
 
-	for (const KeyValue<StringName, ShaderLanguage::FunctionInfo>& E : p_functions) {
+	for (const KeyValue<String, ShaderLanguage::FunctionInfo>& E : p_functions) {
 		if (E.value.built_ins.has(p_name)) {
 			return true;
 		}
@@ -11472,11 +11472,11 @@ Error ShaderLanguage::_find_last_flow_op_in_block(BlockNode* p_block, FlowOperat
 Error ShaderLanguage::_parse_shader_mode(
 	bool p_is_stencil, const Vector<ModeInfo>& p_modes, HashMap<String, String>& r_defined_modes)
 {
-	StringName mode;
+	String mode;
 	_get_completable_identifier(
 		nullptr, p_is_stencil ? COMPLETION_STENCIL_MODE : COMPLETION_RENDER_MODE, mode);
 
-	if (mode == StringName()) {
+	if (mode == String()) {
 		if (p_is_stencil) {
 			_set_error(RTR("Expected an identifier for stencil mode."));
 		}
@@ -11488,7 +11488,7 @@ Error ShaderLanguage::_parse_shader_mode(
 
 	const String smode = String(mode);
 
-	Vector<StringName>& current_modes = p_is_stencil ? shader->stencil_modes : shader->render_modes;
+	Vector<String>& current_modes = p_is_stencil ? shader->stencil_modes : shader->render_modes;
 
 	if (current_modes.has(mode)) {
 		if (p_is_stencil) {

@@ -203,13 +203,13 @@ String EditorFileSystemDirectory::get_file_icon_path(int p_idx) const
 	return files[p_idx]->class_info.icon_path;
 }
 
-StringName EditorFileSystemDirectory::get_file_type(int p_idx) const
+String EditorFileSystemDirectory::get_file_type(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, files.size(), "");
 	return files[p_idx]->type;
 }
 
-StringName EditorFileSystemDirectory::get_file_resource_script_class(int p_idx) const
+String EditorFileSystemDirectory::get_file_resource_script_class(int p_idx) const
 {
 	ERR_FAIL_INDEX_V(p_idx, files.size(), "");
 	return files[p_idx]->resource_script_class;
@@ -533,7 +533,7 @@ void EditorFileSystem::_save_filesystem_cache(
 		}
 
 		String type = file_info->type;
-		if (file_info->resource_script_class) {
+		if (!file_info->resource_script_class.is_empty()) {
 			type += "/" + String(file_info->resource_script_class);
 		}
 

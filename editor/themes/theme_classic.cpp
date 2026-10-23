@@ -48,8 +48,8 @@ void ThemeClassic::populate_shared_styles(
 	{
 		// Base colors.
 
-		p_theme->set_color("base_color", EditorStringName(Editor), p_config.base_color);
-		p_theme->set_color("accent_color", EditorStringName(Editor), p_config.accent_color);
+		p_theme->set_color("base_color", EditorString(Editor), p_config.base_color);
+		p_theme->set_color("accent_color", EditorString(Editor), p_config.accent_color);
 
 		// White (dark theme) or black (light theme), will be used to generate the rest of the
 		// colors
@@ -83,11 +83,11 @@ void ThemeClassic::populate_shared_styles(
 		// This frame time gradient is used to colorize text for a dark background, so it should
 		// keep using bright colors even when using a light theme.
 		p_theme->set_color(
-			"success_color_dark_background", EditorStringName(Editor), p_config.success_color);
+			"success_color_dark_background", EditorString(Editor), p_config.success_color);
 		p_theme->set_color(
-			"warning_color_dark_background", EditorStringName(Editor), p_config.warning_color);
+			"warning_color_dark_background", EditorString(Editor), p_config.warning_color);
 		p_theme->set_color(
-			"error_color_dark_background", EditorStringName(Editor), p_config.error_color);
+			"error_color_dark_background", EditorString(Editor), p_config.error_color);
 
 		if (!p_config.dark_icon_and_font) {
 			// Darken some colors to be readable on a light background.
@@ -96,21 +96,21 @@ void ThemeClassic::populate_shared_styles(
 			p_config.error_color = Color(0.8, 0.22, 0.22);
 		}
 
-		p_theme->set_color("mono_color", EditorStringName(Editor), p_config.mono_color);
-		p_theme->set_color("dark_color_1", EditorStringName(Editor), p_config.dark_color_1);
-		p_theme->set_color("dark_color_2", EditorStringName(Editor), p_config.dark_color_2);
-		p_theme->set_color("dark_color_3", EditorStringName(Editor), p_config.dark_color_3);
-		p_theme->set_color("contrast_color_1", EditorStringName(Editor), p_config.contrast_color_1);
-		p_theme->set_color("contrast_color_2", EditorStringName(Editor), p_config.contrast_color_2);
-		p_theme->set_color("highlight_color", EditorStringName(Editor), p_config.highlight_color);
-		p_theme->set_color("highlight_disabled_color", EditorStringName(Editor),
+		p_theme->set_color("mono_color", EditorString(Editor), p_config.mono_color);
+		p_theme->set_color("dark_color_1", EditorString(Editor), p_config.dark_color_1);
+		p_theme->set_color("dark_color_2", EditorString(Editor), p_config.dark_color_2);
+		p_theme->set_color("dark_color_3", EditorString(Editor), p_config.dark_color_3);
+		p_theme->set_color("contrast_color_1", EditorString(Editor), p_config.contrast_color_1);
+		p_theme->set_color("contrast_color_2", EditorString(Editor), p_config.contrast_color_2);
+		p_theme->set_color("highlight_color", EditorString(Editor), p_config.highlight_color);
+		p_theme->set_color("highlight_disabled_color", EditorString(Editor),
 			p_config.highlight_disabled_color);
-		p_theme->set_color("success_color", EditorStringName(Editor), p_config.success_color);
-		p_theme->set_color("warning_color", EditorStringName(Editor), p_config.warning_color);
-		p_theme->set_color("error_color", EditorStringName(Editor), p_config.error_color);
-		p_theme->set_color("ruler_color", EditorStringName(Editor), p_config.dark_color_2);
+		p_theme->set_color("success_color", EditorString(Editor), p_config.success_color);
+		p_theme->set_color("warning_color", EditorString(Editor), p_config.warning_color);
+		p_theme->set_color("error_color", EditorString(Editor), p_config.error_color);
+		p_theme->set_color("ruler_color", EditorString(Editor), p_config.dark_color_2);
 #ifndef DISABLE_DEPRECATED // Used before 4.3.
-		p_theme->set_color("disabled_highlight_color", EditorStringName(Editor),
+		p_theme->set_color("disabled_highlight_color", EditorString(Editor),
 			p_config.highlight_disabled_color);
 #endif
 
@@ -120,9 +120,9 @@ void ThemeClassic::populate_shared_styles(
 			p_config.dark_theme ? Color(0.3, 0.3, 0.3) : Color(0.7, 0.7, 0.7);
 
 		p_theme->set_color(
-			"extra_border_color_1", EditorStringName(Editor), p_config.extra_border_color_1);
+			"extra_border_color_1", EditorString(Editor), p_config.extra_border_color_1);
 		p_theme->set_color(
-			"extra_border_color_2", EditorStringName(Editor), p_config.extra_border_color_2);
+			"extra_border_color_2", EditorString(Editor), p_config.extra_border_color_2);
 
 		// Font colors.
 
@@ -163,41 +163,41 @@ void ThemeClassic::populate_shared_styles(
 		}
 
 		p_theme->set_color(
-			SceneStringName(font_color), EditorStringName(Editor), p_config.font_color);
-		p_theme->set_color("font_focus_color", EditorStringName(Editor), p_config.font_focus_color);
-		p_theme->set_color("font_hover_color", EditorStringName(Editor), p_config.font_hover_color);
+			SceneString(font_color), EditorString(Editor), p_config.font_color);
+		p_theme->set_color("font_focus_color", EditorString(Editor), p_config.font_focus_color);
+		p_theme->set_color("font_hover_color", EditorString(Editor), p_config.font_hover_color);
 		p_theme->set_color(
-			"font_pressed_color", EditorStringName(Editor), p_config.font_pressed_color);
-		p_theme->set_color("font_hover_pressed_color", EditorStringName(Editor),
+			"font_pressed_color", EditorString(Editor), p_config.font_pressed_color);
+		p_theme->set_color("font_hover_pressed_color", EditorString(Editor),
 			p_config.font_hover_pressed_color);
 		p_theme->set_color(
-			"font_disabled_color", EditorStringName(Editor), p_config.font_disabled_color);
+			"font_disabled_color", EditorString(Editor), p_config.font_disabled_color);
 		p_theme->set_color(
-			"font_readonly_color", EditorStringName(Editor), p_config.font_readonly_color);
+			"font_readonly_color", EditorString(Editor), p_config.font_readonly_color);
 		p_theme->set_color(
-			"font_placeholder_color", EditorStringName(Editor), p_config.font_placeholder_color);
+			"font_placeholder_color", EditorString(Editor), p_config.font_placeholder_color);
 		p_theme->set_color(
-			"font_outline_color", EditorStringName(Editor), p_config.font_outline_color);
+			"font_outline_color", EditorString(Editor), p_config.font_outline_color);
 
-		p_theme->set_color("font_dark_background_color", EditorStringName(Editor),
+		p_theme->set_color("font_dark_background_color", EditorString(Editor),
 			p_config.font_dark_background_color);
-		p_theme->set_color("font_dark_background_focus_color", EditorStringName(Editor),
+		p_theme->set_color("font_dark_background_focus_color", EditorString(Editor),
 			p_config.font_dark_background_focus_color);
-		p_theme->set_color("font_dark_background_hover_color", EditorStringName(Editor),
+		p_theme->set_color("font_dark_background_hover_color", EditorString(Editor),
 			p_config.font_dark_background_hover_color);
-		p_theme->set_color("font_dark_background_pressed_color", EditorStringName(Editor),
+		p_theme->set_color("font_dark_background_pressed_color", EditorString(Editor),
 			p_config.font_dark_background_pressed_color);
-		p_theme->set_color("font_dark_background_hover_pressed_color", EditorStringName(Editor),
+		p_theme->set_color("font_dark_background_hover_pressed_color", EditorString(Editor),
 			p_config.font_dark_background_hover_pressed_color);
 
 #ifndef DISABLE_DEPRECATED // Used before 4.3.
 		p_theme->set_color(
-			"readonly_font_color", EditorStringName(Editor), p_config.font_readonly_color);
+			"readonly_font_color", EditorString(Editor), p_config.font_readonly_color);
 		p_theme->set_color(
-			"disabled_font_color", EditorStringName(Editor), p_config.font_disabled_color);
+			"disabled_font_color", EditorString(Editor), p_config.font_disabled_color);
 		p_theme->set_color(
-			"readonly_color", EditorStringName(Editor), p_config.font_readonly_color);
-		p_theme->set_color("highlighted_font_color", EditorStringName(Editor),
+			"readonly_color", EditorString(Editor), p_config.font_readonly_color);
+		p_theme->set_color("highlighted_font_color", EditorString(Editor),
 			p_config.font_hover_color); // Closest equivalent.
 #endif
 
@@ -217,13 +217,13 @@ void ThemeClassic::populate_shared_styles(
 		p_config.icon_disabled_color = Color(p_config.icon_normal_color, 0.4);
 
 		p_theme->set_color(
-			"icon_normal_color", EditorStringName(Editor), p_config.icon_normal_color);
-		p_theme->set_color("icon_focus_color", EditorStringName(Editor), p_config.icon_focus_color);
-		p_theme->set_color("icon_hover_color", EditorStringName(Editor), p_config.icon_hover_color);
+			"icon_normal_color", EditorString(Editor), p_config.icon_normal_color);
+		p_theme->set_color("icon_focus_color", EditorString(Editor), p_config.icon_focus_color);
+		p_theme->set_color("icon_hover_color", EditorString(Editor), p_config.icon_hover_color);
 		p_theme->set_color(
-			"icon_pressed_color", EditorStringName(Editor), p_config.icon_pressed_color);
+			"icon_pressed_color", EditorString(Editor), p_config.icon_pressed_color);
 		p_theme->set_color(
-			"icon_disabled_color", EditorStringName(Editor), p_config.icon_disabled_color);
+			"icon_disabled_color", EditorString(Editor), p_config.icon_disabled_color);
 
 		// Additional GUI colors.
 
@@ -235,72 +235,72 @@ void ThemeClassic::populate_shared_styles(
 		p_config.separator_color =
 			Color(p_config.mono_color.r, p_config.mono_color.g, p_config.mono_color.b, 0.1);
 
-		p_theme->set_color("selection_color", EditorStringName(Editor), p_config.selection_color);
+		p_theme->set_color("selection_color", EditorString(Editor), p_config.selection_color);
 		p_theme->set_color(
-			"disabled_border_color", EditorStringName(Editor), p_config.disabled_border_color);
+			"disabled_border_color", EditorString(Editor), p_config.disabled_border_color);
 		p_theme->set_color(
-			"disabled_bg_color", EditorStringName(Editor), p_config.disabled_bg_color);
-		p_theme->set_color("separator_color", EditorStringName(Editor), p_config.separator_color);
+			"disabled_bg_color", EditorString(Editor), p_config.disabled_bg_color);
+		p_theme->set_color("separator_color", EditorString(Editor), p_config.separator_color);
 
 		// Additional editor colors.
 
-		p_theme->set_color("box_selection_fill_color", EditorStringName(Editor),
+		p_theme->set_color("box_selection_fill_color", EditorString(Editor),
 			p_config.accent_color * Color(1, 1, 1, 0.3));
-		p_theme->set_color("box_selection_stroke_color", EditorStringName(Editor),
+		p_theme->set_color("box_selection_stroke_color", EditorString(Editor),
 			p_config.accent_color * Color(1, 1, 1, 0.8));
 
-		p_theme->set_color("axis_x_color", EditorStringName(Editor), Color(0.96, 0.20, 0.32));
-		p_theme->set_color("axis_y_color", EditorStringName(Editor), Color(0.53, 0.84, 0.01));
-		p_theme->set_color("axis_z_color", EditorStringName(Editor), Color(0.16, 0.55, 0.96));
-		p_theme->set_color("axis_w_color", EditorStringName(Editor), Color(0.55, 0.55, 0.55));
+		p_theme->set_color("axis_x_color", EditorString(Editor), Color(0.96, 0.20, 0.32));
+		p_theme->set_color("axis_y_color", EditorString(Editor), Color(0.53, 0.84, 0.01));
+		p_theme->set_color("axis_z_color", EditorString(Editor), Color(0.16, 0.55, 0.96));
+		p_theme->set_color("axis_w_color", EditorString(Editor), Color(0.55, 0.55, 0.55));
 		p_theme->set_color(
-			"axis_view_plane_color", EditorStringName(Editor), Color(0.75, 0.75, 0.75, 0.33));
+			"axis_view_plane_color", EditorString(Editor), Color(0.75, 0.75, 0.75, 0.33));
 
 		const float prop_color_saturation = p_config.accent_color.get_s() * 0.75;
 		const float prop_color_value = p_config.accent_color.get_v();
 
-		p_theme->set_color("property_color_x", EditorStringName(Editor),
+		p_theme->set_color("property_color_x", EditorString(Editor),
 			Color::from_hsv(0.0 / 3.0 + 0.05, prop_color_saturation, prop_color_value));
-		p_theme->set_color("property_color_y", EditorStringName(Editor),
+		p_theme->set_color("property_color_y", EditorString(Editor),
 			Color::from_hsv(1.0 / 3.0 + 0.05, prop_color_saturation, prop_color_value));
-		p_theme->set_color("property_color_z", EditorStringName(Editor),
+		p_theme->set_color("property_color_z", EditorString(Editor),
 			Color::from_hsv(2.0 / 3.0 + 0.05, prop_color_saturation, prop_color_value));
-		p_theme->set_color("property_color_w", EditorStringName(Editor),
+		p_theme->set_color("property_color_w", EditorString(Editor),
 			Color::from_hsv(1.5 / 3.0 + 0.05, prop_color_saturation, prop_color_value));
 
 		// Special colors for rendering methods.
 
-		p_theme->set_color("forward_plus_color", EditorStringName(Editor), Color::hex(0x5d8c3fff));
-		p_theme->set_color("mobile_color", EditorStringName(Editor), Color::hex(0xa5557dff));
+		p_theme->set_color("forward_plus_color", EditorString(Editor), Color::hex(0x5d8c3fff));
+		p_theme->set_color("mobile_color", EditorString(Editor), Color::hex(0xa5557dff));
 		p_theme->set_color(
-			"gl_compatibility_color", EditorStringName(Editor), Color::hex(0x5586a4ff));
+			"gl_compatibility_color", EditorString(Editor), Color::hex(0x5586a4ff));
 	}
 
 	// Constants.
 	{
 		// Can't save single float in theme, so using Color.
-		p_theme->set_color("icon_saturation", EditorStringName(Editor),
+		p_theme->set_color("icon_saturation", EditorString(Editor),
 			Color(p_config.icon_saturation, p_config.icon_saturation, p_config.icon_saturation));
 
 		// Controls may rely on the scale for their internal drawing logic.
 		p_theme->set_default_base_scale(EDSCALE);
-		p_theme->set_constant("scale", EditorStringName(Editor), EDSCALE);
+		p_theme->set_constant("scale", EditorString(Editor), EDSCALE);
 
-		p_theme->set_constant("thumb_size", EditorStringName(Editor), p_config.thumb_size);
+		p_theme->set_constant("thumb_size", EditorString(Editor), p_config.thumb_size);
 		p_theme->set_constant(
-			"class_icon_size", EditorStringName(Editor), p_config.class_icon_size);
+			"class_icon_size", EditorString(Editor), p_config.class_icon_size);
 		p_theme->set_constant(
-			"gizmo_handle_scale", EditorStringName(Editor), p_config.gizmo_handle_scale);
+			"gizmo_handle_scale", EditorString(Editor), p_config.gizmo_handle_scale);
 
-		p_theme->set_constant("base_margin", EditorStringName(Editor), p_config.base_margin);
+		p_theme->set_constant("base_margin", EditorString(Editor), p_config.base_margin);
 		p_theme->set_constant(
-			"increased_margin", EditorStringName(Editor), p_config.increased_margin);
+			"increased_margin", EditorString(Editor), p_config.increased_margin);
 		p_theme->set_constant(
-			"window_border_margin", EditorStringName(Editor), p_config.window_border_margin);
+			"window_border_margin", EditorString(Editor), p_config.window_border_margin);
 		p_theme->set_constant(
-			"top_bar_separation", EditorStringName(Editor), p_config.top_bar_separation);
+			"top_bar_separation", EditorString(Editor), p_config.top_bar_separation);
 
-		p_theme->set_constant("dark_theme", EditorStringName(Editor), p_config.dark_theme);
+		p_theme->set_constant("dark_theme", EditorString(Editor), p_config.dark_theme);
 	}
 
 	// Styleboxes.

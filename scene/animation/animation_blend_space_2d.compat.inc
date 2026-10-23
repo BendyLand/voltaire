@@ -39,7 +39,7 @@ void AnimationNodeBlendSpace2D::_add_blend_point_bind_compat_110369(
 	while (find_blend_point_by_name(itos(n)) != -1) {
 		n++;
 	}
-	add_blend_point(p_node, p_position, p_at_index, StringName(itos(n)));
+	add_blend_point(p_node, p_position, p_at_index, String(itos(n)));
 }
 
 void AnimationNodeBlendSpace2D::_bind_compatibility_methods() {}

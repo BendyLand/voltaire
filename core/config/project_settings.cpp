@@ -264,7 +264,7 @@ struct _VCSort
 	}
 };
 
-void ProjectSettings::_queue_changed(const StringName& p_name) { data->changed_settings.insert(p_name); }
+void ProjectSettings::_queue_changed(const String& p_name) { data->changed_settings.insert(p_name); }
 
 void ProjectSettings::_emit_changed()
 {
@@ -799,7 +799,7 @@ bool ProjectSettings::is_project_loaded() { return data->project_loaded; }
 Vector<String> ProjectSettings::get_changed_settings()
 {
 	Vector<String> arr;
-	for (const StringName& setting : data->changed_settings) {
+	for (const String& setting : data->changed_settings) {
 		arr.push_back(setting);
 	}
 	return arr;
@@ -807,7 +807,7 @@ Vector<String> ProjectSettings::get_changed_settings()
 
 bool ProjectSettings::check_changed_settings_in_group(const String& p_setting_prefix)
 {
-	for (const StringName& setting : data->changed_settings) {
+	for (const String& setting : data->changed_settings) {
 		if (String(setting).begins_with(p_setting_prefix)) {
 			return true;
 		}
@@ -825,14 +825,14 @@ bool ProjectSettings::has_custom_feature(const String& p_feature)
 	return data->custom_features.has(p_feature);
 }
 
-const HashMap<StringName, ProjectSettings::AutoloadInfo>& ProjectSettings::get_autoload_list()
+const HashMap<String, ProjectSettings::AutoloadInfo>& ProjectSettings::get_autoload_list()
 {
 	return data->autoloads;
 }
 
 void ProjectSettings::add_autoload(const AutoloadInfo& p_autoload, bool p_front_insert)
 {
-	ERR_FAIL_COND_MSG(p_autoload.name == StringName(), "Trying to add autoload with no name.");
+	ERR_FAIL_COND_MSG(p_autoload.name == String(), "Trying to add autoload with no name.");
 	if (p_front_insert) {
 		if (data->autoloads.has(p_autoload.name)) {
 			data->autoloads.erase(p_autoload.name);
@@ -844,18 +844,18 @@ void ProjectSettings::add_autoload(const AutoloadInfo& p_autoload, bool p_front_
 	}
 }
 
-void ProjectSettings::remove_autoload(const StringName& p_autoload)
+void ProjectSettings::remove_autoload(const String& p_autoload)
 {
 	ERR_FAIL_COND_MSG(!data->autoloads.has(p_autoload), "Trying to remove non-existent autoload.");
 	data->autoloads.erase(p_autoload);
 }
 
-bool ProjectSettings::has_autoload(const StringName& p_autoload)
+bool ProjectSettings::has_autoload(const String& p_autoload)
 {
 	return data->autoloads.has(p_autoload);
 }
 
-ProjectSettings::AutoloadInfo ProjectSettings::get_autoload(const StringName& p_name)
+ProjectSettings::AutoloadInfo ProjectSettings::get_autoload(const String& p_name)
 {
 	ERR_FAIL_COND_V_MSG(
 		!data->autoloads.has(p_name), AutoloadInfo(), "Trying to get non-existent autoload.");
@@ -864,40 +864,40 @@ ProjectSettings::AutoloadInfo ProjectSettings::get_autoload(const StringName& p_
 
 void ProjectSettings::fix_autoload_paths()
 {
-	for (KeyValue<StringName, AutoloadInfo>& kv : data->autoloads) {
+	for (KeyValue<String, AutoloadInfo>& kv : data->autoloads) {
 		kv.value.path = ResourceUID::ensure_path(kv.value.path);
 	}
 }
 
-const HashMap<StringName, String>& ProjectSettings::get_global_groups_list()
+const HashMap<String, String>& ProjectSettings::get_global_groups_list()
 {
 	return data->global_groups;
 }
 
-void ProjectSettings::add_global_group(const StringName& p_name, const String& p_description)
+void ProjectSettings::add_global_group(const String& p_name, const String& p_description)
 {
-	ERR_FAIL_COND_MSG(p_name == StringName(), "Trying to add global group with no name.");
+	ERR_FAIL_COND_MSG(p_name == String(), "Trying to add global group with no name.");
 	data->global_groups[p_name] = p_description;
 }
 
-void ProjectSettings::remove_global_group(const StringName& p_name)
+void ProjectSettings::remove_global_group(const String& p_name)
 {
 	ERR_FAIL_COND_MSG(!data->global_groups.has(p_name), "Trying to remove non-existent global group.");
 	data->global_groups.erase(p_name);
 }
 
-bool ProjectSettings::has_global_group(const StringName& p_name)
+bool ProjectSettings::has_global_group(const String& p_name)
 {
 	return data->global_groups.has(p_name);
 }
 
-void ProjectSettings::remove_scene_groups_cache(const StringName& p_path)
+void ProjectSettings::remove_scene_groups_cache(const String& p_path)
 {
 	data->scene_groups_cache.erase(p_path);
 }
 
 void ProjectSettings::add_scene_groups_cache(
-	const StringName& p_path, const HashSet<StringName>& p_cache)
+	const String& p_path, const HashSet<String>& p_cache)
 {
 	data->scene_groups_cache[p_path] = p_cache;
 }
@@ -906,7 +906,7 @@ void ProjectSettings::save_scene_groups_cache()
 {
 	Ref<ConfigFile> cf;
 	cf.instantiate();
-	for (const KeyValue<StringName, HashSet<StringName>>& E : data->scene_groups_cache) {
+	for (const KeyValue<String, HashSet<String>>& E : data->scene_groups_cache) {
 		if (E.value.is_empty()) {
 			continue;
 		}
@@ -919,7 +919,7 @@ String ProjectSettings::get_scene_groups_cache_path()
 	return get_project_data_path().path_join("scene_groups_cache.cfg");
 }
 
-const HashMap<StringName, HashSet<StringName>>& ProjectSettings::get_scene_groups_cache()
+const HashMap<String, HashSet<String>>& ProjectSettings::get_scene_groups_cache()
 {
 	return data->scene_groups_cache;
 }
@@ -938,7 +938,7 @@ void ProjectSettings::_convert_to_last_version(int p_from_version) {}
 void ProjectSettings::refresh_global_class_list() {}
 
 void ProjectSettings::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options)
+	const String& p_function, int p_idx, List<String>* r_options)
 {
 }
 

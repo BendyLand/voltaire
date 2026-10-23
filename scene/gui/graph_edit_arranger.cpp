@@ -33,11 +33,11 @@
 #include "scene/gui/graph_edit.h"
 
 int GraphEditArranger::_set_operations(
-	SET_OPERATIONS p_operation, HashSet<StringName>& r_u, const HashSet<StringName>& r_v)
+	SET_OPERATIONS p_operation, HashSet<String>& r_u, const HashSet<String>& r_v)
 {
 	switch (p_operation) {
 	case GraphEditArranger::IS_EQUAL: {
-		for (const StringName& E : r_u) {
+		for (const String& E : r_u) {
 			if (!r_v.has(E)) {
 				return 0;
 			}
@@ -48,7 +48,7 @@ int GraphEditArranger::_set_operations(
 		if (r_u.size() == r_v.size() && !r_u.size()) {
 			return 1;
 		}
-		for (const StringName& E : r_u) {
+		for (const String& E : r_u) {
 			if (!r_v.has(E)) {
 				return 0;
 			}
@@ -56,19 +56,19 @@ int GraphEditArranger::_set_operations(
 		return 1;
 	} break;
 	case GraphEditArranger::DIFFERENCE: {
-		Vector<StringName> common;
-		for (const StringName& E : r_u) {
+		Vector<String> common;
+		for (const String& E : r_u) {
 			if (r_v.has(E)) {
 				common.append(E);
 			}
 		}
-		for (const StringName& E : common) {
+		for (const String& E : common) {
 			r_u.erase(E);
 		}
 		return r_u.size();
 	} break;
 	case GraphEditArranger::UNION: {
-		for (const StringName& E : r_v) {
+		for (const String& E : r_v) {
 			if (!r_u.has(E)) {
 				r_u.insert(E);
 			}
@@ -81,28 +81,28 @@ int GraphEditArranger::_set_operations(
 	return -1;
 }
 
-HashMap<int, Vector<StringName>> GraphEditArranger::_layering(
-	const HashSet<StringName>& r_selected_nodes,
-	const HashMap<StringName, HashSet<StringName>>& r_upper_neighbours)
+HashMap<int, Vector<String>> GraphEditArranger::_layering(
+	const HashSet<String>& r_selected_nodes,
+	const HashMap<String, HashSet<String>>& r_upper_neighbours)
 {
-	HashMap<int, Vector<StringName>> l;
+	HashMap<int, Vector<String>> l;
 
-	HashSet<StringName> p(r_selected_nodes);
-	HashSet<StringName> q(r_selected_nodes);
-	HashSet<StringName> u;
-	HashSet<StringName> z;
+	HashSet<String> p(r_selected_nodes);
+	HashSet<String> q(r_selected_nodes);
+	HashSet<String> u;
+	HashSet<String> z;
 	int current_layer = 0;
 	bool selected = false;
 
 	while (!_set_operations(GraphEditArranger::IS_EQUAL, q, u)) {
 		_set_operations(GraphEditArranger::DIFFERENCE, p, u);
-		for (const StringName& E : p) {
-			HashSet<StringName> n(r_upper_neighbours[E]);
+		for (const String& E : p) {
+			HashSet<String> n(r_upper_neighbours[E]);
 			if (_set_operations(GraphEditArranger::IS_SUBSET, n, z)) {
-				Vector<StringName> t;
+				Vector<String> t;
 				t.push_back(E);
 				if (!l.has(current_layer)) {
-					l.insert(current_layer, Vector<StringName>{});
+					l.insert(current_layer, Vector<String>{});
 				}
 				selected = true;
 				t.append_array(l[current_layer]);
@@ -117,11 +117,11 @@ HashMap<int, Vector<StringName>> GraphEditArranger::_layering(
 			if (z.size() == previous_size_z) {
 				WARN_PRINT(
 					"Graph contains cycle(s). The cycle(s) will not be rearranged accurately.");
-				Vector<StringName> t;
+				Vector<String> t;
 				if (l.has(0)) {
 					t.append_array(l[0]);
 				}
-				for (const StringName& E : p) {
+				for (const String& E : p) {
 					t.push_back(E);
 				}
 				l.insert(0, t);

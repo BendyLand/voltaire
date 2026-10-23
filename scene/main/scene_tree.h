@@ -144,7 +144,7 @@ private:
 	bool paused = false;
 	bool suspended = false;
 
-	HashMap<StringName, SceneTreeGroup> group_map;
+	HashMap<String, SceneTreeGroup> group_map;
 	bool _quit = false;
 
 	// Static so we can get directly instead of via SceneTree pointer.
@@ -157,10 +157,10 @@ private:
 
 	SceneTreeFTI scene_tree_fti;
 
-	StringName tree_changed_name = "tree_changed";
-	StringName node_added_name = "node_added";
-	StringName node_removed_name = "node_removed";
-	StringName node_renamed_name = "node_renamed";
+	String tree_changed_name = "tree_changed";
+	String node_added_name = "node_added";
+	String node_removed_name = "node_removed";
+	String node_renamed_name = "node_renamed";
 
 	int64_t current_frame = 0;
 	int nodes_in_tree_count = 0;
@@ -170,8 +170,8 @@ private:
 #endif
 	struct UGCall
 	{
-		StringName group;
-		StringName call;
+		String group;
+		String call;
 
 		static uint32_t hash(const UGCall& p_val) { return p_val.group.hash() ^ p_val.call.hash(); }
 
@@ -232,8 +232,8 @@ private:
 	void process_timers(double p_delta, bool p_physics_frame);
 	void process_tweens(double p_delta, bool p_physics_frame);
 
-	SceneTreeGroup* add_to_group(const StringName& p_group, Node* p_node);
-	void remove_from_group(const StringName& p_group, Node* p_node);
+	SceneTreeGroup* add_to_group(const String& p_group, Node* p_node);
+	void remove_from_group(const String& p_group, Node* p_node);
 
 	void _process_group(ProcessGroup* p_group, bool p_physics);
 	void _process_groups_thread(uint32_t p_index, bool p_physics);
@@ -278,7 +278,7 @@ private:
 	};
 
 	// used by viewport
-	void _call_input_pause(const StringName& p_group, CallInputType p_call_type,
+	void _call_input_pause(const String& p_group, CallInputType p_call_type,
 		const Ref<InputEvent>& p_input, Viewport* p_viewport);
 
 protected:
@@ -301,10 +301,10 @@ public:
 
 	Window* get_root() const;
 
-	void notify_group_flags(uint32_t p_call_flags, const StringName& p_group, int p_notification);
+	void notify_group_flags(uint32_t p_call_flags, const String& p_group, int p_notification);
 
 	// `notify_group()` is immediate by default since Godot 4.0.
-	void notify_group(const StringName& p_group, int p_notification);
+	void notify_group(const String& p_group, int p_notification);
 
 	void flush_transform_notifications();
 
@@ -388,10 +388,10 @@ public:
 
 	int get_node_count() const;
 
-	Vector<Node*> get_nodes_in_group(const StringName& p_group);
-	Node* get_first_node_in_group(const StringName& p_group);
-	bool has_group(const StringName& p_identifier) const;
-	int get_node_count_in_group(const StringName& p_group) const;
+	Vector<Node*> get_nodes_in_group(const String& p_group);
+	Node* get_first_node_in_group(const String& p_group);
+	bool has_group(const String& p_identifier) const;
+	int get_node_count_in_group(const String& p_group) const;
 
 	// void change_scene(const String& p_path);
 	// Node *get_loaded_scene();
@@ -419,7 +419,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	// network API

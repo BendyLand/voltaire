@@ -175,7 +175,7 @@ public:
 	}
 
 	virtual void set_sample_playback_bus_volumes_linear(const Ref<AudioSamplePlayback>& p_playback,
-		const HashMap<StringName, Vector<AudioFrame>>& p_bus_volumes)
+		const HashMap<String, Vector<AudioFrame>>& p_bus_volumes)
 	{
 	}
 
@@ -187,7 +187,7 @@ public:
 
 	virtual void move_sample_bus(int p_bus, int p_to_pos) {}
 
-	virtual void set_sample_bus_send(int p_bus, const StringName& p_send) {}
+	virtual void set_sample_bus_send(int p_bus, const String& p_send) {}
 
 	virtual void set_sample_bus_volume_db(int p_bus, float p_volume_db) {}
 
@@ -283,7 +283,7 @@ private:
 
 	struct Bus
 	{
-		StringName name;
+		String name;
 		bool solo = false;
 		bool mute = false;
 		bool bypass = false;
@@ -316,14 +316,14 @@ private:
 
 		Vector<Effect> effects;
 		float volume_db = 0.0f;
-		StringName send;
+		String send;
 		int index_cache = 0;
 	};
 
 	struct AudioStreamPlaybackBusDetails
 	{
 		bool bus_active[MAX_BUSES_PER_PLAYBACK] = {};
-		StringName bus[MAX_BUSES_PER_PLAYBACK];
+		String bus[MAX_BUSES_PER_PLAYBACK];
 		AudioFrame volume[MAX_BUSES_PER_PLAYBACK][MAX_CHANNELS_PER_BUS];
 	};
 
@@ -385,7 +385,7 @@ private:
 	Vector<Vector<AudioFrame>> temp_buffer; // temp_buffer for each level
 	Vector<AudioFrame> mix_buffer;
 	Vector<Bus*> buses;
-	HashMap<StringName, Bus*> bus_map;
+	HashMap<String, Bus*> bus_map;
 
 	void _update_bus_effects(int p_bus);
 
@@ -439,7 +439,7 @@ public:
 	bool thread_has_channel_mix_buffer(int p_bus, int p_buffer) const;
 	AudioFrame* thread_get_channel_mix_buffer(int p_bus, int p_buffer);
 	int thread_get_mix_buffer_size() const;
-	int thread_find_bus_index(const StringName& p_name);
+	int thread_find_bus_index(const String& p_name);
 
 #ifdef DEBUG_ENABLED
 	void set_debug_mute(bool p_mute);
@@ -456,7 +456,7 @@ public:
 
 	void set_bus_name(int p_bus, const String& p_name);
 	String get_bus_name(int p_bus) const;
-	int get_bus_index(const StringName& p_bus_name) const;
+	int get_bus_index(const String& p_bus_name) const;
 
 	int get_bus_channels(int p_bus) const;
 
@@ -466,8 +466,8 @@ public:
 	void set_bus_volume_linear(int p_bus, float p_volume_linear);
 	float get_bus_volume_linear(int p_bus) const;
 
-	void set_bus_send(int p_bus, const StringName& p_send);
-	StringName get_bus_send(int p_bus) const;
+	void set_bus_send(int p_bus, const String& p_send);
+	String get_bus_send(int p_bus) const;
 
 	void set_bus_solo(int p_bus, bool p_enable);
 	bool is_bus_solo(int p_bus) const;
@@ -499,18 +499,18 @@ public:
 	float get_playback_speed_scale() const;
 
 	// Convenience method.
-	void start_playback_stream(Ref<AudioStreamPlayback> p_playback, const StringName& p_bus,
+	void start_playback_stream(Ref<AudioStreamPlayback> p_playback, const String& p_bus,
 		Vector<AudioFrame> p_volume_db_vector, float p_start_time = 0, float p_pitch_scale = 1);
 	// Expose all parameters.
 	void start_playback_stream(Ref<AudioStreamPlayback> p_playback,
-		const HashMap<StringName, Vector<AudioFrame>>& p_bus_volumes, float p_start_time = 0,
+		const HashMap<String, Vector<AudioFrame>>& p_bus_volumes, float p_start_time = 0,
 		float p_pitch_scale = 1, float p_highshelf_gain = 0, float p_attenuation_cutoff_hz = 0);
 	void stop_playback_stream(Ref<AudioStreamPlayback> p_playback);
 
 	void set_playback_bus_exclusive(
-		Ref<AudioStreamPlayback> p_playback, const StringName& p_bus, Vector<AudioFrame> p_volumes);
+		Ref<AudioStreamPlayback> p_playback, const String& p_bus, Vector<AudioFrame> p_volumes);
 	void set_playback_bus_volumes_linear(Ref<AudioStreamPlayback> p_playback,
-		const HashMap<StringName, Vector<AudioFrame>>& p_bus_volumes);
+		const HashMap<String, Vector<AudioFrame>>& p_bus_volumes);
 	void set_playback_all_bus_volumes_linear(
 		Ref<AudioStreamPlayback> p_playback, Vector<AudioFrame> p_volumes);
 	void set_playback_pitch_scale(Ref<AudioStreamPlayback> p_playback, float p_pitch_scale);
@@ -579,7 +579,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	PlaybackType get_default_playback_type() const;
@@ -607,7 +607,7 @@ class AudioBusLayout : public Resource
 
 	struct Bus
 	{
-		StringName name;
+		String name;
 		bool solo = false;
 		bool mute = false;
 		bool bypass = false;
@@ -621,7 +621,7 @@ class AudioBusLayout : public Resource
 		Vector<Effect> effects;
 
 		float volume_db = 0.0f;
-		StringName send;
+		String send;
 
 		Bus() {}
 	};

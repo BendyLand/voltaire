@@ -137,8 +137,8 @@ void OpenXRInteractionProfileEditor::_update_interaction_profile()
 		PanelContainer* panel = memnew(PanelContainer);
 		panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 		interaction_profile_hb->add_child(panel);
-		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
+		panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SceneString(panel), SNAME("TabContainer")).ptr());
 
 		VBoxContainer* container = memnew(VBoxContainer);
 		panel->add_child(container);

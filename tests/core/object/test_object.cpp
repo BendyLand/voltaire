@@ -54,18 +54,18 @@ public:
 
 class _MockScriptInstance : public ScriptInstance
 {
-	StringName property_name = "NO_NAME";
+	String property_name = "NO_NAME";
 	Variant property_value;
 
 public:
-	bool set(const StringName& p_name, const Variant& p_value) override
+	bool set(const String& p_name, const Variant& p_value) override
 	{
 		property_name = p_name;
 		property_value = p_value;
 		return true;
 	}
 
-	bool get(const StringName& p_name, Variant& r_ret) const override
+	bool get(const String& p_name, Variant& r_ret) const override
 	{
 		if (property_name == p_name) {
 			r_ret = property_value;
@@ -76,26 +76,26 @@ public:
 
 	void get_property_list(List<PropertyInfo>* p_properties) const override {}
 
-	Variant::Type get_property_type(const StringName& p_name, bool* r_is_valid) const override
+	Variant::Type get_property_type(const String& p_name, bool* r_is_valid) const override
 	{
 		return Variant::PACKED_FLOAT32_ARRAY;
 	}
 
 	virtual void validate_property(PropertyInfo& p_property) const override {}
 
-	bool property_can_revert(const StringName& p_name) const override { return false; }
+	bool property_can_revert(const String& p_name) const override { return false; }
 
-	bool property_get_revert(const StringName& p_name, Variant& r_ret) const override
+	bool property_get_revert(const String& p_name, Variant& r_ret) const override
 	{
 		return false;
 	}
 
 	void get_method_list(List<MethodInfo>* p_list) const override {}
 
-	bool has_method(const StringName& p_method) const override { return false; }
+	bool has_method(const String& p_method) const override { return false; }
 
 	int get_method_argument_count(
-		const StringName& p_method, bool* r_is_valid = nullptr) const override
+		const String& p_method, bool* r_is_valid = nullptr) const override
 	{
 		if (r_is_valid) {
 			*r_is_valid = false;
@@ -103,7 +103,7 @@ public:
 		return 0;
 	}
 
-	Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount,
+	Variant callp(const String& p_method, const Variant** p_args, int p_argcount,
 		Callable::CallError& r_error) override
 	{
 		return Variant();

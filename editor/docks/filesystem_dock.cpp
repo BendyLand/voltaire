@@ -176,7 +176,7 @@ Ref<Texture2D> FileSystemDock::_get_tree_item_icon(
 	if (!p_is_valid) {
 		return get_editor_theme_icon(SNAME("ImportFail"));
 	}
-	else if (has_theme_icon(p_file_type, EditorStringName(EditorIcons))) {
+	else if (has_theme_icon(p_file_type, EditorString(EditorIcons))) {
 		return get_editor_theme_icon(p_file_type);
 	}
 	else {
@@ -270,7 +270,7 @@ Ref<Texture2D> FileSystemDock::_apply_thumbnail_filter(
 
 		if (dir) {
 			if (dir->get_file_import_is_valid(index)) {
-				const StringName& file_type = dir->get_file_type(index);
+				const String& file_type = dir->get_file_type(index);
 
 				if (file_type == SNAME("CompressedTexture2D") || file_type == SNAME("Image")) {
 					const String extension = p_file_path.get_extension();
@@ -291,7 +291,7 @@ Ref<Texture2D> FileSystemDock::_apply_thumbnail_filter(
 	return p_thumbnail;
 }
 
-bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const StringName& p_class)
+bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
@@ -299,9 +299,9 @@ bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const StringName&
 		return false;
 	}
 
-	StringName class_name = p_class;
+	String class_name = p_class;
 
-	while (class_name != StringName()) {
+	while (class_name != String()) {
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}

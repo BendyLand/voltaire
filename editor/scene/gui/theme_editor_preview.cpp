@@ -92,7 +92,7 @@ void DefaultThemeEditorPreview::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		test_color_picker_button->set_custom_minimum_size(
 			Size2(0,
-				get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor))) /
+				get_theme_constant(SNAME("inspector_property_height"), EditorString(Editor))) /
 			EDSCALE);
 	} break;
 	}

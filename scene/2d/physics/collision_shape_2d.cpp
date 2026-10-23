@@ -90,7 +90,7 @@ Color CollisionShape2D::get_debug_color() const { return debug_color; }
 
 #ifdef DEBUG_ENABLED
 
-bool CollisionShape2D::_property_can_revert(const StringName& p_name) const
+bool CollisionShape2D::_property_can_revert(const String& p_name) const
 {
 	if (p_name == "debug_color") {
 		return true;

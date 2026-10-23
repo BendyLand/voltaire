@@ -111,8 +111,8 @@ public:
 
 class ExportTemplateManager : public AcceptDialog
 {
-	const StringName PATH_META = "path";
-	const StringName FILE_META = "file";
+	const String PATH_META = "path";
+	const String FILE_META = "file";
 
 	enum class TemplateID
 	{

@@ -35,9 +35,9 @@
 
 class AnimationNodeAnimation : public AnimationRootNode
 {
-	StringName backward = "backward"; // Only used by pingpong animation.
+	String backward = "backward"; // Only used by pingpong animation.
 
-	StringName animation;
+	String animation;
 	mutable uint32_t animation_version = 1;
 
 	bool advance_on_start = false;
@@ -56,9 +56,9 @@ public:
 	};
 
 	virtual void validate_node(
-		const AnimationTree* p_tree, const StringName& p_path) const override;
+		const AnimationTree* p_tree, const String& p_path) const override;
 
-	static LocalVector<StringName> (*get_editable_animation_list)();
+	static LocalVector<String> (*get_editable_animation_list)();
 
 	virtual String get_caption() const override;
 
@@ -71,8 +71,8 @@ public:
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
-	void set_animation(const StringName& p_name);
-	StringName get_animation() const;
+	void set_animation(const String& p_name);
+	String get_animation() const;
 
 	void set_play_mode(PlayMode p_play_mode);
 	PlayMode get_play_mode() const;
@@ -152,17 +152,17 @@ private:
 	bool break_loop_at_end = false;
 	bool abort_on_reset = false;
 
-	StringName request = PNAME("request");
-	StringName active = PNAME("active");
-	StringName internal_active = PNAME("internal_active");
-	StringName fade_in_remaining = "fade_in_remaining";
-	StringName fade_out_remaining = "fade_out_remaining";
-	StringName time_to_restart = "time_to_restart";
+	String request = PNAME("request");
+	String active = PNAME("active");
+	String internal_active = PNAME("internal_active");
+	String fade_in_remaining = "fade_in_remaining";
+	String fade_out_remaining = "fade_out_remaining";
+	String time_to_restart = "time_to_restart";
 
 protected:
 
 public:
-	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
+	virtual bool is_parameter_read_only(const String& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
@@ -204,7 +204,7 @@ public:
 
 class AnimationNodeAdd2 : public AnimationNodeSync
 {
-	StringName add_amount = PNAME("add_amount");
+	String add_amount = PNAME("add_amount");
 
 public:
 	virtual String get_caption() const override;
@@ -218,7 +218,7 @@ public:
 
 class AnimationNodeAdd3 : public AnimationNodeSync
 {
-	StringName add_amount = PNAME("add_amount");
+	String add_amount = PNAME("add_amount");
 
 public:
 	virtual String get_caption() const override;
@@ -232,7 +232,7 @@ public:
 
 class AnimationNodeBlend2 : public AnimationNodeSync
 {
-	StringName blend_amount = PNAME("blend_amount");
+	String blend_amount = PNAME("blend_amount");
 
 public:
 	virtual String get_caption() const override;
@@ -245,7 +245,7 @@ public:
 
 class AnimationNodeBlend3 : public AnimationNodeSync
 {
-	StringName blend_amount = PNAME("blend_amount");
+	String blend_amount = PNAME("blend_amount");
 
 public:
 	virtual String get_caption() const override;
@@ -257,7 +257,7 @@ public:
 
 class AnimationNodeSub2 : public AnimationNodeSync
 {
-	StringName sub_amount = PNAME("sub_amount");
+	String sub_amount = PNAME("sub_amount");
 
 public:
 	virtual String get_caption() const override;
@@ -271,7 +271,7 @@ public:
 
 class AnimationNodeTimeScale : public AnimationNode
 {
-	StringName scale = PNAME("scale");
+	String scale = PNAME("scale");
 
 public:
 	virtual String get_caption() const override;
@@ -284,7 +284,7 @@ public:
 
 class AnimationNodeTimeSeek : public AnimationNode
 {
-	StringName seek_request = PNAME("seek_request");
+	String seek_request = PNAME("seek_request");
 	bool explicit_elapse = true;
 
 protected:
@@ -312,11 +312,11 @@ class AnimationNodeTransition : public AnimationNodeSync
 
 	LocalVector<InputData> input_data;
 
-	StringName prev_xfading = "prev_xfading";
-	StringName prev_index = "prev_index";
-	StringName current_index = PNAME("current_index");
-	StringName current_state = PNAME("current_state");
-	StringName transition_request = PNAME("transition_request");
+	String prev_xfading = "prev_xfading";
+	String prev_index = "prev_index";
+	String current_index = PNAME("current_index");
+	String current_state = PNAME("current_state");
+	String transition_request = PNAME("transition_request");
 
 	double xfade_time = 0.0;
 	Ref<Curve> xfade_curve;
@@ -327,7 +327,7 @@ class AnimationNodeTransition : public AnimationNodeSync
 protected:
 
 public:
-	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
+	virtual bool is_parameter_read_only(const String& p_parameter) const override;
 
 	virtual String get_caption() const override;
 
@@ -378,14 +378,14 @@ class AnimationNodeBlendTree : public AnimationRootNode
 	{
 		Ref<AnimationNode> node;
 		Vector2 position;
-		LocalVector<StringName> connections;
+		LocalVector<String> connections;
 	};
 
-	AHashMap<StringName, Node> nodes;
+	AHashMap<String, Node> nodes;
 
 	Vector2 graph_offset;
 
-	void _child_node_changed(const StringName& p_node);
+	void _child_node_changed(const String& p_node);
 
 	void _initialize_node_tree();
 
@@ -408,50 +408,50 @@ public:
 	};
 
 	virtual void validate_node(
-		const AnimationTree* p_tree, const StringName& p_path) const override;
+		const AnimationTree* p_tree, const String& p_path) const override;
 
-	void add_node(const StringName& p_name, const Ref<AnimationNode>& p_node,
+	void add_node(const String& p_name, const Ref<AnimationNode>& p_node,
 		const Vector2& p_position = Vector2());
-	Ref<AnimationNode> get_node(const StringName& p_name) const;
-	void remove_node(const StringName& p_name);
-	void rename_node(const StringName& p_name, const StringName& p_new_name);
-	bool has_node(const StringName& p_name) const;
-	const LocalVector<StringName>* get_node_connection_array(const StringName& p_name) const;
+	Ref<AnimationNode> get_node(const String& p_name) const;
+	void remove_node(const String& p_name);
+	void rename_node(const String& p_name, const String& p_new_name);
+	bool has_node(const String& p_name) const;
+	const LocalVector<String>* get_node_connection_array(const String& p_name) const;
 
-	void set_node_position(const StringName& p_node, const Vector2& p_position);
-	Vector2 get_node_position(const StringName& p_node) const;
+	void set_node_position(const String& p_node, const Vector2& p_position);
+	Vector2 get_node_position(const String& p_node) const;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
 	void connect_node(
-		const StringName& p_input_node, int p_input_index, const StringName& p_output_node);
-	void disconnect_node(const StringName& p_node, int p_input_index);
+		const String& p_input_node, int p_input_index, const String& p_output_node);
+	void disconnect_node(const String& p_node, int p_input_index);
 
 	struct NodeConnection
 	{
-		StringName input_node;
+		String input_node;
 		int input_index = 0;
-		StringName output_node;
+		String output_node;
 	};
 
 	ConnectionError can_connect_node(
-		const StringName& p_input_node, int p_input_index, const StringName& p_output_node) const;
+		const String& p_input_node, int p_input_index, const String& p_output_node) const;
 	void get_node_connections(LocalVector<NodeConnection>* r_connections) const;
 
 	virtual String get_caption() const override;
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
-	LocalVector<StringName> get_node_list() const;
+	LocalVector<String> get_node_list() const;
 
 	void set_graph_offset(const Vector2& p_graph_offset);
 	Vector2 get_graph_offset() const;
 
-	virtual Ref<AnimationNode> get_child_by_name(const StringName& p_name) const override;
+	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const override;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const override;
+		const String& p_function, int p_idx, List<String>* r_options) const override;
 #endif
 
 	AnimationNodeBlendTree();

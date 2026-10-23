@@ -367,20 +367,20 @@ TEST_CASE("[VariantInitialization] change_and_reset") {
 		CHECK(*p == Variant(Color()));
 	}
 
-	SUBCASE("StringName") {
-		VariantTypeChanger<StringName>::change_and_reset(p);
+	SUBCASE("String") {
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 
-		*p = Variant(StringName("abc"));
-		VariantTypeChanger<StringName>::change_and_reset(p);
+		*p = Variant(String("abc"));
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 
 		*p = Variant(true);
-		VariantTypeChanger<StringName>::change_and_reset(p);
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 	}
 
 	SUBCASE("NodePath") {

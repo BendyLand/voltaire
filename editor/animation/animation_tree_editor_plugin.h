@@ -72,7 +72,7 @@ class AnimationTreeEditor : public EditorDock
 
 	void _toggle_error_panel();
 
-	static LocalVector<StringName> get_animation_list();
+	static LocalVector<String> get_animation_list();
 
 protected:
 	void _notification(int p_what);

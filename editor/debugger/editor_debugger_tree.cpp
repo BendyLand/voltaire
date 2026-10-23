@@ -97,7 +97,7 @@ void EditorDebuggerTree::clear_selection()
 void EditorDebuggerTree::update_icon_max_width()
 {
 	add_theme_constant_override(
-		"icon_max_width", get_theme_constant("class_icon_size", EditorStringName(Editor)));
+		"icon_max_width", get_theme_constant("class_icon_size", EditorString(Editor)));
 }
 
 void EditorDebuggerTree::_item_menu_id_pressed(int p_option)

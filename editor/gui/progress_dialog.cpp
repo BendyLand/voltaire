@@ -111,7 +111,7 @@ void ProgressDialog::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		Ref<StyleBox> style = main->get_theme_stylebox(SceneStringName(panel), SNAME("PopupMenu"));
+		Ref<StyleBox> style = main->get_theme_stylebox(SceneString(panel), SNAME("PopupMenu"));
 		main_border_size = style->get_minimum_size();
 		main->set_offset(SIDE_LEFT, style->get_margin(SIDE_LEFT));
 		main->set_offset(SIDE_RIGHT, -style->get_margin(SIDE_RIGHT));
@@ -119,7 +119,7 @@ void ProgressDialog::_notification(int p_what)
 		main->set_offset(SIDE_BOTTOM, -style->get_margin(SIDE_BOTTOM));
 
 		center_panel->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "PopupPanel").ptr());
+			SceneString(panel), get_theme_stylebox(SceneString(panel), "PopupPanel").ptr());
 	} break;
 	}
 }

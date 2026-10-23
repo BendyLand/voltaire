@@ -34,10 +34,10 @@
 
 class ShaderGlobalsOverride : public Node {
 
-	StringName *_remap(const StringName &p_name) const;
+	String *_remap(const String &p_name) const;
 
 	bool active = false;
-	mutable HashMap<StringName, StringName> param_remaps;
+	mutable HashMap<String, String> param_remaps;
 
 	void _activate();
 

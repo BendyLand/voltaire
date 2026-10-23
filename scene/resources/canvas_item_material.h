@@ -72,9 +72,9 @@ private:
 
 	struct ShaderNames
 	{
-		StringName particles_anim_h_frames;
-		StringName particles_anim_v_frames;
-		StringName particles_anim_loop;
+		String particles_anim_h_frames;
+		String particles_anim_v_frames;
+		String particles_anim_loop;
 	};
 
 	static ShaderNames* shader_names;

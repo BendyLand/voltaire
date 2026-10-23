@@ -68,12 +68,12 @@ void Skeleton3D::_update_bone_names() const
 		}
 		names += bones[i].name;
 	}
-	concatenated_bone_names = StringName(names);
+	concatenated_bone_names = String(names);
 }
 
-StringName Skeleton3D::get_concatenated_bone_names() const
+String Skeleton3D::get_concatenated_bone_names() const
 {
-	if (concatenated_bone_names == StringName()) {
+	if (concatenated_bone_names == String()) {
 		_update_bone_names();
 	}
 	return concatenated_bone_names;

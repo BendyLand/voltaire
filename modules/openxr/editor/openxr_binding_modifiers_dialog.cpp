@@ -42,8 +42,8 @@ void OpenXRBindingModifiersDialog::_notification(int p_what)
 
 	case NOTIFICATION_THEME_CHANGED: {
 		if (binding_modifier_sc) {
-			binding_modifier_sc->add_theme_style_override(SceneStringName(panel),
-				get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
+			binding_modifier_sc->add_theme_style_override(SceneString(panel),
+				get_theme_stylebox(SceneString(panel), SNAME("Tree")).ptr());
 		}
 	} break;
 	}

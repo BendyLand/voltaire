@@ -74,19 +74,19 @@ public:
 	/* ---- Data ---- */
 	struct AnimationLibraryData
 	{
-		StringName name;
+		String name;
 		Ref<AnimationLibrary> library;
 
 		bool operator<(const AnimationLibraryData& p_data) const
 		{
-			return name.string() < p_data.name.string();
+			return name < p_data.name;
 		}
 	};
 
 	struct AnimationData
 	{
 		Ref<Animation> animation;
-		StringName animation_library;
+		String animation_library;
 		uint64_t last_update = 0;
 	};
 
@@ -112,15 +112,15 @@ public:
 protected:
 	/* ---- Data lists ---- */
 	LocalVector<AnimationLibraryData> animation_libraries;
-	AHashMap<StringName, AnimationData>
+	AHashMap<String, AnimationData>
 		animation_set; // HashMap<Library name + Animation name, AnimationData>
 
-	// TODO: This needs to be a TypedArray<StringName> see this PR for rationale
+	// TODO: This needs to be a TypedArray<String> see this PR for rationale
 	// https://github.com/godotengine/godot/pull/110767/
 	Vector<String> _get_animation_list() const
 	{
 		Vector<String> ret;
-		LocalVector<StringName> animations = get_sorted_animation_list();
+		LocalVector<String> animations = get_sorted_animation_list();
 		ret.resize(animations.size());
 		for (uint32_t i = 0; i < animations.size(); ++i) {
 			ret.write[i] = animations[i];
@@ -133,11 +133,11 @@ protected:
 	void _animation_set_cache_update();
 
 	// Signals.
-	virtual void _animation_added(const StringName& p_name, const StringName& p_library);
-	virtual void _animation_removed(const StringName& p_name, const StringName& p_library);
+	virtual void _animation_added(const String& p_name, const String& p_library);
+	virtual void _animation_removed(const String& p_name, const String& p_library);
 	virtual void _animation_renamed(
-		const StringName& p_name, const StringName& p_to_name, const StringName& p_library);
-	virtual void _animation_changed(const StringName& p_name);
+		const String& p_name, const String& p_to_name, const String& p_library);
+	virtual void _animation_changed(const String& p_name);
 
 	/* ---- General settings for animation ---- */
 	AnimationCallbackModeProcess callback_mode_process = ANIMATION_CALLBACK_MODE_PROCESS_IDLE;
@@ -220,7 +220,7 @@ protected:
 
 	struct TrackCacheValue : public TrackCache
 	{
-		Vector<StringName> subpath;
+		Vector<String> subpath;
 
 		// TODO: There are many boolean, can be packed into one integer.
 		bool is_init = false;
@@ -263,7 +263,7 @@ protected:
 		Ref<AudioStreamPolyphonic> audio_stream;
 		Ref<AudioStreamPlaybackPolyphonic> audio_stream_playback;
 		AudioServer::PlaybackType playback_type;
-		StringName bus;
+		String bus;
 
 		TrackCacheAudio() { type = Animation::TYPE_AUDIO; }
 	};
@@ -315,14 +315,14 @@ protected:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	void _node_removed(Node* p_node);
 
 	// Helper for extended class.
 	virtual void _set_active(bool p_active);
-	virtual void _remove_animation(const StringName& p_name);
+	virtual void _remove_animation(const String& p_name);
 
 	/* ---- Blending processor ---- */
 	virtual void _process_animation(double p_delta, bool p_update_only = false);
@@ -360,19 +360,19 @@ protected:
 
 public:
 	/* ---- Data lists ---- */
-	void get_animation_library_list(LocalVector<StringName>* p_animations) const;
-	Ref<AnimationLibrary> get_animation_library(const StringName& p_name) const;
-	bool has_animation_library(const StringName& p_name) const;
-	const StringName& find_animation_library(const Ref<Animation>& p_animation) const;
-	void remove_animation_library(const StringName& p_name);
-	void rename_animation_library(const StringName& p_name, const StringName& p_new_name);
+	void get_animation_library_list(LocalVector<String>* p_animations) const;
+	Ref<AnimationLibrary> get_animation_library(const String& p_name) const;
+	bool has_animation_library(const String& p_name) const;
+	const String& find_animation_library(const Ref<Animation>& p_animation) const;
+	void remove_animation_library(const String& p_name);
+	void rename_animation_library(const String& p_name, const String& p_new_name);
 
-	LocalVector<StringName> get_sorted_animation_list() const;
-	void get_animation_list(LocalVector<StringName>* p_animations) const;
-	const Ref<Animation>& get_animation(const StringName& p_name) const;
-	const Ref<Animation>& get_animation_or_null(const StringName& p_name) const;
-	bool has_animation(const StringName& p_name) const;
-	StringName find_animation(const Ref<Animation>& p_animation) const;
+	LocalVector<String> get_sorted_animation_list() const;
+	void get_animation_list(LocalVector<String>* p_animations) const;
+	const Ref<Animation>& get_animation(const String& p_name) const;
+	const Ref<Animation>& get_animation_or_null(const String& p_name) const;
+	bool has_animation(const String& p_name) const;
+	String find_animation(const Ref<Animation>& p_animation) const;
 
 	/* ---- General settings for animation ---- */
 	void set_active(bool p_active);
@@ -413,7 +413,7 @@ public:
 
 	/* ---- Blending processor ---- */
 
-void make_animation_instance(const StringName& p_name, const PlaybackInfo& p_playback_info);
+void make_animation_instance(const String& p_name, const PlaybackInfo& p_playback_info);
 	void clear_animation_instances();
 	virtual void advance(double p_time);
 	virtual void clear_caches(); // Must be called by hand if an animation was modified after added.

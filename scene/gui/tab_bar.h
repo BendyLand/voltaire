@@ -203,7 +203,7 @@ private:
 
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}

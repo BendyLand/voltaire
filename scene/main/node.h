@@ -240,10 +240,10 @@ private:
 
 		Node* parent = nullptr;
 		Node* owner = nullptr;
-		HashMap<StringName, Node*> children;
+		HashMap<String, Node*> children;
 		mutable bool children_cache_dirty = false;
 		mutable LocalVector<Node*> children_cache;
-		HashMap<StringName, Node*> owned_unique_nodes;
+		HashMap<String, Node*> owned_unique_nodes;
 		bool unique_name_in_owner = false;
 		InternalMode internal_mode = INTERNAL_MODE_DISABLED;
 		mutable int internal_children_front_count_cache = 0;
@@ -253,7 +253,7 @@ private:
 		int32_t depth = -1;
 		int blocked = 0; // Safeguard that throws an error when attempting to modify the tree in a
 						 // harmful way while being traversed.
-		StringName name;
+		String name;
 		SceneTree* tree = nullptr;
 
 		String editor_description;
@@ -262,7 +262,7 @@ private:
 
 		mutable RID accessibility_element;
 
-		HashMap<StringName, GroupData> grouped;
+		HashMap<String, GroupData> grouped;
 		List<Node*>::Element* OW = nullptr; // Owned element.
 		List<Node*> owned;
 
@@ -339,12 +339,12 @@ private:
 	String _get_tree_string_pretty(const String& p_prefix, bool p_last);
 	String _get_tree_string(const Node* p_node);
 
-	Node* _get_child_by_name(const StringName& p_name) const;
+	Node* _get_child_by_name(const String& p_name) const;
 
 	void _replace_connections_target(Node* p_new_target);
 
 	void _validate_child_name(Node* p_child, bool p_force_human_readable = false);
-	void _generate_serial_child_name(const Node* p_child, StringName& name) const;
+	void _generate_serial_child_name(const Node* p_child, String& name) const;
 
 	void _propagate_enter_tree();
 	void _propagate_ready();
@@ -424,10 +424,10 @@ protected:
 
 	friend class SceneState;
 
-	void _add_child_nocheck(Node* p_child, const StringName& p_name,
+	void _add_child_nocheck(Node* p_child, const String& p_name,
 		InternalMode p_internal_mode = INTERNAL_MODE_DISABLED);
 	void _set_owner_nocheck(Node* p_owner);
-	void _set_name_nocheck(const StringName& p_name);
+	void _set_name_nocheck(const String& p_name);
 
 	void _set_physics_interpolated_client_side(bool p_enable)
 	{
@@ -465,7 +465,7 @@ protected:
 
 	// Localization
 
-	virtual StringName _get_translation_context_with_override(const StringName& p_context) const
+	virtual String _get_translation_context_with_override(const String& p_context) const
 	{
 		return p_context;
 	}
@@ -544,9 +544,9 @@ public:
 
 	/* NODE/TREE */
 
-	StringName get_name() const;
+	String get_name() const;
 	String get_description(bool p_show_not_in_tree = false) const;
-	void set_name(const StringName& p_name);
+	void set_name(const String& p_name);
 
 	InternalMode get_internal_mode() const;
 
@@ -574,7 +574,7 @@ public:
 		bool p_recursive = true, bool p_owned = true) const;
 	bool has_node_and_resource(const NodePath& p_path) const;
 	Node* get_node_and_resource(const NodePath& p_path, Ref<Resource>& r_res,
-		Vector<StringName>& r_leftover_subpath, bool p_last_is_property = true) const;
+		Vector<String>& r_leftover_subpath, bool p_last_is_property = true) const;
 
 	void reparent(Node* rp_parent, bool p_keep_global_transform = true);
 	Node* get_parent() const;
@@ -604,13 +604,13 @@ public:
 	NodePath get_path_to(const Node* rp_node, bool p_use_unique_path = false) const;
 	Node* find_common_parent_with(const Node* p_node) const;
 
-	void add_to_group(const StringName& p_identifier, bool p_persistent = false);
-	void remove_from_group(const StringName& p_identifier);
-	bool is_in_group(const StringName& p_identifier) const;
+	void add_to_group(const String& p_identifier, bool p_persistent = false);
+	void remove_from_group(const String& p_identifier);
+	bool is_in_group(const String& p_identifier) const;
 
 	struct GroupInfo
 	{
-		StringName name;
+		String name;
 		bool persistent = false;
 	};
 
@@ -676,13 +676,13 @@ public:
 
 #ifdef TOOLS_ENABLED
 	void set_property_pinned(const String& p_property, bool p_pinned);
-	bool is_property_pinned(const StringName& p_property) const;
-	virtual StringName get_property_store_alias(const StringName& p_property) const;
+	bool is_property_pinned(const String& p_property) const;
+	virtual String get_property_store_alias(const String& p_property) const;
 	bool is_part_of_edited_scene() const;
 #else
 	bool is_part_of_edited_scene() const { return false; }
 #endif
-	void get_storable_properties(HashSet<StringName>& r_storable_properties) const;
+	void get_storable_properties(HashSet<String>& r_storable_properties) const;
 
 	/* NOTIFICATIONS */
 
@@ -825,9 +825,9 @@ public:
 
 #ifdef TOOLS_ENABLED
 	String validate_child_name(Node* p_child);
-	String prevalidate_child_name(Node* p_child, StringName p_name);
+	String prevalidate_child_name(Node* p_child, String p_name);
 	void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 	static String adjust_name_casing(const String& p_name);
 
@@ -855,10 +855,10 @@ public:
 	int get_multiplayer_authority() const;
 	bool is_multiplayer_authority() const;
 
-	template <typename... VarArgs> Error rpc(const StringName& p_method, VarArgs... p_args);
+	template <typename... VarArgs> Error rpc(const String& p_method, VarArgs... p_args);
 
 	template <typename... VarArgs>
-	Error rpc_id(int p_peer_id, const StringName& p_method, VarArgs... p_args);
+	Error rpc_id(int p_peer_id, const String& p_method, VarArgs... p_args);
 
 	Ref<MultiplayerAPI> get_multiplayer() const;
 
@@ -868,8 +868,8 @@ public:
 	AutoTranslateMode get_auto_translate_mode() const;
 	bool can_auto_translate() const;
 
-	virtual StringName get_translation_domain() const;
-	virtual void set_translation_domain(const StringName& p_domain);
+	virtual String get_translation_domain() const;
+	virtual void set_translation_domain(const String& p_domain);
 	void set_translation_domain_inherited();
 
 	/* THREADING */
@@ -885,14 +885,14 @@ public:
 	// These inherited functions need proper multithread locking when overridden in Node.
 #ifdef DEBUG_ENABLED
 
-	virtual bool has_meta(const StringName& p_name) const;
-	virtual void remove_meta(const StringName& p_name);
-	virtual void get_meta_list(List<StringName>* p_list) const;
+	virtual bool has_meta(const String& p_name) const;
+	virtual void remove_meta(const String& p_name);
+	virtual void get_meta_list(List<String>* p_list) const;
 
-	virtual bool has_signal(const StringName& p_name) const;
+	virtual bool has_signal(const String& p_name) const;
 	virtual int get_persistent_signal_connection_count() const;
 
-	virtual bool has_connections(const StringName& p_signal) const;
+	virtual bool has_connections(const String& p_signal) const;
 #endif
 	Node();
 	~Node();
@@ -904,7 +904,7 @@ typedef HashSet<Node*, Node::Comparator> NodeSet;
 // usage. See this StackOverflow question for more information:
 // https://stackoverflow.com/questions/495021/why-can-templates-only-be-implemented-in-the-header-file
 
-template <typename... VarArgs> Error Node::rpc(const StringName& p_method, VarArgs... p_args)
+template <typename... VarArgs> Error Node::rpc(const String& p_method, VarArgs... p_args)
 {
 	return rpc_id(0, p_method, p_args...);
 }

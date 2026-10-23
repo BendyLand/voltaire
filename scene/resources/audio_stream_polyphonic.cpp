@@ -202,7 +202,7 @@ int AudioStreamPlaybackPolyphonic::mix(AudioFrame* p_buffer, float p_rate_scale,
 
 AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 	const Ref<AudioStream>& p_stream, float p_from_offset, float p_volume_db, float p_pitch_scale,
-	AudioServer::PlaybackType p_playback_type, const StringName& p_bus)
+	AudioServer::PlaybackType p_playback_type, const String& p_bus)
 {
 	ERR_FAIL_COND_V(p_stream.is_null(), INVALID_ID);
 

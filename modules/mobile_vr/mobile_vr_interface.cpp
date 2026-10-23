@@ -34,7 +34,7 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
-StringName MobileVRInterface::get_name() const { return "Native mobile"; }
+String MobileVRInterface::get_name() const { return "Native mobile"; }
 
 uint32_t MobileVRInterface::get_capabilities() const { return XRInterface::XR_STEREO; }
 

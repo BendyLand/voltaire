@@ -37,8 +37,8 @@
 
 Size2 EditorObjectSelector::get_minimum_size() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font));
-	int font_size = get_theme_font_size(SceneStringName(font_size));
+	Ref<Font> font = get_theme_font(SceneString(font));
+	int font_size = get_theme_font_size(SceneString(font_size));
 	return Button::get_minimum_size() + Size2(0, font->get_height(font_size));
 }
 

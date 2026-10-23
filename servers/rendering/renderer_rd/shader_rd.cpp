@@ -297,7 +297,7 @@ void ShaderRD::_build_variant_code(StringBuilder& builder, uint32_t p_variant,
 			if (p_version->uniforms.size()) {
 				builder.append("#define MATERIAL_UNIFORMS_USED\n");
 			}
-			for (const KeyValue<StringName, CharString>& E : p_version->code_sections) {
+			for (const KeyValue<String, CharString>& E : p_version->code_sections) {
 				builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
 			}
 			builder.append(String("#define RENDER_DRIVER_") +
@@ -586,11 +586,11 @@ String ShaderRD::_version_get_sha1(Version* p_version) const
 	hash_build.append("[intersection_globals]");
 	hash_build.append(p_version->intersection_globals.get_data());
 
-	Vector<StringName> code_sections;
-	for (const KeyValue<StringName, CharString>& E : p_version->code_sections) {
+	Vector<String> code_sections;
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
 		code_sections.push_back(E.key);
 	}
-	code_sections.sort_custom<StringName::AlphCompare>();
+	code_sections.sort();
 
 	for (int i = 0; i < code_sections.size(); i++) {
 		hash_build.append(String("[code:") + String(code_sections[i]) + "]");
@@ -662,7 +662,7 @@ void ShaderRD::_version_set(Version* p_version, const HashMap<String, String>& p
 {
 	p_version->code_sections.clear();
 	for (const KeyValue<String, String>& E : p_code) {
-		p_version->code_sections[StringName(E.key.to_upper())] = E.value.utf8();
+		p_version->code_sections[String(E.key.to_upper())] = E.value.utf8();
 	}
 
 	p_version->custom_defines.clear();

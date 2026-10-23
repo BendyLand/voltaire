@@ -35,7 +35,7 @@
 class BoneMap : public Resource
 {
 	Ref<SkeletonProfile> profile;
-	HashMap<StringName, StringName> bone_map;
+	HashMap<String, String> bone_map;
 
 	void _update_profile();
 	void _validate_bone_map();
@@ -44,15 +44,15 @@ public:
 	Ref<SkeletonProfile> get_profile() const;
 	void set_profile(const Ref<SkeletonProfile>& p_profile);
 
-	int get_skeleton_bone_name_count(const StringName& p_skeleton_bone_name) const;
+	int get_skeleton_bone_name_count(const String& p_skeleton_bone_name) const;
 
-	StringName get_skeleton_bone_name(const StringName& p_profile_bone_name) const;
+	String get_skeleton_bone_name(const String& p_profile_bone_name) const;
 	void set_skeleton_bone_name(
-		const StringName& p_profile_bone_name, const StringName& p_skeleton_bone_name);
-	void _set_skeleton_bone_name(const StringName& p_profile_bone_name,
-		const StringName& p_skeleton_bone_name); // Avoid to emit signal for editor.
+		const String& p_profile_bone_name, const String& p_skeleton_bone_name);
+	void _set_skeleton_bone_name(const String& p_profile_bone_name,
+		const String& p_skeleton_bone_name); // Avoid to emit signal for editor.
 
-	StringName find_profile_bone_name(const StringName& p_skeleton_bone_name) const;
+	String find_profile_bone_name(const String& p_skeleton_bone_name) const;
 
 	BoneMap();
 	~BoneMap();

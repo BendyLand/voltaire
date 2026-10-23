@@ -404,7 +404,7 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 
 	RD::draw_command_begin_label("Copy Screen Texture");
 
-	StringName texture_name;
+	String texture_name;
 	bool can_use_storage = _render_buffers_can_be_storage();
 	Size2i size = rb->get_internal_size();
 

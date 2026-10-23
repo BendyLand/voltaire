@@ -54,14 +54,14 @@ public:
 
 	bool _hide_metadata_from_inspector() { return true; }
 
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 	String _get_editor_name() const;
 
 	void add_node(const NodePath& p_node);
 
 	int get_node_count() const;
 	NodePath get_node(int p_index) const;
-	StringName get_edited_class_name() const;
+	String get_edited_class_name() const;
 
 	// If the nodes selected are the same independently of order then return true.
 	bool is_same_selection(const MultiNodeEdit* p_other) const

@@ -37,7 +37,7 @@ class Texture2D;
 
 class EditorIconManager : public Control
 {
-	HashMap<StringName, Ref<AtlasTexture>> icons;
+	HashMap<String, Ref<AtlasTexture>> icons;
 
 	inline static EditorIconManager* singleton = nullptr;
 
@@ -47,7 +47,7 @@ protected:
 public:
 	EditorIconManager();
 
-	static Ref<Texture2D> get_icon(const StringName& p_icon_name);
+	static Ref<Texture2D> get_icon(const String& p_icon_name);
 };
 
 

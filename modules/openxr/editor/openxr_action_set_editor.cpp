@@ -43,8 +43,8 @@ void OpenXRActionSetEditor::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
 		_theme_changed();
-		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
+		panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SceneString(panel), SNAME("TabContainer")).ptr());
 	} break;
 	}
 }

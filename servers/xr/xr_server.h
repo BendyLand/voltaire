@@ -122,7 +122,7 @@ protected:
 	static void _bind_compatibility_methods();
 	void _add_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
 	void _remove_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
-	Ref<XRPositionalTracker> _get_tracker_bind_compat_90645(const StringName& p_name) const;
+	Ref<XRPositionalTracker> _get_tracker_bind_compat_90645(const String& p_name) const;
 #endif
 
 public:
@@ -215,14 +215,14 @@ public:
 	*/
 	void add_tracker(const Ref<XRTracker>& p_tracker);
 	void remove_tracker(const Ref<XRTracker>& p_tracker);
-	Ref<XRTracker> get_tracker(const StringName& p_name) const;
+	Ref<XRTracker> get_tracker(const String& p_name) const;
 
 	/*
 		We don't know which trackers and actions will existing during runtime but we can request
 	   suggested names from our interfaces to help our IDE UI.
 	*/
 	PackedStringArray get_suggested_tracker_names() const;
-	PackedStringArray get_suggested_pose_names(const StringName& p_tracker_name) const;
+	PackedStringArray get_suggested_pose_names(const String& p_tracker_name) const;
 	// Q: Should we add get_suggested_input_names and get_suggested_haptic_names even though we
 	// don't use them for the IDE?
 

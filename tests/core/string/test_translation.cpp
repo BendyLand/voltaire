@@ -57,7 +57,7 @@ TEST_CASE("[Translation] Messages") {
 	// The message no longer exists, so it returns an empty string instead.
 	CHECK(translation->get_message("Hello") == "");
 
-	List<StringName> messages;
+	List<String> messages;
 	translation->get_message_list(&messages);
 	CHECK(translation->get_message_count() == 0);
 	CHECK(messages.size() == 0);
@@ -90,7 +90,7 @@ TEST_CASE("[Translation] Messages with context") {
 	CHECK(translation->get_message("Hello", "friendly") == "Salut");
 	CHECK(translation->get_message("Hello", "nonexistent_context") == "");
 
-	List<StringName> messages;
+	List<String> messages;
 	translation->get_message_list(&messages);
 
 	CHECK(translation->get_message_count() == 1);
@@ -209,7 +209,7 @@ TEST_CASE("[OptimizedTranslation] Generate from Translation and read messages") 
 	CHECK(optimized_translation->get_message("Hello3") == "Bonjour3");
 	CHECK(optimized_translation->get_message("DoesNotExist") == "");
 
-	List<StringName> messages;
+	List<String> messages;
 	// `get_message_list()` can't return the list of messages stored in an OptimizedTranslation.
 	optimized_translation->get_message_list(&messages);
 	CHECK(optimized_translation->get_message_count() == 0);
@@ -219,7 +219,7 @@ TEST_CASE("[OptimizedTranslation] Generate from Translation and read messages") 
 TEST_CASE("[TranslationCSV] CSV import") {
 	Ref<ResourceImporterCSVTranslation> import_csv_translation = memnew(ResourceImporterCSVTranslation);
 
-	HashMap<StringName, Variant> options;
+	HashMap<String, Variant> options;
 	options["compress"] = false;
 	options["delimiter"] = 0;
 
@@ -239,18 +239,18 @@ TEST_CASE("[TranslationCSV] CSV import") {
 
 	td->set_locale_override("en");
 
-	CHECK(td->translate("GOOD_MORNING", StringName()) == "Good Morning");
-	CHECK(td->translate("GOOD_EVENING", StringName()) == "Good Evening");
+	CHECK(td->translate("GOOD_MORNING", String()) == "Good Morning");
+	CHECK(td->translate("GOOD_EVENING", String()) == "Good Evening");
 
 	td->set_locale_override("de");
 
-	CHECK(td->translate("GOOD_MORNING", StringName()) == "Guten Morgen");
-	CHECK(td->translate("GOOD_EVENING", StringName()) == "Good Evening"); // Left blank in CSV, should source from 'en'.
+	CHECK(td->translate("GOOD_MORNING", String()) == "Guten Morgen");
+	CHECK(td->translate("GOOD_EVENING", String()) == "Good Evening"); // Left blank in CSV, should source from 'en'.
 
 	td->set_locale_override("ja");
 
-	CHECK(td->translate("GOOD_MORNING", StringName()) == String::utf8("おはよう"));
-	CHECK(td->translate("GOOD_EVENING", StringName()) == String::utf8("こんばんは"));
+	CHECK(td->translate("GOOD_MORNING", String()) == String::utf8("おはよう"));
+	CHECK(td->translate("GOOD_EVENING", String()) == String::utf8("こんばんは"));
 
 	/* FIXME: This passes, but triggers a chain reaction that makes test_viewport
 	 * and test_text_edit explode in a billion glittery Unicode particles.

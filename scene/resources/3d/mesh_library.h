@@ -61,7 +61,7 @@ public:
 	struct Item
 	{
 		String name;
-		StringName category;
+		String category;
 		Ref<Mesh> mesh;
 		Transform3D mesh_transform;
 		RSE::ShadowCastingSetting mesh_cast_shadow = RSE::SHADOW_CASTING_SETTING_ON;
@@ -78,7 +78,7 @@ private:
 	RBMap<int, Item> item_map;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}
@@ -88,7 +88,7 @@ protected:
 public:
 	void create_item(int p_item);
 	void set_item_name(int p_item, const String& p_name);
-	void set_item_category(int p_item, const StringName& p_category);
+	void set_item_category(int p_item, const String& p_category);
 	void set_item_mesh(int p_item, const Ref<Mesh>& p_mesh);
 	void set_item_mesh_transform(int p_item, const Transform3D& p_transform);
 	void set_item_mesh_cast_shadow(int p_item, RSE::ShadowCastingSetting p_shadow_casting_setting);
@@ -104,7 +104,7 @@ public:
 	void set_item_preview(int p_item, const Ref<Texture2D>& p_preview);
 
 	String get_item_name(int p_item) const;
-	StringName get_item_category(int p_item) const;
+	String get_item_category(int p_item) const;
 	Ref<Mesh> get_item_mesh(int p_item) const;
 	Transform3D get_item_mesh_transform(int p_item) const;
 	RSE::ShadowCastingSetting get_item_mesh_cast_shadow(int p_item) const;

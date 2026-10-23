@@ -199,10 +199,10 @@ TileDataOcclusionShapeEditor::TileDataOcclusionShapeEditor()
 	add_child(polygon_editor);
 }
 
-void TileDataCollisionEditor::_property_selected(const StringName& p_path, int p_focusable)
+void TileDataCollisionEditor::_property_selected(const String& p_path, int p_focusable)
 {
 	// Deselect all other properties
-	for (KeyValue<StringName, EditorProperty*>& editor : property_editors) {
+	for (KeyValue<String, EditorProperty*>& editor : property_editors) {
 		if (editor.key != p_path) {
 			editor.value->deselect();
 		}

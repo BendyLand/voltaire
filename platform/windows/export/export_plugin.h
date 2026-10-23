@@ -94,7 +94,7 @@ public:
 	virtual bool get_export_option_visibility(
 		const EditorExportPreset* p_preset, const String& p_option) const override;
 	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const StringName& p_name) const override;
+		const EditorExportPreset* p_preset, const String& p_name) const override;
 
 	virtual String get_template_file_name(
 		const String& p_target, const String& p_arch) const override;

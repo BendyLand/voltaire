@@ -311,7 +311,7 @@ private:
 
 		ThemeOwner* theme_owner = nullptr;
 		Ref<Theme> theme;
-		StringName theme_type_variation;
+		String theme_type_variation;
 
 		bool bulk_theme_override = false;
 		Theme::ThemeIconMap theme_icon_override;
@@ -321,12 +321,12 @@ private:
 		Theme::ThemeColorMap theme_color_override;
 		Theme::ThemeConstantMap theme_constant_override;
 
-		mutable HashMap<StringName, Theme::ThemeIconMap> theme_icon_cache;
-		mutable HashMap<StringName, Theme::ThemeStyleMap> theme_style_cache;
-		mutable HashMap<StringName, Theme::ThemeFontMap> theme_font_cache;
-		mutable HashMap<StringName, Theme::ThemeFontSizeMap> theme_font_size_cache;
-		mutable HashMap<StringName, Theme::ThemeColorMap> theme_color_cache;
-		mutable HashMap<StringName, Theme::ThemeConstantMap> theme_constant_cache;
+		mutable HashMap<String, Theme::ThemeIconMap> theme_icon_cache;
+		mutable HashMap<String, Theme::ThemeStyleMap> theme_style_cache;
+		mutable HashMap<String, Theme::ThemeFontMap> theme_font_cache;
+		mutable HashMap<String, Theme::ThemeFontSizeMap> theme_font_size_cache;
+		mutable HashMap<String, Theme::ThemeColorMap> theme_color_cache;
+		mutable HashMap<String, Theme::ThemeConstantMap> theme_constant_cache;
 
 		// Internationalization.
 
@@ -339,7 +339,7 @@ private:
 		// Extra properties.
 
 		String tooltip;
-		StringName translation_context;
+		String translation_context;
 		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
 
 	} data;
@@ -420,12 +420,12 @@ private:
 	static int root_layout_direction;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 
 	// Localization
 
-	virtual StringName _get_translation_context_with_override(
-		const StringName& p_context) const override;
+	virtual String _get_translation_context_with_override(
+		const String& p_context) const override;
 
 	// Theming.
 
@@ -504,7 +504,7 @@ public:
 	PackedStringArray get_accessibility_configuration_warnings() const ;
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif // TOOLS_ENABLED
 
 	virtual bool is_text_field() const;
@@ -749,61 +749,61 @@ public:
 	void set_theme(const Ref<Theme>& p_theme);
 	Ref<Theme> get_theme() const;
 
-	void set_theme_type_variation(const StringName& p_theme_type);
-	StringName get_theme_type_variation() const;
+	void set_theme_type_variation(const String& p_theme_type);
+	String get_theme_type_variation() const;
 
 	void begin_bulk_theme_override();
 	void end_bulk_theme_override();
 
-	void add_theme_icon_override(const StringName& p_name, Texture2D* rp_icon);
-	void add_theme_style_override(const StringName& p_name, StyleBox* rp_style);
-	void add_theme_font_override(const StringName& p_name, Font* rp_font);
-	void add_theme_font_size_override(const StringName& p_name, int p_font_size);
-	void add_theme_color_override(const StringName& p_name, const Color& p_color);
-	void add_theme_constant_override(const StringName& p_name, int p_constant);
+	void add_theme_icon_override(const String& p_name, Texture2D* rp_icon);
+	void add_theme_style_override(const String& p_name, StyleBox* rp_style);
+	void add_theme_font_override(const String& p_name, Font* rp_font);
+	void add_theme_font_size_override(const String& p_name, int p_font_size);
+	void add_theme_color_override(const String& p_name, const Color& p_color);
+	void add_theme_constant_override(const String& p_name, int p_constant);
 
-	void remove_theme_icon_override(const StringName& p_name);
-	void remove_theme_style_override(const StringName& p_name);
-	void remove_theme_font_override(const StringName& p_name);
-	void remove_theme_font_size_override(const StringName& p_name);
-	void remove_theme_color_override(const StringName& p_name);
-	void remove_theme_constant_override(const StringName& p_name);
+	void remove_theme_icon_override(const String& p_name);
+	void remove_theme_style_override(const String& p_name);
+	void remove_theme_font_override(const String& p_name);
+	void remove_theme_font_size_override(const String& p_name);
+	void remove_theme_color_override(const String& p_name);
+	void remove_theme_constant_override(const String& p_name);
 
 	Ref<Texture2D> get_theme_icon(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	Ref<StyleBox> get_theme_stylebox(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	Ref<Font> get_theme_font(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	int get_theme_font_size(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	Color get_theme_color(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	int get_theme_constant(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 #ifdef TOOLS_ENABLED
-	Ref<Texture2D> get_editor_theme_icon(const StringName& p_name) const;
+	Ref<Texture2D> get_editor_theme_icon(const String& p_name) const;
 #endif // TOOLS_ENABLED
 
-	bool has_theme_icon_override(const StringName& p_name) const;
-	bool has_theme_stylebox_override(const StringName& p_name) const;
-	bool has_theme_font_override(const StringName& p_name) const;
-	bool has_theme_font_size_override(const StringName& p_name) const;
-	bool has_theme_color_override(const StringName& p_name) const;
-	bool has_theme_constant_override(const StringName& p_name) const;
+	bool has_theme_icon_override(const String& p_name) const;
+	bool has_theme_stylebox_override(const String& p_name) const;
+	bool has_theme_font_override(const String& p_name) const;
+	bool has_theme_font_size_override(const String& p_name) const;
+	bool has_theme_color_override(const String& p_name) const;
+	bool has_theme_constant_override(const String& p_name) const;
 
 	bool has_theme_icon(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	bool has_theme_stylebox(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	bool has_theme_font(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	bool has_theme_font_size(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	bool has_theme_color(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 	bool has_theme_constant(
-		const StringName& p_name, const StringName& p_theme_type = StringName()) const;
+		const String& p_name, const String& p_theme_type = String()) const;
 
 	float get_theme_default_base_scale() const;
 	Ref<Font> get_theme_default_font() const;
@@ -831,8 +831,8 @@ public:
 
 	String get_tooltip_text() const;
 	void set_tooltip_text(const String& text);
-	StringName get_translation_context() const;
-	void set_translation_context(const StringName& p_context);
+	String get_translation_context() const;
+	void set_translation_context(const String& p_context);
 	virtual Control* make_custom_tooltip(const String& p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;

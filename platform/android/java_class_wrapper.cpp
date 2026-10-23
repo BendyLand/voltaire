@@ -33,8 +33,8 @@
 #include "jni_utils.h"
 #include "thread_jandroid.h"
 
-bool JavaClass::_call_method(JavaObject *p_instance, const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error, Variant &ret) {
-	HashMap<StringName, List<MethodInfo>>::Iterator M = methods.find(p_method);
+bool JavaClass::_call_method(JavaObject *p_instance, const String &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error, Variant &ret) {
+	HashMap<String, List<MethodInfo>>::Iterator M = methods.find(p_method);
 	if (!M) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 		return false;
@@ -719,7 +719,7 @@ bool JavaClass::_call_method(JavaObject *p_instance, const StringName &p_method,
 	return success;
 }
 
-bool JavaClass::_get(const StringName &p_name, Variant &r_ret) const {
+bool JavaClass::_get(const String &p_name, Variant &r_ret) const {
 	if (constant_map.has(p_name)) {
 		r_ret = constant_map[p_name];
 		return true;
@@ -728,7 +728,7 @@ bool JavaClass::_get(const StringName &p_name, Variant &r_ret) const {
 	return false;
 }
 
-Variant JavaClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+Variant JavaClass::callp(const String &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	// Godot methods take precedence.
 	Variant ret = RefCounted::callp(p_method, p_args, p_argcount, r_error);
 	if (r_error.error == Callable::CallError::CALL_OK) {
@@ -751,7 +751,7 @@ String JavaClass::get_java_class_name() const {
 TypedArray<Dictionary> JavaClass::get_java_method_list() const {
 	TypedArray<Dictionary> method_list;
 
-	for (const KeyValue<StringName, List<MethodInfo>> &item : methods) {
+	for (const KeyValue<String, List<MethodInfo>> &item : methods) {
 		for (const MethodInfo &mi : item.value) {
 			Dictionary method;
 
@@ -835,7 +835,7 @@ String JavaClass::_to_string() {
 	return "<JavaClass:" + java_class_name + ">";
 }
 
-bool JavaClass::has_java_method(const StringName &p_method) const {
+bool JavaClass::has_java_method(const String &p_method) const {
 	String method = (p_method == java_constructor_name) ? "<init>" : p_method;
 	return methods.has(method);
 }
@@ -854,7 +854,7 @@ JavaClass::~JavaClass() {
 
 /////////////////////
 
-Variant JavaObject::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+Variant JavaObject::callp(const String &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	// Godot methods take precedence.
 	Variant ret = RefCounted::callp(p_method, p_args, p_argcount, r_error);
 	if (r_error.error == Callable::CallError::CALL_OK) {
@@ -886,7 +886,7 @@ String JavaObject::_to_string() {
 	return RefCounted::_to_string();
 }
 
-bool JavaObject::has_java_method(const StringName &p_method) const {
+bool JavaObject::has_java_method(const String &p_method) const {
 	if (instance) {
 		Ref<JavaClass> c = base_class;
 		while (c.is_valid()) {

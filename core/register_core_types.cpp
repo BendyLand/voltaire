@@ -111,7 +111,6 @@ void register_core_types()
 
 	CryptoCore::initialize();
 
-	StringName::setup();
 	register_global_constants();
 
 	_time = memnew(Time);

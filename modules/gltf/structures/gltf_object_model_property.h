@@ -65,7 +65,7 @@ protected:
 
 public:
 	void append_node_path(const NodePath& p_node_path);
-	void append_path_to_property(const NodePath& p_node_path, const StringName& p_prop_name);
+	void append_path_to_property(const NodePath& p_node_path, const String& p_prop_name);
 
 	GLTFAccessor::GLTFAccessorType get_accessor_type() const;
 

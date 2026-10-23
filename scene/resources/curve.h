@@ -142,7 +142,7 @@ public:
 	void ensure_default_setup(real_t p_min, real_t p_max);
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}
@@ -228,7 +228,7 @@ class Curve2D : public Resource
 	bool _filter_property(const String& p_name, int p_index) const;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}
@@ -336,7 +336,7 @@ class Curve3D : public Resource
 	bool _filter_property(const String& p_name, int p_index) const;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}

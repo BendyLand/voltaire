@@ -70,7 +70,7 @@ private:
 	// A mapping from the joint indices (in the order of joints_original) to the
 	// Godot Skeleton's bone_indices
 	HashMap<int, int> joint_i_to_bone_i;
-	HashMap<int, StringName> joint_i_to_name;
+	HashMap<int, String> joint_i_to_name;
 
 	// The Actual Skin that will be created as a mapping between the IBM's of
 	// this skin to the generated skeleton for the mesh instances.

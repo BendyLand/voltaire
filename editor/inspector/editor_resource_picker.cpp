@@ -64,7 +64,7 @@ void EditorResourcePicker::_on_unique_button_pressed()
 	}
 }
 
-static bool _should_hide_type(const StringName& p_type)
+static bool _should_hide_type(const String& p_type)
 {
 	if (p_type == SNAME("MissingResource")) {
 		return true;
@@ -84,14 +84,14 @@ String EditorResourcePicker::get_base_type() const { return base_type; }
 Vector<String> EditorResourcePicker::get_allowed_types() const
 {
 	_ensure_allowed_types();
-	HashSet<StringName> allowed_types(allowed_types_without_convert);
+	HashSet<String> allowed_types(allowed_types_without_convert);
 
 	Vector<String> types;
 	types.resize(allowed_types.size());
 
 	int i = 0;
 	String* w = types.ptrw();
-	for (const StringName& E : allowed_types) {
+	for (const String& E : allowed_types) {
 		w[i] = E;
 		i++;
 	}

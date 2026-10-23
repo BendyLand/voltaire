@@ -102,7 +102,7 @@ public:
 	bool get_visible();
 	void set_visible(bool p_visible);
 
-	bool has_additional_data(const StringName& p_extension_name);
+	bool has_additional_data(const String& p_extension_name);
 
 	NodePath get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_skeletons = true);
 };

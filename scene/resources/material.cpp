@@ -106,7 +106,7 @@ Material::~Material()
 	}
 }
 
-bool ShaderMaterial::_property_can_revert(const StringName& p_name) const
+bool ShaderMaterial::_property_can_revert(const String& p_name) const
 {
 	if (shader.is_valid()) {
 		if (remap_cache.has(p_name)) {
@@ -1999,7 +1999,7 @@ Ref<Texture2D> BaseMaterial3D::get_texture(TextureParam p_param) const
 	return textures[p_param];
 }
 
-Ref<Texture2D> BaseMaterial3D::get_texture_by_name(const StringName& p_name) const
+Ref<Texture2D> BaseMaterial3D::get_texture_by_name(const String& p_name) const
 {
 	for (int i = 0; i < (int)BaseMaterial3D::TEXTURE_MAX; i++) {
 		TextureParam param = TextureParam(i);

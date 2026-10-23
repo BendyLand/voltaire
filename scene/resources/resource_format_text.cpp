@@ -150,7 +150,7 @@ void ResourceFormatLoaderText::get_recognized_extensions(List<String>* p_extensi
 bool ResourceFormatLoaderText::handles_type(const String& p_type) const { return true; }
 
 void ResourceFormatLoaderText::get_classes_used(
-	const String& p_path, HashSet<StringName>* r_classes)
+	const String& p_path, HashSet<String>* r_classes)
 {
 	const String type = get_resource_type(p_path);
 	if (!type.is_empty()) {
@@ -401,7 +401,7 @@ ResourceUID::ID ResourceLoaderText::get_uid(Ref<FileAccess>) { return ResourceUI
 void ResourceLoaderText::get_dependencies(Ref<FileAccess>, List<String, DefaultAllocator>*, bool) {}
 
 Error ResourceLoaderText::get_classes_used(
-	HashSet<StringName, HashMapHasherDefault, HashMapComparatorDefault<StringName, void>>*)
+	HashSet<String, HashMapHasherDefault, HashMapComparatorDefault<String, void>>*)
 {
 	return OK;
 }
