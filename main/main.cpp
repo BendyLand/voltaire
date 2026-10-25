@@ -1878,10 +1878,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			if (N) {
 				validate_extension_api_file = N->get();
 
-				N = N->next
-();
+				N = N->next();
 			}
-			else {
+ else {
 				OS::get_singleton()->print(
 					"Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
@@ -2636,13 +2635,38 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (default_renderer_mobile.is_empty()) {
 		default_renderer_mobile = "gl_compatibility";
 	}
-	// Default to Compatibility when using the project manager.
-	if (rendering_driver.is_empty() && rendering_method.is_empty() && project_manager) {
-		rendering_driver = "opengl3";
-		rendering_method = "gl_compatibility";
-		default_renderer_mobile = "gl_compatibility";
-	}
 #endif
+
+	// Probe hardware capabilities directly if no rendering driver was explicitly set on CLI.
+	if (rendering_driver.is_empty()) {
+		String probe_display =
+			display_driver.is_empty() ? DisplayServer::get_create_function_name(0) : display_driver;
+
+#if defined(RD_ENABLED) && defined(VULKAN_ENABLED)
+		if (OS::get_singleton()->_test_create_rendering_device(probe_display)) {
+			rendering_driver = "vulkan";
+			if (rendering_method.is_empty()) {
+				rendering_method = "forward_plus";
+			}
+		}
+#endif
+
+#if defined(GLES3_ENABLED)
+		if (rendering_driver.is_empty()) {
+			rendering_driver = "opengl3";
+			if (rendering_method.is_empty()) {
+				rendering_method = "gl_compatibility";
+			}
+		}
+#endif
+
+		if (rendering_driver.is_empty()) {
+			OS::get_singleton()->print(
+				"FATAL: No supported rendering backend detected on this system.\n");
+			exit_err = ERR_UNAVAILABLE;
+			goto error;
+		}
+	}
 
 	if (!rendering_method.is_empty()) {
 		if (rendering_method != "forward_plus" && rendering_method != "mobile" &&
@@ -3950,7 +3974,6 @@ int Main::start()
 		int64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t prev_time = OS::get_singleton()->get_ticks_usec();
 		while (minimum_time > 0) {
-
 			DisplayServer::get_singleton()->process_events();
 			O S::get_singleton()->delay_usec(100);
 
@@ -3998,7 +4021,8 @@ int Main::start()
 		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
 		Renderer::viewport_set_active(viewport_rid, true);
 		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
-		Renderer::viewport_attach_to_screen(viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
+		Renderer::viewport_attach_to_screen(
+			viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
 
 		// Instantiate and attach ColorRect directly to root canvas
 		ColorRect* rect = memnew(ColorRect);
@@ -4049,6 +4073,11 @@ static uint64_t navigation_process_max = 0;
 // to be set explicitly here (defaults to EXIT_SUCCESS).
 bool Main::iteration()
 {
+	// Inside RendererCompositorRD::begin_frame or Main::iteration:
+	static uint64_t frame_counter = 0;
+	if ((++frame_counter % 60) == 0) {
+		__print_line(vformat("Render loop alive! Frame: %d", frame_counter));
+	}
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();
@@ -4199,7 +4228,8 @@ bool Main::iteration()
 		// Only relevant when running the editor.
 		if (!editor) {
 			OS::get_singleton()->set_exit_code(EXIT_FAILURE);
-			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but no project "
+			ERR_FAIL_V_MSG(true
+, "Command line option --build-solutions was passed, but no project "
 								 "is being edited. Aborting.");
 		}
 		if (!EditorNode::get_singleton()->call_build()) {
@@ -4348,5 +4378,3 @@ void Main::cleanup(bool p_force)
 }
 
 void Main::setup_boot_logo() {}
-
-

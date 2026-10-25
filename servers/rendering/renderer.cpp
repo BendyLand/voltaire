@@ -630,22 +630,6 @@ void Renderer::finalize()
 	}
 }
 
-void Renderer::draw(bool p_swap_buffers, double frame_step)
-{
-	static bool printed = false;
-	if (!printed) {
-		__print_line("Renderer::draw called!");
-		printed = true;
-	}
-	if (viewport) {
-		viewport->draw_viewports(p_swap_buffers);
-	}
-
-	if (canvas) {
-		canvas->update();
-	}
-}
-
 void Renderer::sync() {}
 
 void Renderer::tick()
@@ -2802,4 +2786,15 @@ void Renderer::reflection_probe_set_update_mode(RID p_probe, RSE::ReflectionProb
 	RendererLightStorage::reflection_probe_set_update_mode(p_probe, p_mode);
 }
 
+void Renderer::draw(bool p_swap_buffers, double frame_step)
+{
+    if (viewport) {
+        viewport->draw_viewports(p_swap_buffers);
+    }
 
+    if (canvas) {
+        canvas->update();
+    }
+
+    RendererCompositor::end_frame(p_swap_buffers);
+}

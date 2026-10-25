@@ -37,6 +37,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/rendering_device.h"
@@ -483,7 +484,8 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			p_viewport->sdf_active = false; // If used, gets set active again.
 		}
 		else {
-			RendererTextureStorage::render_target_mark_sdf_enabled(p_viewport->render_target, false);
+			RendererTextureStorage::render_target_mark_sdf_enabled(
+				p_viewport->render_target, false);
 		}
 
 		Rect2 shadow_rect;
@@ -1428,7 +1430,8 @@ void RendererViewport::viewport_set_use_debanding(RID p_viewport, bool p_use_deb
 		return;
 	}
 	viewport->use_debanding = p_use_debanding;
-	RendererTextureStorage::render_target_set_use_debanding(viewport->render_target, p_use_debanding);
+	RendererTextureStorage::render_target_set_use_debanding(
+		viewport->render_target, p_use_debanding);
 	_configure_3d_render_buffers(viewport);
 }
 
@@ -1735,20 +1738,18 @@ int RendererViewport::get_num_viewports_with_motion_vectors() const
 
 void RendererViewport::draw_viewports(bool p_swap_buffers)
 {
+	static uint64_t dv_count = 0;
+	if ((++dv_count % 60) == 1) {
+		DUMP(viewport_owner);
+		printf("[DRAW_VIEWPORTS] call %llu, rid_count=%u\n", (unsigned long long)dv_count,
+			viewport_owner.get_rid_count());
+	}
 	draw_viewports_pass++;
-
-
 	total_objects_drawn = 0;
 	total_vertices_drawn = 0;
 	total_draw_calls_used = 0;
 
 	uint32_t rid_count = viewport_owner.get_rid_count();
-
-    static bool printed = false;
-    if (!printed) {
-        __print_line(vformat("draw_viewports: total viewports allocated = %d", rid_count));
-        printed = true;
-    }
 
 	if (rid_count == 0) {
 		if (p_swap_buffers) {
@@ -1782,19 +1783,38 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 
 	active_viewports.sort_custom<ViewportSort>();
 
+	HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>
+		blit_to_screen;
+
 	for (uint32_t i = 0; i < active_viewports.size(); i++) {
 		Viewport* v = active_viewports[i];
-		static bool printed_draw = false;
-        if (!printed_draw) {
-            __print_line("Calling _draw_viewport on active viewport!");
-            printed_draw = true;
-        }
 		_draw_viewport(v);
+		if (v->viewport_to_screen != DisplayServerEnums::INVALID_WINDOW_ID &&
+			v->render_target.is_valid()) {
+			RenderingServerTypes::BlitToScreen blit = {};
+			blit.render_target = v->render_target;
+			blit.src_rect = Rect2(0, 0, v->size.x, v->size.y);
+
+			if (v->viewport_to_screen_rect.size.x > 0.0f &&
+				v->viewport_to_screen_rect.size.y > 0.0f &&
+				v->viewport_to_screen_rect.size.x <= 16384.0f &&
+				v->viewport_to_screen_rect.size.y <= 16384.0f) {
+				blit.dst_rect = v->viewport_to_screen_rect;
+			}
+			else {
+				blit.dst_rect = Rect2(0, 0, v->size.x, v->size.y);
+			}
+
+			blit_to_screen[v->viewport_to_screen].push_back(blit);
+		}
+	}
+
+	for (KeyValue<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>&
+			 E : blit_to_screen) {
+		RendererCompositorRD::blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
 	}
 
 	if (p_swap_buffers) {
 		DisplayServer::get_singleton()->swap_buffers();
 	}
 }
-
-

@@ -534,7 +534,7 @@ private:
 
 	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;
 	DescriptorSetPools descriptor_set_pools;
-	uint32_t max_descriptor_sets_per_pool = 0;
+	uint32_t max_descriptor_sets_per_pool = 64;
 
 	HashMap<int, DescriptorSetPools> linear_descriptor_set_pools;
 	bool linear_descriptor_pools_enabled = true;
