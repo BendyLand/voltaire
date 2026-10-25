@@ -30,116 +30,153 @@
 
 #include "rendering_context_driver.h"
 
-RenderingContextDriver::~RenderingContextDriver() {
-}
+RenderingContextDriver::~RenderingContextDriver() {}
 
-RenderingContextDriver::SurfaceID RenderingContextDriver::surface_get_from_window(DisplayServerEnums::WindowID p_window) const {
-	HashMap<DisplayServerEnums::WindowID, SurfaceID>::ConstIterator it = window_surface_map.find(p_window);
+RenderingContextDriver::SurfaceID RenderingContextDriver::surface_get_from_window(
+	DisplayServerEnums::WindowID p_window) const
+{
+	printf("[MAP CHECK] map size = %d, looking for window = %d\n",
+           (int)window_surface_map.size(), (int)p_window);
+	HashMap<DisplayServerEnums::WindowID, SurfaceID>::ConstIterator it =
+		window_surface_map.find(p_window);
 	if (it != window_surface_map.end()) {
 		return it->value;
-	} else {
+	}
+	else {
 		return SurfaceID();
 	}
 }
 
-Error RenderingContextDriver::window_create(DisplayServerEnums::WindowID p_window, const void *p_platform_data) {
+Error RenderingContextDriver::window_create(
+	DisplayServerEnums::WindowID p_window, const void* p_platform_data)
+{
 	SurfaceID surface = surface_create(p_platform_data);
 	if (surface != 0) {
 		window_surface_map[p_window] = surface;
 		return OK;
-	} else {
+	}
+	else {
 		return ERR_CANT_CREATE;
 	}
 }
 
-void RenderingContextDriver::window_set_size(DisplayServerEnums::WindowID p_window, uint32_t p_width, uint32_t p_height) {
+void RenderingContextDriver::window_set_size(
+	DisplayServerEnums::WindowID p_window, uint32_t p_width, uint32_t p_height)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_size(surface, p_width, p_height);
 	}
 }
 
-void RenderingContextDriver::window_set_vsync_mode(DisplayServerEnums::WindowID p_window, DisplayServerEnums::VSyncMode p_vsync_mode) {
+void RenderingContextDriver::window_set_vsync_mode(
+	DisplayServerEnums::WindowID p_window, DisplayServerEnums::VSyncMode p_vsync_mode)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_vsync_mode(surface, p_vsync_mode);
 	}
 }
 
-DisplayServerEnums::VSyncMode RenderingContextDriver::window_get_vsync_mode(DisplayServerEnums::WindowID p_window) const {
+DisplayServerEnums::VSyncMode RenderingContextDriver::window_get_vsync_mode(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		return surface_get_vsync_mode(surface);
-	} else {
+	}
+	else {
 		return DisplayServerEnums::VSYNC_DISABLED;
 	}
 }
 
-void RenderingContextDriver::window_set_hdr_output_enabled(DisplayServerEnums::WindowID p_window, bool p_enabled) {
+void RenderingContextDriver::window_set_hdr_output_enabled(
+	DisplayServerEnums::WindowID p_window, bool p_enabled)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_hdr_output_enabled(surface, p_enabled);
 	}
 }
 
-bool RenderingContextDriver::window_get_hdr_output_enabled(DisplayServerEnums::WindowID p_window) const {
+bool RenderingContextDriver::window_get_hdr_output_enabled(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		return surface_get_hdr_output_enabled(surface);
-	} else {
+	}
+	else {
 		return false;
 	}
 }
 
-void RenderingContextDriver::window_set_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window, float p_reference_luminance) {
+void RenderingContextDriver::window_set_hdr_output_reference_luminance(
+	DisplayServerEnums::WindowID p_window, float p_reference_luminance)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_hdr_output_reference_luminance(surface, p_reference_luminance);
 	}
 }
 
-float RenderingContextDriver::window_get_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window) const {
+float RenderingContextDriver::window_get_hdr_output_reference_luminance(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		return surface_get_hdr_output_reference_luminance(surface);
-	} else {
+	}
+	else {
 		return 0.0f;
 	}
 }
 
-void RenderingContextDriver::window_set_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window, float p_max_luminance) {
+void RenderingContextDriver::window_set_hdr_output_max_luminance(
+	DisplayServerEnums::WindowID p_window, float p_max_luminance)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_hdr_output_max_luminance(surface, p_max_luminance);
 	}
 }
 
-float RenderingContextDriver::window_get_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window) const {
+float RenderingContextDriver::window_get_hdr_output_max_luminance(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		return surface_get_hdr_output_max_luminance(surface);
-	} else {
+	}
+	else {
 		return 0.0f;
 	}
 }
 
-void RenderingContextDriver::window_set_hdr_output_linear_luminance_scale(DisplayServerEnums::WindowID p_window, float p_linear_luminance_scale) {
+void RenderingContextDriver::window_set_hdr_output_linear_luminance_scale(
+	DisplayServerEnums::WindowID p_window, float p_linear_luminance_scale)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_set_hdr_output_linear_luminance_scale(surface, p_linear_luminance_scale);
 	}
 }
 
-float RenderingContextDriver::window_get_hdr_output_linear_luminance_scale(DisplayServerEnums::WindowID p_window) const {
+float RenderingContextDriver::window_get_hdr_output_linear_luminance_scale(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		return surface_get_hdr_output_linear_luminance_scale(surface);
-	} else {
+	}
+	else {
 		return 0.0f;
 	}
 }
 
-float RenderingContextDriver::window_get_output_max_linear_value(DisplayServerEnums::WindowID p_window) const {
+float RenderingContextDriver::window_get_output_max_linear_value(
+	DisplayServerEnums::WindowID p_window) const
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		if (surface_get_hdr_output_enabled(surface)) {
@@ -149,7 +186,8 @@ float RenderingContextDriver::window_get_output_max_linear_value(DisplayServerEn
 	return 1.0f; // SDR
 }
 
-void RenderingContextDriver::window_destroy(DisplayServerEnums::WindowID p_window) {
+void RenderingContextDriver::window_destroy(DisplayServerEnums::WindowID p_window)
+{
 	SurfaceID surface = surface_get_from_window(p_window);
 	if (surface) {
 		surface_destroy(surface);
@@ -158,7 +196,8 @@ void RenderingContextDriver::window_destroy(DisplayServerEnums::WindowID p_windo
 	window_surface_map.erase(p_window);
 }
 
-String RenderingContextDriver::get_driver_and_device_memory_report() const {
+String RenderingContextDriver::get_driver_and_device_memory_report() const
+{
 	String report;
 
 	const uint32_t num_tracked_obj_types = static_cast<uint32_t>(get_tracked_object_type_count());
@@ -203,42 +242,27 @@ String RenderingContextDriver::get_driver_and_device_memory_report() const {
 	return report;
 }
 
-const char *RenderingContextDriver::get_tracked_object_name(uint32_t p_type_index) const {
+const char* RenderingContextDriver::get_tracked_object_name(uint32_t p_type_index) const
+{
 	return "Tracking Unsupported by API";
 }
 
-uint64_t RenderingContextDriver::get_tracked_object_type_count() const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_tracked_object_type_count() const { return 0; }
 
-uint64_t RenderingContextDriver::get_driver_total_memory() const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_driver_total_memory() const { return 0; }
 
-uint64_t RenderingContextDriver::get_driver_allocation_count() const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_driver_allocation_count() const { return 0; }
 
-uint64_t RenderingContextDriver::get_driver_memory_by_object_type(uint32_t) const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_driver_memory_by_object_type(uint32_t) const { return 0; }
 
-uint64_t RenderingContextDriver::get_driver_allocs_by_object_type(uint32_t) const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_driver_allocs_by_object_type(uint32_t) const { return 0; }
 
-uint64_t RenderingContextDriver::get_device_total_memory() const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_device_total_memory() const { return 0; }
 
-uint64_t RenderingContextDriver::get_device_allocation_count() const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_device_allocation_count() const { return 0; }
 
-uint64_t RenderingContextDriver::get_device_memory_by_object_type(uint32_t) const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_device_memory_by_object_type(uint32_t) const { return 0; }
 
-uint64_t RenderingContextDriver::get_device_allocs_by_object_type(uint32_t) const {
-	return 0;
-}
+uint64_t RenderingContextDriver::get_device_allocs_by_object_type(uint32_t) const { return 0; }
+
+

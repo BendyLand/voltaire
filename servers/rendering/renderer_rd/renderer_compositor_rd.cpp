@@ -49,6 +49,7 @@
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
 {
+	puts("HERE2");
 	Error err = RD::screen_prepare_for_drawing(p_screen);
 	if (err != OK) {
 		return;

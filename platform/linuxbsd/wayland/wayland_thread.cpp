@@ -5125,8 +5125,7 @@ void WaylandThread::set_default_icon(const Ref<Image>& p_icon)
 	xdg_icon = xdg_toplevel_icon_manager_v1_create_icon(registry.xdg_toplevel_icon_manager);
 	xdg_toplevel_icon_v1_add_buffer(xdg_icon, icon_buffer, icon_size.width);
 
-	if (Engine::is_editor_hint() ||
-		Engine::is_project_manager_hint()) {
+	if (Engine::is_editor_hint() || Engine::is_project_manager_hint()) {
 		// Setting a name allows the godot icon to be overridden by a system theme.
 		// We only want the project manager and editor to get themed,
 		// Games will get icons with the protocol and themed icons with .desktop entries.
@@ -5512,8 +5511,7 @@ Error WaylandThread::init()
 		embedder_enabled = false;
 	}
 
-	if (embedder_enabled && Engine::is_editor_hint() &&
-		!Engine::is_project_manager_hint()) {
+	if (embedder_enabled && Engine::is_editor_hint() && !Engine::is_project_manager_hint()) {
 		print_verbose("Initializing Wayland embedder.");
 		bool embedder_debug =
 			OS::get_singleton()->get_environment("GODOT_WAYLAND_EMBEDDER_DEBUG") == "1";
@@ -6238,12 +6236,12 @@ bool WaylandThread::is_suspended() const
 	return true;
 }
 
-bool WaylandThread::window_wait_ready
-(DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
+bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, int p_timeout_ms)
 {
 	MutexLock mutex_lock(mutex);
 
-	WindowState* ws = windows.getptr(p_window_id);
+	WindowState
+* ws = windows.getptr(p_window_id);
 	ERR_FAIL_NULL_V(ws, false);
 
 	if (ws->ready) {
@@ -6380,6 +6378,8 @@ void WaylandThread::_wl_pointer_on_button(void* data, struct wl_pointer* wl_poin
 	uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
 {
 }
+
+void WaylandThread::_window_hover(int p_window) {}
 
 #endif // WAYLAND_ENABLED
 

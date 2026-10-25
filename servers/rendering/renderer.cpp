@@ -632,11 +632,6 @@ void Renderer::finalize()
 
 void Renderer::draw(bool p_swap_buffers, double frame_step)
 {
-	static bool printed = false;
-	if (!printed) {
-		__print_line("Renderer::draw called!");
-		printed = true;
-	}
 	if (viewport) {
 		viewport->draw_viewports(p_swap_buffers);
 	}

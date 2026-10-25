@@ -2168,8 +2168,7 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size
-= sz;
+			wd.size = sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
@@ -5452,6 +5451,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 	DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i& p_rect,
 	Window p_parent_window)
 {
+	puts("IN CREATE WINDOW");
 	// Create window
 
 	XVisualInfo visualInfo;
@@ -5709,8 +5709,11 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 				RenderingContextDriverVulkanX11::WindowPlatformData vulkan;
 #endif
 			} wpd;
+
+			puts("HERE3.5");
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
+				puts("HERE3");
 				wpd.vulkan.window = wd.x11_window;
 				wpd.vulkan.display = x11_display;
 			}
@@ -6086,81 +6089,121 @@ Error DisplayServer::init_rendering_device()
 }
 
 DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
-	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
-	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
-	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
+    DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
+    uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
+    DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
-	rendering_driver = p_rendering_driver;
-	if (initialize_xlib(0) != 0) {
-		r_error = ERR_CANT_CREATE;
-		return;
-	}
-	x11_display = XOpenDisplay(nullptr);
-	if (!x11_display) {
-		r_error = ERR_CANT_CREATE;
-		return;
-	}
+	printf("[X11 CONSTRUCTOR] driver='%s', context_ptr=%p\n",
+           p_rendering_driver.utf8().get_data(), (void*)rendering_context);
+    fflush(stdout);
+    rendering_driver = p_rendering_driver;
+
+#if defined(RD_ENABLED)
+#if defined(VULKAN_ENABLED)
+    if (rendering_driver == "vulkan") {
+        rendering_context = memnew(RenderingContextDriverVulkanX11);
+    }
+#endif
+#endif
+
+    if (initialize_xlib(0) != 0) {
+        r_error = ERR_CANT_CREATE;
+        return;
+    }
+
+    x11_display = XOpenDisplay(nullptr);
+    if (!x11_display) {
+        r_error = ERR_CANT_CREATE;
+        return;
+    }
+
 #if defined(XRANDR_ENABLED)
-	xrandr_ext_ok = (initialize_xrandr(0) == 0);
+    xrandr_ext_ok = (initialize_xrandr(0) == 0);
 #else
-	xrandr_ext_ok = false;
+    xrandr_ext_ok = false;
 #endif
+
 #if defined(XINERAMA_ENABLED)
-	xinerama_ext_ok = (initialize_xinerama(0) == 0);
+    xinerama_ext_ok = (initialize_xinerama(0) == 0);
 #else
-	xinerama_ext_ok = false;
+    xinerama_ext_ok = false;
 #endif
+
 #if defined(XSHAPE_ENABLED)
-	xshaped_ext_ok = (initialize_xshape(0) == 0);
+    xshaped_ext_ok = (initialize_xshape(0) == 0);
 #else
-	xshaped_ext_ok = false;
+    xshaped_ext_ok = false;
 #endif
-	r_error = OK;
-	int width = p_resolution.x > 0 ? p_resolution.x : 1024;
-	int height = p_resolution.y > 0 ? p_resolution.y : 768;
-	int x = p_position ? p_position->x : 0;
-	int y = p_position ? p_position->y : 0;
-	::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
-	XSetWindowAttributes wa;
-	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
-					ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
-					EnterWindowMask | LeaveWindowMask;
-	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
-	::Window x11_win = XCreateWindow(x11_display, root, x, y,
-width, height, 0, CopyFromParent,
-		InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
-	if (!x11_win) {
-		r_error = ERR_CANT_CREATE;
-		return;
-	}
-	WindowData wd;
-	wd.x11_window = x11_win;
-	wd.x11_xim_window = 0;
-	wd.xic = nullptr;
-	wd.position = Point2i(x, y);
-	wd.size = Size2i(width, height);
-	switch (p_mode) {
-	case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
-		wd.fullscreen = true;
-	} break;
-	case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
-		wd.fullscreen = true;
-		wd.exclusive_fullscreen = true;
-	} break;
-	case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
-		wd.maximized = true;
-	} break;
-	case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
-		wd.minimized = true;
-	} break;
-	case DisplayServerEnums::WINDOW_MODE_WINDOWED:
-	default: {
-		// standard defaults already set
-	} break;
-	}
-	windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
-	XMapWindow(x11_display, x11_win);
-	XFlush(x11_display);
+
+    r_error = OK;
+
+    int width = p_resolution.x > 0 ? p_resolution.x : 1024;
+    int height = p_resolution.y > 0 ? p_resolution.y : 768;
+    int x = p_position ? p_position->x : 0;
+    int y = p_position ? p_position->y : 0;
+
+    ::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
+    XSetWindowAttributes wa;
+    wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
+                    ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
+                    EnterWindowMask | LeaveWindowMask;
+    wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
+
+    ::Window x11_win = XCreateWindow(x11_display, root, x, y, width, height, 0, CopyFromParent,
+        InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
+
+    if (!x11_win) {
+        r_error = ERR_CANT_CREATE;
+        return;
+    }
+
+    WindowData wd;
+    wd.x11_window = x11_win;
+    wd.x11_xim_window = 0;
+    wd.xic = nullptr;
+    wd.position = Point2i(x, y);
+    wd.size = Size2i(width, height);
+
+    switch (p_mode) {
+    case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
+        wd.fullscreen = true;
+    } break;
+    case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
+        wd.fullscreen = true;
+        wd.exclusive_fullscreen = true;
+    } break;
+    case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
+        wd.maximized = true;
+    } break;
+    case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
+        wd.minimized = true;
+    } break;
+    case DisplayServerEnums::WINDOW_MODE_WINDOWED:
+    default: {
+        // standard defaults already set
+    } break;
+    }
+
+    windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
+
+#if defined(RD_ENABLED)
+    if (rendering_context) {
+        RenderingContextDriverVulkanX11::WindowPlatformData wpd;
+        wpd.window = x11_win;
+        wpd.display = x11_display;
+
+        Error err = rendering_context->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &wpd);
+        if (err != OK) {
+            ERR_PRINT("Failed to create Vulkan surface for Window 0");
+        }
+
+        rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, width, height);
+        rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
+    }
+#endif
+
+    XMapWindow(x11_display, x11_win);
+    XFlush(x11_display);
 }
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}

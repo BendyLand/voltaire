@@ -3112,7 +3112,6 @@ void RendererRD::TextureStorage::render_target_do_clear_request(RID p_render_tar
 	}
 	Vector<Color> clear_colors;
 	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
-	RD::draw_list_end();
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;
 }

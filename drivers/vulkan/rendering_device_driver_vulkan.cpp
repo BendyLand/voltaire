@@ -3599,45 +3599,6 @@ void RenderingDeviceDriverVulkan::semaphore_free(SemaphoreID p_semaphore)
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SEMAPHORE));
 }
 
-RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
-	uint32_t p_cmd_queue_family_bits,
-	RenderingContextDriver::SurfaceID p_surface)
-{
-	// Pick the queue with the least amount of bits that can fulfill the requirements.
-	VkQueueFlags picked_queue_flags = VK_QUEUE_FLAG_BITS_MAX_ENUM;
-	uint32_t picked_family_index = UINT_MAX;
-	for (uint32_t i = 0; i < queue_family_properties.size(); i++) {
-		if (queue_families[i].is_empty()) {
-			// Ignore empty queue families.
-			continue;
-		}
-
-		if (p_surface != 0 &&
-			!context_driver->queue_family_supports_present(physical_device, i, p_surface)) {
-			// Present is not an actual bit but something that must be queried manually.
-			continue;
-		}
-
-		// Preferring a queue with less bits will get us closer to getting a queue that performs
-		// better for our requirements. For example, dedicated compute and transfer queues are
-		// usually indicated as such.
-		const VkQueueFlags option_queue_flags = queue_family_properties[i].queueFlags;
-		const bool prefer_less_bits = option_queue_flags < picked_queue_flags;
-		if (prefer_less_bits) {
-			picked_family_index = i;
-			picked_queue_flags = option_queue_flags;
-		}
-	}
-
-	if (picked_family_index >= queue_family_properties.size()) {
-		return CommandQueueFamilyID();
-	}
-
-	// Since 0 is a valid index and we use 0 as the error case, we make the index start from 1
-	// instead.
-	return CommandQueueFamilyID(picked_family_index + 1);
-}
-
 RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(
 	CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue)
 {
@@ -4230,6 +4191,63 @@ RenderingDeviceDriver::SwapChainID RenderingDeviceDriverVulkan::swap_chain_creat
 	SwapChain* swap_chain = memnew(SwapChain);
 	swap_chain->surface = p_surface;
 	return SwapChainID(swap_chain);
+}
+
+RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
+		uint32_t p_cmd_queue_family_bits,
+		RenderingContextDriver::SurfaceID p_surface)
+{
+	VkQueueFlags required_flags = 0;
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_GRAPHICS_BIT) {
+		required_flags |= VK_QUEUE_GRAPHICS_BIT;
+	}
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_COMPUTE_BIT) {
+		required_flags |= VK_QUEUE_COMPUTE_BIT;
+	}
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_TRANSFER_BIT) {
+		required_flags |= VK_QUEUE_TRANSFER_BIT;
+	}
+
+	uint32_t picked_family_index = UINT_MAX;
+	uint32_t picked_queue_flags_count = UINT_MAX;
+
+	for (uint32_t i = 0; i < queue_family_properties.size(); i++) {
+		if (queue_families[i].is_empty()) {
+			// Ignore empty queue families.
+			continue;
+		}
+
+		// Ensure the queue family supports every required functional capability.
+		if ((queue_family_properties[i].queueFlags & required_flags) != required_flags) {
+			continue;
+		}
+
+		// Present is not an explicit bitflag in VkQueueFlags; it must be queried against the surface.
+		if (p_surface != 0 &&
+				!context_driver->queue_family_supports_present(physical_device, i, p_surface)) {
+			continue;
+		}
+
+		// Count the set bits to prefer dedicated queues with the least extraneous functionality.
+		uint32_t queue_flags_count = 0;
+		for (uint32_t j = 0; j < 32; j++) {
+			if (queue_family_properties[i].queueFlags & (1u << j)) {
+				queue_flags_count++;
+			}
+		}
+
+		if (queue_flags_count < picked_queue_flags_count) {
+			picked_family_index = i;
+			picked_queue_flags_count = queue_flags_count;
+		}
+	}
+
+	if (picked_family_index >= queue_family_properties.size()) {
+		return CommandQueueFamilyID();
+	}
+
+	// 0 represents an invalid ID; offset by 1.
+	return CommandQueueFamilyID(picked_family_index + 1);
 }
 
 Error RenderingDeviceDriverVulkan::swap_chain_resize(

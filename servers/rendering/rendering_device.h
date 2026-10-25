@@ -369,6 +369,13 @@ public:
 	};
 
 public:
+
+	RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
+	    uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps,
+	    RDC::TextureSliceType p_slice_type);
+
+	RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
+	    const Vector<Vector<uint8_t>>& p_data);
 	// --- Lifecycle & System Management ---
 	static void make_current();
 

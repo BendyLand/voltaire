@@ -1228,15 +1228,17 @@ VkQueueFamilyProperties RenderingContextDriverVulkan::queue_family_get(
 }
 
 bool RenderingContextDriverVulkan::queue_family_supports_present(
-	VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const
+		VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const
 {
 	DEV_ASSERT(p_physical_device != VK_NULL_HANDLE);
 	DEV_ASSERT(p_surface != 0);
-	Surface* surface = (Surface*)(p_surface);
-	VkBool32 present_supported = false;
+
+	Surface *surface = (Surface *)(p_surface);
+	VkBool32 present_supported = VK_FALSE;
 	VkResult err = vkGetPhysicalDeviceSurfaceSupportKHR(
-		p_physical_device, p_queue_family_index, surface->vk_surface, &present_supported);
-	return err == VK_SUCCESS && present_supported;
+			p_physical_device, p_queue_family_index, surface->vk_surface, &present_supported);
+
+	return (err == VK_SUCCESS) && (present_supported == VK_TRUE);
 }
 
 const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::functions_get() const
