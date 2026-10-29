@@ -1303,6 +1303,10 @@ bool DisplayServerWayland::window_can_draw(DisplayServerEnums::WindowID p_window
     MutexLock mutex_lock(wayland_thread.mutex);
 
     uint64_t last_frame_time = wayland_thread.window_get_last_frame_time(p_window_id);
+    if (last_frame_time == 0) {
+        return true;
+    }
+
     uint64_t time_since_frame = OS::get_singleton()->get_ticks_usec() - last_frame_time;
 
     if (time_since_frame > WAYLAND_MAX_FRAME_TIME_US) {
@@ -1318,7 +1322,12 @@ bool DisplayServerWayland::window_can_draw(DisplayServerEnums::WindowID p_window
 
 bool DisplayServerWayland::can_any_window_draw() const
 {
-    return suspend_state == SuspendState::NONE;
+    for (const KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
+        if (window_can_draw(E.key)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void DisplayServerWayland::window_set_ime_active(

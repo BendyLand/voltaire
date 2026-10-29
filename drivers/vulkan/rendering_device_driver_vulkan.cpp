@@ -3777,9 +3777,9 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 		results.resize(swapchains.size());
 
 		VkPresentInfoKHR present_info = {};
-		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		present_info.waitSemaphoreCount = wait_semaphores.size();
-		present_info.pWaitSemaphores = wait_semaphores.ptr();
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.waitSemaphoreCount = wait_semaphores.size();
+        present_info.pWaitSemaphores = wait_semaphores.ptr();
 		present_info.swapchainCount = swapchains.size();
 		present_info.pSwapchains = swapchains.ptr();
 		present_info.pImageIndices = image_indices.ptr();
@@ -3791,7 +3791,9 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 			err = SwappyVk_queuePresent(device_queue.queue, &present_info);
 		}
 		else {
+			printf("[VK] QueuePresentKHR called for window %d\n", (int)p_window);
 			err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
+			printf("[VK] QueuePresentKHR result = %d\n", (int)err);
 		}
 #else
 		err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
@@ -5360,6 +5362,12 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(
 	descriptor_set_pool_create_info.maxSets = max_descriptor_sets_per_pool;
 	descriptor_set_pool_create_info.poolSizeCount = vk_sizes_count;
 	descriptor_set_pool_create_info.pPoolSizes = vk_sizes;
+	// In RenderingDeviceDriverVulkan::_descriptor_set_pool_create, right before vkCreateDescriptorPool:
+	printf("[DEBUG pool_create] max_sets=%u, sizes_count=%u\n",
+	       max_descriptor_sets_per_pool, vk_sizes_count);
+	for (uint32_t i = 0; i < vk_sizes_count; i++) {
+	    printf("  size[%u]: type=%d, count=%u\n", i, vk_sizes[i].type, vk_sizes[i].descriptorCount);
+	}
 
 	VkDescriptorPool vk_pool = VK_NULL_HANDLE;
 	VkResult res = vkCreateDescriptorPool(vk_device, &descriptor_set_pool_create_info,
@@ -6476,21 +6484,37 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	RenderPassInfo* render_pass = (RenderPassInfo*)(p_render_pass.id);
 	Framebuffer* framebuffer = (Framebuffer*)(p_framebuffer.id);
 
+	ERR_FAIL_NULL(command_buffer);
+	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);
+	ERR_FAIL_NULL(render_pass);
+	ERR_FAIL_COND(render_pass->vk_render_pass == VK_NULL_HANDLE);
+	ERR_FAIL_NULL(framebuffer);
+	ERR_FAIL_COND(framebuffer->vk_framebuffer == VK_NULL_HANDLE);
+
+	if (p_rect.size.x <= 0 || p_rect.size.y <= 0) {
+		return;
+	}
+
 	if (framebuffer->swap_chain_acquired) {
-		// Insert a barrier to wait for the acquisition of the framebuffer before the render pass
-		// begins.
-		VkImageMemoryBarrier image_barrier = {};
-		image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_barrier.image = framebuffer->swap_chain_image;
-		image_barrier.subresourceRange = framebuffer->swap_chain_image_subresource_range;
-		vkCmdPipelineBarrier(command_buffer->vk_command_buffer,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1,
-			&image_barrier);
+		if (framebuffer->swap_chain_image != VK_NULL_HANDLE) {
+			VkImageMemoryBarrier image_barrier = {};
+			image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			image_barrier.image = framebuffer->swap_chain_image;
+			image_barrier.subresourceRange = framebuffer->swap_chain_image_subresource_range;
+			if (image_barrier.subresourceRange.aspectMask == 0) {
+				image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				image_barrier.subresourceRange.levelCount = 1;
+				image_barrier.subresourceRange.layerCount = 1;
+			}
+			vkCmdPipelineBarrier(command_buffer->vk_command_buffer,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1,
+				&image_barrier);
+		}
 		framebuffer->swap_chain_acquired = false;
 	}
 
@@ -6505,21 +6529,13 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	render_pass_begin.renderArea.extent.height = p_rect.size.y;
 
 	render_pass_begin.clearValueCount = p_clear_values.size();
-	render_pass_begin.pClearValues = (const VkClearValue*)p_clear_values.ptr();
+	render_pass_begin.pClearValues =
+		(p_clear_values.size() > 0) ? (const VkClearValue*)p_clear_values.ptr() : nullptr;
 
-	VkSubpassContents vk_subpass_contents = p_cmd_buffer_type == COMMAND_BUFFER_TYPE_PRIMARY
-												? VK_SUBPASS_CONTENTS_INLINE
-												: VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-	vkCmdBeginRenderPass(
-		command_buffer->vk_command_buffer, &render_pass_begin, vk_subpass_contents);
-
-	command_buffer->active_framebuffer = framebuffer;
-	command_buffer->active_render_pass = render_pass;
-
-#if PRINT_NATIVE_COMMANDS
-	print_line(vformat(
-		"vkCmdBeginRenderPass Pass 0x%uX Framebuffer 0x%uX", p_render_pass.id, p_framebuffer.id));
-#endif
+	vkCmdBeginRenderPass(command_buffer->vk_command_buffer, &render_pass_begin,
+		(p_cmd_buffer_type == COMMAND_BUFFER_TYPE_SECONDARY)
+			? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+			: VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_buffer)

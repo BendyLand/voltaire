@@ -35,14 +35,19 @@ RenderingContextDriver::~RenderingContextDriver() {}
 RenderingContextDriver::SurfaceID RenderingContextDriver::surface_get_from_window(
 	DisplayServerEnums::WindowID p_window) const
 {
-	printf("[MAP CHECK] map size = %d, looking for window = %d\n",
-           (int)window_surface_map.size(), (int)p_window);
+	for (const KeyValue<DisplayServerEnums::WindowID, SurfaceID>& E : window_surface_map) {
+		printf("[MAP ENTRY] key=%d, surface=%llu\n", (int)E.key, (unsigned long long)E.value);
+	}
+
 	HashMap<DisplayServerEnums::WindowID, SurfaceID>::ConstIterator it =
 		window_surface_map.find(p_window);
 	if (it != window_surface_map.end()) {
+		printf("[MAP HIT] found surface=%llu for window=%d\n", (unsigned long long)it->value,
+			(int)p_window);
 		return it->value;
 	}
 	else {
+		printf("[MAP MISS] no surface for window=%d\n", (int)p_window);
 		return SurfaceID();
 	}
 }
@@ -264,5 +269,3 @@ uint64_t RenderingContextDriver::get_device_allocation_count() const { return 0;
 uint64_t RenderingContextDriver::get_device_memory_by_object_type(uint32_t) const { return 0; }
 
 uint64_t RenderingContextDriver::get_device_allocs_by_object_type(uint32_t) const { return 0; }
-
-

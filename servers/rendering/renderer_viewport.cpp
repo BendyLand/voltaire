@@ -37,11 +37,11 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/texture_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"
@@ -484,7 +484,8 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			p_viewport->sdf_active = false; // If used, gets set active again.
 		}
 		else {
-			RendererTextureStorage::render_target_mark_sdf_enabled(p_viewport->render_target, false);
+			RendererTextureStorage::render_target_mark_sdf_enabled(
+				p_viewport->render_target, false);
 		}
 
 		Rect2 shadow_rect;
@@ -1429,7 +1430,8 @@ void RendererViewport::viewport_set_use_debanding(RID p_viewport, bool p_use_deb
 		return;
 	}
 	viewport->use_debanding = p_use_debanding;
-	RendererTextureStorage::render_target_set_use_debanding(viewport->render_target, p_use_debanding);
+	RendererTextureStorage::render_target_set_use_debanding(
+		viewport->render_target, p_use_debanding);
 	_configure_3d_render_buffers(viewport);
 }
 
@@ -1736,71 +1738,83 @@ int RendererViewport::get_num_viewports_with_motion_vectors() const
 
 void RendererViewport::draw_viewports(bool p_swap_buffers)
 {
-    draw_viewports_pass++;
-    total_objects_drawn = 0;
-    total_vertices_drawn = 0;
-    total_draw_calls_used = 0;
+	static uint64_t dv_count = 0;
+	if ((++dv_count % 60) == 1) {
+		DUMP(viewport_owner);
+		printf("[DRAW_VIEWPORTS] call %llu, rid_count=%u\n", (unsigned long long)dv_count,
+			viewport_owner.get_rid_count());
+	}
+	draw_viewports_pass++;
+	total_objects_drawn = 0;
+	total_vertices_drawn = 0;
+	total_draw_calls_used = 0;
 
-    uint32_t rid_count = viewport_owner.get_rid_count();
+	uint32_t rid_count = viewport_owner.get_rid_count();
 
-    if (rid_count == 0) {
-        if (p_swap_buffers) {
-            DisplayServer::get_singleton()->swap_buffers();
-        }
-        return;
-    }
+	if (rid_count == 0) {
+		if (p_swap_buffers) {
+			DisplayServer::get_singleton()->swap_buffers();
+		}
+		return;
+	}
 
-    LocalVector<RID> rids;
-    rids.resize(rid_count);
-    viewport_owner.fill_owned_buffer(rids.ptr());
+	LocalVector<RID> rids;
+	rids.resize(rid_count);
+	viewport_owner.fill_owned_buffer(rids.ptr());
 
-    LocalVector<Viewport*> active_viewports;
+	LocalVector<Viewport*> active_viewports;
 
-    for (uint32_t i = 0; i < rid_count; i++) {
-        Viewport* v = viewport_owner.get_or_null(rids[i]);
-        if (!v) {
-            continue;
-        }
+	for (uint32_t i = 0; i < rid_count; i++) {
+		Viewport* v = viewport_owner.get_or_null(rids[i]);
+		if (!v) {
+			continue;
+		}
 
-        if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_DISABLED) {
-            continue;
-        }
+		if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_DISABLED) {
+			continue;
+		}
 
-        if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_ONCE) {
-            v->update_mode = RenderingServerEnums::VIEWPORT_UPDATE_DISABLED;
-        }
+		if (v->update_mode == RenderingServerEnums::VIEWPORT_UPDATE_ONCE) {
+			v->update_mode = RenderingServerEnums::VIEWPORT_UPDATE_DISABLED;
+		}
 
-        active_viewports.push_back(v);
-    }
+		active_viewports.push_back(v);
+	}
 
-    active_viewports.sort_custom<ViewportSort>();
+	active_viewports.sort_custom<ViewportSort>();
 
-    HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>> blit_to_screen;
+	HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>
+		blit_to_screen;
 
-    for (uint32_t i = 0; i < active_viewports.size(); i++) {
-        Viewport* v = active_viewports[i];
-        _draw_viewport(v);
+	for (uint32_t i = 0; i < active_viewports.size(); i++) {
+		Viewport* v = active_viewports[i];
+		_draw_viewport(v);
+		if (v->viewport_to_screen != DisplayServerEnums::INVALID_WINDOW_ID &&
+			v->render_target.is_valid()) {
+			RenderingServerTypes::BlitToScreen blit = {};
+			blit.render_target = v->render_target;
+			blit.src_rect = Rect2(0, 0, v->size.x, v->size.y);
 
-        if (v->viewport_to_screen != DisplayServerEnums::INVALID_WINDOW_ID && v->render_target.is_valid()) {
-            RenderingServerTypes::BlitToScreen blit;
-            blit.render_target = v->render_target;
-            blit.src_rect = Rect2(0, 0, v->size.x, v->size.y);
-            blit.dst_rect = (v->viewport_to_screen_rect.size.x != 0 && v->viewport_to_screen_rect.size.y != 0)
-                ? v->viewport_to_screen_rect
-                : blit.src_rect;
+			if (v->viewport_to_screen_rect.size.x > 0.0f &&
+				v->viewport_to_screen_rect.size.y > 0.0f &&
+				v->viewport_to_screen_rect.size.x <= 16384.0f &&
+				v->viewport_to_screen_rect.size.y <= 16384.0f) {
+				blit.dst_rect = v->viewport_to_screen_rect;
+			}
+			else {
+				blit.dst_rect = Rect2(0, 0, v->size.x, v->size.y);
+			}
 
-            blit_to_screen[v->viewport_to_screen].push_back(blit);
-        }
-    }
+			blit_to_screen[v->viewport_to_screen].push_back(blit);
+		}
+	}
 
-    for (KeyValue<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>& E : blit_to_screen) {
-        RendererCompositorRD::blit_render_targets_to_screen(
-            E.key, E.value.ptr(), E.value.size());
-    }
+	for (KeyValue<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>&
+			 E : blit_to_screen) {
+		RendererCompositorRD::blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
+	}
 
-    if (p_swap_buffers) {
-        DisplayServer::get_singleton()->swap_buffers();
-    }
+	if (p_swap_buffers) {
+		DisplayServer::get_singleton()->swap_buffers();
+	}
 }
-
-

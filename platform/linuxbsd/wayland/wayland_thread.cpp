@@ -1506,6 +1506,7 @@ void WaylandThread::_xdg_surface_on_configure(
 	ERR_FAIL_NULL(ws);
 
 	ws->ready = true;
+	printf("[WAYLAND] _xdg_surface_on_configure called! ws=%p, ready=true\n", ws);
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("xdg surface on configure rect %s", ws->rect));
 }

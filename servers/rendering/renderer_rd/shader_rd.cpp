@@ -625,8 +625,7 @@ String ShaderRD::_get_cache_file_path(
 void ShaderRD::_save_to_cache(Version* p_version, int p_group)
 {
 	ERR_FAIL_COND(!shader_cache_user_dir_valid);
-	String api_safe_name =
-		String(RD::get_device_api_name()).validate_filename().to_lower();
+	String api_safe_name = String(RD::get_device_api_name()).validate_filename().to_lower();
 	const String& path = _get_cache_file_path(p_version, p_group, api_safe_name, true);
 	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
 	ERR_FAIL_COND(f.is_null());
@@ -1063,12 +1062,13 @@ Vector<RDC::ShaderStageSPIRVData> ShaderRD::compile_stages(
 	}
 
 	if (compilation_failed) {
-		ERR_PRINT("Error compiling " +
-				  String(compilation_failed_stage == RDC::SHADER_STAGE_COMPUTE
-							 ? "Compute "
-							 : (compilation_failed_stage == RDC::SHADER_STAGE_VERTEX ? "Vertex"
-																					: "Fragment")) +
-				  " shader.");
+		ERR_PRINT(
+			"Error compiling " +
+			String(compilation_failed_stage == RDC::SHADER_STAGE_COMPUTE
+					   ? "Compute "
+					   : (compilation_failed_stage == RDC::SHADER_STAGE_VERTEX ? "Vertex"
+																			   : "Fragment")) +
+			" shader.");
 		ERR_PRINT(error);
 
 #ifdef DEBUG_ENABLED
@@ -1135,10 +1135,67 @@ ShaderRD::~ShaderRD()
 	}
 }
 
-void ShaderRD::_compile_version_end(Version *p_version, int p_group) {}
+void ShaderRD::_compile_version_start(ShaderRD::Version* p_version, int p_group)
+{
+	// If not using background worker threads, compilation can run directly here or in
+	// _compile_version_end
+}
 
+void ShaderRD::_compile_version_end(ShaderRD::Version* p_version, int p_group)
+{
+	ERR_FAIL_COND(!group_to_variant_map.has(p_group));
+	const LocalVector<int>& group_variants = group_to_variant_map[p_group];
 
+	CompileData compile_data;
+	compile_data.version = p_version;
+	compile_data.group = p_group;
 
-void ShaderRD::_initialize_version(ShaderRD::Version*) {}
+	for (uint32_t i = 0; i < group_variants.size(); i++) {
+		_compile_variant(i, compile_data);
+	}
 
-void ShaderRD::_compile_version_start(ShaderRD::Version*, int) {}
+	bool all_ok = true;
+	for (uint32_t i = 0; i < group_variants.size(); i++) {
+		int variant_idx = group_variants[i];
+		if (variants_enabled[variant_idx] && p_version->variants[variant_idx].is_null()) {
+			all_ok = false;
+			break;
+		}
+	}
+
+	if (all_ok) {
+		p_version->valid = true;
+	}
+}
+
+void ShaderRD::_initialize_version(ShaderRD::Version* p_version)
+{
+	p_version->variants.resize(variant_defines.size());
+	p_version->variant_data.resize(variant_defines.size());
+	p_version->initialize_needed = false;
+	p_version->dirty = false;
+}
+
+void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
+{
+	uint32_t variant = group_to_variant_map[p_data.group][p_variant];
+	if (!variants_enabled[variant]) {
+		return; // Variant is disabled, return.
+	}
+
+	Vector<String> variant_stage_sources = _build_variant_stage_sources(variant, p_data);
+	Vector<RDC::ShaderStageSPIRVData> variant_stages =
+			compile_stages(variant_stage_sources, dynamic_buffers);
+	ERR_FAIL_COND(variant_stages.is_empty());
+
+	Vector<uint8_t> shader_data = RD::shader_compile_binary_from_spirv(
+			variant_stages, name + ":" + itos(variant));
+	ERR_FAIL_COND(shader_data.is_empty());
+
+	{
+		p_data.version->variants.write[variant] =
+				RD::shader_create_from_bytecode(
+						shader_data, p_data.version->variants[variant]);
+		p_data.version->variant_data.write[variant] = shader_data;
+	}
+}

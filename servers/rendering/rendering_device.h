@@ -1527,7 +1527,7 @@ private:
 		StagingBuffers download_staging_buffers;
 
 		bool descriptor_set_batching = true;
-		bool split_swapchain_into_its_own_cmd_buffer = true;
+		bool split_swapchain_into_its_own_cmd_buffer = false;
 		uint32_t gpu_copy_count = 0;
 		uint32_t direct_copy_count = 0;
 		uint32_t copy_bytes_count = 0;

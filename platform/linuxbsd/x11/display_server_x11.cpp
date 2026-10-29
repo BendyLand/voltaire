@@ -5451,7 +5451,6 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 	DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i& p_rect,
 	Window p_parent_window)
 {
-	puts("IN CREATE WINDOW");
 	// Create window
 
 	XVisualInfo visualInfo;
@@ -5710,10 +5709,8 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 #endif
 			} wpd;
 
-			puts("HERE3.5");
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
-				puts("HERE3");
 				wpd.vulkan.window = wd.x11_window;
 				wpd.vulkan.display = x11_display;
 			}
