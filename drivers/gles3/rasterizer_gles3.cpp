@@ -465,7 +465,7 @@ void RasterizerGLES3::initialize()
 	post_effects = memnew(GLES3::PostEffects);
 	feed_effects = memnew(GLES3::FeedEffects);
 	GLES3::GI::initialize();
-	fog = memnew(GLES3::Fog);
+	GLES3::Fog::initialize();
 
     RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
@@ -489,7 +489,7 @@ void RasterizerGLES3::finalize()
 	memdelete(scene);
 	RasterizerCanvasGLES3::finalize();
 	GLES3::GI::finalize();
-	memdelete(fog);
+	GLES3::Fog::finalize();
 	memdelete(post_effects);
 	memdelete(glow);
 	memdelete(cubemap_filter);

@@ -34,18 +34,13 @@
 #include "renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
-#include "servers/rendering/renderer_rd/shaders/decal_data_inc.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/light_data_inc.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/scene_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
-#include "servers/rendering/storage/light_storage.h"
 
 void get_vogel_disk(float* r_kernel, int p_sample_count)
 {
@@ -210,30 +205,30 @@ RID RendererSceneRenderRD::reflection_probe_create_framebuffer(RID p_color, RID 
 
 RID RendererSceneRenderRD::fog_volume_instance_create(RID p_fog_volume)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_create(p_fog_volume);
+	return RendererRD::Fog::fog_volume_instance_create(p_fog_volume);
 }
 
 void RendererSceneRenderRD::fog_volume_instance_set_transform(
 	RID p_fog_volume_instance, const Transform3D& p_transform)
 {
-	RendererRD::Fog::get_singleton()->fog_volume_instance_set_transform(
+	RendererRD::Fog::fog_volume_instance_set_transform(
 		p_fog_volume_instance, p_transform);
 }
 
 void RendererSceneRenderRD::fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active)
 {
-	RendererRD::Fog::get_singleton()->fog_volume_instance_set_active(
+	RendererRD::Fog::fog_volume_instance_set_active(
 		p_fog_volume_instance, p_active);
 }
 
 RID RendererSceneRenderRD::fog_volume_instance_get_volume(RID p_fog_volume_instance)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_volume(p_fog_volume_instance);
+	return RendererRD::Fog::fog_volume_instance_get_volume(p_fog_volume_instance);
 }
 
 Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume_instance)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_position(
+	return RendererRD::Fog::fog_volume_instance_get_position(
 		p_fog_volume_instance);
 }
 
@@ -1846,8 +1841,8 @@ bool RendererSceneRenderRD::free(RID p_rid)
 		data->sky.update_dirty_skys();
 		data->sky.free_sky(p_rid);
 	}
-	else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
-		RendererRD::Fog::get_singleton()->fog_instance_free(p_rid);
+	else if (RendererRD::Fog::owns_fog_volume_instance(p_rid)) {
+		RendererRD::Fog::fog_instance_free(p_rid);
 	}
 	else {
 		return false;

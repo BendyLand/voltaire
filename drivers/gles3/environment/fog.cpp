@@ -13,7 +13,7 @@
 /* "Software"), to deal in the Software without restriction, including    */
 /* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
+/* permit persons to whom the Software is furnished to do so, subject to */
 /* the following conditions:                                              */
 /*                                                                        */
 /* The above copyright notice and this permission notice shall be         */
@@ -32,38 +32,37 @@
 
 #ifdef GLES3_ENABLED
 
-#include "core/math/aabb.h"
-#include "core/templates/rid.h"
-
 using namespace GLES3;
 
-/* FOG */
+/* LIFECYCLE */
 
-RID Fog::fog_volume_allocate() {
-	return RID();
-}
+void Fog::initialize() {}
 
-void Fog::fog_volume_initialize(RID p_rid) {
-}
+void Fog::finalize() {}
 
-void Fog::fog_volume_free(RID p_rid) {
-}
+bool Fog::free(RID p_rid) { return false; }
 
-void Fog::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {
-}
+/* FOG VOLUMES */
 
-void Fog::fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) {
-}
+bool Fog::owns_fog_volume(RID p_rid) { return false; }
 
-void Fog::fog_volume_set_material(RID p_fog_volume, RID p_material) {
-}
+RID Fog::fog_volume_allocate() { return RID(); }
 
-AABB Fog::fog_volume_get_aabb(RID p_fog_volume) const {
-	return AABB();
-}
+void Fog::fog_volume_initialize(RID p_rid) {}
 
-RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume) const {
-	return RSE::FOG_VOLUME_SHAPE_BOX;
+void Fog::fog_volume_free(RID p_rid) {}
+
+void Fog::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {}
+
+void Fog::fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) {}
+
+void Fog::fog_volume_set_material(RID p_fog_volume, RID p_material) {}
+
+AABB Fog::fog_volume_get_aabb(RID p_fog_volume) { return AABB(); }
+
+RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume)
+{
+	return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
 }
 
 #endif // GLES3_ENABLED

@@ -31,6 +31,7 @@
 #pragma once
 
 #include "servers/rendering/dummy/environment/gi.h"
+#include "servers/rendering/dummy/environment/fog.h"
 #include "servers/rendering/dummy/storage/light_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
 #include "servers/rendering/environment/renderer_gi.h"
@@ -78,6 +79,7 @@ public:
 	static void bind_utilities() {}
 
 	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
+	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
 
 	static RendererCanvasRender* get_canvas();
 	static RendererSceneRender* get_scene();

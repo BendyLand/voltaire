@@ -154,7 +154,7 @@ public:
 
 	static void bind_gi() { RendererGI::bind<RendererRD::GI>(); }
 
-	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }
+	static void bind_fog() { RendererFog::bind<RendererRD::Fog>(); }
 
 	_ALWAYS_INLINE_ static RendererCanvasRender* get_canvas() { return canvas; }
 

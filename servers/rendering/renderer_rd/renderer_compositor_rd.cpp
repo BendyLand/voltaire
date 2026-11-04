@@ -249,7 +249,7 @@ void RendererCompositorRD::finalize()
 {
 	RendererRD::TextureStorage::_tex_blit_shader_free();
 	RendererCanvasRenderRD::finalize();
-	memdelete(fog);
+	RendererRD::Fog::finalize();
 	RendererRD::ParticlesStorage::finalize();
 	RendererRD::LightStorage::finalize();
 	RendererRD::TextureStorage::finalize();

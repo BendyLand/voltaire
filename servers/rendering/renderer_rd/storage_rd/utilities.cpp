@@ -67,7 +67,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::ParticlesStorage::owns_particles_collision(p_rid)) {
 		return RSE::INSTANCE_PARTICLES_COLLISION;
 	}
-	if (RendererRD::Fog::get_singleton()->owns_fog_volume(p_rid)) {
+	if (RendererRD::Fog::owns_fog_volume(p_rid)) {
 		return RSE::INSTANCE_FOG_VOLUME;
 	}
 	if (owns_visibility_notifier(p_rid)) {
@@ -110,8 +110,8 @@ bool Utilities::free(RID p_rid)
 		RendererRD::GI::voxel_gi_free(p_rid);
 		return true;
 	}
-	else if (RendererRD::Fog::get_singleton()->owns_fog_volume(p_rid)) {
-		RendererRD::Fog::get_singleton()->fog_volume_free(p_rid);
+	else if (RendererRD::Fog::owns_fog_volume(p_rid)) {
+		RendererRD::Fog::fog_volume_free(p_rid);
 		return true;
 	}
 	else if (owns_visibility_notifier(p_rid)) {
@@ -168,8 +168,8 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 			ParticlesStorage::particles_collision_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (Fog::get_singleton()->owns_fog_volume(p_base)) {
-		Dependency* dependency = Fog::get_singleton()->fog_volume_get_dependency(p_base);
+	else if (Fog::owns_fog_volume(p_base)) {
+		Dependency* dependency = Fog::fog_volume_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (owns_visibility_notifier(p_base)) {

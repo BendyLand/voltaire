@@ -603,7 +603,6 @@ void Renderer::initialize()
 	data = memnew(Data);
 	RendererCompositor::create();
 
-	fog = RendererCompositor::get_fog();
 	canvas_render = RendererCompositor::get_canvas();
 	viewport = memnew(RendererViewport);
 	canvas = memnew(RendererCanvasCull);

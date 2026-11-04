@@ -1568,7 +1568,7 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 		settings.env = p_environment;
 		settings.sky = &RendererSceneRenderRD::data->sky;
 
-		RendererRD::Fog::get_singleton()->volumetric_fog_update(settings, p_cam_projection,
+		RendererRD::Fog::volumetric_fog_update(settings, p_cam_projection,
 			p_cam_transform, p_prev_cam_inv_transform, p_shadow_atlas, p_directional_light_count,
 			p_use_directional_shadows, p_positional_light_count, p_voxel_gi_count, p_fog_volumes);
 	}

@@ -49,6 +49,7 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/environment/renderer_fog.h"
 
 class RasterizerGLES3 final
 {
@@ -66,8 +67,6 @@ private:
 	static inline GLES3::MaterialStorage* material_storage = nullptr;
 	static inline GLES3::ParticlesStorage* particles_storage = nullptr;
 	static inline GLES3::LightStorage* light_storage = nullptr;
-	static inline GLES3::GI* gi = nullptr;
-	static inline GLES3::Fog* fog = nullptr;
 	static inline GLES3::CopyEffects* copy_effects = nullptr;
 	static inline GLES3::CubemapFilter* cubemap_filter = nullptr;
 	static inline GLES3::Glow* glow = nullptr;
@@ -84,8 +83,7 @@ public:
 	static inline void bind_mesh_storage();
 
 	static void bind_gi() { RendererGI::bind<GLES3::GI>(); }
-
-	static _ALWAYS_INLINE_ RendererFog* get_fog() { return fog; }
+	static void bind_fog() { RendererFog::bind<GLES3::Fog>(); }
 
 	static _ALWAYS_INLINE_ RendererCanvasRender* get_canvas() { return canvas; }
 

@@ -29,18 +29,14 @@
 /**************************************************************************/
 
 #include "fog.h"
-#include "servers/rendering/renderer_rd/cluster_builder_rd.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 
 using namespace RendererRD;
 
-Fog* Fog::singleton = nullptr;
 
-Fog::Fog() { singleton = this; }
+void Fog::initialize() {}
 
-Fog::~Fog() { singleton = nullptr; }
+void Fog::finalize() {}
 
 int Fog::_get_fog_shader_group()
 {
@@ -87,7 +83,7 @@ void Fog::fog_volume_free(RID p_rid)
 	fog_volume_owner.free(p_rid);
 }
 
-Dependency* Fog::fog_volume_get_dependency(RID p_fog_volume) const
+Dependency* Fog::fog_volume_get_dependency(RID p_fog_volume)
 {
 	FogVolume* fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
 	ERR_FAIL_NULL_V(fog_volume, nullptr);
@@ -124,7 +120,7 @@ void Fog::fog_volume_set_material(RID p_fog_volume, RID p_material)
 	fog_volume->material = p_material;
 }
 
-RID Fog::fog_volume_get_material(RID p_fog_volume) const
+RID Fog::fog_volume_get_material(RID p_fog_volume)
 {
 	FogVolume* fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
 	ERR_FAIL_NULL_V(fog_volume, RID());
@@ -132,7 +128,7 @@ RID Fog::fog_volume_get_material(RID p_fog_volume) const
 	return fog_volume->material;
 }
 
-RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume) const
+RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume)
 {
 	FogVolume* fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
 	ERR_FAIL_NULL_V(fog_volume, RSE::FOG_VOLUME_SHAPE_BOX);
@@ -140,7 +136,7 @@ RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume) const
 	return fog_volume->shape;
 }
 
-AABB Fog::fog_volume_get_aabb(RID p_fog_volume) const
+AABB Fog::fog_volume_get_aabb(RID p_fog_volume)
 {
 	FogVolume* fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
 	ERR_FAIL_NULL_V(fog_volume, AABB());
@@ -162,7 +158,7 @@ AABB Fog::fog_volume_get_aabb(RID p_fog_volume) const
 	}
 }
 
-Vector3 Fog::fog_volume_get_size(RID p_fog_volume) const
+Vector3 Fog::fog_volume_get_size(RID p_fog_volume)
 {
 	const FogVolume* fog_volume = fog_volume_owner.get_or_null(p_fog_volume);
 	ERR_FAIL_NULL_V(fog_volume, Vector3());
@@ -179,7 +175,7 @@ RendererRD::MaterialStorage::ShaderData* Fog::_create_fog_shader_func()
 
 RendererRD::MaterialStorage::ShaderData* Fog::_create_fog_shader_funcs()
 {
-	return Fog::get_singleton()->_create_fog_shader_func();
+	return Fog::_create_fog_shader_func();
 }
 
 RendererRD::MaterialStorage::MaterialData* Fog::_create_fog_material_func(FogShaderData* p_shader)
@@ -193,7 +189,7 @@ RendererRD::MaterialStorage::MaterialData* Fog::_create_fog_material_func(FogSha
 RendererRD::MaterialStorage::MaterialData* Fog::_create_fog_material_funcs(
 	RendererRD::MaterialStorage::ShaderData* p_shader)
 {
-	return Fog::get_singleton()->_create_fog_material_func(static_cast<FogShaderData*>(p_shader));
+	return Fog::_create_fog_material_func(static_cast<FogShaderData*>(p_shader));
 }
 
 RID Fog::fog_volume_instance_create(RID p_fog_volume)
@@ -250,22 +246,20 @@ void Fog::FogShaderData::set_code(const String& p_code)
 
 	actions.uniforms = &uniforms;
 
-	Fog* fog_singleton = Fog::get_singleton();
-
-	Error err = fog_singleton->volumetric_fog.compiler.compile(
+	Error err = RendererRD::Fog::volumetric_fog.compiler.compile(
 		RSE::SHADER_FOG, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Fog shader compilation failed.");
 
 	if (version.is_null()) {
-		version = fog_singleton->volumetric_fog.shader.version_create();
+		version = RendererRD::Fog::volumetric_fog.shader.version_create();
 	}
 	else {
 		pipeline.free();
 	}
 
-	fog_singleton->volumetric_fog.shader.version_set_compute_code(version, gen_code.code,
+	RendererRD::Fog::volumetric_fog.shader.version_set_compute_code(version, gen_code.code,
 		gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_COMPUTE], gen_code.defines);
-	ERR_FAIL_COND(!fog_singleton->volumetric_fog.shader.version_is_valid(version));
+	ERR_FAIL_COND(!RendererRD::Fog::volumetric_fog.shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
 	ubo_offsets = gen_code.uniform_offsets;
@@ -280,25 +274,20 @@ bool Fog::FogShaderData::casts_shadows() const { return false; }
 
 RenderingServerTypes::ShaderNativeSourceCode Fog::FogShaderData::get_native_source_code() const
 {
-	Fog* fog_singleton = Fog::get_singleton();
-
-	return fog_singleton->volumetric_fog.shader.version_get_native_source_code(version);
+	return RendererRD::Fog::volumetric_fog.shader.version_get_native_source_code(version);
 }
 
 Pair<ShaderRD*, RID> Fog::FogShaderData::get_native_shader_and_version() const
 {
-	Fog* fog_singleton = Fog::get_singleton();
-	return {&fog_singleton->volumetric_fog.shader, version};
+	return {&RendererRD::Fog::volumetric_fog.shader, version};
 }
 
 Fog::FogShaderData::~FogShaderData()
 {
 	pipeline.free();
 
-	Fog* fog_singleton = Fog::get_singleton();
-	ERR_FAIL_NULL(fog_singleton);
 	if (version.is_valid()) {
-		fog_singleton->volumetric_fog.shader.version_free(version);
+		RendererRD::Fog::volumetric_fog.shader.version_free(version);
 	}
 }
 
