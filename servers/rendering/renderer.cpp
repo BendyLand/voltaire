@@ -614,6 +614,7 @@ void Renderer::initialize()
 
 void Renderer::finalize()
 {
+	RendererCompositor::finalize();
 	memdelete(canvas);
 	canvas = nullptr;
 	memdelete(viewport);

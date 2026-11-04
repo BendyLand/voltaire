@@ -43,7 +43,6 @@ using namespace RendererRD;
 
 const Vector3i GI::SDFGI::Cascade::DIRTY_ALL = Vector3i(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF);
 
-
 RID GI::voxel_gi_allocate() { return voxel_gi_owner.allocate_rid(); }
 
 void GI::voxel_gi_free(RID p_voxel_gi)
@@ -813,7 +812,8 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			ERR_CONTINUE(!RendererRD::LightStorage::owns_light_instance(light_instance));
 
 			RID light = RendererRD::LightStorage::light_instance_get_base_light(light_instance);
-			AABB light_aabb = RendererRD::LightStorage::light_instance_get_base_aabb(light_instance);
+			AABB light_aabb =
+				RendererRD::LightStorage::light_instance_get_base_aabb(light_instance);
 			Transform3D light_transform =
 				RendererRD::LightStorage::light_instance_get_base_transform(light_instance);
 
@@ -874,11 +874,12 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].has_shadow = RendererLightStorage::light_has_shadow(light);
 			lights[idx].attenuation =
 				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
-			lights[idx].radius = RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_RANGE);
+			lights[idx].radius =
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_RANGE);
 			lights[idx].cos_spot_angle = Math::cos(Math::deg_to_rad(
 				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
-			lights[idx].inv_spot_attenuation =
-				1.0f / RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
+			lights[idx].inv_spot_attenuation = 1.0f / RendererLightStorage::light_get_param(
+														  light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
@@ -896,7 +897,8 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				lights[idx].area_projector_rect[2] = proj_rect.size.x;
 				lights[idx].area_projector_rect[3] = proj_rect.size.y;
 
-				Size2i texture_size = proj_rect.size * RendererRD::TextureStorage::area_light_atlas_get_size();
+				Size2i texture_size =
+					proj_rect.size * RendererRD::TextureStorage::area_light_atlas_get_size();
 				lights[idx].cos_spot_angle =
 					MIN(Math::floor(Math::log2(MAX(MIN(texture_size.x, texture_size.y), 1.0f))),
 						RendererRD::TextureStorage::area_light_atlas_get_mipmaps()) -
@@ -1037,6 +1039,18 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 
 void GI::finalize()
 {
+	if (!_initialized) {
+		return;
+	}
+
+	// Free the two GiShaderRD versions before the OS and RD are torn down
+	if (shader.version_is_valid(shader_version)) {
+		shader.version_free(shader_version);
+	}
+
+	// If GI allocated uniform sets, UBOs, or pipelines, free them here as well
+
+	_initialized = false;
 	for (int v = 0; v < SHADER_SPECIALIZATION_VARIATIONS; v++) {
 		for (int i = 0; i < MODE_MAX; i++) {
 			pipelines[v][i].free();
@@ -1312,9 +1326,8 @@ void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
 {
 }
 
-void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky) {}
-
-void GI::init(RendererRD::SkyRD *p_sky) {
+void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
+{
 	// 1. Main GI gather shader
 	{
 		Vector<String> modes;
@@ -1322,7 +1335,8 @@ void GI::init(RendererRD::SkyRD *p_sky) {
 		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n");
 		modes.push_back("\n#define MODE_SDFGI\n");
 		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_SDFGI\n");
-		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n#define MODE_SDFGI\n");
+		modes.push_back(
+			"\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n#define MODE_SDFGI\n");
 
 		shader.initialize(modes);
 		shader_version = shader.version_create();
@@ -1401,5 +1415,3 @@ void GI::init(RendererRD::SkyRD *p_sky) {
 		sdfgi_shader.debug_probes_shader_version = sdfgi_shader.debug_probes.version_create();
 	}
 }
-
-

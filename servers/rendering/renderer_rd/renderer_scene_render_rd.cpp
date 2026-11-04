@@ -1929,7 +1929,7 @@ void RendererSceneRenderRD::initialize()
     data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
 #endif
     data->sky.init();
-    RendererRD::GI::init(&data->sky);
+    RendererRD::GI::initialize(&data->sky);
 
     _update_shader_quality_settings();
 }

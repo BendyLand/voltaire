@@ -4306,6 +4306,8 @@ void Main::cleanup(bool p_force)
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
 	Renderer::global_shader_parameters_clear();
 
+	Renderer::finalize();
+
 #ifndef XR_DISABLED
 	if (xr_server) {
 		// Now that we're unregistering properly in plugins we need to keep access to xr_server for

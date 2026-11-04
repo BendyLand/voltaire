@@ -250,18 +250,19 @@ void RendererCompositorRD::finalize()
 	RendererRD::TextureStorage::_tex_blit_shader_free();
 	RendererCanvasRenderRD::finalize();
 	RendererRD::Fog::finalize();
+	RendererRD::GI::finalize();
 	RendererRD::ParticlesStorage::finalize();
 	RendererRD::LightStorage::finalize();
 	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
 
+	blit->shader.version_free(blit->shader_version);
+	RD::free_rid(blit->index_buffer);
+	RD::free_rid(blit->sampler);
 	if (blit) {
 		memdelete(blit);
 		blit = nullptr;
 	}
-	blit->shader.version_free(blit->shader_version);
-	RD::free_rid(blit->index_buffer);
-	RD::free_rid(blit->sampler);
 }
 
 float RendererCompositorRD::_compute_reference_multiplier(RDC::ColorSpace p_color_space,
