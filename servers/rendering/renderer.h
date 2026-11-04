@@ -132,7 +132,6 @@ public:
 	static inline bool threaded = false;
 
 	static inline RendererParticlesStorage* particles_storage = nullptr;
-	static inline RendererGI* gi = nullptr;
 	static inline RendererFog* fog = nullptr;
 	static inline RendererCameraAttributes* camera_attributes = nullptr;
 	static inline RendererCanvasRender* canvas_render = nullptr;

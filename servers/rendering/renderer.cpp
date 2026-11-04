@@ -602,7 +602,7 @@ void Renderer::initialize()
 {
 	data = memnew(Data);
 	RendererCompositor::create();
-	gi = RendererCompositor::get_gi();
+
 	fog = RendererCompositor::get_fog();
 	canvas_render = RendererCompositor::get_canvas();
 	viewport = memnew(RendererViewport);
@@ -620,7 +620,6 @@ void Renderer::finalize()
 	memdelete(viewport);
 	viewport = nullptr;
 	particles_storage = nullptr;
-	gi = nullptr;
 	fog = nullptr;
 	canvas_render = nullptr;
 	scene = nullptr;
@@ -2649,8 +2648,8 @@ void Renderer::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shap
 
 RID Renderer::voxel_gi_create()
 {
-	RID ret = RS::gi->voxel_gi_allocate();
-	RS::gi->voxel_gi_initialize(ret);
+	RID ret = RendererGI::voxel_gi_allocate();
+	RendererGI::voxel_gi_initialize(ret);
 	return ret;
 }
 
@@ -2659,68 +2658,68 @@ void Renderer::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_ce
 	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
 	const Vector<int>& p_level_counts)
 {
-	RS::gi->voxel_gi_allocate_data(p_voxel_gi, p_to_cell_xform, p_aabb, p_octree_size,
+	RendererGI::voxel_gi_allocate_data(p_voxel_gi, p_to_cell_xform, p_aabb, p_octree_size,
 		p_octree_cells, p_data_cells, p_distance_field, p_level_counts);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_octree_cells(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_octree_cells(p_voxel_gi);
+	return RendererGI::voxel_gi_get_octree_cells(p_voxel_gi);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_data_cells(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_data_cells(p_voxel_gi);
+	return RendererGI::voxel_gi_get_data_cells(p_voxel_gi);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_distance_field(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_distance_field(p_voxel_gi);
+	return RendererGI::voxel_gi_get_distance_field(p_voxel_gi);
 }
 
 Vector<int> Renderer::voxel_gi_get_level_counts(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_level_counts(p_voxel_gi);
+	return RendererGI::voxel_gi_get_level_counts(p_voxel_gi);
 }
 
 void Renderer::voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range)
 {
-	RS::gi->voxel_gi_set_dynamic_range(p_voxel_gi, p_range);
+	RendererGI::voxel_gi_set_dynamic_range(p_voxel_gi, p_range);
 }
 
 void Renderer::voxel_gi_set_propagation(RID p_voxel_gi, float p_propagation)
 {
-	RS::gi->voxel_gi_set_propagation(p_voxel_gi, p_propagation);
+	RendererGI::voxel_gi_set_propagation(p_voxel_gi, p_propagation);
 }
 
 void Renderer::voxel_gi_set_energy(RID p_voxel_gi, float p_energy)
 {
-	RS::gi->voxel_gi_set_energy(p_voxel_gi, p_energy);
+	RendererGI::voxel_gi_set_energy(p_voxel_gi, p_energy);
 }
 
 void Renderer::voxel_gi_set_bias(RID p_voxel_gi, float p_bias)
 {
-	RS::gi->voxel_gi_set_bias(p_voxel_gi, p_bias);
+	RendererGI::voxel_gi_set_bias(p_voxel_gi, p_bias);
 }
 
 void Renderer::voxel_gi_set_normal_bias(RID p_voxel_gi, float p_bias)
 {
-	RS::gi->voxel_gi_set_normal_bias(p_voxel_gi, p_bias);
+	RendererGI::voxel_gi_set_normal_bias(p_voxel_gi, p_bias);
 }
 
 void Renderer::voxel_gi_set_interior(RID p_voxel_gi, bool p_interior)
 {
-	RS::gi->voxel_gi_set_interior(p_voxel_gi, p_interior);
+	RendererGI::voxel_gi_set_interior(p_voxel_gi, p_interior);
 }
 
 void Renderer::voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_use_two_bounces)
 {
-	RS::gi->voxel_gi_set_use_two_bounces(p_voxel_gi, p_use_two_bounces);
+	RendererGI::voxel_gi_set_use_two_bounces(p_voxel_gi, p_use_two_bounces);
 }
 
 void Renderer::voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_normalization)
 {
-	RS::gi->voxel_gi_set_baked_exposure_normalization(p_voxel_gi, p_normalization);
+	RendererGI::voxel_gi_set_baked_exposure_normalization(p_voxel_gi, p_normalization);
 }
 
 RID Renderer::reflection_probe_create()
