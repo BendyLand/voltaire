@@ -405,6 +405,7 @@ public:
 	virtual bool command_pool_reset(CommandPoolID p_cmd_pool) override final;
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
 
+
 private:
 	struct CommandBufferInfo
 	{

@@ -4596,6 +4596,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 		framebuffer->vk_framebuffer = vk_framebuffer;
 		framebuffer->swap_chain_image = swap_chain->images[i];
 		framebuffer->swap_chain_image_subresource_range = view_create_info.subresourceRange;
+		DUMP(framebuffer);
 		swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
 	}
 
@@ -6483,6 +6484,7 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	CommandBufferInfo* command_buffer = (CommandBufferInfo*)(p_cmd_buffer.id);
 	RenderPassInfo* render_pass = (RenderPassInfo*)(p_render_pass.id);
 	Framebuffer* framebuffer = (Framebuffer*)(p_framebuffer.id);
+	// DUMP(framebuffer);
 
 	ERR_FAIL_NULL(command_buffer);
 	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);
@@ -6569,9 +6571,11 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 		}
 	}
 	else {
+		if (command_buffer->active_render_pass == nullptr) {
+	        return;
+	    }
 		vkCmdEndRenderPass(command_buffer->vk_command_buffer);
 	}
-
 	command_buffer->active_render_pass = nullptr;
 	command_buffer->active_framebuffer = nullptr;
 

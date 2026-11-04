@@ -6241,8 +6241,7 @@ bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, 
 {
 	MutexLock mutex_lock(mutex);
 
-	WindowState
-* ws = windows.getptr(p_window_id);
+	WindowState* ws = windows.getptr(p_window_id);
 	ERR_FAIL_NULL_V(ws, false);
 
 	if (ws->ready) {
@@ -6382,6 +6381,13 @@ void WaylandThread::_wl_pointer_on_button(void* data, struct wl_pointer* wl_poin
 
 void WaylandThread::_window_hover(int p_window) {}
 
+bool WaylandThread::window_is_ready(DisplayServerEnums::WindowID p_window_id) const
+{
+	const WindowState* ws = window_get_state(p_window_id);
+	if (!ws) {
+		return false;
+	}
+	return ws->ready;
+}
+
 #endif // WAYLAND_ENABLED
-
-

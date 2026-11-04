@@ -35,19 +35,19 @@ RenderingContextDriver::~RenderingContextDriver() {}
 RenderingContextDriver::SurfaceID RenderingContextDriver::surface_get_from_window(
 	DisplayServerEnums::WindowID p_window) const
 {
-	for (const KeyValue<DisplayServerEnums::WindowID, SurfaceID>& E : window_surface_map) {
-		printf("[MAP ENTRY] key=%d, surface=%llu\n", (int)E.key, (unsigned long long)E.value);
-	}
+	// for (const KeyValue<DisplayServerEnums::WindowID, SurfaceID>& E : window_surface_map) {
+	// 	printf("[MAP ENTRY] key=%d, surface=%llu\n", (int)E.key, (unsigned long long)E.value);
+	// }
 
 	HashMap<DisplayServerEnums::WindowID, SurfaceID>::ConstIterator it =
 		window_surface_map.find(p_window);
 	if (it != window_surface_map.end()) {
-		printf("[MAP HIT] found surface=%llu for window=%d\n", (unsigned long long)it->value,
-			(int)p_window);
+		// printf("[MAP HIT] found surface=%llu for window=%d\n", (unsigned long long)it->value,
+		// 	(int)p_window);
 		return it->value;
 	}
 	else {
-		printf("[MAP MISS] no surface for window=%d\n", (int)p_window);
+		// printf("[MAP MISS] no surface for window=%d\n", (int)p_window);
 		return SurfaceID();
 	}
 }
