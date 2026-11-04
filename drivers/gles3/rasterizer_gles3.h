@@ -87,7 +87,7 @@ public:
 
 	static _ALWAYS_INLINE_ RendererParticlesStorage* get_particles_storage()
 	{
-		return particles_storage;
+		return nullptr;
 	}
 
 	static _ALWAYS_INLINE_ RendererGI* get_gi() { return gi; }

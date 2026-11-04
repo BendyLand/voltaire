@@ -33,6 +33,7 @@
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
+#include "drivers/gles3/storage/particles_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/storage/utilities.h"
@@ -457,7 +458,7 @@ void RasterizerGLES3::initialize()
 	GLES3::TextureStorage::initialize();
 	GLES3::MaterialStorage::initialize();
 	GLES3::LightStorage::initialize();
-	particles_storage = memnew(GLES3::ParticlesStorage);
+	GLES3::ParticlesStorage::initialize();
 	copy_effects = memnew(GLES3::CopyEffects);
 	cubemap_filter = memnew(GLES3::CubemapFilter);
 	glow = memnew(GLES3::Glow);
@@ -494,7 +495,7 @@ void RasterizerGLES3::finalize()
 	memdelete(cubemap_filter);
 	memdelete(copy_effects);
 	memdelete(feed_effects);
-	memdelete(particles_storage);
+	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::TextureStorage::finalize();
 	memdelete(config);

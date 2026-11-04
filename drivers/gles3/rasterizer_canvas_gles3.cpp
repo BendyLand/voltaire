@@ -1406,9 +1406,6 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 				}
 			}
 			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
-				GLES3::ParticlesStorage* particles_storage =
-					GLES3::ParticlesStorage::get_singleton();
-
 				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
 				RID particles = pt->particles;
 				state.canvas_instance_batches[state.current_batch_index].tex = pt->texture;
@@ -1419,7 +1416,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 				state.canvas_instance_batches[state.current_batch_index].flags |=
 					BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 
-				if (particles_storage->particles_has_collision(particles) &&
+				if (GLES3::ParticlesStorage::particles_has_collision(particles) &&
 					GLES3::TextureStorage::render_target_is_sdf_enabled(p_render_target)) {
 					// Pass collision information.
 					Transform2D xform = p_item->final_transform;
@@ -1437,14 +1434,14 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 						to_screen.position = -sdf_rect.position * to_screen.size;
 					}
 
-					particles_storage->particles_set_canvas_sdf_collision(
+					GLES3::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, true, xform, to_screen, sdf_texture);
 				}
 				else {
-					particles_storage->particles_set_canvas_sdf_collision(
+					GLES3::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, false, Transform2D(), Rect2(), 0);
 				}
-				r_sdf_used |= particles_storage->particles_has_collision(particles);
+				r_sdf_used |= GLES3::ParticlesStorage::particles_has_collision(particles);
 			}
 
 			state.canvas_instance_batches[state.current_batch_index].command = c;
@@ -1641,7 +1638,6 @@ void RasterizerCanvasGLES3::_render_batch(
 	case RCR::Item::Command::TYPE_MESH:
 	case RCR::Item::Command::TYPE_MULTIMESH:
 	case RCR::Item::Command::TYPE_PARTICLES: {
-		GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
 		RID mesh;
 		RID mesh_instance;
 		uint32_t instance_count = 1;
@@ -1690,24 +1686,24 @@ void RasterizerCanvasGLES3::_render_batch(
 			const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(
 				state.canvas_instance_batches[p_index].command);
 			RID particles = pt->particles;
-			mesh = particles_storage->particles_get_draw_pass_mesh(particles, 0);
+			mesh = GLES3::ParticlesStorage::particles_get_draw_pass_mesh(particles, 0);
 
-			ERR_BREAK(particles_storage->particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
-			particles_storage->particles_request_process(particles);
+			ERR_BREAK(GLES3::ParticlesStorage::particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
+			GLES3::ParticlesStorage::particles_request_process(particles);
 
-			if (particles_storage->particles_is_inactive(particles)) {
+			if (GLES3::ParticlesStorage::particles_is_inactive(particles)) {
 				break;
 			}
 
 			Renderer::redraw_request(); // Active particles means redraw request.
 
-			int dpc = particles_storage->particles_get_draw_passes(particles);
+			int dpc = GLES3::ParticlesStorage::particles_get_draw_passes(particles);
 			if (dpc == 0) {
 				break; // Nothing to draw.
 			}
 
-			instance_count = particles_storage->particles_get_amount(particles);
-			instance_buffer = particles_storage->particles_get_gl_buffer(particles);
+			instance_count = GLES3::ParticlesStorage::particles_get_amount(particles);
+			instance_buffer = GLES3::ParticlesStorage::particles_get_gl_buffer(particles);
 			instance_stride =
 				12; // 8 bytes for instance transform and 4 bytes for packed color and custom.
 			instance_color_offset = 8; // 8 bytes for instance transform.

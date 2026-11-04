@@ -380,7 +380,6 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 	RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
 	uint32_t p_from_element, uint32_t p_to_element)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	RD::DrawListID draw_list = p_draw_list;
 	RD::FramebufferFormatID framebuffer_format = p_framebuffer_Format;
 
@@ -695,7 +694,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			}
 
 			if (surf->owner->base_flags & INSTANCE_DATA_FLAG_PARTICLES) {
-				particles_storage->particles_get_instance_buffer_motion_vectors_offsets(
+				RendererRD::ParticlesStorage::particles_get_instance_buffer_motion_vectors_offsets(
 					surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset,
 					push_constant.multimesh_motion_vectors_previous_offset);
 			}
@@ -5046,7 +5045,6 @@ void RenderForwardClustered::_geometry_instance_add_surface(
 
 void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	GeometryInstanceForwardClustered* ginstance =
 		static_cast<GeometryInstanceForwardClustered*>(p_geometry_instance);
 
@@ -5107,10 +5105,10 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		} break;
 #endif
 	case RSE::INSTANCE_PARTICLES: {
-		int draw_passes = particles_storage->particles_get_draw_passes(ginstance->data->base);
+		int draw_passes = RendererRD::ParticlesStorage::particles_get_draw_passes(ginstance->data->base);
 
 		for (int j = 0; j < draw_passes; j++) {
-			RID mesh = particles_storage->particles_get_draw_pass_mesh(ginstance->data->base, j);
+			RID mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(ginstance->data->base, j);
 			if (!mesh.is_valid()) {
 				continue;
 			}
@@ -5127,7 +5125,7 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		}
 
 		ginstance->instance_count =
-			particles_storage->particles_get_amount(ginstance->data->base, ginstance->trail_steps);
+			RendererRD::ParticlesStorage::particles_get_amount(ginstance->data->base, ginstance->trail_steps);
 
 	} break;
 
@@ -5172,21 +5170,21 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		ginstance->base_flags |=
 			(ginstance->trail_steps << INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_SHIFT);
 
-		if (!particles_storage->particles_is_using_local_coords(ginstance->data->base)) {
+		if (!RendererRD::ParticlesStorage::particles_is_using_local_coords(ginstance->data->base)) {
 			store_transform = false;
 		}
 		ginstance->transforms_uniform_set =
-			particles_storage->particles_get_instance_buffer_uniform_set(
+			RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
 				ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 
-		if (particles_storage->particles_get_frame_counter(ginstance->data->base) == 0) {
+		if (RendererRD::ParticlesStorage::particles_get_frame_counter(ginstance->data->base) == 0) {
 			// Particles haven't been cleared or updated, update once now to ensure they are ready
 			// to render.
-			particles_storage->update_particles();
+			RendererRD::ParticlesStorage::update_particles();
 		}
 
 		if (ginstance->data->dirty_dependencies) {
-			particles_storage->particles_update_dependency(
+			RendererRD::ParticlesStorage::particles_update_dependency(
 				ginstance->data->base, &ginstance->data->dependency_tracker);
 		}
 	}

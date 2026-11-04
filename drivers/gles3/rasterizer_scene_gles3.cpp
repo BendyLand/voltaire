@@ -480,8 +480,6 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 
 void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
-
 	GeometryInstanceGLES3* ginstance = static_cast<GeometryInstanceGLES3*>(p_geometry_instance);
 
 	if (ginstance->data->dirty_dependencies) {
@@ -533,10 +531,10 @@ void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_g
 
 	} break;
 	case RSE::INSTANCE_PARTICLES: {
-		int draw_passes = particles_storage->particles_get_draw_passes(ginstance->data->base);
+		int draw_passes = GLES3::ParticlesStorage::particles_get_draw_passes(ginstance->data->base);
 
 		for (int j = 0; j < draw_passes; j++) {
-			RID mesh = particles_storage->particles_get_draw_pass_mesh(ginstance->data->base, j);
+			RID mesh = GLES3::ParticlesStorage::particles_get_draw_pass_mesh(ginstance->data->base, j);
 			if (!mesh.is_valid()) {
 				continue;
 			}
@@ -553,7 +551,7 @@ void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_g
 			}
 		}
 
-		ginstance->instance_count = particles_storage->particles_get_amount(ginstance->data->base);
+		ginstance->instance_count = GLES3::ParticlesStorage::particles_get_amount(ginstance->data->base);
 	} break;
 
 	default: {
@@ -584,7 +582,7 @@ void RasterizerSceneGLES3::_geometry_instance_update(RenderGeometryInstance* p_g
 		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
 		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
 
-		if (!particles_storage->particles_is_using_local_coords(ginstance->data->base)) {
+		if (!GLES3::ParticlesStorage::particles_is_using_local_coords(ginstance->data->base)) {
 			store_transform = false;
 		}
 
@@ -3730,8 +3728,6 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 	const RenderDataGLES3* p_render_data, uint32_t p_from_element, uint32_t p_to_element,
 	bool p_alpha_pass)
 {
-	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
-
 	GLuint prev_vertex_array_gl = 0;
 	GLuint prev_index_array_gl = 0;
 
@@ -4753,7 +4749,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				GLuint instance_buffer = 0;
 				uint32_t stride = 0;
 				if (inst->flags_cache & INSTANCE_DATA_FLAG_PARTICLES) {
-					instance_buffer = particles_storage->particles_get_gl_buffer(inst->data->base);
+					instance_buffer = GLES3::ParticlesStorage::particles_get_gl_buffer(inst->data->base);
 					stride = 16; // 12 bytes for instance transform and 4 bytes for packed color and
 								 // custom.
 				}
@@ -4779,7 +4775,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 					GLuint prev_instance_buffer = 0;
 					if (inst->flags_cache & INSTANCE_DATA_FLAG_PARTICLES) {
 						prev_instance_buffer =
-							particles_storage->particles_get_prev_gl_buffer(inst->data->base);
+							GLES3::ParticlesStorage::particles_get_prev_gl_buffer(inst->data->base);
 					}
 					else {
 						prev_instance_buffer =
@@ -4792,7 +4788,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 					GLuint secondary_instance_buffer = 0;
 					if (inst->flags_cache & INSTANCE_DATA_FLAG_PARTICLES) {
-						if (particles_storage->particles_get_last_change(inst->data->base) ==
+						if (GLES3::ParticlesStorage::particles_get_last_change(inst->data->base) ==
 							RendererCompositor::get_frame_number()) {
 							secondary_instance_buffer = prev_instance_buffer;
 						}
@@ -4877,10 +4873,8 @@ void RasterizerSceneGLES3::render_material(const Transform3D& p_cam_transform,
 void RasterizerSceneGLES3::render_particle_collider_heightfield(RID p_collider,
 	const Transform3D& p_transform, const PagedArray<RenderGeometryInstance*>& p_instances)
 {
-	GLES3::ParticlesStorage* particles_storage = GLES3::ParticlesStorage::get_singleton();
-
-	ERR_FAIL_COND(!particles_storage->particles_collision_is_heightfield(p_collider));
-	Vector3 extents = particles_storage->particles_collision_get_extents(p_collider) *
+	ERR_FAIL_COND(!GLES3::ParticlesStorage::particles_collision_is_heightfield(p_collider));
+	Vector3 extents = GLES3::ParticlesStorage::particles_collision_get_extents(p_collider) *
 					  p_transform.basis.get_scale();
 	Projection cm;
 	cm.set_orthogonal(-extents.x, extents.x, -extents.z, extents.z, 0, extents.y * 2.0);
@@ -4892,8 +4886,8 @@ void RasterizerSceneGLES3::render_particle_collider_heightfield(RID p_collider,
 	cam_xform.set_look_at(cam_pos, cam_pos - p_transform.basis.get_column(Vector3::AXIS_Y),
 		-p_transform.basis.get_column(Vector3::AXIS_Z).normalized());
 
-	GLuint fb = particles_storage->particles_collision_get_heightfield_framebuffer(p_collider);
-	Size2i fb_size = particles_storage->particles_collision_get_heightfield_size(p_collider);
+	GLuint fb = GLES3::ParticlesStorage::particles_collision_get_heightfield_framebuffer(p_collider);
+	Size2i fb_size = GLES3::ParticlesStorage::particles_collision_get_heightfield_size(p_collider);
 
 	RENDER_TIMESTAMP("Setup GPUParticlesCollisionHeightField3D");
 

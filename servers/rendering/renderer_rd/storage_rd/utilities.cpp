@@ -61,10 +61,10 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
-	if (RendererRD::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
+	if (RendererRD::ParticlesStorage::owns_particles(p_rid)) {
 		return RSE::INSTANCE_PARTICLES;
 	}
-	if (RendererRD::ParticlesStorage::get_singleton()->owns_particles_collision(p_rid)) {
+	if (RendererRD::ParticlesStorage::owns_particles_collision(p_rid)) {
 		return RSE::INSTANCE_PARTICLES_COLLISION;
 	}
 	if (RendererRD::Fog::get_singleton()->owns_fog_volume(p_rid)) {
@@ -79,6 +79,18 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 
 bool Utilities::free(RID p_rid)
 {
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles(p_rid)) {
+		ParticlesStorage::free(p_rid);
+		return true;
+	}
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles_collision(p_rid)) {
+		ParticlesStorage::particles_collision_free(p_rid);
+		return true;
+	}
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles_collision_instance(p_rid)) {
+		ParticlesStorage::particles_collision_instance_free(p_rid);
+		return true;
+	}
 	if (RendererRD::LightStorage::free(p_rid)) {
 		return true;
 	}
@@ -88,7 +100,7 @@ bool Utilities::free(RID p_rid)
 	else if (RendererRD::MeshStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::ParticlesStorage::get_singleton()->free(p_rid)) {
+	else if (RendererRD::ParticlesStorage::free(p_rid)) {
 		return true;
 	}
 	else if (RendererRD::TextureStorage::free(p_rid)) {
@@ -127,8 +139,7 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 		}
 	}
 	else if (LightStorage::owns_reflection_probe(p_base)) {
-		Dependency* dependency =
-			LightStorage::reflection_probe_get_dependency(p_base);
+		Dependency* dependency = LightStorage::reflection_probe_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (TextureStorage::owns_decal(p_base)) {
@@ -147,14 +158,14 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 		Dependency* dependency = LightStorage::light_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {
+	else if (ParticlesStorage::owns_particles(p_base)) {
 		Dependency* dependency =
-			ParticlesStorage::get_singleton()->particles_get_dependency(p_base);
+			ParticlesStorage::particles_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (ParticlesStorage::get_singleton()->owns_particles_collision(p_base)) {
+	else if (ParticlesStorage::owns_particles_collision(p_base)) {
 		Dependency* dependency =
-			ParticlesStorage::get_singleton()->particles_collision_get_dependency(p_base);
+			ParticlesStorage::particles_collision_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (Fog::get_singleton()->owns_fog_volume(p_base)) {
@@ -196,25 +207,13 @@ AABB Utilities::visibility_notifier_get_aabb(RID p_notifier)
 	return vn->aabb;
 }
 
-void Utilities::capture_timestamps_begin()
-{
-	RD::capture_timestamp("Frame Begin");
-}
+void Utilities::capture_timestamps_begin() { RD::capture_timestamp("Frame Begin"); }
 
-void Utilities::capture_timestamp(const String& p_name)
-{
-	RD::capture_timestamp(p_name);
-}
+void Utilities::capture_timestamp(const String& p_name) { RD::capture_timestamp(p_name); }
 
-uint32_t Utilities::get_captured_timestamps_count()
-{
-	return RD::get_captured_timestamps_count();
-}
+uint32_t Utilities::get_captured_timestamps_count() { return RD::get_captured_timestamps_count(); }
 
-uint64_t Utilities::get_captured_timestamps_frame()
-{
-	return RD::get_captured_timestamps_frame();
-}
+uint64_t Utilities::get_captured_timestamps_frame() { return RD::get_captured_timestamps_frame(); }
 
 uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index)
 {
@@ -233,8 +232,8 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index)
 
 void Utilities::update_dirty_resources()
 {
-	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue them for
-											// update
+	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue
+													   // them for update
 	MaterialStorage::_update_queued_materials();
 	MeshStorage::_update_dirty_multimeshes();
 	MeshStorage::_update_dirty_skeletons();
@@ -294,12 +293,9 @@ bool Utilities::has_os_feature(const String& p_feature)
 
 void Utilities::update_memory_info()
 {
-	texture_mem_cache =
-		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
-	buffer_mem_cache =
-		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
-	total_mem_cache =
-		RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TOTAL);
+	texture_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
+	buffer_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
+	total_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TOTAL);
 }
 
 uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
@@ -316,15 +312,9 @@ uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
 	return 0;
 }
 
-String Utilities::get_video_adapter_name()
-{
-	return RenderingDevice::get_device_name();
-}
+String Utilities::get_video_adapter_name() { return RenderingDevice::get_device_name(); }
 
-String Utilities::get_video_adapter_vendor()
-{
-	return RenderingDevice::get_device_vendor_name();
-}
+String Utilities::get_video_adapter_vendor() { return RenderingDevice::get_device_vendor_name(); }
 
 RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type()
 {
@@ -350,13 +340,10 @@ uint32_t Utilities::get_maximum_shader_varyings()
 
 uint64_t Utilities::get_maximum_uniform_buffer_size()
 {
-	return RenderingDevice::limit_get(
-		RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
+	return RenderingDevice::limit_get(RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
 }
 
 void RendererRD::Utilities::visibility_notifier_call(
 	RID p_notifier, bool p_enter_call, bool p_deferred)
 {
 }
-
-

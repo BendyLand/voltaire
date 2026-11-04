@@ -42,6 +42,7 @@
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -249,7 +250,7 @@ void RendererCompositorRD::finalize()
 	RendererRD::TextureStorage::_tex_blit_shader_free();
 	RendererCanvasRenderRD::finalize();
 	memdelete(fog);
-	memdelete(particles_storage);
+	RendererRD::ParticlesStorage::finalize();
 	RendererRD::LightStorage::finalize();
 	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
