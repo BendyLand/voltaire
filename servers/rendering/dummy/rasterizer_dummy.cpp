@@ -54,8 +54,6 @@ RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
 
 RendererFog* RasterizerDummy::get_fog() { return fog; }
 
-RendererGI* RasterizerDummy::get_gi() { return gi; }
-
 RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
 
 

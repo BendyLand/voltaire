@@ -32,9 +32,12 @@
 
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/renderer_rd/environment/sky.h"
 #include "servers/rendering/renderer_rd/environment/gi.h"
 #include "servers/rendering/renderer_rd/pipeline_deferred_rd.h"
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog_process.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
 #include "servers/rendering/storage/utilities.h"
@@ -393,7 +396,6 @@ public:
 		// Objects related to our render buffer
 		Ref<VolumetricFog> vfog;
 		ClusterBuilderRD* cluster_builder;
-		GI* gi;
 		Ref<GI::SDFGI> sdfgi;
 		Ref<GI::RenderBuffersGI> rbgi;
 		RID env;

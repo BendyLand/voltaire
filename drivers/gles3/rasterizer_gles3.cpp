@@ -464,7 +464,7 @@ void RasterizerGLES3::initialize()
 	glow = memnew(GLES3::Glow);
 	post_effects = memnew(GLES3::PostEffects);
 	feed_effects = memnew(GLES3::FeedEffects);
-	gi = memnew(GLES3::GI);
+	GLES3::GI::initialize();
 	fog = memnew(GLES3::Fog);
 
     RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
@@ -488,7 +488,7 @@ void RasterizerGLES3::finalize()
 	GLES3::TextureStorage::_tex_blit_shader_free();
 	memdelete(scene);
 	RasterizerCanvasGLES3::finalize();
-	memdelete(gi);
+	GLES3::GI::finalize();
 	memdelete(fog);
 	memdelete(post_effects);
 	memdelete(glow);

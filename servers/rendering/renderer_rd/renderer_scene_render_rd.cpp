@@ -104,19 +104,19 @@ void RendererSceneRenderRD::environment_set_volumetric_fog_filter_active(bool p_
 void RendererSceneRenderRD::environment_set_sdfgi_ray_count(
 	RSE::EnvironmentSDFGIRayCount p_ray_count)
 {
-	data->gi.sdfgi_ray_count = p_ray_count;
+	RendererRD::GI::sdfgi_ray_count = p_ray_count;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_converge(
 	RSE::EnvironmentSDFGIFramesToConverge p_frames)
 {
-	data->gi.sdfgi_frames_to_converge = p_frames;
+	RendererRD::GI::sdfgi_frames_to_converge = p_frames;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_update_light(
 	RSE::EnvironmentSDFGIFramesToUpdateLight p_update)
 {
-	data->gi.sdfgi_frames_to_update_light = p_update;
+	RendererRD::GI::sdfgi_frames_to_update_light = p_update;
 }
 
 Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
@@ -241,7 +241,7 @@ Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume
 
 RID RendererSceneRenderRD::voxel_gi_instance_create(RID p_base)
 {
-	return data->gi.voxel_gi_instance_create(p_base);
+	return RendererRD::GI::voxel_gi_instance_create(p_base);
 }
 
 void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
@@ -251,7 +251,7 @@ void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
 		return;
 	}
 
-	data->gi.voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
+	RendererRD::GI::voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
 }
 
 bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe)
@@ -260,7 +260,7 @@ bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe)
 		return false;
 	}
 
-	return data->gi.voxel_gi_needs_update(p_probe);
+	return RendererRD::GI::voxel_gi_needs_update(p_probe);
 }
 
 void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_instances,
@@ -271,7 +271,7 @@ void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_ins
 		return;
 	}
 
-	data->gi.voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
+	RendererRD::GI::voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
 }
 
 void RendererSceneRenderRD::_debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_render_buffers,
@@ -1416,7 +1416,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 RID RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer()
 {
-	return data->gi.default_voxel_gi_buffer;
+	return RendererRD::GI::default_voxel_gi_buffer;
 }
 
 RDC::DataFormat RendererSceneRenderRD::_render_buffers_get_preferred_color_format()
@@ -1428,7 +1428,7 @@ bool RendererSceneRenderRD::_render_buffers_can_be_storage() { return true; }
 
 void RendererSceneRenderRD::gi_set_use_half_resolution(bool p_enable)
 {
-	data->gi.half_resolution = p_enable;
+	RendererRD::GI::half_resolution = p_enable;
 }
 
 void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality)
@@ -1839,8 +1839,8 @@ bool RendererSceneRenderRD::free(RID p_rid)
 	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
 		RS::camera_attributes->camera_attributes_free(p_rid);
 	}
-	else if (data->gi.voxel_gi_instance_owns(p_rid)) {
-		data->gi.voxel_gi_instance_free(p_rid);
+	else if (RendererRD::GI::voxel_gi_instance_owns(p_rid)) {
+		RendererRD::GI::voxel_gi_instance_free(p_rid);
 	}
 	else if (data->sky.sky_owner.owns(p_rid)) {
 		data->sky.update_dirty_skys();
@@ -1895,8 +1895,8 @@ float RendererSceneRenderRD::screen_space_roughness_limiter_get_limit()
 void RendererSceneRenderRD::sdfgi_set_debug_probe_select(
 	const Vector3& p_position, const Vector3& p_dir)
 {
-	data->gi.sdfgi_debug_probe_pos = p_position;
-	data->gi.sdfgi_debug_probe_dir = p_dir;
+	RendererRD::GI::sdfgi_debug_probe_pos = p_position;
+	RendererRD::GI::sdfgi_debug_probe_dir = p_dir;
 }
 
 bool RendererSceneRenderRD::is_vrs_supported()
@@ -1934,7 +1934,7 @@ void RendererSceneRenderRD::initialize()
     data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
 #endif
     data->sky.init();
-    data->gi.init(&data->sky);
+    RendererRD::GI::init(&data->sky);
 
     _update_shader_quality_settings();
 }
@@ -1944,7 +1944,7 @@ void RendererSceneRenderRD::finalize()
     if (!data) {
         return;
     }
-    data->gi.free();
+    RendererRD::GI::free();
     if (data->directional_penumbra_shadow_kernel) {
         memdelete_arr(data->directional_penumbra_shadow_kernel);
     }

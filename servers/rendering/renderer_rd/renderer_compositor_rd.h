@@ -46,6 +46,7 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/storage/light_storage.h"
 #include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/particles_storage.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 class RendererCompositorRD final
@@ -146,16 +147,12 @@ public:
 
 	static void bind_particles_storage()
 	{
-		// Particles storage binding if converted, or stub
+		RendererParticlesStorage::bind<RendererRD::ParticlesStorage>();
 	}
 
 	static void bind_utilities();
 
-	static RendererGI* get_gi()
-	{
-		ERR_FAIL_NULL_V(RendererSceneRenderRD::data, nullptr);
-		return RendererSceneRenderRD::get_gi();
-	}
+	static void bind_gi() { RendererGI::bind<RendererRD::GI>(); }
 
 	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }
 
@@ -209,5 +206,3 @@ public:
 };
 
 using RCRD = RendererCompositorRD;
-
-

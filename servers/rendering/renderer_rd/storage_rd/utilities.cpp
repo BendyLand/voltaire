@@ -52,7 +52,7 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
 		return RSE::INSTANCE_DECAL;
 	}
-	if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
+	if (RendererRD::GI::owns_voxel_gi(p_rid)) {
 		return RSE::INSTANCE_VOXEL_GI;
 	}
 	if (RendererRD::LightStorage::owns_light(p_rid)) {
@@ -106,8 +106,8 @@ bool Utilities::free(RID p_rid)
 	else if (RendererRD::TextureStorage::free(p_rid)) {
 		return true;
 	}
-	else if (RendererRD::GI::get_singleton()->owns_voxel_gi(p_rid)) {
-		RendererRD::GI::get_singleton()->voxel_gi_free(p_rid);
+	else if (RendererRD::GI::owns_voxel_gi(p_rid)) {
+		RendererRD::GI::voxel_gi_free(p_rid);
 		return true;
 	}
 	else if (RendererRD::Fog::get_singleton()->owns_fog_volume(p_rid)) {
@@ -146,8 +146,8 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 		Dependency* dependency = TextureStorage::decal_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (GI::get_singleton()->owns_voxel_gi(p_base)) {
-		Dependency* dependency = GI::get_singleton()->voxel_gi_get_dependency(p_base);
+	else if (GI::owns_voxel_gi(p_base)) {
+		Dependency* dependency = GI::voxel_gi_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (LightStorage::owns_lightmap(p_base)) {

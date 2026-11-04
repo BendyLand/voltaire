@@ -89,8 +89,8 @@ public:
         Backend::bind_mesh_storage();
         Backend::bind_light_storage();
         Backend::bind_particles_storage();
+		Backend::bind_gi();
 
-        get_gi = &Backend::get_gi;
         get_fog = &Backend::get_fog;
         get_canvas = &Backend::get_canvas;
 

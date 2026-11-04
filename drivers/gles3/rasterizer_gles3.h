@@ -32,7 +32,6 @@
 
 #include "servers/rendering/storage/material_storage.h"
 #ifdef GLES3_ENABLED
-
 #include "drivers/gles3/effects/copy_effects.h"
 #include "drivers/gles3/effects/cubemap_filter.h"
 #include "drivers/gles3/effects/feed_effects.h"
@@ -41,7 +40,6 @@
 #include "drivers/gles3/environment/fog.h"
 #include "drivers/gles3/environment/gi.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
-#include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
 #include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/light_storage.h"
@@ -85,12 +83,7 @@ public:
 	static inline void bind_utilities();
 	static inline void bind_mesh_storage();
 
-	static _ALWAYS_INLINE_ RendererParticlesStorage* get_particles_storage()
-	{
-		return nullptr;
-	}
-
-	static _ALWAYS_INLINE_ RendererGI* get_gi() { return gi; }
+	static void bind_gi() { RendererGI::bind<GLES3::GI>(); }
 
 	static _ALWAYS_INLINE_ RendererFog* get_fog() { return fog; }
 
@@ -156,5 +149,3 @@ public:
 using RGLES3 = RasterizerGLES3;
 
 #endif // GLES3_ENABLED
-
-

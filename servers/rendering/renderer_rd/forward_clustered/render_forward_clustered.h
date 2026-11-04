@@ -1082,7 +1082,7 @@ public:
 	virtual uint32_t sdfgi_get_pending_region_cascade(
 		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const;
 
-	RID sdfgi_get_ubo() const { return RendererSceneRenderRD::data->gi.sdfgi_ubo; }
+	RID sdfgi_get_ubo() const { return RendererRD::GI::sdfgi_ubo; }
 
 	/* GEOMETRY INSTANCE */
 
