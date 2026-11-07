@@ -31,7 +31,7 @@
 #include "animation_mixer.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/animation/animation_player.h"
 #include "scene/audio/audio_stream_player.h"
@@ -50,15 +50,15 @@
 #include "editor/editor_undo_redo_manager.h"
 #endif // TOOLS_ENABLED
 
-void AnimationMixer::_animation_added(const StringName& p_name, const StringName& p_library)
+void AnimationMixer::_animation_added(const String& p_name, const String& p_library)
 {
 	_animation_set_cache_update();
 }
 
-void AnimationMixer::_animation_removed(const StringName& p_name, const StringName& p_library)
+void AnimationMixer::_animation_removed(const String& p_name, const String& p_library)
 {
-	const StringName name =
-		p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
+	const String name =
+		p_library == String() ? p_name : String(String(p_library) + "/" + String(p_name));
 
 	if (!animation_set.has(name)) {
 		return; // No need to update because not the one from the library being used.
@@ -69,16 +69,16 @@ void AnimationMixer::_animation_removed(const StringName& p_name, const StringNa
 	_remove_animation(name);
 }
 
-void AnimationMixer::_animation_changed(const StringName& p_name) { _clear_caches(); }
+void AnimationMixer::_animation_changed(const String& p_name) { _clear_caches(); }
 
-void AnimationMixer::get_animation_library_list(LocalVector<StringName>* p_libraries) const
+void AnimationMixer::get_animation_library_list(LocalVector<String>* p_libraries) const
 {
 	for (const AnimationLibraryData& lib : animation_libraries) {
 		p_libraries->push_back(lib.name);
 	}
 }
 
-Ref<AnimationLibrary> AnimationMixer::get_animation_library(const StringName& p_name) const
+Ref<AnimationLibrary> AnimationMixer::get_animation_library(const String& p_name) const
 {
 	for (const AnimationLibraryData& lib : animation_libraries) {
 		if (lib.name == p_name) {
@@ -88,7 +88,7 @@ Ref<AnimationLibrary> AnimationMixer::get_animation_library(const StringName& p_
 	ERR_FAIL_V(Ref<AnimationLibrary>());
 }
 
-bool AnimationMixer::has_animation_library(const StringName& p_name) const
+bool AnimationMixer::has_animation_library(const String& p_name) const
 {
 	for (const AnimationLibraryData& lib : animation_libraries) {
 		if (lib.name == p_name) {
@@ -99,34 +99,34 @@ bool AnimationMixer::has_animation_library(const StringName& p_name) const
 	return false;
 }
 
-const StringName& AnimationMixer::find_animation_library(const Ref<Animation>& p_animation) const
+const String& AnimationMixer::find_animation_library(const Ref<Animation>& p_animation) const
 {
-	for (const KeyValue<StringName, AnimationData>& E : animation_set) {
+	for (const KeyValue<String, AnimationData>& E : animation_set) {
 		if (E.value.animation == p_animation) {
 			return E.value.animation_library;
 		}
 	}
-	const static StringName empty = StringName();
+	const static String empty = String();
 	return empty;
 }
 
-LocalVector<StringName> AnimationMixer::get_sorted_animation_list() const
+LocalVector<String> AnimationMixer::get_sorted_animation_list() const
 {
-	LocalVector<StringName> animations;
+	LocalVector<String> animations;
 	get_animation_list(&animations);
-	animations.sort_custom<StringName::AlphCompare>();
+	animations.sort();
 	return animations;
 }
 
-void AnimationMixer::get_animation_list(LocalVector<StringName>* p_animations) const
+void AnimationMixer::get_animation_list(LocalVector<String>* p_animations) const
 {
 	p_animations->reserve(p_animations->size() + animation_set.size());
-	for (const KeyValue<StringName, AnimationData>& E : animation_set) {
+	for (const KeyValue<String, AnimationData>& E : animation_set) {
 		p_animations->push_back(E.key);
 	}
 }
 
-const Ref<Animation>& AnimationMixer::get_animation(const StringName& p_name) const
+const Ref<Animation>& AnimationMixer::get_animation(const String& p_name) const
 {
 	const Ref<Animation>& animation = get_animation_or_null(p_name);
 	ERR_FAIL_COND_V_MSG(
@@ -134,7 +134,7 @@ const Ref<Animation>& AnimationMixer::get_animation(const StringName& p_name) co
 	return animation;
 }
 
-const Ref<Animation>& AnimationMixer::get_animation_or_null(const StringName& p_name) const
+const Ref<Animation>& AnimationMixer::get_animation_or_null(const String& p_name) const
 {
 	const AnimationData* ad = animation_set.getptr(p_name);
 	if (!ad) {
@@ -144,19 +144,19 @@ const Ref<Animation>& AnimationMixer::get_animation_or_null(const StringName& p_
 	return ad->animation;
 }
 
-bool AnimationMixer::has_animation(const StringName& p_name) const
+bool AnimationMixer::has_animation(const String& p_name) const
 {
 	return animation_set.has(p_name);
 }
 
-StringName AnimationMixer::find_animation(const Ref<Animation>& p_animation) const
+String AnimationMixer::find_animation(const Ref<Animation>& p_animation) const
 {
-	for (const KeyValue<StringName, AnimationData>& E : animation_set) {
+	for (const KeyValue<String, AnimationData>& E : animation_set) {
 		if (E.value.animation == p_animation) {
 			return E.key;
 		}
 	}
-	return StringName();
+	return String();
 }
 
 void AnimationMixer::_set_process(bool p_process, bool p_force)
@@ -420,7 +420,7 @@ void AnimationMixer::_blend_calc_total_weight()
 }
 
 void AnimationMixer::make_animation_instance(
-	const StringName& p_name, const PlaybackInfo& p_playback_info)
+	const String& p_name, const PlaybackInfo& p_playback_info)
 {
 	const Ref<Animation>& animation = get_animation_or_null(p_name);
 	ERR_FAIL_COND(animation.is_null());
@@ -469,7 +469,7 @@ void AnimationMixer::set_reset_on_save_enabled(bool p_enabled) { reset_on_save =
 
 bool AnimationMixer::is_reset_on_save_enabled() const { return reset_on_save; }
 
-bool AnimationMixer::can_apply_reset() const { return has_animation(SceneStringName(RESET)); }
+bool AnimationMixer::can_apply_reset() const { return has_animation(SceneString(RESET)); }
 
 void AnimationMixer::_node_removed(Node* p_node) { _clear_caches(); }
 
@@ -504,20 +504,20 @@ void AnimationMixer::_notification(int p_what)
 
 #ifdef TOOLS_ENABLED
 void AnimationMixer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	if (p_idx == 0) {
 		if (pf == "get_animation" || pf == "has_animation") {
-			for (const StringName& name : get_sorted_animation_list()) {
+			for (const String& name : get_sorted_animation_list()) {
 				r_options->push_back(String(name).quote());
 			}
 		}
 		else if (pf == "get_animation_library" || pf == "has_animation_library" ||
 				   pf == "remove_animation_library" || pf == "rename_animation_library") {
-			LocalVector<StringName> al;
+			LocalVector<String> al;
 			get_animation_library_list(&al);
-			for (const StringName& name : al) {
+			for (const String& name : al) {
 				r_options->push_back(String(name).quote());
 			}
 		}
@@ -613,12 +613,12 @@ AnimationMixer::TrackCache* AnimatedValuesBackup::get_cache_copy(
 
 void AnimationMixer::_animation_set_cache_update() {}
 
-void AnimationMixer::_remove_animation(const StringName& p_name) {}
+void AnimationMixer::_remove_animation(const String& p_name) {}
 
 void AnimationMixer::_process_animation(double p_delta, bool p_update_only) {}
 
 void AnimationMixer::_animation_renamed(
-	const StringName& p_name, const StringName& p_to_name, const StringName& p_library)
+	const String& p_name, const String& p_to_name, const String& p_library)
 {
 }
 

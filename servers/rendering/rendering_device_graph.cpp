@@ -2471,4 +2471,29 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 
 void RenderingDeviceGraph::_wait_for_secondary_command_buffer_tasks() {}
 
+void RenderingDeviceGraph::initialize(RDD* p_driver,
+	RenderPassCreationFunction p_render_pass_creation_function, uint32_t p_frame_count,
+	RDD::CommandQueueFamilyID p_secondary_command_queue_family,
+	uint32_t p_secondary_command_buffers_per_frame)
+{
+	driver = p_driver;
+	render_pass_creation_function = p_render_pass_creation_function;
+	tracking_frame = 0;
 
+	frames.resize(p_frame_count);
+
+	if (p_secondary_command_buffers_per_frame > 0) {
+		for (uint32_t i = 0; i < p_frame_count; i++) {
+			frames[i].secondary_command_buffers.resize(p_secondary_command_buffers_per_frame);
+			frames[i].secondary_command_buffers_used = 0;
+
+			for (uint32_t j = 0; j < p_secondary_command_buffers_per_frame; j++) {
+				frames[i].secondary_command_buffers[j].command_pool = driver->command_pool_create(
+					p_secondary_command_queue_family, RDD::COMMAND_BUFFER_TYPE_SECONDARY);
+				frames[i].secondary_command_buffers[j].command_buffer =
+					driver->command_buffer_create(
+						frames[i].secondary_command_buffers[j].command_pool);
+			}
+		}
+	}
+}

@@ -58,11 +58,11 @@ void EditorBottomPanel::_theme_changed()
 {
 	if (get_current_tab() == -1) {
 		// Hide panel when not showing anything.
-		remove_theme_style_override(SceneStringName(panel));
+		remove_theme_style_override(SceneString(panel));
 	}
 	else {
-		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("BottomPanel"), EditorStringName(EditorStyles)).ptr());
+		add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("BottomPanel"), EditorString(EditorStyles)).ptr());
 	}
 }
 

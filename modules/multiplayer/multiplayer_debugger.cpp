@@ -42,7 +42,7 @@ int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
 	ERR_FAIL_COND_V(p_buffer.is_empty(), 0);
 	int total_bandwidth = 0;
 
-	uint64_t timestamp = OS::get_singleton()->get_ticks_msec();
+	uint64_t timestamp = OS::get_ticks_msec();
 	uint64_t final_timestamp = timestamp - 1000;
 
 	int i = (p_pointer + p_buffer.size() - 1) % p_buffer.size();

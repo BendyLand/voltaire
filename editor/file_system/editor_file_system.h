@@ -56,8 +56,8 @@ class EditorFileSystemDirectory
 	struct FileInfo
 	{
 		String file;
-		StringName type;
-		StringName resource_script_class; // If any resource has script with a global class name,
+		String type;
+		String resource_script_class; // If any resource has script with a global class name,
 										  // its found here.
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 		uint64_t modified_time = 0;
@@ -97,8 +97,8 @@ public:
 	String get_file(int p_idx) const;
 	String get_file_path(int p_idx) const;
 	ResourceUID::ID get_file_uid(int p_idx) const;
-	StringName get_file_type(int p_idx) const;
-	StringName get_file_resource_script_class(int p_idx) const;
+	String get_file_type(int p_idx) const;
+	String get_file_resource_script_class(int p_idx) const;
 	Vector<String> get_file_deps(int p_idx) const;
 	bool get_file_import_is_valid(int p_idx) const;
 	uint64_t get_file_modified_time(int p_idx) const;
@@ -192,7 +192,7 @@ class EditorFileSystem : public Node
 	/* Used for reading the filesystem cache file */
 	struct FileCache
 	{
-		StringName type;
+		String type;
 		String resource_script_class;
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 		uint64_t modification_time = 0;
@@ -271,7 +271,7 @@ class EditorFileSystem : public Node
 
 	struct ScriptClassInfoUpdate : public ScriptClassInfo
 	{
-		StringName type;
+		String type;
 		ScriptClassInfoUpdate() = default;
 
 		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : ScriptClassInfo(p_info) {}

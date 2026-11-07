@@ -320,7 +320,7 @@ Error EditorExportPlatformWeb::_export_project(
 Error EditorExportPlatformWeb::_launch_browser(
 	const String& p_bind_host, const uint16_t p_bind_port, const bool p_use_tls)
 {
-	OS::get_singleton()->shell_open(String((p_use_tls ? "https://" : "http://") + p_bind_host +
+	OS::shell_open(String((p_use_tls ? "https://" : "http://") + p_bind_host +
 										   ":" + itos(p_bind_port) + "/tmp_js_export.html"));
 	// FIXME: Find out how to clean up export files after running the successfully
 	// exported game. Might not be trivial.

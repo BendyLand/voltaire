@@ -33,23 +33,23 @@
 
 Ref<SkeletonProfile> BoneMap::get_profile() const { return profile; }
 
-StringName BoneMap::get_skeleton_bone_name(const StringName& p_profile_bone_name) const
+String BoneMap::get_skeleton_bone_name(const String& p_profile_bone_name) const
 {
-	ERR_FAIL_COND_V(!bone_map.has(p_profile_bone_name), StringName());
+	ERR_FAIL_COND_V(!bone_map.has(p_profile_bone_name), String());
 	return bone_map.get(p_profile_bone_name);
 }
 
 void BoneMap::_set_skeleton_bone_name(
-	const StringName& p_profile_bone_name, const StringName& p_skeleton_bone_name)
+	const String& p_profile_bone_name, const String& p_skeleton_bone_name)
 {
 	ERR_FAIL_COND(!bone_map.has(p_profile_bone_name));
 	bone_map.insert(p_profile_bone_name, p_skeleton_bone_name);
 }
 
-StringName BoneMap::find_profile_bone_name(const StringName& p_skeleton_bone_name) const
+String BoneMap::find_profile_bone_name(const String& p_skeleton_bone_name) const
 {
-	StringName profile_bone_name;
-	HashMap<StringName, StringName>::ConstIterator E = bone_map.begin();
+	String profile_bone_name;
+	HashMap<String, String>::ConstIterator E = bone_map.begin();
 	while (E) {
 		if (E->value == p_skeleton_bone_name) {
 			profile_bone_name = E->key;
@@ -60,10 +60,10 @@ StringName BoneMap::find_profile_bone_name(const StringName& p_skeleton_bone_nam
 	return profile_bone_name;
 }
 
-int BoneMap::get_skeleton_bone_name_count(const StringName& p_skeleton_bone_name) const
+int BoneMap::get_skeleton_bone_name_count(const String& p_skeleton_bone_name) const
 {
 	int count = 0;
-	HashMap<StringName, StringName>::ConstIterator E = bone_map.begin();
+	HashMap<String, String>::ConstIterator E = bone_map.begin();
 	while (E) {
 		if (E->value == p_skeleton_bone_name) {
 			++count;
@@ -79,17 +79,17 @@ void BoneMap::_validate_bone_map()
 	if (current_profile.is_valid()) {
 		// Insert missing profile bones into bone map.
 		int len = current_profile->get_bone_size();
-		StringName profile_bone_name;
+		String profile_bone_name;
 		for (int i = 0; i < len; i++) {
 			profile_bone_name = current_profile->get_bone_name(i);
 			if (!bone_map.has(profile_bone_name)) {
-				bone_map.insert(profile_bone_name, StringName());
+				bone_map.insert(profile_bone_name, String());
 			}
 		}
 		// Remove bones that do not exist in the profile from the map.
-		Vector<StringName> delete_bones;
-		StringName k;
-		HashMap<StringName, StringName>::ConstIterator E = bone_map.begin();
+		Vector<String> delete_bones;
+		String k;
+		HashMap<String, String>::ConstIterator E = bone_map.begin();
 		while (E) {
 			k = E->key;
 			if (!current_profile->has_bone(k)) {
@@ -113,4 +113,4 @@ BoneMap::~BoneMap() {}
 
 
 
-void BoneMap::set_skeleton_bone_name(StringName const&, StringName const&) {}
+void BoneMap::set_skeleton_bone_name(String const&, String const&) {}

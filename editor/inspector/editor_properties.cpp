@@ -95,16 +95,16 @@ void EditorPropertyText::_update_theme()
 	int font_size;
 
 	if (monospaced) {
-		font = get_theme_font(SNAME("source"), EditorStringName(EditorFonts));
-		font_size = get_theme_font_size(SNAME("source_size"), EditorStringName(EditorFonts));
+		font = get_theme_font(SNAME("source"), EditorString(EditorFonts));
+		font_size = get_theme_font_size(SNAME("source_size"), EditorString(EditorFonts));
 	}
 	else {
-		font = get_theme_font(SceneStringName(font), SNAME("LineEdit"));
-		font_size = get_theme_font_size(SceneStringName(font_size), SNAME("LineEdit"));
+		font = get_theme_font(SceneString(font), SNAME("LineEdit"));
+		font_size = get_theme_font_size(SceneString(font_size), SNAME("LineEdit"));
 	}
 
-	text->add_theme_font_override(SceneStringName(font), font.ptr());
-	text->add_theme_font_size_override(SceneStringName(font_size), font_size);
+	text->add_theme_font_override(SceneString(font), font.ptr());
+	text->add_theme_font_size_override(SceneString(font_size), font_size);
 }
 
 void EditorPropertyText::_text_submitted(const String& p_string)
@@ -216,8 +216,8 @@ EditorPropertyFlags::EditorPropertyFlags()
 
 Size2 EditorPropertyLayersGrid::get_grid_size() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	return Vector2(0, font->get_height(font_size) * 3);
 }
 
@@ -265,7 +265,7 @@ void EditorPropertyObjectID::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
 		edit->add_theme_constant_override("icon_max_width",
-			get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor)));
+			get_theme_constant(SNAME("class_icon_size"), EditorString(Editor)));
 	} break;
 	}
 }
@@ -527,7 +527,7 @@ void EditorPropertyColor::set_live_changes_enabled(bool p_enabled)
 }
 
 void EditorPropertyNodePath::setup(
-	const Vector<StringName>& p_valid_types, bool p_use_path_from_scene_root, bool p_editing_node)
+	const Vector<String>& p_valid_types, bool p_use_path_from_scene_root, bool p_editing_node)
 {
 	valid_types = p_valid_types;
 	editing_node = p_editing_node;

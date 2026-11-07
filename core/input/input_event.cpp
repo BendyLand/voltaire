@@ -45,14 +45,14 @@ void InputEvent::set_device(int p_device)
 
 int InputEvent::get_device() const { return device; }
 
-bool InputEvent::is_action(const StringName& p_action, bool p_exact_match) const
+bool InputEvent::is_action(const String& p_action, bool p_exact_match) const
 {
 	return InputMap::get_singleton()->event_is_action(
 		Ref<InputEvent>(const_cast<InputEvent*>(this)).ptr(), p_action, p_exact_match);
 }
 
 bool InputEvent::is_action_pressed(
-	const StringName& p_action, bool p_allow_echo, bool p_exact_match) const
+	const String& p_action, bool p_allow_echo, bool p_exact_match) const
 {
 	bool pressed_state;
 	bool valid = InputMap::get_singleton()->event_get_action_status(
@@ -61,7 +61,7 @@ bool InputEvent::is_action_pressed(
 	return valid && pressed_state && (p_allow_echo || !is_echo());
 }
 
-bool InputEvent::is_action_released(const StringName& p_action, bool p_exact_match) const
+bool InputEvent::is_action_released(const String& p_action, bool p_exact_match) const
 {
 	bool pressed_state;
 	bool valid = InputMap::get_singleton()->event_get_action_status(
@@ -71,14 +71,14 @@ bool InputEvent::is_action_released(const StringName& p_action, bool p_exact_mat
 }
 
 bool InputEvent::is_action_just_pressed_or_echo(
-	const StringName& p_action, bool p_exact_match) const
+	const String& p_action, bool p_exact_match) const
 {
 	return is_action(p_action, p_exact_match) &&
 		   (is_echo() || Input::get_singleton()->is_action_just_pressed_by_event(
 							 p_action, const_cast<InputEvent*>(this)));
 }
 
-float InputEvent::get_action_strength(const StringName& p_action, bool p_exact_match) const
+float InputEvent::get_action_strength(const String& p_action, bool p_exact_match) const
 {
 	float strength;
 	bool valid = InputMap::get_singleton()->event_get_action_status(
@@ -87,7 +87,7 @@ float InputEvent::get_action_strength(const StringName& p_action, bool p_exact_m
 	return valid ? strength : 0.0f;
 }
 
-float InputEvent::get_action_raw_strength(const StringName& p_action, bool p_exact_match) const
+float InputEvent::get_action_raw_strength(const String& p_action, bool p_exact_match) const
 {
 	float raw_strength;
 	bool valid = InputMap::get_singleton()->event_get_action_status(
@@ -1240,9 +1240,9 @@ bool InputEventScreenDrag::accumulate(const Ref<InputEvent>& p_event)
 	return true;
 }
 
-void InputEventAction::set_action(const StringName& p_action) { action = p_action; }
+void InputEventAction::set_action(const String& p_action) { action = p_action; }
 
-StringName InputEventAction::get_action() const { return action; }
+String InputEventAction::get_action() const { return action; }
 
 void InputEventAction::set_pressed(bool p_pressed) { pressed = p_pressed; }
 
@@ -1263,7 +1263,7 @@ bool InputEventAction::is_match(const Ref<InputEvent>& p_event, bool p_exact_mat
 	return p_event->is_action(action, p_exact_match);
 }
 
-bool InputEventAction::is_action(const StringName& p_action) const { return action == p_action; }
+bool InputEventAction::is_action(const String& p_action) const { return action == p_action; }
 
 bool InputEventAction::action_match(const Ref<InputEvent>& p_event, bool p_exact_match,
 	float p_deadzone, bool* r_pressed, float* r_strength, float* r_raw_strength) const

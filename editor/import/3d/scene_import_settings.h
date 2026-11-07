@@ -190,7 +190,7 @@ class SceneImportSettingsDialog : public ConfirmationDialog
 	void _stop_current_animation();
 	void _reset_animation(const String& p_animation_name = "");
 	void _animation_slider_value_changed(double p_value);
-	void _animation_finished(const StringName& p_name);
+	void _animation_finished(const String& p_name);
 	void _animation_update_skeleton_visibility();
 	void _material_tree_selected();
 	void _mesh_tree_selected();

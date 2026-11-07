@@ -69,7 +69,7 @@ void AudioDriverDummy::thread_func(void *p_udata) {
 			ad->unlock();
 		}
 
-		OS::get_singleton()->delay_usec(usdelay);
+		OS::delay_usec(usdelay);
 	}
 }
 

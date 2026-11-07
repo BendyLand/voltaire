@@ -206,7 +206,7 @@ public:
 protected:
 
 private:
-	Vector<StringName> property;
+	Vector<String> property;
 
 	Ref<RefCounted> ref_copy; // Makes sure that RefCounted objects are not freed too early.
 

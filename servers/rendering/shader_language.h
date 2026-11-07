@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/templates/rb_map.h"
@@ -365,9 +365,9 @@ public:
 
 	struct VaryingFunctionNames
 	{
-		StringName fragment;
-		StringName vertex;
-		StringName light;
+		String fragment;
+		String vertex;
+		String light;
 
 		VaryingFunctionNames()
 		{
@@ -438,7 +438,7 @@ public:
 		DataPrecision return_precision_cache = PRECISION_DEFAULT;
 		int return_array_size = 0;
 		Operator op = OP_EQUAL;
-		StringName struct_name;
+		String struct_name;
 		Vector<Node*> arguments;
 		Vector<Scalar> values;
 
@@ -458,9 +458,9 @@ public:
 	struct VariableNode : public Node
 	{
 		DataType datatype_cache = TYPE_VOID;
-		StringName name;
-		StringName rname;
-		StringName struct_name;
+		String name;
+		String rname;
+		String struct_name;
 		bool is_const = false;
 		bool is_local = false;
 
@@ -480,7 +480,7 @@ public:
 
 		struct Declaration
 		{
-			StringName name;
+			String name;
 			uint32_t size = 0U;
 			Node* size_expression = nullptr;
 			Vector<Node*> initializer;
@@ -497,8 +497,8 @@ public:
 	struct ArrayNode : public Node
 	{
 		DataType datatype_cache = TYPE_VOID;
-		StringName struct_name;
-		StringName name;
+		String struct_name;
+		String name;
 		Node* index_expression = nullptr;
 		Node* call_expression = nullptr;
 		Node* assign_expression = nullptr;
@@ -585,7 +585,7 @@ public:
 		struct Variable
 		{
 			DataType type;
-			StringName struct_name;
+			String struct_name;
 			DataPrecision precision;
 			int line; // for completion
 			int array_size;
@@ -593,7 +593,7 @@ public:
 			Vector<Scalar> values;
 		};
 
-		HashMap<StringName, Variable> variables;
+		HashMap<String, Variable> variables;
 		List<Node*> statements;
 		bool single_statement = false;
 		bool use_comma_between_statements = false;
@@ -618,12 +618,12 @@ public:
 	{
 		DataType basetype = TYPE_VOID;
 		bool basetype_const = false;
-		StringName base_struct_name;
+		String base_struct_name;
 		DataPrecision precision = PRECISION_DEFAULT;
 		DataType datatype = TYPE_VOID;
 		int array_size = 0;
-		StringName struct_name;
-		StringName name;
+		String struct_name;
+		String name;
 		Node* owner = nullptr;
 		Node* index_expression = nullptr;
 		Node* assign_expression = nullptr;
@@ -664,9 +664,9 @@ public:
 	{
 		struct Constant
 		{
-			StringName name;
+			String name;
 			DataType type;
-			StringName struct_name;
+			String struct_name;
 			DataPrecision precision;
 			Node* initializer = nullptr;
 			int array_size;
@@ -674,16 +674,16 @@ public:
 
 		struct Function
 		{
-			StringName name;
-			StringName rname;
+			String name;
+			String rname;
 			FunctionNode* function = nullptr;
-			HashSet<StringName> uses_function;
+			HashSet<String> uses_function;
 			bool callable;
 		};
 
 		struct Struct
 		{
-			StringName name;
+			String name;
 			StructNode* shader_struct = nullptr;
 		};
 
@@ -798,13 +798,13 @@ public:
 			}
 		};
 
-		HashMap<StringName, Constant> constants;
-		HashMap<StringName, Varying> varyings;
-		HashMap<StringName, Uniform> uniforms;
-		HashMap<StringName, Struct> structs;
-		HashMap<StringName, Function> functions;
-		Vector<StringName> render_modes;
-		Vector<StringName> stencil_modes;
+		HashMap<String, Constant> constants;
+		HashMap<String, Varying> varyings;
+		HashMap<String, Uniform> uniforms;
+		HashMap<String, Struct> structs;
+		HashMap<String, Function> functions;
+		Vector<String> render_modes;
+		Vector<String> stencil_modes;
 		int stencil_reference = -1;
 
 		Vector<Function> vfunctions;
@@ -819,27 +819,27 @@ public:
 		struct Argument
 		{
 			ArgumentQualifier qualifier;
-			StringName name;
+			String name;
 			DataType type;
-			StringName struct_name;
+			String struct_name;
 			DataPrecision precision;
 			// for passing textures as arguments
 			bool tex_argument_check;
 			TextureFilter tex_argument_filter;
 			TextureRepeat tex_argument_repeat;
 			bool tex_builtin_check;
-			StringName tex_builtin;
+			String tex_builtin;
 			ShaderNode::Uniform::Hint tex_hint;
 			bool is_const;
 			int array_size;
 
-			HashMap<StringName, HashSet<int>> tex_argument_connect;
+			HashMap<String, HashSet<int>> tex_argument_connect;
 		};
 
-		StringName name;
-		StringName rname;
+		String name;
+		String rname;
 		DataType return_type = TYPE_VOID;
-		StringName return_struct_name;
+		String return_struct_name;
 		DataPrecision return_precision = PRECISION_DEFAULT;
 		int return_array_size = 0;
 		Vector<Argument> arguments;
@@ -858,7 +858,7 @@ public:
 	struct UniformOrderComparator
 	{
 		_FORCE_INLINE_ bool operator()(
-			const Pair<StringName, int>& A, const Pair<StringName, int>& B) const
+			const Pair<String, int>& A, const Pair<String, int>& B) const
 		{
 			return A.second < B.second;
 		}
@@ -884,7 +884,7 @@ public:
 
 	struct VarInfo
 	{
-		StringName name;
+		String name;
 		DataType type;
 	};
 
@@ -906,7 +906,7 @@ public:
 	struct Token
 	{
 		TokenType type;
-		StringName text;
+		String text;
 		double constant;
 		uint16_t line;
 
@@ -973,10 +973,10 @@ public:
 	{
 		struct Argument
 		{
-			StringName name;
+			String name;
 			DataType type;
 
-			Argument(const StringName& p_name = StringName(), DataType p_type = TYPE_VOID)
+			Argument(const String& p_name = String(), DataType p_type = TYPE_VOID)
 			{
 				name = p_name;
 				type = p_type;
@@ -990,22 +990,22 @@ public:
 
 	struct ModeInfo
 	{
-		StringName name;
-		Vector<StringName> options;
+		String name;
+		Vector<String> options;
 
 		ModeInfo() {}
 
-		ModeInfo(const StringName& p_name) : name(p_name) {}
+		ModeInfo(const String& p_name) : name(p_name) {}
 
-		ModeInfo(const StringName& p_name, const StringName& p_arg1, const StringName& p_arg2)
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2)
 			: name(p_name)
 		{
 			options.push_back(p_arg1);
 			options.push_back(p_arg2);
 		}
 
-		ModeInfo(const StringName& p_name, const StringName& p_arg1, const StringName& p_arg2,
-			const StringName& p_arg3)
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3)
 			: name(p_name)
 		{
 			options.push_back(p_arg1);
@@ -1013,8 +1013,8 @@ public:
 			options.push_back(p_arg3);
 		}
 
-		ModeInfo(const StringName& p_name, const StringName& p_arg1, const StringName& p_arg2,
-			const StringName& p_arg3, const StringName& p_arg4)
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4)
 			: name(p_name)
 		{
 			options.push_back(p_arg1);
@@ -1023,8 +1023,8 @@ public:
 			options.push_back(p_arg4);
 		}
 
-		ModeInfo(const StringName& p_name, const StringName& p_arg1, const StringName& p_arg2,
-			const StringName& p_arg3, const StringName& p_arg4, const StringName& p_arg5)
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4, const String& p_arg5)
 			: name(p_name)
 		{
 			options.push_back(p_arg1);
@@ -1034,9 +1034,9 @@ public:
 			options.push_back(p_arg5);
 		}
 
-		ModeInfo(const StringName& p_name, const StringName& p_arg1, const StringName& p_arg2,
-			const StringName& p_arg3, const StringName& p_arg4, const StringName& p_arg5,
-			const StringName& p_arg6)
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4, const String& p_arg5,
+			const String& p_arg6)
 			: name(p_name)
 		{
 			options.push_back(p_arg1);
@@ -1047,9 +1047,9 @@ public:
 			options.push_back(p_arg6);
 		}
 
-		ModeInfo(const StringName& p_name, std::initializer_list<StringName> p_args) : name(p_name)
+		ModeInfo(const String& p_name, std::initializer_list<String> p_args) : name(p_name)
 		{
-			for (const StringName& arg : p_args) {
+			for (const String& arg : p_args) {
 				options.push_back(arg);
 			}
 		}
@@ -1057,17 +1057,17 @@ public:
 
 	struct FunctionInfo
 	{
-		HashMap<StringName, BuiltInInfo> built_ins;
-		HashMap<StringName, StageFunctionInfo> stage_functions;
+		HashMap<String, BuiltInInfo> built_ins;
+		HashMap<String, StageFunctionInfo> stage_functions;
 
 		bool can_discard = false;
 		bool main_function = false;
 	};
 
-	static bool has_builtin(const HashMap<StringName, ShaderLanguage::FunctionInfo>& p_functions,
-		const StringName& p_name, bool p_check_global_funcs = false);
+	static bool has_builtin(const HashMap<String, ShaderLanguage::FunctionInfo>& p_functions,
+		const String& p_name, bool p_check_global_funcs = false);
 
-	typedef DataType (*GlobalShaderUniformGetTypeFunc)(const StringName& p_name);
+	typedef DataType (*GlobalShaderUniformGetTypeFunc)(const String& p_name);
 
 	struct FilePosition
 	{
@@ -1095,7 +1095,7 @@ private:
 
 	Vector<FilePosition> include_positions;
 	HashSet<String> include_markers_handled;
-	HashMap<StringName, int> function_overload_count;
+	HashMap<String, int> function_overload_count;
 
 	// Additional function information (eg. call hierarchy). No need to expose it to compiler.
 	struct CallInfo
@@ -1115,12 +1115,12 @@ private:
 			Item(ItemType p_type, TkPos p_pos) : type(p_type), pos(p_pos) {}
 		};
 
-		StringName name;
-		List<Pair<StringName, Item>> uses_restricted_items;
+		String name;
+		List<Pair<String, Item>> uses_restricted_items;
 		List<CallInfo*> calls;
 	};
 
-	RBMap<StringName, CallInfo> calls_info;
+	RBMap<String, CallInfo> calls_info;
 
 #ifdef DEBUG_ENABLED
 	struct Usage
@@ -1131,15 +1131,15 @@ private:
 		Usage(int p_decl_line = -1) { decl_line = p_decl_line; }
 	};
 
-	HashMap<StringName, Usage> used_constants;
-	HashMap<StringName, Usage> used_varyings;
-	HashMap<StringName, Usage> used_uniforms;
-	HashMap<StringName, Usage> used_functions;
-	HashMap<StringName, Usage> used_structs;
-	HashMap<ShaderWarning::Code, HashMap<StringName, Usage>*> warnings_check_map;
+	HashMap<String, Usage> used_constants;
+	HashMap<String, Usage> used_varyings;
+	HashMap<String, Usage> used_uniforms;
+	HashMap<String, Usage> used_functions;
+	HashMap<String, Usage> used_structs;
+	HashMap<ShaderWarning::Code, HashMap<String, Usage>*> warnings_check_map;
 
-	HashMap<StringName, HashMap<StringName, Usage>> used_local_vars;
-	HashMap<ShaderWarning::Code, HashMap<StringName, HashMap<StringName, Usage>>*>
+	HashMap<String, HashMap<String, Usage>> used_local_vars;
+	HashMap<ShaderWarning::Code, HashMap<String, HashMap<String, Usage>>*>
 		warnings_check_map2;
 
 	List<ShaderWarning> warnings;
@@ -1153,10 +1153,10 @@ private:
 	int char_idx = 0;
 	int tk_line = 0;
 
-	StringName shader_type_identifier;
-	StringName current_function;
+	String shader_type_identifier;
+	String current_function;
 	bool is_const_decl = false;
-	StringName last_name;
+	String last_name;
 	bool is_shader_inc = false;
 
 	String current_uniform_group_name;
@@ -1214,7 +1214,7 @@ private:
 
 	static const char* token_names[TK_MAX];
 
-	Token _make_token(TokenType p_type, const StringName& p_text = StringName());
+	Token _make_token(TokenType p_type, const String& p_text = String());
 	Token _get_token();
 	bool _lookup_next(Token& r_tk);
 	Token _peek();
@@ -1236,20 +1236,20 @@ private:
 	IdentifierType last_type = IDENTIFIER_MAX;
 
 	bool _find_identifier(const BlockNode* p_block, bool p_allow_reassign,
-		const FunctionInfo& p_function_info, const StringName& p_identifier,
+		const FunctionInfo& p_function_info, const String& p_identifier,
 		DataType* r_data_type = nullptr, IdentifierType* r_type = nullptr,
 		bool* r_is_const = nullptr, int* r_array_size = nullptr,
-		StringName* r_struct_name = nullptr, Vector<Scalar>* r_constant_values = nullptr);
+		String* r_struct_name = nullptr, Vector<Scalar>* r_constant_values = nullptr);
 #ifdef DEBUG_ENABLED
 	void _parse_used_identifier(
-		const StringName& p_identifier, IdentifierType p_type, const StringName& p_function);
+		const String& p_identifier, IdentifierType p_type, const String& p_function);
 #endif // DEBUG_ENABLED
 	bool _is_operator_assign(Operator p_op) const;
 	bool _validate_assign(
 		Node* p_node, const FunctionInfo& p_function_info, String* r_message = nullptr);
 	bool _validate_operator(const BlockNode* p_block, const FunctionInfo& p_function_info,
 		OperatorNode* p_op, DataType* r_ret_type = nullptr, int* r_ret_size = nullptr,
-		StringName* r_ret_struct_name = nullptr);
+		String* r_ret_struct_name = nullptr);
 
 	Vector<Scalar> _get_node_values(
 		const BlockNode* p_block, const FunctionInfo& p_function_info, Node* p_node);
@@ -1316,20 +1316,20 @@ private:
 	DataType completion_base;
 	bool completion_base_array = false;
 	SubClassTag completion_class;
-	StringName completion_function;
-	StringName completion_struct;
+	String completion_function;
+	String completion_struct;
 	int completion_argument = 0;
 
 #ifdef DEBUG_ENABLED
 	uint32_t keyword_completion_context;
 #endif // DEBUG_ENABLED
 
-	const HashMap<StringName, FunctionInfo>* stages = nullptr;
+	const HashMap<String, FunctionInfo>* stages = nullptr;
 	bool is_supported_frag_only_funcs = false;
 	bool is_discard_supported = false;
 
 	bool _get_completable_identifier(
-		BlockNode* p_block, CompletionType p_type, StringName& identifier);
+		BlockNode* p_block, CompletionType p_type, String& identifier);
 	static const BuiltinFuncDef builtin_func_defs[];
 	static const BuiltinFuncOutArgs builtin_func_out_args[];
 	static const BuiltinFuncConstArgs builtin_func_const_args[];
@@ -1343,22 +1343,22 @@ private:
 	bool _compare_datatypes_in_nodes(Node* a, Node* b);
 
 	bool _validate_function_call(BlockNode* p_block, const FunctionInfo& p_function_info,
-		OperatorNode* p_func, DataType* r_ret_type, StringName* r_ret_type_str,
+		OperatorNode* p_func, DataType* r_ret_type, String* r_ret_type_str,
 		bool* r_is_custom_function = nullptr);
 	bool _parse_function_arguments(BlockNode* p_block, const FunctionInfo& p_function_info,
 		OperatorNode* p_func, int* r_complete_arg = nullptr);
 	ShaderNode::Uniform::Hint _sanitize_hint(ShaderNode::Uniform::Hint p_hint);
-	bool _propagate_function_call_sampler_uniform_settings(const StringName& p_name, int p_argument,
+	bool _propagate_function_call_sampler_uniform_settings(const String& p_name, int p_argument,
 		TextureFilter p_filter, TextureRepeat p_repeat, ShaderNode::Uniform::Hint p_hint);
 	bool _propagate_function_call_sampler_builtin_reference(
-		const StringName& p_name, int p_argument, const StringName& p_builtin);
+		const String& p_name, int p_argument, const String& p_builtin);
 	bool _validate_varying_assign(ShaderNode::Varying& p_varying, String* r_message);
 	bool _check_node_constness(const Node* p_node) const;
 
 	bool _check_restricted_func(
-		const StringName& p_name, const StringName& p_current_function) const;
+		const String& p_name, const String& p_current_function) const;
 	bool _validate_restricted_func(
-		const StringName& p_call_name, const CallInfo* p_func_info, bool p_is_builtin_hint = false);
+		const String& p_call_name, const CallInfo* p_func_info, bool p_is_builtin_hint = false);
 
 	Node* _parse_expression(BlockNode* p_block, const FunctionInfo& p_function_info,
 		const ExpressionInfo* p_previous_expression_info = nullptr);
@@ -1367,7 +1367,7 @@ private:
 		bool* r_unknown_size);
 	Node* _parse_array_constructor(BlockNode* p_block, const FunctionInfo& p_function_info);
 	Node* _parse_array_constructor(BlockNode* p_block, const FunctionInfo& p_function_info,
-		DataType p_type, const StringName& p_struct_name, int p_array_size);
+		DataType p_type, const String& p_struct_name, int p_array_size);
 	ShaderLanguage::Node* _reduce_expression(BlockNode* p_block, ShaderLanguage::Node* p_node);
 
 	Node* _parse_and_reduce_expression(BlockNode* p_block, const FunctionInfo& p_function_info,
@@ -1378,7 +1378,7 @@ private:
 	String _get_qualifier_str(ArgumentQualifier p_qualifier) const;
 
 	bool _parse_numeric_constant_expression(const FunctionInfo& p_function_info, float& r_constant);
-	Error _parse_shader(const HashMap<StringName, FunctionInfo>& p_functions,
+	Error _parse_shader(const HashMap<String, FunctionInfo>& p_functions,
 		const Vector<ModeInfo>& p_render_modes, const Vector<ModeInfo>& p_stencil_modes,
 		const HashSet<String>& p_shader_types);
 
@@ -1409,7 +1409,7 @@ public:
 
 	struct ShaderCompileInfo
 	{
-		HashMap<StringName, FunctionInfo> functions;
+		HashMap<String, FunctionInfo> functions;
 		Vector<ModeInfo> render_modes;
 		Vector<ModeInfo> stencil_modes;
 		VaryingFunctionNames varying_function_names;

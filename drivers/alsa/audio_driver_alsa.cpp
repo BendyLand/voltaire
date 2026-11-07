@@ -233,7 +233,7 @@ void AudioDriverALSA::thread_func(void *p_udata) {
 				ad->stop_counting_ticks();
 				ad->unlock();
 
-				OS::get_singleton()->delay_usec(1000);
+				OS::delay_usec(1000);
 
 				ad->lock();
 				ad->start_counting_ticks();

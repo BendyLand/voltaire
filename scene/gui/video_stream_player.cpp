@@ -307,7 +307,7 @@ void VideoStreamPlayer::set_autoplay(bool p_enable) { autoplay = p_enable; }
 
 bool VideoStreamPlayer::has_autoplay() const { return autoplay; }
 
-void VideoStreamPlayer::set_bus(const StringName& p_bus)
+void VideoStreamPlayer::set_bus(const String& p_bus)
 {
 	// If audio is active, must lock this.
 	AudioServer::get_singleton()->lock();
@@ -315,14 +315,14 @@ void VideoStreamPlayer::set_bus(const StringName& p_bus)
 	AudioServer::get_singleton()->unlock();
 }
 
-StringName VideoStreamPlayer::get_bus() const
+String VideoStreamPlayer::get_bus() const
 {
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
 		if (AudioServer::get_singleton()->get_bus_name(i) == bus) {
 			return bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 VideoStreamPlayer::~VideoStreamPlayer()

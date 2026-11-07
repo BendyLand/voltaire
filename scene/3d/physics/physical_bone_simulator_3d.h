@@ -77,7 +77,7 @@ public:
 	PhysicalBone3D* get_physical_bone(int p_bone);
 	PhysicalBone3D* get_physical_bone_parent(int p_bone);
 	void physical_bones_stop_simulation();
-	void physical_bones_start_simulation_on(const TypedArray<StringName>& p_bones);
+	void physical_bones_start_simulation_on(const TypedArray<String>& p_bones);
 	void physical_bones_add_collision_exception(RID p_exception);
 	void physical_bones_remove_collision_exception(RID p_exception);
 	PhysicalBoneSimulator3D() = default;

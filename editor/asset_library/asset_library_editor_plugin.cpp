@@ -75,14 +75,14 @@ void EditorAssetLibraryItem::_notification(int p_what)
 
 void EditorAssetLibraryItem::_author_clicked()
 {
-	OS::get_singleton()->shell_open(
+	OS::shell_open(
 		"https://store.godotengine.org/publisher/" + author_id.uri_encode() + "/");
 }
 
 void EditorAssetLibraryItem::_license_clicked()
 {
 	ERR_FAIL_COND(!license_url.begins_with("http"));
-	OS::get_singleton()->shell_open(license_url);
+	OS::shell_open(license_url);
 }
 
 Control* EditorAssetLibraryZoomMode::remove_previews()
@@ -110,12 +110,12 @@ void EditorAssetLibraryZoomMode::input(const Ref<InputEvent>& p_event)
 
 void EditorAssetLibraryItemDescription::_store_pressed()
 {
-	OS::get_singleton()->shell_open(store_url);
+	OS::shell_open(store_url);
 }
 
 void EditorAssetLibraryItemDescription::_source_pressed()
 {
-	OS::get_singleton()->shell_open(source_url);
+	OS::shell_open(source_url);
 }
 
 void EditorAssetLibraryItemDescription::_zoom_toggled(bool p_pressed)
@@ -149,7 +149,7 @@ void EditorAssetLibrary::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_READY: {
 		add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
+			SceneString(panel), get_theme_stylebox(SNAME("bg"), SNAME("AssetLib")).ptr());
 		error_label->move_to_front();
 	} break;
 

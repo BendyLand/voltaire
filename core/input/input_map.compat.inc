@@ -32,7 +32,7 @@
 
 #include "input_map.h"
 
-void InputMap::_add_action_bind_compat_97281(const StringName& p_action, float p_deadzone)
+void InputMap::_add_action_bind_compat_97281(const String& p_action, float p_deadzone)
 {
 	add_action(p_action, p_deadzone);
 }

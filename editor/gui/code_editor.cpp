@@ -617,13 +617,13 @@ void CodeTextEditor::remove_all_bookmarks() { text_editor->clear_bookmarked_line
 
 void CodeTextEditor::_zoom_in()
 {
-	int s = text_editor->get_theme_font_size(SceneStringName(font_size));
+	int s = text_editor->get_theme_font_size(SceneString(font_size));
 	_zoom_to(zoom_factor * (s + MAX(1.0f, EDSCALE)) / s);
 }
 
 void CodeTextEditor::_zoom_out()
 {
-	int s = text_editor->get_theme_font_size(SceneStringName(font_size));
+	int s = text_editor->get_theme_font_size(SceneString(font_size));
 	_zoom_to(zoom_factor * (s - MAX(1.0f, EDSCALE)) / s);
 }
 

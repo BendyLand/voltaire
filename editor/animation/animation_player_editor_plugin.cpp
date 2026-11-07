@@ -68,7 +68,7 @@ String AnimationPlayerEditor::_get_current() const
 
 float AnimationPlayerEditor::_get_editor_step() const
 {
-	const StringName current = player->get_assigned_animation();
+	const String current = player->get_assigned_animation();
 	const Ref<Animation> anim = player->get_animation(current);
 	ERR_FAIL_COND_V(anim.is_null(), 0.0);
 
@@ -93,14 +93,14 @@ void AnimationPlayerEditor::_update_animation_list_icons()
 
 		Ref<Texture2D> icon;
 		if (anim_name == player->get_autoplay()) {
-			if (anim_name == SceneStringName(RESET)) {
+			if (anim_name == SceneString(RESET)) {
 				icon = autoplay_reset_icon;
 			}
 			else {
 				icon = autoplay_icon;
 			}
 		}
-		else if (anim_name == SceneStringName(RESET)) {
+		else if (anim_name == SceneString(RESET)) {
 			icon = reset_icon;
 		}
 

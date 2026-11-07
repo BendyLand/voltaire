@@ -54,7 +54,7 @@ public:
 		{
 			String name;
 			Color color_cache;
-			StringName fullpath_cache;
+			String fullpath_cache;
 			float cpu_time = 0;
 			float gpu_time = 0;
 		};
@@ -89,8 +89,8 @@ private:
 
 	int hover_metric = -1;
 
-	StringName selected_area;
-	HashMap<StringName, bool> category_folding;
+	String selected_area;
+	HashMap<String, bool> category_folding;
 
 	bool updating_frame = false;
 

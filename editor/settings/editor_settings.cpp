@@ -400,10 +400,10 @@ void EditorSettings::set_recent_dirs_bind(const Vector<String>& p_recent_dirs)
 
 Vector<String> EditorSettings::get_recent_dirs() const { return recent_dirs; }
 
-HashMap<StringName, Color> EditorSettings::get_godot2_text_editor_theme()
+HashMap<String, Color> EditorSettings::get_godot2_text_editor_theme()
 {
 	// Godot 2 is only a dark theme; it doesn't have a light theme counterpart.
-	HashMap<StringName, Color> colors;
+	HashMap<String, Color> colors;
 	colors["text_editor/theme/highlighting/symbol_color"] = Color(0.73, 0.87, 1.0);
 	colors["text_editor/theme/highlighting/keyword_color"] = Color(1.0, 1.0, 0.7);
 	colors["text_editor/theme/highlighting/control_flow_keyword_color"] = Color(1.0, 0.85, 0.7);

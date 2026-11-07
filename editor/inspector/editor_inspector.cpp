@@ -67,7 +67,7 @@
 #include "servers/rendering/renderer.h"
 
 EditorInspectorActionButton::EditorInspectorActionButton(
-	const String& p_text, const StringName& p_icon_name)
+	const String& p_text, const String& p_icon_name)
 {
 	icon_name = p_icon_name;
 	set_text(p_text);
@@ -112,7 +112,7 @@ void EditorProperty::set_read_only(bool p_read_only)
 
 bool EditorProperty::is_read_only() const { return read_only; }
 
-StringName EditorProperty::_get_revert_property() const { return property; }
+String EditorProperty::_get_revert_property() const { return property; }
 
 bool EditorProperty::is_draw_label() const { return draw_label; }
 
@@ -390,7 +390,7 @@ void EditorInspectorArray::_panel_draw(int p_index)
 {
 	ERR_FAIL_INDEX(p_index, (int)array_elements.size());
 
-	Ref<StyleBox> style = get_theme_stylebox(SNAME("Focus"), EditorStringName(EditorStyles));
+	Ref<StyleBox> style = get_theme_stylebox(SNAME("Focus"), EditorString(EditorStyles));
 	if (style.is_null()) {
 		return;
 	}
@@ -533,7 +533,7 @@ void EditorInspector::set_keying(bool p_active)
 
 void EditorInspector::_keying_changed()
 {
-	for (const KeyValue<StringName, List<EditorProperty*>>& F : editor_property_map) {
+	for (const KeyValue<String, List<EditorProperty*>>& F : editor_property_map) {
 		for (EditorProperty* E : F.value) {
 			if (E) {
 				E->set_keying(keying);
@@ -638,7 +638,7 @@ void EditorInspector::collapse_all_folding()
 		E->fold();
 	}
 
-	for (const KeyValue<StringName, List<EditorProperty*>>& F : editor_property_map) {
+	for (const KeyValue<String, List<EditorProperty*>>& F : editor_property_map) {
 		for (EditorProperty* E : F.value) {
 			E->collapse_all_folding();
 		}
@@ -650,7 +650,7 @@ void EditorInspector::expand_all_folding()
 	for (EditorInspectorSection* E : sections) {
 		E->unfold();
 	}
-	for (const KeyValue<StringName, List<EditorProperty*>>& F : editor_property_map) {
+	for (const KeyValue<String, List<EditorProperty*>>& F : editor_property_map) {
 		for (EditorProperty* E : F.value) {
 			E->expand_all_folding();
 		}
@@ -673,7 +673,7 @@ void EditorInspector::set_use_deletable_properties(bool p_enabled)
 	deletable_properties = p_enabled;
 }
 
-void EditorInspector::_page_change_request(int p_new_page, const StringName& p_array_prefix)
+void EditorInspector::_page_change_request(int p_new_page, const String& p_array_prefix)
 {
 	int prev_page = per_array_page.has(p_array_prefix) ? per_array_page[p_array_prefix] : 0;
 	int new_page = MAX(0, p_new_page);

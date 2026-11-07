@@ -338,7 +338,7 @@ Ref<Image> SkyRD::Sky::bake_panorama(float p_energy, int p_roughness_layers, con
 		tf.height = p_size.height;
 		tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
-		RID rad_tex = RD::texture_create(tf, RD::TextureView());
+		RID rad_tex = RD::texture_create(tf, RDD::TextureView());
 		copy_effects->copy_octmap_to_panorama(radiance, rad_tex, p_size, p_roughness_layers,
 			reflection.layers.size() > 1, Size2(uv_border_size, 1.0f - uv_border_size * 2.0));
 		Vector<uint8_t> data = RD::texture_get_data(rad_tex, 0);
@@ -936,7 +936,7 @@ void SkyRD::update_dirty_skys()
 					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
-				sky->radiance = RD::texture_create(tf, RD::TextureView());
+				sky->radiance = RD::texture_create(tf, RDD::TextureView());
 
 				// Create view into the first layer slice for user shaders.
 				sky->radiance_first_layer_slice = RD::texture_create_shared_from_slice(
@@ -965,7 +965,7 @@ void SkyRD::update_dirty_skys()
 					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
-				sky->radiance = RD::texture_create(tf, RD::TextureView());
+				sky->radiance = RD::texture_create(tf, RDD::TextureView());
 
 				DEV_ASSERT(sky->radiance_first_layer_slice.is_null());
 

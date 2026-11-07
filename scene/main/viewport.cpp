@@ -2567,15 +2567,7 @@ void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
 
 Viewport::Viewport()
 {
-	void* callers[4];
-	int frames = backtrace(callers, 4);
-	backtrace_symbols_fd(callers, frames, STDERR_FILENO);
-
-	__print_line("Viewport constructor called!");
-	__print_line("Viewport constructor called!");
 	viewport = Renderer::viewport_create();
-	__print_line(vformat("Created viewport RID: %d", viewport.get_id()));
-
 	world_2d.instantiate();
 	world_2d->register_viewport(this);
 	current_canvas = world_2d->get_canvas();

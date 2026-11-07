@@ -55,10 +55,10 @@ private:
 	float deadzone_ratio = 0.0f;
 	float clampzone_ratio = 1.0f;
 	Vector2 initial_offset_ratio = Vector2(0.5, 0.5);
-	StringName action_left = "ui_left";
-	StringName action_right = "ui_right";
-	StringName action_up = "ui_up";
-	StringName action_down = "ui_down";
+	String action_left = "ui_left";
+	String action_right = "ui_right";
+	String action_up = "ui_up";
+	String action_down = "ui_down";
 	VisibilityMode visibility = VISIBILITY_ALWAYS;
 
 	struct ThemeCache
@@ -109,14 +109,14 @@ public:
 	void set_initial_offset_ratio(const Vector2& p_ratio);
 	Vector2 get_initial_offset_ratio() const;
 
-	void set_action_left(const StringName& p_action);
-	StringName get_action_left() const;
-	void set_action_right(const StringName& p_action);
-	StringName get_action_right() const;
-	void set_action_up(const StringName& p_action);
-	StringName get_action_up() const;
-	void set_action_down(const StringName& p_action);
-	StringName get_action_down() const;
+	void set_action_left(const String& p_action);
+	String get_action_left() const;
+	void set_action_right(const String& p_action);
+	String get_action_right() const;
+	void set_action_up(const String& p_action);
+	String get_action_up() const;
+	void set_action_down(const String& p_action);
+	String get_action_down() const;
 
 	void set_visibility_mode(VisibilityMode p_mode);
 	VisibilityMode get_visibility_mode() const;

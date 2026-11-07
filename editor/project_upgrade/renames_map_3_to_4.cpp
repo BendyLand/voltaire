@@ -1047,7 +1047,7 @@ const char *RenamesMap3To4::gdscript_properties_renames[][2] = {
 	// make sure to add it to the C# rename map too.
 
 	// Too common words, users may use these names for variables or in comments.
-	// { "bg", SceneStringName(panel) }, // Theme
+	// { "bg", SceneString(panel) }, // Theme
 	// { "alt", "alt_pressed" }, // InputEventWithModifiers
 	// { "command", "command_pressed" }, // InputEventWithModifiers
 	// { "control", "ctrl_pressed" }, // InputEventWithModifiers

@@ -134,10 +134,10 @@ private:
 	void _clear_monitoring();
 
 	bool audio_bus_override = false;
-	StringName audio_bus;
+	String audio_bus;
 
 	bool use_reverb_bus = false;
-	StringName reverb_bus;
+	String reverb_bus;
 	float reverb_amount = 0.0;
 	float reverb_uniformity = 0.0;
 
@@ -206,14 +206,14 @@ public:
 	void set_audio_bus_override(bool p_override);
 	bool is_overriding_audio_bus() const;
 
-	void set_audio_bus_name(const StringName& p_audio_bus);
-	StringName get_audio_bus_name() const;
+	void set_audio_bus_name(const String& p_audio_bus);
+	String get_audio_bus_name() const;
 
 	void set_use_reverb_bus(bool p_enable);
 	bool is_using_reverb_bus() const;
 
-	void set_reverb_bus_name(const StringName& p_audio_bus);
-	StringName get_reverb_bus_name() const;
+	void set_reverb_bus_name(const String& p_audio_bus);
+	String get_reverb_bus_name() const;
 
 	void set_reverb_amount(float p_amount);
 	float get_reverb_amount() const;

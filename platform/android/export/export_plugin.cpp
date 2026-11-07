@@ -347,7 +347,7 @@ bool EditorExportPlatformAndroid::_should_compress_asset(
 
 zip_fileinfo EditorExportPlatformAndroid::get_zip_fileinfo()
 {
-	OS::DateTime dt = OS::get_singleton()->get_datetime();
+	OS::DateTime dt = OS::get_datetime();
 
 	zip_fileinfo zipfi;
 	zipfi.tmz_date.tm_year = dt.year;
@@ -886,7 +886,7 @@ static bool has_valid_keystore_credentials(String& r_error_str, const String& p_
 	args.push_back("-alias");
 	args.push_back(p_username);
 	String keytool_path = EditorExportPlatformAndroid::get_keytool_path();
-	Error error = OS::get_singleton()->execute(keytool_path, args, &output, nullptr, true);
+	Error error = OS::execute(keytool_path, args, &output, nullptr, true);
 	String keytool_error = "keytool error:";
 	bool valid = output.substr(0, keytool_error.length()) != keytool_error;
 
@@ -933,7 +933,7 @@ bool _validate_dotnet_tfm(const String& required_tfm, String& r_error)
 		args.push_back("--getProperty:TargetFramework");
 
 		int exitcode;
-		Error err = OS::get_singleton()->execute("dotnet", args, &pipe, &exitcode, true);
+		Error err = OS::execute("dotnet", args, &pipe, &exitcode, true);
 		if (err != OK || exitcode != 0) {
 			if (err != OK) {
 				WARN_PRINT("Failed to execute dotnet command. Error " + String(error_names[err]));
@@ -1081,7 +1081,7 @@ bool EditorExportPlatformAndroid::_is_clean_build_required(const Ref<EditorExpor
 #endif // DISABLE_DEPRECATED
 	}
 
-	last_gradle_build_time = OS::get_singleton()->get_unix_time();
+	last_gradle_build_time = OS::get_unix_time();
 	last_gradle_build_dir = gradle_build_dir;
 	last_plugin_names = plugin_names;
 
@@ -1274,7 +1274,7 @@ void EditorExportPlatformAndroid::get_preset_features(
 }
 
 String EditorExportPlatformAndroid::get_export_option_warning(
-	const EditorExportPreset* p_preset, const StringName& p_name) const
+	const EditorExportPreset* p_preset, const String& p_name) const
 {
 	return String();
 }

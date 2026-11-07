@@ -145,7 +145,7 @@ static Error read_reals(real_t* r_dst, Ref<FileAccess>& r_file, size_t p_count)
 	return OK;
 }
 
-StringName ResourceLoaderBinary::_get_string()
+String ResourceLoaderBinary::_get_string()
 {
 	uint32_t id = f->get_32();
 	if (id & 0x80000000) {
@@ -154,7 +154,7 @@ StringName ResourceLoaderBinary::_get_string()
 			str_buf.resize(len);
 		}
 		if (len == 0) {
-			return StringName();
+			return String();
 		}
 		f->get_buffer((uint8_t*)&str_buf[0], len);
 		return String::utf8(&str_buf[0], len);
@@ -289,9 +289,9 @@ Error ResourceLoaderBinary::load()
 		int pc = f->get_32();
 
 		for (int j = 0; j < pc; j++) {
-			StringName name = _get_string();
+			String name = _get_string();
 
-			if (name == StringName()) {
+			if (name == String()) {
 				error = ERR_FILE_CORRUPT;
 				ERR_FAIL_V(ERR_FILE_CORRUPT);
 			}
@@ -359,7 +359,7 @@ String ResourceLoaderBinary::get_unicode_string()
 	return String::utf8(&str_buf[0], len);
 }
 
-void ResourceLoaderBinary::get_classes_used(Ref<FileAccess> p_file, HashSet<StringName>* p_classes)
+void ResourceLoaderBinary::get_classes_used(Ref<FileAccess> p_file, HashSet<String>* p_classes)
 {
 	open(p_file, false, true);
 	if (error) {
@@ -498,7 +498,7 @@ void ResourceLoaderBinary::open(Ref<FileAccess> p_file, bool p_no_resources, boo
 	uint32_t string_table_size = f->get_32();
 	string_map.resize(string_table_size);
 	for (uint32_t i = 0; i < string_table_size; i++) {
-		StringName s = get_unicode_string();
+		String s = get_unicode_string();
 		string_map.write[i] = s;
 	}
 
@@ -958,7 +958,7 @@ Error ResourceFormatLoaderBinary::rename_dependencies(
 }
 
 void ResourceFormatLoaderBinary::get_classes_used(
-	const String& p_path, HashSet<StringName>* r_classes)
+	const String& p_path, HashSet<String>* r_classes)
 {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_MSG(f.is_null(), vformat("Cannot open file '%s'.", p_path));
@@ -981,7 +981,7 @@ void ResourceFormatLoaderBinary::get_classes_used(
 
 	Ref<SceneState> state = Ref<PackedScene>(loader.get_resource())->get_state();
 	for (int i = 0; i < state->get_node_count(); i++) {
-		const StringName node_name = state->get_node_type(i);
+		const String node_name = state->get_node_type(i);
 		// Fetch the values of properties in the node.
 	}
 }
@@ -1058,7 +1058,7 @@ void ResourceFormatSaverBinaryInstance::save_unicode_string(
 
 int ResourceFormatSaverBinaryInstance::get_string_index(const String& p_string)
 {
-	StringName s = p_string;
+	String s = p_string;
 	if (string_map.has(s)) {
 		return string_map[s];
 	}

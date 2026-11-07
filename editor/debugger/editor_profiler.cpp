@@ -100,26 +100,26 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const
 	}
 
 	// Different metrics may contain different number of categories.
-	HashSet<StringName> possible_signatures;
+	HashSet<String> possible_signatures;
 	for (int i = 0; i < frame_metrics.size(); i++) {
 		const Metric& m = frame_metrics[i];
 		if (!m.valid) {
 			continue;
 		}
-		for (const KeyValue<StringName, Metric::Category*>& E : m.category_ptrs) {
+		for (const KeyValue<String, Metric::Category*>& E : m.category_ptrs) {
 			possible_signatures.insert(E.key);
 		}
-		for (const KeyValue<StringName, Metric::Category::Item*>& E : m.item_ptrs) {
+		for (const KeyValue<String, Metric::Category::Item*>& E : m.item_ptrs) {
 			possible_signatures.insert(E.key);
 		}
 	}
 
 	// Generate CSV header and cache indices.
-	HashMap<StringName, int> sig_map;
+	HashMap<String, int> sig_map;
 	Vector<String> signatures;
 	signatures.resize(possible_signatures.size());
 	int sig_index = 0;
-	for (const StringName& E : possible_signatures) {
+	for (const String& E : possible_signatures) {
 		signatures.write[sig_index] = E;
 		sig_map[E] = sig_index;
 		sig_index++;
@@ -148,10 +148,10 @@ Vector<Vector<String>> EditorProfiler::get_data_as_csv() const
 		values.clear();
 		values.resize(possible_signatures.size());
 
-		for (const KeyValue<StringName, Metric::Category*>& E : m.category_ptrs) {
+		for (const KeyValue<String, Metric::Category*>& E : m.category_ptrs) {
 			values.write[sig_map[E.key]] = String::num_real(E.value->total_time);
 		}
-		for (const KeyValue<StringName, Metric::Category::Item*>& E : m.item_ptrs) {
+		for (const KeyValue<String, Metric::Category::Item*>& E : m.item_ptrs) {
 			values.write[sig_map[E.key]] = String::num_real(E.value->total);
 		}
 

@@ -52,16 +52,16 @@ public:
 
 	struct IdentifierActions
 	{
-		HashMap<StringName, Stage> entry_point_stages;
+		HashMap<String, Stage> entry_point_stages;
 
-		HashMap<StringName, Pair<int*, int>> render_mode_values;
-		HashMap<StringName, bool*> render_mode_flags;
-		HashMap<StringName, bool*> usage_flag_pointers;
-		HashMap<StringName, bool*> write_flag_pointers;
-		HashMap<StringName, Pair<int*, int>> stencil_mode_values;
+		HashMap<String, Pair<int*, int>> render_mode_values;
+		HashMap<String, bool*> render_mode_flags;
+		HashMap<String, bool*> usage_flag_pointers;
+		HashMap<String, bool*> write_flag_pointers;
+		HashMap<String, Pair<int*, int>> stencil_mode_values;
 		int* stencil_reference = nullptr;
 
-		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform>* uniforms = nullptr;
+		HashMap<String, ShaderLanguage::ShaderNode::Uniform>* uniforms = nullptr;
 	};
 
 	struct GeneratedCode
@@ -70,7 +70,7 @@ public:
 
 		struct Texture
 		{
-			StringName name;
+			String name;
 			ShaderLanguage::DataType type = ShaderLanguage::DataType::TYPE_VOID;
 			ShaderLanguage::ShaderNode::Uniform::Hint hint =
 				ShaderLanguage::ShaderNode::Uniform::Hint::HINT_NONE;
@@ -101,10 +101,10 @@ public:
 
 	struct DefaultIdentifierActions
 	{
-		HashMap<StringName, String> renames;
-		HashMap<StringName, String> render_mode_defines;
-		HashMap<StringName, String> usage_defines;
-		HashMap<StringName, String> custom_samplers;
+		HashMap<String, String> renames;
+		HashMap<String, String> render_mode_defines;
+		HashMap<String, String> usage_defines;
+		HashMap<String, String> custom_samplers;
 		ShaderLanguage::TextureFilter default_filter =
 			ShaderLanguage::TextureFilter::FILTER_NEAREST;
 		ShaderLanguage::TextureRepeat default_repeat =
@@ -125,28 +125,28 @@ private:
 	String _get_sampler_name(
 		ShaderLanguage::TextureFilter p_filter, ShaderLanguage::TextureRepeat p_repeat);
 
-	void _dump_function_deps(const ShaderLanguage::ShaderNode* p_node, const StringName& p_for_func,
-		const HashMap<StringName, String>& p_func_code, String& r_to_add,
-		HashSet<StringName>& added);
+	void _dump_function_deps(const ShaderLanguage::ShaderNode* p_node, const String& p_for_func,
+		const HashMap<String, String>& p_func_code, String& r_to_add,
+		HashSet<String>& added);
 	String _dump_node_code(const ShaderLanguage::Node* p_node, int p_level,
 		GeneratedCode& r_gen_code, IdentifierActions& p_actions,
 		const DefaultIdentifierActions& p_default_actions, bool p_assigning, bool p_scope = true);
 
 	const ShaderLanguage::ShaderNode* shader = nullptr;
 	const ShaderLanguage::FunctionNode* function = nullptr;
-	StringName current_func_name;
-	StringName time_name;
-	HashSet<StringName> texture_functions;
+	String current_func_name;
+	String time_name;
+	HashSet<String> texture_functions;
 
-	HashSet<StringName> used_name_defines;
-	HashSet<StringName> used_flag_pointers;
-	HashSet<StringName> used_rmode_defines;
-	HashSet<StringName> internal_functions;
-	HashSet<StringName> fragment_varyings;
+	HashSet<String> used_name_defines;
+	HashSet<String> used_flag_pointers;
+	HashSet<String> used_rmode_defines;
+	HashSet<String> internal_functions;
+	HashSet<String> fragment_varyings;
 
 	DefaultIdentifierActions actions;
 
-	static ShaderLanguage::DataType _get_global_shader_uniform_type(const StringName& p_name);
+	static ShaderLanguage::DataType _get_global_shader_uniform_type(const String& p_name);
 
 public:
 	Error compile(RSE::ShaderMode p_mode, const String& p_code, IdentifierActions* p_actions,

@@ -122,11 +122,11 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	DWORD cbNeeded;
 	std::vector<HMODULE> module_handles(1);
 
-	if (OS::get_singleton() == nullptr || OS::get_singleton()->is_disable_crash_handler() || IsDebuggerPresent()) {
+	if (OS::get_singleton() == nullptr || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
-	if (OS::get_singleton()->is_crash_handler_silent()) {
+	if (OS::is_crash_handler_silent()) {
 		std::_Exit(0);
 	}
 
@@ -136,8 +136,8 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+	if (OS::get_main_loop()) {
+		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	print_error("\n================================================================");

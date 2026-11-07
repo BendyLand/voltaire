@@ -317,7 +317,7 @@ public:
 	GLTFMeshIndex _convert_mesh_to_gltf(Ref<GLTFState> p_state, MeshInstance3D* p_mesh_instance);
 
 	GLTFNodeIndex _node_and_or_bone_to_gltf_node_index(
-		Ref<GLTFState> p_state, const Vector<StringName>& p_node_subpath, const Node* p_godot_node);
+		Ref<GLTFState> p_state, const Vector<String>& p_node_subpath, const Node* p_godot_node);
 	bool _convert_animation_node_track(Ref<GLTFState> p_state,
 		GLTFAnimation::NodeTrack& p_gltf_node_track, const Ref<Animation>& p_godot_animation,
 		int32_t p_godot_anim_track_index, Vector<double>& p_times);

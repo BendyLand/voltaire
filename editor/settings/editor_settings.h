@@ -93,7 +93,7 @@ private:
 							   // engine
 	bool initialized = false;
 
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 
 	void _set_initialized();
 	void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
@@ -134,8 +134,8 @@ public:
 	bool has_setting(const String& p_setting) const;
 	void erase(const String& p_setting);
 	void raise_order(const String& p_setting);
-	void set_restart_if_changed(const StringName& p_setting, bool p_restart);
-	void set_basic(const StringName& p_setting, bool p_basic);
+	void set_restart_if_changed(const String& p_setting, bool p_restart);
+	void set_basic(const String& p_setting, bool p_basic);
 
 	PackedStringArray get_changed_settings() const;
 	bool check_changed_settings_in_group(const String& p_setting_prefix) const;
@@ -158,7 +158,7 @@ public:
 	Vector<String> get_recent_dirs() const;
 	void load_favorites_and_recent_dirs();
 
-	static HashMap<StringName, Color> get_godot2_text_editor_theme();
+	static HashMap<String, Color> get_godot2_text_editor_theme();
 	static bool is_default_text_editor_theme(const String& p_theme_name);
 	void update_text_editor_themes_list();
 
@@ -180,7 +180,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	EditorSettings();

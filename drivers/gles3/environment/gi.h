@@ -32,57 +32,95 @@
 
 #ifdef GLES3_ENABLED
 
+#include "core/math/vector3i.h"
+#include "core/templates/rid.h"
 #include "servers/rendering/environment/renderer_gi.h"
 
-namespace GLES3 {
+namespace GLES3
+{
 
-class GI : public RendererGI {
+class GI final
+{
 public:
-	/* VOXEL GI API */
+	GI() = delete;
+	~GI() = delete;
+	GI(const GI&) = delete;
+	GI& operator=(const GI&) = delete;
 
-	virtual RID voxel_gi_allocate() override;
-	virtual void voxel_gi_free(RID p_rid) override;
-	virtual void voxel_gi_initialize(RID p_rid) override;
-	virtual void voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D &p_to_cell_xform, const AABB &p_aabb, const Vector3i &p_octree_size, const Vector<uint8_t> &p_octree_cells, const Vector<uint8_t> &p_data_cells, const Vector<uint8_t> &p_distance_field, const Vector<int> &p_level_counts) override;
+	static void initialize();
 
-	virtual AABB voxel_gi_get_bounds(RID p_voxel_gi) const override;
-	virtual Vector3i voxel_gi_get_octree_size(RID p_voxel_gi) const override;
-	virtual Vector<uint8_t> voxel_gi_get_octree_cells(RID p_voxel_gi) const override;
-	virtual Vector<uint8_t> voxel_gi_get_data_cells(RID p_voxel_gi) const override;
-	virtual Vector<uint8_t> voxel_gi_get_distance_field(RID p_voxel_gi) const override;
+	static void finalize();
 
-	virtual Vector<int> voxel_gi_get_level_counts(RID p_voxel_gi) const override;
-	virtual Transform3D voxel_gi_get_to_cell_xform(RID p_voxel_gi) const override;
+	static bool is_initialized();
 
-	virtual void voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range) override;
-	virtual float voxel_gi_get_dynamic_range(RID p_voxel_gi) const override;
+	static bool free(RID p_rid);
 
-	virtual void voxel_gi_set_propagation(RID p_voxel_gi, float p_range) override;
-	virtual float voxel_gi_get_propagation(RID p_voxel_gi) const override;
+	/* VOXEL GI STUBS */
+	static bool owns_voxel_gi(RID p_rid);
 
-	virtual void voxel_gi_set_energy(RID p_voxel_gi, float p_range) override;
-	virtual float voxel_gi_get_energy(RID p_voxel_gi) const override;
+	static RID voxel_gi_allocate();
 
-	virtual void voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked_exposure) override;
-	virtual float voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi) const override;
+	static void voxel_gi_free(RID p_voxel_gi);
 
-	virtual void voxel_gi_set_bias(RID p_voxel_gi, float p_range) override;
-	virtual float voxel_gi_get_bias(RID p_voxel_gi) const override;
+	static void voxel_gi_initialize(RID p_voxel_gi);
 
-	virtual void voxel_gi_set_normal_bias(RID p_voxel_gi, float p_range) override;
-	virtual float voxel_gi_get_normal_bias(RID p_voxel_gi) const override;
+	static void voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+		const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+		const Vector<int>& p_level_counts);
 
-	virtual void voxel_gi_set_interior(RID p_voxel_gi, bool p_enable) override;
-	virtual bool voxel_gi_is_interior(RID p_voxel_gi) const override;
+	static AABB voxel_gi_get_bounds(RID p_voxel_gi);
 
-	virtual void voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable) override;
-	virtual bool voxel_gi_is_using_two_bounces(RID p_voxel_gi) const override;
+	static Vector3i voxel_gi_get_octree_size(RID p_voxel_gi);
 
-	virtual uint32_t voxel_gi_get_version(RID p_voxel_gi) const override;
+	static Vector<uint8_t> voxel_gi_get_octree_cells(RID p_voxel_gi);
 
-	virtual void sdfgi_reset() override;
+	static Vector<uint8_t> voxel_gi_get_data_cells(RID p_voxel_gi);
+
+	static Vector<uint8_t> voxel_gi_get_distance_field(RID p_voxel_gi);
+
+	static Vector<int> voxel_gi_get_level_counts(RID p_voxel_gi);
+
+	static Transform3D voxel_gi_get_to_cell_xform(RID p_voxel_gi);
+
+	static void voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range);
+
+	static float voxel_gi_get_dynamic_range(RID p_voxel_gi);
+
+	static void voxel_gi_set_propagation(RID p_voxel_gi, float p_range);
+
+	static float voxel_gi_get_propagation(RID p_voxel_gi);
+
+	static void voxel_gi_set_energy(RID p_voxel_gi, float p_energy);
+
+	static float voxel_gi_get_energy(RID p_voxel_gi);
+
+	static void voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked_exposure);
+
+	static float voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi);
+
+	static void voxel_gi_set_bias(RID p_voxel_gi, float p_bias);
+
+	static float voxel_gi_get_bias(RID p_voxel_gi);
+
+	static void voxel_gi_set_normal_bias(RID p_voxel_gi, float p_range);
+
+	static float voxel_gi_get_normal_bias(RID p_voxel_gi);
+
+	static void voxel_gi_set_interior(RID p_voxel_gi, bool p_enable);
+
+	static bool voxel_gi_is_interior(RID p_voxel_gi);
+
+	static void voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable);
+
+	static bool voxel_gi_is_using_two_bounces(RID p_voxel_gi);
+
+	static uint32_t voxel_gi_get_version(RID p_probe);
+
+	/* SDFGI STUBS */
+	static void sdfgi_reset();
 };
 
-}; // namespace GLES3
+} // namespace GLES3
 
 #endif // GLES3_ENABLED

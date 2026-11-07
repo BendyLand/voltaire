@@ -353,9 +353,9 @@ SkeletonIK3D::~SkeletonIK3D()
 	task = nullptr;
 }
 
-StringName SkeletonIK3D::get_root_bone() const { return root_bone; }
+String SkeletonIK3D::get_root_bone() const { return root_bone; }
 
-StringName SkeletonIK3D::get_tip_bone() const { return tip_bone; }
+String SkeletonIK3D::get_tip_bone() const { return tip_bone; }
 
 #ifndef DISABLE_DEPRECATED
 void SkeletonIK3D::_set_interpolation(real_t p_interpolation) { set_influence(p_interpolation); }

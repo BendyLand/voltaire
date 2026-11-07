@@ -60,17 +60,17 @@ EditorRunBar* EditorRunBar::singleton = nullptr;
 void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
-		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles)).ptr());
-		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorStringName(EditorStyles))
+		add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorString(EditorStyles)).ptr());
+		write_movie_panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorString(EditorStyles))
 				.ptr());
 	}
 	else {
-		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)).ptr());
-		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorStringName(EditorStyles))
+		add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorString(EditorStyles)).ptr());
+		write_movie_panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorString(EditorStyles))
 				.ptr());
 	}
 }

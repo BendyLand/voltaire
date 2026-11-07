@@ -78,10 +78,10 @@ class GroupsEditor : public VBoxContainer
 	Tree* tree = nullptr;
 	Label* select_a_node = nullptr;
 
-	HashMap<StringName, bool> scene_groups_for_caching;
+	HashMap<String, bool> scene_groups_for_caching;
 
-	HashMap<StringName, bool> scene_groups;
-	HashMap<StringName, String> global_groups;
+	HashMap<String, bool> scene_groups;
+	HashMap<String, String> global_groups;
 
 	void _show_add_group_dialog();
 	void _show_rename_group_dialog();
@@ -113,7 +113,7 @@ class GroupsEditor : public VBoxContainer
 
 	void _node_removed(Node* p_node);
 
-	bool _can_edit(const StringName& p_group);
+	bool _can_edit(const String& p_group);
 
 protected:
 	void _notification(int p_what);

@@ -58,7 +58,7 @@ class AudioEffectCompressor : public AudioEffect
 	float attack_us;
 	float release_ms;
 	float mix;
-	StringName sidechain;
+	String sidechain;
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;
@@ -81,8 +81,8 @@ public:
 	void set_mix(float p_mix);
 	float get_mix() const;
 
-	void set_sidechain(const StringName& p_sidechain);
-	StringName get_sidechain() const;
+	void set_sidechain(const String& p_sidechain);
+	String get_sidechain() const;
 
 	AudioEffectCompressor();
 };

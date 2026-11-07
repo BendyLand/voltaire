@@ -209,7 +209,7 @@ Control::CursorShape GraphEdit::get_cursor_shape(const Point2& p_pos) const
 }
 
 bool GraphEdit::is_node_connected(
-	const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port)
+	const String& p_from, int p_from_port, const String& p_to, int p_to_port)
 {
 	for (const Ref<Connection>& conn : connection_map[p_from]) {
 		if (conn->from_node == p_from && conn->from_port == p_from_port && conn->to_node == p_to &&
@@ -223,7 +223,7 @@ bool GraphEdit::is_node_connected(
 
 const Vector<Ref<GraphEdit::Connection>>& GraphEdit::get_connections() const { return connections; }
 
-int GraphEdit::get_connection_count(const StringName& p_node, int p_port)
+int GraphEdit::get_connection_count(const String& p_node, int p_port)
 {
 	int count = 0;
 	for (const Ref<Connection>& conn : connections) {
@@ -645,7 +645,7 @@ void GraphEdit::update_warped_panning() { panner->setup_warped_panning(this, war
 void GraphEdit::arrange_nodes() { arranger->arrange_nodes(); }
 
 bool GraphEdit::is_node_hover_valid(
-	const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port)
+	const String& p_from, int p_from_port, const String& p_to, int p_to_port)
 {
 	return true;
 }
@@ -658,7 +658,7 @@ void GraphEdit::set_scroll_offset(Vector2 const&) {}
 
 bool GraphEdit::_filter_input(Vector2 const&) { return false; }
 
-Error GraphEdit::connect_node(StringName const&, int, StringName const&, int, bool) { return OK; }
+Error GraphEdit::connect_node(String const&, int, String const&, int, bool) { return OK; }
 
 void GraphEdit::add_child_notify(Node* p_child) {}
 

@@ -86,7 +86,7 @@ TEST_CASE("[PCKPacker] Pack a PCK file with some files and directories") {
 			pck_packer.pck_start(output_pck_path) == OK,
 			"Starting a PCK file should return an OK error code.");
 
-	const String base_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+	const String base_dir = OS::get_executable_path().get_base_dir();
 
 	CHECK_MESSAGE(
 			pck_packer.add_file("version.py", base_dir.path_join("../version.py"), "version.py") == OK,

@@ -61,7 +61,7 @@ class CreateDialog : public ConfirmationDialog
 
 	struct TypeInfo
 	{
-		StringName type_name;
+		String type_name;
 		PackedStringArray search_keywords;
 	};
 
@@ -88,16 +88,16 @@ class CreateDialog : public ConfirmationDialog
 	HashMap<String, String> custom_type_parents;
 	HashMap<String, int> custom_type_indices;
 	List<TypeInfo> type_info_list;
-	HashSet<StringName> type_blacklist;
-	HashSet<StringName> custom_type_blocklist;
-	HashSet<StringName> selectable_types;
+	HashSet<String> type_blacklist;
+	HashSet<String> custom_type_blocklist;
+	HashSet<String> selectable_types;
 
 	void _update_filter_button_state();
 	void _update_search();
-	bool _should_hide_type(const StringName& p_type) const;
+	bool _should_hide_type(const String& p_type) const;
 	void _add_type(
-		const StringName& p_type, TypeCategory p_type_category, const String& p_match_keyword);
-	void _configure_search_option_item(TreeItem* r_item, const StringName& p_type,
+		const String& p_type, TypeCategory p_type_category, const String& p_match_keyword);
+	void _configure_search_option_item(TreeItem* r_item, const String& p_type,
 		TypeCategory p_type_category, const String& p_match_keyword);
 	void _script_button_clicked(
 		TreeItem* p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index);
@@ -122,7 +122,7 @@ class CreateDialog : public ConfirmationDialog
 	void _history_activated(int p_idx);
 	void _favorite_activated();
 
-	bool _is_class_disabled_by_feature_profile(const StringName& p_class) const;
+	bool _is_class_disabled_by_feature_profile(const String& p_class) const;
 
 protected:
 	void _notification(int p_what);
@@ -139,7 +139,7 @@ public:
 
 	void select_base();
 
-	void set_type_blocklist(const HashSet<StringName>& p_blocklist)
+	void set_type_blocklist(const HashSet<String>& p_blocklist)
 	{
 		custom_type_blocklist = p_blocklist;
 	}

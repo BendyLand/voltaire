@@ -47,9 +47,9 @@
 #include "scene/gui/spin_box.h"
 #include "scene/main/timer.h"
 
-StringName AnimationNodeBlendSpace1DEditor::get_blend_position_path() const
+String AnimationNodeBlendSpace1DEditor::get_blend_position_path() const
 {
-	StringName path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
+	String path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
 	return path;
 }
 

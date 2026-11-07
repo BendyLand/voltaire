@@ -150,7 +150,7 @@ private:
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}

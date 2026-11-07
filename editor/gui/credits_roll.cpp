@@ -54,18 +54,18 @@ Label* CreditsRoll::_create_label(const String& p_with_text, LabelSize p_size)
 
 	switch (p_size) {
 	case LabelSize::NORMAL: {
-		label->add_theme_font_size_override(SceneStringName(font_size), font_size_normal);
+		label->add_theme_font_size_override(SceneString(font_size), font_size_normal);
 		label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	} break;
 
 	case LabelSize::HEADER: {
-		label->add_theme_font_size_override(SceneStringName(font_size), font_size_header);
-		label->add_theme_font_override(SceneStringName(font), bold_font.ptr());
+		label->add_theme_font_size_override(SceneString(font_size), font_size_header);
+		label->add_theme_font_override(SceneString(font), bold_font.ptr());
 	} break;
 
 	case LabelSize::BIG_HEADER: {
-		label->add_theme_font_size_override(SceneStringName(font_size), font_size_big_header);
-		label->add_theme_font_override(SceneStringName(font), bold_font.ptr());
+		label->add_theme_font_size_override(SceneString(font_size), font_size_big_header);
+		label->add_theme_font_override(SceneString(font), bold_font.ptr());
 	} break;
 	}
 	content->add_child(label);

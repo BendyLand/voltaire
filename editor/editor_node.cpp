@@ -398,7 +398,7 @@ bool EditorNode::_is_project_data_missing()
 	return false;
 }
 
-void EditorNode::_remove_lock_file() { OS::get_singleton()->remove_lock_file(); }
+void EditorNode::_remove_lock_file() { OS::remove_lock_file(); }
 
 void EditorNode::_reload_project_settings()
 {
@@ -523,7 +523,7 @@ bool EditorNode::is_scene_unsaved(int p_idx)
 	return false;
 }
 
-bool EditorNode::_is_class_editor_disabled_by_feature_profile(const StringName& p_class)
+bool EditorNode::_is_class_editor_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
@@ -531,9 +531,9 @@ bool EditorNode::_is_class_editor_disabled_by_feature_profile(const StringName& 
 		return false;
 	}
 
-	StringName class_name = p_class;
+	String class_name = p_class;
 
-	while (class_name != StringName()) {
+	while (class_name != String()) {
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}
@@ -560,7 +560,7 @@ void EditorNode::_android_export_preset_selected(int p_index)
 
 void EditorNode::_android_explore_build_templates()
 {
-	OS::get_singleton()->shell_show_in_file_manager(
+	OS::shell_show_in_file_manager(
 		ProjectSettings::globalize_path(
 			export_template_manager->get_android_build_directory(android_export_preset)
 				.get_base_dir()),
@@ -638,7 +638,7 @@ int EditorNode::_next_unsaved_scene(bool p_valid_filename, int p_start)
 	return -1;
 }
 
-void EditorNode::add_extension_editor_plugin(const StringName& p_class_name) {}
+void EditorNode::add_extension_editor_plugin(const String& p_class_name) {}
 
 bool EditorNode::is_addon_plugin_enabled(const String& p_addon) const
 {
@@ -918,10 +918,10 @@ void EditorNode::_file_dialog_thumbnail_callback(const String& p_path,
 
 void EditorNode::_build_icon_type_cache()
 {
-	List<StringName> tl;
-	theme->get_icon_list(EditorStringName(EditorIcons), &tl);
-	for (const StringName& E : tl) {
-		icon_type_cache[E] = theme->get_icon(E, EditorStringName(EditorIcons));
+	List<String> tl;
+	theme->get_icon_list(EditorString(EditorIcons), &tl);
+	for (const String& E : tl) {
+		icon_type_cache[E] = theme->get_icon(E, EditorString(EditorIcons));
 	}
 }
 
@@ -1261,7 +1261,7 @@ static Node* _resource_get_edited_scene()
 static void _execute_thread(void* p_ud)
 {
 	EditorNode::ExecuteThreadArgs* eta = (EditorNode::ExecuteThreadArgs*)p_ud;
-	Error err = OS::get_singleton()->execute(
+	Error err = OS::execute(
 		eta->path, eta->args, &eta->output, &eta->exitcode, true, &eta->execute_output_mutex);
 	print_verbose("Thread exit status: " + itos(eta->exitcode));
 	if (err != OK) {

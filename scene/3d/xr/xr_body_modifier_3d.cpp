@@ -32,12 +32,12 @@
 #include "servers/xr/xr_server.h"
 #include "xr_body_modifier_3d.h"
 
-void XRBodyModifier3D::set_body_tracker(const StringName& p_tracker_name)
+void XRBodyModifier3D::set_body_tracker(const String& p_tracker_name)
 {
 	tracker_name = p_tracker_name;
 }
 
-StringName XRBodyModifier3D::get_body_tracker() const { return tracker_name; }
+String XRBodyModifier3D::get_body_tracker() const { return tracker_name; }
 
 void XRBodyModifier3D::set_body_update(uint32_t p_body_update)
 {
@@ -59,7 +59,7 @@ void XRBodyModifier3D::set_bone_update(BoneUpdate p_bone_update)
 XRBodyModifier3D::BoneUpdate XRBodyModifier3D::get_bone_update() const { return bone_update; }
 
 void XRBodyModifier3D::_tracker_changed(
-	const StringName& p_tracker_name, XRServer::TrackerType p_tracker_type)
+	const String& p_tracker_name, XRServer::TrackerType p_tracker_type)
 {
 	if (tracker_name == p_tracker_name) {
 		_get_joint_data();

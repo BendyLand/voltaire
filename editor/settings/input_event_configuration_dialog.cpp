@@ -231,10 +231,10 @@ void InputEventConfigurationDialog::_notification(int p_what)
 		icon_cache.joypad_button = get_editor_theme_icon(SNAME("JoyButton"));
 		icon_cache.joypad_axis = get_editor_theme_icon(SNAME("JoyAxis"));
 
-		event_as_text->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
-		event_exists->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+		event_as_text->add_theme_font_override(SceneString(font),
+			get_theme_font(SNAME("bold"), EditorString(EditorFonts)).ptr());
+		event_exists->add_theme_color_override(SceneString(font_color),
+			get_theme_color(SNAME("error_color"), EditorString(Editor)));
 
 		_update_input_list();
 	} break;

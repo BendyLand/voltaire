@@ -156,9 +156,8 @@ void _err_print_error_asap(const String &p_error, ErrorHandlerType p_type) {
 	}
 
 	is_printing_error = true;
-
-	if (OS::get_singleton()) {
-		OS::get_singleton()->printerr("%s: %s\n", _error_handler_type_string(p_type), err_details);
+	if (OS::is_initialized()) {
+		OS::printerr("%s: %s\n", _error_handler_type_string(p_type), err_details);
 	} else {
 		// Fallback if errors happen before OS init or after it's destroyed.
 		_err_print_fallback(nullptr, nullptr, 0, err_details, p_type, false);
@@ -221,7 +220,7 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	}
 
 	if (!warn_count) {
-		time_now = OS::get_singleton()->get_ticks_msec() / 1000;
+		time_now = OS::get_ticks_msec() / 1000;
 	}
 
 	if ((warn_count == 0) && (time_now >= warn_timeout)) {

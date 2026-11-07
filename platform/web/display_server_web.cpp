@@ -268,7 +268,7 @@ int DisplayServerWeb::_mouse_button_callback(int p_pressed, int p_button, double
 	}
 
 	if (p_pressed) {
-		uint64_t diff = (OS::get_singleton()->get_ticks_usec() / 1000) - ds->last_click_ms;
+		uint64_t diff = (OS::get_ticks_usec() / 1000) - ds->last_click_ms;
 
 		if (ev->get_button_index() == ds->last_click_button_index) {
 			if (diff < 400 && Point2(ds->last_click_pos).distance_to(ev->get_position()) < 5) {
@@ -905,7 +905,7 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 					break;
 				}
 			}
-			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+			OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
 			ds->ime_started = true;
 		} break;
 		case 1: {
@@ -913,7 +913,7 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 			if (ds->ime_active && ds->ime_started) {
 				ds->ime_text = p_text;
 				ds->ime_selection = Vector2i(ds->ime_text.length(), ds->ime_text.length());
-				OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
 			}
 		} break;
 		case 2: {
@@ -923,7 +923,7 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 
 				ds->ime_text = String();
 				ds->ime_selection = Vector2i();
-				OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
 
 				String text = p_text;
 				for (int i = 0; i < text.length(); i++) {
@@ -1122,7 +1122,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 	godot_js_config_canvas_id_get(canvas_id, 256);
 
 	// Handle contextmenu, webglcontextlost
-	godot_js_display_setup_canvas(p_resolution.x, p_resolution.y, (p_window_mode == DisplayServerEnums::WINDOW_MODE_FULLSCREEN || p_window_mode == DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN), OS::get_singleton()->is_hidpi_allowed() ? 1 : 0);
+	godot_js_display_setup_canvas(p_resolution.x, p_resolution.y, (p_window_mode == DisplayServerEnums::WINDOW_MODE_FULLSCREEN || p_window_mode == DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN), OS::is_hidpi_allowed() ? 1 : 0);
 
 	// Check if it's windows.
 	swap_cancel_ok = godot_js_display_is_swap_ok_cancel() == 1;
@@ -1135,7 +1135,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 	if (godot_js_display_has_webgl(2)) {
 		EmscriptenWebGLContextAttributes attributes;
 		emscripten_webgl_init_context_attributes(&attributes);
-		attributes.alpha = OS::get_singleton()->is_layered_allowed();
+		attributes.alpha = OS::is_layered_allowed();
 		attributes.antialias = false;
 		attributes.majorVersion = 2;
 		attributes.explicitSwapControl = true;
@@ -1150,7 +1150,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 		RasterizerGLES3::make_current(false);
 
 	} else {
-		OS::get_singleton()->alert(
+		OS::alert(
 				"Your browser seems not to support WebGL 2.\n\n"
 				"If possible, consider updating your browser version and video card drivers.",
 				"Unable to initialize WebGL 2 video driver");

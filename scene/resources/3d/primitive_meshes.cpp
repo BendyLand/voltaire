@@ -112,9 +112,9 @@ Ref<Material> PrimitiveMesh::surface_get_material(int p_idx) const
 
 int PrimitiveMesh::get_blend_shape_count() const { return 0; }
 
-StringName PrimitiveMesh::get_blend_shape_name(int p_index) const { return StringName(); }
+String PrimitiveMesh::get_blend_shape_name(int p_index) const { return String(); }
 
-void PrimitiveMesh::set_blend_shape_name(int p_index, const StringName& p_name) {}
+void PrimitiveMesh::set_blend_shape_name(int p_index, const String& p_name) {}
 
 AABB PrimitiveMesh::get_aabb() const
 {

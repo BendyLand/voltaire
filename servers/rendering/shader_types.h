@@ -41,7 +41,7 @@ public:
 
     struct Type
     {
-        HashMap<StringName, ShaderLanguage::FunctionInfo> functions;
+        HashMap<String, ShaderLanguage::FunctionInfo> functions;
         Vector<ShaderLanguage::ModeInfo> modes;
         Vector<ShaderLanguage::ModeInfo> stencil_modes;
     };
@@ -50,7 +50,7 @@ public:
     static inline HashSet<String> shader_types;
     static inline List<String> shader_types_list;
 
-    static const HashMap<StringName, ShaderLanguage::FunctionInfo>& get_functions(
+    static const HashMap<String, ShaderLanguage::FunctionInfo>& get_functions(
         RSE::ShaderMode p_mode);
     static const Vector<ShaderLanguage::ModeInfo>& get_modes(RSE::ShaderMode p_mode);
     static const Vector<ShaderLanguage::ModeInfo>& get_stencil_modes(RSE::ShaderMode p_mode);

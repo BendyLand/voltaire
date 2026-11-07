@@ -57,11 +57,11 @@ class LocalizationEditor : public VBoxContainer
 	Button* template_generate_button = nullptr;
 
 	bool updating_translations = false;
-	StringName localization_changed;
+	String localization_changed;
 
 	LocalVector<Tree*> trees;
 	HashMap<Tree*, String> tree_data_types;
-	HashMap<Tree*, StringName> tree_settings;
+	HashMap<Tree*, String> tree_settings;
 
 	void _translation_file_open();
 	void _translation_add(const PackedStringArray& p_paths);

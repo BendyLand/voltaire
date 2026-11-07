@@ -47,7 +47,7 @@ private:
 	class Joypad : public Input::JoypadFeatures {
 	public:
 		bool attached = false;
-		StringName guid;
+		String guid;
 
 		SDL_JoystickID sdl_instance_idx;
 

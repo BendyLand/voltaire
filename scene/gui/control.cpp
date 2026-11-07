@@ -166,7 +166,7 @@ String Control::properties_managed_by_container[] = {"offset_left", "offset_top"
 	"offset_bottom", "anchor_left", "anchor_top", "anchor_right", "anchor_bottom", "position",
 	"rotation", "scale", "size"};
 
-bool Control::_property_can_revert(const StringName& p_name) const
+bool Control::_property_can_revert(const String& p_name) const
 {
 	if (p_name == "layout_mode" || p_name == "anchors_preset") {
 		return true;
@@ -1856,138 +1856,138 @@ Ref<Theme> Control::get_theme() const
 	return data.theme;
 }
 
-void Control::set_theme_type_variation(const StringName& p_theme_type) {}
+void Control::set_theme_type_variation(const String& p_theme_type) {}
 
-StringName Control::get_theme_type_variation() const
+String Control::get_theme_type_variation() const
 {
-	ERR_READ_THREAD_GUARD_V(StringName());
+	ERR_READ_THREAD_GUARD_V(String());
 	return data.theme_type_variation;
 }
 
 #ifdef TOOLS_ENABLED
-Ref<Texture2D> Control::get_editor_theme_icon(const StringName& p_name) const
+Ref<Texture2D> Control::get_editor_theme_icon(const String& p_name) const
 {
 	return get_theme_icon(p_name, SNAME("EditorIcons"));
 }
 #endif // TOOLS_ENABLED
 
-void Control::add_theme_style_override(const StringName& p_name, StyleBox* rp_style) {}
+void Control::add_theme_style_override(const String& p_name, StyleBox* rp_style) {}
 
-void Control::add_theme_font_override(const StringName& p_name, Font* rp_font) {}
+void Control::add_theme_font_override(const String& p_name, Font* rp_font) {}
 
-void Control::add_theme_font_size_override(const StringName& p_name, int p_font_size)
+void Control::add_theme_font_size_override(const String& p_name, int p_font_size)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_font_size_override[p_name] = p_font_size;
 	_notify_theme_override_changed();
 }
 
-void Control::add_theme_color_override(const StringName& p_name, const Color& p_color)
+void Control::add_theme_color_override(const String& p_name, const Color& p_color)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_color_override[p_name] = p_color;
 	_notify_theme_override_changed();
 }
 
-Color Control::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
+Color Control::get_theme_color(const String& p_name, const String& p_theme_type) const
 {
 	return Color();
 }
 
-void Control::add_theme_constant_override(const StringName& p_name, int p_constant)
+void Control::add_theme_constant_override(const String& p_name, int p_constant)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_constant_override[p_name] = p_constant;
 	_notify_theme_override_changed();
 }
 
-void Control::remove_theme_font_size_override(const StringName& p_name)
+void Control::remove_theme_font_size_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_font_size_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-int Control::get_theme_font_size(const StringName& p_name, const StringName& p_theme_type) const
+int Control::get_theme_font_size(const String& p_name, const String& p_theme_type) const
 {
 	return 0;
 }
 
 Ref<StyleBox> Control::get_theme_stylebox(
-	const StringName& p_name, const StringName& p_theme_type) const
+	const String& p_name, const String& p_theme_type) const
 {
 	Ref<StyleBox> sb = memnew(StyleBox);
 	return sb;
 }
 
-Ref<Font> Control::get_theme_font(const StringName& p_name, const StringName& p_theme_type) const
+Ref<Font> Control::get_theme_font(const String& p_name, const String& p_theme_type) const
 {
 	Ref<Font> font = memnew(Font);
 	return font;
 }
 
-void Control::remove_theme_color_override(const StringName& p_name)
+void Control::remove_theme_color_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-int Control::get_theme_constant(const StringName& p_name, const StringName& p_theme_type) const
+int Control::get_theme_constant(const String& p_name, const String& p_theme_type) const
 {
 	return 0;
 }
 
-void Control::remove_theme_constant_override(const StringName& p_name)
+void Control::remove_theme_constant_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.theme_constant_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-bool Control::has_theme_icon_override(const StringName& p_name) const
+bool Control::has_theme_icon_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<Texture2D>* tex = data.theme_icon_override.getptr(p_name);
 	return tex != nullptr;
 }
 
-bool Control::has_theme_stylebox_override(const StringName& p_name) const
+bool Control::has_theme_stylebox_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<StyleBox>* style = data.theme_style_override.getptr(p_name);
 	return style != nullptr;
 }
 
-bool Control::has_theme_font_override(const StringName& p_name) const
+bool Control::has_theme_font_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<Font>* font = data.theme_font_override.getptr(p_name);
 	return font != nullptr;
 }
 
-bool Control::has_theme_font_size_override(const StringName& p_name) const
+bool Control::has_theme_font_size_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const int* font_size = data.theme_font_size_override.getptr(p_name);
 	return font_size != nullptr;
 }
 
-bool Control::has_theme_color_override(const StringName& p_name) const
+bool Control::has_theme_color_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Color* color = data.theme_color_override.getptr(p_name);
 	return color != nullptr;
 }
 
-bool Control::has_theme_constant_override(const StringName& p_name) const
+bool Control::has_theme_constant_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const int* constant = data.theme_constant_override.getptr(p_name);
 	return constant != nullptr;
 }
 
-bool Control::has_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
+bool Control::has_theme_stylebox(const String& p_name, const String& p_theme_type) const
 {
 	return true;
 }
@@ -2041,7 +2041,7 @@ void Control::set_layout_direction(Control::LayoutDirection p_direction)
 bool Control::is_layout_rtl() const { return false; }
 
 void Control::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 }
 
@@ -2101,19 +2101,19 @@ String Control::get_tooltip_text() const
 	return data.tooltip;
 }
 
-void Control::set_translation_context(const StringName& p_context)
+void Control::set_translation_context(const String& p_context)
 {
 	ERR_MAIN_THREAD_GUARD;
 	data.translation_context = p_context;
 }
 
-StringName Control::get_translation_context() const
+String Control::get_translation_context() const
 {
-	ERR_READ_THREAD_GUARD_V(StringName());
+	ERR_READ_THREAD_GUARD_V(String());
 	return data.translation_context;
 }
 
-StringName Control::_get_translation_context_with_override(const StringName& p_context) const
+String Control::_get_translation_context_with_override(const String& p_context) const
 {
 	if (p_context.is_empty()) {
 		return data.translation_context;
@@ -2142,7 +2142,7 @@ void Control::_size_changed() {}
 void Control::_notify_theme_override_changed() {}
 
 Ref<Texture2D> Control::get_theme_icon(
-	const StringName& p_name, const StringName& p_theme_type) const
+	const String& p_name, const String& p_theme_type) const
 {
 	Ref<Texture2D> t = memnew(Texture2D);
 	return t;
@@ -2150,9 +2150,9 @@ Ref<Texture2D> Control::get_theme_icon(
 
 void Control::set_stretch_ratio(real_t p_ratio) {}
 
-bool Control::has_theme_icon(StringName const&, StringName const&) const {}
+bool Control::has_theme_icon(String const&, String const&) const {}
 
-void Control::add_theme_icon_override(StringName const&, Texture2D*) {}
+void Control::add_theme_icon_override(String const&, Texture2D*) {}
 
 void Control::set_shortcut_context(Node const*) {}
 
@@ -2168,7 +2168,7 @@ void Control::set_rotation(float) {}
 
 void Control::set_clip_contents(bool) {}
 
-void Control::remove_theme_style_override(StringName const&) {}
+void Control::remove_theme_style_override(String const&) {}
 
 void Control::_notification(int) {}
 
@@ -2188,7 +2188,7 @@ void Control::set_offset_transform_pivot_ratio(Vector2 const&) {}
 
 void Control::set_offset_transform_enabled(bool) {}
 
-bool Control::has_theme_color(StringName const&, StringName const&) const { return false; }
+bool Control::has_theme_color(String const&, String const&) const { return false; }
 
 PackedStringArray Control::get_accessibility_configuration_warnings() const
 {

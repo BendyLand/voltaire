@@ -111,8 +111,8 @@ class GraphEdit : public Control
 public:
 	struct Connection : RefCounted
 	{
-		StringName from_node;
-		StringName to_node;
+		String from_node;
+		String to_node;
 		int from_port = 0;
 		int to_port = 0;
 		float activity = 0.0;
@@ -202,13 +202,13 @@ private:
 
 	bool keyboard_connecting = false;
 	bool connecting = false;
-	StringName connecting_from_node;
+	String connecting_from_node;
 	bool connecting_from_output = false;
 	int connecting_type = 0;
 	Color connecting_color;
 	Vector2 connecting_to_point; // In local screen space.
 	bool connecting_target_valid = false;
-	StringName connecting_target_node;
+	String connecting_target_node;
 	int connecting_from_port_index = 0;
 	int connecting_target_port_index = 0;
 
@@ -246,7 +246,7 @@ private:
 	bool awaiting_scroll_offset_update = false;
 
 	Vector<Ref<Connection>> connections;
-	HashMap<StringName, List<Ref<Connection>>> connection_map;
+	HashMap<String, List<Ref<Connection>>> connection_map;
 	Ref<Connection> hovered_connection;
 
 	float lines_thickness = 4.0f;
@@ -312,8 +312,8 @@ private:
 	// of both background nodes (e.g frame nodes) and foreground nodes (connectable nodes).
 	int background_nodes_separator_idx = 0;
 
-	HashMap<StringName, HashSet<StringName>> frame_attached_nodes;
-	HashMap<StringName, StringName> linked_parent_map;
+	HashMap<String, HashSet<String>> frame_attached_nodes;
+	HashMap<String, String> linked_parent_map;
 
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
 	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
@@ -332,7 +332,7 @@ private:
 	void _graph_node_slot_updated(int p_index, Node* p_node);
 	void _graph_node_rect_changed(GraphNode* p_node);
 
-	void _ensure_node_order_from_root(const StringName& p_node);
+	void _ensure_node_order_from_root(const String& p_node);
 	void _ensure_node_order_from(Node* p_node);
 
 	void _update_scrollbars();
@@ -375,7 +375,7 @@ private:
 	PackedVector2Array _get_connection_line_bind_compat_86158(
 		const Vector2& p_from, const Vector2& p_to);
 	Error _connect_node_bind_compat_97449(
-		const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port);
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
 #endif
 
 protected:
@@ -407,16 +407,16 @@ public:
 	void _update_graph_frame(GraphFrame* p_frame);
 
 	// Connection related methods.
-	Error connect_node(const StringName& p_from, int p_from_port, const StringName& p_to,
+	Error connect_node(const String& p_from, int p_from_port, const String& p_to,
 		int p_to_port, bool keep_alive = false);
 	bool is_node_connected(
-		const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port);
-	int get_connection_count(const StringName& p_node, int p_port);
-	GraphNode* get_input_connection_target(const StringName& p_node, int p_port);
-	GraphNode* get_output_connection_target(const StringName& p_node, int p_port);
-	String get_connections_description(const StringName& p_node, int p_port);
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
+	int get_connection_count(const String& p_node, int p_port);
+	GraphNode* get_input_connection_target(const String& p_node, int p_port);
+	GraphNode* get_output_connection_target(const String& p_node, int p_port);
+	String get_connections_description(const String& p_node, int p_port);
 	void disconnect_node(
-		const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port);
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
 
 	void force_connection_drag_end();
 	const Vector<Ref<Connection>>& get_connections() const;
@@ -433,9 +433,9 @@ public:
 	void end_keyboard_connecting(GraphNode* p_node, int p_in_port, int p_out_port);
 
 	virtual bool is_node_hover_valid(
-		const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port);
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
 
-	void set_connection_activity(const StringName& p_from, int p_from_port, const StringName& p_to,
+	void set_connection_activity(const String& p_from, int p_from_port, const String& p_to,
 		int p_to_port, float p_activity);
 	void reset_all_connection_activity();
 
@@ -445,10 +445,10 @@ public:
 
 	// GraphFrame related methods.
 	void attach_graph_element_to_frame(
-		const StringName& p_graph_element, const StringName& p_parent_frame);
-	void detach_graph_element_from_frame(const StringName& p_graph_element);
-	GraphFrame* get_element_frame(const StringName& p_attached_graph_element);
-	TypedArray<StringName> get_attached_nodes_of_frame(const StringName& p_graph_frame);
+		const String& p_graph_element, const String& p_parent_frame);
+	void detach_graph_element_from_frame(const String& p_graph_element);
+	GraphFrame* get_element_frame(const String& p_attached_graph_element);
+	TypedArray<String> get_attached_nodes_of_frame(const String& p_graph_frame);
 
 	void set_panning_scheme(PanningScheme p_scheme);
 	PanningScheme get_panning_scheme() const;

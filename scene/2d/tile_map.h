@@ -93,7 +93,7 @@ private:
 	void _set_layer_tile_data(int p_layer, const PackedInt32Array& p_data);
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const
+	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}

@@ -88,9 +88,9 @@ public:
 class DummyObject
 {
 public:
-	bool has_dummy_property(const StringName& p_name);
-	void add_dummy_property(const StringName& p_name);
-	void remove_dummy_property(const StringName& p_name);
+	bool has_dummy_property(const String& p_name);
+	void add_dummy_property(const String& p_name);
+	void remove_dummy_property(const String& p_name);
 	void clear_dummy_properties();
 };
 
@@ -234,7 +234,7 @@ private:
 protected:
 	DummyObject* dummy_object = memnew(DummyObject);
 
-	StringName type;
+	String type;
 	String property;
 	void _notification(int p_what);
 
@@ -316,9 +316,9 @@ class TileDataCollisionEditor : public TileDataDefaultEditor
 	// UI
 	GenericTilePolygonEditor* polygon_editor = nullptr;
 	DummyObject* dummy_object = memnew(DummyObject);
-	HashMap<StringName, EditorProperty*> property_editors;
+	HashMap<String, EditorProperty*> property_editors;
 
-	void _property_selected(const StringName& p_path, int p_focusable);
+	void _property_selected(const String& p_path, int p_focusable);
 	void _polygons_changed();
 
 	virtual void _set_painted_value(TileSetAtlasSource* p_tile_set_atlas_source, Vector2 p_coords,

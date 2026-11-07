@@ -2783,9 +2783,9 @@ Error RenderingDeviceDriverD3D12::swap_chain_resize(CommandQueueID p_cmd_queue, 
 	swap_chain->data_format = new_data_format;
 
 #ifdef DCOMP_ENABLED
-	bool create_for_composition = OS::get_singleton()->is_layered_allowed();
+	bool create_for_composition = OS::is_layered_allowed();
 #else
-	if (OS::get_singleton()->is_layered_allowed()) {
+	if (OS::is_layered_allowed()) {
 		WARN_PRINT_ONCE("Window transparency is not supported without DirectComposition on D3D12.");
 	}
 	bool create_for_composition = false;

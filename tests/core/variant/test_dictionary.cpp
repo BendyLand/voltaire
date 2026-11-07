@@ -44,17 +44,17 @@ TEST_CASE("[Dictionary] Assignment using bracket notation ([])") {
 	map["World!"] = 4;
 	CHECK(int(map["World!"]) == 4);
 
-	map[StringName("HelloName")] = 6;
-	CHECK(int(map[StringName("HelloName")]) == 6);
+	map[String("HelloName")] = 6;
+	CHECK(int(map[String("HelloName")]) == 6);
 	CHECK(int(map.find_key(6).get_type()) == Variant::STRING_NAME);
-	map[StringName("HelloName")] = 7;
-	CHECK(int(map[StringName("HelloName")]) == 7);
+	map[String("HelloName")] = 7;
+	CHECK(int(map[String("HelloName")]) == 7);
 
-	// Test String and StringName are equivalent.
-	map[StringName("Hello")] = 8;
+	// Test String and String are equivalent.
+	map[String("Hello")] = 8;
 	CHECK(int(map["Hello"]) == 8);
 	map["Hello"] = 9;
-	CHECK(int(map[StringName("Hello")]) == 9);
+	CHECK(int(map[String("Hello")]) == 9);
 
 	// Test non-string keys, since keys can be of any Variant type.
 	map[12345] = -5;
@@ -629,7 +629,7 @@ TEST_CASE("[Dictionary] assign()") {
 	CHECK(untyped.size() == 1);
 
 	Dictionary typed;
-	typed.set_typed(Variant::STRING, StringName(), Variant(), Variant::STRING, StringName(), Variant());
+	typed.set_typed(Variant::STRING, String(), Variant(), Variant::STRING, String(), Variant());
 	typed.assign(untyped);
 	CHECK(typed.size() == 1);
 	typed["key2"] = "value";
@@ -688,7 +688,7 @@ TEST_CASE("[Dictionary] Type checks/comparisons") {
 	CHECK_FALSE(d1.is_typed_key());
 	CHECK_FALSE(d1.is_typed_value());
 
-	d1.set_typed(Variant::STRING, StringName(), Variant(), Variant::OBJECT, "Node", Variant());
+	d1.set_typed(Variant::STRING, String(), Variant(), Variant::OBJECT, "Node", Variant());
 	CHECK(d1.is_typed());
 	CHECK(d1.is_typed_key());
 	CHECK(d1.is_typed_value());
@@ -701,7 +701,7 @@ TEST_CASE("[Dictionary] Type checks/comparisons") {
 	CHECK_FALSE(d1.is_same_typed_key(d2));
 	CHECK_FALSE(d1.is_same_typed_value(d2));
 
-	d2.set_typed(Variant::STRING, StringName(), Variant(), Variant::STRING, StringName(), Variant());
+	d2.set_typed(Variant::STRING, String(), Variant(), Variant::STRING, String(), Variant());
 	CHECK_FALSE(d1.is_same_typed(d2));
 	CHECK(d1.is_same_typed_key(d2));
 	CHECK_FALSE(d1.is_same_typed_value(d2));

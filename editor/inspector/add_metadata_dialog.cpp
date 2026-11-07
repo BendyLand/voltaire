@@ -34,6 +34,6 @@
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/line_edit.h"
 
-StringName AddMetadataDialog::get_meta_name() { return add_meta_name->get_text(); }
+String AddMetadataDialog::get_meta_name() { return add_meta_name->get_text(); }
 
 

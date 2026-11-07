@@ -166,7 +166,7 @@ Error store_string_at_path(const String& p_path, const String& p_data)
 	String dir = p_path.get_base_dir();
 	Error err = create_directory(dir);
 	if (err != OK) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			print_error("Unable to write data into " + p_path);
 		}
 		return err;

@@ -119,7 +119,7 @@ class TileMapEditorPlugin : public EditorPlugin
 	void _tile_map_layer_changed();
 	void _tile_map_layer_removed();
 	void _update_tile_map();
-	void _select_layer(const StringName& p_name);
+	void _select_layer(const String& p_name);
 
 	void _edit_tile_map_layer(TileMapLayer* p_tile_map_layer, bool p_show_layer_selector);
 	void _edit_tile_map(TileMap* p_tile_map);

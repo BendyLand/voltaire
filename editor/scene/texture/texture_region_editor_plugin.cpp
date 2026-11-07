@@ -82,7 +82,7 @@ void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to)
 
 	Vector2 dash_size = (p_to - p_from).normalized() * 10;
 	const int dash_thickness = Math::round(2 * EDSCALE);
-	const Color dash_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor));
+	const Color dash_color = get_theme_color(SNAME("mono_color"), EditorString(Editor));
 	const Color dash_bg_color = dash_color.inverted() * Color(1, 1, 1, 0.5);
 	const int line_threshold = 200;
 

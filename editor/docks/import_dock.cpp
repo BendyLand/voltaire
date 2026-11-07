@@ -48,7 +48,7 @@ class ImportDockParameters
 public:
 	Ref<ResourceImporter> importer;
 	Vector<String> paths;
-	HashSet<StringName> checked;
+	HashSet<String> checked;
 	bool checking = false;
 	bool skip = false;
 	String base_options_path;
@@ -101,7 +101,7 @@ void ImportDock::_advanced_options()
 	}
 }
 
-void ImportDock::_property_toggled(const StringName& p_prop, bool p_checked)
+void ImportDock::_property_toggled(const String& p_prop, bool p_checked)
 {
 	if (p_checked) {
 		params->checked.insert(p_prop);

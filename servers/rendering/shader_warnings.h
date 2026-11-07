@@ -32,7 +32,7 @@
 
 #ifdef DEBUG_ENABLED
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 
 class ShaderWarning
@@ -71,12 +71,12 @@ public:
 private:
 	Code code;
 	int line;
-	StringName subject;
+	String subject;
 
 public:
 	Code get_code() const;
 	int get_line() const;
-	const StringName& get_subject() const;
+	const String& get_subject() const;
 	String get_message() const;
 	String get_name() const;
 

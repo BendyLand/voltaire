@@ -60,7 +60,7 @@ Vector<String> EditorFolding::_get_animation_folds(const Animation* p_animation)
 	if (folded_groups.size()) {
 		String* w = folded_groups.ptrw();
 		int idx = 0;
-		for (const StringName& group_name : p_animation->editor_get_folded_groups()) {
+		for (const String& group_name : p_animation->editor_get_folded_groups()) {
 			w[idx++] = group_name;
 		}
 	}

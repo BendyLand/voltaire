@@ -179,7 +179,7 @@ protected:
 	struct NamedIndexNode : public ENode
 	{
 		ENode* base = nullptr;
-		StringName name;
+		String name;
 
 		NamedIndexNode() { type = TYPE_NAMED_INDEX; }
 	};
@@ -194,7 +194,7 @@ protected:
 	struct CallNode : public ENode
 	{
 		ENode* base = nullptr;
-		StringName method;
+		String method;
 		Vector<ENode*> arguments;
 
 		CallNode() { type = TYPE_CALL; }
@@ -216,7 +216,7 @@ protected:
 
 	struct BuiltinFuncNode : public ENode
 	{
-		StringName func;
+		String func;
 		Vector<ENode*> arguments;
 
 		BuiltinFuncNode() { type = TYPE_BUILTIN_FUNC; }

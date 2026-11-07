@@ -568,7 +568,7 @@ private:
 
 	void _reload_project_settings();
 
-	bool _is_class_editor_disabled_by_feature_profile(const StringName& p_class);
+	bool _is_class_editor_disabled_by_feature_profile(const String& p_class);
 
 	void _immediate_dialog_confirmed();
 
@@ -637,7 +637,7 @@ public:
 	static void progress_task_step_bg(const String& p_task, int p_step = -1);
 	static void progress_end_task_bg(const String& p_task);
 
-	static void add_extension_editor_plugin(const StringName& p_class_name);
+	static void add_extension_editor_plugin(const String& p_class_name);
 
 	static void add_plugin_init_callback(EditorPluginInitializeCallback p_callback);
 

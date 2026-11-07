@@ -335,7 +335,7 @@ class EditorAssetLibrary : public PanelContainer
 
 	HBoxContainer* _make_pages(
 		int p_page, int p_page_count, int p_page_len, int p_total_items, int p_current_items);
-	void _update_button_icon(Button* p_button, const StringName& p_icon);
+	void _update_button_icon(Button* p_button, const String& p_icon);
 
 	enum RequestType
 	{

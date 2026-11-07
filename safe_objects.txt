@@ -2362,7 +2362,6 @@ bin/obj/core/io/stream_peer_socket.linuxbsd.editor.x86_64.o
 bin/obj/core/io/json_resource_format.linuxbsd.editor.x86_64.o
 bin/obj/core/io/udp_server.linuxbsd.editor.x86_64.o
 bin/obj/core/string/translation.linuxbsd.editor.x86_64.o
-bin/obj/core/string/string_name.linuxbsd.editor.x86_64.o
 bin/obj/core/string/translation_server.linuxbsd.editor.x86_64.o
 bin/obj/core/string/char_range.linuxbsd.editor.x86_64.o
 bin/obj/core/string/plural_rules.linuxbsd.editor.x86_64.o

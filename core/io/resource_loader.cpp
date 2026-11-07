@@ -72,7 +72,7 @@ bool ResourceFormatLoader::recognize_path(const String& p_path, const String& p_
 	return false;
 }
 
-void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<StringName>* r_classes)
+void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
 	Vector<String> ret;
 	for (int i = 0; i < ret.size(); i++) {
@@ -524,7 +524,7 @@ Ref<Resource> ResourceLoader::load_threaded_get(const String& p_path, Error* r_e
 			while (load_task_ptr->status == THREAD_LOAD_IN_PROGRESS) {
 				thread_load_lock.temp_unlock();
 				bool exit = !_ensure_load_progress();
-				OS::get_singleton()->delay_usec(1000);
+				OS::delay_usec(1000);
 
 				thread_load_lock.temp_relock();
 				if (exit) {
@@ -673,7 +673,7 @@ bool ResourceLoader::_ensure_load_progress()
 	// Since the only known one is the rendering server (in single thread mode), let's keep it
 	// simple and just sync it. This may be refactored in the future to support other servers and
 	// have less coupling.
-	if (OS::get_singleton()->is_separate_thread_rendering_enabled()) {
+	if (OS::is_separate_thread_rendering_enabled()) {
 		return false; // Not needed.
 	}
 	Renderer::sync();
@@ -850,7 +850,7 @@ Error ResourceLoader::rename_dependencies(
 	return OK; // ??
 }
 
-void ResourceLoader::get_classes_used(const String& p_path, HashSet<StringName>* r_classes)
+void ResourceLoader::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
 	String local_path = _validate_local_path(p_path);
 
@@ -1048,7 +1048,7 @@ void ResourceLoader::clear_thread_load_tasks()
 
 		thread_load_lock.temp_unlock();
 
-		OS::get_singleton()->delay_usec(1000);
+		OS::delay_usec(1000);
 
 		thread_load_lock.temp_relock();
 	}

@@ -324,7 +324,7 @@ void AudioDriverWeb::update_sample_playback_pitch_scale(const Ref<AudioSamplePla
 			p_pitch_scale);
 }
 
-void AudioDriverWeb::set_sample_playback_bus_volumes_linear(const Ref<AudioSamplePlayback> &p_playback, const HashMap<StringName, Vector<AudioFrame>> &p_bus_volumes) {
+void AudioDriverWeb::set_sample_playback_bus_volumes_linear(const Ref<AudioSamplePlayback> &p_playback, const HashMap<String, Vector<AudioFrame>> &p_bus_volumes) {
 	ERR_FAIL_COND_MSG(p_playback.is_null(), "Parameter p_playback is null.");
 
 	constexpr int real_max_channels = AudioServer::MAX_CHANNELS_PER_BUS * 2;
@@ -336,7 +336,7 @@ void AudioDriverWeb::set_sample_playback_bus_volumes_linear(const Ref<AudioSampl
 	values.resize(p_bus_volumes.size() * AudioServer::MAX_CHANNELS_PER_BUS * 2);
 	float *values_ptrw = values.ptrw();
 	int idx = 0;
-	for (KeyValue<StringName, Vector<AudioFrame>> pair : p_bus_volumes) {
+	for (KeyValue<String, Vector<AudioFrame>> pair : p_bus_volumes) {
 		int bus_index = AudioServer::get_singleton()->get_bus_index(pair.key);
 		buses_ptrw[idx] = bus_index;
 		ERR_FAIL_COND(pair.value.size() != AudioServer::MAX_CHANNELS_PER_BUS);
@@ -371,7 +371,7 @@ void AudioDriverWeb::move_sample_bus(int p_bus, int p_to_pos) {
 	godot_audio_sample_bus_move(p_bus, p_to_pos);
 }
 
-void AudioDriverWeb::set_sample_bus_send(int p_bus, const StringName &p_send) {
+void AudioDriverWeb::set_sample_bus_send(int p_bus, const String &p_send) {
 	godot_audio_sample_bus_set_send(p_bus, AudioServer::get_singleton()->get_bus_index(p_send));
 }
 

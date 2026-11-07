@@ -90,17 +90,17 @@ class ShaderMaterial : public Material
 {
 	Ref<Shader> shader;
 
-	mutable HashMap<StringName, StringName> remap_cache;
+	mutable HashMap<String, String> remap_cache;
 	mutable Mutex material_rid_mutex;
 
 protected:
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 
 	static void _bind_methods();
 
 #ifdef TOOLS_ENABLED
 	void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	virtual bool _can_do_next_pass() const override;
@@ -475,62 +475,62 @@ private:
 
 	struct ShaderNames
 	{
-		StringName albedo;
-		StringName specular;
-		StringName metallic;
-		StringName roughness;
-		StringName emission;
-		StringName emission_energy;
-		StringName normal_scale;
-		StringName rim;
-		StringName rim_tint;
-		StringName clearcoat;
-		StringName clearcoat_roughness;
-		StringName anisotropy;
-		StringName heightmap_scale;
-		StringName subsurface_scattering_strength;
-		StringName transmittance_color;
-		StringName transmittance_depth;
-		StringName transmittance_boost;
-		StringName backlight;
-		StringName refraction;
-		StringName point_size;
-		StringName uv1_scale;
-		StringName uv1_offset;
-		StringName uv2_scale;
-		StringName uv2_offset;
-		StringName particles_anim_h_frames;
-		StringName particles_anim_v_frames;
-		StringName particles_anim_loop;
-		StringName heightmap_min_layers;
-		StringName heightmap_max_layers;
-		StringName heightmap_flip;
-		StringName uv1_blend_sharpness;
-		StringName uv2_blend_sharpness;
-		StringName grow;
-		StringName proximity_fade_distance;
-		StringName msdf_pixel_range;
-		StringName msdf_outline_size;
-		StringName distance_fade_min;
-		StringName distance_fade_max;
-		StringName ao_light_affect;
+		String albedo;
+		String specular;
+		String metallic;
+		String roughness;
+		String emission;
+		String emission_energy;
+		String normal_scale;
+		String rim;
+		String rim_tint;
+		String clearcoat;
+		String clearcoat_roughness;
+		String anisotropy;
+		String heightmap_scale;
+		String subsurface_scattering_strength;
+		String transmittance_color;
+		String transmittance_depth;
+		String transmittance_boost;
+		String backlight;
+		String refraction;
+		String point_size;
+		String uv1_scale;
+		String uv1_offset;
+		String uv2_scale;
+		String uv2_offset;
+		String particles_anim_h_frames;
+		String particles_anim_v_frames;
+		String particles_anim_loop;
+		String heightmap_min_layers;
+		String heightmap_max_layers;
+		String heightmap_flip;
+		String uv1_blend_sharpness;
+		String uv2_blend_sharpness;
+		String grow;
+		String proximity_fade_distance;
+		String msdf_pixel_range;
+		String msdf_outline_size;
+		String distance_fade_min;
+		String distance_fade_max;
+		String ao_light_affect;
 
-		StringName metallic_texture_channel;
-		StringName ao_texture_channel;
-		StringName clearcoat_texture_channel;
-		StringName rim_texture_channel;
-		StringName heightmap_texture_channel;
-		StringName refraction_texture_channel;
+		String metallic_texture_channel;
+		String ao_texture_channel;
+		String clearcoat_texture_channel;
+		String rim_texture_channel;
+		String heightmap_texture_channel;
+		String refraction_texture_channel;
 
-		StringName texture_names[TEXTURE_MAX];
+		String texture_names[TEXTURE_MAX];
 
-		StringName alpha_scissor_threshold;
-		StringName alpha_hash_scale;
+		String alpha_scissor_threshold;
+		String alpha_hash_scale;
 
-		StringName alpha_antialiasing_edge;
-		StringName albedo_texture_size;
-		StringName z_clip_scale;
-		StringName fov_override;
+		String alpha_antialiasing_edge;
+		String albedo_texture_size;
+		String z_clip_scale;
+		String fov_override;
 	};
 
 	static Mutex material_mutex;
@@ -778,7 +778,7 @@ public:
 	void set_texture(TextureParam p_param, const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture(TextureParam p_param) const;
 	// Used only for shader material conversion
-	Ref<Texture2D> get_texture_by_name(const StringName& p_name) const;
+	Ref<Texture2D> get_texture_by_name(const String& p_name) const;
 
 	void set_texture_filter(TextureFilter p_filter);
 	TextureFilter get_texture_filter() const;

@@ -547,7 +547,7 @@ Rect2 AnimatedSprite3D::get_item_rect() const
 	}
 
 	Ref<Texture2D> t;
-	if (animation) {
+	if (!animation.is_empty()) {
 		t = frames->get_frame_texture(animation, frame);
 	}
 	if (t.is_null()) {
@@ -597,7 +597,7 @@ void AnimatedSprite3D::_calc_frame_speed_scale()
 	frame_speed_scale = 1.0 / _get_frame_duration();
 }
 
-StringName AnimatedSprite3D::get_animation() const { return animation; }
+String AnimatedSprite3D::get_animation() const { return animation; }
 
 PackedStringArray AnimatedSprite3D::get_configuration_warnings() const
 {
@@ -612,15 +612,15 @@ PackedStringArray AnimatedSprite3D::get_configuration_warnings() const
 
 #ifdef TOOLS_ENABLED
 void AnimatedSprite3D::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	if (p_idx == 0 && frames.is_valid()) {
 		if (pf == "play" || pf == "play_backwards" || pf == "set_animation" ||
 			pf == "set_autoplay") {
-			List<StringName> al;
+			List<String> al;
 			frames->get_animation_list(&al);
-			for (const StringName& name : al) {
+			for (const String& name : al) {
 				r_options->push_back(String(name).quote());
 			}
 		}

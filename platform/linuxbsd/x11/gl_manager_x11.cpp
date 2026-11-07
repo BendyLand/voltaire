@@ -139,7 +139,7 @@ Error GLManager_X11::_create_context(GLDisplay &gl_display) {
 	GLXFBConfig fbconfig = nullptr;
 	XVisualInfo *vi = nullptr;
 
-	if (OS::get_singleton()->is_layered_allowed()) {
+	if (OS::is_layered_allowed()) {
 		GLXFBConfig *fbc = glXChooseFBConfig(x11_display, DefaultScreen(x11_display), visual_attribs_layered, &fbcount);
 		ERR_FAIL_NULL_V(fbc, ERR_UNCONFIGURED);
 
@@ -333,7 +333,7 @@ void GLManager_X11::swap_buffers() {
 	}
 
 	// On X11, when enabled, transparency is always active, so clear alpha manually.
-	if (OS::get_singleton()->is_layered_allowed()) {
+	if (OS::is_layered_allowed()) {
 		if (!DisplayServer::get_singleton()->window_get_flag(DisplayServerEnums::WINDOW_FLAG_TRANSPARENT, _current_window->window_id)) {
 			glColorMask(false, false, false, true);
 			glClearColor(0, 0, 0, 1);

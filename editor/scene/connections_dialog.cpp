@@ -68,7 +68,7 @@ ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
 	return source_connection_data;
 }
 
-StringName ConnectDialog::get_signal_name() const { return signal; }
+String ConnectDialog::get_signal_name() const { return signal; }
 
 PackedStringArray ConnectDialog::get_signal_args() const { return signal_args; }
 
@@ -76,7 +76,7 @@ NodePath ConnectDialog::get_dst_path() const { return dst_path; }
 
 void ConnectDialog::set_dst_node(Node* p_node) { tree->set_selected(p_node); }
 
-StringName ConnectDialog::get_dst_method_name() const
+String ConnectDialog::get_dst_method_name() const
 {
 	String txt = dst_method->get_text();
 	if (txt.contains_char('(')) {
@@ -85,7 +85,7 @@ StringName ConnectDialog::get_dst_method_name() const
 	return txt;
 }
 
-void ConnectDialog::set_dst_method(const StringName& p_method) { dst_method->set_text(p_method); }
+void ConnectDialog::set_dst_method(const String& p_method) { dst_method->set_text(p_method); }
 
 int ConnectDialog::get_unbinds() const { return int(unbind_count->get_value()); }
 

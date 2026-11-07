@@ -94,16 +94,16 @@ void Area2D::set_audio_bus_override(bool p_override) { audio_bus_override = p_ov
 
 bool Area2D::is_overriding_audio_bus() const { return audio_bus_override; }
 
-void Area2D::set_audio_bus_name(const StringName& p_audio_bus) { audio_bus = p_audio_bus; }
+void Area2D::set_audio_bus_name(const String& p_audio_bus) { audio_bus = p_audio_bus; }
 
-StringName Area2D::get_audio_bus_name() const
+String Area2D::get_audio_bus_name() const
 {
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
 		if (AudioServer::get_singleton()->get_bus_name(i) == audio_bus) {
 			return audio_bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 

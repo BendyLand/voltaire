@@ -115,7 +115,7 @@ public:
 		float p_pitch_scale = 1.0,
 		AudioServer::PlaybackType p_playback_type =
 			AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT,
-		const StringName& p_bus = SceneStringName(Master));
+		const String& p_bus = SceneString(Master));
 	void set_stream_volume(ID p_stream_id, float p_volume_db);
 	void set_stream_pitch_scale(ID p_stream_id, float p_pitch_scale);
 	bool is_stream_playing(ID p_stream_id) const;

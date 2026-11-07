@@ -159,7 +159,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 
 	while (tcp_client->get_status() == StreamPeerTCP::STATUS_CONNECTING) {
 		tcp_client->poll();
-		OS::get_singleton()->delay_usec(100);
+		OS::delay_usec(100);
 	}
 
 	if (tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
@@ -190,8 +190,8 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 	print_verbose("Remote Filesystem: Tags.");
 	Vector<String> tags;
 	{
-		tags.push_back(OS::get_singleton()->get_identifier());
-		switch (OS::get_singleton()->get_preferred_texture_format()) {
+		tags.push_back(OS::get_identifier());
+		switch (OS::get_preferred_texture_format()) {
 			case OS::PREFERRED_TEXTURE_FORMAT_S3TC_BPTC: {
 				tags.push_back("bptc");
 				tags.push_back("s3tc");

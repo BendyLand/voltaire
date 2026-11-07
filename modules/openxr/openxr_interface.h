@@ -138,7 +138,7 @@ private:
 protected:
 
 public:
-	virtual StringName get_name() const override;
+	virtual String get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
 	virtual PackedStringArray get_suggested_tracker_names() const override;
@@ -153,7 +153,7 @@ public:
 	virtual bool initialize() override;
 	virtual void uninitialize() override;
 
-	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
+	virtual void trigger_haptic_pulse(const String& p_action_name, const String& p_tracker_name,
 		double p_frequency, double p_amplitude, double p_duration_sec,
 		double p_delay_sec = 0) override;
 

@@ -38,7 +38,10 @@
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 
+#define UNIQUE_NODE_PREFIX "%"
+
 class String;
+
 template <typename T> class CharStringT;
 
 /*************************************************************************/
@@ -389,6 +392,12 @@ public:
 	_FORCE_INLINE_ explicit String(float p_val) { *this = String::num_real(p_val); }
 
 	_FORCE_INLINE_ explicit String(double p_val) { *this = String::num_real(p_val); }
+	_FORCE_INLINE_ bool is_node_unique_name() const {
+	    if (_cowdata.is_empty()) {
+	        return false;
+	    }
+	    return (char32_t)_cowdata.get(0) == (char32_t)UNIQUE_NODE_PREFIX[0]; // '%'
+	}
 
 	_FORCE_INLINE_ ~String() = default;
 
@@ -1070,5 +1079,7 @@ template <typename... Args> _FORCE_INLINE_ String vformat(const String& p_fmt, A
 		return vformat_detail::dispatch(p_fmt, args, sizeof...(Args));
 	}
 }
+
+#define SNAME(m_arg) String(m_arg)
 
 

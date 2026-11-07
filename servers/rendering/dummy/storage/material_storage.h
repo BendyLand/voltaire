@@ -44,11 +44,11 @@ namespace RendererDummy
 class MaterialStorage final
 {
 private:
-	static inline HashMap<StringName, RSE::GlobalShaderParameterType> global_shader_variables;
+	static inline HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
 
 	struct DummyShader
 	{
-		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> uniforms;
+		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
 	};
 
 	static inline RID_Owner<DummyShader> shader_owner;
@@ -74,11 +74,11 @@ public:
 	static void finalize();
 
 	/* GLOBAL SHADER UNIFORM API */
-	static void global_shader_parameter_remove(const StringName& p_name);
-	static Vector<StringName> global_shader_parameter_get_list();
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
 
 	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
-		const StringName& p_name);
+		const String& p_name);
 
 	static void global_shader_parameters_load_settings(bool p_load_textures = true);
 
@@ -105,12 +105,12 @@ public:
 	static String shader_get_code(RID p_shader) { return ""; }
 
 	static void shader_set_default_texture_parameter(
-		RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+		RID p_shader, const String& p_name, RID p_texture, int p_index)
 	{
 	}
 
 	static RID shader_get_default_texture_parameter(
-		RID p_shader, const StringName& p_name, int p_index)
+		RID p_shader, const String& p_name, int p_index)
 	{
 		return RID();
 	}

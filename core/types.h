@@ -28,7 +28,7 @@
 
 // Strings & Paths
 #include "core/string/node_path.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/string/ustring.h"
 
 // Core Identifiers & Handles

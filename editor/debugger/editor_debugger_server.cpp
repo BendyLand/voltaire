@@ -94,7 +94,7 @@ public:
 	static Ref<EditorDebuggerServer> create(const String& p_protocol);
 };
 
-HashMap<StringName, EditorDebuggerServer::CreateServerFunc> EditorDebuggerServer::protocols;
+HashMap<String, EditorDebuggerServer::CreateServerFunc> EditorDebuggerServer::protocols;
 
 Ref<EditorDebuggerServer> EditorDebuggerServer::create(const String& p_protocol)
 {

@@ -53,9 +53,9 @@ class ResourceLoaderBinary
 	Vector<char> str_buf;
 	List<Ref<Resource>> resource_cache;
 
-	Vector<StringName> string_map;
+	Vector<String> string_map;
 
-	StringName _get_string();
+	String _get_string();
 
 	struct ExtResource
 	{
@@ -106,7 +106,7 @@ public:
 	String recognize(Ref<FileAccess> p_file);
 	String recognize_script_class(Ref<FileAccess> p_file);
 	void get_dependencies(Ref<FileAccess> p_file, List<String>* p_dependencies, bool p_add_types);
-	void get_classes_used(Ref<FileAccess> p_file, HashSet<StringName>* p_classes);
+	void get_classes_used(Ref<FileAccess> p_file, HashSet<String>* p_classes);
 };
 
 class ResourceFormatLoaderBinary : public ResourceFormatLoader
@@ -121,7 +121,7 @@ public:
 	virtual bool handles_type(const String& p_type) const override;
 	virtual String get_resource_type(const String& p_path) const override;
 	virtual String get_resource_script_class(const String& p_path) const override;
-	virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes) override;
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override;
 	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override;
 	virtual bool has_custom_uid_support() const override;
 	virtual void get_dependencies(
@@ -146,7 +146,7 @@ class ResourceFormatSaverBinaryInstance
 	struct NonPersistentKey
 	{ // for resource properties generated on the fly
 		Ref<Resource> base;
-		StringName property;
+		String property;
 
 		bool operator<(const NonPersistentKey& p_key) const
 		{
@@ -154,8 +154,8 @@ class ResourceFormatSaverBinaryInstance
 		}
 	};
 
-	HashMap<StringName, int> string_map;
-	Vector<StringName> strings;
+	HashMap<String, int> string_map;
+	Vector<String> strings;
 
 	HashMap<Ref<Resource>, int> external_resources;
 	List<Ref<Resource>> saved_resources;

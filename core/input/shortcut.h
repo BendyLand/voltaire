@@ -50,7 +50,7 @@ public:
 
 	String get_as_text() const;
 
-	static Ref<Shortcut> make_from_action(const StringName& p_action);
+	static Ref<Shortcut> make_from_action(const String& p_action);
 
 	static bool is_event_array_equal(const Vector<Ref<InputEvent>>& p_event_array1, const Vector<Ref<InputEvent>>& p_event_array2);
 };

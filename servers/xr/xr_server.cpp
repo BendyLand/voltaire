@@ -120,7 +120,7 @@ void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface
 
 void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
 
-Ref<XRTracker> XRServer::get_tracker(const StringName& p_name) const
+Ref<XRTracker> XRServer::get_tracker(const String& p_name) const
 {
 	Ref<XRTracker> xpt = memnew(XRTracker);
 	return xpt;

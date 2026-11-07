@@ -46,7 +46,7 @@ void initialize_mbedtls_module(ModuleInitializationLevel p_level)
 	}
 
 #ifdef DEBUG_ENABLED
-	if (OS::get_singleton()->is_stdout_verbose()) {
+	if (OS::is_stdout_verbose()) {
 		mbedtls_debug_set_threshold(1);
 	}
 #endif

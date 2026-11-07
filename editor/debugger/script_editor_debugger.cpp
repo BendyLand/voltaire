@@ -141,7 +141,7 @@ void ScriptEditorDebugger::update_tabs()
 
 void ScriptEditorDebugger::clear_style()
 {
-	tabs->remove_theme_style_override(SceneStringName(panel));
+	tabs->remove_theme_style_override(SceneString(panel));
 }
 
 void ScriptEditorDebugger::_file_selected(const String& p_file)
@@ -461,7 +461,7 @@ void ScriptEditorDebugger::_vmem_item_menu_id_pressed(int p_option)
 	String path = item->get_text(0);
 	switch (p_option) {
 	case VMEM_MENU_SHOW_IN_EXPLORER: {
-		OS::get_singleton()->shell_show_in_file_manager(
+		OS::shell_show_in_file_manager(
 			ProjectSettings::globalize_path(path), true);
 	} break;
 	}
@@ -527,7 +527,7 @@ void ScriptEditorDebugger::_item_menu_id_pressed(int p_option)
 		String git_ref = String(VLTR_VERSION_HASH).is_empty()
 							 ? String(VLTR_VERSION_NUMBER) + "-stable"
 							 : String(VLTR_VERSION_HASH);
-		OS::get_singleton()->shell_open(vformat(
+		OS::shell_open(vformat(
 			"https://github.com/godotengine/godot/blob/%s/%s#L%d", git_ref, file, line_number));
 	} break;
 	case ACTION_DELETE_BREAKPOINT: {

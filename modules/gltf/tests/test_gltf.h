@@ -70,7 +70,7 @@ static Node *gltf_import(const String &p_file) {
 		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
 	}
 
-	HashMap<StringName, Variant> options(21);
+	HashMap<String, Variant> options(21);
 	options["nodes/root_type"] = "";
 	options["nodes/root_name"] = "";
 	options["nodes/root_script"] = Variant();

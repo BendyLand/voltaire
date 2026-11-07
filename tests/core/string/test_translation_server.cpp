@@ -69,7 +69,7 @@ TEST_CASE("[TranslationServer] Translation operations") {
 	CHECK(td->find_translations("uk_UA", true).size() == 1);
 
 	td->set_locale_override("uk");
-	CHECK(td->translate("Good Morning", StringName()) == String::utf8("Добрий ранок"));
+	CHECK(td->translate("Good Morning", String()) == String::utf8("Добрий ранок"));
 
 	td->remove_translation(t1);
 	CHECK(td->get_translations().size() == 1);
@@ -83,7 +83,7 @@ TEST_CASE("[TranslationServer] Translation operations") {
 	CHECK(td->find_translations("uk_UA", false).size() == 1);
 
 	// If no suitable Translation object has been found - the original message should be returned.
-	CHECK(td->translate("Good Morning", StringName()) == "Good Morning");
+	CHECK(td->translate("Good Morning", String()) == "Good Morning");
 
 	TranslationServer::get_singleton()->remove_domain("godot.test");
 }

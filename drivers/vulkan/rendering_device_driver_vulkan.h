@@ -405,6 +405,7 @@ public:
 	virtual bool command_pool_reset(CommandPoolID p_cmd_pool) override final;
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
 
+
 private:
 	struct CommandBufferInfo
 	{
@@ -534,7 +535,7 @@ private:
 
 	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;
 	DescriptorSetPools descriptor_set_pools;
-	uint32_t max_descriptor_sets_per_pool = 0;
+	uint32_t max_descriptor_sets_per_pool = 64;
 
 	HashMap<int, DescriptorSetPools> linear_descriptor_set_pools;
 	bool linear_descriptor_pools_enabled = true;

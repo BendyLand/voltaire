@@ -100,8 +100,8 @@ NodePath GLTFNode::get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_ske
 {
 	ERR_FAIL_COND_V_MSG(
 		p_state.is_null(), NodePath(), "Cannot get scene node path because GLTFState is null.");
-	Vector<StringName> path;
-	Vector<StringName> subpath;
+	Vector<String> path;
+	Vector<String> subpath;
 	Ref<GLTFNode> current_gltf_node = this;
 	const int gltf_node_count = p_state->nodes.size();
 	if (p_handle_skeletons && skeleton != -1) {

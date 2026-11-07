@@ -42,11 +42,11 @@ void register_android_exporter_types() {}
 inline String get_default_android_sdk_path()
 {
 #ifdef WINDOWS_ENABLED
-	return OS::get_singleton()->get_environment("LOCALAPPDATA").path_join("Android/Sdk");
+	return OS::get_environment("LOCALAPPDATA").path_join("Android/Sdk");
 #elif LINUXBSD_ENABLED
-	return OS::get_singleton()->get_environment("HOME").path_join("Android/Sdk");
+	return OS::get_environment("HOME").path_join("Android/Sdk");
 #elif MACOS_ENABLED
-	return OS::get_singleton()->get_environment("HOME").path_join("Library/Android/sdk");
+	return OS::get_environment("HOME").path_join("Library/Android/sdk");
 #else
 	return String();
 #endif

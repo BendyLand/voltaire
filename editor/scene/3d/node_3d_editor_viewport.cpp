@@ -172,9 +172,9 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 		// Draw the axis letter for the positive axes.
 		const String axis_name = direction == 0 ? "X" : (direction == 1 ? "Y" : "Z");
 		const Ref<Font>& font =
-			get_theme_font(SNAME("rotation_control"), EditorStringName(EditorFonts));
+			get_theme_font(SNAME("rotation_control"), EditorString(EditorFonts));
 		const int font_size =
-			get_theme_font_size(SNAME("rotation_control_size"), EditorStringName(EditorFonts));
+			get_theme_font_size(SNAME("rotation_control_size"), EditorString(EditorFonts));
 		const Size2 char_size = font->get_char_size(axis_name[0], font_size);
 		const Vector2 char_offset = Vector2(-char_size.width / 2.0, char_size.height * 0.25);
 		draw_char(
@@ -189,9 +189,9 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 		// Draw the text for the negative axes.
 		const String axis_name = direction == 0 ? "-X" : (direction == 1 ? "-Y" : "-Z");
 		const Ref<Font>& font =
-			get_theme_font(SNAME("rotation_control"), EditorStringName(EditorFonts));
+			get_theme_font(SNAME("rotation_control"), EditorString(EditorFonts));
 		const int font_size =
-			get_theme_font_size(SNAME("rotation_control_size"), EditorStringName(EditorFonts));
+			get_theme_font_size(SNAME("rotation_control_size"), EditorString(EditorFonts));
 		const Size2 string_size =
 			font->get_string_size(axis_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size);
 		const float font_ascent = font->get_ascent(font_size);

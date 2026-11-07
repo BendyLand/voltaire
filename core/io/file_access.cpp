@@ -100,7 +100,7 @@ Ref<FileAccess> FileAccess::create_temp(ModeFlags p_mode_flags, const String& p_
 			vformat(R"(%s: "%s" is not a valid extension.)", ERROR_COMMON_PREFIX, p_extension));
 	}
 
-	const String TEMP_DIR = OS::get_singleton()->get_temp_path();
+	const String TEMP_DIR = OS::get_temp_path();
 	String extension = p_extension.trim_prefix(".");
 
 	uint32_t suffix_i = 0;
@@ -308,7 +308,7 @@ String FileAccess::fix_path(const String& p_path) const
 	} break;
 	case ACCESS_USERDATA: {
 		if (r_path.begins_with("user://")) {
-			String data_dir = OS::get_singleton()->get_user_data_dir();
+			String data_dir = OS::get_user_data_dir();
 			if (!data_dir.is_empty()) {
 				return r_path.replace("user:/", data_dir);
 			}

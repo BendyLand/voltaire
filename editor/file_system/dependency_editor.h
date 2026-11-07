@@ -145,7 +145,7 @@ class DependencyRemoveDialog : public ConfirmationDialog
 		}
 	};
 
-	LocalVector<StringName> path_project_settings;
+	LocalVector<String> path_project_settings;
 
 	void _find_files_in_removed_folder(EditorFileSystemDirectory* efsd, const String& p_folder);
 	void _find_all_removed_dependencies(
@@ -162,8 +162,8 @@ public:
 
 class DependencyErrorDialog : public ConfirmationDialog
 {
-	StringName icon_name_fail;
-	StringName icon_name_check;
+	String icon_name_fail;
+	String icon_name_check;
 
 	String for_file;
 

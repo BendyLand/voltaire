@@ -38,7 +38,7 @@ class PackedScene;
 
 class SceneState : public RefCounted
 {
-	Vector<StringName> names;
+	Vector<String> names;
 	Vector<NodePath> node_paths;
 	Vector<PackedInt32Array> id_paths;
 	mutable PackedInt32Array ids;
@@ -76,7 +76,7 @@ class SceneState : public RefCounted
 
 	struct DeferredNodePathProperties
 	{
-		StringName property;
+		String property;
 	};
 
 	Vector<NodeData> nodes;
@@ -147,9 +147,9 @@ public:
 		const Ref<Resource>& p_fallback, Node* p_for_scene);
 
 	int find_node_by_path(const NodePath& p_node) const;
-	bool is_node_in_group(int p_node, const StringName& p_group) const;
+	bool is_node_in_group(int p_node, const String& p_group) const;
 	bool is_connection(
-		int p_node, const StringName& p_signal, int p_to_node, const StringName& p_to_method) const;
+		int p_node, const String& p_signal, int p_to_node, const String& p_to_method) const;
 
 	Error pack(Node* p_scene);
 
@@ -169,8 +169,8 @@ public:
 	// unbuild API
 
 	int get_node_count() const;
-	StringName get_node_type(int p_idx) const;
-	StringName get_node_name(int p_idx) const;
+	String get_node_type(int p_idx) const;
+	String get_node_name(int p_idx) const;
 	NodePath get_node_path(int p_idx, bool p_for_parent = false) const;
 	int32_t get_node_unique_id(int p_idx) const;
 	PackedInt32Array get_node_id_path(int p_idx) const;
@@ -180,18 +180,18 @@ public:
 	Ref<PackedScene> get_node_instance(int p_idx) const;
 	String get_node_instance_placeholder(int p_idx) const;
 	bool is_node_instance_placeholder(int p_idx) const;
-	Vector<StringName> get_node_groups(int p_idx) const;
+	Vector<String> get_node_groups(int p_idx) const;
 	int get_node_index(int p_idx) const;
 
 	int get_node_property_count(int p_idx) const;
-	StringName get_node_property_name(int p_idx, int p_prop) const;
+	String get_node_property_name(int p_idx, int p_prop) const;
 	Vector<String> get_node_deferred_nodepath_properties(int p_idx) const;
 
 	int get_connection_count() const;
 	NodePath get_connection_source(int p_idx) const;
-	StringName get_connection_signal(int p_idx) const;
+	String get_connection_signal(int p_idx) const;
 	NodePath get_connection_target(int p_idx) const;
-	StringName get_connection_method(int p_idx) const;
+	String get_connection_method(int p_idx) const;
 
 	PackedInt32Array get_connection_source_id_path(int p_idx) const;
 	PackedInt32Array get_connection_target_id_path(int p_idx) const;
@@ -199,8 +199,8 @@ public:
 	int get_connection_flags(int p_idx) const;
 	int get_connection_unbinds(int p_idx) const;
 
-	bool has_connection(const NodePath& p_node_from, const StringName& p_signal,
-		const NodePath& p_node_to, const StringName& p_method, bool p_no_inheritance = false);
+	bool has_connection(const NodePath& p_node_from, const String& p_signal,
+		const NodePath& p_node_to, const String& p_method, bool p_no_inheritance = false);
 
 	Vector<NodePath> get_editable_instances() const;
 	Ref<Resource> get_sub_resource(const String& p_path);
@@ -208,7 +208,7 @@ public:
 
 	// build API
 
-	int add_name(const StringName& p_name);
+	int add_name(const String& p_name);
 	int add_node_path(const NodePath& p_path, const PackedInt32Array& p_uid_path);
 	int add_node(int p_parent, int p_owner, int p_type, int p_name, int p_instance, int p_index,
 		int32_t p_unique_id);
@@ -219,9 +219,9 @@ public:
 		int p_unbinds, const Vector<int>& p_binds);
 	void add_editable_instance(const NodePath& p_path);
 
-	bool remove_group_references(const StringName& p_name);
-	bool rename_group_references(const StringName& p_old_name, const StringName& p_new_name);
-	HashSet<StringName> get_all_groups();
+	bool remove_group_references(const String& p_name);
+	bool rename_group_references(const String& p_old_name, const String& p_new_name);
+	HashSet<String> get_all_groups();
 
 	virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
 

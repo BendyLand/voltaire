@@ -24,6 +24,9 @@ CompileFlags:
     - -Wno-unused-const-variable
     - -Wno-unused-function
     - -Wno-unused-variable
+    - -isystem=/usr/include/c++/12
+    - -isystem=/usr/include/c++/13
+    - -isystem=/usr/include/c++/v1
 
 ---
 

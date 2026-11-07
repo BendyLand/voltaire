@@ -67,14 +67,14 @@
 class TextServerFallback : public TextServerExtension {
 	_THREAD_SAFE_CLASS_
 
-	HashMap<StringName, int32_t> feature_sets;
-	HashMap<int32_t, StringName> feature_sets_inv;
+	HashMap<String, int32_t> feature_sets;
+	HashMap<int32_t, String> feature_sets_inv;
 
 	SafeNumeric<TextServer::FontLCDSubpixelLayout> lcd_subpixel_layout{ TextServer::FontLCDSubpixelLayout::FONT_LCD_SUBPIXEL_LAYOUT_NONE };
 	void _update_settings();
 
 	void _insert_feature_sets();
-	_FORCE_INLINE_ void _insert_feature(const StringName &p_name, int32_t p_tag);
+	_FORCE_INLINE_ void _insert_feature(const String &p_name, int32_t p_tag);
 
 	// Font cache data.
 

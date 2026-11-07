@@ -57,13 +57,13 @@ private:
 			Performance::MonitorType p_type, TreeItem* p_item);
 	};
 
-	HashMap<StringName, Monitor> monitors;
+	HashMap<String, Monitor> monitors;
 
-	HashMap<StringName, TreeItem*> base_map;
+	HashMap<String, TreeItem*> base_map;
 	Tree* monitor_tree = nullptr;
 	Control* monitor_draw = nullptr;
 	Label* info_message = nullptr;
-	StringName marker_key;
+	String marker_key;
 	int marker_frame = 0;
 	const int MARGIN = 4;
 	const int POINT_SEPARATION = 5;
@@ -79,7 +79,7 @@ protected:
 public:
 	void reset();
 	void add_profile_frame(const Vector<float>& p_values);
-	List<float>* get_monitor_data(const StringName& p_name);
+	List<float>* get_monitor_data(const String& p_name);
 	EditorPerformanceProfiler() = default;
 };
 

@@ -39,10 +39,10 @@ void AnimatedTexture::_update_proxy()
 	float delta;
 	if (prev_ticks == 0) {
 		delta = 0;
-		prev_ticks = OS::get_singleton()->get_ticks_usec();
+		prev_ticks = OS::get_ticks_usec();
 	}
 	else {
-		uint64_t ticks = OS::get_singleton()->get_ticks_usec();
+		uint64_t ticks = OS::get_ticks_usec();
 		delta = float(double(ticks - prev_ticks) / 1000000.0);
 		prev_ticks = ticks;
 	}

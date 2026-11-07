@@ -81,7 +81,7 @@ void AnimationNodeBlendTreeEditor::_scroll_changed(const Vector2& p_scroll)
 AnimationNodeBlendTreeEditor* AnimationNodeBlendTreeEditor::singleton = nullptr;
 
 // AnimationNode's "node_changed" signal means almost update_input.
-void AnimationNodeBlendTreeEditor::_node_changed(const StringName& p_node_name)
+void AnimationNodeBlendTreeEditor::_node_changed(const String& p_node_name)
 {
 	// TODO:
 	// Here is executed during the commit of EditorNode::undo_redo, it is not possible to create an

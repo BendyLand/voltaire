@@ -477,14 +477,14 @@ String Renderer::get_current_rendering_driver_name()
 {
 	// Needs to remain in OS, since it's actually OS that interacts with it, but it's better exposed
 	// here.
-	return ::OS::get_singleton()->get_current_rendering_driver_name();
+	return ::OS::get_current_rendering_driver_name();
 }
 
 String Renderer::get_current_rendering_method()
 {
 	// Needs to remain in OS, since it's actually OS that interacts with it, but it's better exposed
 	// here.
-	return ::OS::get_singleton()->get_current_rendering_method();
+	return ::OS::get_current_rendering_method();
 }
 
 Vector<uint8_t> _convert_surface_version_1_to_surface_version_2(uint64_t p_format,
@@ -594,16 +594,15 @@ void Renderer::mesh_add_surface_from_mesh_data(RID p_mesh, const Geometry3D::Mes
 RID Renderer::make_sphere_mesh(int p_lats, int p_lons, real_t p_radius) { return RID(); }
 
 void Renderer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options)
+	const String& p_function, int p_idx, List<String>* r_options)
 {
 }
 
-void Renderer::init()
+void Renderer::initialize()
 {
 	data = memnew(Data);
 	RendererCompositor::create();
-	gi = RendererCompositor::get_gi();
-	fog = RendererCompositor::get_fog();
+
 	canvas_render = RendererCompositor::get_canvas();
 	viewport = memnew(RendererViewport);
 	canvas = memnew(RendererCanvasCull);
@@ -615,34 +614,18 @@ void Renderer::init()
 
 void Renderer::finalize()
 {
+	RendererCompositor::finalize();
 	memdelete(canvas);
 	canvas = nullptr;
 	memdelete(viewport);
 	viewport = nullptr;
 	particles_storage = nullptr;
-	gi = nullptr;
 	fog = nullptr;
 	canvas_render = nullptr;
 	scene = nullptr;
 	if (data) {
 		memdelete(data);
 		data = nullptr;
-	}
-}
-
-void Renderer::draw(bool p_swap_buffers, double frame_step)
-{
-	static bool printed = false;
-	if (!printed) {
-		__print_line("Renderer::draw called!");
-		printed = true;
-	}
-	if (viewport) {
-		viewport->draw_viewports(p_swap_buffers);
-	}
-
-	if (canvas) {
-		canvas->update();
 	}
 }
 
@@ -1644,7 +1627,7 @@ void Renderer::shader_set_path_hint(RID p_shader, const String& p_path)
 }
 
 void Renderer::shader_set_default_texture_parameter(
-	RID p_shader, const StringName& p_name, RID p_texture, int p_index)
+	RID p_shader, const String& p_name, RID p_texture, int p_index)
 {
 	RendererMaterialStorage::shader_set_default_texture_parameter(
 		p_shader, p_name, p_texture, p_index);
@@ -2665,8 +2648,8 @@ void Renderer::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shap
 
 RID Renderer::voxel_gi_create()
 {
-	RID ret = RS::gi->voxel_gi_allocate();
-	RS::gi->voxel_gi_initialize(ret);
+	RID ret = RendererGI::voxel_gi_allocate();
+	RendererGI::voxel_gi_initialize(ret);
 	return ret;
 }
 
@@ -2675,68 +2658,68 @@ void Renderer::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_ce
 	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
 	const Vector<int>& p_level_counts)
 {
-	RS::gi->voxel_gi_allocate_data(p_voxel_gi, p_to_cell_xform, p_aabb, p_octree_size,
+	RendererGI::voxel_gi_allocate_data(p_voxel_gi, p_to_cell_xform, p_aabb, p_octree_size,
 		p_octree_cells, p_data_cells, p_distance_field, p_level_counts);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_octree_cells(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_octree_cells(p_voxel_gi);
+	return RendererGI::voxel_gi_get_octree_cells(p_voxel_gi);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_data_cells(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_data_cells(p_voxel_gi);
+	return RendererGI::voxel_gi_get_data_cells(p_voxel_gi);
 }
 
 Vector<uint8_t> Renderer::voxel_gi_get_distance_field(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_distance_field(p_voxel_gi);
+	return RendererGI::voxel_gi_get_distance_field(p_voxel_gi);
 }
 
 Vector<int> Renderer::voxel_gi_get_level_counts(RID p_voxel_gi)
 {
-	return RS::gi->voxel_gi_get_level_counts(p_voxel_gi);
+	return RendererGI::voxel_gi_get_level_counts(p_voxel_gi);
 }
 
 void Renderer::voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range)
 {
-	RS::gi->voxel_gi_set_dynamic_range(p_voxel_gi, p_range);
+	RendererGI::voxel_gi_set_dynamic_range(p_voxel_gi, p_range);
 }
 
 void Renderer::voxel_gi_set_propagation(RID p_voxel_gi, float p_propagation)
 {
-	RS::gi->voxel_gi_set_propagation(p_voxel_gi, p_propagation);
+	RendererGI::voxel_gi_set_propagation(p_voxel_gi, p_propagation);
 }
 
 void Renderer::voxel_gi_set_energy(RID p_voxel_gi, float p_energy)
 {
-	RS::gi->voxel_gi_set_energy(p_voxel_gi, p_energy);
+	RendererGI::voxel_gi_set_energy(p_voxel_gi, p_energy);
 }
 
 void Renderer::voxel_gi_set_bias(RID p_voxel_gi, float p_bias)
 {
-	RS::gi->voxel_gi_set_bias(p_voxel_gi, p_bias);
+	RendererGI::voxel_gi_set_bias(p_voxel_gi, p_bias);
 }
 
 void Renderer::voxel_gi_set_normal_bias(RID p_voxel_gi, float p_bias)
 {
-	RS::gi->voxel_gi_set_normal_bias(p_voxel_gi, p_bias);
+	RendererGI::voxel_gi_set_normal_bias(p_voxel_gi, p_bias);
 }
 
 void Renderer::voxel_gi_set_interior(RID p_voxel_gi, bool p_interior)
 {
-	RS::gi->voxel_gi_set_interior(p_voxel_gi, p_interior);
+	RendererGI::voxel_gi_set_interior(p_voxel_gi, p_interior);
 }
 
 void Renderer::voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_use_two_bounces)
 {
-	RS::gi->voxel_gi_set_use_two_bounces(p_voxel_gi, p_use_two_bounces);
+	RendererGI::voxel_gi_set_use_two_bounces(p_voxel_gi, p_use_two_bounces);
 }
 
 void Renderer::voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_normalization)
 {
-	RS::gi->voxel_gi_set_baked_exposure_normalization(p_voxel_gi, p_normalization);
+	RendererGI::voxel_gi_set_baked_exposure_normalization(p_voxel_gi, p_normalization);
 }
 
 RID Renderer::reflection_probe_create()
@@ -2802,4 +2785,15 @@ void Renderer::reflection_probe_set_update_mode(RID p_probe, RSE::ReflectionProb
 	RendererLightStorage::reflection_probe_set_update_mode(p_probe, p_mode);
 }
 
+void Renderer::draw(bool p_swap_buffers, double frame_step)
+{
+    if (viewport) {
+        viewport->draw_viewports(p_swap_buffers);
+    }
 
+    if (canvas) {
+        canvas->update();
+    }
+
+    RendererCompositor::end_frame(p_swap_buffers);
+}

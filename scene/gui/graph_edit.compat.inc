@@ -44,7 +44,7 @@ PackedVector2Array GraphEdit::_get_connection_line_bind_compat_86158(
 }
 
 Error GraphEdit::_connect_node_bind_compat_97449(
-	const StringName& p_from, int p_from_port, const StringName& p_to, int p_to_port)
+	const String& p_from, int p_from_port, const String& p_to, int p_to_port)
 {
 	return connect_node(p_from, p_from_port, p_to, p_to_port);
 }

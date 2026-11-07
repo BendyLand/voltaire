@@ -70,7 +70,7 @@ static Node* _find_node_by_id(Node* p_owner, Node* p_node, int32_t p_id)
 	return nullptr;
 }
 
-static int _nm_get_string(const String& p_string, HashMap<StringName, int>& name_map)
+static int _nm_get_string(const String& p_string, HashMap<String, int>& name_map)
 {
 	if (name_map.has(p_string)) {
 		return name_map[p_string];
@@ -131,12 +131,12 @@ int SceneState::_find_base_scene_node_remap_key(int p_idx) const
 	return -1;
 }
 
-bool SceneState::is_node_in_group(int p_node, const StringName& p_group) const
+bool SceneState::is_node_in_group(int p_node, const String& p_group) const
 {
 	ERR_FAIL_COND_V(p_node < 0, false);
 
 	if (p_node < nodes.size()) {
-		const StringName* namep = names.ptr();
+		const String* namep = names.ptr();
 		for (int i = 0; i < nodes[p_node].groups.size(); i++) {
 			if (namep[nodes[p_node].groups[i]] == p_group) {
 				return true;
@@ -156,7 +156,7 @@ bool SceneState::disable_placeholders = false;
 void SceneState::set_disable_placeholders(bool p_disable) { disable_placeholders = p_disable; }
 
 bool SceneState::is_connection(
-	int p_node, const StringName& p_signal, int p_to_node, const StringName& p_to_method) const
+	int p_node, const String& p_signal, int p_to_node, const String& p_to_method) const
 {
 	ERR_FAIL_COND_V(p_node < 0, false);
 	ERR_FAIL_COND_V(p_to_node < 0, false);
@@ -195,18 +195,18 @@ bool SceneState::is_connection(
 
 int SceneState::get_node_count() const { return nodes.size(); }
 
-StringName SceneState::get_node_type(int p_idx) const
+String SceneState::get_node_type(int p_idx) const
 {
-	ERR_FAIL_INDEX_V(p_idx, nodes.size(), StringName());
+	ERR_FAIL_INDEX_V(p_idx, nodes.size(), String());
 	if (nodes[p_idx].type == TYPE_INSTANTIATED) {
-		return StringName();
+		return String();
 	}
 	return names[nodes[p_idx].type];
 }
 
-StringName SceneState::get_node_name(int p_idx) const
+String SceneState::get_node_name(int p_idx) const
 {
-	ERR_FAIL_INDEX_V(p_idx, nodes.size(), StringName());
+	ERR_FAIL_INDEX_V(p_idx, nodes.size(), String());
 	return names[nodes[p_idx].name];
 }
 
@@ -223,10 +223,10 @@ bool SceneState::is_node_instance_placeholder(int p_idx) const
 	return nodes[p_idx].instance >= 0 && (nodes[p_idx].instance & FLAG_INSTANCE_IS_PLACEHOLDER);
 }
 
-Vector<StringName> SceneState::get_node_groups(int p_idx) const
+Vector<String> SceneState::get_node_groups(int p_idx) const
 {
-	ERR_FAIL_INDEX_V(p_idx, nodes.size(), Vector<StringName>());
-	Vector<StringName> groups;
+	ERR_FAIL_INDEX_V(p_idx, nodes.size(), Vector<String>());
+	Vector<String> groups;
 	for (int i = 0; i < nodes[p_idx].groups.size(); i++) {
 		groups.push_back(names[nodes[p_idx].groups[i]]);
 	}
@@ -254,7 +254,7 @@ NodePath SceneState::get_node_path(int p_idx, bool p_for_parent) const
 		}
 	}
 
-	Vector<StringName> sub_path;
+	Vector<String> sub_path;
 	NodePath base_path;
 	int nidx = p_idx;
 	while (true) {
@@ -342,10 +342,10 @@ int SceneState::get_node_property_count(int p_idx) const
 	return nodes[p_idx].properties.size();
 }
 
-StringName SceneState::get_node_property_name(int p_idx, int p_prop) const
+String SceneState::get_node_property_name(int p_idx, int p_prop) const
 {
-	ERR_FAIL_INDEX_V(p_idx, nodes.size(), StringName());
-	ERR_FAIL_INDEX_V(p_prop, nodes[p_idx].properties.size(), StringName());
+	ERR_FAIL_INDEX_V(p_idx, nodes.size(), String());
+	ERR_FAIL_INDEX_V(p_prop, nodes[p_idx].properties.size(), String());
 	return names[nodes[p_idx].properties[p_prop].name & FLAG_PROP_NAME_MASK];
 }
 
@@ -401,9 +401,9 @@ NodePath SceneState::get_connection_source(int p_idx) const
 	}
 }
 
-StringName SceneState::get_connection_signal(int p_idx) const
+String SceneState::get_connection_signal(int p_idx) const
 {
-	ERR_FAIL_INDEX_V(p_idx, connections.size(), StringName());
+	ERR_FAIL_INDEX_V(p_idx, connections.size(), String());
 	return names[connections[p_idx].signal];
 }
 
@@ -440,9 +440,9 @@ PackedInt32Array SceneState::get_connection_source_id_path(int p_idx) const
 	}
 }
 
-StringName SceneState::get_connection_method(int p_idx) const
+String SceneState::get_connection_method(int p_idx) const
 {
-	ERR_FAIL_INDEX_V(p_idx, connections.size(), StringName());
+	ERR_FAIL_INDEX_V(p_idx, connections.size(), String());
 	return names[connections[p_idx].method];
 }
 
@@ -458,8 +458,8 @@ int SceneState::get_connection_unbinds(int p_idx) const
 	return connections[p_idx].unbinds;
 }
 
-bool SceneState::has_connection(const NodePath& p_node_from, const StringName& p_signal,
-	const NodePath& p_node_to, const StringName& p_method, bool p_no_inheritance)
+bool SceneState::has_connection(const NodePath& p_node_from, const String& p_signal,
+	const NodePath& p_node_to, const String& p_method, bool p_no_inheritance)
 {
 	// this method cannot be const because of this
 	Ref<SceneState> ss = this;
@@ -486,8 +486,8 @@ bool SceneState::has_connection(const NodePath& p_node_from, const StringName& p
 				np_to = ss->get_node_path(c.to);
 			}
 
-			StringName sn_signal = ss->names[c.signal];
-			StringName sn_method = ss->names[c.method];
+			String sn_signal = ss->names[c.signal];
+			String sn_method = ss->names[c.method];
 
 			if (np_from == p_node_from && sn_signal == p_signal && np_to == p_node_to &&
 				sn_method == p_method) {
@@ -507,7 +507,7 @@ bool SceneState::has_connection(const NodePath& p_node_from, const StringName& p
 
 Vector<NodePath> SceneState::get_editable_instances() const { return editable_instances; }
 
-int SceneState::add_name(const StringName& p_name)
+int SceneState::add_name(const String& p_name)
 {
 	names.push_back(p_name);
 	return names.size() - 1;
@@ -550,7 +550,7 @@ void SceneState::add_editable_instance(const NodePath& p_path)
 	editable_instances.push_back(p_path);
 }
 
-bool SceneState::remove_group_references(const StringName& p_name)
+bool SceneState::remove_group_references(const String& p_name)
 {
 	bool edited = false;
 	for (NodeData& node : nodes) {
@@ -565,7 +565,7 @@ bool SceneState::remove_group_references(const StringName& p_name)
 	return edited;
 }
 
-bool SceneState::rename_group_references(const StringName& p_old_name, const StringName& p_new_name)
+bool SceneState::rename_group_references(const String& p_old_name, const String& p_new_name)
 {
 	bool edited = false;
 	for (const NodeData& node : nodes) {
@@ -580,9 +580,9 @@ bool SceneState::rename_group_references(const StringName& p_old_name, const Str
 	return edited;
 }
 
-HashSet<StringName> SceneState::get_all_groups()
+HashSet<String> SceneState::get_all_groups()
 {
-	HashSet<StringName> ret;
+	HashSet<String> ret;
 	for (const NodeData& node : nodes) {
 		for (const int& group : node.groups) {
 			ret.insert(names[group]);
@@ -593,7 +593,7 @@ HashSet<StringName> SceneState::get_all_groups()
 
 Vector<String> SceneState::_get_node_groups(int p_idx) const
 {
-	Vector<StringName> groups = get_node_groups(p_idx);
+	Vector<String> groups = get_node_groups(p_idx);
 	Vector<String> ret;
 
 	for (int i = 0; i < groups.size(); i++) {

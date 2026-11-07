@@ -115,7 +115,7 @@ static void static_test_daemon(void *p_arg) {
 
 static void static_busy_task(void *p_arg) {
 	while (!exit.is_set()) {
-		OS::get_singleton()->delay_usec(1);
+		OS::delay_usec(1);
 	}
 }
 
@@ -148,7 +148,7 @@ TEST_CASE("[WorkerThreadPool] Run a yielding daemon as the only hope for other t
 	}
 
 	while (counter[1].get() != legit_tasks_count) {
-		OS::get_singleton()->delay_usec(1);
+		OS::delay_usec(1);
 	}
 
 	exit.set();

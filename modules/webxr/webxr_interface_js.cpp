@@ -113,7 +113,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void _emwebxr_on_simple_event(char *p_signal_nam
 	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
-	StringName signal_name = StringName(p_signal_name);
+	String signal_name = String(p_signal_name);
 	interface->emit_signal(signal_name);
 }
 
@@ -269,7 +269,7 @@ void WebXRInterfaceJS::_set_environment_blend_mode(const String &p_blend_mode_st
 	}
 }
 
-StringName WebXRInterfaceJS::get_name() const {
+String WebXRInterfaceJS::get_name() const {
 	return "WebXR";
 }
 
@@ -669,7 +669,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 	if (tracker.is_null()) {
 		tracker.instantiate();
 
-		StringName tracker_name;
+		String tracker_name;
 		if (input_source.target_ray_mode == WebXRInterface::TargetRayMode::TARGET_RAY_MODE_SCREEN) {
 			tracker_name = touch_names[touch_index];
 		} else {
@@ -689,15 +689,15 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 	}
 
 	Transform3D aim_transform = _js_matrix_to_transform(target_pose);
-	tracker->set_pose(SceneStringName(default_), aim_transform, Vector3(), Vector3());
+	tracker->set_pose(SceneString(default_), aim_transform, Vector3(), Vector3());
 	tracker->set_pose(SNAME("aim"), aim_transform, Vector3(), Vector3());
 	if (has_grip_pose) {
 		tracker->set_pose(SNAME("grip"), _js_matrix_to_transform(grip_pose), Vector3(), Vector3());
 	}
 
 	for (int i = 0; i < button_count; i++) {
-		StringName button_name = has_standard_mapping ? standard_button_names[i] : unknown_button_names[i];
-		StringName button_pressure_name = has_standard_mapping ? standard_button_pressure_names[i] : unknown_button_pressure_names[i];
+		String button_name = has_standard_mapping ? standard_button_names[i] : unknown_button_names[i];
+		String button_pressure_name = has_standard_mapping ? standard_button_pressure_names[i] : unknown_button_pressure_names[i];
 		float value = buttons[i];
 		bool state = value > 0.0;
 		tracker->set_input(button_name, state);
@@ -705,7 +705,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 	}
 
 	for (int i = 0; i < axes_count; i++) {
-		StringName axis_name = has_standard_mapping ? standard_axis_names[i] : unknown_axis_names[i];
+		String axis_name = has_standard_mapping ? standard_axis_names[i] : unknown_axis_names[i];
 		float value = axes[i];
 		if (has_standard_mapping && (i == 1 || i == 3)) {
 			// Invert the Y-axis on thumbsticks and trackpads, in order to
@@ -861,7 +861,7 @@ void WebXRInterfaceJS::_on_input_event(int p_event_type, int p_input_source_id) 
 }
 
 Vector2 WebXRInterfaceJS::_get_screen_position_from_joy_vector(const Vector2 &p_joy_vector) {
-	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_main_loop());
 	if (!scene_tree) {
 		return Vector2();
 	}

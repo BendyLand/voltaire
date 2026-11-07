@@ -32,12 +32,12 @@
 #include "core/config/engine.h"
 #include "scene/resources/animation.h"
 
-StringName AnimationNodeAnimation::get_animation() const { return animation; }
+String AnimationNodeAnimation::get_animation() const { return animation; }
 
-LocalVector<StringName> (*AnimationNodeAnimation::get_editable_animation_list)() = nullptr;
+LocalVector<String> (*AnimationNodeAnimation::get_editable_animation_list)() = nullptr;
 
 void AnimationNodeAnimation::validate_node(
-	const AnimationTree* p_tree, const StringName& p_path) const
+	const AnimationTree* p_tree, const String& p_path) const
 {
 	AnimationRootNode::validate_node(p_tree, p_path);
 
@@ -104,7 +104,7 @@ bool AnimationNodeSync::is_using_sync() const { return sync; }
 
 AnimationNodeSync::AnimationNodeSync() {}
 
-bool AnimationNodeOneShot::is_parameter_read_only(const StringName& p_parameter) const
+bool AnimationNodeOneShot::is_parameter_read_only(const String& p_parameter) const
 {
 	if (AnimationNode::is_parameter_read_only(p_parameter)) {
 		return true;
@@ -237,7 +237,7 @@ bool AnimationNodeTimeSeek::is_explicit_elapse() const { return explicit_elapse;
 
 AnimationNodeTimeSeek::AnimationNodeTimeSeek() { add_input("in"); }
 
-bool AnimationNodeTransition::is_parameter_read_only(const StringName& p_parameter) const
+bool AnimationNodeTransition::is_parameter_read_only(const String& p_parameter) const
 {
 	if (AnimationNode::is_parameter_read_only(p_parameter)) {
 		return true;
@@ -335,20 +335,20 @@ AnimationNode::NodeTimeInfo AnimationNodeOutput::_process(ProcessState& p_proces
 
 AnimationNodeOutput::AnimationNodeOutput() { add_input("output"); }
 
-Ref<AnimationNode> AnimationNodeBlendTree::get_node(const StringName& p_name) const
+Ref<AnimationNode> AnimationNodeBlendTree::get_node(const String& p_name) const
 {
 	const Node* node = nodes.getptr(p_name);
 	ERR_FAIL_NULL_V(node, Ref<AnimationNode>());
 	return node->node;
 }
 
-void AnimationNodeBlendTree::set_node_position(const StringName& p_node, const Vector2& p_position)
+void AnimationNodeBlendTree::set_node_position(const String& p_node, const Vector2& p_position)
 {
 	ERR_FAIL_COND(!nodes.has(p_node));
 	nodes[p_node].position = p_position;
 }
 
-Vector2 AnimationNodeBlendTree::get_node_position(const StringName& p_node) const
+Vector2 AnimationNodeBlendTree::get_node_position(const String& p_node) const
 {
 	ERR_FAIL_COND_V(!nodes.has(p_node), Vector2());
 	return nodes[p_node].position;
@@ -356,7 +356,7 @@ Vector2 AnimationNodeBlendTree::get_node_position(const StringName& p_node) cons
 
 void AnimationNodeBlendTree::get_child_nodes(LocalVector<ChildNode>* r_child_nodes)
 {
-	for (const KeyValue<StringName, Node>& E : nodes) {
+	for (const KeyValue<String, Node>& E : nodes) {
 		ChildNode cn;
 		cn.name = E.key;
 		cn.node = E.value.node;
@@ -364,10 +364,10 @@ void AnimationNodeBlendTree::get_child_nodes(LocalVector<ChildNode>* r_child_nod
 	}
 }
 
-bool AnimationNodeBlendTree::has_node(const StringName& p_name) const { return nodes.has(p_name); }
+bool AnimationNodeBlendTree::has_node(const String& p_name) const { return nodes.has(p_name); }
 
-const LocalVector<StringName>* AnimationNodeBlendTree::get_node_connection_array(
-	const StringName& p_name) const
+const LocalVector<String>* AnimationNodeBlendTree::get_node_connection_array(
+	const String& p_name) const
 {
 	const Node* node = nodes.getptr(p_name);
 	ERR_FAIL_NULL_V(node, nullptr);
@@ -375,9 +375,9 @@ const LocalVector<StringName>* AnimationNodeBlendTree::get_node_connection_array
 }
 
 AnimationNodeBlendTree::ConnectionError AnimationNodeBlendTree::can_connect_node(
-	const StringName& p_input_node, int p_input_index, const StringName& p_output_node) const
+	const String& p_input_node, int p_input_index, const String& p_output_node) const
 {
-	if (!nodes.has(p_output_node) || p_output_node == SceneStringName(output)) {
+	if (!nodes.has(p_output_node) || p_output_node == SceneString(output)) {
 		return CONNECTION_ERROR_NO_OUTPUT;
 	}
 
@@ -395,13 +395,13 @@ AnimationNodeBlendTree::ConnectionError AnimationNodeBlendTree::can_connect_node
 		return CONNECTION_ERROR_NO_INPUT_INDEX;
 	}
 
-	if (nodes[p_input_node].connections[p_input_index] != StringName()) {
+	if (nodes[p_input_node].connections[p_input_index] != String()) {
 		return CONNECTION_ERROR_CONNECTION_EXISTS;
 	}
 
-	for (const KeyValue<StringName, Node>& E : nodes) {
+	for (const KeyValue<String, Node>& E : nodes) {
 		for (uint32_t i = 0; i < E.value.connections.size(); i++) {
-			const StringName output = E.value.connections[i];
+			const String output = E.value.connections[i];
 			if (output == p_output_node) {
 				return CONNECTION_ERROR_CONNECTION_EXISTS;
 			}
@@ -412,10 +412,10 @@ AnimationNodeBlendTree::ConnectionError AnimationNodeBlendTree::can_connect_node
 
 void AnimationNodeBlendTree::get_node_connections(LocalVector<NodeConnection>* r_connections) const
 {
-	for (const KeyValue<StringName, Node>& E : nodes) {
+	for (const KeyValue<String, Node>& E : nodes) {
 		for (uint32_t i = 0; i < E.value.connections.size(); i++) {
-			const StringName output = E.value.connections[i];
-			if (output != StringName()) {
+			const String output = E.value.connections[i];
+			if (output != String()) {
 				NodeConnection nc;
 				nc.input_node = E.key;
 				nc.input_index = i;
@@ -432,26 +432,26 @@ AnimationNode::NodeTimeInfo AnimationNodeBlendTree::_process(ProcessState& p_pro
 	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
 	bool p_test_only)
 {
-	const Ref<AnimationNodeOutput> output = nodes[SceneStringName(output)].node;
+	const Ref<AnimationNodeOutput> output = nodes[SceneString(output)].node;
 	ERR_FAIL_COND_V(output.is_null(), NodeTimeInfo());
 
 	AnimationMixer::PlaybackInfo pi = p_playback_info;
 	pi.weight = 1.0;
 
 	AnimationNodeInstance& output_instance =
-		p_instance.get_child_instance_by_path(SceneStringName(output));
+		p_instance.get_child_instance_by_path(SceneString(output));
 	return _blend_node(p_process_state, p_instance, output_instance, pi, FILTER_IGNORE, true,
 		p_test_only, nullptr);
 }
 
-LocalVector<StringName> AnimationNodeBlendTree::get_node_list() const
+LocalVector<String> AnimationNodeBlendTree::get_node_list() const
 {
-	LocalVector<StringName> list;
+	LocalVector<String> list;
 	list.reserve(nodes.size());
-	for (const KeyValue<StringName, Node>& E : nodes) {
+	for (const KeyValue<String, Node>& E : nodes) {
 		list.push_back(E.key);
 	}
-	list.sort_custom<StringName::AlphCompare>();
+	list.sort();
 	return list;
 }
 
@@ -462,7 +462,7 @@ void AnimationNodeBlendTree::set_graph_offset(const Vector2& p_graph_offset)
 
 Vector2 AnimationNodeBlendTree::get_graph_offset() const { return graph_offset; }
 
-Ref<AnimationNode> AnimationNodeBlendTree::get_child_by_name(const StringName& p_name) const
+Ref<AnimationNode> AnimationNodeBlendTree::get_child_by_name(const String& p_name) const
 {
 	return get_node(p_name);
 }
@@ -470,35 +470,35 @@ Ref<AnimationNode> AnimationNodeBlendTree::get_child_by_name(const StringName& p
 void AnimationNodeBlendTree::_tree_changed() { AnimationRootNode::_tree_changed(); }
 
 void AnimationNodeBlendTree::validate_node(
-	const AnimationTree* p_tree, const StringName& p_path) const
+	const AnimationTree* p_tree, const String& p_path) const
 {
 	AnimationRootNode::validate_node(p_tree, p_path);
 
 	// Validate output connection.
 	{
-		const LocalVector<StringName>* output_connections =
-			get_node_connection_array(SceneStringName(output));
-		const StringName& node_name = output_connections->operator[](0);
+		const LocalVector<String>* output_connections =
+			get_node_connection_array(SceneString(output));
+		const String& node_name = output_connections->operator[](0);
 
 		if (const Node* child_node = nodes.getptr(node_name); !child_node) {
-			add_validation_error(p_tree, String(p_path) + SceneStringName(output) + "/",
+			add_validation_error(p_tree, String(p_path) + SceneString(output) + "/",
 				RTR("Nothing connected to output."));
 		}
 	}
 
 	// Rest of children.
-	for (const KeyValue<StringName, Node>& E : nodes) {
+	for (const KeyValue<String, Node>& E : nodes) {
 		const Node& child = E.value;
 
 		// Skip output node, already validated.
-		if (E.key == SceneStringName(output)) {
+		if (E.key == SceneString(output)) {
 			continue;
 		}
 
 		for (uint32_t input = 0; input < child.connections.size(); input++) {
-			const StringName& connected_node_name = child.connections[input];
+			const String& connected_node_name = child.connections[input];
 			if (const Node* connected_to = nodes.getptr(connected_node_name); !connected_to) {
-				StringName path = String(p_path) + String(E.key) + "/";
+				String path = String(p_path) + String(E.key) + "/";
 				add_validation_error(p_tree, path, "Nothing connected to", input);
 			}
 		}
@@ -507,7 +507,7 @@ void AnimationNodeBlendTree::validate_node(
 
 #ifdef TOOLS_ENABLED
 void AnimationNodeBlendTree::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	bool add_node_options = false;
@@ -521,7 +521,7 @@ void AnimationNodeBlendTree::get_argument_options(
 		add_node_options = (pf == "connect_node" || pf == "disconnect_node");
 	}
 	if (add_node_options) {
-		for (const KeyValue<StringName, Node>& E : nodes) {
+		for (const KeyValue<String, Node>& E : nodes) {
 			r_options->push_back(String(E.key).quote());
 		}
 	}
@@ -537,7 +537,7 @@ void AnimationNodeBlendTree::_initialize_node_tree()
 	n.node = output;
 	n.position = Vector2(300, 150);
 	n.connections.resize(1);
-	nodes[SceneStringName(output)] = n;
+	nodes[SceneString(output)] = n;
 }
 
 AnimationNodeBlendTree::AnimationNodeBlendTree() { _initialize_node_tree(); }

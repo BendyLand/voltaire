@@ -270,10 +270,10 @@ String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const
 
 void EditorExportPlatformLinuxBSD::cleanup()
 {
-	if (ssh_pid != 0 && OS::get_singleton()->is_process_running(ssh_pid)) {
+	if (ssh_pid != 0 && OS::is_process_running(ssh_pid)) {
 		__print_line("Terminating connection...");
-		OS::get_singleton()->kill(ssh_pid);
-		OS::get_singleton()->delay_usec(1000);
+		OS::kill(ssh_pid);
+		OS::delay_usec(1000);
 	}
 
 	if (!cleanup_commands.is_empty()) {

@@ -31,7 +31,7 @@
 #include "core/config/project_settings.h"
 #include "material_storage.h"
 
-void RendererDummy::MaterialStorage::global_shader_parameter_remove(const StringName& p_name)
+void RendererDummy::MaterialStorage::global_shader_parameter_remove(const String& p_name)
 {
 	if (!global_shader_variables.has(p_name)) {
 		return;
@@ -40,13 +40,13 @@ void RendererDummy::MaterialStorage::global_shader_parameter_remove(const String
 	global_shader_variables.erase(p_name);
 }
 
-Vector<StringName> RendererDummy::MaterialStorage::global_shader_parameter_get_list()
+Vector<String> RendererDummy::MaterialStorage::global_shader_parameter_get_list()
 {
-	Vector<StringName> names;
-	for (const KeyValue<StringName, RSE::GlobalShaderParameterType>& E : global_shader_variables) {
+	Vector<String> names;
+	for (const KeyValue<String, RSE::GlobalShaderParameterType>& E : global_shader_variables) {
 		names.push_back(E.key);
 	}
-	names.sort_custom<StringName::AlphCompare>();
+	names.sort();
 	return names;
 }
 
@@ -138,7 +138,7 @@ void RendererDummy::MaterialStorage::material_set_next_pass(RID p_material, RID 
 }
 
 RSE::GlobalShaderParameterType RendererDummy::MaterialStorage::global_shader_parameter_get_type(
-	const StringName& p_name)
+	const String& p_name)
 {
 	return RSE::GLOBAL_VAR_TYPE_MAX;
 }

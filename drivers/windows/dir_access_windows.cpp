@@ -316,7 +316,7 @@ Error DirAccessWindows::rename(String p_path, String p_new_path) {
 		// The path is a file; juggle
 		// Note: do not use GetTempFileNameW, it's not long path aware!
 		Char16String tmpfile_utf16;
-		uint64_t id = OS::get_singleton()->get_ticks_usec();
+		uint64_t id = OS::get_ticks_usec();
 		while (true) {
 			tmpfile_utf16 = (path + itos(id++) + ".tmp").utf16();
 			HANDLE handle = CreateFileW((LPCWSTR)tmpfile_utf16.get_data(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);

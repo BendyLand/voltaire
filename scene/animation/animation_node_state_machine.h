@@ -54,8 +54,8 @@ public:
 private:
 	SwitchMode switch_mode = SWITCH_MODE_IMMEDIATE;
 	AdvanceMode advance_mode = ADVANCE_MODE_ENABLED;
-	StringName advance_condition;
-	StringName advance_condition_name;
+	String advance_condition;
+	String advance_condition_name;
 	float xfade_time = 0.0;
 	Ref<Curve> xfade_curve;
 	bool break_loop_at_end = false;
@@ -75,10 +75,10 @@ public:
 	void set_advance_mode(AdvanceMode p_mode);
 	AdvanceMode get_advance_mode() const;
 
-	void set_advance_condition(const StringName& p_condition);
-	StringName get_advance_condition() const;
+	void set_advance_condition(const String& p_condition);
+	String get_advance_condition() const;
 
-	StringName get_advance_condition_name() const;
+	String get_advance_condition_name() const;
 
 	void set_advance_expression(const String& p_expression);
 	String get_advance_expression() const;
@@ -124,27 +124,27 @@ private:
 		Vector2 position;
 	};
 
-	HashMap<StringName, State> states;
+	HashMap<String, State> states;
 	bool allow_transition_to_self = false;
 	bool reset_ends = false;
 
 	struct Transition
 	{
-		StringName from;
-		StringName to;
+		String from;
+		String to;
 		Ref<AnimationNodeStateMachineTransition> transition;
 	};
 
 	Vector<Transition> transitions;
 
-	StringName playback = "playback";
+	String playback = "playback";
 	bool updating_transitions = false;
 
 	Vector2 graph_offset;
 
 	void _remove_transition(const Ref<AnimationNodeStateMachineTransition> p_transition);
-	void _rename_transitions(const StringName& p_name, const StringName& p_new_name);
-	bool _can_connect(const StringName& p_name);
+	void _rename_transitions(const String& p_name, const String& p_new_name);
+	bool _can_connect(const String& p_name);
 
 protected:
 	bool _check_advance_condition(const Ref<AnimationNodeStateMachine> p_state_machine,
@@ -156,40 +156,40 @@ protected:
 
 public:
 	virtual void validate_node(
-		const AnimationTree* p_tree, const StringName& p_path) const override;
+		const AnimationTree* p_tree, const String& p_path) const override;
 
-	virtual bool is_parameter_read_only(const StringName& p_parameter) const override;
+	virtual bool is_parameter_read_only(const String& p_parameter) const override;
 
 	void add_node(
-		const StringName& p_name, Ref<AnimationNode> p_node, const Vector2& p_position = Vector2());
-	void replace_node(const StringName& p_name, Ref<AnimationNode> p_node);
-	Ref<AnimationNode> get_node(const StringName& p_name) const;
-	void remove_node(const StringName& p_name);
-	void rename_node(const StringName& p_name, const StringName& p_new_name);
-	bool has_node(const StringName& p_name) const;
-	StringName get_node_name(const Ref<AnimationNode>& p_node) const;
-	LocalVector<StringName> get_node_list() const;
+		const String& p_name, Ref<AnimationNode> p_node, const Vector2& p_position = Vector2());
+	void replace_node(const String& p_name, Ref<AnimationNode> p_node);
+	Ref<AnimationNode> get_node(const String& p_name) const;
+	void remove_node(const String& p_name);
+	void rename_node(const String& p_name, const String& p_new_name);
+	bool has_node(const String& p_name) const;
+	String get_node_name(const Ref<AnimationNode>& p_node) const;
+	LocalVector<String> get_node_list() const;
 
-	void set_node_position(const StringName& p_name, const Vector2& p_position);
-	Vector2 get_node_position(const StringName& p_name) const;
+	void set_node_position(const String& p_name, const Vector2& p_position);
+	Vector2 get_node_position(const String& p_name) const;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
-	bool has_transition(const StringName& p_from, const StringName& p_to) const;
-	bool has_transition_from(const StringName& p_from) const;
-	bool has_transition_to(const StringName& p_to) const;
-	int find_transition(const StringName& p_from, const StringName& p_to) const;
-	Vector<int> find_transition_from(const StringName& p_from) const;
-	Vector<int> find_transition_to(const StringName& p_to) const;
-	void add_transition(const StringName& p_from, const StringName& p_to,
+	bool has_transition(const String& p_from, const String& p_to) const;
+	bool has_transition_from(const String& p_from) const;
+	bool has_transition_to(const String& p_to) const;
+	int find_transition(const String& p_from, const String& p_to) const;
+	Vector<int> find_transition_from(const String& p_from) const;
+	Vector<int> find_transition_to(const String& p_to) const;
+	void add_transition(const String& p_from, const String& p_to,
 		const Ref<AnimationNodeStateMachineTransition>& p_transition);
 	Ref<AnimationNodeStateMachineTransition> get_transition(int p_transition) const;
-	StringName get_transition_from(int p_transition) const;
-	StringName get_transition_to(int p_transition) const;
+	String get_transition_from(int p_transition) const;
+	String get_transition_to(int p_transition) const;
 	int get_transition_count() const;
 	bool is_transition_across_group(int p_transition) const;
 	void remove_transition_by_index(const int p_transition);
-	void remove_transition(const StringName& p_from, const StringName& p_to);
+	void remove_transition(const String& p_from, const String& p_to);
 
 	void set_state_machine_type(StateMachineType p_state_machine_type);
 	StateMachineType get_state_machine_type() const;
@@ -200,7 +200,7 @@ public:
 	void set_reset_ends(bool p_enable);
 	bool are_ends_reset() const;
 
-	bool can_edit_node(const StringName& p_name) const;
+	bool can_edit_node(const String& p_name) const;
 
 	void set_graph_offset(const Vector2& p_offset);
 	Vector2 get_graph_offset() const;
@@ -209,15 +209,15 @@ public:
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 	virtual String get_caption() const override;
 
-	virtual Ref<AnimationNode> get_child_by_name(const StringName& p_name) const override;
+	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const override;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const override;
+		const String& p_function, int p_idx, List<String>* r_options) const override;
 #endif
 
-	Vector<StringName> get_nodes_with_transitions_from(const StringName& p_node) const;
-	Vector<StringName> get_nodes_with_transitions_to(const StringName& p_node) const;
+	Vector<String> get_nodes_with_transitions_from(const String& p_node) const;
+	Vector<String> get_nodes_with_transitions_to(const String& p_node) const;
 
 	AnimationNodeStateMachine();
 };
@@ -229,19 +229,19 @@ class AnimationNodeStateMachinePlayback : public Resource
 	struct AStarCost
 	{
 		float distance = 0.0;
-		StringName prev;
+		String prev;
 	};
 
 	struct TransitionInfo
 	{
-		StringName from;
-		StringName to;
-		StringName next;
+		String from;
+		String to;
+		String next;
 	};
 
 	struct NextInfo
 	{
-		StringName node;
+		String node;
 		double xfade;
 		Ref<Curve> curve;
 		AnimationNodeStateMachineTransition::SwitchMode switch_mode;
@@ -252,7 +252,7 @@ class AnimationNodeStateMachinePlayback : public Resource
 	struct ChildStateMachineInfo
 	{
 		Ref<AnimationNodeStateMachinePlayback> playback;
-		Vector<StringName> path;
+		Vector<String> path;
 		bool is_reset = false;
 	};
 
@@ -260,22 +260,22 @@ class AnimationNodeStateMachinePlayback : public Resource
 	String base_path;
 
 	AnimationNode::NodeTimeInfo current_nti;
-	StringName current = SceneStringName(Start);
+	String current = SceneString(Start);
 	Ref<Curve> current_curve;
 
 	Ref<AnimationNodeStateMachineTransition> group_start_transition;
 	Ref<AnimationNodeStateMachineTransition> group_end_transition;
 
 	AnimationNode::NodeTimeInfo fadeing_from_nti;
-	StringName fading_from;
+	String fading_from;
 	float fading_time = 0.0;
 	float fading_pos = 0.0;
 
-	Vector<StringName> path;
+	Vector<String> path;
 	bool playing = false;
 
-	StringName start_request;
-	StringName travel_request;
+	String start_request;
+	String travel_request;
 	bool reset_request = false;
 	bool reset_request_on_teleport = false;
 	bool _reset_request_for_fading_from = false;
@@ -286,17 +286,17 @@ class AnimationNodeStateMachinePlayback : public Resource
 	bool is_grouped = false;
 
 	void _clear_fading(AnimationNode::ProcessState& p_process_state,
-		AnimationNodeStateMachine* p_state_machine, const StringName& p_state);
+		AnimationNodeStateMachine* p_state_machine, const String& p_state);
 	void _signal_state_change(
-		AnimationTree* p_animation_tree, const StringName& p_state, bool p_started);
-	void _travel_main(const StringName& p_state, bool p_reset_on_teleport = true);
-	void _start_main(const StringName& p_state, bool p_reset = true);
+		AnimationTree* p_animation_tree, const String& p_state, bool p_started);
+	void _travel_main(const String& p_state, bool p_reset_on_teleport = true);
+	void _start_main(const String& p_state, bool p_reset = true);
 	void _next_main();
 	void _stop_main();
 
 	bool _make_travel_path(AnimationNode::ProcessState& p_process_state, AnimationTree* p_tree,
 		AnimationNodeStateMachine* p_state_machine, bool p_is_allow_transition_to_self,
-		Vector<StringName>& r_path, bool p_test_only);
+		Vector<String>& r_path, bool p_test_only);
 	String _validate_path(AnimationNodeStateMachine* p_state_machine, const String& p_path);
 	bool _travel(AnimationNode::ProcessState& p_process_state, AnimationTree* p_tree,
 		AnimationNodeStateMachine* p_state_machine, bool p_is_allow_transition_to_self,
@@ -328,7 +328,7 @@ class AnimationNodeStateMachinePlayback : public Resource
 		Ref<AnimationNodeStateMachine>& r_state_machine, bool& r_bypass) const;
 
 	void _set_current(AnimationNode::ProcessState& p_process_state,
-		AnimationNodeStateMachine* p_state_machine, const StringName& p_state);
+		AnimationNodeStateMachine* p_state_machine, const String& p_state);
 	void _set_grouped(bool p_is_grouped);
 	void _set_base_path(const String& p_base_path);
 	Ref<AnimationNodeStateMachinePlayback> _get_parent_playback(AnimationTree* p_tree) const;
@@ -339,15 +339,15 @@ class AnimationNodeStateMachinePlayback : public Resource
 protected:
 
 public:
-	void travel(const StringName& p_state, bool p_reset_on_teleport = true);
-	void start(const StringName& p_state, bool p_reset = true);
+	void travel(const String& p_state, bool p_reset_on_teleport = true);
+	void start(const String& p_state, bool p_reset = true);
 	void next();
 	void stop();
 	bool is_playing() const;
 	bool is_end() const;
-	StringName get_current_node() const;
-	StringName get_fading_from_node() const;
-	Vector<StringName> get_travel_path() const;
+	String get_current_node() const;
+	String get_fading_from_node() const;
+	Vector<String> get_travel_path() const;
 	float get_current_play_pos() const;
 	float get_current_length() const;
 
@@ -358,7 +358,7 @@ public:
 	float get_fading_pos() const;
 
 	void clear_path();
-	void push_path(const StringName& p_state);
+	void push_path(const String& p_state);
 
 	AnimationNodeStateMachinePlayback();
 };

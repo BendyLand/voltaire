@@ -242,7 +242,7 @@ Texture2DMultisampleEXT");
 		disable_transform_feedback_shader_cache = true;
 	}
 
-	if (OS::get_singleton()->get_current_rendering_driver_name() == "opengl3_angle") {
+	if (OS::get_current_rendering_driver_name() == "opengl3_angle") {
 		polyfill_half2float = false;
 	}
 #ifdef WEB_ENABLED

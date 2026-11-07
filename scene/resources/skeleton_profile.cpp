@@ -31,9 +31,9 @@
 #include "core/config/engine.h"
 #include "skeleton_profile.h"
 
-StringName SkeletonProfile::get_root_bone() { return root_bone; }
+String SkeletonProfile::get_root_bone() { return root_bone; }
 
-void SkeletonProfile::set_root_bone(const StringName& p_bone_name)
+void SkeletonProfile::set_root_bone(const String& p_bone_name)
 {
 	if (is_read_only) {
 		return;
@@ -41,9 +41,9 @@ void SkeletonProfile::set_root_bone(const StringName& p_bone_name)
 	root_bone = p_bone_name;
 }
 
-StringName SkeletonProfile::get_scale_base_bone() { return scale_base_bone; }
+String SkeletonProfile::get_scale_base_bone() { return scale_base_bone; }
 
-void SkeletonProfile::set_scale_base_bone(const StringName& p_bone_name)
+void SkeletonProfile::set_scale_base_bone(const String& p_bone_name)
 {
 	if (is_read_only) {
 		return;
@@ -53,9 +53,9 @@ void SkeletonProfile::set_scale_base_bone(const StringName& p_bone_name)
 
 int SkeletonProfile::get_group_size() { return groups.size(); }
 
-StringName SkeletonProfile::get_group_name(int p_group_idx) const
+String SkeletonProfile::get_group_name(int p_group_idx) const
 {
-	ERR_FAIL_INDEX_V(p_group_idx, groups.size(), StringName());
+	ERR_FAIL_INDEX_V(p_group_idx, groups.size(), String());
 	return groups[p_group_idx].group_name;
 }
 
@@ -67,9 +67,9 @@ Ref<Texture2D> SkeletonProfile::get_texture(int p_group_idx) const
 
 int SkeletonProfile::get_bone_size() { return bones.size(); }
 
-int SkeletonProfile::find_bone(const StringName& p_bone_name) const
+int SkeletonProfile::find_bone(const String& p_bone_name) const
 {
-	if (p_bone_name == StringName()) {
+	if (p_bone_name == String()) {
 		return -1;
 	}
 	for (int i = 0; i < bones.size(); i++) {
@@ -89,15 +89,15 @@ PackedStringArray SkeletonProfile::get_bone_names()
 	return s;
 }
 
-StringName SkeletonProfile::get_bone_name(int p_bone_idx) const
+String SkeletonProfile::get_bone_name(int p_bone_idx) const
 {
-	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
+	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), String());
 	return bones[p_bone_idx].bone_name;
 }
 
-StringName SkeletonProfile::get_bone_parent(int p_bone_idx) const
+String SkeletonProfile::get_bone_parent(int p_bone_idx) const
 {
-	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
+	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), String());
 	return bones[p_bone_idx].bone_parent;
 }
 
@@ -107,9 +107,9 @@ SkeletonProfile::TailDirection SkeletonProfile::get_tail_direction(int p_bone_id
 	return bones[p_bone_idx].tail_direction;
 }
 
-StringName SkeletonProfile::get_bone_tail(int p_bone_idx) const
+String SkeletonProfile::get_bone_tail(int p_bone_idx) const
 {
-	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
+	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), String());
 	return bones[p_bone_idx].bone_tail;
 }
 
@@ -125,9 +125,9 @@ Vector2 SkeletonProfile::get_handle_offset(int p_bone_idx) const
 	return bones[p_bone_idx].handle_offset;
 }
 
-StringName SkeletonProfile::get_group(int p_bone_idx) const
+String SkeletonProfile::get_group(int p_bone_idx) const
 {
-	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), StringName());
+	ERR_FAIL_INDEX_V(p_bone_idx, bones.size(), String());
 	return bones[p_bone_idx].group;
 }
 
@@ -137,7 +137,7 @@ bool SkeletonProfile::is_required(int p_bone_idx) const
 	return bones[p_bone_idx].required;
 }
 
-bool SkeletonProfile::has_bone(const StringName& p_bone_name)
+bool SkeletonProfile::has_bone(const String& p_bone_name)
 {
 	bool is_found = false;
 	for (int i = 0; i < bones.size(); i++) {
@@ -548,6 +548,6 @@ void SkeletonProfile::set_group_size(int) {}
 
 void SkeletonProfile::set_bone_size(int) {}
 
-void SkeletonProfile::set_bone_parent(int, StringName const&) {}
+void SkeletonProfile::set_bone_parent(int, String const&) {}
 
-void SkeletonProfile::set_bone_name(int, StringName const&) {}
+void SkeletonProfile::set_bone_name(int, String const&) {}

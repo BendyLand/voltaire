@@ -1012,7 +1012,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 				RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_texture);
 		}
 		{
@@ -1024,7 +1024,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 			tf.format = RDC::DATA_FORMAT_D32_SFLOAT;
 			tf.is_discardable = true;
 			// chunks to write
-			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_depth_texture);
 		}
 
@@ -1404,7 +1404,7 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 		}
 	}
 }
@@ -1932,9 +1932,6 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				}
 			}
 			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
-				RendererRD::ParticlesStorage* particles_storage =
-					RendererRD::ParticlesStorage::get_singleton();
-
 				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
 				RendererRD::TextureState tex_state(
 					pt->texture, texture_filter, texture_repeat, false, use_linear_colors);
@@ -1948,7 +1945,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 
 				uint32_t divisor = 1;
 				r_current_batch->mesh_instance_count =
-					particles_storage->particles_get_amount(pt->particles, divisor);
+					RendererRD::ParticlesStorage::particles_get_amount(pt->particles, divisor);
 				r_current_batch->flags |= (divisor & BATCH_FLAGS_INSTANCING_MASK);
 				r_current_batch->mesh_instance_count /= divisor;
 
@@ -1957,7 +1954,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_COLORS;
 				r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 
-				if (particles_storage->particles_has_collision(particles) &&
+				if (RendererRD::ParticlesStorage::particles_has_collision(particles) &&
 					RendererRD::TextureStorage::render_target_is_sdf_enabled(
 						p_render_target.render_target)) {
 					// Pass collision information.
@@ -1976,14 +1973,14 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 						to_screen.position = -sdf_rect.position * to_screen.size;
 					}
 
-					particles_storage->particles_set_canvas_sdf_collision(
+					RendererRD::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, true, xform, to_screen, sdf_texture);
 				}
 				else {
-					particles_storage->particles_set_canvas_sdf_collision(
+					RendererRD::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, false, Transform2D(), Rect2(), RID());
 				}
-				r_sdf_used |= particles_storage->particles_has_collision(particles);
+				r_sdf_used |= RendererRD::ParticlesStorage::particles_has_collision(particles);
 			}
 
 			Color modulated = modulate * base_color;
@@ -2255,9 +2252,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 		RendererRD::PushConstantAttributes push_constant = p_batch->push_constant_attributes();
 
-		RendererRD::ParticlesStorage* particles_storage =
-			RendererRD::ParticlesStorage::get_singleton();
-
 		RID mesh;
 		RID mesh_instance;
 
@@ -2280,23 +2274,23 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			const RCR::Item::CommandParticles* pt =
 				static_cast<const RCR::Item::CommandParticles*>(p_batch->command);
 			RID particles = pt->particles;
-			mesh = particles_storage->particles_get_draw_pass_mesh(particles, 0);
+			mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(particles, 0);
 
-			ERR_BREAK(particles_storage->particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
-			particles_storage->particles_request_process(particles);
+			ERR_BREAK(RendererRD::ParticlesStorage::particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
+			RendererRD::ParticlesStorage::particles_request_process(particles);
 
-			if (particles_storage->particles_is_inactive(particles)) {
+			if (RendererRD::ParticlesStorage::particles_is_inactive(particles)) {
 				break;
 			}
 
 			Renderer::redraw_request(); // Active particles means redraw request.
 
-			int dpc = particles_storage->particles_get_draw_passes(particles);
+			int dpc = RendererRD::ParticlesStorage::particles_get_draw_passes(particles);
 			if (dpc == 0) {
 				break; // Nothing to draw.
 			}
 
-			RID uniform_set = particles_storage->particles_get_instance_buffer_uniform_set(
+			RID uniform_set = RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
 				pt->particles, RendererRD::shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
 			RD::draw_list_bind_uniform_set(p_draw_list, uniform_set, TRANSFORMS_UNIFORM_SET);
 		}

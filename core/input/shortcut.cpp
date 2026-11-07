@@ -74,7 +74,7 @@ String Shortcut::get_as_text() const
 	return "None";
 }
 
-Ref<Shortcut> Shortcut::make_from_action(const StringName& p_action)
+Ref<Shortcut> Shortcut::make_from_action(const String& p_action)
 {
 	Ref<InputEventAction> event;
 	event.instantiate();

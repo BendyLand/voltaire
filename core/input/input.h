@@ -122,7 +122,7 @@ private:
 	RBSet<Key> keys_pressed;
 	RBSet<JoyButton> joy_buttons_pressed;
 	RBMap<JoyAxis, float> _joy_axis;
-	// RBMap<StringName,int> custom_action_press;
+	// RBMap<String,int> custom_action_press;
 	bool gravity_enabled = false;
 	Vector3 gravity;
 	bool accelerometer_enabled = false;
@@ -168,7 +168,7 @@ private:
 		} cache;
 	};
 
-	HashMap<StringName, ActionState> action_states;
+	HashMap<String, ActionState> action_states;
 
 	bool emulate_touch_from_mouse = false;
 	bool emulate_mouse_from_touch = false;
@@ -238,8 +238,8 @@ private:
 
 	struct Joypad
 	{
-		StringName name;
-		StringName uid;
+		String name;
+		String uid;
 		bool connected = false;
 		bool is_known = false;
 		bool last_buttons[(size_t)JoyButton::MAX] = {false};
@@ -342,7 +342,7 @@ private:
 	JoyAxis _get_output_axis(const String& p_output);
 	void _button_event(int p_device, JoyButton p_index, bool p_pressed);
 	void _axis_event(int p_device, JoyAxis p_axis, float p_value);
-	void _update_action_cache(const StringName& p_action_name, ActionState& r_action_state);
+	void _update_action_cache(const String& p_action_name, ActionState& r_action_state);
 	void _update_joypad_features(int p_device);
 
 	void _parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_emulated);
@@ -389,7 +389,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	static Input* get_singleton();
@@ -401,19 +401,19 @@ public:
 	bool is_key_label_pressed(Key p_keycode) const;
 	bool is_mouse_button_pressed(MouseButton p_button) const;
 	bool is_joy_button_pressed(int p_device, JoyButton p_button) const;
-	bool is_action_pressed(const StringName& p_action, bool p_exact = false) const;
-	bool is_action_just_pressed(const StringName& p_action, bool p_exact = false) const;
-	bool is_action_just_released(const StringName& p_action, bool p_exact = false) const;
+	bool is_action_pressed(const String& p_action, bool p_exact = false) const;
+	bool is_action_just_pressed(const String& p_action, bool p_exact = false) const;
+	bool is_action_just_released(const String& p_action, bool p_exact = false) const;
 	bool is_action_just_pressed_by_event(
-		const StringName& p_action, InputEvent* rp_event, bool p_exact = false) const;
+		const String& p_action, InputEvent* rp_event, bool p_exact = false) const;
 	bool is_action_just_released_by_event(
-		const StringName& p_action, InputEvent* rp_event, bool p_exact = false) const;
-	float get_action_strength(const StringName& p_action, bool p_exact = false) const;
-	float get_action_raw_strength(const StringName& p_action, bool p_exact = false) const;
+		const String& p_action, InputEvent* rp_event, bool p_exact = false) const;
+	float get_action_strength(const String& p_action, bool p_exact = false) const;
+	float get_action_raw_strength(const String& p_action, bool p_exact = false) const;
 
-	float get_axis(const StringName& p_negative_action, const StringName& p_positive_action) const;
-	Vector2 get_vector(const StringName& p_negative_x, const StringName& p_positive_x,
-		const StringName& p_negative_y, const StringName& p_positive_y,
+	float get_axis(const String& p_negative_action, const String& p_positive_action) const;
+	Vector2 get_vector(const String& p_negative_x, const String& p_positive_x,
+		const String& p_negative_y, const String& p_positive_y,
 		float p_deadzone = -1.0f) const;
 
 	float get_joy_axis(int p_device, JoyAxis p_axis) const;
@@ -485,8 +485,8 @@ public:
 
 	void set_mouse_position(const Point2& p_posf);
 
-	void action_press(const StringName& p_action, float p_strength = 1.f);
-	void action_release(const StringName& p_action);
+	void action_press(const String& p_action, float p_strength = 1.f);
+	void action_release(const String& p_action);
 
 	void set_emulate_touch_from_mouse(bool p_emulate);
 	bool is_emulating_touch_from_mouse() const;

@@ -53,12 +53,12 @@ public:
 		{ Theme::DATA_TYPE_STYLEBOX, Ref<StyleBox>(memnew(StyleBoxFlat)) },
 	};
 
-	const StringName valid_item_name = "valid_item_name";
-	const StringName valid_type_name = "ValidTypeName";
+	const String valid_item_name = "valid_item_name";
+	const String valid_type_name = "ValidTypeName";
 };
 
 TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
-	StringName names[] = {
+	String names[] = {
 		"", // Empty name.
 		"CapitalizedName",
 		"snake_cased_name",
@@ -67,7 +67,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 	};
 
 	SUBCASE("add_type") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			Ref<Theme> theme = memnew(Theme);
 
 			ErrorDetector ed;
@@ -77,7 +77,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 	}
 
 	SUBCASE("set_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -89,7 +89,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 	}
 
 	SUBCASE("add_theme_item_type") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -101,8 +101,8 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 	}
 
 	SUBCASE("set_type_variation") {
-		for (const StringName &name : names) {
-			if (name == StringName()) { // Skip empty here, not allowed.
+		for (const String &name : names) {
+			if (name == String()) { // Skip empty here, not allowed.
 				continue;
 			}
 			Ref<Theme> theme = memnew(Theme);
@@ -111,8 +111,8 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 			theme->set_type_variation(valid_type_name, name);
 			CHECK_FALSE(ed.has_error);
 		}
-		for (const StringName &name : names) {
-			if (name == StringName()) { // Skip empty here, not allowed.
+		for (const String &name : names) {
+			if (name == String()) { // Skip empty here, not allowed.
 				continue;
 			}
 			Ref<Theme> theme = memnew(Theme);
@@ -125,7 +125,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme type names") {
 }
 
 TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
-	StringName names[] = {
+	String names[] = {
 		"With/Slash",
 		"With Space",
 		"With@various$symbols!",
@@ -135,7 +135,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
 	ERR_PRINT_OFF; // All these rightfully print errors.
 
 	SUBCASE("add_type") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			Ref<Theme> theme = memnew(Theme);
 
 			ErrorDetector ed;
@@ -145,7 +145,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
 	}
 
 	SUBCASE("set_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -157,7 +157,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
 	}
 
 	SUBCASE("add_theme_item_type") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -169,14 +169,14 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
 	}
 
 	SUBCASE("set_type_variation") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			Ref<Theme> theme = memnew(Theme);
 
 			ErrorDetector ed;
 			theme->set_type_variation(valid_type_name, name);
 			CHECK(ed.has_error);
 		}
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			Ref<Theme> theme = memnew(Theme);
 
 			ErrorDetector ed;
@@ -189,7 +189,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme type names") {
 }
 
 TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme item names") {
-	StringName names[] = {
+	String names[] = {
 		"CapitalizedName",
 		"snake_cased_name",
 		"42",
@@ -197,7 +197,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme item names") {
 	};
 
 	SUBCASE("set_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -210,7 +210,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme item names") {
 	}
 
 	SUBCASE("rename_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 				theme->set_theme_item(entry.type, valid_item_name, valid_type_name, entry.value);
@@ -226,7 +226,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Good theme item names") {
 }
 
 TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme item names") {
-	StringName names[] = {
+	String names[] = {
 		"", // Empty name.
 		"With/Slash",
 		"With Space",
@@ -237,7 +237,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme item names") {
 	ERR_PRINT_OFF; // All these rightfully print errors.
 
 	SUBCASE("set_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 
@@ -250,7 +250,7 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme item names") {
 	}
 
 	SUBCASE("rename_theme_item") {
-		for (const StringName &name : names) {
+		for (const String &name : names) {
 			for (const DataEntry &entry : valid_data) {
 				Ref<Theme> theme = memnew(Theme);
 				theme->set_theme_item(entry.type, valid_item_name, valid_type_name, entry.value);

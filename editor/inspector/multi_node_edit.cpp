@@ -38,7 +38,7 @@ String MultiNodeEdit::_get_editor_name() const
 	return vformat(TTR("%s (%d Selected)"), get_edited_class_name(), get_node_count());
 }
 
-bool MultiNodeEdit::_property_can_revert(const StringName& p_name) const
+bool MultiNodeEdit::_property_can_revert(const String& p_name) const
 {
 	Node* es = EditorNode::get_singleton()->get_edited_scene();
 	if (!es) {
@@ -59,4 +59,4 @@ NodePath MultiNodeEdit::get_node(int p_index) const
 
 
 
-StringName MultiNodeEdit::get_edited_class_name() const {}
+String MultiNodeEdit::get_edited_class_name() const {}

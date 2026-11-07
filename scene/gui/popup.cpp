@@ -253,7 +253,7 @@ void PopupPanel::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		panel->add_theme_style_override(SceneStringName(panel), theme_cache.panel_style.ptr());
+		panel->add_theme_style_override(SceneString(panel), theme_cache.panel_style.ptr());
 
 		if (is_visible()) {
 			_update_shadow_offsets();

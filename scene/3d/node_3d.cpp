@@ -856,7 +856,7 @@ NodePath Node3D::get_visibility_parent() const
 	return visibility_parent_path;
 }
 
-bool Node3D::_property_can_revert(const StringName& p_name) const
+bool Node3D::_property_can_revert(const String& p_name) const
 {
 	const String sname = p_name;
 	if (sname == "basis") {

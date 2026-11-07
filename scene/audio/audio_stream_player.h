@@ -83,8 +83,8 @@ public:
 	bool is_playing() const;
 	float get_playback_position();
 
-	void set_bus(const StringName& p_bus);
-	StringName get_bus() const;
+	void set_bus(const String& p_bus);
+	String get_bus() const;
 
 	void set_autoplay(bool p_enable);
 	bool is_autoplay_enabled() const;

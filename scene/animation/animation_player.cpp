@@ -217,7 +217,7 @@ void AnimationPlayer::_blend_capture(double p_delta)
 	blend_capture(p_delta * Math::abs(speed_scale));
 }
 
-void AnimationPlayer::queue(const StringName& p_name)
+void AnimationPlayer::queue(const String& p_name)
 {
 	if (!is_playing()) {
 		play(p_name);
@@ -229,25 +229,25 @@ void AnimationPlayer::queue(const StringName& p_name)
 
 void AnimationPlayer::clear_queue() { playback_queue.clear(); }
 
-void AnimationPlayer::play_backwards(const StringName& p_name, double p_custom_blend)
+void AnimationPlayer::play_backwards(const String& p_name, double p_custom_blend)
 {
 	play(p_name, p_custom_blend, -1, true);
 }
 
-void AnimationPlayer::play_section_with_markers_backwards(const StringName& p_name,
-	const StringName& p_start_marker, const StringName& p_end_marker, double p_custom_blend)
+void AnimationPlayer::play_section_with_markers_backwards(const String& p_name,
+	const String& p_start_marker, const String& p_end_marker, double p_custom_blend)
 {
 	play_section_with_markers(p_name, p_start_marker, p_end_marker, p_custom_blend, -1, true);
 }
 
 void AnimationPlayer::play_section_backwards(
-	const StringName& p_name, double p_start_time, double p_end_time, double p_custom_blend)
+	const String& p_name, double p_start_time, double p_end_time, double p_custom_blend)
 {
 	play_section(p_name, p_start_time, p_end_time, p_custom_blend, -1, true);
 }
 
 void AnimationPlayer::play(
-	const StringName& p_name, double p_custom_blend, float p_custom_scale, bool p_from_end)
+	const String& p_name, double p_custom_blend, float p_custom_scale, bool p_from_end)
 {
 	if (auto_capture) {
 		play_with_capture(p_name, auto_capture_duration, p_custom_blend, p_custom_scale, p_from_end,
@@ -259,19 +259,19 @@ void AnimationPlayer::play(
 }
 
 void AnimationPlayer::_play(
-	const StringName& p_name, double p_custom_blend, float p_custom_scale, bool p_from_end)
+	const String& p_name, double p_custom_blend, float p_custom_scale, bool p_from_end)
 {
 	play_section_with_markers(
-		p_name, StringName(), StringName(), p_custom_blend, p_custom_scale, p_from_end);
+		p_name, String(), String(), p_custom_blend, p_custom_scale, p_from_end);
 }
 
-void AnimationPlayer::play_section_with_markers(const StringName& p_name,
-	const StringName& p_start_marker, const StringName& p_end_marker, double p_custom_blend,
+void AnimationPlayer::play_section_with_markers(const String& p_name,
+	const String& p_start_marker, const String& p_end_marker, double p_custom_blend,
 	float p_custom_scale, bool p_from_end)
 {
-	StringName name = p_name;
+	String name = p_name;
 
-	if (name == StringName()) {
+	if (name == String()) {
 		name = playback.assigned;
 	}
 
@@ -280,27 +280,27 @@ void AnimationPlayer::play_section_with_markers(const StringName& p_name,
 
 	const Ref<Animation>& animation = ad->animation;
 
-	ERR_FAIL_COND_MSG(p_start_marker == p_end_marker && p_start_marker,
+	ERR_FAIL_COND_MSG(p_start_marker == p_end_marker && !p_start_marker.is_empty(),
 		vformat("Start marker and end marker cannot be the same marker: %s.", p_start_marker));
-	ERR_FAIL_COND_MSG(p_start_marker && !animation->has_marker(p_start_marker),
+	ERR_FAIL_COND_MSG(!p_start_marker.is_empty() && !animation->has_marker(p_start_marker),
 		vformat("Marker %s not found in animation: %s.", p_start_marker, name));
-	ERR_FAIL_COND_MSG(p_end_marker && !animation->has_marker(p_end_marker),
+	ERR_FAIL_COND_MSG(!p_end_marker.is_empty() && !animation->has_marker(p_end_marker),
 		vformat("Marker %s not found in animation: %s.", p_end_marker, name));
 
-	double start_time = p_start_marker ? animation->get_marker_time(p_start_marker) : -1;
-	double end_time = p_end_marker ? animation->get_marker_time(p_end_marker) : -1;
+	double start_time = !p_start_marker.is_empty() ? animation->get_marker_time(p_start_marker) : -1;
+	double end_time = !p_end_marker.is_empty() ? animation->get_marker_time(p_end_marker) : -1;
 
 	ERR_FAIL_COND_MSG(
-		p_start_marker && p_end_marker && Animation::is_greater_approx(start_time, end_time),
+		!p_start_marker.is_empty() && !p_end_marker.is_empty() && Animation::is_greater_approx(start_time, end_time),
 		vformat("End marker %s is placed earlier than start marker %s in animation: %s.",
 			p_end_marker, p_start_marker, name));
 
-	if (p_start_marker && Animation::is_less_approx(start_time, 0)) {
+	if (!p_start_marker.is_empty() && Animation::is_less_approx(start_time, 0)) {
 		WARN_PRINT_ED(vformat("Negative time start marker: %s is invalid in the section, so the "
 							  "start of the animation: %s is used instead.",
 			p_start_marker, playback.current.animation_name));
 	}
-	if (p_end_marker && Animation::is_less_approx(end_time, 0)) {
+	if (!p_end_marker.is_empty() && Animation::is_less_approx(end_time, 0)) {
 		WARN_PRINT_ED(vformat("Negative time end marker: %s is invalid in the section, so the end "
 							  "of the animation: %s is used instead.",
 			p_end_marker, playback.current.animation_name));
@@ -309,7 +309,7 @@ void AnimationPlayer::play_section_with_markers(const StringName& p_name,
 	play_section(name, start_time, end_time, p_custom_blend, p_custom_scale, p_from_end);
 }
 
-void AnimationPlayer::play_with_capture(const StringName& p_name, double p_duration,
+void AnimationPlayer::play_with_capture(const String& p_name, double p_duration,
 	double p_custom_blend, float p_custom_scale, bool p_from_end,
 	Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type)
 {
@@ -319,12 +319,12 @@ void AnimationPlayer::play_with_capture(const StringName& p_name, double p_durat
 
 bool AnimationPlayer::is_playing() const { return playing; }
 
-StringName AnimationPlayer::get_current_animation() const
+String AnimationPlayer::get_current_animation() const
 {
-	return (is_playing() ? playback.assigned : StringName());
+	return (is_playing() ? playback.assigned : String());
 }
 
-StringName AnimationPlayer::get_assigned_animation() const { return playback.assigned; }
+String AnimationPlayer::get_assigned_animation() const { return playback.assigned; }
 
 void AnimationPlayer::pause() { _stop_internal(false, false); }
 
@@ -420,34 +420,34 @@ double AnimationPlayer::get_current_animation_length() const
 }
 
 void AnimationPlayer::set_section_with_markers(
-	const StringName& p_start_marker, const StringName& p_end_marker)
+	const String& p_start_marker, const String& p_end_marker)
 {
 	ERR_FAIL_COND_MSG(!playback.current.is_enabled, "AnimationPlayer has no current animation.");
-	ERR_FAIL_COND_MSG(p_start_marker == p_end_marker && p_start_marker,
+	ERR_FAIL_COND_MSG(p_start_marker == p_end_marker && !p_start_marker.is_empty(),
 		vformat("Start marker and end marker cannot be the same marker: %s.", p_start_marker));
 	ERR_FAIL_COND_MSG(
-		p_start_marker &&
+		!p_start_marker.is_empty() &&
 			!animation_set[playback.current.animation_name].animation->has_marker(p_start_marker),
 		vformat("Marker %s not found in animation: %s.", p_start_marker,
 			playback.current.animation_name));
 	ERR_FAIL_COND_MSG(
-		p_end_marker &&
+		!p_end_marker.is_empty() &&
 			!animation_set[playback.current.animation_name].animation->has_marker(p_end_marker),
 		vformat("Marker %s not found in animation: %s.", p_end_marker,
 			playback.current.animation_name));
 	double start_time =
-		p_start_marker ? animation_set[playback.current.animation_name].animation->get_marker_time(
+		!p_start_marker.is_empty() ? animation_set[playback.current.animation_name].animation->get_marker_time(
 							 p_start_marker)
 					   : -1;
 	double end_time =
-		p_end_marker ? animation_set[playback.current.animation_name].animation->get_marker_time(
+		!p_end_marker.is_empty() ? animation_set[playback.current.animation_name].animation->get_marker_time(
 						   p_end_marker)
 					 : -1;
-	if (p_start_marker && Animation::is_less_approx(start_time, 0)) {
+	if (!p_start_marker.is_empty() && Animation::is_less_approx(start_time, 0)) {
 		WARN_PRINT_ONCE_ED(vformat("Marker %s time must be positive in animation: %s.",
 			p_start_marker, playback.current.animation_name));
 	}
-	if (p_end_marker && Animation::is_less_approx(end_time, 0)) {
+	if (!p_end_marker.is_empty() && Animation::is_less_approx(end_time, 0)) {
 		WARN_PRINT_ONCE_ED(vformat("Marker %s time must be positive in animation: %s.",
 			p_end_marker, playback.current.animation_name));
 	}
@@ -493,7 +493,7 @@ bool AnimationPlayer::has_section() const
 		   Animation::is_greater_or_equal_approx(playback.current.end_time, 0);
 }
 
-void AnimationPlayer::set_autoplay(const StringName& p_name)
+void AnimationPlayer::set_autoplay(const String& p_name)
 {
 	if (is_inside_tree() && !Engine::is_editor_hint()) {
 		WARN_PRINT("Setting autoplay after the node has been added to the scene has no effect.");
@@ -502,7 +502,7 @@ void AnimationPlayer::set_autoplay(const StringName& p_name)
 	autoplay = p_name;
 }
 
-StringName AnimationPlayer::get_autoplay() const { return autoplay; }
+String AnimationPlayer::get_autoplay() const { return autoplay; }
 
 void AnimationPlayer::set_movie_quit_on_finish_enabled(bool p_enabled)
 {
@@ -518,7 +518,7 @@ void AnimationPlayer::set_clear_cache_on_stop_enabled(bool p_enabled)
 
 bool AnimationPlayer::is_clear_cache_on_stop_enabled() const { return clear_cache_on_stop; }
 
-void AnimationPlayer::_animation_changed(const StringName& p_name)
+void AnimationPlayer::_animation_changed(const String& p_name)
 {
 	AnimationMixer::_animation_changed(p_name);
 	if (playback.current.is_enabled && playback.current.animation_name == p_name &&
@@ -527,18 +527,18 @@ void AnimationPlayer::_animation_changed(const StringName& p_name)
 	}
 }
 
-void AnimationPlayer::animation_set_next(const StringName& p_animation, const StringName& p_next)
+void AnimationPlayer::animation_set_next(const String& p_animation, const String& p_next)
 {
 	ERR_FAIL_COND_MSG(
 		!animation_set.has(p_animation), vformat("Animation not found: %s.", p_animation));
 	animation_next_set[p_animation] = p_next;
 }
 
-StringName AnimationPlayer::animation_get_next(const StringName& p_animation) const
+String AnimationPlayer::animation_get_next(const String& p_animation) const
 {
-	const StringName* next = animation_next_set.getptr(p_animation);
+	const String* next = animation_next_set.getptr(p_animation);
 	if (!next) {
-		return StringName();
+		return String();
 	}
 	return *next;
 }
@@ -548,7 +548,7 @@ void AnimationPlayer::set_default_blend_time(double p_default) { default_blend_t
 double AnimationPlayer::get_default_blend_time() const { return default_blend_time; }
 
 void AnimationPlayer::set_blend_time(
-	const StringName& p_animation1, const StringName& p_animation2, double p_time)
+	const String& p_animation1, const String& p_animation2, double p_time)
 {
 	ERR_FAIL_COND_MSG(
 		!animation_set.has(p_animation1), vformat("Animation not found: %s.", p_animation1));
@@ -568,7 +568,7 @@ void AnimationPlayer::set_blend_time(
 }
 
 double AnimationPlayer::get_blend_time(
-	const StringName& p_animation1, const StringName& p_animation2) const
+	const String& p_animation1, const String& p_animation2) const
 {
 	BlendKey bk;
 	bk.from = p_animation1;
@@ -614,12 +614,12 @@ Tween::EaseType AnimationPlayer::get_auto_capture_ease_type() const
 
 #ifdef TOOLS_ENABLED
 void AnimationPlayer::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	if (p_idx == 0 &&
 		(pf == "play" || pf == "play_backwards" || pf == "has_animation" || pf == "queue")) {
-		for (const StringName& name : get_sorted_animation_list()) {
+		for (const String& name : get_sorted_animation_list()) {
 			r_options->push_back(String(name).quote());
 		}
 	}
@@ -627,12 +627,12 @@ void AnimationPlayer::get_argument_options(
 }
 #endif
 
-void AnimationPlayer::_animation_removed(const StringName& p_name, const StringName& p_library)
+void AnimationPlayer::_animation_removed(const String& p_name, const String& p_library)
 {
 	AnimationMixer::_animation_removed(p_name, p_library);
 
-	const StringName& name =
-		p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
+	const String& name =
+		p_library == String() ? p_name : String(String(p_library) + "/" + String(p_name));
 
 	if (!animation_set.has(name)) {
 		return; // No need to update because not the one from the library being used.
@@ -654,7 +654,7 @@ void AnimationPlayer::_animation_removed(const StringName& p_name, const StringN
 	}
 }
 
-void AnimationPlayer::_rename_animation(const StringName& p_from_name, const StringName& p_to_name)
+void AnimationPlayer::_rename_animation(const String& p_from_name, const String& p_to_name)
 {
 	// Rename autoplay or blends if needed.
 	LocalVector<BlendKey> to_erase;
@@ -697,17 +697,17 @@ AnimationPlayer::AnimationPlayer() {}
 AnimationPlayer::~AnimationPlayer() {}
 
 void AnimationPlayer::_capture(
-	StringName const&, bool, double, Tween::TransitionType, Tween::EaseType)
+	String const&, bool, double, Tween::TransitionType, Tween::EaseType)
 {
 }
 
 void AnimationPlayer::_stop_internal(bool, bool) {}
 
-void AnimationPlayer::play_section(StringName const&, double, double, double, float, bool) {}
+void AnimationPlayer::play_section(String const&, double, double, double, float, bool) {}
 
-void AnimationPlayer::set_current_animation(StringName const&) {}
+void AnimationPlayer::set_current_animation(String const&) {}
 
-void AnimationPlayer::set_assigned_animation(StringName const&) {}
+void AnimationPlayer::set_assigned_animation(String const&) {}
 
 bool AnimationPlayer::_blend_pre_process(
 		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map)

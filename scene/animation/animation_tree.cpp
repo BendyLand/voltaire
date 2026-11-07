@@ -37,7 +37,7 @@
 thread_local AnimationNode::ProcessState* AnimationNode::tls_process_state = nullptr;
 thread_local AnimationNodeInstance* AnimationNode::current_instance = nullptr;
 
-bool AnimationNode::is_parameter_read_only(const StringName& p_parameter) const
+bool AnimationNode::is_parameter_read_only(const String& p_parameter) const
 {
 	if (p_parameter == current_length || p_parameter == current_position ||
 		p_parameter == current_delta) {
@@ -48,14 +48,14 @@ bool AnimationNode::is_parameter_read_only(const StringName& p_parameter) const
 }
 
 void AnimationNode::blend_animation(ProcessState& p_process_state,
-	AnimationNodeInstance& p_instance, const StringName& p_animation,
+	AnimationNodeInstance& p_instance, const String& p_animation,
 	AnimationMixer::PlaybackInfo& p_playback_info)
 {
 	p_playback_info.track_weights = &p_instance.track_weights;
 	p_process_state.tree->make_animation_instance(p_animation, p_playback_info);
 }
 
-void AnimationNode::add_validation_error(const AnimationTree* p_tree, const StringName& p_path,
+void AnimationNode::add_validation_error(const AnimationTree* p_tree, const String& p_path,
 	const String& p_error, int p_input_index) const
 {
 	p_tree->_add_validation_error(p_path, p_error, p_input_index);
@@ -352,7 +352,7 @@ Ref<AnimationNode> AnimationNode::find_node_by_path(const String& p_name) const
 	return ret;
 }
 
-void AnimationNode::blend_animation_ex(const StringName& p_animation, double p_time, double p_delta,
+void AnimationNode::blend_animation_ex(const String& p_animation, double p_time, double p_delta,
 	bool p_seeked, bool p_is_external_seeking, real_t p_blend, Animation::LoopedFlag p_looped_flag)
 {
 	ERR_FAIL_NULL(tls_process_state);
@@ -369,7 +369,7 @@ void AnimationNode::blend_animation_ex(const StringName& p_animation, double p_t
 	blend_animation(*tls_process_state, *current_instance, p_animation, info);
 }
 
-double AnimationNode::blend_node_ex(const StringName& p_sub_path, const Ref<AnimationNode>& p_node,
+double AnimationNode::blend_node_ex(const String& p_sub_path, const Ref<AnimationNode>& p_node,
 	double p_time, bool p_seek, bool p_is_external_seeking, real_t p_blend, FilterAction p_filter,
 	bool p_sync, bool p_test_only)
 {
@@ -512,7 +512,7 @@ NodePath AnimationTree::get_advance_expression_base_node() const
 
 bool AnimationTree::is_state_invalid() const { return !process_state.valid; }
 
-const AHashMap<StringName, AnimationNode::InvalidInstance>&
+const AHashMap<String, AnimationNode::InvalidInstance>&
 AnimationTree::get_invalid_instances() const
 {
 	return process_state.invalid_instances;
@@ -528,7 +528,7 @@ PackedStringArray AnimationTree::get_configuration_warnings() const
 }
 
 void AnimationTree::_add_validation_error(
-	const StringName& p_path, const String& p_error, int p_input_index) const
+	const String& p_path, const String& p_error, int p_input_index) const
 {
 	AnimationNode::InvalidInstance& invalid_instance = process_state.invalid_instances[p_path];
 
@@ -562,7 +562,7 @@ void AnimationTree::_notification(int p_what)
 NodePath AnimationTree::get_animation_player() const { return animation_player; }
 
 #ifdef ENABLE_ACTIVITY_TRACKING
-real_t AnimationTree::get_connection_activity(const StringName& p_path, int p_connection) const
+real_t AnimationTree::get_connection_activity(const String& p_path, int p_connection) const
 {
 	const AnimationNodeInstance* a = get_node_instance_by_path_or_null(p_path);
 	if (!a) {
@@ -605,7 +605,7 @@ AnimationTree::~AnimationTree() {}
 
 bool AnimationNode::has_filter() const { return false; }
 
-Ref<AnimationNode> AnimationNode::get_child_by_name(const StringName& p_name) const
+Ref<AnimationNode> AnimationNode::get_child_by_name(const String& p_name) const
 {
 	return Ref<AnimationNode>();
 }

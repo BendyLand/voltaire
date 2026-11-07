@@ -68,14 +68,14 @@ public:
 	void set_device(int p_device);
 	int get_device() const;
 
-	bool is_action(const StringName& p_action, bool p_exact_match = false) const;
+	bool is_action(const String& p_action, bool p_exact_match = false) const;
 	bool is_action_pressed(
-		const StringName& p_action, bool p_allow_echo = false, bool p_exact_match = false) const;
-	bool is_action_released(const StringName& p_action, bool p_exact_match = false) const;
+		const String& p_action, bool p_allow_echo = false, bool p_exact_match = false) const;
+	bool is_action_released(const String& p_action, bool p_exact_match = false) const;
 	bool is_action_just_pressed_or_echo(
-		const StringName& p_action, bool p_exact_match = false) const;
-	float get_action_strength(const StringName& p_action, bool p_exact_match = false) const;
-	float get_action_raw_strength(const StringName& p_action, bool p_exact_match = false) const;
+		const String& p_action, bool p_exact_match = false) const;
+	float get_action_strength(const String& p_action, bool p_exact_match = false) const;
+	float get_action_raw_strength(const String& p_action, bool p_exact_match = false) const;
 
 	bool is_canceled() const;
 	bool is_pressed() const;
@@ -464,15 +464,15 @@ public:
 
 class InputEventAction : public InputEvent
 {
-	StringName action;
+	String action;
 	float strength = 1.0f;
 	int event_index = -1;
 
 protected:
 
 public:
-	void set_action(const StringName& p_action);
-	StringName get_action() const;
+	void set_action(const String& p_action);
+	String get_action() const;
 
 	void set_pressed(bool p_pressed);
 
@@ -482,7 +482,7 @@ public:
 	void set_event_index(int p_index);
 	int get_event_index() const;
 
-	virtual bool is_action(const StringName& p_action) const;
+	virtual bool is_action(const String& p_action) const;
 
 	virtual bool action_match(const Ref<InputEvent>& p_event, bool p_exact_match, float p_deadzone,
 		bool* r_pressed, float* r_strength, float* r_raw_strength) const override;

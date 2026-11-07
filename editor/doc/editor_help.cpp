@@ -316,7 +316,7 @@ void EditorHelp::_class_desc_select(const String& p_select)
 		}
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
-		OS::get_singleton()->shell_open(p_select);
+		OS::shell_open(p_select);
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::get_singleton()->clipboard_set(p_select.substr(1));
@@ -330,7 +330,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 // Macros for assigning the deprecated/experimental marks to class members in overview.
 #define DEPRECATED_DOC_TAG                                                                         \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
-	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));       \
+	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorString(Editor)));       \
 	Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));                       \
 	class_desc->add_image(error_icon, error_icon->get_width(), error_icon->get_height());          \
 	class_desc->add_text(String::chr(160) + TTR("Deprecated"));                                    \
@@ -339,7 +339,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 
 #define EXPERIMENTAL_DOC_TAG                                                                       \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
-	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));     \
+	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorString(Editor)));     \
 	Ref<Texture2D> warning_icon = get_editor_theme_icon(SNAME("NodeWarning"));                     \
 	class_desc->add_image(warning_icon, warning_icon->get_width(), warning_icon->get_height());    \
 	class_desc->add_text(String::chr(160) + TTR("Experimental"));                                  \
@@ -351,7 +351,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 	Ref<Texture2D> error_icon = get_editor_theme_icon(SNAME("StatusError"));                       \
 	class_desc->add_image(error_icon, error_icon->get_width(), error_icon->get_height());          \
 	class_desc->add_text(nbsp);                                                                    \
-	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorStringName(Editor)));       \
+	class_desc->push_color(get_theme_color(SNAME("error_color"), EditorString(Editor)));       \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
 	class_desc->add_text(TTR("Deprecated:"));                                                      \
 	class_desc->pop();                                                                             \
@@ -368,7 +368,7 @@ void EditorHelp::_class_desc_input(const Ref<InputEvent>& p_input) {}
 	Ref<Texture2D> warning_icon = get_editor_theme_icon(SNAME("NodeWarning"));                     \
 	class_desc->add_image(warning_icon, warning_icon->get_width(), warning_icon->get_height());    \
 	class_desc->add_text(nbsp);                                                                    \
-	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorStringName(Editor)));     \
+	class_desc->push_color(get_theme_color(SNAME("warning_color"), EditorString(Editor)));     \
 	class_desc->push_font(theme_cache.doc_bold_font);                                              \
 	class_desc->add_text(TTR("Experimental:"));                                                    \
 	class_desc->pop();                                                                             \
@@ -572,7 +572,7 @@ void EditorHelp::_finish_regen_script_doc_thread(void* p_udata)
 	_process_postponed_docs();
 	_script_docs_loaded.set();
 
-	OS::get_singleton()->benchmark_end_measure("EditorHelp", "Generate Script Documentation");
+	OS::benchmark_end_measure("EditorHelp", "Generate Script Documentation");
 }
 
 // Runs on loader_thread since _reload_scripts_documentation calls ResourceLoader::load().
@@ -580,7 +580,7 @@ void EditorHelp::_finish_regen_script_doc_thread(void* p_udata)
 // waiting on worker_thread.
 void EditorHelp::_regen_script_doc_thread(void* p_udata)
 {
-	OS::get_singleton()->benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
+	OS::benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
 
 	EditorFileSystemDirectory* dir = static_cast<EditorFileSystemDirectory*>(p_udata);
 	_script_docs_loaded.set_to(false);
@@ -615,7 +615,7 @@ void EditorHelp::_delete_script_doc_cache()
 void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache)
 {
 	doc_generation_count++;
-	OS::get_singleton()->benchmark_begin_measure(
+	OS::benchmark_begin_measure(
 		"EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
 
 	// In case not the first attempt.
@@ -795,7 +795,7 @@ void EditorHelpBit::_go_to_url(const String& p_what)
 	String doc_url = clss.is_empty()
 						 ? String(VLTR_VERSION_DOCS_URL "/")
 						 : vformat(VLTR_VERSION_DOCS_URL "/classes/class_%s.html%s", clss, section);
-	OS::get_singleton()->shell_open(doc_url);
+	OS::shell_open(doc_url);
 }
 
 void EditorHelpBit::_go_to_help(const String& p_what)
@@ -900,10 +900,10 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 	else if (p_select.begins_with("open-file:")) {
 		String path =
 			ProjectSettings::globalize_path(p_select.trim_prefix("open-file:"));
-		OS::get_singleton()->shell_show_in_file_manager(path, true);
+		OS::shell_show_in_file_manager(path, true);
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
-		OS::get_singleton()->shell_open(p_select);
+		OS::shell_open(p_select);
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::get_singleton()->clipboard_set(p_select.substr(1));
@@ -1184,7 +1184,7 @@ void EditorHelpBitTooltip::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE:
 		_is_tooltip_visible = true;
-		_enter_tree_time = OS::get_singleton()->get_ticks_msec();
+		_enter_tree_time = OS::get_ticks_msec();
 		break;
 	case NOTIFICATION_EXIT_TREE:
 		_is_tooltip_visible = false;
@@ -1263,12 +1263,12 @@ void EditorHelpHighlighter::reset_cache()
 #ifdef MODULE_GDSCRIPT_ENABLED
 	highlight_data_caches[LANGUAGE_GDSCRIPT].clear();
 	text_edits[LANGUAGE_GDSCRIPT]->add_theme_color_override(
-		SceneStringName(font_color), text_color);
+		SceneString(font_color), text_color);
 #endif
 
 #ifdef MODULE_MONO_ENABLED
 	highlight_data_caches[LANGUAGE_CSHARP].clear();
-	text_edits[LANGUAGE_CSHARP]->add_theme_color_override(SceneStringName(font_color), text_color);
+	text_edits[LANGUAGE_CSHARP]->add_theme_color_override(SceneString(font_color), text_color);
 #endif
 }
 
@@ -1277,7 +1277,7 @@ EditorHelpHighlighter::EditorHelpHighlighter()
 #ifdef MODULE_MONO_E
 	NABLED
 	TextEdit* csharp_text_edit = memnew(TextEdit);
-	csharp_text_edit->add_theme_color_override(SceneStringName(font_color), text_color);
+	csharp_text_edit->add_theme_color_override(SceneString(font_color), text_color);
 
 	// See G
 	H - 89610.
@@ -1413,43 +1413,43 @@ void EditorHelp::_gen_doc_thread(void*) {}
 void EditorHelp::_compute_doc_version_hash() {}
 
 EditorHelpBit::HelpData EditorHelpBit::_get_theme_item_help_data(
-	StringName const&, StringName const&)
+	String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_signal_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_method_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_enum_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_enum_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_constant_help_data(StringName const&, StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_constant_help_data(String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
-EditorHelpBit::HelpData EditorHelpBit::_get_class_help_data(StringName const&)
+EditorHelpBit::HelpData EditorHelpBit::_get_class_help_data(String const&)
 {
 	return EditorHelpBit::HelpData();
 }
 
 EditorHelpBit::HelpData EditorHelpBit::_get_annotation_help_data(
-	StringName const&, StringName const&)
+	String const&, String const&)
 {
 	return EditorHelpBit::HelpData();
 }

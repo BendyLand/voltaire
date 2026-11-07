@@ -74,7 +74,7 @@ void MIDIDriverALSAMidi::thread_func(void *p_udata) {
 		}
 		md->unlock();
 
-		OS::get_singleton()->delay_usec(1000);
+		OS::delay_usec(1000);
 	}
 }
 

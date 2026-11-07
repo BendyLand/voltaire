@@ -62,7 +62,7 @@ int MeshInstance3D::get_blend_shape_count() const
 	return mesh->get_blend_shape_count();
 }
 
-int MeshInstance3D::find_blend_shape_by_name(const StringName& p_name)
+int MeshInstance3D::find_blend_shape_by_name(const String& p_name)
 {
 	if (mesh.is_null()) {
 		return -1;
@@ -257,9 +257,9 @@ void MeshInstance3D::create_debug_tangents()
 	}
 }
 
-bool MeshInstance3D::_property_can_revert(const StringName& p_name) const
+bool MeshInstance3D::_property_can_revert(const String& p_name) const
 {
-	HashMap<StringName, int>::ConstIterator E = blend_shape_properties.find(p_name);
+	HashMap<String, int>::ConstIterator E = blend_shape_properties.find(p_name);
 	if (E) {
 		return true;
 	}

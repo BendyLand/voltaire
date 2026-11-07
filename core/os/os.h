@@ -43,9 +43,14 @@
 
 class MainLoop;
 
-class OS
+class OS final
 {
 public:
+	OS() = delete;
+	~OS() = delete;
+	OS(const OS&) = delete;
+	OS& operator=(const OS&) = delete;
+
 	typedef void (*ImeCallback)(void* p_inp, const String& p_text, Point2 p_selection);
 	typedef bool (*HasServerFeatureCallback)(const String& p_feature);
 
@@ -79,252 +84,23 @@ public:
 		PLATFORM_STRING_FILE_MANAGER_SHOW,
 	};
 
-private:
-	static OS* singleton;
-	static uint64_t target_ticks;
-	String _execpath;
-	List<String> _cmdline;
-	List<String> _user_args;
-	bool _keep_screen_on =
-		true; // set default value to true, because this had been true before godot 2.0.
-	bool low_processor_usage_mode = false;
-	int low_processor_usage_mode_sleep_usec = 10000;
-	bool _delta_smoothing_enabled = false;
-	bool _verbose_stdout = false;
-	bool _debug_stdout = false;
-	String _local_clipboard;
-	// Assume success by default, all failure cases need to set EXIT_FAILURE explicitly.
-	int _exit_code = EXIT_SUCCESS;
-	bool _allow_hidpi = false;
-	bool _allow_layered = false;
-	bool _stdout_enabled = true;
-	bool _stderr_enabled = true;
-	bool _writing_movie = false;
-	bool _in_editor = false;
-	bool _embedded_in_editor = false;
-
-	CompositeLogger* _logger = nullptr;
-
-	bool restart_on_exit = false;
-	List<String> restart_commandline;
-
-	String _current_rendering_driver_name;
-	RenderingSource _current_rendering_driver_name_source = RENDERING_SOURCE_DEFAULT;
-	String _current_rendering_method;
-	RenderingSource _current_rendering_method_source = RENDERING_SOURCE_DEFAULT;
-	bool _is_gles_over_gl = false;
-
-	RemoteFilesystemClient default_rfs;
-
-	// For tracking benchmark data
-	bool use_benchmark = false;
-	String benchmark_file;
-	HashMap<Pair<String, String>, uint64_t> benchmark_marks_from;
-	HashMap<Pair<String, String>, double> benchmark_marks_final;
-
-protected:
-	void _set_logger(CompositeLogger* p_logger);
-
-	friend class Main;
-	// Needed by tests to setup command-line args.
-	friend int test_main(int p_argc, char* p_argv[]);
-
-	HasServerFeatureCallback has_server_feature_callback = nullptr;
-	bool _separate_thread_render = false;
-	bool _silent_crash_handler = false;
-
-	// Functions used by Main to initialize/deinitialize the OS.
-
-	virtual void initialize() = 0;
-	virtual void initialize_joypads() = 0;
-
-	virtual void set_main_loop(MainLoop* p_main_loop) = 0;
-	virtual void delete_main_loop() = 0;
-
-	virtual void finalize() = 0;
-	virtual void finalize_core() = 0;
-
-	virtual void set_cmdline(
-		const char* p_execpath, const List<String>& p_args, const List<String>& p_user_args);
-
-	virtual bool _check_internal_feature_support(const String& p_feature) = 0;
-
-public:
-	static OS* get_singleton();
-
-	static bool prefer_meta_over_ctrl();
-
-	void set_current_rendering_driver_name(const String& p_driver_name, RenderingSource p_source)
+	enum PreferredTextureFormat
 	{
-		_current_rendering_driver_name = p_driver_name;
-		_current_rendering_driver_name_source = p_source;
-	}
-
-	void set_current_rendering_method(const String& p_name, RenderingSource p_source)
-	{
-		_current_rendering_method = p_name;
-		_current_rendering_method_source = p_source;
-	}
-
-	void set_gles_over_gl(bool p_enabled) { _is_gles_over_gl = p_enabled; }
-
-	String get_current_rendering_driver_name() const { return _current_rendering_driver_name; }
-
-	String get_current_rendering_method() const { return _current_rendering_method; }
-
-	RenderingSource get_current_rendering_driver_name_source() const
-	{
-		return _current_rendering_driver_name_source;
-	}
-
-	RenderingSource get_current_rendering_method_source() const
-	{
-		return _current_rendering_method_source;
-	}
-
-	bool get_gles_over_gl() const { return _is_gles_over_gl; }
-
-	virtual Vector<String> get_video_adapter_driver_info() const = 0;
-
-	virtual bool get_user_prefers_integrated_gpu() const { return false; }
-
-	void print(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
-	void print_rich(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
-	void printerr(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
-
-	virtual String get_stdin_string(int64_t p_buffer_size = 1024) = 0;
-	virtual Vector<uint8_t> get_stdin_buffer(int64_t p_buffer_size = 1024) = 0;
-
-	virtual StdHandleType get_stdin_type() const { return STD_HANDLE_UNKNOWN; }
-
-	virtual StdHandleType get_stdout_type() const { return STD_HANDLE_UNKNOWN; }
-
-	virtual StdHandleType get_stderr_type() const { return STD_HANDLE_UNKNOWN; }
-
-	virtual Error get_entropy(
-		uint8_t* r_buffer, int p_bytes) = 0; // Should return cryptographically-safe random bytes.
-
-	virtual String get_system_ca_certificates()
-	{
-		return "";
-	} // Concatenated certificates in PEM format.
-
-	virtual Vector<String> get_connected_midi_inputs();
-	virtual void open_midi_inputs();
-	virtual void close_midi_inputs();
-
-	virtual Rect2 calculate_boot_screen_rect(
-		const Size2& p_window_size, const Size2& p_imgrect_size) const;
-
-	virtual void alert(const String& p_alert, const String& p_title = "ALERT!");
-
-	struct GDExtensionData
-	{
-		bool also_set_library_path = false;
-		String* r_resolved_path = nullptr;
-		bool generate_temp_files = false;
-		Vector<String>* library_dependencies = nullptr;
+		PREFERRED_TEXTURE_FORMAT_S3TC_BPTC,
+		PREFERRED_TEXTURE_FORMAT_ETC2_ASTC
 	};
 
-	virtual Error open_dynamic_library(
-		const String& p_path, void*& p_library_handle, GDExtensionData* p_data = nullptr)
+	enum SystemDir
 	{
-		return ERR_UNAVAILABLE;
-	}
-
-	virtual Error close_dynamic_library(void* p_library_handle) { return ERR_UNAVAILABLE; }
-
-	virtual Error get_dynamic_library_symbol_handle(void* p_library_handle, const String& p_name,
-		void*& p_symbol_handle, bool p_optional = false)
-	{
-		return ERR_UNAVAILABLE;
-	}
-
-	virtual void set_low_processor_usage_mode(bool p_enabled);
-	virtual bool is_in_low_processor_usage_mode() const;
-	virtual void set_low_processor_usage_mode_sleep_usec(int p_usec);
-	virtual int get_low_processor_usage_mode_sleep_usec() const;
-
-	void set_delta_smoothing(bool p_enabled);
-	bool is_delta_smoothing_enabled() const;
-
-	virtual Vector<String> get_system_fonts() const { return Vector<String>(); }
-
-	virtual String get_system_font_path(const String& p_font_name, int p_weight = 400,
-		int p_stretch = 100, bool p_italic = false) const
-	{
-		return String();
-	}
-
-	virtual Vector<String> get_system_font_path_for_text(const String& p_font_name,
-		const String& p_text, const String& p_locale = String(), const String& p_script = String(),
-		int p_weight = 400, int p_stretch = 100, bool p_italic = false) const
-	{
-		return Vector<String>();
-	}
-
-	virtual String get_executable_path() const;
-	virtual Error execute(const String& p_path, const List<String>& p_arguments,
-		String* r_pipe = nullptr, int* r_exitcode = nullptr, bool p_read_stderr = false,
-		Mutex* p_pipe_mutex = nullptr, bool p_open_console = false) = 0;
-
-	virtual Error create_process(const String& p_path, const List<String>& p_arguments,
-		ProcessID* r_child_id = nullptr, bool p_open_console = false) = 0;
-
-	virtual Error create_instance(const List<String>& p_arguments, ProcessID* r_child_id = nullptr)
-	{
-		return create_process(get_executable_path(), p_arguments, r_child_id);
-	}
-
-	virtual Error open_with_program(const String& p_program_path, const List<String>& p_paths)
-	{
-		return create_process(p_program_path, p_paths);
-	}
-
-	virtual Error kill(const ProcessID& p_pid) = 0;
-	virtual int get_process_id() const;
-	virtual bool is_process_running(const ProcessID& p_pid) const = 0;
-	virtual int get_process_exit_code(const ProcessID& p_pid) const = 0;
-
-	virtual void vibrate_handheld(int p_duration_ms = 500, float p_amplitude = -1.0) {}
-
-	virtual Error shell_open(const String& p_uri);
-	virtual Error shell_show_in_file_manager(String p_path, bool p_open_folder = true);
-	virtual Error set_cwd(const String& p_cwd);
-	virtual String get_cwd() const;
-
-	virtual bool has_environment(const String& p_var) const = 0;
-	virtual String get_environment(const String& p_var) const = 0;
-	virtual void set_environment(const String& p_var, const String& p_value) const = 0;
-	virtual void unset_environment(const String& p_var) const = 0;
-
-	virtual void load_shell_environment() const {}
-
-	virtual String get_name() const = 0;
-	virtual String get_identifier() const;
-	virtual String get_distribution_name() const = 0;
-	virtual String get_version() const = 0;
-
-	virtual String get_version_alias() const { return get_version(); }
-
-	virtual List<String> get_cmdline_args() const { return List<String>(_cmdline); }
-
-	virtual List<String> get_cmdline_user_args() const { return List<String>(_user_args); }
-
-	virtual List<String> get_cmdline_platform_args() const { return List<String>(); }
-
-	virtual String get_model_name() const;
-
-	bool is_layered_allowed() const { return _allow_layered; }
-
-	bool is_hidpi_allowed() const { return _allow_hidpi; }
-
-	void ensure_user_data_dir();
-
-	// NOTE: MainLoop is forward-declared in OS and should be included to use this.
-	virtual MainLoop* get_main_loop() const = 0;
-
-	virtual void yield();
+		SYSTEM_DIR_DESKTOP,
+		SYSTEM_DIR_DCIM,
+		SYSTEM_DIR_DOCUMENTS,
+		SYSTEM_DIR_DOWNLOADS,
+		SYSTEM_DIR_MOVIES,
+		SYSTEM_DIR_MUSIC,
+		SYSTEM_DIR_PICTURES,
+		SYSTEM_DIR_RINGTONES,
+	};
 
 	struct DateTime
 	{
@@ -344,150 +120,334 @@ public:
 		String name;
 	};
 
-	virtual DateTime get_datetime(bool p_utc = false) const = 0;
-	virtual TimeZoneInfo get_time_zone_info() const = 0;
-	virtual double get_unix_time() const;
-
-	virtual void delay_usec(uint32_t p_usec) const = 0;
-	virtual void add_frame_delay(bool p_can_draw, bool p_wake_for_events);
-	virtual uint64_t get_frame_delay(bool p_can_draw) const;
-
-	virtual uint64_t get_ticks_usec() const = 0;
-	uint64_t get_ticks_msec() const;
-
-	virtual bool is_userfs_persistent() const { return true; }
-
-	bool is_stdout_verbose() const;
-	bool is_stdout_debug_enabled() const;
-
-	bool is_stdout_enabled() const;
-	bool is_stderr_enabled() const;
-	void set_stdout_enabled(bool p_enabled);
-	void set_stderr_enabled(bool p_enabled);
-
-	virtual void set_crash_handler_silent() { _silent_crash_handler = true; }
-
-	virtual bool is_crash_handler_silent() { return _silent_crash_handler; }
-
-	virtual String multibyte_to_string(
-		const String& p_encoding, const Vector<uint8_t>& p_array) const;
-	virtual Vector<uint8_t> string_to_multibyte(
-		const String& p_encoding, const String& p_string) const;
-
-	virtual void disable_crash_handler() {}
-
-	virtual bool is_disable_crash_handler() const { return false; }
-
-	virtual void initialize_debugging() {}
-
-	virtual uint64_t get_static_memory_usage() const;
-	virtual uint64_t get_static_memory_peak_usage() const;
-
-	bool is_separate_thread_rendering_enabled() const { return _separate_thread_render; }
-
-	virtual String get_locale() const;
-
-	virtual Vector<String> get_preferred_locales() const { return Vector<String>{get_locale()}; }
-
-	String get_locale_language() const;
-
-	virtual uint64_t get_embedded_pck_offset() const;
-
-	String get_safe_dir_name(const String& p_dir_name, bool p_allow_paths = false) const;
-	virtual String get_godot_dir_name() const;
-
-	virtual String get_data_path() const;
-	virtual String get_config_path() const;
-	virtual String get_cache_path() const;
-	virtual String get_temp_path() const;
-	virtual String get_bundle_resource_dir() const;
-	virtual String get_bundle_icon_path() const;
-	virtual String get_bundle_icon_name() const;
-
-	virtual String get_user_data_dir(const String& p_user_dir) const;
-	virtual String get_user_data_dir() const;
-	virtual String get_resource_dir() const;
-
-	enum SystemDir
+	struct GDExtensionData
 	{
-		SYSTEM_DIR_DESKTOP,
-		SYSTEM_DIR_DCIM,
-		SYSTEM_DIR_DOCUMENTS,
-		SYSTEM_DIR_DOWNLOADS,
-		SYSTEM_DIR_MOVIES,
-		SYSTEM_DIR_MUSIC,
-		SYSTEM_DIR_PICTURES,
-		SYSTEM_DIR_RINGTONES,
+		bool also_set_library_path = false;
+		String* r_resolved_path = nullptr;
+		bool generate_temp_files = false;
+		Vector<String>* library_dependencies = nullptr;
 	};
 
-	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const;
+private:
+	static inline uint64_t target_ticks = 0;
+	static inline String _execpath;
+	static inline List<String> _cmdline;
+	static inline List<String> _user_args;
+	static inline bool _keep_screen_on = true;
+	static inline bool low_processor_usage_mode = false;
+	static inline int low_processor_usage_mode_sleep_usec = 10000;
+	static inline bool _delta_smoothing_enabled = false;
+	static inline bool _verbose_stdout = false;
+	static inline bool _debug_stdout = false;
+	static inline String _local_clipboard;
+	static inline int _exit_code = EXIT_SUCCESS;
+	static inline bool _allow_hidpi = false;
+	static inline bool _allow_layered = false;
+	static inline bool _stdout_enabled = true;
+	static inline bool _stderr_enabled = true;
+	static inline bool _writing_movie = false;
+	static inline bool _in_editor = false;
+	static inline bool _embedded_in_editor = false;
 
-	virtual String expand_path(const String& p_path) const;
+	static inline bool restart_on_exit = false;
+	static inline List<String> restart_commandline;
 
-	virtual Error move_to_trash(const String& p_path) { return FAILED; }
+	static inline String _current_rendering_driver_name = "";
+	static inline RenderingSource _current_rendering_driver_name_source = RENDERING_SOURCE_DEFAULT;
+	static inline String _current_rendering_method;
+	static inline RenderingSource _current_rendering_method_source = RENDERING_SOURCE_DEFAULT;
+	static inline bool _is_gles_over_gl = false;
 
-	void create_lock_file();
-	void remove_lock_file();
+	static inline RemoteFilesystemClient default_rfs;
 
-	virtual int get_exit_code() const;
-	// `set_exit_code` should only be used from `SceneTree` (or from a similar
-	// level, e.g. from the `Main::start` if leaving without creating a `SceneTree`).
-	// For other components, `SceneTree.quit()` should be used instead.
-	virtual void set_exit_code(int p_code);
+	// Benchmark data tracking
+	static inline bool use_benchmark = false;
+	static inline String benchmark_file;
+	static inline HashMap<Pair<String, String>, uint64_t> benchmark_marks_from;
+	static inline HashMap<Pair<String, String>, double> benchmark_marks_final;
 
-	virtual int get_processor_count() const;
-	virtual String get_processor_name() const;
+	static inline HasServerFeatureCallback has_server_feature_callback = nullptr;
+	static inline bool _separate_thread_render = false;
+	static inline bool _silent_crash_handler = false;
 
-	virtual int get_default_thread_pool_size() const { return get_processor_count(); }
+	static bool _check_internal_feature_support(const String& p_feature);
 
-	virtual String get_unique_id() const;
+	friend class Main;
+	friend int test_main(int p_argc, char* p_argv[]);
 
-	bool has_feature(const String& p_feature);
+public:
+	static void _set_logger(CompositeLogger* p_logger);
+	static inline bool _initialized = false;
+	static inline CompositeLogger* _logger = nullptr;
 
-	virtual bool is_sandboxed() const;
+	// Lifecycle
+	static void initialize();
+	static bool is_initialized();
+	static void initialize_core();
+	static void initialize_joypads();
+	static void finalize();
+	static void finalize_core();
 
-	void set_has_server_feature_callback(HasServerFeatureCallback p_callback);
+	static void set_cmdline(
+		const char* p_execpath, const List<String>& p_args, const List<String>& p_user_args);
+	static void set_main_loop(MainLoop* p_main_loop);
+	static void delete_main_loop();
+	static MainLoop* get_main_loop();
 
-	void set_restart_on_exit(bool p_restart, const List<String>& p_restart_arguments);
-	bool is_restart_on_exit_set() const;
-	List<String> get_restart_on_exit_arguments() const;
+	static bool prefer_meta_over_ctrl();
 
-	virtual bool request_permission(const String& p_name) { return true; }
+	// Rendering Driver & Settings
+	static void set_current_rendering_driver_name(
+		const String& p_driver_name, RenderingSource p_source)
+	{
+		_current_rendering_driver_name = p_driver_name;
+		_current_rendering_driver_name_source = p_source;
+	}
 
-	virtual bool request_permissions() { return true; }
+	static void set_current_rendering_method(const String& p_name, RenderingSource p_source)
+	{
+		_current_rendering_method = p_name;
+		_current_rendering_method_source = p_source;
+	}
 
-	virtual Vector<String> get_granted_permissions() const { return Vector<String>(); }
+	static void set_gles_over_gl(bool p_enabled) { _is_gles_over_gl = p_enabled; }
 
-	virtual void revoke_granted_permissions() {}
+	static String get_current_rendering_driver_name() { return _current_rendering_driver_name; }
 
-	// For recording / measuring benchmark data. Only enabled with tools
-	void set_use_benchmark(bool p_use_benchmark);
-	bool is_use_benchmark_set();
-	void set_benchmark_file(const String& p_benchmark_file);
-	String get_benchmark_file();
-	virtual void benchmark_begin_measure(const String& p_context, const String& p_what);
-	virtual void benchmark_end_measure(const String& p_context, const String& p_what);
-	virtual void benchmark_dump();
+	static String get_current_rendering_method() { return _current_rendering_method; }
 
-	virtual Error setup_remote_filesystem(
+	static RenderingSource get_current_rendering_driver_name_source()
+	{
+		return _current_rendering_driver_name_source;
+	}
+
+	static RenderingSource get_current_rendering_method_source()
+	{
+		return _current_rendering_method_source;
+	}
+
+	static bool get_gles_over_gl() { return _is_gles_over_gl; }
+
+	static Vector<String> get_video_adapter_driver_info();
+	static bool get_user_prefers_integrated_gpu();
+
+	// Output & Logging
+	static void print(const char* p_format, ...);
+	static void print_rich(const char* p_format, ...);
+	static void printerr(const char* p_format, ...);
+
+	static String get_stdin_string(int64_t p_buffer_size = 1024);
+	static Vector<uint8_t> get_stdin_buffer(int64_t p_buffer_size = 1024);
+
+	static StdHandleType get_stdin_type();
+	static StdHandleType get_stdout_type();
+	static StdHandleType get_stderr_type();
+
+	static Error get_entropy(uint8_t* r_buffer, int p_bytes);
+	static String get_system_ca_certificates();
+
+	static Vector<String> get_connected_midi_inputs();
+	static void open_midi_inputs();
+	static void close_midi_inputs();
+
+	static Rect2 calculate_boot_screen_rect(
+		const Size2& p_window_size, const Size2& p_imgrect_size);
+	static void alert(const String& p_alert, const String& p_title = "ALERT!");
+
+	// Dynamic Libraries / GDExtension
+	static Error open_dynamic_library(
+		const String& p_path, void*& p_library_handle, GDExtensionData* p_data = nullptr);
+	static Error close_dynamic_library(void* p_library_handle);
+	static Error get_dynamic_library_symbol_handle(void* p_library_handle, const String& p_name,
+		void*& p_symbol_handle, bool p_optional = false);
+
+	// CPU / Power Management
+	static void set_low_processor_usage_mode(bool p_enabled);
+	static bool is_in_low_processor_usage_mode();
+	static void set_low_processor_usage_mode_sleep_usec(int p_usec);
+	static int get_low_processor_usage_mode_sleep_usec();
+
+	static void set_delta_smoothing(bool p_enabled);
+	static bool is_delta_smoothing_enabled();
+
+	// System Fonts
+	static Vector<String> get_system_fonts();
+	static String get_system_font_path(
+		const String& p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false);
+	static Vector<String> get_system_font_path_for_text(const String& p_font_name,
+		const String& p_text, const String& p_locale = String(), const String& p_script = String(),
+		int p_weight = 400, int p_stretch = 100, bool p_italic = false);
+
+	// Process & Execution
+	static String get_executable_path();
+	static Error execute(const String& p_path, const List<String>& p_arguments,
+		String* r_pipe = nullptr, int* r_exitcode = nullptr, bool p_read_stderr = false,
+		Mutex* p_pipe_mutex = nullptr, bool p_open_console = false);
+	static Error create_process(const String& p_path, const List<String>& p_arguments,
+		ProcessID* r_child_id = nullptr, bool p_open_console = false);
+
+	static Error create_instance(const List<String>& p_arguments, ProcessID* r_child_id = nullptr)
+	{
+		return create_process(get_executable_path(), p_arguments, r_child_id);
+	}
+
+	static Error open_with_program(const String& p_program_path, const List<String>& p_paths)
+	{
+		return create_process(p_program_path, p_paths);
+	}
+
+	static Error kill(const ProcessID& p_pid);
+	static int get_process_id();
+	static bool is_process_running(const ProcessID& p_pid);
+	static int get_process_exit_code(const ProcessID& p_pid);
+
+	static void vibrate_handheld(int p_duration_ms = 500, float p_amplitude = -1.0);
+
+	static Error shell_open(const String& p_uri);
+	static Error shell_show_in_file_manager(String p_path, bool p_open_folder = true);
+	static Error set_cwd(const String& p_cwd);
+	static String get_cwd();
+
+	// Environment
+	static bool has_environment(const String& p_var);
+	static String get_environment(const String& p_var);
+	static void set_environment(const String& p_var, const String& p_value);
+	static void unset_environment(const String& p_var);
+	static void load_shell_environment();
+
+	// Platform Metadata
+	static String get_name();
+	static String get_identifier();
+	static String get_distribution_name();
+	static String get_version();
+
+	static String get_version_alias() { return get_version(); }
+
+	static List<String> get_cmdline_args() { return List<String>(_cmdline); }
+
+	static List<String> get_cmdline_user_args() { return List<String>(_user_args); }
+
+	static List<String> get_cmdline_platform_args();
+
+	static String get_model_name();
+
+	static bool is_layered_allowed() { return _allow_layered; }
+
+	static bool is_hidpi_allowed() { return _allow_hidpi; }
+
+	static void ensure_user_data_dir();
+	static void yield();
+
+	// Time & Timing
+	static DateTime get_datetime(bool p_utc = false);
+	static TimeZoneInfo get_time_zone_info();
+	static double get_unix_time();
+
+	static void delay_usec(uint32_t p_usec);
+	static void add_frame_delay(bool p_can_draw, bool p_wake_for_events);
+	static uint64_t get_frame_delay(bool p_can_draw);
+
+	static uint64_t get_ticks_usec();
+	static uint64_t get_ticks_msec();
+
+	static bool is_userfs_persistent() { return true; }
+
+	// Diagnostics & Capabilities
+	static bool is_stdout_verbose();
+	static bool is_stdout_debug_enabled();
+	static bool is_stdout_enabled();
+	static bool is_stderr_enabled();
+	static void set_stdout_enabled(bool p_enabled);
+	static void set_stderr_enabled(bool p_enabled);
+
+	static void set_crash_handler_silent() { _silent_crash_handler = true; }
+
+	static bool is_crash_handler_silent() { return _silent_crash_handler; }
+
+	static String multibyte_to_string(const String& p_encoding, const Vector<uint8_t>& p_array);
+	static Vector<uint8_t> string_to_multibyte(const String& p_encoding, const String& p_string);
+
+	static void disable_crash_handler();
+	static bool is_disable_crash_handler();
+	static void initialize_debugging();
+
+	static uint64_t get_static_memory_usage();
+	static uint64_t get_static_memory_peak_usage();
+
+	static bool is_separate_thread_rendering_enabled() { return _separate_thread_render; }
+
+	// Localization & Paths
+	static String get_locale();
+
+	static Vector<String> get_preferred_locales() { return Vector<String>{get_locale()}; }
+
+	static String get_locale_language();
+
+	static uint64_t get_embedded_pck_offset();
+	static String get_safe_dir_name(const String& p_dir_name, bool p_allow_paths = false);
+	static String get_godot_dir_name();
+
+	static String get_data_path();
+	static String get_config_path();
+	static String get_cache_path();
+	static String get_temp_path();
+	static String get_bundle_resource_dir();
+	static String get_bundle_icon_path();
+	static String get_bundle_icon_name();
+
+	static String get_user_data_dir(const String& p_user_dir);
+	static String get_user_data_dir();
+	static String get_resource_dir();
+
+	static String get_system_dir(SystemDir p_dir, bool p_shared_storage = true);
+	static String expand_path(const String& p_path);
+
+	static Error move_to_trash(const String& p_path);
+
+	static void create_lock_file();
+	static void remove_lock_file();
+
+	static int get_exit_code();
+	static void set_exit_code(int p_code);
+
+	static int get_processor_count();
+	static String get_processor_name();
+
+	static int get_default_thread_pool_size() { return get_processor_count(); }
+
+	static String get_unique_id();
+	static bool has_feature(const String& p_feature);
+	static bool is_sandboxed();
+
+	static void set_has_server_feature_callback(HasServerFeatureCallback p_callback);
+
+	static void set_restart_on_exit(bool p_restart, const List<String>& p_restart_arguments);
+	static bool is_restart_on_exit_set();
+	static List<String> get_restart_on_exit_arguments();
+
+	static bool request_permission(const String& p_name);
+	static bool request_permissions();
+	static Vector<String> get_granted_permissions();
+	static void revoke_granted_permissions();
+
+	// Benchmark
+	static void set_use_benchmark(bool p_use_benchmark);
+	static bool is_use_benchmark_set();
+	static void set_benchmark_file(const String& p_benchmark_file);
+	static String get_benchmark_file();
+	static void benchmark_begin_measure(const String& p_context, const String& p_what);
+	static void benchmark_end_measure(const String& p_context, const String& p_what);
+	static void benchmark_dump();
+
+	static Error setup_remote_filesystem(
 		const String& p_server_host, int p_port, const String& p_password, String& r_project_path);
 
-	void add_logger(Logger* p_logger);
+	static void add_logger(Logger* p_logger);
 
-	enum PreferredTextureFormat
-	{
-		PREFERRED_TEXTURE_FORMAT_S3TC_BPTC,
-		PREFERRED_TEXTURE_FORMAT_ETC2_ASTC
-	};
+	static PreferredTextureFormat get_preferred_texture_format();
+	static void load_platform_gdextensions();
 
-	virtual PreferredTextureFormat get_preferred_texture_format() const;
-
-	// Load GDExtensions specific to this platform.
-	// This is invoked by the GDExtensionManager after loading GDExtensions specified by the
-	// project.
-	virtual void load_platform_gdextensions() const {}
-
-	virtual String get_platform_string(PlatformString p_platform_string) const
+	static String get_platform_string(PlatformString p_platform_string)
 	{
 		switch (p_platform_string) {
 		case PlatformString::PLATFORM_STRING_FILE_MANAGER_OPEN:
@@ -500,21 +460,8 @@ public:
 	}
 
 #ifdef TOOLS_ENABLED
-	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to
-	// crash on some NVIDIA drivers.
-	virtual bool _test_create_rendering_device_and_gl(const String& p_display_driver) const
-	{
-		return true;
-	}
-
-	virtual bool _test_create_rendering_device(const String& p_display_driver) const
-	{
-		return true;
-	}
+	static bool _test_create_rendering_device_and_gl(const String& p_display_driver);
+	static bool _test_create_rendering_device(const String& p_display_driver);
 #endif
-
-	OS();
-	virtual ~OS();
 };
-
 

@@ -79,6 +79,6 @@ void Skin::clear_binds()
 
 void Skin::reset_state() { clear_binds(); }
 
-void Skin::set_bind_name(int p_index, const StringName& p_name) {}
+void Skin::set_bind_name(int p_index, const String& p_name) {}
 
 

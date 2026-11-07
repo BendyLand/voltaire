@@ -93,7 +93,7 @@ bpy.ops.export_scene.gltf(**opts['gltf_options'])
 
 bool EditorImportBlendRunner::is_running()
 {
-	return blender_pid != 0 && OS::get_singleton()->is_process_running(blender_pid);
+	return blender_pid != 0 && OS::is_process_running(blender_pid);
 }
 
 HTTPClient::Status EditorImportBlendRunner::connect_blender_rpc(
@@ -107,7 +107,7 @@ HTTPClient::Status EditorImportBlendRunner::connect_blender_rpc(
 
 	bool done = false;
 	while (!done) {
-		OS::get_singleton()->delay_usec(wait_usecs);
+		OS::delay_usec(wait_usecs);
 		attempts++;
 		status = p_client->get_status();
 		switch (status) {
@@ -163,7 +163,7 @@ void EditorImportBlendRunner::_kill_blender()
 {
 	kill_timer->stop();
 	if (is_running()) {
-		OS::get_singleton()->kill(blender_pid);
+		OS::kill(blender_pid);
 	}
 	blender_pid = 0;
 }

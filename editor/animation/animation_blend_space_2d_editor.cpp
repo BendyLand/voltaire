@@ -56,9 +56,9 @@ bool AnimationNodeBlendSpace2DEditor::can_edit(const Ref<AnimationNode>& p_node)
 	return bs2d.is_valid();
 }
 
-StringName AnimationNodeBlendSpace2DEditor::get_blend_position_path() const
+String AnimationNodeBlendSpace2DEditor::get_blend_position_path() const
 {
-	StringName path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
+	String path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
 	return path;
 }
 

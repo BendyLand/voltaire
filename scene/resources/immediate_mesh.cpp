@@ -405,9 +405,9 @@ Ref<Material> ImmediateMesh::surface_get_material(int p_idx) const
 
 int ImmediateMesh::get_blend_shape_count() const { return 0; }
 
-StringName ImmediateMesh::get_blend_shape_name(int p_index) const { return StringName(); }
+String ImmediateMesh::get_blend_shape_name(int p_index) const { return String(); }
 
-void ImmediateMesh::set_blend_shape_name(int p_index, const StringName& p_name) {}
+void ImmediateMesh::set_blend_shape_name(int p_index, const String& p_name) {}
 
 AABB ImmediateMesh::get_aabb() const
 {

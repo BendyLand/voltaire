@@ -184,8 +184,8 @@ int AnimationTimelineEdit::get_name_limit() const
 Size2 AnimationTimelineEdit::get_minimum_size() const
 {
 	Size2 ms = filter_track->get_minimum_size();
-	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	const Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	const int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	ms.height = MAX(ms.height, font->get_height(font_size));
 	ms.width = get_buttons_width() + add_track->get_minimum_size().width +
 			   get_editor_theme_icon(SNAME("Hsize"))->get_width() + 2 + 8 * EDSCALE;
@@ -397,8 +397,8 @@ NodePath AnimationTrackEdit::get_path() const { return node_path; }
 Size2 AnimationTrackEdit::get_minimum_size() const
 {
 	Ref<Texture2D> texture = get_editor_theme_icon(SNAME("Object"));
-	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	const Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	const int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	const int separation = get_theme_constant(SNAME("v_separation"), SNAME("ItemList"));
 
 	int max_h = MAX(texture->get_height(), font->get_height(font_size));
@@ -443,15 +443,15 @@ void AnimationTrackEditGroup::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
 		icon_size =
-			Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+			Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorString(Editor));
 	} break;
 	}
 }
 
 Size2 AnimationTrackEditGroup::get_minimum_size() const
 {
-	const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	const Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	const int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	const int separation = get_theme_constant(SNAME("v_separation"), SNAME("ItemList"));
 
 	const Ref<StyleBox>& header_style =
@@ -548,7 +548,7 @@ PackedStringArray AnimationTrackEditor::get_selected_section() const
 	return marker_edit->get_selected_section();
 }
 
-bool AnimationTrackEditor::is_marker_selected(const StringName& p_marker) const
+bool AnimationTrackEditor::is_marker_selected(const String& p_marker) const
 {
 	return marker_edit->is_marker_selected(p_marker);
 }
@@ -617,7 +617,7 @@ void AnimationTrackEditor::_add_track(int p_type)
 	adding_track_type = p_type;
 
 	String title_text = TTRC("Pick a node to animate:");
-	Vector<StringName> valid_types;
+	Vector<String> valid_types;
 	switch (adding_track_type) {
 	case Animation::TYPE_BLEND_SHAPE: {
 		// Blend Shape is a property of MeshInstance3D.
@@ -923,8 +923,8 @@ bool AnimationMarkerEdit::_is_ui_pos_in_current_section(const Point2& p_pos)
 	if (p_pos.x >= limit && p_pos.x <= limit_end) {
 		PackedStringArray section = get_selected_section();
 		if (!section.is_empty()) {
-			StringName start_marker = section[0];
-			StringName end_marker = section[1];
+			String start_marker = section[0];
+			String end_marker = section[1];
 			float start_offset =
 				(animation->get_marker_time(start_marker) - timeline->get_value()) *
 					timeline->get_zoom_scale() +
@@ -988,7 +988,7 @@ PackedStringArray AnimationMarkerEdit::get_selected_section() const
 		arr.push_back(""); // Marker with largest time.
 		double min_time = Math::INF;
 		double max_time = -Math::INF;
-		for (const StringName& marker_name : selection) {
+		for (const String& marker_name : selection) {
 			double time = animation->get_marker_time(marker_name);
 			if (time < min_time) {
 				arr.set(0, marker_name);
@@ -1005,7 +1005,7 @@ PackedStringArray AnimationMarkerEdit::get_selected_section() const
 	return PackedStringArray();
 }
 
-bool AnimationMarkerEdit::is_marker_selected(const StringName& p_marker) const
+bool AnimationMarkerEdit::is_marker_selected(const String& p_marker) const
 {
 	return selection.has(p_marker);
 }
@@ -1021,8 +1021,8 @@ Ref<Animation> AnimationMarkerEdit::get_animation() const { return animation; }
 Size2 AnimationMarkerEdit::get_minimum_size() const
 {
 	Ref<Texture2D> texture = get_editor_theme_icon(SNAME("Object"));
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	int separation = get_theme_constant(SNAME("v_separation"), SNAME("ItemList"));
 
 	int max_h = MAX(texture->get_height(), font->get_height(font_size));
@@ -1041,7 +1041,7 @@ void AnimationMarkerEdit::_move_selection_begin()
 
 float AnimationMarkerKeyEdit::get_time() const { return animation->get_marker_time(marker_name); }
 
-void AnimationMarkerKeyEdit::_set_marker_name(const StringName& p_name) { marker_name = p_name; }
+void AnimationMarkerKeyEdit::_set_marker_name(const String& p_name) { marker_name = p_name; }
 
 void AnimationTrackKeyEdit::notify_change() {}
 

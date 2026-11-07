@@ -1474,6 +1474,7 @@ public:
 	void window_create_popup(DisplayServerEnums::WindowID p_window_id,
 		DisplayServerEnums::WindowID p_parent_id, Rect2i p_rect);
 	void window_destroy(DisplayServerEnums::WindowID p_window_Id);
+	bool window_is_ready(DisplayServerEnums::WindowID p_window_id) const;
 
 	// Checks if a window exists for this ID (NOT if its data is valid). Useful to
 	// detect deleted windows.

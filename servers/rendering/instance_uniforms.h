@@ -52,7 +52,7 @@ private:
 	};
 
 	int32_t _location = -1;
-	HashMap<StringName, Item> _parameters;
+	HashMap<String, Item> _parameters;
 
 	void _init_param(
 		Item& r_item, const InstanceShaderParam& p_param) const;

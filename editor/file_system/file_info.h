@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 enum class FileSortOption {
@@ -47,7 +47,7 @@ struct FileInfo {
 	String name;
 	String path;
 	String icon_path;
-	StringName type;
+	String type;
 	Vector<String> sources;
 	bool import_broken = false;
 	uint64_t modified_time = 0;

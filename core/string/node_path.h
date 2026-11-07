@@ -31,7 +31,6 @@
 #pragma once
 
 #include <climits>
-#include "core/string/string_name.h"
 #include "core/string/ustring.h"
 
 // Represents a path to a node or property in a hierarchy of nodes
@@ -43,10 +42,10 @@ class [[nodiscard]] _WARN_UNUSED_ NodePath
 	struct Data
 	{
 		SafeRefCount refcount;
-		Vector<StringName> path;
-		Vector<StringName> subpath;
-		StringName concatenated_path;
-		StringName concatenated_subpath;
+		Vector<String> path;
+		Vector<String> subpath;
+		String concatenated_path;
+		String concatenated_subpath;
 		bool absolute;
 		mutable bool hash_cache_valid;
 		mutable uint32_t hash_cache;
@@ -64,14 +63,14 @@ class [[nodiscard]] _WARN_UNUSED_ NodePath
 public:
 	bool is_absolute() const;
 	int get_name_count() const;
-	StringName get_name(int p_idx) const;
+	String get_name(int p_idx) const;
 	int get_subname_count() const;
-	StringName get_subname(int p_idx) const;
+	String get_subname(int p_idx) const;
 	int get_total_name_count() const;
-	Vector<StringName> get_names() const;
-	Vector<StringName> get_subnames() const;
-	StringName get_concatenated_names() const;
-	StringName get_concatenated_subnames() const;
+	Vector<String> get_names() const;
+	Vector<String> get_subnames() const;
+	String get_concatenated_names() const;
+	String get_concatenated_subnames() const;
 	NodePath slice(int p_begin, int p_end = INT_MAX) const;
 
 	NodePath rel_path_to(const NodePath& p_np) const;
@@ -100,9 +99,9 @@ public:
 	void simplify();
 	NodePath simplified() const;
 
-	NodePath(const Vector<StringName>& p_path, bool p_absolute);
+	NodePath(const Vector<String>& p_path, bool p_absolute);
 	NodePath(
-		const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute);
+		const Vector<String>& p_path, const Vector<String>& p_subpath, bool p_absolute);
 	NodePath(const NodePath& p_path);
 	NodePath(const String& p_path);
 

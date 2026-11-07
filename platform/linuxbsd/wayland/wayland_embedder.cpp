@@ -3200,7 +3200,7 @@ Error WaylandEmbedder::init(bool debug) {
 	struct sockaddr_un addr = {};
 	addr.sun_family = AF_UNIX;
 
-	String runtime_dir_path = OS::get_singleton()->get_environment("XDG_RUNTIME_DIR");
+	String runtime_dir_path = OS::get_environment("XDG_RUNTIME_DIR");
 	ERR_FAIL_COND_V_MSG(runtime_dir_path.is_empty(), ERR_DOES_NOT_EXIST, "XDG_RUNTIME_DIR is not set or empty.");
 
 	runtime_dir = DirAccess::create_for_path(runtime_dir_path);

@@ -90,7 +90,7 @@ AnimationNode::NodeTimeInfo AnimationNode::_pre_process(
 }
 
 void AnimationNode::get_argument_options(
-	StringName const&, int, List<String, DefaultAllocator>*) const
+	String const&, int, List<String, DefaultAllocator>*) const
 {
 }
 

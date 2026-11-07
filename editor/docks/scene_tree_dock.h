@@ -205,7 +205,7 @@ class SceneTreeDock : public EditorDock
 	void _set_node_owner_recursive(
 		Node* p_node, Node* p_owner, const HashMap<const Node*, Node*>& p_inverse_duplimap);
 
-	void _fill_path_renames(Vector<StringName> base_path, Vector<StringName> new_base_path,
+	void _fill_path_renames(Vector<String> base_path, Vector<String> new_base_path,
 		Node* p_node, HashMap<Node*, NodePath>* p_renames);
 
 	void _normalize_drop(Node*& to_node, int& to_pos, int p_type);

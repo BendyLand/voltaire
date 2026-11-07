@@ -92,7 +92,7 @@ private:
 
 	struct Clip
 	{
-		StringName name;
+		String name;
 		Ref<AudioStream> stream;
 
 		AutoAdvanceMode auto_advance = AUTO_ADVANCE_DISABLED;
@@ -161,8 +161,8 @@ public:
 	void set_initial_clip(int p_clip);
 	int get_initial_clip() const;
 
-	void set_clip_name(int p_clip, const StringName& p_name);
-	StringName get_clip_name(int p_clip) const;
+	void set_clip_name(int p_clip, const String& p_name);
+	String get_clip_name(int p_clip) const;
 
 	void set_clip_stream(int p_clip, const Ref<AudioStream>& p_stream);
 	Ref<AudioStream> get_clip_stream(int p_clip) const;
@@ -262,7 +262,7 @@ public:
 
 	virtual void tag_used_streams() override;
 
-	void switch_to_clip_by_name(const StringName& p_name);
+	void switch_to_clip_by_name(const String& p_name);
 	void switch_to_clip(int p_index);
 	int get_current_clip_index() const;
 

@@ -37,11 +37,7 @@
 
 using namespace RendererRD;
 
-ParticlesStorage* ParticlesStorage::singleton = nullptr;
-
-ParticlesStorage* ParticlesStorage::get_singleton() { return singleton; }
-
-ParticlesStorage::~ParticlesStorage()
+void ParticlesStorage::finalize()
 {
 	for (int i = 0; i <= ParticlesShader::MAX_USERDATAS; i++) {
 		for (int j = 0; j < ParticlesShader::COPY_MODE_MAX; j++) {
@@ -58,8 +54,6 @@ ParticlesStorage::~ParticlesStorage()
 		memdelete(sort_effects);
 		sort_effects = nullptr;
 	}
-
-	singleton = nullptr;
 }
 
 bool ParticlesStorage::free(RID p_rid)
@@ -403,7 +397,7 @@ void ParticlesStorage::particles_set_process_material(RID p_particles, RID p_mat
 		Dependency::DEPENDENCY_CHANGED_PARTICLES); // the instance buffer may have changed
 }
 
-RID ParticlesStorage::particles_get_process_material(RID p_particles) const
+RID ParticlesStorage::particles_get_process_material(RID p_particles)
 {
 	Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, RID());
@@ -618,7 +612,7 @@ AABB ParticlesStorage::particles_get_current_aabb(RID p_particles)
 	return aabb;
 }
 
-AABB ParticlesStorage::particles_get_aabb(RID p_particles) const
+AABB ParticlesStorage::particles_get_aabb(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, AABB());
@@ -651,7 +645,7 @@ void ParticlesStorage::particles_set_interp_to_end(RID p_particles, float p_inte
 	particles->interp_to_end = p_interp;
 }
 
-int ParticlesStorage::particles_get_draw_passes(RID p_particles) const
+int ParticlesStorage::particles_get_draw_passes(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, 0);
@@ -659,7 +653,7 @@ int ParticlesStorage::particles_get_draw_passes(RID p_particles) const
 	return particles->draw_passes.size();
 }
 
-RID ParticlesStorage::particles_get_draw_pass_mesh(RID p_particles, int p_pass) const
+RID ParticlesStorage::particles_get_draw_pass_mesh(RID p_particles, int p_pass)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, RID());
@@ -1198,7 +1192,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	RD::compute_list_end();
 }
 
-Dependency* ParticlesStorage::particles_get_dependency(RID p_particles) const
+Dependency* ParticlesStorage::particles_get_dependency(RID p_particles)
 {
 	Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, nullptr);
@@ -1206,7 +1200,7 @@ Dependency* ParticlesStorage::particles_get_dependency(RID p_particles) const
 	return &particles->dependency;
 }
 
-bool ParticlesStorage::particles_is_inactive(RID p_particles) const
+bool ParticlesStorage::particles_is_inactive(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, false);
@@ -1222,13 +1216,12 @@ bool ParticlesStorage::ParticlesShaderData::casts_shadows() const { return false
 RenderingServerTypes::ShaderNativeSourceCode
 ParticlesStorage::ParticlesShaderData::get_native_source_code() const
 {
-	return ParticlesStorage::get_singleton()
-		->particles_shader.shader.version_get_native_source_code(version);
+	return ParticlesStorage::particles_shader.shader.version_get_native_source_code(version);
 }
 
 Pair<ShaderRD*, RID> ParticlesStorage::ParticlesShaderData::get_native_shader_and_version() const
 {
-	return {&ParticlesStorage::get_singleton()->particles_shader.shader, version};
+	return {&ParticlesStorage::particles_shader.shader, version};
 }
 
 ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
@@ -1236,7 +1229,7 @@ ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
 	pipeline.free();
 
 	if (version.is_valid()) {
-		ParticlesStorage::get_singleton()->particles_shader.shader.version_free(version);
+		ParticlesStorage::particles_shader.shader.version_free(version);
 	}
 }
 
@@ -1284,7 +1277,7 @@ void ParticlesStorage::particles_collision_free(RID p_rid)
 }
 
 RID ParticlesStorage::particles_collision_get_heightfield_framebuffer(
-	RID p_particles_collision) const
+	RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1316,7 +1309,7 @@ RID ParticlesStorage::particles_collision_get_heightfield_framebuffer(
 		tf.usage_bits =
 			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-		particles_collision->heightfield_texture = RD::texture_create(tf, RD::TextureView());
+		particles_collision->heightfield_texture = RD::texture_create(tf, RDD::TextureView());
 
 		Vector<RID> fb_tex;
 		fb_tex.push_back(particles_collision->heightfield_texture);
@@ -1356,7 +1349,7 @@ void ParticlesStorage::particles_collision_set_cull_mask(
 	particles_collision->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_CULL_MASK);
 }
 
-uint32_t ParticlesStorage::particles_collision_get_cull_mask(RID p_particles_collision) const
+uint32_t ParticlesStorage::particles_collision_get_cull_mask(RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1365,7 +1358,7 @@ uint32_t ParticlesStorage::particles_collision_get_cull_mask(RID p_particles_col
 }
 
 uint32_t ParticlesStorage::particles_collision_get_height_field_mask(
-	RID p_particles_collision) const
+	RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1472,7 +1465,7 @@ void ParticlesStorage::particles_collision_set_height_field_resolution(
 	}
 }
 
-AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision) const
+AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1495,7 +1488,7 @@ AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision) c
 	}
 }
 
-Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collision) const
+Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1503,7 +1496,7 @@ Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collis
 	return particles_collision->extents;
 }
 
-bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collision) const
+bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1511,7 +1504,7 @@ bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collis
 	return particles_collision->type == RSE::PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE;
 }
 
-Dependency* ParticlesStorage::particles_collision_get_dependency(RID p_particles_collision) const
+Dependency* ParticlesStorage::particles_collision_get_dependency(RID p_particles_collision)
 {
 	ParticlesCollision* pc = particles_collision_owner.get_or_null(p_particles_collision);
 	ERR_FAIL_NULL_V(pc, nullptr);

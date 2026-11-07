@@ -2174,7 +2174,7 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 
 	} break;
 	case RSE::INSTANCE_VOXEL_GI: {
-		new_aabb = RS::gi->voxel_gi_get_bounds(p_instance->base);
+		new_aabb = RendererGI::voxel_gi_get_bounds(p_instance->base);
 
 	} break;
 	case RSE::INSTANCE_LIGHTMAP: {

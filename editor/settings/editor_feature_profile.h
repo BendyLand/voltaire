@@ -60,11 +60,11 @@ public:
 	};
 
 private:
-	HashSet<StringName> disabled_classes;
-	HashSet<StringName> disabled_editors;
-	HashMap<StringName, HashSet<StringName>> disabled_properties;
+	HashSet<String> disabled_classes;
+	HashSet<String> disabled_editors;
+	HashMap<String, HashSet<String>> disabled_properties;
 
-	HashSet<StringName> collapsed_classes;
+	HashSet<String> collapsed_classes;
 
 	bool features_disabled[FEATURE_MAX];
 	static const char* feature_names[FEATURE_MAX];
@@ -76,19 +76,19 @@ private:
 protected:
 
 public:
-	void set_disable_class(const StringName& p_class, bool p_disabled);
-	bool is_class_disabled(const StringName& p_class) const;
+	void set_disable_class(const String& p_class, bool p_disabled);
+	bool is_class_disabled(const String& p_class) const;
 
-	void set_disable_class_editor(const StringName& p_class, bool p_disabled);
-	bool is_class_editor_disabled(const StringName& p_class) const;
+	void set_disable_class_editor(const String& p_class, bool p_disabled);
+	bool is_class_editor_disabled(const String& p_class) const;
 
 	void set_disable_class_property(
-		const StringName& p_class, const StringName& p_property, bool p_disabled);
-	bool is_class_property_disabled(const StringName& p_class, const StringName& p_property) const;
-	bool has_class_properties_disabled(const StringName& p_class) const;
+		const String& p_class, const String& p_property, bool p_disabled);
+	bool is_class_property_disabled(const String& p_class, const String& p_property) const;
+	bool has_class_properties_disabled(const String& p_class) const;
 
-	void set_item_collapsed(const StringName& p_class, bool p_collapsed);
-	bool is_item_collapsed(const StringName& p_class) const;
+	void set_item_collapsed(const String& p_class, bool p_collapsed);
+	bool is_item_collapsed(const String& p_class) const;
 
 	void set_disable_feature(Feature p_feature, bool p_disable);
 	bool is_feature_disabled(

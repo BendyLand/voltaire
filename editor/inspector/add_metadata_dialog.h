@@ -40,12 +40,12 @@ class AddMetadataDialog : public ConfirmationDialog
 {
 public:
 	AddMetadataDialog();
-	void open(const StringName p_title, List<StringName>& p_existing_metas);
+	void open(const String p_title, List<String>& p_existing_metas);
 
-	StringName get_meta_name();
+	String get_meta_name();
 
 private:
-	List<StringName> _existing_metas;
+	List<String> _existing_metas;
 
 	LineEdit* add_meta_name = nullptr;
 	EditorVariantTypeOptionButton* add_meta_type = nullptr;

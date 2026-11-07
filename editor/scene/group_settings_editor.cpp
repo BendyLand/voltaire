@@ -75,7 +75,7 @@ void GroupSettingsEditor::_text_submitted(const String& p_text)
 	}
 }
 
-bool GroupSettingsEditor::remove_node_references(Node* p_node, const StringName& p_name)
+bool GroupSettingsEditor::remove_node_references(Node* p_node, const String& p_name)
 {
 	bool edited = false;
 	if (p_node->is_in_group(p_name)) {
@@ -90,7 +90,7 @@ bool GroupSettingsEditor::remove_node_references(Node* p_node, const StringName&
 }
 
 bool GroupSettingsEditor::rename_node_references(
-	Node* p_node, const StringName& p_old_name, const StringName& p_new_name)
+	Node* p_node, const String& p_old_name, const String& p_new_name)
 {
 	bool edited = false;
 	if (p_node->is_in_group(p_old_name)) {

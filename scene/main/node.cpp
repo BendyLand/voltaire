@@ -68,7 +68,7 @@ void Node::_propagate_physics_interpolation_reset_requested(bool p_requested)
 	}
 
 	data.blocked++;
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		K.value->_propagate_physics_interpolation_reset_requested(p_requested);
 	}
 	data.blocked--;
@@ -113,13 +113,13 @@ void Node::move_child(Node* rp_child, int p_index)
 
 void Node::_propagate_groups_dirty()
 {
-	for (const KeyValue<StringName, GroupData>& E : data.grouped) {
+	for (const KeyValue<String, GroupData>& E : data.grouped) {
 		if (E.value.group) {
 			E.value.group->changed = true;
 		}
 	}
 
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		K.value->_propagate_groups_dirty();
 	}
 }
@@ -201,7 +201,7 @@ void Node::set_multiplayer_authority(int p_peer_id, bool p_recursive)
 	data.multiplayer_authority = p_peer_id;
 
 	if (p_recursive) {
-		for (KeyValue<StringName, Node*>& K : data.children) {
+		for (KeyValue<String, Node*>& K : data.children) {
 			K.value->set_multiplayer_authority(p_peer_id, true);
 		}
 	}
@@ -411,7 +411,7 @@ void Node::_remove_tree_from_process_thread_group()
 		return; // May not be initialized yet.
 	}
 
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
 			continue;
 		}
@@ -438,7 +438,7 @@ void Node::_add_tree_to_process_thread_group(Node* p_owner)
 		_add_to_process_thread_group();
 	}
 
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
 			continue;
 		}
@@ -599,9 +599,9 @@ void Node::set_translation_domain_inherited()
 	_propagate_translation_domain_dirty();
 }
 
-StringName Node::get_name() const { return data.name; }
+String Node::get_name() const { return data.name; }
 
-void Node::_set_name_nocheck(const StringName& p_name) { data.name = p_name; }
+void Node::_set_name_nocheck(const String& p_name) { data.name = p_name; }
 
 static SafeRefCount node_hrcr_count;
 
@@ -612,12 +612,12 @@ void Node::init_node_hrcr() { node_hrcr_count.init(1); }
 #ifdef TOOLS_ENABLED
 String Node::validate_child_name(Node* p_child)
 {
-	StringName name = p_child->data.name;
+	String name = p_child->data.name;
 	_generate_serial_child_name(p_child, name);
 	return name;
 }
 
-String Node::prevalidate_child_name(Node* p_child, StringName p_name)
+String Node::prevalidate_child_name(Node* p_child, String p_name)
 {
 	_generate_serial_child_name(p_child, p_name);
 	return p_name;
@@ -704,7 +704,7 @@ void Node::_update_children_cache_impl() const
 	// Assign children
 	data.children_cache.resize(data.children.size());
 	int idx = 0;
-	for (const KeyValue<StringName, Node*>& K : data.children) {
+	for (const KeyValue<String, Node*>& K : data.children) {
 		data.children_cache[idx] = K.value;
 		idx++;
 	}
@@ -820,7 +820,7 @@ Vector<Node*> Node::get_children(bool p_include_internal) const
 	return children;
 }
 
-Node* Node::_get_child_by_name(const StringName& p_name) const
+Node* Node::_get_child_by_name(const String& p_name) const
 {
 	const Node* const* node = data.children.getptr(p_name);
 	if (node) {
@@ -855,7 +855,7 @@ Node* Node::get_node_or_null(const NodePath& p_path) const
 	}
 
 	for (int i = 0; i < p_path.get_name_count(); i++) {
-		StringName name = p_path.get_name(i);
+		String name = p_path.get_name(i);
 		Node* next = nullptr;
 
 		if (name == SNAME(".")) {
@@ -936,7 +936,7 @@ Node* Node::find_child(const String& p_pattern, bool p_recursive, bool p_owned) 
 		if (p_owned && !cptr[i]->data.owner) {
 			continue;
 		}
-		if (cptr[i]->data.name.string().match(p_pattern)) {
+		if (cptr[i]->data.name.match(p_pattern)) {
 			return cptr[i];
 		}
 
@@ -1007,7 +1007,7 @@ Node* Node::find_parent(const String& p_pattern) const
 	ERR_THREAD_GUARD_V(nullptr);
 	Node* p = data.parent;
 	while (p) {
-		if (p->data.name.string().match(p_pattern)) {
+		if (p->data.name.match(p_pattern)) {
 			return p;
 		}
 		p = p->data.parent;
@@ -1112,7 +1112,7 @@ void Node::get_owned_by(Node* p_by, List<Node*>* p_owned)
 		p_owned->push_back(this);
 	}
 
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		K.value->get_owned_by(p_by, p_owned);
 	}
 }
@@ -1134,7 +1134,7 @@ void Node::_set_owner_nocheck(Node* p_owner)
 void Node::_release_unique_name_in_owner()
 {
 	ERR_FAIL_NULL(data.owner); // Safety check.
-	StringName key = StringName(UNIQUE_NODE_PREFIX + data.name.string());
+	String key = String(UNIQUE_NODE_PREFIX + data.name);
 	Node** which = data.owner->data.owned_unique_nodes.getptr(key);
 	if (which == nullptr || *which != this) {
 		return; // Ignore.
@@ -1145,7 +1145,7 @@ void Node::_release_unique_name_in_owner()
 void Node::_acquire_unique_name_in_owner()
 {
 	ERR_FAIL_NULL(data.owner); // Safety check.
-	StringName key = StringName(UNIQUE_NODE_PREFIX + data.name.string());
+	String key = String(UNIQUE_NODE_PREFIX + data.name);
 	Node** which = data.owner->data.owned_unique_nodes.getptr(key);
 	if (which != nullptr && *which != this) {
 		String which_path =
@@ -1263,8 +1263,8 @@ NodePath Node::get_path_to(const Node* rp_node, bool p_use_unique_path) const
 
 	visited.clear();
 
-	Vector<StringName> path;
-	StringName up = String("..");
+	Vector<String> path;
+	String up = String("..");
 
 	if (p_use_unique_path) {
 		n = rp_node;
@@ -1335,10 +1335,10 @@ NodePath Node::get_path() const
 
 	const Node* n = this;
 
-	Vector<StringName> path;
+	Vector<String> path;
 	path.resize(data.depth);
 
-	StringName* ptrw = path.ptrw();
+	String* ptrw = path.ptrw();
 	while (n) {
 		ptrw[n->data.depth - 1] = n->get_name();
 		n = n->data.parent;
@@ -1349,13 +1349,13 @@ NodePath Node::get_path() const
 	return *data.path_cache;
 }
 
-bool Node::is_in_group(const StringName& p_identifier) const
+bool Node::is_in_group(const String& p_identifier) const
 {
 	ERR_THREAD_GUARD_V(false);
 	return data.grouped.has(p_identifier);
 }
 
-void Node::add_to_group(const StringName& p_identifier, bool p_persistent)
+void Node::add_to_group(const String& p_identifier, bool p_persistent)
 {
 	ERR_THREAD_GUARD
 	ERR_FAIL_COND_MSG(p_identifier.is_empty(),
@@ -1382,10 +1382,10 @@ void Node::add_to_group(const StringName& p_identifier, bool p_persistent)
 	}
 }
 
-void Node::remove_from_group(const StringName& p_identifier)
+void Node::remove_from_group(const String& p_identifier)
 {
 	ERR_THREAD_GUARD
-	HashMap<StringName, GroupData>::Iterator E = data.grouped.find(p_identifier);
+	HashMap<String, GroupData>::Iterator E = data.grouped.find(p_identifier);
 
 	if (!E) {
 		return;
@@ -1411,7 +1411,7 @@ void Node::remove_from_group(const StringName& p_identifier)
 void Node::get_groups(List<GroupInfo>* p_groups) const
 {
 	ERR_THREAD_GUARD
-	for (const KeyValue<StringName, GroupData>& E : data.grouped) {
+	for (const KeyValue<String, GroupData>& E : data.grouped) {
 		GroupInfo gi;
 		gi.name = E.key;
 		gi.persistent = E.value.persistent;
@@ -1424,7 +1424,7 @@ int Node::get_persistent_group_count() const
 	ERR_THREAD_GUARD_V(0);
 	int count = 0;
 
-	for (const KeyValue<StringName, GroupData>& E : data.grouped) {
+	for (const KeyValue<String, GroupData>& E : data.grouped) {
 		if (E.value.persistent) {
 			count += 1;
 		}
@@ -1467,7 +1467,7 @@ void Node::_propagate_replace_owner(Node* p_owner, Node* p_by_owner)
 	}
 
 	data.blocked++;
-	for (KeyValue<StringName, Node*>& K : data.children) {
+	for (KeyValue<String, Node*>& K : data.children) {
 		K.value->_propagate_replace_owner(p_owner, p_by_owner);
 	}
 	data.blocked--;
@@ -1547,7 +1547,7 @@ Node* Node::get_deepest_editable_node(Node* p_start_node) const
 
 #ifdef TOOLS_ENABLED
 
-StringName Node::get_property_store_alias(const StringName& p_property) const { return p_property; }
+String Node::get_property_store_alias(const String& p_property) const { return p_property; }
 
 bool Node::is_part_of_edited_scene() const
 {
@@ -1656,7 +1656,7 @@ bool Node::has_node_and_resource(const NodePath& p_path) const
 		return false;
 	}
 	Ref<Resource> res;
-	Vector<StringName> leftover_path;
+	Vector<String> leftover_path;
 	Node* node = get_node_and_resource(p_path, res, leftover_path, false);
 
 	return node;
@@ -1822,7 +1822,7 @@ Node::~Node()
 
 Node::Node() {
 	// Initialize scalar and pointer fields
-	data.name = StringName();
+	data.name = String();
 	data.parent = nullptr;
 	data.owner = nullptr;
 	data.tree = SceneTree::get_singleton(); // Fallback so standalone nodes have tree context
@@ -1854,7 +1854,7 @@ Node::Node() {
 
 String Node::get_description(bool p_show_not_in_tree) const { return String(); }
 
-void Node::set_name(const StringName& p_name) { data.name = p_name; }
+void Node::set_name(const String& p_name) { data.name = p_name; }
 
 void Node::propagate_notification(int p_notification) {}
 
@@ -1866,11 +1866,11 @@ void Node::set_process_shortcut_input(bool) {}
 
 void Node::set_process_input(bool) {}
 
-void Node::get_argument_options(StringName const&, int, List<String, DefaultAllocator>*) const {}
+void Node::get_argument_options(String const&, int, List<String, DefaultAllocator>*) const {}
 
 void Node::notify_deferred_thread_group(int) {}
 
-void Node::_generate_serial_child_name(Node const*, StringName&) const {}
+void Node::_generate_serial_child_name(Node const*, String&) const {}
 
 void Node::_duplicate_signals(Node const*, Node*) const {}
 
@@ -1911,13 +1911,13 @@ void Node::_propagate_enter_tree() {}
 
 void Node::_propagate_after_exit_tree() {}
 
-Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<StringName>&, bool) const
+Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<String>&, bool) const
 {
 	Node n = Node();
 	return &n;
 }
 
-void Node::_add_child_nocheck(Node* p_child, const StringName& p_name, InternalMode p_internal)
+void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode p_internal)
 {
 	p_child->data.parent = this;
 	p_child->data.name = p_name;
@@ -1932,20 +1932,20 @@ void Node::_add_child_nocheck(Node* p_child, const StringName& p_name, InternalM
 	}
 }
 
-void Node::set_translation_domain(const StringName& p_domain) {}
+void Node::set_translation_domain(const String& p_domain) {}
 
-void Node::remove_meta(const StringName& p_name) {}
+void Node::remove_meta(const String& p_name) {}
 
-bool Node::has_signal(const StringName& p_name) const { return false; }
+bool Node::has_signal(const String& p_name) const { return false; }
 
-bool Node::has_meta(const StringName& p_name) const { return false; }
+bool Node::has_meta(const String& p_name) const { return false; }
 
-bool Node::has_connections(const StringName& p_signal) const { return false; }
+bool Node::has_connections(const String& p_signal) const { return false; }
 
-StringName Node::get_translation_domain() const { return StringName(); }
+String Node::get_translation_domain() const { return String(); }
 
 int Node::get_persistent_signal_connection_count() const { return 0; }
 
-void Node::get_meta_list(List<StringName>* p_list) const {}
+void Node::get_meta_list(List<String>* p_list) const {}
 
 

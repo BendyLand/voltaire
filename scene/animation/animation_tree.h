@@ -130,7 +130,7 @@ public:
 		bool track_map_updated = false;
 		bool is_testing = false;
 		bool valid = false;
-		mutable AHashMap<StringName, InvalidInstance> invalid_instances;
+		mutable AHashMap<String, InvalidInstance> invalid_instances;
 		uint64_t last_pass = 0;
 	};
 
@@ -148,7 +148,7 @@ public:
 
 	friend class AnimationNodeBlendTree;
 
-	virtual void validate_node(const AnimationTree* p_tree, const StringName& p_path) const {}
+	virtual void validate_node(const AnimationTree* p_tree, const String& p_path) const {}
 
 	// The time information is passed from upstream to downstream by
 	// AnimationMixer::PlaybackInfo::p_playback_info until AnimationNodeAnimation processes it.
@@ -162,9 +162,9 @@ public:
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false);
 
 protected:
-	StringName current_length = "current_length";
-	StringName current_position = "current_position";
-	StringName current_delta = "current_delta";
+	String current_length = "current_length";
+	String current_position = "current_position";
+	String current_delta = "current_delta";
 
 	// Virtualizing for especially AnimationNodeAnimation needs to take "backward" into account.
 	_FORCE_INLINE_ virtual double get_process_delta(AnimationNodeInstance& p_instance,
@@ -178,7 +178,7 @@ protected:
 		bool p_test_only = false); // Main process.
 
 	void blend_animation(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const StringName& p_animation, AnimationMixer::PlaybackInfo& p_playback_info);
+		const String& p_animation, AnimationMixer::PlaybackInfo& p_playback_info);
 	NodeTimeInfo blend_node(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		AnimationNodeInstance* p_other, const AnimationMixer::PlaybackInfo& p_playback_info,
 		FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
@@ -188,17 +188,17 @@ protected:
 
 	// Bind-able methods to expose for compatibility, moreover AnimationMixer::PlaybackInfo is not
 	// exposed.
-	void blend_animation_ex(const StringName& p_animation, double p_time, double p_delta,
+	void blend_animation_ex(const String& p_animation, double p_time, double p_delta,
 		bool p_seeked, bool p_is_external_seeking, real_t p_blend,
 		Animation::LoopedFlag p_looped_flag = Animation::LOOPED_FLAG_NONE);
-	double blend_node_ex(const StringName& p_sub_path, const Ref<AnimationNode>& p_node,
+	double blend_node_ex(const String& p_sub_path, const Ref<AnimationNode>& p_node,
 		double p_time, bool p_seek, bool p_is_external_seeking, real_t p_blend,
 		FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
 	double blend_input_ex(int p_input, double p_time, bool p_seek, bool p_is_external_seeking,
 		real_t p_blend, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true,
 		bool p_test_only = false);
 
-	void add_validation_error(const AnimationTree* p_tree, const StringName& p_path,
+	void add_validation_error(const AnimationTree* p_tree, const String& p_path,
 		const String& p_error, int p_input_index = -1) const;
 	void make_invalid(
 		ProcessState& p_process_state, AnimationNodeInstance& p_instance, const String& p_reason);
@@ -208,11 +208,11 @@ private:
 	void _mark_filters_dirty();
 
 public:
-	virtual bool is_parameter_read_only(const StringName& p_parameter) const;
+	virtual bool is_parameter_read_only(const String& p_parameter) const;
 
 	struct ChildNode
 	{
-		StringName name;
+		String name;
 		Ref<AnimationNode> node;
 	};
 
@@ -242,10 +242,10 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
-	virtual Ref<AnimationNode> get_child_by_name(const StringName& p_name) const;
+	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const;
 	Ref<AnimationNode> find_node_by_path(const String& p_name) const;
 
 	AnimationNode();
@@ -286,7 +286,7 @@ struct AnimationNodeInstance
 	mutable bool blended = false;
 	mutable LocalVector<int> filtered_track_indices_cache;
 	mutable uint32_t filters_version = 0;
-	mutable AHashMap<StringName, AnimationNodeInstance*>
+	mutable AHashMap<String, AnimationNodeInstance*>
 		child_instances; // Child Name -> AnimationNodeInstance*
 
 	// Multiple AnimationNodeInstances can share the same resource btw.
@@ -295,7 +295,7 @@ struct AnimationNodeInstance
 	// TODO: these fields are like only used during initialization, or editor, or already slow
 	// paths. Consider moving them out of this struct.
 	// AnimationNodeInstance *parent = nullptr;
-	StringName path; // e.g. "parameters/node_name/sub_node_name/"
+	String path; // e.g. "parameters/node_name/sub_node_name/"
 
 #ifdef ENABLE_ACTIVITY_TRACKING
 	struct Activity
@@ -377,7 +377,7 @@ struct AnimationNodeInstance
 #undef DEFINE_GET_PARAMETER_METHOD
 
 	_FORCE_INLINE_ AnimationNodeInstance* get_child_instance_by_path_or_null(
-		const StringName& p_path)
+		const String& p_path)
 	{
 		AnimationNodeInstance** instance_ptr = child_instances.getptr(p_path);
 		if (!instance_ptr) {
@@ -387,7 +387,7 @@ struct AnimationNodeInstance
 		return instance;
 	}
 
-	_FORCE_INLINE_ AnimationNodeInstance& get_child_instance_by_path(const StringName& p_path)
+	_FORCE_INLINE_ AnimationNodeInstance& get_child_instance_by_path(const String& p_path)
 	{
 		AnimationNodeInstance** instance_ptr = child_instances.getptr(p_path);
 		CRASH_COND_MSG(
@@ -424,7 +424,7 @@ private:
 	bool started = true;
 
 	friend class AnimationNode;
-	mutable AHashMap<StringName, AnimationNodeInstance> instance_map;
+	mutable AHashMap<String, AnimationNodeInstance> instance_map;
 
 	mutable bool properties_dirty = true;
 	mutable bool validation_dirty = true;
@@ -432,9 +432,9 @@ private:
 	void _update_properties() const;
 	void _update_connections();
 	void _add_validation_error(
-		const StringName& p_path, const String& p_error, int p_input_index = -1) const;
+		const String& p_path, const String& p_error, int p_input_index = -1) const;
 	void _update_properties_for_node(
-		const StringName& p_base_path, const Ref<AnimationNode>& p_node) const;
+		const String& p_base_path, const Ref<AnimationNode>& p_node) const;
 
 	void _tree_changed();
 
@@ -461,7 +461,7 @@ private:
 #endif // DISABLE_DEPRECATED
 
 public:
-	AnimationNodeInstance& get_node_instance_by_path(const StringName& p_path)
+	AnimationNodeInstance& get_node_instance_by_path(const String& p_path)
 	{
 		AnimationNodeInstance* instance = instance_map.getptr(p_path);
 		CRASH_COND_MSG(
@@ -469,7 +469,7 @@ public:
 		return *instance;
 	}
 
-	AnimationNodeInstance* get_node_instance_by_path_or_null(const StringName& p_path) const
+	AnimationNodeInstance* get_node_instance_by_path_or_null(const String& p_path) const
 	{
 		return instance_map.getptr(p_path);
 	}
@@ -477,7 +477,7 @@ public:
 #if TOOLS_ENABLED
 	// Used in situations where instance_map is not built.
 	// Intended for the editor, because its very slow.
-	Ref<AnimationNode> get_animation_node_by_path(const StringName& p_path) const
+	Ref<AnimationNode> get_animation_node_by_path(const String& p_path) const
 	{
 		Ref<AnimationNode> current = root_animation_node;
 		int name_count = String(p_path).substr(0, String(p_path).length() - 1).count("/");
@@ -486,7 +486,7 @@ public:
 				return Ref<AnimationNode>();
 			}
 
-			StringName child_name = StringName(String(p_path).get_slicec('/', i + 1));
+			String child_name = String(String(p_path).get_slicec('/', i + 1));
 			current = current->get_child_by_name(child_name);
 		}
 
@@ -506,9 +506,9 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 
 	bool is_state_invalid() const;
-	const AHashMap<StringName, AnimationNode::InvalidInstance>& get_invalid_instances() const;
+	const AHashMap<String, AnimationNode::InvalidInstance>& get_invalid_instances() const;
 
-	real_t get_connection_activity(const StringName& p_path, int p_connection) const;
+	real_t get_connection_activity(const String& p_path, int p_connection) const;
 
 #ifdef TOOLS_ENABLED
 	String get_editor_error_message() const;

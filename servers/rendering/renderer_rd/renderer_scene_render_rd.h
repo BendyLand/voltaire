@@ -95,7 +95,6 @@ public:
 		PagedArray<RenderGeometryInstance*> cull_argument;
 
 		RendererRD::SkyRD sky;
-		RendererRD::GI gi;
 
 		RSE::ViewportDebugDraw debug_draw = RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
 
@@ -264,10 +263,6 @@ public:
 
 	static void setup_added_decal(const Transform3D& p_transform, const Vector3& p_half_size) {}
 
-	/* GI */
-
-	static RendererRD::GI* get_gi() { return &data->gi; }
-
 	/* SKY */
 
 	static RendererRD::SkyRD* get_sky() { return &data->sky; }
@@ -334,7 +329,7 @@ public:
 
 	static void voxel_gi_set_quality(RSE::VoxelGIQuality p_quality)
 	{
-		data->gi.voxel_gi_quality = p_quality;
+		RendererRD::GI::voxel_gi_quality = p_quality;
 	}
 
 	/* RENDER BUFFERS */

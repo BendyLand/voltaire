@@ -92,8 +92,8 @@ void EditorResourcePreview::_idle_callback()
 	}
 
 	// Process preview tasks, trying to leave a little bit of responsiveness worst case.
-	uint64_t start = OS::get_singleton()->get_ticks_msec();
-	while (!singleton->queue.is_empty() && OS::get_singleton()->get_ticks_msec() - start < 100) {
+	uint64_t start = OS::get_ticks_msec();
+	while (!singleton->queue.is_empty() && OS::get_ticks_msec() - start < 100) {
 		singleton->_iterate();
 	}
 }

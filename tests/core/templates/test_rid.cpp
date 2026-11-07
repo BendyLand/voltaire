@@ -138,7 +138,7 @@ TEST_CASE("[RID_Owner] Thread safety") {
 		}
 
 		explicit RID_OwnerTester(bool p_chunk_for_all, bool p_chunks_preallocated) :
-				thread_count(OS::get_singleton()->get_processor_count()),
+				thread_count(OS::get_processor_count()),
 				rid_owner(sizeof(DataHolder) * (p_chunk_for_all ? thread_count : 1)) {
 			threads.resize(thread_count);
 			rids.resize(threads.size());

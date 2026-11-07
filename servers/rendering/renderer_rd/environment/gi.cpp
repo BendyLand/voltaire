@@ -43,8 +43,6 @@ using namespace RendererRD;
 
 const Vector3i GI::SDFGI::Cascade::DIRTY_ALL = Vector3i(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF);
 
-GI* GI::singleton = nullptr;
-
 RID GI::voxel_gi_allocate() { return voxel_gi_owner.allocate_rid(); }
 
 void GI::voxel_gi_free(RID p_voxel_gi)
@@ -113,7 +111,7 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 							RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 			Vector<Vector<uint8_t>> s;
 			s.push_back(p_distance_field);
-			voxel_gi->sdf_texture = RD::texture_create(tf, RD::TextureView(), s);
+			voxel_gi->sdf_texture = RD::texture_create(tf, RDD::TextureView(), s);
 			RD::set_resource_name(voxel_gi->sdf_texture, "VoxelGI SDF Texture");
 		}
 #if 0
@@ -193,7 +191,7 @@ void GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xfo
 	voxel_gi->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
 }
 
-AABB GI::voxel_gi_get_bounds(RID p_voxel_gi) const
+AABB GI::voxel_gi_get_bounds(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, AABB());
@@ -201,14 +199,14 @@ AABB GI::voxel_gi_get_bounds(RID p_voxel_gi) const
 	return voxel_gi->bounds;
 }
 
-Vector3i GI::voxel_gi_get_octree_size(RID p_voxel_gi) const
+Vector3i GI::voxel_gi_get_octree_size(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Vector3i());
 	return voxel_gi->octree_size;
 }
 
-Vector<uint8_t> GI::voxel_gi_get_octree_cells(RID p_voxel_gi) const
+Vector<uint8_t> GI::voxel_gi_get_octree_cells(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Vector<uint8_t>());
@@ -219,7 +217,7 @@ Vector<uint8_t> GI::voxel_gi_get_octree_cells(RID p_voxel_gi) const
 	return Vector<uint8_t>();
 }
 
-Vector<uint8_t> GI::voxel_gi_get_data_cells(RID p_voxel_gi) const
+Vector<uint8_t> GI::voxel_gi_get_data_cells(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Vector<uint8_t>());
@@ -230,7 +228,7 @@ Vector<uint8_t> GI::voxel_gi_get_data_cells(RID p_voxel_gi) const
 	return Vector<uint8_t>();
 }
 
-Vector<uint8_t> GI::voxel_gi_get_distance_field(RID p_voxel_gi) const
+Vector<uint8_t> GI::voxel_gi_get_distance_field(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Vector<uint8_t>());
@@ -241,7 +239,7 @@ Vector<uint8_t> GI::voxel_gi_get_distance_field(RID p_voxel_gi) const
 	return Vector<uint8_t>();
 }
 
-Vector<int> GI::voxel_gi_get_level_counts(RID p_voxel_gi) const
+Vector<int> GI::voxel_gi_get_level_counts(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Vector<int>());
@@ -249,7 +247,7 @@ Vector<int> GI::voxel_gi_get_level_counts(RID p_voxel_gi) const
 	return voxel_gi->level_counts;
 }
 
-Transform3D GI::voxel_gi_get_to_cell_xform(RID p_voxel_gi) const
+Transform3D GI::voxel_gi_get_to_cell_xform(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, Transform3D());
@@ -266,7 +264,7 @@ void GI::voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range)
 	voxel_gi->version++;
 }
 
-float GI::voxel_gi_get_dynamic_range(RID p_voxel_gi) const
+float GI::voxel_gi_get_dynamic_range(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -283,7 +281,7 @@ void GI::voxel_gi_set_propagation(RID p_voxel_gi, float p_range)
 	voxel_gi->version++;
 }
 
-float GI::voxel_gi_get_propagation(RID p_voxel_gi) const
+float GI::voxel_gi_get_propagation(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -298,7 +296,7 @@ void GI::voxel_gi_set_energy(RID p_voxel_gi, float p_energy)
 	voxel_gi->energy = p_energy;
 }
 
-float GI::voxel_gi_get_energy(RID p_voxel_gi) const
+float GI::voxel_gi_get_energy(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -313,7 +311,7 @@ void GI::voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked
 	voxel_gi->baked_exposure = p_baked_exposure;
 }
 
-float GI::voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi) const
+float GI::voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -328,7 +326,7 @@ void GI::voxel_gi_set_bias(RID p_voxel_gi, float p_bias)
 	voxel_gi->bias = p_bias;
 }
 
-float GI::voxel_gi_get_bias(RID p_voxel_gi) const
+float GI::voxel_gi_get_bias(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -343,7 +341,7 @@ void GI::voxel_gi_set_normal_bias(RID p_voxel_gi, float p_normal_bias)
 	voxel_gi->normal_bias = p_normal_bias;
 }
 
-float GI::voxel_gi_get_normal_bias(RID p_voxel_gi) const
+float GI::voxel_gi_get_normal_bias(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -367,21 +365,21 @@ void GI::voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable)
 	voxel_gi->version++;
 }
 
-bool GI::voxel_gi_is_using_two_bounces(RID p_voxel_gi) const
+bool GI::voxel_gi_is_using_two_bounces(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, false);
 	return voxel_gi->use_two_bounces;
 }
 
-bool GI::voxel_gi_is_interior(RID p_voxel_gi) const
+bool GI::voxel_gi_is_interior(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, false);
 	return voxel_gi->interior;
 }
 
-uint32_t GI::voxel_gi_get_version(RID p_voxel_gi) const
+uint32_t GI::voxel_gi_get_version(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, 0);
@@ -395,14 +393,14 @@ uint32_t GI::voxel_gi_get_data_version(RID p_voxel_gi)
 	return voxel_gi->data_version;
 }
 
-RID GI::voxel_gi_get_octree_buffer(RID p_voxel_gi) const
+RID GI::voxel_gi_get_octree_buffer(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, RID());
 	return voxel_gi->octree_buffer;
 }
 
-RID GI::voxel_gi_get_data_buffer(RID p_voxel_gi) const
+RID GI::voxel_gi_get_data_buffer(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, RID());
@@ -417,7 +415,7 @@ RID GI::voxel_gi_get_sdf_texture(RID p_voxel_gi)
 	return voxel_gi->sdf_texture;
 }
 
-Dependency* GI::voxel_gi_get_dependency(RID p_voxel_gi) const
+Dependency* GI::voxel_gi_get_dependency(RID p_voxel_gi)
 {
 	VoxelGI* voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
 	ERR_FAIL_NULL_V(voxel_gi, nullptr);
@@ -429,7 +427,7 @@ void GI::sdfgi_reset() { sdfgi_current_version++; }
 
 static RID create_clear_texture(const RDC::TextureFormat& p_format, const String& p_name)
 {
-	RID texture = RD::texture_create(p_format, RD::TextureView());
+	RID texture = RD::texture_create(p_format, RDD::TextureView());
 	ERR_FAIL_COND_V_MSG(texture.is_null(), RID(), String("Cannot create texture: ") + p_name);
 
 	RD::set_resource_name(texture, p_name);
@@ -814,7 +812,8 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			ERR_CONTINUE(!RendererRD::LightStorage::owns_light_instance(light_instance));
 
 			RID light = RendererRD::LightStorage::light_instance_get_base_light(light_instance);
-			AABB light_aabb = RendererRD::LightStorage::light_instance_get_base_aabb(light_instance);
+			AABB light_aabb =
+				RendererRD::LightStorage::light_instance_get_base_aabb(light_instance);
 			Transform3D light_transform =
 				RendererRD::LightStorage::light_instance_get_base_transform(light_instance);
 
@@ -875,11 +874,12 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 			lights[idx].has_shadow = RendererLightStorage::light_has_shadow(light);
 			lights[idx].attenuation =
 				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_ATTENUATION);
-			lights[idx].radius = RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_RANGE);
+			lights[idx].radius =
+				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_RANGE);
 			lights[idx].cos_spot_angle = Math::cos(Math::deg_to_rad(
 				RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ANGLE)));
-			lights[idx].inv_spot_attenuation =
-				1.0f / RendererLightStorage::light_get_param(light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
+			lights[idx].inv_spot_attenuation = 1.0f / RendererLightStorage::light_get_param(
+														  light, RSE::LIGHT_PARAM_SPOT_ATTENUATION);
 
 			if (lights[idx].type == RSE::LIGHT_AREA) {
 				Vector3 area_vec_a = light_transform.basis.get_column(0).normalized() * area_size.x;
@@ -897,7 +897,8 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 				lights[idx].area_projector_rect[2] = proj_rect.size.x;
 				lights[idx].area_projector_rect[3] = proj_rect.size.y;
 
-				Size2i texture_size = proj_rect.size * RendererRD::TextureStorage::area_light_atlas_get_size();
+				Size2i texture_size =
+					proj_rect.size * RendererRD::TextureStorage::area_light_atlas_get_size();
 				lights[idx].cos_spot_angle =
 					MIN(Math::floor(Math::log2(MAX(MIN(texture_size.x, texture_size.y), 1.0f))),
 						RendererRD::TextureStorage::area_light_atlas_get_mipmaps()) -
@@ -960,14 +961,14 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 	}
 
 	Projection cam_transform = (p_camera_with_transform * Projection(transform)) *
-							   Projection(gi->voxel_gi_get_to_cell_xform(probe).affine_inverse());
+							   Projection(GI::voxel_gi_get_to_cell_xform(probe).affine_inverse());
 
 	int level = 0;
-	Vector3i octree_size = gi->voxel_gi_get_octree_size(probe);
+	Vector3i octree_size = GI::voxel_gi_get_octree_size(probe);
 
 	VoxelGIDebugPushConstant push_constant;
 	push_constant.alpha = p_alpha;
-	push_constant.dynamic_range = gi->voxel_gi_get_dynamic_range(probe);
+	push_constant.dynamic_range = GI::voxel_gi_get_dynamic_range(probe);
 	push_constant.cell_offset = mipmaps[level].cell_offset;
 	push_constant.level = level;
 
@@ -982,15 +983,15 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 		}
 	}
 
-	if (gi->voxel_gi_debug_uniform_set.is_valid()) {
-		RD::free_rid(gi->voxel_gi_debug_uniform_set);
+	if (GI::voxel_gi_debug_uniform_set.is_valid()) {
+		RD::free_rid(GI::voxel_gi_debug_uniform_set);
 	}
 	Vector<RD::Uniform> uniforms;
 	{
 		RD::Uniform u;
 		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 1;
-		u.append_id(gi->voxel_gi_get_data_buffer(probe));
+		u.append_id(GI::voxel_gi_get_data_buffer(probe));
 		uniforms.push_back(u);
 	}
 	{
@@ -1017,8 +1018,8 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 		cell_count = mipmaps[level].cell_count;
 	}
 
-	gi->voxel_gi_debug_uniform_set =
-		RD::uniform_set_create(uniforms, gi->voxel_gi_debug_shader_version_shaders[0], 0);
+	voxel_gi_debug_uniform_set =
+		RD::uniform_set_create(uniforms, GI::voxel_gi_debug_shader_version_shaders[0], 0);
 
 	int voxel_gi_debug_pipeline = VOXEL_GI_DEBUG_COLOR;
 	if (p_emission) {
@@ -1029,15 +1030,27 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer,
 			has_dynamic_object_data ? VOXEL_GI_DEBUG_LIGHT_FULL : VOXEL_GI_DEBUG_LIGHT;
 	}
 	RD::draw_list_bind_render_pipeline(p_draw_list,
-		gi->voxel_gi_debug_shader_version_pipelines[voxel_gi_debug_pipeline].get_render_pipeline(
+		GI::voxel_gi_debug_shader_version_pipelines[voxel_gi_debug_pipeline].get_render_pipeline(
 			RDC::INVALID_ID, RD::framebuffer_get_format(p_framebuffer)));
-	RD::draw_list_bind_uniform_set(p_draw_list, gi->voxel_gi_debug_uniform_set, 0);
+	RD::draw_list_bind_uniform_set(p_draw_list, GI::voxel_gi_debug_uniform_set, 0);
 	RD::draw_list_set_push_constant(p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));
 	RD::draw_list_draw(p_draw_list, false, cell_count, 36);
 }
 
-GI::~GI()
+void GI::finalize()
 {
+	if (!_initialized) {
+		return;
+	}
+
+	// Free the two GiShaderRD versions before the OS and RD are torn down
+	if (shader.version_is_valid(shader_version)) {
+		shader.version_free(shader_version);
+	}
+
+	// If GI allocated uniform sets, UBOs, or pipelines, free them here as well
+
+	_initialized = false;
 	for (int v = 0; v < SHADER_SPECIALIZATION_VARIATIONS; v++) {
 		for (int i = 0; i < MODE_MAX; i++) {
 			pipelines[v][i].free();
@@ -1086,8 +1099,49 @@ GI::~GI()
 	if (sdfgi_shader.preprocess_shader.is_valid()) {
 		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
 	}
+	if (shader_version.is_valid()) {
+		shader.version_free(shader_version);
+		shader_version = RID();
+	}
 
-	singleton = nullptr;
+	if (sdfgi_shader.debug_probes_shader_version.is_valid()) {
+		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader_version);
+		sdfgi_shader.debug_probes_shader_version = RID();
+	}
+	if (sdfgi_shader.debug_shader_version.is_valid()) {
+		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader_version);
+		sdfgi_shader.debug_shader_version = RID();
+	}
+	if (sdfgi_shader.direct_light_shader.is_valid()) {
+		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
+		sdfgi_shader.direct_light_shader = RID();
+	}
+	if (sdfgi_shader.integrate_shader.is_valid()) {
+		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
+		sdfgi_shader.integrate_shader = RID();
+	}
+	if (sdfgi_shader.preprocess_shader.is_valid()) {
+		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
+		sdfgi_shader.preprocess_shader = RID();
+	}
+	if (shader_version.is_valid()) {
+		shader.version_free(shader_version);
+		shader_version = RID();
+	}
+	if (voxel_gi_lighting_shader_version.is_valid()) {
+		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
+		voxel_gi_lighting_shader_version = RID();
+	}
+	if (voxel_gi_debug_shader_version.is_valid()) {
+		voxel_gi_debug_shader.version_free(voxel_gi_debug_shader_version);
+		voxel_gi_debug_shader_version = RID();
+	}
+
+	// And any on voxel_gi_shader / debug shaders:
+	if (voxel_gi_lighting_shader_version.is_valid()) {
+		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
+		voxel_gi_lighting_shader_version = RID();
+	}
 }
 
 void GI::free()
@@ -1113,7 +1167,7 @@ Ref<GI::SDFGI> GI::create_sdfgi(
 	Ref<SDFGI> sdfgi;
 	sdfgi.instantiate();
 
-	sdfgi->create(p_env, p_world_position, p_requested_history_size, this);
+	sdfgi->create(p_env, p_world_position, p_requested_history_size);
 
 	return sdfgi;
 }
@@ -1250,7 +1304,6 @@ void GI::RenderBuffersGI::free_data()
 RID GI::voxel_gi_instance_create(RID p_base)
 {
 	VoxelGIInstance voxel_gi;
-	voxel_gi.gi = this;
 	voxel_gi.probe = p_base;
 	RID rid = voxel_gi_instance_owner.make_rid(voxel_gi);
 	return rid;
@@ -1271,7 +1324,7 @@ void GI::voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D&
 	voxel_gi->transform = p_xform;
 }
 
-bool GI::voxel_gi_needs_update(RID p_probe) const
+bool GI::voxel_gi_needs_update(RID p_probe)
 {
 	VoxelGIInstance* voxel_gi = voxel_gi_instance_owner.get_or_null(p_probe);
 	ERR_FAIL_NULL_V(voxel_gi, false);
@@ -1316,9 +1369,8 @@ void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
 {
 }
 
-RendererRD::GI::GI() {}
-
-void GI::init(RendererRD::SkyRD *p_sky) {
+void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
+{
 	// 1. Main GI gather shader
 	{
 		Vector<String> modes;
@@ -1326,7 +1378,8 @@ void GI::init(RendererRD::SkyRD *p_sky) {
 		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n");
 		modes.push_back("\n#define MODE_SDFGI\n");
 		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_SDFGI\n");
-		modes.push_back("\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n#define MODE_SDFGI\n");
+		modes.push_back(
+			"\n#define MODE_VOXEL_GI\n#define MODE_VOXEL_GI_WITHOUT_SAMPLER\n#define MODE_SDFGI\n");
 
 		shader.initialize(modes);
 		shader_version = shader.version_create();
@@ -1405,5 +1458,3 @@ void GI::init(RendererRD::SkyRD *p_sky) {
 		sdfgi_shader.debug_probes_shader_version = sdfgi_shader.debug_probes.version_create();
 	}
 }
-
-

@@ -211,11 +211,11 @@ int64_t get_image_base(const String &p_path) {
 extern void CrashHandlerException(int signal) {
 	CrashHandlerData data;
 
-	if (OS::get_singleton() == nullptr || OS::get_singleton()->is_disable_crash_handler() || IsDebuggerPresent()) {
+	if (OS::get_singleton() == nullptr || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
 		return;
 	}
 
-	if (OS::get_singleton()->is_crash_handler_silent()) {
+	if (OS::is_crash_handler_silent()) {
 		std::_Exit(0);
 	}
 
@@ -225,8 +225,8 @@ extern void CrashHandlerException(int signal) {
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+	if (OS::get_main_loop()) {
+		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	print_error("\n================================================================");
@@ -240,7 +240,7 @@ extern void CrashHandlerException(int signal) {
 	}
 	print_error(vformat("Dumping the backtrace. %s", msg));
 
-	String exec_path = OS::get_singleton()->get_executable_path();
+	String exec_path = OS::get_executable_path();
 
 	// Load process and image info to determine ASLR addresses offset.
 	MODULEINFO mi;

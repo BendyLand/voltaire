@@ -45,7 +45,7 @@ public:
 
 private:
 	bool has_tracking_data = false;
-	StringName name;
+	String name;
 	Transform3D transform;
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
@@ -57,8 +57,8 @@ public:
 	void set_has_tracking_data(const bool p_has_tracking_data);
 	bool get_has_tracking_data() const;
 
-	void set_name(const StringName& p_name);
-	StringName get_name() const;
+	void set_name(const String& p_name);
+	String get_name() const;
 
 	void set_transform(const Transform3D p_transform);
 	Transform3D get_transform() const;

@@ -35,27 +35,27 @@
 
 class AnimationLibrary : public Resource
 {
-	void _animation_changed(const StringName& p_name);
+	void _animation_changed(const String& p_name);
 
 	friend class AnimationMixer; // For faster access.
-	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
+	RBMap<String, Ref<Animation>> animations;
 
 public:
 	static bool is_valid_animation_name(const String& p_name);
 	static bool is_valid_library_name(const String& p_name);
 	static String validate_library_name(const String& p_name);
 
-	Error add_animation(const StringName& p_name, const Ref<Animation>& p_animation);
-	void remove_animation(const StringName& p_name);
-	void rename_animation(const StringName& p_name, const StringName& p_new_name);
-	bool has_animation(const StringName& p_name) const;
-	Ref<Animation> get_animation(const StringName& p_name) const;
-	void get_animation_list(LocalVector<StringName>* p_animations) const;
+	Error add_animation(const String& p_name, const Ref<Animation>& p_animation);
+	void remove_animation(const String& p_name);
+	void rename_animation(const String& p_name, const String& p_new_name);
+	bool has_animation(const String& p_name) const;
+	Ref<Animation> get_animation(const String& p_name) const;
+	void get_animation_list(LocalVector<String>* p_animations) const;
 	int get_animation_list_size() const;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	AnimationLibrary();

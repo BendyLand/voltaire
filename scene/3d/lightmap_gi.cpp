@@ -757,7 +757,7 @@ PackedStringArray LightmapGI::get_configuration_warnings() const
 #elif defined(ANDROID_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 	warnings.push_back(vformat(
 		RTR("Lightmaps cannot be baked on %s. Rendering existing baked lightmaps will still work."),
-		OS::get_singleton()->get_name()));
+		OS::get_name()));
 #else
 	warnings.push_back(RTR("Lightmaps cannot be baked, as the `lightmapper_rd` module was disabled "
 						   "at compile-time. Rendering existing baked lightmaps will still work."));

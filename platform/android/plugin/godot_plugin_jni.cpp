@@ -131,7 +131,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitS
 		env->DeleteLocalRef(j_param);
 	}
 
-	singleton->emit_signalp(StringName(signal_name), args, count);
+	singleton->emit_signalp(String(signal_name), args, count);
 
 	// Manually invoke the destructor to decrease the reference counts for the variant arguments.
 	for (int i = 0; i < count; i++) {

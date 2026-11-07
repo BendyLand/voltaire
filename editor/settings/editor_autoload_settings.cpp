@@ -110,6 +110,6 @@ bool EditorAutoloadSettings::autoload_add(String const&, String const&, bool) { 
 
 void EditorAutoloadSettings::init_autoloads() {}
 
-void EditorAutoloadSettings::autoload_remove(StringName const&) {}
+void EditorAutoloadSettings::autoload_remove(String const&) {}
 
 

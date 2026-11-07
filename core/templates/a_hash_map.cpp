@@ -29,11 +29,8 @@
 /**************************************************************************/
 
 #include "a_hash_map.h"
-#include "core/types.h"
 
 // Explicit instantiation.
 template class AHashMap<int, int>;
 template class AHashMap<String, int>;
-template class AHashMap<StringName, StringName>;
-template class AHashMap<StringName, int>;
-
+template class AHashMap<String, String>;

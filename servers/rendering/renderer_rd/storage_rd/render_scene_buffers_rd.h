@@ -103,8 +103,8 @@ private:
 
 	struct NTKey
 	{
-		StringName context;
-		StringName buffer_name;
+		String context;
+		String buffer_name;
 
 		bool operator==(const NTKey& p_val) const
 		{
@@ -120,7 +120,7 @@ private:
 
 		NTKey() {}
 
-		NTKey(const StringName& p_context, const StringName& p_texture_name)
+		NTKey(const String& p_context, const String& p_texture_name)
 		{
 			context = p_context;
 			buffer_name = p_texture_name;
@@ -185,7 +185,7 @@ private:
 	void free_named_texture(NamedTexture& p_named_texture);
 
 	// Data buffers
-	mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;
+	mutable HashMap<String, Ref<RenderBufferCustomDataRD>> data_buffers;
 
 	// Samplers.
 	RendererRD::Samplers samplers;
@@ -248,38 +248,38 @@ public:
 
 	// Named Textures
 
-	bool has_texture(const StringName& p_context, const StringName& p_texture_name) const;
-	RID create_texture(const StringName& p_context, const StringName& p_texture_name,
+	bool has_texture(const String& p_context, const String& p_texture_name) const;
+	RID create_texture(const String& p_context, const String& p_texture_name,
 		const RDC::DataFormat p_data_format, const uint32_t p_usage_bits,
 		const RDC::TextureSamples p_texture_samples = RDC::TEXTURE_SAMPLES_1,
 		const Size2i p_size = Size2i(0, 0), const uint32_t p_layers = 0,
 		const uint32_t p_mipmaps = 1, bool p_unique = true, bool p_discardable = false);
-	RID create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
+	RID create_texture_from_format(const String& p_context, const String& p_texture_name,
 		const RDC::TextureFormat& p_texture_format, RD::TextureView p_view = RD::TextureView(),
 		bool p_unique = true);
-	RID create_texture_view(const StringName& p_context, const StringName& p_texture_name,
-		const StringName& p_view_name, RD::TextureView p_view = RD::TextureView());
-	RID get_texture(const StringName& p_context, const StringName& p_texture_name) const;
+	RID create_texture_view(const String& p_context, const String& p_texture_name,
+		const String& p_view_name, RD::TextureView p_view = RD::TextureView());
+	RID get_texture(const String& p_context, const String& p_texture_name) const;
 	const RDC::TextureFormat get_texture_format(
-		const StringName& p_context, const StringName& p_texture_name) const;
-	RID get_texture_slice(const StringName& p_context, const StringName& p_texture_name,
+		const String& p_context, const String& p_texture_name) const;
+	RID get_texture_slice(const String& p_context, const String& p_texture_name,
 		const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
 		const uint32_t p_mipmaps = 1);
-	RID get_texture_slice_view(const StringName& p_context, const StringName& p_texture_name,
+	RID get_texture_slice_view(const String& p_context, const String& p_texture_name,
 		const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
 		const uint32_t p_mipmaps = 1, RD::TextureView p_view = RD::TextureView());
 	Size2i get_texture_slice_size(
-		const StringName& p_context, const StringName& p_texture_name, const uint32_t p_mipmap);
+		const String& p_context, const String& p_texture_name, const uint32_t p_mipmap);
 
-	void clear_context(const StringName& p_context);
+	void clear_context(const String& p_context);
 
 	// Allocate shared buffers
 	void allocate_blur_textures();
 
 	// Custom data
-	bool has_custom_data(const StringName& p_name);
-	void set_custom_data(const StringName& p_name, Ref<RenderBufferCustomDataRD> p_data);
-	Ref<RenderBufferCustomDataRD> get_custom_data(const StringName& p_name) const;
+	bool has_custom_data(const String& p_name);
+	void set_custom_data(const String& p_name, Ref<RenderBufferCustomDataRD> p_data);
+	Ref<RenderBufferCustomDataRD> get_custom_data(const String& p_name) const;
 
 	// Getters
 
@@ -447,14 +447,14 @@ public:
 	static uint32_t get_vrs_usage_bits();
 
 private:
-	RID _create_texture_from_format(const StringName& p_context, const StringName& p_texture_name,
+	RID _create_texture_from_format(const String& p_context, const String& p_texture_name,
 		const Ref<RDTextureFormat>& p_texture_format,
 		const Ref<RDTextureView>& p_view = Ref<RDTextureView>(), bool p_unique = true);
-	RID _create_texture_view(const StringName& p_context, const StringName& p_texture_name,
-		const StringName& p_view_name, const Ref<RDTextureView> p_view = Ref<RDTextureView>());
+	RID _create_texture_view(const String& p_context, const String& p_texture_name,
+		const String& p_view_name, const Ref<RDTextureView> p_view = Ref<RDTextureView>());
 	Ref<RDTextureFormat> _get_texture_format(
-		const StringName& p_context, const StringName& p_texture_name) const;
-	RID _get_texture_slice_view(const StringName& p_context, const StringName& p_texture_name,
+		const String& p_context, const String& p_texture_name) const;
+	RID _get_texture_slice_view(const String& p_context, const String& p_texture_name,
 		const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
 		const uint32_t p_mipmaps = 1, const Ref<RDTextureView> p_view = Ref<RDTextureView>());
 
@@ -562,8 +562,8 @@ private:
 	RID _get_velocity_texture_bind_compat_80214();
 	RID _get_velocity_layer_bind_compat_80214(const uint32_t p_layer);
 
-	RID _create_texture_bind_compat_98670(const StringName& p_context,
-		const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+	RID _create_texture_bind_compat_98670(const String& p_context,
+		const String& p_texture_name, const RDC::DataFormat p_data_format,
 		const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples,
 		const Size2i p_size, const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique);
 

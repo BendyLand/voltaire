@@ -89,7 +89,7 @@ class AnimationNodeBlendSpace1DEditor : public AnimationTreeNodeEditorPlugin
 
 	PopupMenu* menu = nullptr;
 	PopupMenu* animations_menu = nullptr;
-	Vector<StringName> animations_to_add;
+	Vector<String> animations_to_add;
 	float add_point_pos = 0.0f;
 	Vector<real_t> points;
 
@@ -127,7 +127,7 @@ class AnimationNodeBlendSpace1DEditor : public AnimationTreeNodeEditorPlugin
 		MENU_LOAD_FILE_CONFIRM = 1002
 	};
 
-	StringName get_blend_position_path() const;
+	String get_blend_position_path() const;
 	String _get_safe_name(
 		const Ref<AnimationNodeBlendSpace1D>& p_blend_space, const String& p_name);
 

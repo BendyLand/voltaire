@@ -120,7 +120,7 @@ public:
 	// Extras
 	int get_remote_port() const;
 
-	// Used by ENetMultiplayer (TODO use meta? If only they where StringNames)
+	// Used by ENetMultiplayer (TODO use meta? If only they where Strings)
 	bool is_active() const;
 
 	ENetPacketPeer(ENetPeer* p_peer);

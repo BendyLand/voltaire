@@ -33,6 +33,7 @@
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
+#include "drivers/gles3/storage/particles_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/storage/utilities.h"
@@ -361,7 +362,7 @@ void RasterizerGLES3::initialize()
 
 #ifdef GLAD_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			if (GLAD_GL_ARB_debug_output) {
 				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 				glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
@@ -375,7 +376,7 @@ void RasterizerGLES3::initialize()
 
 #ifdef GL_API_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
+		if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
 			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
 				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
@@ -398,7 +399,7 @@ void RasterizerGLES3::initialize()
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
 #ifdef GLES_API_ENABLED
 	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			DebugMessageCallbackARB callback =
 				(DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
 			if (!callback) {
@@ -457,14 +458,14 @@ void RasterizerGLES3::initialize()
 	GLES3::TextureStorage::initialize();
 	GLES3::MaterialStorage::initialize();
 	GLES3::LightStorage::initialize();
-	particles_storage = memnew(GLES3::ParticlesStorage);
+	GLES3::ParticlesStorage::initialize();
 	copy_effects = memnew(GLES3::CopyEffects);
 	cubemap_filter = memnew(GLES3::CubemapFilter);
 	glow = memnew(GLES3::Glow);
 	post_effects = memnew(GLES3::PostEffects);
 	feed_effects = memnew(GLES3::FeedEffects);
-	gi = memnew(GLES3::GI);
-	fog = memnew(GLES3::Fog);
+	GLES3::GI::initialize();
+	GLES3::Fog::initialize();
 
     RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
@@ -487,14 +488,14 @@ void RasterizerGLES3::finalize()
 	GLES3::TextureStorage::_tex_blit_shader_free();
 	memdelete(scene);
 	RasterizerCanvasGLES3::finalize();
-	memdelete(gi);
-	memdelete(fog);
+	GLES3::GI::finalize();
+	GLES3::Fog::finalize();
 	memdelete(post_effects);
 	memdelete(glow);
 	memdelete(cubemap_filter);
 	memdelete(copy_effects);
 	memdelete(feed_effects);
-	memdelete(particles_storage);
+	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::TextureStorage::finalize();
 	memdelete(config);
@@ -503,7 +504,7 @@ void RasterizerGLES3::finalize()
 void RasterizerGLES3::make_current(bool p_gles_over_gl)
 {
 	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
-	OS::get_singleton()->set_gles_over_gl(p_gles_over_gl);
+	OS::set_gles_over_gl(p_gles_over_gl);
 
 	RendererCompositor::_create_func = _create_current;
 	RendererCompositor::low_end = true;
@@ -622,7 +623,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	glDepthMask(GL_FALSE);
 	glClearColor(p_color.r, p_color.g, p_color.b,
-		OS::get_singleton()->is_layered_allowed() ? p_color.a : 1.0);
+		OS::is_layered_allowed() ? p_color.a : 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	RID texture = texture_storage->texture_allocate();

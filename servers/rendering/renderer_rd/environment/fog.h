@@ -13,7 +13,7 @@
 /* "Software"), to deal in the Software without restriction, including    */
 /* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
+/* permit persons to whom the Software is furnished to do so, subject to */
 /* the following conditions:                                              */
 /*                                                                        */
 /* The above copyright notice and this permission notice shall be         */
@@ -33,10 +33,13 @@
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/environment/renderer_fog.h"
 #include "servers/rendering/renderer_rd/environment/gi.h"
+#include "servers/rendering/renderer_rd/environment/sky.h"
 #include "servers/rendering/renderer_rd/pipeline_deferred_rd.h"
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog_process.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
+#include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/storage/utilities.h"
 
 #define RB_SCOPE_FOG SNAME("Fog")
@@ -46,14 +49,13 @@ class ClusterBuilderRD;
 namespace RendererRD
 {
 
-class Fog : public RendererFog
+class Fog final
 {
-private:
-	static Fog* singleton;
-
-	static int _get_fog_shader_group();
-	static int _get_fog_variant();
-	static int _get_fog_process_variant(int p_idx);
+public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
 
 	/* FOG VOLUMES */
 
@@ -67,18 +69,12 @@ private:
 		Dependency dependency;
 	};
 
-	mutable RID_Owner<FogVolume, true> fog_volume_owner;
-
 	struct FogVolumeInstance
 	{
 		RID volume;
 		Transform3D transform;
 		bool active = false;
 	};
-
-	mutable RID_Owner<FogVolumeInstance> fog_volume_instance_owner;
-
-	const int SAMPLERS_BINDING_FIRST_INDEX = 3;
 
 	/* Volumetric Fog */
 	struct VolumetricFogShader
@@ -205,13 +201,7 @@ private:
 
 		RID process_shader_version;
 		PipelineDeferredRD process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
-
-	} volumetric_fog;
-
-	Vector3i _point_get_position_in_froxel_volume(const Vector3& p_point, float fog_end,
-		const Vector2& fog_near_size, const Vector2& fog_far_size,
-		float volumetric_fog_detail_spread, const Vector3& fog_size,
-		const Transform3D& p_cam_transform);
+	};
 
 	struct FogShaderData : public RendererRD::MaterialStorage::ShaderData
 	{
@@ -228,11 +218,12 @@ private:
 
 		bool uses_time = false;
 
-		virtual void set_code(const String& p_Code);
-		virtual bool is_animated() const;
-		virtual bool casts_shadows() const;
-		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
+		virtual void set_code(const String& p_Code) override;
+		virtual bool is_animated() const override;
+		virtual bool casts_shadows() const override;
+		virtual RenderingServerTypes::ShaderNativeSourceCode
+		get_native_source_code() const override;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const override;
 
 		FogShaderData() {}
 
@@ -245,80 +236,14 @@ private:
 		RID uniform_set;
 		bool uniform_set_updated;
 
-		virtual void set_render_priority(int p_priority) {}
+		virtual void set_render_priority(int p_priority) override {}
 
-		virtual void set_next_pass(RID p_pass) {}
+		virtual void set_next_pass(RID p_pass) override {}
 
 		virtual ~FogMaterialData();
 	};
 
-	RendererRD::MaterialStorage::ShaderData* _create_fog_shader_func();
-	static RendererRD::MaterialStorage::ShaderData* _create_fog_shader_funcs();
-
-	RendererRD::MaterialStorage::MaterialData* _create_fog_material_func(FogShaderData* p_shader);
-	static RendererRD::MaterialStorage::MaterialData* _create_fog_material_funcs(
-		RendererRD::MaterialStorage::ShaderData* p_shader);
-
-public:
-	static Fog* get_singleton() { return singleton; }
-
-	Fog();
-	~Fog();
-
-	/* FOG VOLUMES */
-
-	bool owns_fog_volume(RID p_rid) { return fog_volume_owner.owns(p_rid); }
-
-	virtual RID fog_volume_allocate() override;
-	virtual void fog_volume_initialize(RID p_rid) override;
-	virtual void fog_volume_free(RID p_rid) override;
-	Dependency* fog_volume_get_dependency(RID p_fog_volume) const;
-
-	virtual void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) override;
-	virtual void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size) override;
-	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) override;
-	virtual RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const override;
-	RID fog_volume_get_material(RID p_fog_volume) const;
-	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const override;
-	Vector3 fog_volume_get_size(RID p_fog_volume) const;
-
-	/* FOG VOLUMES INSTANCE */
-
-	bool owns_fog_volume_instance(RID p_rid) { return fog_volume_instance_owner.owns(p_rid); }
-
-	RID fog_volume_instance_create(RID p_fog_volume);
-	void fog_instance_free(RID p_rid);
-
-	void fog_volume_instance_set_transform(
-		RID p_fog_volume_instance, const Transform3D& p_transform)
-	{
-		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
-		ERR_FAIL_NULL(fvi);
-		fvi->transform = p_transform;
-	}
-
-	void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active)
-	{
-		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
-		ERR_FAIL_NULL(fvi);
-		fvi->active = p_active;
-	}
-
-	RID fog_volume_instance_get_volume(RID p_fog_volume_instance) const
-	{
-		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
-		ERR_FAIL_NULL_V(fvi, RID());
-		return fvi->volume;
-	}
-
-	Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance) const
-	{
-		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
-		ERR_FAIL_NULL_V(fvi, Vector3());
-		return fvi->transform.get_origin();
-	}
-
-	/* Volumetric FOG */
+	/* Volumetric FOG Render Buffer Data */
 	class VolumetricFog : public RenderBufferCustomDataRD
 	{
 	public:
@@ -356,7 +281,6 @@ public:
 
 		int last_shadow_filter = -1;
 
-		// If the device doesn't support image atomics, use storage buffers instead.
 		RDC::UniformType atomic_type = RDC::UNIFORM_TYPE_IMAGE;
 
 		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override {}
@@ -368,10 +292,6 @@ public:
 		void init(const Vector3i& fog_size, RID p_sky_shader);
 		~VolumetricFog();
 	};
-
-	void init_fog_shader(uint32_t p_max_directional_lights, int p_roughness_layers,
-		bool p_is_using_radiance_octmap_array);
-	void free_fog_shader();
 
 	struct VolumetricFogSettings
 	{
@@ -390,17 +310,123 @@ public:
 		RID directional_shadow_depth;
 		RID directional_light_buffer;
 
-		// Objects related to our render buffer
 		Ref<VolumetricFog> vfog;
 		ClusterBuilderRD* cluster_builder;
-		GI* gi;
 		Ref<GI::SDFGI> sdfgi;
 		Ref<GI::RenderBuffersGI> rbgi;
 		RID env;
 		SkyRD* sky;
 	};
 
-	void volumetric_fog_update(const VolumetricFogSettings& p_settings,
+private:
+	static inline bool _initialized = false;
+
+	static int _get_fog_shader_group();
+	static int _get_fog_variant();
+	static int _get_fog_process_variant(int p_idx);
+
+	/* FOG VOLUMES */
+
+	static inline RID_Owner<FogVolume, true> fog_volume_owner;
+	static inline RID_Owner<FogVolumeInstance> fog_volume_instance_owner;
+
+	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 3;
+
+	static inline VolumetricFogShader volumetric_fog;
+
+	static Vector3i _point_get_position_in_froxel_volume(const Vector3& p_point, float fog_end,
+		const Vector2& fog_near_size, const Vector2& fog_far_size,
+		float volumetric_fog_detail_spread, const Vector3& fog_size,
+		const Transform3D& p_cam_transform);
+
+	static RendererRD::MaterialStorage::ShaderData* _create_fog_shader_func();
+	static RendererRD::MaterialStorage::ShaderData* _create_fog_shader_funcs();
+
+	static RendererRD::MaterialStorage::MaterialData* _create_fog_material_func(
+		FogShaderData* p_shader);
+	static RendererRD::MaterialStorage::MaterialData* _create_fog_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader);
+
+public:
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return _initialized; }
+
+	static bool free(RID p_rid);
+
+	/* FOG VOLUMES */
+
+	static bool owns_fog_volume(RID p_rid)
+	{
+		if (!_initialized) {
+			return false;
+		}
+		return fog_volume_owner.owns(p_rid);
+	}
+
+	static RID fog_volume_allocate();
+	static void fog_volume_initialize(RID p_rid);
+	static void fog_volume_free(RID p_rid);
+	static Dependency* fog_volume_get_dependency(RID p_fog_volume);
+
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape);
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size);
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material);
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume);
+	static RID fog_volume_get_material(RID p_fog_volume);
+	static AABB fog_volume_get_aabb(RID p_fog_volume);
+	static Vector3 fog_volume_get_size(RID p_fog_volume);
+
+	/* FOG VOLUMES INSTANCE */
+
+	static bool owns_fog_volume_instance(RID p_rid)
+	{
+		if (!_initialized) {
+			return false;
+		}
+		return fog_volume_instance_owner.owns(p_rid);
+	}
+
+	static RID fog_volume_instance_create(RID p_fog_volume);
+	static void fog_instance_free(RID p_rid);
+
+	static void fog_volume_instance_set_transform(
+		RID p_fog_volume_instance, const Transform3D& p_transform)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL(fvi);
+		fvi->transform = p_transform;
+	}
+
+	static void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL(fvi);
+		fvi->active = p_active;
+	}
+
+	static RID fog_volume_instance_get_volume(RID p_fog_volume_instance)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL_V(fvi, RID());
+		return fvi->volume;
+	}
+
+	static Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL_V(fvi, Vector3());
+		return fvi->transform.get_origin();
+	}
+
+	/* Volumetric FOG API */
+
+	static void init_fog_shader(uint32_t p_max_directional_lights, int p_roughness_layers,
+		bool p_is_using_radiance_octmap_array);
+	static void free_fog_shader();
+
+	static void volumetric_fog_update(const VolumetricFogSettings& p_settings,
 		const Projection& p_cam_projection, const Transform3D& p_cam_transform,
 		const Transform3D& p_prev_cam_inv_transform, RID p_shadow_atlas,
 		int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count,
@@ -408,5 +434,3 @@ public:
 };
 
 } // namespace RendererRD
-
-

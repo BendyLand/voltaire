@@ -46,7 +46,7 @@
 class XRFaceModifier3D : public Node3D {
 
 private:
-	StringName tracker_name = "/user/face_tracker";
+	String tracker_name = "/user/face_tracker";
 	NodePath target;
 
 	// Map from XRFaceTracker blend shape index to mesh blend shape index.
@@ -59,8 +59,8 @@ private:
 protected:
 
 public:
-	void set_face_tracker(const StringName &p_tracker_name);
-	StringName get_face_tracker() const;
+	void set_face_tracker(const String &p_tracker_name);
+	String get_face_tracker() const;
 
 	void set_target(const NodePath &p_target);
 	NodePath get_target() const;

@@ -680,12 +680,12 @@ DisplayServer *DisplayServerAndroid::create_func(const String &p_rendering_drive
 	DisplayServer *ds = memnew(DisplayServerAndroid(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
-			OS::get_singleton()->alert(
+			OS::alert(
 					"Your device seems not to support the required Vulkan version.\n\n"
 					"Please try exporting your game using the 'gl_compatibility' renderer.",
 					"Unable to initialize Vulkan video driver");
 		} else {
-			OS::get_singleton()->alert(
+			OS::alert(
 					"Your device seems not to support the required OpenGL ES 3.0 version.",
 					"Unable to initialize OpenGL video driver");
 		}
@@ -716,8 +716,8 @@ bool DisplayServerAndroid::check_vulkan_global_context(bool p_vulkan_requirement
 #if defined(GLES3_ENABLED)
 			if (fallback_to_opengl3) {
 				WARN_PRINT("Your device does not seem to support Vulkan, switching to OpenGL 3.");
-				OS::get_singleton()->set_current_rendering_driver_name("opengl3", OS::RENDERING_SOURCE_FALLBACK);
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name("opengl3", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
 			} else
 #endif
 			{

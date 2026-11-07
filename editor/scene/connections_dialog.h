@@ -52,8 +52,8 @@ class ConnectDialog : public ConfirmationDialog
 public:
 	struct ConnectionData
 	{
-		StringName signal;
-		StringName method;
+		String signal;
+		String method;
 		uint32_t flags = 0;
 		int unbinds = 0;
 
@@ -65,7 +65,7 @@ private:
 	LineEdit* from_signal = nullptr;
 	LineEdit* filter_nodes = nullptr;
 	ConnectionData source_connection_data;
-	StringName signal;
+	String signal;
 	PackedStringArray signal_args;
 	LineEdit* dst_method = nullptr;
 	bool edit_mode = false;
@@ -118,12 +118,12 @@ protected:
 
 public:
 	ConnectionData get_source_connection_data() const;
-	StringName get_signal_name() const;
+	String get_signal_name() const;
 	PackedStringArray get_signal_args() const;
 	NodePath get_dst_path() const;
 	void set_dst_node(Node* p_node);
-	StringName get_dst_method_name() const;
-	void set_dst_method(const StringName& p_method);
+	String get_dst_method_name() const;
+	void set_dst_method(const String& p_method);
 	int get_unbinds() const;
 
 	bool get_deferred() const;

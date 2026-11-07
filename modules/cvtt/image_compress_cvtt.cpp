@@ -143,7 +143,7 @@ static void _digest_row_task(
 void image_compress_cvtt(
 	Image* p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format)
 {
-	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	uint64_t start_time = OS::get_ticks_msec();
 
 	if (p_image->is_compressed()) {
 		return; // do not compress, already compressed
@@ -303,7 +303,7 @@ void image_compress_cvtt(
 	p_image->set_data(w, h, p_image->has_mipmaps(), target_format, data);
 
 	print_verbose(
-		vformat("CVTT: Encoding took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
+		vformat("CVTT: Encoding took %d ms.", OS::get_ticks_msec() - start_time));
 }
 
 void image_decompress_cvtt(Image* p_image)

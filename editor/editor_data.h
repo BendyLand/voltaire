@@ -121,7 +121,7 @@ public:
 
 private:
 	Vector<EditorPlugin*> editor_plugins;
-	HashMap<StringName, EditorPlugin*> extension_editor_plugins;
+	HashMap<String, EditorPlugin*> extension_editor_plugins;
 
 	struct PropertyData
 	{
@@ -139,8 +139,8 @@ private:
 
 	bool _find_updated_instances(Node* p_root, Node* p_node, HashSet<String>& checked_paths);
 
-	HashMap<StringName, String> _script_class_icon_paths;
-	HashMap<String, StringName> _script_class_file_to_path;
+	HashMap<String, String> _script_class_icon_paths;
+	HashMap<String, String> _script_class_file_to_path;
 	HashMap<String, Ref<Texture2D>> _script_icon_cache;
 
 	Ref<Texture2D> _load_script_icon(const String& p_path) const;
@@ -158,10 +158,10 @@ public:
 	int get_editor_plugin_count() const;
 	EditorPlugin* get_editor_plugin(int p_idx);
 
-	void add_extension_editor_plugin(const StringName& p_class_name, EditorPlugin* p_plugin);
-	void remove_extension_editor_plugin(const StringName& p_class_name);
-	bool has_extension_editor_plugin(const StringName& p_class_name);
-	EditorPlugin* get_extension_editor_plugin(const StringName& p_class_name);
+	void add_extension_editor_plugin(const String& p_class_name, EditorPlugin* p_plugin);
+	void remove_extension_editor_plugin(const String& p_class_name);
+	bool has_extension_editor_plugin(const String& p_class_name);
+	EditorPlugin* get_extension_editor_plugin(const String& p_class_name);
 
 	void remove_custom_type(const String& p_type);
 
@@ -202,8 +202,8 @@ public:
 	void set_plugin_window_layout(Ref<ConfigFile> p_layout);
 	void get_plugin_window_layout(Ref<ConfigFile> p_layout);
 
-	StringName script_class_get_name(const String& p_path) const;
-	void script_class_set_name(const String& p_path, const StringName& p_class);
+	String script_class_get_name(const String& p_path) const;
+	void script_class_set_name(const String& p_path, const String& p_class);
 
 	String script_class_get_icon_path(const String& p_class, bool* r_valid = nullptr) const;
 	void script_class_set_icon_path(const String& p_class, const String& p_icon_path);

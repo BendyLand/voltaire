@@ -30,8 +30,11 @@
 
 #pragma once
 
+#include "servers/rendering/dummy/environment/gi.h"
+#include "servers/rendering/dummy/environment/fog.h"
 #include "servers/rendering/dummy/storage/light_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
+#include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/storage/light_storage.h"
@@ -75,11 +78,13 @@ private:
 public:
 	static void bind_utilities() {}
 
+	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
+	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
+
 	static RendererCanvasRender* get_canvas();
 	static RendererSceneRender* get_scene();
 
 	static RendererFog* get_fog();
-	static RendererGI* get_gi();
 
 	static RendererDummy::Utilities* get_utilities();
 
@@ -288,5 +293,3 @@ public:
 };
 
 using RDummy = RasterizerDummy;
-
-

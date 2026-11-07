@@ -380,7 +380,6 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 	RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters* p_params,
 	uint32_t p_from_element, uint32_t p_to_element)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	RD::DrawListID draw_list = p_draw_list;
 	RD::FramebufferFormatID framebuffer_format = p_framebuffer_Format;
 
@@ -695,7 +694,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			}
 
 			if (surf->owner->base_flags & INSTANCE_DATA_FLAG_PARTICLES) {
-				particles_storage->particles_get_instance_buffer_motion_vectors_offsets(
+				RendererRD::ParticlesStorage::particles_get_instance_buffer_motion_vectors_offsets(
 					surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset,
 					push_constant.multimesh_motion_vectors_previous_offset);
 			}
@@ -1568,9 +1567,8 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 		settings.sdfgi = sdfgi;
 		settings.env = p_environment;
 		settings.sky = &RendererSceneRenderRD::data->sky;
-		settings.gi = &RendererSceneRenderRD::data->gi;
 
-		RendererRD::Fog::get_singleton()->volumetric_fog_update(settings, p_cam_projection,
+		RendererRD::Fog::volumetric_fog_update(settings, p_cam_projection,
 			p_cam_transform, p_prev_cam_inv_transform, p_shadow_atlas, p_directional_light_count,
 			p_use_directional_shadows, p_positional_light_count, p_voxel_gi_count, p_fog_volumes);
 	}
@@ -1852,7 +1850,7 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
 	}
 
 	if (render_gi) {
-		RendererSceneRenderRD::data->gi.process_gi(rb, p_normal_roughness_slices, p_voxel_gi_buffer, p_render_data->environment,
+		RendererRD::GI::process_gi(rb, p_normal_roughness_slices, p_voxel_gi_buffer, p_render_data->environment,
 			p_render_data->scene_data->view_count, p_render_data->scene_data->view_projection,
 			p_render_data->scene_data->view_eye_offset, p_render_data->scene_data->cam_transform,
 			*p_render_data->voxel_gi_instances);
@@ -2017,7 +2015,7 @@ void RenderForwardClustered::_render_scene(
 	// assign render indices to voxel_gi_instances
 	for (uint32_t i = 0; i < (uint32_t)p_render_data->voxel_gi_instances->size(); i++) {
 		RID voxel_gi_instance = (*p_render_data->voxel_gi_instances)[i];
-		RendererSceneRenderRD::data->gi.voxel_gi_instance_set_render_index(voxel_gi_instance, i);
+		RendererRD::GI::voxel_gi_instance_set_render_index(voxel_gi_instance, i);
 	}
 
 	// obtain cluster builder
@@ -2046,7 +2044,7 @@ void RenderForwardClustered::_render_scene(
 			}
 		}
 
-		RendererSceneRenderRD::data->gi.setup_voxel_gi_instances(p_render_data, p_render_data->render_buffers,
+		RendererRD::GI::setup_voxel_gi_instances(p_render_data, p_render_data->render_buffers,
 			p_render_data->scene_data->cam_transform, *p_render_data->voxel_gi_instances,
 			p_render_data->voxel_gi_count);
 	}
@@ -4010,7 +4008,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
 		for (int i = 0; i < MAX_VOXEL_GI_INSTANCESS; i++) {
 			if (p_render_data && i < (int)p_render_data->voxel_gi_instances->size()) {
-				RID tex = RendererSceneRenderRD::data->gi.voxel_gi_instance_get_texture((*p_render_data->voxel_gi_instances)[i]);
+				RID tex = RendererRD::GI::voxel_gi_instance_get_texture((*p_render_data->voxel_gi_instances)[i]);
 				if (!tex.is_valid()) {
 					tex = default_tex;
 				}
@@ -4657,7 +4655,7 @@ void RenderForwardClustered::sdfgi_update(const Ref<RenderSceneBuffers>& p_rende
 	}
 
 	bool needs_sdfgi = p_environment.is_valid() && RendererSceneRender::environment_get_sdfgi_enabled(p_environment);
-	bool needs_reset = sdfgi.is_valid() ? sdfgi->version != RendererSceneRenderRD::data->gi.sdfgi_current_version : false;
+	bool needs_reset = sdfgi.is_valid() ? sdfgi->version != RendererRD::GI::sdfgi_current_version : false;
 
 	if (!needs_sdfgi || needs_reset) {
 		if (sdfgi.is_valid()) {
@@ -4677,7 +4675,7 @@ void RenderForwardClustered::sdfgi_update(const Ref<RenderSceneBuffers>& p_rende
 
 	static const uint32_t history_frames_to_converge[RSE::ENV_SDFGI_CONVERGE_MAX] = {
 		5, 10, 15, 20, 25, 30};
-	uint32_t requested_history_size = history_frames_to_converge[RendererSceneRenderRD::data->gi.sdfgi_frames_to_converge];
+	uint32_t requested_history_size = history_frames_to_converge[RendererRD::GI::sdfgi_frames_to_converge];
 
 	if (sdfgi.is_valid() &&
 		(sdfgi->num_cascades != RendererSceneRender::environment_get_sdfgi_cascades(p_environment) ||
@@ -4692,7 +4690,7 @@ void RenderForwardClustered::sdfgi_update(const Ref<RenderSceneBuffers>& p_rende
 
 	if (sdfgi.is_null()) {
 		// re-create
-		sdfgi = RendererSceneRenderRD::data->gi.create_sdfgi(p_environment, p_world_position, requested_history_size);
+		sdfgi = RendererRD::GI::create_sdfgi(p_environment, p_world_position, requested_history_size);
 		rb->set_custom_data(RB_SCOPE_SDFGI, sdfgi);
 	}
 	else {
@@ -5046,7 +5044,6 @@ void RenderForwardClustered::_geometry_instance_add_surface(
 
 void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	GeometryInstanceForwardClustered* ginstance =
 		static_cast<GeometryInstanceForwardClustered*>(p_geometry_instance);
 
@@ -5107,10 +5104,10 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		} break;
 #endif
 	case RSE::INSTANCE_PARTICLES: {
-		int draw_passes = particles_storage->particles_get_draw_passes(ginstance->data->base);
+		int draw_passes = RendererRD::ParticlesStorage::particles_get_draw_passes(ginstance->data->base);
 
 		for (int j = 0; j < draw_passes; j++) {
-			RID mesh = particles_storage->particles_get_draw_pass_mesh(ginstance->data->base, j);
+			RID mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(ginstance->data->base, j);
 			if (!mesh.is_valid()) {
 				continue;
 			}
@@ -5127,7 +5124,7 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		}
 
 		ginstance->instance_count =
-			particles_storage->particles_get_amount(ginstance->data->base, ginstance->trail_steps);
+			RendererRD::ParticlesStorage::particles_get_amount(ginstance->data->base, ginstance->trail_steps);
 
 	} break;
 
@@ -5172,21 +5169,21 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance* p
 		ginstance->base_flags |=
 			(ginstance->trail_steps << INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_SHIFT);
 
-		if (!particles_storage->particles_is_using_local_coords(ginstance->data->base)) {
+		if (!RendererRD::ParticlesStorage::particles_is_using_local_coords(ginstance->data->base)) {
 			store_transform = false;
 		}
 		ginstance->transforms_uniform_set =
-			particles_storage->particles_get_instance_buffer_uniform_set(
+			RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
 				ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 
-		if (particles_storage->particles_get_frame_counter(ginstance->data->base) == 0) {
+		if (RendererRD::ParticlesStorage::particles_get_frame_counter(ginstance->data->base) == 0) {
 			// Particles haven't been cleared or updated, update once now to ensure they are ready
 			// to render.
-			particles_storage->update_particles();
+			RendererRD::ParticlesStorage::update_particles();
 		}
 
 		if (ginstance->data->dirty_dependencies) {
-			particles_storage->particles_update_dependency(
+			RendererRD::ParticlesStorage::particles_update_dependency(
 				ginstance->data->base, &ginstance->data->dependency_tracker);
 		}
 	}
@@ -5900,7 +5897,7 @@ void RenderForwardClustered::enable_features(uint32_t p_feature_bits)
 	}
 
 	if ((p_feature_bits & RendererSceneRenderRD::FEATURE_VRS_BIT) != 0) {
-		RendererSceneRenderRD::data->gi.enable_vrs_shader_group();
+		RendererRD::GI::enable_vrs_shader_group();
 	}
 }
 
@@ -6069,7 +6066,7 @@ void RendererRD::GI::SDFGI::debug_draw(unsigned int p_mode, const Projection* p_
 }
 
 void RendererRD::GI::SDFGI::create(RID p_env, const Vector3& p_world_position,
-	unsigned int p_requested_history_size, RendererRD::GI* p_gi)
+	unsigned int p_requested_history_size)
 {
 }
 

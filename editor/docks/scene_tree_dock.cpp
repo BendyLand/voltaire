@@ -151,8 +151,8 @@ bool SceneTreeDock::_track_inherit(const String& p_target_scene_path, Node* p_de
 	return result;
 }
 
-void SceneTreeDock::_fill_path_renames(Vector<StringName> base_path,
-	Vector<StringName> new_base_path, Node* p_node, HashMap<Node*, NodePath>* p_renames)
+void SceneTreeDock::_fill_path_renames(Vector<String> base_path,
+	Vector<String> new_base_path, Node* p_node, HashMap<Node*, NodePath>* p_renames)
 {
 	base_path.push_back(p_node->get_name());
 
@@ -172,14 +172,14 @@ void SceneTreeDock::_fill_path_renames(Vector<StringName> base_path,
 void SceneTreeDock::fill_path_renames(
 	Node* p_node, Node* p_new_parent, HashMap<Node*, NodePath>* p_renames)
 {
-	Vector<StringName> base_path;
+	Vector<String> base_path;
 	Node* n = p_node->get_parent();
 	while (n) {
 		base_path.push_back(n->get_name());
 		n = n->get_parent();
 	}
 
-	Vector<StringName> new_base_path;
+	Vector<String> new_base_path;
 	if (p_new_parent) {
 		n = p_new_parent;
 		while (n) {

@@ -40,7 +40,7 @@
 #include "shader_file_editor_plugin.h"
 
 void ShaderFileEditor::_update_version(
-	const StringName& p_version_txt, const RDC::ShaderStage p_stage)
+	const String& p_version_txt, const RDC::ShaderStage p_stage)
 {
 }
 

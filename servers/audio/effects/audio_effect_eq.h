@@ -54,7 +54,7 @@ class AudioEffectEQ : public AudioEffect
 
 	EQ eq;
 	Vector<float> gain;
-	HashMap<StringName, int> prop_band_map;
+	HashMap<String, int> prop_band_map;
 	Vector<String> band_names;
 
 public:

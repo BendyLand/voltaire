@@ -100,7 +100,7 @@ static String _get_device_type_name(const RenderingContextDriver::Device& p_devi
 
 static uint32_t _get_device_type_score(const RenderingContextDriver::Device& p_device)
 {
-	static const bool prefer_integrated = OS::get_singleton()->get_user_prefers_integrated_gpu();
+	static const bool prefer_integrated = OS::get_user_prefers_integrated_gpu();
 	switch (p_device.type) {
 	case RenderingContextDriver::DEVICE_TYPE_INTEGRATED_GPU:
 		return prefer_integrated ? 5 : 4;
@@ -186,30 +186,38 @@ void RenderingDevice::_remove_dependency(RID p_id, RID p_depends_on)
 
 void RenderingDevice::_free_dependencies(RID p_id)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	Vector<RID> dependencies_to_free;
 
-	// Direct dependencies must be freed.
+	{
+		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
-	if (E) {
-		while (E->value.size()) {
-			free_rid(*E->value.begin());
+		// Direct dependencies must be freed.
+		HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
+		if (E) {
+			for (const RID& dep : E->value) {
+				if (dep.is_valid()) {
+					dependencies_to_free.push_back(dep);
+				}
+			}
+			data->dependency_map.remove(E);
 		}
-		data->dependency_map.remove(E);
+
+		// Reverse dependencies must be unreferenced.
+		E = data->reverse_dependency_map.find(p_id);
+		if (E) {
+			for (const RID& F : E->value) {
+				HashMap<RID, HashSet<RID>>::Iterator G = data->dependency_map.find(F);
+				if (G && G->value.has(p_id)) {
+					G->value.erase(p_id);
+				}
+			}
+
+			data->reverse_dependency_map.remove(E);
+		}
 	}
 
-	// Reverse dependencies must be unreferenced.
-	E = data->reverse_dependency_map.find(p_id);
-
-	if (E) {
-		for (const RID& F : E->value) {
-			HashMap<RID, HashSet<RID>>::Iterator G = data->dependency_map.find(F);
-			ERR_CONTINUE(!G);
-			ERR_CONTINUE(!G->value.has(p_id));
-			G->value.erase(p_id);
-		}
-
-		data->reverse_dependency_map.remove(E);
+	for (const RID& dep : dependencies_to_free) {
+		free_rid(dep);
 	}
 }
 
@@ -1276,10 +1284,38 @@ RID RenderingDevice::texture_buffer_create(
 	return id;
 }
 
-RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
-	const Vector<Vector<uint8_t>>& p_data)
+RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format,
+	const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
 {
-	return RID();
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
+	Texture texture;
+	texture.type = p_format.texture_type;
+	texture.format = p_format.format;
+	texture.width = p_format.width;
+	texture.height = p_format.height;
+	texture.depth = p_format.depth;
+	texture.layers = p_format.array_layers;
+	texture.mipmaps = p_format.mipmaps;
+	texture.usage_flags = p_format.usage_bits;
+	texture.samples = p_format.samples;
+
+	texture.allowed_shared_formats = p_format.shareable_formats;
+	if (!texture.allowed_shared_formats.has(texture.format)) {
+		texture.allowed_shared_formats.push_back(texture.format);
+	}
+
+	RDD::TextureView tv = p_view;
+	if (tv.format == RDC::DATA_FORMAT_MAX) {
+		tv.format = texture.format;
+	}
+
+	texture.driver_id = data->driver->texture_create(p_format, tv);
+	ERR_FAIL_COND_V(texture.driver_id == RDD::TextureID(), RID());
+
+	data->texture_memory.add(data->driver->texture_get_allocation_size(texture.driver_id));
+
+	return data->texture_owner.make_rid(texture);
 }
 
 Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_layer)
@@ -1289,25 +1325,17 @@ Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_laye
 
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
 {
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
 	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
 	ERR_FAIL_NULL_V(src_texture, RID());
 
-	if (src_texture->owner
-			.is_valid()) { // Ahh this is a share. The RenderingDeviceDriver needs the actual owner.
-		p_with_texture = src_texture->owner;
-		src_texture = data->texture_owner.get_or_null(src_texture->owner);
-		ERR_FAIL_NULL_V(src_texture, RID()); // This is a bug.
-	}
-
-	// Create view.
-
 	Texture texture = *src_texture;
-	texture.slice_trackers = nullptr;
-	texture.shared_fallback = nullptr;
 
 	RDD::TextureView tv;
 	bool create_shared = true;
-	bool raw_reintepretation = false;
+	bool raw_reinterpretation = false;
+
 	if (p_view.format_override == RDC::DATA_FORMAT_MAX ||
 		p_view.format_override == texture.format) {
 		tv.format = texture.format;
@@ -1318,10 +1346,12 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 		ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
 			"Format override is not in the list of allowed shareable formats for original "
 			"texture.");
+
 		tv.format = p_view.format_override;
 		create_shared = data->driver->texture_can_make_shared_with_format(
-			texture.driver_id, p_view.format_override, raw_reintepretation);
+			texture.driver_id, p_view.format_override, raw_reinterpretation);
 	}
+
 	tv.swizzle_r = p_view.swizzle_r;
 	tv.swizzle_g = p_view.swizzle_g;
 	tv.swizzle_b = p_view.swizzle_b;
@@ -1331,12 +1361,10 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 		texture.driver_id = data->driver->texture_create_shared(texture.driver_id, tv);
 	}
 	else {
-		// The regular view will use the same format as the main texture.
 		RDD::TextureView regular_view = tv;
 		regular_view.format = src_texture->format;
 		texture.driver_id = data->driver->texture_create_shared(texture.driver_id, regular_view);
 
-		// Create the independent texture for the alias.
 		RDC::TextureFormat alias_format = texture.texture_format();
 		alias_format.format = tv.format;
 		alias_format.usage_bits =
@@ -1346,209 +1374,12 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 		_texture_check_shared_fallback(&texture);
 
 		texture.shared_fallback->texture = data->driver->texture_create(alias_format, tv);
-		texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
+		texture.shared_fallback->raw_reinterpretation = raw_reinterpretation;
 		data->texture_memory.add(
 			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
-
-		RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
-		tracker->texture_driver_id = texture.shared_fallback->texture;
-		tracker->texture_size = Size2i(texture.width, texture.height);
-		tracker->texture_subresources = texture.barrier_range();
-		tracker->texture_usage = alias_format.usage_bits;
-		tracker->is_discardable = texture.is_discardable;
-		tracker->reference_count = 1;
-		texture.shared_fallback->texture_tracker = tracker;
-		texture.shared_fallback->revision = 0;
-
-		if (raw_reintepretation && src_texture->shared_fallback->buffer.id == 0) {
-			// For shared textures of the same size, we create the buffer on the main texture if it
-			// doesn't have it already.
-			_texture_create_reinterpret_buffer(src_texture);
-		}
 	}
 
-	ERR_FAIL_COND_V(!texture.driver_id, RID());
-
-	if (texture.draw_tracker != nullptr) {
-		texture.draw_tracker->reference_count++;
-	}
-
-	texture.owner = p_with_texture;
-	RID id = data->texture_owner.make_rid(texture);
-#ifdef DEV_ENABLED
-	set_resource_name(id, "RID:" + itos(id.get_id()));
-#endif
-	_add_dependency(id, p_with_texture);
-
-	return id;
-}
-
-RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
-	uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps, RDC::TextureSliceType p_slice_type,
-	uint32_t p_layers)
-{
-	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
-	ERR_FAIL_NULL_V(src_texture, RID());
-
-	if (src_texture->owner.is_valid()) { // // Ahh this is a share. The RenderingDeviceDriver needs
-										 // the actual owner.
-		p_with_texture = src_texture->owner;
-		src_texture = data->texture_owner.get_or_null(src_texture->owner);
-		ERR_FAIL_NULL_V(src_texture, RID()); // This is a bug.
-	}
-
-	ERR_FAIL_COND_V_MSG(p_slice_type == RDC::TEXTURE_SLICE_CUBEMAP &&
-							(src_texture->type != RDC::TEXTURE_TYPE_CUBE &&
-								src_texture->type != RDC::TEXTURE_TYPE_CUBE_ARRAY),
-		RID(), "Can only create a cubemap slice from a cubemap or cubemap array mipmap");
-
-	ERR_FAIL_COND_V_MSG(
-		p_slice_type == RDC::TEXTURE_SLICE_3D && src_texture->type != RDC::TEXTURE_TYPE_3D, RID(),
-		"Can only create a 3D slice from a 3D texture");
-
-	ERR_FAIL_COND_V_MSG(p_slice_type == RDC::TEXTURE_SLICE_2D_ARRAY &&
-							(src_texture->type != RDC::TEXTURE_TYPE_2D_ARRAY),
-		RID(), "Can only create an array slice from a 2D array mipmap");
-
-	// Create view.
-
-	ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, src_texture->mipmaps, RID());
-	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > src_texture->mipmaps, RID());
-	ERR_FAIL_UNSIGNED_INDEX_V(p_layer, src_texture->layers, RID());
-
-	int slice_layers = 1;
-	if (p_layers != 0) {
-		ERR_FAIL_COND_V_MSG(p_layers > 1 && p_slice_type != RDC::TEXTURE_SLICE_2D_ARRAY, RID(),
-			"layer slicing only supported for 2D arrays");
-		ERR_FAIL_COND_V_MSG(
-			p_layer + p_layers > src_texture->layers, RID(), "layer slice is out of bounds");
-		slice_layers = p_layers;
-	}
-	else if (p_slice_type == RDC::TEXTURE_SLICE_2D_ARRAY) {
-		ERR_FAIL_COND_V_MSG(
-			p_layer != 0, RID(), "layer must be 0 when obtaining a 2D array mipmap slice");
-		slice_layers = src_texture->layers;
-	}
-	else if (p_slice_type == RDC::TEXTURE_SLICE_CUBEMAP) {
-		slice_layers = 6;
-	}
-
-	Texture texture = *src_texture;
-	texture.slice_trackers = nullptr;
-	texture.shared_fallback = nullptr;
-
-	RDC::get_image_format_required_size(texture.format, texture.width, texture.height,
-		texture.depth, p_mipmap + 1, &texture.width, &texture.height);
-	texture.mipmaps = p_mipmaps;
-	texture.layers = slice_layers;
-	texture.base_mipmap = p_mipmap;
-	texture.base_layer = p_layer;
-
-	if (p_slice_type == RDC::TEXTURE_SLICE_2D) {
-		texture.type = RDC::TEXTURE_TYPE_2D;
-	}
-	else if (p_slice_type == RDC::TEXTURE_SLICE_3D) {
-		texture.type = RDC::TEXTURE_TYPE_3D;
-	}
-
-	RDD::TextureView tv;
-	bool create_shared = true;
-	bool raw_reintepretation = false;
-	if (p_view.format_override == RDC::DATA_FORMAT_MAX ||
-		p_view.format_override == texture.format) {
-		tv.format = texture.format;
-	}
-	else {
-		ERR_FAIL_INDEX_V(p_view.format_override, RDC::DATA_FORMAT_MAX, RID());
-
-		ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
-			"Format override is not in the list of allowed shareable formats for original "
-			"texture.");
-		tv.format = p_view.format_override;
-		create_shared = data->driver->texture_can_make_shared_with_format(
-			texture.driver_id, p_view.format_override, raw_reintepretation);
-	}
-
-	tv.swizzle_r = p_view.swizzle_r;
-	tv.swizzle_g = p_view.swizzle_g;
-	tv.swizzle_b = p_view.swizzle_b;
-	tv.swizzle_a = p_view.swizzle_a;
-
-	if (p_slice_type == RDC::TEXTURE_SLICE_CUBEMAP) {
-		ERR_FAIL_COND_V_MSG(
-			p_layer >= src_texture->layers, RID(), "Specified layer is invalid for cubemap");
-		ERR_FAIL_COND_V_MSG((p_layer % 6) != 0, RID(), "Specified layer must be a multiple of 6.");
-	}
-
-	if (create_shared) {
-		texture.driver_id = data->driver->texture_create_shared_from_slice(
-			src_texture->driver_id, tv, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
-	}
-	else {
-		// The regular view will use the same format as the main texture.
-		RDD::TextureView regular_view = tv;
-		regular_view.format = src_texture->format;
-		texture.driver_id = data->driver->texture_create_shared_from_slice(src_texture->driver_id,
-			regular_view, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
-
-		// Create the independent texture for the slice.
-		RDD::TextureSubresourceRange slice_range = texture.barrier_range();
-		slice_range.base_mipmap = 0;
-		slice_range.base_layer = 0;
-
-		RDC::TextureFormat slice_format = texture.texture_format();
-		slice_format.width = MAX(texture.width >> p_mipmap, 1U);
-		slice_format.height = MAX(texture.height >> p_mipmap, 1U);
-		slice_format.depth = MAX(texture.depth >> p_mipmap, 1U);
-		slice_format.format = tv.format;
-		slice_format.usage_bits =
-			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
-
-		_texture_check_shared_fallback(src_texture);
-		_texture_check_shared_fallback(&texture);
-
-		texture.shared_fallback->texture = data->driver->texture_create(slice_format, tv);
-		texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
-		data->texture_memory.add(
-			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
-
-		RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
-		tracker->texture_driver_id = texture.shared_fallback->texture;
-		tracker->texture_size = Size2i(texture.width, texture.height);
-		tracker->texture_subresources = slice_range;
-		tracker->texture_usage = slice_format.usage_bits;
-		tracker->is_discardable = slice_format.is_discardable;
-		tracker->reference_count = 1;
-		texture.shared_fallback->texture_tracker = tracker;
-		texture.shared_fallback->revision = 0;
-
-		if (raw_reintepretation && src_texture->shared_fallback->buffer.id == 0) {
-			// For shared texture slices, we create the buffer on the slice if the source texture
-			// has no reinterpretation buffer.
-			_texture_create_reinterpret_buffer(&texture);
-		}
-	}
-
-	ERR_FAIL_COND_V(!texture.driver_id, RID());
-
-	const Rect2i slice_rect(p_mipmap, p_layer, p_mipmaps, slice_layers);
-	texture.owner = p_with_texture;
-	texture.slice_type = p_slice_type;
-	texture.slice_rect = slice_rect;
-
-	// If parent is mutable, make slice mutable by default.
-	if (src_texture->draw_tracker != nullptr) {
-		texture.draw_tracker = nullptr;
-		_texture_make_mutable(&texture, RID());
-	}
-
-	RID id = data->texture_owner.make_rid(texture);
-#ifdef DEV_ENABLED
-	set_resource_name(id, "RID:" + itos(id.get_id()));
-#endif
-	_add_dependency(id, p_with_texture);
-
-	return id;
+	return data->texture_owner.make_rid(texture);
 }
 
 static _ALWAYS_INLINE_ void _copy_region(const uint8_t* __restrict p_src, uint8_t* __restrict p_dst,
@@ -1933,6 +1764,7 @@ RDC::TextureFormat RenderingDevice::texture_get_format(RID p_texture)
 	tf.depth = tex->depth;
 	tf.array_layers = tex->layers;
 	tf.mipmaps = tex->mipmaps;
+
 	tf.texture_type = tex->type;
 	tf.samples = tex->samples;
 	tf.usage_bits = tex->usage_flags;
@@ -3325,7 +3157,209 @@ uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 RID RenderingDevice::uniform_set_create(
 	const VectorView<Uniform>& p_uniforms, RID p_shader, uint32_t p_shader_set, bool p_linear_pool)
 {
-	return RID();
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
+	RDD::ShaderID shader_driver_id;
+	uint32_t set_format = 0;
+	{
+		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+		const Shader* shader = data->shader_owner.get_or_null(p_shader);
+		ERR_FAIL_NULL_V(shader, RID());
+		ERR_FAIL_INDEX_V(p_shader_set, (uint32_t)shader->set_formats.size(), RID());
+		shader_driver_id = shader->driver_id;
+		set_format = shader->set_formats[p_shader_set];
+	}
+
+	UniformSet uniform_set;
+	uniform_set.format = set_format;
+	uniform_set.shader_id = p_shader;
+	uniform_set.shader_set = p_shader_set;
+
+	LocalVector<RDD::BoundUniform> bound_uniforms;
+	bound_uniforms.resize(p_uniforms.size());
+
+	Vector<RID> referenced_resources;
+
+	for (uint32_t i = 0; i < p_uniforms.size(); i++) {
+		const Uniform& u = p_uniforms[i];
+		RDD::BoundUniform& bu = bound_uniforms[i];
+
+		bu.binding = u.binding;
+		bu.type = u.uniform_type;
+		bu.immutable_sampler = u.immutable_sampler;
+
+		switch (u.uniform_type) {
+		case RDC::UNIFORM_TYPE_SAMPLER: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID s_rid = u.get_id(j);
+				const RDD::SamplerID* sampler = data->sampler_owner.get_or_null(s_rid);
+				ERR_FAIL_NULL_V(sampler, RID());
+				bu.ids.push_back(*sampler);
+				referenced_resources.push_back(s_rid);
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
+			uint32_t id_count = u.get_id_count();
+			ERR_FAIL_COND_V(id_count % 2 != 0, RID());
+			for (uint32_t j = 0; j < id_count; j += 2) {
+				RID sampler_rid = u.get_id(j + 0);
+				const RDD::SamplerID* sampler = data->sampler_owner.get_or_null(sampler_rid);
+				ERR_FAIL_NULL_V(sampler, RID());
+				bu.ids.push_back(*sampler);
+				referenced_resources.push_back(sampler_rid);
+
+				RID texture_rid = u.get_id(j + 1);
+				Texture* texture = data->texture_owner.get_or_null(texture_rid);
+				ERR_FAIL_NULL_V(texture, RID());
+				bu.ids.push_back(texture->driver_id);
+				referenced_resources.push_back(texture_rid);
+
+				_texture_make_mutable(texture, texture_rid);
+				if (texture->draw_tracker != nullptr) {
+					uniform_set.draw_trackers.push_back(texture->draw_tracker);
+					uniform_set.draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_SAMPLE);
+				}
+
+#ifdef DEBUG_ENABLED
+				UniformSet::AttachableTexture at;
+				at.bind = u.binding;
+				at.texture = texture_rid;
+				uniform_set.attachable_textures.push_back(at);
+#endif
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_TEXTURE: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID texture_rid = u.get_id(j);
+				Texture* texture = data->texture_owner.get_or_null(texture_rid);
+				ERR_FAIL_NULL_V(texture, RID());
+				bu.ids.push_back(texture->driver_id);
+				referenced_resources.push_back(texture_rid);
+
+				_texture_make_mutable(texture, texture_rid);
+				if (texture->draw_tracker != nullptr) {
+					uniform_set.draw_trackers.push_back(texture->draw_tracker);
+					uniform_set.draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_SAMPLE);
+				}
+
+#ifdef DEBUG_ENABLED
+				UniformSet::AttachableTexture at;
+				at.bind = u.binding;
+				at.texture = texture_rid;
+				uniform_set.attachable_textures.push_back(at);
+#endif
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_IMAGE: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID texture_rid = u.get_id(j);
+				Texture* texture = data->texture_owner.get_or_null(texture_rid);
+				ERR_FAIL_NULL_V(texture, RID());
+				bu.ids.push_back(texture->driver_id);
+				referenced_resources.push_back(texture_rid);
+
+				_texture_make_mutable(texture, texture_rid);
+				if (texture->draw_tracker != nullptr) {
+					uniform_set.draw_trackers.push_back(texture->draw_tracker);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE);
+				}
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_TEXTURE_BUFFER: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID b_rid = u.get_id(j);
+				const Buffer* buffer = data->texture_buffer_owner.get_or_null(b_rid);
+				ERR_FAIL_NULL_V(buffer, RID());
+				bu.ids.push_back(buffer->driver_id);
+				referenced_resources.push_back(b_rid);
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER: {
+			uint32_t id_count = u.get_id_count();
+			ERR_FAIL_COND_V(id_count % 2 != 0, RID());
+			for (uint32_t j = 0; j < id_count; j += 2) {
+				RID sampler_rid = u.get_id(j + 0);
+				const RDD::SamplerID* sampler = data->sampler_owner.get_or_null(sampler_rid);
+				ERR_FAIL_NULL_V(sampler, RID());
+				bu.ids.push_back(*sampler);
+				referenced_resources.push_back(sampler_rid);
+
+				RID buffer_rid = u.get_id(j + 1);
+				const Buffer* buffer = data->texture_buffer_owner.get_or_null(buffer_rid);
+				ERR_FAIL_NULL_V(buffer, RID());
+				bu.ids.push_back(buffer->driver_id);
+				referenced_resources.push_back(buffer_rid);
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_UNIFORM_BUFFER: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID buffer_rid = u.get_id(j);
+				Buffer* buffer = data->uniform_buffer_owner.get_or_null(buffer_rid);
+				ERR_FAIL_NULL_V(buffer, RID());
+				bu.ids.push_back(buffer->driver_id);
+				referenced_resources.push_back(buffer_rid);
+
+				_buffer_make_mutable(buffer, buffer_rid);
+				if (buffer->draw_tracker != nullptr) {
+					uniform_set.draw_trackers.push_back(buffer->draw_tracker);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_UNIFORM_BUFFER_READ);
+				}
+			}
+		} break;
+
+		case RDC::UNIFORM_TYPE_STORAGE_BUFFER: {
+			uint32_t id_count = u.get_id_count();
+			for (uint32_t j = 0; j < id_count; j++) {
+				RID buffer_rid = u.get_id(j);
+				Buffer* buffer = data->storage_buffer_owner.get_or_null(buffer_rid);
+				ERR_FAIL_NULL_V(buffer, RID());
+				bu.ids.push_back(buffer->driver_id);
+				referenced_resources.push_back(buffer_rid);
+
+				_buffer_make_mutable(buffer, buffer_rid);
+				if (buffer->draw_tracker != nullptr) {
+					uniform_set.draw_trackers.push_back(buffer->draw_tracker);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE);
+				}
+			}
+		} break;
+
+		default: {
+			ERR_FAIL_V_MSG(RID(), "Invalid uniform type: " + itos(u.uniform_type));
+		} break;
+		}
+	}
+
+	int linear_pool_index = p_linear_pool ? 0 : -1;
+	uniform_set.driver_id = data->driver->uniform_set_create(
+		bound_uniforms, shader_driver_id, p_shader_set, linear_pool_index);
+	ERR_FAIL_COND_V(uniform_set.driver_id == RDD::UniformSetID(), RID());
+
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	RID id = data->uniform_set_owner.make_rid(uniform_set);
+
+	_add_dependency(id, p_shader);
+	for (uint32_t i = 0; i < referenced_resources.size(); i++) {
+		if (referenced_resources[i].is_valid()) {
+			_add_dependency(id, referenced_resources[i]);
+		}
+	}
+
+	return id;
 }
 
 void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
@@ -3510,17 +3544,16 @@ int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowI
 RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_format(
 	DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
-
-	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
-
-		data->screen_swap_chains.find(p_screen);
-	ERR_FAIL_COND_V_MSG(
-		it == data->screen_swap_chains.end(), RDC::INVALID_ID, "Screen was never prepared.");
-
-	RDC::DataFormat format = data->driver->swap_chain_get_format(it->value);
-	ERR_FAIL_COND_V(format == RDC::DATA_FORMAT_MAX, RDC::INVALID_ID);
-
+	RDC::DataFormat format;
+	{
+		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+		HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
+			data->screen_swap_chains.find(p_screen);
+		ERR_FAIL_COND_V_MSG(
+			it == data->screen_swap_chains.end(), RDC::INVALID_ID, "Screen was never prepared.");
+		format = data->driver->swap_chain_get_format(it->value);
+		ERR_FAIL_COND_V(format == RDC::DATA_FORMAT_MAX, RDC::INVALID_ID);
+	}
 	AttachmentFormat attachment;
 	attachment.format = format;
 	attachment.samples = RDC::TEXTURE_SAMPLES_1;
@@ -3573,7 +3606,8 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
 		data->screen_swap_chains.find(p_screen);
 	HashMap<DisplayServerEnums::WindowID, RDD::FramebufferID>::ConstIterator fb_it =
 		data->screen_framebuffers.find(p_screen);
-	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
+
+	ERR_FAIL_COND_V_MSG(surface == 0, RDC::INVALID_ID, "A surface was not created for the screen.");
 	ERR_FAIL_COND_V_MSG(
 		sc_it == data->screen_swap_chains.end(), RDC::INVALID_ID, "Screen was never prepared.");
 	ERR_FAIL_COND_V_MSG(fb_it == data->screen_framebuffers.end(), RDC::INVALID_ID,
@@ -3582,11 +3616,14 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(
 	Rect2i viewport = Rect2i(0, 0, data->context->surface_get_width(surface),
 		data->context->surface_get_height(surface));
 
+	data->draw_list_bound_textures.clear();
 	_draw_list_start(viewport);
+
 #ifdef DEBUG_ENABLED
 	data->draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
 #endif
 	data->draw_list_subpass_count = 1;
+	data->draw_list_current_subpass = 0;
 
 	RDD::RenderPassClearValue clear_value;
 	clear_value.color = p_clear_color;
@@ -3724,9 +3761,7 @@ void RenderingDevice::draw_list_bind_uniform_set(
 	const UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
-	if (p_index > data->draw_list.state.set_count) {
-		data->draw_list.state.set_count = p_index;
-	}
+	data->draw_list.state.set_count = MAX(data->draw_list.state.set_count, p_index + 1);
 
 	data->draw_list.state.sets[p_index].uniform_set_driver_id =
 		uniform_set->driver_id;						   // Update set pointer.
@@ -3807,7 +3842,7 @@ void RenderingDevice::draw_list_draw(
 		// Make sure number of instances is valid.
 		ERR_FAIL_COND_MSG(p_instances > data->draw_list.validation.vertex_max_instances_allowed,
 			"Number of instances requested (" + itos(p_instances) +
-				" is larger than the maximum number supported by the bound vertex array (" +
+				") is larger than the maximum number supported by the bound vertex array (" +
 				itos(data->draw_list.validation.vertex_max_instances_allowed) + ").");
 	}
 
@@ -3818,9 +3853,6 @@ void RenderingDevice::draw_list_draw(
 			"it's not present.");
 	}
 
-#endif
-
-#ifdef DEBUG_ENABLED
 	for (uint32_t i = 0; i < data->draw_list.state.set_count; i++) {
 		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
@@ -3887,12 +3919,19 @@ void RenderingDevice::draw_list_draw(
 		}
 
 		if (!data->draw_list.state.sets[i].bound) {
+			UniformSet* uniform_set =
+				data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
+			ERR_FAIL_NULL(uniform_set);
+			_uniform_set_update_shared(uniform_set);
+
+			data->draw_graph.add_draw_list_usages(
+				uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
+			data->draw_list.state.sets[i].bound = true;
+
 			// Batch contiguous descriptor sets in a single call.
 			if (data->descriptor_set_batching) {
 				// All good, see if this requires re-binding.
 				if (i - last_set_index > 1) {
-					// If the descriptor sets are not contiguous, bind the previous ones and start a
-					// new batch.
 					data->draw_graph.add_draw_list_bind_uniform_sets(
 						data->draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
 						first_set_index, valid_set_count);
@@ -3902,20 +3941,10 @@ void RenderingDevice::draw_list_draw(
 					valid_descriptor_ids[0] = data->draw_list.state.sets[i].uniform_set_driver_id;
 				}
 				else {
-					// Otherwise, keep storing in the current batch.
 					valid_descriptor_ids[valid_set_count] =
 						data->draw_list.state.sets[i].uniform_set_driver_id;
 					valid_set_count++;
 				}
-
-				UniformSet* uniform_set =
-					data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
-				ERR_FAIL_NULL(uniform_set);
-				_uniform_set_update_shared(uniform_set);
-
-				data->draw_graph.add_draw_list_usages(
-					uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
-				data->draw_list.state.sets[i].bound = true;
 
 				last_set_index = i;
 			}
@@ -4040,68 +4069,6 @@ uint32_t RenderingDevice::draw_list_get_current_pass()
 	ERR_RENDER_THREAD_GUARD_V(0);
 
 	return data->draw_list_current_subpass;
-}
-
-RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
-{
-	ERR_RENDER_THREAD_GUARD_V(RDC::INVALID_ID);
-
-	ERR_FAIL_COND_V(!data->draw_list.active, INVALID_FORMAT_ID);
-	ERR_FAIL_COND_V(
-		data->draw_list_current_subpass >= data->draw_list_subpass_count - 1, INVALID_FORMAT_ID);
-
-	data->draw_list_current_subpass++;
-
-	Rect2i viewport;
-	_draw_list_end(&viewport);
-
-	data->draw_graph.add_draw_list_next_subpass(RDD::COMMAND_BUFFER_TYPE_PRIMARY);
-
-	_draw_list_start(viewport);
-
-	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
-}
-
-void RenderingDevice::_draw_list_start(const Rect2i& p_viewport)
-{
-	data->draw_list.viewport = p_viewport;
-	data->draw_list.active = true;
-}
-
-void RenderingDevice::_draw_list_end(Rect2i* r_last_viewport)
-{
-	if (r_last_viewport) {
-		*r_last_viewport = data->draw_list.viewport;
-	}
-
-	data->draw_list = DrawList();
-}
-
-void RenderingDevice::draw_list_end()
-{
-	ERR_RENDER_THREAD_GUARD();
-
-	ERR_FAIL_COND_MSG(!data->draw_list.active, "Immediate draw list is already inactive.");
-
-	data->draw_graph.add_draw_list_end();
-
-	_draw_list_end();
-
-	for (uint32_t i = 0; i < data->draw_list_bound_textures.size(); i++) {
-		Texture* texture = data->texture_owner.get_or_null(data->draw_list_bound_textures[i]);
-		ERR_CONTINUE(!texture); // Wtf.
-		if (texture->usage_flags & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
-			texture->bound = false;
-		}
-		if (texture->usage_flags & RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-			texture->bound = false;
-		}
-		if (texture->usage_flags & RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT) {
-			texture->bound = false;
-		}
-	}
-
-	data->draw_list_bound_textures.clear();
 }
 
 RenderingDevice::RaytracingListID RenderingDevice::raytracing_list_begin()
@@ -5087,9 +5054,10 @@ bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker*
 void RenderingDevice::free_rid(RID p_rid)
 {
 	ERR_RENDER_THREAD_GUARD();
-
-	_free_dependencies(
-		p_rid); // Recursively erase dependencies first, to avoid potential API problems.
+	if (p_rid.is_null()) {
+		return;
+	}
+	_free_dependencies(p_rid);
 	_free_internal(p_rid);
 }
 
@@ -5164,8 +5132,7 @@ void RenderingDevice::_free_internal(RID p_id)
 		_check_transfer_worker_buffer(index_buffer);
 
 		RDG::resource_tracker_free(index_buffer->draw_tracker);
-		data->frames[data->frame].
-buffers_to_dispose_of.push_back(*index_buffer);
+		data->frames[data->frame].buffers_to_dispose_of.push_back(*index_buffer);
 		data->index_buffer_owner.free(p_id);
 	}
 	else if (data->index_array_owner.owns(p_id)) {
@@ -5692,6 +5659,9 @@ template <typename T> void RenderingDevice::_free_rids(T& p_owner, const char* p
 
 void RenderingDevice::capture_timestamp(const String& p_name)
 {
+	if (data->max_timestamp_query_elements == 0) {
+		return;
+	}
 	ERR_RENDER_THREAD_GUARD();
 
 	ERR_FAIL_COND_MSG(data->draw_list.active && data->draw_list.state.draw_count > 0,
@@ -5717,7 +5687,7 @@ void RenderingDevice::capture_timestamp(const String& p_name)
 
 	data->frames[data->frame].timestamp_names[data->frames[data->frame].timestamp_count] = p_name;
 	data->frames[data->frame].timestamp_cpu_values[data->frames[data->frame].timestamp_count] =
-		OS::get_singleton()->get_ticks_usec();
+		OS::get_ticks_usec();
 	data->frames[data->frame].timestamp_count++;
 }
 
@@ -5969,11 +5939,41 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 }
 #endif
 
-void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {}
+void RenderingDevice::swap_buffers(bool p_present)
+{
+	ERR_RENDER_THREAD_GUARD();
 
-void RenderingDevice::swap_buffers(bool) {}
+	if (p_present) {
+		for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
+			data->screen_swap_chains) {
+			data->frames[data->frame].swap_chains_to_present.push_back(it.value);
+		}
+	}
 
-Error RenderingDevice::screen_prepare_for_drawing(int) { return OK; }
+	RDD::CommandBufferID command_buffer = data->frames[data->frame].command_buffer;
+	data->driver->command_buffer_begin(command_buffer);
+
+	data->draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer,
+		data->frames[data->frame].command_buffer_pool);
+
+	data->driver->command_buffer_end(command_buffer);
+
+	_execute_frame(p_present);
+
+	data->screen_framebuffers.clear();
+
+	data->frame = (data->frame + 1) % data->frames.size();
+	data->frames_drawn++;
+
+	if (data->frames[data->frame].fence_signaled) {
+		data->driver->fence_wait(data->frames[data->frame].fence);
+		data->frames[data->frame].fence_signaled = false;
+	}
+
+	data->driver->command_pool_reset(data->frames[data->frame].command_pool);
+
+	_free_pending_resources(data->frame);
+}
 
 Error RenderingDevice::screen_free(int) { return OK; }
 
@@ -5986,7 +5986,73 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 	uint32_t p_for_render_pass,
 	const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants)
 {
-	return RID();
+	ERR_FAIL_NULL_V(data, RID());
+	ERR_FAIL_COND_V(!data->shader_owner.owns(p_shader), RID());
+
+	Shader* shader = data->shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, RID());
+
+	ERR_FAIL_COND_V(!data->framebuffer_formats.has(p_framebuffer_format), RID());
+	const FramebufferFormat& fb_format = data->framebuffer_formats[p_framebuffer_format];
+	ERR_FAIL_COND_V(p_for_render_pass >= (uint32_t)fb_format.E->key().passes.size(), RID());
+
+	RDD::RenderPassID render_pass = fb_format.render_pass;
+	VectorView<int32_t> color_attachments =
+		fb_format.E->key().passes[p_for_render_pass].color_attachments;
+
+	RDD::VertexFormatID vertex_format;
+	if (data->vertex_formats.has(p_vertex_format)) {
+		vertex_format = data->vertex_formats[p_vertex_format].driver_id;
+	}
+
+	RDD::PipelineID pipeline_id = data->driver->render_pipeline_create(shader->driver_id,
+		vertex_format, p_render_primitive, p_rasterization_state, p_multisample_state,
+		p_depth_stencil_state, p_blend_state, color_attachments, p_dynamic_state_flags, render_pass,
+		p_for_render_pass, p_specialization_constants);
+
+	ERR_FAIL_COND_V(!pipeline_id, RID());
+
+	RenderPipeline pipeline;
+	pipeline.driver_id = pipeline_id;
+	pipeline.shader = p_shader;
+	pipeline.shader_driver_id = shader->driver_id;
+	pipeline.shader_layout_hash = shader->layout_hash;
+	pipeline.set_formats = shader->set_formats;
+	pipeline.push_constant_size = shader->push_constant_size;
+
+#ifdef DEBUG_ENABLED
+	pipeline.validation.framebuffer_format = p_framebuffer_format;
+	pipeline.validation.render_pass = p_for_render_pass;
+	pipeline.validation.dynamic_state = p_dynamic_state_flags;
+	pipeline.validation.vertex_format = p_vertex_format;
+
+	switch (p_render_primitive) {
+	case RDC::RENDER_PRIMITIVE_POINTS:
+		pipeline.validation.primitive_divisor = 1;
+		break;
+	case RDC::RENDER_PRIMITIVE_LINES:
+	case RDC::RENDER_PRIMITIVE_LINES_WITH_ADJACENCY:
+		pipeline.validation.primitive_divisor = 2;
+		break;
+	case RDC::RENDER_PRIMITIVE_LINESTRIPS:
+	case RDC::RENDER_PRIMITIVE_LINESTRIPS_WITH_ADJACENCY:
+	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS:
+	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_ADJACENCY:
+	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX:
+	case RDC::RENDER_PRIMITIVE_TESSELLATION_PATCH:
+		pipeline.validation.primitive_divisor = 1;
+		break;
+	case RDC::RENDER_PRIMITIVE_TRIANGLES:
+	case RDC::RENDER_PRIMITIVE_TRIANGLES_WITH_ADJACENCY:
+		pipeline.validation.primitive_divisor = 3;
+		break;
+	default:
+		pipeline.validation.primitive_divisor = 1;
+		break;
+	}
+#endif
+
+	return data->render_pipeline_owner.make_rid(pipeline);
 }
 
 RID RenderingDevice::texture_create_from_extension(RDC::TextureType p_type,
@@ -6004,8 +6070,6 @@ Error RenderingDevice::texture_update(
 
 void RenderingDevice::compute_list_add_barrier(ComputeListID p_list) {}
 
-void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array) {}
-
 Error RenderingDevice::initialize(
 	RenderingContextDriver* p_context, RenderingContextDriver::Device p_device)
 {
@@ -6018,20 +6082,17 @@ Error RenderingDevice::initialize(
 	data->driver = data->context->driver_create();
 	ERR_FAIL_NULL_V(data->driver, ERR_CANT_CREATE);
 
+	data->device = p_device;
+
 	uint32_t device_count = data->context->device_get_count();
 	uint32_t device_index = 0;
-	uint32_t best_score = 0;
-
 	for (uint32_t i = 0; i < device_count; i++) {
 		RenderingContextDriver::Device dev = data->context->device_get(i);
-		uint32_t score = _get_device_type_score(dev);
-		if (score > best_score) {
-			best_score = score;
+		if (memcmp(&dev, &p_device, sizeof(RenderingContextDriver::Device)) == 0) {
 			device_index = i;
+			break;
 		}
 	}
-
-	data->device = data->context->device_get(device_index);
 
 	const uint32_t frame_count = 3;
 	data->frames.resize(frame_count);
@@ -6050,7 +6111,19 @@ Error RenderingDevice::initialize(
 	data->present_queue_family = data->main_queue_family;
 	data->present_queue = data->main_queue;
 
-	return OK;
+	for (uint32_t i = 0; i < frame_count; i++) {
+		data->frames[i].command_pool = data->driver->command_pool_create(
+			data->main_queue_family, RDD::COMMAND_BUFFER_TYPE_PRIMARY);
+		data->frames[i].command_buffer_pool.pool = data->frames[i].command_pool;
+		data->frames[i].command_buffer =
+			data->driver->command_buffer_create(data->frames[i].command_pool);
+		data->frames[i].semaphore = data->driver->semaphore_create();
+		data->frames[i].fence = data->driver->fence_create();
+		data->frames[i].fence_signaled = false;
+	}
+
+	data->draw_graph.initialize(data->driver, &RenderingDevice::_render_pass_create_from_graph,
+		frame_count, data->main_queue_family, 0);
 
 	return OK;
 }
@@ -6120,17 +6193,19 @@ RID RenderingDevice::vertex_buffer_create(
 }
 
 RID RenderingDevice::compute_pipeline_create(
-		RID p_shader, const Vector<RDC::PipelineSpecializationConstant> &p_specialization_constants) {
+	RID p_shader, const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants)
+{
 	ERR_FAIL_NULL_V(data, RID());
 	ERR_FAIL_COND_V(!data->shader_owner.owns(p_shader), RID());
 
-	Shader *shader = data->shader_owner.get_or_null(p_shader);
+	Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, RID());
 
-	RDD::PipelineID pipeline_id = data->driver->compute_pipeline_create(shader->driver_id, p_specialization_constants);
+	RDD::PipelineID pipeline_id =
+		data->driver->compute_pipeline_create(shader->driver_id, p_specialization_constants);
 	ERR_FAIL_COND_V(!pipeline_id, RID());
 
-	ComputePipeline *pipeline = memnew(ComputePipeline);
+	ComputePipeline* pipeline = memnew(ComputePipeline);
 	pipeline->driver_id = pipeline_id;
 	pipeline->shader = p_shader;
 	pipeline->shader_driver_id = shader->driver_id;
@@ -6144,4 +6219,272 @@ RID RenderingDevice::compute_pipeline_create(
 	return id;
 }
 
+void RenderingDevice::_draw_list_start(const Rect2i& p_viewport)
+{
+	__print_line(vformat("[RD DEBUG] _draw_list_start called. viewport: %s", p_viewport));
+	data->draw_list.viewport = p_viewport;
+	data->draw_list.active = true;
+}
 
+void RenderingDevice::_draw_list_end(Rect2i* r_last_viewport)
+{
+	if (r_last_viewport) {
+		*r_last_viewport = data->draw_list.viewport;
+	}
+
+	data->draw_list = DrawList();
+}
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
+{
+	ERR_RENDER_THREAD_GUARD_V(RDC::INVALID_ID);
+
+	ERR_FAIL_COND_V(!data->draw_list.active, RDC::INVALID_ID);
+	ERR_FAIL_COND_V(
+		data->draw_list_current_subpass >= data->draw_list_subpass_count - 1, RDC::INVALID_ID);
+
+	data->draw_list_current_subpass++;
+
+	Rect2i viewport;
+	_draw_list_end(&viewport);
+
+	data->draw_graph.add_draw_list_next_subpass(RDD::COMMAND_BUFFER_TYPE_PRIMARY);
+
+	_draw_list_start(viewport);
+
+	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+void RenderingDevice::draw_list_end()
+{
+	ERR_RENDER_THREAD_GUARD();
+	if (!data->draw_list.active) {
+		fprintf(stderr, "[CALLER] %p\n", __builtin_return_address(0));
+		fflush(stderr);
+	}
+
+	ERR_FAIL_COND_MSG(!data->draw_list.active, "Immediate draw list is already inactive.");
+
+	data->draw_graph.add_draw_list_end();
+
+	_draw_list_end();
+
+	for (uint32_t i = 0; i < data->draw_list_bound_textures.size(); i++) {
+		Texture* texture = data->texture_owner.get_or_null(data->draw_list_bound_textures[i]);
+		ERR_CONTINUE(!texture);
+		if (texture->usage_flags & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
+			texture->bound = false;
+		}
+		if (texture->usage_flags & RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+			texture->bound = false;
+		}
+		if (texture->usage_flags & RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT) {
+			texture->bound = false;
+		}
+	}
+
+	data->draw_list_bound_textures.clear();
+}
+
+RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
+	uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, RDC::TextureSliceType p_slice_type,
+	uint32_t p_mipmaps)
+{
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
+	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
+	ERR_FAIL_NULL_V(src_texture, RID());
+
+	ERR_FAIL_COND_V(p_slice_type == RDC::TEXTURE_SLICE_2D &&
+						src_texture->type != RDC::TEXTURE_TYPE_2D &&
+						src_texture->type != RDC::TEXTURE_TYPE_2D_ARRAY &&
+						src_texture->type != RDC::TEXTURE_TYPE_CUBE &&
+						src_texture->type != RDC::TEXTURE_TYPE_CUBE_ARRAY,
+		RID());
+	ERR_FAIL_COND_V(
+		p_slice_type == RDC::TEXTURE_SLICE_3D && src_texture->type != RDC::TEXTURE_TYPE_3D, RID());
+	ERR_FAIL_COND_V(p_mipmaps == 0, RID());
+	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > src_texture->mipmaps, RID());
+
+	Texture texture = *src_texture;
+
+	if (p_slice_type == RDC::TEXTURE_SLICE_2D) {
+		texture.type = RDC::TEXTURE_TYPE_2D;
+		texture.layers = (p_layers > 0) ? p_layers : 1;
+	}
+	else if (p_slice_type == RDC::TEXTURE_SLICE_CUBEMAP) {
+		texture.type = RDC::TEXTURE_TYPE_CUBE;
+		texture.layers = (p_layers > 0) ? p_layers : 6;
+	}
+	else if (p_slice_type == RDC::TEXTURE_SLICE_3D) {
+		texture.type = RDC::TEXTURE_TYPE_3D;
+		texture.layers = (p_layers > 0) ? p_layers : 1;
+	}
+	texture.mipmaps = p_mipmaps;
+
+	RDD::TextureView tv;
+	bool create_shared = true;
+	bool raw_reinterpretation = false;
+
+	if (p_view.format_override == RDC::DATA_FORMAT_MAX ||
+		p_view.format_override == texture.format) {
+		tv.format = texture.format;
+	}
+	else {
+		ERR_FAIL_INDEX_V(p_view.format_override, RDC::DATA_FORMAT_MAX, RID());
+
+		ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
+			"Format override is not in the list of allowed shareable formats for original "
+			"texture.");
+
+		tv.format = p_view.format_override;
+		create_shared = data->driver->texture_can_make_shared_with_format(
+			texture.driver_id, p_view.format_override, raw_reinterpretation);
+	}
+
+	tv.swizzle_r = p_view.swizzle_r;
+	tv.swizzle_g = p_view.swizzle_g;
+	tv.swizzle_b = p_view.swizzle_b;
+	tv.swizzle_a = p_view.swizzle_a;
+
+	texture.driver_id = data->driver->texture_create_shared_from_slice(
+		src_texture->driver_id, tv, p_slice_type, p_layer, texture.layers, p_mipmap, p_mipmaps);
+
+	return data->texture_owner.make_rid(texture);
+}
+
+Error RenderingDevice::screen_prepare_for_drawing(DisplayServerEnums::WindowID p_screen)
+{
+	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
+
+	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
+	ERR_FAIL_COND_V(surface == 0, ERR_INVALID_PARAMETER);
+
+	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator sc_it =
+		data->screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(sc_it == data->screen_swap_chains.end(), ERR_INVALID_PARAMETER,
+		"A swap chain was not created for the screen.");
+
+	RDD::SwapChainID swap_chain = sc_it->value;
+
+	data->screen_framebuffers.erase(p_screen);
+
+	bool resize_required = false;
+	RDD::FramebufferID framebuffer =
+		data->driver->swap_chain_acquire_framebuffer(data->main_queue, swap_chain, resize_required);
+
+	if (resize_required) {
+		for (uint32_t i = 0; i < data->frames.size(); i++) {
+			if (data->frames[i].fence_signaled) {
+				data->driver->fence_wait(data->frames[i].fence);
+				data->frames[i].fence_signaled = false;
+			}
+		}
+
+		data->driver->swap_chain_resize(data->main_queue, swap_chain, 0);
+
+		bool resize_still_required = false;
+		framebuffer = data->driver->swap_chain_acquire_framebuffer(
+			data->main_queue, swap_chain, resize_still_required);
+
+		if (resize_still_required || framebuffer == RDD::FramebufferID()) {
+			return ERR_BUSY;
+		}
+	}
+
+	ERR_FAIL_COND_V_MSG(
+		framebuffer == RDD::FramebufferID(), FAILED, "Unable to acquire framebuffer.");
+
+	data->screen_framebuffers[p_screen] = framebuffer;
+
+	return OK;
+}
+
+void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array)
+{
+	ERR_RENDER_THREAD_GUARD();
+
+	ERR_FAIL_COND(!data->draw_list.active);
+
+	IndexArray* index_array = data->index_array_owner.get_or_null(p_index_array);
+	ERR_FAIL_NULL(index_array);
+
+	if (index_array->draw_tracker != nullptr) {
+		data->draw_graph.add_draw_list_usage(
+			index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
+	}
+
+#ifdef DEBUG_ENABLED
+	data->draw_list.validation.index_array_count = index_array->indices;
+	data->draw_list.validation.index_buffer_uses_restart_indices =
+		index_array->supports_restart_indices;
+#endif
+}
+
+void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array)
+{
+	ERR_RENDER_THREAD_GUARD();
+
+	ERR_FAIL_COND(!data->draw_list.active);
+
+	VertexArray* vertex_array = data->vertex_array_owner.get_or_null(p_vertex_array);
+	ERR_FAIL_NULL(vertex_array);
+
+	data->draw_graph.add_draw_list_usages(
+		vertex_array->draw_trackers, RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
+
+#ifdef DEBUG_ENABLED
+	data->draw_list.validation.vertex_format = vertex_array->description;
+	data->draw_list.validation.vertex_array_size = vertex_array->vertex_count;
+	data->draw_list.validation.vertex_max_instances_allowed = vertex_array->max_instances_allowed;
+#endif
+}
+
+RID RenderingDevice::shader_create_from_bytecode(
+	const Vector<uint8_t>& p_shader_binary, RID p_placeholder)
+{
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
+	Ref<RenderingShaderContainer> container =
+		data->driver->get_shader_container_format().
+create_container();
+	bool ok = container->from_bytes(p_shader_binary);
+	ERR_FAIL_COND_V_MSG(!ok, RID(), "Failed to parse shader container binary.");
+
+	Vector<RDD::ImmutableSampler> immutable_samplers;
+	RDD::ShaderID driver_id =
+		data->driver->shader_create_from_container(container, immutable_samplers);
+	ERR_FAIL_COND_V(!driver_id, RID());
+
+	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+
+	Shader shader;
+	static_cast<RDC::ShaderReflection&>(shader) = container->get_shader_reflection();
+	shader.driver_id = driver_id;
+	shader.layout_hash = data->driver->shader_get_layout_hash(driver_id);
+	shader.stage_bits = shader.stages_bits;
+
+	shader.set_formats.resize(shader.uniform_sets.size());
+	for (int i = 0; i < shader.uniform_sets.size(); i++) {
+		UniformSetFormat usf;
+		usf.uniforms = shader.uniform_sets[i];
+		uint32_t format_id = 0;
+		if (data->uniform_set_format_cache.has(usf)) {
+			format_id = data->uniform_set_format_cache[usf];
+		}
+		else {
+			format_id = data->uniform_set_format_cache.size() + 1;
+			data->uniform_set_format_cache[usf] = format_id;
+		}
+		shader.set_formats.write[i] = format_id;
+	}
+
+	if (p_placeholder.is_valid()) {
+		Shader* existing = data->shader_owner.get_or_null(p_placeholder);
+		ERR_FAIL_NULL_V(existing, RID());
+		*existing = shader;
+		return p_placeholder;
+	}
+
+	return data->shader_owner.make_rid(shader);
+}

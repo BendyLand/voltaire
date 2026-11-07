@@ -35,13 +35,13 @@ void XRTracker::set_tracker_type(XRServer::TrackerType p_type) { type = p_type; 
 
 XRServer::TrackerType XRTracker::get_tracker_type() const { return type; }
 
-void XRTracker::set_tracker_name(const StringName& p_name)
+void XRTracker::set_tracker_name(const String& p_name)
 {
 	// Note: this should not be changed after the tracker is registered with the XRServer!
 	name = p_name;
 }
 
-StringName XRTracker::get_tracker_name() const { return name; }
+String XRTracker::get_tracker_name() const { return name; }
 
 void XRTracker::set_tracker_desc(const String& p_desc) { description = p_desc; }
 

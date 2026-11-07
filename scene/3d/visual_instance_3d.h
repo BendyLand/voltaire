@@ -133,7 +133,7 @@ private:
 
 	float lod_bias = 1.0;
 
-	mutable HashMap<StringName, StringName> instance_shader_parameter_property_remap;
+	mutable HashMap<String, String> instance_shader_parameter_property_remap;
 
 	float extra_cull_margin = 0.0;
 	AABB custom_aabb;
@@ -141,7 +141,7 @@ private:
 	GIMode gi_mode = GI_MODE_STATIC;
 	bool ignore_occlusion_culling = false;
 
-	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
+	const String* _instance_uniform_get_remap(const String& p_name) const;
 
 protected:
 

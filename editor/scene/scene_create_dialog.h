@@ -49,7 +49,7 @@ class SceneCreateDialog : public ConfirmationDialog
 		MSG_ID_ROOT,
 	};
 
-	const StringName type_meta = StringName("type");
+	const String type_meta = String("type");
 
 public:
 	enum RootType

@@ -97,7 +97,7 @@ void HighlightedLabel::_notification(int p_notification)
 	}
 }
 
-String EditorQuickOpenDialog::get_dialog_title(const Vector<StringName>& p_base_types)
+String EditorQuickOpenDialog::get_dialog_title(const Vector<String>& p_base_types)
 {
 	if (p_base_types.size() > 1) {
 		return TTR("Select Resource");
@@ -227,9 +227,9 @@ void QuickOpenResultContainer::_add_candidate(QuickOpenResultCandidate& p_candid
 {
 	ERR_FAIL_COND(!ResourceUID::get_singleton()->has_id(p_candidate.uid));
 
-	StringName actual_type;
+	String actual_type;
 	{
-		StringName* actual_type_ptr = filetypes.getptr(p_candidate.uid);
+		String* actual_type_ptr = filetypes.getptr(p_candidate.uid);
 		if (actual_type_ptr) {
 			actual_type = *actual_type_ptr;
 		}
@@ -264,7 +264,7 @@ void QuickOpenResultContainer::_add_candidate(QuickOpenResultCandidate& p_candid
 	else if (file_type_icons.has(actual_type)) {
 		p_candidate.thumbnail = *file_type_icons.getptr(actual_type);
 	}
-	else if (has_theme_icon(actual_type, EditorStringName(EditorIcons))) {
+	else if (has_theme_icon(actual_type, EditorString(EditorIcons))) {
 		p_candidate.thumbnail = get_editor_theme_icon(actual_type);
 		file_type_icons.insert(actual_type, p_candidate.thumbnail);
 	}
@@ -437,20 +437,20 @@ String QuickOpenResultContainer::get_selected_path() const
 	return path;
 }
 
-const Vector<StringName>& QuickOpenResultContainer::get_base_types() const { return base_types; }
+const Vector<String>& QuickOpenResultContainer::get_base_types() const { return base_types; }
 
 QuickOpenDisplayMode QuickOpenResultContainer::get_adaptive_display_mode(
-	const Vector<StringName>& p_base_types)
+	const Vector<String>& p_base_types)
 {
-	static const Vector<StringName> grid_preferred_types = {
-		StringName("Font", true),
-		StringName("Texture2D", true),
-		StringName("Material", true),
-		StringName("Mesh", true),
+	static const Vector<String> grid_preferred_types = {
+		String("Font"),
+		String("Texture2D"),
+		String("Material"),
+		String("Mesh"),
 	};
 
-	for (const StringName& type : grid_preferred_types) {
-		for (const StringName& base_type : p_base_types) {
+	for (const String& type : grid_preferred_types) {
+		for (const String& base_type : p_base_types) {
 			if (base_type == type) {
 				return QuickOpenDisplayMode::GRID;
 			}
@@ -561,7 +561,7 @@ QuickOpenResultListItem::QuickOpenResultListItem()
 	path = memnew(HighlightedLabel);
 	path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	path->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-	path->add_theme_font_size_override(SceneStringName(font_size), 12 * EDSCALE);
+	path->add_theme_font_size_override(SceneString(font_size), 12 * EDSCALE);
 	text_container->add_child(path);
 }
 
@@ -599,12 +599,12 @@ void QuickOpenResultListItem::reset()
 
 void QuickOpenResultListItem::highlight_item(const Color& p_color)
 {
-	name->add_theme_color_override(SceneStringName(font_color), p_color);
+	name->add_theme_color_override(SceneString(font_color), p_color);
 }
 
 void QuickOpenResultListItem::remove_highlight()
 {
-	name->remove_theme_color_override(SceneStringName(font_color));
+	name->remove_theme_color_override(SceneString(font_color));
 }
 
 QuickOpenResultGridItem::QuickOpenResultGridItem()
@@ -632,7 +632,7 @@ QuickOpenResultGridItem::QuickOpenResultGridItem()
 	name->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	name->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 	name->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
-	name->add_theme_font_size_override(SceneStringName(font_size), 13 * EDSCALE);
+	name->add_theme_font_size_override(SceneString(font_size), 13 * EDSCALE);
 	vbc->add_child(name);
 }
 
@@ -645,12 +645,12 @@ void QuickOpenResultGridItem::reset()
 
 void QuickOpenResultGridItem::highlight_item(const Color& p_color)
 {
-	name->add_theme_color_override(SceneStringName(font_color), p_color);
+	name->add_theme_color_override(SceneString(font_color), p_color);
 }
 
 void QuickOpenResultGridItem::remove_highlight()
 {
-	name->remove_theme_color_override(SceneStringName(font_color));
+	name->remove_theme_color_override(SceneString(font_color));
 }
 
 void HighlightedLabel::reset_highlights() {}

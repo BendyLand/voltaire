@@ -47,7 +47,7 @@ public:
 
 	struct BoneJoint
 	{
-		StringName name;
+		String name;
 		int bone = -1;
 	};
 

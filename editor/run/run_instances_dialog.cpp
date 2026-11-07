@@ -134,7 +134,7 @@ void RunInstancesDialog::get_argument_list_for_instance(int p_idx, List<String>&
 
 				// Append the Godot executable name before we append executable arguments
 				// (since the order is reversed when using `push_front()`).
-				r_list.push_front(OS::get_singleton()->get_executable_path());
+				r_list.push_front(OS::get_executable_path());
 			}
 
 			for (int i = exec_args.size() - 1; i >= 0; i--) {
@@ -185,7 +185,7 @@ void RunInstancesDialog::apply_custom_features(int p_instance_idx)
 			stripped_features.push_back(f);
 		}
 	}
-	OS::get_singleton()->set_environment(
+	OS::set_environment(
 		"GODOT_EDITOR_CUSTOM_FEATURES", String(",").join(stripped_features));
 }
 

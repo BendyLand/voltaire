@@ -56,13 +56,13 @@ class EditorPropertyRevert
 
 class EditorInspectorActionButton : public Button
 {
-	StringName icon_name;
+	String icon_name;
 
 protected:
 	void _notification(int p_what);
 
 public:
-	EditorInspectorActionButton(const String& p_text, const StringName& p_icon_name);
+	EditorInspectorActionButton(const String& p_text, const String& p_icon_name);
 };
 
 class EditorProperty : public Container
@@ -145,7 +145,7 @@ private:
 	String label;
 	int text_size;
 	friend class EditorInspector;
-	StringName property;
+	String property;
 	String property_path;
 	String doc_path;
 	bool internal = false;
@@ -220,7 +220,7 @@ protected:
 
 	const Color* _get_property_colors();
 
-	virtual StringName _get_revert_property() const;
+	virtual String _get_revert_property() const;
 
 	void _update_property_bg();
 
@@ -241,7 +241,7 @@ public:
 	void set_draw_background(bool p_draw_background);
 	bool is_draw_background() const;
 
-	StringName get_edited_property() const;
+	String get_edited_property() const;
 
 	EditorInspector* get_parent_inspector() const;
 
@@ -453,7 +453,7 @@ class EditorInspectorSection : public Container
 
 	PopupMenu* menu = nullptr;
 
-	HashSet<StringName> revertable_properties;
+	HashSet<String> revertable_properties;
 	bool can_revert = false;
 
 	LocalVector<EditorProperty*> section_properties;
@@ -560,8 +560,8 @@ class EditorInspectorArray : public EditorInspectorSection
 		MODE_USE_MOVE_ARRAY_ELEMENT_FUNCTION,
 	} mode = MODE_NONE;
 
-	StringName count_property;
-	StringName array_element_prefix;
+	String count_property;
+	String array_element_prefix;
 	String swap_method;
 
 	int count = 0;
@@ -736,9 +736,9 @@ private:
 	VBoxContainer* main_vbox = nullptr;
 
 	// Map used to cache the instantiated editors.
-	HashMap<StringName, List<EditorProperty*>> editor_property_map;
+	HashMap<String, List<EditorProperty*>> editor_property_map;
 	List<EditorInspectorSection*> sections;
-	HashSet<StringName> pending;
+	HashSet<String> pending;
 
 	void _clear(bool p_hide_plugins = true);
 
@@ -765,8 +765,8 @@ private:
 
 	float refresh_countdown;
 	bool update_tree_pending = false;
-	StringName _prop_edited;
-	StringName property_selected;
+	String _prop_edited;
+	String property_selected;
 	int property_focusable;
 	int update_scroll_request;
 
@@ -778,8 +778,8 @@ private:
 		String theme_item_name;
 	};
 
-	HashMap<StringName, HashMap<StringName, DocCacheInfo>> doc_cache;
-	HashSet<StringName> restart_request_props;
+	HashMap<String, HashMap<String, DocCacheInfo>> doc_cache;
+	HashSet<String> restart_request_props;
 	HashMap<String, String> custom_property_descriptions;
 	HashMap<String, String> doc_property_class_remaps;
 
@@ -806,8 +806,8 @@ private:
 
 	void _node_removed(Node* p_node);
 
-	HashMap<StringName, int> per_array_page;
-	void _page_change_request(int p_new_page, const StringName& p_array_prefix);
+	HashMap<String, int> per_array_page;
+	void _page_change_request(int p_new_page, const String& p_array_prefix);
 
 	void _changed_callback();
 
@@ -820,7 +820,7 @@ private:
 
 	void _feature_profile_changed();
 
-	bool _is_property_disabled_by_feature_profile(const StringName& p_property);
+	bool _is_property_disabled_by_feature_profile(const String& p_property);
 
 	void _section_toggled_by_user(const String& p_path, bool p_value);
 

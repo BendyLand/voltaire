@@ -404,28 +404,28 @@ void ThemeTypeDialog::set_edited_theme(const Ref<Theme>& p_theme) { edited_theme
 
 void ThemeTypeDialog::set_include_own_types(bool p_enable) { include_own_types = p_enable; }
 
-HashMap<StringName, bool> ThemeTypeEditor::_get_type_items(
+HashMap<String, bool> ThemeTypeEditor::_get_type_items(
 	String p_type_name, Theme::DataType p_type, bool p_include_default)
 {
-	HashMap<StringName, bool> items;
-	List<StringName> names;
+	HashMap<String, bool> items;
+	List<String> names;
 
 	if (p_include_default) {
 		names.clear();
 		String default_type;
 
 		{
-			const StringName variation_base = edited_theme->get_type_variation_base(p_type_name);
-			if (variation_base != StringName()) {
+			const String variation_base = edited_theme->get_type_variation_base(p_type_name);
+			if (variation_base != String()) {
 				default_type = variation_base;
 			}
 		}
 
 		if (default_type.is_empty()) {
 			// If variation base was not found in the edited theme, look in the default theme.
-			const StringName variation_base =
+			const String variation_base =
 				ThemeDB::get_singleton()->get_default_theme()->get_type_variation_base(p_type_name);
-			if (variation_base != StringName()) {
+			if (variation_base != String()) {
 				default_type = variation_base;
 			}
 		}
@@ -440,8 +440,8 @@ HashMap<StringName, bool> ThemeTypeEditor::_get_type_items(
 			names.push_back(E.item_name);
 		}
 
-		names.sort_custom<StringName::AlphCompare>();
-		for (const StringName& E : names) {
+		names.sort();
+		for (const String& E : names) {
 			items[E] = false;
 		}
 	}
@@ -449,20 +449,20 @@ HashMap<StringName, bool> ThemeTypeEditor::_get_type_items(
 	{
 		names.clear();
 		edited_theme->get_theme_item_list(p_type, p_type_name, &names);
-		names.sort_custom<StringName::AlphCompare>();
-		for (const StringName& E : names) {
+		names.sort();
+		for (const String& E : names) {
 			items[E] = true;
 		}
 	}
 
-	List<StringName> keys;
-	for (const KeyValue<StringName, bool>& E : items) {
+	List<String> keys;
+	for (const KeyValue<String, bool>& E : items) {
 		keys.push_back(E.key);
 	}
-	keys.sort_custom<StringName::AlphCompare>();
+	keys.sort();
 
-	HashMap<StringName, bool> ordered_items;
-	for (const StringName& E : keys) {
+	HashMap<String, bool> ordered_items;
+	for (const String& E : keys) {
 		ordered_items[E] = items[E];
 	}
 

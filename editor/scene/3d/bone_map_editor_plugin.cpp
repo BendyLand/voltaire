@@ -62,7 +62,7 @@ void BoneMapperButton::fetch_textures()
 	set_state(BONE_MAP_STATE_UNSET);
 }
 
-StringName BoneMapperButton::get_profile_bone_name() const { return profile_bone_name; }
+String BoneMapperButton::get_profile_bone_name() const { return profile_bone_name; }
 
 bool BoneMapperButton::is_require() const { return require; }
 
@@ -76,14 +76,14 @@ void BoneMapperButton::_notification(int p_what)
 }
 
 BoneMapperButton::BoneMapperButton(
-	const StringName& p_profile_bone_name, bool p_require, bool p_selected)
+	const String& p_profile_bone_name, bool p_require, bool p_selected)
 {
 	profile_bone_name = p_profile_bone_name;
 	require = p_require;
 	selected = p_selected;
 }
 
-BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name)
+BoneMapperItem::BoneMapperItem(Ref<BoneMap>& p_bone_map, const String& p_profile_bone_name)
 {
 	bone_map = p_bone_map;
 	profile_bone_name = p_profile_bone_name;
@@ -100,11 +100,11 @@ bool BonePicker::has_selected_bone()
 	return true;
 }
 
-StringName BonePicker::get_selected_bone()
+String BonePicker::get_selected_bone()
 {
 	TreeItem* selected = bones->get_selected();
 	if (!selected) {
-		return StringName();
+		return String();
 	}
 	return selected->get_text(0);
 }
@@ -169,16 +169,16 @@ void BoneMapper::_update_state()
 {
 	int len = bone_mapper_buttons.size();
 	for (int i = 0; i < len; i++) {
-		StringName pbn = bone_mapper_buttons[i]->get_profile_bone_name();
-		StringName sbn = bone_map->get_skeleton_bone_name(pbn);
+		String pbn = bone_mapper_buttons[i]->get_profile_bone_name();
+		String sbn = bone_map->get_skeleton_bone_name(pbn);
 		int bone_idx = skeleton->find_bone(sbn);
 		if (bone_idx >= 0) {
 			if (bone_map->get_skeleton_bone_name_count(sbn) == 1) {
 				Ref<SkeletonProfile> prof = bone_map->get_profile();
 
-				StringName parent_name = prof->get_bone_parent(prof->find_bone(pbn));
+				String parent_name = prof->get_bone_parent(prof->find_bone(pbn));
 				Vector<int> prof_parent_bones;
-				while (parent_name != StringName()) {
+				while (parent_name != String()) {
 					prof_parent_bones.push_back(
 						skeleton->find_bone(bone_map->get_skeleton_bone_name(parent_name)));
 					if (prof->find_bone(parent_name) == -1) {
@@ -232,7 +232,7 @@ void BoneMapper::_clear_mapping_current_group()
 			int len = profile->get_bone_size();
 			for (int i = 0; i < len; i++) {
 				if (profile->get_group(i) == profile->get_group_name(current_group_idx)) {
-					bone_map->_set_skeleton_bone_name(profile->get_bone_name(i), StringName());
+					bone_map->_set_skeleton_bone_name(profile->get_bone_name(i), String());
 				}
 			}
 			recreate_items();

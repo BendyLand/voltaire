@@ -207,7 +207,7 @@ void EmbeddedProcess::_notification(int p_what)
 	} break;
 	case NOTIFICATION_APPLICATION_FOCUS_IN: {
 		application_has_focus = true;
-		last_application_focus_time = OS::get_singleton()->get_ticks_msec();
+		last_application_focus_time = OS::get_ticks_msec();
 	} break;
 	case NOTIFICATION_APPLICATION_FOCUS_OUT: {
 		application_has_focus = false;
@@ -238,7 +238,7 @@ EmbeddedProcess::~EmbeddedProcess()
 {
 	if (current_process_id != 0) {
 		// Stop embedding the last process.
-		OS::get_singleton()->kill(current_process_id);
+		OS::kill(current_process_id);
 		reset();
 	}
 }

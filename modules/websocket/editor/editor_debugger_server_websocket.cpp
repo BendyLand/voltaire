@@ -47,7 +47,7 @@ void EditorDebuggerServerWebSocket::poll()
 
 		Error err = peer->accept_stream(tcp_server->take_connection());
 		if (err == OK) {
-			pending_timer = OS::get_singleton()->get_ticks_msec();
+			pending_timer = OS::get_ticks_msec();
 			pending_peer = peer;
 		}
 	}
@@ -59,7 +59,7 @@ void EditorDebuggerServerWebSocket::poll()
 			pending_peer.unref(); // Failed.
 		}
 		if (ready_state == WebSocketPeer::STATE_CONNECTING &&
-			OS::get_singleton()->get_ticks_msec() - pending_timer > 3000) {
+			OS::get_ticks_msec() - pending_timer > 3000) {
 			pending_peer.unref(); // Timeout.
 		}
 	}

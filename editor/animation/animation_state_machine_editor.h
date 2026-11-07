@@ -64,8 +64,8 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	PanelContainer* panel = nullptr;
 
-	StringName selected_node;
-	HashSet<StringName> selected_nodes;
+	String selected_node;
+	HashSet<String> selected_nodes;
 
 	HScrollBar* h_scroll = nullptr;
 	VScrollBar* v_scroll = nullptr;
@@ -139,7 +139,7 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	PopupMenu* state_machine_menu = nullptr;
 	PopupMenu* end_menu = nullptr;
 	PopupMenu* animations_menu = nullptr;
-	Vector<StringName> animations_to_add;
+	Vector<String> animations_to_add;
 	Vector<String> nodes_to_connect;
 
 	Vector2 add_node_pos;
@@ -148,20 +148,20 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	Point2 box_selecting_from;
 	Point2 box_selecting_to;
 	Rect2 box_selecting_rect;
-	HashSet<StringName> previous_selected;
+	HashSet<String> previous_selected;
 
 	bool dragging_selected_attempt = false;
 	bool dragging_selected = false;
 	Vector2 drag_from;
 	Vector2 drag_ofs;
-	StringName snap_x;
-	StringName snap_y;
+	String snap_x;
+	String snap_y;
 
 	bool connecting = false;
 	bool connection_follows_cursor = false;
-	StringName connecting_from;
+	String connecting_from;
 	Vector2 connecting_to;
-	StringName connecting_to_node;
+	String connecting_to_node;
 
 	bool reconnecting = false;
 	int hovered_transition_index = -1;
@@ -171,13 +171,13 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	int reconnecting_from_node_rect_index = -1;
 	int reconnecting_to_node_rect_index = -1;
 	Vector2 reconnecting_transition_pos;
-	StringName reconnecting_transition_target;
+	String reconnecting_transition_target;
 
-	void _select_transition(const StringName& p_from, const StringName& p_to);
+	void _select_transition(const String& p_from, const String& p_to);
 
 	struct NodeRect
 	{
-		StringName node_name;
+		String node_name;
 		Rect2 node;
 		Rect2 play;
 		Rect2 name;
@@ -189,12 +189,12 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	struct TransitionLine
 	{
-		StringName from_node;
-		StringName to_node;
+		String from_node;
+		String to_node;
 		Vector2 from;
 		Vector2 to;
 		AnimationNodeStateMachineTransition::SwitchMode mode;
-		StringName advance_condition_name;
+		String advance_condition_name;
 		bool advance_condition_state = false;
 		bool disabled = false;
 		bool auto_advance = false;
@@ -211,22 +211,22 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	struct NodeUR
 	{
-		StringName name;
+		String name;
 		Ref<AnimationNode> node;
 		Vector2 position;
 	};
 
 	struct TransitionUR
 	{
-		StringName new_from;
-		StringName new_to;
-		StringName old_from;
-		StringName old_to;
+		String new_from;
+		String new_to;
+		String old_from;
+		String old_to;
 		Ref<AnimationNodeStateMachineTransition> transition;
 	};
 
-	StringName selected_transition_from;
-	StringName selected_transition_to;
+	String selected_transition_from;
+	String selected_transition_to;
 	int selected_transition_index = -1;
 
 	enum HoveredNodeArea
@@ -236,7 +236,7 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 		HOVER_NODE_EDIT = 1,
 	};
 
-	StringName hovered_node_name;
+	String hovered_node_name;
 	HoveredNodeArea hovered_node_area = HOVER_NODE_NONE;
 
 	String prev_name;
@@ -251,9 +251,9 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 	void _stop_connecting();
 
 	bool last_active = false;
-	StringName last_fading_from_node;
-	StringName last_current_node;
-	Vector<StringName> last_travel_path;
+	String last_fading_from_node;
+	String last_current_node;
+	Vector<String> last_travel_path;
 
 	float fade_from_last_play_pos = 0.0f;
 	float fade_from_current_play_pos = 0.0f;
@@ -278,8 +278,8 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 		MENU_LOAD_FILE_CONFIRM = 1002
 	};
 
-	HashSet<StringName> connected_nodes;
-	void _update_connected_nodes(const StringName& p_node);
+	HashSet<String> connected_nodes;
+	void _update_connected_nodes(const String& p_node);
 
 	Ref<StyleBox> _adjust_stylebox_opacity(Ref<StyleBox> p_style, float p_opacity);
 
@@ -300,15 +300,15 @@ class EditorAnimationMultiTransitionEdit : public RefCounted
 {
 	struct Transition
 	{
-		StringName from;
-		StringName to;
+		String from;
+		String to;
 		Ref<AnimationNodeStateMachineTransition> transition;
 	};
 
 	Vector<Transition> transitions;
 
 public:
-	void add_transition(const StringName& p_from, const StringName& p_to,
+	void add_transition(const String& p_from, const String& p_to,
 		Ref<AnimationNodeStateMachineTransition> p_transition);
 };
 

@@ -63,7 +63,7 @@ class VideoStreamPlayer : public Control
 	int audio_track = 0;
 	int bus_index = 0;
 
-	StringName bus;
+	String bus;
 
 	void _mix_audio();
 	static int _audio_mix_callback(void* p_udata, const float* p_data, int p_frames);
@@ -115,8 +115,8 @@ public:
 	void set_buffering_msec(int p_msec);
 	int get_buffering_msec() const;
 
-	void set_bus(const StringName& p_bus);
-	StringName get_bus() const;
+	void set_bus(const String& p_bus);
+	String get_bus() const;
 
 	~VideoStreamPlayer();
 };

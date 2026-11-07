@@ -55,7 +55,7 @@ ThemeContext* ThemeOwner::_get_active_owner_context() const
 }
 
 bool ThemeOwner::has_theme_item_in_types(
-	Theme::DataType p_data_type, const StringName& p_name, const Vector<StringName>& p_theme_types)
+	Theme::DataType p_data_type, const String& p_name, const Vector<String>& p_theme_types)
 {
 	ERR_FAIL_COND_V_MSG(
 		p_theme_types.is_empty(), false, "At least one theme type must be specified.");
@@ -67,7 +67,7 @@ bool ThemeOwner::has_theme_item_in_types(
 	while (current_owner) {
 		// For each theme resource check the theme types provided and see if p_name exists with any
 		// of them.
-		for (const StringName& E : p_theme_types) {
+		for (const String& E : p_theme_types) {
 			Ref<Theme> owner_theme = _get_owner_node_theme(current_owner);
 
 			if (owner_theme.is_valid() && owner_theme->has_theme_item(p_data_type, p_name, E)) {
@@ -82,7 +82,7 @@ bool ThemeOwner::has_theme_item_in_types(
 	ThemeContext* global_context = _get_active_owner_context();
 	for (const Ref<Theme>& theme : global_context->get_themes()) {
 		if (theme.is_valid()) {
-			for (const StringName& E : p_theme_types) {
+			for (const String& E : p_theme_types) {
 				if (theme->has_theme_item(p_data_type, p_name, E)) {
 					return true;
 				}

@@ -31,7 +31,7 @@
 #include "core/templates/rb_set.h"
 #include "resource_preloader.h"
 
-void ResourcePreloader::rename_resource(const StringName& p_from_name, const StringName& p_to_name)
+void ResourcePreloader::rename_resource(const String& p_from_name, const String& p_to_name)
 {
 	ERR_FAIL_COND(!resources.has(p_from_name));
 
@@ -41,12 +41,12 @@ void ResourcePreloader::rename_resource(const StringName& p_from_name, const Str
 	add_resource(p_to_name, res);
 }
 
-bool ResourcePreloader::has_resource(const StringName& p_name) const
+bool ResourcePreloader::has_resource(const String& p_name) const
 {
 	return resources.has(p_name);
 }
 
-Ref<Resource> ResourcePreloader::get_resource(const StringName& p_name) const
+Ref<Resource> ResourcePreloader::get_resource(const String& p_name) const
 {
 	ERR_FAIL_COND_V(!resources.has(p_name), Ref<Resource>());
 	return resources[p_name];
@@ -57,7 +57,7 @@ Vector<String> ResourcePreloader::_get_resource_list() const
 	Vector<String> res;
 	res.resize(resources.size());
 	int i = 0;
-	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
+	for (const KeyValue<String, Ref<Resource>>& E : resources) {
 		res.set(i, E.key);
 		i++;
 	}
@@ -65,9 +65,9 @@ Vector<String> ResourcePreloader::_get_resource_list() const
 	return res;
 }
 
-void ResourcePreloader::get_resource_list(List<StringName>* p_list)
+void ResourcePreloader::get_resource_list(List<String>* p_list)
 {
-	for (const KeyValue<StringName, Ref<Resource>>& E : resources) {
+	for (const KeyValue<String, Ref<Resource>>& E : resources) {
 		p_list->push_back(E.key);
 	}
 }
@@ -77,4 +77,4 @@ ResourcePreloader::ResourcePreloader() {}
 
 
 
-void ResourcePreloader::add_resource(StringName const&, Ref<Resource> const&) {}
+void ResourcePreloader::add_resource(String const&, Ref<Resource> const&) {}

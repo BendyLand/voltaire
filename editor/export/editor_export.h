@@ -44,8 +44,8 @@ class EditorExport : public Node
 
 	static inline const String RUNNABLE_SECTION_NAME = "runnable_presets";
 
-	static inline StringName _export_presets_updated;
-	static inline StringName _export_presets_runnable_updated;
+	static inline String _export_presets_updated;
+	static inline String _export_presets_runnable_updated;
 
 	Timer* save_timer = nullptr;
 	bool block_save = false;

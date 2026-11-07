@@ -51,7 +51,7 @@ class EditorAutoloadSettings : public VBoxContainer
 	};
 
 	String path = "res://";
-	const StringName autoload_changed = "autoload_changed";
+	const String autoload_changed = "autoload_changed";
 	String pending_autoload_path;
 
 	struct AutoloadInfo
@@ -104,7 +104,7 @@ public:
 	void init_autoloads();
 	void update_autoload();
 	bool autoload_add(const String& p_name, const String& p_path, bool p_use_undo);
-	void autoload_remove(const StringName& p_name);
+	void autoload_remove(const String& p_name);
 
 	EditorAutoloadSettings();
 	~EditorAutoloadSettings();

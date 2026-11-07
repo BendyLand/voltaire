@@ -127,7 +127,7 @@ Ref<EditorExportPreset> ProjectExportDialog::get_current_preset() const
 
 void ProjectExportDialog::_open_key_help_link()
 {
-	OS::get_singleton()->shell_open(
+	OS::shell_open(
 		vformat("%s/engine_details/development/compiling/compiling_with_script_encryption_key.html",
 			VLTR_VERSION_DOCS_URL));
 }

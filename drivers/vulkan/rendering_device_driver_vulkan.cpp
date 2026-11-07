@@ -612,7 +612,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions()
 #ifdef DEV_ENABLED
 		bool want_debug_markers = true;
 #else
-		bool want_debug_markers = OS::get_singleton()->is_stdout_verbose();
+		bool want_debug_markers = OS::is_stdout_verbose();
 #endif
 		if (want_debug_markers) {
 			_register_requested_device_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false);
@@ -823,10 +823,10 @@ Error RenderingDeviceDriverVulkan::_check_device_features()
 #if defined(ANDROID_ENABLED) || defined(IOS_ENABLED)
 		// Android/iOS platform ports currently don't exit themselves when this method returns
 		// `ERR_CANT_CREATE`.
-		OS::get_singleton()->alert(
+		OS::alert(
 			error_string + "\nClick OK to exit (black screen will be visible).");
 #else
-		OS::get_singleton()->alert(error_string + "\nClick OK to exit.");
+		OS::alert(error_string + "\nClick OK to exit.");
 #endif
 
 		return ERR_CANT_CREATE;
@@ -2134,7 +2134,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		// Hooks control device creation & possibly presentation
 		// (e.g. OpenXR) thus it's too risky to use Swappy.
 		swappy_frame_pacer_enable = false;
-		OS::get_singleton()->print(
+		OS::print(
 			"VulkanHooks detected (e.g. OpenXR): Force-disabling Swappy Frame Pacing.\n");
 	}
 #endif
@@ -3599,45 +3599,6 @@ void RenderingDeviceDriverVulkan::semaphore_free(SemaphoreID p_semaphore)
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SEMAPHORE));
 }
 
-RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
-	uint32_t p_cmd_queue_family_bits,
-	RenderingContextDriver::SurfaceID p_surface)
-{
-	// Pick the queue with the least amount of bits that can fulfill the requirements.
-	VkQueueFlags picked_queue_flags = VK_QUEUE_FLAG_BITS_MAX_ENUM;
-	uint32_t picked_family_index = UINT_MAX;
-	for (uint32_t i = 0; i < queue_family_properties.size(); i++) {
-		if (queue_families[i].is_empty()) {
-			// Ignore empty queue families.
-			continue;
-		}
-
-		if (p_surface != 0 &&
-			!context_driver->queue_family_supports_present(physical_device, i, p_surface)) {
-			// Present is not an actual bit but something that must be queried manually.
-			continue;
-		}
-
-		// Preferring a queue with less bits will get us closer to getting a queue that performs
-		// better for our requirements. For example, dedicated compute and transfer queues are
-		// usually indicated as such.
-		const VkQueueFlags option_queue_flags = queue_family_properties[i].queueFlags;
-		const bool prefer_less_bits = option_queue_flags < picked_queue_flags;
-		if (prefer_less_bits) {
-			picked_family_index = i;
-			picked_queue_flags = option_queue_flags;
-		}
-	}
-
-	if (picked_family_index >= queue_family_properties.size()) {
-		return CommandQueueFamilyID();
-	}
-
-	// Since 0 is a valid index and we use 0 as the error case, we make the index start from 1
-	// instead.
-	return CommandQueueFamilyID(picked_family_index + 1);
-}
-
 RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(
 	CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue)
 {
@@ -3816,9 +3777,9 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 		results.resize(swapchains.size());
 
 		VkPresentInfoKHR present_info = {};
-		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		present_info.waitSemaphoreCount = wait_semaphores.size();
-		present_info.pWaitSemaphores = wait_semaphores.ptr();
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.waitSemaphoreCount = wait_semaphores.size();
+        present_info.pWaitSemaphores = wait_semaphores.ptr();
 		present_info.swapchainCount = swapchains.size();
 		present_info.pSwapchains = swapchains.ptr();
 		present_info.pImageIndices = image_indices.ptr();
@@ -3830,7 +3791,9 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 			err = SwappyVk_queuePresent(device_queue.queue, &present_info);
 		}
 		else {
+			printf("[VK] QueuePresentKHR called for window %d\n", (int)p_window);
 			err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
+			printf("[VK] QueuePresentKHR result = %d\n", (int)err);
 		}
 #else
 		err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
@@ -4232,6 +4195,63 @@ RenderingDeviceDriver::SwapChainID RenderingDeviceDriverVulkan::swap_chain_creat
 	return SwapChainID(swap_chain);
 }
 
+RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
+		uint32_t p_cmd_queue_family_bits,
+		RenderingContextDriver::SurfaceID p_surface)
+{
+	VkQueueFlags required_flags = 0;
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_GRAPHICS_BIT) {
+		required_flags |= VK_QUEUE_GRAPHICS_BIT;
+	}
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_COMPUTE_BIT) {
+		required_flags |= VK_QUEUE_COMPUTE_BIT;
+	}
+	if (p_cmd_queue_family_bits & RDD::COMMAND_QUEUE_FAMILY_TRANSFER_BIT) {
+		required_flags |= VK_QUEUE_TRANSFER_BIT;
+	}
+
+	uint32_t picked_family_index = UINT_MAX;
+	uint32_t picked_queue_flags_count = UINT_MAX;
+
+	for (uint32_t i = 0; i < queue_family_properties.size(); i++) {
+		if (queue_families[i].is_empty()) {
+			// Ignore empty queue families.
+			continue;
+		}
+
+		// Ensure the queue family supports every required functional capability.
+		if ((queue_family_properties[i].queueFlags & required_flags) != required_flags) {
+			continue;
+		}
+
+		// Present is not an explicit bitflag in VkQueueFlags; it must be queried against the surface.
+		if (p_surface != 0 &&
+				!context_driver->queue_family_supports_present(physical_device, i, p_surface)) {
+			continue;
+		}
+
+		// Count the set bits to prefer dedicated queues with the least extraneous functionality.
+		uint32_t queue_flags_count = 0;
+		for (uint32_t j = 0; j < 32; j++) {
+			if (queue_family_properties[i].queueFlags & (1u << j)) {
+				queue_flags_count++;
+			}
+		}
+
+		if (queue_flags_count < picked_queue_flags_count) {
+			picked_family_index = i;
+			picked_queue_flags_count = queue_flags_count;
+		}
+	}
+
+	if (picked_family_index >= queue_family_properties.size()) {
+		return CommandQueueFamilyID();
+	}
+
+	// 0 represents an invalid ID; offset by 1.
+	return CommandQueueFamilyID(picked_family_index + 1);
+}
+
 Error RenderingDeviceDriverVulkan::swap_chain_resize(
 	CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count)
 {
@@ -4371,7 +4391,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 	VkSurfaceTransformFlagBitsKHR surface_transform_bits = surface_capabilities.currentTransform;
 
 	VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	if (OS::get_singleton()->is_layered_allowed() ||
+	if (OS::is_layered_allowed() ||
 		!(surface_capabilities.supportedCompositeAlpha & composite_alpha)) {
 		// Find a supported composite alpha mode - one of these is guaranteed to be set.
 		VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] = {
@@ -4576,6 +4596,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 		framebuffer->vk_framebuffer = vk_framebuffer;
 		framebuffer->swap_chain_image = swap_chain->images[i];
 		framebuffer->swap_chain_image_subresource_range = view_create_info.subresourceRange;
+		DUMP(framebuffer);
 		swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
 	}
 
@@ -5342,6 +5363,12 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(
 	descriptor_set_pool_create_info.maxSets = max_descriptor_sets_per_pool;
 	descriptor_set_pool_create_info.poolSizeCount = vk_sizes_count;
 	descriptor_set_pool_create_info.pPoolSizes = vk_sizes;
+	// In RenderingDeviceDriverVulkan::_descriptor_set_pool_create, right before vkCreateDescriptorPool:
+	printf("[DEBUG pool_create] max_sets=%u, sizes_count=%u\n",
+	       max_descriptor_sets_per_pool, vk_sizes_count);
+	for (uint32_t i = 0; i < vk_sizes_count; i++) {
+	    printf("  size[%u]: type=%d, count=%u\n", i, vk_sizes[i].type, vk_sizes[i].descriptorCount);
+	}
 
 	VkDescriptorPool vk_pool = VK_NULL_HANDLE;
 	VkResult res = vkCreateDescriptorPool(vk_device, &descriptor_set_pool_create_info,
@@ -6457,22 +6484,39 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	CommandBufferInfo* command_buffer = (CommandBufferInfo*)(p_cmd_buffer.id);
 	RenderPassInfo* render_pass = (RenderPassInfo*)(p_render_pass.id);
 	Framebuffer* framebuffer = (Framebuffer*)(p_framebuffer.id);
+	// DUMP(framebuffer);
+
+	ERR_FAIL_NULL(command_buffer);
+	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);
+	ERR_FAIL_NULL(render_pass);
+	ERR_FAIL_COND(render_pass->vk_render_pass == VK_NULL_HANDLE);
+	ERR_FAIL_NULL(framebuffer);
+	ERR_FAIL_COND(framebuffer->vk_framebuffer == VK_NULL_HANDLE);
+
+	if (p_rect.size.x <= 0 || p_rect.size.y <= 0) {
+		return;
+	}
 
 	if (framebuffer->swap_chain_acquired) {
-		// Insert a barrier to wait for the acquisition of the framebuffer before the render pass
-		// begins.
-		VkImageMemoryBarrier image_barrier = {};
-		image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		image_barrier.image = framebuffer->swap_chain_image;
-		image_barrier.subresourceRange = framebuffer->swap_chain_image_subresource_range;
-		vkCmdPipelineBarrier(command_buffer->vk_command_buffer,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1,
-			&image_barrier);
+		if (framebuffer->swap_chain_image != VK_NULL_HANDLE) {
+			VkImageMemoryBarrier image_barrier = {};
+			image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			image_barrier.image = framebuffer->swap_chain_image;
+			image_barrier.subresourceRange = framebuffer->swap_chain_image_subresource_range;
+			if (image_barrier.subresourceRange.aspectMask == 0) {
+				image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				image_barrier.subresourceRange.levelCount = 1;
+				image_barrier.subresourceRange.layerCount = 1;
+			}
+			vkCmdPipelineBarrier(command_buffer->vk_command_buffer,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1,
+				&image_barrier);
+		}
 		framebuffer->swap_chain_acquired = false;
 	}
 
@@ -6487,21 +6531,13 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	render_pass_begin.renderArea.extent.height = p_rect.size.y;
 
 	render_pass_begin.clearValueCount = p_clear_values.size();
-	render_pass_begin.pClearValues = (const VkClearValue*)p_clear_values.ptr();
+	render_pass_begin.pClearValues =
+		(p_clear_values.size() > 0) ? (const VkClearValue*)p_clear_values.ptr() : nullptr;
 
-	VkSubpassContents vk_subpass_contents = p_cmd_buffer_type == COMMAND_BUFFER_TYPE_PRIMARY
-												? VK_SUBPASS_CONTENTS_INLINE
-												: VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-	vkCmdBeginRenderPass(
-		command_buffer->vk_command_buffer, &render_pass_begin, vk_subpass_contents);
-
-	command_buffer->active_framebuffer = framebuffer;
-	command_buffer->active_render_pass = render_pass;
-
-#if PRINT_NATIVE_COMMANDS
-	print_line(vformat(
-		"vkCmdBeginRenderPass Pass 0x%uX Framebuffer 0x%uX", p_render_pass.id, p_framebuffer.id));
-#endif
+	vkCmdBeginRenderPass(command_buffer->vk_command_buffer, &render_pass_begin,
+		(p_cmd_buffer_type == COMMAND_BUFFER_TYPE_SECONDARY)
+			? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+			: VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_buffer)
@@ -6535,9 +6571,11 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 		}
 	}
 	else {
+		if (command_buffer->active_render_pass == nullptr) {
+	        return;
+	    }
 		vkCmdEndRenderPass(command_buffer->vk_command_buffer);
 	}
-
 	command_buffer->active_render_pass = nullptr;
 	command_buffer->active_framebuffer = nullptr;
 
@@ -7141,7 +7179,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 			if ((i < shader_info->respv_stage_shaders.size()) &&
 				!shader_info->respv_stage_shaders[i].empty()) {
 #if RECORD_PIPELINE_STATISTICS
-				uint64_t respv_start_time = OS::get_singleton()->get_ticks_usec();
+				uint64_t respv_start_time = OS::get_ticks_usec();
 #endif
 				// Attempt to optimize the shader using re-spirv before relying on the driver.
 				respv_spec_constants.resize(p_specialization_constants.size());
@@ -7194,7 +7232,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 					}
 
 #if RECORD_PIPELINE_STATISTICS
-					respv_run_time[i] = OS::get_singleton()->get_ticks_usec() - respv_start_time;
+					respv_run_time[i] = OS::get_ticks_usec() - respv_start_time;
 					respv_size[i] = respv_optimized_data.size();
 #endif
 				}
@@ -7249,7 +7287,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	pipeline_create_info.subpass = p_render_subpass;
 
 #if RECORD_PIPELINE_STATISTICS
-	uint64_t pipeline_start_time = OS::get_singleton()->get_ticks_usec();
+	uint64_t pipeline_start_time = OS::get_ticks_usec();
 #endif
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
@@ -7270,7 +7308,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	{
 		MutexLock lock(pipeline_statistics.file_access_mutex);
 		uint64_t pipeline_creation_time =
-			OS::get_singleton()->get_ticks_usec() - pipeline_start_time;
+			OS::get_ticks_usec() - pipeline_start_time;
 		for (uint32_t i = 0; i < shader_info->vk_stages_create_info.size(); i++) {
 			PackedStringArray csv_array = {shader_info->name,
 				String::num_uint64(hash_murmur3_buffer(shader_info->spirv_stage_bytes[i].ptr(),

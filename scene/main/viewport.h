@@ -303,10 +303,10 @@ private:
 
 	Ref<World2D> world_2d;
 
-	StringName input_group;
-	StringName shortcut_input_group;
-	StringName unhandled_input_group;
-	StringName unhandled_key_input_group;
+	String input_group;
+	String shortcut_input_group;
+	String unhandled_input_group;
+	String unhandled_key_input_group;
 
 	void _update_audio_listener_2d();
 
@@ -843,7 +843,7 @@ public:
 	bool is_audio_listener_2d() const;
 
 	Camera2D* get_camera_2d() const;
-	void assign_next_enabled_camera_2d(const StringName& p_camera_group);
+	void assign_next_enabled_camera_2d(const String& p_camera_group);
 
 #ifndef _3D_DISABLED
 private:

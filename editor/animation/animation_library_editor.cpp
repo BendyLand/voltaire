@@ -125,19 +125,19 @@ String AnimationLibraryEditor::_get_mixer_signature() const
 	String signature = String();
 
 	// Get all libraries sorted for consistency
-	LocalVector<StringName> libs;
+	LocalVector<String> libs;
 	mixer->get_animation_library_list(&libs);
-	libs.sort_custom<StringName::AlphCompare>();
+	libs.sort();
 
 	// Add libraries and their animations to signature
-	for (const StringName& lib_name : libs) {
+	for (const String& lib_name : libs) {
 		signature += "::" + String(lib_name);
 		Ref<AnimationLibrary> lib = mixer->get_animation_library(lib_name);
 		if (lib.is_valid()) {
-			LocalVector<StringName> anims;
+			LocalVector<String> anims;
 			lib->get_animation_list(&anims);
-			anims.sort_custom<StringName::AlphCompare>();
-			for (const StringName& anim_name : anims) {
+			anims.sort();
+			for (const String& anim_name : anims) {
 				signature += "," + String(anim_name);
 			}
 		}

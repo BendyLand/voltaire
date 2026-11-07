@@ -56,8 +56,8 @@ protected:
 	Viewport* custom_viewport = nullptr;
 	Viewport* viewport = nullptr;
 
-	StringName group_name;
-	StringName canvas_group_name;
+	String group_name;
+	String canvas_group_name;
 	RID canvas;
 	Vector2 offset;
 	Vector2 zoom = Vector2(1, 1);

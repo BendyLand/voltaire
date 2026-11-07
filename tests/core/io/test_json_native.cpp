@@ -62,7 +62,7 @@ TEST_CASE("[JSON][Native] Conversion between native and JSON formats") {
 	test(-Math::INF, R"("f:-inf")");
 	test(Math::NaN, R"("f:nan")");
 	test(String("abc"), R"("s:abc")");
-	test(StringName("abc"), R"("sn:abc")");
+	test(String("abc"), R"("sn:abc")");
 	test(NodePath("abc"), R"("np:abc")");
 
 	// Non-serializable types (always empty after deserialization).

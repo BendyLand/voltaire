@@ -87,9 +87,9 @@ Ref<Texture2D> ThemeDB::get_fallback_icon() { return fallback_icon; }
 Ref<StyleBox> ThemeDB::get_fallback_stylebox() { return fallback_stylebox; }
 
 void ThemeDB::get_native_type_dependencies(
-	const StringName& p_base_type, Vector<StringName>& r_result)
+	const String& p_base_type, Vector<String>& r_result)
 {
-	if (p_base_type == StringName()) {
+	if (p_base_type == String()) {
 		return;
 	}
 }
@@ -150,8 +150,8 @@ ThemeContext* ThemeDB::get_nearest_theme_context(Node* p_for_node) const
 
 // Theme item binding.
 
-void ThemeDB::bind_class_item(Theme::DataType p_data_type, const StringName& p_class_name,
-	const StringName& p_prop_name, const StringName& p_item_name, ThemeItemSetter p_setter)
+void ThemeDB::bind_class_item(Theme::DataType p_data_type, const String& p_class_name,
+	const String& p_prop_name, const String& p_item_name, ThemeItemSetter p_setter)
 {
 	ERR_FAIL_COND_MSG(theme_item_binds[p_class_name].has(p_prop_name),
 		vformat("Failed to bind theme item '%s' in class '%s': already bound", p_prop_name,
@@ -165,8 +165,8 @@ void ThemeDB::bind_class_item(Theme::DataType p_data_type, const StringName& p_c
 	theme_item_binds_list[p_class_name].push_back(bind);
 }
 
-void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const StringName& p_class_name,
-	const StringName& p_prop_name, const StringName& p_item_name, const StringName& p_type_name,
+void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const String& p_class_name,
+	const String& p_prop_name, const String& p_item_name, const String& p_type_name,
 	ThemeItemSetter p_setter)
 {
 	ERR_FAIL_COND_MSG(theme_item_binds[p_class_name].has(p_prop_name),
@@ -183,17 +183,17 @@ void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const String
 	theme_item_binds_list[p_class_name].push_back(bind);
 }
 
-void ThemeDB::get_class_items(const StringName& p_class_name, List<ThemeItemBind>* r_list,
+void ThemeDB::get_class_items(const String& p_class_name, List<ThemeItemBind>* r_list,
 	bool p_include_inherited, Theme::DataType p_filter_type)
 {
-	List<StringName> class_hierarchy;
-	StringName class_name = p_class_name;
-	while (class_name != StringName()) {
+	List<String> class_hierarchy;
+	String class_name = p_class_name;
+	while (class_name != String()) {
 		class_hierarchy.push_front(class_name); // Put parent classes in front.
 	}
-	HashSet<StringName> inherited_props;
-	for (const StringName& theme_type : class_hierarchy) {
-		HashMap<StringName, List<ThemeItemBind>>::Iterator E =
+	HashSet<String> inherited_props;
+	for (const String& theme_type : class_hierarchy) {
+		HashMap<String, List<ThemeItemBind>>::Iterator E =
 			theme_item_binds_list.find(theme_type);
 		if (E) {
 			for (const ThemeItemBind& F : E->value) {
@@ -217,7 +217,7 @@ void ThemeDB::get_class_items(const StringName& p_class_name, List<ThemeItemBind
 
 void ThemeDB::_sort_theme_items()
 {
-	for (KeyValue<StringName, List<ThemeDB::ThemeItemBind>>& E : theme_item_binds_list) {
+	for (KeyValue<String, List<ThemeDB::ThemeItemBind>>& E : theme_item_binds_list) {
 		E.value.sort_custom<ThemeItemBind::SortByType>();
 	}
 }

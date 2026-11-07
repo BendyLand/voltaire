@@ -314,7 +314,7 @@ void AudioStreamPlayer3D::_notification(int p_what)
 
 		if (setplayback.is_valid() && setplay.get() >= 0) {
 			internal->active.set();
-			HashMap<StringName, Vector<AudioFrame>> bus_map;
+			HashMap<String, Vector<AudioFrame>> bus_map;
 			bus_map[_get_actual_bus()] = volume_vector;
 			AudioServer::get_singleton()->start_playback_stream(setplayback, bus_map, setplay.get(),
 				actual_pitch_scale, linear_attenuation, attenuation_filter_cutoff_hz);
@@ -331,7 +331,7 @@ void AudioStreamPlayer3D::_notification(int p_what)
 }
 
 // Interacts with PhysicsServer3D, so can only be called during _physics_process.
-StringName AudioStreamPlayer3D::_get_actual_bus()
+String AudioStreamPlayer3D::_get_actual_bus()
 {
 #ifndef PHYSICS_3D_DISABLED
 	Area3D* overriding_area = _get_overriding_area();
@@ -569,7 +569,7 @@ Vector<AudioFrame> AudioStreamPlayer3D::_update_panning()
 			}
 
 			if (area->is_using_reverb_bus()) {
-				StringName reverb_bus_name = area->get_reverb_bus_name();
+				String reverb_bus_name = area->get_reverb_bus_name();
 				bus_volumes[reverb_bus_name] = output_reverb_vector;
 			}
 		}
@@ -680,13 +680,13 @@ float AudioStreamPlayer3D::get_playback_position()
 	return internal->get_playback_position();
 }
 
-void AudioStreamPlayer3D::set_bus(const StringName& p_bus)
+void AudioStreamPlayer3D::set_bus(const String& p_bus)
 {
 	internal->bus = p_bus; // This will be pushed to the audio server during the next physics
 						   // timestep, which is fast enough.
 }
 
-StringName AudioStreamPlayer3D::get_bus() const { return internal->get_bus(); }
+String AudioStreamPlayer3D::get_bus() const { return internal->get_bus(); }
 
 void AudioStreamPlayer3D::set_autoplay(bool p_enable) { internal->autoplay = p_enable; }
 
