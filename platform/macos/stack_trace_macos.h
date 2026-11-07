@@ -75,7 +75,7 @@ static Vector<String> symbolize_with_atos(const String &p_exec_path, const void 
 	// Execute atos with the arguments and capture the output.
 	String atos_output;
 	int ret = 0;
-	const Error err = OS::get_singleton()->execute("atos", args, &atos_output, &ret);
+	const Error err = OS::execute("atos", args, &atos_output, &ret);
 	if (err == OK && ret == 0 && !atos_output.is_empty()) {
 		return atos_output.split("\n", false);
 	}

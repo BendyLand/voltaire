@@ -401,17 +401,17 @@ bool EditorHelpSearch::Runner::_find_or_create_item(
 bool EditorHelpSearch::Runner::work(uint64_t slot)
 {
 	// Return true when the search has been completed, otherwise false.
-	const uint64_t until = OS::get_singleton()->get_ticks_usec() + slot;
+	const uint64_t until = OS::get_ticks_usec() + slot;
 	if (term.length() > 1 || term == "@") {
 		while (!_slice()) {
-			if (OS::get_singleton()->get_ticks_usec() > until) {
+			if (OS::get_ticks_usec() > until) {
 				return false;
 			}
 		}
 	}
 	else {
 		while (!_fill()) {
-			if (OS::get_singleton()->get_ticks_usec() > until) {
+			if (OS::get_ticks_usec() > until) {
 				return false;
 			}
 		}

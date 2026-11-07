@@ -1099,6 +1099,49 @@ void GI::finalize()
 	if (sdfgi_shader.preprocess_shader.is_valid()) {
 		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
 	}
+	if (shader_version.is_valid()) {
+		shader.version_free(shader_version);
+		shader_version = RID();
+	}
+
+	if (sdfgi_shader.debug_probes_shader_version.is_valid()) {
+		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader_version);
+		sdfgi_shader.debug_probes_shader_version = RID();
+	}
+	if (sdfgi_shader.debug_shader_version.is_valid()) {
+		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader_version);
+		sdfgi_shader.debug_shader_version = RID();
+	}
+	if (sdfgi_shader.direct_light_shader.is_valid()) {
+		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
+		sdfgi_shader.direct_light_shader = RID();
+	}
+	if (sdfgi_shader.integrate_shader.is_valid()) {
+		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
+		sdfgi_shader.integrate_shader = RID();
+	}
+	if (sdfgi_shader.preprocess_shader.is_valid()) {
+		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
+		sdfgi_shader.preprocess_shader = RID();
+	}
+	if (shader_version.is_valid()) {
+		shader.version_free(shader_version);
+		shader_version = RID();
+	}
+	if (voxel_gi_lighting_shader_version.is_valid()) {
+		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
+		voxel_gi_lighting_shader_version = RID();
+	}
+	if (voxel_gi_debug_shader_version.is_valid()) {
+		voxel_gi_debug_shader.version_free(voxel_gi_debug_shader_version);
+		voxel_gi_debug_shader_version = RID();
+	}
+
+	// And any on voxel_gi_shader / debug shaders:
+	if (voxel_gi_lighting_shader_version.is_valid()) {
+		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
+		voxel_gi_lighting_shader_version = RID();
+	}
 }
 
 void GI::free()

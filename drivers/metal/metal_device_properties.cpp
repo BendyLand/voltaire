@@ -87,7 +87,7 @@ void MetalDeviceProperties::init_features(MTL::Device *p_device) {
 	features.msl_max_version = make_msl_version((static_cast<uint32_t>(lang_version) >> 0x10) & 0xff, (static_cast<uint32_t>(lang_version) >> 0x00) & 0xff);
 	features.msl_target_version = features.msl_max_version;
 	opts->release();
-	if (String version = OS::get_singleton()->get_environment("GODOT_MTL_TARGET_VERSION"); !version.is_empty()) {
+	if (String version = OS::get_environment("GODOT_MTL_TARGET_VERSION"); !version.is_empty()) {
 		if (version != "max") {
 			Vector<String> parts = version.split(".", true, 2);
 			if (parts.size() == 2) {
@@ -161,7 +161,7 @@ void MetalDeviceProperties::init_features(MTL::Device *p_device) {
 		}
 	}
 
-	if (OS::get_singleton()->get_environment("GODOT_MTL_DISABLE_IMAGE_ATOMICS") == "1") {
+	if (OS::get_environment("GODOT_MTL_DISABLE_IMAGE_ATOMICS") == "1") {
 		features.supports_native_image_atomics = false;
 	}
 
@@ -175,7 +175,7 @@ void MetalDeviceProperties::init_features(MTL::Device *p_device) {
 		features.needs_arg_encoders = !(p_device->supportsFamily(MTL::GPUFamilyMetal3) && features.argument_buffers_tier == MTL::ArgumentBuffersTier2);
 	}
 
-	if (String v = OS::get_singleton()->get_environment("GODOT_MTL_DISABLE_ARGUMENT_BUFFERS"); v == "1") {
+	if (String v = OS::get_environment("GODOT_MTL_DISABLE_ARGUMENT_BUFFERS"); v == "1") {
 		features.use_argument_buffers = false;
 	}
 

@@ -172,7 +172,7 @@ Error WebSocketMultiplayerPeer::create_client(const String& p_url, const Ref<TLS
 		return err;
 	}
 	PendingPeer pending;
-	pending.time = OS::get_singleton()->get_ticks_msec();
+	pending.time = OS::get_ticks_msec();
 	pending_peers[1] = pending;
 	peers_map[1] = peer;
 	connection_status = CONNECTION_CONNECTING;

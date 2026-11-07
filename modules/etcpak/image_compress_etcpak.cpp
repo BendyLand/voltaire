@@ -91,7 +91,7 @@ void _compress_bc(Image *r_img, Image::UsedChannels p_channels) {
 }
 
 void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
-	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	uint64_t start_time = OS::get_ticks_msec();
 
 	// The image is already compressed, return.
 	if (r_img->is_compressed()) {
@@ -303,6 +303,6 @@ void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
 	// Replace original image with compressed one.
 	r_img->set_data(width, height, has_mipmaps, target_format, dest_data);
 
-	print_verbose(vformat("etcpak: Encoding took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
+	print_verbose(vformat("etcpak: Encoding took %d ms.", OS::get_ticks_msec() - start_time));
 }
 #endif // TOOLS_ENABLED

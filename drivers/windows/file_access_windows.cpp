@@ -155,7 +155,7 @@ Error FileAccessWindows::open_internal(const String &p_path, int p_mode_flags) {
 			}
 			proper_path = "res://";
 		} else if (get_access_type() == ACCESS_USERDATA) {
-			working_path = OS::get_singleton()->get_user_data_dir();
+			working_path = OS::get_user_data_dir();
 			if (!working_path.is_empty()) {
 				base_path = working_path.path_to_file(base_path);
 			}
@@ -199,7 +199,7 @@ Error FileAccessWindows::open_internal(const String &p_path, int p_mode_flags) {
 		// Create a temporary file in the same directory as the target file.
 		// Note: do not use GetTempFileNameW, it's not long path aware!
 		String tmpfile;
-		uint64_t id = OS::get_singleton()->get_ticks_usec();
+		uint64_t id = OS::get_ticks_usec();
 		while (true) {
 			tmpfile = path + itos(id++) + ".tmp";
 			HANDLE handle = CreateFileW((LPCWSTR)tmpfile.utf16().get_data(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -263,7 +263,7 @@ void FileAccessWindows::_close() {
 				break;
 			}
 
-			OS::get_singleton()->delay_usec(1000);
+			OS::delay_usec(1000);
 		}
 
 		if (rename_error) {

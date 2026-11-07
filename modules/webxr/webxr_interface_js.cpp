@@ -861,7 +861,7 @@ void WebXRInterfaceJS::_on_input_event(int p_event_type, int p_input_source_id) 
 }
 
 Vector2 WebXRInterfaceJS::_get_screen_position_from_joy_vector(const Vector2 &p_joy_vector) {
-	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_main_loop());
 	if (!scene_tree) {
 		return Vector2();
 	}

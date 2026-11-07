@@ -362,7 +362,7 @@ void RasterizerGLES3::initialize()
 
 #ifdef GLAD_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			if (GLAD_GL_ARB_debug_output) {
 				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 				glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
@@ -376,7 +376,7 @@ void RasterizerGLES3::initialize()
 
 #ifdef GL_API_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
+		if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
 			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
 				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
@@ -399,7 +399,7 @@ void RasterizerGLES3::initialize()
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
 #ifdef GLES_API_ENABLED
 	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			DebugMessageCallbackARB callback =
 				(DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
 			if (!callback) {
@@ -504,7 +504,7 @@ void RasterizerGLES3::finalize()
 void RasterizerGLES3::make_current(bool p_gles_over_gl)
 {
 	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
-	OS::get_singleton()->set_gles_over_gl(p_gles_over_gl);
+	OS::set_gles_over_gl(p_gles_over_gl);
 
 	RendererCompositor::_create_func = _create_current;
 	RendererCompositor::low_end = true;
@@ -623,7 +623,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	glDepthMask(GL_FALSE);
 	glClearColor(p_color.r, p_color.g, p_color.b,
-		OS::get_singleton()->is_layered_allowed() ? p_color.a : 1.0);
+		OS::is_layered_allowed() ? p_color.a : 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	RID texture = texture_storage->texture_allocate();

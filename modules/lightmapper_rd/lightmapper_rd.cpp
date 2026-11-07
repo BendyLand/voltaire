@@ -939,7 +939,7 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 			String str;
 			int exitcode = 0;
 
-			Error err = OS::get_singleton()->execute(p_exe, args, &str, &exitcode, true);
+			Error err = OS::execute(p_exe, args, &str, &exitcode, true);
 
 			da->remove(fname_light_in);
 

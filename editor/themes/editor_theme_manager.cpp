@@ -183,7 +183,7 @@ Ref<StyleBoxLine> EditorThemeManager::make_line_stylebox(
 
 Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme>& p_old_theme)
 {
-	OS::get_singleton()->benchmark_begin_measure(get_benchmark_key(), "Create Base Theme");
+	OS::benchmark_begin_measure(get_benchmark_key(), "Create Base Theme");
 
 	Ref<EditorTheme> theme = memnew(EditorTheme);
 	ThemeConfiguration config = _create_theme_config();
@@ -204,7 +204,7 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme>& 
 
 	// Register icons.
 	{
-		OS::get_singleton()->benchmark_begin_measure(get_benchmark_key(), "Register Icons");
+		OS::benchmark_begin_measure(get_benchmark_key(), "Register Icons");
 
 		// External functions, see editor_icons.cpp.
 		editor_configure_icons(config.dark_icon_and_font);
@@ -224,7 +224,7 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme>& 
 				config.thumb_size, config.gizmo_handle_scale);
 		}
 
-		OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Register Icons");
+		OS::benchmark_end_measure(get_benchmark_key(), "Register Icons");
 	}
 
 	// TODO: Check if existing style definitions from the old theme are usable and copy them.
@@ -243,7 +243,7 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme>& 
 	_populate_text_editor_styles(theme, config);
 	_populate_visual_shader_styles(theme, config);
 
-	OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Create Base Theme");
+	OS::benchmark_end_measure(get_benchmark_key(), "Create Base Theme");
 	return theme;
 }
 

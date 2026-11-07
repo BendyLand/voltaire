@@ -466,7 +466,7 @@ bool ColorPicker::is_hex_visible() const { return hex_visible; }
 void ColorPicker::_req_permission()
 {
 #ifdef MACOS_ENABLED
-	OS::get_singleton()->request_permission("macos.permission.RECORD_SCREEN");
+	OS::request_permission("macos.permission.RECORD_SCREEN");
 #endif
 }
 

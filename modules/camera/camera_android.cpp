@@ -237,7 +237,7 @@ bool CameraFeedAndroid::activate_feed() {
 	device_error_occurred.clear();
 
 	// Request permission
-	if (!OS::get_singleton()->request_permission("CAMERA")) {
+	if (!OS::request_permission("CAMERA")) {
 		return false;
 	}
 

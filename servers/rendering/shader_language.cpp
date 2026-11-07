@@ -10187,7 +10187,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 							new_hint = ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE;
 							--texture_uniforms;
 							--texture_binding;
-							if (OS::get_singleton()->get_current_rendering_method() !=
+							if (OS::get_current_rendering_method() !=
 								"forward_plus") {
 								_set_error(RTR("'hint_normal_roughness_texture' is only available "
 											   "when using the Forward+ renderer."));

@@ -40,7 +40,7 @@ RandomPCG::RandomPCG(uint64_t p_seed, uint64_t p_inc) :
 }
 
 void RandomPCG::randomize() {
-	seed(((uint64_t)OS::get_singleton()->get_unix_time() + OS::get_singleton()->get_ticks_usec()) * pcg.state + PCG_DEFAULT_INC_64);
+	seed(((uint64_t)OS::get_unix_time() + OS::get_ticks_usec()) * pcg.state + PCG_DEFAULT_INC_64);
 }
 
 int64_t RandomPCG::rand_weighted(const Vector<float> &p_weights) {

@@ -16,7 +16,7 @@
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
 /*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
+/* The above copyright notice and this permission notice shall be          */
 /* included in all copies or substantial portions of the Software.        */
 /*                                                                        */
 /* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "crash_handler_linuxbsd.h"
-
 #include "core/input/input_event.h"
+#include "core/os/os.h"
+#include "crash_handler_linuxbsd.h"
 #include "drivers/alsa/audio_driver_alsa.h"
 #include "drivers/alsamidi/midi_driver_alsamidi.h"
 #include "drivers/pulseaudio/audio_driver_pulseaudio.h"
@@ -45,100 +45,108 @@ typedef struct _FcConfig FcConfig;
 typedef struct _FcObjectSet FcObjectSet;
 #endif
 
-class OS_LinuxBSD : public OS_Unix {
-	virtual void delete_main_loop() override;
+class OS_LinuxBSD final
+{
+public:
+	OS_LinuxBSD() = delete;
+	~OS_LinuxBSD() = delete;
+	OS_LinuxBSD(const OS_LinuxBSD&) = delete;
+	OS_LinuxBSD& operator=(const OS_LinuxBSD&) = delete;
 
+private:
 #ifdef FONTCONFIG_ENABLED
-	bool font_config_initialized = false;
-	FcConfig *config = nullptr;
-	FcObjectSet *object_set = nullptr;
+	static inline bool font_config_initialized = false;
+	static inline FcConfig* config = nullptr;
+	static inline FcObjectSet* object_set = nullptr;
 
-	int _weight_to_fc(int p_weight) const;
-	int _stretch_to_fc(int p_stretch) const;
+	static int _weight_to_fc(int p_weight);
+	static int _stretch_to_fc(int p_stretch);
 #endif
 
 #ifdef SDL_ENABLED
-	JoypadSDL *joypad_sdl = nullptr;
+	static inline JoypadSDL* joypad_sdl = nullptr;
 #endif
 
 #ifdef ALSA_ENABLED
-	AudioDriverALSA driver_alsa;
+	static inline AudioDriverALSA driver_alsa;
 #endif
 
 #ifdef ALSAMIDI_ENABLED
-	MIDIDriverALSAMidi driver_alsamidi;
+	static inline MIDIDriverALSAMidi driver_alsamidi;
 #endif
 
 #ifdef PULSEAUDIO_ENABLED
-	AudioDriverPulseAudio driver_pulseaudio;
+	static inline AudioDriverPulseAudio driver_pulseaudio;
 #endif
 
-	CrashHandler crash_handler;
+	static inline CrashHandler crash_handler;
+	static inline MainLoop* main_loop = nullptr;
 
-	MainLoop *main_loop = nullptr;
+	static String get_systemd_os_release_info_value(const String& key);
 
-	String get_systemd_os_release_info_value(const String &key) const;
+	static Vector<String> lspci_device_filter(Vector<String> vendor_device_id_mapping,
+		String class_suffix, String check_column, String whitelist);
+	static Vector<String> lspci_get_device_value(
+		Vector<String> vendor_device_id_mapping, String check_column, String blacklist);
 
-	Vector<String> lspci_device_filter(Vector<String> vendor_device_id_mapping, String class_suffix, String check_column, String whitelist) const;
-	Vector<String> lspci_get_device_value(Vector<String> vendor_device_id_mapping, String check_column, String blacklist) const;
-
-	String system_dir_desktop_cache;
-
-protected:
-	virtual void initialize() override;
-	virtual void finalize() override;
-
-	virtual void initialize_joypads() override;
-
-	virtual void set_main_loop(MainLoop *p_main_loop) override;
+	static inline String system_dir_desktop_cache;
 
 public:
-	virtual String get_identifier() const override;
-	virtual String get_name() const override;
-	virtual String get_distribution_name() const override;
-	virtual String get_version() const override;
+	static void initialize();
+	static void initialize_core();
+	static void finalize();
+	static void finalize_core();
 
-	virtual Vector<String> get_video_adapter_driver_info() const override;
+	static void initialize_joypads();
 
-	virtual MainLoop *get_main_loop() const override;
+	static void set_main_loop(MainLoop* p_main_loop);
+	static void delete_main_loop();
+	static MainLoop* get_main_loop();
 
-	virtual uint64_t get_embedded_pck_offset() const override;
+	static String get_identifier();
+	static String get_name();
+	static String get_distribution_name();
+	static String get_version();
 
-	virtual Vector<String> get_system_fonts() const override;
-	virtual String get_system_font_path(const String &p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
-	virtual Vector<String> get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale = String(), const String &p_script = String(), int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
+	static Vector<String> get_video_adapter_driver_info();
 
-	virtual String get_config_path() const override;
-	virtual String get_data_path() const override;
-	virtual String get_cache_path() const override;
+	static uint64_t get_embedded_pck_offset();
 
-	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const override;
+	static Vector<String> get_system_fonts();
+	static String get_system_font_path(const String& p_font_name, int p_weight = 400,
+		int p_stretch = 100, bool p_italic = false);
+	static Vector<String> get_system_font_path_for_text(const String& p_font_name,
+		const String& p_text, const String& p_locale = String(), const String& p_script = String(),
+		int p_weight = 400, int p_stretch = 100, bool p_italic = false);
 
-	virtual Error shell_open(const String &p_uri) override;
+	static String get_config_path();
+	static String get_data_path();
+	static String get_cache_path();
 
-	virtual String get_unique_id() const override;
-	virtual String get_processor_name() const override;
+	static String get_system_dir(OS::SystemDir p_dir, bool p_shared_storage = true);
 
-	virtual bool is_sandboxed() const override;
+	static Error shell_open(const String& p_uri);
 
-	virtual void alert(const String &p_alert, const String &p_title = "ALERT!") override;
+	static String get_unique_id();
+	static String get_processor_name();
 
-	virtual bool _check_internal_feature_support(const String &p_feature) override;
+	static bool is_sandboxed();
 
-	void run();
+	static void alert(const String& p_alert, const String& p_title = "ALERT!");
 
-	virtual void disable_crash_handler() override;
-	virtual bool is_disable_crash_handler() const override;
+	static bool _check_internal_feature_support(const String& p_feature);
 
-	virtual Error move_to_trash(const String &p_path) override;
+	static void run();
 
-	virtual String get_system_ca_certificates() override;
+	static void disable_crash_handler();
+	static bool is_disable_crash_handler();
+
+	static Error move_to_trash(const String& p_path);
+
+	static String get_system_ca_certificates();
 
 #ifdef TOOLS_ENABLED
-	virtual bool _test_create_rendering_device_and_gl(const String &p_display_driver) const override;
-	virtual bool _test_create_rendering_device(const String &p_display_driver) const override;
+	static bool _test_create_rendering_device_and_gl(const String& p_display_driver);
+	static bool _test_create_rendering_device(const String& p_display_driver);
 #endif
-
-	OS_LinuxBSD();
-	~OS_LinuxBSD();
 };

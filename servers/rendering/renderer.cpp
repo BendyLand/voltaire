@@ -477,14 +477,14 @@ String Renderer::get_current_rendering_driver_name()
 {
 	// Needs to remain in OS, since it's actually OS that interacts with it, but it's better exposed
 	// here.
-	return ::OS::get_singleton()->get_current_rendering_driver_name();
+	return ::OS::get_current_rendering_driver_name();
 }
 
 String Renderer::get_current_rendering_method()
 {
 	// Needs to remain in OS, since it's actually OS that interacts with it, but it's better exposed
 	// here.
-	return ::OS::get_singleton()->get_current_rendering_method();
+	return ::OS::get_current_rendering_method();
 }
 
 Vector<uint8_t> _convert_surface_version_1_to_surface_version_2(uint64_t p_format,

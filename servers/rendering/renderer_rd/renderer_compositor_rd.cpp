@@ -256,10 +256,11 @@ void RendererCompositorRD::finalize()
 	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
 
-	blit->shader.version_free(blit->shader_version);
-	RD::free_rid(blit->index_buffer);
-	RD::free_rid(blit->sampler);
 	if (blit) {
+		blit->shader.version_free(blit->shader_version);
+		RD::free_rid(blit->index_buffer);
+		RD::free_rid(blit->sampler);
+
 		memdelete(blit);
 		blit = nullptr;
 	}

@@ -274,7 +274,7 @@ static void _get_drives(List<String> *list) {
 		}
 
 		// Add Desktop dir.
-		String dpath = OS::get_singleton()->get_system_dir(OS::SystemDir::SYSTEM_DIR_DESKTOP);
+		String dpath = OS::get_system_dir(OS::SystemDir::SYSTEM_DIR_DESKTOP);
 		if (dpath.length() > 0 && !list->find(dpath)) {
 			list->push_back(dpath);
 		}

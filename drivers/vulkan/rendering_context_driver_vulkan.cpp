@@ -459,7 +459,7 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions()
 #ifdef DEV_ENABLED
 	bool want_debug_utils = true;
 #else
-	bool want_debug_utils = OS::get_singleton()->is_stdout_verbose();
+	bool want_debug_utils = OS::is_stdout_verbose();
 #endif
 	if (want_debug_utils) {
 		_register_requested_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, false);

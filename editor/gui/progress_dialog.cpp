@@ -140,7 +140,7 @@ bool ProgressDialog::task_step(
 
 	Task& t = tasks[p_task];
 	if (!p_force_redraw) {
-		uint64_t tus = OS::get_singleton()->get_ticks_usec();
+		uint64_t tus = OS::get_ticks_usec();
 		if (tus - t.last_progress_tick < 200000) { // 200ms
 			return canceled;
 		}
@@ -153,7 +153,7 @@ bool ProgressDialog::task_step(
 	}
 
 	t.state->set_text(p_state);
-	t.last_progress_tick = OS::get_singleton()->get_ticks_usec();
+	t.last_progress_tick = OS::get_ticks_usec();
 	_update_ui();
 
 	return canceled;

@@ -2780,7 +2780,7 @@ void DisplayServerX11::window_set_size(const Size2i p_size, DisplayServerEnums::
 			break;
 		}
 
-		OS::get_singleton()->delay_usec(10'000);
+		OS::delay_usec(10'000);
 	}
 
 	// Keep rendering context window size in sync
@@ -3043,7 +3043,7 @@ void DisplayServerX11::_set_wm_maximized(DisplayServerEnums::WindowID p_window, 
 		for (int attempt = 0;
 			 window_get_mode(p_window) != DisplayServerEnums::WINDOW_MODE_MAXIMIZED && attempt < 50;
 			 attempt++) {
-			OS::get_singleton()->delay_usec(10'000);
+			OS::delay_usec(10'000);
 		}
 	}
 	wd.maximized = p_enabled;
@@ -4666,7 +4666,7 @@ void DisplayServerX11::popup_open(DisplayServerEnums::WindowID p_window)
 			_send_window_event(windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 
-		time_since_popup = OS::get_singleton()->get_ticks_msec();
+		time_since_popup = OS::get_ticks_msec();
 		popup_list.push_back(p_window);
 	}
 }
@@ -4698,7 +4698,7 @@ bool DisplayServerX11::mouse_process_popups()
 		return false;
 	}
 
-	uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_since_popup;
+	uint64_t delta = OS::get_ticks_msec() - time_since_popup;
 	if (delta < 250) {
 		return false;
 	}
@@ -4818,7 +4818,7 @@ bool DisplayServerX11::is_window_transparency_available() const
 		return false;
 	}
 #endif
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
 void DisplayServerX11::set_native_icon(const String& p_filename)
@@ -5495,7 +5495,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 		ERR_FAIL_NULL_V(vi_list, DisplayServerEnums::INVALID_WINDOW_ID);
 
 		visualInfo = vi_list[0];
-		if (OS::get_singleton()->is_layered_allowed()) {
+		if (OS::is_layered_allowed()) {
 			for (int i = 0; i < numberOfVisuals; i++) {
 				XRenderPictFormat* pict_format =
 					XRenderFindVisualFormat(x11_display, vi_list[i].visual);
@@ -5523,7 +5523,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 
 	unsigned long valuemask = CWBorderPixel | CWColormap | CWEventMask;
 
-	if (OS::get_singleton()->is_layered_allowed()) {
+	if (OS::is_layered_allowed()) {
 		windowAttributes.background_pixmap = None;
 		windowAttributes.background_pixel = 0;
 		windowAttributes.border_pixmap = None;
@@ -5606,7 +5606,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 		}
 #endif
 		if (!AccessibilityServer::get_singleton()->window_create(id, nullptr)) {
-			if (OS::get_singleton()->is_stdout_verbose()) {
+			if (OS::is_stdout_verbose()) {
 				ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 						  "disabled!");
 			}
@@ -5620,7 +5620,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 		// associate PID
 		//  make PID known to X11
 		{
-			const long pid = OS::get_singleton()->get_process_id();
+			const long pid = OS::get_process_id();
 			Atom net_wm_pid = XInternAtom(x11_display, "_NET_WM_PID", False);
 			if (net_wm_pid != None) {
 				XChangeProperty(x11_display, wd.x11_window, net_wm_pid, XA_CARDINAL, 32,

@@ -206,7 +206,7 @@ Error HTTPClientTCP::request(Method p_method, const String& p_url, const Vector<
 	}
 	if (add_uagent) {
 		request += "User-Agent: GodotEngine/" + String(VLTR_VERSION_FULL_BUILD) + " (" +
-				   OS::get_singleton()->get_name() + ")\r\n";
+				   OS::get_name() + ")\r\n";
 	}
 	if (add_accept) {
 		request += "Accept: */*\r\n";

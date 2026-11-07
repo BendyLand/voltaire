@@ -100,7 +100,7 @@ Error DAPeer::handle_data()
 
 		// Apply a timestamp if it there's none yet
 		if (!timestamp) {
-			timestamp = OS::get_singleton()->get_ticks_msec();
+			timestamp = OS::get_ticks_msec();
 		}
 
 		// Response

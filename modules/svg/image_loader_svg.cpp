@@ -103,7 +103,7 @@ Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const ui
 
 	picture->size(width, height);
 
-	uint32_t threads = OS::get_singleton()->get_processor_count();
+	uint32_t threads = OS::get_processor_count();
 	tvg::Initializer::init(threads);
 	std::unique_ptr<tvg::SwCanvas> sw_canvas(tvg::SwCanvas::gen());
 	Vector<uint8_t> buffer;

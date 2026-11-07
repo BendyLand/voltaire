@@ -130,8 +130,8 @@ String Resource::generate_scene_unique_id()
 	// Generate a unique enough hash, but still user-readable.
 	// If it's not unique it does not matter because the saver will try again.
 	if (unique_id_gen.get_seed() == 0) {
-		OS::DateTime dt = OS::get_singleton()->get_datetime();
-		uint32_t hash = hash_murmur3_one_32(OS::get_singleton()->get_ticks_usec());
+		OS::DateTime dt = OS::get_datetime();
+		uint32_t hash = hash_murmur3_one_32(OS::get_ticks_usec());
 		hash = hash_murmur3_one_32(dt.year, hash);
 		hash = hash_murmur3_one_32(dt.month, hash);
 		hash = hash_murmur3_one_32(dt.day, hash);
@@ -305,7 +305,7 @@ Mutex ResourceCache::lock;
 void ResourceCache::clear()
 {
 	if (!resources.is_empty()) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			ERR_PRINT(vformat("%d resources still in use at exit.", resources.size()));
 			for (const KeyValue<String, Resource*>& E : resources) {
 				__print_line(vformat("Resource still in use: %s", E.key));

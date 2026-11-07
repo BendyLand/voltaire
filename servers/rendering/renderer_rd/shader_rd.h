@@ -108,7 +108,7 @@ private:
 	void _compile_variant(uint32_t p_variant, CompileData p_data);
 
 	void _initialize_version(Version* p_version);
-	void _clear_version(Version* p_version);
+	void _clear_version(Version* p_version, bool p_skip_compilation = false);
 	void _compile_version_start(Version* p_version, int p_group);
 	void _compile_version_end(Version* p_version, int p_group);
 	void _compile_ensure_finished(Version* p_version);
@@ -324,5 +324,3 @@ public:
 
 	virtual ~ShaderRD();
 };
-
-

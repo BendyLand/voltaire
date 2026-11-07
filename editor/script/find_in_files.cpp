@@ -129,11 +129,10 @@ void FindInFilesSearch::_process()
 {
 	// This part can be moved to a thread if needed.
 
-	OS& os = *OS::get_singleton();
-	uint64_t time_before = os.get_ticks_msec();
+	uint64_t time_before = OS::get_ticks_msec();
 	while (is_processing()) {
 		_iterate();
-		uint64_t elapsed = (os.get_ticks_msec() - time_before);
+		uint64_t elapsed = (OS::get_ticks_msec() - time_before);
 		if (elapsed > 8) { // Process again after waiting 8 ticks.
 			break;
 		}

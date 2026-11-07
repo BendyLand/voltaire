@@ -204,7 +204,7 @@ TEST_CASE("[Multiplayer][SceneMultiplayer][SceneTree] Send Authentication") {
 		multiplayer_peer->emit_signal(SNAME("peer_connected"), second_peer_id);
 
 		// Let timeout happens.
-		OS::get_singleton()->delay_usec(500000);
+		OS::delay_usec(500000);
 
 		CHECK_EQ(scene_multiplayer->poll(), Error::OK);
 

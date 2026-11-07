@@ -64,7 +64,7 @@ bool ExportTemplateManager::_is_online() const { return !offline_container->is_v
 
 void ExportTemplateManager::_open_mirror()
 {
-	OS::get_singleton()->shell_open(_get_current_mirror_url());
+	OS::shell_open(_get_current_mirror_url());
 }
 
 void ExportTemplateManager::_delete_confirmed()
@@ -88,7 +88,7 @@ void ExportTemplateManager::_delete_file(const TreeItem* p_item)
 			_get_template_folder_path(selected_version).path_join(p_item->get_text(0));
 
 		if (FileAccess::exists(full_path)) {
-			OS::get_singleton()->move_to_trash(full_path);
+			OS::move_to_trash(full_path);
 		}
 		file_metadata.erase(p_item->get_text(0));
 	}
@@ -383,7 +383,7 @@ void ExportTemplateManager::_tree_item_edited()
 void ExportTemplateManager::_open_template_directory()
 {
 	const String selected_version = version_list->get_item_text(version_list->get_current());
-	OS::get_singleton()->shell_show_in_file_manager(
+	OS::shell_show_in_file_manager(
 		_get_template_folder_path(selected_version), true);
 }
 

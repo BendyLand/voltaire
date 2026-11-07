@@ -36,10 +36,10 @@ uint32_t MultiplayerPeer::generate_unique_id() const
 	uint32_t hash = 0;
 
 	while (hash == 0 || hash == 1) {
-		hash = hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_ticks_usec());
-		hash = hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_unix_time(), hash);
+		hash = hash_murmur3_one_32((uint32_t)OS::get_ticks_usec());
+		hash = hash_murmur3_one_32((uint32_t)OS::get_unix_time(), hash);
 		hash =
-			hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_user_data_dir().hash64(), hash);
+			hash_murmur3_one_32((uint32_t)OS::get_user_data_dir().hash64(), hash);
 		hash = hash_murmur3_one_32((uint32_t)((uint64_t)this), hash);  // Rely on ASLR heap
 		hash = hash_murmur3_one_32((uint32_t)((uint64_t)&hash), hash); // Rely on ASLR stack
 

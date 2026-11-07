@@ -612,7 +612,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions()
 #ifdef DEV_ENABLED
 		bool want_debug_markers = true;
 #else
-		bool want_debug_markers = OS::get_singleton()->is_stdout_verbose();
+		bool want_debug_markers = OS::is_stdout_verbose();
 #endif
 		if (want_debug_markers) {
 			_register_requested_device_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false);
@@ -823,10 +823,10 @@ Error RenderingDeviceDriverVulkan::_check_device_features()
 #if defined(ANDROID_ENABLED) || defined(IOS_ENABLED)
 		// Android/iOS platform ports currently don't exit themselves when this method returns
 		// `ERR_CANT_CREATE`.
-		OS::get_singleton()->alert(
+		OS::alert(
 			error_string + "\nClick OK to exit (black screen will be visible).");
 #else
-		OS::get_singleton()->alert(error_string + "\nClick OK to exit.");
+		OS::alert(error_string + "\nClick OK to exit.");
 #endif
 
 		return ERR_CANT_CREATE;
@@ -2134,7 +2134,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		// Hooks control device creation & possibly presentation
 		// (e.g. OpenXR) thus it's too risky to use Swappy.
 		swappy_frame_pacer_enable = false;
-		OS::get_singleton()->print(
+		OS::print(
 			"VulkanHooks detected (e.g. OpenXR): Force-disabling Swappy Frame Pacing.\n");
 	}
 #endif
@@ -4391,7 +4391,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 	VkSurfaceTransformFlagBitsKHR surface_transform_bits = surface_capabilities.currentTransform;
 
 	VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	if (OS::get_singleton()->is_layered_allowed() ||
+	if (OS::is_layered_allowed() ||
 		!(surface_capabilities.supportedCompositeAlpha & composite_alpha)) {
 		// Find a supported composite alpha mode - one of these is guaranteed to be set.
 		VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] = {
@@ -7179,7 +7179,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 			if ((i < shader_info->respv_stage_shaders.size()) &&
 				!shader_info->respv_stage_shaders[i].empty()) {
 #if RECORD_PIPELINE_STATISTICS
-				uint64_t respv_start_time = OS::get_singleton()->get_ticks_usec();
+				uint64_t respv_start_time = OS::get_ticks_usec();
 #endif
 				// Attempt to optimize the shader using re-spirv before relying on the driver.
 				respv_spec_constants.resize(p_specialization_constants.size());
@@ -7232,7 +7232,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 					}
 
 #if RECORD_PIPELINE_STATISTICS
-					respv_run_time[i] = OS::get_singleton()->get_ticks_usec() - respv_start_time;
+					respv_run_time[i] = OS::get_ticks_usec() - respv_start_time;
 					respv_size[i] = respv_optimized_data.size();
 #endif
 				}
@@ -7287,7 +7287,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	pipeline_create_info.subpass = p_render_subpass;
 
 #if RECORD_PIPELINE_STATISTICS
-	uint64_t pipeline_start_time = OS::get_singleton()->get_ticks_usec();
+	uint64_t pipeline_start_time = OS::get_ticks_usec();
 #endif
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
@@ -7308,7 +7308,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 	{
 		MutexLock lock(pipeline_statistics.file_access_mutex);
 		uint64_t pipeline_creation_time =
-			OS::get_singleton()->get_ticks_usec() - pipeline_start_time;
+			OS::get_ticks_usec() - pipeline_start_time;
 		for (uint32_t i = 0; i < shader_info->vk_stages_create_info.size(); i++) {
 			PackedStringArray csv_array = {shader_info->name,
 				String::num_uint64(hash_murmur3_buffer(shader_info->spirv_stage_bytes[i].ptr(),

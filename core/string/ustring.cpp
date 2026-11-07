@@ -5625,7 +5625,7 @@ Vector<uint8_t> String::to_wchar_buffer() const
 
 Vector<uint8_t> String::to_multibyte_char_buffer(const String& p_encoding) const
 {
-	return OS::get_singleton()->string_to_multibyte(p_encoding, *this);
+	return OS::string_to_multibyte(p_encoding, *this);
 }
 
 #ifdef TOOLS_ENABLED

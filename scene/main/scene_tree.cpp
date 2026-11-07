@@ -357,7 +357,7 @@ void SceneTree::quit(int p_exit_code)
 {
 	_THREAD_SAFE_METHOD_
 
-	OS::get_singleton()->set_exit_code(p_exit_code);
+	OS::set_exit_code(p_exit_code);
 	_quit = true;
 }
 

@@ -220,7 +220,7 @@ Error CryptoCore::AESContext::finish(uint8_t *r_dst, size_t p_dst_size) {
 Error CryptoCore::generate_random(uint8_t *r_buffer, size_t p_buffer_len) {
 	if (unlikely(!initialized)) {
 		// Fall back to raw get_entropy (might affect performance).
-		return OS::get_singleton()->get_entropy(r_buffer, p_buffer_len);
+		return OS::get_entropy(r_buffer, p_buffer_len);
 	}
 	int ret = psa_generate_random(r_buffer, p_buffer_len);
 	ERR_FAIL_COND_V(ret, FAILED);

@@ -269,7 +269,7 @@ Error AudioDriverOpenSL::input_start() {
 		return ERR_ALREADY_IN_USE;
 	}
 
-	if (OS::get_singleton()->request_permission("RECORD_AUDIO")) {
+	if (OS::request_permission("RECORD_AUDIO")) {
 		Error err = init_input_device();
 		if (err != OK) {
 			input_stop();

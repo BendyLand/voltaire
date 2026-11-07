@@ -398,7 +398,7 @@ bool EditorNode::_is_project_data_missing()
 	return false;
 }
 
-void EditorNode::_remove_lock_file() { OS::get_singleton()->remove_lock_file(); }
+void EditorNode::_remove_lock_file() { OS::remove_lock_file(); }
 
 void EditorNode::_reload_project_settings()
 {
@@ -560,7 +560,7 @@ void EditorNode::_android_export_preset_selected(int p_index)
 
 void EditorNode::_android_explore_build_templates()
 {
-	OS::get_singleton()->shell_show_in_file_manager(
+	OS::shell_show_in_file_manager(
 		ProjectSettings::globalize_path(
 			export_template_manager->get_android_build_directory(android_export_preset)
 				.get_base_dir()),
@@ -1261,7 +1261,7 @@ static Node* _resource_get_edited_scene()
 static void _execute_thread(void* p_ud)
 {
 	EditorNode::ExecuteThreadArgs* eta = (EditorNode::ExecuteThreadArgs*)p_ud;
-	Error err = OS::get_singleton()->execute(
+	Error err = OS::execute(
 		eta->path, eta->args, &eta->output, &eta->exitcode, true, &eta->execute_output_mutex);
 	print_verbose("Thread exit status: " + itos(eta->exitcode));
 	if (err != OK) {

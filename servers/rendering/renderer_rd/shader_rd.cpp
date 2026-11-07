@@ -264,9 +264,11 @@ RID ShaderRD::version_create(bool p_embedded)
 	return rid;
 }
 
-void ShaderRD::_clear_version(Version* p_version)
+void ShaderRD::_clear_version(Version* p_version, bool p_skip_compilation)
 {
-	_compile_ensure_finished(p_version);
+	if (!p_skip_compilation) {
+		_compile_ensure_finished(p_version);
+	}
 
 	// Clear versions if they exist.
 	if (!p_version->variants.is_empty()) {
@@ -301,8 +303,7 @@ void ShaderRD::_build_variant_code(StringBuilder& builder, uint32_t p_variant,
 				builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
 			}
 			builder.append(String("#define RENDER_DRIVER_") +
-						   OS::get_singleton()->get_current_rendering_driver_name().to_upper() +
-						   "\n");
+						   OS::get_current_rendering_driver_name().to_upper() + "\n");
 			builder.append("#define samplerExternalOES sampler2D\n");
 			builder.append("#define textureExternalOES texture2D\n");
 		} break;
@@ -1126,16 +1127,22 @@ bool ShaderRD::shader_cache_save_debug = true;
 
 ShaderRD::~ShaderRD()
 {
-	LocalVector<RID> remaining = version_owner.get_owned_list();
-	if (remaining.size()) {
-		ERR_PRINT(itos(remaining.size()) + " shaders of type " + name + " were never freed");
-		for (const RID& version_rid : remaining) {
-			version_free(version_rid);
+	if (version_owner.get_rid_count() > 0) {
+		ERR_PRINT(itos(version_owner.get_rid_count()) + " shaders of type " + String("ShaderRD") +
+				  " were never freed");
+		LocalVector<RID> remaining = version_owner.get_owned_list();
+		for (const RID& E : remaining) {
+			Version* v = version_owner.get_or_null(E);
+			if (v) {
+				_clear_version(v, true);
+			}
+			version_owner.free(E);
 		}
 	}
 }
 
 void ShaderRD::_compile_version_start(ShaderRD::Version* p_version, int p_group)
+
 {
 	// If not using background worker threads, compilation can run directly here or in
 	// _compile_version_end
@@ -1185,17 +1192,16 @@ void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
 
 	Vector<String> variant_stage_sources = _build_variant_stage_sources(variant, p_data);
 	Vector<RDC::ShaderStageSPIRVData> variant_stages =
-			compile_stages(variant_stage_sources, dynamic_buffers);
+		compile_stages(variant_stage_sources, dynamic_buffers);
 	ERR_FAIL_COND(variant_stages.is_empty());
 
-	Vector<uint8_t> shader_data = RD::shader_compile_binary_from_spirv(
-			variant_stages, name + ":" + itos(variant));
+	Vector<uint8_t> shader_data =
+		RD::shader_compile_binary_from_spirv(variant_stages, name + ":" + itos(variant));
 	ERR_FAIL_COND(shader_data.is_empty());
 
 	{
 		p_data.version->variants.write[variant] =
-				RD::shader_create_from_bytecode(
-						shader_data, p_data.version->variants[variant]);
+			RD::shader_create_from_bytecode(shader_data, p_data.version->variants[variant]);
 		p_data.version->variant_data.write[variant] = shader_data;
 	}
 }

@@ -214,7 +214,7 @@ Error EGLManager::_gldisplay_create_context(GLDisplay &p_gldisplay) {
 
 	EGLint config_count = 0;
 
-	if (OS::get_singleton()->is_layered_allowed()) {
+	if (OS::is_layered_allowed()) {
 		eglChooseConfig(p_gldisplay.egl_display, attribs_layered, &p_gldisplay.egl_config, 1, &config_count);
 	} else {
 		eglChooseConfig(p_gldisplay.egl_display, attribs, &p_gldisplay.egl_config, 1, &config_count);

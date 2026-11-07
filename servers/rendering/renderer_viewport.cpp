@@ -164,7 +164,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			if (scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_OFF &&
 				scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR &&
 				scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_NEAREST &&
-				OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+				OS::get_current_rendering_method() == "gl_compatibility") {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR;
 				scaling_type = RSE::scaling_3d_mode_type(scaling_3d_mode);
 				WARN_PRINT_ONCE("MetalFX and FSR upscaling are not supported in the Compatibility "
@@ -174,7 +174,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			if ((scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR ||
 					scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR2 ||
 					scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) &&
-				OS::get_singleton()->get_current_rendering_method() == "mobile") {
+				OS::get_current_rendering_method() == "mobile") {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR;
 				scaling_type = RSE::scaling_3d_mode_type(scaling_3d_mode);
 				WARN_PRINT_ONCE("MetalFX temporal and FSR upscaling are not supported in the "
@@ -356,7 +356,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		timestamp_vp_map[rt_id] = p_viewport->self;
 	}
 
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+	if (OS::get_current_rendering_method() == "gl_compatibility") {
 		// This is currently needed for GLES to keep the current window being rendered to up to date
 		DisplayServer::get_singleton()->gl_window_make_current(p_viewport->viewport_to_screen);
 	}
@@ -898,7 +898,7 @@ void RendererViewport::viewport_set_scaling_3d_mode(
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	const String rendering_method = OS::get_singleton()->get_current_rendering_method();
+	const String rendering_method = OS::get_current_rendering_method();
 	if (rendering_method != "forward_plus") {
 		if (p_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR) {
 			WARN_PRINT_ONCE_ED(
@@ -1383,7 +1383,7 @@ void RendererViewport::viewport_set_screen_space_aa(
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" &&
+	if (OS::get_current_rendering_method() == "gl_compatibility" &&
 		p_mode != RSE::VIEWPORT_SCREEN_SPACE_AA_DISABLED) {
 		WARN_PRINT_ONCE_ED(
 			"Screen-space AA is only available when using the Forward+ or Mobile renderer.");
@@ -1401,7 +1401,7 @@ void RendererViewport::viewport_set_use_taa(RID p_viewport, bool p_use_taa)
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+	if (OS::get_current_rendering_method() != "forward_plus") {
 		WARN_PRINT_ONCE_ED("TAA is only available when using the Forward+ renderer.");
 		return;
 	}

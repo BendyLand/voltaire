@@ -1374,7 +1374,7 @@ void WaylandThread::_frame_wl_callback_on_done(
 	ERR_FAIL_NULL(ws->wayland_thread);
 	ERR_FAIL_NULL(ws->wl_surface);
 
-	ws->last_frame_time = OS::get_singleton()->get_ticks_usec();
+	ws->last_frame_time = OS::get_ticks_usec();
 	ws->wayland_thread->set_frame();
 
 	ws->frame_callback = wl_surface_frame(ws->wl_surface);
@@ -2325,7 +2325,7 @@ void WaylandThread::_wl_keyboard_on_key(void* data, struct wl_keyboard* wl_keybo
 
 	if (pressed) {
 		if (xkb_keymap_key_repeats(ss->xkb_keymap, xkb_keycode)) {
-			ss->last_repeat_start_msec = OS::get_singleton()->get_ticks_msec();
+			ss->last_repeat_start_msec = OS::get_ticks_msec();
 			ss->repeating_keycode = xkb_keycode;
 		}
 
@@ -4160,7 +4160,7 @@ void WaylandThread::seat_state_echo_keys(SeatState* p_ss)
 	// TODO: Comment and document out properly this block of code.
 	// In short, this implements key repeating.
 	if (p_ss->repeat_key_delay_msec && p_ss->repeating_keycode != XKB_KEYCODE_INVALID) {
-		uint64_t current_ticks = OS::get_singleton()->get_ticks_msec();
+		uint64_t current_ticks = OS::get_ticks_msec();
 		uint64_t delayed_start_ticks = p_ss->last_repeat_start_msec + p_ss->repeat_start_delay_msec;
 
 		if (p_ss->last_repeat_msec < delayed_start_ticks) {
@@ -5507,7 +5507,7 @@ Error WaylandThread::init()
 #ifdef TOOLS_ENABLED
 	bool embedder_enabled = true;
 
-	if (OS::get_singleton()->get_environment("GODOT_WAYLAND_DISABLE_EMBEDDER") == "1") {
+	if (OS::get_environment("GODOT_WAYLAND_DISABLE_EMBEDDER") == "1") {
 		print_verbose("Disabling Wayland embedder as per GODOT_WAYLAND_DISABLE_EMBEDDER.");
 		embedder_enabled = false;
 	}
@@ -5515,7 +5515,7 @@ Error WaylandThread::init()
 	if (embedder_enabled && Engine::is_editor_hint() && !Engine::is_project_manager_hint()) {
 		print_verbose("Initializing Wayland embedder.");
 		bool embedder_debug =
-			OS::get_singleton()->get_environment("GODOT_WAYLAND_EMBEDDER_DEBUG") == "1";
+			OS::get_environment("GODOT_WAYLAND_EMBEDDER_DEBUG") == "1";
 		Error embedder_status = embedder.init(embedder_debug);
 		ERR_FAIL_COND_V_MSG(
 			embedder_status != OK, ERR_CANT_CREATE, "Can't initialize Wayland embedder.");
@@ -5524,15 +5524,15 @@ Error WaylandThread::init()
 		ERR_FAIL_COND_V_MSG(embedder_socket_path.is_empty(), ERR_CANT_CREATE,
 			"Wayland embedder returned invalid path.");
 
-		OS::get_singleton()->set_environment("GODOT_WAYLAND_DISPLAY", embedder_socket_path);
+		OS::set_environment("GODOT_WAYLAND_DISPLAY", embedder_socket_path);
 	}
 #endif // TOOLS_ENABLED
 
 	if (Engine::is_embedded_in_editor()) {
-		embedder_socket_path = OS::get_singleton()->get_environment("GODOT_WAYLAND_DISPLAY");
+		embedder_socket_path = OS::get_environment("GODOT_WAYLAND_DISPLAY");
 #if 0
 		// Debug
-		OS::get_singleton()->set_environment("WAYLAND_DEBUG", "1");
+		OS::set_environment("WAYLAND_DEBUG", "1");
 		int fd = open("/tmp/gdembedded.log", O_CREAT | O_RDWR, 0666);
 		dup2(fd, 1);
 		dup2(fd, 2);
@@ -5556,7 +5556,7 @@ Error WaylandThread::init()
 	bool libdecor_found = true;
 
 	bool skip_libdecor =
-		OS::get_singleton()->get_environment("GODOT_WAYLAND_DISABLE_LIBDECOR") == "1";
+		OS::get_environment("GODOT_WAYLAND_DISABLE_LIBDECOR") == "1";
 
 #ifdef SOWRAP_ENABLED
 	if (!skip_libdecor && initialize_libdecor(dylibloader_verbose) != 0) {
@@ -5633,9 +5633,9 @@ Error WaylandThread::init()
 	// TODO: Async?
 	wl_display_roundtrip(wl_display);
 
-	cursor_theme_name = OS::get_singleton()->get_environment("XCURSOR_THEME");
+	cursor_theme_name = OS::get_environment("XCURSOR_THEME");
 
-	unscaled_cursor_size = OS::get_singleton()->get_environment("XCURSOR_SIZE").to_int();
+	unscaled_cursor_size = OS::get_environment("XCURSOR_SIZE").to_int();
 	if (unscaled_cursor_size <= 0) {
 		print_verbose("Detected invalid cursor size preference, defaulting to 24.");
 		unscaled_cursor_size = 24;
@@ -6162,7 +6162,7 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout)
 	}
 
 	for (int remaining_ms = p_timeout; remaining_ms > 0;) {
-		int begin_ms = OS::get_singleton()->get_ticks_msec();
+		int begin_ms = OS::get_ticks_msec();
 
 		wait_events(remaining_ms);
 
@@ -6177,7 +6177,7 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout)
 			return true;
 		}
 
-		remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		remaining_ms -= OS::get_ticks_msec() - begin_ms;
 	}
 
 	DEBUG_LOG_WAYLAND_THREAD("Frame timeout.");
@@ -6259,7 +6259,7 @@ bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, 
 	}
 
 	for (int remaining_ms = p_timeout_ms; remaining_ms > 0;) {
-		int begin_ms = OS::get_singleton()->get_ticks_msec();
+		int begin_ms = OS::get_ticks_msec();
 
 		wait_events(remaining_ms);
 
@@ -6269,7 +6269,7 @@ bool WaylandThread::window_wait_ready(DisplayServerEnums::WindowID p_window_id, 
 			return true;
 		}
 
-		remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		remaining_ms -= OS::get_ticks_msec() - begin_ms;
 	}
 
 	return false;

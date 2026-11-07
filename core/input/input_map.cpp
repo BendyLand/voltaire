@@ -863,7 +863,7 @@ InputMap::get_builtins_with_feature_overrides_applied()
 		String override_for =
 			fullname.get_slice_count(".") > 1 ? fullname.get_slicec('.', 1) : String();
 
-		if (!override_for.is_empty() && OS::get_singleton()->has_feature(override_for)) {
+		if (!override_for.is_empty() && OS::has_feature(override_for)) {
 			builtins_with_overrides[name].push_back(override_for);
 		}
 	}
@@ -880,7 +880,7 @@ InputMap::get_builtins_with_feature_overrides_applied()
 			continue;
 		}
 
-		if (!override_for.is_empty() && !OS::get_singleton()->has_feature(override_for)) {
+		if (!override_for.is_empty() && !OS::has_feature(override_for)) {
 			// OS does not support this override - skip.
 			continue;
 		}

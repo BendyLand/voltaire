@@ -1228,7 +1228,7 @@ void PopupMenu::_popup_base(const Rect2i& p_bounds)
 		}
 
 		moved = Vector2();
-		popup_time_msec = OS::get_singleton()->get_ticks_msec();
+		popup_time_msec = OS::get_ticks_msec();
 
 		Popup::_popup_base(p_bounds);
 	}

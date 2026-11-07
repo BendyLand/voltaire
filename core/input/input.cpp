@@ -120,7 +120,7 @@ bool Input::is_mouse_mode_override_enabled() { return is_mouse_mode_override_ena
 
 void Input::VelocityTrack::update(const Vector2& p_delta_p, const Vector2& p_screen_delta_p)
 {
-	uint64_t tick = OS::get_singleton()->get_ticks_usec();
+	uint64_t tick = OS::get_ticks_usec();
 	uint32_t tdiff = tick - last_tick;
 	float delta_t = tdiff / 1000000.0;
 	last_tick = tick;
@@ -153,7 +153,7 @@ void Input::VelocityTrack::update(const Vector2& p_delta_p, const Vector2& p_scr
 
 void Input::VelocityTrack::reset()
 {
-	last_tick = OS::get_singleton()->get_ticks_usec();
+	last_tick = OS::get_ticks_usec();
 	velocity = Vector2();
 	screen_velocity = Vector2();
 	accum = Vector2();
@@ -559,7 +559,7 @@ float Input::get_joy_vibration_remaining_duration(int p_device)
 		vibration_duration = 0xFFFF / 1000.f; // SDL_MAX_RUMBLE_DURATION_MS / 1000.f
 	}
 	return MAX(
-		vibration_duration - (OS::get_singleton()->get_ticks_usec() - vibration->timestamp) / 1e6,
+		vibration_duration - (OS::get_ticks_usec() - vibration->timestamp) / 1e6,
 		0.f);
 }
 
@@ -1214,7 +1214,7 @@ void Input::start_joy_vibration(
 	vibration.weak_magnitude = p_weak_magnitude;
 	vibration.strong_magnitude = p_strong_magnitude;
 	vibration.duration = p_duration;
-	vibration.timestamp = OS::get_singleton()->get_ticks_usec();
+	vibration.timestamp = OS::get_ticks_usec();
 	joy_vibration[p_device] = vibration;
 }
 
@@ -1225,13 +1225,13 @@ void Input::stop_joy_vibration(int p_device)
 	vibration.weak_magnitude = 0;
 	vibration.strong_magnitude = 0;
 	vibration.duration = 0;
-	vibration.timestamp = OS::get_singleton()->get_ticks_usec();
+	vibration.timestamp = OS::get_ticks_usec();
 	joy_vibration[p_device] = vibration;
 }
 
 void Input::vibrate_handheld(int p_duration_ms, float p_amplitude)
 {
-	OS::get_singleton()->vibrate_handheld(p_duration_ms, p_amplitude);
+	OS::vibrate_handheld(p_duration_ms, p_amplitude);
 }
 
 void Input::set_ignore_joypad_on_unfocused_application(bool p_ignore)
@@ -1294,7 +1294,7 @@ Point2 Input::get_last_mouse_screen_velocity()
 uint32_t Input::get_mouse_button_mask() const
 {
 	return mouse_button_mask; // do not trust OS implementation, should remove it -
-							  // OS::get_singleton()->get_mouse_button_state();
+							  // OS::get_mouse_button_state();
 }
 
 void Input::warp_mouse(const Vector2& p_position) { warp_mouse_func(p_position); }
@@ -1749,7 +1749,7 @@ void Input::joy_motion_sensors(
 
 	Vector3 gyro_degrees = p_gyroscope * 180.0 / M_PI;
 	Vector3 accel_g = -p_accelerometer / STANDARD_GRAVITY;
-	uint64_t new_timestamp = OS::get_singleton()->get_ticks_msec();
+	uint64_t new_timestamp = OS::get_ticks_msec();
 	float delta_time = (new_timestamp - motion->last_timestamp) / 1000.0f;
 	motion->last_timestamp = new_timestamp;
 	motion->gamepad_motion->ProcessMotion(gyro_degrees.x, gyro_degrees.y, gyro_degrees.z, accel_g.x,
@@ -1848,7 +1848,7 @@ void Input::_update_joypad_features(int p_device)
 		else {
 			motion.gamepad_motion->Reset();
 		}
-		motion.last_timestamp = OS::get_singleton()->get_ticks_msec();
+		motion.last_timestamp = OS::get_ticks_msec();
 	}
 	if (joypad->features->get_joy_num_touchpads() > 0) {
 		joy_touch[p_device].num_touchpads = joypad->features->get_joy_num_touchpads();
@@ -2304,7 +2304,7 @@ Input::Input()
 	}
 
 	// If defined, parse SDL_GAMECONTROLLERCONFIG for possible new mappings/overrides.
-	String env_mapping = OS::get_singleton()->get_environment("SDL_GAMECONTROLLERCONFIG");
+	String env_mapping = OS::get_environment("SDL_GAMECONTROLLERCONFIG");
 	if (!env_mapping.is_empty()) {
 		Vector<String> entries = env_mapping.split("\n");
 		for (int i = 0; i < entries.size(); i++) {
@@ -2316,7 +2316,7 @@ Input::Input()
 	}
 
 	String env_ignore_devices =
-		OS::get_singleton()->get_environment("SDL_GAMECONTROLLER_IGNORE_DEVICES");
+		OS::get_environment("SDL_GAMECONTROLLER_IGNORE_DEVICES");
 	if (!env_ignore_devices.is_empty()) {
 		Vector<String> entries = env_ignore_devices.split(",");
 		for (int i = 0; i < entries.size(); i++) {

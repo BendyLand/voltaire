@@ -111,7 +111,7 @@ JPH::JobHandle JoltJobSystem::CreateJob(const char* p_name, JPH::ColorArg p_colo
 		WARN_PRINT_ONCE("Jolt Physics job system exceeded the maximum number of jobs. This should "
 						"not happen. Please report this. Waiting for jobs to become available...");
 
-		OS::get_singleton()->delay_usec(100);
+		OS::delay_usec(100);
 
 		_reclaim_jobs();
 	}

@@ -4483,7 +4483,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 		}
 
 		String locale = (p_language.is_empty()) ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
-		PackedStringArray fallback_font_name = OS::get_singleton()->get_system_font_path_for_text(font_name, p_text, locale, p_script_code, font_weight, font_stretch, font_style & TextServer::FONT_ITALIC);
+		PackedStringArray fallback_font_name = OS::get_system_font_path_for_text(font_name, p_text, locale, p_script_code, font_weight, font_stretch, font_style & TextServer::FONT_ITALIC);
 		for (const String &E : fallback_font_name) {
 			SystemFontKey key = SystemFontKey(E, font_style & TextServer::FONT_ITALIC, font_weight, font_stretch, p_fdef, this);
 			if (system_fonts.has(key)) {
@@ -4697,7 +4697,7 @@ void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_
 					break;
 				}
 			}
-			if (!found_el_char && OS::get_singleton()->has_feature("system_fonts") && fonts.size() > 0 && _font_is_allow_system_fallback(fonts[0])) {
+			if (!found_el_char && OS::has_feature("system_fonts") && fonts.size() > 0 && _font_is_allow_system_fallback(fonts[0])) {
 				const char32_t u32str[] = { sd->el_char, 0 };
 				RID rid = _find_sys_font_for_text(fonts[0], String(), spans[span_size - 1].language, u32str);
 				if (rid.is_valid()) {
@@ -4720,7 +4720,7 @@ void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_
 						break;
 					}
 				}
-				if (!found_dot_char && OS::get_singleton()->has_feature("system_fonts") && fonts.size() > 0 && _font_is_allow_system_fallback(fonts[0])) {
+				if (!found_dot_char && OS::has_feature("system_fonts") && fonts.size() > 0 && _font_is_allow_system_fallback(fonts[0])) {
 					RID rid = _find_sys_font_for_text(fonts[0], String(), spans[span_size - 1].language, ".");
 					if (rid.is_valid()) {
 						dot_gl_font_rid = rid;
@@ -4974,7 +4974,7 @@ bool TextServerFallback::_shaped_text_shape(const RID &p_shaped) {
 						gl.font_rid = prev_font;
 					}
 				}
-				if (!gl.font_rid.is_valid() && OS::get_singleton()->has_feature("system_fonts") && span.fonts.size() > 0) {
+				if (!gl.font_rid.is_valid() && OS::has_feature("system_fonts") && span.fonts.size() > 0) {
 					// Try system fallback.
 					RID fdef = span.fonts[0];
 					if (_font_is_allow_system_fallback(fdef)) {

@@ -118,10 +118,10 @@ void print_web_header() {
 	free(emscripten_version_char);
 
 	// Build features.
-	String thread_support = OS::get_singleton()->has_feature("threads")
+	String thread_support = OS::has_feature("threads")
 			? "multi-threaded"
 			: "single-threaded";
-	String extensions_support = OS::get_singleton()->has_feature("web_extensions")
+	String extensions_support = OS::has_feature("web_extensions")
 			? "GDExtension support"
 			: "no GDExtension support";
 

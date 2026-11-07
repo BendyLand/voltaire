@@ -97,17 +97,21 @@ int main(int argc, char* argv[])
 	struct rlimit stack_lim = {0x1E00000, 0x1E00000};
 	setrlimit(RLIMIT_STACK, &stack_lim);
 #endif
-
-	OS_LinuxBSD os;
-
 	setlocale(LC_CTYPE, "");
 
 	char* cwd = (char*)malloc(PATH_MAX);
 	ERR_FAIL_NULL_V(cwd, ERR_OUT_OF_MEMORY);
 	char* ret = getcwd(cwd, PATH_MAX);
 
+	// Initialize core system primitives (DirAccess, FileAccess, IP resolver, posix threads)
+	OS::initialize_core();
+
+	// Initialize platform subsystems (DisplayServer drivers: Wayland/X11, Audio, Loggers)
+	OS::initialize();
+
 	Error err = Main::setup(argv[0], argc - 1, &argv[1]);
 	if (err != OK) {
+		OS::finalize_core();
 		free(cwd);
 		if (err == ERR_HELP) { // Returned by --help and --version, so success.
 			return EXIT_SUCCESS;
@@ -116,12 +120,16 @@ int main(int argc, char* argv[])
 	}
 
 	if (Main::start() == EXIT_SUCCESS) {
-		os.run();
+		OS_LinuxBSD::run();
 	}
 	else {
-		os.set_exit_code(EXIT_FAILURE);
+		OS::set_exit_code(EXIT_FAILURE);
 	}
 	Main::cleanup();
+
+	// Clean up OS state after engine subsystems tear down
+	OS::finalize();
+	OS::finalize_core();
 
 	if (ret) { // Previous getcwd was successful
 		if (chdir(cwd) != 0) {
@@ -129,7 +137,5 @@ int main(int argc, char* argv[])
 		}
 	}
 	free(cwd);
-	return os.get_exit_code();
+	return OS::get_exit_code();
 }
-
-

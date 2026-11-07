@@ -1633,7 +1633,7 @@ bool GLES3::LightStorage::shadow_atlas_update_light(
 
 	ERR_FAIL_COND_V(valid_quadrant_count == 0, false);
 
-	uint64_t tick = OS::get_singleton()->get_ticks_msec();
+	uint64_t tick = OS::get_ticks_msec();
 
 	uint32_t old_key = SHADOW_INVALID;
 	uint32_t old_quadrant = SHADOW_INVALID;

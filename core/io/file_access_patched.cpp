@@ -47,8 +47,8 @@ Error FileAccessPatched::_apply_patch() const {
 
 		Error err = OK;
 
-		uint64_t total_usec_start = OS::get_singleton()->get_ticks_usec();
-		uint64_t io_usec_start = OS::get_singleton()->get_ticks_usec();
+		uint64_t total_usec_start = OS::get_ticks_usec();
+		uint64_t io_usec_start = OS::get_ticks_usec();
 
 		Ref<FileAccess> patch_file = FileAccess::open(delta_patch.pack, FileAccess::READ, &err);
 		ERR_FAIL_COND_V(err != OK, err);
@@ -59,18 +59,18 @@ Error FileAccessPatched::_apply_patch() const {
 		Vector<uint8_t> patch_data = patch_file->get_buffer(delta_patch.size);
 		ERR_FAIL_COND_V(patch_data.is_empty(), ERR_FILE_CANT_READ);
 
-		uint64_t io_usec_end = OS::get_singleton()->get_ticks_usec();
-		uint64_t decode_usec_start = OS::get_singleton()->get_ticks_usec();
+		uint64_t io_usec_end = OS::get_ticks_usec();
+		uint64_t decode_usec_start = OS::get_ticks_usec();
 
 		Vector<uint8_t> new_file_data;
 		err = DeltaEncoding::decode_delta(old_file_data, patch_data, new_file_data);
 		ERR_FAIL_COND_V_MSG(err != OK, err, vformat("Failed to apply delta patch (%d of %d) to \"%s\".", i + 1, delta_patches.size(), path));
 
-		uint64_t decode_usec_end = OS::get_singleton()->get_ticks_usec();
+		uint64_t decode_usec_end = OS::get_ticks_usec();
 
 		old_file_data = new_file_data;
 
-		uint64_t total_usec_end = OS::get_singleton()->get_ticks_usec();
+		uint64_t total_usec_end = OS::get_ticks_usec();
 
 		print_verbose(vformat(U"Applied delta patch to \"%s\" from \"%s\" in %d μs (%d μs I/O, %d μs decoding).", path, delta_patch.pack.get_file(), total_usec_end - total_usec_start, io_usec_end - io_usec_start, decode_usec_end - decode_usec_start));
 	}

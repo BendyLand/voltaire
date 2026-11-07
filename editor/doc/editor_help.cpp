@@ -316,7 +316,7 @@ void EditorHelp::_class_desc_select(const String& p_select)
 		}
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
-		OS::get_singleton()->shell_open(p_select);
+		OS::shell_open(p_select);
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::get_singleton()->clipboard_set(p_select.substr(1));
@@ -572,7 +572,7 @@ void EditorHelp::_finish_regen_script_doc_thread(void* p_udata)
 	_process_postponed_docs();
 	_script_docs_loaded.set();
 
-	OS::get_singleton()->benchmark_end_measure("EditorHelp", "Generate Script Documentation");
+	OS::benchmark_end_measure("EditorHelp", "Generate Script Documentation");
 }
 
 // Runs on loader_thread since _reload_scripts_documentation calls ResourceLoader::load().
@@ -580,7 +580,7 @@ void EditorHelp::_finish_regen_script_doc_thread(void* p_udata)
 // waiting on worker_thread.
 void EditorHelp::_regen_script_doc_thread(void* p_udata)
 {
-	OS::get_singleton()->benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
+	OS::benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
 
 	EditorFileSystemDirectory* dir = static_cast<EditorFileSystemDirectory*>(p_udata);
 	_script_docs_loaded.set_to(false);
@@ -615,7 +615,7 @@ void EditorHelp::_delete_script_doc_cache()
 void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache)
 {
 	doc_generation_count++;
-	OS::get_singleton()->benchmark_begin_measure(
+	OS::benchmark_begin_measure(
 		"EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
 
 	// In case not the first attempt.
@@ -795,7 +795,7 @@ void EditorHelpBit::_go_to_url(const String& p_what)
 	String doc_url = clss.is_empty()
 						 ? String(VLTR_VERSION_DOCS_URL "/")
 						 : vformat(VLTR_VERSION_DOCS_URL "/classes/class_%s.html%s", clss, section);
-	OS::get_singleton()->shell_open(doc_url);
+	OS::shell_open(doc_url);
 }
 
 void EditorHelpBit::_go_to_help(const String& p_what)
@@ -900,10 +900,10 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 	else if (p_select.begins_with("open-file:")) {
 		String path =
 			ProjectSettings::globalize_path(p_select.trim_prefix("open-file:"));
-		OS::get_singleton()->shell_show_in_file_manager(path, true);
+		OS::shell_show_in_file_manager(path, true);
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
-		OS::get_singleton()->shell_open(p_select);
+		OS::shell_open(p_select);
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::get_singleton()->clipboard_set(p_select.substr(1));
@@ -1184,7 +1184,7 @@ void EditorHelpBitTooltip::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE:
 		_is_tooltip_visible = true;
-		_enter_tree_time = OS::get_singleton()->get_ticks_msec();
+		_enter_tree_time = OS::get_ticks_msec();
 		break;
 	case NOTIFICATION_EXIT_TREE:
 		_is_tooltip_visible = false;

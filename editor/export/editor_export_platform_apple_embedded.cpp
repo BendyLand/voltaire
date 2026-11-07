@@ -481,7 +481,7 @@ bool EditorExportPlatformAppleEmbedded::_check_xcode_install()
 		mdfind_args.push_back("kMDItemCFBundleIdentifier=com.apple.dt.Xcode");
 
 		String output;
-		Error err = OS::get_singleton()->execute("mdfind", mdfind_args, &output);
+		Error err = OS::execute("mdfind", mdfind_args, &output);
 		if (err == OK) {
 			mdfind_paths = output.split("\n");
 		}
@@ -552,7 +552,7 @@ void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
 				args.push_back("-I");
 
 				int ec = 0;
-				Error err = OS::get_singleton()->execute(idepl, args, &devices_json, &ec, true);
+				Error err = OS::execute(idepl, args, &devices_json, &ec, true);
 				if (err == OK && ec == 0) {
 					Ref<JSON> json;
 					json.instantiate();
@@ -599,7 +599,7 @@ void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
 			args.push_back(vformat("hardwareProperties.deviceType MATCHES '%s'", device_types));
 
 			int ec = 0;
-			Error err = OS::get_singleton()->execute("xcrun", args, &devices_json, &ec, false);
+			Error err = OS::execute("xcrun", args, &devices_json, &ec, false);
 			if (err == OK && ec == 0) {
 				Ref<JSON> json;
 				json.instantiate();
@@ -656,9 +656,9 @@ void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
 
 		uint64_t sleep = 200;
 		uint64_t wait = 3000000;
-		uint64_t time = OS::get_singleton()->get_ticks_usec();
-		while (OS::get_singleton()->get_ticks_usec() - time < wait) {
-			OS::get_singleton()->delay_usec(1000 * sleep);
+		uint64_t time = OS::get_ticks_usec();
+		while (OS::get_ticks_usec() - time < wait) {
+			OS::delay_usec(1000 * sleep);
 			if (ea->quit_request.is_set()) {
 				break;
 			}
@@ -751,7 +751,7 @@ public:
 int EditorExportPlatformAppleEmbedded::_execute(const String& p_path,
 	const List<String>& p_arguments, std::function<void(const String&)> p_on_data)
 {
-	Dictionary pipe_info = OS::get_singleton()->execute_with_pipe(p_path, p_arguments, false);
+	Dictionary pipe_info = OS::execute_with_pipe(p_path, p_arguments, false);
 	ERR_FAIL_COND_V_MSG(pipe_info.is_empty(), 1, "execute_with_pipe failed");
 
 	Ref<FileAccess> fa_stdout = pipe_info["stdio"];
@@ -770,11 +770,11 @@ int EditorExportPlatformAppleEmbedded::_execute(const String& p_path,
 		}
 
 		// If the process is no longer running and no new data arrived, we're done.
-		if (output.is_empty() && !OS::get_singleton()->is_process_running(pid)) {
+		if (output.is_empty() && !OS::is_process_running(pid)) {
 			break;
 		}
 
-		OS::get_singleton()->delay_usec(1000);
+		OS::delay_usec(1000);
 	}
 
 	// Flush any remaining content
@@ -788,7 +788,7 @@ int EditorExportPlatformAppleEmbedded::_execute(const String& p_path,
 	fa_stdout->close();
 	fa_stderr->close();
 
-	return OS::get_singleton()->get_process_exit_code(pid);
+	return OS::get_process_exit_code(pid);
 }
 
 #endif
@@ -810,7 +810,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 
 	EditorProgress ep("run", vformat(TTR("Running on %s"), devices[p_device].name), 3);
 
-	String id = "tmpexport." + uitos(OS::get_singleton()->get_unix_time());
+	String id = "tmpexport." + uitos(OS::get_unix_time());
 
 	Ref<DirAccess> filesystem_da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	ERR_FAIL_COND_V_MSG(filesystem_da.is_null(), ERR_CANT_CREATE,
@@ -919,7 +919,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 			}
 			String log;
 			int ec;
-			err = OS::get_singleton()->execute(idepl, args, &log, &ec, true);
+			err = OS::execute(idepl, args, &log, &ec, true);
 			if (err != OK) {
 				add_message(EXPORT_MESSAGE_WARNING, TTR("Run"),
 					TTR("Could not start ios-deploy executable."));

@@ -545,7 +545,7 @@ void WSLPeer::poll()
 
 	if (ready_state == STATE_OPEN || ready_state == STATE_CLOSING) {
 		ERR_FAIL_NULL(wsl_ctx);
-		uint64_t ticks = OS::get_singleton()->get_ticks_msec();
+		uint64_t ticks = OS::get_ticks_msec();
 		int err = 0;
 		if (heartbeat_interval_msec != 0 && ticks - last_heartbeat > heartbeat_interval_msec &&
 			ready_state == STATE_OPEN) {

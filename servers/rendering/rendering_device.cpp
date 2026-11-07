@@ -100,7 +100,7 @@ static String _get_device_type_name(const RenderingContextDriver::Device& p_devi
 
 static uint32_t _get_device_type_score(const RenderingContextDriver::Device& p_device)
 {
-	static const bool prefer_integrated = OS::get_singleton()->get_user_prefers_integrated_gpu();
+	static const bool prefer_integrated = OS::get_user_prefers_integrated_gpu();
 	switch (p_device.type) {
 	case RenderingContextDriver::DEVICE_TYPE_INTEGRATED_GPU:
 		return prefer_integrated ? 5 : 4;
@@ -186,30 +186,38 @@ void RenderingDevice::_remove_dependency(RID p_id, RID p_depends_on)
 
 void RenderingDevice::_free_dependencies(RID p_id)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	Vector<RID> dependencies_to_free;
 
-	// Direct dependencies must be freed.
+	{
+		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
-	HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
-	if (E) {
-		while (E->value.size()) {
-			free_rid(*E->value.begin());
+		// Direct dependencies must be freed.
+		HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
+		if (E) {
+			for (const RID& dep : E->value) {
+				if (dep.is_valid()) {
+					dependencies_to_free.push_back(dep);
+				}
+			}
+			data->dependency_map.remove(E);
 		}
-		data->dependency_map.remove(E);
+
+		// Reverse dependencies must be unreferenced.
+		E = data->reverse_dependency_map.find(p_id);
+		if (E) {
+			for (const RID& F : E->value) {
+				HashMap<RID, HashSet<RID>>::Iterator G = data->dependency_map.find(F);
+				if (G && G->value.has(p_id)) {
+					G->value.erase(p_id);
+				}
+			}
+
+			data->reverse_dependency_map.remove(E);
+		}
 	}
 
-	// Reverse dependencies must be unreferenced.
-	E = data->reverse_dependency_map.find(p_id);
-
-	if (E) {
-		for (const RID& F : E->value) {
-			HashMap<RID, HashSet<RID>>::Iterator G = data->dependency_map.find(F);
-			ERR_CONTINUE(!G);
-			ERR_CONTINUE(!G->value.has(p_id));
-			G->value.erase(p_id);
-		}
-
-		data->reverse_dependency_map.remove(E);
+	for (const RID& dep : dependencies_to_free) {
+		free_rid(dep);
 	}
 }
 
@@ -1751,6 +1759,7 @@ RDC::TextureFormat RenderingDevice::texture_get_format(RID p_texture)
 	tf.depth = tex->depth;
 	tf.array_layers = tex->layers;
 	tf.mipmaps = tex->mipmaps;
+
 	tf.texture_type = tex->type;
 	tf.samples = tex->samples;
 	tf.usage_bits = tex->usage_flags;
@@ -3253,7 +3262,8 @@ RID RenderingDevice::uniform_set_create(
 				_texture_make_mutable(texture, texture_rid);
 				if (texture->draw_tracker != nullptr) {
 					uniform_set.draw_trackers.push_back(texture->draw_tracker);
-					uniform_set.draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE);
 				}
 			}
 		} break;
@@ -3299,7 +3309,8 @@ RID RenderingDevice::uniform_set_create(
 				_buffer_make_mutable(buffer, buffer_rid);
 				if (buffer->draw_tracker != nullptr) {
 					uniform_set.draw_trackers.push_back(buffer->draw_tracker);
-					uniform_set.draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_UNIFORM_BUFFER_READ);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_UNIFORM_BUFFER_READ);
 				}
 			}
 		} break;
@@ -3316,7 +3327,8 @@ RID RenderingDevice::uniform_set_create(
 				_buffer_make_mutable(buffer, buffer_rid);
 				if (buffer->draw_tracker != nullptr) {
 					uniform_set.draw_trackers.push_back(buffer->draw_tracker);
-					uniform_set.draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE);
+					uniform_set.draw_trackers_usage.push_back(
+						RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE);
 				}
 			}
 		} break;
@@ -3443,8 +3455,7 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 	for (uint32_t i = 0; i < p_miss_shader_count; i++) {
 		miss_shader_group_indices[i] = i;
 	}
-	success = data->driver
-->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline,
+	success = data->driver->raytracing_pipeline_get_shader_group_handles(p_raytracing_pipeline,
 		p_raygen_shader_count, VectorView<uint32_t>(miss_shader_group_indices),
 		sbt_data.ptr() + miss_sbt_offset, shader_group_stride);
 	if (unlikely(!success)) {
@@ -5038,9 +5049,10 @@ bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker*
 void RenderingDevice::free_rid(RID p_rid)
 {
 	ERR_RENDER_THREAD_GUARD();
-
-	_free_dependencies(
-		p_rid); // Recursively erase dependencies first, to avoid potential API problems.
+	if (p_rid.is_null()) {
+		return;
+	}
+	_free_dependencies(p_rid);
 	_free_internal(p_rid);
 }
 
@@ -5670,7 +5682,7 @@ void RenderingDevice::capture_timestamp(const String& p_name)
 
 	data->frames[data->frame].timestamp_names[data->frames[data->frame].timestamp_count] = p_name;
 	data->frames[data->frame].timestamp_cpu_values[data->frames[data->frame].timestamp_count] =
-		OS::get_singleton()->get_ticks_usec();
+		OS::get_ticks_usec();
 	data->frames[data->frame].timestamp_count++;
 }
 
@@ -6429,7 +6441,8 @@ RID RenderingDevice::shader_create_from_bytecode(
 	ERR_RENDER_THREAD_GUARD_V(RID());
 
 	Ref<RenderingShaderContainer> container =
-		data->driver->get_shader_container_format().create_container();
+		data->driver->get_shader_container_format().
+create_container();
 	bool ok = container->from_bytes(p_shader_binary);
 	ERR_FAIL_COND_V_MSG(!ok, RID(), "Failed to parse shader container binary.");
 

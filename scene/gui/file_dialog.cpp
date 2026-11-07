@@ -126,7 +126,7 @@ void FileDialog::set_visible(bool p_visible)
 
 bool FileDialog::_should_use_native_popup() const
 {
-	return _can_use_native_popup() && (use_native_dialog || OS::get_singleton()->is_sandboxed());
+	return _can_use_native_popup() && (use_native_dialog || OS::is_sandboxed());
 }
 
 Vector<String> FileDialog::get_selected_files() const
@@ -141,7 +141,7 @@ Vector<String> FileDialog::get_selected_files() const
 
 void FileDialog::_dir_submitted(String p_dir)
 {
-	String new_dir = OS::get_singleton()->expand_path(p_dir);
+	String new_dir = OS::expand_path(p_dir);
 #ifdef WINDOWS_ENABLED
 	if (root_prefix.is_empty() && drives->is_visible() && !new_dir.is_network_share_path() &&
 		new_dir.is_absolute_path() && new_dir.find(":/") == -1 && new_dir.find(":\\") == -1) {
@@ -238,7 +238,7 @@ void FileDialog::_file_list_select_first()
 
 void FileDialog::_delete_confirm()
 {
-	Error err = OS::get_singleton()->move_to_trash(_get_item_path(_get_selected_file_idx()));
+	Error err = OS::move_to_trash(_get_item_path(_get_selected_file_idx()));
 	if (err == OK) {
 		invalidate();
 		_dir_contents_changed();
@@ -304,7 +304,7 @@ String FileDialog::get_current_path() const
 void FileDialog::set_current_dir(const String& p_dir)
 {
 	if (p_dir.is_relative_path()) {
-		dir_access->change_dir(OS::get_singleton()->get_resource_dir());
+		dir_access->change_dir(OS::get_resource_dir());
 	}
 	_change_dir(p_dir);
 
@@ -328,7 +328,7 @@ void FileDialog::set_current_path(const String& p_path)
 		return;
 	}
 
-	String path = OS::get_singleton()->expand_path(p_path);
+	String path = OS::expand_path(p_path);
 
 	int pos = MAX(path.rfind_char('/'), path.rfind_char('\\'));
 	if (pos == -1) {
@@ -463,7 +463,7 @@ void FileDialog::set_access(Access p_access)
 	case ACCESS_FILESYSTEM: {
 		dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 #ifdef ANDROID_ENABLED
-		set_current_dir(OS::get_singleton()->get_system_dir(OS::SYSTEM_DIR_DESKTOP));
+		set_current_dir(OS::get_system_dir(OS::SYSTEM_DIR_DESKTOP));
 #endif
 	} break;
 	case ACCESS_RESOURCES: {

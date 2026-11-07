@@ -771,7 +771,7 @@ DisplayServerEnums::WindowID DisplayServerWayland::create_sub_window(
 	wd.vsync_mode = p_vsync_mode;
 
 	if (!AccessibilityServer::get_singleton()->window_create(wd.id, nullptr)) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 					  "disabled!");
 		}
@@ -1308,7 +1308,7 @@ bool DisplayServerWayland::window_can_draw(DisplayServerEnums::WindowID p_window
 		return true;
 	}
 
-	uint64_t time_since_frame = OS::get_singleton()->get_ticks_usec() - last_frame_time;
+	uint64_t time_since_frame = OS::get_ticks_usec() - last_frame_time;
 
 	if (time_since_frame > WAYLAND_MAX_FRAME_TIME_US) {
 		return false;
@@ -1761,7 +1761,7 @@ ProcessID DisplayServerWayland::get_focused_process_id()
 	ProcessID embedded_pid = wayland_thread.embedded_compositor_get_focused_pid();
 
 	if (embedded_pid < 0) {
-		return OS::get_singleton()->get_process_id();
+		return OS::get_process_id();
 	}
 
 	return embedded_pid;
@@ -2006,7 +2006,7 @@ void DisplayServerWayland::process_events()
 		}
 
 		if (emulate_vsync) {
-			if (OS::get_singleton()->is_in_low_processor_usage_mode()) {
+			if (OS::is_in_low_processor_usage_mode()) {
 				if (!Renderer::has_changed()) {
 					wayland_thread.commit_surfaces();
 					try_suspend();
@@ -2095,7 +2095,7 @@ bool DisplayServerWayland::is_window_transparency_available() const
 		return false;
 	}
 #endif
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
 Vector<String> DisplayServerWayland::get_rendering_drivers_func()
@@ -2145,8 +2145,8 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 	r_error = ERR_UNAVAILABLE;
 	context = p_context;
 
-	String current_desk = OS::get_singleton()->get_environment("XDG_CURRENT_DESKTOP").to_lower();
-	String session_desk = OS::get_singleton()->get_environment("XDG_SESSION_DESKTOP").to_lower();
+	String current_desk = OS::get_environment("XDG_CURRENT_DESKTOP").to_lower();
+	String session_desk = OS::get_environment("XDG_SESSION_DESKTOP").to_lower();
 	swap_cancel_ok = (current_desk.contains("kde") || session_desk.contains("kde") ||
 					  current_desk.contains("lxqt") || session_desk.contains("lxqt"));
 
@@ -2173,7 +2173,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 	rendering_driver = p_rendering_driver;
 
 	bool driver_found = false;
-	String executable_name = OS::get_singleton()->get_executable_path().get_file();
+	String executable_name = OS::get_executable_path().get_file();
 
 	if (rendering_driver == "dummy") {
 		RasterizerDummy::make_current();
@@ -2194,7 +2194,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 			r_error = ERR_CANT_CREATE;
 
 			if (p_rendering_driver == "vulkan") {
-				OS::get_singleton()->alert(
+				OS::alert(
 					vformat("Your video card drivers seem not to support the required Vulkan "
 							"version.\n\n"
 							"Executable: %s",
@@ -2274,7 +2274,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 				egl_manager = nullptr;
 				r_error = ERR_UNAVAILABLE;
 
-				OS::get_singleton()->alert(
+				OS::alert(
 					vformat("Your video card drivers seem not to support the required OpenGL "
 							"3.3 version.\n\n"
 							"Executable: %s",
@@ -2298,7 +2298,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 				egl_manager = nullptr;
 				r_error = ERR_CANT_CREATE;
 
-				OS::get_singleton()->alert(
+				OS::alert(
 					vformat(
 						"Your video card drivers seem not to support the required OpenGL ES 3.0 "
 						"version.\n\n"
@@ -2332,7 +2332,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 	wd.title = "Voltaire";
 
 	if (!AccessibilityServer::get_singleton()->window_create(wd.id, nullptr)) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 					  "disabled!");
 		}

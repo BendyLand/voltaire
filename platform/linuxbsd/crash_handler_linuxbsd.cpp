@@ -55,21 +55,20 @@ inline String find_addr2line_executable()
 	List<String> args;
 	args.push_back("--version");
 	String output;
-	OS* os = OS::get_singleton();
 	int ret = 0;
 	Error err = OK;
 	// First, check for addr2line in the home directory's cargo bin.
-	if (os->has_environment("HOME")) {
+	if (OS::has_environment("HOME")) {
 		// Faster implementation from gimli-rs/addr2line.
 		const String cargo_addr2line =
-			os->get_environment("HOME").path_join(String("/.cargo/bin/addr2line"));
-		err = os->execute(cargo_addr2line, args, &output, &ret);
+			OS::get_environment("HOME").path_join(String("/.cargo/bin/addr2line"));
+		err = OS::execute(cargo_addr2line, args, &output, &ret);
 		if (err == OK && ret == 0) {
 			return cargo_addr2line;
 		}
 	}
 	// Otherwise, check for llvm-addr2line.
-	err = os->execute(String("llvm-addr2line"), args, &output, &ret);
+	err = OS::execute(String("llvm-addr2line"), args, &output, &ret);
 	if (err == OK && ret == 0) {
 		return String("llvm-addr2line");
 	}

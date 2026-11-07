@@ -242,7 +242,7 @@ String ProjectSettings::globalize_path(const String& p_path)
 		return path.replace("res://", "");
 	}
 	else if (p_path.begins_with("user://")) {
-		String data_dir = OS::get_singleton()->get_user_data_dir();
+		String data_dir = OS::get_user_data_dir();
 		if (!data_dir.is_empty()) {
 			return p_path.replace("user:/", data_dir);
 		}
@@ -294,7 +294,7 @@ bool ProjectSettings::_load_resource_pack(
 		return false;
 	}
 
-	if (!p_main_pack && !data->using_datapack && !OS::get_singleton()->get_resource_dir().is_empty()) {
+	if (!p_main_pack && !data->using_datapack && !OS::get_resource_dir().is_empty()) {
 		// Add the project's resource file system to PackedData so directory access keeps working
 		// when the game is running without a main pack, like in the editor or on Android.
 		PackedData::get_singleton()->add_pack_source(memnew(PackedSourceDirectory));
@@ -354,10 +354,10 @@ bool ProjectSettings::_load_resource_pack(
 Error ProjectSettings::_setup(
 	const String& p_path, const String& p_main_pack, bool p_upwards, bool p_ignore_override)
 {
-	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
+	if (!OS::get_resource_dir().is_empty()) {
 		// OS will call ProjectSettings->get_resource_path which will be empty if not overridden!
 		// If the OS would rather use a specific location, then it will not be empty.
-		data->resource_path = OS::get_singleton()->get_resource_dir().replace_char('\\', '/');
+		data->resource_path = OS::get_resource_dir().replace_char('\\', '/');
 		if (!data->resource_path.is_empty() && data->resource_path[data->resource_path.length() - 1] == '/') {
 			data->resource_path = data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
 		}
@@ -371,7 +371,7 @@ Error ProjectSettings::_setup(
 		return err;
 	}
 
-	String exec_path = OS::get_singleton()->get_executable_path();
+	String exec_path = OS::get_executable_path();
 
 	if (!exec_path.is_empty()) {
 		// We do several tests sequentially until one succeeds to find a PCK,
@@ -394,10 +394,10 @@ Error ProjectSettings::_setup(
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 		if (!found) {
 			// Attempt to load PCK from macOS .app bundle resources.
-			found = _load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(
+			found = _load_resource_pack(OS::get_bundle_resource_dir().path_join(
 											exec_basename + ".pck"),
 						false, 0, true) ||
-					_load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(
+					_load_resource_pack(OS::get_bundle_resource_dir().path_join(
 											exec_filename + ".pck"),
 						false, 0, true);
 		}
@@ -434,14 +434,14 @@ Error ProjectSettings::_setup(
 	// Try to use the filesystem for files, according to OS.
 	// (Only Android -when reading from PCK-.)
 
-	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
+	if (!OS::get_resource_dir().is_empty()) {
 		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
 		return err;
 	}
 
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 	// Attempt to load project file from macOS .app bundle resources.
-	resource_path = OS::get_singleton()->get_bundle_resource_dir();
+	resource_path = OS::get_bundle_resource_dir();
 	if (!resource_path.is_empty()) {
 		if (resource_path[resource_path.length() - 1] == '/') {
 			resource_path = resource_path.substr(0, resource_path.length() - 1); // Chop end.

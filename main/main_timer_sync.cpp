@@ -257,7 +257,7 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 	// via the error metric and switch off.
 	// Also only try smoothing if vsync is enabled (classical vsync, not new types) ..
 	// This condition is currently checked before calling smooth_delta().
-	if (!OS::get_singleton()->is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
+	if (!OS::is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
 		return p_delta;
 	}
 

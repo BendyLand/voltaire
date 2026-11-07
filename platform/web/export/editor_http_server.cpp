@@ -37,7 +37,7 @@
 void EditorHTTPServer::_server_thread_poll(void *data) {
 	EditorHTTPServer *web_server = static_cast<EditorHTTPServer *>(data);
 	while (!web_server->server_quit.is_set()) {
-		OS::get_singleton()->delay_usec(6900);
+		OS::delay_usec(6900);
 		{
 			MutexLock lock(web_server->server_lock);
 			web_server->_poll();
@@ -142,9 +142,9 @@ void EditorHTTPServer::_poll() {
 		}
 		tcp = server->take_connection();
 		peer = tcp;
-		time = OS::get_singleton()->get_ticks_usec();
+		time = OS::get_ticks_usec();
 	}
-	if (OS::get_singleton()->get_ticks_usec() - time > 1000000) {
+	if (OS::get_ticks_usec() - time > 1000000) {
 		_clear_client();
 		return;
 	}

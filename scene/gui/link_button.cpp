@@ -73,7 +73,7 @@ void LinkButton::pressed()
 		return;
 	}
 
-	OS::get_singleton()->shell_open(uri);
+	OS::shell_open(uri);
 }
 
 Size2 LinkButton::get_minimum_size() const

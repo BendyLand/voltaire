@@ -58,7 +58,7 @@ RenderingContextDriverMetal::~RenderingContextDriverMetal() {
 }
 
 Error RenderingContextDriverMetal::initialize() {
-	if (OS::get_singleton()->get_environment("MTL_CAPTURE_ENABLED") == "1" || OS::get_singleton()->get_environment("MTLCAPTURE_DESTINATION_DEVELOPER_TOOLS_ENABLE") == "1") {
+	if (OS::get_environment("MTL_CAPTURE_ENABLED") == "1" || OS::get_environment("MTLCAPTURE_DESTINATION_DEVELOPER_TOOLS_ENABLE") == "1") {
 		capture_available = true;
 	}
 
@@ -108,7 +108,7 @@ public:
 			Surface(p_device), layer(p_layer) {
 		layer->setAllowsNextDrawableTimeout(true);
 		layer->setFramebufferOnly(true);
-		layer->setOpaque(!OS::get_singleton()->is_layered_allowed());
+		layer->setOpaque(!OS::is_layered_allowed());
 		layer->setPixelFormat(get_pixel_format());
 		layer->setDevice(p_device);
 	}
@@ -255,13 +255,13 @@ public:
 			Surface(p_device), layer(p_layer) {
 		layer->setAllowsNextDrawableTimeout(true);
 		layer->setFramebufferOnly(true);
-		layer->setOpaque(!OS::get_singleton()->is_layered_allowed());
+		layer->setOpaque(!OS::is_layered_allowed());
 		layer->setPixelFormat(get_pixel_format());
 		layer->setDevice(p_device);
 #if TARGET_OS_OSX
 		layer->setDisplaySyncEnabled(false);
 #endif
-		target_time = OS::get_singleton()->get_ticks_usec();
+		target_time = OS::get_ticks_usec();
 
 		textures.resize(frame_buffer_size);
 		drawables.resize(frame_buffer_size);
@@ -343,7 +343,7 @@ public:
 		}
 
 		frame_buffer.size = Size2i(width, height);
-		uint64_t now = OS::get_singleton()->get_ticks_usec();
+		uint64_t now = OS::get_ticks_usec();
 		if (now >= target_time) {
 			target_time = now + 1'000'000; // 1 second into the future.
 			CA::MetalDrawable *drawable = layer->nextDrawable();
@@ -396,7 +396,7 @@ public:
 RenderingContextDriver::SurfaceID RenderingContextDriverMetal::surface_create(const void *p_platform_data) {
 	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
 	Surface *surface;
-	if (String v = OS::get_singleton()->get_environment("GODOT_MTL_OFF_SCREEN"); v == U"1") {
+	if (String v = OS::get_environment("GODOT_MTL_OFF_SCREEN"); v == U"1") {
 		surface = memnew(SurfaceOffscreen(wpd->layer, metal_device));
 	} else {
 		surface = memnew(SurfaceLayer(wpd->layer, metal_device));

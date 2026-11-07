@@ -357,7 +357,7 @@ void Utilities::capture_timestamp(const String& p_name)
 
 	frames[frame].timestamp_names[frames[frame].timestamp_count] = p_name;
 	frames[frame].timestamp_cpu_values[frames[frame].timestamp_count] =
-		OS::get_singleton()->get_ticks_usec();
+		OS::get_ticks_usec();
 	frames[frame].timestamp_count++;
 }
 

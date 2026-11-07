@@ -133,7 +133,7 @@ void MobileVRInterface::set_position_from_sensors()
 
 	Basis orientation = head_transform.basis;
 
-	uint64_t ticks = OS::get_singleton()->get_ticks_usec();
+	uint64_t ticks = OS::get_ticks_usec();
 	uint64_t ticks_elapsed = ticks - last_ticks;
 	float delta_time = (double)ticks_elapsed / 1000000.0;
 
@@ -321,7 +321,7 @@ bool MobileVRInterface::initialize()
 		// make this our primary interface
 		xr_server->set_primary_interface(this);
 
-		last_ticks = OS::get_singleton()->get_ticks_usec();
+		last_ticks = OS::get_ticks_usec();
 
 		initialized = true;
 	};

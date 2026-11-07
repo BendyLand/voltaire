@@ -56,7 +56,7 @@ bool EditorRun::has_child_process(ProcessID p_pid) const
 void EditorRun::stop_child_process(ProcessID p_pid)
 {
 	if (has_child_process(p_pid)) {
-		OS::get_singleton()->kill(p_pid);
+		OS::kill(p_pid);
 		pids.erase(p_pid);
 	}
 }
@@ -65,7 +65,7 @@ void EditorRun::stop()
 {
 	if (status != STATUS_STOP && pids.size() > 0) {
 		for (const ProcessID& E : pids) {
-			OS::get_singleton()->kill(E);
+			OS::kill(E);
 		}
 		pids.clear();
 	}
