@@ -38,7 +38,7 @@ Path3D::Path3D()
 {
 	SceneTree* st = SceneTree::get_singleton();
 	if (st && st->is_debugging_paths_hint()) {
-		debug_instance = RS::instance_create();
+		debug_instance = Renderer::instance_create();
 		set_notify_transform(true);
 		_update_debug_mesh();
 	}
@@ -48,11 +48,11 @@ Path3D::~Path3D()
 {
 	if (debug_instance.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(debug_mesh->get_rid());
+		Renderer::free_rid(debug_mesh->get_rid());
 	}
 }
 

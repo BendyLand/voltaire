@@ -145,7 +145,7 @@ void Skeleton2D::_update_transform()
 
 	for (uint32_t i = 0; i < bones.size(); i++) {
 		Transform2D final_xform = bones[i].accum_transform * bones[i].rest_inverse;
-		RS::skeleton_bone_set_transform_2d(skeleton, i, final_xform);
+		Renderer::skeleton_bone_set_transform_2d(skeleton, i, final_xform);
 	}
 }
 
@@ -223,7 +223,7 @@ void Skeleton2D::_notification(int p_what)
 			}
 		}
 		else {
-			RS::skeleton_set_base_transform_2d(skeleton, get_global_transform());
+			Renderer::skeleton_set_base_transform_2d(skeleton, get_global_transform());
 		}
 	} break;
 
@@ -238,7 +238,7 @@ void Skeleton2D::_notification(int p_what)
 			TransformInterpolator::interpolate_transform_2d(_interpolation_data.xform_prev,
 				_interpolation_data.xform_curr, res,
 				Engine::get_physics_interpolation_fraction());
-			RS::skeleton_set_base_transform_2d(skeleton, res);
+			Renderer::skeleton_set_base_transform_2d(skeleton, res);
 		}
 		if (modification_stack.is_valid()) {
 			execute_modifications(get_process_delta_time(),
@@ -320,7 +320,7 @@ Ref<SkeletonModificationStack2D> Skeleton2D::get_modification_stack() const
 
 Skeleton2D::Skeleton2D()
 {
-	skeleton = RS::skeleton_create();
+	skeleton = Renderer::skeleton_create();
 	set_notify_transform(true);
 	set_hide_clip_children(true);
 }
@@ -328,7 +328,7 @@ Skeleton2D::Skeleton2D()
 Skeleton2D::~Skeleton2D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(skeleton);
+	Renderer::free_rid(skeleton);
 }
 
 void Skeleton2D::_update_bone_setup() {}

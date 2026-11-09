@@ -71,7 +71,7 @@ void Shader::set_path(const String& p_path, bool p_take_over)
 	Resource::set_path(p_path, p_take_over);
 
 	if (shader_rid.is_valid()) {
-		RS::shader_set_path_hint(shader_rid, p_path);
+		Renderer::shader_set_path_hint(shader_rid, p_path);
 	}
 }
 
@@ -112,7 +112,7 @@ void Shader::set_default_texture_parameter(
 			default_textures[p_name] = HashMap<int, Ref<Texture>>();
 		}
 		default_textures[p_name][p_index] = p_texture;
-		RS::shader_set_default_texture_parameter(
+		Renderer::shader_set_default_texture_parameter(
 			shader_rid, p_name, p_texture->get_rid(), p_index);
 	}
 	else {
@@ -123,7 +123,7 @@ void Shader::set_default_texture_parameter(
 				default_textures.erase(p_name);
 			}
 		}
-		RS::shader_set_default_texture_parameter(
+		Renderer::shader_set_default_texture_parameter(
 			shader_rid, p_name, RID(), p_index);
 	}
 

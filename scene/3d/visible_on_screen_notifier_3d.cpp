@@ -51,7 +51,7 @@ VisibleOnScreenNotifier3D::~VisibleOnScreenNotifier3D()
 	RID base_old = get_base();
 	set_base(RID());
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(base_old);
+	Renderer::free_rid(base_old);
 }
 
 void VisibleOnScreenEnabler3D::_screen_enter() { _update_enable_mode(true); }

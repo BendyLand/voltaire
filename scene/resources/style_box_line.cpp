@@ -102,7 +102,7 @@ void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 		r.size.y = thickness;
 	}
 
-	RS::canvas_item_add_rect(p_canvas_item, r, color);
+	Renderer::canvas_item_add_rect(p_canvas_item, r, color);
 }
 
 

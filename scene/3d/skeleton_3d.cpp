@@ -56,7 +56,7 @@ SkinReference::~SkinReference()
 	if (skeleton_node) {
 		skeleton_node->skin_bindings.erase(this);
 	}
-	RS::free_rid(skeleton);
+	Renderer::free_rid(skeleton);
 }
 
 void Skeleton3D::_update_bone_names() const

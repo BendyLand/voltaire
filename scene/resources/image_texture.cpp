@@ -228,13 +228,13 @@ Error ImageTextureLayered::create_from_images(Vector<Ref<Image>> p_images)
 	}
 
 	if (texture.is_valid()) {
-		RID new_texture = RS::texture_2d_layered_create(
+		RID new_texture = Renderer::texture_2d_layered_create(
 			p_images, RSE::TextureLayeredType(layered_type));
 		ERR_FAIL_COND_V(!new_texture.is_valid(), ERR_CANT_CREATE);
-		RS::texture_replace(texture, new_texture);
+		Renderer::texture_replace(texture, new_texture);
 	}
 	else {
-		texture = RS::texture_2d_layered_create(
+		texture = Renderer::texture_2d_layered_create(
 			p_images, RSE::TextureLayeredType(layered_type));
 		ERR_FAIL_COND_V(!texture.is_valid(), ERR_CANT_CREATE);
 	}
@@ -258,19 +258,19 @@ void ImageTextureLayered::update_layer(const Ref<Image>& p_image, int p_layer)
 	ERR_FAIL_COND_MSG(p_image->has_mipmaps() != mipmaps,
 		"Image mipmap configuration must match texture's image mipmap configuration.");
 	ERR_FAIL_INDEX_MSG(p_layer, layers, "Layer index is out of bounds.");
-	RS::texture_2d_update(texture, p_image, p_layer);
+	Renderer::texture_2d_update(texture, p_image, p_layer);
 }
 
 Ref<Image> ImageTextureLayered::get_layer_data(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, layers, Ref<Image>());
-	return RS::texture_2d_layer_get(texture, p_layer);
+	return Renderer::texture_2d_layer_get(texture, p_layer);
 }
 
 RID ImageTextureLayered::get_rid() const
 {
 	if (texture.is_null()) {
-		texture = RS::texture_2d_layered_placeholder_create(
+		texture = Renderer::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return texture;
@@ -279,7 +279,7 @@ RID ImageTextureLayered::get_rid() const
 void ImageTextureLayered::set_path(const String& p_path, bool p_take_over)
 {
 	if (texture.is_valid()) {
-		RS::texture_set_path(texture, p_path);
+		Renderer::texture_set_path(texture, p_path);
 	}
 
 	Resource::set_path(p_path, p_take_over);
@@ -295,7 +295,7 @@ ImageTextureLayered::~ImageTextureLayered()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -341,13 +341,13 @@ void ImageTexture3D::update(const Vector<Ref<Image>>& p_data)
 Vector<Ref<Image>> ImageTexture3D::get_data() const
 {
 	ERR_FAIL_COND_V(!texture.is_valid(), Vector<Ref<Image>>());
-	return RS::texture_3d_get(texture);
+	return Renderer::texture_3d_get(texture);
 }
 
 RID ImageTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_3d_placeholder_create();
+		texture = Renderer::texture_3d_placeholder_create();
 	}
 	return texture;
 }
@@ -367,7 +367,7 @@ ImageTexture3D::~ImageTexture3D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 

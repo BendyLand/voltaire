@@ -142,14 +142,14 @@ void Polygon2D::clear_bones() { bone_weights.clear(); }
 
 NodePath Polygon2D::get_skeleton() const { return skeleton; }
 
-Polygon2D::Polygon2D() { mesh = RS::mesh_create(); }
+Polygon2D::Polygon2D() { mesh = Renderer::mesh_create(); }
 
 Polygon2D::~Polygon2D()
 {
 	// This will free the internally-allocated mesh instance, if allocated.
 	ERR_FAIL_NULL(Renderer::data);
-	RS::canvas_item_attach_skeleton(get_canvas_item(), RID());
-	RS::free_rid(mesh);
+	Renderer::canvas_item_attach_skeleton(get_canvas_item(), RID());
+	Renderer::free_rid(mesh);
 }
 
 void Polygon2D::set_offset(const Vector2& p_offset) {}

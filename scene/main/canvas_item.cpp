@@ -302,7 +302,7 @@ void CanvasItem::set_light_mask(int p_light_mask)
 	}
 
 	light_mask = p_light_mask;
-	RS::canvas_item_set_light_mask(canvas_item, p_light_mask);
+	Renderer::canvas_item_set_light_mask(canvas_item, p_light_mask);
 }
 
 int CanvasItem::get_light_mask() const
@@ -318,7 +318,7 @@ void CanvasItem::set_z_as_relative(bool p_enabled)
 		return;
 	}
 	z_relative = p_enabled;
-	RS::canvas_item_set_z_as_relative_to_parent(canvas_item, p_enabled);
+	Renderer::canvas_item_set_z_as_relative_to_parent(canvas_item, p_enabled);
 }
 
 bool CanvasItem::is_z_relative() const
@@ -350,7 +350,7 @@ void CanvasItem::set_y_sort_enabled(bool p_enabled)
 {
 	ERR_THREAD_GUARD;
 	y_sort_enabled = p_enabled;
-	RS::canvas_item_set_sort_children_by_y(canvas_item, y_sort_enabled);
+	Renderer::canvas_item_set_sort_children_by_y(canvas_item, y_sort_enabled);
 }
 
 bool CanvasItem::is_y_sort_enabled() const
@@ -886,7 +886,7 @@ void CanvasItem::set_use_parent_material(bool p_use_parent_material)
 {
 	ERR_THREAD_GUARD;
 	use_parent_material = p_use_parent_material;
-	RS::canvas_item_set_use_parent_material(canvas_item, p_use_parent_material);
+	Renderer::canvas_item_set_use_parent_material(canvas_item, p_use_parent_material);
 }
 
 bool CanvasItem::get_use_parent_material() const
@@ -1129,7 +1129,7 @@ void CanvasTexture::set_specular_color(const Color& p_color)
 		return;
 	}
 	specular = p_color;
-	RS::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
+	Renderer::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
 	emit_changed();
 }
 
@@ -1141,7 +1141,7 @@ void CanvasTexture::set_specular_shininess(real_t p_shininess)
 		return;
 	}
 	shininess = p_shininess;
-	RS::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
+	Renderer::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
 	emit_changed();
 }
 
@@ -1153,7 +1153,7 @@ void CanvasTexture::set_texture_filter(CanvasItem::TextureFilter p_filter)
 		return;
 	}
 	texture_filter = p_filter;
-	RS::canvas_texture_set_texture_filter(canvas_texture, RSE::CanvasItemTextureFilter(p_filter));
+	Renderer::canvas_texture_set_texture_filter(canvas_texture, RSE::CanvasItemTextureFilter(p_filter));
 	emit_changed();
 }
 
@@ -1165,7 +1165,7 @@ void CanvasTexture::set_texture_repeat(CanvasItem::TextureRepeat p_repeat)
 		return;
 	}
 	texture_repeat = p_repeat;
-	RS::canvas_texture_set_texture_repeat(canvas_texture, RSE::CanvasItemTextureRepeat(p_repeat));
+	Renderer::canvas_texture_set_texture_repeat(canvas_texture, RSE::CanvasItemTextureRepeat(p_repeat));
 	emit_changed();
 }
 
@@ -1236,12 +1236,12 @@ Ref<Image> CanvasTexture::get_image() const
 
 RID CanvasTexture::get_rid() const { return canvas_texture; }
 
-CanvasTexture::CanvasTexture() { canvas_texture = RS::canvas_texture_create(); }
+CanvasTexture::CanvasTexture() { canvas_texture = Renderer::canvas_texture_create(); }
 
 CanvasTexture::~CanvasTexture()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(canvas_texture);
+	Renderer::free_rid(canvas_texture);
 }
 
 void CanvasItem::_top_level_changed() {}

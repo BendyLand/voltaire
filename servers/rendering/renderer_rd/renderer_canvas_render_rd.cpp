@@ -602,7 +602,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			}
 
 			Transform2D final_xform;
-			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
+			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
 				!l->on_interpolate_transform_list) {
 				final_xform = l->xform_curr;
 			}

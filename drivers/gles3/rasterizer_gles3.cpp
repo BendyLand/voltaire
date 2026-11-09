@@ -303,8 +303,8 @@ void RasterizerGLES3::initialize()
 {
 	Engine::print_header(
 		vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
-			RS::get_video_adapter_api_version(), RS::get_video_adapter_vendor(),
-			RS::get_video_adapter_name()));
+			Renderer::get_video_adapter_api_version(), Renderer::get_video_adapter_vendor(),
+			Renderer::get_video_adapter_name()));
 	if (Engine::get_gpu_index() >= 0) {
 		WARN_PRINT(
 			"The Compatibility renderer does not support overriding the GPU with the --gpu-index "

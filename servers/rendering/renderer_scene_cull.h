@@ -598,9 +598,9 @@ public:
 				}
 				if (instance->base_type == RSE::INSTANCE_PARTICLES) {
 					RID particle_material =
-						RS::particles_storage->particles_get_process_material(instance->base);
+						Renderer::particles_storage->particles_get_process_material(instance->base);
 					if (p_dependency == particle_material) {
-						RS::particles_storage->particles_set_process_material(
+						Renderer::particles_storage->particles_set_process_material(
 							instance->base, RID());
 					}
 				}

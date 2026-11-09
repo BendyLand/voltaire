@@ -79,19 +79,19 @@ void Camera3D::fti_update_servers_property()
 			break;
 		case PROJECTION_PERSPECTIVE: {
 			if (update_fov || update_near || update_far) {
-				RS::camera_set_perspective(
+				Renderer::camera_set_perspective(
 					camera, fov.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
 		case PROJECTION_ORTHOGONAL: {
 			if (update_size || update_near || update_far) {
-				RS::camera_set_orthogonal(
+				Renderer::camera_set_orthogonal(
 					camera, size.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
 		case PROJECTION_FRUSTUM: {
 			if (update_size || update_frustum_offset || update_near || update_far) {
-				RS::camera_set_frustum(camera, size.interpolated(),
+				Renderer::camera_set_frustum(camera, size.interpolated(),
 					frustum_offset.interpolated(), _near.interpolated(), _far.interpolated());
 			}
 		} break;
@@ -106,7 +106,7 @@ void Camera3D::fti_update_servers_xform()
 	if (camera.is_valid()) {
 		Transform3D tr =
 			_get_adjusted_camera_transform(_get_cached_global_transform_interpolated());
-		RS::camera_set_transform(camera, tr);
+		Renderer::camera_set_transform(camera, tr);
 	}
 	Node3D::fti_update_servers_xform();
 }

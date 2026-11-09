@@ -99,7 +99,7 @@ const Rect2& RCR::Item::get_rect() const
 			const Item::CommandParticles* particles_cmd =
 				static_cast<const Item::CommandParticles*>(c);
 			if (particles_cmd->particles.is_valid()) {
-				AABB aabb = RS::particles_storage->particles_get_aabb(particles_cmd->particles);
+				AABB aabb = Renderer::particles_storage->particles_get_aabb(particles_cmd->particles);
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 			}
 

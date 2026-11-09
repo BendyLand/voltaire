@@ -2098,11 +2098,11 @@ void Tree::set_self_modulate(const Color& p_self_modulate)
 	}
 
 	CanvasItem::set_self_modulate(p_self_modulate);
-	RS::canvas_item_set_self_modulate(header_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(content_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(header_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(content_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
 }
 
 void Tree::_update_all()

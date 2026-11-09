@@ -734,7 +734,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 		c.exposure_normalization = 1.0;
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure_normalization =
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			c.exposure_normalization =
 				exposure_normalization / cascades[i].baked_exposure_normalization;
@@ -788,7 +788,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -867,7 +867,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1237,7 +1237,7 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 				gipd.exposure_normalization = 1.0;
 				if (p_render_data->camera_attributes.is_valid()) {
 					float exposure_normalization =
-						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 					gipd.exposure_normalization =
 						exposure_normalization /

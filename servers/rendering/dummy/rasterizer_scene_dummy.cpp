@@ -46,8 +46,8 @@ bool RasterizerSceneDummy::free(RID p_rid)
 		compositor_effect_free(p_rid);
 		return true;
 	}
-	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
-		RS::camera_attributes->camera_attributes_free(p_rid);
+	else if (Renderer::camera_attributes->owns_camera_attributes(p_rid)) {
+		Renderer::camera_attributes->camera_attributes_free(p_rid);
 		return true;
 	}
 	else {

@@ -35,8 +35,8 @@ void CompositorEffect::set_enabled(bool p_enabled)
 {
 	enabled = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_enabled(rid, enabled);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_enabled(rid, enabled);
 	}
 }
 
@@ -51,8 +51,8 @@ void CompositorEffect::set_access_resolved_color(bool p_enabled)
 {
 	access_resolved_color = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_flag(rid,
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_flag(rid,
 			RSE::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_COLOR,
 			access_resolved_color);
 	}
@@ -64,8 +64,8 @@ void CompositorEffect::set_access_resolved_depth(bool p_enabled)
 {
 	access_resolved_depth = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_flag(rid,
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_flag(rid,
 			RSE::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_DEPTH,
 			access_resolved_depth);
 	}
@@ -77,8 +77,8 @@ void CompositorEffect::set_needs_motion_vectors(bool p_enabled)
 {
 	needs_motion_vectors = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_flag(rid,
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_flag(rid,
 			RSE::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_NEEDS_MOTION_VECTORS,
 			needs_motion_vectors);
 	}
@@ -90,8 +90,8 @@ void CompositorEffect::set_needs_normal_roughness(bool p_enabled)
 {
 	needs_normal_roughness = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_flag(rid,
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_flag(rid,
 			RSE::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_NEEDS_ROUGHNESS,
 			needs_normal_roughness);
 	}
@@ -103,8 +103,8 @@ void CompositorEffect::set_needs_separate_specular(bool p_enabled)
 {
 	needs_separate_specular = p_enabled;
 	if (rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::compositor_effect_set_flag(rid,
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::compositor_effect_set_flag(rid,
 			RSE::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR,
 			needs_separate_specular);
 	}
@@ -114,8 +114,8 @@ bool CompositorEffect::get_needs_separate_specular() const { return needs_separa
 
 CompositorEffect::~CompositorEffect()
 {
-	if (RS::data != nullptr && rid.is_valid()) {
-		RS::free_rid(rid);
+	if (Renderer::data != nullptr && rid.is_valid()) {
+		Renderer::free_rid(rid);
 	}
 }
 
@@ -124,15 +124,15 @@ CompositorEffect::~CompositorEffect()
 
 Compositor::Compositor()
 {
-	if (RS::data != nullptr) {
-		compositor = RS::compositor_create();
+	if (Renderer::data != nullptr) {
+		compositor = Renderer::compositor_create();
 	}
 }
 
 Compositor::~Compositor()
 {
-	if (RS::data != nullptr && compositor.is_valid()) {
-		RS::free_rid(compositor);
+	if (Renderer::data != nullptr && compositor.is_valid()) {
+		Renderer::free_rid(compositor);
 	}
 }
 

@@ -83,7 +83,7 @@ static Transform2D _canvas_get_transform(RendererViewport::Viewport* p_viewport,
 	}
 	xf = xf * c_xform;
 
-	if (scale != 1.0 && !RS::canvas->disable_scale) {
+	if (scale != 1.0 && !Renderer::canvas->disable_scale) {
 		Vector2 pivot = p_vp_size * 0.5;
 		Transform2D xfpivot;
 		xfpivot.set_origin(pivot);
@@ -377,16 +377,16 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	if (RS::scene->is_scenario(p_viewport->scenario)) {
-		RID environment = RS::scene->scenario_get_environment(p_viewport->scenario);
-		if (RS::scene->is_environment(environment)) {
+	if (Renderer::scene->is_scenario(p_viewport->scenario)) {
+		RID environment = Renderer::scene->scenario_get_environment(p_viewport->scenario);
+		if (Renderer::scene->is_environment(environment)) {
 			if (can_draw_2d && !viewport_is_environment_disabled(p_viewport)) {
 				scenario_draw_canvas_bg =
-					RS::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS;
+					Renderer::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS;
 				scenario_canvas_max_layer =
-					RS::scene->environment_get_canvas_max_layer(environment);
+					Renderer::scene->environment_get_canvas_max_layer(environment);
 			}
-			else if (RS::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS) {
+			else if (Renderer::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS) {
 				// The scene renderer will still copy over the last frame, so we need to clear the
 				// render target.
 				force_clear_render_target = true;
@@ -404,11 +404,11 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	bool can_draw_3d = RS::scene->is_camera(p_viewport->camera) && !p_viewport->disable_3d;
+	bool can_draw_3d = Renderer::scene->is_camera(p_viewport->camera) && !p_viewport->disable_3d;
 
 	if ((scenario_draw_canvas_bg || can_draw_3d) && !p_viewport->render_buffers.is_valid()) {
 		// wants to draw 3D but there is no render buffer, create
-		p_viewport->render_buffers = RS::scene->render_buffers_create();
+		p_viewport->render_buffers = Renderer::scene->render_buffers_create();
 
 		_configure_3d_render_buffers(p_viewport);
 	}
@@ -460,7 +460,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						continue;
 					}
 
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -478,7 +478,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				}
 			}
 
-			RS::canvas_render->render_sdf(p_viewport->render_target, occluders);
+			Renderer::canvas_render->render_sdf(p_viewport->render_target, occluders);
 			RendererTextureStorage::render_target_mark_sdf_enabled(p_viewport->render_target, true);
 
 			p_viewport->sdf_active = false; // If used, gets set active again.
@@ -512,7 +512,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					Vector2 offset = tsize / 2.0;
 					Rect2 local_rect = Rect2(-offset + cl->texture_offset, tsize);
 
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -552,7 +552,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				if (cl->enabled) {
 					cl->filter_next_ptr = directional_lights;
 					directional_lights = cl;
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -598,7 +598,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					if (!F->enabled) {
 						continue;
 					}
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -620,7 +620,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			while (light) {
 				RENDER_TIMESTAMP("Render PointLight2D Shadow");
 
-				RS::canvas_render->light_update_shadow(light->light_internal, shadow_count++,
+				Renderer::canvas_render->light_update_shadow(light->light_internal, shadow_count++,
 					light->xform_cache.affine_inverse(), light->item_shadow_mask,
 					light->radius_cache / 1000.0, light->radius_cache * 1.1, occluders,
 					light->rect_cache);
@@ -702,7 +702,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						if (!F->enabled) {
 							continue;
 						}
-						if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+						if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 							!F->interpolated) {
 							F->xform_cache = xf * F->xform_curr;
 						}
@@ -724,7 +724,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					}
 				}
 
-				RS::canvas_render->light_update_directional_shadow(light->light_internal,
+				Renderer::canvas_render->light_update_directional_shadow(light->light_internal,
 					shadow_count++, light->xform_cache, light->item_shadow_mask, cull_distance,
 					clip_rect, occluders);
 
@@ -740,7 +740,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
 					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
 			}
 			else {
@@ -779,7 +779,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 			RENDER_TIMESTAMP("> Render Canvas " + itos(canvas_idx));
 
-			RS::canvas->render_canvas(p_viewport->render_target, canvas, xform, canvas_lights,
+			Renderer::canvas->render_canvas(p_viewport->render_target, canvas, xform, canvas_lights,
 				canvas_directional_lights, clip_rect, p_viewport->texture_filter,
 				p_viewport->texture_repeat, p_viewport->snap_2d_transforms_to_pixel,
 				p_viewport->snap_2d_vertices_to_pixel, p_viewport->canvas_cull_mask,
@@ -787,7 +787,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 			RENDER_TIMESTAMP("< Render Canvas " + itos(canvas_idx));
 
-			if (RS::canvas->was_sdf_used()) {
+			if (Renderer::canvas->was_sdf_used()) {
 				p_viewport->sdf_active = true;
 			}
 
@@ -797,7 +797,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				// target.
 				RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 				if (!can_draw_3d) {
-					RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
+					Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
 						p_viewport->shadow_atlas, p_viewport->window_output_max_value);
 				}
 				else {
@@ -815,7 +815,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
 					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
 			}
 			else {
@@ -1231,7 +1231,7 @@ void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario)
 	ERR_FAIL_NULL(viewport);
 
 	if (viewport->scenario.is_valid()) {
-		RS::scene->scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
+		Renderer::scene->scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
 	}
 
 	viewport->scenario = p_scenario;
@@ -1246,7 +1246,7 @@ void RendererViewport::viewport_attach_canvas(RID p_viewport, RID p_canvas)
 	ERR_FAIL_NULL(viewport);
 
 	ERR_FAIL_COND(viewport->canvas_map.has(p_canvas));
-	RendererCanvasCull::Canvas* canvas = RS::canvas->canvas_owner.get_or_null(p_canvas);
+	RendererCanvasCull::Canvas* canvas = Renderer::canvas->canvas_owner.get_or_null(p_canvas);
 	ERR_FAIL_NULL(canvas);
 
 	canvas->viewports.insert(p_viewport);
@@ -1261,7 +1261,7 @@ void RendererViewport::viewport_remove_canvas(RID p_viewport, RID p_canvas)
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
 
-	RendererCanvasCull::Canvas* canvas = RS::canvas->canvas_owner.get_or_null(p_canvas);
+	RendererCanvasCull::Canvas* canvas = Renderer::canvas->canvas_owner.get_or_null(p_canvas);
 	ERR_FAIL_NULL(canvas);
 
 	viewport->canvas_map.erase(p_canvas);

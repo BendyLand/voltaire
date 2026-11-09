@@ -36,13 +36,13 @@ void BackBufferCopy::_update_copy_mode()
 {
 	switch (copy_mode) {
 	case COPY_MODE_DISABLED: {
-		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), false, Rect2());
+		Renderer::canvas_item_set_copy_to_backbuffer(get_canvas_item(), false, Rect2());
 	} break;
 	case COPY_MODE_RECT: {
-		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, rect);
+		Renderer::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, rect);
 	} break;
 	case COPY_MODE_VIEWPORT: {
-		RS::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, Rect2());
+		Renderer::canvas_item_set_copy_to_backbuffer(get_canvas_item(), true, Rect2());
 
 	} break;
 	}

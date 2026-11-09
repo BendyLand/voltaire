@@ -254,7 +254,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			}
 
 			Transform2D final_xform;
-			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
+			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
 				final_xform = l->xform_curr;
 			}
 			else {

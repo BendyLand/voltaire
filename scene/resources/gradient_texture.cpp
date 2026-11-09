@@ -38,7 +38,7 @@ GradientTexture1D::~GradientTexture1D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -71,7 +71,7 @@ bool GradientTexture1D::is_using_hdr() const { return use_hdr; }
 RID GradientTexture1D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -100,7 +100,7 @@ GradientTexture2D::~GradientTexture2D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -231,7 +231,7 @@ GradientTexture2D::Repeat GradientTexture2D::get_repeat() const { return repeat;
 RID GradientTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }

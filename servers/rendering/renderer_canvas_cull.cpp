@@ -112,7 +112,7 @@ void RendererCanvasCull::_render_canvas_item_tree(RID p_to_render_target,
 	RENDER_TIMESTAMP("Render CanvasItems");
 
 	bool sdf_flag;
-	RS::canvas_render->canvas_render_items(p_to_render_target, list, p_modulate, p_lights,
+	Renderer::canvas_render->canvas_render_items(p_to_render_target, list, p_modulate, p_lights,
 		p_directional_lights, p_transform, p_default_filter, p_default_repeat,
 		p_snap_2d_vertices_to_pixel, sdf_flag, r_render_info);
 	if (sdf_flag) {
@@ -2047,7 +2047,7 @@ void RendererCanvasCull::canvas_item_add_particles(RID p_item, RID p_particles, 
 
 	// take the chance and request processing for them, at least once until they become visible
 	// again
-	RS::particles_storage->particles_request_process(p_particles);
+	Renderer::particles_storage->particles_request_process(p_particles);
 }
 
 void RendererCanvasCull::canvas_item_add_multimesh(RID p_item, RID p_mesh, RID p_texture)
@@ -2220,7 +2220,7 @@ void RendererCanvasCull::canvas_item_set_use_parent_material(RID p_item, bool p_
 void RendererCanvasCull::canvas_item_set_debug_redraw(bool p_enabled)
 {
 	debug_redraw = p_enabled;
-	RS::canvas_render->set_debug_redraw(p_enabled, debug_redraw_time, debug_redraw_color);
+	Renderer::canvas_render->set_debug_redraw(p_enabled, debug_redraw_time, debug_redraw_color);
 }
 
 bool RendererCanvasCull::canvas_item_get_debug_redraw() const { return debug_redraw; }
@@ -2279,7 +2279,7 @@ void RendererCanvasCull::canvas_light_initialize(RID p_rid)
 {
 	canvas_light_owner.initialize_rid(p_rid);
 	RendererCanvasRender::Light* clight = canvas_light_owner.get_or_null(p_rid);
-	clight->light_internal = RS::canvas_render->light_create();
+	clight->light_internal = Renderer::canvas_render->light_create();
 }
 
 void RendererCanvasCull::update() {}
@@ -2382,7 +2382,7 @@ void RendererCanvasCull::canvas_light_set_texture(RID p_light, RID p_texture)
 	}
 	clight->texture = p_texture;
 	clight->version++;
-	RS::canvas_render->light_set_texture(clight->light_internal, p_texture);
+	Renderer::canvas_render->light_set_texture(clight->light_internal, p_texture);
 }
 
 void RendererCanvasCull::canvas_light_set_texture_offset(RID p_light, const Vector2& p_offset)
@@ -2477,7 +2477,7 @@ void RendererCanvasCull::canvas_light_set_shadow_enabled(RID p_light, bool p_ena
 	}
 	clight->use_shadow = p_enabled;
 	clight->version++;
-	RS::canvas_render->light_set_use_shadow(clight->light_internal, clight->use_shadow);
+	Renderer::canvas_render->light_set_use_shadow(clight->light_internal, clight->use_shadow);
 }
 
 void RendererCanvasCull::canvas_light_set_shadow_filter(
@@ -2677,7 +2677,7 @@ void RendererCanvasCull::canvas_occluder_polygon_initialize(RID p_rid)
 {
 	canvas_light_occluder_polygon_owner.initialize_rid(p_rid);
 	LightOccluderPolygon* occluder_poly = canvas_light_occluder_polygon_owner.get_or_null(p_rid);
-	occluder_poly->occluder = RS::canvas_render->occluder_polygon_create();
+	occluder_poly->occluder = Renderer::canvas_render->occluder_polygon_create();
 }
 
 void RendererCanvasCull::canvas_occluder_polygon_set_shape(
@@ -2701,7 +2701,7 @@ void RendererCanvasCull::canvas_occluder_polygon_set_shape(
 		}
 	}
 
-	RS::canvas_render->occluder_polygon_set_shape(occluder_poly->occluder, p_shape, p_closed);
+	Renderer::canvas_render->occluder_polygon_set_shape(occluder_poly->occluder, p_shape, p_closed);
 
 	for (RendererCanvasRender::LightOccluderInstance* E : occluder_poly->owners) {
 		E->aabb_cache = occluder_poly->aabb;
@@ -2715,7 +2715,7 @@ void RendererCanvasCull::canvas_occluder_polygon_set_cull_mode(
 		canvas_light_occluder_polygon_owner.get_or_null(p_occluder_polygon);
 	ERR_FAIL_NULL(occluder_poly);
 	occluder_poly->cull_mode = p_mode;
-	RS::canvas_render->occluder_polygon_set_cull_mode(occluder_poly->occluder, p_mode);
+	Renderer::canvas_render->occluder_polygon_set_cull_mode(occluder_poly->occluder, p_mode);
 	for (RendererCanvasRender::LightOccluderInstance* E : occluder_poly->owners) {
 		E->cull_cache = p_mode;
 	}
@@ -2723,7 +2723,7 @@ void RendererCanvasCull::canvas_occluder_polygon_set_cull_mode(
 
 void RendererCanvasCull::canvas_set_shadow_texture_size(int p_size)
 {
-	RS::canvas_render->set_shadow_texture_size(p_size);
+	Renderer::canvas_render->set_shadow_texture_size(p_size);
 }
 
 RID RendererCanvasCull::canvas_texture_allocate()

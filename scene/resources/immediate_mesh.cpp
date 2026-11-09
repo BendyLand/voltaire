@@ -315,7 +315,7 @@ void ImmediateMesh::surface_end()
 		sd.material = active_surface_data.material->get_rid();
 	}
 
-	RS::mesh_add_surface(mesh, sd);
+	Renderer::mesh_add_surface(mesh, sd);
 
 	active_surface_data.aabb = aabb;
 
@@ -346,7 +346,7 @@ void ImmediateMesh::surface_end()
 
 void ImmediateMesh::clear_surfaces()
 {
-	RS::mesh_clear(mesh);
+	Renderer::mesh_clear(mesh);
 	surfaces.clear();
 	surface_active = false;
 
@@ -394,7 +394,7 @@ void ImmediateMesh::surface_set_material(int p_idx, const Ref<Material>& p_mater
 	if (p_material.is_valid()) {
 		mat = p_material->get_rid();
 	}
-	RS::mesh_surface_set_material(mesh, p_idx, mat);
+	Renderer::mesh_surface_set_material(mesh, p_idx, mat);
 }
 
 Ref<Material> ImmediateMesh::surface_get_material(int p_idx) const
@@ -426,12 +426,12 @@ AABB ImmediateMesh::get_aabb() const
 
 RID ImmediateMesh::get_rid() const { return mesh; }
 
-ImmediateMesh::ImmediateMesh() { mesh = RS::mesh_create(); }
+ImmediateMesh::ImmediateMesh() { mesh = Renderer::mesh_create(); }
 
 ImmediateMesh::~ImmediateMesh()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(mesh);
+	Renderer::free_rid(mesh);
 }
 
 

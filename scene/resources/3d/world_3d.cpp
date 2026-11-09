@@ -53,10 +53,10 @@ void World3D::set_environment(const Ref<Environment>& p_environment)
 
 	environment = p_environment;
 	if (environment.is_valid()) {
-		RS::scenario_set_environment(scenario, environment->get_rid());
+		Renderer::scenario_set_environment(scenario, environment->get_rid());
 	}
 	else {
-		RS::scenario_set_environment(scenario, RID());
+		Renderer::scenario_set_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -72,10 +72,10 @@ void World3D::set_fallback_environment(const Ref<Environment>& p_environment)
 
 	fallback_environment = p_environment;
 	if (fallback_environment.is_valid()) {
-		RS::scenario_set_fallback_environment(scenario, p_environment->get_rid());
+		Renderer::scenario_set_fallback_environment(scenario, p_environment->get_rid());
 	}
 	else {
-		RS::scenario_set_fallback_environment(scenario, RID());
+		Renderer::scenario_set_fallback_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -87,10 +87,10 @@ void World3D::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 {
 	camera_attributes = p_camera_attributes;
 	if (camera_attributes.is_valid()) {
-		RS::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
+		Renderer::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
 	}
 	else {
-		RS::scenario_set_camera_attributes(scenario, RID());
+		Renderer::scenario_set_camera_attributes(scenario, RID());
 	}
 }
 
@@ -100,10 +100,10 @@ void World3D::set_compositor(const Ref<Compositor>& p_compositor)
 {
 	compositor = p_compositor;
 	if (compositor.is_valid()) {
-		RS::scenario_set_compositor(scenario, compositor->get_rid());
+		Renderer::scenario_set_compositor(scenario, compositor->get_rid());
 	}
 	else {
-		RS::scenario_set_compositor(scenario, RID());
+		Renderer::scenario_set_compositor(scenario, RID());
 	}
 }
 

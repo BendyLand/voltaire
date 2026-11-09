@@ -73,7 +73,7 @@ void CanvasModulate::set_color(const Color& p_color)
 {
 	color = p_color;
 	if (is_active) {
-		RS::canvas_set_modulate(get_canvas(), color);
+		Renderer::canvas_set_modulate(get_canvas(), color);
 	}
 }
 

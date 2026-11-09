@@ -225,7 +225,7 @@ void NavigationLink3D::_link_exit_navigation_map()
 	NavigationServer3D::link_set_map(link, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::instance_set_visible(debug_instance, false);
+		Renderer::instance_set_visible(debug_instance, false);
 	}
 #endif // DEBUG_ENABLED
 }

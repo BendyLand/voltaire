@@ -214,18 +214,18 @@ void MultiMesh::set_buffer(const Vector<float>& p_buffer)
 		"Cannot set a buffer on a Multimesh that is a different size from the Multimesh's existing "
 		"buffer.");
 
-	RS::multimesh_set_buffer(multimesh, p_buffer);
+	Renderer::multimesh_set_buffer(multimesh, p_buffer);
 }
 
 Vector<float> MultiMesh::get_buffer() const
 {
-	return RS::multimesh_get_buffer(multimesh);
+	return Renderer::multimesh_get_buffer(multimesh);
 }
 
 void MultiMesh::set_buffer_interpolated(
 	const Vector<float>& p_buffer_curr, const Vector<float>& p_buffer_prev)
 {
-	RS::multimesh_set_buffer_interpolated(multimesh, p_buffer_curr, p_buffer_prev);
+	Renderer::multimesh_set_buffer_interpolated(multimesh, p_buffer_curr, p_buffer_prev);
 }
 
 void MultiMesh::set_mesh(const Ref<Mesh>& p_mesh)
@@ -385,7 +385,7 @@ void MultiMesh::set_physics_interpolated(bool p_interpolated)
 void MultiMesh::set_custom_aabb(const AABB& p_custom)
 {
 	custom_aabb = p_custom;
-	RS::multimesh_set_custom_aabb(multimesh, custom_aabb);
+	Renderer::multimesh_set_custom_aabb(multimesh, custom_aabb);
 	emit_changed();
 }
 

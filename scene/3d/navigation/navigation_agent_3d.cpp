@@ -82,7 +82,7 @@ void NavigationAgent3D::_notification(int p_what)
 
 #ifdef DEBUG_ENABLED
 		if (debug_path_instance.is_valid()) {
-			RS::instance_set_visible(debug_path_instance, false);
+			Renderer::instance_set_visible(debug_path_instance, false);
 		}
 #endif // DEBUG_ENABLED
 	} break;

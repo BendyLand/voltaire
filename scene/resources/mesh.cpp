@@ -757,7 +757,7 @@ void ArrayMesh::_set_blend_shape_names(const PackedStringArray& p_names)
 	}
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
 	}
 }
 
@@ -774,10 +774,10 @@ PackedStringArray ArrayMesh::_get_blend_shape_names() const
 void ArrayMesh::_create_if_empty() const
 {
 	if (!mesh.is_valid()) {
-		mesh = RS::mesh_create();
-		RS::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)blend_shape_mode);
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
-		RS::mesh_set_path(mesh, get_path());
+		mesh = Renderer::mesh_create();
+		Renderer::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)blend_shape_mode);
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_path(mesh, get_path());
 	}
 }
 
@@ -826,7 +826,7 @@ void ArrayMesh::add_blend_shape(const String& p_name)
 	blend_shapes.push_back(shape_name);
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
 	}
 }
 
@@ -863,7 +863,7 @@ void ArrayMesh::clear_blend_shapes()
 	blend_shapes.clear();
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, 0);
+		Renderer::mesh_set_blend_shape_count(mesh, 0);
 	}
 }
 
@@ -871,7 +871,7 @@ void ArrayMesh::set_blend_shape_mode(BlendShapeMode p_mode)
 {
 	blend_shape_mode = p_mode;
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)p_mode);
+		Renderer::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)p_mode);
 	}
 }
 
@@ -942,7 +942,7 @@ void ArrayMesh::surface_update_vertex_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_vertex_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_vertex_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -950,7 +950,7 @@ void ArrayMesh::surface_update_attribute_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_attribute_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_attribute_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -958,7 +958,7 @@ void ArrayMesh::surface_update_skin_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_skin_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_skin_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -989,7 +989,7 @@ void ArrayMesh::clear_surfaces()
 	if (!mesh.is_valid()) {
 		return;
 	}
-	RS::mesh_clear(mesh);
+	Renderer::mesh_clear(mesh);
 	surfaces.clear();
 	aabb = AABB();
 }
@@ -998,7 +998,7 @@ void ArrayMesh::set_custom_aabb(const AABB& p_custom)
 {
 	_create_if_empty();
 	custom_aabb = p_custom;
-	RS::mesh_set_custom_aabb(mesh, custom_aabb);
+	Renderer::mesh_set_custom_aabb(mesh, custom_aabb);
 	emit_changed();
 }
 
@@ -1052,10 +1052,10 @@ void ArrayMesh::set_shadow_mesh(const Ref<ArrayMesh>& p_mesh)
 	ERR_FAIL_COND_MSG(p_mesh == this, "Cannot set a mesh as its own shadow mesh.");
 	shadow_mesh = p_mesh;
 	if (shadow_mesh.is_valid()) {
-		RS::mesh_set_shadow_mesh(mesh, shadow_mesh->get_rid());
+		Renderer::mesh_set_shadow_mesh(mesh, shadow_mesh->get_rid());
 	}
 	else {
-		RS::mesh_set_shadow_mesh(mesh, RID());
+		Renderer::mesh_set_shadow_mesh(mesh, RID());
 	}
 }
 
@@ -1075,12 +1075,12 @@ ArrayMesh::~ArrayMesh()
 	}
 }
 
-PlaceholderMesh::PlaceholderMesh() { rid = RS::mesh_create(); }
+PlaceholderMesh::PlaceholderMesh() { rid = Renderer::mesh_create(); }
 
 PlaceholderMesh::~PlaceholderMesh()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(rid);
+	Renderer::free_rid(rid);
 }
 
 int Mesh::get_surface_count() const { return 0; }

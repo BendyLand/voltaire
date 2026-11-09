@@ -60,7 +60,7 @@ PlaceholderTexture2D::~PlaceholderTexture2D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 
@@ -101,7 +101,7 @@ PlaceholderTexture3D::~PlaceholderTexture3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 
@@ -137,7 +137,7 @@ Ref<Image> PlaceholderTextureLayered::get_layer_data(int p_layer) const { return
 RID PlaceholderTextureLayered::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RS::texture_2d_layered_placeholder_create(
+		rid = Renderer::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return rid;
@@ -150,7 +150,7 @@ PlaceholderTextureLayered::~PlaceholderTextureLayered()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 

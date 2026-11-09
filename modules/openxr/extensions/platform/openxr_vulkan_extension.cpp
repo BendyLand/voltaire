@@ -185,7 +185,7 @@ void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 
 	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
 
-	ERR_FAIL_NULL(RS::data);
+	ERR_FAIL_NULL(Renderer::data);
 	ERR_FAIL_NULL(RD::data);
 
 	for (const RID& texture_rid : data->texture_rids) {

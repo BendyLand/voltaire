@@ -1183,6 +1183,4 @@ public:
 	~Renderer() = delete;
 };
 
-#define RS Renderer
-
 

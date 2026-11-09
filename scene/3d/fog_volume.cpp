@@ -69,15 +69,15 @@ PackedStringArray FogVolume::get_configuration_warnings() const
 
 FogVolume::FogVolume()
 {
-	volume = RS::fog_volume_create();
-	RS::fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
+	volume = Renderer::fog_volume_create();
+	Renderer::fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
 	set_base(volume);
 }
 
 FogVolume::~FogVolume()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(volume);
+	Renderer::free_rid(volume);
 }
 
 

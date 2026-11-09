@@ -205,11 +205,11 @@ void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Mate
 	surface_override_materials.write[p_surface] = p_material;
 
 	if (surface_override_materials[p_surface].is_valid()) {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
 	}
 	else {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, RID());
 	}
 }

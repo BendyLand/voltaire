@@ -79,19 +79,19 @@ void OpenXRVisibilityMaskExtension::on_instance_created(const XrInstance p_insta
 void OpenXRVisibilityMaskExtension::on_session_created(const XrSession p_instance)
 {
 	if (available) {
-		ERR_FAIL_NULL(RS::data);
+		ERR_FAIL_NULL(Renderer::data);
 
 		OpenXRAPI* openxr_api = (OpenXRAPI*)OpenXRAPI::get_singleton();
 		ERR_FAIL_NULL(openxr_api);
 
 		// Create our shader.
-		shader = RS::shader_create();
-		RS::shader_set_code(shader, VISIBILITY_MASK_SHADER_CODE);
+		shader = Renderer::shader_create();
+		Renderer::shader_set_code(shader, VISIBILITY_MASK_SHADER_CODE);
 
 		// Create our material.
-		material = RS::material_create();
-		RS::material_set_shader(material, shader);
-		RS::material_set_render_priority(material, 99);
+		material = Renderer::material_create();
+		Renderer::material_set_shader(material, shader);
+		Renderer::material_set_render_priority(material, 99);
 
 		// Get our initial mesh data.
 		mesh_count = openxr_api->get_view_count(); // We need a mesh for each view.
@@ -106,23 +106,23 @@ void OpenXRVisibilityMaskExtension::on_session_created(const XrSession p_instanc
 
 void OpenXRVisibilityMaskExtension::on_session_destroyed()
 {
-	ERR_FAIL_NULL(RS::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	// Free our mesh.
 	if (mesh.is_valid()) {
-		RS::free_rid(mesh);
+		Renderer::free_rid(mesh);
 		mesh = RID();
 	}
 
 	// Free our material.
 	if (material.is_valid()) {
-		RS::free_rid(material);
+		Renderer::free_rid(material);
 		material = RID();
 	}
 
 	// Free our shader.
 	if (shader.is_valid()) {
-		RS::free_rid(shader);
+		Renderer::free_rid(shader);
 		shader = RID();
 	}
 

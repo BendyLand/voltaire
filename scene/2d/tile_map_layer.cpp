@@ -77,10 +77,10 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 			// Free the quadrant.
 			Ref<DebugQuadrant>& debug_quadrant = kv.value;
 			if (debug_quadrant->canvas_item.is_valid()) {
-				RS::free_rid(debug_quadrant->canvas_item);
+				Renderer::free_rid(debug_quadrant->canvas_item);
 			}
 			if (debug_quadrant->physics_mesh.is_valid()) {
-				RS::free_rid(debug_quadrant->physics_mesh);
+				Renderer::free_rid(debug_quadrant->physics_mesh);
 			}
 		}
 		debug_quadrant_map.clear();
@@ -177,20 +177,20 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 		// Update the quadrant's canvas item.
 		RID& ci = debug_quadrant->canvas_item;
 		if (ci.is_valid()) {
-			RS::canvas_item_clear(ci);
+			Renderer::canvas_item_clear(ci);
 		}
 		else {
-			ci = RS::canvas_item_create();
+			ci = Renderer::canvas_item_create();
 			if (needs_set_not_interpolated) {
-				RS::canvas_item_set_interpolated(ci, false);
+				Renderer::canvas_item_set_interpolated(ci, false);
 			}
-			RS::canvas_item_set_z_index(ci, RSE::CANVAS_ITEM_Z_MAX - 1);
-			RS::canvas_item_set_parent(ci, get_canvas_item());
+			Renderer::canvas_item_set_z_index(ci, RSE::CANVAS_ITEM_Z_MAX - 1);
+			Renderer::canvas_item_set_parent(ci, get_canvas_item());
 		}
 		const Vector2 quadrant_pos =
 			tile_set->map_to_local(debug_quadrant->quadrant_coords * TILE_MAP_DEBUG_QUADRANT_SIZE);
 		Transform2D xform(0, quadrant_pos);
-		RS::canvas_item_set_transform(ci, xform);
+		Renderer::canvas_item_set_transform(ci, xform);
 
 #ifndef PHYSICS_2D_DISABLED
 		// Draw physics.
@@ -215,7 +215,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 		if (!debug_quadrant->drawn_to) {
 			// Free the quadrant.
 			if (ci.is_valid()) {
-				RS::free_rid(ci);
+				Renderer::free_rid(ci);
 			}
 			debug_quadrant_map.erase(quadrant_coords);
 		}
@@ -253,8 +253,8 @@ void TileMapLayer::_rendering_notification(int p_what)
 							continue;
 						}
 						Transform2D xform(0, tile_set->map_to_local(kv.key));
-						RS::canvas_light_occluder_attach_to_canvas(rid, get_canvas());
-						RS::canvas_light_occluder_set_transform(rid, tilemap_xform * xform);
+						Renderer::canvas_light_occluder_attach_to_canvas(rid, get_canvas());
+						Renderer::canvas_light_occluder_set_transform(rid, tilemap_xform * xform);
 					}
 				}
 			}
@@ -265,7 +265,7 @@ void TileMapLayer::_rendering_notification(int p_what)
 			for (const KeyValue<Vector2i, Ref<RenderingQuadrant>>& kv : rendering_quadrant_map) {
 				for (const RID& ci : kv.value->canvas_items) {
 					if (ci.is_valid()) {
-						RS::canvas_item_reset_physics_interpolation(ci);
+						Renderer::canvas_item_reset_physics_interpolation(ci);
 					}
 				}
 			}
@@ -278,7 +278,7 @@ void TileMapLayer::_rendering_occluders_clear_cell(CellData& r_cell_data)
 	// Free the occluders.
 	for (const LocalVector<RID>& polygons : r_cell_data.occluders) {
 		for (const RID& rid : polygons) {
-			RS::free_rid(rid);
+			Renderer::free_rid(rid);
 		}
 	}
 	r_cell_data.occluders.clear();
@@ -810,9 +810,9 @@ void TileMapLayer::_physics_interpolated_changed()
 	for (const KeyValue<Vector2i, Ref<RenderingQuadrant>>& kv : rendering_quadrant_map) {
 		for (const RID& ci : kv.value->canvas_items) {
 			if (ci.is_valid()) {
-				RS::canvas_item_set_interpolated(ci, interpolated);
+				Renderer::canvas_item_set_interpolated(ci, interpolated);
 				if (needs_reset) {
-					RS::canvas_item_reset_physics_interpolation(ci);
+					Renderer::canvas_item_reset_physics_interpolation(ci);
 				}
 			}
 		}
@@ -822,9 +822,9 @@ void TileMapLayer::_physics_interpolated_changed()
 		for (const LocalVector<RID>& polygons : E.value.occluders) {
 			for (const RID& occluder_id : polygons) {
 				if (occluder_id.is_valid()) {
-					RS::canvas_light_occluder_set_interpolated(occluder_id, interpolated);
+					Renderer::canvas_light_occluder_set_interpolated(occluder_id, interpolated);
 					if (needs_reset) {
-						RS::canvas_light_occluder_reset_physics_interpolation(occluder_id);
+						Renderer::canvas_light_occluder_reset_physics_interpolation(occluder_id);
 					}
 				}
 			}

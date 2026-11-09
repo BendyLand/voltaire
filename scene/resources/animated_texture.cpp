@@ -239,8 +239,8 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
 AnimatedTexture::~AnimatedTexture()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(proxy);
-	RS::free_rid(proxy_ph);
+	Renderer::free_rid(proxy);
+	Renderer::free_rid(proxy_ph);
 }
 
 

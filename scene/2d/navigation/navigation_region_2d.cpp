@@ -275,9 +275,9 @@ void NavigationRegion2D::_update_debug_baking_rect()
 #ifdef DEBUG_ENABLED
 void NavigationRegion2D::_set_debug_visible(bool p_visible)
 {
-	ERR_FAIL_NULL(RS::data);
+	ERR_FAIL_NULL(Renderer::data);
 	if (debug_instance_rid.is_valid()) {
-		RS::canvas_item_set_visible(debug_instance_rid, p_visible);
+		Renderer::canvas_item_set_visible(debug_instance_rid, p_visible);
 	}
 }
 #endif // DEBUG_ENABLED

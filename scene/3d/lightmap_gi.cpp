@@ -99,14 +99,14 @@ void LightmapGIData::clear() { users.clear(); }
 
 void LightmapGIData::_reset_lightmap_textures()
 {
-	RS::lightmap_set_textures(lightmap,
+	Renderer::lightmap_set_textures(lightmap,
 		combined_light_texture.is_valid() ? combined_light_texture->get_rid() : RID(),
 		uses_spherical_harmonics);
 }
 
 void LightmapGIData::_reset_shadowmask_textures()
 {
-	RS::lightmap_set_shadowmask_textures(lightmap,
+	Renderer::lightmap_set_shadowmask_textures(lightmap,
 		combined_shadowmask_texture.is_valid() ? combined_shadowmask_texture->get_rid() : RID());
 }
 
@@ -127,12 +127,12 @@ bool LightmapGIData::_is_using_packed_directional() const { return _uses_packed_
 
 void LightmapGIData::update_shadowmask_mode(ShadowmaskMode p_mode)
 {
-	RS::lightmap_set_shadowmask_mode(lightmap, (RSE::ShadowmaskMode)p_mode);
+	Renderer::lightmap_set_shadowmask_mode(lightmap, (RSE::ShadowmaskMode)p_mode);
 }
 
 LightmapGIData::ShadowmaskMode LightmapGIData::get_shadowmask_mode() const
 {
-	return (ShadowmaskMode)RS::lightmap_get_shadowmask_mode(lightmap);
+	return (ShadowmaskMode)Renderer::lightmap_get_shadowmask_mode(lightmap);
 }
 
 void LightmapGIData::set_capture_data(const AABB& p_bounds, bool p_interior,
@@ -145,18 +145,18 @@ void LightmapGIData::set_capture_data(const AABB& p_bounds, bool p_interior,
 		ERR_FAIL_COND(pc * 9 != p_point_sh.size());
 		ERR_FAIL_COND((p_tetrahedra.size() % 4) != 0);
 		ERR_FAIL_COND((p_bsp_tree.size() % 6) != 0);
-		RS::lightmap_set_probe_capture_data(
+		Renderer::lightmap_set_probe_capture_data(
 			lightmap, p_points, p_point_sh, p_tetrahedra, p_bsp_tree);
-		RS::lightmap_set_probe_bounds(lightmap, p_bounds);
-		RS::lightmap_set_probe_interior(lightmap, p_interior);
+		Renderer::lightmap_set_probe_bounds(lightmap, p_bounds);
+		Renderer::lightmap_set_probe_interior(lightmap, p_interior);
 	}
 	else {
-		RS::lightmap_set_probe_capture_data(lightmap, PackedVector3Array(),
+		Renderer::lightmap_set_probe_capture_data(lightmap, PackedVector3Array(),
 			PackedColorArray(), PackedInt32Array(), PackedInt32Array());
-		RS::lightmap_set_probe_bounds(lightmap, AABB());
-		RS::lightmap_set_probe_interior(lightmap, false);
+		Renderer::lightmap_set_probe_bounds(lightmap, AABB());
+		Renderer::lightmap_set_probe_interior(lightmap, false);
 	}
-	RS::lightmap_set_baked_exposure_normalization(lightmap, p_baked_exposure);
+	Renderer::lightmap_set_baked_exposure_normalization(lightmap, p_baked_exposure);
 	baked_exposure = p_baked_exposure;
 	lightprobe_hash = p_lightprobe_hash;
 	interior = p_interior;
@@ -165,22 +165,22 @@ void LightmapGIData::set_capture_data(const AABB& p_bounds, bool p_interior,
 
 PackedVector3Array LightmapGIData::get_capture_points() const
 {
-	return RS::lightmap_get_probe_capture_points(lightmap);
+	return Renderer::lightmap_get_probe_capture_points(lightmap);
 }
 
 PackedColorArray LightmapGIData::get_capture_sh() const
 {
-	return RS::lightmap_get_probe_capture_sh(lightmap);
+	return Renderer::lightmap_get_probe_capture_sh(lightmap);
 }
 
 PackedInt32Array LightmapGIData::get_capture_tetrahedra() const
 {
-	return RS::lightmap_get_probe_capture_tetrahedra(lightmap);
+	return Renderer::lightmap_get_probe_capture_tetrahedra(lightmap);
 }
 
 PackedInt32Array LightmapGIData::get_capture_bsp_tree() const
 {
-	return RS::lightmap_get_probe_capture_bsp_tree(lightmap);
+	return Renderer::lightmap_get_probe_capture_bsp_tree(lightmap);
 }
 
 uint32_t LightmapGIData::get_lightprobe_hash() const { return lightprobe_hash; }
@@ -191,12 +191,12 @@ bool LightmapGIData::is_interior() const { return interior; }
 
 float LightmapGIData::get_baked_exposure() const { return baked_exposure; }
 
-LightmapGIData::LightmapGIData() { lightmap = RS::lightmap_create(); }
+LightmapGIData::LightmapGIData() { lightmap = Renderer::lightmap_create(); }
 
 LightmapGIData::~LightmapGIData()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(lightmap);
+	Renderer::free_rid(lightmap);
 }
 
 ///////////////////////////
