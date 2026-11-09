@@ -41,8 +41,6 @@ void RasterizerDummy::end_frame(bool p_present)
 	}
 }
 
-RendererCanvasRender* RasterizerDummy::get_canvas() { return canvas; }
-
 RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
 
 RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }

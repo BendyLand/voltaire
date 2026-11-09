@@ -39,6 +39,7 @@
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/renderer_canvas_render.h"
 
 namespace GLES3
 {
@@ -356,12 +357,11 @@ public:
 
 	static inline GLES3::PolygonBuffers polygon_buffers;
 
-	PolygonID request_polygon(const Vector<int>& p_indices,
+	static PolygonID request_polygon(const Vector<int>& p_indices,
 		const Vector<Point2>& p_points, const Vector<Color>& p_colors,
 		const Vector<Point2>& p_uvs = Vector<Point2>(), const Vector<int>& p_bones = Vector<int>(),
 		const Vector<float>& p_weights = Vector<float>(), int p_count = -1);
-	void free_polygon(PolygonID p_polygon);
-
+	static void free_polygon(PolygonID p_polygon);
 
 	static_assert(sizeof(GLES3::InstanceData) == 128, "2D instance data struct size must be 128 bytes");
 
@@ -447,7 +447,7 @@ public:
 	static void initialize(
 		GLES3::TextureStorage* p_texture_storage, GLES3::MaterialStorage* p_material_storage);
 
-	virtual void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
+	static void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
 	{
 		if (p_enabled) {
 			WARN_PRINT_ONCE("Debug CanvasItem Redraw is not available yet when using the "
@@ -455,11 +455,12 @@ public:
 		}
 	}
 
-	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) { return 0; }
+	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) { return 0; }
 
-	RasterizerCanvasGLES3(GLES3::TextureStorage* p_texture_storage,
-		GLES3::MaterialStorage* p_material_storage) = delete;
-	~RasterizerCanvasGLES3() = delete;
+	RasterizerCanvasGLES3(GLES3::TextureStorage *p_texture_storage, GLES3::MaterialStorage *p_material_storage) = delete;
+    RasterizerCanvasGLES3() = delete;
+    RasterizerCanvasGLES3(const RasterizerCanvasGLES3 &) = delete;
+    ~RasterizerCanvasGLES3() = delete;
 };
 
 #endif // GLES3_ENABLED

@@ -133,6 +133,9 @@ public:
 
 	static void bind_mesh_storage();
 
+	// Inside class RendererCompositorRD public section:
+    static void bind_canvas() { RendererCanvasRender::bind<RendererCanvasRenderRD>(); }
+
 	static void bind_texture_storage()
 	{
 		RendererTextureStorage::bind<RendererRD::TextureStorage>();

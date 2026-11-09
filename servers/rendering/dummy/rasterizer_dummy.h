@@ -30,8 +30,9 @@
 
 #pragma once
 
-#include "servers/rendering/dummy/environment/gi.h"
 #include "servers/rendering/dummy/environment/fog.h"
+#include "servers/rendering/dummy/environment/gi.h"
+#include "servers/rendering/dummy/rasterizer_canvas_dummy.h"
 #include "servers/rendering/dummy/storage/light_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
 #include "servers/rendering/environment/renderer_gi.h"
@@ -76,12 +77,6 @@ private:
 	static inline RendererDummy::Utilities* utilities = nullptr;
 
 public:
-	static void bind_utilities() {}
-
-	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
-	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
-
-	static RendererCanvasRender* get_canvas();
 	static RendererSceneRender* get_scene();
 
 	static RendererFog* get_fog();
@@ -280,12 +275,21 @@ public:
 		// Dummy material storage binding
 	}
 
+	// Inside class RasterizerDummy public section:
+	static void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasDummy>(); }
+
 	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
 
 	static void bind_particles_storage()
 	{
 		// Dummy particles storage stub
 	}
+
+	static void bind_utilities() {}
+
+	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
+
+	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
 
 	RasterizerDummy() = delete;
 	RasterizerDummy(const RasterizerDummy&) = delete;

@@ -82,10 +82,9 @@ public:
 	static inline void bind_utilities();
 	static inline void bind_mesh_storage();
 
+    static inline void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasGLES3>(); }
 	static void bind_gi() { RendererGI::bind<GLES3::GI>(); }
 	static void bind_fog() { RendererFog::bind<GLES3::Fog>(); }
-
-	static _ALWAYS_INLINE_ RendererCanvasRender* get_canvas() { return canvas; }
 
 	static _ALWAYS_INLINE_ RendererSceneRender* get_scene() { return scene; }
 

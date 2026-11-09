@@ -3355,7 +3355,7 @@ GLuint GLES3::TextureStorage::render_target_get_sdf_texture(RID p_render_target)
 	ERR_FAIL_NULL_V(rt, 0);
 	if (rt->sdf_texture_read == 0) {
 		Texture* texture = texture_owner.get_or_null(default_gl_textures[DEFAULT_GL_TEXTURE_BLACK]);
-		return texture->tex_id;
+		return texture ? texture->tex_id : 0;
 	}
 
 	return rt->sdf_texture_read;
@@ -3725,12 +3725,64 @@ String GLES3::TextureStorage::get_framebuffer_error(GLenum p_status)
 
 void GLES3::TextureStorage::initialize()
 {
-	// Initialize default OpenGL textures / white / black fallback textures
+	// 1. Create 1x1 white texture
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(1, 1, 1, 1));
+		default_gl_textures[DEFAULT_GL_TEXTURE_WHITE] = texture_2d_create(image);
+	}
+
+	// 2. Create 1x1 black texture
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(0, 0, 0, 1));
+		default_gl_textures[DEFAULT_GL_TEXTURE_BLACK] = texture_2d_create(image);
+	}
+
+	// 3. Create 1x1 transparent texture
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(0, 0, 0, 0));
+		default_gl_textures[DEFAULT_GL_TEXTURE_TRANSPARENT] = texture_2d_create(image);
+	}
+
+	// 4. Create 1x1 normal map texture (flat normal: (0.5, 0.5, 1.0, 1.0) -> RGB (128, 128, 255))
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(0.5, 0.5, 1.0, 1.0));
+		default_gl_textures[DEFAULT_GL_TEXTURE_NORMAL] = texture_2d_create(image);
+	}
+
+	// 5. Create 1x1 aniso texture
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(0, 0, 0, 1));
+		default_gl_textures[DEFAULT_GL_TEXTURE_ANISO] = texture_2d_create(image);
+	}
+
+	// 6. Create 1x1 depth texture (white)
+	{
+		Ref<Image> image = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+		image->fill(Color(1, 1, 1, 1));
+		default_gl_textures[DEFAULT_GL_TEXTURE_DEPTH] = texture_2d_create(image);
+	}
+
+	// Fill any remaining default texture slots with the white fallback
+	for (int i = 0; i < DEFAULT_GL_TEXTURE_MAX; i++) {
+		if (default_gl_textures[i].is_null()) {
+			default_gl_textures[i] = default_gl_textures[DEFAULT_GL_TEXTURE_WHITE];
+		}
+	}
 }
 
 void GLES3::TextureStorage::finalize()
 {
-	// Free default GL textures and owners
+	for (int i = 0; i < DEFAULT_GL_TEXTURE_MAX; i++) {
+		if (default_gl_textures[i].is_valid()) {
+			texture_free(default_gl_textures[i]);
+			default_gl_textures[i] = RID();
+		}
+	}
 }
 
 RID GLES3::TextureStorage::texture_gl_get_default(DefaultGLTexture p_texture)

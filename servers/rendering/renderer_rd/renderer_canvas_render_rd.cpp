@@ -2557,18 +2557,18 @@ RID RendererRD::CanvasShaderData::get_shader(
 
 void RendererCanvasRenderRD::light_update_shadow(RID p_light, int p_shadow_index,
 	const Transform2D& p_light_xform, int p_light_mask, float p_near, float p_far,
-	RendererCanvasRender::LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
+	LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
 {
 }
 
 void RendererCanvasRenderRD::light_update_directional_shadow(RID p_light, int p_shadow_index,
 	const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
-	const Rect2& p_clip_rect, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	const Rect2& p_clip_rect, LightOccluderInstance* p_occluders)
 {
 }
 
 void RendererCanvasRenderRD::render_sdf(
-	RID p_render_target, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	RID p_render_target, LightOccluderInstance* p_occluders)
 {
 }
 

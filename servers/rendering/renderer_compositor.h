@@ -59,8 +59,6 @@ public:
 
     /* Static Function Pointer Dispatch Interface */
 
-    static inline RendererGI* (*get_gi)() = nullptr;
-    static inline RendererFog* (*get_fog)() = nullptr;
     static inline RendererCanvasRender* (*get_canvas)() = nullptr;
 
     static inline void (*set_boot_image_with_stretch)(
@@ -91,8 +89,7 @@ public:
         Backend::bind_particles_storage();
 		Backend::bind_gi();
 		Backend::bind_fog();
-
-        get_canvas = &Backend::get_canvas;
+		Backend::bind_canvas();
 
         set_boot_image_with_stretch = &Backend::set_boot_image_with_stretch;
         initialize = &Backend::initialize;

@@ -13,14 +13,14 @@ errs:
 
 test:
 	if [[ -f ./bin/voltaire.linuxbsd.editor.x86_64 ]]; then
-		./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs --quit
+		./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver opengl3 --accurate-breadcrumbs --quit
 	else
 		echo "Binary not built."
 	fi
 
 inspect:
 	# gdb ./bin/voltaire.linuxbsd.editor.x86_64
-	gdb --args ./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs --quit
+	gdb --args ./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver opengl3 --accurate-breadcrumbs --quit
 
 link:
 	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
