@@ -213,9 +213,6 @@ struct State
 
 class RasterizerCanvasGLES3 : public RendererCanvasRender
 {
-	static inline GLES3::TextureStorage* texture_storage = nullptr;
-	static inline GLES3::MaterialStorage* material_storage = nullptr;
-
 	static _FORCE_INLINE_ void _update_transform_2d_to_mat2x4(
 		const Transform2D& p_transform, float* p_mat2x4);
 	static _FORCE_INLINE_ void _update_transform_2d_to_mat2x3(
@@ -444,8 +441,7 @@ public:
 	static void set_time(double p_time);
 
 	static void finalize();
-	static void initialize(
-		GLES3::TextureStorage* p_texture_storage, GLES3::MaterialStorage* p_material_storage);
+	static void initialize();
 
 	static void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
 	{

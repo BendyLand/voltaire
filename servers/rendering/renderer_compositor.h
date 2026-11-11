@@ -48,7 +48,6 @@ private:
     static inline bool xr_enabled = false;
 
 public:
-    static inline Error (*_create_func)() = nullptr;
     static inline bool back_end = false;
     static inline bool low_end = false;
 

@@ -465,8 +465,10 @@ void RasterizerGLES3::initialize()
     GLES3::GI::initialize();
     GLES3::Fog::initialize();
 
-    RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
+    RasterizerCanvasGLES3::initialize();
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+	printf("[LIFECYCLE 1] Scene allocated: scene=%p, vptr=%p\n", (void*)scene, *(void**)scene);
+	fflush(stdout);
     RendererTextureStorage::bind<GLES3::TextureStorage>();
     // Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
     // TexBlit Shaders
@@ -481,22 +483,51 @@ void RasterizerGLES3::initialize()
 
 void RasterizerGLES3::finalize()
 {
+	static bool finalized = false;
+    if (finalized) {
+        return;
+    }
+    finalized = true;
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
 	GLES3::TextureStorage::_tex_blit_shader_free();
-	memdelete(scene);
+	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n",
+       (void*)scene, scene ? *(void**)scene : nullptr);
+	fflush(stdout);
+	if (scene) {
+		memdelete(scene);
+		scene = nullptr;
+	}
 	RasterizerCanvasGLES3::finalize();
 	GLES3::GI::finalize();
 	GLES3::Fog::finalize();
-	memdelete(post_effects);
-	memdelete(glow);
-	memdelete(cubemap_filter);
-	memdelete(copy_effects);
-	memdelete(feed_effects);
+	if (post_effects) {
+		memdelete(post_effects);
+		post_effects = nullptr;
+	}
+	if (glow) {
+		memdelete(glow);
+		glow = nullptr;
+	}
+	if (cubemap_filter) {
+		memdelete(cubemap_filter);
+		cubemap_filter = nullptr;
+	}
+	if (copy_effects) {
+		memdelete(copy_effects);
+		copy_effects = nullptr;
+	}
+	if (feed_effects) {
+		memdelete(feed_effects);
+		feed_effects = nullptr;
+	}
 	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::TextureStorage::finalize();
-	memdelete(config);
+	if (config) {
+		memdelete(config);
+		config = nullptr;
+	}
 }
 
 void RasterizerGLES3::make_current(bool p_gles_over_gl)
@@ -504,7 +535,6 @@ void RasterizerGLES3::make_current(bool p_gles_over_gl)
 	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
 	OS::set_gles_over_gl(p_gles_over_gl);
 
-	RendererCompositor::_create_func = _create_current;
 	RendererCompositor::low_end = true;
 	RendererCompositor::bind_compositor<RasterizerGLES3>();
 }

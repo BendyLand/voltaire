@@ -198,7 +198,6 @@ public:
 
 	static void make_current()
 	{
-		RendererCompositor::_create_func = _create_current;
 		RendererCompositor::low_end = false;
 		RendererCompositor::bind_compositor<RendererCompositorRD>();
 	}

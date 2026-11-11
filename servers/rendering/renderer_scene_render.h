@@ -414,7 +414,10 @@ public:
 
 	virtual void update();
 
-	virtual ~RendererSceneRender() {}
+	virtual ~RendererSceneRender() {
+	    printf("[LIFECYCLE 2] ~RendererSceneRender running on %p, vptr=%p\n", (void*)this, *(void**)this);
+	    fflush(stdout);
+	}
 };
 
 

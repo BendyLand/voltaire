@@ -116,6 +116,10 @@ void ShaderGLES3::_setup(const char* p_vertex_code, const char* p_fragment_code,
 {
 	name = p_name;
 
+	for (int i = 0; i < STAGE_TYPE_MAX; i++) {
+	    stage_templates[i].chunks.clear();
+	}
+
 	if (p_vertex_code) {
 		_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
 	}

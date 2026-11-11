@@ -104,12 +104,6 @@ public:
 
 	static void finalize();
 
-	static Error _create_current()
-	{
-		RasterizerGLES3::initialize();
-		return OK;
-	}
-
 	static void make_current(bool p_gles_over_gl);
 
 #ifdef WINDOWS_ENABLED

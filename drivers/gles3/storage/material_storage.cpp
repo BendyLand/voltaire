@@ -1988,7 +1988,6 @@ void GLES3::MaterialStorage::initialize()
 
 	shaders->canvas_shader.initialize();
 	shaders->sky_shader.initialize();
-	shaders->scene_shader.initialize();
 	shaders->particles_process_shader.initialize();
 	shaders->tex_blit_shader.initialize();
 

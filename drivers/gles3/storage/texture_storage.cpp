@@ -3777,12 +3777,14 @@ void GLES3::TextureStorage::initialize()
 
 void GLES3::TextureStorage::finalize()
 {
-	for (int i = 0; i < DEFAULT_GL_TEXTURE_MAX; i++) {
-		if (default_gl_textures[i].is_valid()) {
-			texture_free(default_gl_textures[i]);
-			default_gl_textures[i] = RID();
-		}
-	}
+    for (int i = 0; i < DEFAULT_GL_TEXTURE_MAX; i++) {
+        if (default_gl_textures[i].is_valid()) {
+            if (texture_owner.get_or_null(default_gl_textures[i]) != nullptr) {
+                texture_free(default_gl_textures[i]);
+            }
+            default_gl_textures[i] = RID();
+        }
+    }
 }
 
 RID GLES3::TextureStorage::texture_gl_get_default(DefaultGLTexture p_texture)

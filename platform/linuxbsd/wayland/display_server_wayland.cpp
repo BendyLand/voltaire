@@ -2121,8 +2121,8 @@ DisplayServer* DisplayServerWayland::create_func(const String& p_rendering_drive
 	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
 	// Reject native Wayland and bail early
-	WARN_PRINT("Native Wayland support is currently disabled. Please run through X11/Xwayland via "
-			   "'--display-driver x11'.");
+	// WARN_PRINT("Native Wayland support is currently disabled. Please run through X11/Xwayland via "
+	// 		   "'--display-driver x11'.");
 	r_error = ERR_UNAVAILABLE;
 	return nullptr;
 }

@@ -1811,7 +1811,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 
 	for (KeyValue<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>&
 			 E : blit_to_screen) {
-		RendererCompositorRD::blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
+		RendererCompositor::blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
 	}
 
 	if (p_swap_buffers) {

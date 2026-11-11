@@ -49,10 +49,6 @@
 
 Error RendererCompositor::create()
 {
-    if (_create_func != nullptr) {
-        return _create_func();
-    }
-
     String driver_name = "";
     if (DisplayServer::get_singleton()) {
         driver_name = OS::get_current_rendering_driver_name();
@@ -61,7 +57,7 @@ Error RendererCompositor::create()
 #if defined(GLES3_ENABLED)
     if (driver_name == "opengl3" || driver_name == "opengl3_es") {
         RasterizerGLES3::make_current(true);
-        return RasterizerGLES3::_create_current();
+        return OK;
     }
 #endif
 
