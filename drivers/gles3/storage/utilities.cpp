@@ -347,7 +347,10 @@ void Utilities::capture_timestamps_begin() { capture_timestamp("Frame Begin"); }
 
 void Utilities::capture_timestamp(const String& p_name)
 {
-	ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	// ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	if (frames[frame].timestamp_count >= max_timestamp_query_elements) {
+		return;
+	}
 
 #ifdef GL_API_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {

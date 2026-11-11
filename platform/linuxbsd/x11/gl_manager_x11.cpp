@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/os/main_loop.h"
 #include "gl_manager_x11.h"
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
@@ -78,144 +79,117 @@ static int ctxErrorHandler(Display* dpy, XErrorEvent* ev)
 
 int GLManager_X11::_find_or_create_display(Display* p_x11_display)
 {
-    for (unsigned int n = 0; n < _displays.size(); n++) {
-        const GLDisplay& d = _displays[n];
-        if (d.x11_display == p_x11_display) {
-            return n;
-        }
-    }
+	for (unsigned int n = 0; n < _displays.size(); n++) {
+		const GLDisplay& d = _displays[n];
+		if (d.x11_display == p_x11_display) {
+			return n;
+		}
+	}
 
-    // Ensure GLAD GLX function pointers are loaded for this display
-    if (!gladLoaderLoadGLX(p_x11_display, DefaultScreen(p_x11_display))) {
-        ERR_FAIL_V_MSG(-1, "Failed to initialize GLAD GLX.");
-    }
+	// Ensure GLAD GLX function pointers are loaded for this display
+	if (!gladLoaderLoadGLX(p_x11_display, DefaultScreen(p_x11_display))) {
+		ERR_FAIL_V_MSG(-1, "Failed to initialize GLAD GLX.");
+	}
 
-    // create display entry
-    GLDisplay d_temp;
-    d_temp.x11_display = p_x11_display;
-    _displays.push_back(d_temp);
-    int new_display_id = _displays.size() - 1;
-    GLDisplay& d = _displays[new_display_id];
+	// create display entry
+	GLDisplay d_temp;
+	d_temp.x11_display = p_x11_display;
+	_displays.push_back(d_temp);
+	int new_display_id = _displays.size() - 1;
+	GLDisplay& d = _displays[new_display_id];
 
-    // Select valid FBConfig
-    static const int visual_attribs[] = {
-        GLX_X_RENDERABLE, True,
-        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE, GLX_RGBA_BIT,
-        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_RED_SIZE, 8,
-        GLX_GREEN_SIZE, 8,
-        GLX_BLUE_SIZE, 8,
-        GLX_ALPHA_SIZE, 8,
-        GLX_DEPTH_SIZE, 24,
-        GLX_STENCIL_SIZE, 8,
-        GLX_DOUBLEBUFFER, True,
-        None
-    };
+	// Select valid FBConfig
+	static const int visual_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+		GLX_RENDER_TYPE, GLX_RGBA_BIT, GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR, GLX_RED_SIZE, 8,
+		GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, GLX_DEPTH_SIZE, 24,
+		GLX_STENCIL_SIZE, 8, GLX_DOUBLEBUFFER, True, None};
 
-    int fbcount = 0;
-    GLXFBConfig *fbc = glXChooseFBConfig(d.x11_display, DefaultScreen(d.x11_display), visual_attribs, &fbcount);
-    if (!fbc || fbcount == 0) {
-        static const int fallback_attribs[] = {
-            GLX_X_RENDERABLE, True,
-            GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-            GLX_RENDER_TYPE, GLX_RGBA_BIT,
-            GLX_RED_SIZE, 8,
-            GLX_GREEN_SIZE, 8,
-            GLX_BLUE_SIZE, 8,
-            GLX_DEPTH_SIZE, 16,
-            GLX_DOUBLEBUFFER, True,
-            None
-        };
-        fbc = glXChooseFBConfig(d.x11_display, DefaultScreen(d.x11_display), fallback_attribs, &fbcount);
-    }
+	int fbcount = 0;
+	GLXFBConfig* fbc =
+		glXChooseFBConfig(d.x11_display, DefaultScreen(d.x11_display), visual_attribs, &fbcount);
+	if (!fbc || fbcount == 0) {
+		static const int fallback_attribs[] = {GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE,
+			GLX_WINDOW_BIT, GLX_RENDER_TYPE, GLX_RGBA_BIT, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8,
+			GLX_BLUE_SIZE, 8, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, True, None};
+		fbc = glXChooseFBConfig(
+			d.x11_display, DefaultScreen(d.x11_display), fallback_attribs, &fbcount);
+	}
 
-    ERR_FAIL_COND_V_MSG(!fbc || fbcount == 0, -1, "No matching GLX FBConfig found.");
+	ERR_FAIL_COND_V_MSG(!fbc || fbcount == 0, -1, "No matching GLX FBConfig found.");
 
-    d.x_fbconfig = (void *)fbc[0];
+	d.x_fbconfig = (void*)fbc[0];
 
-    XVisualInfo *vi = glXGetVisualFromFBConfig(d.x11_display, fbc[0]);
-    if (vi) {
-        d.x_vi = *vi;
-        XFree(vi);
-    }
-    XFree(fbc);
+	XVisualInfo* vi = glXGetVisualFromFBConfig(d.x11_display, fbc[0]);
+	if (vi) {
+		d.x_vi = *vi;
+		XFree(vi);
+	}
+	XFree(fbc);
 
-    // create context
-    d.context = memnew(GLManager_X11_Private);
-    d.context->glx_context = nullptr;
+	// create context
+	d.context = memnew(GLManager_X11_Private);
+	d.context->glx_context = nullptr;
 
-    Error err = _create_context(d);
+	Error err = _create_context(d);
 
-    if (err != OK) {
-        _displays.remove_at(new_display_id);
-        return -1;
-    }
+	if (err != OK) {
+		_displays.remove_at(new_display_id);
+		return -1;
+	}
 
-    return new_display_id;
+	return new_display_id;
 }
 
-Error GLManager_X11::_create_context(GLDisplay &gl_display)
+Error GLManager_X11::_create_context(GLDisplay& gl_display)
 {
-    ERR_FAIL_NULL_V(gl_display.x_fbconfig, ERR_INVALID_PARAMETER);
+	ERR_FAIL_NULL_V(gl_display.x_fbconfig, ERR_INVALID_PARAMETER);
 
-    if (!gl_display.context) {
-        gl_display.context = memnew(GLManager_X11_Private);
-    }
-    gl_display.context->glx_context = nullptr;
+	if (!gl_display.context) {
+		gl_display.context = memnew(GLManager_X11_Private);
+	}
+	gl_display.context->glx_context = nullptr;
 
-    GLXFBConfig fb_config = (GLXFBConfig)gl_display.x_fbconfig;
+	GLXFBConfig fb_config = (GLXFBConfig)gl_display.x_fbconfig;
 
-    // Trap X11 errors to prevent default handler exit(1) on unsupported context flags
-    ctxErrorOccurred = false;
-    int (*oldHandler)(Display *, XErrorEvent *) = XSetErrorHandler(ctxErrorHandler);
+	// Trap X11 errors to prevent default handler exit(1) on unsupported context flags
+	ctxErrorOccurred = false;
+	int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(ctxErrorHandler);
 
-    // Try OpenGL 3.3 Core Profile first via ARB extension if supported
-    if (glad_glXCreateContextAttribsARB) {
-        int attribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-            GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-            None
-        };
+	// Try OpenGL 3.3 Core Profile first via ARB extension if supported
+	if (glad_glXCreateContextAttribsARB) {
+		int attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+			GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB, None};
 
-        gl_display.context->glx_context = glad_glXCreateContextAttribsARB(
-            gl_display.x11_display,
-            fb_config,
-            nullptr,
-            True,
-            attribs);
+		gl_display.context->glx_context = glad_glXCreateContextAttribsARB(
+			gl_display.x11_display, fb_config, nullptr, True, attribs);
 
-        XSync(gl_display.x11_display, False);
+		XSync(gl_display.x11_display, False);
 
-        if (ctxErrorOccurred) {
-            gl_display.context->glx_context = nullptr;
-            ctxErrorOccurred = false;
-        }
-    }
+		if (ctxErrorOccurred) {
+			gl_display.context->glx_context = nullptr;
+			ctxErrorOccurred = false;
+		}
+	}
 
-    // Fall back to standard GLX 1.3 context creation if core profile creation fails
-    if (!gl_display.context->glx_context) {
-        ctxErrorOccurred = false;
-        gl_display.context->glx_context = glXCreateNewContext(
-            gl_display.x11_display,
-            fb_config,
-            GLX_RGBA_TYPE,
-            nullptr,
-            True);
+	// Fall back to standard GLX 1.3 context creation if core profile creation fails
+	if (!gl_display.context->glx_context) {
+		ctxErrorOccurred = false;
+		gl_display.context->glx_context =
+			glXCreateNewContext(gl_display.x11_display, fb_config, GLX_RGBA_TYPE, nullptr, True);
 
-        XSync(gl_display.x11_display, False);
+		XSync(gl_display.x11_display, False);
 
-        if (ctxErrorOccurred) {
-            gl_display.context->glx_context = nullptr;
-        }
-    }
+		if (ctxErrorOccurred) {
+			gl_display.context->glx_context = nullptr;
+		}
+	}
 
-    XSetErrorHandler(oldHandler);
+	XSetErrorHandler(oldHandler);
 
-    ERR_FAIL_COND_V_MSG(!gl_display.context->glx_context, ERR_CANT_CREATE, "Could not create GLX context.");
+	ERR_FAIL_COND_V_MSG(
+		!gl_display.context->glx_context, ERR_CANT_CREATE, "Could not create GLX context.");
 
-    return OK;
+	return OK;
 }
 
 XVisualInfo GLManager_X11::get_vi(Display* p_display, Error& r_error)
@@ -352,6 +326,34 @@ void GLManager_X11::swap_buffers()
 		return;
 	}
 
+	// Drain and inspect events right here before letting GLX block in poll()
+	while (XPending(_x_windisp.x11_display)) {
+		XEvent ev;
+		XNextEvent(_x_windisp.x11_display, &ev);
+
+		if (ev.type == ClientMessage) {
+			Atom wm_protocols = XInternAtom(_x_windisp.x11_display, "WM_PROTOCOLS", True);
+			Atom wm_delete = XInternAtom(_x_windisp.x11_display, "WM_DELETE_WINDOW", True);
+			if (ev.xclient.message_type == wm_protocols &&
+				(Atom)ev.xclient.data.l[0] == wm_delete) {
+				printf("[GLX SWAP] Intercepted WM_DELETE_WINDOW before swap! Exiting.\n");
+				fflush(stdout);
+				if (OS::is_initialized() && OS::get_main_loop()) {
+					OS::get_main_loop()->finalize();
+				}
+				return; // Do NOT call glXSwapBuffers!
+			}
+		}
+		else if (ev.type == DestroyNotify || ev.type == UnmapNotify) {
+			printf("[GLX SWAP] Window unmapped or destroyed (type=%d). Exiting.\n", ev.type);
+			fflush(stdout);
+			if (OS::is_initialized() && OS::get_main_loop()) {
+				OS::get_main_loop()->finalize();
+			}
+			return; // Do NOT call glXSwapBuffers!
+		}
+	}
+
 	// On X11, when enabled, transparency is always active, so clear alpha manually.
 	if (OS::is_layered_allowed()) {
 		if (!DisplayServer::get_singleton()->window_get_flag(
@@ -363,6 +365,20 @@ void GLManager_X11::swap_buffers()
 		}
 	}
 
+	static uint64_t swap_count = 0;
+	swap_count++;
+
+	// Check if the display pointers actually match
+	DisplayServer* ds = DisplayServer::get_singleton();
+	int pending_gl = XPending(_x_windisp.x11_display);
+
+	if (swap_count % 120 == 0) {
+		printf("[SWAP HEARTBEAT] swap=%lu, pending=%d, win=%lu\n", swap_count, pending_gl,
+			(unsigned long)_x_windisp.x11_window);
+		fflush(stdout);
+	}
+
+	// Do the swap
 	glXSwapBuffers(_x_windisp.x11_display, _x_windisp.x11_window);
 }
 
@@ -384,7 +400,8 @@ void GLManager_X11::set_use_vsync(bool p_use)
 	const GLDisplay& disp = get_current_display();
 
 	int val = p_use ? 1 : 0;
-	if (GLAD_GLX_MESA_swap_control) {
+	if (GLAD_GLX_MESA_swap_control)
+{
 		glXSwapIntervalMESA(val);
 	}
 	else if (GLAD_GLX_SGI_swap_control) {

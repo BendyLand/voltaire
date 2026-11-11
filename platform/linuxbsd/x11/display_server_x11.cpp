@@ -4453,8 +4453,7 @@ void DisplayServerX11::_xim_preedit_done_callback(
 {
 	DisplayServerX11* ds = reinterpret_cast<DisplayServerX11*>(client_data);
 	DisplayServerEnums::WindowID window_id = ds->_get_focused_window_or_popup();
-	WindowData& wd =
-ds->windows[window_id];
+	WindowData& wd = ds->windows[window_id];
 	if (wd.ime_active) {
 		wd.ime_in_progress = false;
 		wd.ime_suppress_next_keyup = true;
@@ -4573,6 +4572,8 @@ void DisplayServerX11::_check_pending_events(LocalVector<XEvent>& r_events)
 	// Non-blocking wait for next event and remove it from the queue.
 	XEvent ev = {};
 	while (XCheckIfEvent(x11_display, &ev, _predicate_all_events, nullptr)) {
+		printf("[X11 RAW] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
+		fflush(stdout);
 		// Check if the input manager wants to process the event.
 		if (XFilterEvent(&ev, None)) {
 			// Event has been filtered by the Input Manager,
@@ -4663,6 +4664,8 @@ void DisplayServerX11::popup_open(DisplayServerEnums::WindowID p_window)
 			}
 		}
 		if (C) {
+			printf("[CLOSE REQUEST RECEIVED 1]\n");
+			fflush(stdout);
 			_send_window_event(windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 
@@ -4684,6 +4687,8 @@ void DisplayServerX11::popup_close(DisplayServerEnums::WindowID p_window)
 		if (win_id != p_window) {
 			// Only request close on related windows, not this window.  We are already processing
 			// it.
+			printf("[CLOSE REQUEST RECEIVED 2]\n");
+			fflush(stdout);
 			_send_window_event(windows[win_id], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 		E = F;
@@ -4738,6 +4743,8 @@ bool DisplayServerX11::mouse_process_popups()
 						}
 					}
 					if (C) {
+						printf("[CLOSE REQUEST RECEIVED 3]\n");
+						fflush(stdout);
 						_send_window_event(
 							windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 						closed = true;
@@ -6020,15 +6027,6 @@ void DisplayServerX11::register_x11_driver()
 	register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
-void DisplayServerX11::_send_window_event(
-	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
-{
-}
-
-#endif // X11 enabled
-
-void DisplayServerX11::process_events() {}
-
 uint32_t DisplayServerX11::mouse_get_button_state() const { return 0; }
 
 void DisplayServerX11::cursor_set_custom_image(const Ref<Resource>& p_cursor,
@@ -6088,145 +6086,217 @@ Error DisplayServer::init_rendering_device()
 }
 
 DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
-    DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
-    uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
-    DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
+	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
+	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
+	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
-    printf("[X11 CONSTRUCTOR] driver='%s', context_ptr=%p\n", p_rendering_driver.utf8().get_data(),
-        (void*)rendering_context);
-    fflush(stdout);
-    rendering_driver = p_rendering_driver;
+	printf("[X11 CONSTRUCTOR] driver='%s', context_ptr=%p\n", p_rendering_driver.utf8().get_data(),
+		(void*)rendering_context);
+	fflush(stdout);
+	rendering_driver = p_rendering_driver;
 
 #if defined(RD_ENABLED)
 #if defined(VULKAN_ENABLED)
-    if (rendering_driver == "vulkan") {
-        rendering_context = memnew(RenderingContextDriverVulkanX11);
-        Error context_err = rendering_context->initialize();
-        if (context_err != OK) {
-            ERR_PRINT("Failed to initialize Vulkan X11 context driver.");
-            memdelete(rendering_context);
-            rendering_context = nullptr;
-            r_error = ERR_CANT_CREATE;
-            return;
-        }
-    }
+	if (rendering_driver == "vulkan") {
+		rendering_context = memnew(RenderingContextDriverVulkanX11);
+		Error context_err = rendering_context->initialize();
+		if (context_err != OK) {
+			ERR_PRINT("Failed to initialize Vulkan X11 context driver.");
+			memdelete(rendering_context);
+			rendering_context = nullptr;
+			r_error = ERR_CANT_CREATE;
+			return;
+		}
+	}
 #endif
 #endif
 
 #if defined(GLES3_ENABLED)
-    if (rendering_driver == "opengl3") {
-        RasterizerGLES3::make_current(true);
-        gl_manager = memnew(GLManager_X11(p_resolution));
-    }
+	if (rendering_driver == "opengl3") {
+		RasterizerGLES3::make_current(true);
+		gl_manager = memnew(GLManager_X11(p_resolution));
+	}
 #endif
 
-    if (initialize_xlib(0) != 0) {
-        r_error = ERR_CANT_CREATE;
-        return;
-    }
+	if (initialize_xlib(0) != 0) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
 
-    x11_display = XOpenDisplay(nullptr);
-    if (!x11_display) {
-        r_error = ERR_CANT_CREATE;
-        return;
-    }
+	x11_display = XOpenDisplay(nullptr);
+	if (!x11_display) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
 
 #if defined(XRANDR_ENABLED)
-    xrandr_ext_ok = (initialize_xrandr(0) == 0);
+	xrandr_ext_ok = (initialize_xrandr(0) == 0);
 #else
-    xrandr_ext_ok = false;
+	xrandr_ext_ok = false;
 #endif
 
 #if defined(XINERAMA_ENABLED)
-    xinerama_ext_ok = (initialize_xinerama(0) == 0);
+	xinerama_ext_ok = (initialize_xinerama(0) == 0);
 #else
-    xinerama_ext_ok = false;
+	xinerama_ext_ok = false;
 #endif
 
 #if defined(XSHAPE_ENABLED)
-    xshaped_ext_ok = (initialize_xshape(0) == 0);
+	xshaped_ext_ok = (initialize_xshape(0) == 0);
 #else
-    xshaped_ext_ok = false;
+	xshaped_ext_ok = false;
 #endif
 
-    r_error = OK;
+	r_error = OK;
 
-    int width = p_resolution.x > 0 ? p_resolution.x : 1024;
-    int height = p_resolution.y > 0 ? p_resolution.y : 768;
-    int x = p_position ? p_position->x : 0;
-    int y = p_position ? p_position->y : 0;
+	int width = p_resolution.x > 0 ? p_resolution.x : 1024;
+	int height = p_resolution.y > 0 ? p_resolution.y : 768;
+	int x = p_position ? p_position->x : 0;
+	int y = p_position ? p_position->y : 0;
 
-    ::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
-    XSetWindowAttributes wa;
-    wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
-                    ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
-                    EnterWindowMask | LeaveWindowMask;
-    wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
+	::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
+	XSetWindowAttributes wa;
+	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
+					ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
+					EnterWindowMask | LeaveWindowMask;
+	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
 
-    ::Window x11_win = XCreateWindow(x11_display, root, x, y, width, height, 0, CopyFromParent,
-        InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
+	::Window x11_win = XCreateWindow(x11_display, root, x, y, width, height, 0, CopyFromParent,
+		InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
 
-    if (!x11_win) {
-        r_error = ERR_CANT_CREATE;
-        return;
-    }
+	if (!x11_win) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
 
-    WindowData wd;
-    wd.x11_window = x11_win;
-    wd.x11_xim_window = 0;
-    wd.xic = nullptr;
-    wd.position = Point2i(x, y);
-    wd.size = Size2i(width, height);
+	// Register WM_DELETE_WINDOW protocol so clicking 'X' notifies the app instead of dropping the
+	// window
+	Atom protocols[1];
+	protocols[0] = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
+	Status s = XSetWMProtocols(x11_display, x11_win, protocols, 1);
+	printf("[X11 INIT] XSetWMProtocols returned status=%d, atom=%lu, win=%lu\n", s,
+		(unsigned long)protocols[0], (unsigned long)x11_win);
+	fflush(stdout);
 
-    switch (p_mode) {
-    case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
-        wd.fullscreen = true;
-    } break;
-    case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
-        wd.fullscreen = true;
-        wd.exclusive_fullscreen = true;
-    } break;
-    case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
-        wd.maximized = true;
-    } break;
-    case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
-        wd.minimized = true;
-    } break;
-    case DisplayServerEnums::WINDOW_MODE_WINDOWED:
-    default: {
-        // standard defaults already set
-    } break;
-    }
+	WindowData wd;
+	wd.x11_window = x11_win;
+	wd.x11_xim_window = 0;
+	wd.xic = nullptr;
+	wd.position = Point2i(x, y);
+	wd.size = Size2i(width, height);
 
-    windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
+	switch (p_mode) {
+	case DisplayServerEnums::WINDOW_MODE_FULLSCREEN: {
+		wd.fullscreen = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN: {
+		wd.fullscreen = true;
+		wd.exclusive_fullscreen = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_MAXIMIZED: {
+		wd.maximized = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_MINIMIZED: {
+		wd.minimized = true;
+	} break;
+	case DisplayServerEnums::WINDOW_MODE_WINDOWED:
+	default: {
+		// standard defaults already set
+	} break;
+	}
+
+	windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
 
 #if defined(RD_ENABLED)
-    if (rendering_context) {
-        RenderingContextDriverVulkanX11::WindowPlatformData wpd;
-        wpd.window = x11_win;
-        wpd.display = x11_display;
+	if (rendering_context) {
+		RenderingContextDriverVulkanX11::WindowPlatformData wpd;
+		wpd.window = x11_win;
+		wpd.display = x11_display;
 
-        Error err = rendering_context->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &wpd);
-        if (err != OK) {
-            ERR_PRINT("Failed to create Vulkan surface for Window 0");
-        }
+		Error err = rendering_context->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &wpd);
+		if (err != OK) {
+			ERR_PRINT("Failed to create Vulkan surface for Window 0");
+		}
 
-        rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, width, height);
-        rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
-    }
+		rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, width, height);
+		rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
+	}
 #endif
 
 #if defined(GLES3_ENABLED)
-    if (gl_manager) {
-        Error err = gl_manager->window_create(DisplayServerEnums::MAIN_WINDOW_ID, x11_win, x11_display, width, height);
-        if (err != OK) {
-            ERR_PRINT("Failed to create OpenGL context for Window 0");
-        }
-    }
+	if (gl_manager) {
+		Error err = gl_manager->window_create(
+			DisplayServerEnums::MAIN_WINDOW_ID, x11_win, x11_display, width, height);
+		if (err != OK) {
+			ERR_PRINT("Failed to create OpenGL context for Window 0");
+		}
+	}
 #endif
 
-    XMapWindow(x11_display, x11_win);
-    XFlush(x11_display);
+	XMapWindow(x11_display, x11_win);
+	XFlush(x11_display);
 }
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+void DisplayServerX11::_send_window_event(
+	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
+{
+	if (p_event == DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST) {
+		extern bool s_quit_requested;
+		s_quit_requested = true;
+	}
+}
+
+void DisplayServerX11::process_events()
+{
+	if (!x11_display) {
+		return;
+	}
+
+	// Force reading pending packets from the X11 connection socket into Xlib's queue
+	int count = XEventsQueued(x11_display, QueuedAfterReading);
+	if (count > 0) {
+		printf("[X11 QUEUE] count=%d\n", count);
+		fflush(stdout);
+	}
+
+	while (XPending(x11_display) > 0) {
+		XEvent ev;
+		XNextEvent(x11_display, &ev);
+
+		printf("[EVENT DUMP] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
+		fflush(stdout);
+
+		if (XFilterEvent(&ev, None)) {
+			continue;
+		}
+
+		if (ev.type == ClientMessage) {
+			char* name = XGetAtomName(x11_display, ev.xclient.message_type);
+			char* data0_name = XGetAtomName(x11_display, (Atom)ev.xclient.data.l[0]);
+
+			printf("[CLIENT MESSAGE] msg_type=%s, data[0]=%s\n", name ? name : "null",
+				data0_name ? data0_name : "null");
+			fflush(stdout);
+
+			if (name)
+				XFree(name);
+			if (data0_name)
+				XFree(data0_name);
+
+			// Quit regardless of protocol string match for now
+			printf("[FORCE QUIT ON CLIENT MESSAGE]\n");
+			fflush(stdout);
+			exit(0)
+;
+		}
+		else if (ev.type == DestroyNotify) {
+			printf("[FORCE QUIT ON DESTROY]\n");
+			fflush(stdout);
+			exit(0);
+		}
+	}
+}
+
+#endif // X11 enabled

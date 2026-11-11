@@ -30,6 +30,8 @@
 
 #include "main_loop.h"
 
+bool s_quit_requested = false;
+
 void MainLoop::finalize() {}
 
 void MainLoop::initialize() {}

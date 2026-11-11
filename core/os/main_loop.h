@@ -33,8 +33,6 @@
 
 class MainLoop
 {
-protected:
-
 public:
 	enum
 	{
@@ -64,7 +62,8 @@ public:
 	virtual bool process(double p_time);
 	virtual void finalize();
 
-	virtual ~MainLoop() {}
+	MainLoop() = default;
+	virtual ~MainLoop() = default;
 };
 
 
