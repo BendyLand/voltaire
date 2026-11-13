@@ -71,4 +71,4 @@ public:
 };
 
 // Implicitly zero-constructible as a trivially-constructible type.
-static_assert(is_zero_constructible_v<uint32_t);
+static_assert(is_zero_constructible_v<BitField<Error>>);

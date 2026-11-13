@@ -32,6 +32,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
+#include "core/utils.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
@@ -5941,38 +5942,40 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 
 void RenderingDevice::swap_buffers(bool p_present)
 {
-	ERR_RENDER_THREAD_GUARD();
+    ERR_RENDER_THREAD_GUARD();
 
-	if (p_present) {
-		for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
-			data->screen_swap_chains) {
-			data->frames[data->frame].swap_chains_to_present.push_back(it.value);
-		}
-	}
+    if (p_present) {
+        for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
+            data->screen_swap_chains) {
+            if (data->screen_framebuffers.has(it.key)) {
+                data->frames[data->frame].swap_chains_to_present.push_back(it.value);
+            }
+        }
+    }
 
-	RDD::CommandBufferID command_buffer = data->frames[data->frame].command_buffer;
-	data->driver->command_buffer_begin(command_buffer);
+    RDD::CommandBufferID command_buffer = data->frames[data->frame].command_buffer;
+    data->driver->command_buffer_begin(command_buffer);
 
-	data->draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer,
-		data->frames[data->frame].command_buffer_pool);
+    data->draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer,
+        data->frames[data->frame].command_buffer_pool);
 
-	data->driver->command_buffer_end(command_buffer);
+    data->driver->command_buffer_end(command_buffer);
 
-	_execute_frame(p_present);
+    _execute_frame(p_present);
 
-	data->screen_framebuffers.clear();
+    data->screen_framebuffers.clear();
+    data->frame = (data->frame + 1) % data->frames.size();
+    data->frames_drawn++;
 
-	data->frame = (data->frame + 1) % data->frames.size();
-	data->frames_drawn++;
+    if (data->frames[data->frame].fence_signaled) {
+        data->driver->fence_wait(data->frames[data->frame].fence);
+        data->frames[data->frame].fence_signaled = false;
+    }
 
-	if (data->frames[data->frame].fence_signaled) {
-		data->driver->fence_wait(data->frames[data->frame].fence);
-		data->frames[data->frame].fence_signaled = false;
-	}
+    data->driver->command_pool_reset(data->frames[data->frame].command_pool);
+    _free_pending_resources(data->frame);
 
-	data->driver->command_pool_reset(data->frames[data->frame].command_pool);
-
-	_free_pending_resources(data->frame);
+    data->draw_graph.begin();
 }
 
 Error RenderingDevice::screen_free(int) { return OK; }
@@ -6124,6 +6127,7 @@ Error RenderingDevice::initialize(
 
 	data->draw_graph.initialize(data->driver, &RenderingDevice::_render_pass_create_from_graph,
 		frame_count, data->main_queue_family, 0);
+	data->draw_graph.begin();
 
 	return OK;
 }
@@ -6402,23 +6406,35 @@ Error RenderingDevice::screen_prepare_for_drawing(DisplayServerEnums::WindowID p
 
 void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array)
 {
-	ERR_RENDER_THREAD_GUARD();
+    ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND(!data->draw_list.active);
+    ERR_FAIL_COND(!data->draw_list.active);
 
-	IndexArray* index_array = data->index_array_owner.get_or_null(p_index_array);
-	ERR_FAIL_NULL(index_array);
+    if (data->draw_list.state.index_array == p_index_array) {
+        return;
+    }
 
-	if (index_array->draw_tracker != nullptr) {
-		data->draw_graph.add_draw_list_usage(
-			index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
-	}
+    IndexArray* index_array = data->index_array_owner.get_or_null(p_index_array);
+    ERR_FAIL_NULL(index_array);
 
+    _check_transfer_worker_index_array(index_array);
+
+    if (index_array->draw_tracker != nullptr) {
+        data->draw_graph.add_draw_list_usage(
+            index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
+    }
+
+    data->draw_graph.add_draw_list_bind_index_buffer(index_array->driver_id, index_array->format,
+        index_array->offset * (index_array->format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? 2 : 4));
+
+    data->draw_list.validation.index_array_count = index_array->indices;
 #ifdef DEBUG_ENABLED
-	data->draw_list.validation.index_array_count = index_array->indices;
-	data->draw_list.validation.index_buffer_uses_restart_indices =
-		index_array->supports_restart_indices;
+    data->draw_list.validation.index_array_max_index = index_array->max_index;
+    data->draw_list.validation.index_buffer_uses_restart_indices =
+        index_array->supports_restart_indices;
 #endif
+
+    data->draw_list.state.index_array = p_index_array;
 }
 
 void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array)
@@ -6669,10 +6685,10 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 	RDD::TextureSubresourceRange range;
 
 	if (RDC::format_has_depth(p_texture->format)) {
-		range.aspect |= RDD::TEXTURE_ASPECT_DEPTH_BIT;
+		range.aspect = Utils::set_flag(range.aspect, RDD::TEXTURE_ASPECT_DEPTH_BIT);
 	}
 	if (RDC::format_has_stencil(p_texture->format)) {
-		range.aspect |= RDD::TEXTURE_ASPECT_STENCIL_BIT;
+		range.aspect = Utils::set_flag(range.aspect, RDD::TEXTURE_ASPECT_STENCIL_BIT);
 	}
 	range.base_mipmap = p_texture->base_mipmap + p_base_mipmap;
 	range.mipmap_count = p_mipmaps;

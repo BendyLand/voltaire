@@ -3119,12 +3119,12 @@ void RendererRD::TextureStorage::render_target_do_clear_request(RID p_render_tar
 
 	// Begin a draw list on the render target's framebuffer
 	if (rt->rd_framebuffer.is_valid()) {
-		RD::DrawListID draw_list = RD::draw_list_begin(
-			rt->rd_framebuffer, RenderingDevice::DRAW_DEFAULT_ALL, clear_colors_const);
-		if (draw_list != RDC::INVALID_ID) {
-			RD::draw_list_end();
-		}
-	}
+        RD::DrawListID draw_list = RD::draw_list_begin(
+            rt->rd_framebuffer, RenderingDevice::DRAW_CLEAR_COLOR_0, clear_colors);
+        if (draw_list != RDC::INVALID_ID) {
+            RD::draw_list_end();
+        }
+    }
 
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;
