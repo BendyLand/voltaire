@@ -378,6 +378,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
+	DUMP(can_draw_2d);
+	DUMP(p_viewport->size);
+	DUMP(p_viewport->canvas_map.size());
 	if (Renderer::scene->is_scenario(p_viewport->scenario)) {
 		RID environment = Renderer::scene->scenario_get_environment(p_viewport->scenario);
 		if (Renderer::scene->is_environment(environment)) {
@@ -387,7 +390,8 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				scenario_canvas_max_layer =
 					Renderer::scene->environment_get_canvas_max_layer(environment);
 			}
-			else if (Renderer::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS) {
+			else if (Renderer::scene->environment_get_background(environment) ==
+					   RSE::ENV_BG_CANVAS) {
 				// The scene renderer will still copy over the last frame, so we need to clear the
 				// render target.
 				force_clear_render_target = true;
@@ -741,8 +745,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+					p_viewport->scenario, p_viewport->shadow_atlas,
+					p_viewport->window_output_max_value);
 			}
 			else {
 				_draw_3d(p_viewport);
@@ -798,8 +803,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				// target.
 				RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 				if (!can_draw_3d) {
-					Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-						p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+					Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+						p_viewport->scenario, p_viewport->shadow_atlas,
+						p_viewport->window_output_max_value);
 				}
 				else {
 					_draw_3d(p_viewport);
@@ -816,8 +822,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				Renderer::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+					p_viewport->scenario, p_viewport->shadow_atlas,
+					p_viewport->window_output_max_value);
 			}
 			else {
 				_draw_3d(p_viewport);
@@ -1741,7 +1748,6 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 {
 	static uint64_t dv_count = 0;
 	if ((++dv_count % 60) == 1) {
-		DUMP(viewport_owner);
 		printf("[DRAW_VIEWPORTS] call %llu, rid_count=%u\n", (unsigned long long)dv_count,
 			viewport_owner.get_rid_count());
 	}

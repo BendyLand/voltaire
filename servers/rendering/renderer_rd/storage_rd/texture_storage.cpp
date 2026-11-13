@@ -36,6 +36,7 @@
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/texture_storage.h"
 #include "texture_storage.h"
 
@@ -1964,7 +1965,8 @@ void RendererRD::TextureStorage::decal_atlas_mark_dirty_on_texture(RID p_texture
 
 void RendererRD::TextureStorage::decal_atlas_remove_texture(RID p_texture)
 {
-	if (decal_atlas.textures.has(p_texture)) {
+	if (decal_atlas.
+textures.has(p_texture)) {
 		decal_atlas.textures.erase(p_texture);
 		// there is not much a point of making it dirty, just let it be.
 	}
@@ -3113,6 +3115,17 @@ void RendererRD::TextureStorage::render_target_do_clear_request(RID p_render_tar
 	}
 	Vector<Color> clear_colors;
 	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
+	const Vector<Color> clear_colors_const = clear_colors;
+
+	// Begin a draw list on the render target's framebuffer
+	if (rt->rd_framebuffer.is_valid()) {
+		RD::DrawListID draw_list = RD::draw_list_begin(
+			rt->rd_framebuffer, RenderingDevice::DRAW_DEFAULT_ALL, clear_colors_const);
+		if (draw_list != RDC::INVALID_ID) {
+			RD::draw_list_end();
+		}
+	}
+
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;
 }
@@ -3757,7 +3770,8 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 			w[i * 4 + 0] = r;
 			w[i * 4 + 1] = g;
 			w[i * 4 + 2] = b;
-			w[i * 4 + 3] = a;
+			w[i * 4 + 3] = a
+;
 		}
 		initial_data.push_back(buffer);
 	}
@@ -3772,11 +3786,8 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 	texture->mipmaps = 1;
 	texture->type = TextureType::TYPE_2D;
 	texture->rd_type = rd_format.texture_type;
-	texture->rd_format = rd_format.
-format;
+	texture->rd_format = rd_format.format;
 	texture->is_render_target = true;
 }
 
 void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
-
-

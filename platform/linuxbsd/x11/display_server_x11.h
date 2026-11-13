@@ -125,7 +125,6 @@ class DisplayServerX11 : public DisplayServer
 #endif
 #if defined(RD_ENABLED)
 	RenderingContextDriver* rendering_context = nullptr;
-	RenderingDevice* rendering_device = nullptr;
 #endif
 
 #if defined(DBUS_ENABLED)

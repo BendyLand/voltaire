@@ -2070,8 +2070,8 @@ DisplayServerEnums::WindowID DisplayServerX11::create_sub_window(
 		}
 	}
 #ifdef RD_ENABLED
-	if (rendering_device) {
-		rendering_device->screen_create(id);
+	if (RD::is_initialized()) {
+		RD::screen_create(id);
 	}
 #endif
 
@@ -2169,17 +2169,16 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size
-= sz;
+			wd.size = sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
-				Error err = RenderingDevice::initialize(
-					rendering_context, rendering_context->device_get(0));
-				if (err != OK) {
-					ERR_PRINT("Failed to initialize RenderingDevice.");
-					return;
-				}
+				// Error err = RenderingDevice::initialize(
+				// 	rendering_context, rendering_context->device_get(0));
+				// if (err != OK) {
+				// 	ERR_PRINT("Failed to initialize RenderingDevice.");
+				// 	return;
+				// }
 			}
 #endif
 #if defined(GLES3_ENABLED)
@@ -4822,7 +4821,7 @@ bool DisplayServerX11::is_window_transparency_available() const
 		return false;
 	}
 #if defined(RD_ENABLED)
-	if (rendering_device && !rendering_device->is_composite_alpha_supported()) {
+	if (RD::is_initialized() && !RD::is_composite_alpha_supported()) {
 		return false;
 	}
 #endif
@@ -5918,8 +5917,8 @@ DisplayServerX11::~DisplayServerX11()
 	// destroy all windows
 	for (KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
 #if defined(RD_ENABLED)
-		if (rendering_device) {
-			rendering_device->screen_free(E.key);
+		if (RD::is_initialized()) {
+			RD::screen_free(E.key);
 		}
 
 		if (rendering_context) {
@@ -5968,9 +5967,8 @@ DisplayServerX11::~DisplayServerX11()
 
 	// destroy drivers
 #if defined(RD_ENABLED)
-	if (rendering_device) {
-		memdelete(RD::data);
-		rendering_device = nullptr;
+	if (RD::is_initialized()) {
+		RD::finalize();
 	}
 
 	if (rendering_context) {
@@ -6074,12 +6072,13 @@ Error DisplayServer::init_rendering_device()
 
 	RenderingContextDriver::Device device = rcd->device_get(0);
 
-	err = RD::initialize(rcd, device);
-	if (err != OK) {
-		memdelete(rcd);
-		return err;
+	if (!RD::is_initialized()) {
+		err = RD::initialize(rcd, device);
+		if (err != OK) {
+			memdelete(rcd);
+			return err;
+		}
 	}
-
 	return OK;
 #else
 	return ERR_UNAVAILABLE;
@@ -6221,6 +6220,19 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 		rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, width, height);
 		rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
+		if (!RenderingDevice::is_initialized()) {
+			if (RenderingDevice::initialize(rendering_context, rendering_context->device_get(0)) !=
+				OK) {
+				ERR_PRINT("Failed to initialize RenderingDevice for Window 0");
+				r_error = ERR_CANT_CREATE;
+				return;
+			}
+		}
+		if (RenderingDevice::screen_create(DisplayServerEnums::MAIN_WINDOW_ID) != OK) {
+			ERR_PRINT("Failed to create RenderingDevice screen for Window 0");
+			r_error = ERR_CANT_CREATE;
+			return;
+		}
 	}
 #endif
 
@@ -6256,18 +6268,14 @@ void DisplayServerX11::process_events()
 	}
 
 	// Force reading pending packets from the X11 connection socket into Xlib's queue
-	int count = XEventsQueued(x11_display, QueuedAfterReading);
-	if (count > 0) {
-		printf("[X11 QUEUE] count=%d\n", count);
-		fflush(stdout);
-	}
-
+	int _count = XEventsQueued(x11_display, QueuedAfterReading);
 	while (XPending(x11_display) > 0) {
 		XEvent ev;
 		XNextEvent(x11_display, &ev);
 
-		printf("[EVENT DUMP] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
-		fflush(stdout);
+		// Uncomment to enable logging of window events
+		// printf("[EVENT DUMP] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
+		// fflush(stdout);
 
 		if (XFilterEvent(&ev, None)) {
 			continue;
@@ -6281,20 +6289,16 @@ void DisplayServerX11::process_events()
 				data0_name ? data0_name : "null");
 			fflush(stdout);
 
-			if (name)
+			if (name) {
 				XFree(name);
-			if (data0_name)
+			}
+			if (data0_name) {
 				XFree(data0_name);
-
+			}
 			// Quit regardless of protocol string match for now
-			printf("[FORCE QUIT ON CLIENT MESSAGE]\n");
-			fflush(stdout);
-			exit(0)
-;
+			exit(0);
 		}
 		else if (ev.type == DestroyNotify) {
-			printf("[FORCE QUIT ON DESTROY]\n");
-			fflush(stdout);
 			exit(0);
 		}
 	}

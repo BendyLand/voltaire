@@ -59,7 +59,8 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 	BlitPipelines blit_pipelines =
 		_get_blit_pipelines_for_format(RD::screen_get_framebuffer_format(p_screen));
 
-	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
+	// RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
+	RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen, Color(1, 0, 1, 1));
 	ERR_FAIL_COND(draw_list == RDC::INVALID_ID);
 
 	const RDC::ColorSpace color_space = RD::screen_get_color_space(p_screen);
@@ -73,8 +74,8 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		_compute_reference_multiplier(color_space, reference_luminance, linear_luminance_scale);
 
 	for (int i = 0; i < p_amount; i++) {
-		RID rd_texture =
-			RendererRD::TextureStorage::render_target_get_rd_texture(p_render_targets[i].render_target);
+		RID rd_texture = RendererRD::TextureStorage::render_target_get_rd_texture(
+			p_render_targets[i].render_target);
 		ERR_CONTINUE(rd_texture.is_null());
 
 		RDC::TextureFormat tex_format = RD::texture_get_format(rd_texture);
@@ -85,9 +86,9 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		}
 
 		BlitMode mode = p_render_targets[i].lens_distortion.apply
-			? BLIT_MODE_LENS
-			: (p_render_targets[i].multi_view.use_layer ? BLIT_MODE_USE_LAYER
-														: BLIT_MODE_NORMAL);
+							? BLIT_MODE_LENS
+							: (p_render_targets[i].multi_view.use_layer ? BLIT_MODE_USE_LAYER
+																		: BLIT_MODE_NORMAL);
 
 		HashMap<RID, RID>::Iterator it = render_target_descriptors.find(rd_texture);
 		RID uniform_set;
@@ -106,11 +107,13 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 			u.append_id(rd_texture);
 			uniforms.push_back(u);
 
-			uniform_set = RD::uniform_set_create(uniforms, blit->shader.version_get_shader(blit->shader_version, 0), 0);
+			uniform_set = RD::uniform_set_create(
+				uniforms, blit->shader.version_get_shader(blit->shader_version, 0), 0);
 			ERR_CONTINUE(uniform_set.is_null());
 
 			render_target_descriptors.insert(rd_texture, uniform_set);
-		} else {
+		}
+		else {
 			uniform_set = it->value;
 		}
 
@@ -119,12 +122,10 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 			continue;
 		}
 
-		Rect2 dst_rect = Rect2(
-			(float)p_render_targets[i].dst_rect.position.x,
+		Rect2 dst_rect = Rect2((float)p_render_targets[i].dst_rect.position.x,
 			(float)p_render_targets[i].dst_rect.position.y,
 			(float)p_render_targets[i].dst_rect.size.width,
-			(float)p_render_targets[i].dst_rect.size.height
-		);
+			(float)p_render_targets[i].dst_rect.size.height);
 
 		if (dst_rect.size.width <= 0.0f || dst_rect.size.height <= 0.0f ||
 			dst_rect.position.x > 32768.0f || dst_rect.position.x < -32768.0f ||
@@ -132,12 +133,10 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 			dst_rect = Rect2(Point2(), screen_size);
 		}
 
-		Rect2 src_rect = Rect2(
-			(float)p_render_targets[i].src_rect.position.x,
+		Rect2 src_rect = Rect2((float)p_render_targets[i].src_rect.position.x,
 			(float)p_render_targets[i].src_rect.position.y,
 			(float)p_render_targets[i].src_rect.size.width,
-			(float)p_render_targets[i].src_rect.size.height
-		);
+			(float)p_render_targets[i].src_rect.size.height);
 
 		if (src_rect.size.width <= 0.0f || src_rect.size.height <= 0.0f ||
 			src_rect.position.x > 32768.0f || src_rect.position.x < -32768.0f ||
@@ -183,7 +182,7 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
 		blit->push_constant.output_max_value = output_max_value;
 
 		RD::draw_list_set_push_constant(draw_list, &blit->push_constant, sizeof(BlitPushConstant));
-		RD::draw_list_draw(draw_list, false, 1, 3);
+	 	// RD::draw_list_draw(draw_list, false, 1, 3);
 	}
 
 	RD::draw_list_end();
@@ -223,10 +222,7 @@ void RendererCompositorRD::initialize()
 
 		blit->shader.initialize(blit_modes);
 		blit->shader_version = blit->shader.version_create();
-		printf("[BLIT INIT] version ID: %d\n", (int)blit->shader_version.get_id());
-		printf("[BLIT INIT] is_valid: %d\n", (int)blit->shader.version_is_valid(blit->shader_version));
 		RID s_rid = blit->shader.version_get_shader(blit->shader_version, 0);
-		printf("[BLIT INIT] variant 0 shader RID: %lu\n", (uint64_t)s_rid.get_id());
 
 		Vector<uint8_t> pv;
 		pv.resize(6 * 2);
@@ -390,16 +386,22 @@ void RendererCompositorRD::bind_canvas_render()
 	RendererCanvasRender::light_set_texture = &RendererCanvasRenderRD::light_set_texture;
 	RendererCanvasRender::light_set_use_shadow = &RendererCanvasRenderRD::light_set_use_shadow;
 	RendererCanvasRender::light_update_shadow = &RendererCanvasRenderRD::light_update_shadow;
-	RendererCanvasRender::light_update_directional_shadow = &RendererCanvasRenderRD::light_update_directional_shadow;
+	RendererCanvasRender::light_update_directional_shadow =
+		&RendererCanvasRenderRD::light_update_directional_shadow;
 	RendererCanvasRender::render_sdf = &RendererCanvasRenderRD::render_sdf;
-	RendererCanvasRender::occluder_polygon_create = &RendererCanvasRenderRD::occluder_polygon_create;
-	RendererCanvasRender::occluder_polygon_set_shape = &RendererCanvasRenderRD::occluder_polygon_set_shape;
-	RendererCanvasRender::occluder_polygon_set_cull_mode = &RendererCanvasRenderRD::occluder_polygon_set_cull_mode;
-	RendererCanvasRender::set_shadow_texture_size = &RendererCanvasRenderRD::set_shadow_texture_size;
+	RendererCanvasRender::occluder_polygon_create =
+		&RendererCanvasRenderRD::occluder_polygon_create;
+	RendererCanvasRender::occluder_polygon_set_shape =
+		&RendererCanvasRenderRD::occluder_polygon_set_shape;
+	RendererCanvasRender::occluder_polygon_set_cull_mode =
+		&RendererCanvasRenderRD::occluder_polygon_set_cull_mode;
+	RendererCanvasRender::set_shadow_texture_size =
+		&RendererCanvasRenderRD::set_shadow_texture_size;
 	RendererCanvasRender::free = &RendererCanvasRenderRD::free;
 	RendererCanvasRender::update = &RendererCanvasRenderRD::update;
 	RendererCanvasRender::set_debug_redraw = &RendererCanvasRenderRD::set_debug_redraw;
-	RendererCanvasRender::get_pipeline_compilations = &RendererCanvasRenderRD::get_pipeline_compilations;
+	RendererCanvasRender::get_pipeline_compilations =
+		&RendererCanvasRenderRD::get_pipeline_compilations;
 }
 
 void RendererCompositorRD::bind_mesh_storage()
@@ -526,9 +528,11 @@ void RendererCompositorRD::bind_mesh_storage()
 		&RendererRD::MeshStorage::skeleton_update_dependency;
 }
 
-RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(RenderingDevice::FramebufferFormatID format)
+RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_for_format(
+	RenderingDevice::FramebufferFormatID format)
 {
-	HashMap<RenderingDevice::FramebufferFormatID, BlitPipelines>::Iterator it = blit->pipelines_by_format.find(format);
+	HashMap<RenderingDevice::FramebufferFormatID, BlitPipelines>::Iterator it =
+		blit->pipelines_by_format.find(format);
 	if (it != blit->pipelines_by_format.end()) {
 		return it->value;
 	}
@@ -536,18 +540,13 @@ RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_fo
 	BlitPipelines pipelines;
 	for (int i = 0; i < BLIT_MODE_MAX; i++) {
 		pipelines.pipelines[i] = RD::render_pipeline_create(
-				blit->shader.version_get_shader(blit->shader_version, i),
-				format,
-				RDC::INVALID_ID,
-				RDC::RENDER_PRIMITIVE_TRIANGLES,
-				RDC::PipelineRasterizationState(),
-				RDC::PipelineMultisampleState(),
-				RDC::PipelineDepthStencilState(),
-				i == BLIT_MODE_NORMAL_ALPHA ? RDC::PipelineColorBlendState::create_blend() : RDC::PipelineColorBlendState::create_disabled(),
-				0);
+			blit->shader.version_get_shader(blit->shader_version, i), format, RDC::INVALID_ID,
+			RDC::RENDER_PRIMITIVE_TRIANGLES, RDC::PipelineRasterizationState(),
+			RDC::PipelineMultisampleState(), RDC::PipelineDepthStencilState(),
+			i == BLIT_MODE_NORMAL_ALPHA ? RDC::PipelineColorBlendState::create_blend()
+										: RDC::PipelineColorBlendState::create_disabled(),
+			0);
 	}
 	blit->pipelines_by_format.insert(format, pipelines);
 	return pipelines;
 }
-
-

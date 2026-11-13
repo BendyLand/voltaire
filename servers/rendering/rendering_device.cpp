@@ -1758,6 +1758,8 @@ RDC::TextureFormat RenderingDevice::texture_get_format(RID p_texture)
 	tf.width = tex->width;
 	tf.height = tex->height;
 	tf.depth = tex->depth;
+
+
 	tf.array_layers = tex->layers;
 	tf.mipmaps = tex->mipmaps;
 
@@ -3429,7 +3431,8 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 
 	r_sbt_buffer.size = miss_sbt_offset + miss_sbt_size;
 	r_sbt_buffer.driver_id = data->driver->buffer_create(r_sbt_buffer.size,
-		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_SHADER_BINDING_TABLE_BIT |
+		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::
+BUFFER_USAGE_SHADER_BINDING_TABLE_BIT |
 			RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT,
 		RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!r_sbt_buffer.driver_id, ERR_CANT_CREATE);
@@ -5167,7 +5170,8 @@ void RenderingDevice::_free_internal(RID p_id)
 	}
 	else if (data->uniform_set_owner.owns(p_id)) {
 		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_id);
-		data->frames[data->frame].uniform_sets_to_dispose_of.push_back(*uniform_set);
+		data->frames[data->frame].uniform_sets_to_dispose_of.push_back
+(*uniform_set);
 		data->uniform_set_owner.free(p_id);
 
 		if (uniform_set->invalidated_callback != nullptr) {
@@ -6217,7 +6221,6 @@ RID RenderingDevice::compute_pipeline_create(
 
 void RenderingDevice::_draw_list_start(const Rect2i& p_viewport)
 {
-	__print_line(vformat("[RD DEBUG] _draw_list_start called. viewport: %s", p_viewport));
 	data->draw_list.viewport = p_viewport;
 	data->draw_list.active = true;
 }
@@ -6354,6 +6357,7 @@ Error RenderingDevice::screen_prepare_for_drawing(DisplayServerEnums::WindowID p
 	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
 
 	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
+
 	ERR_FAIL_COND_V(surface == 0, ERR_INVALID_PARAMETER);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator sc_it =
@@ -6442,8 +6446,7 @@ RID RenderingDevice::shader_create_from_bytecode(
 	ERR_RENDER_THREAD_GUARD_V(RID());
 
 	Ref<RenderingShaderContainer> container =
-		data->driver->get_shader_container_format().
-create_container();
+		data->driver->get_shader_container_format().create_container();
 	bool ok = container->from_bytes(p_shader_binary);
 	ERR_FAIL_COND_V_MSG(!ok, RID(), "Failed to parse shader container binary.");
 
@@ -6483,4 +6486,207 @@ create_container();
 	}
 
 	return data->shader_owner.make_rid(shader);
+}
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer,
+	uint32_t p_draw_flags, const Vector<Color>& p_clear_color_values, float p_clear_depth_value,
+	uint32_t p_clear_stencil_value, const Rect2& p_region, uint32_t p_breadcrumb)
+{
+	ERR_RENDER_THREAD_GUARD_V(RDC::INVALID_ID);
+
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, RDC::INVALID_ID,
+		"Only one draw list can be active at the same time.");
+
+	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
+	ERR_FAIL_NULL_V(framebuffer, RDC::INVALID_ID);
+
+	const FramebufferFormatKey* framebuffer_key;
+	framebuffer_key = &data->framebuffer_formats[framebuffer->format_id].E->key();
+
+	Point2i viewport_offset;
+	Point2i viewport_size = framebuffer->size;
+
+	if (p_region != Rect2() &&
+		p_region != Rect2(Vector2(), viewport_size)) { // Check custom region.
+		Rect2i viewport(viewport_offset, viewport_size);
+		Rect2i regioni = p_region;
+		if (!((regioni.position.x >= viewport.position.x) &&
+				(regioni.position.y >= viewport.position.y) &&
+				((regioni.position.x + regioni.size.x) <=
+					(viewport.position.x + viewport.size.x)) &&
+				((regioni.position.y + regioni.size.y) <=
+					(viewport.position.y + viewport.size.y)))) {
+			ERR_FAIL_V_MSG(RDC::INVALID_ID, "When supplying a custom region, it must be contained "
+											"within the framebuffer rectangle");
+		}
+
+		viewport_offset = regioni.position;
+		viewport_size = regioni.size;
+	}
+
+	thread_local LocalVector<RDG::AttachmentOperation> operations;
+	thread_local LocalVector<RDD::RenderPassClearValue> clear_values;
+	thread_local LocalVector<RDG::ResourceTracker*> resource_trackers;
+	thread_local LocalVector<RDG::ResourceUsage> resource_usages;
+	uint32_t stages = 0;
+	operations.resize(framebuffer->texture_ids.size());
+	clear_values.resize(framebuffer->texture_ids.size());
+	resource_trackers.clear();
+	resource_usages.clear();
+
+	uint32_t color_index = 0;
+	for (int i = 0; i < framebuffer->texture_ids.size(); i++) {
+		RID texture_rid = framebuffer->texture_ids[i];
+		Texture* texture = data->texture_owner.get_or_null(texture_rid);
+		if (texture == nullptr) {
+			operations[i] = RDG::ATTACHMENT_OPERATION_DEFAULT;
+			clear_values[i] = RDD::RenderPassClearValue();
+			continue;
+		}
+
+		// Clear the texture if the driver requires it during its first use.
+		_texture_check_pending_clear(texture_rid, texture);
+
+		// Indicate the texture will get modified for the shared texture fallback.
+		_texture_update_shared_fallback(texture_rid, texture, true);
+
+		RDG::AttachmentOperation operation = RDG::ATTACHMENT_OPERATION_DEFAULT;
+		RDD::RenderPassClearValue clear_value;
+		if (framebuffer_key->vrs_attachment == i &&
+			(texture->usage_flags & RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
+			resource_trackers.push_back(texture->draw_tracker);
+			resource_usages.push_back(_vrs_usage_from_method(framebuffer_key->vrs_method));
+			stages |= _vrs_stages_from_method(framebuffer_key->vrs_method);
+		}
+		else if (texture->usage_flags & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
+			if (p_draw_flags & (DRAW_CLEAR_COLOR_0 << color_index)) {
+				ERR_FAIL_COND_V_MSG((int)color_index >= p_clear_color_values.size(),
+					RDC::INVALID_ID,
+					vformat("Color texture (%d) was specified to be cleared but no color value was "
+							"provided.",
+						color_index));
+				operation = RDG::ATTACHMENT_OPERATION_CLEAR;
+				clear_value.color = p_clear_color_values[color_index];
+			}
+			else if (p_draw_flags & (DRAW_IGNORE_COLOR_0 << color_index)) {
+				operation = RDG::ATTACHMENT_OPERATION_IGNORE;
+			}
+
+			resource_trackers.push_back(texture->draw_tracker);
+			resource_usages.push_back(RDG::RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE);
+			stages |= RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			color_index++;
+		}
+		else if (texture->usage_flags & (RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+											  RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT)) {
+			if ((p_draw_flags & DRAW_CLEAR_DEPTH) || (p_draw_flags & DRAW_CLEAR_STENCIL)) {
+				operation = RDG::ATTACHMENT_OPERATION_CLEAR;
+				clear_value.depth = p_clear_depth_value;
+				clear_value.stencil = p_clear_stencil_value;
+			}
+			else if ((p_draw_flags & DRAW_IGNORE_DEPTH) || (p_draw_flags & DRAW_IGNORE_STENCIL)) {
+				operation = RDG::ATTACHMENT_OPERATION_IGNORE;
+			}
+
+			resource_trackers.push_back(texture->draw_tracker);
+			resource_usages.push_back(RDG::RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE);
+			stages |= RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			stages |= RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		}
+
+		operations[i] = operation;
+		clear_values[i] = clear_value;
+	}
+
+	data->draw_graph.add_draw_list_begin(framebuffer->framebuffer_cache,
+		Rect2i(viewport_offset, viewport_size), operations, clear_values, stages, p_breadcrumb);
+	data->draw_graph.add_draw_list_usages(resource_trackers, resource_usages);
+
+	// Mark textures as bound.
+	data->draw_list_bound_textures.clear();
+
+	for (int i = 0; i < framebuffer->texture_ids.size(); i++) {
+		Texture* texture = data->texture_owner.get_or_null(framebuffer->texture_ids[i]);
+		if (texture == nullptr) {
+			continue;
+		}
+
+		texture->bound = true;
+		data->draw_list_bound_textures.push_back(framebuffer->texture_ids[i]);
+	}
+
+	_draw_list_start(Rect2i(viewport_offset, viewport_size));
+#ifdef DEBUG_ENABLED
+	data->draw_list_framebuffer_format = framebuffer->format_id;
+#endif
+	data->draw_list_current_subpass = 0;
+	data->draw_list_subpass_count = framebuffer_key->passes.size();
+
+	Rect2i viewport_rect(viewport_offset, viewport_size);
+	data->draw_graph.add_draw_list_set_viewport(viewport_rect);
+	data->draw_graph.add_draw_list_set_scissor(viewport_rect);
+
+	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+void RenderingDevice::_texture_check_pending_clear(RID p_texture_rid, Texture* p_texture)
+{
+	DEV_ASSERT(p_texture != nullptr);
+
+	if (!p_texture->pending_clear) {
+		return;
+	}
+
+	bool clear = true;
+	p_texture->pending_clear = false;
+
+	if (p_texture->owner.is_valid()) {
+		// Check the owner texture instead if it exists.
+		p_texture_rid = p_texture->owner;
+		p_texture = texture_owner.get_or_null(p_texture_rid);
+		clear = p_texture->pending_clear;
+	}
+
+	if (p_texture != nullptr && clear) {
+		if (p_texture->usage_flags & RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+			_texture_clear_depth_stencil(
+				p_texture_rid, p_texture, 0.0f, 0, 0, p_texture->mipmaps, 0, p_texture->layers);
+		}
+		else {
+			_texture_clear_color(
+				p_texture_rid, p_texture, Color(), 0, p_texture->mipmaps, 0, p_texture->layers);
+		}
+		p_texture->pending_clear = false;
+	}
+}
+
+void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p_texture,
+	float p_depth, uint8_t p_stencil, uint32_t p_base_mipmap, uint32_t p_mipmaps,
+	uint32_t p_base_layer, uint32_t p_layers)
+{
+	_check_transfer_worker_texture(p_texture);
+
+	RDD::TextureSubresourceRange range;
+
+	if (RDC::format_has_depth(p_texture->format)) {
+		range.aspect |= RDD::TEXTURE_ASPECT_DEPTH_BIT;
+	}
+	if (RDC::format_has_stencil(p_texture->format)) {
+		range.aspect |= RDD::TEXTURE_ASPECT_STENCIL_BIT;
+	}
+	range.base_mipmap = p_texture->base_mipmap + p_base_mipmap;
+	range.mipmap_count = p_mipmaps;
+	range.base_layer = p_texture->base_layer + p_base_layer;
+	range.layer_count = p_layers;
+
+	// Indicate the texture will get modified for the shared texture fallback.
+	_texture_update_shared_fallback(p_texture_rid, p_texture, true);
+
+	if (_texture_make_mutable(p_texture, p_texture_rid)) {
+		// The texture must be mutable to be used as a clear destination.
+		draw_graph.add_synchronization();
+	}
+
+	draw_graph.add_texture_clear_depth_stencil(
+		p_texture->driver_id, p_texture->draw_tracker, p_depth, p_stencil, range);
 }

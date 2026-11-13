@@ -4597,7 +4597,6 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 		framebuffer->vk_framebuffer = vk_framebuffer;
 		framebuffer->swap_chain_image = swap_chain->images[i];
 		framebuffer->swap_chain_image_subresource_range = view_create_info.subresourceRange;
-		DUMP(framebuffer);
 		swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
 	}
 
