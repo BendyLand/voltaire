@@ -2,10 +2,11 @@
 /*  gradient_texture.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -38,7 +39,7 @@ GradientTexture1D::~GradientTexture1D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -71,7 +72,7 @@ bool GradientTexture1D::is_using_hdr() const { return use_hdr; }
 RID GradientTexture1D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -100,7 +101,7 @@ GradientTexture2D::~GradientTexture2D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -231,7 +232,7 @@ GradientTexture2D::Repeat GradientTexture2D::get_repeat() const { return repeat;
 RID GradientTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }

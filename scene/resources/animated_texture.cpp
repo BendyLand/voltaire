@@ -2,10 +2,11 @@
 /*  animated_texture.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -239,8 +240,8 @@ bool AnimatedTexture::is_pixel_opaque(int p_x, int p_y) const
 AnimatedTexture::~AnimatedTexture()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(proxy);
-	RS::free_rid(proxy_ph);
+	Renderer::free_rid(proxy);
+	Renderer::free_rid(proxy_ph);
 }
 
 

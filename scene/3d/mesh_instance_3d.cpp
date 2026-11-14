@@ -2,10 +2,11 @@
 /*  mesh_instance_3d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -205,11 +206,11 @@ void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Mate
 	surface_override_materials.write[p_surface] = p_material;
 
 	if (surface_override_materials[p_surface].is_valid()) {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
 	}
 	else {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, RID());
 	}
 }

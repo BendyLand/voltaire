@@ -1,5 +1,5 @@
 build:
-	scons -j 8 linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes warnings=no
+	scons -j 5 linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes warnings=no
 
 er:
 	lash build 2> errs
@@ -13,14 +13,14 @@ errs:
 
 test:
 	if [[ -f ./bin/voltaire.linuxbsd.editor.x86_64 ]]; then
-		./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs --quit
+		./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
 	else
 		echo "Binary not built."
 	fi
 
 inspect:
 	# gdb ./bin/voltaire.linuxbsd.editor.x86_64
-	gdb --args ./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs --quit
+	gdb --args ./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
 
 link:
 	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl

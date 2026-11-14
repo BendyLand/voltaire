@@ -2,10 +2,11 @@
 /*  path_3d.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -38,7 +39,7 @@ Path3D::Path3D()
 {
 	SceneTree* st = SceneTree::get_singleton();
 	if (st && st->is_debugging_paths_hint()) {
-		debug_instance = RS::instance_create();
+		debug_instance = Renderer::instance_create();
 		set_notify_transform(true);
 		_update_debug_mesh();
 	}
@@ -48,11 +49,11 @@ Path3D::~Path3D()
 {
 	if (debug_instance.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 	}
 	if (debug_mesh.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(debug_mesh->get_rid());
+		Renderer::free_rid(debug_mesh->get_rid());
 	}
 }
 

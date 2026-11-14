@@ -2,10 +2,11 @@
 /*  renderer_scene_render_rd.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -564,7 +565,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		RendererRD::TextureStorage::render_target_get_msaa(render_target) != RSE::VIEWPORT_MSAA_DISABLED;
 
 	bool using_dof =
-		RS::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
+		Renderer::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
 
 	if (using_dof && p_render_data->transparent_bg) {
 		WARN_PRINT_ONCE("Depth of field is not supported in viewports with a transparent "
@@ -636,7 +637,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 	float auto_exposure_scale = 1.0;
 
-	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		RENDER_TIMESTAMP("Auto exposure");
 
@@ -646,19 +647,19 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			data->luminance->get_luminance_buffers(rb);
 
 		uint64_t auto_exposure_version =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_version(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_version(
 				p_render_data->camera_attributes);
 		bool set_immediate = auto_exposure_version != rb->get_auto_exposure_version();
 		rb->set_auto_exposure_version(auto_exposure_version);
 
-		double step = RS::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
+		double step = Renderer::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
 						  p_render_data->camera_attributes) *
 					  data->time_step;
 		float auto_exposure_min_sensitivity =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
 				p_render_data->camera_attributes);
 		float auto_exposure_max_sensitivity =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
 				p_render_data->camera_attributes);
 		data->luminance->luminance_reduction(rb->get_internal_texture(), rb->get_internal_size(),
 			luminance_buffers, auto_exposure_min_sensitivity, auto_exposure_max_sensitivity, step,
@@ -666,7 +667,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		// Swap final reduce with prev luminance.
 
-		auto_exposure_scale = RS::camera_attributes->camera_attributes_get_auto_exposure_scale(
+		auto_exposure_scale = Renderer::camera_attributes->camera_attributes_get_auto_exposure_scale(
 			p_render_data->camera_attributes);
 
 		Renderer::redraw_request(); // Redraw all the time if auto exposure rendering
@@ -700,7 +701,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		if (can_use_storage) {
 			RD::draw_command_begin_label("Gaussian Glow");
 			RID luminance_texture;
-			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				luminance_texture = data->luminance->get_current_luminance_buffer(
 					rb); // this will return and empty RID if we don't have an auto exposure buffer
@@ -814,7 +815,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		tonemap.exposure_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (can_use_effects &&
-			RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 				p_render_data->camera_attributes) &&
 			tonemap.exposure_texture.is_valid()) {
 			tonemap.use_auto_exposure = true;
@@ -1154,7 +1155,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 		ERR_FAIL_MSG("Glow is not supported when using subpasses.");
 	}
 
-	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		ERR_FAIL_MSG("Auto Exposure is not supported when using subpasses.");
 	}
@@ -1831,8 +1832,8 @@ bool RendererSceneRenderRD::free(RID p_rid)
 	else if (RendererSceneRender::is_compositor_effect(p_rid)) {
 		RendererSceneRender::compositor_effect_free(p_rid);
 	}
-	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
-		RS::camera_attributes->camera_attributes_free(p_rid);
+	else if (Renderer::camera_attributes->owns_camera_attributes(p_rid)) {
+		Renderer::camera_attributes->camera_attributes_free(p_rid);
 	}
 	else if (RendererRD::GI::voxel_gi_instance_owns(p_rid)) {
 		RendererRD::GI::voxel_gi_instance_free(p_rid);

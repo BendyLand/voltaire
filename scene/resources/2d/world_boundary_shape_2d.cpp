@@ -2,10 +2,11 @@
 /*  world_boundary_shape_2d.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -93,7 +94,7 @@ void WorldBoundaryShape2D::draw(const RID& p_to_rid, const Color& p_color)
 	Color transparent_color = Color(p_color, 0);
 	PackedColorArray line_colors = {transparent_color, p_color, p_color, transparent_color};
 
-	RS::canvas_item_add_polyline(p_to_rid, line_points, line_colors, line_width);
+	Renderer::canvas_item_add_polyline(p_to_rid, line_points, line_colors, line_width);
 
 	// Draw arrow.
 	Color arrow_color = p_color.inverted();
@@ -111,7 +112,7 @@ void WorldBoundaryShape2D::draw(const RID& p_to_rid, const Color& p_color)
 		xf.xform(Vector2(distance + line_width / 2, 2.5)),
 	};
 
-	RS::canvas_item_add_polyline(
+	Renderer::canvas_item_add_polyline(
 		p_to_rid, arrow_points, {arrow_color}, line_width / 2);
 }
 

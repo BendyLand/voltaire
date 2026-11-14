@@ -2,10 +2,11 @@
 /*  gi.cpp                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -734,7 +735,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 		c.exposure_normalization = 1.0;
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure_normalization =
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			c.exposure_normalization =
 				exposure_normalization / cascades[i].baked_exposure_normalization;
@@ -788,7 +789,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -867,7 +868,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				lights[idx].energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1042,15 +1043,8 @@ void GI::finalize()
 	if (!_initialized) {
 		return;
 	}
-
-	// Free the two GiShaderRD versions before the OS and RD are torn down
-	if (shader.version_is_valid(shader_version)) {
-		shader.version_free(shader_version);
-	}
-
-	// If GI allocated uniform sets, UBOs, or pipelines, free them here as well
-
 	_initialized = false;
+
 	for (int v = 0; v < SHADER_SPECIALIZATION_VARIATIONS; v++) {
 		for (int i = 0; i < MODE_MAX; i++) {
 			pipelines[v][i].free();
@@ -1075,55 +1069,6 @@ void GI::finalize()
 		voxel_gi_lighting_shader_version_pipelines[i].free();
 	}
 
-	if (voxel_gi_debug_shader_version.is_valid()) {
-		voxel_gi_debug_shader.version_free(voxel_gi_debug_shader_version);
-	}
-	if (voxel_gi_lighting_shader_version.is_valid()) {
-		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
-	}
-	if (shader_version.is_valid()) {
-		shader.version_free(shader_version);
-	}
-	if (sdfgi_shader.debug_probes_shader.is_valid()) {
-		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader);
-	}
-	if (sdfgi_shader.debug_shader.is_valid()) {
-		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader);
-	}
-	if (sdfgi_shader.direct_light_shader.is_valid()) {
-		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
-	}
-	if (sdfgi_shader.integrate_shader.is_valid()) {
-		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
-	}
-	if (sdfgi_shader.preprocess_shader.is_valid()) {
-		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
-	}
-	if (shader_version.is_valid()) {
-		shader.version_free(shader_version);
-		shader_version = RID();
-	}
-
-	if (sdfgi_shader.debug_probes_shader_version.is_valid()) {
-		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader_version);
-		sdfgi_shader.debug_probes_shader_version = RID();
-	}
-	if (sdfgi_shader.debug_shader_version.is_valid()) {
-		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader_version);
-		sdfgi_shader.debug_shader_version = RID();
-	}
-	if (sdfgi_shader.direct_light_shader.is_valid()) {
-		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
-		sdfgi_shader.direct_light_shader = RID();
-	}
-	if (sdfgi_shader.integrate_shader.is_valid()) {
-		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
-		sdfgi_shader.integrate_shader = RID();
-	}
-	if (sdfgi_shader.preprocess_shader.is_valid()) {
-		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
-		sdfgi_shader.preprocess_shader = RID();
-	}
 	if (shader_version.is_valid()) {
 		shader.version_free(shader_version);
 		shader_version = RID();
@@ -1136,11 +1081,25 @@ void GI::finalize()
 		voxel_gi_debug_shader.version_free(voxel_gi_debug_shader_version);
 		voxel_gi_debug_shader_version = RID();
 	}
-
-	// And any on voxel_gi_shader / debug shaders:
-	if (voxel_gi_lighting_shader_version.is_valid()) {
-		voxel_gi_shader.version_free(voxel_gi_lighting_shader_version);
-		voxel_gi_lighting_shader_version = RID();
+	if (sdfgi_shader.preprocess_shader.is_valid()) {
+		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
+		sdfgi_shader.preprocess_shader = RID();
+	}
+	if (sdfgi_shader.direct_light_shader.is_valid()) {
+		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
+		sdfgi_shader.direct_light_shader = RID();
+	}
+	if (sdfgi_shader.integrate_shader.is_valid()) {
+		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
+		sdfgi_shader.integrate_shader = RID();
+	}
+	if (sdfgi_shader.debug_shader_version.is_valid()) {
+		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader_version);
+		sdfgi_shader.debug_shader_version = RID();
+	}
+	if (sdfgi_shader.debug_probes_shader_version.is_valid()) {
+		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader_version);
+		sdfgi_shader.debug_probes_shader_version = RID();
 	}
 }
 
@@ -1237,7 +1196,7 @@ void GI::setup_voxel_gi_instances(RenderDataRD* p_render_data,
 				gipd.exposure_normalization = 1.0;
 				if (p_render_data->camera_attributes.is_valid()) {
 					float exposure_normalization =
-						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 					gipd.exposure_normalization =
 						exposure_normalization /
@@ -1371,6 +1330,10 @@ void RendererRD::GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers,
 
 void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 {
+	if (_initialized) {
+		return;
+	}
+
 	// 1. Main GI gather shader
 	{
 		Vector<String> modes;
@@ -1457,4 +1420,6 @@ void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 		sdfgi_shader.debug_probes.initialize(debug_probes_modes);
 		sdfgi_shader.debug_probes_shader_version = sdfgi_shader.debug_probes.version_create();
 	}
+
+	_initialized = true;
 }

@@ -2,10 +2,11 @@
 /*  world_3d.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -53,10 +54,10 @@ void World3D::set_environment(const Ref<Environment>& p_environment)
 
 	environment = p_environment;
 	if (environment.is_valid()) {
-		RS::scenario_set_environment(scenario, environment->get_rid());
+		Renderer::scenario_set_environment(scenario, environment->get_rid());
 	}
 	else {
-		RS::scenario_set_environment(scenario, RID());
+		Renderer::scenario_set_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -72,10 +73,10 @@ void World3D::set_fallback_environment(const Ref<Environment>& p_environment)
 
 	fallback_environment = p_environment;
 	if (fallback_environment.is_valid()) {
-		RS::scenario_set_fallback_environment(scenario, p_environment->get_rid());
+		Renderer::scenario_set_fallback_environment(scenario, p_environment->get_rid());
 	}
 	else {
-		RS::scenario_set_fallback_environment(scenario, RID());
+		Renderer::scenario_set_fallback_environment(scenario, RID());
 	}
 
 	emit_changed();
@@ -87,10 +88,10 @@ void World3D::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attrib
 {
 	camera_attributes = p_camera_attributes;
 	if (camera_attributes.is_valid()) {
-		RS::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
+		Renderer::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
 	}
 	else {
-		RS::scenario_set_camera_attributes(scenario, RID());
+		Renderer::scenario_set_camera_attributes(scenario, RID());
 	}
 }
 
@@ -100,10 +101,10 @@ void World3D::set_compositor(const Ref<Compositor>& p_compositor)
 {
 	compositor = p_compositor;
 	if (compositor.is_valid()) {
-		RS::scenario_set_compositor(scenario, compositor->get_rid());
+		Renderer::scenario_set_compositor(scenario, compositor->get_rid());
 	}
 	else {
-		RS::scenario_set_compositor(scenario, RID());
+		Renderer::scenario_set_compositor(scenario, RID());
 	}
 }
 
@@ -123,10 +124,6 @@ World3D::~World3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 
-#ifndef PHYSICS_3D_DISABLED
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-#endif // PHYSICS_3D_DISABLED
-
 #ifndef NAVIGATION_3D_DISABLED
 	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
@@ -135,6 +132,7 @@ World3D::~World3D()
 
 #ifndef PHYSICS_3D_DISABLED
 	if (space.is_valid()) {
+		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 		PhysicsServer3D::get_singleton()->free_rid(space);
 	}
 #endif // PHYSICS_3D_DISABLED

@@ -2,10 +2,11 @@
 /*  render_forward_clustered.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1382,7 +1383,7 @@ void RenderForwardClustered::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				RendererRD::LightStorage::lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}
@@ -1414,7 +1415,7 @@ void RenderForwardClustered::_update_sdfgi(RenderDataRD* p_render_data)
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			exposure_normalization =
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 		for (int i = 0; i < p_render_data->render_sdfgi_region_count; i++) {
@@ -2026,7 +2027,7 @@ void RenderForwardClustered::_render_scene(
 		if (p_render_data->camera_attributes.is_valid()) {
 			RendererRD::LightStorage::reflection_probe_set_baked_exposure(
 				RendererRD::LightStorage::reflection_probe_instance_get_probe(p_render_data->reflection_probe),
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes));
 		}
 	}
@@ -2347,7 +2348,7 @@ void RenderForwardClustered::_render_scene(
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			bg_energy_multiplier *=
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 
@@ -2857,7 +2858,7 @@ void RenderForwardClustered::_render_scene(
 			rb_data->ensure_fsr2(fsr2_effect);
 
 			RID exposure;
-			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = RendererSceneRenderRD::data->luminance->get_current_luminance_buffer(rb);
 			}
@@ -2909,7 +2910,7 @@ void RenderForwardClustered::_render_scene(
 			bool reset = rb_data->ensure_mfx_temporal(mfx_temporal_effect);
 
 			RID exposure;
-			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = luminance->get_current_luminance_buffer(rb);
 			}
@@ -3793,7 +3794,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 				lut1_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
 
-				ltc.lut1_texture = RS::texture_2d_create(lut1_image);
+				ltc.lut1_texture = Renderer::texture_2d_create(lut1_image);
 
 				int lut2_bytes = 4 * dimensions * dimensions;
 				size_t lut2_size = lut2_bytes * 4;
@@ -3806,7 +3807,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 				lut2_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
 
-				ltc.lut2_texture = RS::texture_2d_create(lut2_image);
+				ltc.lut2_texture = Renderer::texture_2d_create(lut2_image);
 			}
 		}
 
@@ -5995,10 +5996,10 @@ RenderForwardClustered::~RenderForwardClustered()
 	dfg_lut.shader.version_free(dfg_lut.shader_version);
 
 	if (ltc.lut1_texture.is_valid()) {
-		RS::free_rid(ltc.lut1_texture);
+		Renderer::free_rid(ltc.lut1_texture);
 	}
 	if (ltc.lut2_texture.is_valid()) {
-		RS::free_rid(ltc.lut2_texture);
+		Renderer::free_rid(ltc.lut2_texture);
 	}
 
 	{

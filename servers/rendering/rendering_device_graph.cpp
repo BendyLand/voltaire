@@ -2,10 +2,11 @@
 /*  rendering_device_graph.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1660,6 +1661,19 @@ void RenderingDeviceGraph::add_draw_list_begin(RDD::RenderPassID p_render_pass,
 {
 	_add_draw_list_begin(nullptr, p_render_pass, p_framebuffer, p_region, p_attachment_operations,
 		p_attachment_clear_values, p_stages, p_breadcrumb, p_split_cmd_buffer);
+}
+
+void RenderingDeviceGraph::add_draw_list_bind_index_buffer(RDD::BufferID p_buffer,
+    RenderingDeviceCommons::IndexBufferFormat p_format, uint32_t p_offset)
+{
+    DrawListBindIndexBufferInstruction* instruction =
+        reinterpret_cast<DrawListBindIndexBufferInstruction*>(
+            _allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
+    instruction->type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
+    instruction->buffer = p_buffer;
+    instruction->format = p_format;
+    instruction->offset = p_offset;
+    draw_instruction_list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_pipeline(

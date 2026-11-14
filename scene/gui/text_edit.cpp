@@ -2,10 +2,11 @@
 /*  text_edit.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -492,11 +493,11 @@ void TextEdit::_draw_selection_handle(Vector2 p_pos) const
 	int line_height = get_line_height();
 
 	int handle_line_width = theme_cache.caret_width * MAX(1, theme_cache.base_scale);
-	RS::canvas_item_add_line(
+	Renderer::canvas_item_add_line(
 		text_ci, p_pos, p_pos + Vector2(0, line_height), handle_color, handle_line_width);
 
 	Vector2 circle_center = p_pos + Vector2(0, line_height + selection_handle_radius);
-	RS::canvas_item_add_circle(
+	Renderer::canvas_item_add_circle(
 		text_ci, circle_center, selection_handle_radius, handle_color);
 }
 
@@ -4326,7 +4327,7 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 	Rect2 rect = p_rect.abs();
 
 	if (p_width >= rect.size.width || p_width >= rect.size.height) {
-		RS::canvas_item_add_rect(
+		Renderer::canvas_item_add_rect(
 			p_canvas_item, rect.grow(0.5f * p_width), p_color, p_antialiased);
 	}
 	else {
@@ -4340,12 +4341,12 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 
 		Vector<Color> colors = {p_color};
 
-		RS::canvas_item_add_polyline(
+		Renderer::canvas_item_add_polyline(
 			p_canvas_item, points, colors, p_width, p_antialiased);
 	}
 }
 
-TextEdit::~TextEdit() { RS::free_rid(text_ci); }
+TextEdit::~TextEdit() { Renderer::free_rid(text_ci); }
 
 void TextEdit::_update_scrollbars() {}
 

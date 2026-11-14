@@ -2,10 +2,11 @@
 /*  renderer_canvas_render.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -508,6 +509,7 @@ public:
 	{
 		bool enabled : 1;
 		bool on_interpolate_transform_list : 1;
+		bool sdf_collision = false;
 		bool interpolated : 1;
 		RID canvas;
 		RID polygon;
@@ -517,7 +519,6 @@ public:
 		Transform2D xform_prev;
 		Transform2D xform_cache;
 		int light_mask;
-		bool sdf_collision;
 		RSE::CanvasOccluderPolygonCullMode cull_cache;
 
 		LightOccluderInstance* next = nullptr;
@@ -574,6 +575,30 @@ public:
 	static inline void (*set_debug_redraw)(
 		bool p_enabled, double p_time, const Color& p_color) = nullptr;
 	static inline uint32_t (*get_pipeline_compilations)(RSE::PipelineSource p_source) = nullptr;
+
+    template <typename T>
+    static void bind()
+    {
+        request_polygon = &T::request_polygon;
+        free_polygon = &T::free_polygon;
+
+        canvas_render_items = &T::canvas_render_items;
+        set_debug_redraw = &T::set_debug_redraw;
+        get_pipeline_compilations = &T::get_pipeline_compilations;
+
+        light_create = &T::light_create;
+        light_set_texture = &T::light_set_texture;
+        light_set_use_shadow = &T::light_set_use_shadow;
+        light_update_shadow = &T::light_update_shadow;
+        light_update_directional_shadow = &T::light_update_directional_shadow;
+
+        render_sdf = &T::render_sdf;
+
+        occluder_polygon_create = &T::occluder_polygon_create;
+        occluder_polygon_set_shape = &T::occluder_polygon_set_shape;
+        occluder_polygon_set_cull_mode = &T::occluder_polygon_set_cull_mode;
+        set_shadow_texture_size = &T::set_shadow_texture_size;
+    }
 };
 
 

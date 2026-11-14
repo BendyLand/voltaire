@@ -2,10 +2,11 @@
 /*  rendering_device.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -36,6 +37,7 @@
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 #include "core/templates/rid_owner.h"
+#include "scene/resources/texture.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_device_driver.h"
@@ -369,13 +371,6 @@ public:
 	};
 
 public:
-
-	RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
-	    uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps,
-	    RDC::TextureSliceType p_slice_type);
-
-	RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
-	    const Vector<Vector<uint8_t>>& p_data);
 	// --- Lifecycle & System Management ---
 	static void make_current();
 
@@ -1627,12 +1622,28 @@ private:
 
 public:
 	static inline Data* data = nullptr;
+	static void _texture_check_pending_clear(RID p_texture_rid, Texture* p_texture);
+	static RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
+	    uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps,
+	    RDC::TextureSliceType p_slice_type);
+	static void _texture_clear_depth_stencil(RID p_texture_rid, Texture* p_texture,
+		float p_depth, uint8_t p_stencil, uint32_t p_base_mipmap, uint32_t p_mipmaps,
+		uint32_t p_base_layer, uint32_t p_layers);
+
+	static RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
+	    const Vector<Vector<uint8_t>>& p_data);
 
 	static Error initialize(
 		RenderingContextDriver* p_context, RenderingContextDriver::Device p_device);
-	static void finalize();
+	static void finalize()
+	{
+		memdelete(data);
+		data = nullptr;
+	}
 
 	static bool is_initialized() { return data != nullptr; }
+	static inline RID_Owner<Texture, true> texture_owner;
+	static inline RenderingDeviceGraph draw_graph;
 
 	RenderingDevice() = delete;
 	RenderingDevice(const RenderingDevice&) = delete;

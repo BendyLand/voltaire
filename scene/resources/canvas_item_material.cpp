@@ -2,10 +2,11 @@
 /*  canvas_item_material.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -67,7 +68,7 @@ void CanvasItemMaterial::_update_shader()
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::free_rid(shader_map[current_key].shader);
+			Renderer::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 	}
@@ -75,7 +76,7 @@ void CanvasItemMaterial::_update_shader()
 	current_key = mk;
 
 	if (shader_map.has(mk)) {
-		RS::material_set_shader(_get_material(), shader_map[mk].shader);
+		Renderer::material_set_shader(_get_material(), shader_map[mk].shader);
 		shader_map[mk].users++;
 		return;
 	}
@@ -147,14 +148,14 @@ void CanvasItemMaterial::_update_shader()
 	}
 
 	ShaderData shader_data;
-	shader_data.shader = RS::shader_create();
+	shader_data.shader = Renderer::shader_create();
 	shader_data.users = 1;
 
-	RS::shader_set_code(shader_data.shader, code);
+	Renderer::shader_set_code(shader_data.shader, code);
 
 	shader_map[mk] = shader_data;
 
-	RS::material_set_shader(_get_material(), shader_data.shader);
+	Renderer::material_set_shader(_get_material(), shader_data.shader);
 }
 
 void CanvasItemMaterial::flush_changes()
@@ -222,11 +223,11 @@ CanvasItemMaterial::~CanvasItemMaterial()
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::free_rid(shader_map[current_key].shader);
+			Renderer::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 
-		RS::material_set_shader(_get_material(), RID());
+		Renderer::material_set_shader(_get_material(), RID());
 	}
 }
 

@@ -2,10 +2,11 @@
 /*  light_storage.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -756,7 +757,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1070,7 +1071,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -2164,7 +2165,7 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure =
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			reflection_ubo.exposure_normalization = exposure / probe->baked_exposure;
 		}

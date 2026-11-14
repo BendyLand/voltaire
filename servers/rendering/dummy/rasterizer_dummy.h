@@ -2,16 +2,17 @@
 /*  rasterizer_dummy.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -30,8 +31,9 @@
 
 #pragma once
 
-#include "servers/rendering/dummy/environment/gi.h"
 #include "servers/rendering/dummy/environment/fog.h"
+#include "servers/rendering/dummy/environment/gi.h"
+#include "servers/rendering/dummy/rasterizer_canvas_dummy.h"
 #include "servers/rendering/dummy/storage/light_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
 #include "servers/rendering/environment/renderer_gi.h"
@@ -76,12 +78,6 @@ private:
 	static inline RendererDummy::Utilities* utilities = nullptr;
 
 public:
-	static void bind_utilities() {}
-
-	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
-	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
-
-	static RendererCanvasRender* get_canvas();
 	static RendererSceneRender* get_scene();
 
 	static RendererFog* get_fog();
@@ -123,7 +119,6 @@ public:
 
 	static void make_current()
 	{
-		RendererCompositor::_create_func = _create_current;
 		RendererCompositor::low_end = false;
 		RendererCompositor::bind_compositor<RasterizerDummy>();
 	}
@@ -280,12 +275,21 @@ public:
 		// Dummy material storage binding
 	}
 
+	// Inside class RasterizerDummy public section:
+	static void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasDummy>(); }
+
 	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
 
 	static void bind_particles_storage()
 	{
 		// Dummy particles storage stub
 	}
+
+	static void bind_utilities() {}
+
+	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
+
+	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
 
 	RasterizerDummy() = delete;
 	RasterizerDummy(const RasterizerDummy&) = delete;

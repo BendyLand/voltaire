@@ -2,10 +2,11 @@
 /*  canvas_group.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -38,7 +39,7 @@ real_t CanvasGroup::get_clear_margin() const { return clear_margin; }
 void CanvasGroup::set_use_mipmaps(bool p_use_mipmaps)
 {
 	use_mipmaps = p_use_mipmaps;
-	RS::canvas_item_set_canvas_group_mode(get_canvas_item(),
+	Renderer::canvas_item_set_canvas_group_mode(get_canvas_item(),
 		RSE::CANVAS_GROUP_MODE_TRANSPARENT, clear_margin, true, fit_margin, use_mipmaps);
 }
 
@@ -51,7 +52,7 @@ CanvasGroup::CanvasGroup()
 
 CanvasGroup::~CanvasGroup()
 {
-	RS::canvas_item_set_canvas_group_mode(
+	Renderer::canvas_item_set_canvas_group_mode(
 		get_canvas_item(), RSE::CANVAS_GROUP_MODE_DISABLED);
 }
 

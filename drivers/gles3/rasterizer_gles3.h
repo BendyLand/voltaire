@@ -2,10 +2,11 @@
 /*  rasterizer_gles3.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -82,10 +83,9 @@ public:
 	static inline void bind_utilities();
 	static inline void bind_mesh_storage();
 
+    static inline void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasGLES3>(); }
 	static void bind_gi() { RendererGI::bind<GLES3::GI>(); }
 	static void bind_fog() { RendererFog::bind<GLES3::Fog>(); }
-
-	static _ALWAYS_INLINE_ RendererCanvasRender* get_canvas() { return canvas; }
 
 	static _ALWAYS_INLINE_ RendererSceneRender* get_scene() { return scene; }
 
@@ -104,12 +104,6 @@ public:
 	static void end_frame(bool p_swap_buffers);
 
 	static void finalize();
-
-	static Error _create_current()
-	{
-		RasterizerGLES3::initialize();
-		return OK;
-	}
 
 	static void make_current(bool p_gles_over_gl);
 

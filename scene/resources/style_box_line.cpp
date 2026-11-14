@@ -2,10 +2,11 @@
 /*  style_box_line.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -102,7 +103,7 @@ void StyleBoxLine::draw(RID p_canvas_item, const Rect2& p_rect) const
 		r.size.y = thickness;
 	}
 
-	RS::canvas_item_add_rect(p_canvas_item, r, color);
+	Renderer::canvas_item_add_rect(p_canvas_item, r, color);
 }
 
 

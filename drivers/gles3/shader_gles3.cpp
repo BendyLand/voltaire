@@ -2,10 +2,11 @@
 /*  shader_gles3.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -115,6 +116,10 @@ void ShaderGLES3::_setup(const char* p_vertex_code, const char* p_fragment_code,
 	const Specialization* p_specializations, int p_variant_count, const char** p_variants)
 {
 	name = p_name;
+
+	for (int i = 0; i < STAGE_TYPE_MAX; i++) {
+	    stage_templates[i].chunks.clear();
+	}
 
 	if (p_vertex_code) {
 		_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);

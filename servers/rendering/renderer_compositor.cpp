@@ -2,16 +2,17 @@
 /*  renderer_compositor.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -30,6 +31,7 @@
 
 #include "renderer_compositor.h"
 #include "servers/display/display_server.h"
+#include "core/os/os.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -48,32 +50,38 @@
 
 Error RendererCompositor::create()
 {
-	if (_create_func != nullptr) {
-		return _create_func();
-	}
+    String driver_name = "";
+    if (DisplayServer::get_singleton()) {
+        driver_name = OS::get_current_rendering_driver_name();
+    }
+
+#if defined(GLES3_ENABLED)
+    if (driver_name == "opengl3" || driver_name == "opengl3_es") {
+        RasterizerGLES3::make_current(true);
+        return OK;
+    }
+#endif
+
 #if defined(RD_ENABLED)
-	low_end = false;
-	bind_compositor<RendererCompositorRD>();
-	DisplayServer* ds = DisplayServer::get_singleton();
-	if (ds != nullptr) {
-		Error err = ds->init_rendering_device();
-		ERR_FAIL_COND_V_MSG(
-			err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
-	}
-	RendererRD::MeshStorage::initialize();
-	RendererCompositorRD::initialize();
-	return OK;
-#elif defined(GLES3_ENABLED)
-	low_end = true;
-	bind_compositor<RasterizerGLES3>();
-	GLES3::MeshStorage::initialize();
-	RasterizerGLES3::initialize();
-	return OK;
+    if (!low_end && driver_name != "opengl3") {
+        low_end = false;
+        bind_compositor<RendererCompositorRD>();
+        DisplayServer* ds = DisplayServer::get_singleton();
+        if (ds != nullptr) {
+            Error err = ds->init_rendering_device();
+            ERR_FAIL_COND_V_MSG(
+                err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
+        }
+        return OK;
+    }
+#endif
+
+#if defined(DUMMY_ENABLED)
+    low_end = true;
+    bind_compositor<RasterizerDummy>();
+    return OK;
 #else
-	low_end = true;
-	bind_compositor<RasterizerDummy>();
-	RasterizerDummy::initialize();
-	return OK;
+    return ERR_UNAVAILABLE;
 #endif
 }
 

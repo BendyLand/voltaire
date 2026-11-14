@@ -2,10 +2,11 @@
 /*  display_server_wayland.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -111,6 +112,12 @@ void DisplayServerWayland::_send_window_event(
 	DisplayServerEnums::WindowEvent p_event, DisplayServerEnums::WindowID p_window_id)
 {
 	ERR_FAIL_COND(!windows.has(p_window_id));
+	if (p_window_id == DisplayServerEnums::MAIN_WINDOW_ID &&
+		(p_event == DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST ||
+			p_event == DisplayServerEnums::WINDOW_EVENT_FORCE_CLOSE)) {
+		extern bool s_quit_requested;
+		s_quit_requested = true;
+	}
 }
 
 void DisplayServerWayland::dispatch_input_events(const Ref<InputEvent>& p_event)
@@ -2121,8 +2128,8 @@ DisplayServer* DisplayServerWayland::create_func(const String& p_rendering_drive
 	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
 	// Reject native Wayland and bail early
-	WARN_PRINT("Native Wayland support is currently disabled. Please run through X11/Xwayland via "
-			   "'--display-driver x11'.");
+	// WARN_PRINT("Native Wayland support is currently disabled. Please run through X11/Xwayland via "
+	// 		   "'--display-driver x11'.");
 	r_error = ERR_UNAVAILABLE;
 	return nullptr;
 }

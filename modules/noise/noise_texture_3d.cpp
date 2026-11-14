@@ -2,10 +2,11 @@
 /*  noise_texture_3d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -149,7 +150,7 @@ bool NoiseTexture3D::has_mipmaps() const { return false; }
 RID NoiseTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_3d_placeholder_create();
+		texture = Renderer::texture_3d_placeholder_create();
 	}
 
 	return texture;
@@ -158,7 +159,7 @@ RID NoiseTexture3D::get_rid() const
 Vector<Ref<Image>> NoiseTexture3D::get_data() const
 {
 	ERR_FAIL_COND_V(!texture.is_valid(), Vector<Ref<Image>>());
-	return RS::texture_3d_get(texture);
+	return Renderer::texture_3d_get(texture);
 }
 
 Image::Format NoiseTexture3D::get_format() const { return format; }

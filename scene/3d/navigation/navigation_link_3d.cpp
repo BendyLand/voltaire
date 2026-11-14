@@ -2,10 +2,11 @@
 /*  navigation_link_3d.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -225,7 +226,7 @@ void NavigationLink3D::_link_exit_navigation_map()
 	NavigationServer3D::link_set_map(link, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::instance_set_visible(debug_instance, false);
+		Renderer::instance_set_visible(debug_instance, false);
 	}
 #endif // DEBUG_ENABLED
 }

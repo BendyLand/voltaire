@@ -2,10 +2,11 @@
 /*  drawable_texture_2d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,7 +36,7 @@
 
 DrawableTexture2D::DrawableTexture2D()
 {
-	default_material = RS::texture_drawable_get_default_material();
+	default_material = Renderer::texture_drawable_get_default_material();
 }
 
 DrawableTexture2D::~DrawableTexture2D()
@@ -50,12 +51,12 @@ DrawableTexture2D::~DrawableTexture2D()
 void DrawableTexture2D::_initialize()
 {
 	if (texture.is_valid()) {
-		RID new_texture = RS::texture_drawable_create(
+		RID new_texture = Renderer::texture_drawable_create(
 			width, height, (RSE::TextureDrawableFormat)format, base_color, mipmaps);
-		RS::texture_replace(texture, new_texture);
+		Renderer::texture_replace(texture, new_texture);
 	}
 	else {
-		texture = RS::texture_drawable_create(
+		texture = Renderer::texture_drawable_create(
 			width, height, (RSE::TextureDrawableFormat)format, base_color, mipmaps);
 	}
 }
@@ -133,7 +134,7 @@ void DrawableTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rect,
 Ref<Image> DrawableTexture2D::get_image() const
 {
 	if (texture.is_valid()) {
-		return RS::texture_2d_get(texture);
+		return Renderer::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -143,7 +144,7 @@ Ref<Image> DrawableTexture2D::get_image() const
 void DrawableTexture2D::generate_mipmaps()
 {
 	if (texture.is_valid()) {
-		RS::texture_drawable_generate_mipmaps(texture);
+		Renderer::texture_drawable_generate_mipmaps(texture);
 	}
 }
 

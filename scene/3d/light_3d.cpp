@@ -2,10 +2,11 @@
 /*  light_3d.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -46,7 +47,7 @@ bool Light3D::has_shadow() const { return shadow; }
 void Light3D::set_negative(bool p_enable)
 {
 	negative = p_enable;
-	RS::light_set_negative(light, p_enable);
+	Renderer::light_set_negative(light, p_enable);
 }
 
 bool Light3D::is_negative() const { return negative; }
@@ -56,7 +57,7 @@ bool Light3D::is_distance_fade_enabled() const { return distance_fade_enabled; }
 void Light3D::set_distance_fade_begin(real_t p_distance)
 {
 	distance_fade_begin = p_distance;
-	RS::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
+	Renderer::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
 		distance_fade_shadow, distance_fade_length);
 }
 
@@ -65,7 +66,7 @@ real_t Light3D::get_distance_fade_begin() const { return distance_fade_begin; }
 void Light3D::set_distance_fade_shadow(real_t p_distance)
 {
 	distance_fade_shadow = p_distance;
-	RS::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
+	Renderer::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
 		distance_fade_shadow, distance_fade_length);
 }
 
@@ -74,7 +75,7 @@ real_t Light3D::get_distance_fade_shadow() const { return distance_fade_shadow; 
 void Light3D::set_distance_fade_length(real_t p_length)
 {
 	distance_fade_length = p_length;
-	RS::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
+	Renderer::light_set_distance_fade(light, distance_fade_enabled, distance_fade_begin,
 		distance_fade_shadow, distance_fade_length);
 }
 
@@ -83,7 +84,7 @@ real_t Light3D::get_distance_fade_length() const { return distance_fade_length; 
 void Light3D::set_cull_mask(uint32_t p_cull_mask)
 {
 	cull_mask = p_cull_mask;
-	RS::light_set_cull_mask(light, p_cull_mask);
+	Renderer::light_set_cull_mask(light, p_cull_mask);
 }
 
 uint32_t Light3D::get_cull_mask() const { return cull_mask; }
@@ -93,7 +94,7 @@ Color Light3D::get_color() const { return color; }
 void Light3D::set_shadow_reverse_cull_face(bool p_enable)
 {
 	reverse_cull = p_enable;
-	RS::light_set_reverse_cull_face_mode(light, reverse_cull);
+	Renderer::light_set_reverse_cull_face_mode(light, reverse_cull);
 }
 
 bool Light3D::get_shadow_reverse_cull_face() const { return reverse_cull; }
@@ -101,7 +102,7 @@ bool Light3D::get_shadow_reverse_cull_face() const { return reverse_cull; }
 void Light3D::set_shadow_caster_mask(uint32_t p_caster_mask)
 {
 	shadow_caster_mask = p_caster_mask;
-	RS::light_set_shadow_caster_mask(light, shadow_caster_mask);
+	Renderer::light_set_shadow_caster_mask(light, shadow_caster_mask);
 }
 
 uint32_t Light3D::get_shadow_caster_mask() const { return shadow_caster_mask; }
@@ -122,7 +123,7 @@ PackedStringArray Light3D::get_configuration_warnings() const
 void Light3D::set_bake_mode(BakeMode p_mode)
 {
 	bake_mode = p_mode;
-	RS::light_set_bake_mode(light, RSE::LightBakeMode(p_mode));
+	Renderer::light_set_bake_mode(light, RSE::LightBakeMode(p_mode));
 }
 
 Light3D::BakeMode Light3D::get_bake_mode() const { return bake_mode; }
@@ -194,7 +195,7 @@ void Light3D::_update_visibility()
 	}
 #endif
 
-	RS::instance_set_visible(get_instance(), is_visible_in_tree() && editor_ok);
+	Renderer::instance_set_visible(get_instance(), is_visible_in_tree() && editor_ok);
 }
 
 void Light3D::_notification(int p_what)
@@ -224,7 +225,7 @@ Light3D::Light3D()
 Light3D::~Light3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::instance_set_base(get_instance(), RID());
+	Renderer::instance_set_base(get_instance(), RID());
 
 	if (light.is_valid()) {
 		Renderer::free_rid(light);
@@ -236,7 +237,7 @@ DirectionalLight3D::ShadowMode DirectionalLight3D::get_shadow_mode() const { ret
 void DirectionalLight3D::set_blend_splits(bool p_enable)
 {
 	blend_splits = p_enable;
-	RS::light_directional_set_blend_splits(light, p_enable);
+	Renderer::light_directional_set_blend_splits(light, p_enable);
 }
 
 bool DirectionalLight3D::is_blend_splits_enabled() const { return blend_splits; }
@@ -244,7 +245,7 @@ bool DirectionalLight3D::is_blend_splits_enabled() const { return blend_splits; 
 void DirectionalLight3D::set_sky_mode(SkyMode p_mode)
 {
 	sky_mode = p_mode;
-	RS::light_directional_set_sky_mode(
+	Renderer::light_directional_set_sky_mode(
 		light, RSE::LightDirectionalSkyMode(p_mode));
 }
 
@@ -253,7 +254,7 @@ DirectionalLight3D::SkyMode DirectionalLight3D::get_sky_mode() const { return sk
 void OmniLight3D::set_shadow_mode(ShadowMode p_mode)
 {
 	shadow_mode = p_mode;
-	RS::light_omni_set_shadow_mode(light, RSE::LightOmniShadowMode(p_mode));
+	Renderer::light_omni_set_shadow_mode(light, RSE::LightOmniShadowMode(p_mode));
 }
 
 OmniLight3D::ShadowMode OmniLight3D::get_shadow_mode() const { return shadow_mode; }
@@ -310,7 +311,7 @@ Vector2 AreaLight3D::get_area_size() const { return area_size; }
 void AreaLight3D::set_area_normalize_energy(bool p_enabled)
 {
 	area_normalize_energy = p_enabled;
-	RS::light_area_set_normalize_energy(light, p_enabled);
+	Renderer::light_area_set_normalize_energy(light, p_enabled);
 }
 
 bool AreaLight3D::is_area_normalizing_energy() const { return area_normalize_energy; }

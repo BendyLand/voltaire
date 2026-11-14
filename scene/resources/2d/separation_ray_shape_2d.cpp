@@ -2,10 +2,11 @@
 /*  separation_ray_shape_2d.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -45,7 +46,7 @@ void SeparationRayShape2D::draw(const RID& p_to_rid, const Color& p_color)
 		arrow_size = target_position.length();
 	}
 	else {
-		RS::canvas_item_add_line(p_to_rid, Vector2(),
+		Renderer::canvas_item_add_line(p_to_rid, Vector2(),
 			target_position - target_position.normalized() * arrow_size, p_color, line_width);
 	}
 
@@ -58,7 +59,7 @@ void SeparationRayShape2D::draw(const RID& p_to_rid, const Color& p_color)
 
 	Vector<Color> cols = {p_color, p_color, p_color};
 
-	RS::canvas_item_add_primitive(p_to_rid, pts, cols, Vector<Point2>(), RID());
+	Renderer::canvas_item_add_primitive(p_to_rid, pts, cols, Vector<Point2>(), RID());
 }
 
 Rect2 SeparationRayShape2D::get_rect() const

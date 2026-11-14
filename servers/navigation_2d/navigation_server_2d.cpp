@@ -2,10 +2,11 @@
 /*  navigation_server_2d.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -196,8 +197,6 @@ bool NavigationServer2D::get_debug_navigation_avoidance_enable_obstacles_static(
 }
 #endif // DEBUG_ENABLED
 
-static NavigationServer2D* navigation_server_2d = nullptr;
-
 #ifdef DEBUG_ENABLED
 void NavigationServer2D::set_debug_navigation_geometry_face_color(const Color& p_color)
 {
@@ -359,6 +358,38 @@ bool NavigationServer2D::get_debug_navigation_enable_link_connections()
 	return data->debug_navigation_enable_link_connections;
 }
 #endif // DEBUG_ENABLED
+
+struct NavigationServer2D::NavMap
+{
+};
+struct NavigationServer2D::NavRegion
+{
+};
+struct NavigationServer2D::NavLink
+{
+};
+struct NavigationServer2D::NavAgent
+{
+};
+struct NavigationServer2D::NavObstacle
+{
+};
+
+void NavigationServer2D::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void NavigationServer2D::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
 
 void NavigationServer2D::process(double p_delta_time) {}
 

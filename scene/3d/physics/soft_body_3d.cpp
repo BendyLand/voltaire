@@ -2,10 +2,11 @@
 /*  soft_body_3d.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -45,14 +46,14 @@ void SoftBodyRenderingServerHandler::prepare(RID p_mesh, int p_surface)
 	surface = p_surface;
 
 	RenderingServerTypes::SurfaceData surface_data =
-		RS::mesh_get_surface(mesh, surface);
+		Renderer::mesh_get_surface(mesh, surface);
 
 	uint32_t surface_offsets[RSE::ARRAY_MAX];
 	uint32_t vertex_stride;
 	uint32_t normal_tangent_stride;
 	uint32_t attrib_stride;
 	uint32_t skin_stride;
-	RS::mesh_surface_make_offsets_from_format(surface_data.format,
+	Renderer::mesh_surface_make_offsets_from_format(surface_data.format,
 		surface_data.vertex_count, surface_data.index_count, surface_offsets, vertex_stride,
 		normal_tangent_stride, attrib_stride, skin_stride);
 
@@ -81,7 +82,7 @@ void SoftBodyRenderingServerHandler::close() { write_buffer = nullptr; }
 
 void SoftBodyRenderingServerHandler::commit_changes()
 {
-	RS::mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
+	Renderer::mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
 }
 
 void SoftBodyRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3& p_vertex)
@@ -104,7 +105,7 @@ void SoftBodyRenderingServerHandler::set_normal(int p_vertex_id, const Vector3& 
 
 void SoftBodyRenderingServerHandler::set_aabb(const AABB& p_aabb)
 {
-	RS::mesh_set_custom_aabb(mesh, p_aabb);
+	Renderer::mesh_set_custom_aabb(mesh, p_aabb);
 }
 
 SoftBody3D::PinnedPoint::PinnedPoint() {}

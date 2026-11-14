@@ -2,10 +2,11 @@
 /*  rasterizer_gles3.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -114,7 +115,7 @@ void RasterizerGLES3::begin_frame(double frame_step)
 
 	time_total += frame_step;
 
-	canvas->set_time(time_total);
+	RasterizerCanvasGLES3::set_time(time_total);
 	scene->set_time(time_total, frame_step);
 
 	GLES3::Utilities::_capture_timestamps_begin();
@@ -301,204 +302,233 @@ void* _egl_load_function_wrapper(const char* p_name) { return (void*)eglGetProcA
 
 void RasterizerGLES3::initialize()
 {
-	Engine::print_header(
-		vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
-			RS::get_video_adapter_api_version(), RS::get_video_adapter_vendor(),
-			RS::get_video_adapter_name()));
-	if (Engine::get_gpu_index() >= 0) {
-		WARN_PRINT(
-			"The Compatibility renderer does not support overriding the GPU with the --gpu-index "
-			"command line argument. Falling back to the default GPU for OpenGL applications.");
-	}
-
 #ifdef GLAD_ENABLED
-	bool glad_loaded = false;
+    bool glad_loaded = false;
+
+    // 1. Try desktop OpenGL loader first (GLX / libGL on Linux desktop)
+    if (gladLoaderLoadGL()) {
+        glad_loaded = true;
+        RasterizerUtilGLES3::set_gles_over_gl(true);
+        OS::set_gles_over_gl(true);
+    }
 
 #ifdef EGL_ENABLED
-	// There should be a more flexible system for getting the GL pointer, as
-	// different DisplayServers can have different ways. We can just use the GLAD
-	// version global to see if it loaded for now though, otherwise we fall back to
-	// the generic loader below.
+    // 2. Fall back to EGL (Wayland / mobile / embedded) if desktop GL loader failed
+    if (!glad_loaded) {
 #if defined(EGL_STATIC)
-	bool has_egl = true;
+        bool has_egl = true;
 #else
-	bool has_egl = (eglGetProcAddress != nullptr);
+        bool has_egl = (eglGetProcAddress != nullptr);
 #endif
-
-	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (has_egl && !glad_loaded && gladLoadGL((GLADloadfunc)&_egl_load_function_wrapper)) {
-			glad_loaded = true;
-		}
-	}
-	else {
-		if (has_egl && !glad_loaded && gladLoadGLES2((GLADloadfunc)&_egl_load_function_wrapper)) {
-			glad_loaded = true;
-		}
-	}
+        if (has_egl) {
+            if (RasterizerUtilGLES3::is_gles_over_gl()) {
+                if (gladLoadGL((GLADloadfunc)&_egl_load_function_wrapper)) {
+                    glad_loaded = true;
+                }
+            } else {
+                if (gladLoadGLES2((GLADloadfunc)&_egl_load_function_wrapper)) {
+                    glad_loaded = true;
+                }
+            }
+        }
+    }
 #endif // EGL_ENABLED
 
-	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (!glad_loaded && gladLoaderLoadGL()) {
-			glad_loaded = true;
-		}
 #ifdef GLES_API_ENABLED
-	}
-	else {
-		if (!glad_loaded && gladLoaderLoadGLES2()) {
-			glad_loaded = true;
-		}
+    if (!glad_loaded) {
+        if (gladLoaderLoadGLES2()) {
+            glad_loaded = true;
+            RasterizerUtilGLES3::set_gles_over_gl(false);
+            OS::set_gles_over_gl(false);
+        }
+    }
 #endif
-	}
 
-	// FIXME this is an early return from a constructor.  Any other code using this instance will
-	// crash or the finalizer will crash, because none of the members of this instance are
-	// initialized, so this just makes debugging harder.  It should either crash here intentionally,
-	// or we need to actually test for this situation before constructing this.
-	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
+    ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
 #endif // GLAD_ENABLED
 
+    // Print adapter details only AFTER GLAD has populated glGetString
+    Engine::print_header(
+        vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
+            Renderer::get_video_adapter_api_version(), Renderer::get_video_adapter_vendor(),
+            Renderer::get_video_adapter_name()));
+    if (Engine::get_gpu_index() >= 0) {
+        WARN_PRINT(
+            "The Compatibility renderer does not support overriding the GPU with the --gpu-index "
+            "command line argument. Falling back to the default GPU for OpenGL applications.");
+    }
+
 #ifdef GL_DEBUG_CALLBACK
-	// Setup OpenGL debug callback, via DebugMessageCallbackARB (GLAD or EGL).
+    // Setup OpenGL debug callback, via DebugMessageCallbackARB (GLAD or EGL).
 
 #ifdef GLAD_ENABLED
-	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::is_stdout_verbose()) {
-			if (GLAD_GL_ARB_debug_output) {
-				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-				glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
-				glEnable(_EXT_DEBUG_OUTPUT);
-			}
-			else {
-				__print_line("OpenGL debugging not supported!");
-			}
-		}
-	}
+    if (RasterizerUtilGLES3::is_gles_over_gl()) {
+        if (OS::is_stdout_verbose()) {
+            if (GLAD_GL_ARB_debug_output) {
+                glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+                glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
+                glEnable(_EXT_DEBUG_OUTPUT);
+            } else {
+                __print_line("OpenGL debugging not supported!");
+            }
+        }
+    }
 
 #ifdef GL_API_ENABLED
-	if (RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
-				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
-				_EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
-				GL_TRUE);
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
-				_EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
-				GL_TRUE);
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB,
-				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB,
-				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB,
-				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		}
-	}
+    if (RasterizerUtilGLES3::is_gles_over_gl()) {
+        if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
+                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+                _EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+                GL_TRUE);
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+                _EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+                GL_TRUE);
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB,
+                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB,
+                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB,
+                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+        }
+    }
 #endif // GL_API_ENABLED
 #endif // GLAD_ENABLED
 
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
 #ifdef GLES_API_ENABLED
-	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
-		if (OS::is_stdout_verbose()) {
-			DebugMessageCallbackARB callback =
-				(DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
-			if (!callback) {
-				callback = (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallbackKHR");
-			}
+    if (!RasterizerUtilGLES3::is_gles_over_gl()) {
+        if (OS::is_stdout_verbose()) {
+            DebugMessageCallbackARB callback =
+                (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
+            if (!callback) {
+                callback = (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallbackKHR");
+            }
 
-			if (callback) {
-				__print_line("godot: ENABLING GL DEBUG");
-				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-				callback((DEBUGPROCARB)_gl_debug_print, nullptr);
-				glEnable(_EXT_DEBUG_OUTPUT);
-			}
-		}
-	}
+            if (callback) {
+                __print_line("godot: ENABLING GL DEBUG");
+                glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+                callback((DEBUGPROCARB)_gl_debug_print, nullptr);
+                glEnable(_EXT_DEBUG_OUTPUT);
+            }
+        }
+    }
 #endif // GLES_API_ENABLED
 #endif // EGL_ENABLED || ANDROID_ENABLED
 
 #endif // GL_DEBUG_CALLBACK
 
-	{
-		// Setup shader cache.
+    {
+        // Setup shader cache.
 
-		String shader_cache_dir = Engine::get_shader_cache_path();
-		if (shader_cache_dir.is_empty()) {
-			shader_cache_dir = "user://";
-		}
-		Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
-		if (da.is_null()) {
-			ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
-					  shader_cache_dir);
-		}
-		else {
-			Error err = da->change_dir("shader_cache");
-			if (err != OK) {
-				err = da->make_dir("shader_cache");
-			}
-			if (err != OK) {
-				ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
-						  shader_cache_dir);
-			}
-			else {
-				shader_cache_dir = shader_cache_dir.path_join("shader_cache");
-				if (!Engine::is_editor_hint()) {
-					shader_cache_dir = String(); // disable only if not editor
-				}
-				if (!shader_cache_dir.is_empty()) {
-					ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
-				}
-			}
-		}
-	}
+        String shader_cache_dir = Engine::get_shader_cache_path();
+        if (shader_cache_dir.is_empty()) {
+            shader_cache_dir = "user://";
+        }
+        Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
+        if (da.is_null()) {
+            ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+                      shader_cache_dir);
+        } else {
+            Error err = da->change_dir("shader_cache");
+            if (err != OK) {
+                err = da->make_dir("shader_cache");
+            }
+            if (err != OK) {
+                ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+                          shader_cache_dir);
+            } else {
+                shader_cache_dir = shader_cache_dir.path_join("shader_cache");
+                if (!Engine::is_editor_hint()) {
+                    shader_cache_dir = String(); // disable only if not editor
+                }
+                if (!shader_cache_dir.is_empty()) {
+                    ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
+                }
+            }
+        }
+    }
 
-	// OpenGL needs to be initialized before initializing the Rasterizers
-	config = memnew(GLES3::Config);
-	GLES3::Utilities::initialize();
-	GLES3::TextureStorage::initialize();
-	GLES3::MaterialStorage::initialize();
-	GLES3::LightStorage::initialize();
-	GLES3::ParticlesStorage::initialize();
-	copy_effects = memnew(GLES3::CopyEffects);
-	cubemap_filter = memnew(GLES3::CubemapFilter);
-	glow = memnew(GLES3::Glow);
-	post_effects = memnew(GLES3::PostEffects);
-	feed_effects = memnew(GLES3::FeedEffects);
-	GLES3::GI::initialize();
-	GLES3::Fog::initialize();
+    // OpenGL needs to be initialized before initializing the Rasterizers
+    config = memnew(GLES3::Config);
+    GLES3::Utilities::initialize();
+    GLES3::TextureStorage::initialize();
+    GLES3::MaterialStorage::initialize();
+    GLES3::MeshStorage::initialize();
+    GLES3::LightStorage::initialize();
+    GLES3::ParticlesStorage::initialize();
+    copy_effects = memnew(GLES3::CopyEffects);
+    cubemap_filter = memnew(GLES3::CubemapFilter);
+    glow = memnew(GLES3::Glow);
+    post_effects = memnew(GLES3::PostEffects);
+    feed_effects = memnew(GLES3::FeedEffects);
+    GLES3::GI::initialize();
+    GLES3::Fog::initialize();
 
-    RasterizerCanvasGLES3::initialize(texture_storage, material_storage);
+    RasterizerCanvasGLES3::initialize();
     scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+	printf("[LIFECYCLE 1] Scene allocated: scene=%p, vptr=%p\n", (void*)scene, *(void**)scene);
+	fflush(stdout);
     RendererTextureStorage::bind<GLES3::TextureStorage>();
-	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
-	// TexBlit Shaders
-	GLES3::TextureStorage::_tex_blit_shader_initialize();
+    // Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
+    // TexBlit Shaders
+    GLES3::TextureStorage::_tex_blit_shader_initialize();
 
-	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
-	// itself.
-	if (config->srgb_framebuffer_supported) {
-		glDisable(GL_FRAMEBUFFER_SRGB);
-	}
+    // Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
+    // itself.
+    if (config->srgb_framebuffer_supported) {
+        glDisable(GL_FRAMEBUFFER_SRGB);
+    }
 }
 
 void RasterizerGLES3::finalize()
 {
+	static bool finalized = false;
+    if (finalized) {
+        return;
+    }
+    finalized = true;
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
 	GLES3::TextureStorage::_tex_blit_shader_free();
-	memdelete(scene);
+	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n",
+       (void*)scene, scene ? *(void**)scene : nullptr);
+	fflush(stdout);
+	if (scene) {
+		memdelete(scene);
+		scene = nullptr;
+	}
 	RasterizerCanvasGLES3::finalize();
 	GLES3::GI::finalize();
 	GLES3::Fog::finalize();
-	memdelete(post_effects);
-	memdelete(glow);
-	memdelete(cubemap_filter);
-	memdelete(copy_effects);
-	memdelete(feed_effects);
+	if (post_effects) {
+		memdelete(post_effects);
+		post_effects = nullptr;
+	}
+	if (glow) {
+		memdelete(glow);
+		glow = nullptr;
+	}
+	if (cubemap_filter) {
+		memdelete(cubemap_filter);
+		cubemap_filter = nullptr;
+	}
+	if (copy_effects) {
+		memdelete(copy_effects);
+		copy_effects = nullptr;
+	}
+	if (feed_effects) {
+		memdelete(feed_effects);
+		feed_effects = nullptr;
+	}
 	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::TextureStorage::finalize();
-	memdelete(config);
+	if (config) {
+		memdelete(config);
+		config = nullptr;
+	}
 }
 
 void RasterizerGLES3::make_current(bool p_gles_over_gl)
@@ -506,7 +536,6 @@ void RasterizerGLES3::make_current(bool p_gles_over_gl)
 	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
 	OS::set_gles_over_gl(p_gles_over_gl);
 
-	RendererCompositor::_create_func = _create_current;
 	RendererCompositor::low_end = true;
 	RendererCompositor::bind_compositor<RasterizerGLES3>();
 }
@@ -544,18 +573,15 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 
-	if (p_first) {
-		if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
-			// Viewport doesn't cover entire window so clear window to black before blitting.
-			// Querying the actual window size from the DisplayServer would deadlock in separate
-			// render thread mode, so let's set the biggest viewport the implementation supports, to
-			// be sure the window is fully covered.
-			Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
-			glViewport(0, 0, max_vp[0], max_vp[1]);
-			glClearColor(0.0, 0.0, 0.0, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT);
-		}
-	}
+	// Handled at the start of blit_render_targets_to_screen to match Vulkan's magenta screen clear.
+	// if (p_first) {
+	// 	if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
+	// 		Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+	// 		glViewport(0, 0, max_vp[0], max_vp[1]);
+	// 		glClearColor(0.0, 0.0, 0.0, 1.0);
+	// 		glClear(GL_COLOR_BUFFER_BIT);
+	// 	}
+	// }
 
 	Vector2 screen_rect_end = p_blit.dst_rect.get_end();
 
@@ -580,29 +606,44 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 
-	if (p_blit.lens_distortion.apply &&
-		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
-		copy_effects->copy_with_lens_distortion(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
-			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
-			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
-	}
-	else if (rt->view_count > 1) {
-		copy_effects->copy_to_rect_3d(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
-			0.0, linear_to_srgb);
-	}
-	else {
-		copy_effects->copy_to_rect(screenrect, linear_to_srgb);
-	}
+	// Disabled while matching Vulkan's magenta overlay stage so the empty render target
+	// does not overwrite the magenta screen clear.
+	// if (p_blit.lens_distortion.apply &&
+	// 	(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
+	// 	copy_effects->copy_with_lens_distortion(screenrect,
+	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
+	// 		p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
+	// 		p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
+	// }
+	// else if (rt->view_count > 1) {
+	// 	copy_effects->copy_to_rect_3d(screenrect,
+	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
+	// 		0.0, linear_to_srgb);
+	// }
+	// else {
+	// 	copy_effects->copy_to_rect(screenrect, linear_to_srgb);
+	// }
+	(void)screenrect;
+	(void)linear_to_srgb;
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(target, 0);
 }
 
 // is this p_screen useless in a multi window environment?
 void RasterizerGLES3::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glDisable(GL_SCISSOR_TEST);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	// Querying the actual window size from the DisplayServer would deadlock in separate
+	// render thread mode, so set the biggest viewport the implementation supports to
+	// ensure the entire window is covered (including across resizes).
+	Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+	glViewport(0, 0, max_vp[0], max_vp[1]);
+	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	for (int i = 0; i < p_amount; i++) {
 		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);
 	}

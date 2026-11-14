@@ -2,10 +2,11 @@
 /*  display_server_x11.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -2069,8 +2070,8 @@ DisplayServerEnums::WindowID DisplayServerX11::create_sub_window(
 		}
 	}
 #ifdef RD_ENABLED
-	if (rendering_device) {
-		rendering_device->screen_create(id);
+	if (RD::is_initialized()) {
+		RD::screen_create(id);
 	}
 #endif
 
@@ -2168,17 +2169,16 @@ void DisplayServerX11::show_window(DisplayServerEnums::WindowID p_id)
 				return;
 			}
 
-			wd.size
-= sz;
+			wd.size = sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
 				rendering_context->window_set_size(p_id, sz.width, sz.height);
-				Error err = RenderingDevice::initialize(
-					rendering_context, rendering_context->device_get(0));
-				if (err != OK) {
-					ERR_PRINT("Failed to initialize RenderingDevice.");
-					return;
-				}
+				// Error err = RenderingDevice::initialize(
+				// 	rendering_context, rendering_context->device_get(0));
+				// if (err != OK) {
+				// 	ERR_PRINT("Failed to initialize RenderingDevice.");
+				// 	return;
+				// }
 			}
 #endif
 #if defined(GLES3_ENABLED)
@@ -4453,8 +4453,7 @@ void DisplayServerX11::_xim_preedit_done_callback(
 {
 	DisplayServerX11* ds = reinterpret_cast<DisplayServerX11*>(client_data);
 	DisplayServerEnums::WindowID window_id = ds->_get_focused_window_or_popup();
-	WindowData& wd =
-ds->windows[window_id];
+	WindowData& wd = ds->windows[window_id];
 	if (wd.ime_active) {
 		wd.ime_in_progress = false;
 		wd.ime_suppress_next_keyup = true;
@@ -4573,6 +4572,8 @@ void DisplayServerX11::_check_pending_events(LocalVector<XEvent>& r_events)
 	// Non-blocking wait for next event and remove it from the queue.
 	XEvent ev = {};
 	while (XCheckIfEvent(x11_display, &ev, _predicate_all_events, nullptr)) {
+		printf("[X11 RAW] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
+		fflush(stdout);
 		// Check if the input manager wants to process the event.
 		if (XFilterEvent(&ev, None)) {
 			// Event has been filtered by the Input Manager,
@@ -4663,6 +4664,8 @@ void DisplayServerX11::popup_open(DisplayServerEnums::WindowID p_window)
 			}
 		}
 		if (C) {
+			printf("[CLOSE REQUEST RECEIVED 1]\n");
+			fflush(stdout);
 			_send_window_event(windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 
@@ -4684,6 +4687,8 @@ void DisplayServerX11::popup_close(DisplayServerEnums::WindowID p_window)
 		if (win_id != p_window) {
 			// Only request close on related windows, not this window.  We are already processing
 			// it.
+			printf("[CLOSE REQUEST RECEIVED 2]\n");
+			fflush(stdout);
 			_send_window_event(windows[win_id], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 		E = F;
@@ -4738,6 +4743,8 @@ bool DisplayServerX11::mouse_process_popups()
 						}
 					}
 					if (C) {
+						printf("[CLOSE REQUEST RECEIVED 3]\n");
+						fflush(stdout);
 						_send_window_event(
 							windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 						closed = true;
@@ -4814,7 +4821,7 @@ bool DisplayServerX11::is_window_transparency_available() const
 		return false;
 	}
 #if defined(RD_ENABLED)
-	if (rendering_device && !rendering_device->is_composite_alpha_supported()) {
+	if (RD::is_initialized() && !RD::is_composite_alpha_supported()) {
 		return false;
 	}
 #endif
@@ -5910,8 +5917,8 @@ DisplayServerX11::~DisplayServerX11()
 	// destroy all windows
 	for (KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
 #if defined(RD_ENABLED)
-		if (rendering_device) {
-			rendering_device->screen_free(E.key);
+		if (RD::is_initialized()) {
+			RD::screen_free(E.key);
 		}
 
 		if (rendering_context) {
@@ -5960,9 +5967,8 @@ DisplayServerX11::~DisplayServerX11()
 
 	// destroy drivers
 #if defined(RD_ENABLED)
-	if (rendering_device) {
-		memdelete(RD::data);
-		rendering_device = nullptr;
+	if (RD::is_initialized()) {
+		RD::finalize();
 	}
 
 	if (rendering_context) {
@@ -6020,15 +6026,6 @@ void DisplayServerX11::register_x11_driver()
 	register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
-void DisplayServerX11::_send_window_event(
-	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
-{
-}
-
-#endif // X11 enabled
-
-void DisplayServerX11::process_events() {}
-
 uint32_t DisplayServerX11::mouse_get_button_state() const { return 0; }
 
 void DisplayServerX11::cursor_set_custom_image(const Ref<Resource>& p_cursor,
@@ -6047,6 +6044,10 @@ void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawC
 Error DisplayServer::init_rendering_device()
 {
 #if defined(RD_ENABLED)
+	if (RD::is_initialized()) {
+		return OK;
+	}
+
 	RenderingContextDriver* rcd = nullptr;
 
 #if defined(VULKAN_ENABLED)
@@ -6075,12 +6076,13 @@ Error DisplayServer::init_rendering_device()
 
 	RenderingContextDriver::Device device = rcd->device_get(0);
 
-	err = RD::initialize(rcd, device);
-	if (err != OK) {
-		memdelete(rcd);
-		return err;
+	if (!RD::is_initialized()) {
+		err = RD::initialize(rcd, device);
+		if (err != OK) {
+			memdelete(rcd);
+			return err;
+		}
 	}
-
 	return OK;
 #else
 	return ERR_UNAVAILABLE;
@@ -6111,6 +6113,13 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 		}
 	}
 #endif
+#endif
+
+#if defined(GLES3_ENABLED)
+	if (rendering_driver == "opengl3") {
+		RasterizerGLES3::make_current(true);
+		gl_manager = memnew(GLManager_X11(p_resolution));
+	}
 #endif
 
 	if (initialize_xlib(0) != 0) {
@@ -6164,6 +6173,15 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 		return;
 	}
 
+	// Register WM_DELETE_WINDOW protocol so clicking 'X' notifies the app instead of dropping the
+	// window
+	Atom protocols[1];
+	protocols[0] = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
+	Status s = XSetWMProtocols(x11_display, x11_win, protocols, 1);
+	printf("[X11 INIT] XSetWMProtocols returned status=%d, atom=%lu, win=%lu\n", s,
+		(unsigned long)protocols[0], (unsigned long)x11_win);
+	fflush(stdout);
+
 	WindowData wd;
 	wd.x11_window = x11_win;
 	wd.x11_xim_window = 0;
@@ -6206,6 +6224,29 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 		rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, width, height);
 		rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
+		if (!RenderingDevice::is_initialized()) {
+			if (RenderingDevice::initialize(rendering_context, rendering_context->device_get(0)) !=
+				OK) {
+				ERR_PRINT("Failed to initialize RenderingDevice for Window 0");
+				r_error = ERR_CANT_CREATE;
+				return;
+			}
+		}
+		if (RenderingDevice::screen_create(DisplayServerEnums::MAIN_WINDOW_ID) != OK) {
+			ERR_PRINT("Failed to create RenderingDevice screen for Window 0");
+			r_error = ERR_CANT_CREATE;
+			return;
+		}
+	}
+#endif
+
+#if defined(GLES3_ENABLED)
+	if (gl_manager) {
+		Error err = gl_manager->window_create(
+			DisplayServerEnums::MAIN_WINDOW_ID, x11_win, x11_display, width, height);
+		if (err != OK) {
+			ERR_PRINT("Failed to create OpenGL context for Window 0");
+		}
 	}
 #endif
 
@@ -6214,3 +6255,55 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 }
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
+
+void DisplayServerX11::_send_window_event(
+	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
+{
+	if (p_event == DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST) {
+		extern bool s_quit_requested;
+		s_quit_requested = true;
+	}
+}
+
+void DisplayServerX11::process_events()
+{
+	if (!x11_display) {
+		return;
+	}
+
+	// Force reading pending packets from the X11 connection socket into Xlib's queue
+	int _count = XEventsQueued(x11_display, QueuedAfterReading);
+	while (XPending(x11_display) > 0) {
+		XEvent ev;
+		XNextEvent(x11_display, &ev);
+
+		// Uncomment to enable logging of window events
+		// printf("[EVENT DUMP] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
+		// fflush(stdout);
+
+		if (XFilterEvent(&ev, None)) {
+			continue;
+		}
+
+		if (ev.type == ClientMessage) {
+			Atom wm_protocols = XInternAtom(x11_display, "WM_PROTOCOLS", False);
+			Atom wm_delete = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
+			if (ev.xclient.message_type == wm_protocols &&
+				(Atom)ev.xclient.data.l[0] == wm_delete) {
+				extern bool s_quit_requested;
+				s_quit_requested = true;
+				return;
+			}
+		}
+		else if (ev.type == DestroyNotify) {
+			if (windows.has(DisplayServerEnums::MAIN_WINDOW_ID) &&
+				ev.xdestroywindow.window == windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window) {
+				extern bool s_quit_requested;
+				s_quit_requested = true;
+				return;
+			}
+		}
+	}
+}
+
+#endif // X11 enabled

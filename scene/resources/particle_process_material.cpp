@@ -2,10 +2,11 @@
 /*  particle_process_material.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -445,7 +446,7 @@ Shader::Mode ParticleProcessMaterial::get_shader_mode() const { return Shader::M
 
 ParticleProcessMaterial::ParticleProcessMaterial() : element(this)
 {
-	_set_material(RS::material_create());
+	_set_material(Renderer::material_create());
 
 	set_direction(Vector3(1, 0, 0));
 	set_spread(45);
@@ -537,11 +538,11 @@ ParticleProcessMaterial::~ParticleProcessMaterial()
 		shader_map[current_key].users--;
 		if (shader_map[current_key].users == 0) {
 			// deallocate shader, as it's no longer in use
-			RS::free_rid(shader_map[current_key].shader);
+			Renderer::free_rid(shader_map[current_key].shader);
 			shader_map.erase(current_key);
 		}
 
-		RS::material_set_shader(_get_material(), RID());
+		Renderer::material_set_shader(_get_material(), RID());
 	}
 }
 

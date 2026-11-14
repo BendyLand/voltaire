@@ -2,10 +2,11 @@
 /*  shader_compiler.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -40,7 +41,7 @@ static String _mktab(int p_level) { return String("\t").repeat(p_level); }
 static String _typestr(SL::DataType p_type)
 {
 	String type = ShaderLanguage::get_datatype_name(p_type);
-	if (!RS::is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
+	if (!Renderer::is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
 		type = type.replace(
 			"sampler", "texture"); // we use textures instead of samplers in Vulkan GLSL
 	}
@@ -612,7 +613,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			if (SL::is_sampler_type(uniform.type)) {
 				// Texture layouts are different for OpenGL GLSL and Vulkan GLSL
-				if (!RS::is_low_end()) {
+				if (!Renderer::is_low_end()) {
 					ucode = "layout(set = " + itos(actions.texture_layout_set) + ", binding = " +
 							itos(actions.base_texture_binding_index + uniform.texture_binding) +
 							") ";
@@ -761,7 +762,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			vcode += ";\n";
 			// GLSL ES 3.0 does not allow layout qualifiers for varyings
-			if (!RS::is_low_end()) {
+			if (!Renderer::is_low_end()) {
 				r_gen_code.stage_globals[STAGE_VERTEX] += "layout(location=" + itos(index) + ") ";
 				r_gen_code.stage_globals[STAGE_FRAGMENT] += "layout(location=" + itos(index) + ") ";
 			}
@@ -1432,7 +1433,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 						break;
 					}
 
-					if (correct_texture_uniform && !RS::is_low_end()) {
+					if (correct_texture_uniform && !Renderer::is_low_end()) {
 						// Need to map from texture to sampler in order to sample when using Vulkan
 						// GLSL.
 						String sampler_name;
@@ -1532,7 +1533,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 						code += data_type_name + "(" + node_code + ", " + sampler_name + ")";
 					}
-					else if (correct_texture_uniform && RS::is_low_end()) {
+					else if (correct_texture_uniform && Renderer::is_low_end()) {
 						// Texture function on low end hardware (i.e. OpenGL).
 
 						if (shader->uniforms.has(texture_uniform)) {
@@ -1587,7 +1588,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 			code += ")";
 			if (is_screen_texture && !texture_func_returns_data &&
 				actions.apply_luminance_multiplier) {
-				if (RS::is_low_end()) {
+				if (Renderer::is_low_end()) {
 					code = "(" + code +
 						   " / vec4(vec3(scene_data_block.data.luminance_multiplier), 1.0))";
 				}
@@ -1774,7 +1775,7 @@ ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const S
 {
 	RSE::GlobalShaderParameterType gvt =
 		RendererMaterialStorage::global_shader_parameter_get_type(p_name);
-	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
+	return (ShaderLanguage::DataType)Renderer::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 
 Error ShaderCompiler::compile(RSE::ShaderMode p_mode, const String& p_code,

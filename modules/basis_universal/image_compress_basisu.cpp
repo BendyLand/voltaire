@@ -2,10 +2,11 @@
 /*  image_compress_basisu.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -103,12 +104,12 @@ Ref<Image> basis_universal_unpacker_ptr(const uint8_t* p_data, int p_size)
 	Image::Format image_format = Image::FORMAT_MAX;
 
 	// Get supported compression formats.
-	bool bptc_supported = RS::has_os_feature("bptc");
-	bool astc_supported = RS::has_os_feature("astc");
-	bool rgtc_supported = RS::has_os_feature("rgtc");
-	bool s3tc_supported = RS::has_os_feature("s3tc");
-	bool etc2_supported = RS::has_os_feature("etc2");
-	bool astc_hdr_supported = RS::has_os_feature("astc_hdr");
+	bool bptc_supported = Renderer::has_os_feature("bptc");
+	bool astc_supported = Renderer::has_os_feature("astc");
+	bool rgtc_supported = Renderer::has_os_feature("rgtc");
+	bool s3tc_supported = Renderer::has_os_feature("s3tc");
+	bool etc2_supported = Renderer::has_os_feature("etc2");
+	bool astc_hdr_supported = Renderer::has_os_feature("astc_hdr");
 
 	bool needs_ra_rg_swap = false;
 	bool needs_rg_trim = false;

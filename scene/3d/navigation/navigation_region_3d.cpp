@@ -2,10 +2,11 @@
 /*  navigation_region_3d.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -228,10 +229,10 @@ void NavigationRegion3D::_region_exit_navigation_map()
 	NavigationServer3D::region_set_map(region, RID());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::instance_set_visible(debug_instance, false);
+		Renderer::instance_set_visible(debug_instance, false);
 	}
 	if (debug_edge_connections_instance.is_valid()) {
-		RS::instance_set_visible(debug_edge_connections_instance, false);
+		Renderer::instance_set_visible(debug_edge_connections_instance, false);
 	}
 #endif // DEBUG_ENABLED
 }
@@ -245,7 +246,7 @@ void NavigationRegion3D::_region_update_transform()
 	NavigationServer3D::region_set_transform(region, get_global_transform());
 #ifdef DEBUG_ENABLED
 	if (debug_instance.is_valid()) {
-		RS::instance_set_transform(debug_instance, get_global_transform());
+		Renderer::instance_set_transform(debug_instance, get_global_transform());
 	}
 #endif // DEBUG_ENABLED
 }

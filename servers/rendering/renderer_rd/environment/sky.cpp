@@ -2,10 +2,11 @@
 /*  sky.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -436,17 +437,38 @@ void SkyRD::set_texture_format(RDC::DataFormat p_texture_format)
 SkyRD::~SkyRD()
 {
 	// cleanup anything created in init...
-	SkyMaterialData* md = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
-		sky_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
-	sky_shader.shader.version_free(md->shader_data->version);
-	RD::free_rid(sky_scene_state.directional_light_buffer);
-	RD::free_rid(sky_scene_state.uniform_buffer);
-	memdelete_arr(sky_scene_state.directional_lights);
-	memdelete_arr(sky_scene_state.last_frame_directional_lights);
-	MaterialStorage::shader_free(sky_shader.default_shader);
-	MaterialStorage::material_free(sky_shader.default_material);
-	MaterialStorage::shader_free(sky_scene_state.fog_shader);
-	MaterialStorage::material_free(sky_scene_state.fog_material);
+	if (sky_shader.default_material.is_valid()) {
+		SkyMaterialData* md = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
+			sky_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
+		if (md && md->shader_data && md->shader_data->version.is_valid()) {
+			sky_shader.shader.version_free(md->shader_data->version);
+			md->shader_data->version = RID();
+		}
+		MaterialStorage::material_free(sky_shader.default_material);
+		sky_shader.default_material = RID();
+	}
+	if (sky_shader.default_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_shader.default_shader);
+		sky_shader.default_shader = RID();
+	}
+	if (sky_scene_state.directional_light_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state.directional_light_buffer);
+	}
+	if (sky_scene_state.uniform_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state.uniform_buffer);
+	}
+	if (sky_scene_state.directional_lights) {
+		memdelete_arr(sky_scene_state.directional_lights);
+	}
+	if (sky_scene_state.last_frame_directional_lights) {
+		memdelete_arr(sky_scene_state.last_frame_directional_lights);
+	}
+	if (sky_scene_state.fog_material.is_valid()) {
+		MaterialStorage::material_free(sky_scene_state.fog_material);
+	}
+	if (sky_scene_state.fog_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_scene_state.fog_shader);
+	}
 
 	if (RD::uniform_set_is_valid(sky_scene_state.uniform_set)) {
 		RD::free_rid(sky_scene_state.uniform_set);
@@ -651,7 +673,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 

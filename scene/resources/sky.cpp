@@ -2,10 +2,11 @@
 /*  sky.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -37,7 +38,7 @@ void Sky::set_radiance_size(RadianceSize p_size)
 
 	radiance_size = p_size;
 	static const int size[RADIANCE_SIZE_MAX] = {32, 64, 128, 256, 512, 1024, 2048};
-	RS::sky_set_radiance_size(sky, size[radiance_size]);
+	Renderer::sky_set_radiance_size(sky, size[radiance_size]);
 }
 
 Sky::RadianceSize Sky::get_radiance_size() const { return radiance_size; }
@@ -45,7 +46,7 @@ Sky::RadianceSize Sky::get_radiance_size() const { return radiance_size; }
 void Sky::set_process_mode(ProcessMode p_mode)
 {
 	mode = p_mode;
-	RS::sky_set_mode(sky, RSE::SkyMode(mode));
+	Renderer::sky_set_mode(sky, RSE::SkyMode(mode));
 }
 
 Sky::ProcessMode Sky::get_process_mode() const { return mode; }
@@ -57,7 +58,7 @@ void Sky::set_material(const Ref<Material>& p_material)
 	if (sky_material.is_valid()) {
 		material_rid = sky_material->get_rid();
 	}
-	RS::sky_set_material(sky, material_rid);
+	Renderer::sky_set_material(sky, material_rid);
 }
 
 Ref<Material> Sky::get_material() const { return sky_material; }
@@ -65,12 +66,12 @@ Ref<Material> Sky::get_material() const { return sky_material; }
 RID Sky::get_rid() const { return sky; }
 
 
-Sky::Sky() { sky = RS::sky_create(); }
+Sky::Sky() { sky = Renderer::sky_create(); }
 
 Sky::~Sky()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(sky);
+	Renderer::free_rid(sky);
 }
 
 

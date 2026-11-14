@@ -2,10 +2,11 @@
 /*  rasterizer_canvas_gles3.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -254,7 +255,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			}
 
 			Transform2D final_xform;
-			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
+			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
 				final_xform = l->xform_curr;
 			}
 			else {
@@ -3089,13 +3090,9 @@ void RasterizerCanvasGLES3::_allocate_instance_buffer()
 
 void RasterizerCanvasGLES3::set_time(double p_time) { state.time = p_time; }
 
-void RasterizerCanvasGLES3::initialize(
-	GLES3::TextureStorage* p_texture_storage, GLES3::MaterialStorage* p_material_storage)
+void RasterizerCanvasGLES3::initialize()
 {
-	texture_storage = p_texture_storage;
-	material_storage = p_material_storage;
 	GLES3::TextureStorage* texture_storage = texture_storage;
-	GLES3::MaterialStorage* material_storage = p_material_storage;
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	glVertexAttrib4f(RSE::ARRAY_COLOR, 1.0, 1.0, 1.0, 1.0);
@@ -3267,10 +3264,10 @@ void RasterizerCanvasGLES3::initialize(
 	shadow_render.shader_version = shadow_render.shader.version_create();
 
 	{
-		default_canvas_group_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(default_canvas_group_shader);
+		default_canvas_group_shader = GLES3::MaterialStorage::shader_allocate();
+		GLES3::MaterialStorage::shader_initialize(default_canvas_group_shader);
 
-		material_storage->shader_set_code(default_canvas_group_shader, R"(
+		GLES3::MaterialStorage::shader_set_code(default_canvas_group_shader, R"(
 // Default CanvasGroup shader.
 
 shader_type canvas_item;
@@ -3288,18 +3285,18 @@ void fragment() {
 	COLOR *= c;
 }
 )");
-		default_canvas_group_material = material_storage->material_allocate();
-		material_storage->material_initialize(default_canvas_group_material);
+		default_canvas_group_material = GLES3::MaterialStorage::material_allocate();
+		GLES3::MaterialStorage::material_initialize(default_canvas_group_material);
 
-		material_storage->material_set_shader(
+		GLES3::MaterialStorage::material_set_shader(
 			default_canvas_group_material, default_canvas_group_shader);
 	}
 
 	{
-		default_clip_children_shader = material_storage->shader_allocate();
-		material_storage->shader_initialize(default_clip_children_shader);
+		default_clip_children_shader = GLES3::MaterialStorage::shader_allocate();
+		GLES3::MaterialStorage::shader_initialize(default_clip_children_shader);
 
-		material_storage->shader_set_code(default_clip_children_shader, R"(
+		GLES3::MaterialStorage::shader_set_code(default_clip_children_shader, R"(
 // Default clip children shader.
 
 shader_type canvas_item;
@@ -3312,10 +3309,10 @@ void fragment() {
 	COLOR.rgb = c.rgb;
 }
 )");
-		default_clip_children_material = material_storage->material_allocate();
-		material_storage->material_initialize(default_clip_children_material);
+		default_clip_children_material = GLES3::MaterialStorage::material_allocate();
+		GLES3::MaterialStorage::material_initialize(default_clip_children_material);
 
-		material_storage->material_set_shader(
+		GLES3::MaterialStorage::material_set_shader(
 			default_clip_children_material, default_clip_children_shader);
 	}
 
@@ -3327,8 +3324,6 @@ void fragment() {
 
 void RasterizerCanvasGLES3::finalize()
 {
-	texture_storage = nullptr;
-	material_storage = nullptr;
 	GLES3::MaterialStorage::shaders->canvas_shader.version_free(data.canvas_shader_default_version);
 	shadow_render.shader.version_free(shadow_render.shader_version);
 	GLES3::MaterialStorage::material_free(default_canvas_group_material);

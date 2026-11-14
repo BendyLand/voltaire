@@ -2,10 +2,11 @@
 /*  curve_texture.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -76,7 +77,7 @@ CurveTexture::TextureMode CurveTexture::get_texture_mode() const { return textur
 RID CurveTexture::get_rid() const
 {
 	if (!_texture.is_valid()) {
-		_texture = RS::texture_2d_placeholder_create();
+		_texture = Renderer::texture_2d_placeholder_create();
 	}
 	return _texture;
 }
@@ -85,7 +86,7 @@ CurveTexture::~CurveTexture()
 {
 	if (_texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(_texture);
+		Renderer::free_rid(_texture);
 	}
 }
 
@@ -145,7 +146,7 @@ Ref<Curve> CurveXYZTexture::get_curve_z() const { return _curve_z; }
 RID CurveXYZTexture::get_rid() const
 {
 	if (!_texture.is_valid()) {
-		_texture = RS::texture_2d_placeholder_create();
+		_texture = Renderer::texture_2d_placeholder_create();
 	}
 	return _texture;
 }
@@ -154,7 +155,7 @@ CurveXYZTexture::~CurveXYZTexture()
 {
 	if (_texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(_texture);
+		Renderer::free_rid(_texture);
 	}
 }
 

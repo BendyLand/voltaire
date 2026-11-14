@@ -2,10 +2,11 @@
 /*  openxr_api.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -736,7 +737,7 @@ Size2 OpenXRAPI::get_recommended_target_size()
 
 	Size2 target_size;
 
-	if (RS::data && RS::is_on_render_thread()) {
+	if (Renderer::data && Renderer::is_on_render_thread()) {
 		target_size.width = view_configuration_views[0].recommendedImageRectWidth *
 							render_state.render_target_size_multiplier;
 		target_size.height = view_configuration_views[0].recommendedImageRectHeight *

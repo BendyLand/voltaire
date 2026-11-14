@@ -2,10 +2,11 @@
 /*  placeholder_textures.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -60,7 +61,7 @@ PlaceholderTexture2D::~PlaceholderTexture2D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 
@@ -101,7 +102,7 @@ PlaceholderTexture3D::~PlaceholderTexture3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 
@@ -137,7 +138,7 @@ Ref<Image> PlaceholderTextureLayered::get_layer_data(int p_layer) const { return
 RID PlaceholderTextureLayered::get_rid() const
 {
 	if (rid.is_null()) {
-		rid = RS::texture_2d_layered_placeholder_create(
+		rid = Renderer::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return rid;
@@ -150,7 +151,7 @@ PlaceholderTextureLayered::~PlaceholderTextureLayered()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	if (rid.is_valid()) {
-		RS::free_rid(rid);
+		Renderer::free_rid(rid);
 	}
 }
 

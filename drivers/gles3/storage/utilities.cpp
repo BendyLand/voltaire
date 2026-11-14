@@ -2,10 +2,11 @@
 /*  utilities.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -347,7 +348,10 @@ void Utilities::capture_timestamps_begin() { capture_timestamp("Frame Begin"); }
 
 void Utilities::capture_timestamp(const String& p_name)
 {
-	ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	// ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	if (frames[frame].timestamp_count >= max_timestamp_query_elements) {
+		return;
+	}
 
 #ifdef GL_API_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {

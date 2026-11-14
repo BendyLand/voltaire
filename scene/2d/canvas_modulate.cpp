@@ -2,10 +2,11 @@
 /*  canvas_modulate.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -73,7 +74,7 @@ void CanvasModulate::set_color(const Color& p_color)
 {
 	color = p_color;
 	if (is_active) {
-		RS::canvas_set_modulate(get_canvas(), color);
+		Renderer::canvas_set_modulate(get_canvas(), color);
 	}
 }
 

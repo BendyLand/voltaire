@@ -2,10 +2,11 @@
 /*  canvas_layer.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -208,21 +209,21 @@ void CanvasLayer::_update_follow_viewport(bool p_force_exit)
 		return;
 	}
 	if (p_force_exit || !follow_viewport) {
-		RS::canvas_set_parent(canvas, RID(), 1.0);
+		Renderer::canvas_set_parent(canvas, RID(), 1.0);
 	}
 	else {
-		RS::canvas_set_parent(
+		Renderer::canvas_set_parent(
 			canvas, vp->get_world_2d()->get_canvas(), follow_viewport_scale);
 	}
 }
 
 
-CanvasLayer::CanvasLayer() { canvas = RS::canvas_create(); }
+CanvasLayer::CanvasLayer() { canvas = Renderer::canvas_create(); }
 
 CanvasLayer::~CanvasLayer()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(canvas);
+	Renderer::free_rid(canvas);
 }
 
 

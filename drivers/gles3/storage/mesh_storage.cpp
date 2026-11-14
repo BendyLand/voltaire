@@ -2,10 +2,11 @@
 /*  mesh_storage.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1533,7 +1534,7 @@ void MeshStorage::update_mesh_instances()
 	while (dirty_mesh_instance_arrays.first()) {
 		MeshInstance* mi = dirty_mesh_instance_arrays.first()->self();
 
-		bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
+		bool uses_motion_vectors = Renderer::viewport->get_num_viewports_with_motion_vectors() > 0;
 		int frame = RendererCompositor::get_frame_number();
 		if (uses_motion_vectors) {
 			for (uint32_t i = 0; i < mi->surfaces.size(); i++) {
@@ -2320,7 +2321,7 @@ void MeshStorage::_multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_
 
 	// Assign data to previous buffer if motion vectors are used, that data will be made current in
 	// _update_dirty_multimeshes().
-	bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
+	bool uses_motion_vectors = Renderer::viewport->get_num_viewports_with_motion_vectors() > 0;
 	int buffer_index = uses_motion_vectors ? multimesh->prev_buffer : multimesh->current_buffer;
 
 	if (multimesh->uses_colors || multimesh->uses_custom_data) {
@@ -2561,7 +2562,7 @@ void MeshStorage::_update_dirty_multimeshes()
 	while (multimesh_dirty_list) {
 		MultiMesh* multimesh = multimesh_dirty_list;
 
-		bool uses_motion_vectors = RS::viewport->get_num_viewports_with_motion_vectors() > 0;
+		bool uses_motion_vectors = Renderer::viewport->get_num_viewports_with_motion_vectors() > 0;
 		if (uses_motion_vectors) {
 			multimesh->prev_buffer = multimesh->current_buffer;
 			uint32_t new_buffer_index = multimesh->current_buffer ^ 1;
