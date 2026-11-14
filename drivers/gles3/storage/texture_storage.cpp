@@ -2766,12 +2766,17 @@ RID GLES3::TextureStorage::render_target_create()
 
 	Texture t;
 	t.active = true;
-	t.render_target = &render_target;
 	t.is_render_target = true;
 
 	render_target.texture = texture_owner.make_rid(t);
-	_update_render_target_color(&render_target);
-	return render_target_owner.make_rid(render_target);
+	RID rt_rid = render_target_owner.make_rid(render_target);
+	RenderTarget* rt = render_target_owner.get_or_null(rt_rid);
+	Texture* tex = get_texture(rt->texture);
+	if (tex) {
+		tex->render_target = rt;
+	}
+	_update_render_target_color(rt);
+	return rt_rid;
 }
 
 void GLES3::TextureStorage::render_target_free(RID p_rid)

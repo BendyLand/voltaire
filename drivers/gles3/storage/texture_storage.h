@@ -761,10 +761,10 @@ public:
 
 	static void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) {}
 
-	/* Clear Color Stub */
-	static void set_default_clear_color(const Color& p_color) {}
+	/* Clear Color */
+	static void set_default_clear_color(const Color& p_color) { default_clear_color = p_color; }
 
-	static Color get_default_clear_color() { return Color(); }
+	static Color get_default_clear_color() { return default_clear_color; }
 
 	static inline Color default_clear_color = Color(0, 0, 0, 1);
 };

@@ -115,7 +115,7 @@ void RasterizerGLES3::begin_frame(double frame_step)
 
 	time_total += frame_step;
 
-	canvas->set_time(time_total);
+	RasterizerCanvasGLES3::set_time(time_total);
 	scene->set_time(time_total, frame_step);
 
 	GLES3::Utilities::_capture_timestamps_begin();
@@ -573,18 +573,15 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 
-	if (p_first) {
-		if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
-			// Viewport doesn't cover entire window so clear window to black before blitting.
-			// Querying the actual window size from the DisplayServer would deadlock in separate
-			// render thread mode, so let's set the biggest viewport the implementation supports, to
-			// be sure the window is fully covered.
-			Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
-			glViewport(0, 0, max_vp[0], max_vp[1]);
-			glClearColor(0.0, 0.0, 0.0, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT);
-		}
-	}
+	// Handled at the start of blit_render_targets_to_screen to match Vulkan's magenta screen clear.
+	// if (p_first) {
+	// 	if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
+	// 		Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+	// 		glViewport(0, 0, max_vp[0], max_vp[1]);
+	// 		glClearColor(0.0, 0.0, 0.0, 1.0);
+	// 		glClear(GL_COLOR_BUFFER_BIT);
+	// 	}
+	// }
 
 	Vector2 screen_rect_end = p_blit.dst_rect.get_end();
 
@@ -609,29 +606,44 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 
-	if (p_blit.lens_distortion.apply &&
-		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
-		copy_effects->copy_with_lens_distortion(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
-			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
-			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
-	}
-	else if (rt->view_count > 1) {
-		copy_effects->copy_to_rect_3d(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
-			0.0, linear_to_srgb);
-	}
-	else {
-		copy_effects->copy_to_rect(screenrect, linear_to_srgb);
-	}
+	// Disabled while matching Vulkan's magenta overlay stage so the empty render target
+	// does not overwrite the magenta screen clear.
+	// if (p_blit.lens_distortion.apply &&
+	// 	(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
+	// 	copy_effects->copy_with_lens_distortion(screenrect,
+	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
+	// 		p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
+	// 		p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
+	// }
+	// else if (rt->view_count > 1) {
+	// 	copy_effects->copy_to_rect_3d(screenrect,
+	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
+	// 		0.0, linear_to_srgb);
+	// }
+	// else {
+	// 	copy_effects->copy_to_rect(screenrect, linear_to_srgb);
+	// }
+	(void)screenrect;
+	(void)linear_to_srgb;
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(target, 0);
 }
 
 // is this p_screen useless in a multi window environment?
 void RasterizerGLES3::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glDisable(GL_SCISSOR_TEST);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	// Querying the actual window size from the DisplayServer would deadlock in separate
+	// render thread mode, so set the biggest viewport the implementation supports to
+	// ensure the entire window is covered (including across resizes).
+	Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+	glViewport(0, 0, max_vp[0], max_vp[1]);
+	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	for (int i = 0; i < p_amount; i++) {
 		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);
 	}
