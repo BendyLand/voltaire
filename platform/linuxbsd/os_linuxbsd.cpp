@@ -1437,11 +1437,12 @@ void OS_LinuxBSD::run()
 		return;
 	}
 
-	while (true) {
+	extern bool s_quit_requested;
+	while (!s_quit_requested) {
 		if (DisplayServer::get_singleton()) {
 			DisplayServer::get_singleton()->process_events();
 		}
-		if (Main::iteration()) {
+		if (s_quit_requested || Main::iteration()) {
 			break;
 		}
 	}

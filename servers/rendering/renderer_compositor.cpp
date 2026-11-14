@@ -72,8 +72,6 @@ Error RendererCompositor::create()
             ERR_FAIL_COND_V_MSG(
                 err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
         }
-        RendererRD::MeshStorage::initialize();
-        RendererCompositorRD::initialize();
         return OK;
     }
 #endif
@@ -81,7 +79,6 @@ Error RendererCompositor::create()
 #if defined(DUMMY_ENABLED)
     low_end = true;
     bind_compositor<RasterizerDummy>();
-    RasterizerDummy::initialize();
     return OK;
 #else
     return ERR_UNAVAILABLE;

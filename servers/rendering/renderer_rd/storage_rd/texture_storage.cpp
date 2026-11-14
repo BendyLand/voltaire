@@ -72,7 +72,10 @@ void RendererRD::TextureStorage::Texture::cleanup()
 
 void RendererRD::TextureStorage::finalize()
 {
-	rt_sdf.shader.version_free(rt_sdf.shader_version);
+	if (rt_sdf.shader_version.is_valid()) {
+		rt_sdf.shader.version_free(rt_sdf.shader_version);
+		rt_sdf.shader_version = RID();
+	}
 
 	free_decal_data();
 

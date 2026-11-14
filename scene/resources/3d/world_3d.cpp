@@ -124,10 +124,6 @@ World3D::~World3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
 
-#ifndef PHYSICS_3D_DISABLED
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-#endif // PHYSICS_3D_DISABLED
-
 #ifndef NAVIGATION_3D_DISABLED
 	ERR_FAIL_NULL(NavigationServer3D::data);
 #endif // NAVIGATION_3D_DISABLED
@@ -136,6 +132,7 @@ World3D::~World3D()
 
 #ifndef PHYSICS_3D_DISABLED
 	if (space.is_valid()) {
+		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 		PhysicsServer3D::get_singleton()->free_rid(space);
 	}
 #endif // PHYSICS_3D_DISABLED

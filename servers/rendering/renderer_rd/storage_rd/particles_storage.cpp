@@ -46,10 +46,19 @@ void ParticlesStorage::finalize()
 		}
 	}
 
-	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
+	if (particles_shader.copy_shader_version.is_valid()) {
+		particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
+		particles_shader.copy_shader_version = RID();
+	}
 
-	MaterialStorage::material_free(particles_shader.default_material);
-	MaterialStorage::shader_free(particles_shader.default_shader);
+	if (particles_shader.default_material.is_valid()) {
+		MaterialStorage::material_free(particles_shader.default_material);
+		particles_shader.default_material = RID();
+	}
+	if (particles_shader.default_shader.is_valid()) {
+		MaterialStorage::shader_free(particles_shader.default_shader);
+		particles_shader.default_shader = RID();
+	}
 
 	if (sort_effects) {
 		memdelete(sort_effects);

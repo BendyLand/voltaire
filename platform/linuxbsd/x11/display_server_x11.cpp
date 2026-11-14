@@ -6044,6 +6044,10 @@ void DisplayServerX11::_xim_preedit_draw_callback(_XIM*, char*, _XIMPreeditDrawC
 Error DisplayServer::init_rendering_device()
 {
 #if defined(RD_ENABLED)
+	if (RD::is_initialized()) {
+		return OK;
+	}
+
 	RenderingContextDriver* rcd = nullptr;
 
 #if defined(VULKAN_ENABLED)
@@ -6282,24 +6286,22 @@ void DisplayServerX11::process_events()
 		}
 
 		if (ev.type == ClientMessage) {
-			char* name = XGetAtomName(x11_display, ev.xclient.message_type);
-			char* data0_name = XGetAtomName(x11_display, (Atom)ev.xclient.data.l[0]);
-
-			printf("[CLIENT MESSAGE] msg_type=%s, data[0]=%s\n", name ? name : "null",
-				data0_name ? data0_name : "null");
-			fflush(stdout);
-
-			if (name) {
-				XFree(name);
+			Atom wm_protocols = XInternAtom(x11_display, "WM_PROTOCOLS", False);
+			Atom wm_delete = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
+			if (ev.xclient.message_type == wm_protocols &&
+				(Atom)ev.xclient.data.l[0] == wm_delete) {
+				extern bool s_quit_requested;
+				s_quit_requested = true;
+				return;
 			}
-			if (data0_name) {
-				XFree(data0_name);
-			}
-			// Quit regardless of protocol string match for now
-			exit(0);
 		}
 		else if (ev.type == DestroyNotify) {
-			exit(0);
+			if (windows.has(DisplayServerEnums::MAIN_WINDOW_ID) &&
+				ev.xdestroywindow.window == windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window) {
+				extern bool s_quit_requested;
+				s_quit_requested = true;
+				return;
+			}
 		}
 	}
 }

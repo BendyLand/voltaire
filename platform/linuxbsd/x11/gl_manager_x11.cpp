@@ -339,6 +339,8 @@ void GLManager_X11::swap_buffers()
 				(Atom)ev.xclient.data.l[0] == wm_delete) {
 				printf("[GLX SWAP] Intercepted WM_DELETE_WINDOW before swap! Exiting.\n");
 				fflush(stdout);
+				extern bool s_quit_requested;
+				s_quit_requested = true;
 				if (OS::is_initialized() && OS::get_main_loop()) {
 					OS::get_main_loop()->finalize();
 				}
@@ -348,6 +350,8 @@ void GLManager_X11::swap_buffers()
 		else if (ev.type == DestroyNotify || ev.type == UnmapNotify) {
 			printf("[GLX SWAP] Window unmapped or destroyed (type=%d). Exiting.\n", ev.type);
 			fflush(stdout);
+			extern bool s_quit_requested;
+			s_quit_requested = true;
 			if (OS::is_initialized() && OS::get_main_loop()) {
 				OS::get_main_loop()->finalize();
 			}

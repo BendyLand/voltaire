@@ -2494,39 +2494,67 @@ void RendererCanvasRenderRD::initialize() {}
 
 void RendererCanvasRenderRD::finalize()
 {
-	RendererRD::MaterialStorage::material_free(default_canvas_group_material);
-	RendererRD::MaterialStorage::shader_free(default_canvas_group_shader);
+	if (default_canvas_group_material.is_valid()) {
+		RendererRD::MaterialStorage::material_free(default_canvas_group_material);
+		default_canvas_group_material = RID();
+	}
+	if (default_canvas_group_shader.is_valid()) {
+		RendererRD::MaterialStorage::shader_free(default_canvas_group_shader);
+		default_canvas_group_shader = RID();
+	}
 
-	RendererRD::MaterialStorage::material_free(default_clip_children_material);
-	RendererRD::MaterialStorage::shader_free(default_clip_children_shader);
+	if (default_clip_children_material.is_valid()) {
+		RendererRD::MaterialStorage::material_free(default_clip_children_material);
+		default_clip_children_material = RID();
+	}
+	if (default_clip_children_shader.is_valid()) {
+		RendererRD::MaterialStorage::shader_free(default_clip_children_shader);
+		default_clip_children_shader = RID();
+	}
 
 	{
 		if (RendererRD::state.canvas_state_buffer.is_valid()) {
 			RD::free_rid(RendererRD::state.canvas_state_buffer);
 		}
 
-		memdelete_arr(RendererRD::state.light_uniforms);
-		RD::free_rid(RendererRD::state.lights_storage_buffer);
+		if (RendererRD::state.light_uniforms) {
+			memdelete_arr(RendererRD::state.light_uniforms);
+			RendererRD::state.light_uniforms = nullptr;
+		}
+		if (RendererRD::state.lights_storage_buffer.is_valid()) {
+			RD::free_rid(RendererRD::state.lights_storage_buffer);
+		}
 	}
 
 	// shadow rendering
 	{
-		shadow_render.shader.version_free(shadow_render.shader_version);
+		if (shadow_render.shader_version.is_valid()) {
+			shadow_render.shader.version_free(shadow_render.shader_version);
+			shadow_render.shader_version = RID();
+		}
 		// this will also automatically clear all pipelines
-		RD::free_rid(RendererRD::state.shadow_sampler);
+		if (RendererRD::state.shadow_sampler.is_valid()) {
+			RD::free_rid(RendererRD::state.shadow_sampler);
+		}
 	}
 
 	// buffers
 	{
-		RD::free_rid(RendererRD::shader.quad_index_array);
-		RD::free_rid(RendererRD::shader.quad_index_buffer);
+		if (RendererRD::shader.quad_index_array.is_valid()) {
+			RD::free_rid(RendererRD::shader.quad_index_array);
+		}
+		if (RendererRD::shader.quad_index_buffer.is_valid()) {
+			RD::free_rid(RendererRD::shader.quad_index_buffer);
+		}
 		// primitives are erase by dependency
 	}
 
 	if (RendererRD::state.shadow_fb.is_valid()) {
 		RD::free_rid(RendererRD::state.shadow_depth_texture);
 	}
-	RD::free_rid(RendererRD::state.shadow_texture);
+	if (RendererRD::state.shadow_texture.is_valid()) {
+		RD::free_rid(RendererRD::state.shadow_texture);
+	}
 
 	if (RendererRD::state.shadow_occluder_buffer.is_valid()) {
 		RD::free_rid(RendererRD::state.shadow_occluder_buffer);
@@ -2534,13 +2562,19 @@ void RendererCanvasRenderRD::finalize()
 
 	RendererRD::state.instance_buffers.uninit();
 
-	// Disable the callback, as we're tearing everything down
-	RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(
-		default_canvas_texture, nullptr, nullptr);
-	RendererRD::TextureStorage::canvas_texture_free(default_canvas_texture);
+	if (default_canvas_texture.is_valid()) {
+		// Disable the callback, as we're tearing everything down
+		RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(
+			default_canvas_texture, nullptr, nullptr);
+		RendererRD::TextureStorage::canvas_texture_free(default_canvas_texture);
+		default_canvas_texture = RID();
+	}
 	// pipelines don't need freeing, they are all gone after shaders are gone
 
-	memdelete(RendererRD::shader.default_version_data);
+	if (RendererRD::shader.default_version_data) {
+		memdelete(RendererRD::shader.default_version_data);
+		RendererRD::shader.default_version_data = nullptr;
+	}
 }
 
 RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(

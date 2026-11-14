@@ -267,9 +267,7 @@ RID ShaderRD::version_create(bool p_embedded)
 
 void ShaderRD::_clear_version(Version* p_version, bool p_skip_compilation)
 {
-	if (!p_skip_compilation) {
-		_compile_ensure_finished(p_version);
-	}
+	(void)p_skip_compilation;
 
 	// Clear versions if they exist.
 	if (!p_version->variants.is_empty()) {
@@ -652,9 +650,15 @@ void ShaderRD::_allocate_placeholders(Version* p_version, int p_group)
 
 void ShaderRD::_compile_ensure_finished(Version* p_version)
 {
+	if (p_version->initialize_needed || p_version->variants.is_empty() || p_version->valid) {
+		return;
+	}
+
 	// Wait for compilation of existing groups if necessary.
 	for (int i = 0; i < group_enabled.size(); i++) {
-		_compile_version_end(p_version, i);
+		if (group_enabled[i]) {
+			_compile_version_end(p_version, i);
+		}
 	}
 }
 

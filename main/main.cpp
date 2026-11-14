@@ -902,13 +902,6 @@ Error Main::test_setup()
 	physics_server_2d_manager = memnew(PhysicsServer2DManager);
 #endif // PHYSICS_2D_DISABLED
 
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server_manager();
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server_manager();
-#endif // NAVIGATION_3D_DISABLED
-
 	// From `Main::setup2()`.
 	register_early_core_singletons();
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_CORE);
@@ -944,10 +937,10 @@ Error Main::test_setup()
 	initialize_theme_db();
 
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::initialize_server();
+	NavigationServer3D::initialize();
 #endif // NAVIGATION_3D_DISABLED
 #ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::initialize_server();
+	NavigationServer2D::initialize();
 #endif // NAVIGATION_2D_DISABLED
 
 	register_scene_types();
@@ -1056,12 +1049,10 @@ void Main::test_cleanup()
 	}
 
 #ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2DManager::finalize_server();
-	NavigationServer2DManager::finalize_server_manager();
+	NavigationServer2D::finalize();
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3DManager::finalize_server();
-	NavigationServer3DManager::finalize_server_manager();
+	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
 	GDExtensionManager::get_singleton()->deinitialize_extensions(
@@ -3524,6 +3515,12 @@ Error Main::setup2(bool p_show_boot_logo)
 #if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 	MAIN_PRINT("Main: Load Navigation");
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+#ifndef NAVIGATION_3D_DISABLED
+	NavigationServer3D::initialize();
+#endif // NAVIGATION_3D_DISABLED
+#ifndef NAVIGATION_2D_DISABLED
+	NavigationServer2D::initialize();
+#endif // NAVIGATION_2D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -4292,6 +4289,13 @@ void Main::cleanup(bool p_force)
 	}
 
 	OS::delete_main_loop();
+
+#ifndef NAVIGATION_2D_DISABLED
+	NavigationServer2D::finalize();
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+	NavigationServer3D::finalize();
+#endif // NAVIGATION_3D_DISABLED
 
 	OS::_cmdline.clear();
 	OS::_user_args.clear();

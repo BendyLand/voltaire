@@ -42,6 +42,7 @@
 #include "servers/rendering/renderer_rd/renderer_canvas_render_rd.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
@@ -208,6 +209,11 @@ void RendererCompositorRD::end_frame(bool p_present) { RD::swap_buffers(p_presen
 
 void RendererCompositorRD::initialize()
 {
+	if (blit) {
+		return;
+	}
+
+	RendererRD::MeshStorage::initialize();
 	RendererSceneRenderRD::initialize();
 	RendererCanvasRenderRD::initialize();
 	bind_canvas_render();
@@ -224,6 +230,7 @@ void RendererCompositorRD::initialize()
 		blit->shader.initialize(blit_modes);
 		blit->shader_version = blit->shader.version_create();
 		RID s_rid = blit->shader.version_get_shader(blit->shader_version, 0);
+		(void)s_rid;
 
 		Vector<uint8_t> pv;
 		pv.resize(6 * 2);
@@ -246,14 +253,24 @@ void RendererCompositorRD::initialize()
 
 void RendererCompositorRD::finalize()
 {
+	static bool finalized = false;
+	if (finalized) {
+		return;
+	}
+	finalized = true;
+
 	RendererRD::TextureStorage::_tex_blit_shader_free();
 	RendererCanvasRenderRD::finalize();
+	RendererSceneRenderRD::finalize();
 	RendererRD::Fog::finalize();
 	RendererRD::GI::finalize();
 	RendererRD::ParticlesStorage::finalize();
 	RendererRD::LightStorage::finalize();
-	RendererRD::TextureStorage::finalize();
 	RendererRD::MeshStorage::finalize();
+	RendererRD::MaterialStorage::finalize();
+	RendererRD::TextureStorage::finalize();
+
+	render_target_descriptors.clear();
 
 	if (blit) {
 		blit->shader.version_free(blit->shader_version);

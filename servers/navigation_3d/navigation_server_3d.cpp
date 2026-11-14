@@ -523,11 +523,37 @@ bool NavigationServer3D::get_debug_avoidance_enabled() { return data->debug_avoi
 
 #endif // DEBUG_ENABLED
 
-static NavigationServer3D* navigation_server_3d = nullptr;
+struct NavigationServer3D::NavMap
+{
+};
+struct NavigationServer3D::NavRegion
+{
+};
+struct NavigationServer3D::NavLink
+{
+};
+struct NavigationServer3D::NavAgent
+{
+};
+struct NavigationServer3D::NavObstacle
+{
+};
 
-void NavigationServer3D::initialize() {}
+void NavigationServer3D::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
 
-void NavigationServer3D::finalize() {}
+void NavigationServer3D::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
 
 void NavigationServer3D::set_active(bool p_active) {}
 

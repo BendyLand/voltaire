@@ -66,8 +66,8 @@ World2D::~World2D()
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
 	if (space.is_valid()) {
+		ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
 		PhysicsServer2D::get_singleton()->free_rid(space);
 	}
 #endif // PHYSICS_2D_DISABLED
@@ -80,4 +80,4 @@ RID World2D::get_navigation_map() const
 }
 #endif // NAVIGATION_2D_DISABLED
 
-RID World2D::get_space() const {}
+RID World2D::get_space() const { return RID(); }

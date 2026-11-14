@@ -906,6 +906,6 @@ void SceneTree::initialize()
 
 bool SceneTree::physics_process(double p_time) { return false; }
 
-bool SceneTree::process(double p_time) { return false; }
+bool SceneTree::process(double p_time) { return _quit; }
 
 

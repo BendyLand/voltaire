@@ -112,6 +112,12 @@ void DisplayServerWayland::_send_window_event(
 	DisplayServerEnums::WindowEvent p_event, DisplayServerEnums::WindowID p_window_id)
 {
 	ERR_FAIL_COND(!windows.has(p_window_id));
+	if (p_window_id == DisplayServerEnums::MAIN_WINDOW_ID &&
+		(p_event == DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST ||
+			p_event == DisplayServerEnums::WINDOW_EVENT_FORCE_CLOSE)) {
+		extern bool s_quit_requested;
+		s_quit_requested = true;
+	}
 }
 
 void DisplayServerWayland::dispatch_input_events(const Ref<InputEvent>& p_event)
