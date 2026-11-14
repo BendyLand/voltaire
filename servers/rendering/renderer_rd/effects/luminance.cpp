@@ -2,10 +2,11 @@
 /*  luminance.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -80,11 +81,11 @@ void Luminance::LuminanceBuffers::configure(RenderSceneBuffersRD* p_render_buffe
 			tf.usage_bits |= RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 		}
 
-		RID texture = RD::texture_create(tf, RD::TextureView());
+		RID texture = RD::texture_create(tf, RDD::TextureView());
 		reduce.push_back(texture);
 
 		if (final) {
-			current = RD::texture_create(tf, RD::TextureView());
+			current = RD::texture_create(tf, RDD::TextureView());
 			RD::texture_clear(current, Color(0.0, 0.0, 0.0), 0u, 1u, 0u, 1u);
 			break;
 		}

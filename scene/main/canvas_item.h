@@ -2,10 +2,11 @@
 /*  canvas_item.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -96,7 +97,7 @@ public:
 private:
 	mutable SelfList<Node> xform_change;
 
-	StringName canvas_group;
+	String canvas_group;
 
 	CanvasLayer* canvas_layer = nullptr;
 
@@ -136,7 +137,7 @@ private:
 	bool notify_transform = false;
 	bool hide_clip_children = false;
 #ifdef TOOLS_ENABLED
-	mutable HashMap<StringName, StringName> instance_parameter_cache;
+	mutable HashMap<String, String> instance_parameter_cache;
 #endif
 	OversamplingWithScale oversampling_with_scale = OVERSAMPLING_WITH_SCALE_PARENT_NODE;
 	double oversampling_override = -1.0;
@@ -190,11 +191,11 @@ private:
 	void _update_texture_filter_changed(bool p_propagate);
 
 	void _notify_transform_deferred();
-	const StringName* _instance_shader_parameter_get_remap(const StringName& p_name) const;
+	const String* _instance_shader_parameter_get_remap(const String& p_name) const;
 
 protected:
 #ifdef TOOLS_ENABLED
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 #endif
 
 	virtual void _physics_interpolated_changed() override;

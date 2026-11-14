@@ -2,10 +2,11 @@
 /*  image_decompress_etcpak.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -180,7 +181,7 @@ static void decompress_image(EtcpakFormat format, const void *src, void *dst, co
 }
 
 void _decompress_etc(Image *p_image) {
-	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	uint64_t start_time = OS::get_ticks_msec();
 
 	int width = p_image->get_width();
 	int height = p_image->get_height();
@@ -241,5 +242,5 @@ void _decompress_etc(Image *p_image) {
 	}
 
 	print_verbose(vformat("etcpak: Decompression of %dx%d %s image %s with %d mipmaps took %d ms.",
-			p_image->get_width(), p_image->get_height(), Image::get_format_name(source_format), p_image->get_path(), p_image->get_mipmap_count(), OS::get_singleton()->get_ticks_msec() - start_time));
+			p_image->get_width(), p_image->get_height(), Image::get_format_name(source_format), p_image->get_path(), p_image->get_mipmap_count(), OS::get_ticks_msec() - start_time));
 }

@@ -2,10 +2,11 @@
 /*  navigation_polygon.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -92,7 +93,7 @@ public:
 	uint32_t parsed_collision_mask = 0xFFFFFFFF;
 
 	SourceGeometryMode source_geometry_mode = SOURCE_GEOMETRY_ROOT_NODE_CHILDREN;
-	StringName source_geometry_group_name = "navigation_polygon_source_geometry_group";
+	String source_geometry_group_name = "navigation_polygon_source_geometry_group";
 
 	void set_vertices(const Vector<Vector2>& p_vertices);
 	const Vector<Vector2>& get_vertices() const _LIFETIME_BOUND_;
@@ -134,8 +135,8 @@ public:
 	void set_source_geometry_mode(SourceGeometryMode p_geometry_mode);
 	SourceGeometryMode get_source_geometry_mode() const;
 
-	void set_source_geometry_group_name(const StringName& p_group_name);
-	StringName get_source_geometry_group_name() const;
+	void set_source_geometry_group_name(const String& p_group_name);
+	String get_source_geometry_group_name() const;
 
 	void set_agent_radius(real_t p_value);
 	real_t get_agent_radius() const;

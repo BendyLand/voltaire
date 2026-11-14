@@ -2,10 +2,11 @@
 /*  rasterizer_canvas_gles3.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -39,6 +40,7 @@
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/renderer_canvas_render.h"
 
 namespace GLES3
 {
@@ -212,9 +214,6 @@ struct State
 
 class RasterizerCanvasGLES3 : public RendererCanvasRender
 {
-	static inline GLES3::TextureStorage* texture_storage = nullptr;
-	static inline GLES3::MaterialStorage* material_storage = nullptr;
-
 	static _FORCE_INLINE_ void _update_transform_2d_to_mat2x4(
 		const Transform2D& p_transform, float* p_mat2x4);
 	static _FORCE_INLINE_ void _update_transform_2d_to_mat2x3(
@@ -356,12 +355,11 @@ public:
 
 	static inline GLES3::PolygonBuffers polygon_buffers;
 
-	PolygonID request_polygon(const Vector<int>& p_indices,
+	static PolygonID request_polygon(const Vector<int>& p_indices,
 		const Vector<Point2>& p_points, const Vector<Color>& p_colors,
 		const Vector<Point2>& p_uvs = Vector<Point2>(), const Vector<int>& p_bones = Vector<int>(),
 		const Vector<float>& p_weights = Vector<float>(), int p_count = -1);
-	void free_polygon(PolygonID p_polygon);
-
+	static void free_polygon(PolygonID p_polygon);
 
 	static_assert(sizeof(GLES3::InstanceData) == 128, "2D instance data struct size must be 128 bytes");
 
@@ -444,10 +442,9 @@ public:
 	static void set_time(double p_time);
 
 	static void finalize();
-	static void initialize(
-		GLES3::TextureStorage* p_texture_storage, GLES3::MaterialStorage* p_material_storage);
+	static void initialize();
 
-	virtual void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
+	static void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color)
 	{
 		if (p_enabled) {
 			WARN_PRINT_ONCE("Debug CanvasItem Redraw is not available yet when using the "
@@ -455,11 +452,12 @@ public:
 		}
 	}
 
-	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) { return 0; }
+	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) { return 0; }
 
-	RasterizerCanvasGLES3(GLES3::TextureStorage* p_texture_storage,
-		GLES3::MaterialStorage* p_material_storage) = delete;
-	~RasterizerCanvasGLES3() = delete;
+	RasterizerCanvasGLES3(GLES3::TextureStorage *p_texture_storage, GLES3::MaterialStorage *p_material_storage) = delete;
+    RasterizerCanvasGLES3() = delete;
+    RasterizerCanvasGLES3(const RasterizerCanvasGLES3 &) = delete;
+    ~RasterizerCanvasGLES3() = delete;
 };
 
 #endif // GLES3_ENABLED

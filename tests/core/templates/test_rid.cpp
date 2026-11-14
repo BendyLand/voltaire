@@ -2,10 +2,11 @@
 /*  test_rid.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -138,7 +139,7 @@ TEST_CASE("[RID_Owner] Thread safety") {
 		}
 
 		explicit RID_OwnerTester(bool p_chunk_for_all, bool p_chunks_preallocated) :
-				thread_count(OS::get_singleton()->get_processor_count()),
+				thread_count(OS::get_processor_count()),
 				rid_owner(sizeof(DataHolder) * (p_chunk_for_all ? thread_count : 1)) {
 			threads.resize(thread_count);
 			rids.resize(threads.size());

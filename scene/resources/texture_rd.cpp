@@ -2,10 +2,11 @@
 /*  texture_rd.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -50,9 +51,9 @@ bool Texture2DRD::has_alpha() const { return false; }
 
 Ref<Image> Texture2DRD::get_image() const
 {
-	ERR_FAIL_NULL_V(RS::data, Ref<Image>());
+	ERR_FAIL_NULL_V(Renderer::data, Ref<Image>());
 	if (texture_rid.is_valid()) {
-		return RS::texture_2d_get(texture_rid);
+		return Renderer::texture_2d_get(texture_rid);
 	}
 	else {
 		return Ref<Image>();
@@ -66,8 +67,8 @@ Texture2DRD::Texture2DRD() { size = Size2i(); }
 Texture2DRD::~Texture2DRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::free_rid(texture_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }
@@ -97,7 +98,7 @@ RID TextureLayeredRD::get_rid() const
 Ref<Image> TextureLayeredRD::get_layer_data(int p_layer) const
 {
 	ERR_FAIL_INDEX_V(p_layer, (int)layers, Ref<Image>());
-	return RS::texture_2d_layer_get(texture_rid, p_layer);
+	return Renderer::texture_2d_layer_get(texture_rid, p_layer);
 }
 
 RID TextureLayeredRD::get_texture_rd_rid() const { return texture_rd_rid; }
@@ -114,8 +115,8 @@ TextureLayeredRD::TextureLayeredRD(LayeredType p_layer_type)
 TextureLayeredRD::~TextureLayeredRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::free_rid(texture_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }
@@ -152,8 +153,8 @@ Texture3DRD::Texture3DRD()
 Texture3DRD::~Texture3DRD()
 {
 	if (texture_rid.is_valid()) {
-		ERR_FAIL_NULL(RS::data);
-		RS::free_rid(texture_rid);
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(texture_rid);
 		texture_rid = RID();
 	}
 }

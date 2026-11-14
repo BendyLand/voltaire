@@ -2,10 +2,11 @@
 /*  fog_material.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -59,7 +60,7 @@ RID FogMaterial::get_rid() const
 {
 	_update_shader();
 	if (!shader_set) {
-		RS::material_set_shader(_get_material(), shader);
+		Renderer::material_set_shader(_get_material(), shader);
 		shader_set = true;
 	}
 	return _get_material();
@@ -69,7 +70,7 @@ void FogMaterial::cleanup_shader()
 {
 	if (shader.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(shader);
+		Renderer::free_rid(shader);
 	}
 }
 
@@ -77,10 +78,10 @@ void FogMaterial::_update_shader()
 {
 	MutexLock shader_lock(shader_mutex);
 	if (shader.is_null()) {
-		shader = RS::shader_create();
+		shader = Renderer::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		RS::shader_set_code(shader, R"(
+		Renderer::shader_set_code(shader, R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
 													 R"('s FogMaterial.
 
@@ -107,7 +108,7 @@ void fog() {
 
 FogMaterial::FogMaterial()
 {
-	_set_material(RS::material_create());
+	_set_material(Renderer::material_create());
 
 	set_density(1.0);
 	set_albedo(Color(1, 1, 1, 1));
@@ -117,7 +118,7 @@ FogMaterial::FogMaterial()
 	set_edge_fade(0.1);
 }
 
-FogMaterial::~FogMaterial() { RS::material_set_shader(_get_material(), RID()); }
+FogMaterial::~FogMaterial() { Renderer::material_set_shader(_get_material(), RID()); }
 
 
 

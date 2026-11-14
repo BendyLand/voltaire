@@ -2,10 +2,11 @@
 /*  editor_autoload_settings.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -51,7 +52,7 @@ class EditorAutoloadSettings : public VBoxContainer
 	};
 
 	String path = "res://";
-	const StringName autoload_changed = "autoload_changed";
+	const String autoload_changed = "autoload_changed";
 	String pending_autoload_path;
 
 	struct AutoloadInfo
@@ -104,7 +105,7 @@ public:
 	void init_autoloads();
 	void update_autoload();
 	bool autoload_add(const String& p_name, const String& p_path, bool p_use_undo);
-	void autoload_remove(const StringName& p_name);
+	void autoload_remove(const String& p_name);
 
 	EditorAutoloadSettings();
 	~EditorAutoloadSettings();

@@ -2,10 +2,11 @@
 /*  add_metadata_dialog.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -40,12 +41,12 @@ class AddMetadataDialog : public ConfirmationDialog
 {
 public:
 	AddMetadataDialog();
-	void open(const StringName p_title, List<StringName>& p_existing_metas);
+	void open(const String p_title, List<String>& p_existing_metas);
 
-	StringName get_meta_name();
+	String get_meta_name();
 
 private:
-	List<StringName> _existing_metas;
+	List<String> _existing_metas;
 
 	LineEdit* add_meta_name = nullptr;
 	EditorVariantTypeOptionButton* add_meta_type = nullptr;

@@ -2,10 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -28,11 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-
-#include "shader_compile.h"
-
 #include "core/config/engine.h"
+#include "register_types.h"
+#include "shader_compile.h"
 
 #ifdef D3D12_ENABLED
 #include "core/os/os.h"
@@ -46,7 +45,10 @@ VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
 
 VLTR_GCC_WARNING_POP
 
-Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_stage, const String &p_source_code, RenderingDeviceCommons::ShaderLanguageVersion p_language_version, RenderingDeviceCommons::ShaderSpirvVersion p_spirv_version, String *r_error) {
+Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_stage,
+	const String& p_source_code, RenderingDeviceCommons::ShaderLanguageVersion p_language_version,
+	RenderingDeviceCommons::ShaderSpirvVersion p_spirv_version, String* r_error)
+{
 	Vector<uint8_t> ret;
 	EShLanguage stages[RenderingDeviceCommons::SHADER_STAGE_MAX] = {
 		EShLangVertex,
@@ -64,16 +66,19 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 	int ClientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
 
 	// The enum values can be converted directly.
-	glslang::EShTargetClientVersion ClientVersion = (glslang::EShTargetClientVersion)p_language_version;
-	glslang::EShTargetLanguageVersion TargetVersion = (glslang::EShTargetLanguageVersion)p_spirv_version;
+	glslang::EShTargetClientVersion ClientVersion =
+		(glslang::EShTargetClientVersion)p_language_version;
+	glslang::EShTargetLanguageVersion TargetVersion =
+		(glslang::EShTargetLanguageVersion)p_spirv_version;
 
 	glslang::TShader shader(stages[p_stage]);
 	CharString cs = p_source_code.utf8();
-	const char *cs_strings = cs.get_data();
+	const char* cs_strings = cs.get_data();
 	std::string preamble = "";
 
 	shader.setStrings(&cs_strings, 1);
-	shader.setEnvInput(glslang::EShSourceGlsl, stages[p_stage], glslang::EShClientVulkan, ClientInputSemanticsVersion);
+	shader.setEnvInput(glslang::EShSourceGlsl, stages[p_stage], glslang::EShClientVulkan,
+		ClientInputSemanticsVersion);
 	shader.setEnvClient(glslang::EShClientVulkan, ClientVersion);
 	shader.setEnvTarget(glslang::EShTargetSpv, TargetVersion);
 
@@ -83,7 +88,7 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 
 	bool generate_spirv_debug_info = Engine::is_generate_spirv_debug_info_enabled();
 #ifdef D3D12_ENABLED
-	if (OS::get_singleton()->get_current_rendering_driver_name() == "d3d12") {
+	if (OS::get_current_rendering_driver_name() == "d3d12") {
 		// SPIRV to DXIL conversion does not support debug info.
 		generate_spirv_debug_info = false;
 	}
@@ -95,7 +100,7 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 	}
 	const int DefaultVersion = 100;
 
-	//parse
+	// parse
 	if (!shader.parse(GetDefaultResources(), DefaultVersion, false, messages)) {
 		if (r_error) {
 			(*r_error) = "Failed parse:\n";
@@ -106,7 +111,7 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 		return ret;
 	}
 
-	//link
+	// link
 	glslang::TProgram program;
 	program.addShader(&shader);
 
@@ -135,14 +140,15 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 
 	ret.resize(SpirV.size() * sizeof(uint32_t));
 	{
-		uint8_t *w = ret.ptrw();
+		uint8_t* w = ret.ptrw();
 		memcpy(w, &SpirV[0], SpirV.size() * sizeof(uint32_t));
 	}
 
 	return ret;
 }
 
-void initialize_glslang_module(ModuleInitializationLevel p_level) {
+void initialize_glslang_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
 		return;
 	}
@@ -152,7 +158,8 @@ void initialize_glslang_module(ModuleInitializationLevel p_level) {
 	glslang::InitializeProcess();
 }
 
-void uninitialize_glslang_module(ModuleInitializationLevel p_level) {
+void uninitialize_glslang_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
 		return;
 	}

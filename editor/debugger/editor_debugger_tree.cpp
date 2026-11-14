@@ -2,10 +2,11 @@
 /*  editor_debugger_tree.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -97,7 +98,7 @@ void EditorDebuggerTree::clear_selection()
 void EditorDebuggerTree::update_icon_max_width()
 {
 	add_theme_constant_override(
-		"icon_max_width", get_theme_constant("class_icon_size", EditorStringName(Editor)));
+		"icon_max_width", get_theme_constant("class_icon_size", EditorString(Editor)));
 }
 
 void EditorDebuggerTree::_item_menu_id_pressed(int p_option)

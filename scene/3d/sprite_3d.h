@@ -2,10 +2,11 @@
 /*  sprite_3d.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -233,7 +234,7 @@ class AnimatedSprite3D : public SpriteBase3D
 	String autoplay;
 
 	bool playing = false;
-	StringName animation = SceneStringName(default_);
+	String animation = SceneString(default_);
 	int frame = 0;
 	float speed_scale = 1.0;
 	float custom_speed_scale = 1.0;
@@ -255,14 +256,14 @@ public:
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
-	void play_backwards(const StringName& p_name = StringName());
+	void play_backwards(const String& p_name = String());
 	void pause();
 	void stop();
 
 	bool is_playing() const;
 
-	void set_animation(const StringName& p_name);
-	StringName get_animation() const;
+	void set_animation(const String& p_name);
+	String get_animation() const;
 
 	void set_autoplay(const String& p_name);
 	String get_autoplay() const;
@@ -283,7 +284,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options) const;
+		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
 	AnimatedSprite3D();

@@ -2,10 +2,11 @@
 /*  ustring.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -36,7 +37,7 @@
 #include "core/math/math_funcs.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/string/translation_server.h"
 #include "core/string/ucaps.h"
 #include "core/version_generated.gen.h"
@@ -5625,7 +5626,7 @@ Vector<uint8_t> String::to_wchar_buffer() const
 
 Vector<uint8_t> String::to_multibyte_char_buffer(const String& p_encoding) const
 {
-	return OS::get_singleton()->string_to_multibyte(p_encoding, *this);
+	return OS::string_to_multibyte(p_encoding, *this);
 }
 
 #ifdef TOOLS_ENABLED

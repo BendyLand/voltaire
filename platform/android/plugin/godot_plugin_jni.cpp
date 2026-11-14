@@ -2,10 +2,11 @@
 /*  godot_plugin_jni.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -131,7 +132,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitS
 		env->DeleteLocalRef(j_param);
 	}
 
-	singleton->emit_signalp(StringName(signal_name), args, count);
+	singleton->emit_signalp(String(signal_name), args, count);
 
 	// Manually invoke the destructor to decrease the reference counts for the variant arguments.
 	for (int i = 0; i < count; i++) {

@@ -2,10 +2,11 @@
 /*  rendering_shader_container_metal.cpp                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -84,7 +85,7 @@ void RenderingShaderContainerMetal::_initialize_toolchain_properties() {
 
 	String r_pipe;
 	int exit_code;
-	Error err = OS::get_singleton()->execute("sh", args, &r_pipe, &exit_code, true);
+	Error err = OS::execute("sh", args, &r_pipe, &exit_code, true);
 	ERR_FAIL_COND_MSG(err != OK, "Failed to determine Metal toolchain properties");
 
 	// Parse the lines, which are in the form:
@@ -181,7 +182,7 @@ Error RenderingShaderContainerMetal::compile_metal_source(const char *p_source, 
 		args.push_back(result_file->get_path_absolute());
 		String r_pipe;
 		int exit_code;
-		Error err = OS::get_singleton()->execute("/usr/bin/xcrun", args, &r_pipe, &exit_code, true);
+		Error err = OS::execute("/usr/bin/xcrun", args, &r_pipe, &exit_code, true);
 		if (!r_pipe.is_empty()) {
 			print_line(r_pipe);
 		}
@@ -203,7 +204,7 @@ Error RenderingShaderContainerMetal::compile_metal_source(const char *p_source, 
 		List<String> args{ "-sdk", sdk, "metal-dsymutil", "--remove-source", result_file->get_path_absolute() };
 		String r_pipe;
 		int exit_code;
-		Error err = OS::get_singleton()->execute("/usr/bin/xcrun", args, &r_pipe, &exit_code, true);
+		Error err = OS::execute("/usr/bin/xcrun", args, &r_pipe, &exit_code, true);
 		if (!r_pipe.is_empty()) {
 			print_line(r_pipe);
 		}

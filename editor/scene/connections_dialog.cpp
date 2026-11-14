@@ -2,10 +2,11 @@
 /*  connections_dialog.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ ConnectDialog::ConnectionData ConnectDialog::get_source_connection_data() const
 	return source_connection_data;
 }
 
-StringName ConnectDialog::get_signal_name() const { return signal; }
+String ConnectDialog::get_signal_name() const { return signal; }
 
 PackedStringArray ConnectDialog::get_signal_args() const { return signal_args; }
 
@@ -76,7 +77,7 @@ NodePath ConnectDialog::get_dst_path() const { return dst_path; }
 
 void ConnectDialog::set_dst_node(Node* p_node) { tree->set_selected(p_node); }
 
-StringName ConnectDialog::get_dst_method_name() const
+String ConnectDialog::get_dst_method_name() const
 {
 	String txt = dst_method->get_text();
 	if (txt.contains_char('(')) {
@@ -85,7 +86,7 @@ StringName ConnectDialog::get_dst_method_name() const
 	return txt;
 }
 
-void ConnectDialog::set_dst_method(const StringName& p_method) { dst_method->set_text(p_method); }
+void ConnectDialog::set_dst_method(const String& p_method) { dst_method->set_text(p_method); }
 
 int ConnectDialog::get_unbinds() const { return int(unbind_count->get_value()); }
 

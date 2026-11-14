@@ -2,10 +2,11 @@
 /*  fog.h                                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -31,24 +32,51 @@
 #pragma once
 
 #include "core/math/aabb.h"
+#include "core/math/vector3.h"
 #include "core/templates/rid.h"
 #include "servers/rendering/environment/renderer_fog.h"
 
-namespace RendererDummy {
+namespace RendererDummy
+{
 
-class Fog : public RendererFog {
+class Fog final
+{
 public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
+
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static bool is_initialized() { return true; }
+
+	static bool free(RID p_rid) { return false; }
+
 	/* FOG VOLUMES */
 
-	virtual RID fog_volume_allocate() override { return RID(); }
-	virtual void fog_volume_initialize(RID p_rid) override {}
-	virtual void fog_volume_free(RID p_rid) override {}
+	static bool owns_fog_volume(RID p_rid) { return false; }
 
-	virtual void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) override {}
-	virtual void fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) override {}
-	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) override {}
-	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const override { return AABB(); }
-	virtual RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const override { return RSE::FOG_VOLUME_SHAPE_BOX; }
+	static RID fog_volume_allocate() { return RID(); }
+
+	static void fog_volume_initialize(RID p_rid) {}
+
+	static void fog_volume_free(RID p_rid) {}
+
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {}
+
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size) {}
+
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material) {}
+
+	static AABB fog_volume_get_aabb(RID p_fog_volume) { return AABB(); }
+
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume)
+	{
+		return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
+	}
 };
 
 } // namespace RendererDummy

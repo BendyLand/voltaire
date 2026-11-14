@@ -2,10 +2,11 @@
 /*  mobile_vr_interface.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -152,7 +153,7 @@ public:
 	float get_vrs_strength() const;
 	void set_vrs_strength(float p_vrs_strength);
 
-	virtual StringName get_name() const override;
+	virtual String get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
 	virtual TrackingStatus get_tracking_status() const override;

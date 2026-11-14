@@ -2,10 +2,11 @@
 /*  editor_icon_manager.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,7 +36,7 @@
 
 void EditorIconManager::_notification(int p_what) {
 	if (p_what == NOTIFICATION_THEME_CHANGED) {
-		for (KeyValue<StringName, Ref<AtlasTexture>> &icon : icons) {
+		for (KeyValue<String, Ref<AtlasTexture>> &icon : icons) {
 			icon.value->set_atlas(get_editor_theme_icon(icon.key));
 		}
 	}
@@ -45,7 +46,7 @@ EditorIconManager::EditorIconManager() {
 	singleton = this;
 }
 
-Ref<Texture2D> EditorIconManager::get_icon(const StringName &p_icon_name) {
+Ref<Texture2D> EditorIconManager::get_icon(const String &p_icon_name) {
 	Ref<AtlasTexture> *existing = singleton->icons.getptr(p_icon_name);
 	if (existing) {
 		return *existing;

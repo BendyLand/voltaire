@@ -2,10 +2,11 @@
 /*  test_gltf.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -70,7 +71,7 @@ static Node *gltf_import(const String &p_file) {
 		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
 	}
 
-	HashMap<StringName, Variant> options(21);
+	HashMap<String, Variant> options(21);
 	options["nodes/root_type"] = "";
 	options["nodes/root_name"] = "";
 	options["nodes/root_script"] = Variant();

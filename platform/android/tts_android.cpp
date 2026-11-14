@@ -2,10 +2,11 @@
 /*  tts_android.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,7 +66,7 @@ void TTS_Android::_thread_function(void *self) {
 
 	uint64_t sleep = 200;
 	while (env->CallIntMethod(tts, _get_state) == INIT_STATE_UNKNOWN && !quit_request.is_set()) {
-		OS::get_singleton()->delay_usec(1000 * sleep);
+		OS::delay_usec(1000 * sleep);
 	}
 	init_done.set();
 }
@@ -90,9 +91,9 @@ void TTS_Android::initialize_tts(bool p_wait) {
 	if (p_wait) {
 		uint64_t sleep = 200;
 		uint64_t wait = 1000000;
-		uint64_t time = OS::get_singleton()->get_ticks_usec();
-		while (OS::get_singleton()->get_ticks_usec() - time < wait) {
-			OS::get_singleton()->delay_usec(1000 * sleep);
+		uint64_t time = OS::get_ticks_usec();
+		while (OS::get_ticks_usec() - time < wait) {
+			OS::delay_usec(1000 * sleep);
 			if (init_done.is_set()) {
 				break;
 			}

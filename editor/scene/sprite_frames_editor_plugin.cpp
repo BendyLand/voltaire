@@ -2,10 +2,11 @@
 /*  sprite_frames_editor_plugin.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -509,11 +510,11 @@ void SpriteFramesEditor::_animation_remove_confirmed()
 
 void SpriteFramesEditor::_animation_search_text_changed(const String& p_text) { _update_library(); }
 
-StringName SpriteFramesEditor::_find_next_animation()
+String SpriteFramesEditor::_find_next_animation()
 {
-	List<StringName> anim_names;
+	List<String> anim_names;
 	frames->get_animation_list(&anim_names);
-	anim_names.sort_custom<StringName::AlphCompare>();
+	anim_names.sort();
 	if (anim_names.size() >= 2) {
 		if (edited_anim == anim_names.get(0)) {
 			return anim_names.get(1);
@@ -523,7 +524,7 @@ StringName SpriteFramesEditor::_find_next_animation()
 		}
 	}
 	else {
-		return StringName();
+		return String();
 	}
 }
 
@@ -639,7 +640,7 @@ Ref<ClipboardAnimation> ClipboardAnimation::from_sprite_frames(
 
 
 
-void SpriteFramesEditor::_animation_remove_undo_redo(StringName const&, Vector<ClipboardSpriteFrames::Frame> const*) {}
+void SpriteFramesEditor::_animation_remove_undo_redo(String const&, Vector<ClipboardSpriteFrames::Frame> const*) {}
 
 void SpriteFramesEditor::_update_library(bool) {}
 

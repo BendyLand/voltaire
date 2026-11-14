@@ -2,10 +2,11 @@
 /*  editor_color_map.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -31,13 +32,13 @@
 #include "editor_color_map.h"
 
 HashMap<Color, Color> EditorColorMap::color_conversion_map;
-HashSet<StringName> EditorColorMap::color_conversion_exceptions;
+HashSet<String> EditorColorMap::color_conversion_exceptions;
 
 void EditorColorMap::add_conversion_color_pair(const String &p_from_color, const String &p_to_color) {
 	color_conversion_map[Color::html(p_from_color)] = Color::html(p_to_color);
 }
 
-void EditorColorMap::add_conversion_exception(const StringName &p_icon_name) {
+void EditorColorMap::add_conversion_exception(const String &p_icon_name) {
 	color_conversion_exceptions.insert(p_icon_name);
 }
 

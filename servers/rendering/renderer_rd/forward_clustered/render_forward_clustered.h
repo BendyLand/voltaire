@@ -2,10 +2,11 @@
 /*  render_forward_clustered.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1082,7 +1083,7 @@ public:
 	virtual uint32_t sdfgi_get_pending_region_cascade(
 		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const;
 
-	RID sdfgi_get_ubo() const { return RendererSceneRenderRD::data->gi.sdfgi_ubo; }
+	RID sdfgi_get_ubo() const { return RendererRD::GI::sdfgi_ubo; }
 
 	/* GEOMETRY INSTANCE */
 

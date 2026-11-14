@@ -2,10 +2,11 @@
 /*  audio_stream_player_internal.h                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -43,7 +44,7 @@ class AudioStreamPlayerInternal
 private:
 	struct ParameterData
 	{
-		StringName path;
+		String path;
 	};
 
 	static inline const String PARAM_PREFIX = "parameters/";
@@ -52,7 +53,7 @@ private:
 	bool physical = false;
 	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
 
-	HashMap<StringName, ParameterData> playback_parameters;
+	HashMap<String, ParameterData> playback_parameters;
 
 	void _set_process(bool p_enabled);
 	void _update_stream_parameters();
@@ -74,7 +75,7 @@ public:
 	float pitch_scale = 1.0;
 	float volume_db = 0.0;
 	bool autoplay = false;
-	StringName bus;
+	String bus;
 	int max_polyphony = 1;
 
 	void process();
@@ -86,7 +87,7 @@ public:
 	void set_pitch_scale(float p_pitch_scale);
 	void set_max_polyphony(int p_max_polyphony);
 
-	StringName get_bus() const;
+	String get_bus() const;
 
 	Ref<AudioStreamPlayback> play_basic();
 	void seek(float p_seconds);

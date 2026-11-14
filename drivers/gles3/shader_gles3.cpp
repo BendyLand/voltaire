@@ -2,10 +2,11 @@
 /*  shader_gles3.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -116,6 +117,10 @@ void ShaderGLES3::_setup(const char* p_vertex_code, const char* p_fragment_code,
 {
 	name = p_name;
 
+	for (int i = 0; i < STAGE_TYPE_MAX; i++) {
+	    stage_templates[i].chunks.clear();
+	}
+
 	if (p_vertex_code) {
 		_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
 	}
@@ -191,7 +196,7 @@ void ShaderGLES3::_build_variant_code(StringBuilder& builder, uint32_t p_variant
 	if (p_version->uniforms.size()) {
 		builder.append("#define MATERIAL_UNIFORMS_USED\n");
 	}
-	for (const KeyValue<StringName, CharString>& E : p_version->code_sections) {
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
 		builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
 	}
 
@@ -548,11 +553,11 @@ String ShaderGLES3::_version_get_sha1(Version* p_version) const
 	hash_build.append("[fragment_globals]");
 	hash_build.append(p_version->fragment_globals.get_data());
 
-	Vector<StringName> code_sections;
-	for (const KeyValue<StringName, CharString>& E : p_version->code_sections) {
+	Vector<String> code_sections;
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
 		code_sections.push_back(E.key);
 	}
-	code_sections.sort_custom<StringName::AlphCompare>();
+	code_sections.sort();
 
 	for (int i = 0; i < code_sections.size(); i++) {
 		hash_build.append(String("[code:") + String(code_sections[i]) + "]");
@@ -784,7 +789,7 @@ void ShaderGLES3::version_set_code(RID p_version, const HashMap<String, String>&
 	version->code_sections.clear();
 	version->texture_uniforms = p_texture_uniforms;
 	for (const KeyValue<String, String>& E : p_code) {
-		version->code_sections[StringName(E.key.to_upper())] = E.value.utf8();
+		version->code_sections[String(E.key.to_upper())] = E.value.utf8();
 	}
 
 	version->custom_defines.clear();

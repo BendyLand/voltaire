@@ -2,10 +2,11 @@
 /*  print_string.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -74,7 +75,7 @@ void remove_print_handler(const PrintHandlerList* p_handler)
 		prev = l;
 		l = l->next;
 	}
-	// OS::get_singleton()->print("print handler list is %p\n",print_handler_list);
+	// OS::print("print handler list is %p\n",print_handler_list);
 
 	_global_unlock();
 	ERR_FAIL_NULL(l);
@@ -98,7 +99,7 @@ void __print_line(const String& p_string)
 
 	is_printing = true;
 
-	OS::get_singleton()->print("%s\n", p_string.utf8().get_data());
+	OS::print("%s\n", p_string.utf8().get_data());
 
 	_global_lock();
 	PrintHandlerList* l = print_handler_list;
@@ -386,7 +387,7 @@ void __print_line_rich(const String& p_string)
 
 	is_printing = true;
 
-	OS::get_singleton()->print_rich("%s\n", output.utf8().get_data());
+	OS::print_rich("%s\n", output.utf8().get_data());
 
 	_global_lock();
 	PrintHandlerList* l = print_handler_list;
@@ -414,7 +415,7 @@ void print_raw(const String& p_string)
 
 	is_printing = true;
 
-	OS::get_singleton()->print("%s", p_string.utf8().get_data());
+	OS::print("%s", p_string.utf8().get_data());
 
 	is_printing = false;
 }
@@ -437,7 +438,7 @@ void print_error(const String& p_string)
 
 	is_printing = true;
 
-	OS::get_singleton()->printerr("%s\n", p_string.utf8().get_data());
+	OS::printerr("%s\n", p_string.utf8().get_data());
 
 	_global_lock();
 	PrintHandlerList* l = print_handler_list;
@@ -451,6 +452,6 @@ void print_error(const String& p_string)
 	is_printing = false;
 }
 
-bool is_print_verbose_enabled() { return OS::get_singleton()->is_stdout_verbose(); }
+bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
 
 

@@ -2,10 +2,11 @@
 /*  inspector_dock.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -98,7 +99,7 @@ class InspectorDock : public EditorDock
 	int current_option = -1;
 	ConfirmationDialog* unique_resources_confirmation = nullptr;
 	Tree* unique_resources_list_tree = nullptr;
-	LocalVector<StringName> properties_to_unique;
+	LocalVector<String> properties_to_unique;
 
 	EditorPropertyNameProcessor::Style property_name_style;
 

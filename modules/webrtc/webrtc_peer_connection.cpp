@@ -2,10 +2,11 @@
 /*  webrtc_peer_connection.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -34,11 +35,11 @@
 #include "webrtc_peer_connection_js.h"
 #endif
 
-StringName WebRTCPeerConnection::default_extension;
+String WebRTCPeerConnection::default_extension;
 
-void WebRTCPeerConnection::set_default_extension(const StringName& p_extension)
+void WebRTCPeerConnection::set_default_extension(const String& p_extension)
 {
-	default_extension = StringName(p_extension, true);
+	default_extension = String(p_extension);
 }
 
 WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
@@ -47,7 +48,7 @@ WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
 	return static_cast<WebRTCPeerConnection*>(
 		ClassDB::creator<WebRTCPeerConnectionJS>(p_notify_postinitialize));
 #else
-	if (default_extension == StringName()) {
+	if (default_extension == String()) {
 		WARN_PRINT_ONCE("No default WebRTC extension configured.");
 	}
 	return memnew(WebRTCPeerConnection);

@@ -2,10 +2,11 @@
 /*  version_control_editor_plugin.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ void VersionControlEditorPlugin::_create_vcs_metadata_files()
 void VersionControlEditorPlugin::_populate_available_vcs_names()
 {
 	set_up_choice->clear();
-	for (const StringName& available_plugin : available_plugins) {
+	for (const String& available_plugin : available_plugins) {
 		set_up_choice->add_item(available_plugin);
 	}
 }

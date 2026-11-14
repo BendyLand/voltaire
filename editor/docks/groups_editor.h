@@ -2,10 +2,11 @@
 /*  groups_editor.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -78,10 +79,10 @@ class GroupsEditor : public VBoxContainer
 	Tree* tree = nullptr;
 	Label* select_a_node = nullptr;
 
-	HashMap<StringName, bool> scene_groups_for_caching;
+	HashMap<String, bool> scene_groups_for_caching;
 
-	HashMap<StringName, bool> scene_groups;
-	HashMap<StringName, String> global_groups;
+	HashMap<String, bool> scene_groups;
+	HashMap<String, String> global_groups;
 
 	void _show_add_group_dialog();
 	void _show_rename_group_dialog();
@@ -113,7 +114,7 @@ class GroupsEditor : public VBoxContainer
 
 	void _node_removed(Node* p_node);
 
-	bool _can_edit(const StringName& p_group);
+	bool _can_edit(const String& p_group);
 
 protected:
 	void _notification(int p_what);

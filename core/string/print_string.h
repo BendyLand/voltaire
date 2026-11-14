@@ -2,10 +2,11 @@
 /*  print_string.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -16,7 +17,7 @@
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
 /*                                                                        */
-/* The above copyright notice and this permission notice shall be          */
+/* The above copyright notice and this permission notice shall be         */
 /* included in all copies or substantial portions of the Software.        */
 /*                                                                        */
 /* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
@@ -30,6 +31,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -37,6 +39,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include "core/templates/span.h"
 
 class String;
@@ -64,6 +67,13 @@ extern bool is_print_verbose_enabled();
 
 namespace dbg
 {
+
+// Forward declaration so recursion can see it. The default depth lives here only.
+template <typename T> std::string to_string(const T& p_val, int p_depth = 2);
+
+// ---------------------------------------------------------------------------
+// Detection traits
+// ---------------------------------------------------------------------------
 
 // Detection: has .position and .size (Rect2, Rect2i)
 template <typename T, typename = void> struct has_pos_size : std::false_type
@@ -105,7 +115,114 @@ struct is_streamable<T, std::void_t<decltype(std::declval<std::ostream&>() << st
 
 template <typename T> inline constexpr bool is_streamable_v = is_streamable<T>::value;
 
-template <typename T> std::string to_string(const T& p_val)
+// ---------------------------------------------------------------------------
+// Aggregate field walking (values only, no reflection needed)
+// ---------------------------------------------------------------------------
+
+constexpr std::size_t k_max_fields = 10;
+
+// Converts to anything, used to probe how many initializers a struct accepts.
+struct any_t
+{
+	template <typename U> constexpr operator U() const noexcept;
+};
+
+template <typename T, typename Seq, typename = void> struct brace_ok : std::false_type
+{
+};
+
+template <typename T, std::size_t... I>
+struct brace_ok<T, std::index_sequence<I...>, std::void_t<decltype(T{(void(I), any_t{})...})>>
+	: std::true_type
+{
+};
+
+template <typename T, std::size_t N = 0> constexpr std::size_t count_fields()
+{
+	if constexpr (N < 16 && brace_ok<T, std::make_index_sequence<N + 1>>::value) {
+		return count_fields<T, N + 1>();
+	}
+	else {
+		return N;
+	}
+}
+
+template <typename T> constexpr bool dumpable_check()
+{
+	if constexpr (std::is_aggregate_v<T> && !std::is_array_v<T> && !std::is_union_v<T>) {
+		constexpr std::size_t n = count_fields<T>();
+		return n >= 1 && n <= k_max_fields;
+	}
+	else {
+		return false;
+	}
+}
+
+// Only complete types qualify (incomplete ones like VkCommandBuffer_T SFINAE out).
+template <typename T, typename = void> struct is_dumpable : std::false_type
+{
+};
+
+template <typename T>
+struct is_dumpable<T, std::void_t<decltype(sizeof(T))>> : std::bool_constant<dumpable_check<T>()>
+{
+};
+
+template <typename T> inline constexpr bool is_dumpable_v = is_dumpable<T>::value;
+
+template <typename T, typename F> void for_each_field(const T& p_val, F&& p_fn)
+{
+	constexpr std::size_t N = count_fields<T>();
+
+	if constexpr (N == 1) {
+		const auto& [a0] = p_val;
+		p_fn(a0);
+	}
+	else if constexpr (N == 2) {
+		const auto& [a0, a1] = p_val;
+		p_fn(a0); p_fn(a1);
+	}
+	else if constexpr (N == 3) {
+		const auto& [a0, a1, a2] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2);
+	}
+	else if constexpr (N == 4) {
+		const auto& [a0, a1, a2, a3] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3);
+	}
+	else if constexpr (N == 5) {
+		const auto& [a0, a1, a2, a3, a4] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4);
+	}
+	else if constexpr (N == 6) {
+		const auto& [a0, a1, a2, a3, a4, a5] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5);
+	}
+	else if constexpr (N == 7) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6);
+	}
+	else if constexpr (N == 8) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+	}
+	else if constexpr (N == 9) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+		p_fn(a8);
+	}
+	else if constexpr (N == 10) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+		p_fn(a8); p_fn(a9);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Value formatting
+// ---------------------------------------------------------------------------
+
+template <typename T> std::string to_string(const T& p_val, int p_depth)
 {
 	using Decayed = std::decay_t<T>;
 
@@ -129,10 +246,17 @@ template <typename T> std::string to_string(const T& p_val)
 	}
 	else if constexpr (std::is_pointer_v<Decayed>) {
 		if (!p_val) {
-			return "nullptr (0x0)";
+			return "nullptr";
 		}
 		std::ostringstream oss;
 		oss << static_cast<const void*>(p_val);
+
+		using Pointee = std::remove_cv_t<std::remove_pointer_t<Decayed>>;
+		if constexpr (is_dumpable_v<Pointee>) {
+			if (p_depth > 0) {
+				oss << " -> " << to_string(*p_val, p_depth - 1);
+			}
+		}
 		return oss.str();
 	}
 	else if constexpr (has_pos_size_v<Decayed>) {
@@ -148,13 +272,32 @@ template <typename T> std::string to_string(const T& p_val)
 	}
 	else if constexpr (std::is_arithmetic_v<Decayed>) {
 		std::ostringstream oss;
-		oss << p_val;
+		if constexpr (sizeof(Decayed) == 1) {
+			// int8_t / uint8_t: print the number, not the raw character.
+			oss << static_cast<int>(p_val);
+		}
+		else {
+			oss << p_val;
+		}
 		return oss.str();
 	}
 	else if constexpr (is_streamable_v<Decayed>) {
 		std::ostringstream oss;
 		oss << p_val;
 		return oss.str();
+	}
+	else if constexpr (is_dumpable_v<Decayed>) {
+		std::string out = "{";
+		bool first = true;
+		for_each_field(p_val, [&](const auto& p_field) {
+			if (!first) {
+				out += ", ";
+			}
+			first = false;
+			out += to_string(p_field, p_depth);
+		});
+		out += "}";
+		return out;
 	}
 	else {
 		// Raw POD fallback
@@ -169,6 +312,10 @@ template <typename T> std::string to_string(const T& p_val)
 		return oss.str();
 	}
 }
+
+// ---------------------------------------------------------------------------
+// DUMP support
+// ---------------------------------------------------------------------------
 
 inline void print_unpacked(std::string_view) { std::cout << std::endl; }
 

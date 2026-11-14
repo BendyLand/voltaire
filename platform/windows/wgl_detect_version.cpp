@@ -2,10 +2,11 @@
 /*  wgl_detect_version.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -106,9 +107,9 @@ Dictionary detect_wgl() {
 						PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
 						PFD_DOUBLEBUFFER,
 				(BYTE)PFD_TYPE_RGBA,
-				(BYTE)(OS::get_singleton()->is_layered_allowed() ? 32 : 24),
+				(BYTE)(OS::is_layered_allowed() ? 32 : 24),
 				(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
-				(BYTE)(OS::get_singleton()->is_layered_allowed() ? 8 : 0), // Alpha Buffer
+				(BYTE)(OS::is_layered_allowed() ? 8 : 0), // Alpha Buffer
 				(BYTE)0, // Shift Bit Ignored
 				(BYTE)0, // No Accumulation Buffer
 				(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored

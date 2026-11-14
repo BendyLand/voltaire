@@ -2,10 +2,11 @@
 /*  audio_stream_interactive.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -52,15 +53,15 @@ int AudioStreamInteractive::get_initial_clip() const { return initial_clip; }
 
 int AudioStreamInteractive::get_clip_count() const { return clip_count; }
 
-void AudioStreamInteractive::set_clip_name(int p_clip, const StringName& p_name)
+void AudioStreamInteractive::set_clip_name(int p_clip, const String& p_name)
 {
 	ERR_FAIL_INDEX(p_clip, MAX_CLIPS);
 	clips[p_clip].name = p_name;
 }
 
-StringName AudioStreamInteractive::get_clip_name(int p_clip) const
+String AudioStreamInteractive::get_clip_name(int p_clip) const
 {
-	ERR_FAIL_COND_V(p_clip < -1 || p_clip >= MAX_CLIPS, StringName());
+	ERR_FAIL_COND_V(p_clip < -1 || p_clip >= MAX_CLIPS, String());
 	if (p_clip == CLIP_ANY) {
 		return RTR("All Clips");
 	}
@@ -725,9 +726,9 @@ void AudioStreamPlaybackInteractive::tag_used_streams()
 	stream->tag_used(0);
 }
 
-void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const StringName& p_name)
+void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const String& p_name)
 {
-	if (p_name == StringName()) {
+	if (p_name == String()) {
 		switch_request = -1;
 		return;
 	}

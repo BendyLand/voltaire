@@ -2,10 +2,11 @@
 /*  openxr_eye_gaze_interaction.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -54,8 +55,8 @@ HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensio
 	// Only enable this extension when requested.
 	// We still register our meta data or the action map editor will fail.
 	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") &&
-		(!OS::get_singleton()->has_feature("mobile") ||
-			OS::get_singleton()->has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
+		(!OS::has_feature("mobile") ||
+			OS::has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
 		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &available;
 	}
 
@@ -91,8 +92,8 @@ bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
 	// Thus both need to be true.
 	// In addition, on mobile runtimes, the proper permission needs to be granted.
 	if (available && properties.supportsEyeGazeInteraction) {
-		return !OS::get_singleton()->has_feature("mobile") ||
-			   OS::get_singleton()->has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
+		return !OS::has_feature("mobile") ||
+			   OS::has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
 	}
 
 	return false;

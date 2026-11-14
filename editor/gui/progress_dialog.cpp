@@ -2,10 +2,11 @@
 /*  progress_dialog.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -111,7 +112,7 @@ void ProgressDialog::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		Ref<StyleBox> style = main->get_theme_stylebox(SceneStringName(panel), SNAME("PopupMenu"));
+		Ref<StyleBox> style = main->get_theme_stylebox(SceneString(panel), SNAME("PopupMenu"));
 		main_border_size = style->get_minimum_size();
 		main->set_offset(SIDE_LEFT, style->get_margin(SIDE_LEFT));
 		main->set_offset(SIDE_RIGHT, -style->get_margin(SIDE_RIGHT));
@@ -119,7 +120,7 @@ void ProgressDialog::_notification(int p_what)
 		main->set_offset(SIDE_BOTTOM, -style->get_margin(SIDE_BOTTOM));
 
 		center_panel->add_theme_style_override(
-			SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), "PopupPanel").ptr());
+			SceneString(panel), get_theme_stylebox(SceneString(panel), "PopupPanel").ptr());
 	} break;
 	}
 }
@@ -140,7 +141,7 @@ bool ProgressDialog::task_step(
 
 	Task& t = tasks[p_task];
 	if (!p_force_redraw) {
-		uint64_t tus = OS::get_singleton()->get_ticks_usec();
+		uint64_t tus = OS::get_ticks_usec();
 		if (tus - t.last_progress_tick < 200000) { // 200ms
 			return canceled;
 		}
@@ -153,7 +154,7 @@ bool ProgressDialog::task_step(
 	}
 
 	t.state->set_text(p_state);
-	t.last_progress_tick = OS::get_singleton()->get_ticks_usec();
+	t.last_progress_tick = OS::get_ticks_usec();
 	_update_ui();
 
 	return canceled;

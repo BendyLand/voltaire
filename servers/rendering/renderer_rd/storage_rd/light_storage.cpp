@@ -2,10 +2,11 @@
 /*  light_storage.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -756,7 +757,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1070,7 +1071,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -1856,7 +1857,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->reflection_texture_size;
 			tf.height = atlas->reflection_texture_size;
 			tf.usage_bits = get_reflection_probe_color_usage_bits(use_storage);
-			atlas->reflection = RD::texture_create(tf, RD::TextureView());
+			atlas->reflection = RD::texture_create(tf, RDD::TextureView());
 		}
 		{
 			RDC::TextureFormat tf;
@@ -1866,7 +1867,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->size;
 			tf.height = atlas->size;
 			tf.usage_bits = get_reflection_probe_color_usage_bits(use_storage);
-			atlas->color_buffer = RD::texture_create(tf, RD::TextureView());
+			atlas->color_buffer = RD::texture_create(tf, RDD::TextureView());
 		}
 		{
 			RDC::TextureFormat tf;
@@ -1874,7 +1875,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 			tf.width = atlas->size;
 			tf.height = atlas->size;
 			tf.usage_bits = get_reflection_probe_depth_usage_bits();
-			atlas->depth_buffer = RD::texture_create(tf, RD::TextureView());
+			atlas->depth_buffer = RD::texture_create(tf, RDD::TextureView());
 		}
 		atlas->reflections.resize(atlas->count);
 		for (int i = 0; i < atlas->count; i++) {
@@ -2164,7 +2165,7 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure =
-				RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			reflection_ubo.exposure_normalization = exposure / probe->baked_exposure;
 		}
@@ -2536,7 +2537,7 @@ void RendererRD::LightStorage::_update_shadow_atlas(ShadowAtlas* shadow_atlas)
 		tf.height = shadow_atlas->size;
 		tf.usage_bits = get_shadow_atlas_depth_usage_bits();
 
-		shadow_atlas->depth = RD::texture_create(tf, RD::TextureView());
+		shadow_atlas->depth = RD::texture_create(tf, RDD::TextureView());
 		Vector<RID> fb_tex;
 		fb_tex.push_back(shadow_atlas->depth);
 		shadow_atlas->fb = RD::framebuffer_create(fb_tex);
@@ -2828,7 +2829,7 @@ bool RendererRD::LightStorage::shadow_atlas_update_light(
 
 	ERR_FAIL_COND_V(valid_quadrant_count == 0, false);
 
-	uint64_t tick = OS::get_singleton()->get_ticks_msec();
+	uint64_t tick = OS::get_ticks_msec();
 
 	uint32_t old_key = SHADOW_INVALID;
 	uint32_t old_quadrant = SHADOW_INVALID;
@@ -2972,7 +2973,7 @@ void RendererRD::LightStorage::update_directional_shadow_atlas()
 		tf.height = directional_shadow.size;
 		tf.usage_bits = get_shadow_atlas_depth_usage_bits();
 
-		directional_shadow.depth = RD::texture_create(tf, RD::TextureView());
+		directional_shadow.depth = RD::texture_create(tf, RDD::TextureView());
 		Vector<RID> fb_tex;
 		fb_tex.push_back(directional_shadow.depth);
 		directional_shadow.fb = RD::framebuffer_create(fb_tex);
@@ -3070,7 +3071,7 @@ RendererRD::LightStorage::ShadowCubemap* RendererRD::LightStorage::_get_shadow_c
 			tf.texture_type = RDC::TEXTURE_TYPE_CUBE;
 			tf.array_layers = 6;
 			tf.usage_bits = get_cubemap_depth_usage_bits();
-			sc.cubemap = RD::texture_create(tf, RD::TextureView());
+			sc.cubemap = RD::texture_create(tf, RDD::TextureView());
 		}
 
 		for (int i = 0; i < 6; i++) {

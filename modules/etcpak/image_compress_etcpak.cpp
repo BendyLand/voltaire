@@ -2,10 +2,11 @@
 /*  image_compress_etcpak.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -91,7 +92,7 @@ void _compress_bc(Image *r_img, Image::UsedChannels p_channels) {
 }
 
 void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
-	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	uint64_t start_time = OS::get_ticks_msec();
 
 	// The image is already compressed, return.
 	if (r_img->is_compressed()) {
@@ -303,6 +304,6 @@ void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
 	// Replace original image with compressed one.
 	r_img->set_data(width, height, has_mipmaps, target_format, dest_data);
 
-	print_verbose(vformat("etcpak: Encoding took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
+	print_verbose(vformat("etcpak: Encoding took %d ms.", OS::get_ticks_msec() - start_time));
 }
 #endif // TOOLS_ENABLED

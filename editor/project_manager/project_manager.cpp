@@ -2,10 +2,11 @@
 /*  project_manager.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -107,10 +108,10 @@ void ProjectManager::_build_icon_type_cache(Ref<Theme> p_theme)
 	if (p_theme.is_null()) {
 		return;
 	}
-	List<StringName> tl;
-	p_theme->get_icon_list(EditorStringName(EditorIcons), &tl);
-	for (const StringName& name : tl) {
-		icon_type_cache[name] = p_theme->get_icon(name, EditorStringName(EditorIcons));
+	List<String> tl;
+	p_theme->get_icon_list(EditorString(EditorIcons), &tl);
+	for (const String& name : tl) {
+		icon_type_cache[name] = p_theme->get_icon(name, EditorString(EditorIcons));
 	}
 }
 
@@ -166,8 +167,8 @@ void ProjectManager::_dim_window()
 
 void ProjectManager::_restart_confirmed()
 {
-	List<String> args = OS::get_singleton()->get_cmdline_args();
-	Error err = OS::get_singleton()->create_instance(args);
+	List<String> args = OS::get_cmdline_args();
+	Error err = OS::create_instance(args);
 	ERR_FAIL_COND(err);
 
 	_dim_window();
@@ -244,7 +245,7 @@ void ProjectManager::_show_project_in_file_manager()
 	}
 
 	for (const ProjectList::Item& E : selected_list) {
-		OS::get_singleton()->shell_show_in_file_manager(E.path, true);
+		OS::shell_show_in_file_manager(E.path, true);
 	}
 }
 
@@ -380,7 +381,7 @@ void ProjectManager::_create_new_tag()
 void ProjectManager::_migration_guide_button_pressed()
 {
 	const String url = vformat("%s/tutorials/migrating/index.html", VLTR_VERSION_DOCS_URL);
-	OS::get_singleton()->shell_open(url);
+	OS::shell_open(url);
 }
 
 void ProjectManager::_files_dropped(PackedStringArray p_files)
@@ -432,7 +433,7 @@ void ProjectManager::_titlebar_resized()
 
 void ProjectManager::_open_donate_page()
 {
-	OS::get_singleton()->shell_open("https://ko-fi.com/bendyland");
+	OS::shell_open("https://ko-fi.com/bendyland");
 }
 
 ProjectManager::~ProjectManager()

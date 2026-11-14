@@ -2,10 +2,11 @@
 /*  graph_edit_arranger.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -50,11 +51,11 @@ class GraphEditArranger : public RefCounted
 	bool arranging_graph = false;
 
 	int _set_operations(
-		SET_OPERATIONS p_operation, HashSet<StringName>& r_u, const HashSet<StringName>& r_v);
-	HashMap<int, Vector<StringName>> _layering(const HashSet<StringName>& r_selected_nodes,
-		const HashMap<StringName, HashSet<StringName>>& r_upper_neighbours);
-	void _crossing_minimisation(HashMap<int, Vector<StringName>>& r_layers,
-		const HashMap<StringName, HashSet<StringName>>& r_upper_neighbours);
+		SET_OPERATIONS p_operation, HashSet<String>& r_u, const HashSet<String>& r_v);
+	HashMap<int, Vector<String>> _layering(const HashSet<String>& r_selected_nodes,
+		const HashMap<String, HashSet<String>>& r_upper_neighbours);
+	void _crossing_minimisation(HashMap<int, Vector<String>>& r_layers,
+		const HashMap<String, HashSet<String>>& r_upper_neighbours);
 
 public:
 	void arrange_nodes();

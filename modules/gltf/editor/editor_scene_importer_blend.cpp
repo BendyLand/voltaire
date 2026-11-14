@@ -2,10 +2,11 @@
 /*  editor_scene_importer_blend.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -60,7 +61,7 @@ static bool _get_blender_version(
 	List<String> args;
 	args.push_back("--version");
 	String pipe;
-	Error err = OS::get_singleton()->execute(p_path, args, &pipe);
+	Error err = OS::execute(p_path, args, &pipe);
 	if (err != OK) {
 		if (r_err) {
 			*r_err = TTR("Couldn't run Blender executable.");
@@ -139,7 +140,7 @@ bool EditorFileSystemImportFormatSupportQueryBlend::_autodetect_path()
 		mdfind_args.push_back("kMDItemCFBundleIdentifier=org.blenderfoundation.blender");
 
 		String output;
-		Error err = OS::get_singleton()->execute("mdfind", mdfind_args, &output);
+		Error err = OS::execute("mdfind", mdfind_args, &output);
 		if (err == OK) {
 			for (const String& find_path : output.split("\n")) {
 				find_paths.push_back(find_path.path_join("Contents/MacOS/Blender"));

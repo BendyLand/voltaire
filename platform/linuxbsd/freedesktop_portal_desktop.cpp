@@ -2,10 +2,11 @@
 /*  freedesktop_portal_desktop.cpp                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -132,7 +133,7 @@ bool FreeDesktopPortalDesktop::read_setting(
 
 	DBusConnection* bus = dbus_bus_get(DBUS_BUS_SESSION, &error);
 	if (dbus_error_is_set(&error)) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			ERR_PRINT(vformat("Error opening D-Bus connection: %s", String::utf8(error.message)));
 		}
 		dbus_error_free(&error);
@@ -148,7 +149,7 @@ bool FreeDesktopPortalDesktop::read_setting(
 	DBusMessage* reply = dbus_connection_send_with_reply_and_block(bus, message, 50, &error);
 	dbus_message_unref(message);
 	if (dbus_error_is_set(&error)) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			ERR_PRINT(vformat("Failed to read setting %s %s: %s", p_namespace, p_key,
 				String::utf8(error.message)));
 		}
@@ -343,7 +344,7 @@ bool FreeDesktopPortalDesktop::is_inhibit_supported()
 	static int supported = -1;
 	if (supported == -1) {
 		// If not sandboxed, prefer to use org.freedesktop.ScreenSaver
-		supported = OS::get_singleton()->is_sandboxed() &&
+		supported = OS::is_sandboxed() &&
 					_is_interface_supported(BUS_INTERFACE_INHIBIT, 1);
 	}
 	return supported;

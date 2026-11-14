@@ -2,10 +2,11 @@
 /*  navigation_mesh.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -90,7 +91,7 @@ protected:
 	uint32_t collision_mask = 0xFFFFFFFF;
 
 	SourceGeometryMode source_geometry_mode = SOURCE_GEOMETRY_ROOT_NODE_CHILDREN;
-	StringName source_group_name = "navigation_mesh_source_group";
+	String source_group_name = "navigation_mesh_source_group";
 
 	bool filter_low_hanging_obstacles = false;
 	bool filter_ledge_spans = false;
@@ -115,8 +116,8 @@ public:
 	void set_source_geometry_mode(SourceGeometryMode p_geometry_mode);
 	SourceGeometryMode get_source_geometry_mode() const;
 
-	void set_source_group_name(const StringName& p_group_name);
-	StringName get_source_group_name() const;
+	void set_source_group_name(const String& p_group_name);
+	String get_source_group_name() const;
 
 	void set_cell_size(float p_value);
 	float get_cell_size() const;

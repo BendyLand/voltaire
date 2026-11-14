@@ -2,10 +2,11 @@
 /*  rendering_device_binds.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -252,26 +253,26 @@ protected:
 
 class RDShaderFile : public Resource
 {
-	HashMap<StringName, Ref<RDShaderSPIRV>> versions;
+	HashMap<String, Ref<RDShaderSPIRV>> versions;
 	String base_error;
 
 public:
 	void set_bytecode(
-		const Ref<RDShaderSPIRV>& p_bytecode, const StringName& p_version = StringName())
+		const Ref<RDShaderSPIRV>& p_bytecode, const String& p_version = String())
 	{
 		ERR_FAIL_COND(p_bytecode.is_null());
 		versions[p_version] = p_bytecode;
 		emit_changed();
 	}
 
-	Ref<RDShaderSPIRV> get_spirv(const StringName& p_version = StringName()) const
+	Ref<RDShaderSPIRV> get_spirv(const String& p_version = String()) const
 	{
 		ERR_FAIL_COND_V(!versions.has(p_version), Ref<RDShaderSPIRV>());
 		return versions[p_version];
 	}
 
 	Vector<RDC::ShaderStageSPIRVData> get_spirv_stages(
-		const StringName& p_version = StringName()) const
+		const String& p_version = String()) const
 	{
 		ERR_FAIL_COND_V(!versions.has(p_version), Vector<RDC::ShaderStageSPIRVData>());
 		return versions[p_version]->get_stages();
@@ -291,7 +292,7 @@ public:
 			ERR_PRINT("Error parsing shader '" + p_file + "':\n\n" + base_error);
 		}
 		else {
-			for (KeyValue<StringName, Ref<RDShaderSPIRV>>& E : versions) {
+			for (KeyValue<String, Ref<RDShaderSPIRV>>& E : versions) {
 				for (int i = 0; i < RDC::SHADER_STAGE_MAX; i++) {
 					String error = E.value->get_stage_compile_error(RDC::ShaderStage(i));
 					if (!error.is_empty()) {

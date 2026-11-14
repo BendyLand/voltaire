@@ -2,10 +2,11 @@
 /*  shader.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -62,7 +63,7 @@ private:
 	String code;
 	String include_path;
 
-	HashMap<StringName, HashMap<int, Ref<Texture>>> default_textures;
+	HashMap<String, HashMap<int, Ref<Texture>>> default_textures;
 
 	void _check_shader_rid() const;
 	void _dependency_changed();
@@ -72,9 +73,9 @@ private:
 protected:
 #ifndef DISABLE_DEPRECATED
 	void _set_default_texture_parameter_bind_compat_95126(
-		const StringName& p_name, const Ref<Texture2D>& p_texture, int p_index = 0);
+		const String& p_name, const Ref<Texture2D>& p_texture, int p_index = 0);
 	Ref<Texture2D> _get_default_texture_parameter_bind_compat_95126(
-		const StringName& p_name, int p_index = 0) const;
+		const String& p_name, int p_index = 0) const;
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
@@ -93,9 +94,9 @@ public:
 
 
 	void set_default_texture_parameter(
-		const StringName& p_name, const Ref<Texture>& p_texture, int p_index = 0);
-	Ref<Texture> get_default_texture_parameter(const StringName& p_name, int p_index = 0) const;
-	void get_default_texture_parameter_list(List<StringName>* r_textures) const;
+		const String& p_name, const Ref<Texture>& p_texture, int p_index = 0);
+	Ref<Texture> get_default_texture_parameter(const String& p_name, int p_index = 0) const;
+	void get_default_texture_parameter_list(List<String>* r_textures) const;
 
 	virtual bool is_text_shader() const;
 

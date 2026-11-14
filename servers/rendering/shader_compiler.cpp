@@ -2,10 +2,11 @@
 /*  shader_compiler.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -40,7 +41,7 @@ static String _mktab(int p_level) { return String("\t").repeat(p_level); }
 static String _typestr(SL::DataType p_type)
 {
 	String type = ShaderLanguage::get_datatype_name(p_type);
-	if (!RS::is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
+	if (!Renderer::is_low_end() && ShaderLanguage::is_sampler_type(p_type)) {
 		type = type.replace(
 			"sampler", "texture"); // we use textures instead of samplers in Vulkan GLSL
 	}
@@ -303,8 +304,8 @@ String ShaderCompiler::_get_sampler_name(
 												  : 0)]);
 }
 
-void ShaderCompiler::_dump_function_deps(const SL::ShaderNode* p_node, const StringName& p_for_func,
-	const HashMap<StringName, String>& p_func_code, String& r_to_add, HashSet<StringName>& added)
+void ShaderCompiler::_dump_function_deps(const SL::ShaderNode* p_node, const String& p_for_func,
+	const HashMap<String, String>& p_func_code, String& r_to_add, HashSet<String>& added)
 {
 	int fidx = -1;
 
@@ -317,12 +318,12 @@ void ShaderCompiler::_dump_function_deps(const SL::ShaderNode* p_node, const Str
 
 	ERR_FAIL_COND(fidx == -1);
 
-	Vector<StringName> uses_functions;
+	Vector<String> uses_functions;
 
-	for (const StringName& E : p_node->vfunctions[fidx].uses_function) {
+	for (const String& E : p_node->vfunctions[fidx].uses_function) {
 		uses_functions.push_back(E);
 	}
-	uses_functions.sort_custom<StringName::AlphCompare>(); // ensure order is deterministic so the
+	uses_functions.sort(); // ensure order is deterministic so the
 														   // same shader is always produced
 
 	for (int k = 0; k < uses_functions.size(); k++) {
@@ -547,7 +548,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 		int max_texture_uniforms = 0;
 		int max_uniforms = 0;
 
-		for (const KeyValue<StringName, SL::ShaderNode::Uniform>& E : pnode->uniforms) {
+		for (const KeyValue<String, SL::ShaderNode::Uniform>& E : pnode->uniforms) {
 			if (SL::is_sampler_type(E.value.type)) {
 				if (E.value.hint == SL::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
 					E.value.hint == SL::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
@@ -573,23 +574,23 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 		Vector<int> uniform_sizes;
 		Vector<int> uniform_alignments;
-		Vector<StringName> uniform_defines;
+		Vector<String> uniform_defines;
 		uniform_sizes.resize(max_uniforms);
 		uniform_alignments.resize(max_uniforms);
 		uniform_defines.resize(max_uniforms);
 		bool uses_uniforms = false;
 
-		Vector<StringName> uniform_names;
+		Vector<String> uniform_names;
 
-		for (const KeyValue<StringName, SL::ShaderNode::Uniform>& E : pnode->uniforms) {
+		for (const KeyValue<String, SL::ShaderNode::Uniform>& E : pnode->uniforms) {
 			uniform_names.push_back(E.key);
 		}
 
-		uniform_names.sort_custom<StringName::AlphCompare>(); // ensure order is deterministic so
+		uniform_names.sort(); // ensure order is deterministic so
 															  // the same shader is always produced
 
 		for (int k = 0; k < uniform_names.size(); k++) {
-			const StringName& uniform_name = uniform_names[k];
+			const String& uniform_name = uniform_names[k];
 			const SL::ShaderNode::Uniform& uniform = pnode->uniforms[uniform_name];
 
 			String ucode;
@@ -612,7 +613,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			if (SL::is_sampler_type(uniform.type)) {
 				// Texture layouts are different for OpenGL GLSL and Vulkan GLSL
-				if (!RS::is_low_end()) {
+				if (!Renderer::is_low_end()) {
 					ucode = "layout(set = " + itos(actions.texture_layout_set) + ", binding = " +
 							itos(actions.base_texture_binding_index + uniform.texture_binding) +
 							") ";
@@ -721,24 +722,24 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 		uint32_t index = p_default_actions.base_varying_index;
 
-		List<Pair<StringName, SL::ShaderNode::Varying>> var_frag_to_light;
+		List<Pair<String, SL::ShaderNode::Varying>> var_frag_to_light;
 
-		Vector<StringName> varying_names;
+		Vector<String> varying_names;
 
-		for (const KeyValue<StringName, SL::ShaderNode::Varying>& E : pnode->varyings) {
+		for (const KeyValue<String, SL::ShaderNode::Varying>& E : pnode->varyings) {
 			varying_names.push_back(E.key);
 		}
 
-		varying_names.sort_custom<StringName::AlphCompare>(); // ensure order is deterministic so
+		varying_names.sort(); // ensure order is deterministic so
 															  // the same shader is always produced
 
 		for (int k = 0; k < varying_names.size(); k++) {
-			const StringName& varying_name = varying_names[k];
+			const String& varying_name = varying_names[k];
 			const SL::ShaderNode::Varying& varying = pnode->varyings[varying_name];
 
 			if (varying.stage == SL::ShaderNode::Varying::STAGE_FRAGMENT) {
 				var_frag_to_light.push_back(
-					Pair<StringName, SL::ShaderNode::Varying>(varying_name, varying));
+					Pair<String, SL::ShaderNode::Varying>(varying_name, varying));
 				fragment_varyings.insert(varying_name);
 				continue;
 			}
@@ -761,7 +762,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 			vcode += ";\n";
 			// GLSL ES 3.0 does not allow layout qualifiers for varyings
-			if (!RS::is_low_end()) {
+			if (!Renderer::is_low_end()) {
 				r_gen_code.stage_globals[STAGE_VERTEX] += "layout(location=" + itos(index) + ") ";
 				r_gen_code.stage_globals[STAGE_FRAGMENT] += "layout(location=" + itos(index) + ") ";
 			}
@@ -773,7 +774,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 		if (var_frag_to_light.size() > 0) {
 			String gcode = "\n\nstruct {\n";
-			for (const Pair<StringName, SL::ShaderNode::Varying>& E : var_frag_to_light) {
+			for (const Pair<String, SL::ShaderNode::Varying>& E : var_frag_to_light) {
 				gcode += "\t" + _prestr(E.second.precision) + _typestr(E.second.type) + " " +
 						 _mkid(E.first);
 				if (E.second.array_size > 0) {
@@ -813,7 +814,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 			}
 		}
 
-		HashMap<StringName, String> function_code;
+		HashMap<String, String> function_code;
 
 		// code for functions
 		for (int i = 0; i < pnode->vfunctions.size(); i++) {
@@ -827,7 +828,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 		// place functions in actual code
 
-		HashSet<StringName> added_funcs_per_stage[STAGE_MAX];
+		HashSet<String> added_funcs_per_stage[STAGE_MAX];
 
 		for (int i = 0; i < pnode->vfunctions.size(); i++) {
 			SL::FunctionNode* fnode = pnode->vfunctions[i].function;
@@ -1002,7 +1003,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 				// its a uniform!
 				const ShaderLanguage::ShaderNode::Uniform& u = shader->uniforms[vnode->name];
 				if (u.is_texture()) {
-					StringName name;
+					String name;
 					if (u.hint == ShaderLanguage::ShaderNode::Uniform::HINT_SCREEN_TEXTURE) {
 						name = "color_buffer";
 						if (u.filter >= ShaderLanguage::FILTER_NEAREST_MIPMAP) {
@@ -1380,7 +1381,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 				}
 
 				if (is_out_qualifier) {
-					StringName name;
+					String name;
 					bool found = false;
 					{
 						const SL::Node* node = onode->arguments[i];
@@ -1412,7 +1413,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 					p_actions, p_default_actions, p_assigning);
 				if (is_texture_func && i == 1) {
 					// If we're doing a texture lookup we need to check our texture argument
-					StringName texture_uniform;
+					String texture_uniform;
 					bool correct_texture_uniform = false;
 
 					switch (onode->arguments[i]->type) {
@@ -1432,7 +1433,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 						break;
 					}
 
-					if (correct_texture_uniform && !RS::is_low_end()) {
+					if (correct_texture_uniform && !Renderer::is_low_end()) {
 						// Need to map from texture to sampler in order to sample when using Vulkan
 						// GLSL.
 						String sampler_name;
@@ -1532,7 +1533,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 
 						code += data_type_name + "(" + node_code + ", " + sampler_name + ")";
 					}
-					else if (correct_texture_uniform && RS::is_low_end()) {
+					else if (correct_texture_uniform && Renderer::is_low_end()) {
 						// Texture function on low end hardware (i.e. OpenGL).
 
 						if (shader->uniforms.has(texture_uniform)) {
@@ -1587,7 +1588,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 			code += ")";
 			if (is_screen_texture && !texture_func_returns_data &&
 				actions.apply_luminance_multiplier) {
-				if (RS::is_low_end()) {
+				if (Renderer::is_low_end()) {
 					code = "(" + code +
 						   " / vec4(vec3(scene_data_block.data.luminance_multiplier), 1.0))";
 				}
@@ -1770,11 +1771,11 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 	return code;
 }
 
-ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const StringName& p_name)
+ShaderLanguage::DataType ShaderCompiler::_get_global_shader_uniform_type(const String& p_name)
 {
 	RSE::GlobalShaderParameterType gvt =
 		RendererMaterialStorage::global_shader_parameter_get_type(p_name);
-	return (ShaderLanguage::DataType)RS::global_shader_uniform_type_get_shader_datatype(gvt);
+	return (ShaderLanguage::DataType)Renderer::global_shader_uniform_type_get_shader_datatype(gvt);
 }
 
 Error ShaderCompiler::compile(RSE::ShaderMode p_mode, const String& p_code,

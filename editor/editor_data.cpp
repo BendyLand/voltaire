@@ -2,10 +2,11 @@
 /*  editor_data.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -175,23 +176,23 @@ EditorPlugin* EditorData::get_editor_plugin(int p_idx)
 	return editor_plugins[p_idx];
 }
 
-void EditorData::add_extension_editor_plugin(const StringName& p_class_name, EditorPlugin* p_plugin)
+void EditorData::add_extension_editor_plugin(const String& p_class_name, EditorPlugin* p_plugin)
 {
 	ERR_FAIL_COND(extension_editor_plugins.has(p_class_name));
 	extension_editor_plugins.insert(p_class_name, p_plugin);
 }
 
-void EditorData::remove_extension_editor_plugin(const StringName& p_class_name)
+void EditorData::remove_extension_editor_plugin(const String& p_class_name)
 {
 	extension_editor_plugins.erase(p_class_name);
 }
 
-bool EditorData::has_extension_editor_plugin(const StringName& p_class_name)
+bool EditorData::has_extension_editor_plugin(const String& p_class_name)
 {
 	return extension_editor_plugins.has(p_class_name);
 }
 
-EditorPlugin* EditorData::get_extension_editor_plugin(const StringName& p_class_name)
+EditorPlugin* EditorData::get_extension_editor_plugin(const String& p_class_name)
 {
 	EditorPlugin** plugin = extension_editor_plugins.getptr(p_class_name);
 	return plugin == nullptr ? nullptr : *plugin;
@@ -501,13 +502,13 @@ void EditorData::script_class_set_icon_path(const String& p_class, const String&
 	_script_class_icon_paths[p_class] = p_icon_path;
 }
 
-StringName EditorData::script_class_get_name(const String& p_path) const
+String EditorData::script_class_get_name(const String& p_path) const
 {
 	return _script_class_file_to_path.has(p_path) ? _script_class_file_to_path[p_path]
-												  : StringName();
+												  : String();
 }
 
-void EditorData::script_class_set_name(const String& p_path, const StringName& p_class)
+void EditorData::script_class_set_name(const String& p_path, const String& p_class)
 {
 	_script_class_file_to_path[p_path] = p_class;
 }

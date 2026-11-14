@@ -2,10 +2,11 @@
 /*  time.cpp                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -264,7 +265,7 @@ String Time::get_offset_string_from_offset_minutes(int64_t p_offset_minutes) con
 
 String Time::get_datetime_string_from_system(bool p_utc, bool p_use_space) const
 {
-	OS::DateTime dt = OS::get_singleton()->get_datetime(p_utc);
+	OS::DateTime dt = OS::get_datetime(p_utc);
 	const String format_string =
 		p_use_space ? "%04d-%02d-%02d %02d:%02d:%02d" : "%04d-%02d-%02dT%02d:%02d:%02d";
 	return vformat(
@@ -273,22 +274,22 @@ String Time::get_datetime_string_from_system(bool p_utc, bool p_use_space) const
 
 String Time::get_date_string_from_system(bool p_utc) const
 {
-	OS::DateTime dt = OS::get_singleton()->get_datetime(p_utc);
+	OS::DateTime dt = OS::get_datetime(p_utc);
 	// Android is picky about the types passed to make Variant, so we need a cast.
 	return vformat("%04d-%02d-%02d", dt.year, (uint8_t)dt.month, dt.day);
 }
 
 String Time::get_time_string_from_system(bool p_utc) const
 {
-	OS::DateTime dt = OS::get_singleton()->get_datetime(p_utc);
+	OS::DateTime dt = OS::get_datetime(p_utc);
 	return vformat("%02d:%02d:%02d", dt.hour, dt.minute, dt.second);
 }
 
-double Time::get_unix_time_from_system() const { return OS::get_singleton()->get_unix_time(); }
+double Time::get_unix_time_from_system() const { return OS::get_unix_time(); }
 
-uint64_t Time::get_ticks_msec() const { return OS::get_singleton()->get_ticks_msec(); }
+uint64_t Time::get_ticks_msec() const { return OS::get_ticks_msec(); }
 
-uint64_t Time::get_ticks_usec() const { return OS::get_singleton()->get_ticks_usec(); }
+uint64_t Time::get_ticks_usec() const { return OS::get_ticks_usec(); }
 
 Time::Time()
 {

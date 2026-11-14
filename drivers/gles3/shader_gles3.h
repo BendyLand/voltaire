@@ -2,10 +2,11 @@
 /*  shader_gles3.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -46,7 +47,7 @@ class ShaderGLES3
 public:
 	struct TextureUniformData
 	{
-		StringName name;
+		String name;
 		int array_size;
 	};
 
@@ -93,7 +94,7 @@ private:
 		CharString uniforms;
 		CharString vertex_globals;
 		CharString fragment_globals;
-		HashMap<StringName, CharString> code_sections;
+		HashMap<String, CharString> code_sections;
 		Vector<CharString> custom_defines;
 
 		struct Specialization
@@ -140,7 +141,7 @@ private:
 			};
 
 			Type type;
-			StringName code;
+			String code;
 			CharString text;
 		};
 

@@ -2,10 +2,11 @@
 /*  os_unix.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -181,13 +182,16 @@ void OS_Unix::initialize_core()
 
 void OS_Unix::finalize_core()
 {
-	memdelete(process_map);
+    if (process_map) {
+        memdelete(process_map);
+        process_map = nullptr;
+    }
 #ifndef UNIX_SOCKET_UNAVAILABLE
 	NetSocketUnix::cleanup();
 #endif
 }
 
-Vector<String> OS_Unix::get_video_adapter_driver_info() const { return Vector<String>(); }
+Vector<String> OS_Unix::get_video_adapter_driver_info() { return Vector<String>(); }
 
 String OS_Unix::get_stdin_string(int64_t p_buffer_size)
 {
@@ -211,73 +215,73 @@ PackedByteArray OS_Unix::get_stdin_buffer(int64_t p_buffer_size)
 	return PackedByteArray();
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stdin_type() const
+OS::StdHandleType OS_Unix::get_stdin_type()
 {
 	int h = fileno(stdin);
 	if (h == -1) {
-		return STD_HANDLE_INVALID;
+		return OS::STD_HANDLE_INVALID;
 	}
 
 	if (isatty(h)) {
-		return STD_HANDLE_CONSOLE;
+		return OS::STD_HANDLE_CONSOLE;
 	}
 	struct stat statbuf;
 	if (fstat(h, &statbuf) < 0) {
-		return STD_HANDLE_UNKNOWN;
+		return OS::STD_HANDLE_UNKNOWN;
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
-		return STD_HANDLE_PIPE;
+		return OS::STD_HANDLE_PIPE;
 	}
 	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
-		return STD_HANDLE_FILE;
+		return OS::STD_HANDLE_FILE;
 	}
-	return STD_HANDLE_UNKNOWN;
+	return OS::STD_HANDLE_UNKNOWN;
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stdout_type() const
+OS::StdHandleType OS_Unix::get_stdout_type()
 {
 	int h = fileno(stdout);
 	if (h == -1) {
-		return STD_HANDLE_INVALID;
+		return OS::STD_HANDLE_INVALID;
 	}
 
 	if (isatty(h)) {
-		return STD_HANDLE_CONSOLE;
+		return OS::STD_HANDLE_CONSOLE;
 	}
 	struct stat statbuf;
 	if (fstat(h, &statbuf) < 0) {
-		return STD_HANDLE_UNKNOWN;
+		return OS::STD_HANDLE_UNKNOWN;
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
-		return STD_HANDLE_PIPE;
+		return OS::STD_HANDLE_PIPE;
 	}
 	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
-		return STD_HANDLE_FILE;
+		return OS::STD_HANDLE_FILE;
 	}
-	return STD_HANDLE_UNKNOWN;
+	return OS::STD_HANDLE_UNKNOWN;
 }
 
-OS_Unix::StdHandleType OS_Unix::get_stderr_type() const
+OS::StdHandleType OS_Unix::get_stderr_type()
 {
 	int h = fileno(stderr);
 	if (h == -1) {
-		return STD_HANDLE_INVALID;
+		return OS::STD_HANDLE_INVALID;
 	}
 
 	if (isatty(h)) {
-		return STD_HANDLE_CONSOLE;
+		return OS::STD_HANDLE_CONSOLE;
 	}
 	struct stat statbuf;
 	if (fstat(h, &statbuf) < 0) {
-		return STD_HANDLE_UNKNOWN;
+		return OS::STD_HANDLE_UNKNOWN;
 	}
 	if (S_ISFIFO(statbuf.st_mode)) {
-		return STD_HANDLE_PIPE;
+		return OS::STD_HANDLE_PIPE;
 	}
 	else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
-		return STD_HANDLE_FILE;
+		return OS::STD_HANDLE_FILE;
 	}
-	return STD_HANDLE_UNKNOWN;
+	return OS::STD_HANDLE_UNKNOWN;
 }
 
 Error OS_Unix::get_entropy(uint8_t* r_buffer, int p_bytes)
@@ -307,22 +311,22 @@ Error OS_Unix::get_entropy(uint8_t* r_buffer, int p_bytes)
 	return OK;
 }
 
-String OS_Unix::get_name() const { return "Unix"; }
+String OS_Unix::get_name() { return "Unix"; }
 
-String OS_Unix::get_distribution_name() const { return ""; }
+String OS_Unix::get_distribution_name() { return ""; }
 
-String OS_Unix::get_version() const { return ""; }
+String OS_Unix::get_version() { return ""; }
 
-String OS_Unix::get_temp_path() const { return "/tmp"; }
+String OS_Unix::get_temp_path() { return "/tmp"; }
 
-double OS_Unix::get_unix_time() const
+double OS_Unix::get_unix_time()
 {
 	struct timeval tv_now;
 	gettimeofday(&tv_now, nullptr);
 	return (double)tv_now.tv_sec + double(tv_now.tv_usec) / 1000000;
 }
 
-OS::DateTime OS_Unix::get_datetime(bool p_utc) const
+OS::DateTime OS_Unix::get_datetime(bool p_utc)
 {
 	time_t t = time(nullptr);
 	struct tm lt;
@@ -332,7 +336,7 @@ OS::DateTime OS_Unix::get_datetime(bool p_utc) const
 	else {
 		localtime_r(&t, &lt);
 	}
-	DateTime ret;
+	OS::DateTime ret;
 	ret.year = 1900 + lt.tm_year;
 	// Index starting at 1 to match OS_Unix::get_date
 	//   and Windows SYSTEMTIME and tm_mon follows the typical structure
@@ -348,7 +352,7 @@ OS::DateTime OS_Unix::get_datetime(bool p_utc) const
 	return ret;
 }
 
-OS::TimeZoneInfo OS_Unix::get_time_zone_info() const
+OS::TimeZoneInfo OS_Unix::get_time_zone_info()
 {
 	time_t t = time(nullptr);
 	struct tm lt;
@@ -356,7 +360,7 @@ OS::TimeZoneInfo OS_Unix::get_time_zone_info() const
 	char name[16];
 	strftime(name, 16, "%Z", &lt);
 	name[15] = 0;
-	TimeZoneInfo ret;
+	OS::TimeZoneInfo ret;
 	ret.name = name;
 
 	char bias_buf[16];
@@ -378,7 +382,7 @@ OS::TimeZoneInfo OS_Unix::get_time_zone_info() const
 	return ret;
 }
 
-void OS_Unix::delay_usec(uint32_t p_usec) const
+void OS_Unix::delay_usec(uint32_t p_usec)
 {
 	struct timespec requested = {
 		static_cast<time_t>(p_usec / 1000000), (static_cast<long>(p_usec) % 1000000) * 1000};
@@ -389,7 +393,7 @@ void OS_Unix::delay_usec(uint32_t p_usec) const
 	}
 }
 
-uint64_t OS_Unix::get_ticks_usec() const
+uint64_t OS_Unix::get_ticks_usec()
 {
 #if defined(__APPLE__)
 	uint64_t longtime = mach_absolute_time() * _clock_scale;
@@ -461,7 +465,7 @@ void OS_Unix::_load_iconv()
 }
 #endif
 
-String OS_Unix::multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array) const
+String OS_Unix::multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array)
 {
 	ERR_FAIL_COND_V_MSG(!_iconv_ok, String(), "Conversion failed: Unable to load libiconv");
 
@@ -499,7 +503,7 @@ String OS_Unix::multibyte_to_string(const String& p_encoding, const PackedByteAr
 	return String::utf8((const char*)chars.ptr(), chars.size());
 }
 
-PackedByteArray OS_Unix::string_to_multibyte(const String& p_encoding, const String& p_string) const
+PackedByteArray OS_Unix::string_to_multibyte(const String& p_encoding, const String& p_string)
 {
 	ERR_FAIL_COND_V_MSG(
 		!_iconv_ok, PackedByteArray(), "Conversion failed: Unable to load libiconv");
@@ -563,7 +567,7 @@ int OS_Unix::_wait_for_pid_completion(const pid_t p_pid, int* r_status, int p_op
 	}
 }
 
-bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int* r_status) const
+bool OS_Unix::_check_pid_is_running(const pid_t p_pid, int* r_status)
 {
 	const ProcessInfo* pi = process_map->getptr(p_pid);
 
@@ -739,15 +743,15 @@ Error OS_Unix::kill(const ProcessID& p_pid)
 	return ret ? ERR_INVALID_PARAMETER : OK;
 }
 
-int OS_Unix::get_process_id() const { return getpid(); }
+int OS_Unix::get_process_id() { return getpid(); }
 
-bool OS_Unix::is_process_running(const ProcessID& p_pid) const
+bool OS_Unix::is_process_running(const ProcessID& p_pid)
 {
 	MutexLock lock(process_map_mutex);
 	return _check_pid_is_running(p_pid, nullptr);
 }
 
-int OS_Unix::get_process_exit_code(const ProcessID& p_pid) const
+int OS_Unix::get_process_exit_code(const ProcessID& p_pid)
 {
 	MutexLock lock(process_map_mutex);
 
@@ -760,7 +764,7 @@ int OS_Unix::get_process_exit_code(const ProcessID& p_pid) const
 	return exit_code;
 }
 
-String OS_Unix::get_locale() const
+String OS_Unix::get_locale()
 {
 	if (!has_environment("LANG")) {
 		return "en";
@@ -775,7 +779,7 @@ String OS_Unix::get_locale() const
 }
 
 Error OS_Unix::open_dynamic_library(
-	const String& p_path, void*& p_library_handle, GDExtensionData* p_data)
+	const String& p_path, void*& p_library_handle, OS::GDExtensionData* p_data)
 {
 	String path = p_path;
 
@@ -847,7 +851,7 @@ Error OS_Unix::set_cwd(const String& p_cwd)
 	return OK;
 }
 
-String OS_Unix::get_cwd() const
+String OS_Unix::get_cwd()
 {
 	String dir;
 	char real_current_dir_name[2048];
@@ -858,12 +862,12 @@ String OS_Unix::get_cwd() const
 	return dir;
 }
 
-bool OS_Unix::has_environment(const String& p_var) const
+bool OS_Unix::has_environment(const String& p_var)
 {
 	return getenv(p_var.utf8().get_data()) != nullptr;
 }
 
-String OS_Unix::get_environment(const String& p_var) const
+String OS_Unix::get_environment(const String& p_var)
 {
 	const char* val = getenv(p_var.utf8().get_data());
 	if (val == nullptr) { // Not set; return empty string
@@ -876,7 +880,7 @@ String OS_Unix::get_environment(const String& p_var) const
 	return String(val); // Not valid UTF-8, so return as-is
 }
 
-void OS_Unix::set_environment(const String& p_var, const String& p_value) const
+void OS_Unix::set_environment(const String& p_var, const String& p_value)
 {
 	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='),
 		vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
@@ -885,19 +889,19 @@ void OS_Unix::set_environment(const String& p_var, const String& p_value) const
 		vformat("Failed setting environment variable '%s', the system is out of memory.", p_var));
 }
 
-void OS_Unix::unset_environment(const String& p_var) const
+void OS_Unix::unset_environment(const String& p_var)
 {
 	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='),
 		vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
 	unsetenv(p_var.utf8().get_data());
 }
 
-String OS_Unix::get_user_data_dir(const String& p_user_dir) const
+String OS_Unix::get_user_data_dir(const String& p_user_dir)
 {
-	return get_data_path().path_join(p_user_dir);
+	return OS::get_data_path().path_join(p_user_dir);
 }
 
-String OS_Unix::get_executable_path() const
+String OS_Unix::get_executable_path()
 {
 #ifdef __linux__
 	// fix for running from a symlink
@@ -968,7 +972,7 @@ String OS_Unix::get_executable_path() const
 #endif
 }
 
-String OS_Unix::expand_path(const String& p_path) const
+String OS_Unix::expand_path(const String& p_path)
 {
 	String path = p_path;
 
@@ -984,7 +988,7 @@ String OS_Unix::expand_path(const String& p_path) const
 
 UnixTerminalLogger::~UnixTerminalLogger() {}
 
-OS_Unix::OS_Unix()
+void OS_Unix::initialize()
 {
 #if !defined(__GLIBC__) && !defined(WEB_ENABLED)
 	_load_iconv();
@@ -992,7 +996,7 @@ OS_Unix::OS_Unix()
 
 	Vector<Logger*> loggers;
 	loggers.push_back(memnew(UnixTerminalLogger));
-	_set_logger(memnew(CompositeLogger(loggers)));
+	OS::_set_logger(memnew(CompositeLogger(loggers)));
 }
 
 #endif

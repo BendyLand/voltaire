@@ -2,10 +2,11 @@
 /*  lightmapper_rd.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -823,7 +824,7 @@ void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i 
 		// grid and indices
 		tf.format = RDC::DATA_FORMAT_R32G32_UINT;
 		texdata.write[0] = grid_indices.to_byte_array();
-		grid_texture = rd->texture_create(tf, RD::TextureView(), texdata);
+		grid_texture = rd->texture_create(tf, RDD::TextureView(), texdata);
 	}
 }
 
@@ -939,7 +940,7 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 			String str;
 			int exitcode = 0;
 
-			Error err = OS::get_singleton()->execute(p_exe, args, &str, &exitcode, true);
+			Error err = OS::execute(p_exe, args, &str, &exitcode, true);
 
 			da->remove(fname_light_in);
 

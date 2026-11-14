@@ -2,10 +2,11 @@
 /*  editor_run_bar.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -60,17 +61,17 @@ EditorRunBar* EditorRunBar::singleton = nullptr;
 void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
-		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorStringName(EditorStyles)).ptr());
-		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorStringName(EditorStyles))
+		add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("LaunchPadMovieMode"), EditorString(EditorStyles)).ptr());
+		write_movie_panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("MovieWriterButtonPressed"), EditorString(EditorStyles))
 				.ptr());
 	}
 	else {
-		add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorStringName(EditorStyles)).ptr());
-		write_movie_panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorStringName(EditorStyles))
+		add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("LaunchPadNormal"), EditorString(EditorStyles)).ptr());
+		write_movie_panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SNAME("MovieWriterButtonNormal"), EditorString(EditorStyles))
 				.ptr());
 	}
 }

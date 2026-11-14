@@ -2,10 +2,11 @@
 /*  scene_rpc_interface.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -42,7 +43,7 @@ class SceneRPCInterface : public RefCounted
 private:
 	struct RPCConfig
 	{
-		StringName name;
+		String name;
 		MultiplayerAPI::RPCMode rpc_mode = MultiplayerAPI::RPC_MODE_DISABLED;
 		bool call_local = false;
 		MultiplayerPeer::TransferMode transfer_mode = MultiplayerPeer::TRANSFER_MODE_RELIABLE;
@@ -54,16 +55,14 @@ private:
 	struct RPCConfigCache
 	{
 		HashMap<uint16_t, RPCConfig> configs;
-		HashMap<StringName, uint16_t> ids;
+		HashMap<String, uint16_t> ids;
 	};
 
 	struct SortRPCConfig
 	{
-		StringName::AlphCompare compare;
-
 		bool operator()(const RPCConfig& p_a, const RPCConfig& p_b) const
 		{
-			return compare(p_a.name, p_b.name);
+			return p_a.name < p_b.name;
 		}
 	};
 

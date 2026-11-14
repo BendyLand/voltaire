@@ -2,10 +2,11 @@
 /*  animation_library_editor.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -80,15 +81,15 @@ class AnimationLibraryEditor : public AcceptDialog
 
 	FileDialogAction file_dialog_action = FILE_DIALOG_ACTION_OPEN_ANIMATION;
 
-	StringName file_dialog_animation;
-	StringName file_dialog_library;
+	String file_dialog_animation;
+	String file_dialog_library;
 
 	Button* new_library_button = nullptr;
 	Button* load_library_button = nullptr;
 
 	AcceptDialog* error_dialog = nullptr;
 	bool adding_animation = false;
-	StringName adding_animation_to_library;
+	String adding_animation_to_library;
 	EditorFileDialog* file_dialog = nullptr;
 	ConfirmationDialog* add_library_dialog = nullptr;
 	LineEdit* add_library_name = nullptr;

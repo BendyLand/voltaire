@@ -2,10 +2,11 @@
 /*  renderer_canvas_render_rd.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -602,7 +603,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			}
 
 			Transform2D final_xform;
-			if (!RS::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
+			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
 				!l->on_interpolate_transform_list) {
 				final_xform = l->xform_curr;
 			}
@@ -1012,7 +1013,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 				RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_texture);
 		}
 		{
@@ -1024,7 +1025,7 @@ void RendererCanvasRenderRD::_update_shadow_atlas()
 			tf.format = RDC::DATA_FORMAT_D32_SFLOAT;
 			tf.is_discardable = true;
 			// chunks to write
-			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_depth_texture = RD::texture_create(tf, RDD::TextureView());
 			fb_textures.push_back(RendererRD::state.shadow_depth_texture);
 		}
 
@@ -1404,7 +1405,7 @@ void RendererCanvasRenderRD::set_shadow_texture_size(int p_size)
 			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
 			tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
 
-			RendererRD::state.shadow_texture = RD::texture_create(tf, RD::TextureView());
+			RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
 		}
 	}
 }
@@ -1932,9 +1933,6 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				}
 			}
 			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
-				RendererRD::ParticlesStorage* particles_storage =
-					RendererRD::ParticlesStorage::get_singleton();
-
 				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
 				RendererRD::TextureState tex_state(
 					pt->texture, texture_filter, texture_repeat, false, use_linear_colors);
@@ -1948,7 +1946,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 
 				uint32_t divisor = 1;
 				r_current_batch->mesh_instance_count =
-					particles_storage->particles_get_amount(pt->particles, divisor);
+					RendererRD::ParticlesStorage::particles_get_amount(pt->particles, divisor);
 				r_current_batch->flags |= (divisor & BATCH_FLAGS_INSTANCING_MASK);
 				r_current_batch->mesh_instance_count /= divisor;
 
@@ -1957,7 +1955,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_COLORS;
 				r_current_batch->flags |= BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA;
 
-				if (particles_storage->particles_has_collision(particles) &&
+				if (RendererRD::ParticlesStorage::particles_has_collision(particles) &&
 					RendererRD::TextureStorage::render_target_is_sdf_enabled(
 						p_render_target.render_target)) {
 					// Pass collision information.
@@ -1976,14 +1974,14 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 						to_screen.position = -sdf_rect.position * to_screen.size;
 					}
 
-					particles_storage->particles_set_canvas_sdf_collision(
+					RendererRD::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, true, xform, to_screen, sdf_texture);
 				}
 				else {
-					particles_storage->particles_set_canvas_sdf_collision(
+					RendererRD::ParticlesStorage::particles_set_canvas_sdf_collision(
 						pt->particles, false, Transform2D(), Rect2(), RID());
 				}
-				r_sdf_used |= particles_storage->particles_has_collision(particles);
+				r_sdf_used |= RendererRD::ParticlesStorage::particles_has_collision(particles);
 			}
 
 			Color modulated = modulate * base_color;
@@ -2255,9 +2253,6 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 
 		RendererRD::PushConstantAttributes push_constant = p_batch->push_constant_attributes();
 
-		RendererRD::ParticlesStorage* particles_storage =
-			RendererRD::ParticlesStorage::get_singleton();
-
 		RID mesh;
 		RID mesh_instance;
 
@@ -2280,23 +2275,23 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			const RCR::Item::CommandParticles* pt =
 				static_cast<const RCR::Item::CommandParticles*>(p_batch->command);
 			RID particles = pt->particles;
-			mesh = particles_storage->particles_get_draw_pass_mesh(particles, 0);
+			mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(particles, 0);
 
-			ERR_BREAK(particles_storage->particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
-			particles_storage->particles_request_process(particles);
+			ERR_BREAK(RendererRD::ParticlesStorage::particles_get_mode(particles) != RSE::PARTICLES_MODE_2D);
+			RendererRD::ParticlesStorage::particles_request_process(particles);
 
-			if (particles_storage->particles_is_inactive(particles)) {
+			if (RendererRD::ParticlesStorage::particles_is_inactive(particles)) {
 				break;
 			}
 
 			Renderer::redraw_request(); // Active particles means redraw request.
 
-			int dpc = particles_storage->particles_get_draw_passes(particles);
+			int dpc = RendererRD::ParticlesStorage::particles_get_draw_passes(particles);
 			if (dpc == 0) {
 				break; // Nothing to draw.
 			}
 
-			RID uniform_set = particles_storage->particles_get_instance_buffer_uniform_set(
+			RID uniform_set = RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
 				pt->particles, RendererRD::shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
 			RD::draw_list_bind_uniform_set(p_draw_list, uniform_set, TRANSFORMS_UNIFORM_SET);
 		}
@@ -2499,39 +2494,67 @@ void RendererCanvasRenderRD::initialize() {}
 
 void RendererCanvasRenderRD::finalize()
 {
-	RendererRD::MaterialStorage::material_free(default_canvas_group_material);
-	RendererRD::MaterialStorage::shader_free(default_canvas_group_shader);
+	if (default_canvas_group_material.is_valid()) {
+		RendererRD::MaterialStorage::material_free(default_canvas_group_material);
+		default_canvas_group_material = RID();
+	}
+	if (default_canvas_group_shader.is_valid()) {
+		RendererRD::MaterialStorage::shader_free(default_canvas_group_shader);
+		default_canvas_group_shader = RID();
+	}
 
-	RendererRD::MaterialStorage::material_free(default_clip_children_material);
-	RendererRD::MaterialStorage::shader_free(default_clip_children_shader);
+	if (default_clip_children_material.is_valid()) {
+		RendererRD::MaterialStorage::material_free(default_clip_children_material);
+		default_clip_children_material = RID();
+	}
+	if (default_clip_children_shader.is_valid()) {
+		RendererRD::MaterialStorage::shader_free(default_clip_children_shader);
+		default_clip_children_shader = RID();
+	}
 
 	{
 		if (RendererRD::state.canvas_state_buffer.is_valid()) {
 			RD::free_rid(RendererRD::state.canvas_state_buffer);
 		}
 
-		memdelete_arr(RendererRD::state.light_uniforms);
-		RD::free_rid(RendererRD::state.lights_storage_buffer);
+		if (RendererRD::state.light_uniforms) {
+			memdelete_arr(RendererRD::state.light_uniforms);
+			RendererRD::state.light_uniforms = nullptr;
+		}
+		if (RendererRD::state.lights_storage_buffer.is_valid()) {
+			RD::free_rid(RendererRD::state.lights_storage_buffer);
+		}
 	}
 
 	// shadow rendering
 	{
-		shadow_render.shader.version_free(shadow_render.shader_version);
+		if (shadow_render.shader_version.is_valid()) {
+			shadow_render.shader.version_free(shadow_render.shader_version);
+			shadow_render.shader_version = RID();
+		}
 		// this will also automatically clear all pipelines
-		RD::free_rid(RendererRD::state.shadow_sampler);
+		if (RendererRD::state.shadow_sampler.is_valid()) {
+			RD::free_rid(RendererRD::state.shadow_sampler);
+		}
 	}
 
 	// buffers
 	{
-		RD::free_rid(RendererRD::shader.quad_index_array);
-		RD::free_rid(RendererRD::shader.quad_index_buffer);
+		if (RendererRD::shader.quad_index_array.is_valid()) {
+			RD::free_rid(RendererRD::shader.quad_index_array);
+		}
+		if (RendererRD::shader.quad_index_buffer.is_valid()) {
+			RD::free_rid(RendererRD::shader.quad_index_buffer);
+		}
 		// primitives are erase by dependency
 	}
 
 	if (RendererRD::state.shadow_fb.is_valid()) {
 		RD::free_rid(RendererRD::state.shadow_depth_texture);
 	}
-	RD::free_rid(RendererRD::state.shadow_texture);
+	if (RendererRD::state.shadow_texture.is_valid()) {
+		RD::free_rid(RendererRD::state.shadow_texture);
+	}
 
 	if (RendererRD::state.shadow_occluder_buffer.is_valid()) {
 		RD::free_rid(RendererRD::state.shadow_occluder_buffer);
@@ -2539,13 +2562,19 @@ void RendererCanvasRenderRD::finalize()
 
 	RendererRD::state.instance_buffers.uninit();
 
-	// Disable the callback, as we're tearing everything down
-	RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(
-		default_canvas_texture, nullptr, nullptr);
-	RendererRD::TextureStorage::canvas_texture_free(default_canvas_texture);
+	if (default_canvas_texture.is_valid()) {
+		// Disable the callback, as we're tearing everything down
+		RendererRD::TextureStorage::canvas_texture_set_invalidation_callback(
+			default_canvas_texture, nullptr, nullptr);
+		RendererRD::TextureStorage::canvas_texture_free(default_canvas_texture);
+		default_canvas_texture = RID();
+	}
 	// pipelines don't need freeing, they are all gone after shaders are gone
 
-	memdelete(RendererRD::shader.default_version_data);
+	if (RendererRD::shader.default_version_data) {
+		memdelete(RendererRD::shader.default_version_data);
+		RendererRD::shader.default_version_data = nullptr;
+	}
 }
 
 RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(
@@ -2563,18 +2592,18 @@ RID RendererRD::CanvasShaderData::get_shader(
 
 void RendererCanvasRenderRD::light_update_shadow(RID p_light, int p_shadow_index,
 	const Transform2D& p_light_xform, int p_light_mask, float p_near, float p_far,
-	RendererCanvasRender::LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
+	LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
 {
 }
 
 void RendererCanvasRenderRD::light_update_directional_shadow(RID p_light, int p_shadow_index,
 	const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
-	const Rect2& p_clip_rect, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	const Rect2& p_clip_rect, LightOccluderInstance* p_occluders)
 {
 }
 
 void RendererCanvasRenderRD::render_sdf(
-	RID p_render_target, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	RID p_render_target, LightOccluderInstance* p_occluders)
 {
 }
 

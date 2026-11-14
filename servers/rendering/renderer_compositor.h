@@ -2,10 +2,11 @@
 /*  renderer_compositor.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -48,7 +49,6 @@ private:
     static inline bool xr_enabled = false;
 
 public:
-    static inline Error (*_create_func)() = nullptr;
     static inline bool back_end = false;
     static inline bool low_end = false;
 
@@ -59,8 +59,6 @@ public:
 
     /* Static Function Pointer Dispatch Interface */
 
-    static inline RendererGI* (*get_gi)() = nullptr;
-    static inline RendererFog* (*get_fog)() = nullptr;
     static inline RendererCanvasRender* (*get_canvas)() = nullptr;
 
     static inline void (*set_boot_image_with_stretch)(
@@ -89,10 +87,9 @@ public:
         Backend::bind_mesh_storage();
         Backend::bind_light_storage();
         Backend::bind_particles_storage();
-
-        get_gi = &Backend::get_gi;
-        get_fog = &Backend::get_fog;
-        get_canvas = &Backend::get_canvas;
+		Backend::bind_gi();
+		Backend::bind_fog();
+		Backend::bind_canvas();
 
         set_boot_image_with_stretch = &Backend::set_boot_image_with_stretch;
         initialize = &Backend::initialize;

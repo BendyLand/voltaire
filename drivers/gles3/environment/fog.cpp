@@ -2,10 +2,11 @@
 /*  fog.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -32,38 +33,37 @@
 
 #ifdef GLES3_ENABLED
 
-#include "core/math/aabb.h"
-#include "core/templates/rid.h"
-
 using namespace GLES3;
 
-/* FOG */
+/* LIFECYCLE */
 
-RID Fog::fog_volume_allocate() {
-	return RID();
-}
+void Fog::initialize() {}
 
-void Fog::fog_volume_initialize(RID p_rid) {
-}
+void Fog::finalize() {}
 
-void Fog::fog_volume_free(RID p_rid) {
-}
+bool Fog::free(RID p_rid) { return false; }
 
-void Fog::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {
-}
+/* FOG VOLUMES */
 
-void Fog::fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) {
-}
+bool Fog::owns_fog_volume(RID p_rid) { return false; }
 
-void Fog::fog_volume_set_material(RID p_fog_volume, RID p_material) {
-}
+RID Fog::fog_volume_allocate() { return RID(); }
 
-AABB Fog::fog_volume_get_aabb(RID p_fog_volume) const {
-	return AABB();
-}
+void Fog::fog_volume_initialize(RID p_rid) {}
 
-RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume) const {
-	return RSE::FOG_VOLUME_SHAPE_BOX;
+void Fog::fog_volume_free(RID p_rid) {}
+
+void Fog::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {}
+
+void Fog::fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) {}
+
+void Fog::fog_volume_set_material(RID p_fog_volume, RID p_material) {}
+
+AABB Fog::fog_volume_get_aabb(RID p_fog_volume) { return AABB(); }
+
+RSE::FogVolumeShape Fog::fog_volume_get_shape(RID p_fog_volume)
+{
+	return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
 }
 
 #endif // GLES3_ENABLED

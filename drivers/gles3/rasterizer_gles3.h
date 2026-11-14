@@ -2,10 +2,11 @@
 /*  rasterizer_gles3.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -32,7 +33,6 @@
 
 #include "servers/rendering/storage/material_storage.h"
 #ifdef GLES3_ENABLED
-
 #include "drivers/gles3/effects/copy_effects.h"
 #include "drivers/gles3/effects/cubemap_filter.h"
 #include "drivers/gles3/effects/feed_effects.h"
@@ -41,7 +41,6 @@
 #include "drivers/gles3/environment/fog.h"
 #include "drivers/gles3/environment/gi.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
-#include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
 #include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/light_storage.h"
@@ -51,6 +50,7 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/environment/renderer_fog.h"
 
 class RasterizerGLES3 final
 {
@@ -68,8 +68,6 @@ private:
 	static inline GLES3::MaterialStorage* material_storage = nullptr;
 	static inline GLES3::ParticlesStorage* particles_storage = nullptr;
 	static inline GLES3::LightStorage* light_storage = nullptr;
-	static inline GLES3::GI* gi = nullptr;
-	static inline GLES3::Fog* fog = nullptr;
 	static inline GLES3::CopyEffects* copy_effects = nullptr;
 	static inline GLES3::CubemapFilter* cubemap_filter = nullptr;
 	static inline GLES3::Glow* glow = nullptr;
@@ -85,16 +83,9 @@ public:
 	static inline void bind_utilities();
 	static inline void bind_mesh_storage();
 
-	static _ALWAYS_INLINE_ RendererParticlesStorage* get_particles_storage()
-	{
-		return particles_storage;
-	}
-
-	static _ALWAYS_INLINE_ RendererGI* get_gi() { return gi; }
-
-	static _ALWAYS_INLINE_ RendererFog* get_fog() { return fog; }
-
-	static _ALWAYS_INLINE_ RendererCanvasRender* get_canvas() { return canvas; }
+    static inline void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasGLES3>(); }
+	static void bind_gi() { RendererGI::bind<GLES3::GI>(); }
+	static void bind_fog() { RendererFog::bind<GLES3::Fog>(); }
 
 	static _ALWAYS_INLINE_ RendererSceneRender* get_scene() { return scene; }
 
@@ -113,12 +104,6 @@ public:
 	static void end_frame(bool p_swap_buffers);
 
 	static void finalize();
-
-	static Error _create_current()
-	{
-		RasterizerGLES3::initialize();
-		return OK;
-	}
 
 	static void make_current(bool p_gles_over_gl);
 
@@ -156,5 +141,3 @@ public:
 using RGLES3 = RasterizerGLES3;
 
 #endif // GLES3_ENABLED
-
-

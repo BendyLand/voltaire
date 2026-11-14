@@ -2,10 +2,11 @@
 /*  renames_map_3_to_4.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1047,7 +1048,7 @@ const char *RenamesMap3To4::gdscript_properties_renames[][2] = {
 	// make sure to add it to the C# rename map too.
 
 	// Too common words, users may use these names for variables or in comments.
-	// { "bg", SceneStringName(panel) }, // Theme
+	// { "bg", SceneString(panel) }, // Theme
 	// { "alt", "alt_pressed" }, // InputEventWithModifiers
 	// { "command", "command_pressed" }, // InputEventWithModifiers
 	// { "control", "ctrl_pressed" }, // InputEventWithModifiers

@@ -2,10 +2,11 @@
 /*  os_linuxbsd.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -101,7 +102,7 @@ void OS_LinuxBSD::alert(const String& p_alert, const String& p_title)
 {
 	const char* message_programs[] = {"zenity", "kdialog", "Xdialog", "xmessage"};
 
-	String path = get_environment("PATH");
+	String path = OS::get_environment("PATH");
 	Vector<String> path_elems = path.split(":", false);
 	String program;
 
@@ -158,20 +159,95 @@ void OS_LinuxBSD::alert(const String& p_alert, const String& p_title)
 	}
 
 	if (program.length()) {
-		execute(program, args);
+		OS::execute(program, args);
 	}
 	else {
 		__print_line(p_alert);
 	}
 }
 
+void OS::initialize()
+{
+	OS_LinuxBSD::initialize();
+	Vector<Logger*> loggers;
+	loggers.push_back(memnew(StdLogger));
+	_set_logger(memnew(CompositeLogger(loggers)));
+	_initialized = true;
+}
+
 void OS_LinuxBSD::initialize()
+{
+	OS_Unix::initialize();
+
+	main_loop = nullptr;
+
+#ifdef PULSEAUDIO_ENABLED
+	AudioDriverManager::add_driver(&driver_pulseaudio);
+#endif
+
+#ifdef ALSA_ENABLED
+	AudioDriverManager::add_driver(&driver_alsa);
+#endif
+
+#ifdef X11_ENABLED
+	DisplayServerX11::register_x11_driver();
+#endif
+
+#ifdef WAYLAND_ENABLED
+	DisplayServerWayland::register_wayland_driver();
+#endif
+
+#ifdef FONTCONFIG_ENABLED
+#ifdef SOWRAP_ENABLED
+#ifdef DEBUG_ENABLED
+	int dylibloader_verbose = 1;
+#else
+	int dylibloader_verbose = 0;
+#endif
+	font_config_initialized = (initialize_fontconfig(dylibloader_verbose) == 0);
+#else
+	font_config_initialized = true;
+#endif
+	if (font_config_initialized) {
+		bool ver_ok = false;
+		int version = FcGetVersion();
+		ver_ok = ((version / 100 / 100) == 2 && (version / 100 % 100) >= 11) ||
+				 ((version / 100 / 100) > 2); // 2.11.0
+		print_verbose(vformat("FontConfig %d.%d.%d detected.", version / 100 / 100,
+			version / 100 % 100, version % 100));
+		if (!ver_ok) {
+			font_config_initialized = false;
+		}
+	}
+
+	if (font_config_initialized) {
+		config = FcInitLoadConfigAndFonts();
+		if (!config) {
+			font_config_initialized = false;
+		}
+		object_set = FcObjectSetBuild(FC_FAMILY, FC_FILE, nullptr);
+		if (!object_set) {
+			font_config_initialized = false;
+		}
+	}
+#endif // FONTCONFIG_ENABLED
+}
+
+void OS::initialize_core()
+{
+#ifdef UNIX_ENABLED
+	OS_LinuxBSD::initialize_core();
+	_initialized = true;
+#endif
+}
+
+void OS_LinuxBSD::initialize_core()
 {
 	crash_handler.initialize();
 
 	OS_Unix::initialize_core();
 
-	system_dir_desktop_cache = get_system_dir(SYSTEM_DIR_DESKTOP);
+	system_dir_desktop_cache = get_system_dir(OS::SYSTEM_DIR_DESKTOP);
 }
 
 void OS_LinuxBSD::initialize_joypads()
@@ -186,7 +262,7 @@ void OS_LinuxBSD::initialize_joypads()
 #endif
 }
 
-String OS_LinuxBSD::get_unique_id() const
+String OS_LinuxBSD::get_unique_id()
 {
 	static String machine_id;
 	if (machine_id.is_empty()) {
@@ -210,7 +286,7 @@ String OS_LinuxBSD::get_unique_id() const
 	return machine_id;
 }
 
-String OS_LinuxBSD::get_processor_name() const
+String OS_LinuxBSD::get_processor_name()
 {
 #if defined(__FreeBSD__)
 	const int mib[2] = {CTL_HW, HW_MODEL};
@@ -237,7 +313,7 @@ String OS_LinuxBSD::get_processor_name() const
 	ERR_FAIL_V_MSG("", String("Couldn't get the CPU model. Returning an empty string."));
 }
 
-bool OS_LinuxBSD::is_sandboxed() const
+bool OS_LinuxBSD::is_sandboxed()
 {
 	// This function is derived from SDL:
 	// https://github.com/libsdl-org/SDL/blob/main/src/core/linux/SDL_sandbox.c#L28-L45
@@ -248,8 +324,8 @@ bool OS_LinuxBSD::is_sandboxed() const
 
 	// For Snap, we check multiple variables because they might be set for
 	// unrelated reasons. This is the same thing WebKitGTK does.
-	if (has_environment("SNAP") && has_environment("SNAP_NAME") &&
-		has_environment("SNAP_REVISION")) {
+	if (OS::has_environment("SNAP") && OS::has_environment("SNAP_NAME") &&
+		OS::has_environment("SNAP_REVISION")) {
 		return true;
 	}
 
@@ -260,7 +336,7 @@ bool OS_LinuxBSD::is_sandboxed() const
 	return false;
 }
 
-void OS_LinuxBSD::finalize()
+void OS_LinuxBSD::finalize_core()
 {
 	memdelete(main_loop);
 	main_loop = nullptr;
@@ -274,7 +350,7 @@ void OS_LinuxBSD::finalize()
 #endif
 }
 
-MainLoop* OS_LinuxBSD::get_main_loop() const { return main_loop; }
+MainLoop* OS_LinuxBSD::get_main_loop() { return main_loop; }
 
 void OS_LinuxBSD::delete_main_loop()
 {
@@ -284,9 +360,9 @@ void OS_LinuxBSD::delete_main_loop()
 
 void OS_LinuxBSD::set_main_loop(MainLoop* p_main_loop) { main_loop = p_main_loop; }
 
-String OS_LinuxBSD::get_identifier() const { return "linuxbsd"; }
+String OS_LinuxBSD::get_identifier() { return "linuxbsd"; }
 
-String OS_LinuxBSD::get_name() const
+String OS_LinuxBSD::get_name()
 {
 #ifdef __linux__
 	return "Linux";
@@ -301,7 +377,7 @@ String OS_LinuxBSD::get_name() const
 #endif
 }
 
-String OS_LinuxBSD::get_systemd_os_release_info_value(const String& key) const
+String OS_LinuxBSD::get_systemd_os_release_info_value(const String& key)
 {
 	Ref<FileAccess> f = FileAccess::open("/etc/os-release", FileAccess::READ);
 	if (f.is_valid()) {
@@ -317,7 +393,7 @@ String OS_LinuxBSD::get_systemd_os_release_info_value(const String& key) const
 	return "";
 }
 
-String OS_LinuxBSD::get_distribution_name() const
+String OS_LinuxBSD::get_distribution_name()
 {
 	static String distribution_name = get_systemd_os_release_info_value(
 		"NAME"); // returns a value for systemd users, otherwise an empty string.
@@ -330,7 +406,7 @@ String OS_LinuxBSD::get_distribution_name() const
 	return distribution_name;
 }
 
-String OS_LinuxBSD::get_version() const
+String OS_LinuxBSD::get_version()
 {
 	static String release_version = get_systemd_os_release_info_value(
 		"VERSION"); // returns a value for systemd users, otherwise an empty string.
@@ -343,7 +419,7 @@ String OS_LinuxBSD::get_version() const
 	return release_version;
 }
 
-Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
+Vector<String> OS_LinuxBSD::get_video_adapter_driver_info()
 {
 	if (Renderer::data == nullptr) {
 		return Vector<String>();
@@ -365,7 +441,7 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
 	List<String> lspci_args;
 	lspci_args.push_back("-n");
 	Error err =
-		const_cast<OS_LinuxBSD*>(this)->execute("lspci", lspci_args, &vendor_device_id_mappings);
+		OS::execute("lspci", lspci_args, &vendor_device_id_mappings);
 	if (err != OK || vendor_device_id_mappings.is_empty()) {
 		return Vector<String>();
 	}
@@ -461,7 +537,7 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
 	String modinfo;
 	List<String> modinfo_args;
 	modinfo_args.push_back(driver_name);
-	err = const_cast<OS_LinuxBSD*>(this)->execute("modinfo", modinfo_args, &modinfo);
+	err = OS::execute("modinfo", modinfo_args, &modinfo);
 	if (err != OK || modinfo.is_empty()) {
 		info.push_back(""); // So that this method always either returns an empty array, or an array
 							// of length 2.
@@ -485,7 +561,7 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const
 }
 
 Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_mapping,
-	String class_suffix, String check_column, String whitelist) const
+	String class_suffix, String check_column, String whitelist)
 {
 	// NOTE: whitelist can be changed to `Vector<String>`, if the need arises.
 	const String sep = ":";
@@ -496,7 +572,7 @@ Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_
 		d_args.push_back("-d");
 		d_args.push_back(mapping + sep + class_suffix);
 		d_args.push_back("-vmm");
-		Error err = const_cast<OS_LinuxBSD*>(this)->execute(
+		Error err = OS::execute(
 			"lspci", d_args, &device); // e.g. `lspci -d 10de:13c2:0300 -vmm`
 		if (err != OK) {
 			return Vector<String>();
@@ -528,7 +604,7 @@ Vector<String> OS_LinuxBSD::lspci_device_filter(Vector<String> vendor_device_id_
 }
 
 Vector<String> OS_LinuxBSD::lspci_get_device_value(
-	Vector<String> vendor_device_id_mapping, String check_column, String blacklist) const
+	Vector<String> vendor_device_id_mapping, String check_column, String blacklist)
 {
 	// NOTE: blacklist can be changed to `Vector<String>`, if the need arises.
 	Vector<String> values;
@@ -538,7 +614,7 @@ Vector<String> OS_LinuxBSD::lspci_get_device_value(
 		d_args.push_back("-d");
 		d_args.push_back(mapping);
 		d_args.push_back("-k");
-		Error err = const_cast<OS_LinuxBSD*>(this)->execute(
+		Error err = OS::execute(
 			"lspci", d_args, &device); // e.g. `lspci -d 10de:13c2 -k`
 		if (err != OK) {
 			return Vector<String>();
@@ -577,32 +653,32 @@ Error OS_LinuxBSD::shell_open(const String& p_uri)
 
 	// Use create_process() instead of execute() to avoid blocking the main thread.
 	// This prevents the UI from freezing when opening file managers or other applications.
-	Error ok = create_process("xdg-open", args);
+	Error ok = OS::create_process("xdg-open", args);
 	if (ok == OK) {
 		return OK;
 	}
 	// GNOME
 	args.push_front("open"); // The command is `gio open`, so we need to add it to args
-	ok = create_process("gio", args);
+	ok = OS::create_process("gio", args);
 	if (ok == OK) {
 		return OK;
 	}
 	args.pop_front();
-	ok = create_process("gvfs-open", args);
+	ok = OS::create_process("gvfs-open", args);
 	if (ok == OK) {
 		return OK;
 	}
 	// KDE
-	ok = create_process("kde-open5", args);
+	ok = OS::create_process("kde-open5", args);
 	if (ok == OK) {
 		return OK;
 	}
-	ok = create_process("kde-open", args);
+	ok = OS::create_process("kde-open", args);
 	if (ok == OK) {
 		return OK;
 	}
 	// XFCE
-	ok = create_process("exo-open", args);
+	ok = OS::create_process("exo-open", args);
 	if (ok == OK) {
 		return OK;
 	}
@@ -636,9 +712,9 @@ bool OS_LinuxBSD::_check_internal_feature_support(const String& p_feature)
 	return false;
 }
 
-uint64_t OS_LinuxBSD::get_embedded_pck_offset() const
+uint64_t OS_LinuxBSD::get_embedded_pck_offset()
 {
-	Ref<FileAccess> f = FileAccess::open(get_executable_path(), FileAccess::READ);
+	Ref<FileAccess> f = FileAccess::open(OS::get_executable_path(), FileAccess::READ);
 	if (f.is_null()) {
 		return 0;
 	}
@@ -725,7 +801,7 @@ uint64_t OS_LinuxBSD::get_embedded_pck_offset() const
 	return off;
 }
 
-Vector<String> OS_LinuxBSD::get_system_fonts() const
+Vector<String> OS_LinuxBSD::get_system_fonts()
 {
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
@@ -771,7 +847,7 @@ Vector<String> OS_LinuxBSD::get_system_fonts() const
 }
 
 #ifdef FONTCONFIG_ENABLED
-int OS_LinuxBSD::_weight_to_fc(int p_weight) const
+int OS_LinuxBSD::_weight_to_fc(int p_weight)
 {
 	if (p_weight < 150) {
 		return FC_WEIGHT_THIN;
@@ -811,7 +887,7 @@ int OS_LinuxBSD::_weight_to_fc(int p_weight) const
 	}
 }
 
-int OS_LinuxBSD::_stretch_to_fc(int p_stretch) const
+int OS_LinuxBSD::_stretch_to_fc(int p_stretch)
 {
 	if (p_stretch < 56) {
 		return FC_WIDTH_ULTRACONDENSED;
@@ -845,7 +921,7 @@ int OS_LinuxBSD::_stretch_to_fc(int p_stretch) const
 
 Vector<String> OS_LinuxBSD::get_system_font_path_for_text(const String& p_font_name,
 	const String& p_text, const String& p_locale, const String& p_script, int p_weight,
-	int p_stretch, bool p_italic) const
+	int p_stretch, bool p_italic)
 {
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
@@ -906,7 +982,7 @@ Vector<String> OS_LinuxBSD::get_system_font_path_for_text(const String& p_font_n
 }
 
 String OS_LinuxBSD::get_system_font_path(
-	const String& p_font_name, int p_weight, int p_stretch, bool p_italic) const
+	const String& p_font_name, int p_weight, int p_stretch, bool p_italic)
 {
 #ifdef FONTCONFIG_ENABLED
 	if (!font_config_initialized) {
@@ -972,102 +1048,102 @@ String OS_LinuxBSD::get_system_font_path(
 #endif
 }
 
-String OS_LinuxBSD::get_config_path() const
+String OS_LinuxBSD::get_config_path()
 {
-	if (has_environment("XDG_CONFIG_HOME")) {
-		if (get_environment("XDG_CONFIG_HOME").is_absolute_path()) {
-			return get_environment("XDG_CONFIG_HOME");
+	if (OS::has_environment("XDG_CONFIG_HOME")) {
+		if (OS::get_environment("XDG_CONFIG_HOME").is_absolute_path()) {
+			return OS::get_environment("XDG_CONFIG_HOME");
 		}
 		else {
 			WARN_PRINT_ONCE(
 				"`XDG_CONFIG_HOME` is a relative path. Ignoring its value and falling back to "
 				"`$HOME/.config` or `.` per the XDG Base Directory specification.");
-			return has_environment("HOME") ? get_environment("HOME").path_join(".config") : ".";
+			return OS::has_environment("HOME") ? OS::get_environment("HOME").path_join(".config") : ".";
 		}
 	}
-	else if (has_environment("HOME")) {
-		return get_environment("HOME").path_join(".config");
+	else if (OS::has_environment("HOME")) {
+		return OS::get_environment("HOME").path_join(".config");
 	}
 	else {
 		return ".";
 	}
 }
 
-String OS_LinuxBSD::get_data_path() const
+String OS_LinuxBSD::get_data_path()
 {
-	if (has_environment("XDG_DATA_HOME")) {
-		if (get_environment("XDG_DATA_HOME").is_absolute_path()) {
-			return get_environment("XDG_DATA_HOME");
+	if (OS::has_environment("XDG_DATA_HOME")) {
+		if (OS::get_environment("XDG_DATA_HOME").is_absolute_path()) {
+			return OS::get_environment("XDG_DATA_HOME");
 		}
 		else {
 			WARN_PRINT_ONCE("`XDG_DATA_HOME` is a relative path. Ignoring its value and falling "
 							"back to `$HOME/.local/share` or `get_config_path()` per the XDG Base "
 							"Directory specification.");
-			return has_environment("HOME") ? get_environment("HOME").path_join(".local/share")
+			return OS::has_environment("HOME") ? OS::get_environment("HOME").path_join(".local/share")
 										   : get_config_path();
 		}
 	}
-	else if (has_environment("HOME")) {
-		return get_environment("HOME").path_join(".local/share");
+	else if (OS::has_environment("HOME")) {
+		return OS::get_environment("HOME").path_join(".local/share");
 	}
 	else {
 		return get_config_path();
 	}
 }
 
-String OS_LinuxBSD::get_cache_path() const
+String OS_LinuxBSD::get_cache_path()
 {
-	if (has_environment("XDG_CACHE_HOME")) {
-		if (get_environment("XDG_CACHE_HOME").is_absolute_path()) {
-			return get_environment("XDG_CACHE_HOME");
+	if (OS::has_environment("XDG_CACHE_HOME")) {
+		if (OS::get_environment("XDG_CACHE_HOME").is_absolute_path()) {
+			return OS::get_environment("XDG_CACHE_HOME");
 		}
 		else {
 			WARN_PRINT_ONCE(
 				"`XDG_CACHE_HOME` is a relative path. Ignoring its value and falling back to "
 				"`$HOME/.cache` or `get_config_path()` per the XDG Base Directory specification.");
-			return has_environment("HOME") ? get_environment("HOME").path_join(".cache")
+			return OS::has_environment("HOME") ? OS::get_environment("HOME").path_join(".cache")
 										   : get_config_path();
 		}
 	}
-	else if (has_environment("HOME")) {
-		return get_environment("HOME").path_join(".cache");
+	else if (OS::has_environment("HOME")) {
+		return OS::get_environment("HOME").path_join(".cache");
 	}
 	else {
 		return get_config_path();
 	}
 }
 
-String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const
+String OS_LinuxBSD::get_system_dir(OS::SystemDir p_dir, bool p_shared_storage)
 {
-	if (p_dir == SYSTEM_DIR_DESKTOP && !system_dir_desktop_cache.is_empty()) {
+	if (p_dir == OS::SYSTEM_DIR_DESKTOP && !system_dir_desktop_cache.is_empty()) {
 		return system_dir_desktop_cache;
 	}
 
 	String xdgparam;
 
 	switch (p_dir) {
-	case SYSTEM_DIR_DESKTOP: {
+	case OS::SYSTEM_DIR_DESKTOP: {
 		xdgparam = "DESKTOP";
 	} break;
-	case SYSTEM_DIR_DCIM: {
+	case OS::SYSTEM_DIR_DCIM: {
 		xdgparam = "PICTURES";
 	} break;
-	case SYSTEM_DIR_DOCUMENTS: {
+	case OS::SYSTEM_DIR_DOCUMENTS: {
 		xdgparam = "DOCUMENTS";
 	} break;
-	case SYSTEM_DIR_DOWNLOADS: {
+	case OS::SYSTEM_DIR_DOWNLOADS: {
 		xdgparam = "DOWNLOAD";
 	} break;
-	case SYSTEM_DIR_MOVIES: {
+	case OS::SYSTEM_DIR_MOVIES: {
 		xdgparam = "VIDEOS";
 	} break;
-	case SYSTEM_DIR_MUSIC: {
+	case OS::SYSTEM_DIR_MUSIC: {
 		xdgparam = "MUSIC";
 	} break;
-	case SYSTEM_DIR_PICTURES: {
+	case OS::SYSTEM_DIR_PICTURES: {
 		xdgparam = "PICTURES";
 	} break;
-	case SYSTEM_DIR_RINGTONES: {
+	case OS::SYSTEM_DIR_RINGTONES: {
 		xdgparam = "MUSIC";
 	} break;
 	}
@@ -1075,7 +1151,7 @@ String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const
 	String pipe;
 	List<String> arg;
 	arg.push_back(xdgparam);
-	Error err = const_cast<OS_LinuxBSD*>(this)->execute("xdg-user-dir", arg, &pipe);
+	Error err = OS::execute("xdg-user-dir", arg, &pipe);
 	if (err != OK) {
 		return ".";
 	}
@@ -1084,7 +1160,7 @@ String OS_LinuxBSD::get_system_dir(SystemDir p_dir, bool p_shared_storage) const
 
 void OS_LinuxBSD::disable_crash_handler() { crash_handler.disable(); }
 
-bool OS_LinuxBSD::is_disable_crash_handler() const { return crash_handler.is_disabled(); }
+bool OS_LinuxBSD::is_disable_crash_handler() { return crash_handler.is_disabled(); }
 
 static String get_mountpoint(const String& p_path)
 {
@@ -1127,7 +1203,7 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 
 	args.push_front(
 		"trash"); // The command is `gio trash <file_name>` so we add it before the path.
-	Error result = execute("gio", args, nullptr, &err_code); // For GNOME based machines.
+	Error result = OS::execute("gio", args, nullptr, &err_code); // For GNOME based machines.
 	if (result == OK && err_code == 0) {					 // Success.
 		return OK;
 	}
@@ -1135,14 +1211,14 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 	args.pop_front();
 	args.push_front("move");
 	args.push_back("trash:/"); // The command is `kioclient5 move <file_name> trash:/`.
-	result = execute("kioclient5", args, nullptr, &err_code); // For KDE based machines.
+	result = OS::execute("kioclient5", args, nullptr, &err_code); // For KDE based machines.
 	if (result == OK && err_code == 0) {
 		return OK;
 	}
 
 	args.pop_front();
 	args.pop_back();
-	result = execute("gvfs-trash", args, nullptr, &err_code); // For older Linux machines.
+	result = OS::execute("gvfs-trash", args, nullptr, &err_code); // For older Linux machines.
 	if (result == OK && err_code == 0) {
 		return OK;
 	}
@@ -1227,7 +1303,7 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 	String renamed_path = path.get_base_dir() + "/" + file_name;
 
 	// Generates the .trashinfo file
-	OS::DateTime dt = OS::get_singleton()->get_datetime(false);
+	OS::DateTime dt = OS::get_datetime(false);
 	String timestamp =
 		vformat("%04d-%02d-%02dT%02d:%02d:", dt.year, (int)dt.month, dt.day, dt.hour, dt.minute);
 	timestamp = vformat("%s%02d", timestamp, dt.second); // vformat only supports up to 6 arguments.
@@ -1258,7 +1334,7 @@ Error OS_LinuxBSD::move_to_trash(const String& p_path)
 	mv_args.push_back(trash_path + "/files");
 	{
 		int retval;
-		Error err = execute("mv", mv_args, nullptr, &retval);
+		Error err = OS::execute("mv", mv_args, nullptr, &retval);
 
 		// Issue an error if "mv" failed to move the given resource to the trash can.
 		if (err != OK || retval != 0) {
@@ -1318,7 +1394,7 @@ String OS_LinuxBSD::get_system_ca_certificates()
 }
 
 #ifdef TOOLS_ENABLED
-bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_driver) const
+bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_driver)
 {
 	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to
 	// crash on some drivers.
@@ -1350,75 +1426,7 @@ bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_d
 }
 #endif
 
-OS_LinuxBSD::OS_LinuxBSD()
-{
-	main_loop = nullptr;
-
-#ifdef PULSEAUDIO_ENABLED
-	AudioDriverManager::add_driver(&driver_pulseaudio);
-#endif
-
-#ifdef ALSA_ENABLED
-	AudioDriverManager::add_driver(&driver_alsa);
-#endif
-
-#ifdef X11_ENABLED
-	DisplayServerX11::register_x11_driver();
-#endif
-
-#ifdef WAYLAND_ENABLED
-	DisplayServerWayland::register_wayland_driver();
-#endif
-
-#ifdef FONTCONFIG_ENABLED
-#ifdef SOWRAP_ENABLED
-#ifdef DEBUG_ENABLED
-	int dylibloader_verbose = 1;
-#else
-	int dylibloader_verbose = 0;
-#endif
-	font_config_initialized = (initialize_fontconfig(dylibloader_verbose) == 0);
-#else
-	font_config_initialized = true;
-#endif
-	if (font_config_initialized) {
-		bool ver_ok = false;
-		int version = FcGetVersion();
-		ver_ok = ((version / 100 / 100) == 2 && (version / 100 % 100) >= 11) ||
-				 ((version / 100 / 100) > 2); // 2.11.0
-		print_verbose(vformat("FontConfig %d.%d.%d detected.", version / 100 / 100,
-			version / 100 % 100, version % 100));
-		if (!ver_ok) {
-			font_config_initialized = false;
-		}
-	}
-
-	if (font_config_initialized) {
-		config = FcInitLoadConfigAndFonts();
-		if (!config) {
-			font_config_initialized = false;
-		}
-		object_set = FcObjectSetBuild(FC_FAMILY, FC_FILE, nullptr);
-		if (!object_set) {
-			font_config_initialized = false;
-		}
-	}
-#endif // FONTCONFIG_ENABLED
-}
-
-OS_LinuxBSD::~OS_LinuxBSD()
-{
-#ifdef FONTCONFIG_ENABLED
-	if (object_set) {
-		FcObjectSetDestroy(object_set);
-	}
-	if (config) {
-		FcConfigDestroy(config);
-	}
-#endif // FONTCONFIG_ENABLED
-}
-
-bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver) const
+bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver)
 {
 	return false;
 }
@@ -1429,11 +1437,12 @@ void OS_LinuxBSD::run()
 		return;
 	}
 
-	while (true) {
+	extern bool s_quit_requested;
+	while (!s_quit_requested) {
 		if (DisplayServer::get_singleton()) {
 			DisplayServer::get_singleton()->process_events();
 		}
-		if (Main::iteration()) {
+		if (s_quit_requested || Main::iteration()) {
 			break;
 		}
 	}
@@ -1441,4 +1450,189 @@ void OS_LinuxBSD::run()
 	main_loop->finalize();
 }
 
+/* -------------------------------------------------------------------------- */
+/*                        OS Static Platform Dispatch                         */
+/* -------------------------------------------------------------------------- */
 
+// Timing & Execution
+uint64_t OS::get_ticks_usec()
+{
+	return OS_Unix::get_ticks_usec();
+}
+
+void OS::delay_usec(uint32_t p_usec)
+{
+	OS_Unix::delay_usec(p_usec);
+}
+
+// Environment Variables
+String OS::get_environment(const String& p_var)
+{
+	return OS_Unix::get_environment(p_var);
+}
+
+bool OS::has_environment(const String& p_var)
+{
+	return OS_Unix::has_environment(p_var);
+}
+
+void OS::set_environment(const String& p_var, const String& p_value)
+{
+	OS_Unix::set_environment(p_var, p_value);
+}
+
+void OS::unset_environment(const String& p_var)
+{
+	OS_Unix::unset_environment(p_var);
+}
+
+void OS::load_shell_environment()
+{
+	// No-op on LinuxBSD
+}
+
+// Date & Time
+OS::DateTime OS::get_datetime(bool p_utc)
+{
+	return OS_Unix::get_datetime(p_utc);
+}
+
+OS::TimeZoneInfo OS::get_time_zone_info()
+{
+	return OS_Unix::get_time_zone_info();
+}
+
+// Processes & Execution
+Error OS::execute(const String& p_path, const List<String>& p_arguments,
+	String* r_pipe, int* r_exitcode, bool p_read_stderr, Mutex* p_pipe_mutex, bool p_open_console)
+{
+	return OS_Unix::execute(
+		p_path, p_arguments, r_pipe, r_exitcode, p_read_stderr, p_pipe_mutex, p_open_console);
+}
+
+Error OS::create_process(const String& p_path, const List<String>& p_arguments,
+	ProcessID* r_child_id, bool p_open_console)
+{
+	return OS_Unix::create_process(p_path, p_arguments, r_child_id, p_open_console);
+}
+
+Error OS::kill(const ProcessID& p_pid)
+{
+	return OS_Unix::kill(p_pid);
+}
+
+bool OS::is_process_running(const ProcessID& p_pid)
+{
+	return OS_Unix::is_process_running(p_pid);
+}
+
+// Security & System Info
+Error OS::get_entropy(uint8_t* r_buffer, int p_bytes)
+{
+	return OS_Unix::get_entropy(r_buffer, p_bytes);
+}
+
+String OS::get_system_ca_certificates()
+{
+	return OS_LinuxBSD::get_system_ca_certificates();
+}
+
+String OS::get_name()
+{
+	return OS_LinuxBSD::get_name();
+}
+
+List<String> OS::get_cmdline_platform_args()
+{
+	return List<String>();
+}
+
+bool OS::_check_internal_feature_support(const String& p_feature)
+{
+	return OS_LinuxBSD::_check_internal_feature_support(p_feature);
+}
+
+// Main Loop & Lifecycle
+void OS::set_main_loop(MainLoop* p_main_loop)
+{
+	OS_LinuxBSD::set_main_loop(p_main_loop);
+}
+
+MainLoop* OS::get_main_loop()
+{
+	return OS_LinuxBSD::get_main_loop();
+}
+
+void OS::delete_main_loop()
+{
+	OS_LinuxBSD::delete_main_loop();
+}
+
+void OS::finalize_core()
+{
+	OS_Unix::finalize_core();
+}
+
+void OS::initialize_joypads()
+{
+	OS_LinuxBSD::initialize_joypads();
+}
+
+void OS::disable_crash_handler()
+{
+	OS_LinuxBSD::disable_crash_handler();
+}
+
+// Miscellaneous Stubs
+void OS::vibrate_handheld(int p_duration_ms, float p_amplitude)
+{
+	// Not supported on Linux desktop
+}
+
+Error OS::move_to_trash(const String& p_path)
+{
+	return OS_LinuxBSD::move_to_trash(p_path);
+}
+
+#ifdef TOOLS_ENABLED
+bool OS::_test_create_rendering_device(const String& p_display_driver)
+{
+	return OS_LinuxBSD::_test_create_rendering_device(p_display_driver);
+}
+
+bool OS::_test_create_rendering_device_and_gl(const String& p_display_driver)
+{
+	return OS_LinuxBSD::_test_create_rendering_device_and_gl(p_display_driver);
+}
+
+void OS_LinuxBSD::finalize()
+{
+#ifdef FONTCONFIG_ENABLED
+    if (font_config_initialized) {
+        if (object_set) {
+            FcObjectSetDestroy(object_set);
+            object_set = nullptr;
+        }
+        if (config) {
+            FcConfigDestroy(config);
+            config = nullptr;
+        }
+        font_config_initialized = false;
+    }
+#endif // FONTCONFIG_ENABLED
+}
+
+void OS::finalize()
+{
+    _initialized = false;
+
+    // Platform-specific teardown
+    OS_LinuxBSD::finalize();
+
+    // Core OS logging cleanup
+    if (_logger) {
+        memdelete(_logger);
+        _logger = nullptr;
+    }
+}
+#endif

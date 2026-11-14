@@ -2,10 +2,11 @@
 /*  renderer_fog.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -30,25 +31,41 @@
 
 #pragma once
 
+#include "core/math/aabb.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class RID;
-struct AABB;
-struct Vector3;
-
-class RendererFog {
+class RendererFog
+{
 public:
-	virtual ~RendererFog() {}
+	/* FOG VOLUMES FUNCTION POINTERS */
+	inline static bool (*owns_fog_volume)(RID p_rid) = nullptr;
 
-	/* FOG VOLUMES */
+	inline static RID (*fog_volume_allocate)() = nullptr;
+	inline static void (*fog_volume_initialize)(RID p_rid) = nullptr;
+	inline static void (*fog_volume_free)(RID p_rid) = nullptr;
 
-	virtual RID fog_volume_allocate() = 0;
-	virtual void fog_volume_initialize(RID p_rid) = 0;
-	virtual void fog_volume_free(RID p_rid) = 0;
+	inline static void (*fog_volume_set_shape)(RID p_fog_volume, RSE::FogVolumeShape p_shape) = nullptr;
+	inline static void (*fog_volume_set_size)(RID p_fog_volume, const Vector3 &p_size) = nullptr;
+	inline static void (*fog_volume_set_material)(RID p_fog_volume, RID p_material) = nullptr;
+	inline static AABB (*fog_volume_get_aabb)(RID p_fog_volume) = nullptr;
+	inline static RSE::FogVolumeShape (*fog_volume_get_shape)(RID p_fog_volume) = nullptr;
 
-	virtual void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) = 0;
-	virtual void fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) = 0;
-	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) = 0;
-	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const = 0;
-	virtual RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const = 0;
+	/* BIND TEMPLATE */
+	template <typename T>
+	static void bind()
+	{
+		owns_fog_volume = T::owns_fog_volume;
+
+		fog_volume_allocate = T::fog_volume_allocate;
+		fog_volume_initialize = T::fog_volume_initialize;
+		fog_volume_free = T::fog_volume_free;
+
+		fog_volume_set_shape = T::fog_volume_set_shape;
+		fog_volume_set_size = T::fog_volume_set_size;
+		fog_volume_set_material = T::fog_volume_set_material;
+		fog_volume_get_aabb = T::fog_volume_get_aabb;
+		fog_volume_get_shape = T::fog_volume_get_shape;
+	}
 };

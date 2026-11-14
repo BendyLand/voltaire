@@ -2,10 +2,11 @@
 /*  editor_resource_preview.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -92,8 +93,8 @@ void EditorResourcePreview::_idle_callback()
 	}
 
 	// Process preview tasks, trying to leave a little bit of responsiveness worst case.
-	uint64_t start = OS::get_singleton()->get_ticks_msec();
-	while (!singleton->queue.is_empty() && OS::get_singleton()->get_ticks_msec() - start < 100) {
+	uint64_t start = OS::get_ticks_msec();
+	while (!singleton->queue.is_empty() && OS::get_ticks_msec() - start < 100) {
 		singleton->_iterate();
 	}
 }

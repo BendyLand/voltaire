@@ -2,10 +2,11 @@
 /*  test_worker_thread_pool.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -115,7 +116,7 @@ static void static_test_daemon(void *p_arg) {
 
 static void static_busy_task(void *p_arg) {
 	while (!exit.is_set()) {
-		OS::get_singleton()->delay_usec(1);
+		OS::delay_usec(1);
 	}
 }
 
@@ -148,7 +149,7 @@ TEST_CASE("[WorkerThreadPool] Run a yielding daemon as the only hope for other t
 	}
 
 	while (counter[1].get() != legit_tasks_count) {
-		OS::get_singleton()->delay_usec(1);
+		OS::delay_usec(1);
 	}
 
 	exit.set();

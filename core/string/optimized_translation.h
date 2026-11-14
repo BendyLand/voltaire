@@ -2,10 +2,11 @@
 /*  optimized_translation.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -96,14 +97,14 @@ protected:
 #endif
 
 public:
-	virtual StringName get_message(const StringName& p_src_text,
-		const StringName& p_context = "") const override; // overridable for other implementations
-	virtual StringName get_plural_message(const StringName& p_src_text,
-		const StringName& p_plural_text, int p_n, const StringName& p_context = "") const override;
+	virtual String get_message(const String& p_src_text,
+		const String& p_context = "") const override; // overridable for other implementations
+	virtual String get_plural_message(const String& p_src_text,
+		const String& p_plural_text, int p_n, const String& p_context = "") const override;
 	virtual Vector<String> get_translated_message_list() const override;
 	bool generate(const Ref<Translation>& p_from);
 
-	virtual void get_message_list(List<StringName>* r_messages) const override;
+	virtual void get_message_list(List<String>* r_messages) const override;
 	virtual int get_message_count() const override;
 };
 

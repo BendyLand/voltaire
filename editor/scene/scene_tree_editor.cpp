@@ -2,10 +2,11 @@
 /*  scene_tree_editor.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -376,7 +377,7 @@ void SceneTreeEditor::set_display_foreign_nodes(bool p_display)
 	_update_tree();
 }
 
-void SceneTreeEditor::set_valid_types(const Vector<StringName>& p_valid)
+void SceneTreeEditor::set_valid_types(const Vector<String>& p_valid)
 {
 	valid_types = p_valid;
 	clear_cache();
@@ -396,7 +397,7 @@ void SceneTreeEditor::_selection_changed()
 	_update_selection(root);
 }
 
-bool SceneTreeEditor::_is_script_type(const StringName& p_type) const
+bool SceneTreeEditor::_is_script_type(const String& p_type) const
 {
 	return (script_types->has(p_type));
 }
@@ -597,6 +598,6 @@ TreeItem* SceneTreeEditor::_find(TreeItem*, NodePath const&)
 
 void SceneTreeEditor::clear_cache() {}
 
-void SceneTreeDialog::set_valid_types(Vector<StringName> const&) {}
+void SceneTreeDialog::set_valid_types(Vector<String> const&) {}
 
 

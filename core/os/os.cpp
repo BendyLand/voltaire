@@ -2,10 +2,11 @@
 /*  os.cpp                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -47,11 +48,6 @@
 #define THREADING_NAMESPACE std
 #endif
 
-OS* OS::singleton = nullptr;
-uint64_t OS::target_ticks = 0;
-
-OS* OS::get_singleton() { return singleton; }
-
 bool OS::prefer_meta_over_ctrl()
 {
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
@@ -63,13 +59,15 @@ bool OS::prefer_meta_over_ctrl()
 #endif
 }
 
-uint64_t OS::get_ticks_msec() const { return get_ticks_usec() / 1000ULL; }
+uint64_t OS::get_ticks_msec() { return get_ticks_usec() / 1000ULL; }
 
-double OS::get_unix_time() const { return 0; }
+double OS::get_unix_time() { return 0; }
 
 void OS::_set_logger(CompositeLogger* p_logger)
 {
-	memdelete(_logger);
+	if (_logger) {
+		memdelete(_logger);
+	}
 	_logger = p_logger;
 }
 
@@ -85,7 +83,7 @@ void OS::add_logger(Logger* p_logger)
 	}
 }
 
-String OS::get_identifier() const { return get_name().to_lower(); }
+String OS::get_identifier() { return get_name().to_lower(); }
 
 void OS::print(const char* p_format, ...)
 {
@@ -142,63 +140,63 @@ void OS::alert(const String& p_alert, const String& p_title)
 
 void OS::set_low_processor_usage_mode(bool p_enabled) { low_processor_usage_mode = p_enabled; }
 
-bool OS::is_in_low_processor_usage_mode() const { return low_processor_usage_mode; }
+bool OS::is_in_low_processor_usage_mode() { return low_processor_usage_mode; }
 
 void OS::set_low_processor_usage_mode_sleep_usec(int p_usec)
 {
 	low_processor_usage_mode_sleep_usec = p_usec;
 }
 
-int OS::get_low_processor_usage_mode_sleep_usec() const
+int OS::get_low_processor_usage_mode_sleep_usec()
 {
 	return low_processor_usage_mode_sleep_usec;
 }
 
 void OS::set_delta_smoothing(bool p_enabled) { _delta_smoothing_enabled = p_enabled; }
 
-bool OS::is_delta_smoothing_enabled() const { return _delta_smoothing_enabled; }
+bool OS::is_delta_smoothing_enabled() { return _delta_smoothing_enabled; }
 
-String OS::get_executable_path() const { return _execpath; }
+String OS::get_executable_path() { return _execpath; }
 
-int OS::get_process_id() const { return -1; }
+int OS::get_process_id() { return -1; }
 
-bool OS::is_stdout_verbose() const { return _verbose_stdout; }
+bool OS::is_stdout_verbose() { return _verbose_stdout; }
 
-bool OS::is_stdout_debug_enabled() const { return _debug_stdout; }
+bool OS::is_stdout_debug_enabled() { return _debug_stdout; }
 
-bool OS::is_stdout_enabled() const { return _stdout_enabled; }
+bool OS::is_stdout_enabled() { return _stdout_enabled; }
 
-bool OS::is_stderr_enabled() const { return _stderr_enabled; }
+bool OS::is_stderr_enabled() { return _stderr_enabled; }
 
 void OS::set_stdout_enabled(bool p_enabled) { _stdout_enabled = p_enabled; }
 
 void OS::set_stderr_enabled(bool p_enabled) { _stderr_enabled = p_enabled; }
 
-String OS::multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array) const
+String OS::multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array)
 {
 	return String();
 }
 
-PackedByteArray OS::string_to_multibyte(const String& p_encoding, const String& p_string) const
+PackedByteArray OS::string_to_multibyte(const String& p_encoding, const String& p_string)
 {
 	return PackedByteArray();
 }
 
-int OS::get_exit_code() const { return _exit_code; }
+int OS::get_exit_code() { return _exit_code; }
 
 void OS::set_exit_code(int p_code) { _exit_code = p_code; }
 
-String OS::get_locale() const { return "en"; }
+String OS::get_locale() { return "en"; }
 
 // Non-virtual helper to extract the 2 or 3-letter language code from
 // `get_locale()` in a way that's consistent for all platforms.
-String OS::get_locale_language() const { return get_locale().left(3).remove_char('_'); }
+String OS::get_locale_language() { return get_locale().left(3).remove_char('_'); }
 
 // Embedded PCK offset.
-uint64_t OS::get_embedded_pck_offset() const { return 0; }
+uint64_t OS::get_embedded_pck_offset() { return 0; }
 
 // Default boot screen rect scale mode is "Keep Aspect Centered"
-Rect2 OS::calculate_boot_screen_rect(const Size2& p_window_size, const Size2& p_imgrect_size) const
+Rect2 OS::calculate_boot_screen_rect(const Size2& p_window_size, const Size2& p_imgrect_size)
 {
 	Rect2 screenrect;
 	if (p_window_size.width > p_window_size.height) {
@@ -217,7 +215,7 @@ Rect2 OS::calculate_boot_screen_rect(const Size2& p_window_size, const Size2& p_
 }
 
 // Helper function to ensure that a dir name/path will be valid on the OS
-String OS::get_safe_dir_name(const String& p_dir_name, bool p_allow_paths) const
+String OS::get_safe_dir_name(const String& p_dir_name, bool p_allow_paths)
 {
 	String safe_dir_name = p_dir_name;
 	Vector<String> invalid_chars = String(": * ? \" < > |").split(" ");
@@ -253,45 +251,45 @@ String OS::get_safe_dir_name(const String& p_dir_name, bool p_allow_paths) const
 // Path to data, config, cache, etc. OS-specific folders
 
 // Get properly capitalized engine name for system paths
-String OS::get_godot_dir_name() const
+String OS::get_godot_dir_name()
 {
 	// Default to lowercase, so only override when different case is needed
 	return String(VLTR_VERSION_SHORT_NAME).to_lower();
 }
 
 // OS equivalent of XDG_DATA_HOME
-String OS::get_data_path() const { return "."; }
+String OS::get_data_path() { return "."; }
 
 // OS equivalent of XDG_CONFIG_HOME
-String OS::get_config_path() const { return "."; }
+String OS::get_config_path() { return "."; }
 
 // OS equivalent of XDG_CACHE_HOME
-String OS::get_cache_path() const { return "."; }
+String OS::get_cache_path() { return "."; }
 
-String OS::get_temp_path() const { return "."; }
+String OS::get_temp_path() { return "."; }
 
 // Path to macOS .app bundle resources
-String OS::get_bundle_resource_dir() const { return "."; }
+String OS::get_bundle_resource_dir() { return "."; }
 
 // Path to macOS .app bundle embedded icon (.icns file).
-String OS::get_bundle_icon_path() const { return String(); }
+String OS::get_bundle_icon_path() { return String(); }
 
 // Name of macOS .app bundle embedded icon (Liquid Glass asset name).
-String OS::get_bundle_icon_name() const { return String(); }
+String OS::get_bundle_icon_name() { return String(); }
 
 // OS specific path for user://
-String OS::get_user_data_dir(const String& p_user_dir) const { return "."; }
+String OS::get_user_data_dir(const String& p_user_dir) { return "."; }
 
 // Absolute path to res://
-String OS::get_resource_dir() const
+String OS::get_resource_dir()
 {
 	return ProjectSettings::get_resource_path();
 }
 
 // Access system-specific dirs like Documents, Downloads, etc.
-String OS::get_system_dir(SystemDir p_dir, bool p_shared_storage) const { return "."; }
+String OS::get_system_dir(SystemDir p_dir, bool p_shared_storage) { return "."; }
 
-String OS::expand_path(const String& p_path) const { return p_path; }
+String OS::expand_path(const String& p_path) { return p_path; }
 
 void OS::create_lock_file()
 {
@@ -329,13 +327,13 @@ Error OS::shell_show_in_file_manager(String p_path, bool p_open_folder)
 
 // implement these with the canvas?
 
-uint64_t OS::get_static_memory_usage() const { return Memory::get_mem_usage(); }
+uint64_t OS::get_static_memory_usage() { return Memory::get_mem_usage(); }
 
-uint64_t OS::get_static_memory_peak_usage() const { return Memory::get_mem_max_usage(); }
+uint64_t OS::get_static_memory_peak_usage() { return Memory::get_mem_max_usage(); }
 
 Error OS::set_cwd(const String& p_cwd) { return ERR_CANT_OPEN; }
 
-String OS::get_cwd() const { return "."; }
+String OS::get_cwd() { return "."; }
 
 void OS::yield() {}
 
@@ -351,7 +349,7 @@ void OS::ensure_user_data_dir()
 	ERR_FAIL_COND_MSG(err != OK, vformat("Error attempting to create data dir: %s.", dd));
 }
 
-String OS::get_model_name() const { return "GenericDevice"; }
+String OS::get_model_name() { return "GenericDevice"; }
 
 void OS::set_cmdline(
 	const char* p_execpath, const List<String>& p_args, const List<String>& p_user_args)
@@ -361,11 +359,11 @@ void OS::set_cmdline(
 	_user_args = p_user_args;
 }
 
-String OS::get_unique_id() const { return ""; }
+String OS::get_unique_id() { return ""; }
 
-int OS::get_processor_count() const { return THREADING_NAMESPACE::thread::hardware_concurrency(); }
+int OS::get_processor_count() { return THREADING_NAMESPACE::thread::hardware_concurrency(); }
 
-String OS::get_processor_name() const { return ""; }
+String OS::get_processor_name() { return ""; }
 
 void OS::set_has_server_feature_callback(HasServerFeatureCallback p_callback)
 {
@@ -553,7 +551,7 @@ bool OS::has_feature(const String& p_feature)
 	return false;
 }
 
-bool OS::is_sandboxed() const { return false; }
+bool OS::is_sandboxed() { return false; }
 
 void OS::set_restart_on_exit(bool p_restart, const List<String>& p_restart_arguments)
 {
@@ -561,9 +559,9 @@ void OS::set_restart_on_exit(bool p_restart, const List<String>& p_restart_argum
 	restart_commandline = p_restart_arguments;
 }
 
-bool OS::is_restart_on_exit_set() const { return restart_on_exit; }
+bool OS::is_restart_on_exit_set() { return restart_on_exit; }
 
-List<String> OS::get_restart_on_exit_arguments() const { return List<String>(restart_commandline); }
+List<String> OS::get_restart_on_exit_arguments() { return List<String>(restart_commandline); }
 
 PackedStringArray OS::get_connected_midi_inputs()
 {
@@ -573,7 +571,7 @@ PackedStringArray OS::get_connected_midi_inputs()
 
 	PackedStringArray list;
 	ERR_FAIL_V_MSG(
-		list, vformat("MIDI input isn't supported on %s.", OS::get_singleton()->get_name()));
+		list, vformat("MIDI input isn't supported on %s.", OS::get_name()));
 }
 
 void OS::open_midi_inputs()
@@ -582,7 +580,7 @@ void OS::open_midi_inputs()
 		MIDIDriver::get_singleton()->open();
 	}
 	else {
-		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_singleton()->get_name()));
+		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_name()));
 	}
 }
 
@@ -592,11 +590,11 @@ void OS::close_midi_inputs()
 		MIDIDriver::get_singleton()->close();
 	}
 	else {
-		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_singleton()->get_name()));
+		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_name()));
 	}
 }
 
-uint64_t OS::get_frame_delay(bool p_can_draw) const
+uint64_t OS::get_frame_delay(bool p_can_draw)
 {
 	const uint32_t frame_delay = Engine::get_frame_delay();
 
@@ -658,7 +656,7 @@ Error OS::setup_remote_filesystem(
 	return default_rfs.synchronize_with_server(p_server_host, p_port, p_password, r_project_path);
 }
 
-OS::PreferredTextureFormat OS::get_preferred_texture_format() const
+OS::PreferredTextureFormat OS::get_preferred_texture_format()
 {
 #if defined(__arm__) || defined(__aarch64__) || defined(_M_ARM) || defined(_M_ARM64)
 	return PREFERRED_TEXTURE_FORMAT_ETC2_ASTC; // By rule, ARM hardware uses ETC texture
@@ -687,7 +685,7 @@ void OS::benchmark_begin_measure(const String& p_context, const String& p_what)
 	ERR_FAIL_COND_MSG(benchmark_marks_from.has(mark_key),
 		vformat("Benchmark key '%s:%s' already exists.", p_context, p_what));
 
-	benchmark_marks_from[mark_key] = OS::get_singleton()->get_ticks_usec();
+	benchmark_marks_from[mark_key] = OS::get_ticks_usec();
 #endif
 }
 
@@ -698,7 +696,7 @@ void OS::benchmark_end_measure(const String& p_context, const String& p_what)
 	ERR_FAIL_COND_MSG(!benchmark_marks_from.has(mark_key),
 		vformat("Benchmark key '%s:%s' doesn't exist.", p_context, p_what));
 
-	uint64_t total = OS::get_singleton()->get_ticks_usec() - benchmark_marks_from[mark_key];
+	uint64_t total = OS::get_ticks_usec() - benchmark_marks_from[mark_key];
 	double total_f = double(total) / double(1000000);
 	benchmark_marks_final[mark_key] = total_f;
 #endif
@@ -738,21 +736,11 @@ void OS::benchmark_dump()
 #endif
 }
 
-OS::OS()
+bool OS::is_initialized()
 {
-	singleton = this;
-
-	Vector<Logger*> loggers;
-	loggers.push_back(memnew(StdLogger));
-	_set_logger(memnew(CompositeLogger(loggers)));
+	return _initialized;
 }
 
-OS::~OS()
-{
-	memdelete(_logger);
-	singleton = nullptr;
-}
-
-String OS::get_user_data_dir() const { return String(); }
+String OS::get_user_data_dir() { return String(); }
 
 

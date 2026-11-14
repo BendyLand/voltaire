@@ -2,10 +2,11 @@
 /*  input_event_configuration_dialog.cpp                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -231,10 +232,10 @@ void InputEventConfigurationDialog::_notification(int p_what)
 		icon_cache.joypad_button = get_editor_theme_icon(SNAME("JoyButton"));
 		icon_cache.joypad_axis = get_editor_theme_icon(SNAME("JoyAxis"));
 
-		event_as_text->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)).ptr());
-		event_exists->add_theme_color_override(SceneStringName(font_color),
-			get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+		event_as_text->add_theme_font_override(SceneString(font),
+			get_theme_font(SNAME("bold"), EditorString(EditorFonts)).ptr());
+		event_exists->add_theme_color_override(SceneString(font_color),
+			get_theme_color(SNAME("error_color"), EditorString(Editor)));
 
 		_update_input_list();
 	} break;

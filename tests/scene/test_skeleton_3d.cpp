@@ -2,10 +2,11 @@
 /*  test_skeleton_3d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -55,7 +56,7 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 	CHECK_MESSAGE(skeleton->get_bone_meta(0, "key2") == Variant(12345), "Bone meta missing.");
 
 	// Retrieve list of keys.
-	List<StringName> keys;
+	List<String> keys;
 	skeleton->get_bone_meta_list(0, &keys);
 	CHECK_MESSAGE(keys.size() == 2, "Wrong number of bone meta keys.");
 	CHECK_MESSAGE(keys.find("key1"), "key1 not found in bone meta list");
@@ -66,7 +67,7 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 	skeleton->set_bone_meta(0, "key2", Variant());
 	CHECK_MESSAGE(!skeleton->has_bone_meta(0, "key1"), "Bone meta key1 should be deleted.");
 	CHECK_MESSAGE(!skeleton->has_bone_meta(0, "key2"), "Bone meta key2 should be deleted.");
-	List<StringName> should_be_empty_keys;
+	List<String> should_be_empty_keys;
 	skeleton->get_bone_meta_list(0, &should_be_empty_keys);
 	CHECK_MESSAGE(should_be_empty_keys.size() == 0, "Wrong number of bone meta keys.");
 

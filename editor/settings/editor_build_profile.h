@@ -2,10 +2,11 @@
 /*  editor_build_profile.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -81,9 +82,9 @@ public:
 	};
 
 private:
-	HashSet<StringName> disabled_classes;
+	HashSet<String> disabled_classes;
 
-	HashSet<StringName> collapsed_classes;
+	HashSet<String> collapsed_classes;
 
 	String force_detect_classes;
 
@@ -104,11 +105,11 @@ private:
 protected:
 
 public:
-	void set_disable_class(const StringName& p_class, bool p_disabled);
-	bool is_class_disabled(const StringName& p_class) const;
+	void set_disable_class(const String& p_class, bool p_disabled);
+	bool is_class_disabled(const String& p_class) const;
 
-	void set_item_collapsed(const StringName& p_class, bool p_collapsed);
-	bool is_item_collapsed(const StringName& p_class) const;
+	void set_item_collapsed(const String& p_class, bool p_collapsed);
+	bool is_item_collapsed(const String& p_class) const;
 
 	void set_disable_build_option(BuildOption p_build_option, bool p_disable);
 	bool is_build_option_disabled(BuildOption p_build_option) const;

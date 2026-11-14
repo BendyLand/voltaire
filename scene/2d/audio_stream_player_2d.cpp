@@ -2,10 +2,11 @@
 /*  audio_stream_player_2d.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -102,7 +103,7 @@ void AudioStreamPlayer2D::_update_panning()
 	volume_vector.write[2] = AudioFrame(0, 0);
 	volume_vector.write[3] = AudioFrame(0, 0);
 
-	StringName actual_bus = _get_actual_bus();
+	String actual_bus = _get_actual_bus();
 
 	for (Viewport* vp : viewports) {
 		if (!vp->is_audio_listener_2d()) {
@@ -246,13 +247,13 @@ float AudioStreamPlayer2D::get_playback_position()
 	return internal->get_playback_position();
 }
 
-void AudioStreamPlayer2D::set_bus(const StringName& p_bus)
+void AudioStreamPlayer2D::set_bus(const String& p_bus)
 {
 	internal->bus = p_bus; // This will be pushed to the audio server during the next physics
 						   // timestep, which is fast enough.
 }
 
-StringName AudioStreamPlayer2D::get_bus() const { return internal->get_bus(); }
+String AudioStreamPlayer2D::get_bus() const { return internal->get_bus(); }
 
 void AudioStreamPlayer2D::set_autoplay(bool p_enable) { internal->autoplay = p_enable; }
 
@@ -316,4 +317,4 @@ AudioStreamPlayer2D::~AudioStreamPlayer2D() { memdelete(internal); }
 
 
 
-StringName AudioStreamPlayer2D::_get_actual_bus() {}
+String AudioStreamPlayer2D::_get_actual_bus() {}

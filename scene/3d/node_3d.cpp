@@ -2,10 +2,11 @@
 /*  node_3d.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -856,7 +857,7 @@ NodePath Node3D::get_visibility_parent() const
 	return visibility_parent_path;
 }
 
-bool Node3D::_property_can_revert(const StringName& p_name) const
+bool Node3D::_property_can_revert(const String& p_name) const
 {
 	const String sname = p_name;
 	if (sname == "basis") {

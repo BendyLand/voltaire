@@ -2,10 +2,11 @@
 /*  primitive_meshes.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -112,9 +113,9 @@ Ref<Material> PrimitiveMesh::surface_get_material(int p_idx) const
 
 int PrimitiveMesh::get_blend_shape_count() const { return 0; }
 
-StringName PrimitiveMesh::get_blend_shape_name(int p_index) const { return StringName(); }
+String PrimitiveMesh::get_blend_shape_name(int p_index) const { return String(); }
 
-void PrimitiveMesh::set_blend_shape_name(int p_index, const StringName& p_name) {}
+void PrimitiveMesh::set_blend_shape_name(int p_index, const String& p_name) {}
 
 AABB PrimitiveMesh::get_aabb() const
 {
@@ -141,7 +142,7 @@ void PrimitiveMesh::set_custom_aabb(const AABB& p_custom)
 		return;
 	}
 	custom_aabb = p_custom;
-	RS::mesh_set_custom_aabb(mesh, custom_aabb);
+	Renderer::mesh_set_custom_aabb(mesh, custom_aabb);
 	emit_changed();
 }
 

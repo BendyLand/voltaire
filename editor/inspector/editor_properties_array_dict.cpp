@@ -2,10 +2,11 @@
 /*  editor_properties_array_dict.cpp                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -161,7 +162,7 @@ void EditorPropertyDictionary::_notification(int p_what)
 	case NOTIFICATION_THEME_CHANGED: {
 		if (button_add_item) {
 			add_panel->add_theme_style_override(
-				SceneStringName(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
+				SceneString(panel), get_theme_stylebox(SNAME("DictionaryAddItem")).ptr());
 		}
 	} break;
 	}

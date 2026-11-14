@@ -2,10 +2,11 @@
 /*  xr_server.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -47,7 +48,7 @@ XRServer* XRServer::get_singleton() { return singleton; }
 
 double XRServer::get_world_scale() const
 {
-	if (RS::data && RS::is_on_render_thread()) {
+	if (Renderer::data && Renderer::is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
 		return render_state.world_scale;
@@ -120,7 +121,7 @@ void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface
 
 void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
 
-Ref<XRTracker> XRServer::get_tracker(const StringName& p_name) const
+Ref<XRTracker> XRServer::get_tracker(const String& p_name) const
 {
 	Ref<XRTracker> xpt = memnew(XRTracker);
 	return xpt;

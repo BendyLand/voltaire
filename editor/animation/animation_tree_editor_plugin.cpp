@@ -2,10 +2,11 @@
 /*  animation_tree_editor_plugin.cpp                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -95,18 +96,18 @@ bool AnimationTreeEditor::can_edit(const Ref<AnimationNode>& p_node) const
 	return false;
 }
 
-LocalVector<StringName> AnimationTreeEditor::get_animation_list()
+LocalVector<String> AnimationTreeEditor::get_animation_list()
 {
 	// This can be called off the main thread due to resource preview generation. Quit early in that
 	// case.
 	if (!singleton->tree || !Thread::is_main_thread() || !singleton->is_visible()) {
 		// When tree is empty, singleton not in the main thread.
-		return LocalVector<StringName>();
+		return LocalVector<String>();
 	}
 
 	AnimationTree* tree = singleton->tree;
 	if (!tree) {
-		return LocalVector<StringName>();
+		return LocalVector<String>();
 	}
 
 	return tree->get_sorted_animation_list();

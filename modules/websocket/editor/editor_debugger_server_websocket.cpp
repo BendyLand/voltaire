@@ -2,10 +2,11 @@
 /*  editor_debugger_server_websocket.cpp                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -47,7 +48,7 @@ void EditorDebuggerServerWebSocket::poll()
 
 		Error err = peer->accept_stream(tcp_server->take_connection());
 		if (err == OK) {
-			pending_timer = OS::get_singleton()->get_ticks_msec();
+			pending_timer = OS::get_ticks_msec();
 			pending_peer = peer;
 		}
 	}
@@ -59,7 +60,7 @@ void EditorDebuggerServerWebSocket::poll()
 			pending_peer.unref(); // Failed.
 		}
 		if (ready_state == WebSocketPeer::STATE_CONNECTING &&
-			OS::get_singleton()->get_ticks_msec() - pending_timer > 3000) {
+			OS::get_ticks_msec() - pending_timer > 3000) {
 			pending_peer.unref(); // Timeout.
 		}
 	}

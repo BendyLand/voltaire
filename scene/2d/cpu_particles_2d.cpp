@@ -2,10 +2,11 @@
 /*  cpu_particles_2d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -82,7 +83,7 @@ void CPUParticles2D::set_amount(int p_amount)
 	}
 
 	particle_data.resize((8 + 4 + 4) * p_amount);
-	RS::multimesh_allocate_data(
+	Renderer::multimesh_allocate_data(
 		multimesh, p_amount, RSE::MULTIMESH_TRANSFORM_2D, true, true);
 
 	particle_order.resize(p_amount);
@@ -970,7 +971,7 @@ void CPUParticles2D::_update_render_thread()
 {
 	MutexLock lock(update_mutex);
 
-	RS::multimesh_set_buffer(multimesh, particle_data);
+	Renderer::multimesh_set_buffer(multimesh, particle_data);
 }
 
 #ifdef TOOLS_ENABLED
@@ -1003,8 +1004,8 @@ void CPUParticles2D::_draw_emission_gizmo()
 CPUParticles2D::~CPUParticles2D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(multimesh);
-	RS::free_rid(mesh);
+	Renderer::free_rid(multimesh);
+	Renderer::free_rid(mesh);
 }
 
 void CPUParticles2D::_set_do_redraw(bool p_do_redraw) {}

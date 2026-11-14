@@ -2,10 +2,11 @@
 /*  resource_format_text.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -128,7 +129,7 @@ public:
 	void get_dependencies(Ref<FileAccess> p_f, List<String>* p_dependencies, bool p_add_types);
 	Error rename_dependencies(
 		Ref<FileAccess> p_f, const String& p_path, const HashMap<String, String>& p_map);
-	Error get_classes_used(HashSet<StringName>* r_classes);
+	Error get_classes_used(HashSet<String>* r_classes);
 
 	ResourceLoaderText() = default;
 };
@@ -144,7 +145,7 @@ public:
 		const String& p_type, List<String>* p_extensions) const override;
 	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
 	virtual bool handles_type(const String& p_type) const override;
-	virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes) override;
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override;
 
 	virtual String get_resource_type(const String& p_path) const override;
 	virtual String get_resource_script_class(const String& p_path) const override;
@@ -172,7 +173,7 @@ class ResourceFormatSaverTextInstance
 	struct NonPersistentKey
 	{ // for resource properties generated on the fly
 		Ref<Resource> base;
-		StringName property;
+		String property;
 
 		bool operator<(const NonPersistentKey& p_key) const
 		{

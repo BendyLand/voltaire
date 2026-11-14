@@ -2,10 +2,11 @@
 /*  shader_warnings.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -32,7 +33,7 @@
 
 #ifdef DEBUG_ENABLED
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 
 class ShaderWarning
@@ -71,12 +72,12 @@ public:
 private:
 	Code code;
 	int line;
-	StringName subject;
+	String subject;
 
 public:
 	Code get_code() const;
 	int get_line() const;
-	const StringName& get_subject() const;
+	const String& get_subject() const;
 	String get_message() const;
 	String get_name() const;
 

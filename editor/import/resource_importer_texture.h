@@ -2,10 +2,11 @@
 /*  resource_importer_texture.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -81,7 +82,7 @@ protected:
 		RSE::TextureDetectRoughnessChannel channel_for_roughness = RSE::TEXTURE_DETECT_ROUGHNESS_R;
 	};
 
-	HashMap<StringName, MakeInfo> make_flags;
+	HashMap<String, MakeInfo> make_flags;
 
 	static void _texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
 		const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel);

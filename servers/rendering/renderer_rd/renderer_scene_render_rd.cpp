@@ -2,10 +2,11 @@
 /*  renderer_scene_render_rd.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -34,18 +35,13 @@
 #include "renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
-#include "servers/rendering/renderer_rd/shaders/decal_data_inc.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/light_data_inc.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/scene_data_inc.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_include_db.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
-#include "servers/rendering/storage/light_storage.h"
 
 void get_vogel_disk(float* r_kernel, int p_sample_count)
 {
@@ -104,19 +100,19 @@ void RendererSceneRenderRD::environment_set_volumetric_fog_filter_active(bool p_
 void RendererSceneRenderRD::environment_set_sdfgi_ray_count(
 	RSE::EnvironmentSDFGIRayCount p_ray_count)
 {
-	data->gi.sdfgi_ray_count = p_ray_count;
+	RendererRD::GI::sdfgi_ray_count = p_ray_count;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_converge(
 	RSE::EnvironmentSDFGIFramesToConverge p_frames)
 {
-	data->gi.sdfgi_frames_to_converge = p_frames;
+	RendererRD::GI::sdfgi_frames_to_converge = p_frames;
 }
 
 void RendererSceneRenderRD::environment_set_sdfgi_frames_to_update_light(
 	RSE::EnvironmentSDFGIFramesToUpdateLight p_update)
 {
-	data->gi.sdfgi_frames_to_update_light = p_update;
+	RendererRD::GI::sdfgi_frames_to_update_light = p_update;
 }
 
 Ref<Image> RendererSceneRenderRD::environment_bake_panorama(
@@ -210,30 +206,30 @@ RID RendererSceneRenderRD::reflection_probe_create_framebuffer(RID p_color, RID 
 
 RID RendererSceneRenderRD::fog_volume_instance_create(RID p_fog_volume)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_create(p_fog_volume);
+	return RendererRD::Fog::fog_volume_instance_create(p_fog_volume);
 }
 
 void RendererSceneRenderRD::fog_volume_instance_set_transform(
 	RID p_fog_volume_instance, const Transform3D& p_transform)
 {
-	RendererRD::Fog::get_singleton()->fog_volume_instance_set_transform(
+	RendererRD::Fog::fog_volume_instance_set_transform(
 		p_fog_volume_instance, p_transform);
 }
 
 void RendererSceneRenderRD::fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active)
 {
-	RendererRD::Fog::get_singleton()->fog_volume_instance_set_active(
+	RendererRD::Fog::fog_volume_instance_set_active(
 		p_fog_volume_instance, p_active);
 }
 
 RID RendererSceneRenderRD::fog_volume_instance_get_volume(RID p_fog_volume_instance)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_volume(p_fog_volume_instance);
+	return RendererRD::Fog::fog_volume_instance_get_volume(p_fog_volume_instance);
 }
 
 Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume_instance)
 {
-	return RendererRD::Fog::get_singleton()->fog_volume_instance_get_position(
+	return RendererRD::Fog::fog_volume_instance_get_position(
 		p_fog_volume_instance);
 }
 
@@ -241,7 +237,7 @@ Vector3 RendererSceneRenderRD::fog_volume_instance_get_position(RID p_fog_volume
 
 RID RendererSceneRenderRD::voxel_gi_instance_create(RID p_base)
 {
-	return data->gi.voxel_gi_instance_create(p_base);
+	return RendererRD::GI::voxel_gi_instance_create(p_base);
 }
 
 void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
@@ -251,7 +247,7 @@ void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(
 		return;
 	}
 
-	data->gi.voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
+	RendererRD::GI::voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
 }
 
 bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe)
@@ -260,7 +256,7 @@ bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe)
 		return false;
 	}
 
-	return data->gi.voxel_gi_needs_update(p_probe);
+	return RendererRD::GI::voxel_gi_needs_update(p_probe);
 }
 
 void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_instances,
@@ -271,7 +267,7 @@ void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_ins
 		return;
 	}
 
-	data->gi.voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
+	RendererRD::GI::voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
 }
 
 void RendererSceneRenderRD::_debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_render_buffers,
@@ -404,7 +400,7 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 
 	RD::draw_command_begin_label("Copy Screen Texture");
 
-	StringName texture_name;
+	String texture_name;
 	bool can_use_storage = _render_buffers_can_be_storage();
 	Size2i size = rb->get_internal_size();
 
@@ -569,7 +565,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		RendererRD::TextureStorage::render_target_get_msaa(render_target) != RSE::VIEWPORT_MSAA_DISABLED;
 
 	bool using_dof =
-		RS::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
+		Renderer::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
 
 	if (using_dof && p_render_data->transparent_bg) {
 		WARN_PRINT_ONCE("Depth of field is not supported in viewports with a transparent "
@@ -641,7 +637,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 	float auto_exposure_scale = 1.0;
 
-	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		RENDER_TIMESTAMP("Auto exposure");
 
@@ -651,19 +647,19 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			data->luminance->get_luminance_buffers(rb);
 
 		uint64_t auto_exposure_version =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_version(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_version(
 				p_render_data->camera_attributes);
 		bool set_immediate = auto_exposure_version != rb->get_auto_exposure_version();
 		rb->set_auto_exposure_version(auto_exposure_version);
 
-		double step = RS::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
+		double step = Renderer::camera_attributes->camera_attributes_get_auto_exposure_adjust_speed(
 						  p_render_data->camera_attributes) *
 					  data->time_step;
 		float auto_exposure_min_sensitivity =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_min_sensitivity(
 				p_render_data->camera_attributes);
 		float auto_exposure_max_sensitivity =
-			RS::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
+			Renderer::camera_attributes->camera_attributes_get_auto_exposure_max_sensitivity(
 				p_render_data->camera_attributes);
 		data->luminance->luminance_reduction(rb->get_internal_texture(), rb->get_internal_size(),
 			luminance_buffers, auto_exposure_min_sensitivity, auto_exposure_max_sensitivity, step,
@@ -671,7 +667,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		// Swap final reduce with prev luminance.
 
-		auto_exposure_scale = RS::camera_attributes->camera_attributes_get_auto_exposure_scale(
+		auto_exposure_scale = Renderer::camera_attributes->camera_attributes_get_auto_exposure_scale(
 			p_render_data->camera_attributes);
 
 		Renderer::redraw_request(); // Redraw all the time if auto exposure rendering
@@ -705,7 +701,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 		if (can_use_storage) {
 			RD::draw_command_begin_label("Gaussian Glow");
 			RID luminance_texture;
-			if (RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				luminance_texture = data->luminance->get_current_luminance_buffer(
 					rb); // this will return and empty RID if we don't have an auto exposure buffer
@@ -819,7 +815,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 
 		tonemap.exposure_texture = data->luminance->get_current_luminance_buffer(rb);
 		if (can_use_effects &&
-			RS::camera_attributes->camera_attributes_uses_auto_exposure(
+			Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 				p_render_data->camera_attributes) &&
 			tonemap.exposure_texture.is_valid()) {
 			tonemap.use_auto_exposure = true;
@@ -1159,7 +1155,7 @@ void RendererSceneRenderRD::_post_process_subpass(
 		ERR_FAIL_MSG("Glow is not supported when using subpasses.");
 	}
 
-	if (can_use_effects && RS::camera_attributes->camera_attributes_uses_auto_exposure(
+	if (can_use_effects && Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
 							   p_render_data->camera_attributes)) {
 		ERR_FAIL_MSG("Auto Exposure is not supported when using subpasses.");
 	}
@@ -1416,7 +1412,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 RID RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer()
 {
-	return data->gi.default_voxel_gi_buffer;
+	return RendererRD::GI::default_voxel_gi_buffer;
 }
 
 RDC::DataFormat RendererSceneRenderRD::_render_buffers_get_preferred_color_format()
@@ -1428,7 +1424,7 @@ bool RendererSceneRenderRD::_render_buffers_can_be_storage() { return true; }
 
 void RendererSceneRenderRD::gi_set_use_half_resolution(bool p_enable)
 {
-	data->gi.half_resolution = p_enable;
+	RendererRD::GI::half_resolution = p_enable;
 }
 
 void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality)
@@ -1807,10 +1803,8 @@ void RendererSceneRenderRD::render_material(const Transform3D& p_cam_transform,
 void RendererSceneRenderRD::render_particle_collider_heightfield(RID p_collider,
 	const Transform3D& p_transform, const PagedArray<RenderGeometryInstance*>& p_instances)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
-
-	ERR_FAIL_COND(!particles_storage->particles_collision_is_heightfield(p_collider));
-	Vector3 extents = particles_storage->particles_collision_get_extents(p_collider) *
+	ERR_FAIL_COND(!RendererRD::ParticlesStorage::particles_collision_is_heightfield(p_collider));
+	Vector3 extents = RendererRD::ParticlesStorage::particles_collision_get_extents(p_collider) *
 					  p_transform.basis.get_scale();
 	Projection cm;
 	cm.set_orthogonal(-extents.x, extents.x, -extents.z, extents.z, 0, extents.y * 2.0);
@@ -1822,7 +1816,7 @@ void RendererSceneRenderRD::render_particle_collider_heightfield(RID p_collider,
 	cam_xform.set_look_at(cam_pos, cam_pos - p_transform.basis.get_column(Vector3::AXIS_Y),
 		-p_transform.basis.get_column(Vector3::AXIS_Z).normalized());
 
-	RID fb = particles_storage->particles_collision_get_heightfield_framebuffer(p_collider);
+	RID fb = RendererRD::ParticlesStorage::particles_collision_get_heightfield_framebuffer(p_collider);
 
 	_render_particle_collider_heightfield(fb, cam_xform, cm, p_instances);
 }
@@ -1838,18 +1832,18 @@ bool RendererSceneRenderRD::free(RID p_rid)
 	else if (RendererSceneRender::is_compositor_effect(p_rid)) {
 		RendererSceneRender::compositor_effect_free(p_rid);
 	}
-	else if (RS::camera_attributes->owns_camera_attributes(p_rid)) {
-		RS::camera_attributes->camera_attributes_free(p_rid);
+	else if (Renderer::camera_attributes->owns_camera_attributes(p_rid)) {
+		Renderer::camera_attributes->camera_attributes_free(p_rid);
 	}
-	else if (data->gi.voxel_gi_instance_owns(p_rid)) {
-		data->gi.voxel_gi_instance_free(p_rid);
+	else if (RendererRD::GI::voxel_gi_instance_owns(p_rid)) {
+		RendererRD::GI::voxel_gi_instance_free(p_rid);
 	}
 	else if (data->sky.sky_owner.owns(p_rid)) {
 		data->sky.update_dirty_skys();
 		data->sky.free_sky(p_rid);
 	}
-	else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
-		RendererRD::Fog::get_singleton()->fog_instance_free(p_rid);
+	else if (RendererRD::Fog::owns_fog_volume_instance(p_rid)) {
+		RendererRD::Fog::fog_instance_free(p_rid);
 	}
 	else {
 		return false;
@@ -1897,8 +1891,8 @@ float RendererSceneRenderRD::screen_space_roughness_limiter_get_limit()
 void RendererSceneRenderRD::sdfgi_set_debug_probe_select(
 	const Vector3& p_position, const Vector3& p_dir)
 {
-	data->gi.sdfgi_debug_probe_pos = p_position;
-	data->gi.sdfgi_debug_probe_dir = p_dir;
+	RendererRD::GI::sdfgi_debug_probe_pos = p_position;
+	RendererRD::GI::sdfgi_debug_probe_dir = p_dir;
 }
 
 bool RendererSceneRenderRD::is_vrs_supported()
@@ -1936,7 +1930,7 @@ void RendererSceneRenderRD::initialize()
     data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
 #endif
     data->sky.init();
-    data->gi.init(&data->sky);
+    RendererRD::GI::initialize(&data->sky);
 
     _update_shader_quality_settings();
 }
@@ -1946,7 +1940,7 @@ void RendererSceneRenderRD::finalize()
     if (!data) {
         return;
     }
-    data->gi.free();
+    RendererRD::GI::free();
     if (data->directional_penumbra_shadow_kernel) {
         memdelete_arr(data->directional_penumbra_shadow_kernel);
     }

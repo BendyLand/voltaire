@@ -2,10 +2,11 @@
 /*  openxr_composition_layer_extension.cpp                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -550,13 +551,13 @@ void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
 	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
 
 	if (subviewport.viewport.is_valid() && openxr_api && openxr_api->is_running()) {
-		RSE::ViewportUpdateMode update_mode = RS::viewport_get_update_mode(subviewport.viewport);
+		RSE::ViewportUpdateMode update_mode = Renderer::viewport_get_update_mode(subviewport.viewport);
 		if (update_mode == RSE::VIEWPORT_UPDATE_ONCE ||
 			update_mode == RSE::VIEWPORT_UPDATE_ALWAYS) {
 			// Update our XR swapchain
 			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
 				// Render to our XR swapchain image.
-				RID rt = RS::viewport_get_render_target(subviewport.viewport);
+				RID rt = Renderer::viewport_get_render_target(subviewport.viewport);
 				RendererTextureStorage::render_target_set_override(
 					rt, get_current_swapchain_texture(), RID(), RID(), RID());
 			}

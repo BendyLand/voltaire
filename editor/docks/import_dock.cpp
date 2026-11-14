@@ -2,10 +2,11 @@
 /*  import_dock.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -48,7 +49,7 @@ class ImportDockParameters
 public:
 	Ref<ResourceImporter> importer;
 	Vector<String> paths;
-	HashSet<StringName> checked;
+	HashSet<String> checked;
 	bool checking = false;
 	bool skip = false;
 	String base_options_path;
@@ -101,7 +102,7 @@ void ImportDock::_advanced_options()
 	}
 }
 
-void ImportDock::_property_toggled(const StringName& p_prop, bool p_checked)
+void ImportDock::_property_toggled(const String& p_prop, bool p_checked)
 {
 	if (p_checked) {
 		params->checked.insert(p_prop);

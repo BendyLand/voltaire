@@ -2,10 +2,11 @@
 /*  animated_sprite_2d.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -46,7 +47,7 @@ bool AnimatedSprite2D::_edit_use_rect() const
 	}
 
 	Ref<Texture2D> t;
-	if (animation) {
+	if (!animation.is_empty()) {
 		t = frames->get_frame_texture(animation, frame);
 	}
 	return t.is_valid();
@@ -65,7 +66,7 @@ Rect2 AnimatedSprite2D::_get_rect() const
 	}
 
 	Ref<Texture2D> t;
-	if (animation) {
+	if (!animation.is_empty()) {
 		t = frames->get_frame_texture(animation, frame);
 	}
 	if (t.is_null()) {
@@ -143,7 +144,7 @@ void AnimatedSprite2D::_calc_frame_speed_scale()
 	frame_speed_scale = 1.0 / _get_frame_duration();
 }
 
-StringName AnimatedSprite2D::get_animation() const { return animation; }
+String AnimatedSprite2D::get_animation() const { return animation; }
 
 PackedStringArray AnimatedSprite2D::get_configuration_warnings() const
 {
@@ -158,15 +159,15 @@ PackedStringArray AnimatedSprite2D::get_configuration_warnings() const
 
 #ifdef TOOLS_ENABLED
 void AnimatedSprite2D::get_argument_options(
-	const StringName& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options) const
 {
 	const String pf = p_function;
 	if (p_idx == 0 && frames.is_valid()) {
 		if (pf == "play" || pf == "play_backwards" || pf == "set_animation" ||
 			pf == "set_autoplay") {
-			List<StringName> al;
+			List<String> al;
 			frames->get_animation_list(&al);
-			for (const StringName& name : al) {
+			for (const String& name : al) {
 				r_options->push_back(String(name).quote());
 			}
 		}

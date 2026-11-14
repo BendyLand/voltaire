@@ -2,10 +2,11 @@
 /*  camera_feed.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -63,8 +64,8 @@ public:
 
 private:
 	int id; // unique id for this, for internal use in case feeds are removed
-	const StringName format_changed_signal_name = "format_changed";
-	const StringName frame_changed_signal_name = "frame_changed";
+	const String format_changed_signal_name = "format_changed";
+	const String frame_changed_signal_name = "frame_changed";
 
 protected:
 	struct FeedFormat

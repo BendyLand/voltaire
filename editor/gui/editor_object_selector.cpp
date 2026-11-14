@@ -2,10 +2,11 @@
 /*  editor_object_selector.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -37,8 +38,8 @@
 
 Size2 EditorObjectSelector::get_minimum_size() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font));
-	int font_size = get_theme_font_size(SceneStringName(font_size));
+	Ref<Font> font = get_theme_font(SceneString(font));
+	int font_size = get_theme_font_size(SceneString(font_size));
 	return Button::get_minimum_size() + Size2(0, font->get_height(font_size));
 }
 

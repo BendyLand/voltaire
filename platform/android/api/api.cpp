@@ -2,10 +2,11 @@
 /*  api.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -50,7 +51,7 @@ String JavaClass::get_java_class_name() const { return ""; }
 
 Ref<JavaClass> JavaClass::get_java_parent_class() const { return Ref<JavaClass>(); }
 
-bool JavaClass::has_java_method(const StringName&) const { return false; }
+bool JavaClass::has_java_method(const String&) const { return false; }
 
 JavaClass::JavaClass() {}
 
@@ -58,7 +59,7 @@ JavaClass::~JavaClass() {}
 
 Ref<JavaClass> JavaObject::get_java_class() const { return Ref<JavaClass>(); }
 
-bool JavaObject::has_java_method(const StringName&) const { return false; }
+bool JavaObject::has_java_method(const String&) const { return false; }
 
 JavaClassWrapper* JavaClassWrapper::singleton = nullptr;
 

@@ -2,10 +2,11 @@
 /*  resource_importer.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -338,7 +339,7 @@ ResourceUID::ID ResourceFormatImporter::get_resource_uid(const String& p_path) c
 
 bool ResourceFormatImporter::has_custom_uid_support() const { return true; }
 
-Error ResourceFormatImporter::get_resource_import_info(const String& p_path, StringName& r_type,
+Error ResourceFormatImporter::get_resource_import_info(const String& p_path, String& r_type,
 	ResourceUID::ID& r_uid, String& r_import_group_file) const
 {
 	PathAndType pat;
@@ -358,7 +359,7 @@ Error ResourceFormatImporter::get_resource_import_info(const String& p_path, Str
 	return err;
 }
 
-void ResourceFormatImporter::get_classes_used(const String& p_path, HashSet<StringName>* r_classes)
+void ResourceFormatImporter::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);

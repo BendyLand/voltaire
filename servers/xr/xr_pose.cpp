@@ -2,10 +2,11 @@
 /*  xr_pose.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -39,9 +40,9 @@ void XRPose::set_has_tracking_data(const bool p_has_tracking_data)
 
 bool XRPose::get_has_tracking_data() const { return has_tracking_data; }
 
-void XRPose::set_name(const StringName& p_name) { name = p_name; }
+void XRPose::set_name(const String& p_name) { name = p_name; }
 
-StringName XRPose::get_name() const { return name; }
+String XRPose::get_name() const { return name; }
 
 void XRPose::set_transform(const Transform3D p_transform) { transform = p_transform; }
 

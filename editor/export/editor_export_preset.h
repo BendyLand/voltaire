@@ -2,10 +2,11 @@
 /*  editor_export_preset.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -83,7 +84,7 @@ private:
 	friend class EditorExport;
 	friend class EditorExportPlatform;
 
-	HashMap<StringName, bool> update_visibility;
+	HashMap<String, bool> update_visibility;
 
 	String name;
 	bool options_search_active = false;
@@ -100,7 +101,7 @@ private:
 	ScriptExportMode script_mode = MODE_SCRIPT_BINARY_TOKENS_COMPRESSED;
 
 protected:
-	String _get_property_warning(const StringName& p_name) const;
+	String _get_property_warning(const String& p_name) const;
 
 #ifndef DISABLE_DEPRECATED
 	int _get_script_export_mode_bind_compat_107167() const;
@@ -176,7 +177,7 @@ public:
 	// If `p_windows_version` is `true`, formats the returned version number to
 	// be compatible with Windows executable metadata (which requires a
 	// 4-component format).
-	String get_version(const StringName& p_name, bool p_windows_version = false) const;
+	String get_version(const String& p_name, bool p_windows_version = false) const;
 };
 
 

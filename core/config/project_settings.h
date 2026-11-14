@@ -2,10 +2,11 @@
 /*  project_settings.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -59,15 +60,15 @@ public:
 
 	struct AutoloadInfo
 	{
-		StringName name;
+		String name;
 		String path;
 		bool is_singleton = false;
 	};
 
 private:
-	static bool _property_can_revert(const StringName& p_name);
+	static bool _property_can_revert(const String& p_name);
 
-	static void _queue_changed(const StringName& p_name);
+	static void _queue_changed(const String& p_name);
 	static void _emit_changed();
 
 	static Error _load_settings_text(const String& p_path);
@@ -108,7 +109,7 @@ private:
 		uint32_t _version = 1;
 
 		// Track changed settings for get_changed_settings functionality
-		HashSet<StringName> changed_settings;
+		HashSet<String> changed_settings;
 
 		int last_order = NO_BUILTIN_ORDER_BASE;
 		int last_builtin_order = 0;
@@ -120,13 +121,13 @@ private:
 		List<String> input_presets;
 
 		HashSet<String> custom_features;
-		HashMap<StringName, LocalVector<Pair<StringName, StringName>>> feature_overrides;
+		HashMap<String, LocalVector<Pair<String, String>>> feature_overrides;
 		LocalVector<String> hidden_prefixes;
-		HashMap<StringName, AutoloadInfo> autoloads;
-		HashMap<StringName, String> global_groups;
-		HashMap<StringName, HashSet<StringName>> scene_groups_cache;
+		HashMap<String, AutoloadInfo> autoloads;
+		HashMap<String, String> global_groups;
+		HashMap<String, HashSet<String>> scene_groups_cache;
 
-		Vector<StringName> global_class_list;
+		Vector<String> global_class_list;
 		bool is_global_class_list_loaded = false;
 		String project_data_dir_name;
 	};
@@ -188,21 +189,21 @@ public:
 	static Vector<String> get_changed_settings();
 	static bool check_changed_settings_in_group(const String& p_setting_prefix);
 
-	static const HashMap<StringName, AutoloadInfo>& get_autoload_list();
+	static const HashMap<String, AutoloadInfo>& get_autoload_list();
 	static void add_autoload(const AutoloadInfo& p_autoload, bool p_front_insert = false);
-	static void remove_autoload(const StringName& p_autoload);
-	static bool has_autoload(const StringName& p_autoload);
-	static AutoloadInfo get_autoload(const StringName& p_name);
+	static void remove_autoload(const String& p_autoload);
+	static bool has_autoload(const String& p_autoload);
+	static AutoloadInfo get_autoload(const String& p_name);
 	static void fix_autoload_paths();
 
-	static const HashMap<StringName, String>& get_global_groups_list();
-	static void add_global_group(const StringName& p_name, const String& p_description);
-	static void remove_global_group(const StringName& p_name);
-	static bool has_global_group(const StringName& p_name);
+	static const HashMap<String, String>& get_global_groups_list();
+	static void add_global_group(const String& p_name, const String& p_description);
+	static void remove_global_group(const String& p_name);
+	static bool has_global_group(const String& p_name);
 
-	static const HashMap<StringName, HashSet<StringName>>& get_scene_groups_cache();
-	static void add_scene_groups_cache(const StringName& p_path, const HashSet<StringName>& p_cache);
-	static void remove_scene_groups_cache(const StringName& p_path);
+	static const HashMap<String, HashSet<String>>& get_scene_groups_cache();
+	static void add_scene_groups_cache(const String& p_path, const HashSet<String>& p_cache);
+	static void remove_scene_groups_cache(const String& p_path);
 	static void save_scene_groups_cache();
 	static String get_scene_groups_cache_path();
 	static void load_scene_groups_cache();
@@ -212,7 +213,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	static void get_argument_options(
-		const StringName& p_function, int p_idx, List<String>* r_options);
+		const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
 	static bool has_editor_setting_override(const String& p_setting);

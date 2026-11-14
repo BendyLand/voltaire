@@ -2,10 +2,11 @@
 /*  group_settings_editor.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -75,7 +76,7 @@ void GroupSettingsEditor::_text_submitted(const String& p_text)
 	}
 }
 
-bool GroupSettingsEditor::remove_node_references(Node* p_node, const StringName& p_name)
+bool GroupSettingsEditor::remove_node_references(Node* p_node, const String& p_name)
 {
 	bool edited = false;
 	if (p_node->is_in_group(p_name)) {
@@ -90,7 +91,7 @@ bool GroupSettingsEditor::remove_node_references(Node* p_node, const StringName&
 }
 
 bool GroupSettingsEditor::rename_node_references(
-	Node* p_node, const StringName& p_old_name, const StringName& p_new_name)
+	Node* p_node, const String& p_old_name, const String& p_new_name)
 {
 	bool edited = false;
 	if (p_node->is_in_group(p_old_name)) {

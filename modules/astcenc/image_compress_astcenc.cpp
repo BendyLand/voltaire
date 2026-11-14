@@ -2,10 +2,11 @@
 /*  image_compress_astcenc.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -52,7 +53,7 @@ Image::CompressProfile _pick_profile_from_channels(Image::UsedChannels p_channel
 }
 
 void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::CompressProfile p_profile) {
-	const uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	const uint64_t start_time = OS::get_ticks_msec();
 
 	if (r_img->is_compressed()) {
 		return; // Do not compress, already compressed.
@@ -189,12 +190,12 @@ void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::Compres
 	// Replace original image with compressed one.
 	r_img->set_data(width, height, has_mipmaps, target_format, dest_data);
 
-	print_verbose(vformat("astcenc: Encoding took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
+	print_verbose(vformat("astcenc: Encoding took %d ms.", OS::get_ticks_msec() - start_time));
 }
 #endif // TOOLS_ENABLED
 
 void _decompress_astc(Image *r_img) {
-	const uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	const uint64_t start_time = OS::get_ticks_msec();
 
 	// Determine decompression parameters from image format.
 	const Image::Format src_format = r_img->get_format();
@@ -315,5 +316,5 @@ void _decompress_astc(Image *r_img) {
 	// Replace original image with compressed one.
 	r_img->set_data(width, height, has_mipmaps, target_format, dest_data);
 
-	print_verbose(vformat("astcenc: Decompression took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
+	print_verbose(vformat("astcenc: Decompression took %d ms.", OS::get_ticks_msec() - start_time));
 }

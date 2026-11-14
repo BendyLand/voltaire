@@ -2,10 +2,11 @@
 /*  cpu_particles_3d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -84,8 +85,8 @@ void CPUParticles3D::set_amount(int p_amount)
 	}
 
 	particle_data.resize((12 + 4 + 4) * p_amount);
-	RS::multimesh_set_visible_instances(multimesh, -1);
-	RS::multimesh_allocate_data(
+	Renderer::multimesh_set_visible_instances(multimesh, -1);
+	Renderer::multimesh_allocate_data(
 		multimesh, p_amount, RSE::MULTIMESH_TRANSFORM_3D, true, true);
 
 	particle_order.resize(p_amount);
@@ -295,8 +296,8 @@ bool CPUParticles3D::get_split_scale() { return split_scale; }
 
 AABB CPUParticles3D::capture_aabb() const
 {
-	RS::multimesh_set_custom_aabb(multimesh, AABB());
-	return RS::multimesh_get_aabb(multimesh);
+	Renderer::multimesh_set_custom_aabb(multimesh, AABB());
+	return Renderer::multimesh_get_aabb(multimesh);
 }
 
 bool CPUParticles3D::get_use_fixed_seed() const { return use_fixed_seed; }
@@ -543,7 +544,7 @@ void CPUParticles3D::_update_render_thread()
 	MutexLock lock(update_mutex);
 
 	if (can_update.is_set()) {
-		RS::multimesh_set_buffer(multimesh, particle_data);
+		Renderer::multimesh_set_buffer(multimesh, particle_data);
 		can_update.clear(); // wait for next time
 	}
 }
@@ -622,7 +623,7 @@ void CPUParticles3D::_notification(int p_what)
 CPUParticles3D::~CPUParticles3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(multimesh);
+	Renderer::free_rid(multimesh);
 }
 
 void CPUParticles3D::_set_redraw(bool p_redraw) {}

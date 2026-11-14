@@ -2,10 +2,11 @@
 /*  stream_peer_socket.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -66,7 +67,7 @@ Error StreamPeerSocket::poll()
 	}
 	else if (err == ERR_BUSY) {
 		// Check for connect timeout
-		if (OS::get_singleton()->get_ticks_msec() > timeout) {
+		if (OS::get_ticks_msec() > timeout) {
 			disconnect_from_host();
 			status = STATUS_ERROR;
 			return ERR_CONNECTION_ERROR;

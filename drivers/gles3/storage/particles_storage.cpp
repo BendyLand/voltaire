@@ -2,10 +2,11 @@
 /*  particles_storage.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -42,11 +43,8 @@
 
 using namespace GLES3;
 
-ParticlesStorage* ParticlesStorage::singleton = nullptr;
 
-ParticlesStorage* ParticlesStorage::get_singleton() { return singleton; }
-
-ParticlesStorage::ParticlesStorage()
+void ParticlesStorage::initialize()
 {
 	{
 		String global_defines;
@@ -78,10 +76,8 @@ void process() {
 	}
 }
 
-ParticlesStorage::~ParticlesStorage()
+void ParticlesStorage::finalize()
 {
-	singleton = nullptr;
-
 	MaterialStorage::material_free(particles_shader.default_material);
 	MaterialStorage::shader_free(particles_shader.default_shader);
 	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
@@ -378,7 +374,7 @@ void ParticlesStorage::particles_set_process_material(RID p_particles, RID p_mat
 		Dependency::DEPENDENCY_CHANGED_PARTICLES); // the instance buffer may have changed
 }
 
-RID ParticlesStorage::particles_get_process_material(RID p_particles) const
+RID ParticlesStorage::particles_get_process_material(RID p_particles)
 {
 	Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, RID());
@@ -506,7 +502,7 @@ AABB ParticlesStorage::particles_get_current_aabb(RID p_particles)
 	return aabb;
 }
 
-AABB ParticlesStorage::particles_get_aabb(RID p_particles) const
+AABB ParticlesStorage::particles_get_aabb(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, AABB());
@@ -539,7 +535,7 @@ void ParticlesStorage::particles_set_interp_to_end(RID p_particles, float p_inte
 	particles->interp_to_end = p_interp;
 }
 
-int ParticlesStorage::particles_get_draw_passes(RID p_particles) const
+int ParticlesStorage::particles_get_draw_passes(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, 0);
@@ -547,7 +543,7 @@ int ParticlesStorage::particles_get_draw_passes(RID p_particles) const
 	return particles->draw_passes.size();
 }
 
-RID ParticlesStorage::particles_get_draw_pass_mesh(RID p_particles, int p_pass) const
+RID ParticlesStorage::particles_get_draw_pass_mesh(RID p_particles, int p_pass)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, RID());
@@ -1441,7 +1437,7 @@ void ParticlesStorage::_particles_reverse_lifetime_sort(Particles* particles)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-Dependency* ParticlesStorage::particles_get_dependency(RID p_particles) const
+Dependency* ParticlesStorage::particles_get_dependency(RID p_particles)
 {
 	Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, nullptr);
@@ -1449,7 +1445,7 @@ Dependency* ParticlesStorage::particles_get_dependency(RID p_particles) const
 	return &particles->dependency;
 }
 
-bool ParticlesStorage::particles_is_inactive(RID p_particles) const
+bool ParticlesStorage::particles_is_inactive(RID p_particles)
 {
 	const Particles* particles = particles_owner.get_or_null(p_particles);
 	ERR_FAIL_NULL_V(particles, false);
@@ -1484,7 +1480,7 @@ void ParticlesStorage::particles_collision_free(RID p_rid)
 }
 
 GLuint ParticlesStorage::particles_collision_get_heightfield_framebuffer(
-	RID p_particles_collision) const
+	RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1578,7 +1574,7 @@ void ParticlesStorage::particles_collision_set_cull_mask(
 	particles_collision->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_CULL_MASK);
 }
 
-uint32_t ParticlesStorage::particles_collision_get_cull_mask(RID p_particles_collision) const
+uint32_t ParticlesStorage::particles_collision_get_cull_mask(RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1676,7 +1672,7 @@ void ParticlesStorage::particles_collision_set_height_field_resolution(
 	}
 }
 
-AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision) const
+AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision)
 {
 	ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1699,7 +1695,7 @@ AABB ParticlesStorage::particles_collision_get_aabb(RID p_particles_collision) c
 	}
 }
 
-Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collision) const
+Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1707,7 +1703,7 @@ Vector3 ParticlesStorage::particles_collision_get_extents(RID p_particles_collis
 	return particles_collision->extents;
 }
 
-bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collision) const
+bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1716,7 +1712,7 @@ bool ParticlesStorage::particles_collision_is_heightfield(RID p_particles_collis
 }
 
 uint32_t ParticlesStorage::particles_collision_get_height_field_mask(
-	RID p_particles_collision) const
+	RID p_particles_collision)
 {
 	const ParticlesCollision* particles_collision =
 		particles_collision_owner.get_or_null(p_particles_collision);
@@ -1733,7 +1729,7 @@ void ParticlesStorage::particles_collision_set_height_field_mask(
 	particles_collision->heightfield_mask = p_heightfield_mask;
 }
 
-Dependency* ParticlesStorage::particles_collision_get_dependency(RID p_particles_collision) const
+Dependency* ParticlesStorage::particles_collision_get_dependency(RID p_particles_collision)
 {
 	ParticlesCollision* pc = particles_collision_owner.get_or_null(p_particles_collision);
 	ERR_FAIL_NULL_V(pc, nullptr);

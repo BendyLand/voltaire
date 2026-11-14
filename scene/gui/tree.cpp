@@ -2,10 +2,11 @@
 /*  tree.cpp                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -2098,11 +2099,11 @@ void Tree::set_self_modulate(const Color& p_self_modulate)
 	}
 
 	CanvasItem::set_self_modulate(p_self_modulate);
-	RS::canvas_item_set_self_modulate(header_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(content_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
-	RS::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(header_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(content_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
 }
 
 void Tree::_update_all()
@@ -2725,7 +2726,7 @@ TreeItem* Tree::get_item_with_text(const String& p_find) const
 
 void Tree::_do_incr_search(const String& p_add)
 {
-	uint64_t time = OS::get_singleton()->get_ticks_usec() / 1000; // Convert to msec.
+	uint64_t time = OS::get_ticks_usec() / 1000; // Convert to msec.
 	uint64_t diff = time - last_keypress;
 	if (diff >
 		uint64_t(GLOBAL_GET_CACHED(uint64_t, "gui/timers/incremental_search_max_interval_msec"))) {

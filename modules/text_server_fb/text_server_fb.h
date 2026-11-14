@@ -2,10 +2,11 @@
 /*  text_server_fb.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -67,14 +68,14 @@
 class TextServerFallback : public TextServerExtension {
 	_THREAD_SAFE_CLASS_
 
-	HashMap<StringName, int32_t> feature_sets;
-	HashMap<int32_t, StringName> feature_sets_inv;
+	HashMap<String, int32_t> feature_sets;
+	HashMap<int32_t, String> feature_sets_inv;
 
 	SafeNumeric<TextServer::FontLCDSubpixelLayout> lcd_subpixel_layout{ TextServer::FontLCDSubpixelLayout::FONT_LCD_SUBPIXEL_LAYOUT_NONE };
 	void _update_settings();
 
 	void _insert_feature_sets();
-	_FORCE_INLINE_ void _insert_feature(const StringName &p_name, int32_t p_tag);
+	_FORCE_INLINE_ void _insert_feature(const String &p_name, int32_t p_tag);
 
 	// Font cache data.
 

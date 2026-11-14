@@ -2,10 +2,11 @@
 /*  tile_map_layer_editor.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -71,8 +72,8 @@ void TileMapLayerSubEditorPlugin::draw_tile_coords_over_viewport(Control* p_over
 			Math::abs(rect_size.y) + 1);
 	}
 
-	Ref<Font> font = p_overlay->get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = p_overlay->get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = p_overlay->get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = p_overlay->get_theme_font_size(SceneString(font_size), SNAME("Label"));
 
 	p_overlay->draw_string(font.ptr(), msgpos + Point2(1, 1), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 		font_size, Color(0, 0, 0, 0.8));

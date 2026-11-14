@@ -2,10 +2,11 @@
 /*  test_config_file.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -129,7 +130,7 @@ TEST_CASE("[ConfigFile] Saving file") {
 	config_file.set_value("quoted", "a=b", 7);
 
 #ifdef WINDOWS_ENABLED
-	const String config_path = OS::get_singleton()->get_environment("TEMP").path_join("config.ini");
+	const String config_path = OS::get_environment("TEMP").path_join("config.ini");
 #else
 	const String config_path = "/tmp/config.ini";
 #endif

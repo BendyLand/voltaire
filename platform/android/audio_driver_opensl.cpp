@@ -2,10 +2,11 @@
 /*  audio_driver_opensl.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -269,7 +270,7 @@ Error AudioDriverOpenSL::input_start() {
 		return ERR_ALREADY_IN_USE;
 	}
 
-	if (OS::get_singleton()->request_permission("RECORD_AUDIO")) {
+	if (OS::request_permission("RECORD_AUDIO")) {
 		Error err = init_input_device();
 		if (err != OK) {
 			input_stop();

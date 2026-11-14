@@ -2,10 +2,11 @@
 /*  editor_dock.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -73,7 +74,7 @@ private:
 
 	String title;
 	String layout_key;
-	StringName icon_name;
+	String icon_name;
 	Ref<Texture2D> dock_icon;
 	bool force_show_icon = false;
 	Color title_color = Color(0, 0, 0, 0);
@@ -118,9 +119,9 @@ public:
 
 	bool is_closable() const { return closable; }
 
-	void set_icon_name(const StringName& p_name);
+	void set_icon_name(const String& p_name);
 
-	StringName get_icon_name() const { return icon_name; }
+	String get_icon_name() const { return icon_name; }
 
 	void set_dock_icon(const Ref<Texture2D>& p_icon);
 

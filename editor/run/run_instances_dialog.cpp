@@ -2,10 +2,11 @@
 /*  run_instances_dialog.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -134,7 +135,7 @@ void RunInstancesDialog::get_argument_list_for_instance(int p_idx, List<String>&
 
 				// Append the Godot executable name before we append executable arguments
 				// (since the order is reversed when using `push_front()`).
-				r_list.push_front(OS::get_singleton()->get_executable_path());
+				r_list.push_front(OS::get_executable_path());
 			}
 
 			for (int i = exec_args.size() - 1; i >= 0; i--) {
@@ -185,7 +186,7 @@ void RunInstancesDialog::apply_custom_features(int p_instance_idx)
 			stripped_features.push_back(f);
 		}
 	}
-	OS::get_singleton()->set_environment(
+	OS::set_environment(
 		"GODOT_EDITOR_CUSTOM_FEATURES", String(",").join(stripped_features));
 }
 

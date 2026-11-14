@@ -2,10 +2,11 @@
 /*  skeleton_modification_2d_physicalbones.h                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -60,8 +61,8 @@ public:
 	NodePath get_physical_bone_node(int p_joint_idx) const;
 
 	void fetch_physical_bones();
-	void start_simulation(const TypedArray<StringName>& p_bones);
-	void stop_simulation(const TypedArray<StringName>& p_bones);
+	void start_simulation(const TypedArray<String>& p_bones);
+	void stop_simulation(const TypedArray<String>& p_bones);
 
 	SkeletonModification2DPhysicalBones();
 	~SkeletonModification2DPhysicalBones() = default;

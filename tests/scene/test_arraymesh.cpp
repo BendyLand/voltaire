@@ -2,10 +2,11 @@
 /*  test_arraymesh.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -43,8 +44,8 @@ namespace TestArrayMesh {
 TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
-	StringName name_a{ "ShapeA" };
-	StringName name_b{ "ShapeB" };
+	String name_a{ "ShapeA" };
+	String name_b{ "ShapeB" };
 
 	SUBCASE("Adding a blend shape to the mesh before a surface is added.") {
 		mesh->add_blend_shape(name_a);
@@ -392,12 +393,12 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 
 	SUBCASE("Able to get correct mesh RID.") {
 		RID rid = mesh->get_rid();
-		CHECK(RS::mesh_get_surface_count(rid) == 2);
+		CHECK(Renderer::mesh_get_surface_count(rid) == 2);
 	}
 
 	SUBCASE("Create surface from raw SurfaceData data.") {
 		RID mesh_rid = mesh->get_rid();
-		RenderingServerTypes::SurfaceData surface_data = RS::mesh_get_surface(mesh_rid, 0);
+		RenderingServerTypes::SurfaceData surface_data = Renderer::mesh_get_surface(mesh_rid, 0);
 		Ref<ArrayMesh> mesh2;
 		mesh2.instantiate();
 		mesh2->add_surface(surface_data.format, Mesh::PRIMITIVE_TRIANGLES, surface_data.vertex_data, surface_data.attribute_data,

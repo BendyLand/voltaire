@@ -2,10 +2,11 @@
 /*  renderer_scene_cull.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -325,7 +326,7 @@ void RendererSceneCull::_instance_pair(Instance* p_A, Instance* p_B)
 			static_cast<InstanceParticlesCollisionData*>(B->base_data);
 
 		if ((collision->cull_mask & A->layer_mask)) {
-			RS::particles_storage->particles_add_collision(A->base, collision->instance);
+			Renderer::particles_storage->particles_add_collision(A->base, collision->instance);
 		}
 	}
 }
@@ -473,7 +474,7 @@ void RendererSceneCull::_instance_unpair(Instance* p_A, Instance* p_B)
 			static_cast<InstanceParticlesCollisionData*>(B->base_data);
 
 		if ((collision->cull_mask & A->layer_mask)) {
-			RS::particles_storage->particles_remove_collision(A->base, collision->instance);
+			Renderer::particles_storage->particles_remove_collision(A->base, collision->instance);
 		}
 	}
 }
@@ -844,8 +845,8 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 		case RSE::INSTANCE_PARTICLES_COLLISION: {
 			InstanceParticlesCollisionData* collision = memnew(InstanceParticlesCollisionData);
 			collision->instance =
-				RS::particles_storage->particles_collision_instance_create(p_base);
-			RS::particles_storage->particles_collision_instance_set_active(
+				Renderer::particles_storage->particles_collision_instance_create(p_base);
+			Renderer::particles_storage->particles_collision_instance_set_active(
 				collision->instance, instance->visible);
 			instance->base_data = collision;
 		} break;
@@ -1180,7 +1181,7 @@ void RendererSceneCull::instance_set_visible(RID p_instance, bool p_visible)
 	if (instance->base_type == RSE::INSTANCE_PARTICLES_COLLISION) {
 		InstanceParticlesCollisionData* collision =
 			static_cast<InstanceParticlesCollisionData*>(instance->base_data);
-		RS::particles_storage->particles_collision_instance_set_active(
+		Renderer::particles_storage->particles_collision_instance_set_active(
 			collision->instance, p_visible);
 	}
 
@@ -1737,20 +1738,20 @@ void RendererSceneCull::_update_instance(Instance* p_instance) const
 			voxel_gi->probe_instance, *instance_xform);
 	}
 	else if (p_instance->base_type == RSE::INSTANCE_PARTICLES) {
-		RS::particles_storage->particles_set_emission_transform(p_instance->base, *instance_xform);
+		Renderer::particles_storage->particles_set_emission_transform(p_instance->base, *instance_xform);
 	}
 	else if (p_instance->base_type == RSE::INSTANCE_PARTICLES_COLLISION) {
 		InstanceParticlesCollisionData* collision =
 			static_cast<InstanceParticlesCollisionData*>(p_instance->base_data);
 
 		// remove materials no longer used and un-own them
-		if (RS::particles_storage->particles_collision_is_heightfield(p_instance->base)) {
+		if (Renderer::particles_storage->particles_collision_is_heightfield(p_instance->base)) {
 			heightfield_particle_colliders_update_list.insert(p_instance);
 		}
-		RS::particles_storage->particles_collision_instance_set_transform(
+		Renderer::particles_storage->particles_collision_instance_set_transform(
 			collision->instance, *instance_xform);
 		collision->cull_mask =
-			RS::particles_storage->particles_collision_get_cull_mask(p_instance->base);
+			Renderer::particles_storage->particles_collision_get_cull_mask(p_instance->base);
 	}
 	else if (p_instance->base_type == RSE::INSTANCE_FOG_VOLUME) {
 		InstanceFogVolumeData* volume = static_cast<InstanceFogVolumeData*>(p_instance->base_data);
@@ -2147,16 +2148,16 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 			new_aabb = *p_instance->custom_aabb;
 		}
 		else {
-			new_aabb = RS::particles_storage->particles_get_aabb(p_instance->base);
+			new_aabb = Renderer::particles_storage->particles_get_aabb(p_instance->base);
 		}
 
 	} break;
 	case RSE::INSTANCE_PARTICLES_COLLISION: {
-		new_aabb = RS::particles_storage->particles_collision_get_aabb(p_instance->base);
+		new_aabb = Renderer::particles_storage->particles_collision_get_aabb(p_instance->base);
 
 	} break;
 	case RSE::INSTANCE_FOG_VOLUME: {
-		new_aabb = RS::fog->fog_volume_get_aabb(p_instance->base);
+		new_aabb = Renderer::fog->fog_volume_get_aabb(p_instance->base);
 	} break;
 	case RSE::INSTANCE_VISIBLITY_NOTIFIER: {
 		new_aabb = RendererUtilities::visibility_notifier_get_aabb(p_instance->base);
@@ -2174,7 +2175,7 @@ void RendererSceneCull::_update_instance_aabb(Instance* p_instance) const
 
 	} break;
 	case RSE::INSTANCE_VOXEL_GI: {
-		new_aabb = RS::gi->voxel_gi_get_bounds(p_instance->base);
+		new_aabb = RendererGI::voxel_gi_get_bounds(p_instance->base);
 
 	} break;
 	case RSE::INSTANCE_LIGHTMAP: {
@@ -2605,7 +2606,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 					Instance* instance = instance_shadow_cull_result[j];
 					const bool is_inactive_particle =
 						(instance->base_type == RSE::INSTANCE_PARTICLES) &&
-						RS::particles_storage->particles_is_inactive(instance->base);
+						Renderer::particles_storage->particles_is_inactive(instance->base);
 					if (!instance->visible ||
 						!((1 << instance->base_type) & RSE::INSTANCE_GEOMETRY_MASK) ||
 						!static_cast<InstanceGeometryData*>(instance->base_data)
@@ -2699,7 +2700,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 					Instance* instance = instance_shadow_cull_result[j];
 					const bool is_inactive_particle =
 						(instance->base_type == RSE::INSTANCE_PARTICLES) &&
-						RS::particles_storage->particles_is_inactive(instance->base);
+						Renderer::particles_storage->particles_is_inactive(instance->base);
 					if (!instance->visible ||
 						!((1 << instance->base_type) & RSE::INSTANCE_GEOMETRY_MASK) ||
 						!static_cast<InstanceGeometryData*>(instance->base_data)
@@ -2788,7 +2789,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 			Instance* instance = instance_shadow_cull_result[j];
 			const bool is_inactive_particle =
 				(instance->base_type == RSE::INSTANCE_PARTICLES) &&
-				RS::particles_storage->particles_is_inactive(instance->base);
+				Renderer::particles_storage->particles_is_inactive(instance->base);
 			if (!instance->visible || !((1 << instance->base_type) & RSE::INSTANCE_GEOMETRY_MASK) ||
 				!static_cast<InstanceGeometryData*>(instance->base_data)->can_cast_shadows ||
 				!(p_visible_layers & instance->layer_mask &
@@ -2873,7 +2874,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance,
 			Instance* instance = instance_shadow_cull_result[j];
 			const bool is_inactive_particle =
 				(instance->base_type == RSE::INSTANCE_PARTICLES) &&
-				RS::particles_storage->particles_is_inactive(instance->base);
+				Renderer::particles_storage->particles_is_inactive(instance->base);
 			if (!instance->visible || !((1 << instance->base_type) & RSE::INSTANCE_GEOMETRY_MASK) ||
 				!static_cast<InstanceGeometryData*>(instance->base_data)->can_cast_shadows ||
 				!(p_visible_layers & instance->layer_mask &
@@ -3022,7 +3023,7 @@ bool RendererSceneCull::_visibility_parent_check(
 void RendererSceneCull::_scene_particles_set_view_axis(
 	RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis)
 {
-	RS::particles_storage->particles_set_view_axis(p_particles, p_axis, p_up_axis);
+	Renderer::particles_storage->particles_set_view_axis(p_particles, p_axis, p_up_axis);
 }
 
 RID RendererSceneCull::_render_get_environment(RID p_camera, RID p_scenario)
@@ -3399,7 +3400,7 @@ void RendererSceneCull::render_particle_colliders()
 		Instance* hfpc = *heightfield_particle_colliders_update_list.begin();
 
 		if (hfpc->scenario && hfpc->base_type == RSE::INSTANCE_PARTICLES_COLLISION &&
-			RS::particles_storage->particles_collision_is_heightfield(hfpc->base)) {
+			Renderer::particles_storage->particles_collision_is_heightfield(hfpc->base)) {
 			// update heightfield
 			instance_cull_result.clear();
 			scene_cull_result.geometry_instances.clear();
@@ -3422,7 +3423,7 @@ void RendererSceneCull::render_particle_colliders()
 			CullAABB cull_aabb;
 			cull_aabb.result = &instance_cull_result;
 			cull_aabb.heightfield_mask =
-				RS::particles_storage->particles_collision_get_height_field_mask(hfpc->base);
+				Renderer::particles_storage->particles_collision_get_height_field_mask(hfpc->base);
 			hfpc->scenario->indexers[Scenario::INDEXER_GEOMETRY].aabb_query(
 				hfpc->transformed_aabb, cull_aabb);
 			hfpc->scenario->indexers[Scenario::INDEXER_VOLUMES].aabb_query(
@@ -3463,14 +3464,14 @@ void RendererSceneCull::update_visibility_notifiers()
 			visibility_notifier->just_visible = false;
 
 			RendererUtilities::visibility_notifier_call(
-				visibility_notifier->base, true, RS::threaded);
+				visibility_notifier->base, true, Renderer::threaded);
 		}
 		else {
 			if (visibility_notifier->visible_in_frame != RendererCompositor::get_frame_number()) {
 				visible_notifier_list.remove(E);
 
 				RendererUtilities::visibility_notifier_call(
-					visibility_notifier->base, false, RS::threaded);
+					visibility_notifier->base, false, Renderer::threaded);
 			}
 		}
 		E = N;

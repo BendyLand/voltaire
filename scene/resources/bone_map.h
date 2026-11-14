@@ -2,10 +2,11 @@
 /*  bone_map.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,7 +36,7 @@
 class BoneMap : public Resource
 {
 	Ref<SkeletonProfile> profile;
-	HashMap<StringName, StringName> bone_map;
+	HashMap<String, String> bone_map;
 
 	void _update_profile();
 	void _validate_bone_map();
@@ -44,15 +45,15 @@ public:
 	Ref<SkeletonProfile> get_profile() const;
 	void set_profile(const Ref<SkeletonProfile>& p_profile);
 
-	int get_skeleton_bone_name_count(const StringName& p_skeleton_bone_name) const;
+	int get_skeleton_bone_name_count(const String& p_skeleton_bone_name) const;
 
-	StringName get_skeleton_bone_name(const StringName& p_profile_bone_name) const;
+	String get_skeleton_bone_name(const String& p_profile_bone_name) const;
 	void set_skeleton_bone_name(
-		const StringName& p_profile_bone_name, const StringName& p_skeleton_bone_name);
-	void _set_skeleton_bone_name(const StringName& p_profile_bone_name,
-		const StringName& p_skeleton_bone_name); // Avoid to emit signal for editor.
+		const String& p_profile_bone_name, const String& p_skeleton_bone_name);
+	void _set_skeleton_bone_name(const String& p_profile_bone_name,
+		const String& p_skeleton_bone_name); // Avoid to emit signal for editor.
 
-	StringName find_profile_bone_name(const StringName& p_skeleton_bone_name) const;
+	String find_profile_bone_name(const String& p_skeleton_bone_name) const;
 
 	BoneMap();
 	~BoneMap();

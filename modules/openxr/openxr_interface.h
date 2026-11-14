@@ -2,10 +2,11 @@
 /*  openxr_interface.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -138,7 +139,7 @@ private:
 protected:
 
 public:
-	virtual StringName get_name() const override;
+	virtual String get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
 	virtual PackedStringArray get_suggested_tracker_names() const override;
@@ -153,7 +154,7 @@ public:
 	virtual bool initialize() override;
 	virtual void uninitialize() override;
 
-	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
+	virtual void trigger_haptic_pulse(const String& p_action_name, const String& p_tracker_name,
 		double p_frequency, double p_amplitude, double p_duration_sec,
 		double p_delay_sec = 0) override;
 

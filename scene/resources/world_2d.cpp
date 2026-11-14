@@ -2,10 +2,11 @@
 /*  world_2d.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,8 +66,8 @@ World2D::~World2D()
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
 	if (space.is_valid()) {
+		ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
 		PhysicsServer2D::get_singleton()->free_rid(space);
 	}
 #endif // PHYSICS_2D_DISABLED
@@ -79,4 +80,4 @@ RID World2D::get_navigation_map() const
 }
 #endif // NAVIGATION_2D_DISABLED
 
-RID World2D::get_space() const {}
+RID World2D::get_space() const { return RID(); }

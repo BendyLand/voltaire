@@ -2,10 +2,11 @@
 /*  register_core_types.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -107,11 +108,10 @@ static bool _is_core_extensions_registered = false;
 
 void register_core_types()
 {
-	OS::get_singleton()->benchmark_begin_measure("Core", "Register Types");
+	OS::benchmark_begin_measure("Core", "Register Types");
 
 	CryptoCore::initialize();
 
-	StringName::setup();
 	register_global_constants();
 
 	_time = memnew(Time);
@@ -153,7 +153,7 @@ void register_core_types()
 
 	ip = IP::create();
 
-	OS::get_singleton()->benchmark_end_measure("Core", "Register Types");
+	OS::benchmark_end_measure("Core", "Register Types");
 }
 
 void register_core_settings() {}
@@ -164,18 +164,18 @@ void register_core_singletons() {}
 
 void register_core_extensions()
 {
-	OS::get_singleton()->benchmark_begin_measure("Core", "Register Extensions");
+	OS::benchmark_begin_measure("Core", "Register Extensions");
 
 	// Hardcoded for now.
 	_is_core_extensions_registered = true;
 
-	OS::get_singleton()->benchmark_end_measure("Core", "Register Extensions");
+	OS::benchmark_end_measure("Core", "Register Extensions");
 }
 
 void unregister_core_extensions()
 {
-	OS::get_singleton()->benchmark_begin_measure("Core", "Unregister Extensions");
-	OS::get_singleton()->benchmark_end_measure("Core", "Unregister Extensions");
+	OS::benchmark_begin_measure("Core", "Unregister Extensions");
+	OS::benchmark_end_measure("Core", "Unregister Extensions");
 }
 
 void unregister_core_types() {}

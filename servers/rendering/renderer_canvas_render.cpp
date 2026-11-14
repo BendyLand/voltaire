@@ -2,10 +2,11 @@
 /*  renderer_canvas_render.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -99,7 +100,7 @@ const Rect2& RCR::Item::get_rect() const
 			const Item::CommandParticles* particles_cmd =
 				static_cast<const Item::CommandParticles*>(c);
 			if (particles_cmd->particles.is_valid()) {
-				AABB aabb = RS::particles_storage->particles_get_aabb(particles_cmd->particles);
+				AABB aabb = Renderer::particles_storage->particles_get_aabb(particles_cmd->particles);
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 			}
 

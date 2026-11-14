@@ -2,10 +2,11 @@
 /*  gpu_particles_collision_3d.cpp                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -39,22 +40,22 @@
 void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
 {
 	cull_mask = p_cull_mask;
-	RS::particles_collision_set_cull_mask(collision, p_cull_mask);
+	Renderer::particles_collision_set_cull_mask(collision, p_cull_mask);
 }
 
 uint32_t GPUParticlesCollision3D::get_cull_mask() const { return cull_mask; }
 
 GPUParticlesCollision3D::GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type)
 {
-	collision = RS::particles_collision_create();
-	RS::particles_collision_set_collision_type(collision, p_type);
+	collision = Renderer::particles_collision_create();
+	Renderer::particles_collision_set_collision_type(collision, p_type);
 	set_base(collision);
 }
 
 GPUParticlesCollision3D::~GPUParticlesCollision3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(collision);
+	Renderer::free_rid(collision);
 }
 
 real_t GPUParticlesCollisionSphere3D::get_radius() const { return radius; }
@@ -136,7 +137,7 @@ void GPUParticlesCollisionSDF3D::set_texture(const Ref<Texture3D>& p_texture)
 {
 	texture = p_texture;
 	RID tex = texture.is_valid() ? texture->get_rid() : RID();
-	RS::particles_collision_set_field_texture(_get_collision(), tex);
+	Renderer::particles_collision_set_field_texture(_get_collision(), tex);
 }
 
 Ref<Texture3D> GPUParticlesCollisionSDF3D::get_texture() const { return texture; }
@@ -159,7 +160,7 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_INTERNAL_PROCESS: {
 		if (update_mode == UPDATE_MODE_ALWAYS) {
-			RS::particles_collision_height_field_update(_get_collision());
+			Renderer::particles_collision_height_field_update(_get_collision());
 		}
 
 		if (follow_camera_mode && get_viewport()) {
@@ -190,14 +191,14 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 
 				if (new_xform != xform) {
 					set_global_transform(new_xform);
-					RS::particles_collision_height_field_update(_get_collision());
+					Renderer::particles_collision_height_field_update(_get_collision());
 				}
 			}
 		}
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		RS::particles_collision_height_field_update(_get_collision());
+		Renderer::particles_collision_height_field_update(_get_collision());
 	} break;
 	}
 }
@@ -225,7 +226,7 @@ GPUParticlesCollisionHeightField3D::get_update_mode() const
 void GPUParticlesCollisionHeightField3D::set_heightfield_mask(uint32_t p_heightfield_mask)
 {
 	heightfield_mask = p_heightfield_mask;
-	RS::particles_collision_set_height_field_mask(
+	Renderer::particles_collision_set_height_field_mask(
 		_get_collision(), p_heightfield_mask);
 }
 
@@ -283,7 +284,7 @@ GPUParticlesCollisionHeightField3D::~GPUParticlesCollisionHeightField3D() {}
 void GPUParticlesAttractor3D::set_cull_mask(uint32_t p_cull_mask)
 {
 	cull_mask = p_cull_mask;
-	RS::particles_collision_set_cull_mask(collision, p_cull_mask);
+	Renderer::particles_collision_set_cull_mask(collision, p_cull_mask);
 }
 
 uint32_t GPUParticlesAttractor3D::get_cull_mask() const { return cull_mask; }
@@ -291,7 +292,7 @@ uint32_t GPUParticlesAttractor3D::get_cull_mask() const { return cull_mask; }
 void GPUParticlesAttractor3D::set_strength(real_t p_strength)
 {
 	strength = p_strength;
-	RS::particles_collision_set_attractor_strength(collision, p_strength);
+	Renderer::particles_collision_set_attractor_strength(collision, p_strength);
 }
 
 real_t GPUParticlesAttractor3D::get_strength() const { return strength; }
@@ -299,7 +300,7 @@ real_t GPUParticlesAttractor3D::get_strength() const { return strength; }
 void GPUParticlesAttractor3D::set_attenuation(real_t p_attenuation)
 {
 	attenuation = p_attenuation;
-	RS::particles_collision_set_attractor_attenuation(collision, p_attenuation);
+	Renderer::particles_collision_set_attractor_attenuation(collision, p_attenuation);
 }
 
 real_t GPUParticlesAttractor3D::get_attenuation() const { return attenuation; }
@@ -308,15 +309,15 @@ real_t GPUParticlesAttractor3D::get_directionality() const { return directionali
 
 GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type)
 {
-	collision = RS::particles_collision_create();
-	RS::particles_collision_set_collision_type(collision, p_type);
+	collision = Renderer::particles_collision_create();
+	Renderer::particles_collision_set_collision_type(collision, p_type);
 	set_base(collision);
 }
 
 GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(collision);
+	Renderer::free_rid(collision);
 }
 
 real_t GPUParticlesAttractorSphere3D::get_radius() const { return radius; }
@@ -350,7 +351,7 @@ void GPUParticlesAttractorVectorField3D::set_texture(const Ref<Texture3D>& p_tex
 {
 	texture = p_texture;
 	RID tex = texture.is_valid() ? texture->get_rid() : RID();
-	RS::particles_collision_set_field_texture(_get_collision(), tex);
+	Renderer::particles_collision_set_field_texture(_get_collision(), tex);
 }
 
 Ref<Texture3D> GPUParticlesAttractorVectorField3D::get_texture() const { return texture; }

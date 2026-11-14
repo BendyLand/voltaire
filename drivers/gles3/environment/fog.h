@@ -2,10 +2,11 @@
 /*  fog.h                                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -32,23 +33,49 @@
 
 #ifdef GLES3_ENABLED
 
+#include "core/math/aabb.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
 #include "servers/rendering/environment/renderer_fog.h"
 
-namespace GLES3 {
+namespace GLES3
+{
 
-class Fog : public RendererFog {
+class Fog final
+{
 public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
+
+	static void initialize();
+
+	static void finalize();
+
+	static bool is_initialized();
+
+	static bool free(RID p_rid);
+
 	/* FOG VOLUMES */
 
-	virtual RID fog_volume_allocate() override;
-	virtual void fog_volume_initialize(RID p_rid) override;
-	virtual void fog_volume_free(RID p_rid) override;
+	static bool owns_fog_volume(RID p_rid);
 
-	virtual void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) override;
-	virtual void fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) override;
-	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) override;
-	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const override;
-	virtual RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const override;
+	static RID fog_volume_allocate();
+
+	static void fog_volume_initialize(RID p_rid);
+
+	static void fog_volume_free(RID p_rid);
+
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape);
+
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size);
+
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material);
+
+	static AABB fog_volume_get_aabb(RID p_fog_volume);
+
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume);
 };
 
 } // namespace GLES3

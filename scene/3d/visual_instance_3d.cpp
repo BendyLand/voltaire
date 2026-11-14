@@ -2,10 +2,11 @@
 /*  visual_instance_3d.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -52,11 +53,11 @@ void VisualInstance3D::_update_visibility()
 	if (visible && !already_visible) {
 		if (!_is_using_identity_transform()) {
 			Transform3D gt = get_global_transform();
-			RS::instance_set_transform(instance, gt);
+			Renderer::instance_set_transform(instance, gt);
 		}
 	}
 
-	RS::instance_set_visible(instance, visible);
+	Renderer::instance_set_visible(instance, visible);
 }
 
 void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
@@ -67,11 +68,11 @@ void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
 	if (is_inside_tree()) {
 		if (p_enable) {
 			// Want to make sure instance is using identity transform.
-			RS::instance_set_transform(instance, Transform3D());
+			Renderer::instance_set_transform(instance, Transform3D());
 		}
 		else {
 			// Want to make sure instance is up to date.
-			RS::instance_set_transform(instance, get_global_transform());
+			Renderer::instance_set_transform(instance, get_global_transform());
 		}
 	}
 }
@@ -79,7 +80,7 @@ void VisualInstance3D::set_instance_use_identity_transform(bool p_enable)
 void VisualInstance3D::fti_update_servers_xform()
 {
 	if (!_is_using_identity_transform()) {
-		RS::instance_set_transform(
+		Renderer::instance_set_transform(
 			get_instance(), _get_cached_global_transform_interpolated());
 	}
 }
@@ -199,7 +200,7 @@ Ref<Material> GeometryInstance3D::get_material_override() const { return materia
 void GeometryInstance3D::set_material_overlay(const Ref<Material>& p_material)
 {
 	material_overlay = p_material;
-	RS::instance_geometry_set_material_overlay(
+	Renderer::instance_geometry_set_material_overlay(
 		get_instance(), p_material.is_valid() ? p_material->get_rid() : RID());
 }
 
@@ -227,9 +228,9 @@ GeometryInstance3D::get_visibility_range_fade_mode() const
 	return visibility_range_fade_mode;
 }
 
-const StringName* GeometryInstance3D::_instance_uniform_get_remap(const StringName& p_name) const
+const String* GeometryInstance3D::_instance_uniform_get_remap(const String& p_name) const
 {
-	StringName* r = instance_shader_parameter_property_remap.getptr(p_name);
+	String* r = instance_shader_parameter_property_remap.getptr(p_name);
 	if (!r) {
 		String s = p_name;
 #ifndef DISABLE_DEPRECATED
@@ -238,8 +239,8 @@ const StringName* GeometryInstance3D::_instance_uniform_get_remap(const StringNa
 		}
 #endif // DISABLE_DEPRECATED
 		if (s.begins_with("instance_shader_parameters/")) {
-			StringName pname = StringName(s);
-			StringName name = s.replace("instance_shader_parameters/", "");
+			String pname = String(s);
+			String name = s.replace("instance_shader_parameters/", "");
 			instance_shader_parameter_property_remap[pname] = name;
 			return instance_shader_parameter_property_remap.getptr(pname);
 		}
@@ -253,7 +254,7 @@ void GeometryInstance3D::set_cast_shadows_setting(ShadowCastingSetting p_shadow_
 {
 	shadow_casting_setting = p_shadow_casting_setting;
 
-	RS::instance_geometry_set_cast_shadows_setting(
+	Renderer::instance_geometry_set_cast_shadows_setting(
 		get_instance(), (RSE::ShadowCastingSetting)p_shadow_casting_setting);
 }
 
@@ -266,7 +267,7 @@ void GeometryInstance3D::set_extra_cull_margin(float p_margin)
 {
 	ERR_FAIL_COND(p_margin < 0);
 	extra_cull_margin = p_margin;
-	RS::instance_set_extra_visibility_margin(get_instance(), extra_cull_margin);
+	Renderer::instance_set_extra_visibility_margin(get_instance(), extra_cull_margin);
 }
 
 float GeometryInstance3D::get_extra_cull_margin() const { return extra_cull_margin; }
@@ -275,7 +276,7 @@ void GeometryInstance3D::set_lod_bias(float p_bias)
 {
 	ERR_FAIL_COND(p_bias < 0.0);
 	lod_bias = p_bias;
-	RS::instance_geometry_set_lod_bias(get_instance(), lod_bias);
+	Renderer::instance_geometry_set_lod_bias(get_instance(), lod_bias);
 }
 
 float GeometryInstance3D::get_lod_bias() const { return lod_bias; }
@@ -290,22 +291,22 @@ void GeometryInstance3D::set_gi_mode(GIMode p_mode)
 {
 	switch (p_mode) {
 	case GI_MODE_DISABLED: {
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, false);
 	} break;
 	case GI_MODE_STATIC: {
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, false);
 
 	} break;
 	case GI_MODE_DYNAMIC: {
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			get_instance(), RSE::INSTANCE_FLAG_USE_DYNAMIC_GI, true);
 	} break;
 	}
@@ -318,7 +319,7 @@ GeometryInstance3D::GIMode GeometryInstance3D::get_gi_mode() const { return gi_m
 void GeometryInstance3D::set_ignore_occlusion_culling(bool p_enabled)
 {
 	ignore_occlusion_culling = p_enabled;
-	RS::instance_geometry_set_flag(
+	Renderer::instance_geometry_set_flag(
 		get_instance(), RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, ignore_occlusion_culling);
 }
 
@@ -358,14 +359,14 @@ PackedStringArray GeometryInstance3D::get_configuration_warnings() const
 	}
 
 	if (!Math::is_zero_approx(transparency) &&
-		OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+		OS::get_current_rendering_method() != "forward_plus") {
 		warnings.push_back(RTR(
 			"GeometryInstance3D transparency is only available when using the Forward+ renderer."));
 	}
 
 	if ((visibility_range_fade_mode == VISIBILITY_RANGE_FADE_SELF ||
 			visibility_range_fade_mode == VISIBILITY_RANGE_FADE_DEPENDENCIES) &&
-		OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+		OS::get_current_rendering_method() != "forward_plus") {
 		warnings.push_back(RTR("GeometryInstance3D visibility range transparency fade is only "
 							   "available when using the Forward+ renderer."));
 	}

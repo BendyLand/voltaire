@@ -2,10 +2,11 @@
 /*  animation_blend_space_2d.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,13 +66,13 @@ protected:
 
 	struct BlendPoint
 	{
-		StringName name;
+		String name;
 		Ref<AnimationRootNode> node;
 		Vector2 position;
 
 		void reset()
 		{
-			name = StringName();
+			name = String();
 			node = Ref<AnimationRootNode>();
 			position = Vector2();
 		}
@@ -87,8 +88,8 @@ protected:
 
 	Vector<BlendTriangle> triangles;
 
-	StringName blend_position = "blend_position";
-	StringName closest = "closest";
+	String blend_position = "blend_position";
+	String closest = "closest";
 	Vector2 max_space = Vector2(1, 1);
 	Vector2 min_space = Vector2(-1, -1);
 	Vector2 snap = Vector2(0.1, 0.1);
@@ -132,17 +133,17 @@ protected:
 
 public:
 	virtual void validate_node(
-		const AnimationTree* p_tree, const StringName& p_path) const override;
+		const AnimationTree* p_tree, const String& p_path) const override;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
 	void add_blend_point(const Ref<AnimationRootNode>& p_node, const Vector2& p_position,
-		int p_at_index = -1, const StringName& p_name = StringName());
+		int p_at_index = -1, const String& p_name = String());
 	void set_blend_point_position(int p_point, const Vector2& p_position);
 	void set_blend_point_node(int p_point, const Ref<AnimationRootNode>& p_node);
-	void set_blend_point_name(int p_point, const StringName& p_name);
-	const StringName& get_blend_point_name(int p_point) const;
-	int find_blend_point_by_name(const StringName& p_name) const;
+	void set_blend_point_name(int p_point, const String& p_name);
+	const String& get_blend_point_name(int p_point) const;
+	int find_blend_point_by_name(const String& p_name) const;
 	Vector2 get_blend_point_position(int p_point) const;
 	Ref<AnimationRootNode> get_blend_point_node(int p_point) const;
 	void remove_blend_point(int p_point);
@@ -194,7 +195,7 @@ public:
 	void set_sync_mode(SyncMode p_sync_mode);
 	SyncMode get_sync_mode() const;
 
-	virtual Ref<AnimationNode> get_child_by_name(const StringName& p_name) const override;
+	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const override;
 };
 
 

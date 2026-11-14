@@ -2,10 +2,11 @@
 /*  mesh_storage.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -218,7 +219,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 #else
 
 	if (surface_version != uint64_t(RSE::ARRAY_FLAG_FORMAT_CURRENT_VERSION)) {
-		RS::fix_surface_compatibility(new_surface);
+		Renderer::fix_surface_compatibility(new_surface);
 		surface_version = new_surface.format & (RSE::ARRAY_FLAG_FORMAT_VERSION_MASK
 												   << RSE::ARRAY_FLAG_FORMAT_VERSION_SHIFT);
 		ERR_FAIL_COND_MSG(surface_version != RSE::ARRAY_FLAG_FORMAT_CURRENT_VERSION,
@@ -1729,7 +1730,7 @@ void MeshStorage::_multimesh_instance_set_transform(
 
 	_multimesh_make_local(multimesh);
 
-	bool uses_motion_vectors = (RS::viewport->get_num_viewports_with_motion_vectors() > 0) ||
+	bool uses_motion_vectors = (Renderer::viewport->get_num_viewports_with_motion_vectors() > 0) ||
 							   (RendererCompositorStorage::get_singleton()
 									   ->get_num_compositor_effects_with_motion_vectors() > 0);
 

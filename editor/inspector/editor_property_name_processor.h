@@ -2,10 +2,11 @@
 /*  editor_property_name_processor.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -40,14 +41,14 @@ class EditorPropertyNameProcessor : public Node
 	HashMap<String, String> capitalize_string_remaps;
 	LocalVector<String> stop_words; // Exceptions that shouldn't be capitalized.
 
-	HashMap<String, HashMap<String, StringName>> translation_contexts;
+	HashMap<String, HashMap<String, String>> translation_contexts;
 
 	// Capitalizes property path segments.
 	String _capitalize_name(const String& p_name) const;
 
 	// Returns the translation context for the given name.
-	StringName _get_context(
-		const String& p_name, const String& p_property, const StringName& p_class) const;
+	String _get_context(
+		const String& p_name, const String& p_property, const String& p_class) const;
 
 public:
 	// Matches `interface/inspector/default_property_name_style` editor setting.
@@ -70,7 +71,7 @@ public:
 	// `p_class` and `p_property` are only used for `STYLE_LOCALIZED`, associating the name with a
 	// translation context.
 	String process_name(const String& p_name, Style p_style, const String& p_property = "",
-		const StringName& p_class = "") const;
+		const String& p_class = "") const;
 
 	// Translate plain text group names.
 	String translate_group_name(const String& p_name) const;

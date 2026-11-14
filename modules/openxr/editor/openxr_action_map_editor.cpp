@@ -2,10 +2,11 @@
 /*  openxr_action_map_editor.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ OpenXRInteractionProfileEditorBase* OpenXRActionMapEditor::_add_interaction_prof
 	new_profile_editor->setup(action_map, p_interaction_profile);
 	tabs->add_child(new_profile_editor);
 	new_profile_editor->add_theme_style_override(
-		SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("Tree")).ptr());
+		SceneString(panel), get_theme_stylebox(SceneString(panel), SNAME("Tree")).ptr());
 	tabs->set_tab_button_icon(
 		tabs->get_tab_count() - 1, get_theme_icon(SNAME("close"), SNAME("TabBar")));
 

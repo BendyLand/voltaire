@@ -2,10 +2,11 @@
 /*  mesh.cpp                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -757,7 +758,7 @@ void ArrayMesh::_set_blend_shape_names(const PackedStringArray& p_names)
 	}
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
 	}
 }
 
@@ -774,10 +775,10 @@ PackedStringArray ArrayMesh::_get_blend_shape_names() const
 void ArrayMesh::_create_if_empty() const
 {
 	if (!mesh.is_valid()) {
-		mesh = RS::mesh_create();
-		RS::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)blend_shape_mode);
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
-		RS::mesh_set_path(mesh, get_path());
+		mesh = Renderer::mesh_create();
+		Renderer::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)blend_shape_mode);
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_path(mesh, get_path());
 	}
 }
 
@@ -808,12 +809,12 @@ void ArrayMesh::_recompute_aabb()
 
 int ArrayMesh::get_surface_count() const { return surfaces.size(); }
 
-void ArrayMesh::add_blend_shape(const StringName& p_name)
+void ArrayMesh::add_blend_shape(const String& p_name)
 {
 	ERR_FAIL_COND_MSG(
 		surfaces.size(), "Can't add a shape key count if surfaces are already created.");
 
-	StringName shape_name = p_name;
+	String shape_name = p_name;
 
 	if (blend_shapes.has(shape_name)) {
 		int count = 2;
@@ -826,23 +827,23 @@ void ArrayMesh::add_blend_shape(const StringName& p_name)
 	blend_shapes.push_back(shape_name);
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, blend_shapes.size());
+		Renderer::mesh_set_blend_shape_count(mesh, blend_shapes.size());
 	}
 }
 
 int ArrayMesh::get_blend_shape_count() const { return blend_shapes.size(); }
 
-StringName ArrayMesh::get_blend_shape_name(int p_index) const
+String ArrayMesh::get_blend_shape_name(int p_index) const
 {
-	ERR_FAIL_INDEX_V(p_index, blend_shapes.size(), StringName());
+	ERR_FAIL_INDEX_V(p_index, blend_shapes.size(), String());
 	return blend_shapes[p_index];
 }
 
-void ArrayMesh::set_blend_shape_name(int p_index, const StringName& p_name)
+void ArrayMesh::set_blend_shape_name(int p_index, const String& p_name)
 {
 	ERR_FAIL_INDEX(p_index, blend_shapes.size());
 
-	StringName shape_name = p_name;
+	String shape_name = p_name;
 	int found = blend_shapes.find(shape_name);
 	if (found != -1 && found != p_index) {
 		int count = 2;
@@ -863,7 +864,7 @@ void ArrayMesh::clear_blend_shapes()
 	blend_shapes.clear();
 
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_count(mesh, 0);
+		Renderer::mesh_set_blend_shape_count(mesh, 0);
 	}
 }
 
@@ -871,7 +872,7 @@ void ArrayMesh::set_blend_shape_mode(BlendShapeMode p_mode)
 {
 	blend_shape_mode = p_mode;
 	if (mesh.is_valid()) {
-		RS::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)p_mode);
+		Renderer::mesh_set_blend_shape_mode(mesh, (RSE::BlendShapeMode)p_mode);
 	}
 }
 
@@ -942,7 +943,7 @@ void ArrayMesh::surface_update_vertex_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_vertex_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_vertex_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -950,7 +951,7 @@ void ArrayMesh::surface_update_attribute_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_attribute_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_attribute_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -958,7 +959,7 @@ void ArrayMesh::surface_update_skin_region(
 	int p_surface, int p_offset, const Vector<uint8_t>& p_data)
 {
 	ERR_FAIL_INDEX(p_surface, surfaces.size());
-	RS::mesh_surface_update_skin_region(mesh, p_surface, p_offset, p_data);
+	Renderer::mesh_surface_update_skin_region(mesh, p_surface, p_offset, p_data);
 	emit_changed();
 }
 
@@ -989,7 +990,7 @@ void ArrayMesh::clear_surfaces()
 	if (!mesh.is_valid()) {
 		return;
 	}
-	RS::mesh_clear(mesh);
+	Renderer::mesh_clear(mesh);
 	surfaces.clear();
 	aabb = AABB();
 }
@@ -998,7 +999,7 @@ void ArrayMesh::set_custom_aabb(const AABB& p_custom)
 {
 	_create_if_empty();
 	custom_aabb = p_custom;
-	RS::mesh_set_custom_aabb(mesh, custom_aabb);
+	Renderer::mesh_set_custom_aabb(mesh, custom_aabb);
 	emit_changed();
 }
 
@@ -1052,10 +1053,10 @@ void ArrayMesh::set_shadow_mesh(const Ref<ArrayMesh>& p_mesh)
 	ERR_FAIL_COND_MSG(p_mesh == this, "Cannot set a mesh as its own shadow mesh.");
 	shadow_mesh = p_mesh;
 	if (shadow_mesh.is_valid()) {
-		RS::mesh_set_shadow_mesh(mesh, shadow_mesh->get_rid());
+		Renderer::mesh_set_shadow_mesh(mesh, shadow_mesh->get_rid());
 	}
 	else {
-		RS::mesh_set_shadow_mesh(mesh, RID());
+		Renderer::mesh_set_shadow_mesh(mesh, RID());
 	}
 }
 
@@ -1075,12 +1076,12 @@ ArrayMesh::~ArrayMesh()
 	}
 }
 
-PlaceholderMesh::PlaceholderMesh() { rid = RS::mesh_create(); }
+PlaceholderMesh::PlaceholderMesh() { rid = Renderer::mesh_create(); }
 
 PlaceholderMesh::~PlaceholderMesh()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(rid);
+	Renderer::free_rid(rid);
 }
 
 int Mesh::get_surface_count() const { return 0; }
@@ -1102,9 +1103,9 @@ Ref<Material> Mesh::surface_get_material(int p_idx) const { return Ref<Material>
 
 int Mesh::get_blend_shape_count() const { return 0; }
 
-StringName Mesh::get_blend_shape_name(int p_idx) const { return StringName(); }
+String Mesh::get_blend_shape_name(int p_idx) const { return String(); }
 
-void Mesh::set_blend_shape_name(int p_idx, const StringName& p_name) {}
+void Mesh::set_blend_shape_name(int p_idx, const String& p_name) {}
 
 AABB Mesh::get_aabb() const { return AABB(); }
 

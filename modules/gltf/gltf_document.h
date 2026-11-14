@@ -2,10 +2,11 @@
 /*  gltf_document.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -317,7 +318,7 @@ public:
 	GLTFMeshIndex _convert_mesh_to_gltf(Ref<GLTFState> p_state, MeshInstance3D* p_mesh_instance);
 
 	GLTFNodeIndex _node_and_or_bone_to_gltf_node_index(
-		Ref<GLTFState> p_state, const Vector<StringName>& p_node_subpath, const Node* p_godot_node);
+		Ref<GLTFState> p_state, const Vector<String>& p_node_subpath, const Node* p_godot_node);
 	bool _convert_animation_node_track(Ref<GLTFState> p_state,
 		GLTFAnimation::NodeTrack& p_gltf_node_track, const Ref<Animation>& p_godot_animation,
 		int32_t p_godot_anim_track_index, Vector<double>& p_times);

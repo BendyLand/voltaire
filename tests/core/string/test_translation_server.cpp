@@ -2,10 +2,11 @@
 /*  test_translation_server.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -69,7 +70,7 @@ TEST_CASE("[TranslationServer] Translation operations") {
 	CHECK(td->find_translations("uk_UA", true).size() == 1);
 
 	td->set_locale_override("uk");
-	CHECK(td->translate("Good Morning", StringName()) == String::utf8("Добрий ранок"));
+	CHECK(td->translate("Good Morning", String()) == String::utf8("Добрий ранок"));
 
 	td->remove_translation(t1);
 	CHECK(td->get_translations().size() == 1);
@@ -83,7 +84,7 @@ TEST_CASE("[TranslationServer] Translation operations") {
 	CHECK(td->find_translations("uk_UA", false).size() == 1);
 
 	// If no suitable Translation object has been found - the original message should be returned.
-	CHECK(td->translate("Good Morning", StringName()) == "Good Morning");
+	CHECK(td->translate("Good Morning", String()) == "Good Morning");
 
 	TranslationServer::get_singleton()->remove_domain("godot.test");
 }

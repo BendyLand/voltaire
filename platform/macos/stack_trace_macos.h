@@ -2,10 +2,11 @@
 /*  stack_trace_macos.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -75,7 +76,7 @@ static Vector<String> symbolize_with_atos(const String &p_exec_path, const void 
 	// Execute atos with the arguments and capture the output.
 	String atos_output;
 	int ret = 0;
-	const Error err = OS::get_singleton()->execute("atos", args, &atos_output, &ret);
+	const Error err = OS::execute("atos", args, &atos_output, &ret);
 	if (err == OK && ret == 0 && !atos_output.is_empty()) {
 		return atos_output.split("\n", false);
 	}

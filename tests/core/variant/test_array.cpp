@@ -2,10 +2,11 @@
 /*  test_array.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -766,7 +767,7 @@ TEST_CASE("[Array] Test typed arrays") {
 	Array arr1;
 	CHECK_FALSE(arr1.is_typed());
 
-	arr1.set_typed(Variant::FLOAT, StringName(), Variant());
+	arr1.set_typed(Variant::FLOAT, String(), Variant());
 	CHECK(arr1.is_typed());
 	CHECK_EQ(arr1.get_typed_builtin(), Variant::FLOAT);
 
@@ -779,7 +780,7 @@ TEST_CASE("[Array] Test typed arrays") {
 	ERR_PRINT_ON;
 
 	Array arr2;
-	arr2.set_typed(Variant::INT, StringName(), Variant());
+	arr2.set_typed(Variant::INT, String(), Variant());
 	CHECK_FALSE(arr1.is_same_typed(arr2));
 
 	Array arr3;

@@ -2,10 +2,11 @@
 /*  smaa.cpp                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -122,7 +123,7 @@ SMAA::SMAA() {
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.search_tex = RD::texture_create(tf, RD::TextureView(), data_slices);
+		smaa.search_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 
 	// 3. Load precomputed area texture from embedded PNG
@@ -143,7 +144,7 @@ SMAA::SMAA() {
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.area_tex = RD::texture_create(tf, RD::TextureView(), data_slices);
+		smaa.area_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 }
 

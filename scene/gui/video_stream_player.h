@@ -2,10 +2,11 @@
 /*  video_stream_player.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -63,7 +64,7 @@ class VideoStreamPlayer : public Control
 	int audio_track = 0;
 	int bus_index = 0;
 
-	StringName bus;
+	String bus;
 
 	void _mix_audio();
 	static int _audio_mix_callback(void* p_udata, const float* p_data, int p_frames);
@@ -115,8 +116,8 @@ public:
 	void set_buffering_msec(int p_msec);
 	int get_buffering_msec() const;
 
-	void set_bus(const StringName& p_bus);
-	StringName get_bus() const;
+	void set_bus(const String& p_bus);
+	String get_bus() const;
 
 	~VideoStreamPlayer();
 };

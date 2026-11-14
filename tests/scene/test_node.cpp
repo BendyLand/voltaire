@@ -2,10 +2,11 @@
 /*  test_node.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -116,7 +117,7 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a very simple scene tr
 	CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 1);
 
 	// Check initial node setup.
-	CHECK(node->get_name() == StringName());
+	CHECK(node->get_name() == String());
 	CHECK_FALSE(node->is_inside_tree());
 	CHECK_EQ(node->get_parent(), nullptr);
 	ERR_PRINT_OFF;
@@ -129,7 +130,7 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a very simple scene tr
 	CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 1);
 	CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 2);
 
-	CHECK(node->get_name() != StringName());
+	CHECK(node->get_name() != String());
 	CHECK(node->is_inside_tree());
 	CHECK_EQ(SceneTree::get_singleton()->get_root(), node->get_parent());
 	CHECK_FALSE(node->get_path().is_empty());

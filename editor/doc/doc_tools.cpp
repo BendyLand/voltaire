@@ -2,10 +2,11 @@
 /*  doc_tools.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -71,7 +72,7 @@ static String _translate_doc_string(const String& p_text)
 	const String indent = _get_indent(p_text);
 	const String message = p_text.dedent().strip_edges();
 	const String translated =
-		TranslationServer::get_singleton()->get_doc_domain()->translate(message, StringName());
+		TranslationServer::get_singleton()->get_doc_domain()->translate(message, String());
 	// No need to restore stripped edges because they'll be stripped again later.
 	return translated.indent(indent);
 }

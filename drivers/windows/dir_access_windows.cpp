@@ -2,10 +2,11 @@
 /*  dir_access_windows.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -316,7 +317,7 @@ Error DirAccessWindows::rename(String p_path, String p_new_path) {
 		// The path is a file; juggle
 		// Note: do not use GetTempFileNameW, it's not long path aware!
 		Char16String tmpfile_utf16;
-		uint64_t id = OS::get_singleton()->get_ticks_usec();
+		uint64_t id = OS::get_ticks_usec();
 		while (true) {
 			tmpfile_utf16 = (path + itos(id++) + ".tmp").utf16();
 			HANDLE handle = CreateFileW((LPCWSTR)tmpfile_utf16.get_data(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);

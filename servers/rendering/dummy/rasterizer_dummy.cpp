@@ -2,10 +2,11 @@
 /*  rasterizer_dummy.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -30,15 +31,8 @@
 
 #include "rasterizer_dummy.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/environment/fog.h"
-#include "servers/rendering/dummy/environment/gi.h"
 #include "servers/rendering/dummy/rasterizer_canvas_dummy.h"
 #include "servers/rendering/dummy/rasterizer_scene_dummy.h"
-#include "servers/rendering/dummy/storage/light_storage.h"
-#include "servers/rendering/dummy/storage/material_storage.h"
-#include "servers/rendering/dummy/storage/mesh_storage.h"
-#include "servers/rendering/dummy/storage/particles_storage.h"
-#include "servers/rendering/dummy/storage/texture_storage.h"
 #include "servers/rendering/dummy/storage/utilities.h"
 
 void RasterizerDummy::end_frame(bool p_present)
@@ -48,13 +42,7 @@ void RasterizerDummy::end_frame(bool p_present)
 	}
 }
 
-RendererCanvasRender* RasterizerDummy::get_canvas() { return canvas; }
-
 RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
-
-RendererFog* RasterizerDummy::get_fog() { return fog; }
-
-RendererGI* RasterizerDummy::get_gi() { return gi; }
 
 RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
 

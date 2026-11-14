@@ -2,10 +2,11 @@
 /*  collision_object_3d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -274,7 +275,7 @@ void CollisionObject3D::_shape_changed(const Ref<Shape3D>& p_shape)
 			ShapeData::ShapeBase& s = shape_bases[i];
 			if (s.shape == p_shape && s.debug_shape.is_valid()) {
 				Ref<Mesh> mesh = s.shape->get_debug_mesh();
-				RS::instance_set_base(s.debug_shape, mesh->get_rid());
+				Renderer::instance_set_base(s.debug_shape, mesh->get_rid());
 			}
 		}
 	}
@@ -295,7 +296,7 @@ void CollisionObject3D::_on_transform_changed()
 				if (shape_bases[i].debug_shape.is_null()) {
 					continue;
 				}
-				RS::instance_set_transform(
+				Renderer::instance_set_transform(
 					shape_bases[i].debug_shape, debug_shape_old_transform * shapedata.xform);
 			}
 		}

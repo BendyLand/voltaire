@@ -2,10 +2,11 @@
 /*  animation_blend_space_1d.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,13 +66,13 @@ protected:
 
 	struct BlendPoint
 	{
-		StringName name;
+		String name;
 		Ref<AnimationRootNode> node;
 		float position = 0.0;
 
 		void reset()
 		{
-			name = StringName();
+			name = String();
 			node = Ref<AnimationRootNode>();
 			position = 0.0;
 		}
@@ -87,8 +88,8 @@ protected:
 
 	String value_label = "value";
 
-	StringName blend_position = "blend_position";
-	StringName closest = "closest";
+	String blend_position = "blend_position";
+	String closest = "closest";
 
 	BlendMode blend_mode = BLEND_MODE_INTERPOLATED;
 
@@ -112,20 +113,20 @@ protected:
 
 public:
 	virtual void validate_node(
-		const AnimationTree* p_tree, const StringName& p_path) const override;
+		const AnimationTree* p_tree, const String& p_path) const override;
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
 	void add_blend_point(const Ref<AnimationRootNode>& p_node, float p_position,
-		int p_at_index = -1, const StringName& p_name = "");
+		int p_at_index = -1, const String& p_name = "");
 	void set_blend_point_position(int p_point, float p_position);
 	void set_blend_point_node(int p_point, const Ref<AnimationRootNode>& p_node);
 
 	float get_blend_point_position(int p_point) const;
 	Ref<AnimationRootNode> get_blend_point_node(int p_point) const;
-	void set_blend_point_name(int p_point, const StringName& p_name);
-	const StringName& get_blend_point_name(int p_point) const;
-	int find_blend_point_by_name(const StringName& p_name) const;
+	void set_blend_point_name(int p_point, const String& p_name);
+	const String& get_blend_point_name(int p_point) const;
+	int find_blend_point_by_name(const String& p_name) const;
 	void remove_blend_point(int p_point);
 	int get_blend_point_count() const;
 
@@ -161,7 +162,7 @@ public:
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 	String get_caption() const override;
 
-	Ref<AnimationNode> get_child_by_name(const StringName& p_name) const override;
+	Ref<AnimationNode> get_child_by_name(const String& p_name) const override;
 };
 
 

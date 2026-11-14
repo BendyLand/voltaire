@@ -2,10 +2,11 @@
 /*  navigation_polygon.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -461,12 +462,12 @@ NavigationPolygon::SourceGeometryMode NavigationPolygon::get_source_geometry_mod
 	return source_geometry_mode;
 }
 
-void NavigationPolygon::set_source_geometry_group_name(const StringName& p_group_name)
+void NavigationPolygon::set_source_geometry_group_name(const String& p_group_name)
 {
 	source_geometry_group_name = p_group_name;
 }
 
-StringName NavigationPolygon::get_source_geometry_group_name() const
+String NavigationPolygon::get_source_geometry_group_name() const
 {
 	return source_geometry_group_name;
 }

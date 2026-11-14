@@ -2,10 +2,11 @@
 /*  lightmap_gi_editor_plugin.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -48,7 +49,7 @@ void LightmapGIEditorPlugin::bake_func_end(uint64_t p_time_started)
 		memdelete(tmp_progress);
 		tmp_progress = nullptr;
 	}
-	const int time_taken = OS::get_singleton()->get_ticks_msec() - p_time_started;
+	const int time_taken = OS::get_ticks_msec() - p_time_started;
 	__print_line(vformat("Done baking lightmaps in %02d:%02d:%02d.%02d.", time_taken / 3'600'000,
 		(time_taken % 3'600'000) / 60'000, (time_taken % 60'000) / 1000, (time_taken % 1000) / 10));
 	// Request attention in case the user was doing something else.

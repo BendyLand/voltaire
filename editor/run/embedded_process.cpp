@@ -2,10 +2,11 @@
 /*  embedded_process.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -207,7 +208,7 @@ void EmbeddedProcess::_notification(int p_what)
 	} break;
 	case NOTIFICATION_APPLICATION_FOCUS_IN: {
 		application_has_focus = true;
-		last_application_focus_time = OS::get_singleton()->get_ticks_msec();
+		last_application_focus_time = OS::get_ticks_msec();
 	} break;
 	case NOTIFICATION_APPLICATION_FOCUS_OUT: {
 		application_has_focus = false;
@@ -238,7 +239,7 @@ EmbeddedProcess::~EmbeddedProcess()
 {
 	if (current_process_id != 0) {
 		// Stop embedding the last process.
-		OS::get_singleton()->kill(current_process_id);
+		OS::kill(current_process_id);
 		reset();
 	}
 }

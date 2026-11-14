@@ -2,10 +2,11 @@
 /*  core_constants.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -30,23 +31,23 @@
 
 #pragma once
 
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 
 class CoreConstants {
 public:
 	static int get_global_constant_count();
-	static StringName get_global_constant_enum(int p_idx);
+	static String get_global_constant_enum(int p_idx);
 	static bool is_global_constant_bitfield(int p_idx);
 	static bool get_ignore_value_in_docs(int p_idx);
 	static const char *get_global_constant_name(int p_idx);
 	static int64_t get_global_constant_value(int p_idx);
-	static bool is_global_constant(const StringName &p_name);
-	static int get_global_constant_index(const StringName &p_name);
-	static bool is_global_enum(const StringName &p_enum);
-	static void get_enum_values(const StringName &p_enum, HashMap<StringName, int64_t> *r_values);
+	static bool is_global_constant(const String &p_name);
+	static int get_global_constant_index(const String &p_name);
+	static bool is_global_enum(const String &p_enum);
+	static void get_enum_values(const String &p_enum, HashMap<String, int64_t> *r_values);
 #ifdef TOOLS_ENABLED
-	static void get_global_enums(List<StringName> *r_values);
+	static void get_global_enums(List<String> *r_values);
 #endif
 };

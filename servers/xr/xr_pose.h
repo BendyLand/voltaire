@@ -2,10 +2,11 @@
 /*  xr_pose.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -45,7 +46,7 @@ public:
 
 private:
 	bool has_tracking_data = false;
-	StringName name;
+	String name;
 	Transform3D transform;
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
@@ -57,8 +58,8 @@ public:
 	void set_has_tracking_data(const bool p_has_tracking_data);
 	bool get_has_tracking_data() const;
 
-	void set_name(const StringName& p_name);
-	StringName get_name() const;
+	void set_name(const String& p_name);
+	String get_name() const;
 
 	void set_transform(const Transform3D p_transform);
 	Transform3D get_transform() const;

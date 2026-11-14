@@ -2,10 +2,11 @@
 /*  animation_blend_space_2d.compat.inc                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -39,7 +40,7 @@ void AnimationNodeBlendSpace2D::_add_blend_point_bind_compat_110369(
 	while (find_blend_point_by_name(itos(n)) != -1) {
 		n++;
 	}
-	add_blend_point(p_node, p_position, p_at_index, StringName(itos(n)));
+	add_blend_point(p_node, p_position, p_at_index, String(itos(n)));
 }
 
 void AnimationNodeBlendSpace2D::_bind_compatibility_methods() {}

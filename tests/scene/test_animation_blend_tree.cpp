@@ -2,10 +2,11 @@
 /*  test_animation_blend_tree.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -48,7 +49,7 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 	// Test adding animation node.
 	Ref<AnimationNodeAnimation> anim_node;
 	anim_node.instantiate();
-	anim_node->set_animation(StringName("test_animation"));
+	anim_node->set_animation(String("test_animation"));
 	Vector2 position(100, 100);
 	blend_tree->add_node("test_node", anim_node, position);
 
@@ -61,9 +62,9 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 	CHECK_EQ(blend_tree->can_connect_node("output", 0, "test_node"), AnimationNodeBlendTree::CONNECTION_OK);
 	blend_tree->connect_node("output", 0, "test_node");
 
-	const LocalVector<StringName> *connections = blend_tree->get_node_connection_array("output");
+	const LocalVector<String> *connections = blend_tree->get_node_connection_array("output");
 	CHECK_EQ(connections->size(), 1);
-	CHECK_EQ(connections->operator[](0), StringName("test_node"));
+	CHECK_EQ(connections->operator[](0), String("test_node"));
 
 	// Test node rename.
 	blend_tree->rename_node("test_node", "renamed_node");
@@ -71,14 +72,14 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 	CHECK(blend_tree->has_node("renamed_node"));
 
 	connections = blend_tree->get_node_connection_array("output");
-	CHECK_EQ(connections->operator[](0), StringName("renamed_node"));
+	CHECK_EQ(connections->operator[](0), String("renamed_node"));
 
 	// Test node removal.
 	blend_tree->remove_node("renamed_node");
 	CHECK_FALSE(blend_tree->has_node("renamed_node"));
 
 	connections = blend_tree->get_node_connection_array("output");
-	CHECK_EQ(connections->operator[](0), StringName());
+	CHECK_EQ(connections->operator[](0), String());
 }
 
 } // namespace TestAnimationBlendTree

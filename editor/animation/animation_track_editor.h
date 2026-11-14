@@ -2,10 +2,11 @@
 /*  animation_track_editor.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -128,7 +129,7 @@ public:
 	bool animation_read_only = false;
 
 	Ref<Animation> animation;
-	StringName marker_name;
+	String marker_name;
 	bool use_fps = false;
 
 	AnimationMarkerEdit* marker_edit = nullptr;
@@ -144,7 +145,7 @@ public:
 	float get_time() const;
 
 protected:
-	void _set_marker_name(const StringName& p_name);
+	void _set_marker_name(const String& p_name);
 };
 
 class AnimationMultiMarkerKeyEdit
@@ -153,7 +154,7 @@ public:
 	bool animation_read_only = false;
 
 	Ref<Animation> animation;
-	Vector<StringName> marker_names;
+	Vector<String> marker_names;
 
 	AnimationMarkerEdit* marker_edit = nullptr;
 
@@ -281,7 +282,7 @@ class AnimationMarkerEdit : public Control
 									  // changed are much faster.
 	float play_position_pos = 0.0f;
 
-	HashSet<StringName> selection;
+	HashSet<String> selection;
 
 	Ref<Animation> animation;
 	bool read_only = false;
@@ -292,7 +293,7 @@ class AnimationMarkerEdit : public Control
 	PopupMenu* menu = nullptr;
 
 	bool hovered = false;
-	StringName hovering_marker;
+	String hovering_marker;
 
 	void _zoom_changed();
 
@@ -307,15 +308,15 @@ class AnimationMarkerEdit : public Control
 	float moving_selection_pivot = 0.0f;
 	float moving_selection_mouse_begin_x = 0.0f;
 	float moving_selection_mouse_begin_y = 0.0f;
-	StringName select_single_attempt;
+	String select_single_attempt;
 	bool moving_selection = false;
 	void _move_selection_begin();
 	void _move_selection(float p_offset);
 	void _move_selection_cancel();
 
 	void _clear_selection_for_anim(const Ref<Animation>& p_anim);
-	void _select_key(const StringName& p_name, bool is_single = false);
-	void _deselect_key(const StringName& p_name);
+	void _select_key(const String& p_name, bool is_single = false);
+	void _deselect_key(const String& p_name);
 
 	void _insert_marker(float p_ofs);
 
@@ -327,7 +328,7 @@ class AnimationMarkerEdit : public Control
 
 	ConfirmationDialog* marker_rename_confirm = nullptr;
 	LineEdit* marker_rename_new_name = nullptr;
-	StringName marker_rename_prev_name;
+	String marker_rename_prev_name;
 
 	AcceptDialog* marker_rename_error_dialog = nullptr;
 
@@ -375,7 +376,7 @@ public:
 	void set_use_fps(bool p_use_fps);
 
 	PackedStringArray get_selected_section() const;
-	bool is_marker_selected(const StringName& p_marker) const;
+	bool is_marker_selected(const String& p_marker) const;
 
 	AnimationMarkerEdit();
 };
@@ -889,7 +890,7 @@ public:
 	bool is_grouping_tracks();
 	bool is_sorting_alphabetically();
 	PackedStringArray get_selected_section() const;
-	bool is_marker_selected(const StringName& p_marker) const;
+	bool is_marker_selected(const String& p_marker) const;
 	bool is_marker_moving_selection() const;
 	float get_marker_moving_selection_offset() const;
 	bool is_function_name_pressed();
@@ -932,14 +933,14 @@ public:
 class AnimationMarkerKeyEditEditor : public EditorProperty
 {
 	Ref<Animation> animation;
-	StringName marker_name;
+	String marker_name;
 	bool use_fps = false;
 
 	EditorSpinSlider* spinner = nullptr;
 
 public:
 	AnimationMarkerKeyEditEditor(
-		Ref<Animation> p_animation, const StringName& p_name, bool p_use_fps);
+		Ref<Animation> p_animation, const String& p_name, bool p_use_fps);
 };
 
 

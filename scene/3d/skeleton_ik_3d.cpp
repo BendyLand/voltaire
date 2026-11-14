@@ -2,10 +2,11 @@
 /*  skeleton_ik_3d.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -353,9 +354,9 @@ SkeletonIK3D::~SkeletonIK3D()
 	task = nullptr;
 }
 
-StringName SkeletonIK3D::get_root_bone() const { return root_bone; }
+String SkeletonIK3D::get_root_bone() const { return root_bone; }
 
-StringName SkeletonIK3D::get_tip_bone() const { return tip_bone; }
+String SkeletonIK3D::get_tip_bone() const { return tip_bone; }
 
 #ifndef DISABLE_DEPRECATED
 void SkeletonIK3D::_set_interpolation(real_t p_interpolation) { set_influence(p_interpolation); }

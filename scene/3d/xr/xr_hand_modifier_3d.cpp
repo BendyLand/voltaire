@@ -2,10 +2,11 @@
 /*  xr_hand_modifier_3d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -32,7 +33,7 @@
 #include "servers/xr/xr_server.h"
 #include "xr_hand_modifier_3d.h"
 
-StringName XRHandModifier3D::get_hand_tracker() const { return tracker_name; }
+String XRHandModifier3D::get_hand_tracker() const { return tracker_name; }
 
 void XRHandModifier3D::set_bone_update(BoneUpdate p_bone_update)
 {

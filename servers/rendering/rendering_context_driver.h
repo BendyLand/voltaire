@@ -2,10 +2,11 @@
 /*  rendering_context_driver.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -30,15 +31,15 @@
 
 #pragma once
 
+#include <cstdint>
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "servers/display/display_server_enums.h"
 
-#include <cstdint>
-
 class RenderingDeviceDriver;
 
-class RenderingContextDriver {
+class RenderingContextDriver
+{
 public:
 	typedef uint64_t SurfaceID;
 
@@ -47,17 +48,23 @@ private:
 
 public:
 	SurfaceID surface_get_from_window(DisplayServerEnums::WindowID p_window) const;
-	Error window_create(DisplayServerEnums::WindowID p_window, const void *p_platform_data);
-	void window_set_size(DisplayServerEnums::WindowID p_window, uint32_t p_width, uint32_t p_height);
-	void window_set_vsync_mode(DisplayServerEnums::WindowID p_window, DisplayServerEnums::VSyncMode p_vsync_mode);
-	DisplayServerEnums::VSyncMode window_get_vsync_mode(DisplayServerEnums::WindowID p_window) const;
+	Error window_create(DisplayServerEnums::WindowID p_window, const void* p_platform_data);
+	void window_set_size(
+		DisplayServerEnums::WindowID p_window, uint32_t p_width, uint32_t p_height);
+	void window_set_vsync_mode(
+		DisplayServerEnums::WindowID p_window, DisplayServerEnums::VSyncMode p_vsync_mode);
+	DisplayServerEnums::VSyncMode window_get_vsync_mode(
+		DisplayServerEnums::WindowID p_window) const;
 	void window_set_hdr_output_enabled(DisplayServerEnums::WindowID p_window, bool p_enabled);
 	bool window_get_hdr_output_enabled(DisplayServerEnums::WindowID p_window) const;
-	void window_set_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window, float p_reference_luminance);
+	void window_set_hdr_output_reference_luminance(
+		DisplayServerEnums::WindowID p_window, float p_reference_luminance);
 	float window_get_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window) const;
-	void window_set_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window, float p_max_luminance);
+	void window_set_hdr_output_max_luminance(
+		DisplayServerEnums::WindowID p_window, float p_max_luminance);
 	float window_get_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window) const;
-	void window_set_hdr_output_linear_luminance_scale(DisplayServerEnums::WindowID p_window, float p_linear_luminance_scale);
+	void window_set_hdr_output_linear_luminance_scale(
+		DisplayServerEnums::WindowID p_window, float p_linear_luminance_scale);
 	float window_get_hdr_output_linear_luminance_scale(DisplayServerEnums::WindowID p_window) const;
 	float window_get_output_max_linear_value(DisplayServerEnums::WindowID p_window) const;
 	void window_destroy(DisplayServerEnums::WindowID p_window);
@@ -67,7 +74,8 @@ public:
 	// the various drivers, which report them in uint32_t. Casting to an
 	// enum value is dangerous in this case as we don't actually know what
 	// range the driver is reporting a value in.
-	struct Vendor {
+	struct Vendor
+	{
 		constexpr static uint32_t VENDOR_UNKNOWN = 0x0;
 		constexpr static uint32_t VENDOR_AMD = 0x1002;
 		constexpr static uint32_t VENDOR_IMGTEC = 0x1010;
@@ -79,7 +87,8 @@ public:
 		constexpr static uint32_t VENDOR_INTEL = 0x8086;
 	};
 
-	enum DeviceType {
+	enum DeviceType
+	{
 		DEVICE_TYPE_OTHER = 0x0,
 		DEVICE_TYPE_INTEGRATED_GPU = 0x1,
 		DEVICE_TYPE_DISCRETE_GPU = 0x2,
@@ -88,7 +97,8 @@ public:
 		DEVICE_TYPE_MAX = 0x5
 	};
 
-	struct Device {
+	struct Device
+	{
 		String name = "Unknown";
 		uint32_t vendor = Vendor::VENDOR_UNKNOWN;
 		DeviceType type = DEVICE_TYPE_OTHER;
@@ -96,22 +106,26 @@ public:
 
 	virtual ~RenderingContextDriver();
 	virtual Error initialize() = 0;
-	virtual const Device &device_get(uint32_t p_device_index) const = 0;
+	virtual const Device& device_get(uint32_t p_device_index) const = 0;
 	virtual uint32_t device_get_count() const = 0;
 	virtual bool device_supports_present(uint32_t p_device_index, SurfaceID p_surface) const = 0;
-	virtual RenderingDeviceDriver *driver_create() = 0;
-	virtual void driver_free(RenderingDeviceDriver *p_driver) = 0;
-	virtual SurfaceID surface_create(const void *p_platform_data) = 0;
+	virtual RenderingDeviceDriver* driver_create() = 0;
+	virtual void driver_free(RenderingDeviceDriver* p_driver) = 0;
+	virtual SurfaceID surface_create(const void* p_platform_data) = 0;
 	virtual void surface_set_size(SurfaceID p_surface, uint32_t p_width, uint32_t p_height) = 0;
-	virtual void surface_set_vsync_mode(SurfaceID p_surface, DisplayServerEnums::VSyncMode p_vsync_mode) = 0;
+	virtual void surface_set_vsync_mode(
+		SurfaceID p_surface, DisplayServerEnums::VSyncMode p_vsync_mode) = 0;
 	virtual DisplayServerEnums::VSyncMode surface_get_vsync_mode(SurfaceID p_surface) const = 0;
 	virtual void surface_set_hdr_output_enabled(SurfaceID p_surface, bool p_enabled) = 0;
 	virtual bool surface_get_hdr_output_enabled(SurfaceID p_surface) const = 0;
-	virtual void surface_set_hdr_output_reference_luminance(SurfaceID p_surface, float p_reference_luminance) = 0;
+	virtual void surface_set_hdr_output_reference_luminance(
+		SurfaceID p_surface, float p_reference_luminance) = 0;
 	virtual float surface_get_hdr_output_reference_luminance(SurfaceID p_surface) const = 0;
-	virtual void surface_set_hdr_output_max_luminance(SurfaceID p_surface, float p_max_luminance) = 0;
+	virtual void surface_set_hdr_output_max_luminance(
+		SurfaceID p_surface, float p_max_luminance) = 0;
 	virtual float surface_get_hdr_output_max_luminance(SurfaceID p_surface) const = 0;
-	virtual void surface_set_hdr_output_linear_luminance_scale(SurfaceID p_surface, float p_linear_luminance_scale) = 0;
+	virtual void surface_set_hdr_output_linear_luminance_scale(
+		SurfaceID p_surface, float p_linear_luminance_scale) = 0;
 	virtual float surface_get_hdr_output_linear_luminance_scale(SurfaceID p_surface) const = 0;
 	virtual float surface_get_hdr_output_max_value(SurfaceID p_surface) const = 0;
 	virtual uint32_t surface_get_width(SurfaceID p_surface) const = 0;
@@ -123,7 +137,7 @@ public:
 
 	String get_driver_and_device_memory_report() const;
 
-	virtual const char *get_tracked_object_name(uint32_t p_type_index) const;
+	virtual const char* get_tracked_object_name(uint32_t p_type_index) const;
 	virtual uint64_t get_tracked_object_type_count() const;
 
 	virtual uint64_t get_driver_total_memory() const;

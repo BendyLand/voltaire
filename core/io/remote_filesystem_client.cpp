@@ -2,10 +2,11 @@
 /*  remote_filesystem_client.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -159,7 +160,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 
 	while (tcp_client->get_status() == StreamPeerTCP::STATUS_CONNECTING) {
 		tcp_client->poll();
-		OS::get_singleton()->delay_usec(100);
+		OS::delay_usec(100);
 	}
 
 	if (tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
@@ -190,8 +191,8 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 	print_verbose("Remote Filesystem: Tags.");
 	Vector<String> tags;
 	{
-		tags.push_back(OS::get_singleton()->get_identifier());
-		switch (OS::get_singleton()->get_preferred_texture_format()) {
+		tags.push_back(OS::get_identifier());
+		switch (OS::get_preferred_texture_format()) {
 			case OS::PREFERRED_TEXTURE_FORMAT_S3TC_BPTC: {
 				tags.push_back("bptc");
 				tags.push_back("s3tc");

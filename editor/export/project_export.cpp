@@ -2,10 +2,11 @@
 /*  project_export.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -127,7 +128,7 @@ Ref<EditorExportPreset> ProjectExportDialog::get_current_preset() const
 
 void ProjectExportDialog::_open_key_help_link()
 {
-	OS::get_singleton()->shell_open(
+	OS::shell_open(
 		vformat("%s/engine_details/development/compiling/compiling_with_script_encryption_key.html",
 			VLTR_VERSION_DOCS_URL));
 }

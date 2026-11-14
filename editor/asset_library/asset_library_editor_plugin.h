@@ -2,10 +2,11 @@
 /*  asset_library_editor_plugin.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -335,7 +336,7 @@ class EditorAssetLibrary : public PanelContainer
 
 	HBoxContainer* _make_pages(
 		int p_page, int p_page_count, int p_page_len, int p_total_items, int p_current_items);
-	void _update_button_icon(Button* p_button, const StringName& p_icon);
+	void _update_button_icon(Button* p_button, const String& p_icon);
 
 	enum RequestType
 	{

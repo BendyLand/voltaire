@@ -2,10 +2,11 @@
 /*  editor_property_name_processor.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -73,30 +74,30 @@ String EditorPropertyNameProcessor::_capitalize_name(const String& p_name) const
 	return capitalized;
 }
 
-StringName EditorPropertyNameProcessor::_get_context(
-	const String& p_name, const String& p_property, const StringName& p_class) const
+String EditorPropertyNameProcessor::_get_context(
+	const String& p_name, const String& p_property, const String& p_class) const
 {
-	if (p_property.is_empty() && p_class == StringName()) {
-		return StringName();
+	if (p_property.is_empty() && p_class == String()) {
+		return String();
 	}
-	const HashMap<String, StringName>* context_map = translation_contexts.getptr(p_name);
+	const HashMap<String, String>* context_map = translation_contexts.getptr(p_name);
 	if (context_map == nullptr) {
-		return StringName();
+		return String();
 	}
 	// It's expected that full property path is enough to distinguish between usages.
 	// In case a class name is needed, all usages should be prefixed with the class name.
-	const StringName* context = context_map->getptr(p_property);
-	if (context == nullptr && p_class != StringName()) {
+	const String* context = context_map->getptr(p_property);
+	if (context == nullptr && p_class != String()) {
 		context = context_map->getptr(String(p_class) + "::" + p_property);
 	}
 	if (context == nullptr) {
-		return StringName();
+		return String();
 	}
 	return *context;
 }
 
 String EditorPropertyNameProcessor::process_name(
-	const String& p_name, Style p_style, const String& p_property, const StringName& p_class) const
+	const String& p_name, Style p_style, const String& p_property, const String& p_class) const
 {
 	switch (p_style) {
 	case STYLE_RAW: {
@@ -123,7 +124,7 @@ String EditorPropertyNameProcessor::translate_group_name(const String& p_name) c
 {
 	if (TranslationServer::get_singleton()) {
 		return TranslationServer::get_singleton()->get_property_domain()->translate(
-			p_name, StringName());
+			p_name, String());
 	}
 	return p_name;
 }

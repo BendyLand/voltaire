@@ -2,10 +2,11 @@
 /*  editor_export.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -44,8 +45,8 @@ class EditorExport : public Node
 
 	static inline const String RUNNABLE_SECTION_NAME = "runnable_presets";
 
-	static inline StringName _export_presets_updated;
-	static inline StringName _export_presets_runnable_updated;
+	static inline String _export_presets_updated;
+	static inline String _export_presets_runnable_updated;
 
 	Timer* save_timer = nullptr;
 	bool block_save = false;

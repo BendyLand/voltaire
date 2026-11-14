@@ -2,10 +2,11 @@
 /*  test_main.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -82,7 +83,7 @@ int test_main(int argc, char *argv[]) {
 	for (int i = 0; i < argc; i++) {
 		args.push_back(String::utf8(argv[i]));
 	}
-	OS::get_singleton()->set_cmdline("", args, List<String>());
+	OS::set_cmdline("", args, List<String>());
 	DisplayServerMock::register_mock_driver();
 
 	WorkerThreadPool::get_singleton()->init();
@@ -177,7 +178,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			Input::get_singleton()->set_use_accumulated_input(false);
 
 			Error err = OK;
-			OS::get_singleton()->set_has_server_feature_callback(nullptr);
+			OS::set_has_server_feature_callback(nullptr);
 
 			for (int i = 0; i < AccessibilityServer::get_create_function_count(); i++) {
 				if (String("dummy") == AccessibilityServer::get_create_function_name(i)) {

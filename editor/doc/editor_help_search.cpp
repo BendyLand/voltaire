@@ -2,10 +2,11 @@
 /*  editor_help_search.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -102,7 +103,7 @@ void EditorHelpSearch::TreeCache::clear()
 	item_cache.clear();
 }
 
-bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const StringName& p_class)
+bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
 		EditorFeatureProfileManager::get_singleton()->get_current_profile();
@@ -110,8 +111,8 @@ bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const Strin
 		return false;
 	}
 
-	StringName class_name = p_class;
-	while (class_name != StringName()) {
+	String class_name = p_class;
+	while (class_name != String()) {
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}
@@ -401,17 +402,17 @@ bool EditorHelpSearch::Runner::_find_or_create_item(
 bool EditorHelpSearch::Runner::work(uint64_t slot)
 {
 	// Return true when the search has been completed, otherwise false.
-	const uint64_t until = OS::get_singleton()->get_ticks_usec() + slot;
+	const uint64_t until = OS::get_ticks_usec() + slot;
 	if (term.length() > 1 || term == "@") {
 		while (!_slice()) {
-			if (OS::get_singleton()->get_ticks_usec() > until) {
+			if (OS::get_ticks_usec() > until) {
 				return false;
 			}
 		}
 	}
 	else {
 		while (!_fill()) {
-			if (OS::get_singleton()->get_ticks_usec() > until) {
+			if (OS::get_ticks_usec() > until) {
 				return false;
 			}
 		}

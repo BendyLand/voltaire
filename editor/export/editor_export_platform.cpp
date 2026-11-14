@@ -2,10 +2,11 @@
 /*  editor_export_platform.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -598,7 +599,7 @@ bool EditorExportPlatform::_is_editable_ancestor(Node* p_root, Node* p_node)
 
 String EditorExportPlatform::_get_script_encryption_key(const Ref<EditorExportPreset>& p_preset)
 {
-	const String from_env = OS::get_singleton()->get_environment(ENV_SCRIPT_ENCRYPTION_KEY);
+	const String from_env = OS::get_environment(ENV_SCRIPT_ENCRYPTION_KEY);
 	if (!from_env.is_empty()) {
 		return from_env.to_lower();
 	}
@@ -708,7 +709,7 @@ void EditorExportPlatform::zip_folder_recursive(
 			continue;
 		}
 		if (da->is_link(f)) {
-			OS::DateTime dt = OS::get_singleton()->get_datetime();
+			OS::DateTime dt = OS::get_datetime();
 
 			zip_fileinfo zipfi;
 			zipfi.tmz_date.tm_year = dt.year;
@@ -748,7 +749,7 @@ void EditorExportPlatform::zip_folder_recursive(
 		else {
 			bool _is_executable = is_executable(dir.path_join(f));
 
-			OS::DateTime dt = OS::get_singleton()->get_datetime();
+			OS::DateTime dt = OS::get_datetime();
 
 			zip_fileinfo zipfi;
 			zipfi.tmz_date.tm_year = dt.year;

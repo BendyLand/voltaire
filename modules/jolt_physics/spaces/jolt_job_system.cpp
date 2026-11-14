@@ -2,10 +2,11 @@
 /*  jolt_job_system.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -111,7 +112,7 @@ JPH::JobHandle JoltJobSystem::CreateJob(const char* p_name, JPH::ColorArg p_colo
 		WARN_PRINT_ONCE("Jolt Physics job system exceeded the maximum number of jobs. This should "
 						"not happen. Please report this. Waiting for jobs to become available...");
 
-		OS::get_singleton()->delay_usec(100);
+		OS::delay_usec(100);
 
 		_reclaim_jobs();
 	}

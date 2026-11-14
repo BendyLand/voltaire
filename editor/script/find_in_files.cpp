@@ -2,10 +2,11 @@
 /*  find_in_files.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -129,11 +130,10 @@ void FindInFilesSearch::_process()
 {
 	// This part can be moved to a thread if needed.
 
-	OS& os = *OS::get_singleton();
-	uint64_t time_before = os.get_ticks_msec();
+	uint64_t time_before = OS::get_ticks_msec();
 	while (is_processing()) {
 		_iterate();
-		uint64_t elapsed = (os.get_ticks_msec() - time_before);
+		uint64_t elapsed = (OS::get_ticks_msec() - time_before);
 		if (elapsed > 8) { // Process again after waiting 8 ticks.
 			break;
 		}

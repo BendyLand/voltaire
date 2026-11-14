@@ -2,10 +2,11 @@
 /*  mobile_vr_interface.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -34,7 +35,7 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
-StringName MobileVRInterface::get_name() const { return "Native mobile"; }
+String MobileVRInterface::get_name() const { return "Native mobile"; }
 
 uint32_t MobileVRInterface::get_capabilities() const { return XRInterface::XR_STEREO; }
 
@@ -133,7 +134,7 @@ void MobileVRInterface::set_position_from_sensors()
 
 	Basis orientation = head_transform.basis;
 
-	uint64_t ticks = OS::get_singleton()->get_ticks_usec();
+	uint64_t ticks = OS::get_ticks_usec();
 	uint64_t ticks_elapsed = ticks - last_ticks;
 	float delta_time = (double)ticks_elapsed / 1000000.0;
 
@@ -321,7 +322,7 @@ bool MobileVRInterface::initialize()
 		// make this our primary interface
 		xr_server->set_primary_interface(this);
 
-		last_ticks = OS::get_singleton()->get_ticks_usec();
+		last_ticks = OS::get_ticks_usec();
 
 		initialized = true;
 	};

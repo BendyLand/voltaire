@@ -2,10 +2,11 @@
 /*  rendering_device_graph.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1100,6 +1101,8 @@ public:
 		VectorView<RDD::RenderPassClearValue> p_attachment_clear_values,
 		uint32_t p_stages, uint32_t p_breadcrumb = 0,
 		bool p_split_cmd_buffer = false);
+	void add_draw_list_bind_index_buffer(RDD::BufferID p_buffer,
+        RenderingDeviceCommons::IndexBufferFormat p_format, uint32_t p_offset);
 	void add_draw_list_bind_pipeline(
 		RDD::PipelineID p_pipeline, uint32_t p_pipeline_stage_bits);
 	void add_draw_list_bind_uniform_set(

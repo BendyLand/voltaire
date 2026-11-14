@@ -2,10 +2,11 @@
 /*  mesh_instance_3d.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -53,7 +54,7 @@ protected:
 	NodePath skeleton_path;
 
 	LocalVector<float> blend_shape_tracks;
-	HashMap<StringName, int> blend_shape_properties;
+	HashMap<String, int> blend_shape_properties;
 	Vector<Ref<Material>> surface_override_materials;
 
 	void _resolve_skeleton_path();
@@ -63,7 +64,7 @@ protected:
 
 	void _notification(int p_what);
 
-	bool _property_can_revert(const StringName& p_name) const;
+	bool _property_can_revert(const String& p_name) const;
 
 public:
 	void set_mesh(const Ref<Mesh>& p_mesh);
@@ -78,7 +79,7 @@ public:
 	Ref<SkinReference> get_skin_reference() const;
 
 	int get_blend_shape_count() const;
-	int find_blend_shape_by_name(const StringName& p_name);
+	int find_blend_shape_by_name(const String& p_name);
 	float get_blend_shape_value(int p_blend_shape) const;
 	void set_blend_shape_value(int p_blend_shape, float p_value);
 

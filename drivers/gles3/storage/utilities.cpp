@@ -2,10 +2,11 @@
 /*  utilities.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -170,13 +171,13 @@ RSE::InstanceType Utilities::get_base_type(RID p_rid)
 	else if (GLES3::LightStorage::owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
-	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
+	else if (GLES3::ParticlesStorage::owns_particles(p_rid)) {
 		return RSE::INSTANCE_PARTICLES;
 	}
 	else if (GLES3::LightStorage::owns_reflection_probe(p_rid)) {
 		return RSE::INSTANCE_REFLECTION_PROBE;
 	}
-	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles_collision(p_rid)) {
+	else if (GLES3::ParticlesStorage::owns_particles_collision(p_rid)) {
 		return RSE::INSTANCE_PARTICLES_COLLISION;
 	}
 	else if (owns_visibility_notifier(p_rid)) {
@@ -239,16 +240,16 @@ bool Utilities::free(RID p_rid)
 		GLES3::LightStorage::reflection_probe_instance_free(p_rid);
 		return true;
 	}
-	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles(p_rid)) {
-		GLES3::ParticlesStorage::get_singleton()->particles_free(p_rid);
+	else if (GLES3::ParticlesStorage::owns_particles(p_rid)) {
+		GLES3::ParticlesStorage::particles_free(p_rid);
 		return true;
 	}
-	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles_collision(p_rid)) {
-		GLES3::ParticlesStorage::get_singleton()->particles_collision_free(p_rid);
+	else if (GLES3::ParticlesStorage::owns_particles_collision(p_rid)) {
+		GLES3::ParticlesStorage::particles_collision_free(p_rid);
 		return true;
 	}
-	else if (GLES3::ParticlesStorage::get_singleton()->owns_particles_collision_instance(p_rid)) {
-		GLES3::ParticlesStorage::get_singleton()->particles_collision_instance_free(p_rid);
+	else if (GLES3::ParticlesStorage::owns_particles_collision_instance(p_rid)) {
+		GLES3::ParticlesStorage::particles_collision_instance_free(p_rid);
 		return true;
 	}
 	else if (GLES3::MeshStorage::owns_skeleton(p_rid)) {
@@ -288,14 +289,14 @@ void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance
 		Light* l = LightStorage::get_light(p_base);
 		p_instance->update_dependency(&l->dependency);
 	}
-	else if (ParticlesStorage::get_singleton()->owns_particles(p_base)) {
+	else if (ParticlesStorage::owns_particles(p_base)) {
 		Dependency* dependency =
-			ParticlesStorage::get_singleton()->particles_get_dependency(p_base);
+			ParticlesStorage::particles_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
-	else if (ParticlesStorage::get_singleton()->owns_particles_collision(p_base)) {
+	else if (ParticlesStorage::owns_particles_collision(p_base)) {
 		Dependency* dependency =
-			ParticlesStorage::get_singleton()->particles_collision_get_dependency(p_base);
+			ParticlesStorage::particles_collision_get_dependency(p_base);
 		p_instance->update_dependency(dependency);
 	}
 	else if (owns_visibility_notifier(p_base)) {
@@ -347,7 +348,10 @@ void Utilities::capture_timestamps_begin() { capture_timestamp("Frame Begin"); }
 
 void Utilities::capture_timestamp(const String& p_name)
 {
-	ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	// ERR_FAIL_COND(frames[frame].timestamp_count >= max_timestamp_query_elements);
+	if (frames[frame].timestamp_count >= max_timestamp_query_elements) {
+		return;
+	}
 
 #ifdef GL_API_ENABLED
 	if (RasterizerUtilGLES3::is_gles_over_gl()) {
@@ -357,7 +361,7 @@ void Utilities::capture_timestamp(const String& p_name)
 
 	frames[frame].timestamp_names[frames[frame].timestamp_count] = p_name;
 	frames[frame].timestamp_cpu_values[frames[frame].timestamp_count] =
-		OS::get_singleton()->get_ticks_usec();
+		OS::get_ticks_usec();
 	frames[frame].timestamp_count++;
 }
 

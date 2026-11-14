@@ -2,10 +2,11 @@
 /*  mesh_instance_3d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -62,7 +63,7 @@ int MeshInstance3D::get_blend_shape_count() const
 	return mesh->get_blend_shape_count();
 }
 
-int MeshInstance3D::find_blend_shape_by_name(const StringName& p_name)
+int MeshInstance3D::find_blend_shape_by_name(const String& p_name)
 {
 	if (mesh.is_null()) {
 		return -1;
@@ -205,11 +206,11 @@ void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Mate
 	surface_override_materials.write[p_surface] = p_material;
 
 	if (surface_override_materials[p_surface].is_valid()) {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, surface_override_materials[p_surface]->get_rid());
 	}
 	else {
-		RS::instance_set_surface_override_material(
+		Renderer::instance_set_surface_override_material(
 			get_instance(), p_surface, RID());
 	}
 }
@@ -257,9 +258,9 @@ void MeshInstance3D::create_debug_tangents()
 	}
 }
 
-bool MeshInstance3D::_property_can_revert(const StringName& p_name) const
+bool MeshInstance3D::_property_can_revert(const String& p_name) const
 {
-	HashMap<StringName, int>::ConstIterator E = blend_shape_properties.find(p_name);
+	HashMap<String, int>::ConstIterator E = blend_shape_properties.find(p_name);
 	if (E) {
 		return true;
 	}

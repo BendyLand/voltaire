@@ -2,10 +2,11 @@
 /*  xr_tracker.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,13 +36,13 @@ void XRTracker::set_tracker_type(XRServer::TrackerType p_type) { type = p_type; 
 
 XRServer::TrackerType XRTracker::get_tracker_type() const { return type; }
 
-void XRTracker::set_tracker_name(const StringName& p_name)
+void XRTracker::set_tracker_name(const String& p_name)
 {
 	// Note: this should not be changed after the tracker is registered with the XRServer!
 	name = p_name;
 }
 
-StringName XRTracker::get_tracker_name() const { return name; }
+String XRTracker::get_tracker_name() const { return name; }
 
 void XRTracker::set_tracker_desc(const String& p_desc) { description = p_desc; }
 

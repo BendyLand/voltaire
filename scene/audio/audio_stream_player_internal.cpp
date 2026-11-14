@@ -2,10 +2,11 @@
 /*  audio_stream_player_internal.cpp                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -144,7 +145,7 @@ AudioServer::PlaybackType AudioStreamPlayerInternal::get_playback_type() const
 	return playback_type;
 }
 
-StringName AudioStreamPlayerInternal::get_bus() const
+String AudioStreamPlayerInternal::get_bus() const
 {
 	const String bus_name = bus;
 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
@@ -152,7 +153,7 @@ StringName AudioStreamPlayerInternal::get_bus() const
 			return bus;
 		}
 	}
-	return SceneStringName(Master);
+	return SceneString(Master);
 }
 
 

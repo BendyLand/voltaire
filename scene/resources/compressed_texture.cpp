@@ -2,10 +2,11 @@
 /*  compressed_texture.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -145,7 +146,7 @@ int CompressedTexture2D::get_height() const { return h; }
 RID CompressedTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
 }
@@ -185,7 +186,7 @@ bool CompressedTexture2D::has_alpha() const { return false; }
 Ref<Image> CompressedTexture2D::get_image() const
 {
 	if (texture.is_valid()) {
-		return RS::texture_2d_get(texture);
+		return Renderer::texture_2d_get(texture);
 	}
 	else {
 		return Ref<Image>();
@@ -375,7 +376,7 @@ CompressedTexture2D::~CompressedTexture2D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -448,7 +449,7 @@ bool CompressedTexture3D::has_mipmaps() const { return mipmaps; }
 RID CompressedTexture3D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_3d_placeholder_create();
+		texture = Renderer::texture_3d_placeholder_create();
 	}
 	return texture;
 }
@@ -456,7 +457,7 @@ RID CompressedTexture3D::get_rid() const
 Vector<Ref<Image>> CompressedTexture3D::get_data() const
 {
 	if (texture.is_valid()) {
-		return RS::texture_3d_get(texture);
+		return Renderer::texture_3d_get(texture);
 	}
 	else {
 		return Vector<Ref<Image>>();
@@ -484,7 +485,7 @@ CompressedTexture3D::~CompressedTexture3D()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 
@@ -564,7 +565,7 @@ TextureLayered::LayeredType CompressedTextureLayered::get_layered_type() const
 RID CompressedTextureLayered::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_layered_placeholder_create(
+		texture = Renderer::texture_2d_layered_placeholder_create(
 			RSE::TextureLayeredType(layered_type));
 	}
 	return texture;
@@ -574,7 +575,7 @@ Ref<Image> CompressedTextureLayered::get_layer_data(int p_layer) const
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_INDEX_V(p_layer, get_layers(), Ref<Image>());
-		return RS::texture_2d_layer_get(texture, p_layer);
+		return Renderer::texture_2d_layer_get(texture, p_layer);
 	}
 	else {
 		return Ref<Image>();
@@ -602,7 +603,7 @@ CompressedTextureLayered::~CompressedTextureLayered()
 {
 	if (texture.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(texture);
+		Renderer::free_rid(texture);
 	}
 }
 

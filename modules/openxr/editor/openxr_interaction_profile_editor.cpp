@@ -2,10 +2,11 @@
 /*  openxr_interaction_profile_editor.cpp                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -137,8 +138,8 @@ void OpenXRInteractionProfileEditor::_update_interaction_profile()
 		PanelContainer* panel = memnew(PanelContainer);
 		panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 		interaction_profile_hb->add_child(panel);
-		panel->add_theme_style_override(SceneStringName(panel),
-			get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")).ptr());
+		panel->add_theme_style_override(SceneString(panel),
+			get_theme_stylebox(SceneString(panel), SNAME("TabContainer")).ptr());
 
 		VBoxContainer* container = memnew(VBoxContainer);
 		panel->add_child(container);

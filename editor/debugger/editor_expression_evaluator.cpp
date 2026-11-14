@@ -2,10 +2,11 @@
 /*  editor_expression_evaluator.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -103,10 +104,10 @@ void EditorExpressionEvaluator::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_THEME_CHANGED: {
-		expression_input->add_theme_font_override(SceneStringName(font),
-			get_theme_font(SNAME("expression"), EditorStringName(EditorFonts)).ptr());
-		expression_input->add_theme_font_size_override(SceneStringName(font_size),
-			get_theme_font_size(SNAME("expression_size"), EditorStringName(EditorFonts)));
+		expression_input->add_theme_font_override(SceneString(font),
+			get_theme_font(SNAME("expression"), EditorString(EditorFonts)).ptr());
+		expression_input->add_theme_font_size_override(SceneString(font_size),
+			get_theme_font_size(SNAME("expression_size"), EditorString(EditorFonts)));
 	} break;
 	}
 }

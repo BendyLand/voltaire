@@ -2,10 +2,11 @@
 /*  editor_resource_picker.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -64,7 +65,7 @@ void EditorResourcePicker::_on_unique_button_pressed()
 	}
 }
 
-static bool _should_hide_type(const StringName& p_type)
+static bool _should_hide_type(const String& p_type)
 {
 	if (p_type == SNAME("MissingResource")) {
 		return true;
@@ -84,14 +85,14 @@ String EditorResourcePicker::get_base_type() const { return base_type; }
 Vector<String> EditorResourcePicker::get_allowed_types() const
 {
 	_ensure_allowed_types();
-	HashSet<StringName> allowed_types(allowed_types_without_convert);
+	HashSet<String> allowed_types(allowed_types_without_convert);
 
 	Vector<String> types;
 	types.resize(allowed_types.size());
 
 	int i = 0;
 	String* w = types.ptrw();
-	for (const StringName& E : allowed_types) {
+	for (const String& E : allowed_types) {
 		w[i] = E;
 		i++;
 	}

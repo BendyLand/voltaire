@@ -2,10 +2,11 @@
 /*  resource_loader.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,7 +66,7 @@ public:
 		const String& p_type, List<String>* p_extensions) const;
 	virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const;
 	virtual bool handles_type(const String& p_type) const;
-	virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes);
 	virtual String get_resource_type(const String& p_path) const;
 	virtual String get_resource_script_class(const String& p_path) const;
 	virtual ResourceUID::ID get_resource_uid(const String& p_path) const;
@@ -275,7 +276,7 @@ public:
 	static void add_resource_format_loader(
 		Ref<ResourceFormatLoader> p_format_loader, bool p_at_front = false);
 	static void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
-	static void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
+	static void get_classes_used(const String& p_path, HashSet<String>* r_classes);
 	static String get_resource_type(const String& p_path);
 	static String get_resource_script_class(const String& p_path);
 	static ResourceUID::ID get_resource_uid(const String& p_path);

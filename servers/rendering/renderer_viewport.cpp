@@ -2,10 +2,11 @@
 /*  renderer_viewport.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -37,6 +38,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
 #include "servers/rendering/rendering_device.h"
@@ -82,7 +84,7 @@ static Transform2D _canvas_get_transform(RendererViewport::Viewport* p_viewport,
 	}
 	xf = xf * c_xform;
 
-	if (scale != 1.0 && !RS::canvas->disable_scale) {
+	if (scale != 1.0 && !Renderer::canvas->disable_scale) {
 		Vector2 pivot = p_vp_size * 0.5;
 		Transform2D xfpivot;
 		xfpivot.set_origin(pivot);
@@ -163,7 +165,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			if (scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_OFF &&
 				scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR &&
 				scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_NEAREST &&
-				OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+				OS::get_current_rendering_method() == "gl_compatibility") {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR;
 				scaling_type = RSE::scaling_3d_mode_type(scaling_3d_mode);
 				WARN_PRINT_ONCE("MetalFX and FSR upscaling are not supported in the Compatibility "
@@ -173,7 +175,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport* p_viewport)
 			if ((scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR ||
 					scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR2 ||
 					scaling_3d_mode == RSE::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) &&
-				OS::get_singleton()->get_current_rendering_method() == "mobile") {
+				OS::get_current_rendering_method() == "mobile") {
 				scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_BILINEAR;
 				scaling_type = RSE::scaling_3d_mode_type(scaling_3d_mode);
 				WARN_PRINT_ONCE("MetalFX temporal and FSR upscaling are not supported in the "
@@ -355,7 +357,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		timestamp_vp_map[rt_id] = p_viewport->self;
 	}
 
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+	if (OS::get_current_rendering_method() == "gl_compatibility") {
 		// This is currently needed for GLES to keep the current window being rendered to up to date
 		DisplayServer::get_singleton()->gl_window_make_current(p_viewport->viewport_to_screen);
 	}
@@ -376,16 +378,20 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	if (RS::scene->is_scenario(p_viewport->scenario)) {
-		RID environment = RS::scene->scenario_get_environment(p_viewport->scenario);
-		if (RS::scene->is_environment(environment)) {
+	DUMP(can_draw_2d);
+	DUMP(p_viewport->size);
+	DUMP(p_viewport->canvas_map.size());
+	if (Renderer::scene->is_scenario(p_viewport->scenario)) {
+		RID environment = Renderer::scene->scenario_get_environment(p_viewport->scenario);
+		if (Renderer::scene->is_environment(environment)) {
 			if (can_draw_2d && !viewport_is_environment_disabled(p_viewport)) {
 				scenario_draw_canvas_bg =
-					RS::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS;
+					Renderer::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS;
 				scenario_canvas_max_layer =
-					RS::scene->environment_get_canvas_max_layer(environment);
+					Renderer::scene->environment_get_canvas_max_layer(environment);
 			}
-			else if (RS::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS) {
+			else if (Renderer::scene->environment_get_background(environment) ==
+					   RSE::ENV_BG_CANVAS) {
 				// The scene renderer will still copy over the last frame, so we need to clear the
 				// render target.
 				force_clear_render_target = true;
@@ -403,11 +409,11 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	bool can_draw_3d = RS::scene->is_camera(p_viewport->camera) && !p_viewport->disable_3d;
+	bool can_draw_3d = Renderer::scene->is_camera(p_viewport->camera) && !p_viewport->disable_3d;
 
 	if ((scenario_draw_canvas_bg || can_draw_3d) && !p_viewport->render_buffers.is_valid()) {
 		// wants to draw 3D but there is no render buffer, create
-		p_viewport->render_buffers = RS::scene->render_buffers_create();
+		p_viewport->render_buffers = Renderer::scene->render_buffers_create();
 
 		_configure_3d_render_buffers(p_viewport);
 	}
@@ -459,7 +465,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						continue;
 					}
 
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -477,13 +483,14 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				}
 			}
 
-			RS::canvas_render->render_sdf(p_viewport->render_target, occluders);
+			Renderer::canvas_render->render_sdf(p_viewport->render_target, occluders);
 			RendererTextureStorage::render_target_mark_sdf_enabled(p_viewport->render_target, true);
 
 			p_viewport->sdf_active = false; // If used, gets set active again.
 		}
 		else {
-			RendererTextureStorage::render_target_mark_sdf_enabled(p_viewport->render_target, false);
+			RendererTextureStorage::render_target_mark_sdf_enabled(
+				p_viewport->render_target, false);
 		}
 
 		Rect2 shadow_rect;
@@ -510,7 +517,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					Vector2 offset = tsize / 2.0;
 					Rect2 local_rect = Rect2(-offset + cl->texture_offset, tsize);
 
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -550,7 +557,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				if (cl->enabled) {
 					cl->filter_next_ptr = directional_lights;
 					directional_lights = cl;
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -596,7 +603,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					if (!F->enabled) {
 						continue;
 					}
-					if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -618,7 +625,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			while (light) {
 				RENDER_TIMESTAMP("Render PointLight2D Shadow");
 
-				RS::canvas_render->light_update_shadow(light->light_internal, shadow_count++,
+				Renderer::canvas_render->light_update_shadow(light->light_internal, shadow_count++,
 					light->xform_cache.affine_inverse(), light->item_shadow_mask,
 					light->radius_cache / 1000.0, light->radius_cache * 1.1, occluders,
 					light->rect_cache);
@@ -700,7 +707,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						if (!F->enabled) {
 							continue;
 						}
-						if (!RS::canvas->_interpolation_data.interpolation_enabled ||
+						if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
 							!F->interpolated) {
 							F->xform_cache = xf * F->xform_curr;
 						}
@@ -722,7 +729,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					}
 				}
 
-				RS::canvas_render->light_update_directional_shadow(light->light_internal,
+				Renderer::canvas_render->light_update_directional_shadow(light->light_internal,
 					shadow_count++, light->xform_cache, light->item_shadow_mask, cull_distance,
 					clip_rect, occluders);
 
@@ -738,8 +745,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+					p_viewport->scenario, p_viewport->shadow_atlas,
+					p_viewport->window_output_max_value);
 			}
 			else {
 				_draw_3d(p_viewport);
@@ -777,7 +785,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 			RENDER_TIMESTAMP("> Render Canvas " + itos(canvas_idx));
 
-			RS::canvas->render_canvas(p_viewport->render_target, canvas, xform, canvas_lights,
+			Renderer::canvas->render_canvas(p_viewport->render_target, canvas, xform, canvas_lights,
 				canvas_directional_lights, clip_rect, p_viewport->texture_filter,
 				p_viewport->texture_repeat, p_viewport->snap_2d_transforms_to_pixel,
 				p_viewport->snap_2d_vertices_to_pixel, p_viewport->canvas_cull_mask,
@@ -785,7 +793,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 			RENDER_TIMESTAMP("< Render Canvas " + itos(canvas_idx));
 
-			if (RS::canvas->was_sdf_used()) {
+			if (Renderer::canvas->was_sdf_used()) {
 				p_viewport->sdf_active = true;
 			}
 
@@ -795,8 +803,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				// target.
 				RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 				if (!can_draw_3d) {
-					RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-						p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+					Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+						p_viewport->scenario, p_viewport->shadow_atlas,
+						p_viewport->window_output_max_value);
 				}
 				else {
 					_draw_3d(p_viewport);
@@ -813,8 +822,9 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				RS::scene->render_empty_scene(p_viewport->render_buffers, p_viewport->scenario,
-					p_viewport->shadow_atlas, p_viewport->window_output_max_value);
+				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+					p_viewport->scenario, p_viewport->shadow_atlas,
+					p_viewport->window_output_max_value);
 			}
 			else {
 				_draw_3d(p_viewport);
@@ -896,7 +906,7 @@ void RendererViewport::viewport_set_scaling_3d_mode(
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	const String rendering_method = OS::get_singleton()->get_current_rendering_method();
+	const String rendering_method = OS::get_current_rendering_method();
 	if (rendering_method != "forward_plus") {
 		if (p_mode == RSE::VIEWPORT_SCALING_3D_MODE_FSR) {
 			WARN_PRINT_ONCE_ED(
@@ -1229,7 +1239,7 @@ void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario)
 	ERR_FAIL_NULL(viewport);
 
 	if (viewport->scenario.is_valid()) {
-		RS::scene->scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
+		Renderer::scene->scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
 	}
 
 	viewport->scenario = p_scenario;
@@ -1244,7 +1254,7 @@ void RendererViewport::viewport_attach_canvas(RID p_viewport, RID p_canvas)
 	ERR_FAIL_NULL(viewport);
 
 	ERR_FAIL_COND(viewport->canvas_map.has(p_canvas));
-	RendererCanvasCull::Canvas* canvas = RS::canvas->canvas_owner.get_or_null(p_canvas);
+	RendererCanvasCull::Canvas* canvas = Renderer::canvas->canvas_owner.get_or_null(p_canvas);
 	ERR_FAIL_NULL(canvas);
 
 	canvas->viewports.insert(p_viewport);
@@ -1259,7 +1269,7 @@ void RendererViewport::viewport_remove_canvas(RID p_viewport, RID p_canvas)
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
 
-	RendererCanvasCull::Canvas* canvas = RS::canvas->canvas_owner.get_or_null(p_canvas);
+	RendererCanvasCull::Canvas* canvas = Renderer::canvas->canvas_owner.get_or_null(p_canvas);
 	ERR_FAIL_NULL(canvas);
 
 	viewport->canvas_map.erase(p_canvas);
@@ -1381,7 +1391,7 @@ void RendererViewport::viewport_set_screen_space_aa(
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" &&
+	if (OS::get_current_rendering_method() == "gl_compatibility" &&
 		p_mode != RSE::VIEWPORT_SCREEN_SPACE_AA_DISABLED) {
 		WARN_PRINT_ONCE_ED(
 			"Screen-space AA is only available when using the Forward+ or Mobile renderer.");
@@ -1399,7 +1409,7 @@ void RendererViewport::viewport_set_use_taa(RID p_viewport, bool p_use_taa)
 {
 	Viewport* viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
-	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+	if (OS::get_current_rendering_method() != "forward_plus") {
 		WARN_PRINT_ONCE_ED("TAA is only available when using the Forward+ renderer.");
 		return;
 	}
@@ -1428,7 +1438,8 @@ void RendererViewport::viewport_set_use_debanding(RID p_viewport, bool p_use_deb
 		return;
 	}
 	viewport->use_debanding = p_use_debanding;
-	RendererTextureStorage::render_target_set_use_debanding(viewport->render_target, p_use_debanding);
+	RendererTextureStorage::render_target_set_use_debanding(
+		viewport->render_target, p_use_debanding);
 	_configure_3d_render_buffers(viewport);
 }
 
@@ -1735,20 +1746,17 @@ int RendererViewport::get_num_viewports_with_motion_vectors() const
 
 void RendererViewport::draw_viewports(bool p_swap_buffers)
 {
+	static uint64_t dv_count = 0;
+	if ((++dv_count % 60) == 1) {
+		printf("[DRAW_VIEWPORTS] call %llu, rid_count=%u\n", (unsigned long long)dv_count,
+			viewport_owner.get_rid_count());
+	}
 	draw_viewports_pass++;
-
-
 	total_objects_drawn = 0;
 	total_vertices_drawn = 0;
 	total_draw_calls_used = 0;
 
 	uint32_t rid_count = viewport_owner.get_rid_count();
-
-    static bool printed = false;
-    if (!printed) {
-        __print_line(vformat("draw_viewports: total viewports allocated = %d", rid_count));
-        printed = true;
-    }
 
 	if (rid_count == 0) {
 		if (p_swap_buffers) {
@@ -1782,19 +1790,38 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 
 	active_viewports.sort_custom<ViewportSort>();
 
+	HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>
+		blit_to_screen;
+
 	for (uint32_t i = 0; i < active_viewports.size(); i++) {
 		Viewport* v = active_viewports[i];
-		static bool printed_draw = false;
-        if (!printed_draw) {
-            __print_line("Calling _draw_viewport on active viewport!");
-            printed_draw = true;
-        }
 		_draw_viewport(v);
+		if (v->viewport_to_screen != DisplayServerEnums::INVALID_WINDOW_ID &&
+			v->render_target.is_valid()) {
+			RenderingServerTypes::BlitToScreen blit = {};
+			blit.render_target = v->render_target;
+			blit.src_rect = Rect2(0, 0, v->size.x, v->size.y);
+
+			if (v->viewport_to_screen_rect.size.x > 0.0f &&
+				v->viewport_to_screen_rect.size.y > 0.0f &&
+				v->viewport_to_screen_rect.size.x <= 16384.0f &&
+				v->viewport_to_screen_rect.size.y <= 16384.0f) {
+				blit.dst_rect = v->viewport_to_screen_rect;
+			}
+			else {
+				blit.dst_rect = Rect2(0, 0, v->size.x, v->size.y);
+			}
+
+			blit_to_screen[v->viewport_to_screen].push_back(blit);
+		}
+	}
+
+	for (KeyValue<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>&
+			 E : blit_to_screen) {
+		RendererCompositor::blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
 	}
 
 	if (p_swap_buffers) {
 		DisplayServer::get_singleton()->swap_buffers();
 	}
 }
-
-

@@ -2,10 +2,11 @@
 /*  test_command_queue.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -356,11 +357,11 @@ TEST_CASE("[CommandQueue] Test Queue Wrapping to same spot.") {
 	sts.add_msg_to_write(SharedThreadState::TEST_MSG_FUNC1_TRANSFORM);
 	sts.add_msg_to_write(SharedThreadState::TEST_MSG_FUNC3_TRANSFORMx6);
 	sts.writer_threadwork.main_start_work();
-	OS::get_singleton()->delay_usec(1000);
+	OS::delay_usec(1000);
 
 	sts.message_count_to_read = -1;
 	sts.reader_threadwork.main_start_work();
-	OS::get_singleton()->delay_usec(1000);
+	OS::delay_usec(1000);
 
 	sts.writer_threadwork.main_wait_for_done();
 	sts.reader_threadwork.main_wait_for_done();
@@ -418,7 +419,7 @@ TEST_CASE("[CommandQueue] Test Queue Lapping") {
 
 	sts.add_msg_to_write(SharedThreadState::TEST_MSG_FUNC2_TRANSFORM_FLOAT);
 	sts.writer_threadwork.main_start_work();
-	OS::get_singleton()->delay_usec(1000);
+	OS::delay_usec(1000);
 
 	sts.message_count_to_read = 3;
 	sts.reader_threadwork.main_start_work();

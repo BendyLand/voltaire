@@ -2,10 +2,11 @@
 /*  camera_2d.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -56,8 +57,8 @@ protected:
 	Viewport* custom_viewport = nullptr;
 	Viewport* viewport = nullptr;
 
-	StringName group_name;
-	StringName canvas_group_name;
+	String group_name;
+	String canvas_group_name;
 	RID canvas;
 	Vector2 offset;
 	Vector2 zoom = Vector2(1, 1);

@@ -2,10 +2,11 @@
 /*  xr_interface.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -110,15 +111,15 @@ protected:
 
 public:
 	virtual PackedStringArray get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
-	virtual PackedStringArray get_suggested_pose_names(const StringName& p_tracker_name)
+	virtual PackedStringArray get_suggested_pose_names(const String& p_tracker_name)
 		const; /* return a list of likely/suggested action names for this tracker */
 	virtual TrackingStatus get_tracking_status() const; /* get the status of our current tracking */
-	virtual void trigger_haptic_pulse(const String& p_action_name, const StringName& p_tracker_name,
+	virtual void trigger_haptic_pulse(const String& p_action_name, const String& p_tracker_name,
 		double p_frequency, double p_amplitude, double p_duration_sec,
 		double p_delay_sec = 0); /* trigger a haptic pulse */
 
 	/** general interface information **/
-	virtual StringName get_name() const;
+	virtual String get_name() const;
 	virtual uint32_t get_capabilities() const;
 
 	bool is_primary();

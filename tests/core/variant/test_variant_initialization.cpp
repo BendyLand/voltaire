@@ -2,10 +2,11 @@
 /*  test_variant_initialization.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -367,20 +368,20 @@ TEST_CASE("[VariantInitialization] change_and_reset") {
 		CHECK(*p == Variant(Color()));
 	}
 
-	SUBCASE("StringName") {
-		VariantTypeChanger<StringName>::change_and_reset(p);
+	SUBCASE("String") {
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 
-		*p = Variant(StringName("abc"));
-		VariantTypeChanger<StringName>::change_and_reset(p);
+		*p = Variant(String("abc"));
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 
 		*p = Variant(true);
-		VariantTypeChanger<StringName>::change_and_reset(p);
+		VariantTypeChanger<String>::change_and_reset(p);
 		CHECK(p->get_type() == Variant::Type::STRING_NAME);
-		CHECK(*p == Variant(StringName()));
+		CHECK(*p == Variant(String()));
 	}
 
 	SUBCASE("NodePath") {

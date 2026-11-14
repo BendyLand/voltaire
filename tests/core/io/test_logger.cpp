@@ -2,10 +2,11 @@
 /*  test_logger.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -44,7 +45,7 @@ constexpr int sleep_duration = 1200000;
 
 void initialize_logs() {
 	ProjectSettings::set_setting("application/config/name", "godot_tests");
-	DirAccess::make_dir_recursive_absolute(OS::get_singleton()->get_user_data_dir().path_join("logs"));
+	DirAccess::make_dir_recursive_absolute(OS::get_user_data_dir().path_join("logs"));
 }
 
 void cleanup_logs() {
@@ -58,8 +59,8 @@ void cleanup_logs() {
 		}
 		file = dir->get_next();
 	}
-	DirAccess::remove_absolute(OS::get_singleton()->get_user_data_dir().path_join("logs"));
-	DirAccess::remove_absolute(OS::get_singleton()->get_user_data_dir());
+	DirAccess::remove_absolute(OS::get_user_data_dir().path_join("logs"));
+	DirAccess::remove_absolute(OS::get_user_data_dir());
 }
 
 TEST_CASE("[Logger][RotatedFileLogger] Creates the first log file and logs on it") {
@@ -107,7 +108,7 @@ TEST_CASE("[Logger][RotatedFileLogger] Rotates logs files") {
 		all_waiting_for_godot.push_back(waiting_for_godot);
 
 		// Required to ensure the rotation of the log file.
-		OS::get_singleton()->delay_usec(sleep_duration);
+		OS::delay_usec(sleep_duration);
 	}
 
 	Vector<String> log_files;
@@ -122,7 +123,7 @@ TEST_CASE("[Logger][RotatedFileLogger] Rotates logs files") {
 	}
 
 	// Required to ensure the rotation of the log file.
-	OS::get_singleton()->delay_usec(sleep_duration);
+	OS::delay_usec(sleep_duration);
 
 	// This time the oldest log must be removed and godot.log updated.
 	String new_waiting_for_godot = "Waiting for Godot " + itos(number_of_files);

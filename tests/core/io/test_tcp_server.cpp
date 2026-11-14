@@ -2,10 +2,11 @@
 /*  test_tcp_server.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -47,9 +48,9 @@ const uint32_t SLEEP_DURATION = 1000;
 const uint64_t MAX_WAIT_USEC = 2000000;
 
 void wait_for_condition(std::function<bool()> f_test) {
-	const uint64_t time = OS::get_singleton()->get_ticks_usec();
-	while (!f_test() && (OS::get_singleton()->get_ticks_usec() - time) < MAX_WAIT_USEC) {
-		OS::get_singleton()->delay_usec(SLEEP_DURATION);
+	const uint64_t time = OS::get_ticks_usec();
+	while (!f_test() && (OS::get_ticks_usec() - time) < MAX_WAIT_USEC) {
+		OS::delay_usec(SLEEP_DURATION);
 	}
 }
 

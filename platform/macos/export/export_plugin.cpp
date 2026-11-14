@@ -2,10 +2,11 @@
 /*  export_plugin.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -188,7 +189,7 @@ Error EditorExportPlatformMacOS::_create_dmg(
 	List<String> args;
 
 	if (FileAccess::exists(p_dmg_path)) {
-		OS::get_singleton()->move_to_trash(p_dmg_path);
+		OS::move_to_trash(p_dmg_path);
 	}
 
 	args.push_back("create");
@@ -201,7 +202,7 @@ Error EditorExportPlatformMacOS::_create_dmg(
 	args.push_back(p_app_path_name);
 
 	String str;
-	Error err = OS::get_singleton()->execute("hdiutil", args, &str, nullptr, true);
+	Error err = OS::execute("hdiutil", args, &str, nullptr, true);
 	if (err != OK) {
 		add_message(
 			EXPORT_MESSAGE_ERROR, TTR("DMG Creation"), TTR("Could not start hdiutil executable."));

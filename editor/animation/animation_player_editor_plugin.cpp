@@ -2,10 +2,11 @@
 /*  animation_player_editor_plugin.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ String AnimationPlayerEditor::_get_current() const
 
 float AnimationPlayerEditor::_get_editor_step() const
 {
-	const StringName current = player->get_assigned_animation();
+	const String current = player->get_assigned_animation();
 	const Ref<Animation> anim = player->get_animation(current);
 	ERR_FAIL_COND_V(anim.is_null(), 0.0);
 
@@ -93,14 +94,14 @@ void AnimationPlayerEditor::_update_animation_list_icons()
 
 		Ref<Texture2D> icon;
 		if (anim_name == player->get_autoplay()) {
-			if (anim_name == SceneStringName(RESET)) {
+			if (anim_name == SceneString(RESET)) {
 				icon = autoplay_reset_icon;
 			}
 			else {
 				icon = autoplay_icon;
 			}
 		}
-		else if (anim_name == SceneStringName(RESET)) {
+		else if (anim_name == SceneString(RESET)) {
 			icon = reset_icon;
 		}
 

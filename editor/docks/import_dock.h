@@ -2,10 +2,11 @@
 /*  import_dock.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ class ImportDock : public EditorDock
 	void _update_options(const String& p_path, const Ref<ConfigFile>& p_config = Ref<ConfigFile>());
 	void _add_keep_import_option(const String& p_importer_name);
 
-	void _property_toggled(const StringName& p_prop, bool p_checked);
+	void _property_toggled(const String& p_prop, bool p_checked);
 	void _reimport_attempt();
 	void _reimport_and_cleanup();
 	void _reimport();

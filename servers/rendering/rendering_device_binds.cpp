@@ -2,10 +2,11 @@
 /*  rendering_device_binds.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -58,7 +59,7 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 	};
 	String stage_code[RDC::SHADER_STAGE_MAX];
 	int stages_found = 0;
-	HashMap<StringName, String> version_texts;
+	HashMap<String, String> version_texts;
 
 	versions.clear();
 	base_error = "";
@@ -203,7 +204,7 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 
 		/* STEP 2, Compile the versions, add to shader file */
 
-		for (const KeyValue<StringName, String>& E : version_texts) {
+		for (const KeyValue<String, String>& E : version_texts) {
 			Ref<RDShaderSPIRV> bytecode;
 			bytecode.instantiate();
 

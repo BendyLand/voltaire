@@ -2,10 +2,11 @@
 /*  editor_performance_profiler.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -57,13 +58,13 @@ private:
 			Performance::MonitorType p_type, TreeItem* p_item);
 	};
 
-	HashMap<StringName, Monitor> monitors;
+	HashMap<String, Monitor> monitors;
 
-	HashMap<StringName, TreeItem*> base_map;
+	HashMap<String, TreeItem*> base_map;
 	Tree* monitor_tree = nullptr;
 	Control* monitor_draw = nullptr;
 	Label* info_message = nullptr;
-	StringName marker_key;
+	String marker_key;
 	int marker_frame = 0;
 	const int MARGIN = 4;
 	const int POINT_SEPARATION = 5;
@@ -79,7 +80,7 @@ protected:
 public:
 	void reset();
 	void add_profile_frame(const Vector<float>& p_values);
-	List<float>* get_monitor_data(const StringName& p_name);
+	List<float>* get_monitor_data(const String& p_name);
 	EditorPerformanceProfiler() = default;
 };
 

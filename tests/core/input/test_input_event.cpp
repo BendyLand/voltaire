@@ -2,10 +2,11 @@
 /*  test_input_event.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -43,7 +44,7 @@ TEST_CASE("[InputEvent] Signal is emitted when device is changed") {
 	Ref<InputEventKey> input_event;
 	input_event.instantiate();
 
-	SIGNAL_WATCH(*input_event, CoreStringName(changed));
+	SIGNAL_WATCH(*input_event, CoreString(changed));
 
 	Array empty_args = { {} };
 	input_event->set_device(1);
@@ -51,7 +52,7 @@ TEST_CASE("[InputEvent] Signal is emitted when device is changed") {
 	SIGNAL_CHECK("changed", empty_args);
 	CHECK(input_event->get_device() == 1);
 
-	SIGNAL_UNWATCH(*input_event, CoreStringName(changed));
+	SIGNAL_UNWATCH(*input_event, CoreString(changed));
 }
 
 TEST_CASE("[InputEvent] Test accumulate") {

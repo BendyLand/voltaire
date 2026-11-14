@@ -2,10 +2,11 @@
 /*  xr_face_modifier_3d.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -46,7 +47,7 @@
 class XRFaceModifier3D : public Node3D {
 
 private:
-	StringName tracker_name = "/user/face_tracker";
+	String tracker_name = "/user/face_tracker";
 	NodePath target;
 
 	// Map from XRFaceTracker blend shape index to mesh blend shape index.
@@ -59,8 +60,8 @@ private:
 protected:
 
 public:
-	void set_face_tracker(const StringName &p_tracker_name);
-	StringName get_face_tracker() const;
+	void set_face_tracker(const String &p_tracker_name);
+	String get_face_tracker() const;
 
 	void set_target(const NodePath &p_target);
 	NodePath get_target() const;

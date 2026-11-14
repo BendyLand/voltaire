@@ -2,16 +2,17 @@
 /*  ustring.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -38,7 +39,10 @@
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 
+#define UNIQUE_NODE_PREFIX "%"
+
 class String;
+
 template <typename T> class CharStringT;
 
 /*************************************************************************/
@@ -389,6 +393,12 @@ public:
 	_FORCE_INLINE_ explicit String(float p_val) { *this = String::num_real(p_val); }
 
 	_FORCE_INLINE_ explicit String(double p_val) { *this = String::num_real(p_val); }
+	_FORCE_INLINE_ bool is_node_unique_name() const {
+	    if (_cowdata.is_empty()) {
+	        return false;
+	    }
+	    return (char32_t)_cowdata.get(0) == (char32_t)UNIQUE_NODE_PREFIX[0]; // '%'
+	}
 
 	_FORCE_INLINE_ ~String() = default;
 
@@ -1070,5 +1080,7 @@ template <typename... Args> _FORCE_INLINE_ String vformat(const String& p_fmt, A
 		return vformat_detail::dispatch(p_fmt, args, sizeof...(Args));
 	}
 }
+
+#define SNAME(m_arg) String(m_arg)
 
 

@@ -2,10 +2,11 @@
 /*  sprite_frames_editor_plugin.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -156,7 +157,7 @@ class SpriteFramesEditor : public EditorDock {
 
 	PopupMenu *menu = nullptr;
 
-	StringName edited_anim;
+	String edited_anim;
 
 	ConfirmationDialog *delete_dialog = nullptr;
 
@@ -238,11 +239,11 @@ class SpriteFramesEditor : public EditorDock {
 	void _animation_loop_pressed();
 	void _animation_speed_resized();
 	void _animation_speed_changed(double p_value);
-	void _animation_remove_undo_redo(const StringName &p_action_name, const Vector<ClipboardSpriteFrames::Frame> *p_frames = nullptr);
+	void _animation_remove_undo_redo(const String &p_action_name, const Vector<ClipboardSpriteFrames::Frame> *p_frames = nullptr);
 
 	void _update_anim_loop_button();
 
-	StringName _find_next_animation();
+	String _find_next_animation();
 	String _generate_unique_animation_name(const String &p_base_name) const;
 
 	void _frame_list_gui_input(const Ref<InputEvent> &p_event);

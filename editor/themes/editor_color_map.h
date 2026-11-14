@@ -2,10 +2,11 @@
 /*  editor_color_map.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -31,7 +32,7 @@
 #pragma once
 
 #include "core/math/color.h"
-#include "core/string/string_name.h"
+#include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 
@@ -43,14 +44,14 @@ class EditorColorMap {
 	static HashMap<Color, Color> color_conversion_map;
 	// The names of the icons to never convert, even if one of their colors
 	// are contained in the color map from above.
-	static HashSet<StringName> color_conversion_exceptions;
+	static HashSet<String> color_conversion_exceptions;
 
 public:
 	static void add_conversion_color_pair(const String &p_from_color, const String &p_to_color);
-	static void add_conversion_exception(const StringName &p_icon_name);
+	static void add_conversion_exception(const String &p_icon_name);
 
 	static HashMap<Color, Color> &get_color_conversion_map() { return color_conversion_map; }
-	static HashSet<StringName> &get_color_conversion_exceptions() { return color_conversion_exceptions; }
+	static HashSet<String> &get_color_conversion_exceptions() { return color_conversion_exceptions; }
 
 	static void create();
 	static void finish();

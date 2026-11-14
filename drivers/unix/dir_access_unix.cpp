@@ -2,10 +2,11 @@
 /*  dir_access_unix.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -274,7 +275,7 @@ static void _get_drives(List<String> *list) {
 		}
 
 		// Add Desktop dir.
-		String dpath = OS::get_singleton()->get_system_dir(OS::SystemDir::SYSTEM_DIR_DESKTOP);
+		String dpath = OS::get_system_dir(OS::SystemDir::SYSTEM_DIR_DESKTOP);
 		if (dpath.length() > 0 && !list->find(dpath)) {
 			list->push_back(dpath);
 		}

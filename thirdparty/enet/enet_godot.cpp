@@ -2,10 +2,11 @@
 /*  enet_godot.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -367,7 +368,7 @@ public:
 				String key = String(peer_ip) + ":" + itos(peer_port);
 				Peer p;
 				p.conn = peer;
-				p.timeout = OS::get_singleton()->get_ticks_msec() + ENET_DTLS_TIMEOUT_MS;
+				p.timeout = OS::get_ticks_msec() + ENET_DTLS_TIMEOUT_MS;
 				peers[key] = p;
 			}
 		}
@@ -377,7 +378,7 @@ public:
 		// TODO this needs to be fair!
 
 		for (KeyValue<String, Peer> &E : peers) {
-			if (unlikely(!E.value.bound && OS::get_singleton()->get_ticks_msec() >= E.value.timeout)) {
+			if (unlikely(!E.value.bound && OS::get_ticks_msec() >= E.value.timeout)) {
 				remove.push_back(E.key);
 				continue;
 			}
@@ -472,15 +473,15 @@ void enet_deinitialize(void) {
 }
 
 enet_uint32 enet_host_random_seed(void) {
-	return (enet_uint32)OS::get_singleton()->get_unix_time();
+	return (enet_uint32)OS::get_unix_time();
 }
 
 enet_uint32 enet_time_get(void) {
-	return OS::get_singleton()->get_ticks_msec() - timeBase;
+	return OS::get_ticks_msec() - timeBase;
 }
 
 void enet_time_set(enet_uint32 newTimeBase) {
-	timeBase = OS::get_singleton()->get_ticks_msec() - newTimeBase;
+	timeBase = OS::get_ticks_msec() - newTimeBase;
 }
 
 int enet_address_set_host(ENetAddress *address, const char *name) {

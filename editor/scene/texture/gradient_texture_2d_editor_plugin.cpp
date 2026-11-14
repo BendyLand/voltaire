@@ -2,10 +2,11 @@
 /*  gradient_texture_2d_editor_plugin.cpp                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -68,7 +69,7 @@ void GradientTexture2DEdit::set_fill_pos(const Vector2& p_pos)
 		return;
 	}
 
-	const StringName property_name = (grabbed == HANDLE_FROM) ? "fill_from" : "fill_to";
+	const String property_name = (grabbed == HANDLE_FROM) ? "fill_from" : "fill_to";
 	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->commit_action();
 }

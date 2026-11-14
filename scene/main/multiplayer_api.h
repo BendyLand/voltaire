@@ -2,10 +2,11 @@
 /*  multiplayer_api.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,7 +36,7 @@
 class MultiplayerAPI : public RefCounted
 {
 private:
-	static StringName default_interface;
+	static String default_interface;
 
 public:
 	enum RPCMode
@@ -47,8 +48,8 @@ public:
 	};
 
 	static Ref<MultiplayerAPI> create_default_interface();
-	static void set_default_interface(const StringName& p_interface);
-	static StringName get_default_interface();
+	static void set_default_interface(const String& p_interface);
+	static String get_default_interface();
 
 	virtual Error poll();
 	virtual void set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer);

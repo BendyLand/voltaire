@@ -2,10 +2,11 @@
 /*  navigation_obstacle_2d.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -61,7 +62,7 @@ void NavigationObstacle2D::_notification(int p_what)
 		_update_transform();
 		set_physics_process_internal(true);
 #ifdef DEBUG_ENABLED
-		RS::canvas_item_set_parent(
+		Renderer::canvas_item_set_parent(
 			debug_canvas_item, get_world_2d()->get_canvas());
 #endif // DEBUG_ENABLED
 	} break;
@@ -70,7 +71,7 @@ void NavigationObstacle2D::_notification(int p_what)
 		set_physics_process_internal(false);
 		_update_map(RID());
 #ifdef DEBUG_ENABLED
-		RS::canvas_item_set_parent(debug_canvas_item, RID());
+		Renderer::canvas_item_set_parent(debug_canvas_item, RID());
 #endif // DEBUG_ENABLED
 	} break;
 
@@ -108,7 +109,7 @@ void NavigationObstacle2D::_notification(int p_what)
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 #ifdef DEBUG_ENABLED
-		RS::canvas_item_set_visible(debug_canvas_item, is_visible_in_tree());
+		Renderer::canvas_item_set_visible(debug_canvas_item, is_visible_in_tree());
 #endif // DEBUG_ENABLED
 	} break;
 
@@ -141,8 +142,8 @@ void NavigationObstacle2D::_notification(int p_what)
 			}
 
 			if (is_debug_enabled) {
-				RS::canvas_item_clear(debug_canvas_item);
-				RS::canvas_item_set_transform(debug_canvas_item, Transform2D());
+				Renderer::canvas_item_clear(debug_canvas_item);
+				Renderer::canvas_item_set_transform(debug_canvas_item, Transform2D());
 				_update_fake_agent_radius_debug();
 				_update_static_obstacle_debug();
 			}
@@ -304,7 +305,7 @@ void NavigationObstacle2D::_update_fake_agent_radius_debug()
 		// Agent radius is a scalar value and does not support non-uniform scaling, choose the
 		// largest axis.
 		const float scaling_max_value = safe_scale[safe_scale.max_axis_index()];
-		RS::canvas_item_add_circle(debug_canvas_item, get_global_position(),
+		Renderer::canvas_item_add_circle(debug_canvas_item, get_global_position(),
 			scaling_max_value * radius, debug_radius_color);
 	}
 }

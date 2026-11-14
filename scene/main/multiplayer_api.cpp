@@ -2,10 +2,11 @@
 /*  multiplayer_api.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -31,14 +32,14 @@
 #include "core/io/marshalls.h"
 #include "multiplayer_api.h"
 
-StringName MultiplayerAPI::default_interface;
+String MultiplayerAPI::default_interface;
 
-void MultiplayerAPI::set_default_interface(const StringName& p_interface)
+void MultiplayerAPI::set_default_interface(const String& p_interface)
 {
-	default_interface = StringName(p_interface, true);
+	default_interface = String(p_interface);
 }
 
-StringName MultiplayerAPI::get_default_interface() { return default_interface; }
+String MultiplayerAPI::get_default_interface() { return default_interface; }
 
 Ref<MultiplayerAPI> MultiplayerAPI::create_default_interface()
 {

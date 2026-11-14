@@ -2,10 +2,11 @@
 /*  render_forward_mobile.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -780,7 +781,7 @@ void RenderForwardMobile::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				RendererRD::LightStorage::lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}
@@ -1466,7 +1467,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 				lut1_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
 
-				ltc.lut1_texture = RS::texture_2d_create(lut1_image);
+				ltc.lut1_texture = Renderer::texture_2d_create(lut1_image);
 
 				int lut2_bytes = 4 * dimensions * dimensions;
 				size_t lut2_size = lut2_bytes * 4;
@@ -1479,7 +1480,7 @@ void RenderForwardMobile::_update_render_base_uniform_set()
 				lut2_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
 
-				ltc.lut2_texture = RS::texture_2d_create(lut2_image);
+				ltc.lut2_texture = Renderer::texture_2d_create(lut2_image);
 			}
 		}
 
@@ -2349,7 +2350,6 @@ void RenderForwardMobile::_geometry_instance_add_surface(
 
 void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
 {
-	RendererRD::ParticlesStorage* particles_storage = RendererRD::ParticlesStorage::get_singleton();
 	GeometryInstanceForwardMobile* ginstance =
 		static_cast<GeometryInstanceForwardMobile*>(p_geometry_instance);
 
@@ -2412,10 +2412,10 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 		} break;
 #endif
 	case RSE::INSTANCE_PARTICLES: {
-		int draw_passes = particles_storage->particles_get_draw_passes(ginstance->data->base);
+		int draw_passes = RendererRD::ParticlesStorage::particles_get_draw_passes(ginstance->data->base);
 
 		for (int j = 0; j < draw_passes; j++) {
-			RID mesh = particles_storage->particles_get_draw_pass_mesh(ginstance->data->base, j);
+			RID mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(ginstance->data->base, j);
 			if (!mesh.is_valid()) {
 				continue;
 			}
@@ -2433,7 +2433,7 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 		}
 
 		ginstance->instance_count =
-			particles_storage->particles_get_amount(ginstance->data->base, ginstance->trail_steps);
+			RendererRD::ParticlesStorage::particles_get_amount(ginstance->data->base, ginstance->trail_steps);
 
 	} break;
 
@@ -2481,21 +2481,21 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_ge
 		ginstance->base_flags |=
 			(ginstance->trail_steps << INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_SHIFT);
 
-		if (!particles_storage->particles_is_using_local_coords(ginstance->data->base)) {
+		if (!RendererRD::ParticlesStorage::particles_is_using_local_coords(ginstance->data->base)) {
 			store_transform = false;
 		}
 		ginstance->transforms_uniform_set =
-			particles_storage->particles_get_instance_buffer_uniform_set(
+			RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
 				ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 
-		if (particles_storage->particles_get_frame_counter(ginstance->data->base) == 0) {
+		if (RendererRD::ParticlesStorage::particles_get_frame_counter(ginstance->data->base) == 0) {
 			// Particles haven't been cleared or updated, update once now to ensure they are ready
 			// to render.
-			particles_storage->update_particles();
+			RendererRD::ParticlesStorage::update_particles();
 		}
 
 		if (ginstance->data->dirty_dependencies) {
-			particles_storage->particles_update_dependency(
+			RendererRD::ParticlesStorage::particles_update_dependency(
 				ginstance->data->base, &ginstance->data->dependency_tracker);
 		}
 	}
@@ -2950,10 +2950,10 @@ RenderForwardMobile::~RenderForwardMobile()
 	RendererLightStorage::directional_shadow_atlas_set_size(0);
 
 	if (ltc.lut1_texture.is_valid()) {
-		RS::free_rid(ltc.lut1_texture);
+		Renderer::free_rid(ltc.lut1_texture);
 	}
 	if (ltc.lut2_texture.is_valid()) {
-		RS::free_rid(ltc.lut2_texture);
+		Renderer::free_rid(ltc.lut2_texture);
 	}
 
 	{

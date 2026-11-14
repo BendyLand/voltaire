@@ -2,10 +2,11 @@
 /*  viewport.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -93,8 +94,8 @@ void ViewportTexture::reset_local_to_scene()
 	}
 
 	if (proxy.is_valid() && proxy_ph.is_null()) {
-		proxy_ph = RS::texture_2d_placeholder_create();
-		RS::texture_proxy_update(proxy, proxy_ph);
+		proxy_ph = Renderer::texture_2d_placeholder_create();
+		Renderer::texture_proxy_update(proxy, proxy_ph);
 	}
 }
 
@@ -161,8 +162,8 @@ Size2 ViewportTexture::get_size() const
 RID ViewportTexture::get_rid() const
 {
 	if (proxy.is_null()) {
-		proxy_ph = RS::texture_2d_placeholder_create();
-		proxy = RS::texture_proxy_create(proxy_ph);
+		proxy_ph = Renderer::texture_2d_placeholder_create();
+		proxy = Renderer::texture_proxy_create(proxy_ph);
 	}
 	return proxy;
 }
@@ -175,7 +176,7 @@ Ref<Image> ViewportTexture::get_image() const
 		_err_print_viewport_not_set();
 		return Ref<Image>();
 	}
-	return RS::texture_2d_get(vp->texture_rid);
+	return Renderer::texture_2d_get(vp->texture_rid);
 }
 
 void ViewportTexture::_err_print_viewport_not_set() const
@@ -196,10 +197,10 @@ ViewportTexture::~ViewportTexture()
 	ERR_FAIL_NULL(Renderer::data);
 
 	if (proxy_ph.is_valid()) {
-		RS::free_rid(proxy_ph);
+		Renderer::free_rid(proxy_ph);
 	}
 	if (proxy.is_valid()) {
-		RS::free_rid(proxy);
+		Renderer::free_rid(proxy);
 	}
 }
 
@@ -240,7 +241,7 @@ void Viewport::_sub_window_update_order()
 	}
 
 	for (int i = 0; i < gui.sub_windows.size(); i++) {
-		RS::canvas_item_set_draw_index(gui.sub_windows[i].canvas_item, i);
+		Renderer::canvas_item_set_draw_index(gui.sub_windows[i].canvas_item, i);
 	}
 }
 
@@ -252,13 +253,13 @@ void Viewport::_sub_window_register(Window* p_window)
 	}
 
 	if (gui.sub_windows.is_empty()) {
-		subwindow_canvas = RS::canvas_create();
-		RS::viewport_attach_canvas(viewport, subwindow_canvas);
-		RS::viewport_set_canvas_stacking(viewport, subwindow_canvas, SUBWINDOW_CANVAS_LAYER, 0);
+		subwindow_canvas = Renderer::canvas_create();
+		Renderer::viewport_attach_canvas(viewport, subwindow_canvas);
+		Renderer::viewport_set_canvas_stacking(viewport, subwindow_canvas, SUBWINDOW_CANVAS_LAYER, 0);
 	}
 	SubWindow sw;
-	sw.canvas_item = RS::canvas_item_create();
-	RS::canvas_item_set_parent(sw.canvas_item, subwindow_canvas);
+	sw.canvas_item = Renderer::canvas_item_create();
+	Renderer::canvas_item_set_parent(sw.canvas_item, subwindow_canvas);
 	sw.window = p_window;
 	gui.sub_windows.push_back(sw);
 
@@ -295,7 +296,7 @@ void Viewport::_sub_window_update(Window* p_window)
 	SubWindow& sw = gui.sub_windows.write[index];
 	sw.pending_window_update = false;
 
-	RS::canvas_item_clear(sw.canvas_item);
+	Renderer::canvas_item_clear(sw.canvas_item);
 	const Rect2i r = Rect2i(p_window->get_position(), p_window->get_size());
 
 	if (!p_window->get_flag(Window::FLAG_BORDERLESS)) {
@@ -347,9 +348,9 @@ void Viewport::_sub_window_update(Window* p_window)
 	Rect2 vr = xform.xform(sw.window->get_visible_rect());
 	vr.position += p_window->get_position();
 	if (vr != r) {
-		RS::canvas_item_add_rect(sw.canvas_item, r, Color());
+		Renderer::canvas_item_add_rect(sw.canvas_item, r, Color());
 	}
-	RS::canvas_item_add_texture_rect(sw.canvas_item, vr, sw.window->get_texture()->get_rid());
+	Renderer::canvas_item_add_texture_rect(sw.canvas_item, vr, sw.window->get_texture()->get_rid());
 }
 
 int Viewport::_sub_window_find(Window* p_window) const
@@ -519,7 +520,7 @@ void Viewport::set_transparent_background(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	transparent_bg = p_enable;
-	RS::viewport_set_transparent_background(viewport, p_enable);
+	Renderer::viewport_set_transparent_background(viewport, p_enable);
 }
 
 bool Viewport::has_transparent_background() const
@@ -532,7 +533,7 @@ void Viewport::set_use_hdr_2d(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	use_hdr_2d = p_enable;
-	RS::viewport_set_use_hdr_2d(viewport, p_enable);
+	Renderer::viewport_set_use_hdr_2d(viewport, p_enable);
 }
 
 bool Viewport::is_using_hdr_2d() const
@@ -615,7 +616,7 @@ void Viewport::set_positional_shadow_atlas_size(int p_size)
 {
 	ERR_MAIN_THREAD_GUARD;
 	positional_shadow_atlas_size = p_size;
-	RS::viewport_set_positional_shadow_atlas_size(
+	Renderer::viewport_set_positional_shadow_atlas_size(
 		viewport, p_size, positional_shadow_atlas_16_bits);
 }
 
@@ -633,7 +634,7 @@ void Viewport::set_positional_shadow_atlas_16_bits(bool p_16_bits)
 	}
 
 	positional_shadow_atlas_16_bits = p_16_bits;
-	RS::viewport_set_positional_shadow_atlas_size(
+	Renderer::viewport_set_positional_shadow_atlas_size(
 		viewport, positional_shadow_atlas_size, positional_shadow_atlas_16_bits);
 }
 
@@ -657,7 +658,7 @@ void Viewport::set_positional_shadow_atlas_quadrant_subdiv(
 	positional_shadow_atlas_quadrant_subdiv[p_quadrant] = p_subdiv;
 	static const int subdiv[SHADOW_ATLAS_QUADRANT_SUBDIV_MAX] = {0, 1, 4, 16, 64, 256, 1024};
 
-	RS::viewport_set_positional_shadow_atlas_quadrant_subdivision(
+	Renderer::viewport_set_positional_shadow_atlas_quadrant_subdivision(
 		viewport, p_quadrant, subdiv[p_subdiv]);
 }
 
@@ -1482,7 +1483,7 @@ void Viewport::set_msaa_2d(MSAA p_msaa)
 		return;
 	}
 	msaa_2d = p_msaa;
-	RS::viewport_set_msaa_2d(viewport, RSE::ViewportMSAA(p_msaa));
+	Renderer::viewport_set_msaa_2d(viewport, RSE::ViewportMSAA(p_msaa));
 }
 
 Viewport::MSAA Viewport::get_msaa_2d() const
@@ -1499,7 +1500,7 @@ void Viewport::set_msaa_3d(MSAA p_msaa)
 		return;
 	}
 	msaa_3d = p_msaa;
-	RS::viewport_set_msaa_3d(viewport, RSE::ViewportMSAA(p_msaa));
+	Renderer::viewport_set_msaa_3d(viewport, RSE::ViewportMSAA(p_msaa));
 }
 
 Viewport::MSAA Viewport::get_msaa_3d() const
@@ -1516,7 +1517,7 @@ void Viewport::set_screen_space_aa(ScreenSpaceAA p_screen_space_aa)
 		return;
 	}
 	screen_space_aa = p_screen_space_aa;
-	RS::viewport_set_screen_space_aa(viewport, RSE::ViewportScreenSpaceAA(p_screen_space_aa));
+	Renderer::viewport_set_screen_space_aa(viewport, RSE::ViewportScreenSpaceAA(p_screen_space_aa));
 }
 
 Viewport::ScreenSpaceAA Viewport::get_screen_space_aa() const
@@ -1532,7 +1533,7 @@ void Viewport::set_use_taa(bool p_use_taa)
 		return;
 	}
 	use_taa = p_use_taa;
-	RS::viewport_set_use_taa(viewport, p_use_taa);
+	Renderer::viewport_set_use_taa(viewport, p_use_taa);
 }
 
 bool Viewport::is_using_taa() const
@@ -1548,7 +1549,7 @@ void Viewport::set_use_debanding(bool p_use_debanding)
 		return;
 	}
 	use_debanding = p_use_debanding;
-	RS::viewport_set_use_debanding(viewport, p_use_debanding);
+	Renderer::viewport_set_use_debanding(viewport, p_use_debanding);
 }
 
 bool Viewport::is_using_debanding() const
@@ -1561,7 +1562,7 @@ void Viewport::set_mesh_lod_threshold(float p_pixels)
 {
 	ERR_MAIN_THREAD_GUARD;
 	mesh_lod_threshold = p_pixels;
-	RS::viewport_set_mesh_lod_threshold(viewport, mesh_lod_threshold);
+	Renderer::viewport_set_mesh_lod_threshold(viewport, mesh_lod_threshold);
 }
 
 float Viewport::get_mesh_lod_threshold() const
@@ -1580,7 +1581,7 @@ void Viewport::set_debug_draw(DebugDraw p_debug_draw)
 {
 	ERR_MAIN_THREAD_GUARD;
 	debug_draw = p_debug_draw;
-	RS::viewport_set_debug_draw(viewport, RSE::ViewportDebugDraw(p_debug_draw));
+	Renderer::viewport_set_debug_draw(viewport, RSE::ViewportDebugDraw(p_debug_draw));
 }
 
 Viewport::DebugDraw Viewport::get_debug_draw() const
@@ -1592,7 +1593,7 @@ Viewport::DebugDraw Viewport::get_debug_draw() const
 int Viewport::get_render_info(RenderInfoType p_type, RenderInfo p_info)
 {
 	ERR_READ_THREAD_GUARD_V(0);
-	return RS::viewport_get_render_info(
+	return Renderer::viewport_get_render_info(
 		viewport, RSE::ViewportRenderInfoType(p_type), RSE::ViewportRenderInfo(p_info));
 }
 
@@ -1612,7 +1613,7 @@ void Viewport::set_snap_2d_transforms_to_pixel(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	snap_2d_transforms_to_pixel = p_enable;
-	RS::viewport_set_snap_2d_transforms_to_pixel(viewport, snap_2d_transforms_to_pixel);
+	Renderer::viewport_set_snap_2d_transforms_to_pixel(viewport, snap_2d_transforms_to_pixel);
 }
 
 bool Viewport::is_snap_2d_transforms_to_pixel_enabled() const
@@ -1625,7 +1626,7 @@ void Viewport::set_snap_2d_vertices_to_pixel(bool p_enable)
 {
 	ERR_MAIN_THREAD_GUARD;
 	snap_2d_vertices_to_pixel = p_enable;
-	RS::viewport_set_snap_2d_vertices_to_pixel(viewport, snap_2d_vertices_to_pixel);
+	Renderer::viewport_set_snap_2d_vertices_to_pixel(viewport, snap_2d_vertices_to_pixel);
 }
 
 bool Viewport::is_snap_2d_vertices_to_pixel_enabled() const
@@ -1742,13 +1743,13 @@ void Viewport::set_vrs_update_mode(VRSUpdateMode p_vrs_update_mode)
 	vrs_update_mode = p_vrs_update_mode;
 	switch (p_vrs_update_mode) {
 	case VRS_UPDATE_ONCE: {
-		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ONCE);
+		Renderer::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ONCE);
 	} break;
 	case VRS_UPDATE_ALWAYS: {
-		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ALWAYS);
+		Renderer::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_ALWAYS);
 	} break;
 	default: {
-		RS::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
+		Renderer::viewport_set_vrs_update_mode(viewport, RSE::VIEWPORT_VRS_UPDATE_DISABLED);
 	} break;
 	}
 }
@@ -1766,7 +1767,7 @@ void Viewport::set_vrs_texture(Ref<Texture2D> p_texture)
 
 	// TODO need to add something here in case the RID changes
 	RID tex = p_texture.is_valid() ? p_texture->get_rid() : RID();
-	RS::viewport_set_vrs_texture(viewport, tex);
+	Renderer::viewport_set_vrs_texture(viewport, tex);
 }
 
 Ref<Texture2D> Viewport::get_vrs_texture() const
@@ -1898,7 +1899,7 @@ void Viewport::set_sdf_oversize(SDFOversize p_sdf_oversize)
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX(p_sdf_oversize, SDF_OVERSIZE_MAX);
 	sdf_oversize = p_sdf_oversize;
-	RS::viewport_set_sdf_oversize_and_scale(
+	Renderer::viewport_set_sdf_oversize_and_scale(
 		viewport, RSE::ViewportSDFOversize(sdf_oversize), RSE::ViewportSDFScale(sdf_scale));
 }
 
@@ -1913,7 +1914,7 @@ void Viewport::set_sdf_scale(SDFScale p_sdf_scale)
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX(p_sdf_scale, SDF_SCALE_MAX);
 	sdf_scale = p_sdf_scale;
-	RS::viewport_set_sdf_oversize_and_scale(
+	Renderer::viewport_set_sdf_oversize_and_scale(
 		viewport, RSE::ViewportSDFOversize(sdf_oversize), RSE::ViewportSDFScale(sdf_scale));
 }
 
@@ -2328,7 +2329,7 @@ void Viewport::set_scaling_3d_mode(Scaling3DMode p_scaling_3d_mode)
 	}
 
 	scaling_3d_mode = p_scaling_3d_mode;
-	RS::viewport_set_scaling_3d_mode(viewport, (RSE::ViewportScaling3DMode)(int)p_scaling_3d_mode);
+	Renderer::viewport_set_scaling_3d_mode(viewport, (RSE::ViewportScaling3DMode)(int)p_scaling_3d_mode);
 }
 
 Viewport::Scaling3DMode Viewport::get_scaling_3d_mode() const
@@ -2345,7 +2346,7 @@ void Viewport::set_scaling_3d_scale(float p_scaling_3d_scale)
 	// isn't displayed with mipmaps.
 	scaling_3d_scale = CLAMP(p_scaling_3d_scale, 0.1, 2.0);
 
-	RS::viewport_set_scaling_3d_scale(viewport, scaling_3d_scale);
+	Renderer::viewport_set_scaling_3d_scale(viewport, scaling_3d_scale);
 }
 
 float Viewport::get_scaling_3d_scale() const
@@ -2366,7 +2367,7 @@ void Viewport::set_fsr_sharpness(float p_fsr_sharpness)
 	}
 
 	fsr_sharpness = p_fsr_sharpness;
-	RS::viewport_set_fsr_sharpness(viewport, p_fsr_sharpness);
+	Renderer::viewport_set_fsr_sharpness(viewport, p_fsr_sharpness);
 }
 
 float Viewport::get_fsr_sharpness() const
@@ -2383,7 +2384,7 @@ void Viewport::set_texture_mipmap_bias(float p_texture_mipmap_bias)
 	}
 
 	texture_mipmap_bias = p_texture_mipmap_bias;
-	RS::viewport_set_texture_mipmap_bias(viewport, p_texture_mipmap_bias);
+	Renderer::viewport_set_texture_mipmap_bias(viewport, p_texture_mipmap_bias);
 }
 
 float Viewport::get_texture_mipmap_bias() const
@@ -2400,7 +2401,7 @@ void Viewport::set_anisotropic_filtering_level(AnisotropicFiltering p_anisotropi
 	}
 
 	anisotropic_filtering_level = p_anisotropic_filtering_level;
-	RS::viewport_set_anisotropic_filtering_level(
+	Renderer::viewport_set_anisotropic_filtering_level(
 		viewport, (RSE::ViewportAnisotropicFiltering)(int)p_anisotropic_filtering_level);
 }
 
@@ -2496,7 +2497,7 @@ void SubViewport::set_update_mode(UpdateMode p_mode)
 {
 	ERR_MAIN_THREAD_GUARD;
 	update_mode = p_mode;
-	RS::viewport_set_update_mode(get_viewport_rid(), RSE::ViewportUpdateMode(p_mode));
+	Renderer::viewport_set_update_mode(get_viewport_rid(), RSE::ViewportUpdateMode(p_mode));
 }
 
 SubViewport::UpdateMode SubViewport::get_update_mode() const
@@ -2509,7 +2510,7 @@ void SubViewport::set_clear_mode(ClearMode p_mode)
 {
 	ERR_MAIN_THREAD_GUARD;
 	clear_mode = p_mode;
-	RS::viewport_set_clear_mode(get_viewport_rid(), RSE::ViewportClearMode(p_mode));
+	Renderer::viewport_set_clear_mode(get_viewport_rid(), RSE::ViewportClearMode(p_mode));
 }
 
 SubViewport::ClearMode SubViewport::get_clear_mode() const
@@ -2526,7 +2527,7 @@ DisplayServerEnums::WindowID SubViewport::get_window_id() const
 
 SubViewport::SubViewport()
 {
-	RS::viewport_set_size(
+	Renderer::viewport_set_size(
 		get_viewport_rid(), get_size().width, get_size().height, get_view_count());
 }
 
@@ -2567,15 +2568,7 @@ void SubViewport::_internal_set_size(Vector2i const&, int, bool) {}
 
 Viewport::Viewport()
 {
-	void* callers[4];
-	int frames = backtrace(callers, 4);
-	backtrace_symbols_fd(callers, frames, STDERR_FILENO);
-
-	__print_line("Viewport constructor called!");
-	__print_line("Viewport constructor called!");
 	viewport = Renderer::viewport_create();
-	__print_line(vformat("Created viewport RID: %d", viewport.get_id()));
-
 	world_2d.instantiate();
 	world_2d->register_viewport(this);
 	current_canvas = world_2d->get_canvas();

@@ -2,10 +2,11 @@
 /*  rendering_context_driver_vulkan.cpp                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -459,7 +460,7 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions()
 #ifdef DEV_ENABLED
 	bool want_debug_utils = true;
 #else
-	bool want_debug_utils = OS::get_singleton()->is_stdout_verbose();
+	bool want_debug_utils = OS::is_stdout_verbose();
 #endif
 	if (want_debug_utils) {
 		_register_requested_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, false);
@@ -1228,15 +1229,17 @@ VkQueueFamilyProperties RenderingContextDriverVulkan::queue_family_get(
 }
 
 bool RenderingContextDriverVulkan::queue_family_supports_present(
-	VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const
+		VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const
 {
 	DEV_ASSERT(p_physical_device != VK_NULL_HANDLE);
 	DEV_ASSERT(p_surface != 0);
-	Surface* surface = (Surface*)(p_surface);
-	VkBool32 present_supported = false;
+
+	Surface *surface = (Surface *)(p_surface);
+	VkBool32 present_supported = VK_FALSE;
 	VkResult err = vkGetPhysicalDeviceSurfaceSupportKHR(
-		p_physical_device, p_queue_family_index, surface->vk_surface, &present_supported);
-	return err == VK_SUCCESS && present_supported;
+			p_physical_device, p_queue_family_index, surface->vk_surface, &present_supported);
+
+	return (err == VK_SUCCESS) && (present_supported == VK_TRUE);
 }
 
 const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::functions_get() const

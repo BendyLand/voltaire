@@ -2,10 +2,11 @@
 /*  dir_access.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -41,7 +42,7 @@ String DirAccess::_get_root_path() const
 	case ACCESS_RESOURCES:
 		return ProjectSettings::get_resource_path();
 	case ACCESS_USERDATA:
-		return OS::get_singleton()->get_user_data_dir();
+		return OS::get_user_data_dir();
 	default:
 		return "";
 	}
@@ -209,7 +210,7 @@ String DirAccess::fix_path(const String& p_path) const
 	} break;
 	case ACCESS_USERDATA: {
 		if (p_path.begins_with("user://")) {
-			String data_dir = OS::get_singleton()->get_user_data_dir();
+			String data_dir = OS::get_user_data_dir();
 			if (!data_dir.is_empty()) {
 				return p_path.replace_first("user:/", data_dir);
 			}
@@ -346,7 +347,6 @@ Ref<DirAccess> DirAccess::create(AccessType p_access)
 			da->change_dir("user://");
 		}
 	}
-
 	return da;
 }
 
@@ -360,7 +360,7 @@ Ref<DirAccess> DirAccess::create_temp(const String& p_prefix, bool p_keep, Error
 			vformat(R"(%s: "%s" is not a valid prefix.)", ERROR_COMMON_PREFIX, p_prefix));
 	}
 
-	Ref<DirAccess> dir_access = DirAccess::open(OS::get_singleton()->get_temp_path());
+	Ref<DirAccess> dir_access = DirAccess::open(OS::get_temp_path());
 
 	uint32_t suffix_i = 0;
 	String path;

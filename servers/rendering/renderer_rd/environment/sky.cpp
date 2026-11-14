@@ -2,10 +2,11 @@
 /*  sky.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -338,7 +339,7 @@ Ref<Image> SkyRD::Sky::bake_panorama(float p_energy, int p_roughness_layers, con
 		tf.height = p_size.height;
 		tf.usage_bits = RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 
-		RID rad_tex = RD::texture_create(tf, RD::TextureView());
+		RID rad_tex = RD::texture_create(tf, RDD::TextureView());
 		copy_effects->copy_octmap_to_panorama(radiance, rad_tex, p_size, p_roughness_layers,
 			reflection.layers.size() > 1, Size2(uv_border_size, 1.0f - uv_border_size * 2.0));
 		Vector<uint8_t> data = RD::texture_get_data(rad_tex, 0);
@@ -436,17 +437,38 @@ void SkyRD::set_texture_format(RDC::DataFormat p_texture_format)
 SkyRD::~SkyRD()
 {
 	// cleanup anything created in init...
-	SkyMaterialData* md = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
-		sky_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
-	sky_shader.shader.version_free(md->shader_data->version);
-	RD::free_rid(sky_scene_state.directional_light_buffer);
-	RD::free_rid(sky_scene_state.uniform_buffer);
-	memdelete_arr(sky_scene_state.directional_lights);
-	memdelete_arr(sky_scene_state.last_frame_directional_lights);
-	MaterialStorage::shader_free(sky_shader.default_shader);
-	MaterialStorage::material_free(sky_shader.default_material);
-	MaterialStorage::shader_free(sky_scene_state.fog_shader);
-	MaterialStorage::material_free(sky_scene_state.fog_material);
+	if (sky_shader.default_material.is_valid()) {
+		SkyMaterialData* md = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
+			sky_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
+		if (md && md->shader_data && md->shader_data->version.is_valid()) {
+			sky_shader.shader.version_free(md->shader_data->version);
+			md->shader_data->version = RID();
+		}
+		MaterialStorage::material_free(sky_shader.default_material);
+		sky_shader.default_material = RID();
+	}
+	if (sky_shader.default_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_shader.default_shader);
+		sky_shader.default_shader = RID();
+	}
+	if (sky_scene_state.directional_light_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state.directional_light_buffer);
+	}
+	if (sky_scene_state.uniform_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state.uniform_buffer);
+	}
+	if (sky_scene_state.directional_lights) {
+		memdelete_arr(sky_scene_state.directional_lights);
+	}
+	if (sky_scene_state.last_frame_directional_lights) {
+		memdelete_arr(sky_scene_state.last_frame_directional_lights);
+	}
+	if (sky_scene_state.fog_material.is_valid()) {
+		MaterialStorage::material_free(sky_scene_state.fog_material);
+	}
+	if (sky_scene_state.fog_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_scene_state.fog_shader);
+	}
 
 	if (RD::uniform_set_is_valid(sky_scene_state.uniform_set)) {
 		RD::free_rid(sky_scene_state.uniform_set);
@@ -651,7 +673,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						RS::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 
@@ -936,7 +958,7 @@ void SkyRD::update_dirty_skys()
 					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
-				sky->radiance = RD::texture_create(tf, RD::TextureView());
+				sky->radiance = RD::texture_create(tf, RDD::TextureView());
 
 				// Create view into the first layer slice for user shaders.
 				sky->radiance_first_layer_slice = RD::texture_create_shared_from_slice(
@@ -965,7 +987,7 @@ void SkyRD::update_dirty_skys()
 					tf.usage_bits |= RDC::TEXTURE_USAGE_STORAGE_BIT;
 				}
 
-				sky->radiance = RD::texture_create(tf, RD::TextureView());
+				sky->radiance = RD::texture_create(tf, RDD::TextureView());
 
 				DEV_ASSERT(sky->radiance_first_layer_slice.is_null());
 

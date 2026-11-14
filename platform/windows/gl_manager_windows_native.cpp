@@ -2,10 +2,11 @@
 /*  gl_manager_windows_native.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -93,7 +94,7 @@ NvAPI_GetErrorMessage_t NvAPI_GetErrorMessage__;
 
 static bool nvapi_err_check(const char *msg, int status) {
 	if (status != 0) {
-		if (OS::get_singleton()->is_stdout_verbose()) {
+		if (OS::is_stdout_verbose()) {
 			NvAPI_ShortString err_desc = { 0 };
 			NvAPI_GetErrorMessage__(status, err_desc);
 			print_verbose(vformat("%s: %s(code %d)", msg, err_desc, status));
@@ -167,7 +168,7 @@ void GLManagerNative_Windows::_nvapi_setup_profile() {
 		return;
 	}
 
-	String app_executable_name = OS::get_singleton()->get_executable_path().get_file();
+	String app_executable_name = OS::get_executable_path().get_file();
 	String app_profile_name = GLOBAL_GET("application/config/name");
 	// We need a name anyways, so let's use the engine name if an application name is not available
 	// (this is used mostly by the Project Manager)
@@ -317,9 +318,9 @@ static Error _configure_pixel_format(HDC hDC) {
 				PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
 				PFD_DOUBLEBUFFER,
 		(BYTE)PFD_TYPE_RGBA,
-		(BYTE)(OS::get_singleton()->is_layered_allowed() ? 32 : 24),
+		(BYTE)(OS::is_layered_allowed() ? 32 : 24),
 		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
-		(BYTE)(OS::get_singleton()->is_layered_allowed() ? 8 : 0), // Alpha Buffer
+		(BYTE)(OS::is_layered_allowed() ? 8 : 0), // Alpha Buffer
 		(BYTE)0, // Shift Bit Ignored
 		(BYTE)0, // No Accumulation Buffer
 		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored

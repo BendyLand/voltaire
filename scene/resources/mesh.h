@@ -2,10 +2,11 @@
 /*  mesh.h                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -165,8 +166,8 @@ public:
 	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material);
 	virtual Ref<Material> surface_get_material(int p_idx) const;
 	virtual int get_blend_shape_count() const;
-	virtual StringName get_blend_shape_name(int p_index) const;
-	virtual void set_blend_shape_name(int p_index, const StringName& p_name);
+	virtual String get_blend_shape_name(int p_index) const;
+	virtual void set_blend_shape_name(int p_index, const String& p_name);
 	virtual AABB get_aabb() const;
 
 	Vector<Face3> get_faces() const;
@@ -310,7 +311,7 @@ private:
 	mutable RID mesh;
 	AABB aabb;
 	BlendShapeMode blend_shape_mode = BLEND_SHAPE_MODE_RELATIVE;
-	Vector<StringName> blend_shapes;
+	Vector<String> blend_shapes;
 	AABB custom_aabb;
 
 	_FORCE_INLINE_ void _create_if_empty() const;
@@ -335,10 +336,10 @@ public:
 			Vector<RenderingServerTypes::SurfaceData::LOD>(),
 		const Vector4 p_uv_scale = Vector4());
 
-	void add_blend_shape(const StringName& p_name);
+	void add_blend_shape(const String& p_name);
 	int get_blend_shape_count() const override;
-	StringName get_blend_shape_name(int p_index) const override;
-	void set_blend_shape_name(int p_index, const StringName& p_name) override;
+	String get_blend_shape_name(int p_index) const override;
+	void set_blend_shape_name(int p_index, const String& p_name) override;
 	void clear_blend_shapes();
 
 	void set_blend_shape_mode(BlendShapeMode p_mode);
@@ -419,9 +420,9 @@ public:
 
 	virtual int get_blend_shape_count() const override { return 0; }
 
-	virtual StringName get_blend_shape_name(int p_index) const override { return StringName(); }
+	virtual String get_blend_shape_name(int p_index) const override { return String(); }
 
-	virtual void set_blend_shape_name(int p_index, const StringName& p_name) override {}
+	virtual void set_blend_shape_name(int p_index, const String& p_name) override {}
 
 	virtual RID get_rid() const override { return rid; }
 

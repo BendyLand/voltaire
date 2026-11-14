@@ -2,10 +2,11 @@
 /*  test_validate_testing.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -101,7 +102,7 @@ TEST_SUITE("Validate tests") {
 		Color color(1, 0.5, 0.2, 0.3);
 		INFO(color);
 
-		StringName string_name("has_method");
+		String string_name("has_method");
 		INFO(string_name);
 
 		NodePath node_path("godot/sprite");

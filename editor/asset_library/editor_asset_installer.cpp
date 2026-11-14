@@ -2,10 +2,11 @@
 /*  editor_asset_installer.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -87,7 +88,7 @@ bool EditorAssetInstaller::_fix_conflicted_indeterminate_state(TreeItem* p_item,
 	}
 	if (has_conflict_child) {
 		p_item->set_custom_color(
-			p_column, get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+			p_column, get_theme_color(SNAME("error_color"), EditorString(Editor)));
 	}
 	else {
 		p_item->clear_custom_color(p_column);
@@ -133,7 +134,7 @@ bool EditorAssetInstaller::_update_source_item_status(TreeItem* p_item, const St
 	bool target_exists = FileAccess::exists(target_path);
 	if (target_exists) {
 		p_item->set_custom_color(
-			0, get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
+			0, get_theme_color(SNAME("error_color"), EditorString(Editor)));
 		p_item->set_tooltip_text(0, vformat(TTR("%s (already exists)"), target_path));
 		p_item->set_checked(0, false);
 	}

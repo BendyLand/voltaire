@@ -2,10 +2,11 @@
 /*  tile_data_editors.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -199,10 +200,10 @@ TileDataOcclusionShapeEditor::TileDataOcclusionShapeEditor()
 	add_child(polygon_editor);
 }
 
-void TileDataCollisionEditor::_property_selected(const StringName& p_path, int p_focusable)
+void TileDataCollisionEditor::_property_selected(const String& p_path, int p_focusable)
 {
 	// Deselect all other properties
-	for (KeyValue<StringName, EditorProperty*>& editor : property_editors) {
+	for (KeyValue<String, EditorProperty*>& editor : property_editors) {
 		if (editor.key != p_path) {
 			editor.value->deselect();
 		}

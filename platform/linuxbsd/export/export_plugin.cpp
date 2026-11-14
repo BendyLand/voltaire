@@ -2,10 +2,11 @@
 /*  export_plugin.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -270,10 +271,10 @@ String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const
 
 void EditorExportPlatformLinuxBSD::cleanup()
 {
-	if (ssh_pid != 0 && OS::get_singleton()->is_process_running(ssh_pid)) {
+	if (ssh_pid != 0 && OS::is_process_running(ssh_pid)) {
 		__print_line("Terminating connection...");
-		OS::get_singleton()->kill(ssh_pid);
-		OS::get_singleton()->delay_usec(1000);
+		OS::kill(ssh_pid);
+		OS::delay_usec(1000);
 	}
 
 	if (!cleanup_commands.is_empty()) {

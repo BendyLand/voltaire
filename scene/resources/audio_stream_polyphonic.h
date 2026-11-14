@@ -2,10 +2,11 @@
 /*  audio_stream_polyphonic.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -115,7 +116,7 @@ public:
 		float p_pitch_scale = 1.0,
 		AudioServer::PlaybackType p_playback_type =
 			AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT,
-		const StringName& p_bus = SceneStringName(Master));
+		const String& p_bus = SceneString(Master));
 	void set_stream_volume(ID p_stream_id, float p_volume_db);
 	void set_stream_pitch_scale(ID p_stream_id, float p_pitch_scale);
 	bool is_stream_playing(ID p_stream_id) const;

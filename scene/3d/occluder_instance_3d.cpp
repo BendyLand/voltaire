@@ -2,10 +2,11 @@
 /*  occluder_instance_3d.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -61,7 +62,7 @@ void Occluder3D::_update()
 	debug_lines.clear();
 	debug_mesh.unref();
 
-	RS::occluder_set_mesh(occluder, vertices, indices);
+	Renderer::occluder_set_mesh(occluder, vertices, indices);
 	emit_changed();
 }
 
@@ -100,13 +101,13 @@ Vector<Vector3> Occluder3D::get_debug_lines() const
 
 AABB Occluder3D::get_aabb() const { return aabb; }
 
-Occluder3D::Occluder3D() { occluder = RS::occluder_create(); }
+Occluder3D::Occluder3D() { occluder = Renderer::occluder_create(); }
 
 Occluder3D::~Occluder3D()
 {
 	if (occluder.is_valid()) {
 		ERR_FAIL_NULL(Renderer::data);
-		RS::free_rid(occluder);
+		Renderer::free_rid(occluder);
 	}
 }
 

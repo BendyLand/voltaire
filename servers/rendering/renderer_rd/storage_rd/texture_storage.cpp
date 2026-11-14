@@ -2,10 +2,11 @@
 /*  texture_storage.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,6 +36,7 @@
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/texture_storage.h"
 #include "texture_storage.h"
 
@@ -70,7 +72,10 @@ void RendererRD::TextureStorage::Texture::cleanup()
 
 void RendererRD::TextureStorage::finalize()
 {
-	rt_sdf.shader.version_free(rt_sdf.shader_version);
+	if (rt_sdf.shader_version.is_valid()) {
+		rt_sdf.shader.version_free(rt_sdf.shader_version);
+		rt_sdf.shader_version = RID();
+	}
 
 	free_decal_data();
 
@@ -1785,7 +1790,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 	tformat.mipmaps = area_light_atlas.mipmaps;
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_UNORM);
 
-	area_light_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	area_light_atlas.texture = RD::texture_create(tformat, RDD::TextureView());
 	RD::texture_clear(
 		area_light_atlas.texture, Color(0, 0, 0, 0), 0, area_light_atlas.mipmaps, 0, 1);
 
@@ -1963,7 +1968,8 @@ void RendererRD::TextureStorage::decal_atlas_mark_dirty_on_texture(RID p_texture
 
 void RendererRD::TextureStorage::decal_atlas_remove_texture(RID p_texture)
 {
-	if (decal_atlas.textures.has(p_texture)) {
+	if (decal_atlas.
+textures.has(p_texture)) {
 		decal_atlas.textures.erase(p_texture);
 		// there is not much a point of making it dirty, just let it be.
 	}
@@ -2132,7 +2138,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_UNORM);
 	tformat.shareable_formats.push_back(RDC::DATA_FORMAT_R8G8B8A8_SRGB);
 
-	decal_atlas.texture = RD::texture_create(tformat, RD::TextureView());
+	decal_atlas.texture = RD::texture_create(tformat, RDD::TextureView());
 	RD::texture_clear(decal_atlas.texture, Color(0, 0, 0, 0), 0, decal_atlas.mipmaps, 0, 1);
 
 	{
@@ -2529,7 +2535,7 @@ void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 	}
 
 	RDC::TextureFormat rd_color_attachment_format;
-	RD::TextureView rd_view;
+	RDD::TextureView rd_view;
 	{ // attempt register
 		rd_color_attachment_format.format = rt->color_format;
 		rd_color_attachment_format.width = rt->size.width;
@@ -2571,7 +2577,7 @@ void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 		};
 		rd_color_multisample_format.samples = texture_samples[rt->msaa];
 		rd_color_multisample_format.usage_bits = render_target_get_color_usage_bits(true);
-		RD::TextureView rd_view_multisample;
+		RDD::TextureView rd_view_multisample;
 		rd_color_multisample_format.is_resolve_buffer = false;
 		rd_color_multisample_format.is_discardable = true;
 		rt->color_multisample =
@@ -2639,7 +2645,7 @@ void RendererRD::TextureStorage::_create_render_target_backbuffer(RenderTarget* 
 					RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	tf.mipmaps = mipmaps_required;
 
-	rt->backbuffer = RD::texture_create(tf, RD::TextureView());
+	rt->backbuffer = RD::texture_create(tf, RDD::TextureView());
 	RD::set_resource_name(rt->backbuffer, "Render Target Back Buffer");
 	rt->backbuffer_mipmap0 =
 		RD::texture_create_shared_from_slice(RD::TextureView(), rt->backbuffer, 0, 0);
@@ -3112,7 +3118,17 @@ void RendererRD::TextureStorage::render_target_do_clear_request(RID p_render_tar
 	}
 	Vector<Color> clear_colors;
 	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
-	RD::draw_list_end();
+	const Vector<Color> clear_colors_const = clear_colors;
+
+	// Begin a draw list on the render target's framebuffer
+	if (rt->rd_framebuffer.is_valid()) {
+        RD::DrawListID draw_list = RD::draw_list_begin(
+            rt->rd_framebuffer, RenderingDevice::DRAW_CLEAR_COLOR_0, clear_colors);
+        if (draw_list != RDC::INVALID_ID) {
+            RD::draw_list_end();
+        }
+    }
+
 	rt->clear_requested = false;
 	rt->msaa_needs_resolve = false;
 }
@@ -3206,7 +3222,7 @@ RID RendererRD::TextureStorage::render_target_get_sdf_texture(RID p_render_targe
 		memset(pv.ptrw(), 0, 16 * 4);
 		Vector<Vector<uint8_t>> vpv;
 		vpv.push_back(pv);
-		rt->sdf_buffer_read = RD::texture_create(tformat, RD::TextureView(), vpv);
+		rt->sdf_buffer_read = RD::texture_create(tformat, RDD::TextureView(), vpv);
 	}
 
 	return rt->sdf_buffer_read;
@@ -3643,7 +3659,7 @@ void RendererRD::TextureStorage::texture_2d_initialize(RID p_texture, const Ref<
 		data.push_back(img_data.slice(ofs, ofs + size));
 	}
 
-	texture.rd_texture = RD::texture_create(tf, RD::TextureView(), data);
+	texture.rd_texture = RD::texture_create(tf, RDD::TextureView(), data);
 
 	texture_owner.initialize_rid(p_texture, texture);
 }
@@ -3708,7 +3724,7 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 	rd_format.texture_type = RDC::TEXTURE_TYPE_2D;
 	rd_format.samples = RDC::TEXTURE_SAMPLES_1;
 
-	RD::TextureView rd_view;
+	RDD::TextureView rd_view;
 
 	if (p_depth) {
 		rd_format.format = RDC::DATA_FORMAT_D32_SFLOAT;
@@ -3757,7 +3773,8 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 			w[i * 4 + 0] = r;
 			w[i * 4 + 1] = g;
 			w[i * 4 + 2] = b;
-			w[i * 4 + 3] = a;
+			w[i * 4 + 3] = a
+;
 		}
 		initial_data.push_back(buffer);
 	}
@@ -3772,11 +3789,8 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 	texture->mipmaps = 1;
 	texture->type = TextureType::TYPE_2D;
 	texture->rd_type = rd_format.texture_type;
-	texture->rd_format = rd_format.
-format;
+	texture->rd_format = rd_format.format;
 	texture->is_render_target = true;
 }
 
 void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
-
-

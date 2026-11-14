@@ -2,10 +2,11 @@
 /*  rendering_device_driver_metal.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1560,7 +1561,7 @@ void RenderingDeviceDriverMetal::command_bind_push_constants(CommandBufferID p_c
 // ----- CACHE -----
 
 String RenderingDeviceDriverMetal::_pipeline_get_cache_path() const {
-	String path = OS::get_singleton()->get_user_data_dir() + "/metal/pipelines";
+	String path = OS::get_user_data_dir() + "/metal/pipelines";
 	path += "." + context_device.name.validate_filename().replace_char(' ', '_').to_lower();
 	if (Engine::is_editor_hint()) {
 		path += ".editor";
@@ -2740,7 +2741,7 @@ const RDD::Capabilities &RenderingDeviceDriverMetal::get_capabilities() const {
 
 bool RenderingDeviceDriverMetal::is_composite_alpha_supported(CommandQueueID p_queue) const {
 	// The CAMetalLayer.opaque property is configured according to this global setting.
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
 size_t RenderingDeviceDriverMetal::get_texel_buffer_alignment_for_format(RDD::DataFormat p_format) const {
@@ -2756,12 +2757,12 @@ size_t RenderingDeviceDriverMetal::get_texel_buffer_alignment_for_format(MTL::Pi
 RenderingDeviceDriverMetal::RenderingDeviceDriverMetal(RenderingContextDriverMetal *p_context_driver) :
 		context_driver(p_context_driver) {
 	DEV_ASSERT(p_context_driver != nullptr);
-	if (String res = OS::get_singleton()->get_environment("GODOT_MTL_ARCHIVE_FAIL_ON_MISS"); res == "1") {
+	if (String res = OS::get_environment("GODOT_MTL_ARCHIVE_FAIL_ON_MISS"); res == "1") {
 		archive_fail_on_miss = true;
 	}
 
 #if TARGET_OS_OSX
-	if (String res = OS::get_singleton()->get_environment("GODOT_MTL_SHADER_LOAD_STRATEGY"); res == U"lazy") {
+	if (String res = OS::get_environment("GODOT_MTL_SHADER_LOAD_STRATEGY"); res == U"lazy") {
 		_shader_load_strategy = ShaderLoadStrategy::LAZY;
 	}
 #else
@@ -2911,9 +2912,9 @@ Error RenderingDeviceDriverMetal::_initialize(uint32_t p_device_index, uint32_t 
 
 #if defined(APPLE_EMBEDDED_ENABLED)
 		// Apple Embedded platforms exports currently don't exit themselves when this method returns `ERR_CANT_CREATE`.
-		OS::get_singleton()->alert(error_string + "\nClick OK to exit (black screen will be visible).");
+		OS::alert(error_string + "\nClick OK to exit (black screen will be visible).");
 #else
-		OS::get_singleton()->alert(error_string + "\nClick OK to exit.");
+		OS::alert(error_string + "\nClick OK to exit.");
 #endif
 
 		return ERR_CANT_CREATE;

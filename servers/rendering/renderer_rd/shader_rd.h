@@ -2,10 +2,11 @@
 /*  shader_rd.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -85,7 +86,7 @@ private:
 		CharString closest_hit_globals;
 		CharString miss_globals;
 		CharString intersection_globals;
-		HashMap<StringName, CharString> code_sections;
+		HashMap<String, CharString> code_sections;
 		Vector<CharString> custom_defines;
 		Vector<bool> group_loaded_from_cache;
 
@@ -108,7 +109,7 @@ private:
 	void _compile_variant(uint32_t p_variant, CompileData p_data);
 
 	void _initialize_version(Version* p_version);
-	void _clear_version(Version* p_version);
+	void _clear_version(Version* p_version, bool p_skip_compilation = false);
 	void _compile_version_start(Version* p_version, int p_group);
 	void _compile_version_end(Version* p_version, int p_group);
 	void _compile_ensure_finished(Version* p_version);
@@ -139,7 +140,7 @@ private:
 			};
 
 			Type type;
-			StringName code;
+			String code;
 			CharString text;
 		};
 
@@ -324,5 +325,3 @@ public:
 
 	virtual ~ShaderRD();
 };
-
-

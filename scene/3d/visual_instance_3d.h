@@ -2,10 +2,11 @@
 /*  visual_instance_3d.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -133,7 +134,7 @@ private:
 
 	float lod_bias = 1.0;
 
-	mutable HashMap<StringName, StringName> instance_shader_parameter_property_remap;
+	mutable HashMap<String, String> instance_shader_parameter_property_remap;
 
 	float extra_cull_margin = 0.0;
 	AABB custom_aabb;
@@ -141,7 +142,7 @@ private:
 	GIMode gi_mode = GI_MODE_STATIC;
 	bool ignore_occlusion_culling = false;
 
-	const StringName* _instance_uniform_get_remap(const StringName& p_name) const;
+	const String* _instance_uniform_get_remap(const String& p_name) const;
 
 protected:
 

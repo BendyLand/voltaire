@@ -2,10 +2,11 @@
 /*  xr_face_modifier_3d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -35,7 +36,7 @@
 // This method takes the name of a mesh blend shape and returns the
 // corresponding XRFaceTracker blend shape. If no match is
 // found then the function returns -1.
-static int find_face_blend_shape(const StringName& p_name)
+static int find_face_blend_shape(const String& p_name)
 {
 	// Entry for blend shape name table.
 	struct blend_map_entry
@@ -372,7 +373,7 @@ static void remove_driven_unified_blend_shapes(RBMap<int, int>& p_blend_mapping)
 }
 
 
-void XRFaceModifier3D::set_face_tracker(const StringName& p_tracker_name)
+void XRFaceModifier3D::set_face_tracker(const String& p_tracker_name)
 {
 	tracker_name = p_tracker_name;
 	if (is_inside_tree()) {
@@ -380,7 +381,7 @@ void XRFaceModifier3D::set_face_tracker(const StringName& p_tracker_name)
 	}
 }
 
-StringName XRFaceModifier3D::get_face_tracker() const { return tracker_name; }
+String XRFaceModifier3D::get_face_tracker() const { return tracker_name; }
 
 void XRFaceModifier3D::set_target(const NodePath& p_target)
 {

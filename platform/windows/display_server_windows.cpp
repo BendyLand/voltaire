@@ -2,10 +2,11 @@
 /*  display_server_windows.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -699,7 +700,7 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 
 		String dir = ProjectSettings::globalize_path(fd->current_directory);
 		if (dir == ".") {
-			dir = OS::get_singleton()->get_executable_path().get_base_dir();
+			dir = OS::get_executable_path().get_base_dir();
 		}
 		if (dir.is_relative_path() || dir == ".") {
 			Char16String current_dir_name;
@@ -1809,7 +1810,7 @@ DisplayServerEnums::WindowID DisplayServerWindows::create_sub_window(DisplayServ
 
 	bool no_redirection_bitmap = false;
 #ifdef DCOMP_ENABLED
-	no_redirection_bitmap = OS::get_singleton()->is_layered_allowed() && rendering_driver == "d3d12";
+	no_redirection_bitmap = OS::is_layered_allowed() && rendering_driver == "d3d12";
 #endif
 
 	DisplayServerEnums::WindowID window_id = window_id_counter;
@@ -1866,7 +1867,7 @@ DisplayServerEnums::WindowID DisplayServerWindows::create_sub_window(DisplayServ
 		wd.is_popup = true;
 	}
 	if (p_flags & DisplayServerEnums::WINDOW_FLAG_TRANSPARENT_BIT) {
-		if (OS::get_singleton()->is_layered_allowed()) {
+		if (OS::is_layered_allowed()) {
 			DWM_BLURBEHIND bb;
 			ZeroMemory(&bb, sizeof(bb));
 			HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
@@ -2882,7 +2883,7 @@ void DisplayServerWindows::window_set_flag(DisplayServerEnums::WindowFlags p_fla
 		case DisplayServerEnums::WINDOW_FLAG_TRANSPARENT: {
 			if (p_enabled) {
 				// Enable per-pixel alpha.
-				if (OS::get_singleton()->is_layered_allowed()) {
+				if (OS::is_layered_allowed()) {
 					DWM_BLURBEHIND bb;
 					ZeroMemory(&bb, sizeof(bb));
 					HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
@@ -2895,7 +2896,7 @@ void DisplayServerWindows::window_set_flag(DisplayServerEnums::WindowFlags p_fla
 			} else {
 				// Disable per-pixel alpha.
 				wd.layered_window = false;
-				if (OS::get_singleton()->is_layered_allowed()) {
+				if (OS::is_layered_allowed()) {
 					DWM_BLURBEHIND bb;
 					ZeroMemory(&bb, sizeof(bb));
 					HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
@@ -5065,7 +5066,7 @@ bool DisplayServerWindows::is_window_transparency_available() const {
 		return false;
 	}
 #endif
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
 #define MI_WP_SIGNATURE 0xFF515700
@@ -5250,7 +5251,7 @@ void DisplayServerWindows::popup_open(DisplayServerEnums::WindowID p_window) {
 			_send_window_event(windows[C->get()], DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		}
 
-		time_since_popup = OS::get_singleton()->get_ticks_msec();
+		time_since_popup = OS::get_ticks_msec();
 		popup_list.push_back(p_window);
 	}
 }
@@ -5299,7 +5300,7 @@ uint32_t DisplayServerWindows::_get_mods() const {
 LRESULT DisplayServerWindows::MouseProc(int code, WPARAM wParam, LPARAM lParam) {
 	_THREAD_SAFE_METHOD_
 
-	uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_since_popup;
+	uint64_t delta = OS::get_ticks_msec() - time_since_popup;
 	if (delta > 250) {
 		switch (wParam) {
 			case WM_NCLBUTTONDOWN:
@@ -5356,7 +5357,7 @@ LRESULT DisplayServerWindows::_handle_early_window_message(HWND hWnd, UINT uMsg,
 			pWindowData->hWnd = hWnd;
 
 			if (!AccessibilityServer::get_singleton()->window_create(pWindowData->id, (void *)hWnd)) {
-				if (OS::get_singleton()->is_stdout_verbose()) {
+				if (OS::is_stdout_verbose()) {
 					ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 				}
 			}
@@ -5450,8 +5451,8 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 			app_focused = new_app_focused;
-			if (OS::get_singleton()->get_main_loop()) {
-				OS::get_singleton()->get_main_loop()->notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+			if (OS::get_main_loop()) {
+				OS::get_main_loop()->notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 			}
 		} break;
 		case WM_ACTIVATE: {
@@ -5912,7 +5913,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			coords.y = GET_Y_LPARAM(lParam);
 
 			// Note: Handle popup closing here, since mouse event is not emulated and hook will not be called.
-			uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_since_popup;
+			uint64_t delta = OS::get_ticks_msec() - time_since_popup;
 			if (delta > 250) {
 				Point2i pos = Point2i(coords.x, coords.y) - _get_screens_origin();
 				List<DisplayServerEnums::WindowID>::Element *C = nullptr;
@@ -6662,7 +6663,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			if (windows[window_id].ime_active) {
 				SetCaretPos(windows[window_id].im_position.x, windows[window_id].im_position.y);
-				OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
 			}
 		} break;
 		case WM_INPUTLANGCHANGEREQUEST: {
@@ -7735,7 +7736,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 
 	tablet_drivers.push_back("dummy");
 
-	String wacom_cfg = OS::get_singleton()->get_config_path().path_join("WTablet").path_join("Wacom_Tablet.dat");
+	String wacom_cfg = OS::get_config_path().path_join("WTablet").path_join("Wacom_Tablet.dat");
 	if (FileAccess::exists(wacom_cfg)) {
 		Ref<XMLParser> parser;
 		parser.instantiate();
@@ -7756,7 +7757,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 		}
 	}
 
-	if (OS::get_singleton()->is_hidpi_allowed()) {
+	if (OS::is_hidpi_allowed()) {
 		SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
 	}
 
@@ -7827,7 +7828,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 		HKEY key;
 		if (RegOpenKeyW(HKEY_CURRENT_USER_LOCAL_SETTINGS, L"Software\\Microsoft\\Windows\\Shell\\MuiCache", &key) == ERROR_SUCCESS) {
 			Char16String cs_name = name.utf16();
-			String value_name = OS::get_singleton()->get_executable_path().replace_char('/', '\\') + ".FriendlyAppName";
+			String value_name = OS::get_executable_path().replace_char('/', '\\') + ".FriendlyAppName";
 			RegSetValueExW(key, (LPCWSTR)value_name.utf16().get_data(), 0, REG_SZ, (const BYTE *)cs_name.get_data(), cs_name.size() * sizeof(WCHAR));
 			RegCloseKey(key);
 		}
@@ -7907,7 +7908,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 			if (rendering_context->initialize() == OK) {
 				// The window needs to be recreated when this value differs, because it cannot be added or removed after creation.
 #ifdef DCOMP_ENABLED
-				bool new_no_redirection_bitmap_value = OS::get_singleton()->is_layered_allowed() && tested_rendering_driver == "d3d12";
+				bool new_no_redirection_bitmap_value = OS::is_layered_allowed() && tested_rendering_driver == "d3d12";
 #else
 				bool new_no_redirection_bitmap_value = false;
 #endif
@@ -7941,7 +7942,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 						}
 #endif
 						rendering_driver = tested_rendering_driver;
-						OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, i > 0 ? OS::RENDERING_SOURCE_FALLBACK : OS::get_singleton()->get_current_rendering_driver_name_source());
+						OS::set_current_rendering_driver_name(rendering_driver, i > 0 ? OS::RENDERING_SOURCE_FALLBACK : OS::get_current_rendering_driver_name_source());
 
 						break;
 					}
@@ -7967,8 +7968,8 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 			tested_drivers.set_flag(DRIVER_ID_COMPAT_OPENGL3);
 			WARN_PRINT("Your video card drivers seem not to support Direct3D 12 or Vulkan, switching to OpenGL 3.");
 			rendering_driver = "opengl3";
-			OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
-			OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+			OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+			OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			rendering_driver_failed = false;
 		}
 	}
@@ -8062,7 +8063,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 				}
 			}
 			rendering_driver = "opengl3_angle";
-			OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+			OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 		}
 	}
 
@@ -8102,7 +8103,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 
 #ifdef RD_ENABLED
 #ifdef DCOMP_ENABLED
-	no_redirection_bitmap = OS::get_singleton()->is_layered_allowed() && rendering_driver == "d3d12";
+	no_redirection_bitmap = OS::is_layered_allowed() && rendering_driver == "d3d12";
 #endif
 
 	// The window may still need to be recreated when all RD backends fail and it falls back to OpenGL.
@@ -8171,7 +8172,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 #ifdef ACCESSKIT_ENABLED
 	if (accessibility_screen_reader_active()) {
 		_THREAD_SAFE_LOCK_
-		uint64_t time_wait = OS::get_singleton()->get_ticks_msec();
+		uint64_t time_wait = OS::get_ticks_msec();
 		while (true) {
 			MSG msg = {};
 			while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -8179,7 +8180,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 				DispatchMessageW(&msg);
 			}
 
-			uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_wait;
+			uint64_t delta = OS::get_ticks_msec() - time_wait;
 			if (delta > 500 || get_object_received) {
 				break;
 			}
@@ -8198,7 +8199,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	}
 #endif
 
-	if (!Engine::is_editor_hint() && !OS::get_singleton()->is_in_low_processor_usage_mode()) {
+	if (!Engine::is_editor_hint() && !OS::is_in_low_processor_usage_mode()) {
 		// Increase priority for projects that are not in low-processor mode (typically games)
 		// to reduce the risk of frame stuttering.
 		// This is not done for the editor to prevent importers or resource bakers
@@ -8249,7 +8250,7 @@ DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_drive
 	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (tested_drivers == 0) {
-			OS::get_singleton()->alert("Failed to register the window class.", "Unable to initialize DisplayServer");
+			OS::alert("Failed to register the window class.", "Unable to initialize DisplayServer");
 		} else if (tested_drivers.has_flag(DRIVER_ID_RD_VULKAN) || tested_drivers.has_flag(DRIVER_ID_RD_D3D12)) {
 			Vector<String> drivers;
 			if (tested_drivers.has_flag(DRIVER_ID_RD_VULKAN)) {
@@ -8258,8 +8259,8 @@ DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_drive
 			if (tested_drivers.has_flag(DRIVER_ID_RD_D3D12)) {
 				drivers.push_back("Direct3D 12");
 			}
-			String executable_name = OS::get_singleton()->get_executable_path().get_file();
-			OS::get_singleton()->alert(
+			String executable_name = OS::get_executable_path().get_file();
+			OS::alert(
 					vformat("Your video card drivers seem not to support the required %s version.\n\n"
 							"If possible, consider updating your video card drivers or using the OpenGL 3 driver.\n\n"
 							"You can enable the OpenGL 3 driver by starting the engine from the\n"
@@ -8276,7 +8277,7 @@ DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_drive
 			if (tested_drivers.has_flag(DRIVER_ID_COMPAT_ANGLE_D3D11)) {
 				drivers.push_back("Direct3D 11");
 			}
-			OS::get_singleton()->alert(
+			OS::alert(
 					vformat(
 							"Your video card drivers seem not to support the required %s version.\n\n"
 							"If possible, consider updating your video card drivers.\n\n"

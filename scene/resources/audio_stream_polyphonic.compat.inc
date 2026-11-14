@@ -2,10 +2,11 @@
 /*  audio_stream_polyphonic.compat.inc                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -36,7 +37,7 @@ AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::_play_stream_bi
 	const Ref<AudioStream>& p_stream, float p_from_offset, float p_volume_db, float p_pitch_scale)
 {
 	return play_stream(p_stream, p_from_offset, p_volume_db, p_pitch_scale,
-		AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT, SceneStringName(Master));
+		AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT, SceneString(Master));
 }
 
 void AudioStreamPlaybackPolyphonic::_bind_compatibility_methods() {}

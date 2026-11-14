@@ -2,10 +2,11 @@
 /*  os_windows.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -30,10 +31,10 @@
 
 #pragma once
 
-#include "crash_handler_windows.h"
-
+#ifdef _WIN32
 #include "core/input/input_event.h"
 #include "core/os/os.h"
+#include "crash_handler_windows.h"
 #include "drivers/wasapi/audio_driver_wasapi.h"
 #include "drivers/winmidi/midi_driver_winmidi.h"
 
@@ -41,16 +42,15 @@
 #include "drivers/xaudio2/audio_driver_xaudio2.h"
 #endif
 
-#include <windows.h>
-
 #include <dwrite.h>
 #include <dwrite_2.h>
 #include <io.h>
 #include <shellapi.h>
+#include <windows.h>
 #include <windowsx.h>
 
 #ifdef DEBUG_ENABLED
-// forward error messages to OutputDebugString
+// Forward error messages to OutputDebugString
 #define WINDOWS_DEBUG_OUTPUT_ENABLED
 #endif
 
@@ -58,30 +58,37 @@
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x4
 #endif
 
-#ifndef SAFE_RELEASE // when Windows Media Device M? is not present
-#define SAFE_RELEASE(x) \
-	if (x != nullptr) { \
-		x->Release(); \
-		x = nullptr; \
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(x)                                                                            \
+	if (x != nullptr) {                                                                            \
+		x->Release();                                                                              \
+		x = nullptr;                                                                               \
 	}
 #endif
 
-template <typename T>
-class ComAutoreleaseRef {
+template <typename T> class ComAutoreleaseRef
+{
 public:
-	T *reference = nullptr;
+	T* reference = nullptr;
 
-	_FORCE_INLINE_ T *operator->() { return reference; }
-	_FORCE_INLINE_ const T *operator->() const { return reference; }
-	_FORCE_INLINE_ T *operator*() { return reference; }
-	_FORCE_INLINE_ const T *operator*() const { return reference; }
+	_FORCE_INLINE_ T* operator->() { return reference; }
+
+	_FORCE_INLINE_ const T* operator->() const { return reference; }
+
+	_FORCE_INLINE_ T* operator*() { return reference; }
+
+	_FORCE_INLINE_ const T* operator*() const { return reference; }
+
 	_FORCE_INLINE_ bool is_valid() const { return reference != nullptr; }
+
 	_FORCE_INLINE_ bool is_null() const { return reference == nullptr; }
+
 	ComAutoreleaseRef() {}
-	ComAutoreleaseRef(T *p_ref) {
-		reference = p_ref;
-	}
-	~ComAutoreleaseRef() {
+
+	ComAutoreleaseRef(T* p_ref) { reference = p_ref; }
+
+	~ComAutoreleaseRef()
+	{
 		if (reference != nullptr) {
 			reference->Release();
 			reference = nullptr;
@@ -89,195 +96,213 @@ public:
 	}
 };
 
-class OS_Windows : public OS {
-	uint64_t target_ticks = 0;
-	uint64_t ticks_start = 0;
-	uint64_t ticks_per_second = 0;
-	uint64_t delay_resolution = 1000;
+class OS_Windows final
+{
+public:
+	OS_Windows() = delete;
+	~OS_Windows() = delete;
+	OS_Windows(const OS_Windows&) = delete;
+	OS_Windows& operator=(const OS_Windows&) = delete;
 
-	HINSTANCE hInstance;
-	MainLoop *main_loop = nullptr;
-
-#ifdef WASAPI_ENABLED
-	AudioDriverWASAPI driver_wasapi;
-#endif
-#ifdef XAUDIO2_ENABLED
-	AudioDriverXAudio2 driver_xaudio2;
-#endif
-#ifdef WINMIDI_ENABLED
-	MIDIDriverWinMidi driver_midi;
-#endif
-
-	CrashHandler crash_handler;
-
-#ifdef WINDOWS_DEBUG_OUTPUT_ENABLED
-	ErrorHandlerList error_handlers;
-#endif
-
-	HWND main_window;
-
-	IDWriteFactory *dwrite_factory = nullptr;
-	IDWriteFactory2 *dwrite_factory2 = nullptr;
-	IDWriteFontCollection *font_collection = nullptr;
-	IDWriteFontFallback *system_font_fallback = nullptr;
-
-	bool dwrite_init = false;
-	bool dwrite2_init = false;
-
-	HashMap<void *, String> temp_libraries;
-
-	void _remove_temp_library(void *p_library_handle);
-	String _get_default_fontname(const String &p_font_name) const;
-	DWRITE_FONT_WEIGHT _weight_to_dw(int p_weight) const;
-	DWRITE_FONT_STRETCH _stretch_to_dw(int p_stretch) const;
-
-	bool is_using_con_wrapper() const;
-
-	HashMap<String, int> encodings;
-	void _init_encodings();
-
-	Vector<String> _get_video_adapter_driver_info_reg(const String &p_name) const;
-	Vector<String> _get_video_adapter_driver_info_wmi(const String &p_name) const;
-
-	// functions used by main to initialize/deinitialize the OS
-protected:
-	virtual void initialize() override;
-
-	virtual void set_main_loop(MainLoop *p_main_loop) override;
-	virtual void delete_main_loop() override;
-
-	virtual void finalize() override;
-	virtual void finalize_core() override;
-
-	virtual String get_stdin_string(int64_t p_buffer_size = 1024) override;
-	virtual PackedByteArray get_stdin_buffer(int64_t p_buffer_size = 1024) override;
-	virtual StdHandleType get_stdin_type() const override;
-	virtual StdHandleType get_stdout_type() const override;
-	virtual StdHandleType get_stderr_type() const override;
-
-	String _quote_command_line_argument(const String &p_text) const;
-
-	struct ProcessInfo {
+	struct ProcessInfo
+	{
 		STARTUPINFOEX si;
 		PROCESS_INFORMATION pi;
 		mutable bool is_running = true;
 		mutable int exit_code = -1;
 	};
-	HashMap<ProcessID, ProcessInfo> *process_map = nullptr;
-	Mutex process_map_mutex;
+
+private:
+	static inline uint64_t target_ticks = 0;
+	static inline uint64_t ticks_start = 0;
+	static inline uint64_t ticks_per_second = 0;
+	static inline uint64_t delay_resolution = 1000;
+
+	static inline HINSTANCE hInstance = nullptr;
+	static inline MainLoop* main_loop = nullptr;
+
+#ifdef WASAPI_ENABLED
+	static inline AudioDriverWASAPI driver_wasapi;
+#endif
+#ifdef XAUDIO2_ENABLED
+	static inline AudioDriverXAudio2 driver_xaudio2;
+#endif
+#ifdef WINMIDI_ENABLED
+	static inline MIDIDriverWinMidi driver_midi;
+#endif
+
+	static inline CrashHandler crash_handler;
+
+#ifdef WINDOWS_DEBUG_OUTPUT_ENABLED
+	static inline ErrorHandlerList error_handlers;
+#endif
+
+	static inline HWND main_window = nullptr;
+
+	static inline IDWriteFactory* dwrite_factory = nullptr;
+	static inline IDWriteFactory2* dwrite_factory2 = nullptr;
+	static inline IDWriteFontCollection* font_collection = nullptr;
+	static inline IDWriteFontFallback* system_font_fallback = nullptr;
+
+	static inline bool dwrite_init = false;
+	static inline bool dwrite2_init = false;
+
+	static inline HashMap<void*, String> temp_libraries;
+
+	static void _remove_temp_library(void* p_library_handle);
+	static String _get_default_fontname(const String& p_font_name);
+	static DWRITE_FONT_WEIGHT _weight_to_dw(int p_weight);
+	static DWRITE_FONT_STRETCH _stretch_to_dw(int p_stretch);
+
+	static bool is_using_con_wrapper();
+
+	static inline HashMap<String, int> encodings;
+	static void _init_encodings();
+
+	static Vector<String> _get_video_adapter_driver_info_reg(const String& p_name);
+	static Vector<String> _get_video_adapter_driver_info_wmi(const String& p_name);
+
+	static String _quote_command_line_argument(const String& p_text);
+
+	static inline HashMap<ProcessID, ProcessInfo>* process_map = nullptr;
+	static inline Mutex process_map_mutex;
 
 public:
-	virtual void alert(const String &p_alert, const String &p_title = "ALERT!") override;
+	static void initialize();
+	static void set_main_loop(MainLoop* p_main_loop);
+	static void delete_main_loop();
+	static void finalize();
+	static void finalize_core();
 
-	virtual Error get_entropy(uint8_t *r_buffer, int p_bytes) override;
+	static String get_stdin_string(int64_t p_buffer_size = 1024);
+	static PackedByteArray get_stdin_buffer(int64_t p_buffer_size = 1024);
+	static OS::StdHandleType get_stdin_type();
+	static OS::StdHandleType get_stdout_type();
+	static OS::StdHandleType get_stderr_type();
 
-	virtual Error open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data = nullptr) override;
-	virtual Error close_dynamic_library(void *p_library_handle) override;
-	virtual Error get_dynamic_library_symbol_handle(void *p_library_handle, const String &p_name, void *&p_symbol_handle, bool p_optional = false) override;
+	static void alert(const String& p_alert, const String& p_title = "ALERT!");
 
-	virtual MainLoop *get_main_loop() const override;
+	static Error get_entropy(uint8_t* r_buffer, int p_bytes);
 
-	virtual String get_name() const override;
-	virtual String get_distribution_name() const override;
-	virtual String get_version() const override;
-	virtual String get_version_alias() const override;
+	static Error open_dynamic_library(
+		const String& p_path, void*& p_library_handle, OS::GDExtensionData* p_data = nullptr);
+	static Error close_dynamic_library(void* p_library_handle);
+	static Error get_dynamic_library_symbol_handle(void* p_library_handle, const String& p_name,
+		void*& p_symbol_handle, bool p_optional = false);
 
-	virtual Vector<String> get_video_adapter_driver_info() const override;
-	virtual bool get_user_prefers_integrated_gpu() const override;
+	static MainLoop* get_main_loop();
 
-	virtual void initialize_joypads() override {}
+	static String get_name();
+	static String get_distribution_name();
+	static String get_version();
+	static String get_version_alias();
 
-	virtual DateTime get_datetime(bool p_utc) const override;
-	virtual TimeZoneInfo get_time_zone_info() const override;
-	virtual double get_unix_time() const override;
+	static Vector<String> get_video_adapter_driver_info();
+	static bool get_user_prefers_integrated_gpu();
 
-	virtual Error set_cwd(const String &p_cwd) override;
-	virtual String get_cwd() const override;
+	static void initialize_joypads() {}
 
-	virtual void add_frame_delay(bool p_can_draw, bool p_wake_for_events) override;
-	virtual void delay_usec(uint32_t p_usec) const override;
-	virtual uint64_t get_ticks_usec() const override;
+	static OS::DateTime get_datetime(bool p_utc);
+	static OS::TimeZoneInfo get_time_zone_info();
+	static double get_unix_time();
 
-	virtual Dictionary get_memory_info() const override;
+	static Error set_cwd(const String& p_cwd);
+	static String get_cwd();
 
-	virtual Error execute(const String &p_path, const List<String> &p_arguments, String *r_pipe = nullptr, int *r_exitcode = nullptr, bool read_stderr = false, Mutex *p_pipe_mutex = nullptr, bool p_open_console = false) override;
-	virtual Dictionary execute_with_pipe(const String &p_path, const List<String> &p_arguments, bool p_blocking = true) override;
-	virtual Error create_process(const String &p_path, const List<String> &p_arguments, ProcessID *r_child_id = nullptr, bool p_open_console = false) override;
-	virtual Error kill(const ProcessID &p_pid) override;
-	virtual int get_process_id() const override;
-	virtual bool is_process_running(const ProcessID &p_pid) const override;
-	virtual int get_process_exit_code(const ProcessID &p_pid) const override;
+	static void add_frame_delay(bool p_can_draw, bool p_wake_for_events);
+	static void delay_usec(uint32_t p_usec);
+	static uint64_t get_ticks_usec();
 
-	virtual bool has_environment(const String &p_var) const override;
-	virtual String get_environment(const String &p_var) const override;
-	virtual void set_environment(const String &p_var, const String &p_value) const override;
-	virtual void unset_environment(const String &p_var) const override;
+	static Dictionary get_memory_info();
 
-	virtual Vector<String> get_system_fonts() const override;
-	virtual String get_system_font_path(const String &p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
-	virtual Vector<String> get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale = String(), const String &p_script = String(), int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
+	static Error execute(const String& p_path, const List<String>& p_arguments,
+		String* r_pipe = nullptr, int* r_exitcode = nullptr, bool read_stderr = false,
+		Mutex* p_pipe_mutex = nullptr, bool p_open_console = false);
+	static Dictionary execute_with_pipe(
+		const String& p_path, const List<String>& p_arguments, bool p_blocking = true);
+	static Error create_process(const String& p_path, const List<String>& p_arguments,
+		ProcessID* r_child_id = nullptr, bool p_open_console = false);
+	static Error kill(const ProcessID& p_pid);
+	static int get_process_id();
+	static bool is_process_running(const ProcessID& p_pid);
+	static int get_process_exit_code(const ProcessID& p_pid);
 
-	virtual String get_executable_path() const override;
+	static bool has_environment(const String& p_var);
+	static String get_environment(const String& p_var);
+	static void set_environment(const String& p_var, const String& p_value);
+	static void unset_environment(const String& p_var);
 
-	virtual String get_locale() const override;
-	virtual Vector<String> get_preferred_locales() const override;
+	static Vector<String> get_system_fonts();
+	static String get_system_font_path(
+		const String& p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false);
+	static Vector<String> get_system_font_path_for_text(const String& p_font_name,
+		const String& p_text, const String& p_locale = String(), const String& p_script = String(),
+		int p_weight = 400, int p_stretch = 100, bool p_italic = false);
 
-	virtual String get_processor_name() const override;
+	static String get_executable_path();
 
-	virtual String get_model_name() const override;
+	static String get_locale();
+	static Vector<String> get_preferred_locales();
 
-	virtual uint64_t get_embedded_pck_offset() const override;
+	static String get_processor_name();
+	static String get_model_name();
 
-	virtual String get_config_path() const override;
-	virtual String get_data_path() const override;
-	virtual String get_cache_path() const override;
-	virtual String get_temp_path() const override;
-	virtual String get_godot_dir_name() const override;
+	static uint64_t get_embedded_pck_offset();
 
-	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const override;
-	virtual String get_user_data_dir(const String &p_user_dir) const override;
+	static String get_config_path();
+	static String get_data_path();
+	static String get_cache_path();
+	static String get_temp_path();
+	static String get_godot_dir_name();
 
-	virtual String expand_path(const String &p_path) const override;
+	static String get_system_dir(OS::SystemDir p_dir, bool p_shared_storage = true);
+	static String get_user_data_dir(const String& p_user_dir);
 
-	virtual String get_unique_id() const override;
+	static String expand_path(const String& p_path);
 
-	virtual Error shell_open(const String &p_uri) override;
-	virtual Error shell_show_in_file_manager(String p_path, bool p_open_folder) override;
+	static String get_unique_id();
 
-	void run();
+	static Error shell_open(const String& p_uri);
+	static Error shell_show_in_file_manager(String p_path, bool p_open_folder);
 
-	virtual bool _check_internal_feature_support(const String &p_feature) override;
+	static void run();
 
-	virtual String multibyte_to_string(const String &p_encoding, const PackedByteArray &p_array) const override;
-	virtual PackedByteArray string_to_multibyte(const String &p_encoding, const String &p_string) const override;
+	static bool _check_internal_feature_support(const String& p_feature);
 
-	virtual void disable_crash_handler() override;
-	virtual bool is_disable_crash_handler() const override;
-	virtual void initialize_debugging() override;
+	static String multibyte_to_string(const String& p_encoding, const PackedByteArray& p_array);
+	static PackedByteArray string_to_multibyte(const String& p_encoding, const String& p_string);
 
-	virtual Error move_to_trash(const String &p_path) override;
+	static void disable_crash_handler();
+	static bool is_disable_crash_handler();
+	static void initialize_debugging();
 
-	virtual String get_system_ca_certificates() override;
+	static Error move_to_trash(const String& p_path);
 
-	void set_main_window(HWND p_main_window) { main_window = p_main_window; }
+	static String get_system_ca_certificates();
 
-	virtual String get_platform_string(PlatformString p_platform_string) const override {
+	static void set_main_window(HWND p_main_window) { main_window = p_main_window; }
+
+	static String get_platform_string(OS::PlatformString p_platform_string)
+	{
 		switch (p_platform_string) {
-			case OS::PlatformString::PLATFORM_STRING_FILE_MANAGER_OPEN:
-				return ETR("Open in File Explorer");
-			case OS::PlatformString::PLATFORM_STRING_FILE_MANAGER_SHOW:
-				return ETR("Show in File Explorer");
-			default:
-				return OS::get_platform_string(p_platform_string);
+		case OS::PlatformString::PLATFORM_STRING_FILE_MANAGER_OPEN:
+			return ETR("Open in File Explorer");
+		case OS::PlatformString::PLATFORM_STRING_FILE_MANAGER_SHOW:
+			return ETR("Show in File Explorer");
+		default:
+			return OS::get_platform_string(p_platform_string);
 		}
 	}
 
 #ifdef TOOLS_ENABLED
-	virtual bool _test_create_rendering_device_and_gl(const String &p_display_driver) const override;
-	virtual bool _test_create_rendering_device(const String &p_display_driver) const override;
+	static bool _test_create_rendering_device_and_gl(const String& p_display_driver);
+	static bool _test_create_rendering_device(const String& p_display_driver);
 #endif
 
-	HINSTANCE get_hinstance() { return hInstance; }
-	OS_Windows(HINSTANCE _hInstance);
-	~OS_Windows();
+	static void set_hinstance(HINSTANCE p_hInstance) { hInstance = p_hInstance; }
+
+	static HINSTANCE get_hinstance() { return hInstance; }
 };
+
+#endif // _WIN32
+

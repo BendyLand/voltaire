@@ -2,10 +2,11 @@
 /*  scene_tree_dock.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -205,7 +206,7 @@ class SceneTreeDock : public EditorDock
 	void _set_node_owner_recursive(
 		Node* p_node, Node* p_owner, const HashMap<const Node*, Node*>& p_inverse_duplimap);
 
-	void _fill_path_renames(Vector<StringName> base_path, Vector<StringName> new_base_path,
+	void _fill_path_renames(Vector<String> base_path, Vector<String> new_base_path,
 		Node* p_node, HashMap<Node*, NodePath>* p_renames);
 
 	void _normalize_drop(Node*& to_node, int& to_pos, int p_type);

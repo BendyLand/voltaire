@@ -2,10 +2,11 @@
 /*  theme_editor_plugin.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -319,7 +320,7 @@ class ThemeTypeEditor : public MarginContainer
 	struct LeadingStylebox
 	{
 		bool pinned = false;
-		StringName item_name;
+		String item_name;
 		Ref<StyleBox> stylebox;
 		Ref<StyleBox> ref_stylebox;
 	};
@@ -361,7 +362,7 @@ class ThemeTypeEditor : public MarginContainer
 
 	VBoxContainer* _create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
-	HashMap<StringName, bool> _get_type_items(
+	HashMap<String, bool> _get_type_items(
 		String p_type_name, Theme::DataType p_type, bool p_include_default);
 	HBoxContainer* _create_property_control(
 		Theme::DataType p_data_type, String p_item_name, bool p_editable);

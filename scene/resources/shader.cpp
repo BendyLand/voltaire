@@ -2,10 +2,11 @@
 /*  shader.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -71,7 +72,7 @@ void Shader::set_path(const String& p_path, bool p_take_over)
 	Resource::set_path(p_path, p_take_over);
 
 	if (shader_rid.is_valid()) {
-		RS::shader_set_path_hint(shader_rid, p_path);
+		Renderer::shader_set_path_hint(shader_rid, p_path);
 	}
 }
 
@@ -103,7 +104,7 @@ RID Shader::get_rid() const
 }
 
 void Shader::set_default_texture_parameter(
-	const StringName& p_name, const Ref<Texture>& p_texture, int p_index)
+	const String& p_name, const Ref<Texture>& p_texture, int p_index)
 {
 	_check_shader_rid();
 
@@ -112,7 +113,7 @@ void Shader::set_default_texture_parameter(
 			default_textures[p_name] = HashMap<int, Ref<Texture>>();
 		}
 		default_textures[p_name][p_index] = p_texture;
-		RS::shader_set_default_texture_parameter(
+		Renderer::shader_set_default_texture_parameter(
 			shader_rid, p_name, p_texture->get_rid(), p_index);
 	}
 	else {
@@ -123,14 +124,14 @@ void Shader::set_default_texture_parameter(
 				default_textures.erase(p_name);
 			}
 		}
-		RS::shader_set_default_texture_parameter(
+		Renderer::shader_set_default_texture_parameter(
 			shader_rid, p_name, RID(), p_index);
 	}
 
 	emit_changed();
 }
 
-Ref<Texture> Shader::get_default_texture_parameter(const StringName& p_name, int p_index) const
+Ref<Texture> Shader::get_default_texture_parameter(const String& p_name, int p_index) const
 {
 	if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
 		return default_textures[p_name][p_index];
@@ -138,9 +139,9 @@ Ref<Texture> Shader::get_default_texture_parameter(const StringName& p_name, int
 	return Ref<Texture2D>();
 }
 
-void Shader::get_default_texture_parameter_list(List<StringName>* r_textures) const
+void Shader::get_default_texture_parameter_list(List<String>* r_textures) const
 {
-	for (const KeyValue<StringName, HashMap<int, Ref<Texture>>>& E : default_textures) {
+	for (const KeyValue<String, HashMap<int, Ref<Texture>>>& E : default_textures) {
 		r_textures->push_back(E.key);
 	}
 }

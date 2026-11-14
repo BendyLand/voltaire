@@ -2,10 +2,11 @@
 /*  http_client_tcp.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -206,7 +207,7 @@ Error HTTPClientTCP::request(Method p_method, const String& p_url, const Vector<
 	}
 	if (add_uagent) {
 		request += "User-Agent: GodotEngine/" + String(VLTR_VERSION_FULL_BUILD) + " (" +
-				   OS::get_singleton()->get_name() + ")\r\n";
+				   OS::get_name() + ")\r\n";
 	}
 	if (add_accept) {
 		request += "Accept: */*\r\n";

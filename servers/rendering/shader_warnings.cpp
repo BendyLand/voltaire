@@ -2,10 +2,11 @@
 /*  shader_warnings.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -36,7 +37,7 @@ ShaderWarning::Code ShaderWarning::get_code() const { return code; }
 
 int ShaderWarning::get_line() const { return line; }
 
-const StringName& ShaderWarning::get_subject() const { return subject; }
+const String& ShaderWarning::get_subject() const { return subject; }
 
 String ShaderWarning::get_message() const
 {

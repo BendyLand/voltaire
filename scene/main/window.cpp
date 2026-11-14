@@ -2,10 +2,11 @@
 /*  window.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -209,7 +210,7 @@ Size2i Window::get_size_with_decorations() const
 Size2i Window::_clamp_limit_size(const Size2i& p_limit_size)
 {
 	// Force window limits to respect size limitations of rendering server.
-	Size2i max_window_size = RS::get_maximum_viewport_size();
+	Size2i max_window_size = Renderer::get_maximum_viewport_size();
 	if (max_window_size != Size2i()) {
 		return p_limit_size.clamp(Vector2i(), max_window_size);
 	}
@@ -224,7 +225,7 @@ void Window::_validate_limit_size()
 	// server.
 	bool max_size_valid =
 		(max_size.x > 0 || max_size.y > 0) && max_size.x >= min_size.x && max_size.y >= min_size.y;
-	max_size_used = max_size_valid ? max_size : RS::get_maximum_viewport_size();
+	max_size_used = max_size_valid ? max_size : Renderer::get_maximum_viewport_size();
 }
 
 void Window::set_max_size(const Size2i& p_max_size)
@@ -520,7 +521,7 @@ void Window::_clear_window()
 	}
 
 	_update_viewport_size();
-	RS::viewport_set_update_mode(
+	Renderer::viewport_set_update_mode(
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 
 	if (transient && transient_to_focused) {
@@ -1036,7 +1037,7 @@ void Window::_update_viewport_for_hdr_output()
 	// We only need to do this if the viewport is not already set up for HDR 2D rendering.
 
 	if (!is_using_hdr_2d()) {
-		RS::viewport_set_use_hdr_2d(viewport, hdr_output_requested);
+		Renderer::viewport_set_use_hdr_2d(viewport, hdr_output_requested);
 	}
 }
 
@@ -1384,105 +1385,105 @@ void Window::_update_embedded_window()
 	updating_embedded_window = false;
 }
 
-StringName Window::get_theme_type_variation() const
+String Window::get_theme_type_variation() const
 {
-	ERR_READ_THREAD_GUARD_V(StringName());
+	ERR_READ_THREAD_GUARD_V(String());
 	return theme_type_variation;
 }
 
 /// Theme property lookup.
 
 #ifdef TOOLS_ENABLED
-Ref<Texture2D> Window::get_editor_theme_icon(const StringName& p_name) const
+Ref<Texture2D> Window::get_editor_theme_icon(const String& p_name) const
 {
 	return get_theme_icon(p_name, SNAME("EditorIcons"));
 }
 #endif
 
-void Window::add_theme_font_size_override(const StringName& p_name, int p_font_size)
+void Window::add_theme_font_size_override(const String& p_name, int p_font_size)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_font_size_override[p_name] = p_font_size;
 	_notify_theme_override_changed();
 }
 
-void Window::add_theme_color_override(const StringName& p_name, const Color& p_color)
+void Window::add_theme_color_override(const String& p_name, const Color& p_color)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_color_override[p_name] = p_color;
 	_notify_theme_override_changed();
 }
 
-void Window::add_theme_constant_override(const StringName& p_name, int p_constant)
+void Window::add_theme_constant_override(const String& p_name, int p_constant)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_constant_override[p_name] = p_constant;
 	_notify_theme_override_changed();
 }
 
-void Window::remove_theme_font_size_override(const StringName& p_name)
+void Window::remove_theme_font_size_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_font_size_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-void Window::remove_theme_color_override(const StringName& p_name)
+void Window::remove_theme_color_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-Ref<StyleBox> Window::get_theme_stylebox(const StringName& p_name, const StringName& p_theme_type) const
+Ref<StyleBox> Window::get_theme_stylebox(const String& p_name, const String& p_theme_type) const
 {
 	Ref<StyleBox> sb = memnew(StyleBox);
 	return sb;
 }
 
-void Window::remove_theme_constant_override(const StringName& p_name)
+void Window::remove_theme_constant_override(const String& p_name)
 {
 	ERR_MAIN_THREAD_GUARD;
 	theme_constant_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
-bool Window::has_theme_icon_override(const StringName& p_name) const
+bool Window::has_theme_icon_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<Texture2D>* tex = theme_icon_override.getptr(p_name);
 	return tex != nullptr;
 }
 
-bool Window::has_theme_stylebox_override(const StringName& p_name) const
+bool Window::has_theme_stylebox_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<StyleBox>* style = theme_style_override.getptr(p_name);
 	return style != nullptr;
 }
 
-bool Window::has_theme_font_override(const StringName& p_name) const
+bool Window::has_theme_font_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Ref<Font>* font = theme_font_override.getptr(p_name);
 	return font != nullptr;
 }
 
-bool Window::has_theme_font_size_override(const StringName& p_name) const
+bool Window::has_theme_font_size_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const int* font_size = theme_font_size_override.getptr(p_name);
 	return font_size != nullptr;
 }
 
-bool Window::has_theme_color_override(const StringName& p_name) const
+bool Window::has_theme_color_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const Color* color = theme_color_override.getptr(p_name);
 	return color != nullptr;
 }
 
-bool Window::has_theme_constant_override(const StringName& p_name) const
+bool Window::has_theme_constant_override(const String& p_name) const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	const int* constant = theme_constant_override.getptr(p_name);
@@ -1700,19 +1701,19 @@ void Window::_mouse_leave_viewport()
 
 Window::Window()
 {
-	if (RS::data) {
-		max_size = RS::get_maximum_viewport_size();
+	if (Renderer::data) {
+		max_size = Renderer::get_maximum_viewport_size();
 		max_size_used = max_size; // Update max_size_used.
 	}
 
 	theme_owner = memnew(ThemeOwner(this));
-	RS::viewport_set_update_mode(
+	Renderer::viewport_set_update_mode(
 		get_viewport_rid(), RSE::VIEWPORT_UPDATE_DISABLED);
 }
 
 void Window::_update_viewport_size() {}
 
-Color Window::get_theme_color(const StringName& p_name, const StringName& p_theme_type) const
+Color Window::get_theme_color(const String& p_name, const String& p_theme_type) const
 {
 	return Color();
 }
@@ -1726,7 +1727,7 @@ bool Window::is_layout_rtl() const {}
 
 void Window::set_visible(bool) {}
 
-Ref<Font> Window::get_theme_font(StringName const&, StringName const&) const {}
+Ref<Font> Window::get_theme_font(String const&, String const&) const {}
 
 Window* Window::get_from_id(int) {}
 
@@ -1736,7 +1737,7 @@ void Window::_propagate_window_notification(Node*, int) {}
 
 void Window::_popup_base(Rect2i const&) {}
 
-int Window::get_theme_font_size(StringName const&, StringName const&) const {}
+int Window::get_theme_font_size(String const&, String const&) const {}
 
 void Window::_update_theme_item_cache() {}
 
@@ -1744,11 +1745,11 @@ void Window::_settings_changed() {}
 
 void Window::_make_transient() {}
 
-Ref<Texture2D> Window::get_theme_icon(StringName const&, StringName const&) const {}
+Ref<Texture2D> Window::get_theme_icon(String const&, String const&) const {}
 
 void Window::_event_callback(DisplayServerEnums::WindowEvent) {}
 
-void Window::add_theme_font_override(StringName const&, Ref<Font> const&) {}
+void Window::add_theme_font_override(String const&, Ref<Font> const&) {}
 
 void Window::_accessibility_notify_exit(Node*) {}
 

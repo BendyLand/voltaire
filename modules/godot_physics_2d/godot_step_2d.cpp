@@ -2,10 +2,11 @@
 /*  godot_step_2d.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -146,7 +147,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 
 	/* INTEGRATE FORCES */
 
-	uint64_t profile_begtime = OS::get_singleton()->get_ticks_usec();
+	uint64_t profile_begtime = OS::get_ticks_usec();
 	uint64_t profile_endtime = 0;
 
 	int active_count = 0;
@@ -164,7 +165,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 	p_space->update();
 
 	{ // profile
-		profile_endtime = OS::get_singleton()->get_ticks_usec();
+		profile_endtime = OS::get_ticks_usec();
 		p_space->set_elapsed_time(
 			GodotSpace2D::ELAPSED_TIME_INTEGRATE_FORCES, profile_endtime - profile_begtime);
 		profile_begtime = profile_endtime;
@@ -243,7 +244,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 	p_space->set_island_count((int)island_count);
 
 	{ // profile
-		profile_endtime = OS::get_singleton()->get_ticks_usec();
+		profile_endtime = OS::get_ticks_usec();
 		p_space->set_elapsed_time(
 			GodotSpace2D::ELAPSED_TIME_GENERATE_ISLANDS, profile_endtime - profile_begtime);
 		profile_begtime = profile_endtime;
@@ -254,7 +255,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 	uint32_t total_constraint_count = all_constraints.size();
 
 	{ // profile
-		profile_endtime = OS::get_singleton()->get_ticks_usec();
+		profile_endtime = OS::get_ticks_usec();
 		p_space->set_elapsed_time(
 			GodotSpace2D::ELAPSED_TIME_SETUP_CONSTRAINTS, profile_endtime - profile_begtime);
 		profile_begtime = profile_endtime;
@@ -273,7 +274,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 	// their content is not reliable after these calls and shouldn't be used anymore.
 
 	{ // profile
-		profile_endtime = OS::get_singleton()->get_ticks_usec();
+		profile_endtime = OS::get_ticks_usec();
 		p_space->set_elapsed_time(
 			GodotSpace2D::ELAPSED_TIME_SOLVE_CONSTRAINTS, profile_endtime - profile_begtime);
 		profile_begtime = profile_endtime;
@@ -295,7 +296,7 @@ void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
 	}
 
 	{ // profile
-		profile_endtime = OS::get_singleton()->get_ticks_usec();
+		profile_endtime = OS::get_ticks_usec();
 		p_space->set_elapsed_time(
 			GodotSpace2D::ELAPSED_TIME_INTEGRATE_VELOCITIES, profile_endtime - profile_begtime);
 		// profile_begtime=profile_endtime;

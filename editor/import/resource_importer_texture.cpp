@@ -2,10 +2,11 @@
 /*  resource_importer_texture.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -44,7 +45,7 @@ void ResourceImporterTexture::_texture_reimport_roughness(const Ref<CompressedTe
 	ERR_FAIL_COND(p_tex.is_null());
 
 	MutexLock lock(singleton->mutex);
-	StringName path = p_tex->get_path();
+	String path = p_tex->get_path();
 
 	if (!singleton->make_flags.has(path)) {
 		singleton->make_flags[path] = MakeInfo();
@@ -60,7 +61,7 @@ void ResourceImporterTexture::_texture_reimport_3d(const Ref<CompressedTexture2D
 	ERR_FAIL_COND(p_tex.is_null());
 
 	MutexLock lock(singleton->mutex);
-	StringName path = p_tex->get_path();
+	String path = p_tex->get_path();
 
 	if (!singleton->make_flags.has(path)) {
 		singleton->make_flags[path] = MakeInfo();
@@ -74,7 +75,7 @@ void ResourceImporterTexture::_texture_reimport_normal(const Ref<CompressedTextu
 	ERR_FAIL_COND(p_tex.is_null());
 
 	MutexLock lock(singleton->mutex);
-	StringName path = p_tex->get_path();
+	String path = p_tex->get_path();
 
 	if (!singleton->make_flags.has(path)) {
 		singleton->make_flags[path] = MakeInfo();

@@ -2,10 +2,11 @@
 /*  audio_driver_pulseaudio.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -428,7 +429,7 @@ void AudioDriverPulseAudio::thread_func(void* p_udata)
 	AudioDriverPulseAudio* ad = static_cast<AudioDriverPulseAudio*>(p_udata);
 	unsigned int write_ofs = 0;
 	size_t avail_bytes = 0;
-	uint64_t default_device_msec = OS::get_singleton()->get_ticks_msec();
+	uint64_t default_device_msec = OS::get_ticks_msec();
 	int last_reported_errno = PA_OK;
 
 	while (!ad->exit_thread.is_set()) {
@@ -527,7 +528,7 @@ void AudioDriverPulseAudio::thread_func(void* p_udata)
 		// If we're using the default output device, check that the current output device is still
 		// the default
 		if (ad->output_device_name == "Default") {
-			uint64_t msec = OS::get_singleton()->get_ticks_msec();
+			uint64_t msec = OS::get_ticks_msec();
 			if (msec > (default_device_msec + 1000)) {
 				String old_default_device = ad->default_output_device;
 
@@ -632,7 +633,7 @@ void AudioDriverPulseAudio::thread_func(void* p_udata)
 
 		// Let the thread rest a while if we haven't read or write anything
 		if (written_bytes == 0 && read_bytes == 0) {
-			OS::get_singleton()->delay_usec(1000);
+			OS::delay_usec(1000);
 		}
 	}
 }

@@ -2,10 +2,11 @@
 /*  skeleton_ik_3d.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -125,8 +126,8 @@ class SkeletonIK3D : public SkeletonModifier3D
 {
 	bool internal_active = false;
 
-	StringName root_bone;
-	StringName tip_bone;
+	String root_bone;
+	String tip_bone;
 	Transform3D target;
 	NodePath target_node_path_override;
 	bool override_tip_basis = true;
@@ -152,9 +153,9 @@ public:
 	SkeletonIK3D();
 	virtual ~SkeletonIK3D();
 
-	StringName get_root_bone() const;
+	String get_root_bone() const;
 
-	StringName get_tip_bone() const;
+	String get_tip_bone() const;
 
 	void set_target_transform(const Transform3D& p_target);
 	const Transform3D& get_target_transform() const;

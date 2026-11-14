@@ -2,10 +2,11 @@
 /*  renderer_scene_occlusion_cull.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -52,7 +53,7 @@ void RendererSceneOcclusionCull::HZBuffer::clear() {
 	}
 
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(debug_texture);
+	Renderer::free_rid(debug_texture);
 }
 
 void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
@@ -110,7 +111,7 @@ void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
 
 	debug_data.resize(sizes[0].x * sizes[0].y);
 	if (debug_texture.is_valid()) {
-		RS::free_rid(debug_texture);
+		Renderer::free_rid(debug_texture);
 		debug_texture = RID();
 	}
 }
@@ -180,7 +181,7 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 	debug_image->set_data(sizes[0].x, sizes[0].y, false, Image::FORMAT_L8, debug_data);
 
 	if (debug_texture.is_null()) {
-		debug_texture = RS::texture_2d_create(debug_image);
+		debug_texture = Renderer::texture_2d_create(debug_image);
 	} else {
 		Renderer::texture_2d_update(debug_texture, debug_image);
 	}

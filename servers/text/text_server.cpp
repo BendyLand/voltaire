@@ -2,10 +2,11 @@
 /*  text_server.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -1241,21 +1242,21 @@ String TextServer::strip_diacritics(const String& p_string) const
 #ifndef DISABLE_DEPRECATED
 String TextServer::format_number(const String& p_string, const String& p_language) const
 {
-	const StringName lang =
+	const String lang =
 		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
 	return TranslationServer::get_singleton()->format_number(p_string, lang);
 }
 
 String TextServer::parse_number(const String& p_string, const String& p_language) const
 {
-	const StringName lang =
+	const String lang =
 		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
 	return TranslationServer::get_singleton()->parse_number(p_string, lang);
 }
 
 String TextServer::percent_sign(const String& p_language) const
 {
-	const StringName lang =
+	const String lang =
 		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
 	return TranslationServer::get_singleton()->get_percent_sign(lang);
 }

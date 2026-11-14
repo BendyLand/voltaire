@@ -2,16 +2,17 @@
 /*  renderer_compositor_rd.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
 /* distribute, sublicense, and/or sell copies of the Software, and to     */
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
@@ -46,6 +47,7 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/storage/light_storage.h"
 #include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/particles_storage.h"
 #include "servers/rendering/storage/texture_storage.h"
 
 class RendererCompositorRD final
@@ -132,6 +134,9 @@ public:
 
 	static void bind_mesh_storage();
 
+	// Inside class RendererCompositorRD public section:
+    static void bind_canvas() { RendererCanvasRender::bind<RendererCanvasRenderRD>(); }
+
 	static void bind_texture_storage()
 	{
 		RendererTextureStorage::bind<RendererRD::TextureStorage>();
@@ -146,18 +151,14 @@ public:
 
 	static void bind_particles_storage()
 	{
-		// Particles storage binding if converted, or stub
+		RendererParticlesStorage::bind<RendererRD::ParticlesStorage>();
 	}
 
 	static void bind_utilities();
 
-	static RendererGI* get_gi()
-	{
-		ERR_FAIL_NULL_V(RendererSceneRenderRD::data, nullptr);
-		return RendererSceneRenderRD::get_gi();
-	}
+	static void bind_gi() { RendererGI::bind<RendererRD::GI>(); }
 
-	_ALWAYS_INLINE_ static RendererFog* get_fog() { return fog; }
+	static void bind_fog() { RendererFog::bind<RendererRD::Fog>(); }
 
 	_ALWAYS_INLINE_ static RendererCanvasRender* get_canvas() { return canvas; }
 
@@ -198,7 +199,6 @@ public:
 
 	static void make_current()
 	{
-		RendererCompositor::_create_func = _create_current;
 		RendererCompositor::low_end = false;
 		RendererCompositor::bind_compositor<RendererCompositorRD>();
 	}
@@ -209,5 +209,3 @@ public:
 };
 
 using RCRD = RendererCompositorRD;
-
-

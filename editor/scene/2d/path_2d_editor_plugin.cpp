@@ -2,10 +2,11 @@
 /*  path_2d_editor_plugin.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -129,12 +130,12 @@ void Path2DEditor::_restore_curve_points(Path2D* p_path2d, const PackedVector2Ar
 
 Path2DEditor::~Path2DEditor()
 {
-	ERR_FAIL_NULL(RS::data);
-	RS::free_rid(debug_mesh_rid);
-	RS::free_rid(debug_handle_curve_multimesh_rid);
-	RS::free_rid(debug_handle_sharp_multimesh_rid);
-	RS::free_rid(debug_handle_smooth_multimesh_rid);
-	RS::free_rid(debug_handle_mesh_rid);
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(debug_mesh_rid);
+	Renderer::free_rid(debug_handle_curve_multimesh_rid);
+	Renderer::free_rid(debug_handle_sharp_multimesh_rid);
+	Renderer::free_rid(debug_handle_smooth_multimesh_rid);
+	Renderer::free_rid(debug_handle_mesh_rid);
 }
 
 

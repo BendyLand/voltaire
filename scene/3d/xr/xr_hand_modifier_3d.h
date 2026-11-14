@@ -2,10 +2,11 @@
 /*  xr_hand_modifier_3d.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -48,7 +49,7 @@ public:
 		BONE_UPDATE_MAX
 	};
 
-	StringName get_hand_tracker() const;
+	String get_hand_tracker() const;
 
 	void set_bone_update(BoneUpdate p_bone_update);
 	BoneUpdate get_bone_update() const;
@@ -67,7 +68,7 @@ private:
 		int parent_joint = -1;
 	};
 
-	StringName tracker_name = "/user/hand_tracker/left";
+	String tracker_name = "/user/hand_tracker/left";
 	BoneUpdate bone_update = BONE_UPDATE_FULL;
 	JointData joints[XRHandTracker::HAND_JOINT_MAX];
 

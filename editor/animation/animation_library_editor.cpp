@@ -2,10 +2,11 @@
 /*  animation_library_editor.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -125,19 +126,19 @@ String AnimationLibraryEditor::_get_mixer_signature() const
 	String signature = String();
 
 	// Get all libraries sorted for consistency
-	LocalVector<StringName> libs;
+	LocalVector<String> libs;
 	mixer->get_animation_library_list(&libs);
-	libs.sort_custom<StringName::AlphCompare>();
+	libs.sort();
 
 	// Add libraries and their animations to signature
-	for (const StringName& lib_name : libs) {
+	for (const String& lib_name : libs) {
 		signature += "::" + String(lib_name);
 		Ref<AnimationLibrary> lib = mixer->get_animation_library(lib_name);
 		if (lib.is_valid()) {
-			LocalVector<StringName> anims;
+			LocalVector<String> anims;
 			lib->get_animation_list(&anims);
-			anims.sort_custom<StringName::AlphCompare>();
-			for (const StringName& anim_name : anims) {
+			anims.sort();
+			for (const String& anim_name : anims) {
 				signature += "," + String(anim_name);
 			}
 		}

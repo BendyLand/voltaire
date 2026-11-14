@@ -2,10 +2,11 @@
 /*  xr_positional_tracker.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -61,7 +62,7 @@ protected:
 					// bound for to the tracker
 	TrackerHand tracker_hand = TRACKER_HAND_UNKNOWN; // if known, the hand this tracker is held in
 
-	HashMap<StringName, Ref<XRPose>> poses;
+	HashMap<String, Ref<XRPose>> poses;
 
 
 public:
@@ -71,10 +72,10 @@ public:
 	XRPositionalTracker::TrackerHand get_tracker_hand() const;
 	virtual void set_tracker_hand(const XRPositionalTracker::TrackerHand p_hand);
 
-	bool has_pose(const StringName& p_action_name) const;
-	Ref<XRPose> get_pose(const StringName& p_action_name) const;
-	void invalidate_pose(const StringName& p_action_name);
-	void set_pose(const StringName& p_action_name, const Transform3D& p_transform,
+	bool has_pose(const String& p_action_name) const;
+	Ref<XRPose> get_pose(const String& p_action_name) const;
+	void invalidate_pose(const String& p_action_name);
+	void set_pose(const String& p_action_name, const Transform3D& p_transform,
 		const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
 		const XRPose::TrackingConfidence p_tracking_confidence =
 			XRPose::XR_TRACKING_CONFIDENCE_HIGH);

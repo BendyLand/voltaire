@@ -2,10 +2,11 @@
 /*  file_access_pack.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -257,7 +258,7 @@ bool PackedSourcePCK::try_open_pack(const String& p_path, bool p_replace_files, 
 			ERR_FAIL_V_MSG(false, "Loading self-contained executable with offset not supported.");
 		}
 
-		int64_t pck_off = OS::get_singleton()->get_embedded_pck_offset();
+		int64_t pck_off = OS::get_embedded_pck_offset();
 		if (pck_off != 0) {
 			// Search for the header, in case PCK start and section have different alignment.
 			for (int i = 0; i < 8; i++) {

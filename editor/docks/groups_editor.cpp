@@ -2,10 +2,11 @@
 /*  groups_editor.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -71,7 +72,7 @@ struct _GroupInfoComparator
 {
 	bool operator()(const Node::GroupInfo& p_a, const Node::GroupInfo& p_b) const
 	{
-		return p_a.name.string() < p_b.name.string();
+		return p_a.name < p_b.name;
 	}
 };
 
@@ -102,7 +103,7 @@ void GroupsEditor::_set_group_checked(const String& p_name, bool p_checked)
 	ti->set_checked(0, p_checked);
 }
 
-bool GroupsEditor::_can_edit(const StringName& p_group)
+bool GroupsEditor::_can_edit(const String& p_group)
 {
 	for (Node* p_node : selection) {
 		if (!can_edit(p_node, p_group)) {
@@ -162,8 +163,8 @@ void GroupsEditor::_update_groups()
 
 	_load_scene_groups(scene_root_node);
 
-	for (HashMap<StringName, bool>::Iterator E = scene_groups.begin(); E;) {
-		HashMap<StringName, bool>::Iterator next = E;
+	for (HashMap<String, bool>::Iterator E = scene_groups.begin(); E;) {
+		HashMap<String, bool>::Iterator next = E;
 		++next;
 
 		if (global_groups.has(E->key)) {

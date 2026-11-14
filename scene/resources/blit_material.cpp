@@ -2,10 +2,11 @@
 /*  blit_material.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -37,7 +38,7 @@ void BlitMaterial::_update_shader(BlendMode p_blend)
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_blend);
 	if (shader_cache[p_blend].is_null()) {
-		shader_cache[p_blend] = RS::shader_create();
+		shader_cache[p_blend] = Renderer::shader_create();
 		String code = "// NOTE: Shader automatically converted from " VLTR_VERSION_NAME
 					  " " VLTR_VERSION_FULL_CONFIG "'s BlitMaterial.\n\n";
 
@@ -75,7 +76,7 @@ void BlitMaterial::_update_shader(BlendMode p_blend)
 		code += "	COLOR1 = texture(source_texture1, UV) * MODULATE;\n";
 		code += "	COLOR2 = texture(source_texture2, UV) * MODULATE;\n";
 		code += "	COLOR3 = texture(source_texture3, UV) * MODULATE;\n}";
-		RS::shader_set_code(shader_cache[index], code);
+		Renderer::shader_set_code(shader_cache[index], code);
 	}
 }
 
@@ -84,7 +85,7 @@ void BlitMaterial::set_blend_mode(BlendMode p_blend_mode)
 	blend_mode = p_blend_mode;
 	_update_shader(blend_mode);
 	if (shader_set) {
-		RS::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
+		Renderer::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
 	}
 }
 
@@ -102,7 +103,7 @@ RID BlitMaterial::get_rid() const
 {
 	_update_shader(blend_mode);
 	if (!shader_set) {
-		RS::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
+		Renderer::material_set_shader(_get_material(), shader_cache[int(blend_mode)]);
 		shader_set = true;
 	}
 	return _get_material();
@@ -115,7 +116,7 @@ void BlitMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 5; i++) {
 		if (shader_cache[i].is_valid()) {
-			RS::free_rid(shader_cache[i]);
+			Renderer::free_rid(shader_cache[i]);
 		}
 	}
 }
@@ -123,7 +124,7 @@ void BlitMaterial::cleanup_shader()
 
 BlitMaterial::BlitMaterial()
 {
-	_set_material(RS::material_create());
+	_set_material(Renderer::material_create());
 	set_blend_mode(BLEND_MODE_MIX);
 }
 

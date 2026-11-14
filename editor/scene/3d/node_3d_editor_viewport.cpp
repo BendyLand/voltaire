@@ -2,10 +2,11 @@
 /*  node_3d_editor_viewport.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -172,9 +173,9 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 		// Draw the axis letter for the positive axes.
 		const String axis_name = direction == 0 ? "X" : (direction == 1 ? "Y" : "Z");
 		const Ref<Font>& font =
-			get_theme_font(SNAME("rotation_control"), EditorStringName(EditorFonts));
+			get_theme_font(SNAME("rotation_control"), EditorString(EditorFonts));
 		const int font_size =
-			get_theme_font_size(SNAME("rotation_control_size"), EditorStringName(EditorFonts));
+			get_theme_font_size(SNAME("rotation_control_size"), EditorString(EditorFonts));
 		const Size2 char_size = font->get_char_size(axis_name[0], font_size);
 		const Vector2 char_offset = Vector2(-char_size.width / 2.0, char_size.height * 0.25);
 		draw_char(
@@ -189,9 +190,9 @@ void ViewportRotationControl::_draw_axis(const Axis2D& p_axis)
 		// Draw the text for the negative axes.
 		const String axis_name = direction == 0 ? "-X" : (direction == 1 ? "-Y" : "-Z");
 		const Ref<Font>& font =
-			get_theme_font(SNAME("rotation_control"), EditorStringName(EditorFonts));
+			get_theme_font(SNAME("rotation_control"), EditorString(EditorFonts));
 		const int font_size =
-			get_theme_font_size(SNAME("rotation_control_size"), EditorStringName(EditorFonts));
+			get_theme_font_size(SNAME("rotation_control_size"), EditorString(EditorFonts));
 		const Size2 string_size =
 			font->get_string_size(axis_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0f, font_size);
 		const float font_ascent = font->get_ascent(font_size);
@@ -930,109 +931,109 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 	uint32_t layer = 1 << (GIZMO_BASE_LAYER + p_idx);
 
 	for (int i = 0; i < 3; i++) {
-		move_gizmo_instance[i] = RS::instance_create();
-		RS::instance_set_base(
+		move_gizmo_instance[i] = Renderer::instance_create();
+		Renderer::instance_set_base(
 			move_gizmo_instance[i], spatial_editor->get_move_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			move_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(move_gizmo_instance[i], false);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(move_gizmo_instance[i], false);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			move_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(move_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(move_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			move_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			move_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 
-		move_plane_gizmo_instance[i] = RS::instance_create();
-		RS::instance_set_base(
+		move_plane_gizmo_instance[i] = Renderer::instance_create();
+		Renderer::instance_set_base(
 			move_plane_gizmo_instance[i], spatial_editor->get_move_plane_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			move_plane_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(move_plane_gizmo_instance[i], false);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(move_plane_gizmo_instance[i], false);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			move_plane_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(move_plane_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(move_plane_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			move_plane_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			move_plane_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 
-		scale_gizmo_instance[i] = RS::instance_create();
-		RS::instance_set_base(
+		scale_gizmo_instance[i] = Renderer::instance_create();
+		Renderer::instance_set_base(
 			scale_gizmo_instance[i], spatial_editor->get_scale_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			scale_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(scale_gizmo_instance[i], false);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(scale_gizmo_instance[i], false);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			scale_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(scale_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(scale_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			scale_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			scale_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 
-		scale_plane_gizmo_instance[i] = RS::instance_create();
-		RS::instance_set_base(
+		scale_plane_gizmo_instance[i] = Renderer::instance_create();
+		Renderer::instance_set_base(
 			scale_plane_gizmo_instance[i], spatial_editor->get_scale_plane_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			scale_plane_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(scale_plane_gizmo_instance[i], false);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(scale_plane_gizmo_instance[i], false);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			scale_plane_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(scale_plane_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(scale_plane_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			scale_plane_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			scale_plane_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 
-		axis_gizmo_instance[i] = RS::instance_create();
+		axis_gizmo_instance[i] = Renderer::instance_create();
 	}
 
 	for (int i = 0; i < 3; i++) {
-		RS::instance_set_base(
+		Renderer::instance_set_base(
 			axis_gizmo_instance[i], spatial_editor->get_axis_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			axis_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(axis_gizmo_instance[i], true);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(axis_gizmo_instance[i], true);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			axis_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(axis_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(axis_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			axis_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			axis_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 	}
 
 	for (int i = 0; i < 4; i++) {
-		rotate_gizmo_instance[i] = RS::instance_create();
-		RS::instance_set_base(
+		rotate_gizmo_instance[i] = Renderer::instance_create();
+		Renderer::instance_set_base(
 			rotate_gizmo_instance[i], spatial_editor->get_rotate_gizmo(i)->get_rid());
-		RS::instance_set_scenario(
+		Renderer::instance_set_scenario(
 			rotate_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-		RS::instance_set_visible(rotate_gizmo_instance[i], false);
-		RS::instance_geometry_set_cast_shadows_setting(
+		Renderer::instance_set_visible(rotate_gizmo_instance[i], false);
+		Renderer::instance_geometry_set_cast_shadows_setting(
 			rotate_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
-		RS::instance_set_layer_mask(rotate_gizmo_instance[i], layer);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_set_layer_mask(rotate_gizmo_instance[i], layer);
+		Renderer::instance_geometry_set_flag(
 			rotate_gizmo_instance[i], RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-		RS::instance_geometry_set_flag(
+		Renderer::instance_geometry_set_flag(
 			rotate_gizmo_instance[i], RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 	}
 
 	// Create trackball sphere instance
-	trackball_sphere_instance = RS::instance_create();
-	RS::instance_set_base(
+	trackball_sphere_instance = Renderer::instance_create();
+	Renderer::instance_set_base(
 		trackball_sphere_instance, spatial_editor->get_trackball_sphere_gizmo()->get_rid());
-	RS::instance_set_scenario(
+	Renderer::instance_set_scenario(
 		trackball_sphere_instance, get_tree()->get_root()->get_world_3d()->get_scenario());
-	RS::instance_set_visible(trackball_sphere_instance, false);
-	RS::instance_geometry_set_cast_shadows_setting(
+	Renderer::instance_set_visible(trackball_sphere_instance, false);
+	Renderer::instance_geometry_set_cast_shadows_setting(
 		trackball_sphere_instance, RSE::SHADOW_CASTING_SETTING_OFF);
-	RS::instance_set_layer_mask(trackball_sphere_instance, layer);
-	RS::instance_geometry_set_flag(
+	Renderer::instance_set_layer_mask(trackball_sphere_instance, layer);
+	Renderer::instance_geometry_set_flag(
 		trackball_sphere_instance, RSE::INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING, true);
-	RS::instance_geometry_set_flag(
+	Renderer::instance_geometry_set_flag(
 		trackball_sphere_instance, RSE::INSTANCE_FLAG_USE_BAKED_LIGHT, false);
 }
 
@@ -1040,17 +1041,17 @@ void Node3DEditorViewport::_finish_gizmo_instances()
 {
 	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < 3; i++) {
-		RS::free_rid(move_gizmo_instance[i]);
-		RS::free_rid(move_plane_gizmo_instance[i]);
-		RS::free_rid(rotate_gizmo_instance[i]);
-		RS::free_rid(scale_gizmo_instance[i]);
-		RS::free_rid(scale_plane_gizmo_instance[i]);
-		RS::free_rid(axis_gizmo_instance[i]);
+		Renderer::free_rid(move_gizmo_instance[i]);
+		Renderer::free_rid(move_plane_gizmo_instance[i]);
+		Renderer::free_rid(rotate_gizmo_instance[i]);
+		Renderer::free_rid(scale_gizmo_instance[i]);
+		Renderer::free_rid(scale_plane_gizmo_instance[i]);
+		Renderer::free_rid(axis_gizmo_instance[i]);
 	}
 	// Rotation white outline
-	RS::free_rid(rotate_gizmo_instance[3]);
+	Renderer::free_rid(rotate_gizmo_instance[3]);
 
-	RS::free_rid(trackball_sphere_instance);
+	Renderer::free_rid(trackball_sphere_instance);
 }
 
 void Node3DEditorViewport::_disable_follow_mode()

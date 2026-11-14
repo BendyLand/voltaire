@@ -2,10 +2,11 @@
 /*  node_3d_editor_gizmos.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,7 +66,7 @@ void EditorNode3DGizmo::clear()
 	ERR_FAIL_NULL(Renderer::data);
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
-			RS::free_rid(instances[i].instance);
+			Renderer::free_rid(instances[i].instance);
 		}
 	}
 
@@ -144,10 +145,10 @@ void EditorNode3DGizmo::add_mesh(const Ref<Mesh>& p_mesh, const Ref<Material>& p
 	ins.xform = p_xform;
 	if (valid) {
 		ins.create_instance(spatial_node, hidden);
-		RS::instance_set_transform(
+		Renderer::instance_set_transform(
 			ins.instance, spatial_node->get_global_transform() * ins.xform);
 		if (ins.material.is_valid()) {
-			RS::instance_geometry_set_material_override(
+			Renderer::instance_geometry_set_material_override(
 				ins.instance, p_material->get_rid());
 		}
 	}
@@ -507,7 +508,7 @@ void EditorNode3DGizmo::transform()
 	ERR_FAIL_NULL(spatial_node);
 	ERR_FAIL_COND(!valid);
 	for (int i = 0; i < instances.size(); i++) {
-		RS::instance_set_transform(
+		Renderer::instance_set_transform(
 			instances[i].instance, spatial_node->get_global_transform() * instances[i].xform);
 	}
 
@@ -522,7 +523,7 @@ void EditorNode3DGizmo::free()
 
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
-			RS::free_rid(instances[i].instance);
+			Renderer::free_rid(instances[i].instance);
 		}
 		instances.write[i].instance = RID();
 	}
@@ -540,7 +541,7 @@ void EditorNode3DGizmo::set_hidden(bool p_hidden)
 	hidden = p_hidden;
 	int layer = hidden ? 0 : 1 << Node3DEditorViewport::GIZMO_EDIT_LAYER;
 	for (int i = 0; i < instances.size(); ++i) {
-		RS::instance_set_layer_mask(instances[i].instance, layer);
+		Renderer::instance_set_layer_mask(instances[i].instance, layer);
 	}
 }
 

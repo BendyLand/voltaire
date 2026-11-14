@@ -2,10 +2,11 @@
 /*  render_scene_buffers_rd.compat.inc                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -62,8 +63,8 @@ RID RenderSceneBuffersRD::_get_velocity_layer_bind_compat_80214(const uint32_t p
 	return _get_velocity_layer(p_layer, msaa_3d != RSE::VIEWPORT_MSAA_DISABLED);
 }
 
-RID RenderSceneBuffersRD::_create_texture_bind_compat_98670(const StringName& p_context,
-	const StringName& p_texture_name, const RDC::DataFormat p_data_format,
+RID RenderSceneBuffersRD::_create_texture_bind_compat_98670(const String& p_context,
+	const String& p_texture_name, const RDC::DataFormat p_data_format,
 	const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples, const Size2i p_size,
 	const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique)
 {

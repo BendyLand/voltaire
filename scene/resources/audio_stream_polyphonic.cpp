@@ -2,10 +2,11 @@
 /*  audio_stream_polyphonic.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -202,7 +203,7 @@ int AudioStreamPlaybackPolyphonic::mix(AudioFrame* p_buffer, float p_rate_scale,
 
 AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 	const Ref<AudioStream>& p_stream, float p_from_offset, float p_volume_db, float p_pitch_scale,
-	AudioServer::PlaybackType p_playback_type, const StringName& p_bus)
+	AudioServer::PlaybackType p_playback_type, const String& p_bus)
 {
 	ERR_FAIL_COND_V(p_stream.is_null(), INVALID_ID);
 

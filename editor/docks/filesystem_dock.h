@@ -2,10 +2,11 @@
 /*  filesystem_dock.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -309,7 +310,7 @@ private:
 	Vector<String> _tree_get_selected(
 		bool remove_self_inclusion = true, bool p_include_unselected_cursor = false) const;
 
-	bool _is_file_type_disabled_by_feature_profile(const StringName& p_class);
+	bool _is_file_type_disabled_by_feature_profile(const String& p_class);
 
 	static Vector<String> _remove_self_included_paths(Vector<String> selected_strings);
 

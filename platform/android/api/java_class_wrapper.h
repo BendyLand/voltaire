@@ -2,10 +2,11 @@
 /*  java_class_wrapper.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -65,7 +66,7 @@ class JavaClass : public RefCounted
 		ARG_TYPE_MASK = (1 << 16) - 1
 	};
 
-	RBMap<StringName, Variant> constant_map;
+	RBMap<String, Variant> constant_map;
 
 	struct MethodInfo
 	{
@@ -73,7 +74,7 @@ class JavaClass : public RefCounted
 		bool _static = false;
 		bool _constructor = false;
 		Vector<uint32_t> param_types;
-		Vector<StringName> param_sigs;
+		Vector<String> param_sigs;
 		uint32_t return_type = 0;
 		jmethodID method;
 	};
@@ -185,14 +186,14 @@ class JavaClass : public RefCounted
 	_FORCE_INLINE_ static bool _convert_object_to_variant(
 		JNIEnv* env, jobject obj, Variant& var, uint32_t p_sig);
 
-	bool _call_method(JavaObject* p_instance, const StringName& p_method, const Variant** p_args,
+	bool _call_method(JavaObject* p_instance, const String& p_method, const Variant** p_args,
 		int p_argcount, Callable::CallError& r_error, Variant& ret);
 
 	friend class JavaClassWrapper;
 	friend class JavaObject;
 	String java_class_name;
 	String java_constructor_name;
-	HashMap<StringName, List<MethodInfo>> methods;
+	HashMap<String, List<MethodInfo>> methods;
 	jclass _class;
 	bool is_interface;
 #endif
@@ -201,7 +202,7 @@ public:
 
 	String get_java_class_name() const;
 	Ref<JavaClass> get_java_parent_class() const;
-	bool has_java_method(const StringName& p_method) const;
+	bool has_java_method(const String& p_method) const;
 
 #ifdef ANDROID_ENABLED
 	virtual String _to_string() override;
@@ -225,7 +226,7 @@ protected:
 public:
 
 	Ref<JavaClass> get_java_class() const;
-	bool has_java_method(const StringName& p_method) const;
+	bool has_java_method(const String& p_method) const;
 
 #ifdef ANDROID_ENABLED
 	virtual String _to_string() override;

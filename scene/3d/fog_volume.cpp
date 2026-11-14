@@ -2,10 +2,11 @@
 /*  fog_volume.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -54,7 +55,7 @@ PackedStringArray FogVolume::get_configuration_warnings() const
 
 	Ref<Environment> environment = get_viewport()->find_world_3d()->get_environment();
 
-	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+	if (OS::get_current_rendering_method() != "forward_plus") {
 		warnings.push_back(RTR("Fog Volumes are only visible when using the Forward+ renderer."));
 		return warnings;
 	}
@@ -69,15 +70,15 @@ PackedStringArray FogVolume::get_configuration_warnings() const
 
 FogVolume::FogVolume()
 {
-	volume = RS::fog_volume_create();
-	RS::fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
+	volume = Renderer::fog_volume_create();
+	Renderer::fog_volume_set_shape(volume, RSE::FOG_VOLUME_SHAPE_BOX);
 	set_base(volume);
 }
 
 FogVolume::~FogVolume()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(volume);
+	Renderer::free_rid(volume);
 }
 
 

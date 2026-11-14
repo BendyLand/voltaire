@@ -2,10 +2,11 @@
 /*  editor_audio_buses.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -247,8 +248,8 @@ void EditorAudioMeterNotches::add_notch(
 
 Size2 EditorAudioMeterNotches::get_minimum_size() const
 {
-	Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
-	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+	Ref<Font> font = get_theme_font(SceneString(font), SNAME("Label"));
+	int font_size = get_theme_font_size(SceneString(font_size), SNAME("Label"));
 	float font_height = font->get_height(font_size);
 
 	float width = 0;

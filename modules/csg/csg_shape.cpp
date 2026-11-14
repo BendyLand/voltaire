@@ -2,10 +2,11 @@
 /*  csg_shape.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -651,21 +652,21 @@ void CSGShape3D::_update_debug_collision_shape()
 	ERR_FAIL_NULL(Renderer::data);
 
 	if (root_collision_debug_instance.is_null()) {
-		root_collision_debug_instance = RS::instance_create();
+		root_collision_debug_instance = Renderer::instance_create();
 	}
 
 	Ref<Mesh> debug_mesh = root_collision_shape->get_debug_mesh();
-	RS::instance_set_scenario(
+	Renderer::instance_set_scenario(
 		root_collision_debug_instance, get_world_3d()->get_scenario());
-	RS::instance_set_base(root_collision_debug_instance, debug_mesh->get_rid());
-	RS::instance_set_transform(
+	Renderer::instance_set_base(root_collision_debug_instance, debug_mesh->get_rid());
+	Renderer::instance_set_transform(
 		root_collision_debug_instance, get_global_transform());
 }
 
 void CSGShape3D::_clear_debug_collision_shape()
 {
 	if (root_collision_debug_instance.is_valid()) {
-		RS::free_rid(root_collision_debug_instance);
+		Renderer::free_rid(root_collision_debug_instance);
 		root_collision_debug_instance = RID();
 	}
 }
@@ -675,7 +676,7 @@ void CSGShape3D::_on_transform_changed()
 	if (root_collision_debug_instance.is_valid() &&
 		!debug_shape_old_transform.is_equal_approx(get_global_transform())) {
 		debug_shape_old_transform = get_global_transform();
-		RS::instance_set_transform(
+		Renderer::instance_set_transform(
 			root_collision_debug_instance, debug_shape_old_transform);
 	}
 }

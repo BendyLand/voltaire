@@ -2,10 +2,11 @@
 /*  localization_editor.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -57,11 +58,11 @@ class LocalizationEditor : public VBoxContainer
 	Button* template_generate_button = nullptr;
 
 	bool updating_translations = false;
-	StringName localization_changed;
+	String localization_changed;
 
 	LocalVector<Tree*> trees;
 	HashMap<Tree*, String> tree_data_types;
-	HashMap<Tree*, StringName> tree_settings;
+	HashMap<Tree*, String> tree_settings;
 
 	void _translation_file_open();
 	void _translation_add(const PackedStringArray& p_paths);

@@ -2,10 +2,11 @@
 /*  xr_nodes.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -43,14 +44,14 @@ class XRCamera3D : public Camera3D
 protected:
 	// The name and pose for our HMD tracker is currently the only hardcoded bit.
 	// If we ever are able to support multiple HMDs we may need to make this settable.
-	StringName tracker_name = "head";
-	StringName pose_name = SceneStringName(default_);
+	String tracker_name = "head";
+	String pose_name = SceneString(default_);
 	Ref<XRPositionalTracker> tracker;
 
 	void _bind_tracker();
 	void _unbind_tracker();
-	void _changed_tracker(const StringName& p_tracker_name, int p_tracker_type);
-	void _removed_tracker(const StringName& p_tracker_name, int p_tracker_type);
+	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
+	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
 	void _pose_changed(const Ref<XRPose>& p_pose);
 
 public:
@@ -74,8 +75,8 @@ public:
 class XRNode3D : public Node3D
 {
 private:
-	StringName tracker_name;
-	StringName pose_name = SceneStringName(default_);
+	String tracker_name;
+	String pose_name = SceneString(default_);
 	bool has_tracking_data = false;
 	bool show_when_tracked = false;
 
@@ -85,8 +86,8 @@ protected:
 
 	virtual void _bind_tracker();
 	virtual void _unbind_tracker();
-	void _changed_tracker(const StringName& p_tracker_name, int p_tracker_type);
-	void _removed_tracker(const StringName& p_tracker_name, int p_tracker_type);
+	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
+	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
 
 	void _pose_changed(const Ref<XRPose>& p_pose);
 	void _pose_lost_tracking(const Ref<XRPose>& p_pose);
@@ -95,11 +96,11 @@ protected:
 	void _update_visibility();
 
 public:
-	void set_tracker(const StringName& p_tracker_name);
-	StringName get_tracker() const;
+	void set_tracker(const String& p_tracker_name);
+	String get_tracker() const;
 
-	void set_pose_name(const StringName& p_pose);
-	StringName get_pose_name() const;
+	void set_pose_name(const String& p_pose);
+	String get_pose_name() const;
 
 	bool get_is_active() const;
 	bool get_has_tracking_data() const;
@@ -137,9 +138,9 @@ protected:
 	void _profile_changed(const String& p_role);
 
 public:
-	bool is_button_pressed(const StringName& p_name) const;
-	float get_float(const StringName& p_name) const;
-	Vector2 get_vector2(const StringName& p_name) const;
+	bool is_button_pressed(const String& p_name) const;
+	float get_float(const String& p_name) const;
+	Vector2 get_vector2(const String& p_name) const;
 
 	XRPositionalTracker::TrackerHand get_tracker_hand() const;
 };

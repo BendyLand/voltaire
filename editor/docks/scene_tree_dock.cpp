@@ -2,10 +2,11 @@
 /*  scene_tree_dock.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -151,8 +152,8 @@ bool SceneTreeDock::_track_inherit(const String& p_target_scene_path, Node* p_de
 	return result;
 }
 
-void SceneTreeDock::_fill_path_renames(Vector<StringName> base_path,
-	Vector<StringName> new_base_path, Node* p_node, HashMap<Node*, NodePath>* p_renames)
+void SceneTreeDock::_fill_path_renames(Vector<String> base_path,
+	Vector<String> new_base_path, Node* p_node, HashMap<Node*, NodePath>* p_renames)
 {
 	base_path.push_back(p_node->get_name());
 
@@ -172,14 +173,14 @@ void SceneTreeDock::_fill_path_renames(Vector<StringName> base_path,
 void SceneTreeDock::fill_path_renames(
 	Node* p_node, Node* p_new_parent, HashMap<Node*, NodePath>* p_renames)
 {
-	Vector<StringName> base_path;
+	Vector<String> base_path;
 	Node* n = p_node->get_parent();
 	while (n) {
 		base_path.push_back(n->get_name());
 		n = n->get_parent();
 	}
 
-	Vector<StringName> new_base_path;
+	Vector<String> new_base_path;
 	if (p_new_parent) {
 		n = p_new_parent;
 		while (n) {

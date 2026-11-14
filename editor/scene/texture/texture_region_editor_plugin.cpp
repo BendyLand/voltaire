@@ -2,10 +2,11 @@
 /*  texture_region_editor_plugin.cpp                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -67,11 +68,11 @@ void TextureRegionEditor::_texture_preview_draw()
 
 	Transform2D mtx = _get_offset_transform();
 
-	RS::canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
+	Renderer::canvas_item_add_set_transform(texture_preview->get_canvas_item(), mtx);
 	texture_preview->draw_rect(
 		Rect2(Point2(), object_texture->get_size()), Color(0.5, 0.5, 0.5, 0.5), false);
 	texture_preview->draw_texture(object_texture.ptr(), Point2());
-	RS::canvas_item_add_set_transform(
+	Renderer::canvas_item_add_set_transform(
 		texture_preview->get_canvas_item(), Transform2D());
 }
 
@@ -82,7 +83,7 @@ void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to)
 
 	Vector2 dash_size = (p_to - p_from).normalized() * 10;
 	const int dash_thickness = Math::round(2 * EDSCALE);
-	const Color dash_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor));
+	const Color dash_color = get_theme_color(SNAME("mono_color"), EditorString(Editor));
 	const Color dash_bg_color = dash_color.inverted() * Color(1, 1, 1, 0.5);
 	const int line_threshold = 200;
 

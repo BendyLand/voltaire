@@ -2,10 +2,11 @@
 /*  project_list.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -139,7 +140,7 @@ String ProjectList::Item::get_last_edited_string() const
 		return TTR("Missing Date");
 	}
 
-	OS::TimeZoneInfo tz = OS::get_singleton()->get_time_zone_info();
+	OS::TimeZoneInfo tz = OS::get_time_zone_info();
 	return Time::get_singleton()->get_datetime_string_from_unix_time(
 		last_edited + tz.bias * 60, true);
 }
@@ -370,7 +371,7 @@ void ProjectList::_remove_project(int p_index, bool p_update_config)
 
 void ProjectList::_on_explore_pressed(const String& p_path)
 {
-	OS::get_singleton()->shell_show_in_file_manager(p_path, true);
+	OS::shell_show_in_file_manager(p_path, true);
 }
 
 void ProjectList::_update_menu_icons() {}
@@ -521,7 +522,7 @@ void ProjectList::erase_selected_projects(bool p_delete_project_contents)
 			// Comment out for now until we have a better warning system to
 			// ensure users delete their project only.
 			// if (p_delete_project_contents) {
-			//	OS::get_singleton()->move_to_trash(item.path);
+			//	OS::move_to_trash(item.path);
 			//}
 
 			memdelete(item.control);

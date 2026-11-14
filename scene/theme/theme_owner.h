@@ -2,10 +2,11 @@
 /*  theme_owner.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -69,10 +70,10 @@ public:
 	// Theme lookup.
 
 	void get_theme_type_dependencies(
-		const Node* p_for_node, const StringName& p_theme_type, Vector<StringName>& r_result) const;
+		const Node* p_for_node, const String& p_theme_type, Vector<String>& r_result) const;
 
-	bool has_theme_item_in_types(Theme::DataType p_data_type, const StringName& p_name,
-		const Vector<StringName>& p_theme_types);
+	bool has_theme_item_in_types(Theme::DataType p_data_type, const String& p_name,
+		const Vector<String>& p_theme_types);
 
 	float get_theme_default_base_scale();
 	Ref<Font> get_theme_default_font();

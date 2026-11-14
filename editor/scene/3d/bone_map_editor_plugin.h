@@ -2,10 +2,11 @@
 /*  bone_map_editor_plugin.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -54,7 +55,7 @@ public:
 	};
 
 private:
-	StringName profile_bone_name;
+	String profile_bone_name;
 	bool selected = false;
 	bool require = false;
 
@@ -66,17 +67,17 @@ protected:
 	void _notification(int p_what);
 
 public:
-	StringName get_profile_bone_name() const;
+	String get_profile_bone_name() const;
 	void set_state(BoneMapState p_state);
 
 	bool is_require() const;
 
-	BoneMapperButton(const StringName& p_profile_bone_name, bool p_require, bool p_selected);
+	BoneMapperButton(const String& p_profile_bone_name, bool p_require, bool p_selected);
 };
 
 class BoneMapperItem : public VBoxContainer
 {
-	StringName profile_bone_name;
+	String profile_bone_name;
 
 	Ref<BoneMap> bone_map;
 
@@ -93,7 +94,7 @@ protected:
 public:
 	void assign_button_id(int p_button_id);
 
-	BoneMapperItem(Ref<BoneMap>& p_bone_map, const StringName& p_profile_bone_name = StringName());
+	BoneMapperItem(Ref<BoneMap>& p_bone_map, const String& p_profile_bone_name = String());
 };
 
 class BonePicker : public AcceptDialog
@@ -103,7 +104,7 @@ class BonePicker : public AcceptDialog
 
 public:
 	bool has_selected_bone();
-	StringName get_selected_bone();
+	String get_selected_bone();
 
 protected:
 	void _notification(int p_what);
@@ -148,7 +149,7 @@ class BoneMapper : public VBoxContainer
 
 	/* Bone picker */
 	BonePicker* picker = nullptr;
-	StringName picker_key_name;
+	String picker_key_name;
 	void _apply_picker_selection();
 	void _clear_mapping_current_group();
 

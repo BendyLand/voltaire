@@ -2,10 +2,11 @@
 /*  camera_attributes_storage.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -70,7 +71,7 @@ void RendererCameraAttributes::camera_attributes_set_dof_blur(RID p_camera_attri
 	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 	ERR_FAIL_NULL(cam_attributes);
 #ifdef DEBUG_ENABLED
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" && (p_far_enable || p_near_enable)) {
+	if (OS::get_current_rendering_method() == "gl_compatibility" && (p_far_enable || p_near_enable)) {
 		WARN_PRINT_ONCE_ED("Depth of field blur is only available when using the Forward+ or Mobile renderer.");
 	}
 #endif
@@ -148,7 +149,7 @@ void RendererCameraAttributes::camera_attributes_set_auto_exposure(RID p_camera_
 		cam_attributes->auto_exposure_version = ++auto_exposure_counter;
 	}
 #ifdef DEBUG_ENABLED
-	if ((OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" || OS::get_singleton()->get_current_rendering_method() == "mobile") && p_enable) {
+	if ((OS::get_current_rendering_method() == "gl_compatibility" || OS::get_current_rendering_method() == "mobile") && p_enable) {
 		WARN_PRINT_ONCE_ED("Auto-exposure is only available when using the Forward+ renderer.");
 	}
 #endif

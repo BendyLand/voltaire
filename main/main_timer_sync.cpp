@@ -2,10 +2,11 @@
 /*  main_timer_sync.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -257,7 +258,7 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 	// via the error metric and switch off.
 	// Also only try smoothing if vsync is enabled (classical vsync, not new types) ..
 	// This condition is currently checked before calling smooth_delta().
-	if (!OS::get_singleton()->is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
+	if (!OS::is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
 		return p_delta;
 	}
 

@@ -2,10 +2,11 @@
 /*  noise_texture_2d.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -45,13 +46,13 @@ void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
 	image = p_image;
 	if (image.is_valid()) {
 		if (texture.is_valid()) {
-			RID new_texture = RS::texture_2d_create(p_image);
-			RS::texture_replace(texture, new_texture);
+			RID new_texture = Renderer::texture_2d_create(p_image);
+			Renderer::texture_replace(texture, new_texture);
 		}
 		else {
-			texture = RS::texture_2d_create(p_image);
+			texture = Renderer::texture_2d_create(p_image);
 		}
-		RS::texture_set_path(texture, get_path());
+		Renderer::texture_set_path(texture, get_path());
 	}
 	emit_changed();
 }
@@ -228,7 +229,7 @@ int NoiseTexture2D::get_height() const { return size.y; }
 RID NoiseTexture2D::get_rid() const
 {
 	if (!texture.is_valid()) {
-		texture = RS::texture_2d_placeholder_create();
+		texture = Renderer::texture_2d_placeholder_create();
 	}
 
 	return texture;

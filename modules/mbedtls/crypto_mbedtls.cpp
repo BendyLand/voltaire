@@ -2,10 +2,11 @@
 /*  crypto_mbedtls.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -493,7 +494,7 @@ void CryptoMbedTLS::load_default_certificates(const String& p_path)
 	}
 	else {
 		// Try to use system certs otherwise.
-		String system_certs = OS::get_singleton()->get_system_ca_certificates();
+		String system_certs = OS::get_system_ca_certificates();
 		if (!system_certs.is_empty()) {
 			CharString cs = system_certs.utf8();
 			default_certs->load_from_memory((const uint8_t*)cs.get_data(), cs.size());

@@ -2,10 +2,11 @@
 /*  camera_attributes.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -60,7 +61,7 @@ void CameraAttributes::_update_exposure()
 		exposure_normalization = calculate_exposure_normalization();
 	}
 
-	RS::camera_attributes_set_exposure(
+	Renderer::camera_attributes_set_exposure(
 		camera_attributes, exposure_multiplier, exposure_normalization);
 }
 
@@ -87,13 +88,13 @@ RID CameraAttributes::get_rid() const { return camera_attributes; }
 
 CameraAttributes::CameraAttributes()
 {
-	camera_attributes = RS::camera_attributes_create();
+	camera_attributes = Renderer::camera_attributes_create();
 }
 
 CameraAttributes::~CameraAttributes()
 {
 	ERR_FAIL_NULL(Renderer::data);
-	RS::free_rid(camera_attributes);
+	Renderer::free_rid(camera_attributes);
 }
 
 //////////////////////////////////////////////////////
@@ -154,7 +155,7 @@ float CameraAttributesPractical::get_dof_blur_amount() const { return dof_blur_a
 
 void CameraAttributesPractical::_update_dof_blur()
 {
-	RS::camera_attributes_set_dof_blur(get_rid(), dof_blur_far_enabled,
+	Renderer::camera_attributes_set_dof_blur(get_rid(), dof_blur_far_enabled,
 		dof_blur_far_distance, dof_blur_far_transition, dof_blur_near_enabled,
 		dof_blur_near_distance, dof_blur_near_transition, dof_blur_amount);
 }
@@ -189,7 +190,7 @@ float CameraAttributesPractical::get_auto_exposure_max_sensitivity() const
 
 void CameraAttributesPractical::_update_auto_exposure()
 {
-	RS::camera_attributes_set_auto_exposure(get_rid(), auto_exposure_enabled,
+	Renderer::camera_attributes_set_auto_exposure(get_rid(), auto_exposure_enabled,
 		auto_exposure_min *
 			((12.5 / 100.0) / exposure_sensitivity), // Convert from Sensitivity to Luminance
 		auto_exposure_max *
@@ -290,13 +291,13 @@ void CameraAttributesPhysical::_update_frustum()
 	bool use_far = (depth_far < frustum_far) && (depth_far > 0.0);
 	bool use_near = depth_near > frustum_near;
 #ifdef DEBUG_ENABLED
-	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+	if (OS::get_current_rendering_method() == "gl_compatibility") {
 		// Force disable DoF in editor builds to suppress warnings.
 		use_far = false;
 		use_near = false;
 	}
 #endif
-	RS::camera_attributes_set_dof_blur(get_rid(), use_far,
+	Renderer::camera_attributes_set_dof_blur(get_rid(), use_far,
 		u / 1000.0, // Focus distance clampd to focal length expressed in meters.
 		-1.0,		// Negative to tell Bokeh effect to use physically-based scaling.
 		use_near, u / 1000.0, -1.0,
@@ -334,7 +335,7 @@ float CameraAttributesPhysical::get_auto_exposure_max_exposure_value() const
 
 void CameraAttributesPhysical::_update_auto_exposure()
 {
-	RS::camera_attributes_set_auto_exposure(get_rid(), auto_exposure_enabled,
+	Renderer::camera_attributes_set_auto_exposure(get_rid(), auto_exposure_enabled,
 		std::pow(2.0, auto_exposure_min) *
 			(12.5 / exposure_sensitivity), // Convert from EV100 to Luminance
 		std::pow(2.0, auto_exposure_max) *

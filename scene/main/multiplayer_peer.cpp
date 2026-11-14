@@ -2,10 +2,11 @@
 /*  multiplayer_peer.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -36,10 +37,10 @@ uint32_t MultiplayerPeer::generate_unique_id() const
 	uint32_t hash = 0;
 
 	while (hash == 0 || hash == 1) {
-		hash = hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_ticks_usec());
-		hash = hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_unix_time(), hash);
+		hash = hash_murmur3_one_32((uint32_t)OS::get_ticks_usec());
+		hash = hash_murmur3_one_32((uint32_t)OS::get_unix_time(), hash);
 		hash =
-			hash_murmur3_one_32((uint32_t)OS::get_singleton()->get_user_data_dir().hash64(), hash);
+			hash_murmur3_one_32((uint32_t)OS::get_user_data_dir().hash64(), hash);
 		hash = hash_murmur3_one_32((uint32_t)((uint64_t)this), hash);  // Rely on ASLR heap
 		hash = hash_murmur3_one_32((uint32_t)((uint64_t)&hash), hash); // Rely on ASLR stack
 

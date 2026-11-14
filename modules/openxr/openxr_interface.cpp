@@ -2,10 +2,11 @@
 /*  openxr_interface.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -41,7 +42,7 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
-StringName OpenXRInterface::get_name() const { return StringName("OpenXR"); }
+String OpenXRInterface::get_name() const { return String("OpenXR"); }
 
 uint32_t OpenXRInterface::get_capabilities() const
 {
@@ -260,7 +261,7 @@ void OpenXRInterface::tracker_profile_changed(RID p_tracker, RID p_interaction_p
 }
 
 void OpenXRInterface::trigger_haptic_pulse(const String& p_action_name,
-	const StringName& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
+	const String& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
 	double p_delay_sec)
 {
 	ERR_FAIL_NULL(openxr_api);

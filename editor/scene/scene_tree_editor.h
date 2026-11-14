@@ -2,10 +2,11 @@
 /*  scene_tree_editor.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -213,11 +214,11 @@ class SceneTreeEditor : public Control
 
 	Timer* update_timer = nullptr;
 
-	LocalVector<StringName>* script_types;
+	LocalVector<String>* script_types;
 	bool _has_drop_selection(TreeItem* p_item, const Point2& p_point) const;
-	bool _is_script_type(const StringName& p_type) const;
+	bool _is_script_type(const String& p_type) const;
 
-	Vector<StringName> valid_types;
+	Vector<String> valid_types;
 
 	void _update_ask_before_revoking_unique_name();
 	void _revoke_unique_name();
@@ -248,7 +249,7 @@ public:
 
 	void set_show_enabled_subscene(bool p_show) { show_enabled_subscene = p_show; }
 
-	void set_valid_types(const Vector<StringName>& p_valid);
+	void set_valid_types(const Vector<String>& p_valid);
 	void clear_cache();
 
 	inline void update_tree() { _update_tree(); }
@@ -289,7 +290,7 @@ protected:
 public:
 	void popup_scenetree_dialog(Node* p_selected_node = nullptr, Node* p_marked_node = nullptr,
 		bool p_marked_node_selectable = true, bool p_marked_node_children_selectable = true);
-	void set_valid_types(const Vector<StringName>& p_valid);
+	void set_valid_types(const Vector<String>& p_valid);
 
 	SceneTreeEditor* get_scene_tree() { return tree; }
 

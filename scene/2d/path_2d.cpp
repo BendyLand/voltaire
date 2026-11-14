@@ -2,10 +2,11 @@
 /*  path_2d.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
 /**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
@@ -110,31 +111,31 @@ void Path2D::_notification(int p_what)
 #ifdef DEBUG_ENABLED
 void Path2D::_debug_create()
 {
-	ERR_FAIL_NULL(RS::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (debug_mesh_rid.is_null()) {
-		debug_mesh_rid = RS::mesh_create();
+		debug_mesh_rid = Renderer::mesh_create();
 	}
 
 	if (debug_instance.is_null()) {
-		debug_instance = RS::instance_create();
+		debug_instance = Renderer::instance_create();
 	}
 
-	RS::instance_set_base(debug_instance, debug_mesh_rid);
-	RS::instance_geometry_set_cast_shadows_setting(
+	Renderer::instance_set_base(debug_instance, debug_mesh_rid);
+	Renderer::instance_geometry_set_cast_shadows_setting(
 		debug_instance, RSE::SHADOW_CASTING_SETTING_OFF);
 }
 
 void Path2D::_debug_free()
 {
-	ERR_FAIL_NULL(RS::data);
+	ERR_FAIL_NULL(Renderer::data);
 
 	if (debug_instance.is_valid()) {
-		RS::free_rid(debug_instance);
+		Renderer::free_rid(debug_instance);
 		debug_instance = RID();
 	}
 	if (debug_mesh_rid.is_valid()) {
-		RS::free_rid(debug_mesh_rid);
+		Renderer::free_rid(debug_mesh_rid);
 		debug_mesh_rid = RID();
 	}
 }
