@@ -1731,8 +1731,7 @@ void MeshStorage::_multimesh_instance_set_transform(
 	_multimesh_make_local(multimesh);
 
 	bool uses_motion_vectors = (Renderer::viewport->get_num_viewports_with_motion_vectors() > 0) ||
-							   (RendererCompositorStorage::get_singleton()
-									   ->get_num_compositor_effects_with_motion_vectors() > 0);
+							   (RendererCompositorStorage::get_num_compositor_effects_with_motion_vectors() > 0);
 
 	_multimesh_update_motion_vectors_data_cache(multimesh);
 

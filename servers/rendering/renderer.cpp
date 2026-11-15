@@ -43,6 +43,9 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_warnings.h"
+#include "servers/rendering/storage/camera_attributes_storage.h"
+#include "servers/rendering/storage/compositor_storage.h"
+#include "servers/rendering/storage/environment_storage.h"
 #include "servers/rendering/storage/material_storage.h"
 #include "servers/rendering/storage/texture_storage.h"
 #include "servers/rendering/storage/utilities.h"
@@ -602,12 +605,14 @@ void Renderer::get_argument_options(
 void Renderer::initialize()
 {
 	data = memnew(Data);
+	RendererCameraAttributes::initialize();
+	RendererCompositorStorage::initialize();
+	RendererEnvironmentStorage::initialize();
 	RendererCompositor::create();
 
 	viewport = memnew(RendererViewport);
 	canvas = memnew(RendererCanvasCull);
 	RendererSceneCull* sr = memnew(RendererSceneCull);
-	Renderer::camera_attributes = memnew(RendererCameraAttributes);
 	Renderer::scene = sr;
 	RendererCompositor::initialize();
 }
@@ -623,6 +628,9 @@ void Renderer::finalize()
 	fog = nullptr;
 	canvas_render = nullptr;
 	scene = nullptr;
+	RendererEnvironmentStorage::finalize();
+	RendererCompositorStorage::finalize();
+	RendererCameraAttributes::finalize();
 	if (data) {
 		memdelete(data);
 		data = nullptr;
@@ -2044,15 +2052,15 @@ void Renderer::light_area_set_normalize_energy(RID p_light, bool p_enable)
 
 RID Renderer::camera_attributes_create()
 {
-	RID ret = Renderer::camera_attributes->camera_attributes_allocate();
-	Renderer::camera_attributes->camera_attributes_initialize(ret);
+	RID ret = RendererCameraAttributes::camera_attributes_allocate();
+	RendererCameraAttributes::camera_attributes_initialize(ret);
 	return ret;
 }
 
 void Renderer::camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable,
 	float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale)
 {
-	Renderer::camera_attributes->camera_attributes_set_auto_exposure(
+	RendererCameraAttributes::camera_attributes_set_auto_exposure(
 		p_camera_attributes, p_enable, p_min_sensitivity, p_max_sensitivity, p_speed, p_scale);
 }
 
@@ -2060,7 +2068,7 @@ void Renderer::camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_fa
 	float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance,
 	float p_near_transition, float p_amount)
 {
-	Renderer::camera_attributes->camera_attributes_set_dof_blur(p_camera_attributes, p_far_enable,
+	RendererCameraAttributes::camera_attributes_set_dof_blur(p_camera_attributes, p_far_enable,
 		p_far_distance, p_far_transition, p_near_enable, p_near_distance, p_near_transition,
 		p_amount);
 }
@@ -2068,7 +2076,7 @@ void Renderer::camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_fa
 void Renderer::camera_attributes_set_exposure(
 	RID p_camera_attributes, float p_multiplier, float p_normalization)
 {
-	Renderer::camera_attributes->camera_attributes_set_exposure(
+	RendererCameraAttributes::camera_attributes_set_exposure(
 		p_camera_attributes, p_multiplier, p_normalization);
 }
 

@@ -65,7 +65,6 @@ struct MeshData;
 #endif
 
 class RenderingDevice;
-class RendererCameraAttributes;
 class RendererCanvasRender;
 class RendererCanvasCull;
 class RendererSceneCull;
@@ -134,7 +133,6 @@ public:
 
 	static inline RendererParticlesStorage* particles_storage = nullptr;
 	static inline RendererFog* fog = nullptr;
-	static inline RendererCameraAttributes* camera_attributes = nullptr;
 	static inline RendererCanvasRender* canvas_render = nullptr;
 
 	static inline RendererCanvasCull* canvas = nullptr;

@@ -8,7 +8,9 @@ import methods
 
 
 def modules_enabled_builder(target, source):
-    modules = sorted(source[0])
+    modules = sorted(
+        k for k, v in source[0].items() if os.path.isdir(v)
+    )
     with methods.generated_wrapper(str(target[0])) as file:
         for module in modules:
             file.write(f"#define MODULE_{module.upper()}_ENABLED\n")
@@ -25,7 +27,6 @@ modules_enabled_builder(
                 ("websocket", "modules/websocket"),
                 ("webrtc", "modules/webrtc"),
                 ("webp", "modules/webp"),
-                ("visual_shader", "modules/visual_shader"),
                 ("vhacd", "modules/vhacd"),
                 ("upnp", "modules/upnp"),
                 ("tinyexr", "modules/tinyexr"),
@@ -34,7 +35,6 @@ modules_enabled_builder(
                 ("raycast", "modules/raycast"),
                 ("openxr", "modules/openxr"),
                 ("ogg", "modules/ogg"),
-                ("objectdb_profiler", "modules/objectdb_profiler"),
                 ("noise", "modules/noise"),
                 ("navigation_3d", "modules/navigation_3d"),
                 ("navigation_2d", "modules/navigation_2d"),
@@ -44,7 +44,6 @@ modules_enabled_builder(
                 ("meshoptimizer", "modules/meshoptimizer"),
                 ("mbedtls", "modules/mbedtls"),
                 ("lightmapper_rd", "modules/lightmapper_rd"),
-                ("jsonrpc", "modules/jsonrpc"),
                 ("jpg", "modules/jpg"),
                 ("jolt_physics", "modules/jolt_physics"),
                 ("interactive_music", "modules/interactive_music"),

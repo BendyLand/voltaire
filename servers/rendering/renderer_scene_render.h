@@ -41,10 +41,6 @@
 
 class RendererSceneRender
 {
-private:
-	static inline RendererEnvironmentStorage environment_storage;
-	static inline RendererCompositorStorage compositor_storage;
-
 public:
 	enum
 	{

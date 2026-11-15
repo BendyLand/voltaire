@@ -34,24 +34,34 @@
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class RendererEnvironmentStorage {
+class RendererEnvironmentStorage final
+{
 public:
-	union TonemapParameters {
+	RendererEnvironmentStorage() = delete;
+	~RendererEnvironmentStorage() = delete;
+	RendererEnvironmentStorage(const RendererEnvironmentStorage&) = delete;
+	RendererEnvironmentStorage& operator=(const RendererEnvironmentStorage&) = delete;
+
+	union TonemapParameters
+	{
 		// Shader vec4:
 		float tonemapper_params[4];
 
 		// Reinhard:
-		struct {
+		struct
+		{
 			float white_squared;
 		};
 
 		// Filmic and ACES:
-		struct {
+		struct
+		{
 			float white_tonemapped;
 		};
 
 		// AgX:
-		struct {
+		struct
+		{
 			float awp_contrast;
 			float awp_toe_a;
 			float awp_slope;
@@ -60,10 +70,11 @@ public:
 	};
 
 private:
-	static RendererEnvironmentStorage *singleton;
+	static inline bool _initialized = false;
 
 	// Environment
-	struct Environment {
+	struct Environment
+	{
 		// Note, we capture and store all environment parameters received from Godot here.
 		// Not all renderers support all effects and should just ignore the bits they don't support.
 
@@ -182,155 +193,177 @@ private:
 		RID color_correction;
 	};
 
-	mutable RID_Owner<Environment, true> environment_owner;
+	static inline RID_Owner<Environment, true> environment_owner;
 
 public:
-	static RendererEnvironmentStorage *get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
 
-	RendererEnvironmentStorage();
-	virtual ~RendererEnvironmentStorage();
+	static bool is_initialized() { return _initialized; }
 
 	// Environment
-	RID environment_allocate();
-	void environment_initialize(RID p_rid);
-	void environment_free(RID p_rid);
+	static RID environment_allocate();
+	static void environment_initialize(RID p_rid);
+	static void environment_free(RID p_rid);
 
-	bool is_environment(RID p_environment) const {
-		return environment_owner.owns(p_environment);
-	}
+	static bool is_environment(RID p_environment) { return environment_owner.owns(p_environment); }
 
 	// Background
-	void environment_set_background(RID p_env, RSE::EnvironmentBG p_bg);
-	void environment_set_sky(RID p_env, RID p_sky);
-	void environment_set_sky_custom_fov(RID p_env, float p_scale);
-	void environment_set_sky_orientation(RID p_env, const Basis &p_orientation);
-	void environment_set_bg_color(RID p_env, const Color &p_color);
-	void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
-	void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
-	void environment_set_ambient_light(RID p_env, const Color &p_color, RSE::EnvironmentAmbientSource p_ambient = RSE::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, RSE::EnvironmentReflectionSource p_reflection_source = RSE::ENV_REFLECTION_SOURCE_BG);
-	void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id);
-	int environment_get_camera_feed_id(RID p_env) const;
+	static void environment_set_background(RID p_env, RSE::EnvironmentBG p_bg);
+	static void environment_set_sky(RID p_env, RID p_sky);
+	static void environment_set_sky_custom_fov(RID p_env, float p_scale);
+	static void environment_set_sky_orientation(RID p_env, const Basis& p_orientation);
+	static void environment_set_bg_color(RID p_env, const Color& p_color);
+	static void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
+	static void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
+	static void environment_set_ambient_light(RID p_env, const Color& p_color,
+		RSE::EnvironmentAmbientSource p_ambient = RSE::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0,
+		float p_sky_contribution = 0.0,
+		RSE::EnvironmentReflectionSource p_reflection_source = RSE::ENV_REFLECTION_SOURCE_BG);
+	static void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id);
+	static int environment_get_camera_feed_id(RID p_env);
 
-	RSE::EnvironmentBG environment_get_background(RID p_env) const;
-	RID environment_get_sky(RID p_env) const;
-	float environment_get_sky_custom_fov(RID p_env) const;
-	Basis environment_get_sky_orientation(RID p_env) const;
-	Color environment_get_bg_color(RID p_env) const;
-	float environment_get_bg_energy_multiplier(RID p_env) const;
-	float environment_get_bg_intensity(RID p_env) const;
-	int environment_get_canvas_max_layer(RID p_env) const;
-	RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_env) const;
-	Color environment_get_ambient_light(RID p_env) const;
-	float environment_get_ambient_light_energy(RID p_env) const;
-	float environment_get_ambient_sky_contribution(RID p_env) const;
-	RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_env) const;
+	static RSE::EnvironmentBG environment_get_background(RID p_env);
+	static RID environment_get_sky(RID p_env);
+	static float environment_get_sky_custom_fov(RID p_env);
+	static Basis environment_get_sky_orientation(RID p_env);
+	static Color environment_get_bg_color(RID p_env);
+	static float environment_get_bg_energy_multiplier(RID p_env);
+	static float environment_get_bg_intensity(RID p_env);
+	static int environment_get_canvas_max_layer(RID p_env);
+	static RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_env);
+	static Color environment_get_ambient_light(RID p_env);
+	static float environment_get_ambient_light_energy(RID p_env);
+	static float environment_get_ambient_sky_contribution(RID p_env);
+	static RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_env);
 
 	// Tonemap
-	void environment_set_tonemap(RID p_env, RSE::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white);
-	RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_env) const;
-	float environment_get_exposure(RID p_env) const;
-	float environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value) const;
-	void environment_set_tonemap_agx_contrast(RID p_env, float p_agx_contrast);
-	float environment_get_tonemap_agx_contrast(RID p_env) const;
-	TonemapParameters environment_get_tonemap_parameters(RID p_env, bool p_limit_agx_white, float p_output_max_value) const;
+	static void environment_set_tonemap(
+		RID p_env, RSE::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white);
+	static RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_env);
+	static float environment_get_exposure(RID p_env);
+	static float environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value);
+	static void environment_set_tonemap_agx_contrast(RID p_env, float p_agx_contrast);
+	static float environment_get_tonemap_agx_contrast(RID p_env);
+	static TonemapParameters environment_get_tonemap_parameters(
+		RID p_env, bool p_limit_agx_white, float p_output_max_value);
 
 	// Fog
-	void environment_set_fog(RID p_env, bool p_enable, const Color &p_light_color, float p_light_energy, float p_sun_scatter, float p_density, float p_height, float p_height_density, float p_aerial_perspective, float p_sky_affect, RSE::EnvironmentFogMode p_mode);
-	bool environment_get_fog_enabled(RID p_env) const;
-	RSE::EnvironmentFogMode environment_get_fog_mode(RID p_env) const;
-	Color environment_get_fog_light_color(RID p_env) const;
-	float environment_get_fog_light_energy(RID p_env) const;
-	float environment_get_fog_sun_scatter(RID p_env) const;
-	float environment_get_fog_density(RID p_env) const;
-	float environment_get_fog_sky_affect(RID p_env) const;
-	float environment_get_fog_height(RID p_env) const;
-	float environment_get_fog_height_density(RID p_env) const;
-	float environment_get_fog_aerial_perspective(RID p_env) const;
+	static void environment_set_fog(RID p_env, bool p_enable, const Color& p_light_color,
+		float p_light_energy, float p_sun_scatter, float p_density, float p_height,
+		float p_height_density, float p_aerial_perspective, float p_sky_affect,
+		RSE::EnvironmentFogMode p_mode);
+	static bool environment_get_fog_enabled(RID p_env);
+	static RSE::EnvironmentFogMode environment_get_fog_mode(RID p_env);
+	static Color environment_get_fog_light_color(RID p_env);
+	static float environment_get_fog_light_energy(RID p_env);
+	static float environment_get_fog_sun_scatter(RID p_env);
+	static float environment_get_fog_density(RID p_env);
+	static float environment_get_fog_sky_affect(RID p_env);
+	static float environment_get_fog_height(RID p_env);
+	static float environment_get_fog_height_density(RID p_env);
+	static float environment_get_fog_aerial_perspective(RID p_env);
 
 	// Depth Fog
-	void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end);
-	float environment_get_fog_depth_curve(RID p_env) const;
-	float environment_get_fog_depth_begin(RID p_env) const;
-	float environment_get_fog_depth_end(RID p_env) const;
+	static void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end);
+	static float environment_get_fog_depth_curve(RID p_env);
+	static float environment_get_fog_depth_begin(RID p_env);
+	static float environment_get_fog_depth_end(RID p_env);
 
 	// Volumetric Fog
-	void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density, const Color &p_albedo, const Color &p_emission, float p_emission_energy, float p_anisotropy, float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection, float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect);
-	bool environment_get_volumetric_fog_enabled(RID p_env) const;
-	float environment_get_volumetric_fog_density(RID p_env) const;
-	Color environment_get_volumetric_fog_scattering(RID p_env) const;
-	Color environment_get_volumetric_fog_emission(RID p_env) const;
-	float environment_get_volumetric_fog_emission_energy(RID p_env) const;
-	float environment_get_volumetric_fog_anisotropy(RID p_env) const;
-	float environment_get_volumetric_fog_length(RID p_env) const;
-	float environment_get_volumetric_fog_detail_spread(RID p_env) const;
-	float environment_get_volumetric_fog_gi_inject(RID p_env) const;
-	float environment_get_volumetric_fog_sky_affect(RID p_env) const;
-	bool environment_get_volumetric_fog_temporal_reprojection(RID p_env) const;
-	float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env) const;
-	float environment_get_volumetric_fog_ambient_inject(RID p_env) const;
+	static void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density,
+		const Color& p_albedo, const Color& p_emission, float p_emission_energy, float p_anisotropy,
+		float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection,
+		float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect);
+	static bool environment_get_volumetric_fog_enabled(RID p_env);
+	static float environment_get_volumetric_fog_density(RID p_env);
+	static Color environment_get_volumetric_fog_scattering(RID p_env);
+	static Color environment_get_volumetric_fog_emission(RID p_env);
+	static float environment_get_volumetric_fog_emission_energy(RID p_env);
+	static float environment_get_volumetric_fog_anisotropy(RID p_env);
+	static float environment_get_volumetric_fog_length(RID p_env);
+	static float environment_get_volumetric_fog_detail_spread(RID p_env);
+	static float environment_get_volumetric_fog_gi_inject(RID p_env);
+	static float environment_get_volumetric_fog_sky_affect(RID p_env);
+	static bool environment_get_volumetric_fog_temporal_reprojection(RID p_env);
+	static float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env);
+	static float environment_get_volumetric_fog_ambient_inject(RID p_env);
 
 	// GLOW
-	void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels, float p_intensity, float p_strength, float p_mix, float p_bloom_threshold, RSE::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold, float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength, RID p_glow_map);
-	bool environment_get_glow_enabled(RID p_env) const;
-	Vector<float> environment_get_glow_levels(RID p_env) const;
-	float environment_get_glow_intensity(RID p_env) const;
-	float environment_get_glow_strength(RID p_env) const;
-	float environment_get_glow_bloom(RID p_env) const;
-	float environment_get_glow_mix(RID p_env) const;
-	RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_env) const;
-	float environment_get_glow_hdr_bleed_threshold(RID p_env) const;
-	float environment_get_glow_hdr_luminance_cap(RID p_env) const;
-	float environment_get_glow_hdr_bleed_scale(RID p_env) const;
-	float environment_get_glow_map_strength(RID p_env) const;
-	RID environment_get_glow_map(RID p_env) const;
+	static void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels,
+		float p_intensity, float p_strength, float p_mix, float p_bloom_threshold,
+		RSE::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold,
+		float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength,
+		RID p_glow_map);
+	static bool environment_get_glow_enabled(RID p_env);
+	static Vector<float> environment_get_glow_levels(RID p_env);
+	static float environment_get_glow_intensity(RID p_env);
+	static float environment_get_glow_strength(RID p_env);
+	static float environment_get_glow_bloom(RID p_env);
+	static float environment_get_glow_mix(RID p_env);
+	static RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_env);
+	static float environment_get_glow_hdr_bleed_threshold(RID p_env);
+	static float environment_get_glow_hdr_luminance_cap(RID p_env);
+	static float environment_get_glow_hdr_bleed_scale(RID p_env);
+	static float environment_get_glow_map_strength(RID p_env);
+	static RID environment_get_glow_map(RID p_env);
 
 	// SSR
-	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance);
-	bool environment_get_ssr_enabled(RID p_env) const;
-	int environment_get_ssr_max_steps(RID p_env) const;
-	float environment_get_ssr_fade_in(RID p_env) const;
-	float environment_get_ssr_fade_out(RID p_env) const;
-	float environment_get_ssr_depth_tolerance(RID p_env) const;
+	static void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int,
+		float p_fade_out, float p_depth_tolerance);
+	static bool environment_get_ssr_enabled(RID p_env);
+	static int environment_get_ssr_max_steps(RID p_env);
+	static float environment_get_ssr_fade_in(RID p_env);
+	static float environment_get_ssr_fade_out(RID p_env);
+	static float environment_get_ssr_depth_tolerance(RID p_env);
 
 	// SSAO
-	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect);
-	bool environment_get_ssao_enabled(RID p_env) const;
-	float environment_get_ssao_radius(RID p_env) const;
-	float environment_get_ssao_intensity(RID p_env) const;
-	float environment_get_ssao_power(RID p_env) const;
-	float environment_get_ssao_detail(RID p_env) const;
-	float environment_get_ssao_horizon(RID p_env) const;
-	float environment_get_ssao_sharpness(RID p_env) const;
-	float environment_get_ssao_direct_light_affect(RID p_env) const;
-	float environment_get_ssao_ao_channel_affect(RID p_env) const;
+	static void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity,
+		float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect,
+		float p_ao_channel_affect);
+	static bool environment_get_ssao_enabled(RID p_env);
+	static float environment_get_ssao_radius(RID p_env);
+	static float environment_get_ssao_intensity(RID p_env);
+	static float environment_get_ssao_power(RID p_env);
+	static float environment_get_ssao_detail(RID p_env);
+	static float environment_get_ssao_horizon(RID p_env);
+	static float environment_get_ssao_sharpness(RID p_env);
+	static float environment_get_ssao_direct_light_affect(RID p_env);
+	static float environment_get_ssao_ao_channel_affect(RID p_env);
 
 	// SSIL
-	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
-	bool environment_get_ssil_enabled(RID p_env) const;
-	float environment_get_ssil_radius(RID p_env) const;
-	float environment_get_ssil_intensity(RID p_env) const;
-	float environment_get_ssil_sharpness(RID p_env) const;
-	float environment_get_ssil_normal_rejection(RID p_env) const;
+	static void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity,
+		float p_sharpness, float p_normal_rejection);
+	static bool environment_get_ssil_enabled(RID p_env);
+	static float environment_get_ssil_radius(RID p_env);
+	static float environment_get_ssil_intensity(RID p_env);
+	static float environment_get_ssil_sharpness(RID p_env);
+	static float environment_get_ssil_normal_rejection(RID p_env);
 
 	// SDFGI
-	void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades, float p_min_cell_size, RSE::EnvironmentSDFGIYScale p_y_scale, bool p_use_occlusion, float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias, float p_probe_bias);
-	bool environment_get_sdfgi_enabled(RID p_env) const;
-	int environment_get_sdfgi_cascades(RID p_env) const;
-	float environment_get_sdfgi_min_cell_size(RID p_env) const;
-	bool environment_get_sdfgi_use_occlusion(RID p_env) const;
-	float environment_get_sdfgi_bounce_feedback(RID p_env) const;
-	bool environment_get_sdfgi_read_sky_light(RID p_env) const;
-	float environment_get_sdfgi_energy(RID p_env) const;
-	float environment_get_sdfgi_normal_bias(RID p_env) const;
-	float environment_get_sdfgi_probe_bias(RID p_env) const;
-	RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_env) const;
+	static void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades,
+		float p_min_cell_size, RSE::EnvironmentSDFGIYScale p_y_scale, bool p_use_occlusion,
+		float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias,
+		float p_probe_bias);
+	static bool environment_get_sdfgi_enabled(RID p_env);
+	static int environment_get_sdfgi_cascades(RID p_env);
+	static float environment_get_sdfgi_min_cell_size(RID p_env);
+	static bool environment_get_sdfgi_use_occlusion(RID p_env);
+	static float environment_get_sdfgi_bounce_feedback(RID p_env);
+	static bool environment_get_sdfgi_read_sky_light(RID p_env);
+	static float environment_get_sdfgi_energy(RID p_env);
+	static float environment_get_sdfgi_normal_bias(RID p_env);
+	static float environment_get_sdfgi_probe_bias(RID p_env);
+	static RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_env);
 
 	// Adjustment
-	void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness, float p_contrast, float p_saturation, bool p_use_1d_color_correction, RID p_color_correction);
-	bool environment_get_adjustments_enabled(RID p_env) const;
-	float environment_get_adjustments_brightness(RID p_env) const;
-	float environment_get_adjustments_contrast(RID p_env) const;
-	float environment_get_adjustments_saturation(RID p_env) const;
-	bool environment_get_use_1d_color_correction(RID p_env) const;
-	RID environment_get_color_correction(RID p_env) const;
+	static void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness,
+		float p_contrast, float p_saturation, bool p_use_1d_color_correction,
+		RID p_color_correction);
+	static bool environment_get_adjustments_enabled(RID p_env);
+	static float environment_get_adjustments_brightness(RID p_env);
+	static float environment_get_adjustments_contrast(RID p_env);
+	static float environment_get_adjustments_saturation(RID p_env);
+	static bool environment_get_use_1d_color_correction(RID p_env);
+	static RID environment_get_color_correction(RID p_env);
 };

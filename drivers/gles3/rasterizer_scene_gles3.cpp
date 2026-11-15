@@ -931,7 +931,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 
@@ -1993,14 +1993,14 @@ void RasterizerSceneGLES3::_setup_environment(const RenderDataGLES3* p_render_da
 
 	if (p_render_data->camera_attributes.is_valid()) {
 		scene_state.data.emissive_exposure_normalization =
-			Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		scene_state.data.IBL_exposure_normalization = 1.0;
 		if (is_environment(p_render_data->environment)) {
 			RID sky_rid = environment_get_sky(p_render_data->environment);
 			if (sky_rid.is_valid()) {
 				float current_exposure =
-					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes) *
 					environment_get_bg_intensity(p_render_data->environment);
 				scene_state.data.IBL_exposure_normalization =
@@ -2119,7 +2119,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -2403,7 +2403,7 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3* p_render_data, b
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -3080,7 +3080,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 		if (render_data.camera_attributes.is_valid()) {
 			bg_energy_multiplier *=
-				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 					render_data.camera_attributes);
 		}
 
@@ -4513,9 +4513,9 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 						float exposure_normalization = 1.0;
 						if (p_render_data->camera_attributes.is_valid()) {
-							float enf = Renderer::camera_attributes
-											->camera_attributes_get_exposure_normalization_factor(
-												p_render_data->camera_attributes);
+							float enf =
+								RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
+									p_render_data->camera_attributes);
 							exposure_normalization = enf / lm->baked_exposure;
 						}
 						GLES3::MaterialStorage::shaders->scene_shader.version_set_uniform(
@@ -5203,9 +5203,9 @@ bool RasterizerSceneGLES3::free(RID p_rid)
 	else if (GLES3::LightStorage::owns_light_instance(p_rid)) {
 		GLES3::LightStorage::light_instance_free(p_rid);
 	}
-	else if (Renderer::camera_attributes->owns_camera_attributes(p_rid)) {
+	else if (RendererCameraAttributes::owns_camera_attributes(p_rid)) {
 		// not much to delete, just free it
-		Renderer::camera_attributes->camera_attributes_free(p_rid);
+		RendererCameraAttributes::camera_attributes_free(p_rid);
 	}
 	else if (is_compositor(p_rid)) {
 		compositor_free(p_rid);

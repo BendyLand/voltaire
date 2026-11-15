@@ -34,11 +34,16 @@
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class RendererCameraAttributes {
-private:
-	static RendererCameraAttributes *singleton;
+class RendererCameraAttributes final
+{
+public:
+	RendererCameraAttributes() = delete;
+	~RendererCameraAttributes() = delete;
+	RendererCameraAttributes(const RendererCameraAttributes&) = delete;
+	RendererCameraAttributes& operator=(const RendererCameraAttributes&) = delete;
 
-	struct CameraAttributes {
+	struct CameraAttributes
+	{
 		float exposure_multiplier = 1.0;
 		float exposure_normalization = 1.0;
 		float exposure_sensitivity = 100.0; // In ISO.
@@ -59,69 +64,87 @@ private:
 		float dof_blur_amount = 0.1;
 	};
 
-	RSE::DOFBlurQuality dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
-	RSE::DOFBokehShape dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
-	bool dof_blur_use_jitter = false;
-	static uint64_t auto_exposure_counter;
+private:
+	static inline bool _initialized = false;
 
-	mutable RID_Owner<CameraAttributes, true> camera_attributes_owner;
+	static inline RSE::DOFBlurQuality dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
+	static inline RSE::DOFBokehShape dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
+	static inline bool dof_blur_use_jitter = false;
+	static inline uint64_t auto_exposure_counter = 2;
+
+	static inline RID_Owner<CameraAttributes, true> camera_attributes_owner;
 
 public:
-	static RendererCameraAttributes *get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
 
-	RendererCameraAttributes();
-	~RendererCameraAttributes();
+	static bool is_initialized() { return _initialized; }
 
-	CameraAttributes *get_camera_attributes(RID p_rid) { return camera_attributes_owner.get_or_null(p_rid); }
-	bool owns_camera_attributes(RID p_rid) { return camera_attributes_owner.owns(p_rid); }
+	static CameraAttributes* get_camera_attributes(RID p_rid)
+	{
+		return camera_attributes_owner.get_or_null(p_rid);
+	}
+	static bool owns_camera_attributes(RID p_rid) { return camera_attributes_owner.owns(p_rid); }
 
-	RID camera_attributes_allocate();
-	void camera_attributes_initialize(RID p_rid);
-	void camera_attributes_free(RID p_rid);
+	static RID camera_attributes_allocate();
+	static void camera_attributes_initialize(RID p_rid);
+	static void camera_attributes_free(RID p_rid);
 
-	void camera_attributes_set_dof_blur_quality(RSE::DOFBlurQuality p_quality, bool p_use_jitter);
-	void camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape);
+	static void camera_attributes_set_dof_blur_quality(
+		RSE::DOFBlurQuality p_quality, bool p_use_jitter);
+	static void camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape);
 
-	void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable, float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance, float p_near_transition, float p_amount);
-	bool camera_attributes_get_dof_far_enabled(RID p_camera_attributes);
-	float camera_attributes_get_dof_far_distance(RID p_camera_attributes);
-	float camera_attributes_get_dof_far_transition(RID p_camera_attributes);
-	bool camera_attributes_get_dof_near_enabled(RID p_camera_attributes);
-	float camera_attributes_get_dof_near_distance(RID p_camera_attributes);
-	float camera_attributes_get_dof_near_transition(RID p_camera_attributes);
-	float camera_attributes_get_dof_blur_amount(RID p_camera_attributes);
+	static void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable,
+		float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance,
+		float p_near_transition, float p_amount);
+	static bool camera_attributes_get_dof_far_enabled(RID p_camera_attributes);
+	static float camera_attributes_get_dof_far_distance(RID p_camera_attributes);
+	static float camera_attributes_get_dof_far_transition(RID p_camera_attributes);
+	static bool camera_attributes_get_dof_near_enabled(RID p_camera_attributes);
+	static float camera_attributes_get_dof_near_distance(RID p_camera_attributes);
+	static float camera_attributes_get_dof_near_transition(RID p_camera_attributes);
+	static float camera_attributes_get_dof_blur_amount(RID p_camera_attributes);
 
-	_FORCE_INLINE_ bool camera_attributes_uses_dof(RID p_camera_attributes) {
-		CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	_FORCE_INLINE_ static bool camera_attributes_uses_dof(RID p_camera_attributes)
+	{
+		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 
-		return cam_attributes && (cam_attributes->dof_blur_near_enabled || cam_attributes->dof_blur_far_enabled) && cam_attributes->dof_blur_amount > 0.0;
+		return cam_attributes &&
+			   (cam_attributes->dof_blur_near_enabled || cam_attributes->dof_blur_far_enabled) &&
+			   cam_attributes->dof_blur_amount > 0.0;
 	}
 
-	void camera_attributes_set_exposure(RID p_camera_attributes, float p_multiplier, float p_exposure_normalization);
-	float camera_attributes_get_exposure_normalization_factor(RID p_camera_attributes);
+	static void camera_attributes_set_exposure(
+		RID p_camera_attributes, float p_multiplier, float p_exposure_normalization);
+	static float camera_attributes_get_exposure_normalization_factor(RID p_camera_attributes);
 
-	void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable, float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale);
-	float camera_attributes_get_auto_exposure_min_sensitivity(RID p_camera_attributes);
-	float camera_attributes_get_auto_exposure_max_sensitivity(RID p_camera_attributes);
-	float camera_attributes_get_auto_exposure_adjust_speed(RID p_camera_attributes);
-	float camera_attributes_get_auto_exposure_scale(RID p_camera_attributes);
-	uint64_t camera_attributes_get_auto_exposure_version(RID p_camera_attributes);
+	static void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable,
+		float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale);
+	static float camera_attributes_get_auto_exposure_min_sensitivity(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_max_sensitivity(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_adjust_speed(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_scale(RID p_camera_attributes);
+	static uint64_t camera_attributes_get_auto_exposure_version(RID p_camera_attributes);
 
-	_FORCE_INLINE_ bool camera_attributes_uses_auto_exposure(RID p_camera_attributes) {
-		CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	_FORCE_INLINE_ static bool camera_attributes_uses_auto_exposure(RID p_camera_attributes)
+	{
+		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 
 		return cam_attributes && cam_attributes->use_auto_exposure;
 	}
 
-	_FORCE_INLINE_ RSE::DOFBlurQuality camera_attributes_get_dof_blur_quality() {
+	_FORCE_INLINE_ static RSE::DOFBlurQuality camera_attributes_get_dof_blur_quality()
+	{
 		return dof_blur_quality;
 	}
 
-	_FORCE_INLINE_ RSE::DOFBokehShape camera_attributes_get_dof_blur_bokeh_shape() {
+	_FORCE_INLINE_ static RSE::DOFBokehShape camera_attributes_get_dof_blur_bokeh_shape()
+	{
 		return dof_blur_bokeh_shape;
 	}
 
-	_FORCE_INLINE_ bool camera_attributes_get_dof_blur_use_jitter() {
+	_FORCE_INLINE_ static bool camera_attributes_get_dof_blur_use_jitter()
+	{
 		return dof_blur_use_jitter;
 	}
 };

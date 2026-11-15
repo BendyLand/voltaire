@@ -45,17 +45,10 @@ namespace RendererDummy
 class MaterialStorage final
 {
 private:
-	static inline HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
-
 	struct DummyShader
 	{
 		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
 	};
-
-	static inline RID_Owner<DummyShader> shader_owner;
-
-	static inline ShaderCompiler* dummy_compiler = nullptr;
-	static inline HashSet<RID> dummy_embedded_set;
 
 	struct DummyMaterial
 	{
@@ -63,7 +56,24 @@ private:
 		RID next_pass;
 	};
 
-	static inline RID_Owner<DummyMaterial> material_owner;
+	struct Data
+	{
+		HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
+		RID_Owner<DummyShader> shader_owner;
+		ShaderCompiler* dummy_compiler = nullptr;
+		HashSet<RID> dummy_embedded_set;
+		RID_Owner<DummyMaterial> material_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			initialize();
+		}
+		return data;
+	}
 
 public:
 	MaterialStorage() = delete;
@@ -93,7 +103,7 @@ public:
 	static void global_shader_parameters_instance_free(RID p_instance) {}
 
 	/* SHADER API */
-	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+	static bool owns_shader(RID p_rid) { return data && data->shader_owner.owns(p_rid); }
 
 	static RID shader_allocate();
 	static void shader_initialize(RID p_rid, bool p_embedded = true);
@@ -126,13 +136,13 @@ public:
 
 	static const HashSet<RID>& shader_embedded_set_get()
 	{
-		return dummy_embedded_set;
+		return _get_data()->dummy_embedded_set;
 	}
 
 	static void shader_embedded_set_unlock() {}
 
 	/* MATERIAL API */
-	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+	static bool owns_material(RID p_rid) { return data && data->material_owner.owns(p_rid); }
 
 	static RID material_allocate();
 	static void material_initialize(RID p_rid);

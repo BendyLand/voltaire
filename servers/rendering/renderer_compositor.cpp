@@ -50,39 +50,39 @@
 
 Error RendererCompositor::create()
 {
-    String driver_name = "";
-    if (DisplayServer::get_singleton()) {
-        driver_name = OS::get_current_rendering_driver_name();
-    }
+	String driver_name = "";
+	if (DisplayServer::get_singleton()) {
+		driver_name = OS::get_current_rendering_driver_name();
+	}
+
+	if (driver_name == "dummy" || driver_name.is_empty()) {
+		RasterizerDummy::make_current();
+		return OK;
+	}
 
 #if defined(GLES3_ENABLED)
-    if (driver_name == "opengl3" || driver_name == "opengl3_es") {
-        RasterizerGLES3::make_current(true);
-        return OK;
-    }
+	if (driver_name == "opengl3" || driver_name == "opengl3_es" || driver_name == "opengl3_angle") {
+		RasterizerGLES3::make_current(driver_name == "opengl3");
+		return OK;
+	}
 #endif
 
 #if defined(RD_ENABLED)
-    if (!low_end && driver_name != "opengl3") {
-        low_end = false;
-        bind_compositor<RendererCompositorRD>();
-        DisplayServer* ds = DisplayServer::get_singleton();
-        if (ds != nullptr) {
-            Error err = ds->init_rendering_device();
-            ERR_FAIL_COND_V_MSG(
-                err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
-        }
-        return OK;
-    }
+	if (!low_end) {
+		low_end = false;
+		bind_compositor<RendererCompositorRD>();
+		DisplayServer* ds = DisplayServer::get_singleton();
+		if (ds != nullptr) {
+			Error err = ds->init_rendering_device();
+			ERR_FAIL_COND_V_MSG(
+				err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
+		}
+		return OK;
+	}
 #endif
 
-#if defined(DUMMY_ENABLED)
-    low_end = true;
-    bind_compositor<RasterizerDummy>();
-    return OK;
-#else
-    return ERR_UNAVAILABLE;
-#endif
+	RasterizerDummy::make_current();
+	return OK;
 }
 
 bool RendererCompositor::is_xr_enabled()

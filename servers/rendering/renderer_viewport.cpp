@@ -378,9 +378,6 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	DUMP(can_draw_2d);
-	DUMP(p_viewport->size);
-	DUMP(p_viewport->canvas_map.size());
 	if (Renderer::scene->is_scenario(p_viewport->scenario)) {
 		RID environment = Renderer::scene->scenario_get_environment(p_viewport->scenario);
 		if (Renderer::scene->is_environment(environment)) {

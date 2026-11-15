@@ -781,7 +781,7 @@ void RenderForwardMobile::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				RendererRD::LightStorage::lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}

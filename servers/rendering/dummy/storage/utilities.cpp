@@ -33,7 +33,7 @@
 #include "servers/rendering/dummy/storage/material_storage.h"
 #include "servers/rendering/dummy/storage/mesh_storage.h"
 #include "servers/rendering/dummy/storage/texture_storage.h"
-#include "utilities.h"
+#include "servers/rendering/dummy/storage/utilities.h"
 
 using namespace RendererDummy;
 
@@ -58,6 +58,14 @@ bool Utilities::free(RID p_rid)
 	}
 	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {
 		RendererDummy::TextureStorage::texture_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::TextureStorage::owns_canvas_texture(p_rid)) {
+		RendererDummy::TextureStorage::canvas_texture_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::TextureStorage::owns_render_target(p_rid)) {
+		RendererDummy::TextureStorage::render_target_free(p_rid);
 		return true;
 	}
 	else if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {

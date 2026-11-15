@@ -673,7 +673,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 
 				if (p_render_data->camera_attributes.is_valid()) {
 					sky_light_data.energy *=
-						Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+						RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 							p_render_data->camera_attributes);
 				}
 

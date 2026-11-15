@@ -48,7 +48,6 @@ RenderingContextDriver::SurfaceID RenderingContextDriver::surface_get_from_windo
 		return it->value;
 	}
 	else {
-		printf("[MAP MISS] no surface for window=%d\n", (int)p_window);
 		return SurfaceID();
 	}
 }

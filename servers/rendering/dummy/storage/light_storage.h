@@ -50,9 +50,22 @@ public:
 		RID lightmap;
 	};
 
-	/* Static Storage State */
-	static inline RID_Owner<Lightmap, true> lightmap_owner;
-	static inline RID_Owner<LightmapInstance> lightmap_instance_owner;
+private:
+	struct Data
+	{
+		RID_Owner<Lightmap, true> lightmap_owner;
+		RID_Owner<LightmapInstance> lightmap_instance_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			initialize();
+		}
+		return data;
+	}
 
 public:
 	LightStorage() = delete;
@@ -61,6 +74,7 @@ public:
 	~LightStorage() = delete;
 
 	static void initialize();
+	static void finalize();
 	static bool free(RID p_rid);
 
 	/* Light API */
@@ -310,7 +324,7 @@ public:
 	static bool reflection_probe_instance_postprocess_step(RID p_instance) { return true; }
 
 	/* LIGHTMAP CAPTURE */
-	static bool owns_lightmap(RID p_rid) { return lightmap_owner.owns(p_rid); }
+	static bool owns_lightmap(RID p_rid) { return data && data->lightmap_owner.owns(p_rid); }
 
 	static RID lightmap_allocate();
 	static void lightmap_initialize(RID p_rid);
@@ -372,7 +386,10 @@ public:
 	static void lightmap_set_shadowmask_mode(RID p_lightmap, RSE::ShadowmaskMode p_mode) {}
 
 	/* LIGHTMAP INSTANCE */
-	static bool owns_lightmap_instance(RID p_rid) { return lightmap_instance_owner.owns(p_rid); }
+	static bool owns_lightmap_instance(RID p_rid)
+	{
+		return data && data->lightmap_instance_owner.owns(p_rid);
+	}
 
 	static RID lightmap_instance_create(RID p_lightmap);
 	static void lightmap_instance_free(RID p_lightmap);

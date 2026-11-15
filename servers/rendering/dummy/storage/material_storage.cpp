@@ -30,45 +30,54 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "material_storage.h"
+#include "servers/rendering/dummy/storage/material_storage.h"
 
 void RendererDummy::MaterialStorage::global_shader_parameter_remove(const String& p_name)
 {
-	if (!global_shader_variables.has(p_name)) {
+	Data* d = _get_data();
+	if (!d->global_shader_variables.has(p_name)) {
 		return;
 	}
 
-	global_shader_variables.erase(p_name);
+	d->global_shader_variables.erase(p_name);
 }
 
 Vector<String> RendererDummy::MaterialStorage::global_shader_parameter_get_list()
 {
+	Data* d = _get_data();
 	Vector<String> names;
-	for (const KeyValue<String, RSE::GlobalShaderParameterType>& E : global_shader_variables) {
+	for (const KeyValue<String, RSE::GlobalShaderParameterType>& E : d->global_shader_variables) {
 		names.push_back(E.key);
 	}
 	names.sort();
 	return names;
 }
 
-RID RendererDummy::MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
+RID RendererDummy::MaterialStorage::shader_allocate()
+{
+	return _get_data()->shader_owner.allocate_rid();
+}
 
 void RendererDummy::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
 {
-	shader_owner.initialize_rid(p_rid, DummyShader());
+	_get_data()->shader_owner.initialize_rid(p_rid, DummyShader());
 }
 
 void RendererDummy::MaterialStorage::shader_free(RID p_rid)
 {
-	DummyShader* shader = shader_owner.get_or_null(p_rid);
+	if (!data) {
+		return;
+	}
+	DummyShader* shader = data->shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
 
-	shader_owner.free(p_rid);
+	data->shader_owner.free(p_rid);
 }
 
 void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 {
-	DummyShader* shader = shader_owner.get_or_null(p_shader);
+	Data* d = _get_data();
+	DummyShader* shader = d->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 	if (p_code.is_empty()) {
 		return;
@@ -103,28 +112,34 @@ void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String&
 	actions.uniforms = &shader->uniforms;
 	ShaderCompiler::GeneratedCode gen_code;
 
-	Error err = MaterialStorage::dummy_compiler->compile(new_mode, p_code, &actions, "", gen_code);
+	Error err = d->dummy_compiler->compile(new_mode, p_code, &actions, "", gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 }
 
-RID RendererDummy::MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
+RID RendererDummy::MaterialStorage::material_allocate()
+{
+	return _get_data()->material_owner.allocate_rid();
+}
 
 void RendererDummy::MaterialStorage::material_initialize(RID p_rid)
 {
-	material_owner.initialize_rid(p_rid, DummyMaterial());
+	_get_data()->material_owner.initialize_rid(p_rid, DummyMaterial());
 }
 
 void RendererDummy::MaterialStorage::material_free(RID p_rid)
 {
-	DummyMaterial* material = material_owner.get_or_null(p_rid);
+	if (!data) {
+		return;
+	}
+	DummyMaterial* material = data->material_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(material);
 
-	material_owner.free(p_rid);
+	data->material_owner.free(p_rid);
 }
 
 void RendererDummy::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 {
-	DummyMaterial* material = material_owner.get_or_null(p_material);
+	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 
 	material->shader = p_shader;
@@ -132,7 +147,7 @@ void RendererDummy::MaterialStorage::material_set_shader(RID p_material, RID p_s
 
 void RendererDummy::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
 {
-	DummyMaterial* material = material_owner.get_or_null(p_material);
+	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
 
 	material->next_pass = p_next_material;
@@ -153,17 +168,27 @@ void RendererDummy::MaterialStorage::material_get_instance_shader_parameters(
 
 void RendererDummy::MaterialStorage::initialize()
 {
-	dummy_compiler = memnew(ShaderCompiler);
-	ShaderCompiler::DefaultIdentifierActions actions;
-	dummy_compiler->initialize(actions);
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!data->dummy_compiler) {
+		data->dummy_compiler = memnew(ShaderCompiler);
+		ShaderCompiler::DefaultIdentifierActions actions;
+		data->dummy_compiler->initialize(actions);
+	}
 }
 
 void RendererDummy::MaterialStorage::finalize()
 {
-	if (dummy_compiler) {
-		memdelete(dummy_compiler);
-		dummy_compiler = nullptr;
+	if (!data) {
+		return;
 	}
+	if (data->dummy_compiler) {
+		memdelete(data->dummy_compiler);
+		data->dummy_compiler = nullptr;
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
 

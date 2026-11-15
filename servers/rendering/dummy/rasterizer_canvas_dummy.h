@@ -36,6 +36,16 @@
 class RasterizerCanvasDummy
 {
 public:
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static void set_time(double p_time) {}
+
+	static void update() {}
+
+	static bool free(RID p_rid) { return false; }
+
 	static PolygonID request_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
 		const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
 		const Vector<int>& p_bones = Vector<int>(),

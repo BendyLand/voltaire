@@ -271,14 +271,14 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 
 	if (p_camera_attributes.is_valid()) {
 		ubo.emissive_exposure_normalization =
-			Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_camera_attributes);
 		ubo.IBL_exposure_normalization = 1.0;
 		if (p_env.is_valid()) {
 			RID sky_rid = RendererSceneRender::environment_get_sky(p_env);
 			if (sky_rid.is_valid()) {
 				float current_exposure =
-					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 						p_camera_attributes) *
 					RendererSceneRender::environment_get_bg_intensity(p_env) /
 					p_luminance_multiplier;

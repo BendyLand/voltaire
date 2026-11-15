@@ -757,7 +757,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 
 			if (p_render_data->camera_attributes.is_valid()) {
 				light_data.energy *=
-					Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+					RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 						p_render_data->camera_attributes);
 			}
 
@@ -1071,7 +1071,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		}
 
 		if (p_render_data->camera_attributes.is_valid()) {
-			energy *= Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			energy *= RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 		}
 
@@ -2165,7 +2165,7 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			float exposure =
-				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 			reflection_ubo.exposure_normalization = exposure / probe->baked_exposure;
 		}

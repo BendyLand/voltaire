@@ -89,14 +89,9 @@ public:
 	{
 	}
 
-	static void initialize() {}
+	static void initialize();
 
-	static void begin_frame(double frame_step)
-	{
-		frame++;
-		delta = frame_step;
-		time += frame_step;
-	}
+	static void begin_frame(double frame_step);
 
 	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
@@ -109,7 +104,7 @@ public:
 
 	static void end_frame(bool p_present);
 
-	static void finalize() {}
+	static void finalize();
 
 	static Error _create_current()
 	{
@@ -117,11 +112,7 @@ public:
 		return OK;
 	}
 
-	static void make_current()
-	{
-		RendererCompositor::low_end = false;
-		RendererCompositor::bind_compositor<RasterizerDummy>();
-	}
+	static void make_current();
 
 	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
 
@@ -264,28 +255,17 @@ public:
 			&RendererDummy::MeshStorage::skeleton_update_dependency;
 	}
 
-	static void bind_texture_storage()
-	{
-		// Dummy texture storage binding (or
-		// RendererTextureStorage::bind<RendererDummy::TextureStorage>() if implemented)
-	}
+	static void bind_texture_storage();
 
-	static void bind_material_storage()
-	{
-		// Dummy material storage binding
-	}
+	static void bind_material_storage();
 
-	// Inside class RasterizerDummy public section:
-	static void bind_canvas() { RendererCanvasRender::bind<RasterizerCanvasDummy>(); }
+	static void bind_canvas();
 
 	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
 
-	static void bind_particles_storage()
-	{
-		// Dummy particles storage stub
-	}
+	static void bind_particles_storage();
 
-	static void bind_utilities() {}
+	static void bind_utilities();
 
 	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
 

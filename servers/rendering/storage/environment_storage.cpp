@@ -37,14 +37,20 @@
 
 // Storage
 
-RendererEnvironmentStorage *RendererEnvironmentStorage::singleton = nullptr;
-
-RendererEnvironmentStorage::RendererEnvironmentStorage() {
-	singleton = this;
+void RendererEnvironmentStorage::initialize()
+{
+	if (_initialized) {
+		return;
+	}
+	_initialized = true;
 }
 
-RendererEnvironmentStorage::~RendererEnvironmentStorage() {
-	singleton = nullptr;
+void RendererEnvironmentStorage::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	_initialized = false;
 }
 
 // Environment
@@ -116,79 +122,79 @@ void RendererEnvironmentStorage::environment_set_ambient_light(RID p_env, const 
 	env->reflection_source = p_reflection_source;
 }
 
-RSE::EnvironmentBG RendererEnvironmentStorage::environment_get_background(RID p_env) const {
+RSE::EnvironmentBG RendererEnvironmentStorage::environment_get_background(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_BG_CLEAR_COLOR);
 	return env->background;
 }
 
-RID RendererEnvironmentStorage::environment_get_sky(RID p_env) const {
+RID RendererEnvironmentStorage::environment_get_sky(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RID());
 	return env->sky;
 }
 
-float RendererEnvironmentStorage::environment_get_sky_custom_fov(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sky_custom_fov(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->sky_custom_fov;
 }
 
-Basis RendererEnvironmentStorage::environment_get_sky_orientation(RID p_env) const {
+Basis RendererEnvironmentStorage::environment_get_sky_orientation(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Basis());
 	return env->sky_orientation;
 }
 
-Color RendererEnvironmentStorage::environment_get_bg_color(RID p_env) const {
+Color RendererEnvironmentStorage::environment_get_bg_color(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Color());
 	return env->bg_color;
 }
 
-float RendererEnvironmentStorage::environment_get_bg_energy_multiplier(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_bg_energy_multiplier(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->bg_energy_multiplier;
 }
 
-float RendererEnvironmentStorage::environment_get_bg_intensity(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_bg_intensity(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->bg_intensity;
 }
 
-int RendererEnvironmentStorage::environment_get_canvas_max_layer(RID p_env) const {
+int RendererEnvironmentStorage::environment_get_canvas_max_layer(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0);
 	return env->canvas_max_layer;
 }
 
-RSE::EnvironmentAmbientSource RendererEnvironmentStorage::environment_get_ambient_source(RID p_env) const {
+RSE::EnvironmentAmbientSource RendererEnvironmentStorage::environment_get_ambient_source(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_AMBIENT_SOURCE_BG);
 	return env->ambient_source;
 }
 
-Color RendererEnvironmentStorage::environment_get_ambient_light(RID p_env) const {
+Color RendererEnvironmentStorage::environment_get_ambient_light(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Color());
 	return env->ambient_light;
 }
 
-float RendererEnvironmentStorage::environment_get_ambient_light_energy(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ambient_light_energy(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->ambient_light_energy;
 }
 
-float RendererEnvironmentStorage::environment_get_ambient_sky_contribution(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ambient_sky_contribution(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->ambient_sky_contribution;
 }
 
-RSE::EnvironmentReflectionSource RendererEnvironmentStorage::environment_get_reflection_source(RID p_env) const {
+RSE::EnvironmentReflectionSource RendererEnvironmentStorage::environment_get_reflection_source(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_REFLECTION_SOURCE_BG);
 	return env->reflection_source;
@@ -200,7 +206,7 @@ void RendererEnvironmentStorage::environment_set_camera_feed_id(RID p_env, int p
 	env->camera_feed_id = p_camera_feed_id;
 }
 
-int RendererEnvironmentStorage::environment_get_camera_feed_id(RID p_env) const {
+int RendererEnvironmentStorage::environment_get_camera_feed_id(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, -1);
 	return env->camera_feed_id;
@@ -216,19 +222,19 @@ void RendererEnvironmentStorage::environment_set_tonemap(RID p_env, RSE::Environ
 	env->white = p_white;
 }
 
-RSE::EnvironmentToneMapper RendererEnvironmentStorage::environment_get_tone_mapper(RID p_env) const {
+RSE::EnvironmentToneMapper RendererEnvironmentStorage::environment_get_tone_mapper(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_TONE_MAPPER_LINEAR);
 	return env->tone_mapper;
 }
 
-float RendererEnvironmentStorage::environment_get_exposure(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_exposure(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->exposure;
 }
 
-float RendererEnvironmentStorage::environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value) const {
+float RendererEnvironmentStorage::environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 
@@ -268,13 +274,13 @@ void RendererEnvironmentStorage::environment_set_tonemap_agx_contrast(RID p_env,
 	env->tonemap_agx_contrast = p_agx_contrast;
 }
 
-float RendererEnvironmentStorage::environment_get_tonemap_agx_contrast(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_tonemap_agx_contrast(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->tonemap_agx_contrast;
 }
 
-RendererEnvironmentStorage::TonemapParameters RendererEnvironmentStorage::environment_get_tonemap_parameters(RID p_env, bool p_limit_agx_white, float p_output_max_value) const {
+RendererEnvironmentStorage::TonemapParameters RendererEnvironmentStorage::environment_get_tonemap_parameters(RID p_env, bool p_limit_agx_white, float p_output_max_value) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, TonemapParameters());
 
@@ -361,61 +367,61 @@ void RendererEnvironmentStorage::environment_set_fog(RID p_env, bool p_enable, c
 	env->fog_sky_affect = p_sky_affect;
 }
 
-bool RendererEnvironmentStorage::environment_get_fog_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_fog_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->fog_enabled;
 }
 
-RSE::EnvironmentFogMode RendererEnvironmentStorage::environment_get_fog_mode(RID p_env) const {
+RSE::EnvironmentFogMode RendererEnvironmentStorage::environment_get_fog_mode(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_FOG_MODE_EXPONENTIAL);
 	return env->fog_mode;
 }
 
-Color RendererEnvironmentStorage::environment_get_fog_light_color(RID p_env) const {
+Color RendererEnvironmentStorage::environment_get_fog_light_color(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Color(0.5, 0.6, 0.7));
 	return env->fog_light_color;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_light_energy(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_light_energy(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->fog_light_energy;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_sun_scatter(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_sun_scatter(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_sun_scatter;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_density(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_density(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.001);
 	return env->fog_density;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_height(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_height(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_height;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_height_density(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_height_density(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_height_density;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_aerial_perspective(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_aerial_perspective(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_aerial_perspective;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_sky_affect(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_sky_affect(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_sky_affect;
@@ -431,19 +437,19 @@ void RendererEnvironmentStorage::environment_set_fog_depth(RID p_env, float p_cu
 	env->fog_depth_end = p_end;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_depth_curve(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_depth_curve(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_depth_curve;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_depth_begin(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_depth_begin(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_depth_begin;
 }
 
-float RendererEnvironmentStorage::environment_get_fog_depth_end(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_fog_depth_end(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->fog_depth_end;
@@ -474,79 +480,79 @@ void RendererEnvironmentStorage::environment_set_volumetric_fog(RID p_env, bool 
 	env->volumetric_fog_sky_affect = p_sky_affect;
 }
 
-bool RendererEnvironmentStorage::environment_get_volumetric_fog_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_volumetric_fog_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->volumetric_fog_enabled;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_density(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_density(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.01);
 	return env->volumetric_fog_density;
 }
 
-Color RendererEnvironmentStorage::environment_get_volumetric_fog_scattering(RID p_env) const {
+Color RendererEnvironmentStorage::environment_get_volumetric_fog_scattering(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Color(1, 1, 1));
 	return env->volumetric_fog_scattering;
 }
 
-Color RendererEnvironmentStorage::environment_get_volumetric_fog_emission(RID p_env) const {
+Color RendererEnvironmentStorage::environment_get_volumetric_fog_emission(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Color(0, 0, 0));
 	return env->volumetric_fog_emission;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_emission_energy(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_emission_energy(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->volumetric_fog_emission_energy;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_anisotropy(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_anisotropy(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.2);
 	return env->volumetric_fog_anisotropy;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_length(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_length(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 64.0);
 	return env->volumetric_fog_length;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_detail_spread(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_detail_spread(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 2.0);
 	return env->volumetric_fog_detail_spread;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_gi_inject(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_gi_inject(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->volumetric_fog_gi_inject;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_sky_affect(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_sky_affect(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->volumetric_fog_sky_affect;
 }
 
-bool RendererEnvironmentStorage::environment_get_volumetric_fog_temporal_reprojection(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_volumetric_fog_temporal_reprojection(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, true);
 	return env->volumetric_fog_temporal_reprojection;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.9);
 	return env->volumetric_fog_temporal_reprojection_amount;
 }
 
-float RendererEnvironmentStorage::environment_get_volumetric_fog_ambient_inject(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_volumetric_fog_ambient_inject(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->volumetric_fog_ambient_inject;
@@ -572,73 +578,73 @@ void RendererEnvironmentStorage::environment_set_glow(RID p_env, bool p_enable, 
 	env->glow_map = p_glow_map;
 }
 
-bool RendererEnvironmentStorage::environment_get_glow_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_glow_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->glow_enabled;
 }
 
-Vector<float> RendererEnvironmentStorage::environment_get_glow_levels(RID p_env) const {
+Vector<float> RendererEnvironmentStorage::environment_get_glow_levels(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, Vector<float>());
 	return env->glow_levels;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_intensity(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_intensity(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.3);
 	return env->glow_intensity;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_strength(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_strength(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->glow_strength;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_bloom(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_bloom(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->glow_bloom;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_mix(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_mix(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.01);
 	return env->glow_mix;
 }
 
-RSE::EnvironmentGlowBlendMode RendererEnvironmentStorage::environment_get_glow_blend_mode(RID p_env) const {
+RSE::EnvironmentGlowBlendMode RendererEnvironmentStorage::environment_get_glow_blend_mode(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_GLOW_BLEND_MODE_SCREEN);
 	return env->glow_blend_mode;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_hdr_bleed_threshold(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_hdr_bleed_threshold(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->glow_hdr_bleed_threshold;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_hdr_luminance_cap(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_hdr_luminance_cap(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 12.0);
 	return env->glow_hdr_luminance_cap;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_hdr_bleed_scale(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_hdr_bleed_scale(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 2.0);
 	return env->glow_hdr_bleed_scale;
 }
 
-float RendererEnvironmentStorage::environment_get_glow_map_strength(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_glow_map_strength(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->glow_map_strength;
 }
 
-RID RendererEnvironmentStorage::environment_get_glow_map(RID p_env) const {
+RID RendererEnvironmentStorage::environment_get_glow_map(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RID());
 	return env->glow_map;
@@ -661,31 +667,31 @@ void RendererEnvironmentStorage::environment_set_ssr(RID p_env, bool p_enable, i
 	env->ssr_depth_tolerance = p_depth_tolerance;
 }
 
-bool RendererEnvironmentStorage::environment_get_ssr_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_ssr_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->ssr_enabled;
 }
 
-int RendererEnvironmentStorage::environment_get_ssr_max_steps(RID p_env) const {
+int RendererEnvironmentStorage::environment_get_ssr_max_steps(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 64);
 	return env->ssr_max_steps;
 }
 
-float RendererEnvironmentStorage::environment_get_ssr_fade_in(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssr_fade_in(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.15);
 	return env->ssr_fade_in;
 }
 
-float RendererEnvironmentStorage::environment_get_ssr_fade_out(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssr_fade_out(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 2.0);
 	return env->ssr_fade_out;
 }
 
-float RendererEnvironmentStorage::environment_get_ssr_depth_tolerance(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssr_depth_tolerance(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.5);
 	return env->ssr_depth_tolerance;
@@ -712,55 +718,55 @@ void RendererEnvironmentStorage::environment_set_ssao(RID p_env, bool p_enable, 
 	env->ssao_ao_channel_affect = p_ao_channel_affect;
 }
 
-bool RendererEnvironmentStorage::environment_get_ssao_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_ssao_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->ssao_enabled;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_radius(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_radius(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->ssao_radius;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_intensity(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_intensity(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 2.0);
 	return env->ssao_intensity;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_power(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_power(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.5);
 	return env->ssao_power;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_detail(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_detail(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.5);
 	return env->ssao_detail;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_horizon(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_horizon(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.06);
 	return env->ssao_horizon;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_sharpness(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_sharpness(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.98);
 	return env->ssao_sharpness;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_direct_light_affect(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_direct_light_affect(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->ssao_direct_light_affect;
 }
 
-float RendererEnvironmentStorage::environment_get_ssao_ao_channel_affect(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssao_ao_channel_affect(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.0);
 	return env->ssao_ao_channel_affect;
@@ -783,31 +789,31 @@ void RendererEnvironmentStorage::environment_set_ssil(RID p_env, bool p_enable, 
 	env->ssil_normal_rejection = p_normal_rejection;
 }
 
-bool RendererEnvironmentStorage::environment_get_ssil_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_ssil_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->ssil_enabled;
 }
 
-float RendererEnvironmentStorage::environment_get_ssil_radius(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssil_radius(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 5.0);
 	return env->ssil_radius;
 }
 
-float RendererEnvironmentStorage::environment_get_ssil_intensity(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssil_intensity(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->ssil_intensity;
 }
 
-float RendererEnvironmentStorage::environment_get_ssil_sharpness(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssil_sharpness(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.98);
 	return env->ssil_sharpness;
 }
 
-float RendererEnvironmentStorage::environment_get_ssil_normal_rejection(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_ssil_normal_rejection(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->ssil_normal_rejection;
@@ -835,61 +841,61 @@ void RendererEnvironmentStorage::environment_set_sdfgi(RID p_env, bool p_enable,
 	env->sdfgi_y_scale = p_y_scale;
 }
 
-bool RendererEnvironmentStorage::environment_get_sdfgi_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_sdfgi_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->sdfgi_enabled;
 }
 
-int RendererEnvironmentStorage::environment_get_sdfgi_cascades(RID p_env) const {
+int RendererEnvironmentStorage::environment_get_sdfgi_cascades(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 4);
 	return env->sdfgi_cascades;
 }
 
-float RendererEnvironmentStorage::environment_get_sdfgi_min_cell_size(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sdfgi_min_cell_size(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.2);
 	return env->sdfgi_min_cell_size;
 }
 
-bool RendererEnvironmentStorage::environment_get_sdfgi_use_occlusion(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_sdfgi_use_occlusion(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->sdfgi_use_occlusion;
 }
 
-float RendererEnvironmentStorage::environment_get_sdfgi_bounce_feedback(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sdfgi_bounce_feedback(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 0.5);
 	return env->sdfgi_bounce_feedback;
 }
 
-bool RendererEnvironmentStorage::environment_get_sdfgi_read_sky_light(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_sdfgi_read_sky_light(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, true);
 	return env->sdfgi_read_sky_light;
 }
 
-float RendererEnvironmentStorage::environment_get_sdfgi_energy(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sdfgi_energy(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->sdfgi_energy;
 }
 
-float RendererEnvironmentStorage::environment_get_sdfgi_normal_bias(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sdfgi_normal_bias(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.1);
 	return env->sdfgi_normal_bias;
 }
 
-float RendererEnvironmentStorage::environment_get_sdfgi_probe_bias(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_sdfgi_probe_bias(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.1);
 	return env->sdfgi_probe_bias;
 }
 
-RSE::EnvironmentSDFGIYScale RendererEnvironmentStorage::environment_get_sdfgi_y_scale(RID p_env) const {
+RSE::EnvironmentSDFGIYScale RendererEnvironmentStorage::environment_get_sdfgi_y_scale(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RSE::ENV_SDFGI_Y_SCALE_75_PERCENT);
 	return env->sdfgi_y_scale;
@@ -911,37 +917,37 @@ void RendererEnvironmentStorage::environment_set_adjustment(RID p_env, bool p_en
 	env->color_correction = p_color_correction;
 }
 
-bool RendererEnvironmentStorage::environment_get_adjustments_enabled(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_adjustments_enabled(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->adjustments_enabled;
 }
 
-float RendererEnvironmentStorage::environment_get_adjustments_brightness(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_adjustments_brightness(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->adjustments_brightness;
 }
 
-float RendererEnvironmentStorage::environment_get_adjustments_contrast(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_adjustments_contrast(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->adjustments_contrast;
 }
 
-float RendererEnvironmentStorage::environment_get_adjustments_saturation(RID p_env) const {
+float RendererEnvironmentStorage::environment_get_adjustments_saturation(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, 1.0);
 	return env->adjustments_saturation;
 }
 
-bool RendererEnvironmentStorage::environment_get_use_1d_color_correction(RID p_env) const {
+bool RendererEnvironmentStorage::environment_get_use_1d_color_correction(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, false);
 	return env->use_1d_color_correction;
 }
 
-RID RendererEnvironmentStorage::environment_get_color_correction(RID p_env) const {
+RID RendererEnvironmentStorage::environment_get_color_correction(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RID());
 	return env->color_correction;

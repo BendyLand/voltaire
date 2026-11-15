@@ -6099,6 +6099,10 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	fflush(stdout);
 	rendering_driver = p_rendering_driver;
 
+	if (rendering_driver == "dummy") {
+		RasterizerDummy::make_current();
+	}
+
 #if defined(RD_ENABLED)
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {

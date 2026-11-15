@@ -29,7 +29,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "light_storage.h"
+#include "servers/rendering/dummy/storage/light_storage.h"
+
+void RendererDummy::LightStorage::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void RendererDummy::LightStorage::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
 
 bool RendererDummy::LightStorage::free(RID p_rid)
 {
@@ -47,17 +62,23 @@ bool RendererDummy::LightStorage::free(RID p_rid)
 
 /* LIGHTMAP API */
 
-RID RendererDummy::LightStorage::lightmap_allocate() { return lightmap_owner.allocate_rid(); }
+RID RendererDummy::LightStorage::lightmap_allocate()
+{
+	return _get_data()->lightmap_owner.allocate_rid();
+}
 
 void RendererDummy::LightStorage::lightmap_initialize(RID p_lightmap)
 {
-	lightmap_owner.initialize_rid(p_lightmap, Lightmap());
+	_get_data()->lightmap_owner.initialize_rid(p_lightmap, Lightmap());
 }
 
 void RendererDummy::LightStorage::lightmap_free(RID p_rid)
 {
+	if (!data) {
+		return;
+	}
 	lightmap_set_textures(p_rid, RID(), false);
-	lightmap_owner.free(p_rid);
+	data->lightmap_owner.free(p_rid);
 }
 
 /* LIGHTMAP INSTANCE */
@@ -66,12 +87,15 @@ RID RendererDummy::LightStorage::lightmap_instance_create(RID p_lightmap)
 {
 	LightmapInstance li;
 	li.lightmap = p_lightmap;
-	return lightmap_instance_owner.make_rid(li);
+	return _get_data()->lightmap_instance_owner.make_rid(li);
 }
 
 void RendererDummy::LightStorage::lightmap_instance_free(RID p_lightmap)
 {
-	lightmap_instance_owner.free(p_lightmap);
+	if (!data) {
+		return;
+	}
+	data->lightmap_instance_owner.free(p_lightmap);
 }
 
 

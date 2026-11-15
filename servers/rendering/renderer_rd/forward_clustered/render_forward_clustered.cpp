@@ -1383,7 +1383,7 @@ void RenderForwardClustered::_setup_lightmaps(const RenderDataRD* p_render_data,
 		if (p_render_data->camera_attributes.is_valid()) {
 			float baked_exposure =
 				RendererRD::LightStorage::lightmap_get_baked_exposure_normalization(lightmap);
-			float enf = Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+			float enf = RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 				p_render_data->camera_attributes);
 			scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
 		}
@@ -1415,7 +1415,7 @@ void RenderForwardClustered::_update_sdfgi(RenderDataRD* p_render_data)
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			exposure_normalization =
-				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 		for (int i = 0; i < p_render_data->render_sdfgi_region_count; i++) {
@@ -2027,7 +2027,7 @@ void RenderForwardClustered::_render_scene(
 		if (p_render_data->camera_attributes.is_valid()) {
 			RendererRD::LightStorage::reflection_probe_set_baked_exposure(
 				RendererRD::LightStorage::reflection_probe_instance_get_probe(p_render_data->reflection_probe),
-				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes));
 		}
 	}
@@ -2348,7 +2348,7 @@ void RenderForwardClustered::_render_scene(
 
 		if (p_render_data->camera_attributes.is_valid()) {
 			bg_energy_multiplier *=
-				Renderer::camera_attributes->camera_attributes_get_exposure_normalization_factor(
+				RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
 					p_render_data->camera_attributes);
 		}
 
@@ -2858,7 +2858,7 @@ void RenderForwardClustered::_render_scene(
 			rb_data->ensure_fsr2(fsr2_effect);
 
 			RID exposure;
-			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (RendererCameraAttributes::camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = RendererSceneRenderRD::data->luminance->get_current_luminance_buffer(rb);
 			}
@@ -2910,7 +2910,7 @@ void RenderForwardClustered::_render_scene(
 			bool reset = rb_data->ensure_mfx_temporal(mfx_temporal_effect);
 
 			RID exposure;
-			if (Renderer::camera_attributes->camera_attributes_uses_auto_exposure(
+			if (RendererCameraAttributes::camera_attributes_uses_auto_exposure(
 					p_render_data->camera_attributes)) {
 				exposure = luminance->get_current_luminance_buffer(rb);
 			}

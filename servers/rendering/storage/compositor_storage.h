@@ -34,11 +34,17 @@
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class RendererCompositorStorage
+class RendererCompositorStorage final
 {
+public:
+	RendererCompositorStorage() = delete;
+	~RendererCompositorStorage() = delete;
+	RendererCompositorStorage(const RendererCompositorStorage&) = delete;
+	RendererCompositorStorage& operator=(const RendererCompositorStorage&) = delete;
+
 private:
-	static RendererCompositorStorage* singleton;
-	int num_compositor_effects_with_motion_vectors = 0;
+	static inline bool _initialized = false;
+	static inline int num_compositor_effects_with_motion_vectors = 0;
 
 	// Compositor effect
 	struct CompositorEffect
@@ -49,7 +55,7 @@ private:
 		uint32_t flags = {};
 	};
 
-	mutable RID_Owner<CompositorEffect, true> compositor_effects_owner;
+	static inline RID_Owner<CompositorEffect, true> compositor_effects_owner;
 
 	// Compositor
 	struct Compositor
@@ -58,49 +64,48 @@ private:
 		Vector<RID> compositor_effects;
 	};
 
-	mutable RID_Owner<Compositor, true> compositor_owner;
+	static inline RID_Owner<Compositor, true> compositor_owner;
 
 public:
-	static RendererCompositorStorage* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
 
-	int get_num_compositor_effects_with_motion_vectors() const
+	static bool is_initialized() { return _initialized; }
+
+	static int get_num_compositor_effects_with_motion_vectors()
 	{
 		return num_compositor_effects_with_motion_vectors;
 	}
 
-	RendererCompositorStorage();
-	virtual ~RendererCompositorStorage();
-
 	// Compositor effect
-	RID compositor_effect_allocate();
-	void compositor_effect_initialize(RID p_rid);
-	void compositor_effect_free(RID p_rid);
+	static RID compositor_effect_allocate();
+	static void compositor_effect_initialize(RID p_rid);
+	static void compositor_effect_free(RID p_rid);
 
-	bool is_compositor_effect(RID p_effect) const
+	static bool is_compositor_effect(RID p_effect)
 	{
 		return compositor_effects_owner.owns(p_effect);
 	}
 
-	void compositor_effect_set_enabled(RID p_effect, bool p_enabled);
-	bool compositor_effect_get_enabled(RID p_effect) const;
+	static void compositor_effect_set_enabled(RID p_effect, bool p_enabled);
+	static bool compositor_effect_get_enabled(RID p_effect);
 
-	RSE::CompositorEffectCallbackType compositor_effect_get_callback_type(RID p_effect) const;
+	static RSE::CompositorEffectCallbackType compositor_effect_get_callback_type(RID p_effect);
 
-	void compositor_effect_set_flag(RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set);
-	bool compositor_effect_get_flag(RID p_effect, RSE::CompositorEffectFlags p_flag) const;
+	static void compositor_effect_set_flag(
+		RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set);
+	static bool compositor_effect_get_flag(RID p_effect, RSE::CompositorEffectFlags p_flag);
 
 	// Compositor
-	RID compositor_allocate();
-	void compositor_initialize(RID p_rid);
-	void compositor_free(RID p_rid);
+	static RID compositor_allocate();
+	static void compositor_initialize(RID p_rid);
+	static void compositor_free(RID p_rid);
 
-	bool is_compositor(RID p_compositor) const { return compositor_owner.owns(p_compositor); }
+	static bool is_compositor(RID p_compositor) { return compositor_owner.owns(p_compositor); }
 
-	void compositor_set_compositor_effects(RID p_compositor, const Vector<RID>& p_effects);
-	Vector<RID> compositor_get_compositor_effects(RID p_compositor,
+	static void compositor_set_compositor_effects(RID p_compositor, const Vector<RID>& p_effects);
+	static Vector<RID> compositor_get_compositor_effects(RID p_compositor,
 		RSE::CompositorEffectCallbackType p_callback_type =
 			RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY,
-		bool p_enabled_only = true) const;
+		bool p_enabled_only = true);
 };
-
-

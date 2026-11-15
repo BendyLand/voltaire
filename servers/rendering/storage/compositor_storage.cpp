@@ -31,11 +31,22 @@
 
 #include "compositor_storage.h"
 
-RendererCompositorStorage* RendererCompositorStorage::singleton = nullptr;
+void RendererCompositorStorage::initialize()
+{
+	if (_initialized) {
+		return;
+	}
+	num_compositor_effects_with_motion_vectors = 0;
+	_initialized = true;
+}
 
-RendererCompositorStorage::RendererCompositorStorage() { singleton = this; }
-
-RendererCompositorStorage::~RendererCompositorStorage() { singleton = nullptr; }
+void RendererCompositorStorage::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	_initialized = false;
+}
 
 RID RendererCompositorStorage::compositor_effect_allocate()
 {
@@ -47,7 +58,7 @@ void RendererCompositorStorage::compositor_effect_initialize(RID p_rid)
 	compositor_effects_owner.initialize_rid(p_rid, CompositorEffect());
 }
 
-bool RendererCompositorStorage::compositor_effect_get_enabled(RID p_effect) const
+bool RendererCompositorStorage::compositor_effect_get_enabled(RID p_effect)
 {
 	CompositorEffect* effect = compositor_effects_owner.get_or_null(p_effect);
 	ERR_FAIL_NULL_V(effect, false);
@@ -56,7 +67,7 @@ bool RendererCompositorStorage::compositor_effect_get_enabled(RID p_effect) cons
 }
 
 RSE::CompositorEffectCallbackType RendererCompositorStorage::compositor_effect_get_callback_type(
-	RID p_effect) const
+	RID p_effect)
 {
 	CompositorEffect* effect = compositor_effects_owner.get_or_null(p_effect);
 	ERR_FAIL_NULL_V(effect, RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_MAX);
@@ -88,7 +99,7 @@ void RendererCompositorStorage::compositor_set_compositor_effects(
 }
 
 Vector<RID> RendererCompositorStorage::compositor_get_compositor_effects(
-	RID p_compositor, RSE::CompositorEffectCallbackType p_callback_type, bool p_enabled_only) const
+	RID p_compositor, RSE::CompositorEffectCallbackType p_callback_type, bool p_enabled_only)
 {
 	Compositor* compositor = compositor_owner.get_or_null(p_compositor);
 	ERR_FAIL_NULL_V(compositor, Vector<RID>());
@@ -119,11 +130,9 @@ void RendererCompositorStorage::compositor_effect_set_flag(
 void RendererCompositorStorage::compositor_effect_set_enabled(RID p_effect, bool p_enabled) {}
 
 bool RendererCompositorStorage::compositor_effect_get_flag(
-	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag) const
+	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag)
 {
 	return false;
 }
 
 void RendererCompositorStorage::compositor_effect_free(RID p_effect) {}
-
-
